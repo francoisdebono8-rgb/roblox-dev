@@ -4471,7 +4471,7 @@ return {
       <Item class="StringValue" referent="ND26">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">d4cc1043a9faed24b8737d1ccc9db8522c7e57e53ed23a6110ff35fb18dc3ddf</string>
+          <string name="Value">f3ccec9ea58126dc44f846b38b5003dec7936b8c1efdcc9fadb8cfcab1cad816</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND27">
@@ -21720,7 +21720,7 @@ function Tutorial.plan(a)
 	add({id="heavy",title="Heavy strike",key=K.Heavy,pad=P.Heavy,place="near",
 		check=function(s,t) return t.ok("Heavy") and t.count("Hit")&gt;=1 end})
 	if routes.side then
-		add({id="routeSide",title="Turn the angle: "..moveLabel(routes.side),key="1 hit, then side + "..K.Light,pad="1 hit, then side + "..P.Light,place="near",
+		add({id="routeSide",title="Turn the angle: "..moveLabel(routes.side),key="2 hits, then side + "..K.Light,pad="2 hits, then side + "..P.Light,place="near",
 			check=function(s,t) return t.ev("RouteSide") end})
 	end
 	if routes.down then
@@ -21743,7 +21743,9 @@ function Tutorial.plan(a)
 		check=function(s,t) return t.ev("RunningStrike") end})
 	add({id="grab",title="Grab, then throw",key=K.Grab..", then "..K.Light.." ("..K.Heavy.." throws upward)",pad=P.Grab..", then "..P.Light,place="near",
 		check=function(s,t) return t.ev("ThrowHit") end})
-	add({id="tool",title="Your tool: "..toolName(a),key=K.Tool,pad=P.Tool,
+	-- A deflecting tool (Guy's kick) needs something thrown at it: the partner throws.
+	add({id="tool",title="Your tool: "..toolName(a),key=if a.def.Tool=="Deflect" then K.Tool.." as his kunai flies" else K.Tool,pad=if a.def.Tool=="Deflect" then P.Tool.." as his kunai flies" else P.Tool,
+		bot=if a.def.Tool=="Deflect" then "throw" else "idle",
 		check=function(s,t) return t.ok("Tool") end})
 	for i,spec in def.Techniques or {} do
 		if i&gt;5 then break end
@@ -21758,7 +21760,9 @@ function Tutorial.plan(a)
 		check=function(s,t,now) local a,b=s.human,s.bot;return t.ev("Dodge") and (t.ev("Evaded") or (b.attackName=="Heavy" and now-(b.attackStarted or now)&gt;.46 and a.health==t.health)) end})
 	add({id="substitute",title="Escape after being hit",key=K.Substitute.." just after contact",pad=P.Substitute.." just after contact",place="near",bot="heavy",
 		check=function(s,t) return t.ev("Substitute") end})
-	add({id="interrupt",title="Interrupt his hand signs",key=K.Light.." during the signs",pad=P.Light.." during the signs",place="far",bot="channel",
+	-- (Roster run 02/11: STUCK for every fighter from 28 studs: the signs end
+	-- before anyone gets there.) In dash reach, as in a duel.
+	add({id="interrupt",title="Interrupt his hand signs",key=K.Light.." during the signs",pad=P.Light.." during the signs",place="mid",bot="channel",
 		check=function(s,t) return t.ev("Interrupt") end})
 	add({id="throwBreak",title="Break his grab",key=K.Grab.." as he seizes you",pad=P.Grab.." as he seizes you",place="near",bot="grab",
 		check=function(s,t) return t.ev("ThrowBreak") end})
@@ -21812,7 +21816,8 @@ function Tutorial.enter(s,now)
 	b.trainingChannelScale=if spec.bot=="channel" then 3 else 1
 	local place=spec.place
 	local near=place=="near" or place=="air"
-	c:relocate(a,s.origin+Vector3.new(0,3,if near then 3 else 14));c:relocate(b,s.origin+Vector3.new(0,3,if near then -2 else -14))
+	local gapA,gapB=if near then 3 elseif place=="mid" then 5 else 14,if near then -2 elseif place=="mid" then -5 else -14
+	c:relocate(a,s.origin+Vector3.new(0,3,gapA));c:relocate(b,s.origin+Vector3.new(0,3,gapB))
 	if place=="wall" then
 		local R=require(script.Parent.World).WALL_RADIUS
 		c:relocate(a,s.origin+Vector3.new(R-7,3,0));c:relocate(b,s.origin+Vector3.new(R-17,3,0))
@@ -21823,8 +21828,11 @@ function Tutorial.enter(s,now)
 		Brawler.react(c,b,"Juggled",Vector3.zero,1.8)
 	end
 	-- A jutsu that needs its target in reach starts within it.
+	-- (Roster run 02/11: "Out of range" x5 for Guy, Kakashi, Shino...: a
+	-- Sequence, a Zone at the target, a Teleport check their Range without
+	-- Requires.) Any jutsu with a reach shorter than the gap starts within it.
 	local tech=spec.technique
-	if tech and tech.Requires=="Target" then
+	if tech and (tech.Requires=="Target" or (tech.Range and tech.Range&lt;(b.root.Position-a.root.Position).Magnitude+2)) then
 		local gap=math.clamp((tech.Range or 10)*.5,3,12)
 		c:relocate(b,a.root.Position+flat(b.root.Position-a.root.Position).Unit*gap)
 		b.root.CFrame=CFrame.lookAt(b.root.Position,a.root.Position)
@@ -21941,6 +21949,8 @@ function Tutorial.update(s,now,dt)
 		b.root.CFrame=CFrame.lookAt(b.root.Position,a.root.Position);c:request(b,"Heavy");t.attackAt=now+1.7
 	elseif spec.bot=="channel" and now&gt;=t.attackAt then
 		b.cooldowns={};b.chakra=b.def.Chakra or 100;c:request(b,Tutorial.interruptSlot(b),a.root.Position);t.attackAt=now+1.4
+	elseif spec.bot=="throw" and now&gt;=t.attackAt then
+		b.cooldowns={};b.toolCooldown=0;c:request(b,"Tool",a.root.Position);t.attackAt=now+1.6
 	elseif spec.bot=="grab" and now&gt;=t.attackAt then
 		if (b.root.Position-a.root.Position).Magnitude&gt;4 then c:relocate(b,a.root.Position+a.root.CFrame.LookVector*3.2) end
 		b.root.CFrame=CFrame.lookAt(b.root.Position,a.root.Position);b.grabCooldown=0;c:request(b,"Grab");t.attackAt=now+1.8
@@ -22011,7 +22021,8 @@ local function scripts(s,wait,alive)
 	end
 	S.string=function() stick(Vector3.zero);chain((A().def.StringLength or 4)+1,.26);wait(.5) end
 	S.heavy=function() press("Heavy");wait(1) end
-	S.routeSide=function() press("Attack");wait(.3);stick(toward():Cross(Vector3.yAxis));press("Attack");wait(.6);stick(Vector3.zero) end
+	-- The side route, like the others, opens after two hits (Brawler: combo&gt;=2).
+	S.routeSide=function() chain(2,.28);stick(toward():Cross(Vector3.yAxis));press("Attack");wait(.6);stick(Vector3.zero) end
 	S.routeDown=function() chain(2,.28);stick(-toward());press("Attack");wait(.6);stick(Vector3.zero) end
 	S.launch=function() chain(2,.28);stick(toward());press("Attack");wait(.6);stick(Vector3.zero) end
 	S.chase=function() wait(.15);press("Pursuit");wait(.8) end
@@ -22028,8 +22039,27 @@ local function scripts(s,wait,alive)
 		end
 		a.sprinting=false;wait(.6);stick(Vector3.zero)
 	end
-	S.grab=function() press("Grab");wait(.4);press("Attack");wait(.8) end
-	S.tool=function() press("Tool",B().root.Position);wait(.9) end
+	-- Walk into reach first (Gaara and Sasori whiffed from the step's 5 studs:
+	-- their grab does not carry the lunge the others do), then seize and throw.
+	S.grab=function()
+		local t0=os.clock()
+		while alive() and os.clock()-t0&lt;1.5 and flat(B().root.Position-A().root.Position).Magnitude&gt;2.8 do stick(toward());wait(.03) end
+		stick(Vector3.zero);press("Grab");wait(.4);press("Attack");wait(1.2)
+	end
+	S.tool=function()
+		local a=A()
+		if a.def.Tool=="Deflect" then
+			-- Kick when the partner's blade is coming (Techniques.bladeIncoming).
+			local Techniques=require(script.Parent.Techniques)
+			local t0=os.clock()
+			while alive() and os.clock()-t0&lt;4 do
+				if Techniques.bladeIncoming(c,a,a.def.Deflect) then press("Tool",B().root.Position);wait(.9);return end
+				wait(.02)
+			end
+			return
+		end
+		press("Tool",B().root.Position);wait(.9)
+	end
 	for i=1,5 do
 		S["jutsu"..i]=function() press("Technique"..i,B().root.Position);wait(1.4) end
 	end
@@ -34914,6 +34944,9 @@ function Dev.install(ctx)
 	local Metrics=require(Shared.DevMetrics)
 	local Fighters=require(Shared.Fighters)
 	local volumes=require(script.Parent.DevVolumes).new(ctx.player)
+	-- The tutorial as a test of the game: per-step fluidity measures (Client/TutorialProbe).
+	local probeModule=script.Parent:FindFirstChild("TutorialProbe")
+	if probeModule then pcall(function() require(probeModule).install(ctx) end) end
 	local m=Metrics.new()
 	local self={panelOpen=false,metrics=m,blocked={phase="DevPanel"}}
 	local track={};local lastPacket=nil;local packetAt=0;local epoch=nil
@@ -41399,6 +41432,172 @@ return SandFX
         </Item>
         <Item class="ModuleScript" referent="ND166">
           <Properties>
+            <string name="Name">TutorialProbe</string>
+            <ProtectedString name="Source">-- Debug/QA places only (build.py DEBUG_SOURCES). The tutorial as a test of the
+-- game (user 02/11: "the tutorial must serve the game": find what keeps it
+-- from being fluid). Every rendered frame of a tutorial step it measures what
+-- the player sees, per fighter and per step, and keeps the worst examples:
+--   pop       the drawn body jumps between two frames (not a declared warp)
+--   freeze    the server wants the body to move, the drawn body does not
+--   slide     the drawn body moves while the server says it stands, or runs
+--             far slower/faster than the server's own speed
+--   snap      the drawn velocity changes brutally out of a free move
+--             (run -&gt; jump, wall -&gt; air, landing): the "cut" a player feels
+--   camera    the camera jumps (position or angle) more than the body it follows
+--   offscreen the fighter's head leaves the view
+--   late      a strike or a jump reaches the screen late (server start -&gt; seen)
+-- Read it with _G.NinjaDuelProbe.report() from the Client command bar (or the
+-- Studio MCP Client datamodel). Measures only: changes nothing in the game.
+local RunService=game:GetService("RunService")
+local Probe={}
+
+local function flat(v) return Vector3.new(v.X,0,v.Z) end
+local KINDS={"pop","freeze","slide","snap","camera","offscreen","late"}
+
+function Probe.install(ctx)
+	local data={} -- data[fighter][step]={kind={n=,worst=,example=}}
+	local order={}
+	local st={}
+	local function bucket(fighter,step)
+		local f=data[fighter];if not f then f={};data[fighter]=f;table.insert(order,fighter) end
+		local b=f[step];if not b then b={frames=0};f[step]=b end
+		return b
+	end
+	local function note(b,kind,value,example)
+		local k=b[kind];if not k then k={n=0,worst=0};b[kind]=k end
+		k.n+=1
+		if value&gt;k.worst then k.worst=value;k.example=example end
+	end
+	local function context(h)
+		return string.format("%s%s%s%s%s",h.state or "?",if h.attackName and h.state~="Neutral" then ":"..h.attackName else "",
+			if h.reaction then " r:"..h.reaction else "",if h.airborne then " air" else "",if h.wall then " wall:"..tostring(h.wallMode) else "")
+	end
+	RunService:BindToRenderStep("NinjaDuelTutorialProbe",Enum.RenderPriority.Camera.Value+3,function(dt)
+		local cur=ctx.state()
+		if not cur or cur.phase~="Duel" or not cur.tutorial or not cur.human or dt&lt;=0 or dt&gt;.1 then st.last=nil;return end
+		local h=cur.human
+		local model=ctx.player.Character
+		local head=model and model:FindFirstChild("Head")
+		local torso=model and (model:FindFirstChild("LowerTorso") or model:FindFirstChild("Torso"))
+		if not head or not torso then return end
+		local fighter=h.fighterId or "?"
+		local step=cur.tutorial.id or "?"
+		local b=bucket(fighter,step);b.frames+=1
+		local cam=workspace.CurrentCamera
+		local now=os.clock()
+		local p=torso.Position
+		local last=st.last
+		-- A new step relocates both bodies (Tutorial.enter): not a defect.
+		if last and (last.step~=step or last.fighter~=fighter or (h.warpSerial or 0)~=last.warp) then last=nil;st.settle=now+.35 end
+		local settling=now&lt;(st.settle or 0)
+		local ctxText=context(h)
+		if last and not settling then
+			local move=p-last.p
+			local v=move/dt
+			local vFlat=flat(v).Magnitude
+			local serverSpeed=math.max(h.speed or 0,flat(h.velocity or Vector3.zero).Magnitude)
+			-- pop: more travel in one frame than the fastest the body may go.
+			local allowed=math.max(1.2,(math.max(serverSpeed,last.vFlat or 0,80))*dt*1.6)
+			if move.Magnitude&gt;allowed then note(b,"pop",move.Magnitude,string.format("%.2f studs in %.0f ms (%s -&gt; %s)",move.Magnitude,dt*1000,last.ctx,ctxText)) end
+			local free=h.state=="Neutral" and not h.reaction and not h.wall and not h.airborne and (h.airHold or 0)==0
+			-- freeze: the server runs, the screen stands.
+			if free and (h.speed or 0)&gt;6 and vFlat&lt;.5 then st.stillFor=(st.stillFor or 0)+dt else st.stillFor=0 end
+			if st.stillFor&gt;=.25 and not st.freezeOpen then st.freezeOpen=true;note(b,"freeze",st.stillFor,"server speed "..string.format("%.1f",h.speed or 0).." / drawn 0 ("..ctxText..")") end
+			if st.stillFor==0 then st.freezeOpen=false end
+			-- slide: drawn speed against the server's own, free on the ground.
+			if free and h.state=="Neutral" then
+				local gap=math.abs(vFlat-(h.speed or 0))
+				if gap&gt;8 then st.slideFor=(st.slideFor or 0)+dt else st.slideFor=0 end
+				if st.slideFor&gt;=.2 and not st.slideOpen then st.slideOpen=true;note(b,"slide",gap,string.format("drawn %.1f / server %.1f studs/s (%s)",vFlat,h.speed or 0,ctxText)) end
+				if st.slideFor==0 then st.slideOpen=false end
+			end
+			-- snap: brutal change of the drawn velocity around a free move.
+			if last.v then
+				local acc=(v-last.v).Magnitude/dt
+				local committed=(h.state~="Neutral" and h.state~="Guarding") or h.reaction~=nil
+				if acc&gt;650 and not committed and v.Magnitude&lt;120 then
+					note(b,"snap",acc,string.format("%.0f studs/s² (%s -&gt; %s)",acc,last.ctx,ctxText))
+				end
+			end
+			-- camera: the view moves much more than the body it follows.
+			local cf=cam.CFrame
+			if last.cam then
+				local camMove=(cf.Position-last.cam.Position).Magnitude
+				local angle=math.deg(math.acos(math.clamp(cf.LookVector:Dot(last.cam.LookVector),-1,1)))
+				if camMove&gt;move.Magnitude+2.5 then note(b,"camera",camMove,string.format("camera %.1f studs vs body %.1f (%s)",camMove,move.Magnitude,ctxText)) end
+				if angle&gt;18 and not h.ultClip then note(b,"camera",angle,string.format("camera turned %.0f° in one frame (%s)",angle,ctxText)) end
+			end
+			-- offscreen: the head out of the view (or hidden by the HUD's bottom bar).
+			local screen,visible=cam:WorldToViewportPoint(head.Position)
+			local size=cam.ViewportSize
+			if not visible or screen.X&lt;0 or screen.X&gt;size.X or screen.Y&lt;0 or screen.Y&gt;size.Y*.86 then
+				st.offFor=(st.offFor or 0)+dt
+				if st.offFor&gt;=.3 and not st.offOpen then st.offOpen=true;note(b,"offscreen",st.offFor,"head at "..string.format("%.0f,%.0f",screen.X,screen.Y).." ("..ctxText..")") end
+			else st.offFor=0;st.offOpen=false end
+			st.lastV=v
+			last.v=v;last.vFlat=vFlat
+		end
+		-- late: how old a strike is when the screen first shows it.
+		if (h.attackSerial or 0)~=(st.attackSerial or 0) then
+			if st.attackSerial~=nil and h.attackElapsed and h.attackName then
+				local ms=h.attackElapsed*1000
+				if ms&gt;120 then note(b,"late",ms,string.format("%s seen %.0f ms after it began",h.attackName,ms)) end
+			end
+			st.attackSerial=h.attackSerial or 0
+		end
+		-- jump: server airborne -&gt; the drawn body leaves the ground.
+		if h.airborne and not st.wasAir then st.airAt=now;st.airFrom=p.Y end
+		if st.airAt and p.Y&gt;(st.airFrom or p.Y)+.4 then
+			local ms=(now-st.airAt)*1000
+			if ms&gt;120 then note(b,"late",ms,string.format("jump drawn %.0f ms after the server's take-off",ms)) end
+			st.airAt=nil
+		end
+		if not h.airborne then st.airAt=nil end
+		st.wasAir=h.airborne
+		st.last={p=p,step=step,fighter=fighter,warp=h.warpSerial or 0,ctx=ctxText,cam=cam.CFrame,v=last and last.v,vFlat=last and last.vFlat}
+	end)
+	local api={}
+	function api.reset() table.clear(data);table.clear(order) end
+	-- One line per fighter and step that has a defect, worst first.
+	function api.report(fighter)
+		local lines={}
+		for _,f in order do
+			if not fighter or f==fighter then
+				for step,b in data[f] do
+					for _,kind in KINDS do
+						local k=b[kind]
+						if k then table.insert(lines,{score=k.n*(if kind=="freeze" or kind=="pop" then 4 else 1),text=string.format("%s %s %s x%d worst: %s",f,step,kind,k.n,tostring(k.example))}) end
+					end
+				end
+			end
+		end
+		table.sort(lines,function(a,b) return a.score&gt;b.score end)
+		local out={};for i,l in lines do out[i]=l.text end
+		return table.concat(out,"\n")
+	end
+	-- Totals per kind and fighter (a table to compare fighters).
+	function api.totals()
+		local out={}
+		for _,f in order do
+			local row={f}
+			for _,kind in KINDS do
+				local n=0;for _,b in data[f] do if b[kind] then n+=b[kind].n end end
+				if n&gt;0 then table.insert(row,kind.."="..n) end
+			end
+			table.insert(out,table.concat(row," "))
+		end
+		return table.concat(out,"\n")
+	end
+	api.data=data
+	_G.NinjaDuelProbe=api
+	return api
+end
+return Probe
+</ProtectedString>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="ND167">
+          <Properties>
             <string name="Name">UI</string>
             <ProtectedString name="Source">-- Prodigy Tournament interface: roster/selection, online queue and fighter
 -- pick, duel HUD, match intro and result framing. Presentation only; every
@@ -41863,6 +42062,11 @@ end
 function UI:render(data)
 	local pad=if data.gamepad~=nil then data.gamepad else Controls.isGamepad(UIS:GetLastInputType())
 	self.tutorialPanel.Visible=data.tutorial~=nil and data.phase=="Duel"
+	-- (User 02/11, tutorial on screen) The cue band (124) and the hint (200)
+	-- sat on the tutorial panel (84-174): "SPACE REBOUND / C DETACH" was printed
+	-- across the step's own instruction. Under the panel while it shows.
+	self.cue.Position=UDim2.new(.5,-300,0,if self.tutorialPanel.Visible then 182 else 124)
+	self.hint.Position=UDim2.new(.5,-260,0,if self.tutorialPanel.Visible then 226 else 200)
 	if data.tutorial then
 		self.tutorialTitle.Text=data.tutorial.index.." / "..data.tutorial.total.."  "..data.tutorial.title
 		self.tutorialPrompt.Text=(if pad then data.tutorial.pad else data.tutorial.key).."  •  "..(if pad then "Touchpad to skip" else "ESC to skip")
@@ -42038,7 +42242,7 @@ return UI
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND167">
+        <Item class="ModuleScript" referent="ND168">
           <Properties>
             <string name="Name">UltimateFX</string>
             <ProtectedString name="Source">-- The ultimates on the client (stage 6, the approved move list, "Ultimes"):
@@ -42946,7 +43150,7 @@ return UltimateFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND168">
+        <Item class="ModuleScript" referent="ND169">
           <Properties>
             <string name="Name">VelmoraHitFeedback</string>
             <ProtectedString name="Source">-- Impact presentation. Adapted from Velmora src/client/Combat/HitFeedback.luau
@@ -43142,7 +43346,7 @@ return Feedback
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND169">
+        <Item class="ModuleScript" referent="ND170">
           <Properties>
             <string name="Name">VelmoraMotionEngine</string>
             <ProtectedString name="Source">-- Ninja Duel body animation. Started from Velmora's additive R15 layer (MIT) and
@@ -46790,7 +46994,7 @@ return Motion
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND170">
+        <Item class="ModuleScript" referent="ND171">
           <Properties>
             <string name="Name">VfxAtlas</string>
             <ProtectedString name="Source">-- GENERATED by tools/vfx_textures.py --pack: do not edit by hand.
@@ -48243,7 +48447,7 @@ HAOBECABDA1HBIA3HBGAmZ]]},
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND171">
+        <Item class="ModuleScript" referent="ND172">
           <Properties>
             <string name="Name">VfxKit</string>
             <ProtectedString name="Source">-- Presentation primitives on the project's own VFX textures
@@ -48703,7 +48907,7 @@ return Kit
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND172">
+        <Item class="ModuleScript" referent="ND173">
           <Properties>
             <string name="Name">Wave1FX</string>
             <ProtectedString name="Source">-- Roster 20, batch 1 (Haku, Zabuza, Kimimaro): the batch's own drawing,
@@ -48917,7 +49121,7 @@ return M
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND173">
+        <Item class="ModuleScript" referent="ND174">
           <Properties>
             <string name="Name">Wave1Motion</string>
             <ProtectedString name="Source">-- Roster batch 1 bodies authored from their Combat Bibles (DEC-026). First:
@@ -49218,7 +49422,7 @@ return Wave1Motion
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND174">
+        <Item class="ModuleScript" referent="ND175">
           <Properties>
             <string name="Name">Wave2FX</string>
             <ProtectedString name="Source">-- Roster 20, batch 2 (Shikamaru, Shino, Orochimaru): the batch's own drawing, installed by
@@ -49231,7 +49435,7 @@ return M
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND175">
+        <Item class="ModuleScript" referent="ND176">
           <Properties>
             <string name="Name">Wave3FX</string>
             <ProtectedString name="Source">-- Roster 20, batch 3 (Deidara, Sasori, Nagato, Killer Bee): the batch's own
@@ -49334,7 +49538,7 @@ return M
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND176">
+        <Item class="ModuleScript" referent="ND177">
           <Properties>
             <string name="Name">Wave3Motion</string>
             <ProtectedString name="Source">-- Roster batch 3 bodies authored from their Combat Bibles (DEC-026). First:
@@ -49461,7 +49665,7 @@ return Wave3Motion
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND177">
+        <Item class="ModuleScript" referent="ND178">
           <Properties>
             <string name="Name">Wave4FX</string>
             <ProtectedString name="Source">-- DEC-026 newcomers (Madara, Hashirama, Hiruzen as children): the weapons
@@ -49604,7 +49808,7 @@ return M
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND178">
+        <Item class="ModuleScript" referent="ND179">
           <Properties>
             <string name="Name">Wave4Motion</string>
             <ProtectedString name="Source">-- DEC-026 newcomers: the bodies of Madara, Hashirama and Hiruzen as children
@@ -49820,7 +50024,7 @@ return Wave4Motion
       </Item>
     </Item>
   </Item>
-  <Item class="Lighting" referent="ND179">
+  <Item class="Lighting" referent="ND180">
     <Properties>
       <string name="Name">Lighting</string>
       <token name="Technology">3</token>
@@ -49838,7 +50042,7 @@ return Wave4Motion
       </Color3>
     </Properties>
   </Item>
-  <Item class="SoundService" referent="ND180">
+  <Item class="SoundService" referent="ND181">
     <Properties>
       <string name="Name">SoundService</string>
     </Properties>
