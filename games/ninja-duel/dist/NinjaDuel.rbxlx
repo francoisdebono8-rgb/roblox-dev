@@ -4352,7 +4352,7 @@ return {
       <Item class="StringValue" referent="ND25">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">915d6a69634f715be01cdd2a398343a00a17265084ff24f5d9e0b8276a8dab56</string>
+          <string name="Value">7be828fe9fb54c8de1248a6d11cff227c0e0bb5ffaab26ec90a6133d0b69377a</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND26">
@@ -38032,7 +38032,11 @@ end
 -- While the set is filmed the world's ambient is the studio's: low, so the
 -- key and the coloured back lights model the bodies; the duel's own lighting
 -- comes back the moment the board hides.
-local LIGHTING={Ambient=Color3.fromRGB(40,36,46),OutdoorAmbient=Color3.fromRGB(40,36,46),ExposureCompensation=0,Brightness=0}
+-- (Look pass 2) The sky's own light (environment diffuse and specular, the
+-- colour shifts) reaches inside the box too and turned every fighter blue:
+-- in the studio there is no sky.
+local LIGHTING={Ambient=Color3.fromRGB(40,36,46),OutdoorAmbient=Color3.fromRGB(40,36,46),ExposureCompensation=0,Brightness=0,
+	EnvironmentDiffuseScale=0,EnvironmentSpecularScale=0,ColorShift_Top=Color3.new(0,0,0),ColorShift_Bottom=Color3.new(0,0,0)}
 function MenuStage:filmed(on)
 	if on==self.isFilmed then return end
 	self.isFilmed=on

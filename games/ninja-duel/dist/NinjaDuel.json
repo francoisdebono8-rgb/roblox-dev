@@ -1,7 +1,7 @@
 {
   "version": "0.13.0-arena-combo",
   "artifact": "NinjaDuel.rbxlx",
-  "sha256": "a04236c0b43be8388cb52f38411a3e4719f0e2a5146821ea4e856a57afc202e9",
+  "sha256": "914b10dd528d4a1f4e2b798e177f253f009a2e9173492fca147116ed89f49053",
   "sources": {
     "src/Client/ArenaDress.luau": "65e20c492ec1647ba730d337febdc0b9d33ad9c7a1be95952005100834d175cd",
     "src/Client/AuthoredClips.luau": "d748c22ae9fa394c9918123816c03d4e21e1f7064830b37c14b54922c5262cd7",
@@ -60,7 +60,7 @@
     "src/Client/Input.luau": "121dc33c95e5b33014ffe20c6ff47ebd1e3ca107d04f826322f9ebc7786dd397",
     "src/Client/LeeFX.luau": "3f45ced5aa86dc552a07c0802c33e6dcb6a05019da3bd4768585cefeef07e159",
     "src/Client/Main.client.luau": "6bf960244b028c5735e907035c6ee84c72c21cf56971aa7c06b8b4c6cdec4116",
-    "src/Client/MenuStage.luau": "df45acddc8fb34a46094aed28533c1f708fab0e30723c2521d30ddccb678478f",
+    "src/Client/MenuStage.luau": "7552876359d8d4df566bc0498a87ef01728e9477ed8ef7ed52826898c7f2af30",
     "src/Client/MotionSmear.luau": "e17fac23382063789300efe7f7b8dbfce3f07e6052d3e60c26ee6877ce5bb01e",
     "src/Client/NarutoFX.luau": "c37b04701dc6f1582491d7d279ad7cc96b4fb3e9df8916d21e16c82cf164591b",
     "src/Client/Presentation.luau": "a5600929e304aaec326cdf4c92b145f494e9aaa26d3d22e29f8c82333dddf7d1",
@@ -155,7 +155,7 @@
   },
   "sourceEquality": "PASS",
   "debugOnly": false,
-  "buildFingerprint": "915d6a69634f715be01cdd2a398343a00a17265084ff24f5d9e0b8276a8dab56",
+  "buildFingerprint": "7be828fe9fb54c8de1248a6d11cff227c0e0bb5ffaab26ec90a6133d0b69377a",
   "donorAssets": {
     "assets/BanglaAssets.rbxmx": "6e99f5f67e6c34ac8a81d739431554b1495f0f5cd1dd1870a39eeb8bf23e1983"
   },
