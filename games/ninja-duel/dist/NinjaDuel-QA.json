@@ -1,7 +1,7 @@
 {
   "version": "0.13.0-arena-combo",
   "artifact": "NinjaDuel-QA.rbxlx",
-  "sha256": "87df2b2735b9bde1d4addfd15aeed5f793a96c4b54a24232459d25379a1468ef",
+  "sha256": "b343fb18a2bf61fdb2ba0c0b1391181c4d1d9d55bc701d9bae6427ccfba1c428",
   "sources": {
     "src/Client/AuthoredClips.luau": "d748c22ae9fa394c9918123816c03d4e21e1f7064830b37c14b54922c5262cd7",
     "src/Client/AuthoredClips1.luau": "bcd9bbaf71c82da03ee726a346ba958037258bc9c795bc1676c2f44e5adc8668",
@@ -154,9 +154,9 @@
     "src/Shared/Controls.luau": "338a15e1343be76544354947d81e9191c8930e6e9787f54b2c62f8ce55f81bc5",
     "src/Shared/DevMetrics.luau": "011735bb738b123e7d097faf408bd5473f57a2ea978d76303c964c473d281cea",
     "src/Shared/Face.luau": "02badd728c546560d0075d0fd98a215972af71fdc4a593a2282425fdf76eeff5",
-    "src/Shared/Fighters.luau": "137c01cd2bad6aacc54c0036a13c28e8ca992057705224277383fe199af8c8a0",
+    "src/Shared/Fighters.luau": "54a46595a9900a7a6a1130cf56e6259698af48e8c1f1085bec02d00b88767e10",
     "src/Shared/Looks.luau": "e6880497c6a9f0bbf27a88a3b0b3a68261e97b915c37e5c80e20d717e6216d43",
-    "src/Shared/MoveGraphs.luau": "3fe20d3d762afeb28d2f8181d234c8944cef82d8c5db5623fcebb669413f5091",
+    "src/Shared/MoveGraphs.luau": "bfc9da114fed044a3e86e2d86e7d1ddffee64a9ea1554b3353ffbe0289eb2914",
     "src/Shared/OnlineProtocol.luau": "b00e4042120d8dfd2faee5dac4ff550cc17f3015aec315228b7fab16b9be8194",
     "src/Shared/Roster.luau": "6d05314bd6aa2d069dee390568d8edd201b71b02298993229eaefac1a6db7157",
     "src/Shared/RosterMoves.luau": "ba024881ff583c4444995e12df026bf3206325f236e01c7f79e0b833fb649321",
@@ -171,7 +171,7 @@
   },
   "sourceEquality": "PASS",
   "debugOnly": true,
-  "buildFingerprint": "cbe74182ee2aae35205b77897f0a3cce5a4dd46d6b0c6dce2ec4cca747ca7e91",
+  "buildFingerprint": "6bf469cb1d0619e43d54d2ffb0b63e21552475e53fc57674f56ebb4a23e43923",
   "donorAssets": {
     "assets/BanglaAssets.rbxmx": "6e99f5f67e6c34ac8a81d739431554b1495f0f5cd1dd1870a39eeb8bf23e1983"
   },
@@ -339,7 +339,7 @@
       },
       "tests/Control.spec.luau": {
         "exit": 0,
-        "summary": "NinjaDuel player control: PASS (1001 presses, 2.2% eaten, no freeze, no ghost air, no stuck state; headless pad player vs AI, 8 fighters)"
+        "summary": "NinjaDuel player control: PASS (981 presses, 2.1% eaten, no freeze, no ghost air, no stuck state; headless pad player vs AI, 8 fighters)"
       },
       "tests/Ultimates.spec.luau": {
         "exit": 0,

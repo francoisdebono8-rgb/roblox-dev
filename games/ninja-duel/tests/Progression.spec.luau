@@ -861,7 +861,8 @@ test("property and stat nodes are read by the live pipeline (cost, cooldown, cha
  assert(c3:request(s,H.slot(s,"Chidori")));assert(math.abs(s.untilTime-c3.now-.5084)<.01,"Chidori channel")
  -- Health and reserve on the actor and its humanoid; recovery per second.
  local c4,n=duelWith("GentleFist","Flashstep",{"Conditioning","ChakraReserve","ChakraControl"})
- assert(n.health==141 and n.hum.MaxHealth==141 and n.chakra==121,"stats not applied to the actor")
+ local hp=H.fighters.GentleFist.Health+6 -- (Conditioning: +6 on his base, whatever the balance sets it to)
+ assert(n.health==hp and n.hum.MaxHealth==hp and n.chakra==121,"stats not applied to the actor")
  n.chakra=50;H.step(c4,1)
  assert(math.abs(n.chakra-50-8.2)<.15,"regen "..(n.chakra-50))
 end)

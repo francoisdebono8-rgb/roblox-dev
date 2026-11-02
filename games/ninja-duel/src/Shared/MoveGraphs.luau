@@ -166,7 +166,8 @@ local Graphs = {
 			UzumakiKick={move="UzumakiKick",body="clone",summon=true,solo="Launcher",awake="ClawRise"},
 			MirrorClone={move="MirrorClone",body="clone",summon=true,solo="Light2",awake="ClawSwipe"},
 		},
-		airFinisher={name="NarutoRendan",cue="NARUTO UZUMAKI RENDAN",event="NarutoRendan",damage=18,impulse=Vector3.new(0,-92,8)},
+		-- (É7: his strikes hit at × 0.82 now; his signature finisher keeps its weight)
+		airFinisher={name="NarutoRendan",cue="NARUTO UZUMAKI RENDAN",event="NarutoRendan",damage=21,impulse=Vector3.new(0,-92,8)},
 		-- Unpredictable: a quick re-entry on an angle whose side does not simply
 		-- alternate (shuffle), and a clone out on a flank rushes the other side.
 		reengage={name="legion",speed=1.2,arrive=3.2,angle=30,shuffle=true,chase=.28,recovery=.22},

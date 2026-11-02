@@ -1,3 +1,18 @@
+**É7, PV logiques (02/11, 23 h 40)** (utilisateur : « pas logique Naruto moins de PV que Sasuke », « à 13 ans Itachi n'est pas malade ») — remplace les chiffres de l'équilibrage précédent. Les PV suivent l'histoire, l'équilibre passe par les dégâts :
+
+| Perso | PV | Dégâts | Pourquoi |
+|---|---|---|---|
+| Naruto | 150 | × 0,82 (clones 3 toutes les 2,3 s ; Naruto Rendan 18 → 21) | l'endurance d'Uzumaki ; il gagne au nombre, pas au coup |
+| Lee | 140 | × 1,00 | le corps forgé par l'entraînement |
+| Gaara | 138 | × 0,88 | l'armure et le bouclier de sable |
+| Itachi | 130 | × 1,15 (chakra + 8,6/s, vitesse 18,5) | 13 ans, ANBU, en pleine forme : le prodige précis |
+| Sasuke | 130 | × 1,10 | |
+| Kakashi | 130 | × 1,05 | |
+| Neji | 130 | × 1,12 | |
+| Minato | 125 | × 1,00 | le plus rapide de tous |
+
+Matrice IA contre IA des 8 (`tests/Balance.sim.luau`) : 39–61 % (Sasuke 39, Neji et Lee 46, Minato et Kakashi 50, Itachi et Naruto 54, Gaara 61). Indicateur seulement : à confirmer en jouant.
+
 **É7, suite (02/11, 23 h 30)** (utilisateur : « continue sur ta voie »)
 - **Pas en avant des coups à la touche** (`Presentation.predictStrike`) : le corps avance vers l'adversaire dès la pression, sur la courbe du serveur (`Combat` drive), arrêté à la portée du coup ; rien sans place pour avancer.
 - **Équilibrage des 8** (matrice IA contre IA, `tests/Balance.sim.luau` passée à 8) : écart 25–82 % → 36–64 %. Naruto PV 140 → 128, clones 4 dégâts toutes les 1,9 s → 3 toutes les 2,3 s ; Sasuke PV 120 → 132 ; Neji dégâts × 0,95 → 1,06 ; Lee PV 125 → 132, dégâts × 1,06 ; Gaara PV 140 → 134. L'IA n'est qu'un indicateur : à confirmer en jouant.
