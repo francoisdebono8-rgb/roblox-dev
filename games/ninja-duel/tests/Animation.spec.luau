@@ -791,4 +791,22 @@ test("a standing hit keeps a planted foot on the floor while the server slides t
  assert(worst<.03,string.format("a planted foot slid %.3f studs in a frame under a hit",worst))
 end)
 
+test("the move list's own clips: Kakashi's tanto cuts when drawn, everyone's air heavy, Naruto's head dive, the buffs and Gaara's glide",function()
+ local clips=H.load("Client/AuthoredClips")
+ -- Blade out: every move his tanto lists plays his own cut (not Sasuke's knife).
+ local def=H.fighters.Copycat
+ for name in def.Weapon.Moves do
+  if name~="AirSwitch" and name~="AirDrive" then
+   local got=Motion.kunaiClip({armed=true,fighterId="Copycat"},name)
+   assert(got=="Copycat.Blade."..name,"Kakashi's drawn "..name.." plays "..tostring(got))
+  end
+ end
+ assert(Motion.kunaiClip({armed=true,fighterId="Copycat"},"Slam")=="Copycat.Blade.Slam","the plunging cut")
+ assert(Motion.kunaiClip({armed=false,fighterId="Copycat"},"Light1")==nil,"sheathed, the fists")
+ assert(Motion.kunaiClip({armed=true,fighterId="Lion"},"Light1")=="Kunai.Light1","the shared kunai elsewhere")
+ for _,id in {"Lion","Mirage","Flashstep","Legion","Copycat","Sand","Leaf","GentleFist"} do assert(clips[id..".Slam"],id..": no air heavy of his own") end
+ for _,name in {"Legion.HeadDive","Sand.SandGlide","Sand.SandArmor.Channel","Sand.SandArmor.Release","Leaf.RemoveWeights.Channel","Leaf.RemoveWeights.Release",
+  "GentleFist.ByakuganSight.Channel","GentleFist.ByakuganSight.Release"} do assert(clips[name],name.." is missing") end
+end)
+
 print(string.format("NinjaDuel animation presentation: %d PASS",passed))

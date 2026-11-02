@@ -213,6 +213,8 @@ for name,m in {
  ClawSwipe=move(.1,.14,.22,8,1.6,"HitStun",Vector3.new(0,6,16),.4),
  CloneJab=move(.22,.1,.3,4,0,"HitStun",Vector3.new(0,3,10),.32),
  BarrageKick=move(.1,.1,.2,3,0,"Juggled",Vector3.new(0,22,2),.6),
+ -- (Move list, "course + △ : plongée tête la première") out of a full run.
+ HeadDive=move(.12,.16,.42,10,9,"Knockdown",Vector3.new(0,10,46),.7),
 } do
  m.animation=name;m.feedback=m.reaction;m.chain=false;m.air=false
  m.depth=m.range*.8;m.offset=m.range*.4
@@ -228,6 +230,7 @@ for name,shape in {
  ClawSwipe={contact=3.6,range=10,width=9,height=6,depth=9,offset=4.6,zone="body",kind="slash",side=-1,twist=60,lean=12,arm=100,step=1.1,chain=true},
  CloneJab={contact=3,range=5.5,zone="head",kind="strike",side=1,twist=24,lean=10,arm=88,step=1},
  BarrageKick={contact=2.4,range=5,zone="body",kind="kick",side=1,twist=10,lean=-10,arm=60,step=1},
+ HeadDive={contact=3.2,range=7.5,width=5.5,height=5,zone="body",kind="heavy",side=1,twist=4,lean=60,arm=40,step=1.35},
 } do
  for key,value in shape do attacks[name][key]=value end
 end

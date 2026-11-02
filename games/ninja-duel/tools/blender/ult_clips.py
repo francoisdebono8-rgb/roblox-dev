@@ -61,14 +61,81 @@ def absolute(pose):
     legs = pose.get("legs")
     if legs:
         from kunai_lion import tuck
-        out["root"]["tuck"] = 1
+        out["root"]["tuck"] = 2
         out.update(tuck(0, out["root"], legs[0], legs[1]))
+        # The knee in the leg's swing plane, a quarter turn ahead of the leg:
+        # forward for a leg hanging down, up for a leg out in front, back for
+        # a leg over the head - one continuous rule, so the knee never spins.
+        for key, leg in (("rf", legs[0]), ("lf", legs[1])):
+            n = math.sqrt(sum(c * c for c in leg)) or 1.0
+            dy, dz = leg[1] / n, leg[2] / n
+            k = (0.0, -dz, dy)
+            if math.hypot(k[1], k[2]) < .2:
+                k = (0.0, 0.0, -1.0)
+            out[key]["pole"] = k
+    return out
+
+
+def _lerp_pose(a, b, k):
+    """Numbers of two poses mixed (angles, offsets), part by part."""
+    out = {}
+    for part in ("root", "torso", "head", "ra", "la"):
+        pa, pb = merge(ZERO[part], a.get(part, {})), merge(ZERO[part], b.get(part, {}))
+        out[part] = {key: pa[key] + (pb[key] - pa[key]) * k for key in pa}
+    return out
+
+
+def _arc(u, v, k):
+    """An ankle carried round the hip on an arc (direction turned, length mixed)."""
+    nu = math.sqrt(sum(c * c for c in u)) or 1e-6
+    nv = math.sqrt(sum(c * c for c in v)) or 1e-6
+    du, dv = [c / nu for c in u], [c / nv for c in v]
+    dot = max(-1.0, min(1.0, sum(x * y for x, y in zip(du, dv))))
+    ang = math.acos(dot)
+    if ang < 1e-3:
+        d = du
+    else:
+        s = math.sin(ang)
+        d = [(math.sin((1 - k) * ang) * x + math.sin(k * ang) * y) / s for x, y in zip(du, dv)]
+    n = nu + (nv - nu) * k
+    return tuple(c * n for c in d)
+
+
+def _between(keys):
+    """(02/11, the ultimates' 180 deg knee flips) Between two keys whose legs
+    swing far (a heel brought up over the head, a somersault), Blender moved
+    the ankle on a straight line - through the hip, where the leg folds to
+    nothing and the knee spins. Keys are added on the way so the ankle goes
+    round the hip on an arc."""
+    out = []
+    for i, (t, pose, sp) in enumerate(keys):
+        if i > 0:
+            t0, p0, _ = keys[i - 1]
+            l0, l1 = p0.get("legs"), pose.get("legs")
+            if l0 and l1 and sp != "hold":
+                worst = 0.0
+                for u, v in zip(l0, l1):
+                    nu = math.sqrt(sum(c * c for c in u)) or 1e-6
+                    nv = math.sqrt(sum(c * c for c in v)) or 1e-6
+                    worst = max(worst, math.acos(max(-1.0, min(1.0, sum(x * y for x, y in zip(u, v)) / (nu * nv)))))
+                # the body turning fast carries the (world-placed) ankles round too
+                r0, r1 = merge(ZERO["root"], p0.get("root", {})), merge(ZERO["root"], pose.get("root", {}))
+                turn = max(abs(r1[k] - r0[k]) for k in ("pitch", "yaw", "roll"))
+                worst = max(worst, math.radians(turn))
+                steps = 1 if worst < math.radians(55) else (2 if worst < math.radians(110) else 4)
+                for s in range(1, steps):
+                    k = s / steps
+                    mid = _lerp_pose(p0, pose, k)
+                    mid["legs"] = tuple(_arc(u, v, k) for u, v in zip(l0, l1))
+                    out.append((t0 + (t - t0) * k, mid, "pass"))
+        out.append((t, pose, sp))
     return out
 
 
 def clip(arm, name, keys):
     sh = Shot(arm, name)
     used = set()
+    keys = _between(sorted(keys, key=lambda k: k[0]))
     for t, pose, sp in keys:
         f = int(round(t * FPS))
         while f in used:
@@ -402,7 +469,8 @@ def lee(arm):
                 "ra": {"raise": 60, "out": -50, "twist": 30, "elbow": 120}, "la": {"raise": 60, "out": -50, "twist": 30, "elbow": 120},
                 "rf": {"x": .4, "z": .3, "yaw": 10}, "lf": {"x": -.4, "z": -.3, "yaw": -10}})
     k = [(0, s(), "ease"), (S, gather, "ease"), (S + .2, gather, "ease"), (S + .32, roar, "impact"),
-         (S + .38, merge(roar, {"root": {"y": -1.0, "pitch": 20}, "torso": {"pitch": 10}, "head": {"pitch": -10}, "rf": {"z": .8}}), "ease"),
+         # (the take-off crouch with the legs in pelvis space: the kick turns out of it without a flip)
+         (S + .38, fly(roar, ((.1, -1.25, .55), (-.1, -1.35, -.35)), {"root": {"y": -1.0, "pitch": 20}, "torso": {"pitch": 10}, "head": {"pitch": -10}}), "ease"),
          # the rising kick (Konoha Shofu): the right foot straight up through the chin
          (S + .42, fly(AIR, (KICK_HI, DOWN), {"root": {"y": -.2, "pitch": -30, "yaw": 0}, "torso": {"pitch": -10}, "head": {"pitch": -30},
                                               "la": {"raise": 0, "out": 50, "elbow": 10}, "ra": {"raise": 0, "out": 50, "elbow": 10}}), "impact"),

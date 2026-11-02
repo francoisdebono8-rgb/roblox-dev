@@ -25,7 +25,7 @@ local function familyWants(self,c,a,target,spec,distance,danger)
 	elseif family=="Counter" then lo,hi,chance=0,8,if danger then .7 else 0
 	-- (Stage 6) a scripted sequence (Lee's Primary Lotus, the Uzumaki
 	-- barrage): an opener at contact range, taken on an opening.
-	elseif family=="Sequence" then lo,hi,chance=0,(spec.Range or 4)+1,if opening then .85 else .2
+	elseif family=="Sequence" then lo,hi,chance=0,math.min(spec.Range or 4,8)+1,if opening then .85 else .2 -- (the bot keeps it for close range: the dash-in is the player's reach)
 	elseif family=="Summon" then
 		-- Out first; once out, a lunge now and then.
 		if Bodies.count(c,a,spec.Body or "puppet")==0 then lo,hi,chance=0,40,.8 else lo,hi,chance=0,30,.25 end

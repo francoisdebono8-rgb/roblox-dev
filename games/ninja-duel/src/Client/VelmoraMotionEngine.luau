@@ -1300,7 +1300,12 @@ VARIANT_OF.NarutoRendan="Slam";VARIANT_OF.CloneKickStrike="CloneKick";VARIANT_OF
 -- the shared Kunai.* clips (tools/blender/kunai_lion.py), on any fighter.
 local KUNAI_STRIKE={Light1=true,Light2=true,Light3=true,Heavy=true}
 local function kunaiClip(subject,name)
-	if subject.armed and KUNAI_STRIKE[name] and Authored and Authored.has("Kunai."..name) then return "Kunai."..name end
+	if not subject.armed or not Authored then return nil end
+	-- A fighter's own blade (def.Weapon: Kakashi's tanto) has its own cuts
+	-- ("<fighter>.Blade.<move>", tools/blender/gaps_e6.py) on every move it lists.
+	local own=tostring(subject.fighterId)..".Blade."..tostring(name)
+	if Authored.has(own) then return own end
+	if KUNAI_STRIKE[name] and Authored.has("Kunai."..name) then return "Kunai."..name end
 	return nil
 end
 Motion.kunaiClip=kunaiClip

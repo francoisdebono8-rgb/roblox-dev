@@ -155,6 +155,10 @@ local Graphs = {
 		disengage="Kunai",
 		onRoute={UzumakiKick="uzumaki"},
 		heavyAfterOne="Headbutt",
+		-- Out of a full run, the heavy: he dives head first into the body.
+		runStrike="HeadDive",
+		-- The air string's heavy: two clones drive the body down (Legion.airDrive).
+		airCloneDrive=true,
 		stringCancels={CloneRasengan=true},
 		blockCancels={},
 		proxy={

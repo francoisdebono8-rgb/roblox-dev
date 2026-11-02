@@ -240,7 +240,7 @@ local Fighters = {
 			-- Konoha Daisenpū: a spinning kick that crosses the gap. A taijutsu
 			-- strike started by the jutsu pipeline (like the Chidori thrust).
 			{ Id = "LeafGreatWhirlwind", Name = "Leaf Great Whirlwind", Cost = 10, Channel = 0.08, Active = 0.05, Recovery = 0.1, Cooldown = 2.6, Interruptible = true, Range = 15, Damage = 9, Hint = "A spinning kick across the gap • knocks away • E to chase • ends a clean string" },
-			{ Id = "PrimaryLotus", Name = "Primary Lotus", Family = "Sequence", Opener = "Launcher", Cost = 18, Channel = 0.1, Active = 0.04, Recovery = 0.3, Cooldown = 9, Interruptible = true, Range = 8, Hint = "Seize, fly up, drive him head first into the floor • costs health" },
+			{ Id = "PrimaryLotus", Name = "Primary Lotus", Family = "Sequence", Opener = "Launcher", Cost = 18, Channel = 0.1, Active = 0.04, Recovery = 0.3, Cooldown = 9, Interruptible = true, Range = 13, Hint = "Seize, fly up, drive him head first into the floor • costs health" },
 			{ Id = "RemoveWeights", Name = "Remove the Weights", Family = "Buff", Time = 8, Speed = 1.25, Kind = "weights", Cost = 10, Channel = 0.3, Active = 0.05, Recovery = 0.2, Cooldown = 16, Interruptible = true, Hint = "Speed + 25 % for 8 s" },
 			{ Id = "DynamicEntry", Name = "Dynamic Entry", Family = "Teleport", To = "Aim", Distance = 24, Short = 3, Move = "FlyingKick", Cost = 14, Channel = 0.08, Active = 0.02, Recovery = 0.2, Cooldown = 5, Interruptible = true, Range = 26, Damage = 13, Kind = "leaf", Hint = "The flying kick from across the field" },
 		},
@@ -295,7 +295,7 @@ local Fighters = {
 				HoldState = { Time = 3, Drain = 5, Strike = "DashAttack", Air = "Slam", Variant = "Rasengan", AirVariant = "RasenganDrop", Damage = 22,
 					Reaction = "Knockback", Impulse = Vector3.new(0, 22, 74), Stun = .62, Rasengan = true, World = { contact = "energy", element = "wind" }, Style = "burst", Name = "Rasengan", Reach = 9, Event = "Rasengan" }, Hint = "A clone shapes it at his side • strike the clone and it fails • ends a clean string" },
 			{ Id = "MassShadowClone", Name = "Multi Shadow Clone", Cost = 30, Channel = 0.3, Active = 0.08, Recovery = 0.2, Cooldown = 10, Interruptible = true, Range = 26, Hint = "Clones burst out on both sides and charge" },
-			{ Id = "NarutoRendan", Name = "Naruto Uzumaki Rendan", Family = "Sequence", Opener = "Launcher", Cost = 22, Channel = 0.12, Active = 0.04, Recovery = 0.3, Cooldown = 9, Interruptible = true, Range = 8, Hint = "His clones send him up, then the heel down" },
+			{ Id = "NarutoRendan", Name = "Naruto Uzumaki Rendan", Family = "Sequence", Opener = "Launcher", Cost = 22, Channel = 0.12, Active = 0.04, Recovery = 0.3, Cooldown = 9, Interruptible = true, Range = 13, Hint = "His clones send him up, then the heel down" },
 		},
 	},
 	-- Roster wave (DEC-015): Temari between the Chunin Exam and the Sasuke

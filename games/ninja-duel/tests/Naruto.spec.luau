@@ -802,7 +802,7 @@ end
 test("every one of his strikes and his clones' stays finite and inside the joint limits through its timeline",function()
  local c,a=H.duel("Legion","Mirage")
  local names={"NarutoRendan","CloneKickStrike","UzumakiRise","MirrorStrike","Rasengan"}
- for _,name in {"Light1","Light2","Light3","Heavy","Headbutt","Tackle","CloneKick","UzumakiKick","MirrorClone","ClawRise","ClawSwipe","CloneJab","BarrageKick","DashAttack","Air1","Air2","Slam","Launcher"} do table.insert(names,name) end
+ for _,name in {"Light1","Light2","Light3","Heavy","Headbutt","Tackle","CloneKick","UzumakiKick","MirrorClone","ClawRise","ClawSwipe","CloneJab","BarrageKick","DashAttack","Air1","Air2","Slam","Launcher","HeadDive"} do table.insert(names,name) end
  for _,name in names do
   Motion.reset(a.model)
   for step=0,40 do
@@ -1094,4 +1094,25 @@ test("client: a puff for every way a clone comes and goes, no log in his swap, t
  restore()
  assert(ok,err)
 end)
+test("the move list's last two: out of a run the heavy is the head dive; the air string's heavy brings two clones driving the body down",function()
+ local c,a,b=H.duel("Legion","Mirage");place(c,a,b)
+ c:relocate(a,a.root.Position+(a.root.Position-b.root.Position).Unit*6)
+ a.sprinting=true;a.locomotion=(b.root.Position-a.root.Position).Unit*40
+ assert(press(c,a,"Heavy"),"the running heavy was refused")
+ assert(a.attackName=="HeadDive","the running heavy is "..tostring(a.attackName))
+ until_(c,.8,function() return b.reaction=="Knockdown" end,"the head dive did not put him down")
+ -- In the air, an air string under way: the heavy brings the clones.
+ local c2,x,y=H.duel("Legion","Mirage")
+ c2:relocate(x,V.new(0,12,2));c2:relocate(y,V.new(0,12,-1));x.airborne=true;y.airborne=true
+ x.root.CFrame=H.C.lookAt(x.root.Position,y.root.Position)
+ x.airCombo=1;x.airStringAt=c2.now
+ assert(press(c2,x,"Heavy"),"the air heavy was refused")
+ assert(x.attackName=="Slam","the air string's heavy is "..tostring(x.attackName))
+ H.step(c2,.1)
+ local drivers=0
+ for _,body in c2.bodies or {} do if body.alive and body.mode=="drive" then drivers+=1 end end
+ assert(drivers==2,"the clones did not come to drive the body down ("..drivers..")")
+ assert(ev(x,"CloneDrive")==1,"no CloneDrive event")
+end)
+
 print("NinjaDuel Naruto (several bodies): "..passed.." PASS")

@@ -430,6 +430,8 @@ F.Strike={
 -- (Stage 6) Sequence: a jutsu that is a whole route (Lee's Primary Lotus,
 -- Naruto's Rendan): its Opener launches the body; if it lands he chases it
 -- up and his own air finisher (MoveGraphs airFinisher) brings it down.
+Families.SEQUENCE_REACH=3.4
+Families.SEQUENCE_DASH=64
 F.Sequence={
 	check=function(c,a,spec)
 		local b=a.target
@@ -440,9 +442,30 @@ F.Sequence={
 	execute=function(c,a,pending)
 		local spec=pending.spec
 		a.stringCancel=nil
+		c:cue(a,string.upper(spec.Name),.7)
+		-- (02/11, refused at 10 studs) From mid range he dashes in first, then
+		-- opens: the whole route is the jutsu, not only the last 4 studs.
+		local b=a.target
+		local gap=b and Vector3.new(b.root.Position.X-a.root.Position.X,0,b.root.Position.Z-a.root.Position.Z) or Vector3.zero
+		local reach=Families.SEQUENCE_REACH
+		if gap.Magnitude>reach+.5 then
+			local run=gap.Magnitude-reach
+			local time=run/Families.SEQUENCE_DASH
+			a.root.CFrame=CFrame.lookAt(a.root.Position,a.root.Position+gap.Unit)
+			a.hop={direction=gap.Unit,remaining=run,speed=Families.SEQUENCE_DASH}
+			a.pending=nil;a.attackName=nil
+			c:setState(a,"Startup",time+.02)
+			c:pushImpact(a.root.Position,"afterimage",false,{owner=a.id,fighter=a.fighterId})
+			c:schedule(c.now+time,function()
+				if a.health<=0 or a.reaction or c.match.phase~="Duel" then return end
+				a.state="Neutral";a.untilTime=c.now
+				brawler().start(c,a,spec.Opener or "Launcher")
+				if a.pending then a.pending.family=spec end
+			end)
+			return
+		end
 		brawler().start(c,a,spec.Opener or "Launcher")
 		if a.pending then a.pending.family=spec end
-		c:cue(a,string.upper(spec.Name),.7)
 	end,
 }
 function Families.sequenceHit(c,a,b,spec)

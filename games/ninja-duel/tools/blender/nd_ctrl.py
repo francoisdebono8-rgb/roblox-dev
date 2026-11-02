@@ -216,6 +216,24 @@ def pose_bones(arm, spec):
             Rp = nd_anim.R(0, -tr.get("yaw", 0), 0) @ nd_anim.ori(r)
             hip = rb(Vector((tr.get("x", 0) + r.get("x", 0), H + r.get("y", 0), tr.get("z", 0) + r.get("z", 0))) + Rp @ Vector((.5 * s, -.55, 0)))
             ahead = rb(Rp @ Vector((0, .3, -1))).normalized()
+            if r.get("tuck") == 2 and f.get("pole"):
+                # (02/11) the knee given in pelvis space by the author
+                # (ult_clips.absolute: square to the leg, in its swing plane).
+                ahead = rb(Rp @ Vector(f["pole"])).normalized()
+            elif r.get("tuck") == 2:
+                # (02/11, the ultimates' flips) A leg kicked straight ahead lay
+                # on the pole's own line and the knee spun 180 deg in a frame.
+                # The knee aims forward-UP in pelvis space, taken square to the
+                # leg: forward for a leg under the body, up for a leg out in
+                # front, never along the leg.
+                leg = target - hip
+                if leg.length > 1e-4:
+                    d = leg.normalized()
+                    v = rb(Rp @ Vector((0, 1, -1))).normalized()
+                    perp = v - d * v.dot(d)
+                    if perp.length < .15:
+                        perp = rb(Rp @ Vector((0, 1, 0))) - d * rb(Rp @ Vector((0, 1, 0))).dot(d)
+                    ahead = perp.normalized()
             pole_world = (hip + target) * .5 + ahead * 3.0
             pole = arm.data.bones["knee_pole." + side]
             out["knee_pole." + side] = (None, pole.matrix_local.to_3x3().transposed() @ (pole_world - pole.head_local))

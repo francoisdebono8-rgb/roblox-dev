@@ -787,7 +787,12 @@ function Brawler.request(c,a,action)
    end
    -- (User 28/10) The plunge ends an air string; out of a plain jump the
    -- heavy is the salto heel kick (punishable), never a safe drop.
-   if (a.airCombo or 0)>=1 or c.now-(a.airStringAt or -10)<1.0 then return Brawler.start(c,a,"Slam") end
+   if (a.airCombo or 0)>=1 or c.now-(a.airStringAt or -10)<1.0 then
+    local ok=Brawler.start(c,a,"Slam")
+    -- Naruto's ends with his clones driving the body down (MoveGraphs airCloneDrive).
+    if ok~=false and a.pending and graph.airCloneDrive and a.target and a.target.health>0 then require(script.Parent.Legion).airDrive(c,a,a.target) end
+    return ok
+   end
    return Brawler.start(c,a,a.def.AirHeavy or "AirFlip")
   end
   if inChain and a.combo==1 and graph.heavyAfterOne then return Brawler.start(c,a,graph.heavyAfterOne) end

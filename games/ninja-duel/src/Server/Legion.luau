@@ -174,7 +174,41 @@ local function uzumaki(c,a,b,p)
 		end)
 	end
 end
+-- (Move list: "air □ □ △ : U-ZU-MA-KI, ses clones le renvoient au sol")
+-- The heavy that ends his air string: two clones burst out above the body,
+-- one on each side, and drive it down with their heels while he comes down
+-- with it. Free (it is his string, not a jutsu); not under the Nine-Tails
+-- chakra (no clones there).
+local function drive(c,body,dt)
+	local d=body.drive
+	local b=d.target
+	if not b or b.health<=0 then return end
+	local k=math.clamp((c.now-d.t0)/.32,0,1)
+	local line=d.line
+	local side=line:Cross(Vector3.yAxis)*d.side
+	body.position=b.root.Position+side*1.25-line*.4+Vector3.new(0,2.8-1.6*k*k,0)
+	body.airborne=true
+	local look=flat(b.root.Position-body.position)
+	if look.Magnitude>.1 then body.look=look.Unit end
+end
+function Legion.airDrive(c,a,b)
+	if Bodies.blocked(c,a) then return false end
+	local line=flat(b.root.Position-a.root.Position)
+	line=if line.Magnitude>.1 then line.Unit else flat(a.root.CFrame.LookVector)
+	for i,s in {1,-1} do
+		c:schedule(c.now+(i-1)*.05,function()
+			if a.health<=0 or b.health<=0 or c.match.phase~="Duel" then return end
+			local body=Bodies.spawn(c,a,{kind=CLONE,position=b.root.Position+Vector3.new(0,2.8,0)+line:Cross(Vector3.yAxis)*s*1.25,ephemeral=true,life=.55,
+				mode="drive",airborne=true,state="Active",action="AirSpike"})
+			if body then body.drive={target=b,side=s,line=line,t0=c.now} end
+		end)
+	end
+	c:pushImpact(b.root.Position,"uzumaki",false,{owner=a.id,fighter=a.fighterId,syllable="KI"})
+	brawler().event(c,a,"CloneDrive")
+	return true
+end
 function Legion.install(Techniques)
+	Bodies.controllers.drive=drive
 	Bodies.controllers.guard=persistent
 	Bodies.controllers.flank=persistent
 	Bodies.controllers.barrage=barrage

@@ -1,3 +1,12 @@
+**É6, derniers manques de la liste des coups (02/11, 22 h)** (utilisateur : « poursuit sur la suite »)
+- **Lotus primaire (Lee) et Naruto Rendan (×)** : portée 13 ; au-delà de 3,4 studs il fonce d'abord (64 studs/s) puis lance. Avant : refusés à 10 studs. L'IA les garde au contact (`AI` Sequence ≤ 9).
+- **Kakashi, tantô dégainé** : ses propres coupes (`Copycat.Blade.*`, 12 clips : 3 coupes, estoc de chakra blanc, coupe montante, coupe basse, pas feinté + coupe, attaque en course, coupes aériennes, coupe plongeante), au lieu du couteau partagé de Sasuke et de ses poings sabre en main (`Motion.kunaiClip`).
+- **Naruto** : course + △ = plongée tête la première (`HeadDive`, roulade à la réception) ; air □ □ △ = deux clones (vrais corps, `Legion.airDrive`) qui renvoient l'adversaire au sol.
+- **Coup lourd aérien propre aux 8** (`<perso>.Slam`) : talon écrasant, marteau, piqué, piqué au kunai, talon, paumes plongeantes, talon de la feuille. Avant : pose procédurale pour 7 sur 8.
+- **Jutsu sans animation** : Byakugan, armure de sable, retrait des poids, glissade de sable (route latérale de Gaara).
+- **Pipeline Blender** : jambes en l'air en espace bassin avec genou dans le plan du mouvement et clés en arc (`ult_clips._between`) : les 180° de hanche dans les ultimes de Naruto, Sasuke et Lee ont disparu (contrôle FLIP de l'export). Dépôt sur le Mac : un nom de fichier préparé unique par envoi (sinon l'ancien contenu est réécrit).
+- **Preuves** : `Lee.spec` (portée), `Naruto.spec` (plongée, clones), `Animation.spec` (clips propres) ; release à jour. Non jugé en jeu.
+
 **É6, ultimes refaites (02/11, soir)** (utilisateur, 20 h 50 : « globalement tous les mêmes … les coups sont mal faits … même effet même sensation à chaque fois » ; 20 h 53 : « fais le juste », sans vidéo)
 - **Un script par ultime** (`Shared/UltimateScripts`, partagé serveur/client) : trajectoires des deux corps dans le repère de la prise, coups datés, dernier coup à T-0,3, plans de caméra (coupes, cadrages qui suivent un corps) et moments dessinés.
 - **Clips Blender sur toute la séquence** (`tools/blender/ult_clips.py`, job 180/181) : `<perso>.Ultimate` pour le lanceur depuis l'appui, `Ult.<kind>.Victim` pour le corps pris ; joués par une branche de `VelmoraMotionEngine` (champs `ultClip/ultSerial/ultElapsed` du snapshot). Jambes en l'air en espace bassin (vrilles, saltos, chutes cohérents).

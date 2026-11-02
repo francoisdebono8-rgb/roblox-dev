@@ -752,4 +752,20 @@ test("tutorial: the interrupt step gives Lee readable hand signs, like any bot",
  end
 end)
 
+test("Primary Lotus and Naruto Rendan from mid range: he dashes in, launches, and the route lands (02/11: refused at 10 studs)",function()
+ for _,pair in {{"Leaf","PrimaryLotus"},{"Legion","NarutoRendan"}} do
+  for _,gap in {4,10,12.5} do
+   local c,a,b=H.duel(pair[1],"Mirage")
+   c:relocate(a,H.V.new(0,3,gap/2));c:relocate(b,H.V.new(0,3,-gap/2))
+   a.root.CFrame=H.C.lookAt(a.root.Position,H.V.new(0,3,-gap/2))
+   a.chakra=200;b.health=999
+   local ok,why=c:request(a,H.slot(a,pair[2]),b.root.Position)
+   assert(ok,pair[2].." refused at "..gap.." studs ("..tostring(why)..")")
+   local before,launched=b.health,false
+   for _=1,150 do H.step(c,.02);if b.reaction=="Launched" or b.reaction=="Juggled" then launched=true end end
+   assert(launched and before-b.health>=15,string.format("%s at %.1f studs: launched %s, %.1f damage",pair[2],gap,tostring(launched),before-b.health))
+  end
+ end
+end)
+
 print("NinjaDuel Rock Lee stress test: "..passed.." PASS")
