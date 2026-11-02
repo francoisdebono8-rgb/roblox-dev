@@ -4471,7 +4471,7 @@ return {
       <Item class="StringValue" referent="ND26">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">f7d948503581e4c5bc299105fdc773e56d6b08f83ef0f68d73dc9961035ead5f</string>
+          <string name="Value">6fc6744fa0f84edc5b9974e5a3b3823a90669b50abb844c6278569bfdbd2b7b4</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND27">
@@ -42558,7 +42558,7 @@ function UI.new(parent,send)
 		local accent=accentOf(def)
 		local col=(index-1)%10;local row=math.floor((index-1)/10)
 		local x,y=left+col*(W+GAP),664+row*(H+12)
-		local tablet=create("TextButton",shell,{Position=UDim2.fromOffset(x,y),Size=UDim2.fromOffset(W,H),
+		local tablet=create("TextButton",shell,{Name="Tablet"..id,Position=UDim2.fromOffset(x,y),Size=UDim2.fromOffset(W,H),
 			BackgroundColor3=Color3.fromRGB(22,19,25),BorderSizePixel=0,AutoButtonColor=false,Text="",ClipsDescendants=true})
 		corner(tablet,5)
 		local edge=create("UIStroke",tablet,{Color=accent,Thickness=1.5,Transparency=.55,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
@@ -42789,11 +42789,23 @@ function UI.new(parent,send)
 	corner(resultBox,10)
 	stroke(resultBox,palette.red,3)
 	self.resultBox=resultBox
+	self.resultScale=create("UIScale",resultBox,{Scale=1})
+	-- The judges' seal, stamped on the card: 勝 for a win, 敗 for a loss.
+	self.resultSeal=text(resultBox,"",UDim2.fromOffset(600-70,-34),UDim2.fromOffset(96,96),64,palette.paper,BODY_FONT,Enum.TextXAlignment.Center)
+	self.resultSeal.BackgroundColor3=palette.red;self.resultSeal.BackgroundTransparency=0;self.resultSeal.Rotation=12;corner(self.resultSeal,10)
+	create("UIStroke",self.resultSeal,{Color=palette.paper,Thickness=3,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
+	self.resultSealScale=create("UIScale",self.resultSeal,{Scale=1})
 	self.resultTitle=text(resultBox,"",UDim2.fromOffset(30,18),UDim2.fromOffset(540,70),72,palette.paper,TITLE_FONT,Enum.TextXAlignment.Center)
 	self.resultName=text(resultBox,"",UDim2.fromOffset(30,92),UDim2.fromOffset(540,36),30,palette.gold,TITLE_FONT,Enum.TextXAlignment.Center)
 	self.resultNote=text(resultBox,"",UDim2.fromOffset(30,132),UDim2.fromOffset(540,44),15,palette.muted,BODY_FONT,Enum.TextXAlignment.Center)
 	self.rematchButton=button(resultBox,"REMATCH",UDim2.fromOffset(30,196),UDim2.fromOffset(540,52),function() send("Rematch") end,palette.red)
 	button(resultBox,"RETURN TO THE ROSTER",UDim2.fromOffset(30,260),UDim2.fromOffset(540,52),function() send("Selection") end)
+	-- ---------------------------------------------------------------- wipe
+	-- Between screens an ink brush stroke sweeps across (UI:wipe), the same
+	-- angle as the menu's stroke, its leading edge vermilion.
+	self.wipe=frame(self.gui,UDim2.fromScale(-1.6,.5),UDim2.fromScale(1.6,3),Color3.fromRGB(10,9,12),0)
+	self.wipe.AnchorPoint=Vector2.new(.5,.5);self.wipe.Rotation=-9;self.wipe.ZIndex=60;self.wipe.Visible=false
+	local edge=frame(self.wipe,UDim2.new(1,-10,0,0),UDim2.new(0,14,1,0),palette.red,0);edge.ZIndex=61
 	-- ---------------------------------------------------------- online queue
 	self.queue=frame(self.gui,UDim2.fromScale(0,0),UDim2.fromScale(1,1),palette.ink,.25)
 	local queueBox=frame(self.queue,UDim2.new(.5,-300,.5,-150),UDim2.fromOffset(600,300),palette.ink,.1)
@@ -42867,6 +42879,27 @@ function UI:refreshSelection()
 	end
 	self.matchup.Text=string.upper((p.Name).."  VS  "..(o.Name))
 	self.routeNote.Text=if p.Routes then string.upper(p.Name).." STRINGS  "..p.Routes else ""
+end
+-- The ink stroke crosses the screen (0.5 s): the new screen is already under
+-- it, uncovered by its trailing edge.
+function UI:sweep()
+	pcall(function()
+		local w=self.wipe
+		w.Visible=true
+		w.Position=UDim2.fromScale(-.9,.5)
+		local tween=Tween:Create(w,TweenInfo.new(.55,Enum.EasingStyle.Quint,Enum.EasingDirection.InOut),{Position=UDim2.fromScale(1.9,.5)})
+		tween.Completed:Connect(function() w.Visible=false end)
+		tween:Play()
+	end)
+end
+-- The result card drops in and the judges' seal is stamped on it.
+function UI:stampResult()
+	pcall(function()
+		self.resultScale.Scale=1.12
+		Tween:Create(self.resultScale,TweenInfo.new(.35,Enum.EasingStyle.Back,Enum.EasingDirection.Out,0,false,.2),{Scale=1}):Play()
+		self.resultSealScale.Scale=2.6
+		Tween:Create(self.resultSealScale,TweenInfo.new(.22,Enum.EasingStyle.Quad,Enum.EasingDirection.In,0,false,.55),{Scale=1}):Play()
+	end)
 end
 -- A roster tile under the pointer rises; a picked one stands higher.
 function UI:liftTablet(t)
@@ -43060,6 +43093,9 @@ function UI:render(data)
 	self.intro.Visible=introActive
 	-- Gamepad focus moves only after the matching screen is visible.
 	if self.lastPhase~=data.phase then
+		-- A change of screen passes under the ink stroke.
+		if self.lastPhase~=nil then self:sweep() end
+		if data.phase=="Result" then self:stampResult() end
 		GuiService.SelectedObject=if data.phase=="Selection" or data.phase=="Pick" then self.startButton elseif data.phase=="Result" then self.rematchButton
 			elseif data.phase=="Queue" then self.cancelButton else nil
 		self.lastPhase=data.phase
@@ -43230,6 +43266,8 @@ function UI:render(data)
 	local winner=if won then h else b
 	self.resultTitle.Text=(if won then "VICTORY" else "DEFEAT")..(if (data.roundsToWin or 1)&gt;1 and data.wins then string.format("  %d–%d",data.wins.human or 0,data.wins.bot or 0) else "")
 	self.resultTitle.TextColor3=if won then palette.gold else palette.crimson
+	self.resultSeal.Text=if won then "勝" else "敗"
+	self.resultSeal.BackgroundColor3=if won then palette.red else Color3.fromRGB(60,56,64)
 	self.resultName.Text=fullName(winner).."  ADVANCES"
 	self.resultNote.Text=if won then "The judges saw it too. The bracket waits for no one." else "Read the commitment. Find a better opening — prodigies learn fastest from defeat."
 	-- Online: a rematch needs both players; a forfeit says so.
