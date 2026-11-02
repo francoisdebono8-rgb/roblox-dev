@@ -69,6 +69,8 @@ function Portraits.build()
 				model.Archivable=true
 				for _,d in model:GetDescendants() do d.Archivable=true end
 				model:SetAttribute("Fighter",id)
+				-- The client frames a fighter once all of it has replicated.
+				model:SetAttribute("Descendants",#model:GetDescendants())
 				model.Parent=out
 			end)
 			if not ok then warn("[NinjaDuel] portrait "..tostring(id)..": "..tostring(err)) end
@@ -76,6 +78,7 @@ function Portraits.build()
 		end
 	end
 	stage:Destroy()
+	out:SetAttribute("Count",#out:GetChildren())
 	out.Parent=ReplicatedStorage
 end
 

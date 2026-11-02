@@ -207,9 +207,27 @@ function UI.new(parent,send)
 		pcall(function()
 			local folder=game:GetService("ReplicatedStorage"):WaitForChild("NinjaDuelPortraits",60)
 			if not folder then return end
-			self.portraits=folder
-			for id,t in self.tablets do pcall(UI.frameFace,t.face,folder:FindFirstChild(id)) end
-			self:refreshSelection()
+			-- The folder arrives first and its fighters stream in after it: each
+			-- is framed once all of it is here (Server/Portraits counts them).
+			local function complete(model)
+				return model~=nil and #model:GetDescendants()>=(model:GetAttribute("Descendants") or 0)
+			end
+			local framed={}
+			local started=os.clock()
+			while os.clock()-started<30 do
+				local done=0
+				for id,t in self.tablets do
+					local model=folder:FindFirstChild(id)
+					if framed[id] then done+=1
+					elseif complete(model) then framed[id]=true;done+=1;pcall(UI.frameFace,t.face,model) end
+				end
+				if done>0 and not self.portraits then
+					self.portraits=folder
+				end
+				if self.portraits then self:refreshSelection() end
+				if done>=#Roster then break end
+				task.wait(.25)
+			end
 		end)
 	end)
 	-- ------------------------------------------------------------------ HUD
@@ -406,9 +424,10 @@ function UI:refreshSelection()
 			st.note.Text=def.Description or ""
 			st.choosing.Visible=self.side==side and not self.picking
 			st.tag.BackgroundColor3=if self.side==side and not self.picking then palette.gold else palette.paper
-			if self.portraits and st.shown~=id then
+			local model=self.portraits and self.portraits:FindFirstChild(id)
+			if model and st.shown~=id and #model:GetDescendants()>=(model:GetAttribute("Descendants") or 0) then
 				st.shown=id
-				pcall(UI.frameBody,st.view,self.portraits:FindFirstChild(id),st.right)
+				pcall(UI.frameBody,st.view,model,st.right)
 			end
 		end
 	end

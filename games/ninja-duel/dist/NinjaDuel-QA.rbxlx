@@ -4471,7 +4471,7 @@ return {
       <Item class="StringValue" referent="ND26">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">79c7968fd6ed1ee67ccea4ee3c3ab21934237cdb51098c761b88781a1f7d31c9</string>
+          <string name="Value">20eb000ea76b4d7570fc5cfc7baea6dcb3acca365f43baa748ce3c9a5997be76</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND27">
@@ -19910,6 +19910,8 @@ function Portraits.build()
 				model.Archivable=true
 				for _,d in model:GetDescendants() do d.Archivable=true end
 				model:SetAttribute("Fighter",id)
+				-- The client frames a fighter once all of it has replicated.
+				model:SetAttribute("Descendants",#model:GetDescendants())
 				model.Parent=out
 			end)
 			if not ok then warn("[NinjaDuel] portrait "..tostring(id)..": "..tostring(err)) end
@@ -19917,6 +19919,7 @@ function Portraits.build()
 		end
 	end
 	stage:Destroy()
+	out:SetAttribute("Count",#out:GetChildren())
 	out.Parent=ReplicatedStorage
 end
 
@@ -42427,9 +42430,27 @@ function UI.new(parent,send)
 		pcall(function()
 			local folder=game:GetService("ReplicatedStorage"):WaitForChild("NinjaDuelPortraits",60)
 			if not folder then return end
-			self.portraits=folder
-			for id,t in self.tablets do pcall(UI.frameFace,t.face,folder:FindFirstChild(id)) end
-			self:refreshSelection()
+			-- The folder arrives first and its fighters stream in after it: each
+			-- is framed once all of it is here (Server/Portraits counts them).
+			local function complete(model)
+				return model~=nil and #model:GetDescendants()&gt;=(model:GetAttribute("Descendants") or 0)
+			end
+			local framed={}
+			local started=os.clock()
+			while os.clock()-started&lt;30 do
+				local done=0
+				for id,t in self.tablets do
+					local model=folder:FindFirstChild(id)
+					if framed[id] then done+=1
+					elseif complete(model) then framed[id]=true;done+=1;pcall(UI.frameFace,t.face,model) end
+				end
+				if done&gt;0 and not self.portraits then
+					self.portraits=folder
+				end
+				if self.portraits then self:refreshSelection() end
+				if done&gt;=#Roster then break end
+				task.wait(.25)
+			end
 		end)
 	end)
 	-- ------------------------------------------------------------------ HUD
@@ -42626,9 +42647,10 @@ function UI:refreshSelection()
 			st.note.Text=def.Description or ""
 			st.choosing.Visible=self.side==side and not self.picking
 			st.tag.BackgroundColor3=if self.side==side and not self.picking then palette.gold else palette.paper
-			if self.portraits and st.shown~=id then
+			local model=self.portraits and self.portraits:FindFirstChild(id)
+			if model and st.shown~=id and #model:GetDescendants()&gt;=(model:GetAttribute("Descendants") or 0) then
 				st.shown=id
-				pcall(UI.frameBody,st.view,self.portraits:FindFirstChild(id),st.right)
+				pcall(UI.frameBody,st.view,model,st.right)
 			end
 		end
 	end
