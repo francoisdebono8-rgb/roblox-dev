@@ -3,7 +3,7 @@
 -- operations, argument keys and types. Debug/QA places only (DEBUG_SOURCES).
 local Commands={}
 Commands.ops={reset=true,character=true,scenario=true,["repeat"]=true,profile=true,report=true,
-	dummy=true,refill=true,awaken=true,ko=true,list=true,panel=true,selftest=true}
+	dummy=true,refill=true,awaken=true,ultimate=true,ko=true,list=true,panel=true,selftest=true}
 function Commands.validate(op,arg)
 	if type(op)~="string" or not Commands.ops[op] then return false end
 	if arg==nil then return true,{} end

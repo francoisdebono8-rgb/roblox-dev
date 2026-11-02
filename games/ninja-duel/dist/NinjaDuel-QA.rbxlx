@@ -4472,7 +4472,7 @@ return {
       <Item class="StringValue" referent="ND26">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">6bf469cb1d0619e43d54d2ffb0b63e21552475e53fc57674f56ebb4a23e43923</string>
+          <string name="Value">6c165f35274f673abbc8ba639b003087bc7d6923ff6164d0edbe280c5b286d08</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND27">
@@ -12745,7 +12745,7 @@ return Costumes
 -- operations, argument keys and types. Debug/QA places only (DEBUG_SOURCES).
 local Commands={}
 Commands.ops={reset=true,character=true,scenario=true,["repeat"]=true,profile=true,report=true,
-	dummy=true,refill=true,awaken=true,ko=true,list=true,panel=true,selftest=true}
+	dummy=true,refill=true,awaken=true,ultimate=true,ko=true,list=true,panel=true,selftest=true}
 function Commands.validate(op,arg)
 	if type(op)~="string" or not Commands.ops[op] then return false end
 	if arg==nil then return true,{} end
@@ -14251,6 +14251,9 @@ function Tools:run(player,op,arg)
 		local ok,reason=c:request(a,"Awaken")
 		matches:snapshot(player,s)
 		return {ok=ok,error=if ok then nil else reason}
+	elseif op=="ultimate" then
+		-- (Stage 6) the ultimate bar full, to try the eight sequences.
+		a.ultimate=100
 	elseif op=="ko" then
 		a.invulnerableUntil=0;a.rotationUntil=0;a.readUntil=0;a.guardHeld=false;a.shieldCharges=0;a.comboHits=0
 		c:damage(a.target,a,a.health+200,false,false)
@@ -35027,6 +35030,7 @@ function Dev.install(ctx)
 	end
 	button("Reset immédiat",function() run("reset") end);button("Chakra / sub pleins",function() run("refill") end)
 	button("Éveil joueur",function() run("awaken") end);button("KO adversaire",function() run("ko",{actor="bot"}) end)
+	button("Ultime pleine",function() run("ultimate") end)
 	button("Dummy",function() run("dummy",{enabled=true}) end);button("IA",function() run("dummy",{enabled=false}) end)
 	for _,name in SCENARIOS do button("Situation : "..name,function() run("scenario",{name=name}) end) end
 	button("Répéter situation",function() run("repeat") end)

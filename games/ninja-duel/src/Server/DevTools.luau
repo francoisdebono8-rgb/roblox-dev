@@ -60,6 +60,9 @@ function Tools:run(player,op,arg)
 		local ok,reason=c:request(a,"Awaken")
 		matches:snapshot(player,s)
 		return {ok=ok,error=if ok then nil else reason}
+	elseif op=="ultimate" then
+		-- (Stage 6) the ultimate bar full, to try the eight sequences.
+		a.ultimate=100
 	elseif op=="ko" then
 		a.invulnerableUntil=0;a.rotationUntil=0;a.readUntil=0;a.guardHeld=false;a.shieldCharges=0;a.comboHits=0
 		c:damage(a.target,a,a.health+200,false,false)

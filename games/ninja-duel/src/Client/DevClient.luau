@@ -61,6 +61,7 @@ function Dev.install(ctx)
 	end
 	button("Reset immédiat",function() run("reset") end);button("Chakra / sub pleins",function() run("refill") end)
 	button("Éveil joueur",function() run("awaken") end);button("KO adversaire",function() run("ko",{actor="bot"}) end)
+	button("Ultime pleine",function() run("ultimate") end)
 	button("Dummy",function() run("dummy",{enabled=true}) end);button("IA",function() run("dummy",{enabled=false}) end)
 	for _,name in SCENARIOS do button("Situation : "..name,function() run("scenario",{name=name}) end) end
 	button("Répéter situation",function() run("repeat") end)
