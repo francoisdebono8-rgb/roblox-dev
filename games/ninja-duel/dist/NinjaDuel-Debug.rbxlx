@@ -4471,7 +4471,7 @@ return {
       <Item class="StringValue" referent="ND26">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">f3ccec9ea58126dc44f846b38b5003dec7936b8c1efdcc9fadb8cfcab1cad816</string>
+          <string name="Value">03560bba9543806a31ddc78a04e264827051dee5e5fb0a854a58cee653866ff5</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND27">
@@ -22001,12 +22001,17 @@ local function scripts(s,wait,alive)
 	local function B() return s.bot end
 	local function press(action,aim,opts) return c:request(A(),action,aim,nil,opts) end
 	local function toward() local a,b=A(),B();local d=flat(b.root.Position-a.root.Position);return if d.Magnitude&gt;.1 then d.Unit else Vector3.zAxis end
-	local function stick(v) local a=A();a.move=v;a.lastMove=os.clock()+5;Brawler.observe(c,a) end
+	-- The stick is also published on the body (TutorialStick/TutorialSprint):
+	-- the debug client draws the player's own body ahead of the server by the
+	-- local stick (Presentation:leadLocal); fed the bot's stick, it draws what a
+	-- player holding that stick would see (Client/TutorialProbe).
+	local function stick(v) local a=A();a.move=v;a.lastMove=os.clock()+5;Brawler.observe(c,a);a.model:SetAttribute("TutorialStick",v) end
+	local function sprint(on) local a=A();a.sprinting=on;a.model:SetAttribute("TutorialSprint",on) end
 	local function hold(v,sec) local t0=os.clock();while alive() and os.clock()-t0&lt;sec do stick(v);wait(.05) end end
 	local function chain(n,gap) for _=1,n do if not alive() then return end;press("Attack");wait(gap or .24) end end
 	local S={}
 	S.move=function() hold(toward():Cross(Vector3.yAxis),1.5);stick(Vector3.zero) end
-	S.sprint=function() A().sprinting=true;hold(toward():Cross(Vector3.yAxis),1.5);A().sprinting=false;stick(Vector3.zero) end
+	S.sprint=function() sprint(true);hold(toward():Cross(Vector3.yAxis),1.5);sprint(false);stick(Vector3.zero) end
 	S.jump=function() press("Jump");wait(1.2) end
 	S.lock=function()
 		local a=A();a.locked=false;Brawler.event(c,a,"Unlock");wait(.2)
@@ -22029,7 +22034,7 @@ local function scripts(s,wait,alive)
 	S.air=function() press("Attack");wait(.26);press("Attack");wait(.6) end
 	S.airFinish=function() press("Heavy");wait(.8) end
 	S.runStrike=function()
-		local a=A();a.sprinting=true
+		local a=A();sprint(true)
 		local t0=os.clock()
 		while alive() and os.clock()-t0&lt;3 do
 			stick(toward())
@@ -22037,7 +22042,7 @@ local function scripts(s,wait,alive)
 			if gap&lt;9 and a.locomotion.Magnitude&gt;28 then press("Attack");break end
 			wait(.03)
 		end
-		a.sprinting=false;wait(.6);stick(Vector3.zero)
+		sprint(false);wait(.6);stick(Vector3.zero)
 	end
 	-- Walk into reach first (Gaara and Sasori whiffed from the step's 5 studs:
 	-- their grab does not carry the lunge the others do), then seize and throw.
@@ -22131,6 +22136,7 @@ function Bot.play(s,perStep)
 		if os.clock()-started&gt;(perStep or 10)+2 then task.wait(.1) end
 	end
 	s.human.move=Vector3.zero;s.human.sprinting=false
+	s.human.model:SetAttribute("TutorialStick",nil);s.human.model:SetAttribute("TutorialSprint",nil)
 	return Tutorial.report(s)
 end
 return Bot
@@ -40546,6 +40552,20 @@ function Presentation:applyPrediction(actor,now)
 	v.attackName=p.name;v.state="Startup";v.attackSerial=-1-p.serial;v.attackElapsed=now-p.at
 	return v
 end
+-- The server's root for this frame from the snapshot: its position when the
+-- snapshot was taken, carried forward by its velocity over the snapshot's age
+-- (at most 0.1 s: a late packet is not extrapolated into a wall). Facing from
+-- the snapshot's look vector. Falls back to the replicated root.
+function Presentation.snapshotRoot(data,actor,fallback)
+	if not actor.position or not data.serverNow then return fallback end
+	local age=math.clamp(workspace:GetServerTimeNow()-data.serverNow,0,.1)
+	local v=actor.velocity
+	local p=actor.position+(if typeof(v)=="Vector3" and v.Magnitude&lt;200 then v*age else Vector3.zero)
+	local look=actor.lookVector
+	local flatLook=if typeof(look)=="Vector3" then Vector3.new(look.X,0,look.Z) else Vector3.zero
+	if flatLook.Magnitude&lt;.05 then return fallback.Rotation+p end
+	return CFrame.lookAt(p,p+flatLook.Unit)
+end
 -- Just before rendering: the replicated roots have their positions for this
 -- frame; advance each track and draw the body on it (position and facing).
 function Presentation:smoothStep(data,dt)
@@ -40565,6 +40585,13 @@ function Presentation:smoothStep(data,dt)
 			local actualCF=root.CFrame
 			if st and st.drawnCF and st.replicatedCF and (actualCF.Position-st.drawnCF.Position).Magnitude&lt;1e-3
 				and actualCF.LookVector:Dot(st.drawnCF.LookVector)&gt;.99999 then actualCF=st.replicatedCF end
+			-- (Tutorial probe 02/11, Lion run) Roblox's replicated root ran 370 ms
+			-- (10 studs, up to 18) behind the server through a jump, 60-130 ms in
+			-- a chase or a run: the body was drawn late, then caught up in jumps.
+			-- The snapshot carries the server's own root and the time it was
+			-- taken (30 Hz): the track follows that, carried to the present by
+			-- its velocity.
+			actualCF=Presentation.snapshotRoot(data,actor,actualCF)
 			local drawn=self:smoothRoot(key,actualCF,math.max(dt,1/240),actor.warpSerial)
 			if key=="human" then drawn=self:leadLocal(actor,drawn,math.max(dt,1/240)) end
 			st=self.smooth[key]
@@ -41446,8 +41473,8 @@ return SandFX
 --   camera    the camera jumps (position or angle) more than the body it follows
 --   offscreen the fighter's head leaves the view
 --   late      a strike or a jump reaches the screen late (server start -&gt; seen)
--- Read it with _G.NinjaDuelProbe.report() from the Client command bar (or the
--- Studio MCP Client datamodel). Measures only: changes nothing in the game.
+-- Read it with LocalPlayer.NinjaDuelProbe:Invoke("report") (or "totals") from
+-- the Client command bar or the Studio MCP Client datamodel. Measures only: changes nothing in the game.
 local RunService=game:GetService("RunService")
 local Probe={}
 
@@ -41472,6 +41499,14 @@ function Probe.install(ctx)
 		return string.format("%s%s%s%s%s",h.state or "?",if h.attackName and h.state~="Neutral" then ":"..h.attackName else "",
 			if h.reaction then " r:"..h.reaction else "",if h.airborne then " air" else "",if h.wall then " wall:"..tostring(h.wallMode) else "")
 	end
+	-- A bot run (Server/TutorialBot) publishes its stick on the body: the
+	-- player's own body is drawn ahead by the stick (Presentation:leadLocal),
+	-- so it gets the bot's stick, as if a player held it. Before the draw.
+	RunService:BindToRenderStep("NinjaDuelTutorialStick",Enum.RenderPriority.Camera.Value-1,function()
+		local model=ctx.player.Character
+		local stick=model and model:GetAttribute("TutorialStick")
+		if typeof(stick)=="Vector3" then ctx.presentation.inputDir=stick;ctx.presentation.inputSprint=model:GetAttribute("TutorialSprint")==true end
+	end)
 	RunService:BindToRenderStep("NinjaDuelTutorialProbe",Enum.RenderPriority.Camera.Value+3,function(dt)
 		local cur=ctx.state()
 		if not cur or cur.phase~="Duel" or not cur.tutorial or not cur.human or dt&lt;=0 or dt&gt;.1 then st.last=nil;return end
@@ -41498,7 +41533,11 @@ function Probe.install(ctx)
 			local serverSpeed=math.max(h.speed or 0,flat(h.velocity or Vector3.zero).Magnitude)
 			-- pop: more travel in one frame than the fastest the body may go.
 			local allowed=math.max(1.2,(math.max(serverSpeed,last.vFlat or 0,80))*dt*1.6)
-			if move.Magnitude&gt;allowed then note(b,"pop",move.Magnitude,string.format("%.2f studs in %.0f ms (%s -&gt; %s)",move.Magnitude,dt*1000,last.ctx,ctxText)) end
+			if move.Magnitude&gt;allowed then
+				local server=h.position or p
+				note(b,"pop",move.Magnitude,string.format("%.2f studs in %.0f ms (%s -&gt; %s) drawn %s -&gt; %s, server %s",move.Magnitude,dt*1000,last.ctx,ctxText,
+					string.format("%.0f,%.0f,%.0f",last.p.X,last.p.Y,last.p.Z),string.format("%.0f,%.0f,%.0f",p.X,p.Y,p.Z),string.format("%.0f,%.0f,%.0f",server.X,server.Y,server.Z)))
+			end
 			local free=h.state=="Neutral" and not h.reaction and not h.wall and not h.airborne and (h.airHold or 0)==0
 			-- freeze: the server runs, the screen stands.
 			if free and (h.speed or 0)&gt;6 and vFlat&lt;.5 then st.stillFor=(st.stillFor or 0)+dt else st.stillFor=0 end
@@ -41590,6 +41629,11 @@ function Probe.install(ctx)
 	end
 	api.data=data
 	_G.NinjaDuelProbe=api
+	-- Studio tools run in another script context (_G is not shared): a local
+	-- BindableFunction answers them (op "report" | "totals" | "reset").
+	local hook=Instance.new("BindableFunction");hook.Name="NinjaDuelProbe"
+	hook.OnInvoke=function(op,arg) local f=api[op or "report"];return f and f(arg) end
+	hook.Parent=ctx.player
 	return api
 end
 return Probe

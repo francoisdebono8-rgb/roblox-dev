@@ -170,6 +170,20 @@ function Presentation:applyPrediction(actor,now)
 	v.attackName=p.name;v.state="Startup";v.attackSerial=-1-p.serial;v.attackElapsed=now-p.at
 	return v
 end
+-- The server's root for this frame from the snapshot: its position when the
+-- snapshot was taken, carried forward by its velocity over the snapshot's age
+-- (at most 0.1 s: a late packet is not extrapolated into a wall). Facing from
+-- the snapshot's look vector. Falls back to the replicated root.
+function Presentation.snapshotRoot(data,actor,fallback)
+	if not actor.position or not data.serverNow then return fallback end
+	local age=math.clamp(workspace:GetServerTimeNow()-data.serverNow,0,.1)
+	local v=actor.velocity
+	local p=actor.position+(if typeof(v)=="Vector3" and v.Magnitude<200 then v*age else Vector3.zero)
+	local look=actor.lookVector
+	local flatLook=if typeof(look)=="Vector3" then Vector3.new(look.X,0,look.Z) else Vector3.zero
+	if flatLook.Magnitude<.05 then return fallback.Rotation+p end
+	return CFrame.lookAt(p,p+flatLook.Unit)
+end
 -- Just before rendering: the replicated roots have their positions for this
 -- frame; advance each track and draw the body on it (position and facing).
 function Presentation:smoothStep(data,dt)
@@ -189,6 +203,13 @@ function Presentation:smoothStep(data,dt)
 			local actualCF=root.CFrame
 			if st and st.drawnCF and st.replicatedCF and (actualCF.Position-st.drawnCF.Position).Magnitude<1e-3
 				and actualCF.LookVector:Dot(st.drawnCF.LookVector)>.99999 then actualCF=st.replicatedCF end
+			-- (Tutorial probe 02/11, Lion run) Roblox's replicated root ran 370 ms
+			-- (10 studs, up to 18) behind the server through a jump, 60-130 ms in
+			-- a chase or a run: the body was drawn late, then caught up in jumps.
+			-- The snapshot carries the server's own root and the time it was
+			-- taken (30 Hz): the track follows that, carried to the present by
+			-- its velocity.
+			actualCF=Presentation.snapshotRoot(data,actor,actualCF)
 			local drawn=self:smoothRoot(key,actualCF,math.max(dt,1/240),actor.warpSerial)
 			if key=="human" then drawn=self:leadLocal(actor,drawn,math.max(dt,1/240)) end
 			st=self.smooth[key]

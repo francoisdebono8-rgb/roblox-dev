@@ -1,7 +1,7 @@
 {
   "version": "0.13.0-arena-combo",
   "artifact": "NinjaDuel-QA.rbxlx",
-  "sha256": "76c450bcd278d7858961e90bda214dd19d523a43b5bf98b756b24b9db1dddb03",
+  "sha256": "a53bc7a35fac1988d75106daddd44e217ace5df22911a2c28034ffdcce08af15",
   "sources": {
     "src/Client/AuthoredClips.luau": "d748c22ae9fa394c9918123816c03d4e21e1f7064830b37c14b54922c5262cd7",
     "src/Client/AuthoredClips1.luau": "5eecd2ba2731e7024840df82db22363ee725ce4aecfe55f672799a151244c9a3",
@@ -64,9 +64,9 @@
     "src/Client/Main.client.luau": "84dce7fdd67b94e4471f6726d91a5fed0e98f464d55a9c39d959ab20a480150a",
     "src/Client/MotionSmear.luau": "e17fac23382063789300efe7f7b8dbfce3f07e6052d3e60c26ee6877ce5bb01e",
     "src/Client/NarutoFX.luau": "c37b04701dc6f1582491d7d279ad7cc96b4fb3e9df8916d21e16c82cf164591b",
-    "src/Client/Presentation.luau": "4b8250bdbab5e90531bf7b8610aa84c0bcf92f11dc51f7a367b5c8ba0b4a8d55",
+    "src/Client/Presentation.luau": "a5600929e304aaec326cdf4c92b145f494e9aaa26d3d22e29f8c82333dddf7d1",
     "src/Client/SandFX.luau": "a5f0d04be57628eab9a94bf064b1bbb2e14acccb7bdf463c974b95328a64173a",
-    "src/Client/TutorialProbe.luau": "095dd32959ccd247b0f130ea8ea956fedba31b06ce4aac8cf1b1db1c5d58d740",
+    "src/Client/TutorialProbe.luau": "82cc9b42c73a46f97d265fd86a3582d0d3a58c6a2b7caad8296926f64adfa1da",
     "src/Client/UI.luau": "664e5114d398fa200681e06d9f3370d62b9f088e86aedbae754ccd900a70f7bb",
     "src/Client/UltimateFX.luau": "3da697d392feba0e647867fa9bb89c75c4fe292238a62ff904d6f34cfa050937",
     "src/Client/VelmoraHitFeedback.luau": "2c3b4264fda43e189301ccc3431a79ecc76d6c5af526d7f4aa94752d03f192b6",
@@ -136,7 +136,7 @@
     "src/Server/SkillTrees.luau": "6800fcbc308a78bb5e6d226bb34d3a00c28a5acdb1aaa68f3dd3ef31526d8834",
     "src/Server/Techniques.luau": "d803c85c814e914c818d5465bd48d7656d471f514bf66a035032fcf973c03bc3",
     "src/Server/Tutorial.luau": "3862971997b673417fa2c1a1fc66e5a47be919804214aa27d91f84d7794f6ffc",
-    "src/Server/TutorialBot.luau": "d879594ba8961a837d855b76ed510943bbfa510b63882efbd88587bf1b479931",
+    "src/Server/TutorialBot.luau": "f64794c332349b7cd7891c78f3e58d04db925ce5411db0cb87395d10d50e7ab3",
     "src/Server/Ultimates.luau": "38330b6176b7d5d65d54242a19667426c5dc1c15b4942932ee93285a561fa03e",
     "src/Server/VelmoraAntiCheat.luau": "cc3cc6c10ee5ab6d0ca3de956f34eb4cca5feaee331d53505e6fff494729ae87",
     "src/Server/VelmoraDefense.luau": "4438353ac9de20f04db1d9643c152abb41a6bb4d8d6a2345ca1b5f12e1aa75c4",
@@ -173,7 +173,7 @@
   },
   "sourceEquality": "PASS",
   "debugOnly": true,
-  "buildFingerprint": "ae35a01d7d807d0aa21c9ddd0475a686a286dbeeac48361690c3f9230fd215c6",
+  "buildFingerprint": "3bdfbcaa5e3345276033e13c0831f84b7d532b80d7fb4ca8bf37928f12ef75b2",
   "donorAssets": {
     "assets/BanglaAssets.rbxmx": "6e99f5f67e6c34ac8a81d739431554b1495f0f5cd1dd1870a39eeb8bf23e1983"
   },
