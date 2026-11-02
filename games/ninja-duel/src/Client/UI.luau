@@ -77,6 +77,9 @@ function UI.new(parent,send)
 	-- (Gradients only where the engine has them: the headless suites do not.)
 	local hasSequences=ColorSequence~=nil and NumberSequence~=nil and NumberSequenceKeypoint~=nil
 	pcall(function()
+		-- The game's look on this screen (Client/WorldLook): light, grade, sky, ink lines.
+		local lookModule=script.Parent:FindFirstChild("WorldLook")
+		if lookModule then require(lookModule).start() end
 		local stageModule=script.Parent:FindFirstChild("MenuStage")
 		if stageModule then self.menuStage=require(stageModule).new() end
 	end)
