@@ -134,7 +134,7 @@ function UI.new(parent,send)
 		end)
 	end)
 	-- Your fighter's strings, over the roster.
-	self.routeNote=text(shell,"",UDim2.fromOffset(60,616),UDim2.fromOffset(1480,18),14,palette.gold,BODY_FONT,Enum.TextXAlignment.Center)
+	self.routeNote=text(shell,"",UDim2.fromOffset(60,602),UDim2.fromOffset(1480,18),14,palette.gold,BODY_FONT,Enum.TextXAlignment.Center)
 	self.routeNote.TextScaled=true;create("UITextSizeConstraint",self.routeNote,{MaxTextSize=14})
 	-- The roster (user 02/11: the top and the bottom repeated each other, the
 	-- faces were wrong): name plates, two rows of ten, each with a cut of its
@@ -148,7 +148,7 @@ function UI.new(parent,send)
 		local def=Fighters[id]
 		local accent=accentOf(def)
 		local col=(index-1)%10;local row=math.floor((index-1)/10)
-		local x,y=left+col*(W+GAP),652+row*(H+14)
+		local x,y=left+col*(W+GAP),664+row*(H+12)
 		local tablet=create("TextButton",shell,{Position=UDim2.fromOffset(x,y),Size=UDim2.fromOffset(W,H),
 			BackgroundColor3=Color3.fromRGB(22,19,25),BorderSizePixel=0,AutoButtonColor=false,Text="",ClipsDescendants=true})
 		corner(tablet,5)

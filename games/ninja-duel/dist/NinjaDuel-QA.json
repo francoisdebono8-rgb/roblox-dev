@@ -1,7 +1,7 @@
 {
   "version": "0.13.0-arena-combo",
   "artifact": "NinjaDuel-QA.rbxlx",
-  "sha256": "1c326a35a9aaab6e16a0a5c9708e56e2c34aabd559f8c12d7bcfd9d9a8e1845f",
+  "sha256": "509efcb9beab1d8867fdd142bb7cd9f02418952e942d28757ce846cf4edec5da",
   "sources": {
     "src/Client/AuthoredClips.luau": "d748c22ae9fa394c9918123816c03d4e21e1f7064830b37c14b54922c5262cd7",
     "src/Client/AuthoredClips1.luau": "5eecd2ba2731e7024840df82db22363ee725ce4aecfe55f672799a151244c9a3",
@@ -62,13 +62,13 @@
     "src/Client/Input.luau": "121dc33c95e5b33014ffe20c6ff47ebd1e3ca107d04f826322f9ebc7786dd397",
     "src/Client/LeeFX.luau": "3f45ced5aa86dc552a07c0802c33e6dcb6a05019da3bd4768585cefeef07e159",
     "src/Client/Main.client.luau": "6bf960244b028c5735e907035c6ee84c72c21cf56971aa7c06b8b4c6cdec4116",
-    "src/Client/MenuStage.luau": "a9686d42327783979ef2c45012effbec0707eacbe2a7488105661fd96a6cee38",
+    "src/Client/MenuStage.luau": "d33c2102498e82bd844f0440d49d021f69f4a7d412e9c3952eacfe855d5847f5",
     "src/Client/MotionSmear.luau": "e17fac23382063789300efe7f7b8dbfce3f07e6052d3e60c26ee6877ce5bb01e",
     "src/Client/NarutoFX.luau": "c37b04701dc6f1582491d7d279ad7cc96b4fb3e9df8916d21e16c82cf164591b",
     "src/Client/Presentation.luau": "a5600929e304aaec326cdf4c92b145f494e9aaa26d3d22e29f8c82333dddf7d1",
     "src/Client/SandFX.luau": "a5f0d04be57628eab9a94bf064b1bbb2e14acccb7bdf463c974b95328a64173a",
     "src/Client/TutorialProbe.luau": "82cc9b42c73a46f97d265fd86a3582d0d3a58c6a2b7caad8296926f64adfa1da",
-    "src/Client/UI.luau": "87675f4ebd170402b27421fb39831c5fe4883d4b68058f5ff835fb84d75f9ab3",
+    "src/Client/UI.luau": "f9ec37e569f1d5f7d733f7147934ad0dd648622ab403902804a72fa3ba70bf6d",
     "src/Client/UltimateFX.luau": "3da697d392feba0e647867fa9bb89c75c4fe292238a62ff904d6f34cfa050937",
     "src/Client/VelmoraHitFeedback.luau": "2c3b4264fda43e189301ccc3431a79ecc76d6c5af526d7f4aa94752d03f192b6",
     "src/Client/VelmoraMotionEngine.luau": "cf6dc62110fde7672e72aa990552b5996e2da0234d81d3a21cfd5aa41687638f",
@@ -175,7 +175,7 @@
   },
   "sourceEquality": "PASS",
   "debugOnly": true,
-  "buildFingerprint": "a9c09c364e930fb985d874c7a242db932c81cdf93e0a66422bdc0c4e2a9a4e61",
+  "buildFingerprint": "cfd6130555bdefb0d6ab91e8eb8c66e1f2d4acb216fbccce06a205c2c52603d1",
   "donorAssets": {
     "assets/BanglaAssets.rbxmx": "6e99f5f67e6c34ac8a81d739431554b1495f0f5cd1dd1870a39eeb8bf23e1983"
   },

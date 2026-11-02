@@ -15,7 +15,7 @@ MenuStage.__index=MenuStage
 local ORIGIN=Vector3.new(0,4200,0)
 local INK=Color3.fromRGB(14,12,17)
 local FOV=34
-local DISTANCE=19
+local DISTANCE=21
 -- The screen fractions where the two stages are (Client/UI's 1600-wide board).
 MenuStage.SCREEN_X={player=.21,bot=.79}
 
@@ -47,8 +47,8 @@ function MenuStage.new()
 	part(folder,{Name="Back",Size=Vector3.new(160,70,2),CFrame=CFrame.new(O+Vector3.new(0,10,-40)),Color=INK})
 	for _,s in {-1,1} do part(folder,{Name="Side",Size=Vector3.new(2,70,60),CFrame=CFrame.new(O+Vector3.new(s*80,10,-10)),Color=INK}) end
 	-- The brush stroke behind the two fighters (the menu's red band).
-	local band=part(folder,{Name="Stroke",Size=Vector3.new(120,6.5,.2),CFrame=CFrame.new(O+Vector3.new(0,3.4,7.6))*CFrame.Angles(0,0,math.rad(9)),
-		Color=Color3.fromRGB(190,40,36),Material=Enum.Material.Neon,Transparency=.35})
+	local band=part(folder,{Name="Stroke",Size=Vector3.new(120,4.2,.2),CFrame=CFrame.new(O+Vector3.new(0,3.2,7.6))*CFrame.Angles(0,0,math.rad(9)),
+		Color=Color3.fromRGB(150,30,28),Material=Enum.Material.SmoothPlastic,Transparency=.1})
 	part(folder,{Name="StrokeEdge",Size=Vector3.new(120,.6,.2),CFrame=band.CFrame*CFrame.new(0,-1.6,-.05),Color=INK,Transparency=.4})
 	self.band=band
 	-- One slot per stage: where the fighter stands, his lights.
@@ -69,7 +69,8 @@ end
 
 -- The camera's shot of the set (Client/Camera reads it while the roster shows).
 function MenuStage:shot()
-	return CFrame.lookAt(ORIGIN+Vector3.new(0,2.9,-DISTANCE),ORIGIN+Vector3.new(0,2.6,0)),FOV
+	-- Aimed low: the heads sit in the upper third, the names under the chests.
+	return CFrame.lookAt(ORIGIN+Vector3.new(0,1.6,-DISTANCE),ORIGIN+Vector3.new(0,.55,0)),FOV
 end
 -- Each fighter stands where its stage is on this screen, whatever its shape.
 function MenuStage:layout()
@@ -127,6 +128,6 @@ function MenuStage:step(t)
 	for side,slot in self.slots do
 		if not slot.moving then slot.glow.Brightness=1.6+.5*math.sin(t*1.3+(if side=="bot" then 1.6 else 0)) end
 	end
-	self.band.Transparency=.35+.08*math.sin(t*.9)
+	self.band.Transparency=.1+.06*math.sin(t*.9)
 end
 return MenuStage
