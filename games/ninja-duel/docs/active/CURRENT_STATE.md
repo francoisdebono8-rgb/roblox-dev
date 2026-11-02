@@ -1,3 +1,10 @@
+**É7, ressenti du perso joué (02/11, 22 h 45)** (utilisateur : « on est pas au niveau de la triche encore, fais le truc le plus impactant niveau ressenti » ; audits du jour : corps affiché ~65 ms derrière le serveur, esquive / saut non prédits)
+- **Corps du joueur dessiné au présent** (`Presentation.smoothRoot`) : plus de retard fixe de 45 ms pour son propre perso ; entre deux paquets il continue sur le dernier segment (au plus 1/30 s). L'adversaire reste interpolé 45 ms derrière.
+- **Esquive et saut à la touche** (`Presentation.predictMove` / `movement`) : le corps part sur la même courbe que le serveur (esquive 14 studs × DashScale en 0,32 s ; saut à JumpVelocity × JumpScale), la pose d'esquive aussi ; confirmée par l'état serveur en ~0,1 s, sinon abandonnée en douceur (0,16 s). Pas de saut prédit dans une fenêtre de poursuite (le saut manette y est la poursuite).
+- **Coup après une course** : l'avance de course s'efface sur 0,18 s pendant le coup au lieu de 0,07 s (le corps n'est plus tiré en arrière au départ du coup).
+- **Chevilles** : 54 allers-retours de cheville lissés à l'export (`clips_to_luau.ankle_jitter`) ; les gestes rapides dans un seul sens restent.
+- **Preuves** : `Animation.spec` (corps au présent, esquive et saut dès la première image, abandon sans confirmation). Non mesuré en Studio : à sentir en jouant.
+
 **É6, derniers manques de la liste des coups (02/11, 22 h)** (utilisateur : « poursuit sur la suite »)
 - **Lotus primaire (Lee) et Naruto Rendan (×)** : portée 13 ; au-delà de 3,4 studs il fonce d'abord (64 studs/s) puis lance. Avant : refusés à 10 studs. L'IA les garde au contact (`AI` Sequence ≤ 9).
 - **Kakashi, tantô dégainé** : ses propres coupes (`Copycat.Blade.*`, 12 clips : 3 coupes, estoc de chakra blanc, coupe montante, coupe basse, pas feinté + coupe, attaque en course, coupes aériennes, coupe plongeante), au lieu du couteau partagé de Sasuke et de ses poings sabre en main (`Motion.kunaiClip`).

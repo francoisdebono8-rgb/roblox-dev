@@ -26,6 +26,7 @@ end
 -- interpolated track of its replicated positions, a fixed ~45 ms behind: the
 -- motion is continuous every frame. A real teleport still snaps.
 local TRACK_DELAY,TRACK_SNAP,TRACK_MAX,TRACK_SAMPLES=.045,45,12,8
+local LOCAL_EXTRAPOLATE=1/30
 local function yawOf(cf)
 	local look=cf.LookVector
 	return math.atan2(-look.X,-look.Z)
@@ -53,9 +54,20 @@ function Presentation:smoothRoot(key,actualCF,dt,warp)
 		-- Standing still: keep the track anchored to the present.
 		newest.t=now
 	end
-	local at=now-TRACK_DELAY
+	-- (É7, the player's own body) The opponent is drawn 45 ms behind on the
+	-- interpolated track; the player's own body is drawn on the PRESENT: past
+	-- the newest packet it carries on along the last segment, for at most one
+	-- packet's gap (the 45 ms were a quarter of the lag he felt).
+	local at=now-(if key=="human" then 0 else TRACK_DELAY)
 	local pos,face=samples[#samples].p,samples[#samples].yaw
-	if at<=samples[1].t then pos,face=samples[1].p,samples[1].yaw
+	if key=="human" and #samples>=2 and at>samples[#samples].t then
+		local a,b=samples[#samples-1],samples[#samples]
+		local span=b.t-a.t
+		if span>1e-3 and span<.12 then
+			local ahead=math.min(at-b.t,LOCAL_EXTRAPOLATE)
+			pos=b.p+(b.p-a.p)*(ahead/span);face=b.yaw
+		end
+	elseif at<=samples[1].t then pos,face=samples[1].p,samples[1].yaw
 	else
 		for i=#samples-1,1,-1 do
 			local a,b=samples[i],samples[i+1]
@@ -93,7 +105,7 @@ end
 -- body obeying the stick would have run since - an offset that fades as the
 -- track catches up (it is zero at any steady speed), never more than 3 studs,
 -- never into the opponent. Outside free movement it follows the track.
-local LEAD_TAU,LEAD_MAX=.13,3
+local LEAD_TAU,LEAD_MAX,LEAD_GUESS_MAX=.13,3,5
 function Presentation:leadLocal(actor,drawn,dt)
 	local st=self.lead
 	if not st then st={off=Vector3.zero,v=Vector3.zero};self.lead=st end
@@ -101,7 +113,15 @@ function Presentation:leadLocal(actor,drawn,dt)
 	local trackFlat=Vector3.new(track.X,0,track.Z)
 	local free=actor.state=="Neutral" and not actor.reaction and not actor.airborne and not actor.wall and actor.groundPose==nil
 	local want=trackFlat
-	if free then
+	local guess=self:movement(actor)
+	if guess then
+		-- (É7) A dodge or a jump pressed: the body goes at once, on the same
+		-- curve the server will run ~80 ms later; the offset holds while the
+		-- track catches up, then fades.
+		want=Vector3.new(guess.X,0,guess.Z)
+		st.v=want
+		st.vy=guess.Y
+	elseif free then
 		local dir=self.inputDir or Vector3.zero
 		dir=Vector3.new(dir.X,0,dir.Z)
 		if dir.Magnitude>1 then dir=dir.Unit end
@@ -112,15 +132,24 @@ function Presentation:leadLocal(actor,drawn,dt)
 	end
 	st.v=st.v:Lerp(want,math.min(1,dt*28))
 	st.off+=(st.v-trackFlat)*dt
-	st.off*=math.exp(-dt/(if free then LEAD_TAU else .07))
-	if st.off.Magnitude>LEAD_MAX then st.off=st.off.Unit*LEAD_MAX end
+	-- (É7) the jump's rise: ahead of the track while the server's jump is on its way
+	st.offY=(st.offY or 0)+((if guess then st.vy or 0 else track.Y)-track.Y)*dt
+	st.offY*=math.exp(-dt/(if guess then LEAD_TAU else .06))
+	st.offY=math.clamp(st.offY,-.5,LEAD_MAX)
+	-- (É7, audit 02/11) A strike out of a run used to pull the body back onto
+	-- the track in 70 ms (a visible yank as the blow starts): the run's lead now
+	-- fades through the strike; a reaction still snaps it back fast.
+	local striking=actor.attackName~=nil and (actor.state=="Startup" or actor.state=="Active" or actor.state=="Recovery") and not actor.reaction
+	st.off*=math.exp(-dt/(if free or guess then LEAD_TAU elseif striking then .18 else .07))
+	local cap=if guess then LEAD_GUESS_MAX else LEAD_MAX
+	if st.off.Magnitude>cap then st.off=st.off.Unit*cap end
 	local other=self:visualRoot("bot")
 	if other then
 		local at=drawn.Position+st.off
 		local d=Vector3.new(at.X-other.X,0,at.Z-other.Z)
 		if d.Magnitude<2.6 and st.off.Magnitude>1e-3 then st.off*=math.clamp((d.Magnitude-1.6),0,1) end
 	end
-	local out=drawn+st.off
+	local out=drawn+st.off+Vector3.new(0,st.offY,0)
 	if st.prev then
 		local v=(out.Position-st.prev)/math.max(dt,1/240)
 		st.vel=(st.vel or v):Lerp(v,math.min(1,dt*18))
@@ -143,6 +172,53 @@ local function nextLight(name,fighterId)
 	index+=1
 	return if index>=length then "Light3" elseif index<=2 then "Light"..index else "Light"..(index+1)
 end
+-- (É7, the most felt lag) A dodge and a jump start at the press. The server
+-- still decides (cooldowns, cost, a hit in between); its state confirms the
+-- guess within ~0.1 s, or the guess is dropped and the body eases back.
+local DODGE_TIME,DODGE_DISTANCE=.32,14
+function Presentation:predictMove(action,data)
+	local h=data and data.human
+	if not h or h.reaction or h.wall or h.groundPose or (h.health or 1)<=0 then return end
+	local now=os.clock()
+	local def=Fighters[h.fighterId]
+	local root=nil
+	pcall(function()
+		local character=game:GetService("Players").LocalPlayer.Character
+		root=character and character:FindFirstChild("HumanoidRootPart")
+	end)
+	if action=="Dodge" then
+		if h.airborne or not (h.state=="Neutral" or h.state=="Guarding") then return end
+		if now-(self.lastDodgeGuess or -10)<(Config.DodgeCooldown or .8) then return end
+		local dir=self.inputDir or Vector3.zero
+		dir=Vector3.new(dir.X,0,dir.Z)
+		if dir.Magnitude<.1 then dir=if root then root.CFrame.RightVector else Vector3.xAxis end
+		self.lastDodgeGuess=now
+		self.movePrediction={kind="Dodge",at=now,dir=dir.Unit,distance=DODGE_DISTANCE*(def and def.DashScale or 1),time=DODGE_TIME,serial=h.warpSerial}
+	elseif action=="Jump" or action=="PadJump" then
+		-- (a pad jump in a chase window is the chase: the server's call)
+		if h.airborne or h.state~="Neutral" or (h.pursuit or 0)>0 then return end
+		local move=Config.Movement or {}
+		local v0=(move.JumpVelocity or 58)*(def and def.JumpScale or 1)
+		self.movePrediction={kind="Jump",at=now,v0=v0,g=workspace.Gravity,time=.18}
+	end
+end
+-- The guessed velocity of the body now (nil when there is no live guess).
+function Presentation:movement(actor)
+	local g=self.movePrediction
+	if not g then return nil end
+	local t=os.clock()-g.at
+	if g.kind=="Dodge" then
+		if actor.state=="Dodging" then g.confirmed=true end
+		if t>g.time or (not g.confirmed and (t>.16 or actor.reaction)) then self.movePrediction=nil;return nil end
+		local k=t/g.time
+		return g.dir*(g.distance*2*(1-k)/g.time)
+	elseif g.kind=="Jump" then
+		if actor.airborne then g.confirmed=true end
+		if t>g.time or actor.reaction then self.movePrediction=nil;return nil end
+		return Vector3.new(0,g.v0-g.g*t,0)
+	end
+	return nil
+end
 function Presentation:predictStrike(action,data)
 	local h=data and data.human
 	if not h or h.airborne or h.reaction or h.wall or h.groundPose or (h.health or 1)<=0 then return end
@@ -154,6 +230,13 @@ function Presentation:predictStrike(action,data)
 	if guess then self.prediction={name=guess,at=os.clock(),serial=h.attackSerial or 0} end
 end
 function Presentation:applyPrediction(actor,now)
+	local g=self.movePrediction
+	if g and g.kind=="Dodge" and not g.confirmed and actor.state~="Dodging" and now-g.at<=.16 then
+		-- The dodge's body from the press (the server's Dodging follows).
+		local v=table.clone(actor)
+		v.state="Dodging";v.velocity=g.dir*35;v.dodge=math.max(0,g.time-(now-g.at))
+		return v
+	end
 	local p=self.prediction
 	if not p then return actor end
 	if (actor.attackSerial or 0)~=p.serial then
@@ -337,7 +420,7 @@ function Presentation:update(data,dt)
   -- right. Normal presentation never snaps the skeleton.
   self.epoch=data.epoch
   table.clear(self.clocks);table.clear(self.last);table.clear(self.smooth);table.clear(self.landings)
-  self.lead=nil;self.prediction=nil
+  self.lead=nil;self.prediction=nil;self.movePrediction=nil
   self.smears={}
   if players.LocalPlayer.Character then Motion.reset(players.LocalPlayer.Character) end
   if self.botModel then Motion.reset(self.botModel) end

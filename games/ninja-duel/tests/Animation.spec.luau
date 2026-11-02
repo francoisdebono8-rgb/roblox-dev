@@ -809,4 +809,47 @@ test("the move list's own clips: Kakashi's tanto cuts when drawn, everyone's air
   "GentleFist.ByakuganSight.Channel","GentleFist.ByakuganSight.Release"} do assert(clips[name],name.." is missing") end
 end)
 
+test("É7, the player's own body: drawn on the present (not 45 ms behind), a dodge and a jump move it at the press",function()
+ local P=H.load("Client/Presentation")
+ local p=P.new and setmetatable({smooth={},clocks={},last={}},{__index=P}) or nil
+ -- The track: the newest packet, then frames without one. The opponent is
+ -- drawn 45 ms behind; the player's own body at (or a little past) the newest.
+ local function feed(key,x0,x1)
+  p.smooth[key]=nil
+  P.smoothRoot(p,key,H.C.new(x0,3,0),1/60,0)
+  local t=os.clock();repeat until os.clock()-t>.02
+  return P.smoothRoot(p,key,H.C.new(x1,3,0),1/60,0).Position.X
+ end
+ local mine,theirs=feed("human",0,10),feed("bot",0,10)
+ assert(mine>=9.99,string.format("the player's own body is drawn behind its newest position (%.2f)",mine))
+ assert(theirs<9.9,"the opponent is no longer interpolated")
+ -- A dodge pressed: the body moves on the first frame, along the stick.
+ p.smooth={};p.lead=nil;p.inputDir=V.new(1,0,0)
+ local data={human={state="Neutral",fighterId="Lion",health=100,warpSerial=0},bot={}}
+ P.predictMove(p,"Dodge",data)
+ assert(p.movePrediction and p.movePrediction.kind=="Dodge","no dodge guessed at the press")
+ local v=P.movement(p,data.human)
+ assert(v and v.X>40,"the guessed dodge does not move ("..tostring(v)..")")
+ local drawn=H.C.new(0,3,0)
+ local out=drawn
+ for _=1,4 do out=P.leadLocal(p,data.human,drawn,1/60) end
+ assert(out.Position.X>1,string.format("four frames after the press the body has moved %.2f studs",out.Position.X))
+ -- Refused by the server (no Dodging within 0.16 s): the guess is dropped.
+ p.movePrediction.at-=.2
+ assert(P.movement(p,data.human)==nil,"a dodge the server never ran is still guessed")
+ -- A pose too: the guessed dodge is drawn as a dodge.
+ P.predictMove(p,"Dodge",{human={state="Neutral",fighterId="Lion",health=100}})
+ assert(p.movePrediction==nil,"a second dodge inside the cooldown was guessed")
+ p.lastDodgeGuess=-10
+ P.predictMove(p,"Dodge",data)
+ assert(P.applyPrediction(p,data.human,os.clock()).state=="Dodging","the guessed dodge is not drawn as a dodge")
+ -- A jump: up at once; not in a chase window (the pad jump is the chase there).
+ p.movePrediction=nil
+ P.predictMove(p,"Jump",data)
+ assert(p.movePrediction and P.movement(p,data.human).Y>30,"the jump does not rise at the press")
+ p.movePrediction=nil
+ P.predictMove(p,"PadJump",{human={state="Neutral",fighterId="Lion",health=100,pursuit=.4}})
+ assert(p.movePrediction==nil,"a pad jump in a chase window was guessed as a jump")
+end)
+
 print(string.format("NinjaDuel animation presentation: %d PASS",passed))

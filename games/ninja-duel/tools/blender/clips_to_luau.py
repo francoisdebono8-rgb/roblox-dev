@@ -146,6 +146,57 @@ def destep(c):
     return fixed
 
 
+def _slerp(a, b, k):
+    d = sum(x * y for x, y in zip(a, b))
+    if d < 0:
+        b = [-x for x in b]
+        d = -d
+    if d > .9995:
+        return _qnorm([x + (y - x) * k for x, y in zip(a, b)])
+    th = math.acos(min(1.0, d))
+    s = math.sin(th)
+    return [(math.sin((1 - k) * th) * x + math.sin(k * th) * y) / s for x, y in zip(a, b)]
+
+
+def _vel(a, b):
+    """Angular velocity a -> b as a rotation vector (radians)."""
+    q = _qmul(b, _qinv(a))
+    if q[3] < 0:
+        q = [-x for x in q]
+    axis, ang = _axis_angle(q)
+    return [axis[0] * ang, axis[1] * ang, axis[2] * ang]
+
+
+# (É7, the 02/11 Sasuke tests) Ankles baked by the foot IK come out with
+# back-and-forth jitter (Light3's left ankle: 47, 38, 25, 10, 36, 63 deg...):
+# a frame where an ankle turns one way by more than JITTER deg and turns back
+# by more than JITTER deg on the next is put back between its neighbours. A
+# fast turn that goes one way (a foot pointed for a kick) is left alone.
+JITTER = 14
+
+
+def ankle_jitter(c):
+    fixed = 0
+    for joint, rows in c["joints"].items():
+        if "Ankle" not in joint:
+            continue
+        for _ in range(3):
+            q = _quat_rows(joint, rows)
+            hit = 0
+            for i in range(1, len(q) - 1):
+                v1, v2 = _vel(q[i - 1], q[i]), _vel(q[i], q[i + 1])
+                m1 = math.degrees(math.sqrt(sum(x * x for x in v1)))
+                m2 = math.degrees(math.sqrt(sum(x * x for x in v2)))
+                if m1 > JITTER and m2 > JITTER and sum(x * y for x, y in zip(v1, v2)) < 0:
+                    rows[i] = _set_quat(joint, rows[i], _slerp(q[i - 1], q[i + 1], .5))
+                    q[i] = _quat_rows(joint, [rows[i]])[0]
+                    hit += 1
+            fixed += hit
+            if not hit:
+                break
+    return fixed
+
+
 def clip_lines(name, c):
     markers = ",".join("%s=%s" % (k, fmt(v)) for k, v in sorted(c["markers"].items()))
     meta = ",".join("%s=%s" % (k, fmt(v)) for k, v in sorted(c.get("meta", {}).items()) if isinstance(v, (int, float)))
@@ -164,11 +215,12 @@ def main(out, inputs):
     clips = {}
     for p in inputs:
         clips.update(json.load(open(p)))
-    held = stepped = 0
+    held = stepped = jitter = 0
     for c in (clips.values() if not os.environ.get('ND_NO_FILM') else []):
+        jitter += ankle_jitter(c)
         held += moving_holds(c)
         stepped += destep(c)
-    print("film pass:", held, "dead holds made moving,", stepped, "stepped loop joints eased")
+    print("film pass:", held, "dead holds made moving,", stepped, "stepped loop joints eased,", jitter, "ankle jitters smoothed")
     folder, base = os.path.dirname(out), os.path.basename(out)[:-5]
     for f in os.listdir(folder):
         if f.startswith(base) and f[len(base):-5].isdigit() and f.endswith(".luau"):

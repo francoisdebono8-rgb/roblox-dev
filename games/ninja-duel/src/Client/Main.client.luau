@@ -56,6 +56,7 @@ local function send(action,extra)
 	end
 	remote:FireServer(payload)
 	if current.phase=="Duel" and (action=="Attack" or action=="Heavy") then presentation:predictStrike(action,current) end
+	if current.phase=="Duel" and (action=="Dodge" or action=="Jump" or action=="PadJump") then presentation:predictMove(action,current) end
 end
 ui=UI.new(player:WaitForChild("PlayerGui"),send)
 -- Debug/QA places only: the Studio dev panel (F6, DevClient). While it is open
