@@ -4471,7 +4471,7 @@ return {
       <Item class="StringValue" referent="ND26">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">85abae38b7c10537b3a17da3f025104b984f9bb27089e5ba3a3fb152d67b2ac6</string>
+          <string name="Value">9639982655720aae86af288701047d1d2dc1840149cd3e2df20f457579ed5527</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND27">
@@ -40415,6 +40415,7 @@ local Smear=require(script.Parent.MotionSmear)
 local Shared=game:GetService("ReplicatedStorage").NinjaDuel
 local Fighters=require(Shared.Fighters)
 local Config=require(Shared.Config)
+local Attacks=require(Shared.Attacks)
 local Presentation={};Presentation.__index=Presentation
 local LOCOMOTION_POSE_SPEED=26
 function Presentation.new()
@@ -40526,6 +40527,8 @@ function Presentation:leadLocal(actor,drawn,dt)
 		want=Vector3.new(guess.X,0,guess.Z)
 		st.v=want
 		st.vy=guess.Y
+		local g=self.movePrediction
+		if g then g.covered=(g.covered or 0)+want.Magnitude*dt end
 	elseif free then
 		local dir=self.inputDir or Vector3.zero
 		dir=Vector3.new(dir.X,0,dir.Z)
@@ -40617,6 +40620,14 @@ function Presentation:movement(actor)
 		if t&gt;g.time or (not g.confirmed and (t&gt;.16 or actor.reaction)) then self.movePrediction=nil;return nil end
 		local k=t/g.time
 		return g.dir*(g.distance*2*(1-k)/g.time)
+	elseif g.kind=="Strike" then
+		if actor.attackName==g.name and (actor.state=="Startup" or actor.state=="Active") then g.confirmed=true end
+		if t&gt;g.time or actor.reaction or (not g.confirmed and t&gt;.16) then self.movePrediction=nil;return nil end
+		-- Combat's drive: .32 + 1.18 sin(pi p) of the full step; stopped at the reach.
+		local done=g.covered or 0
+		local speed=g.full*(.32+1.18*math.sin(math.clamp(t/g.time,0,1)*math.pi))/g.time
+		if done&gt;=g.distance then return Vector3.zero end
+		return g.dir*speed
 	elseif g.kind=="Jump" then
 		if actor.airborne then g.confirmed=true end
 		if t&gt;g.time or actor.reaction then self.movePrediction=nil;return nil end
@@ -40632,7 +40643,24 @@ function Presentation:predictStrike(action,data)
 		if h.state=="Neutral" then guess="Heavy" end
 	elseif h.state=="Neutral" then guess="Light1"
 	elseif h.state=="Recovery" and h.attackName and nextLight(h.attackName,h.fighterId) then guess=nextLight(h.attackName,h.fighterId) end
-	if guess then self.prediction={name=guess,at=os.clock(),serial=h.attackSerial or 0} end
+	if guess then
+		self.prediction={name=guess,at=os.clock(),serial=h.attackSerial or 0}
+		-- (É7) its step-in too: the body closes on the opponent from the press,
+		-- on the server's own drive curve, stopping at the strike's reach.
+		local spec=Attacks[guess]
+		local me,them=self:visualRoot("human"),self:visualRoot("bot")
+		if spec and me and them and (spec.travel or 0)&gt;0 then
+			local prof=Fighters[h.fighterId] and Fighters[h.fighterId].AttackProfile
+			prof=prof and (prof[guess] or prof[spec.clip or ""]) or {}
+			local to=Vector3.new(them.X-me.X,0,them.Z-me.Z)
+			local room=to.Magnitude-(prof.contact or spec.contact or 3.6)
+			local travel=math.min(spec.travel*(prof.travel or 1),math.max(0,room))
+			local time=spec.startup*(prof.startup or 1)+spec.active*(prof.active or 1)
+			if travel&gt;.2 and to.Magnitude&lt;11 and time&gt;0 then
+				self.movePrediction={kind="Strike",name=guess,at=os.clock(),dir=to.Unit,distance=travel,full=spec.travel*(prof.travel or 1),time=time}
+			end
+		end
+	end
 end
 function Presentation:applyPrediction(actor,now)
 	local g=self.movePrediction

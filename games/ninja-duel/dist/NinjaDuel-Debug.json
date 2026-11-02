@@ -1,7 +1,7 @@
 {
   "version": "0.13.0-arena-combo",
   "artifact": "NinjaDuel-Debug.rbxlx",
-  "sha256": "5a682734535122ed83270342fe17041dd9e2ad033f26ae141635d1d52b24215e",
+  "sha256": "f24af41bf83dbe042e65b048a1f60dc6b89fdd4d78b1b21b37dd92c4b3116046",
   "sources": {
     "src/Client/AuthoredClips.luau": "d748c22ae9fa394c9918123816c03d4e21e1f7064830b37c14b54922c5262cd7",
     "src/Client/AuthoredClips1.luau": "bcd9bbaf71c82da03ee726a346ba958037258bc9c795bc1676c2f44e5adc8668",
@@ -64,7 +64,7 @@
     "src/Client/Main.client.luau": "0bfe79cc25860c37f5afddfbc688d817d2ef92e312127013f52768243d65c3f8",
     "src/Client/MotionSmear.luau": "e17fac23382063789300efe7f7b8dbfce3f07e6052d3e60c26ee6877ce5bb01e",
     "src/Client/NarutoFX.luau": "c37b04701dc6f1582491d7d279ad7cc96b4fb3e9df8916d21e16c82cf164591b",
-    "src/Client/Presentation.luau": "dd39bf1b895e43df8ccf8557e747da85ccb52892d0882c4068456a02c8e73d6e",
+    "src/Client/Presentation.luau": "3ff4ebe327d8f9bcc11834727e268e66afd0ffb67f6cbd298a66050a729edc60",
     "src/Client/SandFX.luau": "a5f0d04be57628eab9a94bf064b1bbb2e14acccb7bdf463c974b95328a64173a",
     "src/Client/UI.luau": "b5cce20695d8438c4a8354cbddf4448ec90c154852ef169c9d245368e78e444e",
     "src/Client/UltimateFX.luau": "3da697d392feba0e647867fa9bb89c75c4fe292238a62ff904d6f34cfa050937",
@@ -170,7 +170,7 @@
   },
   "sourceEquality": "PASS",
   "debugOnly": true,
-  "buildFingerprint": "313f262e51b26f400d8b4255268a807b425ef14d0c5a45a19d11b123074950ae",
+  "buildFingerprint": "9a55dc784b441b62c82ccb934979080d4bf5e28356c1f2467832c8eb5f74de0b",
   "donorAssets": {
     "assets/BanglaAssets.rbxmx": "6e99f5f67e6c34ac8a81d739431554b1495f0f5cd1dd1870a39eeb8bf23e1983"
   },
@@ -226,7 +226,7 @@
       },
       "tests/Animation.spec.luau": {
         "exit": 0,
-        "summary": "NinjaDuel animation presentation: 27 PASS"
+        "summary": "NinjaDuel animation presentation: 28 PASS"
       },
       "tests/Branches.spec.luau": {
         "exit": 0,

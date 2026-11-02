@@ -852,4 +852,22 @@ test("É7, the player's own body: drawn on the present (not 45 ms behind), a dod
  assert(p.movePrediction==nil,"a pad jump in a chase window was guessed as a jump")
 end)
 
+test("É7: a light pressed in reach steps the body in at once, never past the strike's reach",function()
+ local P=H.load("Client/Presentation")
+ local p=setmetatable({smooth={human={pos=V.new(0,3,0)},bot={pos=V.new(0,3,-8)}},clocks={},last={}},{__index=P})
+ local data={human={state="Neutral",fighterId="Lion",health=100,attackSerial=0},bot={}}
+ P.predictStrike(p,"Attack",data)
+ assert(p.prediction and p.prediction.name=="Light1","no light guessed")
+ assert(p.movePrediction and p.movePrediction.kind=="Strike","the step-in is not guessed")
+ local out
+ for _=1,20 do out=P.leadLocal(p,data.human,H.C.new(0,3,0),1/60) end
+ local moved=-out.Position.Z
+ assert(moved>.5,string.format("the body did not step in (%.2f)",moved))
+ assert(moved<8-3,"the step-in ran into the opponent")
+ -- Up close: nothing to close.
+ p.smooth.bot.pos=V.new(0,3,-3.5);p.movePrediction=nil;p.lead=nil
+ P.predictStrike(p,"Attack",data)
+ assert(p.movePrediction==nil,"a step-in guessed with no room")
+end)
+
 print(string.format("NinjaDuel animation presentation: %d PASS",passed))
