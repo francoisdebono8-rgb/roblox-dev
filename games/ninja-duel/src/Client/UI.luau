@@ -176,7 +176,10 @@ function UI.new(parent,send)
 		local glow=frame(tablet,UDim2.fromOffset(0,0),UDim2.new(0,6,1,0),accent,0)
 		local label=text(tablet,string.upper(def.Name),UDim2.fromOffset(12,0),UDim2.fromOffset(W-16,H),22,palette.paper,TITLE_FONT,Enum.TextXAlignment.Center)
 		label.TextScaled=true;create("UITextSizeConstraint",label,{MaxTextSize=22})
-		local seal=text(shell,"",UDim2.fromOffset(x+W/2-30,y-20),UDim2.fromOffset(60,16),13,palette.paper,TITLE_FONT,Enum.TextXAlignment.Center)
+		-- The pick's tag sits on the plate's top edge (above it, it covered the
+		-- row above when a second-row plate was picked).
+		local seal=text(shell,"",UDim2.fromOffset(x+W-52,y-7),UDim2.fromOffset(48,14),12,palette.paper,TITLE_FONT,Enum.TextXAlignment.Center)
+		seal.ZIndex=3
 		seal.BackgroundColor3=palette.red;seal.BackgroundTransparency=1;corner(seal,4)
 		tablet.Activated:Connect(function() self:pick(self.side,id) end)
 		local t={tablet=tablet,edge=edge,glow=glow,label=label,seal=seal,other=seal,accent=accent,x=x,y=y,w=W,hover=false}
@@ -617,7 +620,7 @@ function UI:liftTablet(t)
 	local rise=if t.mine or t.theirs then 10 elseif t.hover then 6 else 0
 	local ok=pcall(function()
 		Tween:Create(t.tablet,TweenInfo.new(.16,Enum.EasingStyle.Quad,Enum.EasingDirection.Out),{Position=UDim2.fromOffset(t.x,t.y-rise)}):Play()
-		Tween:Create(t.seal,TweenInfo.new(.16,Enum.EasingStyle.Quad,Enum.EasingDirection.Out),{Position=UDim2.fromOffset(t.x+t.w/2-30,t.y-20-rise)}):Play()
+		Tween:Create(t.seal,TweenInfo.new(.16,Enum.EasingStyle.Quad,Enum.EasingDirection.Out),{Position=UDim2.fromOffset(t.x+t.w-52,t.y-7-rise)}):Play()
 	end)
 	if not ok then t.tablet.Position=UDim2.fromOffset(t.x,t.y-rise) end
 	t.glow.Size=UDim2.new(0,if t.mine or t.theirs then 10 elseif t.hover then 8 else 6,1,0)
