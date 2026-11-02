@@ -1,7 +1,7 @@
 {
   "version": "0.13.0-arena-combo",
   "artifact": "NinjaDuel-QA.rbxlx",
-  "sha256": "76eee71832fd8f79292ce3b4bd7fe6599d6844092a22444dd17f1f0ace8b75f8",
+  "sha256": "5eedf57b7ca0aa6f3f2e13a8d77793c928a732255def595b4ef4eaf056a5a369",
   "sources": {
     "src/Client/ArenaDress.luau": "bd92aa3bf3c37a36fd9d2b1f02971921d9c5e981788abe9594a098425bf3cb0e",
     "src/Client/AuthoredClips.luau": "d748c22ae9fa394c9918123816c03d4e21e1f7064830b37c14b54922c5262cd7",
@@ -51,7 +51,7 @@
     "src/Client/BodyViews.luau": "3c8dbbea28619bee77fd2366efc8dab78ea6dee91748f1dafdf144d0ea13d0e3",
     "src/Client/Camera.luau": "f90f14f70478b006ec174fe0b9f4f8fb71251a924ce5346e3dc034e2db89ec99",
     "src/Client/ChakraFX.luau": "0cc9da988f6086c1148af14474d736bd47c5c30b6f75c37259ad5bec47f736c5",
-    "src/Client/ChakraFlowFX.luau": "91ccaa45c4a6543e0bd9614e9cedbc70659a310710a2acf3cbeafb1da064681f",
+    "src/Client/ChakraFlowFX.luau": "2ebc852e5c99b6a5d240f9a9700ed57f9c2beee9375823d16b6fde4aed84a9b0",
     "src/Client/CombatDebug.client.luau": "c0cfc3752e4f6c4290f35c652466db38c2e916876b25f03697880562fb44d3ab",
     "src/Client/DevClient.luau": "a484255cf99c06abfa290a7e69d3b0e18c6b75c380c6c73bfbb0e6001bc2e2bf",
     "src/Client/DevVolumes.luau": "1b557735b22d3dde87a14d9b8adcba8374012f2204916e66d7ad65aff52e007f",
@@ -177,7 +177,7 @@
   },
   "sourceEquality": "PASS",
   "debugOnly": true,
-  "buildFingerprint": "752bb0b58b06ff46d4f1fd079783ed853a51604c641935599dc1e5fff3511463",
+  "buildFingerprint": "e7024918e28aa7599229592ac52c51e9346e671df11af5eabdc846eb876cfead",
   "donorAssets": {
     "assets/BanglaAssets.rbxmx": "6e99f5f67e6c34ac8a81d739431554b1495f0f5cd1dd1870a39eeb8bf23e1983"
   },

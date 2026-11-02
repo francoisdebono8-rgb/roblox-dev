@@ -38,8 +38,9 @@ local function aura(st,model,nature)
 	local at=K.new("Attachment",{Name="ChakraFlowAura",Position=Vector3.new(0,-.4,0)},root)
 	local rise=particles(at,{Name="Rise",Texture=K.TEX.fire,Rate=60,Lifetime=NumberRange.new(.35,.6),Speed=NumberRange.new(5,9),
 		SpreadAngle=Vector2.new(18,18),EmissionDirection=Enum.NormalId.Top,Acceleration=Vector3.new(0,6,0),
-		Color=K.seq({{0,CORE},{.3,color},{1,color}}),LightEmission=1,Size=K.num({{0,1.4},{.5,1.9},{1,.3}}),
-		Transparency=K.num({{0,.35},{.6,.55},{1,1}}),Shape=Enum.ParticleEmitterShape.Box,ShapeStyle=Enum.ParticleEmitterShapeStyle.Volume,
+		Color=K.seq({{0,CORE},{.3,color},{1,color}}),LightEmission=1,Size=K.num({{0,1.1},{.5,1.5},{1,.3}}),
+		-- (Look pass 2) Thinner: the body and its colours stay readable inside.
+		Transparency=K.num({{0,.55},{.6,.7},{1,1}}),Shape=Enum.ParticleEmitterShape.Box,ShapeStyle=Enum.ParticleEmitterShapeStyle.Volume,
 		ShapePartial=1,Drag=1})
 	pcall(function() rise.ShapeInOut=Enum.ParticleEmitterShapeInOut.Outward end)
 	local spark=if nature=="Lightning" then particles(at,{Name="Arc",Texture=K.TEX.spark,Rate=24,Lifetime=NumberRange.new(.08,.16),Speed=NumberRange.new(8,16),
