@@ -58,11 +58,11 @@ function MenuStage.new()
 		local outer=if side=="player" then -1 else 1
 		local slot={side=side,outer=outer,x=-outer*6}
 		slot.key,slot.keyAnchor=light(folder,"SpotLight",CFrame.new(O),
-			{Brightness=3,Range=28,Angle=45,Color=Color3.fromRGB(255,236,214),Shadows=true,Face=Enum.NormalId.Front})
+			{Brightness=3.6,Range=28,Angle=45,Color=Color3.fromRGB(255,236,214),Shadows=true,Face=Enum.NormalId.Front})
 		slot.rim,slot.rimAnchor=light(folder,"SpotLight",CFrame.new(O),
-			{Brightness=10,Range=16,Angle=70,Color=Color3.new(1,1,1),Shadows=false,Face=Enum.NormalId.Front})
+			{Brightness=5,Range=14,Angle=42,Color=Color3.new(1,1,1),Shadows=false,Face=Enum.NormalId.Front})
 		slot.fill,slot.fillAnchor=light(folder,"PointLight",CFrame.new(O),{Brightness=.3,Range=10,Color=Color3.fromRGB(150,140,160),Shadows=false})
-		slot.glow,slot.glowAnchor=light(folder,"PointLight",CFrame.new(O),{Brightness=1.6,Range=10,Color=Color3.new(1,1,1),Shadows=false})
+		slot.glow,slot.glowAnchor=light(folder,"PointLight",CFrame.new(O),{Brightness=.8,Range=7,Color=Color3.new(1,1,1),Shadows=false})
 		self.slots[side]=slot
 		self:placeLights(slot)
 	end
@@ -131,8 +131,8 @@ function MenuStage:show(side,source,accent,animate)
 			if t>=1 then slot.moving=false;connection:Disconnect() end
 		end)
 		-- The back light flares, then settles.
-		slot.rim.Brightness=22
-		TweenService:Create(slot.rim,TweenInfo.new(.45,Enum.EasingStyle.Quad,Enum.EasingDirection.Out),{Brightness=10}):Play()
+		slot.rim.Brightness=14
+		TweenService:Create(slot.rim,TweenInfo.new(.45,Enum.EasingStyle.Quad,Enum.EasingDirection.Out),{Brightness=5}):Play()
 	else
 		model:PivotTo(final)
 	end
@@ -156,7 +156,7 @@ end
 -- Idle life: the back lights breathe out of step, the stroke shimmers.
 function MenuStage:step(t)
 	for side,slot in self.slots do
-		if not slot.moving then slot.glow.Brightness=1.6+.5*math.sin(t*1.3+(if side=="bot" then 1.6 else 0)) end
+		if not slot.moving then slot.glow.Brightness=.8+.3*math.sin(t*1.3+(if side=="bot" then 1.6 else 0)) end
 	end
 	self.band.Transparency=.1+.06*math.sin(t*.9)
 end
