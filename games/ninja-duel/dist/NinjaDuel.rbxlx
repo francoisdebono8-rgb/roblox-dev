@@ -4352,7 +4352,7 @@ return {
       <Item class="StringValue" referent="ND25">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">b3d42ef7801ac94c4e99a0551cefd9b5aa25d8cab3413e5868f272631f5ffb3d</string>
+          <string name="Value">63b2e5f60918e2c3a1a54e216218c1110540148a4ad96944ceb782cd2fa7e741</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND26">
@@ -39876,17 +39876,19 @@ function UI:buildControls(pad)
 			local label=text(body,entry[1],UDim2.fromOffset(x+162,row),UDim2.fromOffset(350,23),15,palette.text,BODY_FONT);label.ZIndex=43
 		end
 	end
-	-- The fighter in play: his strings and his jutsu.
+	-- The fighter in play (on the roster: the one picked): his strings, his jutsu.
 	local h=self.lastHuman
-	local def=h and Fighters[h.fighterId or ""]
+	local id=if self.selection.Visible or not h then self.player else h.fighterId
+	local def=Fighters[id or ""]
 	local y=410
 	local head=text(body,if def then string.upper(def.FullName or def.Name) else "YOUR FIGHTER",UDim2.fromOffset(0,y),UDim2.fromOffset(1048,28),24,palette.gold,TITLE_FONT);head.ZIndex=43
-	local combo=Controls.comboHelp(def and MoveGraphs[h.fighterId] or {},pad)
+	local combo=Controls.comboHelp(MoveGraphs[id or ""] or {},pad)
 	local strings=text(body,combo,UDim2.fromOffset(0,y+32),UDim2.fromOffset(1048,40),15,palette.text,BODY_FONT);strings.ZIndex=43
-	if h and h.techniques then
+	if def and def.Techniques then
 		local names={}
-		for i,tech in h.techniques do table.insert(names,(if pad then Controls.TechniquePad[i] else tostring(i)).."  "..string.upper(tech.name)) end
+		for i,spec in def.Techniques do if i&lt;=5 then table.insert(names,(if pad then Controls.TechniquePad[i] else tostring(i)).."  "..string.upper(spec.Name or spec.Id or "")) end end
 		local jutsu=text(body,table.concat(names,"     "),UDim2.fromOffset(0,y+78),UDim2.fromOffset(1048,22),15,palette.paper,TITLE_FONT);jutsu.ZIndex=43
+		jutsu.TextScaled=true;create("UITextSizeConstraint",jutsu,{MaxTextSize=15})
 	end
 	self.controlsClose.Text=(if pad then "START" else "TAB").." to close"
 end
