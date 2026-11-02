@@ -75,8 +75,11 @@ local IMPULSE={
  slam={.26,2.6},wall={.14,1.1},wallbounce={.2,2.0},clash={.12,1.6},walltech={.02,.4},pin={.02,.25},ember={.02,.35},palm={.015,.2},palmburst={.06,.9},flow={.03,.6},awaken={.12,2.4},groundbounce={.18,1.8},worldbreak={.2,2.2},chidori={.1,2.2},afterimage={0,0},deflect={.01,.2},repel={.1,1.3},rotation={.04,.9},trigram={0,0},
 }
 -- (Stage 6) an ultimate takes the lens for its sequence (Server/Ultimates:
--- the "ultimate" contact carries kind and time): a slow orbit round both
--- bodies, then it hands back where it is (no snap).
+-- the "ultimate" contact carries kind, time, and the frame of the catch).
+-- (Redone 02/11) Each sequence is filmed from its own shot list
+-- (Shared/UltimateScripts: cuts, framings that follow a body, the fov of
+-- each shot) instead of one orbit for all; it hands back where it stops.
+local Scripts=require(game:GetService("ReplicatedStorage").NinjaDuel.UltimateScripts)
 local CINEMA={
 	clones={dist=14,height=4,rate=.5,fov=58},lion={dist=16,height=1.5,rate=.7,fov=62,follow=true},pyramid={dist=22,height=12,rate=.25,fov=60},
 	lotus={dist=16,height=1.5,rate=.9,fov=62,follow=true},palms={dist=9,height=2.2,rate=.35,fov=48},tsukuyomi={dist=8,height=2,rate=.12,fov=42},
@@ -85,7 +88,10 @@ local CINEMA={
 Camera.CINEMA=CINEMA
 function Camera:cinema(impact,now)
 	local look=CINEMA[impact and impact.kind or ""] or CINEMA.clones
-	self.cinematic={from=now,untilT=now+((impact and impact.time) or 3.4),look=look,sign=if math.random()<.5 then 1 else -1}
+	local frame=nil
+	if impact and impact.origin and impact.line and Scripts.KINDS[impact.kind or ""] then frame=Scripts.frame(impact.origin,impact.line) end
+	self.cinematic={from=now,untilT=now+((impact and impact.time) or 3.4),look=look,sign=if math.random()<.5 then 1 else -1,
+		kind=impact and impact.kind,frame=frame,owner=impact and impact.owner,victim=impact and impact.victim}
 end
 function Camera:impulse(style,role,impact)
 	if style=="ultimate" then self:cinema(impact,os.clock())
@@ -317,6 +323,26 @@ function Camera:update(data,dt)
 		local look=cine.look
 		local mid=a:Lerp(target,.5)
 		local t=clock-cine.from
+		if cine.frame then
+			-- The script's shot at t: the bodies where they are drawn.
+			local frame=cine.frame
+			local casterIsHuman=cine.owner~=nil and cine.owner==data.human.id
+			local live={caster=frame.anchor(if casterIsHuman then a else target),victim=frame.anchor(if casterIsHuman then target else a)}
+			local eye,at,fov,index=Scripts.shot(cine.kind,t,function(name) return live[name] or live.victim end)
+			if eye then
+				local weye,wat=frame.world(eye),frame.world(at)
+				weye=Vector3.new(weye.X,math.max(weye.Y,frame.origin.Y-2.4),weye.Z)
+				if (wat-weye).Magnitude<.2 then wat=weye+frame.f end
+				local cf=CFrame.lookAt(weye,wat)*shake
+				-- The first shot eases in from the fight's lens; every later
+				-- cut is a cut (the script decides).
+				local ease=if index==1 then math.clamp(t/.25,0,1) else 1
+				camera.CFrame=(self.rigCF or camera.CFrame):Lerp(cf,ease)
+				camera.FieldOfView=if index==1 then camera.FieldOfView+(fov-camera.FieldOfView)*math.clamp(dt*10,0,1) else fov
+				if ease>=1 then self.rigCF=camera.CFrame end
+				return
+			end
+		end
 		local line=Vector3.new(target.X-a.X,0,target.Z-a.Z)
 		if line.Magnitude<.1 then line=Vector3.xAxis end
 		local base=math.atan2(line.Unit.X,line.Unit.Z)+math.pi/2

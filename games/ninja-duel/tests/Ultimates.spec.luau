@@ -59,30 +59,84 @@ test("caught: both bodies are held for the sequence, the ticks and the last blow
  end
 end)
 
-test("each fighter plays his own sequence: no two alike, nobody wired, Sasuke and Lee take it into the air, Minato flashes round",function()
+test("each fighter plays his own script: his own clip and the held body's, his own paths, nobody wired, no two alike",function()
+ local Scripts=Ultimates.Scripts
  local signatures={}
  for _,id in MAIN do
   local c,a,b=H.duel(id,"Mirage");place(c,a,b,4)
   b.health=999;a.ultimate=100
   assert(c:request(a,"Ultimate"))
   local u=Ultimates.def(a)
-  local moves,reactions,top,warps={},{},0,a.warpSerial or 0
-  local seen={}
-  for _=1,math.ceil((u.Startup+u.Time+.2)/.02) do
+  assert(a.ultClip==a.fighterId..".Ultimate",id..": the caster's clip did not start at the press ("..tostring(a.ultClip)..")")
+  local top,warps,start,moved,clones,bound=0,a.warpSerial or 0,nil,0,{},false
+  local samples={}
+  local steps=math.ceil((u.Startup+u.Time+.2)/.02)
+  for n=1,steps do
    H.step(c,.02)
-   if a.attackName and not seen[a.attackName] then seen[a.attackName]=true;table.insert(moves,a.attackName) end
-   if b.reaction and not seen["r"..b.reaction] then seen["r"..b.reaction]=true;table.insert(reactions,b.reaction) end
+   if b.ultimateHeld then
+    assert(b.ultClip=="Ult."..u.Kind..".Victim",id..": the held body plays "..tostring(b.ultClip))
+    start=start or a.root.Position
+    moved=math.max(moved,(a.root.Position-start).Magnitude)
+   end
+   if b.reaction=="Bound" then bound=true end
    top=math.max(top,b.root.Position.Y-3)
+   for _,body in c.bodies or {} do if body.alive and body.mode=="ult" then clones[body.id]=true end end
+   if n%10==0 and a.ultimateSeq then
+    local f=a.ultimateSeq.frame
+    local pa,pb=f.anchor(a.root.Position),f.anchor(b.root.Position)
+    table.insert(samples,string.format("%.0f,%.0f,%.0f/%.0f",pa.X,pa.Y,pa.Z,pb.Y))
+   end
   end
-  local sig=table.concat(moves,",").."|"..table.concat(reactions,",")
+  local sig=table.concat(samples,";")
   signatures[id]=sig
-  if id~="Sand" then assert(not seen.rBound,id..": the body was wired/bound ("..sig..")") end
-  if id=="Lion" or id=="Leaf" then assert(top>6,id..": the sequence stayed on the ground ("..string.format("%.1f",top)..")") end
+  assert(not bound,id..": the body was wired/bound")
+  if id=="Lion" or id=="Leaf" or id=="Legion" then assert(top>8,id..": the body never went up ("..string.format("%.1f",top)..")") end
   if id=="Flashstep" then assert((a.warpSerial or 0)-warps>=8,"Minato did not flash round the body") end
-  if id=="Mirage" then assert(#moves==0,"Itachi's Tsukuyomi threw blows ("..sig..")") end
-  print("   "..id..": "..sig)
+  if id=="Mirage" then assert(moved<.5,"Itachi moved in the Tsukuyomi ("..string.format("%.2f",moved)..")") end
+  if id=="Sand" then assert(moved<.5,"Gaara moved in his funeral") end
+  if id=="Legion" then
+   local n=0;for _ in clones do n+=1 end
+   assert(n>=10,"Naruto's clones were not real bodies ("..n..")")
+  end
+  -- After the sequence: the clips are given back.
+  H.step(c,.6)
+  assert(a.ultClip==nil and b.ultClip==nil,id..": a clip stayed on after the sequence")
+  print("   "..id..": "..#samples.." samples, top "..string.format("%.1f",top))
  end
- for x,sx in signatures do for y,sy in signatures do assert(x==y or sx~=sy,x.." and "..y.." play the same sequence ("..sx..")") end end
+ for x,sx in signatures do for y,sy in signatures do assert(x==y or sx~=sy,x.." and "..y.." follow the same paths") end end
+end)
+
+test("the scripts: every path starts at the catch, every blow inside the sequence, every shot cut in time order",function()
+ local Scripts=Ultimates.Scripts
+ for name,u in Ultimates.DEFS do
+  local s=Scripts.KINDS[u.Kind]
+  assert(s,name..": no script")
+  for _,path in {s.caster,s.victim} do
+   assert(path[1][1]==0,name..": a path does not start at the catch")
+   for i=2,#path do assert(path[i][1]>=path[i-1][1],name..": a path goes back in time at key "..i) end
+  end
+  for _,blow in s.blows do assert(blow[1]>0 and blow[1]<u.Time-.3,name..": a blow at "..blow[1].." is outside the sequence") end
+  for i=2,#s.shots do assert(s.shots[i][1]>s.shots[i-1][1],name..": shots out of order") end
+  assert(u.Blows==#s.blows)
+ end
+ -- The frame round trip.
+ local f=Scripts.frame(V.new(10,3,5),V.new(1,0,0))
+ local w=f.world(V.new(1,2,3))
+ assert((f.anchor(w)-V.new(1,2,3)).Magnitude<1e-4,"anchor/world do not agree")
+ assert(#Scripts.palmTimes()>=40,"Neji's palms are not a rain")
+end)
+
+test("the authored clips: one per caster from the press, one per held body from the catch, long enough",function()
+ local ok,clips=pcall(function() return H.load("Client/AuthoredClips") end)
+ assert(ok and clips,"no authored clips")
+ for _,id in MAIN do
+  local u=H.fighters[id] and Ultimates.DEFS[H.fighters[id].Name]
+  local caster=clips[id..".Ultimate"]
+  assert(caster,id..".Ultimate is missing")
+  assert(caster.length>=u.Startup+u.Time-.01,id..".Ultimate is too short ("..caster.length..")")
+  local victim=clips["Ult."..u.Kind..".Victim"]
+  assert(victim and victim.length>=u.Time-.01,"Ult."..u.Kind..".Victim is missing or short")
+ end
 end)
 
 test("missed: out of reach or dodged, the bar is gone and the caster is open",function()
@@ -117,16 +171,18 @@ test("Lee's gates open one by one inside the awakening; Kakashi's Sharingan only
  assert(H.fighters.Copycat.SharinganAwake==true,"Kakashi's Sharingan is not awake-only")
 end)
 
-test("client: every ultimate contact, the Tsukuyomi, a gate and the reveal draw without error",function()
+test("client: every ultimate contact and every cue of every script draws without error",function()
  local instance,restore=H.stubScene()
  local ok,err=pcall(function()
   local FX=H.load("Client/Effects")
   local UltimateFX=H.load("Client/UltimateFX")
+  local Scripts=Ultimates.Scripts
   local fx=FX.new()
   local folder=instance("Folder")
   for _,id in {"A","B"} do
    local m=instance("Model");m.Name=id;m.Parent=folder
    local p=instance("Part");p.Name="HumanoidRootPart";p.CFrame=H.C.new(0,3,if id=="A" then 2 else -2);p.Size=V.one;p.Parent=m
+   local hand=instance("Part");hand.Name="RightHand";hand.CFrame=H.C.new(.8,2.5,if id=="A" then 1.5 else -1.5);hand.Size=V.one;hand.Parent=m
   end
   local serial=0
   local function draw(impact)
@@ -135,14 +191,24 @@ test("client: every ultimate contact, the Tsukuyomi, a gate and the reveal draw 
    fx:impact(impact,folder)
    return #fx.folder:GetDescendants()>before
   end
-  for kind in UltimateFX.LOOK do
+  for kind,spec in Scripts.KINDS do
    assert(draw({style="ultimateStart",owner="A",kind=kind,name=kind}),kind..": the press drew nothing")
-   draw({style="ultimate",owner="A",victim="B",kind=kind,name=kind,time=3.4})
-   assert(draw({style="ultimateTick",owner="A",victim="B",kind=kind,index=3,heavy=true}),kind..": a blow drew nothing")
+   draw({style="ultimate",owner="A",victim="B",kind=kind,name=kind,time=3.4,origin=V.new(0,3,-2),line=V.new(0,0,-1)})
+   for i,blow in spec.blows do draw({style="ultimateTick",owner="A",victim="B",kind=kind,index=i,heavy=blow[2],text=blow[3]}) end
+   -- Every cue of the script, on a live context (the delays are Studio's).
+   local ctx=UltimateFX.context(fx,{kind=kind,owner="A",victim="B",time=3.4,origin=V.new(0,3,-2),line=V.new(0,0,-1),position=V.new(0,3,-2),serial=1},folder,UltimateFX.LOOK[kind])
+   fx.ultimateRun=ctx.token
+   for _,cue in spec.cues do
+    local name=cue[2]
+    if string.sub(name,1,5)~="text:" then
+     local fn=UltimateFX.CUE[name]
+     assert(fn,kind..": no drawing for the cue "..name)
+     fn(ctx)
+    end
+   end
    assert(draw({style="ultimateEnd",owner="A",victim="B",kind=kind}),kind..": the last blow drew nothing")
-   -- Each sequence's beat runs on its own (the loop is a task in Studio).
-   UltimateFX.BEAT[kind](fx,V.new(0,3,-2),UltimateFX.LOOK[kind],{NextNumber=function() return .5 end},2)
   end
+  assert(draw({style="ultimateKunai",owner="A",points={V.new(3,3,0),V.new(-3,3,0)}}),"Minato's kunai drew nothing")
   assert(draw({style="ultimateMiss",owner="A",kind="lion"}),"the miss drew nothing")
   assert(draw({style="tsukuyomi",owner="A",victim="B",time=1.5}),"the Tsukuyomi drew nothing")
   assert(draw({style="gate",owner="A",fighter="Leaf",gate=3}),"the gate drew nothing")
@@ -150,6 +216,17 @@ test("client: every ultimate contact, the Tsukuyomi, a gate and the reveal draw 
  end)
  restore()
  assert(ok,err)
+end)
+
+test("camera: every script's shot list resolves to a lens at every moment",function()
+ local Scripts=Ultimates.Scripts
+ for kind in Scripts.KINDS do
+  for t=0,4,.1 do
+   local eye,at,fov=Scripts.shot(kind,t,function(name) return if name=="caster" then V.new(0,0,-4) else V.new(0,2,0) end)
+   assert(eye and at and fov and fov>20 and fov<80,kind..": no lens at "..t)
+   assert((eye-at).Magnitude>.5,kind..": the eye sits on its target at "..t)
+  end
+ end
 end)
 
 print("NinjaDuel ultimates and awakenings: "..passed.." PASS (headless; the cinematics are a Studio check)")

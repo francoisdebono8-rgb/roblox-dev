@@ -3154,6 +3154,26 @@ function Motion.present(char,actor,clock,dt)
 		return "ko"
 	end
 	local memo=stateOf(char)
+	-- (Stage 6, redone 02/11) An ultimate's whole-sequence clip, caster or
+	-- held body, played on its own clock from the moment the server started
+	-- it (no feet planting: the server carries the root through the air).
+	if Authored and subject.ultClip and Authored.has(subject.ultClip) then
+		local serial=subject.ultSerial or 0
+		if memo.ultSerial~=serial or memo.ultClip~=subject.ultClip then
+			memo.ultSerial=serial;memo.ultClip=subject.ultClip
+			memo.ultAt=elapsedTime-math.clamp(subject.ultElapsed or 0,0,.25)
+		end
+		local t=elapsedTime-memo.ultAt
+		local length=Authored.length(subject.ultClip)
+		if t<length then
+			local targets=table.clone(Authored.sample(subject.ultClip,t))
+			mark(char,"ultimate",.06)
+			apply(char,targets,RATE.authored,dt)
+			return "ultimate"
+		end
+	else
+		memo.ultClip=nil
+	end
 	-- Studio: the dodge clock only restarted when the last *defense* state
 	-- differed, and nothing cleared it between dodges, so every dodge after the
 	-- first ran on the first one's clock (its push and its cartwheel already

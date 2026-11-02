@@ -204,6 +204,8 @@ function Matches:view(s,cursor,mine,theirs)
 			-- Presentation timing for throws, casts, teleports and variants:
 			-- elapsed values are measured on the server clock the client shares.
 			attackSerial=a.attackSerial or 0,attackVariant=a.attackVariant,armed=a.armed==true,ultimate=a.ultimate or 0,ultimateReady=Ultimates.ready(a),
+			-- (Stage 6) a whole-sequence clip (an ultimate's caster or held body).
+			ultClip=a.ultClip,ultSerial=a.ultSerial or 0,ultElapsed=if a.ultClip then now-(a.ultAt or now) else nil,
 			throwSerial=a.throwSerial or 0,throwKind=a.throwKind,throwElapsed=now-(a.throwStarted or -10),throwRelease=a.throwRelease or .1,
 			castId=a.castId,castElapsed=now-(a.castStarted or now),
 			-- A held technique gathering (0..1), for the body and the fire at the mouth.

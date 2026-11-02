@@ -13,6 +13,7 @@
 local Debris=game:GetService("Debris")
 
 local UltimateFX={}
+local Scripts=require(game:GetService("ReplicatedStorage").NinjaDuel.UltimateScripts)
 local K -- Effects' helpers, handed over by install()
 UltimateFX.clock=os.clock -- (headless tests drive time)
 
@@ -91,12 +92,10 @@ local function around(position,radius,rng)
 	return position+Vector3.new(math.cos(a)*radius,rng:NextNumber()*2-.5,math.sin(a)*radius)
 end
 
--- What each sequence draws round the held body while it plays (a beat every
--- ~0.16 s): Naruto's clones pouring in, Sasuke's lightning, the sand closing
--- into the pyramid, Lee's spin, Neji's palms, the red world, Minato's flashes,
--- Kakashi's white chakra blade.
--- A shadow clone: a copy of the caster's drawn body (its own colours) set
--- down round the held body, facing it, gone in a puff.
+-- (Redone 02/11) Each sequence draws its own moments, on its own timeline
+-- (Shared/UltimateScripts cues), round the bodies where they are drawn: no
+-- shared "beat" any more. A clone of the caster's drawn body (afterimages,
+-- Lee's ghosts) is copied part by part.
 local function copyBody(fx,model,cf,life)
 	if not model then return nil end
 	local root=model:FindFirstChild("HumanoidRootPart")
@@ -105,8 +104,6 @@ local function copyBody(fx,model,cf,life)
 	local base=root.CFrame
 	for _,d in model:GetDescendants() do
 		if d:IsA("BasePart") and d.Name~="HumanoidRootPart" and d.Transparency<.9 and d.Size.Magnitude<8 then
-			-- The part itself (a mesh keeps its mesh: hair, headband), without
-			-- its joints or scripts.
 			local ok,g=pcall(function() local was=d.Archivable;d.Archivable=true;local x=d:Clone();d.Archivable=was;return x end)
 			if ok and g then
 				for _,ch in g:GetChildren() do
@@ -122,123 +119,639 @@ local function copyBody(fx,model,cf,life)
 	return holder
 end
 UltimateFX.copyBody=copyBody
-local BEAT={
-	clones=function(fx,p,look,rng,k,caster)
-		-- Two more clones each beat, round the body, then a puff where they were.
-		for _=1,2 do
-			local spot=around(p,2.6+rng:NextNumber()*1.6,rng)
-			spot=Vector3.new(spot.X,p.Y,spot.Z)
-			-- Out of a puff 5 studs off, the clone lunges in to strike.
-			local from=p+(spot-p).Unit*5;from=Vector3.new(from.X,p.Y,from.Z)
-			local near=p+(spot-p).Unit*1.9;near=Vector3.new(near.X,p.Y,near.Z)
-			K.smokePuff(fx.folder,from,rgb(236,230,220),4,1.1)
-			local clone=copyBody(fx,caster,CFrame.lookAt(from,Vector3.new(p.X,p.Y,p.Z))*CFrame.Angles(math.rad(-12),0,0),.5)
-			if clone then
-				task.delay(.1,function() if clone.Parent then clone:PivotTo(CFrame.lookAt(near,Vector3.new(p.X,p.Y,p.Z))*CFrame.Angles(math.rad(-20),0,0)) end end)
-			end
-			task.delay(.45,function() K.smokePuff(fx.folder,near,rgb(236,230,220),5,1.2) end)
+-- An afterimage: the body as drawn now, in one flat colour, fading.
+local function ghost(fx,model,color,life)
+	local root=model and model:FindFirstChild("HumanoidRootPart")
+	if not root then return end
+	local g=copyBody(fx,model,root.CFrame,life+.05)
+	if not g then return end
+	for _,part in g:GetDescendants() do
+		if part:IsA("BasePart") then
+			part.Color=color;part.Material=Enum.Material.Neon;part.Transparency=.45
+			for _,d in part:GetChildren() do if d:IsA("Decal") then d:Destroy() end end
+			K.tween(part,life,{Transparency=1})
 		end
-		K.flash(fx.folder,around(p,1.2,rng),look.core,.4,2.4,.1,.35)
-	end,
-	lion=function(fx,p,look,rng,k)
-		if K.sparks then K.sparks(fx.folder,p+Vector3.new(0,rng:NextNumber()*2,0),look.core,8,22) end
-		K.flash(fx.folder,around(p,1.2,rng),look.edge,.3,2.2,.08,.3)
-	end,
-	pyramid=function(fx,p,look,rng,k)
-		local y=p.Y-2.6
-		local spot=around(Vector3.new(p.X,y,p.Z),2+rng:NextNumber()*3,rng)
-		local grain=K.block(fx.folder,Vector3.new(.9,.9,.9),CFrame.new(spot.X,y,spot.Z),look.core,Enum.Material.Sand)
-		grain.CanCollide=false;grain.Anchored=true
-		K.tween(grain,.35,{CFrame=CFrame.new(p+Vector3.new(0,.5,0)),Size=Vector3.new(.3,.3,.3)})
-		Debris:AddItem(grain,.4)
-		if k%3==0 then K.shockRing(fx.folder,Vector3.new(p.X,y+.1,p.Z),look.edge,3,9,.4) end
-	end,
-	lotus=function(fx,p,look,rng,k)
-		K.shockRing(fx.folder,p,look.core,1.5,6,.25)
-		K.smokePuff(fx.folder,p-Vector3.new(0,1.5,0),rgb(206,194,168),3,1)
-	end,
-	palms=function(fx,p,look,rng,k)
-		K.flash(fx.folder,around(p,.9,rng),look.edge,.25,1.6,.07,.25)
-		local open=fx.ultimateScreen
-		if open and open.sub then
-			local counts={2,4,8,16,32,64,128}
-			open.sub.Text=tostring(counts[math.min(#counts,1+math.floor(k/2))]).." PALMS"
-		end
-	end,
-	tsukuyomi=function(fx,p,look,rng,k)
-		if k%2==0 then K.shockRing(fx.folder,p,look.core,1,7,.5) end
-	end,
-	flash=function(fx,p,look,rng,k)
-		local from=around(p,6,rng)
-		K.flash(fx.folder,from,look.core,.5,3,.1,.25)
-		K.flash(fx.folder,around(p,1.2,rng),look.edge,.3,2,.08,.3)
-	end,
-	raikiri=function(fx,p,look,rng,k)
-		if K.sparks then K.sparks(fx.folder,p,look.edge,10,26) end
-		if k%2==0 then K.flash(fx.folder,p,look.core,.6,3.4,.1,.25) end
-	end,
-}
-UltimateFX.BEAT=BEAT
+	end
+end
+UltimateFX.ghost=ghost
 
-local function sequence(fx,impact,folder)
-	local look=lookOf(impact.kind)
-	local time=impact.time or 3.4
-	local victim=rootOf(modelFor(folder,impact.victim))
-	local caster=modelFor(folder,impact.owner)
-	UltimateFX.banner(fx,impact.name,look.core,time,if impact.kind=="palms" then "2 PALMS" else nil)
-	UltimateFX.grade(fx,look,time)
-	local beat=BEAT[impact.kind] or BEAT.clones
-	local rng=Random.new(impact.serial or 1)
-	local token={}
-	fx.ultimateRun=token
-	task.spawn(function()
-		local started=UltimateFX.clock()
-		local k=0
-		while UltimateFX.clock()-started<time and fx.ultimateRun==token do
-			k+=1
-			local p=(victim and victim.Parent and victim.Position) or impact.position
-			pcall(beat,fx,p,look,rng,k,caster)
-			task.wait(.16)
-		end
+local function screen(fx)
+	local gui=playerGui()
+	if not gui then return nil end
+	local s=gui:FindFirstChild("NinjaUltimateFX")
+	if not s then s=K.new("ScreenGui",{Name="NinjaUltimateFX",IgnoreGuiInset=true,ResetOnSpawn=false,DisplayOrder=41},gui) end
+	return s
+end
+-- A word on the screen (U! ZU! the palm count, the hours): it slams in big
+-- and settles, then goes.
+function UltimateFX.textPop(fx,text,color,size,hold)
+	local s=screen(fx)
+	if not s then return nil end
+	local label=K.new("TextLabel",{BackgroundTransparency=1,Size=UDim2.new(1,0,0,(size or 70)*1.4),AnchorPoint=Vector2.new(.5,.5),Position=UDim2.fromScale(.5,.38),
+		Font=Enum.Font.GothamBlack,Text=text,TextColor3=color,TextSize=(size or 70)*1.7,TextStrokeTransparency=0,TextStrokeColor3=Color3.new(),TextTransparency=0},s)
+	K.tween(label,.12,{TextSize=size or 70})
+	task.delay(hold or .5,function() if label.Parent then K.tween(label,.2,{TextTransparency=1,TextStrokeTransparency=1}) end end)
+	Debris:AddItem(label,(hold or .5)+.3)
+	return label
+end
+-- The impact frame: two frames of the world in black and white, hard
+-- contrast, a white flash on top (the anime's "frame" on a decisive blow).
+function UltimateFX.impactFrame(fx)
+	pcall(function()
+		local Lighting=game:GetService("Lighting")
+		local cc=K.new("ColorCorrectionEffect",{Name="NinjaImpactFrame",Saturation=-1,Contrast=2.4,Brightness=.08},Lighting)
+		task.delay(.05,function() if cc.Parent then cc.Contrast=-1.6;cc.Brightness=.25 end end)
+		task.delay(.1,function() if cc.Parent then cc:Destroy() end end)
 	end)
-	-- The pyramid closes at the end: a stepped pyramid of sand rises round
-	-- the body and crushes in.
-	if impact.kind=="pyramid" then
-		task.delay(math.max(0,time-1.1),function()
-			if fx.ultimateRun~=token then return end
-			local p=(victim and victim.Parent and victim.Position) or impact.position
-			local floor=p.Y-6
-			for k=0,4 do
-				local w=14-k*2.6
-				local step=K.block(fx.folder,Vector3.new(w,.1,w),CFrame.new(p.X,floor+k*2.2,p.Z)*CFrame.Angles(0,math.rad(45),0),look.core,Enum.Material.Sand)
-				step.Name="Pyramid"
-				task.delay(k*.08,function() if step.Parent then K.tween(step,.25,{Size=Vector3.new(w,2.2,w),CFrame=CFrame.new(p.X,floor+k*2.2+1.1,p.Z)*CFrame.Angles(0,math.rad(45),0)}) end end)
-				task.delay(.85,function() if step.Parent then K.tween(step,.3,{Size=Vector3.new(w*.4,2.2,w*.4),Transparency=1}) end end)
-				Debris:AddItem(step,1.3)
+	local s=screen(fx)
+	if s then
+		local white=K.new("Frame",{BackgroundColor3=Color3.new(1,1,1),BackgroundTransparency=.35,BorderSizePixel=0,Size=UDim2.fromScale(1,1)},s)
+		K.tween(white,.14,{BackgroundTransparency=1})
+		Debris:AddItem(white,.2)
+	end
+end
+-- A crater where a body is driven into the floor: a ring of thrown rock, the
+-- crack, the dust.
+function UltimateFX.crater(fx,p,color,size)
+	size=size or 1
+	local floor=Vector3.new(p.X,p.Y-2.9,p.Z)
+	K.shockRing(fx.folder,floor+Vector3.new(0,.15,0),color,2,18*size,.45)
+	K.smokePuff(fx.folder,floor+Vector3.new(0,.5,0),rgb(196,184,160),14,2.4*size)
+	local rng=Random.new(math.floor(p.X*7+p.Z*13))
+	for k=1,10 do
+		local a=k/10*math.pi*2+rng:NextNumber()*.4
+		local rock=K.block(fx.folder,Vector3.one*(.5+rng:NextNumber()*.9)*size,CFrame.new(floor+Vector3.new(math.cos(a)*1.6,.3,math.sin(a)*1.6))*CFrame.Angles(rng:NextNumber()*3,rng:NextNumber()*3,0),rgb(120,112,100),Enum.Material.Slate)
+		local out=floor+Vector3.new(math.cos(a)*(4+rng:NextNumber()*3)*size,.2,math.sin(a)*(4+rng:NextNumber()*3)*size)
+		K.tween(rock,.35,{CFrame=CFrame.new(out+Vector3.new(0,1.5,0))*CFrame.Angles(rng:NextNumber()*6,rng:NextNumber()*6,0)},Enum.EasingStyle.Quad,Enum.EasingDirection.Out)
+		task.delay(.35,function() if rock.Parent then K.tween(rock,.3,{CFrame=CFrame.new(out),Transparency=.2},Enum.EasingStyle.Quad,Enum.EasingDirection.In) end end)
+		task.delay(1.6,function() if rock.Parent then K.tween(rock,.4,{Transparency=1}) end end)
+		Debris:AddItem(rock,2.1)
+	end
+	-- the crack: a dark star of grooves
+	for k=1,7 do
+		local a=k/7*math.pi*2
+		local len=(3+k%3)*size
+		local c=K.block(fx.folder,Vector3.new(.25,.06,len),CFrame.new(floor+Vector3.new(math.cos(a)*len/2,.06,math.sin(a)*len/2))*CFrame.Angles(0,-a+math.pi/2,0),rgb(40,34,30),Enum.Material.Slate)
+		task.delay(2,function() if c.Parent then K.tween(c,.5,{Transparency=1}) end end)
+		Debris:AddItem(c,2.6)
+	end
+	K.sound(K.anchorPart(fx.folder,p),K.SOUND.boom,.8,.8)
+	K.sound(K.anchorPart(fx.folder,p),K.SOUND.debris,.6,1,1.2)
+end
+
+-- The sequence's context: the frame of the catch, the bodies as drawn.
+local function context(fx,impact,folder,look)
+	local victimModel=modelFor(folder,impact.victim)
+	local casterModel=modelFor(folder,impact.owner)
+	local ctx={fx=fx,impact=impact,look=look,kind=impact.kind,time=impact.time or 3.4,started=UltimateFX.clock(),
+		victimModel=victimModel,casterModel=casterModel,victim=rootOf(victimModel),caster=rootOf(casterModel),token={}}
+	ctx.frame=if impact.origin and impact.line then Scripts.frame(impact.origin,impact.line) else Scripts.frame(impact.position or Vector3.zero,Vector3.new(0,0,-1))
+	function ctx.vpos() return (ctx.victim and ctx.victim.Parent and ctx.victim.Position) or impact.position or ctx.frame.origin end
+	function ctx.cpos() return (ctx.caster and ctx.caster.Parent and ctx.caster.Position) or ctx.frame.origin-ctx.frame.f*4 end
+	function ctx.t() return UltimateFX.clock()-ctx.started end
+	function ctx.live() return fx.ultimateRun==ctx.token end
+	function ctx.floor(p) p=p or ctx.vpos();return Vector3.new(p.X,ctx.frame.origin.Y-2.9,p.Z) end
+	-- Run fn every frame until `untilT` (sequence time) or the end.
+	function ctx.loop(untilT,fn)
+		task.spawn(function()
+			while ctx.live() and ctx.t()<untilT do
+				local ok=pcall(fn,ctx.t())
+				if not ok then break end
+				task.wait()
 			end
 		end)
 	end
-	-- Sasuke's Chidori, Kakashi's Raikiri: the lightning in the hand.
-	if (impact.kind=="lion" or impact.kind=="raikiri") and caster then
-		UltimateFX.handCharge(fx,caster,look,if impact.kind=="lion" then .35 else 2.4,impact.kind=="raikiri")
+	function ctx.hand(model,side)
+		model=model or ctx.casterModel
+		return model and (model:FindFirstChild((side or "Right").."Hand") or model:FindFirstChild("HumanoidRootPart"))
 	end
-	-- Neji: the eight trigrams on the floor under both.
-	if impact.kind=="palms" and caster then
-		local root=caster:FindFirstChild("HumanoidRootPart")
-		local at=if root then root.Position:Lerp(impact.position,.5) else impact.position
-		UltimateFX.trigrams(fx,Vector3.new(at.X,at.Y-2.9,at.Z),look,time)
-	end
-	-- Itachi: a red moon over the world and the crows round the body.
-	if impact.kind=="tsukuyomi" then
-		local p=(victim and victim.Position) or impact.position
-		local moon=K.block(fx.folder,Vector3.new(30,30,30),CFrame.new(p+Vector3.new(0,60,-80)),rgb(180,10,20),Enum.Material.Neon)
-		moon.Shape=Enum.PartType.Ball;moon.Name="RedMoon";moon.Transparency=1
-		K.tween(moon,.4,{Transparency=.05})
-		task.delay(time-.4,function() if moon.Parent then K.tween(moon,.4,{Transparency=1}) end end)
-		Debris:AddItem(moon,time+.1)
-	end
-	K.sound(K.anchorPart(fx.folder,impact.position),K.SOUND.whoosh,.6,.7)
+	return ctx
 end
+
+-- ------------------------------------------------------------------- cues
+local CUE={}
+UltimateFX.CUE=CUE
+CUE.impactFrame=function(ctx) UltimateFX.impactFrame(ctx.fx) end
+CUE.crater=function(ctx) UltimateFX.crater(ctx.fx,ctx.vpos(),ctx.look.core,1.2) end
+
+-- Naruto -----------------------------------------------------------------
+CUE.punch=function(ctx)
+	local p=ctx.vpos()
+	K.flash(ctx.fx.folder,p+Vector3.new(0,.3,0),ctx.look.edge,.6,4,.12,.2)
+	K.shockRing(ctx.fx.folder,p,ctx.look.core,1,6,.25,ctx.frame.f)
+	K.sound(K.anchorPart(ctx.fx.folder,p),K.SOUND.punch,.7,.9)
+end
+CUE.sign=function(ctx)
+	-- The chakra pours out of him: an orange flare, the floor dust thrown out.
+	local p=ctx.cpos()
+	K.flash(ctx.fx.folder,p,ctx.look.core,2,9,.3,.3)
+	K.shockRing(ctx.fx.folder,ctx.floor(p)+Vector3.new(0,.2,0),ctx.look.core,2,22,.5)
+	K.smokePuff(ctx.fx.folder,ctx.floor(ctx.vpos())+Vector3.new(0,1,0),rgb(240,236,226),16,3)
+	K.sound(K.anchorPart(ctx.fx.folder,p),K.SOUND.whoosh,.7,.8)
+end
+
+-- Sasuke ---------------------------------------------------------------
+-- A groove torn in the floor behind a hand dragged low (the Chidori run,
+-- the Raikiri run), glowing then cooling.
+local function scar(ctx,model,untilT,color)
+	local last=nil
+	ctx.loop(untilT,function()
+		local hand=ctx.hand(model)
+		if not hand then return end
+		local at=ctx.floor(hand.Position)+Vector3.new(0,.08,0)
+		if last and (at-last).Magnitude>.8 then
+			local mid=(at+last)/2
+			local g=K.block(ctx.fx.folder,Vector3.new(.45,.12,(at-last).Magnitude+.2),CFrame.lookAt(mid,at),color,Enum.Material.Neon)
+			K.tween(g,1.4,{Color=rgb(40,40,50),Size=Vector3.new(.3,.06,(at-last).Magnitude+.2)})
+			task.delay(2.4,function() if g.Parent then K.tween(g,.5,{Transparency=1}) end end)
+			Debris:AddItem(g,3)
+			if K.sparks and math.random()<.5 then K.sparks(ctx.fx.folder,at,color,3,16) end
+			last=at
+		elseif not last then last=at end
+	end)
+end
+CUE.chidoriRun=function(ctx)
+	UltimateFX.handCharge(ctx.fx,ctx.casterModel,ctx.look,.8,false)
+	scar(ctx,ctx.casterModel,.4,ctx.look.core)
+	K.sound(K.anchorPart(ctx.fx.folder,ctx.cpos()),K.SOUND.electric,.8,1.1)
+end
+CUE.impale=function(ctx)
+	-- Through the body: a burst out of the back, the current running for a while.
+	local p=ctx.vpos()
+	K.flash(ctx.fx.folder,p+ctx.frame.f*.8,ctx.look.edge,1.2,7,.18,.1)
+	K.shockRing(ctx.fx.folder,p+ctx.frame.f*1.2,ctx.look.core,1,9,.3,ctx.frame.f)
+	if K.sparks then K.sparks(ctx.fx.folder,p+ctx.frame.f*1.2,ctx.look.core,20,40) end
+	local t0=ctx.t()
+	ctx.loop(t0+.45,function()
+		if K.sparks and math.random()<.35 then K.sparks(ctx.fx.folder,ctx.vpos()+Vector3.new(0,math.random()-.3,0),ctx.look.edge,4,22) end
+	end)
+	K.sound(K.anchorPart(ctx.fx.folder,p),K.SOUND.electric,.9,.85)
+	K.sound(K.anchorPart(ctx.fx.folder,p),K.SOUND.heavy,.6,.8)
+end
+CUE.throwUp=function(ctx)
+	local p=ctx.vpos()
+	K.shockRing(ctx.fx.folder,ctx.floor(p)+Vector3.new(0,.2,0),ctx.look.edge,2,14,.35)
+	K.smokePuff(ctx.fx.folder,ctx.floor(p)+Vector3.new(0,.6,0),rgb(200,190,170),8,1.8)
+	K.sound(K.anchorPart(ctx.fx.folder,p),K.SOUND.whooshBy,.6,.9)
+end
+CUE.airHit=function(ctx)
+	local p=ctx.vpos()
+	local d=(p-ctx.cpos())
+	d=if d.Magnitude>.1 then d.Unit else ctx.frame.f
+	K.shockRing(ctx.fx.folder,p,ctx.look.edge,1.5,10,.25,d)
+	K.flash(ctx.fx.folder,p,ctx.look.core,.6,4.5,.12,.2)
+end
+
+-- Gaara: one sand mass, start to end --------------------------------------
+-- ~110 grains that are never replaced: they pour out of the floor under him,
+-- run to the body, climb it, close round it into a cocoon (with its shell),
+-- rise with it on a column, tighten, crush, and fly apart. Each grain keeps
+-- an offset in the held body's space once it has reached it.
+local SAND=rgb(214,176,112)
+local SAND_DARK=rgb(170,132,82)
+local function sandMass(ctx)
+	local fx=ctx.fx
+	local rng=Random.new(ctx.impact.serial or 7)
+	local mass={grains={},phase="flood",scale=1,shellSize=0}
+	ctx.sand=mass
+	local from=ctx.floor(ctx.cpos())+ctx.frame.f*1.2
+	local N=110
+	for i=1,N do
+		local s=.45+rng:NextNumber()*.85
+		local g=K.block(fx.folder,Vector3.new(s,s*.8,s),CFrame.new(from),if i%3==0 then SAND_DARK else SAND,Enum.Material.Sand)
+		g.Name="SandGrain"
+		-- Its place on the body: a shell round it, low first (the legs), up to the head.
+		local h=(i/N)
+		local a=rng:NextNumber()*math.pi*2
+		local r=1.05+rng:NextNumber()*.45
+		local body=Vector3.new(math.cos(a)*r,-2.6+h*5.0,math.sin(a)*r*.8)
+		-- Where it waits on the floor first (a pool round the feet).
+		local pool=Vector3.new(math.cos(a)*(1.4+rng:NextNumber()*2.4),-2.75,math.sin(a)*(1.4+rng:NextNumber()*2.4))
+		mass.grains[i]={part=g,body=body,pool=pool,spin=CFrame.Angles(rng:NextNumber()*6,rng:NextNumber()*6,rng:NextNumber()*6),
+			delay=rng:NextNumber()*.55,arrive=nil,from=from+Vector3.new(rng:NextNumber()-.5,0,rng:NextNumber()-.5)}
+	end
+	-- The floor stain spreading under the body, the cocoon's shell, the column.
+	local stain=K.block(fx.folder,Vector3.new(.08,1,1),CFrame.new(ctx.floor(ctx.vpos())+Vector3.new(0,.05,0))*CFrame.Angles(0,0,math.rad(90)),SAND,Enum.Material.Sand)
+	stain.Shape=Enum.PartType.Cylinder;stain.Name="SandStain"
+	K.tween(stain,.8,{Size=Vector3.new(.08,9,9)})
+	local shell=K.block(fx.folder,Vector3.new(.1,.1,.1),CFrame.new(ctx.vpos()),SAND,Enum.Material.Sand)
+	shell.Shape=Enum.PartType.Ball;shell.Name="SandCocoon";shell.Transparency=1
+	local column=K.block(fx.folder,Vector3.new(.1,2.2,2.2),CFrame.new(ctx.floor()),SAND_DARK,Enum.Material.Sand)
+	column.Shape=Enum.PartType.Cylinder;column.Name="SandColumn";column.Transparency=1
+	mass.stain,mass.shell,mass.column=stain,shell,column
+	local t0=ctx.t()
+	ctx.loop(ctx.time+.5,function(t)
+		local v=ctx.victim
+		local vcf=if v and v.Parent then v.CFrame else CFrame.new(ctx.vpos())
+		local floorY=ctx.frame.origin.Y-2.9
+		for i,g in mass.grains do
+			local cf
+			if mass.phase=="flood" or (mass.phase=="grip" and g.body.Y>-1.2) then
+				-- run along the floor from his feet to the pool round the body
+				local k=math.clamp((t-t0-g.delay)/.45,0,1)
+				local to=Vector3.new(vcf.Position.X,0,vcf.Position.Z)+Vector3.new(g.pool.X,floorY+.3,g.pool.Z)
+				local p=g.from:Lerp(to,k*k*(3-2*k))+Vector3.new(0,math.sin(k*math.pi)*.6,0)
+				cf=CFrame.new(p)*g.spin
+			elseif mass.phase=="burst" then
+				cf=nil
+			else
+				-- on the body: from the pool up to its place on the shell
+				g.arrive=g.arrive or t
+				local k=math.clamp((t-g.arrive)/.35,0,1)
+				local place=vcf*(g.body*mass.scale)
+				local pool=Vector3.new(vcf.Position.X+g.pool.X,floorY+.3,vcf.Position.Z+g.pool.Z)
+				local p=pool:Lerp(place,k*k*(3-2*k))
+				if mass.phase=="tighten" then p+=Vector3.new(math.sin(t*60+i)*.06,0,math.cos(t*55+i)*.06) end
+				cf=CFrame.new(p)*g.spin
+			end
+			if cf then g.part.CFrame=cf end
+		end
+		if mass.shellSize>0 then
+			shell.CFrame=vcf
+			shell.Size=Vector3.new(2.5,5.4,2.5)*mass.shellSize*mass.scale
+		end
+		if mass.columnOn then
+			local top=vcf.Position.Y-2.6*mass.scale
+			local h=math.max(.2,top-floorY)
+			column.CFrame=CFrame.new(vcf.Position.X,floorY+h/2,vcf.Position.Z)*CFrame.Angles(0,0,math.rad(90))
+			column.Size=Vector3.new(h,2.4*mass.scale,2.4*mass.scale)
+		end
+	end)
+	return mass
+end
+CUE.sandFlood=function(ctx)
+	sandMass(ctx)
+	K.sound(K.anchorPart(ctx.fx.folder,ctx.cpos()),K.SOUND.whoosh,.6,.6)
+	K.smokePuff(ctx.fx.folder,ctx.floor(ctx.cpos())+Vector3.new(0,.4,0),SAND,6,1.6)
+end
+CUE.sandGrip=function(ctx)
+	local m=ctx.sand;if not m then return end
+	m.phase="grip"
+	K.smokePuff(ctx.fx.folder,ctx.floor()+Vector3.new(0,.5,0),SAND,8,1.6)
+	K.sound(K.anchorPart(ctx.fx.folder,ctx.vpos()),K.SOUND.debris,.5,1.3,.8)
+end
+CUE.sandCocoon=function(ctx)
+	local m=ctx.sand;if not m then return end
+	m.phase="cocoon"
+	m.shell.Transparency=0
+	-- the shell grows over the body once the grains are on it
+	task.spawn(function()
+		local s=UltimateFX.clock()
+		while ctx.live() and UltimateFX.clock()-s<.45 do m.shellSize=math.clamp((UltimateFX.clock()-s)/.45,0,1);task.wait() end
+		m.shellSize=1
+	end)
+end
+CUE.sandLift=function(ctx)
+	local m=ctx.sand;if not m then return end
+	m.columnOn=true;m.column.Transparency=0
+	K.shockRing(ctx.fx.folder,ctx.floor()+Vector3.new(0,.2,0),SAND,2,14,.4)
+	K.sound(K.anchorPart(ctx.fx.folder,ctx.vpos()),K.SOUND.debris,.6,.8,1)
+end
+CUE.sandTighten=function(ctx)
+	local m=ctx.sand;if not m then return end
+	m.phase="tighten"
+	task.spawn(function()
+		local s=UltimateFX.clock()
+		while ctx.live() and UltimateFX.clock()-s<.3 do m.scale=1-.12*math.clamp((UltimateFX.clock()-s)/.3,0,1);task.wait() end
+	end)
+end
+CUE.sandCrush=function(ctx)
+	local m=ctx.sand;if not m then return end
+	m.scale=.72
+	K.flash(ctx.fx.folder,ctx.vpos(),SAND,2,8,.2,.2)
+	K.shockRing(ctx.fx.folder,ctx.vpos(),SAND,2,12,.3)
+	UltimateFX.textPop(ctx.fx,"SABAKU SOSO",rgb(255,214,150),64,.8)
+	K.sound(K.anchorPart(ctx.fx.folder,ctx.vpos()),K.SOUND.boom,.7,1.2)
+end
+CUE.sandBurst=function(ctx)
+	local m=ctx.sand;if not m then return end
+	m.phase="burst"
+	local center=ctx.vpos()
+	local rng=Random.new(11)
+	for _,g in m.grains do
+		local d=g.part.Position-center
+		d=if d.Magnitude>.1 then d.Unit else Vector3.yAxis
+		local out=g.part.Position+d*(6+rng:NextNumber()*8)+Vector3.new(0,rng:NextNumber()*3,0)
+		K.tween(g.part,.5,{CFrame=CFrame.new(out)*g.spin,Transparency=1})
+		Debris:AddItem(g.part,.6)
+	end
+	K.tween(m.shell,.25,{Size=m.shell.Size*1.6,Transparency=1});Debris:AddItem(m.shell,.3)
+	K.tween(m.column,.5,{Transparency=1});Debris:AddItem(m.column,.55)
+	K.tween(m.stain,1.2,{Transparency=1});Debris:AddItem(m.stain,1.3)
+	K.smokePuff(ctx.fx.folder,center,SAND,22,3.4)
+	K.shockRing(ctx.fx.folder,center,SAND,3,26,.5)
+	K.sound(K.anchorPart(ctx.fx.folder,center),K.SOUND.boom,.9,.7)
+end
+
+-- Lee ----------------------------------------------------------------------
+CUE.gates=function(ctx)
+	local p=ctx.cpos()
+	for k=0,2 do
+		task.delay(k*.1,function()
+			K.shockRing(ctx.fx.folder,ctx.floor(p)+Vector3.new(0,.2,0),ctx.look.core,2,10+k*6,.35)
+			K.flash(ctx.fx.folder,p,ctx.look.edge,1.5,5+k*2,.15,.3)
+		end)
+	end
+	-- the floor breaks under him and the stones rise round him
+	local rng=Random.new(5)
+	for k=1,8 do
+		local a=k/8*math.pi*2
+		local at=ctx.floor(p)+Vector3.new(math.cos(a)*2.2,.2,math.sin(a)*2.2)
+		local rock=K.block(ctx.fx.folder,Vector3.one*(.4+rng:NextNumber()*.5),CFrame.new(at),rgb(130,120,104),Enum.Material.Slate)
+		K.tween(rock,.6,{CFrame=CFrame.new(at+Vector3.new(0,2+rng:NextNumber()*2,0))*CFrame.Angles(rng:NextNumber()*4,rng:NextNumber()*4,0)},Enum.EasingStyle.Sine)
+		task.delay(.7,function() if rock.Parent then K.tween(rock,.3,{CFrame=CFrame.new(at),Transparency=1},Enum.EasingStyle.Quad,Enum.EasingDirection.In) end end)
+		Debris:AddItem(rock,1.1)
+	end
+	UltimateFX.textPop(ctx.fx,"GATE OF LIMIT: OPEN",rgb(150,255,160),44,.6)
+	K.sound(K.anchorPart(ctx.fx.folder,p),K.SOUND.boom,.6,1.3)
+end
+CUE.airTrail=function(ctx)
+	-- he is everywhere: green afterimages of his body at every place he was
+	local last=0
+	ctx.loop(2.3,function(t)
+		if t-last>=.075 then last=t;ghost(ctx.fx,ctx.casterModel,ctx.look.core,.3) end
+	end)
+end
+CUE.bandage=function(ctx)
+	local fx=ctx.fx
+	local strip=K.block(fx.folder,Vector3.new(.2,.06,1),CFrame.new(ctx.cpos()),rgb(240,236,226),Enum.Material.Fabric)
+	strip.Name="Bandage"
+	local wraps={}
+	ctx.loop(3.12,function(t)
+		local hand=ctx.hand()
+		local from=if hand then hand.Position else ctx.cpos()
+		local to=ctx.vpos()
+		local d=to-from
+		if d.Magnitude>.1 then strip.Size=Vector3.new(.22,.06,d.Magnitude);strip.CFrame=CFrame.lookAt(from:Lerp(to,.5),to) end
+		if #wraps<5 and t>2.36+#wraps*.05 then
+			local w=K.block(fx.folder,Vector3.new(.25,2.3,2.3),CFrame.new(to),rgb(240,236,226),Enum.Material.Fabric)
+			w.Shape=Enum.PartType.Cylinder;w.Transparency=.15
+			table.insert(wraps,w)
+		end
+		for i,w in wraps do
+			w.CFrame=CFrame.new(to+Vector3.new(0,-1.6+i*.65,0))*CFrame.Angles(0,t*9+i,math.rad(90))
+			w.Size=Vector3.new(.25,1.9,1.9)
+		end
+	end)
+	task.delay(math.max(0,3.15-ctx.t()),function()
+		strip:Destroy()
+		for _,w in wraps do w:Destroy() end
+	end)
+end
+CUE.spin=function(ctx)
+	-- the fall: rings of wind spiral round the pair all the way down
+	ctx.loop(3.1,function(t)
+		if math.random()<.5 then
+			local p=ctx.vpos()
+			K.shockRing(ctx.fx.folder,p+Vector3.new(0,1,0),ctx.look.edge,2,6,.2)
+		end
+	end)
+	K.sound(K.anchorPart(ctx.fx.folder,ctx.vpos()),K.SOUND.whooshBy,.8,.7)
+end
+
+-- Neji -----------------------------------------------------------------
+CUE.trigrams=function(ctx)
+	local mid=ctx.cpos():Lerp(ctx.vpos(),.5)
+	UltimateFX.trigrams(ctx.fx,ctx.floor(mid)+Vector3.new(0,.06,0),ctx.look,ctx.time)
+	K.shockRing(ctx.fx.folder,ctx.floor(mid)+Vector3.new(0,.1,0),ctx.look.edge,2,18,.5)
+	K.sound(K.anchorPart(ctx.fx.folder,mid),K.SOUND.whoosh,.5,1.4)
+end
+CUE.palmRain=function(ctx)
+	-- every palm a point of light closing on the body; the points stay lit
+	local times=Scripts.palmTimes()
+	local i=1
+	local rng=Random.new(3)
+	local points={}
+	ctx.loop(3.0,function(t)
+		while times[i] and t>=times[i] do
+			local v=ctx.victim
+			if v then
+				local off=Vector3.new((rng:NextNumber()-.5)*1.4,(rng:NextNumber()-.3)*2.4,-.55)
+				local dot=K.block(ctx.fx.folder,Vector3.one*.22,v.CFrame*CFrame.new(off),ctx.look.edge,Enum.Material.Neon)
+				dot.Shape=Enum.PartType.Ball
+				table.insert(points,{part=dot,off=off})
+				K.flash(ctx.fx.folder,(v.CFrame*CFrame.new(off)).Position,ctx.look.edge,.3,1.8,.07,.2)
+				if i%3==0 then K.sound(K.anchorPart(ctx.fx.folder,v.Position),K.SOUND.hit,.25,1.2+(i%5)*.05) end
+			end
+			i+=1
+		end
+		local v=ctx.victim
+		if v then for _,pt in points do pt.part.CFrame=v.CFrame*CFrame.new(pt.off) end end
+	end)
+	task.delay(ctx.time,function() for _,pt in points do if pt.part.Parent then pt.part:Destroy() end end end)
+end
+CUE.silence=function(ctx)
+	-- a breath: the colour drains, the sound stops
+	pcall(function()
+		local Lighting=game:GetService("Lighting")
+		local cc=K.new("ColorCorrectionEffect",{Name="NinjaSilence",Saturation=-.9,Contrast=.3},Lighting)
+		task.delay(.32,function() if cc.Parent then cc:Destroy() end end)
+	end)
+end
+CUE.lastPalm=function(ctx)
+	local p=ctx.vpos()
+	K.shockRing(ctx.fx.folder,p,ctx.look.edge,2,16,.35,ctx.frame.f)
+	K.shockRing(ctx.fx.folder,p+ctx.frame.f*2,ctx.look.core,1,10,.3,ctx.frame.f)
+	K.flash(ctx.fx.folder,p,ctx.look.edge,1.4,7,.2,.1)
+	UltimateFX.textPop(ctx.fx,"HAKKE ROKUJUYON SHO",rgb(220,226,255),46,.8)
+	K.sound(K.anchorPart(ctx.fx.folder,p),K.SOUND.boom,.7,1.3)
+end
+
+-- Itachi -----------------------------------------------------------------
+CUE.eye=function(ctx)
+	-- the Mangekyo fills the screen for a moment
+	local s=screen(ctx.fx)
+	if s then
+		local eye=K.new("Frame",{BackgroundColor3=rgb(200,16,24),Size=UDim2.fromOffset(40,40),AnchorPoint=Vector2.new(.5,.5),Position=UDim2.fromScale(.5,.5),BorderSizePixel=0},s)
+		K.new("UICorner",{CornerRadius=UDim.new(1,0)},eye)
+		K.new("UIAspectRatioConstraint",{},eye)
+		local pupil=K.new("Frame",{BackgroundColor3=Color3.new(),Size=UDim2.fromScale(.24,.24),AnchorPoint=Vector2.new(.5,.5),Position=UDim2.fromScale(.5,.5),BorderSizePixel=0},eye)
+		K.new("UICorner",{CornerRadius=UDim.new(1,0)},pupil)
+		for k=0,2 do
+			local a=k*math.pi*2/3
+			local blade=K.new("Frame",{BackgroundColor3=Color3.new(),Size=UDim2.fromScale(.12,.42),AnchorPoint=Vector2.new(.5,1),
+				Position=UDim2.fromScale(.5,.5),Rotation=math.deg(a),BorderSizePixel=0},eye)
+			K.new("UICorner",{CornerRadius=UDim.new(1,0)},blade)
+		end
+		K.tween(eye,.35,{Size=UDim2.fromScale(.9,.9),Rotation=120},Enum.EasingStyle.Quint)
+		task.delay(.35,function() if eye.Parent then K.tween(eye,.15,{BackgroundTransparency=1});for _,d in eye:GetChildren() do if d:IsA("Frame") then K.tween(d,.15,{BackgroundTransparency=1}) end end end end)
+		Debris:AddItem(eye,.6)
+	end
+	K.sound(K.anchorPart(ctx.fx.folder,ctx.cpos()),K.SOUND.whoosh,.5,.5)
+end
+CUE.redWorld=function(ctx)
+	local p=ctx.vpos()
+	UltimateFX.grade(ctx.fx,UltimateFX.LOOK.tsukuyomi,3.0-ctx.t())
+	local moon=K.block(ctx.fx.folder,Vector3.new(34,34,34),CFrame.new(p+ctx.frame.f*90+Vector3.new(0,55,0)),rgb(190,10,20),Enum.Material.Neon)
+	moon.Shape=Enum.PartType.Ball;moon.Name="RedMoon";moon.Transparency=1
+	K.tween(moon,.4,{Transparency=0})
+	task.delay(2.9,function() if moon.Parent then moon:Destroy() end end)
+	-- the floor goes black under the body (a dark disc to the horizon)
+	local floor=K.block(ctx.fx.folder,Vector3.new(.1,120,120),CFrame.new(ctx.floor(p)+Vector3.new(0,.04,0))*CFrame.Angles(0,0,math.rad(90)),rgb(18,6,8),Enum.Material.SmoothPlastic)
+	floor.Shape=Enum.PartType.Cylinder;floor.Transparency=1;floor.Name="TsukuyomiFloor"
+	K.tween(floor,.3,{Transparency=.05})
+	task.delay(2.9,function() if floor.Parent then floor:Destroy() end end)
+end
+CUE.cross=function(ctx)
+	local p=ctx.vpos()
+	local back=ctx.frame.f*.75
+	local cf=CFrame.lookAt(ctx.floor(p)+back,ctx.floor(p)+back-ctx.frame.f)
+	local post=K.block(ctx.fx.folder,Vector3.new(.7,9,.5),cf*CFrame.new(0,4.5,0),rgb(30,18,18),Enum.Material.Wood)
+	local bar=K.block(ctx.fx.folder,Vector3.new(6,.6,.5),cf*CFrame.new(0,5.4,0),rgb(30,18,18),Enum.Material.Wood)
+	post.Name="TsukuyomiCross";bar.Name="TsukuyomiCross"
+	for _,x in {post,bar} do x.Transparency=1;K.tween(x,.25,{Transparency=0}) end
+	task.delay(math.max(0,3.3-ctx.t()),function() post:Destroy();bar:Destroy() end)
+end
+CUE.swords=function(ctx)
+	-- the swords, again: from every side into the body, held, gone
+	local p=ctx.vpos()
+	local rng=Random.new(math.floor(ctx.t()*100))
+	for k=1,6 do
+		local a=rng:NextNumber()*math.pi*2
+		local dir=Vector3.new(math.cos(a),(rng:NextNumber()-.3)*.6,math.sin(a)).Unit
+		local tip=p+Vector3.new(0,rng:NextNumber()*1.6-.4,0)
+		local blade=K.block(ctx.fx.folder,Vector3.new(.12,.3,3.6),CFrame.lookAt(tip+dir*5,tip),rgb(30,30,34),Enum.Material.Metal)
+		K.tween(blade,.08,{CFrame=CFrame.lookAt(tip+dir*1.4,tip)},Enum.EasingStyle.Linear)
+		task.delay(.35,function() if blade.Parent then K.tween(blade,.1,{Transparency=1}) end end)
+		Debris:AddItem(blade,.5)
+	end
+	K.flash(ctx.fx.folder,p,ctx.look.core,.8,4,.15,.3)
+	K.sound(K.anchorPart(ctx.fx.folder,p),K.SOUND.swish,.6,.8)
+end
+CUE.worldBack=function(ctx)
+	local g=ctx.fx.ultimateGrade
+	if g and g.Parent then g:Destroy() end
+	K.flash(ctx.fx.folder,ctx.vpos(),Color3.new(1,1,1),2,10,.15,.2)
+	for _,d in ctx.fx.folder:GetChildren() do if d.Name=="RedMoon" or d.Name=="TsukuyomiFloor" or d.Name=="TsukuyomiCross" then d:Destroy() end end
+end
+
+-- Minato -----------------------------------------------------------------
+UltimateFX.kunai=function(fx,from,to,look)
+	local k=K.block(fx.folder,Vector3.new(.16,.16,1.1),CFrame.lookAt(from,to),rgb(60,60,66),Enum.Material.Metal)
+	k.Name="FlashKunai"
+	local mark=K.block(fx.folder,Vector3.new(.06,.06,.5),CFrame.lookAt(from,to)*CFrame.new(0,0,.55),look.core,Enum.Material.Neon)
+	local stuck=CFrame.lookAt(to+Vector3.new(0,.4,0),to+Vector3.new(0,-1,0))
+	K.tween(k,.2,{CFrame=stuck},Enum.EasingStyle.Linear)
+	K.tween(mark,.2,{CFrame=stuck*CFrame.new(0,0,-.55)},Enum.EasingStyle.Linear)
+	task.delay(.22,function() if k.Parent then K.shockRing(fx.folder,to+Vector3.new(0,.1,0),look.core,.5,3,.3) end end)
+	Debris:AddItem(k,3.6);Debris:AddItem(mark,3.6)
+end
+CUE.kunaiFan=function(ctx)
+	K.sound(K.anchorPart(ctx.fx.folder,ctx.cpos()),K.SOUND.swish,.6,1.3)
+end
+CUE.timeStop=function(ctx)
+	-- time stops: the world grey; every place he appears leaves its yellow
+	-- streak hanging in the air until time starts again
+	pcall(function()
+		local Lighting=game:GetService("Lighting")
+		local cc=K.new("ColorCorrectionEffect",{Name="NinjaTimeStop",Saturation=-1,Contrast=.35,TintColor=rgb(230,236,255)},Lighting)
+		ctx.timeStop=cc
+		task.delay(math.max(0,2.95-ctx.t()),function() if cc.Parent then cc:Destroy() end end)
+	end)
+	K.shockRing(ctx.fx.folder,ctx.vpos(),ctx.look.edge,1,30,.4)
+	local streaks={}
+	ctx.streaks=streaks
+	local last=ctx.cpos()
+	ctx.loop(2.9,function()
+		local now=ctx.cpos()
+		if (now-last).Magnitude>2 then
+			local s=K.block(ctx.fx.folder,Vector3.new(.3,.3,(now-last).Magnitude),CFrame.lookAt(last:Lerp(now,.5),now),ctx.look.core,Enum.Material.Neon)
+			s.Transparency=.1;table.insert(streaks,s)
+			local cut=K.block(ctx.fx.folder,Vector3.new(.08,2.4,.08),CFrame.new(ctx.vpos())*CFrame.Angles(math.random()*3,math.random()*3,math.random()*3),Color3.new(1,1,1),Enum.Material.Neon)
+			cut.Transparency=.2;table.insert(streaks,cut)
+		end
+		last=now
+	end)
+	K.sound(K.anchorPart(ctx.fx.folder,ctx.vpos()),K.SOUND.whoosh,.7,.4)
+end
+CUE.timeStart=function(ctx)
+	if ctx.timeStop and ctx.timeStop.Parent then ctx.timeStop:Destroy() end
+	for _,s in ctx.streaks or {} do
+		if s.Parent then K.tween(s,.25,{Transparency=1,Size=s.Size*Vector3.new(.2,.2,1)});Debris:AddItem(s,.3) end
+	end
+	for _,d in ctx.fx.folder:GetChildren() do if d.Name=="FlashKunai" then K.tween(d,.2,{Transparency=1}) end end
+end
+CUE.cutsLand=function(ctx)
+	local p=ctx.vpos()
+	for k=1,8 do
+		local cut=K.block(ctx.fx.folder,Vector3.new(.1,4,.1),CFrame.new(p)*CFrame.Angles(k*.7,k*1.3,k*.4),ctx.look.edge,Enum.Material.Neon)
+		K.tween(cut,.25,{Size=Vector3.new(.02,5,.02),Transparency=1})
+		Debris:AddItem(cut,.3)
+	end
+	K.flash(ctx.fx.folder,p,ctx.look.core,1.5,8,.2,.1)
+	K.sound(K.anchorPart(ctx.fx.folder,p),K.SOUND.swish,.9,1.1)
+	K.sound(K.anchorPart(ctx.fx.folder,p),K.SOUND.heavy,.6,1)
+end
+
+-- Kakashi --------------------------------------------------------------
+CUE.hounds=function(ctx)
+	-- Kuchiyose: eight hounds burst out of the floor and pin the body
+	local p=ctx.vpos()
+	local rng=Random.new(9)
+	local hounds={}
+	for k=0,7 do
+		local a=k/8*math.pi*2+.2
+		local spot=ctx.floor(p)+Vector3.new(math.cos(a)*1.5,0,math.sin(a)*1.5)
+		local look=CFrame.lookAt(spot,Vector3.new(p.X,spot.Y,p.Z))
+		local dog=K.new("Model",{Name="Hound"},ctx.fx.folder)
+		local tone=if k%3==0 then rgb(120,96,70) else rgb(70,70,80)
+		local body=K.block(dog,Vector3.new(.9,.9,1.8),look*CFrame.new(0,-1.4,0),tone,Enum.Material.SmoothPlastic)
+		local head=K.block(dog,Vector3.new(.7,.7,.8),look*CFrame.new(0,-1.1,-1.1),tone,Enum.Material.SmoothPlastic)
+		local band=K.block(dog,Vector3.new(.72,.2,.82),look*CFrame.new(0,-.85,-1.1),rgb(40,50,90),Enum.Material.Fabric)
+		local up=CFrame.new(0,1.4+rng:NextNumber()*.4,0)
+		K.tween(body,.15,{CFrame=up*body.CFrame});K.tween(head,.15,{CFrame=up*head.CFrame});K.tween(band,.15,{CFrame=up*band.CFrame})
+		K.smokePuff(ctx.fx.folder,spot+Vector3.new(0,.5,0),rgb(196,184,160),3,1)
+		table.insert(hounds,dog)
+	end
+	task.delay(math.max(0,2.42-ctx.t()),function()
+		for _,dog in hounds do
+			local c=dog:GetPivot().Position
+			K.smokePuff(ctx.fx.folder,c,rgb(236,236,240),3,1)
+			dog:Destroy()
+		end
+	end)
+	K.sound(K.anchorPart(ctx.fx.folder,p),K.SOUND.debris,.6,1.1,.8)
+end
+CUE.raikiriCharge=function(ctx)
+	UltimateFX.handCharge(ctx.fx,ctx.casterModel,ctx.look,2.2,true)
+	ctx.loop(2.45,function()
+		if math.random()<.3 then
+			local hand=ctx.hand()
+			if hand and K.sparks then K.sparks(ctx.fx.folder,hand.Position,ctx.look.edge,4,26) end
+			if hand and math.random()<.3 then K.shockRing(ctx.fx.folder,ctx.floor(hand.Position)+Vector3.new(0,.1,0),ctx.look.core,1,5,.2) end
+		end
+	end)
+	K.sound(K.anchorPart(ctx.fx.folder,ctx.cpos()),K.SOUND.electric,.9,.7)
+end
+CUE.raikiriRun=function(ctx)
+	scar(ctx,ctx.casterModel,2.45,ctx.look.edge)
+	K.sound(K.anchorPart(ctx.fx.folder,ctx.cpos()),K.SOUND.electric,.9,1.2)
+end
+
+local function sequence(fx,impact,folder)
+	local look=lookOf(impact.kind)
+	local ctx=context(fx,impact,folder,look)
+	fx.ultimateRun=ctx.token
+	UltimateFX.banner(fx,impact.name,look.core,ctx.time)
+	-- the world's grade, unless the sequence changes the world itself
+	if impact.kind~="tsukuyomi" and impact.kind~="flash" then UltimateFX.grade(fx,look,ctx.time) end
+	local spec=Scripts.KINDS[impact.kind or ""]
+	for _,cue in (spec and spec.cues) or {} do
+		local t,name=cue[1],cue[2]
+		local function run()
+			if not ctx.live() then return end
+			if string.sub(name,1,5)=="text:" then UltimateFX.textPop(fx,string.sub(name,6),look.edge,42,.9);return end
+			local fn=CUE[name]
+			if fn then pcall(fn,ctx) end
+		end
+		if t<=0 then run() else task.delay(t,run) end
+	end
+	fx.ultimateCtx=ctx
+	K.sound(K.anchorPart(fx.folder,impact.position),K.SOUND.whoosh,.6,.7)
+	return ctx
+end
+UltimateFX.sequence=sequence
+UltimateFX.context=context
 
 -- A ball of lightning held in the caster's right hand for `time` seconds
 -- (white and long for the Raikiri).
@@ -288,13 +801,28 @@ local function impact(fx,impact,folder)
 		sequence(fx,impact,folder)
 		return true
 	elseif style=="ultimateTick" then
+		-- A blow of the sequence: its own sound per fighter, the heavy ones
+		-- louder, and the words that go with it (U! ZU! MA! KI!, the count).
 		local look=lookOf(impact.kind)
-		K.flash(fx.folder,p,look.edge,.4,if impact.heavy then 3.2 else 2,.08,.25)
-		K.sound(K.anchorPart(fx.folder,p),K.SOUND.hit,.35,1+((impact.index or 0)%4)*.06)
+		local quiet=impact.kind=="tsukuyomi" or impact.kind=="palms" or impact.kind=="pyramid"
+		if not quiet then K.flash(fx.folder,p,look.edge,.4,if impact.heavy then 3.6 else 2.2,.08,.25) end
+		local SND={clones=K.SOUND.punch,lion=K.SOUND.electric,pyramid=K.SOUND.debris,lotus=K.SOUND.punch,palms=K.SOUND.hit,tsukuyomi=K.SOUND.swish,flash=K.SOUND.swish,raikiri=K.SOUND.electric}
+		K.sound(K.anchorPart(fx.folder,p),SND[impact.kind or ""] or K.SOUND.hit,if impact.heavy then .7 else .4,1+((impact.index or 0)%4)*.06,.6)
+		if impact.heavy then K.sound(K.anchorPart(fx.folder,p),K.SOUND.heavy,.55,.9) end
+		if impact.text and impact.kind~="pyramid" then
+			local big=impact.kind=="clones" and #impact.text<=2
+			UltimateFX.textPop(fx,impact.text..(if big then "!" else ""),if impact.kind=="tsukuyomi" then rgb(255,60,60) else look.edge,if big then 110 else 54,if big then .32 else .55)
+		end
+		return true
+	elseif style=="ultimateKunai" then
+		local caster=rootOf(modelFor(folder,impact.owner))
+		local from=if caster then caster.Position else p
+		for i,point in impact.points or {} do task.delay((i-1)*.02,function() UltimateFX.kunai(fx,from,point,UltimateFX.LOOK.flash) end) end
 		return true
 	elseif style=="ultimateEnd" then
 		local look=lookOf(impact.kind)
-		fx.ultimateRun=nil
+		-- (the sequence's own cues keep running to its end: a burst, a crater)
+		task.delay(.35,function() if fx.ultimateCtx and fx.ultimateCtx.kind==impact.kind then fx.ultimateRun=nil end end)
 		K.flash(fx.folder,p,look.core,1.2,9,.25,.15)
 		K.shockRing(fx.folder,p-Vector3.new(0,2.4,0),look.core,3,18,.5)
 		K.smokePuff(fx.folder,p-Vector3.new(0,2.4,0),rgb(206,194,168),12,2)
