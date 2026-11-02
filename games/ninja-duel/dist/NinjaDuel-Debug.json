@@ -1,8 +1,9 @@
 {
   "version": "0.13.0-arena-combo",
   "artifact": "NinjaDuel-Debug.rbxlx",
-  "sha256": "46e097f4e09c1600b345169ac4af106e0d4dcb250f3255a9548d59620099e6cc",
+  "sha256": "aeeddfe86b3abbb3a019395d9d75a8233cffdba2ee86567633f4346765402ce4",
   "sources": {
+    "src/Client/ArenaDress.luau": "aac49c0cbaa325c7c8aee3dd51a927af7529203ec4261cb87349dfd4cc3f163e",
     "src/Client/AuthoredClips.luau": "d748c22ae9fa394c9918123816c03d4e21e1f7064830b37c14b54922c5262cd7",
     "src/Client/AuthoredClips1.luau": "5eecd2ba2731e7024840df82db22363ee725ce4aecfe55f672799a151244c9a3",
     "src/Client/AuthoredClips10.luau": "79b78f53e00be429f35312b98bd917777440d4e090a837d2c93682d42a955b0f",
@@ -68,7 +69,7 @@
     "src/Client/Presentation.luau": "a5600929e304aaec326cdf4c92b145f494e9aaa26d3d22e29f8c82333dddf7d1",
     "src/Client/SandFX.luau": "a5f0d04be57628eab9a94bf064b1bbb2e14acccb7bdf463c974b95328a64173a",
     "src/Client/TutorialProbe.luau": "82cc9b42c73a46f97d265fd86a3582d0d3a58c6a2b7caad8296926f64adfa1da",
-    "src/Client/UI.luau": "7ce30cbdb8b4d15ea24e3501e432821a2220076517b0a897c3b9fff8ececcce8",
+    "src/Client/UI.luau": "209b850bdbc3363b0cd89c5f85296e879d906c326adc84c46819edf100f78991",
     "src/Client/UltimateFX.luau": "3da697d392feba0e647867fa9bb89c75c4fe292238a62ff904d6f34cfa050937",
     "src/Client/VelmoraHitFeedback.luau": "2c3b4264fda43e189301ccc3431a79ecc76d6c5af526d7f4aa94752d03f192b6",
     "src/Client/VelmoraMotionEngine.luau": "cf6dc62110fde7672e72aa990552b5996e2da0234d81d3a21cfd5aa41687638f",
@@ -81,7 +82,7 @@
     "src/Client/Wave3Motion.luau": "5010f78fd7b83577f08323fd5f25d33ef7b3bb9a5b27e669ba419c35b5eb793c",
     "src/Client/Wave4FX.luau": "c1e221d9e1a447a47ad1ce8156f033eeeca952819e4ef8d6c4ff169542a51e3d",
     "src/Client/Wave4Motion.luau": "dbaa24f6396ab4ffafc7a0e0ac021154f94150ae70a76a2e67b645673c6c1fad",
-    "src/Client/WorldLook.luau": "f6823780e711d193bffd4746da08112a93ab17e4fddeb688464c0758dc4302c3",
+    "src/Client/WorldLook.luau": "75b49f864ff863d2db4cd585efc15af44788401606aeadee28ce86b3e367a7bc",
     "src/Server/AI.luau": "907e2b5b5a3232bd81892daf7140a8a41918005619d8bd4d51febb1cf3ffa156",
     "src/Server/Animation.luau": "fefda60e04e9246a262dcbc1b0d21e8eaa5206e2ba5d4790472939561a62cf89",
     "src/Server/ArenaMeshData.luau": "5bf21bfa9aec5954c73fdd397fd883847a5a434123a9d14f95cf28e89e47e47e",
@@ -147,7 +148,7 @@
     "src/Server/Wave2Kit.luau": "49dff3ee2e1dfb21a45904eca78f067a50a024d808145a18532797e30d5749b6",
     "src/Server/Wave3Kit.luau": "9fa83afb7d16647a1edeb80ab462019eecea113c6304797e8f6629b92f58881a",
     "src/Server/Wave4Kit.luau": "14b41f6af66e84734b44ab9f5370abfea7947a717bf2eb283c805bb96f13c7ba",
-    "src/Server/World.luau": "f5bddc510c03f7e80088cef51cd8d4e32c37e4cb652ab80559a59f11be2946e2",
+    "src/Server/World.luau": "bf2cdd69378da97b4bffa4dd47cea9d95ab7ee9048b148c262faba4e537143b2",
     "src/Server/WorldReaction.luau": "88e17f15e777402cd2a21796177836438e47c3bdc63bf2137d17148c3f653c60",
     "src/Server/Zones.luau": "cf6fc363aa57424ae1bcb243586e7bda5547f1c68601901115a71c34c95434b2",
     "src/Shared/ActionContext.luau": "418ae3e8b7f00e429be31b41164c80fc9a9da5839fa9bac4f1da5311c1e8dd2f",
@@ -175,7 +176,7 @@
   },
   "sourceEquality": "PASS",
   "debugOnly": true,
-  "buildFingerprint": "28abd1f1de443fd0531a44c469deee9fafc7ab9dccaa313e4959a138a0cb0178",
+  "buildFingerprint": "fbca4d16bd0f62fe7221671a25be1a0da131c1f508a4ac2477939bda7abc25fc",
   "donorAssets": {
     "assets/BanglaAssets.rbxmx": "6e99f5f67e6c34ac8a81d739431554b1495f0f5cd1dd1870a39eeb8bf23e1983"
   },
