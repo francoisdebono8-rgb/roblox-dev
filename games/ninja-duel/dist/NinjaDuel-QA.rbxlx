@@ -4471,7 +4471,7 @@ return {
       <Item class="StringValue" referent="ND26">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">1848f09837b25c3726f3800e61c424da8219f2e2017bac287d58b3193c7d6eb4</string>
+          <string name="Value">1ac633cfadcef9fccaa53629641a6c19a7cdd8f2b1f66d4750103d4047e59f36</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND27">
@@ -42551,6 +42551,9 @@ function UI.new(parent,send)
 	self.stages={player=stage("player"),bot=stage("bot")}
 	self.opponentLabel=self.stages.bot.tagText
 	-- VS, and the matchup line under it.
+	-- A vermilion copy a few pixels behind gives the VS depth.
+	local vsShadow=text(shell,"VS",UDim2.fromOffset(808,308),UDim2.fromOffset(240,150),128,palette.red,TITLE_FONT,Enum.TextXAlignment.Center)
+	vsShadow.AnchorPoint=Vector2.new(.5,.5);vsShadow.Rotation=-9
 	local vs=text(shell,"VS",UDim2.fromOffset(800,300),UDim2.fromOffset(240,150),128,palette.paper,TITLE_FONT,Enum.TextXAlignment.Center)
 	local vsScale=create("UIScale",vs,{Scale=1})
 	vs.AnchorPoint=Vector2.new(.5,.5);vs.Rotation=-9
@@ -42568,6 +42571,8 @@ function UI.new(parent,send)
 			if not self.selection.Visible then return end
 			local t=os.clock()
 			vsScale.Scale=1+.035*math.sin(t*2.2)
+			-- The stage button's edge breathes: the next thing to press.
+			if self.startStroke then self.startStroke.Transparency=.15+.5*(.5+.5*math.sin(t*3)) end
 			if self.menuStage then
 				local view=workspace.CurrentCamera.ViewportSize
 				if view~=lastView then lastView=view;self.menuStage:layout() end
@@ -42618,7 +42623,7 @@ function UI.new(parent,send)
 		if self.picking then send("Confirm") else send("Start",{player=self.player,bot=self.bot}) end
 	end,palette.red)
 	self.startButton.TextSize=32
-	create("UIStroke",self.startButton,{Color=palette.paper,Thickness=2,Transparency=.2,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
+	self.startStroke=create("UIStroke",self.startButton,{Color=palette.paper,Thickness=2.5,Transparency=.2,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
 	self.tutorialButton=button(shell,"TRAINING",UDim2.fromOffset(60,below),UDim2.fromOffset(230,58),function()
 		if self.picking then send("Cancel") else send("Tutorial",{player=self.player,bot=self.bot}) end
 	end)
@@ -42757,10 +42762,11 @@ function UI.new(parent,send)
 	self.hp=plate("left")
 	self.enemy=plate("right")
 	self.round=text(self.hud,"ROUND 1",UDim2.new(.5,-120,0,22),UDim2.fromOffset(240,30),26,palette.paper,TITLE_FONT,Enum.TextXAlignment.Center)
-	self.roundSub=text(self.hud,"PRODIGY TOURNAMENT",UDim2.new(.5,-120,0,50),UDim2.fromOffset(240,16),13,palette.paper,BODY_FONT,Enum.TextXAlignment.Center)
+	self.roundSub=text(self.hud,"PRODIGY TOURNAMENT",UDim2.new(.5,-120,0,55),UDim2.fromOffset(240,16),13,palette.paper,BODY_FONT,Enum.TextXAlignment.Center)
 	-- (UI pass 02/11) Over the sky and the wall the grey subtitle disappeared.
 	create("UIStroke",self.roundSub,{Color=palette.ink,Thickness=1.2,Transparency=.2,ApplyStrokeMode=Enum.ApplyStrokeMode.Contextual})
 	create("UIStroke",self.round,{Color=palette.ink,Thickness=2,ApplyStrokeMode=Enum.ApplyStrokeMode.Contextual})
+	frame(self.hud,UDim2.new(.5,-46,0,48),UDim2.fromOffset(92,3),palette.red,0)
 	self.cue=text(self.hud,"",UDim2.new(.5,-300,0,124),UDim2.fromOffset(600,40),30,palette.paper,TITLE_FONT,Enum.TextXAlignment.Center)
 	create("UIStroke",self.cue,{Color=palette.ink,Thickness=2,ApplyStrokeMode=Enum.ApplyStrokeMode.Contextual})
 	self.channel=text(self.hud,"",UDim2.new(.5,-250,0,166),UDim2.fromOffset(500,28),15,palette.muted,BODY_FONT,Enum.TextXAlignment.Center)
@@ -43048,6 +43054,7 @@ function UI:liftTablet(t)
 	end)
 	if not ok then t.tablet.Position=UDim2.fromOffset(t.x,t.y-rise) end
 	t.glow.Size=UDim2.new(0,if t.mine or t.theirs then 10 elseif t.hover then 8 else 6,1,0)
+	if t.label then t.label.TextColor3=if t.hover and not (t.mine or t.theirs) then palette.gold else palette.paper end
 end
 -- A new prodigy steps onto a stage: he slides in from the outer edge out of a
 -- white flash, his name lands a beat later.
@@ -43256,6 +43263,12 @@ function UI:render(data)
 		return
 	end
 	if data.ko and not self.ko.Visible then
+		-- The knockout whitens the screen for an instant.
+		pcall(function()
+			self.koFlash=self.koFlash or frame(self.hud,UDim2.fromScale(0,0),UDim2.fromScale(1,1),palette.paper,1)
+			self.koFlash.ZIndex=0;self.koFlash.BackgroundTransparency=.35
+			Tween:Create(self.koFlash,TweenInfo.new(.4,Enum.EasingStyle.Quad,Enum.EasingDirection.Out),{BackgroundTransparency=1}):Play()
+		end)
 		self.ko.TextSize=170
 		Tween:Create(self.ko,TweenInfo.new(.35,Enum.EasingStyle.Back,Enum.EasingDirection.Out),{TextSize=120}):Play()
 	end
@@ -43276,6 +43289,15 @@ function UI:render(data)
 		local ratio=math.clamp(actor.health/actor.maxHealth,0,1)
 		widget.fill.Size=UDim2.fromScale(ratio,1)
 		widget.fill.BackgroundColor3=if ratio&gt;.5 then palette.gold elseif ratio&gt;.25 then Color3.fromRGB(236,134,60) else palette.red
+		-- In danger the bar throbs; with the ultimate full the medallion's ring burns.
+		local t=os.clock()
+		if ratio&lt;=.25 and ratio&gt;0 then widget.fill.BackgroundColor3=palette.red:Lerp(Color3.fromRGB(255,120,110),.5+.5*math.sin(t*9)) end
+		if actor.ultimateReady then
+			widget.ring.Color=Color3.fromRGB(255,200,80):Lerp(Color3.fromRGB(255,120,40),.5+.5*math.sin(t*6))
+			widget.ring.Thickness=4
+		elseif Fighters[actor.fighterId or ""] then
+			widget.ring.Color=accentOf(Fighters[actor.fighterId]);widget.ring.Thickness=3
+		end
 		-- (UI pass 02/11) The damage trail was re-tweened every frame with a
 		-- 0.25 s delay: each new tween cancelled the last before it started, so
 		-- the trail never drained and the lost health stayed drawn as a full
@@ -43325,6 +43347,9 @@ function UI:render(data)
 		if hits&gt;=2 then
 			local scale=math.max(.35,1-.12*math.max(0,hits-1))
 			widget.hits.Text=hits.." HITS"
+			-- Paper, then gold, then vermilion as the string grows.
+			widget.hits.TextColor3=if hits&gt;=8 then Color3.fromRGB(255,96,80) elseif hits&gt;=5 then palette.gold else palette.paper
+			widget.hits.Rotation=-4
 			widget.detail.Text=string.format("%d DMG  •  NEXT x%.2f",math.floor((victim.comboDamage or 0)+.5),scale)
 			widget.box.Visible=true
 			if hits~=widget.shown then
@@ -43376,6 +43401,14 @@ function UI:render(data)
 			ui.status.Text=count.." SEAL"..(if count&gt;1 then "S" else "").."  •  "..ui.status.Text
 		end
 		ui.box.BackgroundTransparency=if ready then .05 else .35
+		if ready and ui.wasReady==false then
+			pcall(function()
+				ui.flash=ui.flash or (function() local f=Instance.new("Frame");f.BackgroundColor3=palette.paper;f.BorderSizePixel=0;f.Size=UDim2.fromScale(1,1);f.ZIndex=5;local c=Instance.new("UICorner");c.CornerRadius=UDim.new(0,8);c.Parent=f;f.Parent=ui.box;return f end)()
+				ui.flash.BackgroundTransparency=.3
+				Tween:Create(ui.flash,TweenInfo.new(.35,Enum.EasingStyle.Quad,Enum.EasingDirection.Out),{BackgroundTransparency=1}):Play()
+			end)
+		end
+		ui.wasReady=ready
 		ui.title.TextColor3=if ready then palette.paper else palette.muted
 		ui.cool.Size=UDim2.fromScale(1,math.clamp(math.max(tech.remaining/6,if sealed then h.sealed/5 else 0),0,1))
 	end
@@ -43414,6 +43447,7 @@ function UI:render(data)
 	self.resultSeal.Text=if won then "勝" else "敗"
 	self.resultSeal.BackgroundColor3=if won then palette.red else Color3.fromRGB(60,56,64)
 	self.resultName.Text=fullName(winner).."  ADVANCES"
+	if Fighters[winner.fighterId or ""] then self.resultName.TextColor3=accentOf(Fighters[winner.fighterId]):Lerp(palette.paper,.25) end
 	self.resultNote.Text=if won then "The judges saw it too. The bracket waits for no one." else "Read the commitment. Find a better opening — prodigies learn fastest from defeat."
 	-- Online: a rematch needs both players; a forfeit says so.
 	local online=data.online
