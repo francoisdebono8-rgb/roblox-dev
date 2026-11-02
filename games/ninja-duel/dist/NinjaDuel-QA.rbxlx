@@ -4471,7 +4471,7 @@ return {
       <Item class="StringValue" referent="ND26">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">7441735cb6b554415ae67957bade6e7205c46acf4403973b460cf874a82abc7a</string>
+          <string name="Value">6d7449c6b59e43ef63c825d2fe5789f140f191bf81885bc1448a3b4d88417b29</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND27">
@@ -35622,7 +35622,7 @@ local function fighter(fx,model,actor,dt)
 			a.rise.Enabled=loaded~=nil
 			if a.spark then a.spark.Enabled=loaded~=nil end
 			-- the light swells in, then breathes
-			local target=if loaded then 2.2+math.sin(os.clock()*9)*.5 else 0
+			local target=if loaded then 1.1+math.sin(os.clock()*9)*.3 else 0 -- (look pass 2: the body keeps its colours)
 			a.light.Brightness+=(target-a.light.Brightness)*math.min(1,(dt or 1/60)*14)
 		end
 	end
@@ -51613,17 +51613,20 @@ local function outline(model)
 	h.Name="NinjaInkLine";h.FillTransparency=1;h.OutlineColor=OUTLINE;h.OutlineTransparency=.15
 	h.DepthMode=Enum.HighlightDepthMode.Occluded;h.Adornee=model;h.Parent=model
 end
+-- Only the two duelling bodies and the menu's fighters: a Highlight also draws
+-- the outline of invisible parts, and clones, afterimages and substitution
+-- logs hide or fade their parts, so an outline on them floats in the air.
 local function isBody(model)
-	return model:IsA("Model") and model:FindFirstChildOfClass("Humanoid")~=nil or (model:IsA("Model") and model:GetAttribute("Fighter")~=nil)
+	return model.Name=="PlayerFighter" or model.Name=="AIFighter" or model:GetAttribute("Fighter")~=nil
 end
 function WorldLook.start()
 	WorldLook.apply()
 	local function watch(root)
-		for _,d in root:GetDescendants() do if d:IsA("Model") and (d.Name=="PlayerFighter" or d.Name=="AIFighter" or d.Name=="ShadowClone" or d:GetAttribute("Fighter")) then outline(d) end end
+		for _,d in root:GetDescendants() do if d:IsA("Model") and isBody(d) then outline(d) end end
 		root.DescendantAdded:Connect(function(d)
 			if d:IsA("Model") then
 				task.defer(function()
-					if d.Parent and (d.Name=="PlayerFighter" or d.Name=="AIFighter" or d.Name=="ShadowClone" or d:GetAttribute("Fighter") or isBody(d)) then outline(d) end
+					if d.Parent and isBody(d) then outline(d) end
 				end)
 			end
 		end)

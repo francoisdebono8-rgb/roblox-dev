@@ -68,17 +68,20 @@ local function outline(model)
 	h.Name="NinjaInkLine";h.FillTransparency=1;h.OutlineColor=OUTLINE;h.OutlineTransparency=.15
 	h.DepthMode=Enum.HighlightDepthMode.Occluded;h.Adornee=model;h.Parent=model
 end
+-- Only the two duelling bodies and the menu's fighters: a Highlight also draws
+-- the outline of invisible parts, and clones, afterimages and substitution
+-- logs hide or fade their parts, so an outline on them floats in the air.
 local function isBody(model)
-	return model:IsA("Model") and model:FindFirstChildOfClass("Humanoid")~=nil or (model:IsA("Model") and model:GetAttribute("Fighter")~=nil)
+	return model.Name=="PlayerFighter" or model.Name=="AIFighter" or model:GetAttribute("Fighter")~=nil
 end
 function WorldLook.start()
 	WorldLook.apply()
 	local function watch(root)
-		for _,d in root:GetDescendants() do if d:IsA("Model") and (d.Name=="PlayerFighter" or d.Name=="AIFighter" or d.Name=="ShadowClone" or d:GetAttribute("Fighter")) then outline(d) end end
+		for _,d in root:GetDescendants() do if d:IsA("Model") and isBody(d) then outline(d) end end
 		root.DescendantAdded:Connect(function(d)
 			if d:IsA("Model") then
 				task.defer(function()
-					if d.Parent and (d.Name=="PlayerFighter" or d.Name=="AIFighter" or d.Name=="ShadowClone" or d:GetAttribute("Fighter") or isBody(d)) then outline(d) end
+					if d.Parent and isBody(d) then outline(d) end
 				end)
 			end
 		end)

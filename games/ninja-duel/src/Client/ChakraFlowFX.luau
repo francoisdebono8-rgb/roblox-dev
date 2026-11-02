@@ -78,7 +78,7 @@ local function fighter(fx,model,actor,dt)
 			a.rise.Enabled=loaded~=nil
 			if a.spark then a.spark.Enabled=loaded~=nil end
 			-- the light swells in, then breathes
-			local target=if loaded then 2.2+math.sin(os.clock()*9)*.5 else 0
+			local target=if loaded then 1.1+math.sin(os.clock()*9)*.3 else 0 -- (look pass 2: the body keeps its colours)
 			a.light.Brightness+=(target-a.light.Brightness)*math.min(1,(dt or 1/60)*14)
 		end
 	end
