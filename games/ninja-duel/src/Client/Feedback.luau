@@ -99,6 +99,15 @@ function Feedback.new(gui,context)
 	return self
 end
 
+-- The Discord line under the buttons, set by Client/UI once Roblox allows it for this player.
+function Feedback:showDiscord(invite)
+	if self.discord then return end
+	local card=self.send.Parent
+	card.Size=UDim2.fromOffset(640,500)
+	self.discord=create("TextLabel",card,{Text="Talk with the other players and follow the updates:  "..invite,Position=UDim2.fromOffset(30,450),
+		Size=UDim2.fromOffset(580,24),Font=BODY,TextSize=14,TextColor3=GOLD,BackgroundTransparency=1,TextXAlignment=Enum.TextXAlignment.Center,ZIndex=72})
+end
+
 function Feedback:setKind(kind)
 	self.kind=kind
 	for k,tab in self.tabs do

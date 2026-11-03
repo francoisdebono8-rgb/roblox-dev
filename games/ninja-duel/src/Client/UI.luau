@@ -113,6 +113,23 @@ function UI.new(parent,send)
 	self.controlsButton=button(shell,"CONTROLS  (TAB)",UDim2.fromOffset(1290,30),UDim2.fromOffset(220,40),function() self:toggleControls() end)
 	-- (Beta, user 03/11) Bugs, ideas and opinions from inside the game (Client/Feedback).
 	self.feedbackButton=button(shell,"BUG / IDEA",UDim2.fromOffset(1086,30),UDim2.fromOffset(190,40),function() self:openFeedback() end)
+	-- The community's Discord, for the players Roblox allows to see it (Shared/Community).
+	self.discordLine=text(shell,"",UDim2.fromOffset(1086,76),UDim2.fromOffset(424,22),15,palette.gold,BODY_FONT,Enum.TextXAlignment.Right)
+	self.discordLine.Visible=false
+	pcall(function()
+		local module=game:GetService("ReplicatedStorage"):FindFirstChild("NinjaDuel")
+		module=module and module:FindFirstChild("Community")
+		if not module then return end
+		local Community=require(module)
+		task.spawn(function()
+			local player=game:GetService("Players").LocalPlayer
+			if player and Community.canShowDiscord(player) then
+				self.discordLine.Text="JOIN THE COMMUNITY  •  "..Community.DiscordInvite
+				self.discordLine.Visible=true
+				if self.feedback and self.feedback.showDiscord then self.feedback:showDiscord(Community.DiscordInvite) end
+			end
+		end)
+	end)
 	self.controlsButton.TextSize=20
 	-- The two stages.
 	local function stage(side)

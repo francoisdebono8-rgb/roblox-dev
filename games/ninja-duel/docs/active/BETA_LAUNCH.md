@@ -172,6 +172,92 @@ Méthode :
 - Le choix de l'icône, A, B ou C.
 - La musique de la vidéo, si tu en as une préférée.
 
+## Faire venir du monde (plan du 03/11)
+
+Le principe : avant la bêta publique, il n'y a rien à jouer. Ce qui fait venir, c'est **voir le jeu se construire** et **jouer avant les autres**.
+
+Le Discord promet donc l'accès anticipé. Le rôle **Testeur bêta** ouvre des sessions de test sur invitation, sur la place privée, avec Claude qui fait tourner les builds.
+
+### 1. Vidéos courtes : le levier principal
+
+Pour un jeu Roblox, la découverte passe par TikTok, YouTube Shorts et Reels.
+
+- **Un compte au nom du jeu** sur chaque plateforme, avec l'adresse e-mail du jeu. C'est l'utilisateur qui le crée.
+- **Rythme** : 3 clips par semaine, de 10 à 20 s. Le plus fort dans la première seconde (un impact, un ultime), du texte à l'écran, la musique tendance du moment.
+- **Formats qui marchent** :
+  1. « Je crée un jeu de combat ninja sur Roblox — jour N » : un avant/après d'une animation ou d'une technique.
+  2. Un ultime en entier, sans texte.
+  3. « Quel ninja j'ajoute ensuite ? » avec trois portraits du menu. Les commentaires répondent, et on renvoie vers le vote sur Discord.
+  4. Un bug drôle, puis sa correction. Le public adore, et ça montre que les retours servent.
+  5. Le combo le plus long de la semaine, envoyé par un joueur dans `#clips-et-captures`.
+- **Lien en bio** : l'invitation Discord. En légende : « Beta testers wanted → Discord in bio ».
+- **Tournage** : Claude prépare les plans dans Studio (caméra de duel, pilote automatique, lumière du jeu) et les exporte. L'utilisateur poste depuis son téléphone.
+
+### 2. Roblox même
+
+- **Dans le jeu, c'est fait (03/11)** : le menu affiche « JOIN THE COMMUNITY • discord.gg/mJ6Gyax7W » sous BUG / IDEA, et le formulaire de retour le rappelle aussi. Ce n'est montré qu'aux joueurs que Roblox autorise à voir une référence Discord (PolicyService : âge, pays). Les autres ne voient rien et gardent le bouton du jeu.
+- **Page de l'expérience** : le lien Discord dans Social Links, une fois l'expérience publiée.
+- **Groupe Roblox « Ninja Duel »** : il possède le jeu, ses annonces (shouts) arrivent aux membres, et on peut lui donner un rôle « Beta tester » pour accéder à la place privée.
+- **Publicité Roblox** (Ads Manager), seulement après la bêta publique : un petit budget test sur la meilleure vignette, et on mesure les visites.
+
+### 3. Communautés existantes
+
+Il faut toujours lire les règles du sous-forum avant de poster. On montre le jeu, on demande un avis, et on ne colle jamais juste un lien.
+
+- **Reddit `r/robloxgamedev`** : un devlog court avec un GIF, et une question précise (« does the hit feel heavy enough? »).
+- **Reddit `r/roblox`** : le jour de la bêta seulement, avec une vidéo.
+- **Forum développeurs Roblox** (catégorie retours de créations) : pour des avis de développeurs, dès qu'on y a accès.
+- **Annuaires de serveurs Discord** (type Disboard) : il faut y ajouter leur bot, et c'est à l'utilisateur de le valider.
+- **Petits créateurs YouTube et TikTok Roblox** (1 000 à 50 000 abonnés) qui font des jeux de combat ou d'anime : on leur propose l'accès anticipé, et un rôle « Créateur » sur le Discord.
+
+### 4. Garder les gens une fois venus
+
+- Le **devlog du vendredi** dans `#annonces` : ce qui a changé grâce à eux, avec les bugs signalés corrigés et leurs auteurs remerciés.
+- Une **session de test le samedi** pour les testeurs bêta, et un tournoi interne quand il y a assez de joueurs.
+- Un **vote** sur le prochain combattant ou le prochain changement. Les idées les plus 👍 de `#idées` sont lues en premier.
+- Le rôle **Testeur bêta** pour chaque bug reproduit. Il est donné à la main au début.
+
+### 5. Mesurer
+
+Un lien d'invitation par source (TikTok, YouTube, Reddit, page Roblox, jeu). Discord affiche combien de personnes chaque lien a amenées : on garde ce qui marche.
+
+### Textes prêts
+
+**Bio TikTok / YouTube / Instagram**
+
+> 1v1 ninja fighting game on Roblox 🥷⚔️ · Beta testers wanted · Discord ↓
+
+**Légende du premier clip**
+
+> I'm making a ninja fighting game on Roblox. Day 1 of showing you until the beta. Want to test it before everyone? Discord in bio. #roblox #robloxdev #ninja #anime #fightinggame
+
+**Devlog `r/robloxgamedev`**
+
+> **Title:** My 1v1 ninja fighting game: wall runs, throws and ultimates. Does the combat read well?
+>
+> I've been building a 1v1 fighting game on Roblox (R15, server-authoritative, hand-animated in Blender). Here's a 20s clip of a duel. I'm looking for feedback on two things: (1) can you tell who's attacking and who's defending at each moment? (2) does the hit feel heavy enough? Beta testers welcome; there's a Discord if you want in.
+
+**Message à un petit créateur**
+
+> Hi! I'm the dev of Ninja Duel, a 1v1 ninja fighting game on Roblox (clip attached). We're opening a closed beta and I'd love you to be one of the first to try it, before anyone else, with your own code for a private duel. No obligation to post anything; if you like it, you're welcome to. Our Discord: discord.gg/mJ6Gyax7W
+
+**Annonce Discord (ouverture des inscriptions)**
+
+> 🧪 **Closed beta testers wanted!** React ✅ to get the Beta tester role: first sessions soon, with the 8 first fighters. Every bug you report and every idea you post is read. / **On cherche des testeurs !** Réagissez ✅ pour le rôle Testeur bêta : premières sessions bientôt, avec les 8 premiers combattants.
+
+### À faire par l'utilisateur
+
+- Créer les comptes TikTok, YouTube et Instagram du jeu avec l'adresse e-mail du jeu, et y mettre la bio.
+- Valider l'ajout d'un bot d'annuaire si tu veux être listé.
+
+Claude s'occupe du reste :
+
+- les clips ;
+- les textes ;
+- les liens d'invitation par source ;
+- le devlog du vendredi ;
+- le tri des retours.
+
 ## Liste avant la bêta publique
 
 1. Partie 11 (en ligne) vérifiée à deux comptes : NET-001.
