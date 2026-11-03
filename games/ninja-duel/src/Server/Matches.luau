@@ -2,6 +2,7 @@ local Players=game:GetService("Players")
 local Shared=game:GetService("ReplicatedStorage").NinjaDuel
 local Config=require(Shared.Config)
 local Fighters=require(Shared.Fighters)
+local BetaRoster=require(Shared.BetaRoster)
 local Rules=require(Shared.Rules)
 local World=require(script.Parent.World)
 local Combat=require(script.Parent.Combat)
@@ -74,6 +75,8 @@ end
 function Matches:start(player,playerId,botId,training,options)
 	local s=self:session(player)
 	if not Fighters[playerId] or not Fighters[botId] then return false end
+	-- (Beta 03/11) only the beta's fighters (Shared/BetaRoster), whatever a client asks for.
+	if not table.find(BetaRoster,playerId) or not table.find(BetaRoster,botId) then return false,"Not in the beta" end
 	local playerKit,botKit
 	if options~=nil then
 		if type(options)~="table" then return false,"Invalid options" end

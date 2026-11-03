@@ -38,7 +38,8 @@ function Portraits.build()
 	if ReplicatedStorage:FindFirstChild("NinjaDuelPortraits") then return end
 	local World=require(script.Parent.World)
 	local Fighters=require(ReplicatedStorage.NinjaDuel.Fighters)
-	local Roster=require(ReplicatedStorage.NinjaDuel.Roster)
+	-- (Beta 03/11) the select screen's fighters: the beta's (Shared/BetaRoster).
+	local Roster=require(ReplicatedStorage.NinjaDuel.BetaRoster)
 	local LookMeshes=require(script.Parent.LookMeshes)
 	-- Costume meshes load in the background: give them a few seconds.
 	local waited=os.clock()

@@ -18,8 +18,10 @@ local Online={};Online.__index=Online
 function Online.new(matches)
 	return setmetatable({matches=matches,queue={},codes={},duels={},freeLanes={},rng=Random.new()},Online)
 end
+-- (Beta 03/11) an online pick is one of the beta's fighters (Shared/BetaRoster).
+local BetaRoster=require(game:GetService("ReplicatedStorage").NinjaDuel.BetaRoster)
 local function fighter(id)
-	return if type(id)=="string" and #id<=24 and Fighters[id]~=nil then id else nil
+	return if type(id)=="string" and #id<=24 and Fighters[id]~=nil and table.find(BetaRoster,id) then id else nil
 end
 local function nameOf(player)
 	local name=player.DisplayName

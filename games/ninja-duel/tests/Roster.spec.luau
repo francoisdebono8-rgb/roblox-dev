@@ -300,12 +300,19 @@ test("presentation: selectable in the menu, a costume of its own, every family o
   local ui=UI.new(baseNew("PlayerGui"),function(action,extra) table.insert(sent,{action=action,extra=extra}) end)
   -- (UI redesign 02/11) One roster of tablets: a tablet goes to the stage
   -- being chosen (yours, or the opponent's once its stage is picked).
+  -- (Beta 03/11) the menu offers the beta's fighters (Shared/BetaRoster) and
+  -- no other: the rest of the twenty join one by one.
+  local Beta=H.load("Shared/BetaRoster")
   for _,id in Roster do
-   assert(ui.selectionButtons["slot"..id],id.." has no tablet")
-   ui.side="player";ui.selectionButtons["slot"..id].click()
-   assert(ui.player==id,"picking "..id.." did not select it")
+   if table.find(Beta,id) then
+    assert(ui.selectionButtons["slot"..id],id.." has no tablet")
+    ui.side="player";ui.selectionButtons["slot"..id].click()
+    assert(ui.player==id,"picking "..id.." did not select it")
+   else
+    assert(ui.selectionButtons["slot"..id]==nil,id.." is in the beta menu")
+   end
   end
-  local other=Roster[1]==ui.player and Roster[2] or Roster[1]
+  local other=Beta[1]==ui.player and Beta[2] or Beta[1]
   ui.side="bot";ui.selectionButtons["slot"..other].click()
   assert(ui.bot==other,"the opponent's stage did not take its tablet")
  end)

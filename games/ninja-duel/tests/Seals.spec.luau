@@ -168,4 +168,17 @@ test("free combo: the bot keeps its own plan; links are capped in a combo",funct
  assert(not Combat.linkable(c,a,"Dodge"),"no cap on links")
 end)
 
+test("beta: the server starts a duel, the tutorial or an online pick only with the beta's eight",function()
+ local Beta=H.load("Shared/BetaRoster")
+ assert(#Beta==8,"the beta has "..#Beta.." fighters")
+ for _,id in EIGHT do assert(table.find(Beta,id),id.." is not in the beta") end
+ local Matches=H.load("Server/Matches")
+ local m=Matches.new({FireClient=function() end,FireAllClients=function() end})
+ local player={UserId=1,Name="p",DisplayName="p"}
+ local ok,why=m:start(player,"Lion","Mirror",false)
+ assert(not ok and why=="Not in the beta","a duel against Haku started: "..tostring(why))
+ ok,why=m:start(player,"Rival","Lion",false)
+ assert(not ok,"a duel as Madara started")
+end)
+
 print(("Seals: %d passed"):format(passed))

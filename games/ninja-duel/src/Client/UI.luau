@@ -3,7 +3,8 @@
 -- value comes from the snapshot.
 local Shared=game:GetService("ReplicatedStorage").NinjaDuel
 local Fighters=require(Shared.Fighters)
-local Roster=require(Shared.Roster)
+-- (Beta 03/11) the select screen offers the beta's fighters only (Shared/BetaRoster).
+local Roster=require(Shared.BetaRoster)
 local Controls=require(Shared.Controls)
 local SealJutsu=require(Shared.SealJutsu)
 local MoveGraphs=require(Shared.MoveGraphs)
@@ -105,7 +106,7 @@ function UI.new(parent,send)
 	-- Title, top left; the hanging banner, right edge.
 	local title=text(shell,"PRODIGY TOURNAMENT",UDim2.fromOffset(60,18),UDim2.fromOffset(900,70),62,palette.paper,TITLE_FONT)
 	create("UIStroke",title,{Color=palette.ink,Thickness=3,ApplyStrokeMode=Enum.ApplyStrokeMode.Contextual})
-	text(shell,"Twenty future legends. Twelve to fourteen years old. One stage — before they become who they are meant to be.",
+	text(shell,"Eight future legends to start, more every update. Twelve to fourteen years old. One stage — before they become who they are meant to be.",
 		UDim2.fromOffset(62,84),UDim2.fromOffset(1100,20),15,palette.muted,Enum.Font.GothamMedium)
 	local banner=frame(shell,UDim2.fromOffset(1534,0),UDim2.fromOffset(44,280),palette.paper,0)
 	create("UIStroke",banner,{Color=palette.red,Thickness=2})
@@ -181,11 +182,13 @@ function UI.new(parent,send)
 	local playable=table.clone(Roster)
 	self.tablets={}
 	local W,H,GAP=132,38,8
-	local left=(1600-(10*W+9*GAP))/2
+	-- (Beta) one row when the roster fits in it, centred under the stages.
+	local perRow=math.min(#playable,10)
+	local left=(1600-(perRow*W+(perRow-1)*GAP))/2
 	for index,id in playable do
 		local def=Fighters[id]
 		local accent=accentOf(def)
-		local col=(index-1)%10;local row=math.floor((index-1)/10)
+		local col=(index-1)%perRow;local row=math.floor((index-1)/perRow)
 		local x,y=left+col*(W+GAP),664+row*(H+12)
 		local tablet=create("TextButton",shell,{Name="Tablet"..id,Position=UDim2.fromOffset(x,y),Size=UDim2.fromOffset(W,H),
 			BackgroundColor3=Color3.fromRGB(22,19,25),BorderSizePixel=0,AutoButtonColor=false,Text="",ClipsDescendants=true})
@@ -747,7 +750,7 @@ end
 -- A tablet chosen for a stage (side "player" or "bot"). In an online pick
 -- your stage is the only one you fill; the other is the opponent's choice.
 function UI:pick(side,id)
-	if not Fighters[id] then return end
+	if not Fighters[id] or not table.find(Roster,id) then return end
 	if self.picking then
 		if side=="player" then self:choose(id) end
 		return
