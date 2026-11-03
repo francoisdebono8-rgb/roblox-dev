@@ -108,69 +108,69 @@ Compte créateur `ninjaduelcreator`. Serveur **Ninja Duel — Prodigy Tournament
   - activer la double authentification (A2F) ;
   - passer le serveur en « Communauté » s'il veut apparaître dans la découverte, ce qui demande d'accepter les règles Discord.
 
-## Page Roblox (prête pour la publication)
+## Page Roblox (bêta publiée le 03/11)
 
-- **Nom** : `Ninja Duel: Prodigy Tournament [BETA]`. Mieux vaut ne mettre « Naruto » ni dans le titre ni dans la description : c'est la façon la plus sûre d'attirer une plainte, et les joueurs reconnaissent les persos sans ça.
-- **Genre** : Fighting. **Joueurs par serveur** : 2 à 10 (les duels se font par paires). **Appareils** : ordinateur, manette et mobile, après un essai tactile.
-- **Description** :
+Le jeu est en ligne depuis le 03/11. Roblox le limite d'abord aux joueurs 16+ vérifiés ; l'ouverture aux moins de 16 ans demande la vérification du compte, la double authentification, une note Minimal/Mild/Moderate, Roblox Plus/Premium 2 mois **ou** une caution remboursable, puis **250 joueurs 16+ très engagés en 60 jours** ([doc Roblox](https://create.roblox.com/docs/production/publishing/kids-and-select)). Ces 250 joueurs sont le premier objectif chiffré du recrutement.
 
-  > ⚔️ 1v1 ninja duels. Pick one of the young prodigies of the tournament and fight with strings, throws, wall runs and jutsu.
-  > 🥋 Training mode teaches your fighter in a few minutes.
-  > 🤖 Fight the AI, or a friend with a private code, or anyone online.
-  > 🧪 BETA: things change every week. Use the **BUG / IDEA** button in the game, or join the Discord, to tell us what to fix.
+### Visuels (faits le 03/11, `assets/page/`)
 
-- **Visuels** : voir « Visuels de la page Roblox » plus bas.
-- **Lien Discord** : sur la page de l'expérience, dans **Social Links** du Creator Dashboard.
+Rendus des vrais modèles du jeu, posés dans Studio (`tools/marketing/PhotoKit.luau`), détourés par double fond noir/blanc (`tools/marketing/page/matte.py`) et composés en style vignette Roblox (`fx.py`, `thumb_*.py`).
 
-## Visuels de la page Roblox (à produire dans un second temps)
+| Ordre | Fichier | Promesse |
+|---|---|---|
+| Icône | `icon_512.png` | Naruto, Rasengan, « NINJA DUEL » |
+| 1 | `thumb1_clash.png` | Rasengan contre Chidori, logo, BETA |
+| 2 | `thumb2_roster.png` | CHOOSE YOUR NINJA, les 8 prodiges |
+| 3 | `thumb3_duels.png` | 1v1 NINJA DUELS, VS AI • FRIENDS • ONLINE |
+| 4 | `thumb4_ultimate.png` | UNLEASH YOUR ULTIMATE, Itachi |
 
-Une seule identité partout, la même que le menu et le Discord : fond d'encre, bande vermillon à -9°, titres en Bangers papier cerclés d'encre, sceau rouge. L'icône Discord est dans `assets/brand/`, avec son générateur `icon.py`.
+À ajouter quand les plans de jeu seront filmés : une vignette de vraie partie (arène, barres de vie) et la vidéo de 30 s.
 
-### Icône du jeu (512×512)
+### Réglages de l'expérience (Creator Hub)
 
-- **A, recommandée** : un combattant en buste de trois quarts, sous la lumière du menu (`Client/MenuStage`). Il prend la moitié gauche, et le cercle d'encre et 忍 sont en filigrane derrière lui. C'est le personnage qui fait cliquer.
-- **B** : deux silhouettes dos à dos (le prodige et son rival) coupées par la bande vermillon.
-- **C** : l'icône Discord telle quelle. C'est la plus cohérente, mais elle montre peu le jeu.
+- **Nom** : `Ninja Duel [BETA] ⚔️`
+- **Genre** : Action → Battlegrounds & Fighting (sinon Fighting).
+- **Appareils** : ordinateur, manette, mobile, tablette.
+- **Serveur** : 10 joueurs.
+- **Social Links** : Discord `discord.gg/mJ6Gyax7W` (le lien va dans Social Links, jamais dans la description).
 
-À tester : A/B, avec les tests d'icônes du Creator Dashboard s'ils sont disponibles sur le compte.
+### Description (anglais, la langue de la page ; Roblox traduit)
 
-### Vignettes (1920×1080, jusqu'à 10)
+> ⚔️ 1v1 anime ninja battles! Pick a young prodigy and fight with combos, throws, wall runs, jutsu and a full-screen ULTIMATE.
+>
+> 🔥 FEATURES
+> • 20 ninjas to master — each with their own moves and ultimate
+> • Fast PvP duels: vs AI, vs a friend with a private code, or vs anyone online
+> • Training mode teaches your fighter in 2 minutes
+> • Real combat: guard, dodge, counter, grab, punish
+>
+> 🎮 CONTROLS: press TAB (PC) or START (gamepad) in game to see every key.
+>
+> 🧪 BETA — this test is about the COMBAT, the ATTACKS, the ARENA and the LIGHTING. Found a bug or have an idea? Press BUG / IDEA in the menu, or join the community (link on this page).
+>
+> 👤 Coming next: fight as YOUR OWN Roblox avatar, pick a fighting style and grow it with skill trees.
+>
+> 👍 Like & ⭐ favorite to follow updates!
 
-Chacune montre une promesse du jeu, avec trois à cinq mots au plus en surimpression.
+### Description (français, pour la table de traduction)
 
-| # | Image | Texte | Comment l'obtenir |
-|---|---|---|---|
-| 1 | Le menu : deux prodiges face à face, VS au milieu | 1v1 NINJA DUELS | Capture du menu |
-| 2 | Un impact au corps à corps, l'étincelle, les deux corps lisibles | READ. STRIKE. PUNISH. | Caméra de duel, figée au moment du coup |
-| 3 | Un ultime en plein écran (Rasengan, Chidori ou sable de Gaara) | EVERY PRODIGY HAS AN ULTIMATE | Caméra de cinématique |
-| 4 | Une course sur le mur de l'arène, l'adversaire en contrebas | USE THE WHOLE ARENA | Caméra basse, grand-angle |
-| 5 | La grille des huit combattants de la bêta | 8 FIGHTERS · MORE EVERY UPDATE | Composition du roster avec des portraits |
-| 6 | Le tutoriel, la fiche des contrôles ouverte | LEARN IN 2 MINUTES | Capture avec Tab ouvert |
-| 7 | Deux joueurs, le code de duel privé affiché | DUEL YOUR FRIENDS | Capture de l'écran HOST |
-| 8 | Le sceau 勝, la carte de victoire | WIN THE TOURNAMENT | Capture de l'écran de fin |
+> ⚔️ Duels de ninjas anime en 1v1 ! Choisis un jeune prodige et bats-toi avec enchaînements, projections, courses sur les murs, jutsus et un ULTIME en plein écran.
+>
+> 🔥 AU PROGRAMME
+> • 20 ninjas à maîtriser, chacun avec ses coups et son ultime
+> • Duels rapides : contre l'IA, contre un ami avec un code privé, ou contre n'importe qui en ligne
+> • Le mode entraînement t'apprend ton perso en 2 minutes
+> • Un vrai combat : garde, esquive, contre, saisie, punition
+>
+> 🎮 TOUCHES : appuie sur TAB (PC) ou START (manette) en jeu.
+>
+> 🧪 BÊTA : ce test porte sur le COMBAT, les ATTAQUES, l'ARÈNE et la LUMIÈRE. Un bug, une idée ? Bouton BUG / IDEA dans le menu, ou rejoins la communauté (lien sur cette page).
+>
+> 👤 Bientôt : joue TON avatar Roblox, choisis ton style de combat et fais-le grandir avec des arbres de compétences.
+>
+> 👍 Like et ⭐ favori pour suivre les mises à jour !
 
-Les vignettes 1 à 3 sont les plus vues : elles passent en premier.
-
-### Vidéo de gameplay (30 s)
-
-Plan proposé :
-
-- **0–3 s** : noir d'encre, le coup de pinceau vermillon traverse l'écran (le balayage du jeu), le titre « NINJA DUEL ».
-- **3–8 s** : le menu, deux combattants entrent sur scène, VS.
-- **8–20 s** : six plans de deux secondes, un par promesse. Enchaînement, projection, course sur le mur, poursuite en l'air, technique, garde puis riposte.
-- **20–26 s** : un ultime en entier.
-- **26–30 s** : le sceau 勝, puis « BETA — PLAY NOW », avec le lien Discord.
-
-Méthode :
-
-- Les plans sont tournés dans Studio, avec la caméra de duel et le pilote automatique des deux côtés.
-- Le son du jeu est laissé en place, avec une musique libre de droits.
-- La même vidéo sert pour la page Roblox, le salon #annonces et les réseaux (TikTok, Shorts) en version verticale 9:16.
-
-### À fournir par l'utilisateur
-
-- Le choix de l'icône, A, B ou C.
-- La musique de la vidéo, si tu en as une préférée.
+Mots que les joueurs tapent, présents dans le texte : anime, ninja, battlegrounds/fighting, 1v1, PvP, duel, jutsu, ultimate. Les noms de personnages ne vont ni dans le titre ni dans la description (ils sont dans le jeu et sur les images, c'est assez).
 
 ## Faire venir du monde (plan du 03/11)
 
