@@ -80,6 +80,7 @@ function Flight.install(matches,session)
 		push(R.inputs,entry,150)
 	end
 	local still,lastSample,freezeOpen=0,0,false
+	local lastPosition=nil
 	RunService.Heartbeat:Connect(function(dt)
 		local _,s=session()
 		local a=s and s.human
@@ -97,7 +98,13 @@ function Flight.install(matches,session)
 				y=math.floor(a.root.Position.Y*10)/10,hp=math.floor(a.health)},800)
 		end
 		local wants=a.move and flat(a.move).Magnitude>.5
-		local moving=flat(a.root.AssemblyLinearVelocity).Magnitude>1
+		-- (Audit 03/11) Dashes, dodges, strike steps and knockback flights move
+		-- the body by its CFrame, at zero velocity: the frame's displacement
+		-- counts too (they were read as freezes).
+		local position=a.root.Position
+		local stepped=lastPosition and dt>0 and flat(position-lastPosition).Magnitude/dt>1
+		lastPosition=position
+		local moving=flat(a.root.AssemblyLinearVelocity).Magnitude>1 or stepped==true
 		local alive=a.health>0 and not s.finishing and not (s.introUntil and c.now<s.introUntil)
 		if wants and not moving and alive then
 			still+=dt
