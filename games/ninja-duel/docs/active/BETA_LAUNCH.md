@@ -81,6 +81,33 @@ Rôles :
 
 > 🎉 **The Ninja Duel beta is open!** Play here: <lien Roblox>. Eight fighters to start, twelve more joining one by one. Your reports shape the next updates. / **La bêta de Ninja Duel est ouverte !** Jouez ici : <lien Roblox>. Huit combattants pour commencer, douze autres arrivent un par un. Vos retours décident des prochaines mises à jour.
 
+### État du Discord (03/11, monté par Claude)
+
+Compte créateur `ninjaduelcreator`. Serveur **Ninja Duel — Prodigy Tournament**.
+
+- **Invitation permanente** : https://discord.gg/mJ6Gyax7W
+- **Icône** : 忍 dans un cercle d'encre, sur la bande vermillon du menu. Fichiers dans `assets/brand/`. Bannière rouge.
+- **Salons** :
+  - INFOS, en lecture seule : `#bienvenue`, `#règles`, `#annonces`, `#comment-jouer`. Les messages de bienvenue, de règles et de comment-jouer sont postés.
+  - BÊTA :
+    - `#bugs` : forum avec guide de post et tags Combat / Caméra / Interface / Personnage / En ligne / Crash, plus Reproduit / Corrigé réservés aux modérateurs ;
+    - `#idées` : forum avec guide, tags et réaction 👍, plus Prévu / Ajouté réservés aux modérateurs ;
+    - `#avis` ;
+    - `#rapports-du-jeu` : en lecture seule, avec le webhook « Ninja Duel — reports ».
+  - COMMUNAUTÉ : `#discussion`, `#clips-et-captures`, `#cherche-un-adversaire`, `#général`, et les salons vocaux Général et Vocal.
+- **Rôles** :
+  - Équipe : expulser, exclure temporairement, gérer les messages, épingler ;
+  - Testeur bêta.
+- **Sécurité** :
+  - niveau de vérification Moyen ;
+  - filtre des médias sensibles pour tout le monde ;
+  - AutoMod contre le spam de mentions (plus de 6), le spam et les mots signalés.
+- **Webhook** : son URL n'est écrite nulle part. Elle se copie dans Discord : `#rapports-du-jeu` → Modifier le salon → Intégrations → Webhooks → Ninja Duel — reports → **Copier l'URL**. Elle va dans le secret `feedback_webhook` ([FEEDBACK.md](FEEDBACK.md)).
+- **À faire par l'utilisateur** :
+  - confirmer l'e-mail du compte (bandeau vert dans Discord) ;
+  - activer la double authentification (A2F) ;
+  - passer le serveur en « Communauté » s'il veut apparaître dans la découverte, ce qui demande d'accepter les règles Discord.
+
 ## Page Roblox (prête pour la publication)
 
 - **Nom** : `Ninja Duel: Prodigy Tournament [BETA]`. Mieux vaut ne mettre « Naruto » ni dans le titre ni dans la description : c'est la façon la plus sûre d'attirer une plainte, et les joueurs reconnaissent les persos sans ça.
@@ -92,12 +119,58 @@ Rôles :
   > 🤖 Fight the AI, or a friend with a private code, or anyone online.
   > 🧪 BETA: things change every week. Use the **BUG / IDEA** button in the game, or join the Discord, to tell us what to fix.
 
-- **Icône (512×512)** : un combattant en buste de trois quarts sur fond d'encre, avec la bande vermillon, comme le menu. À capturer depuis `Client/MenuStage`.
-- **Vignettes (1920×1080)** : trois captures.
-  - Le menu avec deux combattants.
-  - Un échange en duel sous la lumière de fin d'après-midi.
-  - Un ultime.
+- **Visuels** : voir « Visuels de la page Roblox » plus bas.
 - **Lien Discord** : sur la page de l'expérience, dans **Social Links** du Creator Dashboard.
+
+## Visuels de la page Roblox (à produire dans un second temps)
+
+Une seule identité partout, la même que le menu et le Discord : fond d'encre, bande vermillon à -9°, titres en Bangers papier cerclés d'encre, sceau rouge. L'icône Discord est dans `assets/brand/`, avec son générateur `icon.py`.
+
+### Icône du jeu (512×512)
+
+- **A, recommandée** : un combattant en buste de trois quarts, sous la lumière du menu (`Client/MenuStage`). Il prend la moitié gauche, et le cercle d'encre et 忍 sont en filigrane derrière lui. C'est le personnage qui fait cliquer.
+- **B** : deux silhouettes dos à dos (le prodige et son rival) coupées par la bande vermillon.
+- **C** : l'icône Discord telle quelle. C'est la plus cohérente, mais elle montre peu le jeu.
+
+À tester : A/B, avec les tests d'icônes du Creator Dashboard s'ils sont disponibles sur le compte.
+
+### Vignettes (1920×1080, jusqu'à 10)
+
+Chacune montre une promesse du jeu, avec trois à cinq mots au plus en surimpression.
+
+| # | Image | Texte | Comment l'obtenir |
+|---|---|---|---|
+| 1 | Le menu : deux prodiges face à face, VS au milieu | 1v1 NINJA DUELS | Capture du menu |
+| 2 | Un impact au corps à corps, l'étincelle, les deux corps lisibles | READ. STRIKE. PUNISH. | Caméra de duel, figée au moment du coup |
+| 3 | Un ultime en plein écran (Rasengan, Chidori ou sable de Gaara) | EVERY PRODIGY HAS AN ULTIMATE | Caméra de cinématique |
+| 4 | Une course sur le mur de l'arène, l'adversaire en contrebas | USE THE WHOLE ARENA | Caméra basse, grand-angle |
+| 5 | La grille des huit combattants de la bêta | 8 FIGHTERS · MORE EVERY UPDATE | Composition du roster avec des portraits |
+| 6 | Le tutoriel, la fiche des contrôles ouverte | LEARN IN 2 MINUTES | Capture avec Tab ouvert |
+| 7 | Deux joueurs, le code de duel privé affiché | DUEL YOUR FRIENDS | Capture de l'écran HOST |
+| 8 | Le sceau 勝, la carte de victoire | WIN THE TOURNAMENT | Capture de l'écran de fin |
+
+Les vignettes 1 à 3 sont les plus vues : elles passent en premier.
+
+### Vidéo de gameplay (30 s)
+
+Plan proposé :
+
+- **0–3 s** : noir d'encre, le coup de pinceau vermillon traverse l'écran (le balayage du jeu), le titre « NINJA DUEL ».
+- **3–8 s** : le menu, deux combattants entrent sur scène, VS.
+- **8–20 s** : six plans de deux secondes, un par promesse. Enchaînement, projection, course sur le mur, poursuite en l'air, technique, garde puis riposte.
+- **20–26 s** : un ultime en entier.
+- **26–30 s** : le sceau 勝, puis « BETA — PLAY NOW », avec le lien Discord.
+
+Méthode :
+
+- Les plans sont tournés dans Studio, avec la caméra de duel et le pilote automatique des deux côtés.
+- Le son du jeu est laissé en place, avec une musique libre de droits.
+- La même vidéo sert pour la page Roblox, le salon #annonces et les réseaux (TikTok, Shorts) en version verticale 9:16.
+
+### À fournir par l'utilisateur
+
+- Le choix de l'icône, A, B ou C.
+- La musique de la vidéo, si tu en as une préférée.
 
 ## Liste avant la bêta publique
 
