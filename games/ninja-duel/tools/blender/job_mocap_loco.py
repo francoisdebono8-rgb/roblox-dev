@@ -74,6 +74,38 @@ def tracks():
 
 
 raw = tracks()
+# The key-posed idle each fighter's strikes start from (the earlier exports):
+# the captured idle keeps its upper body breathing but stands on the same
+# feet, so the first frame of a blow does not snap the legs (Naruto.spec).
+OLD = {}
+old_dir = os.environ.get("ND_OLD", "/mnt/user-data/uploads/Documents/NinjaDuelBlender/out")
+if os.path.isdir(old_dir):
+    import glob
+    for path in sorted(glob.glob(os.path.join(old_dir, "clips_*.json"))):
+        if "_mocap" in path:
+            continue
+        try:
+            d = json.load(open(path))
+        except Exception:
+            continue
+        for name, clip in d.items():
+            if name.endswith(".Idle"):
+                OLD[name.split(".")[0]] = clip["joints"]
+LEGS = ("RightHip", "LeftHip", "RightKnee", "LeftKnee", "RightAnkle", "LeftAnkle")
+
+
+def stand_like_before(fighter, t):
+    joints = OLD.get(fighter)
+    if not joints:
+        return t
+    held = {}
+    for j in LEGS + ("Root",):
+        row = joints[j][0][3:] if j == "Root" else joints[j][0]
+        held[j] = nd_mocap.Quaternion((row[3], row[0], row[1], row[2]))
+    nd_style.pose(t, held, .8)
+    base_y = joints["Root"][0][1]
+    t["loc"] = [nd_mocap.Vector((0, v.y * .3 + base_y * .7, 0)) for v in t["loc"]]
+    return t
 for fighter in FIGHTERS:
     if ONLY and fighter not in ONLY:
         continue
@@ -83,6 +115,8 @@ for fighter in FIGHTERS:
     acts = []
     for clip, kind, t, loop, meta in raw:
         styled = nd_style.style(fighter, kind, nd_style.copy(t))
+        if kind == "Idle":
+            stand_like_before(fighter, styled)
         act = nd_mocap.bake(arm, styled, "%s.%s" % (fighter, clip), loop, meta)
         acts.append(act)
         nd_sticks.sheet(arm, act, os.path.join(OUT, "sticks", act.name + ".png"), count=8)

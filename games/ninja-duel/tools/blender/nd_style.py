@@ -157,6 +157,9 @@ POCKETS = {"raise": -6, "out": 9, "twist": 28, "elbow": 38, "wrist": 4}         
 CROSSED_R = {"raise": 30, "out": -10, "twist": 82, "elbow": 96, "wrist": 0}      # Gaara's crossed arms
 CROSSED_L = {"raise": 26, "out": -8, "twist": 86, "elbow": 100, "wrist": 0}
 BEHIND_BACK = {"raise": -22, "out": 18, "twist": 62, "elbow": 104, "wrist": 10}  # Lee's left hand
+# Lee's rear hand behind his back: the joints of his key-posed stance (p8)
+LEE_REAR = {"Right": Quaternion((0.6215, -0.2483, 0.669, -0.3234)), "RightElbow": Quaternion((0.829, 0.5592, 0, 0)),
+            "RightWrist": Quaternion()}
 JUKEN_R = {"raise": 72, "out": 8, "elbow": 14, "wrist": -72}                     # Neji: lead palm out
 JUKEN_L = {"raise": 22, "out": 30, "elbow": 64, "wrist": -54}
 
@@ -190,14 +193,14 @@ def style(fighter, kind, tr):
         if K in ("Walk", "Run", "Sprint"):
             for j in ("RightHip", "LeftHip", "RightKnee", "LeftKnee"):
                 amp(tr, j, .75)      # shorter, heavier steps
-    elif F == "Leaf":          # Lee: left hand behind his back, right palm ready
-        if K in ("Walk", "Idle"):
-            pose(tr, arms(None, BEHIND_BACK), .95)
+    elif F == "Leaf":          # Lee: the rear (right) hand behind his back, the lead palm out
+        if K in ("Walk", "Idle", "Run"):
+            pose(tr, LEE_REAR, .95)     # only his sprint swings both arms
         if K == "Idle":
-            pose(tr, arms({"raise": 48, "out": 4, "elbow": 52, "wrist": -58}, None), .8)
+            pose(tr, arms(None, {"raise": 48, "out": 4, "elbow": 52, "wrist": -58}), .8)
             drop(tr, -.25)
         if K == "Run":
-            for j in ("Right", "Left", "RightElbow", "LeftElbow"):
+            for j in ("Left", "LeftElbow"):
                 amp(tr, j, 1.4)
             lean(tr, 10)
     elif F == "GentleFist":    # Neji: upright, still arms, the Juken stance

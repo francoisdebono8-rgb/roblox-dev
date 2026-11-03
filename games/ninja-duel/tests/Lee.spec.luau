@@ -500,7 +500,10 @@ test("family traits are declared, not inherited: the Fifth Gate does not hunch i
  -- the Fifth Gate stood like an awakened Sasuke.
  local function tilt(id)
   local c,a=H.duel(id,"Mirage")
+  -- (DEC-032) the captured idle breathes: both read at the same moment
+  Motion._setClock(10)
   local calm=present(a.model,body(a,{awaken=0}),60).Root
+  Motion._setClock(10)
   local awake=present(a.model,body(a,{awaken=6}),60).Root
   return math.deg(math.acos(math.clamp(calm.LookVector:Dot(awake.LookVector),-1,1)))
  end
