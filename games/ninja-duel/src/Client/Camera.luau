@@ -186,7 +186,11 @@ function Camera:update(data,dt)
 	if self.mode and selected~=self.mode and clock<(self.modeSince or 0)+.4 and selected~="Slam" and selected~="Pursuit" then selected=self.mode end
 	if selected~=self.mode then self.modeSince=clock end
 	self.mode=selected
-	local frame=framing[selected]
+	-- (User 03/11, free lens: "sometimes the camera switches from free to the
+	-- character and back") The framing modes (chase 21 studs, wall 22, slam
+	-- 19 and 10 up, against 12.5 on the ground) frame the pair when locked
+	-- on; free, they jumped the lens in and out. Free keeps the ground frame.
+	local frame=if follow then framing[selected] else framing.Ground
 	-- Look-stick / unlocked mouse orbit.
 	self.yaw+=(self.look.X or 0)*dt*2.4;self.pitch=math.clamp(self.pitch-(self.look.Y or 0)*dt,.04,.9)
 	-- (Audit 29/10) Locked, a nudge of the right stick is a glance: it eases
