@@ -42,6 +42,15 @@ Repro.cases={
 			dev("refill");dev("place",Vector3.new(0,3,6),Vector3.new(0,3,0))
 			dev("freezeBot",false);dev("ultimate","bot",100)
 		end},
+	B04={title="La touche 5 affichait UNKNOWN ACTION",
+		saw="Avec un perso à 4 techniques, la touche 5 renvoyait « UNKNOWN ACTION » écrit à l'écran (vu dans ta partie avec Minato).",
+		now="La touche 5 ne fait rien, sans message ; les touches 1 à 4 lancent les techniques.",
+		how="Appuie sur 5 : rien ne doit s'afficher. Puis sur 2 de très loin : Minato file vers lui au lieu d'afficher « OUT OF RANGE ».",
+		test="tests/Input.spec.luau (B04), tests/Convergence.spec.luau (reach)",
+		first="Flashstep",second="Mirage",
+		setup=function(dev)
+			dev("freezeBot",true);dev("refill");dev("place",Vector3.new(0,3,40),Vector3.new(0,3,-20))
+		end},
 }
 
 local function label(parent,name,text,size,y,height,color)
