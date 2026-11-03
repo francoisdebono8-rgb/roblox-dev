@@ -206,3 +206,21 @@ Ordre ajusté :
 - **Partie 11, en ligne** : inchangée.
 - **Parties 2 à 9 (les persos)** : elles restent livrées ; chacune sera reprise sur match enregistré.
 
+
+## Décision du 03/11 (soir) — Le joueur joue son propre avatar (direction, non planifiée)
+
+Décision de l'utilisateur, le 03/11 : « les gens mettent du temps à préparer leur avatar, c'est chiant s'ils ne peuvent pas le jouer ».
+
+**À terme, le joueur importe son avatar Roblox et se bat avec.** Concrètement :
+- son avatar est reconstruit en R15, même s'il joue en R6 ;
+- il garde ses accessoires, qui ne bloquent rien et ne comptent pas dans les coups ;
+- les animations restent celles du jeu ;
+- la taille et les proportions sont ramenées dans une fourchette, pour que la portée soit la même pour tous.
+
+**Il choisit un archétype de combat**, avec l'arbre de compétences de cet archétype (DEC-024). Les prodiges actuels servent de base à ces archétypes.
+
+**Des tenues s'achètent pour habiller son ninja.** L'utilisateur veut des tenues « qui ressemblent à » des personnages connus.
+
+Claude a noté le risque, qui reste à arbitrer avant toute vente : une tenue vendue qui copie un personnage protégé (nom, emblème, tenue signature) est l'objet le plus exposé à une plainte de l'ayant droit. La piste plus sûre, ce sont des tenues originales dans l'esprit anime ninja, sans nom ni emblème repris.
+
+**Pour la bêta, rien ne change** : on joue les prodiges. La communication présente la bêta comme le test du **système de combat, des attaques, de l'arène et de la lumière**. L'avatar, les archétypes, les arbres et les tenues sont présentés comme la suite, et ne sont pas promis tant qu'ils ne sont pas planifiés.

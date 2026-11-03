@@ -245,6 +245,16 @@ Un lien d'invitation par source (TikTok, YouTube, Reddit, page Roblox, jeu). Dis
 
 > 🧪 **Closed beta testers wanted!** React ✅ to get the Beta tester role: first sessions soon, with the 8 first fighters. Every bug you report and every idea you post is read. / **On cherche des testeurs !** Réagissez ✅ pour le rôle Testeur bêta : premières sessions bientôt, avec les 8 premiers combattants.
 
+**Annonce « À quoi sert la bêta »** (à épingler dans `#annonces` à l'ouverture des inscriptions, puis à reprendre dans la description du jeu)
+
+> 🧪 **What this beta is for**
+> Right now you play the tournament's prodigies. This beta is here to test the heart of the game: **the combat system, the attacks, the arena and the lighting**. Tell us what feels good, what feels off, and what breaks.
+> **What comes next**: playing **your own Roblox avatar**, choosing your **fighting style**, and growing it through a **skill tree**. Your feedback on the combat now decides how that next part is built.
+>
+> 🧪 **À quoi sert cette bêta**
+> Pour l'instant, vous jouez les prodiges du tournoi. La bêta sert à tester le cœur du jeu : **le système de combat, les attaques, l'arène et la lumière**. Dites-nous ce qui est agréable, ce qui cloche et ce qui casse.
+> **La suite** : jouer **votre propre avatar Roblox**, choisir votre **style de combat** et le faire grandir avec un **arbre de compétences**. Vos retours sur le combat décident de la façon dont on construit cette suite.
+
 ### À faire par l'utilisateur
 
 - Créer les comptes TikTok, YouTube et Instagram du jeu avec l'adresse e-mail du jeu, et y mettre la bio.
