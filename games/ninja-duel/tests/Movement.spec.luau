@@ -38,6 +38,40 @@ local function takeoff(id,side,forward,up)
  return Motion.trickOf(a.model),a,v
 end
 
+test("DEC-031 (the user's own play 03/11): past the cancel point the stick drifts a recovering body; before it, unchanged",function()
+ -- (the harness walks a body whatever its state: the drift is read where
+ -- Combat asks for it, Motor.travel with the stick during the recovery)
+ local Motor=H.load("Server/Motor")
+ local travel=Motor.travel
+ local drift={early=0,late=0}
+ local watch,cancelAt
+ Motor.travel=function(x,c,dir,dist,...)
+  if x==watch and x.state=="Recovery" and dir and (dir-x.move).Magnitude<1e-6 then
+   if c.now<cancelAt then drift.early+=dist else drift.late+=dist end
+  end
+  return travel(x,c,dir,dist,...)
+ end
+ local ok,err=pcall(function()
+  for _,id in {"Lion","Mirage","Leaf","Sand"} do
+   -- a whiffed jab, the stick held to the side
+   local c,a,b=H.duel(id,"Mirage")
+   c:relocate(a,V.new(0,3,20));c:relocate(b,V.new(0,3,-20));b.ai=nil
+   a.root.CFrame=H.C.lookAt(a.root.Position,V.new(0,3,-20))
+   assert(c:request(a,"Attack"))
+   for _=1,120 do H.step(c,.01);if a.state=="Recovery" then break end end
+   assert(a.state=="Recovery",id..": no recovery")
+   watch,cancelAt=a,a.recoveryCancelAt or math.huge
+   drift.early,drift.late=0,0
+   a.move=V.new(1,0,0);a.lastMove=os.clock()+60
+   while a.state=="Recovery" do H.step(c,.01) end
+   assert(drift.early==0,string.format("%s: drifted %.2f studs before the cancel point (the punish window)",id,drift.early))
+   assert(drift.late>0 or cancelAt==math.huge,id..": no drift past the cancel point")
+  end
+ end)
+ Motor.travel=travel
+ assert(ok,err)
+end)
+
 test("a backward jump with momentum is a back flip for an acrobat, a lean for Gaara",function()
  local trick=takeoff("Leaf",0,-24,40)
  assert(trick and trick.kind=="back","Lee's backward jump did not flip (got "..tostring(trick and trick.kind)..")")

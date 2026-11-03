@@ -126,6 +126,8 @@ end
 -- move -> stop -> move -> stop.
 local HITSTOP={light=0,air=0,block=.01,finisher=.05,launcher=.06,parry=.075,slam=.09,jutsu=.065,default=.025}
 Combat.Hitstop=HITSTOP
+-- Studs/s the stick drifts a body through the end of a recovery (DEC-031).
+Combat.RECOVERY_DRIFT=8
 function Combat:applyHitstop(attacker,victim,style,heavy)
 	local stop=HITSTOP[style] or (if heavy then HITSTOP.default else 0)
 	if stop<=0 then return stop end
@@ -1680,6 +1682,14 @@ function Combat:updateActor(a,dt)
 		a.hum.AutoRotate=false
 		self:faceLocked(a,dt)
 	else a.hum.AutoRotate=not a.locked end
+	-- (DEC-031, the user's own play 03/11: his own recoveries were most of
+	-- his "freezes", the stick held and the body planted) Past the cancel
+	-- point the stick drifts the body at a walk's fraction; the string, its
+	-- routes and the punish window before the cancel point stay as they were.
+	if (a.state=="Recovery" or a.state=="TechniqueRecovery") and not a.airborne and not a.reaction and not a.wall
+		and now>=(a.recoveryCancelAt or math.huge) and a.move and Vector3.new(a.move.X,0,a.move.Z).Magnitude>.5 then
+		Motor.travel(a,self,a.move,Combat.RECOVERY_DRIFT*dt)
+	end
 	if a.state=="Dodging" then
 		Evade.step(a,self,Motor.travel)
 	elseif a.state=="Pursuit" and (a.shadowUntil or 0)>now then
