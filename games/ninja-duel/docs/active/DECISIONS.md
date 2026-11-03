@@ -206,3 +206,15 @@ Ordre ajusté :
 - **Partie 11, en ligne** : inchangée.
 - **Parties 2 à 9 (les persos)** : elles restent livrées ; chacune sera reprise sur match enregistré.
 
+
+## DEC-031 — La liberté avant tout ; l'ultime reste la seule cinématique (03/11)
+
+Utilisateur, 03/11 à 15 h 25 : « et aussi la liberté, parce que là pour l'instant on est sur du Storm total ». À la question sur les ultimes : « ça me dérange pas si c'est ponctuel, mais il faut que tout le reste soit libre ».
+
+- **Les ultimes restent des cinématiques** (3,4 à 4 s), parce que c'est ponctuel : barre pleine, ouverture qu'on peut esquiver, une ou deux par match. Raté, l'ultime laisse une ouverture et vide la barre. Pas de raccourcissement : il faudrait refaire les clips.
+- **Tout le reste devient libre** (priorité en tête de la feuille de route, avec la caméra et les freezes) :
+  - plus de séquences qui bloquent les deux corps : Lotus, Rendan et les réveils deviennent des coups joués dans le combat ;
+  - le corps ne se tourne vers l'adversaire que si le joueur verrouille ;
+  - le dash, la poursuite et les plongées partent seulement si le joueur les demande ;
+  - on sort d'une fin de coup en bougeant, en sautant ou en esquivant ;
+  - les techniques marchent en l'air, en courant, depuis un mur.

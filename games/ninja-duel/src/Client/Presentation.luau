@@ -272,7 +272,7 @@ function Presentation:dashes(h,v,data,dt)
 end
 function Presentation:predictMove(action,data,ahead)
 	local h=data and data.human
-	if not h or h.wall or h.groundPose or (h.health or 1)<=0 then return end
+	if not h or h.wall or h.groundPose or (h.health or 1)<=0 or (h.guess and h.guess.held) then return end
 	if h.reaction and action~="Dodge" then return end
 	local now=os.clock()
 	ahead=ahead or self:pressAhead(data)
@@ -551,7 +551,12 @@ function Presentation:guessAir(action,v,def,graph,data,now)
 		airCombo=0
 		local me,them=self:guessRoots()
 		if not me or not them then return nil end
-		if targetUp and not bot.airborne and ActionContext.airDive(me,them) then return "WallDive" end
+		-- (Audit 03/11) Only the flat motion is read ahead, and the body falls
+		-- through the trip: near the edge of the dive's height (a few studs
+		-- lower changes the answer), the server decides alone.
+		local dive=ActionContext.airDive(me,them)
+		if targetUp and not bot.airborne and dive~=ActionContext.airDive(me-Vector3.new(0,3,0),them) then return nil end
+		if targetUp and not bot.airborne and dive then return "WallDive" end
 		local move,known=self:situational(data,def,graph,now)
 		if not known then return nil end
 		if move and Attacks[move] and move==(((graph.context or {}).drop) or "DropStrike") then return move end
@@ -560,7 +565,7 @@ function Presentation:guessAir(action,v,def,graph,data,now)
 end
 function Presentation:predictStrike(action,data,now,ahead)
 	local h=data and data.human
-	if not h or h.reaction or h.wall or h.groundPose or (h.health or 1)<=0 then return end
+	if not h or h.reaction or h.wall or h.groundPose or (h.health or 1)<=0 or (h.guess and h.guess.held) then return end
 	local g=h.guess or {}
 	-- (É7) branches ahead of the strike the client leaves to the server: a
 	-- held body state, a teleport's arrival strike, a grab's throw, a blade

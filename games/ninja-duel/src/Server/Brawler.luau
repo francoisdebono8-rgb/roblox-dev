@@ -259,6 +259,9 @@ function Brawler.guessView(c,a)
   airHoldLeft=math.max(0,(a.airHold or 0)-now),
   -- the sprint dodge at him is the chakra dash when it is available
   locked=a.locked==true,rushReadyLeft=(a.rushReadyAt or 0)-now,freeRushLeft=(a.freeRushUntil or 0)-now,
+  -- (Audit 03/11) inside an ultimate's sequence (cast or held) nothing
+  -- answers: no guess (the bot fires its ultimate now)
+  held=a.ultimateHeld==true or a.ultimateRunning==true,
  }
 end
 -- The closest planted (not flying, not body) seal of Minato's near the target.
