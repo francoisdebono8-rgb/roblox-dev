@@ -72,6 +72,38 @@ test("DEC-031 (the user's own play 03/11): past the cancel point the stick drift
  assert(ok,err)
 end)
 
+test("soft lock (user 03/11, free lens on the pad): standing near him the body faces him and the blow lands, even turned away; far out it does not turn",function()
+ for _,id in {"Flashstep","Lion","Leaf","Legion"} do
+  for _,setup in {{6,180},{8,120},{4,90}} do
+   local gap,away=setup[1],setup[2]
+   local c,a,b=H.duel(id,"Mirage")
+   c:relocate(a,V.new(0,3,0));c:relocate(b,V.new(0,3,-gap));b.ai=nil
+   a.locked=false
+   -- the body faces `away` degrees off the opponent (the lens looked elsewhere)
+   local r=math.rad(away)
+   local face=V.new(math.sin(r),0,-math.cos(r))
+   a.root.CFrame=H.C.lookAt(a.root.Position,a.root.Position+face);a.look=nil
+   -- (on the pad: standing near him, the free body comes round to him first)
+   for _=1,40 do H.step(c,.01) end
+   local hp=b.health
+   assert(c:request(a,"Attack"),id..": the press was refused")
+   for _=1,60 do H.step(c,.01);if a.state=="Recovery" or b.health<hp then break end end
+   local to=(b.root.Position-a.root.Position)*V.new(1,0,1)
+   local lv=a.root.CFrame.LookVector*V.new(1,0,1)
+   local off=math.deg(math.acos(math.clamp(to.Unit:Dot(lv.Unit),-1,1)))
+   assert(b.health<hp,string.format("%s: a jab started %d deg off at %d studs missed (still %.0f deg off)",id,away,gap,off))
+  end
+ end
+ -- far out (20 studs), the free body does not spin round: no magnet across the arena
+ local c,a,b=H.duel("Lion","Mirage")
+ c:relocate(a,V.new(0,3,0));c:relocate(b,V.new(0,3,-20));b.ai=nil
+ a.locked=false;a.root.CFrame=H.C.lookAt(a.root.Position,V.new(0,3,20));a.look=nil
+ for _=1,40 do H.step(c,.01) end
+ assert(c:request(a,"Attack"))
+ for _=1,20 do H.step(c,.01) end
+ assert(a.root.CFrame.LookVector.Z>.8,"a blow 20 studs out turned the body round")
+end)
+
 test("a backward jump with momentum is a back flip for an acrobat, a lean for Gaara",function()
  local trick=takeoff("Leaf",0,-24,40)
  assert(trick and trick.kind=="back","Lee's backward jump did not flip (got "..tostring(trick and trick.kind)..")")

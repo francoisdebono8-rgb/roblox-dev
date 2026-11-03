@@ -52,10 +52,14 @@ local function send(action,extra)
   if input then payload.direction=input:direction(workspace.CurrentCamera);payload.sprint=input.sprinting end
  end
 	if action=="Move" then payload.direction=extra; payload.locked=camera.locked; payload.sprint=input and input.sprinting or false
-		if not camera.locked then
+		-- (DEC-031) Free with the mouse: the body faces where the player looks
+		-- (shift lock). Free with the pad (user 03/11, his own play: strikes
+		-- thrown at the air behind him): the body faces where it goes, and the
+		-- blows turn to the opponent (Combat soft lock).
+		if not camera.locked and not (input and input.pad) then
 			local look=workspace.CurrentCamera.CFrame.LookVector*Vector3.new(1,0,1)
 			if look.Magnitude>.05 then payload.look=look.Unit end
-		end
+		elseif not camera.locked then payload.look=false end
 	elseif type(extra)=="table" then for k,v in extra do payload[k]=v end
 	elseif action=="Tool" or string.match(action,"^Technique") then
 		local gamepad=input and input.pad

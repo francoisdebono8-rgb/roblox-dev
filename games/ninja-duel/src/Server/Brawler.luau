@@ -579,7 +579,15 @@ function Brawler.start(c,a,name)
  a.travelRemaining=spec.travel
  local flat=a.root.CFrame.LookVector*Vector3.new(1,0,1)
  local delta=a.target.root.Position-a.root.Position;delta=delta*Vector3.new(1,0,1)
- if delta.Magnitude>.1 and delta.Magnitude<11 and (flat:Dot(delta.Unit)>.55 or a.locked) then flat=delta.Unit end
+ -- (Soft lock, user 03/11: free lens, blows thrown at the air behind him)
+ -- not locked on, a blow started within SoftLock.Reach steps at him too.
+ local soft=not a.locked and Config.SoftLock
+ if delta.Magnitude>.1 and delta.Magnitude<(if soft then soft.Reach else 11) and (flat:Dot(delta.Unit)>.55 or a.locked or soft) then
+  -- (the line is the one he stood on at the press: a body that moves after
+  -- it is not chased round, Embodiment)
+  if soft and flat:Dot(delta.Unit)<math.cos(math.rad(40)) then a.pending.softDir=delta.Unit end
+  flat=delta.Unit
+ end
  -- The lock stays on the real fighter, but an opener pushed at one of his
  -- bodies (a shadow clone in reach) swings at it (Bodies.aim; Combat turns
  -- and steps toward it).

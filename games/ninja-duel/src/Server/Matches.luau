@@ -344,7 +344,8 @@ function Matches:act(s,actor,payload,clock)
 		actor.move=payload.direction; actor.lastMove=clock
 		if type(payload.sprint)=="boolean" then actor.sprinting=payload.sprint end
 		-- (DEC-031) Free (not locked on), the body faces where the player looks.
-		if payload.look~=nil then
+		if payload.look==false then actor.look=nil end
+		if payload.look~=nil and payload.look~=false then
 			if vector(payload.look) and math.abs(payload.look.Y)<=.01 and payload.look.Magnitude>.9 and payload.look.Magnitude<1.01 then actor.look=payload.look end
 		end
 		if type(payload.locked)=="boolean" then

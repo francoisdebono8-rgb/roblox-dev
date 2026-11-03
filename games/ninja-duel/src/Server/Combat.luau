@@ -1687,6 +1687,13 @@ function Combat:updateActor(a,dt)
 		-- stick strafes. Strikes and jutsu then go where he looks.
 		a.hum.AutoRotate=false
 		self:turnToward(a,a.look,dt,1080)
+	elseif not a.locked and not a.look and (a.state=="Neutral" or a.state=="Guarding") and not a.airborne and a.target
+		and (not a.move or Vector3.new(a.move.X,0,a.move.Z).Magnitude<.3)
+		and (a.target.root.Position-a.root.Position).Magnitude<Config.SoftLock.Face then
+		-- (Soft lock, free lens on the pad) standing near him, the body
+		-- faces him: the next blow starts at him; moving, it faces its way.
+		a.hum.AutoRotate=false
+		self:turnToward(a,a.target.root.Position-a.root.Position,dt,Config.Facing.Neutral)
 	else a.hum.AutoRotate=not a.locked end
 	-- (DEC-031, the user's own play 03/11: his own recoveries were most of
 	-- his "freezes", the stick held and the body planted) Past the cancel
@@ -1858,7 +1865,14 @@ function Combat:updateActor(a,dt)
   -- A locked strike starting up to 11 studs out turns into the opponent here
   -- (Brawler.start no longer snaps the body round in one frame).
   -- (The wall dive owns its own turn, above.)
-  if flat.Magnitude>2 and flat.Magnitude<(if a.state=="Startup" and a.locked then 11 else 9) and attack.name~="WallDive" then
+  -- (Soft lock, user 03/11, his own play in the free lens: Light1 thrown
+  -- 164-179 deg away from Itachi, four strikes in five in the air) Not
+  -- locked on, a strike starting within SoftLock.Reach turns to him, even
+  -- from behind, over its startup.
+  if not a.locked and a.state=="Startup" and attack.softDir then
+   self:turnToward(a,attack.softDir,dt,Config.SoftLock.Rate)
+  end
+  if flat.Magnitude>2 and flat.Magnitude<(if a.state=="Startup" and a.locked then 11 else 9) and attack.name~="WallDive" and not (attack.softDir and a.state=="Startup") then
    local tangent=Vector3.new(-flat.Z,0,flat.X).Unit
    local spec=attack.spec
    if spec.orbit and a.state~="Recovery" then

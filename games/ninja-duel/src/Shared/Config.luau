@@ -95,6 +95,10 @@ return {
 	-- lock's own turn in neutral, and while moving away or sprinting (was
 	-- 760 / 540).
 	Facing = {Startup = 480, Active = 160, Neutral = 520, Committed = 420},
+	-- Free lens: a blow starting this close turns to the opponent at Rate (deg/s).
+	-- (900: the startup's bounded turn, CombatFeel; standing near him the free
+	-- body already faces him, Combat.updateActor)
+	SoftLock = {Reach = 13, Rate = 900, Face = 12},
 	-- (Continuity blocker) A chase heads for the point the body was going to
 	-- and lets it drift at Steer studs/s; it turns at Turn degrees/s.
 	Chase = {Steer = 60, Turn = 720},
