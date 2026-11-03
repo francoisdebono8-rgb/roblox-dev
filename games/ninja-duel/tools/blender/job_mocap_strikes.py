@@ -226,6 +226,14 @@ def plant(arm, tr, ramp=3):
                     w = min(w, d / (ramp + 1))
             (pos, yaw) = target[k]
             root_rot = tr["q"]["Root"][k].to_matrix()
+            # the hips come down when the locked foot would be out of reach
+            # (the capture's hips swing away over a pivoting support foot)
+            hip = tr["loc"][k] + root_rot @ Vector((.5 * s, -.55, 0))
+            horiz = Vector((pos.x - hip.x, 0, pos.z - hip.z)).length
+            reach = (nd_anim.L1 + nd_anim.L2) * .96
+            if (pos - hip).length > reach and horiz < reach:
+                need = pos.y + math.sqrt(reach * reach - horiz * horiz)
+                tr["loc"][k] = Vector((tr["loc"][k].x, tr["loc"][k].y + (need - hip.y) * w, tr["loc"][k].z))
             hip, knee, foot = nd_anim.leg_ik(side, tr["loc"][k], root_rot,
                                              {"x": pos.x - .5 * s, "y": pos.y + 2.6, "z": pos.z, "yaw": yaw})
             for joint, mat in ((name + "Hip", hip), (name + "Knee", knee), (name + "Ankle", foot)):
