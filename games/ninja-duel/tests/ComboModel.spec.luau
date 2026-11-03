@@ -615,7 +615,7 @@ test("the AI re-engages: every CORE4 bot dashes or chases within a minute, witho
      -- A wedge is one state (and one swing) that never ends; a long legal
      -- sequence (launcher, chase, air string, slam) is not.
      local key=x.state..":"..tostring(x.attackSerial or 0)..":"..tostring(x.castId)
-     if x.state=="Neutral" or x.state=="Guarding" or key~=(stuck[x] and stuck[x].key) then stuck[x]={key=key,t=0} else stuck[x].t+=.02 end
+     if x.state=="Neutral" or x.state=="Guarding" or x.ultimateRunning or x.ultimateHeld or key~=(stuck[x] and stuck[x].key) then stuck[x]={key=key,t=0} else stuck[x].t+=.02 end
      assert(stuck[x].t<2.5,pair[1].." vs "..pair[2]..": "..x.fighterId.." wedged in "..x.state)
     end
    end

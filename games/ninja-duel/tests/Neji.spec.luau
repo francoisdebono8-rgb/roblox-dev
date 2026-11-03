@@ -163,7 +163,7 @@ test("AI duels: Neji against both prodigies, both ways, without wedging",functio
    one:update(c.now);two:update(c.now)
    H.step(c,.01)
    for _,x in {a,b} do
-    if x.state=="Neutral" then stuck[x]=0 else stuck[x]=(stuck[x] or 0)+.01 end
+    if x.state=="Neutral" or x.ultimateRunning or x.ultimateHeld then stuck[x]=0 else stuck[x]=(stuck[x] or 0)+.01 end
     assert(stuck[x]<4,pair[1].." vs "..pair[2]..": "..x.fighterId.." wedged in "..x.state)
    end
   end

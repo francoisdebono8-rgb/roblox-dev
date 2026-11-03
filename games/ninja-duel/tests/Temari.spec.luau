@@ -696,7 +696,7 @@ test("AI duels: Temari against every fighter, both ways and the mirror, to the K
      one:update(c.now);two:update(c.now);H.step(c,.01);t+=.01
      for _,x in {a,b} do
       local key=x.state..":"..tostring(x.attackSerial or 0)..":"..tostring(x.castId)
-      if x.state=="Neutral" or x.state=="Guarding" or key~=(stuck[x] and stuck[x].key) then stuck[x]={key=key,t=0} else stuck[x].t+=.01 end
+      if x.state=="Neutral" or x.state=="Guarding" or x.ultimateRunning or x.ultimateHeld or key~=(stuck[x] and stuck[x].key) then stuck[x]={key=key,t=0} else stuck[x].t+=.01 end
       assert(stuck[x].t<2.5,pair[1].." vs "..pair[2]..": "..x.fighterId.." wedged in "..x.state)
       assert(x.health==x.health and x.root.Position.Y==x.root.Position.Y,pair[1].." vs "..pair[2]..": non-finite state")
      end

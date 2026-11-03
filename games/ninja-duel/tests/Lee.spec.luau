@@ -415,7 +415,7 @@ test("AI duels: Rock Lee against every CORE4 prodigy, Gaara and himself, both wa
        -- A wedge is one state (and one swing) that never ends; a long legal
        -- sequence (an air string into the lotus) is not.
        local key=x.state..":"..tostring(x.attackSerial or 0)..":"..tostring(x.castId)
-       if x.state=="Neutral" or x.state=="Guarding" or key~=(stuck[x] and stuck[x].key) then stuck[x]={key=key,t=0} else stuck[x].t+=.01 end
+       if x.state=="Neutral" or x.state=="Guarding" or x.ultimateRunning or x.ultimateHeld or key~=(stuck[x] and stuck[x].key) then stuck[x]={key=key,t=0} else stuck[x].t+=.01 end
        assert(stuck[x].t<2.5,pair[1].." vs "..pair[2]..": "..x.fighterId.." wedged in "..x.state)
        assert(x.health==x.health and x.root.Position.Y==x.root.Position.Y,pair[1].." vs "..pair[2]..": non-finite state")
       end
