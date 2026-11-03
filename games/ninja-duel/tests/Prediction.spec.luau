@@ -53,6 +53,9 @@ local function run(lag)
    local c,a,b,match=H.duel(pair[1],pair[2])
    c:relocate(a,V.new(0,3,10));c:relocate(b,V.new(0,3,-10))
    local one,two=AI.new(c,a,seed*7+index),AI.new(c,b,seed*13+1)
+   -- (DEC-032) the sample is the fight this agreement was measured on: the
+   -- bots keep to their quick slots (hand seals are judged in Seals.spec)
+   one.noSeals=true;two.noSeals=true
    local p=setmetatable({smooth={human={pos=a.root.Position},bot={pos=b.root.Position}},clocks={},last={}},{__index=P})
    local queue={}
    local t=0

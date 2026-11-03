@@ -838,7 +838,7 @@ function AI:update(now)
 		-- (DEC-032) No quick slot taken: now and then a jutsu of the hand seals,
 		-- the two seals woven in one breath (the same weave as a player's).
 		local seals=a.def.SealJutsu
-		if seals and #seals>0 and not punish and self.rng:NextNumber()<(tune.Seals or .2) then
+		if seals and #seals>0 and not self.noSeals and not punish and self.rng:NextNumber()<(tune.Seals or .2) then
 			self.sealStart=((self.sealStart or 0)%#seals)+1
 			local spec=seals[self.sealStart]
 			if (a.cooldowns[spec.Id] or 0)<=now and a.chakra>=spec.Cost and familyWants(self,c,a,target,spec,distance,danger)
