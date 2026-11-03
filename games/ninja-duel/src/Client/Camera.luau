@@ -305,13 +305,34 @@ function Camera:update(data,dt)
 	-- into the player's back: the camera looks through them and they fade.
 	-- Only the floor and the bowl's boundary still stop the lens.
 	local faded={}
-	local hit=workspace:Raycast(focus,desired-focus,ray)
-	for _=1,4 do
+	-- (Studio 03/11, v26: a Naruto clone between the lens and the player hid
+	-- him entirely) A body in the way (a clone, a puppet, a summon, the
+	-- opponent's double) fades whole, and a body brushing the line counts
+	-- too (a sphere, not a thin ray, from the player to the lens).
+	local function fadeBody(part)
+		local model=part:FindFirstAncestorOfClass("Model")
+		if model and model~=workspace and model:FindFirstChildOfClass("Humanoid") then
+			for _,d in model:GetDescendants() do if d:IsA("BasePart") then faded[d]=true end end
+			table.insert(exclude,model)
+			return true
+		end
+		return false
+	end
+	local function cast()
+		local ok,result=pcall(workspace.Spherecast,workspace,focus,.9,desired-focus,ray)
+		local sphere=if ok then result else nil
+		if sphere and not solid(sphere.Instance) and sphere.Instance:FindFirstAncestorOfClass("Model") and sphere.Instance:FindFirstAncestorOfClass("Model"):FindFirstChildOfClass("Humanoid") then return sphere end
+		return workspace:Raycast(focus,desired-focus,ray)
+	end
+	local hit=cast()
+	for _=1,6 do
 		if not hit or solid(hit.Instance) then break end
-		faded[hit.Instance]=true
-		table.insert(exclude,hit.Instance)
+		if not fadeBody(hit.Instance) then
+			faded[hit.Instance]=true
+			table.insert(exclude,hit.Instance)
+		end
 		ray.FilterDescendantsInstances=exclude
-		hit=workspace:Raycast(focus,desired-focus,ray)
+		hit=cast()
 	end
 	for part in self.faded or {} do if not faded[part] and part.Parent then part.LocalTransparencyModifier=0 end end
 	for part in faded do part.LocalTransparencyModifier=.72 end
