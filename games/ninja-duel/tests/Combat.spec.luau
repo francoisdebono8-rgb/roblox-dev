@@ -315,7 +315,10 @@ test("Place1 mantle clearance, arc, state cancellation and wall-hop limits",func
  local p=Parkour.new(a,c);assert(p.jump())
  assert(a.model:GetAttribute("MovementTraversalActive"))
  local start=a.root.Position;c.now+=.15;assert(p.step());assert(a.root.Position.Y>start.Y)
- c.now+=.4;p.step();assert(not a.model:GetAttribute("MovementTraversalActive") and a.root.Position.Y>6)
+ -- (stepped every frame, as in a match: a climb left unstepped past its end is
+ -- abandoned, Freeze 02/11)
+ for _=1,24 do c.now+=1/60;p.step() end
+ assert(not a.model:GetAttribute("MovementTraversalActive") and a.root.Position.Y>6)
  -- A fresh mantle is cancelled immediately by a combat reaction.
  p.reset();a.root.CFrame=C.lookAt(V.new(0,3,0),V.new(1,3,0));c.now+=.5
  assert(p.jump());a.reaction="HitStun";p.step();assert(not a.model:GetAttribute("MovementTraversalActive"))

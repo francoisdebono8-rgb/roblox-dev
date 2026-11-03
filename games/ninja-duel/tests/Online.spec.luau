@@ -9,7 +9,7 @@ local clock=1000
 H.workspace.GetServerTimeNow=function() return clock end
 -- Deterministic stand-in for task.delay (the KO beat between rounds).
 local timers={}
-H.envBase.task={delay=function(t,fn,...) table.insert(timers,{at=clock+t,fn=fn,args=table.pack(...)}) end}
+H.envBase.task={delay=function(t,fn,...) table.insert(timers,{at=clock+t,fn=fn,args=table.pack(...)}) end,spawn=function() end,defer=function() end,wait=function() return 0 end}
 local function runTimers()
 	local due={}
 	for i=#timers,1,-1 do if timers[i].at<=clock then table.insert(due,1,table.remove(timers,i)) end end

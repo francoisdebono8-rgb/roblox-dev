@@ -309,6 +309,9 @@ local playerService={LocalPlayer=localPlayer,GetPlayers=function() return {local
 Harness.localPlayer=localPlayer
 Harness.Players=playerService
 
+-- (Headless) The task library: deferred work never runs here (a UI that
+-- fills its portraits later, a warm-up), but the calls exist as in Roblox.
+envBase.task=envBase.task or {spawn=function() end,defer=function() end,delay=function() end,wait=function() return 0 end}
 envBase.game={GetService=function(_,name)
  if name=="ReplicatedStorage" then
   sharedStub=sharedStub or setmetatable({BanglaAssets=assets,WaitForChild=function(_,key) return assets end,BuildFingerprint={Value="headless"}},{__index=names.Shared})
