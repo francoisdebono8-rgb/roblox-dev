@@ -4550,7 +4550,7 @@ return {
       <Item class="StringValue" referent="ND26">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">d7c3880f9353558965cccc755d7af2823ee35943ba8759967e5b3b85a830963e</string>
+          <string name="Value">5aee95e3ea05d9c8c7f232d82f73757517605bdbde98fd2af6f9902aeb157ac8</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND27">
@@ -10475,6 +10475,8 @@ end
 -- move -&gt; stop -&gt; move -&gt; stop.
 local HITSTOP={light=0,air=0,block=.01,finisher=.05,launcher=.06,parry=.075,slam=.09,jutsu=.065,default=.025}
 Combat.Hitstop=HITSTOP
+-- Studs/s the stick drifts a body through the end of a recovery (DEC-031).
+Combat.RECOVERY_DRIFT=8
 function Combat:applyHitstop(attacker,victim,style,heavy)
 	local stop=HITSTOP[style] or (if heavy then HITSTOP.default else 0)
 	if stop&lt;=0 then return stop end
@@ -12028,7 +12030,21 @@ function Combat:updateActor(a,dt)
 	if a.locked and (a.state=="Neutral" or a.state=="Guarding") then
 		a.hum.AutoRotate=false
 		self:faceLocked(a,dt)
+	elseif not a.locked and a.look and (a.state=="Neutral" or a.state=="Guarding") and not a.airborne then
+		-- (DEC-031, user 03/11: "Storm total") Free: the body faces where the
+		-- player looks (the mouse turns the lens, as Roblox's shift lock); the
+		-- stick strafes. Strikes and jutsu then go where he looks.
+		a.hum.AutoRotate=false
+		self:turnToward(a,a.look,dt,1080)
 	else a.hum.AutoRotate=not a.locked end
+	-- (DEC-031, the user's own play 03/11: his own recoveries were most of
+	-- his "freezes", the stick held and the body planted) Past the cancel
+	-- point the stick drifts the body at a walk's fraction; the string, its
+	-- routes and the punish window before the cancel point stay as they were.
+	if (a.state=="Recovery" or a.state=="TechniqueRecovery") and not a.airborne and not a.reaction and not a.wall
+		and now&gt;=(a.recoveryCancelAt or math.huge) and a.move and Vector3.new(a.move.X,0,a.move.Z).Magnitude&gt;.5 then
+		Motor.travel(a,self,a.move,Combat.RECOVERY_DRIFT*dt)
+	end
 	if a.state=="Dodging" then
 		Evade.step(a,self,Motor.travel)
 	elseif a.state=="Pursuit" and (a.shadowUntil or 0)&gt;now then
@@ -13066,6 +13082,7 @@ function Flight.install(matches,session)
 		push(R.inputs,entry,150)
 	end
 	local still,lastSample,freezeOpen=0,0,false
+	local lastPosition=nil
 	RunService.Heartbeat:Connect(function(dt)
 		local _,s=session()
 		local a=s and s.human
@@ -13083,7 +13100,13 @@ function Flight.install(matches,session)
 				y=math.floor(a.root.Position.Y*10)/10,hp=math.floor(a.health)},800)
 		end
 		local wants=a.move and flat(a.move).Magnitude&gt;.5
-		local moving=flat(a.root.AssemblyLinearVelocity).Magnitude&gt;1
+		-- (Audit 03/11) Dashes, dodges, strike steps and knockback flights move
+		-- the body by its CFrame, at zero velocity: the frame's displacement
+		-- counts too (they were read as freezes).
+		local position=a.root.Position
+		local stepped=lastPosition and dt&gt;0 and flat(position-lastPosition).Magnitude/dt&gt;1
+		lastPosition=position
+		local moving=flat(a.root.AssemblyLinearVelocity).Magnitude&gt;1 or stepped==true
 		local alive=a.health&gt;0 and not s.finishing and not (s.introUntil and c.now&lt;s.introUntil)
 		if wants and not moving and alive then
 			still+=dt
@@ -17871,6 +17894,10 @@ function Matches:act(s,actor,payload,clock)
 		if not vector(payload.direction) or payload.direction.Magnitude&gt;1.01 or math.abs(payload.direction.Y)&gt;0.01 then return end
 		actor.move=payload.direction; actor.lastMove=clock
 		if type(payload.sprint)=="boolean" then actor.sprinting=payload.sprint end
+		-- (DEC-031) Free (not locked on), the body faces where the player looks.
+		if payload.look~=nil then
+			if vector(payload.look) and math.abs(payload.look.Y)&lt;=.01 and payload.look.Magnitude&gt;.9 and payload.look.Magnitude&lt;1.01 then actor.look=payload.look end
+		end
 		if type(payload.locked)=="boolean" then
 			if actor.locked~=payload.locked then require(script.Parent.Brawler).event(s.combat,actor,if payload.locked then "Lock" else "Unlock") end
 			actor.locked=payload.locked
@@ -20605,6 +20632,15 @@ Repro.cases={
 		setup=function(dev)
 			dev("refill");dev("place",Vector3.new(0,3,6),Vector3.new(0,3,0))
 			dev("freezeBot",false);dev("ultimate","bot",100)
+		end},
+	B04={title="La touche 5 affichait UNKNOWN ACTION",
+		saw="Avec un perso à 4 techniques, la touche 5 renvoyait « UNKNOWN ACTION » écrit à l'écran (vu dans ta partie avec Minato).",
+		now="La touche 5 ne fait rien, sans message ; les touches 1 à 4 lancent les techniques.",
+		how="Appuie sur 5 : rien ne doit s'afficher. Puis sur 2 de très loin : Minato file vers lui au lieu d'afficher « OUT OF RANGE ».",
+		test="tests/Input.spec.luau (B04), tests/Convergence.spec.luau (reach)",
+		first="Flashstep",second="Mirage",
+		setup=function(dev)
+			dev("freezeBot",true);dev("refill");dev("place",Vector3.new(0,3,40),Vector3.new(0,3,-20))
 		end},
 }
 
@@ -38010,7 +38046,9 @@ local function solid(part)
 end
 Camera.solid=solid
 function Camera.new()
-	local self=setmetatable({locked=true,look=Vector2.zero,yaw=0,pitch=.22,lastEpoch=-1,lastHealth=nil,lastEnemyHealth=nil,
+	-- (DEC-031, user 03/11: "on est sur du Storm total") Free by default:
+	-- the mouse turns the lens, SHIFT locks on.
+	local self=setmetatable({locked=false,look=Vector2.zero,yaw=0,pitch=.22,lastEpoch=-1,lastHealth=nil,lastEnemyHealth=nil,
 		shakeUntil=0,shakeSize=0,fovKick=0,focus=nil,boomAngle=nil,distance=nil,rng=Random.new(),zoom=0,mode=nil},Camera)
  local UIS=game:GetService("UserInputService")
  -- Right mouse owns the heavy attack, so orbit and zoom are always live
@@ -38076,8 +38114,15 @@ function Camera:impulse(style,role,impact)
 	local SETTLE={finisher=1.6,launcher=1.2,slam=2.4,wallbounce=2.4,wall=1.4,clash=1.4,repel=1.8,parry=1.4,fire=2}
 	if SETTLE[style] then self.settleSize=math.max(if now&lt;(self.settleUntil or 0) then self.settleSize or 0 else 0,SETTLE[style]);self.settleUntil=now+.75 end
 end
+function Camera:mouse(data)
+	local UIS=game:GetService("UserInputService")
+	local free=data~=nil and data.phase=="Duel" and not self.locked and not data.gamepad and not self.menuOpen
+	local want=if free then Enum.MouseBehavior.LockCenter else Enum.MouseBehavior.Default
+	if UIS.MouseBehavior~=want then UIS.MouseBehavior=want end
+end
 function Camera:update(data,dt)
 	local camera=workspace.CurrentCamera
+	pcall(self.mouse,self,data)
 	-- Roster, online queue and fighter pick: no duel on screen yet.
 	if not data or (data.phase~="Duel" and data.phase~="Result") or not data.human or not data.bot then
 		self.lastHealth=nil; self.lastEnemyHealth=nil; camera.FieldOfView=70
@@ -38096,6 +38141,7 @@ function Camera:update(data,dt)
 	if not root then return end
 	camera.CameraType=Enum.CameraType.Scriptable
 	local fresh=self.lastEpoch~=data.epoch
+	if fresh then self.faceOpponent=true end
 	if fresh then self.lastHealth=data.human.health; self.lastEnemyHealth=data.bot.health;self.yaw=0;self.pitch=.22;self.focus=nil;self.boomAngle=nil;self.distance=nil;self.sprint=0;self.wasSprinting=false;self.lastImpactSerial=data.human.impactSerial or 0 end
 	-- Fallback only: the impact-style impulse above owns normal reactions.
 	-- Only a new contact counts: a health drain (curse mark) carries a stale
@@ -38145,7 +38191,11 @@ function Camera:update(data,dt)
 	if self.mode and selected~=self.mode and clock&lt;(self.modeSince or 0)+.4 and selected~="Slam" and selected~="Pursuit" then selected=self.mode end
 	if selected~=self.mode then self.modeSince=clock end
 	self.mode=selected
-	local frame=framing[selected]
+	-- (User 03/11, free lens: "sometimes the camera switches from free to the
+	-- character and back") The framing modes (chase 21 studs, wall 22, slam
+	-- 19 and 10 up, against 12.5 on the ground) frame the pair when locked
+	-- on; free, they jumped the lens in and out. Free keeps the ground frame.
+	local frame=if follow then framing[selected] else framing.Ground
 	-- Look-stick / unlocked mouse orbit.
 	self.yaw+=(self.look.X or 0)*dt*2.4;self.pitch=math.clamp(self.pitch-(self.look.Y or 0)*dt,.04,.9)
 	-- (Audit 29/10) Locked, a nudge of the right stick is a glance: it eases
@@ -38165,6 +38215,7 @@ function Camera:update(data,dt)
 	elseif lost and self.locked then
 		desiredAngle=self.fogYaw or self.boomAngle or 0
 	else
+		if self.faceOpponent then self.yaw=math.atan2(behind.X,behind.Z);self.boomAngle=nil;self.faceOpponent=nil end
 		desiredAngle=self.yaw
 	end
 	if not self.boomAngle then self.boomAngle=desiredAngle end
@@ -38195,7 +38246,10 @@ function Camera:update(data,dt)
 		self.lead=(self.lead or Vector3.zero):Lerp(lead,1-math.exp(-dt*4))
 		targetFocus+=self.lead
 	end
-	if not follow then targetFocus=a+Vector3.new(0,1.6,0) end
+	if not follow then
+		local look=Vector3.new(-boom.X,0,-boom.Z)
+		targetFocus=a+Vector3.new(0,1.6,0)+(if look.Magnitude&gt;.05 then look.Unit:Cross(Vector3.yAxis)*1.7 else Vector3.zero)
+	end
 	local focusRate=if aerial or pursuit then 13 else 9
 	self.focus=if self.focus then self.focus:Lerp(targetFocus,1-math.exp(-dt*focusRate)) else targetFocus
 	local focus=self.focus
@@ -38203,9 +38257,13 @@ function Camera:update(data,dt)
 	-- K.O.: a slow drift around the finish while the lens eases out.
 	if data.ko then self.yaw+=dt*.3 end
 	local spread=math.min(math.max(0,separation-7),19)*.42+math.max(0,separation-26)*.22
-	local wantDistance=math.clamp(frame.distance-sprint*1.5+spread+vertical*.3+self.zoom+(self.settleSize or 0)*math.sin(settle*math.pi*.5)+(if data.ko then 6 else 0),8.5,48)
+	-- Free, the lens follows the player, not the pair: no pull-back for the gap
+	-- to the opponent (a wall run 40 studs from him filmed the player tiny).
+	local pairVertical=vertical
+	if not follow then spread=0;pairVertical=0 end
+	local wantDistance=math.clamp(frame.distance-sprint*1.5+spread+pairVertical*.3+self.zoom+(self.settleSize or 0)*math.sin(settle*math.pi*.5)+(if data.ko then 6 else 0),8.5,48)
 	self.distance=if self.distance then self.distance+(wantDistance-self.distance)*(1-math.exp(-dt*4)) else wantDistance
-	local height=frame.height-sprint*.6+self.pitch*9+vertical*.28+math.min(math.max(0,separation-10)*.1,4)
+	local height=frame.height-sprint*.6+self.pitch*9+(if follow then vertical*.28+math.min(math.max(0,separation-10)*.1,4) else 0)
 	if slam then height+=math.clamp(-(data.human.velocity and data.human.velocity.Y or 0)*.04,0,4) end
 	local desired=focus+boom*self.distance+Vector3.new(0,height,0)
 	-- Match intro: a slow orbit that presents both fighters, then the normal
@@ -44080,9 +44138,14 @@ local function send(action,extra)
   if input then payload.direction=input:direction(workspace.CurrentCamera);payload.sprint=input.sprinting end
  end
 	if action=="Move" then payload.direction=extra; payload.locked=camera.locked; payload.sprint=input and input.sprinting or false
+		if not camera.locked then
+			local look=workspace.CurrentCamera.CFrame.LookVector*Vector3.new(1,0,1)
+			if look.Magnitude&gt;.05 then payload.look=look.Unit end
+		end
 	elseif type(extra)=="table" then for k,v in extra do payload[k]=v end
 	elseif action=="Tool" or string.match(action,"^Technique") then
 		local gamepad=input and input.pad
+		mouse.TargetFilter=player.Character
 		local hit=if gamepad and current.bot then current.bot.position else mouse.Hit.Position
 		if gamepad and action=="Technique1" and current.human and current.human.fighterId=="Flashstep" then hit-=Vector3.new(0,2.8,0) end
 		local root=player.Character and player.Character:FindFirstChild("HumanoidRootPart")
@@ -44105,19 +44168,21 @@ require(playerModule):GetControls():Disable()
 remote.OnClientEvent:Connect(function(data)
 	if data.epoch&lt;(current.epoch or 0) then return end
 	if data.epoch~=current.epoch or data.phase~=current.phase then input:resync() end
-	if data.epoch~=current.epoch then camera.locked=true end
+	if data.epoch~=current.epoch then camera.locked=false end
 	data.gamepad=input.pad
 	current=data; presentation.receivedAt=os.clock(); presentation:impacts(data,camera); ui:render(data)
 	if data.phase=="Duel" and data.serverNow then presentation:noteSnapshot(workspace:GetServerTimeNow()-data.serverNow) end
 end)
 local nextMove=0
-local lastDir,lastSprint=nil,nil
+local lastDir,lastSprint,lastLook=nil,nil,nil
 local lastSentAt=0
 RunService:BindToRenderStep("NinjaDuelCamera",Enum.RenderPriority.Camera.Value,function(dt)
 	-- Last moment before the frame is drawn: the replicated roots have their
 	-- final positions for this frame, so the smoothed bodies and the camera agree.
 	presentation:smoothStep(current,dt)
 	presentation:update(current,dt)
+	camera.menuOpen=(dev~=nil and dev.panelOpen==true)
+	mouse.TargetFilter=player.Character
 	camera:update(current,dt)
 	-- (DEC-030 Partie 1, responsiveness) The stick goes out the frame it
 	-- changes, not on the next 80 ms tick (that alone cost up to 80 ms on every
@@ -44126,10 +44191,13 @@ RunService:BindToRenderStep("NinjaDuelCamera",Enum.RenderPriority.Camera.Value,f
 		local dir=input:direction(workspace.CurrentCamera)
 		presentation.inputDir=dir;presentation.inputSprint=input.sprinting
 		presentation:observeStick(os.clock())
-		local changed=lastDir==nil or (dir-lastDir).Magnitude&gt;.15 or input.sprinting~=lastSprint
+		local flatLook=workspace.CurrentCamera.CFrame.LookVector*Vector3.new(1,0,1)
+		local turned=not camera.locked and flatLook.Magnitude&gt;.05 and (lastLook==nil or (flatLook.Unit-lastLook).Magnitude&gt;.06)
+		local changed=lastDir==nil or (dir-lastDir).Magnitude&gt;.15 or input.sprinting~=lastSprint or turned
 		if (changed and os.clock()-lastSentAt&gt;=1/30) or os.clock()&gt;=nextMove then
 			lastSentAt=os.clock()
 			nextMove=os.clock()+0.08;lastDir=dir;lastSprint=input.sprinting
+			if flatLook.Magnitude&gt;.05 then lastLook=flatLook.Unit end
 			send("Move",dir)
 		end
 	end
