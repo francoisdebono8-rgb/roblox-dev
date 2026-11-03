@@ -258,8 +258,10 @@ function UI.new(parent,send)
 	self.hud=frame(self.gui,UDim2.fromScale(0,0),UDim2.fromScale(1,1),palette.ink,1)
 	local hudScale=create("UIScale",self.hud,{Scale=1})
 	-- (Look pass 03/11) The fight screen's own grade, under every HUD element:
-	-- a soft ink vignette at the edges; a red one that throbs in danger; anime
-	-- speed lines streaming in from the edges at a sprint or a dash.
+	-- a soft ink vignette at the edges; a red one that throbs in danger.
+	-- (User 03/11: the speed lines streaming in from the screen edges at a
+	-- run "drive me crazy". They showed while the dash recharged too, so
+	-- nearly all the time: removed.)
 	self.screenFx=frame(self.gui,UDim2.fromScale(0,0),UDim2.fromScale(1,1),palette.ink,1)
 	self.screenFx.ZIndex=0
 	local function edges(color,parent,strength)
@@ -275,12 +277,6 @@ function UI.new(parent,send)
 	edges(Color3.fromRGB(10,8,14),self.vignette,.38)
 	self.danger=create("CanvasGroup",self.screenFx,{Size=UDim2.fromScale(1,1),BackgroundTransparency=1,GroupTransparency=1})
 	edges(Color3.fromRGB(200,20,30),self.danger,.8)
-	self.speedLines={}
-	for k=1,22 do
-		local line=frame(self.screenFx,UDim2.fromScale(.5,.5),UDim2.fromOffset(220,2),palette.paper,1)
-		line.AnchorPoint=Vector2.new(0,.5)
-		self.speedLines[k]=line
-	end
 	self.hudScale=hudScale
 	-- (UI redesign 02/11) The duel plates in the menu's language: the fighter's
 	-- face in an ink medallion with a ring of his colour at the outer corner,
@@ -589,7 +585,7 @@ function UI:refreshSelection()
 		end
 	end
 	self.matchup.Text=string.upper((p.Name).."  VS  "..(o.Name))
-	self.routeNote.Text=if p.Routes then string.upper(p.Name).." STRINGS  "..p.Routes else ""
+	self.routeNote.Text=if p.Routes then string.upper(p.Name).." STRINGS  "..Controls.localize(p.Routes) else ""
 end
 -- The controls sheet: opened over any screen, built for the device in hand
 -- and the fighter being played.
@@ -984,27 +980,11 @@ function UI:render(data)
 			pip.fill.BackgroundColor3=if k<=charges then palette.paper else palette.muted
 		end
 	end
-	-- Screen grade: the danger edges throb under a quarter of health; speed
-	-- lines stream in at a sprint, a dash, a chase.
+	-- Screen grade: the danger edges throb under a quarter of health.
 	pcall(function()
 		local t=os.clock()
 		local ratio=math.clamp(h.health/math.max(h.maxHealth,1),0,1)
 		self.danger.GroupTransparency=if ratio<=.25 and ratio>0 then .45+.35*(.5+.5*math.sin(t*5)) else 1
-		local fast=(h.speed or 0)>34 or (h.dodge or 0)>0 or h.state=="Pursuit"
-		local view=workspace.CurrentCamera.ViewportSize
-		for k,line in self.speedLines do
-			if fast then
-				-- Each line flickers to a new spot along an edge every few frames.
-				if (k+math.floor(t*30))%3==0 then
-					local a=(k/#self.speedLines)*math.pi*2+math.sin(t*7+k)*.2
-					local r=.5
-					line.Position=UDim2.fromScale(.5+math.cos(a)*r,.5+math.sin(a)*r*.9)
-					line.Rotation=math.deg(a)+180
-					line.Size=UDim2.fromOffset(math.max(120,view.X*.12)+(k%4)*30,2+(k%2))
-					line.BackgroundTransparency=.35+((k*7)%5)*.1
-				end
-			else line.BackgroundTransparency=1 end
-		end
 	end)
 	-- Combo counters with the damage scale of the next hit.
 	for _,pair in {{self.comboMine,b},{self.comboTheirs,h}} do

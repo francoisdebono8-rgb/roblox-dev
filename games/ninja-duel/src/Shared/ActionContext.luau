@@ -136,13 +136,16 @@ function Context.stick(move,line,tune)
 end
 -- The air dive (Brawler.airDive): high above a grounded body and out of the
 -- first air swing's reach, the air opener is the lunge down onto him.
-Context.AirDive={Above=3,AboveMax=26,Near=3.5,Far=18}
+-- (Audit 03/11, B02) Straight above his head (a jump in place next to him:
+-- 15 studs up, 1-3 away) the air swing passed over him too: from Overhead
+-- up, a body that close is dived on as well.
+Context.AirDive={Above=3,AboveMax=26,Near=3.5,Far=18,Overhead=6}
 function Context.airDive(myPos,targetPos)
 	local d=targetPos-myPos
 	local h=flat(d).Magnitude
 	local above=-d.Y
 	local T=Context.AirDive
-	return above>=T.Above and above<=T.AboveMax and h>=T.Near and h<=T.Far
+	return above>=T.Above and above<=T.AboveMax and (h>=T.Near or above>=T.Overhead) and h<=T.Far
 end
 
 -- graph: the fighter's MoveGraphs entry (may be nil); attacks: the Attacks

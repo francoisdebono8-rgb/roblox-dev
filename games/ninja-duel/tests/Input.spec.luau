@@ -336,6 +336,11 @@ test("B01 (audit 03/11, a French Mac): on AZERTY every text names the key printe
  assert(string.find(C.Help,"ZQSD move",1,true) and string.find(C.Help,"A dodge",1,true),"help: "..C.Help)
  assert(C.localize("WALL SPLAT • Q ON IMPACT TO TECH")=="WALL SPLAT • A ON IMPACT TO TECH")
  assert(C.localize("Hold F")=="Hold F" and C.localize("LMB twice")=="LMB twice","words and other keys stay")
+ -- (Studio 03/11) the article stays an article; the roster's string notes follow the keys too.
+ assert(C.localize("RASENGAN • A CLONE FOR IT")=="RASENGAN • A CLONE FOR IT",C.localize("RASENGAN • A CLONE FOR IT"))
+ assert(C.localize("SUBSTITUTION • IT WAS A CLONE!")=="SUBSTITUTION • IT WAS A CLONE!")
+ local routes=H.load("Shared/Fighters").Legion.Routes
+ assert(string.find(C.localize(routes),"W + R: the kunai turns into a clone",1,true),"Naruto's notes: "..C.localize(routes))
  -- QWERTY: nothing changes.
  C.KeyLabel=saved.K;C.Help=saved.Help;C.Grammar=saved.Grammar;C.layout=saved.layout
  assert(not C.useLayout(function(code) return code.Name end),"a QWERTY layout was rewritten")

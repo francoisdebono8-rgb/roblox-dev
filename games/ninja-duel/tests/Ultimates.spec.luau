@@ -41,6 +41,23 @@ test("the bar fills by hitting and by being hit, capped; an empty bar refuses",f
  assert(a.ultimate==100 and Ultimates.ready(a),"the bar is not capped at 100")
 end)
 
+test("B03 (audit 03/11): with a full bar the bot fires its ultimate; with an empty one it never tries",function()
+ local AI=H.load("Server/AI")
+ for _,id in MAIN do
+  local c,a,b=H.duel(id,"Mirage");place(c,a,b,5)
+  b.ai=nil;a.ai=nil
+  local brain=AI.new(c,a,5)
+  local fired=false
+  local request=c.request
+  c.request=function(self,actor,action,...) if actor==a and action=="Ultimate" then fired=true end;return request(self,actor,action,...) end
+  for _=1,300 do brain:update(c.now);H.step(c,.01);if fired then break end;c:relocate(a,V.new(0,3,2.5));c:relocate(b,V.new(0,3,-2.5));a.health=a.def.Health;b.health=b.def.Health end
+  assert(not fired,id..": the bot tried an ultimate with an empty bar")
+  a.ultimate=100
+  for _=1,600 do brain:update(c.now);H.step(c,.01);if fired then break end;c:relocate(a,V.new(0,3,2.5));c:relocate(b,V.new(0,3,-2.5));b.health=b.def.Health end
+  assert(fired,id..": the bot sat on a full bar for 6 s at 5 studs")
+ end
+end)
+
 test("caught: both bodies are held for the sequence, the ticks and the last blow land, the bar is spent",function()
  for _,id in MAIN do
   local c,a,b=H.duel(id,"Mirage");place(c,a,b,4)

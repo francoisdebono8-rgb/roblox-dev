@@ -46,6 +46,26 @@ test("air dive: close above, or with an air string alive, the air strike stays t
  assert(x.attackName~="WallDive","a dive at a body in the air")
 end)
 
+test("B02 (audit 03/11): a jump in place next to him, the air strikes come down on him instead of passing 15 studs over his head",function()
+ for _,id in {"Lion","Leaf","GentleFist","Flashstep"} do
+  for _,action in {"Attack","Heavy"} do
+   local c,a,b=H.duel(id,"Mirage")
+   place(c,a,b,V.new(0,3,0),V.new(0,3,-2))
+   b.ai=nil
+   -- the top of a jump made in place: 15 studs above him, 2 away
+   c:relocate(a,V.new(0,18,0));a.airborne=true
+   local health=b.health
+   assert(c:request(a,action),id.." "..action..": refused")
+   local name=a.attackName
+   for _=1,120 do H.step(c,.01) end
+   assert(b.health<health,id.." "..action.." ("..tostring(name)..") passed over him")
+   -- beside him, not standing on his head
+   local d=a.root.Position-b.root.Position
+   assert(d.Y<3.5,string.format("%s %s: ended %.1f studs above his root",id,action,d.Y))
+  end
+ end
+end)
+
 test("final blow: the last hit throws the body, slow first, then it comes to rest in the KO pose",function()
  local c,a,b=H.duel("Lion","Mirage")
  place(c,a,b,V.new(0,3,4),V.new(0,3,0))

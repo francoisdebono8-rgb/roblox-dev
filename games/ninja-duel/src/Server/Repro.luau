@@ -8,6 +8,7 @@
 -- regression test of each fix lives in the specs (named in `test`).
 local Players=game:GetService("Players")
 local Repro={}
+local turns=0 -- replays so far (a case may alternate what it shows)
 -- id -> {title, saw (what went wrong), now (what the fix shows), how (what to
 -- do in the place), test (the spec that keeps it fixed), first / second
 -- (fighters), tutorial, every (s between replays), setup(dev, s)}
@@ -18,6 +19,29 @@ Repro.cases={
 		how="Suis le tutoriel et lis la touche demandée à chaque étape.",
 		test="tests/Input.spec.luau (B01)",
 		first="Lion",second="Mirage",tutorial=true},
+	B02={title="Coups en l'air dans le vide en sautant à côté de lui",
+		saw="Saut sur place à 1-3 studs d'un adversaire debout : on monte à 15 studs au-dessus de sa tête, et le léger comme le lourd (salto) partaient dans le vide.",
+		now="De là-haut, le léger plonge sur lui et le salto redescend sur sa tête ; les deux touchent et finissent à côté de lui, pas sur sa tête.",
+		how="Regarde Sasuke : il saute à côté d'Itachi (immobile), puis frappe en l'air, lourd puis léger à tour de rôle.",
+		test="tests/AirCombat.spec.luau (B02)",
+		first="Lion",second="Mirage",every=5,
+		setup=function(dev,s)
+			dev("freezeBot",true);dev("refill");dev("place",Vector3.new(0,3,1.5),Vector3.new(0,3,0))
+			task.wait(1)
+			turns+=1
+			dev("act","human","Jump");task.wait(.35)
+			dev("act","human",if turns%2==1 then "Heavy" else "Attack")
+		end},
+	B03={title="L'IA ne lance jamais son ultime",
+		saw="La barre d'ultime de l'IA se remplissait et son HUD affichait ULTIMATE READY, mais elle ne le lançait jamais (aucune décision d'ultime dans l'IA).",
+		now="Barre pleine et toi à portée, elle le lance, surtout sur une ouverture, et de plus en plus sûrement à mesure que la barre reste pleine.",
+		how="Ne touche à rien : Itachi a sa barre pleine à 6 studs de toi ; son Tsukuyomi part en quelques secondes.",
+		test="tests/Ultimates.spec.luau (B03)",
+		first="Lion",second="Mirage",every=12,
+		setup=function(dev)
+			dev("refill");dev("place",Vector3.new(0,3,6),Vector3.new(0,3,0))
+			dev("freezeBot",false);dev("ultimate","bot",100)
+		end},
 }
 
 local function label(parent,name,text,size,y,height,color)
@@ -31,8 +55,9 @@ end
 
 function Repro.banner(player,id,case)
 	local gui=Instance.new("ScreenGui");gui.Name="NinjaDuelRepro";gui.ResetOnSpawn=false;gui.DisplayOrder=50
-	local box=Instance.new("Frame");box.Name="Box";box.AnchorPoint=Vector2.new(0,1)
-	box.Position=UDim2.new(0,16,1,-16);box.Size=UDim2.fromOffset(440,196)
+	-- Left of the screen, between the HP bars and the controls button.
+	local box=Instance.new("Frame");box.Name="Box";box.AnchorPoint=Vector2.new(0,.5)
+	box.Position=UDim2.new(0,16,.5,0);box.Size=UDim2.fromOffset(440,196)
 	box.BackgroundColor3=Color3.new(0,0,0);box.BackgroundTransparency=.3;box.Parent=gui
 	Instance.new("UICorner",box).CornerRadius=UDim.new(0,8)
 	label(box,"Title",id.." — "..case.title,15,10,20,Color3.fromRGB(255,214,120))
@@ -48,7 +73,7 @@ function Repro.install(matches,dev)
 	local id=workspace:GetAttribute("NinjaDuelRepro")
 	local case=type(id)=="string" and Repro.cases[id]
 	if not case then
-		if id~=nil then warn("[NinjaDuelRepro] unknown case "..tostring(id)) end
+		if id~=nil and id~="" then warn("[NinjaDuelRepro] unknown case "..tostring(id)) end
 		return false
 	end
 	local function stage(player)
@@ -65,10 +90,13 @@ function Repro.install(matches,dev)
 			task.wait(1)
 			stage(player)
 			local count=Repro.banner(player,id,case)
-			while case.every and player.Parent do
+			-- (Clearing the attribute stops the replays: the place is free to play.)
+			local function on() return workspace:GetAttribute("NinjaDuelRepro")==id and player.Parent~=nil end
+			while case.every and on() do
 				for left=case.every,1,-1 do count.Text="Rejoue dans "..left.." s";task.wait(1) end
-				stage(player)
+				if on() then stage(player) end
 			end
+			if case.every then count.Text="Rejeu arrêté" end
 		end)
 	end
 	Players.PlayerAdded:Connect(run)

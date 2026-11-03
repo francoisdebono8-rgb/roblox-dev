@@ -99,7 +99,9 @@ function Controls.localize(text,map)
 	map=map or Controls.layout
 	if not map or type(text)~="string" then return text end
 	text=text:gsub("%f[%w]WASD%f[%W]",function() return (map.W or "W")..(map.A or "A")..(map.S or "S")..(map.D or "D") end)
-	return (text:gsub("%f[%w](%u)%f[%W]",function(c) return map[c] or c end))
+	-- "A" alone is the article ("RASENGAN • A CLONE FOR IT"): no text names
+	-- the left key by itself, only inside WASD.
+	return (text:gsub("%f[%w](%u)%f[%W]",function(c) return if c=="A" then c else map[c] or c end))
 end
 -- stringFor(KeyCode) -> the label on this keyboard. Returns true when the
 -- layout differs from the one the texts are written for (QWERTY).

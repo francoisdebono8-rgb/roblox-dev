@@ -6,6 +6,7 @@ local Bodies=require(script.Parent.Bodies)
 local Zones=require(script.Parent.Zones)
 local Families=require(script.Parent.Families)
 local Perception=require(script.Parent.Perception)
+local Ultimates=require(script.Parent.Ultimates)
 -- Family techniques (roster breadth pass): when one is worth using is read
 -- from its family and its own spec.AI band, never from the fighter's name.
 local function familyWants(self,c,a,target,spec,distance,danger)
@@ -148,6 +149,25 @@ function AI:defend(now)
 	-- Low on health: awaken (once per match).
 	if not a.awakened and a.def.Awakening and a.health<=a.def.Health*Config.Awaken.Threshold and not a.reaction and self.rng:NextNumber()<.4 then
 		if c:request(a,"Awaken") then return true end
+	end
+	-- (Audit 03/11, B03) The bot's bar filled and its HUD read ULTIMATE READY,
+	-- but it never fired it. Bar full, the target inside the opener's reach
+	-- and not dodging: it fires it, mostly on an opening, and the longer the
+	-- bar has been full the likelier (own dice, like the kunai: the fight's
+	-- decisions keep their sequence).
+	if not Ultimates.ready(a) then self.ultFullSince=nil
+	elseif a.state=="Neutral" and not a.reaction and not a.airborne and a.target and a.target.root and a.target.health>0 and now>=(self.ultThought or 0) then
+		self.ultFullSince=self.ultFullSince or now
+		self.ultRng=self.ultRng or Random.new(13)
+		local roll=self.ultRng:NextNumber()
+		self.ultThought=now+.6+roll*.9
+		local t=a.target
+		local gap=(t.root.Position-a.root.Position).Magnitude
+		local open=t.state=="Recovery" or t.state=="TechniqueRecovery" or t.state=="Stunned" or t.reaction=="HitStun"
+		local urge=(if open then .75 else .25)+(now-self.ultFullSince)*.12
+		if gap<=Ultimates.def(a).Reach*.8 and t.state~="Dodging" and roll<urge then
+			if c:request(a,"Ultimate") then return true end
+		end
 	end
 	-- Global kunai (DEC-030): the bot draws a blade now and then for the close
 	-- fight (and puts it away again), so the player meets the system too.

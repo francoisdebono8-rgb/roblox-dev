@@ -1762,7 +1762,14 @@ function Combat:updateActor(a,dt)
 		-- frame; the crouched beat now swings the body round.)
 		if flat.Magnitude>.1 then self:turnToward(a,flat,dt,2400) end
 		if a.state=="Active" and delta.Magnitude>2.8 then
-			a.aimIntent={target=a.target.root.Position-delta.Unit*2.4,speed=92,acceleration=2600}
+			-- (Audit 03/11, B02) From straight above, the lunge ends beside him
+			-- on this side, not on top of his head.
+			local goal=a.target.root.Position-delta.Unit*2.4
+			if flat.Magnitude<2.4 then
+				local side=if flat.Magnitude>.1 then flat.Unit else Vector3.new(a.root.CFrame.LookVector.X,0,a.root.CFrame.LookVector.Z).Unit
+				goal=a.target.root.Position-side*2.4
+			end
+			a.aimIntent={target=goal,speed=92,acceleration=2600}
 		end
 	elseif a.state=="Startup" and a.vault and a.vault.serial==a.attackSerial and now<a.vault.untilTime+.05 then
 		-- (Continuity blocker) A vault over the body (the Lion Combo's flip):

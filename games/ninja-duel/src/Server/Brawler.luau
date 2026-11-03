@@ -829,7 +829,21 @@ function Brawler.request(c,a,action)
     if ok~=false and a.pending and graph.airCloneDrive and a.target and a.target.health>0 then require(script.Parent.Legion).airDrive(c,a,a.target) end
     return ok
    end
-   return Brawler.start(c,a,a.def.AirHeavy or "AirFlip")
+   local move=a.def.AirHeavy or "AirFlip"
+   -- (Audit 03/11, B02) From a jump's height the salto turned in the void
+   -- above a standing body (15 studs over his head): high above him, it
+   -- comes down on him, the heel opening over his head (the Lion Combo's arc).
+   local dive=move=="AirFlip" and Brawler.airDive(c,a)
+   local ok=Brawler.start(c,a,move)
+   if dive and ok~=false and a.pending then
+    local b=a.target
+    local look=b.root.Position-a.root.Position;look=Vector3.new(look.X,0,look.Z)
+    look=if look.Magnitude>.1 then look.Unit else Vector3.new(a.root.CFrame.LookVector.X,0,a.root.CFrame.LookVector.Z).Unit
+    a.root.CFrame=CFrame.lookAt(a.root.Position,a.root.Position+look)
+    a.vault={goal=b.root.Position+Vector3.new(0,2.2,0)-look*2.2,untilTime=c.now+a.pending.spec.startup,serial=a.attackSerial}
+    Brawler.event(c,a,"AirDive")
+   end
+   return ok
   end
   if inChain and a.combo==1 and graph.heavyAfterOne then return Brawler.start(c,a,graph.heavyAfterOne) end
   if inChain and a.combo>=2 then return Brawler.start(c,a,a.def.LauncherMove or "Launcher") end

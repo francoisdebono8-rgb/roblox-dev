@@ -157,7 +157,7 @@ for _,id in MAIN do if not only or only==id then
   end
   plan()
   local last=a.root.Position
-  local stillFor,ghostFor,since,lastKey,stunFor=0,0,0,nil,0
+  local stillFor,ghostFor,since,lastKey,stunFor,stunSeq=0,0,0,nil,0,nil
   local wasDead=false
   while t<duration do
    if match.phase~="Duel" then match.phase="Duel" end
@@ -199,7 +199,15 @@ for _,id in MAIN do if not only or only==id then
     row.stuck+=1;inc(row.stuckWhere,key);since=t
    end
    -- stun: time without control in a reaction
-   if a.reaction then row.stun+=DT;stunFor+=DT else row.longestStun=math.max(row.longestStun,stunFor);stunFor=0 end
+   if a.reaction then
+    row.stun+=DT;stunFor+=DT
+    stunSeq=stunSeq or {}
+    local k=a.reaction..(if a.attackedBy then "" else "")
+    if stunSeq[#stunSeq]~=k then table.insert(stunSeq,k) end
+   else
+    if stunFor>row.longestStun then row.longestStun=stunFor;row.longestSeq=table.concat(stunSeq or {}," > ") end
+    stunFor=0;stunSeq=nil
+   end
   end
   row.time+=duration
  end
@@ -210,7 +218,7 @@ for _,id in MAIN do if not only or only==id then
  print("  refused while free:  "..list(row.freeReasons,8))
  print(string.format("  freezes %d (%.1f/min)  %s",row.freezes,row.freezes/minutes,list(row.freezeWhere,4)))
  print(string.format("  ghost air %d  %s | stuck>2s %d  %s",row.ghost,list(row.ghostWhere,4),row.stuck,list(row.stuckWhere,4)))
- print(string.format("  in a reaction %.0f%% of the time, longest %.2f s",row.stun/row.time*100,row.longestStun))
+ print(string.format("  in a reaction %.0f%% of the time, longest %.2f s  (%s)",row.stun/row.time*100,row.longestStun,row.longestSeq or ""))
  for _,e in row.examples do print("   · "..e) end
  ALL.eaten=(ALL.eaten or 0)+row.eaten;for k,v in row.eatenWhy do ALL.eatenWhy=ALL.eatenWhy or {};inc(ALL.eatenWhy,k,v) end
  ALL.presses+=row.presses;ALL.dead+=row.dead;ALL.free+=row.free;ALL.freezes+=row.freezes;ALL.ghost+=row.ghost;ALL.stuck+=row.stuck;ALL.minutes+=minutes
