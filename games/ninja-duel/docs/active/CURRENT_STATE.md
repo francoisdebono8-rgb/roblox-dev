@@ -3,10 +3,11 @@
 - **Garde, réactions, esquives, poursuite des 6** (`tools/blender/job_react_6.py`, le jeu de `clips_react2` sur la garde de chacun) : 23 clips × 6 (garde et impact, coups reçus tête / corps / flanc / dos / jambes des deux côtés, projeté et réception, envoyé en l'air, au sol, relevé des deux côtés, dash, roue, flip arrière, poursuite). Tempo propre : Lee revient le plus vite, Gaara le plus lent, Naruto encaisse large. Gaara pare bras croisés (le sable prend le coup), Neji paumes levées.
 - **Saisie, projection, projection en l'air pour les 8** et **salto talon pour 6** (`tools/blender/common_e9.py`) : la jambe avant fait un vrai pas (glissement des pieds 0,18 → 0,04 stud).
 - **Flip de saut** pour Lee, Naruto, Kakashi, Neji (ceux qui font des figures, `Motion.ACRO`).
-- **Riposte et plongée du mur** jouées avec le Light1 et l'AirDrive dessinés de chacun (`Motion.DRAWN_AS`, client seulement : le timing serveur ne bouge pas) ; une seule règle pour savoir quel clip joue un coup (`Motion.drawnClip`), aussi pour les appuis.
+- **Riposte et plongée du mur** jouées avec le Light1 et l'AirDrive dessinés de chacun (Gaara n'a pas d'AirDrive : sa plongée reste procédurale) (`Motion.DRAWN_AS`, client seulement : le timing serveur ne bouge pas) ; une seule règle pour savoir quel clip joue un coup (`Motion.drawnClip`), aussi pour les appuis.
 - **Clips** : 449 → 621.
 - **Test « un jab plie le corps »** (`CombatFeel`) : mesuré depuis la garde de chacun (l'ancien seuil lisait l'inclinaison absolue : seul un perso penché pouvait le passer). Seuil = le jab dessiné de Sasuke filmé en Studio (12°) ; les 6 nouveaux : 15–21° au jab, 42–52° au coup lourd.
 - **Branche parallèle intégrée** (`claude/ninja-duel-tutorial-v2` : freezes, tutoriel v2 et sonde, nouvelle interface, look) ; trois tests réparés après la fusion (bibliothèque `task` du banc de test, escalade avancée image par image).
+- **Livré** : `ND-Test-v19.rbxlx` (+ `ND-Jeu`, `ND-Labo`), liste « quoi essayer » du projet mise à jour.
 - **Partie 10 (boucle du joueur)** : déjà en place (sélection → duel en rounds → résultat → revanche / retour, tutoriel) ; son interface et son tutoriel sont le chantier de l'autre session : rien de doublé ici.
 
 **É7, les devinettes tiennent le ping (03/11, 1 h 30)** (utilisateur : « continue la suite des étapes »)
