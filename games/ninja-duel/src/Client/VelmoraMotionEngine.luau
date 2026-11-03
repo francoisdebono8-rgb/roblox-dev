@@ -70,6 +70,8 @@ function Motion.tick(dt)
 	return elapsedTime
 end
 function Motion.now() return elapsedTime end
+-- Tests: two poses compared at the same moment of a captured idle (DEC-032).
+function Motion._setClock(t) elapsedTime=t end
 
 -- Damping rate per layer, and a hard angular speed limit (deg/s) so a sudden
 -- target change still travels instead of teleporting.

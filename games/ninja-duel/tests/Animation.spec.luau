@@ -575,6 +575,9 @@ test("identity poses: tenketsu weight, exposed swing, dash brake, counter glide,
  local c,a=H.duel("Mirage","Flashstep")
  local function settle(actor,clock,n)
   local mode
+  -- (DEC-032) the idles are captures that breathe: every pose is read at the
+  -- same moment of the idle
+  Motion._setClock(10)
   for _=1,n or 40 do mode=frame(a.model,actor,clock or {attackElapsed=0,reactionElapsed=0},1/60) end
   return mode,snapshot(a.model)
  end
