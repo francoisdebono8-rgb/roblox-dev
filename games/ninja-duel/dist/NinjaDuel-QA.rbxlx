@@ -4471,7 +4471,7 @@ return {
       <Item class="StringValue" referent="ND26">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">6d7449c6b59e43ef63c825d2fe5789f140f191bf81885bc1448a3b4d88417b29</string>
+          <string name="Value">b5b30fd446a02b8bfc443238285a5cb513b106f722df4b3ec6159d57184addfb</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND27">
@@ -15418,6 +15418,195 @@ return Families
       </Item>
       <Item class="ModuleScript" referent="ND69">
         <Properties>
+          <string name="Name">Feedback</string>
+          <ProtectedString name="Source">-- Players' reports from inside the game (beta, user 03/11: "a way to collect
+-- their opinions, the bugs they see while playing and the improvements they
+-- would like"). One form on the client (Client/Feedback): a bug, an idea or an
+-- opinion, a few lines of text; the game adds where it was sent from (screen,
+-- fighters, round, device, build) so a bug can be found again.
+--
+-- Here, on the server:
+--   * the request is checked: kind, length, one report every 30 s and twenty
+--     per visit at most, the context reduced to short known fields;
+--   * the text passes Roblox's text filter before it is kept or shown to
+--     anyone (if the filter cannot run, the report is refused, never kept raw);
+--   * it is kept in a DataStore (NinjaDuelFeedback_v1), newest first through
+--     an ordered index, so nothing depends on an outside service;
+--   * if the experience has a secret named "feedback_webhook" (the path of a
+--     Discord webhook, see docs/active/FEEDBACK.md), a copy is posted to the
+--     Discord's reports channel. Without the secret, or if Discord refuses,
+--     the report is still kept.
+-- In Studio, ServerStorage.NinjaDuelFeedback:Invoke("list", n) returns the n
+-- newest reports (the developer reads them; the live game has no reader).
+local DataStoreService=game:GetService("DataStoreService")
+local HttpService=game:GetService("HttpService")
+local Players=game:GetService("Players")
+local RunService=game:GetService("RunService")
+local TextService=game:GetService("TextService")
+local Feedback={}
+
+local STORE="NinjaDuelFeedback_v1"
+local INDEX="NinjaDuelFeedbackIndex_v1"
+local KINDS={bug="Bug",idea="Idea",opinion="Opinion"}
+local MAX_TEXT=500
+local MIN_TEXT=4
+local COOLDOWN=30
+local PER_VISIT=20
+-- Context the client may describe; anything else is dropped.
+local CONTEXT={phase=24,fighter=24,opponent=24,round=8,score=12,mode=16,device=12,tutorial=24}
+
+local sent={} -- [player] = {last=os.clock(), count=n}
+
+local function clean(value,limit)
+	if typeof(value)~="string" and typeof(value)~="number" then return nil end
+	local s=tostring(value):gsub("[%c]"," ")
+	if #s==0 then return nil end
+	return string.sub(s,1,limit)
+end
+
+local function filtered(text,userId)
+	local ok,result=pcall(function()
+		local r=TextService:FilterStringAsync(text,userId,Enum.TextFilterContext.PublicChat)
+		return r:GetNonChatStringForBroadcastAsync()
+	end)
+	if ok and typeof(result)=="string" then return result end
+	return nil
+end
+
+local function webhookUrl()
+	local ok,secret=pcall(function() return HttpService:GetSecret("feedback_webhook") end)
+	if not ok or not secret then return nil end
+	local built
+	ok=pcall(function() built=secret:AddPrefix("https://discord.com/api/webhooks/") end)
+	if ok then return built end
+	return nil
+end
+
+local COLORS={bug=0xBE2824,idea=0xE6B856,opinion=0x52B1F4}
+local function toDiscord(report)
+	local url=webhookUrl()
+	if not url then return false end
+	local fields={}
+	for _,k in {"phase","fighter","opponent","round","score","mode","device","tutorial"} do
+		if report.context[k] then table.insert(fields,{name=k,value=report.context[k],inline=true}) end
+	end
+	table.insert(fields,{name="build",value=report.build,inline=true})
+	table.insert(fields,{name="version",value=tostring(report.placeVersion),inline=true})
+	local body=HttpService:JSONEncode({
+		username="Ninja Duel — in-game reports",
+		allowed_mentions={parse={}},
+		embeds={{
+			title=KINDS[report.kind].." — "..report.player,
+			description=report.text,
+			color=COLORS[report.kind],
+			fields=fields,
+			footer={text=report.id},
+			timestamp=DateTime.fromUnixTimestamp(report.time):ToIsoDate(),
+		}},
+	})
+	local ok,response=pcall(function()
+		return HttpService:RequestAsync({Url=url,Method="POST",Headers={["Content-Type"]="application/json"},Body=body})
+	end)
+	if not ok then warn("[NinjaDuel] feedback → Discord: "..tostring(response));return false end
+	if not response.Success then warn("[NinjaDuel] feedback → Discord: HTTP "..tostring(response.StatusCode));return false end
+	return true
+end
+
+local function keep(report)
+	local store=DataStoreService:GetDataStore(STORE)
+	local index=DataStoreService:GetOrderedDataStore(INDEX)
+	local ok,err=pcall(function()
+		store:SetAsync(report.id,report,{report.userId})
+		index:SetAsync(report.id,report.time)
+	end)
+	if not ok then warn("[NinjaDuel] feedback not kept: "..tostring(err)) end
+	return ok
+end
+
+-- The request from a client: returns ok, message for the form.
+function Feedback.submit(player,payload)
+	if typeof(payload)~="table" then return false,"Something went wrong. Try again." end
+	local kind=payload.kind
+	if typeof(kind)~="string" or not KINDS[kind] then return false,"Pick bug, idea or opinion." end
+	local raw=payload.text
+	if typeof(raw)~="string" then return false,"Write a few words first." end
+	raw=string.gsub(raw,"^%s+","");raw=string.gsub(raw,"%s+$","")
+	if #raw&lt;MIN_TEXT then return false,"Write a few words first." end
+	raw=string.sub(raw,1,MAX_TEXT)
+	local now=os.clock()
+	local mine=sent[player] or {last=-math.huge,count=0}
+	if now-mine.last&lt;COOLDOWN then return false,("Thanks! Wait %d s before the next one."):format(math.ceil(COOLDOWN-(now-mine.last))) end
+	if mine.count&gt;=PER_VISIT then return false,"That's a lot of reports for one visit — thank you! Send more next time." end
+	local text=filtered(raw,player.UserId)
+	if not text then return false,"Couldn't check the text right now. Try again in a moment." end
+	mine.last=now;mine.count+=1;sent[player]=mine
+	local context={}
+	if typeof(payload.context)=="table" then
+		for k,limit in CONTEXT do
+			local v=clean(payload.context[k],limit)
+			if v then context[k]=v end
+		end
+	end
+	local time=os.time()
+	local build="?"
+	pcall(function() build=string.sub(game:GetService("ReplicatedStorage").NinjaDuel.BuildFingerprint.Value,1,12) end)
+	local report={
+		id=("%d_%d_%s"):format(time,player.UserId,string.sub(HttpService:GenerateGUID(false),1,6)),
+		kind=kind,text=text,time=time,
+		userId=player.UserId,player=player.Name,
+		context=context,build=build,placeVersion=game.PlaceVersion,
+		studio=RunService:IsStudio(),
+	}
+	local kept=keep(report)
+	local posted=toDiscord(report)
+	if not kept and not posted then
+		mine.last=-math.huge;mine.count-=1
+		return false,"Couldn't send it right now. Try again in a moment."
+	end
+	return true,"Sent — thank you! We read every report."
+end
+
+-- The newest reports (Studio reader).
+function Feedback.list(count)
+	count=math.clamp(tonumber(count) or 20,1,100)
+	local store=DataStoreService:GetDataStore(STORE)
+	local index=DataStoreService:GetOrderedDataStore(INDEX)
+	local out={}
+	local ok,err=pcall(function()
+		local page=index:GetSortedAsync(false,count):GetCurrentPage()
+		for _,entry in page do
+			local report=store:GetAsync(entry.key)
+			if report then table.insert(out,report) end
+		end
+	end)
+	if not ok then return {error=tostring(err)} end
+	return out
+end
+
+function Feedback.start(shared)
+	local remote=Instance.new("RemoteFunction");remote.Name="Feedback";remote.Parent=shared
+	remote.OnServerInvoke=function(player,payload)
+		local ok,a,b=pcall(Feedback.submit,player,payload)
+		if not ok then warn("[NinjaDuel] feedback: "..tostring(a));return false,"Something went wrong. Try again." end
+		return a,b
+	end
+	Players.PlayerRemoving:Connect(function(player) sent[player]=nil end)
+	if RunService:IsStudio() then
+		local reader=Instance.new("BindableFunction");reader.Name="NinjaDuelFeedback"
+		reader.OnInvoke=function(action,arg)
+			if action=="list" then return Feedback.list(arg) end
+			if action=="webhook" then return webhookUrl()~=nil end
+			return nil
+		end
+		reader.Parent=game:GetService("ServerStorage")
+	end
+end
+return Feedback
+</ProtectedString>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="ND70">
+        <Properties>
           <string name="Name">Gale</string>
           <ProtectedString name="Source">-- Temari (Gale, roster wave): the wind fan, on the shared systems. Her kit
 -- lives here so the contested combat files only carry short registries
@@ -15741,7 +15930,7 @@ return Gale
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND70">
+      <Item class="ModuleScript" referent="ND71">
         <Properties>
           <string name="Name">Interactions</string>
           <ProtectedString name="Source">-- Interactions between jutsu (stage 6, the approved move list, "Interactions:
@@ -15883,7 +16072,7 @@ return Interactions
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND71">
+      <Item class="ModuleScript" referent="ND72">
         <Properties>
           <string name="Name">Legion</string>
           <ProtectedString name="Source">-- Naruto Uzumaki (roster wave: Part I, the Chunin Exam to the Valley of the
@@ -16192,7 +16381,7 @@ return Legion
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND72">
+      <Item class="ModuleScript" referent="ND73">
         <Properties>
           <string name="Name">LookMeshData</string>
           <ProtectedString name="Source">-- Generated by tools/blender/looks_to_luau.py from the Studio imports of
@@ -16505,7 +16694,7 @@ return {
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND73">
+      <Item class="ModuleScript" referent="ND74">
         <Properties>
           <string name="Name">LookMeshes</string>
           <ProtectedString name="Source">-- Blender-made looks (user 29/10 14:37: "produis les designs sur Blender").
@@ -16609,7 +16798,7 @@ return LookMeshes
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND74">
+      <Item class="ModuleScript" referent="ND75">
         <Properties>
           <string name="Name">Looks</string>
           <ProtectedString name="Source">-- Looks of the 8 main fighters, final-beta pass (user 29/10 14:00-14:07:
@@ -17279,7 +17468,7 @@ return Looks
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="Script" referent="ND75">
+      <Item class="Script" referent="ND76">
         <Properties>
           <string name="Name">Main</string>
           <ProtectedString name="Source">workspace:SetAttribute("NinjaDuelDebug",true)
@@ -17295,6 +17484,8 @@ require(script.Parent.LookMeshes).preload()
 require(script.Parent.ArenaMeshes).preload()
 -- The select screen's fighters, built once with the duel's rig (Server/Portraits).
 require(script.Parent.Portraits).start()
+-- Players' bug reports, ideas and opinions (Server/Feedback).
+require(script.Parent.Feedback).start(Shared)
 local matches=Matches.new(remote)
 remote.OnServerEvent:Connect(function(player,payload) matches:request(player,payload) end)
 Players.PlayerAdded:Connect(function(player) matches:selection(player) end)
@@ -17314,7 +17505,7 @@ print("[NinjaDuel] Ready — select a fighter and start the duel")
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND76">
+      <Item class="ModuleScript" referent="ND77">
         <Properties>
           <string name="Name">Matches</string>
           <ProtectedString name="Source">local Players=game:GetService("Players")
@@ -17730,7 +17921,7 @@ return Matches
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND77">
+      <Item class="ModuleScript" referent="ND78">
         <Properties>
           <string name="Name">Motor</string>
           <ProtectedString name="Source">-- Server movement authority. This module owns locomotion, landing and safe
@@ -18122,7 +18313,7 @@ return Motor
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND78">
+      <Item class="ModuleScript" referent="ND79">
         <Properties>
           <string name="Name">NativeQA</string>
           <ProtectedString name="Source">-- Test-only module omitted from playable artifact.
@@ -18600,7 +18791,7 @@ return QA
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND79">
+      <Item class="ModuleScript" referent="ND80">
         <Properties>
           <string name="Name">Online</string>
           <ProtectedString name="Source">-- Online 1v1 (NET-001): casual queue, private duel codes, a short fighter
@@ -18938,7 +19129,7 @@ return Online
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND80">
+      <Item class="ModuleScript" referent="ND81">
         <Properties>
           <string name="Name">Perception</string>
           <ProtectedString name="Source">-- Ninja Embodiment (DEC-027): what a body perceives of the space around a
@@ -19050,7 +19241,7 @@ return Perception
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND81">
+      <Item class="ModuleScript" referent="ND82">
         <Properties>
           <string name="Name">Place1Movement</string>
           <ProtectedString name="Source">-- Adapted directly from Place1 FirstPersonMovementController (alexkkork, MIT).
@@ -19354,7 +19545,7 @@ return Movement
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND82">
+      <Item class="ModuleScript" referent="ND83">
         <Properties>
           <string name="Name">Place1Parkour</string>
           <ProtectedString name="Source">-- Adapted directly from Place1 ParkourTraversalController (alexkkork, MIT).
@@ -19836,7 +20027,7 @@ return Parkour
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND83">
+      <Item class="ModuleScript" referent="ND84">
         <Properties>
           <string name="Name">Portraits</string>
           <ProtectedString name="Source">-- The menu's fighters (UI pass 02/11, user: "be original in everything"): the
@@ -19935,7 +20126,7 @@ return Portraits
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND84">
+      <Item class="ModuleScript" referent="ND85">
         <Properties>
           <string name="Name">ProfileRepository</string>
           <ProtectedString name="Source">-- Progression profile persistence (PROG-001). One key per profile; an
@@ -20146,7 +20337,7 @@ return Repo
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND85">
+      <Item class="ModuleScript" referent="ND86">
         <Properties>
           <string name="Name">ProfileSchema</string>
           <ProtectedString name="Source">-- Fighter progression profile (PROG-001). Per fighter: the skill points earned,
@@ -20349,7 +20540,7 @@ return S
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND86">
+      <Item class="ModuleScript" referent="ND87">
         <Properties>
           <string name="Name">SkillBuilds</string>
           <ProtectedString name="Source">-- Skill builds (PROG-001/002). Pure, server-side: validates a fighter's ACTIVE
@@ -20838,7 +21029,7 @@ return SkillBuilds
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND87">
+      <Item class="ModuleScript" referent="ND88">
         <Properties>
           <string name="Name">SkillTrees</string>
           <ProtectedString name="Source">-- Fighter skill trees (PROG-001). Server data: what skill points buy for each
@@ -21156,7 +21347,7 @@ return {
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND88">
+      <Item class="ModuleScript" referent="ND89">
         <Properties>
           <string name="Name">Techniques</string>
           <ProtectedString name="Source">-- Each entry supplies prerequisites and payoff. The combat pipeline owns cost,
@@ -22227,7 +22418,7 @@ return Techniques
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND89">
+      <Item class="ModuleScript" referent="ND90">
         <Properties>
           <string name="Name">Tutorial</string>
           <ProtectedString name="Source">-- Tutorial v2 (user 02/11: "un vrai tutoriel ... adapté pour chaque perso",
@@ -22555,7 +22746,7 @@ return Tutorial
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND90">
+      <Item class="ModuleScript" referent="ND91">
         <Properties>
           <string name="Name">TutorialBot</string>
           <ProtectedString name="Source">-- Debug/QA places only (build.py DEBUG_SOURCES). Plays the tutorial on its
@@ -22723,7 +22914,7 @@ return Bot
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND91">
+      <Item class="ModuleScript" referent="ND92">
         <Properties>
           <string name="Name">Ultimates</string>
           <ProtectedString name="Source">-- Ultimates (stage 6, the approved move list, "Ultimes"): one per main
@@ -23028,7 +23219,7 @@ return Ultimates
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND92">
+      <Item class="ModuleScript" referent="ND93">
         <Properties>
           <string name="Name">VelmoraAntiCheat</string>
           <ProtectedString name="Source">-- Adapted from Velmora src/server/Combat/CombatAntiCheat.luau.
@@ -23056,7 +23247,7 @@ return AntiCheat
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND93">
+      <Item class="ModuleScript" referent="ND94">
         <Properties>
           <string name="Name">VelmoraDefense</string>
           <ProtectedString name="Source">-- Adapted from Velmora CombatService guard/parry/dodge resolution.
@@ -23189,7 +23380,7 @@ return Defense
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND94">
+      <Item class="ModuleScript" referent="ND95">
         <Properties>
           <string name="Name">VelmoraHitDetection</string>
           <ProtectedString name="Source">-- Adapted from Velmora src/server/Combat/HitDetection.luau.
@@ -23240,7 +23431,7 @@ return HitDetection
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND95">
+      <Item class="ModuleScript" referent="ND96">
         <Properties>
           <string name="Name">Wave1Kit</string>
           <ProtectedString name="Source">-- Roster 20, batch 1 (Haku, Zabuza, Kimimaro): the batch's server side. All
@@ -23375,7 +23566,7 @@ return Kit
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND96">
+      <Item class="ModuleScript" referent="ND97">
         <Properties>
           <string name="Name">Wave2Kit</string>
           <ProtectedString name="Source">-- Roster 20, batch 2 (Shisui, Orochimaru, Kabuto): the batch's server side.
@@ -23489,7 +23680,7 @@ return Kit
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND97">
+      <Item class="ModuleScript" referent="ND98">
         <Properties>
           <string name="Name">Wave3Kit</string>
           <ProtectedString name="Source">-- Roster 20, batch 3 (Deidara, Sasori, Nagato, Killer Bee): the batch's
@@ -23675,7 +23866,7 @@ return Kit
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND98">
+      <Item class="ModuleScript" referent="ND99">
         <Properties>
           <string name="Name">Wave4Kit</string>
           <ProtectedString name="Source">-- DEC-026 newcomers (Madara, Hashirama, Hiruzen as children): the batch's
@@ -23782,7 +23973,7 @@ return Kit
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND99">
+      <Item class="ModuleScript" referent="ND100">
         <Properties>
           <string name="Name">World</string>
           <ProtectedString name="Source">local World = {}
@@ -24992,7 +25183,7 @@ return World
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND100">
+      <Item class="ModuleScript" referent="ND101">
         <Properties>
           <string name="Name">WorldReaction</string>
           <ProtectedString name="Source">-- Ninja Embodiment (DEC-027, EMB-004): the arena answers what happens in it.
@@ -25605,7 +25796,7 @@ return WorldReaction
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND101">
+      <Item class="ModuleScript" referent="ND102">
         <Properties>
           <string name="Name">Zones</string>
           <ProtectedString name="Source">-- Persistent typed zones (ROSTER_WAVE_HOOKS H06), beside Combat's hazards
@@ -25833,21 +26024,21 @@ return Zones
       </Item>
     </Item>
   </Item>
-  <Item class="StarterPlayer" referent="ND102">
+  <Item class="StarterPlayer" referent="ND103">
     <Properties>
       <string name="Name">StarterPlayer</string>
       <float name="CameraMinZoomDistance">8</float>
       <float name="CameraMaxZoomDistance">32</float>
     </Properties>
-    <Item class="StarterPlayerScripts" referent="ND103">
+    <Item class="StarterPlayerScripts" referent="ND104">
       <Properties>
         <string name="Name">StarterPlayerScripts</string>
       </Properties>
-      <Item class="Folder" referent="ND104">
+      <Item class="Folder" referent="ND105">
         <Properties>
           <string name="Name">NinjaDuelClient</string>
         </Properties>
-        <Item class="ModuleScript" referent="ND105">
+        <Item class="ModuleScript" referent="ND106">
           <Properties>
             <string name="Name">ArenaDress</string>
             <ProtectedString name="Source">-- The stadium as this screen shows it (look pass 03/11, user: "the brightness,
@@ -26049,7 +26240,7 @@ return ArenaDress
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND106">
+        <Item class="ModuleScript" referent="ND107">
           <Properties>
             <string name="Name">AuthoredClips</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -26101,7 +26292,7 @@ return all
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND107">
+        <Item class="ModuleScript" referent="ND108">
           <Properties>
             <string name="Name">AuthoredClips1</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -26402,7 +26593,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND108">
+        <Item class="ModuleScript" referent="ND109">
           <Properties>
             <string name="Name">AuthoredClips10</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -26516,7 +26707,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND109">
+        <Item class="ModuleScript" referent="ND110">
           <Properties>
             <string name="Name">AuthoredClips11</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -26766,7 +26957,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND110">
+        <Item class="ModuleScript" referent="ND111">
           <Properties>
             <string name="Name">AuthoredClips12</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -26914,7 +27105,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND111">
+        <Item class="ModuleScript" referent="ND112">
           <Properties>
             <string name="Name">AuthoredClips13</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -27215,7 +27406,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND112">
+        <Item class="ModuleScript" referent="ND113">
           <Properties>
             <string name="Name">AuthoredClips14</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -27363,7 +27554,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND113">
+        <Item class="ModuleScript" referent="ND114">
           <Properties>
             <string name="Name">AuthoredClips15</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -27528,7 +27719,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND114">
+        <Item class="ModuleScript" referent="ND115">
           <Properties>
             <string name="Name">AuthoredClips16</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -27727,7 +27918,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND115">
+        <Item class="ModuleScript" referent="ND116">
           <Properties>
             <string name="Name">AuthoredClips17</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -28062,7 +28253,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND116">
+        <Item class="ModuleScript" referent="ND117">
           <Properties>
             <string name="Name">AuthoredClips18</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -28210,7 +28401,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND117">
+        <Item class="ModuleScript" referent="ND118">
           <Properties>
             <string name="Name">AuthoredClips19</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -28443,7 +28634,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND118">
+        <Item class="ModuleScript" referent="ND119">
           <Properties>
             <string name="Name">AuthoredClips2</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -28591,7 +28782,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND119">
+        <Item class="ModuleScript" referent="ND120">
           <Properties>
             <string name="Name">AuthoredClips20</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -28773,7 +28964,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND120">
+        <Item class="ModuleScript" referent="ND121">
           <Properties>
             <string name="Name">AuthoredClips21</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -29108,7 +29299,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND121">
+        <Item class="ModuleScript" referent="ND122">
           <Properties>
             <string name="Name">AuthoredClips22</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -29256,7 +29447,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND122">
+        <Item class="ModuleScript" referent="ND123">
           <Properties>
             <string name="Name">AuthoredClips23</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -29489,7 +29680,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND123">
+        <Item class="ModuleScript" referent="ND124">
           <Properties>
             <string name="Name">AuthoredClips24</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -29739,7 +29930,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND124">
+        <Item class="ModuleScript" referent="ND125">
           <Properties>
             <string name="Name">AuthoredClips25</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -30006,7 +30197,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND125">
+        <Item class="ModuleScript" referent="ND126">
           <Properties>
             <string name="Name">AuthoredClips26</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -30188,7 +30379,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND126">
+        <Item class="ModuleScript" referent="ND127">
           <Properties>
             <string name="Name">AuthoredClips27</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -30438,7 +30629,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND127">
+        <Item class="ModuleScript" referent="ND128">
           <Properties>
             <string name="Name">AuthoredClips28</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -30586,7 +30777,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND128">
+        <Item class="ModuleScript" referent="ND129">
           <Properties>
             <string name="Name">AuthoredClips29</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -30836,7 +31027,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND129">
+        <Item class="ModuleScript" referent="ND130">
           <Properties>
             <string name="Name">AuthoredClips3</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -31086,7 +31277,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND130">
+        <Item class="ModuleScript" referent="ND131">
           <Properties>
             <string name="Name">AuthoredClips30</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -31251,7 +31442,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND131">
+        <Item class="ModuleScript" referent="ND132">
           <Properties>
             <string name="Name">AuthoredClips31</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -31586,7 +31777,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND132">
+        <Item class="ModuleScript" referent="ND133">
           <Properties>
             <string name="Name">AuthoredClips32</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -31751,7 +31942,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND133">
+        <Item class="ModuleScript" referent="ND134">
           <Properties>
             <string name="Name">AuthoredClips33</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -31848,7 +32039,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND134">
+        <Item class="ModuleScript" referent="ND135">
           <Properties>
             <string name="Name">AuthoredClips34</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -32013,7 +32204,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND135">
+        <Item class="ModuleScript" referent="ND136">
           <Properties>
             <string name="Name">AuthoredClips35</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -32110,7 +32301,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND136">
+        <Item class="ModuleScript" referent="ND137">
           <Properties>
             <string name="Name">AuthoredClips36</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -32445,7 +32636,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND137">
+        <Item class="ModuleScript" referent="ND138">
           <Properties>
             <string name="Name">AuthoredClips37</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -32576,7 +32767,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND138">
+        <Item class="ModuleScript" referent="ND139">
           <Properties>
             <string name="Name">AuthoredClips38</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -32656,7 +32847,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND139">
+        <Item class="ModuleScript" referent="ND140">
           <Properties>
             <string name="Name">AuthoredClips39</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -32702,7 +32893,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND140">
+        <Item class="ModuleScript" referent="ND141">
           <Properties>
             <string name="Name">AuthoredClips4</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -32867,7 +33058,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND141">
+        <Item class="ModuleScript" referent="ND142">
           <Properties>
             <string name="Name">AuthoredClips40</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -32913,7 +33104,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND142">
+        <Item class="ModuleScript" referent="ND143">
           <Properties>
             <string name="Name">AuthoredClips41</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -32959,7 +33150,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND143">
+        <Item class="ModuleScript" referent="ND144">
           <Properties>
             <string name="Name">AuthoredClips42</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -32988,7 +33179,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND144">
+        <Item class="ModuleScript" referent="ND145">
           <Properties>
             <string name="Name">AuthoredClips5</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -33221,7 +33412,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND145">
+        <Item class="ModuleScript" referent="ND146">
           <Properties>
             <string name="Name">AuthoredClips6</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -33522,7 +33713,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND146">
+        <Item class="ModuleScript" referent="ND147">
           <Properties>
             <string name="Name">AuthoredClips7</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -33738,7 +33929,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND147">
+        <Item class="ModuleScript" referent="ND148">
           <Properties>
             <string name="Name">AuthoredClips8</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -33937,7 +34128,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND148">
+        <Item class="ModuleScript" referent="ND149">
           <Properties>
             <string name="Name">AuthoredClips9</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -34238,7 +34429,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND149">
+        <Item class="ModuleScript" referent="ND150">
           <Properties>
             <string name="Name">AuthoredMotion</string>
             <ProtectedString name="Source">-- Blender-authored body animation (DEC Blender-first pipeline): clips made in
@@ -34374,7 +34565,7 @@ return Authored
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND150">
+        <Item class="ModuleScript" referent="ND151">
           <Properties>
             <string name="Name">BodyViews</string>
             <ProtectedString name="Source">-- Bodies that are not fighters (Server/Bodies: Naruto's shadow clones), drawn
@@ -34538,7 +34729,7 @@ return BodyViews
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND151">
+        <Item class="ModuleScript" referent="ND152">
           <Properties>
             <string name="Name">Camera</string>
             <ProtectedString name="Source">-- Duel camera. A locked third-person rig that keeps both fighters readable:
@@ -34984,7 +35175,7 @@ return Camera
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND152">
+        <Item class="ModuleScript" referent="ND153">
           <Properties>
             <string name="Name">ChakraFX</string>
             <ProtectedString name="Source">-- Systemic chakra on the client, the player-facing layer (convergence 3,
@@ -35539,7 +35730,7 @@ return ChakraFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND153">
+        <Item class="ModuleScript" referent="ND154">
           <Properties>
             <string name="Name">ChakraFlowFX</string>
             <ProtectedString name="Source">-- ChakraFlow on the client (Freedom, user 28/10: chakra infusions): the load
@@ -35704,7 +35895,7 @@ return ChakraFlowFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="LocalScript" referent="ND154">
+        <Item class="LocalScript" referent="ND155">
           <Properties>
             <string name="Name">CombatDebug</string>
             <ProtectedString name="Source">-- Optional debug-build display, outbound server data only; no combat input.
@@ -35738,7 +35929,7 @@ end)
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND155">
+        <Item class="ModuleScript" referent="ND156">
           <Properties>
             <string name="Name">DevClient</string>
             <ProtectedString name="Source">-- Studio dev panel (F6) and bounded client measurements (Codex 33028b2, ported).
@@ -35891,7 +36082,7 @@ return Dev
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND156">
+        <Item class="ModuleScript" referent="ND157">
           <Properties>
             <string name="Name">DevVolumes</string>
             <ProtectedString name="Source">-- Read-only Studio adornments (Codex 33028b2, ported): fighter roots in blue,
@@ -35935,7 +36126,7 @@ return Volumes
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND157">
+        <Item class="ModuleScript" referent="ND158">
           <Properties>
             <string name="Name">Effects</string>
             <ProtectedString name="Source">-- Client-side combat VFX. Everything here is presentation driven by the server
@@ -38092,7 +38283,7 @@ return FX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND158">
+        <Item class="ModuleScript" referent="ND159">
           <Properties>
             <string name="Name">FamilyFX</string>
             <ProtectedString name="Source">-- Family objects seen in play (roster breadth pass): every projectile kind of
@@ -38716,7 +38907,158 @@ return FamilyFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND159">
+        <Item class="ModuleScript" referent="ND160">
+          <Properties>
+            <string name="Name">Feedback</string>
+            <ProtectedString name="Source">-- The report form (beta, user 03/11): a player tells us about a bug, an idea
+-- or what they think, without leaving the game. Opened from the roster
+-- ("BUG / IDEA"), the controls sheet and the result card; it is the house
+-- ink card (Client/UI). The text goes to the server (Server/Feedback), which
+-- filters it, keeps it and forwards it to the Discord; the game adds where it
+-- was sent from (screen, fighters, round, device) so a bug can be found again.
+local ReplicatedStorage=game:GetService("ReplicatedStorage")
+local UIS=game:GetService("UserInputService")
+local Feedback={}
+Feedback.__index=Feedback
+
+local INK=Color3.fromRGB(16,14,19)
+local RED=Color3.fromRGB(190,40,36)
+local PAPER=Color3.fromRGB(240,232,212)
+local MUTED=Color3.fromRGB(170,164,150)
+local GOLD=Color3.fromRGB(230,184,86)
+local FIELD=Color3.fromRGB(28,26,32)
+local TITLE=Enum.Font.Bangers
+local BODY=Enum.Font.GothamBold
+local MAX=500
+local KINDS={
+	{"bug","BUG","Something broken or strange: what happened, and what you were doing."},
+	{"idea","IDEA","Something you'd like: a move, a fighter, a mode, a change."},
+	{"opinion","OPINION","What you liked, what you didn't, how it feels to play."},
+}
+
+local function create(class,parent,props)
+	local x=Instance.new(class)
+	for k,v in props do (x::any)[k]=v end
+	x.Parent=parent
+	return x
+end
+local function round(x,r) create("UICorner",x,{CornerRadius=UDim.new(0,r or 6)}) end
+
+-- `context()` returns what the game knows about the moment (see Server/Feedback).
+function Feedback.new(gui,context)
+	local self=setmetatable({context=context,kind="bug",busy=false},Feedback)
+	local veil=create("Frame",gui,{Name="Feedback",Size=UDim2.fromScale(1,1),BackgroundColor3=Color3.fromRGB(6,5,8),BackgroundTransparency=.3,
+		BorderSizePixel=0,Visible=false,ZIndex=70,Active=true})
+	self.veil=veil
+	local card=create("Frame",veil,{AnchorPoint=Vector2.new(.5,.5),Position=UDim2.fromScale(.5,.5),Size=UDim2.fromOffset(640,470),
+		BackgroundColor3=INK,BackgroundTransparency=.02,BorderSizePixel=0,ZIndex=71})
+	round(card,12)
+	create("UIStroke",card,{Color=RED,Thickness=2,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
+	local line=create("Frame",card,{Size=UDim2.new(1,0,0,5),BackgroundColor3=RED,BorderSizePixel=0,ZIndex=72});round(line,12)
+	local scale=create("UIScale",card,{Scale=1})
+	local function fit()
+		local v=workspace.CurrentCamera.ViewportSize
+		scale.Scale=math.clamp(math.min(v.X/700,v.Y/520),.5,1.15)
+	end
+	pcall(function() workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(fit) end);fit()
+	local title=create("TextLabel",card,{Text="TELL US",Position=UDim2.fromOffset(30,18),Size=UDim2.fromOffset(400,50),Font=TITLE,TextSize=48,
+		TextColor3=PAPER,BackgroundTransparency=1,TextXAlignment=Enum.TextXAlignment.Left,ZIndex=72})
+	create("UIStroke",title,{Color=Color3.new(0,0,0),Thickness=3,ApplyStrokeMode=Enum.ApplyStrokeMode.Contextual})
+	create("TextLabel",card,{Text="Beta — every report is read.",Position=UDim2.fromOffset(330,34),Size=UDim2.fromOffset(280,24),Font=BODY,TextSize=14,
+		TextColor3=MUTED,BackgroundTransparency=1,TextXAlignment=Enum.TextXAlignment.Right,ZIndex=72})
+	-- Kind: three tabs.
+	self.tabs={}
+	for i,k in KINDS do
+		local tab=create("TextButton",card,{Text=k[2],Position=UDim2.fromOffset(30+(i-1)*196,82),Size=UDim2.fromOffset(186,44),Font=TITLE,TextSize=26,
+			TextColor3=PAPER,BackgroundColor3=FIELD,BorderSizePixel=0,AutoButtonColor=true,ZIndex=72})
+		round(tab,6)
+		local edge=create("UIStroke",tab,{Color=GOLD,Thickness=0,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
+		tab.Activated:Connect(function() self:setKind(k[1]) end)
+		self.tabs[k[1]]={button=tab,edge=edge,hint=k[3]}
+	end
+	self.hint=create("TextLabel",card,{Text="",Position=UDim2.fromOffset(30,134),Size=UDim2.fromOffset(580,22),Font=BODY,TextSize=14,
+		TextColor3=MUTED,BackgroundTransparency=1,TextXAlignment=Enum.TextXAlignment.Left,TextWrapped=true,ZIndex=72})
+	local box=create("TextBox",card,{Text="",PlaceholderText="Write here…",PlaceholderColor3=Color3.fromRGB(110,104,96),Position=UDim2.fromOffset(30,162),
+		Size=UDim2.fromOffset(580,170),Font=Enum.Font.GothamMedium,TextSize=17,TextColor3=PAPER,BackgroundColor3=FIELD,BorderSizePixel=0,
+		ClearTextOnFocus=false,MultiLine=true,TextWrapped=true,TextXAlignment=Enum.TextXAlignment.Left,TextYAlignment=Enum.TextYAlignment.Top,ZIndex=72})
+	round(box,8)
+	create("UIPadding",box,{PaddingLeft=UDim.new(0,12),PaddingRight=UDim.new(0,12),PaddingTop=UDim.new(0,10),PaddingBottom=UDim.new(0,10)})
+	self.box=box
+	self.count=create("TextLabel",card,{Text="0 / "..MAX,Position=UDim2.fromOffset(430,336),Size=UDim2.fromOffset(180,20),Font=BODY,TextSize=13,
+		TextColor3=MUTED,BackgroundTransparency=1,TextXAlignment=Enum.TextXAlignment.Right,ZIndex=72})
+	box:GetPropertyChangedSignal("Text"):Connect(function()
+		if #box.Text&gt;MAX then box.Text=string.sub(box.Text,1,MAX) end
+		self.count.Text=#box.Text.." / "..MAX
+	end)
+	self.status=create("TextLabel",card,{Text="",Position=UDim2.fromOffset(30,336),Size=UDim2.fromOffset(400,20),Font=BODY,TextSize=14,
+		TextColor3=GOLD,BackgroundTransparency=1,TextXAlignment=Enum.TextXAlignment.Left,ZIndex=72})
+	local function action(label,x,w,color,callback)
+		local b=create("TextButton",card,{Text=label,Position=UDim2.fromOffset(x,382),Size=UDim2.fromOffset(w,56),Font=TITLE,TextSize=28,
+			TextColor3=PAPER,BackgroundColor3=color,BorderSizePixel=0,AutoButtonColor=true,ZIndex=72})
+		round(b,6)
+		b.Activated:Connect(callback)
+		return b
+	end
+	self.cancel=action("CLOSE",30,190,FIELD,function() self:close() end)
+	create("UIStroke",self.cancel,{Color=MUTED,Transparency=.55,Thickness=1.5,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
+	self.send=action("SEND",236,374,RED,function() self:submit() end)
+	pcall(function()
+		UIS.InputBegan:Connect(function(input)
+			if veil.Visible and (input.KeyCode==Enum.KeyCode.Escape or input.KeyCode==Enum.KeyCode.ButtonB) and not UIS:GetFocusedTextBox() then self:close() end
+		end)
+	end)
+	self:setKind("bug")
+	return self
+end
+
+function Feedback:setKind(kind)
+	self.kind=kind
+	for k,tab in self.tabs do
+		local on=k==kind
+		tab.button.BackgroundColor3=if on then RED else FIELD
+		tab.edge.Thickness=if on then 2 else 0
+		if on then self.hint.Text=tab.hint end
+	end
+end
+
+function Feedback:open(kind)
+	if kind then self:setKind(kind) end
+	self.status.Text="";self.status.TextColor3=GOLD
+	self.veil.Visible=true
+	pcall(function() game:GetService("GuiService").SelectedObject=self.tabs[self.kind].button end)
+end
+function Feedback:close()
+	self.veil.Visible=false
+	pcall(function() self.box:ReleaseFocus() end)
+	pcall(function() game:GetService("GuiService").SelectedObject=nil end)
+end
+function Feedback:isOpen() return self.veil.Visible end
+
+function Feedback:submit()
+	if self.busy then return end
+	local remote=ReplicatedStorage:FindFirstChild("NinjaDuel") and ReplicatedStorage.NinjaDuel:FindFirstChild("Feedback")
+	if not remote then self.status.Text="Reports are not available right now.";return end
+	local context={}
+	pcall(function() context=self.context() or {} end)
+	self.busy=true
+	self.status.TextColor3=MUTED;self.status.Text="Sending…"
+	task.spawn(function()
+		local ok,accepted,message=pcall(function() return remote:InvokeServer({kind=self.kind,text=self.box.Text,context=context}) end)
+		self.busy=false
+		if not ok then accepted,message=false,"Couldn't send it right now. Try again in a moment." end
+		self.status.TextColor3=if accepted then GOLD else Color3.fromRGB(232,110,100)
+		self.status.Text=message or ""
+		if accepted then
+			self.box.Text=""
+			task.delay(1.6,function() if self.veil.Visible and self.box.Text=="" then self:close() end end)
+		end
+	end)
+end
+return Feedback
+</ProtectedString>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="ND161">
           <Properties>
             <string name="Name">GaleFX</string>
             <ProtectedString name="Source">-- Temari on the client (roster wave): the iron fan (closed on her back at rest,
@@ -39194,7 +39536,7 @@ return GaleFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND160">
+        <Item class="ModuleScript" referent="ND162">
           <Properties>
             <string name="Name">GaleMotion</string>
             <ProtectedString name="Source">-- Temari's motion family (roster wave, DEC-015): her stance, gait, clips,
@@ -39375,7 +39717,7 @@ return GaleMotion
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND161">
+        <Item class="ModuleScript" referent="ND163">
           <Properties>
             <string name="Name">IdentityFX</string>
             <ProtectedString name="Source">-- CORE4 identity on the client (mission NEXT_VALIDATION_ROSTER_SCALE §5): what
@@ -40145,7 +40487,7 @@ return IdentityFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND162">
+        <Item class="ModuleScript" referent="ND164">
           <Properties>
             <string name="Name">Input</string>
             <ProtectedString name="Source">local CAS=game:GetService("ContextActionService")
@@ -40412,7 +40754,7 @@ return Input
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND163">
+        <Item class="ModuleScript" referent="ND165">
           <Properties>
             <string name="Name">LeeFX</string>
             <ProtectedString name="Source">-- Rock Lee on the client (stress-test wave, DEC-015): the Fifth Gate (a green
@@ -40593,7 +40935,7 @@ return LeeFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="LocalScript" referent="ND164">
+        <Item class="LocalScript" referent="ND166">
           <Properties>
             <string name="Name">Main</string>
             <ProtectedString name="Source">local Players=game:GetService("Players")
@@ -40783,7 +41125,7 @@ print("[NinjaDuel] Client ready")
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND165">
+        <Item class="ModuleScript" referent="ND167">
           <Properties>
             <string name="Name">MenuStage</string>
             <ProtectedString name="Source">-- The select screen's two prodigies, in a real 3D set (user 02/11, "everything
@@ -40965,7 +41307,7 @@ return MenuStage
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND166">
+        <Item class="ModuleScript" referent="ND168">
           <Properties>
             <string name="Name">MotionSmear</string>
             <ProtectedString name="Source">-- Speed smear (fluidity pass, user reference 28/10). What the eye cannot
@@ -41108,7 +41450,7 @@ return Smear
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND167">
+        <Item class="ModuleScript" referent="ND169">
           <Properties>
             <string name="Name">NarutoFX</string>
             <ProtectedString name="Source">-- Naruto on the client (roster wave, several bodies): the puffs of smoke of
@@ -41371,7 +41713,7 @@ return NarutoFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND168">
+        <Item class="ModuleScript" referent="ND170">
           <Properties>
             <string name="Name">Presentation</string>
             <ProtectedString name="Source">-- Velmora's additive combat motion and hit feedback, retaining Ninja Duel's
@@ -41828,7 +42170,7 @@ return Presentation
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND169">
+        <Item class="ModuleScript" referent="ND171">
           <Properties>
             <string name="Name">SandFX</string>
             <ProtectedString name="Source">-- Gaara's sand on the client: the sand bullet and Sand Shuriken in flight, the
@@ -42451,7 +42793,7 @@ return SandFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND170">
+        <Item class="ModuleScript" referent="ND172">
           <Properties>
             <string name="Name">TutorialProbe</string>
             <ProtectedString name="Source">-- Debug/QA places only (build.py DEBUG_SOURCES). The tutorial as a test of the
@@ -42634,7 +42976,7 @@ return Probe
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND171">
+        <Item class="ModuleScript" referent="ND173">
           <Properties>
             <string name="Name">UI</string>
             <ProtectedString name="Source">-- Prodigy Tournament interface: roster/selection, online queue and fighter
@@ -42750,6 +43092,8 @@ function UI.new(parent,send)
 	text(banner,"天\n才\n忍\n者\n大\n会",UDim2.fromOffset(0,12),UDim2.fromOffset(44,240),26,palette.red,BODY_FONT,Enum.TextXAlignment.Center).LineHeight=.95
 	frame(shell,UDim2.fromOffset(1553,280),UDim2.fromOffset(6,40),palette.red,0)
 	self.controlsButton=button(shell,"CONTROLS  (TAB)",UDim2.fromOffset(1290,30),UDim2.fromOffset(220,40),function() self:toggleControls() end)
+	-- (Beta, user 03/11) Bugs, ideas and opinions from inside the game (Client/Feedback).
+	self.feedbackButton=button(shell,"BUG / IDEA",UDim2.fromOffset(1086,30),UDim2.fromOffset(190,40),function() self:openFeedback() end)
 	self.controlsButton.TextSize=20
 	-- The two stages.
 	local function stage(side)
@@ -43102,7 +43446,7 @@ function UI.new(parent,send)
 	self.intro.Visible=false
 	-- --------------------------------------------------------------- result
 	self.result=frame(self.gui,UDim2.fromScale(0,0),UDim2.fromScale(1,1),palette.ink,.25)
-	local resultBox=inkCard(frame(self.result,UDim2.new(.5,-300,.5,-170),UDim2.fromOffset(600,340),CARD,0))
+	local resultBox=inkCard(frame(self.result,UDim2.new(.5,-300,.5,-196),UDim2.fromOffset(600,392),CARD,0))
 	self.resultBox=resultBox
 	self.resultScale=create("UIScale",resultBox,{Scale=1})
 	-- The judges' seal, stamped on the card: 勝 for a win, 敗 for a loss.
@@ -43116,6 +43460,8 @@ function UI.new(parent,send)
 	self.resultNote=text(resultBox,"",UDim2.fromOffset(30,132),UDim2.fromOffset(540,44),15,palette.muted,BODY_FONT,Enum.TextXAlignment.Center)
 	self.rematchButton=button(resultBox,"REMATCH",UDim2.fromOffset(30,196),UDim2.fromOffset(540,52),function() send("Rematch") end,palette.red)
 	button(resultBox,"RETURN TO THE ROSTER",UDim2.fromOffset(30,260),UDim2.fromOffset(540,52),function() send("Selection") end)
+	local report=button(resultBox,"REPORT A BUG  •  SUGGEST SOMETHING",UDim2.fromOffset(30,324),UDim2.fromOffset(540,40),function() self:openFeedback() end)
+	report.TextSize=18;report.TextColor3=palette.muted
 	-- ------------------------------------------------------------ controls
 	-- (User 03/11: "the keys should be in a menu rather than on the screen
 	-- all the time".) TAB (pad: START) opens the controls sheet over any
@@ -43133,6 +43479,8 @@ function UI.new(parent,send)
 	sheetTitle.ZIndex=42
 	self.controlsClose=text(sheet,"",UDim2.fromOffset(1120-436,30),UDim2.fromOffset(400,30),16,palette.muted,BODY_FONT,Enum.TextXAlignment.Right)
 	self.controlsClose.ZIndex=42
+	local sheetReport=button(sheet,"BUG / IDEA",UDim2.fromOffset(470,26),UDim2.fromOffset(190,40),function() self.controls.Visible=false;self:openFeedback() end)
+	sheetReport.ZIndex=42
 	frame(sheet,UDim2.fromOffset(36,78),UDim2.fromOffset(1048,3),palette.red,0).ZIndex=42
 	self.controlsBody=frame(sheet,UDim2.fromOffset(36,96),UDim2.fromOffset(1048,520),palette.ink,1)
 	self.controlsBody.ZIndex=42
@@ -43145,6 +43493,10 @@ function UI.new(parent,send)
 			if processed then return end
 			if input.KeyCode==Enum.KeyCode.Tab or input.KeyCode==Enum.KeyCode.ButtonStart then self:toggleControls() end
 		end)
+	end)
+	pcall(function()
+		local module=script.Parent:FindFirstChild("Feedback")
+		if module then self.feedback=require(module).new(self.gui,function() return self:feedbackContext() end) end
 	end)
 	-- ---------------------------------------------------------------- wipe
 	-- Between screens an ink brush stroke sweeps across (UI:wipe), the same
@@ -43267,6 +43619,31 @@ function UI:buildControls(pad)
 		jutsu.TextScaled=true;create("UITextSizeConstraint",jutsu,{MaxTextSize=15})
 	end
 	self.controlsClose.Text=(if pad then "START" else "TAB").." to close"
+end
+-- The report form (Client/Feedback) and what the game tells the server about
+-- the moment it was sent from.
+function UI:openFeedback()
+	if self.feedback then self.feedback:open() end
+end
+function UI:feedbackContext()
+	local data=self.lastData or {}
+	local h=self.lastHuman
+	local device="pc"
+	pcall(function()
+		if UIS.TouchEnabled and not UIS.KeyboardEnabled then device="touch"
+		elseif Controls.isGamepad(UIS:GetLastInputType()) then device="gamepad" end
+	end)
+	local wins=data.wins
+	return {
+		phase=self.lastPhase,
+		fighter=if h then h.fighterId else self.player,
+		opponent=if data.bot then data.bot.fighterId else self.bot,
+		round=data.round,
+		score=if wins then string.format("%d-%d",wins.human or 0,wins.bot or 0) else nil,
+		mode=if data.online then "online" elseif data.tutorial then "tutorial" else "ai",
+		tutorial=if typeof(data.tutorial)=="table" then tostring(data.tutorial.index or "") else nil,
+		device=device,
+	}
 end
 function UI:toggleControls()
 	local open=not self.controls.Visible
@@ -43473,6 +43850,7 @@ function UI.ultimate(widget,actor,pad,mine)
 	end
 end
 function UI:render(data)
+	self.lastData=data
 	local pad=if data.gamepad~=nil then data.gamepad else Controls.isGamepad(UIS:GetLastInputType())
 	self.tutorialPanel.Visible=data.tutorial~=nil and data.phase=="Duel"
 	-- (User 02/11, tutorial on screen) The cue band (124) and the hint (200)
@@ -43761,7 +44139,7 @@ return UI
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND172">
+        <Item class="ModuleScript" referent="ND174">
           <Properties>
             <string name="Name">UltimateFX</string>
             <ProtectedString name="Source">-- The ultimates on the client (stage 6, the approved move list, "Ultimes"):
@@ -44669,7 +45047,7 @@ return UltimateFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND173">
+        <Item class="ModuleScript" referent="ND175">
           <Properties>
             <string name="Name">VelmoraHitFeedback</string>
             <ProtectedString name="Source">-- Impact presentation. Adapted from Velmora src/client/Combat/HitFeedback.luau
@@ -44865,7 +45243,7 @@ return Feedback
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND174">
+        <Item class="ModuleScript" referent="ND176">
           <Properties>
             <string name="Name">VelmoraMotionEngine</string>
             <ProtectedString name="Source">-- Ninja Duel body animation. Started from Velmora's additive R15 layer (MIT) and
@@ -48513,7 +48891,7 @@ return Motion
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND175">
+        <Item class="ModuleScript" referent="ND177">
           <Properties>
             <string name="Name">VfxAtlas</string>
             <ProtectedString name="Source">-- GENERATED by tools/vfx_textures.py --pack: do not edit by hand.
@@ -49966,7 +50344,7 @@ HAOBECABDA1HBIA3HBGAmZ]]},
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND176">
+        <Item class="ModuleScript" referent="ND178">
           <Properties>
             <string name="Name">VfxKit</string>
             <ProtectedString name="Source">-- Presentation primitives on the project's own VFX textures
@@ -50426,7 +50804,7 @@ return Kit
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND177">
+        <Item class="ModuleScript" referent="ND179">
           <Properties>
             <string name="Name">Wave1FX</string>
             <ProtectedString name="Source">-- Roster 20, batch 1 (Haku, Zabuza, Kimimaro): the batch's own drawing,
@@ -50640,7 +51018,7 @@ return M
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND178">
+        <Item class="ModuleScript" referent="ND180">
           <Properties>
             <string name="Name">Wave1Motion</string>
             <ProtectedString name="Source">-- Roster batch 1 bodies authored from their Combat Bibles (DEC-026). First:
@@ -50941,7 +51319,7 @@ return Wave1Motion
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND179">
+        <Item class="ModuleScript" referent="ND181">
           <Properties>
             <string name="Name">Wave2FX</string>
             <ProtectedString name="Source">-- Roster 20, batch 2 (Shikamaru, Shino, Orochimaru): the batch's own drawing, installed by
@@ -50954,7 +51332,7 @@ return M
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND180">
+        <Item class="ModuleScript" referent="ND182">
           <Properties>
             <string name="Name">Wave3FX</string>
             <ProtectedString name="Source">-- Roster 20, batch 3 (Deidara, Sasori, Nagato, Killer Bee): the batch's own
@@ -51057,7 +51435,7 @@ return M
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND181">
+        <Item class="ModuleScript" referent="ND183">
           <Properties>
             <string name="Name">Wave3Motion</string>
             <ProtectedString name="Source">-- Roster batch 3 bodies authored from their Combat Bibles (DEC-026). First:
@@ -51184,7 +51562,7 @@ return Wave3Motion
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND182">
+        <Item class="ModuleScript" referent="ND184">
           <Properties>
             <string name="Name">Wave4FX</string>
             <ProtectedString name="Source">-- DEC-026 newcomers (Madara, Hashirama, Hiruzen as children): the weapons
@@ -51327,7 +51705,7 @@ return M
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND183">
+        <Item class="ModuleScript" referent="ND185">
           <Properties>
             <string name="Name">Wave4Motion</string>
             <ProtectedString name="Source">-- DEC-026 newcomers: the bodies of Madara, Hashirama and Hiruzen as children
@@ -51540,7 +51918,7 @@ return Wave4Motion
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND184">
+        <Item class="ModuleScript" referent="ND186">
           <Properties>
             <string name="Name">WorldLook</string>
             <ProtectedString name="Source">-- What the screen looks like (user 03/11: "the brightness, the graphics,
@@ -51652,7 +52030,7 @@ return WorldLook
       </Item>
     </Item>
   </Item>
-  <Item class="Lighting" referent="ND185">
+  <Item class="Lighting" referent="ND187">
     <Properties>
       <string name="Name">Lighting</string>
       <token name="Technology">4</token>
@@ -51672,7 +52050,7 @@ return WorldLook
       </Color3>
     </Properties>
   </Item>
-  <Item class="SoundService" referent="ND186">
+  <Item class="SoundService" referent="ND188">
     <Properties>
       <string name="Name">SoundService</string>
     </Properties>

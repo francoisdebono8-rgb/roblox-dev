@@ -111,6 +111,8 @@ function UI.new(parent,send)
 	text(banner,"天\n才\n忍\n者\n大\n会",UDim2.fromOffset(0,12),UDim2.fromOffset(44,240),26,palette.red,BODY_FONT,Enum.TextXAlignment.Center).LineHeight=.95
 	frame(shell,UDim2.fromOffset(1553,280),UDim2.fromOffset(6,40),palette.red,0)
 	self.controlsButton=button(shell,"CONTROLS  (TAB)",UDim2.fromOffset(1290,30),UDim2.fromOffset(220,40),function() self:toggleControls() end)
+	-- (Beta, user 03/11) Bugs, ideas and opinions from inside the game (Client/Feedback).
+	self.feedbackButton=button(shell,"BUG / IDEA",UDim2.fromOffset(1086,30),UDim2.fromOffset(190,40),function() self:openFeedback() end)
 	self.controlsButton.TextSize=20
 	-- The two stages.
 	local function stage(side)
@@ -463,7 +465,7 @@ function UI.new(parent,send)
 	self.intro.Visible=false
 	-- --------------------------------------------------------------- result
 	self.result=frame(self.gui,UDim2.fromScale(0,0),UDim2.fromScale(1,1),palette.ink,.25)
-	local resultBox=inkCard(frame(self.result,UDim2.new(.5,-300,.5,-170),UDim2.fromOffset(600,340),CARD,0))
+	local resultBox=inkCard(frame(self.result,UDim2.new(.5,-300,.5,-196),UDim2.fromOffset(600,392),CARD,0))
 	self.resultBox=resultBox
 	self.resultScale=create("UIScale",resultBox,{Scale=1})
 	-- The judges' seal, stamped on the card: 勝 for a win, 敗 for a loss.
@@ -477,6 +479,8 @@ function UI.new(parent,send)
 	self.resultNote=text(resultBox,"",UDim2.fromOffset(30,132),UDim2.fromOffset(540,44),15,palette.muted,BODY_FONT,Enum.TextXAlignment.Center)
 	self.rematchButton=button(resultBox,"REMATCH",UDim2.fromOffset(30,196),UDim2.fromOffset(540,52),function() send("Rematch") end,palette.red)
 	button(resultBox,"RETURN TO THE ROSTER",UDim2.fromOffset(30,260),UDim2.fromOffset(540,52),function() send("Selection") end)
+	local report=button(resultBox,"REPORT A BUG  •  SUGGEST SOMETHING",UDim2.fromOffset(30,324),UDim2.fromOffset(540,40),function() self:openFeedback() end)
+	report.TextSize=18;report.TextColor3=palette.muted
 	-- ------------------------------------------------------------ controls
 	-- (User 03/11: "the keys should be in a menu rather than on the screen
 	-- all the time".) TAB (pad: START) opens the controls sheet over any
@@ -494,6 +498,8 @@ function UI.new(parent,send)
 	sheetTitle.ZIndex=42
 	self.controlsClose=text(sheet,"",UDim2.fromOffset(1120-436,30),UDim2.fromOffset(400,30),16,palette.muted,BODY_FONT,Enum.TextXAlignment.Right)
 	self.controlsClose.ZIndex=42
+	local sheetReport=button(sheet,"BUG / IDEA",UDim2.fromOffset(470,26),UDim2.fromOffset(190,40),function() self.controls.Visible=false;self:openFeedback() end)
+	sheetReport.ZIndex=42
 	frame(sheet,UDim2.fromOffset(36,78),UDim2.fromOffset(1048,3),palette.red,0).ZIndex=42
 	self.controlsBody=frame(sheet,UDim2.fromOffset(36,96),UDim2.fromOffset(1048,520),palette.ink,1)
 	self.controlsBody.ZIndex=42
@@ -506,6 +512,10 @@ function UI.new(parent,send)
 			if processed then return end
 			if input.KeyCode==Enum.KeyCode.Tab or input.KeyCode==Enum.KeyCode.ButtonStart then self:toggleControls() end
 		end)
+	end)
+	pcall(function()
+		local module=script.Parent:FindFirstChild("Feedback")
+		if module then self.feedback=require(module).new(self.gui,function() return self:feedbackContext() end) end
 	end)
 	-- ---------------------------------------------------------------- wipe
 	-- Between screens an ink brush stroke sweeps across (UI:wipe), the same
@@ -628,6 +638,31 @@ function UI:buildControls(pad)
 		jutsu.TextScaled=true;create("UITextSizeConstraint",jutsu,{MaxTextSize=15})
 	end
 	self.controlsClose.Text=(if pad then "START" else "TAB").." to close"
+end
+-- The report form (Client/Feedback) and what the game tells the server about
+-- the moment it was sent from.
+function UI:openFeedback()
+	if self.feedback then self.feedback:open() end
+end
+function UI:feedbackContext()
+	local data=self.lastData or {}
+	local h=self.lastHuman
+	local device="pc"
+	pcall(function()
+		if UIS.TouchEnabled and not UIS.KeyboardEnabled then device="touch"
+		elseif Controls.isGamepad(UIS:GetLastInputType()) then device="gamepad" end
+	end)
+	local wins=data.wins
+	return {
+		phase=self.lastPhase,
+		fighter=if h then h.fighterId else self.player,
+		opponent=if data.bot then data.bot.fighterId else self.bot,
+		round=data.round,
+		score=if wins then string.format("%d-%d",wins.human or 0,wins.bot or 0) else nil,
+		mode=if data.online then "online" elseif data.tutorial then "tutorial" else "ai",
+		tutorial=if typeof(data.tutorial)=="table" then tostring(data.tutorial.index or "") else nil,
+		device=device,
+	}
 end
 function UI:toggleControls()
 	local open=not self.controls.Visible
@@ -834,6 +869,7 @@ function UI.ultimate(widget,actor,pad,mine)
 	end
 end
 function UI:render(data)
+	self.lastData=data
 	local pad=if data.gamepad~=nil then data.gamepad else Controls.isGamepad(UIS:GetLastInputType())
 	self.tutorialPanel.Visible=data.tutorial~=nil and data.phase=="Duel"
 	-- (User 02/11, tutorial on screen) The cue band (124) and the hint (200)

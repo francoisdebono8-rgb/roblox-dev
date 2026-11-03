@@ -9,6 +9,8 @@ require(script.Parent.LookMeshes).preload()
 require(script.Parent.ArenaMeshes).preload()
 -- The select screen's fighters, built once with the duel's rig (Server/Portraits).
 require(script.Parent.Portraits).start()
+-- Players' bug reports, ideas and opinions (Server/Feedback).
+require(script.Parent.Feedback).start(Shared)
 local matches=Matches.new(remote)
 remote.OnServerEvent:Connect(function(player,payload) matches:request(player,payload) end)
 Players.PlayerAdded:Connect(function(player) matches:selection(player) end)
