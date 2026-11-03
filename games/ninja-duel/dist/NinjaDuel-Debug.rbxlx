@@ -4505,7 +4505,7 @@ return {
       <Item class="StringValue" referent="ND26">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">b230897ad392c29b632dab4c85d7d8079b0e2d8af06f44d5e09bbae205a869f1</string>
+          <string name="Value">f741a52a2b2cefabadce3957a2216401c9bb1fb1333fff4c253ec99980b44fcf</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND27">
@@ -21926,14 +21926,27 @@ function Tutorial.plan(a)
 		if i&gt;5 then break end
 		add({id="jutsu"..i,title="Jutsu "..i..": "..tostring(spec.Name),key=TECH_KEY[i],pad=Controls.TechniquePad[i] or ("Jutsu "..i),
 			place=if (spec.Range or 20)&lt;10 then "near" else "far",technique=spec,
-			setup=function(s) local a=s.human;a.chakra=a.def.Chakra or 100;a.cooldowns={} end,
+			setup=function(s)
+				local a=s.human;a.chakra=a.def.Chakra or 100;a.cooldowns={}
+				-- (Studio 03/11, Minato: "Condition missing" on every press) A
+				-- jutsu that goes to a seal gets one planted behind the partner.
+				if spec.Requires=="Anchor" and s.bot and s.combat then
+					local b=s.bot
+					local away=b.root.Position-a.root.Position;away=Vector3.new(away.X,0,away.Z)
+					away=if away.Magnitude&gt;.1 then away.Unit else Vector3.zAxis
+					local spot=b.root.Position+away*6
+					require(script.Parent.Techniques).plant(s.combat,a,Vector3.new(spot.X,s.origin.Y,spot.Z),Vector3.yAxis)
+				end
+			end,
 			check=function(s,t) return t.ev("Cast:"..tostring(spec.Id)) end})
 	end
 	add({id="guard",title="Guard the incoming strike",key="Hold "..K.Guard,pad="Hold "..P.Guard,place="near",bot="heavy",
 		check=function(s,t) return t.ev("GuardHit") end})
 	add({id="evade",title="Dodge the incoming strike",key=K.Dodge.." during his wind-up",pad=P.Dodge.." during his wind-up",place="near",bot="heavy",
-		check=function(s,t,now) local a,b=s.human,s.bot;return t.ev("Dodge") and (t.ev("Evaded") or (b.attackName=="Heavy" and now-(b.attackStarted or now)&gt;.46 and a.health==t.health)) end})
-	add({id="substitute",title="Escape after being hit",key=K.Substitute.." just after contact",pad=P.Substitute.." just after contact",place="near",bot="heavy",
+		check=function(s,t,now) local a,b=s.human,s.bot;return t.ev("Dodge") and (t.ev("Evaded") or (b.attackName~=nil and now-(b.attackStarted or now)&gt;.46 and a.health==t.health)) end})
+	-- (Studio 03/11, against Gaara: his heavy knocks down, and a body on the
+	-- floor cannot substitute) The partner hits with his light here.
+	add({id="substitute",title="Escape after being hit",key=K.Substitute.." just after contact",pad=P.Substitute.." just after contact",place="near",bot="heavy",strike="Attack",
 		check=function(s,t) return t.ev("Substitute") end})
 	-- (Roster run 02/11: STUCK for every fighter from 28 studs: the signs end
 	-- before anyone gets there.) In dash reach, as in a duel.
@@ -21989,6 +22002,13 @@ function Tutorial.enter(s,now)
 	end
 	t.health=a.health
 	b.trainingChannelScale=if spec.bot=="channel" then 3 else 1
+	-- (Studio 03/11, Minato against Gaara: the run strike, the grab, the dodge
+	-- and the escape never completed) A training partner's sand shield ate
+	-- every blow the step asks for. It is down in the drills, up in the fight.
+	if b.def.SandShield then
+		if spec.bot=="fight" then b.shieldCharges=b.def.SandShield.Charges;b.shieldRegenAt=0
+		else b.shieldCharges=0;b.shieldRegenAt=math.huge end
+	end
 	local place=spec.place
 	local near=place=="near" or place=="air"
 	local gapA,gapB=if near then 3 elseif place=="mid" then 5 else 14,if near then -2 elseif place=="mid" then -5 else -14
@@ -22019,7 +22039,9 @@ end
 function Tutorial.interruptSlot(b)
 	local best,bestChannel="Technique1",-1
 	for slot,spec in b.def.Techniques do
-		if spec.Interruptible and spec.Channel&gt;bestChannel and not spec.Requires and not spec.Mobile then best,bestChannel="Technique"..slot,spec.Channel end
+		-- (Studio 03/11, Kakashi against Naruto: STUCK) not a jutsu that runs
+		-- at you once formed (the Rasengan, range 10): hand signs held in place.
+		if spec.Interruptible and spec.Channel&gt;bestChannel and not spec.Requires and not spec.Mobile and (spec.Range or 99)&gt;12 then best,bestChannel="Technique"..slot,spec.Channel end
 	end
 	return best
 end
@@ -22121,7 +22143,7 @@ function Tutorial.update(s,now,dt)
 	-- The practice partner.
 	if spec.bot=="heavy" and now&gt;=t.attackAt then
 		if (b.root.Position-a.root.Position).Magnitude&gt;7 then c:relocate(b,a.root.Position+a.root.CFrame.LookVector*5) end
-		b.root.CFrame=CFrame.lookAt(b.root.Position,a.root.Position);c:request(b,"Heavy");t.attackAt=now+1.7
+		b.root.CFrame=CFrame.lookAt(b.root.Position,a.root.Position);c:request(b,spec.strike or "Heavy");t.attackAt=now+1.7
 	elseif spec.bot=="channel" and now&gt;=t.attackAt then
 		b.cooldowns={};b.chakra=b.def.Chakra or 100;c:request(b,Tutorial.interruptSlot(b),a.root.Position);t.attackAt=now+1.4
 	elseif spec.bot=="throw" and now&gt;=t.attackAt then
@@ -38389,10 +38411,13 @@ local Players=game:GetService("Players")
 local remote=game:GetService("ReplicatedStorage"):WaitForChild("NinjaDuelCombatDebug",10)
 if not remote then return end
 local gui=Instance.new("ScreenGui");gui.Name="NinjaDuelCombatInspector";gui.ResetOnSpawn=false;gui.DisplayOrder=100
+-- (Studio 03/11) Hidden until F8: open by default it covered the player's
+-- plate and a third of the fight.
+gui.Enabled=false
 local panel=Instance.new("TextLabel");panel.Size=UDim2.fromOffset(590,340);panel.Position=UDim2.fromOffset(12,12)
 panel.BackgroundColor3=Color3.fromRGB(18,20,28);panel.BackgroundTransparency=.15;panel.TextColor3=Color3.fromRGB(220,237,245)
 panel.Font=Enum.Font.Code;panel.TextSize=13;panel.TextXAlignment=Enum.TextXAlignment.Left;panel.TextYAlignment=Enum.TextYAlignment.Top
-panel.Text="Ninja Duel debug — waiting for a duel (F8: hide/show)";panel.Parent=gui;gui.Parent=Players.LocalPlayer:WaitForChild("PlayerGui")
+panel.Text="Ninja Duel debug — waiting for a duel (F8: show/hide)";panel.Parent=gui;gui.Parent=Players.LocalPlayer:WaitForChild("PlayerGui")
 game:GetService("UserInputService").InputBegan:Connect(function(input,processed)
  if not processed and input.KeyCode==Enum.KeyCode.F8 then gui.Enabled=not gui.Enabled end
 end)
@@ -44204,10 +44229,21 @@ function Presentation:leadLocal(actor,drawn,dt)
 	local cap=if guess then LEAD_GUESS_MAX else LEAD_MAX
 	if st.off.Magnitude&gt;cap then st.off=st.off.Unit*cap end
 	local other=self:visualRoot("bot")
-	if other then
-		local at=drawn.Position+st.off
-		local d=Vector3.new(at.X-other.X,0,at.Z-other.Z)
-		if d.Magnitude&lt;2.6 and st.off.Magnitude&gt;1e-3 then st.off*=math.clamp((d.Magnitude-1.6),0,1) end
+	if other and st.off.Magnitude&gt;1e-3 then
+		-- (Studio 03/11: Minato pushed into Gaara and the two bodies merged)
+		-- The lead never draws him closer to the opponent than the server
+		-- keeps him (Motor.SURFACE 3.4 root to root): pushing into him, the
+		-- part of the lead that goes toward him is dropped.
+		local function gap(k)
+			local at=drawn.Position+st.off*k
+			return Vector3.new(at.X-other.X,0,at.Z-other.Z).Magnitude
+		end
+		local floor=math.min(3.2,gap(0))
+		if gap(1)&lt;floor then
+			local lo,hi=0,1
+			for _=1,6 do local mid=(lo+hi)/2;if gap(mid)&lt;floor then hi=mid else lo=mid end end
+			st.off*=lo
+		end
 	end
 	local out=drawn+st.off+Vector3.new(0,st.offY,0)
 	if st.prev then
@@ -44705,7 +44741,33 @@ function Presentation.snapshotRoot(data,actor,fallback)
 	if not actor.position or not data.serverNow then return fallback end
 	local age=math.clamp(workspace:GetServerTimeNow()-data.serverNow,0,.1)
 	local v=actor.velocity
-	local p=actor.position+(if typeof(v)=="Vector3" and v.Magnitude&lt;200 then v*age else Vector3.zero)
+	local p=actor.position
+	if typeof(v)=="Vector3" and v.Magnitude&lt;200 then
+		-- (Probe 03/11: a landing drawn 4 studs under the floor, then popped
+		-- up) Carried on flat; in the air the fall bends with gravity and
+		-- stops at the floor under it; on the ground, no vertical guess.
+		p+=Vector3.new(v.X,0,v.Z)*age
+		if actor.airborne then
+			local y=v.Y*age-.5*(workspace.Gravity or 196.2)*age*age
+			if y&lt;0 then
+				local floor=nil
+				pcall(function()
+					local params=RaycastParams.new();params.FilterType=Enum.RaycastFilterType.Exclude
+					local exclude={}
+					local character=game:GetService("Players").LocalPlayer.Character
+					if character then table.insert(exclude,character) end
+					local folder=character and character.Parent
+					local bot=Presentation.opponent(data,folder);if bot then table.insert(exclude,bot) end
+					local effects=folder and folder:FindFirstChild("Effects");if effects then table.insert(exclude,effects) end
+					params.FilterDescendantsInstances=exclude
+					local hit=workspace:Raycast(actor.position,Vector3.new(0,y-3,0),params)
+					floor=hit and hit.Position.Y+2.9
+				end)
+				if floor then y=math.max(y,math.min(0,floor-actor.position.Y)) end
+			end
+			p+=Vector3.new(0,y,0)
+		end
+	end
 	local look=actor.lookVector
 	local flatLook=if typeof(look)=="Vector3" then Vector3.new(look.X,0,look.Z) else Vector3.zero
 	if flatLook.Magnitude&lt;.05 then return fallback.Rotation+p end
@@ -44741,6 +44803,21 @@ function Presentation:smoothStep(data,dt)
 			if key=="human" then drawn=self:leadLocal(actor,drawn,math.max(dt,1/240)) end
 			st=self.smooth[key]
 			st.replicatedCF=actualCF
+			-- (Tutorial probe 03/11: 12-19 pops per fighter, 3-9 studs in one
+			-- frame) A packet that disagrees with where the body was drawn (an
+			-- extrapolation past a landing, a dive or a dash started between two
+			-- packets) moved the body in a single frame. The drawn root now
+			-- covers at most a body's top speed per frame; the rest is caught up
+			-- over the next frames. A declared warp still snaps.
+			local step=math.max(dt,1/240)
+			if st.drawnCF and st.capWarp==actor.warpSerial then
+				local v=actor.velocity
+				local speed=math.max(actor.speed or 0,if typeof(v)=="Vector3" then v.Magnitude else 0)
+				local cap=math.max(80,speed*1.4)*step
+				local d=drawn.Position-st.drawnCF.Position
+				if d.Magnitude&gt;cap and d.Magnitude&lt;TRACK_SNAP then drawn=drawn.Rotation+(st.drawnCF.Position+d.Unit*cap) end
+			end
+			st.capWarp=actor.warpSerial
 			-- Draw the whole body on the track for this frame only; the next
 			-- replication packet overwrites the client copy, never the server.
 			local target=drawn
@@ -46344,8 +46421,14 @@ function UI.new(parent,send)
 		-- same factor so its bottom row sits at the bottom of the screen (the
 		-- slots and help used to float mid-screen on a small viewport).
 		self.hud.Size=UDim2.fromScale(1/s,1/s)
+		-- (Studio 03/11) The player's plate starts after Roblox's own buttons
+		-- in the top-left corner (they covered his medallion and name).
+		local inset=0
+		pcall(function() inset=GuiService.TopbarInset.Min.X end)
+		if self.hp and self.hp.box then self.hp.box.Position=UDim2.fromOffset(math.max(20,(inset+8)/s),16) end
 	end
 	workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(fitHud);fitHud()
+	pcall(function() GuiService:GetPropertyChangedSignal("TopbarInset"):Connect(fitHud) end)
 	self:refreshSelection(); self:render({phase="Selection"})
 	return self
 end

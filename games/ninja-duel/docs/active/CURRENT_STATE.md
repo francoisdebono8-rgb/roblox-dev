@@ -1,3 +1,23 @@
+**Vérification Studio de la v19 → v20 (03/11, 14 h)** (utilisateur : « on est demain, vérifie tout, je vois pas mal de choses qui vont pas »)
+- **Fichiers ouverts par l'utilisateur** : `ND-Test.rbxlx` (29/10, 32 modules de clips) et `ND-FreezeFix` (banc de l'autre session). Aucun n'était la v19 (55 modules).
+- **Méthode** : `ND-Test-v19` ouvert dans Studio ; tutoriel joué par le bot (`tutorialRun`) pour les 8 persos ; sonde client (`TutorialProbe`) qui mesure ce qui se voit. Résultat : aucune erreur dans la console, 28/29 étapes réussies par perso, sauf les blocages corrigés ci-dessous.
+- **Corps qui saute de 3 à 9 studs en une image** (atterrissage, plongée, poursuite ; 6 à 20 fois par perso). Cause : `snapshotRoot` prolongeait la chute sous le sol, puis le paquet suivant le remontait. Correction :
+  - prolongement à plat, gravité en l'air, arrêt au sol ;
+  - le corps dessiné ne parcourt pas plus que la vitesse max du corps par image ; une téléportation déclarée saute toujours.
+  - Mesuré en direct : Sasuke 17 → 9 (pire 7,5 → 2,6 studs), Lee 18 → 9, Minato 20 → 3.
+- **Corps fondus l'un dans l'autre** (Minato poussé dans Gaara) : l'avance locale ne rapproche jamais plus que ce que garde le serveur.
+- **Interface** :
+  - le panneau de debug (`CombatDebug`) est caché par défaut (F8) : il couvrait la plaque du joueur ;
+  - la plaque du joueur commence après les boutons Roblox (`GuiService.TopbarInset`).
+- **Tutoriel bloqué selon l'adversaire** :
+  - le bouclier de sable de Gaara mangeait le coup en course et la saisie : baissé pendant les exercices, levé pendant le duel ;
+  - le Dieu du Tonnerre Volant de Minato reçoit un sceau ;
+  - l'esquive accepte n'importe quel coup ;
+  - l'évasion après un coup reçu se fait sur un coup léger (le lourd de Gaara met au sol) ;
+  - l'interruption prend une technique tenue sur place (le Rasengan de Naruto fonce).
+- **Mesuré sans changement** : l'IA met KO un joueur passif en 17 à 39 s (headless).
+- **Livré** : `ND-Test-v20.rbxlx` (+ `ND-Jeu`, `ND-Labo`).
+
 **Parties 8–9 de la feuille de route : le socle dessiné pour les 8 (03/11, 1 h 30)** (utilisateur : « continue la suite étape 8 9 10 », « pk que Neji »)
 - **Mesure de départ** : seuls Sasuke et Minato avaient leur garde, leurs coups reçus, chutes, relevés, esquives et poursuite dessinés ; les 6 autres les jouaient en procédural. Aucun des 8 n'avait sa saisie ni ses projections ; seul Sasuke avait le salto talon en l'air (`AirFlip`, lourd en l'air hors chaîne).
 - **Garde, réactions, esquives, poursuite des 6** (`tools/blender/job_react_6.py`, le jeu de `clips_react2` sur la garde de chacun) : 23 clips × 6 (garde et impact, coups reçus tête / corps / flanc / dos / jambes des deux côtés, projeté et réception, envoyé en l'air, au sol, relevé des deux côtés, dash, roue, flip arrière, poursuite). Tempo propre : Lee revient le plus vite, Gaara le plus lent, Naruto encaisse large. Gaara pare bras croisés (le sable prend le coup), Neji paumes levées.

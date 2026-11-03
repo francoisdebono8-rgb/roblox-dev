@@ -1,7 +1,7 @@
 {
   "version": "0.13.0-arena-combo",
   "artifact": "NinjaDuel-Debug.rbxlx",
-  "sha256": "2692182c9660cfc25a2aee2c2da4a51373458a3a758073ee764934d6c1e66bb3",
+  "sha256": "f748e88600e2a679f149603de29048d31b01e671af75af2053e7c2f09f800b7d",
   "sources": {
     "src/Client/ArenaDress.luau": "bd92aa3bf3c37a36fd9d2b1f02971921d9c5e981788abe9594a098425bf3cb0e",
     "src/Client/AuthoredClips.luau": "8f70481c7cd03c2c6a8e877e8fa312fb2cc80ab005f3ba721f8ae602f39bbbd0",
@@ -64,7 +64,7 @@
     "src/Client/Camera.luau": "f90f14f70478b006ec174fe0b9f4f8fb71251a924ce5346e3dc034e2db89ec99",
     "src/Client/ChakraFX.luau": "0cc9da988f6086c1148af14474d736bd47c5c30b6f75c37259ad5bec47f736c5",
     "src/Client/ChakraFlowFX.luau": "21d9962e35905514d6cbeab727dcc8f20f7c392ac5e1274415878dc21927f2f9",
-    "src/Client/CombatDebug.client.luau": "c0cfc3752e4f6c4290f35c652466db38c2e916876b25f03697880562fb44d3ab",
+    "src/Client/CombatDebug.client.luau": "9d27af47c4c4bf6a71dda970b2ff5bb5ea3c19079112a15bdeb0973fd60d91b5",
     "src/Client/DevClient.luau": "97dcf83662daf5d148ac8b738dafb30e23415c287d311dedd10b4a59f8a29f88",
     "src/Client/DevVolumes.luau": "1b557735b22d3dde87a14d9b8adcba8374012f2204916e66d7ad65aff52e007f",
     "src/Client/Effects.luau": "40943e6e29bd56ebee03ad4de2a8fe3136f5e01f5261794767e1a24328e0d7d6",
@@ -78,10 +78,10 @@
     "src/Client/MenuStage.luau": "6fb5eb902190d7b9dea0e8b4356bb21479b7733a74b87dcca71d0daa95782088",
     "src/Client/MotionSmear.luau": "e17fac23382063789300efe7f7b8dbfce3f07e6052d3e60c26ee6877ce5bb01e",
     "src/Client/NarutoFX.luau": "c37b04701dc6f1582491d7d279ad7cc96b4fb3e9df8916d21e16c82cf164591b",
-    "src/Client/Presentation.luau": "e5553f1b88321fcc4aeab89a64e80fbd2c7570bdbabe9beda405c67d4c43ebd9",
+    "src/Client/Presentation.luau": "98d556632317bbfadb7b9bec0a6547c544582d2b63affe83b76a1b1c679490cc",
     "src/Client/SandFX.luau": "a5f0d04be57628eab9a94bf064b1bbb2e14acccb7bdf463c974b95328a64173a",
     "src/Client/TutorialProbe.luau": "82cc9b42c73a46f97d265fd86a3582d0d3a58c6a2b7caad8296926f64adfa1da",
-    "src/Client/UI.luau": "7602bc04ca167fc40102b84ddc435ea7f855fb310dc62561c8e6a57488292544",
+    "src/Client/UI.luau": "1c9d48ae047be0f6e7ffb45c02f13727b883b5b6baf294641b95cc2d43cc77bb",
     "src/Client/UltimateFX.luau": "3da697d392feba0e647867fa9bb89c75c4fe292238a62ff904d6f34cfa050937",
     "src/Client/VelmoraHitFeedback.luau": "2c3b4264fda43e189301ccc3431a79ecc76d6c5af526d7f4aa94752d03f192b6",
     "src/Client/VelmoraMotionEngine.luau": "c74a9cc9732a83d1c7935b8d3679508e37846b9fcc63437a9ce2d956e6abb34e",
@@ -150,7 +150,7 @@
     "src/Server/SkillBuilds.luau": "2625664cb638b031abc7278084f0c0ded52ab70287a5b7ad4f0962f259e0ec11",
     "src/Server/SkillTrees.luau": "6800fcbc308a78bb5e6d226bb34d3a00c28a5acdb1aaa68f3dd3ef31526d8834",
     "src/Server/Techniques.luau": "d803c85c814e914c818d5465bd48d7656d471f514bf66a035032fcf973c03bc3",
-    "src/Server/Tutorial.luau": "3862971997b673417fa2c1a1fc66e5a47be919804214aa27d91f84d7794f6ffc",
+    "src/Server/Tutorial.luau": "4f2813ebb69a35e950f3ec72d251c6886b424b19d02f7b1a9f607f8438babb43",
     "src/Server/TutorialBot.luau": "f64794c332349b7cd7891c78f3e58d04db925ce5411db0cb87395d10d50e7ab3",
     "src/Server/Ultimates.luau": "38330b6176b7d5d65d54242a19667426c5dc1c15b4942932ee93285a561fa03e",
     "src/Server/VelmoraAntiCheat.luau": "cc3cc6c10ee5ab6d0ca3de956f34eb4cca5feaee331d53505e6fff494729ae87",
@@ -188,7 +188,7 @@
   },
   "sourceEquality": "PASS",
   "debugOnly": true,
-  "buildFingerprint": "b230897ad392c29b632dab4c85d7d8079b0e2d8af06f44d5e09bbae205a869f1",
+  "buildFingerprint": "f741a52a2b2cefabadce3957a2216401c9bb1fb1333fff4c253ec99980b44fcf",
   "donorAssets": {
     "assets/BanglaAssets.rbxmx": "6e99f5f67e6c34ac8a81d739431554b1495f0f5cd1dd1870a39eeb8bf23e1983"
   },
