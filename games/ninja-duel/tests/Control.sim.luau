@@ -80,7 +80,9 @@ for _,id in MAIN do if not only or only==id then
    row.presses+=1
    local family=if string.match(action,"^Technique") then "Technique" else action
    local gap=Tune.Rates[family] or .04
-   local free=a.state=="Neutral" and not a.reaction and a.health>0
+   -- (DEC-031) An opponent's ultimate holds the body: the one cinematic,
+   -- not a press eaten.
+   local free=a.state=="Neutral" and not a.reaction and a.health>0 and not a.ultimateHeld and not a.ultimateRunning
    local ok,reason
    if gate[family] and c.now-gate[family]<gap then ok,reason=false,"RateGate"
    else gate[family]=c.now;ok,reason=c:request(a,action,b.root.Position) end
@@ -169,7 +171,7 @@ for _,id in MAIN do if not only or only==id then
    while queue[1] and queue[1].at<=t do table.remove(queue,1).fn() end
    if a.state=="Defeated" then wasDead=true end
    -- eaten: refused, then free again within 0.25 s, and nothing came out
-   if a.state=="Neutral" and not a.reaction and a.health>0 and not a.latePress then
+   if a.state=="Neutral" and not a.reaction and a.health>0 and not a.latePress and not a.ultimateHeld and not a.ultimateRunning then
     for _,p in pendingRefused do if t-p.t<=.25 then row.eaten+=1;inc(row.eatenWhy,p.why.."/"..p.action) end end
     table.clear(pendingRefused)
    end
@@ -178,7 +180,7 @@ for _,id in MAIN do if not only or only==id then
    local moved=(flat(pos)-flat(last)).Magnitude
    last=pos
    -- freeze: the player asks to move, nothing holds him, and he does not move
-   local free=a.state=="Neutral" and not a.reaction and not a.airborne and stick.Magnitude>.5
+   local free=a.state=="Neutral" and not a.reaction and not a.airborne and stick.Magnitude>.5 and not a.ultimateHeld and not a.ultimateRunning
    if free and moved<.02 then stillFor+=DT else
     if stillFor>=.3 then row.freezes+=1;inc(row.freezeWhere,string.format("%s hold=%s",tostring(a.attackName or "-"),tostring((a.airHold or 0)>c.now)))
      if #row.examples<12 then table.insert(row.examples,string.format("%.1fs FREEZE %.2fs (Neutral, stick held)",t,stillFor)) end end
