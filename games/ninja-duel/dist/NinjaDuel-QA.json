@@ -1,7 +1,7 @@
 {
   "version": "0.13.0-arena-combo",
   "artifact": "NinjaDuel-QA.rbxlx",
-  "sha256": "431cced45ad4fb004c2e463f2e9505115d699a84567037fb87312b30a721d46d",
+  "sha256": "a06946002fc62013fec5d4569a290d80422717434a9943fb29abc5166a431430",
   "sources": {
     "src/Client/ArenaDress.luau": "bd92aa3bf3c37a36fd9d2b1f02971921d9c5e981788abe9594a098425bf3cb0e",
     "src/Client/AuthoredClips.luau": "88314c81cd73ee1a2db42036a667da7675558c3b89f08bb9af9102a14d49b829",
@@ -57,9 +57,9 @@
     "src/Client/AuthoredClips9.luau": "0942657628b7d4c95974993070b80355e161080b404d07eb5211d51abccb9fe2",
     "src/Client/AuthoredMotion.luau": "a701e2f0f7a198d8bdbe28d651de5d209b13185bc1f998cd6ba3477a5b524370",
     "src/Client/BodyViews.luau": "3c8dbbea28619bee77fd2366efc8dab78ea6dee91748f1dafdf144d0ea13d0e3",
-    "src/Client/Camera.luau": "19109f596aaa5ee942994a6376be93daf8264aed81accc0ad825abc1758a30df",
+    "src/Client/Camera.luau": "a6c360cc67ddb31893fc7394182c8408d51d04d3e3aa3bf9e03ead03d16c77f9",
     "src/Client/ChakraFX.luau": "0cc9da988f6086c1148af14474d736bd47c5c30b6f75c37259ad5bec47f736c5",
-    "src/Client/ChakraFlowFX.luau": "21d9962e35905514d6cbeab727dcc8f20f7c392ac5e1274415878dc21927f2f9",
+    "src/Client/ChakraFlowFX.luau": "c236a90b1b96027d00d08c5c66377275161473e0546ec0ae8fe02a5516c905e4",
     "src/Client/CombatDebug.client.luau": "9d27af47c4c4bf6a71dda970b2ff5bb5ea3c19079112a15bdeb0973fd60d91b5",
     "src/Client/DevClient.luau": "97dcf83662daf5d148ac8b738dafb30e23415c287d311dedd10b4a59f8a29f88",
     "src/Client/DevVolumes.luau": "1b557735b22d3dde87a14d9b8adcba8374012f2204916e66d7ad65aff52e007f",
@@ -103,7 +103,7 @@
     "src/Server/BuildPresets.luau": "c5f2d42a4766f7dc5fee90ee095eeb0727605c050e8e557fd6afc84f595702e9",
     "src/Server/ChakraCombat.luau": "caa3c725a8f604e7dd5ca31cd98cf2ef9bd83cf3e71dd3320ed1fe1ca54e1173",
     "src/Server/ChakraDev.luau": "e89f9b4f656d2a87860dc2e961cc995f63214dbddad1d24764bccd26f8c89153",
-    "src/Server/ChakraFlow.luau": "da7340040484b417709d8e15423d613b404e16d3006dbfb42ba8d86d54800bb5",
+    "src/Server/ChakraFlow.luau": "337ca3fc38dd49ef8ce717238021d17fd598122f469af13b4ca34416aeb828f0",
     "src/Server/ChakraInputPlan.luau": "74f3cce888e6723e7c1c72ddfc6e8b41d44898e24c56c74abd457082369e00c1",
     "src/Server/ChakraLab.luau": "d4cc6ddbd2520afb577ed89fc0198abe65bb5f3d7202be5c652c648adf015a30",
     "src/Server/ChakraRules.luau": "6576c8947bab6027e4183e28594a30493df3d0084ea472460116884b37cc505d",
@@ -186,7 +186,7 @@
   },
   "sourceEquality": "PASS",
   "debugOnly": true,
-  "buildFingerprint": "b9f275a253a5dcfbd7e8c038a673077162e79d0156ff99067257b90cf6353507",
+  "buildFingerprint": "e913bcfcc779e5b65b4050330bba510a7ca4e6e313ed024c6cca2eefe13fce65",
   "donorAssets": {
     "assets/BanglaAssets.rbxmx": "6e99f5f67e6c34ac8a81d739431554b1495f0f5cd1dd1870a39eeb8bf23e1983"
   },
@@ -306,7 +306,7 @@
       },
       "tests/ChakraFlow.spec.luau": {
         "exit": 0,
-        "summary": "NinjaDuel chakra flow: 9 PASS"
+        "summary": "NinjaDuel chakra flow: 12 PASS"
       },
       "tests/AirCombat.spec.luau": {
         "exit": 0,
@@ -354,7 +354,7 @@
       },
       "tests/Control.spec.luau": {
         "exit": 0,
-        "summary": "NinjaDuel player control: PASS (948 presses, 3.1% eaten, no freeze, no ghost air, no stuck state; headless pad player vs AI, 8 fighters)"
+        "summary": "NinjaDuel player control: PASS (898 presses, 2.7% eaten, no freeze, no ghost air, no stuck state; headless pad player vs AI, 8 fighters)"
       },
       "tests/Ultimates.spec.luau": {
         "exit": 0,
