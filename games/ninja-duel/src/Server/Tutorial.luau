@@ -212,7 +212,9 @@ end
 function Tutorial.interruptSlot(b)
 	local best,bestChannel="Technique1",-1
 	for slot,spec in b.def.Techniques do
-		if spec.Interruptible and spec.Channel>bestChannel and not spec.Requires and not spec.Mobile then best,bestChannel="Technique"..slot,spec.Channel end
+		-- (Studio 03/11, Kakashi against Naruto: STUCK) not a jutsu that runs
+		-- at you once formed (the Rasengan, range 10): hand signs held in place.
+		if spec.Interruptible and spec.Channel>bestChannel and not spec.Requires and not spec.Mobile and (spec.Range or 99)>12 then best,bestChannel="Technique"..slot,spec.Channel end
 	end
 	return best
 end
