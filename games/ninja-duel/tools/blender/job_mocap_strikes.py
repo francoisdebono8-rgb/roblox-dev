@@ -42,11 +42,25 @@ OWN = {
     "Sand": {"Light1": ("flick_throw", "RightWrist"), "Light2": ("cast_forward", "RightWrist"), "Light3": ("hadouken", "RightWrist")},
 }
 AIR = {"Air1", "Air2", "AirDrive", "AirFlip", "AirSwitch"}
+# Jutsu releases (user 03/11: "les animations des jutsu"): the throws and the
+# pushes take a captured throw or push, timed on the clip's release marker;
+# the hand seals (channels) and the fire breaths stay key-posed.
+JUTSU = {
+    "Lion": {"Throw.Shuriken": ("flick_throw", "RightWrist")},
+    "Mirage": {"Throw.Shuriken": ("flick_throw", "RightWrist"), "NeedleFan.Release": ("flick_throw", "RightWrist")},
+    "Legion": {"Throw.Kunai": ("throw", "RightWrist")},
+    "Copycat": {"Throw.Kunai": ("throw", "RightWrist"), "WaterDragon.Release": ("cast_forward", "RightWrist")},
+    "Flashstep": {"Throw.Kunai": ("throw", "RightWrist"), "Throw.MarkedKunai": ("throw", "RightWrist"),
+                  "Throw.WindCut": ("flick_throw", "RightWrist")},
+    "GentleFist": {"Throw.Kunai": ("throw", "RightWrist")},
+    "Sand": {"Throw.Sand": ("flick_throw", "RightWrist"), "DesertWave.Release": ("cast_forward", "RightWrist")},
+}
 NO_BASE = {"Sand": {"Heavy", "Launcher", "KneeStrike", "FlyingKick", "Air1", "Air2", "AirDrive", "AirFlip", "AirSwitch"}}
 PLAN = {}
 for F in ("Leaf", "Legion", "Lion", "GentleFist", "Mirage", "Copycat", "Flashstep", "Sand"):
     PLAN[F] = {k: v for k, v in BASE.items() if k not in NO_BASE.get(F, ())}
     PLAN[F].update(OWN.get(F, {}))
+    PLAN[F].update(JUTSU.get(F, {}))
 TIPS = {"RightWrist": (0, -.6, 0), "LeftWrist": (0, -.6, 0), "RightAnkle": (0, -.3, -.6), "LeftAnkle": (0, -.3, -.6),
         "RightKnee": (0, -.5, 0), "LeftKnee": (0, -.5, 0)}
 
@@ -271,8 +285,12 @@ for fighter, slots in PLAN.items():
         start, impact, settle, end = phases(*effector_track(arm, tr, limb))
         fps_old = old.get("fps", 60)
         n_out = int(round(old["length"] * 60)) + 1
-        c = old["markers"].get("contact", old["length"] * .4) * 60
-        r = old["markers"].get("recover", old["length"] * .6) * 60
+        marks = old.get("markers", {})
+        if old["length"] < .25:
+            print("skip", name, "too short to carry a capture")
+            continue
+        c = marks.get("contact", marks.get("release", old["length"] * .4)) * 60
+        r = marks.get("recover", min(old["length"] * .85, marks.get("release", old["length"] * .4) + .12)) * 60
         warp(tr, [start, impact, settle, end], [0, c, r, n_out - 1], n_out)
         melt(tr, old)
         if slot in AIR:

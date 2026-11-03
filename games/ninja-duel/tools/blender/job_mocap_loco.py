@@ -48,6 +48,8 @@ def tracks():
             continue
         stride = abs(t["travel"][1] if axis == "z" else t["travel"][0])
         out.append((clip, kind, nd_style.trim_loop(nd_style.copy(t)), True, {"stride": round(max(stride, .5), 3)}))
+    # (Jump.Air stays key-posed: the captured big jump is a dive into a roll,
+    # its body goes flat; checked on the 8, 03/11)
     for clip, key, kind in (("Jump.Leap", "jump_run_forward", "Leap"), ("Flip", "front_flip", "Flip")):
         t = capture(key)
         if not t:
