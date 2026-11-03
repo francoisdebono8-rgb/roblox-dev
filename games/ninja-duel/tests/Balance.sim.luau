@@ -10,6 +10,8 @@ H.envBase.Random={new=function(seed)
   NextInteger=function(_,a,b) return math.floor(a+(b-a+1)*roll()) end}
 end}
 local AI=H.load("Server/AI")
+-- The game's own damage scale (the harness runs the specs at 1.0).
+H.load("Shared/Config").DamageScale=H.GameDamageScale
 local ids={"Flashstep","Mirage","GentleFist","Lion","Legion","Copycat","Sand","Leaf"}
 local seeds=2
 local wins,time={}, {}

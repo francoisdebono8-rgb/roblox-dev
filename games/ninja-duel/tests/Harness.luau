@@ -300,6 +300,15 @@ loadModule=function(path)
  setfenv(fn,env);cached[path]=fn();return cached[path]
 end
 Harness.load=loadModule
+-- (03/11) The specs read each move's own weight (a Lion Combo "is not light",
+-- a burial "is heavy"): they run at the design scale. The game's global
+-- damage scale (Config.DamageScale, longer rounds) is kept here for the
+-- specs that measure it (the damage-scale test, the balance sim).
+do
+ local Config=loadModule("Shared/Config")
+ Harness.GameDamageScale=Config.DamageScale or 1
+ Config.DamageScale=1
+end
 Harness.cached=cached
 
 local localPlayer={UserId=1,Name="QAPlayer",Character=nil,Parent=true}

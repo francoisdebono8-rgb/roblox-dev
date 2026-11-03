@@ -108,7 +108,7 @@ end
 function Interactions.fireOnSand(c,p,victim)
 	if not isFire(p) or not victim.def.SandShield or (victim.shieldCharges or 0)<=0 then return end
 	victim.shieldCharges-=1
-	victim.shieldRegenAt=c.now+victim.def.SandShield.Regen
+	victim.shieldRegenAt=c.now+require(script.Parent.Combat).shieldRegen(victim.def.SandShield)
 	c:pushImpact(victim.root.Position,"sandmelt",false,{owner=victim.id})
 	c:cue(victim,"FIRE • THE SAND MELTS",.6)
 end

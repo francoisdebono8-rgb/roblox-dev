@@ -87,6 +87,38 @@ function Controls.comboHelp(graph,pad)
  if graph.disengage then table.insert(parts,"away + "..tool.." in string: retreat") end
  return table.concat(parts,"  ·  ")
 end
+-- (Studio audit 03/11, a French Mac: bug B01) Roblox reads letter keys by
+-- their place on the keyboard (KeyCode.W is the key left of E), so on an
+-- AZERTY keyboard the dodge (KeyCode.Q) is the key labelled A and the
+-- chakra (KeyCode.Z) the one labelled W, while the help, the HUD and the
+-- tutorial said "Q dodge", "hold Z": the player pressed Q and moved left.
+-- The client reads its own labels (UserInputService:GetStringForKeyCode)
+-- and every text naming a key is shown with them.
+local LETTERS={"W","A","S","D","Q","Z","E","F","V","R","X","G","T","Y","B","C"}
+function Controls.localize(text,map)
+	map=map or Controls.layout
+	if not map or type(text)~="string" then return text end
+	text=text:gsub("%f[%w]WASD%f[%W]",function() return (map.W or "W")..(map.A or "A")..(map.S or "S")..(map.D or "D") end)
+	return (text:gsub("%f[%w](%u)%f[%W]",function(c) return map[c] or c end))
+end
+-- stringFor(KeyCode) -> the label on this keyboard. Returns true when the
+-- layout differs from the one the texts are written for (QWERTY).
+function Controls.useLayout(stringFor)
+	local map,changed={},false
+	for _,k in LETTERS do
+		local ok,label=pcall(stringFor,Enum.KeyCode[k])
+		if ok and type(label)=="string" and #label==1 then
+			map[k]=string.upper(label)
+			if map[k]~=k then changed=true end
+		end
+	end
+	if not changed then return false end
+	Controls.layout=map
+	for action,label in Controls.KeyLabel do Controls.KeyLabel[action]=Controls.localize(label,map) end
+	Controls.Help=Controls.localize(Controls.Help,map)
+	Controls.Grammar=Controls.localize(Controls.Grammar,map)
+	return true
+end
 function Controls.isGamepad(kind)
  return kind~=nil and kind.Name:match("^Gamepad")~=nil
 end

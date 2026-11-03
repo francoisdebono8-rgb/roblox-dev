@@ -23,6 +23,11 @@ return {
 	-- Damage scaling inside one combo: the first hits land in full, every later
 	-- hit is worth less, and a combo that runs too long ends in a knockdown.
 	ComboScaling = {Free = 2, Step = 0.12, Floor = 0.35, Reset = 0.45, MaxHits = 11},
+	-- (User 03/11: "les combats trop courts") Every blow's damage is scaled by
+	-- this as it lands (Combat:damage, Combat:chip): the HP of the story stay,
+	-- the rounds last longer (AI against AI: 42 s average at 1.0). The
+	-- impact's look still reads the blow's own weight (unscaled).
+	DamageScale = 0.6,
 	Clash = {Window = 0.07, Push = 4.5},
 	-- Re-engage (CORE_COMBAT_CONVERGENCE_2 §3): one contextual action (E; on a pad
 	-- × inside a chase window, sprint + ○ toward outside one). Inside a window it

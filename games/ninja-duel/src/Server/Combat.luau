@@ -172,6 +172,12 @@ function Combat:setState(a,state,duration)
 	-- same holds for a re-engage arrival (Brawler.arrive sets it after this).
 	a.chainOpen=false; a.recoveryCancelAt=nil; a.arrivalRecovery=nil
 end
+-- (03/11) Gaara's shield comes back on a clock: with every blow scaled down
+-- (Config.DamageScale, longer rounds) it would come back more often per blow
+-- and he won 82 % of the AI matrix. It slows by the same factor.
+function Combat.shieldRegen(shield)
+	return shield.Regen/(Config.DamageScale or 1)
+end
 -- Strikes that crack Gaara's sand shield outright (the rest each cost a charge).
 local SHIELD_BREAKERS={SandHand=true,SandFist=true,Heavy=true,Launcher=true,Light3=true,Slam=true,KneeStrike=true,FlyingKick=true,PalmThrust=true,CounterPalm=true,WallDive=true,SandPillar=true}
 -- Damage over time (burning ground, a burning wire): chip damage that never
@@ -183,6 +189,7 @@ function Combat:chip(attacker,victim,amount)
 	if self.match.phase~="Duel" or self.match.finishing or victim.health<=0 or attacker.health<=0 then return false end
 	if (victim.rotationUntil or 0)>self.now or victim.invulnerableUntil>self.now then return false end
 	if (attacker.awakenUntil or 0)>self.now then amount*=Combat.awakeScale(attacker,"Damage",self.now) end
+	amount*=Config.DamageScale or 1
 	victim.health=math.max(0,victim.health-amount); victim.hum.Health=math.max(1,victim.health)
 	if self.damageLog then table.insert(self.damageLog,{t=self.now,by=attacker.fighterId,amount=amount,tag=self.damageTag or "chip",hits=victim.comboHits}) end
 	if victim.health<=0 then
@@ -250,7 +257,7 @@ function Combat:damage(attacker,victim,amount,heavy,readEligible)
 		-- (Combat.shieldBreak, set around the damage: Temari's scythe and gust).
 		breaking=breaking or self.shieldBreak==true
 		victim.shieldCharges=if breaking then 0 else victim.shieldCharges-1
-		victim.shieldRegenAt=self.now+shield.Regen
+		victim.shieldRegenAt=self.now+Combat.shieldRegen(shield)
 		-- The sand absorbs the blow but the string keeps its rhythm: pressing on
 		-- (light, light, third hit) is how the shield is cracked.
 		attacker.hitConfirmed=true
@@ -329,8 +336,11 @@ function Combat:damage(attacker,victim,amount,heavy,readEligible)
 		local tune=Config.ComboScaling
 		local n=victim.comboHits or 0
 		if n>=tune.Free then amount*=math.max(tune.Floor,1-tune.Step*(n-tune.Free+1)) end
-		victim.comboHits=n+1;victim.comboDamage=(victim.comboDamage or 0)+amount;victim.comboBy=attacker
 	end
+	-- The blow's own weight, for its look (impact style, heavy flag) below.
+	local weight=amount
+	amount*=Config.DamageScale or 1
+	if not guarded then victim.comboHits=(victim.comboHits or 0)+1;victim.comboDamage=(victim.comboDamage or 0)+amount;victim.comboBy=attacker end
 	victim.lastHurt=self.now
 	-- Both bodies fill their ultimate bar (Server/Ultimates).
 	Ultimates.gain(self,attacker,victim,amount)
@@ -339,8 +349,8 @@ function Combat:damage(attacker,victim,amount,heavy,readEligible)
 	Families.afterHit(self,attacker,victim,amount,guarded)
 	-- Studio tooling only: where damage comes from, to tune fight length.
 	if self.damageLog then table.insert(self.damageLog,{t=self.now,by=attacker.fighterId,amount=amount,tag=self.damageTag or "other",hits=victim.comboHits}) end
-	victim.impactSerial=(victim.impactSerial or 0)+1; victim.impactHeavy=heavy or amount>=12
-	local style=(if guarded then "block" elseif heavy and amount>=16 then "slam" elseif heavy then "launcher" elseif amount>=20 then "finisher" else "light")
+	victim.impactSerial=(victim.impactSerial or 0)+1; victim.impactHeavy=heavy or weight>=12
+	local style=(if guarded then "block" elseif heavy and weight>=16 then "slam" elseif heavy then "launcher" elseif weight>=20 then "finisher" else "light")
 	victim.impactStyle=style
 	victim.impactAt=self.now
 	-- Direction and weight of the contact so the victim's body can answer the
@@ -359,7 +369,7 @@ function Combat:damage(attacker,victim,amount,heavy,readEligible)
 		victim.hitFrom=Vector3.zAxis
 		victim.hitAngle=0
 	end
-	victim.hitStrength=math.clamp(amount/26,0,1)
+	victim.hitStrength=math.clamp(weight/26,0,1)
 	-- Seed the stop; Brawler adds the exact per-move weight once it knows the move.
 	self:applyHitstop(attacker,victim,style,heavy)
 	-- Combat convergence: the spark sits where the blow met the body (the
@@ -370,7 +380,7 @@ function Combat:damage(attacker,victim,amount,heavy,readEligible)
 	-- (Reference quality) the client draws the blow along its strike and tints
 	-- the body it struck: who, which way, how hard.
 	self:pushImpact(if self.hitOrigin then victim.root.Position else contactAt,style,victim.impactHeavy,
-		{victim=victim.id,direction=-(victim.hitFrom or Vector3.zero),amount=amount,guarded=guarded})
+		{victim=victim.id,direction=-(victim.hitFrom or Vector3.zero),amount=weight,guarded=guarded})
 	Brawler.event(self,attacker,"Damage"); if guarded then Brawler.event(self,victim,"GuardHit") end
 	self:effect("Impact",if self.hitOrigin then victim.root.Position else contactAt,if guarded then Color3.fromRGB(221,203,152) else attacker.color,Vector3.new(2,2,2),0.12)
 	if heavy and not guarded and victim.health>0 then
@@ -1502,7 +1512,7 @@ function Combat:updateActor(a,dt)
 	if a.def.SandShield and a.shieldCharges<a.def.SandShield.Charges and now>=(a.shieldRegenAt or 0) then
 		a.shieldCharges+=1
 		local rate=if (a.awakenUntil or 0)>now then (a.def.Awakening.ShieldRegen or 1) else 1
-		a.shieldRegenAt=now+a.def.SandShield.Regen/rate
+		a.shieldRegenAt=now+Combat.shieldRegen(a.def.SandShield)/rate
 	end
 	-- (x the wind: walking into a lane is slower, with it faster, Zones.speedScale;
 	-- x buffs and slows, Families.speedScale)

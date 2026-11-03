@@ -328,5 +328,7 @@ function DevHooks.install(matches)
 		if autopilot and s and s.phase=="Duel" and autopilot.actor==s.human then autopilot:update(s.combat.now)
 		elseif autopilot and s and s.combat and autopilot.actor~=s.human then autopilot=AI.new(s.combat,s.human,99) end
 	end)
+	-- A repro place of the gameplay audit (tools/make_repro_place.py) stages its bug.
+	require(script.Parent.Repro).install(matches,function(...) return hook:Invoke(...) end)
 end
 return DevHooks

@@ -849,7 +849,7 @@ function UI:render(data)
 	self.hint.Position=UDim2.new(.5,-260,0,if self.tutorialPanel.Visible then 226 else 200)
 	if data.tutorial then
 		self.tutorialTitle.Text=data.tutorial.index.." / "..data.tutorial.total.."  "..data.tutorial.title
-		self.tutorialPrompt.Text=(if pad then data.tutorial.pad else data.tutorial.key).."  •  "..(if pad then "Touchpad to skip" else "ESC to skip")
+		self.tutorialPrompt.Text=(if pad then data.tutorial.pad else Controls.localize(data.tutorial.key)).."  •  "..(if pad then "Touchpad to skip" else "ESC to skip")
 	end
 	local introActive=data.phase=="Duel" and (data.intro or 0)>0
 	self.onlineInfo=data.online
@@ -1036,7 +1036,7 @@ function UI:render(data)
 			return if h.armed then "KUNAI DRAWN (R throws it)" else "B: draw kunai"
 		end)())
 	-- Only decisive moments speak; routine cues stay silent.
-	local cue=h.cue or ""
+	local cue=Controls.localize(h.cue or "")
 	local loud=cue:find("READ") or cue:find("PARRY") or cue:find("PERFECT") or cue:find("FLYING THUNDER") or cue:find("GUARD BREAK") or cue:find("WALL ")
 		or cue:find("CLASH") or cue:find("SUBSTITUTION •") or cue:find("SEAL") or cue:find("COMBO LIMIT") or cue:find("GENJUTSU")
 		or cue:find("PALMS") or cue:find("ROTATION") or cue:find("BYAKUGAN") or cue:find("SHARINGAN")

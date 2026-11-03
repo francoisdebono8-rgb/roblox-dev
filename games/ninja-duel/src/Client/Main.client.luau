@@ -4,6 +4,12 @@ local player=Players.LocalPlayer
 local shared=game:GetService("ReplicatedStorage"):WaitForChild("NinjaDuel")
 local remote=shared:WaitForChild("Action")
 pcall(function() game:GetService("StarterGui"):SetCoreGuiEnabled(Enum.CoreGuiType.Health,false); game:GetService("StarterGui"):SetCoreGuiEnabled(Enum.CoreGuiType.Chat,false); game:GetService("StarterGui"):SetCoreGuiEnabled(Enum.CoreGuiType.PlayerList,false) end)
+-- (Audit B01) Key names as printed on this keyboard (AZERTY: ZQSD to move,
+-- A to dodge), before any text that names a key is built.
+pcall(function()
+	local UIS=game:GetService("UserInputService")
+	require(shared:WaitForChild("Controls")).useLayout(function(code) return UIS:GetStringForKeyCode(code) end)
+end)
 local UI=require(script.Parent.UI)
 local Input=require(script.Parent.Input)
 local Camera=require(script.Parent.Camera)

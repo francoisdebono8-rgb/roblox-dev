@@ -324,4 +324,21 @@ test("remote rejects malformed intent before mutating move or executing an actio
  end
  send("Dodge",V.xAxis);assert(a.state=="Dodging" and a.dodgeDirection.X>.9,"dodge used the previous movement tick")
 end)
+test("B01 (audit 03/11, a French Mac): on AZERTY every text names the key printed on the keyboard",function()
+ local C=H.load("Shared/Controls")
+ local saved={K=table.clone(C.KeyLabel),Help=C.Help,Grammar=C.Grammar,layout=C.layout}
+ -- What Roblox answers on an AZERTY Mac (measured in Studio 03/11).
+ local azerty={W="Z",A="Q",Q="A",Z="W"}
+ local changed=C.useLayout(function(code) return azerty[code.Name] or code.Name end)
+ assert(changed,"an AZERTY layout was not noticed")
+ assert(C.KeyLabel.Dodge=="A","the dodge reads "..C.KeyLabel.Dodge.." (the key labelled A is KeyCode.Q)")
+ assert(C.KeyLabel.Chakra=="W" and C.KeyLabel.ChakraLoad=="W + action","the chakra key reads "..C.KeyLabel.Chakra)
+ assert(string.find(C.Help,"ZQSD move",1,true) and string.find(C.Help,"A dodge",1,true),"help: "..C.Help)
+ assert(C.localize("WALL SPLAT • Q ON IMPACT TO TECH")=="WALL SPLAT • A ON IMPACT TO TECH")
+ assert(C.localize("Hold F")=="Hold F" and C.localize("LMB twice")=="LMB twice","words and other keys stay")
+ -- QWERTY: nothing changes.
+ C.KeyLabel=saved.K;C.Help=saved.Help;C.Grammar=saved.Grammar;C.layout=saved.layout
+ assert(not C.useLayout(function(code) return code.Name end),"a QWERTY layout was rewritten")
+ assert(C.KeyLabel.Dodge=="Q")
+end)
 print(string.format("NinjaDuel input/PS5: %d PASS (callbacks + remote validation; hardware feel not simulated)",passed))

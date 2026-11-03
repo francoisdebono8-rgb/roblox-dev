@@ -86,6 +86,8 @@ loadModule=function(path)
  local env=setmetatable({require=loadModule,script={Parent=names[path:match("^(%w+)/")] }},{__index=function(_,key) return envBase[key] or getfenv()[key] end})
  setfenv(fn,env);cached[path]=fn();return cached[path]
 end
+-- The specs measure the authored damage; the game's DamageScale is checked in Phase4.spec.
+loadModule("Shared/Config").DamageScale=1
 local Combat=loadModule("Server/Combat")
 local Brawler=loadModule("Server/Brawler")
 local Tutorial=loadModule("Server/Tutorial")
