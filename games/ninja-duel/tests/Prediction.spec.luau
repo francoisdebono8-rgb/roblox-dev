@@ -44,7 +44,9 @@ local function run(lag)
  local wrong={}
  local rng=H.envBase.Random.new(5)
  for index,pair in {{"Lion","Mirage"},{"Legion","Leaf"},{"Sand","GentleFist"},{"Copycat","Flashstep"}} do
-  for seed=1,2 do
+  -- (a third duel per pair: the bot's guard and ultimate rules of 03/11 end
+  -- duels sooner, and two left too few dodge presses to judge)
+  for seed=1,3 do
    H.clearWalls()
    -- (one duel in two by a wall: the string's drive into it is read too)
    if seed==2 then H.addWall(14) end
