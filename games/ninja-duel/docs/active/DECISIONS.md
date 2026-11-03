@@ -218,3 +218,16 @@ Utilisateur, 03/11 à 15 h 25 : « et aussi la liberté, parce que là pour l'in
   - le dash, la poursuite et les plongées partent seulement si le joueur les demande ;
   - on sort d'une fin de coup en bougeant, en sautant ou en esquivant ;
   - les techniques marchent en l'air, en courant, depuis un mur.
+
+## DEC-032 — Un jeu libre et vivant : Blender partout, chakra propre à chacun, combos libres, signes des mains (03/11)
+
+Utilisateur, 03/11 à 17 h 15 : « ce qui manque au jeu, c'est beaucoup plus d'animation passée dans Blender, pour quasiment chaque situation [...] l'utilité du chakra, pour l'instant c'est nul [...] les combos sont très génériques [...] on devrait pouvoir varier plus qu'avoir 4 cases d'attaque comme dans Storm [...] il faudrait que ce soit libre [...] sois plus créatif et plus ambitieux, tu as les pleins pouvoirs ; si je ne suis pas d'accord, je te dis non ».
+
+Plan (détail : document de projet `claude/plan-arene-des-prodiges-2026-11-03.md`) :
+1. **Le corps** : pour les 8, déplacement (avec pas de côté et en arrière depuis la caméra libre), sauts (petit, normal, grand, super saut et double saut au chakra), réceptions et murs, dessinés dans Blender. Coups redessinés, avec un clip propre au coup chargé ; le piqué depuis un saut refait.
+2. **Le chakra change le coup selon le perso** : foudre et feu de Sasuke, clones de Naruto, sable de Gaara, portes de Lee, points de chakra de Neji, corbeaux d'Itachi, marques de Minato, copie de Kakashi.
+3. **Des combos libres** : léger, lourd, chargé, saut, dash et jutsu s'enchaînent dans tous les ordres pendant leurs fenêtres, avec des variantes de direction à chaque coup. Le rythme, la réduction des dégâts et la substitution gardent la défense possible.
+4. **Plus que 4 cases** : des signes des mains (8 à 12 jutsu par perso), en gardant les 4 cases rapides et les variantes de situation.
+5. **L'arène des prodiges** : répliques des rivaux, jury, arène qui réagit, tournoi, défis de maîtrise.
+
+Ordre : 1 pour les 8 ; 2 et 3 sur Sasuke d'abord, testés par l'utilisateur ; puis 4, les 7 autres, 5.
