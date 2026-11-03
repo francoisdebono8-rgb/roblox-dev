@@ -538,8 +538,14 @@ function UI.new(parent,send)
 		-- same factor so its bottom row sits at the bottom of the screen (the
 		-- slots and help used to float mid-screen on a small viewport).
 		self.hud.Size=UDim2.fromScale(1/s,1/s)
+		-- (Studio 03/11) The player's plate starts after Roblox's own buttons
+		-- in the top-left corner (they covered his medallion and name).
+		local inset=0
+		pcall(function() inset=GuiService.TopbarInset.Min.X end)
+		if self.hp and self.hp.box then self.hp.box.Position=UDim2.fromOffset(math.max(20,(inset+8)/s),16) end
 	end
 	workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(fitHud);fitHud()
+	pcall(function() GuiService:GetPropertyChangedSignal("TopbarInset"):Connect(fitHud) end)
 	self:refreshSelection(); self:render({phase="Selection"})
 	return self
 end

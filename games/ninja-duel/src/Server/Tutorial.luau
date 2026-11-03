@@ -99,14 +99,27 @@ function Tutorial.plan(a)
 		if i>5 then break end
 		add({id="jutsu"..i,title="Jutsu "..i..": "..tostring(spec.Name),key=TECH_KEY[i],pad=Controls.TechniquePad[i] or ("Jutsu "..i),
 			place=if (spec.Range or 20)<10 then "near" else "far",technique=spec,
-			setup=function(s) local a=s.human;a.chakra=a.def.Chakra or 100;a.cooldowns={} end,
+			setup=function(s)
+				local a=s.human;a.chakra=a.def.Chakra or 100;a.cooldowns={}
+				-- (Studio 03/11, Minato: "Condition missing" on every press) A
+				-- jutsu that goes to a seal gets one planted behind the partner.
+				if spec.Requires=="Anchor" and s.bot and s.combat then
+					local b=s.bot
+					local away=b.root.Position-a.root.Position;away=Vector3.new(away.X,0,away.Z)
+					away=if away.Magnitude>.1 then away.Unit else Vector3.zAxis
+					local spot=b.root.Position+away*6
+					require(script.Parent.Techniques).plant(s.combat,a,Vector3.new(spot.X,s.origin.Y,spot.Z),Vector3.yAxis)
+				end
+			end,
 			check=function(s,t) return t.ev("Cast:"..tostring(spec.Id)) end})
 	end
 	add({id="guard",title="Guard the incoming strike",key="Hold "..K.Guard,pad="Hold "..P.Guard,place="near",bot="heavy",
 		check=function(s,t) return t.ev("GuardHit") end})
 	add({id="evade",title="Dodge the incoming strike",key=K.Dodge.." during his wind-up",pad=P.Dodge.." during his wind-up",place="near",bot="heavy",
-		check=function(s,t,now) local a,b=s.human,s.bot;return t.ev("Dodge") and (t.ev("Evaded") or (b.attackName=="Heavy" and now-(b.attackStarted or now)>.46 and a.health==t.health)) end})
-	add({id="substitute",title="Escape after being hit",key=K.Substitute.." just after contact",pad=P.Substitute.." just after contact",place="near",bot="heavy",
+		check=function(s,t,now) local a,b=s.human,s.bot;return t.ev("Dodge") and (t.ev("Evaded") or (b.attackName~=nil and now-(b.attackStarted or now)>.46 and a.health==t.health)) end})
+	-- (Studio 03/11, against Gaara: his heavy knocks down, and a body on the
+	-- floor cannot substitute) The partner hits with his light here.
+	add({id="substitute",title="Escape after being hit",key=K.Substitute.." just after contact",pad=P.Substitute.." just after contact",place="near",bot="heavy",strike="Attack",
 		check=function(s,t) return t.ev("Substitute") end})
 	-- (Roster run 02/11: STUCK for every fighter from 28 studs: the signs end
 	-- before anyone gets there.) In dash reach, as in a duel.
@@ -162,6 +175,13 @@ function Tutorial.enter(s,now)
 	end
 	t.health=a.health
 	b.trainingChannelScale=if spec.bot=="channel" then 3 else 1
+	-- (Studio 03/11, Minato against Gaara: the run strike, the grab, the dodge
+	-- and the escape never completed) A training partner's sand shield ate
+	-- every blow the step asks for. It is down in the drills, up in the fight.
+	if b.def.SandShield then
+		if spec.bot=="fight" then b.shieldCharges=b.def.SandShield.Charges;b.shieldRegenAt=0
+		else b.shieldCharges=0;b.shieldRegenAt=math.huge end
+	end
 	local place=spec.place
 	local near=place=="near" or place=="air"
 	local gapA,gapB=if near then 3 elseif place=="mid" then 5 else 14,if near then -2 elseif place=="mid" then -5 else -14
@@ -294,7 +314,7 @@ function Tutorial.update(s,now,dt)
 	-- The practice partner.
 	if spec.bot=="heavy" and now>=t.attackAt then
 		if (b.root.Position-a.root.Position).Magnitude>7 then c:relocate(b,a.root.Position+a.root.CFrame.LookVector*5) end
-		b.root.CFrame=CFrame.lookAt(b.root.Position,a.root.Position);c:request(b,"Heavy");t.attackAt=now+1.7
+		b.root.CFrame=CFrame.lookAt(b.root.Position,a.root.Position);c:request(b,spec.strike or "Heavy");t.attackAt=now+1.7
 	elseif spec.bot=="channel" and now>=t.attackAt then
 		b.cooldowns={};b.chakra=b.def.Chakra or 100;c:request(b,Tutorial.interruptSlot(b),a.root.Position);t.attackAt=now+1.4
 	elseif spec.bot=="throw" and now>=t.attackAt then

@@ -5,10 +5,13 @@ local Players=game:GetService("Players")
 local remote=game:GetService("ReplicatedStorage"):WaitForChild("NinjaDuelCombatDebug",10)
 if not remote then return end
 local gui=Instance.new("ScreenGui");gui.Name="NinjaDuelCombatInspector";gui.ResetOnSpawn=false;gui.DisplayOrder=100
+-- (Studio 03/11) Hidden until F8: open by default it covered the player's
+-- plate and a third of the fight.
+gui.Enabled=false
 local panel=Instance.new("TextLabel");panel.Size=UDim2.fromOffset(590,340);panel.Position=UDim2.fromOffset(12,12)
 panel.BackgroundColor3=Color3.fromRGB(18,20,28);panel.BackgroundTransparency=.15;panel.TextColor3=Color3.fromRGB(220,237,245)
 panel.Font=Enum.Font.Code;panel.TextSize=13;panel.TextXAlignment=Enum.TextXAlignment.Left;panel.TextYAlignment=Enum.TextYAlignment.Top
-panel.Text="Ninja Duel debug — waiting for a duel (F8: hide/show)";panel.Parent=gui;gui.Parent=Players.LocalPlayer:WaitForChild("PlayerGui")
+panel.Text="Ninja Duel debug — waiting for a duel (F8: show/hide)";panel.Parent=gui;gui.Parent=Players.LocalPlayer:WaitForChild("PlayerGui")
 game:GetService("UserInputService").InputBegan:Connect(function(input,processed)
  if not processed and input.KeyCode==Enum.KeyCode.F8 then gui.Enabled=not gui.Enabled end
 end)

@@ -149,10 +149,21 @@ function Presentation:leadLocal(actor,drawn,dt)
 	local cap=if guess then LEAD_GUESS_MAX else LEAD_MAX
 	if st.off.Magnitude>cap then st.off=st.off.Unit*cap end
 	local other=self:visualRoot("bot")
-	if other then
-		local at=drawn.Position+st.off
-		local d=Vector3.new(at.X-other.X,0,at.Z-other.Z)
-		if d.Magnitude<2.6 and st.off.Magnitude>1e-3 then st.off*=math.clamp((d.Magnitude-1.6),0,1) end
+	if other and st.off.Magnitude>1e-3 then
+		-- (Studio 03/11: Minato pushed into Gaara and the two bodies merged)
+		-- The lead never draws him closer to the opponent than the server
+		-- keeps him (Motor.SURFACE 3.4 root to root): pushing into him, the
+		-- part of the lead that goes toward him is dropped.
+		local function gap(k)
+			local at=drawn.Position+st.off*k
+			return Vector3.new(at.X-other.X,0,at.Z-other.Z).Magnitude
+		end
+		local floor=math.min(3.2,gap(0))
+		if gap(1)<floor then
+			local lo,hi=0,1
+			for _=1,6 do local mid=(lo+hi)/2;if gap(mid)<floor then hi=mid else lo=mid end end
+			st.off*=lo
+		end
 	end
 	local out=drawn+st.off+Vector3.new(0,st.offY,0)
 	if st.prev then
@@ -650,7 +661,33 @@ function Presentation.snapshotRoot(data,actor,fallback)
 	if not actor.position or not data.serverNow then return fallback end
 	local age=math.clamp(workspace:GetServerTimeNow()-data.serverNow,0,.1)
 	local v=actor.velocity
-	local p=actor.position+(if typeof(v)=="Vector3" and v.Magnitude<200 then v*age else Vector3.zero)
+	local p=actor.position
+	if typeof(v)=="Vector3" and v.Magnitude<200 then
+		-- (Probe 03/11: a landing drawn 4 studs under the floor, then popped
+		-- up) Carried on flat; in the air the fall bends with gravity and
+		-- stops at the floor under it; on the ground, no vertical guess.
+		p+=Vector3.new(v.X,0,v.Z)*age
+		if actor.airborne then
+			local y=v.Y*age-.5*(workspace.Gravity or 196.2)*age*age
+			if y<0 then
+				local floor=nil
+				pcall(function()
+					local params=RaycastParams.new();params.FilterType=Enum.RaycastFilterType.Exclude
+					local exclude={}
+					local character=game:GetService("Players").LocalPlayer.Character
+					if character then table.insert(exclude,character) end
+					local folder=character and character.Parent
+					local bot=Presentation.opponent(data,folder);if bot then table.insert(exclude,bot) end
+					local effects=folder and folder:FindFirstChild("Effects");if effects then table.insert(exclude,effects) end
+					params.FilterDescendantsInstances=exclude
+					local hit=workspace:Raycast(actor.position,Vector3.new(0,y-3,0),params)
+					floor=hit and hit.Position.Y+2.9
+				end)
+				if floor then y=math.max(y,math.min(0,floor-actor.position.Y)) end
+			end
+			p+=Vector3.new(0,y,0)
+		end
+	end
 	local look=actor.lookVector
 	local flatLook=if typeof(look)=="Vector3" then Vector3.new(look.X,0,look.Z) else Vector3.zero
 	if flatLook.Magnitude<.05 then return fallback.Rotation+p end
@@ -686,6 +723,21 @@ function Presentation:smoothStep(data,dt)
 			if key=="human" then drawn=self:leadLocal(actor,drawn,math.max(dt,1/240)) end
 			st=self.smooth[key]
 			st.replicatedCF=actualCF
+			-- (Tutorial probe 03/11: 12-19 pops per fighter, 3-9 studs in one
+			-- frame) A packet that disagrees with where the body was drawn (an
+			-- extrapolation past a landing, a dive or a dash started between two
+			-- packets) moved the body in a single frame. The drawn root now
+			-- covers at most a body's top speed per frame; the rest is caught up
+			-- over the next frames. A declared warp still snaps.
+			local step=math.max(dt,1/240)
+			if st.drawnCF and st.capWarp==actor.warpSerial then
+				local v=actor.velocity
+				local speed=math.max(actor.speed or 0,if typeof(v)=="Vector3" then v.Magnitude else 0)
+				local cap=math.max(80,speed*1.4)*step
+				local d=drawn.Position-st.drawnCF.Position
+				if d.Magnitude>cap and d.Magnitude<TRACK_SNAP then drawn=drawn.Rotation+(st.drawnCF.Position+d.Unit*cap) end
+			end
+			st.capWarp=actor.warpSerial
 			-- Draw the whole body on the track for this frame only; the next
 			-- replication packet overwrites the client copy, never the server.
 			local target=drawn
