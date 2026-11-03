@@ -581,7 +581,7 @@ function Brawler.start(c,a,name)
  local delta=a.target.root.Position-a.root.Position;delta=delta*Vector3.new(1,0,1)
  -- (Soft lock, user 03/11: free lens, blows thrown at the air behind him)
  -- not locked on, a blow started within SoftLock.Reach steps at him too.
- local soft=not a.locked and Config.SoftLock
+ local soft=a.playerInput and not a.locked and Config.SoftLock
  if delta.Magnitude>.1 and delta.Magnitude<(if soft then soft.Reach else 11) and (flat:Dot(delta.Unit)>.55 or a.locked or soft) then
   -- (the line is the one he stood on at the press: a body that moves after
   -- it is not chased round, Embodiment)

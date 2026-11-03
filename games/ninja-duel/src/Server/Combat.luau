@@ -1687,7 +1687,7 @@ function Combat:updateActor(a,dt)
 		-- stick strafes. Strikes and jutsu then go where he looks.
 		a.hum.AutoRotate=false
 		self:turnToward(a,a.look,dt,1080)
-	elseif not a.locked and not a.look and a.state=="Neutral" and not a.airborne and a.target
+	elseif a.playerInput and not a.locked and not a.look and a.state=="Neutral" and not a.airborne and a.target
 		and (not a.move or Vector3.new(a.move.X,0,a.move.Z).Magnitude<.3)
 		and (a.target.root.Position-a.root.Position).Magnitude<Config.SoftLock.Face then
 		-- (Soft lock, free lens on the pad) standing near him, the body

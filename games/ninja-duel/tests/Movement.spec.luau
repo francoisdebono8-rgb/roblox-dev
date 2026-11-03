@@ -78,7 +78,7 @@ test("soft lock (user 03/11, free lens on the pad): standing near him the body f
    local gap,away=setup[1],setup[2]
    local c,a,b=H.duel(id,"Mirage")
    c:relocate(a,V.new(0,3,0));c:relocate(b,V.new(0,3,-gap));b.ai=nil
-   a.locked=false
+   a.locked=false;a.playerInput=true
    -- the body faces `away` degrees off the opponent (the lens looked elsewhere)
    local r=math.rad(away)
    local face=V.new(math.sin(r),0,-math.cos(r))
@@ -97,7 +97,7 @@ test("soft lock (user 03/11, free lens on the pad): standing near him the body f
  -- far out (20 studs), the free body does not spin round: no magnet across the arena
  local c,a,b=H.duel("Lion","Mirage")
  c:relocate(a,V.new(0,3,0));c:relocate(b,V.new(0,3,-20));b.ai=nil
- a.locked=false;a.root.CFrame=H.C.lookAt(a.root.Position,V.new(0,3,20));a.look=nil
+ a.locked=false;a.playerInput=true;a.root.CFrame=H.C.lookAt(a.root.Position,V.new(0,3,20));a.look=nil
  for _=1,40 do H.step(c,.01) end
  assert(c:request(a,"Attack"))
  for _=1,20 do H.step(c,.01) end
