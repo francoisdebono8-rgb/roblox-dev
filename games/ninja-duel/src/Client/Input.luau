@@ -162,6 +162,8 @@ function Input.new(send,getState,toggleLock,camera)
  end)
  bind("Lock",both("Lock"),function(state,obj) if pressed(state,obj) then toggleLock() end end)
  bind("Sprint",both("Sprint"),function(state,obj)
+  -- (DEC-032) R1 + L3: the hand seals (then R1 + □ △ ○ × are the seals).
+  if obj.KeyCode==GAMEPAD.Sprint and self.modifier then if pressed(state,obj) then self.modifierSpent=true;send("Seals") end;return end
   if obj.KeyCode==GAMEPAD.Sprint then if pressed(state,obj) then self.sprinting=not self.sprinting end
   elseif begin(state) then self.sprinting=true elseif released(state) then self.sprinting=false end
  end)

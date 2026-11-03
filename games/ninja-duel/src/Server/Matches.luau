@@ -191,7 +191,15 @@ function Matches:view(s,cursor,mine,theirs)
 		for i,spec in a.def.Techniques do
 			ready[i]={id=spec.Id,name=spec.Name,cost=spec.Cost,remaining=math.max(0,(a.cooldowns[spec.Id] or 0)-now),condition=not spec.Requires or (spec.Requires=="Anchor" and Techniques.sealOf(s.combat,a,now)~=nil) or (spec.Requires=="Target" and s.combat:targetValid(a,a.target,spec.Range,0.35))}
 		end
-		return {id=a.id,fighterId=a.fighterId,fighter=a.def.Name,health=a.health,maxHealth=a.def.Health,chakra=a.chakra,maxChakra=a.def.Chakra or Config.Chakra,stamina=a.stamina or 100,state=a.state,
+		-- (DEC-032) the hand-seal jutsu (cooldowns) and the weave in progress
+		local sealReady=nil
+		if a.def.SealJutsu then
+			sealReady={}
+			for i,spec in a.def.SealJutsu do sealReady[i]={id=spec.Id,remaining=math.max(0,(a.cooldowns[spec.Id] or 0)-now),cost=spec.Cost} end
+		end
+		local weave=a.sealing
+		local sealing=if weave and weave.untilT>s.combat.now then {seq=table.clone(weave.seq),remaining=weave.untilT-s.combat.now} else nil
+		return {id=a.id,fighterId=a.fighterId,fighter=a.def.Name,sealReady=sealReady,sealing=sealing,health=a.health,maxHealth=a.def.Health,chakra=a.chakra,maxChakra=a.def.Chakra or Config.Chakra,stamina=a.stamina or 100,state=a.state,
 			techniques=ready,position=a.root.Position,channel=if a.state=="TechniqueChannel" then math.max(0,a.untilTime-s.combat.now) else 0,
 			anchor=a.anchor and a.anchor.position,illusion=math.max(0,a.illusionUntil-s.combat.now),decoy=a.decoyPosition,
 			cue=if a.cueUntil>s.combat.now then a.cue else "",dodge=math.max(0,a.dodgeUntil-s.combat.now),read=math.max(0,a.readUntil-s.combat.now),

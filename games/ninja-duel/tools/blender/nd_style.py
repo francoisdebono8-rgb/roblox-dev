@@ -175,6 +175,13 @@ def style(fighter, kind, tr):
                 offset(tr, j, nd_anim.R(-55, 0, 0).to_quaternion())
         return tr
     run = K in ("Run", "Sprint")
+    if K == "Air":
+        # the captured jump reaches up with both hands: a ninja's goes up with
+        # the arms swept back (Gaara's stay crossed), the body upright over the
+        # legs tucked under him
+        if F != "Sand":
+            pose(tr, arms(ARMS_BACK, ARMS_BACK), .85)
+        pose(tr, {"Waist": turn(pitch=8), "Neck": turn(pitch=-4)}, .85)
     if K == "Sprint" and F != "Sand":
         # every ninja but Gaara runs arms swept back, chest low
         pose(tr, arms(ARMS_BACK, ARMS_BACK), .85)

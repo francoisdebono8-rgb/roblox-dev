@@ -1,6 +1,7 @@
 local Shared = game:GetService("ReplicatedStorage").NinjaDuel
 local Config = require(Shared.Config)
 local Fighters = require(Shared.Fighters)
+local SealJutsu = require(Shared.SealJutsu)
 local Rules = require(Shared.Rules)
 local World = require(script.Parent.World)
 local Motor = require(script.Parent.Motor)
@@ -1020,6 +1021,52 @@ local LATE={Attack=true,Heavy=true,Jump=true,Dodge=true,Grab=true,Tool=true,
 -- button, L2 / Z held with the press): the press loads the body's nature for
 -- itself (ChakraFlow), the strike, jump or dodge spends it.
 local INFUSED={Attack=true,Heavy=true,Jump=true,Dodge=true}
+-- (DEC-032 §3) The weave of hand seals (Shared/SealJutsu).
+function Combat:openSeals(a)
+	if not a.def.SealJutsu then return false,"No seals" end
+	if self.match.techniquesDisabled then return false,"Techniques disabled" end
+	if (a.sealedUntil or 0)>self.now then return false,"Chakra points sealed" end
+	a.sealing={seq={},untilT=self.now+Config.Seals.Open,at=self.now}
+	self:pushImpact(a.root.Position,"seals",false,{owner=a.id,fighter=a.fighterId,step=0})
+	self:cue(a,"HAND SEALS",.5)
+	Brawler.event(self,a,"SealsOpen")
+	return true
+end
+-- One seal (1..4). true: the weave goes on; false: broken; nil: the press is
+-- a cast (a.sealCast is the jutsu) or the weave was over (a slot press).
+function Combat:seal(a,n)
+	local w=a.sealing
+	if not w or self.now>w.untilT then a.sealing=nil;return nil end
+	table.insert(w.seq,n)
+	w.untilT=self.now+Config.Seals.Gap
+	a.sealPressed=true
+	self:pushImpact(a.root.Position,"seals",false,{owner=a.id,fighter=a.fighterId,step=#w.seq,seal=n})
+	Brawler.event(self,a,"Seal")
+	if #w.seq<SealJutsu.Length then self:cue(a,SealJutsu.Names[n].." …",.5);return true end
+	a.sealing=nil
+	local spec=SealJutsu.find(a.def.SealJutsu,w.seq)
+	if not spec then Brawler.event(self,a,"SealsBroken");return false,"Seals broken" end
+	a.sealCast=spec;a.sealResolved=spec
+	return nil
+end
+-- (DEC-032 §2) A press that follows a clean hit as a free link.
+function Combat.linkable(c,a,action)
+	local L=Config.FreeCombo
+	if not L or not a.playerInput or not Brawler.chainWindow(c,a) then return false end
+	if c.now-(a.linkAt or -math.huge)<=L.Reset and (a.links or 0)>=L.Links then return false end
+	if action=="Dodge" or action=="Jump" or action=="Grab" then return true end
+	local spec=a.sealCast
+	local slot=tonumber(string.match(action,"^Technique([1-5])$"))
+	if not spec and slot then spec=a.def.Techniques[slot] end
+	if not spec then return false end
+	-- A listed string cancel keeps its own shortened wind-up (Combat:requestInner).
+	local graph=Brawler.graph(a) or {}
+	if not a.sealCast and graph.stringCancels and graph.stringCancels[spec.Id] then return false end
+	if c.match.techniquesDisabled or (a.sealedUntil or 0)>c.now then return false end
+	local technique=Techniques[spec.Id]
+	if not technique or (a.cooldowns[spec.Id] or 0)>c.now or a.chakra<spec.Cost then return false end
+	return technique.check(c,a,spec,c.now)==true
+end
 function Combat:request(a,action,aim,clientTime,opts)
 	if type(action)~="string" then return false,"Bad action" end
 	local loaded=false
@@ -1034,6 +1081,8 @@ function Combat:request(a,action,aim,clientTime,opts)
 	if ok==false and a.playerInput and (reason=="Committed" or reason=="Reacting") and LATE[action] and not (opts and opts.late) then
 		local L=Config.Late
 		local down=a.reaction=="Knockdown" or a.reaction=="WallSplat" or a.reaction=="Wakeup"
+		-- (DEC-032) the second seal of a weave comes back as that jutsu, not its slot
+		if a.sealResolved then opts=table.clone(opts or {});opts.sealCast=a.sealResolved end
 		a.latePress={action=action,aim=aim,opts=opts,at=self.now,window=if down then L.Hit+.24 elseif reason=="Reacting" then L.Hit else L.Own}
 	elseif ok~=false and action~="GuardOff" then a.latePress=nil end
 	-- (Audit 29/10) An air dodge leaves the hover: its speed was zeroed by the
@@ -1041,7 +1090,8 @@ function Combat:request(a,action,aim,clientTime,opts)
 	if ok~=false and action=="Dodge" and a.state=="Dodging" then a.airHold=0 end
 	-- (Audit 29/10) A jutsu is the next action too: it spends a load (R1 held
 	-- while choosing it loaded one, and the next ○ became a dash at him).
-	if ok~=false and string.match(action,"^Technique%d$") then a.chakraLoad=nil end
+	if ok~=false and string.match(action,"^Technique%d$") and not a.sealPressed then a.chakraLoad=nil end
+	a.sealResolved=nil;a.sealPressed=nil;a.sealCast=nil
 	if action~="GuardOff" then
 		local log=a.pressLog or {};a.pressLog=log
 		table.insert(log,{t=self.now,action=action,ok=ok~=false,reason=reason,state=a.state,air=a.airborne==true,reaction=a.reaction})
@@ -1072,6 +1122,16 @@ function Combat:requestInner(a,action,aim,clientTime,opts)
 			a.root.AssemblyLinearVelocity=Vector3.new(v.X,v.Y*0.66,v.Z)
 		end
 		return true
+	end
+	-- (DEC-032 §3) Hand seals: the seal key opens the weave (keyboard C off a
+	-- wall, pad R1 + L3), then two jutsu keys are seals instead of slots; the
+	-- seal jutsu goes on the second one, through the same cast as a slot.
+	a.sealCast=opts and opts.sealCast or nil
+	if action=="Seals" or (action=="WallDetach" and not a.wall and a.def.SealJutsu) then return self:openSeals(a) end
+	local sealSlot=not a.sealCast and a.sealing and tonumber(string.match(action,"^Technique([1-4])$"))
+	if sealSlot then
+		local done,why=self:seal(a,sealSlot)
+		if done~=nil then return done,why end
 	end
 	if action=="WallDetach" then Motor.detach(a,self.now,false); return true end
 	-- R1 + L1 (Y): the ultimate; on a wall the same chord still lets go of it.
@@ -1123,6 +1183,15 @@ function Combat:requestInner(a,action,aim,clientTime,opts)
 	local throwHeld=a.throwing and self.now<a.throwing.release
 	if throwHeld and (action=="Attack" or action=="Heavy" or action=="Grab" or action=="Tool" or string.match(action,"^Technique")) then
 		return false,"Committed"
+	end
+	-- (DEC-032 §2, free combos) A clean hit is a link: a dodge, a jump, a grab
+	-- or any jutsu (a quick slot or a seal jutsu) may follow it, in any order,
+	-- not only the fighter's listed string cancels. A few links a combo
+	-- (Config.FreeCombo); the combo's own scaling and cap still apply.
+	if Combat.linkable(self,a,action) then
+		Bangla.close(a.pending);a.pending=nil;a.attackName=nil;a.chainOpen=false;a.state="Neutral";a.untilTime=self.now
+		a.links=(if self.now-(a.linkAt or -math.huge)<=Config.FreeCombo.Reset then (a.links or 0) else 0)+1;a.linkAt=self.now
+		Brawler.event(self,a,"Link")
 	end
 	-- (The light step is no longer resolved here: Brawler.request reads it from
 	-- the confirmed hits when the press actually starts a strike.)
@@ -1270,7 +1339,7 @@ function Combat:requestInner(a,action,aim,clientTime,opts)
 	-- a shortened wind-up. It is a read/finisher, not a neutral button.
 	a.stringCancel=nil
 	local cancelSlot=tonumber(string.match(action,"^Technique([1-5])$"))
-	local cancelSpec=cancelSlot and a.def.Techniques[cancelSlot]
+	local cancelSpec=if a.sealCast then nil else cancelSlot and a.def.Techniques[cancelSlot]
 	-- Skill build (Blood for Chakra): the Curse Mark pays what the reserve lacks
 	-- before the usual checks, for a cancel or a neutral cast alike.
 	if cancelSpec and a.def.Awakening and a.def.Awakening.BloodChakra and ((a.state=="Recovery" and a.chainOpen) or Rules.canAct(a,self.now))
@@ -1338,7 +1407,7 @@ function Combat:requestInner(a,action,aim,clientTime,opts)
 	if self.match.techniquesDisabled then return false,"Techniques disabled" end
 	if string.match(action,"^Technique") and (a.sealedUntil or 0)>self.now then return false,"Chakra points sealed" end
 	local slot=tonumber(string.match(action,"^Technique([1-5])$"))
-	local spec=slot and a.def.Techniques[slot]
+	local spec=a.sealCast or (slot and a.def.Techniques[slot])
  if spec and (a.trainingChannelScale or 1)~=1 then
   -- Tutorial (interrupt step): the signs last long enough to be read and hit,
   -- whoever the bot is (Rock Lee's only jutsu channels 0.08 s).

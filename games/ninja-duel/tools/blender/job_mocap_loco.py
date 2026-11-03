@@ -48,9 +48,10 @@ def tracks():
             continue
         stride = abs(t["travel"][1] if axis == "z" else t["travel"][0])
         out.append((clip, kind, nd_style.trim_loop(nd_style.copy(t)), True, {"stride": round(max(stride, .5), 3)}))
-    # (Jump.Air stays key-posed: the captured big jump is a dive into a roll,
-    # its body goes flat; checked on the 8, 03/11)
-    for clip, key, kind in (("Jump.Leap", "jump_run_forward", "Leap"), ("Flip", "front_flip", "Flip")):
+    # (The captured big jump is a dive into a roll, its body goes flat: the
+    # standing jump comes from the plain jump up instead, its airborne part
+    # only, sampled by the engine along the arc. 03/11)
+    for clip, key, kind in (("Jump.Air", "jump_up", "Air"), ("Jump.Leap", "jump_run_forward", "Leap"), ("Flip", "front_flip", "Flip")):
         t = capture(key)
         if not t:
             continue
@@ -58,7 +59,9 @@ def tracks():
         span = nd_style.airborne(t)
         if span:
             nd_style.window(t, *span)
-        nd_style.still_root(t, keep_rotation=(kind != "Flip"))
+        # (the flip's spin is the engine's; the jump's lean forward is dropped:
+        # the body stays upright over its tucked legs)
+        nd_style.still_root(t, keep_rotation=(kind not in ("Flip", "Air")))
         out.append((clip, kind, t, False, {}))
     land = capture("land")
     if land:

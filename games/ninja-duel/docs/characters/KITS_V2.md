@@ -56,6 +56,10 @@ Les techniques déjà en jeu sont en **gras**.
 - **Minato** : **Kunai marqué**, **Lightning Strike**, **Dieu du Tonnerre Volant**, **Lame de vent**, Rasengan, marques multiples, coupe du Dieu du Tonnerre Volant.
 - **Kakashi** : **Dragon d'eau**, **Lame de foudre**, **Crocs de traque**, **Coupe de foudre (tantô)**, Doton : mur de terre (arrête coups et projectiles, et devient un mur où courir), Doton : chasseur de têtes (sous terre, il saisit les jambes), Doton : dragon de terre, copie (le Sharingan rejoue le dernier jutsu subi), tantô de chakra blanc.
 
+## État (03/11, v29)
+
+Fait : signatures de chakra des 8 (v27), signes des mains et 33 nouvelles techniques (`Shared/SealJutsu`, v29), combos libres (`Combat.linkable`, v29). Encore à faire : la copie du Sharingan de Kakashi, le mur de terre où l'on peut courir, la métamorphose en l'adversaire, les ultimes de Lee et Neji (Lotus caché, 128 paumes).
+
 ## Ordre de construction
 
 1. Signatures de chakra pour les 8 (tableau 1).

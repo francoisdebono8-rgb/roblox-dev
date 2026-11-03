@@ -882,7 +882,7 @@ end
 -- implementation gets the family's.
 function Families.install(Techniques,Fighters)
 	for _,def in Fighters do
-		for _,spec in def.Techniques or {} do
+		for _,spec in require(Shared.SealJutsu).all(def) do
 			if spec.Family and not Techniques[spec.Id] then
 				local family=F[spec.Family]
 				assert(family,"Unknown technique family "..tostring(spec.Family).." for "..tostring(spec.Id))

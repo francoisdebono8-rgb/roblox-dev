@@ -17,6 +17,7 @@
 local Shared=game:GetService("ReplicatedStorage").NinjaDuel
 local Attacks=require(Shared.Attacks)
 local Fighters=require(Shared.Fighters)
+local SealJutsu=require(game:GetService("ReplicatedStorage").NinjaDuel.SealJutsu)
 -- Weapon models come from the VFX module; required lazily so headless tools
 -- that only pose skeletons do not need its services.
 local Effects=nil
@@ -1485,7 +1486,7 @@ local function sealPose(base,t,hold)
 end
 local function techSpec(fighterId,id)
 	local def=Fighters[fighterId]
-	for _,spec in (def and def.Techniques) or {} do if spec.Id==id then return spec end end
+	for _,spec in SealJutsu.all(def) do if spec.Id==id then return spec end end
 	return {}
 end
 -- Cast poses and intros registered by a fighter's own motion module
@@ -3368,6 +3369,18 @@ function Motion.present(char,actor,clock,dt)
 		local stanceFeet=stance(subject.fighterId)
 		base,baseRate=locomotionTargets(char,subject,subject.fighterId,dt,{rf=footwork.R or stanceFeet.rf,lf=footwork.L or stanceFeet.lf},"attack")
 	else base,baseRate=locomotionTargets(char,subject,subject.fighterId,dt) end
+	-- (DEC-032) Weaving hand seals: the hands make each seal as it is pressed,
+	-- the legs keep their gait (the weave never stops the body).
+	if subject.sealing and not swinging and not casting then
+		local seq=subject.sealing.seq or {}
+		local sealed=build(merge(stance(subject.fighterId),merge(SEALS[seq[#seq] or 1],{torso={pitch=6,yaw=-2},head={pitch=6}})))
+		local targets=table.clone(base)
+		for _,joint in {"Right","RightElbow","RightWrist","Left","LeftElbow","LeftWrist","Waist","Neck"} do
+			if sealed[joint] then targets[joint]=sealed[joint] end
+		end
+		apply(char,targets,RATE.cast,dt)
+		return "technique"
+	end
 	if casting and not swinging and Authored then
 		-- (Blender-first) an authored technique: Channel (or Form), Hold while a
 		-- held technique gathers, Release, Recover.

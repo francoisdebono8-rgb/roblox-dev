@@ -1,3 +1,18 @@
+**v28 → v29 : signes des mains, combos libres, nouvelles techniques, saut sur place capturé (03/11, 20 h 50 – 22 h)** (utilisateur : « ce qui reste à faire est censé être dans la bêta »)
+- **Signes des mains** (`Shared/SealJutsu`, `Combat:openSeals` / `Combat:seal`) : C au clavier (hors d'un mur ; sur un mur, C le lâche toujours), R1 + L3 à la manette, puis deux touches de jutsu (1-4 ou R1 + □ △ ○ ×). Le jutsu part au second signe, par le même lancement qu'une case. Les mêmes quatre suites pour tous : 1-2, 2-3, 3-4, 4-1 (Gaara en a une cinquième, 3-1). La fenêtre reste ouverte 1,4 s pour le premier signe, puis 0,9 s entre deux (`Config.Seals`). Une suite inconnue : « SEALS BROKEN ». Fenêtre passée : la touche redevient la case rapide. Points de chakra fermés : pas de signes. Chaque signe se voit dans les mains (les jambes gardent leur pas) ; une fiche au-dessus des cartes de jutsu montre les suites, et les signes déjà faits s'affichent au centre (寅 TIGER · 巳 SNAKE · 未 RAM · 子 RAT). L'IA s'en sert aussi, après ses cases rapides.
+- **33 nouvelles techniques tirées de l'histoire** (8 par perso avec les 4 cases ; KITS_V2 §4) :
+  - Sasuke : Shuriken de l'ombre, Moulin à trois lames, Sharingan : contre, Katon : Dragon de flammes.
+  - Naruto : Métamorphose (bûche, il ressort derrière), Fuma Shuriken caché, Chakra de Kyūbi, Charge Uzumaki.
+  - Gaara : Saisie de sable, Pics de sable, Sables mouvants, Troisième œil, Clone de sable.
+  - Lee : Konoha Shōfū, Konoha Senpū, Poing de l'homme ivre, Porte de l'ouverture.
+  - Neji : Jūken : point de chakra (sceaux 1,6 s), Rafale de paumes à vide, Pas doux : contre-paume, Champ des huit trigrammes.
+  - Itachi : Genjutsu : corbeaux, Clone explosif, Shuriken des angles morts, Katon : feu du phénix.
+  - Minato : Éventail de kunai, Coupe du Dieu du Tonnerre Volant, Shunshin, Rasengan.
+  - Kakashi : Doton : mur de terre, Doton : chasseur de têtes, Doton : dragon de terre, Sabre de chakra blanc.
+- **Combos libres** (`Combat.linkable`, `Config.FreeCombo`) : un coup qui touche proprement ouvre un lien. Une esquive, un saut, une saisie, n'importe quel jutsu (case ou signes) le suit tout de suite, dans tous les ordres, plus seulement les annulations listées par perso. Au plus 3 liens par combo ; la réduction des dégâts et le plafond du combo restent. Réservé au joueur (l'IA garde son plan).
+- **Saut sur place capturé** (`job_mocap_loco.py`, `nd_style`) : la partie en l'air du saut capturé, le corps droit, les jambes repliées, les bras en arrière (Gaara garde les bras croisés). Les 8 `Jump.Air` sont les seuls clips qui changent.
+- **Vérifié dans Studio** (`ND-Jeu-v26` corrigé en direct, moteur réel) : Kakashi et Gaara tissent leurs signes. La fiche se met à jour et la suite en cours s'allume. Les signes apparaissent dans les mains ; le dragon de terre part, les sables mouvants marquent le sol, et la saisie de sable immobilise. Après un léger propre, les Crocs de traque, l’esquive et le saut partent sans attendre. Test : `tests/Seals.spec.luau` (les 33 jutsu lancés jusqu'au bout).
+
 **v27 → v28 : le chakra de chacun, la caméra jamais cachée, les jutsu lancés capturés (03/11, 20 h 15 – 21 h 30)** (utilisateur : « fini ce qu'on s'est dit tout à l'heure », la bêta sort ce soir)
 - **Chakra propre à chaque perso** (`ChakraFlow.Signature`, KITS_V2 tableau 1) : chargé, le coup devient autre chose.
   - Sasuke : le léger est un Chidori Nagashi qui traverse la garde ; le lourd porte un jet de feu.
@@ -10,7 +25,7 @@
   - Kakashi : Doton, un pic de terre qui le soulève ; l'esquive est le Chasseur de têtes, dans son dos.
 - **Vérifié dans Studio** (`ND-Jeu-v26` corrigé en direct, moteur réel) : les 8 signatures déclenchent leur effet (Bound, Launched, clones, corbeaux, téléportations, Rotation) ; un corps entre la caméra et le joueur s'efface en entier (transparence 0,72 sur toutes ses pièces).
 - **v28, jutsu lancés** : lancers de kunai et de shuriken, le kunai marqué, la lame de vent, le sable de Gaara, la poussée du dragon d'eau, depuis les captures. Les signes des mains et les souffles de feu restent posés à la main. Le saut sur place reste posé à la main : le grand saut capturé plonge dans une roulade.
-- **Reste à faire** : les signes des mains au-delà des 4 cases, les combos libres (graphe de liens), les nouvelles techniques par perso (Doton de Kakashi en technique, kit de sable de Gaara…), la réception et le saut sur place capturés pour de bon.
+- **Reste à faire** : fait en v29 (signes des mains, combos libres, nouvelles techniques, saut sur place capturé).
 
 **v23 → v26 : caméra libre jouable, déplacements et frappes capturés (03/11, 17 h – 19 h 20)** (utilisateur : « j'ouvre le jeu, je peux à peine jouer » ; « ce qui nous intéresse, c'est l'action : les courses, les sauts, les frappes surtout »)
 - **Lu dans sa partie** (`ND-Jeu-v23`, Minato contre Itachi, enregistreur posé côté client) : 16 coups, 5 lancés le dos tourné à Itachi (jusqu'à 179°), 7 lancés de 12 à 37 studs ; Itachi a fini la partie avec toute sa vie. La caméra libre (v23) faisait regarder le corps là où regardait la caméra, et aucun test automatique ne jouait ce mode.

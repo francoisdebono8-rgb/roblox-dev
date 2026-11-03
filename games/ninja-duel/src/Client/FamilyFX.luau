@@ -5,6 +5,7 @@
 local Debris=game:GetService("Debris")
 local Shared=game:GetService("ReplicatedStorage").NinjaDuel
 local Looks=require(Shared.Looks)
+local SealJutsu=require(game:GetService("ReplicatedStorage").NinjaDuel.SealJutsu)
 local Fighters=require(Shared.Fighters)
 local FamilyFX={}
 -- Studio/test switch: drawing errors surface instead of being swallowed.
@@ -540,7 +541,7 @@ function FamilyFX.install(FX,kit)
 			local absorbSpec=nil
 			if buffed then
 				local def=Fighters[actor.fighterId or ""]
-				for _,spec in (def and def.Techniques) or {} do if spec.Id==fam.buff and spec.Absorb then absorbSpec=spec end end
+				for _,spec in SealJutsu.all(def) do if spec.Id==fam.buff and spec.Absorb then absorbSpec=spec end end
 			end
 			if absorbSpec and not st.absorb then
 				local look=Looks[absorbSpec.Kind or "chakra"] or Looks.chakra
@@ -560,7 +561,7 @@ function FamilyFX.install(FX,kit)
 			local held=nil
 			if buffed then
 				local def=Fighters[actor.fighterId or ""]
-				for _,spec in (def and def.Techniques) or {} do
+				for _,spec in SealJutsu.all(def) do
 					if spec.Id==fam.buff and spec.Kind and Looks[spec.Kind] and (Looks[spec.Kind].shape=="blade" or Looks[spec.Kind].shape=="needle") then held=spec.Kind end
 				end
 			end

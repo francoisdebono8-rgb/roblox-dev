@@ -99,6 +99,12 @@ return {
 	-- (900: the startup's bounded turn, CombatFeel; standing near him the free
 	-- body already faces him, Combat.updateActor)
 	SoftLock = {Reach = 13, Rate = 900, Face = 12},
+	-- (DEC-032 §3) Hand seals: the weave stays open Open s for the first seal,
+	-- then Gap s between seals.
+	Seals = {Open = 1.4, Gap = 0.9},
+	-- (DEC-032 §2) Free combos: at most Links free links in a combo (links
+	-- less than Reset s apart).
+	FreeCombo = {Links = 3, Reset = 1.6},
 	-- (Continuity blocker) A chase heads for the point the body was going to
 	-- and lets it drift at Steer studs/s; it turns at Turn degrees/s.
 	Chase = {Steer = 60, Turn = 720},

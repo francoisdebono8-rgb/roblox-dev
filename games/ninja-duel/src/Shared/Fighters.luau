@@ -445,6 +445,10 @@ local Fighters = {
 		},
 	},
 }
+-- (DEC-032) The hand-seal jutsu of the eight, beyond their four quick slots.
+for id,list in require(script.Parent.SealJutsu) do
+	if type(list)=="table" and Fighters[id] and list[1] and list[1].Signs then Fighters[id].SealJutsu=list end
+end
 -- Roster 20 batches keep their fighters in their own data modules.
 for _,wave in {require(script.Parent.Wave1),require(script.Parent.Wave2),require(script.Parent.Wave3),require(script.Parent.Wave4)} do
 	for id,def in wave.fighters or {} do Fighters[id]=def end

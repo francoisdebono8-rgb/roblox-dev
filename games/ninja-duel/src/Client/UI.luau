@@ -5,6 +5,7 @@ local Shared=game:GetService("ReplicatedStorage").NinjaDuel
 local Fighters=require(Shared.Fighters)
 local Roster=require(Shared.Roster)
 local Controls=require(Shared.Controls)
+local SealJutsu=require(Shared.SealJutsu)
 local MoveGraphs=require(Shared.MoveGraphs)
 local Protocol=require(Shared.OnlineProtocol)
 local GuiService=game:GetService("GuiService")
@@ -421,6 +422,21 @@ function UI.new(parent,send)
 		cool.AnchorPoint=Vector2.new(0,1);corner(cool,8)
 		self.techniqueButtons[i]={box=box,key=key,title=title,status=status,cool=cool}
 	end
+	-- (DEC-032) The hand-seal jutsu: a slip above the jutsu cards (the two
+	-- seals, the name, the cooldown), lit while the seals are being woven; the
+	-- seals woven so far are stamped in the middle of the screen.
+	self.sealPanel=frame(self.hud,UDim2.new(1,-344,1,-268),UDim2.fromOffset(320,172),Color3.fromRGB(22,19,26),.35)
+	corner(self.sealPanel,8)
+	create("UIStroke",self.sealPanel,{Color=palette.paper,Thickness=1.5,Transparency=.75,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
+	self.sealHead=text(self.sealPanel,"HAND SEALS",UDim2.fromOffset(10,4),UDim2.fromOffset(300,22),16,palette.gold,TITLE_FONT)
+	self.sealRows={}
+	for i=1,5 do
+		local row=text(self.sealPanel,"",UDim2.fromOffset(10,27+(i-1)*28),UDim2.fromOffset(300,24),15,palette.paper,BODY_FONT)
+		row.TextScaled=true;create("UITextSizeConstraint",row,{MaxTextSize=15})
+		self.sealRows[i]=row
+	end
+	self.sealWeave=text(self.hud,"",UDim2.new(.5,-260,.6,0),UDim2.fromOffset(520,64),44,palette.paper,BODY_FONT,Enum.TextXAlignment.Center)
+	create("UIStroke",self.sealWeave,{Color=palette.ink,Thickness=3,ApplyStrokeMode=Enum.ApplyStrokeMode.Contextual})
 	-- The control sheet (first seconds of a duel, and the tutorial): bottom
 	-- left over the status line, clear of the jutsu cards.
 	self.help=text(self.hud,Controls.Help,UDim2.new(0,24,1,-104),UDim2.fromOffset(700,36),12,palette.paper,BODY_FONT)
@@ -593,7 +609,7 @@ local GROUPS={
 	{"MOVE",{{"Move","WASD","L stick"},{"Sprint","Sprint"},{"Jump","Jump"},{"Lock / unlock","Lock"},{"Wall run: into a wall","—","—"},{"Off the wall","WallDetach"}}},
 	{"ATTACK",{{"Light strike (string)","Light"},{"Heavy strike","Heavy"},{"Grab, then throw","Grab"},{"Tool","Tool"},{"Kunai: draw / sheathe","Arm"},{"Chase / chakra dash","Pursuit"}}},
 	{"DEFEND",{{"Guard (hold)","Guard"},{"Dodge","Dodge"},{"Substitution","Substitute"},{"Feint a heavy","Feint"},{"Break a grab","Grab"}}},
-	{"NINJA ARTS",{{"Jutsu 1-4","1  2  3  4","R1 + □ △ ○ ×"},{"Jutsu 5","Technique5"},{"Chakra-infuse (hold + action)","Chakra"},{"Awaken (low health)","Awaken"},{"Ultimate (bar full)","Ultimate"}}},
+	{"NINJA ARTS",{{"Jutsu 1-4","1  2  3  4","R1 + □ △ ○ ×"},{"Hand seals, then two jutsu keys","C (off a wall)","R1 + L3"},{"Jutsu 5","Technique5"},{"Chakra-infuse (hold + action)","Chakra"},{"Awaken (low health)","Awaken"},{"Ultimate (bar full)","Ultimate"}}},
 }
 function UI:buildControls(pad)
 	local body=self.controlsBody
@@ -628,8 +644,54 @@ function UI:buildControls(pad)
 		for i,spec in def.Techniques do if i<=5 then table.insert(names,(if pad then Controls.TechniquePad[i] else tostring(i)).."  "..string.upper(spec.Name or spec.Id or "")) end end
 		local jutsu=text(body,table.concat(names,"     "),UDim2.fromOffset(0,y+78),UDim2.fromOffset(1048,22),15,palette.paper,TITLE_FONT);jutsu.ZIndex=43
 		jutsu.TextScaled=true;create("UITextSizeConstraint",jutsu,{MaxTextSize=15})
+		if def.SealJutsu then
+			local key=if pad then {"□","△","○","×"} else {"1","2","3","4"}
+			local seals={}
+			for _,spec in def.SealJutsu do
+				local s={}
+				for _,v in spec.Signs do table.insert(s,key[v]) end
+				table.insert(seals,table.concat(s,"")..": "..string.upper(spec.Name))
+			end
+			local sealRow=text(body,"SEALS  "..table.concat(seals,"   "),UDim2.fromOffset(0,y+104),UDim2.fromOffset(1048,22),15,palette.gold,BODY_FONT);sealRow.ZIndex=43
+			sealRow.TextScaled=true;create("UITextSizeConstraint",sealRow,{MaxTextSize=15})
+		end
 	end
 	self.controlsClose.Text=(if pad then "START" else "TAB").." to close"
+end
+-- (DEC-032) The seal slip and the weave in progress.
+function UI:sealHud(h,pad)
+	local def=Fighters[h.fighterId or ""]
+	local list=def and def.SealJutsu
+	self.sealPanel.Visible=list~=nil
+	if not list then self.sealWeave.Text="";return end
+	local weave=h.sealing
+	local seq=weave and weave.seq or {}
+	local key=if pad then {"□","△","○","×"} else {"1","2","3","4"}
+	self.sealHead.Text=if weave then "HAND SEALS  •  WEAVING" else "HAND SEALS  •  "..(if pad then "R1 + L3" else Controls.KeyLabel.Seals or "C").." then two"
+	self.sealPanel.BackgroundTransparency=if weave then .05 else .35
+	local sealed=(h.sealed or 0)>0
+	for i,row in self.sealRows do
+		local spec=list[i]
+		row.Visible=spec~=nil
+		if spec then
+			local state=h.sealReady and h.sealReady[i]
+			local remaining=state and state.remaining or 0
+			local signs={}
+			local matches=true
+			for k,v in spec.Signs do
+				table.insert(signs,SealJutsu.Glyphs[v]..key[v])
+				if seq[k]~=nil and seq[k]~=v then matches=false end
+			end
+			local ready=remaining==0 and h.chakra>=spec.Cost and not sealed
+			row.Text=table.concat(signs," ").."   "..string.upper(spec.Name)..(if remaining>0 then string.format("   %.1fs",remaining) elseif h.chakra<spec.Cost then "   NEED CHAKRA" else "")
+			row.TextColor3=if weave and #seq>0 and not matches then palette.muted elseif ready then palette.paper else palette.muted
+		end
+	end
+	if weave then
+		local parts={}
+		for _,v in seq do table.insert(parts,SealJutsu.Glyphs[v].." "..SealJutsu.Names[v]) end
+		self.sealWeave.Text=if #parts>0 then table.concat(parts,"  ·  ").."  …" else "結印"
+	else self.sealWeave.Text="" end
 end
 function UI:toggleControls()
 	local open=not self.controls.Visible
@@ -1059,6 +1121,7 @@ function UI:render(data)
 		ui.cool.Size=UDim2.fromScale(1,math.clamp(math.max(tech.remaining/6,if sealed then h.sealed/5 else 0),0,1))
 	end
 	for i=#h.techniques+1,5 do self.techniqueButtons[i].box.Visible=false end
+	self:sealHud(h,pad)
 	local techOpen=h.reaction=="WallSplat" and (h.splatElapsed or 9)<.34
 	local conversion=UI.conversion(h,pad)
 	self.hint.Text=if techOpen then (if pad then "○ — WALL TECH" else "Q — WALL TECH")
