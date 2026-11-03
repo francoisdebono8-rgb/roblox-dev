@@ -2500,7 +2500,10 @@ return Scripts
 -- Copyright (c) 2026 Yashveer Singh, MIT.
 return table.freeze({
 	ParryWindow = 0.20,
-	ParryStun = 0.50,
+	-- (Audit 03/11, the user's own play: "je pouvais plus bouger") Parried,
+	-- the body is exposed 0.35 s (0.5 s read as a freeze, the counter landing
+	-- every time).
+	ParryStun = 0.35,
 	ParryCost = 16,
 	ParryCooldown = 0.60,
 	BlockHitCost = 9,
@@ -4428,7 +4431,7 @@ return {
       <Item class="StringValue" referent="ND25">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">bdf5b7c94c64e07db7e0b2f436e76b847e7bf811953a511566cd0db67fda2259</string>
+          <string name="Value">e259fee021920db2a4c670bc0faeeb0d51139e5cff6f0b1428d51fd44331d4c8</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND26">
@@ -4633,6 +4636,18 @@ local function laneOnPath(c,a,target)
 	end
 	return false
 end
+-- (Audit 03/11, the user's own play: Itachi parried 4 strikes, each one
+-- 0.5 s frozen then the counter palm) A guard the bot raises on reflex, as
+-- it sees a strike coming, blocks; only now and then is it timed into a
+-- parry (own dice: the fight's decisions keep their sequence).
+AI.ReflexParry=.2
+local function reflexGuard(self,c,a,hold)
+	if not c:request(a,"Guard") then return false end
+	self.parryRng=self.parryRng or Random.new(17)
+	if self.parryRng:NextNumber()&gt;=AI.ReflexParry then a.guardPressedAt=-math.huge end
+	if hold then self.guardUntil=c.now+hold end
+	return true
+end
 local function plantedSeals(a)
 	local count=0
 	for _,entry in a.anchors or {} do if not entry.actor then count+=1 end end
@@ -4687,18 +4702,23 @@ function AI:defend(now)
 	-- and not dodging: it fires it, mostly on an opening, and the longer the
 	-- bar has been full the likelier (own dice, like the kunai: the fight's
 	-- decisions keep their sequence).
+	-- (Same day, the user's own play: two Tsukuyomi in 2-3 minutes, 4 s each
+	-- without a hand on the fight; "ponctuel", he said.) Once per round at
+	-- most, and only on a real opening: his own recovery (a whiff, a jutsu
+	-- ending), never a stun the bot just dealt (a string into the ultimate
+	-- cannot be answered).
+	local round=c.match.round or c.match.epoch or 0
 	if not Ultimates.ready(a) then self.ultFullSince=nil
-	elseif a.state=="Neutral" and not a.reaction and not a.airborne and a.target and a.target.root and a.target.health&gt;0 and now&gt;=(self.ultThought or 0) then
+	elseif self.ultRound~=round and a.state=="Neutral" and not a.reaction and not a.airborne and a.target and a.target.root and a.target.health&gt;0 and now&gt;=(self.ultThought or 0) then
 		self.ultFullSince=self.ultFullSince or now
 		self.ultRng=self.ultRng or Random.new(13)
 		local roll=self.ultRng:NextNumber()
 		self.ultThought=now+.6+roll*.9
 		local t=a.target
 		local gap=(t.root.Position-a.root.Position).Magnitude
-		local open=t.state=="Recovery" or t.state=="TechniqueRecovery" or t.state=="Stunned" or t.reaction=="HitStun"
-		local urge=(if open then .75 else .25)+(now-self.ultFullSince)*.12
-		if gap&lt;=Ultimates.def(a).Reach*.8 and t.state~="Dodging" and roll&lt;urge then
-			if c:request(a,"Ultimate") then return true end
+		local open=(t.state=="Recovery" or t.state=="TechniqueRecovery") and not t.reaction
+		if open and gap&lt;=Ultimates.def(a).Reach*.8 and roll&lt;.6 then
+			if c:request(a,"Ultimate") then self.ultRound=round;return true end
 		end
 	end
 	-- Global kunai (DEC-030): the bot draws a blade now and then for the close
@@ -4798,7 +4818,7 @@ function AI:zone(now,distance,toward,tangent,target)
 	-- A dash or a chase at her: the gust stops it in the air (it is not
 	-- armoured); already on her, the guard takes the arrival strike.
 	if target.state=="Rush" or target.state=="Pursuit" then
-		if distance&lt;7 and self.rng:NextNumber()&lt;.6 then c:request(a,"Guard");self.guardUntil=now+.4;return true end
+		if distance&lt;7 and self.rng:NextNumber()&lt;.6 then reflexGuard(self,c,a,.4);return true end
 		if distance&lt;(a.def.Gust and a.def.Gust.Range or 18)+2 and tool and self.rng:NextNumber()&lt;.75 then
 			a.move=Vector3.zero
 			if press(c,a,"Tool","neutral",0,target.root.Position) then return true end
@@ -4808,7 +4828,7 @@ function AI:zone(now,distance,toward,tangent,target)
 		if hurt then return false end
 		-- A strike already coming: the guard (her fan string or a gust answers after).
 		if (target.state=="Startup" or target.state=="Active") and distance&lt;8 and self.rng:NextNumber()&lt;.55 then
-			c:request(a,"Guard");self.guardUntil=now+.35;return true
+			reflexGuard(self,c,a,.35);return true
 		end
 		-- Walking into the fan's length: the tip first (it out-reaches a fist),
 		-- the string then throws the body back out.
@@ -5068,7 +5088,7 @@ function AI:update(now)
 	if entering and free then
 		local roll=self.rng:NextNumber()
 		if roll&lt;tune.ReadGuard then
-			c:request(a,"Guard");self.guardUntil=now+.42;return
+			reflexGuard(self,c,a,.42);return
 		elseif roll&lt;tune.ReadGuard+tune.ReadDodge and a.dodgeUntil&lt;=now then
 			a.move=tangent*(self.strafeSign or 1)
 			if c:request(a,"Dodge") then return end
@@ -5095,7 +5115,7 @@ function AI:update(now)
   elseif minato then
    a.move=tangent;c:request(a,"Dodge")
   else
-   c:request(a,"Guard");self.guardUntil=now+.36
+   reflexGuard(self,c,a,.36)
   end
   return
  end
@@ -5113,7 +5133,7 @@ function AI:update(now)
 		end
 		if self.rng:NextNumber()&lt;tune.Defense then
 			if self.rng:NextNumber()&lt;0.45 then c:request(a,"Dodge")
-			else c:request(a,"Guard"); self.guardUntil=now+0.5 end
+			else reflexGuard(self,c,a,.5) end
 			return
 		end
 	end
@@ -11235,7 +11255,9 @@ function Combat:requestInner(a,action,aim,clientTime,opts)
   -- whoever the bot is (Rock Lee's only jutsu channels 0.08 s).
   spec=table.clone(spec);spec.Channel=math.max(spec.Channel*a.trainingChannelScale,Combat.TRAINING_CHANNEL)
  end
-	if not spec then return false,"Unknown action" end
+	-- (Audit 03/11, B04) Key 5 with a fighter of four techniques: nothing
+	-- happens, quietly (the press came back as "UNKNOWN ACTION" on screen).
+	if not spec then return false,if slot then "Empty slot" else "Unknown action" end
 	local technique=Techniques[spec.Id]
 	-- (Stage 6) A blade technique draws the blade itself (Kakashi's Lightning
 	-- Cut): the tanto comes out with the signs, it stays out after.
@@ -13238,9 +13260,10 @@ F.Teleport={
 		local b=a.target
 		if not b or b.health&lt;=0 then return false,"No target" end
 		if (spec.To or "Behind")=="Back" then return true end
-		local gap=(b.root.Position-a.root.Position).Magnitude
-		if gap&gt;(spec.Range or 30)+Families.TELEPORT_SLACK then return false,"Out of range" end
 		if not c:lineOfSight(a,b) then return false,"No line of sight" end
+		-- (DEC-031, the user's own play 03/11: Minato's Lightning Strike
+		-- refused "Out of range" 7 times) Out of its Range it is not refused:
+		-- it flashes toward him as far as it reaches (Families.short).
 		return true
 	end,
 	execute=function(c,a,pending)
@@ -13263,6 +13286,21 @@ F.Teleport={
 		local d=spec.Distance or 3.2
 		local from=a.root.Position
 		local line=unitOr(flat(b.root.Position-from),flat(a.root.CFrame.LookVector).Unit)
+		-- Out of reach (Range): the flash toward him, as far as it reaches,
+		-- short of his body; no strike at the arrival.
+		local gap=flat(b.root.Position-from).Magnitude
+		if to~="Back" and to~="Aim" and gap&gt;(spec.Range or 30)+Families.TELEPORT_SLACK then
+			local reach=math.min(spec.Range or 30,gap-(d+2))
+			local destination=Families.placeWithin(c,a,from+line*reach,spec.Range or 30)
+			destination=Vector3.new(destination.X,from.Y,destination.Z)
+			c:relocate(a,destination)
+			a.root.CFrame=CFrame.lookAt(a.root.Position,a.root.Position+line)
+			a.teleportAt=c.now
+			c:pushImpact(destination,"teleport",false,{owner=a.id,from=from,to=destination,kind=spec.Kind})
+			c:cue(a,string.upper(spec.Name),.6)
+			brawler().event(c,a,"TeleportShort")
+			return
+		end
 		local destination
 		-- Inside his own zone of the ring's look (Haku's dome): out of the
 		-- mirror on its far side, a volley from there, no step into melee.
@@ -15809,7 +15847,7 @@ function Matches:act(s,actor,payload,clock)
  end
  local ok,reason=s.combat:request(actor,action,aim,payload.clientTime,if payload.chakra==true then {chakra=true} else nil)
 	if padJump and action=="Pursuit" and ok==false then action="Jump";ok,reason=s.combat:request(actor,"Jump",aim,payload.clientTime,nil) end
-	if not ok and reason~="Committed" and reason~="Intro" then s.combat:cue(actor,string.upper(reason)) end
+	if not ok and reason~="Committed" and reason~="Intro" and reason~="Empty slot" then s.combat:cue(actor,string.upper(reason)) end
 end
 function Matches:update(dt,now)
 	for player,s in self.sessions do
@@ -20657,7 +20695,9 @@ function Defense.read(c,attacker,victim)
 	victim.readUntil=0;victim.bonusUntil=now+1.4;victim.counterUntil=now+1.0
 	victim.counterReach={expires=now+1.0,max=4,variant="ReadCounter"}
 	victim.chakra=math.min(victim.def.Chakra or 100,victim.chakra+10)
-	attacker.pending=nil;c:setState(attacker,"Stunned",.5)
+	-- (Audit 03/11, the user's own play) exposed as long as a parry leaves
+	-- the body (Tune.ParryStun), not 0.5 s.
+	attacker.pending=nil;c:setState(attacker,"Stunned",Tune.ParryStun)
 	victim.pending=nil;c:setState(victim,"Neutral",0)
 	Defense.slip(c,victim,attacker,"read")
 	c:cue(victim,"READ • SEEN COMING • PUNISH");c:cue(attacker,"READ • EXPOSED")
