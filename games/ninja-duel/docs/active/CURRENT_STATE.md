@@ -12,6 +12,7 @@
 - **Combos libres** (`Combat.linkable`, `Config.FreeCombo`) : un coup qui touche proprement ouvre un lien. Une esquive, un saut, une saisie, n'importe quel jutsu (case ou signes) le suit tout de suite, dans tous les ordres, plus seulement les annulations listées par perso. Au plus 3 liens par combo ; la réduction des dégâts et le plafond du combo restent. Réservé au joueur (l'IA garde son plan).
 - **Saut sur place capturé** (`job_mocap_loco.py`, `nd_style`) : la partie en l'air du saut capturé, le corps droit, les jambes repliées, les bras en arrière (Gaara garde les bras croisés). Les 8 `Jump.Air` sont les seuls clips qui changent.
 - **Vérifié dans Studio** (`ND-Jeu-v26` corrigé en direct, moteur réel) : Kakashi et Gaara tissent leurs signes. La fiche se met à jour et la suite en cours s'allume. Les signes apparaissent dans les mains ; le dragon de terre part, les sables mouvants marquent le sol, et la saisie de sable immobilise. Après un léger propre, les Crocs de traque, l’esquive et le saut partent sans attendre. Test : `tests/Seals.spec.luau` (les 33 jutsu lancés jusqu'au bout).
+- **Livré** (`release: PASS`, `Documents/Roblox`, md5 vérifiés sur l'ordinateur) : `ND-Jeu-v29` cc2d08cd, `ND-Test-v29` 2c98af08, `ND-Labo-v29` c1fa09fa.
 
 **v27 → v28 : le chakra de chacun, la caméra jamais cachée, les jutsu lancés capturés (03/11, 20 h 15 – 21 h 30)** (utilisateur : « fini ce qu'on s'est dit tout à l'heure », la bêta sort ce soir)
 - **Chakra propre à chaque perso** (`ChakraFlow.Signature`, KITS_V2 tableau 1) : chargé, le coup devient autre chose.
