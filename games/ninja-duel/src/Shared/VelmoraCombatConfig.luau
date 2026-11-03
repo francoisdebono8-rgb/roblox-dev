@@ -2,7 +2,10 @@
 -- Copyright (c) 2026 Yashveer Singh, MIT.
 return table.freeze({
 	ParryWindow = 0.20,
-	ParryStun = 0.50,
+	-- (Audit 03/11, the user's own play: "je pouvais plus bouger") Parried,
+	-- the body is exposed 0.35 s (0.5 s read as a freeze, the counter landing
+	-- every time).
+	ParryStun = 0.35,
 	ParryCost = 16,
 	ParryCooldown = 0.60,
 	BlockHitCost = 9,

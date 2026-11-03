@@ -635,9 +635,10 @@ F.Teleport={
 		local b=a.target
 		if not b or b.health<=0 then return false,"No target" end
 		if (spec.To or "Behind")=="Back" then return true end
-		local gap=(b.root.Position-a.root.Position).Magnitude
-		if gap>(spec.Range or 30)+Families.TELEPORT_SLACK then return false,"Out of range" end
 		if not c:lineOfSight(a,b) then return false,"No line of sight" end
+		-- (DEC-031, the user's own play 03/11: Minato's Lightning Strike
+		-- refused "Out of range" 7 times) Out of its Range it is not refused:
+		-- it flashes toward him as far as it reaches (Families.short).
 		return true
 	end,
 	execute=function(c,a,pending)
@@ -660,6 +661,21 @@ F.Teleport={
 		local d=spec.Distance or 3.2
 		local from=a.root.Position
 		local line=unitOr(flat(b.root.Position-from),flat(a.root.CFrame.LookVector).Unit)
+		-- Out of reach (Range): the flash toward him, as far as it reaches,
+		-- short of his body; no strike at the arrival.
+		local gap=flat(b.root.Position-from).Magnitude
+		if to~="Back" and to~="Aim" and gap>(spec.Range or 30)+Families.TELEPORT_SLACK then
+			local reach=math.min(spec.Range or 30,gap-(d+2))
+			local destination=Families.placeWithin(c,a,from+line*reach,spec.Range or 30)
+			destination=Vector3.new(destination.X,from.Y,destination.Z)
+			c:relocate(a,destination)
+			a.root.CFrame=CFrame.lookAt(a.root.Position,a.root.Position+line)
+			a.teleportAt=c.now
+			c:pushImpact(destination,"teleport",false,{owner=a.id,from=from,to=destination,kind=spec.Kind})
+			c:cue(a,string.upper(spec.Name),.6)
+			brawler().event(c,a,"TeleportShort")
+			return
+		end
 		local destination
 		-- Inside his own zone of the ring's look (Haku's dome): out of the
 		-- mirror on its far side, a volley from there, no step into melee.

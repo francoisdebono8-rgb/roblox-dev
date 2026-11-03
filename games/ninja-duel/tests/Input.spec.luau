@@ -346,4 +346,16 @@ test("B01 (audit 03/11, a French Mac): on AZERTY every text names the key printe
  assert(not C.useLayout(function(code) return code.Name end),"a QWERTY layout was rewritten")
  assert(C.KeyLabel.Dodge=="Q")
 end)
+test("B04 (audit 03/11, the user's own play): key 5 with four techniques does nothing quietly, no UNKNOWN ACTION on screen",function()
+ for _,id in {"Flashstep","Mirage","GentleFist","Lion","Sand","Leaf","Legion","Copycat"} do
+  local c,a,b=H.duel(id,"Mirage");local send=remote(c,a,b)
+  a.cue="";a.cueUntil=0
+  if not a.def.Techniques[5] then
+   local ok,why=c:request(a,"Technique5")
+   assert(ok==false and why=="Empty slot",id..": "..tostring(why))
+   send("Technique5")
+   assert(a.cue=="" and a.state=="Neutral",id..": the empty slot spoke ("..tostring(a.cue)..")")
+  end
+ end
+end)
 print(string.format("NinjaDuel input/PS5: %d PASS (callbacks + remote validation; hardware feel not simulated)",passed))

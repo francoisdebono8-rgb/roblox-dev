@@ -101,6 +101,18 @@ local function laneOnPath(c,a,target)
 	end
 	return false
 end
+-- (Audit 03/11, the user's own play: Itachi parried 4 strikes, each one
+-- 0.5 s frozen then the counter palm) A guard the bot raises on reflex, as
+-- it sees a strike coming, blocks; only now and then is it timed into a
+-- parry (own dice: the fight's decisions keep their sequence).
+AI.ReflexParry=.2
+local function reflexGuard(self,c,a,hold)
+	if not c:request(a,"Guard") then return false end
+	self.parryRng=self.parryRng or Random.new(17)
+	if self.parryRng:NextNumber()>=AI.ReflexParry then a.guardPressedAt=-math.huge end
+	if hold then self.guardUntil=c.now+hold end
+	return true
+end
 local function plantedSeals(a)
 	local count=0
 	for _,entry in a.anchors or {} do if not entry.actor then count+=1 end end
@@ -155,18 +167,23 @@ function AI:defend(now)
 	-- and not dodging: it fires it, mostly on an opening, and the longer the
 	-- bar has been full the likelier (own dice, like the kunai: the fight's
 	-- decisions keep their sequence).
+	-- (Same day, the user's own play: two Tsukuyomi in 2-3 minutes, 4 s each
+	-- without a hand on the fight; "ponctuel", he said.) Once per round at
+	-- most, and only on a real opening: his own recovery (a whiff, a jutsu
+	-- ending), never a stun the bot just dealt (a string into the ultimate
+	-- cannot be answered).
+	local round=c.match.round or c.match.epoch or 0
 	if not Ultimates.ready(a) then self.ultFullSince=nil
-	elseif a.state=="Neutral" and not a.reaction and not a.airborne and a.target and a.target.root and a.target.health>0 and now>=(self.ultThought or 0) then
+	elseif self.ultRound~=round and a.state=="Neutral" and not a.reaction and not a.airborne and a.target and a.target.root and a.target.health>0 and now>=(self.ultThought or 0) then
 		self.ultFullSince=self.ultFullSince or now
 		self.ultRng=self.ultRng or Random.new(13)
 		local roll=self.ultRng:NextNumber()
 		self.ultThought=now+.6+roll*.9
 		local t=a.target
 		local gap=(t.root.Position-a.root.Position).Magnitude
-		local open=t.state=="Recovery" or t.state=="TechniqueRecovery" or t.state=="Stunned" or t.reaction=="HitStun"
-		local urge=(if open then .75 else .25)+(now-self.ultFullSince)*.12
-		if gap<=Ultimates.def(a).Reach*.8 and t.state~="Dodging" and roll<urge then
-			if c:request(a,"Ultimate") then return true end
+		local open=(t.state=="Recovery" or t.state=="TechniqueRecovery") and not t.reaction
+		if open and gap<=Ultimates.def(a).Reach*.8 and roll<.6 then
+			if c:request(a,"Ultimate") then self.ultRound=round;return true end
 		end
 	end
 	-- Global kunai (DEC-030): the bot draws a blade now and then for the close
@@ -266,7 +283,7 @@ function AI:zone(now,distance,toward,tangent,target)
 	-- A dash or a chase at her: the gust stops it in the air (it is not
 	-- armoured); already on her, the guard takes the arrival strike.
 	if target.state=="Rush" or target.state=="Pursuit" then
-		if distance<7 and self.rng:NextNumber()<.6 then c:request(a,"Guard");self.guardUntil=now+.4;return true end
+		if distance<7 and self.rng:NextNumber()<.6 then reflexGuard(self,c,a,.4);return true end
 		if distance<(a.def.Gust and a.def.Gust.Range or 18)+2 and tool and self.rng:NextNumber()<.75 then
 			a.move=Vector3.zero
 			if press(c,a,"Tool","neutral",0,target.root.Position) then return true end
@@ -276,7 +293,7 @@ function AI:zone(now,distance,toward,tangent,target)
 		if hurt then return false end
 		-- A strike already coming: the guard (her fan string or a gust answers after).
 		if (target.state=="Startup" or target.state=="Active") and distance<8 and self.rng:NextNumber()<.55 then
-			c:request(a,"Guard");self.guardUntil=now+.35;return true
+			reflexGuard(self,c,a,.35);return true
 		end
 		-- Walking into the fan's length: the tip first (it out-reaches a fist),
 		-- the string then throws the body back out.
@@ -536,7 +553,7 @@ function AI:update(now)
 	if entering and free then
 		local roll=self.rng:NextNumber()
 		if roll<tune.ReadGuard then
-			c:request(a,"Guard");self.guardUntil=now+.42;return
+			reflexGuard(self,c,a,.42);return
 		elseif roll<tune.ReadGuard+tune.ReadDodge and a.dodgeUntil<=now then
 			a.move=tangent*(self.strafeSign or 1)
 			if c:request(a,"Dodge") then return end
@@ -563,7 +580,7 @@ function AI:update(now)
   elseif minato then
    a.move=tangent;c:request(a,"Dodge")
   else
-   c:request(a,"Guard");self.guardUntil=now+.36
+   reflexGuard(self,c,a,.36)
   end
   return
  end
@@ -581,7 +598,7 @@ function AI:update(now)
 		end
 		if self.rng:NextNumber()<tune.Defense then
 			if self.rng:NextNumber()<0.45 then c:request(a,"Dodge")
-			else c:request(a,"Guard"); self.guardUntil=now+0.5 end
+			else reflexGuard(self,c,a,.5) end
 			return
 		end
 	end

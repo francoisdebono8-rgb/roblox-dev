@@ -65,6 +65,41 @@ test("the game's damage scale (longer rounds): health takes the scaled blow, the
  assert(math.abs(b.hitStrength-20/26)<.01,"the reaction reads the blow's own weight")
 end)
 
+test("audit 03/11 (the user's own play): the bot's reflex guard blocks the strikes it sees coming; a parry stays the exception",function()
+ local AI=H.load("Server/AI")
+ -- real dice (the harness's always answer 0.5)
+ local saved=H.envBase.Random
+ H.envBase.Random={new=function(seed)
+  local state=(seed or 1)*2654435761%4294967296
+  local function roll() state=(1103515245*state+12345)%2147483648;return state/2147483648 end
+  return {NextNumber=function(_,x,y) local r=roll();if x and y then return x+(y-x)*r end return r end,NextInteger=function(_,x,y) return math.floor(x+(y-x+1)*roll()) end}
+ end}
+ local parries,guarded=0,0
+ for k,id in {"Mirage","GentleFist","Lion","Copycat"} do
+  local c,a,b,match=H.duel("Leaf",id)
+  place(c,a,b,V.new(0,3,4.2),V.new(0,3,0))
+  b.ai=nil;a.playerInput=true
+  local brain=AI.new(c,b,k*7+1)
+  local rng=H.envBase.Random.new(k)
+  for _=1,6000 do
+   if match.phase~="Duel" then break end
+   a.health=a.def.Health;b.health=b.def.Health
+   -- the player walks in and swings whenever he can
+   local d=b.root.Position-a.root.Position;a.move=V.new(d.X,0,d.Z).Unit;a.lastMove=os.clock()
+   if a.state=="Neutral" and not a.reaction and V.new(d.X,0,d.Z).Magnitude<6 and rng:NextNumber()<.08 then c:request(a,if rng:NextNumber()<.5 then "Heavy" else "Attack") end
+   brain:update(c.now);H.step(c,.01)
+  end
+  local ev=b.events or {}
+  parries+=ev.Parry or 0;guarded+=(ev.Parry or 0)+(ev.GuardHit or 0)
+ end
+ H.envBase.Random=saved
+ assert(guarded>=10,"too few guarded heavies to judge ("..guarded..")")
+  print(string.format("  (bot parried %d of %d guarded blows)",parries,guarded))
+ assert(parries/guarded<=.4,string.format("%d of %d guarded heavies were parried (0.35 s frozen, then the counter)",parries,guarded))
+ local Tune=H.load("Shared/VelmoraCombatConfig")
+ assert(Tune.ParryStun<=.36,"a parry still freezes the body "..Tune.ParryStun.." s")
+end)
+
 test("a combo that runs too long drops the victim into a knockdown",function()
  local c,a,b=H.duel("Flashstep","Mirage")
  place(c,a,b,V.new(0,3,2.25),V.new(0,3,-2.25))

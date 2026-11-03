@@ -1,3 +1,14 @@
+**v22 : ce qui bloquait le joueur dans sa propre partie (03/11, 15 h 40 – 16 h)** (utilisateur : « je joue mais ça a tellement bugué que je pouvais plus bouger »)
+- **Lu dans l'enregistreur de sa partie** (`ND-Test-v21`, Sasuke contre Itachi, manette) :
+  - l'ultime d'Itachi deux fois en 2 à 3 minutes, 4 s chacune sans la main ;
+  - 4 parades, chaque fois le corps figé 0,5 s (« EXPOSED »), puis la paume en contre ;
+  - jongles jusqu'à 1,7 s.
+- **Ultime de l'IA** : au plus une fois par round, et seulement sur une vraie ouverture (sa fin de coup ou de jutsu, jamais un étourdissement que le bot vient de lui infliger).
+- **Garde de l'IA** : levée par réflexe en voyant venir le coup, elle bloque ; 1 fois sur 5 seulement, elle est calée en parade (`AI.ReflexParry`).
+- **Paré ou lu** (Read d'Itachi) : exposé 0,35 s au lieu de 0,5 s.
+- **Techniques hors de portée** (DEC-031 ; sa partie : le Lightning Strike de Minato refusé « Out of range » 7 fois) : une relocalisation sur l'adversaire n'est plus refusée. Elle file vers lui jusqu'à sa portée, sans coup à l'arrivée. Toujours refusée à travers un mur.
+- **B04, touche 5** avec un perso à 4 techniques : plus de « UNKNOWN ACTION » à l'écran.
+
 **Audit de jeu en jouant → v21 (03/11, 14 h 30 – 16 h)** (utilisateur : « les combats trop courts », « fais un audit global du gameplay en y jouant ; dès que tu repères un bug ou une incohérence, tu fais une place où tu le recrées et tu répares » ; puis à 15 h : « freeze, bugs, sensation horrible… les traînées aux bords de l'écran quand on court me rendent fou »)
 - **Rounds plus longs** : les dégâts reçus sont multipliés par `Config.DamageScale` (0,6), après la réduction des combos. L'impact visuel et la force du coup gardent le poids d'origine. Le bouclier de Gaara repousse 1/0,6 fois plus lentement, pour qu'il garde sa part. Simulation IA contre IA : 70 s par round en moyenne (de 39 à 120 s), Gaara gagne 64 % de ses duels (82 % sans la compensation).
 - **Traînées au bord de l'écran** (lignes de vitesse à la course) : supprimées. Elles restaient aussi affichées pendant toute la recharge du dash, donc presque tout le temps.

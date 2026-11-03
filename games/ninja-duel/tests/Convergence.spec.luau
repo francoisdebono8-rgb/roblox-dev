@@ -93,17 +93,21 @@ test("composition: on-hit riders merge field by field (Kabuto keeps the scalpel'
  assert(b.chakra<50 and (b.slowUntil or 0)>c.now,"a blow did not both drain and slow")
 end)
 
-test("reach: a targeted relocation respects Range and sight, refused before any cost",function()
- for _,pair in {{"Flicker","BodyFlicker"},{"Mirror","MirrorStep"},{"Mist","SilentKilling"}} do
+test("reach: a targeted relocation respects sight; out of its Range it flashes toward him as far as it reaches (DEC-031)",function()
+ for _,pair in {{"Flicker","BodyFlicker"},{"Mirror","MirrorStep"},{"Mist","SilentKilling"},{"Flashstep","LightningStrike"}} do
   local id,tech=pair[1],pair[2]
   local s,spec=specOf(id,tech)
-  -- Far out of range: refused, nothing spent, nothing moved.
+  -- Far out of range (user 03/11: Minato's Lightning Strike refused "Out of
+  -- range" 7 times): it goes, toward him, as far as it reaches, no strike.
   local c,a,b=H.duel(id,"Leaf");place(c,a,b,V.new(0,3,60),V.new(0,3,-60));a.chakra=100
-  local from=a.root.Position
+  local from=a.root.Position;local health=b.health
   local ok,why=c:request(a,s,b.root.Position)
-  assert(not ok and why=="Out of range",id..": "..tech.." accepted at 120 studs ("..tostring(why)..")")
-  assert(a.chakra==100 and (a.cooldowns[spec.Id] or 0)<=c.now,id..": a refused relocation still cost")
-  step(c,.3);assert((a.root.Position-from).Magnitude<1,id..": moved anyway")
+  assert(ok,id..": "..tech.." refused at 120 studs ("..tostring(why)..")")
+  step(c,.6)
+  local moved=V.new(a.root.Position.X-from.X,0,a.root.Position.Z-from.Z)
+  assert(moved.Magnitude>=spec.Range*.8 and moved.Magnitude<=spec.Range+.5,string.format("%s: flashed %.1f studs (Range %d)",id,moved.Magnitude,spec.Range))
+  assert(moved.Unit:Dot(V.new(0,0,-1))>.95,id..": not toward him")
+  assert(b.health==health,id..": a strike landed from 120 studs")
   -- At the edge: accepted.
   local c2,a2,b2=H.duel(id,"Leaf");local half=(spec.Range-.5)/2
   place(c2,a2,b2,V.new(0,3,half),V.new(0,3,-half));a2.chakra=100
@@ -256,17 +260,19 @@ test("M2: zones and charges are set within Range and never through a wall; Self 
  for _,h in c4.hazards do if h.a==a4 and V.new(h.position.X,0,h.position.Z).Magnitude<1 then mist=true end end
  assert(mist,"the Hidden Mist was bounded by the opponent's distance")
 end)
-test("M2: a relocation is not followed past its Range or sight at the release; a step back always works",function()
- -- Silent Killing accepted at 20, the body dashes to 105 during the channel.
+test("M2: a relocation is not followed past its Range (DEC-031: it flashes as far as it reaches) nor through a wall at the release; a step back always works",function()
+ -- Silent Killing accepted at 20, the body dashes to 105 during the channel:
+ -- the flash goes toward him as far as its Range, never onto him.
  local c,a,b=H.duel("Mist","Leaf");place(c,a,b,V.new(0,3,0),V.new(0,3,-20));a.chakra=999
- local s=slot("Mist","SilentKilling")
- local chakra=a.chakra
+ local s,spec=specOf("Mist","SilentKilling")
+ local health=b.health
  assert(c:request(a,s,b.root.Position))
  c:relocate(b,V.new(0,3,-105))
  step(c,.6)
- assert((a.root.Position-V.new(0,3,0)).Magnitude<4,"Zabuza followed a body that left his Range during the channel")
- assert(a.chakra<chakra,"the fizzle refunded the chakra (policy: spent)")
- assert((a.cooldowns.SilentKilling or 0)-c.now<=.8,"the fizzle put the full cooldown on top")
+ local moved=-a.root.Position.Z
+ assert(moved<=spec.Range+.5,string.format("Zabuza followed a body that left his Range during the channel (%.1f studs)",moved))
+ assert(moved>=spec.Range*.8,string.format("Zabuza did not flash toward him (%.1f studs)",moved))
+ assert(b.health==health,"a strike landed out of Range")
  -- The body steps behind a wall during the channel.
  local c2,a2,b2=H.duel("Flicker","Leaf");place(c2,a2,b2,V.new(0,3,0),V.new(6,3,0));a2.chakra=999
  assert(c2:request(a2,slot("Flicker","BodyFlicker"),b2.root.Position))

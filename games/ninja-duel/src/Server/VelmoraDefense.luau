@@ -110,7 +110,9 @@ function Defense.read(c,attacker,victim)
 	victim.readUntil=0;victim.bonusUntil=now+1.4;victim.counterUntil=now+1.0
 	victim.counterReach={expires=now+1.0,max=4,variant="ReadCounter"}
 	victim.chakra=math.min(victim.def.Chakra or 100,victim.chakra+10)
-	attacker.pending=nil;c:setState(attacker,"Stunned",.5)
+	-- (Audit 03/11, the user's own play) exposed as long as a parry leaves
+	-- the body (Tune.ParryStun), not 0.5 s.
+	attacker.pending=nil;c:setState(attacker,"Stunned",Tune.ParryStun)
 	victim.pending=nil;c:setState(victim,"Neutral",0)
 	Defense.slip(c,victim,attacker,"read")
 	c:cue(victim,"READ • SEEN COMING • PUNISH");c:cue(attacker,"READ • EXPOSED")

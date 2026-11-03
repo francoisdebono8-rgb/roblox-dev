@@ -41,20 +41,33 @@ test("the bar fills by hitting and by being hit, capped; an empty bar refuses",f
  assert(a.ultimate==100 and Ultimates.ready(a),"the bar is not capped at 100")
 end)
 
-test("B03 (audit 03/11): with a full bar the bot fires its ultimate; with an empty one it never tries",function()
+test("B03 (audit 03/11): a full bar, the bot fires its ultimate on an opening, once per round; empty, or no opening, it never does",function()
  local AI=H.load("Server/AI")
  for _,id in MAIN do
   local c,a,b=H.duel(id,"Mirage");place(c,a,b,5)
   b.ai=nil;a.ai=nil
   local brain=AI.new(c,a,5)
-  local fired=false
+  local fired=0
   local request=c.request
-  c.request=function(self,actor,action,...) if actor==a and action=="Ultimate" then fired=true end;return request(self,actor,action,...) end
-  for _=1,300 do brain:update(c.now);H.step(c,.01);if fired then break end;c:relocate(a,V.new(0,3,2.5));c:relocate(b,V.new(0,3,-2.5));a.health=a.def.Health;b.health=b.def.Health end
-  assert(not fired,id..": the bot tried an ultimate with an empty bar")
-  a.ultimate=100
-  for _=1,600 do brain:update(c.now);H.step(c,.01);if fired then break end;c:relocate(a,V.new(0,3,2.5));c:relocate(b,V.new(0,3,-2.5));b.health=b.def.Health end
-  assert(fired,id..": the bot sat on a full bar for 6 s at 5 studs")
+  c.request=function(self,actor,action,...) if actor==a and action=="Ultimate" then fired+=1 end;return request(self,actor,action,...) end
+  local function run(seconds,open)
+   for _=1,math.floor(seconds*100) do
+    if open then b.state="Recovery";b.untilTime=c.now+.3 end
+    brain:update(c.now);H.step(c,.01)
+    if not a.ultimateRunning then c:relocate(a,V.new(0,3,2.5));c:relocate(b,V.new(0,3,-2.5));a.health=a.def.Health;b.health=b.def.Health end
+   end
+  end
+  run(3,true)
+  assert(fired==0,id..": the bot tried an ultimate with an empty bar")
+  b.state="Neutral";b.untilTime=c.now
+  a.ultimate=100;run(6,false)
+  assert(fired==0,id..": the bot fired its ultimate with no opening (user 03/11: twice in 3 minutes)")
+  run(4,true)
+  assert(fired>=1,id..": the bot sat on a full bar through an opening")
+  -- (the sequence ends, the bar fills again in the same round: no second one)
+  for _=1,600 do H.step(c,.01);if not a.ultimateRunning and not b.ultimateHeld then break end end
+  local before=fired;a.ultimate=100;run(4,true)
+  assert(fired==before,id..": a second ultimate in the same round")
  end
 end)
 

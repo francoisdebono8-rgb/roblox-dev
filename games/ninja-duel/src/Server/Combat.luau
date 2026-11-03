@@ -1342,7 +1342,9 @@ function Combat:requestInner(a,action,aim,clientTime,opts)
   -- whoever the bot is (Rock Lee's only jutsu channels 0.08 s).
   spec=table.clone(spec);spec.Channel=math.max(spec.Channel*a.trainingChannelScale,Combat.TRAINING_CHANNEL)
  end
-	if not spec then return false,"Unknown action" end
+	-- (Audit 03/11, B04) Key 5 with a fighter of four techniques: nothing
+	-- happens, quietly (the press came back as "UNKNOWN ACTION" on screen).
+	if not spec then return false,if slot then "Empty slot" else "Unknown action" end
 	local technique=Techniques[spec.Id]
 	-- (Stage 6) A blade technique draws the blade itself (Kakashi's Lightning
 	-- Cut): the tanto comes out with the signs, it stays out after.

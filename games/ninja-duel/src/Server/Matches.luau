@@ -381,7 +381,7 @@ function Matches:act(s,actor,payload,clock)
  end
  local ok,reason=s.combat:request(actor,action,aim,payload.clientTime,if payload.chakra==true then {chakra=true} else nil)
 	if padJump and action=="Pursuit" and ok==false then action="Jump";ok,reason=s.combat:request(actor,"Jump",aim,payload.clientTime,nil) end
-	if not ok and reason~="Committed" and reason~="Intro" then s.combat:cue(actor,string.upper(reason)) end
+	if not ok and reason~="Committed" and reason~="Intro" and reason~="Empty slot" then s.combat:cue(actor,string.upper(reason)) end
 end
 function Matches:update(dt,now)
 	for player,s in self.sessions do
