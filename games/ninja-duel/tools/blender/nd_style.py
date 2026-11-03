@@ -168,6 +168,12 @@ def style(fighter, kind, tr):
     """Applies the fighter's carriage to a locomotion track.
     kind: Idle, Walk, Run, Sprint, Air, Leap, Land, Flip."""
     F, K = fighter, kind
+    if K == "Strike":
+        # a blow keeps the capture's whole mechanics; only the hands change
+        if F == "GentleFist":   # Neji strikes with open palms, fingers up
+            for j in ("RightWrist", "LeftWrist"):
+                offset(tr, j, nd_anim.R(-55, 0, 0).to_quaternion())
+        return tr
     run = K in ("Run", "Sprint")
     if K == "Sprint" and F != "Sand":
         # every ninja but Gaara runs arms swept back, chest low
