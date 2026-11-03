@@ -1,3 +1,17 @@
+**v27 → v28 : le chakra de chacun, la caméra jamais cachée, les jutsu lancés capturés (03/11, 20 h 15 – 21 h 30)** (utilisateur : « fini ce qu'on s'est dit tout à l'heure », la bêta sort ce soir)
+- **Chakra propre à chaque perso** (`ChakraFlow.Signature`, KITS_V2 tableau 1) : chargé, le coup devient autre chose.
+  - Sasuke : le léger est un Chidori Nagashi qui traverse la garde ; le lourd porte un jet de feu.
+  - Naruto : un clone surgit et enchaîne le léger ; le lourd est U-ZU-MA-KI (projeté, des clones dessous).
+  - Gaara : le poing de sable porte loin ; la main de sable saisit les jambes (immobilisé 0,8 s).
+  - Lee : rafale de poings ; le lourd casse la garde ; saut plus haut ; l'esquive ressort dans son dos.
+  - Neji : paume à vide à distance ; l'esquive est une courte Rotation qui repousse.
+  - Itachi : des corbeaux (genjutsu) ; l'esquive le disperse de côté.
+  - Minato : Rasengan au corps ; l'esquive est le Dieu du Tonnerre Volant, dans son dos.
+  - Kakashi : Doton, un pic de terre qui le soulève ; l'esquive est le Chasseur de têtes, dans son dos.
+- **Vérifié dans Studio** (`ND-Jeu-v26` corrigé en direct, moteur réel) : les 8 signatures déclenchent leur effet (Bound, Launched, clones, corbeaux, téléportations, Rotation) ; un corps entre la caméra et le joueur s'efface en entier (transparence 0,72 sur toutes ses pièces).
+- **v28, jutsu lancés** : lancers de kunai et de shuriken, le kunai marqué, la lame de vent, le sable de Gaara, la poussée du dragon d'eau, depuis les captures. Les signes des mains et les souffles de feu restent posés à la main. Le saut sur place reste posé à la main : le grand saut capturé plonge dans une roulade.
+- **Reste à faire** : les signes des mains au-delà des 4 cases, les combos libres (graphe de liens), les nouvelles techniques par perso (Doton de Kakashi en technique, kit de sable de Gaara…), la réception et le saut sur place capturés pour de bon.
+
 **v23 → v26 : caméra libre jouable, déplacements et frappes capturés (03/11, 17 h – 19 h 20)** (utilisateur : « j'ouvre le jeu, je peux à peine jouer » ; « ce qui nous intéresse, c'est l'action : les courses, les sauts, les frappes surtout »)
 - **Lu dans sa partie** (`ND-Jeu-v23`, Minato contre Itachi, enregistreur posé côté client) : 16 coups, 5 lancés le dos tourné à Itachi (jusqu'à 179°), 7 lancés de 12 à 37 studs ; Itachi a fini la partie avec toute sa vie. La caméra libre (v23) faisait regarder le corps là où regardait la caméra, et aucun test automatique ne jouait ce mode.
 - **v25, verrou souple** (`Config.SoftLock`) : dans le mode libre, un coup du joueur lancé à moins de 13 studs avance sur l'adversaire et, s'il est à plus de 40° de lui, se tourne vers la ligne où il se tenait à la pression (900°/s, le virage borné du départ ; un corps qui bouge après la pression n'est pas poursuivi). À la manette, le corps libre regarde là où il va et, arrêté près de l'adversaire, se tourne vers lui ; à la souris, il regarde où regarde la caméra. Réservé au perso du joueur (l'IA garde son orientation) ; la garde garde sa position (l'angle mort du Byakugan). Test : `tests/Movement.spec.luau` (verrou souple).
