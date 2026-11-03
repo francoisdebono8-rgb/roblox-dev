@@ -11,7 +11,7 @@ local K -- Effects' helpers, handed over by install()
 ChakraFlowFX.Color={
 	Lightning=Color3.fromRGB(150,205,255),Fire=Color3.fromRGB(255,124,44),Wind=Color3.fromRGB(176,255,226),
 	Sand=Color3.fromRGB(218,184,116),GentleFist=Color3.fromRGB(196,216,255),Strength=Color3.fromRGB(255,196,90),
-	Chakra=Color3.fromRGB(110,172,255),
+	Chakra=Color3.fromRGB(110,172,255),Earth=Color3.fromRGB(138,112,84),
 }
 local CORE=Color3.fromRGB(250,252,255)
 local LIMBS={"RightHand","LeftHand","RightFoot","LeftFoot"}
@@ -137,6 +137,25 @@ local function impact(fx,i,folder)
 			K.shockRing(fx.folder,p,color,1.5,10,.22,dir)
 		end
 		if i.guarded then K.flash(fx.folder,p,Color3.fromRGB(255,214,120),.5,3,.1,.3) end
+		-- (DEC-032) a signature's own mark: Kakashi's spike of earth, Neji's
+		-- Rotation dome
+		if i.sig=="EarthSpike" then
+			local ok=pcall(function()
+				local spike=Instance.new("Part");spike.Name="EarthSpike";spike.Anchored=true;spike.CanCollide=false;spike.CanQuery=false
+				spike.Material=Enum.Material.Slate;spike.Color=color;spike.Size=Vector3.new(1.5,.2,1.5)
+				local base=CFrame.new(p)*CFrame.Angles(0,math.rad(45),math.rad(4))
+				spike.CFrame=base;spike.Parent=fx.folder
+				local TS=game:GetService("TweenService")
+				TS:Create(spike,TweenInfo.new(.12,Enum.EasingStyle.Back,Enum.EasingDirection.Out),{Size=Vector3.new(1.5,6.5,1.5),CFrame=base*CFrame.new(0,3.2,0)}):Play()
+				task.delay(.55,function() if spike.Parent then TS:Create(spike,TweenInfo.new(.35),{Transparency=1,Size=Vector3.new(1.2,4,1.2)}):Play() end end)
+				game:GetService("Debris"):AddItem(spike,1)
+			end)
+			K.smokePuff(fx.folder,p,Color3.fromRGB(120,104,86),18,2.2)
+			if not ok then K.shockRing(fx.folder,p,color,2,12,.3,Vector3.yAxis) end
+		elseif i.sig=="Rotation" then
+			K.shockRing(fx.folder,p,color,3,14,.36,Vector3.yAxis)
+			K.flash(fx.folder,p,CORE,1,8,.2,.2)
+		end
 	elseif style=="chakraleap" then
 		-- The ground takes the push: a ring flat on it and the dust thrown out.
 		K.shockRing(fx.folder,p,color,2,13,.3)

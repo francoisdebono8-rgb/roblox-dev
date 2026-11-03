@@ -190,4 +190,67 @@ test("the chakra button (user 29/10): a press sent with chakra comes out infused
  assert(ok==false and p.chakraLoad==nil,"a refused infused press left its load")
 end)
 
+-- (DEC-032, user 03/11: "le chakra pour l'instant c'est nul, tu frappes plus
+-- fort mais pas de trucs") Each prodigy's own chakra.
+local function infused(id,action,guard,gap)
+ local c,a,b=H.duel(id,"Flashstep")
+ place(c,a,b,V.new(0,3,(gap or 2.6)),V.new(0,3,-(gap or 2.6)))
+ b.ai=nil
+ if guard then assert(c:request(b,"Guard"));H.step(c,.3) end
+ assert(c:request(a,"ChakraLoad"),id.." could not load")
+ local health=b.health
+ local seen={}
+ assert(c:request(a,action),id.." "..action.." refused")
+ for _=1,90 do H.step(c,.01);if b.reaction then seen[b.reaction]=true end end
+ return health-b.health,seen,c,a,b
+end
+test("signatures: each prodigy's infused blow becomes his own (sand grip, earth spike, U-ZU-MA-KI, Rasengan, the flurry, the crows)",function()
+ local _,seen=infused("Sand","Heavy")
+ assert(seen.Bound,"Gaara's infused heavy did not grip the legs")
+ _,seen=infused("Copycat","Heavy")
+ assert(seen.Launched,"Kakashi's infused heavy did not raise the earth spike")
+ _,seen=infused("Legion","Heavy")
+ assert(seen.Launched,"Naruto's infused heavy did not send him up (U-ZU-MA-KI)")
+ _,seen=infused("Flashstep","Heavy")
+ assert(seen.Knockback or seen.Launched,"Minato's infused heavy (Rasengan) did not drive him away")
+ local flurry=infused("Leaf","Attack")
+ local plain=lightDamage("Leaf",true)
+ assert(flurry>0 and plain>0,"setup: Lee's light missed")
+ local _,_,c,a,b=infused("Mirage","Attack")
+ assert((b.illusionUntil or 0)>c.now-.2 or b.illusionKind=="crows","Itachi's infused light raised no crows")
+ -- Naruto's infused light: a clone pops beside him and kicks him on
+ local dmg,_,c2,x=infused("Legion","Attack")
+ local plainNaruto=lightDamage("Legion",false)
+ assert(dmg>plainNaruto*1.5,string.format("Naruto's clone follow-up did not land (%.1f vs plain %.1f)",dmg,plainNaruto))
+end)
+test("signatures through the guard: Lee's whirlwind crushes it, Sasuke's Nagashi shocks through it",function()
+ local _,seen,c,a,b=infused("Leaf","Heavy",true)
+ assert(seen.HitStun,"Lee's infused heavy did not break the guard")
+ local dmg,_,c2,x,y=infused("Lion","Attack",true)
+ assert(dmg>0,"Chidori Nagashi did nothing through the guard")
+end)
+test("signature dashes: Lee and Minato and Kakashi out behind him, Neji's Rotation pushes, Itachi scatters aside",function()
+ for _,id in {"Leaf","Flashstep","Copycat"} do
+  local c,a,b=H.duel(id,"Mirage")
+  place(c,a,b,V.new(0,3,4),V.new(0,3,-4));b.ai=nil
+  assert(c:request(a,"ChakraLoad"))
+  assert(c:request(a,"Dodge"),id.." dash refused")
+  H.step(c,.05)
+  local toA=(a.root.Position-b.root.Position)*V.new(1,0,1)
+  assert(toA.Z<-.5,id..": did not come out behind him ("..tostring(a.root.Position)..")")
+ end
+ local c,a,b=H.duel("GentleFist","Mirage")
+ place(c,a,b,V.new(0,3,2),V.new(0,3,-2));b.ai=nil
+ assert(c:request(a,"ChakraLoad"));assert(c:request(a,"Dodge"))
+ local pushed=false
+ for _=1,30 do H.step(c,.01);if b.reaction=="Knockback" then pushed=true end end
+ assert(pushed,"Neji's Rotation did not push him away")
+ local c2,x,y=H.duel("Mirage","Flashstep")
+ place(c2,x,y,V.new(0,3,6),V.new(0,3,-6));y.ai=nil
+ local before=x.root.Position
+ assert(c2:request(x,"ChakraLoad"));assert(c2:request(x,"Dodge"))
+ H.step(c2,.05)
+ assert(math.abs(x.root.Position.X-before.X)>4,"Itachi did not scatter aside")
+end)
+
 print("NinjaDuel chakra flow: "..passed.." PASS")
