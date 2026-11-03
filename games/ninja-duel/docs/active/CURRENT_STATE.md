@@ -1,3 +1,31 @@
+**Parties 8–9 de la feuille de route : le socle dessiné pour les 8 (03/11, 1 h 30)** (utilisateur : « continue la suite étape 8 9 10 », « pk que Neji »)
+- **Mesure de départ** : seuls Sasuke et Minato avaient leur garde, leurs coups reçus, chutes, relevés, esquives et poursuite dessinés ; les 6 autres les jouaient en procédural. Aucun des 8 n'avait sa saisie ni ses projections ; seul Sasuke avait le salto talon en l'air (`AirFlip`, lourd en l'air hors chaîne).
+- **Garde, réactions, esquives, poursuite des 6** (`tools/blender/job_react_6.py`, le jeu de `clips_react2` sur la garde de chacun) : 23 clips × 6 (garde et impact, coups reçus tête / corps / flanc / dos / jambes des deux côtés, projeté et réception, envoyé en l'air, au sol, relevé des deux côtés, dash, roue, flip arrière, poursuite). Tempo propre : Lee revient le plus vite, Gaara le plus lent, Naruto encaisse large. Gaara pare bras croisés (le sable prend le coup), Neji paumes levées.
+- **Saisie, projection, projection en l'air pour les 8** et **salto talon pour 6** (`tools/blender/common_e9.py`) : la jambe avant fait un vrai pas (glissement des pieds 0,18 → 0,04 stud).
+- **Flip de saut** pour Lee, Naruto, Kakashi, Neji (ceux qui font des figures, `Motion.ACRO`).
+- **Riposte et plongée du mur** jouées avec le Light1 et l'AirDrive dessinés de chacun (`Motion.DRAWN_AS`, client seulement : le timing serveur ne bouge pas) ; une seule règle pour savoir quel clip joue un coup (`Motion.drawnClip`), aussi pour les appuis.
+- **Clips** : 449 → 621.
+- **Test « un jab plie le corps »** (`CombatFeel`) : mesuré depuis la garde de chacun (l'ancien seuil lisait l'inclinaison absolue : seul un perso penché pouvait le passer). Seuil = le jab dessiné de Sasuke filmé en Studio (12°) ; les 6 nouveaux : 15–21° au jab, 42–52° au coup lourd.
+- **Branche parallèle intégrée** (`claude/ninja-duel-tutorial-v2` : freezes, tutoriel v2 et sonde, nouvelle interface, look) ; trois tests réparés après la fusion (bibliothèque `task` du banc de test, escalade avancée image par image).
+- **Partie 10 (boucle du joueur)** : déjà en place (sélection → duel en rounds → résultat → revanche / retour, tutoriel) ; son interface et son tutoriel sont le chantier de l'autre session : rien de doublé ici.
+
+**É7, les devinettes tiennent le ping (03/11, 1 h 30)** (utilisateur : « continue la suite des étapes »)
+- **Tout ce que la touche peut lancer est deviné**, en suivant `Brawler.request` dans le même ordre : coups en l'air (Air1 / Air2 selon la chaîne aérienne, talon `Slam` ou salto `AirFlip`, Lion Combo et finishers), routes au stick (haut, bas, côté) au sol et en l'air, plongée sur un corps au sol (`WallDive`), coup en tombant (`DropStrike`), coup de fin d'esquive ou d'arrivée (`DashAttack`, lourd d'arrivée), enchaînement contre un mur (le client lance le même rayon que le serveur), riposte, paume de Neji (`PalmThrust`), l'image d'Itachi sous illusion.
+- **Lecteurs partagés serveur / client** (`Shared/ActionContext`) : le stick (`stick`), la géométrie du plongeon (`airDive`), les surfaces (`surface`).
+- **Lu au moment où la touche arrive au serveur** : le snapshot envoie les fenêtres en temps restant (`guess = Brawler.guessView` : chaîne, enchaînement, arrivée, riposte, Lion, annulation, recharge du dash, sortie d'un coup reçu, maintien en l'air). Le client les lit un aller-retour plus tard (`Presentation.viewAt`, aller simple mesuré par `noteSnapshot`), les corps avancés sur leur vitesse, et ne devine que si la réponse est la même à ½ et à 1,5 aller-retour (`steady`). Pas de devinette quand une pression attend déjà, quand le corps touche le sol entre-temps, quand une course monte ou retombe. Les devinettes attendent un aller-retour avant d'être abandonnées.
+- **Esquive** : aussi pour sortir d'un coup reçu (passé sa part, `Brawler.standIn`, comme le serveur) et en sprint vers lui quand le dash chakra n'est pas disponible (recharge, chakra, trop loin).
+- **Mesure** (`tests/Prediction.spec.luau`, release : duels IA, pressions aléatoires, à 0 et à 100 ms de ping, le joueur ne touche à rien pendant l'aller-retour) :
+
+| | 0 ms : justes / faux | 100 ms : justes / faux (+ coup reçu en route) |
+|---|---|---|
+| Léger | 37 / 1 | 32 / 2 |
+| Lourd | 57 / 0 | 34 / 1 (+1) |
+| En l'air | 11 / 0 | 6 / 0 |
+| Esquive | 30 / 0 | 19 / 0 (+4 : devenue permutation) |
+
+  Avant (mêmes duels, 100 ms, lecture du snapshot tel quel) : léger 19 % faux, lourd 7 %. Pas devinés exprès : la permutation de sable de Gaara (téléportation) et l'esquive en l'air.
+- **Banc de test** : le sol a un vrai parent (le parkour remonte les ancêtres ; `Parent=true` cassait une lecture de rebord).
+
 **É7, les gestes du joueur devinés juste (03/11, 0 h 30)** (utilisateur : « continue tes missions initiales »)
 - **L'impact au contact** (`Presentation.localContact`) : au moment où le coup deviné touche le corps dessiné (portée du coup + 1,1 stud), si l'adversaire est ouvert (ni en garde, ni en esquive, ni à terre, ni en Rotation), le son, les éclats et le coup de caméra partent tout de suite ; le contact du serveur pour ce coup ne rejoue que ses effets du monde (pas de second son).
 - **Deviner ce que le serveur fera vraiment** : le client lit la situation du corps avec le même lecteur partagé que le serveur (`Shared/ActionContext` : dans le dos, sur le flanc, de près, au bout de la portée, en reculant, en courant) ; les coups de course ; la chaîne ouverte ; pas de devinette dans une riposte, un état tenu (Chidori), une fenêtre de re-entrée. L'esquive suit les règles du serveur (chakra, temps de recharge, sable de Gaara, dash chakra, ré-engagement en sprint) et sort d'une récupération passé son point d'annulation ; le saut aussi.

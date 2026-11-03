@@ -1331,8 +1331,27 @@ local function attackPhase(name,elapsed,fighterId)
 end
 -- The clip's footwork at `elapsed`: where each planted foot should be (root
 -- space), or nil for a leg that is kicking (free) at this moment.
+-- (É9) Shared moves drawn with the fighter's own nearest strike until they
+-- have a clip of their own (client only: the server's timing is untouched).
+local DRAWN_AS={Riposte="Light1",WallDive="AirDrive"}
+Motion.DRAWN_AS=DRAWN_AS
+-- The authored clip a strike plays for this fighter, or nil (procedural):
+-- its own, then the one Attacks names for it, then DRAWN_AS.
+local function drawnClip(name,fighterId,clip)
+	if clip then return clip end
+	if not Authored then return nil end
+	local F=tostring(fighterId).."."
+	local own=F..tostring(name)
+	if Authored.has(own) then return own end
+	local spec=Attacks[name]
+	if spec and spec.clip and Authored.has(F..spec.clip) then return F..spec.clip end
+	local as=DRAWN_AS[name]
+	if as and Authored.has(F..as) then return F..as end
+	return nil
+end
+Motion.drawnClip=drawnClip
 local function attackFeet(name,elapsed,fighterId,clip)
-	if clip or (Authored and Authored.has(tostring(fighterId).."."..tostring(name))) then return nil end
+	if drawnClip(name,fighterId,clip) then return nil end
 	local route=CLIPS[fighterId] or CLIPS[familyOf(fighterId).clips or familyOf(fighterId).body] or CLIPS.Flashstep
 	local borrow=familyOf(fighterId).borrow
 	local keys=route[name] or (borrow and borrow[name] and route[borrow[name]]) or (Attacks[name] and Attacks[name].clip and route[Attacks[name].clip]) or route.Light1
@@ -1364,12 +1383,9 @@ end
 -- Pose + weight of an attack at `elapsed`. The weight stays at 1 through the
 -- active window and most of recovery, then fades so the stance takes over.
 local function attackTargets(name,elapsed,fighterId,clip)
-	local authored=clip or tostring(fighterId).."."..tostring(name)
 	-- (Stage 6) A strike drawn with another one's clip until it has its own
-	-- (Attacks clip: the 4th and 5th lights of the longer strings).
-	if not clip and Authored and not Authored.has(authored) and Attacks[name] and Attacks[name].clip then
-		authored=tostring(fighterId).."."..Attacks[name].clip
-	end
+	-- (Attacks clip: the 4th and 5th lights of the longer strings; É9 DRAWN_AS).
+	local authored=drawnClip(name,fighterId,clip) or tostring(fighterId).."."..tostring(name)
 	if Authored and Authored.has(authored) then
 		-- (Blender-first) the authored strike, time-warped onto the server's
 		-- startup / active / recovery through its contact markers.

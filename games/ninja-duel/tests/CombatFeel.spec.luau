@@ -25,19 +25,27 @@ end
 local function deg(cf,axis) return math.deg(math.acos(math.clamp(cf:VectorToObjectSpace(AXIS_Y):Dot(axis or AXIS_Y),-1,1))) end
 
 test("a jab to the body folds the whole body, not just the head (it reads at game speed)",function()
- local c,a=H.duel("Mirage","Leaf")
- Motion.reset(a.model)
- for _=1,10 do frame(a.model,body(a)) end
- local most=0
- for i=1,14 do
-  frame(a.model,body(a,{reaction="HitStun",reactionElapsed=i/60,hitStrength=5/26,hitAngle=0,hitZone="body",hitKind="strike"}))
-  local torso=a.model.joints.Waist and a.model.joints.Waist.Transform or a.model.joints.Root.Transform
-  most=math.max(most,deg(torso)+deg(a.model.joints.Root.Transform))
+ -- (É9, 03/11) Measured from the fighter's own stance: the trunk (waist and
+ -- hips) turned away from where it stood. The old bar read the absolute tilt
+ -- (> 24 degrees from vertical, stance lean included), which only a leaning
+ -- stance could meet once the reactions were drawn: Itachi stands upright
+ -- (5 degrees), Sasuke leans 19. The bar is now Sasuke's drawn jab, the one
+ -- filmed in Studio (12 degrees from his stance), for every fighter.
+ local function turned(from,to) local _,an=(from:Inverse()*to):ToAxisAngle() return math.deg(math.abs(an)) end
+ for _,id in {"Lion","Mirage","Legion","Copycat","Sand","Leaf","GentleFist"} do
+  local c,a=H.duel(id,"Leaf")
+  Motion.reset(a.model)
+  for _=1,10 do frame(a.model,body(a)) end
+  local waist0=a.model.joints.Waist and a.model.joints.Waist.Transform or CFrame.identity
+  local root0=a.model.joints.Root.Transform
+  local most=0
+  for i=1,14 do
+   frame(a.model,body(a,{reaction="HitStun",reactionElapsed=i/60,hitStrength=5/26,hitAngle=0,hitZone="body",hitKind="strike"}))
+   local waist=a.model.joints.Waist and a.model.joints.Waist.Transform or CFrame.identity
+   most=math.max(most,turned(waist0,waist)+turned(root0,a.model.joints.Root.Transform))
+  end
+  assert(most>=12,string.format("%s: a jab still barely moves the body (%.0f degrees from his stance)",id,most))
  end
- -- (28/10, 43737a4: the hips go back and the chest straightens part of the
- -- fold so a string keeps a gap between the heads; filmed in Studio. This
- -- suite was outside the release gate and kept the old 30-degree bar.)
- assert(most>24,string.format("a jab still barely moves the body (%.0f degrees)",most))
 end)
 
 test("between two blows of a string the struck body does not flash back to its stance",function()

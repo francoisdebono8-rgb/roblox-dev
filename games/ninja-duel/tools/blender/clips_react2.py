@@ -58,11 +58,14 @@ def setv(base, over, sgn=1):
 
 
 class Body:
-    def __init__(self, fighter, stance, tempo=1.0, give=1.0):
+    def __init__(self, fighter, stance, tempo=1.0, give=1.0, guard_arms=None):
         self.F = fighter + "."
         self.stance = stance
         self.tempo = tempo
         self.give = give
+        # (É8/É9) the fighter's own block (Gaara's folded arms, Neji's raised
+        # palms); None: the forearms crossed before the face.
+        self.guard_arms = guard_arms
 
     def f(self, n):
         return max(1, int(round(n * self.tempo)))
@@ -235,8 +238,8 @@ def guards(b, arm):
     then the arms push back out."""
     S = b.stance
     g = add(S, {"root": {"y": -.14, "z": .1, "pitch": -2}, "torso": {"pitch": 6, "yaw": 4}, "head": {"pitch": 14, "yaw": 6}})
-    g = setv(g, {"ra": {"raise": 92, "out": -34, "twist": 42, "elbow": 114, "wrist": -10},
-                 "la": {"raise": 96, "out": -30, "twist": 40, "elbow": 110, "wrist": -10}})
+    g = setv(g, b.guard_arms or {"ra": {"raise": 92, "out": -34, "twist": 42, "elbow": 114, "wrist": -10},
+                                 "la": {"raise": 96, "out": -30, "twist": 40, "elbow": 110, "wrist": -10}})
     breathe = add(g, {"root": {"y": -.03}, "torso": {"pitch": 1.5}, "ra": {"elbow": 2}, "la": {"elbow": 2}})
     out = []
     gu = Shot(arm, b.F + "Guard")
@@ -396,8 +399,8 @@ def dodges(b, arm):
     return out
 
 
-def author(arm, fighter, stance, tempo=1.0, give=1.0):
-    b = Body(fighter, stance, tempo, give)
+def author(arm, fighter, stance, tempo=1.0, give=1.0, guard_arms=None):
+    b = Body(fighter, stance, tempo, give, guard_arms)
     acts = []
     acts += guards(b, arm)
     for fn, name in ((hit_head, "Head"), (hit_body, "Body"), (hit_side, "Side"), (hit_back, "Back"), (hit_legs, "Legs")):
