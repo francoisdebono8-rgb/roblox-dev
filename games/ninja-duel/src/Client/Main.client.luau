@@ -52,9 +52,14 @@ local function send(action,extra)
   if input then payload.direction=input:direction(workspace.CurrentCamera);payload.sprint=input.sprinting end
  end
 	if action=="Move" then payload.direction=extra; payload.locked=camera.locked; payload.sprint=input and input.sprinting or false
+		if not camera.locked then
+			local look=workspace.CurrentCamera.CFrame.LookVector*Vector3.new(1,0,1)
+			if look.Magnitude>.05 then payload.look=look.Unit end
+		end
 	elseif type(extra)=="table" then for k,v in extra do payload[k]=v end
 	elseif action=="Tool" or string.match(action,"^Technique") then
 		local gamepad=input and input.pad
+		mouse.TargetFilter=player.Character
 		local hit=if gamepad and current.bot then current.bot.position else mouse.Hit.Position
 		if gamepad and action=="Technique1" and current.human and current.human.fighterId=="Flashstep" then hit-=Vector3.new(0,2.8,0) end
 		local root=player.Character and player.Character:FindFirstChild("HumanoidRootPart")
@@ -77,19 +82,21 @@ require(playerModule):GetControls():Disable()
 remote.OnClientEvent:Connect(function(data)
 	if data.epoch<(current.epoch or 0) then return end
 	if data.epoch~=current.epoch or data.phase~=current.phase then input:resync() end
-	if data.epoch~=current.epoch then camera.locked=true end
+	if data.epoch~=current.epoch then camera.locked=false end
 	data.gamepad=input.pad
 	current=data; presentation.receivedAt=os.clock(); presentation:impacts(data,camera); ui:render(data)
 	if data.phase=="Duel" and data.serverNow then presentation:noteSnapshot(workspace:GetServerTimeNow()-data.serverNow) end
 end)
 local nextMove=0
-local lastDir,lastSprint=nil,nil
+local lastDir,lastSprint,lastLook=nil,nil,nil
 local lastSentAt=0
 RunService:BindToRenderStep("NinjaDuelCamera",Enum.RenderPriority.Camera.Value,function(dt)
 	-- Last moment before the frame is drawn: the replicated roots have their
 	-- final positions for this frame, so the smoothed bodies and the camera agree.
 	presentation:smoothStep(current,dt)
 	presentation:update(current,dt)
+	camera.menuOpen=(dev~=nil and dev.panelOpen==true)
+	mouse.TargetFilter=player.Character
 	camera:update(current,dt)
 	-- (DEC-030 Partie 1, responsiveness) The stick goes out the frame it
 	-- changes, not on the next 80 ms tick (that alone cost up to 80 ms on every
@@ -98,10 +105,13 @@ RunService:BindToRenderStep("NinjaDuelCamera",Enum.RenderPriority.Camera.Value,f
 		local dir=input:direction(workspace.CurrentCamera)
 		presentation.inputDir=dir;presentation.inputSprint=input.sprinting
 		presentation:observeStick(os.clock())
-		local changed=lastDir==nil or (dir-lastDir).Magnitude>.15 or input.sprinting~=lastSprint
+		local flatLook=workspace.CurrentCamera.CFrame.LookVector*Vector3.new(1,0,1)
+		local turned=not camera.locked and flatLook.Magnitude>.05 and (lastLook==nil or (flatLook.Unit-lastLook).Magnitude>.06)
+		local changed=lastDir==nil or (dir-lastDir).Magnitude>.15 or input.sprinting~=lastSprint or turned
 		if (changed and os.clock()-lastSentAt>=1/30) or os.clock()>=nextMove then
 			lastSentAt=os.clock()
 			nextMove=os.clock()+0.08;lastDir=dir;lastSprint=input.sprinting
+			if flatLook.Magnitude>.05 then lastLook=flatLook.Unit end
 			send("Move",dir)
 		end
 	end

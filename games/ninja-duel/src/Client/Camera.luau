@@ -41,7 +41,9 @@ local function solid(part)
 end
 Camera.solid=solid
 function Camera.new()
-	local self=setmetatable({locked=true,look=Vector2.zero,yaw=0,pitch=.22,lastEpoch=-1,lastHealth=nil,lastEnemyHealth=nil,
+	-- (DEC-031, user 03/11: "on est sur du Storm total") Free by default:
+	-- the mouse turns the lens, SHIFT locks on.
+	local self=setmetatable({locked=false,look=Vector2.zero,yaw=0,pitch=.22,lastEpoch=-1,lastHealth=nil,lastEnemyHealth=nil,
 		shakeUntil=0,shakeSize=0,fovKick=0,focus=nil,boomAngle=nil,distance=nil,rng=Random.new(),zoom=0,mode=nil},Camera)
  local UIS=game:GetService("UserInputService")
  -- Right mouse owns the heavy attack, so orbit and zoom are always live
@@ -107,8 +109,15 @@ function Camera:impulse(style,role,impact)
 	local SETTLE={finisher=1.6,launcher=1.2,slam=2.4,wallbounce=2.4,wall=1.4,clash=1.4,repel=1.8,parry=1.4,fire=2}
 	if SETTLE[style] then self.settleSize=math.max(if now<(self.settleUntil or 0) then self.settleSize or 0 else 0,SETTLE[style]);self.settleUntil=now+.75 end
 end
+function Camera:mouse(data)
+	local UIS=game:GetService("UserInputService")
+	local free=data~=nil and data.phase=="Duel" and not self.locked and not data.gamepad and not self.menuOpen
+	local want=if free then Enum.MouseBehavior.LockCenter else Enum.MouseBehavior.Default
+	if UIS.MouseBehavior~=want then UIS.MouseBehavior=want end
+end
 function Camera:update(data,dt)
 	local camera=workspace.CurrentCamera
+	pcall(self.mouse,self,data)
 	-- Roster, online queue and fighter pick: no duel on screen yet.
 	if not data or (data.phase~="Duel" and data.phase~="Result") or not data.human or not data.bot then
 		self.lastHealth=nil; self.lastEnemyHealth=nil; camera.FieldOfView=70
@@ -127,6 +136,7 @@ function Camera:update(data,dt)
 	if not root then return end
 	camera.CameraType=Enum.CameraType.Scriptable
 	local fresh=self.lastEpoch~=data.epoch
+	if fresh then self.faceOpponent=true end
 	if fresh then self.lastHealth=data.human.health; self.lastEnemyHealth=data.bot.health;self.yaw=0;self.pitch=.22;self.focus=nil;self.boomAngle=nil;self.distance=nil;self.sprint=0;self.wasSprinting=false;self.lastImpactSerial=data.human.impactSerial or 0 end
 	-- Fallback only: the impact-style impulse above owns normal reactions.
 	-- Only a new contact counts: a health drain (curse mark) carries a stale
@@ -196,6 +206,7 @@ function Camera:update(data,dt)
 	elseif lost and self.locked then
 		desiredAngle=self.fogYaw or self.boomAngle or 0
 	else
+		if self.faceOpponent then self.yaw=math.atan2(behind.X,behind.Z);self.boomAngle=nil;self.faceOpponent=nil end
 		desiredAngle=self.yaw
 	end
 	if not self.boomAngle then self.boomAngle=desiredAngle end
@@ -226,7 +237,10 @@ function Camera:update(data,dt)
 		self.lead=(self.lead or Vector3.zero):Lerp(lead,1-math.exp(-dt*4))
 		targetFocus+=self.lead
 	end
-	if not follow then targetFocus=a+Vector3.new(0,1.6,0) end
+	if not follow then
+		local look=Vector3.new(-boom.X,0,-boom.Z)
+		targetFocus=a+Vector3.new(0,1.6,0)+(if look.Magnitude>.05 then look.Unit:Cross(Vector3.yAxis)*1.7 else Vector3.zero)
+	end
 	local focusRate=if aerial or pursuit then 13 else 9
 	self.focus=if self.focus then self.focus:Lerp(targetFocus,1-math.exp(-dt*focusRate)) else targetFocus
 	local focus=self.focus
@@ -234,9 +248,13 @@ function Camera:update(data,dt)
 	-- K.O.: a slow drift around the finish while the lens eases out.
 	if data.ko then self.yaw+=dt*.3 end
 	local spread=math.min(math.max(0,separation-7),19)*.42+math.max(0,separation-26)*.22
-	local wantDistance=math.clamp(frame.distance-sprint*1.5+spread+vertical*.3+self.zoom+(self.settleSize or 0)*math.sin(settle*math.pi*.5)+(if data.ko then 6 else 0),8.5,48)
+	-- Free, the lens follows the player, not the pair: no pull-back for the gap
+	-- to the opponent (a wall run 40 studs from him filmed the player tiny).
+	local pairVertical=vertical
+	if not follow then spread=0;pairVertical=0 end
+	local wantDistance=math.clamp(frame.distance-sprint*1.5+spread+pairVertical*.3+self.zoom+(self.settleSize or 0)*math.sin(settle*math.pi*.5)+(if data.ko then 6 else 0),8.5,48)
 	self.distance=if self.distance then self.distance+(wantDistance-self.distance)*(1-math.exp(-dt*4)) else wantDistance
-	local height=frame.height-sprint*.6+self.pitch*9+vertical*.28+math.min(math.max(0,separation-10)*.1,4)
+	local height=frame.height-sprint*.6+self.pitch*9+(if follow then vertical*.28+math.min(math.max(0,separation-10)*.1,4) else 0)
 	if slam then height+=math.clamp(-(data.human.velocity and data.human.velocity.Y or 0)*.04,0,4) end
 	local desired=focus+boom*self.distance+Vector3.new(0,height,0)
 	-- Match intro: a slow orbit that presents both fighters, then the normal

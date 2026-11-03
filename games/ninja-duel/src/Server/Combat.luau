@@ -1681,6 +1681,12 @@ function Combat:updateActor(a,dt)
 	if a.locked and (a.state=="Neutral" or a.state=="Guarding") then
 		a.hum.AutoRotate=false
 		self:faceLocked(a,dt)
+	elseif not a.locked and a.look and (a.state=="Neutral" or a.state=="Guarding") and not a.airborne then
+		-- (DEC-031, user 03/11: "Storm total") Free: the body faces where the
+		-- player looks (the mouse turns the lens, as Roblox's shift lock); the
+		-- stick strafes. Strikes and jutsu then go where he looks.
+		a.hum.AutoRotate=false
+		self:turnToward(a,a.look,dt,1080)
 	else a.hum.AutoRotate=not a.locked end
 	-- (DEC-031, the user's own play 03/11: his own recoveries were most of
 	-- his "freezes", the stick held and the body planted) Past the cancel

@@ -343,6 +343,10 @@ function Matches:act(s,actor,payload,clock)
 		if not vector(payload.direction) or payload.direction.Magnitude>1.01 or math.abs(payload.direction.Y)>0.01 then return end
 		actor.move=payload.direction; actor.lastMove=clock
 		if type(payload.sprint)=="boolean" then actor.sprinting=payload.sprint end
+		-- (DEC-031) Free (not locked on), the body faces where the player looks.
+		if payload.look~=nil then
+			if vector(payload.look) and math.abs(payload.look.Y)<=.01 and payload.look.Magnitude>.9 and payload.look.Magnitude<1.01 then actor.look=payload.look end
+		end
 		if type(payload.locked)=="boolean" then
 			if actor.locked~=payload.locked then require(script.Parent.Brawler).event(s.combat,actor,if payload.locked then "Lock" else "Unlock") end
 			actor.locked=payload.locked

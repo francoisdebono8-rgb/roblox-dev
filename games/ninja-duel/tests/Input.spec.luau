@@ -346,6 +346,30 @@ test("B01 (audit 03/11, a French Mac): on AZERTY every text names the key printe
  assert(not C.useLayout(function(code) return code.Name end),"a QWERTY layout was rewritten")
  assert(C.KeyLabel.Dodge=="Q")
 end)
+test("DEC-031: free (not locked on), the body faces where the player looks; the look is validated like the stick",function()
+ local c,a,b=H.duel("Lion","Mirage")
+ c:relocate(a,V.new(0,3,10));c:relocate(b,V.new(0,3,-10))
+ a.root.CFrame=H.C.lookAt(a.root.Position,b.root.Position)
+ local player={};local s=c.match;s.epoch=1;s.combat=c;s.human=a;s.bot=b;s.bucket={tokens=100,time=os.clock()}
+ local matches=setmetatable({sessions={[player]=s}},Matches)
+ for _,bad in {V.new(0,1,0),V.new(3,0,0),V.new(0/0,0,0)} do
+  AntiCheat.clear(a)
+  matches:request(player,{action="Move",epoch=1,direction=V.zero,locked=false,look=bad})
+  assert(a.look==nil,"a malformed look was kept")
+ end
+ AntiCheat.clear(a)
+ matches:request(player,{action="Move",epoch=1,direction=V.zero,locked=false,look=V.new(1,0,0)})
+ assert(a.locked==false and a.look and a.look.X>.99,"the look was not kept")
+ for _=1,60 do H.step(c,.01) end
+ local face=a.root.CFrame.LookVector
+ assert(face.X>.9,string.format("free, the body did not turn where he looks (%.2f, %.2f)",face.X,face.Z))
+ -- locked on, the opponent wins again
+ AntiCheat.clear(a)
+ matches:request(player,{action="Move",epoch=1,direction=V.zero,locked=true})
+ for _=1,80 do H.step(c,.01) end
+ face=a.root.CFrame.LookVector
+ assert(face.Z<-.9,string.format("locked on, the body did not face him (%.2f, %.2f)",face.X,face.Z))
+end)
 test("B04 (audit 03/11, the user's own play): key 5 with four techniques does nothing quietly, no UNKNOWN ACTION on screen",function()
  for _,id in {"Flashstep","Mirage","GentleFist","Lion","Sand","Leaf","Legion","Copycat"} do
   local c,a,b=H.duel(id,"Mirage");local send=remote(c,a,b)
