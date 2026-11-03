@@ -617,6 +617,10 @@ return {
 	-- lock's own turn in neutral, and while moving away or sprinting (was
 	-- 760 / 540).
 	Facing = {Startup = 480, Active = 160, Neutral = 520, Committed = 420},
+	-- Free lens: a blow starting this close turns to the opponent at Rate (deg/s).
+	-- (900: the startup's bounded turn, CombatFeel; standing near him the free
+	-- body already faces him, Combat.updateActor)
+	SoftLock = {Reach = 13, Rate = 900, Face = 12},
 	-- (Continuity blocker) A chase heads for the point the body was going to
 	-- and lets it drift at Steer studs/s; it turns at Turn degrees/s.
 	Chase = {Steer = 60, Turn = 720},
@@ -4550,7 +4554,7 @@ return {
       <Item class="StringValue" referent="ND26">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">3986cdc1f9f88729e30aee9900ff2a7f68a2fcddb6e05940a9b861913166135a</string>
+          <string name="Value">e873f9a73281cd912e64979e8fd6dd11d8b2af5c2568a9c3a7bd58c934381396</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND27">
@@ -7178,7 +7182,15 @@ function Brawler.start(c,a,name)
  a.travelRemaining=spec.travel
  local flat=a.root.CFrame.LookVector*Vector3.new(1,0,1)
  local delta=a.target.root.Position-a.root.Position;delta=delta*Vector3.new(1,0,1)
- if delta.Magnitude&gt;.1 and delta.Magnitude&lt;11 and (flat:Dot(delta.Unit)&gt;.55 or a.locked) then flat=delta.Unit end
+ -- (Soft lock, user 03/11: free lens, blows thrown at the air behind him)
+ -- not locked on, a blow started within SoftLock.Reach steps at him too.
+ local soft=a.playerInput and not a.locked and Config.SoftLock
+ if delta.Magnitude&gt;.1 and delta.Magnitude&lt;(if soft then soft.Reach else 11) and (flat:Dot(delta.Unit)&gt;.55 or a.locked or soft) then
+  -- (the line is the one he stood on at the press: a body that moves after
+  -- it is not chased round, Embodiment)
+  if soft and flat:Dot(delta.Unit)&lt;math.cos(math.rad(40)) then a.pending.softDir=delta.Unit end
+  flat=delta.Unit
+ end
  -- The lock stays on the real fighter, but an opener pushed at one of his
  -- bodies (a shadow clone in reach) swings at it (Bodies.aim; Combat turns
  -- and steps toward it).
@@ -12036,6 +12048,13 @@ function Combat:updateActor(a,dt)
 		-- stick strafes. Strikes and jutsu then go where he looks.
 		a.hum.AutoRotate=false
 		self:turnToward(a,a.look,dt,1080)
+	elseif a.playerInput and not a.locked and not a.look and a.state=="Neutral" and not a.airborne and a.target
+		and (not a.move or Vector3.new(a.move.X,0,a.move.Z).Magnitude&lt;.3)
+		and (a.target.root.Position-a.root.Position).Magnitude&lt;Config.SoftLock.Face then
+		-- (Soft lock, free lens on the pad) standing near him, the body
+		-- faces him: the next blow starts at him; moving, it faces its way.
+		a.hum.AutoRotate=false
+		self:turnToward(a,a.target.root.Position-a.root.Position,dt,Config.Facing.Neutral)
 	else a.hum.AutoRotate=not a.locked end
 	-- (DEC-031, the user's own play 03/11: his own recoveries were most of
 	-- his "freezes", the stick held and the body planted) Past the cancel
@@ -12207,7 +12226,14 @@ function Combat:updateActor(a,dt)
   -- A locked strike starting up to 11 studs out turns into the opponent here
   -- (Brawler.start no longer snaps the body round in one frame).
   -- (The wall dive owns its own turn, above.)
-  if flat.Magnitude&gt;2 and flat.Magnitude&lt;(if a.state=="Startup" and a.locked then 11 else 9) and attack.name~="WallDive" then
+  -- (Soft lock, user 03/11, his own play in the free lens: Light1 thrown
+  -- 164-179 deg away from Itachi, four strikes in five in the air) Not
+  -- locked on, a strike starting within SoftLock.Reach turns to him, even
+  -- from behind, over its startup.
+  if not a.locked and a.state=="Startup" and attack.softDir then
+   self:turnToward(a,attack.softDir,dt,Config.SoftLock.Rate)
+  end
+  if flat.Magnitude&gt;2 and flat.Magnitude&lt;(if a.state=="Startup" and a.locked then 11 else 9) and attack.name~="WallDive" and not (attack.softDir and a.state=="Startup") then
    local tangent=Vector3.new(-flat.Z,0,flat.X).Unit
    local spec=attack.spec
    if spec.orbit and a.state~="Recovery" then
@@ -17894,7 +17920,8 @@ function Matches:act(s,actor,payload,clock)
 		actor.move=payload.direction; actor.lastMove=clock
 		if type(payload.sprint)=="boolean" then actor.sprinting=payload.sprint end
 		-- (DEC-031) Free (not locked on), the body faces where the player looks.
-		if payload.look~=nil then
+		if payload.look==false then actor.look=nil end
+		if payload.look~=nil and payload.look~=false then
 			if vector(payload.look) and math.abs(payload.look.Y)&lt;=.01 and payload.look.Magnitude&gt;.9 and payload.look.Magnitude&lt;1.01 then actor.look=payload.look end
 		end
 		if type(payload.locked)=="boolean" then
@@ -43667,10 +43694,14 @@ local function send(action,extra)
   if input then payload.direction=input:direction(workspace.CurrentCamera);payload.sprint=input.sprinting end
  end
 	if action=="Move" then payload.direction=extra; payload.locked=camera.locked; payload.sprint=input and input.sprinting or false
-		if not camera.locked then
+		-- (DEC-031) Free with the mouse: the body faces where the player looks
+		-- (shift lock). Free with the pad (user 03/11, his own play: strikes
+		-- thrown at the air behind him): the body faces where it goes, and the
+		-- blows turn to the opponent (Combat soft lock).
+		if not camera.locked and not (input and input.pad) then
 			local look=workspace.CurrentCamera.CFrame.LookVector*Vector3.new(1,0,1)
 			if look.Magnitude&gt;.05 then payload.look=look.Unit end
-		end
+		elseif not camera.locked then payload.look=false end
 	elseif type(extra)=="table" then for k,v in extra do payload[k]=v end
 	elseif action=="Tool" or string.match(action,"^Technique") then
 		local gamepad=input and input.pad
