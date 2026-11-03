@@ -4352,7 +4352,7 @@ return {
       <Item class="StringValue" referent="ND25">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">b503b99ff9a5a91cd08d7684025ed355db16a20a5396d893295fe0c937967d5c</string>
+          <string name="Value">4a03372d21908a75d0b58a05626c927dadb24ddae9d5495098a97331bccb574e</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND26">
@@ -13377,8 +13377,8 @@ return Families
 --     anyone (if the filter cannot run, the report is refused, never kept raw);
 --   * it is kept in a DataStore (NinjaDuelFeedback_v1), newest first through
 --     an ordered index, so nothing depends on an outside service;
---   * if the experience has a secret named "feedback_webhook" (the path of a
---     Discord webhook, see docs/active/FEEDBACK.md), a copy is posted to the
+--   * if the experience has a secret named "feedback_webhook" (a Discord
+--     webhook URL, see docs/active/FEEDBACK.md), a copy is posted to the
 --     Discord's reports channel. Without the secret, or if Discord refuses,
 --     the report is still kept.
 -- In Studio, ServerStorage.NinjaDuelFeedback:Invoke("list", n) returns the n
@@ -13418,12 +13418,13 @@ local function filtered(text,userId)
 	return nil
 end
 
+-- The secret holds the whole webhook URL. Discord refuses requests coming
+-- from live Roblox servers (they work from Studio only), so in the live game
+-- the URL is a webhook relay's (same path, another host): see
+-- docs/active/FEEDBACK.md. The URL never appears in the code or the place.
 local function webhookUrl()
 	local ok,secret=pcall(function() return HttpService:GetSecret("feedback_webhook") end)
-	if not ok or not secret then return nil end
-	local built
-	ok=pcall(function() built=secret:AddPrefix("https://discord.com/api/webhooks/") end)
-	if ok then return built end
+	if ok and secret then return secret end
 	return nil
 end
 

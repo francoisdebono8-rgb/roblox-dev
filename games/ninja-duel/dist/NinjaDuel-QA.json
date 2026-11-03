@@ -1,7 +1,7 @@
 {
   "version": "0.13.0-arena-combo",
   "artifact": "NinjaDuel-QA.rbxlx",
-  "sha256": "fa00a26291f282e981bfa825a4bf1a3c74e70b46445fa9e8e22233d8ff811fbf",
+  "sha256": "0e727bce8f712854b69c428d960601c293fcc70d02800c6f01a912334c45b5f3",
   "sources": {
     "src/Client/ArenaDress.luau": "bd92aa3bf3c37a36fd9d2b1f02971921d9c5e981788abe9594a098425bf3cb0e",
     "src/Client/AuthoredClips.luau": "d748c22ae9fa394c9918123816c03d4e21e1f7064830b37c14b54922c5262cd7",
@@ -120,7 +120,7 @@
     "src/Server/DonorAnimations.luau": "50719f41e0a008f2f5a5a1efeff53c2dde53d51de36b4c98c00bab51a5dbdf32",
     "src/Server/Elements.luau": "9649bbdadd668229b9c6c967ef0050af7717f3491079cbe2f76bc9052e10c5cb",
     "src/Server/Families.luau": "2fc434a0a9d5be5187dd54b587ff626d66b5cbab7ee3b8c06a99f5f98f434d7d",
-    "src/Server/Feedback.luau": "29249c20b7e316eed41ae410be9fe06b245fb9a3f06b413300d2efaba85a9f53",
+    "src/Server/Feedback.luau": "662126f2c33f522dcf606b5266d3c906075b82536bf6fe53e29fc9887fb459e7",
     "src/Server/Gale.luau": "72e522c39066b58a86331760fca45e869226fe3b3c36163253a569b310f96f39",
     "src/Server/Interactions.luau": "c9b70100ef1651a5436300359e578e313a8576c42340e75390ab218d49bce5c9",
     "src/Server/Legion.luau": "39fc3f133ce73915e123ae1833e33afeb06ed331b684c125cfaf65f373961094",
@@ -179,7 +179,7 @@
   },
   "sourceEquality": "PASS",
   "debugOnly": true,
-  "buildFingerprint": "b5b30fd446a02b8bfc443238285a5cb513b106f722df4b3ec6159d57184addfb",
+  "buildFingerprint": "060cf346ba651506b985c7cc1ee3891955f10c8837a6b08ca2f64262c916427c",
   "donorAssets": {
     "assets/BanglaAssets.rbxmx": "6e99f5f67e6c34ac8a81d739431554b1495f0f5cd1dd1870a39eeb8bf23e1983"
   },
