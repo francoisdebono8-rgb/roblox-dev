@@ -156,13 +156,16 @@ function Context.stick(move,line,tune)
 end
 -- The air dive (Brawler.airDive): high above a grounded body and out of the
 -- first air swing's reach, the air opener is the lunge down onto him.
-Context.AirDive={Above=3,AboveMax=26,Near=3.5,Far=18}
+-- (Audit 03/11, B02) Straight above his head (a jump in place next to him:
+-- 15 studs up, 1-3 away) the air swing passed over him too: from Overhead
+-- up, a body that close is dived on as well.
+Context.AirDive={Above=3,AboveMax=26,Near=3.5,Far=18,Overhead=6}
 function Context.airDive(myPos,targetPos)
 	local d=targetPos-myPos
 	local h=flat(d).Magnitude
 	local above=-d.Y
 	local T=Context.AirDive
-	return above&gt;=T.Above and above&lt;=T.AboveMax and h&gt;=T.Near and h&lt;=T.Far
+	return above&gt;=T.Above and above&lt;=T.AboveMax and (h&gt;=T.Near or above&gt;=T.Overhead) and h&lt;=T.Far
 end
 
 -- graph: the fighter's MoveGraphs entry (may be nil); attacks: the Attacks
@@ -542,6 +545,11 @@ return {
 	-- Damage scaling inside one combo: the first hits land in full, every later
 	-- hit is worth less, and a combo that runs too long ends in a knockdown.
 	ComboScaling = {Free = 2, Step = 0.12, Floor = 0.35, Reset = 0.45, MaxHits = 11},
+	-- (User 03/11: "les combats trop courts") Every blow's damage is scaled by
+	-- this as it lands (Combat:damage, Combat:chip): the HP of the story stay,
+	-- the rounds last longer (AI against AI: 42 s average at 1.0). The
+	-- impact's look still reads the blow's own weight (unscaled).
+	DamageScale = 0.6,
 	Clash = {Window = 0.07, Push = 4.5},
 	-- Re-engage (CORE_COMBAT_CONVERGENCE_2 §3): one contextual action (E; on a pad
 	-- × inside a chase window, sprint + ○ toward outside one). Inside a window it
@@ -757,6 +765,40 @@ function Controls.comboHelp(graph,pad)
  if #air&gt;0 then table.insert(parts,"Air hit + "..light.." → "..table.concat(air," / ")) end
  if graph.disengage then table.insert(parts,"away + "..tool.." in string: retreat") end
  return table.concat(parts,"  ·  ")
+end
+-- (Studio audit 03/11, a French Mac: bug B01) Roblox reads letter keys by
+-- their place on the keyboard (KeyCode.W is the key left of E), so on an
+-- AZERTY keyboard the dodge (KeyCode.Q) is the key labelled A and the
+-- chakra (KeyCode.Z) the one labelled W, while the help, the HUD and the
+-- tutorial said "Q dodge", "hold Z": the player pressed Q and moved left.
+-- The client reads its own labels (UserInputService:GetStringForKeyCode)
+-- and every text naming a key is shown with them.
+local LETTERS={"W","A","S","D","Q","Z","E","F","V","R","X","G","T","Y","B","C"}
+function Controls.localize(text,map)
+	map=map or Controls.layout
+	if not map or type(text)~="string" then return text end
+	text=text:gsub("%f[%w]WASD%f[%W]",function() return (map.W or "W")..(map.A or "A")..(map.S or "S")..(map.D or "D") end)
+	-- "A" alone is the article ("RASENGAN • A CLONE FOR IT"): no text names
+	-- the left key by itself, only inside WASD.
+	return (text:gsub("%f[%w](%u)%f[%W]",function(c) return if c=="A" then c else map[c] or c end))
+end
+-- stringFor(KeyCode) -&gt; the label on this keyboard. Returns true when the
+-- layout differs from the one the texts are written for (QWERTY).
+function Controls.useLayout(stringFor)
+	local map,changed={},false
+	for _,k in LETTERS do
+		local ok,label=pcall(stringFor,Enum.KeyCode[k])
+		if ok and type(label)=="string" and #label==1 then
+			map[k]=string.upper(label)
+			if map[k]~=k then changed=true end
+		end
+	end
+	if not changed then return false end
+	Controls.layout=map
+	for action,label in Controls.KeyLabel do Controls.KeyLabel[action]=Controls.localize(label,map) end
+	Controls.Help=Controls.localize(Controls.Help,map)
+	Controls.Grammar=Controls.localize(Controls.Grammar,map)
+	return true
 end
 function Controls.isGamepad(kind)
  return kind~=nil and kind.Name:match("^Gamepad")~=nil
@@ -4386,7 +4428,7 @@ return {
       <Item class="StringValue" referent="ND25">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">ad10d2559444e4e0dc6f09b9edf72039e4ab2a41c100a6402b64bedb814d2dd1</string>
+          <string name="Value">bdf5b7c94c64e07db7e0b2f436e76b847e7bf811953a511566cd0db67fda2259</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND26">
@@ -4496,6 +4538,7 @@ local Bodies=require(script.Parent.Bodies)
 local Zones=require(script.Parent.Zones)
 local Families=require(script.Parent.Families)
 local Perception=require(script.Parent.Perception)
+local Ultimates=require(script.Parent.Ultimates)
 -- Family techniques (roster breadth pass): when one is worth using is read
 -- from its family and its own spec.AI band, never from the fighter's name.
 local function familyWants(self,c,a,target,spec,distance,danger)
@@ -4638,6 +4681,25 @@ function AI:defend(now)
 	-- Low on health: awaken (once per match).
 	if not a.awakened and a.def.Awakening and a.health&lt;=a.def.Health*Config.Awaken.Threshold and not a.reaction and self.rng:NextNumber()&lt;.4 then
 		if c:request(a,"Awaken") then return true end
+	end
+	-- (Audit 03/11, B03) The bot's bar filled and its HUD read ULTIMATE READY,
+	-- but it never fired it. Bar full, the target inside the opener's reach
+	-- and not dodging: it fires it, mostly on an opening, and the longer the
+	-- bar has been full the likelier (own dice, like the kunai: the fight's
+	-- decisions keep their sequence).
+	if not Ultimates.ready(a) then self.ultFullSince=nil
+	elseif a.state=="Neutral" and not a.reaction and not a.airborne and a.target and a.target.root and a.target.health&gt;0 and now&gt;=(self.ultThought or 0) then
+		self.ultFullSince=self.ultFullSince or now
+		self.ultRng=self.ultRng or Random.new(13)
+		local roll=self.ultRng:NextNumber()
+		self.ultThought=now+.6+roll*.9
+		local t=a.target
+		local gap=(t.root.Position-a.root.Position).Magnitude
+		local open=t.state=="Recovery" or t.state=="TechniqueRecovery" or t.state=="Stunned" or t.reaction=="HitStun"
+		local urge=(if open then .75 else .25)+(now-self.ultFullSince)*.12
+		if gap&lt;=Ultimates.def(a).Reach*.8 and t.state~="Dodging" and roll&lt;urge then
+			if c:request(a,"Ultimate") then return true end
+		end
 	end
 	-- Global kunai (DEC-030): the bot draws a blade now and then for the close
 	-- fight (and puts it away again), so the player meets the system too.
@@ -6657,6 +6719,9 @@ function Brawler.guessView(c,a)
   airHoldLeft=math.max(0,(a.airHold or 0)-now),
   -- the sprint dodge at him is the chakra dash when it is available
   locked=a.locked==true,rushReadyLeft=(a.rushReadyAt or 0)-now,freeRushLeft=(a.freeRushUntil or 0)-now,
+  -- (Audit 03/11) inside an ultimate's sequence (cast or held) nothing
+  -- answers: no guess (the bot fires its ultimate now)
+  held=a.ultimateHeld==true or a.ultimateRunning==true,
  }
 end
 -- The closest planted (not flying, not body) seal of Minato's near the target.
@@ -7227,7 +7292,21 @@ function Brawler.request(c,a,action)
     if ok~=false and a.pending and graph.airCloneDrive and a.target and a.target.health&gt;0 then require(script.Parent.Legion).airDrive(c,a,a.target) end
     return ok
    end
-   return Brawler.start(c,a,a.def.AirHeavy or "AirFlip")
+   local move=a.def.AirHeavy or "AirFlip"
+   -- (Audit 03/11, B02) From a jump's height the salto turned in the void
+   -- above a standing body (15 studs over his head): high above him, it
+   -- comes down on him, the heel opening over his head (the Lion Combo's arc).
+   local dive=move=="AirFlip" and Brawler.airDive(c,a)
+   local ok=Brawler.start(c,a,move)
+   if dive and ok~=false and a.pending then
+    local b=a.target
+    local look=b.root.Position-a.root.Position;look=Vector3.new(look.X,0,look.Z)
+    look=if look.Magnitude&gt;.1 then look.Unit else Vector3.new(a.root.CFrame.LookVector.X,0,a.root.CFrame.LookVector.Z).Unit
+    a.root.CFrame=CFrame.lookAt(a.root.Position,a.root.Position+look)
+    a.vault={goal=b.root.Position+Vector3.new(0,2.2,0)-look*2.2,untilTime=c.now+a.pending.spec.startup,serial=a.attackSerial}
+    Brawler.event(c,a,"AirDive")
+   end
+   return ok
   end
   if inChain and a.combo==1 and graph.heavyAfterOne then return Brawler.start(c,a,graph.heavyAfterOne) end
   if inChain and a.combo&gt;=2 then return Brawler.start(c,a,a.def.LauncherMove or "Launcher") end
@@ -9986,6 +10065,12 @@ function Combat:setState(a,state,duration)
 	-- same holds for a re-engage arrival (Brawler.arrive sets it after this).
 	a.chainOpen=false; a.recoveryCancelAt=nil; a.arrivalRecovery=nil
 end
+-- (03/11) Gaara's shield comes back on a clock: with every blow scaled down
+-- (Config.DamageScale, longer rounds) it would come back more often per blow
+-- and he won 82 % of the AI matrix. It slows by the same factor.
+function Combat.shieldRegen(shield)
+	return shield.Regen/(Config.DamageScale or 1)
+end
 -- Strikes that crack Gaara's sand shield outright (the rest each cost a charge).
 local SHIELD_BREAKERS={SandHand=true,SandFist=true,Heavy=true,Launcher=true,Light3=true,Slam=true,KneeStrike=true,FlyingKick=true,PalmThrust=true,CounterPalm=true,WallDive=true,SandPillar=true}
 -- Damage over time (burning ground, a burning wire): chip damage that never
@@ -9997,6 +10082,7 @@ function Combat:chip(attacker,victim,amount)
 	if self.match.phase~="Duel" or self.match.finishing or victim.health&lt;=0 or attacker.health&lt;=0 then return false end
 	if (victim.rotationUntil or 0)&gt;self.now or victim.invulnerableUntil&gt;self.now then return false end
 	if (attacker.awakenUntil or 0)&gt;self.now then amount*=Combat.awakeScale(attacker,"Damage",self.now) end
+	amount*=Config.DamageScale or 1
 	victim.health=math.max(0,victim.health-amount); victim.hum.Health=math.max(1,victim.health)
 	if self.damageLog then table.insert(self.damageLog,{t=self.now,by=attacker.fighterId,amount=amount,tag=self.damageTag or "chip",hits=victim.comboHits}) end
 	if victim.health&lt;=0 then
@@ -10064,7 +10150,7 @@ function Combat:damage(attacker,victim,amount,heavy,readEligible)
 		-- (Combat.shieldBreak, set around the damage: Temari's scythe and gust).
 		breaking=breaking or self.shieldBreak==true
 		victim.shieldCharges=if breaking then 0 else victim.shieldCharges-1
-		victim.shieldRegenAt=self.now+shield.Regen
+		victim.shieldRegenAt=self.now+Combat.shieldRegen(shield)
 		-- The sand absorbs the blow but the string keeps its rhythm: pressing on
 		-- (light, light, third hit) is how the shield is cracked.
 		attacker.hitConfirmed=true
@@ -10143,8 +10229,11 @@ function Combat:damage(attacker,victim,amount,heavy,readEligible)
 		local tune=Config.ComboScaling
 		local n=victim.comboHits or 0
 		if n&gt;=tune.Free then amount*=math.max(tune.Floor,1-tune.Step*(n-tune.Free+1)) end
-		victim.comboHits=n+1;victim.comboDamage=(victim.comboDamage or 0)+amount;victim.comboBy=attacker
 	end
+	-- The blow's own weight, for its look (impact style, heavy flag) below.
+	local weight=amount
+	amount*=Config.DamageScale or 1
+	if not guarded then victim.comboHits=(victim.comboHits or 0)+1;victim.comboDamage=(victim.comboDamage or 0)+amount;victim.comboBy=attacker end
 	victim.lastHurt=self.now
 	-- Both bodies fill their ultimate bar (Server/Ultimates).
 	Ultimates.gain(self,attacker,victim,amount)
@@ -10153,8 +10242,8 @@ function Combat:damage(attacker,victim,amount,heavy,readEligible)
 	Families.afterHit(self,attacker,victim,amount,guarded)
 	-- Studio tooling only: where damage comes from, to tune fight length.
 	if self.damageLog then table.insert(self.damageLog,{t=self.now,by=attacker.fighterId,amount=amount,tag=self.damageTag or "other",hits=victim.comboHits}) end
-	victim.impactSerial=(victim.impactSerial or 0)+1; victim.impactHeavy=heavy or amount&gt;=12
-	local style=(if guarded then "block" elseif heavy and amount&gt;=16 then "slam" elseif heavy then "launcher" elseif amount&gt;=20 then "finisher" else "light")
+	victim.impactSerial=(victim.impactSerial or 0)+1; victim.impactHeavy=heavy or weight&gt;=12
+	local style=(if guarded then "block" elseif heavy and weight&gt;=16 then "slam" elseif heavy then "launcher" elseif weight&gt;=20 then "finisher" else "light")
 	victim.impactStyle=style
 	victim.impactAt=self.now
 	-- Direction and weight of the contact so the victim's body can answer the
@@ -10173,7 +10262,7 @@ function Combat:damage(attacker,victim,amount,heavy,readEligible)
 		victim.hitFrom=Vector3.zAxis
 		victim.hitAngle=0
 	end
-	victim.hitStrength=math.clamp(amount/26,0,1)
+	victim.hitStrength=math.clamp(weight/26,0,1)
 	-- Seed the stop; Brawler adds the exact per-move weight once it knows the move.
 	self:applyHitstop(attacker,victim,style,heavy)
 	-- Combat convergence: the spark sits where the blow met the body (the
@@ -10184,7 +10273,7 @@ function Combat:damage(attacker,victim,amount,heavy,readEligible)
 	-- (Reference quality) the client draws the blow along its strike and tints
 	-- the body it struck: who, which way, how hard.
 	self:pushImpact(if self.hitOrigin then victim.root.Position else contactAt,style,victim.impactHeavy,
-		{victim=victim.id,direction=-(victim.hitFrom or Vector3.zero),amount=amount,guarded=guarded})
+		{victim=victim.id,direction=-(victim.hitFrom or Vector3.zero),amount=weight,guarded=guarded})
 	Brawler.event(self,attacker,"Damage"); if guarded then Brawler.event(self,victim,"GuardHit") end
 	self:effect("Impact",if self.hitOrigin then victim.root.Position else contactAt,if guarded then Color3.fromRGB(221,203,152) else attacker.color,Vector3.new(2,2,2),0.12)
 	if heavy and not guarded and victim.health&gt;0 then
@@ -11316,7 +11405,7 @@ function Combat:updateActor(a,dt)
 	if a.def.SandShield and a.shieldCharges&lt;a.def.SandShield.Charges and now&gt;=(a.shieldRegenAt or 0) then
 		a.shieldCharges+=1
 		local rate=if (a.awakenUntil or 0)&gt;now then (a.def.Awakening.ShieldRegen or 1) else 1
-		a.shieldRegenAt=now+a.def.SandShield.Regen/rate
+		a.shieldRegenAt=now+Combat.shieldRegen(a.def.SandShield)/rate
 	end
 	-- (x the wind: walking into a lane is slower, with it faster, Zones.speedScale;
 	-- x buffs and slows, Families.speedScale)
@@ -11566,7 +11655,14 @@ function Combat:updateActor(a,dt)
 		-- frame; the crouched beat now swings the body round.)
 		if flat.Magnitude&gt;.1 then self:turnToward(a,flat,dt,2400) end
 		if a.state=="Active" and delta.Magnitude&gt;2.8 then
-			a.aimIntent={target=a.target.root.Position-delta.Unit*2.4,speed=92,acceleration=2600}
+			-- (Audit 03/11, B02) From straight above, the lunge ends beside him
+			-- on this side, not on top of his head.
+			local goal=a.target.root.Position-delta.Unit*2.4
+			if flat.Magnitude&lt;2.4 then
+				local side=if flat.Magnitude&gt;.1 then flat.Unit else Vector3.new(a.root.CFrame.LookVector.X,0,a.root.CFrame.LookVector.Z).Unit
+				goal=a.target.root.Position-side*2.4
+			end
+			a.aimIntent={target=goal,speed=92,acceleration=2600}
 		end
 	elseif a.state=="Startup" and a.vault and a.vault.serial==a.attackSerial and now&lt;a.vault.untilTime+.05 then
 		-- (Continuity blocker) A vault over the body (the Lion Combo's flip):
@@ -13869,7 +13965,7 @@ end
 function Interactions.fireOnSand(c,p,victim)
 	if not isFire(p) or not victim.def.SandShield or (victim.shieldCharges or 0)&lt;=0 then return end
 	victim.shieldCharges-=1
-	victim.shieldRegenAt=c.now+victim.def.SandShield.Regen
+	victim.shieldRegenAt=c.now+require(script.Parent.Combat).shieldRegen(victim.def.SandShield)
 	c:pushImpact(victim.root.Position,"sandmelt",false,{owner=victim.id})
 	c:cue(victim,"FIRE • THE SAND MELTS",.6)
 end
@@ -40841,6 +40937,12 @@ local player=Players.LocalPlayer
 local shared=game:GetService("ReplicatedStorage"):WaitForChild("NinjaDuel")
 local remote=shared:WaitForChild("Action")
 pcall(function() game:GetService("StarterGui"):SetCoreGuiEnabled(Enum.CoreGuiType.Health,false); game:GetService("StarterGui"):SetCoreGuiEnabled(Enum.CoreGuiType.Chat,false); game:GetService("StarterGui"):SetCoreGuiEnabled(Enum.CoreGuiType.PlayerList,false) end)
+-- (Audit B01) Key names as printed on this keyboard (AZERTY: ZQSD to move,
+-- A to dodge), before any text that names a key is built.
+pcall(function()
+	local UIS=game:GetService("UserInputService")
+	require(shared:WaitForChild("Controls")).useLayout(function(code) return UIS:GetStringForKeyCode(code) end)
+end)
 local UI=require(script.Parent.UI)
 local Input=require(script.Parent.Input)
 local Camera=require(script.Parent.Camera)
@@ -41890,7 +41992,7 @@ function Presentation:dashes(h,v,data,dt)
 end
 function Presentation:predictMove(action,data,ahead)
 	local h=data and data.human
-	if not h or h.wall or h.groundPose or (h.health or 1)&lt;=0 then return end
+	if not h or h.wall or h.groundPose or (h.health or 1)&lt;=0 or (h.guess and h.guess.held) then return end
 	if h.reaction and action~="Dodge" then return end
 	local now=os.clock()
 	ahead=ahead or self:pressAhead(data)
@@ -42169,7 +42271,12 @@ function Presentation:guessAir(action,v,def,graph,data,now)
 		airCombo=0
 		local me,them=self:guessRoots()
 		if not me or not them then return nil end
-		if targetUp and not bot.airborne and ActionContext.airDive(me,them) then return "WallDive" end
+		-- (Audit 03/11) Only the flat motion is read ahead, and the body falls
+		-- through the trip: near the edge of the dive's height (a few studs
+		-- lower changes the answer), the server decides alone.
+		local dive=ActionContext.airDive(me,them)
+		if targetUp and not bot.airborne and dive~=ActionContext.airDive(me-Vector3.new(0,3,0),them) then return nil end
+		if targetUp and not bot.airborne and dive then return "WallDive" end
 		local move,known=self:situational(data,def,graph,now)
 		if not known then return nil end
 		if move and Attacks[move] and move==(((graph.context or {}).drop) or "DropStrike") then return move end
@@ -42178,7 +42285,7 @@ function Presentation:guessAir(action,v,def,graph,data,now)
 end
 function Presentation:predictStrike(action,data,now,ahead)
 	local h=data and data.human
-	if not h or h.reaction or h.wall or h.groundPose or (h.health or 1)&lt;=0 then return end
+	if not h or h.reaction or h.wall or h.groundPose or (h.health or 1)&lt;=0 or (h.guess and h.guess.held) then return end
 	local g=h.guess or {}
 	-- (É7) branches ahead of the strike the client leaves to the server: a
 	-- held body state, a teleport's arrival strike, a grab's throw, a blade
@@ -43496,8 +43603,10 @@ function UI.new(parent,send)
 	self.hud=frame(self.gui,UDim2.fromScale(0,0),UDim2.fromScale(1,1),palette.ink,1)
 	local hudScale=create("UIScale",self.hud,{Scale=1})
 	-- (Look pass 03/11) The fight screen's own grade, under every HUD element:
-	-- a soft ink vignette at the edges; a red one that throbs in danger; anime
-	-- speed lines streaming in from the edges at a sprint or a dash.
+	-- a soft ink vignette at the edges; a red one that throbs in danger.
+	-- (User 03/11: the speed lines streaming in from the screen edges at a
+	-- run "drive me crazy". They showed while the dash recharged too, so
+	-- nearly all the time: removed.)
 	self.screenFx=frame(self.gui,UDim2.fromScale(0,0),UDim2.fromScale(1,1),palette.ink,1)
 	self.screenFx.ZIndex=0
 	local function edges(color,parent,strength)
@@ -43513,12 +43622,6 @@ function UI.new(parent,send)
 	edges(Color3.fromRGB(10,8,14),self.vignette,.38)
 	self.danger=create("CanvasGroup",self.screenFx,{Size=UDim2.fromScale(1,1),BackgroundTransparency=1,GroupTransparency=1})
 	edges(Color3.fromRGB(200,20,30),self.danger,.8)
-	self.speedLines={}
-	for k=1,22 do
-		local line=frame(self.screenFx,UDim2.fromScale(.5,.5),UDim2.fromOffset(220,2),palette.paper,1)
-		line.AnchorPoint=Vector2.new(0,.5)
-		self.speedLines[k]=line
-	end
 	self.hudScale=hudScale
 	-- (UI redesign 02/11) The duel plates in the menu's language: the fighter's
 	-- face in an ink medallion with a ring of his colour at the outer corner,
@@ -43827,7 +43930,7 @@ function UI:refreshSelection()
 		end
 	end
 	self.matchup.Text=string.upper((p.Name).."  VS  "..(o.Name))
-	self.routeNote.Text=if p.Routes then string.upper(p.Name).." STRINGS  "..p.Routes else ""
+	self.routeNote.Text=if p.Routes then string.upper(p.Name).." STRINGS  "..Controls.localize(p.Routes) else ""
 end
 -- The controls sheet: opened over any screen, built for the device in hand
 -- and the fighter being played.
@@ -44087,7 +44190,7 @@ function UI:render(data)
 	self.hint.Position=UDim2.new(.5,-260,0,if self.tutorialPanel.Visible then 226 else 200)
 	if data.tutorial then
 		self.tutorialTitle.Text=data.tutorial.index.." / "..data.tutorial.total.."  "..data.tutorial.title
-		self.tutorialPrompt.Text=(if pad then data.tutorial.pad else data.tutorial.key).."  •  "..(if pad then "Touchpad to skip" else "ESC to skip")
+		self.tutorialPrompt.Text=(if pad then data.tutorial.pad else Controls.localize(data.tutorial.key)).."  •  "..(if pad then "Touchpad to skip" else "ESC to skip")
 	end
 	local introActive=data.phase=="Duel" and (data.intro or 0)&gt;0
 	self.onlineInfo=data.online
@@ -44222,27 +44325,11 @@ function UI:render(data)
 			pip.fill.BackgroundColor3=if k&lt;=charges then palette.paper else palette.muted
 		end
 	end
-	-- Screen grade: the danger edges throb under a quarter of health; speed
-	-- lines stream in at a sprint, a dash, a chase.
+	-- Screen grade: the danger edges throb under a quarter of health.
 	pcall(function()
 		local t=os.clock()
 		local ratio=math.clamp(h.health/math.max(h.maxHealth,1),0,1)
 		self.danger.GroupTransparency=if ratio&lt;=.25 and ratio&gt;0 then .45+.35*(.5+.5*math.sin(t*5)) else 1
-		local fast=(h.speed or 0)&gt;34 or (h.dodge or 0)&gt;0 or h.state=="Pursuit"
-		local view=workspace.CurrentCamera.ViewportSize
-		for k,line in self.speedLines do
-			if fast then
-				-- Each line flickers to a new spot along an edge every few frames.
-				if (k+math.floor(t*30))%3==0 then
-					local a=(k/#self.speedLines)*math.pi*2+math.sin(t*7+k)*.2
-					local r=.5
-					line.Position=UDim2.fromScale(.5+math.cos(a)*r,.5+math.sin(a)*r*.9)
-					line.Rotation=math.deg(a)+180
-					line.Size=UDim2.fromOffset(math.max(120,view.X*.12)+(k%4)*30,2+(k%2))
-					line.BackgroundTransparency=.35+((k*7)%5)*.1
-				end
-			else line.BackgroundTransparency=1 end
-		end
 	end)
 	-- Combo counters with the damage scale of the next hit.
 	for _,pair in {{self.comboMine,b},{self.comboTheirs,h}} do
@@ -44274,7 +44361,7 @@ function UI:render(data)
 			return if h.armed then "KUNAI DRAWN (R throws it)" else "B: draw kunai"
 		end)())
 	-- Only decisive moments speak; routine cues stay silent.
-	local cue=h.cue or ""
+	local cue=Controls.localize(h.cue or "")
 	local loud=cue:find("READ") or cue:find("PARRY") or cue:find("PERFECT") or cue:find("FLYING THUNDER") or cue:find("GUARD BREAK") or cue:find("WALL ")
 		or cue:find("CLASH") or cue:find("SUBSTITUTION •") or cue:find("SEAL") or cue:find("COMBO LIMIT") or cue:find("GENJUTSU")
 		or cue:find("PALMS") or cue:find("ROTATION") or cue:find("BYAKUGAN") or cue:find("SHARINGAN")
