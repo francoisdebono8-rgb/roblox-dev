@@ -1166,19 +1166,26 @@ test("camera at her range: two bodies 20 to 90 studs apart (one of them up in th
    function character:FindFirstChild(n) if n=="HumanoidRootPart" then return root end return nil end
    character.Parent={FindFirstChild=function() return nil end}
    players.LocalPlayer.Character=character
-   local cam=Camera.new()
-   cam.presentation={visualRoot=function(_,key) return if key=="human" then me else them end,visualVelocity=function() return V.zero end}
-   local data={phase="Duel",epoch=1,human={health=100,impactSerial=0,state="Neutral",airborne=false,speed=0},
-    bot={health=100,state="Neutral",airborne=up>0,position=them,id="AIFighter"}}
-   for _=1,180 do cam:update(data,1/60) end
-   local cf=lens.CFrame
-   local tanV=math.tan(math.rad(lens.FieldOfView/2))
-   local tanH=tanV*16/9
-   for label,point in {me=me,them=them} do
-    local p=cf:PointToObjectSpace(point)
-    assert(p.Z<0,string.format("%d studs: %s is behind the lens",gap,label))
-    local x,y=math.abs(p.X/-p.Z),math.abs(p.Y/-p.Z)
-    assert(x<tanH*.9 and y<tanV*.9,string.format("%d studs (%d up): %s leaves the frame (%.2f, %.2f of %.2f, %.2f)",gap,up,label,x,y,tanH,tanV))
+   -- (DEC-031) Both bodies framed is the lock-on rig's promise (SHIFT / R3);
+   -- the free lens (the default) is the player's own, and only promises to
+   -- open the duel facing him, on screen.
+   for _,locked in {true,false} do
+    local cam=Camera.new()
+    cam.locked=locked
+    cam.presentation={visualRoot=function(_,key) return if key=="human" then me else them end,visualVelocity=function() return V.zero end}
+    local data={phase="Duel",epoch=1,human={health=100,impactSerial=0,state="Neutral",airborne=false,speed=0},
+     bot={health=100,state="Neutral",airborne=up>0,position=them,id="AIFighter"}}
+    for _=1,180 do cam:update(data,1/60) end
+    local cf=lens.CFrame
+    local tanV=math.tan(math.rad(lens.FieldOfView/2))
+    local tanH=tanV*16/9
+    local margin=if locked then .9 else 1
+    for label,point in (if locked then {me=me,them=them} else {them=them}) do
+     local p=cf:PointToObjectSpace(point)
+     assert(p.Z<0,string.format("%d studs (%s): %s is behind the lens",gap,if locked then "locked" else "free",label))
+     local x,y=math.abs(p.X/-p.Z),math.abs(p.Y/-p.Z)
+     assert(x<tanH*margin and y<tanV*margin,string.format("%d studs (%d up, %s): %s leaves the frame (%.2f, %.2f of %.2f, %.2f)",gap,up,if locked then "locked" else "free",label,x,y,tanH,tanV))
+    end
    end
   end
  end)
