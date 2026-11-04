@@ -302,6 +302,8 @@ function Input:direction(camera)
  self:chakraHold()
  -- The current device owns movement; a resting controller cannot steer WASD.
  local stick=if self.pad and self.stick.Magnitude>.15 then self.stick else Vector2.zero
+ -- (04/11) a phone's stick (Client/TouchControls)
+ if stick.Magnitude==0 and self.touchStick and self.touchStick.Magnitude>.15 then stick=self.touchStick end
  -- (Freeze 02/11) The keys drive whenever the stick does not. A connected pad
  -- (a drifting stick, any pad event is enough) switched to "pad" and WASD was
  -- ignored, even held: the body stood still until the key was pressed again.
