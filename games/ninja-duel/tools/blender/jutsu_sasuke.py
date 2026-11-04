@@ -100,6 +100,48 @@ def weave(shot, start, signs, base, beat=5, sink=.06):
     return last
 
 
+def act(arm, prefix, keys, active, recovery=None, drags=(), marker=None, tail=6):
+    """One continuous act after the channel, split the way the game plays it.
+
+    The game shows `<prefix>.Release` only while the server is in
+    TechniqueActive (spec.Active seconds: Combat sets the state for exactly
+    that long), then starts `<prefix>.Recover` from ITS frame 0 (spec.Recovery
+    seconds), with a 0.1 s inertial blend at each switch. So a Release whose
+    blow lands after Active is never seen, and a Recover that starts from the
+    Release's END pose skips the follow-through. Here the act is authored once,
+    as one timeline from the channel's last pose (frame 0); a key must sit on
+    the Active frame: the Release is the timeline up to it (+ `tail` frames of
+    the same motion, for a late state change) and the Recover is the timeline
+    from it on - the two clips meet on the same pose and the same velocity (a
+    key passed through there leaves the Recover at speed, "launch")."""
+    fa = round(active * 60)
+    keys = sorted(keys, key=lambda k: k[0])
+    frames = [k[0] for k in keys]
+    if fa not in frames:
+        raise ValueError("%s: no key on the Active frame %d (keys %s)" % (prefix, fa, frames))
+    full, poses = {}, []
+    for f, p, sp in keys:
+        full = merge(full, p)
+        poses.append((f, full, sp))
+    # (the Release ends on the key nearest Active + `tail`: ~ Active + .1 s)
+    end = min((f for f in frames if f > fa), key=lambda f: abs(f - fa - tail), default=fa)
+    re = Shot(arm, prefix + ".Release")
+    rc = Shot(arm, prefix + ".Recover")
+    for f, p, sp in poses:
+        if f <= end:
+            re.key(f, p, sp)
+        if f == fa:
+            rc.key(0, p, "launch" if sp == "pass" else "ease")
+        elif f > fa:
+            rc.key(f - fa, p, sp)
+    for bones, n in drags:
+        re.drag(bones, n)
+        rc.drag(bones, n)
+    if recovery is not None and abs((frames[-1] - fa) - recovery * 60) > 3:
+        print("WARN %s.Recover %d frames for a %.2f s recovery" % (prefix, frames[-1] - fa, recovery))
+    return [re.build(markers={"release": (fa if marker is None else marker) / 60}), rc.build()]
+
+
 def stance_fn(stance):
     base = merge(ZERO, stance)
 
@@ -138,43 +180,30 @@ def soshuha(arm):
     ch.drag(["neck"], 1)
     out.append(ch.build(markers={"release": (last + 9) / 60}))
 
-    re = Shot(arm, N + "Soshuha.Release")
-    re.key(0, coil, "ease")
-    # The X opens into a V, forward-wide, on a lunge over the front foot: the
-    # hips rise and go first, the hands arrive last (the wrists snap).
-    re.key(2, merge(coil, {"root": {"y": -.72, "z": -.08, "pitch": 18}, "torso": {"pitch": 10},
-                           "ra": {"raise": 50, "out": 10, "twist": 30, "elbow": 60}, "la": {"raise": 54, "out": 10, "twist": 30, "elbow": 60}}), "pass")
+    # The throw (Active .04: the shuriken leave as the state opens, so the X
+    # snaps open in two frames): it opens into a V, forward-wide, on a lunge
+    # over the front foot; the hands arrive a frame after the arms (the
+    # wrists snap). The Recover carries the follow-through - the arms keep
+    # opening - then the wires go taut and he hauls them: both elbows driven
+    # back past the ribs, the weight sitting back against them.
     fling = s({"root": {"y": -.62, "z": -.3, "pitch": 16, "yaw": 22}, "torso": {"pitch": 2, "yaw": -6},
                "head": {"pitch": -14, "yaw": -14},
                "ra": {"raise": 104, "out": 54, "twist": -16, "elbow": 6, "wrist": -30},
                "la": {"raise": 70, "out": 48, "twist": -16, "elbow": 6, "wrist": -30},
                "rf": {"y": .08, "toe": -26}})
-    re.key(4, fling, "impact")
     over = merge(fling, {"root": {"z": -.34, "pitch": 14}, "torso": {"pitch": -4}, "head": {"pitch": -16},
                          "ra": {"raise": 110, "out": 64, "wrist": -36}, "la": {"raise": 74, "out": 60, "wrist": -36}})
-    re.key(7, over, "ease")
-    held = merge(over, {"root": {"y": -.6, "z": -.32}, "ra": {"raise": 104, "elbow": 12}, "la": {"raise": 72, "elbow": 12}})
-    re.key(10, held, "ease")
-    re.drag(["hand.R", "hand.L"], 1)
-    out.append(re.build(markers={"release": 4 / 60}))
-
-    rc = Shot(arm, N + "Soshuha.Recover")
-    rc.key(0, held, "ease")
-    # the wires go taut (the fists close, the arms give an inch), then the
-    # haul: both elbows driven back past the ribs, the weight sits back
-    rc.key(3, merge(held, {"root": {"z": -.3}, "ra": {"raise": 98, "out": 58, "elbow": 20, "wrist": 0}, "la": {"raise": 72, "out": 54, "elbow": 20, "wrist": 0}}), "ease")
+    taut = merge(over, {"root": {"y": -.6, "z": -.3}, "ra": {"raise": 100, "out": 58, "elbow": 20, "wrist": 0},
+                        "la": {"raise": 72, "out": 54, "elbow": 20, "wrist": 0}})
     pull = s({"root": {"y": -.7, "z": .2, "pitch": 0, "yaw": 30}, "torso": {"pitch": -6, "yaw": -14},
               "head": {"pitch": -6, "yaw": -16},
               "ra": {"raise": -24, "out": 22, "twist": 10, "elbow": 104},
               "la": {"raise": -18, "out": 22, "twist": 10, "elbow": 104},
               "rf": {"y": 0, "toe": 0}, "lf": {"toe": 16}})
-    rc.key(7, pull, "impact")
-    rc.key(10, merge(pull, {"root": {"y": -.66, "z": .12}, "torso": {"pitch": 0}, "ra": {"raise": -6}, "la": {"raise": 0}, "lf": {"toe": 4}}), "ease")
-    # the second tug, shorter (the blades come round behind him)
-    rc.key(12, merge(pull, {"root": {"z": .18}, "ra": {"raise": -20}, "la": {"raise": -14}, "lf": {"toe": 10}}), "impact")
-    rc.key(18, s(), "ease")
-    rc.drag(["neck"], 1).drag(["spine"], 1)
-    out.append(rc.build())
+    give = merge(pull, {"root": {"y": -.64, "z": .12}, "torso": {"pitch": -2}, "ra": {"raise": -6, "elbow": 96}, "la": {"raise": 0, "elbow": 96}, "lf": {"toe": 4}})
+    out += act(arm, N + "Soshuha", [(0, coil, "ease"), (2, fling, "impact"), (5, over, "ease"), (8, taut, "ease"),
+                                    (11, pull, "impact"), (13, give, "ease"), (17, s(), "ease")],
+               .04, .24, drags=[(["hand.R", "hand.L"], 1), (["neck"], 1)])
     return out
 
 
@@ -205,40 +234,34 @@ def windmill(arm):
     out.append(ch.build(markers={"release": (last + 13) / 60}))
     coil = merge(coil, {"root": {"y": -.84}, "ra": {"out": 80, "wrist": 44}})
 
-    re = Shot(arm, N + "WindmillBlades.Release")
-    re.key(0, coil, "ease")
-    # the hips lead, the arm stays back (it is the last link); the front foot
-    # is already stepping
-    re.key(2, merge(coil, {"root": {"yaw": 46, "z": .08, "roll": 2}, "torso": {"yaw": 24}, "head": {"yaw": -62},
-                           "ra": {"out": 84}, "lf": {"y": .2, "z": -.96}}), "pass")
+    # The throw lands on the Active frame (.06): the hips lead, the arm stays
+    # back (it is the last link) while the front foot steps in, then the arm
+    # whips the blades flat across and follows through across the body (the
+    # Recover's opening). Then the left hand takes the line out in front and
+    # the right fist yanks it taut back to the hip - the yank steps him back
+    # onto his stance (a jutsu does not travel: the game keeps the body put).
+    hips = merge(coil, {"root": {"yaw": 46, "z": .08, "roll": 2}, "torso": {"yaw": 24}, "head": {"yaw": -62},
+                        "ra": {"out": 84}, "lf": {"y": .2, "z": -.96}})
     throw = s({"root": {"y": -.66, "z": -.34, "pitch": 18, "yaw": -12, "roll": -4}, "torso": {"pitch": 10, "yaw": -30},
                "head": {"pitch": -12, "yaw": 22},
                "ra": {"raise": 86, "out": 14, "twist": -30, "elbow": 6, "wrist": -34},
                "la": {"raise": 26, "out": 44, "twist": 0, "elbow": 90},
                "rf": {"y": .1, "toe": -36, "yaw": 14}, "lf": {"z": -1.16, "yaw": -10}})
-    re.key(4, throw, "impact")
     follow = merge(throw, {"root": {"yaw": -26}, "torso": {"yaw": -42}, "head": {"yaw": 30},
                            "ra": {"raise": 60, "out": -36, "twist": -10, "elbow": 24, "wrist": -10}})
-    re.key(7, follow, "ease")
-    rest = merge(follow, {"root": {"y": -.62}, "ra": {"raise": 62}})
-    re.key(11, rest, "ease")
-    re.drag(["hand.R"], 1)
-    out.append(re.build(markers={"release": 4 / 60}))
-
-    rc = Shot(arm, N + "WindmillBlades.Recover")
-    rc.key(0, rest, "ease")
-    # the left hand takes the line out in front, the right fist yanks it taut
-    # back to the hip: the blades turn on it
-    yank = s({"root": {"y": -.7, "z": .08, "pitch": 10, "yaw": 32}, "torso": {"pitch": 4, "yaw": -20},
+    rest = merge(follow, {"root": {"y": -.62, "z": -.28}, "ra": {"raise": 62}})
+    lift = merge(rest, {"root": {"y": -.6, "z": -.1, "yaw": 0}, "torso": {"yaw": -28},
+                        "la": {"raise": 60, "out": 20, "elbow": 40},
+                        "lf": {"y": .22, "z": -.86, "yaw": -8}, "rf": {"y": 0, "toe": 0}})
+    yank = s({"root": {"y": -.72, "z": .1, "pitch": 10, "yaw": 32}, "torso": {"pitch": 4, "yaw": -20},
               "head": {"pitch": -8, "yaw": -14},
               "ra": {"raise": -26, "out": 26, "twist": -10, "elbow": 96},
-              "la": {"raise": 76, "out": 8, "twist": -10, "elbow": 22, "wrist": -14},
-              "rf": {"y": 0, "toe": 0}, "lf": {"z": -1.16}})
-    rc.key(5, yank, "impact")
-    rc.key(9, merge(yank, {"root": {"y": -.72}, "ra": {"raise": -30}, "la": {"raise": 78}}), "ease")
-    rc.key(16, s({"lf": {"z": -1.16}}), "ease")
-    rc.drag(["neck"], 1)
-    out.append(rc.build())
+              "la": {"raise": 76, "out": 8, "twist": -10, "elbow": 22, "wrist": -14}})
+    taut = merge(yank, {"root": {"y": -.72, "z": .06}, "ra": {"raise": -30}, "la": {"raise": 78}})
+    out += act(arm, N + "WindmillBlades", [(0, coil, "ease"), (2, hips, "pass"), (4, throw, "impact"), (7, follow, "ease"),
+                                           (10, rest, "ease"), (12, lift, "pass"), (14, yank, "impact"), (17, taut, "ease"),
+                                           (21, s(), "ease")],
+               .06, .26, drags=[(["hand.R"], 1), (["neck"], 1)])
     return out
 
 
@@ -264,21 +287,22 @@ def counter(arm):
     pose = merge(base, {"root": {"y": -.68}})
     sealed = merge(pose, seal(4, pose))
     read = s(READ)
-    re = Shot(arm, N + "SharinganCounter.Release")
-    re.key(0, sealed, "ease")
-    re.key(2, merge(sealed, {"root": {"z": .12}, "lf": {"z": -.64, "y": .16, "toe": -20}}), "pass")
-    re.key(4, merge(read, {"root": {"y": -.98}}), "impact")
-    re.key(8, read, "ease")
-    re.drag(["neck"], 1)
-    out.append(re.build(markers={"release": 4 / 60}))
-
-    rc = Shot(arm, N + "SharinganCounter.Recover")
-    rc.key(0, read, "ease")
-    # held: the eyes follow the blow (the head a hair), the rear leg loads
-    rc.key(6, merge(read, {"root": {"y": -.98, "z": .32}, "head": {"roll": -1, "yaw": -20}, "la": {"raise": 98}}), "ease")
-    rc.key(9, merge(read, {"root": {"y": -.9, "z": .26}, "lf": {"z": -.6, "y": .14, "toe": -20}}), "pass")
-    rc.key(15, s(), "ease")
-    out.append(rc.build())
+    # The seal parts as the window opens (Active .04): the weight is already
+    # going back and the front foot drawing in on the Active frame; the cat
+    # stance lands just after (the Recover), the eyes follow the blow, the
+    # rear leg loads, then the stance.
+    keys = [(0, sealed, "ease"),
+            (2, merge(sealed, {"root": {"y": -.76, "z": .12}, "head": {"pitch": -6},
+                               "la": {"raise": 70, "out": -6, "twist": -10, "elbow": 70}, "ra": {"raise": 46, "elbow": 100},
+                               "lf": {"z": -.64, "y": .16, "toe": -20}}), "pass"),
+            (5, merge(read, {"root": {"y": -.98}}), "impact"),
+            (8, read, "ease"),
+            (10, merge(read, {"root": {"y": -.97, "z": .32}, "head": {"roll": -1, "yaw": -20}, "la": {"raise": 98}}), "ease"),
+            # the light front foot lifts back out to its place
+            (12, merge(read, {"root": {"y": -.78, "z": .16}, "la": {"raise": 80, "elbow": 50},
+                              "lf": {"z": -.66, "y": .2, "toe": -16}}), "pass"),
+            (15, s(), "ease")]
+    out += act(arm, N + "SharinganCounter", keys, .04, .2, drags=[(["neck"], 1)], marker=2)
     return out
 
 
@@ -302,24 +326,23 @@ def copy(arm):
     ch.drag(["neck"], 1)
     out.append(ch.build(markers={"release": (last + 10) / 60}))
 
-    re = Shot(arm, N + "SharinganCopy.Release")
-    re.key(0, gather, "ease")
+    # The mirrored cast on the Active frame (.06): the hips go in, the open
+    # palm is thrown at him, the fingers still at the eye; the palm presses
+    # on a beat, then the hand comes back and the fingers leave the eye last.
     cast = s({"root": {"y": -.62, "z": -.34, "pitch": 14, "yaw": 22}, "torso": {"pitch": 8, "yaw": -6},
               "head": {"pitch": -10, "yaw": -14},
               "la": {"raise": 92, "out": 0, "twist": -72, "elbow": 4, "wrist": -62},
               "ra": EYE_R, "rf": {"y": .08, "toe": -24}})
-    re.key(3, cast, "impact")
-    re.key(6, merge(cast, {"root": {"z": -.38}, "la": {"raise": 94, "elbow": 0}}), "ease")
-    re.key(9, merge(cast, {"root": {"z": -.36}}), "ease")
-    out.append(re.build(markers={"release": 3 / 60}))
-
-    rc = Shot(arm, N + "SharinganCopy.Recover")
-    rc.key(0, merge(cast, {"root": {"z": -.36}}), "ease")
-    rc.key(7, s({"root": {"y": -.58, "z": -.16}, "la": {"raise": 70, "elbow": 50},
-                 "ra": {"raise": 70, "out": -16, "twist": 30, "elbow": 110}}), "pass")
-    rc.key(15, s(), "ease")
-    rc.drag(["neck"], 1)
-    out.append(rc.build())
+    keys = [(0, gather, "ease"),
+            (2, merge(gather, {"root": {"y": -.68, "z": .02, "pitch": 8}, "torso": {"pitch": 6},
+                               "la": {"raise": 40, "out": 10, "twist": -50, "elbow": 70, "wrist": -30}}), "pass"),
+            (4, cast, "impact"),
+            (7, merge(cast, {"root": {"z": -.38}, "la": {"raise": 94, "elbow": 0}}), "ease"),
+            (10, merge(cast, {"root": {"z": -.36}}), "ease"),
+            (14, s({"root": {"y": -.58, "z": -.16}, "la": {"raise": 70, "elbow": 50},
+                    "ra": {"raise": 76, "out": 4, "twist": 34, "elbow": 112}}), "pass"),
+            (20, s(), "ease")]
+    out += act(arm, N + "SharinganCopy", keys, .06, .26, drags=[(["neck"], 1), (["shoulder.R", "forearm.R", "hand.R"], 1)])
     return out
 
 

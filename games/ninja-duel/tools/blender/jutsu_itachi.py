@@ -41,7 +41,7 @@ Server timings (Shared/SealJutsu, Shared/Attacks):
 """
 from nd_shot import Shot, merge
 from itachi_p3 import STANCE
-from jutsu_sasuke import stance_fn, weave, seal
+from jutsu_sasuke import stance_fn, weave, seal, act
 
 N = "Mirage."
 s, at = stance_fn(STANCE)
@@ -69,29 +69,25 @@ def crows(arm):
     ch.drag(["neck"], 1)
     out.append(ch.build(markers={"release": (last + 6) / 60}))
 
-    re = Shot(arm, N + "CrowGenjutsu.Release")
-    re.key(0, gather, "ease")
-    # one sweep: the arm opens out to the side at shoulder height, the palm
-    # spread toward him; the chest opens with it, the head stays put
+    # One sweep, landing inside the Active window (.1): the arm opens out to
+    # the side at shoulder height, the palm spread toward him; the chest opens
+    # with it, the head stays put. It overshoots a hair (the crows pour), the
+    # hand stays out a beat, then sinks, calm.
     sweep = s({"root": {"y": -.34, "z": .02, "yaw": 30}, "torso": {"pitch": 0, "yaw": -4},
                "head": {"pitch": 4, "yaw": -24},
                "ra": {"raise": 92, "out": 64, "twist": -50, "elbow": 8, "wrist": -40},
                "la": LOW_L})
-    re.key(2, merge(gather, {"ra": {"raise": 74, "out": -4, "twist": 20, "elbow": 40}, "torso": {"yaw": -10}}), "pass")
-    re.key(4, sweep, "impact")
-    re.key(8, merge(sweep, {"ra": {"out": 72, "raise": 94, "wrist": -46}, "torso": {"yaw": -2}}), "ease")
+    over = merge(sweep, {"ra": {"out": 72, "raise": 94, "wrist": -46}, "torso": {"yaw": -2}})
     held = merge(sweep, {"ra": {"out": 70, "raise": 90, "wrist": -40}})
-    re.key(12, held, "ease")
-    re.drag(["hand.R"], 2)
-    out.append(re.build(markers={"release": 4 / 60}))
-
-    rc = Shot(arm, N + "CrowGenjutsu.Recover")
-    rc.key(0, held, "ease")
-    rc.key(6, merge(held, {"ra": {"raise": 84, "out": 68}}), "ease")
-    rc.key(12, merge(s({"head": {"pitch": 0}}), {"ra": {"raise": 30, "out": 30, "twist": -20, "elbow": 30, "wrist": -10}}), "pass")
-    rc.key(18, s(), "ease")
-    rc.drag(["hand.R"], 2).drag(["neck"], 1)
-    out.append(rc.build())
+    keys = [(0, gather, "ease"),
+            (2, merge(gather, {"ra": {"raise": 74, "out": -4, "twist": 20, "elbow": 40}, "torso": {"yaw": -10}}), "pass"),
+            (4, sweep, "impact"),
+            (6, over, "ease"),
+            (10, held, "ease"),
+            (15, merge(held, {"ra": {"raise": 84, "out": 68}}), "ease"),
+            (19, merge(s({"head": {"pitch": 0}}), {"ra": {"raise": 30, "out": 30, "twist": -20, "elbow": 30, "wrist": -10}}), "pass"),
+            (24, s(), "ease")]
+    out += act(arm, N + "CrowGenjutsu", keys, .1, .3, drags=[(["hand.R"], 2), (["neck"], 1)], marker=4)
     return out
 
 
@@ -113,20 +109,16 @@ def clone(arm):
     pose = merge(base, {"root": {"y": -.44}})
     sealed = merge(pose, seal(3, pose))
     bait = s(BAIT)
-    re = Shot(arm, N + "ExplodingClone.Release")
-    re.key(0, sealed, "ease")
-    # the guard drops: he straightens, the hands come apart and down
-    re.key(4, merge(bait, {"root": {"y": -.2}, "la": {"raise": 18, "elbow": 30}}), "impact")
-    re.key(8, bait, "ease")
-    re.drag(["neck"], 1).drag(["shoulder.L", "forearm.L", "hand.L"], 1)
-    out.append(re.build(markers={"release": 4 / 60}))
-
-    rc = Shot(arm, N + "ExplodingClone.Recover")
-    rc.key(0, bait, "ease")
-    rc.key(7, merge(bait, {"root": {"y": -.18}, "head": {"pitch": 6}}), "ease")
-    rc.key(14, s(), "ease")
-    rc.drag(["neck"], 2)
-    out.append(rc.build())
+    # The guard drops as the window opens (Active .04): he straightens, the
+    # hands come apart and down - the bait - and stays still, then the stance.
+    keys = [(0, sealed, "ease"),
+            (2, merge(sealed, {"root": {"y": -.32}, "torso": {"pitch": 6},
+                               "la": {"raise": 40, "out": -4, "twist": 10, "elbow": 70, "wrist": 0},
+                               "ra": {"raise": 20, "out": -10, "twist": 40, "elbow": 96, "wrist": 0}}), "pass"),
+            (5, merge(bait, {"root": {"y": -.2}, "la": {"raise": 18, "elbow": 30}}), "impact"),
+            (9, bait, "ease"),
+            (14, s(), "ease")]
+    out += act(arm, N + "ExplodingClone", keys, .04, .2, drags=[(["neck"], 1), (["shoulder.L", "forearm.L", "hand.L"], 1)], marker=2)
     return out
 
 
@@ -152,19 +144,15 @@ def paralysis(arm):
     ch.drag(["neck"], 2)
     out.append(ch.build(markers={"release": (last + 10) / 60}))
 
-    re = Shot(arm, N + "SharinganParalysis.Release")
-    re.key(0, stare, "ease")
+    # A hair of a push on the Active frame (.06), then held - the eyes do the
+    # work - and the hand lowers slowly, the head last.
     held = merge(stare, {"root": {"z": -.02}, "head": {"pitch": 10}, "la": {"raise": 98, "elbow": 14, "wrist": -60}})
-    re.key(3, merge(held, {"root": {"z": -.04}, "la": {"elbow": 10}}), "impact")
-    re.key(10, held, "ease")
-    out.append(re.build(markers={"release": 3 / 60}))
-
-    rc = Shot(arm, N + "SharinganParalysis.Recover")
-    rc.key(0, held, "ease")
-    rc.key(6, merge(held, {"head": {"pitch": 9}}), "ease")
-    rc.key(15, s(), "ease")
-    rc.drag(["neck"], 3)
-    out.append(rc.build())
+    keys = [(0, stare, "ease"),
+            (4, merge(held, {"root": {"z": -.05}, "la": {"elbow": 8, "raise": 100}}), "impact"),
+            (9, held, "ease"),
+            (14, merge(held, {"head": {"pitch": 8}, "la": {"raise": 72, "out": -6, "twist": -46, "elbow": 48, "wrist": -24}}), "pass"),
+            (19, s(), "ease")]
+    out += act(arm, N + "SharinganParalysis", keys, .06, .24, drags=[(["neck"], 3)])
     return out
 
 
@@ -195,24 +183,21 @@ def phoenix(arm):
     ch.drag(["neck"], 1).drag(["shoulder.L", "forearm.L", "hand.L"], 2)
     out.append(ch.build(markers={"release": (last + 11) / 60}))
 
-    re = Shot(arm, N + "PhoenixSageFire.Release")
-    re.key(0, inhale, "ease")
-    # one breath swept left to right; five pulses ride on it
-    for i, f in enumerate((2, 5, 8, 11, 14)):
-        yaw = -32 + 16 * i
-        re.key(f, breath(yaw, 1.0), "impact")
-        re.key(f + 2, breath(yaw + 6, .25), "ease")
-    re.key(18, breath(36, 0), "ease")
-    re.drag(["neck"], 1)
-    out.append(re.build(markers={"release": 2 / 60}))
-
-    rc = Shot(arm, N + "PhoenixSageFire.Recover")
-    rc.key(0, breath(36, 0), "ease")
-    rc.key(9, s(merge(ANCHOR, {"root": {"y": -.36}, "head": {"pitch": -2, "yaw": -8},
-                               "ra": {"raise": 20, "out": 6, "twist": 10, "elbow": 80, "wrist": 0}})), "pass")
-    rc.key(18, s(), "ease")
-    rc.drag(["neck"], 2)
-    out.append(rc.build())
+    # ONE breath (Active .2), swept left to right across the fan, three
+    # pushes of the chest riding on it (the fireballs leave together, fanned:
+    # the sweep draws the fan); then the chin comes down and the tiger opens.
+    keys = [(0, inhale, "ease"),
+            (2, breath(-32, 1.0), "impact"),
+            (4, breath(-20, .3), "ease"),
+            (6, breath(-4, .9), "impact"),
+            (8, breath(8, .3), "ease"),
+            (10, breath(22, .9), "impact"),
+            (12, breath(32, .4), "ease"),
+            (16, breath(36, 0), "ease"),
+            (23, s(merge(ANCHOR, {"root": {"y": -.36}, "head": {"pitch": -2, "yaw": -8},
+                                  "ra": {"raise": 20, "out": 6, "twist": 10, "elbow": 80, "wrist": 0}})), "pass"),
+            (30, s(), "ease")]
+    out += act(arm, N + "PhoenixSageFire", keys, .2, .3, drags=[(["neck"], 1)], marker=2)
     return out
 
 

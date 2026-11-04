@@ -109,6 +109,7 @@ function Touch.new(input,send,getState,toggleLock,camera)
 		{"Chakra","CHAKRA",function() self.chakra=true end,function() self.chakra=false end},
 		{"Lock","LOCK",function() self.toggleLock() end},{"Awaken","AWAKEN",act("Awaken")},{"Ultimate","ULT",act("Ultimate")}}
 	for i,e in list do button(extras,e[1],e[2],Vector2.new(20+(i-1)*42,20),38,nil,e[3],e[4]) end
+	self.extras=extras
 	self.skipButton=button(gui,"SkipStep","SKIP STEP",Vector2.new(0,0),60,nil,function() self.skipAt=os.clock() end,function()
 		local held=os.clock()-(self.skipAt or os.clock())
 		self.send(if held>=1 then "TutorialSkip" else "TutorialStep")
@@ -251,5 +252,16 @@ function Touch:render(data)
 		self.buttons.Chakra.BackgroundColor3=if self.chakra then Color3.fromRGB(60,120,220) else INK
 	end
 	self.skipButton.Visible=data.tutorial~=nil
+	-- (B1 lot 2) the first minute and its duel: the core cluster and the
+	-- signature only; grab, tool, the extras and the seal page come next duel.
+	local first=data.first~=nil
+	if first and self.page then self.page=false;self:refreshPage() end
+	self.extras.Visible=not first
+	self.buttons.Grab.Visible=not first
+	self.buttons.Tool.Visible=not first
+	if first then
+		self.sealsButton.Visible=false
+		for i,b in self.jutsu do if i~=2 then b.Visible=false end end
+	end
 end
 return Touch

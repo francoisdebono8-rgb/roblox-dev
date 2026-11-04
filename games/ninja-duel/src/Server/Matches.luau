@@ -17,6 +17,7 @@ local Online=require(script.Parent.Online)
 local SkillBuilds=require(script.Parent.SkillBuilds)
 local BuildPresets=require(script.Parent.BuildPresets)
 local Zones=require(script.Parent.Zones)
+local FirstMinute=require(Shared.FirstMinute)
 local Matches={}; Matches.__index=Matches
 -- Skill builds (PROG-001..003) are resolved and validated here, on the server:
 -- a spec is {nodes={...}, unlocked={[id]=true}} (unlocked = the profile's set)
@@ -49,14 +50,36 @@ end
 function Matches.laneOrigin(lane)
 	return Vector3.new((lane-1)*520,0,0)
 end
+-- (B1 lot 2, DEC-034) What a new player's first minutes look like, measured
+-- on the server (Codex's audit §3: time to the first input, the first jutsu,
+-- the first finished duel; abandons). One line each in the log
+-- ([NinjaDuelFirst]) and, in the published game, Roblox's onboarding funnel
+-- (AnalyticsService, in order and once each; skipped quietly where the
+-- service is unavailable, as in the tests).
+Matches.FUNNEL={joined=1,input=2,jutsu=3,duel=4}
+function Matches.measure(player,s,step)
+	local m=s.metrics
+	if not m or m[step.."At"] then return end
+	m[step.."At"]=os.clock()
+	local since=m[step.."At"]-(m.joined or m[step.."At"])
+	print(string.format("[NinjaDuelFirst] %s %s %.1fs",tostring(player.UserId),step,since))
+	local order=Matches.FUNNEL[step]
+	if order and (m.funnel or 0)<order then
+		m.funnel=order
+		pcall(function() game:GetService("AnalyticsService"):LogOnboardingFunnelStepEvent(player,order,step) end)
+	end
+end
 function Matches:send(player,data)
 	if player.Parent==Players then self.remote:FireClient(player,data) end
 end
 function Matches:session(player)
 	if self.sessions[player] then return self.sessions[player] end
 	self.nextLane+=1
-	local s={phase="Selection",lane=self.nextLane,bucket={tokens=Config.RequestBurst,time=os.clock()},lastLifecycle=-10,epoch=0}
-	self.sessions[player]=s; return s
+	local s={phase="Selection",lane=self.nextLane,bucket={tokens=Config.RequestBurst,time=os.clock()},lastLifecycle=-10,epoch=0,
+		metrics={joined=os.clock()},owner=player}
+	self.sessions[player]=s
+	Matches.measure(player,s,"joined")
+	return s
 end
 function Matches:destroy(s)
 	if s.combat then s.combat:clear() end
@@ -115,7 +138,7 @@ function Matches:start(player,playerId,botId,training,options)
 	s.finish=function(winner,_loser)
 		self:roundOver(s,winner,function() self:snapshot(player,s) end,function() self:nextRound(player,s) end)
 	end
-	s.tutorial=nil; if training then Tutorial.new(s) end
+	s.tutorial=nil; if training then Tutorial.new(s,if s.firstStage=="intro" then "first" else nil) end
 	-- Tournament framing: both fighters are shown before the round begins.
 	s.introUntil=if training then nil else s.combat.now+2.6
 	local epoch=s.epoch
@@ -134,6 +157,7 @@ function Matches:roundOver(s,winner,notify,advance)
 	s.wins[winner.id]=(s.wins[winner.id] or 0)+1
 	local decided=s.wins[winner.id]>=s.roundsToWin
 	s.matchPoint=decided
+	if decided and not s.tutorial and not s.online and s.owner then Matches.measure(s.owner,s,"duel") end
 	local finishEpoch=s.epoch
 	notify()
 	-- (Final blow) the thrown body needs its flight and a beat on the floor.
@@ -303,7 +327,7 @@ function Matches:view(s,cursor,mine,theirs)
 	for _,impact in s.combat.impacts do if impact.serial>sent then table.insert(feed,impact) end end
 	cursor.sentImpact=s.combat.impactSerial or 0;cursor.impactEpoch=s.epoch
 	local wins=s.wins or {}
-	return {phase=s.phase,epoch=s.epoch,winner=s.winner and (if s.winner==mine.id then "PlayerFighter" else "AIFighter"),tutorial=Tutorial.snapshot(s),origin=s.origin,human=data(mine),bot=data(theirs),impacts=feed,impactSerial=s.combat.impactSerial or 0,
+	return {phase=s.phase,epoch=s.epoch,first=s.firstStage,winner=s.winner and (if s.winner==mine.id then "PlayerFighter" else "AIFighter"),tutorial=Tutorial.snapshot(s),origin=s.origin,human=data(mine),bot=data(theirs),impacts=feed,impactSerial=s.combat.impactSerial or 0,
 		-- Bodies that are not fighters (Naruto's shadow clones), drawn by Client/BodyViews.
 		bodies=Bodies.view(s.combat),
 		-- zones: wind lanes and updrafts (Zones.snapshot), drawn per kind by the client.
@@ -330,8 +354,11 @@ function Matches:request(player,payload)
 		return
 	end
 	if payload.epoch~=s.epoch then return end
+	if s.metrics and not s.metrics.inputAt and (action~="Move" or (typeof(payload.direction)=="Vector3" and payload.direction.Magnitude>.5)) then Matches.measure(player,s,"input") end
 	-- The online flow owns every request of a player who is in it.
 	if self.online and self.online:request(player,s,action,payload,clock) then return end
+	-- (B1) held on the first minute: straight to its duel, not the roster.
+	if action=="TutorialSkip" and s.tutorial and s.tutorial.first then s.tutorial.done=true;return end
 	if action=="TutorialSkip" and s.tutorial then self:selection(player);s.tutorial=nil;return end
 	-- (Audit 04/11) one step skipped (the panel's "tap: skip the step").
 	if action=="TutorialStep" and s.tutorial then
@@ -339,15 +366,25 @@ function Matches:request(player,payload)
 		return
 	end
 	if self.tournament and self.tournament:request(player,s,action,payload) then return end
+	-- (B1 lot 2) PLAY on a first roster: the first minute with his fighter,
+	-- his story's rival as the partner and then the opponent (easy AI).
+	if action=="First" then
+		if clock-s.lastLifecycle<0.8 or s.phase~="Selection" or type(payload.player)~="string" then return end
+		local rival=FirstMinute.rival(payload.player)
+		if not rival then return end
+		s.lastLifecycle=clock;s.aiLevel="easy";s.firstStage="intro"
+		if not self:start(player,payload.player,rival,true) then s.firstStage=nil end
+		return
+	end
 	if action=="Start" or action=="Tutorial" or action=="Rematch" or action=="Selection" then
 		if clock-s.lastLifecycle<0.8 then return end
 		if (action=="Start" or action=="Tutorial") and s.phase=="Selection" then
 			if type(payload.player)~="string" or type(payload.bot)~="string" then return end
-			s.lastLifecycle=clock
+			s.lastLifecycle=clock;s.firstStage=nil
 			if type(payload.level)=="string" and Matches.LEVELS[payload.level] then s.aiLevel=payload.level end
 			self:start(player,payload.player,payload.bot,action=="Tutorial")
 		elseif action=="Rematch" and (s.phase=="Result" or s.finishing) then
-			s.lastLifecycle=clock; self:start(player,s.playerId,s.botId,s.tutorial~=nil,s.options)
+			s.lastLifecycle=clock;s.firstStage=nil; self:start(player,s.playerId,s.botId,s.tutorial~=nil,s.options)
 		elseif action=="Selection" and (s.phase=="Result" or s.finishing or s.tutorial) then s.lastLifecycle=clock; self:selection(player) end
 		return
 	end
@@ -438,6 +475,13 @@ function Matches:update(dt,now)
 			if s.phase=="Duel" then
 				local intro=s.introUntil and now<s.introUntil
 				if s.tutorial then Tutorial.update(s,now,dt) elseif not s.botFrozen and not intro and not s.finishing then s.ai:update(now) end
+				-- (B1 lot 2) the first minute's last prompt done: its real duel.
+				if s.tutorial and s.tutorial.done and s.firstStage=="intro" then
+					s.firstStage="duel";s.aiLevel="easy";self:start(player,s.playerId,s.botId,false)
+				end
+				if s.metrics and not s.metrics.jutsuAt and s.human and s.human.events then
+					for name in s.human.events do if string.sub(name,1,5)=="Cast:" then Matches.measure(player,s,"jutsu");break end end
+				end
 			end
 		end
 		if s.cup and self.tournament then self.tournament:update(player,s,now) end
@@ -455,6 +499,8 @@ function Matches:remove(player)
 	if s then
 		-- A disconnect forfeits an online fight and frees queue entries and codes.
 		if s.online and self.online then self.online:leave(player,s) end
+		-- (B1 lot 2) left before finishing a first duel: an abandon, measured.
+		if s.metrics and not s.metrics.duelAt then print(string.format("[NinjaDuelFirst] %s left %.1fs (stage %s)",tostring(player.UserId),os.clock()-(s.metrics.joined or os.clock()),tostring(s.firstStage or s.phase))) end
 		self:destroy(s); self.sessions[player]=nil
 	end
 end

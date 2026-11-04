@@ -114,6 +114,8 @@ function Panel.new(ui,remote,kit)
 			local id=ui.player
 			if id and id~=self.lastFighter and Fighters[id] then self.lastFighter=id;self:send({op="fighter",fighter=id}) end
 			self:tickTimer()
+			-- (B1 lot 2) not on the first, simple roster (ALL MODES shows it).
+			self.button.Visible=self.phase=="Selection" and not ui.simple
 			if self.open then self:send({op="open"}) end
 		end
 	end)
@@ -254,7 +256,7 @@ end
 -- list closes when a duel or a pick starts.
 function Panel:render(data)
 	self.phase=data.phase
-	self.button.Visible=data.phase=="Selection"
+	self.button.Visible=data.phase=="Selection" and not self.ui.simple
 	if self.open and data.phase~="Selection" then self:toggle(false) end
 end
 return Panel

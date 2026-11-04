@@ -131,6 +131,9 @@ function Lobby:track(player)
 end
 function Lobby:untrack(player)
 	local p=self.players[player.UserId]
+	-- (Security review 04/11, finding 3) gone before his opponent arrived: no
+	-- seat kept for him on the duel server.
+	if self.duel then self.duel.arrived[player.UserId]=nil end
 	if not p then return end
 	self.players[player.UserId]=nil
 	-- Invitations this player sent die with him; those he received are refused.
@@ -406,9 +409,12 @@ function Lobby:arrive(player)
 	if not rec then return end
 	if player.UserId~=rec.a and player.UserId~=rec.b then return self:home(player,nil) end
 	local a,b=d.arrived[rec.a],d.arrived[rec.b]
-	if a and b and not d.paired then
+	if a and b and not d.paired and a.Parent and b.Parent then
 		d.paired=true
 		local m=self.matches
+		-- (Security review 04/11, finding 3) a local duel or cup started while
+		-- the record loaded is ended first (it kept sending its snapshots).
+		for _,pl in {a,b} do local s=m.sessions[pl];if s and (s.combat or s.cup) then m:destroy(s);s.cup=nil;s.spectate=nil;s.autopilot=nil;s.cupPilot=nil end end
 		for _,pl in {a,b} do d.seated[pl.UserId]=true end
 		local fa=if type(rec.fa)=="string" and table.find(BetaRoster,rec.fa) then rec.fa else BetaRoster[1]
 		local fb=if type(rec.fb)=="string" and table.find(BetaRoster,rec.fb) then rec.fb else BetaRoster[2]
@@ -452,7 +458,10 @@ function Lobby:request(player,payload)
 	elseif op=="close" then p.watching=false
 	elseif op=="fighter" then if fighter then p.fighter=fighter end
 	elseif op=="dnd" then
-		if type(payload.on)=="boolean" then p.dnd=payload.on;self.nextPublish=0;self:send(p.player,{kind="dnd",on=p.dnd}) end
+		-- (Security review 04/11, finding 2) a flip publishes within 2 s, not
+		-- at once: toggled every 0.25 s it rewrote every presence entry 4 times
+		-- a second, on a MemoryStore quota shared by the whole experience.
+		if type(payload.on)=="boolean" then p.dnd=payload.on;self.nextPublish=math.min(self.nextPublish,now+2);self:send(p.player,{kind="dnd",on=p.dnd}) end
 	elseif op=="challenge" then
 		if type(payload.to)=="number" and payload.to==payload.to and payload.to>0 then self:challenge(p,math.floor(payload.to),fighter,now) end
 	elseif op=="answer" then

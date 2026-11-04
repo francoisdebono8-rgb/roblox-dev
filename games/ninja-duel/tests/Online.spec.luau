@@ -573,6 +573,7 @@ test("the client UI renders the real roster, queue, pick, duel and result packet
 	local UI=H.load("Client/UI")
 	local sent={}
 	local ui=UI.new(baseNew("PlayerGui"),function(action,extra) table.insert(sent,{action=action,extra=extra}) end)
+	ui.simple=false;ui:lobby({phase="Selection",epoch=0}) -- (B1) the full roster, as after ALL MODES
 	local function lastSent() return sent[#sent] end
 	assert(ui.selection.Visible and ui.onlineRow.Visible and not ui.queue.Visible and ui.opponentLabel.Text=="OPPONENT (AI)")
 	ui:pick("player","Lion")

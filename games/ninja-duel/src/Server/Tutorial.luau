@@ -18,6 +18,7 @@
 -- its own, for any fighter, in the debug places.
 local Shared=game:GetService("ReplicatedStorage").NinjaDuel
 local Controls=require(Shared.Controls)
+local FirstMinute=require(Shared.FirstMinute)
 local Brawler=require(script.Parent.Brawler)
 local Tutorial={}
 
@@ -154,12 +155,41 @@ function Tutorial.plan(a)
 	return steps
 end
 
+-- (B1 lot 2, DEC-034) The first minute: four prompts, a partner who waits,
+-- then a real duel (Server/Matches). Each step moves on by itself after 25 s
+-- (a player who does not find the key is not held there), and the panel says
+-- what to press on a keyboard, a pad or a phone (Shared/FirstMinute.Touch).
+function Tutorial.firstPlan(a)
+	local def=a.def
+	local steps={}
+	local function add(spec) spec.timeout=spec.timeout or 25;spec.touch=FirstMinute.Touch[spec.id];table.insert(steps,step(spec)) end
+	add({id="move",title="Move",key="WASD",pad="L stick",check=function(s,t) return t.travel>12 end})
+	add({id="string",title="Strike: three hits",key=K.Light.." x3",pad=P.Light.." x3",place="near",
+		check=function(s,t) return t.count("Hit")>=3 end})
+	add({id="dodge",title="Dodge",key="Direction + "..K.Dodge,pad="L stick + "..P.Dodge,
+		check=function(s,t) return t.ev("Dodge") end})
+	local spec=FirstMinute.signature(def)
+	if spec then
+		local slot=FirstMinute.SignatureSlot
+		add({id="signature",title="Your signature: "..tostring(spec.Name),key=TECH_KEY[slot],pad=Controls.TechniquePad[slot] or ("Jutsu "..slot),
+			place=if (spec.Range or 20)<10 then "near" else "far",technique=spec,
+			setup=function(s) local p=s.human;p.chakra=p.def.Chakra or 100;p.cooldowns={} end,
+			check=function(s,t) return t.ev("Cast:"..tostring(spec.Id)) end})
+	end
+	return steps
+end
 -- ----------------------------------------------------------------- driver
-function Tutorial.new(s)
-	local t={index=1,entered=0,baseline={},travel=0,attackAt=0,report={},timeoutScale=1}
-	t.steps=Tutorial.plan(s.human)
+function Tutorial.new(s,kind)
+	local t={index=1,entered=0,baseline={},travel=0,attackAt=0,report={},timeoutScale=1,first=kind=="first"}
+	t.steps=if t.first then Tutorial.firstPlan(s.human) else Tutorial.plan(s.human)
 	s.tutorial=t
 	return t
+end
+-- The next step; past the first minute's last one, it is done (the duel).
+local function nextStep(s,t,now)
+	t.index+=1
+	if not t.steps[t.index] then t.index=#t.steps;t.done=true;return end
+	Tutorial.enter(s,now)
 end
 -- Kept for the specs and tools that name the generic order.
 Tutorial.Steps=Tutorial.plan({def={Techniques={}},fighterId=""})
@@ -298,6 +328,7 @@ end
 -- ------------------------------------------------------------------- tick
 function Tutorial.update(s,now,dt)
 	local t,a,b=s.tutorial,s.human,s.bot;local c=s.combat
+	if t.done then return end
 	if t.entered==0 then Tutorial.enter(s,now) end
 	local spec=t.steps[t.index]
 	if spec.bot=="fight" then s.ai:update(now);return end
@@ -316,12 +347,12 @@ function Tutorial.update(s,now,dt)
 	probeFreeze(s,t,dt,now)
 	if not t.completedAt and spec.check(s,t,now) then t.completedAt=now end
 	if t.completedAt and now-t.completedAt>=.22 then
-		close(s,t,now,"PASS");t.index+=1;Tutorial.enter(s,now);return
+		close(s,t,now,"PASS");nextStep(s,t,now);return
 	end
 	-- Nobody finished it in time: a probe that found a wall, not a lesson to
 	-- retry forever. It is reported STUCK and the next step begins.
 	if now-t.rec.started>=spec.timeout*(t.timeoutScale or 1) then
-		close(s,t,now,"STUCK");t.index+=1;Tutorial.enter(s,now);return
+		close(s,t,now,"STUCK");nextStep(s,t,now);return
 	end
 	-- The practice partner.
 	if spec.bot=="heavy" and now>=t.attackAt then
@@ -342,13 +373,13 @@ function Tutorial.update(s,now,dt)
 end
 function Tutorial.skip(s,now)
 	local t=s.tutorial
-	if not t or not t.steps[t.index+1] then return false end
-	close(s,t,now,"SKIP");t.index+=1;Tutorial.enter(s,now)
+	if not t or t.done or (not t.first and not t.steps[t.index+1]) then return false end
+	close(s,t,now,"SKIP");nextStep(s,t,now)
 	return true
 end
 function Tutorial.snapshot(s)
 	local t=s.tutorial;if not t then return nil end
 	local step=t.steps[t.index]
-	return {index=t.index,total=#t.steps,title=step.title,pad=step.pad,key=step.key,id=step.id}
+	return {index=t.index,total=#t.steps,title=step.title,pad=step.pad,key=step.key,touch=step.touch,id=step.id,first=t.first or nil}
 end
 return Tutorial

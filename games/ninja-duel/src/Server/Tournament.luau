@@ -220,7 +220,16 @@ function Tournament:leave(player)
 end
 
 -- Requests that belong to the cup; true when handled.
+-- (Security review 04/11, finding 1) CupStart, CupFight, CupSkip and
+-- CupLeave build or tear down a whole arena: they share the roster's 0.8 s
+-- lifecycle gap (one client could otherwise rebuild it ~13 times a second).
+local LIFECYCLE={CupStart=true,CupFight=true,CupSkip=true,CupLeave=true}
 function Tournament:request(player,s,action,payload)
+	if LIFECYCLE[action] then
+		local clock=os.clock()
+		if clock-(s.lastLifecycle or -10)<0.8 then return true end
+		s.lastLifecycle=clock
+	end
 	if action=="CupStart" then
 		-- (Audit 04/11) and NEW TOURNAMENT once one is over (champion or out).
 		if (s.phase=="Selection" and not s.cup) or (s.cup and s.cup.over) then self:start(player,payload.player) end

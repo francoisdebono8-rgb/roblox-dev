@@ -200,6 +200,22 @@ test("AI levels: the roster's choice for a duel, climbing in the cup",function()
 	assert(table.concat(seen,",")=="easy,normal,hard","the cup does not climb: "..table.concat(seen,","))
 end)
 
+-- (Security review 04/11, finding 1) the cup's arena builds share the
+-- roster's 0.8 s gap: CupFight right after CupStart is dropped.
+test("cup actions are gated like the roster's: no arena rebuilt in a burst",function()
+	local m,player=fresh()
+	local s=m.sessions[player]
+	s.bucket.tokens=100
+	m:request(player,{action="CupStart",epoch=s.epoch,player="Lion"})
+	assert(s.cup and s.phase=="Bracket","the cup did not start")
+	local epoch=s.epoch
+	m:request(player,{action="CupFight",epoch=s.epoch})
+	assert(s.epoch==epoch and s.phase=="Bracket","CupFight inside the gap built an arena")
+	s.lastLifecycle=-10
+	m:request(player,{action="CupFight",epoch=s.epoch})
+	assert(s.phase=="Duel","CupFight after the gap did nothing")
+end)
+
 test("odds: the engine's table covers the 56 ordered pairs and stays between 10 and 90 %",function()
 	local odds=H.load("Server/CupOdds")
 	local T=Tournament.new(nil,odds)

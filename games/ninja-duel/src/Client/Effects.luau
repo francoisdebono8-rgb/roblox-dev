@@ -319,6 +319,17 @@ function FX:reset()
 	self.folder:ClearAllChildren()
 	table.clear(self.projectiles);table.clear(self.stuck);table.clear(self.seals);table.clear(self.hazards);table.clear(self.rasengan)
 	for _,aura in self.auras do if aura.trail then aura.trail.Enabled=false end end
+	-- (Performance review 04/11, finding 1) every duel builds new rigs: the
+	-- auras of the old ones (trail, face, part lists) were kept for good, and
+	-- with them every weak per-model table of the identity layers.
+	for model in table.clone(self.auras) do if typeof(model)~="Instance" or model.Parent==nil then self.auras[model]=nil end end
+	-- The identity layers' per-model states (narutoState, leeState...): a
+	-- value pointing back at its key (a face) would keep a dead rig alive.
+	for name,states in self do
+		if type(name)=="string" and string.sub(name,-5)=="State" and type(states)=="table" then
+			for model in table.clone(states) do if typeof(model)=="Instance" and model.Parent==nil then states[model]=nil end end
+		end
+	end
 end
 local function serverNow() return workspace:GetServerTimeNow() end
 function FX:visualTime() return serverNow()-FX.DELAY end

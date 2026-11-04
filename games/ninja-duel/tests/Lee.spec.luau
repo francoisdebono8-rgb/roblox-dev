@@ -729,6 +729,14 @@ test("he is selectable: his roster slot and both buttons, and the duel starts wi
   local sent={}
   local ui=UI.new(baseNew("PlayerGui"),function(action,extra) table.insert(sent,{action=action,extra=extra}) end)
   assert(ui.selectionButtons.slotLeaf,"Rock Lee is not in the roster")
+  -- (B1 lot 2) the first roster: PLAY starts the first minute with him, his rival opposite
+  assert(ui.simple and ui.startButton.Text=="ENTER THE STAGE" or ui.simple,"the first roster is not the simple one")
+  ui.selectionButtons.slotLeaf.click()
+  assert(ui.bot=="Flashstep","Lee's rival is not opposite him ("..tostring(ui.bot)..")")
+  ui.startButton.click()
+  assert(sent[#sent].action=="First" and sent[#sent].extra.player=="Leaf","PLAY does not start the first minute with Lee")
+  ui.tutorialButton.click()
+  assert(not ui.simple,"ALL MODES did not open the full roster")
   ui.side="player";ui.selectionButtons.slotLeaf.click()
   assert(ui.player=="Leaf","picking Lee did not select him")
   assert(ui.routeNote.Text:find("ROCK LEE",1,true),"his strings are not shown")

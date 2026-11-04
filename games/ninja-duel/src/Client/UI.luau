@@ -6,6 +6,7 @@ local Fighters=require(Shared.Fighters)
 -- (Beta 03/11) the select screen offers the beta's fighters only (Shared/BetaRoster).
 local Roster=require(Shared.BetaRoster)
 local Controls=require(Shared.Controls)
+local FirstMinute=require(Shared.FirstMinute)
 local SealJutsu=require(Shared.SealJutsu)
 local MoveGraphs=require(Shared.MoveGraphs)
 local Protocol=require(Shared.OnlineProtocol)
@@ -66,7 +67,9 @@ UI.kit={palette=palette,create=create,frame=frame,text=text,corner=corner,inkCar
 	TITLE_FONT=TITLE_FONT,BODY_FONT=BODY_FONT,CARD=CARD}
 local function accentOf(def) return Color3.fromRGB(table.unpack(def.Color)) end
 function UI.new(parent,send)
-	local self=setmetatable({player="Flashstep",bot="Mirage",send=send,selectionButtons={},introShown=nil},UI)
+	-- (B1 lot 2) `simple`: the first roster a player sees is PLAY and the
+	-- fighters, nothing else (ALL MODES opens the rest; any finished duel too).
+	local self=setmetatable({player="Flashstep",bot=FirstMinute.rival("Flashstep") or "Mirage",send=send,selectionButtons={},introShown=nil,simple=true},UI)
 	self.gui=create("ScreenGui",parent,{Name="NinjaDuelHUD",ResetOnSpawn=false,IgnoreGuiInset=true,ZIndexBehavior=Enum.ZIndexBehavior.Sibling})
 	-- ------------------------------------------------------------ selection
 	-- (UI redesign 02/11, user: "be original in everything, you can change
@@ -219,7 +222,9 @@ function UI.new(parent,send)
 	-- The action row: training, online, private duel by code, and the stage.
 	local below=800
 	self.startButton=button(shell,"ENTER THE STAGE",UDim2.fromOffset(1140,below),UDim2.fromOffset(400,58),function()
-		if self.picking then send("Confirm") else send("Start",{player=self.player,bot=self.bot,level=self.aiLevel}) end
+		if self.picking then send("Confirm")
+		elseif self.simple then send("First",{player=self.player})
+		else send("Start",{player=self.player,bot=self.bot,level=self.aiLevel}) end
 	end,palette.red)
 	-- (B1, 04/11) The AI's level for a duel, opposite the tournament: easy
 	-- first (B0: an idle player lost 107 of 125 health in 15 s), the server
@@ -240,7 +245,9 @@ function UI.new(parent,send)
 	end,palette.red)
 	self.cupButton.TextSize=26
 	self.tutorialButton=button(shell,"TRAINING",UDim2.fromOffset(60,below),UDim2.fromOffset(230,58),function()
-		if self.picking then send("Cancel") else send("Tutorial",{player=self.player,bot=self.bot}) end
+		if self.picking then send("Cancel")
+		elseif self.simple then self.simple=false;self:refreshSelection();if self.lastLobby then self:lobby(self.lastLobby) end
+		else send("Tutorial",{player=self.player,bot=self.bot}) end
 	end)
 	-- Online 1v1 with the fighter chosen above: casual queue, or a private duel
 	-- by code (host one, or type a friend's code and join).
@@ -521,18 +528,24 @@ function UI.new(parent,send)
 	-- strings and jutsu. A small chip on the HUD and a button on the roster say
 	-- where it is; nothing else lists keys during a fight.
 	self.controls=frame(self.gui,UDim2.fromScale(0,0),UDim2.fromScale(1,1),Color3.fromRGB(6,5,8),.25)
-	self.controls.ZIndex=40;self.controls.Visible=false
+	-- (UI review 04/11, finding 11) over the bracket (40-52) and the players
+	-- list (70), under an invitation (80).
+	self.controls.ZIndex=75;self.controls.Visible=false
 	-- (Audit 04/11) the sheet takes the clicks (they went through to the roster).
 	self.controls.Active=true
 	local sheet=inkCard(frame(self.controls,UDim2.fromScale(.5,.5),UDim2.fromOffset(1120,640),CARD,0))
-	sheet.AnchorPoint=Vector2.new(.5,.5);sheet.ZIndex=41
+	sheet.AnchorPoint=Vector2.new(.5,.5);sheet.ZIndex=76
 	local sheetScale=create("UIScale",sheet,{Scale=1})
 	local function fitSheet() local v=workspace.CurrentCamera.ViewportSize;sheetScale.Scale=math.clamp(math.min(v.X/1220,v.Y/720),.5,1.2) end
 	workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(fitSheet);fitSheet()
 	local sheetTitle=text(sheet,"CONTROLS",UDim2.fromOffset(36,20),UDim2.fromOffset(600,52),48,palette.paper,TITLE_FONT)
 	sheetTitle.ZIndex=42
-	self.controlsClose=text(sheet,"",UDim2.fromOffset(1120-436,30),UDim2.fromOffset(400,30),16,palette.muted,BODY_FONT,Enum.TextXAlignment.Right)
-	self.controlsClose.ZIndex=42
+	self.controlsClose=text(sheet,"",UDim2.fromOffset(1120-656,30),UDim2.fromOffset(400,30),16,palette.muted,BODY_FONT,Enum.TextXAlignment.Right)
+	self.controlsClose.ZIndex=77
+	-- (UI review 04/11, finding 1) a phone had no TAB: the sheet could not be
+	-- closed. A real button, which the pad's focus takes when the sheet opens.
+	self.controlsCloseButton=button(sheet,"CLOSE",UDim2.fromOffset(1120-236,14),UDim2.fromOffset(200,64),function() if self.controls.Visible then self:toggleControls() end end,palette.red)
+	self.controlsCloseButton.ZIndex=78
 	frame(sheet,UDim2.fromOffset(36,78),UDim2.fromOffset(1048,3),palette.red,0).ZIndex=42
 	self.controlsBody=frame(sheet,UDim2.fromOffset(36,96),UDim2.fromOffset(1048,520),palette.ink,1)
 	self.controlsBody.ZIndex=42
@@ -737,6 +750,8 @@ function UI:toggleControls()
 		self:buildControls(pad)
 	end
 	self.controls.Visible=open
+	if open then pcall(function() GuiService.SelectedObject=self.controlsCloseButton end)
+	elseif GuiService.SelectedObject==self.controlsCloseButton then pcall(function() GuiService.SelectedObject=nil end) end
 end
 -- The ink stroke crosses the screen (0.5 s): the new screen is already under
 -- it, uncovered by its trailing edge.
@@ -788,9 +803,11 @@ function UI:pick(side,id)
 		if side=="player" then self:choose(id) end
 		return
 	end
+	if self.simple then side="player";self.side="player" end
 	if side=="bot" then self.bot=id
 	else
 		self.player=id
+		if self.simple then self.bot=FirstMinute.rival(id) or self.bot end
 		if self.bot==id then
 			local roster=Roster
 			for i,other in roster do if other==id then self.bot=roster[i%#roster+1] break end end
@@ -816,15 +833,17 @@ function UI:lobby(data)
 		self.notice.Text=string.format("ONLINE 1v1  •  THE DUEL STARTS IN %d s",math.ceil(online.remaining or 0))
 	else
 		self.opponentPick=nil
-		self.opponentLabel.Text="OPPONENT (AI)"
-		self.startButton.Text="ENTER THE STAGE"
-		self.tutorialButton.Text="TRAINING"
-		self.notice.Text=data.notice or ""
+		self.opponentLabel.Text=if self.simple then "YOUR RIVAL" else "OPPONENT (AI)"
+		self.startButton.Text=if self.simple then "PLAY" else "ENTER THE STAGE"
+		self.tutorialButton.Text=if self.simple then "ALL MODES" else "TRAINING"
+		self.notice.Text=data.notice or (if self.simple then "PICK YOUR NINJA, THEN PLAY  •  30 SECONDS ON THE FIELD, THEN YOUR FIRST DUEL" else "")
 	end
-	self.onlineRow.Visible=data.phase=="Selection"
+	self.lastLobby=data
+	local full=data.phase=="Selection" and not self.simple
+	self.onlineRow.Visible=full
 	-- (Audit 04/11) not during the online pick (it did nothing there).
-	self.cupButton.Visible=data.phase=="Selection"
-	self.levelButton.Visible=data.phase=="Selection"
+	self.cupButton.Visible=full
+	self.levelButton.Visible=full
 	if data.phase=="Queue" then
 		local private=online~=nil and online.mode=="private"
 		self.queueTitle.Text=if private then "PRIVATE DUEL" else "SEARCHING FOR AN OPPONENT"
@@ -958,7 +977,11 @@ function UI:render(data)
 	self.hint.Position=UDim2.new(.5,-260,0,if self.tutorialPanel.Visible then 226 else 200)
 	if data.tutorial then
 		self.tutorialTitle.Text=data.tutorial.index.." / "..data.tutorial.total.."  "..data.tutorial.title
-		self.tutorialPrompt.Text=(if pad then data.tutorial.pad else Controls.localize(data.tutorial.key)).."  •  "..(if pad then "TOUCHPAD" else "BACKSPACE").." skips the step (hold: leave)"
+		-- (B1; UI review 04/11: a phone was told "WASD" and "BACKSPACE")
+		local tut=data.tutorial
+		local keys=if data.touch then (tut.touch or tut.pad) elseif pad then tut.pad else Controls.localize(tut.key)
+		local skip=if data.touch then "SKIP STEP" elseif pad then "TOUCHPAD" else "BACKSPACE"
+		self.tutorialPrompt.Text=keys.."  •  "..skip..(if tut.first then " skips (hold: straight to the duel)" else " skips the step (hold: leave)")
 	end
 	local introActive=data.phase=="Duel" and (data.intro or 0)>0
 	self.onlineInfo=data.online
@@ -970,7 +993,9 @@ function UI:render(data)
 	if self.lastPhase~=data.phase then
 		-- A change of screen passes under the ink stroke.
 		if self.lastPhase~=nil then self:sweep() end
-		if data.phase=="Result" then self:stampResult() end
+		if data.phase=="Result" then self:stampResult();self.simple=false end
+		-- (UI review 04/11) a new screen closes the controls sheet.
+		if self.controls.Visible then self:toggleControls() end
 		local target=if data.phase=="Selection" or data.phase=="Pick" then self.startButton elseif data.phase=="Result" then self.rematchButton
 			elseif data.phase=="Queue" then self.cancelButton else nil
 		-- Only a button that is on screen can take the focus (the engine warns
@@ -1185,6 +1210,12 @@ function UI:render(data)
 	if data.touch then
 		for _,b in self.techniqueButtons do b.box.Visible=false end
 		self.sealPanel.Visible=false
+	end
+	-- (B1 lot 2) the first minute and its duel: the signature's slot only,
+	-- no seal page; the rest shows from the next duel on.
+	if data.first then
+		for i,b in self.techniqueButtons do if i~=FirstMinute.SignatureSlot then b.box.Visible=false end end
+		self.sealPanel.Visible=false;self.sealWeave.Text=""
 	end
 	-- (Tournament) watching a match: none of these are the player's.
 	if data.spectate then

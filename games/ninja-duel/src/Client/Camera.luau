@@ -137,7 +137,8 @@ function Camera:fadeSelf(character,lens,at)
 	local parts=partsOf[character]
 	if not parts or #parts==0 or not parts[1].Parent then
 		parts={}
-		for _,d in character:GetDescendants() do if d:IsA("BasePart") and d.Name~="HumanoidRootPart" then table.insert(parts,d) end end
+		local ok,list=pcall(function() return character:GetDescendants() end)
+		for _,d in if ok then list else {} do if d:IsA("BasePart") and d.Name~="HumanoidRootPart" then table.insert(parts,d) end end
 		partsOf[character]=parts
 	end
 	faded=faded or {}

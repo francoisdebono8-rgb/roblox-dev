@@ -314,6 +314,9 @@ local function cloak(fx,model,actor,st)
 		for _,iris in st.irises or {} do iris.part.Color=iris.color;iris.part.Material=iris.material end
 		st.irises=nil
 		if st.face then Face.tint(st.face,nil) end
+		-- (Performance review 04/11) the face points back at its model: kept
+		-- in the weak table, it kept the model alive after the duel.
+		st.face=nil
 	end
 	if st.tail and hips then
 		-- One long tail: thick at the hips, rising behind him, a wave running

@@ -298,6 +298,7 @@ test("presentation: selectable in the menu, a costume of its own, every family o
   local UI=H.load("Client/UI")
   local sent={}
   local ui=UI.new(baseNew("PlayerGui"),function(action,extra) table.insert(sent,{action=action,extra=extra}) end)
+  ui.simple=false -- (B1) the full roster, as after ALL MODES
   -- (UI redesign 02/11) One roster of tablets: a tablet goes to the stage
   -- being chosen (yours, or the opponent's once its stage is picked).
   -- (Beta 03/11) the menu offers the beta's fighters (Shared/BetaRoster) and
