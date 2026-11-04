@@ -1,0 +1,7 @@
+# Data, not logic: the Blender clips baked to Luau tables and the build output.
+dist/
+src/Client/AuthoredClips*.luau
+src/Client/AuthoredJutsu*.luau
+src/Server/LookMeshData.luau
+tools/blender/exports/
+graphify-out/cache/
