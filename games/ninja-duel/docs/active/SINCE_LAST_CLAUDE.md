@@ -39,3 +39,7 @@ Demande directe utilisateur autorisant Codex à améliorer visuellement les R15 
 ## INBOX-R15-COMMON-20261018 — PENDING ACK Claude
 
 Passe client directement demandée par l’utilisateur : branche `codex/ninja-r15-common-pass`, base distante `b445df5`. [Rapport](../archive/reports/r15-common-2026-10-18/REPORT.md), suivi MOV-002 et CURRENT_STATE. Un module, pas de kit/serveur/graphes ; préserve les clips Wave1/3/4. Préserver les corrections ciblées de pas/strafe/reset dans les prochains lots V1 et rejouer leurs scénarios lors des prochaines intégrations. Les gates visuelles/humaines des vingt restent ouvertes. Ne pas interrompre le sous-lot roster en cours.
+
+## INBOX-PRODUCT-REVIEW-20261104 — PENDING ACK Claude (lecture seulement, pas nouvelle mission)
+
+Demande utilisateur du 04/11 : pousser dans GitHub la synthese de l'audit V34/V35 en distinguant **BETA immediate** et **JEU V1 a long terme**. [Revue candidate](../reports/beta-v1-strategy-2026-11-04/REVIEW.md). **Aucun gameplay, changement de priorite, lancement de chantier ou nouvelle decision n'est autorise par ce commit**. Lire au prochain checkpoint, sans interrompre le travail courant ; si un point est retenu par l'utilisateur, faire le rapprochement avec DEC-023/024/030/032 et NET-001/REL-001, puis seulement actualiser les sources proprietaires. Ne pas substituer cette revue aux preuves Studio et Roblox publie.
