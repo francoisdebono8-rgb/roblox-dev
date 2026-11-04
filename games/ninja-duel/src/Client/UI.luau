@@ -222,6 +222,11 @@ function UI.new(parent,send)
 	end,palette.red)
 	self.startButton.TextSize=32
 	self.startStroke=create("UIStroke",self.startButton,{Color=palette.paper,Thickness=2.5,Transparency=.2,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
+	-- (04/11) The Prodigy Tournament against the AI (Server/Tournament).
+	self.cupButton=button(shell,"TOURNAMENT  •  VS AI",UDim2.fromOffset(60,712),UDim2.fromOffset(400,52),function()
+		if not self.picking then send("CupStart",{player=self.player}) end
+	end,palette.red)
+	self.cupButton.TextSize=26
 	self.tutorialButton=button(shell,"TRAINING",UDim2.fromOffset(60,below),UDim2.fromOffset(230,58),function()
 		if self.picking then send("Cancel") else send("Tutorial",{player=self.player,bot=self.bot}) end
 	end)
@@ -494,8 +499,9 @@ function UI.new(parent,send)
 	inkTitle(self.resultTitle)
 	self.resultName=text(resultBox,"",UDim2.fromOffset(30,92),UDim2.fromOffset(540,36),30,palette.gold,TITLE_FONT,Enum.TextXAlignment.Center)
 	self.resultNote=text(resultBox,"",UDim2.fromOffset(30,132),UDim2.fromOffset(540,44),15,palette.muted,BODY_FONT,Enum.TextXAlignment.Center)
-	self.rematchButton=button(resultBox,"REMATCH",UDim2.fromOffset(30,196),UDim2.fromOffset(540,52),function() send("Rematch") end,palette.red)
-	button(resultBox,"RETURN TO THE ROSTER",UDim2.fromOffset(30,260),UDim2.fromOffset(540,52),function() send("Selection") end)
+	-- In a tournament the card continues the bracket instead of a rematch.
+	self.rematchButton=button(resultBox,"REMATCH",UDim2.fromOffset(30,196),UDim2.fromOffset(540,52),function() send(if self.inCup then "CupBracket" else "Rematch") end,palette.red)
+	self.rosterButton=button(resultBox,"RETURN TO THE ROSTER",UDim2.fromOffset(30,260),UDim2.fromOffset(540,52),function() send(if self.inCup then "CupLeave" else "Selection") end)
 	-- ------------------------------------------------------------ controls
 	-- (User 03/11: "the keys should be in a menu rather than on the screen
 	-- all the time".) TAB (pad: START) opens the controls sheet over any
@@ -990,7 +996,10 @@ function UI:render(data)
 	end
 	self.ko.Visible=data.ko==true
 	self.round.Text=if data.matchPoint and data.ko then "MATCH" else "ROUND "..(data.round or 1)
-	self.hp.name.Text=fullName(h);self.hp.title.Text=subtitle(h).."  •  YOU"
+	-- (in the tournament, the stage of the bracket under the round)
+	self.roundSub.Text=if data.cup and data.cup.next and data.cup.next.roundName then data.cup.next.roundName else "PRODIGY TOURNAMENT"
+	-- (a match watched in the tournament: neither fighter is the player)
+	self.hp.name.Text=fullName(h);self.hp.title.Text=if data.spectate then "AI  •  "..subtitle(h) else subtitle(h).."  •  YOU"
 	self.enemy.name.Text=fullName(b);self.enemy.title.Text=(if data.online then string.upper(data.online.opponent or "OPPONENT") else "AI").."  •  "..subtitle(b)
 	for _,pair in {{self.hp,h},{self.enemy,b}} do
 		local widget,actor=pair[1],pair[2]
@@ -1060,7 +1069,8 @@ function UI:render(data)
 	pcall(function()
 		local t=os.clock()
 		local ratio=math.clamp(h.health/math.max(h.maxHealth,1),0,1)
-		self.danger.GroupTransparency=if ratio<=.25 and ratio>0 then .45+.35*(.5+.5*math.sin(t*5)) else 1
+		-- (not on a match the player only watches: the danger is no one's)
+		self.danger.GroupTransparency=if not data.spectate and ratio<=.25 and ratio>0 then .45+.35*(.5+.5*math.sin(t*5)) else 1
 	end)
 	-- Combo counters with the damage scale of the next hit.
 	for _,pair in {{self.comboMine,b},{self.comboTheirs,h}} do
@@ -1136,6 +1146,11 @@ function UI:render(data)
 	end
 	for i=#h.techniques+1,5 do self.techniqueButtons[i].box.Visible=false end
 	self:sealHud(h,pad)
+	-- (Tournament) watching a match: none of these are the player's.
+	if data.spectate then
+		for _,b in self.techniqueButtons do b.box.Visible=false end
+		self.sealPanel.Visible=false;self.sealWeave.Text=""
+	end
 	local techOpen=h.reaction=="WallSplat" and (h.splatElapsed or 9)<.34
 	local conversion=UI.conversion(h,pad)
 	self.hint.Text=if techOpen then (if pad then "○ — WALL TECH" else "Q — WALL TECH")
@@ -1179,6 +1194,23 @@ function UI:render(data)
 	if online and online.forfeit then
 		self.resultTitle.Text=(if won then "VICTORY" else "DEFEAT").."  •  FORFEIT"
 		self.resultNote.Text="Your opponent left the duel. The win is yours."
+	end
+	-- (Tournament) continue the bracket; a match watched names its winner.
+	self.inCup=data.cup~=nil
+	self.rosterButton.Text=if self.inCup then "LEAVE THE TOURNAMENT" else "RETURN TO THE ROSTER"
+	if self.inCup then
+		self.rematchButton.Text=if data.cup.out and not data.spectate then "SEE WHO WINS IT  •  THE BRACKET" else "CONTINUE  •  THE BRACKET"
+		if data.spectate then
+			local def=Fighters[winner.fighterId or ""]
+			self.resultTitle.Text=string.upper(def and def.Name or "")..(if (data.roundsToWin or 1)>1 and data.wins then string.format("  %d–%d",math.max(data.wins.human or 0,data.wins.bot or 0),math.min(data.wins.human or 0,data.wins.bot or 0)) else "")
+			self.resultTitle.TextColor3=palette.gold
+			self.resultSeal.Text="勝";self.resultSeal.BackgroundColor3=palette.red
+			self.resultNote.Text="One more name moves up the bracket."
+		elseif won then
+			self.resultNote.Text="Your name moves up the bracket."
+		else
+			self.resultNote.Text="Your tournament ends here. The bracket plays out without you."
+		end
 	end
 end
 return UI

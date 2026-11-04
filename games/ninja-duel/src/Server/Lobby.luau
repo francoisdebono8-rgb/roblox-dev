@@ -139,10 +139,11 @@ function Lobby:stateOf(p)
 	if not s then return "free" end
 	if s.online and (s.online.kind=="duel" or s.online.kind=="travel") then return "duel" end
 	if s.online then return "queue" end
+	if s.cup then return "cup" end
 	if s.phase=="Duel" or s.phase=="Result" then return "training" end
 	return "free"
 end
-function Lobby.challengeable(state) return state=="free" or state=="training" or state=="queue" end
+function Lobby.challengeable(state) return state=="free" or state=="training" or state=="queue" or state=="cup" end
 
 -- ------------------------------------------------------------ presence
 function Lobby:publish(now)

@@ -1,3 +1,29 @@
+**v33 : le tournoi contre l'IA (04/11)** (feuille de route `feuille-de-route-tournoi-matchmaking`, étape 2 : tableau de 8, chaque perso une fois, combats IA visibles depuis les tribunes, 2 manches gagnantes)
+- **Entrée** : **TOURNAMENT • VS AI** sur le roster, avec le perso choisi (`Server/Tournament`, `Client/CupScreen`).
+- **Tableau** : les 8 de la bêta, les affiches de l'histoire en quarts (Naruto–Neji, Sasuke–Gaara, Lee–Minato, Itachi–Kakashi). Quarts, demies, finale ; une phrase de chaque perso avant le match. Les traits du tableau s'allument en or derrière le vainqueur, en rouge pour le prochain match.
+- **Ses matchs** : un duel normal contre l'IA, plus forte à chaque tour (paliers Medium, Hard, Boss de `BuildPresets` quand le perso en a). Pas de revanche : la carte de fin dit « CONTINUE • THE BRACKET ».
+- **Les matchs IA contre IA** :
+  - **WATCH** : joués pour de vrai dans l'arène, un pilote automatique sur le premier perso ; la touche du joueur ne pilote rien.
+  - Caméra des tribunes, haute et sur le côté, qui glisse doucement ; un arbre ou un décor entre elle et les deux persos devient transparent.
+  - Bandeau « SPECTATING • QUARTER-FINAL » avec SKIP ; sous le compteur de manches, l'étape du tableau.
+  - La fiche du perso de gauche dit « AI », pas « YOU », et le bord rouge de vie basse ne s'affiche pas.
+  - **SKIP** : le vainqueur est tiré selon le taux de victoire mesuré sur le moteur, `Server/CupOdds`. C'est une matrice de combats IA contre IA sans écran, 10 graines par paire dans les deux sens, recalculée après un rééquilibrage.
+- **Éliminé** : le reste du tableau se joue tout seul pour montrer le vainqueur (« ELIMINATED IN THE QUARTER-FINAL »), puis NEW TOURNAMENT ou BACK TO THE ROSTER. **Champion** : carte 勝 CHAMPION avec le nom complet du perso.
+- **Présence** : un joueur en tournoi apparaît « IN A TOURNAMENT » dans PLAYERS ONLINE et reste défiable.
+- **Tests** : `tests/Tournament.spec.luau` (6, ajouté à `tests/run.sh`) couvre :
+  - le tableau, un match regardé et le blocage des touches du joueur ;
+  - le SKIP et l'élimination ;
+  - le titre de champion ;
+  - la table de victoires.
+- **Vu dans Studio** (`ND-Test-v31` patché) :
+  - un quart IA regardé jusqu'au bout (Neji 2-0, « NEJI HYUGA ADVANCES ») ;
+  - deux SKIP ;
+  - son quart perdu contre Lee (« DEFEAT 0-2 »), puis le tableau joué jusqu'au champion ;
+  - la carte de champion ;
+  - le retour au roster.
+- **Corrections faites après l'essai** : le « YOU » sur un match regardé, l'arbre devant la caméra, le bord rouge de vie basse, la carte de champion trop grande sur un petit écran, le bouton du roster renommé.
+- **Pas encore** : récompenses (étape 3), tournoi entre joueurs (étape 4).
+
 **v31 → v32 : défier un joueur sans code, sur tout le jeu (04/11)** (utilisateur : « voir s'il y a des joueurs connectés et pouvoir lancer un match, que ça envoie une notification à l'autre, l'autre il accepte ou non » ; feuille de route `feuille-de-route-tournoi-matchmaking`, étape 1)
 - **Présence** (`Server/Lobby`, `Shared/LobbyProtocol`) : chaque serveur publie ses joueurs dans une liste partagée (MemoryStore `ND_Presence_v1`) avec le nom, le perso choisi, l'état (libre, contre l'IA, en recherche, en duel) et « ne pas déranger ». La liste est rafraîchie toutes les 15 s, et une entrée non rafraîchie disparaît au bout de 45 s. Chaque serveur relit la liste toutes les 10 s.
 - **Défi** :

@@ -17,7 +17,7 @@ local Shared=game:GetService("ReplicatedStorage").NinjaDuel
 local Fighters=require(Shared.Fighters)
 local Panel={};Panel.__index=Panel
 
-local STATE={free="ON THE ROSTER",training="VS THE AI",queue="SEARCHING",duel="IN A DUEL"}
+local STATE={free="ON THE ROSTER",training="VS THE AI",queue="SEARCHING",duel="IN A DUEL",cup="IN A TOURNAMENT"}
 local function blocked()
 	local set={}
 	pcall(function()
@@ -191,7 +191,7 @@ function Panel:drawList()
 	for _,e in self.players do
 		if self.blocked[e.id] then continue end
 		shown+=1
-		local available=(e.state=="free" or e.state=="training" or e.state=="queue") and not e.dnd
+		local available=(e.state=="free" or e.state=="training" or e.state=="queue" or e.state=="cup") and not e.dnd
 		if available then free+=1 end
 		local row=K.frame(self.list,UDim2.fromOffset(0,(shown-1)*64),UDim2.fromOffset(696,58),P.panel,.15)
 		K.corner(row,6);row.ZIndex=73

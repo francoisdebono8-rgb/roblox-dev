@@ -409,6 +409,55 @@ function Camera:update(data,dt)
 	elseif cine then
 		self.cinematic=nil;self.rigCF=camera.CFrame
 	end
+	-- (Tournament, 04/11) A match the player watches: the stands' lens, high
+	-- on the side of the pair, drifting slowly along the arena, both bodies in
+	-- frame whatever they do.
+	if data.spectate then
+		local mid=a:Lerp(target,.5)
+		local line=Vector3.new(target.X-a.X,0,target.Z-a.Z)
+		if line.Magnitude<.1 then line=self.spectateLine or Vector3.xAxis end
+		self.spectateLine=line
+		local side=line.Unit:Cross(Vector3.yAxis)
+		if self.spectateSide and side:Dot(self.spectateSide)<0 then side=-side end
+		self.spectateSide=side
+		local drift=math.sin(clock*.12)*.35
+		local dir=(side*math.cos(drift)+line.Unit*math.sin(drift)).Unit
+		local dist=math.max(30,line.Magnitude*.9+22)
+		local eye=mid+dir*dist+Vector3.new(0,13+line.Magnitude*.15,0)
+		local look=mid+Vector3.new(0,2,0)
+		-- (Studio 04/11: one of the arena's trees stood between the stands' lens
+		-- and the pair) Props in the way fade, as for the player's own lens; the
+		-- floor and the bowl's wall bring the lens in, a little higher.
+		local ray=RaycastParams.new();ray.FilterType=Enum.RaycastFilterType.Exclude
+		local exclude={character};if bot then table.insert(exclude,bot) end
+		local effects=folder and folder:FindFirstChild("Effects");if effects then table.insert(exclude,effects) end
+		local fx=workspace:FindFirstChild("NinjaDuelFX");if fx then table.insert(exclude,fx) end
+		local faded={}
+		local hit
+		for _=1,8 do
+			ray.FilterDescendantsInstances=exclude
+			hit=workspace:Raycast(look,eye-look,ray)
+			if not hit or solid(hit.Instance) then break end
+			local model=hit.Instance:FindFirstAncestorOfClass("Model")
+			if model and model~=workspace and model:FindFirstChildOfClass("Humanoid") then
+				for _,d in model:GetDescendants() do if d:IsA("BasePart") then faded[d]=true end end
+				table.insert(exclude,model)
+			else
+				faded[hit.Instance]=true;table.insert(exclude,hit.Instance)
+			end
+		end
+		if hit then eye=hit.Position+hit.Normal*1.2+Vector3.new(0,math.max(0,(eye-look).Magnitude-hit.Distance)*.4,0) end
+		for part in self.faded or {} do if not faded[part] and part.Parent then part.LocalTransparencyModifier=0 end end
+		for part in faded do part.LocalTransparencyModifier=.72 end
+		self.faded=faded
+		local cf=CFrame.lookAt(eye,look)*shake
+		self.spectateCF=if self.spectateCF then self.spectateCF:Lerp(cf,math.clamp(dt*3,0,1)) else cf
+		camera.CFrame=self.spectateCF
+		camera.FieldOfView=camera.FieldOfView+(55-camera.FieldOfView)*math.clamp(dt*4,0,1)
+		self.rigCF=camera.CFrame
+		return
+	end
+	self.spectateCF=nil;self.spectateSide=nil
 	-- Studio film camera (tooling only): a low side view of both fighters, the
 	-- way a fighting-game camera shows feet, ground contact and body mechanics.
 	local film=studio and workspace:GetAttribute("NinjaDuelFilmCam")
