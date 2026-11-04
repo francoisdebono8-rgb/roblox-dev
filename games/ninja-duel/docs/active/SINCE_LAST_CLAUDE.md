@@ -1,5 +1,14 @@
 # Boîte de réception Claude
 
+## INBOX-VFX-STUDIO-20261104 — PENDING ACK Claude (demande utilisateur explicite, 04/11)
+
+**Demande utilisateur : « dis-lui d'installer VFX Studio ».** Plugin Roblox Studio précis : **VFX Studio** par **@XxOmqxXNerd**, asset ID **135581141962270**, Creator Store officiel : https://create.roblox.com/store/asset/135581141962270/VFX-Studio . Ne pas confondre avec VFX Editor, VFX Forge ou d'autres plugins.
+
+**Action demandée à Claude :** depuis la session Roblox Studio accessible, ouvrir le lien officiel, vérifier l'éditeur, le prix et les autorisations demandées, puis installer le plugin si accessible sans achat ni élévation de permissions inattendue. S'il faut une transaction, une connexion/autorisation non disponible ou si l'installation ne peut pas être effectuée par Claude, signaler exactement la manipulation nécessaire à l'utilisateur ; ne jamais affirmer « installé » avant preuve dans l'interface Plugins de Studio. Ne pas télécharger des réuploads tiers ni introduire le plugin dans le runtime du jeu.
+
+**Après installation :** confirmer présence et ouverture de VFX Studio ; examiner en priorité sa pertinence pour les effets jutsu/impacts de la bêta V35. Proposer **un seul test visuel comparatif isolé** sur un effet existant (avant/après), sans remplacer la pipeline VFX actuelle, sans nouveaux systèmes, sans publier automatiquement ; intégrer seulement après preuve à l'écran et validation du rendu. Respecter le chantier en cours et les règles d'exécution : ce message ne vaut pas permission de refondre tous les VFX ni de détourner la roadmap.
+
+
 Propriétaire unique : notifications temporaires à accuser puis absorber selon [EXECUTION_RULES](EXECUTION_RULES.md). Décisions dans [DECISIONS](DECISIONS.md), faits dans [CURRENT_STATE](CURRENT_STATE.md), travail dans [MASTER_BACKLOG](MASTER_BACKLOG.md).
 
 ## INBOX-ANIM-MASTERY-20261027 — ACK Claude 27/10 (bloc en cours)
