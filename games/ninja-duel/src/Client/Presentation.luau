@@ -742,7 +742,8 @@ function Presentation:smoothStep(data,dt)
 			-- its velocity.
 			actualCF=Presentation.snapshotRoot(data,actor,actualCF)
 			local drawn=self:smoothRoot(key,actualCF,math.max(dt,1/240),actor.warpSerial)
-			if key=="human" then drawn=self:leadLocal(actor,drawn,math.max(dt,1/240)) end
+			-- (Audit 04/11) a watched tournament match: the body is the AI's own.
+			if key=="human" and not data.spectate then drawn=self:leadLocal(actor,drawn,math.max(dt,1/240)) end
 			st=self.smooth[key]
 			st.replicatedCF=actualCF
 			-- (Tutorial probe 03/11: 12-19 pops per fighter, 3-9 studs in one

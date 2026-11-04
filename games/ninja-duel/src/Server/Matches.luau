@@ -322,6 +322,11 @@ function Matches:request(player,payload)
 	-- The online flow owns every request of a player who is in it.
 	if self.online and self.online:request(player,s,action,payload,clock) then return end
 	if action=="TutorialSkip" and s.tutorial then self:selection(player);s.tutorial=nil;return end
+	-- (Audit 04/11) one step skipped (the panel's "tap: skip the step").
+	if action=="TutorialStep" and s.tutorial then
+		if clock-(s.lastStepSkip or -10)>.3 then s.lastStepSkip=clock;Tutorial.skip(s,s.combat and s.combat.now or clock) end
+		return
+	end
 	if self.tournament and self.tournament:request(player,s,action,payload) then return end
 	if action=="Start" or action=="Tutorial" or action=="Rematch" or action=="Selection" then
 		if clock-s.lastLifecycle<0.8 then return end

@@ -271,6 +271,10 @@ function Online:request(player,s,action,payload,clock)
 	local o=s.online
 	local gap=clock-s.lastLifecycle>=Protocol.LifecycleGap
 	if not o then
+		-- (Audit 04/11) on a duel server, waiting for the opponent to arrive:
+		-- CANCEL goes back to a public server (it did nothing for 45 s).
+		local lobby=self.matches.lobby
+		if action=="Cancel" and lobby and lobby.duel and gap then s.lastLifecycle=clock;lobby:home(player);return true end
 		if not Protocol.Lifecycle[action] then return false end
 		if action~="Cancel" and s.phase=="Selection" and gap then
 			s.lastLifecycle=clock

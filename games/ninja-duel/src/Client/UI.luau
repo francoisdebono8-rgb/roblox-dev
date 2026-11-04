@@ -510,6 +510,8 @@ function UI.new(parent,send)
 	-- where it is; nothing else lists keys during a fight.
 	self.controls=frame(self.gui,UDim2.fromScale(0,0),UDim2.fromScale(1,1),Color3.fromRGB(6,5,8),.25)
 	self.controls.ZIndex=40;self.controls.Visible=false
+	-- (Audit 04/11) the sheet takes the clicks (they went through to the roster).
+	self.controls.Active=true
 	local sheet=inkCard(frame(self.controls,UDim2.fromScale(.5,.5),UDim2.fromOffset(1120,640),CARD,0))
 	sheet.AnchorPoint=Vector2.new(.5,.5);sheet.ZIndex=41
 	local sheetScale=create("UIScale",sheet,{Scale=1})
@@ -646,7 +648,10 @@ function UI:buildControls(pad)
 	end
 	-- The fighter in play (on the roster: the one picked): his strings, his jutsu.
 	local h=self.lastHuman
-	local id=if self.selection.Visible or not h then self.player else h.fighterId
+	-- (Audit 04/11) his own fighter: in his own duel the one he plays, else
+	-- the one picked (a watched match or the bracket showed someone else's).
+	local own=h~=nil and not self.lastSpectate and (self.lastPhaseSeen=="Duel" or self.lastPhaseSeen=="Result")
+	local id=if self.selection.Visible or not own then self.player else h.fighterId
 	local def=Fighters[id or ""]
 	local y=410
 	local head=text(body,if def then string.upper(def.FullName or def.Name) else "YOUR FIGHTER",UDim2.fromOffset(0,y),UDim2.fromOffset(1048,28),24,palette.gold,TITLE_FONT);head.ZIndex=43
@@ -805,6 +810,8 @@ function UI:lobby(data)
 		self.notice.Text=data.notice or ""
 	end
 	self.onlineRow.Visible=data.phase=="Selection"
+	-- (Audit 04/11) not during the online pick (it did nothing there).
+	self.cupButton.Visible=data.phase=="Selection"
 	if data.phase=="Queue" then
 		local private=online~=nil and online.mode=="private"
 		self.queueTitle.Text=if private then "PRIVATE DUEL" else "SEARCHING FOR AN OPPONENT"
@@ -928,6 +935,7 @@ function UI.ultimate(widget,actor,pad,mine)
 	end
 end
 function UI:render(data)
+	self.lastSpectate=data.spectate==true;self.lastPhaseSeen=data.phase
 	local pad=if data.gamepad~=nil then data.gamepad else Controls.isGamepad(UIS:GetLastInputType())
 	self.tutorialPanel.Visible=data.tutorial~=nil and data.phase=="Duel"
 	-- (User 02/11, tutorial on screen) The cue band (124) and the hint (200)
@@ -937,7 +945,7 @@ function UI:render(data)
 	self.hint.Position=UDim2.new(.5,-260,0,if self.tutorialPanel.Visible then 226 else 200)
 	if data.tutorial then
 		self.tutorialTitle.Text=data.tutorial.index.." / "..data.tutorial.total.."  "..data.tutorial.title
-		self.tutorialPrompt.Text=(if pad then data.tutorial.pad else Controls.localize(data.tutorial.key)).."  •  "..(if pad then "Touchpad to skip" else "ESC to skip")
+		self.tutorialPrompt.Text=(if pad then data.tutorial.pad else Controls.localize(data.tutorial.key)).."  •  "..(if pad then "TOUCHPAD" else "BACKSPACE").." skips the step (hold: leave)"
 	end
 	local introActive=data.phase=="Duel" and (data.intro or 0)>0
 	self.onlineInfo=data.online

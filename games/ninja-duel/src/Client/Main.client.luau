@@ -71,8 +71,9 @@ local function send(action,extra)
 		if root and (hit-root.Position).Magnitude<=140 then payload.aim=hit end
 	end
 	remote:FireServer(payload)
-	if current.phase=="Duel" and (action=="Attack" or action=="Heavy") then presentation:predictStrike(action,current) end
-	if current.phase=="Duel" and (action=="Dodge" or action=="Jump" or action=="PadJump") then presentation:predictMove(action,current) end
+	-- (Audit 04/11) watching a tournament match: the body is the AI's, no guess.
+	if current.phase=="Duel" and not current.spectate and (action=="Attack" or action=="Heavy") then presentation:predictStrike(action,current) end
+	if current.phase=="Duel" and not current.spectate and (action=="Dodge" or action=="Jump" or action=="PadJump") then presentation:predictMove(action,current) end
 end
 ui=UI.new(player:WaitForChild("PlayerGui"),send)
 -- (04/11) Players online and challenges between them (Server/Lobby).
@@ -114,7 +115,9 @@ RunService:BindToRenderStep("NinjaDuelCamera",Enum.RenderPriority.Camera.Value,f
 	-- (DEC-030 Partie 1, responsiveness) The stick goes out the frame it
 	-- changes, not on the next 80 ms tick (that alone cost up to 80 ms on every
 	-- start, stop and turn); the tick stays as a heartbeat.
-	if current.phase=="Duel" then
+	if current.phase=="Duel" and current.spectate then
+		presentation.inputDir=Vector3.zero;presentation.lead=nil;presentation.prediction=nil
+	elseif current.phase=="Duel" then
 		local dir=input:direction(workspace.CurrentCamera)
 		presentation.inputDir=dir;presentation.inputSprint=input.sprinting
 		presentation:observeStick(os.clock())

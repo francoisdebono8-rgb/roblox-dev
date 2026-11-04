@@ -27,7 +27,8 @@ local Controls = {
 		Ultimate = Enum.KeyCode.Y,
 		-- Draw / sheathe a kunai (any fighter, DEC-030); R then throws it.
 		Arm = Enum.KeyCode.B,
-		Skip = Enum.KeyCode.Escape,
+		-- (Audit 04/11) Escape is Roblox's own menu: the game never receives it.
+		Skip = Enum.KeyCode.Backspace,
 	},
 	Gamepad = {
 		Light = Enum.KeyCode.ButtonX,
@@ -56,7 +57,7 @@ local Controls = {
 	KeyLabel = {
 		Light = "LMB", Heavy = "RMB", Jump = "SPACE", Dodge = "Q", Guard = "F",
 		Grab = "V", Tool = "R", Chakra = "Z", Pursuit = "E", Substitute = "X", Feint = "G",
-		WallDetach = "C", Seals = "C + 1-4", Lock = "SHIFT", Sprint = "CTRL", Technique5 = "5", Awaken = "T", Ultimate = "Y", Arm = "B", Skip = "ESC", ChakraLoad = "Z + action",
+		WallDetach = "C", Seals = "C + 1-4", Lock = "SHIFT", Sprint = "CTRL", Technique5 = "5", Awaken = "T", Ultimate = "Y", Arm = "B", Skip = "BACKSPACE", ChakraLoad = "Z + action",
 	},
 	-- HUD copy for the keyboard layout, kept next to the bindings it documents.
 	Hint = "LMB light \u{00B7} RMB heavy",
@@ -68,7 +69,7 @@ local Controls = {
 	GrammarPad = "CLEAN HITS  1 hit → △: heavy  |  2 hits → △: launch · ○: around · ×: rising · R2: retreat  |  3 hits → △: low  |  air hit → △: spike · ○: switch · ×: drive",
 	HelpPad = "L move · L3 sprint   R camera · R3 lock   □ light   △ heavy   ○ dodge / escape   × jump / chase   sprint + ○ toward: chakra dash   L1 guard   L1 + □ grab   R2 tool   hold L2 + any action: chakra-infused   R1 + □/△/○/×: jutsu 1-4   hold R1 + L1 + □/△/○/× (Gaara: D-pad ↑ too): seal jutsu   R1 + L1 (tap) ultimate   R1 + R2 feint   D-pad → escape · ← kunai · ↓ awaken · ↑ jutsu 5",
 	PadLabel = {Light="□",Heavy="△",Dodge="○",Jump="×",Guard="L1",Modifier="R1",Grab="L1 + □",Tool="R2",Chakra="L2",Sprint="L3",Lock="R3",Pursuit="×",Dash="L3 + ○",Substitute="D-pad →",Arm="D-pad ←",Feint="R1 + R2",WallDetach="R1 + L1",Ultimate="R1 + L1",ChakraLoad="L2 + action",Seals="R1 + L1 + □△○×",
-		Technique5="D-pad ↑",Awaken="D-pad ↓",Skip="SELECT"},
+		Technique5="D-pad ↑",Awaken="D-pad ↓",Skip="TOUCHPAD"},
 	-- (Stage 6) One order for everyone: □ pressure, △ signature, ○ movement
 	-- or defence, × control or combo.
 	TechniquePad = {"R1 + □","R1 + △","R1 + ○","R1 + ×","D-pad ↑"},

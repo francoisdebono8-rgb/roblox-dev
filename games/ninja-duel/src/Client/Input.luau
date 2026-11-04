@@ -230,7 +230,16 @@ function Input.new(send,getState,toggleLock,camera)
  -- else ○ toward a locked opponent while sprinting. The Dodge packet already
  -- carries the stick and the sprint toggle; the server turns it into the dash.
  bind("SubstitutePad",key(GAMEPAD.Substitute),function(state,obj) if pressed(state,obj) then send("Substitute") end end)
- bind("Skip",both("Skip"),function(state,obj) if pressed(state,obj) and getState().tutorial then send("TutorialSkip") end end)
+ -- (Audit 04/11) The tutorial: a tap skips the step, held a second it leaves
+ -- (BACKSPACE / touchpad; Escape is the Roblox menu and never arrives).
+ bind("Skip",both("Skip"),function(state,obj)
+  if not getState().tutorial then return end
+  if pressed(state,obj) then self.skipAt=Input.now()
+  elseif released(state) and self.skipAt then
+   local held=Input.now()-self.skipAt;self.skipAt=nil
+   send(if held>=1 then "TutorialSkip" else "TutorialStep")
+  end
+ end)
  for index,code in {Enum.KeyCode.One,Enum.KeyCode.Two,Enum.KeyCode.Three,Enum.KeyCode.Four} do
   bind("Technique"..index,key(code),function(state,obj)
    -- C held: the second page, the seal jutsu (one press, the cast weaves the signs).

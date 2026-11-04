@@ -117,6 +117,7 @@ function Cup.new(ui,send,kit)
 	self.bannerText=K.text(banner,"",UDim2.fromOffset(18,8),UDim2.fromOffset(440,54),20,P.paper,K.TITLE_FONT);self.bannerText.ZIndex=46
 	local skip=K.button(banner,"SKIP",UDim2.fromOffset(474,12),UDim2.fromOffset(148,46),function() self.send("CupSkip") end,P.red)
 	skip.ZIndex=46
+	self.skip=skip
 	return self
 end
 local function nameOf(id)
@@ -239,7 +240,11 @@ function Cup:render(data)
 	end
 	-- Watching a match: whose, which round, SKIP.
 	local watching=phase=="Duel" and data.spectate==true and data.cup~=nil
-	self.banner.Visible=watching
+	-- (Audit 04/11) not over the intro's VS and names, not over the K.O. (the
+	-- result on screen is the result); on a pad SKIP takes the focus.
+	self.banner.Visible=watching and not data.ko and (data.intro or 0)<=0
+	if self.banner.Visible and not self.bannerShown and data.gamepad then focus(self.skip) end
+	self.bannerShown=self.banner.Visible
 	if watching then
 		local n=data.cup.next
 		local a,b=nameOf(data.human and data.human.fighterId),nameOf(data.bot and data.bot.fighterId)

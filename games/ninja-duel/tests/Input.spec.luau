@@ -309,10 +309,16 @@ test("text focus, window blur and disconnect clear guard, jump and stuck control
  uis.focused=true;local n=#sent
  assert(press("Light",Controls.Keyboard.Light)==E.ContextActionResult.Pass and #sent==n)
 end)
-test("Escape reaches the Roblox menu outside tutorial and skips only training",function()
+test("tutorial (audit 04/11): BACKSPACE / touchpad tap skips the step, held a second leaves; Escape stays Roblox's",function()
  local before=#sent
- assert(press("Skip",E.KeyCode.Escape)==E.ContextActionResult.Pass and #sent==before)
- state.tutorial={};tap("Skip",E.KeyCode.Escape);assert(last()=="TutorialSkip")
+ assert(press("Skip",E.KeyCode.Backspace)==E.ContextActionResult.Pass and #sent==before,"the skip key acts outside the tutorial")
+ assert(Controls.Keyboard.Skip~=E.KeyCode.Escape,"the skip is on Escape again (Roblox keeps it for its menu)")
+ local clock,now=0,Input.now
+ Input.now=function() return clock end
+ state.tutorial={};tap("Skip",E.KeyCode.Backspace);assert(last()=="TutorialStep","a tap sent "..last())
+ press("Skip",E.KeyCode.ButtonSelect);clock+=1.2;press("Skip",E.KeyCode.ButtonSelect,E.UserInputState.End)
+ assert(last()=="TutorialSkip","a held touchpad sent "..last())
+ Input.now=now
  state.tutorial=nil
 end)
 test("combo prompts omit routes that the current character does not have",function()

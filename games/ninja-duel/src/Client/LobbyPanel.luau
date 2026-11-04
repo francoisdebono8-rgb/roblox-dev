@@ -196,6 +196,21 @@ function Panel:tickTimer()
 end
 function Panel:drawList()
 	local K,P=self.kit,self.kit.palette
+	-- (Audit 04/11) the list refreshes every second: rebuilt only when it
+	-- changed, else the pad's selected CHALLENGE button was destroyed under it.
+	local parts={tostring(self.dnd)}
+	for _,e in self.players do
+		table.insert(parts,table.concat({tostring(e.id),tostring(e.name),tostring(e.state),tostring(e.fighter),tostring(e.dnd),tostring(e.pending),tostring(e.friend),tostring(e.here),tostring(self.blocked[e.id])},"|"))
+	end
+	local signature=table.concat(parts,";")
+	if signature==self.listSignature and #self.rows>0 then return end
+	self.listSignature=signature
+	local GuiService=game:GetService("GuiService")
+	local selectedIndex
+	pcall(function()
+		local selected=GuiService.SelectedObject
+		for i,b in self.rowButtons or {} do if b==selected then selectedIndex=i end end
+	end)
 	for _,row in self.rows do row:Destroy() end
 	table.clear(self.rows)
 	self.rowButtons={}
@@ -223,6 +238,11 @@ function Panel:drawList()
 		if not available or e.pending then b.TextColor3=P.muted end
 		table.insert(self.rows,row)
 		table.insert(self.rowButtons,b)
+	end
+	-- the pad's selection back on the same row (or the last one)
+	if selectedIndex then
+		local b=self.rowButtons[math.min(selectedIndex,#self.rowButtons)]
+		pcall(function() GuiService.SelectedObject=b or self.closeButton end)
 	end
 	self.list.CanvasSize=UDim2.fromOffset(0,shown*64)
 	self.empty.Visible=shown==0

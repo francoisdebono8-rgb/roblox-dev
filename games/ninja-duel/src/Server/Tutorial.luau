@@ -50,7 +50,7 @@ function Tutorial.plan(a)
 	local routes=graph.routes or {}
 	local steps={}
 	local function add(spec) table.insert(steps,step(spec)) end
-	add({id="move",title="Move",key="W A S D",pad="L stick",
+	add({id="move",title="Move",key="WASD",pad="L stick",
 		check=function(s,t) return t.travel>12 end})
 	add({id="sprint",title="Sprint",key="Hold "..K.Sprint.." + move",pad=P.Sprint..", then move",
 		check=function(s,t) return s.human.sprinting and s.human.locomotion.Magnitude>28 end})
@@ -85,7 +85,9 @@ function Tutorial.plan(a)
 		check=function(s,t) local a,b=s.human,s.bot;return t.ev("Chase") and a.state=="Neutral" and a.airborne and (a.root.Position-b.root.Position).Magnitude<7 end})
 	add({id="air",title="Land two aerial strikes",key=K.Light.." twice in the air",pad=P.Light.." twice in the air",place="air",retry=3,
 		check=function(s,t) return t.count("AirHit")>=2 end})
-	add({id="airFinish",title=if graph.airFinisher then "Finish in the air: "..moveLabel(graph.airFinisher) else "Finish downward",key=K.Heavy.." in the air",pad=P.Heavy.." in the air",place="air",retry=3,
+	-- (Audit 04/11) the finisher is a table: its name (it printed "table: 0x…").
+	local finisher=graph.airFinisher
+	add({id="airFinish",title=if finisher then "Finish in the air: "..moveLabel(if type(finisher)=="table" then finisher.name else finisher) else "Finish downward",key=K.Heavy.." in the air",pad=P.Heavy.." in the air",place="air",retry=3,
 		check=function(s,t) return t.ev("SlamHit") or t.ev("LionCombo") or (t.ok("Heavy") and t.count("Hit")>=1) end})
 	add({id="runStrike",title=if graph.runStrike then "Strike on the run: "..moveLabel(graph.runStrike) else "Strike on the run",key="Sprint at him, then "..K.Light.." or "..K.Heavy,pad="Sprint at him, then "..P.Light.." or "..P.Heavy,
 		check=function(s,t) return t.ev("RunningStrike") end})

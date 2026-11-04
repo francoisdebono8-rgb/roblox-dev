@@ -150,6 +150,10 @@ test("champion: three matches won, the champion's card; leaving ends the cup",fu
 	end
 	assert(s.phase=="Champion" and last(player).phase=="Champion","no champion's card")
 	assert(last(player).cup.champion==last(player).cup.me,"the champion is not him")
+	-- (Audit 04/11) NEW TOURNAMENT on the champion's card starts a new bracket
+	local before=s.cup
+	send(m,player,"CupStart",{player="Leaf"})
+	assert(s.cup and s.cup~=before and not s.cup.over and s.cup.match==1 and s.phase=="Bracket","NEW TOURNAMENT did nothing")
 	send(m,player,"CupLeave")
 	assert(s.phase=="Selection" and s.cup==nil,"the cup outlived the roster")
 end)

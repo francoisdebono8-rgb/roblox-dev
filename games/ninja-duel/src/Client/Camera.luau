@@ -111,7 +111,8 @@ function Camera:impulse(style,role,impact)
 end
 function Camera:mouse(data)
 	local UIS=game:GetService("UserInputService")
-	local free=data~=nil and data.phase=="Duel" and not self.locked and not data.gamepad and not self.menuOpen
+	-- (Audit 04/11) watching a match: the cursor stays free for SKIP.
+	local free=data~=nil and data.phase=="Duel" and not self.locked and not data.gamepad and not self.menuOpen and not data.spectate
 	local want=if free then Enum.MouseBehavior.LockCenter else Enum.MouseBehavior.Default
 	if UIS.MouseBehavior~=want then UIS.MouseBehavior=want end
 end

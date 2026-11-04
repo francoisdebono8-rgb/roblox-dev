@@ -156,6 +156,8 @@ function Tournament:skip(player)
 	local s=m:session(player)
 	local cup=s.cup
 	if not cup or cup.over then return end
+	-- (Audit 04/11) the K.O. on screen is the result: no reroll over it.
+	if s.finishing or s.phase=="Result" then return end
 	local a,b=Tournament.pair(cup,cup.match)
 	if not a or not b or a==cup.me or b==cup.me then return end
 	if s.phase=="Duel" or s.phase=="Result" then m:destroy(s) end
@@ -217,7 +219,8 @@ end
 -- Requests that belong to the cup; true when handled.
 function Tournament:request(player,s,action,payload)
 	if action=="CupStart" then
-		if s.phase=="Selection" and not s.cup then self:start(player,payload.player) end
+		-- (Audit 04/11) and NEW TOURNAMENT once one is over (champion or out).
+		if (s.phase=="Selection" and not s.cup) or (s.cup and s.cup.over) then self:start(player,payload.player) end
 		return true
 	end
 	if not s.cup then return false end
