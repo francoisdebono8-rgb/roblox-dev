@@ -116,6 +116,46 @@ function Camera:mouse(data)
 	local want=if free then Enum.MouseBehavior.LockCenter else Enum.MouseBehavior.Default
 	if UIS.MouseBehavior~=want then UIS.MouseBehavior=want end
 end
+-- (B1) The player's own body fades when the lens comes close to his head (a
+-- wall behind him): see-through from 5.5 studs, at most 0.85. Only parts no
+-- one else hid (an effect's hidden part stays at 1), and only parts it faded
+-- itself are given back. The part list is kept per character.
+local partsOf=setmetatable({},{__mode="k"})
+function Camera:fadeSelf(character,lens,at)
+	local amount=0
+	if character and lens and at then
+		amount=math.clamp((5.5-(lens-(at+Vector3.new(0,1.5,0))).Magnitude)/2.2,0,.85)
+	end
+	local faded=self.selfFaded
+	if amount<=.01 then
+		if faded then
+			for part,value in faded do if part.Parent and math.abs(part.LocalTransparencyModifier-value)<1e-3 then part.LocalTransparencyModifier=0 end end
+			self.selfFaded=nil
+		end
+		return
+	end
+	local parts=partsOf[character]
+	if not parts or #parts==0 or not parts[1].Parent then
+		parts={}
+		for _,d in character:GetDescendants() do if d:IsA("BasePart") and d.Name~="HumanoidRootPart" then table.insert(parts,d) end end
+		partsOf[character]=parts
+	end
+	faded=faded or {}
+	for _,part in parts do
+		local now=part.LocalTransparencyModifier
+		if now<.99 and (faded[part]==nil and now<.01 or faded[part]~=nil) then part.LocalTransparencyModifier=amount;faded[part]=amount end
+	end
+	self.selfFaded=faded
+end
+-- (B1, B0 defect 4) Whether the lens on screen is the player's own: not the
+-- round's intro, a K.O., an ultimate's sequence or a watched match. Only then
+-- does a free mouse lens turn the body (Main sends `look`): during the intro
+-- the body followed the intro's lens and turned its back to the opponent.
+function Camera:steers(data)
+	if not data or data.phase~="Duel" or data.spectate or data.ko or (data.intro or 0)>0 then return false end
+	if self.cinematic and os.clock()<self.cinematic.untilT then return false end
+	return true
+end
 function Camera:update(data,dt)
 	local camera=workspace.CurrentCamera
 	pcall(self.mouse,self,data)
@@ -237,6 +277,11 @@ function Camera:update(data,dt)
 	local moving=presentation and presentation:visualVelocity("human")
 	if moving then
 		local lead=Vector3.new(moving.X,0,moving.Z)*.11
+		-- (B1, B0 defect 3: backing toward the lens, the body slid out of the
+		-- bottom of the frame) No lead toward the lens: there is nothing to
+		-- show "ahead" behind the camera, it only pulled the aim onto him.
+		local back=lead:Dot(boom)
+		if back>0 then lead-=boom*back end
 		local leadCap=2.6+sprint*2.4
 		if lead.Magnitude>leadCap then lead=lead.Unit*leadCap end
 		self.lead=(self.lead or Vector3.zero):Lerp(lead,1-math.exp(-dt*4))
@@ -338,18 +383,33 @@ function Camera:update(data,dt)
 	for part in self.faded or {} do if not faded[part] and part.Parent then part.LocalTransparencyModifier=0 end end
 	for part in faded do part.LocalTransparencyModifier=.72 end
 	self.faded=faded
+	local squeeze=0
 	if hit then
 		local offset=desired-focus
 		local full=offset.Magnitude
 		local allowed=math.max(0,hit.Distance-1.2)
 		local lost=math.clamp(full-allowed,0,full)
-		-- The closer the wall pushes the lens, the higher it rises over the fight:
-		-- continuous in the push, so a fight along the wall never snaps the view.
-		desired=focus+offset.Unit*math.max(allowed,4.5)+Vector3.new(0,lost*.6,0)
+		squeeze=lost/math.max(full,1e-3)
+		-- (B1, B0 defect 2: backed into the arena's wall, the lens sat on his
+		-- head and looked down at it, the screen full of hair and the hedge,
+		-- the opponent out of frame) The wall brings the lens in and only a
+		-- little higher; the lens then looks ahead over the shoulder (below)
+		-- and the player's own body fades, as Roblox's own close camera does.
+		desired=focus+offset.Unit*math.max(allowed,3)+Vector3.new(0,lost*.2,0)
 		local check=workspace:Raycast(focus,desired-focus,ray)
 		if check then desired=check.Position+check.Normal*1.2 end
 	end
-	local cf=CFrame.lookAt(desired,focus)
+	-- In at once (never into the wall), out over a third of a second: the push
+	-- of a body against the wall no longer shakes the lens frame to frame.
+	self.squeeze=if squeeze>=(self.squeeze or 0) then squeeze else (self.squeeze or 0)+(squeeze-(self.squeeze or 0))*(1-math.exp(-dt*3))
+	local aim=focus
+	if self.squeeze>.02 then
+		local ahead=Vector3.new(focus.X-desired.X,0,focus.Z-desired.Z)
+		if ahead.Magnitude>.05 then aim=focus+ahead.Unit*(16*self.squeeze) end
+	end
+	local filming=(data.intro or 0)>0 or data.spectate or (self.cinematic~=nil and os.clock()<self.cinematic.untilT)
+	self:fadeSelf(if self.squeeze>.02 and not filming then character else nil,desired,a)
+	local cf=CFrame.lookAt(desired,aim)
 	-- Shake is an offset on top of the smoothed rig (applied last, never fed
 	-- back into the follow), so it is neither damped away nor left behind.
 	-- A continuous, decaying oscillation (~7-10 Hz) rather than a fresh random

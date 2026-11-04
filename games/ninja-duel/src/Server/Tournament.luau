@@ -148,6 +148,9 @@ function Tournament:fight(player)
 	else
 		s.autopilot=nil;s.spectate=nil;s.cupPilot=nil
 	end
+	-- (B1) his own matches get stronger round by round (easy, normal, hard);
+	-- a watched match is two bots at the same level.
+	if m.aiLevel then s.ai=require(script.Parent.AI).new(s.combat,s.bot,(player.UserId%100000)+s.epoch,m.aiLevel(s)) end
 	m:snapshot(player,s)
 end
 -- SKIP: an AI-vs-AI match decided at once (from the bracket or while watching).

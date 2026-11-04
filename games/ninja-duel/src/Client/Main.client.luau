@@ -57,7 +57,9 @@ local function send(action,extra)
 		-- (shift lock). Free with the pad (user 03/11, his own play: strikes
 		-- thrown at the air behind him): the body faces where it goes, and the
 		-- blows turn to the opponent (Combat soft lock).
-		if not camera.locked and not (input and (input.pad or input.touch)) then
+		-- (B1) only the player's own lens: not the round's intro, a K.O. or an
+		-- ultimate's sequence (the body turned its back to follow the intro).
+		if not camera.locked and not (input and (input.pad or input.touch)) and camera:steers(current) then
 			local look=workspace.CurrentCamera.CFrame.LookVector*Vector3.new(1,0,1)
 			if look.Magnitude>.05 then payload.look=look.Unit end
 		elseif not camera.locked then payload.look=false end
@@ -130,7 +132,7 @@ RunService:BindToRenderStep("NinjaDuelCamera",Enum.RenderPriority.Camera.Value,f
 		presentation.inputDir=dir;presentation.inputSprint=input.sprinting
 		presentation:observeStick(os.clock())
 		local flatLook=workspace.CurrentCamera.CFrame.LookVector*Vector3.new(1,0,1)
-		local turned=not camera.locked and flatLook.Magnitude>.05 and (lastLook==nil or (flatLook.Unit-lastLook).Magnitude>.06)
+		local turned=not camera.locked and camera:steers(current) and flatLook.Magnitude>.05 and (lastLook==nil or (flatLook.Unit-lastLook).Magnitude>.06)
 		local changed=lastDir==nil or (dir-lastDir).Magnitude>.15 or input.sprinting~=lastSprint or turned
 		if (changed and os.clock()-lastSentAt>=1/30) or os.clock()>=nextMove then
 			lastSentAt=os.clock()

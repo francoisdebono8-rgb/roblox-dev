@@ -108,7 +108,7 @@ function Matches:start(player,playerId,botId,training,options)
 	s.bot=actor("AIFighter",botId,s.origin+Vector3.new(0,3,-Config.StartDistance),s.origin+Vector3.new(0,3,Config.StartDistance),botKit)
 	s.human.target=s.bot; s.bot.target=s.human; s.human.locked=true; s.bot.locked=true
 	player.Character=s.human.model
-	s.ai=AI.new(s.combat,s.bot,player.UserId%100000+ s.epoch)
+	s.ai=AI.new(s.combat,s.bot,player.UserId%100000+ s.epoch,Matches.aiLevel(s))
 	s.finishing=false
 	-- Tournament rounds: first to two (one in training).
 	s.round=1;s.wins={PlayerFighter=0,AIFighter=0};s.roundsToWin=if training then 1 else Config.RoundsToWin
@@ -147,9 +147,20 @@ function Matches:roundOver(s,winner,notify,advance)
 		notify()
 	end)
 end
+-- (B1) The bot's level: the roster's choice for a duel (easy by default:
+-- the first duel of a new player), stronger each round of the cup.
+Matches.LEVELS={easy=true,normal=true,hard=true}
+function Matches.aiLevel(s)
+	if s.cup then
+		if s.spectate then return "normal" end
+		local m=s.cup.match or 1
+		return if m<=4 then "easy" elseif m<=6 then "normal" else "hard"
+	end
+	return if Matches.LEVELS[s.aiLevel or ""] then s.aiLevel else "easy"
+end
 function Matches:nextRound(player,s)
 	self:resetRound(s)
-	s.ai=AI.new(s.combat,s.bot,player.UserId%100000+s.epoch)
+	s.ai=AI.new(s.combat,s.bot,player.UserId%100000+s.epoch,Matches.aiLevel(s))
 	self:snapshot(player,s)
 end
 -- Next round: same stage and bodies, fresh fighters, a short intro. A new
@@ -332,7 +343,9 @@ function Matches:request(player,payload)
 		if clock-s.lastLifecycle<0.8 then return end
 		if (action=="Start" or action=="Tutorial") and s.phase=="Selection" then
 			if type(payload.player)~="string" or type(payload.bot)~="string" then return end
-			s.lastLifecycle=clock; self:start(player,payload.player,payload.bot,action=="Tutorial")
+			s.lastLifecycle=clock
+			if type(payload.level)=="string" and Matches.LEVELS[payload.level] then s.aiLevel=payload.level end
+			self:start(player,payload.player,payload.bot,action=="Tutorial")
 		elseif action=="Rematch" and (s.phase=="Result" or s.finishing) then
 			s.lastLifecycle=clock; self:start(player,s.playerId,s.botId,s.tutorial~=nil,s.options)
 		elseif action=="Selection" and (s.phase=="Result" or s.finishing or s.tutorial) then s.lastLifecycle=clock; self:selection(player) end

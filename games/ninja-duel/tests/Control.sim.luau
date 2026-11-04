@@ -61,7 +61,7 @@ for _,id in MAIN do if not only or only==id then
   local c,a,b,match=H.duel(id,opp)
   c:relocate(a,V.new(0,3,12));c:relocate(b,V.new(0,3,-12))
   a.ai=nil;a.playerInput=true
-  local bot=AI.new(c,b,seed*13+1)
+  local bot=AI.new(c,b,seed*13+1,process.env.ND_AI_LEVEL)
   local rng=H.envBase.Random.new(seed*7+#id)
   local gate={}
   local pendingRefused={}
@@ -160,6 +160,7 @@ for _,id in MAIN do if not only or only==id then
   plan()
   local last=a.root.Position
   local stillFor,ghostFor,since,lastKey,stunFor,stunSeq=0,0,0,nil,0,nil
+  local stunBy,ultAt,prevUlt=nil,nil,0
   local wasDead=false
   while t<duration do
    if match.phase~="Duel" then match.phase="Duel" end
@@ -201,14 +202,24 @@ for _,id in MAIN do if not only or only==id then
     row.stuck+=1;inc(row.stuckWhere,key);since=t
    end
    -- stun: time without control in a reaction
+   if (b.ultimate or 0)<(prevUlt or 0)-50 then ultAt=t end
+   if a.reaction and ultAt and t-ultAt<1.5 and not table.find(stunBy or {},"ULTIMATE") then stunBy=stunBy or {};table.insert(stunBy,1,"ULTIMATE") end
+   prevUlt=b.ultimate or 0
    if a.reaction then
     row.stun+=DT;stunFor+=DT
     stunSeq=stunSeq or {}
     local k=a.reaction..(if a.attackedBy then "" else "")
     if stunSeq[#stunSeq]~=k then table.insert(stunSeq,k) end
+    -- what the AI was doing meanwhile (its moves, its jutsu, its ultimate)
+    local doing=b.attackName or (b.state~="Neutral" and b.state~="Guarding" and b.state) or nil
+    if doing then stunBy=stunBy or {};if stunBy[#stunBy]~=doing then table.insert(stunBy,doing) end end
    else
-    if stunFor>row.longestStun then row.longestStun=stunFor;row.longestSeq=table.concat(stunSeq or {}," > ") end
-    stunFor=0;stunSeq=nil
+    if stunFor>row.longestStun then row.longestStun=stunFor;row.longestSeq=table.concat(stunSeq or {}," > ").."  | AI: "..table.concat(stunBy or {},", ") end
+    if stunFor>2.5 then
+     local ult=table.find(stunBy or {},"ULTIMATE")~=nil
+     if ult then row.longUlt=(row.longUlt or 0)+1 else row.long=(row.long or 0)+1;if stunFor>(row.longestOther or 0) then row.longestOther=stunFor;row.longestOtherSeq=table.concat(stunSeq or {}," > ").."  | AI: "..table.concat(stunBy or {},", ") end end
+    end
+    stunFor=0;stunSeq=nil;stunBy=nil
    end
   end
   row.time+=duration
@@ -221,6 +232,7 @@ for _,id in MAIN do if not only or only==id then
  print(string.format("  freezes %d (%.1f/min)  %s",row.freezes,row.freezes/minutes,list(row.freezeWhere,4)))
  print(string.format("  ghost air %d  %s | stuck>2s %d  %s",row.ghost,list(row.ghostWhere,4),row.stuck,list(row.stuckWhere,4)))
  print(string.format("  in a reaction %.0f%% of the time, longest %.2f s  (%s)",row.stun/row.time*100,row.longestStun,row.longestSeq or ""))
+ print(string.format("  over 2.5 s: %d from the ultimate, %d otherwise; longest otherwise %.2f s  (%s)",row.longUlt or 0,row.long or 0,row.longestOther or 0,row.longestOtherSeq or ""))
  for _,e in row.examples do print("   · "..e) end
  ALL.eaten=(ALL.eaten or 0)+row.eaten;for k,v in row.eatenWhy do ALL.eatenWhy=ALL.eatenWhy or {};inc(ALL.eatenWhy,k,v) end
  ALL.presses+=row.presses;ALL.dead+=row.dead;ALL.free+=row.free;ALL.freezes+=row.freezes;ALL.ghost+=row.ghost;ALL.stuck+=row.stuck;ALL.minutes+=minutes

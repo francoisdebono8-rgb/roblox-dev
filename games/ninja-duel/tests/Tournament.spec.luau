@@ -158,6 +158,48 @@ test("champion: three matches won, the champion's card; leaving ends the cup",fu
 	assert(s.phase=="Selection" and s.cup==nil,"the cup outlived the roster")
 end)
 
+-- (B1, 04/11) The AI's level: a duel takes the roster's choice (easy unless
+-- said otherwise, kept for the rematch, an unknown word refused); in the cup
+-- his matches climb easy, normal, hard; a watched match is normal.
+test("AI levels: the roster's choice for a duel, climbing in the cup",function()
+	local AI=H.load("Server/AI")
+	local Config=H.load("Shared/Config")
+	local easy=AI.new(nil,{},1,"easy")
+	assert(easy.tune.Tick>Config.AI.Tick and easy.tune.Aggression<Config.AI.Aggression and easy.tune.Opening,"easy is not gentler")
+	assert(AI.new(nil,{},1,"normal").tune.Aggression==Config.AI.Aggression,"normal is not the tuning")
+	assert(AI.new(nil,{},1,"nonsense").tune.Aggression==Config.AI.Aggression,"an unknown level changed the tuning")
+	assert(AI.new(nil,{},1,"hard").tune.Reaction<Config.AI.Reaction,"hard is not quicker")
+	local m,player=fresh()
+	local s=m.sessions[player]
+	send(m,player,"Start",{player="Lion",bot="Sand"})
+	assert(s.phase=="Duel" and s.ai.tune.Opening and Matches.aiLevel(s)=="easy","the first duel is not easy")
+	m:selection(player)
+	send(m,player,"Start",{player="Lion",bot="Sand",level="hard"})
+	assert(Matches.aiLevel(s)=="hard" and s.ai.tune.Reaction<Config.AI.Reaction,"the roster's HARD was ignored")
+	m:selection(player)
+	send(m,player,"Start",{player="Lion",bot="Sand",level="god"})
+	assert(Matches.aiLevel(s)=="hard","an unknown level replaced the last good one")
+	-- the cup: easy in the quarter-final, harder after
+	m:selection(player)
+	send(m,player,"CupStart",{player="Leaf"})
+	local seen={}
+	for _=1,7 do
+		if s.cup.over then break end
+		local n=last(player).cup.next
+		if n.mine then
+			send(m,player,"CupFight")
+			table.insert(seen,Matches.aiLevel(s))
+			finish(m,player,true);send(m,player,"CupBracket")
+		else
+			send(m,player,"CupFight")
+			assert(s.spectate and Matches.aiLevel(s)=="normal","a watched match is not normal")
+			send(m,player,"CupSkip")
+			if s.phase~="Bracket" then send(m,player,"CupBracket") end
+		end
+	end
+	assert(table.concat(seen,",")=="easy,normal,hard","the cup does not climb: "..table.concat(seen,","))
+end)
+
 test("odds: the engine's table covers the 56 ordered pairs and stays between 10 and 90 %",function()
 	local odds=H.load("Server/CupOdds")
 	local T=Tournament.new(nil,odds)

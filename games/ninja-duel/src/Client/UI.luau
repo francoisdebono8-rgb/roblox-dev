@@ -219,8 +219,19 @@ function UI.new(parent,send)
 	-- The action row: training, online, private duel by code, and the stage.
 	local below=800
 	self.startButton=button(shell,"ENTER THE STAGE",UDim2.fromOffset(1140,below),UDim2.fromOffset(400,58),function()
-		if self.picking then send("Confirm") else send("Start",{player=self.player,bot=self.bot}) end
+		if self.picking then send("Confirm") else send("Start",{player=self.player,bot=self.bot,level=self.aiLevel}) end
 	end,palette.red)
+	-- (B1, 04/11) The AI's level for a duel, opposite the tournament: easy
+	-- first (B0: an idle player lost 107 of 125 health in 15 s), the server
+	-- keeps the choice for the rematches. The tournament sets its own.
+	self.aiLevel="easy"
+	local LEVEL_NEXT={easy="normal",normal="hard",hard="easy"}
+	self.levelButton=button(shell,"AI LEVEL  •  EASY",UDim2.fromOffset(1140,712),UDim2.fromOffset(400,52),function()
+		if self.picking then return end
+		self.aiLevel=LEVEL_NEXT[self.aiLevel] or "easy"
+		self.levelButton.Text="AI LEVEL  •  "..string.upper(self.aiLevel)
+	end)
+	self.levelButton.TextSize=24
 	self.startButton.TextSize=32
 	self.startStroke=create("UIStroke",self.startButton,{Color=palette.paper,Thickness=2.5,Transparency=.2,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
 	-- (04/11) The Prodigy Tournament against the AI (Server/Tournament).
@@ -813,6 +824,7 @@ function UI:lobby(data)
 	self.onlineRow.Visible=data.phase=="Selection"
 	-- (Audit 04/11) not during the online pick (it did nothing there).
 	self.cupButton.Visible=data.phase=="Selection"
+	self.levelButton.Visible=data.phase=="Selection"
 	if data.phase=="Queue" then
 		local private=online~=nil and online.mode=="private"
 		self.queueTitle.Text=if private then "PRIVATE DUEL" else "SEARCHING FOR AN OPPONENT"

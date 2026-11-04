@@ -58,8 +58,21 @@ local function familyWants(self,c,a,target,spec,distance,danger)
 	return self.rng:NextNumber()<chance
 end
 local AI={}; AI.__index=AI
-function AI.new(combat,actor,seed)
-	return setmetatable({combat=combat,actor=actor,nextTick=0,observed=nil,observedAt=0,guardUntil=0,rng=Random.new(seed or 23)},AI)
+-- (B1, 04/11: in B0 an idle player lost 107 of 125 health in 15 s, Itachi
+-- casting Needle Fan seven times in 30 s) Levels over Config.AI: "easy" thinks
+-- slower, reads less, keeps its jutsu for openings and gives a beat at the
+-- start of each round; "normal" is the tuning so far; "hard" reads more.
+AI.LEVELS={
+	easy={Tick=.3,Reaction=.62,Aggression=.42,Defense=.32,Technique=.16,TechniqueGap=6.5,TechniqueJitter=3.5,
+		ReadGuard=.12,ReadDodge=.05,ReadPoke=.1,GuardRead=.02,Feint=0,Recover=.25,Plan=.35,
+		BreakOff1=.7,BreakOff2=.92,RepositionTime=1.5,RepositionJitter=.9,Disengage=.72,Opening=2.5},
+	normal={},
+	hard={Tick=.15,Reaction=.3,Aggression=.8,Defense=.66,TechniqueGap=2,ReadGuard=.36,ReadDodge=.2},
+}
+function AI.new(combat,actor,seed,level)
+	local tune=table.clone(Config.AI)
+	for k,v in (if type(level)=="table" then level elseif type(level)=="string" then AI.LEVELS[level] or {} else {}) do tune[k]=v end
+	return setmetatable({combat=combat,actor=actor,nextTick=0,observed=nil,observedAt=0,guardUntil=0,rng=Random.new(seed or 23),tune=tune},AI)
 end
 local function slotOf(a,id)
 	for slot,spec in a.def.Techniques do if spec.Id==id then return "Technique"..slot,spec end end
@@ -253,7 +266,7 @@ function AI:defend(now)
 		local kind=Brawler.recoverable(c,a)
 		if kind then
 			self.recoverFor=a.reactionStartedAt
-			if self.rng:NextNumber()<(Config.AI.Recover or .5) then
+			if self.rng:NextNumber()<(self.tune.Recover or .5) then
 				local away=a.root.Position-a.target.root.Position;away=Vector3.new(away.X,0,away.Z)
 				away=if away.Magnitude>.1 then away.Unit else -a.root.CFrame.LookVector
 				local side=Vector3.new(-away.Z,0,away.X)*(if self.rng:NextNumber()<.5 then 1 else -1)
@@ -355,7 +368,7 @@ end
 -- may fly on the way. The next approach is a fresh decision.
 function AI:breakOff(now,tangent,toward)
 	local c,a=self.combat,self.actor
-	local tune=Config.AI
+	local tune=self.tune
 	local roll=self.rng:NextNumber()
 	self.reposKind=if roll<.4 then "arc" elseif roll<.75 then "out" else "jump"
 	self.reposSide=if self.rng:NextNumber()<.5 then 1 else -1
@@ -375,10 +388,15 @@ function AI:habit(move)
 	return n>=2
 end
 function AI:update(now)
-	local c,a=self.combat,self.actor; local target=a.target; local tune=Config.AI
+	local c,a=self.combat,self.actor; local target=a.target; local tune=self.tune
 	if c.match.phase~="Duel" or a.health<=0 or target.health<=0 then a.move=Vector3.zero; return end
 	if now<self.nextTick then return end
 	self.nextTick=now+tune.Tick
+	-- (easy) a beat at the start of the round: guard up, it lets him come.
+	if tune.Opening then
+		self.openedAt=self.openedAt or now
+		if now-self.openedAt<tune.Opening then a.move=Vector3.zero;return end
+	end
 	-- No exemption from a shroud: lost in it, the bot aims at where it last saw him.
 	if Families.shrouded(c,a) then a.fogAim=self.lastSeen or target.root.Position
 	else a.fogAim=nil;self.lastSeen=target.root.Position end
