@@ -65,6 +65,12 @@ function Motor.tryWall(a,c,now)
 	if not hit or not hit.Instance:GetAttribute("NinjaWall") or math.abs(hit.Normal.Y)>0.18 then return false end
 	local into=heading.Unit:Dot(-hit.Normal)
 	if into<0.45 then return false end
+	-- (B1, Studio 04/11 v37: backing into the arena's wall, the body climbed
+	-- it, dropped, turned back to its look and climbed again, flipping between
+	-- the wall and the opponent every second) Backing into a wall is being
+	-- cornered, not a wall run: the body must not face away from the wall.
+	local facing=flat(a.root.CFrame.LookVector)
+	if facing.Magnitude>.1 and facing.Unit:Dot(-hit.Normal)<-.25 then return false end
 	-- Movement overhaul: the entry decides the run. A shallow entry runs
 	-- along the wall from its own speed (losing it gradually); a steep one
 	-- runs up it, as high as the entry speed carries (brief §9).

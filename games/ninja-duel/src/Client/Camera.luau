@@ -51,6 +51,7 @@ function Camera.new()
  UIS.InputChanged:Connect(function(input)
   if input.UserInputType==Enum.UserInputType.MouseMovement and not self.locked then
    self.yaw+=input.Delta.X*.004;self.pitch=math.clamp(self.pitch-input.Delta.Y*.003,.04,.9)
+   if input.Delta.Magnitude>.5 then self.lastLookInput=os.clock() end
   elseif input.UserInputType==Enum.UserInputType.MouseWheel then
    self.zoom=math.clamp(self.zoom-input.Position.Z*1.4,-6,12)
   end
@@ -253,6 +254,22 @@ function Camera:update(data,dt)
 		desiredAngle=self.fogYaw or self.boomAngle or 0
 	else
 		if self.faceOpponent then self.yaw=math.atan2(behind.X,behind.Z);self.boomAngle=nil;self.faceOpponent=nil end
+		-- (B1, B0 defect 4 and Studio 04/11 v37: free, the opponent was often off
+		-- screen, at the wall above all) When the player leaves the lens alone
+		-- (no mouse or right stick for 0.9 s, no move), it brings the opponent
+		-- back to the edge of the frame, gently. Never while he steers: the moves
+		-- are relative to the lens, a turn mid-run would bend the run.
+		local clock0=os.clock()
+		if (self.look.Magnitude or 0)>.05 then self.lastLookInput=clock0 end
+		local still=presentation==nil or presentation.inputDir==nil or presentation.inputDir.Magnitude<.1
+		if not lost and not data.ko and still and clock0-(self.lastLookInput or 0)>.9 and separation>4 then
+			local off=wrap(self.yaw-math.atan2(behind.X,behind.Z))
+			local edge=math.rad(32)
+			if math.abs(off)>math.rad(48) then
+				local turn=math.min(math.abs(off)-edge,math.rad(110)*dt)
+				self.yaw=wrap(self.yaw-math.sign(off)*turn)
+			end
+		end
 		desiredAngle=self.yaw
 	end
 	if not self.boomAngle then self.boomAngle=desiredAngle end

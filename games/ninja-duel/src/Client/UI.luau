@@ -575,7 +575,10 @@ function UI.new(parent,send)
 	self.cancelButton=button(queueBox,"CANCEL",UDim2.fromOffset(30,222),UDim2.fromOffset(540,52),function() send("Cancel") end)
 	self.queue.Visible=false
 	-- The genjutsu image carries no label: the world shows it (Presentation:illusion).
-	self.tutorialPanel=inkCard(frame(self.hud,UDim2.new(.5,-260,0,84),UDim2.fromOffset(520,90),CARD,0),10)
+	-- (UI review 04/11, finding 7; seen in Studio v37) at the centre (84) it hid
+	-- the inner ends of both health bars, under them (160) the partner's head:
+	-- on the left, under the player's own plate, the middle stays the fight's.
+	self.tutorialPanel=inkCard(frame(self.hud,UDim2.new(0,24,0,170),UDim2.fromOffset(520,90),CARD,0),10)
 	self.tutorialTitle=text(self.tutorialPanel,"",UDim2.fromOffset(16,9),UDim2.fromOffset(490,30),24,palette.paper,TITLE_FONT)
 	self.tutorialPrompt=text(self.tutorialPanel,"",UDim2.fromOffset(16,40),UDim2.fromOffset(490,40),14,palette.muted)
 	GuiService.AutoSelectGuiEnabled=true
@@ -975,8 +978,8 @@ function UI:render(data)
 	-- (User 02/11, tutorial on screen) The cue band (124) and the hint (200)
 	-- sat on the tutorial panel (84-174): "SPACE REBOUND / C DETACH" was printed
 	-- across the step's own instruction. Under the panel while it shows.
-	self.cue.Position=UDim2.new(.5,-300,0,if self.tutorialPanel.Visible then 182 else 124)
-	self.hint.Position=UDim2.new(.5,-260,0,if self.tutorialPanel.Visible then 226 else 200)
+	self.cue.Position=UDim2.new(.5,-300,0,124)
+	self.hint.Position=UDim2.new(.5,-260,0,200)
 	if data.tutorial then
 		self.tutorialTitle.Text=data.tutorial.index.." / "..data.tutorial.total.."  "..data.tutorial.title
 		-- (B1; UI review 04/11: a phone was told "WASD" and "BACKSPACE")
