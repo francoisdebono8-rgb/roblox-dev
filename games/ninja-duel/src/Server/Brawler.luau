@@ -195,6 +195,9 @@ end
 function Brawler.buttonRoute(c,a,action)
  if action~="Dodge" and action~="Jump" and action~="Tool" then return nil end
  if a.reaction or a.ultimateHeld or a.wall or a.grabbing then return nil end
+ -- (Audit 04/11, « sans perdre de mouvement ») the stick pushed away from him
+ -- always gets out: ○ is the real dodge, × the real jump, even mid-string.
+ if action~="Tool" and Brawler.classify(a,a.move or Vector3.zero)=="back" then return nil end
  -- A launched body: the jump stays a jump and the chase a chase.
  if (a.pursuitUntil or 0)>c.now then return nil end
  local graph=Brawler.graph(a) or {}

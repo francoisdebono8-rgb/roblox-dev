@@ -94,10 +94,17 @@ function Panel.new(ui,remote,kit)
 	end)
 	self.cancelButton.TextSize=16;self.cancelButton.ZIndex=82
 	-- Keyboard answers (the cursor may be held by the duel camera).
+	-- (Audit 04/11) and the pad's: off a duel the gamepad selection sits on
+	-- ACCEPT (A) and B declines; in a duel (A, B are the jump and the dodge)
+	-- SELECT accepts and the invitation runs out on its own.
 	UIS.InputBegan:Connect(function(input,processed)
-		if processed or not self.invite then return end
-		if input.KeyCode==Enum.KeyCode.Return then self:answer(true)
-		elseif input.KeyCode==Enum.KeyCode.Backspace then self:answer(false) end
+		if not self.invite then return end
+		local code=input.KeyCode
+		if code==Enum.KeyCode.ButtonSelect then self:answer(true);return end
+		if code==Enum.KeyCode.ButtonB and self.phase~="Duel" then self:answer(false);return end
+		if processed then return end
+		if code==Enum.KeyCode.Return then self:answer(true)
+		elseif code==Enum.KeyCode.Backspace then self:answer(false) end
 	end)
 	remote.OnClientEvent:Connect(function(data) self:receive(data) end)
 	-- The fighter picked on the roster is what the others see next to the name.
@@ -171,7 +178,13 @@ function Panel:drawInvite()
 	if not invite then return end
 	local def=Fighters[invite.fighter or ""]
 	self.inviteText.Text=string.upper(invite.from).." CHALLENGES YOU"
-	self.inviteSub.Text=(if def then "WITH "..string.upper(def.Name).."  •  " else "").."ENTER ACCEPTS  •  BACKSPACE DECLINES"
+	local pad=false
+	pcall(function() pad=UIS:GetLastInputType().Name:match("^Gamepad")~=nil end)
+	local keys=if not pad then "ENTER ACCEPTS  •  BACKSPACE DECLINES" elseif self.phase=="Duel" then "SELECT ACCEPTS" else "A ACCEPTS  •  B DECLINES"
+	self.inviteSub.Text=(if def then "WITH "..string.upper(def.Name).."  •  " else "")..keys
+	if pad and self.phase~="Duel" then
+		pcall(function() game:GetService("GuiService").SelectedObject=self.acceptButton end)
+	end
 	self:tickTimer()
 end
 function Panel:tickTimer()

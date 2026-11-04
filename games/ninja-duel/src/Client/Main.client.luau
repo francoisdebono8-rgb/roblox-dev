@@ -61,7 +61,8 @@ local function send(action,extra)
 			if look.Magnitude>.05 then payload.look=look.Unit end
 		elseif not camera.locked then payload.look=false end
 	elseif type(extra)=="table" then for k,v in extra do payload[k]=v end
-	elseif action=="Tool" or string.match(action,"^Technique") then
+	-- (Audit 04/11) the seal jutsu aim too (Minato's trap goes where he points).
+	elseif action=="Tool" or string.match(action,"^Technique") or string.match(action,"^Seal%d") then
 		local gamepad=input and input.pad
 		mouse.TargetFilter=player.Character
 		local hit=if gamepad and current.bot then current.bot.position else mouse.Hit.Position
@@ -93,6 +94,7 @@ remote.OnClientEvent:Connect(function(data)
 	if data.epoch~=current.epoch or data.phase~=current.phase then input:resync() end
 	if data.epoch~=current.epoch then camera.locked=false end
 	data.gamepad=input.pad
+	data.sealPage=input.sealPad==true or input.sealKey==true
 	current=data; presentation.receivedAt=os.clock(); presentation:impacts(data,camera); ui:render(data)
 	if lobbyPanel then lobbyPanel:render(data) end
 	cupScreen:render(data)

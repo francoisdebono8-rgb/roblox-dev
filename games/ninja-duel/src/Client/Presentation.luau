@@ -282,6 +282,23 @@ function Presentation:predictMove(action,data,ahead)
 		local character=game:GetService("Players").LocalPlayer.Character
 		root=character and character:FindFirstChild("HumanoidRootPart")
 	end)
+	-- (Audit 04/11) A press the server turns into a string route (Brawler
+	-- .buttonRoute: ○ around, × rising after two hits, the stick not pushed
+	-- away) is a strike, not a dash or a hop: no guess (the body dashed, then
+	-- snapped back into the route).
+	if not h.airborne and (action=="Dodge" or action=="Jump" or action=="PadJump") then
+		local v=Presentation.viewAt(h,ahead)
+		local routes=(MoveGraphs[h.fighterId] or {}).routes or {}
+		local route=if action=="Dodge" then routes.side else routes.up
+		local away=false
+		local dir,b=self.inputDir,data.bot
+		if dir and root and b and b.position then
+			local flat=Vector3.new(dir.X,0,dir.Z)
+			local to=Vector3.new(b.position.X-root.Position.X,0,b.position.Z-root.Position.Z)
+			away=to.Magnitude>.1 and ActionContext.stick(flat,to.Unit,Config.Combo)=="back"
+		end
+		if route and Attacks[route] and v.combo>=2 and (v.stringAlive or v.chainReady) and not away then return end
+	end
 	if action=="Dodge" then
 		-- The server's own rules (Combat:requestInner): chakra for it, off
 		-- cooldown (snapshot `dodge`), not Gaara's sand flicker (a teleport),

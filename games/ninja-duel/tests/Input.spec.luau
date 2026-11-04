@@ -203,6 +203,42 @@ test("seal page (04/11): C held + 1-5 and R1 + L1 held + □ △ ○ × / D-pad 
  table.clear(sent);press("Modifier",E.KeyCode.ButtonR1);tap("Sprint",E.KeyCode.ButtonL3);press("Modifier",E.KeyCode.ButtonR1,E.UserInputState.End)
  for _,p in sent do assert(p.action~="Seals","R1 + L3 still opens the old weave") end
 end)
+test("seal page (audit 04/11): L1 then R1 opens it too; a held page let go is no ultimate; the guard comes back",function()
+ local clock,now=0,Input.now
+ Input.now=function() return clock end
+ table.clear(sent)
+ -- L1 first (the guard), then R1: the page, the guard let go, □ a seal jutsu
+ press("Guard",E.KeyCode.ButtonL1);assert(last()=="Guard")
+ press("Modifier",E.KeyCode.ButtonR1);assert(last()=="GuardOff","the page kept the guard up: "..last())
+ tap("Light",E.KeyCode.ButtonX)
+ local got=false;for _,p in sent do if p.action=="Seal1" then got=true end;assert(p.action~="Technique1" and p.action~="Grab","L1, R1, □ sent "..p.action) end
+ assert(got,"L1 then R1 then □ did not send Seal1")
+ -- R1 let go first, L1 still held: the guard is back, no ultimate
+ press("Modifier",E.KeyCode.ButtonR1,E.UserInputState.End)
+ assert(last()=="Guard","L1 still held after the page: no guard ("..last()..")")
+ press("Guard",E.KeyCode.ButtonL1,E.UserInputState.End);assert(last()=="GuardOff")
+ for _,p in sent do assert(p.action~="Ultimate","a page that cast fired the ultimate") end
+ -- the page held to choose, then let go without a seal: no ultimate
+ table.clear(sent)
+ press("Modifier",E.KeyCode.ButtonR1);press("Guard",E.KeyCode.ButtonL1)
+ clock+=Input.UltimateTap+.2
+ press("Guard",E.KeyCode.ButtonL1,E.UserInputState.End);press("Modifier",E.KeyCode.ButtonR1,E.UserInputState.End)
+ for _,p in sent do assert(p.action~="Ultimate","a held page let go burnt the ultimate") end
+ -- R1 + L1 + R2 is the feint, not the feint and the ultimate
+ table.clear(sent)
+ press("Modifier",E.KeyCode.ButtonR1);press("Guard",E.KeyCode.ButtonL1)
+ press("Tool",E.KeyCode.ButtonR2,E.UserInputState.Begin,V.new(0,0,1));press("Tool",E.KeyCode.ButtonR2,E.UserInputState.End,V.zero)
+ press("Guard",E.KeyCode.ButtonL1,E.UserInputState.End);press("Modifier",E.KeyCode.ButtonR1,E.UserInputState.End)
+ local feint=false
+ for _,p in sent do if p.action=="Feint" then feint=true end;assert(p.action~="Ultimate","R1 + L1 + R2 also fired the ultimate") end
+ assert(feint,"R1 + L1 + R2 is no feint")
+ -- a tap of the chord: the ultimate
+ table.clear(sent)
+ press("Modifier",E.KeyCode.ButtonR1);tap("Guard",E.KeyCode.ButtonL1)
+ assert(last()=="Ultimate","a tap of R1 + L1 is not the ultimate")
+ press("Modifier",E.KeyCode.ButtonR1,E.UserInputState.End)
+ Input.now=now
+end)
 test("jump release cuts a jump but never a technique or pursuit",function()
  tap("Jump",E.KeyCode.Space);assert(#sent==2 and last()=="JumpOff")
  table.clear(sent);state.human.pursuit=1
@@ -366,7 +402,9 @@ test("B01 (audit 03/11, a French Mac): on AZERTY every text names the key printe
  assert(C.localize("RASENGAN • A CLONE FOR IT")=="RASENGAN • A CLONE FOR IT",C.localize("RASENGAN • A CLONE FOR IT"))
  assert(C.localize("SUBSTITUTION • IT WAS A CLONE!")=="SUBSTITUTION • IT WAS A CLONE!")
  local routes=H.load("Shared/Fighters").Legion.Routes
- assert(string.find(C.localize(routes),"W + R: the kunai turns into a clone",1,true),"Naruto's notes: "..C.localize(routes))
+ -- (Audit 04/11) the notes name the actions, not keys (they read on the pad too).
+ assert(string.find(C.localize(routes),"chakra + tool: the kunai turns into a clone",1,true),"Naruto's notes: "..C.localize(routes))
+ assert(not string.find(routes,"[↑↓←→]"),"Naruto's notes still use the stick grammar: "..routes)
  -- QWERTY: nothing changes.
  C.KeyLabel=saved.K;C.Help=saved.Help;C.Grammar=saved.Grammar;C.layout=saved.layout
  assert(not C.useLayout(function(code) return code.Name end),"a QWERTY layout was rewritten")

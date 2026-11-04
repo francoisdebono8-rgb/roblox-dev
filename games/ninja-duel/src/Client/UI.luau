@@ -622,7 +622,7 @@ local GROUPS={
 	{"MOVE",{{"Move","WASD","L stick"},{"Sprint","Sprint"},{"Jump","Jump"},{"Lock / unlock","Lock"},{"Wall run: into a wall","—","—"},{"Off the wall","WallDetach"}}},
 	{"ATTACK",{{"Light strike (string)","Light"},{"Heavy strike","Heavy"},{"Grab, then throw","Grab"},{"Tool","Tool"},{"Kunai: draw / sheathe","Arm"},{"Chase / chakra dash","Pursuit"}}},
 	{"DEFEND",{{"Guard (hold)","Guard"},{"Dodge","Dodge"},{"Substitution","Substitute"},{"Feint a heavy","Feint"},{"Break a grab","Grab"}}},
-	{"NINJA ARTS",{{"Jutsu 1-4","1  2  3  4","R1 + □ △ ○ ×"},{"Hand seals, then two jutsu keys","C (off a wall)","R1 + L3"},{"Jutsu 5","Technique5"},{"Chakra-infuse (hold + action)","Chakra"},{"Awaken (low health)","Awaken"},{"Ultimate (bar full)","Ultimate"}}},
+	{"NINJA ARTS",{{"Jutsu 1-4","1  2  3  4","R1 + □ △ ○ ×"},{"Seal jutsu (hold the 2nd page)","hold C + 1-5","hold R1 + L1 + □△○× / D↑"},{"Jutsu 5","Technique5"},{"Chakra-infuse (hold + action)","Chakra"},{"Awaken (low health)","Awaken"},{"Ultimate (bar full)","Ultimate"}}},
 }
 function UI:buildControls(pad)
 	local body=self.controlsBody
@@ -671,7 +671,10 @@ end
 -- jutsu are a second page of the four jutsu keys: keyboard C held + 1-5, pad
 -- R1 + L1 held + □ △ ○ × (D-pad ↑ for a fifth). The slip lights up while the
 -- page is held; the signs themselves are woven by the cast.
-local function pageHeld(pad)
+local function pageHeld(pad,flag)
+	-- (Audit 04/11) The client's own page state (Input.sealPad / sealKey) when
+	-- it is sent: the pad page opens in either order (L1 then R1 too).
+	if flag~=nil then return flag==true end
 	local ok,held=pcall(function()
 		if pad then
 			local pressed={}
@@ -684,12 +687,12 @@ local function pageHeld(pad)
 	end)
 	return ok and held==true
 end
-function UI:sealHud(h,pad)
+function UI:sealHud(h,pad,page)
 	local def=Fighters[h.fighterId or ""]
 	local list=def and def.SealJutsu
 	self.sealPanel.Visible=list~=nil
 	if not list then self.sealWeave.Text="";return end
-	local held=not h.wall and pageHeld(pad)
+	local held=not h.wall and pageHeld(pad,page)
 	local key=if pad then {"□","△","○","×","D↑"} else {"1","2","3","4","5"}
 	self.sealHead.Text="HAND SEALS  •  "..(if pad then "HOLD R1 + L1" else "HOLD "..(Controls.KeyLabel.WallDetach or "C"))
 	self.sealPanel.BackgroundTransparency=if held then .02 else .35
@@ -834,6 +837,10 @@ function UI.padCue(cue)
 	cue=cue:gsub("SPACE REBOUND",P.Jump.." REBOUND"):gsub("C DETACH",P.WallDetach.." DETACH")
 	cue=cue:gsub("• E ","• "..P.Pursuit.." "):gsub("X TO ESCAPE",P.Substitute.." TO ESCAPE")
 	cue=cue:gsub("• 1 = ","• "..Controls.TechniquePad[1].." = ")
+	-- (Audit 04/11) the keyboard keys the server's cues name, on the pad.
+	cue=cue:gsub("%f[%w]E TO ",P.Pursuit.." TO "):gsub("%f[%w]E PURSUE",P.Pursuit.." PURSUE"):gsub("%f[%w]E CHASE",P.Pursuit.." CHASE")
+	cue=cue:gsub("%f[%w]Q ON ",P.Dodge.." ON "):gsub("%f[%w]Q TO ",P.Dodge.." TO ")
+	cue=cue:gsub("HEAVY: ",P.Heavy..": ")
 	return cue
 end
 -- A plate's chakra network (Neji): four pips, lit per closed point (a fresh one
@@ -1042,7 +1049,7 @@ function UI:render(data)
 		end
 		widget.chakra.Size=UDim2.fromScale(math.clamp(actor.chakra/actor.maxChakra,0,1),1)
 		widget.status.Text=string.format("%d / %d",math.ceil(actor.health),actor.maxHealth)
-		UI.ultimate(widget,actor,pad,actor==h)
+		UI.ultimate(widget,actor,pad,actor==h and not data.spectate)
 		-- Gentle Fist effects on this fighter: the closed points (pips), what
 		-- they cost (the chakra bar dims, its recovery is spelled out) and the
 		-- jutsu the 64 Palms sealed.
@@ -1101,8 +1108,10 @@ function UI:render(data)
 		-- Global kunai (DEC-030): whether a blade is drawn, and how to use it.
 		(function()
 			local weapon=Fighters[h.fighterId or ""] and Fighters[h.fighterId].Weapon
-			if weapon then return if h.armed then weapon.Name.." DRAWN (B sheathes it)" else "B: draw "..string.lower(weapon.Name) end
-			return if h.armed then "KUNAI DRAWN (R throws it)" else "B: draw kunai"
+			local arm=if pad then Controls.PadLabel.Arm else Controls.KeyLabel.Arm
+			local tool=if pad then Controls.PadLabel.Tool else Controls.KeyLabel.Tool
+			if weapon then return if h.armed then weapon.Name.." DRAWN ("..arm.." sheathes it)" else arm..": draw "..string.lower(weapon.Name) end
+			return if h.armed then "KUNAI DRAWN ("..tool.." throws it)" else arm..": draw kunai"
 		end)())
 	-- Only decisive moments speak; routine cues stay silent.
 	local cue=Controls.localize(h.cue or "")
@@ -1148,7 +1157,7 @@ function UI:render(data)
 		ui.cool.Size=UDim2.fromScale(1,math.clamp(math.max(tech.remaining/6,if sealed then h.sealed/5 else 0),0,1))
 	end
 	for i=#h.techniques+1,5 do self.techniqueButtons[i].box.Visible=false end
-	self:sealHud(h,pad)
+	self:sealHud(h,pad,data.sealPage)
 	-- (Tournament) watching a match: none of these are the player's.
 	if data.spectate then
 		for _,b in self.techniqueButtons do b.box.Visible=false end
@@ -1156,19 +1165,23 @@ function UI:render(data)
 	end
 	local techOpen=h.reaction=="WallSplat" and (h.splatElapsed or 9)<.34
 	local conversion=UI.conversion(h,pad)
-	self.hint.Text=if techOpen then (if pad then "○ — WALL TECH" else "Q — WALL TECH")
+	local K,P=Controls.KeyLabel,Controls.PadLabel
+	self.hint.Text=if techOpen then (if pad then P.Dodge.." — WALL TECH" else K.Dodge.." — WALL TECH")
 		elseif conversion then conversion
 		elseif b.reaction=="WallSplat" and h.pursuit>0 then (if pad then "× — PURSUE  •  △ — WALL BOUNCE" else Controls.KeyLabel.Pursuit.." — PURSUE  •  RMB — WALL BOUNCE")
 		elseif (h.counter or 0)>0 then UI.counterPrompt(h,pad)
 		-- The Chidori's risk, from the other side: its charge can be broken.
 		elseif b.castId=="Chidori" and b.state=="TechniqueChannel" then (if pad then Controls.PadLabel.Light else Controls.KeyLabel.Light).." — BREAK THE CHIDORI CHARGE"
-		elseif h.awakenReady then (if pad then "D-PAD ↓ — AWAKEN" else "T — AWAKEN")
-		elseif h.wall then (if pad then "× — REBOUND  •  R1 + L1 — DETACH" else "SPACE — REBOUND  •  C — DETACH")
-		elseif h.state=="Startup" and h.attackName=="Heavy" then (if pad then "R1 + L2 — FEINT" else "G — FEINT")
-		elseif h.reaction=="Grabbed" then (if pad then "L2 — THROW BREAK" else "V — THROW BREAK")
+		elseif h.awakenReady then (if pad then "D-PAD ↓ — AWAKEN" else K.Awaken.." — AWAKEN")
+		elseif h.wall then (if pad then "× — REBOUND  •  "..P.WallDetach.." — DETACH" else "SPACE — REBOUND  •  "..K.WallDetach.." — DETACH")
+		-- (Audit 04/11) the pad's feint is R1 + R2 and its throw break L1 + □.
+		elseif h.state=="Startup" and h.attackName=="Heavy" then (if pad then P.Feint.." — FEINT" else K.Feint.." — FEINT")
+		elseif h.reaction=="Grabbed" then (if pad then P.Grab.." — THROW BREAK" else K.Grab.." — THROW BREAK")
 		elseif h.pursuit>0 then (if pad then "× — CHASE" else Controls.KeyLabel.Pursuit.." / SPACE — CHASE")
 		elseif (h.combo or 0)>=2 and h.state=="Recovery" and not h.airborne and (h.comboHits or 0)==0 and b.reaction then Controls.comboHelp(MoveGraphs[h.fighterId] or {},pad)
 		else ""
+	-- (Tournament, audit 04/11) watching an AI match: its prompts are not his.
+	if data.spectate then self.hint.Text="";self.cue.Text="" end
 	self.help.Text=if pad then Controls.HelpPad else Controls.Help
 	self.grammar.Text=Controls.comboHelp(MoveGraphs[h.fighterId] or {},pad)
 	-- (Reference quality) The control sheet is for the first seconds of a duel

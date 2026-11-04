@@ -1273,7 +1273,10 @@ function Combat:requestInner(a,action,aim,clientTime,opts)
 		opts=table.clone(opts or {});opts.chakra=true
 	end
 	-- (A blade that is not thrown, Kakashi's tanto: R stays the tool.)
-	if action=="Tool" and a.armed and not (a.def.Weapon and a.def.Weapon.Throwable==false) and not (opts~=nil and opts.chakra==true) then return self:throwDrawn(a,aim) end
+	-- (Audit 04/11) R inside a string is its retreat route (Brawler.buttonRoute),
+	-- kunai drawn or not: the hop out comes before the drawn throw.
+	local retreat=action=="Tool" and a.intentOverride~=nil and a.intentOverride[1]=="back" and a.chainOpen==true
+	if action=="Tool" and a.armed and not retreat and not (a.def.Weapon and a.def.Weapon.Throwable==false) and not (opts~=nil and opts.chakra==true) then return self:throwDrawn(a,aim) end
 	if action=="Tool" then
 		-- No blade to throw (Rock Lee): the tool button is his deflecting kick, and
 		-- his chakra profile (ChakraTuning Taijutsu) infuses nothing: the chakra

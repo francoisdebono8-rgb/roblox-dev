@@ -60,14 +60,15 @@ local Controls = {
 	},
 	-- HUD copy for the keyboard layout, kept next to the bindings it documents.
 	Hint = "LMB light \u{00B7} RMB heavy",
-	Help = "WASD move   SPACE jump   Q dodge   LMB light   RMB heavy   F guard   V grab / throw break   E re-engage (chase / chakra dash)   R tool   hold Z + any action: chakra-infused (strike, heavy, jump, dodge, tool)   X substitute   G feint   T awaken   Y ultimate (bar full)   B kunai (draw / sheathe, R throws it)   CTRL sprint   SHIFT lock   1-4 jutsu   hold C + 1-4: seal jutsu",
+	Help = "WASD move   SPACE jump   Q dodge   LMB light   RMB heavy   F guard   V grab / throw break   E re-engage (chase / chakra dash)   R tool   hold Z + any action: chakra-infused (strike, heavy, jump, dodge, tool)   X substitute   G feint   T awaken   Y ultimate (bar full)   B kunai (draw / sheathe, R throws it)   CTRL sprint   SHIFT lock   1-4 jutsu   hold C + 1-4 (Gaara 1-5): seal jutsu",
 	-- The directional combo grammar, shared by every fighter.
 	-- The string's routes on buttons (04/11, user: « le plus simple à faire et
 	-- à jouer, sans perdre de mouvement »; Brawler.buttonRoute): no direction.
 	Grammar = "CLEAN HITS  1 hit → RMB: heavy  |  2 hits → RMB: launch · Q: around · SPACE: rising · R: retreat  |  3 hits → RMB: low  |  air hit → RMB: spike · Q: switch · SPACE: drive",
 	GrammarPad = "CLEAN HITS  1 hit → △: heavy  |  2 hits → △: launch · ○: around · ×: rising · R2: retreat  |  3 hits → △: low  |  air hit → △: spike · ○: switch · ×: drive",
-	HelpPad = "L move · L3 sprint   R camera · R3 lock   □ light   △ heavy   ○ dodge / escape   × jump / chase   sprint + ○ toward: chakra dash   L1 guard   L1 + □ grab   R2 tool   hold L2 + any action: chakra-infused   R1 + □/△/○/×: jutsu 1-4   hold R1 + L1 + □/△/○/×: seal jutsu   R1 + L1 (let go) ultimate   R1 + R2 feint   D-pad → escape · ← kunai · ↓ awaken · ↑ jutsu 5",
-	PadLabel = {Light="□",Heavy="△",Dodge="○",Jump="×",Guard="L1",Modifier="R1",Grab="L1 + □",Tool="R2",Chakra="L2",Sprint="L3",Lock="R3",Pursuit="×",Dash="L3 + ○",Substitute="D-pad →",Arm="D-pad ←",Feint="R1 + R2",WallDetach="R1 + L1",Ultimate="R1 + L1",ChakraLoad="L2 + action",Seals="R1 + L1 + □△○×"},
+	HelpPad = "L move · L3 sprint   R camera · R3 lock   □ light   △ heavy   ○ dodge / escape   × jump / chase   sprint + ○ toward: chakra dash   L1 guard   L1 + □ grab   R2 tool   hold L2 + any action: chakra-infused   R1 + □/△/○/×: jutsu 1-4   hold R1 + L1 + □/△/○/× (Gaara: D-pad ↑ too): seal jutsu   R1 + L1 (tap) ultimate   R1 + R2 feint   D-pad → escape · ← kunai · ↓ awaken · ↑ jutsu 5",
+	PadLabel = {Light="□",Heavy="△",Dodge="○",Jump="×",Guard="L1",Modifier="R1",Grab="L1 + □",Tool="R2",Chakra="L2",Sprint="L3",Lock="R3",Pursuit="×",Dash="L3 + ○",Substitute="D-pad →",Arm="D-pad ←",Feint="R1 + R2",WallDetach="R1 + L1",Ultimate="R1 + L1",ChakraLoad="L2 + action",Seals="R1 + L1 + □△○×",
+		Technique5="D-pad ↑",Awaken="D-pad ↓",Skip="SELECT"},
 	-- (Stage 6) One order for everyone: □ pressure, △ signature, ○ movement
 	-- or defence, × control or combo.
 	TechniquePad = {"R1 + □","R1 + △","R1 + ○","R1 + ×","D-pad ↑"},
