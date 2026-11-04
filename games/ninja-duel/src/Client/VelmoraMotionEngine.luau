@@ -2958,8 +2958,9 @@ local function weaponsFor(char,fighterId)
 			items.throw=makeItem(hand,Effects.buildKunai(false),CF(0,-.16,-.08)*ANG(math.rad(10),0,0))
 		elseif minato then
 			-- Reverse grip: blade out of the little-finger side, along the forearm.
-			items.melee=makeItem(hand,Effects.buildKunai(false),CF(0,-.14,.12)*ANG(math.rad(-12),math.pi,0))
-			items.throw=makeItem(hand,Effects.buildKunai(false),CF(0,-.16,-.08)*ANG(math.rad(10),0,0))
+			-- (04/11) Minato holds his own three-pronged kunai (Shared/HiraishinKunai).
+			items.melee=makeItem(hand,Effects.buildKunai(true),CF(0,-.14,.12)*ANG(math.rad(-12),math.pi,0))
+			items.throw=makeItem(hand,Effects.buildKunai(true),CF(0,-.16,-.08)*ANG(math.rad(10),0,0))
 			items.marked=makeItem(hand,Effects.buildKunai(true),CF(0,-.16,-.08)*ANG(math.rad(10),0,0))
 		else
 			items.shuriken=makeItem(hand,Effects.buildShuriken(),CF(0,-.34,-.08)*ANG(0,0,math.pi/2))

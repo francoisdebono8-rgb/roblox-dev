@@ -7,6 +7,8 @@ local Debris=game:GetService("Debris")
 local TweenService=game:GetService("TweenService")
 local Kit=require(script.Parent.VfxKit)
 local Face=require(game:GetService("ReplicatedStorage").NinjaDuel.Face)
+-- Minato's three-pronged Flying Thunder God kunai (user 04/11), shared with the content factory.
+local HiraishinKunai=require(game:GetService("ReplicatedStorage").NinjaDuel.HiraishinKunai)
 local FX={};FX.__index=FX
 -- Cel flame streams of the fireballs in flight (VfxKit), by model.
 FX.fireStreams=setmetatable({},{__mode="k"})
@@ -148,6 +150,8 @@ end
 -- Kunai built along -Z (point first). The grip centre is the origin, so the
 -- same model sits correctly in a hand and flies point-first.
 function FX.buildKunai(marked)
+	-- (04/11) Minato's marked kunai is the real three-pronged one (Shared/HiraishinKunai).
+	if marked then return HiraishinKunai.build() end
 	local model=new("Model",{Name=if marked then "MarkedKunai" else "Kunai"})
 	local root=block(model,Vector3.new(.1,.1,.1),CFrame.new(),Color3.new(),nil);root.Name="Root";root.Transparency=1
 	local parts={}
@@ -322,7 +326,8 @@ function FX:reset()
 end
 local function serverNow() return workspace:GetServerTimeNow() end
 function FX:visualTime() return serverNow()-FX.DELAY end
-local BUILD={kunai=function() return FX.buildKunai(false) end,marked=function() return FX.buildKunai(true) end,wire=function() return FX.buildShuriken() end,
+local BUILD={kunai=function(p) return FX.buildKunai(p~=nil and p.caster=="Flashstep") end, -- (04/11) Minato throws his three-pronged kunai
+	marked=function() return FX.buildKunai(true) end,wire=function() return FX.buildShuriken() end,
 	shuriken=FX.buildShuriken,fireball=function(p) return FX.buildFireball(p and p.caster) end,wind=FX.buildWind,
 	-- Vacuum Palm: a pale ring of compressed air (sized by the flight radius).
 	palm=function()
@@ -1300,7 +1305,7 @@ function FX:planted(p)
 		sparks(self.folder,far,Color3.fromRGB(255,236,200),6,10)
 		return {data=p,model=model,root=root,static=true,hidden=false,beam=beam,light=light,wire=true,born=os.clock()}
 	end
-	local model=if tool=="shuriken" then FX.buildShuriken() elseif tool=="kunai" or tool=="marked" then FX.buildKunai(tool=="marked") else nil
+	local model=if tool=="shuriken" then FX.buildShuriken() elseif tool=="kunai" or tool=="marked" then FX.buildKunai(tool=="marked" or p.caster=="Flashstep") else nil
 	if not model then return nil end
 	model.Parent=self.folder
 	local root=model.PrimaryPart
@@ -1515,7 +1520,7 @@ function FX:seal(owner,actor,folder)
 					local into=-normal
 					local tilt=(if math.abs(normal.Y)>.7 then Vector3.xAxis else Vector3.yAxis)*.35
 					local axis=(into+tilt).Unit
-					model:PivotTo(CFrame.lookAt(surface-axis*.55,surface-axis*.55+axis))
+					model:PivotTo(CFrame.lookAt(surface-axis*.8,surface-axis*.8+axis)) -- (04/11) deep enough for the longer blade, the prongs still out
 				end
 				local glyph=new("Model",{Name="Seal"},self.folder)
 				local base=CFrame.lookAt(surface+normal*.03,surface+normal*1.03)*CFrame.Angles(0,math.pi/2,0)
