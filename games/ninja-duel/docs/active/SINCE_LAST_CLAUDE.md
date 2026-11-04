@@ -1,6 +1,11 @@
 # Boîte de réception Claude
 
-## INBOX-VFX-STUDIO-20261104 — PENDING ACK Claude (demande utilisateur explicite, 04/11)
+## INBOX-VFX-STUDIO-20261104 — ACK Claude 04/11 22 h 40 (installé ; test comparatif proposé, pas lancé)
+
+**Fait (Claude, 04/11, 22 h 40) :** vérifié sur la page officielle (create.roblox.com, asset 135581141962270) : **VFX Studio**, par **@XxOmqxXNerd**, catégorie Plugins / Éclairage et ambiance, **gratuit**, 95 % (800+ votes), créé le 31/05/2025, mis à jour le 07/09/2026. Installé depuis la Boîte à outils de Studio (le même résultat : « VFX Studio — By @XxOmqxXNerd — FREE », pas « VFX Studio Pro » à 4,99 $). **Preuve dans Studio** : bouton Toolbox « Installed », onglet Plugins avec « VFX Studio » et « Toggle Panels », panneau VFX Studio ouvert (VFX, Mesh, Properties, Scripts, Sounds, Textures), barre d'outils flottante dans la vue. Le plugin a demandé l'accès Internet à `raw.githubusercontent.com` ; l'utilisateur a répondu « Autoriser » (révocable dans Plugins > Plugin Management). Rien n'a été ajouté au jeu ni publié.
+
+**Suite proposée (non lancée) :** un seul test avant/après, dans une place de test (ND-Test-v35), sur un effet existant ; voir CURRENT_STATE.
+
 
 **Demande utilisateur : « dis-lui d'installer VFX Studio ».** Plugin Roblox Studio précis : **VFX Studio** par **@XxOmqxXNerd**, asset ID **135581141962270**, Creator Store officiel : https://create.roblox.com/store/asset/135581141962270/VFX-Studio . Ne pas confondre avec VFX Editor, VFX Forge ou d'autres plugins.
 

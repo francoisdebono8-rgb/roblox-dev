@@ -113,7 +113,8 @@ def check(game=GAME):
             errors.append('ENGINEERING_REVIEW requires exactly six ordered sections')
         if len(review.read_text(encoding='utf-8').splitlines()) > 60:
             errors.append('ENGINEERING_REVIEW must stay short (maximum 60 lines)')
-    docs = sorted(game.rglob('*.md'))
+    # (graphify-out: a generated code graph report, its links are node labels)
+    docs = sorted(p for p in game.rglob('*.md') if 'graphify-out' not in p.parts)
     for doc in docs:
         if not doc.exists():
             errors.append('Missing navigation document: ' + str(doc.relative_to(game)))
