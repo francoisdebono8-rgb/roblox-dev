@@ -238,3 +238,14 @@ Décision utilisateur du **04/11 à 22 h 45**, sur l'[audit produit bêta → la
 
 B0 (Claude) : le build exact v35 rejoué dans Studio en six scènes (arrivée, premier coup, course → saut → mur → attaque → atterrissage, signature, duel complet, KO et revanche), au clavier, à la manette et en émulation téléphone, effets allumés puis éteints ; tableau de preuves TECHNICAL / NATIVE_STUDIO / HUMAN_VISUAL_FEEL / LIVE_ROBLOX et dix pires défauts (sévérité, fréquence, impact). B0 (utilisateur) : testeurs débutants non guidés et défi en ligne réel entre deux comptes et deux serveurs. Suivi dans [QA-001](MASTER_BACKLOG.md#qa-001--validation-studio--artefact-courant-roster-réel-et-manette) et NET-001. Pas de B1, de nouveau mode ni de publicité sans nouvelle décision.
 
+## DEC-034 — B1 ouvert : premier plaisir et feel, avec les relectures Roblox et les animations (04/11)
+
+Décision utilisateur du **04/11 à 23 h 07**, après B0 (DEC-033) et la publication de la v36 : **« Both et intègre ça à B1 »**. B1 comprend :
+
+1. les défauts 1 à 4 de B0 : une IA qui écrase un débutant, la caméra coincée au bord de l'arène, le perso qui sort du cadre en reculant vers la caméra, l'adversaire hors de l'écran au début d'une manche (et l'intro de la manche 2) ;
+2. les trois relectures du plugin Roblox (sécurité des échanges client-serveur, mémoire et performance, interface et mobile) et leurs corrections ;
+3. les animations Blender des sept autres combattants (jutsu de signes, coups 4 et 5, éveil de Naruto) ;
+4. si le temps le permet, le seul test avant / après VFX Studio prévu par l'inbox (le Rasengan).
+
+Sortie B1 (audit `26f8623`, §6) : un débutant termine son premier duel et veut rejouer ; défauts restants consignés. Pas de nouveau mode, de nouveau perso ni de publicité dans B1.
+
