@@ -91,7 +91,7 @@ test("PLAY: four prompts against his rival, then a real duel against the easy AI
 	local epoch=s.epoch
 	for k=1,4 do
 		assert(s.tutorial and s.tutorial.index==k,"not on prompt "..k)
-		perform(s);step(m,.4)
+		perform(s);step(m,if k==4 then 2.6 else .4)
 	end
 	assert(s.epoch>epoch and s.tutorial==nil and s.firstStage=="duel","no duel after the prompts")
 	assert(s.roundsToWin==2 and s.human.fighterId=="Lion" and s.bot.fighterId=="Sand","not the real duel")

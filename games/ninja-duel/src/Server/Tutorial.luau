@@ -174,6 +174,9 @@ function Tutorial.firstPlan(a)
 		add({id="signature",title="Your signature: "..tostring(spec.Name),key=TECH_KEY[slot],pad=Controls.TechniquePad[slot] or ("Jutsu "..slot),
 			place=if (spec.Range or 20)<10 then "near" else "far",technique=spec,
 			setup=function(s) local p=s.human;p.chakra=p.def.Chakra or 100;p.cooldowns={} end,
+			-- (Studio 04/11, v37: the duel's intro cut the Chidori at its cast)
+			-- the act plays out and lands before the duel begins.
+			hold=2.4,
 			check=function(s,t) return t.ev("Cast:"..tostring(spec.Id)) end})
 	end
 	return steps
@@ -346,7 +349,7 @@ function Tutorial.update(s,now,dt)
 	end
 	probeFreeze(s,t,dt,now)
 	if not t.completedAt and spec.check(s,t,now) then t.completedAt=now end
-	if t.completedAt and now-t.completedAt>=.22 then
+	if t.completedAt and now-t.completedAt>=(spec.hold or .22) then
 		close(s,t,now,"PASS");nextStep(s,t,now);return
 	end
 	-- Nobody finished it in time: a probe that found a wall, not a lesson to

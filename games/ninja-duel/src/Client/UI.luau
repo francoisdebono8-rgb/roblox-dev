@@ -231,7 +231,7 @@ function UI.new(parent,send)
 	-- keeps the choice for the rematches. The tournament sets its own.
 	self.aiLevel="easy"
 	local LEVEL_NEXT={easy="normal",normal="hard",hard="easy"}
-	self.levelButton=button(shell,"AI LEVEL  •  EASY",UDim2.fromOffset(1140,712),UDim2.fromOffset(400,52),function()
+	self.levelButton=button(shell,"AI LEVEL  •  EASY",UDim2.fromOffset(600,712),UDim2.fromOffset(400,52),function()
 		if self.picking then return end
 		self.aiLevel=LEVEL_NEXT[self.aiLevel] or "easy"
 		self.levelButton.Text="AI LEVEL  •  "..string.upper(self.aiLevel)
@@ -840,6 +840,8 @@ function UI:lobby(data)
 	end
 	self.lastLobby=data
 	local full=data.phase=="Selection" and not self.simple
+	-- the strings' notes are for the full roster (jargon on a first look)
+	self.routeNote.Visible=not self.simple
 	self.onlineRow.Visible=full
 	-- (Audit 04/11) not during the online pick (it did nothing there).
 	self.cupButton.Visible=full

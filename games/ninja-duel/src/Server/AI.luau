@@ -65,7 +65,7 @@ local AI={}; AI.__index=AI
 AI.LEVELS={
 	easy={Tick=.3,Reaction=.62,Aggression=.42,Defense=.32,Technique=.16,TechniqueGap=6.5,TechniqueJitter=3.5,
 		ReadGuard=.12,ReadDodge=.05,ReadPoke=.1,GuardRead=.02,Feint=0,Recover=.25,Plan=.35,
-		BreakOff1=.7,BreakOff2=.92,RepositionTime=1.5,RepositionJitter=.9,Disengage=.72,Opening=2.5},
+		BreakOff1=.7,BreakOff2=.92,RepositionTime=1.5,RepositionJitter=.9,Disengage=.72,Opening=2.5,UltimateBelow=.4},
 	normal={},
 	hard={Tick=.15,Reaction=.3,Aggression=.8,Defense=.66,TechniqueGap=2,ReadGuard=.36,ReadDodge=.2},
 }
@@ -197,6 +197,9 @@ function AI:defend(now)
 	-- cannot be answered).
 	local round=c.match.round or c.match.epoch or 0
 	if not Ultimates.ready(a) then self.ultFullSince=nil
+	-- (B1, Studio 04/11 v37: the easy AI opened round 2 with its ultimate, 48
+	-- of 130 health on a beginner) easy keeps it for when it is losing.
+	elseif self.tune.UltimateBelow and a.health>a.def.Health*self.tune.UltimateBelow then self.ultFullSince=nil
 	elseif self.ultRound~=round and a.state=="Neutral" and not a.reaction and not a.airborne and a.target and a.target.root and a.target.health>0 and now>=(self.ultThought or 0) then
 		self.ultFullSince=self.ultFullSince or now
 		self.ultRng=self.ultRng or Random.new(13)

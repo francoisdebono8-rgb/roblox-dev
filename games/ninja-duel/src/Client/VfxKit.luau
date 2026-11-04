@@ -292,7 +292,10 @@ stepAll=function(dt)
 	end
 	for handle in streams do
 		local at=handle.attachment
-		if not at.Parent or handle.dead then streams[handle]=nil;continue end
+		-- (Studio 04/11, v37: a Chidori's crackle kept burning where the last
+		-- duel's hand had been, the rig gone) a body removed by replication
+		-- keeps its parts, parented to nothing: out of the world, the stream ends.
+		if not at.Parent or handle.dead or not at:IsDescendantOf(workspace) then streams[handle]=nil;continue end
 		if handle.Enabled and handle.Rate>0 then
 			handle.acc+=handle.Rate*dt
 			local cf=at.WorldCFrame
