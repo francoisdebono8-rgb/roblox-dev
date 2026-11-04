@@ -74,6 +74,20 @@ function Lobby.new(matches,services)
 	if self.remote.OnServerEvent then
 		self.remote.OnServerEvent:Connect(function(player,payload) self:request(player,payload) end)
 	end
+	-- (Audit 04/11) a teleport refused after it started: back to the roster.
+	pcall(function()
+		if svc.teleport and svc.teleport.TeleportInitFailed then
+			svc.teleport.TeleportInitFailed:Connect(function(player)
+				local s=matches.sessions[player]
+				if s and s.online and s.online.kind=="travel" then
+					s.online=nil
+					matches:selection(player)
+					local p=self.players[player.UserId]
+					if p then self:status(p,"THE DUEL COULD NOT START — TRY AGAIN","bad") end
+				end
+			end)
+		end
+	end)
 	pcall(function()
 		if svc.store then
 			self.presence=svc.store:GetSortedMap(Protocol.Tune.PresenceMap)
@@ -139,10 +153,11 @@ function Lobby:stateOf(p)
 	if not s then return "free" end
 	if s.online and (s.online.kind=="duel" or s.online.kind=="travel") then return "duel" end
 	if s.online then return "queue" end
+	if s.cup then return "cup" end
 	if s.phase=="Duel" or s.phase=="Result" then return "training" end
 	return "free"
 end
-function Lobby.challengeable(state) return state=="free" or state=="training" or state=="queue" end
+function Lobby.challengeable(state) return state=="free" or state=="training" or state=="queue" or state=="cup" end
 
 -- ------------------------------------------------------------ presence
 function Lobby:publish(now)
@@ -337,8 +352,11 @@ end
 function Lobby:depart(p,code,opponent)
 	if type(code)~="string" or #code>200 then return end
 	local s=self.matches:session(p.player)
+	-- (Audit 04/11) out of an AI duel first: a travel that failed left the
+	-- player in a frozen duel, every button refused.
+	if s.phase~="Selection" then self.matches:selection(p.player) end
 	if s.online then self.matches.online:leave(p.player,s) end
-	s.online={kind="travel"}
+	s.online={kind="travel",at=self.svc.now()}
 	self:status(p,"LEAVING FOR THE DUEL"..(if opponent then " AGAINST "..string.upper(tostring(opponent)) else "").."…")
 	self:teleport(p.player,code)
 end
@@ -462,6 +480,16 @@ function Lobby:update(now)
 			self.incoming[id]=nil
 			local p=self.players[rec.to]
 			if p then self:send(p.player,{kind="closed",id=id}) end
+		end
+	end
+	-- (Audit 04/11) a teleport that never happened (TeleportInitFailed, or no
+	-- answer at all): the player gets his roster back.
+	for _,p in self.players do
+		local s=self.matches.sessions[p.player]
+		if s and s.online and s.online.kind=="travel" and now-(s.online.at or now)>25 then
+			s.online=nil
+			self.matches:selection(p.player)
+			self:status(p,REASONS.error,"bad")
 		end
 	end
 	local d=self.duel

@@ -30,6 +30,14 @@ local attacks={
  -- Character branches (directional input inside a confirmed string).
  -- Minato: a sidestep cut that swings him around the opponent's guard.
  AngleStep=move(.08,.1,.2,6,1.2,"HitStun",Vector3.new(0,0,9),.3),
+ -- (04/11) Minato's Flying Thunder God level two: a palm laid on the body with
+ -- the formula in it (the seal jutsu sends that body to his seal on contact).
+ FlashTouch=move(.06,.1,.24,4,2.4,"HitStun",Vector3.new(0,0,4),.4),
+ -- (04/11) Seal jutsu strikes: Lee's nunchaku and his rising whirlwind of
+ -- three kicks, Neji's two fingers into the points of the legs.
+ Nunchaku=move(.14,.2,.32,11,2.4,"Knockback",Vector3.new(0,10,40),.5),
+ GorikiSenpu=move(.16,.26,.36,12,2.2,"Launched",Vector3.new(0,48,8),1.0),
+ LowPalm=move(.08,.1,.26,6,2.2,"HitStun",Vector3.new(0,0,8),.35),
  -- Itachi: a low spinning sweep that trades the string for a knockdown,
  -- and the palm that answers a successful Read.
  Sweep=move(.12,.14,.34,7,1.6,"Knockdown",Vector3.new(0,6,12),.62),
@@ -99,7 +107,7 @@ local attacks={
  FanDive=move(.1,.14,.26,7,1.5,"Spiked",Vector3.new(0,-70,4),.9),
 }
 -- Reach of the body that lands each strike (see `contact` in move()).
-for name,gap in {Light3=4.3,Heavy=4.2,FlyingKick=4.2,PalmThrust=3.7,CounterPalm=3.7,KneeStrike=3.2,Sweep=3.5,Grab=2.6,Throw=2.6,ThrowUp=2.6,Slam=3.0,WallDive=2.6} do
+for name,gap in {Light3=4.3,Heavy=4.2,FlyingKick=4.2,PalmThrust=3.7,CounterPalm=3.7,FlashTouch=3.3,KneeStrike=3.2,Sweep=3.5,Grab=2.6,Throw=2.6,ThrowUp=2.6,Slam=3.0,WallDive=2.6} do
  if attacks[name] then attacks[name].contact=gap end
 end
 
@@ -132,6 +140,10 @@ local motion={
  Throw={side=1,twist=70,lean=22,arm=92,step=1.1},
  ThrowUp={side=-1,twist=28,lean=-30,arm=110,step=1.1},
  AngleStep={side=1,twist=40,lean=10,arm=90,step=1.1},
+ FlashTouch={side=1,twist=24,lean=14,arm=92,step=1.1},
+ Nunchaku={side=1,twist=60,lean=12,arm=104,step=1.15},
+ GorikiSenpu={side=1,twist=80,lean=-10,arm=70,step=1.1},
+ LowPalm={side=1,twist=20,lean=30,arm=70,step=1.1},
  Sweep={side=-1,twist=60,lean=20,arm=60,step=1.0},
  CounterPalm={side=1,twist=30,lean=16,arm=100,step=1.2},
  WallDive={side=1,twist=24,lean=42,arm=80,step=1.2},
@@ -177,6 +189,9 @@ local KIND={Light3="kick",Heavy="heavy",Launcher="launch",Air2="kick",Slam="slam
  LionKick="launch",VaultKick="kick",ChidoriThrust="heavy",AirFlip="kick"}
 for name,spec in attacks do spec.zone=ZONE[name] or "body";spec.kind=KIND[name] or "strike" end
 attacks.Light4.clip="Light1";attacks.Light5.clip="Light2"
+-- (Audit 04/11) the new seal-page strikes, until their own Blender clips: the
+-- fighter's nearest clip (they played Sasuke's jab: Lee's own table is his).
+attacks.Nunchaku.clip="LeafWhirlwind";attacks.GorikiSenpu.clip="LeafRising";attacks.LowPalm.clip="PalmThrust"
 attacks.SandHand.range=12;attacks.SandHand.width=5;attacks.SandHand.height=6;attacks.SandHand.depth=11;attacks.SandHand.offset=6;attacks.SandHand.facing=.25;attacks.SandHand.clip="SandPillar";attacks.SandHand.kind="heavy";attacks.SandHand.zone="body"
 attacks.SandFist.range=9;attacks.SandFist.width=5;attacks.SandFist.depth=8;attacks.SandFist.offset=4.5;attacks.SandFist.facing=.3;attacks.SandFist.clip="Light3";attacks.SandFist.kind="heavy"
 attacks.SandLowWave.range=9.5;attacks.SandLowWave.width=7;attacks.SandLowWave.height=3.5;attacks.SandLowWave.depth=9;attacks.SandLowWave.offset=4.5;attacks.SandLowWave.clip="Sweep";attacks.SandLowWave.zone="legs";attacks.SandLowWave.kind="sweep"

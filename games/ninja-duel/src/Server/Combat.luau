@@ -9,6 +9,7 @@ local Animation = require(script.Parent.Animation)
 local Techniques = require(script.Parent.Techniques)
 -- Reusable technique families and fighter traits (roster breadth pass).
 local Families = require(script.Parent.Families)
+local SealKits = require(script.Parent.SealKits)
 local Ultimates = require(script.Parent.Ultimates)
 local Interactions = require(script.Parent.Interactions)
 local Looks = require(Shared.Looks)
@@ -1016,7 +1017,8 @@ end
 -- Presses that wait for the body to be free (Config.Late): the verbs a player
 -- presses to get out of a moment, never the held ones (Guard, ChakraLoad).
 local LATE={Attack=true,Heavy=true,Jump=true,Dodge=true,Grab=true,Tool=true,
-	Technique1=true,Technique2=true,Technique3=true,Technique4=true,Technique5=true}
+	Technique1=true,Technique2=true,Technique3=true,Technique4=true,Technique5=true,
+	Seal1=true,Seal2=true,Seal3=true,Seal4=true,Seal5=true}
 -- Actions the chakra button infuses (user 29/10: the infusion on its own
 -- button, L2 / Z held with the press): the press loads the body's nature for
 -- itself (ChakraFlow), the strike, jump or dodge spends it.
@@ -1069,11 +1071,21 @@ function Combat.linkable(c,a,action)
 end
 function Combat:request(a,action,aim,clientTime,opts)
 	if type(action)~="string" then return false,"Bad action" end
+	-- (04/11) Inside a string ○ × R pick its routes (Brawler.buttonRoute); the
+	-- route rides with the press, so a late press replays the same one.
+	local route=opts and opts.route
+	if not route then
+		local routed,intent=Brawler.buttonRoute(self,a,action)
+		if routed then action=routed;route=intent;opts=table.clone(opts or {});opts.route=intent end
+	end
 	local loaded=false
 	if opts and opts.chakra==true and INFUSED[action] and not ChakraFlow.active(self,a) then
 		loaded=ChakraFlow.load(self,a)==true
 	end
+	local saved=a.intentOverride
+	if route then a.intentOverride=route end
 	local ok,reason=self:requestInner(a,action,aim,clientTime,opts)
+	if route then a.intentOverride=saved end
 	-- A refused press does not leave its load for a later one (a late press
 	-- loads again when it comes out).
 	if loaded and ok==false then a.chakraLoad=nil end
@@ -1090,7 +1102,7 @@ function Combat:request(a,action,aim,clientTime,opts)
 	if ok~=false and action=="Dodge" and a.state=="Dodging" then a.airHold=0 end
 	-- (Audit 29/10) A jutsu is the next action too: it spends a load (R1 held
 	-- while choosing it loaded one, and the next ○ became a dash at him).
-	if ok~=false and string.match(action,"^Technique%d$") and not a.sealPressed then a.chakraLoad=nil end
+	if ok~=false and (string.match(action,"^Technique%d$") or string.match(action,"^Seal%d$")) and not a.sealPressed then a.chakraLoad=nil end
 	a.sealResolved=nil;a.sealPressed=nil;a.sealCast=nil
 	if action~="GuardOff" then
 		local log=a.pressLog or {};a.pressLog=log
@@ -1127,7 +1139,38 @@ function Combat:requestInner(a,action,aim,clientTime,opts)
 	-- wall, pad R1 + L3), then two jutsu keys are seals instead of slots; the
 	-- seal jutsu goes on the second one, through the same cast as a slot.
 	a.sealCast=opts and opts.sealCast or nil
-	if action=="Seals" or (action=="WallDetach" and not a.wall and a.def.SealJutsu) then return self:openSeals(a) end
+	-- (04/11, user: « une 2e page de jutsu ») Seal1-5: the fighter's seal jutsu
+	-- by its place in his list, one press (keyboard C held + 1-5, pad R1 + L1
+	-- held + □ △ ○ ×, D-pad ↑). The signs are woven by the cast itself: they
+	-- show on the hands and in the HUD while the jutsu is moulded.
+	local page=tonumber(string.match(action,"^Seal([1-5])$"))
+	if page then
+		-- (a late press replays with its jutsu already resolved: opts.sealCast)
+		if not a.sealCast then
+			local spec=a.def.SealJutsu and a.def.SealJutsu[page]
+			if not spec then return false,"No seal jutsu" end
+			if self.match.techniquesDisabled then return false,"Techniques disabled" end
+			if (a.sealedUntil or 0)>self.now then return false,"Chakra points sealed" end
+			a.sealing=nil
+			a.sealCast=spec;a.sealResolved=spec
+		end
+		-- (Audit 04/11) the signs only for a cast that will go: a press its own
+		-- check refuses ("Nothing to copy", "Launch him first") wove them for
+		-- nothing.
+		local spec=a.sealCast
+		local technique=Techniques[spec.Id]
+		local follows=spec.FollowsLaunch and a.target and (a.target.reaction=="Launched" or a.target.reaction=="Juggled")
+		if (a.cooldowns[spec.Id] or 0)<=self.now and a.chakra>=(spec.Cost or 0) and (follows or Rules.canAct(a,self.now))
+			and (not technique or not technique.check or technique.check(self,a,spec,self.now)) then
+			for i,n in spec.Signs or {} do
+				self:pushImpact(a.root.Position,"seals",false,{owner=a.id,fighter=a.fighterId,step=i,seal=n})
+			end
+		end
+		action="Technique1"
+	end
+	if action=="Seals" then return self:openSeals(a) end
+	-- Off a wall the seal key only holds the page open (the client's), nothing to do here.
+	if action=="WallDetach" and not a.wall then return true end
 	local sealSlot=not a.sealCast and a.sealing and tonumber(string.match(action,"^Technique([1-4])$"))
 	if sealSlot then
 		local done,why=self:seal(a,sealSlot)
@@ -1237,7 +1280,10 @@ function Combat:requestInner(a,action,aim,clientTime,opts)
 		opts=table.clone(opts or {});opts.chakra=true
 	end
 	-- (A blade that is not thrown, Kakashi's tanto: R stays the tool.)
-	if action=="Tool" and a.armed and not (a.def.Weapon and a.def.Weapon.Throwable==false) and not (opts~=nil and opts.chakra==true) then return self:throwDrawn(a,aim) end
+	-- (Audit 04/11) R inside a string is its retreat route (Brawler.buttonRoute),
+	-- kunai drawn or not: the hop out comes before the drawn throw.
+	local retreat=action=="Tool" and a.intentOverride~=nil and a.intentOverride[1]=="back" and a.chainOpen==true
+	if action=="Tool" and a.armed and not retreat and not (a.def.Weapon and a.def.Weapon.Throwable==false) and not (opts~=nil and opts.chakra==true) then return self:throwDrawn(a,aim) end
 	if action=="Tool" then
 		-- No blade to throw (Rock Lee): the tool button is his deflecting kick, and
 		-- his chakra profile (ChakraTuning Taijutsu) infuses nothing: the chakra
@@ -1358,8 +1404,11 @@ function Combat:requestInner(a,action,aim,clientTime,opts)
 	local arriving=(a.flashUntil or 0)>self.now and (a.state=="TechniqueRecovery" or a.state=="TechniqueActive")
 		and (a.pending==nil or a.pending.spec.Id=="Flashstep")
 	-- (Stage 6) at 13 the arrival is cashed in with the Lightning Strike.
-	if cancelSpec and (cancelSpec.Id=="BurstStrike" or cancelSpec.Id=="LightningStrike") and arriving
-		and (a.cooldowns[cancelSpec.Id] or 0)<=self.now and a.chakra>=cancelSpec.Cost then
+	-- (Audit 04/11) the seal page's Rasengan too (Minato's: "instant after a
+	-- teleport"; the press was refused "Committed").
+	local arrivalSpec=a.sealCast or cancelSpec
+	if arrivalSpec and (arrivalSpec.Id=="BurstStrike" or arrivalSpec.Id=="LightningStrike") and arriving
+		and (a.cooldowns[arrivalSpec.Id] or 0)<=self.now and a.chakra>=(arrivalSpec.Cost or 0) then
 		a.flashUntil=0;a.state="Neutral";a.untilTime=self.now;a.pending=nil
 		a.flashCancel=true
 	end
@@ -1371,6 +1420,17 @@ function Combat:requestInner(a,action,aim,clientTime,opts)
 		and (a.cooldowns[cancelSpec.Id] or 0)<=self.now and a.chakra>=cancelSpec.Cost then
 		a.state="Neutral";a.untilTime=self.now;a.pending=nil
 		a.wireCancel=true
+	end
+	-- (04/11) Lee's Shadow of the Dancing Leaf follows a body he has just
+	-- launched straight out of the blow's recovery (that is the technique).
+	local follow=a.sealCast
+	-- (Audit 04/11) the jutsu's own check first: a refused press ("Out of
+	-- range") cleared his recovery for free.
+	if follow and follow.FollowsLaunch and a.target and (a.target.reaction=="Launched" or a.target.reaction=="Juggled")
+		and (a.state=="Recovery" or a.state=="TechniqueRecovery" or (a.state=="Active" and a.hitConfirmed)) and (a.cooldowns[follow.Id] or 0)<=self.now and a.chakra>=(follow.Cost or 0)
+		and Techniques[follow.Id] and Techniques[follow.Id].check(self,a,follow,self.now) then
+		if a.pending and a.pending.kind=="Brawl" then Bangla.close(a.pending) end
+		a.pending=nil;a.attackName=nil;a.chainOpen=false;a.state="Neutral";a.untilTime=self.now
 	end
 	local chain=action=="Attack" and a.state=="Recovery" and a.chainOpen and self.now>a.chainAt
 	if not chain and not Rules.canAct(a,self.now) then return false,"Committed" end
@@ -1450,6 +1510,7 @@ function Combat:requestInner(a,action,aim,clientTime,opts)
 		-- committed now, but the body stays in Neutral so the legs keep moving
 		-- while the arm throws; the payoff fires on the release frame.
 		Brawler.event(self,a,"Technique"); Brawler.event(self,a,"Cast:"..spec.Id); a.chakra-=spec.Cost; a.cooldowns[spec.Id]=self.now+spec.Cooldown; a.guardHeld=false
+		SealKits.noteCast(self,a,spec)
 		-- Same for a thrown technique: no guard pose (and guard speed) without a guard.
 		if a.state=="Guarding" then self:setState(a,"Neutral",0) end
 		self:awakenTechnique(a,spec)
@@ -1464,6 +1525,7 @@ function Combat:requestInner(a,action,aim,clientTime,opts)
 		return true
 	end
 	Brawler.event(self,a,"Technique"); Brawler.event(self,a,"Cast:"..spec.Id); Rules.reserve(a,spec,self.now); a.guardHeld=false
+	SealKits.noteCast(self,a,spec)
 	self:awakenTechnique(a,spec)
 	a.pending={kind="Technique",spec=spec,implementation=technique,aim=aim or a.target.root.Position,variant=variant,cancelled=cancelled}
 	-- A technique may set itself up as its channel begins (Naruto's Rasengan
@@ -2126,6 +2188,8 @@ function Combat:igniteBlade(p)
 	return false
 end
 function Combat:projectileHit(p,target,position,normal)
+	-- (04/11) Minato's space-time barrier takes the thrown thing into its seal.
+	if Families.warpsProjectile(self,p,target,position) then return end
 	local style=p.style or IMPACT_STYLE[p.kind] or (if Looks[p.kind] then "look" else "shuriken")
 	self:pushImpact(position,style,p.kind=="fireball",{projectile=p.id,kind=p.kind,normal=normal,owner=p.a.id,victim=target.id,direction=p.direction,charge=p.charge})
 	-- The entry still finishes the blade on the client; it only reads as a body
@@ -2154,7 +2218,9 @@ function Combat:projectileHit(p,target,position,normal)
 		Chakra.contact(self,p,target,damaged)
 		if self.match.phase~="Duel" then return end
 	end
-	local guarded=target.impactStyle=="block"
+	-- (Audit 04/11) this blow's guard (impactStyle is the last blow's: an
+	-- absorbed wave read a stale block and broke a guard that was never up).
+	local guarded=damaged and target.impactStyle=="block"
 	-- A family object's contact fields (Families.contact): bind, drain, slow...
 	if p.family then
 		Families.projectileHit(self,p,target,damaged,guarded,position)

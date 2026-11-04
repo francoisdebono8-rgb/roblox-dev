@@ -332,7 +332,8 @@ local function eyeShape(e,eye,brow,droop,browEye)
 		cy=math.max(cy,top+h/2)
 		e.iris.Size=UDim2.fromScale(ib.size.X.Scale,h/math.max(shown,1e-3))
 		e.iris.Position=UDim2.fromScale(.5,(cy-top)/math.max(shown,1e-3))
-		if e.pupil then e.pupil.Size=if eye=="wide" then UDim2.fromScale(.26,.26) else UDim2.fromScale(.42,math.min(.9,.42*ih/h)) end
+		-- (Audit 04/11) a fox tint keeps its slit through blinks and moods.
+		if e.pupil then e.pupil.Size=if e.tintKind=="fox" then UDim2.fromScale(.16,.62) elseif eye=="wide" then UDim2.fromScale(.26,.26) else UDim2.fromScale(.42,math.min(.9,.42*ih/h)) end
 	end
 	-- Lash line rides the lid edge.
 	local top=py-height/2+height*cover
@@ -409,11 +410,13 @@ function Face.set(face,name,blink)
 	return face
 end
 
--- Iris colour override (nil restores): "sharingan" shows the commas.
-function Face.tint(face,color,kind)
+-- Iris colour override (nil restores): "sharingan" shows the commas. `only`
+-- (-1 his left, 1 his right) tints one eye: Kakashi's single Sharingan.
+function Face.tint(face,color,kind,only)
 	if not face then return end
 	for _,e in face.eyes do
 		if not e.iris then continue end
+		if color and only and e.side~=only then continue end
 		e.restore=e.restore or {color=e.iris.BackgroundColor3,gradient=e.gradient and e.gradient.Color}
 		if color then
 			e.iris.BackgroundColor3=color
@@ -423,7 +426,8 @@ function Face.tint(face,color,kind)
 			if e.gradient and e.restore.gradient then e.gradient.Color=e.restore.gradient end
 		end
 		for _,t in e.tomoe do t.Visible=color~=nil and kind=="sharingan" end
-		if e.pupil then e.pupil.Size=if kind=="fox" then UDim2.fromScale(.16,.62) else UDim2.fromScale(.42,.42) end
+		e.tintKind=if color then kind else nil
+		if e.pupil then e.pupil.Size=if kind=="fox" and color then UDim2.fromScale(.16,.62) else UDim2.fromScale(.42,.42) end
 		e.gui.LightInfluence=if color then .1 else .55
 	end
 end

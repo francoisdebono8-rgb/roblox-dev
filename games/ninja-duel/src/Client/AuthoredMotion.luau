@@ -11,6 +11,13 @@
 local Authored={}
 local ok,DATA=pcall(function() return require(script.Parent.AuthoredClips) end)
 if not ok or type(DATA)~="table" then DATA={} end
+-- (04/11) The seal jutsu, the strings' middle hits and the reworked clips
+-- (tools/blender/job_jutsu.py -> AuthoredJutsu*): laid over the others, a clip
+-- of the same name wins.
+local okJutsu,JUTSU=pcall(function() return require(script.Parent.AuthoredJutsu) end)
+if okJutsu and type(JUTSU)=="table" then
+	for name,clip in JUTSU do DATA[name]=clip end
+end
 Authored.data=DATA
 
 local ORDER={"Root","Waist","Neck","Right","Left","RightElbow","LeftElbow","RightWrist","LeftWrist",

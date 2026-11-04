@@ -11,7 +11,17 @@ local Ultimates=require(script.Parent.Ultimates)
 -- from its family and its own spec.AI band, never from the fighter's name.
 local function familyWants(self,c,a,target,spec,distance,danger)
 	local rule=spec.AI or {}
-	local family=spec.Family
+	-- (04/11) a bespoke seal jutsu says which family the bot should read it as
+	local family=spec.Family or spec.AIAs
+	-- (Audit 04/11) a jutsu that follows a launched body (Lee's Dancing Leaf):
+	-- only then (it was pressed into a refusal every time).
+	if spec.FollowsLaunch and not (target.reaction=="Launched" or target.reaction=="Juggled") then return false end
+	-- a jutsu with its own check (the copy, the paralysis...): asked first
+	local own=Techniques[spec.Id]
+	if own and own.check and spec.AIAs then
+		local ok=own.check(c,a,spec,c.now)
+		if not ok then return false end
+	end
 	local range=spec.Range or 30
 	local opening=target.state=="Recovery" or target.state=="TechniqueRecovery" or target.state=="Stunned" or target.reaction=="Bound"
 	local lo,hi,chance
@@ -836,18 +846,13 @@ function AI:update(now)
 			end
 		end
 		-- (DEC-032) No quick slot taken: now and then a jutsu of the hand seals,
-		-- the two seals woven in one breath (the same weave as a player's).
+		-- from the second page like a player's (04/11: one press, Seal1-5).
 		local seals=a.def.SealJutsu
 		if seals and #seals>0 and not self.noSeals and not punish and self.rng:NextNumber()<(tune.Seals or .2) then
 			self.sealStart=((self.sealStart or 0)%#seals)+1
 			local spec=seals[self.sealStart]
-			if (a.cooldowns[spec.Id] or 0)<=now and a.chakra>=spec.Cost and familyWants(self,c,a,target,spec,distance,danger)
-				and c:request(a,"Seals") then
-				-- every seal but the last is woven in place; the last one casts
-				local ok=true
-				for k=1,#spec.Signs-1 do ok=ok and c:seal(a,spec.Signs[k])==true end
-				if ok then ok=c:request(a,"Technique"..spec.Signs[#spec.Signs],target.root.Position) end
-				a.sealing=nil
+			if (a.cooldowns[spec.Id] or 0)<=now and a.chakra>=spec.Cost and familyWants(self,c,a,target,spec,distance,danger) then
+				local ok=c:request(a,"Seal"..self.sealStart,target.root.Position)
 				if ok and (a.cooldowns[spec.Id] or 0)>now then
 					self.techReadyAt=now+(tune.TechniqueGap or 0)+self.rng:NextNumber()*(tune.TechniqueJitter or 0);return
 				end

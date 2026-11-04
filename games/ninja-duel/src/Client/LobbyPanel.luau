@@ -17,7 +17,7 @@ local Shared=game:GetService("ReplicatedStorage").NinjaDuel
 local Fighters=require(Shared.Fighters)
 local Panel={};Panel.__index=Panel
 
-local STATE={free="ON THE ROSTER",training="VS THE AI",queue="SEARCHING",duel="IN A DUEL"}
+local STATE={free="ON THE ROSTER",training="VS THE AI",queue="SEARCHING",duel="IN A DUEL",cup="IN A TOURNAMENT"}
 local function blocked()
 	local set={}
 	pcall(function()
@@ -94,10 +94,17 @@ function Panel.new(ui,remote,kit)
 	end)
 	self.cancelButton.TextSize=16;self.cancelButton.ZIndex=82
 	-- Keyboard answers (the cursor may be held by the duel camera).
+	-- (Audit 04/11) and the pad's: off a duel the gamepad selection sits on
+	-- ACCEPT (A) and B declines; in a duel (A, B are the jump and the dodge)
+	-- SELECT accepts and the invitation runs out on its own.
 	UIS.InputBegan:Connect(function(input,processed)
-		if processed or not self.invite then return end
-		if input.KeyCode==Enum.KeyCode.Return then self:answer(true)
-		elseif input.KeyCode==Enum.KeyCode.Backspace then self:answer(false) end
+		if not self.invite then return end
+		local code=input.KeyCode
+		if code==Enum.KeyCode.ButtonSelect then self:answer(true);return end
+		if code==Enum.KeyCode.ButtonB and self.phase~="Duel" then self:answer(false);return end
+		if processed then return end
+		if code==Enum.KeyCode.Return then self:answer(true)
+		elseif code==Enum.KeyCode.Backspace then self:answer(false) end
 	end)
 	remote.OnClientEvent:Connect(function(data) self:receive(data) end)
 	-- The fighter picked on the roster is what the others see next to the name.
@@ -171,7 +178,13 @@ function Panel:drawInvite()
 	if not invite then return end
 	local def=Fighters[invite.fighter or ""]
 	self.inviteText.Text=string.upper(invite.from).." CHALLENGES YOU"
-	self.inviteSub.Text=(if def then "WITH "..string.upper(def.Name).."  •  " else "").."ENTER ACCEPTS  •  BACKSPACE DECLINES"
+	local pad=false
+	pcall(function() pad=UIS:GetLastInputType().Name:match("^Gamepad")~=nil end)
+	local keys=if not pad then "ENTER ACCEPTS  •  BACKSPACE DECLINES" elseif self.phase=="Duel" then "SELECT ACCEPTS" else "A ACCEPTS  •  B DECLINES"
+	self.inviteSub.Text=(if def then "WITH "..string.upper(def.Name).."  •  " else "")..keys
+	if pad and self.phase~="Duel" then
+		pcall(function() game:GetService("GuiService").SelectedObject=self.acceptButton end)
+	end
 	self:tickTimer()
 end
 function Panel:tickTimer()
@@ -183,6 +196,21 @@ function Panel:tickTimer()
 end
 function Panel:drawList()
 	local K,P=self.kit,self.kit.palette
+	-- (Audit 04/11) the list refreshes every second: rebuilt only when it
+	-- changed, else the pad's selected CHALLENGE button was destroyed under it.
+	local parts={tostring(self.dnd)}
+	for _,e in self.players do
+		table.insert(parts,table.concat({tostring(e.id),tostring(e.name),tostring(e.state),tostring(e.fighter),tostring(e.dnd),tostring(e.pending),tostring(e.friend),tostring(e.here),tostring(self.blocked[e.id])},"|"))
+	end
+	local signature=table.concat(parts,";")
+	if signature==self.listSignature and #self.rows>0 then return end
+	self.listSignature=signature
+	local GuiService=game:GetService("GuiService")
+	local selectedIndex
+	pcall(function()
+		local selected=GuiService.SelectedObject
+		for i,b in self.rowButtons or {} do if b==selected then selectedIndex=i end end
+	end)
 	for _,row in self.rows do row:Destroy() end
 	table.clear(self.rows)
 	self.rowButtons={}
@@ -191,7 +219,7 @@ function Panel:drawList()
 	for _,e in self.players do
 		if self.blocked[e.id] then continue end
 		shown+=1
-		local available=(e.state=="free" or e.state=="training" or e.state=="queue") and not e.dnd
+		local available=(e.state=="free" or e.state=="training" or e.state=="queue" or e.state=="cup") and not e.dnd
 		if available then free+=1 end
 		local row=K.frame(self.list,UDim2.fromOffset(0,(shown-1)*64),UDim2.fromOffset(696,58),P.panel,.15)
 		K.corner(row,6);row.ZIndex=73
@@ -210,6 +238,11 @@ function Panel:drawList()
 		if not available or e.pending then b.TextColor3=P.muted end
 		table.insert(self.rows,row)
 		table.insert(self.rowButtons,b)
+	end
+	-- the pad's selection back on the same row (or the last one)
+	if selectedIndex then
+		local b=self.rowButtons[math.min(selectedIndex,#self.rowButtons)]
+		pcall(function() GuiService.SelectedObject=b or self.closeButton end)
 	end
 	self.list.CanvasSize=UDim2.fromOffset(0,shown*64)
 	self.empty.Visible=shown==0

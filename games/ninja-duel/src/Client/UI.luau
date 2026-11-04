@@ -222,6 +222,11 @@ function UI.new(parent,send)
 	end,palette.red)
 	self.startButton.TextSize=32
 	self.startStroke=create("UIStroke",self.startButton,{Color=palette.paper,Thickness=2.5,Transparency=.2,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
+	-- (04/11) The Prodigy Tournament against the AI (Server/Tournament).
+	self.cupButton=button(shell,"TOURNAMENT  •  VS AI",UDim2.fromOffset(60,712),UDim2.fromOffset(400,52),function()
+		if not self.picking then send("CupStart",{player=self.player}) end
+	end,palette.red)
+	self.cupButton.TextSize=26
 	self.tutorialButton=button(shell,"TRAINING",UDim2.fromOffset(60,below),UDim2.fromOffset(230,58),function()
 		if self.picking then send("Cancel") else send("Tutorial",{player=self.player,bot=self.bot}) end
 	end)
@@ -494,8 +499,9 @@ function UI.new(parent,send)
 	inkTitle(self.resultTitle)
 	self.resultName=text(resultBox,"",UDim2.fromOffset(30,92),UDim2.fromOffset(540,36),30,palette.gold,TITLE_FONT,Enum.TextXAlignment.Center)
 	self.resultNote=text(resultBox,"",UDim2.fromOffset(30,132),UDim2.fromOffset(540,44),15,palette.muted,BODY_FONT,Enum.TextXAlignment.Center)
-	self.rematchButton=button(resultBox,"REMATCH",UDim2.fromOffset(30,196),UDim2.fromOffset(540,52),function() send("Rematch") end,palette.red)
-	button(resultBox,"RETURN TO THE ROSTER",UDim2.fromOffset(30,260),UDim2.fromOffset(540,52),function() send("Selection") end)
+	-- In a tournament the card continues the bracket instead of a rematch.
+	self.rematchButton=button(resultBox,"REMATCH",UDim2.fromOffset(30,196),UDim2.fromOffset(540,52),function() send(if self.inCup then "CupBracket" else "Rematch") end,palette.red)
+	self.rosterButton=button(resultBox,"RETURN TO THE ROSTER",UDim2.fromOffset(30,260),UDim2.fromOffset(540,52),function() send(if self.inCup then "CupLeave" else "Selection") end)
 	-- ------------------------------------------------------------ controls
 	-- (User 03/11: "the keys should be in a menu rather than on the screen
 	-- all the time".) TAB (pad: START) opens the controls sheet over any
@@ -504,6 +510,8 @@ function UI.new(parent,send)
 	-- where it is; nothing else lists keys during a fight.
 	self.controls=frame(self.gui,UDim2.fromScale(0,0),UDim2.fromScale(1,1),Color3.fromRGB(6,5,8),.25)
 	self.controls.ZIndex=40;self.controls.Visible=false
+	-- (Audit 04/11) the sheet takes the clicks (they went through to the roster).
+	self.controls.Active=true
 	local sheet=inkCard(frame(self.controls,UDim2.fromScale(.5,.5),UDim2.fromOffset(1120,640),CARD,0))
 	sheet.AnchorPoint=Vector2.new(.5,.5);sheet.ZIndex=41
 	local sheetScale=create("UIScale",sheet,{Scale=1})
@@ -616,7 +624,7 @@ local GROUPS={
 	{"MOVE",{{"Move","WASD","L stick"},{"Sprint","Sprint"},{"Jump","Jump"},{"Lock / unlock","Lock"},{"Wall run: into a wall","—","—"},{"Off the wall","WallDetach"}}},
 	{"ATTACK",{{"Light strike (string)","Light"},{"Heavy strike","Heavy"},{"Grab, then throw","Grab"},{"Tool","Tool"},{"Kunai: draw / sheathe","Arm"},{"Chase / chakra dash","Pursuit"}}},
 	{"DEFEND",{{"Guard (hold)","Guard"},{"Dodge","Dodge"},{"Substitution","Substitute"},{"Feint a heavy","Feint"},{"Break a grab","Grab"}}},
-	{"NINJA ARTS",{{"Jutsu 1-4","1  2  3  4","R1 + □ △ ○ ×"},{"Hand seals, then two jutsu keys","C (off a wall)","R1 + L3"},{"Jutsu 5","Technique5"},{"Chakra-infuse (hold + action)","Chakra"},{"Awaken (low health)","Awaken"},{"Ultimate (bar full)","Ultimate"}}},
+	{"NINJA ARTS",{{"Jutsu 1-4","1  2  3  4","R1 + □ △ ○ ×"},{"Seal jutsu (hold the 2nd page)","hold C + 1-5","hold R1 + L1 + □△○× / D↑"},{"Jutsu 5","Technique5"},{"Chakra-infuse (hold + action)","Chakra"},{"Awaken (low health)","Awaken"},{"Ultimate (bar full)","Ultimate"}}},
 }
 function UI:buildControls(pad)
 	local body=self.controlsBody
@@ -640,7 +648,10 @@ function UI:buildControls(pad)
 	end
 	-- The fighter in play (on the roster: the one picked): his strings, his jutsu.
 	local h=self.lastHuman
-	local id=if self.selection.Visible or not h then self.player else h.fighterId
+	-- (Audit 04/11) his own fighter: in his own duel the one he plays, else
+	-- the one picked (a watched match or the bracket showed someone else's).
+	local own=h~=nil and not self.lastSpectate and (self.lastPhaseSeen=="Duel" or self.lastPhaseSeen=="Result")
+	local id=if self.selection.Visible or not own then self.player else h.fighterId
 	local def=Fighters[id or ""]
 	local y=410
 	local head=text(body,if def then string.upper(def.FullName or def.Name) else "YOUR FIGHTER",UDim2.fromOffset(0,y),UDim2.fromOffset(1048,28),24,palette.gold,TITLE_FONT);head.ZIndex=43
@@ -652,30 +663,44 @@ function UI:buildControls(pad)
 		local jutsu=text(body,table.concat(names,"     "),UDim2.fromOffset(0,y+78),UDim2.fromOffset(1048,22),15,palette.paper,TITLE_FONT);jutsu.ZIndex=43
 		jutsu.TextScaled=true;create("UITextSizeConstraint",jutsu,{MaxTextSize=15})
 		if def.SealJutsu then
-			local key=if pad then {"□","△","○","×"} else {"1","2","3","4"}
+			local key=if pad then {"□","△","○","×","D↑"} else {"1","2","3","4","5"}
 			local seals={}
-			for _,spec in def.SealJutsu do
-				local s={}
-				for _,v in spec.Signs do table.insert(s,key[v]) end
-				table.insert(seals,table.concat(s,"")..": "..string.upper(spec.Name))
-			end
-			local sealRow=text(body,"SEALS  "..table.concat(seals,"   "),UDim2.fromOffset(0,y+104),UDim2.fromOffset(1048,22),15,palette.gold,BODY_FONT);sealRow.ZIndex=43
+			for i,spec in def.SealJutsu do table.insert(seals,key[i].."  "..string.upper(spec.Name)) end
+			local sealRow=text(body,(if pad then "HOLD R1 + L1  " else "HOLD C  ")..table.concat(seals,"     "),UDim2.fromOffset(0,y+104),UDim2.fromOffset(1048,22),15,palette.gold,BODY_FONT);sealRow.ZIndex=43
 			sealRow.TextScaled=true;create("UITextSizeConstraint",sealRow,{MaxTextSize=15})
 		end
 	end
 	self.controlsClose.Text=(if pad then "START" else "TAB").." to close"
 end
--- (DEC-032) The seal slip and the weave in progress.
-function UI:sealHud(h,pad)
+-- (DEC-032) The seal slip. (04/11, user: « une 2e page de jutsu ») The seal
+-- jutsu are a second page of the four jutsu keys: keyboard C held + 1-5, pad
+-- R1 + L1 held + □ △ ○ × (D-pad ↑ for a fifth). The slip lights up while the
+-- page is held; the signs themselves are woven by the cast.
+local function pageHeld(pad,flag)
+	-- (Audit 04/11) The client's own page state (Input.sealPad / sealKey) when
+	-- it is sent: the pad page opens in either order (L1 then R1 too).
+	if flag~=nil then return flag==true end
+	local ok,held=pcall(function()
+		if pad then
+			local pressed={}
+			for _,input in UIS:GetGamepadState(Enum.UserInputType.Gamepad1) do
+				if input.UserInputState==Enum.UserInputState.Begin or input.Position.Z>.5 then pressed[input.KeyCode]=true end
+			end
+			return pressed[Controls.Gamepad.Modifier]==true and pressed[Controls.Gamepad.Guard]==true
+		end
+		return UIS:IsKeyDown(Controls.Keyboard.WallDetach)
+	end)
+	return ok and held==true
+end
+function UI:sealHud(h,pad,page)
 	local def=Fighters[h.fighterId or ""]
 	local list=def and def.SealJutsu
 	self.sealPanel.Visible=list~=nil
 	if not list then self.sealWeave.Text="";return end
-	local weave=h.sealing
-	local seq=weave and weave.seq or {}
-	local key=if pad then {"□","△","○","×"} else {"1","2","3","4"}
-	self.sealHead.Text=if weave then "HAND SEALS  •  WEAVING" else "HAND SEALS  •  "..(if pad then "R1 + L3" else Controls.KeyLabel.Seals or "C").." then two"
-	self.sealPanel.BackgroundTransparency=if weave then .05 else .35
+	local held=not h.wall and pageHeld(pad,page)
+	local key=if pad then {"□","△","○","×","D↑"} else {"1","2","3","4","5"}
+	self.sealHead.Text="HAND SEALS  •  "..(if pad then "HOLD R1 + L1" else "HOLD "..(Controls.KeyLabel.WallDetach or "C"))
+	self.sealPanel.BackgroundTransparency=if held then .02 else .35
 	local sealed=(h.sealed or 0)>0
 	for i,row in self.sealRows do
 		local spec=list[i]
@@ -683,22 +708,14 @@ function UI:sealHud(h,pad)
 		if spec then
 			local state=h.sealReady and h.sealReady[i]
 			local remaining=state and state.remaining or 0
-			local signs={}
-			local matches=true
-			for k,v in spec.Signs do
-				table.insert(signs,SealJutsu.Glyphs[v]..key[v])
-				if seq[k]~=nil and seq[k]~=v then matches=false end
-			end
+			local glyphs={}
+			for _,v in spec.Signs do table.insert(glyphs,SealJutsu.Glyphs[v]) end
 			local ready=remaining==0 and h.chakra>=spec.Cost and not sealed
-			row.Text=table.concat(signs," ").."   "..string.upper(spec.Name)..(if remaining>0 then string.format("   %.1fs",remaining) elseif h.chakra<spec.Cost then "   NEED CHAKRA" else "")
-			row.TextColor3=if weave and #seq>0 and not matches then palette.muted elseif ready then palette.paper else palette.muted
+			row.Text=key[i].."   "..string.upper(spec.Name).."  "..table.concat(glyphs,"")..(if remaining>0 then string.format("   %.1fs",remaining) elseif h.chakra<spec.Cost then "   NEED CHAKRA" else "")
+			row.TextColor3=if ready and held then palette.gold elseif ready then palette.paper else palette.muted
 		end
 	end
-	if weave then
-		local parts={}
-		for _,v in seq do table.insert(parts,SealJutsu.Glyphs[v].." "..SealJutsu.Names[v]) end
-		self.sealWeave.Text=if #parts>0 then table.concat(parts,"  ·  ").."  …" else "結印"
-	else self.sealWeave.Text="" end
+	self.sealWeave.Text=""
 end
 function UI:toggleControls()
 	local open=not self.controls.Visible
@@ -793,6 +810,8 @@ function UI:lobby(data)
 		self.notice.Text=data.notice or ""
 	end
 	self.onlineRow.Visible=data.phase=="Selection"
+	-- (Audit 04/11) not during the online pick (it did nothing there).
+	self.cupButton.Visible=data.phase=="Selection"
 	if data.phase=="Queue" then
 		local private=online~=nil and online.mode=="private"
 		self.queueTitle.Text=if private then "PRIVATE DUEL" else "SEARCHING FOR AN OPPONENT"
@@ -825,6 +844,10 @@ function UI.padCue(cue)
 	cue=cue:gsub("SPACE REBOUND",P.Jump.." REBOUND"):gsub("C DETACH",P.WallDetach.." DETACH")
 	cue=cue:gsub("• E ","• "..P.Pursuit.." "):gsub("X TO ESCAPE",P.Substitute.." TO ESCAPE")
 	cue=cue:gsub("• 1 = ","• "..Controls.TechniquePad[1].." = ")
+	-- (Audit 04/11) the keyboard keys the server's cues name, on the pad.
+	cue=cue:gsub("%f[%w]E TO ",P.Pursuit.." TO "):gsub("%f[%w]E PURSUE",P.Pursuit.." PURSUE"):gsub("%f[%w]E CHASE",P.Pursuit.." CHASE")
+	cue=cue:gsub("%f[%w]Q ON ",P.Dodge.." ON "):gsub("%f[%w]Q TO ",P.Dodge.." TO ")
+	cue=cue:gsub("HEAVY: ",P.Heavy..": ")
 	return cue
 end
 -- A plate's chakra network (Neji): four pips, lit per closed point (a fresh one
@@ -912,6 +935,7 @@ function UI.ultimate(widget,actor,pad,mine)
 	end
 end
 function UI:render(data)
+	self.lastSpectate=data.spectate==true;self.lastPhaseSeen=data.phase
 	local pad=if data.gamepad~=nil then data.gamepad else Controls.isGamepad(UIS:GetLastInputType())
 	self.tutorialPanel.Visible=data.tutorial~=nil and data.phase=="Duel"
 	-- (User 02/11, tutorial on screen) The cue band (124) and the hint (200)
@@ -921,7 +945,7 @@ function UI:render(data)
 	self.hint.Position=UDim2.new(.5,-260,0,if self.tutorialPanel.Visible then 226 else 200)
 	if data.tutorial then
 		self.tutorialTitle.Text=data.tutorial.index.." / "..data.tutorial.total.."  "..data.tutorial.title
-		self.tutorialPrompt.Text=(if pad then data.tutorial.pad else Controls.localize(data.tutorial.key)).."  •  "..(if pad then "Touchpad to skip" else "ESC to skip")
+		self.tutorialPrompt.Text=(if pad then data.tutorial.pad else Controls.localize(data.tutorial.key)).."  •  "..(if pad then "TOUCHPAD" else "BACKSPACE").." skips the step (hold: leave)"
 	end
 	local introActive=data.phase=="Duel" and (data.intro or 0)>0
 	self.onlineInfo=data.online
@@ -990,7 +1014,10 @@ function UI:render(data)
 	end
 	self.ko.Visible=data.ko==true
 	self.round.Text=if data.matchPoint and data.ko then "MATCH" else "ROUND "..(data.round or 1)
-	self.hp.name.Text=fullName(h);self.hp.title.Text=subtitle(h).."  •  YOU"
+	-- (in the tournament, the stage of the bracket under the round)
+	self.roundSub.Text=if data.cup and data.cup.next and data.cup.next.roundName then data.cup.next.roundName else "PRODIGY TOURNAMENT"
+	-- (a match watched in the tournament: neither fighter is the player)
+	self.hp.name.Text=fullName(h);self.hp.title.Text=if data.spectate then "AI  •  "..subtitle(h) else subtitle(h).."  •  YOU"
 	self.enemy.name.Text=fullName(b);self.enemy.title.Text=(if data.online then string.upper(data.online.opponent or "OPPONENT") else "AI").."  •  "..subtitle(b)
 	for _,pair in {{self.hp,h},{self.enemy,b}} do
 		local widget,actor=pair[1],pair[2]
@@ -1030,7 +1057,7 @@ function UI:render(data)
 		end
 		widget.chakra.Size=UDim2.fromScale(math.clamp(actor.chakra/actor.maxChakra,0,1),1)
 		widget.status.Text=string.format("%d / %d",math.ceil(actor.health),actor.maxHealth)
-		UI.ultimate(widget,actor,pad,actor==h)
+		UI.ultimate(widget,actor,pad,actor==h and not data.spectate)
 		-- Gentle Fist effects on this fighter: the closed points (pips), what
 		-- they cost (the chakra bar dims, its recovery is spelled out) and the
 		-- jutsu the 64 Palms sealed.
@@ -1060,7 +1087,8 @@ function UI:render(data)
 	pcall(function()
 		local t=os.clock()
 		local ratio=math.clamp(h.health/math.max(h.maxHealth,1),0,1)
-		self.danger.GroupTransparency=if ratio<=.25 and ratio>0 then .45+.35*(.5+.5*math.sin(t*5)) else 1
+		-- (not on a match the player only watches: the danger is no one's)
+		self.danger.GroupTransparency=if not data.spectate and ratio<=.25 and ratio>0 then .45+.35*(.5+.5*math.sin(t*5)) else 1
 	end)
 	-- Combo counters with the damage scale of the next hit.
 	for _,pair in {{self.comboMine,b},{self.comboTheirs,h}} do
@@ -1088,8 +1116,10 @@ function UI:render(data)
 		-- Global kunai (DEC-030): whether a blade is drawn, and how to use it.
 		(function()
 			local weapon=Fighters[h.fighterId or ""] and Fighters[h.fighterId].Weapon
-			if weapon then return if h.armed then weapon.Name.." DRAWN (B sheathes it)" else "B: draw "..string.lower(weapon.Name) end
-			return if h.armed then "KUNAI DRAWN (R throws it)" else "B: draw kunai"
+			local arm=if pad then Controls.PadLabel.Arm else Controls.KeyLabel.Arm
+			local tool=if pad then Controls.PadLabel.Tool else Controls.KeyLabel.Tool
+			if weapon then return if h.armed then weapon.Name.." DRAWN ("..arm.." sheathes it)" else arm..": draw "..string.lower(weapon.Name) end
+			return if h.armed then "KUNAI DRAWN ("..tool.." throws it)" else arm..": draw kunai"
 		end)())
 	-- Only decisive moments speak; routine cues stay silent.
 	local cue=Controls.localize(h.cue or "")
@@ -1135,22 +1165,31 @@ function UI:render(data)
 		ui.cool.Size=UDim2.fromScale(1,math.clamp(math.max(tech.remaining/6,if sealed then h.sealed/5 else 0),0,1))
 	end
 	for i=#h.techniques+1,5 do self.techniqueButtons[i].box.Visible=false end
-	self:sealHud(h,pad)
+	self:sealHud(h,pad,data.sealPage)
+	-- (Tournament) watching a match: none of these are the player's.
+	if data.spectate then
+		for _,b in self.techniqueButtons do b.box.Visible=false end
+		self.sealPanel.Visible=false;self.sealWeave.Text=""
+	end
 	local techOpen=h.reaction=="WallSplat" and (h.splatElapsed or 9)<.34
 	local conversion=UI.conversion(h,pad)
-	self.hint.Text=if techOpen then (if pad then "○ — WALL TECH" else "Q — WALL TECH")
+	local K,P=Controls.KeyLabel,Controls.PadLabel
+	self.hint.Text=if techOpen then (if pad then P.Dodge.." — WALL TECH" else K.Dodge.." — WALL TECH")
 		elseif conversion then conversion
 		elseif b.reaction=="WallSplat" and h.pursuit>0 then (if pad then "× — PURSUE  •  △ — WALL BOUNCE" else Controls.KeyLabel.Pursuit.." — PURSUE  •  RMB — WALL BOUNCE")
 		elseif (h.counter or 0)>0 then UI.counterPrompt(h,pad)
 		-- The Chidori's risk, from the other side: its charge can be broken.
 		elseif b.castId=="Chidori" and b.state=="TechniqueChannel" then (if pad then Controls.PadLabel.Light else Controls.KeyLabel.Light).." — BREAK THE CHIDORI CHARGE"
-		elseif h.awakenReady then (if pad then "D-PAD ↓ — AWAKEN" else "T — AWAKEN")
-		elseif h.wall then (if pad then "× — REBOUND  •  R1 + L1 — DETACH" else "SPACE — REBOUND  •  C — DETACH")
-		elseif h.state=="Startup" and h.attackName=="Heavy" then (if pad then "R1 + L2 — FEINT" else "G — FEINT")
-		elseif h.reaction=="Grabbed" then (if pad then "L2 — THROW BREAK" else "V — THROW BREAK")
+		elseif h.awakenReady then (if pad then "D-PAD ↓ — AWAKEN" else K.Awaken.." — AWAKEN")
+		elseif h.wall then (if pad then "× — REBOUND  •  "..P.WallDetach.." — DETACH" else "SPACE — REBOUND  •  "..K.WallDetach.." — DETACH")
+		-- (Audit 04/11) the pad's feint is R1 + R2 and its throw break L1 + □.
+		elseif h.state=="Startup" and h.attackName=="Heavy" then (if pad then P.Feint.." — FEINT" else K.Feint.." — FEINT")
+		elseif h.reaction=="Grabbed" then (if pad then P.Grab.." — THROW BREAK" else K.Grab.." — THROW BREAK")
 		elseif h.pursuit>0 then (if pad then "× — CHASE" else Controls.KeyLabel.Pursuit.." / SPACE — CHASE")
 		elseif (h.combo or 0)>=2 and h.state=="Recovery" and not h.airborne and (h.comboHits or 0)==0 and b.reaction then Controls.comboHelp(MoveGraphs[h.fighterId] or {},pad)
 		else ""
+	-- (Tournament, audit 04/11) watching an AI match: its prompts are not his.
+	if data.spectate then self.hint.Text="";self.cue.Text="" end
 	self.help.Text=if pad then Controls.HelpPad else Controls.Help
 	self.grammar.Text=Controls.comboHelp(MoveGraphs[h.fighterId] or {},pad)
 	-- (Reference quality) The control sheet is for the first seconds of a duel
@@ -1179,6 +1218,23 @@ function UI:render(data)
 	if online and online.forfeit then
 		self.resultTitle.Text=(if won then "VICTORY" else "DEFEAT").."  •  FORFEIT"
 		self.resultNote.Text="Your opponent left the duel. The win is yours."
+	end
+	-- (Tournament) continue the bracket; a match watched names its winner.
+	self.inCup=data.cup~=nil
+	self.rosterButton.Text=if self.inCup then "LEAVE THE TOURNAMENT" else "RETURN TO THE ROSTER"
+	if self.inCup then
+		self.rematchButton.Text=if data.cup.out and not data.spectate then "SEE WHO WINS IT  •  THE BRACKET" else "CONTINUE  •  THE BRACKET"
+		if data.spectate then
+			local def=Fighters[winner.fighterId or ""]
+			self.resultTitle.Text=string.upper(def and def.Name or "")..(if (data.roundsToWin or 1)>1 and data.wins then string.format("  %d–%d",math.max(data.wins.human or 0,data.wins.bot or 0),math.min(data.wins.human or 0,data.wins.bot or 0)) else "")
+			self.resultTitle.TextColor3=palette.gold
+			self.resultSeal.Text="勝";self.resultSeal.BackgroundColor3=palette.red
+			self.resultNote.Text="One more name moves up the bracket."
+		elseif won then
+			self.resultNote.Text="Your name moves up the bracket."
+		else
+			self.resultNote.Text="Your tournament ends here. The bracket plays out without you."
+		end
 	end
 end
 return UI

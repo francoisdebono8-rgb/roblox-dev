@@ -41,6 +41,8 @@ function Matches.new(remote)
 	local self=setmetatable({remote=remote,folder=folder,sessions={},nextLane=0,epoch=0},Matches)
 	-- Online 1v1 (queue, private codes, two-player duels) on the same sessions.
 	self.online=Online.new(self)
+	-- (04/11) The Prodigy Tournament against the AI (Server/Tournament).
+	self.tournament=require(script.Parent.Tournament).new(self)
 	return self
 end
 -- Each duel owns a stage far from every other one.
@@ -67,6 +69,8 @@ function Matches:selection(player,notice)
 	if s.online and self.online then self.online:leave(player,s) end
 	self:destroy(s)
 	player.Character=nil; s.phase="Selection"; s.epoch+=1
+	-- Back on the roster: a tournament in progress ends here.
+	s.cup=nil;s.cupMatch=nil;s.spectate=nil;s.autopilot=nil;s.cupPilot=nil
 	self:send(player,{phase="Selection",epoch=s.epoch,notice=notice})
 	-- (Lobby, 04/11) in a duel server the roster is the lobby: back home.
 	if self.lobby then self.lobby:onSelection(player) end
@@ -293,7 +297,9 @@ function Matches:view(s,cursor,mine,theirs)
 		bodies=Bodies.view(s.combat),
 		-- zones: wind lanes and updrafts (Zones.snapshot), drawn per kind by the client.
 		projectiles=projectiles,hazards=hazards,zones=Zones.snapshot(s.combat,now),serverNow=now,intro=math.max(0,(s.introUntil or 0)-now),ko=s.finishing==true,
-		round=s.round or 1,wins={human=wins[mine.id] or 0,bot=wins[theirs.id] or 0},roundsToWin=s.roundsToWin or 1,matchPoint=s.matchPoint}
+		round=s.round or 1,wins={human=wins[mine.id] or 0,bot=wins[theirs.id] or 0},roundsToWin=s.roundsToWin or 1,matchPoint=s.matchPoint,
+		-- (Tournament) the bracket in play, and a match the player only watches.
+		cup=if s.cup and self.tournament then self.tournament:view(s.cup) else nil,spectate=s.spectate==true}
 end
 function Matches:request(player,payload)
 	local s=self:session(player); local clock=os.clock()
@@ -307,13 +313,21 @@ function Matches:request(player,payload)
 	local action=payload.action
 	if action=="Ready" then
 		if s.online and self.online then self.online:refresh(player,s)
-		elseif s.phase=="Selection" then self:send(player,{phase="Selection",epoch=s.epoch}) else self:snapshot(player,s) end
+		elseif s.phase=="Selection" then self:send(player,{phase="Selection",epoch=s.epoch})
+		elseif (s.phase=="Bracket" or s.phase=="Champion") and s.cup then self.tournament:send(player,s,s.phase)
+		elseif s.combat then self:snapshot(player,s) end
 		return
 	end
 	if payload.epoch~=s.epoch then return end
 	-- The online flow owns every request of a player who is in it.
 	if self.online and self.online:request(player,s,action,payload,clock) then return end
 	if action=="TutorialSkip" and s.tutorial then self:selection(player);s.tutorial=nil;return end
+	-- (Audit 04/11) one step skipped (the panel's "tap: skip the step").
+	if action=="TutorialStep" and s.tutorial then
+		if clock-(s.lastStepSkip or -10)>.3 then s.lastStepSkip=clock;Tutorial.skip(s,s.combat and s.combat.now or clock) end
+		return
+	end
+	if self.tournament and self.tournament:request(player,s,action,payload) then return end
 	if action=="Start" or action=="Tutorial" or action=="Rematch" or action=="Selection" then
 		if clock-s.lastLifecycle<0.8 then return end
 		if (action=="Start" or action=="Tutorial") and s.phase=="Selection" then
@@ -391,7 +405,7 @@ function Matches:act(s,actor,payload,clock)
  if action=="Guard" then actor.guardWanted=true elseif action=="GuardOff" then actor.guardWanted=false end
  -- (Reference quality) A technique key is held: its release lets a held
  -- technique go (Combat.charging). Players hold keys; the AI plans its own.
- local slot=string.match(action,"^Technique(%d)$")
+ local slot=string.match(action,"^Technique(%d)$") or (if string.match(action,"^Seal%d$") then "1" else nil)
  if slot then actor.techHold={slot=tonumber(slot),down=true} end
  if action=="SealRelease" then
   if actor.techHold then actor.techHold.down=false end
@@ -405,13 +419,15 @@ function Matches:update(dt,now)
 	for player,s in self.sessions do
 		-- Online players' duels are stepped once each by Online:update below.
 		if s.phase=="Duel" and not s.online then
-			if os.clock()-s.human.lastMove>0.4 then s.human.move=Vector3.zero end
+			-- (an autopilot drives the first fighter itself: its stick is not stale)
+			if not s.autopilot and os.clock()-s.human.lastMove>0.4 then s.human.move=Vector3.zero end
 			s.combat:update(math.min(dt,0.1),now)
 			if s.phase=="Duel" then
 				local intro=s.introUntil and now<s.introUntil
 				if s.tutorial then Tutorial.update(s,now,dt) elseif not s.botFrozen and not intro and not s.finishing then s.ai:update(now) end
 			end
 		end
+		if s.cup and self.tournament then self.tournament:update(player,s,now) end
 		-- Regular cadence, plus an immediate packet when a contact, throw or
 		-- teleport happened so presentation never waits a full interval.
 		local urgent=s.combat and s.combat.urgent and now>=(s.lastUrgent or 0)+.03

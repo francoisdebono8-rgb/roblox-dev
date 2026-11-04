@@ -175,6 +175,51 @@ function Brawler.intent(a,now)
  if memory and now-memory.at<=TUNE.IntentWindow then return memory.dir,memory.side end
  return "neutral",0
 end
+-- (04/11, user: the routes' « away, machin » were « pas facilement faisables
+-- pour un humain » → « le plus simple à faire et à jouer, sans perdre de
+-- mouvement ») The string's routes on buttons, no direction to hold. Inside a
+-- confirmed ground string of 2 hits or more:
+--   ○ (Dodge) the side route (on the stick's side when one is pushed),
+--   × (Jump)  the rising route,
+--   R (Tool)  hop out behind a throw;
+-- after a confirmed air hit: ○ switches sides, × drives the body away.
+-- (The heavy picks by the count itself, Brawler.request: 1 hit its heavy, 2
+-- the launcher, 3+ the low route; in the air 1 the spike, 2+ the plunge.)
+-- Returns the action the press becomes and the route intent it carries, read
+-- by the same grammar as a stick (the AI and a held stick still work).
+local function sideOf(a)
+ local dir,sign=Brawler.classify(a,a.move or Vector3.zero)
+ if dir=="side" and sign~=0 then return sign end
+ return -(a.angleSide or -1)
+end
+function Brawler.buttonRoute(c,a,action)
+ if action~="Dodge" and action~="Jump" and action~="Tool" then return nil end
+ if a.reaction or a.ultimateHeld or a.wall or a.grabbing then return nil end
+ -- (Audit 04/11, « sans perdre de mouvement ») the stick pushed away from him
+ -- always gets out: ○ is the real dodge, × the real jump, even mid-string.
+ -- (A player's stick: the bot picks its routes by their intent.)
+ if action~="Tool" and a.playerInput and Brawler.classify(a,a.move or Vector3.zero)=="back" then return nil end
+ -- A launched body: the jump stays a jump and the chase a chase.
+ if (a.pursuitUntil or 0)>c.now then return nil end
+ local graph=Brawler.graph(a) or {}
+ local routes=graph.routes or {}
+ local open=Brawler.chainWindow(c,a) or a.state=="Neutral"
+ if not open then return nil end
+ if a.airborne then
+  if action=="Tool" or (a.airCombo or 0)<1 or not Brawler.stringAlive(c,a,true) then return nil end
+  local route=if action=="Dodge" then routes.airSide else routes.airUp
+  if not route or not Attacks[route] then return nil end
+  return "Attack",(if action=="Dodge" then {"side",sideOf(a)} else {"forward",0})
+ end
+ if (a.combo or 0)<2 or not Brawler.stringAlive(c,a,false) then return nil end
+ if action=="Tool" then
+  if not graph.disengage or not a.chainOpen then return nil end
+  return "Tool",{"back",0}
+ end
+ local route=if action=="Dodge" then routes.side else routes.up
+ if not route or not Attacks[route] then return nil end
+ return "Attack",(if action=="Dodge" then {"side",sideOf(a)} else {"forward",0})
+end
 -- Presses made while the body is committed wait for its outcome: a swing
 -- before its contact is known, a chase or a dash before the arrival, a
 -- teleport before it lands.
@@ -832,6 +877,13 @@ function Brawler.request(c,a,action)
     c:cue(a,"LION COMBO",.9);Brawler.event(c,a,"LionCombo")
     return ok
    end
+   -- (04/11, buttons) One air hit in, the heavy spikes him down (the route a
+   -- stick pulled away picked); two or more, the plunge below.
+   if (a.airCombo or 0)==1 and routes.airDown and Attacks[routes.airDown] and Brawler.stringAlive(c,a,true) then
+    a.lastAirAttack=c.now
+    Brawler.event(c,a,"Route")
+    return Brawler.start(c,a,routes.airDown)
+   end
    -- (User 28/10) The plunge ends an air string; out of a plain jump the
    -- heavy is the salto heel kick (punishable), never a safe drop.
    if (a.airCombo or 0)>=1 or c.now-(a.airStringAt or -10)<1.0 then
@@ -857,6 +909,14 @@ function Brawler.request(c,a,action)
    return ok
   end
   if inChain and a.combo==1 and graph.heavyAfterOne then return Brawler.start(c,a,graph.heavyAfterOne) end
+  -- (04/11, buttons) Three hits in, the heavy goes low: the route a stick
+  -- pulled away used to pick (Brawler.buttonRoute). Past three (Lee's and
+  -- Naruto's longer strings, Sasuke's cursed kick) it is the launcher again.
+  if inChain and a.combo==3 and a.attackName~="Light3" and routes.down and Attacks[routes.down] then
+   a.lastAttack=c.now
+   Brawler.event(c,a,"Route");Brawler.event(c,a,"RouteDown")
+   return Brawler.start(c,a,routes.down)
+  end
   if inChain and a.combo>=2 then return Brawler.start(c,a,a.def.LauncherMove or "Launcher") end
   -- Heavy on a re-engage arrival: the prodigy's quick heavy (knee, palm),
   -- except on a body pinned to a wall, where the heavy is the wall bounce.

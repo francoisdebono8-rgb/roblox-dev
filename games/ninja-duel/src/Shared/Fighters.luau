@@ -1,7 +1,7 @@
 local Fighters = {
 	Flashstep = {
 		Name = "Minato", FullName = "Minato Namikaze", Age = 13, Title = "THE FAST PRODIGY", Color = { 82, 177, 244 },
-		Routes = "↑ rising kick (seals the body: 2 follows it up)  ·  ↓ spinning leg sweep (plants a marked kunai)  ·  ←→ angle step  ·  air: push kick / axe kick / flash switch",
+		Routes = "rising: a kick that seals the body (2 follows it up)  ·  low: spinning leg sweep (plants a marked kunai)  ·  around: angle step  ·  air: push kick (drive) / axe kick (spike) / flash switch",
 		Description = "Decision speed. Kunai placement, angle changes and an unfinished teleport seal.",
 		Health = 125, Chakra = 110, ChakraRegen = 8, Speed = 19.5, SprintScale = 1.12, JumpScale = 1.1, AirControlScale = 1.15, AccelerationScale = 1.15,
 		CombatTravel = 1.18, CombatDamage = 1.0, DashScale = 1.15, GuardStrength = 0.10, PreferredRange = 6,
@@ -34,7 +34,7 @@ local Fighters = {
 	},
 	Mirage = {
 		Name = "Itachi", FullName = "Itachi Uchiha", Age = 13, Title = "THE SHARINGAN PRODIGY", Color = { 222, 70, 80 },
-		Routes = "↑ rising palm (shuriken cover the climb)  ·  ↓ reaping sweep  ·  ←→ feint step (an afterimage stays)  ·  air: side kick / hammer drop / hook switch",
+		Routes = "rising: palm (shuriken cover the climb)  ·  low: reaping sweep  ·  around: feint step (an afterimage stays)  ·  air: side kick (drive) / hammer drop (spike) / hook switch",
 		Description = "Sharingan already awakened. Reads, precise shuriken, deception and Katon fire.",
 		Health = 130, Chakra = 125, ChakraRegen = 8.6, Speed = 18.5, SprintScale = 1.0, JumpScale = 0.98, AirControlScale = 0.95, AccelerationScale = 0.98,
 		CombatTravel = 0.98, CombatDamage = 1.15, DashScale = 0.8, StrikeTurnScale = 1.1, GuardStrength = 0.08, PreferredRange = 10,
@@ -76,7 +76,7 @@ local Fighters = {
 	-- with a different engine: palms that attack chakra, not health alone.
 	GentleFist = {
 		Name = "Neji", FullName = "Neji Hyuga", Age = 13, Title = "THE HYUGA GENIUS", Color = { 176, 196, 255 },
-		Routes = "↑ palm heel under the chin  ·  ↓ low rotation sweep (closes two points)  ·  ←→ circular step onto a chakra point  ·  air: twin palms / descending palm / spinning palm",
+		Routes = "rising: palm heel under the chin  ·  low: rotation sweep (closes two points)  ·  around: circular step onto a chakra point  ·  air: twin palms (drive) / descending palm (spike) / spinning palm (switch)",
 		Description = "Byakugan and the Gentle Fist. Palms that close chakra points, a perfect rotation defence.",
 		Health = 130, Chakra = 115, ChakraRegen = 7.6, Speed = 18.5, SprintScale = 1.0, JumpScale = 0.98, AirControlScale = 0.95, AccelerationScale = 1.02,
 		CombatTravel = 1.0, CombatDamage = 1.12, DashScale = 1.0, GuardStrength = 0.1, PreferredRange = 5,
@@ -113,7 +113,7 @@ local Fighters = {
 	-- but every big commitment can be punished.
 	Lion = {
 		Name = "Sasuke", FullName = "Sasuke Uchiha", Age = 12, Title = "THE ROOKIE OF THE YEAR", Color = { 92, 132, 255 },
-		Routes = "↑ rising kick into Shadow of the Dancing Leaf (heavy in the air: LION COMBO)  ·  ↓ low kick sweep  ·  ←→ vault over into a back kick  ·  air: drive / axe kick / switch",
+		Routes = "rising: a kick into Shadow of the Dancing Leaf (heavy in the air: LION COMBO)  ·  low: kick sweep  ·  around: vault over into a back kick  ·  air: drive / axe kick (spike) / switch",
 		Description = "Pressure. Kicks, wire and fire. A launcher he follows into the air and a Chidori that ends everything — or him.",
 		Health = 130, Chakra = 105, ChakraRegen = 7.5, Speed = 19, SprintScale = 1.1, JumpScale = 1.15, AirControlScale = 1.15, AccelerationScale = 1.12,
 		CombatTravel = 1.12, CombatDamage = 1.1, DashScale = 1.08, GuardStrength = 0.08, PreferredRange = 6,
@@ -202,7 +202,7 @@ local Fighters = {
 	-- docs/characters/ROCK_LEE.md (implementation state at its end).
 	Leaf = {
 		Name = "Rock Lee", FullName = "Rock Lee", Age = 13, Title = "THE TAIJUTSU PRODIGY", Color = { 64, 172, 84 },
-		Routes = "↑ Leaf Rising Wind: a rising kick he follows into the air (heavy up there: PRIMARY LOTUS, paid in health)  ·  ↓ Leaf Hurricane: a low spinning kick, the string goes on  ·  ←→ Leaf Whirlwind: a wide spinning kick that catches the side step  ·  air: drive / axe kick / switch",
+		Routes = "rising: Leaf Rising Wind, a kick he follows into the air (heavy up there: PRIMARY LOTUS, paid in health)  ·  low: Leaf Hurricane, the string goes on  ·  around: Leaf Whirlwind, a wide spinning kick  ·  air: drive / axe kick (spike) / switch",
 		Description = "No jutsu, no blade: taijutsu only. The fastest legs, kicks that never stop, a lotus paid with his own body, and the Fifth Gate.",
 		Health = 140, Chakra = 100, ChakraRegen = 9.5, Speed = 20, SprintScale = 1.2, JumpScale = 1.15, AirControlScale = 1.12, AccelerationScale = 1.22,
 		-- (Stage 6) His ground string is five hits (everyone else four).
@@ -253,7 +253,7 @@ local Fighters = {
 	-- Sheet: docs/characters/NARUTO.md.
 	Legion = {
 		Name = "Naruto", FullName = "Naruto Uzumaki", Age = 13, Title = "THE NUMBER ONE SURPRISE", Color = { 255, 140, 40 },
-		Routes = "third hit: a clone out kicks from behind  ·  ↑ Uzumaki Barrage: clones kick him up (E, then heavy: NARUTO RENDAN)  ·  ↓ tackle into the legs  ·  ←→ a clone strikes from his side  ·  air: drive / axe kick / switch  ·  Z + R: the kunai turns into a clone",
+		Routes = "third hit: a clone kicks from behind  ·  rising: Uzumaki Barrage, clones kick him up (chase, then heavy: NARUTO RENDAN)  ·  low: tackle into the legs  ·  around: a clone strikes from his side  ·  air: drive / axe kick (spike) / switch  ·  chakra + tool: the kunai turns into a clone",
 		Description = "Shadow clones that carry his routes and fall to one blow, a Rasengan he can only shape with a clone, the biggest reserve — and the Nine-Tails' red chakra when it all goes wrong.",
 		Health = 150, Chakra = 160, ChakraRegen = 6.5, Speed = 18.5, SprintScale = 1.12, JumpScale = 1.1, AirControlScale = 1.0, AccelerationScale = 1.08,
 		-- (Stage 6) His ground string is five hits (everyone else four).
@@ -305,7 +305,7 @@ local Fighters = {
 	-- Sheet: docs/characters/TEMARI.md (implementation state at its end).
 	Gale = {
 		Name = "Temari", FullName = "Temari of the Sand", Age = 15, Title = "THE WIND FAN", Color = { 168, 140, 214 },
-		Routes = "↑ Updraft: the fan scoops the body into rising air (convert at range: Kamaitachi or Gust)  ·  ↓ Fan Slam  ·  ←→ Fan Pirouette: a full turn, the gust throws the body aside  ·  air: drive / Fan Dive",
+		Routes = "rising: Updraft, the fan scoops the body into rising air (convert at range: Kamaitachi or Gust)  ·  low: Fan Slam  ·  around: Fan Pirouette, the gust throws the body aside  ·  air: drive / Fan Dive",
 		Description = "The wind fan: she paints the distance. Wind lanes slow, carry and turn blades aside; the fan pushes and sends them back. Hold the range or be caught.",
 		Health = 130, Chakra = 120, ChakraRegen = 8, Speed = 17.5, SprintScale = 0.95, JumpScale = 1.0, AirControlScale = 1.3, AccelerationScale = 0.95,
 		CombatTravel = 0.55, CombatDamage = 1, DashScale = 1, GuardStrength = 0.1, PreferredRange = 16,
@@ -366,7 +366,7 @@ local Fighters = {
 	-- (her palms bite harder for a while) and a protective trigram sphere.
 	Lavender = {
 		Name = "Hinata", FullName = "Hinata Hyuga", Age = 12, Title = "THE GENTLE HEIRESS", Color = { 176, 150, 226 },
-		Routes = "↑ palm heel under the chin  ·  ↓ low sweep (closes two points)  ·  ←→ circular step onto a point  ·  air: twin palms / descending palm / spinning palm",
+		Routes = "rising: palm heel under the chin  ·  low: sweep (closes two points)  ·  around: circular step onto a point  ·  air: twin palms (drive) / descending palm (spike) / spinning palm (switch)",
 		Description = "The Gentle Fist, closer and softer than Neji's: palms that drain, Twin Lion Fists, a protective sphere of chakra.",
 		Health = 120, Chakra = 120, ChakraRegen = 8, Speed = 18.5, SprintScale = 1.02, JumpScale = 1.0, AirControlScale = 1.0, AccelerationScale = 1.04,
 		CombatTravel = 1.0, CombatDamage = 0.92, DashScale = 1.0, GuardStrength = 0.12, PreferredRange = 4.5,
@@ -402,7 +402,7 @@ local Fighters = {
 	-- tracking hounds that bind, and a copied Water Dragon.
 	Copycat = {
 		Name = "Kakashi", FullName = "Kakashi Hatake", Age = 13, Title = "THE COPY NINJA", Color = { 170, 182, 196 },
-		Routes = "↑ launcher  ·  ↓ sweep  ·  ←→ feint step  ·  air: drive / spike / switch",
+		Routes = "rising: launcher  ·  low: sweep  ·  around: feint step  ·  air: drive / spike / switch",
 		Description = "The all-rounder: a Sharingan that reads, hounds that hold, a copied Water Dragon and the Lightning Blade.",
 		Health = 130, Chakra = 120, ChakraRegen = 7.6, Speed = 19, SprintScale = 1.08, JumpScale = 1.05, AirControlScale = 1.05, AccelerationScale = 1.06,
 		CombatTravel = 1.06, CombatDamage = 1.05, DashScale = 1.05, GuardStrength = 0.1, PreferredRange = 7,

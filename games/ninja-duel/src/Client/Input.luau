@@ -12,6 +12,9 @@ Input.ChakraHold=.28
 -- while choosing the face button loaded chakra by accident (and the next ○
 -- became a dash). The pad's load needs a deliberate hold.
 Input.ChakraHoldPad=.5
+-- (Audit 04/11) R1 + L1 let go unused is the ultimate only on a short tap:
+-- a page opened to choose a seal and closed without one burnt the bar.
+Input.UltimateTap=.4
 Input.now=os.clock
 local KEYBOARD,GAMEPAD=Controls.Keyboard,Controls.Gamepad
 local function key(code) return {code} end
@@ -80,13 +83,44 @@ function Input.new(send,getState,toggleLock,camera)
   self.look=if released(state) then Vector2.zero else Vector2.new(obj.Position.X,obj.Position.Y)
   camera.look=self.look
  end)
+ -- (Audit 04/11) The seal page: R1 + L1 in either order (L1 is the guard, so
+ -- L1 first is the natural roll); the guard it started is let go while the
+ -- page is open and taken back if L1 is still held when the page closes.
+ local function openPage()
+  self.modifierSpent=true;self.sealPad=true;self.sealPadUsed=false;self.sealPadAt=Input.now()
+  local id=GAMEPAD.Guard.Name
+  if self.guards[id] then
+   self.guards[id]=nil
+   if next(self.guards)==nil then send("GuardOff") end
+  end
+ end
+ local function closePage()
+  if not self.sealPad then return end
+  self.sealPad=false
+  if not self.sealPadUsed and Input.now()-(self.sealPadAt or -math.huge)<=Input.UltimateTap then send("Ultimate") end
+  self.sealPadUsed=true
+  -- L1 still down: the guard comes back.
+  if self.padL1 then
+   local already=next(self.guards)~=nil;self.guards[GAMEPAD.Guard.Name]=true
+   if not already then send("Guard") end
+  end
+ end
  bind("Modifier",key(GAMEPAD.Modifier),function(state)
-  if begin(state) then self.modifier=true;self.modifierAt=Input.now();self.modifierSpent=false elseif released(state) then self.modifier=false end
+  if begin(state) then
+   self.modifier=true;self.modifierAt=Input.now();self.modifierSpent=false
+   if self.padL1 then openPage() end
+  elseif released(state) then
+   self.modifier=false
+   closePage()
+  end
  end)
  local function face(state,object,normal,slot)
   if pressed(state,object) then
    local modified=padObject(object) and self.modifier
    if modified then self.modifierSpent=true;self.seals[object.KeyCode.Name]=true end
+   -- (04/11) R1 + L1 held: the second page, the seal jutsu (the ultimate waits
+   -- for the chord's release, Guard below).
+   if modified and self.sealPad then self.sealPadUsed=true;send("Seal"..slot);return false end
    -- (User 29/10) Pad L1 + □ is the grab (the guard held, the light pressed).
    if not modified and normal=="Attack" and padObject(object) and next(self.guards)~=nil then send("Grab");return false end
    -- The chakra button held (pad L2, keyboard Z): the press goes out infused.
@@ -122,14 +156,22 @@ function Input.new(send,getState,toggleLock,camera)
  bind("Guard",both("Guard"),function(state,obj)
   local id=obj.KeyCode.Name
   if released(state) then
+   -- (04/11) R1 + L1 tapped without a seal jutsu: the ultimate (on a wall, the
+   -- server lets go of it instead).
+   if padObject(obj) then
+    self.padL1=false
+    closePage()
+   end
    if self.guards[id] then
     self.guards[id]=nil
     if next(self.guards)==nil then send("GuardOff") end
    end
    pressed(state,obj)
   elseif pressed(state,obj) then
-   -- R1 + L1: the ultimate (on a wall, the server lets go of it instead).
-   if padObject(obj) and self.modifier then self.modifierSpent=true;send("Ultimate")
+   -- R1 + L1: the seal page while held (□ △ ○ × D-pad ↑), the ultimate when
+   -- let go unused.
+   if padObject(obj) then self.padL1=true end
+   if padObject(obj) and self.modifier then openPage()
    else
     local already=next(self.guards)~=nil;self.guards[id]=true
     if not already then send("Guard") end
@@ -148,7 +190,7 @@ function Input.new(send,getState,toggleLock,camera)
  bind("Tool",both("Tool"),function(state,obj)
   if pressed(state,obj) then
    -- R1 + R2 on the pad is the feint now (R1 is the jutsu shift, L2 the chakra).
-   if padObject(obj) and self.modifier then self.modifierSpent=true;send("Feint");return end
+   if padObject(obj) and self.modifier then self.modifierSpent=true;if self.sealPad then self.sealPadUsed=true end;send("Feint");return end
    local chakra=self:chakraOn(padObject(obj))
    if chakra then self.chakraSpent=true end
    if chakra then send("Tool",{chakra=true,aim=toolAim(getState(),padObject(obj))}) else send("Tool") end
@@ -156,31 +198,52 @@ function Input.new(send,getState,toggleLock,camera)
  end)
  bind("Grab",both("Grab"),function(state,obj)
   if pressed(state,obj) then
-   if padObject(obj) and self.modifier then self.modifierSpent=true end
+   if padObject(obj) and self.modifier then self.modifierSpent=true;if self.sealPad then self.sealPadUsed=true end end
    send(if padObject(obj) and self.modifier then "Feint" else "Grab")
   end
  end)
  bind("Lock",both("Lock"),function(state,obj) if pressed(state,obj) then toggleLock() end end)
  bind("Sprint",both("Sprint"),function(state,obj)
-  -- (DEC-032) R1 + L3: the hand seals (then R1 + □ △ ○ × are the seals).
-  if obj.KeyCode==GAMEPAD.Sprint and self.modifier then if pressed(state,obj) then self.modifierSpent=true;send("Seals") end;return end
   if obj.KeyCode==GAMEPAD.Sprint then if pressed(state,obj) then self.sprinting=not self.sprinting end
   elseif begin(state) then self.sprinting=true elseif released(state) then self.sprinting=false end
  end)
- for _,action in {"Substitute","WallDetach","Feint","Pursuit","Ultimate"} do
+ -- Keyboard C: held, the second page of jutsu (1-5 cast the seal jutsu); on a
+ -- wall the press still lets go of it.
+ bind("SealKey",key(KEYBOARD.WallDetach),function(state,obj)
+  if pressed(state,obj) then self.sealKey=true;send("WallDetach")
+  elseif released(state) then self.sealKey=false end
+ end)
+ for _,action in {"Substitute","Feint","Pursuit","Ultimate"} do
   bind(action.."Key",key(KEYBOARD[action]),function(state,obj) if pressed(state,obj) then send(action) end end)
  end
- for _,action in {"Technique5","Awaken","Arm"} do
+ for _,action in {"Awaken","Arm"} do
   bind(action,both(action),function(state,obj) if pressed(state,obj) then send(action) end end)
  end
+ -- Jutsu 5 (keyboard 5, D-pad ↑); on the seal page the fifth seal jutsu.
+ bind("Technique5",both("Technique5"),function(state,obj)
+  if pressed(state,obj) then
+   local page=if padObject(obj) then self.sealPad else self.sealKey
+   if page then self.sealPadUsed=true;send("Seal5") else send("Technique5") end
+  end
+ end)
  -- Pad re-engage has no button of its own: × in a chase window (Jump above),
  -- else ○ toward a locked opponent while sprinting. The Dodge packet already
  -- carries the stick and the sprint toggle; the server turns it into the dash.
  bind("SubstitutePad",key(GAMEPAD.Substitute),function(state,obj) if pressed(state,obj) then send("Substitute") end end)
- bind("Skip",both("Skip"),function(state,obj) if pressed(state,obj) and getState().tutorial then send("TutorialSkip") end end)
+ -- (Audit 04/11) The tutorial: a tap skips the step, held a second it leaves
+ -- (BACKSPACE / touchpad; Escape is the Roblox menu and never arrives).
+ bind("Skip",both("Skip"),function(state,obj)
+  if not getState().tutorial then return end
+  if pressed(state,obj) then self.skipAt=Input.now()
+  elseif released(state) and self.skipAt then
+   local held=Input.now()-self.skipAt;self.skipAt=nil
+   send(if held>=1 then "TutorialSkip" else "TutorialStep")
+  end
+ end)
  for index,code in {Enum.KeyCode.One,Enum.KeyCode.Two,Enum.KeyCode.Three,Enum.KeyCode.Four} do
   bind("Technique"..index,key(code),function(state,obj)
-   if pressed(state,obj) then send("Technique"..index)
+   -- C held: the second page, the seal jutsu (one press, the cast weaves the signs).
+   if pressed(state,obj) then send(if self.sealKey then "Seal"..index else "Technique"..index)
    -- The release lets a held technique go (a charged Katon).
    elseif released(state) then send("SealRelease") end
   end)
@@ -202,6 +265,7 @@ function Input.new(send,getState,toggleLock,camera)
 end
 function Input:reset()
  table.clear(self.keys);table.clear(self.held);table.clear(self.guards);table.clear(self.jumps);table.clear(self.seals)
+ self.sealKey=false;self.sealPad=false;self.sealPadUsed=true;self.padL1=false
  self.stick=Vector2.zero;self.look=Vector2.zero;self.modifier=false;self.sprinting=false;self.camera.look=Vector2.zero
  self.chakra=false;self.chakraAt=nil;self.modifierSpent=true;self.chakraSpent=true;self.chakraPad=false;self.chakraPadAt=nil
 end
@@ -238,6 +302,8 @@ function Input:direction(camera)
  self:chakraHold()
  -- The current device owns movement; a resting controller cannot steer WASD.
  local stick=if self.pad and self.stick.Magnitude>.15 then self.stick else Vector2.zero
+ -- (04/11) a phone's stick (Client/TouchControls)
+ if stick.Magnitude==0 and self.touchStick and self.touchStick.Magnitude>.15 then stick=self.touchStick end
  -- (Freeze 02/11) The keys drive whenever the stick does not. A connected pad
  -- (a drifting stick, any pad event is enough) switched to "pad" and WASD was
  -- ignored, even held: the body stood still until the key was pressed again.

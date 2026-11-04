@@ -12,6 +12,7 @@ pcall(function()
 end)
 local UI=require(script.Parent.UI)
 local Input=require(script.Parent.Input)
+local TouchControls=require(script.Parent.TouchControls)
 local Camera=require(script.Parent.Camera)
 local Presentation=require(script.Parent.Presentation)
 local presentation=Presentation.new()
@@ -56,13 +57,14 @@ local function send(action,extra)
 		-- (shift lock). Free with the pad (user 03/11, his own play: strikes
 		-- thrown at the air behind him): the body faces where it goes, and the
 		-- blows turn to the opponent (Combat soft lock).
-		if not camera.locked and not (input and input.pad) then
+		if not camera.locked and not (input and (input.pad or input.touch)) then
 			local look=workspace.CurrentCamera.CFrame.LookVector*Vector3.new(1,0,1)
 			if look.Magnitude>.05 then payload.look=look.Unit end
 		elseif not camera.locked then payload.look=false end
 	elseif type(extra)=="table" then for k,v in extra do payload[k]=v end
-	elseif action=="Tool" or string.match(action,"^Technique") then
-		local gamepad=input and input.pad
+	-- (Audit 04/11) the seal jutsu aim too (Minato's trap goes where he points).
+	elseif action=="Tool" or string.match(action,"^Technique") or string.match(action,"^Seal%d") then
+		local gamepad=input and (input.pad or input.touch)
 		mouse.TargetFilter=player.Character
 		local hit=if gamepad and current.bot then current.bot.position else mouse.Hit.Position
 		if gamepad and action=="Technique1" and current.human and current.human.fighterId=="Flashstep" then hit-=Vector3.new(0,2.8,0) end
@@ -70,19 +72,27 @@ local function send(action,extra)
 		if root and (hit-root.Position).Magnitude<=140 then payload.aim=hit end
 	end
 	remote:FireServer(payload)
-	if current.phase=="Duel" and (action=="Attack" or action=="Heavy") then presentation:predictStrike(action,current) end
-	if current.phase=="Duel" and (action=="Dodge" or action=="Jump" or action=="PadJump") then presentation:predictMove(action,current) end
+	-- (Audit 04/11) watching a tournament match: the body is the AI's, no guess.
+	if current.phase=="Duel" and not current.spectate and (action=="Attack" or action=="Heavy") then presentation:predictStrike(action,current) end
+	if current.phase=="Duel" and not current.spectate and (action=="Dodge" or action=="Jump" or action=="PadJump") then presentation:predictMove(action,current) end
 end
 ui=UI.new(player:WaitForChild("PlayerGui"),send)
 -- (04/11) Players online and challenges between them (Server/Lobby).
 local lobbyPanel=nil
 pcall(function() lobbyPanel=require(script.Parent.LobbyPanel).new(ui,shared:WaitForChild("Lobby",20),UI.kit) end)
+-- (04/11) The Prodigy Tournament: bracket, spectator banner, champion (Server/Tournament).
+local cupScreen=require(script.Parent.CupScreen).new(ui,send,UI.kit)
 -- The roster's fighters stand in a 3D set the menu camera films (Client/MenuStage).
 if ui.menuStage then camera.menuShot=function() return ui.menuStage:shot() end end
 -- Debug/QA places only: the Studio dev panel (F6, DevClient). While it is open
 -- Input sees a non-Duel state, so no combat binding fires behind the panel.
 local dev
 input=Input.new(send,function() return if dev and dev.panelOpen then dev.blocked else current end,function() camera:setLocked(not camera.locked);send("Move",input:direction(workspace.CurrentCamera)) end,camera)
+-- (Audit 04/11) phones and tablets: their own controls (none existed).
+local touch=nil
+pcall(function()
+	touch=TouchControls.new(input,send,function() return current end,function() camera:setLocked(not camera.locked);send("Move",input:direction(workspace.CurrentCamera)) end,camera)
+end)
 -- Disable the default movement controller; server receives finite normalized intent.
 local playerModule=player:WaitForChild("PlayerScripts"):WaitForChild("PlayerModule")
 require(playerModule):GetControls():Disable()
@@ -91,8 +101,12 @@ remote.OnClientEvent:Connect(function(data)
 	if data.epoch~=current.epoch or data.phase~=current.phase then input:resync() end
 	if data.epoch~=current.epoch then camera.locked=false end
 	data.gamepad=input.pad
+	data.touch=input.touch==true
+	data.sealPage=input.sealPad==true or input.sealKey==true
 	current=data; presentation.receivedAt=os.clock(); presentation:impacts(data,camera); ui:render(data)
 	if lobbyPanel then lobbyPanel:render(data) end
+	cupScreen:render(data)
+	if touch then touch:render(data) end
 	if data.phase=="Duel" and data.serverNow then presentation:noteSnapshot(workspace:GetServerTimeNow()-data.serverNow) end
 end)
 local nextMove=0
@@ -109,7 +123,9 @@ RunService:BindToRenderStep("NinjaDuelCamera",Enum.RenderPriority.Camera.Value,f
 	-- (DEC-030 Partie 1, responsiveness) The stick goes out the frame it
 	-- changes, not on the next 80 ms tick (that alone cost up to 80 ms on every
 	-- start, stop and turn); the tick stays as a heartbeat.
-	if current.phase=="Duel" then
+	if current.phase=="Duel" and current.spectate then
+		presentation.inputDir=Vector3.zero;presentation.lead=nil;presentation.prediction=nil
+	elseif current.phase=="Duel" then
 		local dir=input:direction(workspace.CurrentCamera)
 		presentation.inputDir=dir;presentation.inputSprint=input.sprinting
 		presentation:observeStick(os.clock())

@@ -16,5 +16,6 @@ return table.freeze({
 	-- is ignored before it reaches Combat.
 	Combat=table.freeze({Move=true,Arm=true,ChakraLoad=true,Attack=true,Heavy=true,Jump=true,JumpOff=true,Dodge=true,Guard=true,GuardOff=true,
 		Grab=true,Tool=true,Pursuit=true,Substitute=true,Feint=true,WallDetach=true,Ultimate=true,Awaken=true,
-		Technique1=true,Technique2=true,Technique3=true,Technique4=true,Technique5=true,SealRelease=true,PadJump=true,Seals=true}),
+		Technique1=true,Technique2=true,Technique3=true,Technique4=true,Technique5=true,SealRelease=true,PadJump=true,Seals=true,
+		Seal1=true,Seal2=true,Seal3=true,Seal4=true,Seal5=true}),
 })
