@@ -275,3 +275,31 @@ Claude s'occupe du reste :
 3. Questionnaire de maturité Roblox rempli par l'utilisateur : combat sans sang, pas de chat vocal.
 4. D'abord publiée en privé, puis ouverte aux amis et au Discord, puis publique.
 5. Une annonce dans `#annonces` et un lien d'invitation Discord permanent sur la page Roblox.
+
+
+## État au 04/11 (01 h)
+
+**Page Roblox — faite :**
+- l'icône et les 4 miniatures (ordre : clash, roster, duels, ultimate) ;
+- la description EN et le texte promo « BETA: 1v1 ninja duels! » ;
+- le genre Action / Champs de bataille et combats, bloqué jusqu'au 03/12 ;
+- le lien Discord dans Liens sociaux.
+
+**Discord — fait :**
+- `#annonces` contient « What this beta is for » (épinglé) ;
+- et le lancement « NINJA DUEL BETA IS LIVE » avec le lien du jeu, EN puis FR.
+
+**Clips WHO WINS? :**
+- ép. 1 Naruto vs Sasuke et ép. 2 Rock Lee vs Gaara ;
+- refilmés avec une caméra de clip qui garde les deux combattants de profil (RenderStep `NDClipCam` côté client) ;
+- montés dans CapCut, 15,5 s, 9:16, musique « SLAY (PHONK) » gratuite ;
+- fichiers dans `Documents/NinjaDuelMedia/Clips` et sur la branche `media-clips`.
+- **YouTube** : brouillons privés de 0:16 avec titre et description. Les anciens brouillons de 0:19 sont à supprimer par l'utilisateur.
+- **TikTok** : à poster depuis le téléphone, ou via « Partager » dans CapCut après connexion.
+- Parties 2 : pas maintenant. La prise de référence est dans `Documents/NinjaDuelMedia/Combats_v3.mov` (Sasuke gagne 2-0, Gaara gagne 2-0).
+
+**Reste à l'utilisateur :**
+- YouTube : cocher « conçue pour les enfants : non », passer en Public, supprimer les deux brouillons de 0:19 ;
+- TikTok : passer en compte Entreprise depuis l'app mobile (Paramètres › Compte) pour rendre le lien cliquable, puis mettre `discord.gg/mJ6Gyax7W` dans « Site web » ;
+- YouTube : les mots-clés de la chaîne (la page Paramètres plante dans le navigateur de l'app Claude) ;
+- Roblox : vérification de l'âge, double authentification, caution remboursable ou Plus, pour ouvrir aux moins de 16 ans.
