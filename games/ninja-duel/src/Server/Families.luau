@@ -177,6 +177,13 @@ function Families.contact(c,a,b,spec,direction,damaged,guarded,position)
 		if spec.Steal then a.chakra=math.min(a.def.Chakra or 100,a.chakra+taken*spec.Steal) end
 		if taken>0 then c:pushImpact(b.root.Position,"drain",false,{owner=a.id,victim=b.id,amount=taken}) end
 	end
+	-- (04/11) Neji's Hasangeki: a guard it meets breaks (the body staggers open).
+	if spec.GuardBreak and guarded and b.health>0 then
+		Brawler.react(c,b,"HitStun",direction*18,.62,a)
+		c:cue(b,"GUARD BROKEN",.7);c:cue(a,string.upper(spec.Name or "").." • GUARD BROKEN",.7)
+		Brawler.event(c,a,"GuardBreak")
+		return
+	end
 	if not damaged or guarded then return end
 	if spec.Slow then
 		b.slowUntil=now+(spec.Slow.Time or 2);b.slowScale=spec.Slow.Scale or .7
@@ -195,6 +202,10 @@ function Families.contact(c,a,b,spec,direction,damaged,guarded,position)
 	end
 	if spec.Bind then
 		Families.bind(c,a,b,spec)
+		return
+	end
+	if spec.Relocate then
+		Families.relocate(c,a,b,spec)
 		return
 	end
 	if spec.Pull then
@@ -258,6 +269,29 @@ function Families.bind(c,a,b,spec)
 	end
 end
 
+-- (04/11) Flying Thunder God, level two (Minato): the body he touched is sent
+-- to his latest seal on the floor (a marked kunai, a planted seal), facing
+-- away from it, a beat in the air so his own Flying Thunder God can follow;
+-- without one it is sent straight up above itself.
+function Families.relocate(c,a,b,spec)
+	if b.health<=0 or (b.invulnerableUntil or 0)>c.now then return end
+	local Brawler=brawler()
+	local goal,where=nil,"up"
+	local latest=nil
+	for _,entry in a.anchors or {} do
+		if entry.expires>c.now and not entry.actor and (not latest or (entry.plantedAt or 0)>=(latest.plantedAt or 0)) then latest=entry end
+	end
+	if latest then goal=latest.position+Vector3.new(0,3.2,0);where="seal" end
+	if not goal then goal=b.root.Position+Vector3.new(0,12,0) end
+	local from=b.root.Position
+	c:relocate(b,goal)
+	c:pushImpact(goal,"teleport",false,{owner=a.id,fighter=a.fighterId,from=from,to=goal,kind="flash",victim=b.id})
+	Brawler.react(c,b,"Juggled",Vector3.new(0,if where=="up" then 6 else 10,0),.75,a)
+	-- His own Flying Thunder God follows it (a chase window to the body too).
+	a.pursuitUntil=math.max(a.pursuitUntil or 0,c.now+.9)
+	c:cue(a,if where=="seal" then "FLYING THUNDER GOD • SENT TO THE SEAL" else "FLYING THUNDER GOD • SENT UP",.8)
+	Brawler.event(c,a,"Relocate")
+end
 -- The zone of a's (with that look, when given) that b stands in.
 function Families.ownZone(c,a,b,look)
 	for _,h in c.hazards do
@@ -361,6 +395,20 @@ function Families.projectileEnd(c,p,position)
 		p.planted=true
 		Families.plant(c,p.a,position,spec.Charge,p.kind)
 	end
+	-- (04/11) Sasuke's Sōshūha: past the body, the wires pull the blade back
+	-- in, through where the body is now: from behind it.
+	if spec and spec.Return and not p.returned and p.a.health>0 and c.match.phase=="Duel" then
+		local b=p.a.target
+		if b and b.health>0 then
+			local goal=b.root.Position
+			local d=goal-position
+			if d.Magnitude>2 then
+				local back=c:projectile(p.a,position+d.Unit*(d.Magnitude+14),math.max(p.speed or 80,80),d.Magnitude+14,p.damage or 3,p.kind,nil,{origin=position,radius=p.radius})
+				back.family=spec;back.returned=true
+				c:pushImpact(position,"look",false,{owner=p.a.id,kind=p.kind})
+			end
+		end
+	end
 end
 -- Every frame, per body: an Absorb buff drinks the enemy objects near it.
 function Families.step(c,a,now)
@@ -392,11 +440,18 @@ F.Projectile={
 		local look=Looks[kind]
 		local launch=spec.Launch or (look and look.launch) or (if spec.Ground then "Ground" else "Palm")
 		local origin=c.launchPoint(a,launch)
+		-- (04/11) A summoned creature fires it (Naruto's Gamakichi): it pops out
+		-- of the smoke in front of him and the shot leaves its mouth.
+		if spec.Summon then
+			local front=unitOr(flat(aim-a.root.Position),flat(a.root.CFrame.LookVector).Unit)
+			origin=a.root.Position+front*3.2+Vector3.new(0,-1.4,0)
+			c:pushImpact(origin,"summon",true,{owner=a.id,kind=spec.Summon,direction=front,time=1.4})
+		end
 		local count=spec.Count or 1
 		local fan=spec.Spread or 0
 		local function fire(i)
 			if a.health<=0 or c.match.phase~="Duel" then return end
-			local from=if (spec.Volley or 0)>0 then c.launchPoint(a,launch) else origin
+			local from=if (spec.Volley or 0)>0 and not spec.Summon then c.launchPoint(a,launch) else origin
 			local d=aim-from
 			if spec.Ground then d=flat(d) end
 			d=unitOr(d,a.root.CFrame.LookVector)
@@ -787,6 +842,22 @@ function Families.beforeHit(c,attacker,victim,readEligible)
 		c:pushImpact(victim.root.Position,"teleport",false,{owner=victim.id,from=from,to=victim.root.Position,kind=spec.Kind})
 	end
 	attacker.pending=nil
+	-- (04/11) Minato's space-time barrier: the attacker is sent elsewhere, far
+	-- along the line he came from; nothing is dealt, the pressure is gone.
+	if spec.Warp then
+		local line=unitOr(flat(attacker.root.Position-victim.root.Position),-flat(victim.root.CFrame.LookVector).Unit)
+		local from=attacker.root.Position
+		local goal=Families.placeWithin(c,victim,victim.root.Position+line*spec.Warp,spec.Warp)
+		goal=Vector3.new(goal.X,from.Y,goal.Z)
+		c:relocate(attacker,goal)
+		attacker.root.CFrame=CFrame.lookAt(attacker.root.Position,Vector3.new(victim.root.Position.X,attacker.root.Position.Y,victim.root.Position.Z))
+		Brawler.react(c,attacker,"HitStun",Vector3.zero,.45,victim)
+		c:pushImpact(from,"teleport",false,{owner=victim.id,from=from,to=goal,kind=spec.Kind,victim=attacker.id})
+		c:pushImpact(victim.root.Position,"look",true,{owner=victim.id,kind=spec.Kind,victim=attacker.id})
+		c:cue(victim,string.upper(spec.Name).." • SENT AWAY",.8)
+		Brawler.event(c,victim,"Counter")
+		return true
+	end
 	-- A stance answered by a real strike (Counter Move: Madara's pommel,
 	-- Hashirama's shoulder, Hiruzen's point): the blow is turned aside, the
 	-- attacker staggers, and the answer is a strike of his body that must
@@ -816,6 +887,17 @@ function Families.beforeHit(c,attacker,victim,readEligible)
 	c:pushImpact(attacker.root.Position,"look",true,{owner=victim.id,kind=spec.Kind,victim=attacker.id})
 	c:cue(victim,string.upper(spec.Name).." • COUNTER",.8)
 	Brawler.event(c,victim,"Counter")
+	return true
+end
+-- (04/11) A thrown object reaching a body in a warping stance (Minato's
+-- space-time barrier) goes into the seal: true when it was taken.
+function Families.warpsProjectile(c,p,target,position)
+	local stance=target.counterStance
+	if not stance or c.now>=stance.untilT or not stance.spec.Warp or p.a==target then return false end
+	c:pushImpact(position,"teleport",false,{owner=target.id,from=position,to=position,kind=stance.spec.Kind})
+	c:pushImpact(target.root.Position,"look",true,{owner=target.id,kind=stance.spec.Kind})
+	c:cue(target,string.upper(stance.spec.Name).." • SENT AWAY",.7)
+	brawler().event(c,target,"Warped")
 	return true
 end
 -- Combat:damage, after health was taken: the attacker's on-hit trait
@@ -873,6 +955,16 @@ function Families.zoneTick(c,h,target)
 		if z.Steal then h.a.chakra=math.min(h.a.def.Chakra or 100,h.a.chakra+taken*z.Steal) end
 	end
 	if z.Seal then target.sealedUntil=math.max(target.sealedUntil or 0,c.now+z.Seal) end
+	-- (04/11) A trap (Minato's sealing formula): the first body to step in is
+	-- held and its jutsu shut, then the formula is spent.
+	if z.Trap and not h.sprung and target.reaction~="Bound" then
+		h.sprung=true
+		if z.Trap.Seal then target.sealedUntil=math.max(target.sealedUntil or 0,c.now+z.Trap.Seal) end
+		if z.Trap.Bind then Families.bind(c,h.a,target,{Bind=z.Trap.Bind,Name=z.Name,Kind=z.Kind}) end
+		h.expires=c.now+.35
+		c:pushImpact(h.position,"look",true,{owner=h.a.id,kind=z.Kind,victim=target.id})
+		brawler().event(c,h.a,"TrapSprung")
+	end
 end
 -- Projectiles: a family object reports its contact (Combat:projectileHit).
 function Families.projectileHit(c,p,target,damaged,guarded,position)

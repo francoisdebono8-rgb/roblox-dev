@@ -11,7 +11,8 @@ local Ultimates=require(script.Parent.Ultimates)
 -- from its family and its own spec.AI band, never from the fighter's name.
 local function familyWants(self,c,a,target,spec,distance,danger)
 	local rule=spec.AI or {}
-	local family=spec.Family
+	-- (04/11) a bespoke seal jutsu says which family the bot should read it as
+	local family=spec.Family or spec.AIAs
 	local range=spec.Range or 30
 	local opening=target.state=="Recovery" or target.state=="TechniqueRecovery" or target.state=="Stunned" or target.reaction=="Bound"
 	local lo,hi,chance

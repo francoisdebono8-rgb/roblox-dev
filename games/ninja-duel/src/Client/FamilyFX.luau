@@ -373,6 +373,34 @@ function FamilyFX.install(FX,kit)
 		end
 		return nil,d
 	end
+	-- (04/11) Minato's sealing formula (Families zone Trap): ink on the floor,
+	-- a double ring, eight strokes of script round the seal's kanji, faintly
+	-- lit so it reads as a trap without shouting.
+	ZONES.seal=function(holder,h,look)
+		local ink,paper=c3(look.color2),c3(look.color)
+		local at=holder.Position
+		local d=decal(holder,h,paper,.82)
+		local function ring(radius,width)
+			local r=block(d,Vector3.new(.05,radius*2,radius*2),CFrame.new(at+Vector3.new(0,.03,0))*CFrame.Angles(0,0,math.rad(90)),ink,Enum.Material.SmoothPlastic)
+			r.Shape=Enum.PartType.Cylinder;r.Transparency=1;tween(r,.4,{Transparency=.15})
+			local inner=block(d,Vector3.new(.06,(radius-width)*2,(radius-width)*2),CFrame.new(at+Vector3.new(0,.035,0))*CFrame.Angles(0,0,math.rad(90)),paper,Enum.Material.SmoothPlastic)
+			inner.Shape=Enum.PartType.Cylinder;inner.Transparency=1;tween(inner,.4,{Transparency=.3})
+		end
+		ring(h.radius,.18);ring(h.radius*.62,.12)
+		for i=1,8 do
+			local angle=i/8*math.pi*2
+			local r=h.radius*.81
+			local stroke=block(d,Vector3.new(.9,.04,.16),CFrame.new(at+Vector3.new(math.cos(angle)*r,.05,math.sin(angle)*r))*CFrame.Angles(0,-angle+math.pi/2,0),ink,Enum.Material.SmoothPlastic)
+			stroke.Transparency=1;tween(stroke,.5,{Transparency=.1})
+		end
+		local plate=block(d,Vector3.new(h.radius*1.1,.04,h.radius*1.1),CFrame.new(at+Vector3.new(0,.06,0)),paper,Enum.Material.SmoothPlastic)
+		plate.Transparency=1
+		local gui=new("SurfaceGui",{Face=Enum.NormalId.Top,LightInfluence=0,Brightness=1.4,SizingMode=Enum.SurfaceGuiSizingMode.PixelsPerStud,PixelsPerStud=40},plate)
+		new("TextLabel",{BackgroundTransparency=1,Size=UDim2.fromScale(1,1),Text="封",TextScaled=true,Font=Enum.Font.GothamBold,TextColor3=ink,TextTransparency=.1},gui)
+		local glow=new("PointLight",{Color=Color3.fromRGB(255,230,170),Brightness=.6,Range=h.radius*1.6,Shadows=false},plate)
+		local _=glow
+		return nil,d
+	end
 	-- A charge on the floor: a small lump of clay whose fuse glows, brighter
 	-- once armed (Families.plant).
 	-- A buried clay charge (QA-004 M5): posed, the fuse is dark; armed (the
@@ -491,6 +519,54 @@ function FamilyFX.install(FX,kit)
 				shockRing(fx.folder,to-Vector3.new(0,2.6,0),color,2,10,.3)
 				return true
 			end
+			if style=="look" and impact.kind=="sandarm" then
+				-- (04/11) Gaara's Shukaku arm: a huge arm of sand grows out of his
+				-- shoulder and sweeps the arc in front of him, then crumbles.
+				local look=Looks.sandarm
+				local owner=folder and folder:FindFirstChild(impact.owner or "")
+				local root=owner and owner:FindFirstChild("HumanoidRootPart")
+				local dir=impact.direction or (root and root.CFrame.LookVector) or Vector3.new(0,0,-1)
+				dir=Vector3.new(dir.X,0,dir.Z)
+				if dir.Magnitude<.1 then dir=Vector3.new(0,0,-1) end
+				dir=dir.Unit
+				local origin=(if root then root.Position else impact.position)+Vector3.new(0,1.2,0)
+				local reach=impact.radius or 13
+				local arm=new("Model",{Name="ShukakuArm"},fx.folder)
+				local segs={}
+				for i=1,5 do
+					local k=i/5
+					local seg=block(arm,Vector3.new(1.4+k*1.6,1.4+k*1.6,reach/5+.6),CFrame.new(origin),c3(look.color),Enum.Material.Sand)
+					table.insert(segs,{part=seg,k=k})
+				end
+				local claw=block(arm,Vector3.new(3.4,1.2,2.6),CFrame.new(origin),c3(look.color2),Enum.Material.Sand)
+				local t0=os.clock()
+				local sweep
+				sweep=game:GetService("RunService").RenderStepped:Connect(function()
+					local t=(os.clock()-t0)/.3
+					if t>1.6 or not arm.Parent then
+						sweep:Disconnect()
+						if arm.Parent then
+							for _,e in segs do smokePuff(fx.folder,e.part.Position,c3(look.color),6,1.6) end
+							arm:Destroy()
+						end
+						return
+					end
+					-- grows over the first third, sweeps from his right to his left
+					local grow=math.clamp(t*2.2,0,1)
+					local angle=math.rad(70-140*math.clamp((t-.15)/.85,0,1))
+					local along=(CFrame.fromAxisAngle(Vector3.yAxis,angle):VectorToWorldSpace(dir))
+					for _,e in segs do
+						local d=reach*e.k*grow
+						local at=origin+along*d+Vector3.new(0,-1.2*e.k,0)
+						e.part.CFrame=CFrame.lookAt(at,at+along)
+					end
+					local tip=origin+along*reach*grow+Vector3.new(0,-1.4,0)
+					claw.CFrame=CFrame.lookAt(tip,tip+along)*CFrame.Angles(0,math.rad(90),0)
+				end)
+				burst(fx.folder,origin,{Texture=TEX.smoke,Lifetime=NumberRange.new(.5,1),Speed=NumberRange.new(6,14),SpreadAngle=Vector2.new(80,80),
+					Color=ColorSequence.new(c3(look.color)),LightInfluence=1,Size=num({{0,1.2},{1,3}}),Transparency=num({{0,.2},{1,1}}),Drag=2},24)
+				return true
+			end
 			if style=="look" then
 				local look=Looks[impact.kind or ""] or Looks.chakra
 				hit(fx,look,impact.position,impact.heavy,impact.normal)
@@ -512,6 +588,71 @@ function FamilyFX.install(FX,kit)
 			elseif style=="stance" then
 				local color=Looks[impact.kind or ""] and c3(Looks[impact.kind].color) or Color3.fromRGB(255,255,255)
 				shockRing(fx.folder,impact.position-Vector3.new(0,2.6,0),color,7,3,impact.time or .6)
+				-- (04/11) Minato's space-time barrier: a sphere of bent space round him
+				-- and the formula hanging in front of his palms while it lasts.
+				if impact.kind=="barrier" then
+					local owner=folder and folder:FindFirstChild(impact.owner or "")
+					local root=owner and owner:FindFirstChild("HumanoidRootPart")
+					local time=impact.time or .9
+					local at=if root then root.CFrame else CFrame.new(impact.position)
+					local sphere=block(fx.folder,Vector3.new(1,1,1),at,color,Enum.Material.ForceField)
+					new("SpecialMesh",{MeshType=Enum.MeshType.Sphere},sphere)
+					sphere.Transparency=.2
+					tween(sphere,.12,{Size=Vector3.new(9,9,9)})
+					task.delay(math.max(.1,time-.2),function() if sphere.Parent then tween(sphere,.2,{Size=Vector3.new(1,1,1),Transparency=1}) end end)
+					Debris:AddItem(sphere,time+.3)
+					local card=block(fx.folder,Vector3.new(3.4,3.4,.05),at*CFrame.new(0,.4,-2.6),Color3.fromRGB(250,244,226),Enum.Material.SmoothPlastic)
+					card.Transparency=1
+					local gui=new("SurfaceGui",{Face=Enum.NormalId.Back,LightInfluence=0,Brightness=2,SizingMode=Enum.SurfaceGuiSizingMode.PixelsPerStud,PixelsPerStud=40},card)
+					local label=new("TextLabel",{BackgroundTransparency=1,Size=UDim2.fromScale(1,1),Text="時空",TextScaled=true,Font=Enum.Font.GothamBold,TextColor3=Color3.fromRGB(255,214,92),TextTransparency=1},gui)
+					tween(label,.1,{TextTransparency=.05})
+					task.delay(math.max(.1,time-.2),function() if label.Parent then tween(label,.2,{TextTransparency=1}) end end)
+					Debris:AddItem(card,time+.3)
+					if root then
+						local follow
+						follow=game:GetService("RunService").RenderStepped:Connect(function()
+							if not sphere.Parent or not root.Parent then follow:Disconnect();return end
+							sphere.CFrame=root.CFrame;card.CFrame=root.CFrame*CFrame.new(0,.4,-2.6)
+						end)
+					end
+				end
+				return true
+			elseif style=="summon" then
+				-- (04/11) Naruto's Gamakichi: out of a puff of smoke, a small orange
+				-- toad squats in front of him, puffs its cheeks and is gone again.
+				local look=Looks[impact.kind or ""] or Looks.toad
+				local at=impact.position
+				local dir=impact.direction or Vector3.new(0,0,-1)
+				local frame=CFrame.lookAt(at,at+Vector3.new(dir.X,0,dir.Z))
+				smokePuff(fx.folder,at+Vector3.new(0,.6,0),Color3.fromRGB(240,236,230),22,3.4)
+				local m=new("Model",{Name="Gamakichi"},fx.folder)
+				local skin,vest=c3(look.color),c3(look.color2)
+				local body=block(m,Vector3.new(2.4,1.7,2.6),frame*CFrame.new(0,.85,0),skin,Enum.Material.SmoothPlastic)
+				new("SpecialMesh",{MeshType=Enum.MeshType.Sphere},body)
+				local belly=block(m,Vector3.new(1.9,1.2,.5),frame*CFrame.new(0,.7,-1.15),Color3.fromRGB(252,214,160),Enum.Material.SmoothPlastic)
+				new("SpecialMesh",{MeshType=Enum.MeshType.Sphere},belly)
+				local cape=block(m,Vector3.new(2.5,.9,1.6),frame*CFrame.new(0,1.35,.5),vest,Enum.Material.Fabric)
+				new("SpecialMesh",{MeshType=Enum.MeshType.Sphere},cape)
+				for _,side in {-1,1} do
+					local eye=block(m,Vector3.new(.7,.7,.7),frame*CFrame.new(side*.62,1.75,-.7),Color3.fromRGB(250,246,230),Enum.Material.SmoothPlastic)
+					new("SpecialMesh",{MeshType=Enum.MeshType.Sphere},eye)
+					local pupil=block(m,Vector3.new(.32,.44,.2),frame*CFrame.new(side*.62,1.75,-1.02),Color3.fromRGB(20,16,14),Enum.Material.SmoothPlastic)
+					new("SpecialMesh",{MeshType=Enum.MeshType.Sphere},pupil)
+					local leg=block(m,Vector3.new(.7,.5,1.2),frame*CFrame.new(side*1.1,.25,-.3),skin,Enum.Material.SmoothPlastic)
+					new("SpecialMesh",{MeshType=Enum.MeshType.Sphere},leg)
+				end
+				local parts={}
+				for _,p in m:GetChildren() do if p:IsA("BasePart") then table.insert(parts,{p,p.Size}) ;p.Size=p.Size*.2 end end
+				for _,e in parts do tween(e[1],.16,{Size=e[2]}) end
+				-- the cheeks puff as it spits
+				task.delay(.1,function() if body.Parent then tween(body,.08,{Size=Vector3.new(2.7,1.9,2.6)}) end end)
+				task.delay(.22,function() if body.Parent then tween(body,.12,{Size=Vector3.new(2.4,1.7,2.6)}) end end)
+				local life=impact.time or 1.4
+				task.delay(life,function()
+					if not m.Parent then return end
+					smokePuff(fx.folder,at+Vector3.new(0,.8,0),Color3.fromRGB(240,236,230),16,2.6)
+					m:Destroy()
+				end)
 				return true
 			elseif style=="drain" then
 				local owner=folder and folder:FindFirstChild(impact.owner or "")
@@ -534,6 +675,30 @@ function FamilyFX.install(FX,kit)
 			local fam=actor.family
 			local root=model:FindFirstChild("HumanoidRootPart")
 			if not root then return end
+			-- (04/11) Lee's nunchaku: out of his belt for the blow (attack
+			-- "Nunchaku"), two sticks on a chain whirling from the right hand.
+			local nun=actor.attackName=="Nunchaku" and (actor.state=="Startup" or actor.state=="Active" or actor.state=="Recovery")
+			if nun and not st.nunchaku then
+				local hand=model:FindFirstChild("RightHand")
+				if hand then
+					local m=new("Model",{Name="Nunchaku"},fx.folder)
+					local wood=Color3.fromRGB(120,74,40)
+					local s1=block(m,Vector3.new(.22,1.3,.22),hand.CFrame,wood,Enum.Material.Wood)
+					local s2=block(m,Vector3.new(.22,1.3,.22),hand.CFrame,wood,Enum.Material.Wood)
+					local link=block(m,Vector3.new(.06,.5,.06),hand.CFrame,Color3.fromRGB(150,150,156),Enum.Material.Metal)
+					st.nunchaku={model=m,a=s1,b=s2,link=link,hand=hand,t0=os.clock()}
+				end
+			elseif not nun and st.nunchaku then
+				st.nunchaku.model:Destroy();st.nunchaku=nil
+			end
+			if st.nunchaku and st.nunchaku.hand.Parent then
+				local n=st.nunchaku
+				local spin=(os.clock()-n.t0)*30
+				local grip=n.hand.CFrame*CFrame.new(0,-.7,0)
+				n.a.CFrame=grip*CFrame.new(0,-.3,0)
+				n.link.CFrame=grip*CFrame.new(0,-1.1,0)
+				n.b.CFrame=grip*CFrame.new(0,-1.2,0)*CFrame.Angles(spin,0,0)*CFrame.new(0,-.7,0)
+			end
 			local buffed=fam and fam.buff~=nil
 			-- An absorbing window (a Buff with Absorb: Nagato's seal), QA-004 M5:
 			-- open, a faint sphere of its radius round him; closed, it folds in

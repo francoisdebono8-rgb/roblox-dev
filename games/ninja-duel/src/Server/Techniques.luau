@@ -1058,6 +1058,8 @@ require(script.Parent.Legion).install(Techniques)
 -- Temari (roster wave): her kit registers itself (techniques, the fan gust
 -- tool, the updraft payoff, Kamatari, the glide, the wind step).
 require(script.Parent.Gale).install(Techniques)
+-- (04/11) The seal jutsu that read the other body (Server/SealKits).
+require(script.Parent.SealKits).install(Techniques)
 -- Roster breadth pass: every technique that names a Family and has no
 -- bespoke entry above runs the family's (Server/Families).
 for _,kit in {require(script.Parent.Wave1Kit),require(script.Parent.Wave2Kit),require(script.Parent.Wave3Kit),require(script.Parent.Wave4Kit)} do kit.install(Techniques) end

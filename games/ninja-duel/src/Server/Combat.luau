@@ -9,6 +9,7 @@ local Animation = require(script.Parent.Animation)
 local Techniques = require(script.Parent.Techniques)
 -- Reusable technique families and fighter traits (roster breadth pass).
 local Families = require(script.Parent.Families)
+local SealKits = require(script.Parent.SealKits)
 local Ultimates = require(script.Parent.Ultimates)
 local Interactions = require(script.Parent.Interactions)
 local Looks = require(Shared.Looks)
@@ -1407,6 +1408,14 @@ function Combat:requestInner(a,action,aim,clientTime,opts)
 		a.state="Neutral";a.untilTime=self.now;a.pending=nil
 		a.wireCancel=true
 	end
+	-- (04/11) Lee's Shadow of the Dancing Leaf follows a body he has just
+	-- launched straight out of the blow's recovery (that is the technique).
+	local follow=a.sealCast
+	if follow and follow.FollowsLaunch and a.target and (a.target.reaction=="Launched" or a.target.reaction=="Juggled")
+		and (a.state=="Recovery" or a.state=="TechniqueRecovery" or (a.state=="Active" and a.hitConfirmed)) and (a.cooldowns[follow.Id] or 0)<=self.now and a.chakra>=(follow.Cost or 0) then
+		if a.pending and a.pending.kind=="Brawl" then Bangla.close(a.pending) end
+		a.pending=nil;a.attackName=nil;a.chainOpen=false;a.state="Neutral";a.untilTime=self.now
+	end
 	local chain=action=="Attack" and a.state=="Recovery" and a.chainOpen and self.now>a.chainAt
 	if not chain and not Rules.canAct(a,self.now) then return false,"Committed" end
 	if action=="Guard" then Brawler.event(self,a,"Guard");Defense.guard(a,true,self.now);self:setState(a,"Guarding",0);return true end
@@ -1485,6 +1494,7 @@ function Combat:requestInner(a,action,aim,clientTime,opts)
 		-- committed now, but the body stays in Neutral so the legs keep moving
 		-- while the arm throws; the payoff fires on the release frame.
 		Brawler.event(self,a,"Technique"); Brawler.event(self,a,"Cast:"..spec.Id); a.chakra-=spec.Cost; a.cooldowns[spec.Id]=self.now+spec.Cooldown; a.guardHeld=false
+		SealKits.noteCast(self,a,spec)
 		-- Same for a thrown technique: no guard pose (and guard speed) without a guard.
 		if a.state=="Guarding" then self:setState(a,"Neutral",0) end
 		self:awakenTechnique(a,spec)
@@ -1499,6 +1509,7 @@ function Combat:requestInner(a,action,aim,clientTime,opts)
 		return true
 	end
 	Brawler.event(self,a,"Technique"); Brawler.event(self,a,"Cast:"..spec.Id); Rules.reserve(a,spec,self.now); a.guardHeld=false
+	SealKits.noteCast(self,a,spec)
 	self:awakenTechnique(a,spec)
 	a.pending={kind="Technique",spec=spec,implementation=technique,aim=aim or a.target.root.Position,variant=variant,cancelled=cancelled}
 	-- A technique may set itself up as its channel begins (Naruto's Rasengan
@@ -2161,6 +2172,8 @@ function Combat:igniteBlade(p)
 	return false
 end
 function Combat:projectileHit(p,target,position,normal)
+	-- (04/11) Minato's space-time barrier takes the thrown thing into its seal.
+	if Families.warpsProjectile(self,p,target,position) then return end
 	local style=p.style or IMPACT_STYLE[p.kind] or (if Looks[p.kind] then "look" else "shuriken")
 	self:pushImpact(position,style,p.kind=="fireball",{projectile=p.id,kind=p.kind,normal=normal,owner=p.a.id,victim=target.id,direction=p.direction,charge=p.charge})
 	-- The entry still finishes the blade on the client; it only reads as a body

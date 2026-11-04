@@ -85,6 +85,19 @@ return {
 	thirdeye={shape="orb",color=rgb(226,198,140),color2=rgb(120,90,50),size={.9,.9,.9},light=.6,trail=0,hit="burst"},
 	crows={shape="swarm",color=rgb(18,16,24),color2=rgb(150,30,40),size={3.4,2.6,3.4},light=0,trail=0,hit="smoke",zone="swarm",launch="Palm",radius=2},
 	airpalm={shape="orb",color=rgb(236,240,255),color2=rgb(176,190,240),size={1.6,1.6,1.6},light=.8,trail=1.2,hit="burst",launch="Palm",radius=1.2},
+	-- (04/11) Minato: a sealing formula written on the floor (Families zone Trap),
+	-- the space-time barrier (a warping stance) and its seal.
+	-- (04/11) The replaced seal jutsu: Gamakichi's water bullet (and the toad
+	-- itself), Shukaku's arm of sand, Neji's mountain crusher, the Sharingan's
+	-- hold, the smoke of a shadow clone popping out.
+	toadwater={shape="orb",color=rgb(170,222,255),color2=rgb(60,140,220),size={2.2,2.2,2.8},light=.8,trail=1.4,hit="splash",zone="water",launch="Palm",radius=1.6},
+	toad={shape="beast",color=rgb(236,120,50),color2=rgb(90,60,120),size={2.4,1.8,2.6},light=0,trail=0,hit="smoke"},
+	sandarm={shape="wave",color=rgb(214,184,124),color2=rgb(150,118,78),size={12,3,2},light=0,trail=0,hit="crush",launch="Ground",radius=3},
+	hasangeki={shape="wave",color=rgb(220,232,255),color2=rgb(150,176,240),size={7,5,2},light=1.2,trail=1.6,hit="burst",launch="Palm",radius=3.4},
+	sharingan={shape="orb",color=rgb(230,30,40),color2=rgb(20,10,12),size={.6,.6,.6},light=1.6,trail=0,hit="burst"},
+	clonepop={shape="orb",color=rgb(244,240,236),color2=rgb(255,150,40),size={1,1,1},light=0,trail=0,hit="smoke"},
+	sealtrap={shape="orb",color=rgb(244,236,214),color2=rgb(40,34,30),size={1,1,1},light=0,trail=0,hit="burst",zone="seal",launch="Ground",radius=4.2},
+	barrier={shape="orb",color=rgb(255,222,120),color2=rgb(40,34,30),size={1,1,1},light=1.4,trail=0,hit="burst"},
 	trigram={shape="orb",color=rgb(214,220,255),color2=rgb(150,160,230),size={1,1,1},light=0,trail=0,hit="burst",zone="shadow"},
 	markedkunai={shape="needle",color=rgb(206,212,222),color2=rgb(255,214,92),size={.14,.14,1.3},light=.6,trail=.3,hit="sparks",launch="Kunai",radius=.6},
 	earthwall={shape="boulder",color=rgb(150,120,88),color2=rgb(104,82,60),size={6,5,1.4},light=0,trail=0,hit="crush",zone="spikes",launch="Ground",radius=3},
