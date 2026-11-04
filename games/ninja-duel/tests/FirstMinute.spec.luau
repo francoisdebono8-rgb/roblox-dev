@@ -91,7 +91,12 @@ test("PLAY: four prompts against his rival, then a real duel against the easy AI
 	local epoch=s.epoch
 	for k=1,4 do
 		assert(s.tutorial and s.tutorial.index==k,"not on prompt "..k)
-		perform(s);step(m,if k==4 then 2.6 else .4)
+		perform(s)
+		if k==4 then
+			-- the signature counts when it lands on the partner
+			step(m,.1);assert(s.tutorial and s.tutorial.index==4,"the cast alone ended the signature prompt")
+			s.bot.health-=6;step(m,1.8)
+		else step(m,.4) end
 	end
 	assert(s.epoch>epoch and s.tutorial==nil and s.firstStage=="duel","no duel after the prompts")
 	assert(s.roundsToWin==2 and s.human.fighterId=="Lion" and s.bot.fighterId=="Sand","not the real duel")

@@ -174,10 +174,15 @@ function Tutorial.firstPlan(a)
 		add({id="signature",title="Your signature: "..tostring(spec.Name),key=TECH_KEY[slot],pad=Controls.TechniquePad[slot] or ("Jutsu "..slot),
 			place=if (spec.Range or 20)<10 then "near" else "far",technique=spec,
 			setup=function(s) local p=s.human;p.chakra=p.def.Chakra or 100;p.cooldowns={} end,
-			-- (Studio 04/11, v37: the duel's intro cut the Chidori at its cast)
-			-- the act plays out and lands before the duel begins.
-			hold=2.4,
-			check=function(s,t) return t.ev("Cast:"..tostring(spec.Id)) end})
+			-- (Studio 04/11, v37: the duel's intro cut the Chidori at its cast,
+			-- and a Chidori is held until a strike releases it) done when it
+			-- lands on the partner (or 5 s after the cast), then a beat to see it.
+			hold=1.6,
+			check=function(s,t,now)
+				if not t.ev("Cast:"..tostring(spec.Id)) then return false end
+				if not t.castAt then t.castAt=now;t.partnerAt=s.bot.health end
+				return s.bot.health<t.partnerAt-.5 or now-t.castAt>5
+			end})
 	end
 	return steps
 end
@@ -205,7 +210,7 @@ function Tutorial.enter(s,now)
 	local t,a,b=s.tutorial,s.human,s.bot
 	local spec=t.steps[t.index]
 	local c=s.combat;c:clear(true)
-	t.entered=now;t.completedAt=nil;t.baseline=table.clone(a.events or {});t.travel=0;t.seenAir=false;t.seenWall=false;t.unlocked=false
+	t.entered=now;t.completedAt=nil;t.castAt=nil;t.partnerAt=nil;t.baseline=table.clone(a.events or {});t.travel=0;t.seenAir=false;t.seenWall=false;t.unlocked=false
 	t.lastPosition=a.root.Position;t.pressFrom=#(a.pressLog or {});t.stillFor=0;t.freezeOpen=false
 	-- A step set up again (a missed launch) keeps its record and its clock.
 	local same=t.rec and t.recIndex==t.index and not t.rec.status
