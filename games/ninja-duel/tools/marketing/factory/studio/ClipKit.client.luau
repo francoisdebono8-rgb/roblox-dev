@@ -417,5 +417,256 @@ function B.devlogTake(opts)
 	return Http:JSONEncode(takeLog)
 end
 
+--------------------------------------------------------------------------
+-- Cinematic shots v3 ("LEGENDARY FIGHTS", 04/11). The server plays a written
+-- scene (ShotRunner.scene / S.takes) and sets workspace.NDBeat = "<beat>#<n>"
+-- and workspace.NDTake = take number; each beat takes the shot listed for it
+-- in that take, so the same scene played three times gives three angles of
+-- every beat, cut together in CapCut from ONE raw recording.
+--
+-- Every framing is SOLVED for the 9:16 area kept from the recording (full
+-- viewport height, 830/1480 of it in width): the camera backs off until the
+-- subject's real parts (hair spikes included) fit inside it. All cameras stay
+-- on one side of the fight axis (180 degree rule), locked at the face-off.
+--   B.scene({T1 = {faceoff = {kind = "fit", yaw = 48}, ...}, T2 = {...}})
+-- Shot kinds (who = "A" the human seat, "B" the bot; "X" adds shadow clones):
+--   fit    both bodies whole            who ("AB"/"ABX"), yaw (>0 toward A's back), pitch, fov, m (margin)
+--          top = true: from above, the fight axis along the frame height
+--   close  head framed (hair included)  who, ang (deg off the face), pitch, drop, parts = "mcu" adds the hands
+--   ots    over `who`'s shoulder onto the other   ang, pitch
+--   track  follows `who` from the side  yaw, m
+--   seq = {{at = 0, ...shot}, {at = 1.4, ...shot}} switches shot inside a beat
+-- No push-ins on fitted shots (they push the near fighter out of frame), and
+-- no depth of field (it made the capture stutter): colour + bloom only.
+--------------------------------------------------------------------------
+local Lighting = game:GetService("Lighting")
+local CROPW = 830 / 1480
+local SIDE_SIGN = 1
+C.shot3, C.shotT = nil, 0
+local partCache = {}
+local function isHead(n) return n == "Head" or n:sub(1, 6) == "Head__" end
+local function isHand(n) return n == "LeftHand" or n == "RightHand" or n:sub(1, 10) == "LeftHand__" or n:sub(1, 11) == "RightHand__" end
+local function partsOf(m, mode)
+	local e = partCache[m]
+	local t = os.clock()
+	if not e or t - e.t > 0.35 then
+		e = {t = t, head = {}, hands = {}, body = {}}
+		local r = hrp(m)
+		for _, d in ipairs(m:GetDescendants()) do
+			if d:IsA("BasePart") and d.Name ~= "HumanoidRootPart" and d.Transparency < 0.9 then
+				if isHead(d.Name) then table.insert(e.head, d) end
+				if isHand(d.Name) then table.insert(e.hands, d) end
+				if r and (d.Position - r.Position).Magnitude < 5.5 and d.Size.Magnitude < 7 then table.insert(e.body, d) end
+			end
+		end
+		partCache[m] = e
+	end
+	return e[mode]
+end
+local SIGNS = {V(1, 1, 1), V(1, 1, -1), V(1, -1, 1), V(1, -1, -1), V(-1, 1, 1), V(-1, 1, -1), V(-1, -1, 1), V(-1, -1, -1)}
+local function addCorners(pts, p)
+	local cf, h = p.CFrame, p.Size / 2
+	for _, s in ipairs(SIGNS) do table.insert(pts, cf * (h * s)) end
+end
+local extraT, extras = 0, {}
+local function extraModels()
+	if os.clock() - extraT < 0.25 then return extras end
+	extraT = os.clock(); extras = {}
+	local A, Bm, duel = duelModels()
+	local rb = hrp(Bm)
+	if not rb then return extras end
+	local seen = {}
+	for _, root in ipairs({duel, workspace:FindFirstChild("NinjaDuelFX"), workspace:FindFirstChild("NinjaDuelBodies")}) do
+		for _, d in ipairs(root and root:GetDescendants() or {}) do
+			if d.Name == "Head" and d:IsA("BasePart") then
+				local m = d:FindFirstAncestorOfClass("Model")
+				if m and m ~= A and m ~= Bm and not seen[m] and (d.Position - rb.Position).Magnitude < 22 then
+					seen[m] = true; table.insert(extras, m)
+				end
+			end
+		end
+	end
+	return extras
+end
+local function subject(who)
+	local A, Bm = duelModels()
+	if who == "B" then return Bm, A end
+	return A, Bm
+end
+local function gather(sp)
+	local who = sp.who or "AB"
+	local A, Bm = duelModels()
+	local pts = {}
+	local function add(m)
+		if not m then return end
+		for _, p in ipairs(partsOf(m, "body")) do addCorners(pts, p) end
+	end
+	if who:find("A") then add(A) end
+	if who:find("B") then add(Bm) end
+	if who:find("X") then
+		for _, m in ipairs(extraModels()) do
+			local cf, size = m:GetBoundingBox()
+			if size.Magnitude < 12 then
+				for _, s in ipairs(SIGNS) do table.insert(pts, cf * (size / 2 * s)) end
+			end
+		end
+	end
+	return pts
+end
+local AXIS = V(0, 0, -1)
+local function lockAxis()
+	local A, Bm = duelModels(); local ra, rb = hrp(A), hrp(Bm)
+	if not (ra and rb) then return end
+	local ax = flat(rb.Position - ra.Position)
+	if ax.Magnitude > 0.5 then AXIS = ax.Unit end
+end
+local function SIDE() return AXIS:Cross(Vector3.yAxis) * SIDE_SIGN end
+local function tilt(dir, pitch)
+	local p = math.rad(pitch or 0)
+	return (dir * math.cos(p) + Vector3.yAxis * math.sin(p)).Unit
+end
+local function sideDir(yaw, pitch)
+	local y = math.rad(yaw or 0)
+	return tilt(SIDE() * math.cos(y) - AXIS * math.sin(y), pitch)
+end
+local function frontDir(who, ang, pitch)
+	local front = (who == "B") and -AXIS or AXIS
+	local a = math.rad(ang or 35)
+	return tilt(front * math.cos(a) + SIDE() * math.sin(a), pitch)
+end
+local function behindDir(who, ang, pitch)
+	local front = (who == "B") and -AXIS or AXIS
+	local a = math.rad(ang or 28)
+	return tilt(-front * math.cos(a) + SIDE() * math.sin(a), pitch)
+end
+-- distance at which every point fits the kept 9:16 area, camera looking at c
+local function solve(pts, c, back, fov, m, upHint)
+	local fwd = -back
+	local right = fwd:Cross(upHint)
+	right = right.Magnitude > 1e-3 and right.Unit or Vector3.xAxis
+	local up = right:Cross(fwd).Unit
+	local tv = math.tan(math.rad(fov) / 2) * m
+	local th = tv * CROPW
+	local d = 0.5
+	for _, p in ipairs(pts) do
+		local r = p - c
+		local need = r:Dot(back) + math.max(math.abs(r:Dot(right)) / th, math.abs(r:Dot(up)) / tv)
+		if need > d then d = need end
+	end
+	return d
+end
+local function bboxCenter(pts)
+	local lo, hi = V(math.huge, math.huge, math.huge), V(-math.huge, -math.huge, -math.huge)
+	for _, p in ipairs(pts) do lo = lo:Min(p); hi = hi:Max(p) end
+	return (lo + hi) / 2, hi - lo
+end
+local SH = {}
+function SH.fit(sp)
+	local pts = gather(sp)
+	if #pts == 0 then return end
+	local c, size = bboxCenter(pts)
+	c += V(0, (sp.look or 0) * size.Y, 0)
+	local dir = sp.top and tilt(SIDE() * 0.25 - AXIS * 0.02, sp.pitch or 80) or sideDir(sp.yaw, sp.pitch or 6)
+	return pts, c, dir, sp.fov or 46, sp.m or 0.84
+end
+function SH.close(sp)
+	local M = subject(sp.who)
+	if not M then return end
+	local pts = {}
+	for _, p in ipairs(partsOf(M, "head")) do addCorners(pts, p) end
+	if sp.parts == "mcu" then for _, p in ipairs(partsOf(M, "hands")) do addCorners(pts, p) end end
+	if #pts == 0 then return end
+	local c, size = bboxCenter(pts)
+	c -= V(0, (sp.drop or 0.35) * math.max(size.Y, 1.5), 0)
+	return pts, c, frontDir(sp.who, sp.ang, sp.pitch or -4), sp.fov or 30, sp.m or 0.86
+end
+function SH.ots(sp)
+	local M, O = subject(sp.who)
+	if not (M and O) then return end
+	local pts = {}
+	for _, p in ipairs(partsOf(O, "body")) do addCorners(pts, p) end
+	for _, p in ipairs(partsOf(M, "head")) do addCorners(pts, p) end
+	if #pts == 0 then return end
+	return pts, (bboxCenter(pts)), behindDir(sp.who, sp.ang, sp.pitch or 6), sp.fov or 42, sp.m or 0.92
+end
+function SH.track(sp)
+	local M = subject(sp.who)
+	if not M then return end
+	local pts = {}
+	for _, p in ipairs(partsOf(M, "body")) do addCorners(pts, p) end
+	if #pts == 0 then return end
+	return pts, (bboxCenter(pts)), sideDir(sp.yaw, sp.pitch or 4), sp.fov or 40, sp.m or 0.6
+end
+B.SH = SH
+-- film look: a little contrast and bloom (no depth of field: it stuttered)
+local function film(on)
+	for _, n in ipairs({"NDFilmDOF", "NDFilmCC", "NDFilmBloom"}) do local e = Lighting:FindFirstChild(n); if e then e:Destroy() end end
+	if not on then return end
+	local cc = Instance.new("ColorCorrectionEffect"); cc.Name = "NDFilmCC"; cc.Contrast = 0.12; cc.Saturation = 0.12; cc.Parent = Lighting
+	local bl = Instance.new("BloomEffect"); bl.Name = "NDFilmBloom"; bl.Intensity = 0.7; bl.Threshold = 1.4; bl.Size = 28; bl.Parent = Lighting
+end
+B.film = film
+local sm = {}
+local function pickSub(spec, t)
+	if not spec.seq then return spec, 0 end
+	local cur, idx = spec.seq[1], 1
+	for i, s in ipairs(spec.seq) do if t >= (s.at or 0) then cur, idx = s, i end end
+	return cur, idx
+end
+pcall(function() RS:UnbindFromRenderStep("NDClipShot") end)
+RS:BindToRenderStep("NDClipShot", Enum.RenderPriority.Last.Value + 2, function(dt)
+	if not C.shot3 then return end
+	C.mode = "shot"
+	C.shotT += dt
+	if not C.axisLocked and C.shotT > 0.12 and C.beatName == "faceoff" then
+		lockAxis(); C.axisLocked = true
+	end
+	local sp, idx = pickSub(C.shot3, C.shotT)
+	if idx ~= sm.idx then sm.idx = idx; sm.snap = true end
+	local fn = SH[sp.kind or "fit"]
+	if not fn then return end
+	local pts, c, dir, fov, m = fn(sp)
+	if not pts then return end
+	local upHint = sp.top and AXIS or Vector3.yAxis
+	local d = math.clamp(solve(pts, c, dir, fov, m, upHint), sp.minD or 1.6, sp.maxD or 70)
+	if sm.snap or not sm.c then
+		sm.c, sm.dir, sm.d, sm.snap = c, dir, d, false
+	else
+		local rate = sp.rate or 7
+		sm.c = dampN(sm.c, c, rate, dt)
+		sm.dir = dampN(sm.dir, dir, rate * 0.7, dt).Unit
+		sm.d = dampN(sm.d, d, (d > sm.d) and 12 or 2.5, dt)
+	end
+	local cam = workspace.CurrentCamera
+	cam.CameraType = Enum.CameraType.Scriptable
+	cam.CFrame = CFrame.lookAt(sm.c + sm.dir * sm.d, sm.c, upHint)
+	cam.FieldOfView = fov
+end)
+local beatConn, takeConn
+function B.scene(maps, opts)
+	opts = opts or {}
+	film(opts.film ~= false)
+	local function apply()
+		local v = workspace:GetAttribute("NDBeat") or ""
+		local name = v:match("^(.-)#") or v
+		local take = workspace:GetAttribute("NDTake") or 1
+		local map = maps["T" .. tostring(take)] or maps.T1 or maps
+		C.shot3 = map[name] or map.default or {kind = "fit"}
+		C.shotT = 0; C.beatName = name; sm.snap = true; sm.idx = nil
+	end
+	if beatConn then beatConn:Disconnect() end
+	if takeConn then takeConn:Disconnect() end
+	beatConn = workspace:GetAttributeChangedSignal("NDBeat"):Connect(apply)
+	takeConn = workspace:GetAttributeChangedSignal("NDTake"):Connect(function() C.axisLocked = false; apply() end)
+	C.mode = "shot"
+	apply()
+	return "scene camera on (" .. tostring(workspace:GetAttribute("NDBeat")) .. ")"
+end
+function B.sceneOff()
+	if beatConn then beatConn:Disconnect(); beatConn = nil end
+	if takeConn then takeConn:Disconnect(); takeConn = nil end
+	film(false); C.mode = "fight"; C.shot3 = nil
+end
+
 _G.NDHideUI(true)
 return "ClipKit ready (mode " .. C.mode .. ")"

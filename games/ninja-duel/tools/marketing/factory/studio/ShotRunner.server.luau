@@ -258,6 +258,83 @@ function S.tournament(entrants, opts)
 	return "running"
 end
 
+-- A WRITTEN fight ("LEGENDARY FIGHTS", 04/11): no AI, every move placed in
+-- time by the script, so each exchange reads (action, then reaction). The
+-- same scene is played once per camera angle (ClipKit B.scene), the edit cuts
+-- between the takes beat by beat.
+--   spec = {a = "Lion", b = "Legion", place = {Vector3, Vector3}, rounds = 1,
+--     beats = {{name = "faceoff", dur = 2}, {name = "seals", dur = 1.8, acts = {
+--       {at = 0, who = "A", seals = {4, 1}},           -- Seals then Technique4, Technique1
+--       {at = 0.5, who = "B", action = "Technique2", chakra = true},
+--       {at = 1, who = "A", move = Vector3.new(0, 0, -1), hold = 0.4}}}}}  -- walk direction for `hold` s
+-- workspace attribute NDBeat = "<name>#<n>" at each beat (the camera follows it).
+function S.scene(spec)
+	if busy then return "busy" end
+	busy, last = true, nil
+	task.spawn(function()
+		local log = {kind = "scene", a = spec.a, b = spec.b, events = {}, build = S.build()}
+		local ok, err = pcall(function()
+			noUlt = spec.noUlt == true
+			rounds(spec.rounds or 1)
+			start(spec.a, spec.b, true); waitDuel(10)
+			dev:Invoke("autopilot", false)
+			dev:Invoke("freezeBot", true)
+			dev:Invoke("scripted", true)
+			local P = spec.place or {Vector3.new(0, 3, 6), Vector3.new(0, 3, -6)}
+			dev:Invoke("place", P[1], P[2])
+			dev:Invoke("refill")
+			dev:Invoke("damagelog", true)
+			workspace:SetAttribute("NDBeat", "ready#0")
+			task.wait(spec.lead or 1.2)
+			log.flash = {now = S.flash()}
+			task.wait(0.5)
+			local seat = {A = "human", B = "bot"}
+			for n, beat in ipairs(spec.beats) do
+				workspace:SetAttribute("NDBeat", beat.name .. "#" .. n)
+				table.insert(log.events, {t = now(), kind = "beat", name = beat.name, n = n, dur = beat.dur})
+				for _, act in ipairs(beat.acts or {}) do
+					task.delay(act.at or 0, function()
+						local who = seat[act.who or "A"]
+						local res
+						if act.refill then dev:Invoke("refill") end
+						if act.seals then
+							res = dev:Invoke("act", who, "Seals")
+							task.wait(act.gap or 0.3)
+							dev:Invoke("act", who, "Technique" .. act.seals[1])
+							task.wait(act.gap or 0.3)
+							res = dev:Invoke("act", who, "Technique" .. act.seals[2])
+						elseif act.move then
+							dev:Invoke("move", who, act.move, act.hold or 0.3)
+						elseif act.ultimate then
+							dev:Invoke("ultimate", who, 100)
+							res = dev:Invoke("act", who, "Ultimate")
+						elseif act.action then
+							res = dev:Invoke("act", who, act.action, act.aim, act.chakra and {chakra = true} or nil)
+						end
+						table.insert(log.events, {t = now(), kind = "act", who = act.who, beat = beat.name,
+							action = act.action or (act.seals and ("Seals " .. act.seals[1] .. "-" .. act.seals[2])) or (act.ultimate and "Ultimate") or (act.move and "move"),
+							ok = type(res) == "table" and res.ok or res, why = type(res) == "table" and res.reason or nil})
+					end)
+				end
+				task.wait(beat.dur or 1.5)
+			end
+			workspace:SetAttribute("NDBeat", "end#" .. (#spec.beats + 1))
+			table.insert(log.events, {t = now(), kind = "end"})
+			for _, d in ipairs(dev:Invoke("damagelog") or {}) do
+				table.insert(log.events, {t = d.t, kind = "hit", by = d.by, amount = d.amount, tag = d.tag, hits = d.hits})
+			end
+			local _, s = phase()
+			log.health = {A = s.human and s.human.health, B = s.bot and s.bot.health}
+			dev:Invoke("scripted", false)
+			dev:Invoke("freezeBot", false)
+		end)
+		noUlt = false
+		if not ok then log.error = tostring(err) end
+		last = log; busy = false
+	end)
+	return "running"
+end
+
 function S.result()
 	if busy then return "running" end
 	return last and Http:JSONEncode(last) or "none"
