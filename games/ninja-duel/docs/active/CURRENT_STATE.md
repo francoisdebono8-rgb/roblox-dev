@@ -1,3 +1,8 @@
+**v36 publiée sur Roblox (04/11, 23 h 10)** (DEC-033 : B0 d'abord, publication ensuite ; « vas-y » de l'utilisateur)
+- v36 = v35 + les corrections du passage B0 (HUD tactile qui recouvrait le HUD clavier et la jauge adverse ; titre du roster caché par les boutons Roblox). Suite 38/38 PASS.
+- Publiée depuis Studio (`ND-Jeu-v36.rbxlx`, md5 cd50bdf5…) par « Publier sous… » sur la place de départ existante de l'expérience (place 77738369296521, jeu 10774567237). Studio a demandé l'autorisation des ressources pour l'expérience : accordée par l'utilisateur. Confirmation de Studio : « available to players ages 16+ ».
+- Passage B0 et dix défauts : doc projet `b0-passage-studio-v35-2026-11-04`, QA-001. Pas encore vu sur le jeu en ligne lui-même (serveur public) ni sur un vrai téléphone.
+
 **v34 → v35 : touches simples, jutsu de signes refaits, relecture des bugs, commandes tactiles (04/11)** (utilisateur : « les touches […] pas facilement faisables pour un humain », « Minato […] c'est déjà les mêmes qu'il a », « fais-moi de belles animations », puis « part à la recherche de bugs dans cette v34 »)
 - **Touches** (v34) : les jutsu de signes sont une 2e page (C tenu + 1-5 ; manette R1 + L1 tenus + □ △ ○ × / D-pad ↑) ; les routes de combo sont sur les boutons (`Brawler.buttonRoute`). Stick à l'opposé de l'adversaire : vraie esquive / vrai saut (v35).
 - **Jutsu de signes** (v34) : Minato a les siens (Rasengan, piège de scellement, barrière espace-temps, Hiraishin niveau 2) ; 14 jutsu qui répétaient un coup du perso sont remplacés (`Server/SealKits`, `Server/Families`). Clips Blender de Minato (`tools/blender/jutsu_minato.py`, `job_jutsu.py`, `nd_seals.py`) ; les 7 autres en cours.
