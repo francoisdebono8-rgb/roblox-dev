@@ -146,14 +146,14 @@ def soshuha(arm):
                            "ra": {"raise": 50, "out": 10, "twist": 30, "elbow": 60}, "la": {"raise": 54, "out": 10, "twist": 30, "elbow": 60}}), "pass")
     fling = s({"root": {"y": -.62, "z": -.3, "pitch": 16, "yaw": 22}, "torso": {"pitch": 2, "yaw": -6},
                "head": {"pitch": -14, "yaw": -14},
-               "ra": {"raise": 92, "out": 52, "twist": -16, "elbow": 6, "wrist": -30},
-               "la": {"raise": 80, "out": 46, "twist": -16, "elbow": 6, "wrist": -30},
+               "ra": {"raise": 104, "out": 54, "twist": -16, "elbow": 6, "wrist": -30},
+               "la": {"raise": 70, "out": 48, "twist": -16, "elbow": 6, "wrist": -30},
                "rf": {"y": .08, "toe": -26}})
     re.key(4, fling, "impact")
     over = merge(fling, {"root": {"z": -.34, "pitch": 14}, "torso": {"pitch": -4}, "head": {"pitch": -16},
-                         "ra": {"raise": 98, "out": 62, "wrist": -36}, "la": {"raise": 86, "out": 58, "wrist": -36}})
+                         "ra": {"raise": 110, "out": 64, "wrist": -36}, "la": {"raise": 74, "out": 60, "wrist": -36}})
     re.key(7, over, "ease")
-    held = merge(over, {"root": {"y": -.6, "z": -.32}, "ra": {"raise": 94, "elbow": 12}, "la": {"raise": 82, "elbow": 12}})
+    held = merge(over, {"root": {"y": -.6, "z": -.32}, "ra": {"raise": 104, "elbow": 12}, "la": {"raise": 72, "elbow": 12}})
     re.key(10, held, "ease")
     re.drag(["hand.R", "hand.L"], 1)
     out.append(re.build(markers={"release": 4 / 60}))
@@ -162,7 +162,7 @@ def soshuha(arm):
     rc.key(0, held, "ease")
     # the wires go taut (the fists close, the arms give an inch), then the
     # haul: both elbows driven back past the ribs, the weight sits back
-    rc.key(3, merge(held, {"root": {"z": -.3}, "ra": {"raise": 90, "out": 56, "elbow": 20, "wrist": 0}, "la": {"raise": 80, "out": 52, "elbow": 20, "wrist": 0}}), "ease")
+    rc.key(3, merge(held, {"root": {"z": -.3}, "ra": {"raise": 98, "out": 58, "elbow": 20, "wrist": 0}, "la": {"raise": 72, "out": 54, "elbow": 20, "wrist": 0}}), "ease")
     pull = s({"root": {"y": -.7, "z": .2, "pitch": 0, "yaw": 30}, "torso": {"pitch": -6, "yaw": -14},
               "head": {"pitch": -6, "yaw": -16},
               "ra": {"raise": -24, "out": 22, "twist": 10, "elbow": 104},
@@ -243,11 +243,14 @@ def windmill(arm):
 
 
 # ======================================================= SharinganCounter
-READ = {"root": {"y": -.8, "z": .14, "pitch": 6, "yaw": 26}, "torso": {"pitch": 10, "yaw": -10},
-        "head": {"pitch": -14, "yaw": -14, "roll": -4},
-        "la": {"raise": 80, "out": 10, "twist": -30, "elbow": 36, "wrist": -20},
-        "ra": {"raise": 64, "out": -24, "twist": 30, "elbow": 120},
-        "lf": {"toe": -10}}
+# The cat stance: the weight sunk on the rear leg, the front foot drawn in on
+# its ball (light: the answer is a kick), side-on; the lead hand open at face
+# height on the line of the blow, the rear hand open low across the belly.
+READ = {"root": {"y": -.94, "z": .3, "pitch": 4, "yaw": 42}, "torso": {"pitch": 8, "yaw": -16},
+        "head": {"pitch": -12, "yaw": -24, "roll": -4},
+        "la": {"raise": 96, "out": 8, "twist": -60, "elbow": 30, "wrist": -30},
+        "ra": {"raise": 40, "out": -10, "twist": 40, "elbow": 92, "wrist": -10},
+        "rf": {"yaw": 48}, "lf": {"z": -.5, "y": .08, "toe": -34, "yaw": 0}}
 
 
 def counter(arm):
@@ -263,22 +266,24 @@ def counter(arm):
     read = s(READ)
     re = Shot(arm, N + "SharinganCounter.Release")
     re.key(0, sealed, "ease")
-    re.key(3, merge(read, {"root": {"y": -.84}}), "impact")
+    re.key(2, merge(sealed, {"root": {"z": .12}, "lf": {"z": -.64, "y": .16, "toe": -20}}), "pass")
+    re.key(4, merge(read, {"root": {"y": -.98}}), "impact")
     re.key(8, read, "ease")
     re.drag(["neck"], 1)
-    out.append(re.build(markers={"release": 3 / 60}))
+    out.append(re.build(markers={"release": 4 / 60}))
 
     rc = Shot(arm, N + "SharinganCounter.Recover")
     rc.key(0, read, "ease")
-    rc.key(5, merge(read, {"root": {"y": -.84, "z": .16}, "head": {"roll": -2, "yaw": -12}, "la": {"raise": 82}}), "ease")
-    rc.key(9, merge(read, {"root": {"y": -.78}}), "ease")
-    rc.key(14, s(), "ease")
+    # held: the eyes follow the blow (the head a hair), the rear leg loads
+    rc.key(6, merge(read, {"root": {"y": -.98, "z": .32}, "head": {"roll": -1, "yaw": -20}, "la": {"raise": 98}}), "ease")
+    rc.key(9, merge(read, {"root": {"y": -.9, "z": .26}, "lf": {"z": -.6, "y": .14, "toe": -20}}), "pass")
+    rc.key(15, s(), "ease")
     out.append(rc.build())
     return out
 
 
 # ========================================================== SharinganCopy
-EYE_R = {"raise": 85.5, "out": 4.2, "twist": 56.9, "elbow": 89.2, "wrist": 0}
+EYE_R = {"raise": 87.5, "out": 18.6, "twist": 40.5, "elbow": 109.7, "wrist": 0}
 
 
 def copy(arm):
@@ -320,61 +325,74 @@ def copy(arm):
 
 # ================================================================ strikes
 def dash_attack(arm):
-    """Out of the run (DashAttack .07 / .15 / .27): the flying knee."""
+    """Out of the run (DashAttack .07 / .15 / .27): the flying knee. The
+    left foot drives off, the right knee goes first and the body follows it
+    (the bible: « genou haut puis corps suit »), the hips thrust through the
+    body at contact, the left arm thrown forward over the face and the right
+    swept back; he lands on the left foot, the right set down behind."""
     sh = Shot(arm, N + "DashAttack")
     run = s({"root": {"y": -.66, "z": -.1, "pitch": 26, "yaw": 0}, "torso": {"pitch": 12, "yaw": 0},
              "head": {"pitch": -28, "yaw": 0},
              "la": {"raise": 40, "out": 10, "twist": 0, "elbow": 90}, "ra": {"raise": -40, "out": 14, "twist": 0, "elbow": 70},
              "lf": {"x": -.04, "z": -.9, "yaw": 0}, "rf": {"x": .04, "z": .6, "y": .3, "toe": -40, "yaw": 0}})
     sh.key(0, run, "ease")
-    take = merge(run, {"travel": {"z": -.5}, "root": {"y": -.42, "z": -.2, "pitch": 8, "yaw": 6}, "torso": {"pitch": 4},
-                       "head": {"pitch": -14},
-                       "rf": {"x": .1, "z": -.6, "y": 1.1, "toe": -40, "knee": 10},
+    take = merge(run, {"travel": {"z": -.5}, "root": {"y": -.4, "z": -.24, "pitch": 10, "yaw": 6}, "torso": {"pitch": 6},
+                       "head": {"pitch": -16},
+                       "rf": {"x": .1, "z": -.9, "y": 1.1, "toe": -40, "knee": 4},
                        "lf": {"y": .06, "toe": -44},
-                       "la": {"raise": 90, "elbow": 80}, "ra": {"raise": -50, "elbow": 40}})
+                       "la": {"raise": 96, "elbow": 70}, "ra": {"raise": -50, "elbow": 40}})
     sh.key(2, take, "launch")
-    hit = s({"travel": {"z": -1.2}, "root": {"y": .1, "z": -.3, "pitch": -12, "yaw": 10}, "torso": {"pitch": 6, "yaw": -4},
-             "head": {"pitch": -4, "yaw": -6},
-             "rf": {"x": .1, "z": -2.0, "y": 1.75, "toe": -40, "knee": 10, "yaw": 0},
-             "lf": {"x": -.1, "z": -.7, "y": .9, "toe": -50, "yaw": 0},
-             "la": {"raise": 124, "out": 8, "twist": 0, "elbow": 76}, "ra": {"raise": -54, "out": 22, "twist": 0, "elbow": 30}})
+    hit = s({"travel": {"z": -1.2}, "root": {"y": .14, "z": -.42, "pitch": -10, "yaw": 8}, "torso": {"pitch": 14, "yaw": -4},
+             "head": {"pitch": -6, "yaw": -6},
+             "rf": {"x": .1, "z": -2.25, "y": 1.45, "toe": -46, "knee": 0, "yaw": 0},
+             "lf": {"x": -.1, "z": -1.15, "y": .65, "toe": -50, "yaw": 0},
+             "la": {"raise": 112, "out": 6, "twist": 0, "elbow": 64}, "ra": {"raise": -62, "out": 20, "twist": 0, "elbow": 20}})
     sh.key(4, hit, "impact")
-    sh.key(8, merge(hit, {"travel": {"z": -1.9}, "root": {"y": .06, "pitch": -16}, "rf": {"z": -2.8, "y": 1.8},
-                          "lf": {"z": -1.6, "y": .9}}), "ease")
+    sh.key(8, merge(hit, {"travel": {"z": -1.9}, "root": {"y": .1, "z": -.46, "pitch": -14}, "rf": {"z": -3.0, "y": 1.5},
+                          "lf": {"z": -1.9, "y": .7}}), "ease")
     T = -2.7
-    land = s({"travel": {"z": T}, "root": {"y": -.86, "z": -.2, "pitch": 20, "yaw": 20}, "torso": {"pitch": 14, "yaw": -10},
-              "head": {"pitch": -18, "yaw": -10},
-              "lf": {"z": LF["z"] + T, "yaw": -6}, "rf": {"x": .2, "z": T - .2, "y": .9, "toe": -30, "knee": 10, "yaw": 20},
-              "la": {"raise": 70, "out": 30, "elbow": 60}, "ra": {"raise": 30, "out": 30, "elbow": 80}})
-    sh.key(13, land, "impact")
-    sh.key(18, merge(land, {"root": {"y": -.66, "yaw": 28}, "rf": {"x": .26, "z": RF["z"] + T, "y": 0, "toe": 0, "knee": 0, "yaw": 38}}), "impact")
+    sh.key(11, s({"travel": {"z": -2.3}, "root": {"y": -.24, "z": -.3, "pitch": 6, "yaw": 12}, "torso": {"pitch": 12, "yaw": -6},
+                  "head": {"pitch": -14, "yaw": -8},
+                  "lf": {"x": -.1, "z": LF["z"] + T + .05, "y": .3, "toe": 10, "yaw": -6},
+                  "rf": {"x": .14, "z": -2.9, "y": 1.2, "toe": -40, "knee": 8, "yaw": 10},
+                  "la": {"raise": 86, "out": 24, "elbow": 60}, "ra": {"raise": 0, "out": 34, "elbow": 60}}), "pass")
+    land = s({"travel": {"z": T}, "root": {"y": -.9, "z": -.36, "pitch": 26, "yaw": 20}, "torso": {"pitch": 16, "yaw": -10},
+              "head": {"pitch": -20, "yaw": -10},
+              "lf": {"z": LF["z"] + T, "yaw": -6}, "rf": {"x": .2, "z": T - .3, "y": .8, "toe": -30, "knee": 10, "yaw": 20},
+              "la": {"raise": 70, "out": 34, "elbow": 56}, "ra": {"raise": 30, "out": 36, "elbow": 76}})
+    sh.key(14, land, "impact")
+    sh.key(19, merge(land, {"root": {"y": -.7, "z": -.16, "pitch": 14, "yaw": 28}, "torso": {"pitch": 10, "yaw": -12},
+                            "rf": {"x": .26, "z": RF["z"] + T, "y": 0, "toe": 0, "knee": 0, "yaw": 38}}), "impact")
     sh.key(29, at(T), "ease")
-    sh.drag(["neck"], 1)
+    sh.drag(["neck"], 1).drag(["shoulder.L", "forearm.L"], 1)
     return sh.build(markers={"contact": .07, "recover": .22})
 
 
 def light4(arm):
-    """The string's middle hit (L1 jab, L2 cross, L4, L3 roundhouse):
-    the lead hook to the body (.09 / .12 / .28)."""
+    """The string's middle hit (L1 jab, L2 cross, L4, L3 roundhouse): the
+    lead hook to the body (.09 / .12 / .28). A level change - the knees
+    drop, the torso tips toward the lead side, the head slips outside the
+    line - the left elbow comes out level and the hips turn it in under the
+    ribs; the turn winds the hips the other way for the kick that follows."""
     sh = Shot(arm, N + "Light4")
     sh.key(0, s(), "ease")
-    load = s({"root": {"y": -.72, "z": -.14, "pitch": 16, "yaw": 16, "roll": -6}, "torso": {"pitch": 12, "yaw": -26},
-              "head": {"pitch": -16, "yaw": 0},
-              "la": {"raise": 40, "out": 46, "twist": 20, "elbow": 96},
+    load = s({"root": {"y": -.8, "z": -.12, "pitch": 16, "yaw": 12, "roll": -8}, "torso": {"pitch": 12, "yaw": -24, "roll": -4},
+              "head": {"pitch": -14, "yaw": 4},
+              "la": {"raise": 34, "out": 50, "twist": 30, "elbow": 100},
               "ra": {"raise": 62, "out": -20, "twist": 26, "elbow": 124},
-              "lf": {"y": .12, "z": -.9}})
+              "lf": {"y": .12, "z": -.92}})
     sh.key(3, load, "ease")
     T = -.3
-    hit = s({"travel": {"z": T}, "root": {"y": -.8, "z": -.3, "pitch": 18, "yaw": 46, "roll": 4}, "torso": {"pitch": 14, "yaw": 8},
-             "head": {"pitch": -10, "yaw": -40},
-             "la": {"raise": 70, "out": 30, "twist": 70, "elbow": 92},
+    hit = s({"travel": {"z": T}, "root": {"y": -.94, "z": -.32, "pitch": 20, "yaw": 50, "roll": -6}, "torso": {"pitch": 14, "yaw": 10, "roll": -4},
+             "head": {"pitch": -8, "yaw": -44},
+             "la": {"raise": 62, "out": 36, "twist": 76, "elbow": 94},
              "ra": {"raise": 64, "out": -24, "twist": 30, "elbow": 128},
-             "lf": {"z": LF["z"] + T, "yaw": 30}, "rf": {"y": .1, "toe": -30}})
+             "lf": {"z": LF["z"] + T, "yaw": 30}, "rf": {"y": .1, "toe": -30, "yaw": 50}})
     sh.key(5, hit, "impact")
-    sh.key(8, merge(hit, {"root": {"yaw": 50}, "torso": {"yaw": 14}, "la": {"out": 20}}), "ease")
-    sh.key(13, merge(hit, {"root": {"y": -.66, "z": -.2, "yaw": 34, "roll": 0}, "torso": {"yaw": -6},
+    sh.key(8, merge(hit, {"root": {"yaw": 56, "y": -.96}, "torso": {"yaw": 16}, "la": {"out": 24}}), "ease")
+    sh.key(13, merge(hit, {"root": {"y": -.72, "z": -.2, "yaw": 34, "roll": 0}, "torso": {"yaw": -8, "roll": 0},
                            "la": {"raise": 62, "out": 10, "twist": 20, "elbow": 70},
-                           "rf": {"z": RF["z"] + T + .1, "y": .14, "toe": -12}}), "pass")
+                           "rf": {"z": RF["z"] + T + .1, "y": .14, "toe": -12, "yaw": 40}}), "pass")
     sh.key(18, at(T, {"root": {"y": -.56}}), "ease")
     sh.key(29, at(T), "ease")
     sh.drag(["neck"], 1).drag(["shoulder.R", "forearm.R"], 1)

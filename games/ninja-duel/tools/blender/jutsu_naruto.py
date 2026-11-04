@@ -271,18 +271,18 @@ def light4(arm):
     sh.key(0, s(), "ease")
     cock = s({"root": {"y": -.5, "z": .04, "pitch": 4, "yaw": 2}, "torso": {"pitch": 0, "yaw": -26},
               "head": {"pitch": -12, "yaw": 0},
-              "la": {"raise": 132, "out": 58, "twist": -24, "elbow": 112, "wrist": 0},
+              "la": {"raise": 100, "out": 84, "twist": 40, "elbow": 110, "wrist": 0},
               "ra": {"raise": 44, "out": 6, "twist": 30, "elbow": 112},
               "lf": {"y": .14, "z": -.8, "toe": -8}})
     sh.key(3, cock, "ease")
-    hit = s({"travel": {"z": -.45}, "root": {"y": -.6, "z": -.22, "pitch": 24, "yaw": 36, "roll": 5},
-             "torso": {"pitch": 18, "yaw": 22}, "head": {"pitch": -4, "yaw": -28},
-             "la": {"raise": 118, "out": -16, "twist": 6, "elbow": 30, "wrist": 0},
+    hit = s({"travel": {"z": -.45}, "root": {"y": -.6, "z": -.26, "pitch": 18, "yaw": 36, "roll": 5},
+             "torso": {"pitch": 14, "yaw": 22}, "head": {"pitch": -22, "yaw": -28},
+             "la": {"raise": 112, "out": -18, "twist": 6, "elbow": 30, "wrist": 0},
              "ra": {"raise": 52, "out": 8, "twist": 30, "elbow": 118},
              "lf": {"y": 0, "z": -1.12, "toe": 0}, "rf": {"toe": -18}})
     sh.key(5, hit, "impact")
-    sh.key(9, merge(hit, {"root": {"y": -.66, "pitch": 30, "yaw": 44}, "torso": {"pitch": 22, "yaw": 30},
-                          "head": {"pitch": 4},
+    sh.key(9, merge(hit, {"root": {"y": -.66, "pitch": 26, "yaw": 44}, "torso": {"pitch": 20, "yaw": 30},
+                          "head": {"pitch": -10},
                           "la": {"raise": 66, "out": -40, "elbow": 50}}), "ease")
     # the rear foot skips up behind him, the fists come back up
     sh.key(16, s({"travel": {"z": -.45}, "root": {"x": -.12, "y": -.56, "z": -.36, "pitch": 18, "yaw": 26}, "torso": {"pitch": 12, "yaw": 2},
@@ -310,9 +310,9 @@ def light5(arm):
     knee = s({"travel": {"z": -.24}, "root": {"x": -.36, "y": -.34, "z": -.28, "pitch": -4, "yaw": 2, "roll": -4}, "torso": {"pitch": 22, "yaw": 0},
               "head": {"pitch": 6, "yaw": -2},
               "la": merge(hook, {"raise": 64, "elbow": 74, "wrist": 44}), "ra": merge(hook, {"raise": 62, "elbow": 76, "wrist": 44}),
-              "rf": {"x": .02, "y": 1.06, "z": -.1, "toe": 40, "yaw": 0}})
+              "rf": {"x": .02, "y": 1.46, "z": -.32, "toe": 40, "yaw": 0}})
     sh.key(6, knee, "impact")
-    sh.key(10, merge(knee, {"root": {"y": -.32}, "torso": {"pitch": 24}, "rf": {"y": 1.16, "z": -.16}}), "ease")
+    sh.key(10, merge(knee, {"root": {"y": -.32}, "torso": {"pitch": 24}, "rf": {"y": 1.56, "z": -.4}}), "ease")
     # the foot comes back down behind, the hands shove him off
     sh.key(16, s({"travel": {"z": -.24}, "root": {"x": -.14, "y": -.52, "z": -.02, "pitch": 14, "yaw": 14}, "torso": {"pitch": 8, "yaw": -6},
                   "head": {"pitch": -10, "yaw": -10},
