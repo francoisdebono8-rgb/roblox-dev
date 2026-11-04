@@ -30,7 +30,7 @@ Avant tout nouvel ID, rechercher une intention équivalente dans le backlog, y c
 - dependencies: QA-002, QA-003
 - subsystem: qa
 - character: ALL
-- summary: Validation Studio du build courant, roster réel et contrôles. (04/11, DEC-033) Lot B0 : v35 rejouée en six scènes, PC / manette / téléphone émulé, effets ON / OFF, tableau de preuves et dix pires défauts ; clôture B0 = tableau rempli et défauts classés.
+- summary: Validation Studio du build courant, roster réel et contrôles. (04/11, DEC-033) Lot B0 : v35 rejouée en six scènes, PC / manette / téléphone émulé, effets ON / OFF, tableau de preuves et dix pires défauts ; clôture B0 = tableau rempli et défauts classés. Sortie B1 (DEC-034) : les six scènes rejouées sur le même build que B0, effets allumés et éteints, PC / manette / téléphone émulé, comparées à la baseline B0 ; puis l'utilisateur et des débutants non briefés.
 - sources: [PROJECT_STRUCTURE](../tools/PROJECT_STRUCTURE.md); [MAINTENANCE_BACKLOG_SOURCE](../archive/tools/MAINTENANCE_BACKLOG_SOURCE.md); [ORCHESTRATION_REFACTOR](../archive/reports/ORCHESTRATION_REFACTOR.md); [COMBAT_CONVERGENCE_ONLINE_ROSTER](../archive/missions/COMBAT_CONVERGENCE_ONLINE_ROSTER.md); [CORE_COMBAT_CONVERGENCE_2](../archive/missions/CORE_COMBAT_CONVERGENCE_2.md)
 - validation: Commit/hash exacts ; vraie sélection et inputs ; neutral, chaîne, routes, outils, jutsu, défense, relance, air/mur, éveil, KO, reset/rematch. Étendre la couverture au roster courant (ancienne matrice 4×4 historique). Par nouveau fighter au moins un duel IA ; couverture diversifiée des familles puis matchups à risque ; manette réelle et acceptation humaine distinctes.
 - evidence: 04/11 (B0, DEC-033) : ND-Test-v35 (serveur d76a48b0…) rejoué dans Studio, six scènes, clavier / manette / iPhone émulé ; tableau et dix défauts dans le doc projet `b0-passage-studio-v35-2026-11-04` (IA trop forte pour un débutant, caméra au bord de l'arène, recul hors cadre, adversaire hors écran, HUD tactile superposé et titre caché — ces deux-là corrigés —, Rasengan peu lisible, pas d'interrupteur d'effets). Restent : testeurs débutants, vrai téléphone, défi en ligne à deux comptes. 18/10 : Studio exact bc7faa3 ouvert et MCP connecté (fingerprint fdba31ab…f09194) ; vérifications natives ciblées dans [audit incrémental](../archive/audits/2026-10-18-feel-preparation/AUDIT.md), aucune nouvelle validation exhaustive20. Préparation M4/M7 sous QA-004 ; conserver limites hardware/feel.
@@ -479,7 +479,7 @@ Studio (3 par lot) : **S22** trois légers+lourd à vitesse normale : anticipati
 - dependencies: ANIM-001, ANIM-002
 - subsystem: animation
 - character: Sasuke
-- summary: locomotion (départ, course ninja, freinage, virages, sauts, mur, chute, réception), taijutsu, lancers en mouvement, Katon (préparation→sceaux→inspiration→projection→suite), Chidori (formation, course, pilotage borné, saut, mur, plongée, touché, raté, sortie)
+- summary: locomotion (départ, course ninja, freinage, virages, sauts, mur, chute, réception), taijutsu, lancers en mouvement, Katon (préparation→sceaux→inspiration→projection→suite), Chidori (formation, course, pilotage borné, saut, mur, plongée, touché, raté, sortie) (04/11, DEC-034 lot 3) Signature bêta : le Chidori, verticalité, lisible sans interface ni effets.
 - sources: [mission](../archive/requests/2026-10-27-animation-mastery-combat-breakthrough.md) §11 ; références recherchées (§5)
 - validation: séquence aux vraies touches avec VFX coupés puis activés ; amélioration visible par un humain
 - evidence: `8e664a8` Sasuke réécrit pose par pose (`clips_lion2.py`, 60 i/s, rapport de flips). Studio : frappe en course, Chidori formé→course→estoc aux vraies touches, Phoenix Flower en duel IA, 0 erreur. VFX coupés/activés et verdict humain PENDING.
@@ -492,7 +492,7 @@ Studio (3 par lot) : **S22** trois légers+lourd à vitesse normale : anticipati
 - dependencies: ANIM-003
 - subsystem: animation
 - character: Minato
-- summary: économie, appuis exacts, angles rapides, kunai en déplacement, FTG intention→disparition→arrivée cohérente→décision, Rasengan avec vraie mécanique
+- summary: économie, appuis exacts, angles rapides, kunai en déplacement, FTG intention→disparition→arrivée cohérente→décision, Rasengan avec vraie mécanique (04/11, DEC-034 lot 3) Signature bêta : le Dieu du tonnerre volant (marque puis angle) ; Rasengan lisible, test avant / après VFX Studio.
 - sources: [mission](../archive/requests/2026-10-27-animation-mastery-combat-breakthrough.md) §12
 - validation: séquence aux vraies touches ; ne se lit pas comme un Sasuke plus rapide
 - evidence: `8e664a8` Minato réécrit (`clips_flash2.py`, appuis sur la plante, foulée plus longue, FTG intention/départ/arrivée). Studio : FTG→Rasengan en course aux vraies touches, duel IA 25 s, 0 erreur. Reste : flip résiduel RightHip 122° à l'impact du Light3 ; verdict humain.
@@ -841,7 +841,7 @@ Sortie commune : trois Lights/Heavy physiques distincts, branche seulement aprè
 - dependencies: QA-001
 - subsystem: camera
 - character: CORE4
-- summary: Continuité camera et swap
+- summary: Continuité camera et swap (04/11, DEC-034 lot 1) Défauts B0 2–4 : caméra coincée au bord de l'arène, perso hors cadre en reculant vers la caméra, adversaire hors écran au début d'une manche et intro de la manche 2 de dos.
 - sources: [ARENA_CAMERA_PRESENTATION](../archive/systems/ARENA_CAMERA_PRESENTATION.md); [CLAUDE_FINAL_TODAY_POLISH](../archive/missions/CLAUDE_FINAL_TODAY_POLISH.md); [CLAUDE_45MIN_FINAL_PLAYABLE_PASS](../archive/missions/CLAUDE_45MIN_FINAL_PLAYABLE_PASS.md); [COMBAT_CONVERGENCE_ONLINE_ROSTER](../archive/missions/COMBAT_CONVERGENCE_ONLINE_ROSTER.md)
 - validation: Lock/free, fade, zoom, sideswap, téléport/throw/air/wall sans snap gênant ; native avant/après
 - evidence: Mécanismes existent ; 2026-10-16 : basculer le verrouillage convertit le yaw (plus de bascule vers le nord du monde ni de décalage au re-verrouillage) ; la secousse s’applique après le lissage (avant : ~17 % survivait et restait incrustée) ; plus de secousse pendant le drain de la marque maudite. TECHNICAL compile PASS ; NATIVE_STUDIO PENDING
@@ -893,7 +893,7 @@ Sortie commune : trois Lights/Heavy physiques distincts, branche seulement aprè
 - dependencies: QA-001
 - subsystem: inputs
 - character: CORE4
-- summary: Grammaire simple, tutoriel et choix contextuels
+- summary: Grammaire simple, tutoriel et choix contextuels (04/11, DEC-034 lot 2) Première minute dès le lancement : choix du ninja en un geste, consignes dans le jeu (bouger, frapper, esquiver, signature sur une touche), premier duel direct contre l'IA facile, révélation progressive du HUD ; le tutoriel complet devient ENTRAÎNEMENT (étapes au choix, sonde QA conservée) ; mesures premier input / première technique / premier duel / refus / abandons (cibles hypothétiques < 15 s, < 45 s, < 3 min).
 - sources: [ARENA_CAMERA_PRESENTATION](../archive/systems/ARENA_CAMERA_PRESENTATION.md); [CLAUDE_FINAL_TODAY_POLISH](../archive/missions/CLAUDE_FINAL_TODAY_POLISH.md); [CLAUDE_45MIN_FINAL_PLAYABLE_PASS](../archive/missions/CLAUDE_45MIN_FINAL_PLAYABLE_PASS.md); [COMBAT_CONVERGENCE_ONLINE_ROSTER](../archive/missions/COMBAT_CONVERGENCE_ONLINE_ROSTER.md); [CORE_COMBAT_CONVERGENCE_2](../archive/missions/CORE_COMBAT_CONVERGENCE_2.md)
 - validation: Toutes routes apprenables et cohérentes keyboard/manette, aucun input conflict ; native avant/après
 - evidence: Mécanismes existent ; 2026-10-16 : à la manette, les cues affichées traduisent les touches clavier en boutons (E → ×, SPACE → ×, C → R1 + L1, X → D-pad →, 1 → R1 + ×, labels issus de Controls) ; les cues WIRED/BOUND (comment s’échapper du fil/sable, utiliser Dragon Flame) sont désormais affichées. TECHNICAL PASS (Regression) ; NATIVE_STUDIO PENDING 2026-10-16 soir : l’étape « interrompre le jutsu » du tutoriel montre au moins 0,75 s de signes quel que soit l’adversaire (`e0abc32`)
@@ -919,7 +919,7 @@ Sortie commune : trois Lights/Heavy physiques distincts, branche seulement aprè
 - dependencies: QA-001
 - subsystem: network
 - character: ALL
-- summary: Boucle de duel réellement publiée Roblox
+- summary: Boucle de duel réellement publiée Roblox (04/11, DEC-034 lot 6) Test réel à deux comptes et deux serveurs : invitation, accepter / refuser, téléportation, sélection, manche, revanche, retour, plus les échecs (pas de réponse, refus, téléportation ratée, déconnexion) et un message clair à chacun.
 - sources: [FUTURE_SYSTEMS](../archive/systems/FUTURE_SYSTEMS.md); [ROADMAP_WEEK](../archive/plans/ROADMAP_WEEK.md); [ROSTER_ARCHETYPES_32](../archive/design_research/02_character_architecture/ROSTER_ARCHETYPES_32.md); [COMBAT_CONVERGENCE_ONLINE_ROSTER](../archive/missions/COMBAT_CONVERGENCE_ONLINE_ROSTER.md)
 - validation: Après étape Studio à deux clients et latence mesurée : rejoindre une expérience Roblox publiée, trouver un adversaire, choisir, disputer/terminer un duel serveur, rematch ou retour en file, quitter/rejoindre sans corrompre la session. Tester avec deux comptes/clients sur Roblox réel ; consigner PlaceID, version, commit, hash, conditions réseau et résultat. Deux clients Studio seuls ne clôturent pas le produit online.
 - evidence: 2026-10-16 DEC-012 : périmètre ouvert par la mission utilisateur (vrai 1v1 joueur contre joueur, autorité serveur, réactivité client, prédiction si utile, réconciliation, validation tenant compte de la latence, projectiles/substitution/FTG/air/mur/clash sous latence, sync chakra/état). Auditer d’abord les fondations Codex (`33028b2` : OnlineHost/Match/Queue/Validation/Replication) avant de reconstruire. 2026-10-16 fondation livrée ([rapport](../archive/reports/ONLINE_FOUNDATION.md), merge `560d059`) : file casual, duel privé par code, choix en face à face, deux humains dans le même moteur serveur, validation par joueur (anti-triche, débit, visée), forfait à la déconnexion, outil de latence Debug seulement ; prédiction client volontairement écartée avant mesure. TECHNICAL PASS (Online 17 cas, isolation). NATIVE_STUDIO PENDING : session deux clients et matrice 0 / ~60 / ~100–120 ms + gigue
@@ -960,7 +960,7 @@ Sortie commune : trois Lights/Heavy physiques distincts, branche seulement aprè
 - dependencies: QA-001
 - subsystem: balance
 - character: ALL
-- summary: Balance humain et durée sans inflation HP
+- summary: Balance humain et durée sans inflation HP (04/11, DEC-034 lot 1) IA en trois niveaux (facile / normale / difficile), facile pour un nouveau joueur, montante dans le tournoi ; défaut B0 1 (107 PV perdus en 15 s) ; temps sans contrôle sous les coups re-mesuré par niveau.
 - sources: [FUTURE_SYSTEMS](../archive/systems/FUTURE_SYSTEMS.md); [ROADMAP_WEEK](../archive/plans/ROADMAP_WEEK.md); [ROSTER_ARCHETYPES_32](../archive/design_research/02_character_architecture/ROSTER_ARCHETYPES_32.md); [COMBAT_CONVERGENCE_ONLINE_ROSTER](../archive/missions/COMBAT_CONVERGENCE_ONLINE_ROSTER.md)
 - validation: Seeds/sim distinctes des duels humains ; diversité routes/defense, pas augmenter HP pour masquer manque de décisions
 - evidence: 18/10 : [audit incrémental](../archive/audits/2026-10-18-feel-preparation/AUDIT.md). Grille str0.51–0.59s pour18/20 ; Sand0.82/Puppet0.76. Push et distinct-tech ne justifient aucun retuning avant M4 sous QA-004 ; comparer aux HP produit et scènes continues, aucun objectif de durée déduit des seeds.
@@ -987,7 +987,7 @@ Sortie commune : trois Lights/Heavy physiques distincts, branche seulement aprè
 - dependencies: CHR-EXT-002, NET-001
 - subsystem: release
 - character: ALL
-- summary: Alpha publique Roblox dès le roster baseline et le combat online suffisamment jouables. DEC-030 (28/10) : bêta ouverte avec les huit premiers combattants terminés (Parties 1–8), socle et boucle joueur (Parties 9–10), en ligne (Partie 11) ; les douze autres rejoignent la bêta un par un
+- summary: Alpha publique Roblox dès le roster baseline et le combat online suffisamment jouables. DEC-030 (28/10) : bêta ouverte avec les huit premiers combattants terminés (Parties 1–8), socle et boucle joueur (Parties 9–10), en ligne (Partie 11) ; les douze autres rejoignent la bêta un par un (04/11, DEC-034 lot 5) Jouer seul : tournoi IA rapide, PASSER visible, récompense sans pay-to-win (sceau de champion par ninja, titres, classement) sauvegardée par ProfileRepository après correction des trous de la relecture sécurité ; entraînement libre contre un mannequin réglable.
 - sources: [Décision alpha](DECISIONS.md#dec-018--alpha-publique-et-online-réel) ; [demande archivée](../archive/missions/PUBLIC_ALPHA_AFTER_ROSTER_20.md)
 - validation: 20 baseline réellement jouables ; flow NET-001 ; pas de crash/verrouillage courant de session ; autorité serveur et déconnexion/forfait ; persistance non destructive ou désactivée ; canal simple de bugs/feedback ; télémétrie pratique (choix, durée/résultat, abandon, rematch, erreurs) ; permissions/auth réelles et PlaceID/version/commit/hash consignés. Ni VFX premium, ni balance finale, ni progression complète, ni monétisation requis. Passage privé/test publié puis public : pas de dépendance circulaire NET-001/REL-001.
 - evidence: Au HEAD 04d6eb0 : direction alpha autorisée, publication et identifiants non prouvés. Cet audit ne publie rien.

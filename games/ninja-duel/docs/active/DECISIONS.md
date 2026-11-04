@@ -238,14 +238,27 @@ Décision utilisateur du **04/11 à 22 h 45**, sur l'[audit produit bêta → la
 
 B0 (Claude) : le build exact v35 rejoué dans Studio en six scènes (arrivée, premier coup, course → saut → mur → attaque → atterrissage, signature, duel complet, KO et revanche), au clavier, à la manette et en émulation téléphone, effets allumés puis éteints ; tableau de preuves TECHNICAL / NATIVE_STUDIO / HUMAN_VISUAL_FEEL / LIVE_ROBLOX et dix pires défauts (sévérité, fréquence, impact). B0 (utilisateur) : testeurs débutants non guidés et défi en ligne réel entre deux comptes et deux serveurs. Suivi dans [QA-001](MASTER_BACKLOG.md#qa-001--validation-studio--artefact-courant-roster-réel-et-manette) et NET-001. Pas de B1, de nouveau mode ni de publicité sans nouvelle décision.
 
-## DEC-034 — B1 ouvert : premier plaisir et feel, avec les relectures Roblox et les animations (04/11)
+## DEC-034 — Bêta : B1 (premier plaisir et feel) puis B2 (jouer seul, en ligne prouvé), un lot à la fois (04/11)
 
-Décision utilisateur du **04/11 à 23 h 07**, après B0 (DEC-033) et la publication de la v36 : **« Both et intègre ça à B1 »**. B1 comprend :
+Décision utilisateur du **04/11 à 23 h 07**, après B0 (DEC-033) et la publication de la v36 : **« Both et intègre ça à B1 »** (relectures Roblox et animations dans B1). **Revue à 23 h 10** sur sa remarque : « ça me semble pas couvrir l'ensemble de ce que t'as demandé codex pr la bêta, le fun jouable même si y'a personne directement en lancement l'appli, le tuto etc. ». Le plan relit l'[audit](../archive/requests/2026-11-04-beta-to-launch-product-growth-audit.md) (`26f8623`, §2–§7) et la [revue bêta / V1](../reports/beta-v1-strategy-2026-11-04/REVIEW.md) en entier ; plan détaillé et correspondance point par point dans le doc projet `plan-beta-b1-b2-2026-11-04`.
 
-1. les défauts 1 à 4 de B0 : une IA qui écrase un débutant, la caméra coincée au bord de l'arène, le perso qui sort du cadre en reculant vers la caméra, l'adversaire hors de l'écran au début d'une manche (et l'intro de la manche 2) ;
-2. les trois relectures du plugin Roblox (sécurité des échanges client-serveur, mémoire et performance, interface et mobile) et leurs corrections ;
-3. les animations Blender des sept autres combattants (jutsu de signes, coups 4 et 5, éveil de Naruto) ;
-4. si le temps le permet, le seul test avant / après VFX Studio prévu par l'inbox (le Rasengan).
+Règle (revue, §4) : un lot à la fois ; chaque lot part d'une scène jouée et finit par la même scène rejouée sur le nouveau build ; preuves TECHNICAL / NATIVE_STUDIO / HUMAN_VISUAL_FEEL / LIVE_ROBLOX séparées ; ni feature décorative, ni nouveau perso, ni publicité.
 
-Sortie B1 (audit `26f8623`, §6) : un débutant termine son premier duel et veut rejouer ; défauts restants consignés. Pas de nouveau mode, de nouveau perso ni de publicité dans B1.
+**B1 — premier plaisir et feel**
+
+1. **Le jeu répond** : IA en trois niveaux (facile pour un nouveau joueur et par défaut hors tournoi, montante dans le tournoi, sélecteur au roster ; défaut B0 1) ; temps sans contrôle sous les coups re-mesuré par niveau (sim du 03/11 : 16–27 %, ultime 4,5 s) ; caméra (défauts B0 2–4) ; scène air / mur / impacts rejouée jusqu'au bout. Tickets : BAL-001, CAM-001, QA-004.
+2. **La première minute, seul, dès le lancement** : choix du ninja en un geste, 30 s de consignes dans le jeu (bouger, frapper, esquiver, signature sur une touche), premier duel direct contre l'IA facile, REVANCHE en grand ; révélation progressive du HUD ; le tutoriel complet devient ENTRAÎNEMENT (étapes au choix, sonde QA conservée) ; mesures du premier input, de la première technique, du premier duel, des refus et des abandons. Cibles hypothétiques de l'audit : < 15 s, < 45 s, < 3 min. Ticket : UX-001.
+3. **Deux signatures exceptionnelles** : Chidori de Sasuke (verticalité), Dieu du tonnerre volant de Minato (marque puis angle), lisibles sans interface ni effets ; test avant / après VFX Studio sur le Rasengan (défaut B0 7) ; interrupteur d'effets (défaut B0 8). Tickets : ANIM-003, ANIM-004.
+4. **Travail déjà lancé** : les trois relectures Roblox (sécurité, performance, interface / mobile) et leurs corrections confirmées ; les animations Blender des sept autres, intégrées seulement si elles rendent mieux dans la scène jouée ; défauts B0 9–10.
+
+Sortie B1 (audit §6–§7) : les six scènes rejouées sur le même build, effets allumés et éteints, PC / manette / téléphone émulé ; l'utilisateur puis des débutants non briefés (objectif proposé : 70 % finissent le premier duel) ; un débutant finit son premier duel et veut rejouer ; défauts restants consignés ; version publiée avec le feu vert de l'utilisateur.
+
+**B2 — jouer seul, en ligne prouvé**
+
+5. **Tournoi IA et entraînement, vrais modes seuls** : tournoi rapide (aujourd'hui 15–20 min), PASSER visible partout, récompense sans pay-to-win (décision du 04/11 : classement, titre, monnaie ; sceau de champion par ninja), sauvegarde par `ProfileRepository` après correction des trous de la relecture sécurité (propriété réseau du corps en duel local, actions du tournoi sans limite) ; entraînement libre contre un mannequin réglable. Ticket : REL-001.
+6. **En ligne prouvé** : défi entre deux serveurs joué en vrai avec deux comptes (parcours et échecs), messages d'erreur utiles. Ticket : NET-001.
+
+Sortie B2 (audit §6) : un joueur seul a un objectif ; deux joueurs se trouvent, se battent, rejouent et sortent.
+
+Hors bêta (audit §4–§6, gates L1 / F1) : file « duel rapide » sur tout le jeu (seulement si le test en ligne la montre nécessaire), entonnoir par source, page Roblox et publicité, hub, progression, classé, boutique, nouveaux persos, tournoi entre joueurs ; risque de droits Naruto à trancher avant toute promotion payante. Restent à l'utilisateur : testeurs débutants, vrai téléphone, deux comptes, vidéos des trois premières minutes. Questions ouvertes (lot 5) : format du tournoi rapide ; monnaie dès la bêta ou avec la boutique.
 
