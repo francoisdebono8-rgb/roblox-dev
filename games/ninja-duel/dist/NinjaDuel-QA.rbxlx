@@ -4767,7 +4767,7 @@ return {
       <Item class="StringValue" referent="ND29">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">fe9864d9a242c561a32bdcd942492ffe6186e0251497f6aa48338549e0f3e0e8</string>
+          <string name="Value">e34026e9a80229af4f719980dbc76dee5ebae21a5c4c23f44023c723d92eb104</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND30">
@@ -13461,6 +13461,28 @@ return Costumes
       </Item>
       <Item class="ModuleScript" referent="ND59">
         <Properties>
+          <string name="Name">CupOdds</string>
+          <ProtectedString name="Source">-- The Prodigy Tournament's skipped matches (Server/Tournament): how often the
+-- fighter of the row beats the one of the column, measured on the engine itself
+-- (headless AI-vs-AI fights in the arena, tests/Balance.sim.luau's harness, 10
+-- seeds per ordered pairing, both sides: p = (row's wins as first + column's
+-- losses as first) / 20). Generated 04/11 for the eight of the beta; re-run
+-- the simulation after a balance pass. Tournament:chance clamps to 10-90 %.
+return {
+	Legion={GentleFist=0.60,Lion=0.70,Sand=0.50,Leaf=0.40,Flashstep=0.65,Mirage=0.85,Copycat=0.40},
+	GentleFist={Legion=0.40,Lion=0.60,Sand=0.20,Leaf=0.35,Flashstep=0.60,Mirage=0.55,Copycat=0.60},
+	Lion={Legion=0.30,GentleFist=0.40,Sand=0.25,Leaf=0.55,Flashstep=0.25,Mirage=0.50,Copycat=0.25},
+	Sand={Legion=0.50,GentleFist=0.80,Lion=0.75,Leaf=0.70,Flashstep=0.60,Mirage=0.70,Copycat=0.60},
+	Leaf={Legion=0.60,GentleFist=0.65,Lion=0.45,Sand=0.30,Flashstep=0.65,Mirage=0.70,Copycat=0.40},
+	Flashstep={Legion=0.35,GentleFist=0.40,Lion=0.75,Sand=0.40,Leaf=0.35,Mirage=0.55,Copycat=0.35},
+	Mirage={Legion=0.15,GentleFist=0.45,Lion=0.50,Sand=0.30,Leaf=0.30,Flashstep=0.45,Copycat=0.25},
+	Copycat={Legion=0.60,GentleFist=0.40,Lion=0.75,Sand=0.40,Leaf=0.60,Flashstep=0.65,Mirage=0.75},
+}
+</ProtectedString>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="ND60">
+        <Properties>
           <string name="Name">DevCommands</string>
           <ProtectedString name="Source">-- Studio tooling boundary (Codex 33028b2, ported): the F6 panel's remote and
 -- the `tool` bindable op reach DevTools only through this allowlist of
@@ -13490,7 +13512,7 @@ return Commands
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND60">
+      <Item class="ModuleScript" referent="ND61">
         <Properties>
           <string name="Name">DevFlight</string>
           <ProtectedString name="Source">-- Debug/QA places only (DevHooks.install): a flight recorder for a human
@@ -13620,7 +13642,7 @@ return Flight
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND61">
+      <Item class="ModuleScript" referent="ND62">
         <Properties>
           <string name="Name">DevGateCheck</string>
           <ProtectedString name="Source">-- Debug/QA places only (build.py DEBUG_SOURCES): QA-004 gate scenarios run
@@ -14141,7 +14163,7 @@ end
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND62">
+      <Item class="ModuleScript" referent="ND63">
         <Properties>
           <string name="Name">DevHooks</string>
           <ProtectedString name="Source">-- Studio-only playtest hooks. A BindableFunction in ServerStorage lets a Studio
@@ -14481,7 +14503,7 @@ return DevHooks
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND63">
+      <Item class="ModuleScript" referent="ND64">
         <Properties>
           <string name="Name">DevProfiler</string>
           <ProtectedString name="Source">-- Studio profiler (Codex 33028b2, ported): instance-level instrumentation,
@@ -14608,7 +14630,7 @@ return Profiler
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND64">
+      <Item class="ModuleScript" referent="ND65">
         <Properties>
           <string name="Name">DevQA</string>
           <ProtectedString name="Source">-- Native smoke of the Studio dev tools themselves (Codex 33028b2, ported).
@@ -14679,7 +14701,7 @@ return QA
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND65">
+      <Item class="ModuleScript" referent="ND66">
         <Properties>
           <string name="Name">DevReport</string>
           <ProtectedString name="Source">-- Profiler report export (Codex 33028b2, ported). Roblox truncates long Output
@@ -14714,7 +14736,7 @@ return Report
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND66">
+      <Item class="ModuleScript" referent="ND67">
         <Properties>
           <string name="Name">DevRosterCheck</string>
           <ProtectedString name="Source">-- Debug/QA places only (build.py DEBUG_SOURCES): a native Studio pass for
@@ -14840,7 +14862,7 @@ end
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND67">
+      <Item class="ModuleScript" referent="ND68">
         <Properties>
           <string name="Name">DevScenarios</string>
           <ProtectedString name="Source">-- Explicit QA setups (Codex 33028b2, ported to the current Matches API). Each
@@ -14936,7 +14958,7 @@ return Scenarios
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND68">
+      <Item class="ModuleScript" referent="ND69">
         <Properties>
           <string name="Name">DevTools</string>
           <ProtectedString name="Source">-- Studio dev-tool dispatcher (Codex 33028b2, ported): shared by the F6 panel
@@ -15020,7 +15042,7 @@ return Tools
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND69">
+      <Item class="ModuleScript" referent="ND70">
         <Properties>
           <string name="Name">DonorAnimations</string>
           <ProtectedString name="Source">-- R6 -&gt; R15 compatibility only; transforms/times remain the donor choreography.
@@ -15062,7 +15084,7 @@ return Donor
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND70">
+      <Item class="ModuleScript" referent="ND71">
         <Properties>
           <string name="Name">Elements</string>
           <ProtectedString name="Source">-- Element families define different gameplay primitives. Fire and Wind are
@@ -15196,7 +15218,7 @@ return Elements
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND71">
+      <Item class="ModuleScript" referent="ND72">
         <Properties>
           <string name="Name">Families</string>
           <ProtectedString name="Source">-- Reusable technique families and fighter traits (ROSTER_20_BREADTH_PASS).
@@ -16141,7 +16163,7 @@ return Families
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND72">
+      <Item class="ModuleScript" referent="ND73">
         <Properties>
           <string name="Name">Gale</string>
           <ProtectedString name="Source">-- Temari (Gale, roster wave): the wind fan, on the shared systems. Her kit
@@ -16466,7 +16488,7 @@ return Gale
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND73">
+      <Item class="ModuleScript" referent="ND74">
         <Properties>
           <string name="Name">Interactions</string>
           <ProtectedString name="Source">-- Interactions between jutsu (stage 6, the approved move list, "Interactions:
@@ -16608,7 +16630,7 @@ return Interactions
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND74">
+      <Item class="ModuleScript" referent="ND75">
         <Properties>
           <string name="Name">Legion</string>
           <ProtectedString name="Source">-- Naruto Uzumaki (roster wave: Part I, the Chunin Exam to the Valley of the
@@ -16917,7 +16939,7 @@ return Legion
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND75">
+      <Item class="ModuleScript" referent="ND76">
         <Properties>
           <string name="Name">Lobby</string>
           <ProtectedString name="Source">-- Players online and challenges between them (user 04/11: « rentrer dans le
@@ -17061,10 +17083,11 @@ function Lobby:stateOf(p)
 	if not s then return "free" end
 	if s.online and (s.online.kind=="duel" or s.online.kind=="travel") then return "duel" end
 	if s.online then return "queue" end
+	if s.cup then return "cup" end
 	if s.phase=="Duel" or s.phase=="Result" then return "training" end
 	return "free"
 end
-function Lobby.challengeable(state) return state=="free" or state=="training" or state=="queue" end
+function Lobby.challengeable(state) return state=="free" or state=="training" or state=="queue" or state=="cup" end
 
 -- ------------------------------------------------------------ presence
 function Lobby:publish(now)
@@ -17397,7 +17420,7 @@ return Lobby
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND76">
+      <Item class="ModuleScript" referent="ND77">
         <Properties>
           <string name="Name">LookMeshData</string>
           <ProtectedString name="Source">-- Generated by tools/blender/looks_to_luau.py from the Studio imports of
@@ -17710,7 +17733,7 @@ return {
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND77">
+      <Item class="ModuleScript" referent="ND78">
         <Properties>
           <string name="Name">LookMeshes</string>
           <ProtectedString name="Source">-- Blender-made looks (user 29/10 14:37: "produis les designs sur Blender").
@@ -17814,7 +17837,7 @@ return LookMeshes
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND78">
+      <Item class="ModuleScript" referent="ND79">
         <Properties>
           <string name="Name">Looks</string>
           <ProtectedString name="Source">-- Looks of the 8 main fighters, final-beta pass (user 29/10 14:00-14:07:
@@ -18484,7 +18507,7 @@ return Looks
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="Script" referent="ND79">
+      <Item class="Script" referent="ND80">
         <Properties>
           <string name="Name">Main</string>
           <ProtectedString name="Source">workspace:SetAttribute("NinjaDuelDebug",true)
@@ -18527,7 +18550,7 @@ print("[NinjaDuel] Ready — select a fighter and start the duel")
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND80">
+      <Item class="ModuleScript" referent="ND81">
         <Properties>
           <string name="Name">Matches</string>
           <ProtectedString name="Source">local Players=game:GetService("Players")
@@ -18573,6 +18596,8 @@ function Matches.new(remote)
 	local self=setmetatable({remote=remote,folder=folder,sessions={},nextLane=0,epoch=0},Matches)
 	-- Online 1v1 (queue, private codes, two-player duels) on the same sessions.
 	self.online=Online.new(self)
+	-- (04/11) The Prodigy Tournament against the AI (Server/Tournament).
+	self.tournament=require(script.Parent.Tournament).new(self)
 	return self
 end
 -- Each duel owns a stage far from every other one.
@@ -18599,6 +18624,8 @@ function Matches:selection(player,notice)
 	if s.online and self.online then self.online:leave(player,s) end
 	self:destroy(s)
 	player.Character=nil; s.phase="Selection"; s.epoch+=1
+	-- Back on the roster: a tournament in progress ends here.
+	s.cup=nil;s.cupMatch=nil;s.spectate=nil;s.autopilot=nil;s.cupPilot=nil
 	self:send(player,{phase="Selection",epoch=s.epoch,notice=notice})
 	-- (Lobby, 04/11) in a duel server the roster is the lobby: back home.
 	if self.lobby then self.lobby:onSelection(player) end
@@ -18825,7 +18852,9 @@ function Matches:view(s,cursor,mine,theirs)
 		bodies=Bodies.view(s.combat),
 		-- zones: wind lanes and updrafts (Zones.snapshot), drawn per kind by the client.
 		projectiles=projectiles,hazards=hazards,zones=Zones.snapshot(s.combat,now),serverNow=now,intro=math.max(0,(s.introUntil or 0)-now),ko=s.finishing==true,
-		round=s.round or 1,wins={human=wins[mine.id] or 0,bot=wins[theirs.id] or 0},roundsToWin=s.roundsToWin or 1,matchPoint=s.matchPoint}
+		round=s.round or 1,wins={human=wins[mine.id] or 0,bot=wins[theirs.id] or 0},roundsToWin=s.roundsToWin or 1,matchPoint=s.matchPoint,
+		-- (Tournament) the bracket in play, and a match the player only watches.
+		cup=if s.cup and self.tournament then self.tournament:view(s.cup) else nil,spectate=s.spectate==true}
 end
 function Matches:request(player,payload)
 	local s=self:session(player); local clock=os.clock()
@@ -18839,13 +18868,16 @@ function Matches:request(player,payload)
 	local action=payload.action
 	if action=="Ready" then
 		if s.online and self.online then self.online:refresh(player,s)
-		elseif s.phase=="Selection" then self:send(player,{phase="Selection",epoch=s.epoch}) else self:snapshot(player,s) end
+		elseif s.phase=="Selection" then self:send(player,{phase="Selection",epoch=s.epoch})
+		elseif (s.phase=="Bracket" or s.phase=="Champion") and s.cup then self.tournament:send(player,s,s.phase)
+		elseif s.combat then self:snapshot(player,s) end
 		return
 	end
 	if payload.epoch~=s.epoch then return end
 	-- The online flow owns every request of a player who is in it.
 	if self.online and self.online:request(player,s,action,payload,clock) then return end
 	if action=="TutorialSkip" and s.tutorial then self:selection(player);s.tutorial=nil;return end
+	if self.tournament and self.tournament:request(player,s,action,payload) then return end
 	if action=="Start" or action=="Tutorial" or action=="Rematch" or action=="Selection" then
 		if clock-s.lastLifecycle&lt;0.8 then return end
 		if (action=="Start" or action=="Tutorial") and s.phase=="Selection" then
@@ -18937,13 +18969,15 @@ function Matches:update(dt,now)
 	for player,s in self.sessions do
 		-- Online players' duels are stepped once each by Online:update below.
 		if s.phase=="Duel" and not s.online then
-			if os.clock()-s.human.lastMove&gt;0.4 then s.human.move=Vector3.zero end
+			-- (an autopilot drives the first fighter itself: its stick is not stale)
+			if not s.autopilot and os.clock()-s.human.lastMove&gt;0.4 then s.human.move=Vector3.zero end
 			s.combat:update(math.min(dt,0.1),now)
 			if s.phase=="Duel" then
 				local intro=s.introUntil and now&lt;s.introUntil
 				if s.tutorial then Tutorial.update(s,now,dt) elseif not s.botFrozen and not intro and not s.finishing then s.ai:update(now) end
 			end
 		end
+		if s.cup and self.tournament then self.tournament:update(player,s,now) end
 		-- Regular cadence, plus an immediate packet when a contact, throw or
 		-- teleport happened so presentation never waits a full interval.
 		local urgent=s.combat and s.combat.urgent and now&gt;=(s.lastUrgent or 0)+.03
@@ -18965,7 +18999,7 @@ return Matches
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND81">
+      <Item class="ModuleScript" referent="ND82">
         <Properties>
           <string name="Name">Motor</string>
           <ProtectedString name="Source">-- Server movement authority. This module owns locomotion, landing and safe
@@ -19357,7 +19391,7 @@ return Motor
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND82">
+      <Item class="ModuleScript" referent="ND83">
         <Properties>
           <string name="Name">NativeQA</string>
           <ProtectedString name="Source">-- Test-only module omitted from playable artifact.
@@ -19835,7 +19869,7 @@ return QA
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND83">
+      <Item class="ModuleScript" referent="ND84">
         <Properties>
           <string name="Name">Online</string>
           <ProtectedString name="Source">-- Online 1v1 (NET-001): casual queue, private duel codes, a short fighter
@@ -20179,7 +20213,7 @@ return Online
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND84">
+      <Item class="ModuleScript" referent="ND85">
         <Properties>
           <string name="Name">Perception</string>
           <ProtectedString name="Source">-- Ninja Embodiment (DEC-027): what a body perceives of the space around a
@@ -20288,7 +20322,7 @@ return Perception
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND85">
+      <Item class="ModuleScript" referent="ND86">
         <Properties>
           <string name="Name">Place1Movement</string>
           <ProtectedString name="Source">-- Adapted directly from Place1 FirstPersonMovementController (alexkkork, MIT).
@@ -20592,7 +20626,7 @@ return Movement
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND86">
+      <Item class="ModuleScript" referent="ND87">
         <Properties>
           <string name="Name">Place1Parkour</string>
           <ProtectedString name="Source">-- Adapted directly from Place1 ParkourTraversalController (alexkkork, MIT).
@@ -21074,7 +21108,7 @@ return Parkour
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND87">
+      <Item class="ModuleScript" referent="ND88">
         <Properties>
           <string name="Name">Portraits</string>
           <ProtectedString name="Source">-- The menu's fighters (UI pass 02/11, user: "be original in everything"): the
@@ -21174,7 +21208,7 @@ return Portraits
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND88">
+      <Item class="ModuleScript" referent="ND89">
         <Properties>
           <string name="Name">ProfileRepository</string>
           <ProtectedString name="Source">-- Progression profile persistence (PROG-001). One key per profile; an
@@ -21385,7 +21419,7 @@ return Repo
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND89">
+      <Item class="ModuleScript" referent="ND90">
         <Properties>
           <string name="Name">ProfileSchema</string>
           <ProtectedString name="Source">-- Fighter progression profile (PROG-001). Per fighter: the skill points earned,
@@ -21588,7 +21622,7 @@ return S
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND90">
+      <Item class="ModuleScript" referent="ND91">
         <Properties>
           <string name="Name">Repro</string>
           <ProtectedString name="Source">-- Repro places (gameplay audit, 03/11). Each bug found by playing gets its
@@ -21709,7 +21743,7 @@ return Repro
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND91">
+      <Item class="ModuleScript" referent="ND92">
         <Properties>
           <string name="Name">SkillBuilds</string>
           <ProtectedString name="Source">-- Skill builds (PROG-001/002). Pure, server-side: validates a fighter's ACTIVE
@@ -22198,7 +22232,7 @@ return SkillBuilds
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND92">
+      <Item class="ModuleScript" referent="ND93">
         <Properties>
           <string name="Name">SkillTrees</string>
           <ProtectedString name="Source">-- Fighter skill trees (PROG-001). Server data: what skill points buy for each
@@ -22516,7 +22550,7 @@ return {
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND93">
+      <Item class="ModuleScript" referent="ND94">
         <Properties>
           <string name="Name">Techniques</string>
           <ProtectedString name="Source">-- Each entry supplies prerequisites and payoff. The combat pipeline owns cost,
@@ -23587,7 +23621,259 @@ return Techniques
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND94">
+      <Item class="ModuleScript" referent="ND95">
+        <Properties>
+          <string name="Name">Tournament</string>
+          <ProtectedString name="Source">-- The Prodigy Tournament against the AI (roadmap 04/11, step 2): the eight
+-- prodigies of the beta in a bracket of eight, each once (the Chunin exam
+-- finals). The player picks his fighter; the seven others take the seven other
+-- places. Quarter-finals, semi-finals, final, each match first to two.
+--  * His matches are ordinary local duels (Matches:start), the AI a little
+--    stronger each round (Server/BuildPresets tiers, where the fighter has one).
+--  * The AI-vs-AI matches are played for real in the arena with an autopilot
+--    on the first fighter (as the Studio dev tools do), watched from a
+--    spectator lens (snapshot `spectate`); SKIP decides one at once from the
+--    matchup's win rate measured on the engine (Server/CupOdds: thousands of
+--    headless AI-vs-AI fights), so a skipped match is not a coin toss.
+--  * Between matches, the bracket (phase "Bracket"). He loses: the rest of
+--    the bracket is decided the same way, to show who won. He wins the final:
+--    phase "Champion".
+-- Client: Client/CupScreen (bracket, spectator banner, champion card).
+local Shared=game:GetService("ReplicatedStorage").NinjaDuel
+local Fighters=require(Shared.Fighters)
+local BetaRoster=require(Shared.BetaRoster)
+local Tournament={};Tournament.__index=Tournament
+
+-- The story's pairings in the quarter-finals (seats 1-2, 3-4, 5-6, 7-8):
+-- Naruto–Neji and Sasuke–Gaara (the exam's finals), Lee–Minato (speed
+-- against speed), Itachi–Kakashi (Sharingan against Sharingan).
+Tournament.Seats={"Legion","GentleFist","Lion","Sand","Leaf","Flashstep","Mirage","Copycat"}
+Tournament.RoundNames={"QUARTER-FINAL","SEMI-FINAL","FINAL"}
+-- The AI in the player's matches, by round (a tier the fighter's skill tree
+-- offers; none: his base kit).
+Tournament.Tiers={"Medium","Hard","Boss"}
+-- A word before the match (original lines, by fighter, then for the story's
+-- own pairs).
+Tournament.Lines={
+	Legion="I'm not losing to anybody here. Believe it!",
+	GentleFist="The outcome was decided before you stepped in.",
+	Lion="Get out of my way. I have someone to catch up with.",
+	Sand="The sand already knows where you will fall.",
+	Leaf="Hard work beats genius. Let me prove it!",
+	Flashstep="Blink and it is over. Try not to blink.",
+	Mirage="You see the blow. You do not see the one behind it.",
+	Copycat="Show me something new. I'll take it with me.",
+}
+Tournament.Rivals={
+	["Legion|GentleFist"]={"Fate? I'll knock that word right out of you!","Then come and fail, like you were always going to."},
+	["Lion|Sand"]={"Show me what that sand of yours can really do.","It is already around your feet."},
+	["Leaf|Flashstep"]={"My youth is faster than your flash!","Fast is a start. Let's see if it lasts."},
+	["Mirage|Copycat"]={"You copy what you see. So see this.","I've seen enough not to blink."},
+}
+
+function Tournament.new(matches,odds)
+	local self=setmetatable({matches=matches,odds=odds,rng=Random.new()},Tournament)
+	if not self.odds then
+		local ok,table_=pcall(function() return require(script.Parent.CupOdds) end)
+		self.odds=if ok then table_ else {}
+	end
+	return self
+end
+-- Match m (1..7): the two seats it opposes (nil while a feeder is undecided).
+function Tournament.pair(cup,m)
+	if m&lt;=4 then return 2*m-1,2*m end
+	if m==5 then return cup.winners[1],cup.winners[2] end
+	if m==6 then return cup.winners[3],cup.winners[4] end
+	return cup.winners[5],cup.winners[6]
+end
+function Tournament.roundOf(m) return if m&lt;=4 then 1 elseif m&lt;=6 then 2 else 3 end
+-- How likely the fighter on seat a beats the one on seat b (the engine's own
+-- AI-vs-AI record; even when unknown).
+function Tournament:chance(x,y)
+	local row=self.odds[x]
+	local p=row and row[y]
+	if type(p)~="number" then
+		local back=self.odds[y] and self.odds[y][x]
+		p=if type(back)=="number" then 1-back else .5
+	end
+	return math.clamp(p,.1,.9)
+end
+function Tournament:decide(cup,m)
+	local a,b=Tournament.pair(cup,m)
+	local win=if self.rng:NextNumber()&lt;self:chance(cup.seats[a],cup.seats[b]) then a else b
+	cup.winners[m]=win
+	cup.skipped[m]=true
+	return win
+end
+function Tournament:line(x,y)
+	local pair=Tournament.Rivals[x.."|"..y]
+	if pair then return pair[1],pair[2] end
+	local back=Tournament.Rivals[y.."|"..x]
+	if back then return back[2],back[1] end
+	return Tournament.Lines[x],Tournament.Lines[y]
+end
+-- What the client draws: the seats, the winners so far, the next match.
+function Tournament:view(cup)
+	local m=cup.match
+	local a,b=Tournament.pair(cup,m)
+	local next_=nil
+	if not cup.over and a and b then
+		local la,lb=self:line(cup.seats[a],cup.seats[b])
+		next_={match=m,round=Tournament.roundOf(m),roundName=Tournament.RoundNames[Tournament.roundOf(m)],a=a,b=b,
+			mine=(a==cup.me or b==cup.me),lineA=la,lineB=lb}
+	end
+	return {seats=table.clone(cup.seats),me=cup.me,winners=table.clone(cup.winners),skipped=table.clone(cup.skipped),
+		next=next_,over=cup.over==true,champion=cup.champion,out=cup.out,eliminatedIn=cup.eliminatedIn}
+end
+function Tournament:send(player,s,phase)
+	s.phase=phase or "Bracket"
+	self.matches:send(player,{phase=s.phase,epoch=s.epoch,cup=self:view(s.cup)})
+end
+
+-- ------------------------------------------------------------ flow
+function Tournament:start(player,fighter)
+	local m=self.matches
+	if type(fighter)~="string" or not table.find(BetaRoster,fighter) or not Fighters[fighter] then return false end
+	local s=m:session(player)
+	if s.online then return false end
+	m:destroy(s)
+	local seats=table.clone(Tournament.Seats)
+	local cup={seats=seats,me=table.find(seats,fighter),winners={},skipped={},match=1,over=false}
+	s.cup=cup
+	s.epoch+=1
+	self:send(player,s)
+	return true
+end
+-- The next match: his own (a duel), or the AI's (watched).
+function Tournament:fight(player)
+	local m=self.matches
+	local s=m:session(player)
+	local cup=s.cup
+	if not cup or cup.over or s.phase~="Bracket" then return end
+	local a,b=Tournament.pair(cup,cup.match)
+	if not a or not b then return end
+	local mine=a==cup.me or b==cup.me
+	local options=nil
+	local first,second
+	if mine then
+		first=cup.seats[cup.me];second=cup.seats[if a==cup.me then b else a]
+		local tier=Tournament.Tiers[Tournament.roundOf(cup.match)]
+		if tier and require(script.Parent.BuildPresets).ai(second,tier) then options={bot={preset=tier}} end
+	else
+		first=cup.seats[a];second=cup.seats[b]
+	end
+	local ok=m:start(player,first,second,false,options)
+	if not ok and options then ok=m:start(player,first,second,false,nil) end
+	if not ok then return end
+	s.cup=cup;s.cupMatch=cup.match;s.cupResolved=false
+	if not mine then
+		-- The first fighter is the autopilot's; the player only watches.
+		local AI=require(script.Parent.AI)
+		s.autopilot=true;s.spectate=true
+		s.cupPilot=AI.new(s.combat,s.human,(player.UserId%100000)+cup.match*7)
+	else
+		s.autopilot=nil;s.spectate=nil;s.cupPilot=nil
+	end
+	m:snapshot(player,s)
+end
+-- SKIP: an AI-vs-AI match decided at once (from the bracket or while watching).
+function Tournament:skip(player)
+	local m=self.matches
+	local s=m:session(player)
+	local cup=s.cup
+	if not cup or cup.over then return end
+	local a,b=Tournament.pair(cup,cup.match)
+	if not a or not b or a==cup.me or b==cup.me then return end
+	if s.phase=="Duel" or s.phase=="Result" then m:destroy(s) end
+	self:decide(cup,cup.match)
+	self:advance(player,s)
+end
+-- A match of the cup has its result (Matches:update calls this once).
+function Tournament:matchOver(player,s)
+	local cup=s.cup
+	if not cup or s.cupResolved or s.cupMatch~=cup.match then return end
+	s.cupResolved=true
+	local a,b=Tournament.pair(cup,cup.match)
+	local mine=a==cup.me or b==cup.me
+	local winnerSeat
+	if mine then
+		local other=if a==cup.me then b else a
+		winnerSeat=if s.winner=="PlayerFighter" then cup.me else other
+	else
+		-- PlayerFighter is the first fighter of the pair (seat a).
+		winnerSeat=if s.winner=="PlayerFighter" then a else b
+	end
+	cup.winners[cup.match]=winnerSeat
+	-- (the lens stays the spectator's until the bracket comes back)
+	s.cupPilot=nil
+	if mine and winnerSeat~=cup.me then
+		cup.out=true;cup.eliminatedIn=Tournament.RoundNames[Tournament.roundOf(cup.match)]
+	end
+	s.cupAdvanceReady=true
+end
+-- After a result or a skip: the next match, or the end.
+function Tournament:advance(player,s)
+	local cup=s.cup
+	s.cupAdvanceReady=false
+	if cup.out then
+		-- Out: the rest of the bracket is decided, to show who won.
+		for m=cup.match+1,7 do if not cup.winners[m] then cup.match=m;self:decide(cup,m) end end
+	end
+	if cup.winners[7] then
+		cup.over=true
+		cup.champion=cup.winners[7]
+		if cup.champion==cup.me then
+			s.epoch+=1
+			s.autopilot=nil;s.spectate=nil;s.cupPilot=nil
+			self.matches:destroy(s)
+			return self:send(player,s,"Champion")
+		end
+	else
+		cup.match+=1
+	end
+	s.epoch+=1
+	s.autopilot=nil;s.spectate=nil;s.cupPilot=nil
+	self.matches:destroy(s)
+	self:send(player,s,"Bracket")
+end
+function Tournament:leave(player)
+	self.matches:selection(player)
+end
+
+-- Requests that belong to the cup; true when handled.
+function Tournament:request(player,s,action,payload)
+	if action=="CupStart" then
+		if s.phase=="Selection" and not s.cup then self:start(player,payload.player) end
+		return true
+	end
+	if not s.cup then return false end
+	if action=="CupFight" then self:fight(player);return true end
+	if action=="CupSkip" then self:skip(player);return true end
+	if action=="CupBracket" then
+		if s.phase=="Result" and s.cupResolved then self:advance(player,s) end
+		return true
+	end
+	if action=="CupLeave" then self:leave(player);return true end
+	-- No rematch inside a cup: the result screen continues the bracket.
+	if action=="Rematch" then return true end
+	-- Watching: the player's own inputs drive nothing.
+	if s.spectate and s.phase=="Duel" then return true end
+	return false
+end
+-- Matches:update, every frame: the autopilot of a watched match, the result.
+function Tournament:update(player,s,now)
+	if not s.cup then return end
+	if s.cupPilot and s.phase=="Duel" and not s.finishing and not (s.introUntil and now&lt;s.introUntil) then
+		if s.cupPilot.actor~=s.human then s.cupPilot=require(script.Parent.AI).new(s.combat,s.human,player.UserId%100000) end
+		s.cupPilot:update(now)
+	end
+	if s.phase=="Result" and not s.cupResolved then self:matchOver(player,s) end
+end
+return Tournament
+</ProtectedString>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="ND96">
         <Properties>
           <string name="Name">Tutorial</string>
           <ProtectedString name="Source">-- Tutorial v2 (user 02/11: "un vrai tutoriel ... adapté pour chaque perso",
@@ -23937,7 +24223,7 @@ return Tutorial
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND95">
+      <Item class="ModuleScript" referent="ND97">
         <Properties>
           <string name="Name">TutorialBot</string>
           <ProtectedString name="Source">-- Debug/QA places only (build.py DEBUG_SOURCES). Plays the tutorial on its
@@ -24105,7 +24391,7 @@ return Bot
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND96">
+      <Item class="ModuleScript" referent="ND98">
         <Properties>
           <string name="Name">Ultimates</string>
           <ProtectedString name="Source">-- Ultimates (stage 6, the approved move list, "Ultimes"): one per main
@@ -24410,7 +24696,7 @@ return Ultimates
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND97">
+      <Item class="ModuleScript" referent="ND99">
         <Properties>
           <string name="Name">VelmoraAntiCheat</string>
           <ProtectedString name="Source">-- Adapted from Velmora src/server/Combat/CombatAntiCheat.luau.
@@ -24438,7 +24724,7 @@ return AntiCheat
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND98">
+      <Item class="ModuleScript" referent="ND100">
         <Properties>
           <string name="Name">VelmoraDefense</string>
           <ProtectedString name="Source">-- Adapted from Velmora CombatService guard/parry/dodge resolution.
@@ -24573,7 +24859,7 @@ return Defense
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND99">
+      <Item class="ModuleScript" referent="ND101">
         <Properties>
           <string name="Name">VelmoraHitDetection</string>
           <ProtectedString name="Source">-- Adapted from Velmora src/server/Combat/HitDetection.luau.
@@ -24624,7 +24910,7 @@ return HitDetection
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND100">
+      <Item class="ModuleScript" referent="ND102">
         <Properties>
           <string name="Name">Wave1Kit</string>
           <ProtectedString name="Source">-- Roster 20, batch 1 (Haku, Zabuza, Kimimaro): the batch's server side. All
@@ -24759,7 +25045,7 @@ return Kit
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND101">
+      <Item class="ModuleScript" referent="ND103">
         <Properties>
           <string name="Name">Wave2Kit</string>
           <ProtectedString name="Source">-- Roster 20, batch 2 (Shisui, Orochimaru, Kabuto): the batch's server side.
@@ -24873,7 +25159,7 @@ return Kit
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND102">
+      <Item class="ModuleScript" referent="ND104">
         <Properties>
           <string name="Name">Wave3Kit</string>
           <ProtectedString name="Source">-- Roster 20, batch 3 (Deidara, Sasori, Nagato, Killer Bee): the batch's
@@ -25059,7 +25345,7 @@ return Kit
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND103">
+      <Item class="ModuleScript" referent="ND105">
         <Properties>
           <string name="Name">Wave4Kit</string>
           <ProtectedString name="Source">-- DEC-026 newcomers (Madara, Hashirama, Hiruzen as children): the batch's
@@ -25166,7 +25452,7 @@ return Kit
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND104">
+      <Item class="ModuleScript" referent="ND106">
         <Properties>
           <string name="Name">World</string>
           <ProtectedString name="Source">local World = {}
@@ -26376,7 +26662,7 @@ return World
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND105">
+      <Item class="ModuleScript" referent="ND107">
         <Properties>
           <string name="Name">WorldReaction</string>
           <ProtectedString name="Source">-- Ninja Embodiment (DEC-027, EMB-004): the arena answers what happens in it.
@@ -26989,7 +27275,7 @@ return WorldReaction
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND106">
+      <Item class="ModuleScript" referent="ND108">
         <Properties>
           <string name="Name">Zones</string>
           <ProtectedString name="Source">-- Persistent typed zones (ROSTER_WAVE_HOOKS H06), beside Combat's hazards
@@ -27217,21 +27503,21 @@ return Zones
       </Item>
     </Item>
   </Item>
-  <Item class="StarterPlayer" referent="ND107">
+  <Item class="StarterPlayer" referent="ND109">
     <Properties>
       <string name="Name">StarterPlayer</string>
       <float name="CameraMinZoomDistance">8</float>
       <float name="CameraMaxZoomDistance">32</float>
     </Properties>
-    <Item class="StarterPlayerScripts" referent="ND108">
+    <Item class="StarterPlayerScripts" referent="ND110">
       <Properties>
         <string name="Name">StarterPlayerScripts</string>
       </Properties>
-      <Item class="Folder" referent="ND109">
+      <Item class="Folder" referent="ND111">
         <Properties>
           <string name="Name">NinjaDuelClient</string>
         </Properties>
-        <Item class="ModuleScript" referent="ND110">
+        <Item class="ModuleScript" referent="ND112">
           <Properties>
             <string name="Name">ArenaDress</string>
             <ProtectedString name="Source">-- The stadium as this screen shows it (look pass 03/11, user: "the brightness,
@@ -27433,7 +27719,7 @@ return ArenaDress
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND111">
+        <Item class="ModuleScript" referent="ND113">
           <Properties>
             <string name="Name">AuthoredClips</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -27492,7 +27778,7 @@ return all
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND112">
+        <Item class="ModuleScript" referent="ND114">
           <Properties>
             <string name="Name">AuthoredClips1</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -27810,7 +28096,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND113">
+        <Item class="ModuleScript" referent="ND115">
           <Properties>
             <string name="Name">AuthoredClips10</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -28196,7 +28482,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND114">
+        <Item class="ModuleScript" referent="ND116">
           <Properties>
             <string name="Name">AuthoredClips11</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -28344,7 +28630,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND115">
+        <Item class="ModuleScript" referent="ND117">
           <Properties>
             <string name="Name">AuthoredClips12</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -28645,7 +28931,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND116">
+        <Item class="ModuleScript" referent="ND118">
           <Properties>
             <string name="Name">AuthoredClips13</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -28878,7 +29164,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND117">
+        <Item class="ModuleScript" referent="ND119">
           <Properties>
             <string name="Name">AuthoredClips14</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -29094,7 +29380,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND118">
+        <Item class="ModuleScript" referent="ND120">
           <Properties>
             <string name="Name">AuthoredClips15</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -29480,7 +29766,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND119">
+        <Item class="ModuleScript" referent="ND121">
           <Properties>
             <string name="Name">AuthoredClips16</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -29645,7 +29931,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND120">
+        <Item class="ModuleScript" referent="ND122">
           <Properties>
             <string name="Name">AuthoredClips17</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -29793,7 +30079,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND121">
+        <Item class="ModuleScript" referent="ND123">
           <Properties>
             <string name="Name">AuthoredClips18</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -30111,7 +30397,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND122">
+        <Item class="ModuleScript" referent="ND124">
           <Properties>
             <string name="Name">AuthoredClips19</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -30395,7 +30681,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND123">
+        <Item class="ModuleScript" referent="ND125">
           <Properties>
             <string name="Name">AuthoredClips2</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -30628,7 +30914,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND124">
+        <Item class="ModuleScript" referent="ND126">
           <Properties>
             <string name="Name">AuthoredClips20</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -30878,7 +31164,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND125">
+        <Item class="ModuleScript" referent="ND127">
           <Properties>
             <string name="Name">AuthoredClips21</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -31213,7 +31499,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND126">
+        <Item class="ModuleScript" referent="ND128">
           <Properties>
             <string name="Name">AuthoredClips22</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -31310,7 +31596,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND127">
+        <Item class="ModuleScript" referent="ND129">
           <Properties>
             <string name="Name">AuthoredClips23</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -31594,7 +31880,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND128">
+        <Item class="ModuleScript" referent="ND130">
           <Properties>
             <string name="Name">AuthoredClips24</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -31827,7 +32113,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND129">
+        <Item class="ModuleScript" referent="ND131">
           <Properties>
             <string name="Name">AuthoredClips25</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -32009,7 +32295,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND130">
+        <Item class="ModuleScript" referent="ND132">
           <Properties>
             <string name="Name">AuthoredClips26</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -32395,7 +32681,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND131">
+        <Item class="ModuleScript" referent="ND133">
           <Properties>
             <string name="Name">AuthoredClips27</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -32594,7 +32880,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND132">
+        <Item class="ModuleScript" referent="ND134">
           <Properties>
             <string name="Name">AuthoredClips28</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -32827,7 +33113,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND133">
+        <Item class="ModuleScript" referent="ND135">
           <Properties>
             <string name="Name">AuthoredClips29</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -33111,7 +33397,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND134">
+        <Item class="ModuleScript" referent="ND136">
           <Properties>
             <string name="Name">AuthoredClips3</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -33361,7 +33647,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND135">
+        <Item class="ModuleScript" referent="ND137">
           <Properties>
             <string name="Name">AuthoredClips30</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -33628,7 +33914,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND136">
+        <Item class="ModuleScript" referent="ND138">
           <Properties>
             <string name="Name">AuthoredClips31</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -33861,7 +34147,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND137">
+        <Item class="ModuleScript" referent="ND139">
           <Properties>
             <string name="Name">AuthoredClips32</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -34196,7 +34482,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND138">
+        <Item class="ModuleScript" referent="ND140">
           <Properties>
             <string name="Name">AuthoredClips33</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -34310,7 +34596,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND139">
+        <Item class="ModuleScript" referent="ND141">
           <Properties>
             <string name="Name">AuthoredClips34</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -34611,7 +34897,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND140">
+        <Item class="ModuleScript" referent="ND142">
           <Properties>
             <string name="Name">AuthoredClips35</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -34844,7 +35130,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND141">
+        <Item class="ModuleScript" referent="ND143">
           <Properties>
             <string name="Name">AuthoredClips36</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -35060,7 +35346,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND142">
+        <Item class="ModuleScript" referent="ND144">
           <Properties>
             <string name="Name">AuthoredClips37</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -35378,7 +35664,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND143">
+        <Item class="ModuleScript" referent="ND145">
           <Properties>
             <string name="Name">AuthoredClips38</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -35679,7 +35965,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND144">
+        <Item class="ModuleScript" referent="ND146">
           <Properties>
             <string name="Name">AuthoredClips39</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -35776,7 +36062,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND145">
+        <Item class="ModuleScript" referent="ND147">
           <Properties>
             <string name="Name">AuthoredClips4</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -36026,7 +36312,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND146">
+        <Item class="ModuleScript" referent="ND148">
           <Properties>
             <string name="Name">AuthoredClips40</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -36276,7 +36562,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND147">
+        <Item class="ModuleScript" referent="ND149">
           <Properties>
             <string name="Name">AuthoredClips41</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -36526,7 +36812,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND148">
+        <Item class="ModuleScript" referent="ND150">
           <Properties>
             <string name="Name">AuthoredClips42</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -36742,7 +37028,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND149">
+        <Item class="ModuleScript" referent="ND151">
           <Properties>
             <string name="Name">AuthoredClips43</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -37145,7 +37431,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND150">
+        <Item class="ModuleScript" referent="ND152">
           <Properties>
             <string name="Name">AuthoredClips44</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -37259,7 +37545,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND151">
+        <Item class="ModuleScript" referent="ND153">
           <Properties>
             <string name="Name">AuthoredClips45</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -37305,7 +37591,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND152">
+        <Item class="ModuleScript" referent="ND154">
           <Properties>
             <string name="Name">AuthoredClips46</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -37351,7 +37637,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND153">
+        <Item class="ModuleScript" referent="ND155">
           <Properties>
             <string name="Name">AuthoredClips47</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -37397,7 +37683,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND154">
+        <Item class="ModuleScript" referent="ND156">
           <Properties>
             <string name="Name">AuthoredClips48</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -37443,7 +37729,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND155">
+        <Item class="ModuleScript" referent="ND157">
           <Properties>
             <string name="Name">AuthoredClips49</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -37472,7 +37758,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND156">
+        <Item class="ModuleScript" referent="ND158">
           <Properties>
             <string name="Name">AuthoredClips5</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -37739,7 +38025,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND157">
+        <Item class="ModuleScript" referent="ND159">
           <Properties>
             <string name="Name">AuthoredClips6</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -37870,7 +38156,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND158">
+        <Item class="ModuleScript" referent="ND160">
           <Properties>
             <string name="Name">AuthoredClips7</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -38154,7 +38440,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND159">
+        <Item class="ModuleScript" referent="ND161">
           <Properties>
             <string name="Name">AuthoredClips8</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -38438,7 +38724,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND160">
+        <Item class="ModuleScript" referent="ND162">
           <Properties>
             <string name="Name">AuthoredClips9</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -38671,7 +38957,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND161">
+        <Item class="ModuleScript" referent="ND163">
           <Properties>
             <string name="Name">AuthoredMotion</string>
             <ProtectedString name="Source">-- Blender-authored body animation (DEC Blender-first pipeline): clips made in
@@ -38807,7 +39093,7 @@ return Authored
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND162">
+        <Item class="ModuleScript" referent="ND164">
           <Properties>
             <string name="Name">BodyViews</string>
             <ProtectedString name="Source">-- Bodies that are not fighters (Server/Bodies: Naruto's shadow clones), drawn
@@ -38971,7 +39257,7 @@ return BodyViews
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND163">
+        <Item class="ModuleScript" referent="ND165">
           <Properties>
             <string name="Name">Camera</string>
             <ProtectedString name="Source">-- Duel camera. A locked third-person rig that keeps both fighters readable:
@@ -39385,6 +39671,55 @@ function Camera:update(data,dt)
 	elseif cine then
 		self.cinematic=nil;self.rigCF=camera.CFrame
 	end
+	-- (Tournament, 04/11) A match the player watches: the stands' lens, high
+	-- on the side of the pair, drifting slowly along the arena, both bodies in
+	-- frame whatever they do.
+	if data.spectate then
+		local mid=a:Lerp(target,.5)
+		local line=Vector3.new(target.X-a.X,0,target.Z-a.Z)
+		if line.Magnitude&lt;.1 then line=self.spectateLine or Vector3.xAxis end
+		self.spectateLine=line
+		local side=line.Unit:Cross(Vector3.yAxis)
+		if self.spectateSide and side:Dot(self.spectateSide)&lt;0 then side=-side end
+		self.spectateSide=side
+		local drift=math.sin(clock*.12)*.35
+		local dir=(side*math.cos(drift)+line.Unit*math.sin(drift)).Unit
+		local dist=math.max(30,line.Magnitude*.9+22)
+		local eye=mid+dir*dist+Vector3.new(0,13+line.Magnitude*.15,0)
+		local look=mid+Vector3.new(0,2,0)
+		-- (Studio 04/11: one of the arena's trees stood between the stands' lens
+		-- and the pair) Props in the way fade, as for the player's own lens; the
+		-- floor and the bowl's wall bring the lens in, a little higher.
+		local ray=RaycastParams.new();ray.FilterType=Enum.RaycastFilterType.Exclude
+		local exclude={character};if bot then table.insert(exclude,bot) end
+		local effects=folder and folder:FindFirstChild("Effects");if effects then table.insert(exclude,effects) end
+		local fx=workspace:FindFirstChild("NinjaDuelFX");if fx then table.insert(exclude,fx) end
+		local faded={}
+		local hit
+		for _=1,8 do
+			ray.FilterDescendantsInstances=exclude
+			hit=workspace:Raycast(look,eye-look,ray)
+			if not hit or solid(hit.Instance) then break end
+			local model=hit.Instance:FindFirstAncestorOfClass("Model")
+			if model and model~=workspace and model:FindFirstChildOfClass("Humanoid") then
+				for _,d in model:GetDescendants() do if d:IsA("BasePart") then faded[d]=true end end
+				table.insert(exclude,model)
+			else
+				faded[hit.Instance]=true;table.insert(exclude,hit.Instance)
+			end
+		end
+		if hit then eye=hit.Position+hit.Normal*1.2+Vector3.new(0,math.max(0,(eye-look).Magnitude-hit.Distance)*.4,0) end
+		for part in self.faded or {} do if not faded[part] and part.Parent then part.LocalTransparencyModifier=0 end end
+		for part in faded do part.LocalTransparencyModifier=.72 end
+		self.faded=faded
+		local cf=CFrame.lookAt(eye,look)*shake
+		self.spectateCF=if self.spectateCF then self.spectateCF:Lerp(cf,math.clamp(dt*3,0,1)) else cf
+		camera.CFrame=self.spectateCF
+		camera.FieldOfView=camera.FieldOfView+(55-camera.FieldOfView)*math.clamp(dt*4,0,1)
+		self.rigCF=camera.CFrame
+		return
+	end
+	self.spectateCF=nil;self.spectateSide=nil
 	-- Studio film camera (tooling only): a low side view of both fighters, the
 	-- way a fighting-game camera shows feet, ground contact and body mechanics.
 	local film=studio and workspace:GetAttribute("NinjaDuelFilmCam")
@@ -39460,7 +39795,7 @@ return Camera
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND164">
+        <Item class="ModuleScript" referent="ND166">
           <Properties>
             <string name="Name">ChakraFX</string>
             <ProtectedString name="Source">-- Systemic chakra on the client, the player-facing layer (convergence 3,
@@ -40015,7 +40350,7 @@ return ChakraFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND165">
+        <Item class="ModuleScript" referent="ND167">
           <Properties>
             <string name="Name">ChakraFlowFX</string>
             <ProtectedString name="Source">-- ChakraFlow on the client (Freedom, user 28/10: chakra infusions): the load
@@ -40199,7 +40534,7 @@ return ChakraFlowFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="LocalScript" referent="ND166">
+        <Item class="LocalScript" referent="ND168">
           <Properties>
             <string name="Name">CombatDebug</string>
             <ProtectedString name="Source">-- Optional debug-build display, outbound server data only; no combat input.
@@ -40236,7 +40571,263 @@ end)
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND167">
+        <Item class="ModuleScript" referent="ND169">
+          <Properties>
+            <string name="Name">CupScreen</string>
+            <ProtectedString name="Source">-- The Prodigy Tournament on screen (Server/Tournament): the bracket between
+-- matches, the spectator banner on a match the player watches, the champion's
+-- card. House ink cards (UI.kit); the server decides every result and every
+-- next match, the buttons only send CupFight / CupSkip / CupStart / CupLeave.
+local Shared=game:GetService("ReplicatedStorage").NinjaDuel
+local Fighters=require(Shared.Fighters)
+local Cup={};Cup.__index=Cup
+
+local W,H=300,44
+local QF_Y={150,202,302,354,454,506,606,658}
+local SF_Y={176,328,480,632}
+local F_Y={252,556}
+local CHAMP_Y=404
+local COLS={110,500,890,1240}
+
+function Cup.new(ui,send,kit)
+	local K,P=kit,kit.palette
+	local self=setmetatable({ui=ui,send=send,kit=K,plates={}},Cup)
+	local root=K.frame(ui.gui,UDim2.fromScale(0,0),UDim2.fromScale(1,1),Color3.fromRGB(8,7,10),.08)
+	root.ZIndex=40;root.Visible=false
+	self.root=root
+	local shell=K.frame(root,UDim2.fromScale(.5,.5),UDim2.fromOffset(1600,900),P.ink,1)
+	shell.AnchorPoint=Vector2.new(.5,.5);shell.ZIndex=41
+	local scale=K.create("UIScale",shell,{Scale=1})
+	local function fit()
+		local size=workspace.CurrentCamera.ViewportSize
+		scale.Scale=math.min(1.25,size.X/1600,size.Y/900)
+	end
+	workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(fit);fit()
+	self.shell=shell
+	local title=K.inkTitle(K.text(shell,"PRODIGY TOURNAMENT",UDim2.fromOffset(110,30),UDim2.fromOffset(900,64),60,P.paper,K.TITLE_FONT))
+	title.ZIndex=42
+	self.subtitle=K.text(shell,"",UDim2.fromOffset(112,92),UDim2.fromOffset(1100,22),16,P.gold,K.BODY_FONT);self.subtitle.ZIndex=42
+	for i,name in {"QUARTER-FINALS","SEMI-FINALS","FINAL","CHAMPION"} do
+		local head=K.text(shell,name,UDim2.fromOffset(COLS[i],118),UDim2.fromOffset(W,24),18,P.muted,K.TITLE_FONT,Enum.TextXAlignment.Center)
+		head.ZIndex=42
+	end
+	-- 8 + 4 + 2 + 1 plates: a seat's fighter, lit as it advances.
+	local function plate(x,y)
+		local f=K.frame(shell,UDim2.fromOffset(x,y),UDim2.fromOffset(W,H),Color3.fromRGB(26,23,30),.05)
+		K.corner(f,6);f.ZIndex=42
+		local edge=K.create("UIStroke",f,{Color=P.paper,Thickness=1.5,Transparency=.75,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
+		local bar=K.frame(f,UDim2.fromOffset(0,0),UDim2.new(0,6,1,0),P.muted,0);bar.ZIndex=43
+		local label=K.text(f,"",UDim2.fromOffset(16,0),UDim2.fromOffset(W-70,H),24,P.paper,K.TITLE_FONT);label.ZIndex=43
+		local tag=K.text(f,"",UDim2.fromOffset(W-60,0),UDim2.fromOffset(52,H),14,P.gold,K.TITLE_FONT,Enum.TextXAlignment.Right);tag.ZIndex=43
+		return {frame=f,edge=edge,bar=bar,label=label,tag=tag}
+	end
+	self.qf,self.sf,self.f={},{},{}
+	for i,y in QF_Y do self.qf[i]=plate(COLS[1],y) end
+	for i,y in SF_Y do self.sf[i]=plate(COLS[2],y) end
+	for i,y in F_Y do self.f[i]=plate(COLS[3],y) end
+	self.champ=plate(COLS[4],CHAMP_Y)
+	-- The bracket's lines: each match joins its two plates and runs to the
+	-- plate its winner moves to (lit gold along the winner's path, red on the
+	-- next match).
+	local function seg(x,y,w,h)
+		local l=K.frame(shell,UDim2.fromOffset(x,y),UDim2.fromOffset(w,h),P.muted,.55)
+		l.BorderSizePixel=0;l.ZIndex=41
+		return l
+	end
+	self.links={}
+	local function link(m,x0,ya,yb,x1,yc)
+		local mid=x0+math.floor((x1-x0)/2)
+		local ca,cb,cc=ya+H/2-1,yb+H/2-1,yc+H/2-1
+		self.links[m]={a=seg(x0,ca,mid-x0,2),b=seg(x0,cb,mid-x0,2),
+			upA=seg(mid-1,ca,2,cc-ca+2),upB=seg(mid-1,cc,2,cb-cc+2),out=seg(mid,cc,x1-mid,2)}
+	end
+	for i=1,4 do link(i,COLS[1]+W,QF_Y[2*i-1],QF_Y[2*i],COLS[2],SF_Y[i]) end
+	link(5,COLS[2]+W,SF_Y[1],SF_Y[2],COLS[3],F_Y[1])
+	link(6,COLS[2]+W,SF_Y[3],SF_Y[4],COLS[3],F_Y[2])
+	link(7,COLS[3]+W,F_Y[1],F_Y[2],COLS[4],CHAMP_Y)
+	-- The next match: who, the words before it, the buttons.
+	local panel=K.inkCard(K.frame(shell,UDim2.fromOffset(110,722),UDim2.fromOffset(1430,150),K.CARD,0),10)
+	panel.ZIndex=42
+	self.nextTitle=K.inkTitle(K.text(panel,"",UDim2.fromOffset(24,12),UDim2.fromOffset(820,40),34,P.paper,K.TITLE_FONT));self.nextTitle.ZIndex=43
+	self.lineA=K.text(panel,"",UDim2.fromOffset(26,58),UDim2.fromOffset(820,36),15,P.text,K.BODY_FONT);self.lineA.ZIndex=43
+	self.lineB=K.text(panel,"",UDim2.fromOffset(26,96),UDim2.fromOffset(820,36),15,P.muted,K.BODY_FONT);self.lineB.ZIndex=43
+	self.primary=K.button(panel,"FIGHT",UDim2.fromOffset(880,18),UDim2.fromOffset(526,56),function() self:press("primary") end,P.red)
+	self.primary.ZIndex=43;self.primary.TextSize=32
+	self.secondary=K.button(panel,"SKIP",UDim2.fromOffset(880,84),UDim2.fromOffset(256,48),function() self:press("secondary") end)
+	self.secondary.ZIndex=43
+	self.leave=K.button(panel,"LEAVE",UDim2.fromOffset(1150,84),UDim2.fromOffset(256,48),function() self:press("leave") end)
+	self.leave.ZIndex=43
+	-- The champion's card.
+	local champion=K.inkCard(K.frame(root,UDim2.fromScale(.5,.5),UDim2.fromOffset(700,420),K.CARD,0))
+	champion.AnchorPoint=Vector2.new(.5,.5);champion.ZIndex=50;champion.Visible=false
+	-- (Studio 04/11: unscaled, the card filled most of a laptop's play window
+	-- and would overflow a phone) fitted to the screen like the banner.
+	local championScale=K.create("UIScale",champion,{Scale=1})
+	local function fitChampion()
+		local size=workspace.CurrentCamera.ViewportSize
+		championScale.Scale=math.clamp(math.min(size.X/1100,size.Y/640),.5,1.2)
+	end
+	workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(fitChampion);fitChampion()
+	self.championCard=champion
+	local seal=K.text(champion,"勝",UDim2.fromOffset(700-90,-40),UDim2.fromOffset(120,120),84,P.paper,K.BODY_FONT,Enum.TextXAlignment.Center)
+	seal.BackgroundColor3=P.red;seal.BackgroundTransparency=0;seal.Rotation=12;seal.ZIndex=52;K.corner(seal,12)
+	K.create("UIStroke",seal,{Color=P.paper,Thickness=3,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
+	local ct=K.inkTitle(K.text(champion,"CHAMPION",UDim2.fromOffset(30,40),UDim2.fromOffset(640,90),88,P.gold,K.TITLE_FONT,Enum.TextXAlignment.Center));ct.ZIndex=51
+	self.championName=K.text(champion,"",UDim2.fromOffset(30,140),UDim2.fromOffset(640,44),36,P.paper,K.TITLE_FONT,Enum.TextXAlignment.Center);self.championName.ZIndex=51
+	local cn=K.text(champion,"Eight prodigies entered the arena. One walks out with the tournament.",UDim2.fromOffset(40,190),UDim2.fromOffset(620,44),16,P.muted,K.BODY_FONT,Enum.TextXAlignment.Center);cn.ZIndex=51
+	local again=K.button(champion,"NEW TOURNAMENT",UDim2.fromOffset(40,262),UDim2.fromOffset(620,56),function() self.send("CupStart",{player=self.lastFighter}) end,P.red)
+	again.ZIndex=51
+	local back=K.button(champion,"BACK TO THE ROSTER",UDim2.fromOffset(40,330),UDim2.fromOffset(620,56),function() self.send("CupLeave") end)
+	back.ZIndex=51
+	self.championAgain=again
+	-- The spectator's banner over a watched match.
+	local banner=K.inkCard(K.frame(ui.gui,UDim2.new(.5,0,1,-118),UDim2.fromOffset(640,70),K.CARD,0),10)
+	banner.AnchorPoint=Vector2.new(.5,0);banner.ZIndex=45;banner.Visible=false
+	local bannerScale=K.create("UIScale",banner,{Scale=1})
+	local function fitBanner()
+		local size=workspace.CurrentCamera.ViewportSize
+		bannerScale.Scale=math.clamp(math.min(size.X/1500,size.Y/860),.55,1.2)
+	end
+	workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(fitBanner);fitBanner()
+	self.banner=banner
+	self.bannerText=K.text(banner,"",UDim2.fromOffset(18,8),UDim2.fromOffset(440,54),20,P.paper,K.TITLE_FONT);self.bannerText.ZIndex=46
+	local skip=K.button(banner,"SKIP",UDim2.fromOffset(474,12),UDim2.fromOffset(148,46),function() self.send("CupSkip") end,P.red)
+	skip.ZIndex=46
+	return self
+end
+local function nameOf(id)
+	local def=Fighters[id or ""]
+	return if def then string.upper(def.Name) else "?"
+end
+function Cup:press(which)
+	local cup=self.cup
+	if not cup then return end
+	if which=="leave" then self.send("CupLeave");return end
+	if cup.over or cup.out then
+		if which=="primary" then self.send("CupStart",{player=cup.seats[cup.me]}) else self.send("CupLeave") end
+		return
+	end
+	local n=cup.next
+	if not n then return end
+	if which=="primary" then self.send("CupFight") elseif not n.mine then self.send("CupSkip") end
+end
+function Cup:fill(p,seat,cup,alive)
+	local P=self.kit.palette
+	if not seat then
+		p.label.Text="—";p.tag.Text="";p.bar.BackgroundColor3=P.muted;p.label.TextColor3=P.muted;p.edge.Transparency=.85
+		return
+	end
+	local id=cup.seats[seat]
+	local def=Fighters[id or ""]
+	p.label.Text=nameOf(id)
+	p.bar.BackgroundColor3=if def then Color3.fromRGB(table.unpack(def.Color)) else P.muted
+	local mine=seat==cup.me
+	p.tag.Text=if mine then "YOU" else ""
+	p.label.TextColor3=if alive then P.paper else P.muted
+	p.frame.BackgroundTransparency=if alive then .05 else .45
+	p.edge.Color=if mine then P.gold else P.paper
+	p.edge.Transparency=if mine then .1 else .75
+end
+function Cup:draw(cup)
+	self.cup=cup
+	self.lastFighter=cup.seats[cup.me]
+	local w=cup.winners
+	-- A seat is alive until a match it played was lost.
+	local lost={}
+	local Pair={[1]={1,2},[2]={3,4},[3]={5,6},[4]={7,8}}
+	for m=1,4 do if w[m] then for _,seat in Pair[m] do if seat~=w[m] then lost[seat]=true end end end end
+	local function sfSeats(m) if m==5 then return w[1],w[2] else return w[3],w[4] end end
+	for _,m in {5,6} do if w[m] then local a,b=sfSeats(m);for _,seat in {a,b} do if seat and seat~=w[m] then lost[seat]=true end end end end
+	if w[7] then for _,seat in {w[5],w[6]} do if seat and seat~=w[7] then lost[seat]=true end end end
+	for i=1,8 do self:fill(self.qf[i],i,cup,not lost[i]) end
+	for i=1,4 do self:fill(self.sf[i],w[i],cup,w[i]~=nil and not lost[w[i]]) end
+	self:fill(self.f[1],w[5],cup,w[5]~=nil and not lost[w[5]])
+	self:fill(self.f[2],w[6],cup,w[6]~=nil and not lost[w[6]])
+	self:fill(self.champ,w[7],cup,w[7]~=nil)
+	local P=self.kit.palette
+	-- (the tournament's winner in gold)
+	if w[7] then self.champ.label.TextColor3=P.gold;self.champ.edge.Color=P.gold;self.champ.edge.Transparency=0 end
+	local n=cup.next
+	-- The lines: the winner's side and the run to the next plate in gold, the
+	-- match about to be played in red, the rest faint.
+	local function seatsOf(m)
+		if m&lt;=4 then return 2*m-1,2*m elseif m==5 then return w[1],w[2] elseif m==6 then return w[3],w[4] end
+		return w[5],w[6]
+	end
+	local live=n and not cup.over and not cup.out and n.match
+	for m,l in self.links do
+		local a,b=seatsOf(m)
+		local won=w[m]
+		local function paint(segment,lit)
+			local hot=live==m
+			segment.BackgroundColor3=if hot then P.red elseif lit then P.gold else P.muted
+			segment.BackgroundTransparency=if hot or lit then 0 else .55
+		end
+		paint(l.a,won~=nil and won==a);paint(l.upA,won~=nil and won==a)
+		paint(l.b,won~=nil and won==b);paint(l.upB,won~=nil and won==b)
+		paint(l.out,won~=nil)
+	end
+	if cup.over or cup.out then
+		local champion=cup.champion and nameOf(cup.seats[cup.champion]) or "?"
+		self.subtitle.Text=if cup.out then "ELIMINATED IN THE "..tostring(cup.eliminatedIn or "").."  •  THE REST OF THE BRACKET WAS PLAYED OUT" else "THE TOURNAMENT IS OVER"
+		self.nextTitle.Text="CHAMPION  •  "..champion
+		self.lineA.Text=if cup.out then "Even prodigies lose. Learn the opening you missed, then come back to the arena." else ""
+		self.lineB.Text=""
+		self.primary.Text="NEW TOURNAMENT"
+		self.secondary.Text="BACK TO THE ROSTER";self.secondary.Visible=true
+		self.leave.Visible=false
+	elseif n then
+		local a,b=nameOf(cup.seats[n.a]),nameOf(cup.seats[n.b])
+		self.subtitle.Text=string.format("%s  •  MATCH %d OF 7  •  FIRST TO TWO ROUNDS",n.roundName or "",n.match or 0)
+		self.nextTitle.Text=string.format("%s  •  %s  VS  %s",n.roundName or "",a,b)
+		self.lineA.Text=a..":  “"..tostring(n.lineA or "").."”"
+		self.lineB.Text=b..":  “"..tostring(n.lineB or "").."”"
+		self.primary.Text=if n.mine then "FIGHT" else "WATCH"
+		self.secondary.Text="SKIP";self.secondary.Visible=not n.mine
+		self.leave.Text="LEAVE";self.leave.Visible=true
+		self.primary.BackgroundColor3=P.red
+	end
+	local nextMatch=n and n.match
+	for _,p in {self.qf,self.sf,self.f} do for _,pl in p do pl.frame.Size=UDim2.fromOffset(W,H) end end
+	-- The two plates of the next match stand out.
+	if n and not cup.over and not cup.out then
+		local plates={}
+		if nextMatch&lt;=4 then plates={self.qf[n.a],self.qf[n.b]}
+		elseif nextMatch==5 then plates={self.sf[1],self.sf[2]} elseif nextMatch==6 then plates={self.sf[3],self.sf[4]}
+		else plates={self.f[1],self.f[2]} end
+		for _,pl in plates do pl.edge.Color=P.red;pl.edge.Transparency=0 end
+	end
+end
+-- Called with every game packet.
+function Cup:render(data)
+	local phase=data.phase
+	self.root.Visible=phase=="Bracket" or phase=="Champion"
+	self.championCard.Visible=phase=="Champion"
+	self.shell.Visible=phase=="Bracket"
+	if data.cup and (phase=="Bracket" or phase=="Champion") then self:draw(data.cup) end
+	-- (pad focus after the UI's own screen change has settled)
+	local function focus(target) task.delay(.25,function() pcall(function() game:GetService("GuiService").SelectedObject=target end) end) end
+	if phase=="Champion" and data.cup and data.cup.champion then
+		self.championName.Text=string.upper((Fighters[data.cup.seats[data.cup.champion]] or {}).FullName or "")
+		if self.lastPhase~="Champion" then focus(self.championAgain) end
+	elseif phase=="Bracket" and self.lastPhase~="Bracket" then
+		focus(self.primary)
+	end
+	-- Watching a match: whose, which round, SKIP.
+	local watching=phase=="Duel" and data.spectate==true and data.cup~=nil
+	self.banner.Visible=watching
+	if watching then
+		local n=data.cup.next
+		local a,b=nameOf(data.human and data.human.fighterId),nameOf(data.bot and data.bot.fighterId)
+		self.bannerText.Text=string.format("SPECTATING  •  %s\n%s  VS  %s",n and n.roundName or "",a,b)
+	end
+	self.lastPhase=phase
+end
+return Cup
+</ProtectedString>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="ND170">
           <Properties>
             <string name="Name">DevClient</string>
             <ProtectedString name="Source">-- Studio dev panel (F6) and bounded client measurements (Codex 33028b2, ported).
@@ -40390,7 +40981,7 @@ return Dev
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND168">
+        <Item class="ModuleScript" referent="ND171">
           <Properties>
             <string name="Name">DevVolumes</string>
             <ProtectedString name="Source">-- Read-only Studio adornments (Codex 33028b2, ported): fighter roots in blue,
@@ -40434,7 +41025,7 @@ return Volumes
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND169">
+        <Item class="ModuleScript" referent="ND172">
           <Properties>
             <string name="Name">Effects</string>
             <ProtectedString name="Source">-- Client-side combat VFX. Everything here is presentation driven by the server
@@ -42591,7 +43182,7 @@ return FX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND170">
+        <Item class="ModuleScript" referent="ND173">
           <Properties>
             <string name="Name">FamilyFX</string>
             <ProtectedString name="Source">-- Family objects seen in play (roster breadth pass): every projectile kind of
@@ -43216,7 +43807,7 @@ return FamilyFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND171">
+        <Item class="ModuleScript" referent="ND174">
           <Properties>
             <string name="Name">GaleFX</string>
             <ProtectedString name="Source">-- Temari on the client (roster wave): the iron fan (closed on her back at rest,
@@ -43694,7 +44285,7 @@ return GaleFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND172">
+        <Item class="ModuleScript" referent="ND175">
           <Properties>
             <string name="Name">GaleMotion</string>
             <ProtectedString name="Source">-- Temari's motion family (roster wave, DEC-015): her stance, gait, clips,
@@ -43875,7 +44466,7 @@ return GaleMotion
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND173">
+        <Item class="ModuleScript" referent="ND176">
           <Properties>
             <string name="Name">IdentityFX</string>
             <ProtectedString name="Source">-- CORE4 identity on the client (mission NEXT_VALIDATION_ROSTER_SCALE §5): what
@@ -44645,7 +45236,7 @@ return IdentityFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND174">
+        <Item class="ModuleScript" referent="ND177">
           <Properties>
             <string name="Name">Input</string>
             <ProtectedString name="Source">local CAS=game:GetService("ContextActionService")
@@ -44914,7 +45505,7 @@ return Input
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND175">
+        <Item class="ModuleScript" referent="ND178">
           <Properties>
             <string name="Name">LeeFX</string>
             <ProtectedString name="Source">-- Rock Lee on the client (stress-test wave, DEC-015): the Fifth Gate (a green
@@ -45095,7 +45686,7 @@ return LeeFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND176">
+        <Item class="ModuleScript" referent="ND179">
           <Properties>
             <string name="Name">LobbyPanel</string>
             <ProtectedString name="Source">-- Players online and challenges, the client's half (Server/Lobby, user 04/11:
@@ -45117,7 +45708,7 @@ local Shared=game:GetService("ReplicatedStorage").NinjaDuel
 local Fighters=require(Shared.Fighters)
 local Panel={};Panel.__index=Panel
 
-local STATE={free="ON THE ROSTER",training="VS THE AI",queue="SEARCHING",duel="IN A DUEL"}
+local STATE={free="ON THE ROSTER",training="VS THE AI",queue="SEARCHING",duel="IN A DUEL",cup="IN A TOURNAMENT"}
 local function blocked()
 	local set={}
 	pcall(function()
@@ -45291,7 +45882,7 @@ function Panel:drawList()
 	for _,e in self.players do
 		if self.blocked[e.id] then continue end
 		shown+=1
-		local available=(e.state=="free" or e.state=="training" or e.state=="queue") and not e.dnd
+		local available=(e.state=="free" or e.state=="training" or e.state=="queue" or e.state=="cup") and not e.dnd
 		if available then free+=1 end
 		local row=K.frame(self.list,UDim2.fromOffset(0,(shown-1)*64),UDim2.fromOffset(696,58),P.panel,.15)
 		K.corner(row,6);row.ZIndex=73
@@ -45328,7 +45919,7 @@ return Panel
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="LocalScript" referent="ND177">
+        <Item class="LocalScript" referent="ND180">
           <Properties>
             <string name="Name">Main</string>
             <ProtectedString name="Source">local Players=game:GetService("Players")
@@ -45410,6 +46001,8 @@ ui=UI.new(player:WaitForChild("PlayerGui"),send)
 -- (04/11) Players online and challenges between them (Server/Lobby).
 local lobbyPanel=nil
 pcall(function() lobbyPanel=require(script.Parent.LobbyPanel).new(ui,shared:WaitForChild("Lobby",20),UI.kit) end)
+-- (04/11) The Prodigy Tournament: bracket, spectator banner, champion (Server/Tournament).
+local cupScreen=require(script.Parent.CupScreen).new(ui,send,UI.kit)
 -- The roster's fighters stand in a 3D set the menu camera films (Client/MenuStage).
 if ui.menuStage then camera.menuShot=function() return ui.menuStage:shot() end end
 -- Debug/QA places only: the Studio dev panel (F6, DevClient). While it is open
@@ -45426,6 +46019,7 @@ remote.OnClientEvent:Connect(function(data)
 	data.gamepad=input.pad
 	current=data; presentation.receivedAt=os.clock(); presentation:impacts(data,camera); ui:render(data)
 	if lobbyPanel then lobbyPanel:render(data) end
+	cupScreen:render(data)
 	if data.phase=="Duel" and data.serverNow then presentation:noteSnapshot(workspace:GetServerTimeNow()-data.serverNow) end
 end)
 local nextMove=0
@@ -45545,7 +46139,7 @@ print("[NinjaDuel] Client ready")
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND178">
+        <Item class="ModuleScript" referent="ND181">
           <Properties>
             <string name="Name">MenuStage</string>
             <ProtectedString name="Source">-- The select screen's two prodigies, in a real 3D set (user 02/11, "everything
@@ -45727,7 +46321,7 @@ return MenuStage
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND179">
+        <Item class="ModuleScript" referent="ND182">
           <Properties>
             <string name="Name">MotionSmear</string>
             <ProtectedString name="Source">-- Speed smear (fluidity pass, user reference 28/10). What the eye cannot
@@ -45870,7 +46464,7 @@ return Smear
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND180">
+        <Item class="ModuleScript" referent="ND183">
           <Properties>
             <string name="Name">NarutoFX</string>
             <ProtectedString name="Source">-- Naruto on the client (roster wave, several bodies): the puffs of smoke of
@@ -46133,7 +46727,7 @@ return NarutoFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND181">
+        <Item class="ModuleScript" referent="ND184">
           <Properties>
             <string name="Name">Presentation</string>
             <ProtectedString name="Source">-- Velmora's additive combat motion and hit feedback, retaining Ninja Duel's
@@ -47135,7 +47729,7 @@ return Presentation
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND182">
+        <Item class="ModuleScript" referent="ND185">
           <Properties>
             <string name="Name">SandFX</string>
             <ProtectedString name="Source">-- Gaara's sand on the client: the sand bullet and Sand Shuriken in flight, the
@@ -47758,7 +48352,7 @@ return SandFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND183">
+        <Item class="ModuleScript" referent="ND186">
           <Properties>
             <string name="Name">TutorialProbe</string>
             <ProtectedString name="Source">-- Debug/QA places only (build.py DEBUG_SOURCES). The tutorial as a test of the
@@ -47941,7 +48535,7 @@ return Probe
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND184">
+        <Item class="ModuleScript" referent="ND187">
           <Properties>
             <string name="Name">UI</string>
             <ProtectedString name="Source">-- Prodigy Tournament interface: roster/selection, online queue and fighter
@@ -48168,6 +48762,11 @@ function UI.new(parent,send)
 	end,palette.red)
 	self.startButton.TextSize=32
 	self.startStroke=create("UIStroke",self.startButton,{Color=palette.paper,Thickness=2.5,Transparency=.2,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
+	-- (04/11) The Prodigy Tournament against the AI (Server/Tournament).
+	self.cupButton=button(shell,"TOURNAMENT  •  VS AI",UDim2.fromOffset(60,712),UDim2.fromOffset(400,52),function()
+		if not self.picking then send("CupStart",{player=self.player}) end
+	end,palette.red)
+	self.cupButton.TextSize=26
 	self.tutorialButton=button(shell,"TRAINING",UDim2.fromOffset(60,below),UDim2.fromOffset(230,58),function()
 		if self.picking then send("Cancel") else send("Tutorial",{player=self.player,bot=self.bot}) end
 	end)
@@ -48440,8 +49039,9 @@ function UI.new(parent,send)
 	inkTitle(self.resultTitle)
 	self.resultName=text(resultBox,"",UDim2.fromOffset(30,92),UDim2.fromOffset(540,36),30,palette.gold,TITLE_FONT,Enum.TextXAlignment.Center)
 	self.resultNote=text(resultBox,"",UDim2.fromOffset(30,132),UDim2.fromOffset(540,44),15,palette.muted,BODY_FONT,Enum.TextXAlignment.Center)
-	self.rematchButton=button(resultBox,"REMATCH",UDim2.fromOffset(30,196),UDim2.fromOffset(540,52),function() send("Rematch") end,palette.red)
-	button(resultBox,"RETURN TO THE ROSTER",UDim2.fromOffset(30,260),UDim2.fromOffset(540,52),function() send("Selection") end)
+	-- In a tournament the card continues the bracket instead of a rematch.
+	self.rematchButton=button(resultBox,"REMATCH",UDim2.fromOffset(30,196),UDim2.fromOffset(540,52),function() send(if self.inCup then "CupBracket" else "Rematch") end,palette.red)
+	self.rosterButton=button(resultBox,"RETURN TO THE ROSTER",UDim2.fromOffset(30,260),UDim2.fromOffset(540,52),function() send(if self.inCup then "CupLeave" else "Selection") end)
 	-- ------------------------------------------------------------ controls
 	-- (User 03/11: "the keys should be in a menu rather than on the screen
 	-- all the time".) TAB (pad: START) opens the controls sheet over any
@@ -48936,7 +49536,10 @@ function UI:render(data)
 	end
 	self.ko.Visible=data.ko==true
 	self.round.Text=if data.matchPoint and data.ko then "MATCH" else "ROUND "..(data.round or 1)
-	self.hp.name.Text=fullName(h);self.hp.title.Text=subtitle(h).."  •  YOU"
+	-- (in the tournament, the stage of the bracket under the round)
+	self.roundSub.Text=if data.cup and data.cup.next and data.cup.next.roundName then data.cup.next.roundName else "PRODIGY TOURNAMENT"
+	-- (a match watched in the tournament: neither fighter is the player)
+	self.hp.name.Text=fullName(h);self.hp.title.Text=if data.spectate then "AI  •  "..subtitle(h) else subtitle(h).."  •  YOU"
 	self.enemy.name.Text=fullName(b);self.enemy.title.Text=(if data.online then string.upper(data.online.opponent or "OPPONENT") else "AI").."  •  "..subtitle(b)
 	for _,pair in {{self.hp,h},{self.enemy,b}} do
 		local widget,actor=pair[1],pair[2]
@@ -49006,7 +49609,8 @@ function UI:render(data)
 	pcall(function()
 		local t=os.clock()
 		local ratio=math.clamp(h.health/math.max(h.maxHealth,1),0,1)
-		self.danger.GroupTransparency=if ratio&lt;=.25 and ratio&gt;0 then .45+.35*(.5+.5*math.sin(t*5)) else 1
+		-- (not on a match the player only watches: the danger is no one's)
+		self.danger.GroupTransparency=if not data.spectate and ratio&lt;=.25 and ratio&gt;0 then .45+.35*(.5+.5*math.sin(t*5)) else 1
 	end)
 	-- Combo counters with the damage scale of the next hit.
 	for _,pair in {{self.comboMine,b},{self.comboTheirs,h}} do
@@ -49082,6 +49686,11 @@ function UI:render(data)
 	end
 	for i=#h.techniques+1,5 do self.techniqueButtons[i].box.Visible=false end
 	self:sealHud(h,pad)
+	-- (Tournament) watching a match: none of these are the player's.
+	if data.spectate then
+		for _,b in self.techniqueButtons do b.box.Visible=false end
+		self.sealPanel.Visible=false;self.sealWeave.Text=""
+	end
 	local techOpen=h.reaction=="WallSplat" and (h.splatElapsed or 9)&lt;.34
 	local conversion=UI.conversion(h,pad)
 	self.hint.Text=if techOpen then (if pad then "○ — WALL TECH" else "Q — WALL TECH")
@@ -49126,12 +49735,29 @@ function UI:render(data)
 		self.resultTitle.Text=(if won then "VICTORY" else "DEFEAT").."  •  FORFEIT"
 		self.resultNote.Text="Your opponent left the duel. The win is yours."
 	end
+	-- (Tournament) continue the bracket; a match watched names its winner.
+	self.inCup=data.cup~=nil
+	self.rosterButton.Text=if self.inCup then "LEAVE THE TOURNAMENT" else "RETURN TO THE ROSTER"
+	if self.inCup then
+		self.rematchButton.Text=if data.cup.out and not data.spectate then "SEE WHO WINS IT  •  THE BRACKET" else "CONTINUE  •  THE BRACKET"
+		if data.spectate then
+			local def=Fighters[winner.fighterId or ""]
+			self.resultTitle.Text=string.upper(def and def.Name or "")..(if (data.roundsToWin or 1)&gt;1 and data.wins then string.format("  %d–%d",math.max(data.wins.human or 0,data.wins.bot or 0),math.min(data.wins.human or 0,data.wins.bot or 0)) else "")
+			self.resultTitle.TextColor3=palette.gold
+			self.resultSeal.Text="勝";self.resultSeal.BackgroundColor3=palette.red
+			self.resultNote.Text="One more name moves up the bracket."
+		elseif won then
+			self.resultNote.Text="Your name moves up the bracket."
+		else
+			self.resultNote.Text="Your tournament ends here. The bracket plays out without you."
+		end
+	end
 end
 return UI
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND185">
+        <Item class="ModuleScript" referent="ND188">
           <Properties>
             <string name="Name">UltimateFX</string>
             <ProtectedString name="Source">-- The ultimates on the client (stage 6, the approved move list, "Ultimes"):
@@ -50039,7 +50665,7 @@ return UltimateFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND186">
+        <Item class="ModuleScript" referent="ND189">
           <Properties>
             <string name="Name">VelmoraHitFeedback</string>
             <ProtectedString name="Source">-- Impact presentation. Adapted from Velmora src/client/Combat/HitFeedback.luau
@@ -50235,7 +50861,7 @@ return Feedback
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND187">
+        <Item class="ModuleScript" referent="ND190">
           <Properties>
             <string name="Name">VelmoraMotionEngine</string>
             <ProtectedString name="Source">-- Ninja Duel body animation. Started from Velmora's additive R15 layer (MIT) and
@@ -53914,7 +54540,7 @@ return Motion
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND188">
+        <Item class="ModuleScript" referent="ND191">
           <Properties>
             <string name="Name">VfxAtlas</string>
             <ProtectedString name="Source">-- GENERATED by tools/vfx_textures.py --pack: do not edit by hand.
@@ -55367,7 +55993,7 @@ HAOBECABDA1HBIA3HBGAmZ]]},
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND189">
+        <Item class="ModuleScript" referent="ND192">
           <Properties>
             <string name="Name">VfxKit</string>
             <ProtectedString name="Source">-- Presentation primitives on the project's own VFX textures
@@ -55827,7 +56453,7 @@ return Kit
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND190">
+        <Item class="ModuleScript" referent="ND193">
           <Properties>
             <string name="Name">Wave1FX</string>
             <ProtectedString name="Source">-- Roster 20, batch 1 (Haku, Zabuza, Kimimaro): the batch's own drawing,
@@ -56041,7 +56667,7 @@ return M
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND191">
+        <Item class="ModuleScript" referent="ND194">
           <Properties>
             <string name="Name">Wave1Motion</string>
             <ProtectedString name="Source">-- Roster batch 1 bodies authored from their Combat Bibles (DEC-026). First:
@@ -56342,7 +56968,7 @@ return Wave1Motion
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND192">
+        <Item class="ModuleScript" referent="ND195">
           <Properties>
             <string name="Name">Wave2FX</string>
             <ProtectedString name="Source">-- Roster 20, batch 2 (Shikamaru, Shino, Orochimaru): the batch's own drawing, installed by
@@ -56355,7 +56981,7 @@ return M
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND193">
+        <Item class="ModuleScript" referent="ND196">
           <Properties>
             <string name="Name">Wave3FX</string>
             <ProtectedString name="Source">-- Roster 20, batch 3 (Deidara, Sasori, Nagato, Killer Bee): the batch's own
@@ -56458,7 +57084,7 @@ return M
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND194">
+        <Item class="ModuleScript" referent="ND197">
           <Properties>
             <string name="Name">Wave3Motion</string>
             <ProtectedString name="Source">-- Roster batch 3 bodies authored from their Combat Bibles (DEC-026). First:
@@ -56585,7 +57211,7 @@ return Wave3Motion
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND195">
+        <Item class="ModuleScript" referent="ND198">
           <Properties>
             <string name="Name">Wave4FX</string>
             <ProtectedString name="Source">-- DEC-026 newcomers (Madara, Hashirama, Hiruzen as children): the weapons
@@ -56728,7 +57354,7 @@ return M
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND196">
+        <Item class="ModuleScript" referent="ND199">
           <Properties>
             <string name="Name">Wave4Motion</string>
             <ProtectedString name="Source">-- DEC-026 newcomers: the bodies of Madara, Hashirama and Hiruzen as children
@@ -56941,7 +57567,7 @@ return Wave4Motion
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND197">
+        <Item class="ModuleScript" referent="ND200">
           <Properties>
             <string name="Name">WorldLook</string>
             <ProtectedString name="Source">-- What the screen looks like (user 03/11: "the brightness, the graphics,
@@ -57053,7 +57679,7 @@ return WorldLook
       </Item>
     </Item>
   </Item>
-  <Item class="Lighting" referent="ND198">
+  <Item class="Lighting" referent="ND201">
     <Properties>
       <string name="Name">Lighting</string>
       <token name="Technology">4</token>
@@ -57073,7 +57699,7 @@ return WorldLook
       </Color3>
     </Properties>
   </Item>
-  <Item class="SoundService" referent="ND199">
+  <Item class="SoundService" referent="ND202">
     <Properties>
       <string name="Name">SoundService</string>
     </Properties>
