@@ -4847,7 +4847,7 @@ return {
       <Item class="StringValue" referent="ND29">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">f938bc34725e119ccdb0e88de106889ff741b961759b08b8598cd80785dab3bc</string>
+          <string name="Value">50f7e051d4f52dfd797b8d66ea9a77205abc83a605cd2f98fb331bf443b7eb2e</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND30">
@@ -49722,7 +49722,9 @@ function Touch.new(input,send,getState,toggleLock,camera)
 	for _,group in {cluster,row,extras,base,self.skipButton} do table.insert(scales,new("UIScale",{Scale=1},group)) end
 	local function fit()
 		local size=workspace.CurrentCamera.ViewportSize
-		local s=math.clamp(math.min(size.Y/Touch.REFERENCE,size.X/(Touch.REFERENCE*1.7)),.75,1.8)
+		-- (B0, 04/11) the stack (cluster, jutsu, extras: 352 tall) stays under
+		-- the health plates: it covered the opponent's plate on a phone.
+		local s=math.clamp(math.min((size.Y-110)/352,size.X/700),.6,1.6)
 		scale.Scale=s
 		for _,u in scales do u.Scale=s end
 		row.Position=UDim2.new(1,-12,1,-(12+246*s))
@@ -50153,10 +50155,11 @@ function UI.new(parent,send)
 	if hasSequences then create("UIGradient",base,{Rotation=-90,Transparency=NumberSequence.new({NumberSequenceKeypoint.new(0,0),NumberSequenceKeypoint.new(.62,.08),NumberSequenceKeypoint.new(1,1)})}) end
 	base.ZIndex=0
 	-- Title, top left; the hanging banner, right edge.
-	local title=text(shell,"PRODIGY TOURNAMENT",UDim2.fromOffset(60,18),UDim2.fromOffset(900,70),62,palette.paper,TITLE_FONT)
+	-- (B0, 04/11) clear of Roblox's own buttons (top left: they covered the P)
+	local title=text(shell,"PRODIGY TOURNAMENT",UDim2.fromOffset(150,18),UDim2.fromOffset(900,70),62,palette.paper,TITLE_FONT)
 	create("UIStroke",title,{Color=palette.ink,Thickness=3,ApplyStrokeMode=Enum.ApplyStrokeMode.Contextual})
 	text(shell,"Eight future legends to start, more every update. Twelve to fourteen years old. One stage — before they become who they are meant to be.",
-		UDim2.fromOffset(62,84),UDim2.fromOffset(1100,20),15,palette.muted,Enum.Font.GothamMedium)
+		UDim2.fromOffset(152,84),UDim2.fromOffset(1100,20),15,palette.muted,Enum.Font.GothamMedium)
 	local banner=frame(shell,UDim2.fromOffset(1534,0),UDim2.fromOffset(44,280),palette.paper,0)
 	create("UIStroke",banner,{Color=palette.red,Thickness=2})
 	text(banner,"天\n才\n忍\n者\n大\n会",UDim2.fromOffset(0,12),UDim2.fromOffset(44,240),26,palette.red,BODY_FONT,Enum.TextXAlignment.Center).LineHeight=.95
@@ -51211,6 +51214,13 @@ function UI:render(data)
 	end
 	for i=#h.techniques+1,5 do self.techniqueButtons[i].box.Visible=false end
 	self:sealHud(h,pad,data.sealPage)
+	-- (B0, 04/11, seen on an emulated phone) on a touch screen the touch
+	-- controls carry the jutsu and the seal page: the keyboard slots and the
+	-- "HOLD C" slip sat under the buttons.
+	if data.touch then
+		for _,b in self.techniqueButtons do b.box.Visible=false end
+		self.sealPanel.Visible=false
+	end
 	-- (Tournament) watching a match: none of these are the player's.
 	if data.spectate then
 		for _,b in self.techniqueButtons do b.box.Visible=false end
@@ -51246,7 +51256,7 @@ function UI:render(data)
 	local _=helping
 	self.lastHuman=h
 	self.controlsChip.Text=(if pad then "START" else "TAB").."   CONTROLS"
-	self.controlsChip.Visible=os.clock()&lt;(self.helpUntil or 0) or data.tutorial~=nil
+	self.controlsChip.Visible=(os.clock()&lt;(self.helpUntil or 0) or data.tutorial~=nil) and not data.touch
 	local won=data.winner=="PlayerFighter"
 	local winner=if won then h else b
 	self.resultTitle.Text=(if won then "VICTORY" else "DEFEAT")..(if (data.roundsToWin or 1)&gt;1 and data.wins then string.format("  %d–%d",data.wins.human or 0,data.wins.bot or 0) else "")

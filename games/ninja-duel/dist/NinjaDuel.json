@@ -1,7 +1,7 @@
 {
   "version": "0.13.0-arena-combo",
   "artifact": "NinjaDuel.rbxlx",
-  "sha256": "4d5fd698e343134e4052f03eb01172bd743578829176b05e25a1f864a0ade952",
+  "sha256": "f2e56c632b304c43997743438ee8991440067947500a4c0ef8558da1e5d0ee54",
   "sources": {
     "src/Client/ArenaDress.luau": "bd92aa3bf3c37a36fd9d2b1f02971921d9c5e981788abe9594a098425bf3cb0e",
     "src/Client/AuthoredClips.luau": "d85a832ad37061e75823f4cd78be73d5939383e22401c20229fe4cf656c79cc3",
@@ -76,8 +76,8 @@
     "src/Client/NarutoFX.luau": "80c790957bc644b45903cde686f1db3453fe94ad8fb71c7d22b7557d52a47d48",
     "src/Client/Presentation.luau": "112ab34d163130a21fb76faa2943caa0bcc69f996cc45af66d0fff9e6630d9f2",
     "src/Client/SandFX.luau": "a5f0d04be57628eab9a94bf064b1bbb2e14acccb7bdf463c974b95328a64173a",
-    "src/Client/TouchControls.luau": "4b6e143317c0ef1da096a64ebdf981cccd74cf9384b3a41bb426181f36f3f72e",
-    "src/Client/UI.luau": "8378949736c6ca098a6ade79c5aebc5d16e2880973f90aaa386e6a9544506fa9",
+    "src/Client/TouchControls.luau": "20d8e933e2eba5744e80317b45695794c5b9b3c7ef8daac5a68ca84a44f15df2",
+    "src/Client/UI.luau": "d60f66dea3f91bfbc290b24e015cb3789049ecaf0b2947f9bfabe2bae8cc4ba4",
     "src/Client/UltimateFX.luau": "3da697d392feba0e647867fa9bb89c75c4fe292238a62ff904d6f34cfa050937",
     "src/Client/VelmoraHitFeedback.luau": "2c3b4264fda43e189301ccc3431a79ecc76d6c5af526d7f4aa94752d03f192b6",
     "src/Client/VelmoraMotionEngine.luau": "b11474103fb1379bc7f984c8a87a4b9a0077e28f066927f877eb916e02888a80",
@@ -174,7 +174,7 @@
   },
   "sourceEquality": "PASS",
   "debugOnly": false,
-  "buildFingerprint": "ff75a8770a69af45ed317b9dee3c2471349a785e9e493f859fed996c6084be7c",
+  "buildFingerprint": "65dd0c8b6ab8793a3e5c8df42acd7a074c73b759355c94dde738774158005960",
   "donorAssets": {
     "assets/BanglaAssets.rbxmx": "6e99f5f67e6c34ac8a81d739431554b1495f0f5cd1dd1870a39eeb8bf23e1983"
   },
