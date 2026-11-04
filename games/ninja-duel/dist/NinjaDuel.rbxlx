@@ -1734,6 +1734,44 @@ return Fighters
       </Item>
       <Item class="ModuleScript" referent="ND13">
         <Properties>
+          <string name="Name">LobbyProtocol</string>
+          <ProtectedString name="Source">-- Players online and challenges (Server/Lobby, Client/LobbyPanel): tunables
+-- and the vocabulary between them. Authority stays in Server/Lobby; nothing in
+-- here is ever read back from a client.
+--
+-- Client -&gt; server (RemoteEvent NinjaDuel.Lobby), every field checked there:
+--   {op="open"} / {op="close"}           the list is on screen / closed
+--   {op="fighter", fighter=id}           the fighter picked on the roster
+--   {op="dnd", on=bool}                  do not disturb
+--   {op="challenge", to=userId, fighter=id}
+--   {op="answer", id=challengeId, accept=bool, fighter=id}
+--   {op="cancel", id=challengeId}
+--   {op="home"}                          from a duel server: back to the lobby
+-- Server -&gt; client:
+--   {kind="list", players={...}, dnd=bool, duelServer=bool}
+--   {kind="invite", id, from, fromId, fighter, remaining}
+--   {kind="sent", id, to, remaining} / {kind="closed", id, text?}
+--   {kind="status", text, tone="info"|"bad"} / {kind="dnd", on}
+return table.freeze({
+	Tune=table.freeze({
+		-- Presence: published every Publish s, gone after Life s without a refresh,
+		-- the map read back every Read s (up to Page entries), ListMax shown.
+		Publish=15,Life=45,Read=10,Page=200,ListMax=60,
+		-- A challenge lasts ChallengeLife s; one every Gap s per player, MaxOut
+		-- waiting per challenger, MaxIn waiting per challenged player.
+		ChallengeLife=20,Gap=10,MaxOut=3,MaxIn=3,
+		-- Requests of one player: one every OpGap s.
+		OpGap=0.25,
+		-- Duel server: both players within Arrival s, its record kept DuelRecordLife s.
+		Arrival=45,DuelRecordLife=600,
+		PresenceMap="ND_Presence_v1",DuelMap="ND_DuelServers_v1",Topic="ND_Lobby_v1",
+	}),
+})
+</ProtectedString>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="ND14">
+        <Properties>
           <string name="Name">Looks</string>
           <ProtectedString name="Source">-- How a family object looks (Families.luau, client FamilyFX): one entry per
 -- projectile/zone kind, shared by server (launch point, radius, contact
@@ -1831,7 +1869,7 @@ return {
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND14">
+      <Item class="ModuleScript" referent="ND15">
         <Properties>
           <string name="Name">MoveGraphs</string>
           <ProtectedString name="Source">-- Character move graphs: the data half of each fighter's combat identity.
@@ -2055,7 +2093,7 @@ return Graphs
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND15">
+      <Item class="ModuleScript" referent="ND16">
         <Properties>
           <string name="Name">OnlineProtocol</string>
           <ProtectedString name="Source">-- Online 1v1 (NET-001): shared tunables and the request vocabulary of the
@@ -2081,7 +2119,7 @@ return table.freeze({
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND16">
+      <Item class="ModuleScript" referent="ND17">
         <Properties>
           <string name="Name">Roster</string>
           <ProtectedString name="Source">-- The playable roster, in menu order: the select screen, the AI soaks and the
@@ -2106,7 +2144,7 @@ return {
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND17">
+      <Item class="ModuleScript" referent="ND18">
         <Properties>
           <string name="Name">RosterMoves</string>
           <ProtectedString name="Source">-- Roster 20 batches (Shared/WaveN): a fighter's own strike, added to Attacks
@@ -2136,7 +2174,7 @@ return RosterMoves
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND18">
+      <Item class="ModuleScript" referent="ND19">
         <Properties>
           <string name="Name">RosterStaging</string>
           <ProtectedString name="Source">-- DEC-026 newcomers (Madara, Hashirama, Hiruzen as children, Shared/Wave4).
@@ -2146,7 +2184,7 @@ return {"Rival","Sapling","Professor"}
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND19">
+      <Item class="ModuleScript" referent="ND20">
         <Properties>
           <string name="Name">Rules</string>
           <ProtectedString name="Source">-- Pure policy shared by server combat and headless tests. Authority lives on server.
@@ -2189,7 +2227,7 @@ return Rules
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND20">
+      <Item class="ModuleScript" referent="ND21">
         <Properties>
           <string name="Name">SealJutsu</string>
           <ProtectedString name="Source">-- Hand-seal jutsu (DEC-032 §3, user 03/11: « plus de variété que 4 cases
@@ -2322,7 +2360,7 @@ return SealJutsu
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND21">
+      <Item class="ModuleScript" referent="ND22">
         <Properties>
           <string name="Name">UltimateScripts</string>
           <ProtectedString name="Source">-- The eight ultimates as scripts (stage 6, redone 02/11: "globalement tous
@@ -2672,7 +2710,7 @@ return Scripts
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND22">
+      <Item class="ModuleScript" referent="ND23">
         <Properties>
           <string name="Name">VelmoraCombatConfig</string>
           <ProtectedString name="Source">-- Adapted from Velmora src/shared/config/CombatConfig.luau.
@@ -2705,7 +2743,7 @@ return table.freeze({
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND23">
+      <Item class="ModuleScript" referent="ND24">
         <Properties>
           <string name="Name">Wave1</string>
           <ProtectedString name="Source">-- Roster 20, batch 1 (DEC-022): Haku, Zabuza, Kimimaro. This batch's shared
@@ -2952,7 +2990,7 @@ return {
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND24">
+      <Item class="ModuleScript" referent="ND25">
         <Properties>
           <string name="Name">Wave2</string>
           <ProtectedString name="Source">-- Roster 20, batch 2 (DEC-022): Shisui, Orochimaru, Kabuto. This batch's
@@ -3138,7 +3176,7 @@ return {
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND25">
+      <Item class="ModuleScript" referent="ND26">
         <Properties>
           <string name="Name">Wave3</string>
           <ProtectedString name="Source">-- Roster 20, batch 3 (DEC-022): Deidara, Sasori, Nagato, Killer Bee. This
@@ -3413,7 +3451,7 @@ return {
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND26">
+      <Item class="ModuleScript" referent="ND27">
         <Properties>
           <string name="Name">Wave4</string>
           <ProtectedString name="Source">-- DEC-026 newcomers: Madara, Hashirama and Hiruzen as children (the three
@@ -4607,17 +4645,17 @@ return {
           </Item>
         </Item>
       </Item>
-      <Item class="StringValue" referent="ND27">
+      <Item class="StringValue" referent="ND28">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">5a05f955a5a8f24cc198da83a29f8bd5751f9ad84693600f17fe8321c08c3e14</string>
+          <string name="Value">1453722a54b927c39da7dff887c001525ae4d4cf9912d9236d3cdeb6114181ba</string>
         </Properties>
       </Item>
-      <Item class="Folder" referent="ND28">
+      <Item class="Folder" referent="ND29">
         <Properties>
           <string name="Name">ThirdPartyLicenses</string>
         </Properties>
-        <Item class="StringValue" referent="ND29">
+        <Item class="StringValue" referent="ND30">
           <Properties>
             <string name="Name">bangla</string>
             <string name="Value">MIT License
@@ -4644,7 +4682,7 @@ SOFTWARE.
 </string>
           </Properties>
         </Item>
-        <Item class="StringValue" referent="ND30">
+        <Item class="StringValue" referent="ND31">
           <Properties>
             <string name="Name">place1</string>
             <string name="Value">MIT License
@@ -4671,7 +4709,7 @@ SOFTWARE.
 </string>
           </Properties>
         </Item>
-        <Item class="StringValue" referent="ND31">
+        <Item class="StringValue" referent="ND32">
           <Properties>
             <string name="Name">velmora</string>
             <string name="Value">MIT License
@@ -4701,15 +4739,15 @@ SOFTWARE.
       </Item>
     </Item>
   </Item>
-  <Item class="ServerScriptService" referent="ND32">
+  <Item class="ServerScriptService" referent="ND33">
     <Properties>
       <string name="Name">ServerScriptService</string>
     </Properties>
-    <Item class="Folder" referent="ND33">
+    <Item class="Folder" referent="ND34">
       <Properties>
         <string name="Name">NinjaDuelServer</string>
       </Properties>
-      <Item class="ModuleScript" referent="ND34">
+      <Item class="ModuleScript" referent="ND35">
         <Properties>
           <string name="Name">AI</string>
           <ProtectedString name="Source">local Config=require(game:GetService("ReplicatedStorage").NinjaDuel.Config)
@@ -5677,7 +5715,7 @@ return AI
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND35">
+      <Item class="ModuleScript" referent="ND36">
         <Properties>
           <string name="Name">Animation</string>
           <ProtectedString name="Source">-- Bangla PunchMoves animation playback, adapted for server-owned human and AI R15.
@@ -5783,7 +5821,7 @@ return Animation
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND36">
+      <Item class="ModuleScript" referent="ND37">
         <Properties>
           <string name="Name">ArenaMeshData</string>
           <ProtectedString name="Source">-- Generated by tools/blender/arena_to_luau.py from the Studio import of
@@ -5857,7 +5895,7 @@ return {
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND37">
+      <Item class="ModuleScript" referent="ND38">
         <Properties>
           <string name="Name">ArenaMeshes</string>
           <ProtectedString name="Source">-- The stadium's scenery made in Blender (stage 5, user 29/10: the arena,
@@ -5933,7 +5971,7 @@ return ArenaMeshes
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND38">
+      <Item class="ModuleScript" referent="ND39">
         <Properties>
           <string name="Name">BanglaCombat</string>
           <ProtectedString name="Source">-- Adapted from BanglaBattlegrounds ServerScriptService/StarterCombat.
@@ -6023,7 +6061,7 @@ return Bangla
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND39">
+      <Item class="ModuleScript" referent="ND40">
         <Properties>
           <string name="Name">BanglaEvade</string>
           <ProtectedString name="Source">-- performEvade from Bangla WalkRunHandler (Dewan Mukto, MIT), adapted.
@@ -6103,7 +6141,7 @@ return Evade
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND40">
+      <Item class="ModuleScript" referent="ND41">
         <Properties>
           <string name="Name">Bodies</string>
           <ProtectedString name="Source">-- Light bodies that are not actors (roster hook H12): Naruto's shadow clones
@@ -6541,7 +6579,7 @@ return Bodies
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND41">
+      <Item class="ModuleScript" referent="ND42">
         <Properties>
           <string name="Name">BodyState</string>
           <ProtectedString name="Source">-- Ninja Embodiment (DEC-027, SYS-001 sustained chakra): a technique that is a
@@ -6672,7 +6710,7 @@ return BodyState
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND42">
+      <Item class="ModuleScript" referent="ND43">
         <Properties>
           <string name="Name">Brawler</string>
           <ProtectedString name="Source">local Shared=game:GetService("ReplicatedStorage").NinjaDuel
@@ -8388,7 +8426,7 @@ return Brawler
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND43">
+      <Item class="ModuleScript" referent="ND44">
         <Properties>
           <string name="Name">BuildPresets</string>
           <ProtectedString name="Source">-- Example ranked builds (PROG-002) and AI budget builds (PROG-003). Every
@@ -8516,7 +8554,7 @@ return Presets
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND44">
+      <Item class="ModuleScript" referent="ND45">
         <Properties>
           <string name="Name">ChakraCombat</string>
           <ProtectedString name="Source">-- ChakraCombat: the runtime adapter between the real duel (projectiles,
@@ -9561,7 +9599,7 @@ return Chakra
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND45">
+      <Item class="ModuleScript" referent="ND46">
         <Properties>
           <string name="Name">ChakraFlow</string>
           <ProtectedString name="Source">-- ChakraFlow: chakra into whatever the body does next (Freedom, user 28/10:
@@ -9927,7 +9965,7 @@ return ChakraFlow
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND46">
+      <Item class="ModuleScript" referent="ND47">
         <Properties>
           <string name="Name">ChakraInputPlan</string>
           <ProtectedString name="Source">-- Optional intent planner ONLY. Does not bind keys or send/change combat actions.
@@ -9955,7 +9993,7 @@ return P
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND47">
+      <Item class="ModuleScript" referent="ND48">
         <Properties>
           <string name="Name">ChakraRules</string>
           <ProtectedString name="Source">-- Declarative matching only. No callbacks/code strings supplied by configuration.
@@ -10052,7 +10090,7 @@ return R
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND48">
+      <Item class="ModuleScript" referent="ND49">
         <Properties>
           <string name="Name">ChakraTuning</string>
           <ProtectedString name="Source">-- Live chakra interaction data (SYS-001 / TOOL-006): OBJECT + CHAKRA + NATURE /
@@ -10254,7 +10292,7 @@ return T
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND49">
+      <Item class="ModuleScript" referent="ND50">
         <Properties>
           <string name="Name">ChakraVectors</string>
           <ProtectedString name="Source">-- Serializable vector math: simulation/reporting has no Roblox instance dependency.
@@ -10280,7 +10318,7 @@ return V
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND50">
+      <Item class="ModuleScript" referent="ND51">
         <Properties>
           <string name="Name">Combat</string>
           <ProtectedString name="Source">local Shared = game:GetService("ReplicatedStorage").NinjaDuel
@@ -12794,7 +12832,7 @@ return Combat
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND51">
+      <Item class="ModuleScript" referent="ND52">
         <Properties>
           <string name="Name">Costumes</string>
           <ProtectedString name="Source">-- Costumes of the roster breadth pass (ROSTER_20): each one registers under
@@ -12915,7 +12953,7 @@ return Costumes
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND52">
+      <Item class="ModuleScript" referent="ND53">
         <Properties>
           <string name="Name">DonorAnimations</string>
           <ProtectedString name="Source">-- R6 -&gt; R15 compatibility only; transforms/times remain the donor choreography.
@@ -12957,7 +12995,7 @@ return Donor
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND53">
+      <Item class="ModuleScript" referent="ND54">
         <Properties>
           <string name="Name">Elements</string>
           <ProtectedString name="Source">-- Element families define different gameplay primitives. Fire and Wind are
@@ -13091,7 +13129,7 @@ return Elements
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND54">
+      <Item class="ModuleScript" referent="ND55">
         <Properties>
           <string name="Name">Families</string>
           <ProtectedString name="Source">-- Reusable technique families and fighter traits (ROSTER_20_BREADTH_PASS).
@@ -14036,7 +14074,7 @@ return Families
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND55">
+      <Item class="ModuleScript" referent="ND56">
         <Properties>
           <string name="Name">Gale</string>
           <ProtectedString name="Source">-- Temari (Gale, roster wave): the wind fan, on the shared systems. Her kit
@@ -14361,7 +14399,7 @@ return Gale
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND56">
+      <Item class="ModuleScript" referent="ND57">
         <Properties>
           <string name="Name">Interactions</string>
           <ProtectedString name="Source">-- Interactions between jutsu (stage 6, the approved move list, "Interactions:
@@ -14503,7 +14541,7 @@ return Interactions
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND57">
+      <Item class="ModuleScript" referent="ND58">
         <Properties>
           <string name="Name">Legion</string>
           <ProtectedString name="Source">-- Naruto Uzumaki (roster wave: Part I, the Chunin Exam to the Valley of the
@@ -14812,7 +14850,479 @@ return Legion
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND58">
+      <Item class="ModuleScript" referent="ND59">
+        <Properties>
+          <string name="Name">Lobby</string>
+          <ProtectedString name="Source">-- Players online and challenges between them (user 04/11: « rentrer dans le
+-- jeu, voir s'il y a des joueurs connectés et pouvoir lancer un match, que ça
+-- envoie une notification à l'autre, l'autre il accepte ou non, et ça fait un
+-- match », without typing a code). Every server of the game:
+--  * Presence: publishes its players (name, fighter, state, do-not-disturb)
+--    in a shared MemoryStore sorted map, refreshed every Tune.Publish s; an
+--    entry nobody refreshes expires by itself (Tune.Life). It reads the map
+--    back every Tune.Read s: that is the list a player challenges from.
+--  * Challenges: the challenger's server sends the invitation to the server
+--    the other player is on (MessagingService, one topic, each server keeps
+--    what is addressed to its own players). Accepted, both go to a reserved
+--    server (TeleportService), whose record (MemoryStore hash map, keyed by
+--    its PrivateServerId) says which two players are expected and with which
+--    fighters: the record lives on the servers, never in the client's
+--    teleport data. Two players on the same server skip the teleport.
+--  * Duel server: the two expected players arrive and are paired on the
+--    online 1v1 that exists (Server/Online: pick, rounds, rematch); anyone
+--    else, a no-show past Tune.Arrival, or a player going back to the roster
+--    is sent home (a public server).
+-- The client only ever sends ids and booleans (Shared/LobbyProtocol); every
+-- invitation, answer and destination is decided here. Roblox services are
+-- injected (Lobby.new(matches, services)) so the specs run two servers in one
+-- process on fakes.
+local Shared=game:GetService("ReplicatedStorage").NinjaDuel
+local Protocol=require(Shared.LobbyProtocol)
+local BetaRoster=require(Shared.BetaRoster)
+local Lobby={};Lobby.__index=Lobby
+Lobby.Tune=Protocol.Tune
+
+-- The real services (a server in Studio without API access, or a test, may
+-- lack some of them: each feature degrades to this server alone).
+function Lobby.defaultServices()
+	local svc={}
+	pcall(function() svc.store=game:GetService("MemoryStoreService") end)
+	pcall(function() svc.messaging=game:GetService("MessagingService") end)
+	pcall(function() svc.teleport=game:GetService("TeleportService") end)
+	svc.players=game:GetService("Players")
+	svc.jobId=game.JobId
+	svc.placeId=game.PlaceId
+	svc.privateServerId=game.PrivateServerId
+	svc.privateServerOwnerId=game.PrivateServerOwnerId
+	svc.now=function() return DateTime.now().UnixTimestampMillis/1000 end
+	svc.spawn=function(fn,...) task.spawn(fn,...) end
+	svc.guid=function() return game:GetService("HttpService"):GenerateGUID(false) end
+	svc.teleportOptions=function(code)
+		local options=Instance.new("TeleportOptions")
+		if code then options.ReservedServerAccessCode=code end
+		return options
+	end
+	svc.friends=function(userId)
+		local set={}
+		local ok,pages=pcall(function() return game:GetService("Players"):GetFriendsAsync(userId) end)
+		if not ok or not pages then return set end
+		for _=1,10 do
+			for _,friend in pages:GetCurrentPage() do set[friend.Id]=true end
+			if pages.IsFinished then break end
+			if not pcall(function() pages:AdvanceToNextPageAsync() end) then break end
+		end
+		return set
+	end
+	return svc
+end
+
+function Lobby.new(matches,services)
+	local svc=services or Lobby.defaultServices()
+	local self=setmetatable({matches=matches,svc=svc,players={},directory={},outgoing={},incoming={},
+		nextPublish=0,nextRead=0,readAt=-math.huge},Lobby)
+	self.remote=svc.remote
+	if not self.remote then
+		local remote=Shared:FindFirstChild("Lobby") or Instance.new("RemoteEvent")
+		remote.Name="Lobby";remote.Parent=Shared
+		self.remote=remote
+	end
+	if self.remote.OnServerEvent then
+		self.remote.OnServerEvent:Connect(function(player,payload) self:request(player,payload) end)
+	end
+	pcall(function()
+		if svc.store then
+			self.presence=svc.store:GetSortedMap(Protocol.Tune.PresenceMap)
+			self.duelRecords=svc.store:GetHashMap(Protocol.Tune.DuelMap)
+		end
+	end)
+	if svc.messaging then
+		svc.spawn(function()
+			local ok,err=pcall(function()
+				svc.messaging:SubscribeAsync(Protocol.Tune.Topic,function(message) self:onMessage(message.Data) end)
+			end)
+			if not ok then warn("[NinjaDuel] Lobby: no cross-server messages ("..tostring(err)..")") end
+		end)
+	end
+	-- A reserved server (no owner) is a duel server: it waits for the two
+	-- players its record names.
+	if svc.privateServerId~=nil and svc.privateServerId~="" and (svc.privateServerOwnerId or 0)==0 then
+		self.duel={arrived={},seated={},startedAt=svc.now()}
+		svc.spawn(function() self:loadDuel() end)
+	end
+	return self
+end
+
+-- ------------------------------------------------------------ players here
+local function nameOf(player)
+	local name=player.DisplayName
+	if type(name)~="string" or name=="" then name=player.Name end
+	return if type(name)=="string" and name~="" then string.sub(name,1,24) else "Ninja"
+end
+function Lobby:send(player,data)
+	pcall(function() self.remote:FireClient(player,data) end)
+end
+function Lobby:track(player)
+	local p={player=player,id=player.UserId,name=nameOf(player),fighter=BetaRoster[1],dnd=false,friends={},lastOp=-math.huge,
+		lastChallenge=-math.huge,watching=false}
+	self.players[player.UserId]=p
+	self.svc.spawn(function() p.friends=self.svc.friends(player.UserId) or {} end)
+	self.nextPublish=0
+	if self.duel then self:arrive(player) end
+	return p
+end
+function Lobby:untrack(player)
+	local p=self.players[player.UserId]
+	if not p then return end
+	self.players[player.UserId]=nil
+	-- Invitations this player sent die with him; those he received are refused.
+	for id,rec in table.clone(self.outgoing) do
+		if rec.from==p.id then self.outgoing[id]=nil;self:deliver({k="drop",id=id,to=rec.to,toJob=rec.toJob}) end
+	end
+	for id,rec in table.clone(self.incoming) do
+		if rec.to==p.id then self.incoming[id]=nil;self:deliver({k="no",id=id,to=rec.from,toJob=rec.fromJob,reason="gone",name=p.name}) end
+	end
+	if self.presence then
+		local key=tostring(p.id)
+		self.svc.spawn(function() pcall(function() self.presence:RemoveAsync(key) end) end)
+	end
+end
+-- What the others see of a player here: free on the roster, training against
+-- the AI (still challengeable: accepting ends the AI duel), or in a duel.
+function Lobby:stateOf(p)
+	if self.duel then return "duel" end
+	local s=self.matches.sessions[p.player]
+	if not s then return "free" end
+	if s.online and (s.online.kind=="duel" or s.online.kind=="travel") then return "duel" end
+	if s.online then return "queue" end
+	if s.phase=="Duel" or s.phase=="Result" then return "training" end
+	return "free"
+end
+function Lobby.challengeable(state) return state=="free" or state=="training" or state=="queue" end
+
+-- ------------------------------------------------------------ presence
+function Lobby:publish(now)
+	if not self.presence then return end
+	local job=self.svc.jobId
+	for _,p in self.players do
+		local value={n=p.name,f=p.fighter,s=self:stateOf(p),d=p.dnd,j=job,t=now}
+		local key=tostring(p.id)
+		self.svc.spawn(function() pcall(function() self.presence:SetAsync(key,value,Protocol.Tune.Life) end) end)
+	end
+end
+function Lobby:read(now)
+	if not self.presence then return end
+	self.svc.spawn(function()
+		local ok,items=pcall(function() return self.presence:GetRangeAsync(Enum.SortDirection.Ascending,Protocol.Tune.Page) end)
+		if not ok or type(items)~="table" then return end
+		local directory={}
+		for _,item in items do
+			local id=tonumber(item.key)
+			local v=item.value
+			if id and type(v)=="table" and type(v.n)=="string" and type(v.j)=="string" and type(v.t)=="number" and now-v.t&lt;=Protocol.Tune.Life then
+				directory[id]={id=id,name=string.sub(v.n,1,24),fighter=if type(v.f)=="string" and table.find(BetaRoster,v.f) then v.f else nil,
+					state=if type(v.s)=="string" then v.s else "free",dnd=v.d==true,job=v.j}
+			end
+		end
+		self.directory=directory;self.readAt=now
+		for _,p in self.players do if p.watching then self:list(p) end end
+	end)
+end
+-- Everyone a player can see: the servers' map plus this server's own players
+-- (always current), without himself; friends first, then who is free.
+function Lobby:entries(viewer)
+	local seen={}
+	local out={}
+	local job=self.svc.jobId
+	for id,p in self.players do
+		seen[id]=true
+		if id~=viewer.id then
+			table.insert(out,{id=id,name=p.name,fighter=p.fighter,state=self:stateOf(p),dnd=p.dnd,here=true,friend=viewer.friends[id]==true})
+		end
+	end
+	for id,e in self.directory do
+		if not seen[id] and id~=viewer.id and e.job~=job then
+			table.insert(out,{id=id,name=e.name,fighter=e.fighter,state=e.state,dnd=e.dnd,here=false,friend=viewer.friends[id]==true})
+		end
+	end
+	table.sort(out,function(a,b)
+		if a.friend~=b.friend then return a.friend end
+		local fa,fb=Lobby.challengeable(a.state) and not a.dnd,Lobby.challengeable(b.state) and not b.dnd
+		if fa~=fb then return fa end
+		return string.lower(a.name)&lt;string.lower(b.name)
+	end)
+	while #out&gt;Protocol.Tune.ListMax do table.remove(out) end
+	return out
+end
+function Lobby:list(p)
+	local pending={}
+	for id,rec in self.outgoing do if rec.from==p.id then pending[rec.to]=id end end
+	local players=self:entries(p)
+	for _,e in players do e.pending=pending[e.id]~=nil end
+	self:send(p.player,{kind="list",players=players,dnd=p.dnd,duelServer=self.duel~=nil})
+end
+-- Where a player is: this server (his record here) or another one (the map).
+function Lobby:locate(id)
+	local p=self.players[id]
+	if p then return {id=id,name=p.name,state=self:stateOf(p),dnd=p.dnd,job=self.svc.jobId,here=true} end
+	local e=self.directory[id]
+	if e then return {id=id,name=e.name,state=e.state,dnd=e.dnd,job=e.job,here=false} end
+	return nil
+end
+
+-- ------------------------------------------------------------ messages
+-- To the server a record names: this one (handled at once) or another one.
+function Lobby:deliver(msg)
+	if msg.toJob==self.svc.jobId or msg.toJob==nil and self.players[msg.to] then return self:onMessage(msg) end
+	if not self.svc.messaging then return end
+	self.svc.spawn(function() pcall(function() self.svc.messaging:PublishAsync(Protocol.Tune.Topic,msg) end) end)
+end
+function Lobby:onMessage(msg)
+	if type(msg)~="table" or type(msg.k)~="string" or type(msg.to)~="number" then return end
+	local p=self.players[msg.to]
+	if not p then return end
+	if msg.k=="ask" then return self:receive(p,msg) end
+	if msg.k=="no" then return self:refused(p,msg) end
+	if msg.k=="yes" then return self:accepted(p,msg) end
+	if msg.k=="go" then return self:depart(p,msg.code,msg.name) end
+	if msg.k=="drop" then
+		if self.incoming[msg.id] then self.incoming[msg.id]=nil;self:send(p.player,{kind="closed",id=msg.id,text="CHALLENGE CANCELLED"}) end
+	end
+end
+
+-- ------------------------------------------------------------ challenges
+function Lobby:status(p,text,tone) self:send(p.player,{kind="status",text=text,tone=tone or "info"}) end
+function Lobby:outgoingOf(id)
+	local n=0
+	for _,rec in self.outgoing do if rec.from==id then n+=1 end end
+	return n
+end
+function Lobby:challenge(p,to,fighter,now)
+	if self.duel then return self:status(p,"BACK TO THE LOBBY FIRST","bad") end
+	if to==p.id then return end
+	if now-p.lastChallenge&lt;Protocol.Tune.Gap then return self:status(p,"WAIT A MOMENT BEFORE THE NEXT CHALLENGE","bad") end
+	if self:outgoingOf(p.id)&gt;=Protocol.Tune.MaxOut then return self:status(p,"TOO MANY CHALLENGES WAITING","bad") end
+	if not Lobby.challengeable(self:stateOf(p)) then return self:status(p,"FINISH YOUR DUEL FIRST","bad") end
+	for _,rec in self.outgoing do if rec.from==p.id and rec.to==to then return end end
+	local target=self:locate(to)
+	if not target then return self:status(p,"THIS PLAYER IS NO LONGER ONLINE","bad") end
+	if target.dnd then return self:status(p,string.upper(target.name).." DOES NOT WANT TO BE DISTURBED","bad") end
+	if not Lobby.challengeable(target.state) then return self:status(p,string.upper(target.name).." IS IN A DUEL","bad") end
+	p.lastChallenge=now
+	if fighter then p.fighter=fighter end
+	local rec={id=string.sub(self.svc.guid(),1,18),from=p.id,name=p.name,fighter=p.fighter,to=to,toName=target.name,
+		fromJob=self.svc.jobId,toJob=target.job,expires=now+Protocol.Tune.ChallengeLife}
+	self.outgoing[rec.id]=rec
+	self:send(p.player,{kind="sent",id=rec.id,to=target.name,remaining=Protocol.Tune.ChallengeLife})
+	self:deliver({k="ask",id=rec.id,to=to,toJob=target.job,from=p.id,name=p.name,fighter=p.fighter,fromJob=self.svc.jobId,expires=rec.expires})
+	if p.watching then self:list(p) end
+end
+-- An invitation reaches the player it names (on this server).
+function Lobby:receive(p,msg)
+	local reply={k="no",id=msg.id,to=msg.from,toJob=msg.fromJob,name=p.name}
+	if type(msg.id)~="string" or type(msg.from)~="number" or type(msg.name)~="string" then return end
+	local count=0
+	for _,rec in self.incoming do if rec.to==p.id then count+=1 end end
+	if p.dnd then reply.reason="dnd";return self:deliver(reply) end
+	if not Lobby.challengeable(self:stateOf(p)) or count&gt;=Protocol.Tune.MaxIn then reply.reason="busy";return self:deliver(reply) end
+	local rec={id=msg.id,from=msg.from,name=string.sub(msg.name,1,24),fighter=if type(msg.fighter)=="string" and table.find(BetaRoster,msg.fighter) then msg.fighter else nil,
+		fromJob=msg.fromJob,to=p.id,expires=if type(msg.expires)=="number" then msg.expires else self.svc.now()+Protocol.Tune.ChallengeLife}
+	self.incoming[rec.id]=rec
+	self:send(p.player,{kind="invite",id=rec.id,from=rec.name,fromId=rec.from,fighter=rec.fighter,remaining=math.max(0,rec.expires-self.svc.now())})
+end
+function Lobby:answer(p,id,accept,fighter,now)
+	local rec=self.incoming[id]
+	if not rec or rec.to~=p.id then return end
+	self.incoming[id]=nil
+	self:send(p.player,{kind="closed",id=id})
+	if now&gt;rec.expires then return self:status(p,"THIS CHALLENGE HAS EXPIRED","bad") end
+	if fighter then p.fighter=fighter end
+	if not accept then return self:deliver({k="no",id=id,to=rec.from,toJob=rec.fromJob,reason="declined",name=p.name}) end
+	if not Lobby.challengeable(self:stateOf(p)) then return self:deliver({k="no",id=id,to=rec.from,toJob=rec.fromJob,reason="busy",name=p.name}) end
+	self:status(p,"ACCEPTED  •  WAITING FOR "..string.upper(rec.name))
+	self:deliver({k="yes",id=id,to=rec.from,toJob=rec.fromJob,from=p.id,name=p.name,fighter=p.fighter,fromJob=self.svc.jobId})
+end
+local REASONS={declined="%s DECLINED",busy="%s IS BUSY",dnd="%s DOES NOT WANT TO BE DISTURBED",gone="%s LEFT",error="THE DUEL COULD NOT START — TRY AGAIN",expired="NO ANSWER FROM %s"}
+function Lobby:refused(p,msg)
+	local rec=self.outgoing[msg.id]
+	if not rec then
+		-- (the accepting side, told the duel could not start)
+		if msg.reason=="error" or msg.reason=="gone" then self:status(p,string.format(REASONS[msg.reason],string.upper(tostring(msg.name or "THE PLAYER"))),"bad") end
+		return
+	end
+	self.outgoing[msg.id]=nil
+	self:status(p,string.format(REASONS[msg.reason] or REASONS.declined,string.upper(rec.toName or tostring(msg.name or "THE PLAYER"))),"bad")
+	if p.watching then self:list(p) end
+end
+-- The challenged player said yes: the challenger's server sets the duel up.
+function Lobby:accepted(p,msg)
+	local rec=self.outgoing[msg.id]
+	if not rec or rec.from~=p.id then return end
+	self.outgoing[msg.id]=nil
+	local fighter=if type(msg.fighter)=="string" and table.find(BetaRoster,msg.fighter) then msg.fighter else BetaRoster[1]
+	local other=self.players[msg.from]
+	if not Lobby.challengeable(self:stateOf(p)) then
+		return self:deliver({k="no",id=msg.id,to=msg.from,toJob=msg.fromJob,reason="busy",name=p.name})
+	end
+	-- Same server: the online 1v1 at once, no teleport.
+	if other then return self:pairHere(p,other,rec.fighter or p.fighter,fighter) end
+	self:status(p,string.upper(rec.toName or "YOUR OPPONENT").." ACCEPTED  •  LEAVING FOR THE DUEL…")
+	self.svc.spawn(function()
+		local ok,code,serverId=pcall(function() return self.svc.teleport:ReserveServer(self.svc.placeId) end)
+		local saved=ok and type(code)=="string" and type(serverId)=="string" and self.duelRecords~=nil and pcall(function()
+			self.duelRecords:SetAsync(serverId,{a=p.id,b=msg.from,fa=rec.fighter or p.fighter,fb=fighter,id=msg.id},Protocol.Tune.DuelRecordLife)
+		end)
+		if not saved then
+			self:status(p,REASONS.error,"bad")
+			return self:deliver({k="no",id=msg.id,to=msg.from,toJob=msg.fromJob,reason="error",name=p.name})
+		end
+		self:deliver({k="go",id=msg.id,to=msg.from,toJob=msg.fromJob,code=code,name=p.name})
+		self:depart(p,code,rec.toName)
+	end)
+end
+-- Both players here: straight into the online pick (Server/Online).
+function Lobby:pairHere(a,b,fa,fb)
+	local m=self.matches
+	for _,p in {a,b} do
+		local s=m:session(p.player)
+		if s.phase~="Selection" or s.online then m:selection(p.player) end
+	end
+	local sa,sb=m:session(a.player),m:session(b.player)
+	m.online:pair({player=a.player,session=sa,fighter=fa},{player=b.player,session=sb,fighter=fb},"challenge")
+end
+function Lobby:depart(p,code,opponent)
+	if type(code)~="string" or #code&gt;200 then return end
+	local s=self.matches:session(p.player)
+	if s.online then self.matches.online:leave(p.player,s) end
+	s.online={kind="travel"}
+	self:status(p,"LEAVING FOR THE DUEL"..(if opponent then " AGAINST "..string.upper(tostring(opponent)) else "").."…")
+	self:teleport(p.player,code)
+end
+function Lobby:teleport(player,code)
+	local svc=self.svc
+	if not svc.teleport then return end
+	svc.spawn(function()
+		for attempt=1,2 do
+			local ok,err=pcall(function() svc.teleport:TeleportAsync(svc.placeId,{player},svc.teleportOptions(code)) end)
+			if ok then return end
+			warn("[NinjaDuel] Lobby teleport failed ("..attempt.."): "..tostring(err))
+		end
+		local p=self.players[player.UserId]
+		local s=self.matches.sessions[player]
+		if s and s.online and s.online.kind=="travel" then s.online=nil end
+		if p then self:status(p,REASONS.error,"bad") end
+	end)
+end
+function Lobby:cancel(p,id)
+	local rec=self.outgoing[id]
+	if not rec or rec.from~=p.id then return end
+	self.outgoing[id]=nil
+	self:deliver({k="drop",id=id,to=rec.to,toJob=rec.toJob})
+	self:status(p,"CHALLENGE CANCELLED")
+	if p.watching then self:list(p) end
+end
+
+-- ------------------------------------------------------------ duel server
+function Lobby:loadDuel()
+	local d=self.duel
+	for _=1,12 do
+		local ok,rec=pcall(function() return self.duelRecords and self.duelRecords:GetAsync(self.svc.privateServerId) end)
+		if ok and type(rec)=="table" and type(rec.a)=="number" and type(rec.b)=="number" then
+			d.record=rec
+			for id in d.arrived do self:arrive(d.arrived[id]) end
+			return
+		end
+		task.wait(1)
+	end
+	d.failed=true
+	for _,p in self.players do self:home(p.player,"THE DUEL COULD NOT START") end
+end
+function Lobby:arrive(player)
+	local d=self.duel
+	d.arrived[player.UserId]=player
+	local rec=d.record
+	if not rec then return end
+	if player.UserId~=rec.a and player.UserId~=rec.b then return self:home(player,nil) end
+	local a,b=d.arrived[rec.a],d.arrived[rec.b]
+	if a and b and not d.paired then
+		d.paired=true
+		local m=self.matches
+		for _,pl in {a,b} do d.seated[pl.UserId]=true end
+		local fa=if type(rec.fa)=="string" and table.find(BetaRoster,rec.fa) then rec.fa else BetaRoster[1]
+		local fb=if type(rec.fb)=="string" and table.find(BetaRoster,rec.fb) then rec.fb else BetaRoster[2]
+		m.online:pair({player=a,session=m:session(a),fighter=fa},{player=b,session=m:session(b),fighter=fb},"challenge")
+	elseif not d.paired then
+		local s=self.matches:session(player)
+		s.phase="Queue";s.epoch+=1
+		self.matches:send(player,{phase="Queue",epoch=s.epoch,online={mode="challenge"}})
+	end
+end
+-- Back to a public server (the roster), with a word on the way.
+function Lobby:home(player,text)
+	local p=self.players[player.UserId]
+	if p then self:status(p,text or "BACK TO THE LOBBY…") end
+	self:teleport(player,nil)
+end
+-- Matches:selection calls this: in a duel server the roster is the lobby.
+function Lobby:onSelection(player)
+	local d=self.duel
+	if d and (d.seated[player.UserId] or d.failed) then self:home(player,nil) end
+end
+
+-- ------------------------------------------------------------ requests
+function Lobby:request(player,payload)
+	local p=self.players[player.UserId]
+	if not p or type(payload)~="table" or type(payload.op)~="string" then return end
+	local now=self.svc.now()
+	if now-p.lastOp&lt;Protocol.Tune.OpGap then return end
+	p.lastOp=now
+	local op=payload.op
+	local fighter=if type(payload.fighter)=="string" and table.find(BetaRoster,payload.fighter) then payload.fighter else nil
+	if op=="open" then p.watching=true;self:list(p)
+	elseif op=="close" then p.watching=false
+	elseif op=="fighter" then if fighter then p.fighter=fighter end
+	elseif op=="dnd" then
+		if type(payload.on)=="boolean" then p.dnd=payload.on;self.nextPublish=0;self:send(p.player,{kind="dnd",on=p.dnd}) end
+	elseif op=="challenge" then
+		if type(payload.to)=="number" and payload.to==payload.to and payload.to&gt;0 then self:challenge(p,math.floor(payload.to),fighter,now) end
+	elseif op=="answer" then
+		if type(payload.id)=="string" and #payload.id&lt;=40 and type(payload.accept)=="boolean" then self:answer(p,payload.id,payload.accept,fighter,now) end
+	elseif op=="cancel" then
+		if type(payload.id)=="string" and #payload.id&lt;=40 then self:cancel(p,payload.id) end
+	elseif op=="home" then
+		if self.duel then self:home(player,nil) end
+	end
+end
+
+function Lobby:update(now)
+	now=self.svc.now()
+	if now&gt;=self.nextPublish then self.nextPublish=now+Protocol.Tune.Publish;self:publish(now) end
+	if now&gt;=self.nextRead then self.nextRead=now+Protocol.Tune.Read;self:read(now) end
+	for id,rec in table.clone(self.outgoing) do
+		if now&gt;rec.expires+2 then
+			self.outgoing[id]=nil
+			local p=self.players[rec.from]
+			if p then self:status(p,string.format(REASONS.expired,string.upper(rec.toName or "THE PLAYER")),"bad");if p.watching then self:list(p) end end
+		end
+	end
+	for id,rec in table.clone(self.incoming) do
+		if now&gt;rec.expires then
+			self.incoming[id]=nil
+			local p=self.players[rec.to]
+			if p then self:send(p.player,{kind="closed",id=id}) end
+		end
+	end
+	local d=self.duel
+	if d and d.record and not d.paired and now-d.startedAt&gt;Protocol.Tune.Arrival then
+		d.failed=true
+		for _,p in self.players do self:home(p.player,"YOUR OPPONENT DID NOT ARRIVE") end
+		d.startedAt=math.huge
+	end
+end
+return Lobby
+</ProtectedString>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="ND60">
         <Properties>
           <string name="Name">LookMeshData</string>
           <ProtectedString name="Source">-- Generated by tools/blender/looks_to_luau.py from the Studio imports of
@@ -15125,7 +15635,7 @@ return {
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND59">
+      <Item class="ModuleScript" referent="ND61">
         <Properties>
           <string name="Name">LookMeshes</string>
           <ProtectedString name="Source">-- Blender-made looks (user 29/10 14:37: "produis les designs sur Blender").
@@ -15229,7 +15739,7 @@ return LookMeshes
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND60">
+      <Item class="ModuleScript" referent="ND62">
         <Properties>
           <string name="Name">Looks</string>
           <ProtectedString name="Source">-- Looks of the 8 main fighters, final-beta pass (user 29/10 14:00-14:07:
@@ -15899,7 +16409,7 @@ return Looks
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="Script" referent="ND61">
+      <Item class="Script" referent="ND63">
         <Properties>
           <string name="Name">Main</string>
           <ProtectedString name="Source">local Players=game:GetService("Players")
@@ -15914,11 +16424,19 @@ require(script.Parent.ArenaMeshes).preload()
 -- The select screen's fighters, built once with the duel's rig (Server/Portraits).
 require(script.Parent.Portraits).start()
 local matches=Matches.new(remote)
+-- (04/11) Players online and challenges between them, across the servers.
+local lobby=require(script.Parent.Lobby).new(matches)
+matches.lobby=lobby
 remote.OnServerEvent:Connect(function(player,payload) matches:request(player,payload) end)
-Players.PlayerAdded:Connect(function(player) matches:selection(player) end)
-Players.PlayerRemoving:Connect(function(player) matches:remove(player) end)
-for _,player in Players:GetPlayers() do matches:selection(player) end
-RunService.Heartbeat:Connect(function(dt) matches:update(dt,workspace:GetServerTimeNow()) end)
+Players.PlayerAdded:Connect(function(player) matches:selection(player);lobby:track(player) end)
+Players.PlayerRemoving:Connect(function(player) lobby:untrack(player);matches:remove(player) end)
+for _,player in Players:GetPlayers() do matches:selection(player);lobby:track(player) end
+local nextLobby=0
+RunService.Heartbeat:Connect(function(dt)
+	matches:update(dt,workspace:GetServerTimeNow())
+	local t=os.clock()
+	if t&gt;=nextLobby then nextLobby=t+.25;lobby:update() end
+end)
 -- Studio-only playtest hooks (no effect in a live server).
 if RunService:IsStudio() and workspace:GetAttribute("NinjaDuelDebug")==true then
 	require(script.Parent.DevHooks).install(matches)
@@ -15932,7 +16450,7 @@ print("[NinjaDuel] Ready — select a fighter and start the duel")
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND62">
+      <Item class="ModuleScript" referent="ND64">
         <Properties>
           <string name="Name">Matches</string>
           <ProtectedString name="Source">local Players=game:GetService("Players")
@@ -16005,6 +16523,8 @@ function Matches:selection(player,notice)
 	self:destroy(s)
 	player.Character=nil; s.phase="Selection"; s.epoch+=1
 	self:send(player,{phase="Selection",epoch=s.epoch,notice=notice})
+	-- (Lobby, 04/11) in a duel server the roster is the lobby: back home.
+	if self.lobby then self.lobby:onSelection(player) end
 end
 -- `options` (optional): {player=spec, bot=spec, bracket=id} skill builds (see
 -- Matches.resolveKit). An invalid or over-budget build refuses the start. No
@@ -16368,7 +16888,7 @@ return Matches
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND63">
+      <Item class="ModuleScript" referent="ND65">
         <Properties>
           <string name="Name">Motor</string>
           <ProtectedString name="Source">-- Server movement authority. This module owns locomotion, landing and safe
@@ -16760,7 +17280,7 @@ return Motor
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND64">
+      <Item class="ModuleScript" referent="ND66">
         <Properties>
           <string name="Name">Online</string>
           <ProtectedString name="Source">-- Online 1v1 (NET-001): casual queue, private duel codes, a short fighter
@@ -16827,6 +17347,8 @@ function Online:notice(player,s,message)
 end
 function Online:waiting(s)
 	local o=s.online
+	-- (Lobby, 04/11) on the way to a duel server: nothing to wait for here.
+	if o.kind=="travel" then return {phase="Queue",epoch=s.epoch,online={mode="travel"}} end
 	return {phase="Queue",epoch=s.epoch,online={mode=if o.kind=="host" then "private" else "casual",code=o.entry.code}}
 end
 -- From the roster: join the casual queue, host a private code or join one.
@@ -17000,6 +17522,8 @@ function Online:leave(player,s)
 	local o=s.online
 	if not o then return end
 	s.online=nil
+	-- (Lobby) a player leaving for a duel server holds no duel here.
+	if o.kind=="travel" then return end
 	if o.kind=="queue" then
 		local index=table.find(self.queue,o.entry)
 		if index then table.remove(self.queue,index) end
@@ -17100,7 +17624,7 @@ return Online
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND65">
+      <Item class="ModuleScript" referent="ND67">
         <Properties>
           <string name="Name">Perception</string>
           <ProtectedString name="Source">-- Ninja Embodiment (DEC-027): what a body perceives of the space around a
@@ -17209,7 +17733,7 @@ return Perception
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND66">
+      <Item class="ModuleScript" referent="ND68">
         <Properties>
           <string name="Name">Place1Movement</string>
           <ProtectedString name="Source">-- Adapted directly from Place1 FirstPersonMovementController (alexkkork, MIT).
@@ -17513,7 +18037,7 @@ return Movement
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND67">
+      <Item class="ModuleScript" referent="ND69">
         <Properties>
           <string name="Name">Place1Parkour</string>
           <ProtectedString name="Source">-- Adapted directly from Place1 ParkourTraversalController (alexkkork, MIT).
@@ -17995,7 +18519,7 @@ return Parkour
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND68">
+      <Item class="ModuleScript" referent="ND70">
         <Properties>
           <string name="Name">Portraits</string>
           <ProtectedString name="Source">-- The menu's fighters (UI pass 02/11, user: "be original in everything"): the
@@ -18095,7 +18619,7 @@ return Portraits
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND69">
+      <Item class="ModuleScript" referent="ND71">
         <Properties>
           <string name="Name">ProfileRepository</string>
           <ProtectedString name="Source">-- Progression profile persistence (PROG-001). One key per profile; an
@@ -18306,7 +18830,7 @@ return Repo
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND70">
+      <Item class="ModuleScript" referent="ND72">
         <Properties>
           <string name="Name">ProfileSchema</string>
           <ProtectedString name="Source">-- Fighter progression profile (PROG-001). Per fighter: the skill points earned,
@@ -18509,7 +19033,7 @@ return S
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND71">
+      <Item class="ModuleScript" referent="ND73">
         <Properties>
           <string name="Name">SkillBuilds</string>
           <ProtectedString name="Source">-- Skill builds (PROG-001/002). Pure, server-side: validates a fighter's ACTIVE
@@ -18998,7 +19522,7 @@ return SkillBuilds
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND72">
+      <Item class="ModuleScript" referent="ND74">
         <Properties>
           <string name="Name">SkillTrees</string>
           <ProtectedString name="Source">-- Fighter skill trees (PROG-001). Server data: what skill points buy for each
@@ -19316,7 +19840,7 @@ return {
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND73">
+      <Item class="ModuleScript" referent="ND75">
         <Properties>
           <string name="Name">Techniques</string>
           <ProtectedString name="Source">-- Each entry supplies prerequisites and payoff. The combat pipeline owns cost,
@@ -20387,7 +20911,7 @@ return Techniques
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND74">
+      <Item class="ModuleScript" referent="ND76">
         <Properties>
           <string name="Name">Tutorial</string>
           <ProtectedString name="Source">-- Tutorial v2 (user 02/11: "un vrai tutoriel ... adapté pour chaque perso",
@@ -20737,7 +21261,7 @@ return Tutorial
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND75">
+      <Item class="ModuleScript" referent="ND77">
         <Properties>
           <string name="Name">Ultimates</string>
           <ProtectedString name="Source">-- Ultimates (stage 6, the approved move list, "Ultimes"): one per main
@@ -21042,7 +21566,7 @@ return Ultimates
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND76">
+      <Item class="ModuleScript" referent="ND78">
         <Properties>
           <string name="Name">VelmoraAntiCheat</string>
           <ProtectedString name="Source">-- Adapted from Velmora src/server/Combat/CombatAntiCheat.luau.
@@ -21070,7 +21594,7 @@ return AntiCheat
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND77">
+      <Item class="ModuleScript" referent="ND79">
         <Properties>
           <string name="Name">VelmoraDefense</string>
           <ProtectedString name="Source">-- Adapted from Velmora CombatService guard/parry/dodge resolution.
@@ -21205,7 +21729,7 @@ return Defense
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND78">
+      <Item class="ModuleScript" referent="ND80">
         <Properties>
           <string name="Name">VelmoraHitDetection</string>
           <ProtectedString name="Source">-- Adapted from Velmora src/server/Combat/HitDetection.luau.
@@ -21256,7 +21780,7 @@ return HitDetection
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND79">
+      <Item class="ModuleScript" referent="ND81">
         <Properties>
           <string name="Name">Wave1Kit</string>
           <ProtectedString name="Source">-- Roster 20, batch 1 (Haku, Zabuza, Kimimaro): the batch's server side. All
@@ -21391,7 +21915,7 @@ return Kit
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND80">
+      <Item class="ModuleScript" referent="ND82">
         <Properties>
           <string name="Name">Wave2Kit</string>
           <ProtectedString name="Source">-- Roster 20, batch 2 (Shisui, Orochimaru, Kabuto): the batch's server side.
@@ -21505,7 +22029,7 @@ return Kit
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND81">
+      <Item class="ModuleScript" referent="ND83">
         <Properties>
           <string name="Name">Wave3Kit</string>
           <ProtectedString name="Source">-- Roster 20, batch 3 (Deidara, Sasori, Nagato, Killer Bee): the batch's
@@ -21691,7 +22215,7 @@ return Kit
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND82">
+      <Item class="ModuleScript" referent="ND84">
         <Properties>
           <string name="Name">Wave4Kit</string>
           <ProtectedString name="Source">-- DEC-026 newcomers (Madara, Hashirama, Hiruzen as children): the batch's
@@ -21798,7 +22322,7 @@ return Kit
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND83">
+      <Item class="ModuleScript" referent="ND85">
         <Properties>
           <string name="Name">World</string>
           <ProtectedString name="Source">local World = {}
@@ -23008,7 +23532,7 @@ return World
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND84">
+      <Item class="ModuleScript" referent="ND86">
         <Properties>
           <string name="Name">WorldReaction</string>
           <ProtectedString name="Source">-- Ninja Embodiment (DEC-027, EMB-004): the arena answers what happens in it.
@@ -23621,7 +24145,7 @@ return WorldReaction
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND85">
+      <Item class="ModuleScript" referent="ND87">
         <Properties>
           <string name="Name">Zones</string>
           <ProtectedString name="Source">-- Persistent typed zones (ROSTER_WAVE_HOOKS H06), beside Combat's hazards
@@ -23849,21 +24373,21 @@ return Zones
       </Item>
     </Item>
   </Item>
-  <Item class="StarterPlayer" referent="ND86">
+  <Item class="StarterPlayer" referent="ND88">
     <Properties>
       <string name="Name">StarterPlayer</string>
       <float name="CameraMinZoomDistance">8</float>
       <float name="CameraMaxZoomDistance">32</float>
     </Properties>
-    <Item class="StarterPlayerScripts" referent="ND87">
+    <Item class="StarterPlayerScripts" referent="ND89">
       <Properties>
         <string name="Name">StarterPlayerScripts</string>
       </Properties>
-      <Item class="Folder" referent="ND88">
+      <Item class="Folder" referent="ND90">
         <Properties>
           <string name="Name">NinjaDuelClient</string>
         </Properties>
-        <Item class="ModuleScript" referent="ND89">
+        <Item class="ModuleScript" referent="ND91">
           <Properties>
             <string name="Name">ArenaDress</string>
             <ProtectedString name="Source">-- The stadium as this screen shows it (look pass 03/11, user: "the brightness,
@@ -24065,7 +24589,7 @@ return ArenaDress
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND90">
+        <Item class="ModuleScript" referent="ND92">
           <Properties>
             <string name="Name">AuthoredClips</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -24124,7 +24648,7 @@ return all
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND91">
+        <Item class="ModuleScript" referent="ND93">
           <Properties>
             <string name="Name">AuthoredClips1</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -24442,7 +24966,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND92">
+        <Item class="ModuleScript" referent="ND94">
           <Properties>
             <string name="Name">AuthoredClips10</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -24828,7 +25352,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND93">
+        <Item class="ModuleScript" referent="ND95">
           <Properties>
             <string name="Name">AuthoredClips11</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -24976,7 +25500,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND94">
+        <Item class="ModuleScript" referent="ND96">
           <Properties>
             <string name="Name">AuthoredClips12</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -25277,7 +25801,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND95">
+        <Item class="ModuleScript" referent="ND97">
           <Properties>
             <string name="Name">AuthoredClips13</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -25510,7 +26034,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND96">
+        <Item class="ModuleScript" referent="ND98">
           <Properties>
             <string name="Name">AuthoredClips14</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -25726,7 +26250,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND97">
+        <Item class="ModuleScript" referent="ND99">
           <Properties>
             <string name="Name">AuthoredClips15</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -26112,7 +26636,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND98">
+        <Item class="ModuleScript" referent="ND100">
           <Properties>
             <string name="Name">AuthoredClips16</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -26277,7 +26801,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND99">
+        <Item class="ModuleScript" referent="ND101">
           <Properties>
             <string name="Name">AuthoredClips17</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -26425,7 +26949,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND100">
+        <Item class="ModuleScript" referent="ND102">
           <Properties>
             <string name="Name">AuthoredClips18</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -26743,7 +27267,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND101">
+        <Item class="ModuleScript" referent="ND103">
           <Properties>
             <string name="Name">AuthoredClips19</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -27027,7 +27551,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND102">
+        <Item class="ModuleScript" referent="ND104">
           <Properties>
             <string name="Name">AuthoredClips2</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -27260,7 +27784,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND103">
+        <Item class="ModuleScript" referent="ND105">
           <Properties>
             <string name="Name">AuthoredClips20</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -27510,7 +28034,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND104">
+        <Item class="ModuleScript" referent="ND106">
           <Properties>
             <string name="Name">AuthoredClips21</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -27845,7 +28369,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND105">
+        <Item class="ModuleScript" referent="ND107">
           <Properties>
             <string name="Name">AuthoredClips22</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -27942,7 +28466,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND106">
+        <Item class="ModuleScript" referent="ND108">
           <Properties>
             <string name="Name">AuthoredClips23</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -28226,7 +28750,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND107">
+        <Item class="ModuleScript" referent="ND109">
           <Properties>
             <string name="Name">AuthoredClips24</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -28459,7 +28983,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND108">
+        <Item class="ModuleScript" referent="ND110">
           <Properties>
             <string name="Name">AuthoredClips25</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -28641,7 +29165,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND109">
+        <Item class="ModuleScript" referent="ND111">
           <Properties>
             <string name="Name">AuthoredClips26</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -29027,7 +29551,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND110">
+        <Item class="ModuleScript" referent="ND112">
           <Properties>
             <string name="Name">AuthoredClips27</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -29226,7 +29750,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND111">
+        <Item class="ModuleScript" referent="ND113">
           <Properties>
             <string name="Name">AuthoredClips28</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -29459,7 +29983,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND112">
+        <Item class="ModuleScript" referent="ND114">
           <Properties>
             <string name="Name">AuthoredClips29</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -29743,7 +30267,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND113">
+        <Item class="ModuleScript" referent="ND115">
           <Properties>
             <string name="Name">AuthoredClips3</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -29993,7 +30517,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND114">
+        <Item class="ModuleScript" referent="ND116">
           <Properties>
             <string name="Name">AuthoredClips30</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -30260,7 +30784,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND115">
+        <Item class="ModuleScript" referent="ND117">
           <Properties>
             <string name="Name">AuthoredClips31</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -30493,7 +31017,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND116">
+        <Item class="ModuleScript" referent="ND118">
           <Properties>
             <string name="Name">AuthoredClips32</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -30828,7 +31352,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND117">
+        <Item class="ModuleScript" referent="ND119">
           <Properties>
             <string name="Name">AuthoredClips33</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -30942,7 +31466,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND118">
+        <Item class="ModuleScript" referent="ND120">
           <Properties>
             <string name="Name">AuthoredClips34</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -31243,7 +31767,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND119">
+        <Item class="ModuleScript" referent="ND121">
           <Properties>
             <string name="Name">AuthoredClips35</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -31476,7 +32000,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND120">
+        <Item class="ModuleScript" referent="ND122">
           <Properties>
             <string name="Name">AuthoredClips36</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -31692,7 +32216,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND121">
+        <Item class="ModuleScript" referent="ND123">
           <Properties>
             <string name="Name">AuthoredClips37</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -32010,7 +32534,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND122">
+        <Item class="ModuleScript" referent="ND124">
           <Properties>
             <string name="Name">AuthoredClips38</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -32311,7 +32835,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND123">
+        <Item class="ModuleScript" referent="ND125">
           <Properties>
             <string name="Name">AuthoredClips39</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -32408,7 +32932,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND124">
+        <Item class="ModuleScript" referent="ND126">
           <Properties>
             <string name="Name">AuthoredClips4</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -32658,7 +33182,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND125">
+        <Item class="ModuleScript" referent="ND127">
           <Properties>
             <string name="Name">AuthoredClips40</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -32908,7 +33432,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND126">
+        <Item class="ModuleScript" referent="ND128">
           <Properties>
             <string name="Name">AuthoredClips41</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -33158,7 +33682,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND127">
+        <Item class="ModuleScript" referent="ND129">
           <Properties>
             <string name="Name">AuthoredClips42</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -33374,7 +33898,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND128">
+        <Item class="ModuleScript" referent="ND130">
           <Properties>
             <string name="Name">AuthoredClips43</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -33777,7 +34301,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND129">
+        <Item class="ModuleScript" referent="ND131">
           <Properties>
             <string name="Name">AuthoredClips44</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -33891,7 +34415,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND130">
+        <Item class="ModuleScript" referent="ND132">
           <Properties>
             <string name="Name">AuthoredClips45</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -33937,7 +34461,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND131">
+        <Item class="ModuleScript" referent="ND133">
           <Properties>
             <string name="Name">AuthoredClips46</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -33983,7 +34507,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND132">
+        <Item class="ModuleScript" referent="ND134">
           <Properties>
             <string name="Name">AuthoredClips47</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -34029,7 +34553,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND133">
+        <Item class="ModuleScript" referent="ND135">
           <Properties>
             <string name="Name">AuthoredClips48</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -34075,7 +34599,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND134">
+        <Item class="ModuleScript" referent="ND136">
           <Properties>
             <string name="Name">AuthoredClips49</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -34104,7 +34628,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND135">
+        <Item class="ModuleScript" referent="ND137">
           <Properties>
             <string name="Name">AuthoredClips5</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -34371,7 +34895,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND136">
+        <Item class="ModuleScript" referent="ND138">
           <Properties>
             <string name="Name">AuthoredClips6</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -34502,7 +35026,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND137">
+        <Item class="ModuleScript" referent="ND139">
           <Properties>
             <string name="Name">AuthoredClips7</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -34786,7 +35310,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND138">
+        <Item class="ModuleScript" referent="ND140">
           <Properties>
             <string name="Name">AuthoredClips8</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -35070,7 +35594,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND139">
+        <Item class="ModuleScript" referent="ND141">
           <Properties>
             <string name="Name">AuthoredClips9</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -35303,7 +35827,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND140">
+        <Item class="ModuleScript" referent="ND142">
           <Properties>
             <string name="Name">AuthoredMotion</string>
             <ProtectedString name="Source">-- Blender-authored body animation (DEC Blender-first pipeline): clips made in
@@ -35439,7 +35963,7 @@ return Authored
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND141">
+        <Item class="ModuleScript" referent="ND143">
           <Properties>
             <string name="Name">BodyViews</string>
             <ProtectedString name="Source">-- Bodies that are not fighters (Server/Bodies: Naruto's shadow clones), drawn
@@ -35603,7 +36127,7 @@ return BodyViews
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND142">
+        <Item class="ModuleScript" referent="ND144">
           <Properties>
             <string name="Name">Camera</string>
             <ProtectedString name="Source">-- Duel camera. A locked third-person rig that keeps both fighters readable:
@@ -36092,7 +36616,7 @@ return Camera
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND143">
+        <Item class="ModuleScript" referent="ND145">
           <Properties>
             <string name="Name">ChakraFX</string>
             <ProtectedString name="Source">-- Systemic chakra on the client, the player-facing layer (convergence 3,
@@ -36647,7 +37171,7 @@ return ChakraFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND144">
+        <Item class="ModuleScript" referent="ND146">
           <Properties>
             <string name="Name">ChakraFlowFX</string>
             <ProtectedString name="Source">-- ChakraFlow on the client (Freedom, user 28/10: chakra infusions): the load
@@ -36831,7 +37355,7 @@ return ChakraFlowFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND145">
+        <Item class="ModuleScript" referent="ND147">
           <Properties>
             <string name="Name">Effects</string>
             <ProtectedString name="Source">-- Client-side combat VFX. Everything here is presentation driven by the server
@@ -38988,7 +39512,7 @@ return FX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND146">
+        <Item class="ModuleScript" referent="ND148">
           <Properties>
             <string name="Name">FamilyFX</string>
             <ProtectedString name="Source">-- Family objects seen in play (roster breadth pass): every projectile kind of
@@ -39613,7 +40137,7 @@ return FamilyFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND147">
+        <Item class="ModuleScript" referent="ND149">
           <Properties>
             <string name="Name">GaleFX</string>
             <ProtectedString name="Source">-- Temari on the client (roster wave): the iron fan (closed on her back at rest,
@@ -40091,7 +40615,7 @@ return GaleFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND148">
+        <Item class="ModuleScript" referent="ND150">
           <Properties>
             <string name="Name">GaleMotion</string>
             <ProtectedString name="Source">-- Temari's motion family (roster wave, DEC-015): her stance, gait, clips,
@@ -40272,7 +40796,7 @@ return GaleMotion
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND149">
+        <Item class="ModuleScript" referent="ND151">
           <Properties>
             <string name="Name">IdentityFX</string>
             <ProtectedString name="Source">-- CORE4 identity on the client (mission NEXT_VALIDATION_ROSTER_SCALE §5): what
@@ -41042,7 +41566,7 @@ return IdentityFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND150">
+        <Item class="ModuleScript" referent="ND152">
           <Properties>
             <string name="Name">Input</string>
             <ProtectedString name="Source">local CAS=game:GetService("ContextActionService")
@@ -41311,7 +41835,7 @@ return Input
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND151">
+        <Item class="ModuleScript" referent="ND153">
           <Properties>
             <string name="Name">LeeFX</string>
             <ProtectedString name="Source">-- Rock Lee on the client (stress-test wave, DEC-015): the Fifth Gate (a green
@@ -41492,7 +42016,238 @@ return LeeFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="LocalScript" referent="ND152">
+        <Item class="ModuleScript" referent="ND154">
+          <Properties>
+            <string name="Name">LobbyPanel</string>
+            <ProtectedString name="Source">-- Players online and challenges, the client's half (Server/Lobby, user 04/11:
+-- see who is connected, challenge one, the other gets a notification and
+-- accepts or declines). Three pieces, all in the house ink card:
+--  * PLAYERS ONLINE on the roster, with the count, opens the list: each
+--    player's name, fighter and state, a CHALLENGE button; friends first;
+--    do not disturb at the bottom.
+--  * The invitation: a card at the top of the screen on every screen (the
+--    roster, a duel against the AI, the result), ACCEPT / DECLINE and the time
+--    left. Keyboard: Enter accepts, Backspace declines.
+--  * The status line under it: challenge sent (cancel), declined, no answer,
+--    leaving for the duel.
+-- The client sends ids and booleans only; players the user blocked on Roblox
+-- are hidden and their invitations declined unseen.
+local Players=game:GetService("Players")
+local UIS=game:GetService("UserInputService")
+local Shared=game:GetService("ReplicatedStorage").NinjaDuel
+local Fighters=require(Shared.Fighters)
+local Panel={};Panel.__index=Panel
+
+local STATE={free="ON THE ROSTER",training="VS THE AI",queue="SEARCHING",duel="IN A DUEL"}
+local function blocked()
+	local set={}
+	pcall(function()
+		for _,id in game:GetService("StarterGui"):GetCore("GetBlockedUserIds") or {} do set[id]=true end
+	end)
+	return set
+end
+
+function Panel.new(ui,remote,kit)
+	local K=kit
+	local P=K.palette
+	local self=setmetatable({ui=ui,remote=remote,kit=K,players={},invites={},rows={},sentId=nil,dnd=false,blocked=blocked(),
+		lastFighter=nil,open=false,phase="Selection"},Panel)
+	-- PLAYERS ONLINE, on the roster above ENTER THE STAGE.
+	self.button=K.button(ui.shell,"PLAYERS ONLINE",UDim2.fromOffset(1140,712),UDim2.fromOffset(400,52),function() self:toggle(true) end)
+	self.button.TextSize=26
+	-- The list.
+	local overlay=K.frame(ui.gui,UDim2.fromScale(0,0),UDim2.fromScale(1,1),P.ink,.35)
+	overlay.ZIndex=70;overlay.Visible=false;overlay.Active=true
+	self.overlay=overlay
+	local card=K.inkCard(K.frame(overlay,UDim2.fromScale(.5,.5),UDim2.fromOffset(760,620),K.CARD,0))
+	card.AnchorPoint=Vector2.new(.5,.5);card.ZIndex=71
+	local scale=K.create("UIScale",card,{Scale=1})
+	local function fit()
+		local size=workspace.CurrentCamera.ViewportSize
+		scale.Scale=math.clamp(math.min(size.X/1500,size.Y/860),.5,1.2)
+	end
+	workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(fit);fit()
+	local title=K.inkTitle(K.text(card,"PLAYERS ONLINE",UDim2.fromOffset(28,16),UDim2.fromOffset(704,50),44,P.paper,K.TITLE_FONT))
+	title.ZIndex=72
+	self.subtitle=K.text(card,"",UDim2.fromOffset(30,66),UDim2.fromOffset(700,20),14,P.muted,K.BODY_FONT);self.subtitle.ZIndex=72
+	local list=K.create("ScrollingFrame",card,{Position=UDim2.fromOffset(24,96),Size=UDim2.fromOffset(712,420),BackgroundTransparency=1,BorderSizePixel=0,
+		ScrollBarThickness=6,CanvasSize=UDim2.fromOffset(0,0),ZIndex=72})
+	self.list=list
+	self.empty=K.text(list,"Nobody else is online right now. Train against the AI — the list refreshes by itself.",UDim2.fromOffset(20,30),UDim2.fromOffset(660,60),18,P.muted,K.BODY_FONT,Enum.TextXAlignment.Center)
+	self.empty.ZIndex=73
+	self.dndButton=K.button(card,"DO NOT DISTURB: OFF",UDim2.fromOffset(24,540),UDim2.fromOffset(340,56),function()
+		self:send({op="dnd",on=not self.dnd})
+	end)
+	self.dndButton.ZIndex=72
+	local close=K.button(card,"CLOSE",UDim2.fromOffset(396,540),UDim2.fromOffset(340,56),function() self:toggle(false) end)
+	close.ZIndex=72
+	self.closeButton=close
+	-- The invitation and the status line, above every screen.
+	local top=K.frame(ui.gui,UDim2.new(.5,0,0,70),UDim2.fromOffset(620,150),P.ink,1)
+	top.AnchorPoint=Vector2.new(.5,0);top.ZIndex=80
+	local topScale=K.create("UIScale",top,{Scale=1})
+	local function fitTop()
+		local size=workspace.CurrentCamera.ViewportSize
+		topScale.Scale=math.clamp(math.min(size.X/1500,size.Y/860),.55,1.2)
+	end
+	workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(fitTop);fitTop()
+	local invite=K.inkCard(K.frame(top,UDim2.fromOffset(0,0),UDim2.fromOffset(620,112),K.CARD,0),10)
+	invite.ZIndex=81;invite.Visible=false
+	self.inviteCard=invite
+	self.inviteText=K.inkTitle(K.text(invite,"",UDim2.fromOffset(18,10),UDim2.fromOffset(584,34),30,P.paper,K.TITLE_FONT,Enum.TextXAlignment.Center))
+	self.inviteText.ZIndex=82
+	self.inviteSub=K.text(invite,"",UDim2.fromOffset(18,42),UDim2.fromOffset(584,18),13,P.muted,K.BODY_FONT,Enum.TextXAlignment.Center)
+	self.inviteSub.ZIndex=82
+	self.acceptButton=K.button(invite,"ACCEPT",UDim2.fromOffset(18,64),UDim2.fromOffset(284,38),function() self:answer(true) end,P.red)
+	self.acceptButton.ZIndex=82
+	self.declineButton=K.button(invite,"DECLINE",UDim2.fromOffset(318,64),UDim2.fromOffset(284,38),function() self:answer(false) end)
+	self.declineButton.ZIndex=82
+	self.timer=K.frame(invite,UDim2.new(0,0,1,-4),UDim2.new(1,0,0,4),P.gold,0);self.timer.ZIndex=83
+	local status=K.frame(top,UDim2.fromOffset(60,118),UDim2.fromOffset(500,30),K.CARD,.1)
+	K.corner(status,6);status.ZIndex=81;status.Visible=false
+	self.statusBox=status
+	self.statusText=K.text(status,"",UDim2.fromOffset(12,0),UDim2.fromOffset(380,30),14,P.paper,K.BODY_FONT,Enum.TextXAlignment.Center)
+	self.statusText.ZIndex=82
+	self.cancelButton=K.button(status,"CANCEL",UDim2.fromOffset(398,3),UDim2.fromOffset(98,24),function()
+		if self.sentId then self:send({op="cancel",id=self.sentId}) end
+	end)
+	self.cancelButton.TextSize=16;self.cancelButton.ZIndex=82
+	-- Keyboard answers (the cursor may be held by the duel camera).
+	UIS.InputBegan:Connect(function(input,processed)
+		if processed or not self.invite then return end
+		if input.KeyCode==Enum.KeyCode.Return then self:answer(true)
+		elseif input.KeyCode==Enum.KeyCode.Backspace then self:answer(false) end
+	end)
+	remote.OnClientEvent:Connect(function(data) self:receive(data) end)
+	-- The fighter picked on the roster is what the others see next to the name.
+	task.spawn(function()
+		while true do
+			task.wait(1)
+			local id=ui.player
+			if id and id~=self.lastFighter and Fighters[id] then self.lastFighter=id;self:send({op="fighter",fighter=id}) end
+			self:tickTimer()
+			if self.open then self:send({op="open"}) end
+		end
+	end)
+	return self
+end
+function Panel:send(payload) pcall(function() self.remote:FireServer(payload) end) end
+function Panel:toggle(open)
+	self.open=open
+	self.overlay.Visible=open
+	self:send({op=if open then "open" else "close"})
+	pcall(function() game:GetService("GuiService").SelectedObject=if open then self.closeButton else nil end)
+end
+function Panel:status(text,tone,cancellable)
+	self.statusText.Text=text or ""
+	self.statusText.TextColor3=if tone=="bad" then self.kit.palette.gold else self.kit.palette.paper
+	self.statusBox.Visible=text~=nil and text~=""
+	self.cancelButton.Visible=cancellable==true
+	self.statusSerial=(self.statusSerial or 0)+1
+	local serial=self.statusSerial
+	if not cancellable then
+		task.delay(6,function() if self.statusSerial==serial then self.statusBox.Visible=false end end)
+	end
+end
+function Panel:receive(data)
+	if type(data)~="table" then return end
+	if data.kind=="list" then
+		self.players=data.players or {}
+		self.dnd=data.dnd==true
+		self:drawList()
+	elseif data.kind=="dnd" then
+		self.dnd=data.on==true
+		self:drawList()
+	elseif data.kind=="invite" then
+		if self.blocked[data.fromId] then self:send({op="answer",id=data.id,accept=false});return end
+		self.invite={id=data.id,from=data.from,fighter=data.fighter,until_=os.clock()+(data.remaining or 20),length=data.remaining or 20}
+		self:drawInvite()
+	elseif data.kind=="closed" then
+		if self.invite and self.invite.id==data.id then self.invite=nil;self:drawInvite() end
+		if self.sentId==data.id then self.sentId=nil end
+		if data.text then self:status(data.text,"bad") end
+	elseif data.kind=="sent" then
+		self.sentId=data.id
+		self:status("CHALLENGE SENT TO "..string.upper(tostring(data.to)).."  •  WAITING…","info",true)
+	elseif data.kind=="status" then
+		if self.sentId and data.tone=="bad" then self.sentId=nil end
+		self:status(data.text,data.tone,false)
+		if string.find(tostring(data.text),"LEAVING FOR THE DUEL",1,true) or string.find(tostring(data.text),"ACCEPTED",1,true) then
+			self.sentId=nil;self:toggle(false)
+		end
+	end
+end
+function Panel:answer(accept)
+	local invite=self.invite
+	if not invite then return end
+	self.invite=nil
+	self:drawInvite()
+	self:send({op="answer",id=invite.id,accept=accept,fighter=self.ui.player})
+end
+function Panel:drawInvite()
+	local invite=self.invite
+	self.inviteCard.Visible=invite~=nil
+	if not invite then return end
+	local def=Fighters[invite.fighter or ""]
+	self.inviteText.Text=string.upper(invite.from).." CHALLENGES YOU"
+	self.inviteSub.Text=(if def then "WITH "..string.upper(def.Name).."  •  " else "").."ENTER ACCEPTS  •  BACKSPACE DECLINES"
+	self:tickTimer()
+end
+function Panel:tickTimer()
+	local invite=self.invite
+	if not invite then return end
+	local left=invite.until_-os.clock()
+	if left&lt;=0 then self.invite=nil;self:drawInvite();return end
+	self.timer.Size=UDim2.new(math.clamp(left/invite.length,0,1),0,0,4)
+end
+function Panel:drawList()
+	local K,P=self.kit,self.kit.palette
+	for _,row in self.rows do row:Destroy() end
+	table.clear(self.rows)
+	self.rowButtons={}
+	local shown=0
+	local free=0
+	for _,e in self.players do
+		if self.blocked[e.id] then continue end
+		shown+=1
+		local available=(e.state=="free" or e.state=="training" or e.state=="queue") and not e.dnd
+		if available then free+=1 end
+		local row=K.frame(self.list,UDim2.fromOffset(0,(shown-1)*64),UDim2.fromOffset(696,58),P.panel,.15)
+		K.corner(row,6);row.ZIndex=73
+		local def=Fighters[e.fighter or ""]
+		local accent=if def then Color3.fromRGB(table.unpack(def.Color)) else P.muted
+		local bar=K.frame(row,UDim2.fromOffset(0,0),UDim2.new(0,6,1,0),accent,0);bar.ZIndex=74
+		local name=K.text(row,(if e.friend then "★ " else "")..string.upper(e.name),UDim2.fromOffset(18,6),UDim2.fromOffset(340,28),24,P.paper,K.TITLE_FONT)
+		name.ZIndex=74;name.TextScaled=true;K.create("UITextSizeConstraint",name,{MaxTextSize=24})
+		local info=(if def then string.upper(def.Name).."  •  " else "")..(if e.dnd then "DO NOT DISTURB" else STATE[e.state] or "")..(if e.here then "  •  THIS SERVER" else "")
+		local sub=K.text(row,info,UDim2.fromOffset(18,34),UDim2.fromOffset(440,18),12,P.muted,K.BODY_FONT);sub.ZIndex=74
+		local label=if e.pending then "SENT…" elseif available then "CHALLENGE" else "BUSY"
+		local b=K.button(row,label,UDim2.fromOffset(500,8),UDim2.fromOffset(186,42),function()
+			if available and not e.pending then self:send({op="challenge",to=e.id,fighter=self.ui.player}) end
+		end,if available and not e.pending then P.red else nil)
+		b.ZIndex=74;b.AutoButtonColor=available
+		if not available or e.pending then b.TextColor3=P.muted end
+		table.insert(self.rows,row)
+		table.insert(self.rowButtons,b)
+	end
+	self.list.CanvasSize=UDim2.fromOffset(0,shown*64)
+	self.empty.Visible=shown==0
+	self.subtitle.Text=if shown==0 then "" else string.format("%d ONLINE  •  %d READY FOR A DUEL  •  FRIENDS FIRST",shown,free)
+	self.dndButton.Text="DO NOT DISTURB: "..(if self.dnd then "ON" else "OFF")
+	self.button.Text=if shown&gt;0 then string.format("PLAYERS ONLINE  •  %d",shown) else "PLAYERS ONLINE"
+end
+-- Called with every game packet: the button lives on the roster only; the
+-- list closes when a duel or a pick starts.
+function Panel:render(data)
+	self.phase=data.phase
+	self.button.Visible=data.phase=="Selection"
+	if self.open and data.phase~="Selection" then self:toggle(false) end
+end
+return Panel
+</ProtectedString>
+          </Properties>
+        </Item>
+        <Item class="LocalScript" referent="ND155">
           <Properties>
             <string name="Name">Main</string>
             <ProtectedString name="Source">local Players=game:GetService("Players")
@@ -41571,6 +42326,9 @@ local function send(action,extra)
 	if current.phase=="Duel" and (action=="Dodge" or action=="Jump" or action=="PadJump") then presentation:predictMove(action,current) end
 end
 ui=UI.new(player:WaitForChild("PlayerGui"),send)
+-- (04/11) Players online and challenges between them (Server/Lobby).
+local lobbyPanel=nil
+pcall(function() lobbyPanel=require(script.Parent.LobbyPanel).new(ui,shared:WaitForChild("Lobby",20),UI.kit) end)
 -- The roster's fighters stand in a 3D set the menu camera films (Client/MenuStage).
 if ui.menuStage then camera.menuShot=function() return ui.menuStage:shot() end end
 -- Debug/QA places only: the Studio dev panel (F6, DevClient). While it is open
@@ -41586,6 +42344,7 @@ remote.OnClientEvent:Connect(function(data)
 	if data.epoch~=current.epoch then camera.locked=false end
 	data.gamepad=input.pad
 	current=data; presentation.receivedAt=os.clock(); presentation:impacts(data,camera); ui:render(data)
+	if lobbyPanel then lobbyPanel:render(data) end
 	if data.phase=="Duel" and data.serverNow then presentation:noteSnapshot(workspace:GetServerTimeNow()-data.serverNow) end
 end)
 local nextMove=0
@@ -41705,7 +42464,7 @@ print("[NinjaDuel] Client ready")
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND153">
+        <Item class="ModuleScript" referent="ND156">
           <Properties>
             <string name="Name">MenuStage</string>
             <ProtectedString name="Source">-- The select screen's two prodigies, in a real 3D set (user 02/11, "everything
@@ -41887,7 +42646,7 @@ return MenuStage
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND154">
+        <Item class="ModuleScript" referent="ND157">
           <Properties>
             <string name="Name">MotionSmear</string>
             <ProtectedString name="Source">-- Speed smear (fluidity pass, user reference 28/10). What the eye cannot
@@ -42030,7 +42789,7 @@ return Smear
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND155">
+        <Item class="ModuleScript" referent="ND158">
           <Properties>
             <string name="Name">NarutoFX</string>
             <ProtectedString name="Source">-- Naruto on the client (roster wave, several bodies): the puffs of smoke of
@@ -42293,7 +43052,7 @@ return NarutoFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND156">
+        <Item class="ModuleScript" referent="ND159">
           <Properties>
             <string name="Name">Presentation</string>
             <ProtectedString name="Source">-- Velmora's additive combat motion and hit feedback, retaining Ninja Duel's
@@ -43295,7 +44054,7 @@ return Presentation
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND157">
+        <Item class="ModuleScript" referent="ND160">
           <Properties>
             <string name="Name">SandFX</string>
             <ProtectedString name="Source">-- Gaara's sand on the client: the sand bullet and Sand Shuriken in flight, the
@@ -43918,7 +44677,7 @@ return SandFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND158">
+        <Item class="ModuleScript" referent="ND161">
           <Properties>
             <string name="Name">UI</string>
             <ProtectedString name="Source">-- Prodigy Tournament interface: roster/selection, online queue and fighter
@@ -43984,6 +44743,9 @@ local function button(parent,value,position,size,callback,color)
 	if not color then create("UIStroke",b,{Color=palette.muted,Transparency=.55,Thickness=1.5,ApplyStrokeMode=Enum.ApplyStrokeMode.Border}) end
 	b.Activated:Connect(callback); return b
 end
+-- (Lobby, 04/11) the same look for the players-online panel (Client/LobbyPanel).
+UI.kit={palette=palette,create=create,frame=frame,text=text,corner=corner,inkCard=inkCard,inkTitle=inkTitle,button=button,
+	TITLE_FONT=TITLE_FONT,BODY_FONT=BODY_FONT,CARD=CARD}
 local function accentOf(def) return Color3.fromRGB(table.unpack(def.Color)) end
 function UI.new(parent,send)
 	local self=setmetatable({player="Flashstep",bot="Mirage",send=send,selectionButtons={},introShown=nil},UI)
@@ -44019,6 +44781,7 @@ function UI.new(parent,send)
 	end)
 	local shell=frame(self.selection,UDim2.fromScale(.5,.5),UDim2.fromOffset(1600,900),palette.ink,1)
 	shell.AnchorPoint=Vector2.new(.5,.5)
+	self.shell=shell
 	local scale=create("UIScale",shell,{Scale=1})
 	local function resize() scale.Scale=math.min(1.25,workspace.CurrentCamera.ViewportSize.X/1600,workspace.CurrentCamera.ViewportSize.Y/900) end
 	workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(resize);resize()
@@ -44718,6 +45481,13 @@ function UI:lobby(data)
 		self.queueCode.Text=if private then (online.code or "") else ""
 		self.queueNote.Text=if private then "Share this code: your friend types it next to JOIN on the roster screen."
 			else "Casual 1v1  •  you meet the next player who searches."
+		-- (Lobby, 04/11) a challenge: on the way to the duel server, then waiting there.
+		local mode=online and online.mode
+		if mode=="travel" or mode=="challenge" then
+			self.queueTitle.Text=if mode=="travel" then "LEAVING FOR THE DUEL" else "CHALLENGE"
+			self.queueCode.Text=""
+			self.queueNote.Text=if mode=="travel" then "Both of you are on the way to the same arena…" else "Waiting for your opponent to arrive…"
+		end
 	end
 	self:refreshSelection()
 end
@@ -45097,7 +45867,7 @@ return UI
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND159">
+        <Item class="ModuleScript" referent="ND162">
           <Properties>
             <string name="Name">UltimateFX</string>
             <ProtectedString name="Source">-- The ultimates on the client (stage 6, the approved move list, "Ultimes"):
@@ -46005,7 +46775,7 @@ return UltimateFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND160">
+        <Item class="ModuleScript" referent="ND163">
           <Properties>
             <string name="Name">VelmoraHitFeedback</string>
             <ProtectedString name="Source">-- Impact presentation. Adapted from Velmora src/client/Combat/HitFeedback.luau
@@ -46201,7 +46971,7 @@ return Feedback
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND161">
+        <Item class="ModuleScript" referent="ND164">
           <Properties>
             <string name="Name">VelmoraMotionEngine</string>
             <ProtectedString name="Source">-- Ninja Duel body animation. Started from Velmora's additive R15 layer (MIT) and
@@ -49880,7 +50650,7 @@ return Motion
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND162">
+        <Item class="ModuleScript" referent="ND165">
           <Properties>
             <string name="Name">VfxAtlas</string>
             <ProtectedString name="Source">-- GENERATED by tools/vfx_textures.py --pack: do not edit by hand.
@@ -51333,7 +52103,7 @@ HAOBECABDA1HBIA3HBGAmZ]]},
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND163">
+        <Item class="ModuleScript" referent="ND166">
           <Properties>
             <string name="Name">VfxKit</string>
             <ProtectedString name="Source">-- Presentation primitives on the project's own VFX textures
@@ -51793,7 +52563,7 @@ return Kit
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND164">
+        <Item class="ModuleScript" referent="ND167">
           <Properties>
             <string name="Name">Wave1FX</string>
             <ProtectedString name="Source">-- Roster 20, batch 1 (Haku, Zabuza, Kimimaro): the batch's own drawing,
@@ -52007,7 +52777,7 @@ return M
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND165">
+        <Item class="ModuleScript" referent="ND168">
           <Properties>
             <string name="Name">Wave1Motion</string>
             <ProtectedString name="Source">-- Roster batch 1 bodies authored from their Combat Bibles (DEC-026). First:
@@ -52308,7 +53078,7 @@ return Wave1Motion
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND166">
+        <Item class="ModuleScript" referent="ND169">
           <Properties>
             <string name="Name">Wave2FX</string>
             <ProtectedString name="Source">-- Roster 20, batch 2 (Shikamaru, Shino, Orochimaru): the batch's own drawing, installed by
@@ -52321,7 +53091,7 @@ return M
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND167">
+        <Item class="ModuleScript" referent="ND170">
           <Properties>
             <string name="Name">Wave3FX</string>
             <ProtectedString name="Source">-- Roster 20, batch 3 (Deidara, Sasori, Nagato, Killer Bee): the batch's own
@@ -52424,7 +53194,7 @@ return M
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND168">
+        <Item class="ModuleScript" referent="ND171">
           <Properties>
             <string name="Name">Wave3Motion</string>
             <ProtectedString name="Source">-- Roster batch 3 bodies authored from their Combat Bibles (DEC-026). First:
@@ -52551,7 +53321,7 @@ return Wave3Motion
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND169">
+        <Item class="ModuleScript" referent="ND172">
           <Properties>
             <string name="Name">Wave4FX</string>
             <ProtectedString name="Source">-- DEC-026 newcomers (Madara, Hashirama, Hiruzen as children): the weapons
@@ -52694,7 +53464,7 @@ return M
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND170">
+        <Item class="ModuleScript" referent="ND173">
           <Properties>
             <string name="Name">Wave4Motion</string>
             <ProtectedString name="Source">-- DEC-026 newcomers: the bodies of Madara, Hashirama and Hiruzen as children
@@ -52907,7 +53677,7 @@ return Wave4Motion
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND171">
+        <Item class="ModuleScript" referent="ND174">
           <Properties>
             <string name="Name">WorldLook</string>
             <ProtectedString name="Source">-- What the screen looks like (user 03/11: "the brightness, the graphics,
@@ -53019,7 +53789,7 @@ return WorldLook
       </Item>
     </Item>
   </Item>
-  <Item class="Lighting" referent="ND172">
+  <Item class="Lighting" referent="ND175">
     <Properties>
       <string name="Name">Lighting</string>
       <token name="Technology">4</token>
@@ -53039,7 +53809,7 @@ return WorldLook
       </Color3>
     </Properties>
   </Item>
-  <Item class="SoundService" referent="ND173">
+  <Item class="SoundService" referent="ND176">
     <Properties>
       <string name="Name">SoundService</string>
     </Properties>
