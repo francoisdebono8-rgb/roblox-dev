@@ -1772,6 +1772,15 @@ function FX:fighter(model,actor,dt)
 		end
 		if aura.eyeLight then aura.eyeLight.Brightness=if lit then 2.2 else .5 end
 	end
+	-- Kakashi's awakening uncovers his one Sharingan (04/11: it was only a red
+	-- mantle; the left eye now turns, commas and all, while it lasts).
+	if actor.fighterId=="Copycat" and aura.face then
+		local want=if (actor.awaken or 0)>0 and (actor.health or 1)>0 then "lit" else "off"
+		if aura.eyeTint~=want then
+			aura.eyeTint=want
+			if want=="off" then Face.tint(aura.face,nil) else Face.tint(aura.face,Color3.fromRGB(226,30,40),"sharingan",-1) end
+		end
+	end
 	self:expression(model,actor,aura)
 	-- Awakening: a chakra mantle that rises off the body for the whole state.
 	local awake=(actor.awaken or 0)>0 and (actor.health or 1)>0

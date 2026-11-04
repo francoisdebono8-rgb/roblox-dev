@@ -98,7 +98,13 @@ local function impact(fx,data,folder)
 end
 
 -- ------------------------------------------------------------------ per frame
--- The Fifth Gate: the shared mantle burns green, the body glows red.
+-- The Fifth Gate: the shared mantle burns green and the body itself burns.
+-- (04/11, the user: "sur l'éveil de Lee, les poids sur sa tête, c'est moche,
+-- c'est bizarre": the red ball that sat round his head is gone.) The gates show
+-- on him: every skin-coloured part flushes red (given back as they close) and
+-- the steam of the burning body rises off his shoulders.
+local STEAM=Color3.fromRGB(232,255,234)
+local function skinLike(a,b) return math.abs(a.R-b.R)+math.abs(a.G-b.G)+math.abs(a.B-b.B)<.07 end
 local function gate(fx,model,actor,st)
 	local aura=fx.auras and fx.auras[model]
 	local open=(actor.awaken or 0)>0 and (actor.health or 1)>0
@@ -109,13 +115,31 @@ local function gate(fx,model,actor,st)
 	end
 	if aura and aura.trail and not aura.leeTrail then aura.trail.Color=ColorSequence.new(GATE);aura.leeTrail=true end
 	local head=model:FindFirstChild("Head")
-	if open and head and not (st.glow and st.glow.Parent) then
-		local glow=K.block(model,Vector3.one*2.1,head.CFrame,FLUSH,Enum.Material.Neon)
-		glow.Name="GateGlow";glow.Shape=Enum.PartType.Ball;glow.Transparency=.82;glow.Anchored=false;glow.Massless=true
-		K.new("WeldConstraint",{Part0=head,Part1=glow},glow)
-		st.glow=glow
-	elseif not open and st.glow then
-		st.glow:Destroy();st.glow=nil
+	if open and head and not st.flush then
+		st.flush={}
+		local skin=head.Color
+		for _,p in model:GetDescendants() do
+			if skin and p:IsA("BasePart") and p.Name~="HumanoidRootPart" and p.Color and skinLike(p.Color,skin) then
+				table.insert(st.flush,{part=p,color=p.Color})
+				p.Color=p.Color:Lerp(FLUSH,.45)
+			end
+		end
+		local torso=model:FindFirstChild("UpperTorso") or head
+		local at=K.new("Attachment",{Name="GateSteam",Position=Vector3.new(0,.7,0)},torso)
+		K.new("ParticleEmitter",{Texture=K.TEX.smoke,Rate=18,Lifetime=NumberRange.new(.7,1.2),Speed=NumberRange.new(1.4,3),SpreadAngle=Vector2.new(35,35),
+			EmissionDirection=Enum.NormalId.Top,Acceleration=Vector3.new(0,2.5,0),Color=ColorSequence.new(STEAM),LightEmission=.25,LightInfluence=.3,
+			Size=K.num({{0,.7},{1,2.4}}),Transparency=K.num({{0,.62},{.4,.7},{1,1}}),Rotation=NumberRange.new(0,360),RotSpeed=NumberRange.new(-45,45)},at)
+		st.steam=at
+	elseif not open and st.flush then
+		for _,f in st.flush do if f.part.Parent then f.part.Color=f.color end end
+		st.flush=nil
+		if st.steam then
+			local e=st.steam:FindFirstChildOfClass("ParticleEmitter")
+			if e then e.Enabled=false end
+			st.steam.Name="GateSteamFading"
+			Debris:AddItem(st.steam,1.3)
+			st.steam=nil
+		end
 	end
 end
 -- The lotuses: a spiral of chakra round the falling body, a crater where it lands.

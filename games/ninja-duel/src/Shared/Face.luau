@@ -409,11 +409,13 @@ function Face.set(face,name,blink)
 	return face
 end
 
--- Iris colour override (nil restores): "sharingan" shows the commas.
-function Face.tint(face,color,kind)
+-- Iris colour override (nil restores): "sharingan" shows the commas. `only`
+-- (-1 his left, 1 his right) tints one eye: Kakashi's single Sharingan.
+function Face.tint(face,color,kind,only)
 	if not face then return end
 	for _,e in face.eyes do
 		if not e.iris then continue end
+		if color and only and e.side~=only then continue end
 		e.restore=e.restore or {color=e.iris.BackgroundColor3,gradient=e.gradient and e.gradient.Color}
 		if color then
 			e.iris.BackgroundColor3=color

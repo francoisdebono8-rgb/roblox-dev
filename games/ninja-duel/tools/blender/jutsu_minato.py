@@ -137,9 +137,40 @@ def flash_touch(arm):
     return sh.build(markers={"contact": 4 / 60, "recover": 10 / 60})
 
 
+def light4(arm):
+    """The string's third hit (L1 cross cut, L2 lead palm, L4, L3 spinning
+    kick): the reverse-grip blade rising. He sinks with the palm's recoil, the
+    blade low by the inside hip, then rises out of it in one line - a short
+    step through, the chest lifting, the kunai carried up the centre and out
+    over his right shoulder. Vertical where his first cut is flat; it leaves
+    the hips turned for the spin that follows. Light4 = .09 / .12 / .28."""
+    sh = Shot(arm, N + "Light4")
+    sh.key(0, s(), "ease")
+    load = s({"root": {"y": -.62, "z": -.08, "pitch": 20, "yaw": 30}, "torso": {"pitch": 12, "yaw": -20}, "head": {"pitch": -12, "yaw": -6},
+              "ra": {"raise": -4, "out": -20, "twist": 70, "elbow": 66, "wrist": -40},
+              "la": {"raise": 62, "out": -4, "twist": 10, "elbow": 92},
+              "lf": {"z": -.92, "y": .08, "toe": -10}})
+    sh.key(3, load, "ease")
+    hit = s({"travel": {"z": -.4}, "root": {"y": -.36, "z": -.12, "pitch": -2, "yaw": 8, "roll": -4}, "torso": {"pitch": -6, "yaw": 18},
+             "head": {"pitch": -14, "yaw": -8},
+             "ra": {"raise": 110, "out": 12, "twist": -18, "elbow": 18, "wrist": 22},
+             "la": {"raise": 40, "out": 22, "twist": 20, "elbow": 104},
+             "lf": {"z": -1.12, "y": 0}, "rf": {"toe": -22}})
+    sh.key(5, hit, "impact")
+    sh.key(8, merge(hit, {"root": {"y": -.32}, "torso": {"yaw": 22}, "ra": {"raise": 142, "out": 30, "elbow": 12}}), "ease")
+    # the blade comes back down outside, the back foot follows the step
+    sh.key(16, s({"travel": {"z": -.4}, "root": {"y": -.46, "z": -.12}, "ra": {"raise": 64, "out": 30, "twist": 10, "elbow": 74, "wrist": -14},
+                  "lf": {"z": -1.12}, "rf": {"z": .58, "y": .12, "toe": -14}}), "pass")
+    sh.key(29, merge(s({"travel": {"z": -.4}}), {"lf": {"z": -1.12}, "rf": {"z": .38}}), "ease")
+    sh.drag(["neck"], 1)
+    sh.drag(["shoulder.R", "forearm.R", "hand.R"], 1)
+    return sh.build(markers={"contact": 5 / 60, "recover": 13 / 60})
+
+
 def author(arm):
     acts = [rasengan_channel(arm)]
     acts += sealing_trap(arm)
     acts += space_time_barrier(arm)
     acts.append(flash_touch(arm))
+    acts.append(light4(arm))
     return acts

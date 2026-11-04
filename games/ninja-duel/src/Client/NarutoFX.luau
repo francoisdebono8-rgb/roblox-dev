@@ -123,17 +123,52 @@ local function speed(fx,impact,folder)
 	return true
 end
 local function awaken(fx,impact,folder)
-	-- The Nine-Tails chakra boils out of him.
+	-- The Nine-Tails chakra boils out of him (04/11, the user: "l'éveil de
+	-- Naruto, c'est un peu léger"): a column of red chakra tears up out of the
+	-- floor through the top of the frame, tongues of it lash out round him,
+	-- the floor cracks red, two rings (the second a beat after the first) and
+	-- a roar under the blast.
 	local at=impact.position
+	local floorY=at.Y-2.6
 	local model=folder and folder:FindFirstChild(impact.owner or "")
-	if model then fx:ghost(model,FOX,.4,.35) end
+	if model then fx:ghost(model,FOX,.55,.25) end
 	local burstModel=K.new("Model",{Name="FoxBurst"},fx.folder)
-	K.flash(burstModel,at,FOX_CORE,2,10,.3,.1)
-	K.flash(burstModel,at,FOX,4,18,.5,.35)
-	Debris:AddItem(burstModel,.6)
-	K.shockRing(fx.folder,at-Vector3.new(0,2.6,0),FOX,3,26,.5)
-	puff(fx,at-Vector3.new(0,2.4,0),20,2.6,Color3.fromRGB(214,180,170))
-	K.sound(K.anchorPart(fx.folder,at),K.SOUND.boom,.5,.8)
+	K.flash(burstModel,at,FOX_CORE,2,12,.32,.05)
+	K.flash(burstModel,at,FOX,4,22,.55,.3)
+	-- The column: an outer red shell and a hot core, rising and thinning out.
+	for _,layer in {{FOX,5.2,8,.2},{FOX_CORE,2.4,3.6,.05}} do
+		local col=K.block(burstModel,Vector3.new(2,layer[2],layer[2]),CFrame.new(at.X,floorY+1,at.Z)*CFrame.Angles(0,0,math.pi/2),layer[1],Enum.Material.Neon)
+		col.Shape=Enum.PartType.Cylinder;col.Name="FoxPillar";col.Transparency=layer[4]
+		K.tween(col,.55,{Size=Vector3.new(30,layer[3],layer[3]),CFrame=CFrame.new(at.X,floorY+15,at.Z)*CFrame.Angles(0,0,math.pi/2),Transparency=1})
+	end
+	-- Tongues of chakra whipped out round him, curling up.
+	for k=0,7 do
+		local a=k/8*math.pi*2+math.random()*.3
+		local out=Vector3.new(math.cos(a),0,math.sin(a))
+		local from=at+out*.8
+		local tongue=K.block(burstModel,Vector3.new(.5,.5,2.6),CFrame.lookAt(from,from+out+Vector3.new(0,.3,0)),FOX,Enum.Material.Neon)
+		tongue.Name="FoxTongue";tongue.Transparency=.15
+		local to=at+out*(7+math.random()*2.5)+Vector3.new(0,2.5+math.random()*3,0)
+		K.tween(tongue,.42,{CFrame=CFrame.lookAt(to,to+out+Vector3.new(0,1,0)),Size=Vector3.new(.12,.12,4.2),Transparency=1})
+	end
+	Debris:AddItem(burstModel,.8)
+	-- The floor cracked red under him.
+	local crack=K.new("Model",{Name="FoxCrack"},fx.folder)
+	for k=0,6 do
+		local a=k/7*math.pi*2+math.random()*.5
+		local line=K.block(crack,Vector3.new(.16,.06,3.4+math.random()*1.6),CFrame.new(at.X,floorY+.05,at.Z)*CFrame.Angles(0,a,0)*CFrame.new(0,0,-2.2),FOX,Enum.Material.Neon)
+		line.Transparency=.1
+	end
+	task.delay(.6,function() for _,d in crack:GetChildren() do K.tween(d,.7,{Transparency=1}) end end)
+	Debris:AddItem(crack,1.5)
+	K.shockRing(fx.folder,Vector3.new(at.X,floorY,at.Z),FOX,3,28,.5)
+	task.delay(.14,function() K.shockRing(fx.folder,Vector3.new(at.X,floorY+.4,at.Z),FOX_CORE,4,36,.55) end)
+	puff(fx,Vector3.new(at.X,floorY+.4,at.Z),28,3,Color3.fromRGB(214,180,170))
+	sparks(fx,at,FOX_CORE,26,26)
+	local anchor=K.anchorPart(fx.folder,at)
+	K.sound(anchor,K.SOUND.boom,.6,.7)
+	K.sound(anchor,K.SOUND.heavy,.55,.5)
+	Debris:AddItem(anchor,3)
 	fx:cheer(1)
 	return true
 end
@@ -194,8 +229,46 @@ local function rasengan(fx,model,actor,st)
 		for _,band in sphere.bands do band.Color=FOX_CORE end
 	end
 end
--- The Nine-Tails cloak: the shared mantle burns red, one tail of red chakra
--- waves behind his hips, the eyes turn red; his dash trail is his orange.
+-- The Nine-Tails cloak: the shared mantle burns red and the version-one cloak
+-- covers him (04/11, "un peu léger" before: four small balls for a tail). A
+-- shroud of red chakra a size up on every limb (a ForceField shell: it boils),
+-- two pointed ears on the head, one long tail lashing from the hips, bubbles
+-- of chakra rising off him, the eyes red; his dash trail is his orange.
+local SHROUD={"Head","UpperTorso","LowerTorso","LeftUpperArm","RightUpperArm","LeftLowerArm","RightLowerArm","LeftHand","RightHand",
+	"LeftUpperLeg","RightUpperLeg","LeftLowerLeg","RightLowerLeg","LeftFoot","RightFoot"}
+local TAIL=10
+local function shroud(fx,model)
+	local holder=K.new("Model",{Name="FoxShroud"},fx.folder)
+	local torsoShell
+	for _,name in SHROUD do
+		local p=model:FindFirstChild(name)
+		if p and p:IsA("BasePart") then
+			local head=name=="Head"
+			local size=if head then Vector3.one*math.max(p.Size.X,p.Size.Y,p.Size.Z)*1.3 else p.Size*1.14+Vector3.one*.12
+			local s=K.block(holder,size,p.CFrame,FOX,Enum.Material.ForceField)
+			if head then s.Shape=Enum.PartType.Ball end
+			s.Name="FoxShell";s.Anchored=false;s.Massless=true
+			K.new("WeldConstraint",{Part0=p,Part1=s},s)
+			if name=="UpperTorso" then torsoShell=s end
+		end
+	end
+	local head=model:FindFirstChild("Head")
+	if head then
+		local r=math.max(head.Size.X,head.Size.Y)*.5
+		for _,side in {-1,1} do
+			-- (a wedge's sharp corner is its top back: the ear points up and back)
+			local ear=K.block(holder,Vector3.new(.18,.8,.5),head.CFrame*CFrame.new(side*r*.62,r*1.12,.1)*CFrame.Angles(math.rad(-8),0,math.rad(-side*18)),FOX,Enum.Material.Neon,"WedgePart")
+			ear.Name="FoxEar";ear.Transparency=.12;ear.Anchored=false;ear.Massless=true
+			K.new("WeldConstraint",{Part0=head,Part1=ear},ear)
+		end
+	end
+	if torsoShell then
+		K.new("ParticleEmitter",{Name="FoxBubbles",Texture=K.TEX.glow,Rate=36,Lifetime=NumberRange.new(.45,.85),Speed=NumberRange.new(.8,2.4),SpreadAngle=Vector2.new(180,180),
+			Acceleration=Vector3.new(0,6,0),Color=ColorSequence.new(FOX_CORE,FOX),LightEmission=.8,LightInfluence=0,
+			Size=K.num({{0,.2},{.4,.65},{1,0}}),Transparency=K.num({{0,.3},{1,1}})},torsoShell)
+	end
+	return holder
+end
 local function cloak(fx,model,actor,st)
 	local aura=fx.auras and fx.auras[model]
 	local open=(actor.awaken or 0)>0 and (actor.health or 1)>0
@@ -207,12 +280,14 @@ local function cloak(fx,model,actor,st)
 	if open and hips and not (st.tail and st.tail.Parent) then
 		local tail=K.new("Model",{Name="FoxTail"},fx.folder)
 		local parts={}
-		for k=1,4 do
-			local p=K.block(tail,Vector3.one*(.8-k*.12),hips.CFrame,FOX,Enum.Material.Neon)
-			p.Shape=Enum.PartType.Ball;p.Transparency=.25+k*.12
+		for k=1,TAIL do
+			local u=(k-1)/(TAIL-1)
+			local p=K.block(tail,Vector3.one*(1.05-u*.7),hips.CFrame,if k==TAIL then FOX_CORE else FOX,Enum.Material.Neon)
+			p.Shape=Enum.PartType.Ball;p.Transparency=.1+u*.35
 			table.insert(parts,p)
 		end
 		st.tail=tail;st.tailParts=parts
+		st.shroud=shroud(fx,model)
 		st.irises={}
 		for _,p in model:GetChildren() do
 			if p.Name=="Iris" then table.insert(st.irises,{part=p,color=p.Color,material=p.Material});p.Color=FOX;p.Material=Enum.Material.Neon end
@@ -222,14 +297,29 @@ local function cloak(fx,model,actor,st)
 		Face.tint(st.face,FOX,"fox")
 	elseif not open and st.tail then
 		st.tail:Destroy();st.tail=nil
+		if st.shroud then
+			-- the shroud burns off rather than vanishing
+			for _,d in st.shroud:GetDescendants() do
+				if d:IsA("BasePart") then K.tween(d,.3,{Transparency=1}) elseif d:IsA("ParticleEmitter") then d.Enabled=false end
+			end
+			st.shroud.Name="FoxShroudFading"
+			Debris:AddItem(st.shroud,.6)
+			st.shroud=nil
+		end
 		for _,iris in st.irises or {} do iris.part.Color=iris.color;iris.part.Material=iris.material end
 		st.irises=nil
 		if st.face then Face.tint(st.face,nil) end
 	end
 	if st.tail and hips then
+		-- One long tail: thick at the hips, rising behind him, a wave running
+		-- down it from the root to the tip (the tip lashes widest).
 		local t=NarutoFX.clock()
 		for k,p in st.tailParts do
-			p.CFrame=hips.CFrame*CFrame.new(math.sin(t*6-k*.8)*.35*k,.15+k*.35,.6+k*.55)
+			local u=(k-1)/(TAIL-1)
+			local side=math.sin(t*5.2-k*.55)*(.15+u*1.25)
+			local lift=.1+u^1.35*3.1+math.sin(t*3.1-k*.4)*.3*u
+			local back=.55+u*3.0-u^2*.6
+			p.CFrame=hips.CFrame*CFrame.new(side,lift,back)
 		end
 	end
 end

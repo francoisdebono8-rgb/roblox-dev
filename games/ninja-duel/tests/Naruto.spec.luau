@@ -1064,6 +1064,8 @@ test("client: a puff for every way a clone comes and goes, no log in his swap, t
   assert(hit("cast",{technique="ShadowClone"})>0,"the Shadow Clone seal drew nothing")
   assert(hit("rasengan",{phase="broken"})>0 and named("RasenganBroken")==1,"a broken Rasengan drew nothing")
   assert(hit("uzumaki",{syllable="ZU"})>0 and named("UzumakiCall")>=1,"the barrage was not called out")
+  -- The awakening: the column of red chakra out of the floor, the cracks.
+  assert(hit("awaken")>0 and named("FoxPillar")==2 and named("FoxCrack")==1 and named("FoxTongue")>=6,"the Nine-Tails awakening is still light")
   -- The Rasengan forming between his palm and the clone at his side.
   local data={phase="Duel",epoch=1,hazards={},projectiles={},bodies={},
    human={id="A",fighterId="Legion",seals={},state="TechniqueChannel",castId="CloneRasengan",health=140,maxHealth=140},
@@ -1084,12 +1086,17 @@ test("client: a puff for every way a clone comes and goes, no log in his swap, t
   data.human.attackName=nil;data.human.attackVariant=nil;data.human.state="Neutral";data.human.awaken=6
   fx:update(data,1/60,folder)
   assert(named("FoxTail")==1,"no chakra tail in the cloak")
+  -- (04/11, "un peu léger") the version-one cloak over the whole body.
+  assert(named("FoxShell")>=12,"the red chakra does not cover his limbs ("..named("FoxShell")..")")
+  assert(named("FoxEar")==2,"the cloak has no fox ears")
+  assert(named("FoxBubbles")==1,"no chakra boiling off him")
   local red=0
   for _,p in naruto:GetChildren() do if p.Name=="Iris" and p.Color==H.roblox.Color3.fromRGB(232,64,30) then red+=1 end end
   assert(red==2,"his eyes did not turn red in the cloak")
   data.human.awaken=0
   fx:update(data,1/60,folder)
   assert(named("FoxTail")==0,"the tail outlived the cloak")
+  assert(named("FoxShroud")==0,"the shroud outlived the cloak")
   for _,p in naruto:GetChildren() do if p.Name=="Iris" then assert(p.Color==H.roblox.Color3.fromRGB(60,130,230),"his eyes stayed red") end end
  end)
  restore()

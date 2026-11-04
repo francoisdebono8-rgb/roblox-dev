@@ -662,11 +662,19 @@ test("client: the Fifth Gate burns green, the lotuses spin and crack the floor, 
   local data={phase="Duel",epoch=1,hazards={},projectiles={},
    human={id="A",fighterId="Leaf",seals={},state="Neutral",health=40,maxHealth=125,awaken=6},
    bot={id="B",fighterId="Mirage",seals={},state="Neutral",health=145,maxHealth=145}}
+  local head=lee:FindFirstChild("Head")
+  head.Color=H.roblox.Color3.fromRGB(236,192,160)
+  lee:FindFirstChild("UpperTorso").Color=H.roblox.Color3.fromRGB(40,120,60)
+  local skin=head.Color
   fx:update(data,1/60,folder)
-  assert(named("GateGlow",lee)==1,"no glow on the body in the Fifth Gate")
+  assert(named("GateSteam",lee)==1,"no steam off the burning body in the Fifth Gate")
+  assert(head.Color~=skin,"his skin did not flush red in the Fifth Gate")
+  assert(named("GateGlow",lee)==0,"a ball round his head again (the user: 'c'est moche')")
   data.human.awaken=0
   fx:update(data,1/60,folder)
-  assert(named("GateGlow",lee)==0,"the gate's glow outlived the gate")
+  assert(named("GateSteam",lee)==0,"the gate's steam outlived the gate")
+  assert(head.Color==skin,"his skin stayed red after the gate")
+  assert(lee:FindFirstChild("UpperTorso").Color==H.roblox.Color3.fromRGB(40,120,60),"the gate tinted his suit")
   -- A lotus: spirals round the falling body, then the crater.
   data.human.attackName="Slam";data.human.attackVariant="PrimaryLotus";data.human.state="Active";data.human.airborne=true
   fx:update(data,1/60,folder)
