@@ -392,6 +392,9 @@ local KIND={Light3="kick",Heavy="heavy",Launcher="launch",Air2="kick",Slam="slam
  LionKick="launch",VaultKick="kick",ChidoriThrust="heavy",AirFlip="kick"}
 for name,spec in attacks do spec.zone=ZONE[name] or "body";spec.kind=KIND[name] or "strike" end
 attacks.Light4.clip="Light1";attacks.Light5.clip="Light2"
+-- (Audit 04/11) the new seal-page strikes, until their own Blender clips: the
+-- fighter's nearest clip (they played Sasuke's jab: Lee's own table is his).
+attacks.Nunchaku.clip="LeafWhirlwind";attacks.GorikiSenpu.clip="LeafRising";attacks.LowPalm.clip="PalmThrust"
 attacks.SandHand.range=12;attacks.SandHand.width=5;attacks.SandHand.height=6;attacks.SandHand.depth=11;attacks.SandHand.offset=6;attacks.SandHand.facing=.25;attacks.SandHand.clip="SandPillar";attacks.SandHand.kind="heavy";attacks.SandHand.zone="body"
 attacks.SandFist.range=9;attacks.SandFist.width=5;attacks.SandFist.depth=8;attacks.SandFist.offset=4.5;attacks.SandFist.facing=.3;attacks.SandFist.clip="Light3";attacks.SandFist.kind="heavy"
 attacks.SandLowWave.range=9.5;attacks.SandLowWave.width=7;attacks.SandLowWave.height=3.5;attacks.SandLowWave.depth=9;attacks.SandLowWave.offset=4.5;attacks.SandLowWave.clip="Sweep";attacks.SandLowWave.zone="legs";attacks.SandLowWave.kind="sweep"
@@ -744,7 +747,8 @@ local Controls = {
 		Ultimate = Enum.KeyCode.Y,
 		-- Draw / sheathe a kunai (any fighter, DEC-030); R then throws it.
 		Arm = Enum.KeyCode.B,
-		Skip = Enum.KeyCode.Escape,
+		-- (Audit 04/11) Escape is Roblox's own menu: the game never receives it.
+		Skip = Enum.KeyCode.Backspace,
 	},
 	Gamepad = {
 		Light = Enum.KeyCode.ButtonX,
@@ -773,18 +777,19 @@ local Controls = {
 	KeyLabel = {
 		Light = "LMB", Heavy = "RMB", Jump = "SPACE", Dodge = "Q", Guard = "F",
 		Grab = "V", Tool = "R", Chakra = "Z", Pursuit = "E", Substitute = "X", Feint = "G",
-		WallDetach = "C", Seals = "C + 1-4", Lock = "SHIFT", Sprint = "CTRL", Technique5 = "5", Awaken = "T", Ultimate = "Y", Arm = "B", Skip = "ESC", ChakraLoad = "Z + action",
+		WallDetach = "C", Seals = "C + 1-4", Lock = "SHIFT", Sprint = "CTRL", Technique5 = "5", Awaken = "T", Ultimate = "Y", Arm = "B", Skip = "BACKSPACE", ChakraLoad = "Z + action",
 	},
 	-- HUD copy for the keyboard layout, kept next to the bindings it documents.
 	Hint = "LMB light \u{00B7} RMB heavy",
-	Help = "WASD move   SPACE jump   Q dodge   LMB light   RMB heavy   F guard   V grab / throw break   E re-engage (chase / chakra dash)   R tool   hold Z + any action: chakra-infused (strike, heavy, jump, dodge, tool)   X substitute   G feint   T awaken   Y ultimate (bar full)   B kunai (draw / sheathe, R throws it)   CTRL sprint   SHIFT lock   1-4 jutsu   hold C + 1-4: seal jutsu",
+	Help = "WASD move   SPACE jump   Q dodge   LMB light   RMB heavy   F guard   V grab / throw break   E re-engage (chase / chakra dash)   R tool   hold Z + any action: chakra-infused (strike, heavy, jump, dodge, tool)   X substitute   G feint   T awaken   Y ultimate (bar full)   B kunai (draw / sheathe, R throws it)   CTRL sprint   SHIFT lock   1-4 jutsu   hold C + 1-4 (Gaara 1-5): seal jutsu",
 	-- The directional combo grammar, shared by every fighter.
 	-- The string's routes on buttons (04/11, user: « le plus simple à faire et
 	-- à jouer, sans perdre de mouvement »; Brawler.buttonRoute): no direction.
 	Grammar = "CLEAN HITS  1 hit → RMB: heavy  |  2 hits → RMB: launch · Q: around · SPACE: rising · R: retreat  |  3 hits → RMB: low  |  air hit → RMB: spike · Q: switch · SPACE: drive",
 	GrammarPad = "CLEAN HITS  1 hit → △: heavy  |  2 hits → △: launch · ○: around · ×: rising · R2: retreat  |  3 hits → △: low  |  air hit → △: spike · ○: switch · ×: drive",
-	HelpPad = "L move · L3 sprint   R camera · R3 lock   □ light   △ heavy   ○ dodge / escape   × jump / chase   sprint + ○ toward: chakra dash   L1 guard   L1 + □ grab   R2 tool   hold L2 + any action: chakra-infused   R1 + □/△/○/×: jutsu 1-4   hold R1 + L1 + □/△/○/×: seal jutsu   R1 + L1 (let go) ultimate   R1 + R2 feint   D-pad → escape · ← kunai · ↓ awaken · ↑ jutsu 5",
-	PadLabel = {Light="□",Heavy="△",Dodge="○",Jump="×",Guard="L1",Modifier="R1",Grab="L1 + □",Tool="R2",Chakra="L2",Sprint="L3",Lock="R3",Pursuit="×",Dash="L3 + ○",Substitute="D-pad →",Arm="D-pad ←",Feint="R1 + R2",WallDetach="R1 + L1",Ultimate="R1 + L1",ChakraLoad="L2 + action",Seals="R1 + L1 + □△○×"},
+	HelpPad = "L move · L3 sprint   R camera · R3 lock   □ light   △ heavy   ○ dodge / escape   × jump / chase   sprint + ○ toward: chakra dash   L1 guard   L1 + □ grab   R2 tool   hold L2 + any action: chakra-infused   R1 + □/△/○/×: jutsu 1-4   hold R1 + L1 + □/△/○/× (Gaara: D-pad ↑ too): seal jutsu   R1 + L1 (tap) ultimate   R1 + R2 feint   D-pad → escape · ← kunai · ↓ awaken · ↑ jutsu 5",
+	PadLabel = {Light="□",Heavy="△",Dodge="○",Jump="×",Guard="L1",Modifier="R1",Grab="L1 + □",Tool="R2",Chakra="L2",Sprint="L3",Lock="R3",Pursuit="×",Dash="L3 + ○",Substitute="D-pad →",Arm="D-pad ←",Feint="R1 + R2",WallDetach="R1 + L1",Ultimate="R1 + L1",ChakraLoad="L2 + action",Seals="R1 + L1 + □△○×",
+		Technique5="D-pad ↑",Awaken="D-pad ↓",Skip="TOUCHPAD"},
 	-- (Stage 6) One order for everyone: □ pressure, △ signature, ○ movement
 	-- or defence, × control or combo.
 	TechniquePad = {"R1 + □","R1 + △","R1 + ○","R1 + ×","D-pad ↑"},
@@ -1310,7 +1315,8 @@ local function eyeShape(e,eye,brow,droop,browEye)
 		cy=math.max(cy,top+h/2)
 		e.iris.Size=UDim2.fromScale(ib.size.X.Scale,h/math.max(shown,1e-3))
 		e.iris.Position=UDim2.fromScale(.5,(cy-top)/math.max(shown,1e-3))
-		if e.pupil then e.pupil.Size=if eye=="wide" then UDim2.fromScale(.26,.26) else UDim2.fromScale(.42,math.min(.9,.42*ih/h)) end
+		-- (Audit 04/11) a fox tint keeps its slit through blinks and moods.
+		if e.pupil then e.pupil.Size=if e.tintKind=="fox" then UDim2.fromScale(.16,.62) elseif eye=="wide" then UDim2.fromScale(.26,.26) else UDim2.fromScale(.42,math.min(.9,.42*ih/h)) end
 	end
 	-- Lash line rides the lid edge.
 	local top=py-height/2+height*cover
@@ -1403,7 +1409,8 @@ function Face.tint(face,color,kind,only)
 			if e.gradient and e.restore.gradient then e.gradient.Color=e.restore.gradient end
 		end
 		for _,t in e.tomoe do t.Visible=color~=nil and kind=="sharingan" end
-		if e.pupil then e.pupil.Size=if kind=="fox" then UDim2.fromScale(.16,.62) else UDim2.fromScale(.42,.42) end
+		e.tintKind=if color then kind else nil
+		if e.pupil then e.pupil.Size=if kind=="fox" and color then UDim2.fromScale(.16,.62) else UDim2.fromScale(.42,.42) end
 		e.gui.LightInfluence=if color then .1 else .55
 	end
 end
@@ -1418,7 +1425,7 @@ return Face
           <ProtectedString name="Source">local Fighters = {
 	Flashstep = {
 		Name = "Minato", FullName = "Minato Namikaze", Age = 13, Title = "THE FAST PRODIGY", Color = { 82, 177, 244 },
-		Routes = "↑ rising kick (seals the body: 2 follows it up)  ·  ↓ spinning leg sweep (plants a marked kunai)  ·  ←→ angle step  ·  air: push kick / axe kick / flash switch",
+		Routes = "rising: a kick that seals the body (2 follows it up)  ·  low: spinning leg sweep (plants a marked kunai)  ·  around: angle step  ·  air: push kick (drive) / axe kick (spike) / flash switch",
 		Description = "Decision speed. Kunai placement, angle changes and an unfinished teleport seal.",
 		Health = 125, Chakra = 110, ChakraRegen = 8, Speed = 19.5, SprintScale = 1.12, JumpScale = 1.1, AirControlScale = 1.15, AccelerationScale = 1.15,
 		CombatTravel = 1.18, CombatDamage = 1.0, DashScale = 1.15, GuardStrength = 0.10, PreferredRange = 6,
@@ -1451,7 +1458,7 @@ return Face
 	},
 	Mirage = {
 		Name = "Itachi", FullName = "Itachi Uchiha", Age = 13, Title = "THE SHARINGAN PRODIGY", Color = { 222, 70, 80 },
-		Routes = "↑ rising palm (shuriken cover the climb)  ·  ↓ reaping sweep  ·  ←→ feint step (an afterimage stays)  ·  air: side kick / hammer drop / hook switch",
+		Routes = "rising: palm (shuriken cover the climb)  ·  low: reaping sweep  ·  around: feint step (an afterimage stays)  ·  air: side kick (drive) / hammer drop (spike) / hook switch",
 		Description = "Sharingan already awakened. Reads, precise shuriken, deception and Katon fire.",
 		Health = 130, Chakra = 125, ChakraRegen = 8.6, Speed = 18.5, SprintScale = 1.0, JumpScale = 0.98, AirControlScale = 0.95, AccelerationScale = 0.98,
 		CombatTravel = 0.98, CombatDamage = 1.15, DashScale = 0.8, StrikeTurnScale = 1.1, GuardStrength = 0.08, PreferredRange = 10,
@@ -1493,7 +1500,7 @@ return Face
 	-- with a different engine: palms that attack chakra, not health alone.
 	GentleFist = {
 		Name = "Neji", FullName = "Neji Hyuga", Age = 13, Title = "THE HYUGA GENIUS", Color = { 176, 196, 255 },
-		Routes = "↑ palm heel under the chin  ·  ↓ low rotation sweep (closes two points)  ·  ←→ circular step onto a chakra point  ·  air: twin palms / descending palm / spinning palm",
+		Routes = "rising: palm heel under the chin  ·  low: rotation sweep (closes two points)  ·  around: circular step onto a chakra point  ·  air: twin palms (drive) / descending palm (spike) / spinning palm (switch)",
 		Description = "Byakugan and the Gentle Fist. Palms that close chakra points, a perfect rotation defence.",
 		Health = 130, Chakra = 115, ChakraRegen = 7.6, Speed = 18.5, SprintScale = 1.0, JumpScale = 0.98, AirControlScale = 0.95, AccelerationScale = 1.02,
 		CombatTravel = 1.0, CombatDamage = 1.12, DashScale = 1.0, GuardStrength = 0.1, PreferredRange = 5,
@@ -1530,7 +1537,7 @@ return Face
 	-- but every big commitment can be punished.
 	Lion = {
 		Name = "Sasuke", FullName = "Sasuke Uchiha", Age = 12, Title = "THE ROOKIE OF THE YEAR", Color = { 92, 132, 255 },
-		Routes = "↑ rising kick into Shadow of the Dancing Leaf (heavy in the air: LION COMBO)  ·  ↓ low kick sweep  ·  ←→ vault over into a back kick  ·  air: drive / axe kick / switch",
+		Routes = "rising: a kick into Shadow of the Dancing Leaf (heavy in the air: LION COMBO)  ·  low: kick sweep  ·  around: vault over into a back kick  ·  air: drive / axe kick (spike) / switch",
 		Description = "Pressure. Kicks, wire and fire. A launcher he follows into the air and a Chidori that ends everything — or him.",
 		Health = 130, Chakra = 105, ChakraRegen = 7.5, Speed = 19, SprintScale = 1.1, JumpScale = 1.15, AirControlScale = 1.15, AccelerationScale = 1.12,
 		CombatTravel = 1.12, CombatDamage = 1.1, DashScale = 1.08, GuardStrength = 0.08, PreferredRange = 6,
@@ -1619,7 +1626,7 @@ return Face
 	-- docs/characters/ROCK_LEE.md (implementation state at its end).
 	Leaf = {
 		Name = "Rock Lee", FullName = "Rock Lee", Age = 13, Title = "THE TAIJUTSU PRODIGY", Color = { 64, 172, 84 },
-		Routes = "↑ Leaf Rising Wind: a rising kick he follows into the air (heavy up there: PRIMARY LOTUS, paid in health)  ·  ↓ Leaf Hurricane: a low spinning kick, the string goes on  ·  ←→ Leaf Whirlwind: a wide spinning kick that catches the side step  ·  air: drive / axe kick / switch",
+		Routes = "rising: Leaf Rising Wind, a kick he follows into the air (heavy up there: PRIMARY LOTUS, paid in health)  ·  low: Leaf Hurricane, the string goes on  ·  around: Leaf Whirlwind, a wide spinning kick  ·  air: drive / axe kick (spike) / switch",
 		Description = "No jutsu, no blade: taijutsu only. The fastest legs, kicks that never stop, a lotus paid with his own body, and the Fifth Gate.",
 		Health = 140, Chakra = 100, ChakraRegen = 9.5, Speed = 20, SprintScale = 1.2, JumpScale = 1.15, AirControlScale = 1.12, AccelerationScale = 1.22,
 		-- (Stage 6) His ground string is five hits (everyone else four).
@@ -1670,7 +1677,7 @@ return Face
 	-- Sheet: docs/characters/NARUTO.md.
 	Legion = {
 		Name = "Naruto", FullName = "Naruto Uzumaki", Age = 13, Title = "THE NUMBER ONE SURPRISE", Color = { 255, 140, 40 },
-		Routes = "third hit: a clone out kicks from behind  ·  ↑ Uzumaki Barrage: clones kick him up (E, then heavy: NARUTO RENDAN)  ·  ↓ tackle into the legs  ·  ←→ a clone strikes from his side  ·  air: drive / axe kick / switch  ·  Z + R: the kunai turns into a clone",
+		Routes = "third hit: a clone kicks from behind  ·  rising: Uzumaki Barrage, clones kick him up (chase, then heavy: NARUTO RENDAN)  ·  low: tackle into the legs  ·  around: a clone strikes from his side  ·  air: drive / axe kick (spike) / switch  ·  chakra + tool: the kunai turns into a clone",
 		Description = "Shadow clones that carry his routes and fall to one blow, a Rasengan he can only shape with a clone, the biggest reserve — and the Nine-Tails' red chakra when it all goes wrong.",
 		Health = 150, Chakra = 160, ChakraRegen = 6.5, Speed = 18.5, SprintScale = 1.12, JumpScale = 1.1, AirControlScale = 1.0, AccelerationScale = 1.08,
 		-- (Stage 6) His ground string is five hits (everyone else four).
@@ -1722,7 +1729,7 @@ return Face
 	-- Sheet: docs/characters/TEMARI.md (implementation state at its end).
 	Gale = {
 		Name = "Temari", FullName = "Temari of the Sand", Age = 15, Title = "THE WIND FAN", Color = { 168, 140, 214 },
-		Routes = "↑ Updraft: the fan scoops the body into rising air (convert at range: Kamaitachi or Gust)  ·  ↓ Fan Slam  ·  ←→ Fan Pirouette: a full turn, the gust throws the body aside  ·  air: drive / Fan Dive",
+		Routes = "rising: Updraft, the fan scoops the body into rising air (convert at range: Kamaitachi or Gust)  ·  low: Fan Slam  ·  around: Fan Pirouette, the gust throws the body aside  ·  air: drive / Fan Dive",
 		Description = "The wind fan: she paints the distance. Wind lanes slow, carry and turn blades aside; the fan pushes and sends them back. Hold the range or be caught.",
 		Health = 130, Chakra = 120, ChakraRegen = 8, Speed = 17.5, SprintScale = 0.95, JumpScale = 1.0, AirControlScale = 1.3, AccelerationScale = 0.95,
 		CombatTravel = 0.55, CombatDamage = 1, DashScale = 1, GuardStrength = 0.1, PreferredRange = 16,
@@ -1783,7 +1790,7 @@ return Face
 	-- (her palms bite harder for a while) and a protective trigram sphere.
 	Lavender = {
 		Name = "Hinata", FullName = "Hinata Hyuga", Age = 12, Title = "THE GENTLE HEIRESS", Color = { 176, 150, 226 },
-		Routes = "↑ palm heel under the chin  ·  ↓ low sweep (closes two points)  ·  ←→ circular step onto a point  ·  air: twin palms / descending palm / spinning palm",
+		Routes = "rising: palm heel under the chin  ·  low: sweep (closes two points)  ·  around: circular step onto a point  ·  air: twin palms (drive) / descending palm (spike) / spinning palm (switch)",
 		Description = "The Gentle Fist, closer and softer than Neji's: palms that drain, Twin Lion Fists, a protective sphere of chakra.",
 		Health = 120, Chakra = 120, ChakraRegen = 8, Speed = 18.5, SprintScale = 1.02, JumpScale = 1.0, AirControlScale = 1.0, AccelerationScale = 1.04,
 		CombatTravel = 1.0, CombatDamage = 0.92, DashScale = 1.0, GuardStrength = 0.12, PreferredRange = 4.5,
@@ -1819,7 +1826,7 @@ return Face
 	-- tracking hounds that bind, and a copied Water Dragon.
 	Copycat = {
 		Name = "Kakashi", FullName = "Kakashi Hatake", Age = 13, Title = "THE COPY NINJA", Color = { 170, 182, 196 },
-		Routes = "↑ launcher  ·  ↓ sweep  ·  ←→ feint step  ·  air: drive / spike / switch",
+		Routes = "rising: launcher  ·  low: sweep  ·  around: feint step  ·  air: drive / spike / switch",
 		Description = "The all-rounder: a Sharingan that reads, hounds that hold, a copied Water Dragon and the Lightning Blade.",
 		Health = 130, Chakra = 120, ChakraRegen = 7.6, Speed = 19, SprintScale = 1.08, JumpScale = 1.05, AirControlScale = 1.05, AccelerationScale = 1.06,
 		CombatTravel = 1.06, CombatDamage = 1.05, DashScale = 1.05, GuardStrength = 0.1, PreferredRange = 7,
@@ -2477,7 +2484,7 @@ SealJutsu.Mirage={ -- Itachi, 13: crows, clones that explode, blades from blind 
 		Radius = 9, Arc = 0.3, Damage = 2, Seal = 1.5, Slow = { Scale = .72, Time = 2 }, Range = 9, Style = "look", Hint = "A flood of crows in his eyes: slowed, his jutsu sealed 1.5 s", AI = { Min = 0, Max = 8 } },
 	{ Id = "ExplodingClone", Name = "Exploding Clone", Signs = {2,3}, Family = "Counter", Kind = "fireball", Time = 0.9, Swap = true, Damage = 12, Knock = 44, Lift = 16,
 		Cost = 16, Channel = 0.04, Active = 0.04, Recovery = 0.2, Cooldown = 9, Interruptible = false, Range = 6, Radius = 6, Hint = "The blow meets a clone: it explodes, Itachi is behind", AI = { Min = 0, Max = 6 } },
-	{ Id = "SharinganParalysis", Name = "Sharingan: Paralysis", Signs = {3,4}, AIAs = "Projectile", Cost = 16, Channel = 0.12, Active = 0.06, Recovery = 0.24, Cooldown = 9, Interruptible = true, Range = 16, Bind = 0.8,
+	{ Id = "SharinganParalysis", Name = "Sharingan: Paralysis", Signs = {3,4}, AIAs = "Projectile", Cost = 16, Channel = 0.3, Active = 0.06, Recovery = 0.24, Cooldown = 9, Interruptible = true, Range = 16, Bind = 0.8,
 		-- (04/11, replaces the Blind-Angle Shuriken: it was his Shadow Shuriken again)
 		Hint = "If he is looking Itachi in the eyes, he cannot move for a moment", AI = { Min = 3, Max = 16 } },
 	{ Id = "PhoenixSageFire", Name = "Katon: Phoenix Sage Fire", Signs = {4,1}, Family = "Projectile", Kind = "fireball", Element = "Fire", Cost = 20, Channel = 0.3, Active = 0.2, Recovery = 0.3, Cooldown = 7, Interruptible = true,
@@ -2490,7 +2497,7 @@ SealJutsu.Flashstep={ -- Minato, 13: Jiraiya's student, a sealing prodigy; the s
 	-- 1. The Rasengan: the spiral forms in his palm (Techniques.BurstStrike, the
 	-- orb drawn by Effects): cast in the open it stays there, he runs and jumps
 	-- with it and his next strike drives it (a thrust, a plunge from the air).
-	{ Id = "BurstStrike", Name = "Rasengan", Signs = {1,2}, Cost = 26, Channel = 0.42, Active = 0.08, Recovery = 0.5, Cooldown = 9, Interruptible = true, Range = 8, Damage = 18,
+	{ Id = "BurstStrike", Name = "Rasengan", Signs = {1,2}, AIAs = "Strike", Cost = 26, Channel = 0.42, Active = 0.08, Recovery = 0.5, Cooldown = 9, Interruptible = true, Range = 8, Damage = 18,
 		HoldState = { Time = 3, Drain = 5, Strike = "DashAttack", Air = "Slam", Variant = "Rasengan", AirVariant = "RasenganDrop", Damage = 18,
 			Reaction = "Knockback", Impulse = Vector3.new(0, 22, 70), Stun = .62, Rasengan = true, World = { contact = "energy", element = "wind" }, Style = "burst", Name = "Rasengan", Reach = 8, Event = "Rasengan" },
 		Hint = "The spiral forms in his palm: run with it, the next blow drives it • instant after a teleport • plunges from the air", AI = { Min = 2, Max = 9, Punish = true } },
@@ -4840,7 +4847,7 @@ return {
       <Item class="StringValue" referent="ND29">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">855d70845b8352786240769297848231ced7c6e6c838a0bb852a807b6e91c152</string>
+          <string name="Value">f938bc34725e119ccdb0e88de106889ff741b961759b08b8598cd80785dab3bc</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND30">
@@ -4957,6 +4964,15 @@ local function familyWants(self,c,a,target,spec,distance,danger)
 	local rule=spec.AI or {}
 	-- (04/11) a bespoke seal jutsu says which family the bot should read it as
 	local family=spec.Family or spec.AIAs
+	-- (Audit 04/11) a jutsu that follows a launched body (Lee's Dancing Leaf):
+	-- only then (it was pressed into a refusal every time).
+	if spec.FollowsLaunch and not (target.reaction=="Launched" or target.reaction=="Juggled") then return false end
+	-- a jutsu with its own check (the copy, the paralysis...): asked first
+	local own=Techniques[spec.Id]
+	if own and own.check and spec.AIAs then
+		local ok=own.check(c,a,spec,c.now)
+		if not ok then return false end
+	end
 	local range=spec.Range or 30
 	local opening=target.state=="Recovery" or target.state=="TechniqueRecovery" or target.state=="Stunned" or target.reaction=="Bound"
 	local lo,hi,chance
@@ -7098,6 +7114,10 @@ end
 function Brawler.buttonRoute(c,a,action)
  if action~="Dodge" and action~="Jump" and action~="Tool" then return nil end
  if a.reaction or a.ultimateHeld or a.wall or a.grabbing then return nil end
+ -- (Audit 04/11, « sans perdre de mouvement ») the stick pushed away from him
+ -- always gets out: ○ is the real dodge, × the real jump, even mid-string.
+ -- (A player's stick: the bot picks its routes by their intent.)
+ if action~="Tool" and a.playerInput and Brawler.classify(a,a.move or Vector3.zero)=="back" then return nil end
  -- A launched body: the jump stays a jump and the chase a chase.
  if (a.pursuitUntil or 0)&gt;c.now then return nil end
  local graph=Brawler.graph(a) or {}
@@ -12037,10 +12057,17 @@ function Combat:requestInner(a,action,aim,clientTime,opts)
 			if (a.sealedUntil or 0)&gt;self.now then return false,"Chakra points sealed" end
 			a.sealing=nil
 			a.sealCast=spec;a.sealResolved=spec
-			if (a.cooldowns[spec.Id] or 0)&lt;=self.now and a.chakra&gt;=(spec.Cost or 0) then
-				for i,n in spec.Signs or {} do
-					self:pushImpact(a.root.Position,"seals",false,{owner=a.id,fighter=a.fighterId,step=i,seal=n})
-				end
+		end
+		-- (Audit 04/11) the signs only for a cast that will go: a press its own
+		-- check refuses ("Nothing to copy", "Launch him first") wove them for
+		-- nothing.
+		local spec=a.sealCast
+		local technique=Techniques[spec.Id]
+		local follows=spec.FollowsLaunch and a.target and (a.target.reaction=="Launched" or a.target.reaction=="Juggled")
+		if (a.cooldowns[spec.Id] or 0)&lt;=self.now and a.chakra&gt;=(spec.Cost or 0) and (follows or Rules.canAct(a,self.now))
+			and (not technique or not technique.check or technique.check(self,a,spec,self.now)) then
+			for i,n in spec.Signs or {} do
+				self:pushImpact(a.root.Position,"seals",false,{owner=a.id,fighter=a.fighterId,step=i,seal=n})
 			end
 		end
 		action="Technique1"
@@ -12157,7 +12184,10 @@ function Combat:requestInner(a,action,aim,clientTime,opts)
 		opts=table.clone(opts or {});opts.chakra=true
 	end
 	-- (A blade that is not thrown, Kakashi's tanto: R stays the tool.)
-	if action=="Tool" and a.armed and not (a.def.Weapon and a.def.Weapon.Throwable==false) and not (opts~=nil and opts.chakra==true) then return self:throwDrawn(a,aim) end
+	-- (Audit 04/11) R inside a string is its retreat route (Brawler.buttonRoute),
+	-- kunai drawn or not: the hop out comes before the drawn throw.
+	local retreat=action=="Tool" and a.intentOverride~=nil and a.intentOverride[1]=="back" and a.chainOpen==true
+	if action=="Tool" and a.armed and not retreat and not (a.def.Weapon and a.def.Weapon.Throwable==false) and not (opts~=nil and opts.chakra==true) then return self:throwDrawn(a,aim) end
 	if action=="Tool" then
 		-- No blade to throw (Rock Lee): the tool button is his deflecting kick, and
 		-- his chakra profile (ChakraTuning Taijutsu) infuses nothing: the chakra
@@ -12278,8 +12308,11 @@ function Combat:requestInner(a,action,aim,clientTime,opts)
 	local arriving=(a.flashUntil or 0)&gt;self.now and (a.state=="TechniqueRecovery" or a.state=="TechniqueActive")
 		and (a.pending==nil or a.pending.spec.Id=="Flashstep")
 	-- (Stage 6) at 13 the arrival is cashed in with the Lightning Strike.
-	if cancelSpec and (cancelSpec.Id=="BurstStrike" or cancelSpec.Id=="LightningStrike") and arriving
-		and (a.cooldowns[cancelSpec.Id] or 0)&lt;=self.now and a.chakra&gt;=cancelSpec.Cost then
+	-- (Audit 04/11) the seal page's Rasengan too (Minato's: "instant after a
+	-- teleport"; the press was refused "Committed").
+	local arrivalSpec=a.sealCast or cancelSpec
+	if arrivalSpec and (arrivalSpec.Id=="BurstStrike" or arrivalSpec.Id=="LightningStrike") and arriving
+		and (a.cooldowns[arrivalSpec.Id] or 0)&lt;=self.now and a.chakra&gt;=(arrivalSpec.Cost or 0) then
 		a.flashUntil=0;a.state="Neutral";a.untilTime=self.now;a.pending=nil
 		a.flashCancel=true
 	end
@@ -12295,8 +12328,11 @@ function Combat:requestInner(a,action,aim,clientTime,opts)
 	-- (04/11) Lee's Shadow of the Dancing Leaf follows a body he has just
 	-- launched straight out of the blow's recovery (that is the technique).
 	local follow=a.sealCast
+	-- (Audit 04/11) the jutsu's own check first: a refused press ("Out of
+	-- range") cleared his recovery for free.
 	if follow and follow.FollowsLaunch and a.target and (a.target.reaction=="Launched" or a.target.reaction=="Juggled")
-		and (a.state=="Recovery" or a.state=="TechniqueRecovery" or (a.state=="Active" and a.hitConfirmed)) and (a.cooldowns[follow.Id] or 0)&lt;=self.now and a.chakra&gt;=(follow.Cost or 0) then
+		and (a.state=="Recovery" or a.state=="TechniqueRecovery" or (a.state=="Active" and a.hitConfirmed)) and (a.cooldowns[follow.Id] or 0)&lt;=self.now and a.chakra&gt;=(follow.Cost or 0)
+		and Techniques[follow.Id] and Techniques[follow.Id].check(self,a,follow,self.now) then
 		if a.pending and a.pending.kind=="Brawl" then Bangla.close(a.pending) end
 		a.pending=nil;a.attackName=nil;a.chainOpen=false;a.state="Neutral";a.untilTime=self.now
 	end
@@ -13086,7 +13122,9 @@ function Combat:projectileHit(p,target,position,normal)
 		Chakra.contact(self,p,target,damaged)
 		if self.match.phase~="Duel" then return end
 	end
-	local guarded=target.impactStyle=="block"
+	-- (Audit 04/11) this blow's guard (impactStyle is the last blow's: an
+	-- absorbed wave read a stale block and broke a guard that was never up).
+	local guarded=damaged and target.impactStyle=="block"
 	-- A family object's contact fields (Families.contact): bind, drain, slow...
 	if p.family then
 		Families.projectileHit(self,p,target,damaged,guarded,position)
@@ -15639,8 +15677,22 @@ function Families.poison(c,a,b,spec)
 end
 -- Held where it stands (shadow, water prison, snakes, hounds): substitution
 -- escapes, as for the Sand Coffin. Crush lands when the hold ends.
+-- (Audit 04/11) Minato's space-time barrier sends a jutsu elsewhere too (a
+-- bind, a burst, a clone out of the floor), not only a blow or a thrown
+-- object: true when the stance took it (and is spent).
+function Families.barrierTakes(c,a,b)
+	local stance=b and b.counterStance
+	if not stance or c.now&gt;=stance.untilT or not stance.spec.Warp or a==b then return false end
+	b.counterStance=nil
+	c:pushImpact(b.root.Position,"teleport",false,{owner=b.id,from=b.root.Position,to=b.root.Position,kind=stance.spec.Kind})
+	c:pushImpact(b.root.Position,"look",true,{owner=b.id,kind=stance.spec.Kind})
+	c:cue(b,string.upper(stance.spec.Name).." • SENT AWAY",.7)
+	brawler().event(c,b,"Warped")
+	return true
+end
 function Families.bind(c,a,b,spec)
 	if b.health&lt;=0 or (b.invulnerableUntil or 0)&gt;c.now then return end
+	if Families.barrierTakes(c,a,b) then return end
 	local Brawler=brawler()
 	local awake=(a.awakenUntil or 0)&gt;c.now and a.def.Awakening and a.def.Awakening.BindScale or 1
 	local duration=spec.Bind*awake
@@ -15977,7 +16029,7 @@ F.Burst={
 		if b and b.health&gt;0 then
 			local d=flat(b.root.Position-a.root.Position)
 			local inArc=d.Magnitude&lt;2 or look:Dot(d.Unit)&gt;(spec.Arc or -1)
-			if d.Magnitude&lt;=reach and math.abs(b.root.Position.Y-a.root.Position.Y)&lt;7 and inArc then
+			if d.Magnitude&lt;=reach and math.abs(b.root.Position.Y-a.root.Position.Y)&lt;7 and inArc and not Families.barrierTakes(c,a,b) then
 				c.damageTag=spec.Name
 				local hit=c:damage(a,b,spec.Damage or 6,(spec.Damage or 6)&gt;=12,false)
 				c.damageTag=nil
@@ -16044,6 +16096,10 @@ F.Zone={
 		local h=c:addHazard(a,position,spec.Radius or 8,spec.Time or 4,spec.Damage or 3,spec.ZoneKind or "Fire")
 		h.effects=spec
 		h.look=spec.Kind
+		-- (Audit 04/11) a trap arms a beat after it is laid: a step out of it
+		-- (the formula seen under him) escapes; it no longer closed on the
+		-- first tick, through any guard.
+		if spec.Trap then h.trapArmedAt=c.now+(spec.Trap.Arm or .45) end
 		c:pushImpact(position,"zone",true,{owner=a.id,kind=spec.Kind,radius=spec.Radius or 8,time=spec.Time or 4})
 		c:cue(a,string.upper(spec.Name),.6)
 	end,
@@ -16353,7 +16409,7 @@ function Families.zoneTick(c,h,target)
 	if z.Seal then target.sealedUntil=math.max(target.sealedUntil or 0,c.now+z.Seal) end
 	-- (04/11) A trap (Minato's sealing formula): the first body to step in is
 	-- held and its jutsu shut, then the formula is spent.
-	if z.Trap and not h.sprung and target.reaction~="Bound" then
+	if z.Trap and not h.sprung and target.reaction~="Bound" and c.now&gt;=(h.trapArmedAt or 0) and (target.invulnerableUntil or 0)&lt;=c.now then
 		h.sprung=true
 		if z.Trap.Seal then target.sealedUntil=math.max(target.sealedUntil or 0,c.now+z.Trap.Seal) end
 		if z.Trap.Bind then Families.bind(c,h.a,target,{Bind=z.Trap.Bind,Name=z.Name,Kind=z.Kind}) end
@@ -16386,6 +16442,8 @@ end
 -- nothing of a round leaks into the next one (a buff, a dose still ticking).
 function Families.clearState(a)
 	a.buff=nil;a.counterStance=nil;a.slowScale=nil;a.boundKind=nil;a.teleportSide=nil;a.fogAim=nil
+	-- (Audit 04/11) the Sharingan copied a jutsu from the round before.
+	a.lastFamilyCast=nil
 	-- A dose already scheduled checks its serial: a new one cancels it.
 	a.poisonSerial=(a.poisonSerial or 0)+1
 	for key,value in a do
@@ -17283,6 +17341,20 @@ function Lobby.new(matches,services)
 	if self.remote.OnServerEvent then
 		self.remote.OnServerEvent:Connect(function(player,payload) self:request(player,payload) end)
 	end
+	-- (Audit 04/11) a teleport refused after it started: back to the roster.
+	pcall(function()
+		if svc.teleport and svc.teleport.TeleportInitFailed then
+			svc.teleport.TeleportInitFailed:Connect(function(player)
+				local s=matches.sessions[player]
+				if s and s.online and s.online.kind=="travel" then
+					s.online=nil
+					matches:selection(player)
+					local p=self.players[player.UserId]
+					if p then self:status(p,"THE DUEL COULD NOT START — TRY AGAIN","bad") end
+				end
+			end)
+		end
+	end)
 	pcall(function()
 		if svc.store then
 			self.presence=svc.store:GetSortedMap(Protocol.Tune.PresenceMap)
@@ -17547,8 +17619,11 @@ end
 function Lobby:depart(p,code,opponent)
 	if type(code)~="string" or #code&gt;200 then return end
 	local s=self.matches:session(p.player)
+	-- (Audit 04/11) out of an AI duel first: a travel that failed left the
+	-- player in a frozen duel, every button refused.
+	if s.phase~="Selection" then self.matches:selection(p.player) end
 	if s.online then self.matches.online:leave(p.player,s) end
-	s.online={kind="travel"}
+	s.online={kind="travel",at=self.svc.now()}
 	self:status(p,"LEAVING FOR THE DUEL"..(if opponent then " AGAINST "..string.upper(tostring(opponent)) else "").."…")
 	self:teleport(p.player,code)
 end
@@ -17672,6 +17747,16 @@ function Lobby:update(now)
 			self.incoming[id]=nil
 			local p=self.players[rec.to]
 			if p then self:send(p.player,{kind="closed",id=id}) end
+		end
+	end
+	-- (Audit 04/11) a teleport that never happened (TeleportInitFailed, or no
+	-- answer at all): the player gets his roster back.
+	for _,p in self.players do
+		local s=self.matches.sessions[p.player]
+		if s and s.online and s.online.kind=="travel" and now-(s.online.at or now)&gt;25 then
+			s.online=nil
+			self.matches:selection(p.player)
+			self:status(p,REASONS.error,"bad")
 		end
 	end
 	local d=self.duel
@@ -19142,6 +19227,11 @@ function Matches:request(player,payload)
 	-- The online flow owns every request of a player who is in it.
 	if self.online and self.online:request(player,s,action,payload,clock) then return end
 	if action=="TutorialSkip" and s.tutorial then self:selection(player);s.tutorial=nil;return end
+	-- (Audit 04/11) one step skipped (the panel's "tap: skip the step").
+	if action=="TutorialStep" and s.tutorial then
+		if clock-(s.lastStepSkip or -10)&gt;.3 then s.lastStepSkip=clock;Tutorial.skip(s,s.combat and s.combat.now or clock) end
+		return
+	end
 	if self.tournament and self.tournament:request(player,s,action,payload) then return end
 	if action=="Start" or action=="Tutorial" or action=="Rematch" or action=="Selection" then
 		if clock-s.lastLifecycle&lt;0.8 then return end
@@ -20410,6 +20500,10 @@ function Online:request(player,s,action,payload,clock)
 	local o=s.online
 	local gap=clock-s.lastLifecycle&gt;=Protocol.LifecycleGap
 	if not o then
+		-- (Audit 04/11) on a duel server, waiting for the opponent to arrive:
+		-- CANCEL goes back to a public server (it did nothing for 45 s).
+		local lobby=self.matches.lobby
+		if action=="Cancel" and lobby and lobby.duel and gap then s.lastLifecycle=clock;lobby:home(player);return true end
 		if not Protocol.Lifecycle[action] then return false end
 		if action~="Cancel" and s.phase=="Selection" and gap then
 			s.lastLifecycle=clock
@@ -22085,11 +22179,14 @@ function SealKits.install(Techniques)
 			c:pushImpact(under-Vector3.new(0,2.4,0),"look",false,{owner=a.id,kind="clonepop"})
 			c:schedule(c.now+.2,function()
 				if a.health&lt;=0 or b.health&lt;=0 or c.match.phase~="Duel" then return end
-				local line=unitOr(flat(b.root.Position-a.root.Position),Vector3.zAxis)
-				local at=b.root.Position
+				-- (Audit 04/11) the clone comes out where the floor cracked: a body
+				-- that stepped off or jumped is missed (it followed him anywhere).
+				local line=unitOr(flat(under-a.root.Position),Vector3.zAxis)
+				local at=under
 				Bodies.spawn(c,a,{kind="clone",position=at-line*.9-Vector3.new(0,1.4,0),ephemeral=true,life=.5,mode="spent",airborne=true,state="Active",action="UzumakiKick"})
 				c:pushImpact(at,"look",true,{owner=a.id,kind="clonepop",victim=b.id})
-				if (b.root.Position-at).Magnitude&gt;3.5 then return end
+				if flat(b.root.Position-at).Magnitude&gt;3.5 or b.airborne or math.abs(b.root.Position.Y-at.Y)&gt;3 then return end
+				if families().barrierTakes(c,a,b) then return end
 				c.damageTag=spec.Name
 				local hit=c:damage(a,b,spec.Damage or 8,true,false)
 				c.damageTag=nil
@@ -22172,7 +22269,15 @@ function SealKits.install(Techniques)
 			local toItachi=unitOr(flat(a.root.Position-b.root.Position),Vector3.zAxis)
 			local facing=flat(b.root.CFrame.LookVector)
 			local meets=facing.Magnitude&gt;.1 and facing.Unit:Dot(toItachi)&gt;.35
+			-- (Audit 04/11) a raised guard looks down behind the arms: not caught
+			-- (it was an unblockable instant hold from 16 studs).
+			local guarding=b.state=="Guarding" or b.guardHeld==true
 			c:pushImpact(a.root.Position+Vector3.new(0,1.6,0),"look",false,{owner=a.id,kind="sharingan"})
+			if guarding then
+				c:cue(a,string.upper(spec.Name).." • GUARDED",.7)
+				brawler().event(c,a,"ParalysisMissed")
+				return
+			end
 			if not meets then
 				c:cue(a,string.upper(spec.Name).." • HE LOOKED AWAY",.7)
 				brawler().event(c,a,"ParalysisMissed")
@@ -24229,6 +24334,8 @@ function Tournament:skip(player)
 	local s=m:session(player)
 	local cup=s.cup
 	if not cup or cup.over then return end
+	-- (Audit 04/11) the K.O. on screen is the result: no reroll over it.
+	if s.finishing or s.phase=="Result" then return end
 	local a,b=Tournament.pair(cup,cup.match)
 	if not a or not b or a==cup.me or b==cup.me then return end
 	if s.phase=="Duel" or s.phase=="Result" then m:destroy(s) end
@@ -24290,7 +24397,8 @@ end
 -- Requests that belong to the cup; true when handled.
 function Tournament:request(player,s,action,payload)
 	if action=="CupStart" then
-		if s.phase=="Selection" and not s.cup then self:start(player,payload.player) end
+		-- (Audit 04/11) and NEW TOURNAMENT once one is over (champion or out).
+		if (s.phase=="Selection" and not s.cup) or (s.cup and s.cup.over) then self:start(player,payload.player) end
 		return true
 	end
 	if not s.cup then return false end
@@ -24375,7 +24483,7 @@ function Tutorial.plan(a)
 	local routes=graph.routes or {}
 	local steps={}
 	local function add(spec) table.insert(steps,step(spec)) end
-	add({id="move",title="Move",key="W A S D",pad="L stick",
+	add({id="move",title="Move",key="WASD",pad="L stick",
 		check=function(s,t) return t.travel&gt;12 end})
 	add({id="sprint",title="Sprint",key="Hold "..K.Sprint.." + move",pad=P.Sprint..", then move",
 		check=function(s,t) return s.human.sprinting and s.human.locomotion.Magnitude&gt;28 end})
@@ -24410,7 +24518,9 @@ function Tutorial.plan(a)
 		check=function(s,t) local a,b=s.human,s.bot;return t.ev("Chase") and a.state=="Neutral" and a.airborne and (a.root.Position-b.root.Position).Magnitude&lt;7 end})
 	add({id="air",title="Land two aerial strikes",key=K.Light.." twice in the air",pad=P.Light.." twice in the air",place="air",retry=3,
 		check=function(s,t) return t.count("AirHit")&gt;=2 end})
-	add({id="airFinish",title=if graph.airFinisher then "Finish in the air: "..moveLabel(graph.airFinisher) else "Finish downward",key=K.Heavy.." in the air",pad=P.Heavy.." in the air",place="air",retry=3,
+	-- (Audit 04/11) the finisher is a table: its name (it printed "table: 0x…").
+	local finisher=graph.airFinisher
+	add({id="airFinish",title=if finisher then "Finish in the air: "..moveLabel(if type(finisher)=="table" then finisher.name else finisher) else "Finish downward",key=K.Heavy.." in the air",pad=P.Heavy.." in the air",place="air",retry=3,
 		check=function(s,t) return t.ev("SlamHit") or t.ev("LionCombo") or (t.ok("Heavy") and t.count("Hit")&gt;=1) end})
 	add({id="runStrike",title=if graph.runStrike then "Strike on the run: "..moveLabel(graph.runStrike) else "Strike on the run",key="Sprint at him, then "..K.Light.." or "..K.Heavy,pad="Sprint at him, then "..P.Light.." or "..P.Heavy,
 		check=function(s,t) return t.ev("RunningStrike") end})
@@ -39777,6 +39887,20 @@ function BodyViews.copy(source)
 	local root=copy:FindFirstChild("HumanoidRootPart")
 	if not root then copy:Destroy();return nil end
 	root.Anchored=true;copy.PrimaryPart=root
+	-- (Audit 04/11) a copy made in the Nine-Tails cloak kept its red slit eyes
+	-- (and a blink) for the rest of the round: the copy's face starts calm.
+	pcall(function()
+		local Face=require(game:GetService("ReplicatedStorage").NinjaDuel.Face)
+		local face=Face.find(copy)
+		if face then Face.tint(face,nil);Face.set(face,"calm") end
+		for _,d in copy:GetDescendants() do
+			if d.Name=="Iris" and d:IsA("BasePart") then
+				local color,material=d:GetAttribute("NDIrisColor"),d:GetAttribute("NDIrisMaterial")
+				if typeof(color)=="Color3" then d.Color=color end
+				if type(material)=="string" and Enum.Material[material] then d.Material=Enum.Material[material] end
+			end
+		end
+	end)
 	return copy
 end
 function BodyViews:take(owner)
@@ -39968,7 +40092,7 @@ end
 -- Impact-driven impulse. Small events must not make the camera twitch: only a
 -- finisher, launcher, parry, slam, teleport or big jutsu earns a reaction.
 local IMPULSE={
- whiff={0,0},spent={0,0},kunai={0,0},shuriken={0,0},stick={0,0},fade={0,0},cast={0,0},chase={.02,1.2},dodge={.01,.25},substitute={.02,.4},
+ whiff={0,0},spent={0,0},seals={0,0},kunai={0,0},shuriken={0,0},stick={0,0},fade={0,0},cast={0,0},chase={.02,1.2},dodge={.01,.25},substitute={.02,.4},
  light={.02,.3},air={.025,.45},landing={.04,.6},block={.04,.6},quickstep={.015,.8},teleport={.03,2.2},mirage={0,0},burst={.02,1},
  -- (Stage 6) the ultimates and the awakenings' moments.
  jutsuclash={.26,3.2},conduct={.08,1},steam={.03,.8},puddle={0,0},sandmelt={0,0},
@@ -40011,7 +40135,8 @@ function Camera:impulse(style,role,impact)
 end
 function Camera:mouse(data)
 	local UIS=game:GetService("UserInputService")
-	local free=data~=nil and data.phase=="Duel" and not self.locked and not data.gamepad and not self.menuOpen
+	-- (Audit 04/11) watching a match: the cursor stays free for SKIP.
+	local free=data~=nil and data.phase=="Duel" and not self.locked and not data.gamepad and not data.touch and not self.menuOpen and not data.spectate
 	local want=if free then Enum.MouseBehavior.LockCenter else Enum.MouseBehavior.Default
 	if UIS.MouseBehavior~=want then UIS.MouseBehavior=want end
 end
@@ -41331,6 +41456,7 @@ function Cup.new(ui,send,kit)
 	self.bannerText=K.text(banner,"",UDim2.fromOffset(18,8),UDim2.fromOffset(440,54),20,P.paper,K.TITLE_FONT);self.bannerText.ZIndex=46
 	local skip=K.button(banner,"SKIP",UDim2.fromOffset(474,12),UDim2.fromOffset(148,46),function() self.send("CupSkip") end,P.red)
 	skip.ZIndex=46
+	self.skip=skip
 	return self
 end
 local function nameOf(id)
@@ -41453,7 +41579,11 @@ function Cup:render(data)
 	end
 	-- Watching a match: whose, which round, SKIP.
 	local watching=phase=="Duel" and data.spectate==true and data.cup~=nil
-	self.banner.Visible=watching
+	-- (Audit 04/11) not over the intro's VS and names, not over the K.O. (the
+	-- result on screen is the result); on a pad SKIP takes the focus.
+	self.banner.Visible=watching and not data.ko and (data.intro or 0)&lt;=0
+	if self.banner.Visible and not self.bannerShown and data.gamepad then focus(self.skip) end
+	self.bannerShown=self.banner.Visible
 	if watching then
 		local n=data.cup.next
 		local a,b=nameOf(data.human and data.human.fighterId),nameOf(data.bot and data.bot.fighterId)
@@ -43306,6 +43436,33 @@ local WEAR={
 	{ {"LowerTorso",Vector3.new(.8,.3,.05),CFrame.new(-.2,0,-.53),"dirt"},{"RightLowerArm",Vector3.new(.2,.08,.03),CFrame.new(.05,.1,-.44),"graze"},{"LeftLowerLeg",Vector3.new(.5,.5,.05),CFrame.new(0,.2,-.45),"dirt"},{"UpperTorso",Vector3.new(.3,.5,.05),CFrame.new(.1,.1,-.535),"tear"} },
 }
 local WEAR_LOOK={dirt={Color3.fromRGB(96,78,58),.35},tear={Color3.fromRGB(40,34,32),.25},graze={Color3.fromRGB(150,46,40),.2}}
+-- (Audit 04/11) One record of a body part's own colour for every layer that
+-- tints it (the battle wear's dust, Lee's gates' flush): each says what it
+-- adds, the colour is rebuilt from the original. Two layers that each kept
+-- their own "original" left Lee red, or browner, for the next round.
+local DUST=Color3.fromRGB(110,92,74)
+local LEE_FLUSH=Color3.fromRGB(226,92,72)
+local BASE=setmetatable({},{__mode="k"})
+local WORN=setmetatable({},{__mode="k"})
+local FLUSHED=setmetatable({},{__mode="k"})
+local function baseColor(p)
+	local base=BASE[p]
+	if not base then base=p.Color;BASE[p]=base end
+	return base
+end
+local function recolor(p)
+	local color=baseColor(p)
+	if WORN[p] then color=color:Lerp(DUST,.14) end
+	if FLUSHED[p] then color=color:Lerp(LEE_FLUSH,FLUSHED[p]) end
+	p.Color=color
+end
+-- layer: "wear" (true / nil) or "flush" (an amount / nil)
+local function tintLayer(p,layer,value)
+	baseColor(p)
+	if layer=="wear" then WORN[p]=value elseif layer=="flush" then FLUSHED[p]=value end
+	recolor(p)
+end
+FX.baseColor=baseColor;FX.recolor=recolor;FX.tintLayer=tintLayer
 function FX:wear(model,actor,aura)
 	local ratio=(actor.health or 1)/math.max(1,actor.maxHealth or 1)
 	local level=if ratio&lt;=.25 then 3 elseif ratio&lt;=.5 then 2 elseif ratio&lt;=.75 then 1 else 0
@@ -43314,7 +43471,7 @@ function FX:wear(model,actor,aura)
 	-- instead of opening round two fully worn (and unable to build again).
 	if aura.wear&gt;0 and level==0 and ratio&gt;=.99 then
 		for _,p in model:GetDescendants() do if p.Name=="BattleWear" then p:Destroy() end end
-		for part,color in aura.cloth or {} do if part.Parent then part.Color=color end end
+		for part in aura.cloth or {} do if part.Parent then tintLayer(part,"wear",nil) end end
 		aura.cloth=nil;aura.wear=0
 	end
 	while aura.wear&lt;level do
@@ -43332,8 +43489,8 @@ function FX:wear(model,actor,aura)
 			-- Low health: cloth looks dusty and darker.
 			for _,p in model:GetChildren() do
 				if p:IsA("BasePart") and p.Name~="HumanoidRootPart" and p.Name~="BattleWear" and p.Transparency&lt;1 and p.Material~=Enum.Material.Neon then
-					aura.cloth=aura.cloth or {};aura.cloth[p]=aura.cloth[p] or p.Color
-					p.Color=p.Color:Lerp(Color3.fromRGB(110,92,74),.14)
+					aura.cloth=aura.cloth or {};aura.cloth[p]=true
+					tintLayer(p,"wear",true)
 				end
 			end
 		end
@@ -43763,6 +43920,19 @@ function FX:update(data,dt,folder)
 	self.fighters=folder
 	if not data or data.phase~="Duel" then
 		if self.epoch~=nil and data and data.phase=="Selection" then self.epoch=nil;self:reset() end
+		-- (Audit 04/11) on the result screen the bodies are still drawn: their
+		-- layers run so an awakening that ended takes its cloak, tail, flush
+		-- and lit eye with it (they stayed, the tail frozen in the air).
+		if data and data.phase=="Result" then
+			for _,key in {"human","bot"} do
+				local actor=data[key]
+				local model=actor and folder and folder:FindFirstChild(actor.id or "")
+				if model then
+					pcall(self.fighter,self,model,actor,dt)
+					for _,layer in FX.layers do if layer.fighter then pcall(layer.fighter,self,model,actor,dt) end end
+				end
+			end
+		end
 		self:stepProjectiles(dt)
 		for _,layer in FX.layers do if layer.step then layer.step(self,data,dt,folder) end end
 		return
@@ -43796,7 +43966,8 @@ require(script.Parent.SandFX).install(FX,{new=new,block=block,tween=tween,sound=
 	smokePuff=smokePuff,floorUnder=floorUnder,anchorPart=anchorPart,weldAll=weldAll,num=num,seq=seq,TEX=TEX,SOUND=SOUND,BUILD=BUILD})
 -- Rock Lee (the Fifth Gate, lotuses, deflecting kick, Rupture, his speed).
 require(script.Parent.LeeFX).install(FX,{new=new,block=block,tween=tween,sound=sound,flash=flash,shockRing=shockRing,burst=burst,
-	smokePuff=smokePuff,floorUnder=floorUnder,anchorPart=anchorPart,weldAll=weldAll,num=num,seq=seq,TEX=TEX,SOUND=SOUND,BUILD=BUILD})
+	smokePuff=smokePuff,floorUnder=floorUnder,anchorPart=anchorPart,weldAll=weldAll,num=num,seq=seq,TEX=TEX,SOUND=SOUND,BUILD=BUILD,
+	baseColor=baseColor,tintLayer=tintLayer})
 -- (Stage 6) the eight ultimates, the Tsukuyomi, Lee's gates, the Byakugan's reveal.
 require(script.Parent.UltimateFX).install(FX,{new=new,block=block,tween=tween,sound=sound,flash=flash,shockRing=shockRing,burst=burst,
 	smokePuff=smokePuff,sparks=sparks,floorUnder=floorUnder,anchorPart=anchorPart,weldAll=weldAll,num=num,seq=seq,TEX=TEX,SOUND=SOUND,BUILD=BUILD})
@@ -43920,12 +44091,20 @@ function FamilyFX.install(FX,kit)
 		local parts={}
 		for i=-2,2 do
 			local h=s[2]*(1-math.abs(i)*.18)
-			local p=ball(m,Vector3.new(s[1]*.32,h,s[3]),CFrame.new(i*s[1]*.18,h*.5-s[2]*.2,math.abs(i)*.35),c3(if math.abs(i)==2 then look.color2 else look.color),Enum.Material.Slate)
+			-- (Audit 04/11) a wave of air (a look with light: Hasangeki) is not
+			-- stone: it flew as five pale rocks with no glow and no trail.
+			local air=(look.light or 0)&gt;0
+			local p=ball(m,Vector3.new(s[1]*.32,h,s[3]),CFrame.new(i*s[1]*.18,h*.5-s[2]*.2,math.abs(i)*.35),c3(if math.abs(i)==2 then look.color2 else look.color),if air then Enum.Material.ForceField else Enum.Material.Slate)
+			if air then p.Transparency=.15 end
 			table.insert(parts,p)
 		end
 		weldAll(root,parts);m.PrimaryPart=root
 		local e=spray(root,c3(look.color),50,s[1]*.25,4)
 		e.EmissionDirection=Enum.NormalId.Top
+		if (look.light or 0)&gt;0 then
+			glow(parts[3],c3(look.color2),look.light)
+			if (look.trail or 0)&gt;0 then trail(parts[3],look.trail,c3(look.color),.4) end
+		end
 		return m
 	end
 	SHAPES.beast=function(look)
@@ -44456,6 +44635,10 @@ function FamilyFX.install(FX,kit)
 				-- toad squats in front of him, puffs its cheeks and is gone again.
 				local look=Looks[impact.kind or ""] or Looks.toad
 				local at=impact.position
+				-- (Audit 04/11) on the floor under the summoning point (it floated
+				-- 1.6 studs up: the point is the water bullet's origin)
+				local ok,floor=pcall(floorUnder,fx,at,3,10)
+				if ok and floor then at=Vector3.new(at.X,floor.Position.Y,at.Z) end
 				local dir=impact.direction or Vector3.new(0,0,-1)
 				local frame=CFrame.lookAt(at,at+Vector3.new(dir.X,0,dir.Z))
 				smokePuff(fx.folder,at+Vector3.new(0,.6,0),Color3.fromRGB(240,236,230),22,3.4)
@@ -46065,6 +46248,9 @@ Input.ChakraHold=.28
 -- while choosing the face button loaded chakra by accident (and the next ○
 -- became a dash). The pad's load needs a deliberate hold.
 Input.ChakraHoldPad=.5
+-- (Audit 04/11) R1 + L1 let go unused is the ultimate only on a short tap:
+-- a page opened to choose a seal and closed without one burnt the bar.
+Input.UltimateTap=.4
 Input.now=os.clock
 local KEYBOARD,GAMEPAD=Controls.Keyboard,Controls.Gamepad
 local function key(code) return {code} end
@@ -46133,11 +46319,35 @@ function Input.new(send,getState,toggleLock,camera)
   self.look=if released(state) then Vector2.zero else Vector2.new(obj.Position.X,obj.Position.Y)
   camera.look=self.look
  end)
+ -- (Audit 04/11) The seal page: R1 + L1 in either order (L1 is the guard, so
+ -- L1 first is the natural roll); the guard it started is let go while the
+ -- page is open and taken back if L1 is still held when the page closes.
+ local function openPage()
+  self.modifierSpent=true;self.sealPad=true;self.sealPadUsed=false;self.sealPadAt=Input.now()
+  local id=GAMEPAD.Guard.Name
+  if self.guards[id] then
+   self.guards[id]=nil
+   if next(self.guards)==nil then send("GuardOff") end
+  end
+ end
+ local function closePage()
+  if not self.sealPad then return end
+  self.sealPad=false
+  if not self.sealPadUsed and Input.now()-(self.sealPadAt or -math.huge)&lt;=Input.UltimateTap then send("Ultimate") end
+  self.sealPadUsed=true
+  -- L1 still down: the guard comes back.
+  if self.padL1 then
+   local already=next(self.guards)~=nil;self.guards[GAMEPAD.Guard.Name]=true
+   if not already then send("Guard") end
+  end
+ end
  bind("Modifier",key(GAMEPAD.Modifier),function(state)
-  if begin(state) then self.modifier=true;self.modifierAt=Input.now();self.modifierSpent=false
+  if begin(state) then
+   self.modifier=true;self.modifierAt=Input.now();self.modifierSpent=false
+   if self.padL1 then openPage() end
   elseif released(state) then
    self.modifier=false
-   if self.sealPad then self.sealPad=false;if not self.sealPadUsed then send("Ultimate") end end
+   closePage()
   end
  end)
  local function face(state,object,normal,slot)
@@ -46182,11 +46392,11 @@ function Input.new(send,getState,toggleLock,camera)
  bind("Guard",both("Guard"),function(state,obj)
   local id=obj.KeyCode.Name
   if released(state) then
-   -- (04/11) R1 + L1 let go without a seal jutsu: the ultimate (on a wall, the
+   -- (04/11) R1 + L1 tapped without a seal jutsu: the ultimate (on a wall, the
    -- server lets go of it instead).
-   if self.sealPad and padObject(obj) then
-    self.sealPad=false
-    if not self.sealPadUsed then send("Ultimate") end
+   if padObject(obj) then
+    self.padL1=false
+    closePage()
    end
    if self.guards[id] then
     self.guards[id]=nil
@@ -46196,7 +46406,8 @@ function Input.new(send,getState,toggleLock,camera)
   elseif pressed(state,obj) then
    -- R1 + L1: the seal page while held (□ △ ○ × D-pad ↑), the ultimate when
    -- let go unused.
-   if padObject(obj) and self.modifier then self.modifierSpent=true;self.sealPad=true;self.sealPadUsed=false
+   if padObject(obj) then self.padL1=true end
+   if padObject(obj) and self.modifier then openPage()
    else
     local already=next(self.guards)~=nil;self.guards[id]=true
     if not already then send("Guard") end
@@ -46215,7 +46426,7 @@ function Input.new(send,getState,toggleLock,camera)
  bind("Tool",both("Tool"),function(state,obj)
   if pressed(state,obj) then
    -- R1 + R2 on the pad is the feint now (R1 is the jutsu shift, L2 the chakra).
-   if padObject(obj) and self.modifier then self.modifierSpent=true;send("Feint");return end
+   if padObject(obj) and self.modifier then self.modifierSpent=true;if self.sealPad then self.sealPadUsed=true end;send("Feint");return end
    local chakra=self:chakraOn(padObject(obj))
    if chakra then self.chakraSpent=true end
    if chakra then send("Tool",{chakra=true,aim=toolAim(getState(),padObject(obj))}) else send("Tool") end
@@ -46223,7 +46434,7 @@ function Input.new(send,getState,toggleLock,camera)
  end)
  bind("Grab",both("Grab"),function(state,obj)
   if pressed(state,obj) then
-   if padObject(obj) and self.modifier then self.modifierSpent=true end
+   if padObject(obj) and self.modifier then self.modifierSpent=true;if self.sealPad then self.sealPadUsed=true end end
    send(if padObject(obj) and self.modifier then "Feint" else "Grab")
   end
  end)
@@ -46255,7 +46466,16 @@ function Input.new(send,getState,toggleLock,camera)
  -- else ○ toward a locked opponent while sprinting. The Dodge packet already
  -- carries the stick and the sprint toggle; the server turns it into the dash.
  bind("SubstitutePad",key(GAMEPAD.Substitute),function(state,obj) if pressed(state,obj) then send("Substitute") end end)
- bind("Skip",both("Skip"),function(state,obj) if pressed(state,obj) and getState().tutorial then send("TutorialSkip") end end)
+ -- (Audit 04/11) The tutorial: a tap skips the step, held a second it leaves
+ -- (BACKSPACE / touchpad; Escape is the Roblox menu and never arrives).
+ bind("Skip",both("Skip"),function(state,obj)
+  if not getState().tutorial then return end
+  if pressed(state,obj) then self.skipAt=Input.now()
+  elseif released(state) and self.skipAt then
+   local held=Input.now()-self.skipAt;self.skipAt=nil
+   send(if held&gt;=1 then "TutorialSkip" else "TutorialStep")
+  end
+ end)
  for index,code in {Enum.KeyCode.One,Enum.KeyCode.Two,Enum.KeyCode.Three,Enum.KeyCode.Four} do
   bind("Technique"..index,key(code),function(state,obj)
    -- C held: the second page, the seal jutsu (one press, the cast weaves the signs).
@@ -46281,7 +46501,7 @@ function Input.new(send,getState,toggleLock,camera)
 end
 function Input:reset()
  table.clear(self.keys);table.clear(self.held);table.clear(self.guards);table.clear(self.jumps);table.clear(self.seals)
- self.sealKey=false;self.sealPad=false;self.sealPadUsed=true
+ self.sealKey=false;self.sealPad=false;self.sealPadUsed=true;self.padL1=false
  self.stick=Vector2.zero;self.look=Vector2.zero;self.modifier=false;self.sprinting=false;self.camera.look=Vector2.zero
  self.chakra=false;self.chakraAt=nil;self.modifierSpent=true;self.chakraSpent=true;self.chakraPad=false;self.chakraPadAt=nil
 end
@@ -46318,6 +46538,8 @@ function Input:direction(camera)
  self:chakraHold()
  -- The current device owns movement; a resting controller cannot steer WASD.
  local stick=if self.pad and self.stick.Magnitude&gt;.15 then self.stick else Vector2.zero
+ -- (04/11) a phone's stick (Client/TouchControls)
+ if stick.Magnitude==0 and self.touchStick and self.touchStick.Magnitude&gt;.15 then stick=self.touchStick end
  -- (Freeze 02/11) The keys drive whenever the stick does not. A connected pad
  -- (a drifting stick, any pad event is enough) switched to "pad" and WASD was
  -- ignored, even held: the body stood still until the key was pressed again.
@@ -46465,12 +46687,14 @@ local function gate(fx,model,actor,st)
 	if aura and aura.trail and not aura.leeTrail then aura.trail.Color=ColorSequence.new(GATE);aura.leeTrail=true end
 	local head=model:FindFirstChild("Head")
 	if open and head and not st.flush then
+		-- (the original colours come from Effects' one record, shared with the
+		-- battle wear: each layer adds itself, nothing is restored blindly)
 		st.flush={}
-		local skin=head.Color
+		local skin=head.Color and K.baseColor(head)
 		for _,p in model:GetDescendants() do
-			if skin and p:IsA("BasePart") and p.Name~="HumanoidRootPart" and p.Color and skinLike(p.Color,skin) then
-				table.insert(st.flush,{part=p,color=p.Color})
-				p.Color=p.Color:Lerp(FLUSH,.45)
+			if skin and p:IsA("BasePart") and p.Name~="HumanoidRootPart" and p.Color and skinLike(K.baseColor(p),skin) then
+				table.insert(st.flush,p)
+				K.tintLayer(p,"flush",.45)
 			end
 		end
 		local torso=model:FindFirstChild("UpperTorso") or head
@@ -46480,7 +46704,7 @@ local function gate(fx,model,actor,st)
 			Size=K.num({{0,.7},{1,2.4}}),Transparency=K.num({{0,.62},{.4,.7},{1,1}}),Rotation=NumberRange.new(0,360),RotSpeed=NumberRange.new(-45,45)},at)
 		st.steam=at
 	elseif not open and st.flush then
-		for _,f in st.flush do if f.part.Parent then f.part.Color=f.color end end
+		for _,p in st.flush do if p.Parent then K.tintLayer(p,"flush",nil) end end
 		st.flush=nil
 		if st.steam then
 			local e=st.steam:FindFirstChildOfClass("ParticleEmitter")
@@ -46648,10 +46872,17 @@ function Panel.new(ui,remote,kit)
 	end)
 	self.cancelButton.TextSize=16;self.cancelButton.ZIndex=82
 	-- Keyboard answers (the cursor may be held by the duel camera).
+	-- (Audit 04/11) and the pad's: off a duel the gamepad selection sits on
+	-- ACCEPT (A) and B declines; in a duel (A, B are the jump and the dodge)
+	-- SELECT accepts and the invitation runs out on its own.
 	UIS.InputBegan:Connect(function(input,processed)
-		if processed or not self.invite then return end
-		if input.KeyCode==Enum.KeyCode.Return then self:answer(true)
-		elseif input.KeyCode==Enum.KeyCode.Backspace then self:answer(false) end
+		if not self.invite then return end
+		local code=input.KeyCode
+		if code==Enum.KeyCode.ButtonSelect then self:answer(true);return end
+		if code==Enum.KeyCode.ButtonB and self.phase~="Duel" then self:answer(false);return end
+		if processed then return end
+		if code==Enum.KeyCode.Return then self:answer(true)
+		elseif code==Enum.KeyCode.Backspace then self:answer(false) end
 	end)
 	remote.OnClientEvent:Connect(function(data) self:receive(data) end)
 	-- The fighter picked on the roster is what the others see next to the name.
@@ -46725,7 +46956,13 @@ function Panel:drawInvite()
 	if not invite then return end
 	local def=Fighters[invite.fighter or ""]
 	self.inviteText.Text=string.upper(invite.from).." CHALLENGES YOU"
-	self.inviteSub.Text=(if def then "WITH "..string.upper(def.Name).."  •  " else "").."ENTER ACCEPTS  •  BACKSPACE DECLINES"
+	local pad=false
+	pcall(function() pad=UIS:GetLastInputType().Name:match("^Gamepad")~=nil end)
+	local keys=if not pad then "ENTER ACCEPTS  •  BACKSPACE DECLINES" elseif self.phase=="Duel" then "SELECT ACCEPTS" else "A ACCEPTS  •  B DECLINES"
+	self.inviteSub.Text=(if def then "WITH "..string.upper(def.Name).."  •  " else "")..keys
+	if pad and self.phase~="Duel" then
+		pcall(function() game:GetService("GuiService").SelectedObject=self.acceptButton end)
+	end
 	self:tickTimer()
 end
 function Panel:tickTimer()
@@ -46737,6 +46974,21 @@ function Panel:tickTimer()
 end
 function Panel:drawList()
 	local K,P=self.kit,self.kit.palette
+	-- (Audit 04/11) the list refreshes every second: rebuilt only when it
+	-- changed, else the pad's selected CHALLENGE button was destroyed under it.
+	local parts={tostring(self.dnd)}
+	for _,e in self.players do
+		table.insert(parts,table.concat({tostring(e.id),tostring(e.name),tostring(e.state),tostring(e.fighter),tostring(e.dnd),tostring(e.pending),tostring(e.friend),tostring(e.here),tostring(self.blocked[e.id])},"|"))
+	end
+	local signature=table.concat(parts,";")
+	if signature==self.listSignature and #self.rows&gt;0 then return end
+	self.listSignature=signature
+	local GuiService=game:GetService("GuiService")
+	local selectedIndex
+	pcall(function()
+		local selected=GuiService.SelectedObject
+		for i,b in self.rowButtons or {} do if b==selected then selectedIndex=i end end
+	end)
 	for _,row in self.rows do row:Destroy() end
 	table.clear(self.rows)
 	self.rowButtons={}
@@ -46764,6 +47016,11 @@ function Panel:drawList()
 		if not available or e.pending then b.TextColor3=P.muted end
 		table.insert(self.rows,row)
 		table.insert(self.rowButtons,b)
+	end
+	-- the pad's selection back on the same row (or the last one)
+	if selectedIndex then
+		local b=self.rowButtons[math.min(selectedIndex,#self.rowButtons)]
+		pcall(function() GuiService.SelectedObject=b or self.closeButton end)
 	end
 	self.list.CanvasSize=UDim2.fromOffset(0,shown*64)
 	self.empty.Visible=shown==0
@@ -46799,6 +47056,7 @@ pcall(function()
 end)
 local UI=require(script.Parent.UI)
 local Input=require(script.Parent.Input)
+local TouchControls=require(script.Parent.TouchControls)
 local Camera=require(script.Parent.Camera)
 local Presentation=require(script.Parent.Presentation)
 local presentation=Presentation.new()
@@ -46843,13 +47101,14 @@ local function send(action,extra)
 		-- (shift lock). Free with the pad (user 03/11, his own play: strikes
 		-- thrown at the air behind him): the body faces where it goes, and the
 		-- blows turn to the opponent (Combat soft lock).
-		if not camera.locked and not (input and input.pad) then
+		if not camera.locked and not (input and (input.pad or input.touch)) then
 			local look=workspace.CurrentCamera.CFrame.LookVector*Vector3.new(1,0,1)
 			if look.Magnitude&gt;.05 then payload.look=look.Unit end
 		elseif not camera.locked then payload.look=false end
 	elseif type(extra)=="table" then for k,v in extra do payload[k]=v end
-	elseif action=="Tool" or string.match(action,"^Technique") then
-		local gamepad=input and input.pad
+	-- (Audit 04/11) the seal jutsu aim too (Minato's trap goes where he points).
+	elseif action=="Tool" or string.match(action,"^Technique") or string.match(action,"^Seal%d") then
+		local gamepad=input and (input.pad or input.touch)
 		mouse.TargetFilter=player.Character
 		local hit=if gamepad and current.bot then current.bot.position else mouse.Hit.Position
 		if gamepad and action=="Technique1" and current.human and current.human.fighterId=="Flashstep" then hit-=Vector3.new(0,2.8,0) end
@@ -46857,8 +47116,9 @@ local function send(action,extra)
 		if root and (hit-root.Position).Magnitude&lt;=140 then payload.aim=hit end
 	end
 	remote:FireServer(payload)
-	if current.phase=="Duel" and (action=="Attack" or action=="Heavy") then presentation:predictStrike(action,current) end
-	if current.phase=="Duel" and (action=="Dodge" or action=="Jump" or action=="PadJump") then presentation:predictMove(action,current) end
+	-- (Audit 04/11) watching a tournament match: the body is the AI's, no guess.
+	if current.phase=="Duel" and not current.spectate and (action=="Attack" or action=="Heavy") then presentation:predictStrike(action,current) end
+	if current.phase=="Duel" and not current.spectate and (action=="Dodge" or action=="Jump" or action=="PadJump") then presentation:predictMove(action,current) end
 end
 ui=UI.new(player:WaitForChild("PlayerGui"),send)
 -- (04/11) Players online and challenges between them (Server/Lobby).
@@ -46872,6 +47132,11 @@ if ui.menuStage then camera.menuShot=function() return ui.menuStage:shot() end e
 -- Input sees a non-Duel state, so no combat binding fires behind the panel.
 local dev
 input=Input.new(send,function() return if dev and dev.panelOpen then dev.blocked else current end,function() camera:setLocked(not camera.locked);send("Move",input:direction(workspace.CurrentCamera)) end,camera)
+-- (Audit 04/11) phones and tablets: their own controls (none existed).
+local touch=nil
+pcall(function()
+	touch=TouchControls.new(input,send,function() return current end,function() camera:setLocked(not camera.locked);send("Move",input:direction(workspace.CurrentCamera)) end,camera)
+end)
 -- Disable the default movement controller; server receives finite normalized intent.
 local playerModule=player:WaitForChild("PlayerScripts"):WaitForChild("PlayerModule")
 require(playerModule):GetControls():Disable()
@@ -46880,9 +47145,12 @@ remote.OnClientEvent:Connect(function(data)
 	if data.epoch~=current.epoch or data.phase~=current.phase then input:resync() end
 	if data.epoch~=current.epoch then camera.locked=false end
 	data.gamepad=input.pad
+	data.touch=input.touch==true
+	data.sealPage=input.sealPad==true or input.sealKey==true
 	current=data; presentation.receivedAt=os.clock(); presentation:impacts(data,camera); ui:render(data)
 	if lobbyPanel then lobbyPanel:render(data) end
 	cupScreen:render(data)
+	if touch then touch:render(data) end
 	if data.phase=="Duel" and data.serverNow then presentation:noteSnapshot(workspace:GetServerTimeNow()-data.serverNow) end
 end)
 local nextMove=0
@@ -46899,7 +47167,9 @@ RunService:BindToRenderStep("NinjaDuelCamera",Enum.RenderPriority.Camera.Value,f
 	-- (DEC-030 Partie 1, responsiveness) The stick goes out the frame it
 	-- changes, not on the next 80 ms tick (that alone cost up to 80 ms on every
 	-- start, stop and turn); the tick stays as a heartbeat.
-	if current.phase=="Duel" then
+	if current.phase=="Duel" and current.spectate then
+		presentation.inputDir=Vector3.zero;presentation.lead=nil;presentation.prediction=nil
+	elseif current.phase=="Duel" then
 		local dir=input:direction(workspace.CurrentCamera)
 		presentation.inputDir=dir;presentation.inputSprint=input.sprinting
 		presentation:observeStick(os.clock())
@@ -47622,7 +47892,12 @@ local function cloak(fx,model,actor,st)
 		st.shroud=shroud(fx,model)
 		st.irises={}
 		for _,p in model:GetChildren() do
-			if p.Name=="Iris" then table.insert(st.irises,{part=p,color=p.Color,material=p.Material});p.Color=FOX;p.Material=Enum.Material.Neon end
+			if p.Name=="Iris" then
+				table.insert(st.irises,{part=p,color=p.Color,material=p.Material})
+				-- (the clones copied from him read these to start with his own eyes)
+				pcall(function() p:SetAttribute("NDIrisColor",p.Color);p:SetAttribute("NDIrisMaterial",p.Material.Name) end)
+				p.Color=FOX;p.Material=Enum.Material.Neon
+			end
 		end
 		-- The drawn face: red slit eyes.
 		st.face=st.face or Face.find(model)
@@ -47967,6 +48242,23 @@ function Presentation:predictMove(action,data,ahead)
 		local character=game:GetService("Players").LocalPlayer.Character
 		root=character and character:FindFirstChild("HumanoidRootPart")
 	end)
+	-- (Audit 04/11) A press the server turns into a string route (Brawler
+	-- .buttonRoute: ○ around, × rising after two hits, the stick not pushed
+	-- away) is a strike, not a dash or a hop: no guess (the body dashed, then
+	-- snapped back into the route).
+	if not h.airborne and (action=="Dodge" or action=="Jump" or action=="PadJump") then
+		local v=Presentation.viewAt(h,ahead)
+		local routes=(MoveGraphs[h.fighterId] or {}).routes or {}
+		local route=if action=="Dodge" then routes.side else routes.up
+		local away=false
+		local dir,b=self.inputDir,data.bot
+		if dir and root and b and b.position then
+			local flat=Vector3.new(dir.X,0,dir.Z)
+			local to=Vector3.new(b.position.X-root.Position.X,0,b.position.Z-root.Position.Z)
+			away=to.Magnitude&gt;.1 and ActionContext.stick(flat,to.Unit,Config.Combo)=="back"
+		end
+		if route and Attacks[route] and v.combo&gt;=2 and (v.stringAlive or v.chainReady) and not away then return end
+	end
 	if action=="Dodge" then
 		-- The server's own rules (Combat:requestInner): chakra for it, off
 		-- cooldown (snapshot `dodge`), not Gaara's sand flicker (a teleport),
@@ -48410,7 +48702,8 @@ function Presentation:smoothStep(data,dt)
 			-- its velocity.
 			actualCF=Presentation.snapshotRoot(data,actor,actualCF)
 			local drawn=self:smoothRoot(key,actualCF,math.max(dt,1/240),actor.warpSerial)
-			if key=="human" then drawn=self:leadLocal(actor,drawn,math.max(dt,1/240)) end
+			-- (Audit 04/11) a watched tournament match: the body is the AI's own.
+			if key=="human" and not data.spectate then drawn=self:leadLocal(actor,drawn,math.max(dt,1/240)) end
 			st=self.smooth[key]
 			st.replicatedCF=actualCF
 			-- (Tutorial probe 03/11: 12-19 pops per fighter, 3-9 studs in one
@@ -49307,6 +49600,265 @@ return SandFX
         </Item>
         <Item class="ModuleScript" referent="ND189">
           <Properties>
+            <string name="Name">TouchControls</string>
+            <ProtectedString name="Source">-- Phone and tablet controls (audit 04/11: the experience is open to phones and
+-- tablets, and a touch player reached a duel with no way to move or strike;
+-- Roblox's own controls are off, Main.client).
+--
+-- Left half: a floating stick where the thumb lands (pushed to the edge it
+-- runs). Right half, empty screen: drag to turn the camera. Bottom right, the
+-- fight cluster (the pad's layout: □ strike, △ heavy, ○ dodge, × jump / chase,
+-- guard held, grab, tool), above it the jutsu row (SEALS turns it to the
+-- second page, the seal jutsu) and a row of the rest (substitution, kunai,
+-- chakra held, lock, awaken, ultimate; the tutorial's step skip).
+-- Every button sends the same packets as a key (Input); the server validates
+-- them all. Shown only on a touch screen, in the player's own duel.
+local UIS=game:GetService("UserInputService")
+local RunService=game:GetService("RunService")
+local Players=game:GetService("Players")
+local Fighters=require(game:GetService("ReplicatedStorage").NinjaDuel.Fighters)
+
+local Touch={};Touch.__index=Touch
+Touch.REFERENCE=390 -- the design height (a phone held sideways)
+local INK=Color3.fromRGB(14,12,18)
+local PAPER=Color3.fromRGB(244,236,220)
+local RED=Color3.fromRGB(196,40,46)
+local GOLD=Color3.fromRGB(232,184,72)
+local MUTED=Color3.fromRGB(120,112,104)
+
+local function new(class,props,parent)
+	local o=Instance.new(class)
+	for k,v in props do o[k]=v end
+	o.Parent=parent
+	return o
+end
+local function round(o,r) new("UICorner",{CornerRadius=UDim.new(r or .5,0)},o) end
+local function isPress(io)
+	return io.UserInputType==Enum.UserInputType.Touch or io.UserInputType==Enum.UserInputType.MouseButton1
+end
+
+function Touch.new(input,send,getState,toggleLock,camera)
+	local self=setmetatable({input=input,send=send,getState=getState,toggleLock=toggleLock,camera=camera,
+		held={},page=false,chakra=false,buttons={},jutsu={}},Touch)
+	if not UIS.TouchEnabled then return self end
+	local gui=new("ScreenGui",{Name="NinjaTouch",ResetOnSpawn=false,IgnoreGuiInset=true,DisplayOrder=8,Enabled=false,
+		ZIndexBehavior=Enum.ZIndexBehavior.Sibling},Players.LocalPlayer:WaitForChild("PlayerGui"))
+	self.gui=gui
+	-- (each group scales about its own corner; the rows are stacked by hand)
+	local scale={Scale=1}
+	self.scale=scale
+
+	-- The stick (drawn where the thumb lands).
+	local base=new("Frame",{Name="StickBase",Size=UDim2.fromOffset(116,116),AnchorPoint=Vector2.new(.5,.5),BackgroundColor3=INK,
+		BackgroundTransparency=.55,Visible=false},gui)
+	round(base);new("UIStroke",{Color=PAPER,Transparency=.6,Thickness=2},base)
+	local knob=new("Frame",{Name="Knob",Size=UDim2.fromOffset(52,52),AnchorPoint=Vector2.new(.5,.5),Position=UDim2.fromScale(.5,.5),
+		BackgroundColor3=PAPER,BackgroundTransparency=.25},base)
+	round(knob)
+	self.base,self.knob=base,knob
+
+	local function button(parent,name,label,center,size,color,down,up)
+		local b=new("TextButton",{Name=name,Text=label,Size=UDim2.fromOffset(size,size),AnchorPoint=Vector2.new(.5,.5),
+			Position=UDim2.fromOffset(center.X,center.Y),BackgroundColor3=color or INK,BackgroundTransparency=.3,AutoButtonColor=false,
+			TextColor3=PAPER,Font=Enum.Font.GothamBlack,TextScaled=true,Active=true},parent)
+		round(b);new("UIStroke",{Color=PAPER,Transparency=.45,Thickness=1.5,ApplyStrokeMode=Enum.ApplyStrokeMode.Border},b)
+		new("UIPadding",{PaddingLeft=UDim.new(.16,0),PaddingRight=UDim.new(.16,0),PaddingTop=UDim.new(.2,0),PaddingBottom=UDim.new(.2,0)},b)
+		b.InputBegan:Connect(function(io)
+			if not isPress(io) or self.held[io] then return end
+			self.held[io]={button=b,up=up}
+			b.BackgroundTransparency=.05
+			if down then down() end
+		end)
+		b.InputEnded:Connect(function(io) self:release(io) end)
+		self.buttons[name]=b
+		return b
+	end
+	self.button=button
+
+	-- The fight cluster (bottom right).
+	local cluster=new("Frame",{Name="Cluster",Size=UDim2.fromOffset(250,240),AnchorPoint=Vector2.new(1,1),Position=UDim2.new(1,-12,1,-12),
+		BackgroundTransparency=1},gui)
+	local function act(action) return function() self:press(action) end end
+	button(cluster,"Attack","□",Vector2.new(185,175),86,RED,act("Attack"))
+	button(cluster,"Heavy","△",Vector2.new(108,110),60,nil,act("Heavy"))
+	button(cluster,"Dodge","○",Vector2.new(185,82),60,nil,act("Dodge"))
+	button(cluster,"Jump","×",Vector2.new(92,198),60,nil,function() self.send("PadJump");self:used() end,function() self.send("JumpOff") end)
+	button(cluster,"Guard","GUARD",Vector2.new(28,128),56,nil,function()
+		self.guarding=true;self.send("Guard");self:used()
+	end,function() self.guarding=false;self.send("GuardOff") end)
+	button(cluster,"Grab","GRAB",Vector2.new(34,214),46,nil,act("Grab"))
+	button(cluster,"Tool","TOOL",Vector2.new(236,26),46,nil,act("Tool"))
+
+	-- The jutsu row (the quick slots; SEALS: the second page).
+	local row=new("Frame",{Name="Jutsu",Size=UDim2.fromOffset(250,50),AnchorPoint=Vector2.new(1,1),Position=UDim2.new(1,-12,1,-258),
+		BackgroundTransparency=1},gui)
+	for i=1,5 do
+		local b=button(row,"Jutsu"..i,tostring(i),Vector2.new(23+(i-1)*51,25),46,nil,function()
+			if self.page then self.send("Seal"..i) else self:press("Technique"..i) end
+			self:used()
+		end,function() self.send("SealRelease") end)
+		b.TextScaled=true
+		self.jutsu[i]=b
+	end
+	local seals=button(row,"Seals","SEALS",Vector2.new(-32,25),52,nil,function()
+		self.page=not self.page;self:refreshPage()
+	end)
+	self.sealsButton=seals
+
+	-- The rest.
+	local extras=new("Frame",{Name="Extras",Size=UDim2.fromOffset(250,40),AnchorPoint=Vector2.new(1,1),Position=UDim2.new(1,-12,1,-312),
+		BackgroundTransparency=1},gui)
+	local list={{"Substitute","SUB",act("Substitute")},{"Arm","KUNAI",act("Arm")},
+		{"Chakra","CHAKRA",function() self.chakra=true end,function() self.chakra=false end},
+		{"Lock","LOCK",function() self.toggleLock() end},{"Awaken","AWAKEN",act("Awaken")},{"Ultimate","ULT",act("Ultimate")}}
+	for i,e in list do button(extras,e[1],e[2],Vector2.new(20+(i-1)*42,20),38,nil,e[3],e[4]) end
+	self.skipButton=button(gui,"SkipStep","SKIP STEP",Vector2.new(0,0),60,nil,function() self.skipAt=os.clock() end,function()
+		local held=os.clock()-(self.skipAt or os.clock())
+		self.send(if held&gt;=1 then "TutorialSkip" else "TutorialStep")
+	end)
+	self.skipButton.AnchorPoint=Vector2.new(0,0);self.skipButton.Position=UDim2.new(0,16,0,90);self.skipButton.Size=UDim2.fromOffset(96,40)
+	round(self.skipButton,.25)
+	local scales={}
+	for _,group in {cluster,row,extras,base,self.skipButton} do table.insert(scales,new("UIScale",{Scale=1},group)) end
+	local function fit()
+		local size=workspace.CurrentCamera.ViewportSize
+		local s=math.clamp(math.min(size.Y/Touch.REFERENCE,size.X/(Touch.REFERENCE*1.7)),.75,1.8)
+		scale.Scale=s
+		for _,u in scales do u.Scale=s end
+		row.Position=UDim2.new(1,-12,1,-(12+246*s))
+		extras.Position=UDim2.new(1,-12,1,-(12+300*s))
+	end
+	workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(fit);fit()
+
+	-- The stick and the camera drag: touches that no button took.
+	UIS.TouchStarted:Connect(function(io,processed)
+		if processed or not gui.Enabled then return end
+		local size=workspace.CurrentCamera.ViewportSize
+		local p=io.Position
+		if p.X&lt;size.X*.45 and not self.stickTouch then
+			self.stickTouch=io;self.origin=Vector2.new(p.X,p.Y)
+			base.Position=UDim2.fromOffset(p.X,p.Y);base.Visible=true
+			knob.Position=UDim2.fromScale(.5,.5)
+			self.input.touch=true
+		elseif p.X&gt;=size.X*.45 and not self.camTouch then
+			self.camTouch=io;self.camLast=Vector2.new(p.X,p.Y)
+		end
+	end)
+	UIS.TouchMoved:Connect(function(io)
+		if io==self.stickTouch and self.origin then
+			local d=Vector2.new(io.Position.X,io.Position.Y)-self.origin
+			local radius=52*scale.Scale
+			local v=d/radius
+			if v.Magnitude&gt;1 then v=v.Unit end
+			self.input.touchStick=Vector2.new(v.X,-v.Y)
+			-- pushed to the edge: the run
+			self.input.sprinting=v.Magnitude&gt;.92
+			knob.Position=UDim2.new(.5,v.X*52,.5,v.Y*52)
+		elseif io==self.camTouch and self.camLast then
+			local p=Vector2.new(io.Position.X,io.Position.Y)
+			local d=p-self.camLast;self.camLast=p
+			self.camera.look=Vector2.new(math.clamp(d.X/7,-1.6,1.6),math.clamp(-d.Y/9,-1.2,1.2))
+			self.camDriven=os.clock()
+		end
+	end)
+	UIS.TouchEnded:Connect(function(io)
+		self:release(io)
+		if io==self.stickTouch then
+			self.stickTouch=nil;self.origin=nil;base.Visible=false
+			self.input.touchStick=Vector2.zero;self.input.sprinting=false
+		elseif io==self.camTouch then
+			self.camTouch=nil;self.camera.look=Vector2.zero
+		end
+	end)
+	-- A drag is a nudge, not a held stick: the turn eases out between moves.
+	RunService.RenderStepped:Connect(function()
+		if self.camTouch and self.camDriven and os.clock()-self.camDriven&gt;.05 then self.camera.look=self.camera.look*.5 end
+	end)
+	UIS.LastInputTypeChanged:Connect(function(kind)
+		if kind==Enum.UserInputType.Touch then self.input.touch=true
+		elseif kind~=Enum.UserInputType.MouseMovement and kind~=Enum.UserInputType.Focus then self.input.touch=false end
+	end)
+	self.input.touch=UIS:GetLastInputType()==Enum.UserInputType.Touch or not UIS.KeyboardEnabled
+	return self
+end
+-- A press with the chakra button held goes out infused (Input: chakraOn).
+function Touch:press(action)
+	if self.chakra then self.send(action,{chakra=true}) else self.send(action) end
+	self:used()
+end
+-- The page closes after one seal jutsu, like letting go of R1 + L1.
+function Touch:used()
+	self.input.touch=true
+end
+function Touch:release(io)
+	local h=self.held[io]
+	if not h then return end
+	self.held[io]=nil
+	h.button.BackgroundTransparency=.3
+	if h.up then h.up() end
+	if self.page and h.button.Name:match("^Jutsu") then self.page=false;self:refreshPage() end
+end
+function Touch:releaseAll()
+	for io in table.clone(self.held) do self:release(io) end
+	if self.stickTouch then self.stickTouch=nil;self.origin=nil;if self.base then self.base.Visible=false end end
+	self.input.touchStick=Vector2.zero
+	if self.camTouch then self.camTouch=nil;self.camera.look=Vector2.zero end
+	self.chakra=false
+end
+local function short(name)
+	name=string.upper(tostring(name or ""))
+	-- the jutsu's own word: its last one, cut to fit a thumb-sized button
+	local last=name:match("([%w%-]+)%s*$") or name
+	return string.sub(last,1,9)
+end
+function Touch:refreshPage()
+	if not self.gui then return end
+	self.sealsButton.BackgroundColor3=if self.page then GOLD else INK
+	self.sealsButton.TextColor3=if self.page then INK else PAPER
+	self:labels(self.lastHuman)
+end
+function Touch:labels(h)
+	if not h then return end
+	local def=Fighters[h.fighterId or ""]
+	local list=if self.page then (def and def.SealJutsu or {}) else (h.techniques or {})
+	for i,b in self.jutsu do
+		local spec=list[i]
+		b.Visible=spec~=nil
+		if spec then
+			b.Text=short(spec.name or spec.Name)
+			local ready=if self.page then true else (spec.remaining or 0)==0 and (h.chakra or 0)&gt;=(spec.cost or 0)
+			b.BackgroundColor3=if self.page then Color3.fromRGB(70,52,20) else INK
+			b.TextColor3=if ready then PAPER else MUTED
+		end
+	end
+	self.sealsButton.Visible=def~=nil and def.SealJutsu~=nil
+end
+-- Every game packet.
+function Touch:render(data)
+	if not self.gui then return end
+	local show=data.phase=="Duel" and not data.spectate and self.input.touch==true
+	if self.gui.Enabled and not show then self:releaseAll() end
+	self.gui.Enabled=show
+	if not show then self.page=false;return end
+	local h=data.human
+	self.lastHuman=h
+	self:labels(h)
+	if h then
+		self.buttons.Ultimate.BackgroundColor3=if h.ultimateReady then GOLD else INK
+		self.buttons.Ultimate.TextColor3=if h.ultimateReady then INK else MUTED
+		self.buttons.Awaken.BackgroundColor3=if h.awakenReady then RED else INK
+		self.buttons.Awaken.TextColor3=if h.awakenReady then PAPER else MUTED
+		self.buttons.Lock.BackgroundColor3=if self.camera.locked then RED else INK
+		self.buttons.Chakra.BackgroundColor3=if self.chakra then Color3.fromRGB(60,120,220) else INK
+	end
+	self.skipButton.Visible=data.tutorial~=nil
+end
+return Touch
+</ProtectedString>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="ND190">
+          <Properties>
             <string name="Name">TutorialProbe</string>
             <ProtectedString name="Source">-- Debug/QA places only (build.py DEBUG_SOURCES). The tutorial as a test of the
 -- game (user 02/11: "the tutorial must serve the game": find what keeps it
@@ -49488,7 +50040,7 @@ return Probe
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND190">
+        <Item class="ModuleScript" referent="ND191">
           <Properties>
             <string name="Name">UI</string>
             <ProtectedString name="Source">-- Prodigy Tournament interface: roster/selection, online queue and fighter
@@ -50003,6 +50555,8 @@ function UI.new(parent,send)
 	-- where it is; nothing else lists keys during a fight.
 	self.controls=frame(self.gui,UDim2.fromScale(0,0),UDim2.fromScale(1,1),Color3.fromRGB(6,5,8),.25)
 	self.controls.ZIndex=40;self.controls.Visible=false
+	-- (Audit 04/11) the sheet takes the clicks (they went through to the roster).
+	self.controls.Active=true
 	local sheet=inkCard(frame(self.controls,UDim2.fromScale(.5,.5),UDim2.fromOffset(1120,640),CARD,0))
 	sheet.AnchorPoint=Vector2.new(.5,.5);sheet.ZIndex=41
 	local sheetScale=create("UIScale",sheet,{Scale=1})
@@ -50115,7 +50669,7 @@ local GROUPS={
 	{"MOVE",{{"Move","WASD","L stick"},{"Sprint","Sprint"},{"Jump","Jump"},{"Lock / unlock","Lock"},{"Wall run: into a wall","—","—"},{"Off the wall","WallDetach"}}},
 	{"ATTACK",{{"Light strike (string)","Light"},{"Heavy strike","Heavy"},{"Grab, then throw","Grab"},{"Tool","Tool"},{"Kunai: draw / sheathe","Arm"},{"Chase / chakra dash","Pursuit"}}},
 	{"DEFEND",{{"Guard (hold)","Guard"},{"Dodge","Dodge"},{"Substitution","Substitute"},{"Feint a heavy","Feint"},{"Break a grab","Grab"}}},
-	{"NINJA ARTS",{{"Jutsu 1-4","1  2  3  4","R1 + □ △ ○ ×"},{"Hand seals, then two jutsu keys","C (off a wall)","R1 + L3"},{"Jutsu 5","Technique5"},{"Chakra-infuse (hold + action)","Chakra"},{"Awaken (low health)","Awaken"},{"Ultimate (bar full)","Ultimate"}}},
+	{"NINJA ARTS",{{"Jutsu 1-4","1  2  3  4","R1 + □ △ ○ ×"},{"Seal jutsu (hold the 2nd page)","hold C + 1-5","hold R1 + L1 + □△○× / D↑"},{"Jutsu 5","Technique5"},{"Chakra-infuse (hold + action)","Chakra"},{"Awaken (low health)","Awaken"},{"Ultimate (bar full)","Ultimate"}}},
 }
 function UI:buildControls(pad)
 	local body=self.controlsBody
@@ -50139,7 +50693,10 @@ function UI:buildControls(pad)
 	end
 	-- The fighter in play (on the roster: the one picked): his strings, his jutsu.
 	local h=self.lastHuman
-	local id=if self.selection.Visible or not h then self.player else h.fighterId
+	-- (Audit 04/11) his own fighter: in his own duel the one he plays, else
+	-- the one picked (a watched match or the bracket showed someone else's).
+	local own=h~=nil and not self.lastSpectate and (self.lastPhaseSeen=="Duel" or self.lastPhaseSeen=="Result")
+	local id=if self.selection.Visible or not own then self.player else h.fighterId
 	local def=Fighters[id or ""]
 	local y=410
 	local head=text(body,if def then string.upper(def.FullName or def.Name) else "YOUR FIGHTER",UDim2.fromOffset(0,y),UDim2.fromOffset(1048,28),24,palette.gold,TITLE_FONT);head.ZIndex=43
@@ -50164,7 +50721,10 @@ end
 -- jutsu are a second page of the four jutsu keys: keyboard C held + 1-5, pad
 -- R1 + L1 held + □ △ ○ × (D-pad ↑ for a fifth). The slip lights up while the
 -- page is held; the signs themselves are woven by the cast.
-local function pageHeld(pad)
+local function pageHeld(pad,flag)
+	-- (Audit 04/11) The client's own page state (Input.sealPad / sealKey) when
+	-- it is sent: the pad page opens in either order (L1 then R1 too).
+	if flag~=nil then return flag==true end
 	local ok,held=pcall(function()
 		if pad then
 			local pressed={}
@@ -50177,12 +50737,12 @@ local function pageHeld(pad)
 	end)
 	return ok and held==true
 end
-function UI:sealHud(h,pad)
+function UI:sealHud(h,pad,page)
 	local def=Fighters[h.fighterId or ""]
 	local list=def and def.SealJutsu
 	self.sealPanel.Visible=list~=nil
 	if not list then self.sealWeave.Text="";return end
-	local held=not h.wall and pageHeld(pad)
+	local held=not h.wall and pageHeld(pad,page)
 	local key=if pad then {"□","△","○","×","D↑"} else {"1","2","3","4","5"}
 	self.sealHead.Text="HAND SEALS  •  "..(if pad then "HOLD R1 + L1" else "HOLD "..(Controls.KeyLabel.WallDetach or "C"))
 	self.sealPanel.BackgroundTransparency=if held then .02 else .35
@@ -50295,6 +50855,8 @@ function UI:lobby(data)
 		self.notice.Text=data.notice or ""
 	end
 	self.onlineRow.Visible=data.phase=="Selection"
+	-- (Audit 04/11) not during the online pick (it did nothing there).
+	self.cupButton.Visible=data.phase=="Selection"
 	if data.phase=="Queue" then
 		local private=online~=nil and online.mode=="private"
 		self.queueTitle.Text=if private then "PRIVATE DUEL" else "SEARCHING FOR AN OPPONENT"
@@ -50327,6 +50889,10 @@ function UI.padCue(cue)
 	cue=cue:gsub("SPACE REBOUND",P.Jump.." REBOUND"):gsub("C DETACH",P.WallDetach.." DETACH")
 	cue=cue:gsub("• E ","• "..P.Pursuit.." "):gsub("X TO ESCAPE",P.Substitute.." TO ESCAPE")
 	cue=cue:gsub("• 1 = ","• "..Controls.TechniquePad[1].." = ")
+	-- (Audit 04/11) the keyboard keys the server's cues name, on the pad.
+	cue=cue:gsub("%f[%w]E TO ",P.Pursuit.." TO "):gsub("%f[%w]E PURSUE",P.Pursuit.." PURSUE"):gsub("%f[%w]E CHASE",P.Pursuit.." CHASE")
+	cue=cue:gsub("%f[%w]Q ON ",P.Dodge.." ON "):gsub("%f[%w]Q TO ",P.Dodge.." TO ")
+	cue=cue:gsub("HEAVY: ",P.Heavy..": ")
 	return cue
 end
 -- A plate's chakra network (Neji): four pips, lit per closed point (a fresh one
@@ -50414,6 +50980,7 @@ function UI.ultimate(widget,actor,pad,mine)
 	end
 end
 function UI:render(data)
+	self.lastSpectate=data.spectate==true;self.lastPhaseSeen=data.phase
 	local pad=if data.gamepad~=nil then data.gamepad else Controls.isGamepad(UIS:GetLastInputType())
 	self.tutorialPanel.Visible=data.tutorial~=nil and data.phase=="Duel"
 	-- (User 02/11, tutorial on screen) The cue band (124) and the hint (200)
@@ -50423,7 +50990,7 @@ function UI:render(data)
 	self.hint.Position=UDim2.new(.5,-260,0,if self.tutorialPanel.Visible then 226 else 200)
 	if data.tutorial then
 		self.tutorialTitle.Text=data.tutorial.index.." / "..data.tutorial.total.."  "..data.tutorial.title
-		self.tutorialPrompt.Text=(if pad then data.tutorial.pad else Controls.localize(data.tutorial.key)).."  •  "..(if pad then "Touchpad to skip" else "ESC to skip")
+		self.tutorialPrompt.Text=(if pad then data.tutorial.pad else Controls.localize(data.tutorial.key)).."  •  "..(if pad then "TOUCHPAD" else "BACKSPACE").." skips the step (hold: leave)"
 	end
 	local introActive=data.phase=="Duel" and (data.intro or 0)&gt;0
 	self.onlineInfo=data.online
@@ -50535,7 +51102,7 @@ function UI:render(data)
 		end
 		widget.chakra.Size=UDim2.fromScale(math.clamp(actor.chakra/actor.maxChakra,0,1),1)
 		widget.status.Text=string.format("%d / %d",math.ceil(actor.health),actor.maxHealth)
-		UI.ultimate(widget,actor,pad,actor==h)
+		UI.ultimate(widget,actor,pad,actor==h and not data.spectate)
 		-- Gentle Fist effects on this fighter: the closed points (pips), what
 		-- they cost (the chakra bar dims, its recovery is spelled out) and the
 		-- jutsu the 64 Palms sealed.
@@ -50594,8 +51161,10 @@ function UI:render(data)
 		-- Global kunai (DEC-030): whether a blade is drawn, and how to use it.
 		(function()
 			local weapon=Fighters[h.fighterId or ""] and Fighters[h.fighterId].Weapon
-			if weapon then return if h.armed then weapon.Name.." DRAWN (B sheathes it)" else "B: draw "..string.lower(weapon.Name) end
-			return if h.armed then "KUNAI DRAWN (R throws it)" else "B: draw kunai"
+			local arm=if pad then Controls.PadLabel.Arm else Controls.KeyLabel.Arm
+			local tool=if pad then Controls.PadLabel.Tool else Controls.KeyLabel.Tool
+			if weapon then return if h.armed then weapon.Name.." DRAWN ("..arm.." sheathes it)" else arm..": draw "..string.lower(weapon.Name) end
+			return if h.armed then "KUNAI DRAWN ("..tool.." throws it)" else arm..": draw kunai"
 		end)())
 	-- Only decisive moments speak; routine cues stay silent.
 	local cue=Controls.localize(h.cue or "")
@@ -50641,7 +51210,7 @@ function UI:render(data)
 		ui.cool.Size=UDim2.fromScale(1,math.clamp(math.max(tech.remaining/6,if sealed then h.sealed/5 else 0),0,1))
 	end
 	for i=#h.techniques+1,5 do self.techniqueButtons[i].box.Visible=false end
-	self:sealHud(h,pad)
+	self:sealHud(h,pad,data.sealPage)
 	-- (Tournament) watching a match: none of these are the player's.
 	if data.spectate then
 		for _,b in self.techniqueButtons do b.box.Visible=false end
@@ -50649,19 +51218,23 @@ function UI:render(data)
 	end
 	local techOpen=h.reaction=="WallSplat" and (h.splatElapsed or 9)&lt;.34
 	local conversion=UI.conversion(h,pad)
-	self.hint.Text=if techOpen then (if pad then "○ — WALL TECH" else "Q — WALL TECH")
+	local K,P=Controls.KeyLabel,Controls.PadLabel
+	self.hint.Text=if techOpen then (if pad then P.Dodge.." — WALL TECH" else K.Dodge.." — WALL TECH")
 		elseif conversion then conversion
 		elseif b.reaction=="WallSplat" and h.pursuit&gt;0 then (if pad then "× — PURSUE  •  △ — WALL BOUNCE" else Controls.KeyLabel.Pursuit.." — PURSUE  •  RMB — WALL BOUNCE")
 		elseif (h.counter or 0)&gt;0 then UI.counterPrompt(h,pad)
 		-- The Chidori's risk, from the other side: its charge can be broken.
 		elseif b.castId=="Chidori" and b.state=="TechniqueChannel" then (if pad then Controls.PadLabel.Light else Controls.KeyLabel.Light).." — BREAK THE CHIDORI CHARGE"
-		elseif h.awakenReady then (if pad then "D-PAD ↓ — AWAKEN" else "T — AWAKEN")
-		elseif h.wall then (if pad then "× — REBOUND  •  R1 + L1 — DETACH" else "SPACE — REBOUND  •  C — DETACH")
-		elseif h.state=="Startup" and h.attackName=="Heavy" then (if pad then "R1 + L2 — FEINT" else "G — FEINT")
-		elseif h.reaction=="Grabbed" then (if pad then "L2 — THROW BREAK" else "V — THROW BREAK")
+		elseif h.awakenReady then (if pad then "D-PAD ↓ — AWAKEN" else K.Awaken.." — AWAKEN")
+		elseif h.wall then (if pad then "× — REBOUND  •  "..P.WallDetach.." — DETACH" else "SPACE — REBOUND  •  "..K.WallDetach.." — DETACH")
+		-- (Audit 04/11) the pad's feint is R1 + R2 and its throw break L1 + □.
+		elseif h.state=="Startup" and h.attackName=="Heavy" then (if pad then P.Feint.." — FEINT" else K.Feint.." — FEINT")
+		elseif h.reaction=="Grabbed" then (if pad then P.Grab.." — THROW BREAK" else K.Grab.." — THROW BREAK")
 		elseif h.pursuit&gt;0 then (if pad then "× — CHASE" else Controls.KeyLabel.Pursuit.." / SPACE — CHASE")
 		elseif (h.combo or 0)&gt;=2 and h.state=="Recovery" and not h.airborne and (h.comboHits or 0)==0 and b.reaction then Controls.comboHelp(MoveGraphs[h.fighterId] or {},pad)
 		else ""
+	-- (Tournament, audit 04/11) watching an AI match: its prompts are not his.
+	if data.spectate then self.hint.Text="";self.cue.Text="" end
 	self.help.Text=if pad then Controls.HelpPad else Controls.Help
 	self.grammar.Text=Controls.comboHelp(MoveGraphs[h.fighterId] or {},pad)
 	-- (Reference quality) The control sheet is for the first seconds of a duel
@@ -50713,7 +51286,7 @@ return UI
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND191">
+        <Item class="ModuleScript" referent="ND192">
           <Properties>
             <string name="Name">UltimateFX</string>
             <ProtectedString name="Source">-- The ultimates on the client (stage 6, the approved move list, "Ultimes"):
@@ -51621,7 +52194,7 @@ return UltimateFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND192">
+        <Item class="ModuleScript" referent="ND193">
           <Properties>
             <string name="Name">VelmoraHitFeedback</string>
             <ProtectedString name="Source">-- Impact presentation. Adapted from Velmora src/client/Combat/HitFeedback.luau
@@ -51817,7 +52390,7 @@ return Feedback
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND193">
+        <Item class="ModuleScript" referent="ND194">
           <Properties>
             <string name="Name">VelmoraMotionEngine</string>
             <ProtectedString name="Source">-- Ninja Duel body animation. Started from Velmora's additive R15 layer (MIT) and
@@ -55496,7 +56069,7 @@ return Motion
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND194">
+        <Item class="ModuleScript" referent="ND195">
           <Properties>
             <string name="Name">VfxAtlas</string>
             <ProtectedString name="Source">-- GENERATED by tools/vfx_textures.py --pack: do not edit by hand.
@@ -56949,7 +57522,7 @@ HAOBECABDA1HBIA3HBGAmZ]]},
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND195">
+        <Item class="ModuleScript" referent="ND196">
           <Properties>
             <string name="Name">VfxKit</string>
             <ProtectedString name="Source">-- Presentation primitives on the project's own VFX textures
@@ -57409,7 +57982,7 @@ return Kit
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND196">
+        <Item class="ModuleScript" referent="ND197">
           <Properties>
             <string name="Name">Wave1FX</string>
             <ProtectedString name="Source">-- Roster 20, batch 1 (Haku, Zabuza, Kimimaro): the batch's own drawing,
@@ -57623,7 +58196,7 @@ return M
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND197">
+        <Item class="ModuleScript" referent="ND198">
           <Properties>
             <string name="Name">Wave1Motion</string>
             <ProtectedString name="Source">-- Roster batch 1 bodies authored from their Combat Bibles (DEC-026). First:
@@ -57924,7 +58497,7 @@ return Wave1Motion
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND198">
+        <Item class="ModuleScript" referent="ND199">
           <Properties>
             <string name="Name">Wave2FX</string>
             <ProtectedString name="Source">-- Roster 20, batch 2 (Shikamaru, Shino, Orochimaru): the batch's own drawing, installed by
@@ -57937,7 +58510,7 @@ return M
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND199">
+        <Item class="ModuleScript" referent="ND200">
           <Properties>
             <string name="Name">Wave3FX</string>
             <ProtectedString name="Source">-- Roster 20, batch 3 (Deidara, Sasori, Nagato, Killer Bee): the batch's own
@@ -58040,7 +58613,7 @@ return M
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND200">
+        <Item class="ModuleScript" referent="ND201">
           <Properties>
             <string name="Name">Wave3Motion</string>
             <ProtectedString name="Source">-- Roster batch 3 bodies authored from their Combat Bibles (DEC-026). First:
@@ -58167,7 +58740,7 @@ return Wave3Motion
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND201">
+        <Item class="ModuleScript" referent="ND202">
           <Properties>
             <string name="Name">Wave4FX</string>
             <ProtectedString name="Source">-- DEC-026 newcomers (Madara, Hashirama, Hiruzen as children): the weapons
@@ -58310,7 +58883,7 @@ return M
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND202">
+        <Item class="ModuleScript" referent="ND203">
           <Properties>
             <string name="Name">Wave4Motion</string>
             <ProtectedString name="Source">-- DEC-026 newcomers: the bodies of Madara, Hashirama and Hiruzen as children
@@ -58523,7 +59096,7 @@ return Wave4Motion
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND203">
+        <Item class="ModuleScript" referent="ND204">
           <Properties>
             <string name="Name">WorldLook</string>
             <ProtectedString name="Source">-- What the screen looks like (user 03/11: "the brightness, the graphics,
@@ -58635,7 +59208,7 @@ return WorldLook
       </Item>
     </Item>
   </Item>
-  <Item class="Lighting" referent="ND204">
+  <Item class="Lighting" referent="ND205">
     <Properties>
       <string name="Name">Lighting</string>
       <token name="Technology">4</token>
@@ -58655,7 +59228,7 @@ return WorldLook
       </Color3>
     </Properties>
   </Item>
-  <Item class="SoundService" referent="ND205">
+  <Item class="SoundService" referent="ND206">
     <Properties>
       <string name="Name">SoundService</string>
     </Properties>

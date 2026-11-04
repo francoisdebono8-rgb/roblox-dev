@@ -1,3 +1,11 @@
+**v34 → v35 : touches simples, jutsu de signes refaits, relecture des bugs, commandes tactiles (04/11)** (utilisateur : « les touches […] pas facilement faisables pour un humain », « Minato […] c'est déjà les mêmes qu'il a », « fais-moi de belles animations », puis « part à la recherche de bugs dans cette v34 »)
+- **Touches** (v34) : les jutsu de signes sont une 2e page (C tenu + 1-5 ; manette R1 + L1 tenus + □ △ ○ × / D-pad ↑) ; les routes de combo sont sur les boutons (`Brawler.buttonRoute`). Stick à l'opposé de l'adversaire : vraie esquive / vrai saut (v35).
+- **Jutsu de signes** (v34) : Minato a les siens (Rasengan, piège de scellement, barrière espace-temps, Hiraishin niveau 2) ; 14 jutsu qui répétaient un coup du perso sont remplacés (`Server/SealKits`, `Server/Families`). Clips Blender de Minato (`tools/blender/jutsu_minato.py`, `job_jutsu.py`, `nd_seals.py`) ; les 7 autres en cours.
+- **Éveils** (v34) : Naruto (colonne de chakra, voile, oreilles, longue queue), Lee (plus de boule rouge sur la tête : peau qui rougit, vapeur), Kakashi (Sharingan gauche).
+- **Relecture du code** (v35, doc projet `bugs-v34-relecture-2026-11-04`) : une quarantaine de bugs corrigés (touches, combat, interface, effets), dont trois bloquants : pas de commandes tactiles, tutoriel impossible à quitter (Échap est à Roblox), téléportation ratée qui figeait le joueur.
+- **Commandes tactiles** (v35, `Client/TouchControls`) : stick flottant, caméra au doigt, boutons de combat, jutsu et page des signes.
+- **Tests** : 38/38 PASS. **Pas encore vu dans Studio** : la v35 attend la vérification à l'écran, puis la publication (avec le « vas-y » de l'utilisateur, donné le 04/11 à 20 h 19 pour la v34).
+
 **v33 : le tournoi contre l'IA (04/11)** (feuille de route `feuille-de-route-tournoi-matchmaking`, étape 2 : tableau de 8, chaque perso une fois, combats IA visibles depuis les tribunes, 2 manches gagnantes)
 - **Entrée** : **TOURNAMENT • VS AI** sur le roster, avec le perso choisi (`Server/Tournament`, `Client/CupScreen`).
 - **Tableau** : les 8 de la bêta, les affiches de l'histoire en quarts (Naruto–Neji, Sasuke–Gaara, Lee–Minato, Itachi–Kakashi). Quarts, demies, finale ; une phrase de chaque perso avant le match. Les traits du tableau s'allument en or derrière le vainqueur, en rouge pour le prochain match.
