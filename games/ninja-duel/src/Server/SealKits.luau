@@ -72,11 +72,14 @@ function SealKits.install(Techniques)
 			c:pushImpact(under-Vector3.new(0,2.4,0),"look",false,{owner=a.id,kind="clonepop"})
 			c:schedule(c.now+.2,function()
 				if a.health<=0 or b.health<=0 or c.match.phase~="Duel" then return end
-				local line=unitOr(flat(b.root.Position-a.root.Position),Vector3.zAxis)
-				local at=b.root.Position
+				-- (Audit 04/11) the clone comes out where the floor cracked: a body
+				-- that stepped off or jumped is missed (it followed him anywhere).
+				local line=unitOr(flat(under-a.root.Position),Vector3.zAxis)
+				local at=under
 				Bodies.spawn(c,a,{kind="clone",position=at-line*.9-Vector3.new(0,1.4,0),ephemeral=true,life=.5,mode="spent",airborne=true,state="Active",action="UzumakiKick"})
 				c:pushImpact(at,"look",true,{owner=a.id,kind="clonepop",victim=b.id})
-				if (b.root.Position-at).Magnitude>3.5 then return end
+				if flat(b.root.Position-at).Magnitude>3.5 or b.airborne or math.abs(b.root.Position.Y-at.Y)>3 then return end
+				if families().barrierTakes(c,a,b) then return end
 				c.damageTag=spec.Name
 				local hit=c:damage(a,b,spec.Damage or 8,true,false)
 				c.damageTag=nil
@@ -159,7 +162,15 @@ function SealKits.install(Techniques)
 			local toItachi=unitOr(flat(a.root.Position-b.root.Position),Vector3.zAxis)
 			local facing=flat(b.root.CFrame.LookVector)
 			local meets=facing.Magnitude>.1 and facing.Unit:Dot(toItachi)>.35
+			-- (Audit 04/11) a raised guard looks down behind the arms: not caught
+			-- (it was an unblockable instant hold from 16 studs).
+			local guarding=b.state=="Guarding" or b.guardHeld==true
 			c:pushImpact(a.root.Position+Vector3.new(0,1.6,0),"look",false,{owner=a.id,kind="sharingan"})
+			if guarding then
+				c:cue(a,string.upper(spec.Name).." • GUARDED",.7)
+				brawler().event(c,a,"ParalysisMissed")
+				return
+			end
 			if not meets then
 				c:cue(a,string.upper(spec.Name).." • HE LOOKED AWAY",.7)
 				brawler().event(c,a,"ParalysisMissed")

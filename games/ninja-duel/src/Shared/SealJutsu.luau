@@ -89,7 +89,7 @@ SealJutsu.Mirage={ -- Itachi, 13: crows, clones that explode, blades from blind 
 		Radius = 9, Arc = 0.3, Damage = 2, Seal = 1.5, Slow = { Scale = .72, Time = 2 }, Range = 9, Style = "look", Hint = "A flood of crows in his eyes: slowed, his jutsu sealed 1.5 s", AI = { Min = 0, Max = 8 } },
 	{ Id = "ExplodingClone", Name = "Exploding Clone", Signs = {2,3}, Family = "Counter", Kind = "fireball", Time = 0.9, Swap = true, Damage = 12, Knock = 44, Lift = 16,
 		Cost = 16, Channel = 0.04, Active = 0.04, Recovery = 0.2, Cooldown = 9, Interruptible = false, Range = 6, Radius = 6, Hint = "The blow meets a clone: it explodes, Itachi is behind", AI = { Min = 0, Max = 6 } },
-	{ Id = "SharinganParalysis", Name = "Sharingan: Paralysis", Signs = {3,4}, AIAs = "Projectile", Cost = 16, Channel = 0.12, Active = 0.06, Recovery = 0.24, Cooldown = 9, Interruptible = true, Range = 16, Bind = 0.8,
+	{ Id = "SharinganParalysis", Name = "Sharingan: Paralysis", Signs = {3,4}, AIAs = "Projectile", Cost = 16, Channel = 0.3, Active = 0.06, Recovery = 0.24, Cooldown = 9, Interruptible = true, Range = 16, Bind = 0.8,
 		-- (04/11, replaces the Blind-Angle Shuriken: it was his Shadow Shuriken again)
 		Hint = "If he is looking Itachi in the eyes, he cannot move for a moment", AI = { Min = 3, Max = 16 } },
 	{ Id = "PhoenixSageFire", Name = "Katon: Phoenix Sage Fire", Signs = {4,1}, Family = "Projectile", Kind = "fireball", Element = "Fire", Cost = 20, Channel = 0.3, Active = 0.2, Recovery = 0.3, Cooldown = 7, Interruptible = true,
@@ -102,7 +102,7 @@ SealJutsu.Flashstep={ -- Minato, 13: Jiraiya's student, a sealing prodigy; the s
 	-- 1. The Rasengan: the spiral forms in his palm (Techniques.BurstStrike, the
 	-- orb drawn by Effects): cast in the open it stays there, he runs and jumps
 	-- with it and his next strike drives it (a thrust, a plunge from the air).
-	{ Id = "BurstStrike", Name = "Rasengan", Signs = {1,2}, Cost = 26, Channel = 0.42, Active = 0.08, Recovery = 0.5, Cooldown = 9, Interruptible = true, Range = 8, Damage = 18,
+	{ Id = "BurstStrike", Name = "Rasengan", Signs = {1,2}, AIAs = "Strike", Cost = 26, Channel = 0.42, Active = 0.08, Recovery = 0.5, Cooldown = 9, Interruptible = true, Range = 8, Damage = 18,
 		HoldState = { Time = 3, Drain = 5, Strike = "DashAttack", Air = "Slam", Variant = "Rasengan", AirVariant = "RasenganDrop", Damage = 18,
 			Reaction = "Knockback", Impulse = Vector3.new(0, 22, 70), Stun = .62, Rasengan = true, World = { contact = "energy", element = "wind" }, Style = "burst", Name = "Rasengan", Reach = 8, Event = "Rasengan" },
 		Hint = "The spiral forms in his palm: run with it, the next blow drives it • instant after a teleport • plunges from the air", AI = { Min = 2, Max = 9, Punish = true } },

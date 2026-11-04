@@ -116,12 +116,14 @@ local function gate(fx,model,actor,st)
 	if aura and aura.trail and not aura.leeTrail then aura.trail.Color=ColorSequence.new(GATE);aura.leeTrail=true end
 	local head=model:FindFirstChild("Head")
 	if open and head and not st.flush then
+		-- (the original colours come from Effects' one record, shared with the
+		-- battle wear: each layer adds itself, nothing is restored blindly)
 		st.flush={}
-		local skin=head.Color
+		local skin=head.Color and K.baseColor(head)
 		for _,p in model:GetDescendants() do
-			if skin and p:IsA("BasePart") and p.Name~="HumanoidRootPart" and p.Color and skinLike(p.Color,skin) then
-				table.insert(st.flush,{part=p,color=p.Color})
-				p.Color=p.Color:Lerp(FLUSH,.45)
+			if skin and p:IsA("BasePart") and p.Name~="HumanoidRootPart" and p.Color and skinLike(K.baseColor(p),skin) then
+				table.insert(st.flush,p)
+				K.tintLayer(p,"flush",.45)
 			end
 		end
 		local torso=model:FindFirstChild("UpperTorso") or head
@@ -131,7 +133,7 @@ local function gate(fx,model,actor,st)
 			Size=K.num({{0,.7},{1,2.4}}),Transparency=K.num({{0,.62},{.4,.7},{1,1}}),Rotation=NumberRange.new(0,360),RotSpeed=NumberRange.new(-45,45)},at)
 		st.steam=at
 	elseif not open and st.flush then
-		for _,f in st.flush do if f.part.Parent then f.part.Color=f.color end end
+		for _,p in st.flush do if p.Parent then K.tintLayer(p,"flush",nil) end end
 		st.flush=nil
 		if st.steam then
 			local e=st.steam:FindFirstChildOfClass("ParticleEmitter")

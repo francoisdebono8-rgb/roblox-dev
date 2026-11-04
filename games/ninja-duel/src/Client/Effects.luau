@@ -1638,6 +1638,33 @@ local WEAR={
 	{ {"LowerTorso",Vector3.new(.8,.3,.05),CFrame.new(-.2,0,-.53),"dirt"},{"RightLowerArm",Vector3.new(.2,.08,.03),CFrame.new(.05,.1,-.44),"graze"},{"LeftLowerLeg",Vector3.new(.5,.5,.05),CFrame.new(0,.2,-.45),"dirt"},{"UpperTorso",Vector3.new(.3,.5,.05),CFrame.new(.1,.1,-.535),"tear"} },
 }
 local WEAR_LOOK={dirt={Color3.fromRGB(96,78,58),.35},tear={Color3.fromRGB(40,34,32),.25},graze={Color3.fromRGB(150,46,40),.2}}
+-- (Audit 04/11) One record of a body part's own colour for every layer that
+-- tints it (the battle wear's dust, Lee's gates' flush): each says what it
+-- adds, the colour is rebuilt from the original. Two layers that each kept
+-- their own "original" left Lee red, or browner, for the next round.
+local DUST=Color3.fromRGB(110,92,74)
+local LEE_FLUSH=Color3.fromRGB(226,92,72)
+local BASE=setmetatable({},{__mode="k"})
+local WORN=setmetatable({},{__mode="k"})
+local FLUSHED=setmetatable({},{__mode="k"})
+local function baseColor(p)
+	local base=BASE[p]
+	if not base then base=p.Color;BASE[p]=base end
+	return base
+end
+local function recolor(p)
+	local color=baseColor(p)
+	if WORN[p] then color=color:Lerp(DUST,.14) end
+	if FLUSHED[p] then color=color:Lerp(LEE_FLUSH,FLUSHED[p]) end
+	p.Color=color
+end
+-- layer: "wear" (true / nil) or "flush" (an amount / nil)
+local function tintLayer(p,layer,value)
+	baseColor(p)
+	if layer=="wear" then WORN[p]=value elseif layer=="flush" then FLUSHED[p]=value end
+	recolor(p)
+end
+FX.baseColor=baseColor;FX.recolor=recolor;FX.tintLayer=tintLayer
 function FX:wear(model,actor,aura)
 	local ratio=(actor.health or 1)/math.max(1,actor.maxHealth or 1)
 	local level=if ratio<=.25 then 3 elseif ratio<=.5 then 2 elseif ratio<=.75 then 1 else 0
@@ -1646,7 +1673,7 @@ function FX:wear(model,actor,aura)
 	-- instead of opening round two fully worn (and unable to build again).
 	if aura.wear>0 and level==0 and ratio>=.99 then
 		for _,p in model:GetDescendants() do if p.Name=="BattleWear" then p:Destroy() end end
-		for part,color in aura.cloth or {} do if part.Parent then part.Color=color end end
+		for part in aura.cloth or {} do if part.Parent then tintLayer(part,"wear",nil) end end
 		aura.cloth=nil;aura.wear=0
 	end
 	while aura.wear<level do
@@ -1664,8 +1691,8 @@ function FX:wear(model,actor,aura)
 			-- Low health: cloth looks dusty and darker.
 			for _,p in model:GetChildren() do
 				if p:IsA("BasePart") and p.Name~="HumanoidRootPart" and p.Name~="BattleWear" and p.Transparency<1 and p.Material~=Enum.Material.Neon then
-					aura.cloth=aura.cloth or {};aura.cloth[p]=aura.cloth[p] or p.Color
-					p.Color=p.Color:Lerp(Color3.fromRGB(110,92,74),.14)
+					aura.cloth=aura.cloth or {};aura.cloth[p]=true
+					tintLayer(p,"wear",true)
 				end
 			end
 		end
@@ -2095,6 +2122,19 @@ function FX:update(data,dt,folder)
 	self.fighters=folder
 	if not data or data.phase~="Duel" then
 		if self.epoch~=nil and data and data.phase=="Selection" then self.epoch=nil;self:reset() end
+		-- (Audit 04/11) on the result screen the bodies are still drawn: their
+		-- layers run so an awakening that ended takes its cloak, tail, flush
+		-- and lit eye with it (they stayed, the tail frozen in the air).
+		if data and data.phase=="Result" then
+			for _,key in {"human","bot"} do
+				local actor=data[key]
+				local model=actor and folder and folder:FindFirstChild(actor.id or "")
+				if model then
+					pcall(self.fighter,self,model,actor,dt)
+					for _,layer in FX.layers do if layer.fighter then pcall(layer.fighter,self,model,actor,dt) end end
+				end
+			end
+		end
 		self:stepProjectiles(dt)
 		for _,layer in FX.layers do if layer.step then layer.step(self,data,dt,folder) end end
 		return
@@ -2128,7 +2168,8 @@ require(script.Parent.SandFX).install(FX,{new=new,block=block,tween=tween,sound=
 	smokePuff=smokePuff,floorUnder=floorUnder,anchorPart=anchorPart,weldAll=weldAll,num=num,seq=seq,TEX=TEX,SOUND=SOUND,BUILD=BUILD})
 -- Rock Lee (the Fifth Gate, lotuses, deflecting kick, Rupture, his speed).
 require(script.Parent.LeeFX).install(FX,{new=new,block=block,tween=tween,sound=sound,flash=flash,shockRing=shockRing,burst=burst,
-	smokePuff=smokePuff,floorUnder=floorUnder,anchorPart=anchorPart,weldAll=weldAll,num=num,seq=seq,TEX=TEX,SOUND=SOUND,BUILD=BUILD})
+	smokePuff=smokePuff,floorUnder=floorUnder,anchorPart=anchorPart,weldAll=weldAll,num=num,seq=seq,TEX=TEX,SOUND=SOUND,BUILD=BUILD,
+	baseColor=baseColor,tintLayer=tintLayer})
 -- (Stage 6) the eight ultimates, the Tsukuyomi, Lee's gates, the Byakugan's reveal.
 require(script.Parent.UltimateFX).install(FX,{new=new,block=block,tween=tween,sound=sound,flash=flash,shockRing=shockRing,burst=burst,
 	smokePuff=smokePuff,sparks=sparks,floorUnder=floorUnder,anchorPart=anchorPart,weldAll=weldAll,num=num,seq=seq,TEX=TEX,SOUND=SOUND,BUILD=BUILD})

@@ -329,6 +329,35 @@ test("Itachi: the paralysis holds a body that faces him, not one looking away",f
   else assert(b.reaction~="Bound","a body looking away was held") end
  end
 end)
+test("audit 04/11: the ambush can be jumped, a guard sees no Sharingan, a refused jutsu weaves no signs, the copy forgets a round",function()
+ -- the clone comes out where the floor cracked: jumped out of, it misses
+ local c,a,b=H.duel("Legion","Mirage")
+ place(c,a,b,V.new(0,3,8),V.new(0,3,-8));b.ai=nil
+ local h=b.health
+ assert(seal(c,a,"CloneAmbush",b.root.Position))
+ run(c,22)
+ assert(c:request(b,"Jump"),"jump refused")
+ run(c,60)
+ assert(b.health==h and b.reaction~="Launched","the clone found a body that jumped out of the crack")
+ -- a raised guard: the eyes do not meet
+ local c2,i,s=H.duel("Mirage","Lion")
+ place(c2,i,s,V.new(0,3,6),V.new(0,3,-6));s.ai=nil
+ c2:request(s,"Guard");run(c2,3)
+ assert(seal(c2,i,"SharinganParalysis",s.root.Position));run(c2,45)
+ assert(s.reaction~="Bound","a guarding body was paralysed")
+ -- a jutsu its own check refuses weaves nothing
+ local c3,l,j=H.duel("Leaf","Mirage")
+ place(c3,l,j,V.new(0,3,6),V.new(0,3,-6));j.ai=nil
+ local before=0;for _,e in c3.impacts or {} do if e.style=="seals" then before+=1 end end
+ local ok=seal(c3,l,"DancingLeafShadow",j.root.Position)
+ local after=0;for _,e in c3.impacts or {} do if e.style=="seals" then after+=1 end end
+ assert(not ok and after==before,"a refused Dancing Leaf still wove its signs")
+ -- the Sharingan's memory ends with the round
+ local c4,x,y=H.duel("Lion","Mirage")
+ y.lastFamilyCast={spec=SealJutsu.Mirage and SealJutsu.Mirage[1] or {},at=c4.now}
+ c4:clear()
+ assert(y.lastFamilyCast==nil,"the copy can take a jutsu from the round before")
+end)
 
 -- A clean light, its recovery reached.
 local function cleanHit(c,a,b)

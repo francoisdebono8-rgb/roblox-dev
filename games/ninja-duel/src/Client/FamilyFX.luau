@@ -86,12 +86,20 @@ function FamilyFX.install(FX,kit)
 		local parts={}
 		for i=-2,2 do
 			local h=s[2]*(1-math.abs(i)*.18)
-			local p=ball(m,Vector3.new(s[1]*.32,h,s[3]),CFrame.new(i*s[1]*.18,h*.5-s[2]*.2,math.abs(i)*.35),c3(if math.abs(i)==2 then look.color2 else look.color),Enum.Material.Slate)
+			-- (Audit 04/11) a wave of air (a look with light: Hasangeki) is not
+			-- stone: it flew as five pale rocks with no glow and no trail.
+			local air=(look.light or 0)>0
+			local p=ball(m,Vector3.new(s[1]*.32,h,s[3]),CFrame.new(i*s[1]*.18,h*.5-s[2]*.2,math.abs(i)*.35),c3(if math.abs(i)==2 then look.color2 else look.color),if air then Enum.Material.ForceField else Enum.Material.Slate)
+			if air then p.Transparency=.15 end
 			table.insert(parts,p)
 		end
 		weldAll(root,parts);m.PrimaryPart=root
 		local e=spray(root,c3(look.color),50,s[1]*.25,4)
 		e.EmissionDirection=Enum.NormalId.Top
+		if (look.light or 0)>0 then
+			glow(parts[3],c3(look.color2),look.light)
+			if (look.trail or 0)>0 then trail(parts[3],look.trail,c3(look.color),.4) end
+		end
 		return m
 	end
 	SHAPES.beast=function(look)
@@ -622,6 +630,10 @@ function FamilyFX.install(FX,kit)
 				-- toad squats in front of him, puffs its cheeks and is gone again.
 				local look=Looks[impact.kind or ""] or Looks.toad
 				local at=impact.position
+				-- (Audit 04/11) on the floor under the summoning point (it floated
+				-- 1.6 studs up: the point is the water bullet's origin)
+				local ok,floor=pcall(floorUnder,fx,at,3,10)
+				if ok and floor then at=Vector3.new(at.X,floor.Position.Y,at.Z) end
 				local dir=impact.direction or Vector3.new(0,0,-1)
 				local frame=CFrame.lookAt(at,at+Vector3.new(dir.X,0,dir.Z))
 				smokePuff(fx.folder,at+Vector3.new(0,.6,0),Color3.fromRGB(240,236,230),22,3.4)

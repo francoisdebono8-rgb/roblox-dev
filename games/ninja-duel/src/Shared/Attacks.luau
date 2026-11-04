@@ -189,6 +189,9 @@ local KIND={Light3="kick",Heavy="heavy",Launcher="launch",Air2="kick",Slam="slam
  LionKick="launch",VaultKick="kick",ChidoriThrust="heavy",AirFlip="kick"}
 for name,spec in attacks do spec.zone=ZONE[name] or "body";spec.kind=KIND[name] or "strike" end
 attacks.Light4.clip="Light1";attacks.Light5.clip="Light2"
+-- (Audit 04/11) the new seal-page strikes, until their own Blender clips: the
+-- fighter's nearest clip (they played Sasuke's jab: Lee's own table is his).
+attacks.Nunchaku.clip="LeafWhirlwind";attacks.GorikiSenpu.clip="LeafRising";attacks.LowPalm.clip="PalmThrust"
 attacks.SandHand.range=12;attacks.SandHand.width=5;attacks.SandHand.height=6;attacks.SandHand.depth=11;attacks.SandHand.offset=6;attacks.SandHand.facing=.25;attacks.SandHand.clip="SandPillar";attacks.SandHand.kind="heavy";attacks.SandHand.zone="body"
 attacks.SandFist.range=9;attacks.SandFist.width=5;attacks.SandFist.depth=8;attacks.SandFist.offset=4.5;attacks.SandFist.facing=.3;attacks.SandFist.clip="Light3";attacks.SandFist.kind="heavy"
 attacks.SandLowWave.range=9.5;attacks.SandLowWave.width=7;attacks.SandLowWave.height=3.5;attacks.SandLowWave.depth=9;attacks.SandLowWave.offset=4.5;attacks.SandLowWave.clip="Sweep";attacks.SandLowWave.zone="legs";attacks.SandLowWave.kind="sweep"

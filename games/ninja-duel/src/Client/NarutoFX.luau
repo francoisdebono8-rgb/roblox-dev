@@ -290,7 +290,12 @@ local function cloak(fx,model,actor,st)
 		st.shroud=shroud(fx,model)
 		st.irises={}
 		for _,p in model:GetChildren() do
-			if p.Name=="Iris" then table.insert(st.irises,{part=p,color=p.Color,material=p.Material});p.Color=FOX;p.Material=Enum.Material.Neon end
+			if p.Name=="Iris" then
+				table.insert(st.irises,{part=p,color=p.Color,material=p.Material})
+				-- (the clones copied from him read these to start with his own eyes)
+				pcall(function() p:SetAttribute("NDIrisColor",p.Color);p:SetAttribute("NDIrisMaterial",p.Material.Name) end)
+				p.Color=FOX;p.Material=Enum.Material.Neon
+			end
 		end
 		-- The drawn face: red slit eyes.
 		st.face=st.face or Face.find(model)

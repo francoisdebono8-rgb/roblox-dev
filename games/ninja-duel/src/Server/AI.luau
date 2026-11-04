@@ -13,6 +13,15 @@ local function familyWants(self,c,a,target,spec,distance,danger)
 	local rule=spec.AI or {}
 	-- (04/11) a bespoke seal jutsu says which family the bot should read it as
 	local family=spec.Family or spec.AIAs
+	-- (Audit 04/11) a jutsu that follows a launched body (Lee's Dancing Leaf):
+	-- only then (it was pressed into a refusal every time).
+	if spec.FollowsLaunch and not (target.reaction=="Launched" or target.reaction=="Juggled") then return false end
+	-- a jutsu with its own check (the copy, the paralysis...): asked first
+	local own=Techniques[spec.Id]
+	if own and own.check and spec.AIAs then
+		local ok=own.check(c,a,spec,c.now)
+		if not ok then return false end
+	end
 	local range=spec.Range or 30
 	local opening=target.state=="Recovery" or target.state=="TechniqueRecovery" or target.state=="Stunned" or target.reaction=="Bound"
 	local lo,hi,chance

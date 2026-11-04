@@ -41,6 +41,20 @@ function BodyViews.copy(source)
 	local root=copy:FindFirstChild("HumanoidRootPart")
 	if not root then copy:Destroy();return nil end
 	root.Anchored=true;copy.PrimaryPart=root
+	-- (Audit 04/11) a copy made in the Nine-Tails cloak kept its red slit eyes
+	-- (and a blink) for the rest of the round: the copy's face starts calm.
+	pcall(function()
+		local Face=require(game:GetService("ReplicatedStorage").NinjaDuel.Face)
+		local face=Face.find(copy)
+		if face then Face.tint(face,nil);Face.set(face,"calm") end
+		for _,d in copy:GetDescendants() do
+			if d.Name=="Iris" and d:IsA("BasePart") then
+				local color,material=d:GetAttribute("NDIrisColor"),d:GetAttribute("NDIrisMaterial")
+				if typeof(color)=="Color3" then d.Color=color end
+				if type(material)=="string" and Enum.Material[material] then d.Material=Enum.Material[material] end
+			end
+		end
+	end)
 	return copy
 end
 function BodyViews:take(owner)

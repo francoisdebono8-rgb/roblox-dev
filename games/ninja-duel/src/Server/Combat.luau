@@ -1153,10 +1153,17 @@ function Combat:requestInner(a,action,aim,clientTime,opts)
 			if (a.sealedUntil or 0)>self.now then return false,"Chakra points sealed" end
 			a.sealing=nil
 			a.sealCast=spec;a.sealResolved=spec
-			if (a.cooldowns[spec.Id] or 0)<=self.now and a.chakra>=(spec.Cost or 0) then
-				for i,n in spec.Signs or {} do
-					self:pushImpact(a.root.Position,"seals",false,{owner=a.id,fighter=a.fighterId,step=i,seal=n})
-				end
+		end
+		-- (Audit 04/11) the signs only for a cast that will go: a press its own
+		-- check refuses ("Nothing to copy", "Launch him first") wove them for
+		-- nothing.
+		local spec=a.sealCast
+		local technique=Techniques[spec.Id]
+		local follows=spec.FollowsLaunch and a.target and (a.target.reaction=="Launched" or a.target.reaction=="Juggled")
+		if (a.cooldowns[spec.Id] or 0)<=self.now and a.chakra>=(spec.Cost or 0) and (follows or Rules.canAct(a,self.now))
+			and (not technique or not technique.check or technique.check(self,a,spec,self.now)) then
+			for i,n in spec.Signs or {} do
+				self:pushImpact(a.root.Position,"seals",false,{owner=a.id,fighter=a.fighterId,step=i,seal=n})
 			end
 		end
 		action="Technique1"
@@ -1397,8 +1404,11 @@ function Combat:requestInner(a,action,aim,clientTime,opts)
 	local arriving=(a.flashUntil or 0)>self.now and (a.state=="TechniqueRecovery" or a.state=="TechniqueActive")
 		and (a.pending==nil or a.pending.spec.Id=="Flashstep")
 	-- (Stage 6) at 13 the arrival is cashed in with the Lightning Strike.
-	if cancelSpec and (cancelSpec.Id=="BurstStrike" or cancelSpec.Id=="LightningStrike") and arriving
-		and (a.cooldowns[cancelSpec.Id] or 0)<=self.now and a.chakra>=cancelSpec.Cost then
+	-- (Audit 04/11) the seal page's Rasengan too (Minato's: "instant after a
+	-- teleport"; the press was refused "Committed").
+	local arrivalSpec=a.sealCast or cancelSpec
+	if arrivalSpec and (arrivalSpec.Id=="BurstStrike" or arrivalSpec.Id=="LightningStrike") and arriving
+		and (a.cooldowns[arrivalSpec.Id] or 0)<=self.now and a.chakra>=(arrivalSpec.Cost or 0) then
 		a.flashUntil=0;a.state="Neutral";a.untilTime=self.now;a.pending=nil
 		a.flashCancel=true
 	end
@@ -1414,8 +1424,11 @@ function Combat:requestInner(a,action,aim,clientTime,opts)
 	-- (04/11) Lee's Shadow of the Dancing Leaf follows a body he has just
 	-- launched straight out of the blow's recovery (that is the technique).
 	local follow=a.sealCast
+	-- (Audit 04/11) the jutsu's own check first: a refused press ("Out of
+	-- range") cleared his recovery for free.
 	if follow and follow.FollowsLaunch and a.target and (a.target.reaction=="Launched" or a.target.reaction=="Juggled")
-		and (a.state=="Recovery" or a.state=="TechniqueRecovery" or (a.state=="Active" and a.hitConfirmed)) and (a.cooldowns[follow.Id] or 0)<=self.now and a.chakra>=(follow.Cost or 0) then
+		and (a.state=="Recovery" or a.state=="TechniqueRecovery" or (a.state=="Active" and a.hitConfirmed)) and (a.cooldowns[follow.Id] or 0)<=self.now and a.chakra>=(follow.Cost or 0)
+		and Techniques[follow.Id] and Techniques[follow.Id].check(self,a,follow,self.now) then
 		if a.pending and a.pending.kind=="Brawl" then Bangla.close(a.pending) end
 		a.pending=nil;a.attackName=nil;a.chainOpen=false;a.state="Neutral";a.untilTime=self.now
 	end
@@ -2205,7 +2218,9 @@ function Combat:projectileHit(p,target,position,normal)
 		Chakra.contact(self,p,target,damaged)
 		if self.match.phase~="Duel" then return end
 	end
-	local guarded=target.impactStyle=="block"
+	-- (Audit 04/11) this blow's guard (impactStyle is the last blow's: an
+	-- absorbed wave read a stale block and broke a guard that was never up).
+	local guarded=damaged and target.impactStyle=="block"
 	-- A family object's contact fields (Families.contact): bind, drain, slow...
 	if p.family then
 		Families.projectileHit(self,p,target,damaged,guarded,position)

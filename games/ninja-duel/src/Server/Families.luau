@@ -243,8 +243,22 @@ function Families.poison(c,a,b,spec)
 end
 -- Held where it stands (shadow, water prison, snakes, hounds): substitution
 -- escapes, as for the Sand Coffin. Crush lands when the hold ends.
+-- (Audit 04/11) Minato's space-time barrier sends a jutsu elsewhere too (a
+-- bind, a burst, a clone out of the floor), not only a blow or a thrown
+-- object: true when the stance took it (and is spent).
+function Families.barrierTakes(c,a,b)
+	local stance=b and b.counterStance
+	if not stance or c.now>=stance.untilT or not stance.spec.Warp or a==b then return false end
+	b.counterStance=nil
+	c:pushImpact(b.root.Position,"teleport",false,{owner=b.id,from=b.root.Position,to=b.root.Position,kind=stance.spec.Kind})
+	c:pushImpact(b.root.Position,"look",true,{owner=b.id,kind=stance.spec.Kind})
+	c:cue(b,string.upper(stance.spec.Name).." • SENT AWAY",.7)
+	brawler().event(c,b,"Warped")
+	return true
+end
 function Families.bind(c,a,b,spec)
 	if b.health<=0 or (b.invulnerableUntil or 0)>c.now then return end
+	if Families.barrierTakes(c,a,b) then return end
 	local Brawler=brawler()
 	local awake=(a.awakenUntil or 0)>c.now and a.def.Awakening and a.def.Awakening.BindScale or 1
 	local duration=spec.Bind*awake
@@ -581,7 +595,7 @@ F.Burst={
 		if b and b.health>0 then
 			local d=flat(b.root.Position-a.root.Position)
 			local inArc=d.Magnitude<2 or look:Dot(d.Unit)>(spec.Arc or -1)
-			if d.Magnitude<=reach and math.abs(b.root.Position.Y-a.root.Position.Y)<7 and inArc then
+			if d.Magnitude<=reach and math.abs(b.root.Position.Y-a.root.Position.Y)<7 and inArc and not Families.barrierTakes(c,a,b) then
 				c.damageTag=spec.Name
 				local hit=c:damage(a,b,spec.Damage or 6,(spec.Damage or 6)>=12,false)
 				c.damageTag=nil
@@ -648,6 +662,10 @@ F.Zone={
 		local h=c:addHazard(a,position,spec.Radius or 8,spec.Time or 4,spec.Damage or 3,spec.ZoneKind or "Fire")
 		h.effects=spec
 		h.look=spec.Kind
+		-- (Audit 04/11) a trap arms a beat after it is laid: a step out of it
+		-- (the formula seen under him) escapes; it no longer closed on the
+		-- first tick, through any guard.
+		if spec.Trap then h.trapArmedAt=c.now+(spec.Trap.Arm or .45) end
 		c:pushImpact(position,"zone",true,{owner=a.id,kind=spec.Kind,radius=spec.Radius or 8,time=spec.Time or 4})
 		c:cue(a,string.upper(spec.Name),.6)
 	end,
@@ -957,7 +975,7 @@ function Families.zoneTick(c,h,target)
 	if z.Seal then target.sealedUntil=math.max(target.sealedUntil or 0,c.now+z.Seal) end
 	-- (04/11) A trap (Minato's sealing formula): the first body to step in is
 	-- held and its jutsu shut, then the formula is spent.
-	if z.Trap and not h.sprung and target.reaction~="Bound" then
+	if z.Trap and not h.sprung and target.reaction~="Bound" and c.now>=(h.trapArmedAt or 0) and (target.invulnerableUntil or 0)<=c.now then
 		h.sprung=true
 		if z.Trap.Seal then target.sealedUntil=math.max(target.sealedUntil or 0,c.now+z.Trap.Seal) end
 		if z.Trap.Bind then Families.bind(c,h.a,target,{Bind=z.Trap.Bind,Name=z.Name,Kind=z.Kind}) end
@@ -990,6 +1008,8 @@ end
 -- nothing of a round leaks into the next one (a buff, a dose still ticking).
 function Families.clearState(a)
 	a.buff=nil;a.counterStance=nil;a.slowScale=nil;a.boundKind=nil;a.teleportSide=nil;a.fogAim=nil
+	-- (Audit 04/11) the Sharingan copied a jutsu from the round before.
+	a.lastFamilyCast=nil
 	-- A dose already scheduled checks its serial: a new one cancels it.
 	a.poisonSerial=(a.poisonSerial or 0)+1
 	for key,value in a do
