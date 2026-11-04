@@ -836,18 +836,13 @@ function AI:update(now)
 			end
 		end
 		-- (DEC-032) No quick slot taken: now and then a jutsu of the hand seals,
-		-- the two seals woven in one breath (the same weave as a player's).
+		-- from the second page like a player's (04/11: one press, Seal1-5).
 		local seals=a.def.SealJutsu
 		if seals and #seals>0 and not self.noSeals and not punish and self.rng:NextNumber()<(tune.Seals or .2) then
 			self.sealStart=((self.sealStart or 0)%#seals)+1
 			local spec=seals[self.sealStart]
-			if (a.cooldowns[spec.Id] or 0)<=now and a.chakra>=spec.Cost and familyWants(self,c,a,target,spec,distance,danger)
-				and c:request(a,"Seals") then
-				-- every seal but the last is woven in place; the last one casts
-				local ok=true
-				for k=1,#spec.Signs-1 do ok=ok and c:seal(a,spec.Signs[k])==true end
-				if ok then ok=c:request(a,"Technique"..spec.Signs[#spec.Signs],target.root.Position) end
-				a.sealing=nil
+			if (a.cooldowns[spec.Id] or 0)<=now and a.chakra>=spec.Cost and familyWants(self,c,a,target,spec,distance,danger) then
+				local ok=c:request(a,"Seal"..self.sealStart,target.root.Position)
 				if ok and (a.cooldowns[spec.Id] or 0)>now then
 					self.techReadyAt=now+(tune.TechniqueGap or 0)+self.rng:NextNumber()*(tune.TechniqueJitter or 0);return
 				end

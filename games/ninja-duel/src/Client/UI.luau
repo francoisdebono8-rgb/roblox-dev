@@ -658,30 +658,41 @@ function UI:buildControls(pad)
 		local jutsu=text(body,table.concat(names,"     "),UDim2.fromOffset(0,y+78),UDim2.fromOffset(1048,22),15,palette.paper,TITLE_FONT);jutsu.ZIndex=43
 		jutsu.TextScaled=true;create("UITextSizeConstraint",jutsu,{MaxTextSize=15})
 		if def.SealJutsu then
-			local key=if pad then {"□","△","○","×"} else {"1","2","3","4"}
+			local key=if pad then {"□","△","○","×","D↑"} else {"1","2","3","4","5"}
 			local seals={}
-			for _,spec in def.SealJutsu do
-				local s={}
-				for _,v in spec.Signs do table.insert(s,key[v]) end
-				table.insert(seals,table.concat(s,"")..": "..string.upper(spec.Name))
-			end
-			local sealRow=text(body,"SEALS  "..table.concat(seals,"   "),UDim2.fromOffset(0,y+104),UDim2.fromOffset(1048,22),15,palette.gold,BODY_FONT);sealRow.ZIndex=43
+			for i,spec in def.SealJutsu do table.insert(seals,key[i].."  "..string.upper(spec.Name)) end
+			local sealRow=text(body,(if pad then "HOLD R1 + L1  " else "HOLD C  ")..table.concat(seals,"     "),UDim2.fromOffset(0,y+104),UDim2.fromOffset(1048,22),15,palette.gold,BODY_FONT);sealRow.ZIndex=43
 			sealRow.TextScaled=true;create("UITextSizeConstraint",sealRow,{MaxTextSize=15})
 		end
 	end
 	self.controlsClose.Text=(if pad then "START" else "TAB").." to close"
 end
--- (DEC-032) The seal slip and the weave in progress.
+-- (DEC-032) The seal slip. (04/11, user: « une 2e page de jutsu ») The seal
+-- jutsu are a second page of the four jutsu keys: keyboard C held + 1-5, pad
+-- R1 + L1 held + □ △ ○ × (D-pad ↑ for a fifth). The slip lights up while the
+-- page is held; the signs themselves are woven by the cast.
+local function pageHeld(pad)
+	local ok,held=pcall(function()
+		if pad then
+			local pressed={}
+			for _,input in UIS:GetGamepadState(Enum.UserInputType.Gamepad1) do
+				if input.UserInputState==Enum.UserInputState.Begin or input.Position.Z>.5 then pressed[input.KeyCode]=true end
+			end
+			return pressed[Controls.Gamepad.Modifier]==true and pressed[Controls.Gamepad.Guard]==true
+		end
+		return UIS:IsKeyDown(Controls.Keyboard.WallDetach)
+	end)
+	return ok and held==true
+end
 function UI:sealHud(h,pad)
 	local def=Fighters[h.fighterId or ""]
 	local list=def and def.SealJutsu
 	self.sealPanel.Visible=list~=nil
 	if not list then self.sealWeave.Text="";return end
-	local weave=h.sealing
-	local seq=weave and weave.seq or {}
-	local key=if pad then {"□","△","○","×"} else {"1","2","3","4"}
-	self.sealHead.Text=if weave then "HAND SEALS  •  WEAVING" else "HAND SEALS  •  "..(if pad then "R1 + L3" else Controls.KeyLabel.Seals or "C").." then two"
-	self.sealPanel.BackgroundTransparency=if weave then .05 else .35
+	local held=not h.wall and pageHeld(pad)
+	local key=if pad then {"□","△","○","×","D↑"} else {"1","2","3","4","5"}
+	self.sealHead.Text="HAND SEALS  •  "..(if pad then "HOLD R1 + L1" else "HOLD "..(Controls.KeyLabel.WallDetach or "C"))
+	self.sealPanel.BackgroundTransparency=if held then .02 else .35
 	local sealed=(h.sealed or 0)>0
 	for i,row in self.sealRows do
 		local spec=list[i]
@@ -689,22 +700,14 @@ function UI:sealHud(h,pad)
 		if spec then
 			local state=h.sealReady and h.sealReady[i]
 			local remaining=state and state.remaining or 0
-			local signs={}
-			local matches=true
-			for k,v in spec.Signs do
-				table.insert(signs,SealJutsu.Glyphs[v]..key[v])
-				if seq[k]~=nil and seq[k]~=v then matches=false end
-			end
+			local glyphs={}
+			for _,v in spec.Signs do table.insert(glyphs,SealJutsu.Glyphs[v]) end
 			local ready=remaining==0 and h.chakra>=spec.Cost and not sealed
-			row.Text=table.concat(signs," ").."   "..string.upper(spec.Name)..(if remaining>0 then string.format("   %.1fs",remaining) elseif h.chakra<spec.Cost then "   NEED CHAKRA" else "")
-			row.TextColor3=if weave and #seq>0 and not matches then palette.muted elseif ready then palette.paper else palette.muted
+			row.Text=key[i].."   "..string.upper(spec.Name).."  "..table.concat(glyphs,"")..(if remaining>0 then string.format("   %.1fs",remaining) elseif h.chakra<spec.Cost then "   NEED CHAKRA" else "")
+			row.TextColor3=if ready and held then palette.gold elseif ready then palette.paper else palette.muted
 		end
 	end
-	if weave then
-		local parts={}
-		for _,v in seq do table.insert(parts,SealJutsu.Glyphs[v].." "..SealJutsu.Names[v]) end
-		self.sealWeave.Text=if #parts>0 then table.concat(parts,"  ·  ").."  …" else "結印"
-	else self.sealWeave.Text="" end
+	self.sealWeave.Text=""
 end
 function UI:toggleControls()
 	local open=not self.controls.Visible

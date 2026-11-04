@@ -1016,7 +1016,8 @@ end
 -- Presses that wait for the body to be free (Config.Late): the verbs a player
 -- presses to get out of a moment, never the held ones (Guard, ChakraLoad).
 local LATE={Attack=true,Heavy=true,Jump=true,Dodge=true,Grab=true,Tool=true,
-	Technique1=true,Technique2=true,Technique3=true,Technique4=true,Technique5=true}
+	Technique1=true,Technique2=true,Technique3=true,Technique4=true,Technique5=true,
+	Seal1=true,Seal2=true,Seal3=true,Seal4=true,Seal5=true}
 -- Actions the chakra button infuses (user 29/10: the infusion on its own
 -- button, L2 / Z held with the press): the press loads the body's nature for
 -- itself (ChakraFlow), the strike, jump or dodge spends it.
@@ -1069,11 +1070,21 @@ function Combat.linkable(c,a,action)
 end
 function Combat:request(a,action,aim,clientTime,opts)
 	if type(action)~="string" then return false,"Bad action" end
+	-- (04/11) Inside a string ○ × R pick its routes (Brawler.buttonRoute); the
+	-- route rides with the press, so a late press replays the same one.
+	local route=opts and opts.route
+	if not route then
+		local routed,intent=Brawler.buttonRoute(self,a,action)
+		if routed then action=routed;route=intent;opts=table.clone(opts or {});opts.route=intent end
+	end
 	local loaded=false
 	if opts and opts.chakra==true and INFUSED[action] and not ChakraFlow.active(self,a) then
 		loaded=ChakraFlow.load(self,a)==true
 	end
+	local saved=a.intentOverride
+	if route then a.intentOverride=route end
 	local ok,reason=self:requestInner(a,action,aim,clientTime,opts)
+	if route then a.intentOverride=saved end
 	-- A refused press does not leave its load for a later one (a late press
 	-- loads again when it comes out).
 	if loaded and ok==false then a.chakraLoad=nil end
@@ -1090,7 +1101,7 @@ function Combat:request(a,action,aim,clientTime,opts)
 	if ok~=false and action=="Dodge" and a.state=="Dodging" then a.airHold=0 end
 	-- (Audit 29/10) A jutsu is the next action too: it spends a load (R1 held
 	-- while choosing it loaded one, and the next ○ became a dash at him).
-	if ok~=false and string.match(action,"^Technique%d$") and not a.sealPressed then a.chakraLoad=nil end
+	if ok~=false and (string.match(action,"^Technique%d$") or string.match(action,"^Seal%d$")) and not a.sealPressed then a.chakraLoad=nil end
 	a.sealResolved=nil;a.sealPressed=nil;a.sealCast=nil
 	if action~="GuardOff" then
 		local log=a.pressLog or {};a.pressLog=log
@@ -1127,7 +1138,31 @@ function Combat:requestInner(a,action,aim,clientTime,opts)
 	-- wall, pad R1 + L3), then two jutsu keys are seals instead of slots; the
 	-- seal jutsu goes on the second one, through the same cast as a slot.
 	a.sealCast=opts and opts.sealCast or nil
-	if action=="Seals" or (action=="WallDetach" and not a.wall and a.def.SealJutsu) then return self:openSeals(a) end
+	-- (04/11, user: « une 2e page de jutsu ») Seal1-5: the fighter's seal jutsu
+	-- by its place in his list, one press (keyboard C held + 1-5, pad R1 + L1
+	-- held + □ △ ○ ×, D-pad ↑). The signs are woven by the cast itself: they
+	-- show on the hands and in the HUD while the jutsu is moulded.
+	local page=tonumber(string.match(action,"^Seal([1-5])$"))
+	if page then
+		-- (a late press replays with its jutsu already resolved: opts.sealCast)
+		if not a.sealCast then
+			local spec=a.def.SealJutsu and a.def.SealJutsu[page]
+			if not spec then return false,"No seal jutsu" end
+			if self.match.techniquesDisabled then return false,"Techniques disabled" end
+			if (a.sealedUntil or 0)>self.now then return false,"Chakra points sealed" end
+			a.sealing=nil
+			a.sealCast=spec;a.sealResolved=spec
+			if (a.cooldowns[spec.Id] or 0)<=self.now and a.chakra>=(spec.Cost or 0) then
+				for i,n in spec.Signs or {} do
+					self:pushImpact(a.root.Position,"seals",false,{owner=a.id,fighter=a.fighterId,step=i,seal=n})
+				end
+			end
+		end
+		action="Technique1"
+	end
+	if action=="Seals" then return self:openSeals(a) end
+	-- Off a wall the seal key only holds the page open (the client's), nothing to do here.
+	if action=="WallDetach" and not a.wall then return true end
 	local sealSlot=not a.sealCast and a.sealing and tonumber(string.match(action,"^Technique([1-4])$"))
 	if sealSlot then
 		local done,why=self:seal(a,sealSlot)

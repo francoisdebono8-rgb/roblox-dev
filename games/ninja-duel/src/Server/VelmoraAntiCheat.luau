@@ -12,7 +12,7 @@ function AntiCheat.check(actor,action,clientTime,now)
 	end
 	local clock=os.clock();local bucket=last[actor]
 	if not bucket then bucket={};last[actor]=bucket end
-	local family=if string.match(action,'^Technique') then 'Technique' else action
+	local family=if string.match(action,'^Technique') or string.match(action,'^Seal%d') then 'Technique' else action
 	local gap=Tune.Rates[family] or .04
 	if bucket[family] and clock-bucket[family]<gap then return false end
 	bucket[family]=clock

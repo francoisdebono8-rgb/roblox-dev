@@ -81,12 +81,19 @@ function Input.new(send,getState,toggleLock,camera)
   camera.look=self.look
  end)
  bind("Modifier",key(GAMEPAD.Modifier),function(state)
-  if begin(state) then self.modifier=true;self.modifierAt=Input.now();self.modifierSpent=false elseif released(state) then self.modifier=false end
+  if begin(state) then self.modifier=true;self.modifierAt=Input.now();self.modifierSpent=false
+  elseif released(state) then
+   self.modifier=false
+   if self.sealPad then self.sealPad=false;if not self.sealPadUsed then send("Ultimate") end end
+  end
  end)
  local function face(state,object,normal,slot)
   if pressed(state,object) then
    local modified=padObject(object) and self.modifier
    if modified then self.modifierSpent=true;self.seals[object.KeyCode.Name]=true end
+   -- (04/11) R1 + L1 held: the second page, the seal jutsu (the ultimate waits
+   -- for the chord's release, Guard below).
+   if modified and self.sealPad then self.sealPadUsed=true;send("Seal"..slot);return false end
    -- (User 29/10) Pad L1 + □ is the grab (the guard held, the light pressed).
    if not modified and normal=="Attack" and padObject(object) and next(self.guards)~=nil then send("Grab");return false end
    -- The chakra button held (pad L2, keyboard Z): the press goes out infused.
@@ -122,14 +129,21 @@ function Input.new(send,getState,toggleLock,camera)
  bind("Guard",both("Guard"),function(state,obj)
   local id=obj.KeyCode.Name
   if released(state) then
+   -- (04/11) R1 + L1 let go without a seal jutsu: the ultimate (on a wall, the
+   -- server lets go of it instead).
+   if self.sealPad and padObject(obj) then
+    self.sealPad=false
+    if not self.sealPadUsed then send("Ultimate") end
+   end
    if self.guards[id] then
     self.guards[id]=nil
     if next(self.guards)==nil then send("GuardOff") end
    end
    pressed(state,obj)
   elseif pressed(state,obj) then
-   -- R1 + L1: the ultimate (on a wall, the server lets go of it instead).
-   if padObject(obj) and self.modifier then self.modifierSpent=true;send("Ultimate")
+   -- R1 + L1: the seal page while held (□ △ ○ × D-pad ↑), the ultimate when
+   -- let go unused.
+   if padObject(obj) and self.modifier then self.modifierSpent=true;self.sealPad=true;self.sealPadUsed=false
    else
     local already=next(self.guards)~=nil;self.guards[id]=true
     if not already then send("Guard") end
@@ -162,17 +176,28 @@ function Input.new(send,getState,toggleLock,camera)
  end)
  bind("Lock",both("Lock"),function(state,obj) if pressed(state,obj) then toggleLock() end end)
  bind("Sprint",both("Sprint"),function(state,obj)
-  -- (DEC-032) R1 + L3: the hand seals (then R1 + □ △ ○ × are the seals).
-  if obj.KeyCode==GAMEPAD.Sprint and self.modifier then if pressed(state,obj) then self.modifierSpent=true;send("Seals") end;return end
   if obj.KeyCode==GAMEPAD.Sprint then if pressed(state,obj) then self.sprinting=not self.sprinting end
   elseif begin(state) then self.sprinting=true elseif released(state) then self.sprinting=false end
  end)
- for _,action in {"Substitute","WallDetach","Feint","Pursuit","Ultimate"} do
+ -- Keyboard C: held, the second page of jutsu (1-5 cast the seal jutsu); on a
+ -- wall the press still lets go of it.
+ bind("SealKey",key(KEYBOARD.WallDetach),function(state,obj)
+  if pressed(state,obj) then self.sealKey=true;send("WallDetach")
+  elseif released(state) then self.sealKey=false end
+ end)
+ for _,action in {"Substitute","Feint","Pursuit","Ultimate"} do
   bind(action.."Key",key(KEYBOARD[action]),function(state,obj) if pressed(state,obj) then send(action) end end)
  end
- for _,action in {"Technique5","Awaken","Arm"} do
+ for _,action in {"Awaken","Arm"} do
   bind(action,both(action),function(state,obj) if pressed(state,obj) then send(action) end end)
  end
+ -- Jutsu 5 (keyboard 5, D-pad ↑); on the seal page the fifth seal jutsu.
+ bind("Technique5",both("Technique5"),function(state,obj)
+  if pressed(state,obj) then
+   local page=if padObject(obj) then self.sealPad else self.sealKey
+   if page then self.sealPadUsed=true;send("Seal5") else send("Technique5") end
+  end
+ end)
  -- Pad re-engage has no button of its own: × in a chase window (Jump above),
  -- else ○ toward a locked opponent while sprinting. The Dodge packet already
  -- carries the stick and the sprint toggle; the server turns it into the dash.
@@ -180,7 +205,8 @@ function Input.new(send,getState,toggleLock,camera)
  bind("Skip",both("Skip"),function(state,obj) if pressed(state,obj) and getState().tutorial then send("TutorialSkip") end end)
  for index,code in {Enum.KeyCode.One,Enum.KeyCode.Two,Enum.KeyCode.Three,Enum.KeyCode.Four} do
   bind("Technique"..index,key(code),function(state,obj)
-   if pressed(state,obj) then send("Technique"..index)
+   -- C held: the second page, the seal jutsu (one press, the cast weaves the signs).
+   if pressed(state,obj) then send(if self.sealKey then "Seal"..index else "Technique"..index)
    -- The release lets a held technique go (a charged Katon).
    elseif released(state) then send("SealRelease") end
   end)
@@ -202,6 +228,7 @@ function Input.new(send,getState,toggleLock,camera)
 end
 function Input:reset()
  table.clear(self.keys);table.clear(self.held);table.clear(self.guards);table.clear(self.jumps);table.clear(self.seals)
+ self.sealKey=false;self.sealPad=false;self.sealPadUsed=true
  self.stick=Vector2.zero;self.look=Vector2.zero;self.modifier=false;self.sprinting=false;self.camera.look=Vector2.zero
  self.chakra=false;self.chakraAt=nil;self.modifierSpent=true;self.chakraSpent=true;self.chakraPad=false;self.chakraPadAt=nil
 end

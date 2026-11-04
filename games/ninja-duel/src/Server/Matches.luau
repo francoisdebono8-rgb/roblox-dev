@@ -400,7 +400,7 @@ function Matches:act(s,actor,payload,clock)
  if action=="Guard" then actor.guardWanted=true elseif action=="GuardOff" then actor.guardWanted=false end
  -- (Reference quality) A technique key is held: its release lets a held
  -- technique go (Combat.charging). Players hold keys; the AI plans its own.
- local slot=string.match(action,"^Technique(%d)$")
+ local slot=string.match(action,"^Technique(%d)$") or (if string.match(action,"^Seal%d$") then "1" else nil)
  if slot then actor.techHold={slot=tonumber(slot),down=true} end
  if action=="SealRelease" then
   if actor.techHold then actor.techHold.down=false end

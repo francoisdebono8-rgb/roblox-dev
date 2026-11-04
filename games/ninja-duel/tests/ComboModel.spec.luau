@@ -652,5 +652,64 @@ test("a deliberate double tap reaches the buffer (the flood guard sits under it)
  assert(Tune.Rates.Attack<=.1,"two presses 0.1 s apart: the second is dropped (gap "..Tune.Rates.Attack..")")
 end)
 
+-- Buttons (04/11, user: the routes' directions « pas facilement faisables pour
+-- un humain » → « le plus simple à faire et à jouer, sans perdre de
+-- mouvement »): every route on a button, the stick at rest.
+local EIGHT={"Lion","Legion","Sand","Leaf","GentleFist","Mirage","Copycat","Flashstep"}
+test("buttons, ground: 2 hits ○ around, × rising, △ launch, R retreat; 3 hits △ low (the eight, no stick)",function()
+ for _,id in EIGHT do
+  local graph=MoveGraphs[id] or {}
+  local routes=graph.routes or {}
+  local def=H.fighters[id]
+  if routes.side then
+   local c,a=opened(id,2)
+   assert(press(c,a,"Dodge"),id..": ○ refused")
+   assert(a.attackName==routes.side,id..": □□○ played "..tostring(a.attackName).." for "..routes.side)
+  end
+  if routes.up then
+   local c,a=opened(id,2)
+   assert(press(c,a,"Jump"),id..": × refused")
+   assert(a.attackName==routes.up,id..": □□× played "..tostring(a.attackName).." for "..routes.up)
+  end
+  do
+   local c,a=opened(id,2)
+   assert(press(c,a,"Heavy"),id..": △ refused")
+   local want=def.LauncherMove or "Launcher"
+   assert(a.attackName==want,id..": □□△ played "..tostring(a.attackName).." for "..want)
+  end
+  if routes.down and (def.StringLength or 4)>=4 then
+   local c,a=opened(id,3)
+   assert(press(c,a,"Heavy"),id..": 3 hits △ refused")
+   assert(a.attackName==routes.down,id..": □□□△ played "..tostring(a.attackName).." for "..routes.down)
+  end
+  if graph.disengage then
+   local c,a=opened(id,2)
+   local before=a.events and a.events.Disengage or 0
+   press(c,a,"Tool",nil,a.target.root.Position)
+   assert((a.events and a.events.Disengage or 0)>before,id..": □□R did not hop out")
+  end
+  -- one hit: ○ is still the dodge, × still the jump
+  local c,a=opened(id,1)
+  press(c,a,"Dodge")
+  assert(a.attackName==nil or a.attackName=="Light1",id..": □○ became a strike ("..tostring(a.attackName)..")")
+ end
+end)
+test("buttons, air: after an air hit ○ switches sides, × drives away, △ spikes (no stick)",function()
+ for _,id in EIGHT do
+  local routes=(MoveGraphs[id] or {}).routes or {}
+  for action,want in {Dodge=routes.airSide,Jump=routes.airUp,Heavy=routes.airDown} do
+   if want then
+    local c,a,b=H.duel(id,"Mirage")
+    airborne(c,a,b,3)
+    assert(press(c,a,"Attack"))
+    assert(airStep(c,b,.6,function() return chainOpen(c,a) end),id..": the air string never opened")
+    assert((a.airCombo or 0)==1,id..": fixture: one air hit ("..tostring(a.airCombo)..")")
+    assert(press(c,a,action),id..": air "..action.." refused")
+    assert(a.attackName==want,id..": air □ "..action.." played "..tostring(a.attackName).." for "..want)
+   end
+  end
+ end
+end)
+
 print(string.format("NinjaDuel combo model: %d PASS",passed))
 if #failures>0 then error(#failures.." FAIL: "..table.concat(failures," | "),0) end

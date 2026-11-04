@@ -67,6 +67,37 @@ test("weave: the seal key, then two jutsu keys, casts the seal jutsu and not the
  end
 end)
 
+test("page (04/11): with the page held, one press casts the seal jutsu of its place",function()
+ for _,id in EIGHT do
+  local c,a,b=H.duel(id,"Flashstep")
+  place(c,a,b,V.new(0,3,9),V.new(0,3,-9))
+  b.ai=nil
+  for k,spec in H.fighters[id].SealJutsu do
+   a.chakra=a.def.Chakra or 100;a.cooldowns={}
+   local ok,why=c:request(a,"Seal"..k,b.root.Position)
+   assert(ok,id.." Seal"..k.." ("..spec.Id..") refused: "..tostring(why))
+   assert((a.cooldowns[spec.Id] or 0)>c.now,id.." "..spec.Id.." not cast by Seal"..k)
+   for _,t in a.def.Techniques do assert((a.cooldowns[t.Id] or 0)<=c.now,id.." the quick slot "..t.Id.." went instead") end
+   for _=1,160 do H.step(c,.01) end
+   c:relocate(a,V.new(0,3,9));c:relocate(b,V.new(0,3,-9));a.reaction=nil;b.reaction=nil
+   c:setState(a,"Neutral",0);c:setState(b,"Neutral",0)
+  end
+  assert(not c:request(a,"Seal9"),"a seal page beyond the list")
+ end
+end)
+
+test("page: off a wall the seal key opens nothing; the AI casts from the page too",function()
+ local c,a,b=H.duel("Flashstep","Lion")
+ place(c,a,b,V.new(0,3,9),V.new(0,3,-9))
+ b.ai=nil
+ assert(c:request(a,"WallDetach")==true,"the seal key refused off a wall")
+ assert(a.sealing==nil,"the old weave opened")
+ -- a jutsu key after it is the quick slot, not a seal
+ local slot=a.def.Techniques[1]
+ assert(c:request(a,"Technique1",b.root.Position))
+ assert((a.cooldowns[slot.Id] or 0)>c.now,"the key after C was not the quick slot")
+end)
+
 test("every seal jutsu runs to its end and reaches the body it is aimed at",function()
  local quiet={}
  for _,id in EIGHT do
@@ -109,15 +140,18 @@ test("weave: a sequence no jutsu has breaks the seals; a weave left open lapses 
  assert((a.cooldowns[slot.Id] or 0)>c.now,"the slot did not go")
 end)
 
-test("weave: closed chakra points stop the seals; the C key on a wall still lets go of it",function()
+test("closed chakra points stop the seals (weave and page); C off a wall only holds the page",function()
  local c,a,b=H.duel("Copycat","Flashstep")
  place(c,a,b,V.new(0,3,9),V.new(0,3,-9))
  a.sealedUntil=c.now+2
  local ok,why=c:request(a,"Seals")
  assert(not ok and why=="Chakra points sealed",tostring(why))
+ ok,why=c:request(a,"Seal1",b.root.Position)
+ assert(not ok and why=="Chakra points sealed","the page ignored the closed points: "..tostring(why))
  a.sealedUntil=0
- assert(c:request(a,"WallDetach"),"C off a wall opens the weave")
- assert(a.sealing,"C off a wall did not open the weave")
+ -- (04/11) the page is the client's: C off a wall is accepted and opens nothing
+ assert(c:request(a,"WallDetach"),"C off a wall refused")
+ assert(a.sealing==nil,"C off a wall opened the old weave")
 end)
 
 -- A clean light, its recovery reached.

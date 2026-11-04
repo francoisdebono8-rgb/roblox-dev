@@ -68,15 +68,15 @@ function Tutorial.plan(a)
 	add({id="heavy",title="Heavy strike",key=K.Heavy,pad=P.Heavy,place="near",
 		check=function(s,t) return t.ok("Heavy") and t.count("Hit")>=1 end})
 	if routes.side then
-		add({id="routeSide",title="Turn the angle: "..moveLabel(routes.side),key="2 hits, then side + "..K.Light,pad="2 hits, then side + "..P.Light,place="near",
+		add({id="routeSide",title="Turn the angle: "..moveLabel(routes.side),key="2 hits, then "..K.Dodge,pad="2 hits, then "..P.Dodge,place="near",
 			check=function(s,t) return t.ev("RouteSide") end})
 	end
 	if routes.down then
-		add({id="routeDown",title="Go low: "..moveLabel(routes.down),key="2 hits, then away + "..K.Light,pad="2 hits, then away + "..P.Light,place="near",
+		add({id="routeDown",title="Go low: "..moveLabel(routes.down),key="3 hits, then "..K.Heavy,pad="3 hits, then "..P.Heavy,place="near",
 			check=function(s,t) return t.ev("RouteDown") end})
 	end
 	if routes.up then
-		add({id="launch",title="Launch: "..moveLabel(routes.up),key="2 hits, then toward + "..K.Light,pad="2 hits, then toward + "..P.Light,place="near",
+		add({id="launch",title="Launch: "..moveLabel(def.LauncherMove or "Launcher"),key="2 hits, then "..K.Heavy,pad="2 hits, then "..P.Heavy,place="near",
 			check=function(s,t) return t.ev("LaunchHit") end})
 	end
 	add({id="chase",title="Chase the launched body",key=K.Pursuit.." after the launch",pad=P.Pursuit.." after the launch",place="near",
@@ -112,6 +112,14 @@ function Tutorial.plan(a)
 				end
 			end,
 			check=function(s,t) return t.ev("Cast:"..tostring(spec.Id)) end})
+	end
+	-- (04/11) The second page: the first seal jutsu, one press with the page held.
+	local seal=def.SealJutsu and def.SealJutsu[1]
+	if seal then
+		add({id="sealPage",title="Hand seals: "..tostring(seal.Name),key="Hold "..K.WallDetach.." + 1",pad="Hold R1 + L1 + □",
+			place=if (seal.Range or 20)<10 then "near" else "far",technique=seal,
+			setup=function(s) local a=s.human;a.chakra=a.def.Chakra or 100;a.cooldowns={} end,
+			check=function(s,t) return t.ev("Cast:"..tostring(seal.Id)) end})
 	end
 	add({id="guard",title="Guard the incoming strike",key="Hold "..K.Guard,pad="Hold "..P.Guard,place="near",bot="heavy",
 		check=function(s,t) return t.ev("GuardHit") end})

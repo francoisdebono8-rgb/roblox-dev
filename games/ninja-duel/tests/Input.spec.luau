@@ -181,6 +181,28 @@ test("chakra button (user 29/10): L2 or Z held infuses the press it is held with
  table.clear(sent)
  Input.now=now
 end)
+test("seal page (04/11): C held + 1-5 and R1 + L1 held + □ △ ○ × / D-pad ↑ send Seal1-5, one press",function()
+ press("SealKey",E.KeyCode.C);assert(last()=="WallDetach","C does not reach the server (wall detach)")
+ for i,code in {E.KeyCode.One,E.KeyCode.Two,E.KeyCode.Three,E.KeyCode.Four} do
+  tap("Technique"..i,code);assert(sent[#sent-1].action=="Seal"..i and last()=="SealRelease","C + "..i.." sent "..tostring(sent[#sent-1].action))
+ end
+ tap("Technique5",E.KeyCode.Five);assert(last()=="Seal5","C + 5 sent "..last())
+ press("SealKey",E.KeyCode.C,E.UserInputState.End)
+ tap("Technique1",E.KeyCode.One);assert(sent[#sent-1].action=="Technique1","1 after C let go is not the quick slot")
+ table.clear(sent)
+ press("Modifier",E.KeyCode.ButtonR1);press("Guard",E.KeyCode.ButtonL1)
+ for i,pair in {{"Light",E.KeyCode.ButtonX},{"Heavy",E.KeyCode.ButtonY},{"Dodge",E.KeyCode.ButtonB},{"Jump",E.KeyCode.ButtonA}} do
+  tap(pair[1],pair[2])
+  local got=false;for _,p in sent do if p.action=="Seal"..i then got=true end end
+  assert(got,"R1 + L1 + "..pair[1].." did not send Seal"..i)
+ end
+ tap("Technique5",E.KeyCode.DPadUp);assert(last()=="Seal5","R1 + L1 + D-pad ↑ sent "..last())
+ press("Guard",E.KeyCode.ButtonL1,E.UserInputState.End);press("Modifier",E.KeyCode.ButtonR1,E.UserInputState.End)
+ for _,p in sent do assert(p.action~="Ultimate","a seal page that cast also fired the ultimate");assert(p.action~="Guard","the page raised the guard") end
+ -- R1 + L3 is the sprint again (no weave)
+ table.clear(sent);press("Modifier",E.KeyCode.ButtonR1);tap("Sprint",E.KeyCode.ButtonL3);press("Modifier",E.KeyCode.ButtonR1,E.UserInputState.End)
+ for _,p in sent do assert(p.action~="Seals","R1 + L3 still opens the old weave") end
+end)
 test("jump release cuts a jump but never a technique or pursuit",function()
  tap("Jump",E.KeyCode.Space);assert(#sent==2 and last()=="JumpOff")
  table.clear(sent);state.human.pursuit=1
@@ -196,8 +218,10 @@ test("PS5 provides deliberate escape, feint and detach; re-engage is never a D-p
  tap("SubstitutePad",E.KeyCode.DPadRight);assert(last()=="Substitute")
  press("Modifier",E.KeyCode.ButtonR1);tap("Guard",E.KeyCode.ButtonL1)
  -- (Stage 6) R1 + L1 is the ultimate; on a wall the server makes it the detach.
+ -- (04/11) it goes on the chord's release, the chord held being the seal page.
  assert(last()=="Ultimate","R1 + L1 emitted a stray GuardOff")
  press("Modifier",E.KeyCode.ButtonR1,E.UserInputState.End)
+ assert(last()=="Ultimate" and sent[#sent-1].action~="Ultimate","the ultimate went twice")
  -- CORE_COMBAT_CONVERGENCE_2 §3: no D-pad input sends the re-engage.
  for _,binding in bindings do
   for _,code in binding.keys do
@@ -259,11 +283,13 @@ test("combo prompts omit routes that the current character does not have",functi
  local graphs=H.load("Shared/MoveGraphs")
  for _,id in {"Flashstep","Mirage","GentleFist","Lion"} do
   local help=Controls.comboHelp(graphs[id],true)
-  assert(help:find("side + □",1,true) and help:find("away + R2",1,true))
+  -- (04/11) buttons only: no direction left in the prompt
+  assert(help:find("○: around",1,true) and help:find("R2: retreat",1,true) and help:find("3 hits → △: low",1,true),help)
+  assert(not help:find("toward",1,true) and not help:find("away",1,true),"a direction left in "..help)
  end
  -- (Stage 6) Gaara now has a side route (the sand glide), still no retreat.
  local sand=Controls.comboHelp(graphs.Sand,true)
- assert(sand:find("side",1,true) and not sand:find("retreat",1,true))
+ assert(sand:find("around",1,true) and not sand:find("retreat",1,true))
 end)
 test("PS5 prompts survive incidental mouse movement and list full jutsu chords",function()
  uis.LastInputTypeChanged:fire(E.UserInputType.Gamepad1);assert(input.pad)
