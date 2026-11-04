@@ -231,3 +231,10 @@ Plan (détail : document de projet `claude/plan-arene-des-prodiges-2026-11-03.md
 5. **L'arène des prodiges** : répliques des rivaux, jury, arène qui réagit, tournoi, défis de maîtrise.
 
 Ordre : 1 pour les 8 ; 2 et 3 sur Sasuke d'abord, testés par l'utilisateur ; puis 4, les 7 autres, 5.
+
+## DEC-033 — Bêta d'abord : le lot B0 de l'audit produit, la v35 publiée après (04/11)
+
+Décision utilisateur du **04/11 à 22 h 45**, sur l'[audit produit bêta → lancement](../archive/requests/2026-11-04-beta-to-launch-product-growth-audit.md) (commit `26f8623`, §9) : **premier lot = B0**, puis décision sur B1 avec ses résultats ; **la v35 est publiée après B0** si le passage dans Studio ne montre aucun bloquant.
+
+B0 (Claude) : le build exact v35 rejoué dans Studio en six scènes (arrivée, premier coup, course → saut → mur → attaque → atterrissage, signature, duel complet, KO et revanche), au clavier, à la manette et en émulation téléphone, effets allumés puis éteints ; tableau de preuves TECHNICAL / NATIVE_STUDIO / HUMAN_VISUAL_FEEL / LIVE_ROBLOX et dix pires défauts (sévérité, fréquence, impact). B0 (utilisateur) : testeurs débutants non guidés et défi en ligne réel entre deux comptes et deux serveurs. Suivi dans [QA-001](MASTER_BACKLOG.md#qa-001--validation-studio--artefact-courant-roster-réel-et-manette) et NET-001. Pas de B1, de nouveau mode ni de publicité sans nouvelle décision.
+

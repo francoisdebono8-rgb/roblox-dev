@@ -30,7 +30,7 @@ Avant tout nouvel ID, rechercher une intention équivalente dans le backlog, y c
 - dependencies: QA-002, QA-003
 - subsystem: qa
 - character: ALL
-- summary: Validation Studio du build courant, roster réel et contrôles
+- summary: Validation Studio du build courant, roster réel et contrôles. (04/11, DEC-033) Lot B0 : v35 rejouée en six scènes, PC / manette / téléphone émulé, effets ON / OFF, tableau de preuves et dix pires défauts ; clôture B0 = tableau rempli et défauts classés.
 - sources: [PROJECT_STRUCTURE](../tools/PROJECT_STRUCTURE.md); [MAINTENANCE_BACKLOG_SOURCE](../archive/tools/MAINTENANCE_BACKLOG_SOURCE.md); [ORCHESTRATION_REFACTOR](../archive/reports/ORCHESTRATION_REFACTOR.md); [COMBAT_CONVERGENCE_ONLINE_ROSTER](../archive/missions/COMBAT_CONVERGENCE_ONLINE_ROSTER.md); [CORE_COMBAT_CONVERGENCE_2](../archive/missions/CORE_COMBAT_CONVERGENCE_2.md)
 - validation: Commit/hash exacts ; vraie sélection et inputs ; neutral, chaîne, routes, outils, jutsu, défense, relance, air/mur, éveil, KO, reset/rematch. Étendre la couverture au roster courant (ancienne matrice 4×4 historique). Par nouveau fighter au moins un duel IA ; couverture diversifiée des familles puis matchups à risque ; manette réelle et acceptation humaine distinctes.
 - evidence: 18/10 : Studio exact bc7faa3 ouvert et MCP connecté (fingerprint fdba31ab…f09194) ; vérifications natives ciblées dans [audit incrémental](../archive/audits/2026-10-18-feel-preparation/AUDIT.md), aucune nouvelle validation exhaustive20. Préparation M4/M7 sous QA-004 ; conserver limites hardware/feel.
