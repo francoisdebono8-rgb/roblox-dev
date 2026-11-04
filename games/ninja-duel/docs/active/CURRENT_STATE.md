@@ -1,3 +1,17 @@
+**v31 : défier un joueur sans code, sur tout le jeu (04/11)** (utilisateur : « voir s'il y a des joueurs connectés et pouvoir lancer un match, que ça envoie une notification à l'autre, l'autre il accepte ou non » ; feuille de route `feuille-de-route-tournoi-matchmaking`, étape 1)
+- **Présence** (`Server/Lobby`, `Shared/LobbyProtocol`) : chaque serveur publie ses joueurs dans une liste partagée (MemoryStore `ND_Presence_v1`) avec le nom, le perso choisi, l'état (libre, contre l'IA, en recherche, en duel) et « ne pas déranger ». La liste est rafraîchie toutes les 15 s, et une entrée non rafraîchie disparaît au bout de 45 s. Chaque serveur relit la liste toutes les 10 s.
+- **Défi** :
+  - **PLAYERS ONLINE** sur le roster liste les joueurs, les amis d'abord ; un bouton **CHALLENGE** par joueur.
+  - L'invitation arrive en haut de l'écran sur tous les écrans, y compris pendant un duel contre l'IA : ACCEPT / DECLINE (Entrée / Retour arrière), 20 s.
+  - Message entre serveurs : MessagingService, sujet `ND_Lobby_v1`.
+- **Duel** :
+  - accepté sur le même serveur : la sélection des persos en ligne tout de suite ;
+  - entre deux serveurs : un serveur réservé (TeleportService), dont la fiche (MemoryStore `ND_DuelServers_v1`, par PrivateServerId) dit quels joueurs et quels persos sont attendus. Ce n'est jamais dans les données de téléportation du client.
+- **Serveur de duel** : les deux joueurs sont mis face à face dans le duel en ligne existant (sélection, manches, revanche). Un autre joueur, un absent au bout de 45 s, ou un retour au roster renvoient vers un serveur public.
+- **Garde-fous** : un défi toutes les 10 s, 3 en attente au plus, « ne pas déranger », pas de défi à un joueur en duel. Les joueurs bloqués sur Roblox sont cachés et leurs invitations refusées sans être vues. Le client n'envoie que des identifiants et des booléens.
+- **Tests** : `tests/Lobby.spec.luau`, plusieurs serveurs dans un même processus sur de faux MemoryStore, MessagingService et TeleportService (présence, invitation, serveur réservé et sa fiche, même serveur, garde-fous), plus l'écran côté client.
+- **Pas encore vu** : l'écran dans Studio (Studio était pris par `ND-Clips2`, pour les vidéos). La vraie téléportation se teste seulement dans le jeu publié, avec deux comptes.
+
 **v30 : la bêta avec les 8 persos prêts (03/11, 21 h 45)** (utilisateur : « on ne peut pas publier la bêta avec les 20 personnages, il n'y en a que 8 qui sont au point »)
 - `Shared/BetaRoster` : Sasuke, Naruto, Gaara, Lee, Neji, Itachi, Kakashi, Minato. Le menu (une rangée de 8 centrée), les portraits, et le serveur (duel, tutoriel, choix en ligne : « Not in the beta » pour un autre) ne lisent que cette liste. `Shared/Roster` garde les 20 pour les tests et les outils. Un perso rejoint la bêta quand on l'ajoute à la liste.
 - Le sous-titre du menu dit « Eight future legends to start, more every update ».

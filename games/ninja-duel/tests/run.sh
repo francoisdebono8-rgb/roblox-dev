@@ -48,6 +48,7 @@ run Tools      "$LUNE" run tests/Tools.spec.luau
 run Chakra     "$LUNE" run tests/Chakra.spec.luau
 run ChakraFlow "$LUNE" run tests/ChakraFlow.spec.luau
 run Seals      "$LUNE" run tests/Seals.spec.luau
+run Lobby      "$LUNE" run tests/Lobby.spec.luau
 run AirCombat  "$LUNE" run tests/AirCombat.spec.luau
 run Sasuke     "$LUNE" run tests/Sasuke.spec.luau
 run Gaara      "$LUNE" run tests/Gaara.spec.luau

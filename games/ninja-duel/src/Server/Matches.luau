@@ -68,6 +68,8 @@ function Matches:selection(player,notice)
 	self:destroy(s)
 	player.Character=nil; s.phase="Selection"; s.epoch+=1
 	self:send(player,{phase="Selection",epoch=s.epoch,notice=notice})
+	-- (Lobby, 04/11) in a duel server the roster is the lobby: back home.
+	if self.lobby then self.lobby:onSelection(player) end
 end
 -- `options` (optional): {player=spec, bot=spec, bracket=id} skill builds (see
 -- Matches.resolveKit). An invalid or over-budget build refuses the start. No

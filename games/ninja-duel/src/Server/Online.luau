@@ -62,6 +62,8 @@ function Online:notice(player,s,message)
 end
 function Online:waiting(s)
 	local o=s.online
+	-- (Lobby, 04/11) on the way to a duel server: nothing to wait for here.
+	if o.kind=="travel" then return {phase="Queue",epoch=s.epoch,online={mode="travel"}} end
 	return {phase="Queue",epoch=s.epoch,online={mode=if o.kind=="host" then "private" else "casual",code=o.entry.code}}
 end
 -- From the roster: join the casual queue, host a private code or join one.
@@ -235,6 +237,8 @@ function Online:leave(player,s)
 	local o=s.online
 	if not o then return end
 	s.online=nil
+	-- (Lobby) a player leaving for a duel server holds no duel here.
+	if o.kind=="travel" then return end
 	if o.kind=="queue" then
 		local index=table.find(self.queue,o.entry)
 		if index then table.remove(self.queue,index) end

@@ -10,11 +10,19 @@ require(script.Parent.ArenaMeshes).preload()
 -- The select screen's fighters, built once with the duel's rig (Server/Portraits).
 require(script.Parent.Portraits).start()
 local matches=Matches.new(remote)
+-- (04/11) Players online and challenges between them, across the servers.
+local lobby=require(script.Parent.Lobby).new(matches)
+matches.lobby=lobby
 remote.OnServerEvent:Connect(function(player,payload) matches:request(player,payload) end)
-Players.PlayerAdded:Connect(function(player) matches:selection(player) end)
-Players.PlayerRemoving:Connect(function(player) matches:remove(player) end)
-for _,player in Players:GetPlayers() do matches:selection(player) end
-RunService.Heartbeat:Connect(function(dt) matches:update(dt,workspace:GetServerTimeNow()) end)
+Players.PlayerAdded:Connect(function(player) matches:selection(player);lobby:track(player) end)
+Players.PlayerRemoving:Connect(function(player) lobby:untrack(player);matches:remove(player) end)
+for _,player in Players:GetPlayers() do matches:selection(player);lobby:track(player) end
+local nextLobby=0
+RunService.Heartbeat:Connect(function(dt)
+	matches:update(dt,workspace:GetServerTimeNow())
+	local t=os.clock()
+	if t>=nextLobby then nextLobby=t+.25;lobby:update() end
+end)
 -- Studio-only playtest hooks (no effect in a live server).
 if RunService:IsStudio() and workspace:GetAttribute("NinjaDuelDebug")==true then
 	require(script.Parent.DevHooks).install(matches)

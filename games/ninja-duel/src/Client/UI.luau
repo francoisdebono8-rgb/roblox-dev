@@ -61,6 +61,9 @@ local function button(parent,value,position,size,callback,color)
 	if not color then create("UIStroke",b,{Color=palette.muted,Transparency=.55,Thickness=1.5,ApplyStrokeMode=Enum.ApplyStrokeMode.Border}) end
 	b.Activated:Connect(callback); return b
 end
+-- (Lobby, 04/11) the same look for the players-online panel (Client/LobbyPanel).
+UI.kit={palette=palette,create=create,frame=frame,text=text,corner=corner,inkCard=inkCard,inkTitle=inkTitle,button=button,
+	TITLE_FONT=TITLE_FONT,BODY_FONT=BODY_FONT,CARD=CARD}
 local function accentOf(def) return Color3.fromRGB(table.unpack(def.Color)) end
 function UI.new(parent,send)
 	local self=setmetatable({player="Flashstep",bot="Mirage",send=send,selectionButtons={},introShown=nil},UI)
@@ -96,6 +99,7 @@ function UI.new(parent,send)
 	end)
 	local shell=frame(self.selection,UDim2.fromScale(.5,.5),UDim2.fromOffset(1600,900),palette.ink,1)
 	shell.AnchorPoint=Vector2.new(.5,.5)
+	self.shell=shell
 	local scale=create("UIScale",shell,{Scale=1})
 	local function resize() scale.Scale=math.min(1.25,workspace.CurrentCamera.ViewportSize.X/1600,workspace.CurrentCamera.ViewportSize.Y/900) end
 	workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(resize);resize()
@@ -795,6 +799,13 @@ function UI:lobby(data)
 		self.queueCode.Text=if private then (online.code or "") else ""
 		self.queueNote.Text=if private then "Share this code: your friend types it next to JOIN on the roster screen."
 			else "Casual 1v1  •  you meet the next player who searches."
+		-- (Lobby, 04/11) a challenge: on the way to the duel server, then waiting there.
+		local mode=online and online.mode
+		if mode=="travel" or mode=="challenge" then
+			self.queueTitle.Text=if mode=="travel" then "LEAVING FOR THE DUEL" else "CHALLENGE"
+			self.queueCode.Text=""
+			self.queueNote.Text=if mode=="travel" then "Both of you are on the way to the same arena…" else "Waiting for your opponent to arrive…"
+		end
 	end
 	self:refreshSelection()
 end
