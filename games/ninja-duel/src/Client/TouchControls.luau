@@ -119,7 +119,9 @@ function Touch.new(input,send,getState,toggleLock,camera)
 	for _,group in {cluster,row,extras,base,self.skipButton} do table.insert(scales,new("UIScale",{Scale=1},group)) end
 	local function fit()
 		local size=workspace.CurrentCamera.ViewportSize
-		local s=math.clamp(math.min(size.Y/Touch.REFERENCE,size.X/(Touch.REFERENCE*1.7)),.75,1.8)
+		-- (B0, 04/11) the stack (cluster, jutsu, extras: 352 tall) stays under
+		-- the health plates: it covered the opponent's plate on a phone.
+		local s=math.clamp(math.min((size.Y-110)/352,size.X/700),.6,1.6)
 		scale.Scale=s
 		for _,u in scales do u.Scale=s end
 		row.Position=UDim2.new(1,-12,1,-(12+246*s))

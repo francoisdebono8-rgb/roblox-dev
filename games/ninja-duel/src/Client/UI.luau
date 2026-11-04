@@ -108,10 +108,11 @@ function UI.new(parent,send)
 	if hasSequences then create("UIGradient",base,{Rotation=-90,Transparency=NumberSequence.new({NumberSequenceKeypoint.new(0,0),NumberSequenceKeypoint.new(.62,.08),NumberSequenceKeypoint.new(1,1)})}) end
 	base.ZIndex=0
 	-- Title, top left; the hanging banner, right edge.
-	local title=text(shell,"PRODIGY TOURNAMENT",UDim2.fromOffset(60,18),UDim2.fromOffset(900,70),62,palette.paper,TITLE_FONT)
+	-- (B0, 04/11) clear of Roblox's own buttons (top left: they covered the P)
+	local title=text(shell,"PRODIGY TOURNAMENT",UDim2.fromOffset(150,18),UDim2.fromOffset(900,70),62,palette.paper,TITLE_FONT)
 	create("UIStroke",title,{Color=palette.ink,Thickness=3,ApplyStrokeMode=Enum.ApplyStrokeMode.Contextual})
 	text(shell,"Eight future legends to start, more every update. Twelve to fourteen years old. One stage — before they become who they are meant to be.",
-		UDim2.fromOffset(62,84),UDim2.fromOffset(1100,20),15,palette.muted,Enum.Font.GothamMedium)
+		UDim2.fromOffset(152,84),UDim2.fromOffset(1100,20),15,palette.muted,Enum.Font.GothamMedium)
 	local banner=frame(shell,UDim2.fromOffset(1534,0),UDim2.fromOffset(44,280),palette.paper,0)
 	create("UIStroke",banner,{Color=palette.red,Thickness=2})
 	text(banner,"天\n才\n忍\n者\n大\n会",UDim2.fromOffset(0,12),UDim2.fromOffset(44,240),26,palette.red,BODY_FONT,Enum.TextXAlignment.Center).LineHeight=.95
@@ -1166,6 +1167,13 @@ function UI:render(data)
 	end
 	for i=#h.techniques+1,5 do self.techniqueButtons[i].box.Visible=false end
 	self:sealHud(h,pad,data.sealPage)
+	-- (B0, 04/11, seen on an emulated phone) on a touch screen the touch
+	-- controls carry the jutsu and the seal page: the keyboard slots and the
+	-- "HOLD C" slip sat under the buttons.
+	if data.touch then
+		for _,b in self.techniqueButtons do b.box.Visible=false end
+		self.sealPanel.Visible=false
+	end
 	-- (Tournament) watching a match: none of these are the player's.
 	if data.spectate then
 		for _,b in self.techniqueButtons do b.box.Visible=false end
@@ -1201,7 +1209,7 @@ function UI:render(data)
 	local _=helping
 	self.lastHuman=h
 	self.controlsChip.Text=(if pad then "START" else "TAB").."   CONTROLS"
-	self.controlsChip.Visible=os.clock()<(self.helpUntil or 0) or data.tutorial~=nil
+	self.controlsChip.Visible=(os.clock()<(self.helpUntil or 0) or data.tutorial~=nil) and not data.touch
 	local won=data.winner=="PlayerFighter"
 	local winner=if won then h else b
 	self.resultTitle.Text=(if won then "VICTORY" else "DEFEAT")..(if (data.roundsToWin or 1)>1 and data.wins then string.format("  %d–%d",data.wins.human or 0,data.wins.bot or 0) else "")
