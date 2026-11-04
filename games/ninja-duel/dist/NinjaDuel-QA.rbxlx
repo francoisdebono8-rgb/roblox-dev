@@ -4887,7 +4887,7 @@ return {
       <Item class="StringValue" referent="ND30">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">9350728501c3c17abfa7a1f562ef6008b483205301a422fe66aee855db6971ce</string>
+          <string name="Value">fd19fab73d70b02a8bda58537ee02477cb93a91570f8c5f803316bb5f76371a0</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND31">
@@ -19553,6 +19553,12 @@ function Motor.tryWall(a,c,now)
 	if not hit or not hit.Instance:GetAttribute("NinjaWall") or math.abs(hit.Normal.Y)&gt;0.18 then return false end
 	local into=heading.Unit:Dot(-hit.Normal)
 	if into&lt;0.45 then return false end
+	-- (B1, Studio 04/11 v37: backing into the arena's wall, the body climbed
+	-- it, dropped, turned back to its look and climbed again, flipping between
+	-- the wall and the opponent every second) Backing into a wall is being
+	-- cornered, not a wall run: the body must not face away from the wall.
+	local facing=flat(a.root.CFrame.LookVector)
+	if facing.Magnitude&gt;.1 and facing.Unit:Dot(-hit.Normal)&lt;-.25 then return false end
 	-- Movement overhaul: the entry decides the run. A shallow entry runs
 	-- along the wall from its own speed (losing it gradually); a steep one
 	-- runs up it, as high as the entry speed carries (brief §9).
@@ -41939,6 +41945,7 @@ function Camera.new()
  UIS.InputChanged:Connect(function(input)
   if input.UserInputType==Enum.UserInputType.MouseMovement and not self.locked then
    self.yaw+=input.Delta.X*.004;self.pitch=math.clamp(self.pitch-input.Delta.Y*.003,.04,.9)
+   if input.Delta.Magnitude&gt;.5 then self.lastLookInput=os.clock() end
   elseif input.UserInputType==Enum.UserInputType.MouseWheel then
    self.zoom=math.clamp(self.zoom-input.Position.Z*1.4,-6,12)
   end
@@ -41989,6 +41996,8 @@ function Camera:impulse(style,role,impact)
 	local spec=IMPULSE[style] or IMPULSE.light
 	if not spec or (spec[1]&lt;=0 and spec[2]&lt;=0) then return end
 	local weight=if role=="victim" then 1.25 elseif role=="neutral" then .6 else .85
+	-- (B1 lot 3) effects LOW: a calmer lens (a little shake, a small kick).
+	if self.calm then weight*=.4 end
 	local now=os.clock()
 	self.shakeSize=math.max(self.shakeSize or 0,spec[1]*weight)
 	self.fovKick=math.max(self.fovKick or 0,spec[2]*weight)
@@ -42141,6 +42150,22 @@ function Camera:update(data,dt)
 		desiredAngle=self.fogYaw or self.boomAngle or 0
 	else
 		if self.faceOpponent then self.yaw=math.atan2(behind.X,behind.Z);self.boomAngle=nil;self.faceOpponent=nil end
+		-- (B1, B0 defect 4 and Studio 04/11 v37: free, the opponent was often off
+		-- screen, at the wall above all) When the player leaves the lens alone
+		-- (no mouse or right stick for 0.9 s, no move), it brings the opponent
+		-- back to the edge of the frame, gently. Never while he steers: the moves
+		-- are relative to the lens, a turn mid-run would bend the run.
+		local clock0=os.clock()
+		if (self.look.Magnitude or 0)&gt;.05 then self.lastLookInput=clock0 end
+		local still=presentation==nil or presentation.inputDir==nil or presentation.inputDir.Magnitude&lt;.1
+		if not lost and not data.ko and still and clock0-(self.lastLookInput or 0)&gt;.9 and separation&gt;4 then
+			local off=wrap(self.yaw-math.atan2(behind.X,behind.Z))
+			local edge=math.rad(32)
+			if math.abs(off)&gt;math.rad(48) then
+				local turn=math.min(math.abs(off)-edge,math.rad(110)*dt)
+				self.yaw=wrap(self.yaw-math.sign(off)*turn)
+			end
+		end
 		desiredAngle=self.yaw
 	end
 	if not self.boomAngle then self.boomAngle=desiredAngle end
@@ -44309,7 +44334,7 @@ local function burst(parent,position,props,count)
 	local holder=anchorPart(parent,position);holder.Transparency=1
 	local at=new("Attachment",{},holder)
 	local e=emitter(at,props)
-	e:Emit(count)
+	e:Emit(math.max(1,math.floor((count or 1)*Kit.amount+.5)))
 	Debris:AddItem(holder,3)
 	return holder
 end
@@ -49066,6 +49091,8 @@ local lobbyPanel=nil
 pcall(function() lobbyPanel=require(script.Parent.LobbyPanel).new(ui,shared:WaitForChild("Lobby",20),UI.kit) end)
 -- (04/11) The Prodigy Tournament: bracket, spectator banner, champion (Server/Tournament).
 local cupScreen=require(script.Parent.CupScreen).new(ui,send,UI.kit)
+-- (B1 lot 3) the controls sheet's EFFECTS switch also calms the lens.
+ui.onEffects=function(low) camera.calm=low end
 -- The roster's fighters stand in a 3D set the menu camera films (Client/MenuStage).
 if ui.menuStage then camera.menuShot=function() return ui.menuStage:shot() end end
 -- Debug/QA places only: the Studio dev panel (F6, DevClient). While it is open
@@ -52009,6 +52036,9 @@ local Fighters=require(Shared.Fighters)
 local Roster=require(Shared.BetaRoster)
 local Controls=require(Shared.Controls)
 local FirstMinute=require(Shared.FirstMinute)
+-- (B1 lot 3) the effects switch lives in the VFX kit (absent in headless tests)
+local okKit,FXKit=pcall(function() return require(script.Parent.VfxKit) end)
+if not okKit then FXKit=nil end
 local SealJutsu=require(Shared.SealJutsu)
 local MoveGraphs=require(Shared.MoveGraphs)
 local Protocol=require(Shared.OnlineProtocol)
@@ -52542,12 +52572,21 @@ function UI.new(parent,send)
 	workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(fitSheet);fitSheet()
 	local sheetTitle=text(sheet,"CONTROLS",UDim2.fromOffset(36,20),UDim2.fromOffset(600,52),48,palette.paper,TITLE_FONT)
 	sheetTitle.ZIndex=42
-	self.controlsClose=text(sheet,"",UDim2.fromOffset(1120-656,30),UDim2.fromOffset(400,30),16,palette.muted,BODY_FONT,Enum.TextXAlignment.Right)
+	self.controlsClose=text(sheet,"",UDim2.fromOffset(1120-900,30),UDim2.fromOffset(400,30),16,palette.muted,BODY_FONT,Enum.TextXAlignment.Right)
 	self.controlsClose.ZIndex=77
 	-- (UI review 04/11, finding 1) a phone had no TAB: the sheet could not be
 	-- closed. A real button, which the pad's focus takes when the sheet opens.
 	self.controlsCloseButton=button(sheet,"CLOSE",UDim2.fromOffset(1120-236,14),UDim2.fromOffset(200,64),function() if self.controls.Visible then self:toggleControls() end end,palette.red)
 	self.controlsCloseButton.ZIndex=78
+	-- (B1 lot 3, B0 defect 8) EFFECTS FULL / LOW: fewer particles, no screen
+	-- tint, a calmer lens (lighter phones; a duel judged with and without).
+	self.effectsButton=button(sheet,"EFFECTS: FULL",UDim2.fromOffset(1120-476,14),UDim2.fromOffset(228,64),function()
+		local low=not (FXKit and FXKit.calm)
+		if FXKit then FXKit.setLow(low) end
+		self.effectsButton.Text=if low then "EFFECTS: LOW" else "EFFECTS: FULL"
+		if self.onEffects then self.onEffects(low) end
+	end)
+	self.effectsButton.ZIndex=78;self.effectsButton.TextSize=22
 	frame(sheet,UDim2.fromOffset(36,78),UDim2.fromOffset(1048,3),palette.red,0).ZIndex=42
 	self.controlsBody=frame(sheet,UDim2.fromOffset(36,96),UDim2.fromOffset(1048,520),palette.ink,1)
 	self.controlsBody.ZIndex=42
@@ -52577,7 +52616,10 @@ function UI.new(parent,send)
 	self.cancelButton=button(queueBox,"CANCEL",UDim2.fromOffset(30,222),UDim2.fromOffset(540,52),function() send("Cancel") end)
 	self.queue.Visible=false
 	-- The genjutsu image carries no label: the world shows it (Presentation:illusion).
-	self.tutorialPanel=inkCard(frame(self.hud,UDim2.new(.5,-260,0,84),UDim2.fromOffset(520,90),CARD,0),10)
+	-- (UI review 04/11, finding 7; seen in Studio v37) at the centre (84) it hid
+	-- the inner ends of both health bars, under them (160) the partner's head:
+	-- on the left, under the player's own plate, the middle stays the fight's.
+	self.tutorialPanel=inkCard(frame(self.hud,UDim2.new(0,24,0,170),UDim2.fromOffset(520,90),CARD,0),10)
 	self.tutorialTitle=text(self.tutorialPanel,"",UDim2.fromOffset(16,9),UDim2.fromOffset(490,30),24,palette.paper,TITLE_FONT)
 	self.tutorialPrompt=text(self.tutorialPanel,"",UDim2.fromOffset(16,40),UDim2.fromOffset(490,40),14,palette.muted)
 	GuiService.AutoSelectGuiEnabled=true
@@ -52977,8 +53019,8 @@ function UI:render(data)
 	-- (User 02/11, tutorial on screen) The cue band (124) and the hint (200)
 	-- sat on the tutorial panel (84-174): "SPACE REBOUND / C DETACH" was printed
 	-- across the step's own instruction. Under the panel while it shows.
-	self.cue.Position=UDim2.new(.5,-300,0,if self.tutorialPanel.Visible then 182 else 124)
-	self.hint.Position=UDim2.new(.5,-260,0,if self.tutorialPanel.Visible then 226 else 200)
+	self.cue.Position=UDim2.new(.5,-300,0,124)
+	self.hint.Position=UDim2.new(.5,-260,0,200)
 	if data.tutorial then
 		self.tutorialTitle.Text=data.tutorial.index.." / "..data.tutorial.total.."  "..data.tutorial.title
 		-- (B1; UI review 04/11: a phone was told "WASD" and "BACKSPACE")
@@ -52991,7 +53033,7 @@ function UI:render(data)
 	self.onlineInfo=data.online
 	self.selection.Visible=data.phase=="Selection" or data.phase=="Pick"; self.hud.Visible=data.phase=="Duel" and not introActive; self.result.Visible=data.phase=="Result"
 	self.queue.Visible=data.phase=="Queue"
-	if self.screenFx then self.screenFx.Visible=data.phase=="Duel" and not introActive end
+	if self.screenFx then self.screenFx.Visible=data.phase=="Duel" and not introActive and not (FXKit and FXKit.calm) end
 	self.intro.Visible=introActive
 	-- Gamepad focus moves only after the matching screen is visible.
 	if self.lastPhase~=data.phase then
@@ -59723,6 +59765,18 @@ local function range(r,default)
 end
 local live={}
 local streams={}
+-- (B1 lot 3, B0 defect 8; audit 26f8623 §2: judge a duel with the effects
+-- on and off) The effects switch: `amount` scales every burst and stream
+-- (1 full, .35 low), `calm` asks the lens and the screen for less. And a
+-- ceiling on live sprites (performance review 04/11, finding 2: tens to
+-- hundreds alive in a busy exchange, one GUI each).
+Kit.amount=1
+Kit.calm=false
+Kit.MaxLive=110
+function Kit.setLow(low)
+	Kit.amount=if low then .35 else 1
+	Kit.calm=low==true
+end
 local origin
 local stepping=false
 local function originPart()
@@ -59750,6 +59804,7 @@ local function ensureStep()
 end
 -- One sprite: a billboard on the shared origin, an image (a flipbook cell).
 local function spawnSprite(name,position,direction,props)
+	if #live&gt;=Kit.MaxLive then return end
 	local content=Kit.content(name)
 	if not content then return end
 	local size=props.Size or NumberSequence.new(1)
@@ -59834,7 +59889,7 @@ stepAll=function(dt)
 		-- keeps its parts, parented to nothing: out of the world, the stream ends.
 		if not at.Parent or handle.dead or not at:IsDescendantOf(workspace) then streams[handle]=nil;continue end
 		if handle.Enabled and handle.Rate&gt;0 then
-			handle.acc+=handle.Rate*dt
+			handle.acc+=handle.Rate*Kit.amount*dt
 			local cf=at.WorldCFrame
 			local axis=if handle.props.front then cf.LookVector else cf.UpVector
 			while handle.acc&gt;=1 do
@@ -59853,6 +59908,7 @@ function Kit.stream(attachment,name,props)
 		local flip=FLIP[name]
 		if flip then e.FlipbookLayout=flip;e.FlipbookMode=props.FlipbookMode or Enum.ParticleFlipbookMode.OneShot end
 		for k,v in props do if k~="front" and k~="Aspect" and k~="FlipbookMode" then e[k]=v end end
+		if props.Rate then e.Rate=props.Rate*Kit.amount end
 		if props.front then e.EmissionDirection=Enum.NormalId.Front end
 		e.Parent=attachment
 		return e
@@ -59869,7 +59925,9 @@ function Kit.setSize(stream,size)
 	if typeof(stream)=="Instance" then stream.Size=size else stream.props.Size=size end
 end
 function Kit.setRate(stream,rate)
-	if stream then stream.Rate=rate end
+	if not stream then return end
+	-- (an emitter is scaled here, a sprite stream when it spawns)
+	if typeof(stream)=="Instance" then stream.Rate=rate*Kit.amount else stream.Rate=rate end
 end
 function Kit.stop(stream)
 	if not stream then return end
@@ -59879,6 +59937,7 @@ end
 -- A one-shot particle burst. `texture` is a Kit texture name; a flipbook
 -- texture plays once over each particle's life.
 function Kit.burst(parent,position,texture,count,props)
+	count=math.max(1,math.floor((count or 1)*Kit.amount+.5))
 	if Kit.spriteOnly(texture) then
 		local d=props.direction
 		local axis=if d and d.Magnitude&gt;.01 then d.Unit else Vector3.yAxis
