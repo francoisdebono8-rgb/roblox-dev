@@ -265,6 +265,11 @@ test("requests: only ids and booleans, anything else ignored",function()
 	assert(next(a.lobby.outgoing)==nil and not a.lobby.players[alice.UserId].dnd,"a malformed request did something")
 	op(a,alice,{op="fighter",fighter="Mirror"})
 	assert(a.lobby.players[alice.UserId].fighter~="Mirror","a fighter outside the beta was taken")
+	-- (Studio 04/11) the list's own refresh, just before a click, never swallows it
+	local carol=join(a,"Carol")
+	a.lobby:request(alice,{op="open"})
+	a.lobby:request(alice,{op="challenge",to=carol.UserId,fighter="Lion"})
+	assert(lastOf(carol,"invite"),"the refresh swallowed the challenge")
 end)
 
 test("client panel: the list, a challenge, an invitation answered, the status line",function()

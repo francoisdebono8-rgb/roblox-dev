@@ -4648,7 +4648,7 @@ return {
       <Item class="StringValue" referent="ND28">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">1453722a54b927c39da7dff887c001525ae4d4cf9912d9236d3cdeb6114181ba</string>
+          <string name="Value">dc531560db6549743f2a7c15bb76d211868a0419f5530f83d9b1f7ec81c27f1d</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND29">
@@ -15273,9 +15273,17 @@ function Lobby:request(player,payload)
 	local p=self.players[player.UserId]
 	if not p or type(payload)~="table" or type(payload.op)~="string" then return end
 	local now=self.svc.now()
-	if now-p.lastOp&lt;Protocol.Tune.OpGap then return end
-	p.lastOp=now
 	local op=payload.op
+	-- (Studio 04/11) The open list refreshes itself every second: a refresh
+	-- has its own budget and never swallows the click that follows it.
+	local refresh=op=="open" or op=="close" or op=="fighter"
+	if refresh then
+		if now-(p.lastRefresh or -math.huge)&lt;Protocol.Tune.OpGap then return end
+		p.lastRefresh=now
+	else
+		if now-p.lastOp&lt;Protocol.Tune.OpGap then return end
+		p.lastOp=now
+	end
 	local fighter=if type(payload.fighter)=="string" and table.find(BetaRoster,payload.fighter) then payload.fighter else nil
 	if op=="open" then p.watching=true;self:list(p)
 	elseif op=="close" then p.watching=false
@@ -42059,7 +42067,9 @@ function Panel.new(ui,remote,kit)
 	local overlay=K.frame(ui.gui,UDim2.fromScale(0,0),UDim2.fromScale(1,1),P.ink,.35)
 	overlay.ZIndex=70;overlay.Visible=false;overlay.Active=true
 	self.overlay=overlay
-	local card=K.inkCard(K.frame(overlay,UDim2.fromScale(.5,.5),UDim2.fromOffset(760,620),K.CARD,0))
+	-- (Studio 04/11) a little under the middle: an invitation at the top of
+	-- the screen never covers the list's title.
+	local card=K.inkCard(K.frame(overlay,UDim2.fromScale(.5,.57),UDim2.fromOffset(760,620),K.CARD,0))
 	card.AnchorPoint=Vector2.new(.5,.5);card.ZIndex=71
 	local scale=K.create("UIScale",card,{Scale=1})
 	local function fit()
@@ -42083,7 +42093,7 @@ function Panel.new(ui,remote,kit)
 	close.ZIndex=72
 	self.closeButton=close
 	-- The invitation and the status line, above every screen.
-	local top=K.frame(ui.gui,UDim2.new(.5,0,0,70),UDim2.fromOffset(620,150),P.ink,1)
+	local top=K.frame(ui.gui,UDim2.new(.5,0,0,8),UDim2.fromOffset(620,150),P.ink,1)
 	top.AnchorPoint=Vector2.new(.5,0);top.ZIndex=80
 	local topScale=K.create("UIScale",top,{Scale=1})
 	local function fitTop()

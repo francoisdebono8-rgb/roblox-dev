@@ -418,9 +418,17 @@ function Lobby:request(player,payload)
 	local p=self.players[player.UserId]
 	if not p or type(payload)~="table" or type(payload.op)~="string" then return end
 	local now=self.svc.now()
-	if now-p.lastOp<Protocol.Tune.OpGap then return end
-	p.lastOp=now
 	local op=payload.op
+	-- (Studio 04/11) The open list refreshes itself every second: a refresh
+	-- has its own budget and never swallows the click that follows it.
+	local refresh=op=="open" or op=="close" or op=="fighter"
+	if refresh then
+		if now-(p.lastRefresh or -math.huge)<Protocol.Tune.OpGap then return end
+		p.lastRefresh=now
+	else
+		if now-p.lastOp<Protocol.Tune.OpGap then return end
+		p.lastOp=now
+	end
 	local fighter=if type(payload.fighter)=="string" and table.find(BetaRoster,payload.fighter) then payload.fighter else nil
 	if op=="open" then p.watching=true;self:list(p)
 	elseif op=="close" then p.watching=false

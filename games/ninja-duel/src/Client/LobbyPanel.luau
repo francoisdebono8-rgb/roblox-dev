@@ -38,7 +38,9 @@ function Panel.new(ui,remote,kit)
 	local overlay=K.frame(ui.gui,UDim2.fromScale(0,0),UDim2.fromScale(1,1),P.ink,.35)
 	overlay.ZIndex=70;overlay.Visible=false;overlay.Active=true
 	self.overlay=overlay
-	local card=K.inkCard(K.frame(overlay,UDim2.fromScale(.5,.5),UDim2.fromOffset(760,620),K.CARD,0))
+	-- (Studio 04/11) a little under the middle: an invitation at the top of
+	-- the screen never covers the list's title.
+	local card=K.inkCard(K.frame(overlay,UDim2.fromScale(.5,.57),UDim2.fromOffset(760,620),K.CARD,0))
 	card.AnchorPoint=Vector2.new(.5,.5);card.ZIndex=71
 	local scale=K.create("UIScale",card,{Scale=1})
 	local function fit()
@@ -62,7 +64,7 @@ function Panel.new(ui,remote,kit)
 	close.ZIndex=72
 	self.closeButton=close
 	-- The invitation and the status line, above every screen.
-	local top=K.frame(ui.gui,UDim2.new(.5,0,0,70),UDim2.fromOffset(620,150),P.ink,1)
+	local top=K.frame(ui.gui,UDim2.new(.5,0,0,8),UDim2.fromOffset(620,150),P.ink,1)
 	top.AnchorPoint=Vector2.new(.5,0);top.ZIndex=80
 	local topScale=K.create("UIScale",top,{Scale=1})
 	local function fitTop()
