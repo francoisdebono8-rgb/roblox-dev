@@ -102,6 +102,8 @@ function Camera:impulse(style,role,impact)
 	local spec=IMPULSE[style] or IMPULSE.light
 	if not spec or (spec[1]<=0 and spec[2]<=0) then return end
 	local weight=if role=="victim" then 1.25 elseif role=="neutral" then .6 else .85
+	-- (B1 lot 3) effects LOW: a calmer lens (a little shake, a small kick).
+	if self.calm then weight*=.4 end
 	local now=os.clock()
 	self.shakeSize=math.max(self.shakeSize or 0,spec[1]*weight)
 	self.fovKick=math.max(self.fovKick or 0,spec[2]*weight)

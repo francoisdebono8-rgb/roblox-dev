@@ -84,6 +84,8 @@ local lobbyPanel=nil
 pcall(function() lobbyPanel=require(script.Parent.LobbyPanel).new(ui,shared:WaitForChild("Lobby",20),UI.kit) end)
 -- (04/11) The Prodigy Tournament: bracket, spectator banner, champion (Server/Tournament).
 local cupScreen=require(script.Parent.CupScreen).new(ui,send,UI.kit)
+-- (B1 lot 3) the controls sheet's EFFECTS switch also calms the lens.
+ui.onEffects=function(low) camera.calm=low end
 -- The roster's fighters stand in a 3D set the menu camera films (Client/MenuStage).
 if ui.menuStage then camera.menuShot=function() return ui.menuStage:shot() end end
 -- Debug/QA places only: the Studio dev panel (F6, DevClient). While it is open

@@ -7,6 +7,9 @@ local Fighters=require(Shared.Fighters)
 local Roster=require(Shared.BetaRoster)
 local Controls=require(Shared.Controls)
 local FirstMinute=require(Shared.FirstMinute)
+-- (B1 lot 3) the effects switch lives in the VFX kit (absent in headless tests)
+local okKit,FXKit=pcall(function() return require(script.Parent.VfxKit) end)
+if not okKit then FXKit=nil end
 local SealJutsu=require(Shared.SealJutsu)
 local MoveGraphs=require(Shared.MoveGraphs)
 local Protocol=require(Shared.OnlineProtocol)
@@ -540,12 +543,21 @@ function UI.new(parent,send)
 	workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(fitSheet);fitSheet()
 	local sheetTitle=text(sheet,"CONTROLS",UDim2.fromOffset(36,20),UDim2.fromOffset(600,52),48,palette.paper,TITLE_FONT)
 	sheetTitle.ZIndex=42
-	self.controlsClose=text(sheet,"",UDim2.fromOffset(1120-656,30),UDim2.fromOffset(400,30),16,palette.muted,BODY_FONT,Enum.TextXAlignment.Right)
+	self.controlsClose=text(sheet,"",UDim2.fromOffset(1120-900,30),UDim2.fromOffset(400,30),16,palette.muted,BODY_FONT,Enum.TextXAlignment.Right)
 	self.controlsClose.ZIndex=77
 	-- (UI review 04/11, finding 1) a phone had no TAB: the sheet could not be
 	-- closed. A real button, which the pad's focus takes when the sheet opens.
 	self.controlsCloseButton=button(sheet,"CLOSE",UDim2.fromOffset(1120-236,14),UDim2.fromOffset(200,64),function() if self.controls.Visible then self:toggleControls() end end,palette.red)
 	self.controlsCloseButton.ZIndex=78
+	-- (B1 lot 3, B0 defect 8) EFFECTS FULL / LOW: fewer particles, no screen
+	-- tint, a calmer lens (lighter phones; a duel judged with and without).
+	self.effectsButton=button(sheet,"EFFECTS: FULL",UDim2.fromOffset(1120-476,14),UDim2.fromOffset(228,64),function()
+		local low=not (FXKit and FXKit.calm)
+		if FXKit then FXKit.setLow(low) end
+		self.effectsButton.Text=if low then "EFFECTS: LOW" else "EFFECTS: FULL"
+		if self.onEffects then self.onEffects(low) end
+	end)
+	self.effectsButton.ZIndex=78;self.effectsButton.TextSize=22
 	frame(sheet,UDim2.fromOffset(36,78),UDim2.fromOffset(1048,3),palette.red,0).ZIndex=42
 	self.controlsBody=frame(sheet,UDim2.fromOffset(36,96),UDim2.fromOffset(1048,520),palette.ink,1)
 	self.controlsBody.ZIndex=42
@@ -992,7 +1004,7 @@ function UI:render(data)
 	self.onlineInfo=data.online
 	self.selection.Visible=data.phase=="Selection" or data.phase=="Pick"; self.hud.Visible=data.phase=="Duel" and not introActive; self.result.Visible=data.phase=="Result"
 	self.queue.Visible=data.phase=="Queue"
-	if self.screenFx then self.screenFx.Visible=data.phase=="Duel" and not introActive end
+	if self.screenFx then self.screenFx.Visible=data.phase=="Duel" and not introActive and not (FXKit and FXKit.calm) end
 	self.intro.Visible=introActive
 	-- Gamepad focus moves only after the matching screen is visible.
 	if self.lastPhase~=data.phase then

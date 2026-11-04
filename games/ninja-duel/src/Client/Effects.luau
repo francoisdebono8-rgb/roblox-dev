@@ -586,7 +586,7 @@ local function burst(parent,position,props,count)
 	local holder=anchorPart(parent,position);holder.Transparency=1
 	local at=new("Attachment",{},holder)
 	local e=emitter(at,props)
-	e:Emit(count)
+	e:Emit(math.max(1,math.floor((count or 1)*Kit.amount+.5)))
 	Debris:AddItem(holder,3)
 	return holder
 end

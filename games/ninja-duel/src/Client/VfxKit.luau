@@ -186,6 +186,18 @@ local function range(r,default)
 end
 local live={}
 local streams={}
+-- (B1 lot 3, B0 defect 8; audit 26f8623 §2: judge a duel with the effects
+-- on and off) The effects switch: `amount` scales every burst and stream
+-- (1 full, .35 low), `calm` asks the lens and the screen for less. And a
+-- ceiling on live sprites (performance review 04/11, finding 2: tens to
+-- hundreds alive in a busy exchange, one GUI each).
+Kit.amount=1
+Kit.calm=false
+Kit.MaxLive=110
+function Kit.setLow(low)
+	Kit.amount=if low then .35 else 1
+	Kit.calm=low==true
+end
 local origin
 local stepping=false
 local function originPart()
@@ -213,6 +225,7 @@ local function ensureStep()
 end
 -- One sprite: a billboard on the shared origin, an image (a flipbook cell).
 local function spawnSprite(name,position,direction,props)
+	if #live>=Kit.MaxLive then return end
 	local content=Kit.content(name)
 	if not content then return end
 	local size=props.Size or NumberSequence.new(1)
@@ -297,7 +310,7 @@ stepAll=function(dt)
 		-- keeps its parts, parented to nothing: out of the world, the stream ends.
 		if not at.Parent or handle.dead or not at:IsDescendantOf(workspace) then streams[handle]=nil;continue end
 		if handle.Enabled and handle.Rate>0 then
-			handle.acc+=handle.Rate*dt
+			handle.acc+=handle.Rate*Kit.amount*dt
 			local cf=at.WorldCFrame
 			local axis=if handle.props.front then cf.LookVector else cf.UpVector
 			while handle.acc>=1 do
@@ -316,6 +329,7 @@ function Kit.stream(attachment,name,props)
 		local flip=FLIP[name]
 		if flip then e.FlipbookLayout=flip;e.FlipbookMode=props.FlipbookMode or Enum.ParticleFlipbookMode.OneShot end
 		for k,v in props do if k~="front" and k~="Aspect" and k~="FlipbookMode" then e[k]=v end end
+		if props.Rate then e.Rate=props.Rate*Kit.amount end
 		if props.front then e.EmissionDirection=Enum.NormalId.Front end
 		e.Parent=attachment
 		return e
@@ -332,7 +346,9 @@ function Kit.setSize(stream,size)
 	if typeof(stream)=="Instance" then stream.Size=size else stream.props.Size=size end
 end
 function Kit.setRate(stream,rate)
-	if stream then stream.Rate=rate end
+	if not stream then return end
+	-- (an emitter is scaled here, a sprite stream when it spawns)
+	if typeof(stream)=="Instance" then stream.Rate=rate*Kit.amount else stream.Rate=rate end
 end
 function Kit.stop(stream)
 	if not stream then return end
@@ -342,6 +358,7 @@ end
 -- A one-shot particle burst. `texture` is a Kit texture name; a flipbook
 -- texture plays once over each particle's life.
 function Kit.burst(parent,position,texture,count,props)
+	count=math.max(1,math.floor((count or 1)*Kit.amount+.5))
 	if Kit.spriteOnly(texture) then
 		local d=props.direction
 		local axis=if d and d.Magnitude>.01 then d.Unit else Vector3.yAxis
