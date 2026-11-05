@@ -488,6 +488,25 @@ local function extraModels()
 	end
 	return extras
 end
+-- Minato's planted seal (Client/Effects FX:seal draws a "Seal" glyph and a
+-- three-pronged kunai in workspace.NinjaDuelFX): the one nearest Neji (B).
+local function sealPoint()
+	local fx = workspace:FindFirstChild("NinjaDuelFX")
+	local _, Bm = duelModels()
+	local rb = hrp(Bm)
+	local best, bestD
+	for _, m in ipairs(fx and fx:GetChildren() or {}) do
+		if m.Name == "Seal" and m:IsA("Model") then
+			local disc = m:FindFirstChildWhichIsA("BasePart")
+			if disc then
+				local d = rb and (disc.Position - rb.Position).Magnitude or 0
+				if not bestD or d < bestD then best, bestD = disc.Position, d end
+			end
+		end
+	end
+	return best
+end
+B.sealPoint = sealPoint
 local function subject(who)
 	local A, Bm = duelModels()
 	if who == "B" then return Bm, A end
@@ -503,6 +522,10 @@ local function gather(sp)
 	end
 	if who:find("A") then add(A) end
 	if who:find("B") then add(Bm) end
+	if who:find("S") then
+		local sp0 = sealPoint()
+		if sp0 then for _, sg in ipairs(SIGNS) do table.insert(pts, sp0 + V(0.9, 1.1, 0.9) * sg + V(0, 0.9, 0)) end end
+	end
 	if who:find("X") then
 		for _, m in ipairs(extraModels()) do
 			local cf, size = m:GetBoundingBox()
@@ -597,6 +620,22 @@ function SH.track(sp)
 	if #pts == 0 then return end
 	return pts, (bboxCenter(pts)), sideDir(sp.yaw, sp.pitch or 4), sp.fov or 40, sp.m or 0.6
 end
+-- The planted kunai in close-up, low, with B standing behind it (the hook).
+-- dist: camera to kunai; h: camera height over the floor; lift: how far up
+-- B's body the lens looks (0 = the kunai, 1 = B's head).
+function SH.seal(sp)
+	local at = sealPoint()
+	local _, Bm = duelModels()
+	local rb = hrp(Bm)
+	if not (at and rb) then return end
+	local toB = flat(rb.Position - at)
+	toB = toB.Magnitude > 0.1 and toB.Unit or AXIS
+	local side = toB:Cross(Vector3.yAxis)
+	local floorY = at.Y
+	local eye = at - toB * (sp.dist or 3.4) + side * (sp.off or 0.8) + V(0, sp.h or 0.9, 0)
+	local look = at:Lerp(rb.Position + V(0, 1.2, 0), sp.lift or 0.22)
+	return nil, eye, look, sp.fov or 38, floorY
+end
 B.SH = SH
 -- film look: a little contrast and bloom (no depth of field: it stuttered)
 local function film(on)
@@ -626,6 +665,18 @@ RS:BindToRenderStep("NDClipShot", Enum.RenderPriority.Last.Value + 2, function(d
 	local fn = SH[sp.kind or "fit"]
 	if not fn then return end
 	local pts, c, dir, fov, m = fn(sp)
+	if not pts and typeof(c) == "Vector3" and typeof(dir) == "Vector3" then
+		-- a placed lens (SH.seal): eye c looking at dir, eased in
+		local cam = workspace.CurrentCamera
+		cam.CameraType = Enum.CameraType.Scriptable
+		local eye, look = c, dir
+		if sm.snap or not sm.eye then sm.eye, sm.look, sm.snap = eye, look, false
+		else sm.eye = dampN(sm.eye, eye, sp.rate or 6, dt); sm.look = dampN(sm.look, look, sp.rate or 6, dt) end
+		cam.CFrame = CFrame.lookAt(sm.eye, sm.look)
+		cam.FieldOfView = fov
+		sm.c = nil
+		return
+	end
 	if not pts then return end
 	local upHint = sp.top and AXIS or Vector3.yAxis
 	local d = math.clamp(solve(pts, c, dir, fov, m, upHint), sp.minD or 1.6, sp.maxD or 70)
@@ -639,7 +690,14 @@ RS:BindToRenderStep("NDClipShot", Enum.RenderPriority.Last.Value + 2, function(d
 	end
 	local cam = workspace.CurrentCamera
 	cam.CameraType = Enum.CameraType.Scriptable
-	cam.CFrame = CFrame.lookAt(sm.c + sm.dir * sm.d, sm.c, upHint)
+	local eye = sm.c + sm.dir * sm.d
+	-- never under the arena floor (low angles near the ground)
+	local A, Bm = duelModels(); local ra, rb = hrp(A), hrp(Bm)
+	if ra and rb and not sp.top then
+		local floorY = math.min(ra.Position.Y, rb.Position.Y) - 2.9
+		if eye.Y < floorY + (sp.minH or 0.6) then eye = V(eye.X, floorY + (sp.minH or 0.6), eye.Z) end
+	end
+	cam.CFrame = CFrame.lookAt(eye, sm.c, upHint)
 	cam.FieldOfView = fov
 end)
 local beatConn, takeConn

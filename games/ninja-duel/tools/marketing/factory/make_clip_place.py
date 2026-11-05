@@ -45,6 +45,14 @@ if '<Item class="ServerStorage"' in xml:
 else:
     k = xml.rindex("</roblox>")
     xml = xml[:k] + f'<Item class="ServerStorage" referent="NDF0"><Properties><string name="Name">ServerStorage</string></Properties>{srv}</Item>\n' + xml[k:]
+# the factory's command channel: a Studio-only Script in ServerScriptService
+# (Studio's execute_luau sandbox may not call the dev hooks itself)
+boot = open(os.path.join(st, "NDFactoryBoot.server.luau"), encoding="utf-8").read()
+assert "]]>" not in boot
+boot_item = (f'<Item class="Script" referent="NDF8"><Properties><string name="Name">NDFactoryBoot</string>'
+             f'<ProtectedString name="Source"><![CDATA[{boot}]]></ProtectedString></Properties></Item>')
+s = xml.index('<Item class="ServerScriptService"'); j = xml.index("</Properties>", s) + len("</Properties>")
+xml = xml[:j] + boot_item + xml[j:]
 out = os.path.join(DOCS, "NinjaDuelMedia", f"ND-Clips-v{v}.rbxlx")
 open(out, "w", encoding="utf-8").write(xml)
 print(out, os.path.getsize(out), "from", os.path.basename(src))
