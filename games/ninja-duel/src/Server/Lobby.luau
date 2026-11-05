@@ -130,6 +130,9 @@ function Lobby:track(player)
 	return p
 end
 function Lobby:untrack(player)
+	-- (Audit v34 #11) a duel server forgets a player who left: the pairing
+	-- below must never seat a body whose player is gone.
+	if self.duel then self.duel.arrived[player.UserId]=nil end
 	local p=self.players[player.UserId]
 	if not p then return end
 	self.players[player.UserId]=nil
@@ -149,6 +152,9 @@ end
 -- the AI (still challengeable: accepting ends the AI duel), or in a duel.
 function Lobby:stateOf(p)
 	if self.duel then return "duel" end
+	-- (Audit v34 #10) a yes already sent: he is on his way to that duel, so a
+	-- second yes (or a new challenge) cannot leave another challenger alone.
+	if p.accepting and self.svc.now()<p.accepting.untilT then return "duel" end
 	local s=self.matches.sessions[p.player]
 	if not s then return "free" end
 	if s.online and (s.online.kind=="duel" or s.online.kind=="travel") then return "duel" end
@@ -243,7 +249,7 @@ function Lobby:onMessage(msg)
 	if msg.k=="ask" then return self:receive(p,msg) end
 	if msg.k=="no" then return self:refused(p,msg) end
 	if msg.k=="yes" then return self:accepted(p,msg) end
-	if msg.k=="go" then return self:depart(p,msg.code,msg.name) end
+	if msg.k=="go" then p.accepting=nil;return self:depart(p,msg.code,msg.name) end
 	if msg.k=="drop" then
 		if self.incoming[msg.id] then self.incoming[msg.id]=nil;self:send(p.player,{kind="closed",id=msg.id,text="CHALLENGE CANCELLED"}) end
 	end
@@ -289,6 +295,8 @@ function Lobby:receive(p,msg)
 	self.incoming[rec.id]=rec
 	self:send(p.player,{kind="invite",id=rec.id,from=rec.name,fromId=rec.from,fighter=rec.fighter,remaining=math.max(0,rec.expires-self.svc.now())})
 end
+-- How long a sent yes holds the player for that duel (the go, or a refusal, frees him sooner).
+Lobby.ACCEPT_HOLD=15
 function Lobby:answer(p,id,accept,fighter,now)
 	local rec=self.incoming[id]
 	if not rec or rec.to~=p.id then return end
@@ -299,6 +307,7 @@ function Lobby:answer(p,id,accept,fighter,now)
 	if not accept then return self:deliver({k="no",id=id,to=rec.from,toJob=rec.fromJob,reason="declined",name=p.name}) end
 	if not Lobby.challengeable(self:stateOf(p)) then return self:deliver({k="no",id=id,to=rec.from,toJob=rec.fromJob,reason="busy",name=p.name}) end
 	self:status(p,"ACCEPTED  •  WAITING FOR "..string.upper(rec.name))
+	p.accepting={id=id,untilT=now+Lobby.ACCEPT_HOLD}
 	self:deliver({k="yes",id=id,to=rec.from,toJob=rec.fromJob,from=p.id,name=p.name,fighter=p.fighter,fromJob=self.svc.jobId})
 end
 local REASONS={declined="%s DECLINED",busy="%s IS BUSY",dnd="%s DOES NOT WANT TO BE DISTURBED",gone="%s LEFT",error="THE DUEL COULD NOT START — TRY AGAIN",expired="NO ANSWER FROM %s"}
@@ -306,7 +315,9 @@ function Lobby:refused(p,msg)
 	local rec=self.outgoing[msg.id]
 	if not rec then
 		-- (the accepting side, told the duel could not start)
-		if msg.reason=="error" or msg.reason=="gone" then self:status(p,string.format(REASONS[msg.reason],string.upper(tostring(msg.name or "THE PLAYER"))),"bad") end
+		if p.accepting and p.accepting.id==msg.id then p.accepting=nil end
+		-- (Audit v34 #10) "busy" too: the challenger had gone into another duel.
+		if msg.reason=="error" or msg.reason=="gone" or msg.reason=="busy" then self:status(p,string.format(REASONS[msg.reason],string.upper(tostring(msg.name or "THE PLAYER"))),"bad") end
 		return
 	end
 	self.outgoing[msg.id]=nil
@@ -324,7 +335,7 @@ function Lobby:accepted(p,msg)
 		return self:deliver({k="no",id=msg.id,to=msg.from,toJob=msg.fromJob,reason="busy",name=p.name})
 	end
 	-- Same server: the online 1v1 at once, no teleport.
-	if other then return self:pairHere(p,other,rec.fighter or p.fighter,fighter) end
+	if other then other.accepting=nil;return self:pairHere(p,other,rec.fighter or p.fighter,fighter) end
 	self:status(p,string.upper(rec.toName or "YOUR OPPONENT").." ACCEPTED  •  LEAVING FOR THE DUEL…")
 	self.svc.spawn(function()
 		local ok,code,serverId=pcall(function() return self.svc.teleport:ReserveServer(self.svc.placeId) end)
@@ -406,6 +417,7 @@ function Lobby:arrive(player)
 	if not rec then return end
 	if player.UserId~=rec.a and player.UserId~=rec.b then return self:home(player,nil) end
 	local a,b=d.arrived[rec.a],d.arrived[rec.b]
+	if a and b and not (self.players[rec.a] and self.players[rec.b]) then a,b=nil,nil end
 	if a and b and not d.paired then
 		d.paired=true
 		local m=self.matches

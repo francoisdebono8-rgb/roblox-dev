@@ -54,6 +54,15 @@ local STEEL_EDGE=Color3.fromRGB(150,158,170)
 local MINATO=Color3.fromRGB(255,214,92)
 local LION=Color3.fromRGB(150,180,255)
 local CURSE=Color3.fromRGB(120,60,200)
+-- (Audit v34 #17) One source for a fighter's tones: the HUD's own colours
+-- (Shared/Fighters Color and Awakening.Color). The aura of five fighters was
+-- a hard-coded red while their HUD showed their own colour.
+local FighterData=require(game:GetService("ReplicatedStorage").NinjaDuel.Fighters)
+local function toneOf(id,awakening)
+	local def=FighterData[id or ""]
+	local c=def and (if awakening and def.Awakening and def.Awakening.Color then def.Awakening.Color else def.Color)
+	return if type(c)=="table" and #c>=3 then Color3.fromRGB(c[1],c[2],c[3]) else nil
+end
 local MINATO_CORE=Color3.fromRGB(255,248,214)
 local SHARINGAN=Color3.fromRGB(230,36,44)
 local WIND=Color3.fromRGB(190,255,226)
@@ -910,7 +919,7 @@ function FX:impact(impact,folder)
 		-- Minato a clean flash, Itachi a lingering copy, Neji a small chakra
 		-- pulse, Sasuke an explosive kick-off. Unknown variants keep the plain look.
 		local variant=impact.variant
-		local tone=if impact.fighter=="Flashstep" then MINATO elseif impact.fighter=="GentleFist" then HYUGA elseif impact.fighter=="Lion" then LION else Color3.fromRGB(150,40,60)
+		local tone=if impact.fighter=="Flashstep" then MINATO elseif impact.fighter=="GentleFist" then HYUGA elseif impact.fighter=="Lion" then LION else toneOf(impact.fighter) or Color3.fromRGB(150,40,60)
 		self:ghost(model,tone,if variant=="mirage" then .45 else .22,if variant=="mirage" then .4 else .55)
 		if variant=="flash" then flash(self.folder,position,MINATO,1,4,.14,.3)
 		elseif variant=="palm" then flash(self.folder,position,HYUGA,.5,3,.12,.25)
@@ -1010,7 +1019,7 @@ function FX:impact(impact,folder)
 		shockRing(self.folder,position,Color3.fromRGB(200,226,255),1,6+math.min(count,4)*1.5,.18)
 	elseif style=="awaken" then
 		local model=modelFor(folder,impact.owner)
-		local tone=if impact.fighter=="Flashstep" then MINATO elseif impact.fighter=="GentleFist" then HYUGA elseif impact.fighter=="Lion" then CURSE else Color3.fromRGB(230,40,50)
+		local tone=toneOf(impact.fighter,true) or Color3.fromRGB(230,40,50)
 		if model then self:ghost(model,tone,.35,.4) end
 		flash(self.folder,position,tone,2,14,.35,.2)
 		shockRing(self.folder,position-Vector3.new(0,2.6,0),tone,3,24,.45)
@@ -1041,7 +1050,7 @@ function FX:impact(impact,folder)
 	elseif style=="afterimage" then
 		-- A lateral route: the body leaves a fading copy where it stood.
 		local model=modelFor(folder,impact.owner)
-		if model then self:ghost(model,if impact.fighter=="GentleFist" then HYUGA elseif impact.fighter=="Lion" then LION else Color3.fromRGB(150,40,60),.3,.45) end
+		if model then self:ghost(model,if impact.fighter=="GentleFist" then HYUGA elseif impact.fighter=="Lion" then LION else toneOf(impact.fighter) or Color3.fromRGB(150,40,60),.3,.45) end
 		smokePuff(self.folder,position-Vector3.new(0,2.6,0),Color3.fromRGB(196,186,166),5,1)
 	elseif style=="chidori" then
 		flash(self.folder,position,Color3.fromRGB(170,200,255),1,6,.18,.25)
@@ -1813,7 +1822,8 @@ function FX:fighter(model,actor,dt)
 	local awake=(actor.awaken or 0)>0 and (actor.health or 1)>0
 	if awake and not aura.mantle then
 		local torso=model:FindFirstChild("UpperTorso") or root
-		local tone=if actor.fighterId=="Flashstep" then MINATO elseif actor.fighterId=="GentleFist" then HYUGA elseif actor.fighterId=="Lion" then CURSE else Color3.fromRGB(230,40,50)
+		-- (Audit v34 #17) the awakening's own colour, the one the HUD shows.
+		local tone=toneOf(actor.fighterId,true) or Color3.fromRGB(230,40,50)
 		local at=new("Attachment",{Name="AwakenMantle"},torso)
 		local e=new("ParticleEmitter",{Texture=TEX.fire,Rate=55,Lifetime=NumberRange.new(.35,.6),Speed=NumberRange.new(2,5),SpreadAngle=Vector2.new(30,30),
 			EmissionDirection=Enum.NormalId.Top,Shape=Enum.ParticleEmitterShape.Box,Color=ColorSequence.new(tone),LightEmission=1,LightInfluence=0,

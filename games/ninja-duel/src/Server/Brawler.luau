@@ -1151,12 +1151,7 @@ end
 -- launcher of the roster weighed nothing before (every unnamed move was a
 -- light, no stop at all).
 function Brawler.stopStyle(p)
- local spec=p.spec or {}
- if p.name=="Slam" or spec.kind=="slam" or spec.kind=="spike" then return "slam" end
- if p.name=="Launcher" or p.name=="ThrowUp" or spec.kind=="launch" then return "launcher" end
- if p.name=="Heavy" or p.name=="Throw" or p.name=="Light3" or spec.kind=="heavy" or spec.reaction=="Knockdown" then return "finisher" end
- if spec.air then return "air" end
- return "light"
+ return Rules.hitTier(p.name,p.spec)
 end
 -- Surfaces a flying body can be slammed into: the stadium wall, the field
 -- trees and the boulders.

@@ -102,6 +102,9 @@ function Camera:impulse(style,role,impact)
 	if not spec or (spec[1]<=0 and spec[2]<=0) then return end
 	local weight=if role=="victim" then 1.25 elseif role=="neutral" then .6 else .85
 	local now=os.clock()
+	-- (Audit v34 #2) the size used to keep the session's biggest blow, so every
+	-- jab after a slam shook like the slam. A shake that has run out is gone.
+	if now>=(self.shakeUntil or 0) then self.shakeSize=0 end
 	self.shakeSize=math.max(self.shakeSize or 0,spec[1]*weight)
 	self.fovKick=math.max(self.fovKick or 0,spec[2]*weight)
 	self.shakeUntil=math.max(self.shakeUntil or 0,now+(if style=="slam" or style=="fire" then .18 else .07))
@@ -146,6 +149,7 @@ function Camera:update(data,dt)
 	if self.lastHealth and data.human.health<self.lastHealth and serial~=self.lastImpactSerial then
 		local damage=self.lastHealth-data.human.health
 		if data.human.impactHeavy or damage>=12 then
+			if os.clock()>=(self.shakeUntil or 0) then self.shakeSize=0 end
 			self.shakeSize=math.max(self.shakeSize or 0,.2);self.fovKick=math.max(self.fovKick or 0,2);self.shakeUntil=math.max(self.shakeUntil or 0,os.clock()+.12)
 		end
 	end
@@ -452,6 +456,10 @@ function Camera:update(data,dt)
 		for part in faded do part.LocalTransparencyModifier=.72 end
 		self.faded=faded
 		local cf=CFrame.lookAt(eye,look)*shake
+		-- (Audit v34, P2) the ears sit near the pair, not on the far lens: a
+		-- watched match (the cup, our films) sounded about 6 dB quieter.
+		pcall(function() game:GetService("SoundService"):SetListener(Enum.ListenerType.CFrame,CFrame.lookAt(mid+dir*14+Vector3.new(0,4,0),look)) end)
+		self.listenerMoved=true
 		self.spectateCF=if self.spectateCF then self.spectateCF:Lerp(cf,math.clamp(dt*3,0,1)) else cf
 		camera.CFrame=self.spectateCF
 		camera.FieldOfView=camera.FieldOfView+(55-camera.FieldOfView)*math.clamp(dt*4,0,1)
@@ -459,6 +467,7 @@ function Camera:update(data,dt)
 		return
 	end
 	self.spectateCF=nil;self.spectateSide=nil
+	if self.listenerMoved then self.listenerMoved=nil;pcall(function() game:GetService("SoundService"):SetListener(Enum.ListenerType.Camera) end) end
 	-- Studio film camera (tooling only): a low side view of both fighters, the
 	-- way a fighting-game camera shows feet, ground contact and body mechanics.
 	local film=studio and workspace:GetAttribute("NinjaDuelFilmCam")

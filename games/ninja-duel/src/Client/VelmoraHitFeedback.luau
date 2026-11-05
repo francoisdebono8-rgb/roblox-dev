@@ -107,13 +107,16 @@ local function strikeLayers(style,position,impact,spec)
 	local ringNormal=(dir+toCamera*.6).Unit
 	local up=if math.abs(ringNormal.Y)>.95 then Vector3.xAxis else Vector3.yAxis
 	local ringCF=CFrame.lookAt(position,position+ringNormal,up)
-	Kit.plane(folder,ringCF,"ring",Vector2.new(1.2,1.2)*(1+w),Vector2.new(5,5)*(1+w*1.6),.12+.1*w,hot,0)
+	-- (Audit v34, P2) the ring grows with the blow: about 4 studs on a jab,
+	-- 8 on a finisher, 10 on a slam (a jab was drawn at ~7.5, nearly a heavy).
+	local ringEnd=1.6+8.4*w^1.1
+	Kit.plane(folder,ringCF,"ring",Vector2.new(1.2,1.2)*(1+w),Vector2.new(ringEnd,ringEnd),.12+.1*w,hot,0)
 	if SLASH[style] then
 		-- A crescent drawn across the blow, facing the camera.
 		local across=dir:Cross(toCamera)
 		local roll=math.atan2(across.Y,math.sqrt(across.X^2+across.Z^2))+(math.random()-.5)*.9
 		local slashCF=CFrame.lookAt(position,position+toCamera)*CFrame.Angles(0,0,roll)
-		Kit.plane(folder,slashCF,"slash",Vector2.new(4,2)*(.8+w),Vector2.new(6.5,3.2)*(.8+w),.1+.06*w,color,0)
+		Kit.plane(folder,slashCF,"slash",Vector2.new(4,2)*(.5+w*1.05),Vector2.new(6.5,3.2)*(.45+w*1.1),.1+.06*w,color,0)
 	end
 	if style=="slam" or style=="wallbounce" or style=="launcher" then
 		local me=game:GetService("Players").LocalPlayer.Character
@@ -131,7 +134,8 @@ function Feedback.impact(style,position,impact)
 	if not spec then return end
 	local anchor=anchorAt(position)
 	local cue=(if style=="light" then "light" elseif AIR_CUE[style] then "whiff" else "heavy")
-	if style~="flow" then playSound(anchor,AUDIO[cue],spec.pitch,spec.volume) end
+	-- (Audit v34, P2) a hair of pitch either way: ten jabs are not one sample ten times.
+	if style~="flow" then playSound(anchor,AUDIO[cue],spec.pitch*(.95+math.random()*.1),spec.volume) end
 	if LAYERED[style] then
 		playSound(anchor,AUDIO.punch,.95+math.random()*.1,.45)
 		playSound(anchor,AUDIO.body,1.1,.35)

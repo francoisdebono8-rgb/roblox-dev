@@ -25,7 +25,9 @@ end
 function Motor.jump(a,c,now)
  local movement,parkour=donor(a,c)
  if parkour.jump() then return true end
- return movement.jump(Motor.grounded(a,c))
+ -- (Audit v34 #6) the 3.6-stud ray missed on a bump or a slope with the body
+ -- standing: the fight's own ground flag counts as well.
+ return movement.jump(Motor.grounded(a,c) or (not a.airborne and not a.wall))
 end
 function Motor.detach(a,now,rebound)
 	local wall=a.wall

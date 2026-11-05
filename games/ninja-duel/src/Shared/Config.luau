@@ -141,6 +141,9 @@ return {
 	-- a guess), probing at range uses tools and step-in feints, and a fighter
 	-- that just got hit backs off to neutral instead of mashing back.
 	AI = { Tick = 0.18, Reaction = 0.38, Aggression = 0.72, Defense = 0.58, Technique = 0.34,
+		-- (Audit v34 #14) a whiff seen up close is punished this often; the
+		-- reaction time varies by up to this fraction either way.
+		Punish = 0.7, ReactionJitter = 0.2,
 		TechniqueGap = 2.6, TechniqueJitter = 2.6, ReadGuard = 0.3, ReadDodge = 0.16, ReadPoke = 0.22, GuardRead = 0.07,
 		Feint = 0.1, ProbeTool = 2.4, Disengage = 0.45, WallRun = 0.35,
 		-- Ninja Embodiment: the bot answers an ordinary blow (Recover: once per

@@ -133,7 +133,11 @@ function Tournament:fight(player)
 		first=cup.seats[cup.me];second=cup.seats[if a==cup.me then b else a]
 		local tier=Tournament.Tiers[Tournament.roundOf(cup.match)]
 		if tier and require(script.Parent.BuildPresets).ai(second,tier) then options={bot={preset=tier}} end
+		-- (Audit v34 #15) every opponent plays the round's level, not only the
+		-- four fighters that have a skill build for it.
+		s.aiLevel=tier
 	else
+		s.aiLevel=nil
 		first=cup.seats[a];second=cup.seats[b]
 	end
 	local ok=m:start(player,first,second,false,options)

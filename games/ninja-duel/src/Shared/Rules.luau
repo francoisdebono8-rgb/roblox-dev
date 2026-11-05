@@ -34,4 +34,16 @@ end
 function Rules.isGuard(a, frontal)
 	return a.state == "Guarding" and frontal and a.chakra > 0
 end
+-- The weight of a contact by what the strike is (Combat.Hitstop styles):
+-- shared so the server's contact feed and the client's predicted contact name
+-- the same tier. (Audit v34 #1: every melee contact went out as "light", so a
+-- slam, a launcher or a heavy sounded and shook like a jab.)
+function Rules.hitTier(name, spec)
+	spec = spec or {}
+	if name == "Slam" or spec.kind == "slam" or spec.kind == "spike" then return "slam" end
+	if name == "Launcher" or name == "ThrowUp" or spec.kind == "launch" then return "launcher" end
+	if name == "Heavy" or name == "Throw" or name == "Light3" or spec.kind == "heavy" or spec.reaction == "Knockdown" then return "finisher" end
+	if spec.air then return "air" end
+	return "light"
+end
 return Rules

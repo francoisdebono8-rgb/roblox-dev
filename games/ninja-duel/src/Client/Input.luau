@@ -273,7 +273,23 @@ end
 -- a direction held through the round change was forgotten until the key was
 -- pressed again, so the body stood still at the start of every round.
 function Input:resync()
+ local guarding=next(self.guards)~=nil
+ local jumping=next(self.jumps)~=nil
  self:reset()
+ -- (Audit v34 #3) the guard key: the server forgets it with the round, and a
+ -- key cleared here never sent its GuardOff on release (the guard came back
+ -- by itself next round). Still held: it is taken again; let go: said so.
+ local held=false
+ pcall(function()
+  if UIS:IsKeyDown(KEYBOARD.Guard) then held=true;self.guards[KEYBOARD.Guard.Name]=true end
+  if UIS:IsGamepadButtonDown(Enum.UserInputType.Gamepad1,GAMEPAD.Guard) then held=true;self.guards[GAMEPAD.Guard.Name]=true;self.padL1=true end
+ end)
+ -- Deferred: on a new round this runs before the client takes the new epoch,
+ -- and a press stamped with the old one is dropped by the server.
+ task.defer(function()
+  if held then self.send("Guard") elseif guarding then self.send("GuardOff") end
+  if jumping then self.send("JumpOff") end
+ end)
  pcall(function()
   for _,code in {Enum.KeyCode.W,Enum.KeyCode.A,Enum.KeyCode.S,Enum.KeyCode.D} do
    if UIS:IsKeyDown(code) then self.keys[code.Name]=true end

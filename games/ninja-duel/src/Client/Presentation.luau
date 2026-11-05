@@ -11,6 +11,7 @@ local Shared=game:GetService("ReplicatedStorage").NinjaDuel
 local Fighters=require(Shared.Fighters)
 local Config=require(Shared.Config)
 local Attacks=require(Shared.Attacks)
+local Rules=require(Shared.Rules)
 local MoveGraphs=require(Shared.MoveGraphs)
 local ActionContext=require(Shared.ActionContext)
 local Presentation={};Presentation.__index=Presentation
@@ -644,7 +645,9 @@ function Presentation:localContact(data,myPos,theirPos,now)
 	g.checked=true
 	if now-g.at>g.contact+.2 then return nil end
 	if not Presentation.contactOpen(data and data.bot,myPos,theirPos,g.reach) then return nil end
-	local style=if g.name=="Heavy" then "launcher" else "light"
+	-- (Audit v34 #1) the same tier the server's contact will carry.
+	local tier=Rules.hitTier(g.name,Attacks[g.name])
+	local style=if tier=="air" then "light" else tier
 	local at=myPos:Lerp(theirPos,.7)+Vector3.new(0,.6,0)
 	self.localHit={at=now,style=style,position=at}
 	return self.localHit

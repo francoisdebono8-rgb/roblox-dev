@@ -353,8 +353,15 @@ function Combat:damage(attacker,victim,amount,heavy,readEligible)
 	Families.afterHit(self,attacker,victim,amount,guarded)
 	-- Studio tooling only: where damage comes from, to tune fight length.
 	if self.damageLog then table.insert(self.damageLog,{t=self.now,by=attacker.fighterId,amount=amount,tag=self.damageTag or "other",hits=victim.comboHits}) end
-	victim.impactSerial=(victim.impactSerial or 0)+1; victim.impactHeavy=heavy or weight>=12
 	local style=(if guarded then "block" elseif heavy and weight>=16 then "slam" elseif heavy then "launcher" elseif weight>=20 then "finisher" else "light")
+	-- (Audit v34 #1) a melee contact arrives with heavy=false (BanglaCombat):
+	-- its look and sound follow the move itself (Rules.hitTier), not the damage.
+	local struck=attacker.pending
+	if style=="light" and struck and struck.kind=="Brawl" then
+		local tier=Brawler.stopStyle(struck)
+		if tier~="light" and tier~="air" then style=tier end
+	end
+	victim.impactSerial=(victim.impactSerial or 0)+1; victim.impactHeavy=heavy or weight>=12 or style=="slam" or style=="launcher"
 	victim.impactStyle=style
 	victim.impactAt=self.now
 	-- Direction and weight of the contact so the victim's body can answer the
@@ -412,7 +419,7 @@ function Combat:damage(attacker,victim,amount,heavy,readEligible)
 		-- A blow driving down (a slam, a spike) pins the body where it is.
 		local spec=attacker.pending and attacker.pending.spec
 		local down=spec and spec.impulse and spec.impulse.Y<0
-		local power=if down then 0 elseif heavy or style=="finisher" or style=="jutsu" then 1 else F.Light
+		local power=if down then 0 elseif heavy or style=="finisher" or style=="jutsu" or style=="launcher" or style=="slam" then 1 else F.Light
 		if power>0 then
 			-- (Studio films: thrown as a knockdown it slid along the floor from
 			-- the first frame.) Flies thrown back (Knockback); on the floor it
@@ -1016,6 +1023,10 @@ end
 -- it was refused (DevHooks summary: presses).
 -- Presses that wait for the body to be free (Config.Late): the verbs a player
 -- presses to get out of a moment, never the held ones (Guard, ChakraLoad).
+-- (Audit v34 #6) A jump pressed this long before landing still jumps, and a
+-- press in the intro's last moment comes out with the fight's first frame.
+Combat.JUMP_BUFFER=.15
+Combat.INTRO_BUFFER=.15
 local LATE={Attack=true,Heavy=true,Jump=true,Dodge=true,Grab=true,Tool=true,
 	Technique1=true,Technique2=true,Technique3=true,Technique4=true,Technique5=true,
 	Seal1=true,Seal2=true,Seal3=true,Seal4=true,Seal5=true}
@@ -1090,12 +1101,19 @@ function Combat:request(a,action,aim,clientTime,opts)
 	-- loads again when it comes out).
 	if loaded and ok==false then a.chakraLoad=nil end
 	-- Players only (Matches:act marks them): the AI plans its own timing.
-	if ok==false and a.playerInput and (reason=="Committed" or reason=="Reacting") and LATE[action] and not (opts and opts.late) then
+	-- (Audit v34 #6) Kept too: a jump pressed just before landing (it comes out
+	-- on the landing frame), and a press in the last instant of the intro.
+	local intro=self.match.introUntil
+	local airJump=reason=="Airborne" and action=="Jump" and a.airborne
+	local introPress=reason=="Intro" and intro~=nil and intro-self.now<=Combat.INTRO_BUFFER and not self.match.finishing
+	if ok==false and a.playerInput and (reason=="Committed" or reason=="Reacting" or airJump or introPress) and LATE[action] and not (opts and opts.late) then
 		local L=Config.Late
 		local down=a.reaction=="Knockdown" or a.reaction=="WallSplat" or a.reaction=="Wakeup"
 		-- (DEC-032) the second seal of a weave comes back as that jutsu, not its slot
 		if a.sealResolved then opts=table.clone(opts or {});opts.sealCast=a.sealResolved end
-		a.latePress={action=action,aim=aim,opts=opts,at=self.now,window=if down then L.Hit+.24 elseif reason=="Reacting" then L.Hit else L.Own}
+		local window=if down then L.Hit+.24 elseif reason=="Reacting" then L.Hit else L.Own
+		if airJump then window=Combat.JUMP_BUFFER elseif introPress then window=(intro-self.now)+.1 end
+		a.latePress={action=action,aim=aim,opts=opts,at=self.now,window=window}
 	elseif ok~=false and action~="GuardOff" then a.latePress=nil end
 	-- (Audit 29/10) An air dodge leaves the hover: its speed was zeroed by the
 	-- remaining air hold on the next frame.
@@ -1618,7 +1636,8 @@ function Combat:updateActor(a,dt)
 	local late=a.latePress
 	if late then
 		if now-late.at>late.window then a.latePress=nil
-		elseif a.state=="Neutral" and not a.reaction and now>=(a.hitstopUntil or 0) then
+		elseif a.state=="Neutral" and not a.reaction and now>=(a.hitstopUntil or 0)
+			and not (late.action=="Jump" and a.airborne) and not (self.match.introUntil and now<self.match.introUntil) then
 			a.latePress=nil
 			local opts=table.clone(late.opts or {});opts.late=true
 			self:request(a,late.action,late.aim,nil,opts)
@@ -2051,7 +2070,11 @@ function Combat:updateActor(a,dt)
 	else Motor.step(a,self,dt,now) end
 	-- Server-owned humanoids + server-clamped arena coordinates.
 	local p=a.root.Position
-	if Vector3.new(p.X-self.match.origin.X,0,p.Z-self.match.origin.Z).Magnitude>Config.ArenaRadius or p.Y<self.match.origin.Y-3 then self:relocate(a,p) end
+	-- (Audit v34 #5) the wall stands at World.WALL_RADIUS: a body leaning on it
+	-- sits about a stud inside, past the old 143 limit, and was warped back
+	-- every frame (the body juddered along the wall). Only a body really
+	-- through the wall is put back.
+	if Vector3.new(p.X-self.match.origin.X,0,p.Z-self.match.origin.Z).Magnitude>World.WALL_RADIUS-.4 or p.Y<self.match.origin.Y-3 then self:relocate(a,p) end
 	World.pose(a,now,dt)
 end
 local IMPACT_STYLE={wire="shuriken",kunai="kunai",marked="kunai",shuriken="shuriken",wind="jutsu",fireball="fire",phoenix="ember",palm="palmburst",sand="sandhit",sandwave="sandburst"}
@@ -2559,6 +2582,9 @@ function Combat:clear(preserveAnimations)
 		a.rushArriveUntil=0;a.awakenUntil=0;a.flowStreak=0;a.nextFlow=nil;a.grabbedAt=nil;a.boundBy=nil
 		Brawler.resetStrings(a);a.intentMemory=nil;a.intentOverride=nil;a.rush=nil;a.arrivalRecovery=nil;a.pursuitDuration=nil;a.rushReadyAt=0
 		a.shieldCharges=a.def.SandShield and a.def.SandShield.Charges or 0
+		-- (Audit v34 #3) a guard held through the KO stayed wanted for the next
+		-- round and came back by itself; the client sends it again if still held.
+		a.guardWanted=false;a.jumpHeld=false;a.latePress=nil
 		a.bodyState=nil
 		a.attackName=nil; a.attackStarted=0; a.pending=nil; a.anchor=nil; a.illusionUntil=0; a.decoyPosition=nil; a.move=Vector3.zero; a.wall=nil
 		a.hum:Move(Vector3.zero); a.root.AssemblyLinearVelocity=Vector3.zero; a.locomotion=Vector3.zero; a.airborne=false

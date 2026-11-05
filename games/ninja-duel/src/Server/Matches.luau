@@ -70,7 +70,7 @@ function Matches:selection(player,notice)
 	self:destroy(s)
 	player.Character=nil; s.phase="Selection"; s.epoch+=1
 	-- Back on the roster: a tournament in progress ends here.
-	s.cup=nil;s.cupMatch=nil;s.spectate=nil;s.autopilot=nil;s.cupPilot=nil
+	s.cup=nil;s.cupMatch=nil;s.spectate=nil;s.autopilot=nil;s.cupPilot=nil;s.aiLevel=nil
 	self:send(player,{phase="Selection",epoch=s.epoch,notice=notice})
 	-- (Lobby, 04/11) in a duel server the roster is the lobby: back home.
 	if self.lobby then self.lobby:onSelection(player) end
@@ -108,7 +108,7 @@ function Matches:start(player,playerId,botId,training,options)
 	s.bot=actor("AIFighter",botId,s.origin+Vector3.new(0,3,-Config.StartDistance),s.origin+Vector3.new(0,3,Config.StartDistance),botKit)
 	s.human.target=s.bot; s.bot.target=s.human; s.human.locked=true; s.bot.locked=true
 	player.Character=s.human.model
-	s.ai=AI.new(s.combat,s.bot,player.UserId%100000+ s.epoch)
+	s.ai=AI.new(s.combat,s.bot,player.UserId%100000+ s.epoch,s.aiLevel)
 	s.finishing=false
 	-- Tournament rounds: first to two (one in training).
 	s.round=1;s.wins={PlayerFighter=0,AIFighter=0};s.roundsToWin=if training then 1 else Config.RoundsToWin
@@ -149,7 +149,7 @@ function Matches:roundOver(s,winner,notify,advance)
 end
 function Matches:nextRound(player,s)
 	self:resetRound(s)
-	s.ai=AI.new(s.combat,s.bot,player.UserId%100000+s.epoch)
+	s.ai=AI.new(s.combat,s.bot,player.UserId%100000+s.epoch,s.aiLevel)
 	self:snapshot(player,s)
 end
 -- Next round: same stage and bodies, fresh fighters, a short intro. A new
@@ -355,12 +355,17 @@ function Matches:act(s,actor,payload,clock)
 	if padJump then
 		action=if (actor.pursuitUntil or 0)>s.combat.now and actor.target and actor.target.health>0 then "Pursuit" else "Jump"
 	end
-	if action~="Move" and not AntiCheat.check(actor,action,payload.clientTime,workspace:GetServerTimeNow()) then
-		-- Diagnostics for latency tests: how many presses were refused, and how
-		-- old the last refused one was (late packets vs rate limit).
-		actor.refusedInputs=(actor.refusedInputs or 0)+1
-		actor.refusedAge=if type(payload.clientTime)=="number" then workspace:GetServerTimeNow()-payload.clientTime else nil
-		return
+	if action~="Move" then
+		local passed,stamp=AntiCheat.check(actor,action,payload.clientTime,workspace:GetServerTimeNow())
+		if not passed then
+			-- Diagnostics for latency tests: how many presses were refused, and how
+			-- old the last refused one was (late packets vs rate limit).
+			actor.refusedInputs=(actor.refusedInputs or 0)+1
+			actor.refusedAge=if type(payload.clientTime)=="number" then workspace:GetServerTimeNow()-payload.clientTime else nil
+			return
+		end
+		-- (Audit v34 #4) a late press is kept, judged at the oldest accepted time.
+		if stamp~=nil then payload=table.clone(payload);payload.clientTime=stamp end
 	end
 	local function vector(v)
 		return typeof(v)=="Vector3" and Rules.finite(v.X) and Rules.finite(v.Y) and Rules.finite(v.Z)

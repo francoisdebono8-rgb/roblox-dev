@@ -58,8 +58,29 @@ local function familyWants(self,c,a,target,spec,distance,danger)
 	return self.rng:NextNumber()<chance
 end
 local AI={}; AI.__index=AI
-function AI.new(combat,actor,seed)
-	return setmetatable({combat=combat,actor=actor,nextTick=0,observed=nil,observedAt=0,guardUntil=0,rng=Random.new(seed or 23)},AI)
+-- (Audit v34 #15) How the bot plays, by level: how fast it reacts to what it
+-- saw, how often it defends it and how often it punishes a whiff. The cup
+-- climbs Medium -> Hard -> Boss (Tournament.Tiers); without a level the bot
+-- plays Config.AI as before.
+AI.LEVELS={
+	Beginner={Reaction=.5,Defense=.34,Punish=.4,ReactionJitter=.3},
+	Medium={Reaction=.4,Defense=.52,Punish=.58,ReactionJitter=.25},
+	Hard={Reaction=.32,Defense=.64,Punish=.74,ReactionJitter=.2},
+	Boss={Reaction=.27,Defense=.74,Punish=.86,ReactionJitter=.15},
+}
+function AI.new(combat,actor,seed,level)
+	local self=setmetatable({combat=combat,actor=actor,nextTick=0,observed=nil,observedAt=0,guardUntil=0,rng=Random.new(seed or 23),seed=seed or 23},AI)
+	local profile=level and AI.LEVELS[level]
+	if profile then self.level=level;self.tune=setmetatable(table.clone(profile),{__index=Config.AI}) end
+	return self
+end
+-- (Audit v34, P3) Each side stream of dice is seeded from the bot's own seed
+-- (the player and the round) instead of one fixed number, so the same choice
+-- no longer repeats from one match to the next; the fight's main dice keep
+-- their sequence.
+function AI:stream(name,salt)
+	if not self[name] then self[name]=Random.new((self.seed%100003)*97+salt) end
+	return self[name]
 end
 local function slotOf(a,id)
 	for slot,spec in a.def.Techniques do if spec.Id==id then return "Technique"..slot,spec end end
@@ -118,7 +139,7 @@ end
 AI.ReflexParry=.2
 local function reflexGuard(self,c,a,hold)
 	if not c:request(a,"Guard") then return false end
-	self.parryRng=self.parryRng or Random.new(17)
+	self:stream("parryRng",17)
 	if self.parryRng:NextNumber()>=AI.ReflexParry then a.guardPressedAt=-math.huge end
 	if hold then self.guardUntil=c.now+hold end
 	return true
@@ -186,7 +207,7 @@ function AI:defend(now)
 	if not Ultimates.ready(a) then self.ultFullSince=nil
 	elseif self.ultRound~=round and a.state=="Neutral" and not a.reaction and not a.airborne and a.target and a.target.root and a.target.health>0 and now>=(self.ultThought or 0) then
 		self.ultFullSince=self.ultFullSince or now
-		self.ultRng=self.ultRng or Random.new(13)
+		self:stream("ultRng",13)
 		local roll=self.ultRng:NextNumber()
 		self.ultThought=now+.6+roll*.9
 		local t=a.target
@@ -202,7 +223,7 @@ function AI:defend(now)
 	-- (Lee's bare hands, Temari's fan, Gaara's sand); the player may draw with anyone.
 	if (a.def.Tool=="Kunai" or a.def.Tool=="Shuriken") and not a.reaction and not a.airborne and a.target and a.target.root and now>=(self.armThought or 0) then
 		-- its own dice: the fight's decisions keep their sequence
-		self.armRng=self.armRng or Random.new(7)
+		self:stream("armRng",7)
 		local roll=self.armRng:NextNumber()
 		self.armThought=now+2.5+roll*3
 		local gap=(a.target.root.Position-a.root.Position).Magnitude
@@ -216,7 +237,7 @@ function AI:defend(now)
 	-- strike, leap or dash comes out infused, so the player meets it too. Own
 	-- dice, like the kunai: the fight's decisions keep their sequence.
 	if not a.reaction and a.target and a.target.root and now>=(self.loadThought or 0) and a.chakra>=30 then
-		self.loadRng=self.loadRng or Random.new(11)
+		self:stream("loadRng",11)
 		local roll=self.loadRng:NextNumber()
 		self.loadThought=now+3+roll*4
 		local gap=(a.target.root.Position-a.root.Position).Magnitude
@@ -375,7 +396,7 @@ function AI:habit(move)
 	return n>=2
 end
 function AI:update(now)
-	local c,a=self.combat,self.actor; local target=a.target; local tune=Config.AI
+	local c,a=self.combat,self.actor; local target=a.target; local tune=self.tune or Config.AI
 	if c.match.phase~="Duel" or a.health<=0 or target.health<=0 then a.move=Vector3.zero; return end
 	if now<self.nextTick then return end
 	self.nextTick=now+tune.Tick
@@ -517,6 +538,9 @@ function AI:update(now)
 	if target.state~=self.observed then
   if target.state=="Startup" or target.state=="TechniqueChannel" then self.threatAt=now end
   self.observed=target.state;self.observedAt=now
+  -- (Audit v34 #14) a reaction time that varies a little with each thing seen
+  -- (a fixed 0.38 s made the bot's answers metronomic).
+  self.reactIn=tune.Reaction*(1+(self:stream("reactRng",5):NextNumber()*2-1)*(tune.ReactionJitter or 0))
  end
 	-- Reads: an opponent stepping into melee range is answered before the
 	-- strike lands. Not a reaction (no latency): a guess, taken once per entry
@@ -576,23 +600,29 @@ function AI:update(now)
 	if free and distance<7 and target.state=="Neutral" and not target.reaction and self.rng:NextNumber()<tune.GuardRead then
 		c:request(a,"Guard");self.guardUntil=now+.28+self.rng:NextNumber()*.22;return
 	end
-	local reacted=now-self.observedAt>=tune.Reaction
+	local reactIn=self.reactIn or tune.Reaction
+	local reacted=now-self.observedAt>=reactIn
 	local danger=target.state=="Startup" or target.state=="TechniqueChannel"
 	local reactedThreat=reacted and (target.state=="Startup" or target.state=="Active")
  -- Remember the wind-up through Active/Recovery: short attacks used to erase
  -- the observation before reaction latency elapsed, so defense never fired.
- local remembered=self.threatAt and now-self.threatAt>=tune.Reaction and now-self.threatAt<.9
+ local remembered=self.threatAt and now-self.threatAt>=reactIn and now-self.threatAt<.9
  if remembered and distance<9 and a.state=="Neutral" and not a.reaction then
   self.threatAt=nil
+  -- (Audit v34 #14) Seen coming is not always answered: up close the bot
+  -- guarded or punished every single time, whatever its Defense, so a player
+  -- could read it like a script. Each answer now has its own odds.
   if target.state=="Recovery" then
-   a.move=toward;a.sprinting=true
-   if distance<6 then c:request(a,"Attack") else c:request(a,"Dodge") end
-  elseif minato then
-   a.move=tangent;c:request(a,"Dodge")
-  else
-   reflexGuard(self,c,a,.36)
+   if self.rng:NextNumber()<(tune.Punish or .7) then
+    a.move=toward;a.sprinting=true
+    if distance<6 then c:request(a,"Attack") else c:request(a,"Dodge") end
+    return
+   end
+  elseif self.rng:NextNumber()<tune.Defense then
+   if minato then a.move=tangent;c:request(a,"Dodge")
+   else reflexGuard(self,c,a,.36) end
+   return
   end
-  return
  end
 	-- Neji: a strike about to land at close range is a Rotation read.
 	if reactedThreat and a.state=="Neutral" and distance<6.5 and slotOf(a,"Rotation") and self.rng:NextNumber()<.3 then
