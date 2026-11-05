@@ -1,4 +1,6 @@
 # NINJA DUEL — BIBLE DES TROIS SÉRIES SOCIAL MEDIA
+
+**EXÉCUTION OBLIGATOIRE :** commencer par [CM_START_HERE](CM_START_HERE.md), puis [RUNBOOK STUDIO + QC ANTI-BUG](CM_EXECUTION_RUNBOOK_SHOTS_AND_BUG_QA.md). Les scènes ne sont validées qu'après capture réelle et revue visuelle : aucun plan buggé n'est conservé.
 **05 novembre 2026 — Direction créative et fabrication pour le community manager**  
 **Branche : media-clips. Statut : brief créatif et production ; aucun post public ni changement gameplay autorisés par ce fichier.**
 
