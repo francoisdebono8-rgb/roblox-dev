@@ -18,7 +18,23 @@ local SkillBuilds=require(script.Parent.SkillBuilds)
 local BuildPresets=require(script.Parent.BuildPresets)
 local Zones=require(script.Parent.Zones)
 local FirstMinute=require(Shared.FirstMinute)
+local OnlineProtocol=require(Shared.OnlineProtocol)
 local Matches={}; Matches.__index=Matches
+-- (05/11, lot 4 review) Every action name a client may send: the fight's
+-- (OnlineProtocol.Combat), the online lobby's, and the local lifecycle,
+-- tutorial, first-minute and cup requests. Anything else is dropped at the
+-- door: an unknown name used to reach AntiCheat.check in the local duel,
+-- which keeps one entry per new name until the duel ends.
+Matches.ACTIONS=(function()
+	local set={}
+	for name in OnlineProtocol.Combat do set[name]=true end
+	for name in OnlineProtocol.Lifecycle do set[name]=true end
+	for _,name in {"Ready","First","Start","Tutorial","Rematch","Selection","TutorialSkip","TutorialStep","Pick","Confirm",
+		"CupStart","CupFight","CupSkip","CupBracket","CupLeave"} do set[name]=true end
+	return table.freeze(set)
+end)()
+-- (05/11, lot 4 review) Ready answers with a full snapshot: one per half second.
+Matches.READY_GAP=.5
 -- Skill builds (PROG-001..003) are resolved and validated here, on the server:
 -- a spec is {nodes={...}, unlocked={[id]=true}} (unlocked = the profile's set)
 -- or, for the AI, {preset="Hard"}; with a ranked bracket the build must also
@@ -346,7 +362,12 @@ function Matches:request(player,payload)
 	elseif not Rules.consumeToken(s.bucket,clock,Config.RequestRate,Config.RequestBurst) then return end
 	if type(payload)~="table" or type(payload.action)~="string" or #payload.action>24 then return end
 	local action=payload.action
+	if not Matches.ACTIONS[action] then return end
 	if action=="Ready" then
+		-- (05/11, lot 4 review) it skips the epoch check and builds a whole view:
+		-- 40 a second were 40 snapshots. The client sends one when it starts.
+		if clock-(s.lastReady or -10)<Matches.READY_GAP then return end
+		s.lastReady=clock
 		if s.online and self.online then self.online:refresh(player,s)
 		elseif s.phase=="Selection" then self:send(player,{phase="Selection",epoch=s.epoch})
 		elseif (s.phase=="Bracket" or s.phase=="Champion") and s.cup then self.tournament:send(player,s,s.phase)

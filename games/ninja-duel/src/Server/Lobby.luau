@@ -64,7 +64,7 @@ end
 function Lobby.new(matches,services)
 	local svc=services or Lobby.defaultServices()
 	local self=setmetatable({matches=matches,svc=svc,players={},directory={},outgoing={},incoming={},
-		nextPublish=0,nextRead=0,readAt=-math.huge},Lobby)
+		nextPublish=0,nextRead=0,readAt=-math.huge,homing={}},Lobby)
 	self.remote=svc.remote
 	if not self.remote then
 		local remote=Shared:FindFirstChild("Lobby") or Instance.new("RemoteEvent")
@@ -78,6 +78,7 @@ function Lobby.new(matches,services)
 	pcall(function()
 		if svc.teleport and svc.teleport.TeleportInitFailed then
 			svc.teleport.TeleportInitFailed:Connect(function(player)
+				self.homing[player.UserId]=nil
 				local s=matches.sessions[player]
 				if s and s.online and s.online.kind=="travel" then
 					s.online=nil
@@ -134,6 +135,7 @@ function Lobby:untrack(player)
 	-- (Security review 04/11, finding 3) gone before his opponent arrived: no
 	-- seat kept for him on the duel server.
 	if self.duel then self.duel.arrived[player.UserId]=nil end
+	self.homing[player.UserId]=nil
 	if not p then return end
 	self.players[player.UserId]=nil
 	-- Invitations this player sent die with him; those he received are refused.
@@ -374,6 +376,7 @@ function Lobby:teleport(player,code)
 		end
 		local p=self.players[player.UserId]
 		local s=self.matches.sessions[player]
+		if code==nil then self.homing[player.UserId]=nil end
 		if s and s.online and s.online.kind=="travel" then s.online=nil end
 		if p then self:status(p,REASONS.error,"bad") end
 	end)
@@ -426,7 +429,16 @@ function Lobby:arrive(player)
 	end
 end
 -- Back to a public server (the roster), with a word on the way.
+-- (05/11, lot 4 review) One trip at a time per player: "home" every 0.25 s
+-- started a new TeleportAsync task each time. The flag drops when that
+-- teleport fails (Lobby:teleport, TeleportInitFailed), when he leaves, or
+-- after HOME_HOLD seconds.
+local HOME_HOLD=15
 function Lobby:home(player,text)
+	local now=self.svc.now()
+	local since=self.homing[player.UserId]
+	if since and now-since<HOME_HOLD then return end
+	self.homing[player.UserId]=now
 	local p=self.players[player.UserId]
 	if p then self:status(p,text or "BACK TO THE LOBBY…") end
 	self:teleport(player,nil)

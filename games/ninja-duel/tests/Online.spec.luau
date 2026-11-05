@@ -421,7 +421,8 @@ end)
 test("a client resync (Ready) gets the packet of its current online phase",function()
 	local m=fresh()
 	local a,b=join(m,"Alpha","Bravo")
-	local function ready(p) m.sessions[p].bucket.tokens=100;m:request(p,{action="Ready"});return last(p) end
+	-- (05/11) each call a fresh resync: the half-second Ready gap has its own test.
+	local function ready(p) m.sessions[p].bucket.tokens=100;m.sessions[p].lastReady=nil;m:request(p,{action="Ready"});return last(p) end
 	lifecycle(m,a,"Host",{player="Lion"})
 	local code=last(a).online.code
 	local packet=ready(a)
@@ -637,6 +638,91 @@ test("the client UI renders the real roster, queue, pick, duel and result packet
 	local p=join(m,"Solo")
 	m:start(p,"Flashstep","Mirage");m.sessions[p].introUntil=nil;step(m,.1);ui:render(last(p))
 	assert(ui.hud.Visible and ui.enemy.title.Text:sub(1,2)=="AI" and ui.rematchButton.Text~=nil)
+end)
+
+-- (05/11, lot 4 review) Every action name the client source can send: the
+-- literals of its send(...) calls, plain or conditional ("Seal"..i and
+-- "Technique"..i expanded to slots 1-5), the touch buttons' act/press, the
+-- face buttons' names and the key tables Input binds in a loop. LobbyPanel
+-- talks to its own remote.
+local function clientActions()
+	local fs=require("@lune/fs")
+	local SRC=if fs.isDir("src") then "src" else "games/ninja-duel/src"
+	local names={}
+	local function add(name,dots) if dots==".." then for i=1,5 do names[name..i]=true end else names[name]=true end end
+	local function take(text) for name,dots in string.gmatch(text,"\"(%u%w*)\"(%.?%.?)") do add(name,dots) end end
+	for _,file in fs.readDir(SRC.."/Client") do
+		if string.match(file,"%.luau$") and file~="LobbyPanel.luau" then
+			for line in string.gmatch(fs.readFile(SRC.."/Client/"..file),"[^\n]+") do
+				for name,dots in string.gmatch(line,"send%(\"(%u%w*)\"(%.?%.?)") do add(name,dots) end
+				for cond in string.gmatch(line,"send%((if .- else \"%u%w*\"%.?%.?)") do take(cond) end
+				for name,dots in string.gmatch(line,"press%(\"(%u%w*)\"(%.?%.?)") do add(name,dots) end
+				for name in string.gmatch(line,"%f[%w]act%(\"(%u%w*)\"%)") do add(name,"") end
+				for name in string.gmatch(line,"face%(state,obj,\"(%u%w*)\"") do add(name,"") end
+				local list=string.match(line,"for _,action in (%b{}) do");if list then take(list) end
+				local cond=string.match(line,"local action=(if .- else \"%u%w*\")");if cond then take(cond) end
+			end
+		end
+	end
+	return names
+end
+
+test("(05/11, lot 4 review) the request vocabulary: all the client sends passes, an unknown name never reaches the anti-cheat",function()
+	local sent=clientActions()
+	for _,name in {"Attack","PadJump","Jump","Seal5","Technique1","SealRelease","Awaken","Pursuit","Move","Ready","First","Start","Pick","Confirm","CupBracket","TutorialStep","Queue"} do
+		assert(sent[name],"the client scan lost "..name)
+	end
+	for name in sent do assert(Matches.ACTIONS[name],"the client sends "..name.." and the server would refuse it") end
+	-- A local duel: junk names stop at the door, before AntiCheat.check keeps
+	-- an entry for each one until the duel ends.
+	local m=fresh()
+	local p=join(m,"Solo")
+	m:start(p,"Flashstep","Mirage")
+	local s=m.sessions[p];s.introUntil=nil
+	local checked={}
+	local check=AntiCheat.check
+	AntiCheat.check=function(actor,action,...) table.insert(checked,action);return check(actor,action,...) end
+	local ok,err=pcall(function()
+		s.human.cue=""
+		for i=1,50 do send(m,p,"Junk"..i,{clientTime=clock}) end
+		send(m,p,"ThrowUp",{clientTime=clock})
+		assert(#checked==0,"an unknown name reached the anti-cheat: "..tostring(checked[1]))
+		assert(s.human.cue~="UNKNOWN ACTION" and s.human.state=="Neutral","an unknown name reached Combat")
+		AntiCheat.clear(s.human);send(m,p,"Attack",{clientTime=clock})
+		assert(#checked==1 and s.human.state=="Startup","a real press was refused")
+	end)
+	AntiCheat.check=check
+	assert(ok,err)
+end)
+
+test("(05/11, lot 4 review) Ready: one full snapshot per half second",function()
+	local m=fresh()
+	local p=join(m,"Solo")
+	m:start(p,"Flashstep","Mirage")
+	local s=m.sessions[p]
+	local function ready() s.bucket.tokens=100;m:request(p,{action="Ready"}) end
+	local before=#inbox[p]
+	ready();ready();ready()
+	assert(#inbox[p]==before+1,"Ready answered "..(#inbox[p]-before).." times inside its gap")
+	assert(last(p).phase=="Duel","Ready did not resend the duel")
+	s.lastReady-=Matches.READY_GAP
+	ready()
+	assert(#inbox[p]==before+2,"Ready refused after its gap")
+end)
+
+test("(05/11, lot 4 review) online picks: one broadcast per gap, the last pick always lands",function()
+	local m=fresh()
+	local a,b=join(m,"Alpha","Bravo")
+	lifecycle(m,a,"Queue",{player="Flashstep"});lifecycle(m,b,"Queue",{player="Mirage"})
+	local d=duelOf(m,a)
+	send(m,a,"Pick",{player="GentleFist"})
+	assert(last(b).online.them=="GentleFist","the first pick was not broadcast at once")
+	local packets=#inbox[b]
+	for _,id in {"Lion","Sand","Leaf","Lion","Legion"} do send(m,a,"Pick",{player=id}) end
+	assert(d.seats[1].fighter=="Legion","a pick was lost")
+	assert(#inbox[b]==packets,"picks inside the gap were broadcast one by one")
+	step(m,m.online.PICK_GAP+.02)
+	assert(#inbox[b]==packets+1 and last(b).online.them=="Legion","the held pick never reached the opponent")
 end)
 
 print(string.format("NinjaDuel online 1v1: %d PASS (server lifecycle/authority; replication, latency and two-client Studio still required)",passed))

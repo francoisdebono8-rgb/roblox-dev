@@ -142,11 +142,20 @@ function Online:refresh(player,s)
 	if o.kind=="duel" then self.matches:send(player,self:packet(o.duel,o.seat))
 	else self.matches:send(player,self:waiting(s)) end
 end
+-- (05/11, lot 4 review) A pick is always taken, but its broadcast to both
+-- players waits PICK_GAP after the last one (Online:update sends the held
+-- one): a client cycling the roster made one broadcast per request.
+Online.PICK_GAP=.2
 function Online:pick(d,seat,action,payload)
 	if seat.ready then return end
 	if action=="Pick" then
 		local id=fighter(payload.player)
-		if id and id~=seat.fighter then seat.fighter=id;self:broadcast(d) end
+		if id and id~=seat.fighter then
+			seat.fighter=id
+			local now=workspace:GetServerTimeNow()
+			if now>=(d.lastPickCast or -math.huge)+Online.PICK_GAP then d.lastPickCast=now;self:broadcast(d)
+			else d.nextPick=math.min(d.nextPick or 0,d.lastPickCast+Online.PICK_GAP) end
+		end
 	elseif action=="Confirm" then
 		seat.ready=true
 		if d.seats[1].ready and d.seats[2].ready then self:fight(d) else self:broadcast(d) end
@@ -306,7 +315,7 @@ function Online:update(dt,now)
 		if not self.duels[d] then continue end
 		if d.phase=="Pick" then
 			if now>=d.pickUntil then self:fight(d)
-			elseif now>=(d.nextPick or 0) then d.nextPick=now+1;self:broadcast(d) end
+			elseif now>=(d.nextPick or 0) then d.nextPick=now+1;d.lastPickCast=now;self:broadcast(d) end
 			continue
 		end
 		local c=d.combat

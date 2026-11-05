@@ -320,4 +320,26 @@ test("client panel: the list, a challenge, an invitation answered, the status li
 	assert(ok,err)
 end)
 
+test("(05/11, lot 4 review) home on a duel server: one teleport in flight per player",function()
+	local world=cloud()
+	world.store:GetHashMap(T.DuelMap):SetAsync("ps7",{a=701,b=702,fa="Lion",fb="Sand"},600)
+	local d=server(world,"D",{privateServerId="ps7"})
+	local alice={UserId=701,Name="Alice",DisplayName="Alice",Parent=H.Players}
+	d.m:selection(alice);d.lobby:track(alice)
+	-- A teleport that fails frees the way at once.
+	local teleport=world.teleport.TeleportAsync
+	world.teleport.TeleportAsync=function() error("teleport down") end
+	op(d,alice,{op="home"})
+	world.teleport.TeleportAsync=teleport
+	assert(#world.teleports==0 and d.lobby.homing[alice.UserId]==nil,"a failed teleport kept the player flagged")
+	for _=1,8 do op(d,alice,{op="home"}) end
+	assert(#world.teleports==1,"home spammed: "..#world.teleports.." teleports")
+	-- One that never took him away is retried after the hold.
+	tick(world,{d},16)
+	op(d,alice,{op="home"})
+	assert(#world.teleports==2,"home never retried")
+	d.lobby:untrack(alice)
+	assert(d.lobby.homing[alice.UserId]==nil,"a player who left stays flagged")
+end)
+
 print(("Lobby: %d passed"):format(passed))
