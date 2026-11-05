@@ -213,6 +213,9 @@ local function relief(scar,palette)
 	local material,skin=WorldReaction.skinAt(scar.position,scar.surface)
 	-- Grass breaks into the earth under it.
 	if material==Enum.Material.Grass then material=Enum.Material.Ground;skin=skin:Lerp(Color3.fromRGB(110,88,62),.7) end
+	-- (06/11) the arena's packed earth is a flat SmoothPlastic for its look:
+	-- broken, it shows the grain of earth
+	if material==Enum.Material.SmoothPlastic or material==Enum.Material.Plastic then material=Enum.Material.Ground end
 	local slab=skin:Lerp(Color3.new(0,0,0),.12)
 	local under=skin:Lerp(palette.dark,.6)
 	-- The bowl itself: the torn ground, darker, never black.

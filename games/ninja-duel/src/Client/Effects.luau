@@ -1672,19 +1672,41 @@ function FX.dressScar(part)
 	end)
 end
 -- (Jutsu pass 06/11, user: « la traînée que laisse la boule de feu, c'est
--- super moche ») Itachi's burning lane (Server/Elements.burnLane) is a row of
--- patches 5 studs apart: each was drawn as its own round fire, so the lane
--- read as a dotted line of fire blobs on clean sand. Now each patch draws the
--- piece of ground from the previous patch of the same lane to itself: a
--- charred strip with ragged edges (overlapping dark ovals), glowing ember
--- cracks along it, low flames licking over the whole segment (a box emitter
--- the segment's length, small and many) and a thin smoke; when the fire is
--- out the embers die first and the scorched ground stays a few seconds more.
-FX.LANE={Char=Color3.fromRGB(34,26,22),CharEdge=Color3.fromRGB(70,52,38),Ember=Color3.fromRGB(255,120,40),Linger=4}
+-- super moche… j'espère que tu as retiré la bande… avec un contour jaune »)
+-- Itachi's burning lane (Server/Elements.burnLane) is a row of patches 5
+-- studs apart. Each patch now draws the piece of ground from the previous
+-- patch of the same lane to itself, with nothing straight in it: scorch marks
+-- (VfxKit's radial burn streaks, ragged by nature) overlapping along the
+-- segment and each turned at random, so the burnt ground has no edge and no
+-- outline; embers (glowing sparks) crawling and lifting off the burnt ground
+-- instead of drawn lines; low flames licking over the whole segment (a box
+-- emitter the segment's length) and a thin smoke. When the fire is out the
+-- embers die first and the scorched ground stays a few seconds more.
+FX.LANE={Char=Color3.fromRGB(46,34,26),Ember=Color3.fromRGB(255,120,40),Linger=4}
 local lanePrev=setmetatable({},{__mode="k"})
+-- Scorch marks laid on the floor, held for `hold` then faded.
+local function scorchMarks(parent,at,normal,frame,length,radius,count,hold,fade,rng)
+	local marks={}
+	if not Kit.has("scorch") then return marks end
+	for k=1,count do
+		local u=if count==1 then 0 else (k-1)/(count-1)-.5
+		local p=frame*CFrame.new(rng:NextNumber(-.5,.5)*radius*.3,0,u*length*.75)
+		local m=Kit.ground(parent,p.Position,normal,"scorch",radius*(2.3+rng:NextNumber(0,.7)),hold,fade,FX.LANE.Char,rng:NextNumber(0,.12))
+		if m then table.insert(marks,m) end
+	end
+	return marks
+end
+local function emberEmitter(parent,rate)
+	return new("ParticleEmitter",{Name="Embers",Texture=TEX.spark,Rate=rate,Lifetime=NumberRange.new(.7,1.4),Speed=NumberRange.new(.4,2.2),
+		SpreadAngle=Vector2.new(40,40),EmissionDirection=Enum.NormalId.Top,Shape=Enum.ParticleEmitterShape.Box,
+		Color=seq({{0,Color3.fromRGB(255,214,120)},{.4,FX.LANE.Ember},{1,Color3.fromRGB(120,30,10)}}),LightEmission=1,LightInfluence=0,
+		Size=num({{0,.2},{.6,.14},{1,0}}),Transparency=num({{0,0},{.8,.2},{1,1}}),Acceleration=Vector3.new(0,1.6,0),Drag=1.2,
+		RotSpeed=NumberRange.new(-60,60),Rotation=NumberRange.new(0,360),ZOffset=.3},parent)
+end
 function FX:lanePatch(h)
 	local floor=floorUnder(self,h.position,3,14)
-	local at=(if floor then floor.Position else h.position-Vector3.new(0,.5,0))+Vector3.new(0,.04,0)
+	local at=(if floor then floor.Position else h.position-Vector3.new(0,.5,0))
+	local normal=if floor and floor.Normal.Y>.6 then floor.Normal else Vector3.yAxis
 	lanePrev[self]=lanePrev[self] or {}
 	local prev=lanePrev[self][h.lane]
 	lanePrev[self][h.lane]=at
@@ -1696,30 +1718,9 @@ function FX:lanePatch(h)
 	local frame=CFrame.lookAt(mid,mid+dir)
 	local holder=new("Model",{Name="FireLane"},self.folder)
 	local rng=Random.new(math.floor(at.X*31+at.Z*17))
-	local LOOK=FX.LANE
-	local scorch={}
-	-- the charred ground: three overlapping ovals along the segment
-	for k=-1,1 do
-		local w=h.radius*(1.5+rng:NextNumber(-.2,.25))
-		local l=length*.5+rng:NextNumber(0,1.2)
-		local p=block(holder,Vector3.new(w,.05,l),frame*CFrame.new(rng:NextNumber(-.4,.4),.001*(k+2),k*length*.28)*CFrame.Angles(0,rng:NextNumber(-.25,.25),0),
-			if k==0 then LOOK.Char else LOOK.CharEdge,Enum.Material.Slate)
-		new("SpecialMesh",{MeshType=Enum.MeshType.Sphere,Scale=Vector3.new(1,.3,1)},p)
-		p.Transparency=1
-		tween(p,.18,{Transparency=if k==0 then .05 else .25})
-		table.insert(scorch,p)
-	end
-	-- ember cracks: thin glowing lines zig-zagging along the strip
-	local embers={}
-	local last=frame*CFrame.new(rng:NextNumber(-.5,.5),.06,-length*.45)
-	for k=1,4 do
-		local nextCF=frame*CFrame.new(rng:NextNumber(-h.radius*.45,h.radius*.45),.06,-length*.45+k*length*.225)
-		local a,b=last.Position,nextCF.Position
-		local seg=block(holder,Vector3.new(.12,.04,(b-a).Magnitude),CFrame.lookAt((a+b)/2,b),LOOK.Ember,Enum.Material.Neon)
-		seg.Transparency=.15
-		table.insert(embers,seg)
-		last=nextCF
-	end
+	local linger=FX.LANE.Linger
+	-- the scorched ground
+	local marks=scorchMarks(holder,mid,normal,frame,length,h.radius,if from then 3 else 2,(h.remaining or 2.6)+linger*.6,linger*.4,rng)
 	-- the flames: low, many, over the whole segment
 	local box=anchorPart(holder,mid+Vector3.new(0,.3,0));box.Transparency=1;box.Size=Vector3.new(h.radius*1.3,.2,length*.9)
 	box.CFrame=frame+Vector3.new(0,.3,0)
@@ -1728,6 +1729,10 @@ function FX:lanePatch(h)
 		Color=seq({{0,Color3.fromRGB(255,232,160)},{.35,Color3.fromRGB(255,128,40)},{1,Color3.fromRGB(110,34,14)}}),LightEmission=.9,LightInfluence=0,
 		Size=num({{0,.6},{.3,1.5},{1,.2}}),Transparency=num({{0,.15},{.7,.4},{1,1}}),Acceleration=Vector3.new(0,2,0),
 		RotSpeed=NumberRange.new(-90,90),Rotation=NumberRange.new(0,360),ZOffset=.2},box)
+	-- the embers: sparks crawling and lifting off the burnt ground
+	local ground=anchorPart(holder,mid+Vector3.new(0,.15,0));ground.Transparency=1;ground.Size=Vector3.new(h.radius*1.6,.1,length)
+	ground.CFrame=frame+Vector3.new(0,.15,0)
+	local embers=emberEmitter(ground,28)
 	local smoke=new("ParticleEmitter",{Texture=TEX.smoke,Rate=6,Lifetime=NumberRange.new(.9,1.4),Speed=NumberRange.new(2,4),
 		SpreadAngle=Vector2.new(15,15),EmissionDirection=Enum.NormalId.Top,Shape=Enum.ParticleEmitterShape.Box,
 		Color=ColorSequence.new(Color3.fromRGB(70,58,52)),LightInfluence=1,Size=num({{0,1.2},{1,3.4}}),Transparency=num({{0,.6},{1,1}}),
@@ -1735,23 +1740,21 @@ function FX:lanePatch(h)
 	local light=new("PointLight",{Color=Color3.fromRGB(255,130,60),Brightness=1.6,Range=h.radius*3,Shadows=false},box)
 	local crackle=new("Sound",{SoundId=SOUND.fireLoop,Volume=.14,Looped=true,PlaybackSpeed=.85+rng:NextNumber()*.3,RollOffMaxDistance=60},box)
 	pcall(function() crackle:Play() end)
-	return {lane=true,holder=holder,scorch=scorch,embers=embers,flames=flames,smoke=smoke,light=light,born=os.clock()}
+	return {lane=true,holder=holder,marks=marks,embers=embers,flames=flames,smoke=smoke,light=light,crackle=crackle,born=os.clock()}
 end
 function FX.laneUpdate(entry,h)
 	local t=os.clock()
 	entry.light.Brightness=1.3+math.sin(t*19+entry.born)*.35+math.sin(t*7)*.25
 	if h.remaining<.5 then entry.flames.Rate=30 end
-	for k,e in entry.embers do e.Transparency=.1+.25*(.5+.5*math.sin(t*6+k*1.7)) end
 end
 function FX.laneFinish(entry)
 	entry.flames.Enabled=false;entry.smoke.Rate=3
+	entry.embers.Rate=8
 	tween(entry.light,.4,{Brightness=0})
-	for _,e in entry.embers do tween(e,.9,{Transparency=1,Color=Color3.fromRGB(60,30,20)}) end
+	if entry.crackle then tween(entry.crackle,.6,{Volume=0}) end
 	local linger=FX.LANE.Linger
-	task.delay(linger*.6,function()
-		entry.smoke.Enabled=false
-		for _,p in entry.scorch do if p.Parent then tween(p,linger*.4,{Transparency=1}) end end
-	end)
+	task.delay(1.2,function() if entry.embers.Parent then entry.embers.Enabled=false end end)
+	task.delay(linger*.6,function() if entry.smoke.Parent then entry.smoke.Enabled=false end end)
 	Debris:AddItem(entry.holder,linger+.2)
 end
 function FX:hazardsStep(data)
@@ -1782,11 +1785,14 @@ function FX:hazardsStep(data)
 			local floor=floorUnder(self,h.position,3,14)
 			local at=if floor then floor.Position else h.position
 			local holder=anchorPart(self.folder,at);holder.Transparency=1;holder.Size=Vector3.new(h.radius*1.6,.2,h.radius*1.6)
-			-- (06/11) the ground under a burning patch chars (a ragged dark
-			-- oval), the flames lick low over it instead of a ball of fire
-			local char=block(self.folder,Vector3.new(h.radius*2,.05,h.radius*1.7),CFrame.new(at+Vector3.new(0,.04,0))*CFrame.Angles(0,math.random()*6.28,0),FX.LANE.Char,Enum.Material.Slate)
-			new("SpecialMesh",{MeshType=Enum.MeshType.Sphere,Scale=Vector3.new(1,.3,1)},char)
-			char.Transparency=1;tween(char,.2,{Transparency=.08})
+			-- (06/11) the ground under a burning patch is scorched (ragged burn
+			-- marks, no outline), embers crawl on it, the flames lick low over it
+			local normal=if floor and floor.Normal.Y>.6 then floor.Normal else Vector3.yAxis
+			local charHolder=new("Model",{Name="FireScorch"},self.folder)
+			scorchMarks(charHolder,at,normal,CFrame.new(at)*CFrame.Angles(0,math.random()*6.28,0),h.radius*.8,h.radius*.85,2,
+				(h.remaining or 3)+FX.LANE.Linger*.6,FX.LANE.Linger*.4,Random.new())
+			Debris:AddItem(charHolder,(h.remaining or 3)+FX.LANE.Linger+.3)
+			local embers=emberEmitter(holder,math.floor(10+h.radius*3))
 			local e=new("ParticleEmitter",{Texture=TEX.fire,Rate=60,Lifetime=NumberRange.new(.35,.65),Speed=NumberRange.new(2.5,5),
 				SpreadAngle=Vector2.new(10,10),EmissionDirection=Enum.NormalId.Top,Shape=Enum.ParticleEmitterShape.Box,
 				Color=seq({{0,Color3.fromRGB(255,232,160)},{.35,Color3.fromRGB(255,128,40)},{1,Color3.fromRGB(110,34,14)}}),LightEmission=.9,LightInfluence=0,
@@ -1794,7 +1800,7 @@ function FX:hazardsStep(data)
 			local light=new("PointLight",{Color=Color3.fromRGB(255,130,60),Brightness=1.8,Range=h.radius*3,Shadows=false},holder)
 			local crackle=new("Sound",{SoundId=SOUND.fireLoop,Volume=.18,Looped=true,PlaybackSpeed=.9+math.random()*.2,RollOffMaxDistance=60},holder)
 			pcall(function() crackle:Play() end)
-			entry={holder=holder,emitter=e,light=light,char=char}
+			entry={holder=holder,emitter=e,light=light,embers=embers}
 			self.hazards[key]=entry
 		end
 		-- Readable, not noisy: a small burning patch (a chakra blade's) flickers
@@ -1810,12 +1816,8 @@ function FX:hazardsStep(data)
 			FX.hazardFinish(entry);self.hazards[key]=nil
 		elseif not live[key] then
 			entry.emitter.Enabled=false;tween(entry.light,.3,{Brightness=0})
-			Debris:AddItem(entry.holder,1);self.hazards[key]=nil
-			if entry.char then
-				local char=entry.char
-				task.delay(FX.LANE.Linger*.6,function() if char.Parent then tween(char,FX.LANE.Linger*.4,{Transparency=1}) end end)
-				Debris:AddItem(char,FX.LANE.Linger+.2)
-			end
+			if entry.embers then entry.embers.Rate=4 end
+			Debris:AddItem(entry.holder,1.2);self.hazards[key]=nil
 		end
 	end
 end

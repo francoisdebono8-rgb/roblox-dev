@@ -8,6 +8,19 @@
 -- Effects keeps the base chakra drawing (sheath, trail, the planted blade,
 -- the contact flashes); this layer adds what makes it readable.
 -- Presentation only: nothing here can change gameplay.
+--
+-- (06/11, user: « Tout ce qui est chargé au chakra, on comprend pas bien,
+-- c'est similaire pour beaucoup. [...] Et il faut qu'il y ait des bruits
+-- pour tout ça aussi. ») Every infused flight wore the same glowing tube
+-- (Effects' sheath) and flew silent; chakra contacts were silent too. The
+-- sheath now takes its nature's character (lightning: a white core that
+-- flickers; fire and wind: thinned so the flames / the cutting edges carry
+-- the look; reinforced steel: denser), a fire blade throws embers behind
+-- it, each flight is heard leaving the hand (FlightSound), every chakra
+-- contact is heard in its nature (ContactSound), a wind contact sends
+-- streaks of air on along its line, a fire one scatters embers, and a live
+-- lightning trap, wire or locked body buzzes now and then. Sounds come only
+-- from the game's own set (Effects SOUND).
 local Debris=game:GetService("Debris")
 local Shared=game:GetService("ReplicatedStorage").NinjaDuel
 local Fighters=require(Shared.Fighters)
@@ -63,6 +76,51 @@ local function ownerColor(data,id)
 	return if def and def.Color then Color3.fromRGB(table.unpack(def.Color)) else STEEL
 end
 local function find(folder,id) return folder and id and folder:FindFirstChild(id) end
+-- (06/11) {sound (Effects SOUND), volume, pitch, fade}: pitch and layering
+-- keep the natures apart where two share a recording.
+ChakraFX.FlightSound={
+	Lightning={{"electric",.3,1.45}},              -- a buzz flying with it
+	Fire={{"fireLoop",.32,1.2,.45},{"whoosh",.2,.7}}, -- a burning fwoosh
+	Wind={{"whooshBy",.32,1.85}},                  -- a high whistle
+	Reinforce={{"swish",.3,.62}},                  -- heavy steel humming through
+}
+ChakraFX.ContactSound={
+	shock={{"electric",.45,1}},pointshock={{"electric",.45,1.1}},wirecharge={{"electric",.4,1.2}},
+	surge={{"electric",.4,1.25}},conduct={{"electric",.35,1.35}},arc={{"electric",.22,1.7}},
+	ignite={{"fireLoop",.35,1.15,.45},{"boom",.2,1.7}},burn={{"fireLoop",.3,1.25,.35}},absorb={{"fireLoop",.35,1,.5},{"boom",.18,1.5}},
+	wireburn={{"fireLoop",.4,.9,.6},{"whoosh",.3,.55}},dragonflame={{"fireLoop",.4,.85,.7}},
+	gust={{"whooshBy",.42,1.5}},blown={{"whooshBy",.35,1.7}},
+	cut={{"swish",.45,1.75}},wirecut={{"swish",.35,1.9}},
+	crush={{"heavy",.45,.85},{"rock",.3,1.2}},
+	deflect={{"hit",.25,1.9}},knock={{"hit",.25,1.8}},intercept={{"hit",.28,1.7}},
+	swat={{"hit",.3,1.5},{"whoosh",.2,.5}},throughguard={{"hit",.35,1.4},{"whoosh",.25,.45}},tenketsu={{"hit",.22,1.8}},
+	plant={{"rock",.2,1.5}},stretch={{"swish",.2,1.2}},recover={{"swish",.18,1.5}},fizzle={{"whoosh",.15,1.8}},
+}
+local BUZZ={{"electric",.1,1.7}} -- a live trap, wire or locked body, now and then
+-- A cue's sounds on a part (they follow it), each a hair off pitch.
+local function play(parent,cue,scale)
+	if not (cue and parent) then return end
+	for _,s in cue do
+		local id=K.SOUND[s[1]]
+		if id then K.sound(parent,id,s[2]*(scale or 1),s[3]*(.96+math.random()*.08),s[4]) end
+	end
+end
+local function emberRamp()
+	return K.seq({{0,Color3.fromRGB(255,232,150)},{1,Color3.fromRGB(255,96,30)}})
+end
+-- (06/11) Effects' sheath is the same glowing tube on every nature: each one
+-- wears it its own way. Lightning: a white core (returned, a flight flickers
+-- it); fire and wind: thinned so the flames / the cutting edges carry the
+-- look; reinforced steel: denser.
+local function restyle(model,nature)
+	local sheath=model and model:FindFirstChild("ChakraSheath")
+	local look=infusion(nature)
+	if not (sheath and look) then return nil end
+	if nature=="Lightning" then sheath.Color=look.core;return sheath end
+	if nature=="Fire" or nature=="Wind" then sheath.Transparency=.82
+	elseif nature=="Reinforce" then sheath.Transparency=.42 end
+	return nil
+end
 local function piece(parent,name,size,cf,color,transparency,shape)
 	local p=K.block(parent,size,cf,color,NEON)
 	p.Name=name;p.Transparency=transparency or 0
@@ -171,7 +229,12 @@ local function stepMarks(fx,st,data,now,clock,dt)
 		if p.planted and p.planted~="held" and p.expires and p.origin then
 			live[p.id]=true
 			local mark=st.marks[p.id]
-			if not mark then mark=buildMark(fx,data,p);st.marks[p.id]=mark end
+			if not mark then
+				mark=buildMark(fx,data,p);st.marks[p.id]=mark
+				-- (06/11) a planted infused blade wears its nature's sheath too
+				local entry=p.infusion and fx.projectiles and fx.projectiles[p.id]
+				if entry then restyle(entry.model,p.infusion) end
+			end
 			local charged=(p.charged or 0)>now
 			local life=math.max(.05,p.expires-(p.born or now))
 			local remaining=math.max(0,p.expires-now)
@@ -185,6 +248,11 @@ local function stepMarks(fx,st,data,now,clock,dt)
 					local side=(mark.tip-mark.origin):Cross(Vector3.yAxis)
 					side=if side.Magnitude>.05 then side.Unit*.45 else Vector3.xAxis*.45
 					arc(fx,"WireCrackle",at-side,at+side+Vector3.new(0,.4,0),lightning().core,.06,.08)
+				end
+				-- (06/11) and is heard
+				if charged and clock>=(mark.nextBuzz or 0) then
+					mark.nextBuzz=clock+.7+math.random()*.4
+					play(mark.ticks[1],BUZZ)
 				end
 			else
 				local meaning=if charged or p.mark=="shock" then "shock" elseif p.owner==viewer then "pickup" else "deny"
@@ -200,6 +268,11 @@ local function stepMarks(fx,st,data,now,clock,dt)
 						mark.nextArc=clock+.12
 						local a=(mark.frame*CFrame.Angles(0,0,math.random()*math.pi*2)*CFrame.new(0,1.05,0)).Position
 						arc(fx,"MarkArc",a,mark.frame.Position,lightning().core,.05,.08)
+					end
+					-- (06/11) a live trap buzzes now and then
+					if clock>=(mark.nextBuzz or 0) then
+						mark.nextBuzz=clock+.8+math.random()*.5
+						play(mark.glyphParts[1] or mark.ticks[1],BUZZ)
 					end
 				end
 			end
@@ -279,6 +352,11 @@ local function stepHolds(fx,st,data,now,clock,folder)
 				hold.nextArc=clock+.05
 				local at=start:Lerp(body,math.random())
 				arc(fx,"WireCurrent",at,at+Vector3.new(math.random()-.5,math.random()-.5,math.random()-.5),lightning().core,.05,.07)
+			end
+			-- (06/11) the current is heard along the line
+			if charged and clock>=(hold.nextBuzz or 0) then
+				hold.nextBuzz=clock+.6
+				play(hold.knot,BUZZ,1.4)
 			end
 		end
 	end
@@ -374,12 +452,28 @@ local function decorate(fx,entry)
 		K.weldAll(root,made)
 		for _,part in made do part.LocalTransparencyModifier=if entry.hidden then 1 else 0 end
 	end
+	-- (06/11) its sheath in its nature's way (lightning's flickers in flight)
+	entry.chakraSheath=restyle(entry.model,nature)
+	if nature=="Fire" then
+		-- embers shed behind the burning blade, left hanging in its wake
+		local at=K.new("Attachment",{Name="ChakraEmbers",Position=Vector3.new(0,0,.3)},root)
+		entry.chakraEmbers=K.new("ParticleEmitter",{Name="Embers",Enabled=false,Texture=K.TEX.fireSpark,Rate=40,Lifetime=NumberRange.new(.3,.55),
+			Speed=NumberRange.new(1,3),SpreadAngle=Vector2.new(180,180),Acceleration=Vector3.new(0,5,0),Drag=2,LightEmission=1,LightInfluence=0,
+			Color=emberRamp(),Size=K.num({{0,.3},{1,.05}}),ZOffset=.5},at)
+	end
 end
 local function stepFlights(fx,clock)
 	for _,entry in fx.projectiles do
 		local p=entry.data
 		if not entry.static and p and p.infusion and entry.root and entry.model then
 			if not entry.chakraLook then decorate(fx,entry) end
+			-- (06/11) heard as it leaves the hand, the sound flying with it
+			if not entry.hidden and not entry.chakraHeard then
+				entry.chakraHeard=true
+				play(entry.root,ChakraFX.FlightSound[p.infusion])
+			end
+			if entry.chakraEmbers then entry.chakraEmbers.Enabled=not entry.hidden end
+			if entry.chakraSheath and not entry.hidden then entry.chakraSheath.Transparency=if math.random()<.35 then .85 else .3 end
 			if p.infusion=="Lightning" and not entry.hidden and clock>=(entry.nextArc or 0) then
 				entry.nextArc=clock+.05
 				local back=entry.root.CFrame.LookVector*-1.4
@@ -461,11 +555,37 @@ local function dragonFlame(fx,impact)
 		end)
 	end
 end
+-- (06/11) A wind contact: streaks of air carried on along its line.
+local function windPast(fx,impact)
+	local at=impact.position
+	local dir=impact.direction or Vector3.zAxis
+	if dir.Magnitude<.05 then return end
+	dir=dir.Unit
+	local holder=K.anchorPart(fx.folder,at)
+	if math.abs(dir.Y)<.95 then holder.CFrame=CFrame.lookAt(at,at+dir)*CFrame.Angles(-math.pi/2,0,0) end
+	local wind=infusion("Wind")
+	local e=K.new("ParticleEmitter",{Enabled=false,LightInfluence=0,ZOffset=1,Texture=K.TEX.spark,Orientation=Enum.ParticleOrientation.VelocityParallel,
+		Lifetime=NumberRange.new(.1,.16),Speed=NumberRange.new(30,46),SpreadAngle=Vector2.new(16,16),
+		Color=ColorSequence.new(if wind then wind.core else STEEL),LightEmission=1,Size=K.num({{0,.45},{1,.1}}),
+		Squash=K.num({{0,-1.4},{1,-1.8}}),Transparency=K.num({{0,0},{1,.6}}),Drag=8},K.new("Attachment",{},holder))
+	e:Emit(8)
+	Debris:AddItem(holder,1)
+end
+-- (06/11) A fire contact: embers scattered off the body.
+local function embersAt(fx,at)
+	K.burst(fx.folder,at,{Texture=K.TEX.fireSpark,Lifetime=NumberRange.new(.5,.9),Speed=NumberRange.new(5,10),SpreadAngle=Vector2.new(180,180),
+		Acceleration=Vector3.new(0,6,0),Drag=2.5,LightEmission=1,Color=emberRamp(),Size=K.num({{0,.35},{1,.05}})},10)
+end
 local function drawImpact(fx,impact)
 	if impact.reason then explain(fx,impact) end
 	local kind=impact.chakra
 	if kind=="arc" then arcInto(fx,impact)
-	elseif kind=="dragonflame" then dragonFlame(fx,impact) end
+	elseif kind=="dragonflame" then dragonFlame(fx,impact)
+	elseif kind=="gust" or kind=="blown" then windPast(fx,impact)
+	elseif kind=="ignite" or kind=="absorb" then embersAt(fx,impact.position) end
+	-- (06/11) every chakra contact is heard in its nature
+	local cue=kind and ChakraFX.ContactSound[kind]
+	if cue and impact.position then play(K.anchorPart(fx.folder,impact.position),cue,if impact.heavy then 1.15 else 1) end
 end
 local function impact(fx,data,_folder)
 	if data.chakra or data.reason then guard(drawImpact,fx,data) end
@@ -496,6 +616,11 @@ local function body(fx,model,actor)
 			local offset=Vector3.new(math.random()-.5,math.random()-.5,math.random()-.5)*2.4
 			arc(fx,"ShockArc",center+offset,center-offset*.6,lightning().core,.06,.08)
 		end
+		-- (06/11) the locked body buzzes
+		if clock>=(b.nextBuzz or 0) then
+			b.nextBuzz=clock+.5+math.random()*.3
+			play(torso,BUZZ,1.3)
+		end
 	elseif b.shock then
 		b.shock:Destroy();b.shock=nil
 	end
@@ -509,6 +634,8 @@ local function body(fx,model,actor)
 				Size=K.num({{0,.9},{1,.2}}),Transparency=K.num({{0,.25},{1,1}})},at)
 			K.new("PointLight",{Color=fire.color,Brightness=1.4,Range=7,Shadows=false},at)
 			b.burn=at
+			-- (06/11) the flames catch with a crackle
+			play(feet,{{"fireLoop",.22,1.1,.6}})
 		end
 	elseif b.burn then
 		b.burn:Destroy();b.burn=nil

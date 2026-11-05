@@ -39,7 +39,12 @@ local function groundOf(scar)
 		if c:IsA("BasePart") and c.Name=="Scar chunk" and c.Material~=Enum.Material.SmoothPlastic then return c.Material,c.Color end
 	end
 	local hit=floorBelow(scar.Position,6,{scar})
-	if hit and hit.Instance:IsA("BasePart") then return hit.Instance.Material,hit.Instance.Color end
+	if hit and hit.Instance:IsA("BasePart") then
+		-- the arena's flat earth breaks into blocks with the grain of earth
+		local m=hit.Instance.Material
+		if m==Enum.Material.SmoothPlastic or m==Enum.Material.Plastic then m=Enum.Material.Ground end
+		return m,hit.Instance.Color
+	end
 	return Enum.Material.Ground,Color3.fromRGB(150,120,86)
 end
 local step
