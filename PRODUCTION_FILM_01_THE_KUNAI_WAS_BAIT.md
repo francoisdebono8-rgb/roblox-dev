@@ -1,4 +1,6 @@
 # CM — PRODUCTION FILM 01 : THE KUNAI WAS BAIT
+
+**POUR TOURNER VRAIMENT LES PLANS :** ouvrir [CM_START_HERE](CM_START_HERE.md) et [RUNBOOK PLAN PAR PLAN + ANTI-BUG](CM_EXECUTION_RUNBOOK_SHOTS_AND_BUG_QA.md). Ne pas monter de rushes P0 buggés.
 Date : 2026-11-05. Branche de livraison : **media-clips**. Demande utilisateur : fournir au CM toutes les instructions pour produire un vrai film promotionnel bien tourné et monté ; **ne pas refaire Naruto vs Sasuke, Gaara vs Rock Lee, ni un énième long duel « Who Wins? »**.
 
 ## 1. Contexte à ne pas manquer
