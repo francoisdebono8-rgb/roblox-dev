@@ -441,6 +441,8 @@ end
 --------------------------------------------------------------------------
 local Lighting = game:GetService("Lighting")
 local CROPW = 830 / 1480
+-- which side of the opening fight line the lenses keep (1 or -1; FILM01 v2:
+-- -1 keeps the arena sun behind the lens). _G.NDCam.side overrides it.
 local SIDE_SIGN = 1
 C.shot3, C.shotT = nil, 0
 local partCache = {}
@@ -543,7 +545,7 @@ local function lockAxis()
 	local ax = flat(rb.Position - ra.Position)
 	if ax.Magnitude > 0.5 then AXIS = ax.Unit end
 end
-local function SIDE() return AXIS:Cross(Vector3.yAxis) * SIDE_SIGN end
+local function SIDE() return AXIS:Cross(Vector3.yAxis) * (C.side or SIDE_SIGN) end
 local function tilt(dir, pitch)
 	local p = math.rad(pitch or 0)
 	return (dir * math.cos(p) + Vector3.yAxis * math.sin(p)).Unit
@@ -601,7 +603,14 @@ function SH.close(sp)
 	if #pts == 0 then return end
 	local c, size = bboxCenter(pts)
 	c -= V(0, (sp.drop or 0.35) * math.max(size.Y, 1.5), 0)
-	return pts, c, frontDir(sp.who, sp.ang, sp.pitch or -4), sp.fov or 30, sp.m or 0.86
+	-- (FILM01 v2) the face wherever the body turned: off the subject's own
+	-- front, not the opening fight line (after a teleport it showed his back)
+	local r = hrp(M)
+	local face = r and flat(r.CFrame.LookVector) or AXIS
+	face = face.Magnitude > 0.1 and face.Unit or AXIS
+	local a = math.rad(sp.ang or 35)
+	local side = face:Cross(Vector3.yAxis) * (C.side or SIDE_SIGN)
+	return pts, c, tilt(face * math.cos(a) + side * math.sin(a), sp.pitch or -4), sp.fov or 30, sp.m or 0.86
 end
 function SH.ots(sp)
 	local M, O = subject(sp.who)
@@ -642,7 +651,7 @@ local function film(on)
 	for _, n in ipairs({"NDFilmDOF", "NDFilmCC", "NDFilmBloom"}) do local e = Lighting:FindFirstChild(n); if e then e:Destroy() end end
 	if not on then return end
 	local cc = Instance.new("ColorCorrectionEffect"); cc.Name = "NDFilmCC"; cc.Contrast = 0.12; cc.Saturation = 0.12; cc.Parent = Lighting
-	local bl = Instance.new("BloomEffect"); bl.Name = "NDFilmBloom"; bl.Intensity = 0.7; bl.Threshold = 1.4; bl.Size = 28; bl.Parent = Lighting
+	local bl = Instance.new("BloomEffect"); bl.Name = "NDFilmBloom"; bl.Intensity = C.bloom or 0.25; bl.Threshold = 2.2; bl.Size = 20; bl.Parent = Lighting
 end
 B.film = film
 local sm = {}

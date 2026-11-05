@@ -1,1 +1,117 @@
-{"a": "Flashstep", "b": "GentleFist", "rounds": 1, "lead": 1.4, "tail": 0.8, "place": [[0, 3, 12], [0, 3, -2]], "beats": [{"name": "faceoff", "dur": 1.2}, {"name": "throw", "dur": 1.5, "acts": [{"at": 0, "who": "A", "move": [1, 0, 0], "stop": 0.75}, {"at": 0.35, "who": "A", "action": "Technique1", "aimFrom": {"who": "B", "off": [4.5, -3, -2.5]}}]}, {"name": "bait", "dur": 2.6, "acts": [{"at": 0.25, "who": "B", "move": [0.55, 0, 0.83], "stop": 0.15}, {"at": 0.6, "who": "B", "action": "Guard"}, {"at": 2.3, "who": "B", "action": "GuardOff"}]}, {"name": "teleport", "dur": 0.55, "acts": [{"at": 0, "who": "A", "stick": [-0.74, 0, -0.67], "hold": 0.3, "action": "Technique3"}, {"at": 0.2, "who": "A", "action": "Heavy"}, {"at": 0.24, "who": "B", "action": "Technique3"}]}, {"name": "counter", "dur": 1.6, "acts": [{"at": 0.05, "who": "B", "action": "Attack"}]}, {"name": "after", "dur": 2.0}]}
+{
+ "a": "Flashstep",
+ "b": "GentleFist",
+ "rounds": 1,
+ "lead": 3.0,
+ "tail": 0.8,
+ "place": [
+  [
+   0,
+   3,
+   12
+  ],
+  [
+   0,
+   3,
+   -2
+  ]
+ ],
+ "beats": [
+  {
+   "name": "faceoff",
+   "dur": 1.2
+  },
+  {
+   "name": "throw",
+   "dur": 1.5,
+   "acts": [
+    {
+     "at": 0,
+     "who": "A",
+     "move": [
+      1,
+      0,
+      0
+     ],
+     "stop": 0.5
+    },
+    {
+     "at": 0.35,
+     "who": "A",
+     "action": "Technique1",
+     "aimFrom": {
+      "who": "B",
+      "off": [
+       8,
+       -3,
+       -10
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "name": "bait",
+   "dur": 2.6,
+   "acts": [
+    {
+     "at": 0.4,
+     "who": "B",
+     "move": [
+      0.62,
+      0,
+      -0.78
+     ],
+     "stop": 0.33
+    },
+    {
+     "at": 1.0,
+     "who": "B",
+     "action": "Guard"
+    },
+    {
+     "at": 2.3,
+     "who": "B",
+     "action": "GuardOff"
+    }
+   ]
+  },
+  {
+   "name": "teleport",
+   "dur": 0.55,
+   "acts": [
+    {
+     "at": 0,
+     "who": "A",
+     "action": "Technique3"
+    },
+    {
+     "at": 0.2,
+     "who": "A",
+     "action": "Heavy"
+    },
+    {
+     "at": 0.24,
+     "who": "B",
+     "action": "Technique3"
+    }
+   ]
+  },
+  {
+   "name": "counter",
+   "dur": 1.6,
+   "acts": [
+    {
+     "at": 0.05,
+     "who": "B",
+     "action": "Attack"
+    }
+   ]
+  },
+  {
+   "name": "after",
+   "dur": 2.0
+  }
+ ],
+ "_note": "Kunai aimed 12.8 studs from Neji (Families.AIM_SNAP=12 would send it into him); Neji steps back toward the seal so the Flying Thunder God lands beside him (flat gap < 7); plain duel start (training runs the v39 tutorial)."
+}
