@@ -230,4 +230,19 @@ test("locked, back to the arena wall: the lens swings along it and keeps the pla
 	assert(onScreen(b.root.Position,2),"the swing lost the opponent")
 end)
 
+test("pad, free, backed into the arena wall: the lens swings along it too",function()
+	local _,a,b,cam=setup(10)
+	H.addWall(12)
+	a.root.CFrame=H.C.lookAt(V.new(10,3,0),V.new(-10,3,0))
+	b.root.CFrame=H.C.lookAt(V.new(-10,3,0),V.new(10,3,0))
+	run(cam,a,b,150,{gamepad=true})
+	local seen=onScreen(a.root.Position+V.new(0,1,0),2)
+	local side=camera.CFrame.Position.X
+	H.clearWalls()
+	if CALIBRATE then print(("  free pad wall: player on screen %s, lens x %.1f, swing %.2f"):format(tostring(seen),side,cam.wallYaw or 0)) end
+	assert(side<12,"the lens went through the wall")
+	assert(seen,"free on a pad, the player is still off screen with his back to the wall")
+	assert(onScreen(b.root.Position,2),"free on a pad, the swing lost the opponent")
+end)
+
 print(("CameraFeel: %d passed"):format(passed))

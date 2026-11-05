@@ -430,7 +430,11 @@ function Camera:update(data,dt)
 				self.yaw=wrap(self.yaw-math.sign(off)*turn)
 			end
 		end
-		desiredAngle=self.yaw
+		-- (FEEL 05/11, Studio: free with a pad, backed into the wall, the player
+		-- was off screen for 100 % of the frames) A pad's free lens swings
+		-- along the wall too; a mouse lens stays the player's (it turns the body).
+		self.baseAngle=self.yaw
+		desiredAngle=self.yaw+(if auto then (self.wallYaw or 0) else 0)
 	end
 	if not self.boomAngle then self.boomAngle=desiredAngle end
 	local delta=wrap(desiredAngle-self.boomAngle)
@@ -476,11 +480,23 @@ function Camera:update(data,dt)
 	-- Free, the lens follows the player (over the shoulder); locked, the pair.
 	-- (05/11) Blended by lockT, so the toggle slides; on a pad the free lens
 	-- leans a little toward the fight it keeps in view.
-	if lockT<.999 then
+	-- (FEEL 05/11) A pad's free lens swung along the wall (steerAroundWall)
+	-- frames the pair while it is swung, as a lock would: seen from the side,
+	-- the player alone left the opponent out (Studio: 209 of 240 frames).
+	local pairT=lockT
+	if auto and not lost then pairT=math.max(lockT,math.clamp(math.abs(self.wallYaw or 0)/.6,0,1)) end
+	if pairT<.999 then
 		local look=Vector3.new(-boom.X,0,-boom.Z)
 		local freeFocus=a+Vector3.new(0,1.6,0)+(if look.Magnitude>.05 then look.Unit:Cross(Vector3.yAxis)*1.7 else Vector3.zero)
-		if auto and not lost then freeFocus+=flat.Unit*math.min(separation*.1,2.5) end
-		targetFocus=freeFocus:Lerp(targetFocus,lockT)
+		if auto and not lost then
+			freeFocus+=flat.Unit*math.min(separation*.1,2.5)
+			-- (FEEL 05/11) and climbs with a body launched far above.
+			if vertical>8 then
+				local k=math.clamp((vertical-8)/10,0,1)
+				freeFocus=Vector3.new(freeFocus.X,freeFocus.Y+(targetFocus.Y-freeFocus.Y)*k,freeFocus.Z)
+			end
+		end
+		targetFocus=freeFocus:Lerp(targetFocus,pairT)
 	end
 	-- (FEEL 05/11) a body shooting far up is followed faster (AVANT defect 2).
 	local focusRate=if vertical>8 then 20 elseif aerial or pursuit then 13 else 9
@@ -495,16 +511,20 @@ function Camera:update(data,dt)
 	-- (05/11) A pad's free lens keeps half of it (the opponent it keeps in view
 	-- stays readable); the share slides with lockT.
 	local freeShare=if auto and not lost then .5 else 0
-	local share=freeShare+(1-freeShare)*lockT
+	local share=freeShare+(1-freeShare)*pairT
 	spread*=share
 	local pairVertical=vertical*share
 	-- (FEEL 05/11, AVANT defect 2) The distance that holds the whole height of
 	-- the pair inside the vertical field of view (a launch of 60 studs needs a
 	-- wide shot for its 2 seconds); ordinary jumps are under the threshold.
+	-- A pad's free lens keeps the opponent in view by itself: for this it
+	-- holds the whole height too (Studio 05/11: free, the lens still lost him
+	-- for 1.1 s at half weight).
+	local holdShare=if auto and not lost then 1 else share
 	local verticalNeed=0
-	if pairVertical>8 then
+	if vertical*holdShare>8 then
 		local halfV=math.rad(math.max(20,frame.fov*.5-6))
-		verticalNeed=math.max(0,(vertical+6)*.5/math.tan(halfV)-(frame.distance+spread))*share
+		verticalNeed=math.max(0,(vertical+6)*.5/math.tan(halfV)-(frame.distance+spread))*holdShare
 	end
 	local wantDistance=math.clamp(frame.distance-sprint*1.5+spread+pairVertical*.3+verticalNeed+self.zoom+(self.settleSize or 0)*math.sin(settle*math.pi*.5)+(if data.ko then 6 else 0),8.5,if verticalNeed>0 then 66 else 48)
 	local distanceRate=if verticalNeed>0 and self.distance and wantDistance>self.distance then 12 else 4
@@ -611,7 +631,7 @@ function Camera:update(data,dt)
 	-- screen for 100 % of a wall run (Studio, take 2). The boom swings along
 	-- the wall to the nearest clear side, so the body is seen three-quarter
 	-- with the opponent; the squeeze above stays the last resort.
-	if follow and (data.intro or 0)<=0 and not data.ko then
+	if (follow or (auto and not lost)) and (data.intro or 0)<=0 and not data.ko then
 		self:steerAroundWall(focus,self.distance,height,squeeze,ray,dt,clock)
 	else
 		self.wallYaw=nil;self.wallGoal=nil;self.wallClearSince=nil
@@ -625,7 +645,10 @@ function Camera:update(data,dt)
 	local aim=focus
 	if self.squeeze>.02 then
 		local ahead=Vector3.new(focus.X-desired.X,0,focus.Z-desired.Z)
-		if ahead.Magnitude>.05 then aim=focus+ahead.Unit*(16*self.squeeze) end
+		-- (FEEL 05/11) swung along the wall, the lens sees him from the side:
+		-- it looks at the pair again instead of past him.
+		local swung=math.clamp(math.abs(self.wallYaw or 0)/.5,0,1)
+		if ahead.Magnitude>.05 then aim=focus+ahead.Unit*(16*self.squeeze*(1-swung)) end
 	end
 	local filming=(data.intro or 0)>0 or data.spectate or (self.cinematic~=nil and os.clock()<self.cinematic.untilT)
 	self:fadeSelf(if self.squeeze>.02 and not filming then character else nil,desired,a)
@@ -635,7 +658,7 @@ function Camera:update(data,dt)
 	-- (locked, or a pad's free lens that keeps the fight in view), the lens
 	-- tilts up to keep the higher body in frame, and widens for what the tilt
 	-- cannot take without dropping the player's feet out of the bottom.
-	local pairShare=if follow then 1 elseif auto and not lost then .5 else 0
+	local pairShare=if follow or (auto and not lost) then 1 else 0
 	local tilt,widen=0,0
 	if pairShare>0 and not filming and not data.ko then
 		tilt,widen=Camera.keepInFrame(cf,camera.FieldOfView,target+Vector3.new(0,2.6,0),a-Vector3.new(0,2.8,0))
