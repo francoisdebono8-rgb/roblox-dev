@@ -774,6 +774,23 @@ function Combat:substitute(a)
 		elseif mode=="clone" then "SUBSTITUTION • IT WAS A CLONE!" else "SUBSTITUTION • REPOSITIONED")..extra)
 	return true
 end
+-- Whether a substitution would come out now (Combat:substitute's own checks,
+-- without the escape blocked by a wall that only the attempt finds).
+function Combat.canSubstitute(c,a)
+	local tune=Config.Substitution
+	if a.subCharges<=0 or c.now<a.subCooldown or a.chakra<tune.Cost or a.ultimateHeld then return false end
+	return (a.reaction~=nil and a.reaction~="Wakeup" and a.reaction~="WallSplat" and not (a.reaction=="Knockdown" and not a.airborne))
+		or a.state=="Stunned" or c.now-a.lastHurt<=tune.Window
+end
+-- (05/11: "REACTING" was the cue of 147 refused presses in one evening's play)
+-- Whether the dodge button would get the body out now: a substitution, or the
+-- body's own recovery past its share of the stun (Brawler.recoverable).
+function Combat.escapeOpen(c,a)
+	if not a.reaction or a.ultimateHeld then return false end
+	if Combat.canSubstitute(c,a) then return true end
+	local kind=Brawler.recoverable(c,a)
+	return kind~=nil and kind~="tech" and a.chakra>=(if kind=="air" then Config.Agency.AirCost else Config.Agency.StepCost)
+end
 -- A reappearance point next to `attacker` is usable when nothing solid fills it
 -- and the attacker has a clear line to it.
 function Combat:openSpot(attacker,spot)
@@ -1140,8 +1157,8 @@ function Combat:requestInner(a,action,aim,clientTime,opts)
 	-- seal jutsu goes on the second one, through the same cast as a slot.
 	a.sealCast=opts and opts.sealCast or nil
 	-- (04/11, user: « une 2e page de jutsu ») Seal1-5: the fighter's seal jutsu
-	-- by its place in his list, one press (keyboard C held + 1-5, pad R1 + L1
-	-- held + □ △ ○ ×, D-pad ↑). The signs are woven by the cast itself: they
+	-- by its place in his list, one press (keyboard C held + 1-5, pad L2 + R1
+	-- held + □ △ ○ ×, D-pad ↑; 05/11). The signs are woven by the cast itself: they
 	-- show on the hands and in the HUD while the jutsu is moulded.
 	local page=tonumber(string.match(action,"^Seal([1-5])$"))
 	if page then
@@ -1191,7 +1208,17 @@ function Combat:requestInner(a,action,aim,clientTime,opts)
 	-- answers it (Brawler.recoverable): guard or step out standing, right
 	-- itself in the air, roll out of a knockdown. Earlier, the dodge is still
 	-- the substitution.
-	if (action=="Guard" or action=="Dodge") and a.reaction then
+	-- (05/11, user on the pad: 13 presses of ○ before the tutorial's escape
+	-- came out) That "earlier" was the first 45 % of the stun: 0.16 s on a
+	-- light blow, shorter than a human reaction, and a later ○ only stepped
+	-- out. On the ground, a dodge that can pay for the substitution is the
+	-- substitution for its first Config.Substitution.Grace after the contact,
+	-- whatever the stun's share; the cheap step out stays for later presses
+	-- and for a body without a charge (the air keeps EMB-003's righting).
+	-- Players only (Matches:act marks them): the AI times its own answers.
+	local substituteFirst=action=="Dodge" and a.playerInput==true and a.reaction=="HitStun" and not a.airborne and Combat.canSubstitute(self,a)
+		and self.now-(a.reactionStartedAt or -math.huge)<=Config.Substitution.Grace
+	if (action=="Guard" or action=="Dodge") and a.reaction and not substituteFirst then
 		local kind=Brawler.recoverable(self,a)
 		if kind then
 			local ok,why=Brawler.recover(self,a,kind,action)

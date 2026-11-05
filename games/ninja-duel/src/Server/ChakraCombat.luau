@@ -1031,7 +1031,7 @@ function Chakra.conduct(c,a,infused)
 	if hit and b.state=="Stunned" then b.untilTime=math.max(b.untilTime,b.reactionUntil or c.now) end
 	wireGlow(c,a)
 	c:pushImpact(b.root.Position,"chidori",false,{owner=a.id,victim=b.id,chakra="conduct",infusion="Lightning",from=hand,to=b.root.Position})
-	c:cue(a,"WIRED • LIGHTNING • 1 = DRAGON FLAME",.9);c:cue(b,"WIRED • X TO ESCAPE",.9)
+	c:cue(a,"WIRED • LIGHTNING • 1 = DRAGON FLAME",.9);c:cue(b,"WIRED • Q TO ESCAPE",.9)
 	Brawler.event(c,a,"WireLightning")
 	record(c,"Conduct",infused.rules,{owner=a.id,victim=b.id,uses=b.wireConducts})
 	return true

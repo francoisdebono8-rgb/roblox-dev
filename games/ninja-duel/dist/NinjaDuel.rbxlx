@@ -550,6 +550,55 @@ return {
       </Item>
       <Item class="ModuleScript" referent="ND9">
         <Properties>
+          <string name="Name">ChakraMoves</string>
+          <ProtectedString name="Source">-- Each prodigy's chakra (DEC-032, user 03/11: "le chakra pour l'instant c'est
+-- nul, tu frappes plus fort mais pas de trucs"): his nature, and what his
+-- infused light, heavy, leap and dash BECOME (docs/characters/KITS_V2.md,
+-- table 1). The server plays them (Server/ChakraFlow); (05/11, user on the
+-- pad: L2 pressed alone 26 times in one evening) the HUD names them while the
+-- chakra button is held, on the jutsu row (Client/UI).
+local ChakraMoves={}
+-- Unlisted: plain chakra.
+ChakraMoves.Nature={
+	Lion="Lightning",Copycat="Lightning",Mirage="Fire",Legion="Wind",Gale="Wind",
+	Sand="Sand",GentleFist="GentleFist",Leaf="Strength",Flashstep="Chakra",
+}
+ChakraMoves.Label={Lightning="RAITON",Fire="KATON",Wind="FUTON",Sand="SAND",GentleFist="GENTLE FIST",Strength="STRENGTH",Chakra="CHAKRA"}
+-- nil: the nature's common effect only.
+ChakraMoves.Signature={
+	Lion={light="Nagashi",heavy="FireJet"},             -- Chidori Nagashi through the guard; a jet of fire past the kick
+	Legion={light="CloneStrike",heavy="Uzumaki"},       -- a clone pops beside him and follows up; U-ZU-MA-KI sends him up
+	Sand={light="SandFist",heavy="SandGrip"},           -- the sand reaches far; the sand hand grips the legs
+	Leaf={light="Flurry",heavy="GuardCrush",leap="Lotus",dash="AfterImage"}, -- the "patates"; the whirlwind through the guard
+	GentleFist={heavy="Vacuum",dash="Rotation"},        -- (light: the Juken closes a point) the palm at range; a short Kaiten
+	Mirage={light="Crows",heavy="FireJet",dash="CrowScatter"}, -- crows from the impact; he scatters into crows
+	Flashstep={heavy="Rasengan",dash="FlyingThunder"},  -- (light: the seal) the Rasengan to the body; he flashes behind
+	Copycat={heavy="EarthSpike",dash="Headhunter"},     -- Doton: a spike under him; under the ground and out behind
+}
+ChakraMoves.SigLabel={Nagashi="CHIDORI NAGASHI",FireJet="FIRE JET",CloneStrike="SHADOW CLONE",Uzumaki="U-ZU-MA-KI",
+	SandFist="SAND FIST",SandGrip="SAND GRIP",Flurry="LEAF FLURRY",GuardCrush="GUARD CRUSH",Lotus="LOTUS LEAP",
+	AfterImage="AFTERIMAGE",Vacuum="VACUUM PALM",Rotation="ROTATION",Crows="CROWS",CrowScatter="CROW SCATTER",
+	Rasengan="RASENGAN",FlyingThunder="FLYING THUNDER GOD",EarthSpike="DOTON • EARTH SPIKE",Headhunter="DOTON • HEADHUNTER"}
+-- The HUD's chakra page: the five presses the chakra button infuses, in the
+-- order of the jutsu row (pad □ △ × ○ R2, keyboard LMB RMB SPACE Q R).
+ChakraMoves.Slots={"light","heavy","leap","dash","tool"}
+local PLAIN={light="STRIKE",heavy="HEAVY",leap="LEAP",dash="DASH",tool="KUNAI"}
+-- Infused lights that are no signature move but do a thing of their own
+-- (Server/ChakraFlow.hit: Minato seals the body, Neji closes a point).
+local OWN={Flashstep={light="SEAL STRIKE"},GentleFist={light="CHAKRA POINT"}}
+function ChakraMoves.name(fighterId,slot)
+	local sig=ChakraMoves.Signature[fighterId] and ChakraMoves.Signature[fighterId][slot]
+	if sig then return ChakraMoves.SigLabel[sig] end
+	local own=OWN[fighterId] and OWN[fighterId][slot]
+	if own then return own end
+	return ChakraMoves.Label[ChakraMoves.Nature[fighterId] or "Chakra"].." "..PLAIN[slot]
+end
+return ChakraMoves
+</ProtectedString>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="ND10">
+        <Properties>
           <string name="Name">Config</string>
           <ProtectedString name="Source">-- Tunable V0 values; no client-supplied balance values are accepted.
 return {
@@ -572,7 +621,9 @@ return {
 	-- Kawarimi: a limited escape that recharges. Usable while being hit (or
 	-- grabbed, juggled, pinned), never as a neutral dodge. The attacker gets a
 	-- short window to track the reappearance.
-	Substitution = {Cost = 15, Charges = 2, Recharge = 9, Cooldown = 1.1, Window = 0.42, Distance = 8, Track = 0.75},
+	-- Grace (05/11): a dodge this soon after the contact is the substitution even
+	-- past the share of the stun where the body could step out (Combat:request).
+	Substitution = {Cost = 15, Charges = 2, Recharge = 9, Cooldown = 1.1, Window = 0.42, Distance = 8, Track = 0.75, Grace = 0.35},
 	-- Damage scaling inside one combo: the first hits land in full, every later
 	-- hit is worth less, and a combo that runs too long ends in a knockdown.
 	ComboScaling = {Free = 2, Step = 0.12, Floor = 0.35, Reset = 0.45, MaxHits = 11},
@@ -715,7 +766,7 @@ return {
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND10">
+      <Item class="ModuleScript" referent="ND11">
         <Properties>
           <string name="Name">Controls</string>
           <ProtectedString name="Source">-- Semantic bindings shared by client, HUD and QA.
@@ -776,19 +827,23 @@ local Controls = {
 	-- Human-readable key names so HUD and tutorial copy cannot drift from bindings.
 	KeyLabel = {
 		Light = "LMB", Heavy = "RMB", Jump = "SPACE", Dodge = "Q", Guard = "F",
-		Grab = "V", Tool = "R", Chakra = "Z", Pursuit = "E", Substitute = "X", Feint = "G",
+		-- (05/11) The escape is taught on the dodge key (Q while hit, Combat:request);
+		-- X still does it.
+		Grab = "V", Tool = "R", Chakra = "Z", Pursuit = "E", Substitute = "Q", Feint = "G",
 		WallDetach = "C", Seals = "C + 1-4", Lock = "SHIFT", Sprint = "CTRL", Technique5 = "5", Awaken = "T", Ultimate = "Y", Arm = "B", Skip = "BACKSPACE", ChakraLoad = "Z + action",
 	},
 	-- HUD copy for the keyboard layout, kept next to the bindings it documents.
 	Hint = "LMB light \u{00B7} RMB heavy",
-	Help = "WASD move   SPACE jump   Q dodge   LMB light   RMB heavy   F guard   V grab / throw break   E re-engage (chase / chakra dash)   R tool   hold Z + any action: chakra-infused (strike, heavy, jump, dodge, tool)   X substitute   G feint   T awaken   Y ultimate (bar full)   B kunai (draw / sheathe, R throws it)   CTRL sprint   SHIFT lock   1-4 jutsu   hold C + 1-4 (Gaara 1-5): seal jutsu",
+	Help = "WASD move   SPACE jump   Q dodge (hit: escape)   LMB light   RMB heavy   F guard   V grab / throw break   E re-engage (chase / chakra dash)   R tool   hold Z + any action: chakra-infused (strike, heavy, jump, dodge, tool)   G feint   T awaken   Y ultimate (bar full)   B kunai (draw / sheathe, R throws it)   CTRL sprint   SHIFT lock   1-4 jutsu   hold C + 1-4 (Gaara 1-5): seal jutsu",
 	-- The directional combo grammar, shared by every fighter.
 	-- The string's routes on buttons (04/11, user: « le plus simple à faire et
 	-- à jouer, sans perdre de mouvement »; Brawler.buttonRoute): no direction.
 	Grammar = "CLEAN HITS  1 hit → RMB: heavy  |  2 hits → RMB: launch · Q: around · SPACE: rising · R: retreat  |  3 hits → RMB: low  |  air hit → RMB: spike · Q: switch · SPACE: drive",
 	GrammarPad = "CLEAN HITS  1 hit → △: heavy  |  2 hits → △: launch · ○: around · ×: rising · R2: retreat  |  3 hits → △: low  |  air hit → △: spike · ○: switch · ×: drive",
-	HelpPad = "L move · L3 sprint   R camera · R3 lock   □ light   △ heavy   ○ dodge / escape   × jump / chase   sprint + ○ toward: chakra dash   L1 guard   L1 + □ grab   R2 tool   hold L2 + any action: chakra-infused   R1 + □/△/○/×: jutsu 1-4   hold R1 + L1 + □/△/○/× (Gaara: D-pad ↑ too): seal jutsu   R1 + L1 (tap) ultimate   R1 + R2 feint   D-pad → escape · ← kunai · ↓ awaken · ↑ jutsu 5",
-	PadLabel = {Light="□",Heavy="△",Dodge="○",Jump="×",Guard="L1",Modifier="R1",Grab="L1 + □",Tool="R2",Chakra="L2",Sprint="L3",Lock="R3",Pursuit="×",Dash="L3 + ○",Substitute="D-pad →",Arm="D-pad ←",Feint="R1 + R2",WallDetach="R1 + L1",Ultimate="R1 + L1",ChakraLoad="L2 + action",Seals="R1 + L1 + □△○×",
+	-- (05/11, user on the pad) One meaning per chord: R1 + L1 is the ultimate,
+	-- the seal jutsu are L2 + R1 (chakra + jutsu), the escape is ○ while hit.
+	HelpPad = "L move · L3 sprint   R camera · R3 lock   □ light   △ heavy   ○ dodge (hit: escape)   × jump / chase   sprint + ○ toward: chakra dash   L1 guard   L1 + □ grab   R2 tool   hold L2 + any action: chakra-infused   R1 + □/△/○/×: jutsu 1-4   hold L2 + R1 + □/△/○/× (Gaara: D-pad ↑ too): seal jutsu   R1 + L1 ultimate (bar full)   R1 + R2 feint   D-pad ← kunai · ↓ awaken · ↑ jutsu 5",
+	PadLabel = {Light="□",Heavy="△",Dodge="○",Jump="×",Guard="L1",Modifier="R1",Grab="L1 + □",Tool="R2",Chakra="L2",Sprint="L3",Lock="R3",Pursuit="×",Dash="L3 + ○",Substitute="○",Arm="D-pad ←",Feint="R1 + R2",WallDetach="R1 + L1",Ultimate="R1 + L1",ChakraLoad="L2 + action",Seals="L2 + R1 + □△○×",
 		Technique5="D-pad ↑",Awaken="D-pad ↓",Skip="TOUCHPAD"},
 	-- (Stage 6) One order for everyone: □ pressure, △ signature, ○ movement
 	-- or defence, × control or combo.
@@ -859,7 +914,7 @@ return Controls
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND11">
+      <Item class="ModuleScript" referent="ND12">
         <Properties>
           <string name="Name">Face</string>
           <ProtectedString name="Source">-- Cartoon faces drawn in 2D on the head (user 29/10 14:07: "il manque une
@@ -1300,7 +1355,7 @@ return Face
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND12">
+      <Item class="ModuleScript" referent="ND13">
         <Properties>
           <string name="Name">Fighters</string>
           <ProtectedString name="Source">local Fighters = {
@@ -1762,7 +1817,7 @@ return Fighters
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND13">
+      <Item class="ModuleScript" referent="ND14">
         <Properties>
           <string name="Name">FirstMinute</string>
           <ProtectedString name="Source">-- The first minute (B1 lot 2, DEC-034; Codex's audit 26f8623 §3: a first
@@ -1802,7 +1857,7 @@ return FirstMinute
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND14">
+      <Item class="ModuleScript" referent="ND15">
         <Properties>
           <string name="Name">LobbyProtocol</string>
           <ProtectedString name="Source">-- Players online and challenges (Server/Lobby, Client/LobbyPanel): tunables
@@ -1840,7 +1895,7 @@ return table.freeze({
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND15">
+      <Item class="ModuleScript" referent="ND16">
         <Properties>
           <string name="Name">Looks</string>
           <ProtectedString name="Source">-- How a family object looks (Families.luau, client FamilyFX): one entry per
@@ -1952,7 +2007,7 @@ return {
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND16">
+      <Item class="ModuleScript" referent="ND17">
         <Properties>
           <string name="Name">MoveGraphs</string>
           <ProtectedString name="Source">-- Character move graphs: the data half of each fighter's combat identity.
@@ -2176,7 +2231,7 @@ return Graphs
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND17">
+      <Item class="ModuleScript" referent="ND18">
         <Properties>
           <string name="Name">OnlineProtocol</string>
           <ProtectedString name="Source">-- Online 1v1 (NET-001): shared tunables and the request vocabulary of the
@@ -2203,7 +2258,7 @@ return table.freeze({
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND18">
+      <Item class="ModuleScript" referent="ND19">
         <Properties>
           <string name="Name">Roster</string>
           <ProtectedString name="Source">-- The playable roster, in menu order: the select screen, the AI soaks and the
@@ -2228,7 +2283,7 @@ return {
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND19">
+      <Item class="ModuleScript" referent="ND20">
         <Properties>
           <string name="Name">RosterMoves</string>
           <ProtectedString name="Source">-- Roster 20 batches (Shared/WaveN): a fighter's own strike, added to Attacks
@@ -2258,7 +2313,7 @@ return RosterMoves
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND20">
+      <Item class="ModuleScript" referent="ND21">
         <Properties>
           <string name="Name">RosterStaging</string>
           <ProtectedString name="Source">-- DEC-026 newcomers (Madara, Hashirama, Hiruzen as children, Shared/Wave4).
@@ -2268,7 +2323,7 @@ return {"Rival","Sapling","Professor"}
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND21">
+      <Item class="ModuleScript" referent="ND22">
         <Properties>
           <string name="Name">Rules</string>
           <ProtectedString name="Source">-- Pure policy shared by server combat and headless tests. Authority lives on server.
@@ -2311,7 +2366,7 @@ return Rules
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND22">
+      <Item class="ModuleScript" referent="ND23">
         <Properties>
           <string name="Name">SealJutsu</string>
           <ProtectedString name="Source">-- Hand-seal jutsu (DEC-032 §3, user 03/11: « plus de variété que 4 cases
@@ -2480,7 +2535,7 @@ return SealJutsu
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND23">
+      <Item class="ModuleScript" referent="ND24">
         <Properties>
           <string name="Name">UltimateScripts</string>
           <ProtectedString name="Source">-- The eight ultimates as scripts (stage 6, redone 02/11: "globalement tous
@@ -2830,7 +2885,7 @@ return Scripts
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND24">
+      <Item class="ModuleScript" referent="ND25">
         <Properties>
           <string name="Name">VelmoraCombatConfig</string>
           <ProtectedString name="Source">-- Adapted from Velmora src/shared/config/CombatConfig.luau.
@@ -2863,7 +2918,7 @@ return table.freeze({
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND25">
+      <Item class="ModuleScript" referent="ND26">
         <Properties>
           <string name="Name">Wave1</string>
           <ProtectedString name="Source">-- Roster 20, batch 1 (DEC-022): Haku, Zabuza, Kimimaro. This batch's shared
@@ -3110,7 +3165,7 @@ return {
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND26">
+      <Item class="ModuleScript" referent="ND27">
         <Properties>
           <string name="Name">Wave2</string>
           <ProtectedString name="Source">-- Roster 20, batch 2 (DEC-022): Shisui, Orochimaru, Kabuto. This batch's
@@ -3296,7 +3351,7 @@ return {
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND27">
+      <Item class="ModuleScript" referent="ND28">
         <Properties>
           <string name="Name">Wave3</string>
           <ProtectedString name="Source">-- Roster 20, batch 3 (DEC-022): Deidara, Sasori, Nagato, Killer Bee. This
@@ -3571,7 +3626,7 @@ return {
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND28">
+      <Item class="ModuleScript" referent="ND29">
         <Properties>
           <string name="Name">Wave4</string>
           <ProtectedString name="Source">-- DEC-026 newcomers: Madara, Hashirama and Hiruzen as children (the three
@@ -4765,17 +4820,17 @@ return {
           </Item>
         </Item>
       </Item>
-      <Item class="StringValue" referent="ND29">
+      <Item class="StringValue" referent="ND30">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">631c861ffd0f602cefaebfd13170e7e8d9aa745a04aa9744970615d829c9be11</string>
+          <string name="Value">0998fd1b51c84c03e05923f78b9c0f04253cd705b5c7323e3cf2183cf43f150f</string>
         </Properties>
       </Item>
-      <Item class="Folder" referent="ND30">
+      <Item class="Folder" referent="ND31">
         <Properties>
           <string name="Name">ThirdPartyLicenses</string>
         </Properties>
-        <Item class="StringValue" referent="ND31">
+        <Item class="StringValue" referent="ND32">
           <Properties>
             <string name="Name">bangla</string>
             <string name="Value">MIT License
@@ -4802,7 +4857,7 @@ SOFTWARE.
 </string>
           </Properties>
         </Item>
-        <Item class="StringValue" referent="ND32">
+        <Item class="StringValue" referent="ND33">
           <Properties>
             <string name="Name">place1</string>
             <string name="Value">MIT License
@@ -4829,7 +4884,7 @@ SOFTWARE.
 </string>
           </Properties>
         </Item>
-        <Item class="StringValue" referent="ND33">
+        <Item class="StringValue" referent="ND34">
           <Properties>
             <string name="Name">velmora</string>
             <string name="Value">MIT License
@@ -4859,15 +4914,15 @@ SOFTWARE.
       </Item>
     </Item>
   </Item>
-  <Item class="ServerScriptService" referent="ND34">
+  <Item class="ServerScriptService" referent="ND35">
     <Properties>
       <string name="Name">ServerScriptService</string>
     </Properties>
-    <Item class="Folder" referent="ND35">
+    <Item class="Folder" referent="ND36">
       <Properties>
         <string name="Name">NinjaDuelServer</string>
       </Properties>
-      <Item class="ModuleScript" referent="ND36">
+      <Item class="ModuleScript" referent="ND37">
         <Properties>
           <string name="Name">AI</string>
           <ProtectedString name="Source">local Config=require(game:GetService("ReplicatedStorage").NinjaDuel.Config)
@@ -5861,7 +5916,7 @@ return AI
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND37">
+      <Item class="ModuleScript" referent="ND38">
         <Properties>
           <string name="Name">Animation</string>
           <ProtectedString name="Source">-- Bangla PunchMoves animation playback, adapted for server-owned human and AI R15.
@@ -5967,7 +6022,7 @@ return Animation
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND38">
+      <Item class="ModuleScript" referent="ND39">
         <Properties>
           <string name="Name">ArenaMeshData</string>
           <ProtectedString name="Source">-- Generated by tools/blender/arena_to_luau.py from the Studio import of
@@ -6041,7 +6096,7 @@ return {
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND39">
+      <Item class="ModuleScript" referent="ND40">
         <Properties>
           <string name="Name">ArenaMeshes</string>
           <ProtectedString name="Source">-- The stadium's scenery made in Blender (stage 5, user 29/10: the arena,
@@ -6117,7 +6172,7 @@ return ArenaMeshes
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND40">
+      <Item class="ModuleScript" referent="ND41">
         <Properties>
           <string name="Name">BanglaCombat</string>
           <ProtectedString name="Source">-- Adapted from BanglaBattlegrounds ServerScriptService/StarterCombat.
@@ -6207,7 +6262,7 @@ return Bangla
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND41">
+      <Item class="ModuleScript" referent="ND42">
         <Properties>
           <string name="Name">BanglaEvade</string>
           <ProtectedString name="Source">-- performEvade from Bangla WalkRunHandler (Dewan Mukto, MIT), adapted.
@@ -6287,7 +6342,7 @@ return Evade
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND42">
+      <Item class="ModuleScript" referent="ND43">
         <Properties>
           <string name="Name">Bodies</string>
           <ProtectedString name="Source">-- Light bodies that are not actors (roster hook H12): Naruto's shadow clones
@@ -6725,7 +6780,7 @@ return Bodies
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND43">
+      <Item class="ModuleScript" referent="ND44">
         <Properties>
           <string name="Name">BodyState</string>
           <ProtectedString name="Source">-- Ninja Embodiment (DEC-027, SYS-001 sustained chakra): a technique that is a
@@ -6856,7 +6911,7 @@ return BodyState
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND44">
+      <Item class="ModuleScript" referent="ND45">
         <Properties>
           <string name="Name">Brawler</string>
           <ProtectedString name="Source">local Shared=game:GetService("ReplicatedStorage").NinjaDuel
@@ -8632,7 +8687,7 @@ return Brawler
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND45">
+      <Item class="ModuleScript" referent="ND46">
         <Properties>
           <string name="Name">BuildPresets</string>
           <ProtectedString name="Source">-- Example ranked builds (PROG-002) and AI budget builds (PROG-003). Every
@@ -8760,7 +8815,7 @@ return Presets
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND46">
+      <Item class="ModuleScript" referent="ND47">
         <Properties>
           <string name="Name">ChakraCombat</string>
           <ProtectedString name="Source">-- ChakraCombat: the runtime adapter between the real duel (projectiles,
@@ -9796,7 +9851,7 @@ function Chakra.conduct(c,a,infused)
 	if hit and b.state=="Stunned" then b.untilTime=math.max(b.untilTime,b.reactionUntil or c.now) end
 	wireGlow(c,a)
 	c:pushImpact(b.root.Position,"chidori",false,{owner=a.id,victim=b.id,chakra="conduct",infusion="Lightning",from=hand,to=b.root.Position})
-	c:cue(a,"WIRED • LIGHTNING • 1 = DRAGON FLAME",.9);c:cue(b,"WIRED • X TO ESCAPE",.9)
+	c:cue(a,"WIRED • LIGHTNING • 1 = DRAGON FLAME",.9);c:cue(b,"WIRED • Q TO ESCAPE",.9)
 	Brawler.event(c,a,"WireLightning")
 	record(c,"Conduct",infused.rules,{owner=a.id,victim=b.id,uses=b.wireConducts})
 	return true
@@ -9805,7 +9860,7 @@ return Chakra
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND47">
+      <Item class="ModuleScript" referent="ND48">
         <Properties>
           <string name="Name">ChakraFlow</string>
           <ProtectedString name="Source">-- ChakraFlow: chakra into whatever the body does next (Freedom, user 28/10:
@@ -9843,12 +9898,11 @@ ChakraFlow.Tune={
 	LeapCarry=1.35,    -- jump horizontal scale
 }
 local T=ChakraFlow.Tune
--- Each fighter's chakra nature (what the load is). Unlisted: plain chakra.
-ChakraFlow.Nature={
-	Lion="Lightning",Copycat="Lightning",Mirage="Fire",Legion="Wind",Gale="Wind",
-	Sand="Sand",GentleFist="GentleFist",Leaf="Strength",Flashstep="Chakra",
-}
-ChakraFlow.Label={Lightning="RAITON",Fire="KATON",Wind="FUTON",Sand="SAND",GentleFist="GENTLE FIST",Strength="STRENGTH",Chakra="CHAKRA"}
+-- Each fighter's chakra nature and its signature moves live in
+-- Shared/ChakraMoves (05/11: the HUD names them while the button is held).
+local ChakraMoves=require(game:GetService("ReplicatedStorage").NinjaDuel.ChakraMoves)
+ChakraFlow.Nature=ChakraMoves.Nature
+ChakraFlow.Label=ChakraMoves.Label
 -- What a nature does to the strike itself (on top of the common scaling).
 local SHAPE={
 	Wind={reach=1.6,impulse=1.45},      -- a blade of wind past the fist
@@ -9857,24 +9911,8 @@ local SHAPE={
 	-- (Stage 6) Gaara's hardened sand: longer lashes (and they slow, ChakraFlow.hit).
 	Fire={},Sand={reach=2,impulse=1.15},GentleFist={},Chakra={},
 }
--- (DEC-032, user 03/11: "le chakra pour l'instant c'est nul, tu frappes
--- plus fort mais pas de trucs") Each prodigy's own chakra: what his infused
--- light, heavy, leap and dash BECOME (docs/characters/KITS_V2.md, table 1).
--- nil: the nature's common effect only.
-ChakraFlow.Signature={
-	Lion={light="Nagashi",heavy="FireJet"},             -- Chidori Nagashi through the guard; a jet of fire past the kick
-	Legion={light="CloneStrike",heavy="Uzumaki"},       -- a clone pops beside him and follows up; U-ZU-MA-KI sends him up
-	Sand={light="SandFist",heavy="SandGrip"},           -- the sand reaches far; the sand hand grips the legs
-	Leaf={light="Flurry",heavy="GuardCrush",leap="Lotus",dash="AfterImage"}, -- the "patates"; the whirlwind through the guard
-	GentleFist={heavy="Vacuum",dash="Rotation"},        -- (light: the Juken closes a point) the palm at range; a short Kaiten
-	Mirage={light="Crows",heavy="FireJet",dash="CrowScatter"}, -- crows from the impact; he scatters into crows
-	Flashstep={heavy="Rasengan",dash="FlyingThunder"},  -- (light: the seal) the Rasengan to the body; he flashes behind
-	Copycat={heavy="EarthSpike",dash="Headhunter"},     -- Doton: a spike under him; under the ground and out behind
-}
-ChakraFlow.SigLabel={Nagashi="CHIDORI NAGASHI",FireJet="FIRE JET",CloneStrike="SHADOW CLONE",Uzumaki="U-ZU-MA-KI",
-	SandFist="SAND FIST",SandGrip="SAND GRIP",Flurry="LEAF FLURRY",GuardCrush="GUARD CRUSH",Lotus="LOTUS LEAP",
-	AfterImage="AFTERIMAGE",Vacuum="VACUUM PALM",Rotation="ROTATION",Crows="CROWS",CrowScatter="CROW SCATTER",
-	Rasengan="RASENGAN",FlyingThunder="FLYING THUNDER GOD",EarthSpike="DOTON • EARTH SPIKE",Headhunter="DOTON • HEADHUNTER"}
+ChakraFlow.Signature=ChakraMoves.Signature
+ChakraFlow.SigLabel=ChakraMoves.SigLabel
 -- What a signature adds to the strike's own reach and push.
 local SIG_SHAPE={FireJet={reach=2.5},SandFist={reach=2.5},Vacuum={reach=4,impulse=1.5},Rasengan={impulse=1.3}}
 function ChakraFlow.signature(a,slot)
@@ -9905,7 +9943,8 @@ function ChakraFlow.load(c,a)
 	a.chakraLoad={untilTime=c.now+T.Life,nature=nature,at=c.now}
 	if fresh then
 		c:pushImpact(a.root.Position,"chakraload",false,{owner=a.id,fighter=a.fighterId,nature=nature})
-		c:cue(a,"CHAKRA • "..ChakraFlow.Label[nature],.6)
+		-- (05/11: Minato's plain chakra read "CHAKRA • CHAKRA")
+		c:cue(a,if nature=="Chakra" then "CHAKRA" else "CHAKRA • "..ChakraFlow.Label[nature],.6)
 		require(script.Parent.Brawler).event(c,a,"ChakraLoad")
 	end
 	return true
@@ -9920,6 +9959,14 @@ local function spend(c,a,cost)
 end
 ChakraFlow.spend=spend
 
+-- (05/11: the screen read "CHAKRA • LIGHT1") A move's name for the player:
+-- the strings' blows are a strike, the rest split into words.
+function ChakraFlow.moveLabel(name)
+	local base=string.gsub(tostring(name),"%d+$","")
+	if base=="Light" then return "STRIKE" end
+	if base=="Air" then return "AIR STRIKE" end
+	return string.upper((string.gsub(base,"(%l)(%u)","%1 %2")))
+end
 -- Brawler.start: the strike about to come out takes the load.
 function ChakraFlow.strike(c,a,name,spec)
 	if NOT_STRIKES[name] then return nil end
@@ -9941,7 +9988,7 @@ function ChakraFlow.strike(c,a,name,spec)
 	spec.depth=(spec.depth or 2)+reach
 	spec.impulse=spec.impulse*(T.Impulse*(shape.impulse or 1)*(sigShape.impulse or 1))
 	c:pushImpact(a.root.Position,"chakrastrike",false,{owner=a.id,fighter=a.fighterId,nature=nature,move=name,sig=sig})
-	c:cue(a,if sig then ChakraFlow.SigLabel[sig] else ChakraFlow.Label[nature].." • "..string.upper(name),.5)
+	c:cue(a,if sig then ChakraFlow.SigLabel[sig] else ChakraFlow.Label[nature].." • "..ChakraFlow.moveLabel(name),.5)
 	return nature
 end
 
@@ -10171,7 +10218,7 @@ return ChakraFlow
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND48">
+      <Item class="ModuleScript" referent="ND49">
         <Properties>
           <string name="Name">ChakraInputPlan</string>
           <ProtectedString name="Source">-- Optional intent planner ONLY. Does not bind keys or send/change combat actions.
@@ -10199,7 +10246,7 @@ return P
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND49">
+      <Item class="ModuleScript" referent="ND50">
         <Properties>
           <string name="Name">ChakraRules</string>
           <ProtectedString name="Source">-- Declarative matching only. No callbacks/code strings supplied by configuration.
@@ -10296,7 +10343,7 @@ return R
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND50">
+      <Item class="ModuleScript" referent="ND51">
         <Properties>
           <string name="Name">ChakraTuning</string>
           <ProtectedString name="Source">-- Live chakra interaction data (SYS-001 / TOOL-006): OBJECT + CHAKRA + NATURE /
@@ -10498,7 +10545,7 @@ return T
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND51">
+      <Item class="ModuleScript" referent="ND52">
         <Properties>
           <string name="Name">ChakraVectors</string>
           <ProtectedString name="Source">-- Serializable vector math: simulation/reporting has no Roblox instance dependency.
@@ -10524,7 +10571,7 @@ return V
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND52">
+      <Item class="ModuleScript" referent="ND53">
         <Properties>
           <string name="Name">Combat</string>
           <ProtectedString name="Source">local Shared = game:GetService("ReplicatedStorage").NinjaDuel
@@ -11303,6 +11350,23 @@ function Combat:substitute(a)
 		elseif mode=="clone" then "SUBSTITUTION • IT WAS A CLONE!" else "SUBSTITUTION • REPOSITIONED")..extra)
 	return true
 end
+-- Whether a substitution would come out now (Combat:substitute's own checks,
+-- without the escape blocked by a wall that only the attempt finds).
+function Combat.canSubstitute(c,a)
+	local tune=Config.Substitution
+	if a.subCharges&lt;=0 or c.now&lt;a.subCooldown or a.chakra&lt;tune.Cost or a.ultimateHeld then return false end
+	return (a.reaction~=nil and a.reaction~="Wakeup" and a.reaction~="WallSplat" and not (a.reaction=="Knockdown" and not a.airborne))
+		or a.state=="Stunned" or c.now-a.lastHurt&lt;=tune.Window
+end
+-- (05/11: "REACTING" was the cue of 147 refused presses in one evening's play)
+-- Whether the dodge button would get the body out now: a substitution, or the
+-- body's own recovery past its share of the stun (Brawler.recoverable).
+function Combat.escapeOpen(c,a)
+	if not a.reaction or a.ultimateHeld then return false end
+	if Combat.canSubstitute(c,a) then return true end
+	local kind=Brawler.recoverable(c,a)
+	return kind~=nil and kind~="tech" and a.chakra&gt;=(if kind=="air" then Config.Agency.AirCost else Config.Agency.StepCost)
+end
 -- A reappearance point next to `attacker` is usable when nothing solid fills it
 -- and the attacker has a clear line to it.
 function Combat:openSpot(attacker,spot)
@@ -11669,8 +11733,8 @@ function Combat:requestInner(a,action,aim,clientTime,opts)
 	-- seal jutsu goes on the second one, through the same cast as a slot.
 	a.sealCast=opts and opts.sealCast or nil
 	-- (04/11, user: « une 2e page de jutsu ») Seal1-5: the fighter's seal jutsu
-	-- by its place in his list, one press (keyboard C held + 1-5, pad R1 + L1
-	-- held + □ △ ○ ×, D-pad ↑). The signs are woven by the cast itself: they
+	-- by its place in his list, one press (keyboard C held + 1-5, pad L2 + R1
+	-- held + □ △ ○ ×, D-pad ↑; 05/11). The signs are woven by the cast itself: they
 	-- show on the hands and in the HUD while the jutsu is moulded.
 	local page=tonumber(string.match(action,"^Seal([1-5])$"))
 	if page then
@@ -11720,7 +11784,17 @@ function Combat:requestInner(a,action,aim,clientTime,opts)
 	-- answers it (Brawler.recoverable): guard or step out standing, right
 	-- itself in the air, roll out of a knockdown. Earlier, the dodge is still
 	-- the substitution.
-	if (action=="Guard" or action=="Dodge") and a.reaction then
+	-- (05/11, user on the pad: 13 presses of ○ before the tutorial's escape
+	-- came out) That "earlier" was the first 45 % of the stun: 0.16 s on a
+	-- light blow, shorter than a human reaction, and a later ○ only stepped
+	-- out. On the ground, a dodge that can pay for the substitution is the
+	-- substitution for its first Config.Substitution.Grace after the contact,
+	-- whatever the stun's share; the cheap step out stays for later presses
+	-- and for a body without a charge (the air keeps EMB-003's righting).
+	-- Players only (Matches:act marks them): the AI times its own answers.
+	local substituteFirst=action=="Dodge" and a.playerInput==true and a.reaction=="HitStun" and not a.airborne and Combat.canSubstitute(self,a)
+		and self.now-(a.reactionStartedAt or -math.huge)&lt;=Config.Substitution.Grace
+	if (action=="Guard" or action=="Dodge") and a.reaction and not substituteFirst then
 		local kind=Brawler.recoverable(self,a)
 		if kind then
 			local ok,why=Brawler.recover(self,a,kind,action)
@@ -13104,7 +13178,7 @@ return Combat
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND53">
+      <Item class="ModuleScript" referent="ND54">
         <Properties>
           <string name="Name">Costumes</string>
           <ProtectedString name="Source">-- Costumes of the roster breadth pass (ROSTER_20): each one registers under
@@ -13225,7 +13299,7 @@ return Costumes
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND54">
+      <Item class="ModuleScript" referent="ND55">
         <Properties>
           <string name="Name">CupOdds</string>
           <ProtectedString name="Source">-- The Prodigy Tournament's skipped matches (Server/Tournament): how often the
@@ -13247,7 +13321,7 @@ return {
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND55">
+      <Item class="ModuleScript" referent="ND56">
         <Properties>
           <string name="Name">DonorAnimations</string>
           <ProtectedString name="Source">-- R6 -&gt; R15 compatibility only; transforms/times remain the donor choreography.
@@ -13289,7 +13363,7 @@ return Donor
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND56">
+      <Item class="ModuleScript" referent="ND57">
         <Properties>
           <string name="Name">Elements</string>
           <ProtectedString name="Source">-- Element families define different gameplay primitives. Fire and Wind are
@@ -13423,7 +13497,7 @@ return Elements
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND57">
+      <Item class="ModuleScript" referent="ND58">
         <Properties>
           <string name="Name">Families</string>
           <ProtectedString name="Source">-- Reusable technique families and fighter traits (ROSTER_20_BREADTH_PASS).
@@ -13695,7 +13769,7 @@ function Families.bind(c,a,b,spec)
 	-- What holds it, for the client (hounds at the legs, a shadow, coils...).
 	b.boundKind=spec.Kind or "chakra"
 	local name=string.upper(spec.Name or "BOUND")
-	c:cue(a,name.." • BOUND",.8);c:cue(b,"BOUND • X TO ESCAPE",.9)
+	c:cue(a,name.." • BOUND",.8);c:cue(b,"BOUND • Q TO ESCAPE",.9)
 	Brawler.event(c,a,"FamilyBind")
 	if spec.Crush then
 		c:schedule(c.now+duration-.05,function()
@@ -14480,7 +14554,7 @@ return Families
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND58">
+      <Item class="ModuleScript" referent="ND59">
         <Properties>
           <string name="Name">Gale</string>
           <ProtectedString name="Source">-- Temari (Gale, roster wave): the wind fan, on the shared systems. Her kit
@@ -14805,7 +14879,7 @@ return Gale
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND59">
+      <Item class="ModuleScript" referent="ND60">
         <Properties>
           <string name="Name">Interactions</string>
           <ProtectedString name="Source">-- Interactions between jutsu (stage 6, the approved move list, "Interactions:
@@ -14947,7 +15021,7 @@ return Interactions
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND60">
+      <Item class="ModuleScript" referent="ND61">
         <Properties>
           <string name="Name">Legion</string>
           <ProtectedString name="Source">-- Naruto Uzumaki (roster wave: Part I, the Chunin Exam to the Valley of the
@@ -15256,7 +15330,7 @@ return Legion
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND61">
+      <Item class="ModuleScript" referent="ND62">
         <Properties>
           <string name="Name">Lobby</string>
           <ProtectedString name="Source">-- Players online and challenges between them (user 04/11: « rentrer dans le
@@ -15773,7 +15847,7 @@ return Lobby
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND62">
+      <Item class="ModuleScript" referent="ND63">
         <Properties>
           <string name="Name">LookMeshData</string>
           <ProtectedString name="Source">-- Generated by tools/blender/looks_to_luau.py from the Studio imports of
@@ -16086,7 +16160,7 @@ return {
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND63">
+      <Item class="ModuleScript" referent="ND64">
         <Properties>
           <string name="Name">LookMeshes</string>
           <ProtectedString name="Source">-- Blender-made looks (user 29/10 14:37: "produis les designs sur Blender").
@@ -16190,7 +16264,7 @@ return LookMeshes
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND64">
+      <Item class="ModuleScript" referent="ND65">
         <Properties>
           <string name="Name">Looks</string>
           <ProtectedString name="Source">-- Looks of the 8 main fighters, final-beta pass (user 29/10 14:00-14:07:
@@ -16860,7 +16934,7 @@ return Looks
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="Script" referent="ND65">
+      <Item class="Script" referent="ND66">
         <Properties>
           <string name="Name">Main</string>
           <ProtectedString name="Source">local Players=game:GetService("Players")
@@ -16901,7 +16975,7 @@ print("[NinjaDuel] Ready — select a fighter and start the duel")
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND66">
+      <Item class="ModuleScript" referent="ND67">
         <Properties>
           <string name="Name">Matches</string>
           <ProtectedString name="Source">local Players=game:GetService("Players")
@@ -17139,7 +17213,7 @@ function Matches:view(s,cursor,mine,theirs)
 	local function data(a)
 		local ready={}
 		for i,spec in a.def.Techniques do
-			ready[i]={id=spec.Id,name=spec.Name,cost=spec.Cost,remaining=math.max(0,(a.cooldowns[spec.Id] or 0)-now),condition=not spec.Requires or (spec.Requires=="Anchor" and Techniques.sealOf(s.combat,a,now)~=nil) or (spec.Requires=="Target" and s.combat:targetValid(a,a.target,spec.Range,0.35))}
+			ready[i]={id=spec.Id,name=spec.Name,cost=spec.Cost,remaining=math.max(0,(a.cooldowns[spec.Id] or 0)-now),requires=spec.Requires,condition=not spec.Requires or (spec.Requires=="Anchor" and Techniques.sealOf(s.combat,a,now)~=nil) or (spec.Requires=="Target" and s.combat:targetValid(a,a.target,spec.Range,0.35))}
 		end
 		-- (DEC-032) the hand-seal jutsu (cooldowns) and the weave in progress
 		local sealReady=nil
@@ -17369,7 +17443,10 @@ function Matches:act(s,actor,payload,clock)
  end
  local ok,reason=s.combat:request(actor,action,aim,payload.clientTime,if payload.chakra==true then {chakra=true} else nil)
 	if padJump and action=="Pursuit" and ok==false then action="Jump";ok,reason=s.combat:request(actor,"Jump",aim,payload.clientTime,nil) end
-	if not ok and reason~="Committed" and reason~="Intro" and reason~="Empty slot" then s.combat:cue(actor,string.upper(reason)) end
+	-- (05/11) A press refused while the body takes a blow says how to get out
+	-- when the dodge button would ("Q" reads ○ on a pad, A on AZERTY).
+	if not ok and reason=="Reacting" and s.combat.escapeOpen(s.combat,actor) then s.combat:cue(actor,"HIT • Q TO ESCAPE")
+	elseif not ok and reason~="Committed" and reason~="Intro" and reason~="Empty slot" then s.combat:cue(actor,string.upper(reason)) end
 end
 function Matches:update(dt,now)
 	for player,s in self.sessions do
@@ -17414,7 +17491,7 @@ return Matches
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND67">
+      <Item class="ModuleScript" referent="ND68">
         <Properties>
           <string name="Name">Motor</string>
           <ProtectedString name="Source">-- Server movement authority. This module owns locomotion, landing and safe
@@ -17812,7 +17889,7 @@ return Motor
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND68">
+      <Item class="ModuleScript" referent="ND69">
         <Properties>
           <string name="Name">Online</string>
           <ProtectedString name="Source">-- Online 1v1 (NET-001): casual queue, private duel codes, a short fighter
@@ -18160,7 +18237,7 @@ return Online
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND69">
+      <Item class="ModuleScript" referent="ND70">
         <Properties>
           <string name="Name">Perception</string>
           <ProtectedString name="Source">-- Ninja Embodiment (DEC-027): what a body perceives of the space around a
@@ -18269,7 +18346,7 @@ return Perception
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND70">
+      <Item class="ModuleScript" referent="ND71">
         <Properties>
           <string name="Name">Place1Movement</string>
           <ProtectedString name="Source">-- Adapted directly from Place1 FirstPersonMovementController (alexkkork, MIT).
@@ -18573,7 +18650,7 @@ return Movement
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND71">
+      <Item class="ModuleScript" referent="ND72">
         <Properties>
           <string name="Name">Place1Parkour</string>
           <ProtectedString name="Source">-- Adapted directly from Place1 ParkourTraversalController (alexkkork, MIT).
@@ -19055,7 +19132,7 @@ return Parkour
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND72">
+      <Item class="ModuleScript" referent="ND73">
         <Properties>
           <string name="Name">Portraits</string>
           <ProtectedString name="Source">-- The menu's fighters (UI pass 02/11, user: "be original in everything"): the
@@ -19155,7 +19232,7 @@ return Portraits
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND73">
+      <Item class="ModuleScript" referent="ND74">
         <Properties>
           <string name="Name">ProfileRepository</string>
           <ProtectedString name="Source">-- Progression profile persistence (PROG-001). One key per profile; an
@@ -19366,7 +19443,7 @@ return Repo
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND74">
+      <Item class="ModuleScript" referent="ND75">
         <Properties>
           <string name="Name">ProfileSchema</string>
           <ProtectedString name="Source">-- Fighter progression profile (PROG-001). Per fighter: the skill points earned,
@@ -19569,7 +19646,7 @@ return S
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND75">
+      <Item class="ModuleScript" referent="ND76">
         <Properties>
           <string name="Name">SealKits</string>
           <ProtectedString name="Source">-- The seal jutsu that are not a plain family object (04/11, the user's kit
@@ -19760,7 +19837,7 @@ return SealKits
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND76">
+      <Item class="ModuleScript" referent="ND77">
         <Properties>
           <string name="Name">SkillBuilds</string>
           <ProtectedString name="Source">-- Skill builds (PROG-001/002). Pure, server-side: validates a fighter's ACTIVE
@@ -20249,7 +20326,7 @@ return SkillBuilds
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND77">
+      <Item class="ModuleScript" referent="ND78">
         <Properties>
           <string name="Name">SkillTrees</string>
           <ProtectedString name="Source">-- Fighter skill trees (PROG-001). Server data: what skill points buy for each
@@ -20567,7 +20644,7 @@ return {
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND78">
+      <Item class="ModuleScript" referent="ND79">
         <Properties>
           <string name="Name">Techniques</string>
           <ProtectedString name="Source">-- Each entry supplies prerequisites and payoff. The combat pipeline owns cost,
@@ -21120,7 +21197,7 @@ function Techniques.wireBind(c,owner,victim,riders,direction)
 	-- The wire is a conductor while it holds: Sasuke's lightning may run down it
 	-- (ChakraCombat.conduct), bounded from the moment the bind started.
 	victim.boundAt=c.now;victim.wireConducts=0
-	c:cue(owner,if pinned then "WIRED TO THE WALL • 1 = DRAGON FLAME" else "WIRED • 1 = DRAGON FLAME",.9);c:cue(victim,"WIRED • X TO ESCAPE",.9)
+	c:cue(owner,if pinned then "WIRED TO THE WALL • 1 = DRAGON FLAME" else "WIRED • 1 = DRAGON FLAME",.9);c:cue(victim,"WIRED • Q TO ESCAPE",.9)
 	Brawler.event(c,owner,if pinned then "WirePin" else "WireBind")
 end
 -- Chidori: the charge is the channel (slowed, interruptible); the release is
@@ -21156,7 +21233,7 @@ function Techniques.bindInSand(c,owner,victim,wet)
 	local Brawler=require(script.Parent.Brawler)
 	Brawler.react(c,victim,"Bound",Vector3.zero,1.25,owner)
 	victim.boundBy=owner
-	c:cue(owner,"SAND COFFIN • BOUND",.8);c:cue(victim,"BOUND • X TO ESCAPE",.9)
+	c:cue(owner,"SAND COFFIN • BOUND",.8);c:cue(victim,"BOUND • Q TO ESCAPE",.9)
 	local spec
 	for _,t in owner.def.Techniques do if t.Id=="SandCoffin" then spec=t end end
 	c:schedule(c.now+1.05,function()
@@ -21640,7 +21717,7 @@ return Techniques
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND79">
+      <Item class="ModuleScript" referent="ND80">
         <Properties>
           <string name="Name">Tournament</string>
           <ProtectedString name="Source">-- The Prodigy Tournament against the AI (roadmap 04/11, step 2): the eight
@@ -21907,7 +21984,7 @@ return Tournament
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND80">
+      <Item class="ModuleScript" referent="ND81">
         <Properties>
           <string name="Name">Tutorial</string>
           <ProtectedString name="Source">-- Tutorial v2 (user 02/11: "un vrai tutoriel ... adapté pour chaque perso",
@@ -22031,7 +22108,7 @@ function Tutorial.plan(a)
 	-- (04/11) The second page: the first seal jutsu, one press with the page held.
 	local seal=def.SealJutsu and def.SealJutsu[1]
 	if seal then
-		add({id="sealPage",title="Hand seals: "..tostring(seal.Name),key="Hold "..K.WallDetach.." + 1",pad="Hold R1 + L1 + □",
+		add({id="sealPage",title="Hand seals: "..tostring(seal.Name),key="Hold "..K.WallDetach.." + 1",pad="Hold L2 + R1 + □",
 			place=if (seal.Range or 20)&lt;10 then "near" else "far",technique=seal,
 			setup=function(s) local a=s.human;a.chakra=a.def.Chakra or 100;a.cooldowns={} end,
 			check=function(s,t) return t.ev("Cast:"..tostring(seal.Id)) end})
@@ -22042,8 +22119,11 @@ function Tutorial.plan(a)
 		check=function(s,t,now) local a,b=s.human,s.bot;return t.ev("Dodge") and (t.ev("Evaded") or (b.attackName~=nil and now-(b.attackStarted or now)&gt;.46 and a.health==t.health)) end})
 	-- (Studio 03/11, against Gaara: his heavy knocks down, and a body on the
 	-- floor cannot substitute) The partner hits with his light here.
-	add({id="substitute",title="Escape after being hit",key=K.Substitute.." just after contact",pad=P.Substitute.." just after contact",place="near",bot="heavy",strike="Attack",
-		check=function(s,t) return t.ev("Substitute") end})
+	-- (05/11, user on the pad: 13 presses of ○, the prompt named D-pad →)
+	-- The escape is the dodge button pressed while taking the blow; the body's
+	-- own step out (past its share of the stun) is an escape too.
+	add({id="substitute",title="Escape after being hit",key=K.Dodge.." as soon as his blow lands",pad=P.Dodge.." as soon as his blow lands",place="near",bot="heavy",strike="Attack",
+		check=function(s,t) return t.ev("Substitute") or t.ev("Recover") end})
 	-- (Roster run 02/11: STUCK for every fighter from 28 studs: the signs end
 	-- before anyone gets there.) In dash reach, as in a duel.
 	add({id="interrupt",title="Interrupt his hand signs",key=K.Light.." during the signs",pad=P.Light.." during the signs",place="mid",bot="channel",
@@ -22306,7 +22386,7 @@ return Tutorial
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND81">
+      <Item class="ModuleScript" referent="ND82">
         <Properties>
           <string name="Name">Ultimates</string>
           <ProtectedString name="Source">-- Ultimates (stage 6, the approved move list, "Ultimes"): one per main
@@ -22611,7 +22691,7 @@ return Ultimates
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND82">
+      <Item class="ModuleScript" referent="ND83">
         <Properties>
           <string name="Name">VelmoraAntiCheat</string>
           <ProtectedString name="Source">-- Adapted from Velmora src/server/Combat/CombatAntiCheat.luau.
@@ -22639,7 +22719,7 @@ return AntiCheat
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND83">
+      <Item class="ModuleScript" referent="ND84">
         <Properties>
           <string name="Name">VelmoraDefense</string>
           <ProtectedString name="Source">-- Adapted from Velmora CombatService guard/parry/dodge resolution.
@@ -22774,7 +22854,7 @@ return Defense
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND84">
+      <Item class="ModuleScript" referent="ND85">
         <Properties>
           <string name="Name">VelmoraHitDetection</string>
           <ProtectedString name="Source">-- Adapted from Velmora src/server/Combat/HitDetection.luau.
@@ -22825,7 +22905,7 @@ return HitDetection
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND85">
+      <Item class="ModuleScript" referent="ND86">
         <Properties>
           <string name="Name">Wave1Kit</string>
           <ProtectedString name="Source">-- Roster 20, batch 1 (Haku, Zabuza, Kimimaro): the batch's server side. All
@@ -22960,7 +23040,7 @@ return Kit
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND86">
+      <Item class="ModuleScript" referent="ND87">
         <Properties>
           <string name="Name">Wave2Kit</string>
           <ProtectedString name="Source">-- Roster 20, batch 2 (Shisui, Orochimaru, Kabuto): the batch's server side.
@@ -23074,7 +23154,7 @@ return Kit
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND87">
+      <Item class="ModuleScript" referent="ND88">
         <Properties>
           <string name="Name">Wave3Kit</string>
           <ProtectedString name="Source">-- Roster 20, batch 3 (Deidara, Sasori, Nagato, Killer Bee): the batch's
@@ -23260,7 +23340,7 @@ return Kit
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND88">
+      <Item class="ModuleScript" referent="ND89">
         <Properties>
           <string name="Name">Wave4Kit</string>
           <ProtectedString name="Source">-- DEC-026 newcomers (Madara, Hashirama, Hiruzen as children): the batch's
@@ -23367,7 +23447,7 @@ return Kit
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND89">
+      <Item class="ModuleScript" referent="ND90">
         <Properties>
           <string name="Name">World</string>
           <ProtectedString name="Source">local World = {}
@@ -24577,7 +24657,7 @@ return World
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND90">
+      <Item class="ModuleScript" referent="ND91">
         <Properties>
           <string name="Name">WorldReaction</string>
           <ProtectedString name="Source">-- Ninja Embodiment (DEC-027, EMB-004): the arena answers what happens in it.
@@ -25190,7 +25270,7 @@ return WorldReaction
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND91">
+      <Item class="ModuleScript" referent="ND92">
         <Properties>
           <string name="Name">Zones</string>
           <ProtectedString name="Source">-- Persistent typed zones (ROSTER_WAVE_HOOKS H06), beside Combat's hazards
@@ -25418,21 +25498,21 @@ return Zones
       </Item>
     </Item>
   </Item>
-  <Item class="StarterPlayer" referent="ND92">
+  <Item class="StarterPlayer" referent="ND93">
     <Properties>
       <string name="Name">StarterPlayer</string>
       <float name="CameraMinZoomDistance">8</float>
       <float name="CameraMaxZoomDistance">32</float>
     </Properties>
-    <Item class="StarterPlayerScripts" referent="ND93">
+    <Item class="StarterPlayerScripts" referent="ND94">
       <Properties>
         <string name="Name">StarterPlayerScripts</string>
       </Properties>
-      <Item class="Folder" referent="ND94">
+      <Item class="Folder" referent="ND95">
         <Properties>
           <string name="Name">NinjaDuelClient</string>
         </Properties>
-        <Item class="ModuleScript" referent="ND95">
+        <Item class="ModuleScript" referent="ND96">
           <Properties>
             <string name="Name">ArenaDress</string>
             <ProtectedString name="Source">-- The stadium as this screen shows it (look pass 03/11, user: "the brightness,
@@ -25634,7 +25714,7 @@ return ArenaDress
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND96">
+        <Item class="ModuleScript" referent="ND97">
           <Properties>
             <string name="Name">AuthoredClips</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -25693,7 +25773,7 @@ return all
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND97">
+        <Item class="ModuleScript" referent="ND98">
           <Properties>
             <string name="Name">AuthoredClips1</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -26011,7 +26091,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND98">
+        <Item class="ModuleScript" referent="ND99">
           <Properties>
             <string name="Name">AuthoredClips10</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -26397,7 +26477,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND99">
+        <Item class="ModuleScript" referent="ND100">
           <Properties>
             <string name="Name">AuthoredClips11</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -26545,7 +26625,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND100">
+        <Item class="ModuleScript" referent="ND101">
           <Properties>
             <string name="Name">AuthoredClips12</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -26846,7 +26926,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND101">
+        <Item class="ModuleScript" referent="ND102">
           <Properties>
             <string name="Name">AuthoredClips13</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -27079,7 +27159,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND102">
+        <Item class="ModuleScript" referent="ND103">
           <Properties>
             <string name="Name">AuthoredClips14</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -27295,7 +27375,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND103">
+        <Item class="ModuleScript" referent="ND104">
           <Properties>
             <string name="Name">AuthoredClips15</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -27681,7 +27761,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND104">
+        <Item class="ModuleScript" referent="ND105">
           <Properties>
             <string name="Name">AuthoredClips16</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -27846,7 +27926,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND105">
+        <Item class="ModuleScript" referent="ND106">
           <Properties>
             <string name="Name">AuthoredClips17</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -27994,7 +28074,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND106">
+        <Item class="ModuleScript" referent="ND107">
           <Properties>
             <string name="Name">AuthoredClips18</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -28312,7 +28392,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND107">
+        <Item class="ModuleScript" referent="ND108">
           <Properties>
             <string name="Name">AuthoredClips19</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -28596,7 +28676,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND108">
+        <Item class="ModuleScript" referent="ND109">
           <Properties>
             <string name="Name">AuthoredClips2</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -28829,7 +28909,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND109">
+        <Item class="ModuleScript" referent="ND110">
           <Properties>
             <string name="Name">AuthoredClips20</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -29079,7 +29159,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND110">
+        <Item class="ModuleScript" referent="ND111">
           <Properties>
             <string name="Name">AuthoredClips21</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -29414,7 +29494,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND111">
+        <Item class="ModuleScript" referent="ND112">
           <Properties>
             <string name="Name">AuthoredClips22</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -29511,7 +29591,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND112">
+        <Item class="ModuleScript" referent="ND113">
           <Properties>
             <string name="Name">AuthoredClips23</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -29795,7 +29875,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND113">
+        <Item class="ModuleScript" referent="ND114">
           <Properties>
             <string name="Name">AuthoredClips24</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -30028,7 +30108,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND114">
+        <Item class="ModuleScript" referent="ND115">
           <Properties>
             <string name="Name">AuthoredClips25</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -30210,7 +30290,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND115">
+        <Item class="ModuleScript" referent="ND116">
           <Properties>
             <string name="Name">AuthoredClips26</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -30596,7 +30676,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND116">
+        <Item class="ModuleScript" referent="ND117">
           <Properties>
             <string name="Name">AuthoredClips27</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -30795,7 +30875,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND117">
+        <Item class="ModuleScript" referent="ND118">
           <Properties>
             <string name="Name">AuthoredClips28</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -31028,7 +31108,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND118">
+        <Item class="ModuleScript" referent="ND119">
           <Properties>
             <string name="Name">AuthoredClips29</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -31312,7 +31392,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND119">
+        <Item class="ModuleScript" referent="ND120">
           <Properties>
             <string name="Name">AuthoredClips3</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -31562,7 +31642,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND120">
+        <Item class="ModuleScript" referent="ND121">
           <Properties>
             <string name="Name">AuthoredClips30</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -31829,7 +31909,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND121">
+        <Item class="ModuleScript" referent="ND122">
           <Properties>
             <string name="Name">AuthoredClips31</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -32062,7 +32142,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND122">
+        <Item class="ModuleScript" referent="ND123">
           <Properties>
             <string name="Name">AuthoredClips32</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -32397,7 +32477,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND123">
+        <Item class="ModuleScript" referent="ND124">
           <Properties>
             <string name="Name">AuthoredClips33</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -32511,7 +32591,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND124">
+        <Item class="ModuleScript" referent="ND125">
           <Properties>
             <string name="Name">AuthoredClips34</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -32812,7 +32892,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND125">
+        <Item class="ModuleScript" referent="ND126">
           <Properties>
             <string name="Name">AuthoredClips35</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -33045,7 +33125,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND126">
+        <Item class="ModuleScript" referent="ND127">
           <Properties>
             <string name="Name">AuthoredClips36</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -33261,7 +33341,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND127">
+        <Item class="ModuleScript" referent="ND128">
           <Properties>
             <string name="Name">AuthoredClips37</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -33579,7 +33659,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND128">
+        <Item class="ModuleScript" referent="ND129">
           <Properties>
             <string name="Name">AuthoredClips38</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -33880,7 +33960,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND129">
+        <Item class="ModuleScript" referent="ND130">
           <Properties>
             <string name="Name">AuthoredClips39</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -33977,7 +34057,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND130">
+        <Item class="ModuleScript" referent="ND131">
           <Properties>
             <string name="Name">AuthoredClips4</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -34227,7 +34307,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND131">
+        <Item class="ModuleScript" referent="ND132">
           <Properties>
             <string name="Name">AuthoredClips40</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -34477,7 +34557,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND132">
+        <Item class="ModuleScript" referent="ND133">
           <Properties>
             <string name="Name">AuthoredClips41</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -34727,7 +34807,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND133">
+        <Item class="ModuleScript" referent="ND134">
           <Properties>
             <string name="Name">AuthoredClips42</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -34943,7 +35023,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND134">
+        <Item class="ModuleScript" referent="ND135">
           <Properties>
             <string name="Name">AuthoredClips43</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -35346,7 +35426,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND135">
+        <Item class="ModuleScript" referent="ND136">
           <Properties>
             <string name="Name">AuthoredClips44</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -35460,7 +35540,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND136">
+        <Item class="ModuleScript" referent="ND137">
           <Properties>
             <string name="Name">AuthoredClips45</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -35506,7 +35586,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND137">
+        <Item class="ModuleScript" referent="ND138">
           <Properties>
             <string name="Name">AuthoredClips46</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -35552,7 +35632,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND138">
+        <Item class="ModuleScript" referent="ND139">
           <Properties>
             <string name="Name">AuthoredClips47</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -35598,7 +35678,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND139">
+        <Item class="ModuleScript" referent="ND140">
           <Properties>
             <string name="Name">AuthoredClips48</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -35644,7 +35724,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND140">
+        <Item class="ModuleScript" referent="ND141">
           <Properties>
             <string name="Name">AuthoredClips49</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -35673,7 +35753,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND141">
+        <Item class="ModuleScript" referent="ND142">
           <Properties>
             <string name="Name">AuthoredClips5</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -35940,7 +36020,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND142">
+        <Item class="ModuleScript" referent="ND143">
           <Properties>
             <string name="Name">AuthoredClips6</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -36071,7 +36151,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND143">
+        <Item class="ModuleScript" referent="ND144">
           <Properties>
             <string name="Name">AuthoredClips7</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -36355,7 +36435,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND144">
+        <Item class="ModuleScript" referent="ND145">
           <Properties>
             <string name="Name">AuthoredClips8</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -36639,7 +36719,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND145">
+        <Item class="ModuleScript" referent="ND146">
           <Properties>
             <string name="Name">AuthoredClips9</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -36872,7 +36952,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND146">
+        <Item class="ModuleScript" referent="ND147">
           <Properties>
             <string name="Name">AuthoredJutsu</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -36887,7 +36967,7 @@ return all
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND147">
+        <Item class="ModuleScript" referent="ND148">
           <Properties>
             <string name="Name">AuthoredJutsu1</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -37307,7 +37387,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND148">
+        <Item class="ModuleScript" referent="ND149">
           <Properties>
             <string name="Name">AuthoredJutsu2</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -37693,7 +37773,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND149">
+        <Item class="ModuleScript" referent="ND150">
           <Properties>
             <string name="Name">AuthoredJutsu3</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -38130,7 +38210,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND150">
+        <Item class="ModuleScript" referent="ND151">
           <Properties>
             <string name="Name">AuthoredJutsu4</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -38533,7 +38613,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND151">
+        <Item class="ModuleScript" referent="ND152">
           <Properties>
             <string name="Name">AuthoredJutsu5</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -38732,7 +38812,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND152">
+        <Item class="ModuleScript" referent="ND153">
           <Properties>
             <string name="Name">AuthoredMotion</string>
             <ProtectedString name="Source">-- Blender-authored body animation (DEC Blender-first pipeline): clips made in
@@ -38875,7 +38955,7 @@ return Authored
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND153">
+        <Item class="ModuleScript" referent="ND154">
           <Properties>
             <string name="Name">BodyViews</string>
             <ProtectedString name="Source">-- Bodies that are not fighters (Server/Bodies: Naruto's shadow clones), drawn
@@ -39053,7 +39133,7 @@ return BodyViews
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND154">
+        <Item class="ModuleScript" referent="ND155">
           <Properties>
             <string name="Name">Camera</string>
             <ProtectedString name="Source">-- Duel camera. A locked third-person rig that keeps both fighters readable:
@@ -39069,12 +39149,18 @@ local Camera={}; Camera.__index=Camera
 local framing={
  -- (Fluidity pass, user reference 28/10) close behind the shoulder: the
  -- body fills the frame, every motion of it reads; the opponent ahead.
- Ground={distance=12.5,height=3.6,fov=64,lift=1.8,side=.62},
- Launcher={distance=18,height=4,fov=72,lift=4.5,side=.36},
- Pursuit={distance=21,height=6,fov=78,lift=3,side=.4},
- AirCombo={distance=19,height=3.5,fov=74,lift=2.5,side=.4},
- Slam={distance=19,height=10,fov=76,lift=-1.5,side=.34},
- Wall={distance=22,height=8,fov=75,lift=3,side=.5},
+ Ground={distance=12.5,height=3.6,fov=64,lift=1.8,side=.55},
+ -- (05/11, user on the pad: "on sent qu'elle bascule entre 2") The air,
+ -- chase, slam and wall framings were 6 to 10 studs further and 8 to 14
+ -- degrees wider than the ground one, and a string with a launcher went in,
+ -- out and in again. Closer to the ground frame now (the gap and the height
+ -- between the bodies still pull the lens back on their own), and every
+ -- change of framing is eased over a third of a second (Camera:update).
+ Launcher={distance=15.5,height=4,fov=68,lift=3.5,side=.5},
+ Pursuit={distance=17,height=5,fov=70,lift=3,side=.5},
+ AirCombo={distance=15.5,height=3.5,fov=68,lift=2.5,side=.5},
+ Slam={distance=16.5,height=7.5,fov=70,lift=-1,side=.45},
+ Wall={distance=17,height=6,fov=70,lift=3,side=.5},
 }
 local function mode(h,b)
  if h.attackName=="Slam" or b.attackName=="Slam" then return "Slam" end
@@ -39293,9 +39379,28 @@ function Camera:update(data,dt)
 	-- character and back") The framing modes (chase 21 studs, wall 22, slam
 	-- 19 and 10 up, against 12.5 on the ground) frame the pair when locked
 	-- on; free, they jumped the lens in and out. Free keeps the ground frame.
-	local frame=if follow then framing[selected] else framing.Ground
+	local goal=if follow then framing[selected] else framing.Ground
+	-- (05/11) The framing in use slides toward the selected one (a third of a
+	-- second) instead of switching tables.
+	local frame=self.frameNow
+	if fresh or not frame then frame=table.clone(goal)
+	else
+		local k=1-math.exp(-dt*3)
+		for key,value in goal do frame[key]+=(value-frame[key])*k end
+	end
+	self.frameNow=frame
+	-- (05/11) How locked the rig is, eased from 0 (free) to 1 (locked): the
+	-- R3 / SHIFT toggle, or the shroud taking the opponent away, slides the
+	-- focus, the distance and the height from one rig to the other instead of
+	-- cutting between two cameras.
+	local lockGoal=if follow then 1 else 0
+	self.lockT=if fresh or self.lockT==nil then lockGoal else self.lockT+(lockGoal-self.lockT)*(1-math.exp(-dt*5))
+	local lockT=self.lockT
+	-- A pad or a phone: the right thumb also strikes (Camera:update below).
+	local auto=data.gamepad==true or data.touch==true
 	-- Look-stick / unlocked mouse orbit.
 	self.yaw+=(self.look.X or 0)*dt*2.4;self.pitch=math.clamp(self.pitch-(self.look.Y or 0)*dt,.04,.9)
+	if (self.look.Magnitude or 0)&gt;.05 then self.lastLookInput=clock end
 	-- (Audit 29/10) Locked, a nudge of the right stick is a glance: it eases
 	-- back behind the shoulder once the stick rests (it stayed off for good).
 	if follow and not data.ko and math.abs(self.look.X or 0)&lt;.05 then self.yaw*=math.exp(-dt*1.6) end
@@ -39315,18 +39420,29 @@ function Camera:update(data,dt)
 	else
 		if self.faceOpponent then self.yaw=math.atan2(behind.X,behind.Z);self.boomAngle=nil;self.faceOpponent=nil end
 		-- (B1, B0 defect 4 and Studio 04/11 v37: free, the opponent was often off
-		-- screen, at the wall above all) When the player leaves the lens alone
-		-- (no mouse or right stick for 0.9 s, no move), it brings the opponent
-		-- back to the edge of the frame, gently. Never while he steers: the moves
-		-- are relative to the lens, a turn mid-run would bend the run.
-		local clock0=os.clock()
-		if (self.look.Magnitude or 0)&gt;.05 then self.lastLookInput=clock0 end
-		local still=presentation==nil or presentation.inputDir==nil or presentation.inputDir.Magnitude&lt;.1
-		if not lost and not data.ko and still and clock0-(self.lastLookInput or 0)&gt;.9 and separation&gt;4 then
+		-- screen, at the wall above all) The free lens brings the opponent back
+		-- toward the frame.
+		-- (05/11, user on the pad: "on sent qu'elle bascule entre 2") It used to
+		-- switch on after 0.9 s without the stick and without a move, then off
+		-- at the first step: the lens kept changing hands. Now:
+		--  * pad or phone (the right thumb also strikes): the follow is always
+		--    on, a dead zone of 22 degrees around the centre and a spring past
+		--    it, run or not; the stick only borrows the lens and, let go, the
+		--    follow comes back over 0.6 s. The body stays free (only a lock
+		--    turns it toward the opponent, DEC-031);
+		--  * mouse: the player steers the body with the lens, so it only helps
+		--    a player who stands and leaves it alone, eased in, never switched.
+		local idle=clock-(self.lastLookInput or -math.huge)
+		if not lost and not data.ko and separation&gt;3.2 then
+			local weight,edge,rate
+			if auto then weight=math.clamp((idle-.6)/.6,0,1);edge=math.rad(22);rate=3.2
+			else
+				local still=presentation==nil or presentation.inputDir==nil or presentation.inputDir.Magnitude&lt;.1
+				weight=if still then math.clamp((idle-.9)/.6,0,1) else 0;edge=math.rad(32);rate=2.4
+			end
 			local off=wrap(self.yaw-math.atan2(behind.X,behind.Z))
-			local edge=math.rad(32)
-			if math.abs(off)&gt;math.rad(48) then
-				local turn=math.min(math.abs(off)-edge,math.rad(110)*dt)
+			if weight&gt;0 and math.abs(off)&gt;edge then
+				local turn=math.min((math.abs(off)-edge)*(1-math.exp(-dt*rate)),math.rad(150)*dt)*weight
 				self.yaw=wrap(self.yaw-math.sign(off)*turn)
 			end
 		end
@@ -39365,9 +39481,14 @@ function Camera:update(data,dt)
 		self.lead=(self.lead or Vector3.zero):Lerp(lead,1-math.exp(-dt*4))
 		targetFocus+=self.lead
 	end
-	if not follow then
+	-- Free, the lens follows the player (over the shoulder); locked, the pair.
+	-- (05/11) Blended by lockT, so the toggle slides; on a pad the free lens
+	-- leans a little toward the fight it keeps in view.
+	if lockT&lt;.999 then
 		local look=Vector3.new(-boom.X,0,-boom.Z)
-		targetFocus=a+Vector3.new(0,1.6,0)+(if look.Magnitude&gt;.05 then look.Unit:Cross(Vector3.yAxis)*1.7 else Vector3.zero)
+		local freeFocus=a+Vector3.new(0,1.6,0)+(if look.Magnitude&gt;.05 then look.Unit:Cross(Vector3.yAxis)*1.7 else Vector3.zero)
+		if auto and not lost then freeFocus+=flat.Unit*math.min(separation*.1,2.5) end
+		targetFocus=freeFocus:Lerp(targetFocus,lockT)
 	end
 	local focusRate=if aerial or pursuit then 13 else 9
 	self.focus=if self.focus then self.focus:Lerp(targetFocus,1-math.exp(-dt*focusRate)) else targetFocus
@@ -39378,11 +39499,15 @@ function Camera:update(data,dt)
 	local spread=math.min(math.max(0,separation-7),19)*.42+math.max(0,separation-26)*.22
 	-- Free, the lens follows the player, not the pair: no pull-back for the gap
 	-- to the opponent (a wall run 40 studs from him filmed the player tiny).
-	local pairVertical=vertical
-	if not follow then spread=0;pairVertical=0 end
+	-- (05/11) A pad's free lens keeps half of it (the opponent it keeps in view
+	-- stays readable); the share slides with lockT.
+	local freeShare=if auto and not lost then .5 else 0
+	local share=freeShare+(1-freeShare)*lockT
+	spread*=share
+	local pairVertical=vertical*share
 	local wantDistance=math.clamp(frame.distance-sprint*1.5+spread+pairVertical*.3+self.zoom+(self.settleSize or 0)*math.sin(settle*math.pi*.5)+(if data.ko then 6 else 0),8.5,48)
 	self.distance=if self.distance then self.distance+(wantDistance-self.distance)*(1-math.exp(-dt*4)) else wantDistance
-	local height=frame.height-sprint*.6+self.pitch*9+(if follow then vertical*.28+math.min(math.max(0,separation-10)*.1,4) else 0)
+	local height=frame.height-sprint*.6+self.pitch*9+(vertical*.28+math.min(math.max(0,separation-10)*.1,4))*share
 	if slam then height+=math.clamp(-(data.human.velocity and data.human.velocity.Y or 0)*.04,0,4) end
 	local desired=focus+boom*self.distance+Vector3.new(0,height,0)
 	-- Match intro: a slow orbit that presents both fighters, then the normal
@@ -39672,7 +39797,7 @@ return Camera
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND155">
+        <Item class="ModuleScript" referent="ND156">
           <Properties>
             <string name="Name">ChakraFX</string>
             <ProtectedString name="Source">-- Systemic chakra on the client, the player-facing layer (convergence 3,
@@ -40227,7 +40352,7 @@ return ChakraFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND156">
+        <Item class="ModuleScript" referent="ND157">
           <Properties>
             <string name="Name">ChakraFlowFX</string>
             <ProtectedString name="Source">-- ChakraFlow on the client (Freedom, user 28/10: chakra infusions): the load
@@ -40411,7 +40536,7 @@ return ChakraFlowFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND157">
+        <Item class="ModuleScript" referent="ND158">
           <Properties>
             <string name="Name">CupScreen</string>
             <ProtectedString name="Source">-- The Prodigy Tournament on screen (Server/Tournament): the bracket between
@@ -40672,7 +40797,7 @@ return Cup
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND158">
+        <Item class="ModuleScript" referent="ND159">
           <Properties>
             <string name="Name">Effects</string>
             <ProtectedString name="Source">-- Client-side combat VFX. Everything here is presentation driven by the server
@@ -42890,7 +43015,7 @@ return FX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND159">
+        <Item class="ModuleScript" referent="ND160">
           <Properties>
             <string name="Name">FamilyFX</string>
             <ProtectedString name="Source">-- Family objects seen in play (roster breadth pass): every projectile kind of
@@ -43692,7 +43817,7 @@ return FamilyFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND160">
+        <Item class="ModuleScript" referent="ND161">
           <Properties>
             <string name="Name">GaleFX</string>
             <ProtectedString name="Source">-- Temari on the client (roster wave): the iron fan (closed on her back at rest,
@@ -44170,7 +44295,7 @@ return GaleFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND161">
+        <Item class="ModuleScript" referent="ND162">
           <Properties>
             <string name="Name">GaleMotion</string>
             <ProtectedString name="Source">-- Temari's motion family (roster wave, DEC-015): her stance, gait, clips,
@@ -44351,7 +44476,7 @@ return GaleMotion
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND162">
+        <Item class="ModuleScript" referent="ND163">
           <Properties>
             <string name="Name">IdentityFX</string>
             <ProtectedString name="Source">-- CORE4 identity on the client (mission NEXT_VALIDATION_ROSTER_SCALE §5): what
@@ -45121,7 +45246,7 @@ return IdentityFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND163">
+        <Item class="ModuleScript" referent="ND164">
           <Properties>
             <string name="Name">Input</string>
             <ProtectedString name="Source">local CAS=game:GetService("ContextActionService")
@@ -45138,9 +45263,6 @@ Input.ChakraHold=.28
 -- while choosing the face button loaded chakra by accident (and the next ○
 -- became a dash). The pad's load needs a deliberate hold.
 Input.ChakraHoldPad=.5
--- (Audit 04/11) R1 + L1 let go unused is the ultimate only on a short tap:
--- a page opened to choose a seal and closed without one burnt the bar.
-Input.UltimateTap=.4
 Input.now=os.clock
 local KEYBOARD,GAMEPAD=Controls.Keyboard,Controls.Gamepad
 local function key(code) return {code} end
@@ -45209,44 +45331,42 @@ function Input.new(send,getState,toggleLock,camera)
   self.look=if released(state) then Vector2.zero else Vector2.new(obj.Position.X,obj.Position.Y)
   camera.look=self.look
  end)
- -- (Audit 04/11) The seal page: R1 + L1 in either order (L1 is the guard, so
- -- L1 first is the natural roll); the guard it started is let go while the
- -- page is open and taken back if L1 is still held when the page closes.
- local function openPage()
-  self.modifierSpent=true;self.sealPad=true;self.sealPadUsed=false;self.sealPadAt=Input.now()
-  local id=GAMEPAD.Guard.Name
-  if self.guards[id] then
-   self.guards[id]=nil
-   if next(self.guards)==nil then send("GuardOff") end
+ -- (05/11, user on the pad: « l'ergonomie des touches c'est pas encore ça »)
+ -- R1 + L1 was three things: the seal page held, the ultimate on a short tap
+ -- of it, the wall's detach; opening the page let the guard go, and a page
+ -- closed without a seal could burn the bar. Now R1 + L1 is the ultimate
+ -- alone, on the chord's press, in either order (the server makes it the
+ -- detach on a wall); the seal jutsu are L2 + R1 + □ △ ○ × (the chakra
+ -- button with the jutsu one: a jutsu woven with its signs).
+ -- The guard L1 raised is let go only when the chord can do something (the
+ -- bar full, a wall to leave) and comes back if L1 is still held when R1 goes.
+ local function ultimate()
+  self.modifierSpent=true
+  local h=getState().human
+  if h and (h.ultimateReady or h.wall) and next(self.guards)~=nil then
+   table.clear(self.guards);send("GuardOff");self.guardTaken=true
   end
- end
- local function closePage()
-  if not self.sealPad then return end
-  self.sealPad=false
-  if not self.sealPadUsed and Input.now()-(self.sealPadAt or -math.huge)&lt;=Input.UltimateTap then send("Ultimate") end
-  self.sealPadUsed=true
-  -- L1 still down: the guard comes back.
-  if self.padL1 then
-   local already=next(self.guards)~=nil;self.guards[GAMEPAD.Guard.Name]=true
-   if not already then send("Guard") end
-  end
+  send("Ultimate")
  end
  bind("Modifier",key(GAMEPAD.Modifier),function(state)
   if begin(state) then
    self.modifier=true;self.modifierAt=Input.now();self.modifierSpent=false
-   if self.padL1 then openPage() end
+   if self.padL1 then ultimate() end
   elseif released(state) then
    self.modifier=false
-   closePage()
+   if self.guardTaken and self.padL1 then
+    local already=next(self.guards)~=nil;self.guards[GAMEPAD.Guard.Name]=true
+    if not already then send("Guard") end
+   end
+   self.guardTaken=nil
   end
  end)
  local function face(state,object,normal,slot)
   if pressed(state,object) then
    local modified=padObject(object) and self.modifier
    if modified then self.modifierSpent=true;self.seals[object.KeyCode.Name]=true end
-   -- (04/11) R1 + L1 held: the second page, the seal jutsu (the ultimate waits
-   -- for the chord's release, Guard below).
-   if modified and self.sealPad then self.sealPadUsed=true;send("Seal"..slot);return false end
+   -- (05/11) L2 held with R1: the second page, the seal jutsu.
+   if modified and self.chakraPad then send("Seal"..slot);return false end
    -- (User 29/10) Pad L1 + □ is the grab (the guard held, the light pressed).
    if not modified and normal=="Attack" and padObject(object) and next(self.guards)~=nil then send("Grab");return false end
    -- The chakra button held (pad L2, keyboard Z): the press goes out infused.
@@ -45282,22 +45402,16 @@ function Input.new(send,getState,toggleLock,camera)
  bind("Guard",both("Guard"),function(state,obj)
   local id=obj.KeyCode.Name
   if released(state) then
-   -- (04/11) R1 + L1 tapped without a seal jutsu: the ultimate (on a wall, the
-   -- server lets go of it instead).
-   if padObject(obj) then
-    self.padL1=false
-    closePage()
-   end
+   if padObject(obj) then self.padL1=false;self.guardTaken=nil end
    if self.guards[id] then
     self.guards[id]=nil
     if next(self.guards)==nil then send("GuardOff") end
    end
    pressed(state,obj)
   elseif pressed(state,obj) then
-   -- R1 + L1: the seal page while held (□ △ ○ × D-pad ↑), the ultimate when
-   -- let go unused.
    if padObject(obj) then self.padL1=true end
-   if padObject(obj) and self.modifier then openPage()
+   -- R1 held, then L1: the ultimate (Modifier above for L1 first).
+   if padObject(obj) and self.modifier then ultimate()
    else
     local already=next(self.guards)~=nil;self.guards[id]=true
     if not already then send("Guard") end
@@ -45316,7 +45430,7 @@ function Input.new(send,getState,toggleLock,camera)
  bind("Tool",both("Tool"),function(state,obj)
   if pressed(state,obj) then
    -- R1 + R2 on the pad is the feint now (R1 is the jutsu shift, L2 the chakra).
-   if padObject(obj) and self.modifier then self.modifierSpent=true;if self.sealPad then self.sealPadUsed=true end;send("Feint");return end
+   if padObject(obj) and self.modifier then self.modifierSpent=true;send("Feint");return end
    local chakra=self:chakraOn(padObject(obj))
    if chakra then self.chakraSpent=true end
    if chakra then send("Tool",{chakra=true,aim=toolAim(getState(),padObject(obj))}) else send("Tool") end
@@ -45324,7 +45438,7 @@ function Input.new(send,getState,toggleLock,camera)
  end)
  bind("Grab",both("Grab"),function(state,obj)
   if pressed(state,obj) then
-   if padObject(obj) and self.modifier then self.modifierSpent=true;if self.sealPad then self.sealPadUsed=true end end
+   if padObject(obj) and self.modifier then self.modifierSpent=true end
    send(if padObject(obj) and self.modifier then "Feint" else "Grab")
   end
  end)
@@ -45345,11 +45459,12 @@ function Input.new(send,getState,toggleLock,camera)
  for _,action in {"Awaken","Arm"} do
   bind(action,both(action),function(state,obj) if pressed(state,obj) then send(action) end end)
  end
- -- Jutsu 5 (keyboard 5, D-pad ↑); on the seal page the fifth seal jutsu.
+ -- Jutsu 5 (keyboard 5, D-pad ↑); on the seal page the fifth seal jutsu
+ -- (keyboard C held, pad L2 + R1 held).
  bind("Technique5",both("Technique5"),function(state,obj)
   if pressed(state,obj) then
-   local page=if padObject(obj) then self.sealPad else self.sealKey
-   if page then self.sealPadUsed=true;send("Seal5") else send("Technique5") end
+   local page=if padObject(obj) then self:sealPage() else self.sealKey
+   if page then send("Seal5") else send("Technique5") end
   end
  end)
  -- Pad re-engage has no button of its own: × in a chase window (Jump above),
@@ -45391,7 +45506,7 @@ function Input.new(send,getState,toggleLock,camera)
 end
 function Input:reset()
  table.clear(self.keys);table.clear(self.held);table.clear(self.guards);table.clear(self.jumps);table.clear(self.seals)
- self.sealKey=false;self.sealPad=false;self.sealPadUsed=true;self.padL1=false
+ self.sealKey=false;self.padL1=false;self.guardTaken=nil
  self.stick=Vector2.zero;self.look=Vector2.zero;self.modifier=false;self.sprinting=false;self.camera.look=Vector2.zero
  self.chakra=false;self.chakraAt=nil;self.modifierSpent=true;self.chakraSpent=true;self.chakraPad=false;self.chakraPadAt=nil
 end
@@ -45409,6 +45524,11 @@ function Input:resync()
    if input.KeyCode==Enum.KeyCode.Thumbstick1 and input.Position.Magnitude&gt;.15 then self.stick=Vector2.new(input.Position.X,input.Position.Y) end
   end
  end)
+end
+-- The seal page held: keyboard C, pad L2 + R1 (05/11) — the HUD's slip.
+function Input:sealPage()
+ if self.pad then return self.modifier==true and self.chakraPad==true end
+ return self.sealKey==true
 end
 -- (Freedom) The modifier held alone: once per hold, the next action is
 -- loaded with chakra. Polled every frame (Input:direction).
@@ -45456,7 +45576,7 @@ return Input
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND164">
+        <Item class="ModuleScript" referent="ND165">
           <Properties>
             <string name="Name">LeeFX</string>
             <ProtectedString name="Source">-- Rock Lee on the client (stress-test wave, DEC-015): the Fifth Gate (a green
@@ -45663,7 +45783,7 @@ return LeeFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND165">
+        <Item class="ModuleScript" referent="ND166">
           <Properties>
             <string name="Name">LobbyPanel</string>
             <ProtectedString name="Source">-- Players online and challenges, the client's half (Server/Lobby, user 04/11:
@@ -45931,7 +46051,7 @@ return Panel
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="LocalScript" referent="ND166">
+        <Item class="LocalScript" referent="ND167">
           <Properties>
             <string name="Name">Main</string>
             <ProtectedString name="Source">local Players=game:GetService("Players")
@@ -46039,10 +46159,17 @@ require(playerModule):GetControls():Disable()
 remote.OnClientEvent:Connect(function(data)
 	if data.epoch&lt;(current.epoch or 0) then return end
 	if data.epoch~=current.epoch or data.phase~=current.phase then input:resync() end
-	if data.epoch~=current.epoch then camera.locked=false end
+	-- (05/11, user on the pad) The lock is the player's choice: it used to drop
+	-- back to free at every round (each round is a new epoch), and the lens
+	-- swapped rigs under him until he pressed R3 again.
 	data.gamepad=input.pad
 	data.touch=input.touch==true
-	data.sealPage=input.sealPad==true or input.sealKey==true
+	data.sealPage=input:sealPage()
+	-- (05/11) R1 held on a pad: the jutsu row lights up (what □ △ ○ × will cast).
+	data.jutsuPage=input.pad==true and input.modifier==true and not data.sealPage
+	-- (05/11) the chakra button held alone (pad L2, keyboard Z): the row names
+	-- what it infuses (UI, Shared/ChakraMoves).
+	data.chakraPage=if input.pad then input.chakraPad==true and not input.modifier else input.chakra==true and not input.sealKey
 	current=data; presentation.receivedAt=os.clock(); presentation:impacts(data,camera); ui:render(data)
 	if lobbyPanel then lobbyPanel:render(data) end
 	cupScreen:render(data)
@@ -46168,7 +46295,7 @@ print("[NinjaDuel] Client ready")
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND167">
+        <Item class="ModuleScript" referent="ND168">
           <Properties>
             <string name="Name">MenuStage</string>
             <ProtectedString name="Source">-- The select screen's two prodigies, in a real 3D set (user 02/11, "everything
@@ -46350,7 +46477,7 @@ return MenuStage
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND168">
+        <Item class="ModuleScript" referent="ND169">
           <Properties>
             <string name="Name">MotionSmear</string>
             <ProtectedString name="Source">-- Speed smear (fluidity pass, user reference 28/10). What the eye cannot
@@ -46493,7 +46620,7 @@ return Smear
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND169">
+        <Item class="ModuleScript" referent="ND170">
           <Properties>
             <string name="Name">NarutoFX</string>
             <ProtectedString name="Source">-- Naruto on the client (roster wave, several bodies): the puffs of smoke of
@@ -46854,7 +46981,7 @@ return NarutoFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND170">
+        <Item class="ModuleScript" referent="ND171">
           <Properties>
             <string name="Name">Presentation</string>
             <ProtectedString name="Source">-- Velmora's additive combat motion and hit feedback, retaining Ninja Duel's
@@ -47874,7 +48001,7 @@ return Presentation
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND171">
+        <Item class="ModuleScript" referent="ND172">
           <Properties>
             <string name="Name">SandFX</string>
             <ProtectedString name="Source">-- Gaara's sand on the client: the sand bullet and Sand Shuriken in flight, the
@@ -48497,7 +48624,7 @@ return SandFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND172">
+        <Item class="ModuleScript" referent="ND173">
           <Properties>
             <string name="Name">TouchControls</string>
             <ProtectedString name="Source">-- Phone and tablet controls (audit 04/11: the experience is open to phones and
@@ -48688,7 +48815,7 @@ function Touch:press(action)
 	if self.chakra then self.send(action,{chakra=true}) else self.send(action) end
 	self:used()
 end
--- The page closes after one seal jutsu, like letting go of R1 + L1.
+-- The page closes after one seal jutsu, like letting go of L2 + R1 on a pad.
 function Touch:used()
 	self.input.touch=true
 end
@@ -48770,7 +48897,7 @@ return Touch
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND173">
+        <Item class="ModuleScript" referent="ND174">
           <Properties>
             <string name="Name">UI</string>
             <ProtectedString name="Source">-- Prodigy Tournament interface: roster/selection, online queue and fighter
@@ -48781,6 +48908,9 @@ local Fighters=require(Shared.Fighters)
 -- (Beta 03/11) the select screen offers the beta's fighters only (Shared/BetaRoster).
 local Roster=require(Shared.BetaRoster)
 local Controls=require(Shared.Controls)
+-- (05/11) The face button of each jutsu slot on a pad (R1 is the row's).
+local PAD_FACE={"□","△","○","×","D↑"}
+local ChakraMoves=require(Shared.ChakraMoves)
 local FirstMinute=require(Shared.FirstMinute)
 -- (B1 lot 3) the effects switch lives in the VFX kit (absent in headless tests)
 local okKit,FXKit=pcall(function() return require(script.Parent.VfxKit) end)
@@ -49224,6 +49354,8 @@ function UI.new(parent,send)
 		seal.Rotation=-6;corner(seal,5)
 		create("UIStroke",seal,{Color=palette.ink,Thickness=2,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
 		local key=text(seal,"",UDim2.fromScale(0,0),UDim2.fromScale(1,1),18,palette.paper,TITLE_FONT,Enum.TextXAlignment.Center)
+		-- (05/11) a word fits too (the chakra page's LMB, SPACE)
+		key.TextScaled=true;create("UITextSizeConstraint",key,{MaxTextSize=18})
 		local title=text(box,"",UDim2.fromOffset(26,6),UDim2.fromOffset(112,28),17,palette.paper,TITLE_FONT)
 		title.TextScaled=true;create("UITextSizeConstraint",title,{MaxTextSize=18})
 		local status=text(box,"",UDim2.fromOffset(10,38),UDim2.fromOffset(126,16),12,Color3.fromRGB(140,190,250))
@@ -49231,6 +49363,11 @@ function UI.new(parent,send)
 		cool.AnchorPoint=Vector2.new(0,1);corner(cool,8)
 		self.techniqueButtons[i]={box=box,key=key,title=title,status=status,cool=cool}
 	end
+	-- (05/11, user on the pad) "R1 + □" did not fit the 28 px seal: on a pad
+	-- each seal shows its face button and the row is prefixed by the R1 it
+	-- needs, lit while R1 is held.
+	self.jutsuCaption=text(self.hud,"R1 +",UDim2.new(1,-80,1,-74),UDim2.fromOffset(52,40),22,palette.paper,TITLE_FONT,Enum.TextXAlignment.Right)
+	self.jutsuCaption.Visible=false
 	-- (DEC-032) The hand-seal jutsu: a slip above the jutsu cards (the two
 	-- seals, the name, the cooldown), lit while the seals are being woven; the
 	-- seals woven so far are stamped in the middle of the screen.
@@ -49438,8 +49575,8 @@ end
 local GROUPS={
 	{"MOVE",{{"Move","WASD","L stick"},{"Sprint","Sprint"},{"Jump","Jump"},{"Lock / unlock","Lock"},{"Wall run: into a wall","—","—"},{"Off the wall","WallDetach"}}},
 	{"ATTACK",{{"Light strike (string)","Light"},{"Heavy strike","Heavy"},{"Grab, then throw","Grab"},{"Tool","Tool"},{"Kunai: draw / sheathe","Arm"},{"Chase / chakra dash","Pursuit"}}},
-	{"DEFEND",{{"Guard (hold)","Guard"},{"Dodge","Dodge"},{"Substitution","Substitute"},{"Feint a heavy","Feint"},{"Break a grab","Grab"}}},
-	{"NINJA ARTS",{{"Jutsu 1-4","1  2  3  4","R1 + □ △ ○ ×"},{"Seal jutsu (hold the 2nd page)","hold C + 1-5","hold R1 + L1 + □△○× / D↑"},{"Jutsu 5","Technique5"},{"Chakra-infuse (hold + action)","Chakra"},{"Awaken (low health)","Awaken"},{"Ultimate (bar full)","Ultimate"}}},
+	{"DEFEND",{{"Guard (hold)","Guard"},{"Dodge","Dodge"},{"Escape when hit (substitution)","Substitute"},{"Feint a heavy","Feint"},{"Break a grab","Grab"}}},
+	{"NINJA ARTS",{{"Jutsu 1-4","1  2  3  4","R1 + □ △ ○ ×"},{"Seal jutsu (hold the 2nd page)","hold C + 1-5","hold L2 + R1 + □△○× / D↑"},{"Jutsu 5","Technique5"},{"Chakra-infuse (hold + action)","Chakra"},{"Awaken (low health)","Awaken"},{"Ultimate (bar full)","Ultimate"}}},
 }
 function UI:buildControls(pad)
 	local body=self.controlsBody
@@ -49481,7 +49618,7 @@ function UI:buildControls(pad)
 			local key=if pad then {"□","△","○","×","D↑"} else {"1","2","3","4","5"}
 			local seals={}
 			for i,spec in def.SealJutsu do table.insert(seals,key[i].."  "..string.upper(spec.Name)) end
-			local sealRow=text(body,(if pad then "HOLD R1 + L1  " else "HOLD C  ")..table.concat(seals,"     "),UDim2.fromOffset(0,y+104),UDim2.fromOffset(1048,22),15,palette.gold,BODY_FONT);sealRow.ZIndex=43
+			local sealRow=text(body,(if pad then "HOLD L2 + R1  " else "HOLD C  ")..table.concat(seals,"     "),UDim2.fromOffset(0,y+104),UDim2.fromOffset(1048,22),15,palette.gold,BODY_FONT);sealRow.ZIndex=43
 			sealRow.TextScaled=true;create("UITextSizeConstraint",sealRow,{MaxTextSize=15})
 		end
 	end
@@ -49489,11 +49626,12 @@ function UI:buildControls(pad)
 end
 -- (DEC-032) The seal slip. (04/11, user: « une 2e page de jutsu ») The seal
 -- jutsu are a second page of the four jutsu keys: keyboard C held + 1-5, pad
--- R1 + L1 held + □ △ ○ × (D-pad ↑ for a fifth). The slip lights up while the
--- page is held; the signs themselves are woven by the cast.
+-- L2 + R1 held + □ △ ○ × (D-pad ↑ for a fifth; 05/11: it was R1 + L1, which
+-- is the ultimate alone now). The slip lights up while the page is held; the
+-- signs themselves are woven by the cast.
 local function pageHeld(pad,flag)
-	-- (Audit 04/11) The client's own page state (Input.sealPad / sealKey) when
-	-- it is sent: the pad page opens in either order (L1 then R1 too).
+	-- (Audit 04/11) The client's own page state (Input:sealPage) when it is
+	-- sent; else the pad's L2 + R1 read here.
 	if flag~=nil then return flag==true end
 	local ok,held=pcall(function()
 		if pad then
@@ -49501,7 +49639,7 @@ local function pageHeld(pad,flag)
 			for _,input in UIS:GetGamepadState(Enum.UserInputType.Gamepad1) do
 				if input.UserInputState==Enum.UserInputState.Begin or input.Position.Z&gt;.5 then pressed[input.KeyCode]=true end
 			end
-			return pressed[Controls.Gamepad.Modifier]==true and pressed[Controls.Gamepad.Guard]==true
+			return pressed[Controls.Gamepad.Modifier]==true and pressed[Controls.Gamepad.Chakra]==true
 		end
 		return UIS:IsKeyDown(Controls.Keyboard.WallDetach)
 	end)
@@ -49514,7 +49652,7 @@ function UI:sealHud(h,pad,page)
 	if not list then self.sealWeave.Text="";return end
 	local held=not h.wall and pageHeld(pad,page)
 	local key=if pad then {"□","△","○","×","D↑"} else {"1","2","3","4","5"}
-	self.sealHead.Text="HAND SEALS  •  "..(if pad then "HOLD R1 + L1" else "HOLD "..(Controls.KeyLabel.WallDetach or "C"))
+	self.sealHead.Text="HAND SEALS  •  "..(if pad then "HOLD L2 + R1" else "HOLD "..(Controls.KeyLabel.WallDetach or "C"))
 	self.sealPanel.BackgroundTransparency=if held then .02 else .35
 	local sealed=(h.sealed or 0)&gt;0
 	for i,row in self.sealRows do
@@ -49668,6 +49806,8 @@ function UI.padCue(cue)
 	cue=cue:gsub("SPACE REBOUND",P.Jump.." REBOUND"):gsub("C DETACH",P.WallDetach.." DETACH")
 	cue=cue:gsub("• E ","• "..P.Pursuit.." "):gsub("X TO ESCAPE",P.Substitute.." TO ESCAPE")
 	cue=cue:gsub("• 1 = ","• "..Controls.TechniquePad[1].." = ")
+	-- (05/11) "SEALED • 2 TO FOLLOW UP": a jutsu key is its pad chord.
+	cue=cue:gsub("%f[%w]([1-5]) TO ",function(d) return (Controls.TechniquePad[tonumber(d)] or d).." TO " end)
 	-- (Audit 04/11) the keyboard keys the server's cues name, on the pad.
 	cue=cue:gsub("%f[%w]E TO ",P.Pursuit.." TO "):gsub("%f[%w]E PURSUE",P.Pursuit.." PURSUE"):gsub("%f[%w]E CHASE",P.Pursuit.." CHASE")
 	cue=cue:gsub("%f[%w]Q ON ",P.Dodge.." ON "):gsub("%f[%w]Q TO ",P.Dodge.." TO ")
@@ -49952,7 +50092,11 @@ function UI:render(data)
 			return if h.armed then "KUNAI DRAWN ("..tool.." throws it)" else arm..": draw kunai"
 		end)())
 	-- Only decisive moments speak; routine cues stay silent.
-	local cue=Controls.localize(h.cue or "")
+	-- (05/11) The server writes its cues with QWERTY keys: a pad reads the
+	-- pad's buttons (UI.padCue), a keyboard its own letters. The two used to
+	-- stack on a French Mac with a pad: "Q TO ESCAPE" became "A TO ESCAPE"
+	-- before the pad's translation could find it.
+	local cue=h.cue or ""
 	local loud=cue:find("READ") or cue:find("PARRY") or cue:find("PERFECT") or cue:find("FLYING THUNDER") or cue:find("GUARD BREAK") or cue:find("WALL ")
 		or cue:find("CLASH") or cue:find("SUBSTITUTION •") or cue:find("SEAL") or cue:find("COMBO LIMIT") or cue:find("GENJUTSU")
 		or cue:find("PALMS") or cue:find("ROTATION") or cue:find("BYAKUGAN") or cue:find("SHARINGAN")
@@ -49964,25 +50108,47 @@ function UI:render(data)
 		or cue:find("DANCING LEAF") or cue:find("LION") or cue:find("CURSE") or cue:find("CHIDORI") or cue:find("PUNISH") or cue:find("LOTUS")
 		-- Naruto's clones (made, broken, swapped) and the barrage's instruction.
 		or cue:find("CLONE") or cue:find("U-ZU-MA-KI")
-	if loud and pad then cue=UI.padCue(cue) end
+		-- (05/11) how to get out of a blow (Combat.escapeOpen)
+		or cue:find("TO ESCAPE")
+	cue=if pad then UI.padCue(cue) else Controls.localize(cue)
 	self.cue.Text=if loud then cue else ""
 	self.channel.Text=""
-	for i,tech in h.techniques do
+	-- (05/11, user on the pad: L2 pressed alone 26 times) The chakra button
+	-- held: the row shows what it infuses, the fighter's own moves.
+	local chakraPage=data.chakraPage==true and not data.first and not data.touch and not data.spectate
+	local K0,P0=Controls.KeyLabel,Controls.PadLabel
+	if chakraPage then
+		local keys=if pad then {P0.Light,P0.Heavy,P0.Jump,P0.Dodge,P0.Tool} else {K0.Light,K0.Heavy,K0.Jump,K0.Dodge,K0.Tool}
+		for i,slot in ChakraMoves.Slots do
+			local ui=self.techniqueButtons[i]
+			ui.box.Visible=true;ui.box.Position=UDim2.new(1,-24-(5-i+1)*150+6,1,-84)
+			ui.key.Text=keys[i];ui.key.TextColor3=palette.gold
+			ui.title.Text=ChakraMoves.name(h.fighterId,slot);ui.title.TextColor3=palette.gold
+			ui.status.Text="CHAKRA";ui.box.BackgroundTransparency=0
+			ui.cool.Size=UDim2.fromScale(1,0);ui.wasReady=nil
+		end
+	end
+	for i,tech in (if chakraPage then {} else h.techniques) do
 		local ui=self.techniqueButtons[i]
 		ui.box.Visible=true
 		-- The row ends at the right edge whatever the kit's size.
 		ui.box.Position=UDim2.new(1,-24-(#h.techniques-i+1)*150+6,1,-84)
-		ui.key.Text=if pad then Controls.TechniquePad[i] else string.format("%d",i)
+		ui.key.Text=if pad then PAD_FACE[i] else string.format("%d",i)
 		ui.title.Text=string.upper(tech.name)
 		-- Sealed by the 64 Palms: every jutsu greys out and says why.
 		local sealed=(h.sealed or 0)&gt;0
 		local ready=tech.remaining==0 and tech.condition and h.chakra&gt;=tech.cost and not sealed
-		ui.status.Text=if sealed then string.format("SEALED  •  %.1fs",h.sealed) elseif tech.remaining&gt;0 then string.format("%.1fs",tech.remaining) elseif not tech.condition then "NEEDS A SEAL / TARGET" elseif h.chakra&lt;tech.cost then "NEED CHAKRA" else tech.cost.." CHAKRA"
+		-- (05/11, "NEEDS A SEAL /" cut in its 150 px box) says which one.
+		local missing=if tech.requires=="Anchor" then "NEEDS A SEAL" elseif tech.requires=="Target" then "OUT OF RANGE" else "NOT NOW"
+		ui.status.Text=if sealed then string.format("SEALED  •  %.1fs",h.sealed) elseif tech.remaining&gt;0 then string.format("%.1fs",tech.remaining) elseif not tech.condition then missing elseif h.chakra&lt;tech.cost then "NEED CHAKRA" else tech.cost.." CHAKRA"
 		if tech.id=="Flashstep" and #(h.seals or {})&gt;0 and tech.remaining==0 and not sealed then
 			local count=#(h.seals or {})
 			ui.status.Text=count.." SEAL"..(if count&gt;1 then "S" else "").."  •  "..ui.status.Text
 		end
 		ui.box.BackgroundTransparency=if ready then .05 else .35
+		-- (05/11) R1 held on a pad: the row it opens is lit, the buttons in gold.
+		ui.key.TextColor3=if data.jutsuPage then palette.gold else palette.paper
+		if data.jutsuPage then ui.box.BackgroundTransparency=0 end
 		if ready and ui.wasReady==false then
 			pcall(function()
 				ui.flash=ui.flash or (function() local f=Instance.new("Frame");f.BackgroundColor3=palette.paper;f.BorderSizePixel=0;f.Size=UDim2.fromScale(1,1);f.ZIndex=5;local c=Instance.new("UICorner");c.CornerRadius=UDim.new(0,8);c.Parent=f;f.Parent=ui.box;return f end)()
@@ -49994,8 +50160,11 @@ function UI:render(data)
 		ui.title.TextColor3=if ready then palette.paper else palette.muted
 		ui.cool.Size=UDim2.fromScale(1,math.clamp(math.max(tech.remaining/6,if sealed then h.sealed/5 else 0),0,1))
 	end
-	for i=#h.techniques+1,5 do self.techniqueButtons[i].box.Visible=false end
+	if not chakraPage then for i=#h.techniques+1,5 do self.techniqueButtons[i].box.Visible=false end end
 	self:sealHud(h,pad,data.sealPage)
+	local caption=self.jutsuCaption
+	caption.Text=if chakraPage then (if pad then P0.Chakra else K0.Chakra).." +" else "R1 +"
+	caption.TextColor3=if data.jutsuPage or chakraPage then palette.gold else palette.paper
 	-- (B0, 04/11, seen on an emulated phone) on a touch screen the touch
 	-- controls carry the jutsu and the seal page: the keyboard slots and the
 	-- "HOLD C" slip sat under the buttons.
@@ -50014,6 +50183,12 @@ function UI:render(data)
 		for _,b in self.techniqueButtons do b.box.Visible=false end
 		self.sealPanel.Visible=false;self.sealWeave.Text=""
 	end
+	-- The caption sits left of the first card still shown (pad only).
+	local leftmost=nil
+	for i,b in self.techniqueButtons do if b.box.Visible then leftmost=leftmost or i end end
+	caption.Visible=(pad or chakraPage) and leftmost~=nil
+	local count=if chakraPage then 5 else #h.techniques
+	if leftmost then caption.Position=UDim2.new(1,-24-(count-leftmost+1)*150+6-62,1,-74) end
 	local techOpen=h.reaction=="WallSplat" and (h.splatElapsed or 9)&lt;.34
 	local conversion=UI.conversion(h,pad)
 	local K,P=Controls.KeyLabel,Controls.PadLabel
@@ -50084,7 +50259,7 @@ return UI
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND174">
+        <Item class="ModuleScript" referent="ND175">
           <Properties>
             <string name="Name">UltimateFX</string>
             <ProtectedString name="Source">-- The ultimates on the client (stage 6, the approved move list, "Ultimes"):
@@ -50992,7 +51167,7 @@ return UltimateFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND175">
+        <Item class="ModuleScript" referent="ND176">
           <Properties>
             <string name="Name">VelmoraHitFeedback</string>
             <ProtectedString name="Source">-- Impact presentation. Adapted from Velmora src/client/Combat/HitFeedback.luau
@@ -51188,7 +51363,7 @@ return Feedback
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND176">
+        <Item class="ModuleScript" referent="ND177">
           <Properties>
             <string name="Name">VelmoraMotionEngine</string>
             <ProtectedString name="Source">-- Ninja Duel body animation. Started from Velmora's additive R15 layer (MIT) and
@@ -54867,7 +55042,7 @@ return Motion
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND177">
+        <Item class="ModuleScript" referent="ND178">
           <Properties>
             <string name="Name">VfxAtlas</string>
             <ProtectedString name="Source">-- GENERATED by tools/vfx_textures.py --pack: do not edit by hand.
@@ -56320,7 +56495,7 @@ HAOBECABDA1HBIA3HBGAmZ]]},
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND178">
+        <Item class="ModuleScript" referent="ND179">
           <Properties>
             <string name="Name">VfxKit</string>
             <ProtectedString name="Source">-- Presentation primitives on the project's own VFX textures
@@ -56800,7 +56975,7 @@ return Kit
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND179">
+        <Item class="ModuleScript" referent="ND180">
           <Properties>
             <string name="Name">Wave1FX</string>
             <ProtectedString name="Source">-- Roster 20, batch 1 (Haku, Zabuza, Kimimaro): the batch's own drawing,
@@ -57014,7 +57189,7 @@ return M
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND180">
+        <Item class="ModuleScript" referent="ND181">
           <Properties>
             <string name="Name">Wave1Motion</string>
             <ProtectedString name="Source">-- Roster batch 1 bodies authored from their Combat Bibles (DEC-026). First:
@@ -57315,7 +57490,7 @@ return Wave1Motion
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND181">
+        <Item class="ModuleScript" referent="ND182">
           <Properties>
             <string name="Name">Wave2FX</string>
             <ProtectedString name="Source">-- Roster 20, batch 2 (Shikamaru, Shino, Orochimaru): the batch's own drawing, installed by
@@ -57328,7 +57503,7 @@ return M
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND182">
+        <Item class="ModuleScript" referent="ND183">
           <Properties>
             <string name="Name">Wave3FX</string>
             <ProtectedString name="Source">-- Roster 20, batch 3 (Deidara, Sasori, Nagato, Killer Bee): the batch's own
@@ -57431,7 +57606,7 @@ return M
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND183">
+        <Item class="ModuleScript" referent="ND184">
           <Properties>
             <string name="Name">Wave3Motion</string>
             <ProtectedString name="Source">-- Roster batch 3 bodies authored from their Combat Bibles (DEC-026). First:
@@ -57558,7 +57733,7 @@ return Wave3Motion
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND184">
+        <Item class="ModuleScript" referent="ND185">
           <Properties>
             <string name="Name">Wave4FX</string>
             <ProtectedString name="Source">-- DEC-026 newcomers (Madara, Hashirama, Hiruzen as children): the weapons
@@ -57701,7 +57876,7 @@ return M
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND185">
+        <Item class="ModuleScript" referent="ND186">
           <Properties>
             <string name="Name">Wave4Motion</string>
             <ProtectedString name="Source">-- DEC-026 newcomers: the bodies of Madara, Hashirama and Hiruzen as children
@@ -57914,7 +58089,7 @@ return Wave4Motion
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND186">
+        <Item class="ModuleScript" referent="ND187">
           <Properties>
             <string name="Name">WorldLook</string>
             <ProtectedString name="Source">-- What the screen looks like (user 03/11: "the brightness, the graphics,
@@ -58026,7 +58201,7 @@ return WorldLook
       </Item>
     </Item>
   </Item>
-  <Item class="Lighting" referent="ND187">
+  <Item class="Lighting" referent="ND188">
     <Properties>
       <string name="Name">Lighting</string>
       <token name="Technology">4</token>
@@ -58046,7 +58221,7 @@ return WorldLook
       </Color3>
     </Properties>
   </Item>
-  <Item class="SoundService" referent="ND188">
+  <Item class="SoundService" referent="ND189">
     <Properties>
       <string name="Name">SoundService</string>
     </Properties>

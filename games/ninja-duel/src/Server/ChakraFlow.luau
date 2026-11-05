@@ -33,12 +33,11 @@ ChakraFlow.Tune={
 	LeapCarry=1.35,    -- jump horizontal scale
 }
 local T=ChakraFlow.Tune
--- Each fighter's chakra nature (what the load is). Unlisted: plain chakra.
-ChakraFlow.Nature={
-	Lion="Lightning",Copycat="Lightning",Mirage="Fire",Legion="Wind",Gale="Wind",
-	Sand="Sand",GentleFist="GentleFist",Leaf="Strength",Flashstep="Chakra",
-}
-ChakraFlow.Label={Lightning="RAITON",Fire="KATON",Wind="FUTON",Sand="SAND",GentleFist="GENTLE FIST",Strength="STRENGTH",Chakra="CHAKRA"}
+-- Each fighter's chakra nature and its signature moves live in
+-- Shared/ChakraMoves (05/11: the HUD names them while the button is held).
+local ChakraMoves=require(game:GetService("ReplicatedStorage").NinjaDuel.ChakraMoves)
+ChakraFlow.Nature=ChakraMoves.Nature
+ChakraFlow.Label=ChakraMoves.Label
 -- What a nature does to the strike itself (on top of the common scaling).
 local SHAPE={
 	Wind={reach=1.6,impulse=1.45},      -- a blade of wind past the fist
@@ -47,24 +46,8 @@ local SHAPE={
 	-- (Stage 6) Gaara's hardened sand: longer lashes (and they slow, ChakraFlow.hit).
 	Fire={},Sand={reach=2,impulse=1.15},GentleFist={},Chakra={},
 }
--- (DEC-032, user 03/11: "le chakra pour l'instant c'est nul, tu frappes
--- plus fort mais pas de trucs") Each prodigy's own chakra: what his infused
--- light, heavy, leap and dash BECOME (docs/characters/KITS_V2.md, table 1).
--- nil: the nature's common effect only.
-ChakraFlow.Signature={
-	Lion={light="Nagashi",heavy="FireJet"},             -- Chidori Nagashi through the guard; a jet of fire past the kick
-	Legion={light="CloneStrike",heavy="Uzumaki"},       -- a clone pops beside him and follows up; U-ZU-MA-KI sends him up
-	Sand={light="SandFist",heavy="SandGrip"},           -- the sand reaches far; the sand hand grips the legs
-	Leaf={light="Flurry",heavy="GuardCrush",leap="Lotus",dash="AfterImage"}, -- the "patates"; the whirlwind through the guard
-	GentleFist={heavy="Vacuum",dash="Rotation"},        -- (light: the Juken closes a point) the palm at range; a short Kaiten
-	Mirage={light="Crows",heavy="FireJet",dash="CrowScatter"}, -- crows from the impact; he scatters into crows
-	Flashstep={heavy="Rasengan",dash="FlyingThunder"},  -- (light: the seal) the Rasengan to the body; he flashes behind
-	Copycat={heavy="EarthSpike",dash="Headhunter"},     -- Doton: a spike under him; under the ground and out behind
-}
-ChakraFlow.SigLabel={Nagashi="CHIDORI NAGASHI",FireJet="FIRE JET",CloneStrike="SHADOW CLONE",Uzumaki="U-ZU-MA-KI",
-	SandFist="SAND FIST",SandGrip="SAND GRIP",Flurry="LEAF FLURRY",GuardCrush="GUARD CRUSH",Lotus="LOTUS LEAP",
-	AfterImage="AFTERIMAGE",Vacuum="VACUUM PALM",Rotation="ROTATION",Crows="CROWS",CrowScatter="CROW SCATTER",
-	Rasengan="RASENGAN",FlyingThunder="FLYING THUNDER GOD",EarthSpike="DOTON • EARTH SPIKE",Headhunter="DOTON • HEADHUNTER"}
+ChakraFlow.Signature=ChakraMoves.Signature
+ChakraFlow.SigLabel=ChakraMoves.SigLabel
 -- What a signature adds to the strike's own reach and push.
 local SIG_SHAPE={FireJet={reach=2.5},SandFist={reach=2.5},Vacuum={reach=4,impulse=1.5},Rasengan={impulse=1.3}}
 function ChakraFlow.signature(a,slot)
@@ -95,7 +78,8 @@ function ChakraFlow.load(c,a)
 	a.chakraLoad={untilTime=c.now+T.Life,nature=nature,at=c.now}
 	if fresh then
 		c:pushImpact(a.root.Position,"chakraload",false,{owner=a.id,fighter=a.fighterId,nature=nature})
-		c:cue(a,"CHAKRA • "..ChakraFlow.Label[nature],.6)
+		-- (05/11: Minato's plain chakra read "CHAKRA • CHAKRA")
+		c:cue(a,if nature=="Chakra" then "CHAKRA" else "CHAKRA • "..ChakraFlow.Label[nature],.6)
 		require(script.Parent.Brawler).event(c,a,"ChakraLoad")
 	end
 	return true
@@ -110,6 +94,14 @@ local function spend(c,a,cost)
 end
 ChakraFlow.spend=spend
 
+-- (05/11: the screen read "CHAKRA • LIGHT1") A move's name for the player:
+-- the strings' blows are a strike, the rest split into words.
+function ChakraFlow.moveLabel(name)
+	local base=string.gsub(tostring(name),"%d+$","")
+	if base=="Light" then return "STRIKE" end
+	if base=="Air" then return "AIR STRIKE" end
+	return string.upper((string.gsub(base,"(%l)(%u)","%1 %2")))
+end
 -- Brawler.start: the strike about to come out takes the load.
 function ChakraFlow.strike(c,a,name,spec)
 	if NOT_STRIKES[name] then return nil end
@@ -131,7 +123,7 @@ function ChakraFlow.strike(c,a,name,spec)
 	spec.depth=(spec.depth or 2)+reach
 	spec.impulse=spec.impulse*(T.Impulse*(shape.impulse or 1)*(sigShape.impulse or 1))
 	c:pushImpact(a.root.Position,"chakrastrike",false,{owner=a.id,fighter=a.fighterId,nature=nature,move=name,sig=sig})
-	c:cue(a,if sig then ChakraFlow.SigLabel[sig] else ChakraFlow.Label[nature].." • "..string.upper(name),.5)
+	c:cue(a,if sig then ChakraFlow.SigLabel[sig] else ChakraFlow.Label[nature].." • "..ChakraFlow.moveLabel(name),.5)
 	return nature
 end
 

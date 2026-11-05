@@ -233,7 +233,7 @@ function Matches:view(s,cursor,mine,theirs)
 	local function data(a)
 		local ready={}
 		for i,spec in a.def.Techniques do
-			ready[i]={id=spec.Id,name=spec.Name,cost=spec.Cost,remaining=math.max(0,(a.cooldowns[spec.Id] or 0)-now),condition=not spec.Requires or (spec.Requires=="Anchor" and Techniques.sealOf(s.combat,a,now)~=nil) or (spec.Requires=="Target" and s.combat:targetValid(a,a.target,spec.Range,0.35))}
+			ready[i]={id=spec.Id,name=spec.Name,cost=spec.Cost,remaining=math.max(0,(a.cooldowns[spec.Id] or 0)-now),requires=spec.Requires,condition=not spec.Requires or (spec.Requires=="Anchor" and Techniques.sealOf(s.combat,a,now)~=nil) or (spec.Requires=="Target" and s.combat:targetValid(a,a.target,spec.Range,0.35))}
 		end
 		-- (DEC-032) the hand-seal jutsu (cooldowns) and the weave in progress
 		local sealReady=nil
@@ -463,7 +463,10 @@ function Matches:act(s,actor,payload,clock)
  end
  local ok,reason=s.combat:request(actor,action,aim,payload.clientTime,if payload.chakra==true then {chakra=true} else nil)
 	if padJump and action=="Pursuit" and ok==false then action="Jump";ok,reason=s.combat:request(actor,"Jump",aim,payload.clientTime,nil) end
-	if not ok and reason~="Committed" and reason~="Intro" and reason~="Empty slot" then s.combat:cue(actor,string.upper(reason)) end
+	-- (05/11) A press refused while the body takes a blow says how to get out
+	-- when the dodge button would ("Q" reads ○ on a pad, A on AZERTY).
+	if not ok and reason=="Reacting" and s.combat.escapeOpen(s.combat,actor) then s.combat:cue(actor,"HIT • Q TO ESCAPE")
+	elseif not ok and reason~="Committed" and reason~="Intro" and reason~="Empty slot" then s.combat:cue(actor,string.upper(reason)) end
 end
 function Matches:update(dt,now)
 	for player,s in self.sessions do

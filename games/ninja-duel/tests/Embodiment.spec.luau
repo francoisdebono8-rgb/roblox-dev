@@ -149,13 +149,36 @@ test("an ordinary blow takes control for a moment: early the dodge is the substi
  assert(c2:request(y,"Guard"),"no guard recovery past the share")
  assert(y.reaction==nil and y.state=="Guarding","the body is still reacting")
  assert(y.stamina==stamina-tune.GuardCost and y.subCharges==charges2,"the guard recovery's price is wrong")
- -- Or a step out of it (chakra).
+ -- Or a step out of it (chakra), once the substitution cannot be paid
+ -- (05/11: before that, the dodge is the substitution for its grace).
  local c3,p,q=jabbed()
  H.step(c3,math.max(tune.Min,(q.reactionUntil-q.reactionStartedAt)*tune.Stand)+.01)
+ q.subCharges=0
  local chakra=q.chakra
  q.move=V.new(1,0,0)
  assert(c3:request(q,"Dodge"),"no step out past the share")
  assert(q.reaction==nil and q.state=="Dodging" and q.chakra<=chakra-tune.StepCost,"the step out did not happen or cost nothing")
+end)
+
+test("a dodge pressed a human reaction after the blow is still the substitution (05/11)",function()
+ -- The user needed 13 presses of ○: the substitution was the first 45 % of
+ -- a 0.27 s stun (0.12 s), later presses only stepped out.
+ local c,a,b=jabbed()
+ local Combat=H.load("Server/Combat")
+ b.playerInput=true
+ H.step(c,.22)
+ assert(b.reaction=="HitStun","setup: the stun ended before the press")
+ assert(Combat.escapeOpen(c,b),"the escape is not reported open")
+ local charges=b.subCharges
+ assert(c:request(b,"Dodge"),"no escape at 0.22 s")
+ assert(b.subCharges==charges-1,"the dodge at 0.22 s was not the substitution")
+ -- A strike pressed in the stun says how to get out.
+ local c2,x,y=jabbed()
+ local ok,why=c2:request(y,"Attack")
+ assert(not ok and why=="Reacting" and Combat.escapeOpen(c2,y),"no escape to tell about in the stun")
+ y.subCharges=0;y.chakra=0
+ assert(not Combat.escapeOpen(c2,y),"an escape reported with nothing to pay it")
+ local _=a;_=x
 end)
 
 test("a body in an air string rights itself past its share; the string drops it after a few blows",function()

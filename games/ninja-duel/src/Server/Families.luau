@@ -267,7 +267,7 @@ function Families.bind(c,a,b,spec)
 	-- What holds it, for the client (hounds at the legs, a shadow, coils...).
 	b.boundKind=spec.Kind or "chakra"
 	local name=string.upper(spec.Name or "BOUND")
-	c:cue(a,name.." • BOUND",.8);c:cue(b,"BOUND • X TO ESCAPE",.9)
+	c:cue(a,name.." • BOUND",.8);c:cue(b,"BOUND • Q TO ESCAPE",.9)
 	Brawler.event(c,a,"FamilyBind")
 	if spec.Crush then
 		c:schedule(c.now+duration-.05,function()

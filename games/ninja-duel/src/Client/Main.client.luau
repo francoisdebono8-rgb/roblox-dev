@@ -103,10 +103,17 @@ require(playerModule):GetControls():Disable()
 remote.OnClientEvent:Connect(function(data)
 	if data.epoch<(current.epoch or 0) then return end
 	if data.epoch~=current.epoch or data.phase~=current.phase then input:resync() end
-	if data.epoch~=current.epoch then camera.locked=false end
+	-- (05/11, user on the pad) The lock is the player's choice: it used to drop
+	-- back to free at every round (each round is a new epoch), and the lens
+	-- swapped rigs under him until he pressed R3 again.
 	data.gamepad=input.pad
 	data.touch=input.touch==true
-	data.sealPage=input.sealPad==true or input.sealKey==true
+	data.sealPage=input:sealPage()
+	-- (05/11) R1 held on a pad: the jutsu row lights up (what □ △ ○ × will cast).
+	data.jutsuPage=input.pad==true and input.modifier==true and not data.sealPage
+	-- (05/11) the chakra button held alone (pad L2, keyboard Z): the row names
+	-- what it infuses (UI, Shared/ChakraMoves).
+	data.chakraPage=if input.pad then input.chakraPad==true and not input.modifier else input.chakra==true and not input.sealKey
 	current=data; presentation.receivedAt=os.clock(); presentation:impacts(data,camera); ui:render(data)
 	if lobbyPanel then lobbyPanel:render(data) end
 	cupScreen:render(data)

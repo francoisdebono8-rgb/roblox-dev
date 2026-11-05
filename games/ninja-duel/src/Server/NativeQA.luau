@@ -431,7 +431,7 @@ function QA.run(matches)
  test("input PS5 chords and existing buffered routes remain available",function()
   assert(Controls.Gamepad.Light==Enum.KeyCode.ButtonX and Controls.Gamepad.Heavy==Enum.KeyCode.ButtonY)
   assert(Controls.Gamepad.Substitute==Enum.KeyCode.DPadRight)
-  assert(Controls.TechniquePad[1]=="R1 + ×" and Controls.TechniquePad[2]=="R1 + □")
+  assert(Controls.TechniquePad[1]=="R1 + □" and Controls.TechniquePad[2]=="R1 + △")
   for _,id in {"Flashstep","Mirage","GentleFist","Lion"} do
    local c,a,b=pair(id,"Flashstep")
    local function confirm()

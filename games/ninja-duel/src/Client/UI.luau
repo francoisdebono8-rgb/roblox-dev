@@ -6,6 +6,9 @@ local Fighters=require(Shared.Fighters)
 -- (Beta 03/11) the select screen offers the beta's fighters only (Shared/BetaRoster).
 local Roster=require(Shared.BetaRoster)
 local Controls=require(Shared.Controls)
+-- (05/11) The face button of each jutsu slot on a pad (R1 is the row's).
+local PAD_FACE={"□","△","○","×","D↑"}
+local ChakraMoves=require(Shared.ChakraMoves)
 local FirstMinute=require(Shared.FirstMinute)
 -- (B1 lot 3) the effects switch lives in the VFX kit (absent in headless tests)
 local okKit,FXKit=pcall(function() return require(script.Parent.VfxKit) end)
@@ -449,6 +452,8 @@ function UI.new(parent,send)
 		seal.Rotation=-6;corner(seal,5)
 		create("UIStroke",seal,{Color=palette.ink,Thickness=2,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
 		local key=text(seal,"",UDim2.fromScale(0,0),UDim2.fromScale(1,1),18,palette.paper,TITLE_FONT,Enum.TextXAlignment.Center)
+		-- (05/11) a word fits too (the chakra page's LMB, SPACE)
+		key.TextScaled=true;create("UITextSizeConstraint",key,{MaxTextSize=18})
 		local title=text(box,"",UDim2.fromOffset(26,6),UDim2.fromOffset(112,28),17,palette.paper,TITLE_FONT)
 		title.TextScaled=true;create("UITextSizeConstraint",title,{MaxTextSize=18})
 		local status=text(box,"",UDim2.fromOffset(10,38),UDim2.fromOffset(126,16),12,Color3.fromRGB(140,190,250))
@@ -456,6 +461,11 @@ function UI.new(parent,send)
 		cool.AnchorPoint=Vector2.new(0,1);corner(cool,8)
 		self.techniqueButtons[i]={box=box,key=key,title=title,status=status,cool=cool}
 	end
+	-- (05/11, user on the pad) "R1 + □" did not fit the 28 px seal: on a pad
+	-- each seal shows its face button and the row is prefixed by the R1 it
+	-- needs, lit while R1 is held.
+	self.jutsuCaption=text(self.hud,"R1 +",UDim2.new(1,-80,1,-74),UDim2.fromOffset(52,40),22,palette.paper,TITLE_FONT,Enum.TextXAlignment.Right)
+	self.jutsuCaption.Visible=false
 	-- (DEC-032) The hand-seal jutsu: a slip above the jutsu cards (the two
 	-- seals, the name, the cooldown), lit while the seals are being woven; the
 	-- seals woven so far are stamped in the middle of the screen.
@@ -663,8 +673,8 @@ end
 local GROUPS={
 	{"MOVE",{{"Move","WASD","L stick"},{"Sprint","Sprint"},{"Jump","Jump"},{"Lock / unlock","Lock"},{"Wall run: into a wall","—","—"},{"Off the wall","WallDetach"}}},
 	{"ATTACK",{{"Light strike (string)","Light"},{"Heavy strike","Heavy"},{"Grab, then throw","Grab"},{"Tool","Tool"},{"Kunai: draw / sheathe","Arm"},{"Chase / chakra dash","Pursuit"}}},
-	{"DEFEND",{{"Guard (hold)","Guard"},{"Dodge","Dodge"},{"Substitution","Substitute"},{"Feint a heavy","Feint"},{"Break a grab","Grab"}}},
-	{"NINJA ARTS",{{"Jutsu 1-4","1  2  3  4","R1 + □ △ ○ ×"},{"Seal jutsu (hold the 2nd page)","hold C + 1-5","hold R1 + L1 + □△○× / D↑"},{"Jutsu 5","Technique5"},{"Chakra-infuse (hold + action)","Chakra"},{"Awaken (low health)","Awaken"},{"Ultimate (bar full)","Ultimate"}}},
+	{"DEFEND",{{"Guard (hold)","Guard"},{"Dodge","Dodge"},{"Escape when hit (substitution)","Substitute"},{"Feint a heavy","Feint"},{"Break a grab","Grab"}}},
+	{"NINJA ARTS",{{"Jutsu 1-4","1  2  3  4","R1 + □ △ ○ ×"},{"Seal jutsu (hold the 2nd page)","hold C + 1-5","hold L2 + R1 + □△○× / D↑"},{"Jutsu 5","Technique5"},{"Chakra-infuse (hold + action)","Chakra"},{"Awaken (low health)","Awaken"},{"Ultimate (bar full)","Ultimate"}}},
 }
 function UI:buildControls(pad)
 	local body=self.controlsBody
@@ -706,7 +716,7 @@ function UI:buildControls(pad)
 			local key=if pad then {"□","△","○","×","D↑"} else {"1","2","3","4","5"}
 			local seals={}
 			for i,spec in def.SealJutsu do table.insert(seals,key[i].."  "..string.upper(spec.Name)) end
-			local sealRow=text(body,(if pad then "HOLD R1 + L1  " else "HOLD C  ")..table.concat(seals,"     "),UDim2.fromOffset(0,y+104),UDim2.fromOffset(1048,22),15,palette.gold,BODY_FONT);sealRow.ZIndex=43
+			local sealRow=text(body,(if pad then "HOLD L2 + R1  " else "HOLD C  ")..table.concat(seals,"     "),UDim2.fromOffset(0,y+104),UDim2.fromOffset(1048,22),15,palette.gold,BODY_FONT);sealRow.ZIndex=43
 			sealRow.TextScaled=true;create("UITextSizeConstraint",sealRow,{MaxTextSize=15})
 		end
 	end
@@ -714,11 +724,12 @@ function UI:buildControls(pad)
 end
 -- (DEC-032) The seal slip. (04/11, user: « une 2e page de jutsu ») The seal
 -- jutsu are a second page of the four jutsu keys: keyboard C held + 1-5, pad
--- R1 + L1 held + □ △ ○ × (D-pad ↑ for a fifth). The slip lights up while the
--- page is held; the signs themselves are woven by the cast.
+-- L2 + R1 held + □ △ ○ × (D-pad ↑ for a fifth; 05/11: it was R1 + L1, which
+-- is the ultimate alone now). The slip lights up while the page is held; the
+-- signs themselves are woven by the cast.
 local function pageHeld(pad,flag)
-	-- (Audit 04/11) The client's own page state (Input.sealPad / sealKey) when
-	-- it is sent: the pad page opens in either order (L1 then R1 too).
+	-- (Audit 04/11) The client's own page state (Input:sealPage) when it is
+	-- sent; else the pad's L2 + R1 read here.
 	if flag~=nil then return flag==true end
 	local ok,held=pcall(function()
 		if pad then
@@ -726,7 +737,7 @@ local function pageHeld(pad,flag)
 			for _,input in UIS:GetGamepadState(Enum.UserInputType.Gamepad1) do
 				if input.UserInputState==Enum.UserInputState.Begin or input.Position.Z>.5 then pressed[input.KeyCode]=true end
 			end
-			return pressed[Controls.Gamepad.Modifier]==true and pressed[Controls.Gamepad.Guard]==true
+			return pressed[Controls.Gamepad.Modifier]==true and pressed[Controls.Gamepad.Chakra]==true
 		end
 		return UIS:IsKeyDown(Controls.Keyboard.WallDetach)
 	end)
@@ -739,7 +750,7 @@ function UI:sealHud(h,pad,page)
 	if not list then self.sealWeave.Text="";return end
 	local held=not h.wall and pageHeld(pad,page)
 	local key=if pad then {"□","△","○","×","D↑"} else {"1","2","3","4","5"}
-	self.sealHead.Text="HAND SEALS  •  "..(if pad then "HOLD R1 + L1" else "HOLD "..(Controls.KeyLabel.WallDetach or "C"))
+	self.sealHead.Text="HAND SEALS  •  "..(if pad then "HOLD L2 + R1" else "HOLD "..(Controls.KeyLabel.WallDetach or "C"))
 	self.sealPanel.BackgroundTransparency=if held then .02 else .35
 	local sealed=(h.sealed or 0)>0
 	for i,row in self.sealRows do
@@ -893,6 +904,8 @@ function UI.padCue(cue)
 	cue=cue:gsub("SPACE REBOUND",P.Jump.." REBOUND"):gsub("C DETACH",P.WallDetach.." DETACH")
 	cue=cue:gsub("• E ","• "..P.Pursuit.." "):gsub("X TO ESCAPE",P.Substitute.." TO ESCAPE")
 	cue=cue:gsub("• 1 = ","• "..Controls.TechniquePad[1].." = ")
+	-- (05/11) "SEALED • 2 TO FOLLOW UP": a jutsu key is its pad chord.
+	cue=cue:gsub("%f[%w]([1-5]) TO ",function(d) return (Controls.TechniquePad[tonumber(d)] or d).." TO " end)
 	-- (Audit 04/11) the keyboard keys the server's cues name, on the pad.
 	cue=cue:gsub("%f[%w]E TO ",P.Pursuit.." TO "):gsub("%f[%w]E PURSUE",P.Pursuit.." PURSUE"):gsub("%f[%w]E CHASE",P.Pursuit.." CHASE")
 	cue=cue:gsub("%f[%w]Q ON ",P.Dodge.." ON "):gsub("%f[%w]Q TO ",P.Dodge.." TO ")
@@ -1177,7 +1190,11 @@ function UI:render(data)
 			return if h.armed then "KUNAI DRAWN ("..tool.." throws it)" else arm..": draw kunai"
 		end)())
 	-- Only decisive moments speak; routine cues stay silent.
-	local cue=Controls.localize(h.cue or "")
+	-- (05/11) The server writes its cues with QWERTY keys: a pad reads the
+	-- pad's buttons (UI.padCue), a keyboard its own letters. The two used to
+	-- stack on a French Mac with a pad: "Q TO ESCAPE" became "A TO ESCAPE"
+	-- before the pad's translation could find it.
+	local cue=h.cue or ""
 	local loud=cue:find("READ") or cue:find("PARRY") or cue:find("PERFECT") or cue:find("FLYING THUNDER") or cue:find("GUARD BREAK") or cue:find("WALL ")
 		or cue:find("CLASH") or cue:find("SUBSTITUTION •") or cue:find("SEAL") or cue:find("COMBO LIMIT") or cue:find("GENJUTSU")
 		or cue:find("PALMS") or cue:find("ROTATION") or cue:find("BYAKUGAN") or cue:find("SHARINGAN")
@@ -1189,25 +1206,47 @@ function UI:render(data)
 		or cue:find("DANCING LEAF") or cue:find("LION") or cue:find("CURSE") or cue:find("CHIDORI") or cue:find("PUNISH") or cue:find("LOTUS")
 		-- Naruto's clones (made, broken, swapped) and the barrage's instruction.
 		or cue:find("CLONE") or cue:find("U-ZU-MA-KI")
-	if loud and pad then cue=UI.padCue(cue) end
+		-- (05/11) how to get out of a blow (Combat.escapeOpen)
+		or cue:find("TO ESCAPE")
+	cue=if pad then UI.padCue(cue) else Controls.localize(cue)
 	self.cue.Text=if loud then cue else ""
 	self.channel.Text=""
-	for i,tech in h.techniques do
+	-- (05/11, user on the pad: L2 pressed alone 26 times) The chakra button
+	-- held: the row shows what it infuses, the fighter's own moves.
+	local chakraPage=data.chakraPage==true and not data.first and not data.touch and not data.spectate
+	local K0,P0=Controls.KeyLabel,Controls.PadLabel
+	if chakraPage then
+		local keys=if pad then {P0.Light,P0.Heavy,P0.Jump,P0.Dodge,P0.Tool} else {K0.Light,K0.Heavy,K0.Jump,K0.Dodge,K0.Tool}
+		for i,slot in ChakraMoves.Slots do
+			local ui=self.techniqueButtons[i]
+			ui.box.Visible=true;ui.box.Position=UDim2.new(1,-24-(5-i+1)*150+6,1,-84)
+			ui.key.Text=keys[i];ui.key.TextColor3=palette.gold
+			ui.title.Text=ChakraMoves.name(h.fighterId,slot);ui.title.TextColor3=palette.gold
+			ui.status.Text="CHAKRA";ui.box.BackgroundTransparency=0
+			ui.cool.Size=UDim2.fromScale(1,0);ui.wasReady=nil
+		end
+	end
+	for i,tech in (if chakraPage then {} else h.techniques) do
 		local ui=self.techniqueButtons[i]
 		ui.box.Visible=true
 		-- The row ends at the right edge whatever the kit's size.
 		ui.box.Position=UDim2.new(1,-24-(#h.techniques-i+1)*150+6,1,-84)
-		ui.key.Text=if pad then Controls.TechniquePad[i] else string.format("%d",i)
+		ui.key.Text=if pad then PAD_FACE[i] else string.format("%d",i)
 		ui.title.Text=string.upper(tech.name)
 		-- Sealed by the 64 Palms: every jutsu greys out and says why.
 		local sealed=(h.sealed or 0)>0
 		local ready=tech.remaining==0 and tech.condition and h.chakra>=tech.cost and not sealed
-		ui.status.Text=if sealed then string.format("SEALED  •  %.1fs",h.sealed) elseif tech.remaining>0 then string.format("%.1fs",tech.remaining) elseif not tech.condition then "NEEDS A SEAL / TARGET" elseif h.chakra<tech.cost then "NEED CHAKRA" else tech.cost.." CHAKRA"
+		-- (05/11, "NEEDS A SEAL /" cut in its 150 px box) says which one.
+		local missing=if tech.requires=="Anchor" then "NEEDS A SEAL" elseif tech.requires=="Target" then "OUT OF RANGE" else "NOT NOW"
+		ui.status.Text=if sealed then string.format("SEALED  •  %.1fs",h.sealed) elseif tech.remaining>0 then string.format("%.1fs",tech.remaining) elseif not tech.condition then missing elseif h.chakra<tech.cost then "NEED CHAKRA" else tech.cost.." CHAKRA"
 		if tech.id=="Flashstep" and #(h.seals or {})>0 and tech.remaining==0 and not sealed then
 			local count=#(h.seals or {})
 			ui.status.Text=count.." SEAL"..(if count>1 then "S" else "").."  •  "..ui.status.Text
 		end
 		ui.box.BackgroundTransparency=if ready then .05 else .35
+		-- (05/11) R1 held on a pad: the row it opens is lit, the buttons in gold.
+		ui.key.TextColor3=if data.jutsuPage then palette.gold else palette.paper
+		if data.jutsuPage then ui.box.BackgroundTransparency=0 end
 		if ready and ui.wasReady==false then
 			pcall(function()
 				ui.flash=ui.flash or (function() local f=Instance.new("Frame");f.BackgroundColor3=palette.paper;f.BorderSizePixel=0;f.Size=UDim2.fromScale(1,1);f.ZIndex=5;local c=Instance.new("UICorner");c.CornerRadius=UDim.new(0,8);c.Parent=f;f.Parent=ui.box;return f end)()
@@ -1219,8 +1258,11 @@ function UI:render(data)
 		ui.title.TextColor3=if ready then palette.paper else palette.muted
 		ui.cool.Size=UDim2.fromScale(1,math.clamp(math.max(tech.remaining/6,if sealed then h.sealed/5 else 0),0,1))
 	end
-	for i=#h.techniques+1,5 do self.techniqueButtons[i].box.Visible=false end
+	if not chakraPage then for i=#h.techniques+1,5 do self.techniqueButtons[i].box.Visible=false end end
 	self:sealHud(h,pad,data.sealPage)
+	local caption=self.jutsuCaption
+	caption.Text=if chakraPage then (if pad then P0.Chakra else K0.Chakra).." +" else "R1 +"
+	caption.TextColor3=if data.jutsuPage or chakraPage then palette.gold else palette.paper
 	-- (B0, 04/11, seen on an emulated phone) on a touch screen the touch
 	-- controls carry the jutsu and the seal page: the keyboard slots and the
 	-- "HOLD C" slip sat under the buttons.
@@ -1239,6 +1281,12 @@ function UI:render(data)
 		for _,b in self.techniqueButtons do b.box.Visible=false end
 		self.sealPanel.Visible=false;self.sealWeave.Text=""
 	end
+	-- The caption sits left of the first card still shown (pad only).
+	local leftmost=nil
+	for i,b in self.techniqueButtons do if b.box.Visible then leftmost=leftmost or i end end
+	caption.Visible=(pad or chakraPage) and leftmost~=nil
+	local count=if chakraPage then 5 else #h.techniques
+	if leftmost then caption.Position=UDim2.new(1,-24-(count-leftmost+1)*150+6-62,1,-74) end
 	local techOpen=h.reaction=="WallSplat" and (h.splatElapsed or 9)<.34
 	local conversion=UI.conversion(h,pad)
 	local K,P=Controls.KeyLabel,Controls.PadLabel

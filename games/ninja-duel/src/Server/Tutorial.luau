@@ -119,7 +119,7 @@ function Tutorial.plan(a)
 	-- (04/11) The second page: the first seal jutsu, one press with the page held.
 	local seal=def.SealJutsu and def.SealJutsu[1]
 	if seal then
-		add({id="sealPage",title="Hand seals: "..tostring(seal.Name),key="Hold "..K.WallDetach.." + 1",pad="Hold R1 + L1 + □",
+		add({id="sealPage",title="Hand seals: "..tostring(seal.Name),key="Hold "..K.WallDetach.." + 1",pad="Hold L2 + R1 + □",
 			place=if (seal.Range or 20)<10 then "near" else "far",technique=seal,
 			setup=function(s) local a=s.human;a.chakra=a.def.Chakra or 100;a.cooldowns={} end,
 			check=function(s,t) return t.ev("Cast:"..tostring(seal.Id)) end})
@@ -130,8 +130,11 @@ function Tutorial.plan(a)
 		check=function(s,t,now) local a,b=s.human,s.bot;return t.ev("Dodge") and (t.ev("Evaded") or (b.attackName~=nil and now-(b.attackStarted or now)>.46 and a.health==t.health)) end})
 	-- (Studio 03/11, against Gaara: his heavy knocks down, and a body on the
 	-- floor cannot substitute) The partner hits with his light here.
-	add({id="substitute",title="Escape after being hit",key=K.Substitute.." just after contact",pad=P.Substitute.." just after contact",place="near",bot="heavy",strike="Attack",
-		check=function(s,t) return t.ev("Substitute") end})
+	-- (05/11, user on the pad: 13 presses of ○, the prompt named D-pad →)
+	-- The escape is the dodge button pressed while taking the blow; the body's
+	-- own step out (past its share of the stun) is an escape too.
+	add({id="substitute",title="Escape after being hit",key=K.Dodge.." as soon as his blow lands",pad=P.Dodge.." as soon as his blow lands",place="near",bot="heavy",strike="Attack",
+		check=function(s,t) return t.ev("Substitute") or t.ev("Recover") end})
 	-- (Roster run 02/11: STUCK for every fighter from 28 studs: the signs end
 	-- before anyone gets there.) In dash reach, as in a duel.
 	add({id="interrupt",title="Interrupt his hand signs",key=K.Light.." during the signs",pad=P.Light.." during the signs",place="mid",bot="channel",

@@ -11,12 +11,18 @@ local Camera={}; Camera.__index=Camera
 local framing={
  -- (Fluidity pass, user reference 28/10) close behind the shoulder: the
  -- body fills the frame, every motion of it reads; the opponent ahead.
- Ground={distance=12.5,height=3.6,fov=64,lift=1.8,side=.62},
- Launcher={distance=18,height=4,fov=72,lift=4.5,side=.36},
- Pursuit={distance=21,height=6,fov=78,lift=3,side=.4},
- AirCombo={distance=19,height=3.5,fov=74,lift=2.5,side=.4},
- Slam={distance=19,height=10,fov=76,lift=-1.5,side=.34},
- Wall={distance=22,height=8,fov=75,lift=3,side=.5},
+ Ground={distance=12.5,height=3.6,fov=64,lift=1.8,side=.55},
+ -- (05/11, user on the pad: "on sent qu'elle bascule entre 2") The air,
+ -- chase, slam and wall framings were 6 to 10 studs further and 8 to 14
+ -- degrees wider than the ground one, and a string with a launcher went in,
+ -- out and in again. Closer to the ground frame now (the gap and the height
+ -- between the bodies still pull the lens back on their own), and every
+ -- change of framing is eased over a third of a second (Camera:update).
+ Launcher={distance=15.5,height=4,fov=68,lift=3.5,side=.5},
+ Pursuit={distance=17,height=5,fov=70,lift=3,side=.5},
+ AirCombo={distance=15.5,height=3.5,fov=68,lift=2.5,side=.5},
+ Slam={distance=16.5,height=7.5,fov=70,lift=-1,side=.45},
+ Wall={distance=17,height=6,fov=70,lift=3,side=.5},
 }
 local function mode(h,b)
  if h.attackName=="Slam" or b.attackName=="Slam" then return "Slam" end
@@ -235,9 +241,28 @@ function Camera:update(data,dt)
 	-- character and back") The framing modes (chase 21 studs, wall 22, slam
 	-- 19 and 10 up, against 12.5 on the ground) frame the pair when locked
 	-- on; free, they jumped the lens in and out. Free keeps the ground frame.
-	local frame=if follow then framing[selected] else framing.Ground
+	local goal=if follow then framing[selected] else framing.Ground
+	-- (05/11) The framing in use slides toward the selected one (a third of a
+	-- second) instead of switching tables.
+	local frame=self.frameNow
+	if fresh or not frame then frame=table.clone(goal)
+	else
+		local k=1-math.exp(-dt*3)
+		for key,value in goal do frame[key]+=(value-frame[key])*k end
+	end
+	self.frameNow=frame
+	-- (05/11) How locked the rig is, eased from 0 (free) to 1 (locked): the
+	-- R3 / SHIFT toggle, or the shroud taking the opponent away, slides the
+	-- focus, the distance and the height from one rig to the other instead of
+	-- cutting between two cameras.
+	local lockGoal=if follow then 1 else 0
+	self.lockT=if fresh or self.lockT==nil then lockGoal else self.lockT+(lockGoal-self.lockT)*(1-math.exp(-dt*5))
+	local lockT=self.lockT
+	-- A pad or a phone: the right thumb also strikes (Camera:update below).
+	local auto=data.gamepad==true or data.touch==true
 	-- Look-stick / unlocked mouse orbit.
 	self.yaw+=(self.look.X or 0)*dt*2.4;self.pitch=math.clamp(self.pitch-(self.look.Y or 0)*dt,.04,.9)
+	if (self.look.Magnitude or 0)>.05 then self.lastLookInput=clock end
 	-- (Audit 29/10) Locked, a nudge of the right stick is a glance: it eases
 	-- back behind the shoulder once the stick rests (it stayed off for good).
 	if follow and not data.ko and math.abs(self.look.X or 0)<.05 then self.yaw*=math.exp(-dt*1.6) end
@@ -257,18 +282,29 @@ function Camera:update(data,dt)
 	else
 		if self.faceOpponent then self.yaw=math.atan2(behind.X,behind.Z);self.boomAngle=nil;self.faceOpponent=nil end
 		-- (B1, B0 defect 4 and Studio 04/11 v37: free, the opponent was often off
-		-- screen, at the wall above all) When the player leaves the lens alone
-		-- (no mouse or right stick for 0.9 s, no move), it brings the opponent
-		-- back to the edge of the frame, gently. Never while he steers: the moves
-		-- are relative to the lens, a turn mid-run would bend the run.
-		local clock0=os.clock()
-		if (self.look.Magnitude or 0)>.05 then self.lastLookInput=clock0 end
-		local still=presentation==nil or presentation.inputDir==nil or presentation.inputDir.Magnitude<.1
-		if not lost and not data.ko and still and clock0-(self.lastLookInput or 0)>.9 and separation>4 then
+		-- screen, at the wall above all) The free lens brings the opponent back
+		-- toward the frame.
+		-- (05/11, user on the pad: "on sent qu'elle bascule entre 2") It used to
+		-- switch on after 0.9 s without the stick and without a move, then off
+		-- at the first step: the lens kept changing hands. Now:
+		--  * pad or phone (the right thumb also strikes): the follow is always
+		--    on, a dead zone of 22 degrees around the centre and a spring past
+		--    it, run or not; the stick only borrows the lens and, let go, the
+		--    follow comes back over 0.6 s. The body stays free (only a lock
+		--    turns it toward the opponent, DEC-031);
+		--  * mouse: the player steers the body with the lens, so it only helps
+		--    a player who stands and leaves it alone, eased in, never switched.
+		local idle=clock-(self.lastLookInput or -math.huge)
+		if not lost and not data.ko and separation>3.2 then
+			local weight,edge,rate
+			if auto then weight=math.clamp((idle-.6)/.6,0,1);edge=math.rad(22);rate=3.2
+			else
+				local still=presentation==nil or presentation.inputDir==nil or presentation.inputDir.Magnitude<.1
+				weight=if still then math.clamp((idle-.9)/.6,0,1) else 0;edge=math.rad(32);rate=2.4
+			end
 			local off=wrap(self.yaw-math.atan2(behind.X,behind.Z))
-			local edge=math.rad(32)
-			if math.abs(off)>math.rad(48) then
-				local turn=math.min(math.abs(off)-edge,math.rad(110)*dt)
+			if weight>0 and math.abs(off)>edge then
+				local turn=math.min((math.abs(off)-edge)*(1-math.exp(-dt*rate)),math.rad(150)*dt)*weight
 				self.yaw=wrap(self.yaw-math.sign(off)*turn)
 			end
 		end
@@ -307,9 +343,14 @@ function Camera:update(data,dt)
 		self.lead=(self.lead or Vector3.zero):Lerp(lead,1-math.exp(-dt*4))
 		targetFocus+=self.lead
 	end
-	if not follow then
+	-- Free, the lens follows the player (over the shoulder); locked, the pair.
+	-- (05/11) Blended by lockT, so the toggle slides; on a pad the free lens
+	-- leans a little toward the fight it keeps in view.
+	if lockT<.999 then
 		local look=Vector3.new(-boom.X,0,-boom.Z)
-		targetFocus=a+Vector3.new(0,1.6,0)+(if look.Magnitude>.05 then look.Unit:Cross(Vector3.yAxis)*1.7 else Vector3.zero)
+		local freeFocus=a+Vector3.new(0,1.6,0)+(if look.Magnitude>.05 then look.Unit:Cross(Vector3.yAxis)*1.7 else Vector3.zero)
+		if auto and not lost then freeFocus+=flat.Unit*math.min(separation*.1,2.5) end
+		targetFocus=freeFocus:Lerp(targetFocus,lockT)
 	end
 	local focusRate=if aerial or pursuit then 13 else 9
 	self.focus=if self.focus then self.focus:Lerp(targetFocus,1-math.exp(-dt*focusRate)) else targetFocus
@@ -320,11 +361,15 @@ function Camera:update(data,dt)
 	local spread=math.min(math.max(0,separation-7),19)*.42+math.max(0,separation-26)*.22
 	-- Free, the lens follows the player, not the pair: no pull-back for the gap
 	-- to the opponent (a wall run 40 studs from him filmed the player tiny).
-	local pairVertical=vertical
-	if not follow then spread=0;pairVertical=0 end
+	-- (05/11) A pad's free lens keeps half of it (the opponent it keeps in view
+	-- stays readable); the share slides with lockT.
+	local freeShare=if auto and not lost then .5 else 0
+	local share=freeShare+(1-freeShare)*lockT
+	spread*=share
+	local pairVertical=vertical*share
 	local wantDistance=math.clamp(frame.distance-sprint*1.5+spread+pairVertical*.3+self.zoom+(self.settleSize or 0)*math.sin(settle*math.pi*.5)+(if data.ko then 6 else 0),8.5,48)
 	self.distance=if self.distance then self.distance+(wantDistance-self.distance)*(1-math.exp(-dt*4)) else wantDistance
-	local height=frame.height-sprint*.6+self.pitch*9+(if follow then vertical*.28+math.min(math.max(0,separation-10)*.1,4) else 0)
+	local height=frame.height-sprint*.6+self.pitch*9+(vertical*.28+math.min(math.max(0,separation-10)*.1,4))*share
 	if slam then height+=math.clamp(-(data.human.velocity and data.human.velocity.Y or 0)*.04,0,4) end
 	local desired=focus+boom*self.distance+Vector3.new(0,height,0)
 	-- Match intro: a slow orbit that presents both fighters, then the normal

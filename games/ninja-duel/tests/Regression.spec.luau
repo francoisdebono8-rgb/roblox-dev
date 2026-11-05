@@ -445,7 +445,9 @@ test("a pad player reads pad buttons in on-screen cues",function()
   ["WALL BOUNCE • E TO PURSUE"]="WALL BOUNCE • "..P.Pursuit.." TO PURSUE",
   ["WALL SPLAT • E PURSUE • HEAVY BOUNCE"]="WALL SPLAT • "..P.Pursuit.." PURSUE • HEAVY BOUNCE",
   ["WALL RUN • SPACE REBOUND / C DETACH"]="WALL RUN • "..P.Jump.." REBOUND / "..P.WallDetach.." DETACH",
-  ["WIRED • X TO ESCAPE"]="WIRED • "..P.Substitute.." TO ESCAPE",
+  -- (05/11) the escape is the dodge button when hit
+  ["WIRED • Q TO ESCAPE"]="WIRED • "..P.Dodge.." TO ESCAPE",
+  ["HIT • Q TO ESCAPE"]="HIT • "..P.Dodge.." TO ESCAPE",
   ["WIRED • 1 = DRAGON FLAME"]="WIRED • "..Controls.TechniquePad[1].." = DRAGON FLAME",
  } do
   assert(UI.padCue(cue)==want,cue.." -> "..UI.padCue(cue))

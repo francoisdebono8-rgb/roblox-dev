@@ -186,7 +186,7 @@ function Touch:press(action)
 	if self.chakra then self.send(action,{chakra=true}) else self.send(action) end
 	self:used()
 end
--- The page closes after one seal jutsu, like letting go of R1 + L1.
+-- The page closes after one seal jutsu, like letting go of L2 + R1 on a pad.
 function Touch:used()
 	self.input.touch=true
 end

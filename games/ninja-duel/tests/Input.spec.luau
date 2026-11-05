@@ -181,7 +181,7 @@ test("chakra button (user 29/10): L2 or Z held infuses the press it is held with
  table.clear(sent)
  Input.now=now
 end)
-test("seal page (04/11): C held + 1-5 and R1 + L1 held + □ △ ○ × / D-pad ↑ send Seal1-5, one press",function()
+test("seal page (05/11): C held + 1-5 and L2 + R1 held + □ △ ○ × / D-pad ↑ send Seal1-5, one press",function()
  press("SealKey",E.KeyCode.C);assert(last()=="WallDetach","C does not reach the server (wall detach)")
  for i,code in {E.KeyCode.One,E.KeyCode.Two,E.KeyCode.Three,E.KeyCode.Four} do
   tap("Technique"..i,code);assert(sent[#sent-1].action=="Seal"..i and last()=="SealRelease","C + "..i.." sent "..tostring(sent[#sent-1].action))
@@ -190,54 +190,53 @@ test("seal page (04/11): C held + 1-5 and R1 + L1 held + □ △ ○ × / D-pad 
  press("SealKey",E.KeyCode.C,E.UserInputState.End)
  tap("Technique1",E.KeyCode.One);assert(sent[#sent-1].action=="Technique1","1 after C let go is not the quick slot")
  table.clear(sent)
- press("Modifier",E.KeyCode.ButtonR1);press("Guard",E.KeyCode.ButtonL1)
+ input.pad=true
+ press("ChakraPad",E.KeyCode.ButtonL2,E.UserInputState.Begin,V.new(0,0,.8));press("Modifier",E.KeyCode.ButtonR1)
+ assert(input:sealPage(),"L2 + R1 held is not the seal page")
  for i,pair in {{"Light",E.KeyCode.ButtonX},{"Heavy",E.KeyCode.ButtonY},{"Dodge",E.KeyCode.ButtonB},{"Jump",E.KeyCode.ButtonA}} do
   tap(pair[1],pair[2])
   local got=false;for _,p in sent do if p.action=="Seal"..i then got=true end end
-  assert(got,"R1 + L1 + "..pair[1].." did not send Seal"..i)
+  assert(got,"L2 + R1 + "..pair[1].." did not send Seal"..i)
  end
- tap("Technique5",E.KeyCode.DPadUp);assert(last()=="Seal5","R1 + L1 + D-pad ↑ sent "..last())
- press("Guard",E.KeyCode.ButtonL1,E.UserInputState.End);press("Modifier",E.KeyCode.ButtonR1,E.UserInputState.End)
- for _,p in sent do assert(p.action~="Ultimate","a seal page that cast also fired the ultimate");assert(p.action~="Guard","the page raised the guard") end
+ tap("Technique5",E.KeyCode.DPadUp);assert(last()=="Seal5","L2 + R1 + D-pad ↑ sent "..last())
+ press("Modifier",E.KeyCode.ButtonR1,E.UserInputState.End);press("ChakraPad",E.KeyCode.ButtonL2,E.UserInputState.End)
+ for _,p in sent do
+  assert(p.action~="Ultimate","a seal page fired the ultimate");assert(p.action~="Guard" and p.action~="GuardOff","the page touched the guard")
+  assert(not (p.extra and p.extra.chakra),"a seal jutsu went out as an infused press")
+ end
+ -- R1 alone + □ stays the quick jutsu
+ table.clear(sent);press("Modifier",E.KeyCode.ButtonR1);tap("Light",E.KeyCode.ButtonX);press("Modifier",E.KeyCode.ButtonR1,E.UserInputState.End)
+ assert(sent[1].action=="Technique1","R1 + □ without L2 sent "..sent[1].action)
  -- R1 + L3 is the sprint again (no weave)
  table.clear(sent);press("Modifier",E.KeyCode.ButtonR1);tap("Sprint",E.KeyCode.ButtonL3);press("Modifier",E.KeyCode.ButtonR1,E.UserInputState.End)
  for _,p in sent do assert(p.action~="Seals","R1 + L3 still opens the old weave") end
+ input.pad=false
 end)
-test("seal page (audit 04/11): L1 then R1 opens it too; a held page let go is no ultimate; the guard comes back",function()
- local clock,now=0,Input.now
- Input.now=function() return clock end
- table.clear(sent)
- -- L1 first (the guard), then R1: the page, the guard let go, □ a seal jutsu
+test("R1 + L1 (05/11): the ultimate alone, on the press, in either order; the guard comes back",function()
+ -- R1 then L1: the ultimate at once, no guard
+ press("Modifier",E.KeyCode.ButtonR1);press("Guard",E.KeyCode.ButtonL1)
+ assert(last()=="Ultimate","R1 then L1 is not the ultimate: "..last())
+ press("Guard",E.KeyCode.ButtonL1,E.UserInputState.End);press("Modifier",E.KeyCode.ButtonR1,E.UserInputState.End)
+ local n=0;for _,p in sent do if p.action=="Ultimate" then n+=1 end;assert(p.action~="Guard","R1 then L1 raised the guard") end
+ assert(n==1,"the ultimate went "..n.." times")
+ -- guarding (L1), the bar full: R1 lets the guard go for the ultimate and,
+ -- L1 still held when R1 goes, the guard comes back
+ table.clear(sent);state.human.ultimateReady=true
  press("Guard",E.KeyCode.ButtonL1);assert(last()=="Guard")
- press("Modifier",E.KeyCode.ButtonR1);assert(last()=="GuardOff","the page kept the guard up: "..last())
- tap("Light",E.KeyCode.ButtonX)
- local got=false;for _,p in sent do if p.action=="Seal1" then got=true end;assert(p.action~="Technique1" and p.action~="Grab","L1, R1, □ sent "..p.action) end
- assert(got,"L1 then R1 then □ did not send Seal1")
- -- R1 let go first, L1 still held: the guard is back, no ultimate
- press("Modifier",E.KeyCode.ButtonR1,E.UserInputState.End)
- assert(last()=="Guard","L1 still held after the page: no guard ("..last()..")")
+ press("Modifier",E.KeyCode.ButtonR1)
+ assert(sent[#sent-1].action=="GuardOff" and last()=="Ultimate","guarding, R1 sent "..sent[#sent-1].action.." then "..last())
+ press("Modifier",E.KeyCode.ButtonR1,E.UserInputState.End);assert(last()=="Guard","L1 still held: no guard back ("..last()..")")
  press("Guard",E.KeyCode.ButtonL1,E.UserInputState.End);assert(last()=="GuardOff")
- for _,p in sent do assert(p.action~="Ultimate","a page that cast fired the ultimate") end
- -- the page held to choose, then let go without a seal: no ultimate
- table.clear(sent)
- press("Modifier",E.KeyCode.ButtonR1);press("Guard",E.KeyCode.ButtonL1)
- clock+=Input.UltimateTap+.2
- press("Guard",E.KeyCode.ButtonL1,E.UserInputState.End);press("Modifier",E.KeyCode.ButtonR1,E.UserInputState.End)
- for _,p in sent do assert(p.action~="Ultimate","a held page let go burnt the ultimate") end
- -- R1 + L1 + R2 is the feint, not the feint and the ultimate
- table.clear(sent)
- press("Modifier",E.KeyCode.ButtonR1);press("Guard",E.KeyCode.ButtonL1)
+ -- the bar not full: the guard stays up (the server says why)
+ table.clear(sent);state.human.ultimateReady=nil
+ press("Guard",E.KeyCode.ButtonL1);press("Modifier",E.KeyCode.ButtonR1)
+ assert(last()=="Ultimate");for _,p in sent do assert(p.action~="GuardOff","a bar not full still dropped the guard") end
+ press("Modifier",E.KeyCode.ButtonR1,E.UserInputState.End);press("Guard",E.KeyCode.ButtonL1,E.UserInputState.End)
+ -- R1 + R2 stays the feint
+ table.clear(sent);press("Modifier",E.KeyCode.ButtonR1)
  press("Tool",E.KeyCode.ButtonR2,E.UserInputState.Begin,V.new(0,0,1));press("Tool",E.KeyCode.ButtonR2,E.UserInputState.End,V.zero)
- press("Guard",E.KeyCode.ButtonL1,E.UserInputState.End);press("Modifier",E.KeyCode.ButtonR1,E.UserInputState.End)
- local feint=false
- for _,p in sent do if p.action=="Feint" then feint=true end;assert(p.action~="Ultimate","R1 + L1 + R2 also fired the ultimate") end
- assert(feint,"R1 + L1 + R2 is no feint")
- -- a tap of the chord: the ultimate
- table.clear(sent)
- press("Modifier",E.KeyCode.ButtonR1);tap("Guard",E.KeyCode.ButtonL1)
- assert(last()=="Ultimate","a tap of R1 + L1 is not the ultimate")
  press("Modifier",E.KeyCode.ButtonR1,E.UserInputState.End)
- Input.now=now
+ assert(sent[1] and sent[1].action=="Feint","R1 + R2 is no feint")
 end)
 test("jump release cuts a jump but never a technique or pursuit",function()
  tap("Jump",E.KeyCode.Space);assert(#sent==2 and last()=="JumpOff")
@@ -254,7 +253,7 @@ test("PS5 provides deliberate escape, feint and detach; re-engage is never a D-p
  tap("SubstitutePad",E.KeyCode.DPadRight);assert(last()=="Substitute")
  press("Modifier",E.KeyCode.ButtonR1);tap("Guard",E.KeyCode.ButtonL1)
  -- (Stage 6) R1 + L1 is the ultimate; on a wall the server makes it the detach.
- -- (04/11) it goes on the chord's release, the chord held being the seal page.
+ -- (05/11) on the chord's press, its only meaning.
  assert(last()=="Ultimate","R1 + L1 emitted a stray GuardOff")
  press("Modifier",E.KeyCode.ButtonR1,E.UserInputState.End)
  assert(last()=="Ultimate" and sent[#sent-1].action~="Ultimate","the ultimate went twice")

@@ -548,7 +548,7 @@ function Techniques.wireBind(c,owner,victim,riders,direction)
 	-- The wire is a conductor while it holds: Sasuke's lightning may run down it
 	-- (ChakraCombat.conduct), bounded from the moment the bind started.
 	victim.boundAt=c.now;victim.wireConducts=0
-	c:cue(owner,if pinned then "WIRED TO THE WALL • 1 = DRAGON FLAME" else "WIRED • 1 = DRAGON FLAME",.9);c:cue(victim,"WIRED • X TO ESCAPE",.9)
+	c:cue(owner,if pinned then "WIRED TO THE WALL • 1 = DRAGON FLAME" else "WIRED • 1 = DRAGON FLAME",.9);c:cue(victim,"WIRED • Q TO ESCAPE",.9)
 	Brawler.event(c,owner,if pinned then "WirePin" else "WireBind")
 end
 -- Chidori: the charge is the channel (slowed, interruptible); the release is
@@ -584,7 +584,7 @@ function Techniques.bindInSand(c,owner,victim,wet)
 	local Brawler=require(script.Parent.Brawler)
 	Brawler.react(c,victim,"Bound",Vector3.zero,1.25,owner)
 	victim.boundBy=owner
-	c:cue(owner,"SAND COFFIN • BOUND",.8);c:cue(victim,"BOUND • X TO ESCAPE",.9)
+	c:cue(owner,"SAND COFFIN • BOUND",.8);c:cue(victim,"BOUND • Q TO ESCAPE",.9)
 	local spec
 	for _,t in owner.def.Techniques do if t.Id=="SandCoffin" then spec=t end end
 	c:schedule(c.now+1.05,function()
