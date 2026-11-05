@@ -422,6 +422,52 @@ def light4(arm):
     return sh.build(markers={"contact": 5 / 60, "recover": 13 / 60})
 
 
+def chidori_dive(arm):
+    """(05/11, B1 lot 3: the signature is verticality) The Chidori out of a
+    jump or off a wall: the dive, on the wall dive's timing (.1 / .3 / .32;
+    the lunge itself lasts as long as the flight, 0.16-0.5 s). Out of the
+    carry (the lightning hand low and back) he coils in the air - knees up,
+    the hand drawn behind the hip, the left hand pointing him out - then
+    opens head first along the line to him: the lightning arm leading, the
+    body behind it in one line, the legs trailing. The floor takes the hand:
+    he lands split, the front foot down, the rear knee low, the arm driven
+    straight into the ground; then he pulls it out and rises into the stance."""
+    sh = Shot(arm, N + "ChidoriDive")
+    carry = s({"root": {"y": -.4, "z": 0, "pitch": 14, "yaw": 0, "roll": 0}, "torso": {"pitch": 10, "yaw": 0, "roll": 0},
+               "head": {"pitch": -20, "yaw": 0},
+               "ra": {"raise": -40, "out": 30, "twist": -20, "elbow": 22, "wrist": -10},
+               "la": {"raise": 50, "out": 6, "twist": 0, "elbow": 80},
+               "rf": {"x": .1, "z": -.4, "y": .8, "toe": -24, "knee": 8, "yaw": 0},
+               "lf": {"x": -.1, "z": .1, "y": .5, "toe": -26, "knee": 0, "yaw": 0}})
+    sh.key(0, carry, "ease")
+    coil = merge(carry, {"root": {"y": -.62, "pitch": 26, "yaw": 10}, "torso": {"pitch": 18, "yaw": -10}, "head": {"pitch": -34, "yaw": -8},
+                         "ra": {"raise": -64, "out": 34, "twist": -30, "elbow": 30, "wrist": -20},
+                         "la": {"raise": 96, "out": 0, "twist": 0, "elbow": 6},
+                         "rf": {"z": -.8, "y": 1.3, "toe": -30, "knee": 12}, "lf": {"z": -.5, "y": 1.15, "toe": -30, "knee": 10}})
+    sh.key(5, coil, "ease")
+    # The legs trail up and back along the line (in the air nothing plants them).
+    dive = merge(carry, {"root": {"y": -.2, "pitch": 78, "yaw": -6}, "torso": {"pitch": 24, "yaw": 4}, "head": {"pitch": 30, "yaw": 0},
+                         "ra": {"raise": 160, "out": -4, "twist": -10, "elbow": 0, "wrist": 10},
+                         "la": {"raise": -30, "out": 20, "twist": 0, "elbow": 10},
+                         "rf": {"z": 1.9, "y": 1.6, "toe": -60, "knee": 4}, "lf": {"z": 1.5, "y": 1.95, "toe": -50, "knee": 30}})
+    sh.key(8, dive, "launch")
+    sh.key(15, merge(dive, {"root": {"pitch": 82}, "ra": {"wrist": 16}, "la": {"out": 26}, "lf": {"knee": 36}}), "ease")
+    sh.key(21, merge(dive, {"root": {"pitch": 70, "y": -.4}, "ra": {"raise": 150}, "rf": {"z": 1.4, "y": 1.0}, "lf": {"z": 1.0, "y": 1.2}}), "pass")
+    land = s({"root": {"y": -1.2, "z": -.1, "pitch": 44, "yaw": 10}, "torso": {"pitch": 24, "yaw": -6}, "head": {"pitch": -10, "yaw": -6},
+              "ra": {"raise": 80, "out": 6, "twist": 0, "elbow": 0, "wrist": 30},
+              "la": {"raise": 30, "out": 40, "twist": 0, "elbow": 40},
+              "lf": {"x": -.12, "z": -.9, "y": 0, "toe": 0, "knee": 0, "yaw": -6},
+              "rf": {"x": .2, "z": 1.1, "y": .3, "toe": -30, "knee": 30, "yaw": 30}})
+    sh.key(24, land, "impact")
+    sh.key(30, merge(land, {"root": {"y": -1.26}, "ra": {"wrist": 36}}), "ease")
+    sh.key(36, merge(land, {"root": {"y": -.8, "pitch": 22, "yaw": 20}, "torso": {"pitch": 12},
+                            "ra": {"raise": 30, "out": 20, "elbow": 60, "wrist": 0}, "la": {"raise": 56, "out": 10, "elbow": 70},
+                            "rf": {"z": .9, "y": .1, "toe": -10, "knee": 10}}), "pass")
+    sh.key(43, s(), "ease")
+    sh.drag(["neck"], 2).drag(["shoulder.L", "forearm.L"], 1)
+    return sh.build(markers={"contact": 6 / 60, "recover": 24 / 60})
+
+
 def author(arm):
     acts = soshuha(arm)
     acts += windmill(arm)
@@ -429,4 +475,5 @@ def author(arm):
     acts += copy(arm)
     acts.append(dash_attack(arm))
     acts.append(light4(arm))
+    acts.append(chidori_dive(arm))
     return acts

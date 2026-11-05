@@ -1299,6 +1299,12 @@ Motion.VARIANT_OF=VARIANT_OF
 -- Naruto: the barrage's finisher rides on the Slam; a clone plays its side of
 -- a route he carries out on that route's own timing (Attacks proxyClip).
 VARIANT_OF.NarutoRendan="Slam";VARIANT_OF.CloneKickStrike="CloneKick";VARIANT_OF.UzumakiRise="UzumakiKick";VARIANT_OF.MirrorStrike="MirrorClone"
+-- (05/11, lot 3) Sasuke's Chidori out of a jump or off a wall rides on the
+-- wall dive's lunge (Lion.ChidoriDive, tools/blender/jutsu_sasuke.py).
+VARIANT_OF.ChidoriDive="WallDive"
+-- (05/11, lot 3) Minato's arrival strike out of a Flying Thunder God rides
+-- on the light (Flashstep.FlashStrike, tools/blender/clips_flash2.py).
+VARIANT_OF.FlashStrike="Light1"
 -- Global kunai (DEC-030): with a drawn blade the string and the heavy play
 -- the shared Kunai.* clips (tools/blender/kunai_lion.py), on any fighter.
 local KUNAI_STRIKE={Light1=true,Light2=true,Light3=true,Heavy=true}

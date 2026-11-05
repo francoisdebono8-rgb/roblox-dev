@@ -1896,7 +1896,7 @@ function FX:fighter(model,actor,dt)
 		or (actor.attackName=="ChidoriThrust" and (actor.state=="Startup" or actor.state=="Active"))
 		-- (Embodiment) held in the hand as a state, and through the strike that releases it.
 		or (actor.bodyState~=nil and (actor.bodyState.id=="Chidori" or actor.bodyState.id=="LightningBlade"))
-		or (actor.attackVariant=="Chidori" and (actor.state=="Startup" or actor.state=="Active"))
+		or ((actor.attackVariant=="Chidori" or actor.attackVariant=="ChidoriDive") and (actor.state=="Startup" or actor.state=="Active"))
 	if chidori and not aura.chidori and (actor.health or 1)>0 then
 		local hand=model:FindFirstChild("RightHand") or root
 		local at=new("Attachment",{Name="Chidori"},hand)
@@ -2001,30 +2001,48 @@ function FX:fighter(model,actor,dt)
 	local hand=model:FindFirstChild("RightHand")
 	if rasengan and hand then
 		if not orb then
+			-- (05/11, B1 lot 3, B0 defect 7: "the Rasengan reads as a plain white
+			-- ball, not a spiral") Three neon balls and three neon disks bloomed
+			-- into one white blob. Now: a small white core, a chakra shell drawn
+			-- with the ForceField material (its pattern moves: the churn inside),
+			-- and three streaks orbiting on crossed planes whose trails draw the
+			-- spiral - white at the head, deep blue at the tail. Only the core
+			-- glows.
 			local holder=new("Model",{Name="Rasengan"},self.folder)
-			local core=block(holder,Vector3.one*.6,hand.CFrame,Color3.fromRGB(235,250,255),Enum.Material.Neon);core.Shape=Enum.PartType.Ball
-			local shell=block(holder,Vector3.one*1.5,hand.CFrame,Color3.fromRGB(110,190,255),Enum.Material.Neon);shell.Shape=Enum.PartType.Ball;shell.Transparency=.45
-			local bands={}
+			local core=block(holder,Vector3.one*.42,hand.CFrame,Color3.fromRGB(240,252,255),Enum.Material.Neon);core.Shape=Enum.PartType.Ball
+			local glow=block(holder,Vector3.one*.95,hand.CFrame,Color3.fromRGB(120,195,255),Enum.Material.Neon);glow.Shape=Enum.PartType.Ball;glow.Transparency=.72
+			local shell=block(holder,Vector3.one*1.55,hand.CFrame,Color3.fromRGB(60,140,255),Enum.Material.ForceField);shell.Shape=Enum.PartType.Ball
+			local pivot=block(holder,Vector3.one*.1,hand.CFrame,Color3.new(1,1,1));pivot.Transparency=1
+			local streaks={}
 			for i=1,3 do
-				local band=block(holder,Vector3.new(.06,1.7,1.7),hand.CFrame,Color3.fromRGB(190,230,255),Enum.Material.Neon)
-				band.Shape=Enum.PartType.Cylinder;band.Transparency=.55;table.insert(bands,band)
+				local a0=new("Attachment",{},pivot);local a1=new("Attachment",{},pivot)
+				local trail=new("Trail",{Attachment0=a0,Attachment1=a1,Lifetime=.11,MinLength=.02,FaceCamera=true,LightEmission=1,LightInfluence=0,
+					Color=ColorSequence.new(Color3.fromRGB(235,250,255),Color3.fromRGB(40,110,255)),Transparency=num({{0,0},{1,1}}),
+					WidthScale=num({{0,1},{1,.2}})},pivot)
+				table.insert(streaks,{a0=a0,a1=a1,trail=trail,tilt=CFrame.Angles(math.rad(60*i),math.rad(35*i),0),phase=i*2.1})
 			end
 			local at=new("Attachment",{},core)
-			local e=new("ParticleEmitter",{Texture=TEX.vortex,Rate=40,Lifetime=NumberRange.new(.15,.3),Speed=NumberRange.new(0,1),
-				Color=ColorSequence.new(Color3.fromRGB(150,210,255)),LightEmission=1,LightInfluence=0,Size=num({{0,1.6},{1,.4}}),
-				Transparency=num({{0,.3},{1,1}}),RotSpeed=NumberRange.new(400,700),Rotation=NumberRange.new(0,360),LockedToPart=true},at)
-			new("PointLight",{Color=Color3.fromRGB(120,190,255),Brightness=3,Range=12,Shadows=false},core)
-			orb={holder=holder,core=core,shell=shell,bands=bands,emitter=e,born=os.clock()}
+			local e=new("ParticleEmitter",{Texture=TEX.vortex,Rate=40*(Kit.amount or 1),Lifetime=NumberRange.new(.15,.3),Speed=NumberRange.new(0,1),
+				Color=ColorSequence.new(Color3.fromRGB(110,180,255)),LightEmission=.6,LightInfluence=0,Size=num({{0,1.5},{1,.4}}),
+				Transparency=num({{0,.45},{1,1}}),RotSpeed=NumberRange.new(400,700),Rotation=NumberRange.new(0,360),LockedToPart=true},at)
+			new("PointLight",{Color=Color3.fromRGB(110,180,255),Brightness=2.5,Range=11,Shadows=false},core)
+			orb={holder=holder,core=core,glow=glow,shell=shell,pivot=pivot,streaks=streaks,emitter=e,born=os.clock()}
 			self.rasengan[model]=orb
 			sound(core,SOUND.whoosh,.3,.5)
 		end
 		local grow=math.clamp((os.clock()-orb.born)/.25,.2,1)
 		local center=hand.CFrame*CFrame.new(0,-.75,-.35)
-		orb.core.CFrame=center;orb.core.Size=Vector3.one*.65*grow
-		orb.shell.CFrame=center;orb.shell.Size=Vector3.one*1.55*grow*(1+math.sin(os.clock()*40)*.05)
-		for i,band in orb.bands do
-			band.CFrame=center*CFrame.Angles(os.clock()*(9+i*3),os.clock()*(7-i*2),i)
-			band.Size=Vector3.new(.06,1.75*grow,1.75*grow)
+		local t=os.clock()
+		orb.core.CFrame=center;orb.core.Size=Vector3.one*.42*grow*(1+math.sin(t*50)*.08)
+		orb.glow.CFrame=center;orb.glow.Size=Vector3.one*.95*grow
+		orb.shell.CFrame=center*CFrame.Angles(t*6,t*9,0);orb.shell.Size=Vector3.one*1.55*grow*(1+math.sin(t*40)*.04)
+		orb.pivot.CFrame=center
+		local radius=.72*grow
+		for _,streak in orb.streaks do
+			local angle=t*30+streak.phase
+			local along=streak.tilt*Vector3.new(math.cos(angle),0,math.sin(angle))
+			local across=streak.tilt*Vector3.new(0,.09*grow,0)
+			streak.a0.Position=along*radius+across;streak.a1.Position=along*radius-across
 		end
 	elseif orb then
 		self.rasengan[model]=nil

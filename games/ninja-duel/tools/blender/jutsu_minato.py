@@ -167,10 +167,43 @@ def light4(arm):
     return sh.build(markers={"contact": 5 / 60, "recover": 13 / 60})
 
 
+def flash_strike(arm):
+    """(05/11, B1 lot 3: "a mark, then an angle") The arrival strike out of a
+    Flying Thunder God, on the light's timing (.09 / .12 / recovery). He is
+    still in the crouch he appeared in (the FTG Release pose: low, turned to
+    the opponent, blade ready); nothing is wound up after the arrival - the
+    hips were already turned by the landing. They unwind first, the chest
+    follows, and the reverse-grip blade is carried wide across at chest
+    height as the body rises out of the crouch (contact on frame 7), the
+    left hand kept on the centre line; a short step in finishes it and he
+    stands in his stance, ready for the string that follows."""
+    sh = Shot(arm, N + "FlashStrike")
+    arrive = s({"root": {"y": -.95, "z": .1, "pitch": 18, "yaw": 26}, "torso": {"pitch": 10, "yaw": -10}, "head": {"pitch": -16, "yaw": -10},
+                "ra": {"raise": 50, "out": 20, "twist": 24, "elbow": 80, "wrist": -24}, "la": {"raise": 10, "out": 30, "elbow": 30},
+                "lf": {"z": -.9}, "rf": {"z": .95, "yaw": 40}})
+    sh.key(0, arrive, "ease")
+    load = merge(arrive, {"root": {"y": -.9, "yaw": 48}, "torso": {"yaw": -32}, "head": {"yaw": -26},
+                          "ra": {"raise": 70, "out": -44, "twist": 40, "elbow": 118, "wrist": -30},
+                          "la": {"raise": 40, "out": -6, "elbow": 80}})
+    sh.key(3, load, "pass")
+    hit = s({"travel": {"z": -.4}, "root": {"y": -.6, "z": -.3, "pitch": 10, "yaw": -30}, "torso": {"pitch": 6, "yaw": 30},
+             "head": {"pitch": -8, "yaw": 10},
+             "ra": {"raise": 92, "out": 50, "twist": -16, "elbow": 14, "wrist": 14},
+             "la": {"raise": 40, "out": -20, "elbow": 80},
+             "lf": {"z": -1.25, "y": 0, "yaw": -10}, "rf": {"y": .08, "toe": -26, "yaw": 10}})
+    sh.key(7, hit, "impact")
+    sh.key(10, merge(hit, {"torso": {"yaw": 36}, "ra": {"out": 58, "wrist": 20}}), "ease")
+    sh.key(15, merge(s({"travel": {"z": -.55}}), {"lf": {"z": -1.25}, "rf": {"z": .5, "y": .1}, "root": {"z": -.2, "yaw": 6}}), "pass")
+    sh.key(24, merge(s({"travel": {"z": -.6}}), {"lf": {"z": -1.25}, "rf": {"z": .3}}), "ease")
+    sh.drag(["neck"], 1).drag(["shoulder.R", "forearm.R"], 1)
+    return sh.build(markers={"contact": 7 / 60, "recover": 13 / 60})
+
+
 def author(arm):
     acts = [rasengan_channel(arm)]
     acts += sealing_trap(arm)
     acts += space_time_barrier(arm)
     acts.append(flash_touch(arm))
     acts.append(light4(arm))
+    acts.append(flash_strike(arm))
     return acts

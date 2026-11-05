@@ -797,6 +797,25 @@ function Brawler.request(c,a,action)
   if action=="Attack" then
    if a.airborne then Brawler.breakString(a,true);a.lastAirAttack=c.now;return arrival(Brawler.start(c,a,"Air1")) end
    Brawler.breakString(a,false);a.lastAttack=c.now
+   -- (05/11, B1 lot 3: Minato's signature is "a mark, then an angle") At
+   -- arm's length the arrival strike is his own: out of the crouch he lands
+   -- in, the hips unwind and the reverse-grip blade cuts across from the new
+   -- side (Flashstep.FlashStrike, on the light's timing). It hits harder and
+   -- holds the body longer than a jab, for the string that follows; from
+   -- behind it says so.
+   if gap<=5.5 and a.fighterId=="Flashstep" then
+    local to=a.root.Position-a.target.root.Position;to=Vector3.new(to.X,0,to.Z)
+    local look=a.target.root.CFrame.LookVector;look=Vector3.new(look.X,0,look.Z)
+    local behind=to.Magnitude>.1 and look.Magnitude>.1 and look.Unit:Dot(to.Unit)<-.2
+    local ok=Brawler.start(c,a,"Light1")
+    if ok and a.pending then
+     local spec=table.clone(a.pending.spec)
+     spec.damageScale=(spec.damageScale or 1)*1.5;spec.stun=math.max(spec.stun or .27,.42)
+     a.pending.spec=spec;a.pending.fromBehind=behind
+     a.attackVariant="FlashStrike"
+    end
+    return arrival(ok)
+   end
    return arrival(Brawler.start(c,a,if gap>5.5 then "DashAttack" else "Light1"))
   end
  end
@@ -1488,6 +1507,9 @@ function Brawler.hit(c,a,p)
   contact.arrival=true
   c:cue(a,"FLYING THUNDER GOD • THE CHAIN GOES ON",.8)
   Brawler.event(c,a,"FlashChain")
+ elseif contact and not guarded and a.flashStrike==a.attackSerial and p.fromBehind then
+  c:cue(a,"FLYING THUNDER GOD • FROM BEHIND",.8)
+  Brawler.event(c,a,"FlashBehind")
  end
  if p.flow and not guarded and b.health>0 then
   a.flowStreak=(a.flowStreak or 0)+1

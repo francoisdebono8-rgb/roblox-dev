@@ -12,6 +12,9 @@
 --   Strike   the strike it releases into on the ground
 --   Air      the strike out of the air (default: the shared drop strike)
 --   Wall     the strike off a wall run (default: the shared wall dive)
+--   AirVariant / WallVariant   the clip the client draws for those strikes
+--   Dive     the air / wall strike ends in the floor: it marks it, hit or miss
+--   Teach    a second cue while it is held (how the situation shapes it)
 --   Damage   the released strike's damage
 --   World    {contact, element}: how the world takes it (Server/WorldReaction)
 --   Style    the contact style pushed to the client on release
@@ -31,6 +34,13 @@ function BodyState.enter(c,a,spec,held)
 	local st=held or spec.State
 	a.bodyState={id=spec.Id,spec=spec,state=st,at=c.now,untilTime=c.now+(st.Time or 2)}
 	c:cue(a,string.upper(st.Name or spec.Name or spec.Id).." • ATTACK TO RELEASE",.9)
+	if st.Teach then
+		local at=c.now
+		c:schedule(c.now+.95,function()
+			local s=a.bodyState
+			if s and s.at==at and a.health>0 then c:cue(a,string.upper(st.Name or spec.Id).." • "..st.Teach,1.1) end
+		end)
+	end
 	brawler().event(c,a,"State:"..spec.Id)
 	c:pushImpact(a.root.Position,st.Style or "chidori",false,{owner=a.id,state=spec.Id,phase="form"})
 end
@@ -93,12 +103,26 @@ function BodyState.release(c,a,action)
 		p.rasengan=true
 		if shape=="ground" then p.spec.travel=math.max(p.spec.travel,10);a.travelRemaining=math.max(a.travelRemaining or 0,p.spec.travel) end
 	end
-	a.attackVariant=(shape=="air" and st.AirVariant) or st.Variant or s.id
+	a.attackVariant=(shape=="air" and st.AirVariant) or (shape=="wall" and st.WallVariant) or st.Variant or s.id
 	a.lastAttack=c.now
 	if shape=="ground" and runSpeed>8 then
 		-- Released out of a run: the run is in the thrust.
 		local need=runSpeed*(p.spec.travelTime or .3)*.9
 		if need>p.spec.travel then p.spec.travel=need;a.travelRemaining=need end
+	end
+	-- (05/11, lot 3) A dive ends in the floor: when the lunge is over the
+	-- ground under the body takes it (a lightning crater), hit or miss.
+	if st.Dive and shape~="ground" then
+		local serial=a.attackSerial
+		c:schedule(c.now+p.spec.startup+math.max(p.slamWindow or 0,.16)+.03,function()
+			if a.health<=0 or a.attackSerial~=serial then return end
+			local hit=workspace:Raycast(a.root.Position,Vector3.new(0,-7,0),c:rayParams(true))
+			if not hit then return end
+			c:pushImpact(hit.Position+Vector3.new(0,.4,0),st.Style or "chidori",true,{owner=a.id,state=s.id,phase="land"})
+			require(script.Parent.WorldReaction).impact(c,{part=hit.Instance,position=hit.Position,normal=hit.Normal,energy=(st.Damage or 20)*3,
+				contact=(st.World and st.World.contact) or "energy",element=st.World and st.World.element,direction=Vector3.new(0,-1,0),source=a.id})
+			Brawler.event(c,a,"Dive:"..s.id)
+		end)
 	end
 	Brawler.event(c,a,"Release:"..s.id);Brawler.event(c,a,"Release:"..shape)
 	if st.Event then Brawler.event(c,a,st.Event) end

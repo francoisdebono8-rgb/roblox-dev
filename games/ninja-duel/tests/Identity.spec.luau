@@ -930,6 +930,23 @@ test("Minato · combo -> relocation -> combo: the rising kick's seal takes him t
  assert(c2:request(x,"Attack"))
  until_(c2,.4,function() return y.health<y.def.Health end,"the arrival strike did not land")
  assert(ev(x,"FlashChain")==0,"a fresh exchange was called a chain")
+ -- (05/11, lot 3) on the ground at arm's length it is his own arrival strike:
+ -- the reverse-grip cut from the new side, harder and longer than a jab;
+ -- landed behind the opponent's back, it says so.
+ assert(x.attackName=="Light1" and x.attackVariant=="FlashStrike","the ground arrival strike is "..tostring(x.attackName).."/"..tostring(x.attackVariant))
+ assert(y.def.Health-y.health>=7,"the arrival strike was light ("..string.format("%.1f",y.def.Health-y.health)..")")
+ local c3,m,o=H.duel("Flashstep","Mirage")
+ place(c3,m,o,V.new(0,3,0),V.new(0,3,-14))
+ o.root.CFrame=H.C.lookAt(o.root.Position,o.root.Position+V.new(0,0,1))
+ Techniques.plant(c3,m,o.root.Position,V.yAxis,o)
+ m.move=V.new(0,0,-1)
+ assert(c3:request(m,H.slot(m,"Flashstep")))
+ until_(c3,.3,function() return (m.flashUntil or 0)>c3.now end,"no arrival")
+ o.root.CFrame=H.C.lookAt(o.root.Position,o.root.Position+(o.root.Position-m.root.Position)*V.new(1,0,1))
+ m.move=V.zero
+ assert(c3:request(m,"Attack"))
+ until_(c3,.4,function() return o.health<o.def.Health end,"the arrival strike from behind did not land")
+ assert(ev(m,"FlashBehind")==1,"a strike from behind was not called one")
  -- (Stage 6) at 13 Minato has no Rasengan: the arrival chain is the strike above.
 end)
 

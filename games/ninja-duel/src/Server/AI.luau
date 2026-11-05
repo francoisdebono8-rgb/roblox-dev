@@ -575,7 +575,9 @@ function AI:update(now)
 	-- in and release it, sometimes from a jump (the release reads the air).
 	if a.bodyState then
 		a.move=toward;a.sprinting=distance>7
-		if distance<(a.bodyState.state.Reach or 9) then c:request(a,"Attack")
+		-- (05/11, lot 3) a state that dives out of the air reaches further from a jump
+		local reach=if a.airborne and a.bodyState.state.AirVariant then 22 else (a.bodyState.state.Reach or 9)
+		if distance<reach then c:request(a,"Attack")
 		elseif distance>11 and not a.airborne and self.rng:NextNumber()<.12 then c:request(a,"Jump") end
 		return
 	end

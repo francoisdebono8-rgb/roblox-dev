@@ -141,7 +141,12 @@ local Fighters = {
 				-- jumps or climbs with it and his next strike releases it (a
 				-- thrust, a drop out of the air, a dive off a wall). Held, it
 				-- drains; a blow taken or a guard puts it out.
-				State = { Time = 2.6, Drain = 6, Strike = "ChidoriThrust", Air = "ChidoriThrust", Damage = 22, World = { contact = "energy", element = "lightning" }, Style = "chidori", Name = "Chidori" },
+				-- (05/11, B1 lot 3: his signature is verticality) Out of a
+				-- jump or off a wall the strike is the dive: the lightning
+				-- hand first, straight at him (the wall dive's lunge), into
+				-- the floor (Dive: the ground takes it, hit or miss).
+				State = { Time = 2.6, Drain = 6, Strike = "ChidoriThrust", Air = "WallDive", Wall = "WallDive", AirVariant = "ChidoriDive", WallVariant = "ChidoriDive", Dive = true,
+					Teach = "JUMP, THEN ATTACK: DIVE", Damage = 22, World = { contact = "energy", element = "lightning" }, Style = "chidori", Name = "Chidori" },
 				Hint = "Form it, move with it, then strike • a miss leaves him open" },
 			{ Id = "WireTrap", Name = "Wire Trap", Cost = 18, Channel = 0.18, Active = 0.08, Recovery = 0.3, Cooldown = 6, Interruptible = true, Range = 34, Damage = 3, Hint = "A wired shuriken binds • then R1 + × (4) for Dragon Flame" },
 			{ Id = "FireBloom", Name = "Great Fireball", Element = "Fire", Cost = 24, Channel = 0.32, Active = 0.4, Recovery = 0.36, Cooldown = 5.5, Interruptible = true, Feintable = true, Range = 70, Speed = 64, Radius = 2, Growth = 1.6, Damage = 15,

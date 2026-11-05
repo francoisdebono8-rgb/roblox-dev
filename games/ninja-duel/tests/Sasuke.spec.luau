@@ -115,6 +115,32 @@ test("Chidori: formed, held in the hand, released by the strike; it lands hard f
  assert(open>=.45,"a missed Chidori recovered in "..string.format("%.2f",open).."s")
 end)
 
+test("Chidori out of a jump (05/11, lot 3): the dive at him, the lightning hand first, into the floor",function()
+ local c,a,b=H.duel("Lion","Mirage")
+ place(c,a,b,V.new(0,3,9),V.new(0,3,-9))
+ local health=b.health
+ assert(c:request(a,slot(a,"Chidori"),b.root.Position),"Chidori refused")
+ until_(c,1.2,function() return a.bodyState~=nil end,"the Chidori was never held")
+ -- up in the air (a jump's height), still holding it
+ c:relocate(a,V.new(0,15,9));a.airborne=true
+ local events=a.events or {};a.events=events
+ assert(c:request(a,"Attack"),"the strike in the air does not release it")
+ assert(a.attackName=="WallDive" and a.attackVariant=="ChidoriDive","the air release is "..tostring(a.attackName).."/"..tostring(a.attackVariant))
+ local top=a.root.Position.Y
+ until_(c,1.2,function() return b.health<health end,"the dive never landed")
+ assert(top-a.root.Position.Y>4,"the dive did not come down ("..string.format("%.1f",top-a.root.Position.Y).." studs)")
+ assert(health-b.health>=18,"the dive was light ("..string.format("%.1f",health-b.health)..")")
+ assert(b.reaction=="Knockdown","the dive did not put him down: "..tostring(b.reaction))
+ until_(c,1,function() return (a.events["Dive:Chidori"] or 0)>0 end,"the floor never took the dive")
+ -- The ground release stays the running thrust.
+ local c2,x,y=H.duel("Lion","Mirage")
+ place(c2,x,y,V.new(0,3,7),V.new(0,3,-7))
+ assert(c2:request(x,slot(x,"Chidori"),y.root.Position))
+ until_(c2,1.2,function() return x.bodyState~=nil end,"the Chidori was never held")
+ assert(c2:request(x,"Attack"))
+ assert(x.attackName=="ChidoriThrust","on the ground the release is "..tostring(x.attackName))
+end)
+
 test("curse mark: faster and harder, and it eats his health (never to a KO)",function()
  local c,a,b=H.duel("Lion","Flashstep")
  place(c,a,b,V.new(0,3,9),V.new(0,3,-9))
