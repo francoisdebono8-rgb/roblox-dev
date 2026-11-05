@@ -867,11 +867,56 @@ local function impact(fx,impact,folder)
 		K.sound(K.anchorPart(fx.folder,p),K.SOUND.whoosh,.5,.6)
 		return true
 	elseif style=="puddle" then
+		-- (Jutsu pass 05/11, user: « la flaque d'eau de Kakashi ») The water
+		-- used to be one flat blue disc, 18 studs wide, drawn at the impact:
+		-- where the dragon broke on a body that is chest height, so it hung in
+		-- the air. Now it lies ON the floor under the impact: a wet patch of
+		-- overlapping ovals (dark, glossy, see-through), spreading in, a few
+		-- ripples while it lasts, soaking away at the end. Same area as the
+		-- server's (Interactions.PUDDLE): lightning into it still conducts.
 		local radius=impact.radius or 9
-		local disc=K.block(fx.folder,Vector3.new(.08,radius*2,radius*2),CFrame.new(p+Vector3.new(0,.06,0))*CFrame.Angles(0,0,math.rad(90)),rgb(90,160,220),Enum.Material.Glass,"Part")
-		disc.Name="Puddle";disc.Shape=Enum.PartType.Cylinder;disc.Transparency=.55;disc.Reflectance=.25
-		task.delay(math.max(0,(impact.time or 6)-.6),function() if disc.Parent then K.tween(disc,.6,{Transparency=1}) end end)
-		Debris:AddItem(disc,(impact.time or 6)+.1)
+		local life=impact.time or 6
+		local hit=K.floorUnder and K.floorUnder(fx,p,2,16)
+		local ground=if hit then hit.Position else p-Vector3.new(0,2.9,0)
+		local rng=Random.new(impact.serial or math.floor(p.X*7+p.Z*13))
+		local holder=K.new("Model",{Name="Puddle"},fx.folder)
+		local patches={}
+		local function patch(at,w,d,color,transparency)
+			local part=K.block(holder,Vector3.new(w,.06,d),CFrame.new(at)*CFrame.Angles(0,rng:NextNumber(0,math.pi*2),0),color,Enum.Material.Glass,"Part")
+			K.new("SpecialMesh",{MeshType=Enum.MeshType.Sphere,Scale=Vector3.new(1,.4,1)},part)
+			part.Reflectance=.32;part.Transparency=1;part.CastShadow=false
+			table.insert(patches,{part=part,size=part.Size,transparency=transparency})
+			return part
+		end
+		-- one broad body, then lobes round its edge (an outline that is not a circle)
+		patch(ground+Vector3.new(0,.03,0),radius*1.5,radius*1.25,rgb(52,92,128),.42)
+		for k=1,6 do
+			local a=k/6*math.pi*2+rng:NextNumber(-.3,.3)
+			local off=Vector3.new(math.cos(a),0,math.sin(a))*radius*rng:NextNumber(.45,.7)
+			local s=radius*rng:NextNumber(.5,.8)
+			patch(ground+off+Vector3.new(0,.035+k*.002,0),s,s*rng:NextNumber(.6,.9),rgb(60,104,142),.46)
+		end
+		-- a lighter sheen in the middle, where the water is deepest
+		patch(ground+Vector3.new(0,.05,0),radius*.7,radius*.55,rgb(120,176,214),.55)
+		for _,entry in patches do
+			entry.part.Size=entry.size*Vector3.new(.35,1,.35)
+			K.tween(entry.part,.28,{Size=entry.size,Transparency=entry.transparency},Enum.EasingStyle.Quad,Enum.EasingDirection.Out)
+		end
+		-- the splash where it lands, then small ripples now and then
+		K.shockRing(fx.folder,ground+Vector3.new(0,.12,0),rgb(200,230,255),1,radius*1.6,.4)
+		for k=1,math.floor((life-1)/.9) do
+			task.delay(k*.9,function()
+				if not holder.Parent then return end
+				local a=rng:NextNumber(0,math.pi*2)
+				local at=ground+Vector3.new(math.cos(a),0,math.sin(a))*radius*rng:NextNumber(0,.6)+Vector3.new(0,.1,0)
+				K.shockRing(fx.folder,at,rgb(190,222,250),.4,2.6,.7)
+			end)
+		end
+		task.delay(math.max(0,life-.9),function()
+			if not holder.Parent then return end
+			for _,entry in patches do K.tween(entry.part,.9,{Transparency=1,Size=entry.size*Vector3.new(.8,1,.8)}) end
+		end)
+		Debris:AddItem(holder,life+.2)
 		return true
 	elseif style=="conduct" then
 		local at=impact.position or p

@@ -2615,11 +2615,23 @@ local function reactionTargets(actor,feet)
 			rl={lift=34*fold,knee=60*fold},ll={lift=-6,knee=34*fold}}),RATE.recoil
 	end
 	if kind=="Bound" then
-		-- Bound by wire or sand: arms pinned to the body, a stiff struggle.
-		local struggle=math.sin(elapsed*26)*4
-		return build({root={y=-.15,yaw=struggle*.5},torso={pitch=-4,roll=struggle*.6},head={pitch=-10,yaw=struggle},
-			ra={raise=-4,out=-2,twist=-10,elbow=14},la={raise=-4,out=-2,twist=-10,elbow=14},
-			rf={x=-.18,z=.05},lf={x=.18,z=-.05}}),RATE.defense
+		-- Bound by wire, sand or the hounds: arms pinned to the body.
+		-- (Jutsu pass 05/11, the Itachi vs Kakashi film: « Itachi figé quand
+		-- les chiens le tiennent ») It was a near-still pose with a 4° shiver,
+		-- which read as a frozen body. Now the catch jolts him (the knees give,
+		-- the chest folds over the hold), then he fights it: the shoulders
+		-- wrench left and right against the bind, the pinned elbows push out
+		-- in turn, the knees sag and push back up, the head shakes.
+		local jolt=1-smooth(math.clamp(elapsed/.2,0,1))
+		local w=elapsed*7.2
+		local wrench=math.sin(w)*13+math.sin(w*2.3+1)*4
+		local sag=.2+math.abs(math.sin(w*.5))*.14+.2*jolt
+		local shake=math.sin(elapsed*17)*5
+		local push=math.sin(w)
+		return build({root={y=-sag,yaw=wrench*.35,pitch=4+10*jolt},torso={pitch=6+12*jolt,yaw=wrench*.8,roll=math.sin(w+.6)*6},
+			head={pitch=-4-14*jolt,yaw=-wrench*.5+shake,roll=shake*.4},
+			ra={raise=4+math.max(0,push)*14,out=-6,twist=-14,elbow=30+push*14},la={raise=4+math.max(0,-push)*14,out=-6,twist=-14,elbow=30-push*14},
+			rf={x=-.24,z=.08+math.sin(w*.5)*.08},lf={x=.24,z=-.1-math.sin(w*.5)*.08}}),RATE.defense
 	end
 	if kind=="Spiked" then
 		-- Driven down: folded forward, arms trailing above, legs whipped behind.

@@ -283,7 +283,8 @@ function FX.buildFireball(caster)
 		Color=ColorSequence.new(look.smokeColor),LightEmission=0,Size=num({{0,3},{1,8}}),Transparency=num({{0,.55},{1,1}}),Drag=2})
 	emitter(at,{Name="Embers",Enabled=true,Texture=TEX.fireSpark,Rate=look.embers,Lifetime=NumberRange.new(.4,.8),Speed=NumberRange.new(6,14),SpreadAngle=Vector2.new(180,180),
 		Color=ColorSequence.new(Color3.fromRGB(255,190,90)),LightEmission=1,Size=num({{0,.35},{1,0}}),Acceleration=Vector3.new(0,6,0)})
-	new("PointLight",{Color=look.light,Brightness=4,Range=28,Shadows=false},root)
+	-- (Jutsu pass 05/11) was 4 over 28 studs: the caster went white behind it
+	new("PointLight",{Color=look.light,Brightness=2,Range=20,Shadows=false},root)
 	model.PrimaryPart=root
 	return model
 end
@@ -333,8 +334,18 @@ function FX:reset()
 end
 local function serverNow() return workspace:GetServerTimeNow() end
 function FX:visualTime() return serverNow()-FX.DELAY end
-local BUILD={kunai=function() return FX.buildKunai(false) end,marked=function() return FX.buildKunai(true) end,wire=function() return FX.buildShuriken() end,
-	shuriken=FX.buildShuriken,fireball=function(p) return FX.buildFireball(p and p.caster) end,wind=FX.buildWind,
+-- (Jutsu pass 05/11, the Itachi vs Kakashi film: « on voit à peine les
+-- shuriken de l'ombre ») A flying shuriken is drawn 1.4 times its resting
+-- size (a stuck one keeps the real size): at the duel camera's distance a
+-- one-stud grey star over light sand was nearly invisible.
+local FLYING_SHURIKEN=1.4
+local function flyingShuriken()
+	local m=FX.buildShuriken()
+	pcall(function() m:ScaleTo(FLYING_SHURIKEN) end)
+	return m
+end
+local BUILD={kunai=function() return FX.buildKunai(false) end,marked=function() return FX.buildKunai(true) end,wire=flyingShuriken,
+	shuriken=flyingShuriken,fireball=function(p) return FX.buildFireball(p and p.caster) end,wind=FX.buildWind,
 	-- Vacuum Palm: a pale ring of compressed air (sized by the flight radius).
 	palm=function()
 		local model=new("Model",{Name="VacuumPalm"})
@@ -387,7 +398,11 @@ function FX:sync(data)
 			elseif p.kind=="kunai" or p.kind=="marked" then
 				addTrail(root,Vector3.new(0,.06,.2),Vector3.new(0,-.06,.2),if p.kind=="marked" then MINATO else Color3.fromRGB(220,226,236),.1,.5,1)
 			elseif p.kind=="shuriken" or p.kind=="wire" then
-				addTrail(root,Vector3.new(-.35,0,0),Vector3.new(.35,0,0),Color3.fromRGB(226,232,240),.08,.6,1)
+				-- Two layers so the line reads on the pale sand and on the sky:
+				-- a wide light wake and a narrow dark core inside it.
+				addTrail(root,Vector3.new(-.55,0,0),Vector3.new(.55,0,0),Color3.fromRGB(236,242,252),.14,.42,1)
+				local core=addTrail(root,Vector3.new(-.14,0,0),Vector3.new(.14,0,0),Color3.fromRGB(44,50,66),.1,.18,1)
+				core.LightEmission=0
 			end
 			if p.kind=="wire" then
 				-- Ninja wire: a thin line from the thrower's hand to the blade.
@@ -615,15 +630,31 @@ local function sparks(parent,position,color,count,speed)
 end
 -- A translucent copy of a fighter's current pose: afterimages for teleports,
 -- dodges and substitutions.
+-- (Jutsu pass 05/11, the Itachi vs Kakashi film: « la lecture du Sharingan
+-- fait une silhouette rouge pleine ») The copy was flat Neon at 35-60 %
+-- transparency: a solid coloured mannequin. Now it is a chakra shell: the
+-- body parts in ForceField (bright at the edges, see-through in the middle,
+-- so the silhouette reads as an image, not a body), over a faint Neon fill
+-- that fades first; the shell swells a little as it goes.
+FX.GHOST_FILL=.82
 function FX:ghost(model,color,time,transparency)
 	if not model then return end
 	local holder=new("Model",{Name="Afterimage"},self.folder)
+	local edge=math.clamp((transparency or .45)-.25,0,.6)
 	for _,d in model:GetChildren() do
 		if d:IsA("BasePart") and d.Name~="HumanoidRootPart" and d.Transparency<.9 then
-			local g=block(holder,d.Size,d.CFrame,color,Enum.Material.Neon,if d:IsA("WedgePart") then "WedgePart" else "Part")
+			local class=if d:IsA("WedgePart") then "WedgePart" else "Part"
+			local g=block(holder,d.Size,d.CFrame,color,Enum.Material.ForceField,class)
 			if d:IsA("Part") then g.Shape=d.Shape end
-			g.Transparency=transparency or .45
-			tween(g,time,{Transparency=1,Size=d.Size*1.08})
+			g.Transparency=edge
+			tween(g,time,{Transparency=1,Size=d.Size*1.1})
+			-- the faint fill only on the body's big volumes (fewer parts to draw)
+			if d.Size.X*d.Size.Y*d.Size.Z>.3 then
+				local fill=block(holder,d.Size*.96,d.CFrame,color,Enum.Material.Neon,class)
+				if d:IsA("Part") then fill.Shape=d.Shape end
+				fill.Transparency=FX.GHOST_FILL
+				tween(fill,time*.6,{Transparency=1})
+			end
 		end
 	end
 	Debris:AddItem(holder,time+.1)
@@ -1120,7 +1151,10 @@ function FX:explosion(position,normal,scale)
 	local holder=anchorPart(self.folder,position);holder.Transparency=1
 	sound(holder,SOUND.boom,.8,.9)
 	sound(holder,SOUND.debris,.32*scale,1.15,1.1)
-	local light=new("PointLight",{Color=Color3.fromRGB(255,150,70),Brightness=10,Range=46*scale,Shadows=false},holder)
+	-- (Jutsu pass 05/11, the reel: the bodies near a fireball's blast turned
+	-- pure white) Brightness 10 over 46 studs blew every surface out; the
+	-- blast still lights the arena, without erasing the fighters' colours.
+	local light=new("PointLight",{Color=Color3.fromRGB(255,150,70),Brightness=3.5,Range=30*scale,Shadows=false},holder)
 	tween(light,.9,{Brightness=0})
 	if not Kit.has("fire") then
 		-- Built-in look (no texture available).
@@ -1229,17 +1263,34 @@ function FX:teleport(from,to,model,awake)
 	Debris:AddItem(holder,1)
 end
 function FX:substitute(position,to,fighter,model)
-	if model then self:ghost(model,Color3.fromRGB(220,220,230),.18,.5) end
-	smokePuff(self.folder,position,Color3.fromRGB(240,240,244),22,2.4)
+	-- (Jutsu pass 05/11, from the Itachi vs Kakashi film: « le rondin fait un
+	-- fantôme blanc ») No white copy of the body any more: the swap is hidden
+	-- in a thick poof of smoke the size of the body, and the log is found
+	-- standing in it where he stood (bark, two pale cut ends), then it topples.
+	smokePuff(self.folder,position,Color3.fromRGB(242,242,246),26,2.8)
+	smokePuff(self.folder,position-Vector3.new(0,1.8,0),Color3.fromRGB(232,232,236),14,2.2)
 	if fighter=="Mirage" then
 		crows(self.folder,position,10,11)
 	else
 		-- The classic: a wooden log takes the hit in his place.
-		local log=block(self.folder,Vector3.new(4.2,1.3,1.3),CFrame.new(position)*CFrame.Angles(0,math.random()*math.pi,math.rad(70)),Color3.fromRGB(122,84,52),Enum.Material.Wood)
-		log.Shape=Enum.PartType.Cylinder;log.Anchored=false;log.CanCollide=true;log.Massless=false
-		log.AssemblyLinearVelocity=Vector3.new(0,6,0)
-		task.delay(1.6,function() if log.Parent then tween(log,.4,{Transparency=1}) end end)
-		Debris:AddItem(log,2.1)
+		local holder=new("Model",{Name="SubstitutionLog"},self.folder)
+		local stand=CFrame.new(position-Vector3.new(0,.6,0))*CFrame.Angles(0,math.random()*math.pi*2,0)*CFrame.Angles(0,0,math.rad(84))
+		local log=block(holder,Vector3.new(3.6,1.25,1.25),stand,Color3.fromRGB(110,74,44),Enum.Material.Wood)
+		log.Shape=Enum.PartType.Cylinder;log.Anchored=false;log.CanCollide=true;log.Massless=false;log.CastShadow=true
+		for _,x in {-1.81,1.81} do
+			local cut=block(holder,Vector3.new(.04,1.12,1.12),stand*CFrame.new(x,0,0),Color3.fromRGB(214,180,128),Enum.Material.Wood)
+			cut.Shape=Enum.PartType.Cylinder;cut.Anchored=false;cut.Massless=true
+			new("WeldConstraint",{Part0=log,Part1=cut},cut)
+		end
+		holder.PrimaryPart=log
+		-- a nudge so it tips over instead of balancing on its end
+		log.AssemblyLinearVelocity=Vector3.new(0,2,0)
+		log.AssemblyAngularVelocity=stand.LookVector*2.2
+		task.delay(1.7,function()
+			if not holder.Parent then return end
+			for _,d in holder:GetChildren() do if d:IsA("BasePart") then tween(d,.4,{Transparency=1}) end end
+		end)
+		Debris:AddItem(holder,2.2)
 	end
 	if to then smokePuff(self.folder,to,Color3.fromRGB(236,236,240),8,1.4) end
 	sound(anchorPart(self.folder,position),SOUND.whoosh,.4,.9)
@@ -2008,10 +2059,15 @@ function FX:fighter(model,actor,dt)
 			-- and three streaks orbiting on crossed planes whose trails draw the
 			-- spiral - white at the head, deep blue at the tail. Only the core
 			-- glows.
+			-- (Jutsu pass 05/11, the reel: still a white ball on Naruto and on
+			-- Minato) The neon core bloomed over everything and its light washed
+			-- the arm white. Now the core is small and pale blue, the body of the
+			-- sphere a deep blue glass (the colour reads at the duel camera's
+			-- distance), the ForceField churn over it, and a weak light.
 			local holder=new("Model",{Name="Rasengan"},self.folder)
-			local core=block(holder,Vector3.one*.42,hand.CFrame,Color3.fromRGB(240,252,255),Enum.Material.Neon);core.Shape=Enum.PartType.Ball
-			local glow=block(holder,Vector3.one*.95,hand.CFrame,Color3.fromRGB(120,195,255),Enum.Material.Neon);glow.Shape=Enum.PartType.Ball;glow.Transparency=.72
-			local shell=block(holder,Vector3.one*1.55,hand.CFrame,Color3.fromRGB(60,140,255),Enum.Material.ForceField);shell.Shape=Enum.PartType.Ball
+			local core=block(holder,Vector3.one*.3,hand.CFrame,Color3.fromRGB(200,236,255),Enum.Material.Neon);core.Shape=Enum.PartType.Ball
+			local glow=block(holder,Vector3.one*1.05,hand.CFrame,Color3.fromRGB(40,120,255),Enum.Material.Glass);glow.Shape=Enum.PartType.Ball;glow.Transparency=.35;glow.Reflectance=.2
+			local shell=block(holder,Vector3.one*1.55,hand.CFrame,Color3.fromRGB(50,130,255),Enum.Material.ForceField);shell.Shape=Enum.PartType.Ball
 			local pivot=block(holder,Vector3.one*.1,hand.CFrame,Color3.new(1,1,1));pivot.Transparency=1
 			local streaks={}
 			for i=1,3 do
@@ -2025,7 +2081,7 @@ function FX:fighter(model,actor,dt)
 			local e=new("ParticleEmitter",{Texture=TEX.vortex,Rate=40*(Kit.amount or 1),Lifetime=NumberRange.new(.15,.3),Speed=NumberRange.new(0,1),
 				Color=ColorSequence.new(Color3.fromRGB(110,180,255)),LightEmission=.6,LightInfluence=0,Size=num({{0,1.5},{1,.4}}),
 				Transparency=num({{0,.45},{1,1}}),RotSpeed=NumberRange.new(400,700),Rotation=NumberRange.new(0,360),LockedToPart=true},at)
-			new("PointLight",{Color=Color3.fromRGB(110,180,255),Brightness=2.5,Range=11,Shadows=false},core)
+			new("PointLight",{Color=Color3.fromRGB(80,150,255),Brightness=1.1,Range=7,Shadows=false},core)
 			orb={holder=holder,core=core,glow=glow,shell=shell,pivot=pivot,streaks=streaks,emitter=e,born=os.clock()}
 			self.rasengan[model]=orb
 			sound(core,SOUND.whoosh,.3,.5)
@@ -2033,8 +2089,8 @@ function FX:fighter(model,actor,dt)
 		local grow=math.clamp((os.clock()-orb.born)/.25,.2,1)
 		local center=hand.CFrame*CFrame.new(0,-.75,-.35)
 		local t=os.clock()
-		orb.core.CFrame=center;orb.core.Size=Vector3.one*.42*grow*(1+math.sin(t*50)*.08)
-		orb.glow.CFrame=center;orb.glow.Size=Vector3.one*.95*grow
+		orb.core.CFrame=center;orb.core.Size=Vector3.one*.3*grow*(1+math.sin(t*50)*.08)
+		orb.glow.CFrame=center*CFrame.Angles(0,t*14,t*5);orb.glow.Size=Vector3.one*1.05*grow
 		orb.shell.CFrame=center*CFrame.Angles(t*6,t*9,0);orb.shell.Size=Vector3.one*1.55*grow*(1+math.sin(t*40)*.04)
 		orb.pivot.CFrame=center
 		local radius=.72*grow

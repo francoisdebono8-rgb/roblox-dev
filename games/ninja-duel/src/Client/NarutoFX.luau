@@ -15,6 +15,7 @@ local NARUTO="Legion"
 local SMOKE=Color3.fromRGB(240,240,244)
 local CHAKRA=Color3.fromRGB(255,160,70) -- his orange
 local BLUE=Color3.fromRGB(110,190,255)
+local DEEP=Color3.fromRGB(40,120,255) -- the Rasengan's body (05/11)
 local CORE=Color3.fromRGB(235,250,255)
 local FOX=Color3.fromRGB(232,64,30) -- the Nine-Tails' red chakra
 local FOX_CORE=Color3.fromRGB(255,176,96)
@@ -200,16 +201,22 @@ local function rasengan(fx,model,actor,st)
 	local cloak=(actor.awaken or 0)>0
 	if forming and hand then
 		if not (st.orb and st.orb.Parent) then
+			-- (Jutsu pass 05/11, the reel: a white blob) A small pale core, a
+			-- deep blue glass body and a ForceField churn over it: the sphere
+			-- reads blue at the duel camera's distance (two neon balls bloomed
+			-- into white).
 			local holder=K.new("Model",{Name="RasenganForming"},fx.folder)
-			local core=K.block(holder,Vector3.one*.4,hand.CFrame,CORE,Enum.Material.Neon);core.Shape=Enum.PartType.Ball
-			local shell=K.block(holder,Vector3.one,hand.CFrame,BLUE,Enum.Material.Neon);shell.Shape=Enum.PartType.Ball;shell.Transparency=.5
-			st.orb=holder;st.core=core;st.shell=shell;st.born=NarutoFX.clock();st.wisp=nil
+			local core=K.block(holder,Vector3.one*.3,hand.CFrame,CORE,Enum.Material.Neon);core.Shape=Enum.PartType.Ball
+			local shell=K.block(holder,Vector3.one,hand.CFrame,DEEP,Enum.Material.Glass);shell.Shape=Enum.PartType.Ball;shell.Transparency=.35;shell.Reflectance=.2
+			local churn=K.block(holder,Vector3.one,hand.CFrame,BLUE,Enum.Material.ForceField);churn.Shape=Enum.PartType.Ball
+			st.orb=holder;st.core=core;st.shell=shell;st.churn=churn;st.born=NarutoFX.clock();st.wisp=nil
 		end
 		local t=NarutoFX.clock()-st.born
 		local grow=math.clamp(t/.45,.25,1)
 		local center=hand.CFrame*CFrame.new(0,-.7,-.35)
-		st.core.CFrame=center;st.core.Size=Vector3.one*.6*grow;st.core.Color=if cloak then FOX_CORE else CORE
-		st.shell.CFrame=center;st.shell.Size=Vector3.one*1.5*grow*(1+math.sin(t*40)*.06);st.shell.Color=if cloak then FOX else BLUE
+		st.core.CFrame=center;st.core.Size=Vector3.one*.36*grow;st.core.Color=if cloak then FOX_CORE else CORE
+		st.shell.CFrame=center;st.shell.Size=Vector3.one*1.1*grow;st.shell.Color=if cloak then FOX else DEEP
+		st.churn.CFrame=center*CFrame.Angles(t*6,t*9,0);st.churn.Size=Vector3.one*1.55*grow*(1+math.sin(t*40)*.05);st.churn.Color=if cloak then FOX else BLUE
 		local root=model:FindFirstChild("HumanoidRootPart")
 		local beat=math.floor(t*30)
 		if not cloak and root and beat~=st.wisp then
@@ -225,8 +232,11 @@ local function rasengan(fx,model,actor,st)
 	end
 	local sphere=fx.rasengan and fx.rasengan[model]
 	if sphere and cloak then
+		-- (Jutsu pass 05/11) Effects' sphere has no bands since its 05/11 rework
+		-- (streaks instead): iterating sphere.bands raised in the cloak.
 		sphere.core.Color=FOX_CORE;sphere.shell.Color=FOX
-		for _,band in sphere.bands do band.Color=FOX_CORE end
+		if sphere.glow then sphere.glow.Color=FOX end
+		for _,band in sphere.bands or {} do band.Color=FOX_CORE end
 	end
 end
 -- The Nine-Tails cloak: the shared mantle burns red and the version-one cloak
