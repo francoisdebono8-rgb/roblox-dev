@@ -296,7 +296,11 @@ local function stepSeals(fx,st,data,now,clock)
 	for _,key in {"human","bot"} do
 		local actor=data[key]
 		for _,info in (actor and actor.seals) or {} do
-			if info.surface and not info.body then
+			-- (06/11, user: « les kunai marqués de Minato, il y a un cercle
+			-- bizarre ») The ring of ticks round a planted seal read as a
+			-- strange halo; the seal's life now shows on its own glyph
+			-- (Effects), no ring. ChakraFX.SealTicks=true brings it back.
+			if ChakraFX.SealTicks and info.surface and not info.body then
 				local id=tostring(actor.id)..":"..tostring(info.id)
 				live[id]=true
 				local ring=st.seals[id]
@@ -318,7 +322,11 @@ end
 local function stepZones(fx,st,data,clock)
 	local live={}
 	for _,h in data.hazards or {} do
-		if h.kind=="Fire" and h.position then
+		-- (06/11, user: « le feu, la bande avec un contour jaune ») The ember
+		-- ticks on every burning patch's edge strung Itachi's lane into a band
+		-- outlined in yellow; the fire and its charred ground (Effects) show
+		-- the zone now. ChakraFX.BurnTicks=true brings the ring back.
+		if ChakraFX.BurnTicks and h.kind=="Fire" and h.position then
 			local key=string.format("%.1f:%.1f:%.1f",h.position.X,h.position.Y,h.position.Z)
 			live[key]=true
 			local zone=st.zones[key]

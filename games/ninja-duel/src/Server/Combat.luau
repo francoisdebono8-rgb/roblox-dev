@@ -2246,6 +2246,8 @@ function Combat:projectileHit(p,target,position,normal)
 	self.shieldBreak=p.breaksShield
 	self.thrownHit=p
 	local damaged=self:damage(p.a,target,p.damage,false,false)
+	-- (06/11) the ground under the body takes a big flight's blow too
+	pcall(WorldReaction.projectileOnBody,self,p,target.root.Position)
 	self.thrownHit=nil
 	if not damaged and entry and entry.projectile==p.id then entry.style="spent";entry.heavy=false end
 	self.hitOrigin=nil

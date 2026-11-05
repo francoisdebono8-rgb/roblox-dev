@@ -928,6 +928,7 @@ local function impact(fx,impact,folder)
 		-- then rings spreading on the water now and then (its ripple flipbook,
 		-- laid flat on the surface)
 		K.shockRing(fx.folder,ground+Vector3.new(0,.12,0),rgb(200,230,255),1,radius*1.6,.4)
+		if K.SOUND and K.SOUND.splash then K.sound(K.anchorPart(fx.folder,ground),K.SOUND.splash,.7,.9) end
 		local TEX=K.TEX or {}
 		local water=K.new("Part",{Name="PuddleWater",Size=Vector3.new(.2,.2,.2),CFrame=CFrame.new(ground+Vector3.new(0,.12,0)),Transparency=1,
 			Anchored=true,CanCollide=false,CanQuery=false,CanTouch=false},holder)

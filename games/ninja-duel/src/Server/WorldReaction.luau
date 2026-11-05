@@ -599,6 +599,27 @@ function WorldReaction.skid(c,a,skid)
 	if not rec then return nil end
 	return WorldReaction.scar(c,"skid",hit.Instance,hit.Position-skid.Unit*.6,hit.Normal,speed*2,skid.Unit,rec.class)
 end
+-- (06/11, user: « beaucoup d'attaques restent dans le ciel et pas sur le
+-- sol ») A big thing that lands ON A BODY (a Great Fireball, a Water Dragon,
+-- an Earth Dragon, a Rasengan's wave...) used to leave nothing: only a flight
+-- that reached a surface marked the world. The ground under the body takes
+-- the blow now, by the same rules (contact, element, the floor's threshold).
+function WorldReaction.below(c,position,energy,contact,element,direction)
+	local hit=workspace:Raycast(position+Vector3.new(0,1,0),Vector3.new(0,-9,0),c:rayParams(true))
+	if not hit or hit.Normal.Y<.6 then return nil end
+	return WorldReaction.impact(c,{part=hit.Instance,position=hit.Position,normal=hit.Normal,energy=energy,contact=contact or "blunt",
+		element=element,direction=direction})
+end
+function WorldReaction.projectileOnBody(c,p,position)
+	local declared=p.world or (p.family and p.family.World) or WorldReaction.Projectiles[p.kind]
+	local big=(p.radius or 0)>=1.2 or p.heavy or (declared and declared.element)
+	if not big then return nil end
+	local contact=declared and declared.contact or "blunt"
+	if contact=="pierce" or contact=="slash" then contact="blunt" end
+	local element=(declared and declared.element) or (if p.infusion and WorldReaction.Elements[p.infusion] then p.infusion else nil)
+	local energy=(p.damage or 2)*TUNE.ProjectileEnergy+(p.radius or 0)*6
+	return WorldReaction.below(c,position,energy,contact,element,p.direction)
+end
 -- A projectile reached a surface.
 function WorldReaction.projectile(c,p,hit)
 	local declared=p.world or (p.family and p.family.World) or WorldReaction.Projectiles[p.kind]

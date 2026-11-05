@@ -50,6 +50,11 @@ local SOUND={
 	body="rbxassetid://9113524242",
 	bodyfall="rbxassetid://9113482032",
 	debris="rbxassetid://9114221862",
+	-- (06/11) Roblox built-in sounds (always available): a fire's crackle
+	-- loop and stone breaking.
+	fireLoop="rbxasset://sounds/fire.mp3",
+	rock="rbxasset://sounds/collide.wav",
+	splash="rbxasset://sounds/impact_water.mp3",
 }
 FX.SOUND=SOUND
 -- Contacts that bring the crowd to its feet, by strength.
@@ -322,8 +327,11 @@ function FX.new()
 	if workspace.DescendantAdded then
 		workspace.DescendantAdded:Connect(function(part) pcall(FX.dressScar,part) end)
 	end
-	return setmetatable({folder=folder,projectiles={},stuck={},seals={},hazards={},auras={},rasengan={},epoch=nil,
+	local fx=setmetatable({folder=folder,projectiles={},stuck={},seals={},hazards={},auras={},rasengan={},epoch=nil,
 		clock=0,cache={}},FX)
+	-- (06/11) GroundFX watches the arena's scars with the live effects layer
+	FX.current=fx
+	return fx
 end
 function FX:reset()
 	self.folder:ClearAllChildren()
@@ -1725,6 +1733,8 @@ function FX:lanePatch(h)
 		Color=ColorSequence.new(Color3.fromRGB(70,58,52)),LightInfluence=1,Size=num({{0,1.2},{1,3.4}}),Transparency=num({{0,.6},{1,1}}),
 		RotSpeed=NumberRange.new(-30,30),Rotation=NumberRange.new(0,360)},box)
 	local light=new("PointLight",{Color=Color3.fromRGB(255,130,60),Brightness=1.6,Range=h.radius*3,Shadows=false},box)
+	local crackle=new("Sound",{SoundId=SOUND.fireLoop,Volume=.14,Looped=true,PlaybackSpeed=.85+rng:NextNumber()*.3,RollOffMaxDistance=60},box)
+	pcall(function() crackle:Play() end)
 	return {lane=true,holder=holder,scorch=scorch,embers=embers,flames=flames,smoke=smoke,light=light,born=os.clock()}
 end
 function FX.laneUpdate(entry,h)
@@ -1772,12 +1782,19 @@ function FX:hazardsStep(data)
 			local floor=floorUnder(self,h.position,3,14)
 			local at=if floor then floor.Position else h.position
 			local holder=anchorPart(self.folder,at);holder.Transparency=1;holder.Size=Vector3.new(h.radius*1.6,.2,h.radius*1.6)
-			local e=new("ParticleEmitter",{Texture=TEX.fire,Rate=60,Lifetime=NumberRange.new(.4,.8),Speed=NumberRange.new(3,7),
-				SpreadAngle=Vector2.new(12,12),EmissionDirection=Enum.NormalId.Top,Shape=Enum.ParticleEmitterShape.Box,
-				Color=seq({{0,Color3.fromRGB(255,220,140)},{.5,Color3.fromRGB(255,110,40)},{1,Color3.fromRGB(90,30,12)}}),LightEmission=1,LightInfluence=0,
-				Size=num({{0,1.4},{.4,2.4},{1,.4}}),Transparency=num({{0,.2},{1,1}}),RotSpeed=NumberRange.new(-80,80),Rotation=NumberRange.new(0,360)},holder)
-			local light=new("PointLight",{Color=Color3.fromRGB(255,130,60),Brightness=3,Range=h.radius*3,Shadows=false},holder)
-			entry={holder=holder,emitter=e,light=light}
+			-- (06/11) the ground under a burning patch chars (a ragged dark
+			-- oval), the flames lick low over it instead of a ball of fire
+			local char=block(self.folder,Vector3.new(h.radius*2,.05,h.radius*1.7),CFrame.new(at+Vector3.new(0,.04,0))*CFrame.Angles(0,math.random()*6.28,0),FX.LANE.Char,Enum.Material.Slate)
+			new("SpecialMesh",{MeshType=Enum.MeshType.Sphere,Scale=Vector3.new(1,.3,1)},char)
+			char.Transparency=1;tween(char,.2,{Transparency=.08})
+			local e=new("ParticleEmitter",{Texture=TEX.fire,Rate=60,Lifetime=NumberRange.new(.35,.65),Speed=NumberRange.new(2.5,5),
+				SpreadAngle=Vector2.new(10,10),EmissionDirection=Enum.NormalId.Top,Shape=Enum.ParticleEmitterShape.Box,
+				Color=seq({{0,Color3.fromRGB(255,232,160)},{.35,Color3.fromRGB(255,128,40)},{1,Color3.fromRGB(110,34,14)}}),LightEmission=.9,LightInfluence=0,
+				Size=num({{0,.7},{.3,1.6},{1,.2}}),Transparency=num({{0,.15},{.7,.4},{1,1}}),Acceleration=Vector3.new(0,2,0),RotSpeed=NumberRange.new(-90,90),Rotation=NumberRange.new(0,360)},holder)
+			local light=new("PointLight",{Color=Color3.fromRGB(255,130,60),Brightness=1.8,Range=h.radius*3,Shadows=false},holder)
+			local crackle=new("Sound",{SoundId=SOUND.fireLoop,Volume=.18,Looped=true,PlaybackSpeed=.9+math.random()*.2,RollOffMaxDistance=60},holder)
+			pcall(function() crackle:Play() end)
+			entry={holder=holder,emitter=e,light=light,char=char}
 			self.hazards[key]=entry
 		end
 		-- Readable, not noisy: a small burning patch (a chakra blade's) flickers
@@ -1794,6 +1811,11 @@ function FX:hazardsStep(data)
 		elseif not live[key] then
 			entry.emitter.Enabled=false;tween(entry.light,.3,{Brightness=0})
 			Debris:AddItem(entry.holder,1);self.hazards[key]=nil
+			if entry.char then
+				local char=entry.char
+				task.delay(FX.LANE.Linger*.6,function() if char.Parent then tween(char,FX.LANE.Linger*.4,{Transparency=1}) end end)
+				Debris:AddItem(char,FX.LANE.Linger+.2)
+			end
 		end
 	end
 end
@@ -2373,6 +2395,9 @@ require(script.Parent.LeeFX).install(FX,{new=new,block=block,tween=tween,sound=s
 -- (Stage 6) the eight ultimates, the Tsukuyomi, Lee's gates, the Byakugan's reveal.
 require(script.Parent.UltimateFX).install(FX,{new=new,block=block,tween=tween,sound=sound,flash=flash,shockRing=shockRing,burst=burst,
 	smokePuff=smokePuff,sparks=sparks,floorUnder=floorUnder,anchorPart=anchorPart,weldAll=weldAll,num=num,seq=seq,TEX=TEX,SOUND=SOUND,BUILD=BUILD})
+-- (06/11) The ground breaks for real under the fight (torn blocks, dust rings).
+require(script.Parent.GroundFX).install(FX,{new=new,block=block,tween=tween,sound=sound,flash=flash,shockRing=shockRing,burst=burst,
+	smokePuff=smokePuff,anchorPart=anchorPart,num=num,seq=seq,TEX=TEX,SOUND=SOUND})
 -- Systemic chakra, the player-facing layer (planted marks, the wire, clashes, bodies).
 require(script.Parent.ChakraFX).install(FX,{new=new,block=block,tween=tween,sound=sound,flash=flash,shockRing=shockRing,burst=burst,
 	smokePuff=smokePuff,floorUnder=floorUnder,anchorPart=anchorPart,weldAll=weldAll,num=num,seq=seq,TEX=TEX,SOUND=SOUND,BUILD=BUILD})
