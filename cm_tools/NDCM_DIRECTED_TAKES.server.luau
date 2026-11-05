@@ -2,7 +2,7 @@
 -- Run in Studio PLAY -> SERVER Command Bar. Never include in public build.
 -- Change SCENE and rerun for each take; capture a separate real-input proof.
 local SCENE="preflight" -- preflight | mark | teleport_counter | itachi_mirage | neji_rotation
-local LEAD=4 -- seconds to switch to OBS/client and start recording
+local LEAD=8 -- seconds to switch to OBS/client and start recording
 local dev=game:GetService("ServerStorage"):FindFirstChild("NinjaDuelDev")
 assert(dev,"Open the CURRENT NinjaDuel-Debug.rbxlx; start Play and use SERVER Command Bar.")
 local function act(who,name,aim)
