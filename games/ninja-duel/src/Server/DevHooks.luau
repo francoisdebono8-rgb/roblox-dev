@@ -152,7 +152,7 @@ function DevHooks.install(matches)
 		return chakraDev:run(op,arg)
 	end
 	RunService.Heartbeat:Connect(function() tools.profiler:watch() end)
-	hook.OnInvoke=function(op,arg1,arg2,arg3,arg4)
+	local function onInvoke(op,arg1,arg2,arg3,arg4)
 		local player,s=session()
 		if op=="tool" then return run(player,arg1,arg2) end
 		if op=="flight" then return Flight.data end
@@ -311,6 +311,42 @@ function DevHooks.install(matches)
 			return {phase=s.phase,now=c.now,human=summary(s.human,c.now),bot=summary(s.bot,c.now),projectiles=projectiles,hazards=#c.hazards,events=s.human.events,botEvents=s.bot.events}
 		end
 		return "unknown op"
+	end
+	hook.OnInvoke=onInvoke
+	-- (05/11, Mission FEEL) Studio's execute_luau sandbox may no longer invoke
+	-- the hook ("Capabilities: Network"): the same ops through workspace
+	-- attributes. Write {"args":["place",[0,3,8],[0,3,-2]]} into NDDev, read the
+	-- JSON answer (or "error: ...") in NDDevResult. An array of exactly three
+	-- numbers is a Vector3 both ways.
+	do
+		local Http=game:GetService("HttpService")
+		local function vec(t)
+			if type(t)~="table" then return t end
+			if #t==3 and type(t[1])=="number" and type(t[2])=="number" and type(t[3])=="number" then return Vector3.new(t[1],t[2],t[3]) end
+			local out={};for k,v in pairs(t) do out[k]=vec(v) end;return out
+		end
+		local function plain(v,depth)
+			depth=depth or 0
+			if typeof(v)=="Vector3" then return {math.floor(v.X*100)/100,math.floor(v.Y*100)/100,math.floor(v.Z*100)/100} end
+			if typeof(v)=="CFrame" then return plain(v.Position,depth) end
+			if type(v)~="table" then if type(v)=="number" or type(v)=="string" or type(v)=="boolean" or v==nil then return v end return tostring(v) end
+			if depth>7 then return "..." end
+			local out={};for k,x in pairs(v) do out[tostring(k)]=plain(x,depth+1) end;return out
+		end
+		workspace:SetAttribute("NDDevResult","ready")
+		workspace:GetAttributeChangedSignal("NDDev"):Connect(function()
+			local raw=workspace:GetAttribute("NDDev")
+			if type(raw)~="string" or raw=="" then return end
+			workspace:SetAttribute("NDDev","")
+			task.spawn(function()
+				local ok,res=pcall(function()
+					local cmd=Http:JSONDecode(raw)
+					local args=vec(cmd.args or {})
+					return Http:JSONEncode(plain(onInvoke(table.unpack(args,1,#(cmd.args or {})))))
+				end)
+				workspace:SetAttribute("NDDevResult",if ok then res else "error: "..tostring(res))
+			end)
+		end)
 	end
 	RunService.Heartbeat:Connect(function()
 		flushRequests()
