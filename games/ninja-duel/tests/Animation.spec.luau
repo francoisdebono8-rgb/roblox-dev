@@ -920,4 +920,153 @@ test("É7: the blow lands for the player at the drawn contact, only when the opp
  assert(not P.contactOpen(data.bot,me,V.new(0,3,-9),g.reach),"a body out of reach was hit locally")
 end)
 
+test("fluidity audit 05/11: a new packet settles in, it never moves the body or turns it in one frame",function()
+ local P=H.load("Client/Presentation")
+ -- A server body as the AI drives one: a new direction and speed every 0.2 s,
+ -- reached at the game's turn acceleration (360 studs/s²), the facing turned
+ -- toward the run at 520 deg/s, once written at once (159 deg, a hit
+ -- reaction), once teleported. Snapshots every 2 server frames (sometimes 3),
+ -- received 24-40 ms after they were taken; the client draws at 60 Hz.
+ local seed=12345
+ local function roll() seed=(1103515245*seed+12345)%2147483648;return seed/2147483648 end
+ local dt=1/60
+ local pos,vel,target=V.new(0,3,0),V.zero,V.zero
+ local yaw,warp=0,0
+ local packets,truth={},{}
+ local nextTarget,sinceSent=0,0
+ local t=0
+ while t<12 do
+  t+=dt
+  if t>=nextTarget then
+   nextTarget=t+.2
+   local a=roll()*2*math.pi
+   target=V.new(math.cos(a),0,math.sin(a))*(20+roll()*25)
+  end
+  local d=target-vel
+  local step=360*dt
+  vel=if d.Magnitude<=step then target else vel+d.Unit*step
+  pos+=vel*dt
+  local was=yaw
+  if math.abs(t-6)<dt/2 then yaw+=math.rad(159)
+  elseif vel.Magnitude>1 then
+   local want=math.atan2(-vel.X,-vel.Z)
+   local diff=(want-yaw+math.pi)%(2*math.pi)-math.pi
+   yaw+=math.clamp(diff,-math.rad(520)*dt,math.rad(520)*dt)
+  end
+  if math.abs(t-9)<dt/2 then pos+=V.new(30,0,0);warp+=1 end
+  table.insert(truth,{t=t,p=pos})
+  local turn=((yaw-was+math.pi)%(2*math.pi)-math.pi)/dt
+  sinceSent+=1
+  if sinceSent>=(if roll()<.15 then 3 else 2) then
+   sinceSent=0
+   table.insert(packets,{at=t+.024+roll()*.016,data={serverNow=t,epoch=1,bot={position=pos,velocity=vel,turn=turn,
+    lookVector=V.new(-math.sin(yaw),0,-math.cos(yaw)),warpSerial=warp,airborne=false}}})
+  end
+ end
+ local function truthAt(time)
+  local i=math.clamp(math.floor(time/dt+.5),1,#truth)
+  return truth[i].p
+ end
+ -- The client: at each frame, the newest packet received.
+ local p=setmetatable({smooth={},clocks={},last={}},{__index=P})
+ local function run(settle)
+  p.settled=nil
+  local index,last,lastV,lastYaw,lastWarp=0,nil,nil,nil,nil
+  local jolts,errors,worstTurn={},{},0
+  local now=.1
+  while now<11.9 do
+   now+=dt
+   while packets[index+1] and packets[index+1].at<=now do index+=1 end
+   local packet=packets[index]
+   if packet then
+    local data=packet.data
+    local cf=P.snapshotRoot(data,data.bot,H.C.new(0,3,0),now)
+    local drawn=if settle then P.settleAnchor(p,"bot",data,data.bot,cf,dt,now) else cf
+    local warped=lastWarp~=nil and data.bot.warpSerial~=lastWarp
+    lastWarp=data.bot.warpSerial
+    if warped and settle then assert((drawn.Position-cf.Position).Magnitude<1e-3,"a teleport was eased instead of cut") end
+    if math.abs(now-9)>.25 and now>.5 then table.insert(errors,(drawn.Position-truthAt(now)).Magnitude) end
+    if last and not warped then
+     -- The jolt: how much the drawn velocity changes from one frame to the next.
+     local v=(drawn.Position-last)/dt
+     if lastV then table.insert(jolts,(v-lastV).Magnitude) end
+     lastV=v
+     local look=drawn.LookVector
+     local y=math.atan2(-look.X,-look.Z)
+     if lastYaw then worstTurn=math.max(worstTurn,math.deg(math.abs((y-lastYaw+math.pi)%(2*math.pi)-math.pi))) end
+     lastYaw=y
+    else lastV=nil;lastYaw=nil end
+    last=drawn.Position
+   end
+  end
+  table.sort(errors);table.sort(jolts)
+  return {p90=jolts[math.ceil(#jolts*.9)],max=jolts[#jolts],turn=worstTurn,errP95=errors[math.ceil(#errors*.95)],errMax=errors[#errors]}
+ end
+ local raw,settled=run(false),run(true)
+ -- The raw track is the defect the audit measured: the drawn velocity jolts
+ -- on most packets, and the facing written at once is drawn at once.
+ assert(raw.p90>30 and raw.turn>150,string.format("the scenario does not reproduce the defect (jolt p90 %.1f, turn %.0f deg)",raw.p90,raw.turn))
+ -- Measured: raw jolts p90 54 / max 90 studs/s per frame, settled 14 / 46.
+ assert(settled.p90<=raw.p90/2.5 and settled.max<=raw.max/1.5,string.format("drawn jolts p90 %.1f max %.1f studs/s per frame (raw %.1f / %.1f)",settled.p90,settled.max,raw.p90,raw.max))
+ assert(settled.turn<36,string.format("the body turned %.0f deg in one frame",settled.turn))
+ -- Settling never draws the body much farther from where the server really
+ -- has it than the raw extrapolation already did (measured: +0.5 p95).
+ assert(settled.errP95<=raw.errP95+.6 and settled.errMax<=raw.errMax+.5,string.format("drawn %.2f (p95) / %.2f (max) studs from the server's body, raw %.2f / %.2f",settled.errP95,settled.errMax,raw.errP95,raw.errMax))
+end)
+
+test("fluidity audit 05/11: a planted leg is never handed a new pose in one frame (Lee's DashAttack, AI against AI)",function()
+ -- Studio: knee 141 deg and hip 170 deg on the first frame of Lee's
+ -- DashAttack. Headless, before the fix: 113-116 deg on every DashAttack
+ -- start, 101 on the KneeStrike, 81-94 on a Grab, a Knockback, a dodge's end.
+ local AI=H.load("Server/AI")
+ local savedRandom=H.envBase.Random
+ H.envBase.Random={new=function(seed)
+  local state=(seed or 1)*2654435761%4294967296
+  local function roll() state=(1103515245*state+12345)%2147483648;return state/2147483648 end
+  return {NextNumber=function(_,a,b) local r=roll();if a and b then return a+(b-a)*r end return r end,
+   NextInteger=function(_,a,b) return math.floor(a+(b-a+1)*roll()) end}
+ end}
+ local ok,err=pcall(function()
+  H.clearWalls()
+  local c,a,b,match=H.duel("Leaf","Sand")
+  c:relocate(a,V.new(0,3,12));c:relocate(b,V.new(0,3,-12))
+  local one,two=AI.new(c,a,7),AI.new(c,b,14)
+  local clock={attackAt=0,reactionAt=0,attackElapsed=0,reactionElapsed=0}
+  local previous,worst,worstAt,starts=nil,0,"",0
+  local t=0
+  while t<25 do
+   if match.phase~="Duel" then match.phase="Duel" end
+   for _,f in {a,b} do if f.health<f.def.Health*.3 then f.health=f.def.Health;f.hum.Health=f.health end end
+   one:update(c.now);two:update(c.now);H.step(c,1/60);t+=1/60
+   if clock.attackName~=a.attackName or clock.serial~=a.attackSerial then
+    clock.attackName=a.attackName;clock.serial=a.attackSerial;clock.attackAt=c.now
+    if a.attackName=="DashAttack" then starts+=1 end
+   end
+   clock.attackElapsed=if a.attackName then c.now-clock.attackAt else 0
+   if clock.reaction~=a.reaction then clock.reaction=a.reaction;clock.reactionAt=c.now end
+   clock.reactionElapsed=if a.reaction then c.now-clock.reactionAt else 0
+   local v=a.root.AssemblyLinearVelocity
+   frame(a.model,body(a,{velocity=v,speed=Vector3.new(v.X,0,v.Z).Magnitude,attackName=a.attackName,state=a.state,reaction=a.reaction,
+    airborne=a.airborne,attackElapsed=clock.attackElapsed,reactionElapsed=clock.reactionElapsed,hitAngle=a.hitAngle or 0,
+    hitStrength=a.hitStrength or .5,groundPose=a.groundPose,wall=a.wall~=nil,lookAt=b.root.Position}),clock,1/60)
+   local current=snapshot(a.model)
+   if previous then
+    for key,transform in current do
+     if (key:find("Hip") or key:find("Knee") or key:find("Ankle")) and previous[key] then
+      local x1,y1=axisAngles(previous[key])
+      local x2,y2=axisAngles(transform)
+      local d=math.deg(math.max(math.abs(x1-x2),math.abs(y1-y2)))
+      if d>worst then worst=d;worstAt=key.." @"..a.state.."/"..tostring(a.attackName).."/"..tostring(a.reaction) end
+     end
+    end
+   end
+   previous=current
+  end
+  assert(starts>0,"Lee never ran a DashAttack in 25 s")
+  assert(worst<55,string.format("a planted leg turned %.0f deg in one frame (%s)",worst,worstAt))
+ end)
+ H.envBase.Random=savedRandom
+ if not ok then error(err,0) end
+end)
+
 print(string.format("NinjaDuel animation presentation: %d PASS",passed))

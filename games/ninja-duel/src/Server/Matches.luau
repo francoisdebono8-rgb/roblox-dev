@@ -294,7 +294,7 @@ function Matches:view(s,cursor,mine,theirs)
 			-- A state of the body held until a strike releases it (Server/BodyState).
 			bodyState=require(script.Parent.BodyState).snapshot(a,now),
 			anchorSurface=a.anchor and a.anchor.surface,anchorNormal=a.anchor and a.anchor.normal,anchorRemaining=a.anchor and math.max(0,a.anchor.expires-now) or 0,
-			teleportSerial=a.teleportSerial or 0,flash=(a.flashUntil or 0)>now,lookVector=a.root.CFrame.LookVector,
+			teleportSerial=a.teleportSerial or 0,flash=(a.flashUntil or 0)>now,lookVector=a.root.CFrame.LookVector,turn=a.turnRate or 0,
 			-- Phase 4: combo scaling, recharging substitution, seals, wall state.
 			comboHits=a.comboHits or 0,comboDamage=a.comboDamage or 0,
 			subRegen=if (a.subRegenAt or math.huge)<math.huge then math.max(0,a.subRegenAt-now) else 0,

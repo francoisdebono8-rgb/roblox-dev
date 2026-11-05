@@ -95,6 +95,9 @@ local function angleBetween(a,b)
 	local _,angle=(a:Inverse()*b):ToAxisAngle()
 	return math.abs(angle)
 end
+-- Above this a planted leg's turn in one frame is a hand-over between two
+-- poses, not the body's own motion (see apply, the feet).
+local LEG_HANDOVER=math.rad(50)
 -- (ANIM-002) Inertialization: when the body changes clip (a strike out of
 -- the run, the next blow of a string, a landing, a hit), the new clip plays
 -- at its own authored spacing at once and the difference with the body as it
@@ -256,7 +259,22 @@ local function apply(char,targets,rate,dt,upperRate,legRate)
 			-- (A foot planted by an authored clip is exact: its knee and hip go
 			-- where the hips take them this frame. Speed-capped, the leg lagged
 			-- behind a landing and the "planted" foot slid down onto the floor.)
-			local legDt=if rate==RATE.authored and f.planted and not enter then nil else dt
+			-- (Fluidity audit 05/11) ...unless the leg would turn more than
+			-- LEG_HANDOVER in one frame: a new clip, a reaction or the end of a
+			-- dodge hands the planted leg a new pose (Studio: knee 141 deg and
+			-- hip 170 deg on the first frame of Lee's DashAttack; headless:
+			-- 113-116 deg on every DashAttack start, 101 on the KneeStrike, 81-94
+			-- on a Grab, a Knockback, the end of a Dodging). That hand-over is
+			-- speed-capped like every other joint; a landing's fold stays exact.
+			local legDt=dt
+			if rate==RATE.authored and f.planted and not enter then
+				local jump=0
+				for j,cf in {[prefix.."Hip"]=hip,[prefix.."Knee"]=knee,[prefix.."Ankle"]=ankle} do
+					local was=s.pose[j]
+					if was then jump=math.max(jump,angleBetween(was,cf)) end
+				end
+				if jump<=LEG_HANDOVER then legDt=nil end
+			end
 			write(char,prefix.."Hip",hip,legRate2,legDt);write(char,prefix.."Knee",knee,legRate2,legDt);write(char,prefix.."Ankle",ankle,legRate2,legDt)
 		end
 	end

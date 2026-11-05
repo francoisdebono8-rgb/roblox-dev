@@ -161,3 +161,21 @@ C'est une coupe **voulue**, pas un bug. Mais pour la victime, elle arrive en ple
 - **Jest Roblox, ClientCast, Input Action System, RoSentry** : non concernés par ce repérage.
 
 Données brutes : `logs/journaux.md`.
+
+## Corrections (6/11, nuit, sans Studio)
+
+L'utilisateur a demandé de corriger sans prendre l'ordinateur. Tout est donc vérifié en tests headless (Lune) ; **la vérification à l'œil dans Studio, avec les mêmes sondes, reste à faire.**
+
+| N° | Correction | Fichier | Test qui la tient (échoue sur l'ancien code) |
+|---|---|---|---|
+| 1 | **Fondu de trajectoire au lieu du saut** : à l'arrivée d'un paquet, le corps quitte la trajectoire où il était dessiné (position et vitesse) et rejoint celle du paquet en 66 ms, sa vitesse se fondant dans celle du paquet (*projective velocity blending*, Murphy, *Game Engine Gems 2*). Une téléportation, un nouveau duel ou un écart de plus de 8 studs coupent toujours. À l'atterrissage, le fondu ne passe jamais sous le sol. | `Client/Presentation.luau` (`settleAnchor`, appelé dans `smoothStep`) | `Animation.spec`, « a new packet settles in » : sur un parcours IA simulé, les à-coups de vitesse d'une image à l'autre passent de 54 à 14 studs/s au 90e centile (maximum 90 → 46). L'écart au corps serveur augmente de 0,5 stud au 95e centile. |
+| 2a | **Orientation portée et fondue** : le serveur envoie la vitesse de rotation de chaque corps (`turn`, rad/s). Le client porte l'orientation entre deux paquets comme il porte la position, et la fond de la même façon, à 1 500°/s au plus. Une orientation écrite d'un coup par le serveur (réaction, départ de plongée) devient un pivot d'environ 0,1 s. | `Server/Combat.luau` (`update`), `Server/Matches.luau` (instantané), `Client/Presentation.luau` (`snapshotRoot`) | même test : pivot en une image 176° → 32° au plus ; `Fluidity.spec`, « the snapshot carries each body's turn rate » |
+| 2b | Les orientations écrites d'un coup côté serveur **restent telles quelles** (c'est le gameplay). Le fondu client du n°2a les dessine en pivot. | — | — |
+| 3 | **Jambes plantées** : le pied planté reste écrit exactement d'une image à l'autre, sauf si une articulation de la jambe devait tourner de plus de 50° en une image (passage d'une pose à une autre). Dans ce cas elle suit le plafond de vitesse comme les autres articulations. | `Client/VelmoraMotionEngine.luau` (`apply`, `LEG_HANDOVER`) | `Animation.spec`, « a planted leg is never handed a new pose in one frame » : Lee contre Gaara, IA contre IA, 25 s. Ancien code : genou 114° en une image au départ du DashAttack. Nouveau : moins de 55°. |
+| 6 | **Bord de l'arène** : un corps tenu sur le bord n'est plus déclaré téléporté à chaque image (il l'était 96 fois en une seconde de course contre le bord, ce qui coupait tout lissage client). Seul un vrai saut, comme une chute sous le sol, reste une téléportation. | `Server/Combat.luau` (`updateActor`) | `Fluidity.spec`, « a body run into the arena's edge » |
+
+**Pas touché.**
+- Le n°4 (coupes des cinématiques) : décision de l'utilisateur.
+- Le n°5 (hanches au plafond des saltos en neutre) : après la vérification Studio des n°1 à 3, qui en retirent peut-être une partie.
+
+**À vérifier dans Studio.** Rejouer les 8 duels avec les sondes du dépôt et comparer aux chiffres du rapport (cassures, pivots, articulations), puis un test court à la manette par l'utilisateur.

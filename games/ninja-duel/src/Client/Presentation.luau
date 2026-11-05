@@ -714,10 +714,15 @@ end
 -- The server's root for this frame from the snapshot: its position when the
 -- snapshot was taken, carried forward by its velocity over the snapshot's age
 -- (at most 0.1 s: a late packet is not extrapolated into a wall). Facing from
--- the snapshot's look vector. Falls back to the replicated root.
-function Presentation.snapshotRoot(data,actor,fallback)
+-- the snapshot's look vector, carried by its turn rate the same way (fluidity
+-- audit 05/11: held for a whole packet, a turn at 1440-2400 deg/s was drawn
+-- in steps of 48-80 deg). A turn faster than TURN_MAX is a facing written at
+-- once (a reaction, a teleport): not carried. Falls back to the replicated
+-- root. `at` (server time) defaults to now.
+local TURN_MAX=45
+function Presentation.snapshotRoot(data,actor,fallback,at)
 	if not actor.position or not data.serverNow then return fallback end
-	local age=math.clamp(workspace:GetServerTimeNow()-data.serverNow,0,.1)
+	local age=math.clamp((at or workspace:GetServerTimeNow())-data.serverNow,0,.1)
 	local v=actor.velocity
 	local p=actor.position
 	if typeof(v)=="Vector3" and v.Magnitude<200 then
@@ -749,7 +754,102 @@ function Presentation.snapshotRoot(data,actor,fallback)
 	local look=actor.lookVector
 	local flatLook=if typeof(look)=="Vector3" then Vector3.new(look.X,0,look.Z) else Vector3.zero
 	if flatLook.Magnitude<.05 then return fallback.Rotation+p end
-	return CFrame.lookAt(p,p+flatLook.Unit)
+	local yaw=math.atan2(-flatLook.X,-flatLook.Z)
+	local turn=actor.turn
+	if type(turn)=="number" and math.abs(turn)<=TURN_MAX then yaw+=turn*age end
+	return CFrame.new(p)*CFrame.Angles(0,yaw,0)
+end
+-- The velocity and turn rate the snapshot carries the body with at `at`
+-- (what snapshotRoot adds per second; none once the packet is 0.1 s old).
+local function anchorMotion(data,actor,at)
+	if not data.serverNow then return Vector3.zero,0 end
+	local age=math.clamp(at-data.serverNow,0,.1)
+	if age>=.1 then return Vector3.zero,0 end
+	local v=actor.velocity
+	local out=Vector3.zero
+	if typeof(v)=="Vector3" and v.Magnitude<200 then
+		out=Vector3.new(v.X,0,v.Z)
+		if actor.airborne then out+=Vector3.new(0,v.Y-(workspace.Gravity or 196.2)*age,0) end
+	end
+	local turn=actor.turn
+	return out,if type(turn)=="number" and math.abs(turn)<=TURN_MAX then turn else 0
+end
+-- (Fluidity audit 05/11: 38-46 % of the packets moved the drawn body more than
+-- 0.18 stud in a single frame, p90 0.44, up to 6; the screen showed 4-7 times
+-- the velocity breaks of the server's own path, 85 % of them in plain neutral)
+-- A new packet no longer moves the body by itself. From the frame it arrives,
+-- the body leaves the course it was drawn on (its position and velocity) and
+-- joins the new packet's course over BLEND_T, its velocity blending into the
+-- packet's as its position does (projective velocity blending: C. Murphy,
+-- "Believable Dead Reckoning for Networked Games", Game Engine Gems 2). Once
+-- joined it is exactly on the packet's course: no lag piles up. The facing
+-- joins the same way, at most BLEND_YAW_RATE: a 159 deg facing written at
+-- once by the server (a hit reaction) turns over ~0.1 s, ~25 deg a frame. A
+-- teleport (warp), a new duel or a gap over SETTLE_MAX studs still cuts.
+local BLEND_T,BLEND_YAW_RATE,SETTLE_MAX=.066,math.rad(1500),8
+local function wrapAngle(a) return (a+math.pi)%(2*math.pi)-math.pi end
+local function yawOfCF(cf) local look=cf.LookVector;return math.atan2(-look.X,-look.Z) end
+function Presentation:settleAnchor(key,data,actor,cf,dt,at)
+	local all=self.settled
+	if not all then all={};self.settled=all end
+	local st=all[key]
+	if not st then st={};all[key]=st end
+	at=at or workspace:GetServerTimeNow()
+	local pos,yaw=cf.Position,yawOfCF(cf)
+	-- (A body on a wall can face up it: no yaw to blend, its rotation is kept.)
+	local look=cf.LookVector
+	local hasYaw=Vector3.new(look.X,0,look.Z).Magnitude>.05
+	if data.serverNow~=st.serverNow then
+		local same=st.data~=nil and st.epoch==data.epoch and st.warp==(actor.warpSerial or 0) and st.drawn~=nil
+		if same and (st.drawn-pos).Magnitude<=SETTLE_MAX then
+			-- The velocity the body was being carried with (not its drawn
+			-- velocity: that one holds the last blend's own correction, and
+			-- feeding it back made the course oscillate).
+			local v0,w0=anchorMotion(st.data,st.actor,at)
+			local old=st.blend
+			if old then
+				local e=math.max(0,at-old.t0)
+				local tau=math.clamp(e/BLEND_T,0,1)
+				local tauY=math.clamp(e/old.ty,0,1)
+				v0=old.v0+(v0-old.v0)*tau
+				w0=old.w0+(w0-old.w0)*tauY
+			end
+			-- (From the last drawn frame: on this one the body already moves on.)
+			st.blend={t0=at-dt,p0=st.drawn,v0=v0,y0=st.drawnYaw,w0=w0,
+				ty=if st.drawnYaw then math.max(BLEND_T,math.abs(wrapAngle(yaw-st.drawnYaw))/BLEND_YAW_RATE) else BLEND_T}
+		else
+			-- A cut: drawn where the packet is.
+			st.blend=nil
+		end
+		st.serverNow=data.serverNow;st.data=data;st.actor=actor;st.epoch=data.epoch;st.warp=actor.warpSerial or 0
+	end
+	local outPos,outYaw=pos,yaw
+	local b=st.blend
+	if b then
+		local e=math.max(0,at-b.t0)
+		local vNew,wNew=anchorMotion(data,actor,at)
+		local tau=math.clamp(e/BLEND_T,0,1)
+		if tau<1 then
+			local vb=b.v0+(vNew-b.v0)*tau
+			local course=b.p0+vb*e
+			outPos=course+(pos-course)*tau
+			-- (A fall caught by a landing between two packets: the old course
+			-- still goes down, the packet's is on the floor; never under both.)
+			outPos=Vector3.new(outPos.X,math.max(outPos.Y,math.min(pos.Y,b.p0.Y)),outPos.Z)
+		end
+		local tauY=math.clamp(e/b.ty,0,1)
+		if tauY<1 and hasYaw and b.y0 then
+			local wb=b.w0+(wNew-b.w0)*tauY
+			local course=b.y0+wb*e
+			outYaw=course+wrapAngle(yaw-course)*tauY
+		end
+		if tau>=1 and tauY>=1 then st.blend=nil end
+	end
+	st.drawn=outPos;st.drawnYaw=if hasYaw then outYaw else nil
+	if outPos==pos and outYaw==yaw then return cf end
+	-- The packet's own rotation turned about the vertical: a lean or a pitch
+	-- it carries is kept.
+	return CFrame.new(outPos)*CFrame.fromAxisAngle(Vector3.yAxis,wrapAngle(outYaw-yaw))*cf.Rotation
 end
 -- Just before rendering: the replicated roots have their positions for this
 -- frame; advance each track and draw the body on it (position and facing).
@@ -777,6 +877,9 @@ function Presentation:smoothStep(data,dt)
 			-- taken (30 Hz): the track follows that, carried to the present by
 			-- its velocity.
 			actualCF=Presentation.snapshotRoot(data,actor,actualCF)
+			-- (Fluidity audit 05/11) and a new packet settles in instead of
+			-- moving the body in one frame.
+			actualCF=self:settleAnchor(key,data,actor,actualCF,math.max(dt,1/240))
 			local drawn=self:smoothRoot(key,actualCF,math.max(dt,1/240),actor.warpSerial)
 			-- (Audit 04/11) a watched tournament match: the body is the AI's own.
 			if key=="human" and not data.spectate then drawn=self:leadLocal(actor,drawn,math.max(dt,1/240)) end

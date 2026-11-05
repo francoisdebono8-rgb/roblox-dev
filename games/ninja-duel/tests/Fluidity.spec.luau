@@ -226,5 +226,44 @@ test("a grab whose grabber let go never holds the body (freeze 02/11)",function(
  assert(b.reaction~="Grabbed","a body stayed grabbed by nobody")
 end)
 
+test("audit 05/11: a body run into the arena's edge is held on it without a teleport, a fall under the floor still is one",function()
+ local c,a,b=H.duel("Lion","Mirage")
+ local o=c.match.origin
+ -- Running out against the edge for a second: held on it, no new warp
+ -- serial (Studio: 53 warps in 41 s, the client dropped its smoothing for
+ -- each one).
+ c:relocate(b,o+V.new(-60,3,0))
+ c:relocate(a,o+V.new(Config.ArenaRadius-4,3,0))
+ local warp=a.warpSerial
+ a.move=V.new(1,0,0)
+ local pressed=false
+ for _=1,60 do
+  H.step(c,1/60)
+  local flat=V.new(a.root.Position.X-o.X,0,a.root.Position.Z-o.Z).Magnitude
+  assert(flat<=Config.ArenaRadius+2,string.format("the body ran %.2f studs from the centre",flat))
+  if flat>Config.ArenaRadius-.5 then pressed=true end
+ end
+ assert(pressed,"the body never reached the edge")
+ assert(a.warpSerial==warp,string.format("a body held on the edge was declared %d teleports",a.warpSerial-warp))
+ -- Under the floor (a fresh duel): put back on it, a real teleport.
+ local c2,a2=H.duel("Lion","Mirage")
+ local before=a2.warpSerial or 0
+ a2.root.CFrame=H.C.new(c2.match.origin+V.new(0,-6,0))
+ c2:updateActor(a2,1/60)
+ assert((a2.warpSerial or 0)==before+1,"a body put back on the floor was not declared a teleport")
+end)
+
+test("audit 05/11: the snapshot carries each body's turn rate, so the client can carry the facing between packets",function()
+ local c,a=H.duel("Lion","Mirage")
+ local dt=1/60
+ a.root.CFrame=H.C.new(a.root.Position)
+ c:update(dt,c.now+dt)
+ a.root.CFrame=H.C.new(a.root.Position)*H.C.Angles(0,math.rad(8),0)
+ c:update(dt,c.now+dt)
+ -- 8 degrees in one frame: 480 deg/s toward the left.
+ local turn=math.deg(a.turnRate or 0)
+ assert(math.abs(turn-480)<30,string.format("turn rate %.0f deg/s, expected 480",turn))
+end)
+
 if failed>0 then error(failed.." fluidity test(s) failed",0) end
 print(string.format("NinjaDuel fluidity: %d PASS (headless; the feel itself is a Studio check)",passed))

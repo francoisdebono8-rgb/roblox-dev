@@ -2092,7 +2092,20 @@ function Combat:updateActor(a,dt)
 	else Motor.step(a,self,dt,now) end
 	-- Server-owned humanoids + server-clamped arena coordinates.
 	local p=a.root.Position
-	if Vector3.new(p.X-self.match.origin.X,0,p.Z-self.match.origin.Z).Magnitude>Config.ArenaRadius or p.Y<self.match.origin.Y-3 then self:relocate(a,p) end
+	if Vector3.new(p.X-self.match.origin.X,0,p.Z-self.match.origin.Z).Magnitude>Config.ArenaRadius or p.Y<self.match.origin.Y-3 then
+		-- (Fluidity audit 05/11) A body pressed against the arena's edge is held
+		-- on it every frame: that is not a teleport. Declared as one (a new warp
+		-- serial each frame: 53 in 41 s of Studio duel, mostly through Wall
+		-- Dives), the client dropped its smoothing on that body for as long as
+		-- it stayed there. Only a real jump (a fall under the floor) still is.
+		local q=self:clamp(p)
+		if (q-p).Magnitude>4 then self:relocate(a,p)
+		else
+			local look=a.root.CFrame.LookVector
+			a.model:PivotTo(CFrame.lookAt(q,q+Vector3.new(look.X,0,look.Z)))
+			a.root.AssemblyLinearVelocity=Vector3.zero
+		end
+	end
 	World.pose(a,now,dt)
 end
 local IMPACT_STYLE={wire="shuriken",kunai="kunai",marked="kunai",shuriken="shuriken",wind="jutsu",fireball="fire",phoenix="ember",palm="palmburst",sand="sandhit",sandwave="sandburst"}
@@ -2577,6 +2590,23 @@ function Combat:update(dt,now)
 	if self.match.phase=="Duel" then Zones.step(self,dt) end
 	if self.match.phase=="Duel" then self:updateProjectiles(dt); self:updateHazards() end
 	WorldReaction.step(self)
+	-- (Fluidity audit 05/11) Each body's turn rate this frame (rad/s about the
+	-- vertical, + = toward its left), sent with the snapshot so the client
+	-- carries the facing between two packets the way it carries the position
+	-- with the velocity. A facing written at once reads as a huge rate: the
+	-- client does not carry those.
+	if dt>0 then
+		for _,a in self.actors do
+			local look=a.root.CFrame.LookVector
+			local flat=Vector3.new(look.X,0,look.Z)
+			local last=a.facingLast
+			if flat.Magnitude>.01 then
+				flat=flat.Unit
+				a.turnRate=if last then math.atan2(last:Cross(flat).Y,last:Dot(flat))/dt else 0
+				a.facingLast=flat
+			else a.turnRate=0 end
+		end
+	end
 	for i=#self.effects,1,-1 do
 		local e=self.effects[i]
 		if e.expires<=now or not e.part.Parent then e.part:Destroy(); table.remove(self.effects,i) end
