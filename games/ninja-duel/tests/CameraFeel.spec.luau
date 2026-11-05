@@ -10,6 +10,7 @@ local V=H.V
 local clock=100
 H.envBase.os=setmetatable({clock=function() return clock end},{__index=os})
 local passed=0
+CALIBRATE=CALIBRATE or (require("@lune/process").env.CALIBRATE~=nil)
 -- CALIBRATE=true prints the measures and runs every test (to compare builds).
 local function test(name,fn)
 	local ok,err=pcall(fn)
@@ -169,6 +170,64 @@ test("locked: a launcher, the chase and the landing ease the framing instead of 
 	assert(worstJolt<.08,("the framing jolted the lens %.2f"):format(worstJolt))
 	assert(worstFov<.5,("the framing jumped the field of view %.2f in a frame"):format(worstFov))
 	local _=c
+end)
+
+-- (FEEL 05/11, AVANT report) The two lens defects measured in Studio.
+-- Where a point is on the screen: inside the frame (with the given margin, in
+-- degrees) or not.
+local function onScreen(p,margin)
+	local v=camera.CFrame:PointToObjectSpace(p)
+	if -v.Z<.5 then return false end
+	local halfV=math.rad(camera.FieldOfView*.5-(margin or 0))
+	local aspect=camera.ViewportSize.X/camera.ViewportSize.Y
+	local halfH=math.atan(math.tan(math.rad(camera.FieldOfView*.5))*aspect)-math.rad(margin or 0)
+	return math.abs(math.atan2(v.Y,-v.Z))<=halfV and math.abs(math.atan2(v.X,-v.Z))<=halfH
+end
+
+test("keepInFrame: nothing to do for a body in frame; a body far above tilts and widens",function()
+	local cf=H.C.lookAt(V.new(0,8,20),V.new(0,4,0))
+	local tilt,widen=Camera.keepInFrame(cf,68,V.new(0,6,0),V.new(0,0,0))
+	assert(tilt==0 and widen==0,"a body in frame moved the lens")
+	tilt,widen=Camera.keepInFrame(cf,68,V.new(0,60,0),V.new(0,0,0))
+	assert(tilt>0,"no tilt for a body 60 studs up")
+	assert(tilt<=.6 and widen<=16,"the keeper went past its caps")
+end)
+
+test("locked: Neji's chakra launcher (66 studs up) keeps the opponent in frame",function()
+	local _,a,b,cam=setup(6)
+	cam:setLocked(true)
+	run(cam,a,b,40,{})
+	-- The flight (Studio take 1: 2.44 s, peak ~66 studs over the floor).
+	b.reaction="Launched";b.airborne=true
+	local off=0
+	for f=1,150 do
+		local t=f/60
+		local y=math.max(0,58*t*1.6-0.5*48*t*t*1.6)
+		b.root.CFrame=H.C.new(b.root.Position.X,3+y,b.root.Position.Z)
+		run(cam,a,b,1,{})
+		if not onScreen(b.root.Position+V.new(0,2.6,0),1) then off+=1 end
+	end
+	if CALIBRATE then print(("  launcher: opponent off screen %d of 150 frames"):format(off)) end
+	assert(off<=15,("the opponent left the frame for %d of 150 frames"):format(off))
+	assert(onScreen(a.root.Position,0),"the player left the frame")
+end)
+
+test("locked, back to the arena wall: the lens swings along it and keeps the player in view",function()
+	local _,a,b,cam=setup(10)
+	-- The wall on +X just behind the player, the opponent toward -X.
+	local wall=H.addWall(12)
+	a.root.CFrame=H.C.lookAt(V.new(10,3,0),V.new(-10,3,0))
+	b.root.CFrame=H.C.lookAt(V.new(-10,3,0),V.new(10,3,0))
+	cam:setLocked(true)
+	run(cam,a,b,120,{})
+	local seen=onScreen(a.root.Position+V.new(0,1,0),2)
+	local side=camera.CFrame.Position.X
+	H.clearWalls()
+	local _=wall
+	if CALIBRATE then print(("  wall: player on screen %s, lens x %.1f, swing %.2f"):format(tostring(seen),side,cam.wallYaw or 0)) end
+	assert(side<12,"the lens went through the wall")
+	assert(seen,"the player is still off screen with his back to the wall")
+	assert(onScreen(b.root.Position,2),"the swing lost the opponent")
 end)
 
 print(("CameraFeel: %d passed"):format(passed))

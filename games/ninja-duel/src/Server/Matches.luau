@@ -69,6 +69,30 @@ function Matches.measure(player,s,step)
 		pcall(function() game:GetService("AnalyticsService"):LogOnboardingFunnelStepEvent(player,order,step) end)
 	end
 end
+-- (FEEL 05/11, AVANT defect 3) What became of the player's presses this
+-- round: accepted late, dropped as too old (gate), refused by the fight
+-- (per reason), or buffered then lost when the body never came free in time
+-- (Combat). Counted on the actor, sent to Roblox analytics once per round
+-- (Matches.logPresses), so the share of presses that do nothing is measured
+-- in the live game, not only in Studio.
+function Matches.countPress(actor,kind,reason)
+	local stats=actor.pressStats or {late=0,gate=0,refused=0,lost=0,reasons={}}
+	actor.pressStats=stats
+	stats[kind]=(stats[kind] or 0)+1
+	if kind=="refused" and reason then stats.reasons[reason]=(stats.reasons[reason] or 0)+1 end
+end
+function Matches.logPresses(player,actor)
+	local stats=actor and actor.pressStats
+	if not player or not stats then return end
+	actor.pressStats=nil
+	pcall(function()
+		local service=game:GetService("AnalyticsService")
+		local fields={[Enum.AnalyticsCustomFieldKeys.CustomField01.Name]=tostring(actor.fighterId)}
+		for _,kind in {"late","gate","refused","lost"} do
+			if (stats[kind] or 0)>0 then service:LogCustomEvent(player,"Press_"..kind,stats[kind],fields) end
+		end
+	end)
+end
 function Matches:send(player,data)
 	if player.Parent==Players then self.remote:FireClient(player,data) end
 end
@@ -158,6 +182,7 @@ function Matches:roundOver(s,winner,notify,advance)
 	local decided=s.wins[winner.id]>=s.roundsToWin
 	s.matchPoint=decided
 	if decided and not s.tutorial and not s.online and s.owner then Matches.measure(s.owner,s,"duel") end
+	if not s.online and s.owner and s.human then Matches.logPresses(s.owner,s.human) end
 	local finishEpoch=s.epoch
 	notify()
 	-- (Final blow) the thrown body needs its flight and a beat on the floor.
@@ -246,7 +271,7 @@ function Matches:view(s,cursor,mine,theirs)
 		return {id=a.id,fighterId=a.fighterId,fighter=a.def.Name,sealReady=sealReady,sealing=sealing,health=a.health,maxHealth=a.def.Health,chakra=a.chakra,maxChakra=a.def.Chakra or Config.Chakra,stamina=a.stamina or 100,state=a.state,
 			techniques=ready,position=a.root.Position,channel=if a.state=="TechniqueChannel" then math.max(0,a.untilTime-s.combat.now) else 0,
 			anchor=a.anchor and a.anchor.position,illusion=math.max(0,a.illusionUntil-s.combat.now),decoy=a.decoyPosition,
-			cue=if a.cueUntil>s.combat.now then a.cue else "",dodge=math.max(0,a.dodgeUntil-s.combat.now),read=math.max(0,a.readUntil-s.combat.now),
+			cue=if a.cueUntil>s.combat.now then a.cue else "",quiet=if (a.quietUntil or 0)>s.combat.now then a.quiet else nil,dodge=math.max(0,a.dodgeUntil-s.combat.now),read=math.max(0,a.readUntil-s.combat.now),
 			speed=a.locomotion.Magnitude,airborne=a.airborne,sprinting=a.model:GetAttribute("MovementSprinting")==true,
 			landStrong=a.model:GetAttribute("MovementHardLanding")==true,pursuit=math.max(0,a.pursuitUntil-s.combat.now),combo=a.combo,
 			subCharges=a.subCharges,chakraLoad=if a.chakraLoad and a.chakraLoad.untilTime>s.combat.now then a.chakraLoad.nature else nil,infused=a.pending and a.pending.chakraFlow or nil,wall=a.wall~=nil,wallMode=a.wall and a.wall.mode or nil,wallSide=a.wall and a.wall.side or nil,reaction=a.reaction,guardImpact=math.max(0,(a.guardImpact or 0)-s.combat.now),attackName=a.attackName,attackElapsed=s.combat.now-(a.attackStarted or 0),whiffed=if a.state=="Recovery" and a.attackWhiffed then true else nil,airHold=a.airHold,impactSerial=a.impactSerial or 0,impactHeavy=a.impactHeavy,impactStyle=a.impactStyle,
@@ -405,12 +430,19 @@ function Matches:act(s,actor,payload,clock)
 	if padJump then
 		action=if (actor.pursuitUntil or 0)>s.combat.now and actor.target and actor.target.health>0 then "Pursuit" else "Jump"
 	end
-	if action~="Move" and not AntiCheat.check(actor,action,payload.clientTime,workspace:GetServerTimeNow()) then
-		-- Diagnostics for latency tests: how many presses were refused, and how
-		-- old the last refused one was (late packets vs rate limit).
-		actor.refusedInputs=(actor.refusedInputs or 0)+1
-		actor.refusedAge=if type(payload.clientTime)=="number" then workspace:GetServerTimeNow()-payload.clientTime else nil
-		return
+	local clientTime=payload.clientTime
+	if action~="Move" then
+		local passed,late=AntiCheat.check(actor,action,clientTime,workspace:GetServerTimeNow())
+		if not passed then
+			-- Diagnostics for latency tests: how many presses were refused, and how
+			-- old the last refused one was (late packets vs rate limit).
+			actor.refusedInputs=(actor.refusedInputs or 0)+1
+			actor.refusedAge=if type(clientTime)=="number" then workspace:GetServerTimeNow()-clientTime else nil
+			Matches.countPress(actor,"gate")
+			return
+		end
+		-- (FEEL 05/11) a late press plays without its (stale) time.
+		if late then clientTime=nil;Matches.countPress(actor,"late") end
 	end
 	local function vector(v)
 		return typeof(v)=="Vector3" and Rules.finite(v.X) and Rules.finite(v.Y) and Rules.finite(v.Z)
@@ -461,12 +493,18 @@ function Matches:act(s,actor,payload,clock)
   if actor.techHold then actor.techHold.down=false end
   return
  end
- local ok,reason=s.combat:request(actor,action,aim,payload.clientTime,if payload.chakra==true then {chakra=true} else nil)
-	if padJump and action=="Pursuit" and ok==false then action="Jump";ok,reason=s.combat:request(actor,"Jump",aim,payload.clientTime,nil) end
+ local ok,reason=s.combat:request(actor,action,aim,clientTime,if payload.chakra==true then {chakra=true} else nil)
+	if padJump and action=="Pursuit" and ok==false then action="Jump";ok,reason=s.combat:request(actor,"Jump",aim,clientTime,nil) end
+	if ok==false and not actor.latePress then Matches.countPress(actor,"refused",reason) end
 	-- (05/11) A press refused while the body takes a blow says how to get out
 	-- when the dodge button would ("Q" reads ○ on a pad, A on AZERTY).
 	if not ok and reason=="Reacting" and s.combat.escapeOpen(s.combat,actor) then s.combat:cue(actor,"HIT • Q TO ESCAPE")
-	elseif not ok and reason~="Committed" and reason~="Intro" and reason~="Empty slot" then s.combat:cue(actor,string.upper(reason)) end
+	elseif not ok and reason~="Committed" and reason~="Intro" and reason~="Empty slot" then
+		s.combat:cue(actor,string.upper(reason))
+		-- (FEEL 05/11) the client only shows the loud cues: the reason also goes
+		-- on the quiet line, so a refused button is never silent.
+		s.combat:quiet(actor,string.upper(reason))
+	elseif not ok and reason=="Committed" and not actor.latePress then s.combat:quiet(actor,"BUSY") end
 end
 function Matches:update(dt,now)
 	for player,s in self.sessions do

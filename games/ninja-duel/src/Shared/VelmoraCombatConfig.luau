@@ -14,6 +14,9 @@ return table.freeze({
 	BloodstepWindow = 0.13,
 	History = 0.20,
 	TimestampWindow = 0.10,
+	-- (FEEL 05/11) a press up to 1 s old still counts, without its time
+	-- (VelmoraAntiCheat.check); past it, it is dropped.
+	LateAccept = 1.0,
 	-- Minimum gap between two packets of one action (a flood guard, not a
 	-- gameplay rule: the server state machine and the press buffer decide what
 	-- a press does). Attack stays under a deliberate double tap (~0.1 s), or the

@@ -912,6 +912,14 @@ function UI.padCue(cue)
 	cue=cue:gsub("HEAVY: ",P.Heavy..": ")
 	return cue
 end
+-- (FEEL 05/11) The server's refusal reasons, in the player's words.
+local QUIET={BUSY="BUSY — STILL IN YOUR MOVE",REACTING="STILL HIT",COOLDOWN="RECHARGING",["NEED CHAKRA"]="NOT ENOUGH CHAKRA",
+	["NO TARGET"]="NO TARGET",["OUT OF RANGE"]="TOO FAR",["TOO FAR"]="TOO FAR",["NO LINE OF SIGHT"]="NOT IN SIGHT",
+	["TOOL RECOVERING"]="TOOL RECOVERING",["SUBSTITUTION RECOVERING"]="SUBSTITUTION RECHARGING",["NOT YET"]="NOT YET",["TOO SOON"]="TOO SOON",
+	["ULTIMATE NOT READY"]="ULTIMATE NOT READY",["NO SUBSTITUTION"]="NO SUBSTITUTION LEFT"}
+function UI.quietText(reason)
+	return QUIET[reason] or reason
+end
 -- A plate's chakra network (Neji): four pips, lit per closed point (a fresh one
 -- pops), shown whenever the opponent fights with the Gentle Fist; the chakra
 -- bar dims with the recovery the points cost.
@@ -1210,7 +1218,10 @@ function UI:render(data)
 		or cue:find("TO ESCAPE")
 	cue=if pad then UI.padCue(cue) else Controls.localize(cue)
 	self.cue.Text=if loud then cue else ""
-	self.channel.Text=""
+	-- (FEEL 05/11, AVANT defect 3) The quiet line: why the last button did
+	-- nothing (the server's own reason, Combat:quiet), small and grey under the
+	-- band, gone in half a second. Never over a loud cue.
+	self.channel.Text=if h.quiet and not loud then UI.quietText(h.quiet) else ""
 	-- (05/11, user on the pad: L2 pressed alone 26 times) The chakra button
 	-- held: the row shows what it infuses, the fighter's own moves.
 	local chakraPage=data.chakraPage==true and not data.first and not data.touch and not data.spectate

@@ -270,10 +270,11 @@ test("anti-cheat, rate limits, epochs and payload validation stay per player",fu
 	-- A's attack rate state does not throttle B.
 	assert(not AntiCheat.check(one,"Attack",clock,clock),"A's second press inside the rate gap passed")
 	assert(AntiCheat.check(two,"Attack",clock,clock));AntiCheat.clear(two)
-	-- Stale or future client clocks are refused, then a fresh one passes.
-	act(m,b,"Heavy",{clientTime=clock-1});assert(two.state=="Neutral","stale clientTime accepted")
+	-- Too old (past LateAccept, 1 s) or future client clocks are refused, then a
+	-- fresh one passes. (FEEL 05/11: a press 0.3-1 s late plays, see below.)
+	act(m,b,"Heavy",{clientTime=clock-1.5});assert(two.state=="Neutral","stale clientTime accepted")
 	-- Refusals are counted per player for the Studio latency matrix (DevHooks "online").
-	assert(two.refusedInputs==1 and math.abs(two.refusedAge-1)<1e-6 and (one.refusedInputs or 0)==0)
+	assert(two.refusedInputs==1 and math.abs(two.refusedAge-1.5)<1e-6 and (one.refusedInputs or 0)==0)
 	local seats=m.online:summary().duels[1].seats
 	assert(seats[2].refusedInputs==1 and seats[1].refusedInputs==0)
 	act(m,b,"Heavy",{clientTime=clock+1});assert(two.state=="Neutral","future clientTime accepted")
@@ -637,6 +638,26 @@ test("the client UI renders the real roster, queue, pick, duel and result packet
 	local p=join(m,"Solo")
 	m:start(p,"Flashstep","Mirage");m.sessions[p].introUntil=nil;step(m,.1);ui:render(last(p))
 	assert(ui.hud.Visible and ui.enemy.title.Text:sub(1,2)=="AI" and ui.rematchButton.Text~=nil)
+end)
+
+-- (FEEL 05/11, AVANT defect 3) A press that arrives late (a hitch, a ping
+-- spike: 402 ms measured in Studio) plays instead of vanishing; it is counted
+-- as late, its stale time is not kept, and a press past 1 s is still dropped.
+test("a late press (0.3-1 s old) plays and is counted; past 1 s it is dropped",function()
+	local m=fresh()
+	local a,b=join(m,"Alpha","Bravo")
+	local d=fight(m,a,b)
+	d.introUntil=nil
+	local two=d.seats[2].actor
+	act(m,b,"Heavy",{clientTime=clock-.45})
+	assert(two.state=="Startup","a press 0.45 s late was dropped")
+	assert(two.pressStats and two.pressStats.late==1,"the late press was not counted")
+	assert(two.attackCommitTime~=clock-.45,"the stale time was kept")
+	step(m,2)
+	act(m,b,"Heavy",{clientTime=clock-1.2})
+	assert(two.state~="Startup","a press 1.2 s late played")
+	assert(two.pressStats.gate==1,"the dropped press was not counted")
+	local _=a
 end)
 
 print(string.format("NinjaDuel online 1v1: %d PASS (server lifecycle/authority; replication, latency and two-client Studio still required)",passed))

@@ -157,6 +157,125 @@ function Camera:fadeSelf(character,lens,at)
 	end
 	self.selfFaded=faded
 end
+-- (FEEL 05/11) How much to tilt the lens up (radians) and widen it (degrees)
+-- so `top` (the higher body's head) is inside the frame without pushing
+-- `bottom` (the player's feet) out of it. A margin of 5 degrees inside the
+-- vertical field of view. Pure: Camera.spec checks it.
+function Camera.keepInFrame(cf,fov,top,bottom)
+	local half=math.rad(fov*.5)-math.rad(5)
+	local function pitchOf(p)
+		local v=cf:PointToObjectSpace(p)
+		return math.atan2(v.Y,math.max(-v.Z,.1))
+	end
+	local need=pitchOf(top)-half
+	if need<=0 then return 0,0 end
+	-- Room under the feet before they leave the bottom edge.
+	local room=math.max(0,pitchOf(bottom)+half)
+	local tilt=math.min(need,room,.6)
+	local widen=math.min(math.deg(need-tilt)*2,16)
+	return tilt,widen
+end
+-- (FEEL 05/11, AVANT defect 1) The lens squeezed by a solid (the stadium
+-- wall, the floor) looks for the nearest clear heading around the player:
+-- tries half a radian, then one, then one and a half, on both sides, and
+-- prefers what is closest to the swing it already has. Back at zero once the
+-- plain heading has been clear for 0.6 s. Only solids count: props fade.
+local WALL_TRIES={0,.5,-.5,1,-1,1.5,-1.5}
+function Camera:steerAroundWall(focus,distance,height,squeeze,ray,dt,clock)
+	local base=self.baseAngle
+	if not base or not distance then return end
+	local current=self.wallGoal or 0
+	local function clear(off)
+		local angle=base+off
+		local spot=focus+Vector3.new(math.sin(angle),0,math.cos(angle))*distance+Vector3.new(0,height,0)
+		local reach=spot-focus
+		local hit=workspace:Raycast(focus,reach,ray)
+		return not (hit and solid(hit.Instance) and hit.Distance<reach.Magnitude*.75)
+	end
+	if squeeze>.3 then
+		self.wallClearSince=nil
+		local best,score=nil,math.huge
+		for _,step in WALL_TRIES do
+			local off=current+step
+			if math.abs(off)<=1.6 and clear(off) then
+				local s=math.abs(step)+.25*math.abs(off)
+				if s<score then best,score=off,s end
+			end
+		end
+		if best then self.wallGoal=best end
+	elseif current~=0 then
+		if clear(0) then
+			self.wallClearSince=self.wallClearSince or clock
+			if clock-self.wallClearSince>.6 then self.wallGoal=0;self.wallClearSince=nil end
+		else
+			self.wallClearSince=nil
+		end
+	end
+	local goal=self.wallGoal or 0
+	local yaw=self.wallYaw or 0
+	yaw+=(goal-yaw)*(1-math.exp(-dt*4))
+	self.wallYaw=if math.abs(yaw)<1e-3 and goal==0 then nil else yaw
+end
+-- (FEEL 05/11, AVANT defect 5) The bushes along the wall and the field
+-- trees' crowns are decor: no collision, no query (World/ArenaMeshes), so
+-- the lens never faded them and a body that ran into one vanished inside it
+-- (Studio, take 1: both fighters in a bush at the wall). Pieces close to a
+-- fighter, or across the line from the lens to the player, fade; the list is
+-- read once per arena.
+local DECOR_FADE=.7
+function Camera:fadeDecor(folder,a,target,lens,clock)
+	local yard=folder and folder:FindFirstChild("Courtyard")
+	local list=self.decorList
+	if yard~=self.decorYard then
+		list={}
+		if yard then
+			local center=nil
+			for _,d in yard:GetDescendants() do
+				if d:IsA("BasePart") and (string.sub(d.Name,1,5)=="Bush_" or string.sub(d.Name,1,5)=="Tree_") then
+					table.insert(list,{part=d,center=d.Position,radius=math.max(d.Size.X,d.Size.Z)*.5,top=d.Position.Y+d.Size.Y*.5})
+				end
+				if d.Name=="Training floor" then center=d.Position end
+			end
+			-- The forest beyond the wall stays as it is.
+			if center then
+				for i=#list,1,-1 do
+					local flat=Vector3.new(list[i].center.X-center.X,0,list[i].center.Z-center.Z)
+					if flat.Magnitude>(150) then table.remove(list,i) end
+				end
+			end
+		end
+		self.decorYard=yard;self.decorList=list
+	end
+	if not list or #list==0 then return end
+	-- Ten times a second is enough for decor.
+	if clock<(self.decorNext or 0) then return end
+	self.decorNext=clock+.1
+	local faded=self.decorFaded or {}
+	local now={}
+	local function near(item,p)
+		local flat=Vector3.new(p.X-item.center.X,0,p.Z-item.center.Z).Magnitude
+		return flat<item.radius+2.5 and p.Y-3<item.top
+	end
+	local function across(item)
+		if not lens then return false end
+		local seg=a-lens
+		local len=seg.Magnitude
+		if len<.1 then return false end
+		local t=math.clamp((item.center-lens):Dot(seg)/(len*len),0,1)
+		return (lens+seg*t-item.center).Magnitude<item.radius*.9
+	end
+	for _,item in list do
+		local part=item.part
+		if part.Parent and (near(item,a) or (target and near(item,target)) or across(item)) then
+			now[part]=true
+			if part.LocalTransparencyModifier<DECOR_FADE then part.LocalTransparencyModifier=DECOR_FADE end
+		end
+	end
+	for part in faded do
+		if not now[part] and part.Parent and math.abs(part.LocalTransparencyModifier-DECOR_FADE)<1e-3 then part.LocalTransparencyModifier=0 end
+	end
+	self.decorFaded=now
+end
 -- (B1, B0 defect 4) Whether the lens on screen is the player's own: not the
 -- round's intro, a K.O., an ultimate's sequence or a watched match. Only then
 -- does a free mouse lens turn the body (Main sends `look`): during the intro
@@ -276,7 +395,10 @@ function Camera:update(data,dt)
 		-- grab): the line between them is noise, the heading holds instead of
 		-- whipping at up to 420 deg/s.
 		if separation<3.2 and self.heldBehind then behind=self.heldBehind else self.heldBehind=behind end
-		desiredAngle=math.atan2(behind.X,behind.Z)+self.yaw+frame.side
+		-- (FEEL 05/11, AVANT defect 1) the wall swing (Camera:steerAroundWall) is
+		-- added on top of the heading, so the boom's own rate limits ease it.
+		self.baseAngle=math.atan2(behind.X,behind.Z)+self.yaw+frame.side
+		desiredAngle=self.baseAngle+(self.wallYaw or 0)
 	elseif lost and self.locked then
 		desiredAngle=self.fogYaw or self.boomAngle or 0
 	else
@@ -321,6 +443,14 @@ function Camera:update(data,dt)
 	-- Focus: between the fighters, biased towards the player, raised for air.
 	local bias=if separation<=26 then .42 else math.max(.3,.42-(separation-26)*.003)
 	local targetFocus=a:Lerp(target,bias)+Vector3.new(0,frame.lift,0)
+	-- (FEEL 05/11, AVANT defect 2) A body far above (a chakra launcher at 66
+	-- studs): the pair's focus rises to their middle, so the lens looks level
+	-- at both instead of up from under one of them.
+	if vertical>8 then
+		local mid=a.Y+(target.Y-a.Y)*.5
+		local k=math.clamp((vertical-8)/10,0,1)
+		targetFocus=Vector3.new(targetFocus.X,targetFocus.Y+(mid+frame.lift-targetFocus.Y)*k,targetFocus.Z)
+	end
 	-- Sprint feel: only the player's own sprint (never the opponent's) eases
 	-- in a wider lens, a slightly tighter and lower boom and a longer lead, so
 	-- the floor streams past without the camera falling behind the body.
@@ -352,7 +482,8 @@ function Camera:update(data,dt)
 		if auto and not lost then freeFocus+=flat.Unit*math.min(separation*.1,2.5) end
 		targetFocus=freeFocus:Lerp(targetFocus,lockT)
 	end
-	local focusRate=if aerial or pursuit then 13 else 9
+	-- (FEEL 05/11) a body shooting far up is followed faster (AVANT defect 2).
+	local focusRate=if vertical>8 then 20 elseif aerial or pursuit then 13 else 9
 	self.focus=if self.focus then self.focus:Lerp(targetFocus,1-math.exp(-dt*focusRate)) else targetFocus
 	local focus=self.focus
 	local settle=math.max(0,(self.settleUntil or 0)-os.clock())/.75
@@ -367,9 +498,20 @@ function Camera:update(data,dt)
 	local share=freeShare+(1-freeShare)*lockT
 	spread*=share
 	local pairVertical=vertical*share
-	local wantDistance=math.clamp(frame.distance-sprint*1.5+spread+pairVertical*.3+self.zoom+(self.settleSize or 0)*math.sin(settle*math.pi*.5)+(if data.ko then 6 else 0),8.5,48)
-	self.distance=if self.distance then self.distance+(wantDistance-self.distance)*(1-math.exp(-dt*4)) else wantDistance
-	local height=frame.height-sprint*.6+self.pitch*9+(vertical*.28+math.min(math.max(0,separation-10)*.1,4))*share
+	-- (FEEL 05/11, AVANT defect 2) The distance that holds the whole height of
+	-- the pair inside the vertical field of view (a launch of 60 studs needs a
+	-- wide shot for its 2 seconds); ordinary jumps are under the threshold.
+	local verticalNeed=0
+	if pairVertical>8 then
+		local halfV=math.rad(math.max(20,frame.fov*.5-6))
+		verticalNeed=math.max(0,(vertical+6)*.5/math.tan(halfV)-(frame.distance+spread))*share
+	end
+	local wantDistance=math.clamp(frame.distance-sprint*1.5+spread+pairVertical*.3+verticalNeed+self.zoom+(self.settleSize or 0)*math.sin(settle*math.pi*.5)+(if data.ko then 6 else 0),8.5,if verticalNeed>0 then 66 else 48)
+	local distanceRate=if verticalNeed>0 and self.distance and wantDistance>self.distance then 12 else 4
+	self.distance=if self.distance then self.distance+(wantDistance-self.distance)*(1-math.exp(-dt*distanceRate)) else wantDistance
+	-- The lens rises with the gap up to 12 studs; past that the focus climbs
+	-- to the pair's middle instead (above) and the lens stays level with it.
+	local height=frame.height-sprint*.6+self.pitch*9+(math.min(vertical,12)*.28+math.min(math.max(0,separation-10)*.1,4))*share
 	if slam then height+=math.clamp(-(data.human.velocity and data.human.velocity.Y or 0)*.04,0,4) end
 	local desired=focus+boom*self.distance+Vector3.new(0,height,0)
 	-- Match intro: a slow orbit that presents both fighters, then the normal
@@ -404,8 +546,8 @@ function Camera:update(data,dt)
 	end
 	self.fovKick*=math.exp(-dt*9)
 	local speed=data.human.speed or 0
-	local targetFov=frame.fov+math.clamp(separation*.08,0,5)+math.clamp(speed*.05,0,2)+sprint*5+self.fovKick
-	camera.FieldOfView+=(targetFov-camera.FieldOfView)*(1-math.exp(-dt*(if pursuit or slam then 8 else 5)))
+	local targetFov=frame.fov+math.clamp(separation*.08,0,5)+math.clamp(speed*.05,0,2)+sprint*5+self.fovKick+(self.keepWiden or 0)
+	camera.FieldOfView+=(targetFov-camera.FieldOfView)*(1-math.exp(-dt*(if pursuit or slam or (self.keepWiden or 0)>.5 then 8 else 5)))
 	-- Keep the lens out of walls and cover; effects and fighters never block it.
 	local ray=RaycastParams.new(); ray.FilterType=Enum.RaycastFilterType.Exclude
 	local exclude={character};if bot then table.insert(exclude,bot) end
@@ -464,6 +606,19 @@ function Camera:update(data,dt)
 		local check=workspace:Raycast(focus,desired-focus,ray)
 		if check then desired=check.Position+check.Normal*1.2 end
 	end
+	-- (FEEL 05/11, AVANT defect 1) Locked with his back to the wall, the
+	-- squeezed lens sat on his head and looked past him: the player was off
+	-- screen for 100 % of a wall run (Studio, take 2). The boom swings along
+	-- the wall to the nearest clear side, so the body is seen three-quarter
+	-- with the opponent; the squeeze above stays the last resort.
+	if follow and (data.intro or 0)<=0 and not data.ko then
+		self:steerAroundWall(focus,self.distance,height,squeeze,ray,dt,clock)
+	else
+		self.wallYaw=nil;self.wallGoal=nil;self.wallClearSince=nil
+	end
+	-- (FEEL 05/11, AVANT defect 5) Bushes and tree crowns are decor (no query,
+	-- no collision): a body that ran into one was hidden inside it.
+	self:fadeDecor(folder,a,target,desired,clock)
 	-- In at once (never into the wall), out over a third of a second: the push
 	-- of a body against the wall no longer shakes the lens frame to frame.
 	self.squeeze=if squeeze>=(self.squeeze or 0) then squeeze else (self.squeeze or 0)+(squeeze-(self.squeeze or 0))*(1-math.exp(-dt*3))
@@ -475,6 +630,23 @@ function Camera:update(data,dt)
 	local filming=(data.intro or 0)>0 or data.spectate or (self.cinematic~=nil and os.clock()<self.cinematic.untilT)
 	self:fadeSelf(if self.squeeze>.02 and not filming then character else nil,desired,a)
 	local cf=CFrame.lookAt(desired,aim)
+	-- (FEEL 05/11, AVANT defect 2) Neji's chakra launcher threw the opponent 66
+	-- studs up and the lens lost him for 1.8 s. Whenever the pair is framed
+	-- (locked, or a pad's free lens that keeps the fight in view), the lens
+	-- tilts up to keep the higher body in frame, and widens for what the tilt
+	-- cannot take without dropping the player's feet out of the bottom.
+	local pairShare=if follow then 1 elseif auto and not lost then .5 else 0
+	local tilt,widen=0,0
+	if pairShare>0 and not filming and not data.ko then
+		tilt,widen=Camera.keepInFrame(cf,camera.FieldOfView,target+Vector3.new(0,2.6,0),a-Vector3.new(0,2.8,0))
+	end
+	local keep=self.keepTilt or 0
+	keep+=(tilt*pairShare-keep)*(1-math.exp(-dt*(if tilt*pairShare>keep then 12 else 3)))
+	self.keepTilt=keep
+	local wide=self.keepWiden or 0
+	wide+=(widen*pairShare-wide)*(1-math.exp(-dt*(if widen*pairShare>wide then 10 else 2.5)))
+	self.keepWiden=wide
+	if keep>1e-3 then cf=cf*CFrame.Angles(keep,0,0) end
 	-- Shake is an offset on top of the smoothed rig (applied last, never fed
 	-- back into the follow), so it is neither damped away nor left behind.
 	-- A continuous, decaying oscillation (~7-10 Hz) rather than a fresh random
@@ -610,7 +782,7 @@ function Camera:update(data,dt)
 		-- Follow tightly enough for teleports, but never jump more than a few
 		-- studs in one frame.
 		local base=self.rigCF
-		local nextCF=base:Lerp(cf,1-math.exp(-dt*(if aerial or pursuit or slam then 15 else 11)))
+		local nextCF=base:Lerp(cf,1-math.exp(-dt*(if vertical>8 then 20 elseif aerial or pursuit or slam then 15 else 11)))
 		local move=nextCF.Position-base.Position
 		local limit=math.max(3.5,520*dt)
 		if move.Magnitude>limit then nextCF=CFrame.new(base.Position+move.Unit*limit)*nextCF.Rotation end

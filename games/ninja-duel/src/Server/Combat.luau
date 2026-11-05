@@ -167,6 +167,13 @@ function Combat:cue(a,message,duration)
 	a.cue=message; a.cueUntil=self.now+(duration or 1.1)
 	if self.match.onCue then self.match.onCue(a,message) end
 end
+-- (FEEL 05/11, AVANT defect 3) A quiet line for presses that did nothing:
+-- the loud cue band keeps the decisive moments, this one says why a button
+-- was not answered (the client shows it small, under the band, for half a
+-- second). It never replaces the loud cue.
+function Combat:quiet(a,message,duration)
+	a.quiet=message;a.quietUntil=self.now+(duration or .6);a.quietSerial=(a.quietSerial or 0)+1
+end
 function Combat:setState(a,state,duration)
 	a.state=state; a.untilTime=self.now+duration
 	if state=="Stunned" then a.strikeCarry=nil end
@@ -1644,7 +1651,14 @@ function Combat:updateActor(a,dt)
 	-- A press made just before the body was free comes out now (Config.Late).
 	local late=a.latePress
 	if late then
-		if now-late.at>late.window then a.latePress=nil
+		if now-late.at>late.window then
+			a.latePress=nil
+			-- (FEEL 05/11) buffered, never played: the body was not free in time.
+			if a.playerInput then
+				self:quiet(a,"BUSY")
+				local stats=a.pressStats or {late=0,gate=0,refused=0,lost=0,reasons={}}
+				a.pressStats=stats;stats.lost+=1
+			end
 		elseif a.state=="Neutral" and not a.reaction and now>=(a.hitstopUntil or 0) then
 			a.latePress=nil
 			local opts=table.clone(late.opts or {});opts.late=true
