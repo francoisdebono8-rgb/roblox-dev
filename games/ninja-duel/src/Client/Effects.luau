@@ -893,10 +893,12 @@ function FX:impact(impact,folder)
 	if CHEER[style] then self:cheer(CHEER[style]) end
 	-- (Reference quality) the struck body flashes: red on a blow, gold on a
 	-- guard, longer and stronger the harder it was.
-	if impact.victim and impact.amount then
+	-- (FEEL 05/11) brighter and a beat longer: a light blow read as nothing.
+	-- Not twice for a blow the client already flashed when it guessed it.
+	if impact.victim and impact.amount and not impact.tinted then
 		local weight=math.clamp(impact.amount/20,.25,1)
-		pcall(Kit.tint,modelFor(folder,impact.victim),if impact.guarded then Color3.fromRGB(255,214,120) else Color3.fromRGB(255,236,226),
-			.06+.07*weight,if impact.guarded then .35 else .3+.25*weight)
+		pcall(Kit.tint,modelFor(folder,impact.victim),if impact.guarded then Color3.fromRGB(255,214,120) else Color3.fromRGB(255,244,236),
+			.09+.08*weight,if impact.guarded then .35 else .5+.35*weight)
 	end
 	for _,layer in FX.layers do if layer.impact and layer.impact(self,impact,folder) then return end end
 	if style=="fire" then

@@ -641,6 +641,25 @@ test("landing clocks belong to each fighter and release on expiry, takeoff and e
  assert(not P.landing(p,"bot",floor,floor,12.01),"round reset retained a landing")
 end)
 
+-- (FEEL 05/11, user: the blows that land feel like nothing) A contact holds
+-- both drawn bodies a few frames (the struck one shakes), longer for heavier
+-- blows; a second contact extends the stop, never stacks it; the fight's own
+-- clock is untouched (presentation only).
+test("hit stop: both bodies hold on a contact, heavier blows longer, no stacking",function()
+ local P=H.load("Client/Presentation")
+ local p=setmetatable({freeze={}},P)
+ local stop=p:hitstop({human=false,bot=true},"light",V.new(1,0,0),10)
+ assert(stop>=.05 and stop<=.1,("light stop %.3f"):format(stop))
+ assert(p:frozen("human",10.03) and p:frozen("bot",10.03),"a light contact did not hold both bodies")
+ assert(not p:frozen("bot",10+stop+.01),"the stop outlived its time")
+ assert(p.freeze.bot.struck and not p.freeze.human.struck,"the struck body is not the one that shakes")
+ assert(P.STOP.launcher>P.STOP.light and P.STOP.slam>P.STOP.finisher,"heavier blows do not stop longer")
+ p:hitstop({human=false,bot=true},"light",nil,20)
+ p:hitstop({human=false,bot=true},"light",nil,20.03)
+ assert(p.freeze.bot.untilT-20<=stop+.031,"a second contact stacked the stop")
+ assert(p:hitstop({human=true},"whiff",nil,30)==0,"a whiff stopped the bodies")
+end)
+
 test("the landing crouch waits for the drawn body to reach the floor (audit 29/10)",function()
  local P=H.load("Client/Presentation")
  local drawnY=5

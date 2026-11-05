@@ -15,7 +15,7 @@ local LAYERED={finisher=true,launcher=true,slam=true,wallbounce=true,clash=true}
 local LOOPED={}
 -- style -> shard count, light range, colour, pitch, volume, tint of the target
 local look={
- light   ={shards=5, range=7,  color=Color3.fromRGB(255,214,170),pitch=1.18,volume=.32,hit=Color3.fromRGB(255,238,214)},
+ light   ={shards=5, range=7,  color=Color3.fromRGB(255,214,170),pitch=1.18,volume=.42,hit=Color3.fromRGB(255,238,214)},
  finisher={shards=6, range=9,  color=Color3.fromRGB(255,186,120),pitch=0.94,volume=.42,hit=Color3.fromRGB(255,220,180)},
  launcher={shards=5, range=9,  color=Color3.fromRGB(196,226,255),pitch=0.86,volume=.40,hit=Color3.fromRGB(226,240,255)},
  air     ={shards=6, range=8,  color=Color3.fromRGB(212,232,255),pitch=1.06,volume=.34,hit=Color3.fromRGB(232,244,255)},
@@ -131,7 +131,11 @@ function Feedback.impact(style,position,impact)
 	if not spec then return end
 	local anchor=anchorAt(position)
 	local cue=(if style=="light" then "light" elseif AIR_CUE[style] then "whiff" else "heavy")
-	if style~="flow" then playSound(anchor,AUDIO[cue],spec.pitch,spec.volume) end
+	-- (FEEL 05/11) never twice the same pitch: a string of lights was one
+	-- sample repeated.
+	if style~="flow" then playSound(anchor,AUDIO[cue],spec.pitch*(.94+math.random()*.12),spec.volume) end
+	-- and a light or air blow lands in a body: a soft thud under it.
+	if style=="light" or style=="air" then playSound(anchor,AUDIO.body,1.2+math.random()*.15,.22) end
 	if LAYERED[style] then
 		playSound(anchor,AUDIO.punch,.95+math.random()*.1,.45)
 		playSound(anchor,AUDIO.body,1.1,.35)

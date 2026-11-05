@@ -7,6 +7,7 @@ local Effects=require(script.Parent.Effects)
 -- Bodies that are not fighters (Naruto's shadow clones).
 local BodyViews=require(script.Parent.BodyViews)
 local Smear=require(script.Parent.MotionSmear)
+local Kit=require(script.Parent.VfxKit)
 local Shared=game:GetService("ReplicatedStorage").NinjaDuel
 local Fighters=require(Shared.Fighters)
 local Config=require(Shared.Config)
@@ -16,7 +17,42 @@ local ActionContext=require(Shared.ActionContext)
 local Presentation={};Presentation.__index=Presentation
 local LOCOMOTION_POSE_SPEED=26
 function Presentation.new()
-	return setmetatable({last={},recoil={},impactSerial=0,impactEpoch=nil,clocks={},landings={},botModel=nil,fx=Effects.new(),bodies=BodyViews.new(),smooth={}},Presentation)
+	return setmetatable({last={},recoil={},impactSerial=0,impactEpoch=nil,clocks={},landings={},botModel=nil,fx=Effects.new(),bodies=BodyViews.new(),smooth={},freeze={}},Presentation)
+end
+-- (FEEL 05/11, user: « les coups qui touchent » are what feels the least fun:
+-- no impact, no weight, the opponent barely reacts) Hit stop, drawn only:
+-- on a contact both bodies hold their pose for a few frames, the struck one
+-- shakes along the blow and its drawn track holds still, then everything
+-- resumes from where it stopped. The server keeps its own clock (no change to
+-- any timing of the fight): the drawn poses run that much behind for the rest
+-- of the move, the drawn track catches up at its normal cap.
+-- Seconds of stop per contact style.
+Presentation.STOP={light=.07,air=.07,flow=.06,palm=.06,kunai=.035,shuriken=.03,block=.05,finisher=.11,launcher=.12,
+	slam=.15,parry=.13,clash=.12,wallbounce=.13,jutsu=.09,repel=.1,palmburst=.1,chidori=.12,groundbounce=.12}
+-- How hard the struck body is flashed (strength, seconds) per style.
+local FLASH={light={.62,.11},air={.62,.11},flow={.55,.1},finisher={.8,.16},launcher={.85,.17},slam={.9,.2},
+	jutsu={.75,.15},wallbounce={.85,.18},palm={.6,.11},palmburst={.8,.16}}
+Presentation.FLASH=FLASH
+function Presentation:hitstop(keys,style,direction,now)
+	local stop=Presentation.STOP[style or ""]
+	if not stop then return 0 end
+	now=now or os.clock()
+	for key,struck in keys do
+		local f=self.freeze[key]
+		-- A second contact inside a stop does not stack: it only extends it.
+		if f and now<f.untilT then f.untilT=math.max(f.untilT,now+stop)
+		else self.freeze[key]={from=now,untilT=now+stop,struck=struck,dir=direction,amp=math.clamp(stop*2.4,.12,.32)} end
+	end
+	return stop
+end
+-- The struck body's flash on a guessed contact (the server's own contact,
+-- when it comes, does not flash it a second time: Effects reads `tinted`).
+function Presentation.flash(model,strength,time)
+	Kit.tint(model,Color3.fromRGB(255,244,236),time,strength)
+end
+function Presentation:frozen(key,now)
+	local f=self.freeze[key]
+	return f~=nil and now<f.untilT,f
 end
 -- The opponent's body in the viewer's duel folder: the server names it by the
 -- id it sends as data.bot.id ("AIFighter" against the AI, a duelist online).
@@ -764,6 +800,20 @@ function Presentation:smoothStep(data,dt)
 			-- Draw the whole body on the track for this frame only; the next
 			-- replication packet overwrites the client copy, never the server.
 			local target=drawn
+			-- (FEEL 05/11) Hit stop: the struck body holds where the blow met it
+			-- and shakes along the blow (a few studs-tenths, 30 Hz), then its
+			-- track catches up. Only a body this client does not simulate (the
+			-- opponent): the player's own root is his physics.
+			local now=os.clock()
+			local isFrozen,f=self:frozen(key,now)
+			if isFrozen and f.struck and key~="human" and st.drawnCF then
+				f.hold=f.hold or st.drawnCF.Position
+				local dir=f.dir
+				if typeof(dir)~="Vector3" or dir.Magnitude<.05 then dir=target.RightVector end
+				local fade=math.clamp((f.untilT-now)/math.max(f.untilT-f.from,1e-3),0,1)
+				local wobble=math.sin((now-f.from)*2*math.pi*30)*f.amp*fade
+				target=target.Rotation+(f.hold+Vector3.new(dir.X,0,dir.Z).Unit*wobble)
+			elseif f and not isFrozen then f.hold=nil end
 			if (target.Position-root.Position).Magnitude>1e-4 or target.LookVector:Dot(root.CFrame.LookVector)<.99999 then
 				model:PivotTo(target*root.CFrame:Inverse()*model:GetPivot())
 			end
@@ -788,10 +838,19 @@ function Presentation:impacts(data,camera)
   if impact.serial==nil or impact.serial>self.impactSerial then
    local lh=self.localHit
    local played=lh and not lh.used and data.bot and impact.victim==data.bot.id and CONTACT_STYLE[impact.style or ""] and os.clock()-lh.at<.4
-   if played then lh.used=true
+   if played then lh.used=true;impact.tinted=true
    else
     Feedback.impact(impact.style or "light",impact.position,impact)
     if camera and camera.impulse then camera:impulse(impact.style,impact.role,impact) end
+    -- (FEEL 05/11) the hit stop for a contact the client did not guess: both
+    -- bodies hold, the struck one shakes (not on a guard: a guard is a stop
+    -- for the attacker's arm only).
+    if impact.victim and not impact.guarded and data.human and data.bot then
+     local struck=if impact.victim==data.human.id then "human" elseif impact.victim==data.bot.id then "bot" else nil
+     if struck then self:hitstop({human=struck=="human",bot=struck=="bot"},impact.style,impact.direction) end
+    elseif impact.guarded then
+     self:hitstop({human=false,bot=false},"block",impact.direction)
+    end
    end
    self.fx:impact(impact,folder)
   end
@@ -853,6 +912,18 @@ end
 local function clockFor(self,key,actor,now)
  local clock=self.clocks[key]
  if not clock then clock={};self.clocks[key]=clock end
+ -- (FEEL 05/11) Hit stop: the clips hold on the contact frame, then resume
+ -- from it (their start moves forward by the time they were held).
+ local frozen=self:frozen(key,now)
+ if frozen then
+  clock.heldFrom=clock.heldFrom or now
+ elseif clock.heldFrom then
+  local held=now-clock.heldFrom
+  clock.heldFrom=nil
+  if clock.attackAt then clock.attackAt+=held end
+  if clock.reactionAt then clock.reactionAt+=held end
+ end
+ local at=clock.heldFrom or now
  -- A new swing restarts the clock even when it repeats the same move name.
  if actor.attackName~=clock.attackName or (actor.attackSerial or 0)~=clock.attackSerial then
   -- Start the clip where the server already is: a snapshot arrives up to an
@@ -867,8 +938,8 @@ local function clockFor(self,key,actor,now)
   clock.reaction=actor.reaction;clock.reactionAt=now
  end
  clock.impactSerial=actor.impactSerial or 0
- clock.attackElapsed=if actor.attackName then now-clock.attackAt else 0
- clock.reactionElapsed=if actor.reaction then now-clock.reactionAt else 0
+ clock.attackElapsed=if actor.attackName then math.max(0,at-clock.attackAt) else 0
+ clock.reactionElapsed=if actor.reaction then math.max(0,at-clock.reactionAt) else 0
  return clock
 end
 -- A landing belongs to one body. Opponent landings must never bend the
@@ -911,7 +982,7 @@ function Presentation:update(data,dt)
   -- right. Normal presentation never snaps the skeleton.
   self.epoch=data.epoch
   table.clear(self.clocks);table.clear(self.last);table.clear(self.smooth);table.clear(self.landings)
-  self.lead=nil;self.prediction=nil;self.movePrediction=nil;self.strikeGuess=nil;self.localHit=nil
+  self.lead=nil;self.prediction=nil;self.movePrediction=nil;self.strikeGuess=nil;self.localHit=nil;table.clear(self.freeze)
   self.smears={}
   if players.LocalPlayer.Character then Motion.reset(players.LocalPlayer.Character) end
   if self.botModel then Motion.reset(self.botModel) end
@@ -941,6 +1012,12 @@ function Presentation:update(data,dt)
     if hit then
      Feedback.impact(hit.style,hit.position,{victim=data.bot and data.bot.id,predicted=true})
      if self.camera and self.camera.impulse then self.camera:impulse(hit.style,"attacker",{predicted=true}) end
+     -- (FEEL 05/11) the blow lands on the frame the fist arrives: both bodies
+     -- hold, the struck one flashes and shakes along the strike.
+     local dir=if me and them then Vector3.new(them.Position.X-me.Position.X,0,them.Position.Z-me.Position.Z) else nil
+     self:hitstop({human=false,bot=true},hit.style,dir,now)
+     local flash=FLASH[hit.style]
+     if flash and bot then pcall(Presentation.flash,bot,flash[1],flash[2]) end
     end
    end
    local clock=clockFor(self,key,actor,now)

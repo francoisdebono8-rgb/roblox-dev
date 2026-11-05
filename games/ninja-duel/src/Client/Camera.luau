@@ -76,7 +76,8 @@ end
 -- finisher, launcher, parry, slam, teleport or big jutsu earns a reaction.
 local IMPULSE={
  whiff={0,0},spent={0,0},seals={0,0},kunai={0,0},shuriken={0,0},stick={0,0},fade={0,0},cast={0,0},chase={.02,1.2},dodge={.01,.25},substitute={.02,.4},
- light={.02,.3},air={.025,.45},landing={.04,.6},block={.04,.6},quickstep={.015,.8},teleport={.03,2.2},mirage={0,0},burst={.02,1},
+ -- (FEEL 05/11) a landed light blow is felt in the lens too (was .02/.3).
+ light={.05,.7},air={.055,.8},landing={.04,.6},block={.04,.6},quickstep={.015,.8},teleport={.03,2.2},mirage={0,0},burst={.02,1},
  -- (Stage 6) the ultimates and the awakenings' moments.
  jutsuclash={.26,3.2},conduct={.08,1},steam={.03,.8},puddle={0,0},sandmelt={0,0},
  ultimateStart={.08,2},ultimate={.12,1.2},ultimateTick={.05,.6},ultimateEnd={.3,3.2},ultimateMiss={0,0},tsukuyomi={.06,1.6},gate={.04,.8},reveal={0,0},
