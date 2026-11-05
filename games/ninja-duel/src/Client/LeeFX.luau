@@ -6,6 +6,7 @@
 -- (like SandFX): Effects only offers the registry and its helpers.
 -- Presentation only: nothing here can change gameplay.
 local Debris=game:GetService("Debris")
+local FadePool=require(script.Parent.FadePool)
 
 local LeeFX={}
 local K -- Effects' helpers, handed over by install()
@@ -17,6 +18,9 @@ local GATE_CORE=Color3.fromRGB(226,255,226)
 local FLUSH=Color3.fromRGB(226,92,72) -- the body burning in the gates
 local DUST=Color3.fromRGB(206,194,168)
 local LOTUS={PrimaryLotus=true,HiddenLotus=true,LeafHeel=true}
+-- (05/11, lot 4 review) the spiral's beat: one pair a 60 Hz frame (a hair
+-- under 1/60 s, so a 60 fps frame that comes early still draws).
+local LOTUS_BEAT=.015
 
 local function stateOf(fx,model)
 	fx.leeState=fx.leeState or setmetatable({},{__mode="k"})
@@ -151,17 +155,30 @@ local function lotus(fx,model,actor,st)
 	local falling=root and LOTUS[variant or ""] and actor.attackName=="Slam" and (actor.state=="Startup" or actor.state=="Active")
 	if falling then
 		st.lotus=variant
-		st.spin=(st.spin or 0)+.9
-		local hidden=variant=="HiddenLotus"
-		for k=0,1 do
-			local a=st.spin+k*math.pi
-			local at=root.Position+Vector3.new(math.cos(a)*2.2,(k-.5)*1.2,math.sin(a)*2.2)
-			local streak=K.block(fx.folder,Vector3.new(.18,.18,1.6),CFrame.lookAt(at,at+Vector3.new(-math.sin(a),0,math.cos(a))),if hidden then FLUSH else GATE_CORE,Enum.Material.Neon)
-			streak.Name="LotusSpiral";streak.Transparency=.25
-			K.tween(streak,.22,{Transparency=1,Size=Vector3.new(.04,.04,2.2)})
-			Debris:AddItem(streak,.25)
+		-- (05/11, lot 4 review) by the clock, not per rendered frame: the spiral
+		-- turned 0.9 rad and drew two neon parts and two tweens every frame, so
+		-- it spun and cost with the frame rate. Now 0.9 rad per 60th of a second
+		-- (the 60 fps look) at most one pair per beat, from pooled parts faded on
+		-- the tween's curve (Client/FadePool).
+		local now=LeeFX.clock()
+		local elapsed=math.min(now-(st.spinAt or now-1/60),.1)
+		if elapsed>=LOTUS_BEAT then
+			st.spinAt=now
+			st.spin=(st.spin or 0)+.9*elapsed*60
+			local hidden=variant=="HiddenLotus"
+			for k=0,1 do
+				local a=st.spin+k*math.pi
+				local at=root.Position+Vector3.new(math.cos(a)*2.2,(k-.5)*1.2,math.sin(a)*2.2)
+				local streak,fresh=FadePool.take(fx.folder,"LotusSpiral")
+				if fresh then streak.Name="LotusSpiral";streak.Material=Enum.Material.Neon end
+				streak.Color=if hidden then FLUSH else GATE_CORE
+				streak.Size=Vector3.new(.18,.18,1.6)
+				streak.CFrame=CFrame.lookAt(at,at+Vector3.new(-math.sin(a),0,math.cos(a)))
+				FadePool.fade(streak,fx.folder,"LotusSpiral",.22,.25,"Out",Vector3.new(.04,.04,2.2))
+			end
 		end
 	elseif st.lotus and root then
+		st.spinAt=nil
 		-- Landed (or cut short): the floor takes it.
 		crater(fx,root.Position,if st.lotus=="HiddenLotus" then 10 else 7)
 		if st.lotus=="HiddenLotus" then K.shockRing(fx.folder,root.Position-Vector3.new(0,2.5,0),FLUSH,3,20,.4) end

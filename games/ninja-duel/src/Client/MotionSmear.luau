@@ -4,8 +4,10 @@
 -- it; a body that jumps several studs in one frame (a teleport, a substitution,
 -- a flash step) leaves copies interpolated along the line it crossed, so the
 -- jump reads as a very fast move, not a cut. Presentation only.
-local TweenService=game:GetService("TweenService")
-local Debris=game:GetService("Debris")
+-- (05/11, lot 4 review) The copies and streaks are pooled parts faded by
+-- one Heartbeat (Client/FadePool) on the curve their tweens had (Quad In):
+-- they were 16 new parts, 16 tweens and 2 streaks every 1/20 s per body.
+local FadePool=require(script.Parent.FadePool)
 
 local Smear={}
 
@@ -18,7 +20,7 @@ local CADENCE=1/20
 local LIFE=.12
 local STREAK_LIFE=.12
 
-type State={pos:Vector3?,at:number?,pose:{[string]:CFrame}?}
+type State={pos:Vector3?,at:number?,pose:{[string]:CFrame}?,spare:{[string]:CFrame}?}
 
 local function folder():Instance
 	local f=workspace:FindFirstChild("NinjaDuelFX")
@@ -28,8 +30,9 @@ local function folder():Instance
 	return f
 end
 
-local function snapshot(model:Model):{[string]:CFrame}
-	local out={}
+-- (05/11, lot 4 review) into the body's spare table (two swap each frame).
+local function snapshot(model:Model,out:{[string]:CFrame}):{[string]:CFrame}
+	table.clear(out)
 	for _,name in LIMBS do
 		local p=model:FindFirstChild(name)
 		if p and p:IsA("BasePart") and p.Transparency<.9 then out[name]=p.CFrame end
@@ -38,40 +41,31 @@ local function snapshot(model:Model):{[string]:CFrame}
 end
 
 local function ghost(model:Model,pose:{[string]:CFrame},shift:Vector3,transparency:number,life:number)
-	local holder=Instance.new("Model");holder.Name="Smear"
+	local f=folder()
 	for name,cf in pose do
 		local src=model:FindFirstChild(name)
 		if src and src:IsA("BasePart") then
-			local g=Instance.new("Part")
-			g.Anchored=true;g.CanCollide=false;g.CanQuery=false;g.CanTouch=false;g.CastShadow=false
-			g.Material=Enum.Material.SmoothPlastic;g.Color=GHOST
+			local g,fresh=FadePool.take(f,"Smear")
+			if fresh then g.Name="Smear";g.Material=Enum.Material.SmoothPlastic;g.Color=GHOST end
 			g.Size=src.Size;g.CFrame=cf+shift
-			g.Transparency=transparency
-			g.Parent=holder
-			TweenService:Create(g,TweenInfo.new(life,Enum.EasingStyle.Quad,Enum.EasingDirection.In),{Transparency=1}):Play()
+			FadePool.fade(g,f,"Smear",life,transparency,"In")
 		end
 	end
-	holder.Parent=folder()
-	Debris:AddItem(holder,life+.05)
 end
 
 local function streaks(at:Vector3,count:number,direction:Vector3)
 	local f=folder()
 	for _=1,count do
-		local s=Instance.new("Part")
-		s.Anchored=true;s.CanCollide=false;s.CanQuery=false;s.CanTouch=false;s.CastShadow=false
-		s.Material=Enum.Material.SmoothPlastic;s.Color=GHOST
+		local s,fresh=FadePool.take(f,"SmearStreak")
+		if fresh then s.Name="SmearStreak";s.Material=Enum.Material.SmoothPlastic;s.Color=GHOST end
 		local length=2+math.random()*2.2
 		s.Size=Vector3.new(.05,length,.05)
 		local side=direction:Cross(Vector3.yAxis)
 		if side.Magnitude<1e-3 then side=Vector3.xAxis end
 		side=side.Unit
-		local offset=side*((math.random()-.5)*3.4)+Vector3.new(0,(math.random()-.3)*2.4,0)-direction*(math.random()*1.5)
+		local offset=side*((math.random()-.5)*3.4)+Vector3.new(0,(math.random()-.5)*2.4,0)-direction*(math.random()*1.5)
 		s.CFrame=CFrame.new(at+offset)
-		s.Transparency=.35
-		s.Parent=f
-		TweenService:Create(s,TweenInfo.new(STREAK_LIFE,Enum.EasingStyle.Quad,Enum.EasingDirection.In),{Transparency=1,Size=Vector3.new(.03,length*1.4,.03)}):Play()
-		Debris:AddItem(s,STREAK_LIFE+.05)
+		FadePool.fade(s,f,"SmearStreak",STREAK_LIFE,.35,"In",Vector3.new(.03,length*1.4,.03))
 	end
 end
 
@@ -82,7 +76,7 @@ function Smear.step(st:State,model:Model?,dt:number)
 	if not (root and root:IsA("BasePart")) then return end
 	local now=os.clock()
 	local pos=root.Position
-	local pose=snapshot(model)
+	local pose=snapshot(model,st.spare or {})
 	if st.pos and st.pose then
 		local delta=pos-(st.pos::Vector3)
 		local flat=Vector3.new(delta.X,0,delta.Z)
@@ -102,7 +96,7 @@ function Smear.step(st:State,model:Model?,dt:number)
 			st.at=now
 		end
 	end
-	st.pos=pos;st.pose=pose
+	st.spare=st.pose;st.pos=pos;st.pose=pose
 end
 
 -- Thin arcs behind the hands and feet while a strike is out (the reference's
