@@ -567,6 +567,51 @@ function FamilyFX.install(FX,kit)
 				local look=Looks[impact.kind]
 				local color,edge=c3(look.color),c3(look.color2)
 				local from,to=impact.from or impact.position,impact.to or impact.position
+				if impact.kind=="leaf" then
+					-- (Jutsu pass 06/11, the reel: « l'entrée dynamique fait un pouf,
+					-- pas un coup de pied volant ») Lee does not vanish: he flies. No
+					-- smoke; the dust he tears off the ground where he leaves, a trail
+					-- of green afterimages of his kick strung along the line he flew,
+					-- wind streaks along it, and the dust ring where he lands.
+					local model=folder and folder:FindFirstChild(impact.owner or "")
+					local line=to-from
+					local GREEN=Color3.fromRGB(70,190,90)
+					shockRing(fx.folder,from-Vector3.new(0,2.6,0),c3({206,194,168}),2,8,.3)
+					burst(fx.folder,from-Vector3.new(0,2.4,0),{Texture=TEX.smoke,Lifetime=NumberRange.new(.3,.6),Speed=NumberRange.new(6,12),SpreadAngle=Vector2.new(60,60),
+						Color=ColorSequence.new(Color3.fromRGB(206,194,168)),LightInfluence=1,Size=num({{0,1},{1,2.4}}),Transparency=num({{0,.3},{1,1}}),Drag=4},10)
+					if model and line.Magnitude>1 then
+						-- (Studio 06/11: copied on the relocation frame they stood
+						-- upright in the stance) a beat later, once the kick is drawn,
+						-- strung back along the flight on an arc, leaning into it
+						task.delay(.05,function()
+							if not model.Parent then return end
+							local flatDir=Vector3.new(line.X,0,line.Z)
+							local lean=if flatDir.Magnitude>.1 then flatDir.Unit:Cross(Vector3.yAxis) else Vector3.xAxis
+							for k=1,5 do
+								local u=1-k/6
+								local ghost=fx:ghost(model,GREEN,.16+k*.04,.45+k*.07)
+								if ghost then
+									local pivot=ghost:GetPivot()
+									local at=pivot.Position-line*u+Vector3.new(0,math.sin(u*math.pi)*1.6,0)
+									pcall(function() ghost:PivotTo(CFrame.fromAxisAngle(lean,math.rad(-14))*(pivot-pivot.Position)+at) end)
+								end
+							end
+						end)
+					end
+					if line.Magnitude>1 then
+						local dir=line.Unit
+						local mid=(from+to)/2+Vector3.new(0,.6,0)
+						for k=-1,1 do
+							local streak=block(fx.folder,Vector3.new(.06,.06,line.Magnitude*.8),CFrame.lookAt(mid+Vector3.new(0,k*.7,0),mid+Vector3.new(0,k*.7,0)+dir),Color3.fromRGB(236,255,236),Enum.Material.Neon)
+							streak.Transparency=.35
+							tween(streak,.22,{Transparency=1,Size=Vector3.new(.02,.02,line.Magnitude*.3),CFrame=streak.CFrame+dir*line.Magnitude*.3})
+							Debris:AddItem(streak,.25)
+						end
+					end
+					shockRing(fx.folder,to-Vector3.new(0,2.6,0),color,2,11,.3)
+					sound(anchorPart(fx.folder,to),SOUND.whooshBy or SOUND.whoosh,.5,1.1)
+					return true
+				end
 				smokePuff(fx.folder,from,color,14,2)
 				flash(fx.folder,from,edge,1,4,.18,.3)
 				smokePuff(fx.folder,to,color,10,1.6)
@@ -655,7 +700,9 @@ function FamilyFX.install(FX,kit)
 				local arm=new("Model",{Name="ShukakuArm"},fx.folder)
 				local sandTone,dark=c3(look.color),c3(look.color2)
 				local function lump(size,tone)
-					local p=block(arm,size,CFrame.new(origin),tone,Enum.Material.Sand)
+					-- (Studio 06/11: the Sand material read olive green in the arena's
+					-- light) plain smooth sand colour
+					local p=block(arm,size,CFrame.new(origin),tone,Enum.Material.SmoothPlastic)
 					new("SpecialMesh",{MeshType=Enum.MeshType.Sphere},p)
 					return p
 				end

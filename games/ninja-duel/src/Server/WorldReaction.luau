@@ -160,6 +160,9 @@ local SHAPES={
 	scorch={round=true,depth=.04,grow=1/14,min=1.4,max=7,burn=true,transparency=.12},
 	char={round=true,depth=.04,grow=1/18,min=1,max=4,burn=true,transparency=.08},
 	wet={round=true,depth=.03,grow=1/12,min=1.6,max=6,transparency=.45},
+	-- (06/11) the furrow a body ploughs sliding on its back: wide, shallow,
+	-- in relief (the ground pushed up on both sides), its own budget
+	skid={round=false,depth=.06,grow=1/20,min=1.2,max=2.6,width=.7},
 }
 WorldReaction.Shapes=SHAPES
 local function scarSize(kind,energy)
@@ -172,7 +175,7 @@ local function evict(list,max)
 		if old.part then old.part:Destroy() end
 	end
 end
-local RELIEF={crater=true,gouge=true,trench=true,crack=true}
+local RELIEF={crater=true,gouge=true,trench=true,crack=true,skid=true}
 local CRACK=Color3.fromRGB(28,22,17)
 local okCS,CS=pcall(function() return game:GetService("CollectionService") end)
 if not okCS then CS=nil end
@@ -343,13 +346,24 @@ function WorldReaction.scar(c,kind,surface,position,normal,energy,along,class)
 	end
 	table.insert(w.scars,entry)
 	w.stats.scars+=1
-	if entry.floor then
+	if kind=="skid" then
+		-- Skids have their own budget (a slide lays several): they never push
+		-- a crater or a scorch out of the floor's.
+		entry.expires=c.now+TUNE.Skid.Fade
+		local n=0
+		for _,s2 in w.scars do if s2.kind=="skid" then n+=1 end end
+		while n>TUNE.Skid.Max do
+			for k,s2 in w.scars do
+				if s2.kind=="skid" then table.remove(w.scars,k);WorldReaction.fade(c,s2);n-=1;break end
+			end
+		end
+	elseif entry.floor then
 		-- The floor's own budget: the oldest floor mark leaves first.
 		local n=0
-		for _,s2 in w.scars do if s2.floor then n+=1 end end
+		for _,s2 in w.scars do if s2.floor and s2.kind~="skid" then n+=1 end end
 		while n>TUNE.MaxFloorScars do
 			for k,s2 in w.scars do
-				if s2.floor then table.remove(w.scars,k);WorldReaction.fade(c,s2);n-=1;break end
+				if s2.floor and s2.kind~="skid" then table.remove(w.scars,k);WorldReaction.fade(c,s2);n-=1;break end
 			end
 		end
 	end
@@ -555,6 +569,35 @@ function WorldReaction.landing(c,a,hit,fall)
 	a.worldHitPart=hit.Instance;a.worldHitAt=c.now
 	return WorldReaction.impact(c,{part=hit.Instance,position=Vector3.new(a.root.Position.X,hit.Position.Y,a.root.Position.Z),normal=hit.Normal,
 		energy=fall*TUNE.BodyEnergy,contact="blunt",source=a.reactionSource and a.reactionSource.id})
+end
+-- (06/11) A blow that throws a body (a knockback, a launcher, a heavy) tears
+-- the ground where its feet were: a crack for a push, a small crater for a
+-- launch up. Only blows strong enough (TUNE.Blow.Speed) and grounded bodies.
+function WorldReaction.blow(c,a,velocity,kind)
+	if not velocity or a.airborne then return nil end
+	local speed=velocity.Magnitude
+	if speed<TUNE.Blow.Speed then return nil end
+	local hit=workspace:Raycast(a.root.Position,Vector3.new(0,-4.2,0),c:rayParams(true))
+	if not hit or hit.Normal.Y<.6 then return nil end
+	local rec=WorldReaction.record(c,hit.Instance)
+	if not rec then return nil end
+	local flat=Vector3.new(velocity.X,0,velocity.Z)
+	local up=kind=="Launched" or velocity.Y>flat.Magnitude
+	local energy=speed*TUNE.Blow.Energy
+	return WorldReaction.scar(c,if up then "crater" else "crack",hit.Instance,hit.Position,hit.Normal,energy,
+		if flat.Magnitude>.1 then flat.Unit else nil,rec.class)
+end
+-- (06/11) A body sliding on the floor ploughs it: a skid mark every
+-- TUNE.Skid.Every seconds along its slide.
+function WorldReaction.skid(c,a,skid)
+	local speed=skid.Magnitude
+	if speed<TUNE.Skid.Speed or c.now-(a.skidMarkAt or -1)<TUNE.Skid.Every then return nil end
+	a.skidMarkAt=c.now
+	local hit=workspace:Raycast(a.root.Position,Vector3.new(0,-4.2,0),c:rayParams(true))
+	if not hit or hit.Normal.Y<.6 then return nil end
+	local rec=WorldReaction.record(c,hit.Instance)
+	if not rec then return nil end
+	return WorldReaction.scar(c,"skid",hit.Instance,hit.Position-skid.Unit*.6,hit.Normal,speed*2,skid.Unit,rec.class)
 end
 -- A projectile reached a surface.
 function WorldReaction.projectile(c,p,hit)

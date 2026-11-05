@@ -881,35 +881,85 @@ local function impact(fx,impact,folder)
 		local rng=Random.new(impact.serial or math.floor(p.X*7+p.Z*13))
 		local holder=K.new("Model",{Name="Puddle"},fx.folder)
 		local patches={}
-		local function patch(at,w,d,color,transparency)
-			local part=K.block(holder,Vector3.new(w,.06,d),CFrame.new(at)*CFrame.Angles(0,rng:NextNumber(0,math.pi*2),0),color,Enum.Material.Glass,"Part")
+		-- (06/11, user: « la flaque est mieux mais pas très belle ») It read
+		-- as a flat sheet of blue plastic laid on the sand. Water over sand is
+		-- mostly the sand, darker and glossy: three layers now -
+		--   soaked ground: the floor's own colour darkened, ragged, wider
+		--     than the water (the sand drank the edge);
+		--   the water: barely blue, see-through over the soaked ground, very
+		--     reflective (it mirrors the sky);
+		--   a few bright glints of sky on it.
+		local floorColor=if hit and hit.Instance and hit.Instance:IsA("BasePart") then hit.Instance.Color else rgb(196,168,120)
+		local SOAK=floorColor:Lerp(rgb(40,34,30),.45)
+		local WATER=rgb(78,110,132)
+		local function patch(at,w,d,color,transparency,material,reflect,yaw)
+			local part=K.block(holder,Vector3.new(w,.06,d),CFrame.new(at)*CFrame.Angles(0,yaw or rng:NextNumber(0,math.pi*2),0),color,material,"Part")
 			K.new("SpecialMesh",{MeshType=Enum.MeshType.Sphere,Scale=Vector3.new(1,.4,1)},part)
-			part.Reflectance=.32;part.Transparency=1;part.CastShadow=false
+			part.Reflectance=reflect or 0;part.Transparency=1;part.CastShadow=false
 			table.insert(patches,{part=part,size=part.Size,transparency=transparency})
 			return part
 		end
-		-- one broad body, then lobes round its edge (an outline that is not a circle)
-		patch(ground+Vector3.new(0,.03,0),radius*1.5,radius*1.25,rgb(52,92,128),.42)
-		for k=1,6 do
-			local a=k/6*math.pi*2+rng:NextNumber(-.3,.3)
-			local off=Vector3.new(math.cos(a),0,math.sin(a))*radius*rng:NextNumber(.45,.7)
-			local s=radius*rng:NextNumber(.5,.8)
-			patch(ground+off+Vector3.new(0,.035+k*.002,0),s,s*rng:NextNumber(.6,.9),rgb(60,104,142),.46)
+		-- soaked ground: one body, lobes round it (opaque, one colour: no seams)
+		patch(ground+Vector3.new(0,.02,0),radius*1.75,radius*1.5,SOAK,0,Enum.Material.SmoothPlastic)
+		for k=1,8 do
+			local a=k/8*math.pi*2+rng:NextNumber(-.3,.3)
+			local off=Vector3.new(math.cos(a),0,math.sin(a))*radius*rng:NextNumber(.55,.85)
+			local sz=radius*rng:NextNumber(.45,.75)
+			patch(ground+off+Vector3.new(0,.018-k*.001,0),sz,sz*rng:NextNumber(.6,.9),SOAK,0,Enum.Material.SmoothPlastic)
 		end
-		-- a lighter sheen in the middle, where the water is deepest
-		patch(ground+Vector3.new(0,.05,0),radius*.7,radius*.55,rgb(120,176,214),.55)
+		-- the water: smaller than the soaked ground, see-through, glossy
+		patch(ground+Vector3.new(0,.05,0),radius*1.35,radius*1.1,WATER,.45,Enum.Material.Glass,.45)
+		for k=1,4 do
+			local a=k/4*math.pi*2+rng:NextNumber(-.4,.4)
+			local off=Vector3.new(math.cos(a),0,math.sin(a))*radius*rng:NextNumber(.3,.5)
+			local sz=radius*rng:NextNumber(.45,.65)
+			patch(ground+off+Vector3.new(0,.048,0),sz,sz*rng:NextNumber(.6,.85),WATER,.45,Enum.Material.Glass,.45)
+		end
+		-- glints of sky
+		for k=1,3 do
+			local off=Vector3.new(rng:NextNumber(-1,1),0,rng:NextNumber(-1,1))*radius*.4
+			patch(ground+off+Vector3.new(0,.07,0),radius*rng:NextNumber(.12,.22),radius*rng:NextNumber(.04,.07),rgb(230,244,255),.35,Enum.Material.SmoothPlastic,0)
+		end
 		for _,entry in patches do
 			entry.part.Size=entry.size*Vector3.new(.35,1,.35)
 			K.tween(entry.part,.28,{Size=entry.size,Transparency=entry.transparency},Enum.EasingStyle.Quad,Enum.EasingDirection.Out)
 		end
-		-- the splash where it lands, then small ripples now and then
+		-- the splash where it lands (VFX Studio's water burst and droplets),
+		-- then rings spreading on the water now and then (its ripple flipbook,
+		-- laid flat on the surface)
 		K.shockRing(fx.folder,ground+Vector3.new(0,.12,0),rgb(200,230,255),1,radius*1.6,.4)
-		for k=1,math.floor((life-1)/.9) do
-			task.delay(k*.9,function()
+		local TEX=K.TEX or {}
+		local water=K.new("Part",{Name="PuddleWater",Size=Vector3.new(.2,.2,.2),CFrame=CFrame.new(ground+Vector3.new(0,.12,0)),Transparency=1,
+			Anchored=true,CanCollide=false,CanQuery=false,CanTouch=false},holder)
+		local at=K.new("Attachment",{},water)
+		if TEX.splash then
+			local splash=K.new("ParticleEmitter",{Texture=TEX.splash,FlipbookLayout=Enum.ParticleFlipbookLayout.Grid8x8,FlipbookMode=Enum.ParticleFlipbookMode.OneShot,
+				Rate=0,Lifetime=NumberRange.new(.55,.65),Speed=NumberRange.new(0,0),Color=ColorSequence.new(rgb(190,225,255)),LightEmission=.25,
+				Size=K.num({{0,radius*.6},{1,radius*.9}}),Transparency=K.num({{0,.05},{1,.4}}),Rotation=NumberRange.new(0,360)},at)
+			splash:Emit(2)
+		end
+		if TEX.droplets then
+			local drops=K.new("ParticleEmitter",{Texture=TEX.droplets,FlipbookLayout=Enum.ParticleFlipbookLayout.Grid4x4,FlipbookMode=Enum.ParticleFlipbookMode.OneShot,
+				Rate=0,Lifetime=NumberRange.new(.5,.8),Speed=NumberRange.new(8,16),SpreadAngle=Vector2.new(50,50),EmissionDirection=Enum.NormalId.Top,
+				Acceleration=Vector3.new(0,-40,0),Color=ColorSequence.new(rgb(200,232,255)),LightEmission=.2,Size=K.num({{0,1.2},{1,.8}}),
+				Transparency=K.num({{0,0},{1,.6}})},at)
+			drops:Emit(10)
+		end
+		local ripples=TEX.ripple and K.new("ParticleEmitter",{Texture=TEX.ripple,FlipbookLayout=Enum.ParticleFlipbookLayout.Grid4x4,
+			FlipbookMode=Enum.ParticleFlipbookMode.OneShot,Orientation=Enum.ParticleOrientation.VelocityPerpendicular,EmissionDirection=Enum.NormalId.Top,
+			Rate=0,Lifetime=NumberRange.new(.9,1.1),Speed=NumberRange.new(.01,.01),Color=ColorSequence.new(rgb(205,232,255)),LightEmission=.15,
+			Size=K.num({{0,1.5},{1,3.4}}),Transparency=K.num({{0,.25},{1,1}}),Rotation=NumberRange.new(0,360)},at)
+		for k=1,math.floor((life-1)/.7) do
+			task.delay(k*.7,function()
 				if not holder.Parent then return end
 				local a=rng:NextNumber(0,math.pi*2)
-				local at=ground+Vector3.new(math.cos(a),0,math.sin(a))*radius*rng:NextNumber(0,.6)+Vector3.new(0,.1,0)
-				K.shockRing(fx.folder,at,rgb(190,222,250),.4,2.6,.7)
+				local spot=Vector3.new(math.cos(a),0,math.sin(a))*radius*rng:NextNumber(0,.6)
+				if ripples then
+					at.Position=spot
+					ripples:Emit(1)
+				else
+					K.shockRing(fx.folder,ground+spot+Vector3.new(0,.1,0),rgb(190,222,250),.4,2.6,.7)
+				end
 			end)
 		end
 		task.delay(math.max(0,life-.9),function()
