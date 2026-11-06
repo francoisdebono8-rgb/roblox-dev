@@ -2460,4 +2460,7 @@ require(script.Parent.ChakraFlowFX).install(FX,{new=new,block=block,tween=tween,
 -- Temari (the iron fan, Kamaitachi, Kamatari, wind lanes and updrafts, gusts).
 require(script.Parent.GaleFX).install(FX,{new=new,block=block,tween=tween,sound=sound,flash=flash,shockRing=shockRing,burst=burst,
 	smokePuff=smokePuff,floorUnder=floorUnder,anchorPart=anchorPart,weldAll=weldAll,num=num,seq=seq,TEX=TEX,SOUND=SOUND,BUILD=BUILD})
+-- (06/11) What the viewer's eyes read of a speed jutsu: ink for ordinary
+-- eyes, afterimages and the strike to come for the Sharingan (Shared/Sight).
+require(script.Parent.PerceptionFX).install(FX,{block=block,sound=sound,anchorPart=anchorPart,SOUND=SOUND})
 return FX

@@ -9,11 +9,13 @@ local Fighters = {
 		-- Shared ninja tools: everyone throws; mastery changes what a throw does.
 		-- Minato: one fast kunai, the quickest recovery (the seals are his art).
 		ToolMastery = { Kind = "kunai", Count = 1, Speed = 96, Damage = 3, Recover = .55 },
+		-- (06/11) Unreadable: too fast for ordinary eyes (Shared/Sight); the
+		-- Sharingan reads him.
 		-- Awakening: the Yellow Flash. Relocations chain: every Flying Thunder God
 		-- leaves a seal where he stood (FlashWake), a body he launched or knocked
 		-- away is a destination by itself (FlashPursuit), the arrival stays open
 		-- longer; faster legs and techniques back almost at once.
-		Awakening = { Name = "YELLOW FLASH", Speed = 1.18, Regen = 1.5, Cooldown = 0.4, FlashWake = true, FlashPursuit = true, Arrival = 0.8, Color = { 255, 214, 92 } },
+		Awakening = { Name = "YELLOW FLASH", Unreadable = true, Speed = 1.18, Regen = 1.5, Cooldown = 0.4, FlashWake = true, FlashPursuit = true, Arrival = 0.8, Color = { 255, 214, 92 } },
 		AttackProfile = {
 			Light1={startup=.82,recovery=.9,travel=1.08,angle=.24,kind="slash"},Light2={startup=.84,recovery=.9,travel=1.12,angle=-.3,kind="palm"},
 			Light3={startup=.82,recovery=.88,travel=1.2,angle=.36,impulseZ=52},Launcher={startup=.72,travel=1.16,impulseY=62},
@@ -234,7 +236,7 @@ local Fighters = {
 		-- (Stage 6, 13:42 decision) The gates only in the awakening: the first
 		-- opens at once, one more every 4 s up to the fifth (Gates); speed,
 		-- damage and the health they cost grow with each.
-		Awakening = { Name = "EIGHT GATES", Speed = 1.18, Damage = 1.1, Regen = 1.6, Cooldown = 0.5, HealthDrain = 2, Gates = { Step = 4, Max = 5 }, Duration = 22, Color = { 120, 230, 140 } },
+		Awakening = { Name = "EIGHT GATES", Unreadable = true, Speed = 1.18, Damage = 1.1, Regen = 1.6, Cooldown = 0.5, HealthDrain = 2, Gates = { Step = 4, Max = 5 }, Duration = 22, Color = { 120, 230, 140 } },
 		AttackProfile = {
 			Light1={startup=.85,recovery=.9,travel=1.1},Light2={startup=.86,recovery=.9,range=6.6,kind="kick",damage=.8},
 			Light3={startup=.9,recovery=.95,impulseZ=58,range=6.8,damage=.75},Heavy={startup=.9},
@@ -246,7 +248,7 @@ local Fighters = {
 			-- strike started by the jutsu pipeline (like the Chidori thrust).
 			{ Id = "LeafGreatWhirlwind", Name = "Leaf Great Whirlwind", Cost = 10, Channel = 0.08, Active = 0.05, Recovery = 0.1, Cooldown = 2.6, Interruptible = true, Range = 15, Damage = 9, Hint = "A spinning kick across the gap • knocks away • E to chase • ends a clean string" },
 			{ Id = "PrimaryLotus", Name = "Primary Lotus", Family = "Sequence", Opener = "Launcher", Cost = 18, Channel = 0.1, Active = 0.04, Recovery = 0.3, Cooldown = 9, Interruptible = true, Range = 13, Hint = "Seize, fly up, drive him head first into the floor • costs health" },
-			{ Id = "RemoveWeights", Name = "Remove the Weights", Family = "Buff", Time = 8, Speed = 1.25, Kind = "weights", Cost = 10, Channel = 0.3, Active = 0.05, Recovery = 0.2, Cooldown = 16, Interruptible = true, Hint = "Speed + 25 % for 8 s" },
+			{ Id = "RemoveWeights", Name = "Remove the Weights", Family = "Buff", Time = 8, Speed = 1.25, Kind = "weights", Unreadable = true, Cost = 10, Channel = 0.3, Active = 0.05, Recovery = 0.2, Cooldown = 16, Interruptible = true, Hint = "Speed + 25 % for 8 s" },
 			{ Id = "DynamicEntry", Name = "Dynamic Entry", Family = "Teleport", To = "Aim", Distance = 24, Short = 3, Move = "FlyingKick", Cost = 14, Channel = 0.08, Active = 0.02, Recovery = 0.2, Cooldown = 5, Interruptible = true, Range = 26, Damage = 13, Kind = "leaf", Hint = "The flying kick from across the field" },
 		},
 	},

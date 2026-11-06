@@ -7,6 +7,8 @@ local Zones=require(script.Parent.Zones)
 local Families=require(script.Parent.Families)
 local Perception=require(script.Parent.Perception)
 local Ultimates=require(script.Parent.Ultimates)
+-- (06/11) What these eyes can read of a speed jutsu (the Sharingan reads it).
+local Sight=require(game:GetService("ReplicatedStorage").NinjaDuel.Sight)
 -- Family techniques (roster breadth pass): when one is worth using is read
 -- from its family and its own spec.AI band, never from the fighter's name.
 local function familyWants(self,c,a,target,spec,distance,danger)
@@ -535,8 +537,15 @@ function AI:update(now)
 		self.wallRun=now+1.1;self.wallSide=if self.rng:NextNumber()<.5 then 1 else -1
 		return
 	end
+	-- (06/11) A speed jutsu (Shared/Sight): eyes without the Sharingan do not
+	-- see the wind-up at all and read the entry far less; the Sharingan reads
+	-- it, and sooner than an ordinary strike.
+	local unreadable=Sight.unreadable(target,now)
+	local blind=unreadable and not Sight.reads(a,now)
+	local readScale=if blind then .3 else 1
+	local latency=tune.Reaction*(if unreadable and not blind then .6 else 1)
 	if target.state~=self.observed then
-  if target.state=="Startup" or target.state=="TechniqueChannel" then self.threatAt=now end
+  if (target.state=="Startup" or target.state=="TechniqueChannel") and not blind then self.threatAt=now end
   self.observed=target.state;self.observedAt=now
  end
 	-- Reads: an opponent stepping into melee range is answered before the
@@ -585,26 +594,27 @@ function AI:update(now)
 	if a.def.Zoner and self:zone(now,distance,toward,tangent,target) then return end
 	if entering and free then
 		local roll=self.rng:NextNumber()
-		if roll<tune.ReadGuard then
+		local guardRead,dodgeRead,pokeRead=tune.ReadGuard*readScale,tune.ReadDodge*readScale,tune.ReadPoke*readScale
+		if roll<guardRead then
 			reflexGuard(self,c,a,.42);return
-		elseif roll<tune.ReadGuard+tune.ReadDodge and a.dodgeUntil<=now then
+		elseif roll<guardRead+dodgeRead and a.dodgeUntil<=now then
 			a.move=tangent*(self.strafeSign or 1)
 			if c:request(a,"Dodge") then return end
-		elseif roll<tune.ReadGuard+tune.ReadDodge+tune.ReadPoke and distance<7.5 then
+		elseif roll<guardRead+dodgeRead+pokeRead and distance<7.5 then
 			if c:request(a,"Attack") then return end
 		end
 	end
 	-- Toe to toe with a fighter who is not swinging yet: sometimes hold a
 	-- guard in anticipation (a parry if the strike comes right then).
-	if free and distance<7 and target.state=="Neutral" and not target.reaction and self.rng:NextNumber()<tune.GuardRead then
+	if free and distance<7 and target.state=="Neutral" and not target.reaction and self.rng:NextNumber()<tune.GuardRead*readScale then
 		c:request(a,"Guard");self.guardUntil=now+.28+self.rng:NextNumber()*.22;return
 	end
-	local reacted=now-self.observedAt>=tune.Reaction
+	local reacted=now-self.observedAt>=latency and not (blind and target.state=="Startup")
 	local danger=target.state=="Startup" or target.state=="TechniqueChannel"
 	local reactedThreat=reacted and (target.state=="Startup" or target.state=="Active")
  -- Remember the wind-up through Active/Recovery: short attacks used to erase
  -- the observation before reaction latency elapsed, so defense never fired.
- local remembered=self.threatAt and now-self.threatAt>=tune.Reaction and now-self.threatAt<.9
+ local remembered=self.threatAt and now-self.threatAt>=latency and now-self.threatAt<.9
  if remembered and distance<9 and a.state=="Neutral" and not a.reaction then
   self.threatAt=nil
   if target.state=="Recovery" then
