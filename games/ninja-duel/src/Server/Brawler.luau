@@ -1294,7 +1294,11 @@ function Brawler.clash(c,a,p)
  -- Simultaneous means the two active frames start within the clash window
  -- (the other swing may be a frame or two from becoming active).
  local other=if b.state=="Active" then (b.activeAt or 10) else b.untilTime
- if math.abs((a.activeAt or -10)-other)>Config.Clash.Window then return false end
+ -- (06/11, Studio) Rasengan into Chidori: two held jutsu thrown at each other
+ -- meet even when their active frames do not start in the same instant (the
+ -- 0.07 s window of two punches never came up in a real exchange).
+ local jutsu=require(script.Parent.Interactions).jutsuPair(p,q)
+ if math.abs((a.activeAt or -10)-other)>(if jutsu then Config.Clash.JutsuWindow or .35 else Config.Clash.Window) then return false end
  local delta=b.root.Position-a.root.Position
  local flat=Vector3.new(delta.X,0,delta.Z)
  if flat.Magnitude<.1 or delta.Magnitude>math.max(p.spec.range or 6,q.spec.range or 6)+1.5 then return false end

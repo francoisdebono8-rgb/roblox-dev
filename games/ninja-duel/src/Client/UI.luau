@@ -1216,6 +1216,11 @@ function UI:render(data)
 		or cue:find("CLONE") or cue:find("U-ZU-MA-KI")
 		-- (05/11) how to get out of a blow (Combat.escapeOpen)
 		or cue:find("TO ESCAPE")
+		-- (06/11, Studio) the jutsu that meet (Interactions) and the steps of an
+		-- awakening said nothing: steam, the water carrying lightning, the fire
+		-- running the wire, Lee's gates, a summoning, a body switch.
+		or cue:find("STEAM") or cue:find("WATER") or cue:find("SOAKED") or cue:find("DRAGON FLAME")
+		or cue:find("GATE") or cue:find("SUMMONING") or cue:find("BODY SWITCH")
 	cue=if pad then UI.padCue(cue) else Controls.localize(cue)
 	self.cue.Text=if loud then cue else ""
 	-- (FEEL 05/11, AVANT defect 3) The quiet line: why the last button did

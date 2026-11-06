@@ -493,27 +493,63 @@ Techniques.Quickstep={
 		c:cue(a,if moved>3 then "ANGLE CREATED" else "ANGLE BLOCKED")
 	end,
 }
--- Great Fireball; on an opponent held by Sasuke's wire it becomes the Dragon
--- Flame: the fire runs along the wire and cannot miss.
-Techniques.FireBloom={check=function() return true end,execute=function(c,a,pending,now)
+-- Dragon Flame: a Katon on an opponent held by Sasuke's wire runs along the
+-- wire and cannot miss.
+-- (06/11, Studio) the bind told the player "1 = DRAGON FLAME" while key 1 is
+-- the Phoenix Flower and only 4 (the Great Fireball) ran the wire: pressing 1
+-- threw flowers past it. Either Katon on the bar now runs the wire while it
+-- holds, and the cue names the keys the bar really shows.
+local WIRE_FIRE={FireBloom=true,PhoenixFlower=true}
+function Techniques.wireFireKeys(a)
+	local keys={}
+	for i,t in (a.def and a.def.Techniques) or {} do if WIRE_FIRE[t.Id] then table.insert(keys,tostring(i)) end end
+	return if #keys>0 then table.concat(keys," OR ") else "KATON"
+end
+local function dragonFlame(c,a,pending)
 	local b=a.wireVictim
-	if b and b.reaction=="Bound" and b.boundBy==a and b.health>0 then
-		a.wireVictim=nil;b.boundBy=nil
-		c.damageTag="Dragon Flame"
-		local hit=c:damage(a,b,pending.spec.Damage,true,false)
-		c.damageTag=nil
-		if c.match.phase~="Duel" then return end
-		-- The flame runs the wire from the hand (or its stake) to the body.
-		require(script.Parent.ChakraCombat).dragonFlame(c,a,b)
-		if hit then
-			local away=b.root.Position-a.root.Position;away=Vector3.new(away.X,0,away.Z)
-			away=if away.Magnitude>.1 then away.Unit else a.root.CFrame.LookVector
-			local Brawler=require(script.Parent.Brawler)
-			Brawler.react(c,b,"Knockdown",away*30+Vector3.new(0,22,0),.8,a)
-		end
+	if b and b.reaction=="Bound" and b.boundBy==a and b.health>0 and (a.wireBurnUntil or 0)<=c.now then
+		-- (Studio 06/11) the wire stays his until the fire reaches the body: let
+		-- go here, the held wire vanished the instant the run began.
+		-- (06/11, user: « le katon ne suit pas les fils de Sasuke ») Studio: the
+		-- fire burst on the body the instant he breathed it, the wire never
+		-- seen burning. The flame runs the wire now, from his mouth to the
+		-- body, and the wire holds him until it arrives; a body that slipped
+		-- the wire meanwhile (substitution) leaves it burning on nothing.
+		local Chakra=require(script.Parent.ChakraCombat)
+		local from=Chakra.wireStart(c,a)
+		local travel=math.clamp((b.root.Position-from).Magnitude/Chakra.WireRun,.12,.45)
+		b.reactionUntil=math.max(b.reactionUntil or 0,c.now+travel+.08)
+		a.wireBurnUntil=c.now+travel
+		Chakra.dragonRun(c,a,b,travel)
 		c:cue(a,"KATON • DRAGON FLAME",1)
-		return
+		-- (the Great Fireball's damage, whichever Katon key ran the wire)
+		local damage=pending.spec.Damage
+		for _,t in a.def.Techniques or {} do if t.Id=="FireBloom" then damage=t.Damage or damage end end
+		c:schedule(c.now+travel,function()
+			if a.wireVictim==b then a.wireVictim=nil end
+			if a.health<=0 or c.match.phase~="Duel" then return end
+			if b.health<=0 or b.reaction~="Bound" or b.boundBy~=a then return end
+			b.boundBy=nil
+			c.damageTag="Dragon Flame"
+			local hit=c:damage(a,b,damage,true,false)
+			c.damageTag=nil
+			if c.match.phase~="Duel" then return end
+			Chakra.dragonFlame(c,a,b)
+			if hit then
+				local away=b.root.Position-a.root.Position;away=Vector3.new(away.X,0,away.Z)
+				away=if away.Magnitude>.1 then away.Unit else a.root.CFrame.LookVector
+				local Brawler=require(script.Parent.Brawler)
+				Brawler.react(c,b,"Knockdown",away*30+Vector3.new(0,22,0),.8,a)
+			end
+		end)
+		return true
 	end
+	return false
+end
+Techniques.dragonFlame=dragonFlame
+-- Great Fireball (or the Dragon Flame on a wired body).
+Techniques.FireBloom={check=function() return true end,execute=function(c,a,pending,now)
+	if dragonFlame(c,a,pending) then return end
 	Elements.fire(c,a,pending,now)
 end}
 -- Wire Trap: a shuriken trailing ninja wire; a body it reaches is bound.
@@ -548,7 +584,7 @@ function Techniques.wireBind(c,owner,victim,riders,direction)
 	-- The wire is a conductor while it holds: Sasuke's lightning may run down it
 	-- (ChakraCombat.conduct), bounded from the moment the bind started.
 	victim.boundAt=c.now;victim.wireConducts=0
-	c:cue(owner,if pinned then "WIRED TO THE WALL • 1 = DRAGON FLAME" else "WIRED • 1 = DRAGON FLAME",.9);c:cue(victim,"WIRED • Q TO ESCAPE",.9)
+	c:cue(owner,(if pinned then "WIRED TO THE WALL • " else "WIRED • ")..Techniques.wireFireKeys(owner).." = DRAGON FLAME",.9);c:cue(victim,"WIRED • Q TO ESCAPE",.9)
 	Brawler.event(c,owner,if pinned then "WirePin" else "WireBind")
 end
 -- Chidori: the charge is the channel (slowed, interruptible); the release is
@@ -935,7 +971,11 @@ function Techniques.rotationCounter(c,a)
 		end)
 	end
 end
-Techniques.PhoenixFlower={check=function() return true end,execute=Elements.phoenix}
+Techniques.PhoenixFlower={check=function() return true end,execute=function(c,a,pending,now)
+	-- (on a body his wire holds: the Dragon Flame, see FireBloom)
+	if dragonFlame(c,a,pending) then return end
+	return Elements.phoenix(c,a,pending,now)
+end}
 -- Minato's Wind Cut: a crescent of wind thrown off the kunai's edge on the run
 -- (the legs never stop). It cuts enemy blades out of its lane, and a body it
 -- cuts is thrown a step sideways with a short wind seal on it: the very next
@@ -1059,8 +1099,27 @@ function Techniques.cursedLeaf(c,a,b)
 end
 -- Curse Mark drain: it burns faster while he is not landing blows (hunger),
 -- pauses for a moment after each one, and never kills.
+-- (06/11, Studio) Lee's gates opened one by one on the server (speed, damage
+-- and the drain grew with them) and nothing on screen said so: one label and
+-- a faint flush for twenty seconds. Each gate that opens is announced now (its
+-- name on screen, a burst on his body) and the snapshot carries which is open.
+local GATE_NAMES={"GATE OF OPENING","GATE OF HEALING","GATE OF LIFE","GATE OF PAIN","GATE OF LIMIT"}
+function Techniques.gateStep(c,a,now)
+	local tune=a.def.Awakening
+	if not (tune and tune.Gates) or (a.awakenUntil or 0)<=now or a.health<=0 then a.gateOpen=nil;return end
+	local g=tune.Gates
+	local gate=math.min(g.Max or 5,1+math.floor((now-(a.awakenedAt or now))/(g.Step or 4))) -- (Combat.gateOf)
+	if a.gateAwake~=a.awakenedAt then a.gateAwake=a.awakenedAt;a.gateOpen=gate;return end
+	if gate==a.gateOpen then return end
+	a.gateOpen=gate
+	c:pushImpact(a.root.Position,"gate",gate>=(tune.Gates.Max or 5),{owner=a.id,fighter=a.fighterId,gate=gate})
+	c:cue(a,"GATE "..gate.." • "..(GATE_NAMES[gate] or "GATE").." OPEN",1.1)
+	if a.target then c:cue(a.target,"LEE • "..(GATE_NAMES[gate] or "GATE").." OPEN",.9) end
+	require(script.Parent.Brawler).event(c,a,"Gate"..gate)
+end
 function Techniques.curseDrain(c,a,dt,now)
 	local tune=a.def.Awakening
+	Techniques.gateStep(c,a,now)
 	if not (tune and tune.HealthDrain) or (a.awakenUntil or 0)<=now or a.health<=1 then a.curseHunger=false;return end
 	local rate=tune.HealthDrain
 	-- Lee's gates: each one open costs a fifth more of the full drain.

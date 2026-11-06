@@ -150,7 +150,7 @@ local Fighters = {
 				State = { Time = 2.6, Drain = 6, Strike = "ChidoriThrust", Air = "WallDive", Wall = "WallDive", AirVariant = "ChidoriDive", WallVariant = "ChidoriDive", Dive = true,
 					Teach = "JUMP, THEN ATTACK: DIVE", Damage = 22, World = { contact = "energy", element = "lightning" }, Style = "chidori", Name = "Chidori" },
 				Hint = "Form it, move with it, then strike • a miss leaves him open" },
-			{ Id = "WireTrap", Name = "Wire Trap", Cost = 18, Channel = 0.18, Active = 0.08, Recovery = 0.3, Cooldown = 6, Interruptible = true, Range = 34, Damage = 3, Hint = "A wired shuriken binds • then R1 + × (4) for Dragon Flame" },
+			{ Id = "WireTrap", Name = "Wire Trap", Cost = 18, Channel = 0.18, Active = 0.08, Recovery = 0.3, Cooldown = 6, Interruptible = true, Range = 34, Damage = 3, Hint = "A wired shuriken binds • then a Katon (1 or 4) runs the wire: Dragon Flame" },
 			{ Id = "FireBloom", Name = "Great Fireball", Element = "Fire", Cost = 24, Channel = 0.32, Active = 0.4, Recovery = 0.36, Cooldown = 5.5, Interruptible = true, Feintable = true, Range = 70, Speed = 64, Radius = 2, Growth = 1.6, Damage = 15,
 				-- (Reference quality) Tap: the quick breath. Held: he keeps drawing
 				-- in for up to Time more seconds (Cost chakra over it) and the ball

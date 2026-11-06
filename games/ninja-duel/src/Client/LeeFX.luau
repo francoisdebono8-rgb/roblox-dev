@@ -87,10 +87,21 @@ local function windUp(fx,impact)
 	K.shockRing(fx.folder,at-Vector3.new(0,2.6,0),DUST,2,9,.3)
 	kickDust(fx,at-Vector3.new(0,2.4,0),10,1.4)
 end
+-- (06/11) A gate opening (Server Techniques.gateStep): a green burst off his
+-- body, the floor cracking under him from the third on.
+local function gateOpens(fx,impact)
+	local at=impact.position
+	local gate=impact.gate or 2
+	K.shockRing(fx.folder,at,GATE,1.5,8+gate*3,.35)
+	K.flash(fx.folder,at,GATE_CORE,.6,3+gate*.6,.2,.3)
+	if gate>=3 then crater(fx,at,3+gate) end
+	K.sound(K.anchorPart(fx.folder,at),K.SOUND.boom,.25+gate*.05,1.6-gate*.08)
+end
 local function impact(fx,data,folder)
 	if data.fighter~=LEE then return false end
 	local style=data.style
 	if style=="awaken" then awaken(fx,data,folder);return true end
+	if style=="gate" then gateOpens(fx,data);return true end
 	if style=="chase" or style=="afterimage" then speed(fx,data,folder);return true end
 	if style=="repel" then rupture(fx,data);return true end
 	if style=="cast" and data.technique=="LeafGreatWhirlwind" then windUp(fx,data);return true end
@@ -115,6 +126,14 @@ local function gate(fx,model,actor,st)
 	end
 	if aura and aura.trail and not aura.leeTrail then aura.trail.Color=ColorSequence.new(GATE);aura.leeTrail=true end
 	local head=model:FindFirstChild("Head")
+	-- (06/11) the flush and the steam grow with the gate that is open.
+	local gateNow=if open then (actor.gate or 1) else 0
+	if open and st.flush and st.gate~=gateNow then
+		st.gate=gateNow
+		for _,p in st.flush do if p.Parent then K.tintLayer(p,"flush",math.min(.85,.3+gateNow*.11)) end end
+		local e=st.steam and st.steam:FindFirstChildOfClass("ParticleEmitter")
+		if e then e.Rate=10+gateNow*8 end
+	end
 	if open and head and not st.flush then
 		-- (the original colours come from Effects' one record, shared with the
 		-- battle wear: each layer adds itself, nothing is restored blindly)
@@ -123,7 +142,7 @@ local function gate(fx,model,actor,st)
 		for _,p in model:GetDescendants() do
 			if skin and p:IsA("BasePart") and p.Name~="HumanoidRootPart" and p.Color and skinLike(K.baseColor(p),skin) then
 				table.insert(st.flush,p)
-				K.tintLayer(p,"flush",.45)
+				K.tintLayer(p,"flush",math.min(.85,.3+(actor.gate or 1)*.11))
 			end
 		end
 		local torso=model:FindFirstChild("UpperTorso") or head
@@ -131,7 +150,7 @@ local function gate(fx,model,actor,st)
 		K.new("ParticleEmitter",{Texture=K.TEX.smoke,Rate=18,Lifetime=NumberRange.new(.7,1.2),Speed=NumberRange.new(1.4,3),SpreadAngle=Vector2.new(35,35),
 			EmissionDirection=Enum.NormalId.Top,Acceleration=Vector3.new(0,2.5,0),Color=ColorSequence.new(STEAM),LightEmission=.25,LightInfluence=.3,
 			Size=K.num({{0,.7},{1,2.4}}),Transparency=K.num({{0,.62},{.4,.7},{1,1}}),Rotation=NumberRange.new(0,360),RotSpeed=NumberRange.new(-45,45)},at)
-		st.steam=at
+		st.steam=at;st.gate=nil
 	elseif not open and st.flush then
 		for _,p in st.flush do if p.Parent then K.tintLayer(p,"flush",nil) end end
 		st.flush=nil

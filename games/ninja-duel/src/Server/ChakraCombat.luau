@@ -276,6 +276,10 @@ end
 -- heavier than a small flame, then the jutsu volume, then weight, then age.
 local function dominant(p,q,vp,vq)
 	if vp.volume and vq.volume then
+		-- (06/11) between two jutsu the nature that wins leads (the Great
+		-- Fireball takes the Wind Cut into itself), else the older one.
+		if beats(vp.nature,vq.nature) then return p,q,vp,vq end
+		if beats(vq.nature,vp.nature) then return q,p,vq,vp end
 		if p.id<=q.id then return p,q,vp,vq end
 		return q,p,vq,vp
 	end
@@ -574,7 +578,7 @@ local function touchWire(c,w,x)
 			c:pushImpact(x.root.Position,"chidori",false,{owner=w.a.id,victim=x.id,chakra="surge",infusion="Lightning",from=point,to=x.root.Position})
 		end
 		-- ("WIRED": the HUD speaks it, like the Wire Trap hit's own cue.)
-		c:cue(w.a,"TRIPWIRE • WIRED • 1 = DRAGON FLAME",.9)
+		c:cue(w.a,"TRIPWIRE • WIRED • "..require(script.Parent.Techniques).wireFireKeys(w.a).." = DRAGON FLAME",.9)
 		Brawler.event(c,w.a,"TripwireBind")
 	end
 	record(c,"WireContact",applied,{owner=w.a.id,actor=x.id,charged=w.charged~=nil})
@@ -657,11 +661,24 @@ end
 function Chakra.dragonFlame(c,a,b)
 	-- (The technique has already let go of the body: the held wire of the
 	-- last tick is the one that burns.)
-	local from=wireStart(c,a)
 	local w=a.heldWire
 	if w then w.dead=true;a.heldWire=nil end
-	c:pushImpact(b.root.Position,"fire",true,{owner=a.id,normal=Vector3.yAxis,from=from,to=b.root.Position,victim=b.id,chakra="dragonflame",infusion="Fire"})
+	-- (06/11) the run along the wire is its own contact now (Chakra.dragonRun):
+	-- this is the blast where it arrives.
+	c:pushImpact(b.root.Position,"fire",true,{owner=a.id,normal=Vector3.yAxis,from=b.root.Position,to=b.root.Position,victim=b.id,chakra="dragonflame",infusion="Fire"})
 	Brawler.event(c,a,"DragonFlameWire")
+end
+-- (06/11, user: « le katon ne suit pas les fils de Sasuke ») The fire runs
+-- the wire: from his mouth (or the stake the wire is tied to) to the body,
+-- `travel` seconds; the client draws the flame travelling it and the wire
+-- burning behind it. Returns where it starts.
+Chakra.WireRun=60 -- studs/s
+function Chakra.wireStart(c,a) return wireStart(c,a) end
+function Chakra.dragonRun(c,a,b,travel)
+	local from=wireStart(c,a)
+	-- ("wirefire": no blast of its own at his mouth; ChakraFX draws the run.)
+	c:pushImpact(from,"wirefire",false,{owner=a.id,from=from,to=b.root.Position,victim=b.id,travel=travel,chakra="dragonrun",infusion="Fire"})
+	return from
 end
 
 -- ------------------------------------------------------------- per tick
@@ -1031,7 +1048,7 @@ function Chakra.conduct(c,a,infused)
 	if hit and b.state=="Stunned" then b.untilTime=math.max(b.untilTime,b.reactionUntil or c.now) end
 	wireGlow(c,a)
 	c:pushImpact(b.root.Position,"chidori",false,{owner=a.id,victim=b.id,chakra="conduct",infusion="Lightning",from=hand,to=b.root.Position})
-	c:cue(a,"WIRED • LIGHTNING • 1 = DRAGON FLAME",.9);c:cue(b,"WIRED • Q TO ESCAPE",.9)
+	c:cue(a,"WIRED • LIGHTNING • "..require(script.Parent.Techniques).wireFireKeys(a).." = DRAGON FLAME",.9);c:cue(b,"WIRED • Q TO ESCAPE",.9)
 	Brawler.event(c,a,"WireLightning")
 	record(c,"Conduct",infused.rules,{owner=a.id,victim=b.id,uses=b.wireConducts})
 	return true

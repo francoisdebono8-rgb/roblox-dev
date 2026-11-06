@@ -1454,7 +1454,8 @@ function Combat:requestInner(a,action,aim,clientTime,opts)
 	-- it at once (the wire throw's recovery is cancelled, the signs are short).
 	a.wireCancel=nil
 	local wired=a.wireVictim and a.wireVictim.reaction=="Bound" and a.wireVictim.boundBy==a
-	if cancelSpec and cancelSpec.Id=="FireBloom" and wired and (a.state=="TechniqueRecovery" or a.state=="Neutral" or a.state=="Recovery")
+	-- (06/11) either Katon on the bar (Techniques.dragonFlame), once per run.
+	if cancelSpec and (cancelSpec.Id=="FireBloom" or cancelSpec.Id=="PhoenixFlower") and wired and (a.wireBurnUntil or 0)<=self.now and (a.state=="TechniqueRecovery" or a.state=="Neutral" or a.state=="Recovery")
 		and (a.cooldowns[cancelSpec.Id] or 0)<=self.now and a.chakra>=cancelSpec.Cost then
 		a.state="Neutral";a.untilTime=self.now;a.pending=nil
 		a.wireCancel=true
@@ -1534,7 +1535,7 @@ function Combat:requestInner(a,action,aim,clientTime,opts)
 	local cancelled=a.stringCancel==spec.Id
 	if cancelled then spec=table.clone(spec);spec.Channel=math.min(spec.Channel,.14) end
 	a.stringCancel=nil
-	if a.wireCancel and spec.Id=="FireBloom" then spec=table.clone(spec);spec.Channel=.16 end
+	if a.wireCancel and (spec.Id=="FireBloom" or spec.Id=="PhoenixFlower") then spec=table.clone(spec);spec.Channel=.16 end
 	a.wireCancel=nil
 	-- Context: the same Rasengan is a different tool after a teleport (instant
 	-- thrust) and in the air (a plunge that ends the air phase).
@@ -2268,6 +2269,8 @@ function Combat:projectileHit(p,target,position,normal)
 	-- (Stage 6) where a Water Dragon ends the ground stays wet; fire reaching
 	-- Gaara melts a charge of his sand.
 	Interactions.ended(self,p,position)
+	-- (06/11) the water reached him: soaked, lightning runs through him.
+	Interactions.soak(self,p,target)
 	Interactions.fireOnSand(self,p,target)
 	self.damageTag=p.kind
 	self.hitOrigin=position-p.direction*4
@@ -2603,6 +2606,8 @@ function Combat:update(dt,now)
 	if self.match.phase=="Duel" then self:separate() end
 	if self.match.phase=="Duel" then self:runScheduled() end
 	if self.match.phase=="Duel" then Bodies.step(self,dt) end
+	-- (06/11) a lightning jutsu charged or cast standing in the water runs into it.
+	if self.match.phase=="Duel" then Interactions.step(self) end
 	-- Zones act before the flights move (a blade entering a lane turns this frame).
 	if self.match.phase=="Duel" then Zones.step(self,dt) end
 	if self.match.phase=="Duel" then self:updateProjectiles(dt); self:updateHazards() end
@@ -2631,6 +2636,7 @@ function Combat:update(dt,now)
 end
 function Combat:clear(preserveAnimations)
 	Interactions.clear(self)
+	for _,x in self.actors do x.wetUntil=nil end
 	-- (Freeze 02/11) An ultimate cut by the end of a round: its scheduled finish
 	-- is cleared below, so it is aborted here (the victim stayed "Held", every
 	-- key refused, and pinned on its path for the rest of the match).

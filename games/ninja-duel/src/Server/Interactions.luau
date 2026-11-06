@@ -7,6 +7,7 @@
 -- holds the new ones:
 --   fire + Water Dragon          a cloud of steam, nobody sees through it (3 s)
 --   Water Dragon on the ground   a puddle (6 s); lightning in it spreads (stun)
+--   water on a body              soaked (6 s): lightning on it is conducted
 --   Gaara's sand + water         wet sand: the Coffin slower but harder
 --   fire on Gaara's sand         the shield loses a charge more (it melts)
 --   Rasengan against Chidori     the two explode: both thrown back, big flash
@@ -16,7 +17,19 @@ local Interactions={}
 
 Interactions.STEAM={Radius=10,Time=3}
 Interactions.PUDDLE={Radius=9,Time=6}
-Interactions.CONDUCT={Damage=1.3,Stun=.6}
+-- (06/11, user: « c'est faux, la foudre ne va pas dans l'eau ») Studio 06/11:
+-- the Water Dragon threw the body out of the puddle it had just made, and the
+-- rule (a lightning blow on a body standing in the puddle, x1.3) never came
+-- up. Water carries lightning two ways now:
+--   soaked: a body the water reached is wet for SOAK.Time (and while it stands
+--     in a puddle); lightning on a wet body is conducted: Damage x, held Stun s;
+--   the puddle: lightning that reaches the water (a lightning blow on anything
+--     standing in it, a lightning jutsu charged or cast by someone standing in
+--     it) runs through the whole puddle: everyone else in it takes Shock and a
+--     ShockStun hold, wet or not, and the clones in it puff away; a puddle
+--     carries one current every Cooldown s.
+Interactions.SOAK={Time=6}
+Interactions.CONDUCT={Damage=1.5,Stun=.8,Shock=6,ShockStun=.6,Cooldown=1.4}
 Interactions.WET={Speed=.7,Damage=1.3}
 Interactions.CLASH={Push=14,Chip=5}
 
@@ -30,6 +43,7 @@ end
 Interactions.isFire=isFire
 Interactions.isWater=isWater
 local function flat(v) return Vector3.new(v.X,0,v.Z) end
+local function brawler() return require(script.Parent.Brawler) end
 
 -- Two flying objects meet (ChakraCombat, before its own rules): true when an
 -- interaction here took the meeting.
@@ -74,11 +88,24 @@ function Interactions.inPuddle(c,a)
 	return nil
 end
 function Interactions.clear(c) c.puddles=nil end
+-- The water reached this body (Combat:projectileHit): soaked.
+function Interactions.soak(c,p,target)
+	if not isWater(p) or not target or not target.root or target.health<=0 then return end
+	target.wetUntil=math.max(target.wetUntil or 0,c.now+Interactions.SOAK.Time)
+end
+function Interactions.wet(c,a)
+	return (a.wetUntil or 0)>c.now or Interactions.inPuddle(c,a)~=nil
+end
 
 -- Is this blow lightning? A lightning jutsu being cast, a held Chidori or
 -- Lightning Blade released, a lightning-infused strike.
 local LIGHTNING_STATES={Chidori=true,LightningBlade=true}
+local function heldLightning(a)
+	local held=a.bodyState
+	return held~=nil and (LIGHTNING_STATES[held.id or ""]==true or (held.spec~=nil and held.spec.Element=="Lightning"))
+end
 function Interactions.lightning(c,a)
+	if heldLightning(a) then return true end
 	local p=a.pending
 	if p and p.spec and (p.spec.Element=="Lightning" or p.spec.element=="Lightning") then return true end
 	if p and LIGHTNING_STATES[p.state or ""] then return true end
@@ -91,10 +118,51 @@ end
 function Interactions.damage(c,attacker,victim,amount)
 	if not Interactions.lightning(c,attacker) then return amount,false end
 	local w=Interactions.inPuddle(c,victim)
-	if not w then return amount,false end
-	c:pushImpact(victim.root.Position,"conduct",true,{owner=attacker.id,victim=victim.id,position=w.position,radius=w.radius})
+	if not w and not Interactions.wet(c,victim) then return amount,false end
+	-- The current runs over the soaked body (and, in a puddle, the whole water).
+	c:pushImpact(victim.root.Position,"conduct",true,{owner=attacker.id,victim=victim.id,position=victim.root.Position,radius=0,body=true})
 	c:cue(attacker,"LIGHTNING • THE WATER CARRIES IT",.8)
+	c:cue(victim,"SOAKED • THE LIGHTNING RUNS THROUGH YOU",.8)
+	brawler().event(c,attacker,"Conduct")
+	if w then Interactions.electrify(c,attacker,w,victim) end
 	return amount*Interactions.CONDUCT.Damage,true
+end
+-- Lightning reached the puddle `w`: the current runs through all of it.
+function Interactions.electrify(c,by,w,skip)
+	local tune=Interactions.CONDUCT
+	if c.now<(w.shockedAt or -9)+tune.Cooldown then return end
+	w.shockedAt=c.now
+	c:pushImpact(w.position,"conduct",true,{owner=by.id,position=w.position,radius=w.radius})
+	for _,x in c.actors do
+		if x~=by and x~=skip and x.health>0 and Interactions.inPuddle(c,x)==w and (x.invulnerableUntil or 0)<=c.now then
+			c.damageTag="Lightning in the water"
+			c:damage(by,x,tune.Shock,false,false)
+			c.damageTag=nil
+			if c.match.phase~="Duel" then return end
+			if x.health>0 then
+				brawler().react(c,x,"HitStun",Vector3.zero,tune.ShockStun,by)
+				x.stunFloorUntil=math.max(x.stunFloorUntil or 0,c.now+tune.ShockStun)
+				c:cue(x,"IN THE WATER • SHOCKED",.8)
+			end
+		end
+	end
+	-- Clones standing in the water go out with the current.
+	require(script.Parent.Bodies).area(c,by,w.position,w.radius)
+end
+-- Every step (Combat:update): a lightning jutsu charged or cast by someone
+-- standing in a puddle runs into the water.
+function Interactions.step(c)
+	if not c.puddles or #c.puddles==0 then return end
+	for _,a in c.actors do
+		if a.health>0 then
+			local charging=heldLightning(a) or ((a.state=="TechniqueChannel" or a.state=="TechniqueActive" or a.state=="Startup" or a.state=="Active")
+				and a.pending~=nil and a.pending.spec~=nil and (a.pending.spec.Element=="Lightning" or a.pending.spec.element=="Lightning"))
+			if charging then
+				local w=Interactions.inPuddle(c,a)
+				if w then Interactions.electrify(c,a,w,nil) end
+			end
+		end
+	end
 end
 
 -- Sand Coffin cast at a body in the water: wet sand, slower but harder.
@@ -118,8 +186,11 @@ end
 -- take a little, both jutsu are spent.
 local function rasengan(p) return p.rasengan==true end
 local function chidori(p) return LIGHTNING_STATES[p.state or ""]==true end
+function Interactions.jutsuPair(p,q)
+	return p~=nil and q~=nil and ((rasengan(p) and chidori(q)) or (chidori(p) and rasengan(q)))
+end
 function Interactions.jutsuClash(c,a,b,p,q)
-	if not ((rasengan(p) and chidori(q)) or (chidori(p) and rasengan(q))) then return false end
+	if not Interactions.jutsuPair(p,q) then return false end
 	local line=flat(b.root.Position-a.root.Position)
 	line=if line.Magnitude>.1 then line.Unit else a.root.CFrame.LookVector
 	local tune=Interactions.CLASH

@@ -304,7 +304,14 @@ test("the Fifth Gate: only under 35%; faster legs (the real limit), harder, the 
  -- (Stage 6) the gates open one by one, one more every 4 s: the first is a
  -- fifth of the speed, the fifth (16 s in) the whole of it.
  assert(a.speedScale>1 and a.speedScale<a.def.Awakening.Speed-.05,"the first gate is already the fifth ("..tostring(a.speedScale)..")")
- H.step(c,16)
+ assert(a.gateOpen==1,"the first gate is not the one open")
+ H.step(c,4)
+ -- (06/11, Studio: nothing on screen said a gate opened) each one is named.
+ assert(a.gateOpen==2 and ev(a,"Gate2")==1 and string.find(a.cue or "","GATE OF HEALING")~=nil,"the second gate opened silently")
+ local gates=0
+ for _,impact in c.impacts do if impact.style=="gate" then gates+=1 end end
+ assert(gates==1,"the gate opening is not in the feed")
+ H.step(c,12)
  assert(a.speedScale>1.1 and math.abs(a.speedScale-a.def.Awakening.Speed)<.001,"the fifth gate did not speed him up ("..tostring(a.speedScale)..")")
  a.health=a.def.Health*.3;a.hum.Health=a.health
  -- Measured in Studio: the fastest legs of the cast on foot (his sprint was

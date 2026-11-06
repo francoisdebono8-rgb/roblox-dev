@@ -86,6 +86,32 @@ test("Wire Trap binds; Great Fireball on the wired body is the Dragon Flame",fun
  assert(health-b.health>=10,"the Dragon Flame was light")
 end)
 
+test("(06/11) the Phoenix Flower key on the wired body runs the wire too; the wire holds him until the fire arrives",function()
+ local c,a,b=H.duel("Lion","GentleFist")
+ place(c,a,b,V.new(0,3,8),V.new(0,3,-8))
+ assert(c:request(a,slot(a,"WireTrap"),b.root.Position),"Wire Trap refused")
+ local wire
+ until_(c,.6,function() for _,p in c.projectiles do if p.kind=="wire" then wire=p end end return wire~=nil end,"no wire thrown")
+ until_(c,.6,function() return b.reaction=="Bound" or wire.dead or not table.find(c.projectiles,wire) end,"the wire never arrived")
+ if b.reaction~="Bound" then c:projectileHit(wire,b,b.root.Position,-wire.direction) end
+ assert(b.reaction=="Bound","the wire did not bind")
+ -- The bind names the keys the bar shows (it said "1" while only 4 worked).
+ assert(string.find(a.cue or "","1 OR 4")~=nil,"the bind cue does not name the real keys: "..tostring(a.cue))
+ H.step(c,.2)
+ local health=b.health
+ assert(c:request(a,slot(a,"PhoenixFlower"),b.root.Position),"the Phoenix key refused on the wire")
+ local ran=false
+ until_(c,.5,function()
+  for _,impact in c.impacts do if impact.chakra=="dragonrun" then ran=true end end
+  return ran
+ end,"the fire never ran the wire")
+ -- While the fire runs: still bound, still wired, nothing flying.
+ assert(b.reaction=="Bound" and a.heldWire~=nil and not a.heldWire.dead,"the wire let go before the fire arrived")
+ for _,p in c.projectiles do assert(p.kind~="phoenix","the Phoenix Flower still flew past the wire") end
+ until_(c,1,function() return b.health<health end,"the Dragon Flame never burned")
+ assert(health-b.health>=10,"the key-1 Dragon Flame was light")
+end)
+
 test("Chidori: formed, held in the hand, released by the strike; it lands hard from range; a miss leaves him open",function()
  local c,a,b=H.duel("Lion","Mirage")
  place(c,a,b,V.new(0,3,7),V.new(0,3,-7))

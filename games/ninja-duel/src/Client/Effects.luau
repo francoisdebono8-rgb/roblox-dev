@@ -2107,6 +2107,10 @@ function FX:fighter(model,actor,dt)
 		if aura.binding.beam then
 			-- taut once tight: the sag goes out of the line with the constriction
 			aura.binding.beam.CurveSize0=-.4*(1-u);aura.binding.beam.CurveSize1=.4*(1-u)
+			-- (06/11, Studio: two lines from his hand, the fire ran one of them)
+			-- the wire itself is drawn by ChakraFX (HeldWire: tension, current,
+			-- the Dragon Flame); this line is only for a bind without one.
+			aura.binding.beam.Enabled=self.folder:FindFirstChild("HeldWire")==nil
 		end
 	end
 	-- Sasuke: the Chidori crackles in the right hand from the charge to the thrust.
@@ -2472,4 +2476,6 @@ require(script.Parent.ByakuganFX).install(FX,{block=block,sound=sound,anchorPart
 require(script.Parent.CopyFX).install(FX,{new=new,block=block,tween=tween,sound=sound,flash=flash,burst=burst,anchorPart=anchorPart,num=num,TEX=TEX,SOUND=SOUND})
 -- (06/11) Kakashi's ninken: diving in, bursting out, the bite (Server/Hounds).
 require(script.Parent.HoundFX).install(FX,{new=new,block=block,tween=tween,sound=sound,flash=flash,burst=burst,anchorPart=anchorPart,num=num,smokePuff=smokePuff,TEX=TEX,SOUND=SOUND})
+-- (06/11) Water carries lightning: drips on a soaked body, the current in the water (Server/Interactions).
+require(script.Parent.ElementFX).install(FX,{new=new,block=block,sound=sound,flash=flash,shockRing=shockRing,anchorPart=anchorPart,floorUnder=floorUnder,SOUND=SOUND})
 return FX

@@ -414,7 +414,7 @@ test("planted chakra blades are contestable points: recovered, knocked out, time
 	assert(p2)
 end)
 
-test("jutsu volumes clear tools from their path; jutsu never cancel each other",function()
+test("jutsu volumes clear tools from their path; the Great Fireball eats the Wind Cut",function()
 	local c,n,m=H.duel("GentleFist","Flashstep")
 	place(c,n,m,V.new(-20,3,0),V.new(20,3,0))
 	local palm=c:projectile(n,V.new(20,3,0),96,32,7,"palm",nil,{origin=V.new(-10,3,0),radius=1.5,growth=2.5})
@@ -425,8 +425,12 @@ test("jutsu volumes clear tools from their path; jutsu never cancel each other",
 	place(c2,i,x,V.new(-20,3,0),V.new(20,3,0))
 	local fire=c2:projectile(i,V.new(20,3,0),54,40,16,"fireball",nil,{origin=V.new(-8,3,0),radius=2.4,growth=2.2})
 	local wind=c2:projectile(x,V.new(-20,3,0),88,40,7,"wind",nil,{origin=V.new(8,3,0),radius=1.4})
+	local radius=fire.radius
 	for _=1,20 do H.step(c2,.01) end
-	assert(not fire.dead and not wind.dead and #outcomes(c2)==1 and outcomes(c2)[1]=="pass","two jutsu interfered")
+	-- (06/11, Studio: they flew through each other) fire feeds on wind, jutsu
+	-- or blade: the crescent goes into the fireball and the fireball grows.
+	assert(not fire.dead and wind.dead and #outcomes(c2)==1 and outcomes(c2)[1]=="absorb","the fireball did not eat the Wind Cut")
+	assert(fire.radius>radius and fire.flared,"the fed fireball did not grow")
 	-- Small flames: reinforced steel heavier than a Phoenix flame goes through it,
 	-- a wind blade is eaten by it (fire feeds on wind).
 	local function flame(fighter,tool)

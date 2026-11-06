@@ -88,7 +88,7 @@ ChakraFX.ContactSound={
 	shock={{"electric",.45,1}},pointshock={{"electric",.45,1.1}},wirecharge={{"electric",.4,1.2}},
 	surge={{"electric",.4,1.25}},conduct={{"electric",.35,1.35}},arc={{"electric",.22,1.7}},
 	ignite={{"fireLoop",.35,1.15,.45},{"boom",.2,1.7}},burn={{"fireLoop",.3,1.25,.35}},absorb={{"fireLoop",.35,1,.5},{"boom",.18,1.5}},
-	wireburn={{"fireLoop",.4,.9,.6},{"whoosh",.3,.55}},dragonflame={{"fireLoop",.4,.85,.7}},
+	wireburn={{"fireLoop",.4,.9,.6},{"whoosh",.3,.55}},dragonflame={{"fireLoop",.4,.85,.7}},dragonrun={{"fireLoop",.35,1.1,.5}},
 	gust={{"whooshBy",.42,1.5}},blown={{"whooshBy",.35,1.7}},
 	cut={{"swish",.45,1.75}},wirecut={{"swish",.35,1.9}},
 	crush={{"heavy",.45,.85},{"rock",.3,1.2}},
@@ -555,6 +555,117 @@ local function dragonFlame(fx,impact)
 		end)
 	end
 end
+-- (06/11, user: « le katon ne suit pas les fils de Sasuke ») The flame runs
+-- the wire: a head of fire travels from his mouth to the body in `travel`
+-- seconds, the wire behind it glowing and burning away, fire shed along it.
+local FLAME_HOT=Color3.fromRGB(255,176,64)
+local FLAME=Color3.fromRGB(240,84,24)
+local FLAME_END=Color3.fromRGB(70,22,10)
+local WIRE_HOT=Color3.fromRGB(226,92,30)
+local WIRE_ASH=Color3.fromRGB(52,34,28)
+-- The held wire as stepHolds draws it this frame (its sagging segments, hand
+-- to chest), as a list of points; nil when no drawn wire starts near `near`.
+local function drawnWire(fx,near)
+	for _,model in fx.folder:GetChildren() do
+		if model.Name=="HeldWire" then
+			local points={}
+			local count=0
+			for _,seg in model:GetChildren() do
+				if seg.Name=="HeldWireSegment" then
+					count+=1
+					if count>SEGMENTS then break end
+					local half=seg.CFrame.LookVector*seg.Size.Z/2
+					if #points==0 then table.insert(points,seg.Position-half) end
+					table.insert(points,seg.Position+half)
+				end
+			end
+			if #points>=2 and (points[1]-near).Magnitude<2.5 then return points end
+		end
+	end
+	return nil
+end
+-- The point at share k (0..1) of a polyline's length, and the index of the
+-- piece it lies on.
+local function alongLine(points,k)
+	local total=0
+	for n=1,#points-1 do total+=(points[n+1]-points[n]).Magnitude end
+	local left=total*k
+	for n=1,#points-1 do
+		local piece=(points[n+1]-points[n]).Magnitude
+		if left<=piece or n==#points-1 then return points[n]:Lerp(points[n+1],if piece>0 then math.clamp(left/piece,0,1) else 1),n end
+		left-=piece
+	end
+	return points[#points],#points-1
+end
+local function dragonRun(fx,impact,folder)
+	local from,to=impact.from or impact.position,impact.to or impact.position
+	-- (Studio 06/11: the fire ran mouth -> hips, beside the wire drawn hand ->
+	-- chest) The run follows the wire as stepHolds draws it, sag included:
+	-- from his right hand (or the stake the wire is tied to) to the chest.
+	local owner=find(folder,impact.owner)
+	local hand=owner and owner:FindFirstChild("RightHand")
+	if hand and (hand.Position-from).Magnitude<4 then from=hand.Position else hand=nil end
+	local victim=find(folder,impact.victim)
+	local chest=victim and (victim:FindFirstChild("UpperTorso") or victim:FindFirstChild("HumanoidRootPart"))
+	if chest then to=chest.Position end
+	local length=(to-from).Magnitude
+	if length<.1 then return end
+	local travel=math.max(.1,impact.travel or .3)
+	local holder=K.new("Model",{Name="DragonFlameRun"},fx.folder)
+	-- (Studio 06/11: a white neon ball and a yellow bar read as a laser) The
+	-- head is flame (a running emitter, an orange light), the wire behind it
+	-- red-hot, cooling to ash.
+	local head=piece(holder,"Head",Vector3.one*.2,CFrame.new(from),FLAME,1)
+	K.new("ParticleEmitter",{Texture=K.TEX.fire,Rate=140,Lifetime=NumberRange.new(.14,.3),Speed=NumberRange.new(1,3),SpreadAngle=Vector2.new(180,180),
+		Color=K.seq({{0,FLAME_HOT},{.45,FLAME},{1,FLAME_END}}),LightEmission=.45,LightInfluence=0,Size=K.num({{0,1.5},{1,.4}}),
+		Transparency=K.num({{0,.1},{1,1}}),RotSpeed=NumberRange.new(-120,120),Rotation=NumberRange.new(0,360)},head)
+	K.new("PointLight",{Color=FLAME,Brightness=2.4,Range=9,Shadows=false},head)
+	local burnt={}
+	for n=1,SEGMENTS do
+		local b=piece(holder,"Burnt",Vector3.new(.09,.09,.05),CFrame.new(from),WIRE_HOT,1)
+		burnt[n]=b
+	end
+	local born=os.clock()
+	local shed=0
+	task.spawn(function()
+		while holder.Parent do
+			local k=math.clamp((os.clock()-born)/travel,0,1)
+			-- (both ends live: the wire is drawn from where the hand is now)
+			if chest and chest.Parent then to=chest.Position end
+			if hand and hand.Parent then from=hand.Position end
+			local points=drawnWire(fx,from) or {from,to}
+			local at,on=alongLine(points,k)
+			head.CFrame=CFrame.new(at)
+			-- the wire burnt up to the head
+			for n=1,SEGMENTS do
+				local b=burnt[n]
+				local a0=points[n]
+				local a1=if n<on then points[n+1] elseif n==on then at else nil
+				if a0 and a1 and (a1-a0).Magnitude>.03 then
+					b.Size=Vector3.new(.09,.09,(a1-a0).Magnitude);b.CFrame=CFrame.lookAt(a0:Lerp(a1,.5),a1);b.Transparency=.05
+				else b.Transparency=1 end
+			end
+			-- fire shed along the wire as the head passes
+			while shed<k do
+				local p=alongLine(points,shed)
+				K.burst(fx.folder,p,{Texture=K.TEX.fire,Lifetime=NumberRange.new(.25,.45),Speed=NumberRange.new(1,3),SpreadAngle=Vector2.new(180,180),
+					Acceleration=Vector3.new(0,6,0),Color=K.seq({{0,FLAME_HOT},{.4,FLAME},{1,FLAME_END}}),LightEmission=.35,LightInfluence=0,
+					Size=K.num({{0,1.1},{1,.3}}),Transparency=K.num({{0,.1},{1,1}})},3)
+				shed+=1/math.max(4,math.floor(length/1.6))
+			end
+			if k>=1 then break end
+			task.wait()
+		end
+		if holder.Parent then
+			local e=head:FindFirstChildOfClass("ParticleEmitter")
+			if e then e.Enabled=false end
+			for _,b in burnt do
+				if b.Transparency<1 then b.Material=Enum.Material.SmoothPlastic;K.tween(b,.5,{Color=WIRE_ASH,Transparency=1}) end
+			end
+			Debris:AddItem(holder,.6)
+		end
+	end)
+end
 -- (06/11) A wind contact: streaks of air carried on along its line.
 local function windPast(fx,impact)
 	local at=impact.position
@@ -576,19 +687,20 @@ local function embersAt(fx,at)
 	K.burst(fx.folder,at,{Texture=K.TEX.fireSpark,Lifetime=NumberRange.new(.5,.9),Speed=NumberRange.new(5,10),SpreadAngle=Vector2.new(180,180),
 		Acceleration=Vector3.new(0,6,0),Drag=2.5,LightEmission=1,Color=emberRamp(),Size=K.num({{0,.35},{1,.05}})},10)
 end
-local function drawImpact(fx,impact)
+local function drawImpact(fx,impact,folder)
 	if impact.reason then explain(fx,impact) end
 	local kind=impact.chakra
 	if kind=="arc" then arcInto(fx,impact)
 	elseif kind=="dragonflame" then dragonFlame(fx,impact)
+	elseif kind=="dragonrun" then dragonRun(fx,impact,folder)
 	elseif kind=="gust" or kind=="blown" then windPast(fx,impact)
 	elseif kind=="ignite" or kind=="absorb" then embersAt(fx,impact.position) end
 	-- (06/11) every chakra contact is heard in its nature
 	local cue=kind and ChakraFX.ContactSound[kind]
 	if cue and impact.position then play(K.anchorPart(fx.folder,impact.position),cue,if impact.heavy then 1.15 else 1) end
 end
-local function impact(fx,data,_folder)
-	if data.chakra or data.reason then guard(drawImpact,fx,data) end
+local function impact(fx,data,folder)
+	if data.chakra or data.reason then guard(drawImpact,fx,data,folder) end
 	return false -- Effects still draws its own part of the contact
 end
 
