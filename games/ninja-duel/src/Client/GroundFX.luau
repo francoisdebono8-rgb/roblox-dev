@@ -20,7 +20,7 @@ local GroundFX={}
 local K -- Effects' helpers, handed over by install()
 
 -- Blocks thrown per scar kind: {count, size, speed}.
-GroundFX.BREAK={crater={10,.9,26},gouge={7,.7,20},trench={8,.7,18},crack={6,.6,15},skid={3,.45,9}}
+GroundFX.BREAK={crater={10,.9,26},gouge={7,.7,20},trench={8,.7,18},crack={6,.6,15},skid={1,.35,7}}
 -- Contact styles whose blow reaches the ground (a dust ring under them).
 GroundFX.HEAVY={heavy=.8,launcher=.9,slam=1.2,finisher=1,groundbounce=1.2,wall=.6,wallbounce=.8,worldbreak=1.3,
 	chidori=1,rasengan=1.1,fire=1,palmburst=.8,clash=.7,awaken=1.1}
@@ -40,9 +40,9 @@ local function groundOf(scar)
 	end
 	local hit=floorBelow(scar.Position,6,{scar})
 	if hit and hit.Instance:IsA("BasePart") then
-		-- the arena's flat earth breaks into blocks with the grain of earth
+		-- the arena's flat earth breaks into blocks of stony earth (as WorldReaction's slabs)
 		local m=hit.Instance.Material
-		if m==Enum.Material.SmoothPlastic or m==Enum.Material.Plastic then m=Enum.Material.Ground end
+		if m==Enum.Material.SmoothPlastic or m==Enum.Material.Plastic then m=Enum.Material.Sandstone end
 		return m,hit.Instance.Color
 	end
 	return Enum.Material.Ground,Color3.fromRGB(150,120,86)
@@ -114,7 +114,8 @@ function GroundFX.tear(fx,at,kind,material,color,along)
 		EmissionDirection=Enum.NormalId.Top,Color=ColorSequence.new(color:Lerp(Color3.fromRGB(230,220,200),.35)),LightInfluence=1,
 		Size=K.num({{0,1.4},{1,3.6}}),Transparency=K.num({{0,.25},{1,1}}),Drag=4,Rotation=NumberRange.new(0,360),RotSpeed=NumberRange.new(-40,40)},math.floor(n*1.6))
 	local anchor=K.anchorPart(fx.folder,at)
-	K.sound(anchor,K.SOUND.debris,.5+n*.03,.85+math.random()*.2,1.1)
+	K.sound(anchor,K.SOUND.rock,.4+n*.03,.75+math.random()*.25)
+	K.sound(anchor,K.SOUND.debris,.4+n*.03,.85+math.random()*.2,1.1)
 	if kind=="crater" or kind=="gouge" then K.sound(anchor,K.SOUND.heavy,.45,.6) end
 end
 -- A blow that reaches the ground: a ring of dust along the floor, grit.

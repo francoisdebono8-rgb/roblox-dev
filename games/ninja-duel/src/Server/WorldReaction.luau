@@ -213,9 +213,12 @@ local function relief(scar,palette)
 	local material,skin=WorldReaction.skinAt(scar.position,scar.surface)
 	-- Grass breaks into the earth under it.
 	if material==Enum.Material.Grass then material=Enum.Material.Ground;skin=skin:Lerp(Color3.fromRGB(110,88,62),.7) end
-	-- (06/11) the arena's packed earth is a flat SmoothPlastic for its look:
-	-- broken, it shows the grain of earth
-	if material==Enum.Material.SmoothPlastic or material==Enum.Material.Plastic then material=Enum.Material.Ground end
+	-- (06/11, user: « c'est pas encore des vrais blocs de pierre qui se
+	-- cassent ») the arena's packed earth is a flat SmoothPlastic for its look,
+	-- and Ground at its colour renders a dark olive brown (Studio 06/11: a pile
+	-- of chocolate cubes on the light floor). Broken, it is blocks of packed,
+	-- stony earth of the floor's own colour: Sandstone.
+	if material==Enum.Material.SmoothPlastic or material==Enum.Material.Plastic then material=Enum.Material.Sandstone end
 	local slab=skin:Lerp(Color3.new(0,0,0),.12)
 	local under=skin:Lerp(palette.dark,.6)
 	-- The bowl itself: the torn ground, darker, never black.
@@ -223,6 +226,19 @@ local function relief(scar,palette)
 	local size=scar.size
 	local base=scar.frame*CFrame.new(-SHAPES[scar.kind].depth*.5,0,0)
 	local seed=scar.position
+	if scar.kind=="skid" then
+		-- (06/11, Studio: slabs along a slide read as piles of planks) A body
+		-- ploughing the ground leaves a furrow: the groove a shade darker than
+		-- the floor, the earth pushed up into a low lip on both sides.
+		p.Color=skin:Lerp(palette.dark,.4);p.Transparency=.1
+		local width=SHAPES.skid.width or .7
+		for _,sideSign in {1,-1} do
+			local h=hash(seed+Vector3.new(sideSign,2,3))
+			chunk(p,base*CFrame.new(.05,sideSign*(width*.5+.12),0)*CFrame.Angles(sideSign*math.rad(24+h*12),0,0),
+				Vector3.new(.12,.3,size*(.85+h*.2)),material,slab)
+		end
+		return
+	end
 	if SHAPES[scar.kind].round then
 		local r=size*.5
 		-- Slabs round the rim: wide, thin, their outer edge up.
@@ -263,17 +279,27 @@ local function relief(scar,palette)
 	else
 		-- A crack / trench: the line itself dark, the ground on both sides
 		-- broken into slabs pushed up and apart.
+		-- (06/11) fewer, bigger slabs, thick and half sunk, their inner edge
+		-- lifted out of the line (Studio: many small slabs read as a pile of
+		-- cubes), and a few loose stones thrown along it.
 		local width=(SHAPES[scar.kind].width or .3)
-		local n=math.clamp(math.floor(3+size*1.2),4,9)
+		local n=math.clamp(math.floor(2+size*.7),3,6)
 		for k=1,n do
 			local h=hash(seed+Vector3.new(k*3,k,k*.5))
-			local z=(k/(n+1)-.5)*size
+			local z=(k/(n+1)-.5)*size*1.05
 			local sideSign=if k%2==0 then 1 else -1
-			local len=size/n*(1.1+h*.5)
-			local w=math.max(.45,width*1.6+size*.08)*(.8+h*.4)
-			local at=base*CFrame.new(.08,sideSign*(width*.55+w*.45),z)
-			local cf=at*CFrame.Angles(sideSign*math.rad(10+h*18),0,0)
-			chunk(p,cf,Vector3.new(.22+h*.15,w,len),material,slab)
+			local len=size/n*(1.15+h*.45)
+			local w=math.max(.7,width*2+size*.14)*(.8+h*.45)
+			local thick=.32+h*.3
+			local at=base*CFrame.new(thick*.12,sideSign*(width*.5+w*.42),z)
+			local cf=at*CFrame.Angles(sideSign*math.rad(14+h*22),0,0)*CFrame.Angles(0,math.rad((h-.5)*16),0)
+			chunk(p,cf,Vector3.new(thick,w,len),material,if k%3==0 then under else slab)
+		end
+		for k=1,math.clamp(math.floor(size*.8),2,5) do
+			local h=hash(seed+Vector3.new(k*5.3,k*.7,k*2.9))
+			local sideSign=if h>.5 then 1 else -1
+			local st=.22+h*.3
+			chunk(p,base*CFrame.new(st*.35,sideSign*(width+.5+h*1.2),(h-.5)*size*.9)*CFrame.Angles(h*4,h*6,h*3),Vector3.new(st,st*1.3,st),material,slab)
 		end
 	end
 end

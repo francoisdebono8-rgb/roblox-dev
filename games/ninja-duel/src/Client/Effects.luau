@@ -50,10 +50,11 @@ local SOUND={
 	body="rbxassetid://9113524242",
 	bodyfall="rbxassetid://9113482032",
 	debris="rbxassetid://9114221862",
-	-- (06/11) Roblox built-in sounds (always available): a fire's crackle
-	-- loop and stone breaking.
-	fireLoop="rbxasset://sounds/fire.mp3",
-	rock="rbxasset://sounds/collide.wav",
+	-- (06/11) a fire's crackle loop and stone breaking (Pro Sound Effects;
+	-- Studio 06/11: the built-in sounds/fire.mp3 does not exist), water
+	-- (built-in, loads).
+	fireLoop="rbxassetid://9112780462",
+	rock={"rbxassetid://9118588165","rbxassetid://9118587494"},
 	splash="rbxasset://sounds/impact_water.mp3",
 }
 FX.SOUND=SOUND
@@ -1554,6 +1555,29 @@ function FX:chakraImpact(impact,folder)
 	end
 end
 -- ------------------------------------------------------------------ persistent
+-- The Flying Thunder God formula written on a surface: its three characters
+-- round a point, facing out, on an invisible plate (a SurfaceGui, unlit).
+FX.FORMULA={"飛","雷","神"}
+function FX.formulaGround(parent,surface,normal,radius,tone)
+	normal=(normal or Vector3.yAxis).Unit
+	local side=if math.abs(normal.Y)>.9 then Vector3.xAxis else Vector3.yAxis
+	local right=side:Cross(normal).Unit
+	local size=radius*2+1.4
+	local plate=block(parent,Vector3.new(size,.05,size),CFrame.fromMatrix(surface+normal*.05,right,normal),tone,Enum.Material.SmoothPlastic)
+	plate.Transparency=1;plate.CanQuery=false;plate.CastShadow=false
+	local gui=new("SurfaceGui",{Face=Enum.NormalId.Top,SizingMode=Enum.SurfaceGuiSizingMode.PixelsPerStud,PixelsPerStud=60,
+		LightInfluence=0,Brightness=1.8,ZIndexBehavior=Enum.ZIndexBehavior.Sibling},plate)
+	local labels={}
+	local turn=math.random()*math.pi*2
+	for i,ch in FX.FORMULA do
+		local a=turn+(i-1)/#FX.FORMULA*math.pi*2
+		local l=new("TextLabel",{BackgroundTransparency=1,Size=UDim2.fromScale(.7/size*1.4,.7/size*1.4),AnchorPoint=Vector2.new(.5,.5),
+			Position=UDim2.fromScale(.5+math.sin(a)*radius/size,.5-math.cos(a)*radius/size),Rotation=math.deg(a),Text=ch,TextScaled=true,
+			Font=Enum.Font.GothamBlack,TextColor3=tone,TextStrokeColor3=Color3.fromRGB(110,60,0),TextStrokeTransparency=.35,TextTransparency=1},gui)
+		table.insert(labels,l)
+	end
+	return plate,labels
+end
 -- Planted Flying Thunder God seals: a real three-pronged kunai in the surface
 -- and a slowly pulsing seal formula around it.
 function FX:seal(owner,actor,folder)
@@ -1567,26 +1591,20 @@ function FX:seal(owner,actor,folder)
 			local model=folder and folder:FindFirstChild(info.body)
 			local torso=model and (model:FindFirstChild("UpperTorso") or model:FindFirstChild("HumanoidRootPart"))
 			if torso then
+				-- (06/11) no glowing disc on the back any more: IdentityFX writes
+				-- the formula round the body; here, its light on him.
 				if not entry then
 					local glyph=new("Model",{Name="Body seal"},self.folder)
 					local tone=if info.wind then WIND else MINATO
-					local disc=block(glyph,Vector3.new(.03,1.5,1.5),torso.CFrame,tone,Enum.Material.Neon);disc.Shape=Enum.PartType.Cylinder;disc.Transparency=.35
-					local marks={}
-					for i=0,5 do table.insert(marks,block(glyph,Vector3.new(.04,.08,.36),torso.CFrame,tone,Enum.Material.Neon)) end
-					local light=new("PointLight",{Color=tone,Brightness=2,Range=7,Shadows=false},disc)
-					entry={glyph=glyph,disc=disc,marks=marks,light=light,body=true,born=os.clock()}
+					local anchor=block(glyph,Vector3.new(.2,.2,.2),torso.CFrame,tone,Enum.Material.SmoothPlastic);anchor.Transparency=1
+					local light=new("PointLight",{Color=tone,Brightness=1.4,Range=6,Shadows=false},anchor)
+					entry={glyph=glyph,anchor=anchor,light=light,body=true,born=os.clock()}
 					self.seals[key]=entry
-					flash(self.folder,torso.Position,tone,.6,4,.2,.2)
+					flash(self.folder,torso.Position,tone,.5,3,.18,.2)
 				end
-				local back=torso.CFrame*CFrame.new(0,.1,.62)
-				local base=CFrame.lookAt(back.Position,back.Position+torso.CFrame.LookVector*-1)*CFrame.Angles(0,math.pi/2,0)
-				entry.disc.CFrame=base
-				for i,mark in entry.marks do
-					mark.CFrame=base*CFrame.Angles((i-1)/6*math.pi*2+os.clock()*2,0,0)*CFrame.new(0,.5,0)
-				end
+				entry.anchor.CFrame=torso.CFrame
 				local pulse=.5+.5*math.sin((os.clock()-entry.born)*7)
-				entry.disc.Transparency=.25+pulse*.3
-				entry.light.Brightness=1.5+pulse*1.5
+				entry.light.Brightness=1+pulse*1.2
 			end
 		elseif info.surface then
 			local surface=info.surface
@@ -1602,24 +1620,23 @@ function FX:seal(owner,actor,folder)
 					local axis=(into+tilt).Unit
 					model:PivotTo(CFrame.lookAt(surface-axis*.55,surface-axis*.55+axis))
 				end
+				-- (06/11, user: « les kunai de Minato… quand ils sont marqués,
+				-- c'est super moche… un cercle bizarre ») No flat neon disc and
+				-- spokes: the seal is its formula, the three characters of the
+				-- Flying Thunder God written round the kunai, gold, glowing softly.
 				local glyph=new("Model",{Name="Seal"},self.folder)
-				local base=CFrame.lookAt(surface+normal*.03,surface+normal*1.03)*CFrame.Angles(0,math.pi/2,0)
-				local disc=block(glyph,Vector3.new(.03,3.2,3.2),base,MINATO,Enum.Material.Neon);disc.Shape=Enum.PartType.Cylinder;disc.Transparency=.8
-				for i=0,5 do
-					local a=i/6*math.pi*2
-					local mark=block(glyph,Vector3.new(.04,.12,.7),base*CFrame.Angles(a,0,0)*CFrame.new(0,1.1,0),MINATO,Enum.Material.Neon)
-					mark.Transparency=.35
-				end
-				local light=new("PointLight",{Color=MINATO,Brightness=1.5,Range=9,Shadows=false},disc)
-				entry={model=model,glyph=glyph,disc=disc,light=light,surface=surface,born=os.clock()}
+				local plate,labels=FX.formulaGround(glyph,surface,normal,if info.wake then 1.6 else 1.05,MINATO)
+				local light=new("PointLight",{Color=MINATO,Brightness=1.2,Range=7,Shadows=false},plate)
+				entry={model=model,glyph=glyph,labels=labels,light=light,surface=surface,born=os.clock()}
 				self.seals[key]=entry
-				flash(self.folder,surface,MINATO,.6,3.5,.2,.2)
+				flash(self.folder,surface,MINATO,.5,2.6,.18,.25)
 			end
 			local pulse=.5+.5*math.sin((os.clock()-entry.born)*4)
 			-- The last seconds of a seal flicker so its expiry is readable.
 			local fading=(info.remaining or 12)<2 and math.sin(os.clock()*30)>0
-			entry.disc.Transparency=if fading then .95 else .72+pulse*.18
-			entry.light.Brightness=if fading then .3 else 1+pulse*1.2
+			local born=math.clamp((os.clock()-entry.born)/.25,0,1)
+			for _,l in entry.labels do l.TextTransparency=if fading then .9 else 1-born*(.85-pulse*.25) end
+			entry.light.Brightness=if fading then .3 else .8+pulse*.9
 		end
 	end
 	for key,entry in self.seals do
