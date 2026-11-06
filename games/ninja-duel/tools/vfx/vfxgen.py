@@ -354,31 +354,40 @@ def glyph_ring(n=1024, text="飛雷神"):
     return to_img(a)
 
 def crack_decal(n=1024, seed=61):
-    """Fissures pour le sol : segments droits qui s'affinent, cratère central, bord clair soulevé."""
+    """Impact au sol : cratère anguleux, fissures épaisses qui s'affinent, bord clair soulevé,
+    cuvette plus sombre autour (le sol a cédé). Pensé pour peser lourd sans tout couvrir."""
     rng = np.random.default_rng(seed)
+    X, Y = grid(n)
     dark = Image.new("L", (n, n), 0); d = ImageDraw.Draw(dark)
     c = n / 2
     def crack(x, y, ang, length, width, depth):
-        seg = int(rng.integers(4, 7))
+        seg = int(rng.integers(4, 6))
         for k in range(seg):
-            ang += rng.normal(0, 0.22)
-            L = length / seg * rng.uniform(0.7, 1.3)
+            ang += rng.normal(0, 0.2)
+            L = length / seg * rng.uniform(0.75, 1.25)
             nx, ny = x + math.cos(ang) * L, y + math.sin(ang) * L
-            w = max(2, int(width * (1 - k / seg) ** 0.8))
+            w = max(3, int(width * (1 - k / seg) ** 0.75))
             d.line([(x, y), (nx, ny)], fill=255, width=w)
             d.ellipse([x - w / 2, y - w / 2, x + w / 2, y + w / 2], fill=255)
-            if depth < 1 and k in (1, 2) and rng.random() < 0.45:
-                crack(nx, ny, ang + rng.choice([-1, 1]) * rng.uniform(0.5, 0.9), length * 0.35, w * 0.6, depth + 1)
+            if depth < 1 and k in (1, 2) and rng.random() < 0.4:
+                crack(nx, ny, ang + rng.choice([-1, 1]) * rng.uniform(0.5, 0.85), length * 0.32, w * 0.55, depth + 1)
             x, y = nx, ny
-    for k in range(7):
-        crack(c, c, k * 2 * math.pi / 7 + rng.normal(0, 0.25), n * rng.uniform(0.3, 0.45), 26, 0)
-    pts = [(c + math.cos(a) * n * r, c + math.sin(a) * n * r) for a, r in
-           zip(np.linspace(0, 2 * np.pi, 9, endpoint=False), rng.uniform(0.07, 0.1, 9))]
-    d.polygon(pts, fill=255)
+    for k in range(6):
+        crack(c, c, k * 2 * math.pi / 6 + rng.normal(0, 0.28), n * rng.uniform(0.3, 0.44), 46, 0)
+    crater = [(c + math.cos(a) * n * r, c + math.sin(a) * n * r) for a, r in
+              zip(np.linspace(0, 2 * np.pi, 11, endpoint=False) + rng.uniform(0, 0.4), rng.uniform(0.11, 0.16, 11))]
+    d.polygon(crater, fill=255)
     m = np.asarray(dark) > 0
-    rim = outline(m, 6)
-    inner = ndimage.binary_erosion(m, iterations=5)
-    return to_img(compose([(rim, (0.88, 0.8, 0.66)), (m, (0.3, 0.22, 0.16)), (inner, (0.17, 0.12, 0.1))], n))
+    cim = Image.new("L", (n, n), 0); ImageDraw.Draw(cim).polygon(crater, fill=255)
+    cm = np.asarray(cim) > 0
+    lit = cm & ~np.roll(np.roll(cm, 22, 0), 22, 1)            # pan éclairé du cratère, en haut à gauche
+    rim = outline(m, 9)
+    basin = np.sqrt(X ** 2 + Y ** 2) < 0.24 + (fbm((n, n), 60, 2, seed) - 0.5) * 0.08
+    img = compose([(basin, (0.42, 0.33, 0.24)), (rim, (0.9, 0.82, 0.68)), (m, (0.28, 0.2, 0.15)),
+                   (ndimage.binary_erosion(m, iterations=7), (0.15, 0.1, 0.09)), (lit, (0.55, 0.43, 0.32))], n)
+    a = img[..., 3]
+    a[basin & ~(m | rim)] *= 0.35                             # cuvette : simple assombrissement
+    return to_img(img)
 
 def scorch_decal(n=1024, seed=71):
     """Brûlure : tache irrégulière en 2 tons, quelques braises (feu)."""
