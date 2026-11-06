@@ -403,7 +403,52 @@ def scorch_decal(n=1024, seed=71):
     emb &= m
     return to_img(compose([(m, (0.27, 0.2, 0.17)), (inner, (0.16, 0.11, 0.1)), (emb, (1.0, 0.55, 0.15))], n))
 
+
+# ---------------------------------------------------------------- textures de maillage (animé moderne, 06/11)
+def streak_band(w=512, h=256, seed=81, lines=46):
+    """Traits de vent horizontaux (tuile en largeur) pour les sphères et cônes d'impact :
+    longueurs et épaisseurs variées, bouts effilés, l'ensemble s'efface en haut et en bas."""
+    rng = np.random.default_rng(seed)
+    a = np.zeros((h, w))
+    xs = np.arange(w)
+    for _ in range(lines):
+        y = rng.uniform(0.08, 0.92) * h
+        th = rng.uniform(1.5, 6.0)
+        L = rng.uniform(0.15, 0.6) * w
+        x0 = rng.uniform(0, w)
+        u = ((xs - x0) % w) / L
+        prof = np.where(u < 1, np.sin(np.pi * np.clip(u, 0, 1)) ** 0.6, 0)
+        yy = np.arange(h)[:, None]
+        band = np.clip(1 - np.abs(yy - y) / th, 0, 1) ** 0.7
+        a = np.maximum(a, band * prof[None, :] * rng.uniform(0.6, 1.0))
+    v = np.linspace(0, 1, h)[:, None]
+    a *= np.clip(np.sin(np.pi * v) * 1.6, 0, 1)
+    return to_img(np.dstack([np.ones_like(a)] * 3 + [a]))
+
+def glow(n=256):
+    """Éclair d'impact rond : cœur plein, halo qui retombe vite (pas d'étoile)."""
+    X, Y = grid(n); r = np.sqrt(X ** 2 + Y ** 2)
+    a = np.clip(np.exp(-(r / 0.32) ** 2) * 1.25, 0, 1)
+    a = np.maximum(a, (r < 0.16).astype(float))
+    return to_img(np.dstack([np.ones_like(a)] * 3 + [a]))
+
+def ring_band(w=512, h=128, seed=91):
+    """Anneau au sol (UV : u autour, v du centre vers le bord) : bord extérieur net et clair,
+    traînée de poussière striée vers l'intérieur."""
+    rng = np.random.default_rng(seed)
+    v = np.linspace(0, 1, h)[:, None]
+    edge = np.clip(1 - np.abs(v - 0.86) / 0.06, 0, 1) ** 0.6
+    trail = np.clip((v - 0.25) / 0.6, 0, 1) ** 1.6 * 0.55
+    streak = fbm((h, w), 9, 2, seed)
+    streak = ndimage.gaussian_filter(streak, (6, 0.6))
+    a = np.maximum(edge, trail * (0.45 + 0.9 * streak)) * (v < 0.93)
+    a = np.clip(a, 0, 1)
+    return to_img(np.dstack([np.ones_like(a)] * 3 + [a]))
+
 RECIPES = {
+    "tx_streak_band": lambda: streak_band(),
+    "tx_glow": lambda: glow(),
+    "tx_ring_band": lambda: ring_band(),
     "fx_star": lambda: star(),
     "fx_impact_lines": lambda: impact_lines(),
     "fx_spark": lambda: spark(),
