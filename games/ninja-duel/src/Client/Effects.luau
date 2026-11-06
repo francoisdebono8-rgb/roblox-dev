@@ -2470,4 +2470,6 @@ require(script.Parent.PerceptionFX).install(FX,{block=block,sound=sound,anchorPa
 require(script.Parent.ByakuganFX).install(FX,{block=block,sound=sound,anchorPart=anchorPart,SOUND=SOUND})
 -- (06/11) Kakashi's Sharingan copy: the read and the copied cast (Server/Copy).
 require(script.Parent.CopyFX).install(FX,{new=new,block=block,tween=tween,sound=sound,flash=flash,burst=burst,anchorPart=anchorPart,num=num,TEX=TEX,SOUND=SOUND})
+-- (06/11) Kakashi's ninken: diving in, bursting out, the bite (Server/Hounds).
+require(script.Parent.HoundFX).install(FX,{new=new,block=block,tween=tween,sound=sound,flash=flash,burst=burst,anchorPart=anchorPart,num=num,smokePuff=smokePuff,TEX=TEX,SOUND=SOUND})
 return FX

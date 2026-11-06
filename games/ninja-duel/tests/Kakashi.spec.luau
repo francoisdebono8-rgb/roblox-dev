@@ -2,6 +2,7 @@
 -- takes his first slot for 15 s or one cast and he casts it as its owner does;
 -- not from behind (unless uncovered), not a Hyuga's, not the Rasengan; a
 -- copied crowd is ten Kakashis, and the key again takes one of their bodies.
+-- His ninken (Server/Hounds): a pack that digs to the legs and holds.
 -- Headless: rules and state. The red read on screen needs native Studio.
 local H=require("./Harness")
 local V=H.V
@@ -74,6 +75,31 @@ test("a copied Multi Shadow Clone is ten Kakashis, and the key again takes one o
  assert(Copy.slotSpec(c,k,1).Id=="MassShadowClone","the slot let go of the crowd while it is out")
  assert(c:request(k,"Technique1",b.root.Position),"the body switch was refused")
  assert((k.root.Position-before).Magnitude>2,"Kakashi did not take a clone's body")
+end)
+
+test("Tracking Fang: four hounds dig to his legs (no blow reaches them there), burst out and hold him, then go",function()
+ local c,k,b=H.duel("Copycat","Mirage");place(c,k,b,14)
+ assert(c:request(k,slot(k,"TrackingFang"),b.root.Position),"Tracking Fang refused")
+ local pack={}
+ for _=1,40 do
+  H.step(c,.01)
+  pack={}
+  for _,body in c.bodies or {} do if body.alive and body.kind=="hound" then table.insert(pack,body) end end
+  if #pack>0 then break end
+ end
+ assert(#pack==4,"the pack is not four hounds ("..#pack..")")
+ assert(pack[1].buried,"a hound digging is not under the floor")
+ assert(Bodies.threat(c,b,40)==nil,"a buried hound can be struck")
+ local held=false
+ for _=1,150 do
+  H.step(c,.01)
+  if b.reaction=="Bound" and b.boundBy==k and b.boundKind=="houndpack" then held=true;break end
+ end
+ assert(held,"the hounds never held him")
+ H.step(c,2.5)
+ local left=0
+ for _,body in c.bodies or {} do if body.alive and body.kind=="hound" then left+=1 end end
+ assert(left==0,"hounds stayed after the hold ("..left..")")
 end)
 
 print("NinjaDuel Kakashi copy: "..passed.." PASS")

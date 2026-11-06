@@ -439,6 +439,11 @@ local Fighters = {
 		-- cast in front of him takes his first slot (the Water Dragon, his first
 		-- copy) for Life seconds or Uses casts; uncovered, from any angle.
 		Copy = { Slot = 1, Life = 15, Uses = 1 },
+		-- (06/11, « les chiens ninja qui sortent du sol ») His ninken (Server/Hounds):
+		-- a Pack that digs at Dig studs/s to the legs, bites in Reach (the
+		-- technique's Bind, ChaseBite after a chase), or runs him down at Run for
+		-- Chase seconds when he dodged.
+		Bodies = { hound = { Pack = 4, Dig = 46, Run = 30, Chase = 2.2, Reach = 2.4, ChaseBite = .7 } },
 		Motion = { body = "Mirage", weapons = "kunai", springy = false,
 			-- Slouched and relaxed, one hand low by the holster.
 			stance = {root={y=-.32,pitch=4,yaw=24},torso={pitch=8,yaw=-10},head={pitch=6,yaw=-14},
@@ -458,7 +463,7 @@ local Fighters = {
 				State = { Time = 2.6, Drain = 6, Strike = "ChidoriThrust", Air = "ChidoriThrust", Damage = 22, World = { contact = "energy", element = "lightning" }, Style = "chidori", Name = "Lightning Blade" },
 				Range = 20, Damage = 22, Hint = "Charge, then a lightning thrust • a miss leaves him open", AI = { Min = 4, Max = 16, Punish = true } },
 			{ Id = "TrackingFang", Name = "Summoning: Tracking Fang", Family = "Projectile", Kind = "hounds", Ground = true, Cost = 22, Channel = 0.3, Active = 0.08, Recovery = 0.3, Cooldown = 8, Interruptible = true,
-				Range = 30, Speed = 50, Damage = 4, Radius = 1.6, Bind = 1.1, Hint = "His hounds burst from the ground and hold the body • then the blade" },
+				Range = 30, Speed = 50, Damage = 4, Radius = 1.6, Bind = 1.1, Hint = "Four hounds dig to his legs, burst out and hold him • dodged, they chase him • one blow sends a hound away" },
 			{ Id = "LightningCut", Name = "Lightning Cut", Family = "Teleport", To = "Behind", Distance = 3.2, Move = "DashAttack", Armed = true, Element = "Lightning", Cost = 18, Channel = 0.08, Active = 0.02, Recovery = 0.16, Cooldown = 6, Interruptible = true, Range = 22, Damage = 14, Invuln = 0.12, Kind = "lightning", Hint = "Tantô drawn: through the body in one cut, out behind it" },
 		},
 	},

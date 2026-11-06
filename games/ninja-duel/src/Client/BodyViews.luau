@@ -6,6 +6,8 @@
 -- Rasengan it shapes). Copies are pooled per owner model; the puffs of smoke
 -- come from the contact feed (Client/NarutoFX). Presentation only.
 local Motion=require(script.Parent.VelmoraMotionEngine)
+-- (06/11) Kakashi's ninken are dogs, not copies of him (Client/HoundFX).
+local HoundFX=require(script.Parent.HoundFX)
 local BodyViews={};BodyViews.__index=BodyViews
 BodyViews.clock=os.clock -- (headless tests drive time)
 -- A body never lags its server position by more than this before it snaps.
@@ -82,6 +84,7 @@ function BodyViews:take(owner)
 end
 function BodyViews:release(view)
 	local model=view.model
+	if view.hound then model:Destroy();return end
 	model.Parent=nil
 	if view.fadeSet and view.fadeSet~=0 then for _,part in view.parts or BodyViews.parts(model) do part.LocalTransparencyModifier=0 end end
 	local pool=self.pools[view.owner] or {}
@@ -112,6 +115,7 @@ function BodyViews:step(view,entry,dt)
 	local drawn=view.look or look
 	drawn=drawn:Lerp(look,1-math.exp(-14*math.max(dt,1/240)))
 	view.look=if drawn.Magnitude>.05 then drawn.Unit else look
+	if view.hound then HoundFX.pose(view,entry,dt);return end
 	view.model:PivotTo(CFrame.lookAt(view.pos,view.pos+view.look))
 	-- Its own clock: an action animates from the frame it was first seen.
 	local clock=view.clock
@@ -225,6 +229,12 @@ function BodyViews:update(data,dt,folder)
 	for _,entry in data.bodies or {} do
 		live[entry.id]=true
 		local view=self.views[entry.id]
+		if not view and entry.kind=="hound" then
+			local model,rig=HoundFX.build(entry.slot or entry.id)
+			model.Parent=self.folder
+			view={model=model,rig=rig,hound=true,pos=entry.position,look=nil,warp=entry.warp,clock={}}
+			self.views[entry.id]=view
+		end
 		if not view then
 			local owner=folder and folder:FindFirstChild(entry.owner or "")
 			local model=owner and self:take(owner)
