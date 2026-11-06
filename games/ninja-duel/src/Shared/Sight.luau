@@ -51,6 +51,20 @@ function Sight.eyes(fighterId,awake)
 	return not def.SharinganAwake or awake==true
 end
 
+-- (06/11) The Byakugan's sight: it sees chakra, not light. Neji's
+-- Perception (a buff of kind "byakugan") or a Byakugan awakening (Neji's
+-- Full Field, Hinata's Resolve) opens it: the opponent's chakra network,
+-- how full it is, the points closed in it and the chakra gathering for a
+-- jutsu, through walls; a body without a network (a clone, an image) shows
+-- for what it is.
+function Sight.chakraSight(fighterId,buffId,awake)
+	local def=Fighters[fighterId or ""]
+	if not def or not def.Byakugan then return false end
+	local spec=techSpec(def,buffId)
+	if spec and spec.Kind=="byakugan" then return true end
+	return awake==true
+end
+
 -- Server side (an actor of Server/Combat).
 function Sight.unreadable(a,now)
 	if not a or (a.health or 0)<=0 then return false end
@@ -71,6 +85,11 @@ function Sight.viewFast(actor)
 end
 function Sight.viewUnreadable(actor)
 	return Sight.viewFast(actor) and Sight.moving(actor.state,actor.speed)
+end
+function Sight.viewChakraSight(actor)
+	if not actor or (actor.health or 1)<=0 then return false end
+	local family=actor.family
+	return Sight.chakraSight(actor.fighterId,family and family.buff,(actor.awaken or 0)>0)
 end
 function Sight.viewReads(actor)
 	return actor~=nil and Sight.eyes(actor.fighterId,(actor.awaken or 0)>0)

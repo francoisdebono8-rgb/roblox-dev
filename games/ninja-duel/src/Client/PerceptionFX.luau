@@ -213,7 +213,9 @@ local function place(copy,frame,offset,transparency)
 		table.insert(parts,g);table.insert(cfs,if offset then offset*cf else cf)
 		g.Transparency=transparency
 	end
-	if #parts>0 then workspace:BulkMoveTo(parts,cfs,Enum.BulkMoveMode.FireCFrameChanged) end
+	if #parts==0 then return end
+	if workspace.BulkMoveTo then workspace:BulkMoveTo(parts,cfs,Enum.BulkMoveMode.FireCFrameChanged)
+	else for i,p in parts do p.CFrame=cfs[i] end end
 end
 local function hideCopy(copy)
 	for _,g in copy or {} do g.Transparency=1 end

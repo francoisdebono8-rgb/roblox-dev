@@ -2463,4 +2463,7 @@ require(script.Parent.GaleFX).install(FX,{new=new,block=block,tween=tween,sound=
 -- (06/11) What the viewer's eyes read of a speed jutsu: ink for ordinary
 -- eyes, afterimages and the strike to come for the Sharingan (Shared/Sight).
 require(script.Parent.PerceptionFX).install(FX,{block=block,sound=sound,anchorPart=anchorPart,SOUND=SOUND})
+-- (06/11) The Byakugan's sight: the opponent's chakra network, its points,
+-- its fullness and the jutsu gathering in it (Shared/Sight, Client/ByakuganFX).
+require(script.Parent.ByakuganFX).install(FX,{block=block,sound=sound,anchorPart=anchorPart,SOUND=SOUND})
 return FX

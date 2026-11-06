@@ -148,42 +148,23 @@ local function drainCue(fx,data,folder)
 	end
 	Debris:AddItem(holder,.35)
 end
--- 64 Palms: the count every palm calls (2, 4, 8 ... 64) over the victim, the
--- same for both players; a ring under Neji at each new call; it holds a beat
--- on the throwing palm, then clears.
+-- 64 Palms: each call (2, 4, 8 ... 64) is a ring under Neji, wider at each
+-- call, the last one white. (06/11) No number over the victim any more
+-- (user: « des 1, 2, 3 pop sur le truc, c'est super moche »): the count reads
+-- in the rings and, through the Byakugan, in the network going dark.
 local function countCue(fx,data,folder)
 	local victim=find(folder,data.victim)
-	local head=victim and (victim:FindFirstChild("Head") or rootOf(victim))
-	if not head then return end
+	if not victim then return end
 	local st=stateOf(fx,victim)
-	local board=st.palmCount
-	if not board or not board.gui.Parent then
-		local gui=K.new("BillboardGui",{Name="PalmCount",Size=UDim2.fromOffset(150,84),StudsOffset=Vector3.new(0,3.4,0),AlwaysOnTop=true,LightInfluence=0,Adornee=head},fx.folder)
-		local number=K.new("TextLabel",{Name="Count",Size=UDim2.fromScale(1,.68),BackgroundTransparency=1,Font=Enum.Font.Bangers,TextScaled=true,
-			TextColor3=HYUGA_CORE,TextStrokeColor3=Color3.fromRGB(26,34,70),TextStrokeTransparency=.1,Text=""},gui)
-		K.new("TextLabel",{Name="Palms",Position=UDim2.fromScale(0,.66),Size=UDim2.fromScale(1,.34),BackgroundTransparency=1,Font=Enum.Font.GothamBlack,TextScaled=true,
-			TextColor3=HYUGA,TextStrokeColor3=Color3.fromRGB(26,34,70),TextStrokeTransparency=.3,Text="PALMS"},gui)
-		board={gui=gui,number=number,shown=0}
-		st.palmCount=board
-	end
-	st.palmCountAt=IdentityFX.clock()
 	local count=data.count or 0
-	board.number.Text=tostring(count)
-	if count~=board.shown then
-		board.shown=count
-		-- Each new call lands a little bigger.
-		board.gui.Size=UDim2.fromOffset(150+count*.9,84+count*.5)
-		local neji=rootOf(find(folder,data.owner))
-		if neji then
-			local floor=K.floorUnder(fx,neji.Position,2,10)
-			local y=if floor then floor.Position.Y+.06 else neji.Position.Y-2.9
-			local size=3+math.log(math.max(count,2),2)*1.6
-			K.shockRing(fx.folder,Vector3.new(neji.Position.X,y,neji.Position.Z),if data.final then HYUGA_CORE else HYUGA,size*.6,size*2,.28)
-		end
-	end
-	if data.final then
-		board.number.TextColor3=Color3.fromRGB(255,255,255)
-		st.palmCountAt=IdentityFX.clock()+.6
+	if count==(st.palmShown or 0) and not data.final then return end
+	st.palmShown=if data.final then 0 else count
+	local neji=rootOf(find(folder,data.owner))
+	if neji then
+		local floor=K.floorUnder(fx,neji.Position,2,10)
+		local y=if floor then floor.Position.Y+.06 else neji.Position.Y-2.9
+		local size=3+math.log(math.max(count,2),2)*1.6
+		K.shockRing(fx.folder,Vector3.new(neji.Position.X,y,neji.Position.Z),if data.final then HYUGA_CORE else HYUGA,size*.6,size*2,.28)
 	end
 end
 -- Wall hit: what drove the body into the stone. Neji's air pressure (a Vacuum
@@ -225,29 +206,9 @@ local function nejiImpact(fx,data,folder)
 	if style=="wall" then wallCue(fx,data);return false end
 	return false
 end
--- Every closed point gets a marker of constant screen size, drawn over the
--- body: the network closing reads from any distance, for both players.
-local function tenketsuMarks(fx,model,actor)
-	local aura=fx.auras and fx.auras[model]
-	if not aura or not aura.points then return end
-	local severe=actor.tenketsuSevere==true
-	for _,entry in aura.points do
-		local dot=entry.dot
-		if dot and dot.Parent then
-			local mark=entry.mark
-			if not mark or not mark.Parent then
-				local gui=K.new("BillboardGui",{Name="TenketsuMark",Size=UDim2.fromOffset(12,12),AlwaysOnTop=true,LightInfluence=0,Adornee=dot},dot)
-				local disc=K.new("Frame",{Name="Point",Size=UDim2.fromScale(1,1),BackgroundColor3=HYUGA,BorderSizePixel=0,BackgroundTransparency=.1},gui)
-				K.new("UICorner",{CornerRadius=UDim.new(1,0)},disc)
-				K.new("UIStroke",{Color=HYUGA_CORE,Thickness=1.5},disc)
-				entry.mark=gui;entry.markDisc=disc
-				mark=gui
-			end
-			entry.mark.Size=if severe then UDim2.fromOffset(16,16) else UDim2.fromOffset(12,12)
-			entry.markDisc.BackgroundColor3=if severe then HYUGA_CORE else HYUGA
-		end
-	end
-end
+-- (06/11) The closed points no longer get a flat disc drawn over everything
+-- (user: « c'est super moche »): Effects lights them on the body itself, and
+-- the Byakugan (Client/ByakuganFX) shows them as dark nodes of the network.
 -- Rotation repelled a strike: until the counter is spent, Neji's palms hold the
 -- dome's chakra (the twin palm that glides out of the spin releases it).
 local function counterGlow(fx,model,actor,st)
@@ -274,13 +235,7 @@ local function counterGlow(fx,model,actor,st)
 end
 -- Any body can carry closed points and a 64 Palms count; only Neji glows.
 local function networkFrame(fx,model,actor,st)
-	tenketsuMarks(fx,model,actor)
 	counterGlow(fx,model,actor,st)
-	-- A 64 Palms count left over (the flurry cut short, or the throw held its beat).
-	local board=st.palmCount
-	if board and IdentityFX.clock()-(st.palmCountAt or 0)>.6 then
-		board.gui:Destroy();st.palmCount=nil
-	end
 end
 
 -- ----------------------------------------------------------------- Minato
