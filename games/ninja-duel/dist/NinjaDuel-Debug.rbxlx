@@ -632,7 +632,7 @@ return {
 	-- the rounds last longer (AI against AI: 42 s average at 1.0). The
 	-- impact's look still reads the blow's own weight (unscaled).
 	DamageScale = 0.6,
-	Clash = {Window = 0.07, Push = 4.5},
+	Clash = {Window = 0.07, Push = 4.5, JutsuWindow = 0.35},
 	-- Re-engage (CORE_COMBAT_CONVERGENCE_2 §3): one contextual action (E; on a pad
 	-- × inside a chase window, sprint + ○ toward outside one). Inside a window it
 	-- is the chase, outside it is this chakra dash at a locked opponent; both cost
@@ -1635,7 +1635,7 @@ return Face
 				State = { Time = 2.6, Drain = 6, Strike = "ChidoriThrust", Air = "WallDive", Wall = "WallDive", AirVariant = "ChidoriDive", WallVariant = "ChidoriDive", Dive = true,
 					Teach = "JUMP, THEN ATTACK: DIVE", Damage = 22, World = { contact = "energy", element = "lightning" }, Style = "chidori", Name = "Chidori" },
 				Hint = "Form it, move with it, then strike • a miss leaves him open" },
-			{ Id = "WireTrap", Name = "Wire Trap", Cost = 18, Channel = 0.18, Active = 0.08, Recovery = 0.3, Cooldown = 6, Interruptible = true, Range = 34, Damage = 3, Hint = "A wired shuriken binds • then R1 + × (4) for Dragon Flame" },
+			{ Id = "WireTrap", Name = "Wire Trap", Cost = 18, Channel = 0.18, Active = 0.08, Recovery = 0.3, Cooldown = 6, Interruptible = true, Range = 34, Damage = 3, Hint = "A wired shuriken binds • then a Katon (1 or 4) runs the wire: Dragon Flame" },
 			{ Id = "FireBloom", Name = "Great Fireball", Element = "Fire", Cost = 24, Channel = 0.32, Active = 0.4, Recovery = 0.36, Cooldown = 5.5, Interruptible = true, Feintable = true, Range = 70, Speed = 64, Radius = 2, Growth = 1.6, Damage = 15,
 				-- (Reference quality) Tap: the quick breath. Held: he keeps drawing
 				-- in for up to Time more seconds (Cost chakra over it) and the ball
@@ -5078,7 +5078,7 @@ return {
       <Item class="StringValue" referent="ND32">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">68a4ca020e2dcbbbae40d6b703fee4b0940f9b2e7d2bbed9cb9d2b0cc8cb0c26</string>
+          <string name="Value">5260c51e4322c60f5a07318e569acf9cf7882effceea1e239f0391d35f37dec1</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND33">
@@ -8539,7 +8539,11 @@ function Brawler.clash(c,a,p)
  -- Simultaneous means the two active frames start within the clash window
  -- (the other swing may be a frame or two from becoming active).
  local other=if b.state=="Active" then (b.activeAt or 10) else b.untilTime
- if math.abs((a.activeAt or -10)-other)&gt;Config.Clash.Window then return false end
+ -- (06/11, Studio) Rasengan into Chidori: two held jutsu thrown at each other
+ -- meet even when their active frames do not start in the same instant (the
+ -- 0.07 s window of two punches never came up in a real exchange).
+ local jutsu=require(script.Parent.Interactions).jutsuPair(p,q)
+ if math.abs((a.activeAt or -10)-other)&gt;(if jutsu then Config.Clash.JutsuWindow or .35 else Config.Clash.Window) then return false end
  local delta=b.root.Position-a.root.Position
  local flat=Vector3.new(delta.X,0,delta.Z)
  if flat.Magnitude&lt;.1 or delta.Magnitude&gt;math.max(p.spec.range or 6,q.spec.range or 6)+1.5 then return false end
@@ -9450,6 +9454,10 @@ end
 -- heavier than a small flame, then the jutsu volume, then weight, then age.
 local function dominant(p,q,vp,vq)
 	if vp.volume and vq.volume then
+		-- (06/11) between two jutsu the nature that wins leads (the Great
+		-- Fireball takes the Wind Cut into itself), else the older one.
+		if beats(vp.nature,vq.nature) then return p,q,vp,vq end
+		if beats(vq.nature,vp.nature) then return q,p,vq,vp end
 		if p.id&lt;=q.id then return p,q,vp,vq end
 		return q,p,vq,vp
 	end
@@ -9748,7 +9756,7 @@ local function touchWire(c,w,x)
 			c:pushImpact(x.root.Position,"chidori",false,{owner=w.a.id,victim=x.id,chakra="surge",infusion="Lightning",from=point,to=x.root.Position})
 		end
 		-- ("WIRED": the HUD speaks it, like the Wire Trap hit's own cue.)
-		c:cue(w.a,"TRIPWIRE • WIRED • 1 = DRAGON FLAME",.9)
+		c:cue(w.a,"TRIPWIRE • WIRED • "..require(script.Parent.Techniques).wireFireKeys(w.a).." = DRAGON FLAME",.9)
 		Brawler.event(c,w.a,"TripwireBind")
 	end
 	record(c,"WireContact",applied,{owner=w.a.id,actor=x.id,charged=w.charged~=nil})
@@ -9831,11 +9839,24 @@ end
 function Chakra.dragonFlame(c,a,b)
 	-- (The technique has already let go of the body: the held wire of the
 	-- last tick is the one that burns.)
-	local from=wireStart(c,a)
 	local w=a.heldWire
 	if w then w.dead=true;a.heldWire=nil end
-	c:pushImpact(b.root.Position,"fire",true,{owner=a.id,normal=Vector3.yAxis,from=from,to=b.root.Position,victim=b.id,chakra="dragonflame",infusion="Fire"})
+	-- (06/11) the run along the wire is its own contact now (Chakra.dragonRun):
+	-- this is the blast where it arrives.
+	c:pushImpact(b.root.Position,"fire",true,{owner=a.id,normal=Vector3.yAxis,from=b.root.Position,to=b.root.Position,victim=b.id,chakra="dragonflame",infusion="Fire"})
 	Brawler.event(c,a,"DragonFlameWire")
+end
+-- (06/11, user: « le katon ne suit pas les fils de Sasuke ») The fire runs
+-- the wire: from his mouth (or the stake the wire is tied to) to the body,
+-- `travel` seconds; the client draws the flame travelling it and the wire
+-- burning behind it. Returns where it starts.
+Chakra.WireRun=60 -- studs/s
+function Chakra.wireStart(c,a) return wireStart(c,a) end
+function Chakra.dragonRun(c,a,b,travel)
+	local from=wireStart(c,a)
+	-- ("wirefire": no blast of its own at his mouth; ChakraFX draws the run.)
+	c:pushImpact(from,"wirefire",false,{owner=a.id,from=from,to=b.root.Position,victim=b.id,travel=travel,chakra="dragonrun",infusion="Fire"})
+	return from
 end
 
 -- ------------------------------------------------------------- per tick
@@ -10205,7 +10226,7 @@ function Chakra.conduct(c,a,infused)
 	if hit and b.state=="Stunned" then b.untilTime=math.max(b.untilTime,b.reactionUntil or c.now) end
 	wireGlow(c,a)
 	c:pushImpact(b.root.Position,"chidori",false,{owner=a.id,victim=b.id,chakra="conduct",infusion="Lightning",from=hand,to=b.root.Position})
-	c:cue(a,"WIRED • LIGHTNING • 1 = DRAGON FLAME",.9);c:cue(b,"WIRED • Q TO ESCAPE",.9)
+	c:cue(a,"WIRED • LIGHTNING • "..require(script.Parent.Techniques).wireFireKeys(a).." = DRAGON FLAME",.9);c:cue(b,"WIRED • Q TO ESCAPE",.9)
 	Brawler.event(c,a,"WireLightning")
 	record(c,"Conduct",infused.rules,{owner=a.id,victim=b.id,uses=b.wireConducts})
 	return true
@@ -11170,6 +11191,10 @@ rule("lightning-down-the-wire","Infuse",60,{source={all={"lightning"}},context={
 rule("gentle-palm","Infuse",40,{source={all={"body","chakra"}}},{signal("chakra-palm")})
 -- ProjectileClash: one exclusive outcome per meeting, from the dominant side.
 rule("plain-pass","ProjectileClash",100,{context={all={"plain"}}},{signal("clash-pass")},{group="clash"})
+-- (06/11, Studio) the Great Fireball and Minato's Wind Cut flew through each
+-- other: the wind is the fire's food (fire beats wind), the fireball takes the
+-- crescent into itself and grows. The one exception to the rule below.
+rule("fire-swallows-wind-jutsu","ProjectileClash",100,{source={all={"fire","volume"}},target={all={"wind","volume"}},context={all={"natureAdvantage"}}},{signal("clash-absorb")},{group="clash"})
 -- Two jutsu never cancel each other: matchups between techniques stay as they are.
 rule("volumes-pass","ProjectileClash",99,{source={all={"volume"}},target={all={"volume"}}},{signal("clash-pass")},{group="clash"})
 rule("fire-feeds-on-wind","ProjectileClash",95,{source={all={"fire"}},target={all={"wind"}},context={all={"natureAdvantage"}}},{signal("clash-absorb")},{group="clash"})
@@ -12701,7 +12726,8 @@ function Combat:requestInner(a,action,aim,clientTime,opts)
 	-- it at once (the wire throw's recovery is cancelled, the signs are short).
 	a.wireCancel=nil
 	local wired=a.wireVictim and a.wireVictim.reaction=="Bound" and a.wireVictim.boundBy==a
-	if cancelSpec and cancelSpec.Id=="FireBloom" and wired and (a.state=="TechniqueRecovery" or a.state=="Neutral" or a.state=="Recovery")
+	-- (06/11) either Katon on the bar (Techniques.dragonFlame), once per run.
+	if cancelSpec and (cancelSpec.Id=="FireBloom" or cancelSpec.Id=="PhoenixFlower") and wired and (a.wireBurnUntil or 0)&lt;=self.now and (a.state=="TechniqueRecovery" or a.state=="Neutral" or a.state=="Recovery")
 		and (a.cooldowns[cancelSpec.Id] or 0)&lt;=self.now and a.chakra&gt;=cancelSpec.Cost then
 		a.state="Neutral";a.untilTime=self.now;a.pending=nil
 		a.wireCancel=true
@@ -12781,7 +12807,7 @@ function Combat:requestInner(a,action,aim,clientTime,opts)
 	local cancelled=a.stringCancel==spec.Id
 	if cancelled then spec=table.clone(spec);spec.Channel=math.min(spec.Channel,.14) end
 	a.stringCancel=nil
-	if a.wireCancel and spec.Id=="FireBloom" then spec=table.clone(spec);spec.Channel=.16 end
+	if a.wireCancel and (spec.Id=="FireBloom" or spec.Id=="PhoenixFlower") then spec=table.clone(spec);spec.Channel=.16 end
 	a.wireCancel=nil
 	-- Context: the same Rasengan is a different tool after a teleport (instant
 	-- thrust) and in the air (a plunge that ends the air phase).
@@ -13515,6 +13541,8 @@ function Combat:projectileHit(p,target,position,normal)
 	-- (Stage 6) where a Water Dragon ends the ground stays wet; fire reaching
 	-- Gaara melts a charge of his sand.
 	Interactions.ended(self,p,position)
+	-- (06/11) the water reached him: soaked, lightning runs through him.
+	Interactions.soak(self,p,target)
 	Interactions.fireOnSand(self,p,target)
 	self.damageTag=p.kind
 	self.hitOrigin=position-p.direction*4
@@ -13850,6 +13878,8 @@ function Combat:update(dt,now)
 	if self.match.phase=="Duel" then self:separate() end
 	if self.match.phase=="Duel" then self:runScheduled() end
 	if self.match.phase=="Duel" then Bodies.step(self,dt) end
+	-- (06/11) a lightning jutsu charged or cast standing in the water runs into it.
+	if self.match.phase=="Duel" then Interactions.step(self) end
 	-- Zones act before the flights move (a blade entering a lane turns this frame).
 	if self.match.phase=="Duel" then Zones.step(self,dt) end
 	if self.match.phase=="Duel" then self:updateProjectiles(dt); self:updateHazards() end
@@ -13878,6 +13908,7 @@ function Combat:update(dt,now)
 end
 function Combat:clear(preserveAnimations)
 	Interactions.clear(self)
+	for _,x in self.actors do x.wetUntil=nil end
 	-- (Freeze 02/11) An ultimate cut by the end of a round: its scheduled finish
 	-- is cleared below, so it is aborted here (the victim stayed "Held", every
 	-- key refused, and pinned on its path for the rest of the match).
@@ -17539,6 +17570,7 @@ return Hounds
 -- holds the new ones:
 --   fire + Water Dragon          a cloud of steam, nobody sees through it (3 s)
 --   Water Dragon on the ground   a puddle (6 s); lightning in it spreads (stun)
+--   water on a body              soaked (6 s): lightning on it is conducted
 --   Gaara's sand + water         wet sand: the Coffin slower but harder
 --   fire on Gaara's sand         the shield loses a charge more (it melts)
 --   Rasengan against Chidori     the two explode: both thrown back, big flash
@@ -17548,7 +17580,19 @@ local Interactions={}
 
 Interactions.STEAM={Radius=10,Time=3}
 Interactions.PUDDLE={Radius=9,Time=6}
-Interactions.CONDUCT={Damage=1.3,Stun=.6}
+-- (06/11, user: « c'est faux, la foudre ne va pas dans l'eau ») Studio 06/11:
+-- the Water Dragon threw the body out of the puddle it had just made, and the
+-- rule (a lightning blow on a body standing in the puddle, x1.3) never came
+-- up. Water carries lightning two ways now:
+--   soaked: a body the water reached is wet for SOAK.Time (and while it stands
+--     in a puddle); lightning on a wet body is conducted: Damage x, held Stun s;
+--   the puddle: lightning that reaches the water (a lightning blow on anything
+--     standing in it, a lightning jutsu charged or cast by someone standing in
+--     it) runs through the whole puddle: everyone else in it takes Shock and a
+--     ShockStun hold, wet or not, and the clones in it puff away; a puddle
+--     carries one current every Cooldown s.
+Interactions.SOAK={Time=6}
+Interactions.CONDUCT={Damage=1.5,Stun=.8,Shock=6,ShockStun=.6,Cooldown=1.4}
 Interactions.WET={Speed=.7,Damage=1.3}
 Interactions.CLASH={Push=14,Chip=5}
 
@@ -17562,6 +17606,7 @@ end
 Interactions.isFire=isFire
 Interactions.isWater=isWater
 local function flat(v) return Vector3.new(v.X,0,v.Z) end
+local function brawler() return require(script.Parent.Brawler) end
 
 -- Two flying objects meet (ChakraCombat, before its own rules): true when an
 -- interaction here took the meeting.
@@ -17606,11 +17651,24 @@ function Interactions.inPuddle(c,a)
 	return nil
 end
 function Interactions.clear(c) c.puddles=nil end
+-- The water reached this body (Combat:projectileHit): soaked.
+function Interactions.soak(c,p,target)
+	if not isWater(p) or not target or not target.root or target.health&lt;=0 then return end
+	target.wetUntil=math.max(target.wetUntil or 0,c.now+Interactions.SOAK.Time)
+end
+function Interactions.wet(c,a)
+	return (a.wetUntil or 0)&gt;c.now or Interactions.inPuddle(c,a)~=nil
+end
 
 -- Is this blow lightning? A lightning jutsu being cast, a held Chidori or
 -- Lightning Blade released, a lightning-infused strike.
 local LIGHTNING_STATES={Chidori=true,LightningBlade=true}
+local function heldLightning(a)
+	local held=a.bodyState
+	return held~=nil and (LIGHTNING_STATES[held.id or ""]==true or (held.spec~=nil and held.spec.Element=="Lightning"))
+end
 function Interactions.lightning(c,a)
+	if heldLightning(a) then return true end
 	local p=a.pending
 	if p and p.spec and (p.spec.Element=="Lightning" or p.spec.element=="Lightning") then return true end
 	if p and LIGHTNING_STATES[p.state or ""] then return true end
@@ -17623,10 +17681,51 @@ end
 function Interactions.damage(c,attacker,victim,amount)
 	if not Interactions.lightning(c,attacker) then return amount,false end
 	local w=Interactions.inPuddle(c,victim)
-	if not w then return amount,false end
-	c:pushImpact(victim.root.Position,"conduct",true,{owner=attacker.id,victim=victim.id,position=w.position,radius=w.radius})
+	if not w and not Interactions.wet(c,victim) then return amount,false end
+	-- The current runs over the soaked body (and, in a puddle, the whole water).
+	c:pushImpact(victim.root.Position,"conduct",true,{owner=attacker.id,victim=victim.id,position=victim.root.Position,radius=0,body=true})
 	c:cue(attacker,"LIGHTNING • THE WATER CARRIES IT",.8)
+	c:cue(victim,"SOAKED • THE LIGHTNING RUNS THROUGH YOU",.8)
+	brawler().event(c,attacker,"Conduct")
+	if w then Interactions.electrify(c,attacker,w,victim) end
 	return amount*Interactions.CONDUCT.Damage,true
+end
+-- Lightning reached the puddle `w`: the current runs through all of it.
+function Interactions.electrify(c,by,w,skip)
+	local tune=Interactions.CONDUCT
+	if c.now&lt;(w.shockedAt or -9)+tune.Cooldown then return end
+	w.shockedAt=c.now
+	c:pushImpact(w.position,"conduct",true,{owner=by.id,position=w.position,radius=w.radius})
+	for _,x in c.actors do
+		if x~=by and x~=skip and x.health&gt;0 and Interactions.inPuddle(c,x)==w and (x.invulnerableUntil or 0)&lt;=c.now then
+			c.damageTag="Lightning in the water"
+			c:damage(by,x,tune.Shock,false,false)
+			c.damageTag=nil
+			if c.match.phase~="Duel" then return end
+			if x.health&gt;0 then
+				brawler().react(c,x,"HitStun",Vector3.zero,tune.ShockStun,by)
+				x.stunFloorUntil=math.max(x.stunFloorUntil or 0,c.now+tune.ShockStun)
+				c:cue(x,"IN THE WATER • SHOCKED",.8)
+			end
+		end
+	end
+	-- Clones standing in the water go out with the current.
+	require(script.Parent.Bodies).area(c,by,w.position,w.radius)
+end
+-- Every step (Combat:update): a lightning jutsu charged or cast by someone
+-- standing in a puddle runs into the water.
+function Interactions.step(c)
+	if not c.puddles or #c.puddles==0 then return end
+	for _,a in c.actors do
+		if a.health&gt;0 then
+			local charging=heldLightning(a) or ((a.state=="TechniqueChannel" or a.state=="TechniqueActive" or a.state=="Startup" or a.state=="Active")
+				and a.pending~=nil and a.pending.spec~=nil and (a.pending.spec.Element=="Lightning" or a.pending.spec.element=="Lightning"))
+			if charging then
+				local w=Interactions.inPuddle(c,a)
+				if w then Interactions.electrify(c,a,w,nil) end
+			end
+		end
+	end
 end
 
 -- Sand Coffin cast at a body in the water: wet sand, slower but harder.
@@ -17650,8 +17749,11 @@ end
 -- take a little, both jutsu are spent.
 local function rasengan(p) return p.rasengan==true end
 local function chidori(p) return LIGHTNING_STATES[p.state or ""]==true end
+function Interactions.jutsuPair(p,q)
+	return p~=nil and q~=nil and ((rasengan(p) and chidori(q)) or (chidori(p) and rasengan(q)))
+end
 function Interactions.jutsuClash(c,a,b,p,q)
-	if not ((rasengan(p) and chidori(q)) or (chidori(p) and rasengan(q))) then return false end
+	if not Interactions.jutsuPair(p,q) then return false end
 	local line=flat(b.root.Position-a.root.Position)
 	line=if line.Magnitude&gt;.1 then line.Unit else a.root.CFrame.LookVector
 	local tune=Interactions.CLASH
@@ -20169,7 +20271,7 @@ function Matches:view(s,cursor,mine,theirs)
 			splatElapsed=if a.reaction=="WallSplat" then now-(a.splatAt or now) else nil,
 			counter=math.max(0,(a.counterUntil or 0)-now),warpSerial=a.warpSerial or 0,
 			shield=a.shieldCharges or 0,shieldMax=a.def.SandShield and a.def.SandShield.Charges or 0,bound=a.reaction=="Bound",boundKind=if a.reaction=="Bound" then a.boundKind else nil,
-			awaken=math.max(0,(a.awakenUntil or 0)-now),
+			awaken=math.max(0,(a.awakenUntil or 0)-now),gate=if (a.awakenUntil or 0)&gt;now then a.gateOpen else nil,
 			awakenReady=a.def.Awakening~=nil and not a.awakened and a.health&gt;0 and a.health&lt;=a.def.Health*Config.Awaken.Threshold,
 			-- Neji: Rotation dome, closed chakra points and sealed techniques.
 			rotation=(a.rotationUntil or 0)&gt;now,tenketsu=if (a.tenketsuUntil or 0)&gt;now then a.tenketsu or 0 else 0,
@@ -20194,7 +20296,9 @@ function Matches:view(s,cursor,mine,theirs)
 			-- Family buffs, counter stances and slows (Server/Families), for auras and the plate.
 			family=require(script.Parent.Families).snapshot(a,now,s.combat),
 			-- (06/11) The jutsu Kakashi's Sharingan holds (his eye stays lit).
-			copy=Copy.view(s.combat,a)}
+			copy=Copy.view(s.combat,a),
+			-- (06/11) Soaked by the water (Interactions): lightning runs through him.
+			wet=require(script.Parent.Interactions).wet(s.combat,a)}
 	end
 	-- Live projectiles: straight constant-speed flights the client reproduces
 	-- exactly on the shared server clock, so blades and fire never stutter.
@@ -24190,27 +24294,63 @@ Techniques.Quickstep={
 		c:cue(a,if moved&gt;3 then "ANGLE CREATED" else "ANGLE BLOCKED")
 	end,
 }
--- Great Fireball; on an opponent held by Sasuke's wire it becomes the Dragon
--- Flame: the fire runs along the wire and cannot miss.
-Techniques.FireBloom={check=function() return true end,execute=function(c,a,pending,now)
+-- Dragon Flame: a Katon on an opponent held by Sasuke's wire runs along the
+-- wire and cannot miss.
+-- (06/11, Studio) the bind told the player "1 = DRAGON FLAME" while key 1 is
+-- the Phoenix Flower and only 4 (the Great Fireball) ran the wire: pressing 1
+-- threw flowers past it. Either Katon on the bar now runs the wire while it
+-- holds, and the cue names the keys the bar really shows.
+local WIRE_FIRE={FireBloom=true,PhoenixFlower=true}
+function Techniques.wireFireKeys(a)
+	local keys={}
+	for i,t in (a.def and a.def.Techniques) or {} do if WIRE_FIRE[t.Id] then table.insert(keys,tostring(i)) end end
+	return if #keys&gt;0 then table.concat(keys," OR ") else "KATON"
+end
+local function dragonFlame(c,a,pending)
 	local b=a.wireVictim
-	if b and b.reaction=="Bound" and b.boundBy==a and b.health&gt;0 then
-		a.wireVictim=nil;b.boundBy=nil
-		c.damageTag="Dragon Flame"
-		local hit=c:damage(a,b,pending.spec.Damage,true,false)
-		c.damageTag=nil
-		if c.match.phase~="Duel" then return end
-		-- The flame runs the wire from the hand (or its stake) to the body.
-		require(script.Parent.ChakraCombat).dragonFlame(c,a,b)
-		if hit then
-			local away=b.root.Position-a.root.Position;away=Vector3.new(away.X,0,away.Z)
-			away=if away.Magnitude&gt;.1 then away.Unit else a.root.CFrame.LookVector
-			local Brawler=require(script.Parent.Brawler)
-			Brawler.react(c,b,"Knockdown",away*30+Vector3.new(0,22,0),.8,a)
-		end
+	if b and b.reaction=="Bound" and b.boundBy==a and b.health&gt;0 and (a.wireBurnUntil or 0)&lt;=c.now then
+		-- (Studio 06/11) the wire stays his until the fire reaches the body: let
+		-- go here, the held wire vanished the instant the run began.
+		-- (06/11, user: « le katon ne suit pas les fils de Sasuke ») Studio: the
+		-- fire burst on the body the instant he breathed it, the wire never
+		-- seen burning. The flame runs the wire now, from his mouth to the
+		-- body, and the wire holds him until it arrives; a body that slipped
+		-- the wire meanwhile (substitution) leaves it burning on nothing.
+		local Chakra=require(script.Parent.ChakraCombat)
+		local from=Chakra.wireStart(c,a)
+		local travel=math.clamp((b.root.Position-from).Magnitude/Chakra.WireRun,.12,.45)
+		b.reactionUntil=math.max(b.reactionUntil or 0,c.now+travel+.08)
+		a.wireBurnUntil=c.now+travel
+		Chakra.dragonRun(c,a,b,travel)
 		c:cue(a,"KATON • DRAGON FLAME",1)
-		return
+		-- (the Great Fireball's damage, whichever Katon key ran the wire)
+		local damage=pending.spec.Damage
+		for _,t in a.def.Techniques or {} do if t.Id=="FireBloom" then damage=t.Damage or damage end end
+		c:schedule(c.now+travel,function()
+			if a.wireVictim==b then a.wireVictim=nil end
+			if a.health&lt;=0 or c.match.phase~="Duel" then return end
+			if b.health&lt;=0 or b.reaction~="Bound" or b.boundBy~=a then return end
+			b.boundBy=nil
+			c.damageTag="Dragon Flame"
+			local hit=c:damage(a,b,damage,true,false)
+			c.damageTag=nil
+			if c.match.phase~="Duel" then return end
+			Chakra.dragonFlame(c,a,b)
+			if hit then
+				local away=b.root.Position-a.root.Position;away=Vector3.new(away.X,0,away.Z)
+				away=if away.Magnitude&gt;.1 then away.Unit else a.root.CFrame.LookVector
+				local Brawler=require(script.Parent.Brawler)
+				Brawler.react(c,b,"Knockdown",away*30+Vector3.new(0,22,0),.8,a)
+			end
+		end)
+		return true
 	end
+	return false
+end
+Techniques.dragonFlame=dragonFlame
+-- Great Fireball (or the Dragon Flame on a wired body).
+Techniques.FireBloom={check=function() return true end,execute=function(c,a,pending,now)
+	if dragonFlame(c,a,pending) then return end
 	Elements.fire(c,a,pending,now)
 end}
 -- Wire Trap: a shuriken trailing ninja wire; a body it reaches is bound.
@@ -24245,7 +24385,7 @@ function Techniques.wireBind(c,owner,victim,riders,direction)
 	-- The wire is a conductor while it holds: Sasuke's lightning may run down it
 	-- (ChakraCombat.conduct), bounded from the moment the bind started.
 	victim.boundAt=c.now;victim.wireConducts=0
-	c:cue(owner,if pinned then "WIRED TO THE WALL • 1 = DRAGON FLAME" else "WIRED • 1 = DRAGON FLAME",.9);c:cue(victim,"WIRED • Q TO ESCAPE",.9)
+	c:cue(owner,(if pinned then "WIRED TO THE WALL • " else "WIRED • ")..Techniques.wireFireKeys(owner).." = DRAGON FLAME",.9);c:cue(victim,"WIRED • Q TO ESCAPE",.9)
 	Brawler.event(c,owner,if pinned then "WirePin" else "WireBind")
 end
 -- Chidori: the charge is the channel (slowed, interruptible); the release is
@@ -24632,7 +24772,11 @@ function Techniques.rotationCounter(c,a)
 		end)
 	end
 end
-Techniques.PhoenixFlower={check=function() return true end,execute=Elements.phoenix}
+Techniques.PhoenixFlower={check=function() return true end,execute=function(c,a,pending,now)
+	-- (on a body his wire holds: the Dragon Flame, see FireBloom)
+	if dragonFlame(c,a,pending) then return end
+	return Elements.phoenix(c,a,pending,now)
+end}
 -- Minato's Wind Cut: a crescent of wind thrown off the kunai's edge on the run
 -- (the legs never stop). It cuts enemy blades out of its lane, and a body it
 -- cuts is thrown a step sideways with a short wind seal on it: the very next
@@ -24756,8 +24900,27 @@ function Techniques.cursedLeaf(c,a,b)
 end
 -- Curse Mark drain: it burns faster while he is not landing blows (hunger),
 -- pauses for a moment after each one, and never kills.
+-- (06/11, Studio) Lee's gates opened one by one on the server (speed, damage
+-- and the drain grew with them) and nothing on screen said so: one label and
+-- a faint flush for twenty seconds. Each gate that opens is announced now (its
+-- name on screen, a burst on his body) and the snapshot carries which is open.
+local GATE_NAMES={"GATE OF OPENING","GATE OF HEALING","GATE OF LIFE","GATE OF PAIN","GATE OF LIMIT"}
+function Techniques.gateStep(c,a,now)
+	local tune=a.def.Awakening
+	if not (tune and tune.Gates) or (a.awakenUntil or 0)&lt;=now or a.health&lt;=0 then a.gateOpen=nil;return end
+	local g=tune.Gates
+	local gate=math.min(g.Max or 5,1+math.floor((now-(a.awakenedAt or now))/(g.Step or 4))) -- (Combat.gateOf)
+	if a.gateAwake~=a.awakenedAt then a.gateAwake=a.awakenedAt;a.gateOpen=gate;return end
+	if gate==a.gateOpen then return end
+	a.gateOpen=gate
+	c:pushImpact(a.root.Position,"gate",gate&gt;=(tune.Gates.Max or 5),{owner=a.id,fighter=a.fighterId,gate=gate})
+	c:cue(a,"GATE "..gate.." • "..(GATE_NAMES[gate] or "GATE").." OPEN",1.1)
+	if a.target then c:cue(a.target,"LEE • "..(GATE_NAMES[gate] or "GATE").." OPEN",.9) end
+	require(script.Parent.Brawler).event(c,a,"Gate"..gate)
+end
 function Techniques.curseDrain(c,a,dt,now)
 	local tune=a.def.Awakening
+	Techniques.gateStep(c,a,now)
 	if not (tune and tune.HealthDrain) or (a.awakenUntil or 0)&lt;=now or a.health&lt;=1 then a.curseHunger=false;return end
 	local rate=tune.HealthDrain
 	-- Lee's gates: each one open costs a fifth more of the full drain.
@@ -43933,7 +44096,7 @@ ChakraFX.ContactSound={
 	shock={{"electric",.45,1}},pointshock={{"electric",.45,1.1}},wirecharge={{"electric",.4,1.2}},
 	surge={{"electric",.4,1.25}},conduct={{"electric",.35,1.35}},arc={{"electric",.22,1.7}},
 	ignite={{"fireLoop",.35,1.15,.45},{"boom",.2,1.7}},burn={{"fireLoop",.3,1.25,.35}},absorb={{"fireLoop",.35,1,.5},{"boom",.18,1.5}},
-	wireburn={{"fireLoop",.4,.9,.6},{"whoosh",.3,.55}},dragonflame={{"fireLoop",.4,.85,.7}},
+	wireburn={{"fireLoop",.4,.9,.6},{"whoosh",.3,.55}},dragonflame={{"fireLoop",.4,.85,.7}},dragonrun={{"fireLoop",.35,1.1,.5}},
 	gust={{"whooshBy",.42,1.5}},blown={{"whooshBy",.35,1.7}},
 	cut={{"swish",.45,1.75}},wirecut={{"swish",.35,1.9}},
 	crush={{"heavy",.45,.85},{"rock",.3,1.2}},
@@ -44400,6 +44563,117 @@ local function dragonFlame(fx,impact)
 		end)
 	end
 end
+-- (06/11, user: « le katon ne suit pas les fils de Sasuke ») The flame runs
+-- the wire: a head of fire travels from his mouth to the body in `travel`
+-- seconds, the wire behind it glowing and burning away, fire shed along it.
+local FLAME_HOT=Color3.fromRGB(255,176,64)
+local FLAME=Color3.fromRGB(240,84,24)
+local FLAME_END=Color3.fromRGB(70,22,10)
+local WIRE_HOT=Color3.fromRGB(226,92,30)
+local WIRE_ASH=Color3.fromRGB(52,34,28)
+-- The held wire as stepHolds draws it this frame (its sagging segments, hand
+-- to chest), as a list of points; nil when no drawn wire starts near `near`.
+local function drawnWire(fx,near)
+	for _,model in fx.folder:GetChildren() do
+		if model.Name=="HeldWire" then
+			local points={}
+			local count=0
+			for _,seg in model:GetChildren() do
+				if seg.Name=="HeldWireSegment" then
+					count+=1
+					if count&gt;SEGMENTS then break end
+					local half=seg.CFrame.LookVector*seg.Size.Z/2
+					if #points==0 then table.insert(points,seg.Position-half) end
+					table.insert(points,seg.Position+half)
+				end
+			end
+			if #points&gt;=2 and (points[1]-near).Magnitude&lt;2.5 then return points end
+		end
+	end
+	return nil
+end
+-- The point at share k (0..1) of a polyline's length, and the index of the
+-- piece it lies on.
+local function alongLine(points,k)
+	local total=0
+	for n=1,#points-1 do total+=(points[n+1]-points[n]).Magnitude end
+	local left=total*k
+	for n=1,#points-1 do
+		local piece=(points[n+1]-points[n]).Magnitude
+		if left&lt;=piece or n==#points-1 then return points[n]:Lerp(points[n+1],if piece&gt;0 then math.clamp(left/piece,0,1) else 1),n end
+		left-=piece
+	end
+	return points[#points],#points-1
+end
+local function dragonRun(fx,impact,folder)
+	local from,to=impact.from or impact.position,impact.to or impact.position
+	-- (Studio 06/11: the fire ran mouth -&gt; hips, beside the wire drawn hand -&gt;
+	-- chest) The run follows the wire as stepHolds draws it, sag included:
+	-- from his right hand (or the stake the wire is tied to) to the chest.
+	local owner=find(folder,impact.owner)
+	local hand=owner and owner:FindFirstChild("RightHand")
+	if hand and (hand.Position-from).Magnitude&lt;4 then from=hand.Position else hand=nil end
+	local victim=find(folder,impact.victim)
+	local chest=victim and (victim:FindFirstChild("UpperTorso") or victim:FindFirstChild("HumanoidRootPart"))
+	if chest then to=chest.Position end
+	local length=(to-from).Magnitude
+	if length&lt;.1 then return end
+	local travel=math.max(.1,impact.travel or .3)
+	local holder=K.new("Model",{Name="DragonFlameRun"},fx.folder)
+	-- (Studio 06/11: a white neon ball and a yellow bar read as a laser) The
+	-- head is flame (a running emitter, an orange light), the wire behind it
+	-- red-hot, cooling to ash.
+	local head=piece(holder,"Head",Vector3.one*.2,CFrame.new(from),FLAME,1)
+	K.new("ParticleEmitter",{Texture=K.TEX.fire,Rate=140,Lifetime=NumberRange.new(.14,.3),Speed=NumberRange.new(1,3),SpreadAngle=Vector2.new(180,180),
+		Color=K.seq({{0,FLAME_HOT},{.45,FLAME},{1,FLAME_END}}),LightEmission=.45,LightInfluence=0,Size=K.num({{0,1.5},{1,.4}}),
+		Transparency=K.num({{0,.1},{1,1}}),RotSpeed=NumberRange.new(-120,120),Rotation=NumberRange.new(0,360)},head)
+	K.new("PointLight",{Color=FLAME,Brightness=2.4,Range=9,Shadows=false},head)
+	local burnt={}
+	for n=1,SEGMENTS do
+		local b=piece(holder,"Burnt",Vector3.new(.09,.09,.05),CFrame.new(from),WIRE_HOT,1)
+		burnt[n]=b
+	end
+	local born=os.clock()
+	local shed=0
+	task.spawn(function()
+		while holder.Parent do
+			local k=math.clamp((os.clock()-born)/travel,0,1)
+			-- (both ends live: the wire is drawn from where the hand is now)
+			if chest and chest.Parent then to=chest.Position end
+			if hand and hand.Parent then from=hand.Position end
+			local points=drawnWire(fx,from) or {from,to}
+			local at,on=alongLine(points,k)
+			head.CFrame=CFrame.new(at)
+			-- the wire burnt up to the head
+			for n=1,SEGMENTS do
+				local b=burnt[n]
+				local a0=points[n]
+				local a1=if n&lt;on then points[n+1] elseif n==on then at else nil
+				if a0 and a1 and (a1-a0).Magnitude&gt;.03 then
+					b.Size=Vector3.new(.09,.09,(a1-a0).Magnitude);b.CFrame=CFrame.lookAt(a0:Lerp(a1,.5),a1);b.Transparency=.05
+				else b.Transparency=1 end
+			end
+			-- fire shed along the wire as the head passes
+			while shed&lt;k do
+				local p=alongLine(points,shed)
+				K.burst(fx.folder,p,{Texture=K.TEX.fire,Lifetime=NumberRange.new(.25,.45),Speed=NumberRange.new(1,3),SpreadAngle=Vector2.new(180,180),
+					Acceleration=Vector3.new(0,6,0),Color=K.seq({{0,FLAME_HOT},{.4,FLAME},{1,FLAME_END}}),LightEmission=.35,LightInfluence=0,
+					Size=K.num({{0,1.1},{1,.3}}),Transparency=K.num({{0,.1},{1,1}})},3)
+				shed+=1/math.max(4,math.floor(length/1.6))
+			end
+			if k&gt;=1 then break end
+			task.wait()
+		end
+		if holder.Parent then
+			local e=head:FindFirstChildOfClass("ParticleEmitter")
+			if e then e.Enabled=false end
+			for _,b in burnt do
+				if b.Transparency&lt;1 then b.Material=Enum.Material.SmoothPlastic;K.tween(b,.5,{Color=WIRE_ASH,Transparency=1}) end
+			end
+			Debris:AddItem(holder,.6)
+		end
+	end)
+end
 -- (06/11) A wind contact: streaks of air carried on along its line.
 local function windPast(fx,impact)
 	local at=impact.position
@@ -44421,19 +44695,20 @@ local function embersAt(fx,at)
 	K.burst(fx.folder,at,{Texture=K.TEX.fireSpark,Lifetime=NumberRange.new(.5,.9),Speed=NumberRange.new(5,10),SpreadAngle=Vector2.new(180,180),
 		Acceleration=Vector3.new(0,6,0),Drag=2.5,LightEmission=1,Color=emberRamp(),Size=K.num({{0,.35},{1,.05}})},10)
 end
-local function drawImpact(fx,impact)
+local function drawImpact(fx,impact,folder)
 	if impact.reason then explain(fx,impact) end
 	local kind=impact.chakra
 	if kind=="arc" then arcInto(fx,impact)
 	elseif kind=="dragonflame" then dragonFlame(fx,impact)
+	elseif kind=="dragonrun" then dragonRun(fx,impact,folder)
 	elseif kind=="gust" or kind=="blown" then windPast(fx,impact)
 	elseif kind=="ignite" or kind=="absorb" then embersAt(fx,impact.position) end
 	-- (06/11) every chakra contact is heard in its nature
 	local cue=kind and ChakraFX.ContactSound[kind]
 	if cue and impact.position then play(K.anchorPart(fx.folder,impact.position),cue,if impact.heavy then 1.15 else 1) end
 end
-local function impact(fx,data,_folder)
-	if data.chakra or data.reason then guard(drawImpact,fx,data) end
+local function impact(fx,data,folder)
+	if data.chakra or data.reason then guard(drawImpact,fx,data,folder) end
 	return false -- Effects still draws its own part of the contact
 end
 
@@ -48095,6 +48370,10 @@ function FX:fighter(model,actor,dt)
 		if aura.binding.beam then
 			-- taut once tight: the sag goes out of the line with the constriction
 			aura.binding.beam.CurveSize0=-.4*(1-u);aura.binding.beam.CurveSize1=.4*(1-u)
+			-- (06/11, Studio: two lines from his hand, the fire ran one of them)
+			-- the wire itself is drawn by ChakraFX (HeldWire: tension, current,
+			-- the Dragon Flame); this line is only for a bind without one.
+			aura.binding.beam.Enabled=self.folder:FindFirstChild("HeldWire")==nil
 		end
 	end
 	-- Sasuke: the Chidori crackles in the right hand from the charge to the thrust.
@@ -48460,11 +48739,154 @@ require(script.Parent.ByakuganFX).install(FX,{block=block,sound=sound,anchorPart
 require(script.Parent.CopyFX).install(FX,{new=new,block=block,tween=tween,sound=sound,flash=flash,burst=burst,anchorPart=anchorPart,num=num,TEX=TEX,SOUND=SOUND})
 -- (06/11) Kakashi's ninken: diving in, bursting out, the bite (Server/Hounds).
 require(script.Parent.HoundFX).install(FX,{new=new,block=block,tween=tween,sound=sound,flash=flash,burst=burst,anchorPart=anchorPart,num=num,smokePuff=smokePuff,TEX=TEX,SOUND=SOUND})
+-- (06/11) Water carries lightning: drips on a soaked body, the current in the water (Server/Interactions).
+require(script.Parent.ElementFX).install(FX,{new=new,block=block,sound=sound,flash=flash,shockRing=shockRing,anchorPart=anchorPart,floorUnder=floorUnder,SOUND=SOUND})
 return FX
 </ProtectedString>
           </Properties>
         </Item>
         <Item class="ModuleScript" referent="ND186">
+          <Properties>
+            <string name="Name">ElementFX</string>
+            <ProtectedString name="Source">-- (06/11, user: « c'est faux, la foudre ne va pas dans l'eau ») Water and
+-- lightning on screen (Server/Interactions). A soaked body drips while it is
+-- wet; the current shows where it runs: jagged arcs crawling over the whole
+-- puddle (everyone in it is shocked), arcs over a soaked body that lightning
+-- reached. One identity layer installed into Effects ahead of the others (it
+-- takes the "conduct" contact). Presentation only.
+local ElementFX={}
+local K -- Effects' helpers, handed over by install()
+ElementFX.clock=os.clock -- (headless tests drive time)
+local ARC=Color3.fromRGB(170,214,255)
+local CORE=Color3.fromRGB(244,250,255)
+local DROP=Color3.fromRGB(150,190,220)
+-- One jagged arc from a to b: a few segments, the middle points thrown aside.
+local function arc(holder,a,b,rng,width,color)
+	local points={a}
+	local n=4
+	for k=1,n-1 do
+		local p=a:Lerp(b,k/n)
+		table.insert(points,p+Vector3.new(rng:NextNumber(-.5,.5),rng:NextNumber(-.15,.35),rng:NextNumber(-.5,.5)))
+	end
+	table.insert(points,b)
+	for k=1,#points-1 do
+		local p,q=points[k],points[k+1]
+		local length=(q-p).Magnitude
+		if length&gt;.05 then
+			K.block(holder,Vector3.new(width,width,length),CFrame.lookAt((p+q)/2,q),color,Enum.Material.Neon)
+		end
+	end
+end
+-- The current: re-drawn every few hundredths of a second for `life` seconds.
+local function current(fx,draw,life,anchor)
+	local holder=K.new("Model",{Name="Current"},fx.folder)
+	local rng=Random.new()
+	local born=ElementFX.clock()
+	local function redraw()
+		holder:ClearAllChildren()
+		draw(holder,rng)
+	end
+	redraw()
+	task.spawn(function()
+		while holder.Parent and ElementFX.clock()-born&lt;life do
+			task.wait(.05)
+			if holder.Parent then redraw() end
+		end
+		if holder.Parent then holder:Destroy() end
+	end)
+	K.sound(K.anchorPart(fx.folder,anchor),K.SOUND.electric,.6,1)
+end
+local function conduct(fx,impact,folder)
+	local at=impact.position
+	if impact.body then
+		-- Over the soaked body: arcs between its parts.
+		local victim=folder and folder:FindFirstChild(impact.victim or "")
+		current(fx,function(holder,rng)
+			local parts={}
+			if victim then for _,d in victim:GetChildren() do if d:IsA("BasePart") and d.Transparency&lt;1 then table.insert(parts,d) end end end
+			for _=1,7 do
+				local a=if #parts&gt;0 then parts[rng:NextInteger(1,#parts)].Position else at+Vector3.new(rng:NextNumber(-1,1),rng:NextNumber(-2,2),rng:NextNumber(-1,1))
+				local b=a+Vector3.new(rng:NextNumber(-1.6,1.6),rng:NextNumber(-1.6,1.6),rng:NextNumber(-1.6,1.6))
+				arc(holder,a,b,rng,.07,if rng:NextNumber()&lt;.3 then CORE else ARC)
+			end
+		end,.5,at)
+		K.flash(fx.folder,at,ARC,.6,3.4,.14,.3)
+		return true
+	end
+	-- Over the whole puddle, on the floor.
+	local radius=impact.radius or 9
+	local hit=K.floorUnder and K.floorUnder(fx,at,2,16)
+	local floor=(if hit then hit.Position else at-Vector3.new(0,2.9,0))+Vector3.new(0,.18,0)
+	current(fx,function(holder,rng)
+		for _=1,16 do
+			local angle=rng:NextNumber(0,math.pi*2)
+			local r=radius*math.sqrt(rng:NextNumber())
+			local a=floor+Vector3.new(math.cos(angle)*r,0,math.sin(angle)*r)
+			local turn=angle+rng:NextNumber(-1.2,1.2)
+			local length=rng:NextNumber(1.5,3.5)
+			local b=a+Vector3.new(math.cos(turn)*length,0,math.sin(turn)*length)
+			if (Vector3.new(b.X,0,b.Z)-Vector3.new(floor.X,0,floor.Z)).Magnitude&gt;radius then b=a:Lerp(b,.3) end
+			arc(holder,a,Vector3.new(b.X,floor.Y,b.Z),rng,.09,if rng:NextNumber()&lt;.25 then CORE else ARC)
+		end
+	end,.6,floor)
+	K.shockRing(fx.folder,floor,ARC,1,radius*2,.3)
+	return true
+end
+-- A soaked body drips.
+local drips=setmetatable({},{__mode="k"})
+local function fighter(fx,model,actor,dt)
+	local wet=actor.wet==true and (actor.health or 1)&gt;0
+	local st=drips[model]
+	if wet and not st then
+		local torso=model:FindFirstChild("UpperTorso") or model:FindFirstChild("HumanoidRootPart")
+		if not torso then return end
+		local at=Instance.new("Attachment");at.Name="Soaked";at.Parent=torso
+		local e=Instance.new("ParticleEmitter")
+		e.Texture="rbxasset://textures/particles/sparkles_main.dds";e.Rate=26;e.Lifetime=NumberRange.new(.35,.6)
+		e.Speed=NumberRange.new(0,1);e.Acceleration=Vector3.new(0,-40,0);e.SpreadAngle=Vector2.new(60,60)
+		e.Shape=Enum.ParticleEmitterShape.Box;e.ShapeStyle=Enum.ParticleEmitterShapeStyle.Volume
+		e.Color=ColorSequence.new(DROP);e.LightEmission=.3;e.LightInfluence=.6
+		e.Size=NumberSequence.new({NumberSequenceKeypoint.new(0,.16),NumberSequenceKeypoint.new(1,.08)})
+		e.Transparency=NumberSequence.new({NumberSequenceKeypoint.new(0,.2),NumberSequenceKeypoint.new(1,.8)})
+		e.Parent=at
+		drips[model]={attachment=at,emitter=e}
+	elseif not wet and st then
+		st.emitter.Enabled=false
+		game:GetService("Debris"):AddItem(st.attachment,1)
+		drips[model]=nil
+	end
+end
+-- (06/11, Studio) Sasuke's lightning down his wire read as a white-hot wire:
+-- the current crawls the wire now, jagged arcs from his hand to the bound
+-- body for half a second (the contact's own drawing still runs after).
+local function alongWire(fx,impact)
+	local from,to=impact.from,impact.to
+	if not (from and to) or (to-from).Magnitude&lt;1 then return end
+	current(fx,function(holder,rng)
+		local steps=math.clamp(math.floor((to-from).Magnitude/2.2),3,12)
+		for k=0,steps-1 do
+			if rng:NextNumber()&lt;.75 then
+				local a=from:Lerp(to,k/steps)
+				local b=from:Lerp(to,(k+1)/steps)
+				arc(holder,a,b,rng,.07,if rng:NextNumber()&lt;.3 then CORE else ARC)
+			end
+		end
+	end,.5,to)
+end
+local function impact(fx,data,folder)
+	if data.style=="conduct" then return conduct(fx,data,folder) end
+	if data.style=="chidori" and data.chakra=="conduct" then alongWire(fx,data) end
+	return false
+end
+function ElementFX.install(Effects,kit)
+	K=kit
+	table.insert(Effects.layers,1,{name="Elements",impact=impact,fighter=fighter})
+end
+return ElementFX
+</ProtectedString>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="ND187">
           <Properties>
             <string name="Name">FamilyFX</string>
             <ProtectedString name="Source">-- Family objects seen in play (roster breadth pass): every projectile kind of
@@ -49451,7 +49873,7 @@ return FamilyFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND187">
+        <Item class="ModuleScript" referent="ND188">
           <Properties>
             <string name="Name">GaleFX</string>
             <ProtectedString name="Source">-- Temari on the client (roster wave): the iron fan (closed on her back at rest,
@@ -49929,7 +50351,7 @@ return GaleFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND188">
+        <Item class="ModuleScript" referent="ND189">
           <Properties>
             <string name="Name">GaleMotion</string>
             <ProtectedString name="Source">-- Temari's motion family (roster wave, DEC-015): her stance, gait, clips,
@@ -50110,7 +50532,7 @@ return GaleMotion
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND189">
+        <Item class="ModuleScript" referent="ND190">
           <Properties>
             <string name="Name">GroundFX</string>
             <ProtectedString name="Source">-- The ground answering the fight, on the client (06/11, user: « applique-toi
@@ -50297,7 +50719,7 @@ return GroundFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND190">
+        <Item class="ModuleScript" referent="ND191">
           <Properties>
             <string name="Name">HoundFX</string>
             <ProtectedString name="Source">-- (06/11, « les chiens ninja qui sortent du sol ») Kakashi's ninken on screen
@@ -50468,7 +50890,7 @@ return HoundFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND191">
+        <Item class="ModuleScript" referent="ND192">
           <Properties>
             <string name="Name">IdentityFX</string>
             <ProtectedString name="Source">-- CORE4 identity on the client (mission NEXT_VALIDATION_ROSTER_SCALE §5): what
@@ -51207,7 +51629,7 @@ return IdentityFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND192">
+        <Item class="ModuleScript" referent="ND193">
           <Properties>
             <string name="Name">Input</string>
             <ProtectedString name="Source">local CAS=game:GetService("ContextActionService")
@@ -51537,7 +51959,7 @@ return Input
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND193">
+        <Item class="ModuleScript" referent="ND194">
           <Properties>
             <string name="Name">LeeFX</string>
             <ProtectedString name="Source">-- Rock Lee on the client (stress-test wave, DEC-015): the Fifth Gate (a green
@@ -51629,10 +52051,21 @@ local function windUp(fx,impact)
 	K.shockRing(fx.folder,at-Vector3.new(0,2.6,0),DUST,2,9,.3)
 	kickDust(fx,at-Vector3.new(0,2.4,0),10,1.4)
 end
+-- (06/11) A gate opening (Server Techniques.gateStep): a green burst off his
+-- body, the floor cracking under him from the third on.
+local function gateOpens(fx,impact)
+	local at=impact.position
+	local gate=impact.gate or 2
+	K.shockRing(fx.folder,at,GATE,1.5,8+gate*3,.35)
+	K.flash(fx.folder,at,GATE_CORE,.6,3+gate*.6,.2,.3)
+	if gate&gt;=3 then crater(fx,at,3+gate) end
+	K.sound(K.anchorPart(fx.folder,at),K.SOUND.boom,.25+gate*.05,1.6-gate*.08)
+end
 local function impact(fx,data,folder)
 	if data.fighter~=LEE then return false end
 	local style=data.style
 	if style=="awaken" then awaken(fx,data,folder);return true end
+	if style=="gate" then gateOpens(fx,data);return true end
 	if style=="chase" or style=="afterimage" then speed(fx,data,folder);return true end
 	if style=="repel" then rupture(fx,data);return true end
 	if style=="cast" and data.technique=="LeafGreatWhirlwind" then windUp(fx,data);return true end
@@ -51657,6 +52090,14 @@ local function gate(fx,model,actor,st)
 	end
 	if aura and aura.trail and not aura.leeTrail then aura.trail.Color=ColorSequence.new(GATE);aura.leeTrail=true end
 	local head=model:FindFirstChild("Head")
+	-- (06/11) the flush and the steam grow with the gate that is open.
+	local gateNow=if open then (actor.gate or 1) else 0
+	if open and st.flush and st.gate~=gateNow then
+		st.gate=gateNow
+		for _,p in st.flush do if p.Parent then K.tintLayer(p,"flush",math.min(.85,.3+gateNow*.11)) end end
+		local e=st.steam and st.steam:FindFirstChildOfClass("ParticleEmitter")
+		if e then e.Rate=10+gateNow*8 end
+	end
 	if open and head and not st.flush then
 		-- (the original colours come from Effects' one record, shared with the
 		-- battle wear: each layer adds itself, nothing is restored blindly)
@@ -51665,7 +52106,7 @@ local function gate(fx,model,actor,st)
 		for _,p in model:GetDescendants() do
 			if skin and p:IsA("BasePart") and p.Name~="HumanoidRootPart" and p.Color and skinLike(K.baseColor(p),skin) then
 				table.insert(st.flush,p)
-				K.tintLayer(p,"flush",.45)
+				K.tintLayer(p,"flush",math.min(.85,.3+(actor.gate or 1)*.11))
 			end
 		end
 		local torso=model:FindFirstChild("UpperTorso") or head
@@ -51673,7 +52114,7 @@ local function gate(fx,model,actor,st)
 		K.new("ParticleEmitter",{Texture=K.TEX.smoke,Rate=18,Lifetime=NumberRange.new(.7,1.2),Speed=NumberRange.new(1.4,3),SpreadAngle=Vector2.new(35,35),
 			EmissionDirection=Enum.NormalId.Top,Acceleration=Vector3.new(0,2.5,0),Color=ColorSequence.new(STEAM),LightEmission=.25,LightInfluence=.3,
 			Size=K.num({{0,.7},{1,2.4}}),Transparency=K.num({{0,.62},{.4,.7},{1,1}}),Rotation=NumberRange.new(0,360),RotSpeed=NumberRange.new(-45,45)},at)
-		st.steam=at
+		st.steam=at;st.gate=nil
 	elseif not open and st.flush then
 		for _,p in st.flush do if p.Parent then K.tintLayer(p,"flush",nil) end end
 		st.flush=nil
@@ -51744,7 +52185,7 @@ return LeeFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND194">
+        <Item class="ModuleScript" referent="ND195">
           <Properties>
             <string name="Name">LobbyPanel</string>
             <ProtectedString name="Source">-- Players online and challenges, the client's half (Server/Lobby, user 04/11:
@@ -52012,7 +52453,7 @@ return Panel
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="LocalScript" referent="ND195">
+        <Item class="LocalScript" referent="ND196">
           <Properties>
             <string name="Name">Main</string>
             <ProtectedString name="Source">local Players=game:GetService("Players")
@@ -52256,7 +52697,7 @@ print("[NinjaDuel] Client ready")
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND196">
+        <Item class="ModuleScript" referent="ND197">
           <Properties>
             <string name="Name">MenuStage</string>
             <ProtectedString name="Source">-- The select screen's two prodigies, in a real 3D set (user 02/11, "everything
@@ -52438,7 +52879,7 @@ return MenuStage
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND197">
+        <Item class="ModuleScript" referent="ND198">
           <Properties>
             <string name="Name">MotionSmear</string>
             <ProtectedString name="Source">-- Speed smear (fluidity pass, user reference 28/10). What the eye cannot
@@ -52581,7 +53022,7 @@ return Smear
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND198">
+        <Item class="ModuleScript" referent="ND199">
           <Properties>
             <string name="Name">NarutoFX</string>
             <ProtectedString name="Source">-- Naruto on the client (roster wave, several bodies): the puffs of smoke of
@@ -52992,7 +53433,7 @@ return NarutoFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND199">
+        <Item class="ModuleScript" referent="ND200">
           <Properties>
             <string name="Name">PerceptionFX</string>
             <ProtectedString name="Source">-- (06/11, « leur Sharingan sert à quelque chose ; un truc qui va trop vite,
@@ -53321,7 +53762,7 @@ return PerceptionFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND200">
+        <Item class="ModuleScript" referent="ND201">
           <Properties>
             <string name="Name">Presentation</string>
             <ProtectedString name="Source">-- Velmora's additive combat motion and hit feedback, retaining Ninja Duel's
@@ -54532,7 +54973,7 @@ return Presentation
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND201">
+        <Item class="ModuleScript" referent="ND202">
           <Properties>
             <string name="Name">SandFX</string>
             <ProtectedString name="Source">-- Gaara's sand on the client: the sand bullet and Sand Shuriken in flight, the
@@ -55155,7 +55596,7 @@ return SandFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND202">
+        <Item class="ModuleScript" referent="ND203">
           <Properties>
             <string name="Name">TouchControls</string>
             <ProtectedString name="Source">-- Phone and tablet controls (audit 04/11: the experience is open to phones and
@@ -55428,7 +55869,7 @@ return Touch
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND203">
+        <Item class="ModuleScript" referent="ND204">
           <Properties>
             <string name="Name">TutorialProbe</string>
             <ProtectedString name="Source">-- Debug/QA places only (build.py DEBUG_SOURCES). The tutorial as a test of the
@@ -55611,7 +56052,7 @@ return Probe
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND204">
+        <Item class="ModuleScript" referent="ND205">
           <Properties>
             <string name="Name">UI</string>
             <ProtectedString name="Source">-- Prodigy Tournament interface: roster/selection, online queue and fighter
@@ -56832,6 +57273,11 @@ function UI:render(data)
 		or cue:find("CLONE") or cue:find("U-ZU-MA-KI")
 		-- (05/11) how to get out of a blow (Combat.escapeOpen)
 		or cue:find("TO ESCAPE")
+		-- (06/11, Studio) the jutsu that meet (Interactions) and the steps of an
+		-- awakening said nothing: steam, the water carrying lightning, the fire
+		-- running the wire, Lee's gates, a summoning, a body switch.
+		or cue:find("STEAM") or cue:find("WATER") or cue:find("SOAKED") or cue:find("DRAGON FLAME")
+		or cue:find("GATE") or cue:find("SUMMONING") or cue:find("BODY SWITCH")
 	cue=if pad then UI.padCue(cue) else Controls.localize(cue)
 	self.cue.Text=if loud then cue else ""
 	-- (FEEL 05/11, AVANT defect 3) The quiet line: why the last button did
@@ -56986,7 +57432,7 @@ return UI
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND205">
+        <Item class="ModuleScript" referent="ND206">
           <Properties>
             <string name="Name">UltimateFX</string>
             <ProtectedString name="Source">-- The ultimates on the client (stage 6, the approved move list, "Ultimes"):
@@ -57990,7 +58436,7 @@ return UltimateFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND206">
+        <Item class="ModuleScript" referent="ND207">
           <Properties>
             <string name="Name">VelmoraHitFeedback</string>
             <ProtectedString name="Source">-- Impact presentation. Adapted from Velmora src/client/Combat/HitFeedback.luau
@@ -58190,7 +58636,7 @@ return Feedback
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND207">
+        <Item class="ModuleScript" referent="ND208">
           <Properties>
             <string name="Name">VelmoraMotionEngine</string>
             <ProtectedString name="Source">-- Ninja Duel body animation. Started from Velmora's additive R15 layer (MIT) and
@@ -61905,7 +62351,7 @@ return Motion
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND208">
+        <Item class="ModuleScript" referent="ND209">
           <Properties>
             <string name="Name">VfxAtlas</string>
             <ProtectedString name="Source">-- GENERATED by tools/vfx_textures.py --pack: do not edit by hand.
@@ -63358,7 +63804,7 @@ HAOBECABDA1HBIA3HBGAmZ]]},
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND209">
+        <Item class="ModuleScript" referent="ND210">
           <Properties>
             <string name="Name">VfxKit</string>
             <ProtectedString name="Source">-- Presentation primitives on the project's own VFX textures
@@ -63840,7 +64286,7 @@ return Kit
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND210">
+        <Item class="ModuleScript" referent="ND211">
           <Properties>
             <string name="Name">Wave1FX</string>
             <ProtectedString name="Source">-- Roster 20, batch 1 (Haku, Zabuza, Kimimaro): the batch's own drawing,
@@ -64054,7 +64500,7 @@ return M
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND211">
+        <Item class="ModuleScript" referent="ND212">
           <Properties>
             <string name="Name">Wave1Motion</string>
             <ProtectedString name="Source">-- Roster batch 1 bodies authored from their Combat Bibles (DEC-026). First:
@@ -64355,7 +64801,7 @@ return Wave1Motion
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND212">
+        <Item class="ModuleScript" referent="ND213">
           <Properties>
             <string name="Name">Wave2FX</string>
             <ProtectedString name="Source">-- Roster 20, batch 2 (Shikamaru, Shino, Orochimaru): the batch's own drawing, installed by
@@ -64368,7 +64814,7 @@ return M
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND213">
+        <Item class="ModuleScript" referent="ND214">
           <Properties>
             <string name="Name">Wave3FX</string>
             <ProtectedString name="Source">-- Roster 20, batch 3 (Deidara, Sasori, Nagato, Killer Bee): the batch's own
@@ -64471,7 +64917,7 @@ return M
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND214">
+        <Item class="ModuleScript" referent="ND215">
           <Properties>
             <string name="Name">Wave3Motion</string>
             <ProtectedString name="Source">-- Roster batch 3 bodies authored from their Combat Bibles (DEC-026). First:
@@ -64598,7 +65044,7 @@ return Wave3Motion
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND215">
+        <Item class="ModuleScript" referent="ND216">
           <Properties>
             <string name="Name">Wave4FX</string>
             <ProtectedString name="Source">-- DEC-026 newcomers (Madara, Hashirama, Hiruzen as children): the weapons
@@ -64741,7 +65187,7 @@ return M
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND216">
+        <Item class="ModuleScript" referent="ND217">
           <Properties>
             <string name="Name">Wave4Motion</string>
             <ProtectedString name="Source">-- DEC-026 newcomers: the bodies of Madara, Hashirama and Hiruzen as children
@@ -64954,7 +65400,7 @@ return Wave4Motion
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND217">
+        <Item class="ModuleScript" referent="ND218">
           <Properties>
             <string name="Name">WorldLook</string>
             <ProtectedString name="Source">-- What the screen looks like (user 03/11: "the brightness, the graphics,
@@ -65066,7 +65512,7 @@ return WorldLook
       </Item>
     </Item>
   </Item>
-  <Item class="Lighting" referent="ND218">
+  <Item class="Lighting" referent="ND219">
     <Properties>
       <string name="Name">Lighting</string>
       <token name="Technology">4</token>
@@ -65086,7 +65532,7 @@ return WorldLook
       </Color3>
     </Properties>
   </Item>
-  <Item class="SoundService" referent="ND219">
+  <Item class="SoundService" referent="ND220">
     <Properties>
       <string name="Name">SoundService</string>
     </Properties>
