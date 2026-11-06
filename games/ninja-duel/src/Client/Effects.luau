@@ -6,6 +6,8 @@
 local Debris=game:GetService("Debris")
 local TweenService=game:GetService("TweenService")
 local Kit=require(script.Parent.VfxKit)
+-- (06/11, refonte VFX) Coups au corps en style animé moderne (Client/VfxHit).
+local vfxHitOk,VfxHit=pcall(require,script.Parent.VfxHit)
 local Face=require(game:GetService("ReplicatedStorage").NinjaDuel.Face)
 local FX={};FX.__index=FX
 -- Cel flame streams of the fireballs in flight (VfxKit), by model.
@@ -940,6 +942,18 @@ function FX:impact(impact,folder)
 		end
 	end
 	if CHEER[style] then self:cheer(CHEER[style]) end
+	-- (06/11, refonte VFX, choix de François : « animé moderne ») Les coups au
+	-- corps : la cible flashe, éclair rond, sphère et cône de traits de vent dans
+	-- le sens du coup, étincelles, et au sol anneau, poussière et cratère (slam).
+	-- Remplace l'ancien rendu de ces styles ; la garde garde le sien.
+	if vfxHitOk and not impact.projectile and not impact.guarded and VfxHit.handles(style) then
+		local victim=modelFor(folder,impact.victim)
+		local dir=impact.direction
+		if not dir or dir.Magnitude<.05 then dir=Vector3.xAxis end
+		pcall(VfxHit.hit,VfxHit.STYLE[style],position,{dir=dir,victim=victim,ignore={folder,self.folder}})
+		if impact.chakra then pcall(self.chakraImpact,self,impact,folder) end
+		return
+	end
 	-- (Reference quality) the struck body flashes: red on a blow, gold on a
 	-- guard, longer and stronger the harder it was.
 	if impact.victim and impact.amount then

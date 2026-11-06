@@ -23,6 +23,41 @@ local VfxMesh = {}
 VfxMesh.DefaultTint = Color3.fromRGB(255, 120, 30)
 local WHITE = Color3.new(1, 1, 1)
 
+local AssetService = game:GetService("AssetService")
+
+-- Maillages envoyés le 06/11 (modèle 131130332204867, nd_vfx_meshes_v3.fbx, avec UV).
+-- Chargés côté client au démarrage : aucun dossier de modèles à poser dans la place.
+local MESH: { [string]: number } = {
+	ND_Crescent = 126706042272219,
+	ND_Crown = 102734361439896,
+	ND_Dome = 79486192867749,
+	ND_RingBlade = 139795598159559,
+	ND_RingFlat = 90440108290185,
+	ND_Rock1 = 138973609471632,
+	ND_Rock2 = 103994207358340,
+	ND_Rock3 = 89619121514326,
+	ND_ShockSphere = 75273062070801,
+	ND_Slab1 = 95308830291327,
+	ND_Slab2 = 116046601252442,
+	ND_Slab3 = 102852927253970,
+	ND_Spike = 77187811142416,
+	ND_Spiral = 126294882482289,
+	ND_WindCone = 129789474452991,
+}
+VfxMesh.MESH = MESH
+local built: { [string]: MeshPart } = {}
+for name, id in MESH do
+	task.spawn(function()
+		local ok, part = pcall(function()
+			return AssetService:CreateMeshPartAsync(Content.fromUri("rbxassetid://" .. id))
+		end)
+		if ok and part then
+			part.Name = name
+			built[name] = part
+		end
+	end)
+end
+
 local templates: Folder? = nil
 local live: { Tween } = {}
 local frozen = false
@@ -46,14 +81,11 @@ end
 
 local function template(name: string): MeshPart?
 	local f = templates or ReplicatedStorage:FindFirstChild("VfxMeshes") :: Folder?
-	if not f then
-		return nil
-	end
-	local t = f:FindFirstChild(name)
+	local t = f and f:FindFirstChild(name)
 	if t and t:IsA("MeshPart") then
 		return t
 	end
-	return nil
+	return built[name]
 end
 
 local function spawn(name: string): MeshPart?

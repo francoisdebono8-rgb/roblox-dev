@@ -5,6 +5,9 @@
 local Debris=game:GetService("Debris")
 local TweenService=game:GetService("TweenService")
 local Kit=require(script.Parent.VfxKit)
+-- (06/11, refonte VFX) Les coups au corps sont dessinés par Client/VfxHit
+-- (via Effects) ; ici on ne garde que leur son.
+local vfxHitOk,VfxHit=pcall(require,script.Parent.VfxHit)
 local Feedback={}
 -- Audio stays on assets already imported and verified by this project; extra
 -- cues are declared here so adding one later is a one-line change.
@@ -135,6 +138,10 @@ function Feedback.impact(style,position,impact)
 	if LAYERED[style] then
 		playSound(anchor,AUDIO.punch,.95+math.random()*.1,.45)
 		playSound(anchor,AUDIO.body,1.1,.35)
+	end
+	if vfxHitOk and type(VfxHit)=="table" and VfxHit.handles and VfxHit.handles(style) and not (impact and impact.guarded) then
+		Debris:AddItem(anchor,2)
+		return spec
 	end
 	local light=Instance.new("PointLight")
 	light.Color=spec.color;light.Brightness=(if style=="parry" or style=="slam" then 8 else 4)
