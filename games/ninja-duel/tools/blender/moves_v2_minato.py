@@ -161,7 +161,7 @@ def game_rows(name):
     fps = int(re.search(r"fps=(\d+)", head).group(1))
     length = float(re.search(r"length=([\d.]+)", head).group(1))
     mk = dict((k, float(v)) for k, v in re.findall(r"(\w+)=([\d.]+)", re.search(r"markers=\{([^}]*)\}", head).group(1)))
-    body = text[head_end:text.index("}},", head_end)]
+    body = text[head_end + len("joints={"):text.index("}},", head_end) + 1]
     rows = dict((j, [float(x) for x in v.split(",")]) for j, v in re.findall(r"(\w+)=\{([^}]*)\}", body))
     tr = {"q": {}, "loc": [], "fps": fps}
     for j in nd_rig.ORDER:

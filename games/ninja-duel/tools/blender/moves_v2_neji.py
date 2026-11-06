@@ -219,3 +219,27 @@ def author(arm):
             common_e9.grab(arm, N, p.STANCE), common_e9.throw_up(arm, N, p.STANCE), common_e9.air_flip(arm, N, AIR),
             guard_impact(arm), jump_leap(arm), jump_air(arm), land(arm), flip(arm)]
     return acts
+
+
+# ================================================================ captures
+MIXAMO = "/mnt/user-data/uploads/Documents/NinjaDuelBlender/mixamo"
+_CAP = {}
+
+
+def capture(key, place="inplace"):
+    """Mixamo capture -> joint track (nd_mocap.track), cached; the FBX's
+    objects leave the scene again."""
+    import nd_mocap, nd_style
+    k = (key, place)
+    if k not in _CAP:
+        before = set(bpy.data.objects)
+        src, s0, s1, _ = nd_mocap.import_fbx(os.path.join(MIXAMO, "mixamo_%s.fbx" % key))
+        _CAP[k] = nd_mocap.track(src, s0, s1, place)
+        for o in set(bpy.data.objects) - before:
+            bpy.data.objects.remove(o, do_unlink=True)
+    return nd_style.copy(_CAP[k])
+
+
+def track_action(arm, name, tr, markers=None, end=None):
+    step = 60 // tr.get("fps", 30)
+    return key_frames(arm, name, rows_to_frames(arm, tr["q"], tr["loc"]), step, markers=markers, end=end)

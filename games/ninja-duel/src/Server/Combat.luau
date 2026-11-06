@@ -157,6 +157,8 @@ function Combat:pushImpact(position,style,heavy,extra)
 	-- Optional context (projectile id, surface normal, teleport endpoints, owner)
 	-- so the client can finish the exact object it was drawing.
 	if extra then for k,v in extra do entry[k]=v end end
+	-- (06/11) the ground under a contact that weighs something keeps it
+	pcall(WorldReaction.contact,self,entry)
 	table.insert(feed,entry)
 	while #feed>12 do table.remove(feed,1) end
 	-- Contacts are worth a snapshot now rather than at the next 50 ms tick.

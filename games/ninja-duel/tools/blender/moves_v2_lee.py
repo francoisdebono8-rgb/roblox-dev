@@ -130,6 +130,9 @@ def smooth(vals, r=2):
     return out
 
 
+DEBUG = {}
+
+
 def to_action(arm, tr, name, markers=None, plant=True, ground=False, meta=None, speed=.075, low=.3, length=None):
     """Bakes a track on the control rig as action `name` (every track frame
     keyed; 60 fps frames). The legs go through the rig's IK: each foot's
@@ -174,6 +177,8 @@ def to_action(arm, tr, name, markers=None, plant=True, ground=False, meta=None, 
                     runs.append((i, j))
                 i = j + 1
             orig = [m.copy() for m in mats]
+            DEBUG.setdefault(name, {})[side] = (runs, [round(x, 2) for x in soles],
+                                                [round((mats[i].translation - mats[i - 1].translation).xz.length, 3) if i else 0 for i in range(n)])
             for i, j in runs:
                 # the spot: the clip's own first/last frame when the run
                 # reaches it (strings chain exactly), else where the foot
@@ -567,7 +572,7 @@ def strike(arm, name, key, src=None, part=None, near=None, hold=0, ease=(1.6, .8
     melt(tr, first, last, head if head is not None else max(2, min(c * .8, n * .25)), tail if tail is not None else n * .3)
     if edit:
         edit(tr, c, r, n)
-    m = {"capture": key, "src": list(src)}
+    m = {"capture": key, "src": " ".join(str(round(x, 1)) for x in src)}
     m.update(meta or {})
     return to_action(arm, tr, name, mk, plant=not air, ground=ground and not air, meta=m, length=length)
 

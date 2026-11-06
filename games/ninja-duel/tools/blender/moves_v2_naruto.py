@@ -662,6 +662,46 @@ def old_clips(arm, names=None):
 NEW = {}
 
 
+def move(name):
+    def deco(fn):
+        NEW[name] = fn
+        return fn
+    return deco
+
+
+def scrappy(tr, k=1.25, chest=6, w=None):
+    """Naruto's carriage over a capture: more of every swing (torso, hips,
+    arms: he overcommits), the shoulders thrown forward and the head down."""
+    for j, f in (("Waist", k), ("Root", 1 + (k - 1) * .6), ("Right", 1 + (k - 1) * .8), ("Left", 1 + (k - 1) * .8),
+                 ("Neck", .8)):
+        nd_style.amp(tr, j, f)
+    n = length(tr)
+    ww = w or [1.0] * n
+    offset_pose(tr, "Waist", turn(pitch=chest), ww)
+    offset_pose(tr, "Neck", turn(pitch=-chest * .7), ww)
+    return tr
+
+
+def sink(tr, dy, keys):
+    """The hips lower by dy over an envelope (knees bend: the IK feet stay)."""
+    e = env(length(tr), keys)
+    return lift(tr, [-dy * w for w in e])
+
+
+@move("Light1")
+def light1(arm):
+    """L1, the right hook: half a step in with the shoulder's weight, the hips
+    open first, the right shoulder follows and the bent arm swings round flat
+    through the jaw; the head goes with it, the left fist stays up. Capture:
+    hook (Mixamo), timed 5 / 11 of 20 frames, two frames held on the
+    contact."""
+    tr, c, r, n = strike(arm, "hook", "RightHand", .3333, 5 / 60, 11 / 60, hold=2, keep=.6)
+    scrappy(tr, 1.3)
+    st = stance(arm)
+    return finish(arm, tr, N + "Light1", c, r, start=st, end=st, head_n=3, tail_n=8,
+                  meta={"capture": "hook", "src": str(tr["src"])})
+
+
 def author(arm):
     acts = {}
     for nm in NAMES:

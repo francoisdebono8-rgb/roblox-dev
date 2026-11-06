@@ -250,16 +250,16 @@ def split(arm, prefix, keys, fa, rel_end, rel_markers=None, drags=(), rec_end=No
 # Kage Bunshin's cross, BIG: the two hands meet in front of the chin, the
 # right crossed in front of the left, the elbows flared out level with the
 # hands (a diamond of arms that reads from behind him at duel distance).
-def cross(height=1.62, fwd=-1.5, flare=1.62, elbow_y=1.3, gap=.3):
+def cross(height=1.9, fwd=-1.15, flare=1.95, elbow_y=1.7, gap=.3):
     ra = reach("R", (gap * .5, height + .06, fwd - .12), {"raise": 70, "out": -20, "twist": 40, "elbow": 100, "wrist": 10},
-               (flare, elbow_y, fwd * .35))
+               (flare, elbow_y, fwd * .45), w_elbow=.6)
     la = reach("L", (-gap * .5, height - .06, fwd + .06), {"raise": 70, "out": -20, "twist": 40, "elbow": 100, "wrist": 10},
-               (-flare, elbow_y - .05, fwd * .35))
+               (-flare, elbow_y - .05, fwd * .45), w_elbow=.6)
     return {"ra": ra, "la": la}
 
 
-SQUARE = {"root": {"x": 0, "y": -.84, "z": 0, "pitch": 16, "yaw": 6, "roll": 0}, "torso": {"pitch": 8, "yaw": -2, "roll": 0},
-          "head": {"pitch": 6, "yaw": -4, "roll": 0}}
+SQUARE = {"root": {"x": 0, "y": -.84, "z": 0, "pitch": 14, "yaw": 6, "roll": 0}, "torso": {"pitch": 4, "yaw": -2, "roll": 0},
+          "head": {"pitch": -12, "yaw": -4, "roll": 0}}
 
 
 # ============================================================ ShadowClone
@@ -278,9 +278,9 @@ def shadow_clone(arm):
     # hips dropped into a deep squat over knees driven out
     seal = s(merge(merge(SQUARE, cross()), {"rf": dict(RF, knee=16), "lf": dict(LF, knee=14)}))
     ch.key(7, seal, "impact")
-    ch.key(9, merge(seal, {"root": {"y": -.92, "pitch": 19}, "torso": {"pitch": 11}, "head": {"pitch": 9}}), "ease")
-    hold = merge(seal, merge({"root": {"y": -.87, "pitch": 16}, "torso": {"pitch": 8, "roll": 1.5}, "head": {"pitch": 5}},
-                             cross(fwd=-1.56, gap=.26)))
+    ch.key(9, merge(seal, {"root": {"y": -.92, "pitch": 17}, "torso": {"pitch": 7}, "head": {"pitch": -10}}), "ease")
+    hold = merge(seal, merge({"root": {"y": -.87, "pitch": 15}, "torso": {"pitch": 5, "roll": 1.5}, "head": {"pitch": -12}},
+                             cross(fwd=-1.2, gap=.26)))
     ch.key(11, hold, "ease")
     ch.drag(["neck"], 1)
     out.append(ch.build(markers={"release": 11 / F}))
@@ -288,7 +288,7 @@ def shadow_clone(arm):
     # squat with the shout, the seal shoved up at the smoke; then the hands
     # burst apart and fall back into his guard
     pop = merge(hold, merge({"root": {"y": -.6, "pitch": 6}, "torso": {"pitch": -6, "roll": 0}, "head": {"pitch": -12}},
-                            cross(height=1.8, fwd=-1.6)))
+                            cross(height=2.05, fwd=-1.3)))
     pop2 = merge(pop, {"root": {"y": -.56}, "torso": {"pitch": -8}, "head": {"pitch": -14}})
     burst = s({"root": {"y": -.5, "pitch": 8, "yaw": 12}, "torso": {"pitch": 0, "yaw": -4}, "head": {"pitch": -12, "yaw": -8},
                "ra": {"raise": 62, "out": 66, "twist": -10, "elbow": 52, "wrist": 0},
@@ -315,18 +315,18 @@ def mass_clone(arm):
     # pulled high for the stamp, the hands rising up the centre line
     rise = s(merge({"root": {"x": .22, "y": -.3, "z": .26, "pitch": 0, "yaw": 6, "roll": -4}, "torso": {"pitch": -6, "yaw": 0, "roll": 2},
                     "head": {"pitch": -6, "yaw": -4},
-                    "lf": {"x": -.4, "y": .62, "z": -.56, "yaw": -22, "toe": 14, "knee": 26}}, cross(height=1.3, fwd=-1.3)))
+                    "lf": {"x": -.4, "y": .62, "z": -.56, "yaw": -22, "toe": 14, "knee": 26}}, cross(height=1.5, fwd=-1.2)))
     ch.key(8, rise, "pass")
     # TAJU KAGE BUNSHIN: the stamp, a horse stance twice his width, the seal
     # thrown up to the forehead with the elbows high
     big = s(merge({"root": {"x": -.04, "y": -.94, "z": .02, "pitch": 10, "yaw": 4, "roll": 3}, "torso": {"pitch": 2, "yaw": 0, "roll": -2},
                    "head": {"pitch": -4, "yaw": -2},
                    "lf": {"x": -.74, "y": 0, "z": -.74, "yaw": -32, "toe": 0, "knee": 20}, "rf": dict(RF, knee=20)},
-                  cross(height=2.25, fwd=-1.35, flare=1.75, elbow_y=1.95)))
+                  cross(height=2.45, fwd=-.95, flare=2.1, elbow_y=2.35)))
     ch.key(11, big, "impact")
     ch.key(14, merge(big, {"root": {"y": -1.02, "pitch": 12, "roll": 1}, "torso": {"pitch": 5, "roll": 0}, "head": {"pitch": -1}}), "ease")
     hold = merge(big, merge({"root": {"y": -.98, "pitch": 11, "roll": -1}, "torso": {"pitch": 3, "roll": 1.5}, "head": {"pitch": -3}},
-                            cross(height=2.28, fwd=-1.4, flare=1.78, elbow_y=1.98, gap=.24)))
+                            cross(height=2.48, fwd=-1.0, flare=2.12, elbow_y=2.38, gap=.24)))
     ch.key(18, hold, "ease")
     ch.drag(["neck"], 1)
     out.append(ch.build(markers={"release": 18 / F}))
@@ -352,7 +352,7 @@ def mass_clone(arm):
 # ============================================================ CloneRasengan
 # The orb: in front of his right hip, the right palm under it, the left over
 # it (chest space); it grows as the hands work it.
-ORB = Vector((.5, .45, -1.25))
+ORB = Vector((.95, .55, -1.3))
 
 
 def orb_hands(r, stir=0.0, spin=.16):
@@ -381,11 +381,11 @@ def clone_rasengan(arm):
     for i, f in enumerate((9, 13, 17, 21)):
         u = (i + 1) / 4.0
         p = s(merge(merge(body(-.66 - .16 * u, 36 + 16 * u, 15 + 5 * u, .04 * u, 2 if i % 2 else -2), feet),
-                    orb_hands(.12 + .2 * u, (i + 1) * math.pi * .5)))
+                    orb_hands(.12 + .24 * u, (i + 1) * math.pi * .5)))
         ch.key(f, p, "pass")
     # coiled: the weight back over the rear leg, the orb held out at his
     # side, the eyes on the opponent - the lunge is next
-    end = s(merge(merge(body(-.9, 54, 18, .14), {"rf": dict(RF, knee=12), "lf": heel(LF, -14)}), orb_hands(.34, 2.5 * math.pi)))
+    end = s(merge(merge(body(-.9, 54, 18, .14), {"rf": dict(RF, knee=12), "lf": heel(LF, -14)}), orb_hands(.4, 2.5 * math.pi)))
     ch.key(24, end, "ease")
     ch.drag(["neck"], 1)
     ch.drag(["hand.L", "forearm.L"], 1)

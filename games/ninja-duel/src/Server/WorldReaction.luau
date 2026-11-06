@@ -605,14 +605,15 @@ end
 function WorldReaction.blow(c,a,velocity,kind)
 	if not velocity or a.airborne then return nil end
 	local speed=velocity.Magnitude
-	if speed<TUNE.Blow.Speed then return nil end
+	-- a body taken off its feet (a sweep) hits the ground even when the blow is slow
+	if speed<(if kind=="Knockdown" then TUNE.Blow.Speed*.4 else TUNE.Blow.Speed) then return nil end
 	local hit=workspace:Raycast(a.root.Position,Vector3.new(0,-4.2,0),c:rayParams(true))
 	if not hit or hit.Normal.Y<.6 then return nil end
 	local rec=WorldReaction.record(c,hit.Instance)
 	if not rec then return nil end
 	local flat=Vector3.new(velocity.X,0,velocity.Z)
 	local up=kind=="Launched" or velocity.Y>flat.Magnitude
-	local energy=speed*TUNE.Blow.Energy
+	local energy=math.max(speed*TUNE.Blow.Energy,if kind=="Knockdown" then 40 else 0)
 	return WorldReaction.scar(c,if up then "crater" else "crack",hit.Instance,hit.Position,hit.Normal,energy,
 		if flat.Magnitude>.1 then flat.Unit else nil,rec.class)
 end
@@ -686,6 +687,70 @@ function WorldReaction.zone(c,position,radius,element)
 	local hit=workspace:Raycast(position+Vector3.new(0,2,0),Vector3.new(0,-8,0),c:rayParams(true))
 	if not hit then return nil end
 	return WorldReaction.impact(c,{part=hit.Instance,position=hit.Position,normal=hit.Normal,energy=radius*TUNE.ZoneEnergy,contact="blast",element=element,zone=true})
+end
+-- (06/11, user: « vérifie aussi le dégât au sol de toutes les attaques… il y a
+-- beaucoup d'attaques qui restent dans le ciel et pas sur le sol ») The ground
+-- audit (tools/studio/probes/ground_audit_server.luau, every strike and jutsu
+-- of the eight fighters) found whole jutsu that left the arena clean: the
+-- floor was only marked when a flight or a thrown body reached it. Now every
+-- contact that weighs something marks the ground UNDER it, whatever it met:
+-- one table read from Combat:pushImpact, by the contact's style, or by its
+-- kind for a family look. {scar, energy, element, line=along its direction,
+-- heavy=only the heavy version, foot=at the caster's feet (owner) instead
+-- of the contact's point}. A contact high in the air (no floor within 9
+-- studs) leaves nothing: it did not reach the ground.
+WorldReaction.ContactMarks={
+	slam={"crater",62},finisher={"crack",48,line=true},landing={"crack",44},
+	chidori={"trench",72,"lightning",line=true,heavy=true,foot=true},
+	rasengan={"crater",80},uzumaki={"crack",46},sandburial={"crater",56},summon={"crater",96},
+	gate={"crater",52,foot=true},awaken={"crack",58,foot=true},rotation={"crater",66,foot=true},
+	trigram={"crack",52,foot=true},greatgust={"furrow",60,"wind",line=true},cyclone={"furrow",44,"wind"},
+	crush={"crater",52,heavy=true},sandwall={"crack",46},
+}
+WorldReaction.KindMarks={
+	-- family looks (SealJutsu Kind): explosions, earth, sand, summons
+	fireball={"crater",70,"fire"},clay={"crater",72,"fire"},clonepop={"crack",50},
+	earthwall={"crack",58},earthhand={"crater",56},earthdragon={"trench",76,line=true},
+	sandarm={"trench",60,line=true},sandspike={"crater",54},quicksand={"crater",44},
+	toadwater={"crater",90,"water"},hasangeki={"furrow",58,line=true},lightning={"cut",46,"lightning",line=true},
+}
+local function actorById(c,id)
+	if id==nil then return nil end
+	for _,x in c.actors or {} do if x.id==id then return x end end
+	return nil
+end
+-- The ground under `position` takes a mark of `kind` (and its element's).
+function WorldReaction.ground(c,position,kind,energy,along,element)
+	local hit=workspace:Raycast(position+Vector3.new(0,1,0),Vector3.new(0,-9,0),c:rayParams(true))
+	if not hit or hit.Normal.Y<.6 or hit.Instance:GetAttribute("WorldScar") then return nil end
+	local rec=WorldReaction.record(c,hit.Instance)
+	if not rec then return nil end
+	state(c).stats.impacts+=1
+	local entry=WorldReaction.scar(c,kind,hit.Instance,hit.Position,hit.Normal,energy,along,rec.class)
+	local el=element and WorldReaction.Elements[element]
+	if el and el.scar then WorldReaction.scar(c,el.scar,hit.Instance,hit.Position+hit.Normal*.02,hit.Normal,energy*.8,nil,rec.class) end
+	return entry
+end
+function WorldReaction.contact(c,entry)
+	local style=entry.style
+	local spec=WorldReaction.ContactMarks[style or ""]
+	if (style=="look" or style=="cast") and entry.kind then spec=WorldReaction.KindMarks[entry.kind] end
+	if not spec or (spec.heavy and not entry.heavy) or not entry.position then return nil end
+	local position=entry.position
+	local owner=actorById(c,entry.owner)
+	if spec.foot and owner and owner.root then position=owner.root.Position end
+	local along=nil
+	if spec.line then
+		local d=entry.direction
+		if typeof(d)~="Vector3" and owner and owner.root then d=owner.root.CFrame.LookVector end
+		if typeof(d)=="Vector3" then
+			d=Vector3.new(d.X,0,d.Z)
+			if d.Magnitude>.05 then along=d.Unit end
+		end
+		-- a line runs ahead of where it starts
+		if along and spec.foot then position+=along*2.2 end
+	end
+	return WorldReaction.ground(c,position,spec[1],spec[2],along,spec[3])
 end
 -- What the world still remembers (inspect, audit, perception later).
 function WorldReaction.summary(c)

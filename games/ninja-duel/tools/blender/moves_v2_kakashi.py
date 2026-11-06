@@ -566,3 +566,71 @@ def author(arm):
     if missing:
         print("MISSING", sorted(missing))
     return out
+
+
+# ============================================================ clip builder
+def stance_T(arm, spec=None):
+    return spec_T(arm, spec or s())
+
+
+def strike(arm, name, key, limb, length, contact, recover, hold=3, plan=None, travel=1.0, start=None, end=None,
+           head=.22, tail=.3, src=None, air=False, shape=None, meta=None):
+    """A captured blow timed on the game: the wind-up lands on `contact`, the
+    impact pose is held `hold` frames (hit-stop), the follow-through ends on
+    `recover`, then the recovery melts into the stance. shape(frames,
+    travels) adds the fighter's own layers; plan is the footwork."""
+    track = capture(key)
+    st, im, se, en = src or phases(track, limb)
+    n = int(round(length * FPS))
+    if hold:
+        frames = warp(track, [st, im, im, se, en], [0, contact, contact + hold, recover, n])
+    else:
+        frames = warp(track, [st, im, se, en], [0, contact, recover, n])
+    travels = strip_travel(frames)
+    travels = [(x * travel, z * travel) for x, z in travels]
+    if air:
+        for T in frames:
+            T["Root"] = T_of(_q(T["Root"]), (0, 0, 0))
+        travels = [(0.0, 0.0)] * len(frames)
+    else:
+        ground(frames, travels)
+    T0, _ = stance_T(arm, start)
+    T1, _ = stance_T(arm, end if end is not None else start)
+    frames = melt(frames, T0, T1, head, tail)
+    if shape:
+        shape(frames, travels)
+    plants = footwork(frames, plan(frames, travels), travels) if plan else None
+    m = {"contact": contact / FPS, "recover": recover / FPS}
+    act = bake_rows(arm, name, frames, 1, m, travels, plants, dict(meta or {}, capture=key, src=str((st, im, se, en))))
+    return act
+
+
+def feet_of(arm, spec=None):
+    """Stance ankle spots (Roblox world x, z) of a spec."""
+    _, f = stance_T(arm, spec)
+    return {k: (v.x, v.z) for k, v in f.items()}
+
+
+def planted(arm, n, steps=None, spec=None):
+    """Footwork: both feet on their stance spots; steps {side: (f0, f1, dx, dz)}
+    lift the foot at f0 and put it down at f1, moved by (dx, dz) and kept there
+    (dx, dz relative to its stance spot)."""
+    home = feet_of(arm, spec)
+
+    def plan(frames, travels):
+        out = {}
+        for side in ("R", "L"):
+            hx, hz = home[side]
+            st = (steps or {}).get(side)
+            if not st:
+                out[side] = [("plant", 0, n, (hx, hz))]
+                continue
+            segs, at, cur = [], 0, (hx, hz)
+            for f0, f1, dx, dz in (st if isinstance(st, list) else [st]):
+                segs.append(("plant", at, f0, cur))
+                cur = (hx + dx, hz + dz)
+                at = f1
+            segs.append(("plant", at, n, cur))
+            out[side] = segs
+        return out
+    return plan
