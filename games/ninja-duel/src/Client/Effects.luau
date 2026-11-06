@@ -1004,8 +1004,8 @@ function FX:impact(impact,folder)
 		sound(anchorPart(self.folder,position),SOUND.land,.35,1.05)
 	elseif style=="slam" then
 		smokePuff(self.folder,position-Vector3.new(0,2.4,0),Color3.fromRGB(176,160,130),22,2.6)
-		local floor=floorUnder(self,position,2,8)
-		if floor then Kit.ground(self.folder,floor.Position,floor.Normal,"crack",10,2.6,1.2,Color3.new(1,1,1),.05) end
+		-- (06/11) no black crack decal: the server breaks the floor there now
+		-- (WorldReaction, a crater), and both read as the same print every time
 		shockRing(self.folder,position-Vector3.new(0,2.6,0),Color3.fromRGB(255,214,160),3,22,.32)
 	elseif style=="launcher" or style=="finisher" then
 		shockRing(self.folder,position,Color3.fromRGB(255,236,200),2,9,.2,impact.direction)
@@ -1046,7 +1046,18 @@ function FX:impact(impact,folder)
 		end
 		if big then sparks(self.folder,position+normal,Color3.fromRGB(255,226,170),14,22) end
 		-- (Reference quality) the surface cracks where the body met it.
-		Kit.ground(self.folder,position,normal,"crack",if big then 9 else 6,2.2,1.2,Color3.new(1,1,1),.1)
+		-- (06/11, user: « des fois pas au sol ») only on a surface there to
+		-- hold it, at most its own size: a crack the size of a door on a thin
+		-- trunk, or on the arena's invisible edge, hung in the air.
+		local params=RaycastParams.new();params.FilterType=Enum.RaycastFilterType.Exclude
+		params.FilterDescendantsInstances={self.folder,workspace:FindFirstChild("NinjaDuels")}
+		local hit=workspace:Raycast(position+normal*1.5,-normal*3,params)
+		local surface=hit and hit.Instance
+		if surface and surface:IsA("BasePart") and surface.Transparency<.9 then
+			local dims={surface.Size.X,surface.Size.Y,surface.Size.Z};table.sort(dims)
+			local size=math.min(if big then 9 else 6,dims[2]*.85)
+			if size>=2 then Kit.ground(self.folder,hit.Position,hit.Normal,"crack",size,2.2,1.2,Color3.new(1,1,1),.1) end
+		end
 	elseif style=="worldbreak" then
 		-- (EMB-004) A tree going down or a boulder bursting: the server already
 		-- changed the arena; this is the dust and the pieces flying off it.
@@ -1233,8 +1244,10 @@ function FX:explosion(position,normal,scale)
 	local floor=floorUnder(self,position,2,14)
 	if floor then
 		if Kit.has("scorch") then
-			Kit.ground(self.folder,floor.Position,floor.Normal,"scorch",16*scale,4.5,2,Color3.new(1,1,1),.08)
-			Kit.ground(self.folder,floor.Position,floor.Normal,"crack",8*scale,3.5,1.5,Color3.new(1,1,1),.15)
+			-- (06/11, user: « la boule de feu laisse les mêmes traces ») the
+			-- burn varies (size, shape, strength) and the black crack decal is
+			-- gone: the server's crater under it is the broken ground now.
+			Kit.ground(self.folder,floor.Position,floor.Normal,"scorch",(12+math.random()*8)*scale,3.5+math.random()*2,2,Color3.new(1,1,1),.08+math.random()*.2)
 			local flat=CFrame.lookAt(floor.Position+floor.Normal*.2,floor.Position+floor.Normal*1.2,Vector3.xAxis)
 			Kit.plane(self.folder,flat,"ring",Vector2.new(4,4)*scale,Vector2.new(30,30)*scale,.42,Color3.fromRGB(255,200,140),0)
 			Kit.dust(self.folder,floor.Position,math.floor(10*scale),3.2*scale,Color3.fromRGB(200,180,150),18)
@@ -1674,6 +1687,9 @@ function FX.dressScar(part)
 		if art[1]=="soft" then decal.Texture=TEX.glow;decal.Transparency=.08 else decal.TextureContent=Kit.content(art[1]) end
 		decal.Color3=art[3];decal.Parent=holder
 		local spin=math.random()*math.pi*2
+		-- (06/11) each burn its own oval and size: a round soft disc was the
+		-- same mark under every fireball
+		local sx,sz=.8+math.random()*.5,.8+math.random()*.5
 		local function fit()
 			-- The scar's X axis is the surface normal (a flat cylinder).
 			local cf=part.CFrame
@@ -1681,7 +1697,7 @@ function FX.dressScar(part)
 			local side=if math.abs(normal.Y)>.9 then Vector3.xAxis else Vector3.yAxis
 			local right=side:Cross(normal).Unit
 			local size=math.max(part.Size.Y,part.Size.Z)*art[2]
-			holder.Size=Vector3.new(size,.05,size)
+			holder.Size=Vector3.new(size*sx,.05,size*sz)
 			holder.CFrame=CFrame.fromMatrix(cf.Position+normal*.03,right,normal)*CFrame.Angles(0,spin,0)
 			part.Transparency=1
 		end

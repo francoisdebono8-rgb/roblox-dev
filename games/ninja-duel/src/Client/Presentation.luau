@@ -65,6 +65,8 @@ end
 -- interpolated track of its replicated positions, a fixed ~45 ms behind: the
 -- motion is continuous every frame. A real teleport still snaps.
 local TRACK_DELAY,TRACK_SNAP,TRACK_MAX,TRACK_SAMPLES=.045,45,12,8
+-- The drawn body's fastest turn (rad/s): the server's own fastest, a rush.
+local ROT_CAP=math.rad(2400)
 local LOCAL_EXTRAPOLATE=1/30
 local function yawOf(cf)
 	local look=cf.LookVector
@@ -898,6 +900,15 @@ function Presentation:smoothStep(data,dt)
 				local cap=math.max(80,speed*1.4)*step
 				local d=drawn.Position-st.drawnCF.Position
 				if d.Magnitude>cap and d.Magnitude<TRACK_SNAP then drawn=drawn.Rotation+(st.drawnCF.Position+d.Unit*cap) end
+				-- (Studio 06/11, after the packet blend) A body leaving a wall for
+				-- its dive still turned 51-64 deg in one frame: the wall pose has no
+				-- yaw to blend. The drawn rotation turns at most ROT_CAP a second,
+				-- the server's own fastest turn (a rush, 2400 deg/s); the rest
+				-- follows over the next frames.
+				local _,turned=(st.drawnCF.Rotation:Inverse()*drawn.Rotation):ToAxisAngle()
+				turned=math.abs(turned)
+				local most=ROT_CAP*step
+				if turned>most then drawn=CFrame.new(drawn.Position)*st.drawnCF.Rotation:Lerp(drawn.Rotation,most/turned) end
 			end
 			st.capWarp=actor.warpSerial
 			-- Draw the whole body on the track for this frame only; the next

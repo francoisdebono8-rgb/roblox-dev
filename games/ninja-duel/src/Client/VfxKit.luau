@@ -418,12 +418,14 @@ function Kit.ground(parent,position,normal,texture,size,hold,fade,color,transpar
 	local side=if math.abs(normal.Y)>.9 then Vector3.xAxis else Vector3.yAxis
 	local right=side:Cross(normal).Unit
 	local cf=CFrame.fromMatrix(position+normal*.04,right,normal)*CFrame.Angles(0,math.random()*math.pi*2,0)
-	local p=new("Part",{Name="FXGround",Size=Vector3.new(size*.55,.05,size*.55),CFrame=cf,Transparency=1,
+	-- (06/11) never twice the same print: each mark its own oval
+	local sx,sz=size*(.8+math.random()*.45),size*(.8+math.random()*.45)
+	local p=new("Part",{Name="FXGround",Size=Vector3.new(sx*.55,.05,sz*.55),CFrame=cf,Transparency=1,
 		Anchored=true,CanCollide=false,CanQuery=false,CanTouch=false,CastShadow=false},parent)
 	local d=new("Decal",{TextureContent=Kit.content(texture),Face=Enum.NormalId.Top,Color3=color or Color3.new(1,1,1),Transparency=1},p)
 	-- In fast: the crack opens in a few frames.
 	tween(d,.06,{Transparency=transparency or 0})
-	tween(p,.1,{Size=Vector3.new(size,.05,size)},Enum.EasingStyle.Back)
+	tween(p,.1,{Size=Vector3.new(sx,.05,sz)},Enum.EasingStyle.Back)
 	task.delay(hold,function() if d.Parent then tween(d,fade,{Transparency=1}) end end)
 	Debris:AddItem(p,hold+fade+.1)
 	return p

@@ -176,7 +176,6 @@ local function evict(list,max)
 	end
 end
 local RELIEF={crater=true,gouge=true,trench=true,crack=true,skid=true}
-local CRACK=Color3.fromRGB(28,22,17)
 local okCS,CS=pcall(function() return game:GetService("CollectionService") end)
 if not okCS then CS=nil end
 -- What the ground looks like at a point: the topmost flat skin over the floor
@@ -240,39 +239,62 @@ local function relief(scar,palette)
 		return
 	end
 	if SHAPES[scar.kind].round then
+		-- (06/11, user: « les cratères sont mieux mais trop répétitifs », « les
+		-- fissures noires reviennent trop souvent ») Every crater was the same
+		-- star: the same frame on a flat floor, its slabs evenly round it, its
+		-- 3-6 black cracks at the same angles. Each one now has its own turn,
+		-- its own oval, gaps in its rim (a side that held), its slabs leaning
+		-- more or less, and at most two cracks, of the torn ground's colour, a
+		-- small one none at all.
 		local r=size*.5
+		local spin=hash(seed+Vector3.new(9,1,4))*math.pi*2
+		local squash=.72+hash(seed+Vector3.new(2,8,5))*.28
+		local lean=18+hash(seed+Vector3.new(6,3,7))*26
+		local function around(a,d)
+			return math.cos(a+spin)*d,math.sin(a+spin)*d*squash
+		end
 		-- Slabs round the rim: wide, thin, their outer edge up.
-		local n=math.clamp(math.floor(4+size*1.3),6,12)
+		local n=math.clamp(math.floor(3+size*(.9+hash(seed+Vector3.new(4,4,1))*.7)),5,12)
+		local gapAt=hash(seed+Vector3.new(1,6,2))*math.pi*2
+		local gapWidth=.6+hash(seed+Vector3.new(3,2,9))*1.2
 		for k=1,n do
 			local h=hash(seed+Vector3.new(k,k*1.7,k*2.3))
-			local a=(k/n)*math.pi*2+h*.5
-			local w=r*(.55+h*.35)
-			local at=base*CFrame.new(.12+h*.15,math.cos(a)*r*(.92+h*.12),math.sin(a)*r*(.92+h*.12))
-			-- face the centre, then lift the outer edge (pitch about the tangent)
-			local cf=at*CFrame.Angles(a,0,0)*CFrame.Angles(0,0,math.rad(32+h*30))
-			-- plates, not blocks (Studio: thick ones read as boxes)
-			chunk(p,cf,Vector3.new(.18+h*.12,w*.75,w),material,if k%3==0 then under else slab)
+			local a=(k/n)*math.pi*2+(h-.5)*1.1
+			local off=math.abs((a-gapAt+math.pi)%(2*math.pi)-math.pi)
+			if off>=gapWidth*.5 and h>.12 then
+				local w=r*(.45+h*.5)
+				local y,z=around(a,r*(.88+h*.2))
+				local at=base*CFrame.new(.12+h*.15,y,z)
+				-- face the centre, then lift the outer edge (pitch about the tangent)
+				local cf=at*CFrame.Angles(a+spin,0,0)*CFrame.Angles(0,0,math.rad(lean+h*24))
+				-- plates, not blocks (Studio: thick ones read as boxes)
+				chunk(p,cf,Vector3.new(.16+h*.16,w*(.6+h*.3),w),material,if k%3==0 then under else slab)
+			end
 		end
-		-- Loose stones thrown just outside.
-		for k=1,math.clamp(math.floor(size*1.5),3,9) do
+		-- Loose stones thrown just outside, more on one side.
+		local throw=hash(seed+Vector3.new(7,7,2))*math.pi*2
+		for k=1,math.clamp(math.floor(size*(.8+hash(seed+Vector3.new(5,1,1)))),2,8) do
 			local h=hash(seed+Vector3.new(k*5,k*.3,k*1.1))
-			local a=h*math.pi*2
-			local d=r*(1.1+h*.6)
-			local s=.25+h*.35
-			chunk(p,base*CFrame.new(s*.4,math.cos(a)*d,math.sin(a)*d)*CFrame.Angles(h*3,h*5,h*2),Vector3.new(s,s*1.2,s*.9),material,slab)
+			local a=throw+(h-.5)*3.4
+			local y,z=around(a,r*(1.05+h*.8))
+			local st=.22+h*.4
+			chunk(p,base*CFrame.new(st*.4,y,z)*CFrame.Angles(h*3,h*5,h*2),Vector3.new(st,st*1.2,st*.9),material,slab)
 		end
-		-- Cracks out of the rim: thin dark grooves flush with the ground,
-		-- three segments each that turn a little and narrow (Studio: a
-		-- straight groove with a raised lip read as a stick on the floor).
-		for k=1,math.clamp(math.floor(2+size*.6),3,6) do
+		-- At most two cracks out of the rim, none for a small crater: grooves of
+		-- the torn ground's colour, three segments each that turn and narrow.
+		local cracks=if size<3.2 then 0 else math.floor(hash(seed+Vector3.new(8,2,6))*3)
+		local groove=under:Lerp(palette.dark,.35)
+		for k=1,cracks do
 			local h=hash(seed+Vector3.new(k*7,k*3,k))
-			local a=(k/5)*math.pi*2+h
-			local len=r*(.6+h*.8)/3
-			local at=base*CFrame.Angles(a,0,0)*CFrame.new(.015,0,r*.92)
+			local a=spin+h*math.pi*2
+			local len=r*(.4+h*.7)/3
+			local y,z=around(a-spin,r*.92)
+			-- (turned a quarter: the groove runs out from the rim, not along it)
+			local at=base*CFrame.new(.015,y,z)*CFrame.Angles(a-math.pi/2,0,0)
 			for seg=1,3 do
 				local turn=math.rad((hash(seed+Vector3.new(k,seg*2.1,seg))-.5)*50)
 				at=at*CFrame.Angles(turn,0,0)
-				chunk(p,at*CFrame.new(0,0,len*.5),Vector3.new(.03,.2-seg*.045,len*1.05),Enum.Material.SmoothPlastic,CRACK)
+				chunk(p,at*CFrame.new(0,0,len*.5),Vector3.new(.03,.16-seg*.035,len*1.05),Enum.Material.SmoothPlastic,groove)
 				at=at*CFrame.new(0,0,len)
 			end
 		end
@@ -343,6 +365,23 @@ function WorldReaction.scar(c,kind,surface,position,normal,energy,along,class)
 			return old
 		end
 	end
+	-- (06/11, Studio: every Great Fireball left a crater AND a crack at its
+	-- centre, slabs and dark lines piled in the bowl) One blow, one break: a
+	-- crack inside a crater is the crater's; a new crater takes the cracks
+	-- already in its bowl.
+	if kind=="crack" or kind=="cut" or kind=="scratch" then
+		for _,old in w.scars do
+			if (old.kind=="crater" or old.kind=="gouge") and old.part and old.surface==surface and (old.position-position).Magnitude<old.size*.5 then return old end
+		end
+	elseif kind=="crater" then
+		local reach=scarSize(kind,energy)*.5
+		for k=#w.scars,1,-1 do
+			local old=w.scars[k]
+			if (old.kind=="crack" or old.kind=="cut" or old.kind=="scratch") and old.surface==surface and (old.position-position).Magnitude<reach then
+				table.remove(w.scars,k);WorldReaction.fade(c,old)
+			end
+		end
+	end
 	local folder=folderOf(c)
 	-- Clear of the surface: a flush mark z-fought into a dark ring outline.
 	local lift=SHAPES[kind].depth*.5+.06
@@ -351,7 +390,10 @@ function WorldReaction.scar(c,kind,surface,position,normal,energy,along,class)
 		-- An unaimed crack runs in a direction drawn from where it is.
 		frame=frame*CFrame.Angles(math.pi*2*hash(position),0,0)
 	end
-	local entry={kind=kind,surface=surface,position=position,normal=normal,size=scarSize(kind,energy),frame=frame,class=class,marks=1,at=c.now,
+	local size=scarSize(kind,energy)
+	-- (06/11) craters of one size read as stamps: each its own, within a third
+	if kind=="crater" or kind=="gouge" then size*=.74+hash(position+Vector3.new(3,1,7))*.34 end
+	local entry={kind=kind,surface=surface,position=position,normal=normal,size=size,frame=frame,class=class,marks=1,at=c.now,
 		energy=energy,floor=normal.Y>.6}
 	entry.expires=c.now+WorldReaction.life(entry)
 	if folder then
@@ -602,15 +644,21 @@ end
 -- (06/11) A blow that throws a body (a knockback, a launcher, a heavy) tears
 -- the ground where its feet were: a crack for a push, a small crater for a
 -- launch up. Only blows strong enough (TUNE.Blow.Speed) and grounded bodies.
+local BLOW_EVERY=1.5
 function WorldReaction.blow(c,a,velocity,kind)
 	if not velocity or a.airborne then return nil end
 	local speed=velocity.Magnitude
 	-- a body taken off its feet (a sweep) hits the ground even when the blow is slow
-	if speed<(if kind=="Knockdown" then TUNE.Blow.Speed*.4 else TUNE.Blow.Speed) then return nil end
+	-- (06/11, user: « les fissures noires reviennent trop souvent ») a plain
+	-- push needs a big one now (half again the launch threshold), and a body
+	-- tears the ground at most once in BLOW_EVERY seconds.
+	local need=if kind=="Knockdown" then TUNE.Blow.Speed*.4 elseif kind=="Knockback" then TUNE.Blow.Speed*1.5 else TUNE.Blow.Speed
+	if speed<need or c.now-(a.blowMarkAt or -math.huge)<BLOW_EVERY then return nil end
 	local hit=workspace:Raycast(a.root.Position,Vector3.new(0,-4.2,0),c:rayParams(true))
 	if not hit or hit.Normal.Y<.6 then return nil end
 	local rec=WorldReaction.record(c,hit.Instance)
 	if not rec then return nil end
+	a.blowMarkAt=c.now
 	local flat=Vector3.new(velocity.X,0,velocity.Z)
 	local up=kind=="Launched" or velocity.Y>flat.Magnitude
 	local energy=math.max(speed*TUNE.Blow.Energy,if kind=="Knockdown" then 40 else 0)
@@ -700,7 +748,9 @@ end
 -- of the contact's point}. A contact high in the air (no floor within 9
 -- studs) leaves nothing: it did not reach the ground.
 WorldReaction.ContactMarks={
-	slam={"crater",62},finisher={"crack",48,line=true},landing={"crack",44},
+	-- (06/11) no crack for a combo's last light blow any more: a crack on
+	-- every third hit covered the floor in black lines
+	slam={"crater",62},landing={"crack",44},
 	chidori={"trench",72,"lightning",line=true,heavy=true,foot=true},
 	rasengan={"crater",80},uzumaki={"crack",46},sandburial={"crater",56},summon={"crater",96},
 	gate={"crater",52,foot=true},awaken={"crack",58,foot=true},rotation={"crater",66,foot=true},
