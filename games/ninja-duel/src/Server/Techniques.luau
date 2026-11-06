@@ -819,8 +819,25 @@ function Techniques.palmCount(k,n)
 	for j=2,6 do if k>=math.floor(j*n/6+.5) then count=2^j end end
 	return count
 end
+-- How far the 64 Palms' stance steps in to reach the body (studs).
+Techniques.PALMS_CLOSE=11
 Techniques.SixtyFourPalms={
 	check=function() return true end,
+	-- (Jutsu pass 05/11, from the films: « les 64 paumes ne touchent qu'à 5
+	-- studs ») The stance steps in: from a little past his reach (up to
+	-- PALMS_CLOSE studs, in sight), the channel glides him to the body, as the
+	-- anime's step into the field; farther away the palms still miss. The
+	-- glide is the ultimates' (Ultimates.step moves the body on it).
+	start=function(c,a,pending)
+		local victim=a.target
+		if not victim or victim.health<=0 then return end
+		local d=victim.root.Position-a.root.Position
+		local flat=Vector3.new(d.X,0,d.Z)
+		local range=pending.spec.Range or 5
+		if flat.Magnitude<=range-.5 or flat.Magnitude>Techniques.PALMS_CLOSE or not c:lineOfSight(a,victim) then return end
+		local goal=Vector3.new(victim.root.Position.X,a.root.Position.Y,victim.root.Position.Z)-flat.Unit*3
+		a.ultimateGlide={from=a.root.Position,to=c:clamp(goal),t0=c.now,t1=c.now+math.max(.12,(pending.spec.Channel or .22)*.9),face=victim}
+	end,
 	execute=function(c,a,pending,now)
 		local Brawler=require(script.Parent.Brawler)
 		local victim=a.target

@@ -160,6 +160,9 @@ local SHAPES={
 	scorch={round=true,depth=.04,grow=1/14,min=1.4,max=7,burn=true,transparency=.12},
 	char={round=true,depth=.04,grow=1/18,min=1,max=4,burn=true,transparency=.08},
 	wet={round=true,depth=.03,grow=1/12,min=1.6,max=6,transparency=.45},
+	-- (06/11) the furrow a body ploughs sliding on its back: wide, shallow,
+	-- in relief (the ground pushed up on both sides), its own budget
+	skid={round=false,depth=.06,grow=1/20,min=1.2,max=2.6,width=.7},
 }
 WorldReaction.Shapes=SHAPES
 local function scarSize(kind,energy)
@@ -172,7 +175,7 @@ local function evict(list,max)
 		if old.part then old.part:Destroy() end
 	end
 end
-local RELIEF={crater=true,gouge=true,trench=true,crack=true}
+local RELIEF={crater=true,gouge=true,trench=true,crack=true,skid=true}
 local CRACK=Color3.fromRGB(28,22,17)
 local okCS,CS=pcall(function() return game:GetService("CollectionService") end)
 if not okCS then CS=nil end
@@ -210,6 +213,12 @@ local function relief(scar,palette)
 	local material,skin=WorldReaction.skinAt(scar.position,scar.surface)
 	-- Grass breaks into the earth under it.
 	if material==Enum.Material.Grass then material=Enum.Material.Ground;skin=skin:Lerp(Color3.fromRGB(110,88,62),.7) end
+	-- (06/11, user: « c'est pas encore des vrais blocs de pierre qui se
+	-- cassent ») the arena's packed earth is a flat SmoothPlastic for its look,
+	-- and Ground at its colour renders a dark olive brown (Studio 06/11: a pile
+	-- of chocolate cubes on the light floor). Broken, it is blocks of packed,
+	-- stony earth of the floor's own colour: Sandstone.
+	if material==Enum.Material.SmoothPlastic or material==Enum.Material.Plastic then material=Enum.Material.Sandstone end
 	local slab=skin:Lerp(Color3.new(0,0,0),.12)
 	local under=skin:Lerp(palette.dark,.6)
 	-- The bowl itself: the torn ground, darker, never black.
@@ -217,6 +226,19 @@ local function relief(scar,palette)
 	local size=scar.size
 	local base=scar.frame*CFrame.new(-SHAPES[scar.kind].depth*.5,0,0)
 	local seed=scar.position
+	if scar.kind=="skid" then
+		-- (06/11, Studio: slabs along a slide read as piles of planks) A body
+		-- ploughing the ground leaves a furrow: the groove a shade darker than
+		-- the floor, the earth pushed up into a low lip on both sides.
+		p.Color=skin:Lerp(palette.dark,.4);p.Transparency=.1
+		local width=SHAPES.skid.width or .7
+		for _,sideSign in {1,-1} do
+			local h=hash(seed+Vector3.new(sideSign,2,3))
+			chunk(p,base*CFrame.new(.05,sideSign*(width*.5+.12),0)*CFrame.Angles(sideSign*math.rad(24+h*12),0,0),
+				Vector3.new(.12,.3,size*(.85+h*.2)),material,slab)
+		end
+		return
+	end
 	if SHAPES[scar.kind].round then
 		local r=size*.5
 		-- Slabs round the rim: wide, thin, their outer edge up.
@@ -257,17 +279,27 @@ local function relief(scar,palette)
 	else
 		-- A crack / trench: the line itself dark, the ground on both sides
 		-- broken into slabs pushed up and apart.
+		-- (06/11) fewer, bigger slabs, thick and half sunk, their inner edge
+		-- lifted out of the line (Studio: many small slabs read as a pile of
+		-- cubes), and a few loose stones thrown along it.
 		local width=(SHAPES[scar.kind].width or .3)
-		local n=math.clamp(math.floor(3+size*1.2),4,9)
+		local n=math.clamp(math.floor(2+size*.7),3,6)
 		for k=1,n do
 			local h=hash(seed+Vector3.new(k*3,k,k*.5))
-			local z=(k/(n+1)-.5)*size
+			local z=(k/(n+1)-.5)*size*1.05
 			local sideSign=if k%2==0 then 1 else -1
-			local len=size/n*(1.1+h*.5)
-			local w=math.max(.45,width*1.6+size*.08)*(.8+h*.4)
-			local at=base*CFrame.new(.08,sideSign*(width*.55+w*.45),z)
-			local cf=at*CFrame.Angles(sideSign*math.rad(10+h*18),0,0)
-			chunk(p,cf,Vector3.new(.22+h*.15,w,len),material,slab)
+			local len=size/n*(1.15+h*.45)
+			local w=math.max(.7,width*2+size*.14)*(.8+h*.45)
+			local thick=.32+h*.3
+			local at=base*CFrame.new(thick*.12,sideSign*(width*.5+w*.42),z)
+			local cf=at*CFrame.Angles(sideSign*math.rad(14+h*22),0,0)*CFrame.Angles(0,math.rad((h-.5)*16),0)
+			chunk(p,cf,Vector3.new(thick,w,len),material,if k%3==0 then under else slab)
+		end
+		for k=1,math.clamp(math.floor(size*.8),2,5) do
+			local h=hash(seed+Vector3.new(k*5.3,k*.7,k*2.9))
+			local sideSign=if h>.5 then 1 else -1
+			local st=.22+h*.3
+			chunk(p,base*CFrame.new(st*.35,sideSign*(width+.5+h*1.2),(h-.5)*size*.9)*CFrame.Angles(h*4,h*6,h*3),Vector3.new(st,st*1.3,st),material,slab)
 		end
 	end
 end
@@ -343,13 +375,24 @@ function WorldReaction.scar(c,kind,surface,position,normal,energy,along,class)
 	end
 	table.insert(w.scars,entry)
 	w.stats.scars+=1
-	if entry.floor then
+	if kind=="skid" then
+		-- Skids have their own budget (a slide lays several): they never push
+		-- a crater or a scorch out of the floor's.
+		entry.expires=c.now+TUNE.Skid.Fade
+		local n=0
+		for _,s2 in w.scars do if s2.kind=="skid" then n+=1 end end
+		while n>TUNE.Skid.Max do
+			for k,s2 in w.scars do
+				if s2.kind=="skid" then table.remove(w.scars,k);WorldReaction.fade(c,s2);n-=1;break end
+			end
+		end
+	elseif entry.floor then
 		-- The floor's own budget: the oldest floor mark leaves first.
 		local n=0
-		for _,s2 in w.scars do if s2.floor then n+=1 end end
+		for _,s2 in w.scars do if s2.floor and s2.kind~="skid" then n+=1 end end
 		while n>TUNE.MaxFloorScars do
 			for k,s2 in w.scars do
-				if s2.floor then table.remove(w.scars,k);WorldReaction.fade(c,s2);n-=1;break end
+				if s2.floor and s2.kind~="skid" then table.remove(w.scars,k);WorldReaction.fade(c,s2);n-=1;break end
 			end
 		end
 	end
@@ -556,6 +599,57 @@ function WorldReaction.landing(c,a,hit,fall)
 	return WorldReaction.impact(c,{part=hit.Instance,position=Vector3.new(a.root.Position.X,hit.Position.Y,a.root.Position.Z),normal=hit.Normal,
 		energy=fall*TUNE.BodyEnergy,contact="blunt",source=a.reactionSource and a.reactionSource.id})
 end
+-- (06/11) A blow that throws a body (a knockback, a launcher, a heavy) tears
+-- the ground where its feet were: a crack for a push, a small crater for a
+-- launch up. Only blows strong enough (TUNE.Blow.Speed) and grounded bodies.
+function WorldReaction.blow(c,a,velocity,kind)
+	if not velocity or a.airborne then return nil end
+	local speed=velocity.Magnitude
+	-- a body taken off its feet (a sweep) hits the ground even when the blow is slow
+	if speed<(if kind=="Knockdown" then TUNE.Blow.Speed*.4 else TUNE.Blow.Speed) then return nil end
+	local hit=workspace:Raycast(a.root.Position,Vector3.new(0,-4.2,0),c:rayParams(true))
+	if not hit or hit.Normal.Y<.6 then return nil end
+	local rec=WorldReaction.record(c,hit.Instance)
+	if not rec then return nil end
+	local flat=Vector3.new(velocity.X,0,velocity.Z)
+	local up=kind=="Launched" or velocity.Y>flat.Magnitude
+	local energy=math.max(speed*TUNE.Blow.Energy,if kind=="Knockdown" then 40 else 0)
+	return WorldReaction.scar(c,if up then "crater" else "crack",hit.Instance,hit.Position,hit.Normal,energy,
+		if flat.Magnitude>.1 then flat.Unit else nil,rec.class)
+end
+-- (06/11) A body sliding on the floor ploughs it: a skid mark every
+-- TUNE.Skid.Every seconds along its slide.
+function WorldReaction.skid(c,a,skid)
+	local speed=skid.Magnitude
+	if speed<TUNE.Skid.Speed or c.now-(a.skidMarkAt or -1)<TUNE.Skid.Every then return nil end
+	a.skidMarkAt=c.now
+	local hit=workspace:Raycast(a.root.Position,Vector3.new(0,-4.2,0),c:rayParams(true))
+	if not hit or hit.Normal.Y<.6 then return nil end
+	local rec=WorldReaction.record(c,hit.Instance)
+	if not rec then return nil end
+	return WorldReaction.scar(c,"skid",hit.Instance,hit.Position-skid.Unit*.6,hit.Normal,speed*2,skid.Unit,rec.class)
+end
+-- (06/11, user: « beaucoup d'attaques restent dans le ciel et pas sur le
+-- sol ») A big thing that lands ON A BODY (a Great Fireball, a Water Dragon,
+-- an Earth Dragon, a Rasengan's wave...) used to leave nothing: only a flight
+-- that reached a surface marked the world. The ground under the body takes
+-- the blow now, by the same rules (contact, element, the floor's threshold).
+function WorldReaction.below(c,position,energy,contact,element,direction)
+	local hit=workspace:Raycast(position+Vector3.new(0,1,0),Vector3.new(0,-9,0),c:rayParams(true))
+	if not hit or hit.Normal.Y<.6 then return nil end
+	return WorldReaction.impact(c,{part=hit.Instance,position=hit.Position,normal=hit.Normal,energy=energy,contact=contact or "blunt",
+		element=element,direction=direction})
+end
+function WorldReaction.projectileOnBody(c,p,position)
+	local declared=p.world or (p.family and p.family.World) or WorldReaction.Projectiles[p.kind]
+	local big=(p.radius or 0)>=1.2 or p.heavy or (declared and declared.element)
+	if not big then return nil end
+	local contact=declared and declared.contact or "blunt"
+	if contact=="pierce" or contact=="slash" then contact="blunt" end
+	local element=(declared and declared.element) or (if p.infusion and WorldReaction.Elements[p.infusion] then p.infusion else nil)
+	local energy=(p.damage or 2)*TUNE.ProjectileEnergy+(p.radius or 0)*6
+	return WorldReaction.below(c,position,energy,contact,element,p.direction)
+end
 -- A projectile reached a surface.
 function WorldReaction.projectile(c,p,hit)
 	local declared=p.world or (p.family and p.family.World) or WorldReaction.Projectiles[p.kind]
@@ -593,6 +687,70 @@ function WorldReaction.zone(c,position,radius,element)
 	local hit=workspace:Raycast(position+Vector3.new(0,2,0),Vector3.new(0,-8,0),c:rayParams(true))
 	if not hit then return nil end
 	return WorldReaction.impact(c,{part=hit.Instance,position=hit.Position,normal=hit.Normal,energy=radius*TUNE.ZoneEnergy,contact="blast",element=element,zone=true})
+end
+-- (06/11, user: « vérifie aussi le dégât au sol de toutes les attaques… il y a
+-- beaucoup d'attaques qui restent dans le ciel et pas sur le sol ») The ground
+-- audit (tools/studio/probes/ground_audit_server.luau, every strike and jutsu
+-- of the eight fighters) found whole jutsu that left the arena clean: the
+-- floor was only marked when a flight or a thrown body reached it. Now every
+-- contact that weighs something marks the ground UNDER it, whatever it met:
+-- one table read from Combat:pushImpact, by the contact's style, or by its
+-- kind for a family look. {scar, energy, element, line=along its direction,
+-- heavy=only the heavy version, foot=at the caster's feet (owner) instead
+-- of the contact's point}. A contact high in the air (no floor within 9
+-- studs) leaves nothing: it did not reach the ground.
+WorldReaction.ContactMarks={
+	slam={"crater",62},finisher={"crack",48,line=true},landing={"crack",44},
+	chidori={"trench",72,"lightning",line=true,heavy=true,foot=true},
+	rasengan={"crater",80},uzumaki={"crack",46},sandburial={"crater",56},summon={"crater",96},
+	gate={"crater",52,foot=true},awaken={"crack",58,foot=true},rotation={"crater",66,foot=true},
+	trigram={"crack",52,foot=true},greatgust={"furrow",60,"wind",line=true},cyclone={"furrow",44,"wind"},
+	crush={"crater",52,heavy=true},sandwall={"crack",46},
+}
+WorldReaction.KindMarks={
+	-- family looks (SealJutsu Kind): explosions, earth, sand, summons
+	fireball={"crater",70,"fire"},clay={"crater",72,"fire"},clonepop={"crack",50},
+	earthwall={"crack",58},earthhand={"crater",56},earthdragon={"trench",76,line=true},
+	sandarm={"trench",60,line=true},sandspike={"crater",54},quicksand={"crater",44},
+	toadwater={"crater",90,"water"},hasangeki={"furrow",58,line=true},lightning={"cut",46,"lightning",line=true},
+}
+local function actorById(c,id)
+	if id==nil then return nil end
+	for _,x in c.actors or {} do if x.id==id then return x end end
+	return nil
+end
+-- The ground under `position` takes a mark of `kind` (and its element's).
+function WorldReaction.ground(c,position,kind,energy,along,element)
+	local hit=workspace:Raycast(position+Vector3.new(0,1,0),Vector3.new(0,-9,0),c:rayParams(true))
+	if not hit or hit.Normal.Y<.6 or hit.Instance:GetAttribute("WorldScar") then return nil end
+	local rec=WorldReaction.record(c,hit.Instance)
+	if not rec then return nil end
+	state(c).stats.impacts+=1
+	local entry=WorldReaction.scar(c,kind,hit.Instance,hit.Position,hit.Normal,energy,along,rec.class)
+	local el=element and WorldReaction.Elements[element]
+	if el and el.scar then WorldReaction.scar(c,el.scar,hit.Instance,hit.Position+hit.Normal*.02,hit.Normal,energy*.8,nil,rec.class) end
+	return entry
+end
+function WorldReaction.contact(c,entry)
+	local style=entry.style
+	local spec=WorldReaction.ContactMarks[style or ""]
+	if (style=="look" or style=="cast") and entry.kind then spec=WorldReaction.KindMarks[entry.kind] end
+	if not spec or (spec.heavy and not entry.heavy) or not entry.position then return nil end
+	local position=entry.position
+	local owner=actorById(c,entry.owner)
+	if spec.foot and owner and owner.root then position=owner.root.Position end
+	local along=nil
+	if spec.line then
+		local d=entry.direction
+		if typeof(d)~="Vector3" and owner and owner.root then d=owner.root.CFrame.LookVector end
+		if typeof(d)=="Vector3" then
+			d=Vector3.new(d.X,0,d.Z)
+			if d.Magnitude>.05 then along=d.Unit end
+		end
+		-- a line runs ahead of where it starts
+		if along and spec.foot then position+=along*2.2 end
+	end
+	return WorldReaction.ground(c,position,spec[1],spec[2],along,spec[3])
 end
 -- What the world still remembers (inspect, audit, perception later).
 function WorldReaction.summary(c)

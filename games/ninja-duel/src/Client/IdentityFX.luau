@@ -313,29 +313,45 @@ local function placeRing(parts,center,radius,spin,tilt)
 		p.CFrame=center*CFrame.Angles(tilt or 0,a,0)*CFrame.new(0,0,-radius)
 	end
 end
+-- (06/11, user: « les kunai de Minato… quand ils sont marqués, c'est super
+-- moche… un cercle bizarre ») No neon rings any more. Effects writes the
+-- formula's characters on the ground round a planted kunai (and a Yellow Flash
+-- floor seal); here: a kunai's beacon is a soft shaft of light fading upward
+-- (a Beam, not a solid stick), and a seal on a body is the same three
+-- characters turning round his waist, always facing the camera, drawing in
+-- as it expires.
+local FORMULA={"飛","雷","神"}
+local function bodyGlyphs(parent,color)
+	local parts={}
+	for _,ch in FORMULA do
+		local p=K.block(parent,Vector3.new(.2,.2,.2),CFrame.new(),color,Enum.Material.SmoothPlastic)
+		p.Transparency=1
+		local gui=K.new("BillboardGui",{Size=UDim2.fromScale(1.05,1.05),LightInfluence=0,Brightness=1.6,AlwaysOnTop=false},p)
+		K.new("TextLabel",{BackgroundTransparency=1,Size=UDim2.fromScale(1,1),Text=ch,TextScaled=true,Font=Enum.Font.GothamBlack,
+			TextColor3=color,TextStrokeColor3=Color3.fromRGB(110,60,0),TextStrokeTransparency=.35},gui)
+		table.insert(parts,p)
+	end
+	return parts
+end
 local function buildSeal(fx,info)
 	local model=K.new("Model",{Name="SealMark"},fx.folder)
 	local look={model=model}
 	if info.body then
 		look.kind="body"
-		look.ring=segmentRing(model,8,1.6,Vector3.new(.5,.09,.07),if info.wind then WIND else MINATO)
-		look.tags=segmentRing(model,3,1.75,Vector3.new(.08,.5,.08),if info.wind then WIND else MINATO_CORE)
+		look.ring=bodyGlyphs(model,if info.wind then WIND else MINATO)
 	elseif info.wake then
 		look.kind="floor"
-		look.ring=segmentRing(model,16,2.5,Vector3.new(.85,.04,.12),MINATO_CORE)
-		look.strokes=segmentRing(model,8,1.5,Vector3.new(.1,.04,.7),MINATO)
-		local cross={}
-		for _,yaw in {0,math.pi/2} do
-			local p=K.block(model,Vector3.new(1.4,.04,.14),CFrame.new(),MINATO_CORE,Enum.Material.Neon);p.Transparency=.2
-			table.insert(cross,{part=p,yaw=yaw})
-		end
-		look.cross=cross
-		K.flash(fx.folder,info.surface,MINATO_CORE,.6,5,.25,.2)
+		K.flash(fx.folder,info.surface,MINATO_CORE,.5,4,.22,.2)
 	else
 		look.kind="kunai"
-		local beam=K.block(model,Vector3.new(.14,7,.14),CFrame.new(),MINATO,Enum.Material.Neon)
-		beam.Name="SealBeacon";beam.Transparency=.6
-		look.beacon=beam
+		local base=K.block(model,Vector3.new(.2,.2,.2),CFrame.new(),MINATO,Enum.Material.SmoothPlastic)
+		base.Name="SealBeacon";base.Transparency=1
+		local a0=K.new("Attachment",{Position=Vector3.zero},base)
+		local a1=K.new("Attachment",{Position=Vector3.new(0,6,0)},base)
+		local beam=K.new("Beam",{Attachment0=a0,Attachment1=a1,Width0=.32,Width1=.06,FaceCamera=true,LightEmission=1,LightInfluence=0,
+			Color=ColorSequence.new(MINATO_CORE,MINATO),Transparency=NumberSequence.new({NumberSequenceKeypoint.new(0,.35),NumberSequenceKeypoint.new(1,1)}),
+			Segments=1},base)
+		look.beacon=base;look.beam=beam
 	end
 	return look
 end
@@ -348,23 +364,21 @@ local function stepSeal(fx,folder,look,info,clock)
 		if not torso then return end
 		-- Round the waist, turning: wherever the camera stands it crosses the body.
 		local center=CFrame.new(torso.Position-Vector3.new(0,.35,0))
-		local radius=1.25+.45*math.clamp(remaining/1.5,0,1)
-		placeRing(look.ring,center,radius,clock*2.2)
-		placeRing(look.tags,center,radius+.15,-clock*1.4)
-		for _,p in look.ring do p.Transparency=if ending then .9 else .25 end
+		local radius=1.15+.4*math.clamp(remaining/1.5,0,1)
+		placeRing(look.ring,center,radius,clock*1.6)
+		for _,p in look.ring do
+			local gui=p:FindFirstChildOfClass("BillboardGui")
+			if gui then gui.Enabled=not ending end
+		end
 	elseif look.kind=="floor" then
-		local at=info.surface+(info.normal or Vector3.yAxis)*.06
-		local base=CFrame.new(at)
-		placeRing(look.ring,base,2.5,clock*.35)
-		placeRing(look.strokes,base,1.5,-clock*.6)
-		for _,c in look.cross do c.part.CFrame=base*CFrame.Angles(0,c.yaw+clock*.35,0) end
-		local glow=if ending then .9 else .2+.15*math.sin(clock*4)
-		for _,p in look.ring do p.Transparency=glow end
+		-- Effects writes the formula on the floor.
 	else
 		-- The beacon stands up from the kunai, whatever surface holds it.
 		local at=info.surface+(info.normal or Vector3.yAxis)*.3
-		look.beacon.CFrame=CFrame.new(at+Vector3.new(0,3.6,0))
-		look.beacon.Transparency=if ending then .95 else .55+.15*math.sin(clock*5)
+		look.beacon.CFrame=CFrame.new(at)
+		look.beam.Enabled=not ending
+		local glow=.35+.12*math.sin(clock*4)
+		look.beam.Transparency=NumberSequence.new({NumberSequenceKeypoint.new(0,glow),NumberSequenceKeypoint.new(1,1)})
 	end
 end
 local function sealFrame(fx,model,actor,clock)

@@ -224,6 +224,53 @@ function FamilyFX.install(FX,kit)
 		end
 	end
 
+	-- (Jutsu pass 05/11, the reel: « le Fuma et le Moulin volent comme une
+	-- boîte grise ») The windmill and fuma shuriken were the generic blade: a
+	-- flat box with a wedge, rolled about its flight line. Now a real giant
+	-- shuriken lying flat: a dark hub with its hole, four blades whose tips
+	-- sweep back (the fuma's curve), a pale edge on each, a faint spin ring at
+	-- the blade tips, and it spins flat about the vertical, fast.
+	local function giantShuriken(look)
+		local m=new("Model",{Name="FamilyFuma"})
+		local d=look.size[1]
+		local t=math.max(look.size[2],.08)
+		local steel,dark=c3(look.color),c3(look.color2)
+		local edgeTone=Color3.fromRGB(236,240,246)
+		local root=block(m,Vector3.new(.1,.1,.1),CFrame.new(),dark);root.Transparency=1
+		local parts={}
+		local hub=block(m,Vector3.new(t*1.5,d*.27,d*.27),CFrame.Angles(0,0,math.pi/2),dark,Enum.Material.Metal);hub.Shape=Enum.PartType.Cylinder
+		local hole=block(m,Vector3.new(t*1.7,d*.09,d*.09),CFrame.Angles(0,0,math.pi/2),Color3.fromRGB(14,14,18),Enum.Material.SmoothPlastic);hole.Shape=Enum.PartType.Cylinder
+		table.insert(parts,hub);table.insert(parts,hole)
+		for k=0,3 do
+			local base=CFrame.Angles(0,k*math.pi/2,0)
+			table.insert(parts,block(m,Vector3.new(d*.16,t,d*.26),base*CFrame.new(0,0,-d*.2),steel,Enum.Material.Metal))
+			-- the tip: a flat triangle (a wedge laid on its side), swept back
+			local tipCF=base*CFrame.new(-d*.045,0,-d*.39)*CFrame.Angles(0,math.rad(26),0)*CFrame.Angles(0,0,math.pi/2)
+			table.insert(parts,block(m,Vector3.new(t,d*.15,d*.24),tipCF,steel,Enum.Material.Metal,"WedgePart"))
+			table.insert(parts,block(m,Vector3.new(d*.018,t*1.15,d*.42),base*CFrame.new(d*.075,0,-d*.27)*CFrame.Angles(0,math.rad(-6),0),edgeTone,Enum.Material.Metal))
+		end
+		local ring=block(m,Vector3.new(t*.6,d*.9,d*.9),CFrame.Angles(0,0,math.pi/2),edgeTone,Enum.Material.Neon);ring.Shape=Enum.PartType.Cylinder
+		ring.Transparency=.82
+		table.insert(parts,ring)
+		weldAll(root,parts);m.PrimaryPart=root
+		-- two trail points on the tips: as it spins they draw a blurred disc
+		local a0=new("Attachment",{Position=Vector3.new(-d*.45,0,0)},root)
+		local a1=new("Attachment",{Position=Vector3.new(d*.45,0,0)},root)
+		new("Trail",{Attachment0=a0,Attachment1=a1,Color=ColorSequence.new(edgeTone),Lifetime=.09,LightEmission=.3,FaceCamera=false,
+			Transparency=num({{0,.55},{1,1}})},root)
+		return m
+	end
+	for _,kind in {"fuma","windmill"} do
+		local look=Looks[kind]
+		if look then
+			BUILD[kind]=function() return giantShuriken(look) end
+			FX.poses[kind]=function(_,entry,p,age,cf,dt)
+				entry.spin+=dt*24
+				return cf*CFrame.Angles(0,entry.spin,0)
+			end
+		end
+	end
+
 	-- Flight poses (FX.poses): orient, roll and animate by shape.
 	for kind,look in Looks do
 		if FX.poses[kind] then continue end
@@ -520,11 +567,117 @@ function FamilyFX.install(FX,kit)
 				local look=Looks[impact.kind]
 				local color,edge=c3(look.color),c3(look.color2)
 				local from,to=impact.from or impact.position,impact.to or impact.position
+				if impact.kind=="leaf" then
+					-- (Jutsu pass 06/11, the reel: « l'entrée dynamique fait un pouf,
+					-- pas un coup de pied volant ») Lee does not vanish: he flies. No
+					-- smoke; the dust he tears off the ground where he leaves, a trail
+					-- of green afterimages of his kick strung along the line he flew,
+					-- wind streaks along it, and the dust ring where he lands.
+					local model=folder and folder:FindFirstChild(impact.owner or "")
+					local line=to-from
+					local GREEN=Color3.fromRGB(70,190,90)
+					shockRing(fx.folder,from-Vector3.new(0,2.6,0),c3({206,194,168}),2,8,.3)
+					burst(fx.folder,from-Vector3.new(0,2.4,0),{Texture=TEX.smoke,Lifetime=NumberRange.new(.3,.6),Speed=NumberRange.new(6,12),SpreadAngle=Vector2.new(60,60),
+						Color=ColorSequence.new(Color3.fromRGB(206,194,168)),LightInfluence=1,Size=num({{0,1},{1,2.4}}),Transparency=num({{0,.3},{1,1}}),Drag=4},10)
+					if model and line.Magnitude>1 then
+						-- (Studio 06/11: copied on the relocation frame they stood
+						-- upright in the stance) a beat later, once the kick is drawn,
+						-- strung back along the flight on an arc, leaning into it
+						task.delay(.05,function()
+							if not model.Parent then return end
+							local flatDir=Vector3.new(line.X,0,line.Z)
+							local lean=if flatDir.Magnitude>.1 then flatDir.Unit:Cross(Vector3.yAxis) else Vector3.xAxis
+							for k=1,5 do
+								local u=1-k/6
+								local ghost=fx:ghost(model,GREEN,.16+k*.04,.45+k*.07)
+								if ghost then
+									local pivot=ghost:GetPivot()
+									local at=pivot.Position-line*u+Vector3.new(0,math.sin(u*math.pi)*1.6,0)
+									pcall(function() ghost:PivotTo(CFrame.fromAxisAngle(lean,math.rad(-14))*(pivot-pivot.Position)+at) end)
+								end
+							end
+						end)
+					end
+					if line.Magnitude>1 then
+						local dir=line.Unit
+						local mid=(from+to)/2+Vector3.new(0,.6,0)
+						for k=-1,1 do
+							local streak=block(fx.folder,Vector3.new(.06,.06,line.Magnitude*.8),CFrame.lookAt(mid+Vector3.new(0,k*.7,0),mid+Vector3.new(0,k*.7,0)+dir),Color3.fromRGB(236,255,236),Enum.Material.Neon)
+							streak.Transparency=.35
+							tween(streak,.22,{Transparency=1,Size=Vector3.new(.02,.02,line.Magnitude*.3),CFrame=streak.CFrame+dir*line.Magnitude*.3})
+							Debris:AddItem(streak,.25)
+						end
+					end
+					shockRing(fx.folder,to-Vector3.new(0,2.6,0),color,2,11,.3)
+					sound(anchorPart(fx.folder,to),SOUND.whooshBy or SOUND.whoosh,.5,1.1)
+					return true
+				end
 				smokePuff(fx.folder,from,color,14,2)
 				flash(fx.folder,from,edge,1,4,.18,.3)
 				smokePuff(fx.folder,to,color,10,1.6)
 				flash(fx.folder,to,edge,1.5,6,.2,.2)
 				shockRing(fx.folder,to-Vector3.new(0,2.6,0),color,2,10,.3)
+				return true
+			end
+			if style=="look" and impact.kind=="crows" then
+				-- (Jutsu pass 05/11, the reel: « on ne voit aucun corbeau ») Itachi's
+				-- crow genjutsu drew only the look's puff of smoke. Now a flock pours
+				-- out of his sleeve and floods the cone in front of him, wings
+				-- beating, black feathers trailing, and scatters past the target.
+				local owner=folder and folder:FindFirstChild(impact.owner or "")
+				local root=owner and owner:FindFirstChild("HumanoidRootPart")
+				local dir=impact.direction or (root and root.CFrame.LookVector) or Vector3.new(0,0,-1)
+				dir=Vector3.new(dir.X,0,dir.Z)
+				dir=if dir.Magnitude>.1 then dir.Unit else Vector3.new(0,0,-1)
+				local side=dir:Cross(Vector3.yAxis)
+				local origin=(if root then root.Position else impact.position)+side*.9+Vector3.new(0,.8,0)+dir*1.2
+				local reach=impact.radius or 8
+				local black,wingTone=Color3.fromRGB(12,12,16),Color3.fromRGB(8,8,12)
+				local RunService=game:GetService("RunService")
+				for i=1,16 do
+					local bird=new("Model",{Name="Crow"},fx.folder)
+					local s=.8+math.random()*.5
+					local body=block(bird,Vector3.new(.4,.34,.9)*s,CFrame.new(origin),black,Enum.Material.SmoothPlastic)
+					local head=block(bird,Vector3.new(.26,.26,.28)*s,CFrame.new(origin),black,Enum.Material.SmoothPlastic)
+					local beak=block(bird,Vector3.new(.08,.08,.22)*s,CFrame.new(origin),Color3.fromRGB(40,36,30),Enum.Material.SmoothPlastic)
+					local eye=block(bird,Vector3.new(.06,.06,.06)*s,CFrame.new(origin),Color3.fromRGB(200,20,30),Enum.Material.Neon)
+					local wingL=block(bird,Vector3.new(1.1,.05,.5)*s,CFrame.new(origin),wingTone,Enum.Material.SmoothPlastic,"WedgePart")
+					local wingR=block(bird,Vector3.new(1.1,.05,.5)*s,CFrame.new(origin),wingTone,Enum.Material.SmoothPlastic,"WedgePart")
+					local spread=math.rad((math.random()-.5)*70)
+					local heading=CFrame.fromAxisAngle(Vector3.yAxis,spread):VectorToWorldSpace(dir)
+					local rise=(math.random()-.35)*.5
+					local course=(heading+Vector3.new(0,rise,0)).Unit
+					local distance=reach*(.8+math.random()*.7)
+					local start=origin+Vector3.new((math.random()-.5)*.6,(math.random()-.5)*.8,(math.random()-.5)*.6)
+					local delay=i*.024
+					local life=.65+math.random()*.35
+					local t0=os.clock()+delay
+					local phase=math.random()*6
+					local conn
+					conn=RunService.RenderStepped:Connect(function()
+						local k=(os.clock()-t0)/life
+						if k<0 then return end
+						if k>=1 or not bird.Parent then conn:Disconnect();bird:Destroy();return end
+						local at=start:Lerp(start+course*distance,1-(1-k)^1.6)+Vector3.new(0,math.sin(k*math.pi)*.8,0)
+						local cf=CFrame.lookAt(at,at+course)
+						local flap=math.sin(os.clock()*30+phase)*1.0
+						body.CFrame=cf
+						head.CFrame=cf*CFrame.new(0,.08*s,-.52*s)
+						beak.CFrame=cf*CFrame.new(0,.06*s,-.74*s)
+						eye.CFrame=cf*CFrame.new(.1*s,.14*s,-.6*s)
+						wingL.CFrame=cf*CFrame.new(-.55*s,.05,0)*CFrame.Angles(0,0,flap)
+						wingR.CFrame=cf*CFrame.new(.55*s,.05,0)*CFrame.Angles(0,0,-flap)
+						local fade=math.clamp((k-.75)/.25,0,1)
+						for _,p in bird:GetChildren() do if p:IsA("BasePart") then p.Transparency=fade end end
+					end)
+				end
+				-- feathers and a dark smoke at the sleeve
+				burst(fx.folder,origin,{Texture=TEX.smoke,Lifetime=NumberRange.new(.4,.8),Speed=NumberRange.new(6,12),SpreadAngle=Vector2.new(45,45),
+					Color=ColorSequence.new(Color3.fromRGB(30,26,34)),LightInfluence=1,Size=num({{0,1},{1,2.6}}),Transparency=num({{0,.35},{1,1}}),Drag=3},10)
+				burst(fx.folder,origin+dir*2,{Texture=TEX.spark,Lifetime=NumberRange.new(.6,1.1),Speed=NumberRange.new(4,10),SpreadAngle=Vector2.new(70,70),
+					Color=ColorSequence.new(Color3.fromRGB(14,14,18)),LightEmission=0,LightInfluence=1,Size=num({{0,.3},{1,.18}}),
+					Acceleration=Vector3.new(0,-4,0),Drag=2,Rotation=NumberRange.new(0,360),RotSpeed=NumberRange.new(-200,200)},18)
+				sound(anchorPart(fx.folder,origin),SOUND.whoosh,.5,.8)
 				return true
 			end
 			if style=="look" and impact.kind=="sandarm" then
@@ -539,37 +692,69 @@ function FamilyFX.install(FX,kit)
 				dir=dir.Unit
 				local origin=(if root then root.Position else impact.position)+Vector3.new(0,1.2,0)
 				local reach=impact.radius or 13
+				-- (Jutsu pass 05/11, the reel: « juste une bouffée de sable ») The arm
+				-- was five sand boxes and a box claw, gone in under half a second.
+				-- Now a rounded arm that thickens to the hand (overlapping lumps of
+				-- sand), a hand with three hooked fingers and a thumb, sand pouring
+				-- off it, and a slower sweep (≈ .7 s) that can be seen.
 				local arm=new("Model",{Name="ShukakuArm"},fx.folder)
-				local segs={}
-				for i=1,5 do
-					local k=i/5
-					local seg=block(arm,Vector3.new(1.4+k*1.6,1.4+k*1.6,reach/5+.6),CFrame.new(origin),c3(look.color),Enum.Material.Sand)
-					table.insert(segs,{part=seg,k=k})
+				local sandTone,dark=c3(look.color),c3(look.color2)
+				local function lump(size,tone)
+					-- (Studio 06/11: the Sand material read olive green in the arena's
+					-- light) plain smooth sand colour
+					local p=block(arm,size,CFrame.new(origin),tone,Enum.Material.SmoothPlastic)
+					new("SpecialMesh",{MeshType=Enum.MeshType.Sphere},p)
+					return p
 				end
-				local claw=block(arm,Vector3.new(3.4,1.2,2.6),CFrame.new(origin),c3(look.color2),Enum.Material.Sand)
+				local segs={}
+				for i=1,7 do
+					local k=i/7
+					local w=1.5+k*2.1
+					table.insert(segs,{part=lump(Vector3.new(w,w*.9,reach/6+1.4),if i%2==0 then dark else sandTone),k=k})
+				end
+				local palm=lump(Vector3.new(4.2,1.6,3.2),sandTone)
+				local fingers={}
+				for f=-1,1 do table.insert(fingers,{part=lump(Vector3.new(.9,.8,2.4),dark),x=f*1.25,curl=0}) end
+				local thumb={part=lump(Vector3.new(.8,.8,1.8),dark),x=-2.1,curl=0}
+				local pour=new("Attachment",{},palm)
+				local spill=new("ParticleEmitter",{Texture=TEX.smoke,Rate=60,Lifetime=NumberRange.new(.4,.8),Speed=NumberRange.new(1,3),SpreadAngle=Vector2.new(30,30),
+					EmissionDirection=Enum.NormalId.Bottom,Color=ColorSequence.new(sandTone),LightInfluence=1,Size=num({{0,.8},{1,2}}),
+					Transparency=num({{0,.3},{1,1}}),Acceleration=Vector3.new(0,-18,0),Drag=1},pour)
+				local SPAN=.42 -- seconds per unit of t below (was .3)
 				local t0=os.clock()
 				local sweep
 				sweep=game:GetService("RunService").RenderStepped:Connect(function()
-					local t=(os.clock()-t0)/.3
-					if t>1.6 or not arm.Parent then
+					local t=(os.clock()-t0)/SPAN
+					if t>1.7 or not arm.Parent then
 						sweep:Disconnect()
 						if arm.Parent then
-							for _,e in segs do smokePuff(fx.folder,e.part.Position,c3(look.color),6,1.6) end
+							spill.Enabled=false
+							for _,e in segs do smokePuff(fx.folder,e.part.Position,sandTone,6,1.8) end
+							smokePuff(fx.folder,palm.Position,sandTone,10,2.4)
 							arm:Destroy()
 						end
 						return
 					end
-					-- grows over the first third, sweeps from his right to his left
+					-- grows over the first third, sweeps from his right to his left,
+					-- the hand closing as it crosses
 					local grow=math.clamp(t*2.2,0,1)
-					local angle=math.rad(70-140*math.clamp((t-.15)/.85,0,1))
+					local swing=math.clamp((t-.15)/.85,0,1)
+					local eased=swing*swing*(3-2*swing)
+					local angle=math.rad(70-140*eased)
 					local along=(CFrame.fromAxisAngle(Vector3.yAxis,angle):VectorToWorldSpace(dir))
 					for _,e in segs do
 						local d=reach*e.k*grow
-						local at=origin+along*d+Vector3.new(0,-1.2*e.k,0)
+						local at=origin+along*d+Vector3.new(0,-1.3*e.k+math.sin(e.k*math.pi)*.8,0)
 						e.part.CFrame=CFrame.lookAt(at,at+along)
 					end
 					local tip=origin+along*reach*grow+Vector3.new(0,-1.4,0)
-					claw.CFrame=CFrame.lookAt(tip,tip+along)*CFrame.Angles(0,math.rad(90),0)
+					local hand=CFrame.lookAt(tip,tip+along)
+					palm.CFrame=hand
+					local close=math.rad(25+70*eased)
+					for _,f in fingers do
+						f.part.CFrame=hand*CFrame.new(f.x,0,-1.4)*CFrame.Angles(-close,0,0)*CFrame.new(0,0,-1)
+					end
+					thumb.part.CFrame=hand*CFrame.new(thumb.x,0,-.4)*CFrame.Angles(0,math.rad(50),0)*CFrame.Angles(-close*.6,0,0)*CFrame.new(0,0,-.8)
 				end)
 				burst(fx.folder,origin,{Texture=TEX.smoke,Lifetime=NumberRange.new(.5,1),Speed=NumberRange.new(6,14),SpreadAngle=Vector2.new(80,80),
 					Color=ColorSequence.new(c3(look.color)),LightInfluence=1,Size=num({{0,1.2},{1,3}}),Transparency=num({{0,.2},{1,1}}),Drag=2},24)

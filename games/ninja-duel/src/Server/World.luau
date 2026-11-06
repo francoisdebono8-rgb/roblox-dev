@@ -162,6 +162,10 @@ local function dressedArena(folder,decor,origin)
 	-- the bowl (Server/WorldReaction reads its material for broken ground).
 	local floor=part(folder,"Training floor",Vector3.new(2,2*(R+28),2*(R+28)),CFrame.new(origin-Vector3.new(0,1,0))*CFrame.Angles(0,0,math.pi/2),rgb(184,158,114),Enum.Material.SmoothPlastic)
 	floor.Shape=Enum.PartType.Cylinder
+	-- (06/11) The floor became SmoothPlastic for its look (29/10) and
+	-- WorldReaction stopped reading it as earth: from then on the arena kept
+	-- no mark at all (impacts=0 in Studio). It declares its class.
+	floor:SetAttribute("WorldMaterial","earth")
 	-- Its grain: the earth texture at half strength over the light colour
 	-- (17:42-17:45: "un mix" of the flat light ground and the textured one).
 	local grain=part(decor,"Floor grain",floor.Size,floor.CFrame+Vector3.new(0,.012,0),rgb(196,172,128),Enum.Material.Ground)

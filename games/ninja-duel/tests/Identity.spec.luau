@@ -953,7 +953,7 @@ end)
 -- (Stage 6) "the Rasengan contact names itself" left with Minato's Rasengan (he is 13).
 
 -- Minato (client) ----------------------------------------------------------------
-test("client · Minato's seals read apart: a beacon over a planted kunai, a formula on the floor (no kunai) where Yellow Flash left, a ring round a sealed body",function()
+test("client · Minato's seals read apart: a beacon over a planted kunai, a formula on the floor (no kunai) where Yellow Flash left, the formula turning round a sealed body",function()
  inScene(function(fx,folder,bodies)
   local minato=actorData("A","Flashstep",{seals={
    {id=1,surface=V.new(10,0,0),normal=V.yAxis,remaining=8},
@@ -971,7 +971,8 @@ test("client · Minato's seals read apart: a beacon over a planted kunai, a form
   local front,behind=0,0
   for _,mark in marks do
    local parts=mark:GetChildren()
-   if #parts==11 then
+   -- (06/11) the body mark is the formula's three characters (was 11 neon segments)
+   if #parts==3 then
     for _,p in parts do
      local d=p.Position-torso
      assert(V.new(d.X,0,d.Z).Magnitude>1.1,"a ring part sits inside the body")

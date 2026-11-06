@@ -24,6 +24,15 @@ local TEX={
 	shock="rbxasset://textures/particles/explosion01_shockwave_main.dds",
 	glow="rbxasset://textures/particles/forcefield_glow_main.dds",
 	vortex="rbxasset://textures/particles/forcefield_vortex_main.dds",
+	-- (Jutsu pass 06/11) From the VFX Studio library (public Roblox assets,
+	-- ids read in its browser): flipbooks need FlipbookLayout set.
+	swirl="rbxassetid://14186707980",      -- "Air2", a white spiral (Rasengan)
+	energy="rbxassetid://12402864591",     -- "29", a spiky ball of energy
+	halo="rbxassetid://12386390257",       -- "11", a bright ring halo
+	ripple="rbxassetid://13189665112",     -- water rings, 4x4 flipbook
+	splash="rbxassetid://12390096354",     -- water burst, 8x8 flipbook
+	droplets="rbxassetid://72264530299648", -- water droplets, 4x4 flipbook
+	bubbles="rbxassetid://79998832137235",  -- bubbles, 4x4 flipbook
 }
 local SOUND={
 	whoosh="rbxassetid://5835032207",
@@ -41,6 +50,12 @@ local SOUND={
 	body="rbxassetid://9113524242",
 	bodyfall="rbxassetid://9113482032",
 	debris="rbxassetid://9114221862",
+	-- (06/11) a fire's crackle loop and stone breaking (Pro Sound Effects;
+	-- Studio 06/11: the built-in sounds/fire.mp3 does not exist), water
+	-- (built-in, loads).
+	fireLoop="rbxassetid://9112780462",
+	rock={"rbxassetid://9118588165","rbxassetid://9118587494"},
+	splash="rbxasset://sounds/impact_water.mp3",
 }
 FX.SOUND=SOUND
 -- Contacts that bring the crowd to its feet, by strength.
@@ -283,7 +298,8 @@ function FX.buildFireball(caster)
 		Color=ColorSequence.new(look.smokeColor),LightEmission=0,Size=num({{0,3},{1,8}}),Transparency=num({{0,.55},{1,1}}),Drag=2})
 	emitter(at,{Name="Embers",Enabled=true,Texture=TEX.fireSpark,Rate=look.embers,Lifetime=NumberRange.new(.4,.8),Speed=NumberRange.new(6,14),SpreadAngle=Vector2.new(180,180),
 		Color=ColorSequence.new(Color3.fromRGB(255,190,90)),LightEmission=1,Size=num({{0,.35},{1,0}}),Acceleration=Vector3.new(0,6,0)})
-	new("PointLight",{Color=look.light,Brightness=4,Range=28,Shadows=false},root)
+	-- (Jutsu pass 05/11) was 4 over 28 studs: the caster went white behind it
+	new("PointLight",{Color=look.light,Brightness=2,Range=20,Shadows=false},root)
 	model.PrimaryPart=root
 	return model
 end
@@ -312,8 +328,11 @@ function FX.new()
 	if workspace.DescendantAdded then
 		workspace.DescendantAdded:Connect(function(part) pcall(FX.dressScar,part) end)
 	end
-	return setmetatable({folder=folder,projectiles={},stuck={},seals={},hazards={},auras={},rasengan={},epoch=nil,
+	local fx=setmetatable({folder=folder,projectiles={},stuck={},seals={},hazards={},auras={},rasengan={},epoch=nil,
 		clock=0,cache={}},FX)
+	-- (06/11) GroundFX watches the arena's scars with the live effects layer
+	FX.current=fx
+	return fx
 end
 function FX:reset()
 	self.folder:ClearAllChildren()
@@ -333,8 +352,18 @@ function FX:reset()
 end
 local function serverNow() return workspace:GetServerTimeNow() end
 function FX:visualTime() return serverNow()-FX.DELAY end
-local BUILD={kunai=function() return FX.buildKunai(false) end,marked=function() return FX.buildKunai(true) end,wire=function() return FX.buildShuriken() end,
-	shuriken=FX.buildShuriken,fireball=function(p) return FX.buildFireball(p and p.caster) end,wind=FX.buildWind,
+-- (Jutsu pass 05/11, the Itachi vs Kakashi film: « on voit à peine les
+-- shuriken de l'ombre ») A flying shuriken is drawn 1.4 times its resting
+-- size (a stuck one keeps the real size): at the duel camera's distance a
+-- one-stud grey star over light sand was nearly invisible.
+local FLYING_SHURIKEN=1.4
+local function flyingShuriken()
+	local m=FX.buildShuriken()
+	pcall(function() m:ScaleTo(FLYING_SHURIKEN) end)
+	return m
+end
+local BUILD={kunai=function() return FX.buildKunai(false) end,marked=function() return FX.buildKunai(true) end,wire=flyingShuriken,
+	shuriken=flyingShuriken,fireball=function(p) return FX.buildFireball(p and p.caster) end,wind=FX.buildWind,
 	-- Vacuum Palm: a pale ring of compressed air (sized by the flight radius).
 	palm=function()
 		local model=new("Model",{Name="VacuumPalm"})
@@ -387,7 +416,11 @@ function FX:sync(data)
 			elseif p.kind=="kunai" or p.kind=="marked" then
 				addTrail(root,Vector3.new(0,.06,.2),Vector3.new(0,-.06,.2),if p.kind=="marked" then MINATO else Color3.fromRGB(220,226,236),.1,.5,1)
 			elseif p.kind=="shuriken" or p.kind=="wire" then
-				addTrail(root,Vector3.new(-.35,0,0),Vector3.new(.35,0,0),Color3.fromRGB(226,232,240),.08,.6,1)
+				-- Two layers so the line reads on the pale sand and on the sky:
+				-- a wide light wake and a narrow dark core inside it.
+				addTrail(root,Vector3.new(-.55,0,0),Vector3.new(.55,0,0),Color3.fromRGB(236,242,252),.14,.42,1)
+				local core=addTrail(root,Vector3.new(-.14,0,0),Vector3.new(.14,0,0),Color3.fromRGB(44,50,66),.1,.18,1)
+				core.LightEmission=0
 			end
 			if p.kind=="wire" then
 				-- Ninja wire: a thin line from the thrower's hand to the blade.
@@ -615,15 +648,31 @@ local function sparks(parent,position,color,count,speed)
 end
 -- A translucent copy of a fighter's current pose: afterimages for teleports,
 -- dodges and substitutions.
+-- (Jutsu pass 05/11, the Itachi vs Kakashi film: « la lecture du Sharingan
+-- fait une silhouette rouge pleine ») The copy was flat Neon at 35-60 %
+-- transparency: a solid coloured mannequin. Now it is a chakra shell: the
+-- body parts in ForceField (bright at the edges, see-through in the middle,
+-- so the silhouette reads as an image, not a body), over a faint Neon fill
+-- that fades first; the shell swells a little as it goes.
+FX.GHOST_FILL=.82
 function FX:ghost(model,color,time,transparency)
 	if not model then return end
 	local holder=new("Model",{Name="Afterimage"},self.folder)
+	local edge=math.clamp((transparency or .45)-.05,.3,.7)
 	for _,d in model:GetChildren() do
 		if d:IsA("BasePart") and d.Name~="HumanoidRootPart" and d.Transparency<.9 then
-			local g=block(holder,d.Size,d.CFrame,color,Enum.Material.Neon,if d:IsA("WedgePart") then "WedgePart" else "Part")
+			local class=if d:IsA("WedgePart") then "WedgePart" else "Part"
+			local g=block(holder,d.Size,d.CFrame,color,Enum.Material.ForceField,class)
 			if d:IsA("Part") then g.Shape=d.Shape end
-			g.Transparency=transparency or .45
-			tween(g,time,{Transparency=1,Size=d.Size*1.08})
+			g.Transparency=edge
+			tween(g,time,{Transparency=1,Size=d.Size*1.1})
+			-- the faint fill only on the body's big volumes (fewer parts to draw)
+			if d.Size.X*d.Size.Y*d.Size.Z>.3 then
+				local fill=block(holder,d.Size*.96,d.CFrame,color,Enum.Material.Neon,class)
+				if d:IsA("Part") then fill.Shape=d.Shape end
+				fill.Transparency=FX.GHOST_FILL
+				tween(fill,time*.6,{Transparency=1})
+			end
 		end
 	end
 	Debris:AddItem(holder,time+.1)
@@ -966,8 +1015,14 @@ function FX:impact(impact,folder)
 		sparks(self.folder,position,Color3.fromRGB(255,246,180),22,26)
 		flash(self.folder,position,Color3.fromRGB(255,250,220),1,6,.14,.2)
 	elseif style=="burst" then
+		-- (Jutsu pass 06/11, Studio: « les corps deviennent blancs » at the
+		-- Rasengan) A chakra copy laid over a body that does not move covers
+		-- it: Minato and Naruto turned white for a quarter second. The release
+		-- is now a ring of chakra round him and sparks at the hand.
 		local model=modelFor(folder,impact.owner)
-		if model then self:ghost(model,Color3.fromRGB(140,200,255),.25,.5) end
+		local hand=model and model:FindFirstChild("RightHand")
+		shockRing(self.folder,position-Vector3.new(0,2.5,0),Color3.fromRGB(120,190,255),2,10,.3)
+		if hand then sparks(self.folder,hand.Position,Color3.fromRGB(170,215,255),10,14) end
 	elseif style=="clash" then
 		-- Two strikes meeting: a hard white-gold flash and a ring across the line
 		-- between the fighters, nothing else. It has to read instantly.
@@ -1122,7 +1177,10 @@ function FX:explosion(position,normal,scale)
 	local holder=anchorPart(self.folder,position);holder.Transparency=1
 	sound(holder,SOUND.boom,.8,.9)
 	sound(holder,SOUND.debris,.32*scale,1.15,1.1)
-	local light=new("PointLight",{Color=Color3.fromRGB(255,150,70),Brightness=10,Range=46*scale,Shadows=false},holder)
+	-- (Jutsu pass 05/11, the reel: the bodies near a fireball's blast turned
+	-- pure white) Brightness 10 over 46 studs blew every surface out; the
+	-- blast still lights the arena, without erasing the fighters' colours.
+	local light=new("PointLight",{Color=Color3.fromRGB(255,150,70),Brightness=3.5,Range=30*scale,Shadows=false},holder)
 	tween(light,.9,{Brightness=0})
 	if not Kit.has("fire") then
 		-- Built-in look (no texture available).
@@ -1231,17 +1289,34 @@ function FX:teleport(from,to,model,awake)
 	Debris:AddItem(holder,1)
 end
 function FX:substitute(position,to,fighter,model)
-	if model then self:ghost(model,Color3.fromRGB(220,220,230),.18,.5) end
-	smokePuff(self.folder,position,Color3.fromRGB(240,240,244),22,2.4)
+	-- (Jutsu pass 05/11, from the Itachi vs Kakashi film: « le rondin fait un
+	-- fantôme blanc ») No white copy of the body any more: the swap is hidden
+	-- in a thick poof of smoke the size of the body, and the log is found
+	-- standing in it where he stood (bark, two pale cut ends), then it topples.
+	smokePuff(self.folder,position,Color3.fromRGB(242,242,246),26,2.8)
+	smokePuff(self.folder,position-Vector3.new(0,1.8,0),Color3.fromRGB(232,232,236),14,2.2)
 	if fighter=="Mirage" then
 		crows(self.folder,position,10,11)
 	else
 		-- The classic: a wooden log takes the hit in his place.
-		local log=block(self.folder,Vector3.new(4.2,1.3,1.3),CFrame.new(position)*CFrame.Angles(0,math.random()*math.pi,math.rad(70)),Color3.fromRGB(122,84,52),Enum.Material.Wood)
-		log.Shape=Enum.PartType.Cylinder;log.Anchored=false;log.CanCollide=true;log.Massless=false
-		log.AssemblyLinearVelocity=Vector3.new(0,6,0)
-		task.delay(1.6,function() if log.Parent then tween(log,.4,{Transparency=1}) end end)
-		Debris:AddItem(log,2.1)
+		local holder=new("Model",{Name="SubstitutionLog"},self.folder)
+		local stand=CFrame.new(position-Vector3.new(0,.6,0))*CFrame.Angles(0,math.random()*math.pi*2,0)*CFrame.Angles(0,0,math.rad(84))
+		local log=block(holder,Vector3.new(3.6,1.25,1.25),stand,Color3.fromRGB(110,74,44),Enum.Material.Wood)
+		log.Shape=Enum.PartType.Cylinder;log.Anchored=false;log.CanCollide=true;log.Massless=false;log.CastShadow=true
+		for _,x in {-1.81,1.81} do
+			local cut=block(holder,Vector3.new(.04,1.12,1.12),stand*CFrame.new(x,0,0),Color3.fromRGB(214,180,128),Enum.Material.Wood)
+			cut.Shape=Enum.PartType.Cylinder;cut.Anchored=false;cut.Massless=true
+			new("WeldConstraint",{Part0=log,Part1=cut},cut)
+		end
+		holder.PrimaryPart=log
+		-- a nudge so it tips over instead of balancing on its end
+		log.AssemblyLinearVelocity=Vector3.new(0,2,0)
+		log.AssemblyAngularVelocity=stand.LookVector*2.2
+		task.delay(1.7,function()
+			if not holder.Parent then return end
+			for _,d in holder:GetChildren() do if d:IsA("BasePart") then tween(d,.4,{Transparency=1}) end end
+		end)
+		Debris:AddItem(holder,2.2)
 	end
 	if to then smokePuff(self.folder,to,Color3.fromRGB(236,236,240),8,1.4) end
 	sound(anchorPart(self.folder,position),SOUND.whoosh,.4,.9)
@@ -1482,6 +1557,29 @@ function FX:chakraImpact(impact,folder)
 	end
 end
 -- ------------------------------------------------------------------ persistent
+-- The Flying Thunder God formula written on a surface: its three characters
+-- round a point, facing out, on an invisible plate (a SurfaceGui, unlit).
+FX.FORMULA={"飛","雷","神"}
+function FX.formulaGround(parent,surface,normal,radius,tone)
+	normal=(normal or Vector3.yAxis).Unit
+	local side=if math.abs(normal.Y)>.9 then Vector3.xAxis else Vector3.yAxis
+	local right=side:Cross(normal).Unit
+	local size=radius*2+1.4
+	local plate=block(parent,Vector3.new(size,.05,size),CFrame.fromMatrix(surface+normal*.05,right,normal),tone,Enum.Material.SmoothPlastic)
+	plate.Transparency=1;plate.CanQuery=false;plate.CastShadow=false
+	local gui=new("SurfaceGui",{Face=Enum.NormalId.Top,SizingMode=Enum.SurfaceGuiSizingMode.PixelsPerStud,PixelsPerStud=60,
+		LightInfluence=0,Brightness=1.8,ZIndexBehavior=Enum.ZIndexBehavior.Sibling},plate)
+	local labels={}
+	local turn=math.random()*math.pi*2
+	for i,ch in FX.FORMULA do
+		local a=turn+(i-1)/#FX.FORMULA*math.pi*2
+		local l=new("TextLabel",{BackgroundTransparency=1,Size=UDim2.fromScale(.7/size*1.4,.7/size*1.4),AnchorPoint=Vector2.new(.5,.5),
+			Position=UDim2.fromScale(.5+math.sin(a)*radius/size,.5-math.cos(a)*radius/size),Rotation=math.deg(a),Text=ch,TextScaled=true,
+			Font=Enum.Font.GothamBlack,TextColor3=tone,TextStrokeColor3=Color3.fromRGB(110,60,0),TextStrokeTransparency=.35,TextTransparency=1},gui)
+		table.insert(labels,l)
+	end
+	return plate,labels
+end
 -- Planted Flying Thunder God seals: a real three-pronged kunai in the surface
 -- and a slowly pulsing seal formula around it.
 function FX:seal(owner,actor,folder)
@@ -1495,26 +1593,20 @@ function FX:seal(owner,actor,folder)
 			local model=folder and folder:FindFirstChild(info.body)
 			local torso=model and (model:FindFirstChild("UpperTorso") or model:FindFirstChild("HumanoidRootPart"))
 			if torso then
+				-- (06/11) no glowing disc on the back any more: IdentityFX writes
+				-- the formula round the body; here, its light on him.
 				if not entry then
 					local glyph=new("Model",{Name="Body seal"},self.folder)
 					local tone=if info.wind then WIND else MINATO
-					local disc=block(glyph,Vector3.new(.03,1.5,1.5),torso.CFrame,tone,Enum.Material.Neon);disc.Shape=Enum.PartType.Cylinder;disc.Transparency=.35
-					local marks={}
-					for i=0,5 do table.insert(marks,block(glyph,Vector3.new(.04,.08,.36),torso.CFrame,tone,Enum.Material.Neon)) end
-					local light=new("PointLight",{Color=tone,Brightness=2,Range=7,Shadows=false},disc)
-					entry={glyph=glyph,disc=disc,marks=marks,light=light,body=true,born=os.clock()}
+					local anchor=block(glyph,Vector3.new(.2,.2,.2),torso.CFrame,tone,Enum.Material.SmoothPlastic);anchor.Transparency=1
+					local light=new("PointLight",{Color=tone,Brightness=1.4,Range=6,Shadows=false},anchor)
+					entry={glyph=glyph,anchor=anchor,light=light,body=true,born=os.clock()}
 					self.seals[key]=entry
-					flash(self.folder,torso.Position,tone,.6,4,.2,.2)
+					flash(self.folder,torso.Position,tone,.5,3,.18,.2)
 				end
-				local back=torso.CFrame*CFrame.new(0,.1,.62)
-				local base=CFrame.lookAt(back.Position,back.Position+torso.CFrame.LookVector*-1)*CFrame.Angles(0,math.pi/2,0)
-				entry.disc.CFrame=base
-				for i,mark in entry.marks do
-					mark.CFrame=base*CFrame.Angles((i-1)/6*math.pi*2+os.clock()*2,0,0)*CFrame.new(0,.5,0)
-				end
+				entry.anchor.CFrame=torso.CFrame
 				local pulse=.5+.5*math.sin((os.clock()-entry.born)*7)
-				entry.disc.Transparency=.25+pulse*.3
-				entry.light.Brightness=1.5+pulse*1.5
+				entry.light.Brightness=1+pulse*1.2
 			end
 		elseif info.surface then
 			local surface=info.surface
@@ -1530,24 +1622,23 @@ function FX:seal(owner,actor,folder)
 					local axis=(into+tilt).Unit
 					model:PivotTo(CFrame.lookAt(surface-axis*.55,surface-axis*.55+axis))
 				end
+				-- (06/11, user: « les kunai de Minato… quand ils sont marqués,
+				-- c'est super moche… un cercle bizarre ») No flat neon disc and
+				-- spokes: the seal is its formula, the three characters of the
+				-- Flying Thunder God written round the kunai, gold, glowing softly.
 				local glyph=new("Model",{Name="Seal"},self.folder)
-				local base=CFrame.lookAt(surface+normal*.03,surface+normal*1.03)*CFrame.Angles(0,math.pi/2,0)
-				local disc=block(glyph,Vector3.new(.03,3.2,3.2),base,MINATO,Enum.Material.Neon);disc.Shape=Enum.PartType.Cylinder;disc.Transparency=.8
-				for i=0,5 do
-					local a=i/6*math.pi*2
-					local mark=block(glyph,Vector3.new(.04,.12,.7),base*CFrame.Angles(a,0,0)*CFrame.new(0,1.1,0),MINATO,Enum.Material.Neon)
-					mark.Transparency=.35
-				end
-				local light=new("PointLight",{Color=MINATO,Brightness=1.5,Range=9,Shadows=false},disc)
-				entry={model=model,glyph=glyph,disc=disc,light=light,surface=surface,born=os.clock()}
+				local plate,labels=FX.formulaGround(glyph,surface,normal,if info.wake then 1.6 else 1.05,MINATO)
+				local light=new("PointLight",{Color=MINATO,Brightness=1.2,Range=7,Shadows=false},plate)
+				entry={model=model,glyph=glyph,labels=labels,light=light,surface=surface,born=os.clock()}
 				self.seals[key]=entry
-				flash(self.folder,surface,MINATO,.6,3.5,.2,.2)
+				flash(self.folder,surface,MINATO,.5,2.6,.18,.25)
 			end
 			local pulse=.5+.5*math.sin((os.clock()-entry.born)*4)
 			-- The last seconds of a seal flicker so its expiry is readable.
 			local fading=(info.remaining or 12)<2 and math.sin(os.clock()*30)>0
-			entry.disc.Transparency=if fading then .95 else .72+pulse*.18
-			entry.light.Brightness=if fading then .3 else 1+pulse*1.2
+			local born=math.clamp((os.clock()-entry.born)/.25,0,1)
+			for _,l in entry.labels do l.TextTransparency=if fading then .9 else 1-born*(.85-pulse*.25) end
+			entry.light.Brightness=if fading then .3 else .8+pulse*.9
 		end
 	end
 	for key,entry in self.seals do
@@ -1599,6 +1690,92 @@ function FX.dressScar(part)
 		part:GetPropertyChangedSignal("Transparency"):Connect(function() if part.Transparency<1 then part.Transparency=1 end end)
 	end)
 end
+-- (Jutsu pass 06/11, user: « la traînée que laisse la boule de feu, c'est
+-- super moche… j'espère que tu as retiré la bande… avec un contour jaune »)
+-- Itachi's burning lane (Server/Elements.burnLane) is a row of patches 5
+-- studs apart. Each patch now draws the piece of ground from the previous
+-- patch of the same lane to itself, with nothing straight in it: scorch marks
+-- (VfxKit's radial burn streaks, ragged by nature) overlapping along the
+-- segment and each turned at random, so the burnt ground has no edge and no
+-- outline; embers (glowing sparks) crawling and lifting off the burnt ground
+-- instead of drawn lines; low flames licking over the whole segment (a box
+-- emitter the segment's length) and a thin smoke. When the fire is out the
+-- embers die first and the scorched ground stays a few seconds more.
+FX.LANE={Char=Color3.fromRGB(46,34,26),Ember=Color3.fromRGB(255,120,40),Linger=4}
+local lanePrev=setmetatable({},{__mode="k"})
+-- Scorch marks laid on the floor, held for `hold` then faded.
+local function scorchMarks(parent,at,normal,frame,length,radius,count,hold,fade,rng)
+	local marks={}
+	if not Kit.has("scorch") then return marks end
+	for k=1,count do
+		local u=if count==1 then 0 else (k-1)/(count-1)-.5
+		local p=frame*CFrame.new(rng:NextNumber(-.5,.5)*radius*.3,0,u*length*.75)
+		local m=Kit.ground(parent,p.Position,normal,"scorch",radius*(2.3+rng:NextNumber(0,.7)),hold,fade,FX.LANE.Char,rng:NextNumber(0,.12))
+		if m then table.insert(marks,m) end
+	end
+	return marks
+end
+local function emberEmitter(parent,rate)
+	return new("ParticleEmitter",{Name="Embers",Texture=TEX.spark,Rate=rate,Lifetime=NumberRange.new(.7,1.4),Speed=NumberRange.new(.4,2.2),
+		SpreadAngle=Vector2.new(40,40),EmissionDirection=Enum.NormalId.Top,Shape=Enum.ParticleEmitterShape.Box,
+		Color=seq({{0,Color3.fromRGB(255,214,120)},{.4,FX.LANE.Ember},{1,Color3.fromRGB(120,30,10)}}),LightEmission=1,LightInfluence=0,
+		Size=num({{0,.2},{.6,.14},{1,0}}),Transparency=num({{0,0},{.8,.2},{1,1}}),Acceleration=Vector3.new(0,1.6,0),Drag=1.2,
+		RotSpeed=NumberRange.new(-60,60),Rotation=NumberRange.new(0,360),ZOffset=.3},parent)
+end
+function FX:lanePatch(h)
+	local floor=floorUnder(self,h.position,3,14)
+	local at=(if floor then floor.Position else h.position-Vector3.new(0,.5,0))
+	local normal=if floor and floor.Normal.Y>.6 then floor.Normal else Vector3.yAxis
+	lanePrev[self]=lanePrev[self] or {}
+	local prev=lanePrev[self][h.lane]
+	lanePrev[self][h.lane]=at
+	local from=if prev and (prev-at).Magnitude<9 then prev else nil
+	local dir=if from then (at-from)*Vector3.new(1,0,1) else Vector3.zero
+	dir=if dir.Magnitude>.05 then dir.Unit else Vector3.zAxis
+	local length=if from then (at-from).Magnitude+h.radius*1.4 else h.radius*2.2
+	local mid=if from then (from+at)/2 else at
+	local frame=CFrame.lookAt(mid,mid+dir)
+	local holder=new("Model",{Name="FireLane"},self.folder)
+	local rng=Random.new(math.floor(at.X*31+at.Z*17))
+	local linger=FX.LANE.Linger
+	-- the scorched ground
+	local marks=scorchMarks(holder,mid,normal,frame,length,h.radius,if from then 3 else 2,(h.remaining or 2.6)+linger*.6,linger*.4,rng)
+	-- the flames: low, many, over the whole segment
+	local box=anchorPart(holder,mid+Vector3.new(0,.3,0));box.Transparency=1;box.Size=Vector3.new(h.radius*1.3,.2,length*.9)
+	box.CFrame=frame+Vector3.new(0,.3,0)
+	local flames=new("ParticleEmitter",{Texture=TEX.fire,Rate=70,Lifetime=NumberRange.new(.35,.65),Speed=NumberRange.new(2.5,5),
+		SpreadAngle=Vector2.new(10,10),EmissionDirection=Enum.NormalId.Top,Shape=Enum.ParticleEmitterShape.Box,
+		Color=seq({{0,Color3.fromRGB(255,232,160)},{.35,Color3.fromRGB(255,128,40)},{1,Color3.fromRGB(110,34,14)}}),LightEmission=.9,LightInfluence=0,
+		Size=num({{0,.6},{.3,1.5},{1,.2}}),Transparency=num({{0,.15},{.7,.4},{1,1}}),Acceleration=Vector3.new(0,2,0),
+		RotSpeed=NumberRange.new(-90,90),Rotation=NumberRange.new(0,360),ZOffset=.2},box)
+	-- the embers: sparks crawling and lifting off the burnt ground
+	local ground=anchorPart(holder,mid+Vector3.new(0,.15,0));ground.Transparency=1;ground.Size=Vector3.new(h.radius*1.6,.1,length)
+	ground.CFrame=frame+Vector3.new(0,.15,0)
+	local embers=emberEmitter(ground,28)
+	local smoke=new("ParticleEmitter",{Texture=TEX.smoke,Rate=6,Lifetime=NumberRange.new(.9,1.4),Speed=NumberRange.new(2,4),
+		SpreadAngle=Vector2.new(15,15),EmissionDirection=Enum.NormalId.Top,Shape=Enum.ParticleEmitterShape.Box,
+		Color=ColorSequence.new(Color3.fromRGB(70,58,52)),LightInfluence=1,Size=num({{0,1.2},{1,3.4}}),Transparency=num({{0,.6},{1,1}}),
+		RotSpeed=NumberRange.new(-30,30),Rotation=NumberRange.new(0,360)},box)
+	local light=new("PointLight",{Color=Color3.fromRGB(255,130,60),Brightness=1.6,Range=h.radius*3,Shadows=false},box)
+	local crackle=new("Sound",{SoundId=SOUND.fireLoop,Volume=.14,Looped=true,PlaybackSpeed=.85+rng:NextNumber()*.3,RollOffMaxDistance=60},box)
+	pcall(function() crackle:Play() end)
+	return {lane=true,holder=holder,marks=marks,embers=embers,flames=flames,smoke=smoke,light=light,crackle=crackle,born=os.clock()}
+end
+function FX.laneUpdate(entry,h)
+	local t=os.clock()
+	entry.light.Brightness=1.3+math.sin(t*19+entry.born)*.35+math.sin(t*7)*.25
+	if h.remaining<.5 then entry.flames.Rate=30 end
+end
+function FX.laneFinish(entry)
+	entry.flames.Enabled=false;entry.smoke.Rate=3
+	entry.embers.Rate=8
+	tween(entry.light,.4,{Brightness=0})
+	if entry.crackle then tween(entry.crackle,.6,{Volume=0}) end
+	local linger=FX.LANE.Linger
+	task.delay(1.2,function() if entry.embers.Parent then entry.embers.Enabled=false end end)
+	task.delay(linger*.6,function() if entry.smoke.Parent then entry.smoke.Enabled=false end end)
+	Debris:AddItem(entry.holder,linger+.2)
+end
 function FX:hazardsStep(data)
 	local live={}
 	for _,h in data.hazards or {} do
@@ -1615,16 +1792,34 @@ function FX:hazardsStep(data)
 			if FX.hazardUpdate then FX.hazardUpdate(entry,h) end
 			continue
 		end
+		if not entry and h.lane then
+			entry=self:lanePatch(h)
+			self.hazards[key]=entry
+		end
+		if entry and entry.lane then
+			FX.laneUpdate(entry,h)
+			continue
+		end
 		if not entry then
 			local floor=floorUnder(self,h.position,3,14)
 			local at=if floor then floor.Position else h.position
 			local holder=anchorPart(self.folder,at);holder.Transparency=1;holder.Size=Vector3.new(h.radius*1.6,.2,h.radius*1.6)
-			local e=new("ParticleEmitter",{Texture=TEX.fire,Rate=60,Lifetime=NumberRange.new(.4,.8),Speed=NumberRange.new(3,7),
-				SpreadAngle=Vector2.new(12,12),EmissionDirection=Enum.NormalId.Top,Shape=Enum.ParticleEmitterShape.Box,
-				Color=seq({{0,Color3.fromRGB(255,220,140)},{.5,Color3.fromRGB(255,110,40)},{1,Color3.fromRGB(90,30,12)}}),LightEmission=1,LightInfluence=0,
-				Size=num({{0,1.4},{.4,2.4},{1,.4}}),Transparency=num({{0,.2},{1,1}}),RotSpeed=NumberRange.new(-80,80),Rotation=NumberRange.new(0,360)},holder)
-			local light=new("PointLight",{Color=Color3.fromRGB(255,130,60),Brightness=3,Range=h.radius*3,Shadows=false},holder)
-			entry={holder=holder,emitter=e,light=light}
+			-- (06/11) the ground under a burning patch is scorched (ragged burn
+			-- marks, no outline), embers crawl on it, the flames lick low over it
+			local normal=if floor and floor.Normal.Y>.6 then floor.Normal else Vector3.yAxis
+			local charHolder=new("Model",{Name="FireScorch"},self.folder)
+			scorchMarks(charHolder,at,normal,CFrame.new(at)*CFrame.Angles(0,math.random()*6.28,0),h.radius*.8,h.radius*.85,2,
+				(h.remaining or 3)+FX.LANE.Linger*.6,FX.LANE.Linger*.4,Random.new())
+			Debris:AddItem(charHolder,(h.remaining or 3)+FX.LANE.Linger+.3)
+			local embers=emberEmitter(holder,math.floor(10+h.radius*3))
+			local e=new("ParticleEmitter",{Texture=TEX.fire,Rate=60,Lifetime=NumberRange.new(.35,.65),Speed=NumberRange.new(2.5,5),
+				SpreadAngle=Vector2.new(10,10),EmissionDirection=Enum.NormalId.Top,Shape=Enum.ParticleEmitterShape.Box,
+				Color=seq({{0,Color3.fromRGB(255,232,160)},{.35,Color3.fromRGB(255,128,40)},{1,Color3.fromRGB(110,34,14)}}),LightEmission=.9,LightInfluence=0,
+				Size=num({{0,.7},{.3,1.6},{1,.2}}),Transparency=num({{0,.15},{.7,.4},{1,1}}),Acceleration=Vector3.new(0,2,0),RotSpeed=NumberRange.new(-90,90),Rotation=NumberRange.new(0,360)},holder)
+			local light=new("PointLight",{Color=Color3.fromRGB(255,130,60),Brightness=1.8,Range=h.radius*3,Shadows=false},holder)
+			local crackle=new("Sound",{SoundId=SOUND.fireLoop,Volume=.18,Looped=true,PlaybackSpeed=.9+math.random()*.2,RollOffMaxDistance=60},holder)
+			pcall(function() crackle:Play() end)
+			entry={holder=holder,emitter=e,light=light,embers=embers}
 			self.hazards[key]=entry
 		end
 		-- Readable, not noisy: a small burning patch (a chakra blade's) flickers
@@ -1634,11 +1829,14 @@ function FX:hazardsStep(data)
 		entry.emitter.Rate=(if h.remaining<.4 then 25 else 60)*scale
 	end
 	for key,entry in self.hazards do
-		if not live[key] and entry.family then
+		if not live[key] and entry.lane then
+			FX.laneFinish(entry);self.hazards[key]=nil
+		elseif not live[key] and entry.family then
 			FX.hazardFinish(entry);self.hazards[key]=nil
 		elseif not live[key] then
 			entry.emitter.Enabled=false;tween(entry.light,.3,{Brightness=0})
-			Debris:AddItem(entry.holder,1);self.hazards[key]=nil
+			if entry.embers then entry.embers.Rate=4 end
+			Debris:AddItem(entry.holder,1.2);self.hazards[key]=nil
 		end
 	end
 end
@@ -2010,10 +2208,15 @@ function FX:fighter(model,actor,dt)
 			-- and three streaks orbiting on crossed planes whose trails draw the
 			-- spiral - white at the head, deep blue at the tail. Only the core
 			-- glows.
+			-- (Jutsu pass 05/11, the reel: still a white ball on Naruto and on
+			-- Minato) The neon core bloomed over everything and its light washed
+			-- the arm white. Now the core is small and pale blue, the body of the
+			-- sphere a deep blue glass (the colour reads at the duel camera's
+			-- distance), the ForceField churn over it, and a weak light.
 			local holder=new("Model",{Name="Rasengan"},self.folder)
-			local core=block(holder,Vector3.one*.42,hand.CFrame,Color3.fromRGB(240,252,255),Enum.Material.Neon);core.Shape=Enum.PartType.Ball
-			local glow=block(holder,Vector3.one*.95,hand.CFrame,Color3.fromRGB(120,195,255),Enum.Material.Neon);glow.Shape=Enum.PartType.Ball;glow.Transparency=.72
-			local shell=block(holder,Vector3.one*1.55,hand.CFrame,Color3.fromRGB(60,140,255),Enum.Material.ForceField);shell.Shape=Enum.PartType.Ball
+			local core=block(holder,Vector3.one*.3,hand.CFrame,Color3.fromRGB(200,236,255),Enum.Material.Neon);core.Shape=Enum.PartType.Ball
+			local glow=block(holder,Vector3.one*1.05,hand.CFrame,Color3.fromRGB(40,120,255),Enum.Material.Glass);glow.Shape=Enum.PartType.Ball;glow.Transparency=.35;glow.Reflectance=.2
+			local shell=block(holder,Vector3.one*1.55,hand.CFrame,Color3.fromRGB(50,130,255),Enum.Material.ForceField);shell.Shape=Enum.PartType.Ball
 			local pivot=block(holder,Vector3.one*.1,hand.CFrame,Color3.new(1,1,1));pivot.Transparency=1
 			local streaks={}
 			for i=1,3 do
@@ -2027,7 +2230,16 @@ function FX:fighter(model,actor,dt)
 			local e=new("ParticleEmitter",{Texture=TEX.vortex,Rate=40*(Kit.amount or 1),Lifetime=NumberRange.new(.15,.3),Speed=NumberRange.new(0,1),
 				Color=ColorSequence.new(Color3.fromRGB(110,180,255)),LightEmission=.6,LightInfluence=0,Size=num({{0,1.5},{1,.4}}),
 				Transparency=num({{0,.45},{1,1}}),RotSpeed=NumberRange.new(400,700),Rotation=NumberRange.new(0,360),LockedToPart=true},at)
-			new("PointLight",{Color=Color3.fromRGB(110,180,255),Brightness=2.5,Range=11,Shadows=false},core)
+			-- the spiral (VFX Studio's "Air2") spun hard inside the sphere, and a
+			-- spiky energy flicker at its heart
+			new("ParticleEmitter",{Name="Spiral",Texture=TEX.swirl,Rate=26,Lifetime=NumberRange.new(.18,.26),Speed=NumberRange.new(0,0),
+				Color=ColorSequence.new(Color3.fromRGB(170,215,255),Color3.fromRGB(70,140,255)),LightEmission=.7,LightInfluence=0,
+				Size=num({{0,1.2},{1,1.75}}),Transparency=num({{0,.15},{.6,.35},{1,1}}),Rotation=NumberRange.new(0,360),
+				RotSpeed=NumberRange.new(-1100,-800),LockedToPart=true,ZOffset=.6},at)
+			new("ParticleEmitter",{Name="Energy",Texture=TEX.energy,Rate=14,Lifetime=NumberRange.new(.08,.14),Speed=NumberRange.new(0,0),
+				Color=ColorSequence.new(Color3.fromRGB(215,240,255)),LightEmission=.9,LightInfluence=0,Size=num({{0,.7},{1,.9}}),
+				Transparency=num({{0,.3},{1,1}}),Rotation=NumberRange.new(0,360),LockedToPart=true,ZOffset=.8},at)
+			new("PointLight",{Color=Color3.fromRGB(80,150,255),Brightness=1.1,Range=7,Shadows=false},core)
 			orb={holder=holder,core=core,glow=glow,shell=shell,pivot=pivot,streaks=streaks,emitter=e,born=os.clock()}
 			self.rasengan[model]=orb
 			sound(core,SOUND.whoosh,.3,.5)
@@ -2035,8 +2247,8 @@ function FX:fighter(model,actor,dt)
 		local grow=math.clamp((os.clock()-orb.born)/.25,.2,1)
 		local center=hand.CFrame*CFrame.new(0,-.75,-.35)
 		local t=os.clock()
-		orb.core.CFrame=center;orb.core.Size=Vector3.one*.42*grow*(1+math.sin(t*50)*.08)
-		orb.glow.CFrame=center;orb.glow.Size=Vector3.one*.95*grow
+		orb.core.CFrame=center;orb.core.Size=Vector3.one*.3*grow*(1+math.sin(t*50)*.08)
+		orb.glow.CFrame=center*CFrame.Angles(0,t*14,t*5);orb.glow.Size=Vector3.one*1.05*grow
 		orb.shell.CFrame=center*CFrame.Angles(t*6,t*9,0);orb.shell.Size=Vector3.one*1.55*grow*(1+math.sin(t*40)*.04)
 		orb.pivot.CFrame=center
 		local radius=.72*grow
@@ -2204,6 +2416,9 @@ require(script.Parent.LeeFX).install(FX,{new=new,block=block,tween=tween,sound=s
 -- (Stage 6) the eight ultimates, the Tsukuyomi, Lee's gates, the Byakugan's reveal.
 require(script.Parent.UltimateFX).install(FX,{new=new,block=block,tween=tween,sound=sound,flash=flash,shockRing=shockRing,burst=burst,
 	smokePuff=smokePuff,sparks=sparks,floorUnder=floorUnder,anchorPart=anchorPart,weldAll=weldAll,num=num,seq=seq,TEX=TEX,SOUND=SOUND,BUILD=BUILD})
+-- (06/11) The ground breaks for real under the fight (torn blocks, dust rings).
+require(script.Parent.GroundFX).install(FX,{new=new,block=block,tween=tween,sound=sound,flash=flash,shockRing=shockRing,burst=burst,
+	smokePuff=smokePuff,anchorPart=anchorPart,num=num,seq=seq,TEX=TEX,SOUND=SOUND})
 -- Systemic chakra, the player-facing layer (planted marks, the wire, clashes, bodies).
 require(script.Parent.ChakraFX).install(FX,{new=new,block=block,tween=tween,sound=sound,flash=flash,shockRing=shockRing,burst=burst,
 	smokePuff=smokePuff,floorUnder=floorUnder,anchorPart=anchorPart,weldAll=weldAll,num=num,seq=seq,TEX=TEX,SOUND=SOUND,BUILD=BUILD})

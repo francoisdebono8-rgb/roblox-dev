@@ -258,6 +258,9 @@ end
 function Ultimates.step(c)
 	for _,x in c.actors do
 		local glide=x.ultimateGlide
+		-- A body struck out of its glide stops gliding (the 64 Palms' step in
+		-- uses the same glide; an ultimate struck in its startup is lost anyway).
+		if glide and x.reaction then x.ultimateGlide=nil;glide=nil end
 		if glide then
 			local k=math.clamp((c.now-glide.t0)/math.max(1e-3,glide.t1-glide.t0),0,1)
 			local p=glide.from:Lerp(glide.to,1-(1-k)^3)

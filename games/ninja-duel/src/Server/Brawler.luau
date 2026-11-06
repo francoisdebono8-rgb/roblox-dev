@@ -439,6 +439,9 @@ function Brawler.react(c,a,kind,velocity,duration,source,cause)
  -- reaction that follows keeps it instead of shortening it to the move's own.
  duration=math.max(duration,(a.stunFloorUntil or 0)-c.now);a.stunFloorUntil=nil
  a.chainOpen=false;a.recoveryCancelAt=nil
+ -- (06/11) the ground keeps the blow: torn where the feet were (before the
+ -- reaction marks the body airborne)
+ if (kind=="Knockback" or kind=="Launched" or kind=="Knockdown") and typeof(velocity)=="Vector3" then pcall(WorldReaction.blow,c,a,velocity,kind) end
  a.reaction=kind;a.reactionUntil=c.now+duration;a.reactionVelocity=velocity;a.reactionStartedAt=c.now
 	 a.reactionSource=source;a.reactionCause=cause
  a.pending=nil;a.buffered=nil;a.attackName=nil;a.guardHeld=false;a.state="Neutral";a.untilTime=c.now
@@ -1680,7 +1683,7 @@ function Brawler.step(c,a,dt)
      if prop.Instance:GetAttribute("WorldState")=="Broken" then skid*=Config.World.SmashCarry
      elseif result~=nil or -skid:Dot(prop.Normal)>0 then skid=Vector3.zero end
     end
-    if skid.Magnitude>.05 then Motor.travel(a,c,skid,skid.Magnitude*dt) end
+    if skid.Magnitude>.05 then Motor.travel(a,c,skid,skid.Magnitude*dt);pcall(WorldReaction.skid,c,a,skid) end
     velocity=skid*math.exp(-dt*7)
    elseif airReactions[a.reaction] then
     velocity+=Vector3.new(0,-75*dt,0)

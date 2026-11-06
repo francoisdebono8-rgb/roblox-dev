@@ -15,6 +15,7 @@ local NARUTO="Legion"
 local SMOKE=Color3.fromRGB(240,240,244)
 local CHAKRA=Color3.fromRGB(255,160,70) -- his orange
 local BLUE=Color3.fromRGB(110,190,255)
+local DEEP=Color3.fromRGB(40,120,255) -- the Rasengan's body (05/11)
 local CORE=Color3.fromRGB(235,250,255)
 local FOX=Color3.fromRGB(232,64,30) -- the Nine-Tails' red chakra
 local FOX_CORE=Color3.fromRGB(255,176,96)
@@ -87,12 +88,46 @@ local function cast(fx,impact,folder)
 	if impact.technique=="ShadowClone" or impact.technique=="MassShadowClone" then
 		-- The cross seal: his chakra flares in his hands.
 		if hand then sparks(fx,hand.Position,CHAKRA,if impact.technique=="MassShadowClone" then 18 else 10,8) end
+		if impact.technique=="MassShadowClone" and model then NarutoFX.crowd(fx,model) end
 		return true
 	elseif impact.technique=="CloneRasengan" then
 		if hand then sparks(fx,hand.Position,BLUE,10,6) end
 		return true
 	end
 	return false
+end
+-- (Jutsu pass 06/11, the reel: « le multi-clonage ne fait qu'un clone ») The
+-- server makes the pair that charges (Server/Legion); around them the field
+-- fills: a fan of extra copies pops out of the smoke behind and beside him,
+-- stands a beat in his stance, then goes up in smoke as the pair runs in.
+-- Cosmetic only (they take no blow, they are not bodies).
+NarutoFX.CROWD={{-3.4,1.6},{3.4,1.6},{-5.6,3.6},{5.6,3.6},{-2,4.4},{2,4.4}}
+function NarutoFX.crowd(fx,model)
+	local root=model:FindFirstChild("HumanoidRootPart")
+	if not root then return end
+	local ok,BodyViews=pcall(require,script.Parent.BodyViews)
+	if not ok or not BodyViews.copy then return end
+	local base=root.CFrame
+	task.delay(.24,function()
+		if not model.Parent then return end
+		for k,spot in NarutoFX.CROWD do
+			task.delay(k*.035,function()
+				local copy=BodyViews.copy(model)
+				if not copy then return end
+				copy.Name="MassCloneDecoy"
+				for _,d in copy:GetDescendants() do if d:IsA("BasePart") then d.Anchored=true end end
+				local at=base*CFrame.new(spot[1],0,spot[2])
+				local turn=CFrame.Angles(0,math.rad(-spot[1]*3),0)
+				pcall(function() copy:PivotTo(at*turn) end)
+				copy.Parent=fx.folder
+				puff(fx,at.Position,10,1.8)
+				task.delay(.55+k*.04,function()
+					if copy.Parent then puff(fx,copy:GetPivot().Position,9,1.7);copy:Destroy() end
+				end)
+			end)
+		end
+		K.sound(K.anchorPart(fx.folder,base.Position),K.SOUND.whoosh,.5,.75)
+	end)
 end
 -- The Rasengan comes apart: the clone shaping it was struck.
 local function broken(fx,impact,folder)
@@ -200,16 +235,30 @@ local function rasengan(fx,model,actor,st)
 	local cloak=(actor.awaken or 0)>0
 	if forming and hand then
 		if not (st.orb and st.orb.Parent) then
+			-- (Jutsu pass 05/11, the reel: a white blob) A small pale core, a
+			-- deep blue glass body and a ForceField churn over it: the sphere
+			-- reads blue at the duel camera's distance (two neon balls bloomed
+			-- into white).
 			local holder=K.new("Model",{Name="RasenganForming"},fx.folder)
-			local core=K.block(holder,Vector3.one*.4,hand.CFrame,CORE,Enum.Material.Neon);core.Shape=Enum.PartType.Ball
-			local shell=K.block(holder,Vector3.one,hand.CFrame,BLUE,Enum.Material.Neon);shell.Shape=Enum.PartType.Ball;shell.Transparency=.5
-			st.orb=holder;st.core=core;st.shell=shell;st.born=NarutoFX.clock();st.wisp=nil
+			local core=K.block(holder,Vector3.one*.3,hand.CFrame,CORE,Enum.Material.Neon);core.Shape=Enum.PartType.Ball
+			local shell=K.block(holder,Vector3.one,hand.CFrame,DEEP,Enum.Material.Glass);shell.Shape=Enum.PartType.Ball;shell.Transparency=.35;shell.Reflectance=.2
+			local churn=K.block(holder,Vector3.one,hand.CFrame,BLUE,Enum.Material.ForceField);churn.Shape=Enum.PartType.Ball
+			-- the VFX Studio spiral turning inside it (as Effects' sphere)
+			local at=K.new("Attachment",{},core)
+			if K.TEX and K.TEX.swirl then
+				K.new("ParticleEmitter",{Name="Spiral",Texture=K.TEX.swirl,Rate=24,Lifetime=NumberRange.new(.18,.26),Speed=NumberRange.new(0,0),
+					Color=ColorSequence.new(Color3.fromRGB(170,215,255),Color3.fromRGB(70,140,255)),LightEmission=.7,LightInfluence=0,
+					Size=K.num({{0,1.1},{1,1.6}}),Transparency=K.num({{0,.15},{.6,.35},{1,1}}),Rotation=NumberRange.new(0,360),
+					RotSpeed=NumberRange.new(-1100,-800),LockedToPart=true,ZOffset=.6},at)
+			end
+			st.orb=holder;st.core=core;st.shell=shell;st.churn=churn;st.born=NarutoFX.clock();st.wisp=nil
 		end
 		local t=NarutoFX.clock()-st.born
 		local grow=math.clamp(t/.45,.25,1)
 		local center=hand.CFrame*CFrame.new(0,-.7,-.35)
-		st.core.CFrame=center;st.core.Size=Vector3.one*.6*grow;st.core.Color=if cloak then FOX_CORE else CORE
-		st.shell.CFrame=center;st.shell.Size=Vector3.one*1.5*grow*(1+math.sin(t*40)*.06);st.shell.Color=if cloak then FOX else BLUE
+		st.core.CFrame=center;st.core.Size=Vector3.one*.36*grow;st.core.Color=if cloak then FOX_CORE else CORE
+		st.shell.CFrame=center;st.shell.Size=Vector3.one*1.1*grow;st.shell.Color=if cloak then FOX else DEEP
+		st.churn.CFrame=center*CFrame.Angles(t*6,t*9,0);st.churn.Size=Vector3.one*1.55*grow*(1+math.sin(t*40)*.05);st.churn.Color=if cloak then FOX else BLUE
 		local root=model:FindFirstChild("HumanoidRootPart")
 		local beat=math.floor(t*30)
 		if not cloak and root and beat~=st.wisp then
@@ -225,8 +274,11 @@ local function rasengan(fx,model,actor,st)
 	end
 	local sphere=fx.rasengan and fx.rasengan[model]
 	if sphere and cloak then
+		-- (Jutsu pass 05/11) Effects' sphere has no bands since its 05/11 rework
+		-- (streaks instead): iterating sphere.bands raised in the cloak.
 		sphere.core.Color=FOX_CORE;sphere.shell.Color=FOX
-		for _,band in sphere.bands do band.Color=FOX_CORE end
+		if sphere.glow then sphere.glow.Color=FOX end
+		for _,band in sphere.bands or {} do band.Color=FOX_CORE end
 	end
 end
 -- The Nine-Tails cloak: the shared mantle burns red and the version-one cloak

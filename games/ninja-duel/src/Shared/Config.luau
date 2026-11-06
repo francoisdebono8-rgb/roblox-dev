@@ -85,8 +85,14 @@ return {
 		-- marks fade (Fade seconds, Major once the energy passed MajorEnergy
 		-- or a mark was deepened three times; Out: the fade itself) and the
 		-- floor holds at most MaxFloorScars at once (oldest first out).
-		GroundEnergy = 75, GroundElement = 34, MajorEnergy = 120, MaxFloorScars = 10,
-		Fade = {Minor = 22, Major = 60, Out = 1.6}},
+		-- (06/11, user: « les traces au sol et les dégâts sur l'arène sont très
+		-- légers ») Was 75 / 34 / 10 floor marks / 22 s and 60 s: the floor kept
+		-- almost nothing. Now a heavy blow marks it, the marks stay for the
+		-- round, and the blows that throw a body leave the ground torn where
+		-- it stood (Blow) and its skid ploughed (Skid, its own budget).
+		GroundEnergy = 40, GroundElement = 18, MajorEnergy = 90, MaxFloorScars = 18,
+		Fade = {Minor = 40, Major = 90, Out = 1.6},
+		Blow = {Speed = 30, Energy = 1.6}, Skid = {Speed = 9, Every = 0.13, Max = 14, Fade = 16}},
 	-- Ninja Embodiment (Server/Perception): the space a body reads around a
 	-- fight. Behind: how far past the target (or behind itself) a surface
 	-- counts; Scan: how far around the target the nearest surface is looked
