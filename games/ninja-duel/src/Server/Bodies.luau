@@ -47,6 +47,15 @@ function Bodies.of(c,a,kind,ephemeral)
 	return out
 end
 function Bodies.count(c,a,kind) return #Bodies.of(c,a,kind) end
+-- (06/11) A crowd (Naruto's Multi Shadow Clone): persistent bodies flagged
+-- `crowd`, capped apart from Max (tuning Crowd).
+function Bodies.crowd(c,a,kind)
+	local out={}
+	for _,body in c.bodies or {} do
+		if body.alive and body.crowd and body.owner==a and (not kind or body.kind==kind) then table.insert(out,body) end
+	end
+	return out
+end
 -- A persistent body free for a job (not already carrying a strike or shaping
 -- a jutsu): the one nearest the owner's target.
 function Bodies.free(c,a,kind)
@@ -72,7 +81,9 @@ function Bodies.move(c,body,goal,speed,dt)
 end
 function Bodies.spawn(c,owner,spec)
 	local kind=spec.kind or "clone"
-	if not spec.ephemeral and Bodies.count(c,owner,kind)>=(Bodies.tuning(owner,kind).Max or 2) then return nil end
+	if spec.crowd then
+		if #Bodies.crowd(c,owner,kind)>=(Bodies.tuning(owner,kind).Crowd or 0) then return nil end
+	elseif not spec.ephemeral and Bodies.count(c,owner,kind)>=(Bodies.tuning(owner,kind).Max or 2) then return nil end
 	c.bodySerial=(c.bodySerial or 0)+1
 	local position=c:clamp(spec.position or owner.root.Position)
 	local look=spec.look
@@ -83,9 +94,11 @@ function Bodies.spawn(c,owner,spec)
 	end
 	local body={id=c.bodySerial,owner=owner,kind=kind,position=position,look=look,born=c.now,expires=c.now+(spec.life or Bodies.tuning(owner,kind).Life or 6),
 		alive=true,state=spec.state or "Neutral",action=spec.action,actionAt=c.now,actionSerial=if spec.action then 1 else 0,mode=spec.mode or "guard",
-		ephemeral=spec.ephemeral==true,velocity=Vector3.zero,airborne=spec.airborne==true,side=spec.side or 1,nextStrike=c.now+(spec.delay or 1),warp=0}
+		ephemeral=spec.ephemeral==true,velocity=Vector3.zero,airborne=spec.airborne==true,side=spec.side or 1,nextStrike=c.now+(spec.delay or 1),warp=0,
+		crowd=spec.crowd==true or nil}
 	table.insert(list(c),body)
-	c:pushImpact(position,"body",false,{phase="appear",kind=kind,body=body.id,owner=owner.id,fighter=owner.fighterId})
+	-- (A crowd pops in a ripple: the client sounds one puff in three.)
+	c:pushImpact(position,"body",false,{phase="appear",kind=kind,body=body.id,owner=owner.id,fighter=owner.fighterId,crowd=body.crowd})
 	brawler().event(c,owner,"BodySpawned")
 	return body
 end
@@ -98,7 +111,7 @@ function Bodies.dispel(c,body,why,by,extra)
 	local index=all and table.find(all,body)
 	if index then table.remove(all,index) end
 	if body.carry then body.carry.lost=true;body.carry.from=nil;body.carry=nil end
-	local entry={phase=why or "hit",kind=body.kind,body=body.id,owner=body.owner.id,fighter=body.owner.fighterId,by=by and by.id}
+	local entry={phase=why or "hit",kind=body.kind,body=body.id,owner=body.owner.id,fighter=body.owner.fighterId,by=by and by.id,crowd=body.crowd}
 	for k,v in extra or {} do entry[k]=v end
 	c:pushImpact(body.position,"body",why=="hit" or why=="blade",entry)
 	local hook=Bodies.onDispel[body.kind]
@@ -424,7 +437,7 @@ function Bodies.view(c)
 			table.insert(out,{id=body.id,owner=body.owner.id,fighterId=body.owner.fighterId,kind=body.kind,position=body.position,look=body.look,
 				state=body.state,action=body.action,variant=body.variant,actionSerial=body.actionSerial,actionElapsed=c.now-(body.actionAt or c.now),
 				airborne=body.airborne,velocity=body.velocity,remaining=math.max(0,body.expires-c.now),mode=body.mode,cast=body.cast,
-				ephemeral=body.ephemeral,warp=body.warp})
+				ephemeral=body.ephemeral,warp=body.warp,crowd=body.crowd})
 		end
 	end
 	return out

@@ -436,23 +436,64 @@ test("a clone out goes to the opponent's flank and jabs when he is open, judged 
  local guard=clones(c3,m)[1]
  assert(guard.mode=="guard" and (guard.position-m.root.Position).Magnitude<4.5,"a clone made far away left his side")
 end)
-test("Multi Shadow Clone: two clones burst out on both sides and charge; refused in the cap",function()
+test("Multi Shadow Clone: a crowd of ten rings the opponent and strikes one at a time; the key again takes a clone's body",function()
  local c,a,b=H.duel("Legion","Mirage");place(c,a,b,14)
+ local function crowd() return Bodies.crowd(c,a,"clone") end
  assert(press(c,a,slot(a,"MassShadowClone")),"Multi Shadow Clone refused")
- until_(c,.6,function() return #clones(c,a)==2 end,"the two clones did not come out")
- local pair=clones(c,a)
- assert(pair[1].mode=="flank" and pair[2].mode=="flank" and pair[1].side~=pair[2].side,"the clones did not charge both flanks")
+ until_(c,1,function() return #crowd()==10 end,"the crowd of ten did not come out")
+ -- After the charge every clone stands on a ring round the opponent.
+ H.step(c,1.5)
+ for _,body in crowd() do
+  local gap=flat(body.position-b.root.Position).Magnitude
+  assert(gap<9.5,"a clone of the crowd stayed out of the ring ("..string.format("%.1f",gap)..")")
+ end
+ -- One strike at a time: never two clones winding up together.
  local health=b.health
- until_(c,2,function() return b.health<health end,"the charging clones never struck")
+ for _=1,250 do
+  H.step(c,.01)
+  local busy=0
+  for _,body in crowd() do if body.state=="Startup" then busy+=1 end end
+  assert(busy<=1,"two clones of the crowd wound up at once")
+ end
+ assert(b.health<health,"the crowd never struck")
+ -- The key again: a clone's body (no stick: the one most behind him), at its
+ -- own small price, the crowd's cooldown untouched; a clone takes his spot.
+ until_(c,1,function() return a.state=="Neutral" and not a.reaction end,"Naruto never came back to neutral")
+ local chakra,cooldown,before=a.chakra,a.cooldowns.MassShadowClone,a.root.Position
+ local count=#crowd()
+ assert(press(c,a,slot(a,"MassShadowClone")),"the body switch was refused")
+ assert(flat(a.root.Position-before).Magnitude>2,"Naruto did not move into a clone")
+ local back=flat(-b.root.CFrame.LookVector).Unit
+ assert(flat(a.root.Position-b.root.Position).Unit:Dot(back)>0,"he did not take the clone behind the opponent")
+ assert(math.abs(a.chakra-(chakra-6))<.01,"the switch was not paid its own price")
+ assert(a.cooldowns.MassShadowClone==cooldown,"the switch touched the crowd's cooldown")
+ assert(#crowd()==count,"a clone was lost in the switch")
+ local left=false
+ for _,body in crowd() do if flat(body.position-before).Magnitude<.5 then left=true end end
+ assert(left,"no clone was left where he stood")
+ assert(#impacts(c,"bodyswitch")==1,"the switch was not in the feed")
+ -- Again at once: the switch has its own short cooldown.
+ local again=press(c,a,slot(a,"MassShadowClone"))
+ assert(not again,"two switches in one breath")
+ -- The stick picks a clone in its direction.
+ H.step(c,.7)
+ local far,farGap=nil,0
+ for _,body in crowd() do local g=flat(body.position-a.root.Position).Magnitude;if g>farGap then far,farGap=body,g end end
+ local from=a.root.Position
+ local stick=flat(far.position-from).Unit
+ assert(press(c,a,slot(a,"MassShadowClone"),stick),"the stick switch was refused")
+ assert(flat(a.root.Position-from).Unit:Dot(stick)>.8,"the stick did not pick a clone in its direction")
+ -- The crowd melts away; then the key is the crowd again (on its cooldown).
  H.step(c,10)
- still(c,a,a.root.Position+side(a,1)*3);still(c,a,a.root.Position+side(a,-1)*3)
- local ok=press(c,a,slot(a,"MassShadowClone"))
- assert(not ok,"Multi Shadow Clone made clones past the cap")
- -- It always makes the pair: with one clone already out it is refused, nothing paid.
- local c2,x,y=H.duel("Legion","Mirage");place(c2,x,y,14)
- still(c2,x,x.root.Position+side(x,1)*3)
- local chakra=x.chakra
- assert(not press(c2,x,slot(x,"MassShadowClone")) and x.chakra==chakra,"Multi Shadow Clone ran (or was paid) with a clone already out")
+ assert(#crowd()==0,"the crowd outlived its time")
+ local single=Bodies.spawn(c,a,{kind="clone",position=a.root.Position+side(a,1)*3,mode="test"})
+ a.cooldowns.MassShadowClone=0;a.chakra=a.def.Chakra
+ assert(press(c,a,slot(a,"MassShadowClone")),"the crowd was refused with a single clone out")
+ until_(c,1,function() return #crowd()==10 end,"the single clone did not join a crowd of ten")
+ assert(single.crowd,"the clone already out did not join the crowd")
+ -- A single Shadow Clone with the crowd out: refused, nothing paid.
+ local chakra2=a.chakra
+ assert(not press(c,a,slot(a,"ShadowClone")) and a.chakra==chakra2,"a single clone was made with the crowd out")
 end)
 -- Awakening: the Nine-Tails chakra ------------------------------------------------
 test("the Nine-Tails chakra: only under 35%; the clones burst, no clone comes back, the clone routes become claws",function()

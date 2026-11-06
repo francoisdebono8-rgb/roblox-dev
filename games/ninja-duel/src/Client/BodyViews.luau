@@ -10,6 +10,20 @@ local BodyViews={};BodyViews.__index=BodyViews
 BodyViews.clock=os.clock -- (headless tests drive time)
 -- A body never lags its server position by more than this before it snaps.
 local SNAP=12
+-- (06/11) Copies kept per owner: Naruto's crowd is ten at once. A fighter
+-- whose kit makes a crowd (Fighters[id].Bodies.clone.Crowd) has its copies
+-- made ahead, one a frame, so the crowd does not stall the frame it appears.
+BodyViews.POOL=12
+local Fighters=nil
+local function crowdSize(fighterId)
+	if not Fighters then
+		local ok,mod=pcall(function() return require(game:GetService("ReplicatedStorage").NinjaDuel.Fighters) end)
+		Fighters=if ok then mod else {}
+	end
+	local def=Fighters[fighterId or ""]
+	local tune=def and def.Bodies and def.Bodies.clone
+	return tune and tune.Crowd or 0
+end
 function BodyViews.new()
 	local folder=Instance.new("Folder");folder.Name="NinjaDuelBodies";folder.Parent=workspace
 	return setmetatable({folder=folder,views={},pools={},epoch=nil},BodyViews)
@@ -69,9 +83,10 @@ end
 function BodyViews:release(view)
 	local model=view.model
 	model.Parent=nil
+	if view.fadeSet and view.fadeSet~=0 then for _,part in view.parts or BodyViews.parts(model) do part.LocalTransparencyModifier=0 end end
 	local pool=self.pools[view.owner] or {}
 	self.pools[view.owner]=pool
-	if #pool<4 then table.insert(pool,model) else model:Destroy() end
+	if #pool<BodyViews.POOL then table.insert(pool,model) else model:Destroy() end
 end
 function BodyViews:reset()
 	for id,view in self.views do view.model:Destroy();self.views[id]=nil end
@@ -109,6 +124,43 @@ function BodyViews:step(view,entry,dt)
 		attackName=if acting then entry.action else nil,attackVariant=if acting then entry.variant else nil,attackSerial=serial,
 		castId=if acting then nil else entry.cast,castElapsed=now-(clock.castAt or now)}
 	view.phase=Motion.present(view.model,visual,{attackElapsed=if acting then now-clock.at else 0,reactionElapsed=0},dt)
+	self:fade(view,dt)
+end
+-- (06/11) A crowd round the opponent stands between the lens and the player's
+-- own body: a clone in that line, or right against the lens, fades to a ghost
+-- (as an obstacle near the camera would) so the player still sees himself
+-- and the fight.
+BodyViews.FADE=.7
+function BodyViews:fade(view,dt)
+	local camera=workspace.CurrentCamera
+	local me=self.focus
+	local want=0
+	if camera and me then
+		local lens=camera.CFrame.Position
+		local root=view.model.PrimaryPart
+		local p=if root then root.Position else view.pos
+		local line=me-lens
+		local length=line.Magnitude
+		if length>.5 then
+			local along=(p-lens):Dot(line/length)
+			local off=((p-lens)-line/length*along).Magnitude
+			if (along>0 and along<length-1 and off<2.6) or (p-lens).Magnitude<4 then want=BodyViews.FADE end
+		end
+	end
+	local now=view.fadeNow or 0
+	now+=(want-now)*(1-math.exp(-14*math.max(dt,1/240)))
+	if want==0 and now<.02 then now=0 end
+	view.fadeNow=now
+	local set=view.fadeSet or 0
+	if math.abs(now-set)<.02 and not (now==0 and set~=0) then return end
+	view.fadeSet=now
+	view.parts=view.parts or BodyViews.parts(view.model)
+	for _,part in view.parts do part.LocalTransparencyModifier=now end
+end
+function BodyViews.parts(model)
+	local list={}
+	for _,d in model:GetDescendants() do if d:IsA("BasePart") then table.insert(list,d) end end
+	return list
 end
 -- A puppet (Sasori's marionette) is a copy of its owner turned to wood: the
 -- body parts lacquered brown, the costume and hair hidden, a pale mask, and
@@ -150,6 +202,25 @@ function BodyViews:update(data,dt,folder)
 		return
 	end
 	if data.epoch~=self.epoch then self:reset();self.epoch=data.epoch end
+	-- The player's own body (what the lens must keep in sight).
+	local mine=data.human and folder and folder:FindFirstChild(data.human.id or "")
+	local mineRoot=mine and mine:FindFirstChild("HumanoidRootPart")
+	self.focus=if mineRoot then mineRoot.Position else nil
+	-- Copies made ahead for a crowd (one a frame, out of the workspace).
+	for _,actor in {data.human,data.bot} do
+		local want=actor and crowdSize(actor.fighterId) or 0
+		local owner=want>0 and folder and folder:FindFirstChild(actor.id or "")
+		if owner then
+			local pool=self.pools[owner] or {}
+			self.pools[owner]=pool
+			local live=0
+			for _,view in self.views do if view.owner==owner then live+=1 end end
+			if #pool+live<math.min(want,BodyViews.POOL) then
+				local model=BodyViews.copy(owner)
+				if model then model.Parent=nil;table.insert(pool,model) end
+			end
+		end
+	end
 	local live={}
 	for _,entry in data.bodies or {} do
 		live[entry.id]=true

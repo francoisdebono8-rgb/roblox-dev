@@ -1760,7 +1760,14 @@ return Face
 		-- Shadow clones (Server/Bodies, Server/Legion): Max at once, Cost chakra
 		-- each, Life seconds, one blow dispels them. On a flank a clone jabs the
 		-- opponent (Strike damage, Reach studs) about every Every seconds.
-		Bodies = { clone = { Max = 2, Cost = 12, Life = 6, Strike = 3, Reach = 5.4, Every = 2.3 } },
+		-- (06/11, « il envoie une foule de multiclonage ; on peut prendre le corps
+		-- de n'importe quel clone ») Multi Shadow Clone makes a crowd: Crowd
+		-- clones for CrowdLife seconds, ringing the opponent; one of them strikes
+		-- every CrowdEvery seconds (CrowdStrike, CrowdKick damage), with a breath
+		-- of CrowdGrace seconds after one lands. With the crowd out, the same key
+		-- takes a clone's body (Switch chakra, SwitchCooldown seconds).
+		Bodies = { clone = { Max = 2, Cost = 12, Life = 6, Strike = 3, Reach = 5.4, Every = 2.3,
+			Crowd = 10, CrowdLife = 9, CrowdStrike = 3, CrowdKick = 4, CrowdEvery = .5, CrowdGrace = .85, Switch = 6, SwitchCooldown = .6 } },
 		-- Substitution with a clone out: "it was a clone!" — he swaps places
 		-- with it and the body that was being hit puffs away.
 		Substitution = { Mode = "clone" },
@@ -1786,7 +1793,7 @@ return Face
 				-- (User 28/10) Shaped in the open, it stays in his hand to run with.
 				HoldState = { Time = 3, Drain = 5, Strike = "DashAttack", Air = "Slam", Variant = "Rasengan", AirVariant = "RasenganDrop", Damage = 22,
 					Reaction = "Knockback", Impulse = Vector3.new(0, 22, 74), Stun = .62, Rasengan = true, World = { contact = "energy", element = "wind" }, Style = "burst", Name = "Rasengan", Reach = 9, Event = "Rasengan" }, Hint = "A clone shapes it at his side • strike the clone and it fails • ends a clean string" },
-			{ Id = "MassShadowClone", Name = "Multi Shadow Clone", Cost = 30, Channel = 0.3, Active = 0.08, Recovery = 0.2, Cooldown = 10, Interruptible = true, Range = 26, Hint = "Clones burst out on both sides and charge" },
+			{ Id = "MassShadowClone", Name = "Multi Shadow Clone", Cost = 40, Channel = 0.3, Active = 0.08, Recovery = 0.2, Cooldown = 18, Interruptible = true, Range = 26, Hint = "A crowd of ten clones rings the opponent • press again: take a clone's body (the stick picks it)" },
 			{ Id = "NarutoRendan", Name = "Naruto Uzumaki Rendan", Family = "Sequence", Opener = "Launcher", Cost = 22, Channel = 0.12, Active = 0.04, Recovery = 0.3, Cooldown = 9, Interruptible = true, Range = 13, Hint = "His clones send him up, then the heel down" },
 		},
 	},
@@ -5062,7 +5069,7 @@ return {
       <Item class="StringValue" referent="ND32">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">6dc03f384f7bab7bfb108698d8d27848722c1b96aae88598b22685bdd5f4827b</string>
+          <string name="Value">a0671fed59c648cd2bc834f977e1bb7378bdecddcaa2019ad5995a72b77a80f5</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND33">
@@ -5952,6 +5959,20 @@ function AI:update(now)
 		a.move=Vector3.zero;press(c,a,"Attack");return
 	end
 	if a.state~="Neutral" or a.reaction then return end
+	-- (06/11) Naruto with his crowd out: now and then he takes the body of
+	-- the clone most behind the opponent (the same key again) and strikes from
+	-- there, so the real one is never where he was.
+	if a.crowd and now&gt;=(self.switchAt or 0) and #Bodies.crowd(c,a,"clone")&gt;0 then
+		self.switchAt=now+1.1+self.rng:NextNumber()*1.6
+		if self.rng:NextNumber()&lt;.6 then
+			for slot,spec in a.def.Techniques do
+				if spec.Id=="MassShadowClone" then
+					a.move=Vector3.zero
+					if c:request(a,"Technique"..slot,target.root.Position) then return end
+				end
+			end
+		end
+	end
 	-- Bodies (Naruto's clones): a clone winding up a jab close by is struck
 	-- first (the stick aims the opener at it), one merely close now and then.
 	local body=not a.airborne and Bodies.threat(c,a,6.5)
@@ -6027,8 +6048,13 @@ function AI:update(now)
 			-- charging from mid range, the Rasengan on an opening or with a clone
 			-- out to shape it.
 			-- (With none out, now and then he holds the single clone for the pair.)
-			if spec.Id=="ShadowClone" then local out=Bodies.count(c,a,"clone");use=distance&gt;4 and distance&lt;26 and out&lt;2 and a.chakra&gt;=36 and (out&gt;0 or self.rng:NextNumber()&lt;.6) end
-			if spec.Id=="MassShadowClone" then use=distance&gt;7 and distance&lt;22 and Bodies.count(c,a,"clone")==0 and a.chakra&gt;=70 and self.rng:NextNumber()&lt;.5 end
+			if spec.Id=="ShadowClone" then local out=Bodies.count(c,a,"clone");use=distance&gt;4 and distance&lt;26 and out&lt;2 and a.chakra&gt;=36 and (out&gt;0 or self.rng:NextNumber()&lt;.6)
+				-- (06/11) With the crowd ready, half the time he keeps his chakra for it.
+				if use and (a.cooldowns.MassShadowClone or 0)&lt;=now and a.chakra&gt;=60 and distance&gt;5 and distance&lt;24 and self.rng:NextNumber()&lt;.5 then use=false end
+			end
+			-- (06/11) The crowd from mid range (two single clones join it); with
+			-- the crowd out the key is his body switch (above), not this.
+			if spec.Id=="MassShadowClone" then use=distance&gt;5 and distance&lt;24 and #Bodies.crowd(c,a,"clone")==0 and a.chakra&gt;=60 and self.rng:NextNumber()&lt;.7 end
 			if spec.Id=="CloneRasengan" then use=distance&lt;9 and (target.state=="Recovery" or target.state=="Stunned" or target.state=="TechniqueRecovery"
 				or (Bodies.count(c,a,"clone")&gt;0 and self.rng:NextNumber()&lt;.35)) end
 			if spec.Family and not use then use=familyWants(self,c,a,target,spec,distance,danger) end
@@ -6645,6 +6671,15 @@ function Bodies.of(c,a,kind,ephemeral)
 	return out
 end
 function Bodies.count(c,a,kind) return #Bodies.of(c,a,kind) end
+-- (06/11) A crowd (Naruto's Multi Shadow Clone): persistent bodies flagged
+-- `crowd`, capped apart from Max (tuning Crowd).
+function Bodies.crowd(c,a,kind)
+	local out={}
+	for _,body in c.bodies or {} do
+		if body.alive and body.crowd and body.owner==a and (not kind or body.kind==kind) then table.insert(out,body) end
+	end
+	return out
+end
 -- A persistent body free for a job (not already carrying a strike or shaping
 -- a jutsu): the one nearest the owner's target.
 function Bodies.free(c,a,kind)
@@ -6670,7 +6705,9 @@ function Bodies.move(c,body,goal,speed,dt)
 end
 function Bodies.spawn(c,owner,spec)
 	local kind=spec.kind or "clone"
-	if not spec.ephemeral and Bodies.count(c,owner,kind)&gt;=(Bodies.tuning(owner,kind).Max or 2) then return nil end
+	if spec.crowd then
+		if #Bodies.crowd(c,owner,kind)&gt;=(Bodies.tuning(owner,kind).Crowd or 0) then return nil end
+	elseif not spec.ephemeral and Bodies.count(c,owner,kind)&gt;=(Bodies.tuning(owner,kind).Max or 2) then return nil end
 	c.bodySerial=(c.bodySerial or 0)+1
 	local position=c:clamp(spec.position or owner.root.Position)
 	local look=spec.look
@@ -6681,9 +6718,11 @@ function Bodies.spawn(c,owner,spec)
 	end
 	local body={id=c.bodySerial,owner=owner,kind=kind,position=position,look=look,born=c.now,expires=c.now+(spec.life or Bodies.tuning(owner,kind).Life or 6),
 		alive=true,state=spec.state or "Neutral",action=spec.action,actionAt=c.now,actionSerial=if spec.action then 1 else 0,mode=spec.mode or "guard",
-		ephemeral=spec.ephemeral==true,velocity=Vector3.zero,airborne=spec.airborne==true,side=spec.side or 1,nextStrike=c.now+(spec.delay or 1),warp=0}
+		ephemeral=spec.ephemeral==true,velocity=Vector3.zero,airborne=spec.airborne==true,side=spec.side or 1,nextStrike=c.now+(spec.delay or 1),warp=0,
+		crowd=spec.crowd==true or nil}
 	table.insert(list(c),body)
-	c:pushImpact(position,"body",false,{phase="appear",kind=kind,body=body.id,owner=owner.id,fighter=owner.fighterId})
+	-- (A crowd pops in a ripple: the client sounds one puff in three.)
+	c:pushImpact(position,"body",false,{phase="appear",kind=kind,body=body.id,owner=owner.id,fighter=owner.fighterId,crowd=body.crowd})
 	brawler().event(c,owner,"BodySpawned")
 	return body
 end
@@ -6696,7 +6735,7 @@ function Bodies.dispel(c,body,why,by,extra)
 	local index=all and table.find(all,body)
 	if index then table.remove(all,index) end
 	if body.carry then body.carry.lost=true;body.carry.from=nil;body.carry=nil end
-	local entry={phase=why or "hit",kind=body.kind,body=body.id,owner=body.owner.id,fighter=body.owner.fighterId,by=by and by.id}
+	local entry={phase=why or "hit",kind=body.kind,body=body.id,owner=body.owner.id,fighter=body.owner.fighterId,by=by and by.id,crowd=body.crowd}
 	for k,v in extra or {} do entry[k]=v end
 	c:pushImpact(body.position,"body",why=="hit" or why=="blade",entry)
 	local hook=Bodies.onDispel[body.kind]
@@ -7022,7 +7061,7 @@ function Bodies.view(c)
 			table.insert(out,{id=body.id,owner=body.owner.id,fighterId=body.owner.fighterId,kind=body.kind,position=body.position,look=body.look,
 				state=body.state,action=body.action,variant=body.variant,actionSerial=body.actionSerial,actionElapsed=c.now-(body.actionAt or c.now),
 				airborne=body.airborne,velocity=body.velocity,remaining=math.max(0,body.expires-c.now),mode=body.mode,cast=body.cast,
-				ephemeral=body.ephemeral,warp=body.warp})
+				ephemeral=body.ephemeral,warp=body.warp,crowd=body.crowd})
 		end
 	end
 	return out
@@ -12706,6 +12745,13 @@ function Combat:requestInner(a,action,aim,clientTime,opts)
 	-- happens, quietly (the press came back as "UNKNOWN ACTION" on screen).
 	if not spec then return false,if slot then "Empty slot" else "Unknown action" end
 	local technique=Techniques[spec.Id]
+	-- (06/11) A technique whose work is out answers its key again itself
+	-- (Naruto's crowd: the press takes a clone's body), before its cooldown
+	-- and its cost; nil when it has nothing out.
+	if technique and technique.recast and not a.sealCast then
+		local handled,why=technique.recast(self,a,spec)
+		if handled~=nil then return handled,why end
+	end
 	-- (Stage 6) A blade technique draws the blade itself (Kakashi's Lightning
 	-- Cut): the tanto comes out with the signs, it stays out after.
 	if spec.Armed and not a.armed then
@@ -17565,12 +17611,239 @@ function Legion.airDrive(c,a,b)
 	brawler().event(c,a,"CloneDrive")
 	return true
 end
+
+-- Multi Shadow Clone: the crowd ---------------------------------------------
+-- (06/11, user, after the @piercevile reel: « il envoie une foule de
+-- multiclonage ; on peut prendre le corps de n'importe quel clone ») Tajū
+-- Kage Bunshin is a crowd: Crowd clones burst out around him in a ripple of
+-- smoke, stand a beat in his stance, then run round the opponent and ring
+-- him: an inner ring in reach turning one way, an outer ring turning the
+-- other. One conductor for the crowd: one strike at a time (CrowdEvery apart),
+-- thrown by the clone most behind him (now and then a clone of the outer ring
+-- dashes in instead), and a breath (CrowdGrace) after one lands, so the crowd
+-- harries him instead of locking him; while Naruto's own strike is out on
+-- him, the crowd holds. Each clone still falls to one blow (a wide swing or a
+-- dome clears many), and the crowd melts away after CrowdLife.
+-- A second press of the key takes the body of any clone (Legion.switch).
+local CROWD_MOVES={"Light1","Light2","Light1","Light3"}
+local CROWD_RINGS={4.3,7.4}
+local CROWD_STARTUP=.18 -- a crowd strike always shows its wind-up this long
+local function crowdState(a)
+	local st=a.crowd
+	if not st then st={next=0,grace=0,serial=0,turn=0};a.crowd=st end
+	return st
+end
+-- The crowd's strike, from the clone that throws it.
+local function crowdStrike(c,body,b,dt)
+	local spec=Attacks[body.action or ""] or JAB
+	local startup=math.max(spec.startup,CROWD_STARTUP)
+	local t=c.now-body.actionAt
+	if body.state=="Startup" then
+		if body.lunge then
+			-- From the outer ring: the run in, stopping at arm's length.
+			local to=flat(b.root.Position-body.position)
+			if to.Magnitude&gt;3.4 then Bodies.move(c,body,body.position+to.Unit*(to.Magnitude-3.3),body.lunge,dt) end
+		end
+		if t&gt;=startup then
+			body.state="Active"
+			local tn=tune(body.owner)
+			local kick=body.action=="Light3"
+			if Bodies.hitFrom(c,body,b,{damage=if kick then tn.CrowdKick or 4 else tn.CrowdStrike or 3,reach=(tn.Reach or 5.4)+.6,arc=.2,
+				reaction=if kick then "Knockback" else "HitStun",push=if kick then 30 else 9,up=if kick then 9 else 3,stun=if kick then .45 else .3,tag="Multi Shadow Clone"}) then
+				crowdState(body.owner).grace=c.now+(tn.CrowdGrace or .85)
+				brawler().event(c,body.owner,"CrowdStrike")
+			end
+		end
+	elseif body.state=="Active" and t&gt;=startup+spec.active then body.state="Recovery"
+	elseif body.state=="Recovery" and t&gt;=startup+spec.active+spec.recovery then body.state="Neutral";body.action=nil;body.lunge=nil end
+end
+-- Once a step for the whole crowd: who strikes next.
+local function conduct(c,a,b,st,members)
+	if c.now&lt;st.next or c.now&lt;st.grace or not open(c,b) then return end
+	if (a.state=="Startup" or a.state=="Active") and flat(a.root.Position-b.root.Position).Magnitude&lt;9 then return end
+	local reach=(tune(a).Reach or 5.4)+.4
+	local back=flat(-b.root.CFrame.LookVector)
+	back=if back.Magnitude&gt;.1 then back.Unit else Vector3.zero
+	-- Every fourth strike comes from the outer ring, running in.
+	local outerTurn=st.serial%4==3
+	local best,score
+	for _,body in members do
+		if body.state=="Neutral" and not body.carry and body.mode=="crowd" and c.now&gt;=(body.waitUntil or 0) then
+			local d=flat(body.position-b.root.Position)
+			local gap=d.Magnitude
+			local behind=if gap&gt;.1 then d.Unit:Dot(back) else 0
+			local s=nil
+			if gap&lt;=reach then s=behind+(if outerTurn then 0 else 2)
+			elseif gap&lt;=10 then s=behind+(if outerTurn then 2 else -1) end
+			if s then
+				s+=((body.id*13+st.serial*7)%10)*.03
+				if not score or s&gt;score then best,score=body,s end
+			end
+		end
+	end
+	if not best then return end
+	st.serial+=1
+	local far=flat(best.position-b.root.Position).Magnitude&gt;reach
+	best.action=if far then "DashAttack" else CROWD_MOVES[(st.serial-1)%#CROWD_MOVES+1]
+	best.lunge=if far then 46 else nil
+	best.state="Startup";best.variant=nil;best.actionAt=c.now;best.actionSerial+=1
+	st.next=c.now+(tune(a).CrowdEvery or .5)*(.8+((best.id*7+st.serial*3)%5)*.1)
+end
+local function crowd(c,body,dt)
+	local a=body.owner
+	local b=a.target
+	if not b or b.health&lt;=0 then return end
+	local st=crowdState(a)
+	if st.tick~=c.now then
+		st.tick=c.now;st.turn+=.3*dt
+		st.members=Bodies.crowd(c,a,CLONE)
+		conduct(c,a,b,st,st.members)
+	end
+	if body.state~="Neutral" then
+		crowdStrike(c,body,b,dt)
+		if body.alive then Bodies.face(body,b.root.Position) end
+		return
+	end
+	if c.now&lt;(body.waitUntil or 0) then
+		-- The beat after the smoke: in his stance, facing the opponent.
+		Bodies.face(body,b.root.Position)
+		return
+	end
+	local ring=body.ring or 1
+	local angle=(body.slot or 0)+(if ring==1 then st.turn else -st.turn*.7)
+	local goal=b.root.Position+Vector3.new(math.cos(angle),0,math.sin(angle))*CROWD_RINGS[ring]
+	-- Elbow room: two clones never stand in one spot.
+	for _,other in st.members or {} do
+		if other~=body and other.alive then
+			local d=flat(body.position-other.position)
+			if d.Magnitude&lt;1.9 then goal+=(if d.Magnitude&gt;.05 then d.Unit else Vector3.xAxis)*(1.9-d.Magnitude) end
+		end
+	end
+	goal=c:clamp(Vector3.new(goal.X,c.match.origin.Y+3,goal.Z))
+	local gap=(goal-body.position).Magnitude
+	Bodies.move(c,body,goal,(if gap&gt;3 then 30 else 12)*(body.pace or 1),dt)
+	Bodies.face(body,b.root.Position)
+end
+-- The crowd comes out: clones already out join it, the rest burst out round
+-- him in a ripple (front and sides first, never in the lens behind him), and
+-- each takes a slot on a ring round the opponent, spread from Naruto's side.
+local function massClone(c,a)
+	local tn=tune(a)
+	local b=a.target
+	local st=crowdState(a)
+	st.next=c.now+.6;st.grace=0;st.turn=0
+	local base=0
+	if b then
+		local d=flat(a.root.Position-b.root.Position)
+		if d.Magnitude&gt;.1 then base=math.atan2(d.Z,d.X) end
+	end
+	local total=tn.Crowd or 10
+	local inner,outer=0,0
+	local function seat(body,k)
+		body.mode="crowd";body.crowd=true;body.rush=nil
+		-- Odd ones on the inner ring, even ones on the outer; the outer slots sit
+		-- between the inner ones.
+		local half=math.ceil(total/2)
+		if k%2==1 then inner+=1;body.ring=1;body.slot=base+2*math.pi*(inner-.5)/half
+		else outer+=1;body.ring=2;body.slot=base+2*math.pi*outer/(total-half) end
+		body.pace=.9+(k%4)*.07
+		body.waitUntil=c.now+.32+k*.02
+		body.expires=c.now+(tn.CrowdLife or 9)+k*.05
+	end
+	local k=0
+	for _,body in Bodies.of(c,a,CLONE) do
+		if not body.carry and body.mode~="shape" and body.mode~="spent" and k&lt;total then k+=1;seat(body,k) end
+	end
+	local fresh=total-k
+	for i=1,fresh do
+		local n=k+i
+		c:schedule(c.now+i*.028,function()
+			if a.health&lt;=0 or c.match.phase~="Duel" or Bodies.blocked(c,a) then return end
+			local t=a.target
+			local fwd=flat(if t then t.root.Position-a.root.Position else a.root.CFrame.LookVector)
+			fwd=if fwd.Magnitude&gt;.1 then fwd.Unit else Vector3.new(0,0,-1)
+			-- -150° to +150° from the line to the opponent, two rows.
+			local spread=if fresh&gt;1 then -150+(i-1)*300/(fresh-1) else 0
+			local dir=CFrame.fromAxisAngle(Vector3.yAxis,math.rad(spread)):VectorToWorldSpace(fwd)
+			local at=a.root.Position+dir*(if i%2==1 then 3.4 else 5.8)
+			local body=Bodies.spawn(c,a,{kind=CLONE,position=Vector3.new(at.X,c.match.origin.Y+3,at.Z),mode="crowd",crowd=true,side=if spread&gt;=0 then 1 else -1,delay=1,
+				life=(tn.CrowdLife or 9)+n*.05})
+			if body then seat(body,n);Bodies.face(body,if t then t.root.Position else at+fwd) end
+		end)
+	end
+	c:cue(a,"MULTI SHADOW CLONE • "..total.." CLONES",.9)
+	brawler().event(c,a,"MassShadowClone")
+end
+-- Taking a clone's body (the key again with the crowd out). The stick picks
+-- the clone in its direction (any distance); no stick, the clone most behind
+-- the opponent. He and the clone trade places in a flicker of chakra: he goes
+-- on from where it stood, it goes on from where he stood.
+function Legion.switchTarget(c,a)
+	local members=Bodies.crowd(c,a,CLONE)
+	local b=a.target
+	local stick=flat(a.move or Vector3.zero)
+	local function pick(useStick)
+		local best,score
+		for _,body in members do
+			if not body.carry and body.mode=="crowd" then
+				local s=nil
+				if useStick then
+					local d=flat(body.position-a.root.Position)
+					if d.Magnitude&gt;1 then
+						local dot=stick.Unit:Dot(d.Unit)
+						if dot&gt;=.3 then s=dot*10-d.Magnitude*.05 end
+					end
+				elseif b then
+					local e=flat(body.position-b.root.Position)
+					local back=flat(-b.root.CFrame.LookVector)
+					local behind=if e.Magnitude&gt;.1 and back.Magnitude&gt;.1 then e.Unit:Dot(back.Unit) else 0
+					s=behind*4-e.Magnitude*.4
+				else s=0 end
+				if s and (not score or s&gt;score) then best,score=body,s end
+			end
+		end
+		return best
+	end
+	return (stick.Magnitude&gt;=.45 and pick(true)) or pick(false)
+end
+local SWITCH_FROM={Neutral=true,Guarding=true,Recovery=true,TechniqueRecovery=true}
+function Legion.switch(c,a)
+	local tn=tune(a)
+	if a.reaction or not SWITCH_FROM[a.state] or c.now&lt;(a.lockUntil or 0) or a.health&lt;=0 then return false,"Committed" end
+	if c.now&lt;(a.switchReadyAt or 0) then return false,"Cooldown" end
+	if a.chakra&lt;(tn.Switch or 6) then return false,"Need chakra" end
+	local body=Legion.switchTarget(c,a)
+	if not body then return false,"No clone free" end
+	local departure=a.root.Position
+	local look=flat(a.root.CFrame.LookVector)
+	local to=body.position
+	c:relocate(a,to)
+	a.airborne=a.root.Position.Y&gt;c.match.origin.Y+4.2
+	local b=a.target
+	if b and b.health&gt;0 then
+		local face=flat(b.root.Position-a.root.Position)
+		if face.Magnitude&gt;.1 then a.root.CFrame=CFrame.lookAt(a.root.Position,a.root.Position+face) end
+	end
+	if a.state~="Neutral" and a.state~="Guarding" then a.pending=nil;c:setState(a,"Neutral",0) end
+	-- The clone takes his place (on the ground under it) and his facing.
+	body.position=c:clamp(Vector3.new(departure.X,c.match.origin.Y+3,departure.Z))
+	body.look=if look.Magnitude&gt;.1 then look.Unit else body.look
+	body.warp+=1;body.state="Neutral";body.action=nil;body.lunge=nil
+	body.waitUntil=c.now+.25
+	a.chakra-=tn.Switch or 6
+	a.switchReadyAt=c.now+(tn.SwitchCooldown or .6)
+	c:pushImpact(departure,"bodyswitch",false,{owner=a.id,fighter=a.fighterId,to=to,body=body.id})
+	c:cue(a,"BODY SWITCH",.45)
+	brawler().event(c,a,"BodySwitch")
+	return true
+end
 function Legion.install(Techniques)
 	Bodies.controllers.drive=drive
 	Bodies.controllers.guard=persistent
 	Bodies.controllers.flank=persistent
 	Bodies.controllers.barrage=barrage
 	Bodies.controllers.shape=shape
+	Bodies.controllers.crowd=crowd
 	Bodies.onDispel[CLONE]=lost
 	Bodies.transforms[CLONE]=kunaiClone
 	brawler().payoffs.uzumaki=uzumaki
@@ -17578,6 +17851,7 @@ function Legion.install(Techniques)
 	-- goes straight out to a flank.
 	local function canClone(c,a)
 		if Bodies.blocked(c,a) then c:cue(a,"NINE-TAILS CHAKRA • NO CLONES",.6);return false end
+		if #Bodies.crowd(c,a,CLONE)&gt;0 then c:cue(a,"THE CROWD IS OUT",.6);return false end
 		if Bodies.count(c,a,CLONE)&gt;=(tune(a).Max or 2) then c:cue(a,"TWO CLONES AT MOST",.6);return false end
 		return true
 	end
@@ -17593,22 +17867,22 @@ function Legion.install(Techniques)
 			brawler().event(c,a,"ShadowClone")
 		end,
 	}
-	-- Tajū Kage Bunshin: clones burst out on both sides at once and charge
-	-- (only with none out: it always makes the pair).
+	-- Tajū Kage Bunshin: the crowd (massClone). Clones already out join it.
+	-- With the crowd out, the same key takes a clone's body (recast, before
+	-- the cooldown and the cost), and the HUD names it (view).
 	Techniques.MassShadowClone={
 		check=function(c,a)
-			if not canClone(c,a) then return false end
-			if Bodies.count(c,a,CLONE)&gt;0 then c:cue(a,"CLONES ALREADY OUT",.6);return false end
+			if Bodies.blocked(c,a) then c:cue(a,"NINE-TAILS CHAKRA • NO CLONES",.6);return false end
 			return true
 		end,
-		execute=function(c,a)
-			local made=0
-			for _,side in {1,-1} do
-				local body=Bodies.spawn(c,a,{kind=CLONE,position=aside(c,a,side,3.2),mode="flank",side=side,delay=.2})
-				if body then body.rush=true;made+=1 end
-			end
-			c:cue(a,"MULTI SHADOW CLONE",.8)
-			if made&gt;0 then brawler().event(c,a,"MassShadowClone") end
+		execute=massClone,
+		recast=function(c,a)
+			if #Bodies.crowd(c,a,CLONE)==0 then return nil end
+			return Legion.switch(c,a)
+		end,
+		view=function(c,a,spec,now)
+			if #Bodies.crowd(c,a,CLONE)==0 then return nil end
+			return {name="Take a Body",cost=tune(a).Switch or 6,remaining=math.max(0,(a.switchReadyAt or 0)-now),condition=true}
 		end,
 	}
 	-- Rasengan, Part I: he cannot shape it alone. A free clone comes to his
@@ -19572,6 +19846,11 @@ function Matches:view(s,cursor,mine,theirs)
 		local ready={}
 		for i,spec in a.def.Techniques do
 			ready[i]={id=spec.Id,name=spec.Name,cost=spec.Cost,remaining=math.max(0,(a.cooldowns[spec.Id] or 0)-now),requires=spec.Requires,condition=not spec.Requires or (spec.Requires=="Anchor" and Techniques.sealOf(s.combat,a,now)~=nil) or (spec.Requires=="Target" and s.combat:targetValid(a,a.target,spec.Range,0.35))}
+			-- (06/11) A key that does something else while the technique's work is
+			-- out (Naruto's crowd: TAKE A BODY) shows that instead.
+			local technique=Techniques[spec.Id]
+			local live=technique and technique.view and technique.view(s.combat,a,spec,now)
+			if live then for k,v in live do ready[i][k]=v end;ready[i].requires=nil;ready[i].alt=true end
 		end
 		-- (DEC-032) the hand-seal jutsu (cooldowns) and the weave in progress
 		local sealReady=nil
@@ -41907,6 +42186,20 @@ local BodyViews={};BodyViews.__index=BodyViews
 BodyViews.clock=os.clock -- (headless tests drive time)
 -- A body never lags its server position by more than this before it snaps.
 local SNAP=12
+-- (06/11) Copies kept per owner: Naruto's crowd is ten at once. A fighter
+-- whose kit makes a crowd (Fighters[id].Bodies.clone.Crowd) has its copies
+-- made ahead, one a frame, so the crowd does not stall the frame it appears.
+BodyViews.POOL=12
+local Fighters=nil
+local function crowdSize(fighterId)
+	if not Fighters then
+		local ok,mod=pcall(function() return require(game:GetService("ReplicatedStorage").NinjaDuel.Fighters) end)
+		Fighters=if ok then mod else {}
+	end
+	local def=Fighters[fighterId or ""]
+	local tune=def and def.Bodies and def.Bodies.clone
+	return tune and tune.Crowd or 0
+end
 function BodyViews.new()
 	local folder=Instance.new("Folder");folder.Name="NinjaDuelBodies";folder.Parent=workspace
 	return setmetatable({folder=folder,views={},pools={},epoch=nil},BodyViews)
@@ -41966,9 +42259,10 @@ end
 function BodyViews:release(view)
 	local model=view.model
 	model.Parent=nil
+	if view.fadeSet and view.fadeSet~=0 then for _,part in view.parts or BodyViews.parts(model) do part.LocalTransparencyModifier=0 end end
 	local pool=self.pools[view.owner] or {}
 	self.pools[view.owner]=pool
-	if #pool&lt;4 then table.insert(pool,model) else model:Destroy() end
+	if #pool&lt;BodyViews.POOL then table.insert(pool,model) else model:Destroy() end
 end
 function BodyViews:reset()
 	for id,view in self.views do view.model:Destroy();self.views[id]=nil end
@@ -42006,6 +42300,43 @@ function BodyViews:step(view,entry,dt)
 		attackName=if acting then entry.action else nil,attackVariant=if acting then entry.variant else nil,attackSerial=serial,
 		castId=if acting then nil else entry.cast,castElapsed=now-(clock.castAt or now)}
 	view.phase=Motion.present(view.model,visual,{attackElapsed=if acting then now-clock.at else 0,reactionElapsed=0},dt)
+	self:fade(view,dt)
+end
+-- (06/11) A crowd round the opponent stands between the lens and the player's
+-- own body: a clone in that line, or right against the lens, fades to a ghost
+-- (as an obstacle near the camera would) so the player still sees himself
+-- and the fight.
+BodyViews.FADE=.7
+function BodyViews:fade(view,dt)
+	local camera=workspace.CurrentCamera
+	local me=self.focus
+	local want=0
+	if camera and me then
+		local lens=camera.CFrame.Position
+		local root=view.model.PrimaryPart
+		local p=if root then root.Position else view.pos
+		local line=me-lens
+		local length=line.Magnitude
+		if length&gt;.5 then
+			local along=(p-lens):Dot(line/length)
+			local off=((p-lens)-line/length*along).Magnitude
+			if (along&gt;0 and along&lt;length-1 and off&lt;2.6) or (p-lens).Magnitude&lt;4 then want=BodyViews.FADE end
+		end
+	end
+	local now=view.fadeNow or 0
+	now+=(want-now)*(1-math.exp(-14*math.max(dt,1/240)))
+	if want==0 and now&lt;.02 then now=0 end
+	view.fadeNow=now
+	local set=view.fadeSet or 0
+	if math.abs(now-set)&lt;.02 and not (now==0 and set~=0) then return end
+	view.fadeSet=now
+	view.parts=view.parts or BodyViews.parts(view.model)
+	for _,part in view.parts do part.LocalTransparencyModifier=now end
+end
+function BodyViews.parts(model)
+	local list={}
+	for _,d in model:GetDescendants() do if d:IsA("BasePart") then table.insert(list,d) end end
+	return list
 end
 -- A puppet (Sasori's marionette) is a copy of its owner turned to wood: the
 -- body parts lacquered brown, the costume and hair hidden, a pale mask, and
@@ -42047,6 +42378,25 @@ function BodyViews:update(data,dt,folder)
 		return
 	end
 	if data.epoch~=self.epoch then self:reset();self.epoch=data.epoch end
+	-- The player's own body (what the lens must keep in sight).
+	local mine=data.human and folder and folder:FindFirstChild(data.human.id or "")
+	local mineRoot=mine and mine:FindFirstChild("HumanoidRootPart")
+	self.focus=if mineRoot then mineRoot.Position else nil
+	-- Copies made ahead for a crowd (one a frame, out of the workspace).
+	for _,actor in {data.human,data.bot} do
+		local want=actor and crowdSize(actor.fighterId) or 0
+		local owner=want&gt;0 and folder and folder:FindFirstChild(actor.id or "")
+		if owner then
+			local pool=self.pools[owner] or {}
+			self.pools[owner]=pool
+			local live=0
+			for _,view in self.views do if view.owner==owner then live+=1 end end
+			if #pool+live&lt;math.min(want,BodyViews.POOL) then
+				local model=BodyViews.copy(owner)
+				if model then model.Parent=nil;table.insert(pool,model) end
+			end
+		end
+	end
 	local live={}
 	for _,entry in data.bodies or {} do
 		live[entry.id]=true
@@ -51708,10 +52058,13 @@ local function body(fx,impact)
 	local at=impact.position
 	local phase=impact.phase
 	local holder=K.new("Model",{Name="ClonePuff"},fx.folder)
+	-- (06/11) A crowd comes and goes in ripples of ten: one puff in three is
+	-- heard, the others only seen.
+	local heard=not impact.crowd or (impact.body or 0)%3==0
 	if phase=="appear" then
 		K.flash(holder,at,SMOKE,.6,3.2,.14,.35)
 		puff(fx,at,14,2)
-		K.sound(K.anchorPart(fx.folder,at),K.SOUND.whoosh,.3,1.4)
+		if heard then K.sound(K.anchorPart(fx.folder,at),K.SOUND.whoosh,.3,1.4) end
 	elseif phase=="hit" or phase=="blade" or phase=="area" then
 		-- One blow and it is gone: a bigger puff and a dry pop.
 		K.flash(holder,at,SMOKE,.8,4.4,.16,.25)
@@ -51748,7 +52101,6 @@ local function cast(fx,impact,folder)
 	if impact.technique=="ShadowClone" or impact.technique=="MassShadowClone" then
 		-- The cross seal: his chakra flares in his hands.
 		if hand then sparks(fx,hand.Position,CHAKRA,if impact.technique=="MassShadowClone" then 18 else 10,8) end
-		if impact.technique=="MassShadowClone" and model then NarutoFX.crowd(fx,model) end
 		return true
 	elseif impact.technique=="CloneRasengan" then
 		if hand then sparks(fx,hand.Position,BLUE,10,6) end
@@ -51756,38 +52108,33 @@ local function cast(fx,impact,folder)
 	end
 	return false
 end
--- (Jutsu pass 06/11, the reel: « le multi-clonage ne fait qu'un clone ») The
--- server makes the pair that charges (Server/Legion); around them the field
--- fills: a fan of extra copies pops out of the smoke behind and beside him,
--- stands a beat in his stance, then goes up in smoke as the pair runs in.
--- Cosmetic only (they take no blow, they are not bodies).
-NarutoFX.CROWD={{-3.4,1.6},{3.4,1.6},{-5.6,3.6},{5.6,3.6},{-2,4.4},{2,4.4}}
-function NarutoFX.crowd(fx,model)
-	local root=model:FindFirstChild("HumanoidRootPart")
-	if not root then return end
-	local ok,BodyViews=pcall(require,script.Parent.BodyViews)
-	if not ok or not BodyViews.copy then return end
-	local base=root.CFrame
-	task.delay(.24,function()
-		if not model.Parent then return end
-		for k,spot in NarutoFX.CROWD do
-			task.delay(k*.035,function()
-				local copy=BodyViews.copy(model)
-				if not copy then return end
-				copy.Name="MassCloneDecoy"
-				for _,d in copy:GetDescendants() do if d:IsA("BasePart") then d.Anchored=true end end
-				local at=base*CFrame.new(spot[1],0,spot[2])
-				local turn=CFrame.Angles(0,math.rad(-spot[1]*3),0)
-				pcall(function() copy:PivotTo(at*turn) end)
-				copy.Parent=fx.folder
-				puff(fx,at.Position,10,1.8)
-				task.delay(.55+k*.04,function()
-					if copy.Parent then puff(fx,copy:GetPivot().Position,9,1.7);copy:Destroy() end
-				end)
-			end)
-		end
-		K.sound(K.anchorPart(fx.folder,base.Position),K.SOUND.whoosh,.5,.75)
-	end)
+-- (Jutsu pass 06/11) The fan of cosmetic copies that stood a beat round him
+-- is gone: the crowd is real now (Server/Legion massClone), drawn by
+-- Client/BodyViews like any clone.
+-- (06/11) Taking a clone's body: a streak of his chakra from the body he
+-- leaves to the one he takes, a glint at both ends, a quick whoosh. No smoke:
+-- nothing puffs away, the two bodies only trade places.
+local function bodySwitch(fx,impact)
+	local from,to=impact.position,impact.to
+	if typeof(to)~="Vector3" then return true end
+	local holder=K.new("Model",{Name="BodySwitch"},fx.folder)
+	local lift=Vector3.new(0,.6,0)
+	local a,b=from+lift,to+lift
+	local length=(b-a).Magnitude
+	if length&gt;.5 then
+		local frame=CFrame.lookAt((a+b)/2,b)
+		local core=K.block(holder,Vector3.new(.16,.16,length),frame,CORE,Enum.Material.Neon)
+		local glow=K.block(holder,Vector3.new(.55,.55,length),frame,BLUE,Enum.Material.Neon)
+		glow.Transparency=.55
+		K.tween(core,.22,{Size=Vector3.new(.02,.02,length),Transparency=1})
+		K.tween(glow,.26,{Size=Vector3.new(.05,.05,length),Transparency=1})
+	end
+	K.flash(holder,a,BLUE,.5,2.4,.16,.35)
+	K.flash(holder,b,CORE,.35,3,.18,.3)
+	sparks(fx,b,BLUE,10,9)
+	K.sound(K.anchorPart(fx.folder,b),K.SOUND.whoosh,.35,1.5)
+	Debris:AddItem(holder,.5)
+	return true
 end
 -- The Rasengan comes apart: the clone shaping it was struck.
 local function broken(fx,impact,folder)
@@ -51872,6 +52219,7 @@ local function impact(fx,data,folder)
 	if style=="body" then return body(fx,data) end
 	if data.fighter~=NARUTO then return false end
 	if style=="substitute" and data.mode=="clone" then return swap(fx,data) end
+	if style=="bodyswitch" then return bodySwitch(fx,data) end
 	if style=="cast" then return cast(fx,data,folder) end
 	if style=="rasengan" then return broken(fx,data,folder) end
 	if style=="burst" then return release(fx,data,folder) end

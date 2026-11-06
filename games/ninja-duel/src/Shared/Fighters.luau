@@ -275,7 +275,14 @@ local Fighters = {
 		-- Shadow clones (Server/Bodies, Server/Legion): Max at once, Cost chakra
 		-- each, Life seconds, one blow dispels them. On a flank a clone jabs the
 		-- opponent (Strike damage, Reach studs) about every Every seconds.
-		Bodies = { clone = { Max = 2, Cost = 12, Life = 6, Strike = 3, Reach = 5.4, Every = 2.3 } },
+		-- (06/11, « il envoie une foule de multiclonage ; on peut prendre le corps
+		-- de n'importe quel clone ») Multi Shadow Clone makes a crowd: Crowd
+		-- clones for CrowdLife seconds, ringing the opponent; one of them strikes
+		-- every CrowdEvery seconds (CrowdStrike, CrowdKick damage), with a breath
+		-- of CrowdGrace seconds after one lands. With the crowd out, the same key
+		-- takes a clone's body (Switch chakra, SwitchCooldown seconds).
+		Bodies = { clone = { Max = 2, Cost = 12, Life = 6, Strike = 3, Reach = 5.4, Every = 2.3,
+			Crowd = 10, CrowdLife = 9, CrowdStrike = 3, CrowdKick = 4, CrowdEvery = .5, CrowdGrace = .85, Switch = 6, SwitchCooldown = .6 } },
 		-- Substitution with a clone out: "it was a clone!" — he swaps places
 		-- with it and the body that was being hit puffs away.
 		Substitution = { Mode = "clone" },
@@ -301,7 +308,7 @@ local Fighters = {
 				-- (User 28/10) Shaped in the open, it stays in his hand to run with.
 				HoldState = { Time = 3, Drain = 5, Strike = "DashAttack", Air = "Slam", Variant = "Rasengan", AirVariant = "RasenganDrop", Damage = 22,
 					Reaction = "Knockback", Impulse = Vector3.new(0, 22, 74), Stun = .62, Rasengan = true, World = { contact = "energy", element = "wind" }, Style = "burst", Name = "Rasengan", Reach = 9, Event = "Rasengan" }, Hint = "A clone shapes it at his side • strike the clone and it fails • ends a clean string" },
-			{ Id = "MassShadowClone", Name = "Multi Shadow Clone", Cost = 30, Channel = 0.3, Active = 0.08, Recovery = 0.2, Cooldown = 10, Interruptible = true, Range = 26, Hint = "Clones burst out on both sides and charge" },
+			{ Id = "MassShadowClone", Name = "Multi Shadow Clone", Cost = 40, Channel = 0.3, Active = 0.08, Recovery = 0.2, Cooldown = 18, Interruptible = true, Range = 26, Hint = "A crowd of ten clones rings the opponent • press again: take a clone's body (the stick picks it)" },
 			{ Id = "NarutoRendan", Name = "Naruto Uzumaki Rendan", Family = "Sequence", Opener = "Launcher", Cost = 22, Channel = 0.12, Active = 0.04, Recovery = 0.3, Cooldown = 9, Interruptible = true, Range = 13, Hint = "His clones send him up, then the heel down" },
 		},
 	},

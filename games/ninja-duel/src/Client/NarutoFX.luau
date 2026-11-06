@@ -48,10 +48,13 @@ local function body(fx,impact)
 	local at=impact.position
 	local phase=impact.phase
 	local holder=K.new("Model",{Name="ClonePuff"},fx.folder)
+	-- (06/11) A crowd comes and goes in ripples of ten: one puff in three is
+	-- heard, the others only seen.
+	local heard=not impact.crowd or (impact.body or 0)%3==0
 	if phase=="appear" then
 		K.flash(holder,at,SMOKE,.6,3.2,.14,.35)
 		puff(fx,at,14,2)
-		K.sound(K.anchorPart(fx.folder,at),K.SOUND.whoosh,.3,1.4)
+		if heard then K.sound(K.anchorPart(fx.folder,at),K.SOUND.whoosh,.3,1.4) end
 	elseif phase=="hit" or phase=="blade" or phase=="area" then
 		-- One blow and it is gone: a bigger puff and a dry pop.
 		K.flash(holder,at,SMOKE,.8,4.4,.16,.25)
@@ -88,7 +91,6 @@ local function cast(fx,impact,folder)
 	if impact.technique=="ShadowClone" or impact.technique=="MassShadowClone" then
 		-- The cross seal: his chakra flares in his hands.
 		if hand then sparks(fx,hand.Position,CHAKRA,if impact.technique=="MassShadowClone" then 18 else 10,8) end
-		if impact.technique=="MassShadowClone" and model then NarutoFX.crowd(fx,model) end
 		return true
 	elseif impact.technique=="CloneRasengan" then
 		if hand then sparks(fx,hand.Position,BLUE,10,6) end
@@ -96,38 +98,33 @@ local function cast(fx,impact,folder)
 	end
 	return false
 end
--- (Jutsu pass 06/11, the reel: « le multi-clonage ne fait qu'un clone ») The
--- server makes the pair that charges (Server/Legion); around them the field
--- fills: a fan of extra copies pops out of the smoke behind and beside him,
--- stands a beat in his stance, then goes up in smoke as the pair runs in.
--- Cosmetic only (they take no blow, they are not bodies).
-NarutoFX.CROWD={{-3.4,1.6},{3.4,1.6},{-5.6,3.6},{5.6,3.6},{-2,4.4},{2,4.4}}
-function NarutoFX.crowd(fx,model)
-	local root=model:FindFirstChild("HumanoidRootPart")
-	if not root then return end
-	local ok,BodyViews=pcall(require,script.Parent.BodyViews)
-	if not ok or not BodyViews.copy then return end
-	local base=root.CFrame
-	task.delay(.24,function()
-		if not model.Parent then return end
-		for k,spot in NarutoFX.CROWD do
-			task.delay(k*.035,function()
-				local copy=BodyViews.copy(model)
-				if not copy then return end
-				copy.Name="MassCloneDecoy"
-				for _,d in copy:GetDescendants() do if d:IsA("BasePart") then d.Anchored=true end end
-				local at=base*CFrame.new(spot[1],0,spot[2])
-				local turn=CFrame.Angles(0,math.rad(-spot[1]*3),0)
-				pcall(function() copy:PivotTo(at*turn) end)
-				copy.Parent=fx.folder
-				puff(fx,at.Position,10,1.8)
-				task.delay(.55+k*.04,function()
-					if copy.Parent then puff(fx,copy:GetPivot().Position,9,1.7);copy:Destroy() end
-				end)
-			end)
-		end
-		K.sound(K.anchorPart(fx.folder,base.Position),K.SOUND.whoosh,.5,.75)
-	end)
+-- (Jutsu pass 06/11) The fan of cosmetic copies that stood a beat round him
+-- is gone: the crowd is real now (Server/Legion massClone), drawn by
+-- Client/BodyViews like any clone.
+-- (06/11) Taking a clone's body: a streak of his chakra from the body he
+-- leaves to the one he takes, a glint at both ends, a quick whoosh. No smoke:
+-- nothing puffs away, the two bodies only trade places.
+local function bodySwitch(fx,impact)
+	local from,to=impact.position,impact.to
+	if typeof(to)~="Vector3" then return true end
+	local holder=K.new("Model",{Name="BodySwitch"},fx.folder)
+	local lift=Vector3.new(0,.6,0)
+	local a,b=from+lift,to+lift
+	local length=(b-a).Magnitude
+	if length>.5 then
+		local frame=CFrame.lookAt((a+b)/2,b)
+		local core=K.block(holder,Vector3.new(.16,.16,length),frame,CORE,Enum.Material.Neon)
+		local glow=K.block(holder,Vector3.new(.55,.55,length),frame,BLUE,Enum.Material.Neon)
+		glow.Transparency=.55
+		K.tween(core,.22,{Size=Vector3.new(.02,.02,length),Transparency=1})
+		K.tween(glow,.26,{Size=Vector3.new(.05,.05,length),Transparency=1})
+	end
+	K.flash(holder,a,BLUE,.5,2.4,.16,.35)
+	K.flash(holder,b,CORE,.35,3,.18,.3)
+	sparks(fx,b,BLUE,10,9)
+	K.sound(K.anchorPart(fx.folder,b),K.SOUND.whoosh,.35,1.5)
+	Debris:AddItem(holder,.5)
+	return true
 end
 -- The Rasengan comes apart: the clone shaping it was struck.
 local function broken(fx,impact,folder)
@@ -212,6 +209,7 @@ local function impact(fx,data,folder)
 	if style=="body" then return body(fx,data) end
 	if data.fighter~=NARUTO then return false end
 	if style=="substitute" and data.mode=="clone" then return swap(fx,data) end
+	if style=="bodyswitch" then return bodySwitch(fx,data) end
 	if style=="cast" then return cast(fx,data,folder) end
 	if style=="rasengan" then return broken(fx,data,folder) end
 	if style=="burst" then return release(fx,data,folder) end

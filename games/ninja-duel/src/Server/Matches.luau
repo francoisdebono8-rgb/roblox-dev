@@ -259,6 +259,11 @@ function Matches:view(s,cursor,mine,theirs)
 		local ready={}
 		for i,spec in a.def.Techniques do
 			ready[i]={id=spec.Id,name=spec.Name,cost=spec.Cost,remaining=math.max(0,(a.cooldowns[spec.Id] or 0)-now),requires=spec.Requires,condition=not spec.Requires or (spec.Requires=="Anchor" and Techniques.sealOf(s.combat,a,now)~=nil) or (spec.Requires=="Target" and s.combat:targetValid(a,a.target,spec.Range,0.35))}
+			-- (06/11) A key that does something else while the technique's work is
+			-- out (Naruto's crowd: TAKE A BODY) shows that instead.
+			local technique=Techniques[spec.Id]
+			local live=technique and technique.view and technique.view(s.combat,a,spec,now)
+			if live then for k,v in live do ready[i][k]=v end;ready[i].requires=nil;ready[i].alt=true end
 		end
 		-- (DEC-032) the hand-seal jutsu (cooldowns) and the weave in progress
 		local sealReady=nil

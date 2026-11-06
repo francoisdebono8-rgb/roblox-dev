@@ -1513,6 +1513,13 @@ function Combat:requestInner(a,action,aim,clientTime,opts)
 	-- happens, quietly (the press came back as "UNKNOWN ACTION" on screen).
 	if not spec then return false,if slot then "Empty slot" else "Unknown action" end
 	local technique=Techniques[spec.Id]
+	-- (06/11) A technique whose work is out answers its key again itself
+	-- (Naruto's crowd: the press takes a clone's body), before its cooldown
+	-- and its cost; nil when it has nothing out.
+	if technique and technique.recast and not a.sealCast then
+		local handled,why=technique.recast(self,a,spec)
+		if handled~=nil then return handled,why end
+	end
 	-- (Stage 6) A blade technique draws the blade itself (Kakashi's Lightning
 	-- Cut): the tanto comes out with the signs, it stays out after.
 	if spec.Armed and not a.armed then

@@ -786,6 +786,20 @@ function AI:update(now)
 		a.move=Vector3.zero;press(c,a,"Attack");return
 	end
 	if a.state~="Neutral" or a.reaction then return end
+	-- (06/11) Naruto with his crowd out: now and then he takes the body of
+	-- the clone most behind the opponent (the same key again) and strikes from
+	-- there, so the real one is never where he was.
+	if a.crowd and now>=(self.switchAt or 0) and #Bodies.crowd(c,a,"clone")>0 then
+		self.switchAt=now+1.1+self.rng:NextNumber()*1.6
+		if self.rng:NextNumber()<.6 then
+			for slot,spec in a.def.Techniques do
+				if spec.Id=="MassShadowClone" then
+					a.move=Vector3.zero
+					if c:request(a,"Technique"..slot,target.root.Position) then return end
+				end
+			end
+		end
+	end
 	-- Bodies (Naruto's clones): a clone winding up a jab close by is struck
 	-- first (the stick aims the opener at it), one merely close now and then.
 	local body=not a.airborne and Bodies.threat(c,a,6.5)
@@ -861,8 +875,13 @@ function AI:update(now)
 			-- charging from mid range, the Rasengan on an opening or with a clone
 			-- out to shape it.
 			-- (With none out, now and then he holds the single clone for the pair.)
-			if spec.Id=="ShadowClone" then local out=Bodies.count(c,a,"clone");use=distance>4 and distance<26 and out<2 and a.chakra>=36 and (out>0 or self.rng:NextNumber()<.6) end
-			if spec.Id=="MassShadowClone" then use=distance>7 and distance<22 and Bodies.count(c,a,"clone")==0 and a.chakra>=70 and self.rng:NextNumber()<.5 end
+			if spec.Id=="ShadowClone" then local out=Bodies.count(c,a,"clone");use=distance>4 and distance<26 and out<2 and a.chakra>=36 and (out>0 or self.rng:NextNumber()<.6)
+				-- (06/11) With the crowd ready, half the time he keeps his chakra for it.
+				if use and (a.cooldowns.MassShadowClone or 0)<=now and a.chakra>=60 and distance>5 and distance<24 and self.rng:NextNumber()<.5 then use=false end
+			end
+			-- (06/11) The crowd from mid range (two single clones join it); with
+			-- the crowd out the key is his body switch (above), not this.
+			if spec.Id=="MassShadowClone" then use=distance>5 and distance<24 and #Bodies.crowd(c,a,"clone")==0 and a.chakra>=60 and self.rng:NextNumber()<.7 end
 			if spec.Id=="CloneRasengan" then use=distance<9 and (target.state=="Recovery" or target.state=="Stunned" or target.state=="TechniqueRecovery"
 				or (Bodies.count(c,a,"clone")>0 and self.rng:NextNumber()<.35)) end
 			if spec.Family and not use then use=familyWants(self,c,a,target,spec,distance,danger) end
