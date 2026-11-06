@@ -403,7 +403,7 @@ RECIPES = {
     "fx_dust_4x4": lambda: sheet(smoke_frames(seed=19, flat=0.5, stretch=1.3, rise=0.04)),
     "fx_fire_burst_4x4": lambda: sheet(fire_burst_frames()),
     "fx_flame_loop_4x4": lambda: sheet(flame_loop_frames()),
-    "fx_lightning_4x2": lambda: sheet(lightning_frames()),
+    "fx_lightning_4x4": lambda: sheet(lightning_frames(frames=16)),
     "fx_crescent": lambda: crescent(),
     "fx_swirl": lambda: swirl(),
     "fx_debris_2x2": lambda: sheet(debris_frames(), 2),
