@@ -1,7 +1,7 @@
 {
   "version": "0.13.0-arena-combo",
   "artifact": "NinjaDuel-Debug.rbxlx",
-  "sha256": "64f1f46a6e9b2b2fb62c200f3a0d5544decfc31111c0ce69b5d6e6bcc4defbf1",
+  "sha256": "ec7ebfeb523c5481487ab212b69b041dfb32335db74efd43aa681d9146e5f476",
   "sources": {
     "src/Client/ArenaDress.luau": "bd92aa3bf3c37a36fd9d2b1f02971921d9c5e981788abe9594a098425bf3cb0e",
     "src/Client/AuthoredClips.luau": "d85a832ad37061e75823f4cd78be73d5939383e22401c20229fe4cf656c79cc3",
@@ -76,7 +76,7 @@
     "src/Client/GaleFX.luau": "9fc4738f9982d99debdc5e74aa351f399f74cf574170b562db65a04dfdd06074",
     "src/Client/GaleMotion.luau": "1b9bc2f85d3a171dbaf1ce5ed3ce1ebc4b47104353752347ec2110d1abdf2df2",
     "src/Client/GroundFX.luau": "db11940691ce8b25119976bbc83e140cf63c6a63df9e77a97eb71c8560712523",
-    "src/Client/HoundFX.luau": "de1d1c78b92886fd93e5040b008f9d7b93947082475399c2d64fc63c6c9119b2",
+    "src/Client/HoundFX.luau": "3b9798edccf89ed436b458c11ca486099aed920750947510ff1a617ed638eb86",
     "src/Client/IdentityFX.luau": "e5a75f8ea43df640178af6d7e6910856e13b7a7fa15065b7348a69ba1b7e0ad8",
     "src/Client/Input.luau": "9e7659012e16dac2f8a914647a47bae116bda4c29ed6f5bb4d400dbe1cf4f7e0",
     "src/Client/LeeFX.luau": "5be99448b35c4f5d54ad1ff4919f11b5086b301aa9cd5541b37c3fcaa630901c",
@@ -210,7 +210,7 @@
   },
   "sourceEquality": "PASS",
   "debugOnly": true,
-  "buildFingerprint": "e200e6a27a5ec5998c80f284786a3402de9273ae2e4d35b5746e77aac6213cd7",
+  "buildFingerprint": "68a4ca020e2dcbbbae40d6b703fee4b0940f9b2e7d2bbed9cb9d2b0cc8cb0c26",
   "donorAssets": {
     "assets/BanglaAssets.rbxmx": "6e99f5f67e6c34ac8a81d739431554b1495f0f5cd1dd1870a39eeb8bf23e1983"
   },

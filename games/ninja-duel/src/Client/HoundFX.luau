@@ -59,8 +59,9 @@ function HoundFX.build(index)
 		weld(root,ear,at(side*.22,.9,-.9))
 	end
 	-- The Konoha headband round the forehead (Studio 06/11: on top it read as a hat).
-	weld(root,part(m,"Headband",v(.78,.13,.74),BAND),at(0,.6,-.95))
-	weld(root,part(m,"Plate",v(.32,.12,.05),PLATE),at(0,.6,-1.33))
+	-- (and at eye level it read as a blindfold: above the eyes, round the head)
+	weld(root,part(m,"Headband",v(.7,.11,.68),BAND),at(0,.7,-.95))
+	weld(root,part(m,"Plate",v(.3,.1,.05),PLATE),at(0,.7,-1.3))
 	local tail=part(m,"Tail",v(.13,.13,.6),color)
 	weld(root,tail,at(0,.35,.95)*CFrame.Angles(math.rad(35),0,0))
 	-- Legs on joints (Motor6D) so the stride can swing them.
