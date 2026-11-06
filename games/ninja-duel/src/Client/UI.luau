@@ -1250,6 +1250,8 @@ function UI:render(data)
 		-- (05/11, "NEEDS A SEAL /" cut in its 150 px box) says which one.
 		local missing=if tech.requires=="Anchor" then "NEEDS A SEAL" elseif tech.requires=="Target" then "OUT OF RANGE" else "NOT NOW"
 		ui.status.Text=if sealed then string.format("SEALED  •  %.1fs",h.sealed) elseif tech.remaining>0 then string.format("%.1fs",tech.remaining) elseif not tech.condition then missing elseif h.chakra<tech.cost then "NEED CHAKRA" else tech.cost.." CHAKRA"
+		-- (06/11) Kakashi's copy slot: the jutsu his Sharingan copied, in red.
+		if tech.copied then ui.status.Text="COPY • "..ui.status.Text end
 		if tech.id=="Flashstep" and #(h.seals or {})>0 and tech.remaining==0 and not sealed then
 			local count=#(h.seals or {})
 			ui.status.Text=count.." SEAL"..(if count>1 then "S" else "").."  •  "..ui.status.Text
@@ -1266,7 +1268,7 @@ function UI:render(data)
 			end)
 		end
 		ui.wasReady=ready
-		ui.title.TextColor3=if ready then palette.paper else palette.muted
+		ui.title.TextColor3=if tech.copied then (if ready then Color3.fromRGB(255,86,86) else Color3.fromRGB(150,60,60)) elseif ready then palette.paper else palette.muted
 		ui.cool.Size=UDim2.fromScale(1,math.clamp(math.max(tech.remaining/6,if sealed then h.sealed/5 else 0),0,1))
 	end
 	if not chakraPage then for i=#h.techniques+1,5 do self.techniqueButtons[i].box.Visible=false end end

@@ -31,7 +31,8 @@ local function brawler() return require(script.Parent.Brawler) end
 local function list(c) c.bodies=c.bodies or {};return c.bodies end
 Bodies.list=list
 function Bodies.tuning(a,kind)
-	return (a.def.Bodies and a.def.Bodies[kind]) or {}
+	-- (06/11) A jutsu Kakashi copied makes its owner's bodies (Server/Copy).
+	return (a.def.Bodies and a.def.Bodies[kind]) or (a.borrowedBodies and a.borrowedBodies[kind]) or {}
 end
 -- An awakening that takes the bodies away (Naruto's Nine-Tails cloak).
 function Bodies.blocked(c,a)

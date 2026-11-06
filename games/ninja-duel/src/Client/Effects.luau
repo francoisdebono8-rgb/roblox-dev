@@ -2028,8 +2028,10 @@ function FX:fighter(model,actor,dt)
 	end
 	-- Kakashi's awakening uncovers his one Sharingan (04/11: it was only a red
 	-- mantle; the left eye now turns, commas and all, while it lasts).
+	-- (06/11) It also shows while he holds a copied jutsu (Server/Copy): the
+	-- opponent sees that Kakashi has his jutsu.
 	if actor.fighterId=="Copycat" and aura.face then
-		local want=if (actor.awaken or 0)>0 and (actor.health or 1)>0 then "lit" else "off"
+		local want=if ((actor.awaken or 0)>0 or actor.copy~=nil) and (actor.health or 1)>0 then "lit" else "off"
 		if aura.eyeTint~=want then
 			aura.eyeTint=want
 			if want=="off" then Face.tint(aura.face,nil) else Face.tint(aura.face,Color3.fromRGB(226,30,40),"sharingan",-1) end
@@ -2466,4 +2468,6 @@ require(script.Parent.PerceptionFX).install(FX,{block=block,sound=sound,anchorPa
 -- (06/11) The Byakugan's sight: the opponent's chakra network, its points,
 -- its fullness and the jutsu gathering in it (Shared/Sight, Client/ByakuganFX).
 require(script.Parent.ByakuganFX).install(FX,{block=block,sound=sound,anchorPart=anchorPart,SOUND=SOUND})
+-- (06/11) Kakashi's Sharingan copy: the read and the copied cast (Server/Copy).
+require(script.Parent.CopyFX).install(FX,{new=new,block=block,tween=tween,sound=sound,flash=flash,burst=burst,anchorPart=anchorPart,num=num,TEX=TEX,SOUND=SOUND})
 return FX

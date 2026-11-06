@@ -417,7 +417,7 @@ local Fighters = {
 	Copycat = {
 		Name = "Kakashi", FullName = "Kakashi Hatake", Age = 13, Title = "THE COPY NINJA", Color = { 170, 182, 196 },
 		Routes = "rising: launcher  ·  low: sweep  ·  around: feint step  ·  air: drive / spike / switch",
-		Description = "The all-rounder: a Sharingan that reads, hounds that hold, a copied Water Dragon and the Lightning Blade.",
+		Description = "The Copy Ninja: the jutsu you cast in front of him is his next. A Sharingan that reads, hounds that hold and the Lightning Blade.",
 		Health = 130, Chakra = 120, ChakraRegen = 7.6, Speed = 19, SprintScale = 1.08, JumpScale = 1.05, AirControlScale = 1.05, AccelerationScale = 1.06,
 		CombatTravel = 1.06, CombatDamage = 1.05, DashScale = 1.05, GuardStrength = 0.1, PreferredRange = 7,
 		ComboToolCancel = true, CombatStyle = "Control", Tool = "Kunai",
@@ -435,6 +435,10 @@ local Fighters = {
 		-- Awakening: the Sharingan uncovered. Wider read windows, jutsu at a
 		-- fraction of their cost, and his hounds hold half as long again.
 		Awakening = { Name = "SHARINGAN UNCOVERED", Speed = 1.08, Regen = 1.4, Cooldown = 0.5, CostScale = 0.6, Windows = 1.4, BindScale = 1.5, Color = { 230, 50, 60 } },
+		-- (06/11, « le Sharingan qui copie ») The Copy Ninja (Server/Copy): a jutsu
+		-- cast in front of him takes his first slot (the Water Dragon, his first
+		-- copy) for Life seconds or Uses casts; uncovered, from any angle.
+		Copy = { Slot = 1, Life = 15, Uses = 1 },
 		Motion = { body = "Mirage", weapons = "kunai", springy = false,
 			-- Slouched and relaxed, one hand low by the holster.
 			stance = {root={y=-.32,pitch=4,yaw=24},torso={pitch=8,yaw=-10},head={pitch=6,yaw=-14},
@@ -448,7 +452,7 @@ local Fighters = {
 		Skin = { 226, 200, 178 }, Hair = { 214, 218, 222 }, Outfit = { 40, 50, 72 },
 		Techniques = {
 			{ Id = "WaterDragon", Name = "Water Dragon", Family = "Projectile", Kind = "waterdragon", Element = "Water", Cost = 28, Channel = 0.55, Active = 0.3, Recovery = 0.36, Cooldown = 7, Interruptible = true, Feintable = true,
-				Range = 52, Speed = 60, Damage = 14, Radius = 2.4, Knock = 46, Lift = 18, Hint = "A copied dragon of water that throws the body far" },
+				Range = 52, Speed = 60, Damage = 14, Radius = 2.4, Knock = 46, Lift = 18, Hint = "A copied dragon of water that throws the body far • a jutsu cast in front of him is copied here (15 s, one cast)" },
 			{ Id = "LightningBlade", Name = "Lightning Blade", Family = "Strike", Move = "ChidoriThrust", Element = "Lightning", Cost = 32, Channel = 0.5, Active = 0.05, Recovery = 0.12, Cooldown = 9, Interruptible = true,
 				-- (User 28/10) Like Sasuke's Chidori: formed, it stays in the hand.
 				State = { Time = 2.6, Drain = 6, Strike = "ChidoriThrust", Air = "ChidoriThrust", Damage = 22, World = { contact = "energy", element = "lightning" }, Style = "chidori", Name = "Lightning Blade" },

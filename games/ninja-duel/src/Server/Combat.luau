@@ -10,6 +10,8 @@ local Techniques = require(script.Parent.Techniques)
 -- Reusable technique families and fighter traits (roster breadth pass).
 local Families = require(script.Parent.Families)
 local SealKits = require(script.Parent.SealKits)
+-- (06/11) Kakashi's Sharingan copy: the jutsu cast in front of him.
+local Copy = require(script.Parent.Copy)
 local Ultimates = require(script.Parent.Ultimates)
 local Interactions = require(script.Parent.Interactions)
 local Looks = require(Shared.Looks)
@@ -1503,7 +1505,8 @@ function Combat:requestInner(a,action,aim,clientTime,opts)
 	if self.match.techniquesDisabled then return false,"Techniques disabled" end
 	if string.match(action,"^Technique") and (a.sealedUntil or 0)>self.now then return false,"Chakra points sealed" end
 	local slot=tonumber(string.match(action,"^Technique([1-5])$"))
-	local spec=a.sealCast or (slot and a.def.Techniques[slot])
+	-- (06/11) Kakashi's copy slot casts the jutsu his Sharingan copied (Copy).
+	local spec=a.sealCast or (slot and (Copy.slotSpec(self,a,slot) or a.def.Techniques[slot]))
  if spec and (a.trainingChannelScale or 1)~=1 then
   -- Tutorial (interrupt step): the signs last long enough to be read and hit,
   -- whoever the bot is (Rock Lee's only jutsu channels 0.08 s).
@@ -1554,6 +1557,7 @@ function Combat:requestInner(a,action,aim,clientTime,opts)
 		-- while the arm throws; the payoff fires on the release frame.
 		Brawler.event(self,a,"Technique"); Brawler.event(self,a,"Cast:"..spec.Id); a.chakra-=spec.Cost; a.cooldowns[spec.Id]=self.now+spec.Cooldown; a.guardHeld=false
 		SealKits.noteCast(self,a,spec)
+		Copy.cast(self,a,spec)
 		-- Same for a thrown technique: no guard pose (and guard speed) without a guard.
 		if a.state=="Guarding" then self:setState(a,"Neutral",0) end
 		self:awakenTechnique(a,spec)
@@ -1569,6 +1573,8 @@ function Combat:requestInner(a,action,aim,clientTime,opts)
 	end
 	Brawler.event(self,a,"Technique"); Brawler.event(self,a,"Cast:"..spec.Id); Rules.reserve(a,spec,self.now); a.guardHeld=false
 	SealKits.noteCast(self,a,spec)
+	-- The Sharingan across the field may copy it; a copied one is spent.
+	Copy.cast(self,a,spec)
 	self:awakenTechnique(a,spec)
 	a.pending={kind="Technique",spec=spec,implementation=technique,aim=aim or a.target.root.Position,variant=variant,cancelled=cancelled}
 	-- A technique may set itself up as its channel begins (Naruto's Rasengan

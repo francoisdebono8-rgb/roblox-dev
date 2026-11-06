@@ -3,6 +3,7 @@ local Techniques=require(script.Parent.Techniques)
 local Brawler=require(script.Parent.Brawler)
 local Chakra=require(script.Parent.ChakraCombat)
 local Bodies=require(script.Parent.Bodies)
+local Copy=require(script.Parent.Copy)
 local Zones=require(script.Parent.Zones)
 local Families=require(script.Parent.Families)
 local Perception=require(script.Parent.Perception)
@@ -846,7 +847,8 @@ function AI:update(now)
 		self.techStart=if rotate then ((self.techStart or 0)%math.max(count,1))+1 else 1
 		for k=0,count-1 do
 			local slot=((self.techStart+k-1)%count)+1
-			local spec=a.def.Techniques[slot]
+			-- (06/11) Kakashi's copy slot: the jutsu his Sharingan copied.
+			local spec=Copy.slotSpec(c,a,slot) or a.def.Techniques[slot]
 			local use=false; local aim=target.root.Position
 			if spec.Id=="MarkedBlade" then use=plantedSeals(a)<2 and not c:markedInFlight(a) and distance>8; aim=position+target.hum.MoveDirection*3
 			elseif spec.Id=="Flashstep" then local seal=Techniques.sealOf(c,a,now);use=seal~=nil and (distance>14 or (seal-target.root.Position).Magnitude<7)
@@ -885,6 +887,8 @@ function AI:update(now)
 			if spec.Id=="CloneRasengan" then use=distance<9 and (target.state=="Recovery" or target.state=="Stunned" or target.state=="TechniqueRecovery"
 				or (Bodies.count(c,a,"clone")>0 and self.rng:NextNumber()<.35)) end
 			if spec.Family and not use then use=familyWants(self,c,a,target,spec,distance,danger) end
+			-- A copied jutsu with no rule of its own: used while it is his, in its range.
+			if spec.Copied and not use and not spec.Family then use=distance<(spec.Range or 20) and self.rng:NextNumber()<.4 end
 			if use and c:request(a,"Technique"..slot,aim) then
 				-- A held technique (spec.Hold): the bot holds it for a while of its
 				-- choosing, longer when the opponent is far (more time to see it).
