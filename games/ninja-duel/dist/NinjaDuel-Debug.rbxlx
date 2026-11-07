@@ -1544,7 +1544,9 @@ return Face
 		AttackProfile = {
 			Light1={startup=.96,recovery=.9,travel=.92,range=6.6},Light2={startup=.98,recovery=.88,travel=.9,range=7,chainTool=true,kind="palm"},
 			Light3={startup=1.02,recovery=1.0,travel=.86,impulseZ=60,kind="kick"},Heavy={startup=.98,recovery=1.02,travel=.9},
-			Launcher={startup=1.0,travel=.86,impulseY=53,impulseZ=20},DashAttack={startup=.95,travel=.92},
+			-- (07/11, Studio + gate: the body flew off at ~23 studs/s and the E chase,
+			-- ending where it was, came up 5 studs short: both air strikes missed)
+			Launcher={startup=1.0,travel=.86,impulseY=53,impulseZ=10},DashAttack={startup=.95,travel=.92},
 			Air1={startup=.98,travel=.9},Air2={startup=1.0,travel=.88},Slam={startup=1.0,recovery=1.0},
 		},
 		Skin = { 197, 164, 143 }, Hair = { 30, 31, 43 }, Outfit = { 69, 49, 66 },
@@ -2776,6 +2778,8 @@ function Sight.viewUnreadable(actor)
 end
 function Sight.viewChakraSight(actor)
 	if not actor or (actor.health or 1)&lt;=0 then return false end
+	-- (07/11) the eye that saw through a genjutsu stays open a moment
+	if actor.sight==true and Fighters[actor.fighterId or ""] and Fighters[actor.fighterId].Byakugan then return true end
 	local family=actor.family
 	return Sight.chakraSight(actor.fighterId,family and family.buff,(actor.awaken or 0)&gt;0)
 end
@@ -5078,7 +5082,7 @@ return {
       <Item class="StringValue" referent="ND32">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">5260c51e4322c60f5a07318e569acf9cf7882effceea1e239f0391d35f37dec1</string>
+          <string name="Value">e5aea75cd9384d3f1b3b28c6a1905680733d78e6076898255daae5d8ef06c393</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND33">
@@ -7222,7 +7226,7 @@ function BodyState.release(c,a,action)
 	-- guard) leaves the body open for its whole recovery.
 	local serial=a.attackSerial
 	c:schedule(c.now+p.spec.startup+p.spec.active+.02,function()
-		if a.health&lt;=0 or a.attackSerial~=serial or a.hitConfirmed or a.state~="Recovery" then return end
+		if a.health&lt;=0 or a.attackSerial~=serial or a.hitConfirmed or a.state~="Recovery" or (a.clashedAt or -10)&gt;c.now-1 then return end
 		c:cue(a,string.upper(st.Name or s.id).." • MISSED • OPEN",.8)
 		if a.target and a.target.health&gt;0 then c:cue(a.target,string.upper(st.Name or s.id).." MISSED • PUNISH",.8) end
 		Brawler.event(c,a,"StateMissed:"..s.id)
@@ -7500,7 +7504,10 @@ function Brawler.chaseArrived(c,a)
  if not b or c.now-(a.pursuitStarted or c.now)&lt;.1 then return false end
  if (b.root.Position-a.root.Position).Magnitude&gt;4.6 then return false end
  local rising=if b.reaction and b.reactionVelocity then b.reactionVelocity.Y else 0
- return rising&lt;=30 or not b.airborne
+ -- (07/11, Studio + gate, Itachi: the chase "arrived" 4.5 studs under a body
+ -- still rising at 25 studs/s, stopped there and both air strikes missed 6-8
+ -- studs below it) a body still climbing is followed on, near its apex.
+ return rising&lt;=12 or not b.airborne
 end
 -- The re-entry windows in which a press is the arrival strike (dash attack on
 -- the ground, the air string in the air) or the arrival heavy.
@@ -7866,6 +7873,9 @@ function Brawler.start(c,a,name)
   slamWindow=math.clamp(gap/88,.16,.5)
  end
  a.pending={kind="Brawl",name=name,spec=spec,hit=false,slamWindow=slamWindow,flow=a.nextFlow==true,step=step,chakraFlow=chakraFlow}
+ -- (07/11, Studio: the Chidori Nagashi's current lasted 0.23 s, the pending
+ -- strike is gone in recovery) the snapshot keeps the nature to its end.
+ a.flowShown=if chakraFlow then {serial=a.attackSerial,nature=chakraFlow} else nil
  if not a.nextFlow then a.flowStreak=0 end
  a.nextFlow=nil
  Bangla.begin(c,a,a.pending)
@@ -8549,6 +8559,9 @@ function Brawler.clash(c,a,p)
  if flat.Magnitude&lt;.1 or delta.Magnitude&gt;math.max(p.spec.range or 6,q.spec.range or 6)+1.5 then return false end
  if a.root.CFrame.LookVector:Dot(flat.Unit)&lt;.4 or b.root.CFrame.LookVector:Dot(-flat.Unit)&lt;.4 then return false end
  for _,x in {a,b} do
+  -- (07/11, Studio: "CHIDORI MISSED • PUNISH" after a clash) a strike that
+  -- met the other one did not miss.
+  x.clashedAt=c.now
   Bangla.close(x.pending);x.pending=nil;x.attackName=nil;x.chainOpen=false;x.buffered=nil;x.travelRemaining=0
   -- Neither strike landed: both strings start over.
   Brawler.resetStrings(x)
@@ -9850,7 +9863,7 @@ end
 -- the wire: from his mouth (or the stake the wire is tied to) to the body,
 -- `travel` seconds; the client draws the flame travelling it and the wire
 -- burning behind it. Returns where it starts.
-Chakra.WireRun=60 -- studs/s
+Chakra.WireRun=34 -- studs/s (07/11: at 60 the run was over before the eye found it)
 function Chakra.wireStart(c,a) return wireStart(c,a) end
 function Chakra.dragonRun(c,a,b,travel)
 	local from=wireStart(c,a)
@@ -15217,7 +15230,11 @@ function DevHooks.install(matches)
 			local victim=if arg1=="human" then s.human else s.bot
 			local by=if arg1=="human" then s.bot else s.human
 			victim.invulnerableUntil=0;victim.rotationUntil=0;victim.readUntil=0;victim.guardHeld=false;victim.comboHits=0
-			c:damage(by,victim,victim.health+50,false,false)
+			-- (07/11, Studio: the gate's "reset" failed for every fighter) Combat
+			-- scales damage (Config.DamageScale .6): health+50 left a 400 HP bot
+			-- standing. One point left, then the blow.
+			victim.health=1;victim.hum.Health=1
+			c:damage(by,victim,50,false,false)
 			return if s.finishing then "KO" else s.phase
 		elseif op=="rematch" then
 			s.lastLifecycle=-10
@@ -17594,7 +17611,7 @@ Interactions.PUDDLE={Radius=9,Time=6}
 Interactions.SOAK={Time=6}
 Interactions.CONDUCT={Damage=1.5,Stun=.8,Shock=6,ShockStun=.6,Cooldown=1.4}
 Interactions.WET={Speed=.7,Damage=1.3}
-Interactions.CLASH={Push=14,Chip=5}
+Interactions.CLASH={Push=14,Chip=5,Grind=.4}
 
 local FIRE_KINDS={fireball=true,phoenix=true,firebreath=true}
 local function isFire(p)
@@ -17757,13 +17774,24 @@ function Interactions.jutsuClash(c,a,b,p,q)
 	local line=flat(b.root.Position-a.root.Position)
 	line=if line.Magnitude&gt;.1 then line.Unit else a.root.CFrame.LookVector
 	local tune=Interactions.CLASH
-	c:pushImpact(a.root.Position:Lerp(b.root.Position,.5),"jutsuclash",true,{direction=line,owner=a.id,victim=b.id})
+	-- (07/11, Studio: a white ring on the floor, over at once) The grind: the
+	-- two jutsu press into each other, both bodies held, then they burst.
+	local spinning=if rasengan(p) then a else b
+	c:pushImpact(a.root.Position:Lerp(b.root.Position,.5),"jutsuclash",false,{direction=line,owner=a.id,victim=b.id,phase="grind",duration=tune.Grind,rasengan=spinning.id})
 	for _,x in {a,b} do
-		c:chip(x.target or x,x,tune.Chip)
+		x.hitstopUntil=math.max(x.hitstopUntil or 0,c.now+tune.Grind)
 		c:cue(x,"RASENGAN • CHIDORI • CLASH",1)
 	end
-	a.hop={direction=-line,remaining=tune.Push,speed=44}
-	b.hop={direction=line,remaining=tune.Push,speed=44}
+	c:schedule(c.now+tune.Grind,function()
+		if c.match.phase~="Duel" then return end
+		c:pushImpact(a.root.Position:Lerp(b.root.Position,.5),"jutsuclash",true,{direction=line,owner=a.id,victim=b.id,phase="burst"})
+		for _,x in {a,b} do
+			if x.health&gt;0 then c:chip(x.target or x,x,tune.Chip) end
+		end
+		if c.match.phase~="Duel" then return end
+		a.hop={direction=-line,remaining=tune.Push,speed=44}
+		b.hop={direction=line,remaining=tune.Push,speed=44}
+	end)
 	return true
 end
 
@@ -20243,7 +20271,7 @@ function Matches:view(s,cursor,mine,theirs)
 			cue=if a.cueUntil&gt;s.combat.now then a.cue else "",quiet=if (a.quietUntil or 0)&gt;s.combat.now then a.quiet else nil,dodge=math.max(0,a.dodgeUntil-s.combat.now),read=math.max(0,a.readUntil-s.combat.now),
 			speed=a.locomotion.Magnitude,airborne=a.airborne,sprinting=a.model:GetAttribute("MovementSprinting")==true,
 			landStrong=a.model:GetAttribute("MovementHardLanding")==true,pursuit=math.max(0,a.pursuitUntil-s.combat.now),combo=a.combo,
-			subCharges=a.subCharges,chakraLoad=if a.chakraLoad and a.chakraLoad.untilTime&gt;s.combat.now then a.chakraLoad.nature else nil,infused=a.pending and a.pending.chakraFlow or nil,wall=a.wall~=nil,wallMode=a.wall and a.wall.mode or nil,wallSide=a.wall and a.wall.side or nil,reaction=a.reaction,guardImpact=math.max(0,(a.guardImpact or 0)-s.combat.now),attackName=a.attackName,attackElapsed=s.combat.now-(a.attackStarted or 0),whiffed=if a.state=="Recovery" and a.attackWhiffed then true else nil,airHold=a.airHold,impactSerial=a.impactSerial or 0,impactHeavy=a.impactHeavy,impactStyle=a.impactStyle,
+			subCharges=a.subCharges,chakraLoad=if a.chakraLoad and a.chakraLoad.untilTime&gt;s.combat.now then a.chakraLoad.nature else nil,infused=(a.pending and a.pending.chakraFlow) or (if a.state=="Recovery" and a.flowShown and a.flowShown.serial==a.attackSerial then a.flowShown.nature else nil),wall=a.wall~=nil,wallMode=a.wall and a.wall.mode or nil,wallSide=a.wall and a.wall.side or nil,reaction=a.reaction,guardImpact=math.max(0,(a.guardImpact or 0)-s.combat.now),attackName=a.attackName,attackElapsed=s.combat.now-(a.attackStarted or 0),whiffed=if a.state=="Recovery" and a.attackWhiffed then true else nil,airHold=a.airHold,impactSerial=a.impactSerial or 0,impactHeavy=a.impactHeavy,impactStyle=a.impactStyle,
 			hitFrom=a.hitFrom,hitAngle=a.hitAngle,hitStrength=a.hitStrength or 0,hitZone=a.hitZone,hitKind=a.hitKind,hitTwist=a.hitTwist,groundPose=a.groundPose,groundSide=a.groundSide,koStyle=a.koStyle,koAirborne=a.koAirborne,koFlying=a.koFlight~=nil,reactionElapsed=math.max(0,s.combat.now-(a.reactionStartedAt or s.combat.now)),
 			-- (Audit 29/10) Only the counters the client reads: every event count
 			-- (80+ names, never reset) went out 30 times a second.
@@ -20271,7 +20299,7 @@ function Matches:view(s,cursor,mine,theirs)
 			splatElapsed=if a.reaction=="WallSplat" then now-(a.splatAt or now) else nil,
 			counter=math.max(0,(a.counterUntil or 0)-now),warpSerial=a.warpSerial or 0,
 			shield=a.shieldCharges or 0,shieldMax=a.def.SandShield and a.def.SandShield.Charges or 0,bound=a.reaction=="Bound",boundKind=if a.reaction=="Bound" then a.boundKind else nil,
-			awaken=math.max(0,(a.awakenUntil or 0)-now),gate=if (a.awakenUntil or 0)&gt;now then a.gateOpen else nil,
+			awaken=math.max(0,(a.awakenUntil or 0)-now),gate=if (a.awakenUntil or 0)&gt;now then a.gateOpen else nil,sight=if (a.sightUntil or 0)&gt;now then true else nil,
 			awakenReady=a.def.Awakening~=nil and not a.awakened and a.health&gt;0 and a.health&lt;=a.def.Health*Config.Awaken.Threshold,
 			-- Neji: Rotation dome, closed chakra points and sealed techniques.
 			rotation=(a.rotationUntil or 0)&gt;now,tenketsu=if (a.tenketsuUntil or 0)&gt;now then a.tenketsu or 0 else 0,
@@ -24164,6 +24192,9 @@ Techniques.MirageCast = {
 		local victim = a.target
 		-- The Byakugan sees chakra, not light: the image has none.
 		if victim.def.Byakugan then
+			-- (07/11, Studio: a flash on his head, nothing else) the eye opens on
+			-- its own for a moment: he sees Itachi's chakra network, no image.
+			victim.sightUntil=math.max(victim.sightUntil or 0,c.now+1.8)
 			c:cue(victim,"BYAKUGAN • SEES THROUGH",1);c:cue(a,"GENJUTSU • SEEN THROUGH",1)
 			c:pushImpact(a.root.Position,"mirage",false,{owner=a.id,fighter=a.fighterId,phase="seen",victim=victim.id})
 			return
@@ -24318,7 +24349,7 @@ local function dragonFlame(c,a,pending)
 		-- the wire meanwhile (substitution) leaves it burning on nothing.
 		local Chakra=require(script.Parent.ChakraCombat)
 		local from=Chakra.wireStart(c,a)
-		local travel=math.clamp((b.root.Position-from).Magnitude/Chakra.WireRun,.12,.45)
+		local travel=math.clamp((b.root.Position-from).Magnitude/Chakra.WireRun,.25,.65)
 		b.reactionUntil=math.max(b.reactionUntil or 0,c.now+travel+.08)
 		a.wireBurnUntil=c.now+travel
 		Chakra.dragonRun(c,a,b,travel)
@@ -24405,7 +24436,7 @@ Techniques.Chidori={
 		local serial=a.attackSerial
 		if thrust then
 			c:schedule(c.now+thrust.spec.startup+thrust.spec.active+.02,function()
-				if a.health&lt;=0 or a.attackSerial~=serial or a.hitConfirmed or a.state~="Recovery" then return end
+				if a.health&lt;=0 or a.attackSerial~=serial or a.hitConfirmed or a.state~="Recovery" or (a.clashedAt or -10)&gt;c.now-1 then return end
 				c:cue(a,"CHIDORI • MISSED • OPEN",.8)
 				if a.target and a.target.health&gt;0 then c:cue(a.target,"CHIDORI MISSED • PUNISH",.8) end
 				Brawler.event(c,a,"ChidoriMissed")
@@ -44624,10 +44655,17 @@ local function dragonRun(fx,impact,folder)
 	-- head is flame (a running emitter, an orange light), the wire behind it
 	-- red-hot, cooling to ash.
 	local head=piece(holder,"Head",Vector3.one*.2,CFrame.new(from),FLAME,1)
-	K.new("ParticleEmitter",{Texture=K.TEX.fire,Rate=140,Lifetime=NumberRange.new(.14,.3),Speed=NumberRange.new(1,3),SpreadAngle=Vector2.new(180,180),
-		Color=K.seq({{0,FLAME_HOT},{.45,FLAME},{1,FLAME_END}}),LightEmission=.45,LightInfluence=0,Size=K.num({{0,1.5},{1,.4}}),
+	K.new("ParticleEmitter",{Texture=K.TEX.fire,Rate=200,Lifetime=NumberRange.new(.16,.34),Speed=NumberRange.new(1,3),SpreadAngle=Vector2.new(180,180),
+		-- (07/11, Studio, daylight: the head faded through dark brown and read as
+		-- smoke) it stays flame-coloured and fades out instead.
+		Color=K.seq({{0,FLAME_HOT},{.6,FLAME},{1,FLAME}}),LightEmission=.8,LightInfluence=0,Size=K.num({{0,2.4},{1,.5}}),
 		Transparency=K.num({{0,.1},{1,1}}),RotSpeed=NumberRange.new(-120,120),Rotation=NumberRange.new(0,360)},head)
-	K.new("PointLight",{Color=FLAME,Brightness=2.4,Range=9,Shadows=false},head)
+	-- (07/11, Studio, mid-run: the front read as dark smoke, the head was lost
+	-- in its own trail) a hot core at the front, the eye goes to it.
+	K.new("ParticleEmitter",{Texture=K.TEX.glow,Rate=70,Lifetime=NumberRange.new(.08,.14),Speed=NumberRange.new(0,.5),
+		Color=ColorSequence.new(FLAME_HOT,FLAME),LightEmission=1,LightInfluence=0,Size=K.num({{0,1.8},{1,1.1}}),
+		Transparency=K.num({{0,.15},{1,.8}})},head)
+	K.new("PointLight",{Color=FLAME,Brightness=3,Range=12,Shadows=false},head)
 	local burnt={}
 	for n=1,SEGMENTS do
 		local b=piece(holder,"Burnt",Vector3.new(.09,.09,.05),CFrame.new(from),WIRE_HOT,1)
@@ -44657,7 +44695,7 @@ local function dragonRun(fx,impact,folder)
 			while shed&lt;k do
 				local p=alongLine(points,shed)
 				K.burst(fx.folder,p,{Texture=K.TEX.fire,Lifetime=NumberRange.new(.25,.45),Speed=NumberRange.new(1,3),SpreadAngle=Vector2.new(180,180),
-					Acceleration=Vector3.new(0,6,0),Color=K.seq({{0,FLAME_HOT},{.4,FLAME},{1,FLAME_END}}),LightEmission=.35,LightInfluence=0,
+					Acceleration=Vector3.new(0,6,0),Color=K.seq({{0,FLAME_HOT},{.5,FLAME},{1,FLAME_END}}),LightEmission=.6,LightInfluence=0,
 					Size=K.num({{0,1.1},{1,.3}}),Transparency=K.num({{0,.1},{1,1}})},3)
 				shed+=1/math.max(4,math.floor(length/1.6))
 			end
@@ -45078,13 +45116,18 @@ BUILD.Fire=function(a,model,root,color)
 end
 BUILD.Wind=function(a,model,root,color)
 	-- rings of air climbing the body from the feet, a spiral spinning under it
+	-- (07/11, Studio: Naruto loaded, seen from behind: no ring at all. A low
+	-- Rate is cut down by the graphics quality, to nothing here; pale mint
+	-- added onto bright sand added nothing either) the rings are emitted by
+	-- hand (TICK.Wind), a deeper teal lit by the scene.
+	local deep=color:Lerp(Color3.fromRGB(30,150,130),.45)
 	a.rise=add(a.emitters,a.at,{Name="Rise",Texture=K.TEX.halo,Orientation=Enum.ParticleOrientation.VelocityPerpendicular,
-		EmissionDirection=Enum.NormalId.Top,Rate=4.5,Lifetime=NumberRange.new(.55,.7),Speed=NumberRange.new(5,6.5),SpreadAngle=Vector2.new(0,0),
-		Color=K.seq({{0,CORE},{1,color}}),LightEmission=.5,Size=K.num({{0,2.4},{1,3.4}}),Transparency=K.num({{0,1},{.15,.6},{.7,.72},{1,1}}),
+		EmissionDirection=Enum.NormalId.Top,Rate=0,Lifetime=NumberRange.new(.55,.7),Speed=NumberRange.new(5,6.5),SpreadAngle=Vector2.new(0,0),
+		Color=K.seq({{0,color},{1,deep}}),LightEmission=.15,LightInfluence=.4,Size=K.num({{0,2.4},{1,3.4}}),Transparency=K.num({{0,1},{.15,.35},{.7,.5},{1,1}}),
 		Rotation=NumberRange.new(0,360),RotSpeed=NumberRange.new(120,260),LockedToPart=true})
-	add(a.emitters,a.at,{Name="Spiral",Texture=K.TEX.swirl,Orientation=Enum.ParticleOrientation.VelocityPerpendicular,
-		EmissionDirection=Enum.NormalId.Top,Rate=5,Lifetime=NumberRange.new(.3,.4),Speed=NumberRange.new(.4,.6),Color=ColorSequence.new(CORE,color),
-		LightEmission=.4,Size=K.num({{0,2.6},{1,4.2}}),Transparency=K.num({{0,.6},{1,1}}),Rotation=NumberRange.new(0,360),
+	a.spiral=add(a.emitters,a.at,{Name="Spiral",Texture=K.TEX.swirl,Orientation=Enum.ParticleOrientation.VelocityPerpendicular,
+		EmissionDirection=Enum.NormalId.Top,Rate=0,Lifetime=NumberRange.new(.3,.4),Speed=NumberRange.new(.4,.6),Color=ColorSequence.new(color,deep),
+		LightEmission=.15,LightInfluence=.4,Size=K.num({{0,2.6},{1,4.2}}),Transparency=K.num({{0,.38},{1,1}}),Rotation=NumberRange.new(0,360),
 		RotSpeed=NumberRange.new(-900,-700),LockedToPart=true})
 end
 -- Sand (and earth): matte, lit by the scene, never glowing.
@@ -45112,7 +45155,8 @@ end
 BUILD.Sand=dusty
 BUILD.Earth=dusty
 BUILD.GentleFist=function(a,model,root,color)
-	a.rise=add(a.emitters,a.at,{Name="Rise",Texture=K.TEX.glow,Rate=6,Lifetime=NumberRange.new(.5,.8),Speed=NumberRange.new(1,2),
+	-- (07/11: a Rate of 6 is cut to nothing at low graphics quality, see Wind)
+	a.rise=add(a.emitters,a.at,{Name="Rise",Texture=K.TEX.glow,Rate=16,Lifetime=NumberRange.new(.5,.8),Speed=NumberRange.new(1,2),
 		SpreadAngle=Vector2.new(30,30),EmissionDirection=Enum.NormalId.Top,Color=K.seq({{0,CORE},{1,color}}),LightEmission=1,
 		Size=K.num({{0,.6},{1,.1}}),Transparency=K.num({{0,.55},{1,1}})})
 	local torso=model:FindFirstChild("UpperTorso")
@@ -45150,10 +45194,12 @@ BUILD.GentleFist=function(a,model,root,color)
 end
 BUILD.Strength=function(a,model,root,color)
 	-- no chakra glow: steam off a straining body
-	a.rise=add(a.emitters,a.at,{Name="Rise",Texture=K.TEX.smoke,Rate=9,Lifetime=NumberRange.new(.6,1),Speed=NumberRange.new(2,4),
+	-- (07/11, Studio: Lee loaded looked exactly like Lee unloaded; the steam
+	-- at .84 vanished on the sand) thicker steam, bigger drops, harder stamps.
+	a.rise=add(a.emitters,a.at,{Name="Rise",Texture=K.TEX.smoke,Rate=18,Lifetime=NumberRange.new(.6,1),Speed=NumberRange.new(2.5,4.5),
 		SpreadAngle=Vector2.new(25,25),EmissionDirection=Enum.NormalId.Top,Acceleration=Vector3.new(0,2,0),Drag=1,
-		Color=ColorSequence.new(Color3.fromRGB(255,246,232)),LightEmission=.1,LightInfluence=.6,Size=K.num({{0,1.2},{1,2.8}}),
-		Transparency=K.num({{0,1},{.25,.84},{.6,.86},{1,1}}),Rotation=NumberRange.new(0,360),RotSpeed=NumberRange.new(-40,40)})
+		Color=ColorSequence.new(Color3.fromRGB(255,250,244)),LightEmission=.25,LightInfluence=.4,Size=K.num({{0,1.4},{1,3.2}}),
+		Transparency=K.num({{0,1},{.2,.48},{.6,.58},{1,1}}),Rotation=NumberRange.new(0,360),RotSpeed=NumberRange.new(-40,40)})
 	-- sweat flicked off the head
 	local head=model:FindFirstChild("Head")
 	local sweat=a.at
@@ -45162,15 +45208,15 @@ BUILD.Strength=function(a,model,root,color)
 		table.insert(a.extras,sweat)
 	end
 	add(a.emitters,sweat,{Name="Sweat",Texture=K.TEX.droplets,FlipbookLayout=Enum.ParticleFlipbookLayout.Grid4x4,
-		FlipbookMode=Enum.ParticleFlipbookMode.OneShot,Rate=7,Lifetime=NumberRange.new(.3,.5),Speed=NumberRange.new(5,8),
+		FlipbookMode=Enum.ParticleFlipbookMode.OneShot,Rate=12,Lifetime=NumberRange.new(.3,.5),Speed=NumberRange.new(5,8),
 		SpreadAngle=Vector2.new(70,70),EmissionDirection=Enum.NormalId.Top,Acceleration=Vector3.new(0,-45,0),
-		Color=ColorSequence.new(Color3.fromRGB(220,236,255)),LightEmission=.25,Size=K.num({{0,.4},{1,.3}}),Transparency=K.num({{0,.1},{.7,.3},{1,1}})})
+		Color=ColorSequence.new(Color3.fromRGB(220,236,255)),LightEmission=.35,Size=K.num({{0,.6},{1,.45}}),Transparency=K.num({{0,0},{.7,.2},{1,1}})})
 	-- the feet stamping the floor (pulsed in TICK, with a low thump)
 	local feet=K.new("Attachment",{Name="ChakraFlowFeet",Position=Vector3.new(0,-2.6,0)},root)
 	table.insert(a.extras,feet)
 	a.stomp=particles(feet,{Name="Stomp",Texture=K.TEX.smoke,Lifetime=NumberRange.new(.35,.55),Speed=NumberRange.new(6,10),
 		SpreadAngle=Vector2.new(85,85),EmissionDirection=Enum.NormalId.Top,Acceleration=Vector3.new(0,2,0),Drag=5,Color=ColorSequence.new(DUST),
-		LightEmission=0,LightInfluence=1,Size=K.num({{0,1},{1,2}}),Transparency=K.num({{0,.45},{1,1}}),Rotation=NumberRange.new(0,360)})
+		LightEmission=0,LightInfluence=1,Size=K.num({{0,1.3},{1,2.6}}),Transparency=K.num({{0,.25},{1,1}}),Rotation=NumberRange.new(0,360)})
 end
 BUILD.Chakra=function(a,model,root,color)
 	-- clean, smooth wisps (no flame texture) and a glow hugging the body
@@ -45200,6 +45246,13 @@ local function aura(st,model,nature)
 	local a={nature=nature,look=look,color=color,root=root,emitters={},both={},beams={},extras={}}
 	a.at=K.new("Attachment",{Name="ChakraFlowAura",Position=AURA_AT[look] or Vector3.new(0,-.4,0)},root)
 	a.light=K.new("PointLight",{Color=color,Brightness=0,Range=12,Shadows=false},root)
+	-- (07/11, Studio: loaded and standing, the body looked the same: a spark
+	-- now and then) The loaded body is outlined in its nature's colour.
+	-- (Studio: Neji's pale blue on his white clothes did not show) a deeper rim
+	local rimColor=if look=="GentleFist" then Color3.fromRGB(96,140,255) else color
+	a.rim=K.new("Highlight",{Name="ChakraFlowRim",Adornee=model,FillColor=rimColor,FillTransparency=1,OutlineColor=rimColor,OutlineTransparency=1,
+		DepthMode=Enum.HighlightDepthMode.Occluded,Enabled=false},model)
+	table.insert(a.extras,a.rim)
 	BUILD[look](a,model,root,color)
 	st.aura=a
 	return a
@@ -45216,10 +45269,13 @@ TICK.Lightning=function(fx,a,model,now,dt,on,keep)
 	a.light.Brightness=(if math.random()&lt;.22 then 2.6 else .3+math.random()*.7)*(if on then 1 else .6)
 	if not on then return end
 	if now&gt;=(a.nextArc or 0) then
-		a.nextArc=now+.08+math.random()*.08
-		local from=model:FindFirstChild(ARC_FROM[math.random(1,#ARC_FROM)]) or a.root
-		local at=from.Position+scatter()*.5
-		jag(fx,at,at+scatter()*(1.2+math.random()*1.3),if math.random()&lt;.5 then CORE else a.color,.07,.08)
+		-- (07/11) two arcs at a time, oftener: the body crackles while loaded
+		a.nextArc=now+.04+math.random()*.05
+		for _=1,2 do
+			local from=model:FindFirstChild(ARC_FROM[math.random(1,#ARC_FROM)]) or a.root
+			local at=from.Position+scatter()*.5
+			jag(fx,at,at+scatter()*(1.2+math.random()*1.3),if math.random()&lt;.5 then CORE else a.color,.08,.1)
+		end
 	end
 	if now&gt;=(a.nextBuzz or 0) then
 		a.nextBuzz=now+.5+math.random()*.35
@@ -45232,6 +45288,12 @@ TICK.Fire=function(fx,a,model,now,dt,on,keep)
 end
 TICK.Wind=function(fx,a,model,now,dt,on,keep)
 	ease(a,if on then .55 elseif keep then .3 else 0,dt)
+	if on and now&gt;=(a.nextRing or 0) then
+		a.nextRing=now+.13
+		a.rise:Emit(1)
+		a.ringCount=(a.ringCount or 0)+1
+		if a.spiral and a.ringCount%2==0 then a.spiral:Emit(1) end
+	end
 end
 TICK.Sand=function(fx,a,model,now,dt,on,keep)
 	ease(a,if on then .25 else 0,dt)
@@ -45249,8 +45311,8 @@ end
 TICK.Strength=function(fx,a,model,now,dt,on,keep)
 	ease(a,0,dt)
 	if on and a.stomp and now&gt;=(a.nextStomp or 0) then
-		a.nextStomp=now+.62
-		a.stomp:Emit(5)
+		a.nextStomp=now+.5
+		a.stomp:Emit(9)
 		play(a.root,{{"heavy",.1,.5}})
 	end
 end
@@ -45368,7 +45430,9 @@ local function fighter(fx,model,actor,dt)
 	dt=dt or 1/60
 	local st=stateOf(fx,model)
 	local loaded=actor.chakraLoad
-	local strike=(actor.infused and actor.attackName and (actor.state=="Startup" or actor.state=="Active"))==true
+	-- (07/11, Studio: the Chidori Nagashi's current showed for ~0.2 s) the
+	-- follow-through keeps it too.
+	local strike=(actor.infused and actor.attackName and (actor.state=="Startup" or actor.state=="Active" or actor.state=="Recovery"))==true
 	local now=os.clock()
 	if loaded or st.aura then
 		local a=if loaded then aura(st,model,loaded) else st.aura
@@ -45377,6 +45441,12 @@ local function fighter(fx,model,actor,dt)
 			local keep=on or (strike and actor.infused==a.nature)
 			if on and not a.wasOn then a.nextBuzz=now+.45;a.nextStomp=now+.6;a.nextArc=now end
 			a.wasOn=on
+			if a.rim then
+				-- a soft pulse: the outline breathes, the fill barely tints
+				a.rim.Enabled=keep
+				a.rim.OutlineTransparency=if on then .15+.2*math.sin(now*9) else .55
+				a.rim.FillTransparency=if on then .8+.04*math.sin(now*9) else .92
+			end
 			for _,e in a.emitters do e.Enabled=on end
 			for _,e in a.both do e.Enabled=keep end
 			for _,b in a.beams do b.Enabled=keep end
@@ -45483,9 +45553,19 @@ local function drawHit(fx,i,look,color)
 	if look=="Lightning" then
 		-- bolts burst out of the contact, and flicker once more
 		for k=1,(if big then 5 else 4) do jag(fx,p,p+scatter()*(1.8+math.random()*1.6),if k%2==1 then CORE else color,.1,.12) end
-		task.delay(.06,function()
-			if not fx.folder.Parent then return end
-			for _=1,2 do jag(fx,p,p+scatter()*(1.4+math.random()*1.2),CORE,.07,.09) end
+		-- (07/11, Studio: the current lasted one flash, .12 s, while the server
+		-- holds the body .2-.45 s longer) it crackles over the body while held.
+		task.spawn(function()
+			local born=os.clock()
+			while os.clock()-born&lt;(if big then .5 else .4) do
+				task.wait(.05)
+				if not fx.folder.Parent then return end
+				-- (Studio: .08 wide arcs were lost on the body) two, thicker
+				for k=1,2 do
+					local from=p+scatter()*(.4+math.random()*.8)
+					jag(fx,from,from+scatter()*(1.4+math.random()*1.4),if k==1 then CORE else color,.13,.1)
+				end
+			end
 		end)
 		K.sparks(fx.folder,p,CORE,if big then 24 else 16,30)
 		K.flash(fx.folder,p,CORE,1,if big then 6 else 4.5,.12,.1)
@@ -47064,9 +47144,20 @@ function FX:mirageCue(impact,folder)
 		sound(anchorPart(self.folder,at),SOUND.hit,.4,.7)
 		self:cheer(.8)
 	elseif phase=="seen" then
+		-- (07/11) the image forms and shatters before the white eye
 		local victim=find(folder,impact.victim)
 		local head=victim and victim:FindFirstChild("Head")
-		if head then flash(self.folder,head.Position,HYUGA,.4,2.4,.2,.2) end
+		if head then flash(self.folder,head.Position,HYUGA,.6,3.4,.25,.2) end
+		for _=1,10 do
+			local dir=Vector3.new(math.random()-.5,math.random()*.8,math.random()-.5)
+			dir=if dir.Magnitude&gt;.01 then dir.Unit else Vector3.yAxis
+			local shard=block(self.folder,Vector3.new(.3,.5,.06),CFrame.lookAt(at,at+dir)*CFrame.new(0,(math.random()-.5)*3,0),SHARINGAN,Enum.Material.Neon)
+			shard.Transparency=.35
+			tween(shard,.45,{CFrame=shard.CFrame+dir*(2+math.random()*3),Transparency=1,Size=Vector3.new(.05,.2,.02)})
+			Debris:AddItem(shard,.5)
+		end
+		smokePuff(self.folder,at,Color3.fromRGB(60,24,30),8,1.3)
+		sound(anchorPart(self.folder,at),SOUND.whoosh,.3,.7)
 	elseif phase=="touch" or phase=="break" then
 		smokePuff(self.folder,at,Color3.fromRGB(70,40,46),6,1.2)
 	else
@@ -54776,7 +54867,9 @@ function Presentation:illusion(data,model)
   echo={mode=mode,epoch=data.epoch,source=source,model=self.fx:image(source,mode),born=os.clock()}
   self.echo=echo
  end
- if mode=="deceived" then Presentation.fade(source,.55) end
+ -- (07/11, Studio: two Itachi, one solid and one ghost; the ghost read as
+ -- the fake) the real body is a faint shimmer behind the image.
+ if mode=="deceived" then Presentation.fade(source,.82) end
  local image=echo.model
  if not image then return end
  local root=watcher and watcher:FindFirstChild("HumanoidRootPart")
@@ -58220,6 +58313,69 @@ function UltimateFX.trigrams(fx,center,look,time)
 	end
 	Debris:AddItem(disc,time)
 end
+-- (07/11, Studio: the clash was a white ring on the floor, over at once)
+-- Rasengan into Chidori, the grind: for `duration` seconds the spinning blue
+-- sphere and the crackling lightning press into each other between the two
+-- held bodies, sparks thrown off where they meet; the burst follows (the
+-- server's second "jutsuclash" contact).
+local RASEN=rgb(120,190,255)
+local RASEN_CORE=rgb(226,244,255)
+local VOLT=rgb(176,214,255)
+local function grind(fx,impact,folder)
+	local mid=impact.position
+	local line=impact.direction or Vector3.zAxis
+	line=Vector3.new(line.X,0,line.Z)
+	line=if line.Magnitude&gt;.05 then line.Unit else Vector3.zAxis
+	local life=math.max(.15,impact.duration or .4)
+	-- the Rasengan side: toward its holder (owner or victim of the contact)
+	local towardRasen=if impact.rasengan==impact.victim then line else -line
+	local holder=K.new("Model",{Name="JutsuGrind"},fx.folder)
+	local sphere=K.block(holder,Vector3.one*1.9,CFrame.new(mid+towardRasen*1),RASEN,Enum.Material.Neon)
+	sphere.Shape=Enum.PartType.Ball;sphere.Transparency=.35
+	local core=K.block(holder,Vector3.one*1.1,CFrame.new(mid+towardRasen*1),RASEN_CORE,Enum.Material.Neon)
+	core.Shape=Enum.PartType.Ball;core.Transparency=.1
+	local rings={}
+	for k=1,2 do
+		local ring=K.block(holder,Vector3.new(.08,2.6,2.6),CFrame.new(mid+towardRasen*1),RASEN_CORE,Enum.Material.Neon)
+		ring.Shape=Enum.PartType.Cylinder;ring.Transparency=.45;rings[k]=ring
+	end
+	local arcs=K.new("Model",{Name="Volt"},holder)
+	local born=os.clock()
+	local rng=Random.new()
+	K.sound(K.anchorPart(fx.folder,mid),K.SOUND.electric,.55,1.1)
+	K.sound(K.anchorPart(fx.folder,mid),K.SOUND.whoosh,.4,.6)
+	task.spawn(function()
+		local nextSpark=0
+		while holder.Parent and os.clock()-born&lt;life do
+			local t=os.clock()-born
+			local swell=1+t/life*.5
+			local at=mid+towardRasen*1
+			sphere.Size=Vector3.one*1.9*swell;core.Size=Vector3.one*1.1*swell
+			sphere.CFrame=CFrame.new(at);core.CFrame=CFrame.new(at)
+			for k,ring in rings do ring.CFrame=CFrame.new(at)*CFrame.Angles(t*24*(if k==1 then 1 else -1),t*9,math.rad(90)*(k-1)) end
+			-- the lightning: jagged arcs out of the other side into the sphere
+			arcs:ClearAllChildren()
+			local from=mid-towardRasen*1.2
+			for _=1,7 do
+				local a=from+Vector3.new(rng:NextNumber(-1,1),rng:NextNumber(-1,1),rng:NextNumber(-1,1))*.9
+				local b=mid+Vector3.new(rng:NextNumber(-.6,.6),rng:NextNumber(-.6,.6),rng:NextNumber(-.6,.6))
+				local last=a
+				for k=1,3 do
+					local q=if k==3 then b else a:Lerp(b,k/3)+Vector3.new(rng:NextNumber(-.3,.3),rng:NextNumber(-.3,.3),rng:NextNumber(-.3,.3))
+					local len=(q-last).Magnitude
+					if len&gt;.03 then K.block(arcs,Vector3.new(.08,.08,len),CFrame.lookAt(last:Lerp(q,.5),q),if rng:NextNumber()&lt;.35 then RASEN_CORE else VOLT,Enum.Material.Neon) end
+					last=q
+				end
+			end
+			if t&gt;=nextSpark then
+				nextSpark=t+.08
+				if K.sparks then K.sparks(fx.folder,mid,RASEN_CORE,6,24) end
+			end
+			task.wait(.03)
+		end
+		if holder.Parent then holder:Destroy() end
+	end)
+end
 local function impact(fx,impact,folder)
 	local style=impact.style
 	local p=impact.position
@@ -58415,6 +58571,9 @@ local function impact(fx,impact,folder)
 	elseif style=="sandmelt" then
 		K.flash(fx.folder,p,rgb(255,150,60),.5,3,.18,.3)
 		K.smokePuff(fx.folder,p-Vector3.new(0,1.6,0),rgb(214,176,112),5,1.2)
+		return true
+	elseif style=="jutsuclash" and impact.phase=="grind" then
+		grind(fx,impact,folder)
 		return true
 	elseif style=="jutsuclash" then
 		K.flash(fx.folder,p,rgb(236,246,255),1.5,12,.3,.1)
