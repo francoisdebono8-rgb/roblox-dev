@@ -7,6 +7,7 @@
 local Debris=game:GetService('Debris')
 local assets=game:GetService('ReplicatedStorage').NinjaDuel:WaitForChild('BanglaAssets')
 local Combo=require(game:GetService('ReplicatedStorage').NinjaDuel.BanglaCombo)
+local Config=require(game:GetService('ReplicatedStorage').NinjaDuel.Config)
 local Bangla={}
 local function sound(parent,id)
  local s=Instance.new('Sound');s.SoundId=id;s.Volume=.5;s.Parent=parent
@@ -43,7 +44,8 @@ function Bangla.tryHit(c,a,p)
  -- Touched on a teleported anchored part was unreliable; query the same volume.
  for _,hit in workspace:GetPartBoundsInBox(hitbox.CFrame,hitbox.Size,params) do
   if hit:IsDescendantOf(target.model) and not donor.Hits[target.id] then
-   if not c:targetValid(a,target,p.spec.range,p.spec.facing or .05,p.from) then continue end
+   -- (07/11, game feel) only what is in front of the blow (Config.Contact).
+   if not c:targetValid(a,target,p.spec.range,p.spec.facing or Config.Contact.Facing,p.from) then continue end
    donor.Hits[target.id]=true
    local delta=frame.Position-target.root.Position
    local frontal=delta.Magnitude<.001 or target.root.CFrame.LookVector:Dot(delta.Unit)>.15
