@@ -151,6 +151,10 @@ rule("lightning-down-the-wire","Infuse",60,{source={all={"lightning"}},context={
 rule("gentle-palm","Infuse",40,{source={all={"body","chakra"}}},{signal("chakra-palm")})
 -- ProjectileClash: one exclusive outcome per meeting, from the dominant side.
 rule("plain-pass","ProjectileClash",100,{context={all={"plain"}}},{signal("clash-pass")},{group="clash"})
+-- (06/11, Studio) the Great Fireball and Minato's Wind Cut flew through each
+-- other: the wind is the fire's food (fire beats wind), the fireball takes the
+-- crescent into itself and grows. The one exception to the rule below.
+rule("fire-swallows-wind-jutsu","ProjectileClash",100,{source={all={"fire","volume"}},target={all={"wind","volume"}},context={all={"natureAdvantage"}}},{signal("clash-absorb")},{group="clash"})
 -- Two jutsu never cancel each other: matchups between techniques stay as they are.
 rule("volumes-pass","ProjectileClash",99,{source={all={"volume"}},target={all={"volume"}}},{signal("clash-pass")},{group="clash"})
 rule("fire-feeds-on-wind","ProjectileClash",95,{source={all={"fire"}},target={all={"wind"}},context={all={"natureAdvantage"}}},{signal("clash-absorb")},{group="clash"})

@@ -282,7 +282,8 @@ test("wire: Wire Trap binds, chakra + tool runs lightning down it, Dragon Flame 
 	H.step(c,.4)
 	assert(b.reaction=="Bound","the bind ended under the current")
 	assert(c:request(a,slot(a,"FireBloom"),b.root.Position),"Dragon Flame refused after the current")
-	until_(c,.6,function() return b.reaction=="Knockdown" end,"Dragon Flame did not follow the wire")
+	-- (06-07/11) the fire runs the wire first (Chakra.WireRun studs/s), then burns.
+	until_(c,1.1,function() return b.reaction=="Knockdown" end,"Dragon Flame did not follow the wire")
 end)
 
 test("a missed wire stays stretched: binds on contact, carries fire, is cut by wind",function()
@@ -414,7 +415,7 @@ test("planted chakra blades are contestable points: recovered, knocked out, time
 	assert(p2)
 end)
 
-test("jutsu volumes clear tools from their path; jutsu never cancel each other",function()
+test("jutsu volumes clear tools from their path; the Great Fireball eats the Wind Cut",function()
 	local c,n,m=H.duel("GentleFist","Flashstep")
 	place(c,n,m,V.new(-20,3,0),V.new(20,3,0))
 	local palm=c:projectile(n,V.new(20,3,0),96,32,7,"palm",nil,{origin=V.new(-10,3,0),radius=1.5,growth=2.5})
@@ -425,8 +426,12 @@ test("jutsu volumes clear tools from their path; jutsu never cancel each other",
 	place(c2,i,x,V.new(-20,3,0),V.new(20,3,0))
 	local fire=c2:projectile(i,V.new(20,3,0),54,40,16,"fireball",nil,{origin=V.new(-8,3,0),radius=2.4,growth=2.2})
 	local wind=c2:projectile(x,V.new(-20,3,0),88,40,7,"wind",nil,{origin=V.new(8,3,0),radius=1.4})
+	local radius=fire.radius
 	for _=1,20 do H.step(c2,.01) end
-	assert(not fire.dead and not wind.dead and #outcomes(c2)==1 and outcomes(c2)[1]=="pass","two jutsu interfered")
+	-- (06/11, Studio: they flew through each other) fire feeds on wind, jutsu
+	-- or blade: the crescent goes into the fireball and the fireball grows.
+	assert(not fire.dead and wind.dead and #outcomes(c2)==1 and outcomes(c2)[1]=="absorb","the fireball did not eat the Wind Cut")
+	assert(fire.radius>radius and fire.flared,"the fed fireball did not grow")
 	-- Small flames: reinforced steel heavier than a Phoenix flame goes through it,
 	-- a wind blade is eaten by it (fire feeds on wind).
 	local function flame(fighter,tool)
@@ -518,7 +523,7 @@ test("the wire is one object: Wire Trap holds the body on a line from the hand, 
 	local current=impactWith(c3,"conduct")
 	assert(current and (current.from-c3.launchPoint(s,"Kunai")).Magnitude<1e-3,"the current did not leave the hand")
 	assert(c3:request(s,slot(s,"FireBloom"),m.root.Position),"Dragon Flame refused")
-	until_(c3,.6,function() return impactWith(c3,"dragonflame")~=nil end,"the Dragon Flame did not run the wire")
+	until_(c3,1.1,function() return impactWith(c3,"dragonflame")~=nil end,"the Dragon Flame did not run the wire")
 	local flame=impactWith(c3,"dragonflame")
 	assert(flame.style=="fire" and flame.victim==m.id and (flame.to-m.root.Position).Magnitude<3,"the flame did not end on the body")
 	H.step(c3,.02)
@@ -547,8 +552,10 @@ test("a stretched wire that catches a body keeps its stake and its blade; the cu
 	assert(held.charged==nil and held.infusion==nil,"the wire stays charged after the current passed")
 	-- Fire: Dragon Flame runs from the stake to the body; the wire burns away.
 	assert(c:request(a,slot(a,"FireBloom"),b.root.Position),"Dragon Flame refused")
-	until_(c,.6,function() return impactWith(c,"dragonflame")~=nil end,"the Dragon Flame did not run the wire")
-	assert((impactWith(c,"dragonflame").from-stake).Magnitude<1e-3,"the flame did not start at the stake")
+	until_(c,1.1,function() return impactWith(c,"dragonflame")~=nil end,"the Dragon Flame did not run the wire")
+	-- (06/11) the run is its own contact ("dragonrun", from the stake); the
+	-- "dragonflame" contact is the blast where it arrives.
+	assert(impactWith(c,"dragonrun") and (impactWith(c,"dragonrun").from-stake).Magnitude<1e-3,"the flame did not start at the stake")
 	H.step(c,.02)
 	assert(#mine(c,a,"wirehold")==0,"the wire survived the flame")
 end)

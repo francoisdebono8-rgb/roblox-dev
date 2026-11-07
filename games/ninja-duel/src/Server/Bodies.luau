@@ -1,5 +1,6 @@
 -- Light bodies that are not actors (roster hook H12): Naruto's shadow clones
--- first; a puppet or a ninja hound later takes the same path. A body is a
+-- first; Sasori's puppet and Kakashi's ninken (Server/Hounds) take the same
+-- path. A body under the floor (`buried`: a hound digging) cannot be struck. A body is a
 -- point on the stage with a small controller, a lifetime and a hit volume:
 -- one blow from the other side (a strike, a blade, a dome) dispels it.
 -- It never becomes a target, a lock-on or a camera subject: Combat keeps its
@@ -31,7 +32,8 @@ local function brawler() return require(script.Parent.Brawler) end
 local function list(c) c.bodies=c.bodies or {};return c.bodies end
 Bodies.list=list
 function Bodies.tuning(a,kind)
-	return (a.def.Bodies and a.def.Bodies[kind]) or {}
+	-- (06/11) A jutsu Kakashi copied makes its owner's bodies (Server/Copy).
+	return (a.def.Bodies and a.def.Bodies[kind]) or (a.borrowedBodies and a.borrowedBodies[kind]) or {}
 end
 -- An awakening that takes the bodies away (Naruto's Nine-Tails cloak).
 function Bodies.blocked(c,a)
@@ -47,6 +49,15 @@ function Bodies.of(c,a,kind,ephemeral)
 	return out
 end
 function Bodies.count(c,a,kind) return #Bodies.of(c,a,kind) end
+-- (06/11) A crowd (Naruto's Multi Shadow Clone): persistent bodies flagged
+-- `crowd`, capped apart from Max (tuning Crowd).
+function Bodies.crowd(c,a,kind)
+	local out={}
+	for _,body in c.bodies or {} do
+		if body.alive and body.crowd and body.owner==a and (not kind or body.kind==kind) then table.insert(out,body) end
+	end
+	return out
+end
 -- A persistent body free for a job (not already carrying a strike or shaping
 -- a jutsu): the one nearest the owner's target.
 function Bodies.free(c,a,kind)
@@ -72,7 +83,9 @@ function Bodies.move(c,body,goal,speed,dt)
 end
 function Bodies.spawn(c,owner,spec)
 	local kind=spec.kind or "clone"
-	if not spec.ephemeral and Bodies.count(c,owner,kind)>=(Bodies.tuning(owner,kind).Max or 2) then return nil end
+	if spec.crowd then
+		if #Bodies.crowd(c,owner,kind)>=(Bodies.tuning(owner,kind).Crowd or 0) then return nil end
+	elseif not spec.ephemeral and Bodies.count(c,owner,kind)>=(Bodies.tuning(owner,kind).Max or 2) then return nil end
 	c.bodySerial=(c.bodySerial or 0)+1
 	local position=c:clamp(spec.position or owner.root.Position)
 	local look=spec.look
@@ -83,9 +96,11 @@ function Bodies.spawn(c,owner,spec)
 	end
 	local body={id=c.bodySerial,owner=owner,kind=kind,position=position,look=look,born=c.now,expires=c.now+(spec.life or Bodies.tuning(owner,kind).Life or 6),
 		alive=true,state=spec.state or "Neutral",action=spec.action,actionAt=c.now,actionSerial=if spec.action then 1 else 0,mode=spec.mode or "guard",
-		ephemeral=spec.ephemeral==true,velocity=Vector3.zero,airborne=spec.airborne==true,side=spec.side or 1,nextStrike=c.now+(spec.delay or 1),warp=0}
+		ephemeral=spec.ephemeral==true,velocity=Vector3.zero,airborne=spec.airborne==true,side=spec.side or 1,nextStrike=c.now+(spec.delay or 1),warp=0,
+		crowd=spec.crowd==true or nil}
 	table.insert(list(c),body)
-	c:pushImpact(position,"body",false,{phase="appear",kind=kind,body=body.id,owner=owner.id,fighter=owner.fighterId})
+	-- (A crowd pops in a ripple: the client sounds one puff in three.)
+	c:pushImpact(position,"body",false,{phase="appear",kind=kind,body=body.id,owner=owner.id,fighter=owner.fighterId,crowd=body.crowd})
 	brawler().event(c,owner,"BodySpawned")
 	return body
 end
@@ -98,7 +113,7 @@ function Bodies.dispel(c,body,why,by,extra)
 	local index=all and table.find(all,body)
 	if index then table.remove(all,index) end
 	if body.carry then body.carry.lost=true;body.carry.from=nil;body.carry=nil end
-	local entry={phase=why or "hit",kind=body.kind,body=body.id,owner=body.owner.id,fighter=body.owner.fighterId,by=by and by.id}
+	local entry={phase=why or "hit",kind=body.kind,body=body.id,owner=body.owner.id,fighter=body.owner.fighterId,by=by and by.id,crowd=body.crowd}
 	for k,v in extra or {} do entry[k]=v end
 	c:pushImpact(body.position,"body",why=="hit" or why=="blade",entry)
 	local hook=Bodies.onDispel[body.kind]
@@ -266,7 +281,7 @@ function Bodies.strike(c,a,p)
 	local covered={}
 	local best,bestGap
 	for _,body in all do
-		if body.alive and body.owner~=a and inBox(box,size,body.position,1) then
+		if body.alive and not body.buried and body.owner~=a and inBox(box,size,body.position,1) then
 			table.insert(covered,body)
 			local gap=(body.position-frame.Position).Magnitude
 			if not bestGap or gap<bestGap then best,bestGap=body,gap end
@@ -302,7 +317,7 @@ function Bodies.projectile(c,p,step)
 	local from=p.position
 	local hit,best
 	for _,body in all do
-		if body.alive and body.owner~=p.a then
+		if body.alive and not body.buried and body.owner~=p.a then
 			local close=closestOnSegment(from,from+step,body.position)
 			local d=body.position-close
 			if flat(d).Magnitude<=Bodies.RADIUS+radius and math.abs(d.Y)<=Bodies.HALF+radius then
@@ -331,7 +346,7 @@ function Bodies.area(c,a,center,radius)
 	local count=0
 	for _,body in table.clone(all) do
 		local d=body.position-center
-		if body.alive and body.owner~=a and flat(d).Magnitude<=radius+Bodies.RADIUS and math.abs(d.Y)<6 then
+		if body.alive and not body.buried and body.owner~=a and flat(d).Magnitude<=radius+Bodies.RADIUS and math.abs(d.Y)<6 then
 			Bodies.dispel(c,body,"area",a);count+=1
 		end
 	end
@@ -348,7 +363,7 @@ function Bodies.aim(c,a)
 	stick=stick.Unit
 	local best,bestDot
 	for _,body in all do
-		if body.alive and body.owner~=a and math.abs(body.position.Y-a.root.Position.Y)<4 then
+		if body.alive and not body.buried and body.owner~=a and math.abs(body.position.Y-a.root.Position.Y)<4 then
 			local d=flat(body.position-a.root.Position)
 			if d.Magnitude>.5 and d.Magnitude<=8 then
 				local dot=stick:Dot(d.Unit)
@@ -367,7 +382,7 @@ end
 function Bodies.threat(c,a,reach)
 	local best,bestGap
 	for _,body in c.bodies or {} do
-		if body.alive and body.owner~=a then
+		if body.alive and not body.buried and body.owner~=a then
 			local gap=flat(body.position-a.root.Position).Magnitude
 			if gap<=reach and math.abs(body.position.Y-a.root.Position.Y)<4 and (not bestGap or gap<bestGap) then best,bestGap=body,gap end
 		end
@@ -424,7 +439,7 @@ function Bodies.view(c)
 			table.insert(out,{id=body.id,owner=body.owner.id,fighterId=body.owner.fighterId,kind=body.kind,position=body.position,look=body.look,
 				state=body.state,action=body.action,variant=body.variant,actionSerial=body.actionSerial,actionElapsed=c.now-(body.actionAt or c.now),
 				airborne=body.airborne,velocity=body.velocity,remaining=math.max(0,body.expires-c.now),mode=body.mode,cast=body.cast,
-				ephemeral=body.ephemeral,warp=body.warp})
+				ephemeral=body.ephemeral,warp=body.warp,crowd=body.crowd,buried=body.buried,slot=body.slot})
 		end
 	end
 	return out

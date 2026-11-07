@@ -4,7 +4,7 @@
 
 ## Audit initial — ce qui existe réellement
 
-**Présent sous `Legion`**, âge affiché13 ; mouvement/clip effectif `Legion`, armes déclarées `palms`. Techniques présentes : `ShadowClone`, `CloneRasengan`, `MassShadowClone`. Routes : airDown=`AirSpike`, airSide=`AirSwitch`, airUp=`AirDrive`, down=`Tackle`, side=`MirrorClone`, up=`UzumakiKick`. [Données](../../src/Shared/Fighters.luau), [graphe](../../src/Shared/MoveGraphs.luau), [moteur de poses](../../src/Client/VelmoraMotionEngine.luau). Les noms de routes ne prouvent ni leur chorégraphie ni le feel ; seules les observations datées de CURRENT_STATE sont des preuves natives.
+**Présent sous `Legion`**, âge affiché13 ; mouvement/clip effectif `Legion`, armes déclarées `palms`. Techniques présentes : `ShadowClone`, `CloneRasengan`, `MassShadowClone` (depuis le 06/11 : une foule de 10 clones qui encercle l'adversaire, et la même touche prend le corps d'un clone ; voir CURRENT_STATE). Routes : airDown=`AirSpike`, airSide=`AirSwitch`, airUp=`AirDrive`, down=`Tackle`, side=`MirrorClone`, up=`UzumakiKick`. [Données](../../src/Shared/Fighters.luau), [graphe](../../src/Shared/MoveGraphs.luau), [moteur de poses](../../src/Client/VelmoraMotionEngine.luau). Les noms de routes ne prouvent ni leur chorégraphie ni le feel ; seules les observations datées de CURRENT_STATE sont des preuves natives.
 
 **Écart décisif :** Bodies/proxies et Rasengan aidé déjà substantiels ; continuer leur intégration, corriger décalages caméra/contact plutôt que refaire système de clones.
 

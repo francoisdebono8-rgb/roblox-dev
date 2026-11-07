@@ -801,9 +801,20 @@ function FX:mirageCue(impact,folder)
 		sound(anchorPart(self.folder,at),SOUND.hit,.4,.7)
 		self:cheer(.8)
 	elseif phase=="seen" then
+		-- (07/11) the image forms and shatters before the white eye
 		local victim=find(folder,impact.victim)
 		local head=victim and victim:FindFirstChild("Head")
-		if head then flash(self.folder,head.Position,HYUGA,.4,2.4,.2,.2) end
+		if head then flash(self.folder,head.Position,HYUGA,.6,3.4,.25,.2) end
+		for _=1,10 do
+			local dir=Vector3.new(math.random()-.5,math.random()*.8,math.random()-.5)
+			dir=if dir.Magnitude>.01 then dir.Unit else Vector3.yAxis
+			local shard=block(self.folder,Vector3.new(.3,.5,.06),CFrame.lookAt(at,at+dir)*CFrame.new(0,(math.random()-.5)*3,0),SHARINGAN,Enum.Material.Neon)
+			shard.Transparency=.35
+			tween(shard,.45,{CFrame=shard.CFrame+dir*(2+math.random()*3),Transparency=1,Size=Vector3.new(.05,.2,.02)})
+			Debris:AddItem(shard,.5)
+		end
+		smokePuff(self.folder,at,Color3.fromRGB(60,24,30),8,1.3)
+		sound(anchorPart(self.folder,at),SOUND.whoosh,.3,.7)
 	elseif phase=="touch" or phase=="break" then
 		smokePuff(self.folder,at,Color3.fromRGB(70,40,46),6,1.2)
 	else
@@ -2028,8 +2039,10 @@ function FX:fighter(model,actor,dt)
 	end
 	-- Kakashi's awakening uncovers his one Sharingan (04/11: it was only a red
 	-- mantle; the left eye now turns, commas and all, while it lasts).
+	-- (06/11) It also shows while he holds a copied jutsu (Server/Copy): the
+	-- opponent sees that Kakashi has his jutsu.
 	if actor.fighterId=="Copycat" and aura.face then
-		local want=if (actor.awaken or 0)>0 and (actor.health or 1)>0 then "lit" else "off"
+		local want=if ((actor.awaken or 0)>0 or actor.copy~=nil) and (actor.health or 1)>0 then "lit" else "off"
 		if aura.eyeTint~=want then
 			aura.eyeTint=want
 			if want=="off" then Face.tint(aura.face,nil) else Face.tint(aura.face,Color3.fromRGB(226,30,40),"sharingan",-1) end
@@ -2105,6 +2118,10 @@ function FX:fighter(model,actor,dt)
 		if aura.binding.beam then
 			-- taut once tight: the sag goes out of the line with the constriction
 			aura.binding.beam.CurveSize0=-.4*(1-u);aura.binding.beam.CurveSize1=.4*(1-u)
+			-- (06/11, Studio: two lines from his hand, the fire ran one of them)
+			-- the wire itself is drawn by ChakraFX (HeldWire: tension, current,
+			-- the Dragon Flame); this line is only for a bind without one.
+			aura.binding.beam.Enabled=self.folder:FindFirstChild("HeldWire")==nil
 		end
 	end
 	-- Sasuke: the Chidori crackles in the right hand from the charge to the thrust.
@@ -2460,4 +2477,16 @@ require(script.Parent.ChakraFlowFX).install(FX,{new=new,block=block,tween=tween,
 -- Temari (the iron fan, Kamaitachi, Kamatari, wind lanes and updrafts, gusts).
 require(script.Parent.GaleFX).install(FX,{new=new,block=block,tween=tween,sound=sound,flash=flash,shockRing=shockRing,burst=burst,
 	smokePuff=smokePuff,floorUnder=floorUnder,anchorPart=anchorPart,weldAll=weldAll,num=num,seq=seq,TEX=TEX,SOUND=SOUND,BUILD=BUILD})
+-- (06/11) What the viewer's eyes read of a speed jutsu: ink for ordinary
+-- eyes, afterimages and the strike to come for the Sharingan (Shared/Sight).
+require(script.Parent.PerceptionFX).install(FX,{block=block,sound=sound,anchorPart=anchorPart,SOUND=SOUND})
+-- (06/11) The Byakugan's sight: the opponent's chakra network, its points,
+-- its fullness and the jutsu gathering in it (Shared/Sight, Client/ByakuganFX).
+require(script.Parent.ByakuganFX).install(FX,{block=block,sound=sound,anchorPart=anchorPart,SOUND=SOUND})
+-- (06/11) Kakashi's Sharingan copy: the read and the copied cast (Server/Copy).
+require(script.Parent.CopyFX).install(FX,{new=new,block=block,tween=tween,sound=sound,flash=flash,burst=burst,anchorPart=anchorPart,num=num,TEX=TEX,SOUND=SOUND})
+-- (06/11) Kakashi's ninken: diving in, bursting out, the bite (Server/Hounds).
+require(script.Parent.HoundFX).install(FX,{new=new,block=block,tween=tween,sound=sound,flash=flash,burst=burst,anchorPart=anchorPart,num=num,smokePuff=smokePuff,TEX=TEX,SOUND=SOUND})
+-- (06/11) Water carries lightning: drips on a soaked body, the current in the water (Server/Interactions).
+require(script.Parent.ElementFX).install(FX,{new=new,block=block,sound=sound,flash=flash,shockRing=shockRing,anchorPart=anchorPart,floorUnder=floorUnder,SOUND=SOUND})
 return FX

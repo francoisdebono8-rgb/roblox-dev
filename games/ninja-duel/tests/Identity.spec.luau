@@ -802,47 +802,53 @@ test("client · a blocked palm draws the chakra it drained out of the guard",fun
   assert(#named(fx,"ChakraDrain")==1,"a non-palm block drained chakra")
  end)
 end)
-test("client · 64 Palms: the count stands over the victim for both players, climbs, and clears after the throw",function()
+test("client · 64 Palms: each call rings under Neji, no number pops over the victim any more (06/11)",function()
  inScene(function(fx,folder,bodies,advance)
   local function palm(k,count,final,victim,owner)
    fx:impact({style="palm",position=V.new(0,3,-3),owner=owner,victim=victim,fighter="GentleFist",move="SixtyFourPalms",point="heart",
     count=count,strike=k,strikes=7,final=final,heavy=final,direction=-V.zAxis,serial=k},folder)
   end
   for k,count in {2,2,4,8,16,32,64} do palm(k,count,k==7,"B","A") end
-  local boards=named(fx,"PalmCount")
-  assert(#boards==1,"the count is not one board over the victim ("..#boards..")")
-  assert(boards[1].Adornee==bodies.B:FindFirstChild("Head") and boards[1].AlwaysOnTop,"the count does not stand over the victim's head")
-  assert(boards[1]:FindFirstChild("Count").Text=="64","the count did not reach 64")
-  local data={phase="Duel",epoch=1,hazards={},projectiles={},human=actorData("A","GentleFist"),bot=actorData("B","Flashstep")}
-  fx:update(data,1/60,folder)
-  assert(#named(fx,"PalmCount")==1,"the throw did not hold its count a beat")
-  advance(1.5);fx:update(data,1/60,folder)
-  assert(#named(fx,"PalmCount")==0,"the count outlived the flurry")
-  -- The other side of the same duel (the local player is the victim): same board.
+  assert(#named(fx,"PalmCount")==0,"a count board still pops over the victim")
+  -- The other side of the same duel (the local player is the victim): no board either.
   for k,count in {2,4} do palm(k,count,false,"A","B") end
-  boards=named(fx,"PalmCount")
-  assert(#boards==1 and boards[1].Adornee==bodies.A:FindFirstChild("Head") and boards[1]:FindFirstChild("Count").Text=="4","the victim's own view has no count")
+  assert(#named(fx,"PalmCount")==0,"the victim's own view still has a count board")
  end)
 end)
-test("client · closed points keep a marker readable from any distance; Rotation's counter keeps Neji's palms lit",function()
+test("client · closed points carry no flat marker over everything any more (06/11); Rotation's counter keeps Neji's palms lit",function()
  inScene(function(fx,folder,bodies)
   local data={phase="Duel",epoch=1,hazards={},projectiles={},human=actorData("A","GentleFist",{counter=.8}),
    bot=actorData("B","Mirage",{tenketsuPoints={"heart","throat"},tenketsu=2})}
   fx:update(data,1/60,folder)
-  local marks=named(fx,"TenketsuMark")
-  assert(#marks==2,"closed points carry "..#marks.." markers")
-  assert(marks[1].AlwaysOnTop and marks[1].Size[1]==12,"a marker is not a constant-size mark over the body")
+  assert(#named(fx,"TenketsuMark")==0,"closed points still carry a flat marker over everything")
   local glow=0
   for _,hand in {"RightHand","LeftHand"} do if bodies.A:FindFirstChild(hand):FindFirstChild("CounterPalmGlow") then glow+=1 end end
   assert(glow==2,"the counter does not light Neji's palms")
-  data.bot.tenketsuPoints={"heart","throat","solar","navel"};data.bot.tenketsuSevere=true;data.human.counter=0
+  data.human.counter=0
   fx:update(data,1/60,folder)
-  marks=named(fx,"TenketsuMark")
-  assert(#marks==4 and marks[1].Size[1]==16,"a sealed network does not grow its markers")
   assert(bodies.A:FindFirstChild("RightHand"):FindFirstChild("CounterPalmGlow")==nil,"the palms stay lit after the counter")
-  data.bot.tenketsuPoints={};data.bot.tenketsuSevere=false
+ end)
+end)
+test("client · the Byakugan's sight (06/11): Perception draws the opponent's chakra network, a closed point dark, gone with the buff",function()
+ inScene(function(fx,folder,bodies)
+  local data={phase="Duel",epoch=1,hazards={},projectiles={},human=actorData("A","GentleFist",{family={buff="ByakuganSight"},chakra=115,maxChakra=115}),
+   bot=actorData("B","Mirage",{chakra=100,maxChakra=100,tenketsuPoints={"heart"},tenketsu=1})}
   fx:update(data,1/60,folder)
-  assert(#named(fx,"TenketsuMark")==0,"reopened points kept their markers")
+  assert(#named(fx,"ByakuganNetwork")==1,"Perception draws no network over the opponent")
+  local nodes=named(fx,"Tenketsu")
+  assert(#nodes==8,"the network shows "..#nodes.." of the eight points")
+  local dark=0
+  for _,node in nodes do if node.Size and node.Size.X>.32 then dark+=1 end end
+  assert(dark==1,"the closed point is not the one dark node ("..dark..")")
+  assert(#named(fx,"ByakuganOutline")==1,"no outline through walls")
+  -- The buff ends: the sight closes.
+  data.human.family=nil
+  fx:update(data,1/60,folder)
+  assert(#named(fx,"ByakuganNetwork")==0,"the network outlived the Byakugan")
+  -- Eyes without the Byakugan never see it.
+  data.human=actorData("A","Mirage",{family={buff="ByakuganSight"}})
+  fx:update(data,1/60,folder)
+  assert(#named(fx,"ByakuganNetwork")==0,"a fighter without the Byakugan sees the network")
  end)
 end)
 test("client · a body a Vacuum Palm drove into a wall leaves the air's palm print on the stone (not on any wall hit)",function()

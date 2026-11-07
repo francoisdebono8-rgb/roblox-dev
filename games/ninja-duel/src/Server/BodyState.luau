@@ -132,7 +132,7 @@ function BodyState.release(c,a,action)
 	-- guard) leaves the body open for its whole recovery.
 	local serial=a.attackSerial
 	c:schedule(c.now+p.spec.startup+p.spec.active+.02,function()
-		if a.health<=0 or a.attackSerial~=serial or a.hitConfirmed or a.state~="Recovery" then return end
+		if a.health<=0 or a.attackSerial~=serial or a.hitConfirmed or a.state~="Recovery" or (a.clashedAt or -10)>c.now-1 then return end
 		c:cue(a,string.upper(st.Name or s.id).." • MISSED • OPEN",.8)
 		if a.target and a.target.health>0 then c:cue(a.target,string.upper(st.Name or s.id).." MISSED • PUNISH",.8) end
 		Brawler.event(c,a,"StateMissed:"..s.id)

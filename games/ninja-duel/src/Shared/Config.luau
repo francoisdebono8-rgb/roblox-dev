@@ -30,7 +30,7 @@ return {
 	-- the rounds last longer (AI against AI: 42 s average at 1.0). The
 	-- impact's look still reads the blow's own weight (unscaled).
 	DamageScale = 0.6,
-	Clash = {Window = 0.07, Push = 4.5},
+	Clash = {Window = 0.07, Push = 4.5, JutsuWindow = 0.35},
 	-- Re-engage (CORE_COMBAT_CONVERGENCE_2 §3): one contextual action (E; on a pad
 	-- × inside a chase window, sprint + ○ toward outside one). Inside a window it
 	-- is the chase, outside it is this chakra dash at a locked opponent; both cost

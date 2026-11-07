@@ -12,6 +12,7 @@ local AntiCheat=require(script.Parent.VelmoraAntiCheat)
 local Techniques=require(script.Parent.Techniques)
 local Ultimates=require(script.Parent.Ultimates)
 local Bodies=require(script.Parent.Bodies)
+local Copy=require(script.Parent.Copy)
 local Brawler=require(script.Parent.Brawler)
 local Online=require(script.Parent.Online)
 local SkillBuilds=require(script.Parent.SkillBuilds)
@@ -257,8 +258,17 @@ function Matches:view(s,cursor,mine,theirs)
 	end
 	local function data(a)
 		local ready={}
-		for i,spec in a.def.Techniques do
+		for i,own in a.def.Techniques do
+			-- (06/11) Kakashi's copy slot shows the jutsu his Sharingan copied.
+			local copied=Copy.slotSpec(s.combat,a,i)
+			local spec=copied or own
 			ready[i]={id=spec.Id,name=spec.Name,cost=spec.Cost,remaining=math.max(0,(a.cooldowns[spec.Id] or 0)-now),requires=spec.Requires,condition=not spec.Requires or (spec.Requires=="Anchor" and Techniques.sealOf(s.combat,a,now)~=nil) or (spec.Requires=="Target" and s.combat:targetValid(a,a.target,spec.Range,0.35))}
+			-- (06/11) A key that does something else while the technique's work is
+			-- out (Naruto's crowd: TAKE A BODY) shows that instead.
+			local technique=Techniques[spec.Id]
+			local live=technique and technique.view and technique.view(s.combat,a,spec,now)
+			if live then for k,v in live do ready[i][k]=v end;ready[i].requires=nil;ready[i].alt=true end
+			if copied then ready[i].copied=true;ready[i].from=copied.CopiedFrom end
 		end
 		-- (DEC-032) the hand-seal jutsu (cooldowns) and the weave in progress
 		local sealReady=nil
@@ -274,7 +284,7 @@ function Matches:view(s,cursor,mine,theirs)
 			cue=if a.cueUntil>s.combat.now then a.cue else "",quiet=if (a.quietUntil or 0)>s.combat.now then a.quiet else nil,dodge=math.max(0,a.dodgeUntil-s.combat.now),read=math.max(0,a.readUntil-s.combat.now),
 			speed=a.locomotion.Magnitude,airborne=a.airborne,sprinting=a.model:GetAttribute("MovementSprinting")==true,
 			landStrong=a.model:GetAttribute("MovementHardLanding")==true,pursuit=math.max(0,a.pursuitUntil-s.combat.now),combo=a.combo,
-			subCharges=a.subCharges,chakraLoad=if a.chakraLoad and a.chakraLoad.untilTime>s.combat.now then a.chakraLoad.nature else nil,infused=a.pending and a.pending.chakraFlow or nil,wall=a.wall~=nil,wallMode=a.wall and a.wall.mode or nil,wallSide=a.wall and a.wall.side or nil,reaction=a.reaction,guardImpact=math.max(0,(a.guardImpact or 0)-s.combat.now),attackName=a.attackName,attackElapsed=s.combat.now-(a.attackStarted or 0),whiffed=if a.state=="Recovery" and a.attackWhiffed then true else nil,airHold=a.airHold,impactSerial=a.impactSerial or 0,impactHeavy=a.impactHeavy,impactStyle=a.impactStyle,
+			subCharges=a.subCharges,chakraLoad=if a.chakraLoad and a.chakraLoad.untilTime>s.combat.now then a.chakraLoad.nature else nil,infused=(a.pending and a.pending.chakraFlow) or (if a.state=="Recovery" and a.flowShown and a.flowShown.serial==a.attackSerial then a.flowShown.nature else nil),wall=a.wall~=nil,wallMode=a.wall and a.wall.mode or nil,wallSide=a.wall and a.wall.side or nil,reaction=a.reaction,guardImpact=math.max(0,(a.guardImpact or 0)-s.combat.now),attackName=a.attackName,attackElapsed=s.combat.now-(a.attackStarted or 0),whiffed=if a.state=="Recovery" and a.attackWhiffed then true else nil,airHold=a.airHold,impactSerial=a.impactSerial or 0,impactHeavy=a.impactHeavy,impactStyle=a.impactStyle,
 			hitFrom=a.hitFrom,hitAngle=a.hitAngle,hitStrength=a.hitStrength or 0,hitZone=a.hitZone,hitKind=a.hitKind,hitTwist=a.hitTwist,groundPose=a.groundPose,groundSide=a.groundSide,koStyle=a.koStyle,koAirborne=a.koAirborne,koFlying=a.koFlight~=nil,reactionElapsed=math.max(0,s.combat.now-(a.reactionStartedAt or s.combat.now)),
 			-- (Audit 29/10) Only the counters the client reads: every event count
 			-- (80+ names, never reset) went out 30 times a second.
@@ -302,7 +312,7 @@ function Matches:view(s,cursor,mine,theirs)
 			splatElapsed=if a.reaction=="WallSplat" then now-(a.splatAt or now) else nil,
 			counter=math.max(0,(a.counterUntil or 0)-now),warpSerial=a.warpSerial or 0,
 			shield=a.shieldCharges or 0,shieldMax=a.def.SandShield and a.def.SandShield.Charges or 0,bound=a.reaction=="Bound",boundKind=if a.reaction=="Bound" then a.boundKind else nil,
-			awaken=math.max(0,(a.awakenUntil or 0)-now),
+			awaken=math.max(0,(a.awakenUntil or 0)-now),gate=if (a.awakenUntil or 0)>now then a.gateOpen else nil,sight=if (a.sightUntil or 0)>now then true else nil,
 			awakenReady=a.def.Awakening~=nil and not a.awakened and a.health>0 and a.health<=a.def.Health*Config.Awaken.Threshold,
 			-- Neji: Rotation dome, closed chakra points and sealed techniques.
 			rotation=(a.rotationUntil or 0)>now,tenketsu=if (a.tenketsuUntil or 0)>now then a.tenketsu or 0 else 0,
@@ -325,7 +335,11 @@ function Matches:view(s,cursor,mine,theirs)
 			-- Temari: the open fan holding her up in the air.
 			glide=a.gliding==true,
 			-- Family buffs, counter stances and slows (Server/Families), for auras and the plate.
-			family=require(script.Parent.Families).snapshot(a,now,s.combat)}
+			family=require(script.Parent.Families).snapshot(a,now,s.combat),
+			-- (06/11) The jutsu Kakashi's Sharingan holds (his eye stays lit).
+			copy=Copy.view(s.combat,a),
+			-- (06/11) Soaked by the water (Interactions): lightning runs through him.
+			wet=require(script.Parent.Interactions).wet(s.combat,a)}
 	end
 	-- Live projectiles: straight constant-speed flights the client reproduces
 	-- exactly on the shared server clock, so blades and fire never stutter.

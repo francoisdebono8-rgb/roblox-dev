@@ -255,7 +255,10 @@ function Brawler.chaseArrived(c,a)
  if not b or c.now-(a.pursuitStarted or c.now)<.1 then return false end
  if (b.root.Position-a.root.Position).Magnitude>4.6 then return false end
  local rising=if b.reaction and b.reactionVelocity then b.reactionVelocity.Y else 0
- return rising<=30 or not b.airborne
+ -- (07/11, Studio + gate, Itachi: the chase "arrived" 4.5 studs under a body
+ -- still rising at 25 studs/s, stopped there and both air strikes missed 6-8
+ -- studs below it) a body still climbing is followed on, near its apex.
+ return rising<=12 or not b.airborne
 end
 -- The re-entry windows in which a press is the arrival strike (dash attack on
 -- the ground, the air string in the air) or the arrival heavy.
@@ -621,6 +624,9 @@ function Brawler.start(c,a,name)
   slamWindow=math.clamp(gap/88,.16,.5)
  end
  a.pending={kind="Brawl",name=name,spec=spec,hit=false,slamWindow=slamWindow,flow=a.nextFlow==true,step=step,chakraFlow=chakraFlow}
+ -- (07/11, Studio: the Chidori Nagashi's current lasted 0.23 s, the pending
+ -- strike is gone in recovery) the snapshot keeps the nature to its end.
+ a.flowShown=if chakraFlow then {serial=a.attackSerial,nature=chakraFlow} else nil
  if not a.nextFlow then a.flowStreak=0 end
  a.nextFlow=nil
  Bangla.begin(c,a,a.pending)
@@ -1294,12 +1300,19 @@ function Brawler.clash(c,a,p)
  -- Simultaneous means the two active frames start within the clash window
  -- (the other swing may be a frame or two from becoming active).
  local other=if b.state=="Active" then (b.activeAt or 10) else b.untilTime
- if math.abs((a.activeAt or -10)-other)>Config.Clash.Window then return false end
+ -- (06/11, Studio) Rasengan into Chidori: two held jutsu thrown at each other
+ -- meet even when their active frames do not start in the same instant (the
+ -- 0.07 s window of two punches never came up in a real exchange).
+ local jutsu=require(script.Parent.Interactions).jutsuPair(p,q)
+ if math.abs((a.activeAt or -10)-other)>(if jutsu then Config.Clash.JutsuWindow or .35 else Config.Clash.Window) then return false end
  local delta=b.root.Position-a.root.Position
  local flat=Vector3.new(delta.X,0,delta.Z)
  if flat.Magnitude<.1 or delta.Magnitude>math.max(p.spec.range or 6,q.spec.range or 6)+1.5 then return false end
  if a.root.CFrame.LookVector:Dot(flat.Unit)<.4 or b.root.CFrame.LookVector:Dot(-flat.Unit)<.4 then return false end
  for _,x in {a,b} do
+  -- (07/11, Studio: "CHIDORI MISSED • PUNISH" after a clash) a strike that
+  -- met the other one did not miss.
+  x.clashedAt=c.now
   Bangla.close(x.pending);x.pending=nil;x.attackName=nil;x.chainOpen=false;x.buffered=nil;x.travelRemaining=0
   -- Neither strike landed: both strings start over.
   Brawler.resetStrings(x)

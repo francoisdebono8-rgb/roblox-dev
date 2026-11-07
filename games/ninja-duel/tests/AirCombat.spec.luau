@@ -126,4 +126,17 @@ test("an air hold never freezes a body standing on the floor (user 29/10: \"je p
  assert((a.root.Position-from).Magnitude>1,string.format("frozen: moved %.2f studs in 0.6 s",(a.root.Position-from).Magnitude))
 end)
 
+test("chase (07/11, Itachi in Studio): a body still climbing fast is not reached yet; near its apex it is",function()
+ local Brawler=H.load("Server/Brawler")
+ local c,a,b=H.duel("Mirage","Leaf")
+ a.ai=nil;b.ai=nil
+ place(c,a,b,V.new(0,10,0),V.new(0,13,-2.5))
+ a.airborne=true;b.airborne=true
+ a.target=b;a.pursuitStarted=c.now-.2
+ b.reaction="Launched";b.reactionVelocity=V.new(0,25,-4)
+ assert(not Brawler.chaseArrived(c,a),"the chase stopped under a body rising at 25 studs/s")
+ b.reactionVelocity=V.new(0,8,-4)
+ assert(Brawler.chaseArrived(c,a),"the chase did not arrive at a body near its apex")
+end)
+
 print("NinjaDuel air combat: "..passed.." PASS")

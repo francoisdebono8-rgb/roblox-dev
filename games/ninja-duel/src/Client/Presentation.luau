@@ -1009,7 +1009,9 @@ function Presentation:illusion(data,model)
   echo={mode=mode,epoch=data.epoch,source=source,model=self.fx:image(source,mode),born=os.clock()}
   self.echo=echo
  end
- if mode=="deceived" then Presentation.fade(source,.55) end
+ -- (07/11, Studio: two Itachi, one solid and one ghost; the ghost read as
+ -- the fake) the real body is a faint shimmer behind the image.
+ if mode=="deceived" then Presentation.fade(source,.82) end
  local image=echo.model
  if not image then return end
  local root=watcher and watcher:FindFirstChild("HumanoidRootPart")

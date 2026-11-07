@@ -3,10 +3,13 @@ local Techniques=require(script.Parent.Techniques)
 local Brawler=require(script.Parent.Brawler)
 local Chakra=require(script.Parent.ChakraCombat)
 local Bodies=require(script.Parent.Bodies)
+local Copy=require(script.Parent.Copy)
 local Zones=require(script.Parent.Zones)
 local Families=require(script.Parent.Families)
 local Perception=require(script.Parent.Perception)
 local Ultimates=require(script.Parent.Ultimates)
+-- (06/11) What these eyes can read of a speed jutsu (the Sharingan reads it).
+local Sight=require(game:GetService("ReplicatedStorage").NinjaDuel.Sight)
 -- Family techniques (roster breadth pass): when one is worth using is read
 -- from its family and its own spec.AI band, never from the fighter's name.
 local function familyWants(self,c,a,target,spec,distance,danger)
@@ -535,8 +538,15 @@ function AI:update(now)
 		self.wallRun=now+1.1;self.wallSide=if self.rng:NextNumber()<.5 then 1 else -1
 		return
 	end
+	-- (06/11) A speed jutsu (Shared/Sight): eyes without the Sharingan do not
+	-- see the wind-up at all and read the entry far less; the Sharingan reads
+	-- it, and sooner than an ordinary strike.
+	local unreadable=Sight.unreadable(target,now)
+	local blind=unreadable and not Sight.reads(a,now)
+	local readScale=if blind then .3 else 1
+	local latency=tune.Reaction*(if unreadable and not blind then .6 else 1)
 	if target.state~=self.observed then
-  if target.state=="Startup" or target.state=="TechniqueChannel" then self.threatAt=now end
+  if (target.state=="Startup" or target.state=="TechniqueChannel") and not blind then self.threatAt=now end
   self.observed=target.state;self.observedAt=now
  end
 	-- Reads: an opponent stepping into melee range is answered before the
@@ -585,26 +595,27 @@ function AI:update(now)
 	if a.def.Zoner and self:zone(now,distance,toward,tangent,target) then return end
 	if entering and free then
 		local roll=self.rng:NextNumber()
-		if roll<tune.ReadGuard then
+		local guardRead,dodgeRead,pokeRead=tune.ReadGuard*readScale,tune.ReadDodge*readScale,tune.ReadPoke*readScale
+		if roll<guardRead then
 			reflexGuard(self,c,a,.42);return
-		elseif roll<tune.ReadGuard+tune.ReadDodge and a.dodgeUntil<=now then
+		elseif roll<guardRead+dodgeRead and a.dodgeUntil<=now then
 			a.move=tangent*(self.strafeSign or 1)
 			if c:request(a,"Dodge") then return end
-		elseif roll<tune.ReadGuard+tune.ReadDodge+tune.ReadPoke and distance<7.5 then
+		elseif roll<guardRead+dodgeRead+pokeRead and distance<7.5 then
 			if c:request(a,"Attack") then return end
 		end
 	end
 	-- Toe to toe with a fighter who is not swinging yet: sometimes hold a
 	-- guard in anticipation (a parry if the strike comes right then).
-	if free and distance<7 and target.state=="Neutral" and not target.reaction and self.rng:NextNumber()<tune.GuardRead then
+	if free and distance<7 and target.state=="Neutral" and not target.reaction and self.rng:NextNumber()<tune.GuardRead*readScale then
 		c:request(a,"Guard");self.guardUntil=now+.28+self.rng:NextNumber()*.22;return
 	end
-	local reacted=now-self.observedAt>=tune.Reaction
+	local reacted=now-self.observedAt>=latency and not (blind and target.state=="Startup")
 	local danger=target.state=="Startup" or target.state=="TechniqueChannel"
 	local reactedThreat=reacted and (target.state=="Startup" or target.state=="Active")
  -- Remember the wind-up through Active/Recovery: short attacks used to erase
  -- the observation before reaction latency elapsed, so defense never fired.
- local remembered=self.threatAt and now-self.threatAt>=tune.Reaction and now-self.threatAt<.9
+ local remembered=self.threatAt and now-self.threatAt>=latency and now-self.threatAt<.9
  if remembered and distance<9 and a.state=="Neutral" and not a.reaction then
   self.threatAt=nil
   if target.state=="Recovery" then
@@ -776,6 +787,20 @@ function AI:update(now)
 		a.move=Vector3.zero;press(c,a,"Attack");return
 	end
 	if a.state~="Neutral" or a.reaction then return end
+	-- (06/11) Naruto with his crowd out: now and then he takes the body of
+	-- the clone most behind the opponent (the same key again) and strikes from
+	-- there, so the real one is never where he was.
+	if a.crowd and now>=(self.switchAt or 0) and #Bodies.crowd(c,a,"clone")>0 then
+		self.switchAt=now+1.1+self.rng:NextNumber()*1.6
+		if self.rng:NextNumber()<.6 then
+			for slot,spec in a.def.Techniques do
+				if spec.Id=="MassShadowClone" then
+					a.move=Vector3.zero
+					if c:request(a,"Technique"..slot,target.root.Position) then return end
+				end
+			end
+		end
+	end
 	-- Bodies (Naruto's clones): a clone winding up a jab close by is struck
 	-- first (the stick aims the opener at it), one merely close now and then.
 	local body=not a.airborne and Bodies.threat(c,a,6.5)
@@ -822,7 +847,8 @@ function AI:update(now)
 		self.techStart=if rotate then ((self.techStart or 0)%math.max(count,1))+1 else 1
 		for k=0,count-1 do
 			local slot=((self.techStart+k-1)%count)+1
-			local spec=a.def.Techniques[slot]
+			-- (06/11) Kakashi's copy slot: the jutsu his Sharingan copied.
+			local spec=Copy.slotSpec(c,a,slot) or a.def.Techniques[slot]
 			local use=false; local aim=target.root.Position
 			if spec.Id=="MarkedBlade" then use=plantedSeals(a)<2 and not c:markedInFlight(a) and distance>8; aim=position+target.hum.MoveDirection*3
 			elseif spec.Id=="Flashstep" then local seal=Techniques.sealOf(c,a,now);use=seal~=nil and (distance>14 or (seal-target.root.Position).Magnitude<7)
@@ -851,11 +877,18 @@ function AI:update(now)
 			-- charging from mid range, the Rasengan on an opening or with a clone
 			-- out to shape it.
 			-- (With none out, now and then he holds the single clone for the pair.)
-			if spec.Id=="ShadowClone" then local out=Bodies.count(c,a,"clone");use=distance>4 and distance<26 and out<2 and a.chakra>=36 and (out>0 or self.rng:NextNumber()<.6) end
-			if spec.Id=="MassShadowClone" then use=distance>7 and distance<22 and Bodies.count(c,a,"clone")==0 and a.chakra>=70 and self.rng:NextNumber()<.5 end
+			if spec.Id=="ShadowClone" then local out=Bodies.count(c,a,"clone");use=distance>4 and distance<26 and out<2 and a.chakra>=36 and (out>0 or self.rng:NextNumber()<.6)
+				-- (06/11) With the crowd ready, half the time he keeps his chakra for it.
+				if use and (a.cooldowns.MassShadowClone or 0)<=now and a.chakra>=60 and distance>5 and distance<24 and self.rng:NextNumber()<.5 then use=false end
+			end
+			-- (06/11) The crowd from mid range (two single clones join it); with
+			-- the crowd out the key is his body switch (above), not this.
+			if spec.Id=="MassShadowClone" then use=distance>5 and distance<24 and #Bodies.crowd(c,a,"clone")==0 and a.chakra>=60 and self.rng:NextNumber()<.7 end
 			if spec.Id=="CloneRasengan" then use=distance<9 and (target.state=="Recovery" or target.state=="Stunned" or target.state=="TechniqueRecovery"
 				or (Bodies.count(c,a,"clone")>0 and self.rng:NextNumber()<.35)) end
 			if spec.Family and not use then use=familyWants(self,c,a,target,spec,distance,danger) end
+			-- A copied jutsu with no rule of its own: used while it is his, in its range.
+			if spec.Copied and not use and not spec.Family then use=distance<(spec.Range or 20) and self.rng:NextNumber()<.4 end
 			if use and c:request(a,"Technique"..slot,aim) then
 				-- A held technique (spec.Hold): the bot holds it for a while of its
 				-- choosing, longer when the opponent is far (more time to see it).

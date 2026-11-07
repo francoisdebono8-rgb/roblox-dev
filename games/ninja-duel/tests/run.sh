@@ -58,6 +58,7 @@ run Sasuke     "$LUNE" run tests/Sasuke.spec.luau
 run Gaara      "$LUNE" run tests/Gaara.spec.luau
 run Lee        "$LUNE" run tests/Lee.spec.luau
 run Naruto     "$LUNE" run tests/Naruto.spec.luau
+run Kakashi    "$LUNE" run tests/Kakashi.spec.luau
 run Temari     "$LUNE" run tests/Temari.spec.luau
 run Roster     "$LUNE" run tests/Roster.spec.luau
 run Roster20   "$LUNE" run tests/Roster20.spec.luau

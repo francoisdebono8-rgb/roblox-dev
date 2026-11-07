@@ -48,13 +48,48 @@ test("the Water Dragon leaves a puddle; lightning into a body standing in it hit
  a.castId="LightningBlade"
  c:damage(a,b,10,false,false)
  a.castId=nil
- assert(math.abs(before-b.health-13)<.01,"the current did not carry ("..(before-b.health)..")")
- assert(impacts(c,"conduct")==1 and (b.stunFloorUntil or 0)>c.now,"the current did not hold the body")
+ -- (06/11) x1.5, and the current runs over the body and through the water.
+ assert(math.abs(before-b.health-15)<.01,"the current did not carry ("..(before-b.health)..")")
+ assert(impacts(c,"conduct")==2 and (b.stunFloorUntil or 0)>c.now,"the current did not hold the body")
  -- Without lightning, the water changes nothing.
  before=b.health;c:damage(a,b,10,false,false)
  assert(math.abs(before-b.health-10)<.01 or before-b.health<10,"a plain blow was carried")
  H.step(c,6.2)
  assert(not Interactions.inPuddle(c,b),"the puddle outlived its 6 s")
+end)
+
+test("(06/11) soaked: the Water Dragon throws him out of its puddle, the lightning still finds him",function()
+ local c,a,b=H.duel("Copycat","Mirage");place(c,a,b,4)
+ Interactions.soak(c,{kind="waterdragon",a=a},b)
+ assert(Interactions.wet(c,b) and not Interactions.inPuddle(c,b),"the body is not soaked")
+ b.health=999
+ local before=b.health
+ a.castId="LightningCut"
+ c:damage(a,b,10,false,false)
+ a.castId=nil
+ assert(math.abs(before-b.health-15)<.01,"lightning on the soaked body was not carried ("..(before-b.health)..")")
+ H.step(c,Interactions.SOAK.Time+.1)
+ assert(not Interactions.wet(c,b),"he stayed soaked")
+end)
+
+test("(06/11) lightning into the puddle shocks everyone standing in it",function()
+ local c,a,b=H.duel("Copycat","Mirage");place(c,a,b,4)
+ Interactions.ended(c,{kind="waterdragon",a=a},b.root.Position-V.new(0,3,0))
+ local w=Interactions.inPuddle(c,b)
+ assert(w,"no puddle")
+ local before=b.health
+ Interactions.electrify(c,a,w,nil)
+ assert(b.health<before and b.reaction=="HitStun","the body in the water was not shocked")
+ before=b.health
+ Interactions.electrify(c,a,w,nil)
+ assert(b.health==before,"the puddle carried two currents at once")
+end)
+
+test("(06/11) Rasengan and Chidori released into each other meet within the jutsu window",function()
+ assert(Interactions.jutsuPair({rasengan=true},{state="Chidori"}) and Interactions.jutsuPair({state="LightningBlade"},{rasengan=true}),"not a jutsu pair")
+ assert(not Interactions.jutsuPair({rasengan=true},{state="FireBloom"}),"a plain blow is a jutsu pair")
+ local Config=H.load("Shared/Config")
+ assert((Config.Clash.JutsuWindow or 0)>Config.Clash.Window*3,"the jutsu window is a punch's window")
 end)
 
 test("wet sand: the Coffin cast at a body in the water is slower and crushes harder",function()
@@ -82,9 +117,13 @@ test("Rasengan into Chidori: both thrown back, the clash contact names it",funct
  local health={a.health,b.health}
  assert(not Interactions.jutsuClash(c,a,b,{rasengan=true},{state="FireBloom"}),"a Rasengan clashed with a plain blow")
  assert(Interactions.jutsuClash(c,a,b,{rasengan=true},{state="Chidori"}),"no clash")
+ -- (07/11) the grind first: both held, the two jutsu pressing; then the burst.
+ assert(impacts(c,"jutsuclash")==1 and (a.hitstopUntil or 0)>c.now and (b.hitstopUntil or 0)>c.now,"no grind")
+ assert(a.hop==nil and b.hop==nil,"thrown back before the grind")
+ H.step(c,Interactions.CLASH.Grind+.02)
  assert(a.hop and b.hop and a.hop.remaining>=10,"the bodies were not thrown back")
  assert(a.health<health[1] and b.health<health[2],"the clash cost nothing")
- assert(impacts(c,"jutsuclash")==1)
+ assert(impacts(c,"jutsuclash")==2,"no burst after the grind")
 end)
 
 test("client: steam, puddle, current, melt and the jutsu clash draw without error",function()

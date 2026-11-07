@@ -10,6 +10,8 @@ local Techniques = require(script.Parent.Techniques)
 -- Reusable technique families and fighter traits (roster breadth pass).
 local Families = require(script.Parent.Families)
 local SealKits = require(script.Parent.SealKits)
+-- (06/11) Kakashi's Sharingan copy: the jutsu cast in front of him.
+local Copy = require(script.Parent.Copy)
 local Ultimates = require(script.Parent.Ultimates)
 local Interactions = require(script.Parent.Interactions)
 local Looks = require(Shared.Looks)
@@ -1452,7 +1454,8 @@ function Combat:requestInner(a,action,aim,clientTime,opts)
 	-- it at once (the wire throw's recovery is cancelled, the signs are short).
 	a.wireCancel=nil
 	local wired=a.wireVictim and a.wireVictim.reaction=="Bound" and a.wireVictim.boundBy==a
-	if cancelSpec and cancelSpec.Id=="FireBloom" and wired and (a.state=="TechniqueRecovery" or a.state=="Neutral" or a.state=="Recovery")
+	-- (06/11) either Katon on the bar (Techniques.dragonFlame), once per run.
+	if cancelSpec and (cancelSpec.Id=="FireBloom" or cancelSpec.Id=="PhoenixFlower") and wired and (a.wireBurnUntil or 0)<=self.now and (a.state=="TechniqueRecovery" or a.state=="Neutral" or a.state=="Recovery")
 		and (a.cooldowns[cancelSpec.Id] or 0)<=self.now and a.chakra>=cancelSpec.Cost then
 		a.state="Neutral";a.untilTime=self.now;a.pending=nil
 		a.wireCancel=true
@@ -1503,7 +1506,8 @@ function Combat:requestInner(a,action,aim,clientTime,opts)
 	if self.match.techniquesDisabled then return false,"Techniques disabled" end
 	if string.match(action,"^Technique") and (a.sealedUntil or 0)>self.now then return false,"Chakra points sealed" end
 	local slot=tonumber(string.match(action,"^Technique([1-5])$"))
-	local spec=a.sealCast or (slot and a.def.Techniques[slot])
+	-- (06/11) Kakashi's copy slot casts the jutsu his Sharingan copied (Copy).
+	local spec=a.sealCast or (slot and (Copy.slotSpec(self,a,slot) or a.def.Techniques[slot]))
  if spec and (a.trainingChannelScale or 1)~=1 then
   -- Tutorial (interrupt step): the signs last long enough to be read and hit,
   -- whoever the bot is (Rock Lee's only jutsu channels 0.08 s).
@@ -1513,6 +1517,13 @@ function Combat:requestInner(a,action,aim,clientTime,opts)
 	-- happens, quietly (the press came back as "UNKNOWN ACTION" on screen).
 	if not spec then return false,if slot then "Empty slot" else "Unknown action" end
 	local technique=Techniques[spec.Id]
+	-- (06/11) A technique whose work is out answers its key again itself
+	-- (Naruto's crowd: the press takes a clone's body), before its cooldown
+	-- and its cost; nil when it has nothing out.
+	if technique and technique.recast and not a.sealCast then
+		local handled,why=technique.recast(self,a,spec)
+		if handled~=nil then return handled,why end
+	end
 	-- (Stage 6) A blade technique draws the blade itself (Kakashi's Lightning
 	-- Cut): the tanto comes out with the signs, it stays out after.
 	if spec.Armed and not a.armed then
@@ -1524,7 +1535,7 @@ function Combat:requestInner(a,action,aim,clientTime,opts)
 	local cancelled=a.stringCancel==spec.Id
 	if cancelled then spec=table.clone(spec);spec.Channel=math.min(spec.Channel,.14) end
 	a.stringCancel=nil
-	if a.wireCancel and spec.Id=="FireBloom" then spec=table.clone(spec);spec.Channel=.16 end
+	if a.wireCancel and (spec.Id=="FireBloom" or spec.Id=="PhoenixFlower") then spec=table.clone(spec);spec.Channel=.16 end
 	a.wireCancel=nil
 	-- Context: the same Rasengan is a different tool after a teleport (instant
 	-- thrust) and in the air (a plunge that ends the air phase).
@@ -1547,6 +1558,7 @@ function Combat:requestInner(a,action,aim,clientTime,opts)
 		-- while the arm throws; the payoff fires on the release frame.
 		Brawler.event(self,a,"Technique"); Brawler.event(self,a,"Cast:"..spec.Id); a.chakra-=spec.Cost; a.cooldowns[spec.Id]=self.now+spec.Cooldown; a.guardHeld=false
 		SealKits.noteCast(self,a,spec)
+		Copy.cast(self,a,spec)
 		-- Same for a thrown technique: no guard pose (and guard speed) without a guard.
 		if a.state=="Guarding" then self:setState(a,"Neutral",0) end
 		self:awakenTechnique(a,spec)
@@ -1562,6 +1574,8 @@ function Combat:requestInner(a,action,aim,clientTime,opts)
 	end
 	Brawler.event(self,a,"Technique"); Brawler.event(self,a,"Cast:"..spec.Id); Rules.reserve(a,spec,self.now); a.guardHeld=false
 	SealKits.noteCast(self,a,spec)
+	-- The Sharingan across the field may copy it; a copied one is spent.
+	Copy.cast(self,a,spec)
 	self:awakenTechnique(a,spec)
 	a.pending={kind="Technique",spec=spec,implementation=technique,aim=aim or a.target.root.Position,variant=variant,cancelled=cancelled}
 	-- A technique may set itself up as its channel begins (Naruto's Rasengan
@@ -2255,6 +2269,8 @@ function Combat:projectileHit(p,target,position,normal)
 	-- (Stage 6) where a Water Dragon ends the ground stays wet; fire reaching
 	-- Gaara melts a charge of his sand.
 	Interactions.ended(self,p,position)
+	-- (06/11) the water reached him: soaked, lightning runs through him.
+	Interactions.soak(self,p,target)
 	Interactions.fireOnSand(self,p,target)
 	self.damageTag=p.kind
 	self.hitOrigin=position-p.direction*4
@@ -2590,6 +2606,8 @@ function Combat:update(dt,now)
 	if self.match.phase=="Duel" then self:separate() end
 	if self.match.phase=="Duel" then self:runScheduled() end
 	if self.match.phase=="Duel" then Bodies.step(self,dt) end
+	-- (06/11) a lightning jutsu charged or cast standing in the water runs into it.
+	if self.match.phase=="Duel" then Interactions.step(self) end
 	-- Zones act before the flights move (a blade entering a lane turns this frame).
 	if self.match.phase=="Duel" then Zones.step(self,dt) end
 	if self.match.phase=="Duel" then self:updateProjectiles(dt); self:updateHazards() end
@@ -2618,6 +2636,7 @@ function Combat:update(dt,now)
 end
 function Combat:clear(preserveAnimations)
 	Interactions.clear(self)
+	for _,x in self.actors do x.wetUntil=nil end
 	-- (Freeze 02/11) An ultimate cut by the end of a round: its scheduled finish
 	-- is cleared below, so it is aborted here (the victim stayed "Held", every
 	-- key refused, and pinned on its path for the rest of the match).

@@ -9,11 +9,13 @@ local Fighters = {
 		-- Shared ninja tools: everyone throws; mastery changes what a throw does.
 		-- Minato: one fast kunai, the quickest recovery (the seals are his art).
 		ToolMastery = { Kind = "kunai", Count = 1, Speed = 96, Damage = 3, Recover = .55 },
+		-- (06/11) Unreadable: too fast for ordinary eyes (Shared/Sight); the
+		-- Sharingan reads him.
 		-- Awakening: the Yellow Flash. Relocations chain: every Flying Thunder God
 		-- leaves a seal where he stood (FlashWake), a body he launched or knocked
 		-- away is a destination by itself (FlashPursuit), the arrival stays open
 		-- longer; faster legs and techniques back almost at once.
-		Awakening = { Name = "YELLOW FLASH", Speed = 1.18, Regen = 1.5, Cooldown = 0.4, FlashWake = true, FlashPursuit = true, Arrival = 0.8, Color = { 255, 214, 92 } },
+		Awakening = { Name = "YELLOW FLASH", Unreadable = true, Speed = 1.18, Regen = 1.5, Cooldown = 0.4, FlashWake = true, FlashPursuit = true, Arrival = 0.8, Color = { 255, 214, 92 } },
 		AttackProfile = {
 			Light1={startup=.82,recovery=.9,travel=1.08,angle=.24,kind="slash"},Light2={startup=.84,recovery=.9,travel=1.12,angle=-.3,kind="palm"},
 			Light3={startup=.82,recovery=.88,travel=1.2,angle=.36,impulseZ=52},Launcher={startup=.72,travel=1.16,impulseY=62},
@@ -57,7 +59,9 @@ local Fighters = {
 		AttackProfile = {
 			Light1={startup=.96,recovery=.9,travel=.92,range=6.6},Light2={startup=.98,recovery=.88,travel=.9,range=7,chainTool=true,kind="palm"},
 			Light3={startup=1.02,recovery=1.0,travel=.86,impulseZ=60,kind="kick"},Heavy={startup=.98,recovery=1.02,travel=.9},
-			Launcher={startup=1.0,travel=.86,impulseY=53,impulseZ=20},DashAttack={startup=.95,travel=.92},
+			-- (07/11, Studio + gate: the body flew off at ~23 studs/s and the E chase,
+			-- ending where it was, came up 5 studs short: both air strikes missed)
+			Launcher={startup=1.0,travel=.86,impulseY=53,impulseZ=10},DashAttack={startup=.95,travel=.92},
 			Air1={startup=.98,travel=.9},Air2={startup=1.0,travel=.88},Slam={startup=1.0,recovery=1.0},
 		},
 		Skin = { 197, 164, 143 }, Hair = { 30, 31, 43 }, Outfit = { 69, 49, 66 },
@@ -148,7 +152,7 @@ local Fighters = {
 				State = { Time = 2.6, Drain = 6, Strike = "ChidoriThrust", Air = "WallDive", Wall = "WallDive", AirVariant = "ChidoriDive", WallVariant = "ChidoriDive", Dive = true,
 					Teach = "JUMP, THEN ATTACK: DIVE", Damage = 22, World = { contact = "energy", element = "lightning" }, Style = "chidori", Name = "Chidori" },
 				Hint = "Form it, move with it, then strike • a miss leaves him open" },
-			{ Id = "WireTrap", Name = "Wire Trap", Cost = 18, Channel = 0.18, Active = 0.08, Recovery = 0.3, Cooldown = 6, Interruptible = true, Range = 34, Damage = 3, Hint = "A wired shuriken binds • then R1 + × (4) for Dragon Flame" },
+			{ Id = "WireTrap", Name = "Wire Trap", Cost = 18, Channel = 0.18, Active = 0.08, Recovery = 0.3, Cooldown = 6, Interruptible = true, Range = 34, Damage = 3, Hint = "A wired shuriken binds • then a Katon (1 or 4) runs the wire: Dragon Flame" },
 			{ Id = "FireBloom", Name = "Great Fireball", Element = "Fire", Cost = 24, Channel = 0.32, Active = 0.4, Recovery = 0.36, Cooldown = 5.5, Interruptible = true, Feintable = true, Range = 70, Speed = 64, Radius = 2, Growth = 1.6, Damage = 15,
 				-- (Reference quality) Tap: the quick breath. Held: he keeps drawing
 				-- in for up to Time more seconds (Cost chakra over it) and the ball
@@ -234,7 +238,7 @@ local Fighters = {
 		-- (Stage 6, 13:42 decision) The gates only in the awakening: the first
 		-- opens at once, one more every 4 s up to the fifth (Gates); speed,
 		-- damage and the health they cost grow with each.
-		Awakening = { Name = "EIGHT GATES", Speed = 1.18, Damage = 1.1, Regen = 1.6, Cooldown = 0.5, HealthDrain = 2, Gates = { Step = 4, Max = 5 }, Duration = 22, Color = { 120, 230, 140 } },
+		Awakening = { Name = "EIGHT GATES", Unreadable = true, Speed = 1.18, Damage = 1.1, Regen = 1.6, Cooldown = 0.5, HealthDrain = 2, Gates = { Step = 4, Max = 5 }, Duration = 22, Color = { 120, 230, 140 } },
 		AttackProfile = {
 			Light1={startup=.85,recovery=.9,travel=1.1},Light2={startup=.86,recovery=.9,range=6.6,kind="kick",damage=.8},
 			Light3={startup=.9,recovery=.95,impulseZ=58,range=6.8,damage=.75},Heavy={startup=.9},
@@ -246,7 +250,7 @@ local Fighters = {
 			-- strike started by the jutsu pipeline (like the Chidori thrust).
 			{ Id = "LeafGreatWhirlwind", Name = "Leaf Great Whirlwind", Cost = 10, Channel = 0.08, Active = 0.05, Recovery = 0.1, Cooldown = 2.6, Interruptible = true, Range = 15, Damage = 9, Hint = "A spinning kick across the gap • knocks away • E to chase • ends a clean string" },
 			{ Id = "PrimaryLotus", Name = "Primary Lotus", Family = "Sequence", Opener = "Launcher", Cost = 18, Channel = 0.1, Active = 0.04, Recovery = 0.3, Cooldown = 9, Interruptible = true, Range = 13, Hint = "Seize, fly up, drive him head first into the floor • costs health" },
-			{ Id = "RemoveWeights", Name = "Remove the Weights", Family = "Buff", Time = 8, Speed = 1.25, Kind = "weights", Cost = 10, Channel = 0.3, Active = 0.05, Recovery = 0.2, Cooldown = 16, Interruptible = true, Hint = "Speed + 25 % for 8 s" },
+			{ Id = "RemoveWeights", Name = "Remove the Weights", Family = "Buff", Time = 8, Speed = 1.25, Kind = "weights", Unreadable = true, Cost = 10, Channel = 0.3, Active = 0.05, Recovery = 0.2, Cooldown = 16, Interruptible = true, Hint = "Speed + 25 % for 8 s" },
 			{ Id = "DynamicEntry", Name = "Dynamic Entry", Family = "Teleport", To = "Aim", Distance = 24, Short = 3, Move = "FlyingKick", Cost = 14, Channel = 0.08, Active = 0.02, Recovery = 0.2, Cooldown = 5, Interruptible = true, Range = 26, Damage = 13, Kind = "leaf", Hint = "The flying kick from across the field" },
 		},
 	},
@@ -273,7 +277,14 @@ local Fighters = {
 		-- Shadow clones (Server/Bodies, Server/Legion): Max at once, Cost chakra
 		-- each, Life seconds, one blow dispels them. On a flank a clone jabs the
 		-- opponent (Strike damage, Reach studs) about every Every seconds.
-		Bodies = { clone = { Max = 2, Cost = 12, Life = 6, Strike = 3, Reach = 5.4, Every = 2.3 } },
+		-- (06/11, « il envoie une foule de multiclonage ; on peut prendre le corps
+		-- de n'importe quel clone ») Multi Shadow Clone makes a crowd: Crowd
+		-- clones for CrowdLife seconds, ringing the opponent; one of them strikes
+		-- every CrowdEvery seconds (CrowdStrike, CrowdKick damage), with a breath
+		-- of CrowdGrace seconds after one lands. With the crowd out, the same key
+		-- takes a clone's body (Switch chakra, SwitchCooldown seconds).
+		Bodies = { clone = { Max = 2, Cost = 12, Life = 6, Strike = 3, Reach = 5.4, Every = 2.3,
+			Crowd = 10, CrowdLife = 9, CrowdStrike = 3, CrowdKick = 4, CrowdEvery = .5, CrowdGrace = .85, Switch = 6, SwitchCooldown = .6 } },
 		-- Substitution with a clone out: "it was a clone!" — he swaps places
 		-- with it and the body that was being hit puffs away.
 		Substitution = { Mode = "clone" },
@@ -299,7 +310,7 @@ local Fighters = {
 				-- (User 28/10) Shaped in the open, it stays in his hand to run with.
 				HoldState = { Time = 3, Drain = 5, Strike = "DashAttack", Air = "Slam", Variant = "Rasengan", AirVariant = "RasenganDrop", Damage = 22,
 					Reaction = "Knockback", Impulse = Vector3.new(0, 22, 74), Stun = .62, Rasengan = true, World = { contact = "energy", element = "wind" }, Style = "burst", Name = "Rasengan", Reach = 9, Event = "Rasengan" }, Hint = "A clone shapes it at his side • strike the clone and it fails • ends a clean string" },
-			{ Id = "MassShadowClone", Name = "Multi Shadow Clone", Cost = 30, Channel = 0.3, Active = 0.08, Recovery = 0.2, Cooldown = 10, Interruptible = true, Range = 26, Hint = "Clones burst out on both sides and charge" },
+			{ Id = "MassShadowClone", Name = "Multi Shadow Clone", Cost = 40, Channel = 0.3, Active = 0.08, Recovery = 0.2, Cooldown = 18, Interruptible = true, Range = 26, Hint = "A crowd of ten clones rings the opponent • press again: take a clone's body (the stick picks it)" },
 			{ Id = "NarutoRendan", Name = "Naruto Uzumaki Rendan", Family = "Sequence", Opener = "Launcher", Cost = 22, Channel = 0.12, Active = 0.04, Recovery = 0.3, Cooldown = 9, Interruptible = true, Range = 13, Hint = "His clones send him up, then the heel down" },
 		},
 	},
@@ -408,7 +419,7 @@ local Fighters = {
 	Copycat = {
 		Name = "Kakashi", FullName = "Kakashi Hatake", Age = 13, Title = "THE COPY NINJA", Color = { 170, 182, 196 },
 		Routes = "rising: launcher  ·  low: sweep  ·  around: feint step  ·  air: drive / spike / switch",
-		Description = "The all-rounder: a Sharingan that reads, hounds that hold, a copied Water Dragon and the Lightning Blade.",
+		Description = "The Copy Ninja: the jutsu you cast in front of him is his next. A Sharingan that reads, hounds that hold and the Lightning Blade.",
 		Health = 130, Chakra = 120, ChakraRegen = 7.6, Speed = 19, SprintScale = 1.08, JumpScale = 1.05, AirControlScale = 1.05, AccelerationScale = 1.06,
 		CombatTravel = 1.06, CombatDamage = 1.05, DashScale = 1.05, GuardStrength = 0.1, PreferredRange = 7,
 		ComboToolCancel = true, CombatStyle = "Control", Tool = "Kunai",
@@ -426,6 +437,15 @@ local Fighters = {
 		-- Awakening: the Sharingan uncovered. Wider read windows, jutsu at a
 		-- fraction of their cost, and his hounds hold half as long again.
 		Awakening = { Name = "SHARINGAN UNCOVERED", Speed = 1.08, Regen = 1.4, Cooldown = 0.5, CostScale = 0.6, Windows = 1.4, BindScale = 1.5, Color = { 230, 50, 60 } },
+		-- (06/11, « le Sharingan qui copie ») The Copy Ninja (Server/Copy): a jutsu
+		-- cast in front of him takes his first slot (the Water Dragon, his first
+		-- copy) for Life seconds or Uses casts; uncovered, from any angle.
+		Copy = { Slot = 1, Life = 15, Uses = 1 },
+		-- (06/11, « les chiens ninja qui sortent du sol ») His ninken (Server/Hounds):
+		-- a Pack that digs at Dig studs/s to the legs, bites in Reach (the
+		-- technique's Bind, ChaseBite after a chase), or runs him down at Run for
+		-- Chase seconds when he dodged.
+		Bodies = { hound = { Pack = 4, Dig = 46, Run = 30, Chase = 2.2, Reach = 2.4, ChaseBite = .7 } },
 		Motion = { body = "Mirage", weapons = "kunai", springy = false,
 			-- Slouched and relaxed, one hand low by the holster.
 			stance = {root={y=-.32,pitch=4,yaw=24},torso={pitch=8,yaw=-10},head={pitch=6,yaw=-14},
@@ -439,13 +459,13 @@ local Fighters = {
 		Skin = { 226, 200, 178 }, Hair = { 214, 218, 222 }, Outfit = { 40, 50, 72 },
 		Techniques = {
 			{ Id = "WaterDragon", Name = "Water Dragon", Family = "Projectile", Kind = "waterdragon", Element = "Water", Cost = 28, Channel = 0.55, Active = 0.3, Recovery = 0.36, Cooldown = 7, Interruptible = true, Feintable = true,
-				Range = 52, Speed = 60, Damage = 14, Radius = 2.4, Knock = 46, Lift = 18, Hint = "A copied dragon of water that throws the body far" },
+				Range = 52, Speed = 60, Damage = 14, Radius = 2.4, Knock = 46, Lift = 18, Hint = "A copied dragon of water that throws the body far • a jutsu cast in front of him is copied here (15 s, one cast)" },
 			{ Id = "LightningBlade", Name = "Lightning Blade", Family = "Strike", Move = "ChidoriThrust", Element = "Lightning", Cost = 32, Channel = 0.5, Active = 0.05, Recovery = 0.12, Cooldown = 9, Interruptible = true,
 				-- (User 28/10) Like Sasuke's Chidori: formed, it stays in the hand.
 				State = { Time = 2.6, Drain = 6, Strike = "ChidoriThrust", Air = "ChidoriThrust", Damage = 22, World = { contact = "energy", element = "lightning" }, Style = "chidori", Name = "Lightning Blade" },
 				Range = 20, Damage = 22, Hint = "Charge, then a lightning thrust • a miss leaves him open", AI = { Min = 4, Max = 16, Punish = true } },
 			{ Id = "TrackingFang", Name = "Summoning: Tracking Fang", Family = "Projectile", Kind = "hounds", Ground = true, Cost = 22, Channel = 0.3, Active = 0.08, Recovery = 0.3, Cooldown = 8, Interruptible = true,
-				Range = 30, Speed = 50, Damage = 4, Radius = 1.6, Bind = 1.1, Hint = "His hounds burst from the ground and hold the body • then the blade" },
+				Range = 30, Speed = 50, Damage = 4, Radius = 1.6, Bind = 1.1, Hint = "Four hounds dig to his legs, burst out and hold him • dodged, they chase him • one blow sends a hound away" },
 			{ Id = "LightningCut", Name = "Lightning Cut", Family = "Teleport", To = "Behind", Distance = 3.2, Move = "DashAttack", Armed = true, Element = "Lightning", Cost = 18, Channel = 0.08, Active = 0.02, Recovery = 0.16, Cooldown = 6, Interruptible = true, Range = 22, Damage = 14, Invuln = 0.12, Kind = "lightning", Hint = "Tantô drawn: through the body in one cut, out behind it" },
 		},
 	},

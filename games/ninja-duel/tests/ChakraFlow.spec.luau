@@ -129,6 +129,17 @@ test("snapshot: the load and the infused strike reach the client",function()
  local seen=false
  for _,i in c.impacts or {} do if i.style=="chakraload" then seen=true end end
  assert(seen,"no load impact for the client")
+ -- (07/11, Studio) the pending strike is gone in recovery: the nature the
+ -- snapshot sends (Matches: infused) is kept for that strike to its end
+ assert(c:request(a,"Attack"))
+ local serial=a.attackSerial
+ for _=1,60 do H.step(c,.01);if a.state=="Recovery" then break end end
+ assert(a.state=="Recovery","setup: the strike never reached its recovery")
+ assert(a.flowShown and a.flowShown.serial==serial and a.flowShown.nature=="Lightning","the infused strike's nature is lost in recovery")
+ -- a plain strike after it does not show the old nature
+ for _=1,80 do H.step(c,.01);if a.state=="Neutral" then break end end
+ assert(c:request(a,"Attack"))
+ assert(a.flowShown==nil,"a plain strike kept the last infusion")
 end)
 
 test("client: the load glows, the infused limbs pour, every nature's contact, the leap and the dash draw (stub scene)",function()
@@ -156,7 +167,11 @@ test("client: the load glows, the infused limbs pour, every nature's contact, th
   assert(aura:FindFirstChild("Rise").Enabled==false,"the aura outlived the load")
   local limb=m:FindFirstChild("RightHand"):FindFirstChild("ChakraFlowLimb")
   assert(limb and limb:FindFirstChild("Infused").Enabled==true,"the striking hand does not pour chakra")
+  -- (07/11, Studio: the current showed 0.23 s) the follow-through keeps it;
+  -- back in neutral it stops
   actor.state="Recovery";layer.fighter(fx,m,actor,1/60)
+  assert(limb:FindFirstChild("Infused").Enabled==true,"the current stopped before the follow-through ended")
+  actor.state="Neutral";actor.infused=nil;actor.attackName=nil;layer.fighter(fx,m,actor,1/60)
   assert(limb:FindFirstChild("Infused").Enabled==false,"the hand still pours after the strike")
   for _,nature in {"Lightning","Fire","Wind","GentleFist","Sand","Strength","Chakra","Unknown"} do
    for _,style in {"chakraload","chakrastrike","chakrahit","chakraleap","chakradash"} do
