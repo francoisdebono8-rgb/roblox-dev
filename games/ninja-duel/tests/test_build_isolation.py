@@ -18,6 +18,9 @@ INSPECTOR = {'DevHooks', 'CombatInspector', 'CombatDebug'}
 DEV_TOOLS = {'DevTools', 'DevCommands', 'DevScenarios', 'DevProfiler', 'DevReport', 'DevQA', 'DevMetrics',
              'DevClient', 'DevVolumes', 'ChakraLab', 'ChakraDev', 'ChakraStudioView', 'ChakraStudioQA', 'DevRosterCheck', 'DevGateCheck', 'TutorialBot', 'TutorialProbe', 'Repro'}
 DEBUG_ONLY = INSPECTOR | DEV_TOOLS
+# The filming place's tools (tools/capture/studio), in the capture place only.
+CAPTURE_TOOLS = {'ClipKit', 'HiraishinKunai', 'ShotRunner', 'Sets', 'SetSnapshot', 'NDFactoryBoot'}
+PROFILES = ('NinjaDuel.json', 'NinjaDuel-Debug.json', 'NinjaDuel-QA.json', 'NinjaDuel-Capture.json')
 # Strings that only the debug-only modules contain (remote, GUI, Output and folder names).
 MARKERS = ('NinjaDuelDevControl', 'NinjaDuelDevPanel', 'NinjaDuelDevMeasure', 'DevObservedVolume', '[NinjaDuelPerf]',
            '[NinjaDuelDevQA]', '[NinjaDuelChakraQA]', 'NinjaDuelChakraLab', 'NinjaDuelCombatDebug')
@@ -107,11 +110,48 @@ class BuildIsolation(unittest.TestCase):
 
     def test_debug_and_qa_keep_the_exact_normal_engine_sources(self):
         normal = scripts('NinjaDuel.rbxlx')
-        for variant in ('NinjaDuel-Debug.rbxlx', 'NinjaDuel-QA.rbxlx'):
+        for variant in ('NinjaDuel-Debug.rbxlx', 'NinjaDuel-QA.rbxlx', 'NinjaDuel-Capture.rbxlx'):
             other = scripts(variant)
             for name, source in normal.items():
                 if not name.endswith(':Main'):
                     self.assertEqual(source, other[name], (variant, name))
+
+    # (Issue #45) The filming place is the Debug place of the same commit plus
+    # the capture tools, and only it carries them.
+    def test_capture_place_is_debug_plus_the_capture_tools(self):
+        capture, debug = scripts('NinjaDuel-Capture.rbxlx'), scripts('NinjaDuel-Debug.rbxlx')
+        self.assertEqual(set(capture) - set(debug), CAPTURE_TOOLS)
+        self.assertEqual(set(debug) - set(capture), set())
+        for name, source in debug.items():
+            self.assertEqual(source, capture[name], name)
+        self.assertNotIn('NativeQA', capture)
+        for filename in ('NinjaDuel.rbxlx', 'NinjaDuel-Debug.rbxlx', 'NinjaDuel-QA.rbxlx'):
+            text = (ROOT / 'dist' / filename).read_text(encoding='utf-8')
+            self.assertEqual(CAPTURE_TOOLS & set(scripts(filename)), set(), filename)
+            self.assertNotIn('NDFactory', text, filename)
+        tools = {p.name.split('.')[0]: p.read_text(encoding='utf-8') for p in (ROOT / 'tools/capture/studio').glob('*.luau')}
+        self.assertEqual(set(tools), CAPTURE_TOOLS)
+        for name, source in tools.items():
+            self.assertEqual(capture[name], source, name)
+
+    def test_every_profile_shares_the_runtime_fingerprint_and_commit(self):
+        manifests = {f: json.loads((ROOT / 'dist' / f).read_text()) for f in PROFILES}
+        self.assertEqual({m['profile'] for m in manifests.values()}, {'release', 'debug', 'qa', 'capture'})
+        self.assertEqual(len({m['runtimeFingerprint'] for m in manifests.values()}), 1, 'runtime differs between profiles')
+        self.assertEqual(len({m['sourceCommit'] for m in manifests.values()}), 1, 'profiles built from different commits')
+        self.assertEqual(len({m['buildFingerprint'] for m in manifests.values()}), 4, 'two profiles share a build fingerprint')
+        release = manifests['NinjaDuel.json']
+        self.assertEqual(release['runtimeFingerprint'], release['buildFingerprint'])
+        for filename, manifest in manifests.items():
+            values = {}
+            for item in ET.parse(ROOT / 'dist' / filename.replace('.json', '.rbxlx')).iter('Item'):
+                if item.get('class') == 'StringValue':
+                    props = item.find('Properties')
+                    values[props.findtext("string[@name='Name']")] = props.findtext("string[@name='Value']")
+            self.assertEqual(values['RuntimeFingerprint'], manifest['runtimeFingerprint'], filename)
+            self.assertEqual(values['BuildFingerprint'], manifest['buildFingerprint'], filename)
+            self.assertEqual(values['BuildProfile'], manifest['profile'], filename)
+            self.assertTrue(manifest['sourceCommit'].startswith(values['SourceCommit'].split('-')[0]), filename)
 
 
 class DevToolsCli(unittest.TestCase):
@@ -131,7 +171,7 @@ class DevToolsCli(unittest.TestCase):
         proc = self.dev('catalogue', '--archetype', 'acrobatique')
         self.assertEqual(proc.returncode, 0, proc.stderr)
         self.assertIn('air_side', proc.stdout)
-        for filename in ('NinjaDuel.json', 'NinjaDuel-Debug.json', 'NinjaDuel-QA.json'):
+        for filename in PROFILES:
             manifest = json.loads((ROOT / 'dist' / filename).read_text())
             self.assertTrue(all(path.startswith('src/') for path in manifest['sources']), filename)
 

@@ -11,7 +11,15 @@ ROOT = Path(__file__).resolve().parent
 parser = argparse.ArgumentParser()
 parser.add_argument('--qa', action='store_true')
 parser.add_argument('--debug', action='store_true', help='Separate Studio-only inspector place; no automatic native QA')
+parser.add_argument('--capture', action='store_true', help='Filming place: the Debug place plus the capture tools (tools/capture/studio); never the release')
 args = parser.parse_args()
+if args.qa+args.debug+args.capture>1: parser.error('choose one profile: --debug, --qa or --capture')
+# One source, four variants of the same commit (issue #45): release (GAME),
+# debug (DEV), qa (QA) and capture (FILM). They all embed the same runtime
+# sources; only the Studio-only tools differ. runtimeFingerprint (below) is the
+# hash of what the release ships, identical in every profile of one commit.
+PROFILE='qa' if args.qa else 'capture' if args.capture else 'debug' if args.debug else 'release'
+STUDIO_ONLY=PROFILE!='release'
 # Studio-only modules: Debug and QA places, never the normal build
 # (tests/test_build_isolation.py). Inspector: DevHooks, CombatInspector,
 # CombatDebug. Codex's dev tools (docs/tools/DEVTOOLS.md): F6 panel, setups,
@@ -20,7 +28,24 @@ DEBUG_SOURCES={'DevHooks.luau','CombatInspector.luau','CombatDebug.client.luau',
     'DevTools.luau','DevCommands.luau','DevScenarios.luau','DevProfiler.luau','DevReport.luau','DevQA.luau','DevMetrics.luau',
     'DevClient.luau','DevVolumes.luau','ChakraLab.luau','ChakraDev.luau','ChakraStudioView.luau','ChakraStudioQA.luau','DevRosterCheck.luau','DevGateCheck.luau','DevFlight.luau','TutorialBot.luau','TutorialProbe.luau','Repro.luau'}
 def included(p):
-    return (args.qa or p.stem!='NativeQA') and (args.qa or args.debug or p.name not in DEBUG_SOURCES)
+    return (args.qa or p.stem!='NativeQA') and (STUDIO_ONLY or p.name not in DEBUG_SOURCES)
+def runtime(p):
+    return p.stem!='NativeQA' and p.name not in DEBUG_SOURCES
+# The capture tools (ported 07/11 from claude/ninja-duel-tutorial-v2
+# tools/marketing/factory/studio, see tools/capture/README.md): where each one
+# lives in the filming place, as the CLIPS factory's make_clip_place.py put them.
+CAPTURE=ROOT/'tools/capture/studio'
+CAPTURE_LAYOUT=[('ReplicatedStorage','ModuleScript','ClipKit','ClipKit.client.luau'),('ReplicatedStorage','ModuleScript','HiraishinKunai','HiraishinKunai.luau'),
+    ('ServerStorage','ModuleScript','ShotRunner','ShotRunner.server.luau'),('ServerStorage','ModuleScript','Sets','Sets.luau'),('ServerStorage','ModuleScript','SetSnapshot','SetSnapshot.luau'),
+    ('ServerScriptService','Script','NDFactoryBoot','NDFactoryBoot.server.luau')]
+capture_files=[CAPTURE/f for *_,f in CAPTURE_LAYOUT] if args.capture else []
+import subprocess
+def git(*a):
+    try: return subprocess.run(['git',*a],cwd=ROOT,capture_output=True,text=True,timeout=20).stdout.strip()
+    except Exception: return ''
+SOURCE_COMMIT=git('rev-parse','HEAD') or 'unknown'
+# Uncommitted changes to what goes into the place (dist/ is the build's own output).
+SOURCE_DIRTY=bool(git('status','--porcelain','--','src','assets','build.py','vendor','tools/capture'))
 xml = ET.Element('roblox', version='4')
 serial = 0
 
@@ -60,8 +85,14 @@ for asset_file in asset_files:
     for ref in donor_xml.iter('Ref'):
         if ref.text in references: ref.text=references[ref.text]
     for node in donor_xml.findall('Item'): shared.append(node)
-fingerprint=hashlib.sha256(b''.join(p.read_bytes() for p in sorted((ROOT/'src').rglob('*.luau')) if included(p))+b''.join(p.read_bytes() for p in asset_files)).hexdigest()
+fingerprint=hashlib.sha256(b''.join(p.read_bytes() for p in sorted((ROOT/'src').rglob('*.luau')) if included(p))+b''.join(p.read_bytes() for p in asset_files)+b''.join(p.read_bytes() for p in capture_files)).hexdigest()
+runtime_fingerprint=hashlib.sha256(b''.join(p.read_bytes() for p in sorted((ROOT/'src').rglob('*.luau')) if runtime(p))+b''.join(p.read_bytes() for p in asset_files)).hexdigest()
 item(shared,'StringValue','BuildFingerprint',[('Value','string',fingerprint)])
+# The build's identity, printed by Main and the capture tools: same runtime and
+# commit in every profile of one commit.
+item(shared,'StringValue','RuntimeFingerprint',[('Value','string',runtime_fingerprint)])
+item(shared,'StringValue','BuildProfile',[('Value','string',PROFILE)])
+item(shared,'StringValue','SourceCommit',[('Value','string',SOURCE_COMMIT[:12]+('-dirty' if SOURCE_DIRTY else ''))])
 licenses=item(shared,'Folder','ThirdPartyLicenses')
 for vendor in ('bangla','place1','velmora'):
     item(licenses,'StringValue',vendor,[('Value','string',(ROOT/'vendor'/vendor/'LICENSE').read_text(encoding='utf-8'))])
@@ -71,20 +102,30 @@ starter=item(xml,'StarterPlayer','StarterPlayer', [('CameraMinZoomDistance','flo
 sources(item(item(starter,'StarterPlayerScripts','StarterPlayerScripts'),'Folder','NinjaDuelClient'),ROOT/'src/Client')
 item(xml,'Lighting','Lighting', [('Technology','token',4),('LightingStyle','token',0),('PrioritizeLightingQuality','bool','true'),('ClockTime','float',15),('Brightness','float',2.5),('Ambient','Color3',{'R':0.42,'G':0.48,'B':0.55}),('OutdoorAmbient','Color3',{'R':0.55,'G':0.58,'B':0.6})])
 item(xml,'SoundService','SoundService')
-if args.qa or args.debug:
+if args.capture:
+    folders={}
+    for service,cls,name,filename in CAPTURE_LAYOUT:
+        if service=='ServerScriptService': parent=server
+        else:
+            if service not in folders:
+                holder=replicated if service=='ReplicatedStorage' else item(xml,'ServerStorage','ServerStorage')
+                folders[service]=item(holder,'Folder','NDFactory')
+            parent=folders[service]
+        item(parent,cls,name,[('Source','ProtectedString',(CAPTURE/filename).read_text(encoding='utf-8'))])
+if STUDIO_ONLY:
     prefix='workspace:SetAttribute("NinjaDuelDebug",true)\n'
     if args.qa: prefix+='workspace:SetAttribute("NinjaDuelQA",true)\n'
     for props in server.iter('Properties'):
         if props.findtext("string[@name='Name']") == 'Main':
             source = props.find("ProtectedString[@name='Source']")
             source.text = prefix+source.text
-name='NinjaDuel-QA.rbxlx' if args.qa else 'NinjaDuel-Debug.rbxlx' if args.debug else 'NinjaDuel.rbxlx'
+name={'release':'NinjaDuel.rbxlx','debug':'NinjaDuel-Debug.rbxlx','qa':'NinjaDuel-QA.rbxlx','capture':'NinjaDuel-Capture.rbxlx'}[PROFILE]
 output=ROOT/'dist'/name
 ET.indent(xml)
 # Binary handle: identical LF bytes on macOS and Windows (text mode would emit CRLF).
 with open(output,'wb') as handle: ET.ElementTree(xml).write(handle,encoding='utf-8',xml_declaration=True)
-expected = [p.read_text(encoding='utf-8') for p in (ROOT/'src').rglob('*.luau') if included(p)]
-if args.qa or args.debug:
+expected = [p.read_text(encoding='utf-8') for p in (ROOT/'src').rglob('*.luau') if included(p)]+[p.read_text(encoding='utf-8') for p in capture_files]
+if STUDIO_ONLY:
     main_source=(ROOT/'src/Server/Main.server.luau').read_text(encoding='utf-8')
     expected[expected.index(main_source)]=prefix+main_source
 embedded=[p.findtext("ProtectedString[@name='Source']") for p in xml.iter('Properties') if p.find("ProtectedString[@name='Source']") is not None]
@@ -92,7 +133,7 @@ assert sorted(embedded)==sorted(expected), 'Embedded sources differ from reviewe
 external_ids={1778999,18342131933,18342045122,18341956985,18341905406,5835032207,8595980577,9117969717,656117400,656118852,656121766,656117878,656115606,656114359}
 for asset_file in asset_files:
     external_ids.update(map(int,re.findall(r'rbxassetid://(\d+)',asset_file.read_text(encoding='utf-8'))))
-import subprocess,sys
+import sys
 # Automated gate: every headless spec must pass on the exact sources built here.
 TEST_RUNNERS=[('lune','tests/Input.spec.luau'),('luau','tests/Rules.spec.luau'),('lune','tests/Combat.spec.luau'),('lune','tests/Sequences.spec.luau'),('lune','tests/Regression.spec.luau'),('lune','tests/Feedback.spec.luau'),('lune','tests/Animation.spec.luau'),('lune','tests/Branches.spec.luau'),('lune','tests/Phase4.spec.luau'),('lune','tests/Neji.spec.luau'),('lune','tests/Systems.spec.luau'),('lune','tests/Tools.spec.luau'),('lune','tests/Sasuke.spec.luau'),('lune','tests/Gaara.spec.luau'),('lune','tests/Lee.spec.luau'),('lune','tests/Online.spec.luau'),('lune','tests/Progression.spec.luau'),('lune','tests/Profiles.spec.luau'),('lune','tests/Preparation.spec.luau'),('lune','tests/DevInfra.spec.luau'),('lune','tests/ComboModel.spec.luau'),('lune','tests/Chakra.spec.luau'),('lune','tests/ChakraFlow.spec.luau'),('lune','tests/AirCombat.spec.luau')]
 # CORE4 identity pass (Mirage, Read, Wind Cut, tenketsu, awakenings, jutsu flow).
@@ -148,7 +189,9 @@ for spec,data in automated['suites'].items():
 if automated['status']=='FAIL':
     sys.exit('Automated suites failed: '+', '.join(automated['failed']))
 
-manifest={'version':'0.13.0-arena-combo','artifact':name,'sha256':hashlib.sha256(output.read_bytes()).hexdigest(),'sources':{p.relative_to(ROOT).as_posix():hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted((ROOT/'src').rglob('*.luau')) if included(p)},'sourceEquality':'PASS','debugOnly':args.debug or args.qa,'buildFingerprint':fingerprint,'donorAssets':{p.relative_to(ROOT).as_posix():hashlib.sha256(p.read_bytes()).hexdigest() for p in asset_files},'externalAssets':sorted(external_ids),
+manifest={'version':'0.13.0-arena-combo','artifact':name,'sha256':hashlib.sha256(output.read_bytes()).hexdigest(),'sources':{p.relative_to(ROOT).as_posix():hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted((ROOT/'src').rglob('*.luau')) if included(p)},'sourceEquality':'PASS','debugOnly':STUDIO_ONLY,'buildFingerprint':fingerprint,
+ 'profile':PROFILE,'runtimeFingerprint':runtime_fingerprint,'sourceCommit':SOURCE_COMMIT,'sourceDirty':SOURCE_DIRTY,
+ 'captureTools':{p.relative_to(ROOT).as_posix():hashlib.sha256(p.read_bytes()).hexdigest() for p in capture_files},'donorAssets':{p.relative_to(ROOT).as_posix():hashlib.sha256(p.read_bytes()).hexdigest() for p in asset_files},'externalAssets':sorted(external_ids),
  'automatedQA':automated,
  # Native (Roblox Studio) and human-feel gates are recorded separately and are
  # only moved off PENDING by an actual Studio run on this exact artifact.

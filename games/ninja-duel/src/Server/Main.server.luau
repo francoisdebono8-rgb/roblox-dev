@@ -31,5 +31,10 @@ end
 if RunService:IsStudio() and workspace:GetAttribute("NinjaDuelQA")==true then
 	task.spawn(function() require(script.Parent.NativeQA).run(matches) end)
 end
-print("[NinjaDuel] BUILD "..Shared.BuildFingerprint.Value)
+-- The build's identity (issue #45): the same RUNTIME and commit in the GAME,
+-- DEV, QA and FILM places of one commit; BUILD differs by profile.
+do
+	local function stamp(name) local value=Shared:FindFirstChild(name) return value and value.Value or "?" end
+	print("[NinjaDuel] BUILD "..Shared.BuildFingerprint.Value.." | RUNTIME "..stamp("RuntimeFingerprint").." | "..stamp("BuildProfile").." @ "..stamp("SourceCommit"))
+end
 print("[NinjaDuel] Ready — select a fighter and start the duel")
