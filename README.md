@@ -29,3 +29,14 @@ Scripts extraits des places :
 - `Downloads/NinjaDuel-5` et `NinjaDuel-Debug` (16/10, `5c6f3be`) : `VelmoraMotionEngine` modifié à chaud.
 
 Les originaux restent sur le Mac (rien n'a été supprimé).
+
+## Ajout du 07/11, 14 h 50 (heure de Paris)
+
+`mac/places-scripts/ND-Clips-integ-0611_1346/` : la place de tournage
+`ND-Clips-integ-0611` a été enregistrée sur le Mac à 14 h 46 avec deux scripts
+absents de Git :
+- `ByakuganFX`, une itération antérieure à celle de `claude/perception-sharingan` ;
+- `ShotRunner`, la correction locale du CM : attendre l'intro d'un vrai duel.
+  Elle est portée dans `games/ninja-duel/tools/capture/studio/` de la référence.
+
+`scripts.txt` liste ses 211 scripts.
