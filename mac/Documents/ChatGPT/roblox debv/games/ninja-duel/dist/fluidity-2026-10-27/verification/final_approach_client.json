@@ -1,0 +1,9 @@
+{
+  "content": [
+    {
+      "type": "text",
+      "text": "{\"attacks\":{\"1\":{\"state\":\"Startup\",\"combo\":0,\"t\":1793125340.498505,\"air\":false,\"attack\":\"VaultKick\"},\"4\":{\"air\":false,\"reaction\":\"Knockback\",\"combo\":0,\"t\":1793125341.99257,\"state\":\"Neutral\"},\"3\":{\"state\":\"Startup\",\"combo\":0,\"t\":1793125341.44251,\"air\":false,\"attack\":\"Light3\"},\"2\":{\"state\":\"Startup\",\"combo\":1,\"t\":1793125340.975841,\"air\":false,\"attack\":\"Light2\"}},\"lights\":{\"1\":{\"shadows\":false,\"range\":5,\"brightness\":0.6499999761581421},\"3\":{\"shadows\":false,\"range\":5,\"brightness\":0.6499999761581421},\"2\":{\"shadows\":false,\"range\":5,\"brightness\":0.6499999761581421}},\"errors\":[]}"
+    }
+  ],
+  "isError": false
+}

@@ -1,0 +1,8 @@
+file '../../v2/S1_throw.mp4'
+file '../../v2/S2_cut.mp4'
+file '../../v2/S3_dodge.mp4'
+file '../../v2/S4_press.mp4'
+file '../../v2/S5_fang.mp4'
+file '../../v2/S6_read.mp4'
+file '../../v2/S7_fireball.mp4'
+file '../../v2/S8_itachi.mp4'

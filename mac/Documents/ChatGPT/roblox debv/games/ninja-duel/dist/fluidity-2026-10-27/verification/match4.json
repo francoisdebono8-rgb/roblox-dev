@@ -1,0 +1,9 @@
+{
+  "content": [
+    {
+      "type": "text",
+      "text": "{\"bot\":39.27599999999998,\"seconds\":85.86502557434142,\"human\":0,\"errors\":[],\"phase\":\"Result\",\"round\":2,\"frames\":2001,\"states\":{\"human:TechniqueChannel\":13,\"human:Startup\":14,\"bot:Guarding\":22,\"bot:Active\":81,\"human:Stunned\":37,\"human:Rush\":7,\"bot:TechniqueChannel\":12,\"human:Dodging\":15,\"bot:Pursuit\":17,\"bot:Rush\":18,\"human:Defeated\":529,\"human:Active\":17,\"bot:TechniqueActive\":3,\"bot:Stunned\":27,\"bot:Neutral\":910,\"human:Neutral\":522,\"bot:Dodging\":19,\"human:Guarding\":32,\"human:TechniqueRecovery\":15,\"bot:TechniqueRecovery\":4,\"human:Pursuit\":4,\"human:TechniqueActive\":19,\"bot:Recovery\":83,\"bot:Startup\":50,\"human:Recovery\":22}}"
+    }
+  ],
+  "isError": false
+}

@@ -1,0 +1,12 @@
+Ninja Duel — version fluidité du 27 octobre 2026
+
+Ouvrir NinjaDuel.rbxlx dans Roblox Studio puis Play.
+La version normale démarre sur le choix des personnages.
+Debug et QA sont des variantes de contrôle.
+
+Corrections : approche sans lancement involontaire, commandes et relâchements fiables, trajectoires aériennes, raccords corps/objets/impacts, lumière atténuée.
+610 tests sur chaque variante et vérifications ciblées en Studio.
+Le troisième coup conserve sa projection de fin de combo.
+
+Sources conservées : branche codex/ninja-playable-fluidity-20261027, commit d5479cf.
+Le rapport et les limites sont dans verification/REPORT.md.

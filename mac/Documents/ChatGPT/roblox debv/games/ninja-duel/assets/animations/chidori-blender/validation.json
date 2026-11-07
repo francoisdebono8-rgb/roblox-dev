@@ -1,0 +1,12 @@
+{
+  "frames": 168,
+  "fps": 24,
+  "duration_seconds": 7,
+  "body_bones": 15,
+  "root_bones": 1,
+  "max_effect_hand_error": 1.0925711858167266e-06,
+  "max_root_step": 0.20670175423392173,
+  "alternating_support": "PASS",
+  "finite_bone_matrices": "PASS",
+  "notes": "Original R15 study; not retargeted to the game avatar. Key rendered poses inspected."
+}

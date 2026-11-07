@@ -1,0 +1,14 @@
+{
+  "file": "/sessions/rcw-01p4bfd8n4cboez6soutatjv/mnt/Documents/NinjaDuelMedia/FILM01_KUNAI_TRAP/01_RUSHES_v3/H_CTA_ARENA_v39t_CTA.mp4",
+  "duration_s": 5.6,
+  "width": 1080,
+  "height": 1920,
+  "frame_rate": "60/1",
+  "codec": "h264",
+  "audio_present": true,
+  "black_candidates": [],
+  "freeze_candidates": [],
+  "contact_sheet_ok": true,
+  "status": "HUMAN_VISUAL_REVIEW_REQUIRED",
+  "limitations": "No automated check of limb animation, Roblox physics, spells, camera clipping or truthful match actions."
+}

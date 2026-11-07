@@ -1,0 +1,86 @@
+[
+ {
+  "place": "Documents/NinjaDuelVFX/ND-VFX-Lab.rbxlx",
+  "path": "Workspace.Lab.Attacker.Animate",
+  "class": "LocalScript",
+  "blob": "5b82b4db55a648442d4422697910252f4377a112",
+  "file": "places-scripts/ND-VFX-Lab/Workspace.Lab.Attacker.Animate.LocalScript.luau"
+ },
+ {
+  "place": "Documents/NinjaDuelVFX/ND-VFX-Lab.rbxlx",
+  "path": "Workspace.Lab.Victim.Animate",
+  "class": "LocalScript",
+  "blob": "5b82b4db55a648442d4422697910252f4377a112",
+  "file": "places-scripts/ND-VFX-Lab/Workspace.Lab.Victim.Animate.LocalScript.luau"
+ },
+ {
+  "place": "Documents/NinjaDuelVFX/ND-VFX-Lab.rbxlx",
+  "path": "ReplicatedStorage.VfxDesign",
+  "class": "ModuleScript",
+  "blob": "4e7e080ddd09cd80074b7cc7f44d51da004a75eb",
+  "file": "places-scripts/ND-VFX-Lab/ReplicatedStorage.VfxDesign.ModuleScript.luau"
+ },
+ {
+  "place": "Documents/NinjaDuelVFX/ND-VFX-Lab.rbxlx",
+  "path": "ReplicatedStorage.VfxMesh",
+  "class": "ModuleScript",
+  "blob": "94dcdd00edaa697260d47391ec37bb045c9feb41",
+  "file": "places-scripts/ND-VFX-Lab/ReplicatedStorage.VfxMesh.ModuleScript.luau"
+ },
+ {
+  "place": "Documents/NinjaDuelVFX/ND-VFX-Lab.rbxlx",
+  "path": "ReplicatedStorage.VfxHit",
+  "class": "ModuleScript",
+  "blob": "719a9823c1cbb44c485cd1c04d7b98ea97c613dc",
+  "file": "places-scripts/ND-VFX-Lab/ReplicatedStorage.VfxHit.ModuleScript.luau"
+ },
+ {
+  "place": "Documents/NinjaDuelMedia/ND-Clips2.rbxlx",
+  "path": "ServerStorage.PhotoLoad",
+  "class": "ModuleScript",
+  "blob": "a853b8d8e218fb70e64fa895c5c837851b478534",
+  "file": "places-scripts/ND-Clips2/ServerStorage.PhotoLoad.ModuleScript.luau"
+ },
+ {
+  "place": "Documents/NinjaDuelMedia/ND-Clips2.rbxlx",
+  "path": "ServerStorage.PhotoMode",
+  "class": "ModuleScript",
+  "blob": "a6023452cdf8fcc54da6dfac52090bf632127361",
+  "file": "places-scripts/ND-Clips2/ServerStorage.PhotoMode.ModuleScript.luau"
+ },
+ {
+  "place": "Documents/NinjaDuelMedia/JUTSU_PASS/ND-Jutsu-Debug-v3.rbxlx",
+  "path": "StarterPlayer.StarterPlayerScripts.NinjaDuelClient.Effects",
+  "class": "ModuleScript",
+  "blob": "c8f60c5f5e13ab47d355e052df9b403e197c86c1",
+  "file": "places-scripts/ND-Jutsu-Debug-v3/StarterPlayer.StarterPlayerScripts.NinjaDuelClient.Effects.ModuleScript.luau"
+ },
+ {
+  "place": "Documents/NinjaDuelMedia/JUTSU_PASS/ND-Jutsu-Debug-v3.rbxlx",
+  "path": "StarterPlayer.StarterPlayerScripts.NinjaDuelClient.FamilyFX",
+  "class": "ModuleScript",
+  "blob": "269f503025c2119ef5a324bced909732c87332e5",
+  "file": "places-scripts/ND-Jutsu-Debug-v3/StarterPlayer.StarterPlayerScripts.NinjaDuelClient.FamilyFX.ModuleScript.luau"
+ },
+ {
+  "place": "Documents/NinjaDuelMedia/JUTSU_PASS/ND-Jutsu-Debug-v3.rbxlx",
+  "path": "StarterPlayer.StarterPlayerScripts.NinjaDuelClient.UltimateFX",
+  "class": "ModuleScript",
+  "blob": "56db59ff9be99caf3486e2542334ad9dec3174b6",
+  "file": "places-scripts/ND-Jutsu-Debug-v3/StarterPlayer.StarterPlayerScripts.NinjaDuelClient.UltimateFX.ModuleScript.luau"
+ },
+ {
+  "place": "Downloads/NinjaDuel-5.rbxlx",
+  "path": "StarterPlayer.StarterPlayerScripts.NinjaDuelClient.VelmoraMotionEngine",
+  "class": "ModuleScript",
+  "blob": "f7ee57fa790bfd75c5a1f9a7c4f8a7ca27595df4",
+  "file": "places-scripts/NinjaDuel-5/StarterPlayer.StarterPlayerScripts.NinjaDuelClient.VelmoraMotionEngine.ModuleScript.luau"
+ },
+ {
+  "place": "Downloads/NinjaDuel-Debug.rbxlx",
+  "path": "StarterPlayer.StarterPlayerScripts.NinjaDuelClient.VelmoraMotionEngine",
+  "class": "ModuleScript",
+  "blob": "f7ee57fa790bfd75c5a1f9a7c4f8a7ca27595df4",
+  "file": "places-scripts/NinjaDuel-Debug/StarterPlayer.StarterPlayerScripts.NinjaDuelClient.VelmoraMotionEngine.ModuleScript.luau"
+ }
+]

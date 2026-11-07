@@ -1,0 +1,35 @@
+KIT CAPCUT — legend01 NARUTO vs SASUKE — 18.55 s (9:16, 1080x1920, 60 i/s)
+
+PISTE PRINCIPALE
+    0.00 ->   0.80  clips/c01_hook_sharingan.mp4      
+    0.80 ->   1.25  clips/c02_hook_chidori.mp4        
+    1.25 ->   2.65  clips/c03_faceoff.mp4             
+    2.65 ->   3.05  clips/c04_naruto_eye.mp4          
+    3.05 ->   3.45  clips/c05_sasuke_eye.mp4          
+    3.45 ->   4.20  clips/c06_naruto_rush.mp4         
+    4.20 ->   5.10  clips/c07_naruto_hits.mp4         
+    5.10 ->   6.65  clips/c08_sasuke_counter.mp4      
+    6.65 ->   7.40  clips/c09_seals_mid.mp4           
+    7.40 ->   8.00  clips/c10_seals_hands.mp4         
+    8.00 ->   8.90  clips/c11_dragon_hit.mp4          
+    8.90 ->  10.10  clips/c12_shadow_clones.mp4       
+   10.10 ->  10.80  clips/c13_rendan_launch.mp4       
+   10.80 ->  12.05  clips/c14_rendan_slam.mp4           vitesse 0.6x
+   12.05 ->  12.95  clips/c15_chidori_charge.mp4      
+   12.95 ->  13.35  clips/c16_naruto_glare.mp4        
+   13.35 ->  14.95  clips/c17_clash_slowmo.mp4          vitesse 0.5x
+   14.95 ->  18.55  clips/c18_freeze.png  (image figée)
+
+INCRUSTATIONS
+    0.00 ->   1.25  overlays/o01_title.png            NARUTO vs SASUKE
+    6.65 ->   8.90  overlays/o02_caption.png          KATON: DRAGON FLAME
+    8.90 ->  10.10  overlays/o03_caption.png          SHADOW CLONE JUTSU
+   10.10 ->  12.05  overlays/o04_caption.png          UZUMAKI BARRAGE
+   12.05 ->  12.95  overlays/o05_caption.png          CHIDORI
+   12.95 ->  13.35  overlays/o06_caption.png          RASENGAN
+   14.95 ->  16.55  overlays/o07_stamp.png            WHO / WINS?
+   16.55 ->  18.55  overlays/o08_cta.png              NINJA DUEL / IS FREE ON ROBLOX
+
+AUDIO
+  0.00 -> 18.55  audio/sfx_bed.wav
+  musique CapCut (usage commercial), -12 dB, coupe nette sur le WHO WINS

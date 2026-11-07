@@ -1,0 +1,21 @@
+{
+  "file": "/sessions/rcw-01p4bfd8n4cboez6soutatjv/mnt/Documents/NinjaDuelMedia/B1_PRODIGY_ITACHI/01_RUSHES/B1_ITACHI_SEQ_v39t_T2.mp4",
+  "duration_s": 8.2,
+  "width": 1080,
+  "height": 1920,
+  "frame_rate": "60/1",
+  "codec": "h264",
+  "audio_present": true,
+  "black_candidates": [],
+  "freeze_candidates": [
+    "[freezedetect @ 0xb3480b698d20] lavfi.freezedetect.freeze_start: 6.73333",
+    "[freezedetect @ 0xb3480b698d20] lavfi.freezedetect.freeze_end: 6.93333",
+    "[freezedetect @ 0xb3480b698d20] lavfi.freezedetect.freeze_start: 7.71667",
+    "[freezedetect @ 0xb3480b698d20] lavfi.freezedetect.freeze_end: 7.93333",
+    "[freezedetect @ 0xb3480b698d20] lavfi.freezedetect.freeze_start: 7.93333",
+    "[freezedetect @ 0xb3480b698d20] lavfi.freezedetect.freeze_end: 8.13333"
+  ],
+  "contact_sheet_ok": true,
+  "status": "HUMAN_VISUAL_REVIEW_REQUIRED",
+  "limitations": "No automated check of limb animation, Roblox physics, spells, camera clipping or truthful match actions."
+}

@@ -1,0 +1,3 @@
+file 'aS1_long_0.wav'
+file 'aS1_long_1.wav'
+file 'aS1_long_2.wav'

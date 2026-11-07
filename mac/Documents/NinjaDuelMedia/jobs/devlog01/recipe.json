@@ -1,0 +1,1093 @@
+{
+ "job": "devlog01",
+ "format": "devlog",
+ "fps": 60,
+ "shots": [
+  {
+   "src": "Tournoi/clips/c15_final.mp4",
+   "in": 0.0,
+   "out": 2.1,
+   "speed": 0.8187134502923977,
+   "label": "broll"
+  },
+  {
+   "src": "Tournoi/clips/c01_hook.mp4",
+   "in": 0.0,
+   "out": 1.358,
+   "speed": 1.0,
+   "label": "broll"
+  },
+  {
+   "src": "Tournoi/clips/c14_finint.mp4",
+   "in": 0.0,
+   "out": 1.1,
+   "speed": 1.0,
+   "label": "broll"
+  },
+  {
+   "src": "Tournoi/clips/c06_qf3.mp4",
+   "in": 0.0,
+   "out": 1.546,
+   "speed": 1.0,
+   "label": "broll"
+  },
+  {
+   "src": "Tournoi/clips/c08_qf4.mp4",
+   "in": 0.0,
+   "out": 1.8,
+   "speed": 0.8239700374531835,
+   "label": "broll"
+  },
+  {
+   "src": "Tournoi/clips/c04_qf2.mp4",
+   "in": 0.0,
+   "out": 1.5,
+   "speed": 0.8239700374531835,
+   "label": "broll"
+  },
+  {
+   "src": "Tournoi/clips/c03_qf1b.mp4",
+   "in": 0.0,
+   "out": 0.934,
+   "speed": 0.812645011600928,
+   "label": "broll"
+  },
+  {
+   "src": "Tournoi/clips/c05_qf2b.mp4",
+   "in": 0.0,
+   "out": 0.934,
+   "speed": 0.812645011600928,
+   "label": "broll"
+  },
+  {
+   "src": "Tournoi/clips/c11_sf1b.mp4",
+   "in": 0.0,
+   "out": 0.934,
+   "speed": 0.812645011600928,
+   "label": "broll"
+  },
+  {
+   "src": "Tournoi/clips/c10_sf1.mp4",
+   "in": 0.0,
+   "out": 1.8,
+   "speed": 1.0,
+   "label": "broll"
+  },
+  {
+   "src": "Tournoi/clips/c12_sf2v2.mp4",
+   "in": 0.0,
+   "out": 0.568,
+   "speed": 1.0,
+   "label": "broll"
+  },
+  {
+   "src": "Tournoi/clips/c13_sf2b.mp4",
+   "in": 0.0,
+   "out": 0.934,
+   "speed": 0.9466216216216213,
+   "label": "broll"
+  },
+  {
+   "src": "Tournoi/clips/c09_qf4b.mp4",
+   "in": 0.0,
+   "out": 0.934,
+   "speed": 0.9466216216216213,
+   "label": "broll"
+  },
+  {
+   "src": "Tournoi/clips/c07_qf3b.mp4",
+   "in": 0.0,
+   "out": 0.934,
+   "speed": 0.9466216216216213,
+   "label": "broll"
+  },
+  {
+   "src": "Tournoi/clips/c02_qf1.mp4",
+   "in": 0.0,
+   "out": 1.5,
+   "speed": 0.6,
+   "label": "broll"
+  }
+ ],
+ "overlays": [
+  {
+   "spec": {
+    "type": "words",
+    "words": [
+     "I'M",
+     "MAKING",
+     "A"
+    ],
+    "hi": 0,
+    "y": 1450
+   },
+   "from": 0.08,
+   "to": 0.279
+  },
+  {
+   "spec": {
+    "type": "words",
+    "words": [
+     "I'M",
+     "MAKING",
+     "A"
+    ],
+    "hi": 1,
+    "y": 1450
+   },
+   "from": 0.279,
+   "to": 0.596
+  },
+  {
+   "spec": {
+    "type": "words",
+    "words": [
+     "I'M",
+     "MAKING",
+     "A"
+    ],
+    "hi": 2,
+    "y": 1450
+   },
+   "from": 0.596,
+   "to": 0.716
+  },
+  {
+   "spec": {
+    "type": "words",
+    "words": [
+     "NINJA",
+     "FIGHTING",
+     "GAME"
+    ],
+    "hi": 0,
+    "y": 1450
+   },
+   "from": 0.716,
+   "to": 0.994
+  },
+  {
+   "spec": {
+    "type": "words",
+    "words": [
+     "NINJA",
+     "FIGHTING",
+     "GAME"
+    ],
+    "hi": 1,
+    "y": 1450
+   },
+   "from": 0.994,
+   "to": 1.391
+  },
+  {
+   "spec": {
+    "type": "words",
+    "words": [
+     "NINJA",
+     "FIGHTING",
+     "GAME"
+    ],
+    "hi": 2,
+    "y": 1450
+   },
+   "from": 1.391,
+   "to": 1.629
+  },
+  {
+   "spec": {
+    "type": "words",
+    "words": [
+     "ON",
+     "ROBLOX."
+    ],
+    "hi": 0,
+    "y": 1450
+   },
+   "from": 1.629,
+   "to": 1.788
+  },
+  {
+   "spec": {
+    "type": "words",
+    "words": [
+     "ON",
+     "ROBLOX."
+    ],
+    "hi": 1,
+    "y": 1450
+   },
+   "from": 1.788,
+   "to": 2.345
+  },
+  {
+   "spec": {
+    "type": "words",
+    "words": [
+     "AND",
+     "YOU",
+     "CAN"
+    ],
+    "hi": 0,
+    "y": 1450
+   },
+   "from": 2.645,
+   "to": 2.772
+  },
+  {
+   "spec": {
+    "type": "words",
+    "words": [
+     "AND",
+     "YOU",
+     "CAN"
+    ],
+    "hi": 1,
+    "y": 1450
+   },
+   "from": 2.772,
+   "to": 2.899
+  },
+  {
+   "spec": {
+    "type": "words",
+    "words": [
+     "AND",
+     "YOU",
+     "CAN"
+    ],
+    "hi": 2,
+    "y": 1450
+   },
+   "from": 2.899,
+   "to": 3.025
+  },
+  {
+   "spec": {
+    "type": "words",
+    "words": [
+     "ALREADY",
+     "PLAY",
+     "IT."
+    ],
+    "hi": 0,
+    "y": 1450
+   },
+   "from": 3.025,
+   "to": 3.254
+  },
+  {
+   "spec": {
+    "type": "words",
+    "words": [
+     "ALREADY",
+     "PLAY",
+     "IT."
+    ],
+    "hi": 1,
+    "y": 1450
+   },
+   "from": 3.254,
+   "to": 3.406
+  },
+  {
+   "spec": {
+    "type": "words",
+    "words": [
+     "ALREADY",
+     "PLAY",
+     "IT."
+    ],
+    "hi": 2,
+    "y": 1450
+   },
+   "from": 3.406,
+   "to": 3.703
+  },
+  {
+   "spec": {
+    "type": "words",
+    "words": [
+     "EIGHT",
+     "YOUNG",
+     "PRODIGIES,"
+    ],
+    "hi": 0,
+    "y": 1450
+   },
+   "from": 4.003,
+   "to": 4.254
+  },
+  {
+   "spec": {
+    "type": "words",
+    "words": [
+     "EIGHT",
+     "YOUNG",
+     "PRODIGIES,"
+    ],
+    "hi": 1,
+    "y": 1450
+   },
+   "from": 4.254,
+   "to": 4.506
+  },
+  {
+   "spec": {
+    "type": "words",
+    "words": [
+     "EIGHT",
+     "YOUNG",
+     "PRODIGIES,"
+    ],
+    "hi": 2,
+    "y": 1450
+   },
+   "from": 4.506,
+   "to": 5.009
+  },
+  {
+   "spec": {
+    "type": "words",
+    "words": [
+     "EACH",
+     "WITH",
+     "THEIR"
+    ],
+    "hi": 0,
+    "y": 1450
+   },
+   "from": 5.009,
+   "to": 5.224
+  },
+  {
+   "spec": {
+    "type": "words",
+    "words": [
+     "EACH",
+     "WITH",
+     "THEIR"
+    ],
+    "hi": 1,
+    "y": 1450
+   },
+   "from": 5.224,
+   "to": 5.439
+  },
+  {
+   "spec": {
+    "type": "words",
+    "words": [
+     "EACH",
+     "WITH",
+     "THEIR"
+    ],
+    "hi": 2,
+    "y": 1450
+   },
+   "from": 5.439,
+   "to": 5.691
+  },
+  {
+   "spec": {
+    "type": "words",
+    "words": [
+     "OWN",
+     "JUTSU."
+    ],
+    "hi": 0,
+    "y": 1450
+   },
+   "from": 5.691,
+   "to": 5.87
+  },
+  {
+   "spec": {
+    "type": "words",
+    "words": [
+     "OWN",
+     "JUTSU."
+    ],
+    "hi": 1,
+    "y": 1450
+   },
+   "from": 5.87,
+   "to": 6.349
+  },
+  {
+   "spec": {
+    "type": "words",
+    "words": [
+     "REAL",
+     "COMBOS,",
+     "THROWS,"
+    ],
+    "hi": 0,
+    "y": 1450
+   },
+   "from": 6.649,
+   "to": 6.925
+  },
+  {
+   "spec": {
+    "type": "words",
+    "words": [
+     "REAL",
+     "COMBOS,",
+     "THROWS,"
+    ],
+    "hi": 1,
+    "y": 1450
+   },
+   "from": 6.925,
+   "to": 7.431
+  },
+  {
+   "spec": {
+    "type": "words",
+    "words": [
+     "REAL",
+     "COMBOS,",
+     "THROWS,"
+    ],
+    "hi": 2,
+    "y": 1450
+   },
+   "from": 7.431,
+   "to": 7.936
+  },
+  {
+   "spec": {
+    "type": "words",
+    "words": [
+     "WALL",
+     "RUNS,",
+     "AND"
+    ],
+    "hi": 0,
+    "y": 1450
+   },
+   "from": 7.936,
+   "to": 8.212
+  },
+  {
+   "spec": {
+    "type": "words",
+    "words": [
+     "WALL",
+     "RUNS,",
+     "AND"
+    ],
+    "hi": 1,
+    "y": 1450
+   },
+   "from": 8.212,
+   "to": 8.626
+  },
+  {
+   "spec": {
+    "type": "words",
+    "words": [
+     "WALL",
+     "RUNS,",
+     "AND"
+    ],
+    "hi": 2,
+    "y": 1450
+   },
+   "from": 8.626,
+   "to": 8.856
+  },
+  {
+   "spec": {
+    "type": "words",
+    "words": [
+     "A",
+     "FULL",
+     "SCREEN"
+    ],
+    "hi": 0,
+    "y": 1450
+   },
+   "from": 8.856,
+   "to": 8.993
+  },
+  {
+   "spec": {
+    "type": "words",
+    "words": [
+     "A",
+     "FULL",
+     "SCREEN"
+    ],
+    "hi": 1,
+    "y": 1450
+   },
+   "from": 8.993,
+   "to": 9.269
+  },
+  {
+   "spec": {
+    "type": "words",
+    "words": [
+     "A",
+     "FULL",
+     "SCREEN"
+    ],
+    "hi": 2,
+    "y": 1450
+   },
+   "from": 9.269,
+   "to": 9.637
+  },
+  {
+   "spec": {
+    "type": "words",
+    "words": [
+     "ULTIMATE."
+    ],
+    "hi": 0,
+    "y": 1450
+   },
+   "from": 9.637,
+   "to": 10.354
+  },
+  {
+   "spec": {
+    "type": "words",
+    "words": [
+     "YESTERDAY,",
+     "I",
+     "MADE"
+    ],
+    "hi": 0,
+    "y": 1450
+   },
+   "from": 10.654,
+   "to": 11.219
+  },
+  {
+   "spec": {
+    "type": "words",
+    "words": [
+     "YESTERDAY,",
+     "I",
+     "MADE"
+    ],
+    "hi": 1,
+    "y": 1450
+   },
+   "from": 11.219,
+   "to": 11.341
+  },
+  {
+   "spec": {
+    "type": "words",
+    "words": [
+     "YESTERDAY,",
+     "I",
+     "MADE"
+    ],
+    "hi": 2,
+    "y": 1450
+   },
+   "from": 11.341,
+   "to": 11.583
+  },
+  {
+   "spec": {
+    "type": "words",
+    "words": [
+     "THE",
+     "AI",
+     "FIGHT"
+    ],
+    "hi": 0,
+    "y": 1450
+   },
+   "from": 11.583,
+   "to": 11.785
+  },
+  {
+   "spec": {
+    "type": "words",
+    "words": [
+     "THE",
+     "AI",
+     "FIGHT"
+    ],
+    "hi": 1,
+    "y": 1450
+   },
+   "from": 11.785,
+   "to": 11.946
+  },
+  {
+   "spec": {
+    "type": "words",
+    "words": [
+     "THE",
+     "AI",
+     "FIGHT"
+    ],
+    "hi": 2,
+    "y": 1450
+   },
+   "from": 11.946,
+   "to": 12.229
+  },
+  {
+   "spec": {
+    "type": "words",
+    "words": [
+     "ITSELF",
+     "IN",
+     "A"
+    ],
+    "hi": 0,
+    "y": 1450
+   },
+   "from": 12.229,
+   "to": 12.552
+  },
+  {
+   "spec": {
+    "type": "words",
+    "words": [
+     "ITSELF",
+     "IN",
+     "A"
+    ],
+    "hi": 1,
+    "y": 1450
+   },
+   "from": 12.552,
+   "to": 12.713
+  },
+  {
+   "spec": {
+    "type": "words",
+    "words": [
+     "ITSELF",
+     "IN",
+     "A"
+    ],
+    "hi": 2,
+    "y": 1450
+   },
+   "from": 12.713,
+   "to": 12.834
+  },
+  {
+   "spec": {
+    "type": "words",
+    "words": [
+     "FULL",
+     "TOURNAMENT."
+    ],
+    "hi": 0,
+    "y": 1450
+   },
+   "from": 12.834,
+   "to": 13.076
+  },
+  {
+   "spec": {
+    "type": "words",
+    "words": [
+     "FULL",
+     "TOURNAMENT."
+    ],
+    "hi": 1,
+    "y": 1450
+   },
+   "from": 13.076,
+   "to": 13.802
+  },
+  {
+   "spec": {
+    "type": "words",
+    "words": [
+     "FOLLOW",
+     "ALONG,",
+     "AND"
+    ],
+    "hi": 0,
+    "y": 1450
+   },
+   "from": 14.102,
+   "to": 14.38
+  },
+  {
+   "spec": {
+    "type": "words",
+    "words": [
+     "FOLLOW",
+     "ALONG,",
+     "AND"
+    ],
+    "hi": 1,
+    "y": 1450
+   },
+   "from": 14.38,
+   "to": 14.728
+  },
+  {
+   "spec": {
+    "type": "words",
+    "words": [
+     "FOLLOW",
+     "ALONG,",
+     "AND"
+    ],
+    "hi": 2,
+    "y": 1450
+   },
+   "from": 14.728,
+   "to": 14.902
+  },
+  {
+   "spec": {
+    "type": "words",
+    "words": [
+     "I'LL",
+     "SHOW",
+     "YOU"
+    ],
+    "hi": 0,
+    "y": 1450
+   },
+   "from": 14.902,
+   "to": 15.111
+  },
+  {
+   "spec": {
+    "type": "words",
+    "words": [
+     "I'LL",
+     "SHOW",
+     "YOU"
+    ],
+    "hi": 1,
+    "y": 1450
+   },
+   "from": 15.111,
+   "to": 15.319
+  },
+  {
+   "spec": {
+    "type": "words",
+    "words": [
+     "I'LL",
+     "SHOW",
+     "YOU"
+    ],
+    "hi": 2,
+    "y": 1450
+   },
+   "from": 15.319,
+   "to": 15.493
+  },
+  {
+   "spec": {
+    "type": "words",
+    "words": [
+     "EVERY",
+     "STEP."
+    ],
+    "hi": 0,
+    "y": 1450
+   },
+   "from": 15.493,
+   "to": 15.737
+  },
+  {
+   "spec": {
+    "type": "words",
+    "words": [
+     "EVERY",
+     "STEP."
+    ],
+    "hi": 1,
+    "y": 1450
+   },
+   "from": 15.737,
+   "to": 16.17
+  },
+  {
+   "spec": {
+    "type": "words",
+    "words": [
+     "WHICH",
+     "NINJA",
+     "SHOULD"
+    ],
+    "hi": 0,
+    "y": 1450
+   },
+   "from": 16.47,
+   "to": 16.72
+  },
+  {
+   "spec": {
+    "type": "words",
+    "words": [
+     "WHICH",
+     "NINJA",
+     "SHOULD"
+    ],
+    "hi": 1,
+    "y": 1450
+   },
+   "from": 16.72,
+   "to": 16.971
+  },
+  {
+   "spec": {
+    "type": "words",
+    "words": [
+     "WHICH",
+     "NINJA",
+     "SHOULD"
+    ],
+    "hi": 2,
+    "y": 1450
+   },
+   "from": 16.971,
+   "to": 17.257
+  },
+  {
+   "spec": {
+    "type": "words",
+    "words": [
+     "I",
+     "ADD",
+     "NEXT?"
+    ],
+    "hi": 0,
+    "y": 1450
+   },
+   "from": 17.257,
+   "to": 17.364
+  },
+  {
+   "spec": {
+    "type": "words",
+    "words": [
+     "I",
+     "ADD",
+     "NEXT?"
+    ],
+    "hi": 1,
+    "y": 1450
+   },
+   "from": 17.364,
+   "to": 17.543
+  },
+  {
+   "spec": {
+    "type": "words",
+    "words": [
+     "I",
+     "ADD",
+     "NEXT?"
+    ],
+    "hi": 2,
+    "y": 1450
+   },
+   "from": 17.543,
+   "to": 17.865
+  },
+  {
+   "spec": {
+    "type": "words",
+    "words": [
+     "TELL",
+     "ME",
+     "IN"
+    ],
+    "hi": 0,
+    "y": 1450
+   },
+   "from": 17.865,
+   "to": 18.08
+  },
+  {
+   "spec": {
+    "type": "words",
+    "words": [
+     "TELL",
+     "ME",
+     "IN"
+    ],
+    "hi": 1,
+    "y": 1450
+   },
+   "from": 18.08,
+   "to": 18.223
+  },
+  {
+   "spec": {
+    "type": "words",
+    "words": [
+     "TELL",
+     "ME",
+     "IN"
+    ],
+    "hi": 2,
+    "y": 1450
+   },
+   "from": 18.223,
+   "to": 18.366
+  },
+  {
+   "spec": {
+    "type": "words",
+    "words": [
+     "THE",
+     "COMMENTS."
+    ],
+    "hi": 0,
+    "y": 1450
+   },
+   "from": 18.366,
+   "to": 18.545
+  },
+  {
+   "spec": {
+    "type": "words",
+    "words": [
+     "THE",
+     "COMMENTS."
+    ],
+    "hi": 1,
+    "y": 1450
+   },
+   "from": 18.545,
+   "to": 19.13
+  },
+  {
+   "spec": {
+    "type": "words",
+    "words": [
+     "SEARCH",
+     "NINJA",
+     "DUEL"
+    ],
+    "hi": 0,
+    "y": 1450
+   },
+   "from": 19.43,
+   "to": 19.806
+  },
+  {
+   "spec": {
+    "type": "words",
+    "words": [
+     "SEARCH",
+     "NINJA",
+     "DUEL"
+    ],
+    "hi": 1,
+    "y": 1450
+   },
+   "from": 19.806,
+   "to": 20.136
+  },
+  {
+   "spec": {
+    "type": "words",
+    "words": [
+     "SEARCH",
+     "NINJA",
+     "DUEL"
+    ],
+    "hi": 2,
+    "y": 1450
+   },
+   "from": 20.136,
+   "to": 20.418
+  },
+  {
+   "spec": {
+    "type": "words",
+    "words": [
+     "ON",
+     "ROBLOX.",
+     "IT'S"
+    ],
+    "hi": 0,
+    "y": 1450
+   },
+   "from": 20.418,
+   "to": 20.606
+  },
+  {
+   "spec": {
+    "type": "words",
+    "words": [
+     "ON",
+     "ROBLOX.",
+     "IT'S"
+    ],
+    "hi": 1,
+    "y": 1450
+   },
+   "from": 20.606,
+   "to": 21.124
+  },
+  {
+   "spec": {
+    "type": "words",
+    "words": [
+     "ON",
+     "ROBLOX.",
+     "IT'S"
+    ],
+    "hi": 2,
+    "y": 1450
+   },
+   "from": 21.124,
+   "to": 21.407
+  },
+  {
+   "spec": {
+    "type": "words",
+    "words": [
+     "FREE."
+    ],
+    "hi": 0,
+    "y": 1450
+   },
+   "from": 21.407,
+   "to": 21.95
+  },
+  {
+   "spec": {
+    "type": "title",
+    "text": "BUILDING NINJA DUEL \u2022 DAY 1",
+    "size": 72,
+    "y": 200
+   },
+   "from": 0,
+   "to": 21.85
+  }
+ ],
+ "sfx": [],
+ "end": {
+  "hold": 2.4,
+  "spec": {
+   "type": "cta",
+   "lines": [
+    "NINJA DUEL",
+    "IS LIVE!"
+   ],
+   "ask": "FOLLOW FOR DAY 2"
+  }
+ },
+ "length": 24.25,
+ "voice": {
+  "file": "voice.wav",
+  "at": 0.0
+ }
+}

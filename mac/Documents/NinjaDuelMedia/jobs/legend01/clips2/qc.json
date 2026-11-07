@@ -1,0 +1,186 @@
+{
+ "clips2/T1_01_faceoff.mp4": {
+  "dur": 2.0,
+  "frames": 110,
+  "fps": 55.0,
+  "gaps": []
+ },
+ "clips2/T1_02_rush.mp4": {
+  "dur": 1.72,
+  "frames": 94,
+  "fps": 54.8,
+  "gaps": []
+ },
+ "clips2/T1_03_counter.mp4": {
+  "dur": 1.82,
+  "frames": 103,
+  "fps": 56.7,
+  "gaps": []
+ },
+ "clips2/T1_04_seals.mp4": {
+  "dur": 1.32,
+  "frames": 73,
+  "fps": 55.5,
+  "gaps": []
+ },
+ "clips2/T1_05_dragon.mp4": {
+  "dur": 1.5,
+  "frames": 85,
+  "fps": 56.6,
+  "gaps": []
+ },
+ "clips2/T1_06_clones.mp4": {
+  "dur": 1.52,
+  "frames": 79,
+  "fps": 52.1,
+  "gaps": []
+ },
+ "clips2/T1_07_rendan.mp4": {
+  "dur": 2.12,
+  "frames": 119,
+  "fps": 56.2,
+  "gaps": []
+ },
+ "clips2/T1_08_charge.mp4": {
+  "dur": 1.62,
+  "frames": 91,
+  "fps": 56.3,
+  "gaps": []
+ },
+ "clips2/T1_09_clash.mp4": {
+  "dur": 1.62,
+  "frames": 94,
+  "fps": 58.2,
+  "gaps": []
+ },
+ "clips2/T1_10_after.mp4": {
+  "dur": 1.4,
+  "frames": 80,
+  "fps": 57.1,
+  "gaps": []
+ },
+ "clips2/T2_01_faceoff.mp4": {
+  "dur": 2.02,
+  "frames": 113,
+  "fps": 56.0,
+  "gaps": []
+ },
+ "clips2/T2_02_rush.mp4": {
+  "dur": 1.72,
+  "frames": 98,
+  "fps": 57.1,
+  "gaps": []
+ },
+ "clips2/T2_03_counter.mp4": {
+  "dur": 1.82,
+  "frames": 100,
+  "fps": 55.1,
+  "gaps": []
+ },
+ "clips2/T2_04_seals.mp4": {
+  "dur": 1.32,
+  "frames": 68,
+  "fps": 51.7,
+  "gaps": []
+ },
+ "clips2/T2_05_dragon.mp4": {
+  "dur": 1.52,
+  "frames": 84,
+  "fps": 55.3,
+  "gaps": []
+ },
+ "clips2/T2_06_clones.mp4": {
+  "dur": 1.52,
+  "frames": 80,
+  "fps": 52.8,
+  "gaps": []
+ },
+ "clips2/T2_07_rendan.mp4": {
+  "dur": 2.12,
+  "frames": 114,
+  "fps": 53.8,
+  "gaps": []
+ },
+ "clips2/T2_08_charge.mp4": {
+  "dur": 1.62,
+  "frames": 90,
+  "fps": 55.7,
+  "gaps": []
+ },
+ "clips2/T2_09_clash.mp4": {
+  "dur": 1.62,
+  "frames": 93,
+  "fps": 57.5,
+  "gaps": []
+ },
+ "clips2/T2_10_after.mp4": {
+  "dur": 1.42,
+  "frames": 79,
+  "fps": 55.8,
+  "gaps": []
+ },
+ "clips2/T3_01_faceoff.mp4": {
+  "dur": 2.02,
+  "frames": 106,
+  "fps": 52.6,
+  "gaps": []
+ },
+ "clips2/T3_02_rush.mp4": {
+  "dur": 1.72,
+  "frames": 90,
+  "fps": 52.4,
+  "gaps": []
+ },
+ "clips2/T3_03_counter.mp4": {
+  "dur": 1.82,
+  "frames": 98,
+  "fps": 53.9,
+  "gaps": []
+ },
+ "clips2/T3_04_seals.mp4": {
+  "dur": 1.32,
+  "frames": 76,
+  "fps": 57.8,
+  "gaps": []
+ },
+ "clips2/T3_05_dragon.mp4": {
+  "dur": 1.5,
+  "frames": 81,
+  "fps": 54.0,
+  "gaps": []
+ },
+ "clips2/T3_06_clones.mp4": {
+  "dur": 1.52,
+  "frames": 58,
+  "fps": 38.3,
+  "gaps": [
+   0.083,
+   0.083,
+   0.083
+  ]
+ },
+ "clips2/T3_07_rendan.mp4": {
+  "dur": 2.1,
+  "frames": 117,
+  "fps": 55.7,
+  "gaps": []
+ },
+ "clips2/T3_08_charge.mp4": {
+  "dur": 1.62,
+  "frames": 90,
+  "fps": 55.7,
+  "gaps": []
+ },
+ "clips2/T3_09_clash.mp4": {
+  "dur": 1.62,
+  "frames": 91,
+  "fps": 56.3,
+  "gaps": []
+ },
+ "clips2/T3_10_after.mp4": {
+  "dur": 1.4,
+  "frames": 81,
+  "fps": 57.8,
+  "gaps": []
+ }
+}

@@ -1,0 +1,17 @@
+{
+  "file": "/sessions/rcw-01p4bfd8n4cboez6soutatjv/mnt/Documents/NinjaDuelMedia/FILM01_KUNAI_TRAP/01_RUSHES_v3/C_BAIT_WIDE_v39t_T1.mp4",
+  "duration_s": 2.5,
+  "width": 1080,
+  "height": 1920,
+  "frame_rate": "60/1",
+  "codec": "h264",
+  "audio_present": true,
+  "black_candidates": [],
+  "freeze_candidates": [
+    "[freezedetect @ 0xc9e2b9ae8d20] lavfi.freezedetect.freeze_start: 1.7",
+    "[freezedetect @ 0xc9e2b9ae8d20] lavfi.freezedetect.freeze_end: 1.88333"
+  ],
+  "contact_sheet_ok": true,
+  "status": "HUMAN_VISUAL_REVIEW_REQUIRED",
+  "limitations": "No automated check of limb animation, Roblox physics, spells, camera clipping or truthful match actions."
+}

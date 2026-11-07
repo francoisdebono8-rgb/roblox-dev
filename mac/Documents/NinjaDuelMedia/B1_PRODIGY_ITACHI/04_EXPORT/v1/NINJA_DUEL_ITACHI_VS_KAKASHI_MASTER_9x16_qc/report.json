@@ -1,0 +1,19 @@
+{
+  "file": "/sessions/rcw-01p4bfd8n4cboez6soutatjv/mnt/Documents/NinjaDuelMedia/B1_PRODIGY_ITACHI/04_EXPORT/NINJA_DUEL_ITACHI_VS_KAKASHI_MASTER_9x16.mp4",
+  "duration_s": 13.666667,
+  "width": 1080,
+  "height": 1920,
+  "frame_rate": "30/1",
+  "codec": "h264",
+  "audio_present": true,
+  "black_candidates": [],
+  "freeze_candidates": [
+    "[freezedetect @ 0xad54663d8d20] lavfi.freezedetect.freeze_start: 7.56667",
+    "[freezedetect @ 0xad54663d8d20] lavfi.freezedetect.freeze_end: 7.8",
+    "[freezedetect @ 0xad54663d8d20] lavfi.freezedetect.freeze_start: 10.2",
+    "[freezedetect @ 0xad54663d8d20] lavfi.freezedetect.freeze_end: 10.4333"
+  ],
+  "contact_sheet_ok": true,
+  "status": "HUMAN_VISUAL_REVIEW_REQUIRED",
+  "limitations": "No automated check of limb animation, Roblox physics, spells, camera clipping or truthful match actions."
+}

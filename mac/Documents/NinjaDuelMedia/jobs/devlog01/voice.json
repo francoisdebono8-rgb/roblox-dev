@@ -1,0 +1,424 @@
+{
+ "file": "voice.wav",
+ "dur": 22.17,
+ "lines": [
+  {
+   "say": "I'm making a ninja fighting game on Roblox.",
+   "show": "broll:Tournoi/clips/c15_final.mp4",
+   "g": "point",
+   "start": 0.0,
+   "end": 2.345,
+   "words": [
+    {
+     "w": "I'm",
+     "a": 0.08,
+     "b": 0.279
+    },
+    {
+     "w": "making",
+     "a": 0.279,
+     "b": 0.596
+    },
+    {
+     "w": "a",
+     "a": 0.596,
+     "b": 0.716
+    },
+    {
+     "w": "ninja",
+     "a": 0.716,
+     "b": 0.994
+    },
+    {
+     "w": "fighting",
+     "a": 0.994,
+     "b": 1.391
+    },
+    {
+     "w": "game",
+     "a": 1.391,
+     "b": 1.629
+    },
+    {
+     "w": "on",
+     "a": 1.629,
+     "b": 1.788
+    },
+    {
+     "w": "Roblox.",
+     "a": 1.788,
+     "b": 2.225
+    }
+   ]
+  },
+  {
+   "say": "And you can already play it.",
+   "show": "broll:Tournoi/clips/c01_hook.mp4",
+   "g": null,
+   "start": 2.565,
+   "end": 3.703,
+   "words": [
+    {
+     "w": "And",
+     "a": 2.645,
+     "b": 2.772
+    },
+    {
+     "w": "you",
+     "a": 2.772,
+     "b": 2.899
+    },
+    {
+     "w": "can",
+     "a": 2.899,
+     "b": 3.025
+    },
+    {
+     "w": "already",
+     "a": 3.025,
+     "b": 3.254
+    },
+    {
+     "w": "play",
+     "a": 3.254,
+     "b": 3.406
+    },
+    {
+     "w": "it.",
+     "a": 3.406,
+     "b": 3.583
+    }
+   ]
+  },
+  {
+   "say": "Eight young prodigies, each with their own jutsu.",
+   "show": "broll:Tournoi/clips/c14_finint.mp4|Tournoi/clips/c06_qf3.mp4",
+   "g": null,
+   "start": 3.923,
+   "end": 6.349,
+   "words": [
+    {
+     "w": "Eight",
+     "a": 4.003,
+     "b": 4.254
+    },
+    {
+     "w": "young",
+     "a": 4.254,
+     "b": 4.506
+    },
+    {
+     "w": "prodigies,",
+     "a": 4.506,
+     "b": 5.009
+    },
+    {
+     "w": "each",
+     "a": 5.009,
+     "b": 5.224
+    },
+    {
+     "w": "with",
+     "a": 5.224,
+     "b": 5.439
+    },
+    {
+     "w": "their",
+     "a": 5.439,
+     "b": 5.691
+    },
+    {
+     "w": "own",
+     "a": 5.691,
+     "b": 5.87
+    },
+    {
+     "w": "jutsu.",
+     "a": 5.87,
+     "b": 6.229
+    }
+   ]
+  },
+  {
+   "say": "Real combos, throws, wall runs, and a full screen ultimate.",
+   "show": "broll:Tournoi/clips/c08_qf4.mp4|Tournoi/clips/c04_qf2.mp4",
+   "g": null,
+   "start": 6.569,
+   "end": 10.354,
+   "words": [
+    {
+     "w": "Real",
+     "a": 6.649,
+     "b": 6.925
+    },
+    {
+     "w": "combos,",
+     "a": 6.925,
+     "b": 7.431
+    },
+    {
+     "w": "throws,",
+     "a": 7.431,
+     "b": 7.936
+    },
+    {
+     "w": "wall",
+     "a": 7.936,
+     "b": 8.212
+    },
+    {
+     "w": "runs,",
+     "a": 8.212,
+     "b": 8.626
+    },
+    {
+     "w": "and",
+     "a": 8.626,
+     "b": 8.856
+    },
+    {
+     "w": "a",
+     "a": 8.856,
+     "b": 8.993
+    },
+    {
+     "w": "full",
+     "a": 8.993,
+     "b": 9.269
+    },
+    {
+     "w": "screen",
+     "a": 9.269,
+     "b": 9.637
+    },
+    {
+     "w": "ultimate.",
+     "a": 9.637,
+     "b": 10.234
+    }
+   ]
+  },
+  {
+   "say": "Yesterday, I made the AI fight itself in a full tournament.",
+   "show": "broll:Tournoi/clips/c03_qf1b.mp4|Tournoi/clips/c05_qf2b.mp4|Tournoi/clips/c11_sf1b.mp4",
+   "g": null,
+   "start": 10.574,
+   "end": 13.802,
+   "words": [
+    {
+     "w": "Yesterday,",
+     "a": 10.654,
+     "b": 11.219
+    },
+    {
+     "w": "I",
+     "a": 11.219,
+     "b": 11.341
+    },
+    {
+     "w": "made",
+     "a": 11.341,
+     "b": 11.583
+    },
+    {
+     "w": "the",
+     "a": 11.583,
+     "b": 11.785
+    },
+    {
+     "w": "AI",
+     "a": 11.785,
+     "b": 11.946
+    },
+    {
+     "w": "fight",
+     "a": 11.946,
+     "b": 12.229
+    },
+    {
+     "w": "itself",
+     "a": 12.229,
+     "b": 12.552
+    },
+    {
+     "w": "in",
+     "a": 12.552,
+     "b": 12.713
+    },
+    {
+     "w": "a",
+     "a": 12.713,
+     "b": 12.834
+    },
+    {
+     "w": "full",
+     "a": 12.834,
+     "b": 13.076
+    },
+    {
+     "w": "tournament.",
+     "a": 13.076,
+     "b": 13.682
+    }
+   ]
+  },
+  {
+   "say": "Follow along, and I'll show you every step.",
+   "show": "broll:Tournoi/clips/c10_sf1.mp4|Tournoi/clips/c12_sf2v2.mp4",
+   "g": null,
+   "start": 14.022,
+   "end": 16.17,
+   "words": [
+    {
+     "w": "Follow",
+     "a": 14.102,
+     "b": 14.38
+    },
+    {
+     "w": "along,",
+     "a": 14.38,
+     "b": 14.728
+    },
+    {
+     "w": "and",
+     "a": 14.728,
+     "b": 14.902
+    },
+    {
+     "w": "I'll",
+     "a": 14.902,
+     "b": 15.111
+    },
+    {
+     "w": "show",
+     "a": 15.111,
+     "b": 15.319
+    },
+    {
+     "w": "you",
+     "a": 15.319,
+     "b": 15.493
+    },
+    {
+     "w": "every",
+     "a": 15.493,
+     "b": 15.737
+    },
+    {
+     "w": "step.",
+     "a": 15.737,
+     "b": 16.05
+    }
+   ]
+  },
+  {
+   "say": "Which ninja should I add next? Tell me in the comments.",
+   "show": "broll:Tournoi/clips/c13_sf2b.mp4|Tournoi/clips/c09_qf4b.mp4|Tournoi/clips/c07_qf3b.mp4",
+   "g": "open",
+   "start": 16.39,
+   "end": 19.13,
+   "words": [
+    {
+     "w": "Which",
+     "a": 16.47,
+     "b": 16.72
+    },
+    {
+     "w": "ninja",
+     "a": 16.72,
+     "b": 16.971
+    },
+    {
+     "w": "should",
+     "a": 16.971,
+     "b": 17.257
+    },
+    {
+     "w": "I",
+     "a": 17.257,
+     "b": 17.364
+    },
+    {
+     "w": "add",
+     "a": 17.364,
+     "b": 17.543
+    },
+    {
+     "w": "next?",
+     "a": 17.543,
+     "b": 17.865
+    },
+    {
+     "w": "Tell",
+     "a": 17.865,
+     "b": 18.08
+    },
+    {
+     "w": "me",
+     "a": 18.08,
+     "b": 18.223
+    },
+    {
+     "w": "in",
+     "a": 18.223,
+     "b": 18.366
+    },
+    {
+     "w": "the",
+     "a": 18.366,
+     "b": 18.545
+    },
+    {
+     "w": "comments.",
+     "a": 18.545,
+     "b": 19.01
+    }
+   ]
+  },
+  {
+   "say": "Search Ninja Duel on Roblox. It's free.",
+   "show": "broll:Tournoi/clips/c02_qf1.mp4",
+   "g": null,
+   "start": 19.35,
+   "end": 21.95,
+   "words": [
+    {
+     "w": "Search",
+     "a": 19.43,
+     "b": 19.806
+    },
+    {
+     "w": "Ninja",
+     "a": 19.806,
+     "b": 20.136
+    },
+    {
+     "w": "Duel",
+     "a": 20.136,
+     "b": 20.418
+    },
+    {
+     "w": "on",
+     "a": 20.418,
+     "b": 20.606
+    },
+    {
+     "w": "Roblox.",
+     "a": 20.606,
+     "b": 21.124
+    },
+    {
+     "w": "It's",
+     "a": 21.124,
+     "b": 21.407
+    },
+    {
+     "w": "free.",
+     "a": 21.407,
+     "b": 21.83
+    }
+   ]
+  }
+ ],
+ "title": "BUILDING NINJA DUEL \u2022 DAY 1"
+}

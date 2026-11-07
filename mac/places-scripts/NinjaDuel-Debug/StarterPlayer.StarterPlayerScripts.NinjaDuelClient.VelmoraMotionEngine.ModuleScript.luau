@@ -1,0 +1,1869 @@
+-- Ninja Duel body animation. Started from Velmora's additive R15 layer (MIT) and
+-- rebuilt into a full-body authored animation system:
+--
+--  * the presentation owns every joint it animates (it keeps its own pose state
+--    instead of blending against whatever the Animator wrote this frame);
+--  * grounded poses place the feet with two-bone leg IK, so stances crouch,
+--    lunge and land with planted feet instead of floating or sliding;
+--  * attacks, throws, hand signs and reactions are multi-key clips authored with
+--    anatomical controls (raise / out / twist / elbow ...), so elbows and knees
+--    bend the right way;
+--  * locomotion is a real gait: stride, foot lift, pelvis/torso counter-twist,
+--    arm swing, and the anime "ninja run" when sprinting or chasing.
+--
+-- Every joint is damped towards its target with an angular speed limit, so no
+-- state change can snap the body. Presentation only: combat authority stays on
+-- the server.
+local Shared=game:GetService("ReplicatedStorage").NinjaDuel
+local Attacks=require(Shared.Attacks)
+local Fighters=require(Shared.Fighters)
+-- Weapon models come from the VFX module; required lazily so headless tools
+-- that only pose skeletons do not need its services.
+local Effects=nil
+local Motion={}
+local rad=math.rad
+local CF=CFrame.new
+local ANG=CFrame.Angles
+local IDENTITY=CFrame.identity
+
+local JOINTS={
+	Root={"HumanoidRootPart","Root"},Waist={"LowerTorso","Waist"},Neck={"UpperTorso","Neck"},
+	Right={"UpperTorso","RightShoulder"},Left={"UpperTorso","LeftShoulder"},
+	RightElbow={"RightUpperArm","RightElbow"},LeftElbow={"LeftUpperArm","LeftElbow"},
+	RightWrist={"RightLowerArm","RightWrist"},LeftWrist={"LeftLowerArm","LeftWrist"},
+	RightHip={"LowerTorso","RightHip"},LeftHip={"LowerTorso","LeftHip"},
+	RightKnee={"RightUpperLeg","RightKnee"},LeftKnee={"LeftUpperLeg","LeftKnee"},
+	RightAnkle={"RightLowerLeg","RightAnkle"},LeftAnkle={"LeftLowerLeg","LeftAnkle"},
+}
+local UPPER={Waist=true,Neck=true,Right=true,Left=true,RightElbow=true,LeftElbow=true,RightWrist=true,LeftWrist=true}
+
+-- ------------------------------------------------------------------ state
+local states=setmetatable({},{__mode="k"})
+local function stateOf(char)
+	local s=states[char]
+	if not s then s={motors={},pose={},phase=0,clock=0};states[char]=s end
+	return s
+end
+local function motor(char,key)
+	local s=stateOf(char)
+	local cached=s.motors[key]
+	if cached~=nil then return cached or nil end
+	local d=JOINTS[key];local part=char and char:FindFirstChild(d[1]);local m=part and part:FindFirstChild(d[2])
+	local found=if m and m:IsA("Motor6D") then m else nil
+	-- Only cache a positive lookup: a rig can still be assembling.
+	if found then s.motors[key]=found end
+	return found
+end
+-- A simulated presentation clock advanced once per rendered frame: identical on
+-- 30 Hz and 120 Hz clients, deterministic in tests.
+local elapsedTime=0
+function Motion.tick(dt)
+	if dt and dt>0 then elapsedTime+=math.min(dt,.1) end
+	return elapsedTime
+end
+function Motion.now() return elapsedTime end
+
+-- Damping rate per layer, and a hard angular speed limit (deg/s) so a sudden
+-- target change still travels instead of teleporting.
+local RATE={attack=42,throw=32,cast=24,recoil=36,guard=26,defense=26,locomotion=22,air=14,ground=12,wall=16,chase=22}
+local MAX_SPEED=1750
+local function angleBetween(a,b)
+	local _,angle=(a:Inverse()*b):ToAxisAngle()
+	return math.abs(angle)
+end
+-- Write one joint: damp the owned pose towards the target, limit the angular
+-- step, then publish it as the Motor6D transform.
+local function write(char,key,target,rate,dt)
+	local joint=motor(char,key)
+	if not joint then return end
+	local s=stateOf(char)
+	if not dt then s.pose[key]=target;joint.Transform=target;return end
+	local current=s.pose[key] or joint.Transform
+	local alpha=1-math.exp(-(rate or RATE.locomotion)*dt)
+	local nextCF=current:Lerp(target,alpha)
+	local step=angleBetween(current,nextCF)
+	-- Strikes may whip faster than ordinary motion so their shape reads.
+	local limit=rad(if (rate or 0)>=RATE.attack then 2280 else MAX_SPEED)*dt
+	if step>limit and step>1e-6 then nextCF=current:Lerp(nextCF,limit/step) end
+	-- Translation (only the Root carries any) is speed-limited too.
+	local move=nextCF.Position-current.Position
+	local maxMove=14*dt
+	if move.Magnitude>maxMove then nextCF=CF(current.Position+move.Unit*maxMove)*nextCF.Rotation end
+	s.pose[key]=nextCF
+	joint.Transform=nextCF
+end
+local LEG_SIDE={RightHip="R",RightKnee="R",RightAnkle="R",LeftHip="L",LeftKnee="L",LeftAnkle="L"}
+local legIK
+local function apply(char,targets,rate,dt)
+	local feet=targets.__feet
+	for key in JOINTS do
+		local side=LEG_SIDE[key]
+		if not (feet and side and feet[side]) then write(char,key,targets[key] or IDENTITY,rate,dt) end
+	end
+	if feet then
+		-- The hips are damped; a planted foot must not be. Solve each planted leg
+		-- against the hips as drawn this frame and set it almost at once.
+		local s=stateOf(char)
+		local hips=s.pose.Root or targets.Root
+		for side,f in feet do
+			local prefix=if side=="R" then "Right" else "Left"
+			local hip,knee,ankle=legIK(hips,if side=="R" then 1 else -1,f.ankle,f.yaw,f.toe)
+			write(char,prefix.."Hip",hip,60,dt);write(char,prefix.."Knee",knee,60,dt);write(char,prefix.."Ankle",ankle,60,dt)
+		end
+	end
+end
+
+-- ------------------------------------------------------------- pose builder
+-- Anatomical controls, degrees / studs:
+--   root  {x,y,z,pitch,yaw,roll}  pitch + leans forward, yaw + turns right,
+--         roll + tilts the top to the right; y < 0 crouches.
+--   torso {pitch,yaw,roll}         same conventions, upper body on the hips.
+--   head  {pitch,yaw,roll}
+--   ra/la {raise,out,twist,elbow,wrist,wroll}  raise + lifts the arm forward,
+--         out + away from the body, twist + rotates it inward, elbow + flexes.
+--   rf/lf {x,y,z,yaw,toe}  IK foot target offset from the rest ankle (x right,
+--         z backwards, y up) for planted feet;
+--   rl/ll {lift,out,twist,knee,ankle}  free leg (air, kicks): lift + raises the
+--         thigh forward, knee + flexes.
+local L1,L2=1.05,1.0
+local ANKLE_Y=-2.6 -- rest ankle height relative to HumanoidRootPart centre
+local function ori(o)
+	if not o then return IDENTITY end
+	return ANG(rad(-(o.pitch or 0)),rad(-(o.yaw or 0)),rad(-(o.roll or 0)))
+end
+local function armCF(side,a)
+	a=a or {}
+	local shoulder=ANG(rad(a.raise or 0),0,0)*ANG(0,0,rad((a.out or 0)*side))*ANG(0,rad((a.twist or 0)*side),0)
+	return shoulder,ANG(rad(a.elbow or 0),0,0),ANG(rad(a.wrist or 0),0,rad((a.wroll or 0)*side))
+end
+local function legFK(side,l)
+	l=l or {}
+	return ANG(rad(l.lift or 0),0,0)*ANG(0,0,rad((l.out or 0)*side))*ANG(0,rad((l.twist or 0)*side),0),ANG(rad(-(l.knee or 0)),0,0),ANG(rad(l.ankle or 0),0,0)
+end
+-- Two-bone IK in the LowerTorso frame: thigh/shin lengths are the rig's real
+-- joint spacing; knees point forward (and a little out); the foot stays flat.
+function legIK(rootCF,side,ankle,footYaw,toe)
+	local hip=rootCF*Vector3.new(.5*side,-.55,0)
+	local inv=rootCF.Rotation:Inverse()
+	local d=inv*(ankle-hip)
+	local u=if d.Magnitude>1e-4 then d.Unit else Vector3.new(0,-1,0)
+	local D=math.clamp(d.Magnitude,.45,L1+L2-1e-3)
+	local bend=math.pi-math.acos(math.clamp((L1*L1+L2*L2-D*D)/(2*L1*L2),-1,1))
+	local a=math.acos(math.clamp((L1*L1+D*D-L2*L2)/(2*L1*D),-1,1))
+	local hint=Vector3.new(side*.18,0,-1).Unit
+	local w=hint-u*hint:Dot(u)
+	if w.Magnitude<1e-3 then w=Vector3.new(0,0,-1) end
+	w=w.Unit
+	local up=-(u*math.cos(a)+w*math.sin(a))
+	local x=w:Cross(up)
+	if x.Magnitude<1e-3 then x=Vector3.xAxis end
+	x=x.Unit
+	local z=x:Cross(up).Unit
+	local hipCF=CFrame.fromMatrix(Vector3.zero,x,up,z)
+	local kneeCF=ANG(-bend,0,0)
+	local foot=(hipCF*kneeCF):Inverse()*inv*ANG(0,rad(-(footYaw or 0)),0)*ANG(rad(toe or 0),0,0)
+	return hipCF,kneeCF,foot
+end
+local function rootCFOf(spec)
+	local r=spec.root or {}
+	return CF(r.x or 0,r.y or 0,r.z or 0)*ori(r)
+end
+-- Spec -> joint transforms. Unspecified parts stay at rest.
+local function build(spec)
+	local out={}
+	local rootCF=rootCFOf(spec)
+	out.Root=rootCF
+	out.Waist=ori(spec.torso)
+	out.Neck=ori(spec.head)
+	out.Right,out.RightElbow,out.RightWrist=armCF(1,spec.ra)
+	out.Left,out.LeftElbow,out.LeftWrist=armCF(-1,spec.la)
+	for _,side in {1,-1} do
+		local prefix=if side==1 then "Right" else "Left"
+		local free=if side==1 then spec.rl else spec.ll
+		if free then
+			-- A free leg (air, kicks) is posed directly.
+			out[prefix.."Hip"],out[prefix.."Knee"],out[prefix.."Ankle"]=legFK(side,free)
+		else
+			-- Otherwise the foot is planted (at rest unless told where) and the
+			-- leg is solved to reach it, whatever the hips are doing.
+			local foot=(if side==1 then spec.rf else spec.lf) or {}
+			local ankle=Vector3.new(.5*side+(foot.x or 0),ANKLE_Y+(foot.y or 0),foot.z or 0)
+			out[prefix.."Hip"],out[prefix.."Knee"],out[prefix.."Ankle"]=legIK(rootCF,side,ankle,foot.yaw,foot.toe)
+			-- Remember the planted foot: apply() re-solves the leg against the
+			-- hips actually drawn this frame, so the foot stays where it was put.
+			out.__feet=out.__feet or {}
+			out.__feet[if side==1 then "R" else "L"]={ankle=ankle,yaw=foot.yaw or 0,toe=foot.toe or 0}
+		end
+	end
+	return out
+end
+local cache=setmetatable({},{__mode="k"})
+local function built(spec)
+	local c=cache[spec]
+	if not c then c=build(spec);cache[spec]=c end
+	return c
+end
+local function blend(a,b,t)
+	if t<=0 then return a end
+	if t>=1 then return b end
+	local out={}
+	for key in JOINTS do out[key]=(a[key] or IDENTITY):Lerp(b[key] or IDENTITY,t) end
+	local fa,fb=a.__feet,b.__feet
+	if fa and fb then
+		for _,side in {"R","L"} do
+			local x,y=fa[side],fb[side]
+			if x and y then
+				out.__feet=out.__feet or {}
+				out.__feet[side]={ankle=x.ankle:Lerp(y.ankle,t),yaw=x.yaw+(y.yaw-x.yaw)*t,toe=x.toe+(y.toe-x.toe)*t}
+			end
+		end
+	end
+	return out
+end
+-- Deep merge: `over` replaces numeric fields of `base`; tables are merged.
+local function merge(base,over)
+	local out={}
+	for k,v in base do out[k]=if type(v)=="table" then table.clone(v) else v end
+	for k,v in over or {} do
+		if type(v)=="table" and type(out[k])=="table" and not v.replace then
+			for kk,vv in v do out[k][kk]=vv end
+		else
+			out[k]=if type(v)=="table" then table.clone(v) else v
+		end
+	end
+	return out
+end
+local function smooth(t) t=math.clamp(t,0,1);return t*t*(3-2*t) end
+local function easeOut(t) t=math.clamp(t,0,1);return 1-(1-t)*(1-t)*(1-t) end
+local function easeIn(t) t=math.clamp(t,0,1);return t*t*t end
+local EASE={smooth=smooth,out=easeOut,["in"]=easeIn,linear=function(t) return math.clamp(t,0,1) end}
+
+-- ---------------------------------------------------------------- stances
+-- Minato: light and coiled, lead foot forward, kunai hand low in reverse grip,
+-- lead hand open. Itachi: upright and square, economical, left hand ready.
+local STANCE={
+	Flashstep={root={y=-.42,pitch=9,yaw=24},torso={pitch=5,yaw=-14},head={pitch=-6,yaw=-11},
+		ra={raise=34,out=14,twist=24,elbow=98,wrist=-22},la={raise=58,out=2,twist=12,elbow=78,wrist=8},
+		rf={x=.22,z=.78,yaw=32},lf={x=-.08,z=-.72,yaw=-4},breath=1.6,tempo=7.5},
+	Mirage={root={y=-.2,pitch=3,yaw=14},torso={pitch=2,yaw=-8},head={pitch=1,yaw=-7},
+		ra={raise=14,out=9,twist=8,elbow=32,wrist=0},la={raise=42,out=-6,twist=24,elbow=84,wrist=10},
+		rf={x=.12,z=.5,yaw=22},lf={x=0,z=-.46,yaw=-2},breath=.7,tempo=5},
+}
+-- Neji: the Gentle Fist stance. Side-on and low, lead palm extended toward the
+-- opponent, rear palm guarding the centre line.
+STANCE.GentleFist={root={y=-.62,pitch=6,yaw=38},torso={pitch=4,yaw=-14},head={pitch=-2,yaw=-22},
+	la={raise=80,out=-6,twist=-40,elbow=26,wrist=-46},ra={raise=56,out=-30,twist=40,elbow=96,wrist=-36},
+	rf={x=.32,z=.92,yaw=64},lf={x=-.18,z=-.95,yaw=-6},breath=.8,tempo=5.5}
+-- Sasuke: low and forward, lead hand out, rear hand by the chin, coiled to kick.
+STANCE.Lion={root={y=-.5,pitch=10,yaw=30},torso={pitch=6,yaw=-14},head={pitch=-6,yaw=-14},
+	la={raise=66,out=6,twist=10,elbow=64,wrist=0},ra={raise=52,out=-16,twist=24,elbow=118,wrist=0},
+	rf={x=.26,z=.84,yaw=38},lf={x=-.1,z=-.76,yaw=-6},breath=1.3,tempo=7}
+local function stance(id) return STANCE[id] or STANCE.Flashstep end
+-- Gait families: springy (Minato, Sasuke) or controlled (Itachi, Neji).
+local SPRINGY={Flashstep=true,Lion=true}
+local function springy(id) return SPRINGY[id]==true or (id~="Mirage" and id~="GentleFist" and STANCE[id]==nil) end
+
+-- ---------------------------------------------------------- attack clips
+-- Keys are placed on the move's own timeline: 0 = start, 1 = end of startup
+-- (contact), 2 = end of active, 3 = end of recovery. `w` fades the clip out
+-- over the tail of recovery so the body returns into its stance.
+local function K(at,pose,ease) return {at=at,pose=pose,ease=ease or "smooth"} end
+local M=STANCE.Flashstep
+local I=STANCE.Mirage
+local function m(over) return merge(M,over) end
+local function i(over) return merge(I,over) end
+local N=STANCE.GentleFist
+local function n(over) return merge(N,over) end
+local CLIPS={Flashstep={},Mirage={},GentleFist={},Lion={}}
+-- Minato --------------------------------------------------------------
+CLIPS.Flashstep.Light1={ -- reverse-grip kunai: cross-body load, outward slash
+	K(0,m({root={y=-.55,yaw=10,pitch=12},torso={yaw=-28,pitch=8},ra={raise=72,out=-42,twist=38,elbow=112,wrist=-30},la={raise=40,out=12,elbow=70},lf={z=-.95}})),
+	K(1,m({root={y=-.5,z=-.35,yaw=36,pitch=14},torso={yaw=24,pitch=6},head={yaw=-20},ra={raise=86,out=24,twist=-12,elbow=22,wrist=10},la={raise=22,out=22,elbow=60},lf={z=-1.2},rf={z=.95}}),"out"),
+	K(2,m({root={y=-.48,z=-.38,yaw=42,pitch=12},torso={yaw=34},ra={raise=72,out=56,twist=-26,elbow=34},la={raise=26,out=26,elbow=64},lf={z=-1.2},rf={z=.95}})),
+	K(3,M),
+}
+CLIPS.Flashstep.Light2={ -- body-turned palm strike with the lead hand, step in
+	K(0,m({root={y=-.5,yaw=40,pitch=10},torso={yaw=18},la={raise=48,out=32,twist=-18,elbow=96},ra={raise=40,out=18,elbow=100}})),
+	K(1,m({root={y=-.48,z=-.42,yaw=-8,pitch=14},torso={yaw=-30,pitch=8},head={yaw=8},la={raise=88,out=-14,twist=22,elbow=26,wrist=24},ra={raise=24,out=20,elbow=92},rf={x=.36,z=.2},lf={z=-1.0}}),"out"),
+	K(2,m({root={y=-.46,z=-.45,yaw=-14,pitch=12},torso={yaw=-38},la={raise=80,out=-30,elbow=38},ra={raise=26,out=24,elbow=92},rf={x=.36,z=.2},lf={z=-1.0}})),
+	K(3,M),
+}
+CLIPS.Flashstep.Light3={ -- spinning roundhouse with the right leg
+	K(0,m({root={y=-.62,yaw=-40,pitch=8},torso={yaw=-22},ra={raise=52,out=-8,elbow=112},la={raise=52,out=-4,elbow=112},rl={lift=72,out=18,knee=104,ankle=-10},lf={z=-.35,yaw=-30}})),
+	K(1,m({root={y=-.32,yaw=62,pitch=-6,roll=-20},torso={yaw=12,roll=-24},head={roll=14,yaw=-30},ra={raise=24,out=82,elbow=18},la={raise=34,out=70,elbow=30},rl={lift=86,out=56,twist=-28,knee=10,ankle=-24},lf={z=-.3,yaw=40}}),"out"),
+	K(2,m({root={y=-.34,yaw=76,pitch=-4,roll=-18},torso={yaw=16,roll=-20},ra={raise=24,out=80,elbow=22},la={raise=32,out=68,elbow=34},rl={lift=80,out=60,twist=-30,knee=16,ankle=-20},lf={z=-.3,yaw=55}})),
+	K(2.5,m({root={y=-.5,yaw=60},rl={lift=42,out=20,knee=76},lf={z=-.3,yaw=40}})),
+	K(3,M),
+}
+CLIPS.Flashstep.Heavy={ -- coiled whole-body lunge, straight right
+	K(0,m({root={y=-.72,z=.3,yaw=46,pitch=12},torso={yaw=26,pitch=8},ra={raise=-18,out=22,twist=22,elbow=120},la={raise=72,out=-4,elbow=58},lf={z=-1.1},rf={z=1.0,yaw=46}})),
+	K(.75,m({root={y=-.86,z=.36,yaw=52,pitch=14},torso={yaw=30,pitch=10},ra={raise=-24,out=24,twist=24,elbow=126},la={raise=76,out=-6,elbow=54},lf={z=-1.15},rf={z=1.05,yaw=48}})),
+	K(1,m({root={y=-.5,z=-.92,yaw=-26,pitch=22},torso={yaw=-22,pitch=10},head={yaw=16},ra={raise=90,out=-4,twist=-10,elbow=4,wrist=0},la={raise=-12,out=18,elbow=112},lf={z=-1.65},rf={z=1.25,yaw=10}}),"out"),
+	K(2,m({root={y=-.52,z=-.95,yaw=-28,pitch=20},torso={yaw=-24,pitch=10},ra={raise=88,out=-6,twist=-10,elbow=8},la={raise=-10,out=18,elbow=110},lf={z=-1.65},rf={z=1.25,yaw=10}})),
+	K(3,M),
+}
+CLIPS.Flashstep.Launcher={ -- crouch, then a vertical rising kick
+	K(0,m({root={y=-.92,pitch=20},torso={pitch=12},ra={raise=42,out=22,elbow=92},la={raise=42,out=22,elbow=92},lf={z=-.42},rf={z=.5}})),
+	K(1,m({root={y=.25,pitch=-22},torso={pitch=-14},head={pitch=-14},ra={raise=-32,out=30,elbow=22},la={raise=-28,out=30,elbow=20},rl={lift=150,out=6,knee=4,ankle=-32},lf={z=0,toe=-26}}),"out"),
+	K(2,m({root={y=.2,pitch=-20},torso={pitch=-12},head={pitch=-12},ra={raise=-30,out=30,elbow=22},la={raise=-26,out=30,elbow=22},rl={lift=138,out=6,knee=12,ankle=-28},lf={z=0,toe=-20}})),
+	K(3,M),
+}
+CLIPS.Flashstep.DashAttack={ -- low dashing kunai thrust
+	K(0,m({root={y=-.75,z=.2,pitch=34},torso={pitch=6},ra={raise=12,out=26,twist=40,elbow=110},la={raise=82,out=-4,elbow=30},lf={z=-1.2},rf={z=1.3}})),
+	K(1,m({root={y=-.72,z=-1.0,pitch=30,yaw=-10},torso={yaw=-12},head={pitch=-16},ra={raise=96,out=-6,twist=-60,elbow=0,wrist=-12},la={raise=-30,out=22,elbow=30},lf={z=-1.7},rf={z=1.5,y=.25,toe=-20}}),"out"),
+	K(2,m({root={y=-.7,z=-1.0,pitch=28,yaw=-12},torso={yaw=-14},head={pitch=-14},ra={raise=94,out=-4,twist=-60,elbow=4},la={raise=-28,out=22,elbow=30},lf={z=-1.7},rf={z=1.5,y=.25,toe=-20}})),
+	K(3,M),
+}
+local AIR_M={root={pitch=6},torso={pitch=6},head={pitch=-6},ra={raise=48,out=20,elbow=96},la={raise=52,out=14,elbow=86},rl={lift=58,knee=96,ankle=-10},ll={lift=34,knee=74,ankle=-10}}
+CLIPS.Flashstep.Air1={
+	K(0,merge(AIR_M,{torso={yaw=-24,pitch=-4},ra={raise=128,out=42,elbow=104,twist=10},la={raise=40,out=30,elbow=70}})),
+	K(1,merge(AIR_M,{torso={yaw=26,pitch=16},root={pitch=10},ra={raise=58,out=-32,elbow=14,wrist=12},la={raise=10,out=44,elbow=50}}),"out"),
+	K(2,merge(AIR_M,{torso={yaw=32,pitch=18},root={pitch=12},ra={raise=44,out=-40,elbow=18},la={raise=8,out=46,elbow=50}})),
+	K(3,AIR_M),
+}
+CLIPS.Flashstep.Air2={
+	K(0,merge(AIR_M,{root={yaw=-50},torso={yaw=-18},rl={lift=80,out=10,knee=112},ra={raise=50,out=-10,elbow=110},la={raise=50,out=-10,elbow=110}})),
+	K(1,merge(AIR_M,{root={yaw=52,roll=-14},torso={yaw=14},rl={lift=92,out=62,twist=-26,knee=8,ankle=-24},ll={lift=18,knee=52},ra={raise=26,out=78,elbow=22},la={raise=30,out=72,elbow=26}}),"out"),
+	K(2,merge(AIR_M,{root={yaw=62,roll=-12},rl={lift=86,out=64,twist=-26,knee=12},ll={lift=18,knee=52},ra={raise=26,out=78,elbow=22},la={raise=30,out=72,elbow=26}})),
+	K(3,AIR_M),
+}
+CLIPS.Flashstep.Slam={ -- double hammer-fist driven straight down
+	K(0,merge(AIR_M,{root={pitch=-14},torso={pitch=-22},head={pitch=-14},ra={raise=172,out=8,elbow=42},la={raise=172,out=8,elbow=42},rl={lift=64,knee=112},ll={lift=58,knee=106}})),
+	K(1,merge(AIR_M,{root={pitch=26},torso={pitch=44},head={pitch=12},ra={raise=42,out=-12,elbow=6},la={raise=42,out=-12,elbow=6},rl={lift=-14,knee=40},ll={lift=12,knee=62}}),"out"),
+	K(2,merge(AIR_M,{root={pitch=30},torso={pitch=46},ra={raise=30,out=-12,elbow=8},la={raise=30,out=-12,elbow=8},rl={lift=-12,knee=36},ll={lift=14,knee=60}})),
+	K(3,m({root={y=-.9,pitch=24},torso={pitch=20}})),
+}
+CLIPS.Flashstep.Grab={
+	K(0,m({root={y=-.55,pitch=14},ra={raise=60,out=12,elbow=70},la={raise=60,out=12,elbow=70}})),
+	K(1,m({root={y=-.5,z=-.45,pitch=18,yaw=0},torso={yaw=0},ra={raise=86,out=-12,elbow=22},la={raise=86,out=-12,elbow=22},lf={z=-1.1}}),"out"),
+	K(3,m({ra={raise=70,out=-6,elbow=60},la={raise=70,out=-6,elbow=60}})),
+}
+CLIPS.Flashstep.Throw={ -- hip toss: twist and pull across
+	K(0,m({root={y=-.6,yaw=20},ra={raise=80,out=-10,elbow=60},la={raise=90,out=10,elbow=90}})),
+	K(1,m({root={y=-.62,yaw=-72,pitch=16},torso={yaw=-32,pitch=12},ra={raise=58,out=-52,elbow=62},la={raise=104,out=22,elbow=92},rf={x=.4,z=.1}}),"out"),
+	K(3,M),
+}
+CLIPS.Flashstep.ThrowUp={
+	K(0,m({root={y=-.85,pitch=16},ra={raise=70,out=-8,elbow=80},la={raise=70,out=-8,elbow=80}})),
+	K(1,m({root={y=.1,pitch=-16},torso={pitch=-12},head={pitch=-20},ra={raise=162,out=6,elbow=18},la={raise=162,out=6,elbow=18},rf={toe=-20},lf={toe=-20}}),"out"),
+	K(3,M),
+}
+-- Itachi --------------------------------------------------------------
+CLIPS.Mirage.Light1={ -- compact lead jab
+	K(0,i({torso={yaw=10},la={raise=56,out=4,twist=20,elbow=112}})),
+	K(1,i({root={z=-.25,yaw=-4,pitch=6},torso={yaw=-16},la={raise=90,out=-6,twist=-18,elbow=4,wrist=0},ra={raise=30,out=10,elbow=96}}),"out"),
+	K(2,i({root={z=-.25,yaw=-4,pitch=6},torso={yaw=-18},la={raise=88,out=-6,twist=-18,elbow=8},ra={raise=30,out=10,elbow=96}})),
+	K(3,I),
+}
+CLIPS.Mirage.Light2={ -- right palm, left hand flicks a blade on the way out
+	K(0,i({root={yaw=30},torso={yaw=14},ra={raise=40,out=16,twist=10,elbow=112},la={raise=60,out=-30,twist=30,elbow=110}})),
+	K(1,i({root={z=-.3,yaw=-10,pitch=6},torso={yaw=-22},ra={raise=88,out=-2,twist=70,elbow=4,wrist=-58},la={raise=72,out=44,twist=-10,elbow=30,wrist=20}}),"out"),
+	K(2,i({root={z=-.3,yaw=-12,pitch=6},torso={yaw=-24},ra={raise=86,out=-2,twist=70,elbow=8,wrist=-56},la={raise=64,out=50,elbow=34}})),
+	K(3,I),
+}
+CLIPS.Mirage.Light3={ -- chambered side kick that creates space
+	K(0,i({root={y=-.32,yaw=-62,roll=6},torso={yaw=-10},ra={raise=50,out=-6,elbow=118},la={raise=54,out=-6,elbow=120},rl={lift=82,out=12,twist=-18,knee=112,ankle=-8},lf={yaw=-40}})),
+	K(1,i({root={y=-.22,yaw=-76,roll=28},torso={roll=-18,yaw=-6},head={roll=-20,yaw=60},ra={raise=50,out=-6,elbow=120},la={raise=30,out=30,elbow=80},rl={lift=86,out=72,knee=0,ankle=12},lf={yaw=-60}}),"out"),
+	K(2,i({root={y=-.24,yaw=-76,roll=26},torso={roll=-16},head={roll=-18,yaw=60},ra={raise=50,out=-6,elbow=118},la={raise=30,out=30,elbow=80},rl={lift=82,out=70,knee=6,ankle=10},lf={yaw=-60}})),
+	K(3,I),
+}
+CLIPS.Mirage.Heavy={ -- turning back kick
+	K(0,i({root={y=-.4,yaw=96,pitch=6},torso={yaw=20},ra={raise=50,out=-8,elbow=116},la={raise=52,out=-8,elbow=116},lf={yaw=60}})),
+	K(1,i({root={y=-.3,yaw=172,pitch=30},torso={pitch=20},head={pitch=-30,yaw=-10},ra={raise=30,out=36,elbow=60},la={raise=20,out=40,elbow=60},rl={lift=-58,out=8,knee=6,ankle=10},lf={yaw=150}}),"out"),
+	K(2,i({root={y=-.3,yaw=176,pitch=30},torso={pitch=20},head={pitch=-30},ra={raise=30,out=36,elbow=60},la={raise=20,out=40,elbow=60},rl={lift=-56,out=8,knee=10,ankle=10},lf={yaw=150}})),
+	K(2.6,i({root={y=-.36,yaw=200},lf={yaw=160}})),
+	K(3,I),
+}
+CLIPS.Mirage.Launcher={ -- rising palm uppercut
+	K(0,i({root={y=-.82,pitch=14},torso={pitch=10},ra={raise=-12,out=14,twist=40,elbow=104},la={raise=52,out=-10,elbow=96},lf={z=-.6},rf={z=.6}})),
+	K(1,i({root={y=.18,pitch=-10,yaw=-8},torso={pitch=-12,yaw=-14},head={pitch=-22},ra={raise=166,out=6,twist=70,elbow=8,wrist=-40},la={raise=10,out=24,elbow=40},rf={toe=-22},lf={z=-.6}}),"out"),
+	K(2,i({root={y=.15,pitch=-10,yaw=-10},torso={pitch=-12,yaw=-16},head={pitch=-20},ra={raise=160,out=6,twist=70,elbow=12},la={raise=10,out=24,elbow=40},rf={toe=-20},lf={z=-.6}})),
+	K(3,I),
+}
+CLIPS.Mirage.DashAttack={ -- gliding open-palm thrust
+	K(0,i({root={y=-.6,z=.2,pitch=22},ra={raise=20,out=20,twist=40,elbow=104},la={raise=50,out=-10,elbow=100},lf={z=-1.0},rf={z=1.1}})),
+	K(1,i({root={y=-.56,z=-.85,pitch=20,yaw=-8},torso={yaw=-12},ra={raise=92,out=-4,twist=72,elbow=2,wrist=-62},la={raise=30,out=24,elbow=60},lf={z=-1.5},rf={z=1.3}}),"out"),
+	K(2,i({root={y=-.55,z=-.86,pitch=18,yaw=-8},torso={yaw=-14},ra={raise=90,out=-4,twist=72,elbow=6,wrist=-60},la={raise=30,out=24,elbow=60},lf={z=-1.5},rf={z=1.3}})),
+	K(3,I),
+}
+local AIR_I={root={pitch=2},torso={pitch=4},ra={raise=34,out=16,elbow=80},la={raise=42,out=8,elbow=90},rl={lift=48,knee=88},ll={lift=28,knee=64}}
+CLIPS.Mirage.Air1={ -- driving knee
+	K(0,merge(AIR_I,{rl={lift=60,knee=120},ra={raise=80,out=20,elbow=90},la={raise=80,out=20,elbow=90}})),
+	K(1,merge(AIR_I,{root={pitch=14},torso={pitch=18},rl={lift=118,knee=146,ankle=-20},ra={raise=50,out=-10,elbow=96},la={raise=50,out=-10,elbow=96}}),"out"),
+	K(2,merge(AIR_I,{root={pitch=14},torso={pitch=18},rl={lift=112,knee=140},ra={raise=50,out=-10,elbow=96},la={raise=50,out=-10,elbow=96}})),
+	K(3,AIR_I),
+}
+CLIPS.Mirage.Air2={ -- tight spinning hook kick
+	K(0,merge(AIR_I,{root={yaw=-40},rl={lift=76,out=6,knee=118}})),
+	K(1,merge(AIR_I,{root={yaw=48,roll=-10},rl={lift=88,out=58,twist=-20,knee=14,ankle=-20},ll={lift=20,knee=60},ra={raise=24,out=56,elbow=40},la={raise=40,out=-6,elbow=110}}),"out"),
+	K(2,merge(AIR_I,{root={yaw=56,roll=-8},rl={lift=84,out=60,knee=20},ll={lift=20,knee=60},ra={raise=24,out=56,elbow=40},la={raise=40,out=-6,elbow=110}})),
+	K(3,AIR_I),
+}
+CLIPS.Mirage.Slam={ -- axe kick
+	K(0,merge(AIR_I,{root={pitch=-12},torso={pitch=-10},rl={lift=160,out=4,knee=6,ankle=-30},ll={lift=10,knee=40},ra={raise=30,out=40,elbow=40},la={raise=30,out=40,elbow=40}})),
+	K(1,merge(AIR_I,{root={pitch=22},torso={pitch=26},rl={lift=10,out=2,knee=8,ankle=-10},ll={lift=-10,knee=50},ra={raise=20,out=40,elbow=30},la={raise=20,out=40,elbow=30}}),"out"),
+	K(2,merge(AIR_I,{root={pitch=24},torso={pitch=26},rl={lift=4,knee=12},ll={lift=-10,knee=50}})),
+	K(3,i({root={y=-.8,pitch=16},torso={pitch=14}})),
+}
+CLIPS.Mirage.Grab={
+	K(0,i({root={y=-.4,pitch=10},ra={raise=56,out=10,elbow=80},la={raise=56,out=10,elbow=80}})),
+	K(1,i({root={y=-.4,z=-.4,pitch=14},ra={raise=84,out=-10,elbow=24},la={raise=84,out=-10,elbow=24},lf={z=-1.0}}),"out"),
+	K(3,i({ra={raise=70,out=-6,elbow=60},la={raise=70,out=-6,elbow=60}})),
+}
+CLIPS.Mirage.Throw={
+	K(0,i({root={y=-.5,yaw=18},ra={raise=78,out=-10,elbow=62},la={raise=88,out=10,elbow=90}})),
+	K(1,i({root={y=-.55,yaw=-66,pitch=12},torso={yaw=-28,pitch=10},ra={raise=54,out=-48,elbow=64},la={raise=100,out=20,elbow=90},rf={x=.4,z=.1}}),"out"),
+	K(3,I),
+}
+CLIPS.Mirage.ThrowUp={
+	K(0,i({root={y=-.8,pitch=12},ra={raise=70,out=-8,elbow=80},la={raise=70,out=-8,elbow=80}})),
+	K(1,i({root={y=.05,pitch=-12},torso={pitch=-10},head={pitch=-18},ra={raise=160,out=6,elbow=16},la={raise=160,out=6,elbow=16},rf={toe=-18},lf={toe=-18}}),"out"),
+	K(3,I),
+}
+-- Rasengan: the Burst Strike release, palm driven forward with the orb.
+CLIPS.Flashstep.Rasengan={
+	K(0,m({root={y=-.75,z=.2,pitch=26},ra={raise=74,out=8,twist=-70,elbow=62,wrist=10},la={raise=78,out=-30,twist=40,elbow=82},lf={z=-1.2},rf={z=1.2}})),
+	K(1,m({root={y=-.62,z=-1.05,pitch=24,yaw=-14},torso={yaw=-16},head={pitch=-14},ra={raise=92,out=-2,twist=-40,elbow=2,wrist=-20},la={raise=40,out=30,elbow=50},lf={z=-1.75},rf={z=1.5,y=.2,toe=-18}}),"out"),
+	K(2,m({root={y=-.6,z=-1.08,pitch=22,yaw=-16},torso={yaw=-18},ra={raise=90,out=-2,twist=-40,elbow=4},la={raise=40,out=30,elbow=50},lf={z=-1.75},rf={z=1.5,y=.2,toe=-18}})),
+	K(3,M),
+}
+
+-- Minato's KneeStrike: hands pull the opponent down onto a rising knee.
+CLIPS.Flashstep.KneeStrike={
+	K(0,m({root={y=-.5,z=.1,pitch=6},torso={pitch=4},ra={raise=86,out=-10,elbow=60},la={raise=86,out=-10,elbow=60},rl={lift=40,knee=80}})),
+	K(1,m({root={y=-.2,z=-.5,pitch=-6},torso={pitch=14},head={pitch=10},ra={raise=60,out=-16,elbow=90,wrist=-20},la={raise=60,out=-16,elbow=90,wrist=-20},rl={lift=112,knee=138,ankle=-20},lf={toe=-24}}),"out"),
+	K(2,m({root={y=-.22,z=-.52,pitch=-4},torso={pitch=12},ra={raise=58,out=-16,elbow=92},la={raise=58,out=-16,elbow=92},rl={lift=104,knee=134},lf={toe=-20}})),
+	K(3,M),
+}
+-- Branch moves ----------------------------------------------------------
+-- Minato's AngleStep: a crossing sidestep that cuts on the way past.
+CLIPS.Flashstep.AngleStep={
+	K(0,m({root={y=-.62,yaw=-30,pitch=12,roll=10},torso={yaw=-24},ra={raise=66,out=-40,twist=36,elbow=110,wrist=-28},la={raise=30,out=30,elbow=60},lf={z=-.4,x=-.4},rf={z=.8,x=.5}})),
+	K(1,m({root={y=-.55,yaw=40,pitch=14,roll=-12},torso={yaw=26,roll=-8},head={yaw=-26},ra={raise=84,out=34,twist=-16,elbow=20,wrist=12},la={raise=20,out=40,elbow=50},lf={z=-.9,x=.3},rf={z=.6,x=.8}}),"out"),
+	K(2,m({root={y=-.5,yaw=48,pitch=12,roll=-10},torso={yaw=32},ra={raise=70,out=58,twist=-28,elbow=30},la={raise=22,out=40,elbow=54},lf={z=-.9,x=.3},rf={z=.6,x=.8}})),
+	K(3,M),
+}
+-- Itachi's Sweep: drop low, pivot on the lead foot, extended leg reaps.
+CLIPS.Mirage.Sweep={
+	K(0,i({root={y=-1.05,pitch=24,yaw=-30},torso={pitch=12,yaw=-14},ra={raise=-20,out=40,elbow=30},la={raise=40,out=-10,elbow=100},lf={z=-.6,yaw=-30},rf={z=.8}})),
+	K(1,i({root={y=-1.25,pitch=30,yaw=70},torso={pitch=16,yaw=12},head={yaw=-50},ra={raise=-40,out=60,elbow=10},la={raise=30,out=10,elbow=90},rl={lift=20,out=72,twist=-40,knee=6,ankle=-10},lf={z=-.4,yaw=60}}),"out"),
+	K(2,i({root={y=-1.2,pitch=28,yaw=120},torso={pitch=14,yaw=16},ra={raise=-40,out=60,elbow=10},la={raise=30,out=10,elbow=90},rl={lift=18,out=70,twist=-40,knee=10},lf={z=-.4,yaw=100}})),
+	K(2.7,i({root={y=-.8,yaw=170},lf={yaw=150}})),
+	K(3,I),
+}
+-- Itachi's CounterPalm: the read has already happened; no wind-up, all hip.
+CLIPS.Mirage.CounterPalm={
+	K(0,i({root={y=-.5,yaw=24,pitch=8},torso={yaw=16},ra={raise=30,out=14,twist=40,elbow=110},la={raise=60,out=-20,elbow=100}})),
+	K(1,i({root={y=-.55,z=-.6,yaw=-20,pitch=16},torso={yaw=-24,pitch=8},head={yaw=12},ra={raise=90,out=-2,twist=72,elbow=2,wrist=-62},la={raise=20,out=30,elbow=60},lf={z=-1.25},rf={z=1.0,yaw=20}}),"out"),
+	K(2,i({root={y=-.55,z=-.62,yaw=-22,pitch=16},torso={yaw=-26,pitch=8},ra={raise=88,out=-2,twist=72,elbow=6,wrist=-60},la={raise=20,out=30,elbow=60},lf={z=-1.25},rf={z=1.0,yaw=20}})),
+	K(3,I),
+}
+
+-- Neji ----------------------------------------------------------------
+-- Gentle Fist: open palms driven by the hips, never fists. Every strike turns
+-- the waist through the target; the rear hand stays on the centre line.
+local PALM_L={raise=90,out=-4,twist=-72,elbow=2,wrist=-62}
+local PALM_R={raise=90,out=-2,twist=72,elbow=2,wrist=-62}
+CLIPS.GentleFist.Light1={ -- lead palm to the chest
+	K(0,n({root={y=-.66,yaw=48},torso={yaw=-6},la={raise=60,out=-10,twist=-60,elbow=100,wrist=-40}})),
+	K(1,n({root={y=-.6,z=-.38,yaw=18,pitch=8},torso={yaw=-24,pitch=4},head={yaw=-10},la=PALM_L,ra={raise=50,out=-26,twist=40,elbow=100}}),"out"),
+	K(2,n({root={y=-.6,z=-.4,yaw=16,pitch=8},torso={yaw=-26,pitch=4},la=PALM_L,ra={raise=50,out=-26,twist=40,elbow=100}})),
+	K(3,N),
+}
+CLIPS.GentleFist.Light2={ -- rear palm, hips turning square
+	K(0,n({root={y=-.66,yaw=46},torso={yaw=10},ra={raise=46,out=10,twist=60,elbow=112,wrist=-30},la={raise=70,out=-6,elbow=60}})),
+	K(1,n({root={y=-.58,z=-.46,yaw=-12,pitch=10},torso={yaw=-30,pitch=6},head={yaw=8},ra=PALM_R,la={raise=40,out=10,twist=-40,elbow=96},lf={z=-1.05},rf={z=.7,x=.2}}),"out"),
+	K(2,n({root={y=-.58,z=-.48,yaw=-14,pitch=10},torso={yaw=-32,pitch=6},ra=PALM_R,la={raise=40,out=10,twist=-40,elbow=96},lf={z=-1.05},rf={z=.7,x=.2}})),
+	K(3,N),
+}
+CLIPS.GentleFist.Light3={ -- twin palms from the hips: the shove that creates space
+	K(0,n({root={y=-.86,z=.22,yaw=12,pitch=6},torso={yaw=0},ra={raise=20,out=6,twist=50,elbow=118,wrist=-20},la={raise=20,out=6,twist=-50,elbow=118,wrist=-20},lf={z=-1.0},rf={z=.9}})),
+	K(1,n({root={y=-.62,z=-.85,yaw=4,pitch=16},torso={yaw=-4,pitch=8},head={yaw=-4},ra={raise=86,out=-8,twist=72,elbow=4,wrist=-64},la={raise=86,out=-8,twist=-72,elbow=4,wrist=-64},lf={z=-1.55},rf={z=1.2,toe=-18}}),"out"),
+	K(2,n({root={y=-.62,z=-.88,yaw=4,pitch=16},torso={yaw=-4,pitch=8},ra={raise=84,out=-8,twist=72,elbow=8,wrist=-62},la={raise=84,out=-8,twist=-72,elbow=8,wrist=-62},lf={z=-1.55},rf={z=1.2,toe=-18}})),
+	K(3,N),
+}
+CLIPS.GentleFist.Heavy={ -- deep stepping palm: the whole body coils, then drives through
+	K(0,n({root={y=-.92,z=.3,yaw=74,pitch=10},torso={yaw=18,pitch=6},la={raise=30,out=-4,twist=-50,elbow=120,wrist=-30},ra={raise=70,out=-30,elbow=80},lf={z=-1.05},rf={z=1.0,yaw=70}})),
+	K(.75,n({root={y=-.98,z=.34,yaw=80,pitch=12},torso={yaw=22,pitch=8},la={raise=26,out=-4,twist=-52,elbow=124,wrist=-30},ra={raise=72,out=-30,elbow=78},lf={z=-1.1},rf={z=1.05,yaw=72}})),
+	K(1,n({root={y=-.64,z=-1.0,yaw=-6,pitch=20},torso={yaw=-28,pitch=10},head={yaw=12},la={raise=92,out=-4,twist=-72,elbow=0,wrist=-64},ra={raise=-10,out=24,elbow=60},lf={z=-1.7},rf={z=1.25,yaw=20,toe=-20}}),"out"),
+	K(2,n({root={y=-.64,z=-1.02,yaw=-8,pitch=20},torso={yaw=-30,pitch=10},la={raise=90,out=-4,twist=-72,elbow=4,wrist=-62},ra={raise=-10,out=24,elbow=60},lf={z=-1.7},rf={z=1.25,yaw=20,toe=-20}})),
+	K(3,N),
+}
+CLIPS.GentleFist.Launcher={ -- rising palm heel under the chin
+	K(0,n({root={y=-.98,pitch=16,yaw=30},torso={pitch=10},la={raise=-10,out=12,twist=-40,elbow=108},ra={raise=60,out=-24,elbow=90},lf={z=-.7},rf={z=.7}})),
+	K(1,n({root={y=.12,pitch=-10,yaw=10},torso={pitch=-12,yaw=-10},head={pitch=-22},la={raise=168,out=4,twist=-70,elbow=6,wrist=-40},ra={raise=20,out=24,elbow=50},lf={toe=-24},rf={z=.6}}),"out"),
+	K(2,n({root={y=.1,pitch=-10,yaw=8},torso={pitch=-12,yaw=-12},head={pitch=-20},la={raise=162,out=4,twist=-70,elbow=10},ra={raise=20,out=24,elbow=50},lf={toe=-20},rf={z=.6}})),
+	K(3,N),
+}
+CLIPS.GentleFist.DashAttack={ -- gliding lead palm
+	K(0,n({root={y=-.8,z=.2,pitch=24,yaw=30},la={raise=40,out=-6,twist=-50,elbow=104},ra={raise=60,out=-24,elbow=90},lf={z=-1.1},rf={z=1.15}})),
+	K(1,n({root={y=-.72,z=-.95,pitch=22,yaw=6},torso={yaw=-18},la=PALM_L,ra={raise=30,out=20,elbow=70},lf={z=-1.6},rf={z=1.35,toe=-18}}),"out"),
+	K(2,n({root={y=-.72,z=-.96,pitch=20,yaw=4},torso={yaw=-20},la=PALM_L,ra={raise=30,out=20,elbow=70},lf={z=-1.6},rf={z=1.35,toe=-18}})),
+	K(3,N),
+}
+CLIPS.GentleFist.PalmThrust={ -- twin palm thrust: the counter that throws a body into a wall
+	K(0,n({root={y=-1.0,z=.32,yaw=8,pitch=8},torso={yaw=0,pitch=4},ra={raise=14,out=8,twist=50,elbow=124,wrist=-20},la={raise=14,out=8,twist=-50,elbow=124,wrist=-20},lf={z=-1.1},rf={z=1.0}})),
+	K(1,n({root={y=-.6,z=-1.15,yaw=2,pitch=20},torso={yaw=-2,pitch=10},head={pitch=-4},ra={raise=94,out=-10,twist=72,elbow=0,wrist=-66},la={raise=94,out=-10,twist=-72,elbow=0,wrist=-66},lf={z=-1.8},rf={z=1.35,toe=-24}}),"out"),
+	K(2,n({root={y=-.6,z=-1.18,yaw=2,pitch=20},torso={yaw=-2,pitch=10},ra={raise=92,out=-10,twist=72,elbow=4,wrist=-64},la={raise=92,out=-10,twist=-72,elbow=4,wrist=-64},lf={z=-1.8},rf={z=1.35,toe=-24}})),
+	K(3,N),
+}
+-- Anything Neji does not author yet (air strings, throws, sweep) borrows
+-- Itachi's controlled clips rather than Minato's.
+setmetatable(CLIPS.GentleFist,{__index=CLIPS.Mirage})
+
+-- Phase 4 -----------------------------------------------------------------
+-- Wall dive: crouched against the wall during the startup, then a flying kick
+-- with the lead leg straight at the opponent, arms thrown back for balance.
+local DIVE_CROUCH={root={pitch=-8,y=-.4},torso={pitch=16},head={pitch=-20},ra={raise=40,out=40,elbow=90},la={raise=40,out=40,elbow=90},
+	rl={lift=96,knee=124,ankle=-20},ll={lift=88,knee=118,ankle=-20}}
+local DIVE_KICK={root={pitch=-14,roll=-6},torso={pitch=12,yaw=-18},head={pitch=-14,yaw=10},ra={raise=-36,out=46,elbow=26},la={raise=70,out=-14,elbow=96},
+	rl={lift=84,out=6,knee=4,ankle=-24},ll={lift=-24,knee=112,ankle=-10}}
+CLIPS.Flashstep.WallDive={
+	K(0,merge(AIR_M,DIVE_CROUCH)),
+	K(1,merge(AIR_M,DIVE_KICK),"out"),
+	K(2,merge(AIR_M,DIVE_KICK)),
+	K(3,m({root={y=-.9,pitch=18},torso={pitch=12},lf={z=-.8},rf={z=.8}})),
+}
+CLIPS.Mirage.WallDive={
+	K(0,merge(AIR_M,DIVE_CROUCH)),
+	-- Itachi dives heel-first and keeps the shuriken hand ready.
+	K(1,merge(merge(AIR_M,DIVE_KICK),{torso={yaw=14},la={raise=96,out=10,twist=30,elbow=40},ra={raise=-30,out=40,elbow=30}}),"out"),
+	K(2,merge(merge(AIR_M,DIVE_KICK),{torso={yaw=14},la={raise=96,out=10,twist=30,elbow=40},ra={raise=-30,out=40,elbow=30}})),
+	K(3,i({root={y=-.9,pitch=18},torso={pitch=12},lf={z=-.8},rf={z=.8}})),
+}
+-- Airborne Rasengan: the orb raised overhead, then driven straight down
+-- with the whole body behind the palm.
+CLIPS.Flashstep.RasenganDrop={
+	K(0,merge(AIR_M,{root={pitch=-16},torso={pitch=-18,yaw=-10},head={pitch=-20},ra={raise=168,out=12,twist=-40,elbow=30,wrist=-20},la={raise=130,out=-20,twist=30,elbow=70},rl={lift=70,knee=120},ll={lift=60,knee=110}})),
+	K(1,merge(AIR_M,{root={pitch=34},torso={pitch=40,yaw=-12},head={pitch=6},ra={raise=50,out=-6,twist=-40,elbow=2,wrist=-30},la={raise=30,out=40,elbow=40},rl={lift=-10,knee=40},ll={lift=20,knee=70}}),"out"),
+	K(2,merge(AIR_M,{root={pitch=36},torso={pitch=42,yaw=-12},ra={raise=44,out=-6,twist=-40,elbow=4,wrist=-30},la={raise=30,out=40,elbow=40},rl={lift=-8,knee=38},ll={lift=22,knee=70}})),
+	K(3,m({root={y=-1.0,pitch=26},torso={pitch=22},ra={raise=60,out=10,elbow=20},lf={z=-.9},rf={z=.9}})),
+}
+CLIPS.Mirage.RasenganDrop=CLIPS.Flashstep.RasenganDrop
+
+-- Running taijutsu ---------------------------------------------------------
+-- Out of a full sprint: a flying kick (strike) or a sliding sweep (heavy).
+local function runningClips(f,base)
+	CLIPS[f].FlyingKick={
+		K(0,merge(base,{root={y=-.2,pitch=-8},torso={pitch=-4},ra={raise=-30,out=40,elbow=40},la={raise=60,out=10,elbow=90},rl={lift=70,knee=120,ankle=-10},ll={lift=-10,knee=40}})),
+		K(1,merge(base,{root={y=.35,pitch=-16,yaw=-10},torso={pitch=6,yaw=-14},head={pitch=10},ra={raise=-40,out=56,elbow=20},la={raise=74,out=-10,elbow=96},rl={lift=92,out=4,knee=2,ankle=-24},ll={lift=-18,knee=112,ankle=-10}}),"out"),
+		K(2,merge(base,{root={y=.3,pitch=-14,yaw=-10},torso={pitch=6,yaw=-14},ra={raise=-40,out=56,elbow=20},la={raise=74,out=-10,elbow=96},rl={lift=88,out=4,knee=6,ankle=-24},ll={lift=-18,knee=112}})),
+		K(3,base),
+	}
+	CLIPS[f].SlideSweep={
+		K(0,merge(base,{root={y=-1.0,pitch=14},torso={pitch=10},ra={raise=30,out=40,elbow=60},la={raise=60,out=20,elbow=80}})),
+		K(1,merge(base,{root={y=-1.7,pitch=-28,yaw=14},torso={pitch=-6,yaw=-10},head={pitch=20},ra={raise=-10,out=70,elbow=10},la={raise=70,out=20,elbow=90},rl={lift=84,out=10,knee=2,ankle=-30},ll={lift=30,knee=118,ankle=-10}}),"out"),
+		K(2,merge(base,{root={y=-1.7,pitch=-26,yaw=16},torso={pitch=-6,yaw=-10},ra={raise=-10,out=70,elbow=10},la={raise=70,out=20,elbow=90},rl={lift=80,out=10,knee=6,ankle=-30},ll={lift=30,knee=118}})),
+		K(2.6,merge(base,{root={y=-1.1,pitch=8},rl={lift=50,knee=80},ll={lift=20,knee=100}})),
+		K(3,base),
+	}
+end
+runningClips("Flashstep",M);runningClips("Mirage",I);runningClips("GentleFist",N);runningClips("Lion",STANCE.Lion)
+-- Directional routes ------------------------------------------------------
+-- The same grammar, three bodies. Low route: Minato drops into a spinning leg
+-- sweep (a marked kunai left behind), Itachi reaps with the extended leg, Neji
+-- turns a full rotation low with a palm on the ground. Lateral route: Minato's
+-- AngleStep, Itachi's feint step (an afterimage stays), Neji's circular step.
+CLIPS.Flashstep.Sweep={
+	K(0,m({root={y=-1.05,pitch=22,yaw=-20},torso={pitch=10,yaw=-10},ra={raise=44,out=30,twist=30,elbow=96,wrist=-20},la={raise=26,out=24,elbow=30},lf={x=.5,z=-.25},rf={z=.75}})),
+	K(1,m({root={y=-1.45,pitch=30,yaw=84},torso={pitch=14,yaw=8},head={yaw=-58},la={raise=18,out=46,elbow=6,wrist=-30},ra={raise=60,out=40,twist=20,elbow=84},rl={lift=16,out=78,twist=-40,knee=4,ankle=-12},lf={x=.5,z=-.1,yaw=84}}),"out"),
+	K(2,m({root={y=-1.4,pitch=28,yaw=160},torso={pitch=12,yaw=10},head={yaw=-70},la={raise=14,out=50,elbow=8},ra={raise=56,out=44,elbow=86},rl={lift=14,out=76,twist=-40,knee=6,ankle=-12},lf={x=.5,z=-.1,yaw=160}})),
+	K(2.5,m({root={y=-1.1,pitch=20,yaw=250},torso={pitch=8},head={yaw=-40},rl={lift=36,out=40,knee=50},lf={x=.5,z=0,yaw=250}})),
+	K(2.8,m({root={y=-.7,pitch=12,yaw=330},lf={x=.3,z=-.4,yaw=330},rf={x=.1,z=.6,yaw=330}})),
+	K(3,merge(M,{root={yaw=M.root.yaw+360}})),
+}
+CLIPS.GentleFist.Sweep={
+	K(0,n({root={y=-1.15,pitch=26,yaw=10},torso={pitch=14,yaw=-10},la={raise=30,out=24,elbow=20,wrist=-40},ra={raise=60,out=-20,twist=40,elbow=96},lf={x=.5,z=-.2},rf={z=.8}})),
+	K(1,n({root={y=-1.55,pitch=32,yaw=100},torso={pitch=16,yaw=10},head={yaw=-70},la={raise=26,out=40,elbow=8,wrist=-50},ra={raise=40,out=30,twist=60,elbow=20,wrist=-50},rl={lift=12,out=80,twist=-40,knee=4,ankle=-12},lf={x=.5,z=-.1,yaw=100}}),"out"),
+	K(2,n({root={y=-1.5,pitch=30,yaw=190},torso={pitch=14,yaw=12},head={yaw=-70},la={raise=24,out=42,elbow=8},ra={raise=40,out=36,twist=60,elbow=20},rl={lift=12,out=80,twist=-40,knee=6,ankle=-12},lf={x=.5,z=-.1,yaw=190}})),
+	K(2.5,n({root={y=-1.2,pitch=24,yaw=280},torso={pitch=10},rl={lift=30,out=50,knee=40},lf={x=.5,z=0,yaw=280}})),
+	K(3,merge(N,{root={yaw=N.root.yaw+360}})),
+}
+CLIPS.Mirage.FeintStep={ -- slips to the flank (an afterimage stays) and palms the ribs
+	K(0,i({root={y=-.5,yaw=-40,roll=8},torso={yaw=-16},ra={raise=30,out=20,twist=40,elbow=110},la={raise=56,out=-20,elbow=100},lf={x=-.5,z=-.2},rf={x=.4,z=.6}})),
+	K(1,i({root={y=-.5,z=-.3,yaw=36,pitch=12,roll=-10},torso={yaw=-28,pitch=6},head={yaw=-20},ra={raise=90,out=-4,twist=72,elbow=2,wrist=-60},la={raise=30,out=30,elbow=70},lf={x=.3,z=-.8},rf={x=.6,z=.7}}),"out"),
+	K(2,i({root={y=-.5,z=-.32,yaw=40,pitch=12,roll=-8},torso={yaw=-30,pitch=6},ra={raise=88,out=-4,twist=72,elbow=6,wrist=-58},la={raise=30,out=30,elbow=70},lf={x=.3,z=-.8},rf={x=.6,z=.7}})),
+	K(3,I),
+}
+CLIPS.GentleFist.CircleStep={ -- a circular step around the guard, palm into the flank
+	K(0,n({root={y=-.7,yaw=70,roll=6},torso={yaw=-10},la={raise=60,out=-10,twist=-60,elbow=100,wrist=-40},ra={raise=50,out=-20,twist=40,elbow=96},lf={x=-.3,z=-.4},rf={x=.4,z=.8}})),
+	K(1,n({root={y=-.62,z=-.3,yaw=0,pitch=8,roll=-6},torso={yaw=-30,pitch=4},head={yaw=-6},la=PALM_L,ra={raise=40,out=-20,twist=40,elbow=100},lf={x=.2,z=-1.0},rf={x=.6,z=.6}}),"out"),
+	K(2,n({root={y=-.62,z=-.32,yaw=-4,pitch=8,roll=-6},torso={yaw=-32,pitch=4},la=PALM_L,ra={raise=40,out=-20,twist=40,elbow=100},lf={x=.2,z=-1.0},rf={x=.6,z=.6}})),
+	K(3,N),
+}
+-- Air routes: drive (push kick / side kick / twin palm), spike (axe kick /
+-- hammer drop / descending palm) and switch (vault into a spinning strike).
+CLIPS.Flashstep.AirDrive={
+	K(0,merge(AIR_M,{root={pitch=-6},torso={pitch=-8},rl={lift=104,knee=124,ankle=-10},ll={lift=30,knee=60},ra={raise=40,out=40,elbow=60},la={raise=60,out=10,elbow=90}})),
+	K(1,merge(AIR_M,{root={pitch=-22},torso={pitch=-10,yaw=-10},head={pitch=12},rl={lift=96,out=0,knee=2,ankle=-30},ll={lift=-10,knee=70},ra={raise=-20,out=50,elbow=30},la={raise=70,out=-10,elbow=100}}),"out"),
+	K(2,merge(AIR_M,{root={pitch=-20},torso={pitch=-10,yaw=-12},rl={lift=92,knee=6,ankle=-28},ll={lift=-10,knee=70},ra={raise=-20,out=50,elbow=30},la={raise=70,out=-10,elbow=100}})),
+	K(3,AIR_M),
+}
+CLIPS.Flashstep.AirSpike={
+	K(0,merge(AIR_M,{root={pitch=-18},torso={pitch=-10},rl={lift=165,out=4,knee=4,ankle=-30},ll={lift=10,knee=40},ra={raise=40,out=50,elbow=40},la={raise=40,out=50,elbow=40}})),
+	K(1,merge(AIR_M,{root={pitch=24},torso={pitch=24},head={pitch=-10},rl={lift=20,out=4,knee=6,ankle=-10},ll={lift=-10,knee=60},ra={raise=20,out=50,elbow=30},la={raise=20,out=50,elbow=30}}),"out"),
+	K(2,merge(AIR_M,{root={pitch=26},torso={pitch=26},rl={lift=14,out=4,knee=8},ll={lift=-10,knee=60},ra={raise=20,out=50,elbow=30},la={raise=20,out=50,elbow=30}})),
+	K(3,AIR_M),
+}
+CLIPS.Flashstep.AirSwitch={
+	K(0,merge(AIR_M,{root={yaw=-60,roll=10},torso={yaw=-20},rl={lift=90,knee=130},ll={lift=80,knee=120},ra={raise=60,out=20,elbow=110},la={raise=60,out=20,elbow=110}})),
+	K(1,merge(AIR_M,{root={yaw=70,roll=-16,pitch=8},torso={yaw=20},head={yaw=-40},rl={lift=80,out=70,twist=-30,knee=6,ankle=-20},ll={lift=30,knee=80},ra={raise=20,out=80,elbow=20},la={raise=30,out=70,elbow=30}}),"out"),
+	K(2,merge(AIR_M,{root={yaw=84,roll=-14,pitch=8},torso={yaw=22},rl={lift=76,out=70,twist=-30,knee=10,ankle=-20},ll={lift=30,knee=80},ra={raise=20,out=80,elbow=20},la={raise=30,out=70,elbow=30}})),
+	K(3,AIR_M),
+}
+CLIPS.Mirage.AirDrive={
+	K(0,merge(AIR_I,{root={yaw=-70},torso={yaw=-10},rl={lift=80,out=10,twist=-20,knee=120},ra={raise=50,out=-6,elbow=118},la={raise=54,out=-6,elbow=120}})),
+	K(1,merge(AIR_I,{root={yaw=-84,roll=26},torso={roll=-16},head={yaw=60,roll=-18},rl={lift=86,out=72,knee=0,ankle=12},ll={lift=20,knee=70},ra={raise=50,out=-6,elbow=120},la={raise=30,out=30,elbow=80}}),"out"),
+	K(2,merge(AIR_I,{root={yaw=-84,roll=24},torso={roll=-14},head={yaw=60,roll=-16},rl={lift=82,out=70,knee=6,ankle=10},ll={lift=20,knee=70},ra={raise=50,out=-6,elbow=120},la={raise=30,out=30,elbow=80}})),
+	K(3,AIR_I),
+}
+CLIPS.Mirage.AirSpike={
+	K(0,merge(AIR_I,{root={pitch=-10},torso={pitch=-16,yaw=-10},ra={raise=170,out=10,elbow=60},la={raise=140,out=-10,elbow=90},rl={lift=60,knee=110},ll={lift=40,knee=90}})),
+	K(1,merge(AIR_I,{root={pitch=24},torso={pitch=36,yaw=6},head={pitch=10},ra={raise=50,out=-14,elbow=10,wrist=-20},la={raise=30,out=30,elbow=60},rl={lift=40,knee=70},ll={lift=20,knee=50}}),"out"),
+	K(2,merge(AIR_I,{root={pitch=26},torso={pitch=38,yaw=6},ra={raise=44,out=-14,elbow=12},la={raise=30,out=30,elbow=60},rl={lift=40,knee=70},ll={lift=20,knee=50}})),
+	K(3,AIR_I),
+}
+CLIPS.Mirage.AirSwitch={
+	K(0,merge(AIR_I,{root={yaw=50,roll=-10},torso={yaw=16},ll={lift=90,knee=130},rl={lift=70,knee=110},ra={raise=50,out=20,elbow=110},la={raise=50,out=20,elbow=110}})),
+	K(1,merge(AIR_I,{root={yaw=-60,roll=14},torso={yaw=-16},head={yaw=40},ll={lift=86,out=64,twist=-24,knee=10,ankle=-20},rl={lift=24,knee=70},ra={raise=30,out=70,elbow=24},la={raise=24,out=60,elbow=30}}),"out"),
+	K(2,merge(AIR_I,{root={yaw=-70,roll=12},torso={yaw=-18},ll={lift=82,out=64,twist=-24,knee=14,ankle=-20},rl={lift=24,knee=70},ra={raise=30,out=70,elbow=24},la={raise=24,out=60,elbow=30}})),
+	K(3,AIR_I),
+}
+CLIPS.GentleFist.AirDrive={
+	K(0,merge(AIR_I,{root={pitch=-6},torso={pitch=-4},ra={raise=20,out=6,twist=50,elbow=120,wrist=-20},la={raise=20,out=6,twist=-50,elbow=120,wrist=-20},rl={lift=60,knee=100},ll={lift=40,knee=80}})),
+	K(1,merge(AIR_I,{root={pitch=10},torso={pitch=10},ra={raise=92,out=-8,twist=72,elbow=2,wrist=-64},la={raise=92,out=-8,twist=-72,elbow=2,wrist=-64},rl={lift=20,knee=60},ll={lift=50,knee=90}}),"out"),
+	K(2,merge(AIR_I,{root={pitch=10},torso={pitch=10},ra={raise=90,out=-8,twist=72,elbow=6,wrist=-62},la={raise=90,out=-8,twist=-72,elbow=6,wrist=-62},rl={lift=20,knee=60},ll={lift=50,knee=90}})),
+	K(3,AIR_I),
+}
+CLIPS.GentleFist.AirSpike={
+	K(0,merge(AIR_I,{root={pitch=-12},torso={pitch=-14},la={raise=170,out=6,twist=-60,elbow=20,wrist=-40},ra={raise=60,out=-20,elbow=96},rl={lift=70,knee=110},ll={lift=50,knee=100}})),
+	K(1,merge(AIR_I,{root={pitch=30},torso={pitch=34},head={pitch=6},la={raise=40,out=-4,twist=-72,elbow=2,wrist=-64},ra={raise=30,out=30,elbow=60},rl={lift=30,knee=70},ll={lift=10,knee=50}}),"out"),
+	K(2,merge(AIR_I,{root={pitch=32},torso={pitch=36},la={raise=36,out=-4,twist=-72,elbow=6,wrist=-62},ra={raise=30,out=30,elbow=60},rl={lift=30,knee=70},ll={lift=10,knee=50}})),
+	K(3,AIR_I),
+}
+CLIPS.GentleFist.AirSwitch={
+	K(0,merge(AIR_I,{root={yaw=-60},torso={yaw=-20},la={raise=60,out=30,twist=-60,elbow=90},ra={raise=60,out=30,twist=60,elbow=90},rl={lift=70,knee=110},ll={lift=60,knee=100}})),
+	K(1,merge(AIR_I,{root={yaw=60,roll=-10},torso={yaw=10},la={raise=90,out=60,twist=-72,elbow=4,wrist=-60},ra={raise=90,out=50,twist=72,elbow=4,wrist=-60},rl={lift=50,knee=90},ll={lift=40,knee=70}}),"out"),
+	K(2,merge(AIR_I,{root={yaw=70,roll=-10},torso={yaw=12},la={raise=88,out=60,twist=-72,elbow=8},ra={raise=88,out=50,twist=72,elbow=8},rl={lift=50,knee=90},ll={lift=40,knee=70}})),
+	K(3,AIR_I),
+}
+-- Sasuke ----------------------------------------------------------------
+-- Aggressive Uchiha taijutsu: a jab, a roundhouse to the body, a spinning
+-- heel kick; an acrobatic rising kick he follows into the air; a vault over
+-- the opponent into a back kick; the Lion Combo heel drop; the Chidori thrust.
+local S=STANCE.Lion
+local function sk(over) return merge(S,over) end
+local AIR_S={root={pitch=8},torso={pitch=6},head={pitch=-6},ra={raise=50,out=24,elbow=96},la={raise=56,out=16,elbow=86},rl={lift=62,knee=100,ankle=-10},ll={lift=36,knee=76,ankle=-10}}
+CLIPS.Lion.Light1={ -- lead-hand jab
+	K(0,sk({torso={yaw=12},la={raise=56,out=6,twist=20,elbow=112}})),
+	K(1,sk({root={z=-.32,yaw=-6,pitch=8},torso={yaw=-18},la={raise=92,out=-4,twist=-14,elbow=4,wrist=0},ra={raise=50,out=-16,elbow=118}}),"out"),
+	K(2,sk({root={z=-.32,yaw=-6,pitch=8},torso={yaw=-20},la={raise=90,out=-4,twist=-14,elbow=8},ra={raise=50,out=-16,elbow=118}})),
+	K(3,S),
+}
+CLIPS.Lion.Light2={ -- rear-leg roundhouse to the ribs
+	K(0,sk({root={y=-.55,yaw=-24,pitch=6},torso={yaw=-16},ra={raise=50,out=-10,elbow=110},la={raise=60,out=10,elbow=90},rl={lift=62,out=22,knee=112,ankle=-10},lf={yaw=-24}})),
+	K(1,sk({root={y=-.4,yaw=70,pitch=-4,roll=-18},torso={yaw=10,roll=-18},head={yaw=-40,roll=12},ra={raise=20,out=70,elbow=20},la={raise=40,out=50,elbow=40},rl={lift=76,out=62,twist=-26,knee=8,ankle=-20},lf={yaw=50}}),"out"),
+	K(2,sk({root={y=-.42,yaw=80,pitch=-4,roll=-16},torso={yaw=12,roll=-16},ra={raise=20,out=70,elbow=24},la={raise=40,out=50,elbow=40},rl={lift=72,out=64,twist=-26,knee=12,ankle=-20},lf={yaw=60}})),
+	K(2.6,sk({root={y=-.5,yaw=50},rl={lift=40,out=20,knee=70},lf={yaw=30}})),
+	K(3,S),
+}
+CLIPS.Lion.Light3={ -- spinning heel kick: the turning strike that sends the body away
+	K(0,sk({root={y=-.62,yaw=-20,pitch=6},torso={yaw=-20},ra={raise=40,out=30,elbow=90},la={raise=40,out=30,elbow=90}})),
+	K(.5,sk({root={y=-.45,yaw=90,pitch=0,roll=8},torso={yaw=-10},head={yaw=-60},ra={raise=30,out=60,elbow=50},la={raise=30,out=60,elbow=50},rl={lift=40,out=30,knee=90},lf={yaw=90,x=.4,z=0}})),
+	K(1,sk({root={y=-.25,yaw=196,pitch=-8,roll=16},torso={yaw=16,roll=12},head={yaw=50},ra={raise=20,out=80,elbow=20},la={raise=30,out=70,elbow=30},rl={lift=94,out=52,twist=20,knee=6,ankle=-20},lf={yaw=196,x=.4,z=0}}),"out"),
+	K(2,sk({root={y=-.28,yaw=214,pitch=-6,roll=14},torso={yaw=18,roll=10},ra={raise=20,out=80,elbow=24},la={raise=30,out=70,elbow=30},rl={lift=88,out=54,twist=20,knee=10,ankle=-20},lf={yaw=214,x=.4,z=0}})),
+	K(2.5,sk({root={y=-.45,yaw=290},rl={lift=40,out=20,knee=70},lf={yaw=290,x=.3,z=0}})),
+	K(3,merge(S,{root={yaw=S.root.yaw+360}})),
+}
+CLIPS.Lion.Heavy={ -- driving front kick off the rear leg
+	K(0,sk({root={y=-.75,z=.25,pitch=12},torso={pitch=8},ra={raise=40,out=20,elbow=100},la={raise=60,out=10,elbow=90},lf={z=-1.0}})),
+	K(1,sk({root={y=-.3,z=-.6,pitch=-14},torso={pitch=-6,yaw=-8},head={pitch=10},ra={raise=-20,out=40,elbow=40},la={raise=70,out=-10,elbow=100},rl={lift=96,out=4,knee=4,ankle=-30},lf={z=-1.2,toe=-10}}),"out"),
+	K(2,sk({root={y=-.32,z=-.62,pitch=-12},torso={pitch=-6,yaw=-8},ra={raise=-20,out=40,elbow=40},la={raise=70,out=-10,elbow=100},rl={lift=92,knee=8,ankle=-28},lf={z=-1.2}})),
+	K(3,S),
+}
+CLIPS.Lion.LionKick={ -- deep crouch, then a rising flip kick straight up under the chin
+	K(0,sk({root={y=-1.05,pitch=22},torso={pitch=14},ra={raise=30,out=40,elbow=80},la={raise=30,out=40,elbow=80},lf={z=-.4},rf={z=.5}})),
+	K(1,sk({root={y=.45,pitch=-46},torso={pitch=-14},head={pitch=-20},ra={raise=-40,out=44,elbow=20},la={raise=-36,out=44,elbow=20},rl={lift=168,out=4,knee=2,ankle=-30},ll={lift=24,knee=70}}),"out"),
+	K(2,sk({root={y=.5,pitch=-56},torso={pitch=-16},head={pitch=-20},ra={raise=-44,out=44,elbow=20},la={raise=-40,out=44,elbow=20},rl={lift=160,out=4,knee=8,ankle=-28},ll={lift=30,knee=80}})),
+	K(3,S),
+}
+CLIPS.Lion.DashAttack={ -- flying knee, hands pulling the head down onto it
+	K(0,sk({root={y=-.6,pitch=20},ra={raise=30,out=30,elbow=90},la={raise=30,out=30,elbow=90},lf={z=-1.0},rf={z=1.1}})),
+	K(1,sk({root={y=-.1,z=-.8,pitch=6},torso={pitch=10},rl={lift=112,knee=142,ankle=-20},ra={raise=84,out=-10,elbow=60},la={raise=84,out=-10,elbow=60},lf={z=-1.3,toe=-30}}),"out"),
+	K(2,sk({root={y=-.12,z=-.82,pitch=6},torso={pitch=10},rl={lift=108,knee=140},ra={raise=80,out=-10,elbow=64},la={raise=80,out=-10,elbow=64},lf={z=-1.3,toe=-24}})),
+	K(3,S),
+}
+CLIPS.Lion.Sweep={ -- both hands on the floor, a full low spin that reaps the legs
+	K(0,sk({root={y=-1.15,pitch=30,yaw=0},torso={pitch=16,yaw=-10},ra={raise=20,out=20,elbow=20,wrist=-40},la={raise=24,out=16,elbow=20,wrist=-40},lf={x=.5,z=-.2},rf={z=.8}})),
+	K(1,sk({root={y=-1.55,pitch=34,yaw=96},torso={pitch=18,yaw=10},head={yaw=-70},ra={raise=16,out=40,elbow=8,wrist=-50},la={raise=20,out=30,elbow=8,wrist=-50},rl={lift=12,out=82,twist=-40,knee=4,ankle=-12},lf={x=.5,z=-.1,yaw=96}}),"out"),
+	K(2,sk({root={y=-1.5,pitch=32,yaw=186},torso={pitch=16,yaw=12},head={yaw=-70},ra={raise=16,out=40,elbow=8},la={raise=20,out=30,elbow=8},rl={lift=12,out=82,twist=-40,knee=6,ankle=-12},lf={x=.5,z=-.1,yaw=186}})),
+	K(2.5,sk({root={y=-1.15,pitch=24,yaw=276},torso={pitch=10},rl={lift=34,out=48,knee=40},lf={x=.5,z=0,yaw=276}})),
+	K(3,merge(S,{root={yaw=S.root.yaw+360}})),
+}
+CLIPS.Lion.VaultKick={ -- over the opponent's shoulder, a back kick from the other side
+	K(0,sk({root={y=-.8,pitch=16},torso={pitch=10},ra={raise=80,out=10,elbow=40},la={raise=80,out=10,elbow=40},lf={z=-.6},rf={z=.6}})),
+	K(1,sk({root={y=.55,pitch=36,yaw=-20},torso={pitch=20},head={pitch=-30,yaw=30},ra={raise=60,out=30,elbow=30},la={raise=50,out=40,elbow=40},rl={lift=-62,out=6,knee=4,ankle=20},ll={lift=60,knee=110}}),"out"),
+	K(2,sk({root={y=.45,pitch=34,yaw=-22},torso={pitch=18},head={pitch=-28,yaw=30},ra={raise=60,out=30,elbow=30},la={raise=50,out=40,elbow=40},rl={lift=-58,out=6,knee=8,ankle=20},ll={lift=56,knee=106}})),
+	K(3,S),
+}
+CLIPS.Lion.LionBarrage={ -- Lion Combo: the heel raised overhead, then driven through the body to the floor
+	K(0,merge(AIR_S,{root={pitch=-22,yaw=30},torso={pitch=-14,yaw=10},rl={lift=172,out=6,knee=2,ankle=-30},ll={lift=10,knee=50},ra={raise=30,out=60,elbow=30},la={raise=30,out=60,elbow=30}})),
+	K(1,merge(AIR_S,{root={pitch=30,yaw=0},torso={pitch=30},head={pitch=-12},rl={lift=12,out=6,knee=6,ankle=-10},ll={lift=-14,knee=60},ra={raise=10,out=60,elbow=20},la={raise=10,out=60,elbow=20}}),"out"),
+	K(2,merge(AIR_S,{root={pitch=32},torso={pitch=32},rl={lift=8,knee=8},ll={lift=-14,knee=60},ra={raise=10,out=60,elbow=20},la={raise=10,out=60,elbow=20}})),
+	K(3,sk({root={y=-1.0,pitch=26},torso={pitch=22},lf={z=-.9},rf={z=.9}})),
+}
+CLIPS.Lion.ChidoriThrust={ -- the lightning hand driven straight through, the whole body behind it
+	K(0,sk({root={y=-.95,z=.25,pitch=24,yaw=20},torso={pitch=14,yaw=10},head={pitch=-14},ra={raise=-20,out=20,twist=40,elbow=30,wrist=-30},la={raise=20,out=-30,twist=40,elbow=90},lf={z=-1.2},rf={z=1.1,yaw=40}})),
+	K(1,sk({root={y=-.7,z=-1.25,pitch=28,yaw=-12},torso={pitch=12,yaw=-14},head={pitch=-16},ra={raise=94,out=-4,twist=-20,elbow=2,wrist=-10},la={raise=40,out=-20,twist=30,elbow=100},lf={z=-1.85},rf={z=1.55,y=.2,toe=-24}}),"out"),
+	K(2,sk({root={y=-.7,z=-1.28,pitch=28,yaw=-14},torso={pitch=12,yaw=-16},ra={raise=92,out=-4,twist=-20,elbow=4},la={raise=40,out=-20,twist=30,elbow=100},lf={z=-1.85},rf={z=1.55,y=.2,toe=-24}})),
+	K(3,S),
+}
+CLIPS.Lion.Riposte=CLIPS.Lion.Light1
+-- Spins are authored with their exact angles (no exaggeration), each key
+-- under half a turn from the next so the body turns the right way round.
+for _,clip in {CLIPS.Flashstep.Sweep,CLIPS.GentleFist.Sweep,CLIPS.Lion.Sweep,CLIPS.Lion.Light3} do
+	for _,key in clip do
+		if key.pose~=M and key.pose~=I and key.pose~=N and key.pose~=S then key.pose.keep=true end
+	end
+end
+-- Anything Sasuke does not author (air strings, throws, knee) borrows Minato's
+-- springier clips.
+setmetatable(CLIPS.Lion,{__index=CLIPS.Flashstep})
+-- Riposte: each fighter's shortest strike, thrown straight out of the guard.
+CLIPS.Flashstep.Riposte=CLIPS.Flashstep.Light2
+CLIPS.Mirage.Riposte=CLIPS.Mirage.CounterPalm
+CLIPS.GentleFist.Riposte=CLIPS.GentleFist.Light1
+-- Taijutsu readability: on ground strikes, push hips, shoulders and the step
+-- further from the stance so the body mechanics read at fight distance.
+local EXAGGERATE,STEP=1.3,1.15
+local AIRBORNE={Air1=true,Air2=true,Slam=true,RasenganDrop=true,WallDive=true,FlyingKick=true,AirDrive=true,AirSpike=true,AirSwitch=true,LionBarrage=true}
+local done={}
+for fighterId,route in {Flashstep=CLIPS.Flashstep,Mirage=CLIPS.Mirage,GentleFist=CLIPS.GentleFist,Lion=CLIPS.Lion} do
+	local base=stance(fighterId)
+	for name,keys in route do
+		if not AIRBORNE[name] and type(keys)=="table" then
+			for _,key in keys do
+				local pose=key.pose
+				if type(pose)=="table" and pose~=base and not done[pose] and pose~=M and pose~=I and pose~=N and pose~=STANCE.Lion and not pose.keep then
+					done[pose]=true
+					for _,part in {"root","torso"} do
+						local p,b=pose[part],base[part] or {}
+						if p then
+							for _,field in {"yaw","pitch","roll"} do
+								if p[field] then p[field]=(b[field] or 0)+(p[field]-(b[field] or 0))*EXAGGERATE end
+							end
+							if part=="root" and p.z then p.z=math.clamp((b.z or 0)+(p.z-(b.z or 0))*EXAGGERATE,-1.4,1.4) end
+						end
+					end
+					for _,foot in {"rf","lf"} do
+						local p,b=pose[foot],base[foot] or {}
+						if p and p.z then p.z=math.clamp((b.z or 0)+(p.z-(b.z or 0))*STEP,-1.9,1.6) end
+					end
+				end
+			end
+		end
+	end
+end
+
+-- Kinetic chain: every ground strike is driven from the floor up. Between the
+-- load and the contact a key is inserted where the feet and hips have already
+-- moved (the step and the hip turn) while the chest and the striking limb are
+-- still loaded; the contact then snaps the shoulders through. After the active
+-- frames a follow-through key carries the chest and arms past the strike, so
+-- weight is seen transferring rather than a limb moving alone.
+local CHAIN={root=.78,rf=.88,lf=.88,torso=.32,head=.4,ra=.14,la=.14,rl=.4,ll=.4}
+local function mixPart(a,b,base,w)
+	local out={}
+	local seen={}
+	for k in a or {} do seen[k]=true end
+	for k in b or {} do seen[k]=true end
+	for k in seen do
+		local va=(a and a[k]) or (base and base[k]) or 0
+		local vb=(b and b[k]) or (base and base[k]) or 0
+		if type(va)=="number" and type(vb)=="number" then out[k]=va+(vb-va)*w end
+	end
+	return out
+end
+local function chainPose(p0,p1,base)
+	local out={}
+	for part,w in CHAIN do
+		local free=part=="rl" or part=="ll"
+		local plant=part=="rf" or part=="lf"
+		local freeKey=if part=="rf" then "rl" elseif part=="lf" then "ll" else nil
+		if free then
+			if p0[part] and p1[part] then out[part]=mixPart(p0[part],p1[part],nil,w) end
+		elseif plant then
+			if not (p0[freeKey] or p1[freeKey]) then out[part]=mixPart(p0[part],p1[part],base[part],w) end
+		else
+			out[part]=mixPart(p0[part],p1[part],base[part],w)
+		end
+	end
+	-- A leg that kicks in both keys stays free; one that kicks in only one of
+	-- them is left to the neighbouring keys (no mixed planted/free leg).
+	if out.rl==nil and out.rf==nil and not (p0.rl or p1.rl) then out.rf=mixPart(p0.rf,p1.rf,base.rf,.88) end
+	if out.ll==nil and out.lf==nil and not (p0.ll or p1.ll) then out.lf=mixPart(p0.lf,p1.lf,base.lf,.88) end
+	return out
+end
+local function followPose(p2,base)
+	local out={}
+	for part,v in p2 do
+		if type(v)=="table" then out[part]=table.clone(v) end
+	end
+	local function push(part,field,k)
+		local t=out[part];if not t or not t[field] then return end
+		local b=(base[part] and base[part][field]) or 0
+		t[field]=t[field]+(t[field]-b)*k
+	end
+	push("torso","yaw",.16);push("torso","pitch",.12);push("root","yaw",.1)
+	for _,arm in {"ra","la"} do push(arm,"raise",.06);push(arm,"out",.1) end
+	if out.root then out.root.z=math.clamp((out.root.z or 0)-.08,-1.5,1.5) end
+	return out
+end
+local chained={}
+for fighterId,route in {Flashstep=CLIPS.Flashstep,Mirage=CLIPS.Mirage,GentleFist=CLIPS.GentleFist,Lion=CLIPS.Lion} do
+	local base=stance(fighterId)
+	for name,keys in route do
+		if not AIRBORNE[name] and type(keys)=="table" and not chained[keys] and #keys>=3 then
+			chained[keys]=true
+			if keys[1].at==0 and keys[2].at==1 then
+				table.insert(keys,2,K(.55,chainPose(keys[1].pose,keys[2].pose,base),"smooth"))
+				keys[3].ease="out"
+			end
+			for index=1,#keys-1 do
+				if keys[index].at==2 and keys[index+1].at>2.2 then
+					table.insert(keys,index+1,K(2.25,followPose(keys[index].pose,base),"out"))
+					break
+				end
+			end
+		end
+	end
+end
+
+-- Sample a key list at time `t` on the [0,3] attack timeline.
+local function sampleKeys(keys,t)
+	if t<=keys[1].at then return built(keys[1].pose) end
+	for index=1,#keys-1 do
+		local a,b=keys[index],keys[index+1]
+		if t<=b.at then
+			local span=math.max(b.at-a.at,1e-3)
+			local ease=EASE[b.ease] or smooth
+			return blend(built(a.pose),built(b.pose),ease((t-a.at)/span))
+		end
+	end
+	return built(keys[#keys].pose)
+end
+-- Real-seconds -> move timeline, using the exact per-fighter timings the server
+-- uses. A small lead compensates for the damping lag so contact frames land on
+-- the server's active window.
+local LEAD=.03
+local function timing(name,fighterId)
+	local spec=Attacks[name] or (if name=="RasenganDrop" or name=="LionBarrage" then Attacks.Slam else Attacks.DashAttack)
+	local fighter=Fighters[fighterId]
+	local profile=fighter and fighter.AttackProfile and fighter.AttackProfile[name]
+	local startup=spec.startup*(profile and profile.startup or 1)
+	local active=spec.active*(profile and profile.active or 1)
+	local recovery=spec.recovery*(profile and profile.recovery or 1)
+	if name=="Rasengan" then startup,active,recovery=.1,.12,.48 end
+	return startup,active,recovery
+end
+local function attackPhase(name,elapsed,fighterId)
+	local startup,active,recovery=timing(name,fighterId)
+	local t=elapsed+LEAD
+	if t<startup then return t/math.max(startup,1e-3),startup,active,recovery end
+	if t<startup+active then return 1+(t-startup)/math.max(active,1e-3),startup,active,recovery end
+	return 2+math.min(1,(t-startup-active)/math.max(recovery,1e-3)),startup,active,recovery
+end
+-- The clip's footwork at `elapsed`: where each planted foot should be (root
+-- space), or nil for a leg that is kicking (free) at this moment.
+local function attackFeet(name,elapsed,fighterId)
+	local route=CLIPS[fighterId] or CLIPS.Flashstep
+	local keys=route[name] or route.Light1
+	local t=attackPhase(name,elapsed,fighterId)
+	local a,b=keys[1],keys[1]
+	local u=0
+	if t>keys[1].at then
+		a,b=keys[#keys],keys[#keys]
+		for index=1,#keys-1 do
+			if t<=keys[index+1].at then
+				a,b=keys[index],keys[index+1]
+				u=(EASE[b.ease] or smooth)((t-a.at)/math.max(b.at-a.at,1e-3))
+				break
+			end
+		end
+	end
+	local out={}
+	for _,side in {"R","L"} do
+		local free=if side=="R" then "rl" else "ll"
+		local plant=if side=="R" then "rf" else "lf"
+		if not (a.pose[free] or b.pose[free]) then
+			local fa,fb=a.pose[plant] or {},b.pose[plant] or {}
+			local function mix(k) return (fa[k] or 0)+((fb[k] or 0)-(fa[k] or 0))*u end
+			out[side]={x=mix("x"),z=mix("z"),yaw=mix("yaw"),y=mix("y"),toe=mix("toe")}
+		end
+	end
+	return out
+end
+-- Pose + weight of an attack at `elapsed`. The weight stays at 1 through the
+-- active window and most of recovery, then fades so the stance takes over.
+local function attackTargets(name,elapsed,fighterId)
+	local route=CLIPS[fighterId] or CLIPS.Flashstep
+	local keys=route[name] or route.Light1
+	local phase=attackPhase(name,elapsed,fighterId)
+	local weight=if phase<2.55 then 1 else 1-smooth((phase-2.55)/.45)
+	return sampleKeys(keys,phase),weight,phase
+end
+
+-- --------------------------------------------------------------- throws
+-- Upper-body overlays timed on the release frame (seconds relative to throw
+-- start; `release` is the server's release delay). Legs keep their gait.
+local THROWS={
+	Kunai=function(t,release)
+		local wind={torso={yaw=26,pitch=-4},head={yaw=-18},ra={raise=150,out=32,twist=-30,elbow=112,wrist=-20},la={raise=82,out=-8,elbow=36}}
+		local snap={torso={yaw=-22,pitch=8},head={yaw=6},ra={raise=96,out=6,twist=18,elbow=12,wrist=34},la={raise=24,out=24,elbow=60}}
+		local follow={torso={yaw=-26,pitch=10},ra={raise=66,out=-22,twist=10,elbow=30,wrist=20},la={raise=30,out=20,elbow=70}}
+		if t<release then return wind,smooth(t/math.max(release*.6,.02)) end
+		if t<release+.08 then return snap,1 end
+		if t<release+.22 then return follow,1 end
+		return follow,1-smooth((t-release-.22)/.16)
+	end,
+	MarkedKunai=function(t,release)
+		local wind={torso={yaw=34,pitch=-8},head={yaw=-22},ra={raise=158,out=36,twist=-34,elbow=118,wrist=-24},la={raise=66,out=-34,twist=30,elbow=122}}
+		local snap={torso={yaw=-28,pitch=10},head={yaw=8},ra={raise=98,out=4,twist=16,elbow=8,wrist=36},la={raise=60,out=-32,twist=30,elbow=118}}
+		local follow={torso={yaw=-30,pitch=12},ra={raise=62,out=-26,elbow=26,wrist=18},la={raise=58,out=-30,twist=30,elbow=116}}
+		if t<release then return wind,smooth(t/math.max(release*.6,.02)) end
+		if t<release+.09 then return snap,1 end
+		if t<release+.24 then return follow,1 end
+		return follow,1-smooth((t-release-.24)/.18)
+	end,
+	Shuriken=function(t,release)
+		local cock={torso={yaw=22},head={yaw=-14},la={raise=70,out=-60,twist=40,elbow=122,wrist=10}}
+		local flick={torso={yaw=-16,pitch=4},head={yaw=8},la={raise=86,out=38,twist=-20,elbow=12,wrist=24}}
+		if t<release then return cock,smooth(t/math.max(release*.6,.02)) end
+		if t<release+.04 then return flick,1 end
+		if t<release+.08 then return merge(cock,{la={raise=76,out=-34,elbow=96}}),1 end
+		if t<release+.2 then return merge(flick,{la={out=46}}),1 end
+		return flick,1-smooth((t-release-.2)/.16)
+	end,
+}
+
+-- --------------------------------------------------------- technique poses
+-- Hand signs cycle through a few distinct seals; the last one is held.
+local SEALS={
+	{ra={raise=56,out=-30,twist=32,elbow=104,wrist=8},la={raise=56,out=-30,twist=32,elbow=104,wrist=8}},
+	{ra={raise=66,out=-26,twist=44,elbow=92,wrist=24},la={raise=62,out=-28,twist=20,elbow=100,wrist=-10}},
+	{ra={raise=50,out=-34,twist=18,elbow=116,wrist=-16},la={raise=54,out=-32,twist=40,elbow=110,wrist=14}},
+	{ra={raise=60,out=-28,twist=36,elbow=100,wrist=30},la={raise=60,out=-28,twist=36,elbow=100,wrist=30}},
+}
+local function sealPose(base,t,hold)
+	local index=if hold then #SEALS else (math.floor(t/.1)%#SEALS)+1
+	return merge(base,merge(SEALS[index],{torso={pitch=6,yaw=-2},head={pitch=8,yaw=0}}))
+end
+local function castSpec(actor)
+	local id=actor.castId
+	local fighterId=actor.fighterId
+	local base=stance(fighterId)
+	local t=actor.castElapsed or 0
+	local state=actor.state
+	if id=="Rotation" then
+		-- Eight Trigrams Rotation: a full-body spin, arms out, weight centred.
+		local spin=(t*1500)%360
+		return merge(base,{root={y=-.45,pitch=2,yaw=spin},torso={pitch=0,yaw=0},head={pitch=0,yaw=0},
+			ra={raise=78,out=64,twist=0,elbow=12,wrist=-20},la={raise=78,out=64,twist=0,elbow=12,wrist=-20},rf={x=.3,z=.4},lf={x=-.3,z=-.4}})
+	elseif id=="VacuumPalm" then
+		if state=="TechniqueChannel" then return merge(base,{root={y=-.8,yaw=56},torso={yaw=10},la={raise=50,out=-10,twist=-60,elbow=112,wrist=-30}}) end
+		return merge(base,{root={y=-.66,z=-.4,yaw=14,pitch=10},torso={yaw=-26},la={raise=94,out=-4,twist=-72,elbow=0,wrist=-70},ra={raise=40,out=20,elbow=80},lf={z=-1.4},rf={z=1.1}})
+	elseif id=="SixtyFourPalms" then
+		if state=="TechniqueChannel" then
+			-- "You are within my field of divination": very wide, very low.
+			return merge(base,{root={y=-1.05,yaw=44,pitch=8},torso={yaw=-10},head={yaw=-26},la={raise=86,out=-4,twist=-60,elbow=12,wrist=-50},ra={raise=140,out=-20,twist=30,elbow=60,wrist=-40},lf={z=-1.45,x=-.2},rf={z=1.35,x=.35,yaw=70}})
+		end
+		local beat=math.floor(t*16)%2==0
+		local jitter=math.sin(t*50)*6
+		return merge(base,{root={y=-.95,z=-.3,yaw=24+jitter,pitch=12},torso={yaw=if beat then -18 else 12},head={yaw=-14},
+			la=if beat then {raise=92,out=-6,twist=-72,elbow=2,wrist=-64} else {raise=60,out=-10,twist=-50,elbow=90,wrist=-30},
+			ra=if beat then {raise=60,out=-20,twist=50,elbow=92,wrist=-30} else {raise=92,out=-4,twist=72,elbow=2,wrist=-64},
+			lf={z=-1.45,x=-.2},rf={z=1.3,x=.35,yaw=64}})
+	elseif id=="PhoenixFlower" then
+		if state=="TechniqueChannel" then return sealPose(base,t,false) end
+		-- Phoenix Flower: a quick sweep of the head across the fan while the hand
+		-- ring stays at the mouth.
+		local sweep=math.sin(math.clamp(t-(actor.channel or 0),0,.4)*14)*18
+		return merge(base,{root={y=-.55,pitch=10,yaw=sweep*.5},torso={pitch=8,yaw=sweep},head={pitch=8,yaw=sweep*.6},
+			ra={raise=112,out=-36,twist=22,elbow=146,wrist=-10},la={raise=8,out=28,elbow=30},lf={z=-1.0},rf={z=.95,yaw=24}})
+	elseif id=="FireBloom" then
+		if state=="TechniqueChannel" then
+			-- Signs, then a held tiger seal and a deep inhale before the breath.
+			local remaining=(actor.channel or 0)
+			if remaining<.14 then return merge(sealPose(base,t,true),{root={pitch=-8,y=-.3},torso={pitch=-16},head={pitch=-14}}) end
+			return sealPose(base,t,false)
+		end
+		-- Katon breath: braced wide stance, hand ring at the mouth, body driving
+		-- forward into the blast.
+		return merge(base,{root={y=-.62,pitch=16,yaw=6},torso={pitch=12,yaw=-6},head={pitch=12,yaw=-4},
+			ra={raise=112,out=-36,twist=22,elbow=146,wrist=-10},la={raise=8,out=28,elbow=30},lf={z=-1.15},rf={z=1.05,yaw=30}})
+	elseif id=="MirageCast" then
+		return merge(base,{root={y=-.24},head={pitch=4,yaw=-4},ra={raise=110,out=-28,twist=30,elbow=150,wrist=10},la={raise=10,out=12,elbow=30}})
+	elseif id=="Read" then
+		return merge(base,{root={y=-.45,pitch=6},head={pitch=2},ra={raise=40,out=-16,elbow=110},la={raise=60,out=-20,elbow=104}})
+	elseif id=="NeedleFan" then
+		if state=="TechniqueChannel" then return merge(base,{torso={yaw=26},la={raise=12,out=-42,twist=30,elbow=112},ra={raise=20,out=10,elbow=60}}) end
+		return merge(base,{torso={yaw=-24,pitch=6},la={raise=88,out=54,twist=-24,elbow=8,wrist=24},ra={raise=24,out=18,elbow=60}})
+	elseif id=="BurstStrike" then
+		-- Rasengan forms in the right palm, the left hand shaping it from above.
+		return merge(base,{root={y=-.6,pitch=14,yaw=10},torso={pitch=8},head={pitch=12},ra={raise=72,out=10,twist=-72,elbow=64,wrist=12},la={raise=78,out=-30,twist=42,elbow=84,wrist=-10}})
+	elseif id=="WindCut" then
+		if state=="TechniqueChannel" then return sealPose(base,t,false) end
+		return merge(base,{torso={yaw=-34,pitch=6},ra={raise=88,out=50,elbow=8,wrist=-10},la={raise=40,out=24,elbow=50},root={yaw=-20,y=-.5}})
+	elseif id=="Flashstep" then
+		if state=="TechniqueChannel" or state=="TechniqueActive" then
+			return merge(base,{root={y=-.6,pitch=12},la={raise=66,out=-34,twist=30,elbow=122},ra={raise=40,out=16,elbow=96}})
+		end
+		-- Arrival: low, balanced, kunai already up — a combat action, not a pop-in.
+		return merge(base,{root={y=-1.05,pitch=22,yaw=8},torso={pitch=10},head={pitch=-18},ra={raise=66,out=14,twist=30,elbow=84,wrist=-20},
+			la={raise=-8,out=24,elbow=20},lf={z=-1.0,x=-.2},rf={z=1.1,x=.3,yaw=40}})
+	elseif id=="Quickstep" then
+		return merge(base,{root={y=-.75,pitch=20,roll=12},torso={roll=-8}})
+	elseif id=="MarkedBlade" then
+		return nil
+	elseif id=="WireTrap" then
+		if state=="TechniqueChannel" then return merge(base,{torso={yaw=20},ra={raise=40,out=-30,twist=30,elbow=110},la={raise=40,out=-30,twist=30,elbow=110}}) end
+		return merge(base,{torso={yaw=-24,pitch=6},ra={raise=88,out=40,elbow=8,wrist=24},la={raise=30,out=20,elbow=70}})
+	elseif id=="Chidori" then
+		-- The charge: low, the lightning hand down and back, the other gripping
+		-- its wrist; the thrust itself is the ChidoriThrust strike.
+		local shake=math.sin(t*90)*2
+		return merge(base,{root={y=-.95,pitch=24,yaw=20+shake},torso={pitch=14,yaw=10},head={pitch=-14},ra={raise=-20,out=20,twist=40,elbow=30,wrist=-30},
+			la={raise=20,out=-30,twist=40,elbow=90},lf={z=-1.2},rf={z=1.1,yaw=40}})
+	end
+	return sealPose(base,t,false)
+end
+
+-- ------------------------------------------------------------- locomotion
+local function planar(v) return if v then Vector3.new(v.X,0,v.Z) else Vector3.zero end
+local function stanceTargets(fighterId)
+	local base=stance(fighterId)
+	local breath=math.sin(elapsedTime*(base.tempo or 6))
+	local spec=merge(base,{root={y=base.root.y+breath*.03},torso={pitch=base.torso.pitch+breath*(base.breath or 1)}})
+	return build(spec)
+end
+-- Feet planted in the world. A foot stays exactly where it was put down until
+-- it drifts too far from where it belongs under the moving body; then it steps
+-- (one foot at a time, the other holds the ground). Walking, strafing,
+-- stopping and turning on the spot all come out of the same rule, so feet
+-- never skate and the steps always match the real displacement.
+local STEP_REACH,STEP_LEAD,RUN_SPEED=1.3,1.05,9
+local MIN_STANCE=.085 -- seconds a running foot stays on the ground, at least
+-- How each prodigy carries his body before any jutsu: stride and cadence
+-- (Minato long and explosive, Itachi economical, Neji short precise steps),
+-- arm swing, forward lean, vertical bounce, and a guard carried while moving.
+local GAIT={
+	Flashstep={stride=1.12,cadence=.98,arm=50,lean=5,bob=1.15,guard=0},
+	Mirage={stride=1.0,cadence=.94,arm=24,lean=-1,bob=.7,guard=.35},
+	GentleFist={stride=.84,cadence=1.12,arm=16,lean=0,bob=.55,guard=.8},
+	Lion={stride=1.08,cadence=1.02,arm=44,lean=6,bob=1.05,guard=.15},
+}
+local function gaitOf(id) return GAIT[id] or GAIT.Flashstep end
+local function stepFeet(char,s,base,velocity,speed,dt,mode)
+	local root=char:FindFirstChild("HumanoidRootPart")
+	dt=dt or 1/60
+	local function authored(side) return ((if side==1 then base.rf else base.lf) or {}) end
+	if not root then return authored(1),authored(-1),0,0 end
+	local rootCF=root.CFrame
+	local look=Vector3.new(rootCF.LookVector.X,0,rootCF.LookVector.Z)
+	if look.Magnitude<1e-3 then look=Vector3.new(0,0,-1) end
+	local flat=CFrame.lookAt(rootCF.Position,rootCF.Position+look.Unit)
+	local groundY=rootCF.Position.Y+ANKLE_Y
+	-- Re-seat after anything that was not ground locomotion (air, a reaction).
+	if s.feet and elapsedTime-(s.feetAt or -1)>.25 then s.feet=nil end
+	s.feetAt=elapsedTime
+	local moving=if mode then 0 else math.clamp(speed/8,0,1)
+	-- Cadence from geometry: a foot lands `lead` ahead of the hip and may drift
+	-- `threshold` behind before it must step, so it holds the ground for
+	-- (lead+threshold)/speed; the swing must fit inside the other foot's stance
+	-- or the body outruns its own legs.
+	local threshold=if mode=="attack" then .28 elseif mode=="react" then .35 else math.clamp(.3+speed*.03,.3,STEP_REACH)
+	local leadLength=math.min(STEP_LEAD,speed*.06)
+	local stanceTime=if speed>.5 then (leadLength+threshold)/speed else .3
+	local swingTime=if mode=="attack" then .09 elseif mode=="react" then .12 else math.clamp(stanceTime*.92,.065,.26)
+	local lead=if speed>.01 then velocity.Unit*leadLength else Vector3.zero
+	local feet=s.feet or {}
+	s.feet=feet
+	local rests={}
+	for _,side in {1,-1} do
+		local key=if side==1 then "R" else "L"
+		local a=authored(side)
+		local restLocal=Vector3.new(.5*side+(a.x or 0)*(1-moving)+.06*side*moving,0,(a.z or 0)*(1-moving))
+		local rest=flat:PointToWorldSpace(restLocal)+lead
+		rests[key]=Vector3.new(rest.X,groundY,rest.Z)
+		if not feet[key] then feet[key]={world=rests[key],planted=true} end
+	end
+	for key,f in feet do
+		if not f.planted and f.runStance==nil and f.t then
+			f.t+=dt
+			f.p=math.min(1,f.t/f.dur)
+			if f.p>=1 then f.planted=true;f.world=rests[key];f.p=nil end
+		elseif not f.planted and f.runStance==nil then
+			-- Left a run mid-flight: finish the step onto the rest spot.
+			f.t=0;f.dur=.12;f.from=f.from or f.world
+		end
+		-- The ground under a planted foot is the floor the body stands on.
+		if f.planted then f.world=Vector3.new(f.world.X,groundY,f.world.Z) end
+	end
+	local function drift(key)
+		local w,r=feet[key].world,rests[key]
+		return Vector3.new(w.X-r.X,0,w.Z-r.Z).Magnitude
+	end
+	local order=if drift("L")>drift("R") then {"L","R"} else {"R","L"}
+	if not mode and speed>=RUN_SPEED then order={} end
+	for _,key in order do
+		local f=feet[key];local other=feet[if key=="R" then "L" else "R"]
+		local e=drift(key)
+		if f.planted and e>STEP_REACH*2.4 then f.world=rests[key] -- carried away (knockback, slide): re-seat
+		elseif f.planted and e>threshold and (other.planted or (other.p or 0)>.6) then
+			f.planted=false;f.from=f.world;f.t=0;f.p=0;f.dur=swingTime*math.clamp(e/math.max(threshold,.01),.75,1.15)
+			break
+		end
+	end
+	local lift=math.clamp(.22+speed*.012,.22,.75)
+	-- Running (not walking, turning or attacking): a real stride with a flight
+	-- phase. A phase clock sets a natural cadence; each foot holds the ground
+	-- for exactly stanceLen/speed (so it never skates while planted), then
+	-- flies forward to land ahead of the hip. Steps get long instead of the
+	-- legs pattering, and the arms and chest have time to move.
+	local running=not mode and speed>=RUN_SPEED
+	local runDip=0
+	local stanceLen=1
+	-- Swing height: a running foot rises well off the floor (heel toward the
+	-- hips, knee driven through), more the faster the body travels.
+	local runLift=math.clamp(.3+speed*.024,.45,1.35)
+	if running then
+		local gait=s.gait or GAIT.Flashstep
+		-- A sprint drives the legs faster as well as longer: above run speed the
+		-- cadence keeps rising (3.8 cap) so a sprint reads fast before the floor does.
+		local cadence=math.clamp(speed/7.2,1.7,3.8)*gait.cadence
+		-- The sprint posture sits lower, so its planted foot can reach further.
+		stanceLen=math.clamp((1+speed*.03)*gait.stride,.9,if speed>28 then 2.3 else 1.85)
+		local duty=math.clamp(stanceLen/speed*cadence,.16,.6)
+		-- Never fewer than ~5 frames on the ground: at sprint speed a world-locked
+		-- foot sweeps under the body in 2-3 frames, which reads as the foot
+		-- teleporting. The stance foot glides a little with the body instead
+		-- (slip), which the speed hides.
+		duty=math.max(duty,math.min(.6,MIN_STANCE*cadence))
+		local slip=math.max(0,1-stanceLen*cadence/(speed*duty))
+		if not s.runPhase then
+			-- Enter the cycle with the foot that is already ahead in stance.
+			local rz=rootCF:PointToObjectSpace(feet.R.world).Z
+			s.runPhase=if rz<0 then 0 else .5
+		end
+		s.runPhase=(s.runPhase+dt*cadence)%1
+		local dirUnit=if speed>.01 then velocity.Unit else look.Unit
+		for key,f in feet do
+			local side=if key=="R" then 1 else -1
+			local q=(s.runPhase+(if key=="R" then 0 else .5))%1
+			local hip=flat:PointToWorldSpace(Vector3.new(.45*side,0,0))
+			if q<duty then
+				-- Stance: planted on its landing spot, locked in the world.
+				if not f.runStance then
+					local land=hip+dirUnit*stanceLen*.5
+					f.world=Vector3.new(land.X,groundY,land.Z);f.planted=true;f.p=nil
+				end
+				f.runStance=true
+				if slip>0 then f.world+=Vector3.new(dirUnit.X,0,dirUnit.Z)*speed*slip*dt end
+				runDip=math.max(runDip,math.sin(math.pi*q/duty))
+			else
+				-- Flight / swing: the foot is carried with the hips, from where it
+				-- pushed off (behind) to its landing spot (ahead of the hip).
+				if f.runStance~=false then
+					local back=f.world-hip
+					f.fromRel=Vector3.new(back.X,0,back.Z);f.planted=false
+				end
+				f.runStance=false
+				local u=(q-duty)/(1-duty)
+				f.p=u
+				-- Not a glide from back to front at ankle height: the foot peels off
+				-- behind while the heel rises, then the knee drives through and the
+				-- shin reaches out to land ahead of the hip.
+				local h=if u<.3 then .1*smooth(u/.3) else .1+.9*smooth((u-.3)/.7)
+				f.runRel=f.fromRel:Lerp(dirUnit*stanceLen*.5,h)
+				f.hipNow=Vector3.new(hip.X,groundY,hip.Z)
+			end
+		end
+	else
+		s.runPhase=nil
+		for _,f in feet do
+			if f.runStance==false and f.runRel then f.world=f.hipNow+f.runRel;f.from=f.world end
+			f.runStance=nil;f.runRel=nil
+		end
+	end
+	local out={}
+	for key,f in feet do
+		local pos=f.world
+		local toe=if f.planted then 0 else -18
+		if not f.planted then
+			local p=f.p or 0
+			if f.runRel and f.runStance==false then
+				-- Peak early (heel recovery), still high as the knee drives, down to land.
+				pos=f.hipNow+f.runRel+Vector3.new(0,math.sin(math.pi*p^.75)*runLift,0)
+				toe=-18-22*math.sin(math.pi*math.min(1,p/.7))
+			else pos=f.from:Lerp(rests[key],smooth(p))+Vector3.new(0,math.sin(math.pi*p)*lift,0) end
+		end
+		local side=if key=="R" then 1 else -1
+		local l=rootCF:PointToObjectSpace(pos)
+		local a=authored(side)
+		out[key]={x=l.X-.5*side,y=l.Y-ANKLE_Y,z=l.Z,yaw=(a.yaw or 0)*(1-moving),toe=toe}
+	end
+	-- The body is lowest as a foot lands and rises through the step (running:
+	-- it sinks through each stance and floats in the flight phase).
+	local swingP=feet.R.p or feet.L.p
+	local bob
+	if running then bob=(.03-.13*runDip)*((s.gait and s.gait.bob) or 1)
+	else bob=if swingP then -.05*moving+.08*math.sin(math.pi*swingP)*moving else -.05*moving end
+	-- Arms answer the legs: the left arm comes forward with the right foot.
+	-- Running: normalised by the stride, so the arms pump through their whole
+	-- range instead of a third of it.
+	local armSwing=math.clamp((out.L.z-out.R.z)/(if running then stanceLen*.8 else 2.2),-1,1)
+	return out.R,out.L,bob,armSwing
+end
+local function locomotionTargets(char,actor,fighterId,dt,rest,mode)
+	local s=stateOf(char)
+	local minato=springy(fighterId)
+	local root=char:FindFirstChild("HumanoidRootPart")
+	local velocity=planar(actor.velocity)
+	local speed=velocity.Magnitude
+	local base=stance(fighterId)
+	local gait=gaitOf(fighterId)
+	s.gait=gait
+	local rf,lf,bob,armSwing=stepFeet(char,s,rest or base,velocity,speed,dt,mode)
+	-- Centre of gravity: the body leans into acceleration (forward to start,
+	-- back to brake, into a turn), from the drawn body's real velocity.
+	local accel=Vector3.zero
+	if s.lastVel and dt and dt>0 then accel=(velocity-s.lastVel)/dt end
+	s.lastVel=velocity
+	s.accel=(s.accel or Vector3.zero):Lerp(accel,math.min(1,(dt or 1/60)*10))
+	local accLocal=if root then root.CFrame:VectorToObjectSpace(s.accel) else Vector3.zero
+	local accForward,accSide=math.clamp(-accLocal.Z*.045,-11,11),math.clamp(accLocal.X*.04,-10,10)
+	-- Eyes on the opponent: when the body runs another way, the head and the
+	-- chest keep tracking them (a three-quarter run, never a blind one).
+	local trackTorso,trackHead=0,0
+	if root and actor.lookAt then
+		local to=actor.lookAt-root.Position
+		local l=root.CFrame:VectorToObjectSpace(Vector3.new(to.X,0,to.Z))
+		if l.Magnitude>1 then
+			local angle=math.deg(math.atan2(l.X,-l.Z))
+			trackTorso=math.clamp(angle*.4,-38,38)
+			trackHead=math.clamp(angle*.8-trackTorso,-48,48)
+		end
+	end
+	if speed<1.2 then
+		local breath=math.sin(elapsedTime*(base.tempo or 6))
+		local spec=merge(base,{root={y=base.root.y+breath*.03+bob,pitch=(base.root.pitch or 0)+accForward*.5,roll=(base.root.roll or 0)+accSide*.5},
+			torso={pitch=base.torso.pitch+breath*(base.breath or 1),yaw=(base.torso.yaw or 0)+trackTorso*.5},head={yaw=(base.head.yaw or 0)+trackHead*.5}})
+		spec.rf=rf;spec.lf=lf
+		return build(spec),RATE.locomotion
+	end
+	local localMove=if root then root.CFrame:VectorToObjectSpace(velocity) else Vector3.new(0,0,-speed)
+	local dir=Vector3.new(localMove.X,0,localMove.Z)
+	dir=if dir.Magnitude>1e-3 then dir.Unit else Vector3.new(0,0,-1)
+	local forward=-dir.Z -- +1 moving where the body faces
+	local side=dir.X
+	local sprint=speed>(if minato then 30 else 28)
+	local swing=armSwing
+	local alpha=math.clamp(speed/30,0,1)
+	local lean=if forward>-.3 then forward*(5+alpha*(if minato then 18 else 12)) else forward*10
+	local spec
+	if sprint and forward>.3 then
+		-- The ninja run: chest low, arms swept back, legs driving.
+		spec={root={y=-.55+bob,pitch=(if minato then 22 else 16),yaw=swing*6},
+			torso={pitch=(if minato then 24 else 18),yaw=-swing*9},head={pitch=-28},
+			ra={raise=-58+swing*6,out=14,twist=-10,elbow=12},la={raise=-58-swing*6,out=14,twist=-10,elbow=12}}
+	else
+		local arm=gait.arm*math.clamp(speed/16,.3,1)
+		spec={root={y=-.32+bob,pitch=lean,yaw=swing*6*alpha,roll=side*(if minato then 8 else 5)},
+			torso={pitch=(if forward<-.3 then -6 else 4)+alpha*4,yaw=-swing*15*alpha,roll=-side*5},head={pitch=-lean*.4,yaw=swing*4*alpha},
+			ra={raise=12-swing*arm,out=12,twist=10,elbow=40+alpha*40},la={raise=12+swing*arm,out=12,twist=10,elbow=40+alpha*40}}
+		if not minato then spec.la.raise+=12;spec.la.elbow+=10 end
+		-- Readable directions: a strafe leans into the step with the shoulders
+		-- turned to the opponent; a retreat sits back behind a raised guard.
+		local strafe=math.clamp(math.abs(side)-math.max(0,forward),0,1)
+		if strafe>.2 then
+			spec.root.roll=(spec.root.roll or 0)+side*10*strafe
+			spec.torso.yaw=(spec.torso.yaw or 0)-side*14*strafe
+			spec.head.yaw=-side*10*strafe
+		end
+		if forward<-.3 then
+			local back=math.clamp(-forward,0,1)
+			spec.root.pitch=-8*back;spec.torso.pitch=-6*back;spec.head.pitch=4*back
+			spec.ra={raise=62,out=-16,twist=30,elbow=104,wrist=-10}
+			spec.la={raise=70,out=-12,twist=30,elbow=96,wrist=-10}
+		end
+		if fighterId=="GentleFist" then
+			local guard=1-math.clamp((speed-8)/16,0,1)
+			spec.la={raise=spec.la.raise+(64-spec.la.raise)*guard,out=-4,twist=-30*guard,elbow=40+20*guard,wrist=-30*guard}
+		end
+	end
+	-- Lean into acceleration, carry the guard, keep eyes on the opponent.
+	spec.root.pitch=(spec.root.pitch or 0)+accForward+gait.lean*alpha
+	spec.root.roll=(spec.root.roll or 0)+accSide
+	spec.torso.yaw=(spec.torso.yaw or 0)+trackTorso
+	spec.head.yaw=(spec.head.yaw or 0)+trackHead
+	if gait.guard>0 and not (sprint and forward>.3) then
+		local g=gait.guard*(1-math.clamp((speed-12)/20,0,.6))
+		spec.ra.raise=spec.ra.raise+(58-spec.ra.raise)*g;spec.ra.elbow=spec.ra.elbow+(96-spec.ra.elbow)*g
+		spec.la.raise=spec.la.raise+(66-spec.la.raise)*g;spec.la.elbow=spec.la.elbow+(80-spec.la.elbow)*g
+	end
+	spec.rf=rf;spec.lf=lf
+	return build(spec),(if sprint then RATE.chase else RATE.locomotion)
+end
+local function airTargets(char,actor,fighterId)
+	local rise=(actor.velocity and actor.velocity.Y or 0)/70
+	local minato=springy(fighterId)
+	local spec
+	if rise>.25 then
+		-- Take-off: the lead knee drives up, the push-off leg trails, the arms
+		-- answer the legs. The chest stays over the hips (no lean back).
+		spec={root={pitch=2},torso={pitch=3},head={pitch=-6},ra={raise=-20,out=30,elbow=40},la={raise=60,out=24,elbow=70},
+			rl={lift=74,knee=104,ankle=-14},ll={lift=-18,knee=40,ankle=-24}}
+	elseif rise<-.3 then
+		spec={root={pitch=4},torso={pitch=8},head={pitch=-4},ra={raise=34,out=44,elbow=34},la={raise=30,out=40,elbow=36},
+			rl={lift=26,knee=42,ankle=-6},ll={lift=8,knee=30,ankle=-6}}
+	else
+		spec={root={pitch=8},torso={pitch=10},head={pitch=-8},ra={raise=48,out=22,elbow=96},la={raise=54,out=16,elbow=88},
+			rl={lift=62,knee=100,ankle=-10},ll={lift=40,knee=84,ankle=-10}}
+	end
+	if not minato then spec.ra.out=(spec.ra.out or 0)*.6;spec.la.out=(spec.la.out or 0)*.6 end
+	-- Momentum: a running or sprint jump travels. The chest leads, the arms
+	-- sweep back like the ninja run and the legs stay split in a stride instead
+	-- of a standing hop's tuck, so the arc reads as distance, not a bounce.
+	local root=char:FindFirstChild("HumanoidRootPart")
+	local flatV=planar(actor.velocity or Vector3.zero)
+	local localV=if root and flatV.Magnitude>1 then root.CFrame:VectorToObjectSpace(flatV).Unit else Vector3.zero
+	local forward=-localV.Z
+	-- A plain running jump (run speed ~19) already leaps; a sprint jump fully.
+	local momentum=math.clamp((flatV.Magnitude-8)/22,0,1)
+	local travel=momentum*math.max(0,forward)
+	-- Sideways and backward jumps read as such: lean into a side hop, sit
+	-- back into a retreating jump with the guard up.
+	local sideways=momentum*localV.X*(1-math.max(0,forward))
+	local backward=momentum*math.max(0,-forward)
+	if math.abs(sideways)>.05 then
+		spec.root.roll=(spec.root.roll or 0)+14*sideways;spec.torso.roll=(spec.torso.roll or 0)-6*sideways
+		spec.head.roll=(spec.head.roll or 0)-8*sideways
+	end
+	if backward>.05 then
+		spec.root.pitch-=14*backward;spec.torso.pitch-=6*backward;spec.head.pitch+=8*backward
+		spec.ra.raise+=(58-spec.ra.raise)*backward;spec.ra.elbow+=(100-spec.ra.elbow)*backward
+		spec.la.raise+=(66-spec.la.raise)*backward;spec.la.elbow+=(86-spec.la.elbow)*backward
+	end
+	if travel>0 then
+		spec.root.pitch+=18*travel;spec.torso.pitch+=10*travel;spec.head.pitch-=14*travel
+		spec.ra.raise+=(-52-spec.ra.raise)*travel;spec.ra.elbow+=(16-spec.ra.elbow)*travel
+		spec.la.raise+=(-52-spec.la.raise)*travel;spec.la.elbow+=(16-spec.la.elbow)*travel
+		spec.rl.lift+=(68-spec.rl.lift)*travel;spec.rl.knee+=(70-spec.rl.knee)*travel
+		spec.ll.lift+=(-36-spec.ll.lift)*travel;spec.ll.knee+=(28-spec.ll.knee)*travel
+	end
+	return build(spec),RATE.air
+end
+-- Running up a wall with chakra: the body stands out from the surface, feet on
+-- it, chest to the sky, legs cycling up the wall.
+local function wallTargets(char,actor,dt)
+	local s=stateOf(char)
+	s.phase=(s.phase+(dt or 1/60)*3.2)%1
+	local swing=math.sin(s.phase*math.pi*2)
+	return build({root={z=1.35,pitch=-78},torso={pitch=10},head={pitch=40},
+		ra={raise=-50+swing*20,out=16,elbow=20},la={raise=-50-swing*20,out=16,elbow=20},
+		rl={lift=40+swing*36,knee=50-swing*30},ll={lift=40-swing*36,knee=50+swing*30}}),RATE.wall
+end
+local function chaseTargets(char,actor,dt)
+	local s=stateOf(char)
+	s.phase=(s.phase+(dt or 1/60)*3)%1
+	local swing=math.sin(s.phase*math.pi*2)
+	return build({root={pitch=52},torso={pitch=14},head={pitch=-48},ra={raise=-70,out=18,elbow=10},la={raise=-70,out=18,elbow=10},
+		rl={lift=40+swing*30,knee=60-swing*20},ll={lift=-20-swing*20,knee=70+swing*10}}),RATE.chase
+end
+
+-- ------------------------------------------------------------ reactions
+local reactionDuration={HitStun=.24,GuardStun=.42,Knockback=.36,Launched=.5,Juggled=.42,WallSplat=.42,Grabbed=.3}
+-- The blow lands within two or three frames, then the body recovers: the
+-- reaction peaks at once instead of easing in after the hit.
+local function snapEnvelope(elapsed,hold)
+	return math.clamp(elapsed/.035,0,1)*(1-smooth(math.clamp((elapsed-.035)/hold,0,1)))
+end
+local function reactionTargets(actor,feet)
+	local kind=actor.reaction or "HitStun"
+	local elapsed=actor.reactionElapsed or 0
+	local t=1-smooth(math.clamp(elapsed/(reactionDuration[kind] or .24),0,1))
+	local strong=math.clamp((actor.hitStrength or .4)*1.4,.35,1.4)
+	local angle=rad(actor.hitAngle or 0)
+	local from=math.cos(angle) -- +1: hit from the front
+	local side=math.sin(angle) -- +1: hit from the fighter's right
+	local behind=math.max(0,-from)
+	local zone=actor.hitZone or "body"
+	local hitKind=actor.hitKind or "strike"
+	local twist=actor.hitTwist or 1
+	if kind=="Launched" or kind=="Juggled" then
+		-- A launcher hits the chin: the head snaps back and the body arches
+		-- before it folds around the blow and is carried up, limbs trailing.
+		local fold=smooth(math.clamp(elapsed/.2,0,1))
+		local whip=if zone=="chin" or hitKind=="launch" then 1-smooth(math.clamp(elapsed/.16,0,1)) else 0
+		return build({root={pitch=-18*fold-14*whip,roll=side*10*fold},torso={pitch=-26*fold-22*whip,yaw=side*16},head={pitch=-22*fold-34*whip},
+			ra={raise=-40*fold+20*whip,out=40*fold,elbow=30},la={raise=-36*fold+16*whip,out=38*fold,elbow=26},
+			rl={lift=34*fold,knee=60*fold},ll={lift=-6,knee=34*fold}}),RATE.recoil
+	end
+	if kind=="Bound" then
+		-- Bound by wire or sand: arms pinned to the body, a stiff struggle.
+		local struggle=math.sin(elapsed*26)*4
+		return build({root={y=-.15,yaw=struggle*.5},torso={pitch=-4,roll=struggle*.6},head={pitch=-10,yaw=struggle},
+			ra={raise=-4,out=-2,twist=-10,elbow=14},la={raise=-4,out=-2,twist=-10,elbow=14},
+			rf={x=-.18,z=.05},lf={x=.18,z=-.05}}),RATE.defense
+	end
+	if kind=="Spiked" then
+		-- Driven down: folded forward, arms trailing above, legs whipped behind.
+		local drive=smooth(math.clamp(elapsed/.08,0,1))
+		return build({root={pitch=48*drive},torso={pitch=30*drive},head={pitch=-26*drive},
+			ra={raise=150*drive,out=30,elbow=30},la={raise=140*drive,out=34,elbow=26},
+			rl={lift=-34*drive,knee=70*drive},ll={lift=-20*drive,knee=50*drive}}),RATE.recoil*1.2
+	end
+	if kind=="Knockdown" then
+		-- Falling: the body turns toward the floor during the flight so the
+		-- landing meets the lying pose. A sweep takes the legs first (they fly
+		-- up, the back drops at once); a heavy blow spins the body as it goes.
+		if hitKind=="sweep" then
+			local fall=smooth(math.clamp(elapsed/.16,0,1))
+			return build({root={y=-.5*fall,pitch=-72*fall,roll=side*8*fall},torso={pitch=-8*fall},head={pitch=20*fall},
+				ra={raise=74*fall,out=50,elbow=36},la={raise=66*fall,out=54,elbow=30},
+				rl={lift=66*fall,knee=26},ll={lift=44*fall,knee=46}}),RATE.recoil*1.3
+		end
+		local fall=smooth(math.clamp(elapsed/.34,0,1))
+		local spin=if hitKind=="heavy" or hitKind=="kick" then twist*46*fall else 0
+		return build({root={pitch=-58*fall-10*t,yaw=spin,roll=side*16*fall},torso={pitch=-16*fall,yaw=spin*.3},head={pitch=16*fall-18*t},
+			ra={raise=50+30*t,out=58,elbow=34},la={raise=44+26*t,out=54,elbow=30},
+			rl={lift=40*fall,knee=56*fall},ll={lift=18*fall,knee=40*fall}}),RATE.recoil
+	end
+	if kind=="Knockback" then
+		local lift=smooth(math.clamp(elapsed/.12,0,1))
+		-- A kick turns the body with it; the head whips the other way.
+		local turn=if hitKind=="kick" then twist*30*t else 0
+		return build({root={pitch=-22*strong*t-8,roll=side*14*t,yaw=turn},torso={pitch=-20*t*strong,yaw=side*24*t+turn*.4},head={pitch=-24*t,yaw=-turn*.6},
+			ra={raise=60*t*strong,out=46*t,elbow=24},la={raise=54*t*strong,out=42*t,elbow=22},
+			rl={lift=30*lift,knee=50*lift},ll={lift=-10*lift,knee=30*lift}}),RATE.recoil
+	end
+	if kind=="GuardStun" then
+		return build({root={y=-.55,z=.2*t,pitch=-6*t},torso={pitch=-12*t,roll=side*8*t},ra={raise=78,out=-26,twist=36,elbow=118},la={raise=78,out=-26,twist=36,elbow=118},
+			lf={z=-.7},rf={z=.7}}),RATE.recoil
+	end
+	if kind=="Grabbed" then
+		return build({root={y=-.3,pitch=10},torso={pitch=14},head={pitch=18},ra={raise=30,out=24,elbow=60},la={raise=30,out=24,elbow=60},rf={z=.3,toe=-30},lf={z=.2,toe=-30}}),RATE.defense
+	end
+	if kind=="WallSplat" then
+		-- The back meets the wall: the body compresses (knees, chest folding in,
+		-- head whipping back into the stone), then spreads flat against it.
+		local splat=smooth(math.clamp((elapsed-.05)/.08,0,1))
+		local crush=math.clamp(elapsed/.03,0,1)*(1-splat)
+		return build({root={y=-.35*crush,pitch=-18*splat+10*crush},torso={pitch=-22*splat+20*crush},head={pitch=-20*splat-30*crush},
+			ra={raise=30+30*crush,out=70*splat,elbow=40+40*crush},la={raise=30+30*crush,out=70*splat,elbow=40+40*crush},
+			rl={lift=20+30*crush,knee=30+50*crush},ll={lift=10+24*crush,knee=26+40*crush}}),RATE.recoil*1.4
+	end
+	-- Standing hits answer where the blow landed. The head snaps away from a
+	-- strike to the face, the body folds around one to the ribs, a low kick
+	-- buckles the knee on its side; from behind the body arches instead.
+	local snap=snapEnvelope(elapsed,reactionDuration[kind] or .24)
+	local s=strong
+	local spec
+	if zone=="head" then
+		spec={root={y=-.2*snap,z=.25*snap,yaw=twist*8*snap,roll=-twist*5*snap},torso={pitch=-8*snap,yaw=twist*16*snap,roll=-twist*6*snap},
+			head={pitch=-16*snap*s,yaw=twist*40*snap,roll=twist*14*snap},
+			ra={raise=34*snap,out=36*snap,elbow=44},la={raise=30*snap,out=32*snap,elbow=40}}
+	elseif zone=="legs" then
+		spec={root={y=-.55*snap,roll=twist*12*snap,pitch=6*snap},torso={pitch=10*snap,roll=-twist*10*snap},head={pitch=8*snap,yaw=twist*10*snap},
+			ra={raise=40*snap,out=40*snap,elbow=50},la={raise=36*snap,out=40*snap,elbow=46}}
+	else
+		local fold=(1-behind)*26*snap*s
+		spec={root={y=-.35*snap*s,z=from*.4*snap,pitch=6*snap*s,yaw=twist*10*snap},torso={pitch=fold-behind*26*snap,yaw=twist*20*snap,roll=-side*10*snap},
+			head={pitch=12*snap*(1-behind)-behind*28*snap,yaw=-side*12*snap},
+			ra={raise=44*snap,out=-8*snap,elbow=96*snap+30},la={raise=40*snap,out=-6*snap,elbow=92*snap+30}}
+	end
+	spec.rf=feet and feet.rf or {z=.25};spec.lf=feet and feet.lf or {z=-.35}
+	return build(spec),RATE.recoil*1.5
+end
+-- Lying on the floor after a knockdown, then a quick, readable get-up.
+local function groundTargets(actor)
+	local pose=actor.groundPose or (if actor.reaction=="WallSplat" then "Splat" else "Knockdown")
+	local side=actor.groundSide or 1
+	local lying={root={y=-2.45,z=.6,pitch=-84,roll=side*14},torso={pitch=-8,roll=side*6},head={pitch=-14,yaw=side*20},
+		ra={raise=20,out=62,elbow=24},la={raise=14,out=56,elbow=30},rl={lift=18,out=8,knee=30},ll={lift=6,out=10,knee=12}}
+	if pose=="Splat" and actor.reaction=="WallSplat" then
+		-- Slid down to the foot of the wall: sitting, back against it, legs out.
+		return build({root={y=-1.95,z=.35,pitch=-28},torso={pitch=-10},head={pitch=12,roll=side*8},
+			ra={raise=12,out=44,elbow=20},la={raise=10,out=40,elbow=26},rl={lift=78,out=10,knee=22},ll={lift=70,out=14,knee=34}}),RATE.ground
+	end
+	if pose=="Wakeup" or actor.reaction=="Wakeup" then
+		local push=smooth(math.clamp((actor.reactionElapsed or 0)/.24,0,1))
+		local crouch={root={y=-1.0,pitch=22},torso={pitch=14},head={pitch=-10},ra={raise=30,out=20,elbow=60},la={raise=40,out=20,elbow=60},lf={z=-.7},rf={z=.6,x=.2}}
+		return blend(build(lying),build(crouch),push),RATE.ground*1.6
+	end
+	return build(lying),RATE.ground
+end
+local KO={
+	light={root={y=-2.45,z=.6,pitch=-84,roll=12},torso={pitch=-6,roll=8},head={pitch=-16,yaw=26},ra={raise=16,out=70,elbow=26},la={raise=10,out=58,elbow=34},rl={lift=20,out=10,knee=34},ll={lift=4,out=8,knee=10}},
+	finisher={root={y=-2.5,z=-.6,pitch=86,roll=-10},torso={pitch=6,roll=-6},head={pitch=10,yaw=-30},ra={raise=120,out=40,elbow=40},la={raise=-10,out=20,elbow=20},rl={lift=-6,out=12,knee=40},ll={lift=4,out=4,knee=8}},
+	launcher={root={y=-2.3,pitch=-20,roll=78},torso={pitch=24,roll=6},head={pitch=20,roll=10},ra={raise=60,out=-10,elbow=70},la={raise=40,out=10,elbow=50},rl={lift=50,knee=80},ll={lift=30,knee=60}},
+	slam={root={y=-2.55,z=.4,pitch=-88},torso={pitch=-2},head={pitch=-6},ra={raise=0,out=85,elbow=6},la={raise=0,out=85,elbow=6},rl={lift=0,out=22,knee=4},ll={lift=0,out=22,knee=4}},
+}
+local function koTargets(style)
+	local key=if style=="finisher" or style=="slam" or style=="launcher" then style else "light"
+	return built(KO[key])
+end
+
+-- ---------------------------------------------------------- defence poses
+local function guardTargets(fighterId,impact)
+	local absorbed=math.clamp((impact or 0)/.18,0,1)
+	local base=stance(fighterId)
+	-- Crossed forearms in front of the face, weight down, braced.
+	return build(merge(base,{root={y=-.6,pitch=8-6*absorbed,z=.2*absorbed},torso={pitch=10-10*absorbed,yaw=-4},head={pitch=10},
+		ra={raise=92,out=-34,twist=42,elbow=112,wrist=-10},la={raise=96,out=-30,twist=40,elbow=108,wrist=-10}})),RATE.guard
+end
+-- A dash is pushed off a leg: for its first few frames the body drops and
+-- the pushing leg drives against the ground, then the glide takes over.
+local DASH_PUSH=.08
+local function dodgeTargets(char,actor,t)
+	local root=char:FindFirstChild("HumanoidRootPart")
+	local direction=planar(actor.velocity)
+	local localMotion=if root and direction.Magnitude>.1 then root.CFrame:VectorToObjectSpace(direction) else Vector3.new(1,0,0)
+	local forward=math.clamp(-localMotion.Z/14,-1,1)
+	local side=math.clamp(localMotion.X/14,-1,1)
+	local push=1-smooth(math.clamp((t or 1)/DASH_PUSH,0,1))
+	local glide,load
+	if math.abs(side)>math.abs(forward)*.8 then
+		local s=if side<0 then -1 else 1
+		glide={root={y=-.9,roll=s*26,pitch=10},torso={roll=s*12},head={roll=-s*10},ra={raise=50,out=40,elbow=60},la={raise=50,out=40,elbow=60},
+			rf={x=s*.6,z=.1},lf={x=s*.6,z=-.1}}
+		-- The far leg pushes: it is extended away from the dash.
+		load={root={y=-1.2,roll=-s*8,pitch=8},torso={roll=-s*6},ra={raise=40,out=30,elbow=70},la={raise=40,out=30,elbow=70},
+			rf=if s>0 then {x=.2,z=0} else {x=-.9,z=0,toe=-25},lf=if s>0 then {x=.9,z=0,toe=-25} else {x=-.2,z=0}}
+	elseif forward>=0 then
+		glide={root={y=-1.0,pitch=38},torso={pitch=10},head={pitch=-30},ra={raise=-40,out=20,elbow=20},la={raise=-40,out=20,elbow=20},
+			lf={z=-1.2},rf={z=1.2,y=.2,toe=-20}}
+		load={root={y=-1.2,pitch=22},torso={pitch=14},head={pitch=-18},ra={raise=20,out=24,elbow=60},la={raise=30,out=24,elbow=70},lf={z=-.5},rf={z=1.5,toe=-30}}
+	else
+		glide={root={y=-.8,pitch=-14,z=.3},torso={pitch=-10},head={pitch=6},ra={raise=70,out=20,elbow=70},la={raise=70,out=20,elbow=70},
+			lf={z=-.4},rf={z=1.1}}
+		load={root={y=-1.1,pitch=-4},torso={pitch=0},ra={raise=70,out=20,elbow=80},la={raise=70,out=20,elbow=80},lf={z=-1.3,toe=-25},rf={z=.3}}
+	end
+	if push<=0 then return build(glide),RATE.defense end
+	return blend(build(glide),build(load),push),RATE.defense*1.4
+end
+local function landTargets(fighterId,strength)
+	local base=stance(fighterId)
+	local absorb=math.clamp(strength,0,1)
+	return build(merge(base,{root={y=base.root.y-.75*absorb,pitch=base.root.pitch+14*absorb},torso={pitch=base.torso.pitch+12*absorb},
+		ra={raise=base.ra.raise-10*absorb,out=base.ra.out+18*absorb},la={raise=base.la.raise-10*absorb,out=base.la.out+18*absorb}})),RATE.defense
+end
+
+-- --------------------------------------------------------------- weapons
+-- Minato keeps a reverse-grip kunai for his cutting strings, a forward-grip
+-- kunai for throws and his marked three-pronged kunai for the seal throw.
+-- Itachi holds shuriken flat between the fingers of his left hand.
+local weapons=setmetatable({},{__mode="k"})
+local MELEE={Lion={},Flashstep={Light1=true,Light2=true,DashAttack=true,Air1=true,AngleStep=true,Riposte=true,AirSwitch=true},Mirage={Light2=true,Light1=true,DashAttack=true,Air1=true,Air2=true,Light3=true}}
+local function makeItem(hand,model,c0)
+	model.Parent=hand
+	local root=model.PrimaryPart
+	root.Anchored=false;root.Massless=true
+	local weld=Instance.new("Weld");weld.Part0=hand;weld.Part1=root;weld.C0=c0;weld.Parent=root
+	local parts={}
+	for _,p in model:GetDescendants() do
+		if p:IsA("BasePart") and p~=root then
+			p.CanCollide=false;p.CanQuery=false;p.CanTouch=false;p.Massless=true;p.CastShadow=false
+			table.insert(parts,{part=p,base=p.Transparency})
+		end
+	end
+	return {model=model,parts=parts,visible=true}
+end
+local function setVisible(item,visible)
+	if not item or item.visible==visible then return end
+	item.visible=visible
+	for _,entry in item.parts do entry.part.Transparency=if visible then entry.base else 1 end
+end
+local function weaponsFor(char,fighterId)
+	local items=weapons[char]
+	if items then return items end
+	items={}
+	weapons[char]=items
+	local minato=fighterId=="Flashstep" or (fighterId~="Mirage" and fighterId~="GentleFist" and fighterId~="Lion")
+	local palms=fighterId=="GentleFist"
+	local hand=char:FindFirstChild(if fighterId=="Mirage" then "LeftHand" else "RightHand")
+	if not hand then weapons[char]=nil;return nil end
+	local ok=pcall(function()
+		Effects=Effects or require(script.Parent.Effects)
+		if palms then
+			items.throw=makeItem(hand,Effects.buildKunai(false),CF(0,-.16,-.08)*ANG(math.rad(10),0,0))
+		elseif minato then
+			-- Reverse grip: blade out of the little-finger side, along the forearm.
+			items.melee=makeItem(hand,Effects.buildKunai(false),CF(0,-.14,.12)*ANG(math.rad(-12),math.pi,0))
+			items.throw=makeItem(hand,Effects.buildKunai(false),CF(0,-.16,-.08)*ANG(math.rad(10),0,0))
+			items.marked=makeItem(hand,Effects.buildKunai(true),CF(0,-.16,-.08)*ANG(math.rad(10),0,0))
+		else
+			items.shuriken=makeItem(hand,Effects.buildShuriken(),CF(0,-.34,-.08)*ANG(0,0,math.pi/2))
+		end
+	end)
+	if not ok then
+		-- Headless or partial rigs: fall back to simple blades so the contract holds.
+		items={}
+		weapons[char]=items
+		local blade=Instance.new("WedgePart");blade.Name="CombatBlade";blade.Size=Vector3.new(.1,.3,1);blade.Parent=hand
+		blade.CanCollide=false;blade.Massless=true
+		items.melee={parts={{part=blade,base=0}},visible=true}
+	end
+	for _,item in items do setVisible(item,false) end
+	return items
+end
+function Motion.weapon(char,actor)
+	local items=weaponsFor(char,actor.fighterId)
+	if not items then return end
+	local minato=actor.fighterId=="Flashstep" or (actor.fighterId~="Mirage" and actor.fighterId~="GentleFist" and actor.fighterId~="Lion")
+	local name=actor.attackName
+	local spec=name and Attacks[name]
+	local swinging=name~=nil and actor.state~="Neutral" and actor.state~="Guarding"
+	local release=if spec then (function() local s,a,r=timing(name,actor.fighterId);return s+a+r*.45 end)() else .35
+	local meleeOut=(swinging and (MELEE[actor.fighterId] or MELEE.Flashstep)[name]==true and (actor.attackElapsed or 0)<=release
+		and actor.attackVariant~="Rasengan") or (minato and (actor.intro or 0)>0)
+	-- Thrown weapons sit in the hand from the wind-up until their release frame.
+	local throwKind=actor.throwKind
+	local throwElapsed=actor.throwElapsed or 99
+	local releaseAt=actor.throwRelease or .1
+	local holding=throwKind~=nil and throwElapsed>=0 and throwElapsed<releaseAt
+	if throwKind=="Shuriken" and throwElapsed>=releaseAt and throwElapsed<releaseAt+.08 then holding=throwElapsed>=releaseAt+.03 end
+	local castFan=actor.castId=="NeedleFan" and actor.state=="TechniqueChannel"
+	if actor.fighterId=="GentleFist" then
+		setVisible(items.throw,holding and throwKind=="Kunai")
+	elseif minato then
+		setVisible(items.melee,meleeOut and not holding)
+		setVisible(items.throw,holding and throwKind=="Kunai")
+		setVisible(items.marked,holding and throwKind=="MarkedKunai")
+	elseif actor.fighterId=="Lion" then
+		setVisible(items.shuriken,(holding and throwKind=="Shuriken") or (actor.castId=="WireTrap" and actor.state=="TechniqueChannel"))
+	else
+		setVisible(items.shuriken,(meleeOut and (name=="Light2")) or (holding and throwKind=="Shuriken") or castFan)
+		if items.melee then setVisible(items.melee,meleeOut and name=="Light2") end
+	end
+	items.debug=string.format("%s/%s/el=%.2f",tostring(name),tostring(actor.state),actor.attackElapsed or -1)
+	items.attackName=name
+end
+function Motion.weaponState(char)
+	local items=weapons[char]
+	if not items then return {visible=false,count=0} end
+	local count,shown=0,0
+	for key,item in items do
+		if type(item)=="table" and item.parts then
+			for _,entry in item.parts do
+				count+=1
+				if entry.part.Transparency<.5 then shown+=1 end
+			end
+		end
+	end
+	return {visible=shown>0,count=count,shown=shown,attackName=items.attackName,debug=items.debug}
+end
+
+-- --------------------------------------------------------- public entries
+-- Attack pose on its own (blended over the rest pose): used by tests and tools.
+function Motion.pose(char,name,elapsed,fighterId,dt)
+	if not Attacks[name] and name~="Rasengan" and name~="RasenganDrop" then return end
+	local targets,weight=attackTargets(name,elapsed,fighterId)
+	apply(char,blend({},targets,weight),RATE.attack,dt)
+end
+function Motion.locomotion(char,speed,airborne,velocity,fighterId,dt,actor,now)
+	local subject=actor or {velocity=velocity,speed=speed}
+	if not subject.velocity then subject=table.clone(subject);subject.velocity=velocity end
+	local targets,rate
+	if airborne then
+		if subject.reaction=="Launched" or subject.reaction=="Juggled" or subject.reaction=="Knockback" then
+			targets,rate=reactionTargets(subject)
+		else
+			targets,rate=airTargets(char,subject,fighterId)
+		end
+	else
+		targets,rate=locomotionTargets(char,subject,fighterId,dt)
+	end
+	apply(char,targets,rate,dt)
+end
+function Motion.defense(char,actor,dt)
+	local targets,rate
+	if actor.state=="Dodging" then
+		local s=stateOf(char)
+		if s.lastDefenseState~="Dodging" then s.dashAt=elapsedTime end
+		targets,rate=dodgeTargets(char,actor,elapsedTime-(s.dashAt or elapsedTime))
+	elseif actor.groundPose or actor.reaction=="Knockdown" or actor.reaction=="Wakeup" then
+		targets,rate=groundTargets(actor)
+	elseif actor.reaction then
+		-- Standing hit: the feet stay planted and stagger-step as the body is
+		-- pushed, instead of sliding with it.
+		local feet=nil
+		if not actor.airborne then
+			local velocity=planar(actor.velocity)
+			local rf,lf=stepFeet(char,stateOf(char),stance(actor.fighterId),velocity,velocity.Magnitude,dt,"react")
+			feet={rf=rf,lf=lf}
+		end
+		targets,rate=reactionTargets(actor,feet)
+	else
+		return
+	end
+	stateOf(char).lastDefenseState=actor.state
+	apply(char,targets,rate,dt)
+end
+function Motion.recoil(char,elapsed,reaction,heavy,dt)
+	local targets,rate=reactionTargets({reaction=reaction,reactionElapsed=elapsed,hitStrength=if heavy then .9 else .45})
+	apply(char,targets,rate,dt)
+end
+function Motion.guard(char,impact,fighterId,dt)
+	local targets,rate=guardTargets(fighterId,impact)
+	apply(char,targets,rate,dt)
+end
+function Motion.land(char,actor,fighterId,strength,dt)
+	local targets,rate=landTargets(fighterId,strength)
+	apply(char,targets,rate,dt)
+end
+function Motion.ko(char,style,dt)
+	apply(char,koTargets(style),RATE.ground,dt)
+end
+-- One entry point deciding which body this frame shows. Priority is the whole
+-- presentation contract: a defeated body settles, a grounded body stays down, an
+-- airborne reaction keeps its trajectory, then defence, chase, wall, guard,
+-- techniques, attacks, landing and locomotion. Throws layer on the upper body.
+function Motion.present(char,actor,clock,dt)
+	local elapsed=clock or {}
+	local subject=actor
+	if elapsed.reactionElapsed or elapsed.attackElapsed then
+		subject=table.clone(actor)
+		subject.reactionElapsed=elapsed.reactionElapsed or actor.reactionElapsed
+		subject.attackElapsed=elapsed.attackElapsed or actor.attackElapsed
+	end
+	if (subject.health or 1)<=0 then
+		apply(char,koTargets(subject.koStyle),RATE.ground,dt)
+		return "ko"
+	end
+	-- Match intro attitude: Minato twirls a kunai, Itachi waits, perfectly still.
+	if (subject.intro or 0)>0 and subject.state=="Neutral" then
+		local base=stance(subject.fighterId)
+		local spec
+		if subject.fighterId=="Mirage" then
+			spec=merge(base,{root={y=-.1,pitch=0,yaw=8},torso={pitch=-2,yaw=-4},head={pitch=-4,yaw=-6},ra={raise=6,out=6,elbow=14},la={raise=6,out=6,elbow=14}})
+		elseif subject.fighterId=="Lion" then
+			-- Hands in the pockets, chin up: unimpressed until the fight starts.
+			spec=merge(base,{root={y=-.08,pitch=-2,yaw=10},torso={pitch=-4,yaw=-6},head={pitch=-8,yaw=-10},ra={raise=-6,out=14,twist=-30,elbow=60,wrist=0},la={raise=-6,out=14,twist=-30,elbow=60,wrist=0},rf={x=.1,z=.2},lf={x=-.1,z=-.2}})
+		elseif subject.fighterId=="GentleFist" then
+			-- Byakugan: two fingers raised to the eyes, then the stance.
+			spec=merge(base,{root={y=-.4,yaw=30},head={pitch=0,yaw=-18},ra={raise=128,out=-30,twist=20,elbow=146,wrist=0},la={raise=40,out=10,elbow=40}})
+		else
+			spec=merge(base,{ra={raise=78,out=22,twist=10,elbow=112,wrist=0,wroll=(elapsedTime*1080)%360},la={raise=30,out=14,elbow=40},head={yaw=-18,pitch=-4}})
+		end
+		apply(char,build(spec),RATE.cast,dt)
+		return "intro"
+	end
+	if subject.groundPose~=nil and subject.airborne~=true then
+		local targets,rate=groundTargets(subject)
+		apply(char,targets,rate,dt)
+		return "ground"
+	end
+	if subject.reaction and subject.airborne then
+		local targets,rate=reactionTargets(subject)
+		apply(char,targets,rate,dt)
+		return "air reaction"
+	end
+	if subject.state=="Dodging" or subject.reaction then
+		Motion.defense(char,subject,dt)
+		return "defense"
+	end
+	if subject.state=="Pursuit" or subject.state=="Rush" then
+		local targets,rate=chaseTargets(char,subject,dt)
+		apply(char,targets,rate,dt)
+		return "chase"
+	end
+	if subject.wall then
+		local targets,rate=wallTargets(char,subject,dt)
+		apply(char,targets,rate,dt)
+		return "wall"
+	end
+	if subject.state=="Guarding" then
+		local targets,rate=guardTargets(subject.fighterId,subject.guardImpact)
+		apply(char,targets,rate,dt)
+		return "guard"
+	end
+	local swinging=subject.attackName~=nil and (subject.state=="Startup" or subject.state=="Active" or subject.state=="Recovery")
+	local casting=subject.castId~=nil and (subject.state=="TechniqueChannel" or subject.state=="TechniqueActive" or subject.state=="TechniqueRecovery")
+	-- The base the body returns to: gait on the ground, air pose in the air.
+	local base,baseRate
+	local attackName=if subject.attackVariant=="Rasengan" or subject.attackVariant=="RasenganDrop" or subject.attackVariant=="LionBarrage" then subject.attackVariant else subject.attackName
+	local footwork=swinging and not subject.airborne and attackFeet(attackName,subject.attackElapsed or 0,subject.fighterId) or nil
+	if subject.airborne then base,baseRate=airTargets(char,subject,subject.fighterId)
+	elseif footwork then
+		-- Attack footwork: the clip says where each foot goes; the stepping
+		-- system plants it there in the world, so a lunge is a real step.
+		local stanceFeet=stance(subject.fighterId)
+		base,baseRate=locomotionTargets(char,subject,subject.fighterId,dt,{rf=footwork.R or stanceFeet.rf,lf=footwork.L or stanceFeet.lf},"attack")
+	else base,baseRate=locomotionTargets(char,subject,subject.fighterId,dt) end
+	if casting and not swinging then
+		local spec=castSpec(subject)
+		if spec then
+			local targets=build(spec)
+			if subject.airborne then
+				-- Keep the legs of the air pose; the upper body casts.
+				for key in JOINTS do if not UPPER[key] and key~="Root" then targets[key]=base[key] end end
+			end
+			apply(char,targets,RATE.cast,dt)
+			return "technique"
+		end
+	end
+	if swinging then
+		local name=if subject.attackVariant=="Rasengan" or subject.attackVariant=="RasenganDrop" or subject.attackVariant=="LionBarrage" then subject.attackVariant else subject.attackName
+		local targets,weight=attackTargets(name,subject.attackElapsed or 0,subject.fighterId)
+		-- (Clone: blend may hand back a cached clip pose, which must not change.)
+		local final=table.clone(blend(base,targets,weight))
+		-- Planted feet come from the stepping system; kicking legs from the clip.
+		if footwork and base.__feet then
+			final.__feet={}
+			for side in footwork do final.__feet[side]=base.__feet[side] end
+		else final.__feet=nil end
+		apply(char,final,RATE.attack,dt)
+		return "attack"
+	end
+	if subject.landing then
+		if not subject.landStrong and not subject.airborne and (subject.speed or 0)>6 then
+			-- A running landing keeps its stride and momentum: the hips absorb the
+			-- drop for a few frames instead of the body stopping in a crouch.
+			local final=table.clone(base)
+			final.Root=(base.Root or IDENTITY)*CF(0,-.3,0)*ANG(rad(-7),0,0)
+			apply(char,final,baseRate or RATE.locomotion,dt)
+			return "landing"
+		end
+		local targets,rate=landTargets(subject.fighterId,if subject.landStrong then 1 else .45)
+		apply(char,targets,rate,dt)
+		return "landing"
+	end
+	-- Throw overlay on top of the gait: the arm throws, the legs keep running.
+	local throw=subject.throwKind and THROWS[subject.throwKind]
+	local throwElapsed=subject.throwElapsed or 99
+	if throw and throwElapsed>=0 and throwElapsed<(subject.throwRelease or .1)+.45 then
+		local spec,weight=throw(throwElapsed,subject.throwRelease or .1)
+		if weight>0 then
+			local overlay=build(merge(stance(subject.fighterId),spec))
+			local targets=table.clone(base)
+			for key in UPPER do targets[key]=(base[key] or IDENTITY):Lerp(overlay[key],weight) end
+			apply(char,targets,RATE.throw,dt)
+			return "throw"
+		end
+	end
+	apply(char,base,baseRate,dt)
+	return "locomotion"
+end
+-- Hard reset: only for a character switch, rematch, death or destruction.
+function Motion.reset(char)
+	local s=stateOf(char)
+	table.clear(s.pose)
+	s.phase=0
+	for key in JOINTS do local joint=motor(char,key);if joint then joint.Transform=IDENTITY end end
+end
+Motion.clear=Motion.reset
+-- Exposed for the headless suite: the world-planted stepping rule.
+Motion._stepFeet=function(char,base,velocity,dt,mode) return stepFeet(char,stateOf(char),base,velocity,velocity.Magnitude,dt,mode) end
+Motion._ankleY=ANKLE_Y
+return Motion

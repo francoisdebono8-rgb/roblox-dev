@@ -1,0 +1,1 @@
+return function(sha) local H=game:GetService("HttpService") local src=H:GetAsync("https://raw.githubusercontent.com/francoisdebono8-rgb/roblox-dev/"..sha.."/games/ninja-duel/tools/marketing/PhotoKit.luau") local m=game:GetService("ServerStorage").PhotoKit game:GetService("ScriptEditorService"):UpdateSourceAsync(m,function() return src end) local K=require(m:Clone()) return K end

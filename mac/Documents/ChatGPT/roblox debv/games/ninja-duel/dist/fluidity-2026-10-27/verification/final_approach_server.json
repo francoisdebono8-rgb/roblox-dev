@@ -1,0 +1,9 @@
+{
+  "content": [
+    {
+      "type": "text",
+      "text": "{\"state\":{\"events\":{\"Damage\":3,\"Light2\":1,\"Light3\":1,\"Hit\":3,\"Context:aside\":1,\"Light1\":3,\"Context\":1,\"VaultKick\":1},\"now\":1793125353.680098,\"hazards\":0,\"phase\":\"Duel\",\"bot\":{\"combo\":0,\"velocity\":\"0, 0, 0\",\"flash\":false,\"untilIn\":-12.137468099594117,\"hitZone\":\"body\",\"chakra\":110,\"subCharges\":2,\"hitKind\":\"kick\",\"comboHits\":0,\"state\":\"Neutral\",\"seals\":0,\"airborne\":false,\"position\":\"-14.229458808898926, 3, 6.48087739944458\",\"wall\":false,\"health\":90.518,\"chainOpen\":false,\"airHold\":0},\"human\":{\"subCharges\":2,\"airHold\":0,\"combo\":0,\"seals\":0,\"velocity\":\"0, 0, 0\",\"comboHits\":0,\"flash\":false,\"state\":\"Neutral\",\"health\":120,\"airborne\":false,\"position\":\"-7.370096206665039, 3, 3.0447683334350586\",\"wall\":false,\"untilIn\":-0.017023086547851564,\"chainOpen\":false,\"chakra\":105},\"projectiles\":[]},\"inputs\":{\"1\":{\"direction\":\"-0.20523673295974731, 0, -0.9787123799324036\",\"action\":\"Attack\",\"steering\":\"0, 0, 1\"},\"3\":{\"direction\":\"-0.5550849437713623, 0, 0.8317936062812805\",\"action\":\"Attack\",\"steering\":\"0, 0, 1\"},\"2\":{\"direction\":\"0.7728596925735474, 0, 0.6345769166946411\",\"action\":\"Attack\",\"steering\":\"0, 0, 1\"},\"5\":{\"direction\":\"-0, 0, 0\",\"action\":\"Attack\",\"steering\":\"0, 0, 0\"},\"4\":{\"direction\":\"-0, 0, 0\",\"action\":\"Attack\",\"steering\":\"0, 0, 0\"},\"6\":{\"direction\":\"-0, 0, 0\",\"action\":\"Attack\",\"steering\":\"0, 0, 0\"}},\"errors\":[]}"
+    }
+  ],
+  "isError": false
+}

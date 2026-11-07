@@ -1,0 +1,14 @@
+{
+  "file": "/sessions/rcw-01p4bfd8n4cboez6soutatjv/mnt/Documents/NinjaDuelMedia/FILM01_KUNAI_TRAP/01_RUSHES_v3/R_CLASH_WIDE_v39t_T1.mp4",
+  "duration_s": 2.3,
+  "width": 1080,
+  "height": 1920,
+  "frame_rate": "60/1",
+  "codec": "h264",
+  "audio_present": true,
+  "black_candidates": [],
+  "freeze_candidates": [],
+  "contact_sheet_ok": true,
+  "status": "HUMAN_VISUAL_REVIEW_REQUIRED",
+  "limitations": "No automated check of limb animation, Roblox physics, spells, camera clipping or truthful match actions."
+}

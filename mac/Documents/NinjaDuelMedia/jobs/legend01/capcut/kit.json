@@ -1,0 +1,296 @@
+{
+ "rows": [
+  [
+   "c01_hook_sharingan.mp4",
+   0.0,
+   0.8,
+   1.0,
+   "hook_sharingan"
+  ],
+  [
+   "c02_hook_chidori.mp4",
+   0.8,
+   1.25,
+   1.0,
+   "hook_chidori"
+  ],
+  [
+   "c03_faceoff.mp4",
+   1.25,
+   2.6500000000000004,
+   1.0,
+   "faceoff"
+  ],
+  [
+   "c04_naruto_eye.mp4",
+   2.6500000000000004,
+   3.0500000000000003,
+   1.0,
+   "naruto_eye"
+  ],
+  [
+   "c05_sasuke_eye.mp4",
+   3.0500000000000003,
+   3.45,
+   1.0,
+   "sasuke_eye"
+  ],
+  [
+   "c06_naruto_rush.mp4",
+   3.45,
+   4.2,
+   1.0,
+   "naruto_rush"
+  ],
+  [
+   "c07_naruto_hits.mp4",
+   4.2,
+   5.1,
+   1.0,
+   "naruto_hits"
+  ],
+  [
+   "c08_sasuke_counter.mp4",
+   5.1,
+   6.6499999999999995,
+   1.0,
+   "sasuke_counter"
+  ],
+  [
+   "c09_seals_mid.mp4",
+   6.6499999999999995,
+   7.3999999999999995,
+   1.0,
+   "seals_mid"
+  ],
+  [
+   "c10_seals_hands.mp4",
+   7.3999999999999995,
+   7.999999999999999,
+   1.0,
+   "seals_hands"
+  ],
+  [
+   "c11_dragon_hit.mp4",
+   7.999999999999999,
+   8.899999999999999,
+   1.0,
+   "dragon_hit"
+  ],
+  [
+   "c12_shadow_clones.mp4",
+   8.899999999999999,
+   10.099999999999998,
+   1.0,
+   "shadow_clones"
+  ],
+  [
+   "c13_rendan_launch.mp4",
+   10.099999999999998,
+   10.799999999999997,
+   1.0,
+   "rendan_launch"
+  ],
+  [
+   "c14_rendan_slam.mp4",
+   10.799999999999997,
+   12.049999999999997,
+   0.6,
+   "rendan_slam"
+  ],
+  [
+   "c15_chidori_charge.mp4",
+   12.049999999999997,
+   12.949999999999998,
+   1.0,
+   "chidori_charge"
+  ],
+  [
+   "c16_naruto_glare.mp4",
+   12.949999999999998,
+   13.349999999999998,
+   1.0,
+   "naruto_glare"
+  ],
+  [
+   "c17_clash_slowmo.mp4",
+   13.349999999999998,
+   14.949999999999998,
+   0.5,
+   "clash_slowmo"
+  ]
+ ],
+ "overlays": [
+  [
+   "o01_title.png",
+   0.0,
+   1.25,
+   "NARUTO vs SASUKE"
+  ],
+  [
+   "o02_caption.png",
+   6.6499999999999995,
+   8.899999999999999,
+   "KATON: DRAGON FLAME"
+  ],
+  [
+   "o03_caption.png",
+   8.899999999999999,
+   10.099999999999998,
+   "SHADOW CLONE JUTSU"
+  ],
+  [
+   "o04_caption.png",
+   10.099999999999998,
+   12.049999999999997,
+   "UZUMAKI BARRAGE"
+  ],
+  [
+   "o05_caption.png",
+   12.049999999999997,
+   12.949999999999998,
+   "CHIDORI"
+  ],
+  [
+   "o06_caption.png",
+   12.949999999999998,
+   13.349999999999998,
+   "RASENGAN"
+  ],
+  [
+   "o07_stamp.png",
+   14.949999999999998,
+   16.549999999999997,
+   "WHO / WINS?"
+  ],
+  [
+   "o08_cta.png",
+   16.549999999999997,
+   18.549999999999997,
+   "NINJA DUEL / IS FREE ON ROBLOX"
+  ]
+ ],
+ "sfx": [
+  {
+   "t": 0.8,
+   "name": "whoosh",
+   "vol": 0.35
+  },
+  {
+   "t": 1.25,
+   "name": "whoosh",
+   "vol": 0.35
+  },
+  {
+   "t": 2.65,
+   "name": "whoosh",
+   "vol": 0.35
+  },
+  {
+   "t": 3.05,
+   "name": "whoosh",
+   "vol": 0.35
+  },
+  {
+   "t": 4.05,
+   "name": "hit"
+  },
+  {
+   "t": 3.45,
+   "name": "whoosh",
+   "vol": 0.35
+  },
+  {
+   "t": 4.251,
+   "name": "hit"
+  },
+  {
+   "t": 4.467,
+   "name": "hit"
+  },
+  {
+   "t": 4.784,
+   "name": "hit"
+  },
+  {
+   "t": 4.2,
+   "name": "whoosh",
+   "vol": 0.35
+  },
+  {
+   "t": 5.233,
+   "name": "hit"
+  },
+  {
+   "t": 5.567,
+   "name": "hit"
+  },
+  {
+   "t": 5.866,
+   "name": "hit"
+  },
+  {
+   "t": 6.283,
+   "name": "heavy"
+  },
+  {
+   "t": 5.1,
+   "name": "whoosh",
+   "vol": 0.35
+  },
+  {
+   "t": 6.65,
+   "name": "whoosh",
+   "vol": 0.35
+  },
+  {
+   "t": 7.4,
+   "name": "whoosh",
+   "vol": 0.35
+  },
+  {
+   "t": 8.0,
+   "name": "whoosh",
+   "vol": 0.35
+  },
+  {
+   "t": 8.9,
+   "name": "whoosh",
+   "vol": 0.35
+  },
+  {
+   "t": 10.265,
+   "name": "heavy"
+  },
+  {
+   "t": 10.1,
+   "name": "whoosh",
+   "vol": 0.35
+  },
+  {
+   "t": 11.217,
+   "name": "heavy"
+  },
+  {
+   "t": 10.8,
+   "name": "whoosh",
+   "vol": 0.35
+  },
+  {
+   "t": 12.05,
+   "name": "whoosh",
+   "vol": 0.35
+  },
+  {
+   "t": 12.95,
+   "name": "whoosh",
+   "vol": 0.35
+  },
+  {
+   "t": 13.35,
+   "name": "whoosh",
+   "vol": 0.35
+  }
+ ],
+ "end": 18.549999999999997
+}
