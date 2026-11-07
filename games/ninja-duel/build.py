@@ -43,9 +43,14 @@ import subprocess
 def git(*a):
     try: return subprocess.run(['git',*a],cwd=ROOT,capture_output=True,text=True,timeout=20).stdout.strip()
     except Exception: return ''
-SOURCE_COMMIT=git('rev-parse','HEAD') or 'unknown'
-# Uncommitted changes to what goes into the place (dist/ is the build's own output).
-SOURCE_DIRTY=bool(git('status','--porcelain','--','src','assets','build.py','vendor','tools/capture'))
+# What goes into the place; dist/ is the build's own output.
+INPUTS=('src','assets','build.py','vendor','tools/capture')
+HEAD_COMMIT=git('rev-parse','HEAD') or 'unknown'
+# sourceCommit: the last commit that changed those inputs, so a later commit that
+# only adds dist/ or docs rebuilds the same bytes. (A --depth clone cannot see
+# history: there it is HEAD; actualiser_places.sh clones with the history.)
+SOURCE_COMMIT=(git('log','-1','--format=%H','--',*INPUTS) if git('rev-parse','--is-shallow-repository')=='false' else '') or HEAD_COMMIT
+SOURCE_DIRTY=bool(git('status','--porcelain','--',*INPUTS))
 xml = ET.Element('roblox', version='4')
 serial = 0
 
@@ -190,7 +195,7 @@ if automated['status']=='FAIL':
     sys.exit('Automated suites failed: '+', '.join(automated['failed']))
 
 manifest={'version':'0.13.0-arena-combo','artifact':name,'sha256':hashlib.sha256(output.read_bytes()).hexdigest(),'sources':{p.relative_to(ROOT).as_posix():hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted((ROOT/'src').rglob('*.luau')) if included(p)},'sourceEquality':'PASS','debugOnly':STUDIO_ONLY,'buildFingerprint':fingerprint,
- 'profile':PROFILE,'runtimeFingerprint':runtime_fingerprint,'sourceCommit':SOURCE_COMMIT,'sourceDirty':SOURCE_DIRTY,
+ 'profile':PROFILE,'runtimeFingerprint':runtime_fingerprint,'sourceCommit':SOURCE_COMMIT,'headCommit':HEAD_COMMIT,'sourceDirty':SOURCE_DIRTY,
  'captureTools':{p.relative_to(ROOT).as_posix():hashlib.sha256(p.read_bytes()).hexdigest() for p in capture_files},'donorAssets':{p.relative_to(ROOT).as_posix():hashlib.sha256(p.read_bytes()).hexdigest() for p in asset_files},'externalAssets':sorted(external_ids),
  'automatedQA':automated,
  # Native (Roblox Studio) and human-feel gates are recorded separately and are

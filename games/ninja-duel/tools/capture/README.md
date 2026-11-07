@@ -14,9 +14,12 @@ python3 build.py --capture    # FILM    dist/NinjaDuel-Capture.rbxlx  (Debug + o
 ```
 
 Les quatre places embarquent **les mêmes scripts de jeu**. Leur manifeste
-(`dist/*.json`) porte `profile`, `sourceCommit`, `sourceDirty`,
-`runtimeFingerprint` (le même dans les quatre profils d'un commit) et
-`buildFingerprint` (propre à chaque profil). Au Play, la sortie Studio affiche :
+(`dist/*.json`) porte `profile`, `sourceCommit` (dernier commit qui a changé
+`src`, `assets`, `build.py`, `vendor` ou `tools/capture` : un commit qui
+n'ajoute que `dist/` ou de la doc reconstruit les mêmes octets), `headCommit`,
+`sourceDirty`, `runtimeFingerprint` (le même dans les quatre profils d'un
+commit) et `buildFingerprint` (propre à chaque profil). Au Play, la sortie
+Studio affiche :
 
 ```
 [NinjaDuel] BUILD <buildFingerprint> | RUNTIME <runtimeFingerprint> | capture @ <commit>
