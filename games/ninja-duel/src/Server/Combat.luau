@@ -1709,13 +1709,11 @@ function Combat:updateActor(a,dt)
 	-- (x the wind: walking into a lane is slower, with it faster, Zones.speedScale;
 	-- x buffs and slows, Families.speedScale)
 	a.speedScale=(if (a.awakenUntil or 0)>now then Combat.awakeScale(a,"Speed",now) else 1)*Zones.speedScale(self,a)*Families.speedScale(a,now)
-	-- Lee's gates open one by one while he is awakened (Combat.gateOf).
-	local gate=(a.awakenUntil or 0)>now and Combat.gateOf(a,now)
-	if gate and gate~=a.gateShown then
-		a.gateShown=gate
-		self:pushImpact(a.root.Position,"gate",gate>=5,{owner=a.id,fighter=a.fighterId,gate=gate})
-		self:cue(a,({"FIRST","SECOND","THIRD","FOURTH","FIFTH"})[gate].." GATE • OPEN",.9)
-	end
+	-- Lee's gates open one by one while he is awakened (Combat.gateOf); each
+	-- opening is announced once, by Techniques.gateStep (called from curseDrain
+	-- below). (Integration 07/11: this older announcement and gateStep both
+	-- pushed a "gate" contact, so every gate drew twice and the first one also
+	-- drew on top of the awakening.)
 	-- Family traits that act every frame (an Absorb buff drinking blades).
 	Families.step(self,a,now)
 	-- The curse mark burns the body that carries it (never to a KO), faster

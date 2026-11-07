@@ -1164,20 +1164,41 @@ test("client · a caught image lights the real body behind it; ricochet and Geom
   assert(#named(fx,"GeometryPath")==2,"the geometry's two blades do not show their paths")
  end)
 end)
-test("client · Itachi's lane reads as one scorched strip across the field and clears with its fire",function()
+-- (Integration 07/11) The lane is the jutsu pass's (Effects FX:lanePatch, 06/11:
+-- « plus de planche ni de bande jaune »): one burnt segment per patch, each
+-- drawn from the previous patch of the same lane, so the lane reads as one
+-- path; the fire goes out with the hazard and the burn lingers, then fades.
+-- Before: one IdentityFX strip (slate plank, neon edges) drawn on top of it.
+test("client · Itachi's lane reads as one scorched path across the field and goes out with its fire",function()
  inScene(function(fx,folder)
   local hazards={}
   for k=0,4 do table.insert(hazards,{position=V.new(6,2.4,-7-k*5),radius=2.4,remaining=2,kind="Fire",owner="A",lane=9}) end
   table.insert(hazards,{position=V.new(-20,2.4,0),radius=7.5,remaining=2,kind="Fire",owner="A"})
   local data={phase="Duel",epoch=1,hazards=hazards,projectiles={},human=actorData("A","Mirage"),bot=actorData("B","Flashstep")}
   fx:update(data,1/60,folder)
-  local strips=named(fx,"FireLane")
-  assert(#strips==1,"the lane is not drawn as one strip ("..#strips..")")
-  local scorch=strips[1]:GetChildren()[1]
-  assert(scorch.Size.Z>=20,"the strip does not run the lane's length")
+  local segments=named(fx,"FireLane")
+  assert(#segments==5,"the lane is not one burnt segment per patch ("..#segments..")")
+  -- chained: the segments after the first run from the previous patch, so
+  -- together they cover the lane's 20 studs without a gap
+  local covered=0
+  for _,segment in segments do
+   local longest=0
+   for _,part in segment:GetChildren() do if part.Size and part.Size.Z>longest then longest=part.Size.Z end end
+   covered+=longest
+  end
+  assert(covered>=20,string.format("the segments do not run the lane's length (%.1f studs)",covered))
+  for _,segment in segments do
+   for _,part in segment:GetChildren() do assert(part.Material~=H.roblox.Enum.Material.Neon,"a neon edge is back on the lane") end
+  end
   data.hazards={}
   fx:update(data,1/60,folder)
-  assert(#named(fx,"FireLane")==0,"the strip outlived its fire")
+  for _,entry in fx.hazards do assert(not entry.lane,"a lane patch outlived its fire") end
+  -- the flames are out on every segment (the burn itself lingers, then fades)
+  local out=0
+  for _,segment in named(fx,"FireLane") do
+   for _,d in segment:GetDescendants() do if d.ClassName=="ParticleEmitter" and d.Enabled==false then out+=1 end end
+  end
+  assert(out>=5,"the fire did not go out on the lane ("..out..")")
  end)
 end)
 test("HUD · a read's counter is named and timed",function()

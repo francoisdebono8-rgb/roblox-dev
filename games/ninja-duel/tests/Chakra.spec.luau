@@ -947,8 +947,18 @@ test("client: marks, the held wire, seals and zones, flights, winners, arcs, the
 		assert(st.holds[20].segments[1].Transparency>taut,"the wire does not slacken as the bind runs out")
 		now=100;fx:update(data,1/60,folder)
 		assert(st.holds[21].segments[1].Color==FX.Infusion.Lightning.core and named("WireCurrent")>0,"a charged held wire is not drawn as lightning")
-		-- Seals and burning zones count their life down too.
-		assert(named("SealTick")==8 and named("BurnEdge")==12,"seal life or burn edge missing")
+		-- Seals and burning zones: (06/11, jutsu pass, user: « le feu, la bande
+		-- avec un contour jaune ») no tick ring by default any more, the seal's
+		-- own look and the fire with its charred ground (Effects) show them.
+		-- The rings stay one switch away (ChakraFX.SealTicks / BurnTicks) and
+		-- still count their life down.
+		assert(named("SealTick")==0 and named("BurnEdge")==0,"a tick ring is back on a seal or a fire by default")
+		ChakraFX.SealTicks=true;ChakraFX.BurnTicks=true
+		fx:update(data,1/60,folder)
+		local ok,err=pcall(function() assert(named("SealTick")==8 and named("BurnEdge")==12,"seal life or burn edge missing ("..named("SealTick").." / "..named("BurnEdge")..")") end)
+		ChakraFX.SealTicks=nil;ChakraFX.BurnTicks=nil
+		fx:update(data,1/60,folder)
+		assert(ok,err)
 		-- Flights: the wind kunai's edges, reinforced steel's shell, lightning's arcs.
 		assert(named("WindEdge")==2 and named("SteelWeight")==1 and named("FlightArc")>0,"an infused flight looks like the plain one")
 		-- Bodies: locked by lightning, standing in fire.

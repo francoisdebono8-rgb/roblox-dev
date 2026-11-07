@@ -720,7 +720,10 @@ test("AI duels: Naruto against every fighter, both ways, to the KO and without w
      end
     end
     assert(match.phase~="Duel",string.format("%s vs %s did not finish in 150 s (%.0f / %.0f health)",pair[1],pair[2],a.health,b.health))
-    assert(most<=2,pair[1].." vs "..pair[2]..": "..most.." clones out at once")
+    -- (06/11, fc5cd72) Multi Shadow Clone is a crowd of Crowd clones (the
+    -- shadow clones stay capped at Max); never more than that at once.
+    local tn=H.fighters.Legion.Bodies.clone
+    assert(most<=math.max(tn.Max,tn.Crowd or 0),pair[1].." vs "..pair[2]..": "..most.." clones out at once")
     for _,x in {a,b} do
      if x.fighterId=="Legion" then
       made+=ev(x,"BodySpawned");lost+=ev(x,"BodyLost");routes+=ev(x,"Route");rendan+=ev(x,"NarutoRendan")

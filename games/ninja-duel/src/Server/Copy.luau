@@ -6,7 +6,7 @@
 -- copy) for Life seconds or Uses casts, and he casts it the way its owner
 -- does (the owner's technique, at its own cost and cooldown). Uncovered (his
 -- awakening) the eye needs no facing.
--- What the eye cannot take: a Hyuga's (kekkei genkai), a sealing formula (the
+-- What the eye cannot take: a Hyuga's (kekkei genkai), the Rinnegan's forces, a sealing formula (the
 -- Flying Thunder God, the marked kunai, the barrier), a jutsu without seals
 -- (the Rasengan), another dojutsu's own read, what only a body trained for it
 -- can do (the weights, the Lotus), and a technique thrown on the run.
@@ -19,6 +19,9 @@ Copy.NEVER={
 	CloneRasengan=true,BurstStrike=true, -- the Rasengan: no seals to read
 	Flashstep=true,FlyingThunderTwo=true,MarkedBlade=true,SealingTrap=true,SpaceTimeBarrier=true, -- Minato's formula
 	Read=true,SharinganCopy=true,SharinganCounter=true,SharinganParalysis=true, -- another Sharingan's own read
+	-- (Integration 07/11, Roster20: Kakashi took Nagato's Absorbing Seal into
+	-- his Water Dragon's slot) the Rinnegan's forces are another dojutsu's own.
+	Repulsion=true,Attraction=true,Absorb=true,
 	RemoveWeights=true,PrimaryLotus=true, -- Lee's body
 }
 local function flat(v) return Vector3.new(v.X,0,v.Z) end
@@ -47,10 +50,13 @@ function Copy.slotSpec(c,a,slot)
 	local copy=a.copy
 	if not copy or slot~=copy.slot then return nil end
 	if copy.uses>0 and c.now<copy.untilT then return copy.spec end
+	local t=techniques()[copy.spec.Id]
 	-- (Studio 06/11) a beat after the cast first: a copied crowd comes out in
 	-- a ripple, and the slot let go of it before the first clone was out.
-	if copy.spentAt and c.now<copy.spentAt+1 then return copy.spec end
-	local t=techniques()[copy.spec.Id]
+	-- (Integration 07/11) only a jutsu whose key acts again on its work (the
+	-- crowd's recast): a spent fireball gives the Water Dragon back at once,
+	-- its key no longer answers "cooldown" for the copy for a second.
+	if copy.spentAt and c.now<copy.spentAt+1 and t and t.recast then return copy.spec end
 	if t and t.view and t.view(c,a,copy.spec,c.now)~=nil then return copy.spec end
 	a.copy=nil
 	return nil

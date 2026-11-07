@@ -284,9 +284,9 @@ local function runScene(spec, take)
 	local ok, err = pcall(function()
 		noUlt = spec.noUlt == true
 		rounds(spec.rounds or 1)
-		-- (v39) a training start runs the tutorial, which moves the bodies: a
-		-- plain duel unless the scene asks (spec.lead must cover the 2.6 s intro)
+		-- (06/11) scenes start a real duel (one round) and wait out its intro
 		start(spec.a, spec.b, spec.training == true); waitDuel(10)
+		if spec.training ~= true then task.wait(spec.intro or 2.9) end
 		dev:Invoke("autopilot", false)
 		dev:Invoke("freezeBot", true)
 		dev:Invoke("scripted", true)

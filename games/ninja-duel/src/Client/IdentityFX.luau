@@ -532,39 +532,11 @@ end
 -- Itachi's burning lane (Elements.burnLane): the patches of one lane share a
 -- scorched strip from the first to the last, so it reads as a line across the
 -- field, not as scattered fires.
-local function laneFrame(fx,data)
-	fx.identityLanes=fx.identityLanes or {}
-	local lanes={}
-	for _,h in data.hazards or {} do
-		if h.lane then
-			local lane=lanes[h.lane] or {}
-			table.insert(lane,h)
-			lanes[h.lane]=lane
-		end
-	end
-	for id,patches in lanes do
-		local strip=fx.identityLanes[id]
-		local first,last=patches[1].position,patches[#patches].position
-		local span=Vector3.new(last.X-first.X,0,last.Z-first.Z)
-		if #patches>=2 and span.Magnitude>.5 and (not strip or strip.count~=#patches or not strip.model.Parent) then
-			if strip then strip.model:Destroy() end
-			local model=K.new("Model",{Name="FireLane"},fx.folder)
-			local width=patches[1].radius*1.5
-			local along=CFrame.lookAt(first:Lerp(last,.5)-Vector3.new(0,.42,0),last-Vector3.new(0,.42,0))
-			local scorch=K.block(model,Vector3.new(width,.05,span.Magnitude+width),along,Color3.fromRGB(32,22,18),Enum.Material.Slate)
-			scorch.Transparency=.25
-			for _,side in {-1,1} do
-				local edge=K.block(model,Vector3.new(.12,.06,span.Magnitude+width*.8),along*CFrame.new(side*width*.5,.02,0),EMBER,Enum.Material.Neon)
-				edge.Transparency=.3
-			end
-			strip={model=model,count=#patches}
-			fx.identityLanes[id]=strip
-		end
-	end
-	for id,strip in fx.identityLanes do
-		if not lanes[id] then strip.model:Destroy();fx.identityLanes[id]=nil end
-	end
-end
+-- (Integration 07/11) Itachi's burning lane is drawn by Effects (FX:lanePatch,
+-- the jutsu pass of 06/11: ragged burn marks chained patch to patch, low
+-- flames, embers). The strip this layer drew on top since 17/10 (a slate
+-- plank with two neon edges, the « planche » and « bande jaune » the user
+-- asked to be rid of) doubled every lane; it is gone.
 local function itachiFrame(fx,model,actor,st,clock)
 	tomoeRing(fx,model,actor,st,clock)
 	if actor.fighterId=="Mirage" then counterWindow(fx,model,actor,st) end
@@ -722,7 +694,6 @@ end
 local function frame(fx,data,dt,folder)
 	-- A new duel numbers its projectiles from one again.
 	if fx.identityEpoch~=data.epoch then fx.identityEpoch=data.epoch;fx.identityGlints={} end
-	laneFrame(fx,data)
 	hiddenGlint(fx,data)
 end
 function IdentityFX.install(FX,kit)

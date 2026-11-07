@@ -57,6 +57,11 @@ contact ; ne juge ni l'animation ni le combat). Demande ffmpeg/ffprobe.
 | `studio/*.luau` | branche `claude/ninja-duel-tutorial-v2`, commit `26008f1` (05/11, « FILM01: shot maps v2… »), dossier `games/ninja-duel/tools/marketing/factory/studio/` |
 | `command-bar/*.luau`, `video_qc.py` | branche `media-clips` (historique séparé, jamais fusionné), dossier `cm_tools/` |
 
+`studio/ShotRunner.server.luau` porte en plus la correction locale du CM
+trouvée dans `ND-Clips-integ-0611` (enregistrée sur le Mac le 07/11 à 14 h 46) :
+une scène lance un vrai duel d'une manche et attend la fin de son intro
+(`spec.intro`, 2,9 s par défaut) au lieu de lancer le tutoriel.
+
 Les places de tournage du Mac (`ND-Clips-v39`, `ND-Clips-integ-0611`)
 contiennent une version plus ancienne de `ClipKit` et `ShotRunner` (commit
 `768bbad` de la même branche) ; celles-ci sont les versions les plus récentes

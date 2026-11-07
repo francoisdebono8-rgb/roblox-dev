@@ -23,7 +23,9 @@ Harness.JOINT_HOST=JOINT_HOST
 local function fakePart(position)
  local p={CFrame=C.new(position or V.zero),AssemblyLinearVelocity=V.zero,Parent=true,CanCollide=true,Transparency=0,
   Size=V.one,Anchored=false,Massless=false,CanQuery=true,CanTouch=true,Name="Part",Shape=roblox.Enum.PartType.Block,
-  Material=roblox.Enum.Material.Plastic,Color=roblox.Color3.new(1,1,1)}
+  Material=roblox.Enum.Material.Plastic,Color=roblox.Color3.new(1,1,1),
+  -- (BasePart default; client sight effects read and set it on bodies.)
+  LocalTransparencyModifier=0}
  p.children={}
  setmetatable(p,{__index=function(t,k) if k=="Position" then return t.CFrame.Position end end})
  function p:Destroy() self.Parent=nil end
@@ -247,7 +249,12 @@ local function buildRig(folder,def,cf,name)
   if now then
    if self.frameAt~=now then self.lastFrame=self.frameAt;self.frameAt=now;self.frameStart=start
    elseif self.frameEnd and (start-self.frameEnd).Magnitude<1e-6 then start=self.frameStart end
-   if self.lastFrame then dt=math.clamp(now-self.lastFrame,0,.1) end
+   -- The length of this frame, not the time since this rig last walked: a
+   -- body that did not walk for a while (a plunge, a held air string) moved
+   -- 0.1 s worth of walking on its first step back (a 6-stud jump headlessly
+   -- that no Humanoid makes in Studio).
+   if self.frameDt and self.frameDt() then dt=self.frameDt()
+   elseif self.lastFrame then dt=math.clamp(now-self.lastFrame,0,.1) end
   end
   local speed=self.WalkSpeed or 0
   local target=start
@@ -370,11 +377,15 @@ function Harness.duel(first,second,kits)
  function match.onCue(a,message) table.insert(match.cues,{actor=a.id,message=message}) end
  local Combat=loadModule("Server/Combat")
  local c=Combat.new(match);c.now=100
+ -- The frame length the rigs walk over (hum:Move), as the engine's step.
+ local update=c.update
+ function c:update(dt,now) self.harnessFrameDt=dt;return update(self,dt,now) end
  local fighters=loadModule("Shared/Fighters")
  local function actor(id,key,z)
   local position=V.new(0,3,z)
   local model,hum,root,joints=buildRig(folder,fighters[key],C.lookAt(position,V.new(0,3,-z)),id)
   hum.clock=function() return c.now end
+  hum.frameDt=function() return c.harnessFrameDt end
   return c:add(id,model,hum,root,joints,key,kits and kits[id])
  end
  local a,b=actor("A",first,2.5),actor("B",second,-2.5)
@@ -417,6 +428,8 @@ function Harness.stubScene()
  for _,k in {"ColorSequence","ColorSequenceKeypoint","NumberSequence","NumberSequenceKeypoint","NumberRange"} do envBase[k]=roblox[k] end
  local function instance(class)
   local o={ClassName=class,Name=class,children={},props={}}
+  -- (BasePart default: client sight effects read it on bodies.)
+  if class=="Part" or class=="WedgePart" or class=="MeshPart" then o.props.LocalTransparencyModifier=0 end
   local mt={}
   mt.__index=function(t,k)
    if k=="Parent" then return rawget(t,"_parent") end

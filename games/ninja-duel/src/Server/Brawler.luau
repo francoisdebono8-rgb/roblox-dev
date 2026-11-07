@@ -257,8 +257,12 @@ function Brawler.chaseArrived(c,a)
  local rising=if b.reaction and b.reactionVelocity then b.reactionVelocity.Y else 0
  -- (07/11, Studio + gate, Itachi: the chase "arrived" 4.5 studs under a body
  -- still rising at 25 studs/s, stopped there and both air strikes missed 6-8
- -- studs below it) a body still climbing is followed on, near its apex.
- return rising<=12 or not b.airborne
+ -- studs below it) a body still climbing is followed on until the chaser is
+ -- level with it (its air string then follows the rise) or near its apex.
+ -- (Integration 07/11: waiting for the apex alone stretched every launch
+ -- chase to its full 0.5 s and the strike after it out of its window.)
+ if not b.airborne or rising<=12 then return true end
+ return rising<=30 and a.root.Position.Y>=b.root.Position.Y-1
 end
 -- The re-entry windows in which a press is the arrival strike (dash attack on
 -- the ground, the air string in the air) or the arrival heavy.
