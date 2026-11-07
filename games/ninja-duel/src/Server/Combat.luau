@@ -636,6 +636,28 @@ function Combat:turnToward(a,direction,dt,rate)
 	local look=CFrame.fromAxisAngle(Vector3.yAxis,step):VectorToWorldSpace(current)
 	a.root.CFrame=CFrame.lookAt(a.root.Position,a.root.Position+look)
 end
+-- (07/11, mission game feel) A free body in an exchange with its opponent:
+-- close (SoftLock.Face), not running, and either just out of its own blow or
+-- reaction (Engaged.Hold) or watching the opponent wind one up at it.
+function Combat.engaged(c,a)
+	local b=a.target
+	if not b or b.health<=0 or not b.root or a.sprinting then return false end
+	local d=b.root.Position-a.root.Position
+	if Vector3.new(d.X,0,d.Z).Magnitude>=Config.SoftLock.Face or math.abs(d.Y)>6 then return false end
+	if (a.engagedUntil or 0)>c.now then return true end
+	return b.pending~=nil and (b.state=="Startup" or b.state=="Active" or b.state=="TechniqueChannel")
+end
+-- (07/11, mission game feel) The turn a free player's strike needs to face
+-- its line by the end of its startup: never slower than `floor`, never
+-- faster than Engaged.Turn (a 180 deg turn in a 0.1 s startup is a whip).
+function Combat.finishTurn(a,direction,now,dt,floor)
+	local want=Vector3.new(direction.X,0,direction.Z)
+	local look=Vector3.new(a.root.CFrame.LookVector.X,0,a.root.CFrame.LookVector.Z)
+	if want.Magnitude<.01 or look.Magnitude<.01 then return floor end
+	local need=math.deg(math.acos(math.clamp(want.Unit:Dot(look.Unit),-1,1)))
+	local left=math.max((a.untilTime or now)-now,dt)
+	return math.clamp(need/left,floor,math.max(floor,Config.Engaged.Turn))
+end
 function Combat:faceLocked(a,dt)
 	-- Lost in the opponent's shroud: no auto-facing on a body he cannot see.
 	if Families.shrouded(self,a) then return end
@@ -1864,6 +1886,9 @@ function Combat:updateActor(a,dt)
 		elseif a.state~="TechniqueChannel" and a.state~="TechniqueActive" then a.castFace=nil end
 	end
 	if Brawler.step(self,a,dt) then World.pose(a,now,dt); return end
+	-- (07/11, game feel) In an exchange: one's own blow or a reaction keeps the
+	-- free body engaged on the opponent a moment after it (Combat.engaged).
+	if a.reaction or (a.pending and a.pending.kind=="Brawl") then a.engagedUntil=now+Config.Engaged.Hold end
 	if a.locked and (a.state=="Neutral" or a.state=="Guarding") then
 		a.hum.AutoRotate=false
 		self:faceLocked(a,dt)
@@ -1871,8 +1896,12 @@ function Combat:updateActor(a,dt)
 		-- (DEC-031, user 03/11: "Storm total") Free: the body faces where the
 		-- player looks (the mouse turns the lens, as Roblox's shift lock); the
 		-- stick strafes. Strikes and jutsu then go where he looks.
+		-- (07/11, game feel) Engaged in an exchange up close, the chest stays
+		-- on the opponent (Combat.engaged): the body no longer swings back to
+		-- the lens between two blows, and it faces a blow coming at it.
 		a.hum.AutoRotate=false
-		self:turnToward(a,a.look,dt,1080)
+		if Combat.engaged(self,a) then self:turnToward(a,a.target.root.Position-a.root.Position,dt,Config.Facing.Neutral)
+		else self:turnToward(a,a.look,dt,1080) end
 	elseif a.playerInput and not a.locked and not a.look and a.state=="Neutral" and not a.airborne and a.target
 		and (not a.move or Vector3.new(a.move.X,0,a.move.Z).Magnitude<.3)
 		and (a.target.root.Position-a.root.Position).Magnitude<Config.SoftLock.Face then
@@ -2056,7 +2085,9 @@ function Combat:updateActor(a,dt)
   -- locked on, a strike starting within SoftLock.Reach turns to him, even
   -- from behind, over its startup.
   if not a.locked and a.state=="Startup" and attack.softDir then
-   self:turnToward(a,attack.softDir,dt,Config.SoftLock.Rate)
+   -- (07/11, game feel: blows out at 50-86 deg off the body they hit) the
+   -- turn is done by the time the blow comes out.
+   self:turnToward(a,attack.softDir,dt,Combat.finishTurn(a,attack.softDir,now,dt,Config.SoftLock.Rate))
   end
   if flat.Magnitude>2 and flat.Magnitude<(if a.state=="Startup" and a.locked then 11 else 9) and attack.name~="WallDive" and not (attack.softDir and a.state=="Startup") then
    local tangent=Vector3.new(-flat.Z,0,flat.X).Unit
@@ -2084,7 +2115,11 @@ function Combat:updateActor(a,dt)
    local look=Vector3.new(a.root.CFrame.LookVector.X,0,a.root.CFrame.LookVector.Z)
    local behind=not attack.aim and look.Magnitude>.01 and look.Unit:Dot(flat.Unit)<math.cos(math.rad(115))
    -- (A strike pushed at another body, a clone at his side, turns to it.)
-   local turn=if spec.orbit or spec.angle then 1080 elseif attack.aim then 900 elseif a.state=="Startup" then Config.Facing.Startup else Config.Facing.Active
+   -- (07/11, game feel) A free player's strike faces him by its first
+   -- active frame (Combat.finishTurn); the lock keeps its bounded turn.
+   local turn=if spec.orbit or spec.angle then 1080 elseif attack.aim then 900
+    elseif a.state=="Startup" and not a.locked and a.playerInput then Combat.finishTurn(a,flat,now,dt,Config.Facing.Startup)
+    elseif a.state=="Startup" then Config.Facing.Startup else Config.Facing.Active
    if not behind then self:turnToward(a,flat,dt,turn*(a.def.StrikeTurnScale or 1)) end
   end
  end

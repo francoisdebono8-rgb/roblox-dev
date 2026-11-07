@@ -709,6 +709,18 @@ return {
 	-- (900: the startup's bounded turn, CombatFeel; standing near him the free
 	-- body already faces him, Combat.updateActor)
 	SoftLock = {Reach = 13, Rate = 900, Face = 12},
+	-- (07/11, mission game feel: Studio audit, free lens, Minato and Sasuke
+	-- landing blows while facing 45-86 deg away from the body they hit; between
+	-- the blows of a string the body swung back to the lens) Engaged: within
+	-- SoftLock.Face of the opponent, during an exchange (Hold s after one's
+	-- own strike or reaction, or while the opponent winds up a blow), the free
+	-- body keeps its chest on him instead of the lens. Turn: a soft-locked
+	-- strike's turn finishes inside its startup (at most Turn deg/s).
+	Engaged = {Hold = 0.8, Turn = 1800},
+	-- (07/11, same audit) A blow lands on what is in front of it: the brawl
+	-- contact cone is +-acos(Contact.Facing) around the striker's facing (was
+	-- +-87 deg: a fist going forward knocked down a body beside it).
+	Contact = {Facing = 0.5},
 	-- (DEC-032 §3) Hand seals: the weave stays open Open s for the first seal,
 	-- then Gap s between seals.
 	Seals = {Open = 1.4, Gap = 0.9},
@@ -5082,13 +5094,13 @@ return {
       <Item class="StringValue" referent="ND32">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">e6cba31a0e7df095cb0d89c09dcca0201cdc35f6b535c917dcddf7560401c3c9</string>
+          <string name="Value">82b80d849aae7f56e8fdec44f47315c2d4b72e4c977bff77e115bf682fd15889</string>
         </Properties>
       </Item>
       <Item class="StringValue" referent="ND33">
         <Properties>
           <string name="Name">RuntimeFingerprint</string>
-          <string name="Value">aec22310b14402e70922780461db4ce95b8073a6b7553699908e3669b8be186a</string>
+          <string name="Value">785554f04f0e33d46a939c40c9bae2bece6bf6701970397a7b9536b3b8e553ed</string>
         </Properties>
       </Item>
       <Item class="StringValue" referent="ND34">
@@ -5100,7 +5112,7 @@ return {
       <Item class="StringValue" referent="ND35">
         <Properties>
           <string name="Name">SourceCommit</string>
-          <string name="Value">0e579bf71877</string>
+          <string name="Value">45cffb89df63</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND36">
@@ -7358,6 +7370,7 @@ return ArenaMeshes
 local Debris=game:GetService('Debris')
 local assets=game:GetService('ReplicatedStorage').NinjaDuel:WaitForChild('BanglaAssets')
 local Combo=require(game:GetService('ReplicatedStorage').NinjaDuel.BanglaCombo)
+local Config=require(game:GetService('ReplicatedStorage').NinjaDuel.Config)
 local Bangla={}
 local function sound(parent,id)
  local s=Instance.new('Sound');s.SoundId=id;s.Volume=.5;s.Parent=parent
@@ -7394,7 +7407,8 @@ function Bangla.tryHit(c,a,p)
  -- Touched on a teleported anchored part was unreliable; query the same volume.
  for _,hit in workspace:GetPartBoundsInBox(hitbox.CFrame,hitbox.Size,params) do
   if hit:IsDescendantOf(target.model) and not donor.Hits[target.id] then
-   if not c:targetValid(a,target,p.spec.range,p.spec.facing or .05,p.from) then continue end
+   -- (07/11, game feel) only what is in front of the blow (Config.Contact).
+   if not c:targetValid(a,target,p.spec.range,p.spec.facing or Config.Contact.Facing,p.from) then continue end
    donor.Hits[target.id]=true
    local delta=frame.Position-target.root.Position
    local frontal=delta.Magnitude&lt;.001 or target.root.CFrame.LookVector:Dot(delta.Unit)&gt;.15
@@ -9625,7 +9639,7 @@ function Brawler.hit(c,a,p)
 	end
   -- Grab has no donor damage action; donor contact volume still validates it.
   if p.name=="Grab" then
-   if not c:targetValid(a,b,spec.range,.05) then return false end
+   if not c:targetValid(a,b,spec.range,Config.Contact.Facing) then return false end
    local donor=p.donor
    donor.hitbox.CFrame=a.root.CFrame*CFrame.new(0,0,-2)
    local params=OverlapParams.new();params.FilterType=Enum.RaycastFilterType.Include;params.FilterDescendantsInstances={b.model}
@@ -9750,6 +9764,8 @@ function Brawler.hit(c,a,p)
  end
  Brawler.event(c,a,"Hit");return true
 end
+-- Degrees/s a held body turns to its grabber (07/11, game feel).
+Brawler.GRAB_TURN=900
 function Brawler.step(c,a,dt)
  if a.buffered and c.now&gt;a.buffered.expires then a.buffered=nil end
  if a.grabVictim then
@@ -9759,7 +9775,17 @@ function Brawler.step(c,a,dt)
    local pos=a.root.Position+a.root.CFrame.LookVector*2.6
    local delta=pos-b.root.Position
    local grip=b.root.Position+(if delta.Magnitude&gt;.001 then delta.Unit*math.min(delta.Magnitude,26*dt) else Vector3.zero)
-   b.root.CFrame=CFrame.lookAt(grip,a.root.Position);b.root.AssemblyLinearVelocity=Vector3.zero;b.hum:Move(Vector3.zero)
+   -- (07/11, game feel: a body grabbed from behind spun 179 deg in one
+   -- frame) the held body is hauled round to the grabber over ~0.2 s.
+   local want=a.root.Position-grip;want=Vector3.new(want.X,0,want.Z)
+   local look=Vector3.new(b.root.CFrame.LookVector.X,0,b.root.CFrame.LookVector.Z)
+   if want.Magnitude&gt;.01 and look.Magnitude&gt;.01 then
+    want=want.Unit;look=look.Unit
+    local angle=math.atan2(look:Cross(want).Y,look:Dot(want))
+    local step=math.clamp(angle,-math.rad(Brawler.GRAB_TURN)*dt,math.rad(Brawler.GRAB_TURN)*dt)
+    look=CFrame.fromAxisAngle(Vector3.yAxis,step):VectorToWorldSpace(look)
+   else look=if want.Magnitude&gt;.01 then want.Unit else b.root.CFrame.LookVector end
+   b.root.CFrame=CFrame.lookAt(grip,grip+look);b.root.AssemblyLinearVelocity=Vector3.zero;b.hum:Move(Vector3.zero)
   end
  end
  if a.reaction then
@@ -12805,6 +12831,28 @@ function Combat:turnToward(a,direction,dt,rate)
 	local look=CFrame.fromAxisAngle(Vector3.yAxis,step):VectorToWorldSpace(current)
 	a.root.CFrame=CFrame.lookAt(a.root.Position,a.root.Position+look)
 end
+-- (07/11, mission game feel) A free body in an exchange with its opponent:
+-- close (SoftLock.Face), not running, and either just out of its own blow or
+-- reaction (Engaged.Hold) or watching the opponent wind one up at it.
+function Combat.engaged(c,a)
+	local b=a.target
+	if not b or b.health&lt;=0 or not b.root or a.sprinting then return false end
+	local d=b.root.Position-a.root.Position
+	if Vector3.new(d.X,0,d.Z).Magnitude&gt;=Config.SoftLock.Face or math.abs(d.Y)&gt;6 then return false end
+	if (a.engagedUntil or 0)&gt;c.now then return true end
+	return b.pending~=nil and (b.state=="Startup" or b.state=="Active" or b.state=="TechniqueChannel")
+end
+-- (07/11, mission game feel) The turn a free player's strike needs to face
+-- its line by the end of its startup: never slower than `floor`, never
+-- faster than Engaged.Turn (a 180 deg turn in a 0.1 s startup is a whip).
+function Combat.finishTurn(a,direction,now,dt,floor)
+	local want=Vector3.new(direction.X,0,direction.Z)
+	local look=Vector3.new(a.root.CFrame.LookVector.X,0,a.root.CFrame.LookVector.Z)
+	if want.Magnitude&lt;.01 or look.Magnitude&lt;.01 then return floor end
+	local need=math.deg(math.acos(math.clamp(want.Unit:Dot(look.Unit),-1,1)))
+	local left=math.max((a.untilTime or now)-now,dt)
+	return math.clamp(need/left,floor,math.max(floor,Config.Engaged.Turn))
+end
 function Combat:faceLocked(a,dt)
 	-- Lost in the opponent's shroud: no auto-facing on a body he cannot see.
 	if Families.shrouded(self,a) then return end
@@ -14033,6 +14081,9 @@ function Combat:updateActor(a,dt)
 		elseif a.state~="TechniqueChannel" and a.state~="TechniqueActive" then a.castFace=nil end
 	end
 	if Brawler.step(self,a,dt) then World.pose(a,now,dt); return end
+	-- (07/11, game feel) In an exchange: one's own blow or a reaction keeps the
+	-- free body engaged on the opponent a moment after it (Combat.engaged).
+	if a.reaction or (a.pending and a.pending.kind=="Brawl") then a.engagedUntil=now+Config.Engaged.Hold end
 	if a.locked and (a.state=="Neutral" or a.state=="Guarding") then
 		a.hum.AutoRotate=false
 		self:faceLocked(a,dt)
@@ -14040,8 +14091,12 @@ function Combat:updateActor(a,dt)
 		-- (DEC-031, user 03/11: "Storm total") Free: the body faces where the
 		-- player looks (the mouse turns the lens, as Roblox's shift lock); the
 		-- stick strafes. Strikes and jutsu then go where he looks.
+		-- (07/11, game feel) Engaged in an exchange up close, the chest stays
+		-- on the opponent (Combat.engaged): the body no longer swings back to
+		-- the lens between two blows, and it faces a blow coming at it.
 		a.hum.AutoRotate=false
-		self:turnToward(a,a.look,dt,1080)
+		if Combat.engaged(self,a) then self:turnToward(a,a.target.root.Position-a.root.Position,dt,Config.Facing.Neutral)
+		else self:turnToward(a,a.look,dt,1080) end
 	elseif a.playerInput and not a.locked and not a.look and a.state=="Neutral" and not a.airborne and a.target
 		and (not a.move or Vector3.new(a.move.X,0,a.move.Z).Magnitude&lt;.3)
 		and (a.target.root.Position-a.root.Position).Magnitude&lt;Config.SoftLock.Face then
@@ -14225,7 +14280,9 @@ function Combat:updateActor(a,dt)
   -- locked on, a strike starting within SoftLock.Reach turns to him, even
   -- from behind, over its startup.
   if not a.locked and a.state=="Startup" and attack.softDir then
-   self:turnToward(a,attack.softDir,dt,Config.SoftLock.Rate)
+   -- (07/11, game feel: blows out at 50-86 deg off the body they hit) the
+   -- turn is done by the time the blow comes out.
+   self:turnToward(a,attack.softDir,dt,Combat.finishTurn(a,attack.softDir,now,dt,Config.SoftLock.Rate))
   end
   if flat.Magnitude&gt;2 and flat.Magnitude&lt;(if a.state=="Startup" and a.locked then 11 else 9) and attack.name~="WallDive" and not (attack.softDir and a.state=="Startup") then
    local tangent=Vector3.new(-flat.Z,0,flat.X).Unit
@@ -14253,7 +14310,11 @@ function Combat:updateActor(a,dt)
    local look=Vector3.new(a.root.CFrame.LookVector.X,0,a.root.CFrame.LookVector.Z)
    local behind=not attack.aim and look.Magnitude&gt;.01 and look.Unit:Dot(flat.Unit)&lt;math.cos(math.rad(115))
    -- (A strike pushed at another body, a clone at his side, turns to it.)
-   local turn=if spec.orbit or spec.angle then 1080 elseif attack.aim then 900 elseif a.state=="Startup" then Config.Facing.Startup else Config.Facing.Active
+   -- (07/11, game feel) A free player's strike faces him by its first
+   -- active frame (Combat.finishTurn); the lock keeps its bounded turn.
+   local turn=if spec.orbit or spec.angle then 1080 elseif attack.aim then 900
+    elseif a.state=="Startup" and not a.locked and a.playerInput then Combat.finishTurn(a,flat,now,dt,Config.Facing.Startup)
+    elseif a.state=="Startup" then Config.Facing.Startup else Config.Facing.Active
    if not behind then self:turnToward(a,flat,dt,turn*(a.def.StrikeTurnScale or 1)) end
   end
  end
