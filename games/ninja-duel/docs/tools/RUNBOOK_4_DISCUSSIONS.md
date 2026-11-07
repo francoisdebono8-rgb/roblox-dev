@@ -85,6 +85,25 @@ Le 07/11, cette règle appliquée aux anciens tournages a libéré 12,9 Go
 (32 rushes `.mov`, 347 exports intermédiaires, etc.) : voir
 [MAC_CLEANUP_RESULT](../reports/mac-local-2026-11-07/MAC_CLEANUP_RESULT.md).
 
+## 3 quater. DEV et ANIMATEUR : qui touche quoi (07/11, mission « game feel »)
+
+Les deux discussions travaillent sur le combat en même temps. Pour ne jamais modifier
+le même fichier chacune de son côté :
+
+| Domaine | Propriétaire | Fichiers |
+|---|---|---|
+| Moteur du combat : orientation, distances, timing des coups, contacts, réactions, états, combos, IA | **DEV** | `src/Server/*` (Combat, Brawler, Motor, BanglaCombat, Bodies, Legion, Hounds, Copy, Interactions, AI…), `src/Shared/Config.luau`, `Shared/Attacks.luau`, `Shared/Fighters.luau` (valeurs de combat : startup, active, recovery, portée, recul) |
+| Rendu des corps, caméra, prédiction | **DEV** | `src/Client/Camera.luau`, `Presentation.luau`, `BodyViews.luau`, `VelmoraMotionEngine.luau` (le moteur qui pose les clips), `Input.luau` |
+| Poses, clips, transitions corporelles, mouvements de jutsu | **ANIMATEUR** | `src/Client/AuthoredClips*.luau`, `AuthoredJutsu*.luau`, `AuthoredMotion.luau`, `~/Documents/NinjaDuel/BLENDER`, `motion-lab/` |
+| Effets visuels des jutsu | **ANIMATEUR** | `src/Client/*FX.luau` (ChakraFX, LeeFX, UltimateFX, ElementFX…), `assets/` des effets |
+
+Règles :
+- **Le timing appartient au DEV.** Un clip s'aligne sur la mise en garde, la phase active et la récupération de `Shared/Attacks`. Si l'ANIMATEUR a besoin d'un autre timing, il le demande au DEV (issue étiquetée `besoin-dev`) au lieu de changer les chiffres.
+- **Le moteur de pose appartient au DEV.** Si l'ANIMATEUR a besoin d'une fonction dans `VelmoraMotionEngine`, il ouvre une issue ou une PR ne contenant que cette fonction, que le DEV relit.
+- **Le DEV demande des poses par issue** (étiquette `besoin-animateur`). Il cite le défaut vu dans Studio, l'heure, le build et le coup concerné. La liste du 07/11 : [audit du combat](../reports/feel-audit-2026-11-07/AUDIT.md#besoins-pour-lanimateur-zones--runbook--3-quater).
+- **L'intégration finale passe par le DEV.** Une PR de l'ANIMATEUR est fusionnée par le DEV après la suite headless et un passage dans `ND-DEV`.
+- **Studio : une discussion par place.** Pendant qu'une discussion joue une place, aucune autre ne lance de duel dedans. Pour mesurer, faire une copie dans `LAB/repro/` et ouvrir cette copie. Le 07/11, deux sessions ont piloté `ND-DEV` en même temps et les duels de l'une ont relancé ceux de l'autre.
+
 ## 4. Remonter un bug
 
 Une ligne, dans l'issue ou le message au DEV : date et heure, place
@@ -110,6 +129,9 @@ Tu es la discussion DEV de Ninja Duel (repo francoisdebono8-rgb/roblox-dev).
 9. Mets à jour CURRENT_STATE / MASTER_BACKLOG (fait prouvé, ID) à chaque lot.
 10. Ton travail n'est disponible pour les autres qu'une fois fusionné dans la référence, suite verte
     et vu dans Studio. Ne pars jamais de la branche d'une autre discussion non intégrée.
+11. Poses, clips et *FX sont à l'ANIMATEUR (§ 3 quater) : un besoin = une issue « besoin-animateur ».
+    Tu relis et fusionnes ses PR (suite + ND-DEV). Pour mesurer dans Studio, travaille dans une copie
+    LAB/repro/, jamais dans une place qu'une autre discussion joue.
 ```
 
 ### CM (clips)
@@ -140,6 +162,10 @@ Tu es la discussion ANIMATEUR (animation/VFX) de Ninja Duel.
 5. Exporte les JSON/FBX utiles dans Git avec la PR (le Mac n'est pas une sauvegarde).
 6. Vérifie le résultat dans ND-DEV après actualiser_places.sh, jamais dans une vieille place.
 7. claude/vfx-redesign n'est pas intégrée : son intégration passe par une revue ciblée (vfx2/vfx3).
+8. Tes fichiers : clips, poses, jutsu animés, *FX (§ 3 quater). Le moteur (Server/*, Config, Attacks,
+   Camera, Presentation, VelmoraMotionEngine) est au DEV : demande par issue « besoin-dev ».
+9. Les demandes du DEV arrivent en issues « besoin-animateur » ; commence par la liste de
+   docs/reports/feel-audit-2026-11-07/AUDIT.md.
 ```
 
 ### OUTILLEUR

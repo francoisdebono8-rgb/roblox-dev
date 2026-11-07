@@ -1496,7 +1496,7 @@ function Brawler.hit(c,a,p)
 	end
   -- Grab has no donor damage action; donor contact volume still validates it.
   if p.name=="Grab" then
-   if not c:targetValid(a,b,spec.range,.05) then return false end
+   if not c:targetValid(a,b,spec.range,Config.Contact.Facing) then return false end
    local donor=p.donor
    donor.hitbox.CFrame=a.root.CFrame*CFrame.new(0,0,-2)
    local params=OverlapParams.new();params.FilterType=Enum.RaycastFilterType.Include;params.FilterDescendantsInstances={b.model}
@@ -1621,6 +1621,8 @@ function Brawler.hit(c,a,p)
  end
  Brawler.event(c,a,"Hit");return true
 end
+-- Degrees/s a held body turns to its grabber (07/11, game feel).
+Brawler.GRAB_TURN=900
 function Brawler.step(c,a,dt)
  if a.buffered and c.now>a.buffered.expires then a.buffered=nil end
  if a.grabVictim then
@@ -1630,7 +1632,17 @@ function Brawler.step(c,a,dt)
    local pos=a.root.Position+a.root.CFrame.LookVector*2.6
    local delta=pos-b.root.Position
    local grip=b.root.Position+(if delta.Magnitude>.001 then delta.Unit*math.min(delta.Magnitude,26*dt) else Vector3.zero)
-   b.root.CFrame=CFrame.lookAt(grip,a.root.Position);b.root.AssemblyLinearVelocity=Vector3.zero;b.hum:Move(Vector3.zero)
+   -- (07/11, game feel: a body grabbed from behind spun 179 deg in one
+   -- frame) the held body is hauled round to the grabber over ~0.2 s.
+   local want=a.root.Position-grip;want=Vector3.new(want.X,0,want.Z)
+   local look=Vector3.new(b.root.CFrame.LookVector.X,0,b.root.CFrame.LookVector.Z)
+   if want.Magnitude>.01 and look.Magnitude>.01 then
+    want=want.Unit;look=look.Unit
+    local angle=math.atan2(look:Cross(want).Y,look:Dot(want))
+    local step=math.clamp(angle,-math.rad(Brawler.GRAB_TURN)*dt,math.rad(Brawler.GRAB_TURN)*dt)
+    look=CFrame.fromAxisAngle(Vector3.yAxis,step):VectorToWorldSpace(look)
+   else look=if want.Magnitude>.01 then want.Unit else b.root.CFrame.LookVector end
+   b.root.CFrame=CFrame.lookAt(grip,grip+look);b.root.AssemblyLinearVelocity=Vector3.zero;b.hum:Move(Vector3.zero)
   end
  end
  if a.reaction then

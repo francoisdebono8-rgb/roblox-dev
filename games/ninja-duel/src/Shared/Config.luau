@@ -107,6 +107,18 @@ return {
 	-- (900: the startup's bounded turn, CombatFeel; standing near him the free
 	-- body already faces him, Combat.updateActor)
 	SoftLock = {Reach = 13, Rate = 900, Face = 12},
+	-- (07/11, mission game feel: Studio audit, free lens, Minato and Sasuke
+	-- landing blows while facing 45-86 deg away from the body they hit; between
+	-- the blows of a string the body swung back to the lens) Engaged: within
+	-- SoftLock.Face of the opponent, during an exchange (Hold s after one's
+	-- own strike or reaction, or while the opponent winds up a blow), the free
+	-- body keeps its chest on him instead of the lens. Turn: a soft-locked
+	-- strike's turn finishes inside its startup (at most Turn deg/s).
+	Engaged = {Hold = 0.8, Turn = 1800},
+	-- (07/11, same audit) A blow lands on what is in front of it: the brawl
+	-- contact cone is +-acos(Contact.Facing) around the striker's facing (was
+	-- +-87 deg: a fist going forward knocked down a body beside it).
+	Contact = {Facing = 0.5},
 	-- (DEC-032 §3) Hand seals: the weave stays open Open s for the first seal,
 	-- then Gap s between seals.
 	Seals = {Open = 1.4, Gap = 0.9},
