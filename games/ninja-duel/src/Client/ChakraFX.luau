@@ -616,10 +616,17 @@ local function dragonRun(fx,impact,folder)
 	-- head is flame (a running emitter, an orange light), the wire behind it
 	-- red-hot, cooling to ash.
 	local head=piece(holder,"Head",Vector3.one*.2,CFrame.new(from),FLAME,1)
-	K.new("ParticleEmitter",{Texture=K.TEX.fire,Rate=140,Lifetime=NumberRange.new(.14,.3),Speed=NumberRange.new(1,3),SpreadAngle=Vector2.new(180,180),
-		Color=K.seq({{0,FLAME_HOT},{.45,FLAME},{1,FLAME_END}}),LightEmission=.45,LightInfluence=0,Size=K.num({{0,1.5},{1,.4}}),
+	K.new("ParticleEmitter",{Texture=K.TEX.fire,Rate=200,Lifetime=NumberRange.new(.16,.34),Speed=NumberRange.new(1,3),SpreadAngle=Vector2.new(180,180),
+		-- (07/11, Studio, daylight: the head faded through dark brown and read as
+		-- smoke) it stays flame-coloured and fades out instead.
+		Color=K.seq({{0,FLAME_HOT},{.6,FLAME},{1,FLAME}}),LightEmission=.8,LightInfluence=0,Size=K.num({{0,2.4},{1,.5}}),
 		Transparency=K.num({{0,.1},{1,1}}),RotSpeed=NumberRange.new(-120,120),Rotation=NumberRange.new(0,360)},head)
-	K.new("PointLight",{Color=FLAME,Brightness=2.4,Range=9,Shadows=false},head)
+	-- (07/11, Studio, mid-run: the front read as dark smoke, the head was lost
+	-- in its own trail) a hot core at the front, the eye goes to it.
+	K.new("ParticleEmitter",{Texture=K.TEX.glow,Rate=70,Lifetime=NumberRange.new(.08,.14),Speed=NumberRange.new(0,.5),
+		Color=ColorSequence.new(FLAME_HOT,FLAME),LightEmission=1,LightInfluence=0,Size=K.num({{0,1.8},{1,1.1}}),
+		Transparency=K.num({{0,.15},{1,.8}})},head)
+	K.new("PointLight",{Color=FLAME,Brightness=3,Range=12,Shadows=false},head)
 	local burnt={}
 	for n=1,SEGMENTS do
 		local b=piece(holder,"Burnt",Vector3.new(.09,.09,.05),CFrame.new(from),WIRE_HOT,1)
@@ -649,7 +656,7 @@ local function dragonRun(fx,impact,folder)
 			while shed<k do
 				local p=alongLine(points,shed)
 				K.burst(fx.folder,p,{Texture=K.TEX.fire,Lifetime=NumberRange.new(.25,.45),Speed=NumberRange.new(1,3),SpreadAngle=Vector2.new(180,180),
-					Acceleration=Vector3.new(0,6,0),Color=K.seq({{0,FLAME_HOT},{.4,FLAME},{1,FLAME_END}}),LightEmission=.35,LightInfluence=0,
+					Acceleration=Vector3.new(0,6,0),Color=K.seq({{0,FLAME_HOT},{.5,FLAME},{1,FLAME_END}}),LightEmission=.6,LightInfluence=0,
 					Size=K.num({{0,1.1},{1,.3}}),Transparency=K.num({{0,.1},{1,1}})},3)
 				shed+=1/math.max(4,math.floor(length/1.6))
 			end

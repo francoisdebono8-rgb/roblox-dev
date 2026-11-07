@@ -59,7 +59,9 @@ local Fighters = {
 		AttackProfile = {
 			Light1={startup=.96,recovery=.9,travel=.92,range=6.6},Light2={startup=.98,recovery=.88,travel=.9,range=7,chainTool=true,kind="palm"},
 			Light3={startup=1.02,recovery=1.0,travel=.86,impulseZ=60,kind="kick"},Heavy={startup=.98,recovery=1.02,travel=.9},
-			Launcher={startup=1.0,travel=.86,impulseY=53,impulseZ=20},DashAttack={startup=.95,travel=.92},
+			-- (07/11, Studio + gate: the body flew off at ~23 studs/s and the E chase,
+			-- ending where it was, came up 5 studs short: both air strikes missed)
+			Launcher={startup=1.0,travel=.86,impulseY=53,impulseZ=10},DashAttack={startup=.95,travel=.92},
 			Air1={startup=.98,travel=.9},Air2={startup=1.0,travel=.88},Slam={startup=1.0,recovery=1.0},
 		},
 		Skin = { 197, 164, 143 }, Hair = { 30, 31, 43 }, Outfit = { 69, 49, 66 },

@@ -117,9 +117,13 @@ test("Rasengan into Chidori: both thrown back, the clash contact names it",funct
  local health={a.health,b.health}
  assert(not Interactions.jutsuClash(c,a,b,{rasengan=true},{state="FireBloom"}),"a Rasengan clashed with a plain blow")
  assert(Interactions.jutsuClash(c,a,b,{rasengan=true},{state="Chidori"}),"no clash")
+ -- (07/11) the grind first: both held, the two jutsu pressing; then the burst.
+ assert(impacts(c,"jutsuclash")==1 and (a.hitstopUntil or 0)>c.now and (b.hitstopUntil or 0)>c.now,"no grind")
+ assert(a.hop==nil and b.hop==nil,"thrown back before the grind")
+ H.step(c,Interactions.CLASH.Grind+.02)
  assert(a.hop and b.hop and a.hop.remaining>=10,"the bodies were not thrown back")
  assert(a.health<health[1] and b.health<health[2],"the clash cost nothing")
- assert(impacts(c,"jutsuclash")==1)
+ assert(impacts(c,"jutsuclash")==2,"no burst after the grind")
 end)
 
 test("client: steam, puddle, current, melt and the jutsu clash draw without error",function()

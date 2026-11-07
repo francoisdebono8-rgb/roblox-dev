@@ -88,6 +88,8 @@ function Sight.viewUnreadable(actor)
 end
 function Sight.viewChakraSight(actor)
 	if not actor or (actor.health or 1)<=0 then return false end
+	-- (07/11) the eye that saw through a genjutsu stays open a moment
+	if actor.sight==true and Fighters[actor.fighterId or ""] and Fighters[actor.fighterId].Byakugan then return true end
 	local family=actor.family
 	return Sight.chakraSight(actor.fighterId,family and family.buff,(actor.awaken or 0)>0)
 end

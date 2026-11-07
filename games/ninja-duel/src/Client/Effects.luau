@@ -801,9 +801,20 @@ function FX:mirageCue(impact,folder)
 		sound(anchorPart(self.folder,at),SOUND.hit,.4,.7)
 		self:cheer(.8)
 	elseif phase=="seen" then
+		-- (07/11) the image forms and shatters before the white eye
 		local victim=find(folder,impact.victim)
 		local head=victim and victim:FindFirstChild("Head")
-		if head then flash(self.folder,head.Position,HYUGA,.4,2.4,.2,.2) end
+		if head then flash(self.folder,head.Position,HYUGA,.6,3.4,.25,.2) end
+		for _=1,10 do
+			local dir=Vector3.new(math.random()-.5,math.random()*.8,math.random()-.5)
+			dir=if dir.Magnitude>.01 then dir.Unit else Vector3.yAxis
+			local shard=block(self.folder,Vector3.new(.3,.5,.06),CFrame.lookAt(at,at+dir)*CFrame.new(0,(math.random()-.5)*3,0),SHARINGAN,Enum.Material.Neon)
+			shard.Transparency=.35
+			tween(shard,.45,{CFrame=shard.CFrame+dir*(2+math.random()*3),Transparency=1,Size=Vector3.new(.05,.2,.02)})
+			Debris:AddItem(shard,.5)
+		end
+		smokePuff(self.folder,at,Color3.fromRGB(60,24,30),8,1.3)
+		sound(anchorPart(self.folder,at),SOUND.whoosh,.3,.7)
 	elseif phase=="touch" or phase=="break" then
 		smokePuff(self.folder,at,Color3.fromRGB(70,40,46),6,1.2)
 	else

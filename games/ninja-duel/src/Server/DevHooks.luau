@@ -277,7 +277,11 @@ function DevHooks.install(matches)
 			local victim=if arg1=="human" then s.human else s.bot
 			local by=if arg1=="human" then s.bot else s.human
 			victim.invulnerableUntil=0;victim.rotationUntil=0;victim.readUntil=0;victim.guardHeld=false;victim.comboHits=0
-			c:damage(by,victim,victim.health+50,false,false)
+			-- (07/11, Studio: the gate's "reset" failed for every fighter) Combat
+			-- scales damage (Config.DamageScale .6): health+50 left a 400 HP bot
+			-- standing. One point left, then the blow.
+			victim.health=1;victim.hum.Health=1
+			c:damage(by,victim,50,false,false)
 			return if s.finishing then "KO" else s.phase
 		elseif op=="rematch" then
 			s.lastLifecycle=-10

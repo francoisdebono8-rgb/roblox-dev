@@ -268,13 +268,18 @@ BUILD.Fire=function(a,model,root,color)
 end
 BUILD.Wind=function(a,model,root,color)
 	-- rings of air climbing the body from the feet, a spiral spinning under it
+	-- (07/11, Studio: Naruto loaded, seen from behind: no ring at all. A low
+	-- Rate is cut down by the graphics quality, to nothing here; pale mint
+	-- added onto bright sand added nothing either) the rings are emitted by
+	-- hand (TICK.Wind), a deeper teal lit by the scene.
+	local deep=color:Lerp(Color3.fromRGB(30,150,130),.45)
 	a.rise=add(a.emitters,a.at,{Name="Rise",Texture=K.TEX.halo,Orientation=Enum.ParticleOrientation.VelocityPerpendicular,
-		EmissionDirection=Enum.NormalId.Top,Rate=4.5,Lifetime=NumberRange.new(.55,.7),Speed=NumberRange.new(5,6.5),SpreadAngle=Vector2.new(0,0),
-		Color=K.seq({{0,CORE},{1,color}}),LightEmission=.5,Size=K.num({{0,2.4},{1,3.4}}),Transparency=K.num({{0,1},{.15,.6},{.7,.72},{1,1}}),
+		EmissionDirection=Enum.NormalId.Top,Rate=0,Lifetime=NumberRange.new(.55,.7),Speed=NumberRange.new(5,6.5),SpreadAngle=Vector2.new(0,0),
+		Color=K.seq({{0,color},{1,deep}}),LightEmission=.15,LightInfluence=.4,Size=K.num({{0,2.4},{1,3.4}}),Transparency=K.num({{0,1},{.15,.35},{.7,.5},{1,1}}),
 		Rotation=NumberRange.new(0,360),RotSpeed=NumberRange.new(120,260),LockedToPart=true})
-	add(a.emitters,a.at,{Name="Spiral",Texture=K.TEX.swirl,Orientation=Enum.ParticleOrientation.VelocityPerpendicular,
-		EmissionDirection=Enum.NormalId.Top,Rate=5,Lifetime=NumberRange.new(.3,.4),Speed=NumberRange.new(.4,.6),Color=ColorSequence.new(CORE,color),
-		LightEmission=.4,Size=K.num({{0,2.6},{1,4.2}}),Transparency=K.num({{0,.6},{1,1}}),Rotation=NumberRange.new(0,360),
+	a.spiral=add(a.emitters,a.at,{Name="Spiral",Texture=K.TEX.swirl,Orientation=Enum.ParticleOrientation.VelocityPerpendicular,
+		EmissionDirection=Enum.NormalId.Top,Rate=0,Lifetime=NumberRange.new(.3,.4),Speed=NumberRange.new(.4,.6),Color=ColorSequence.new(color,deep),
+		LightEmission=.15,LightInfluence=.4,Size=K.num({{0,2.6},{1,4.2}}),Transparency=K.num({{0,.38},{1,1}}),Rotation=NumberRange.new(0,360),
 		RotSpeed=NumberRange.new(-900,-700),LockedToPart=true})
 end
 -- Sand (and earth): matte, lit by the scene, never glowing.
@@ -302,7 +307,8 @@ end
 BUILD.Sand=dusty
 BUILD.Earth=dusty
 BUILD.GentleFist=function(a,model,root,color)
-	a.rise=add(a.emitters,a.at,{Name="Rise",Texture=K.TEX.glow,Rate=6,Lifetime=NumberRange.new(.5,.8),Speed=NumberRange.new(1,2),
+	-- (07/11: a Rate of 6 is cut to nothing at low graphics quality, see Wind)
+	a.rise=add(a.emitters,a.at,{Name="Rise",Texture=K.TEX.glow,Rate=16,Lifetime=NumberRange.new(.5,.8),Speed=NumberRange.new(1,2),
 		SpreadAngle=Vector2.new(30,30),EmissionDirection=Enum.NormalId.Top,Color=K.seq({{0,CORE},{1,color}}),LightEmission=1,
 		Size=K.num({{0,.6},{1,.1}}),Transparency=K.num({{0,.55},{1,1}})})
 	local torso=model:FindFirstChild("UpperTorso")
@@ -340,10 +346,12 @@ BUILD.GentleFist=function(a,model,root,color)
 end
 BUILD.Strength=function(a,model,root,color)
 	-- no chakra glow: steam off a straining body
-	a.rise=add(a.emitters,a.at,{Name="Rise",Texture=K.TEX.smoke,Rate=9,Lifetime=NumberRange.new(.6,1),Speed=NumberRange.new(2,4),
+	-- (07/11, Studio: Lee loaded looked exactly like Lee unloaded; the steam
+	-- at .84 vanished on the sand) thicker steam, bigger drops, harder stamps.
+	a.rise=add(a.emitters,a.at,{Name="Rise",Texture=K.TEX.smoke,Rate=18,Lifetime=NumberRange.new(.6,1),Speed=NumberRange.new(2.5,4.5),
 		SpreadAngle=Vector2.new(25,25),EmissionDirection=Enum.NormalId.Top,Acceleration=Vector3.new(0,2,0),Drag=1,
-		Color=ColorSequence.new(Color3.fromRGB(255,246,232)),LightEmission=.1,LightInfluence=.6,Size=K.num({{0,1.2},{1,2.8}}),
-		Transparency=K.num({{0,1},{.25,.84},{.6,.86},{1,1}}),Rotation=NumberRange.new(0,360),RotSpeed=NumberRange.new(-40,40)})
+		Color=ColorSequence.new(Color3.fromRGB(255,250,244)),LightEmission=.25,LightInfluence=.4,Size=K.num({{0,1.4},{1,3.2}}),
+		Transparency=K.num({{0,1},{.2,.48},{.6,.58},{1,1}}),Rotation=NumberRange.new(0,360),RotSpeed=NumberRange.new(-40,40)})
 	-- sweat flicked off the head
 	local head=model:FindFirstChild("Head")
 	local sweat=a.at
@@ -352,15 +360,15 @@ BUILD.Strength=function(a,model,root,color)
 		table.insert(a.extras,sweat)
 	end
 	add(a.emitters,sweat,{Name="Sweat",Texture=K.TEX.droplets,FlipbookLayout=Enum.ParticleFlipbookLayout.Grid4x4,
-		FlipbookMode=Enum.ParticleFlipbookMode.OneShot,Rate=7,Lifetime=NumberRange.new(.3,.5),Speed=NumberRange.new(5,8),
+		FlipbookMode=Enum.ParticleFlipbookMode.OneShot,Rate=12,Lifetime=NumberRange.new(.3,.5),Speed=NumberRange.new(5,8),
 		SpreadAngle=Vector2.new(70,70),EmissionDirection=Enum.NormalId.Top,Acceleration=Vector3.new(0,-45,0),
-		Color=ColorSequence.new(Color3.fromRGB(220,236,255)),LightEmission=.25,Size=K.num({{0,.4},{1,.3}}),Transparency=K.num({{0,.1},{.7,.3},{1,1}})})
+		Color=ColorSequence.new(Color3.fromRGB(220,236,255)),LightEmission=.35,Size=K.num({{0,.6},{1,.45}}),Transparency=K.num({{0,0},{.7,.2},{1,1}})})
 	-- the feet stamping the floor (pulsed in TICK, with a low thump)
 	local feet=K.new("Attachment",{Name="ChakraFlowFeet",Position=Vector3.new(0,-2.6,0)},root)
 	table.insert(a.extras,feet)
 	a.stomp=particles(feet,{Name="Stomp",Texture=K.TEX.smoke,Lifetime=NumberRange.new(.35,.55),Speed=NumberRange.new(6,10),
 		SpreadAngle=Vector2.new(85,85),EmissionDirection=Enum.NormalId.Top,Acceleration=Vector3.new(0,2,0),Drag=5,Color=ColorSequence.new(DUST),
-		LightEmission=0,LightInfluence=1,Size=K.num({{0,1},{1,2}}),Transparency=K.num({{0,.45},{1,1}}),Rotation=NumberRange.new(0,360)})
+		LightEmission=0,LightInfluence=1,Size=K.num({{0,1.3},{1,2.6}}),Transparency=K.num({{0,.25},{1,1}}),Rotation=NumberRange.new(0,360)})
 end
 BUILD.Chakra=function(a,model,root,color)
 	-- clean, smooth wisps (no flame texture) and a glow hugging the body
@@ -390,6 +398,13 @@ local function aura(st,model,nature)
 	local a={nature=nature,look=look,color=color,root=root,emitters={},both={},beams={},extras={}}
 	a.at=K.new("Attachment",{Name="ChakraFlowAura",Position=AURA_AT[look] or Vector3.new(0,-.4,0)},root)
 	a.light=K.new("PointLight",{Color=color,Brightness=0,Range=12,Shadows=false},root)
+	-- (07/11, Studio: loaded and standing, the body looked the same: a spark
+	-- now and then) The loaded body is outlined in its nature's colour.
+	-- (Studio: Neji's pale blue on his white clothes did not show) a deeper rim
+	local rimColor=if look=="GentleFist" then Color3.fromRGB(96,140,255) else color
+	a.rim=K.new("Highlight",{Name="ChakraFlowRim",Adornee=model,FillColor=rimColor,FillTransparency=1,OutlineColor=rimColor,OutlineTransparency=1,
+		DepthMode=Enum.HighlightDepthMode.Occluded,Enabled=false},model)
+	table.insert(a.extras,a.rim)
 	BUILD[look](a,model,root,color)
 	st.aura=a
 	return a
@@ -406,10 +421,13 @@ TICK.Lightning=function(fx,a,model,now,dt,on,keep)
 	a.light.Brightness=(if math.random()<.22 then 2.6 else .3+math.random()*.7)*(if on then 1 else .6)
 	if not on then return end
 	if now>=(a.nextArc or 0) then
-		a.nextArc=now+.08+math.random()*.08
-		local from=model:FindFirstChild(ARC_FROM[math.random(1,#ARC_FROM)]) or a.root
-		local at=from.Position+scatter()*.5
-		jag(fx,at,at+scatter()*(1.2+math.random()*1.3),if math.random()<.5 then CORE else a.color,.07,.08)
+		-- (07/11) two arcs at a time, oftener: the body crackles while loaded
+		a.nextArc=now+.04+math.random()*.05
+		for _=1,2 do
+			local from=model:FindFirstChild(ARC_FROM[math.random(1,#ARC_FROM)]) or a.root
+			local at=from.Position+scatter()*.5
+			jag(fx,at,at+scatter()*(1.2+math.random()*1.3),if math.random()<.5 then CORE else a.color,.08,.1)
+		end
 	end
 	if now>=(a.nextBuzz or 0) then
 		a.nextBuzz=now+.5+math.random()*.35
@@ -422,6 +440,12 @@ TICK.Fire=function(fx,a,model,now,dt,on,keep)
 end
 TICK.Wind=function(fx,a,model,now,dt,on,keep)
 	ease(a,if on then .55 elseif keep then .3 else 0,dt)
+	if on and now>=(a.nextRing or 0) then
+		a.nextRing=now+.13
+		a.rise:Emit(1)
+		a.ringCount=(a.ringCount or 0)+1
+		if a.spiral and a.ringCount%2==0 then a.spiral:Emit(1) end
+	end
 end
 TICK.Sand=function(fx,a,model,now,dt,on,keep)
 	ease(a,if on then .25 else 0,dt)
@@ -439,8 +463,8 @@ end
 TICK.Strength=function(fx,a,model,now,dt,on,keep)
 	ease(a,0,dt)
 	if on and a.stomp and now>=(a.nextStomp or 0) then
-		a.nextStomp=now+.62
-		a.stomp:Emit(5)
+		a.nextStomp=now+.5
+		a.stomp:Emit(9)
 		play(a.root,{{"heavy",.1,.5}})
 	end
 end
@@ -558,7 +582,9 @@ local function fighter(fx,model,actor,dt)
 	dt=dt or 1/60
 	local st=stateOf(fx,model)
 	local loaded=actor.chakraLoad
-	local strike=(actor.infused and actor.attackName and (actor.state=="Startup" or actor.state=="Active"))==true
+	-- (07/11, Studio: the Chidori Nagashi's current showed for ~0.2 s) the
+	-- follow-through keeps it too.
+	local strike=(actor.infused and actor.attackName and (actor.state=="Startup" or actor.state=="Active" or actor.state=="Recovery"))==true
 	local now=os.clock()
 	if loaded or st.aura then
 		local a=if loaded then aura(st,model,loaded) else st.aura
@@ -567,6 +593,12 @@ local function fighter(fx,model,actor,dt)
 			local keep=on or (strike and actor.infused==a.nature)
 			if on and not a.wasOn then a.nextBuzz=now+.45;a.nextStomp=now+.6;a.nextArc=now end
 			a.wasOn=on
+			if a.rim then
+				-- a soft pulse: the outline breathes, the fill barely tints
+				a.rim.Enabled=keep
+				a.rim.OutlineTransparency=if on then .15+.2*math.sin(now*9) else .55
+				a.rim.FillTransparency=if on then .8+.04*math.sin(now*9) else .92
+			end
 			for _,e in a.emitters do e.Enabled=on end
 			for _,e in a.both do e.Enabled=keep end
 			for _,b in a.beams do b.Enabled=keep end
@@ -673,9 +705,19 @@ local function drawHit(fx,i,look,color)
 	if look=="Lightning" then
 		-- bolts burst out of the contact, and flicker once more
 		for k=1,(if big then 5 else 4) do jag(fx,p,p+scatter()*(1.8+math.random()*1.6),if k%2==1 then CORE else color,.1,.12) end
-		task.delay(.06,function()
-			if not fx.folder.Parent then return end
-			for _=1,2 do jag(fx,p,p+scatter()*(1.4+math.random()*1.2),CORE,.07,.09) end
+		-- (07/11, Studio: the current lasted one flash, .12 s, while the server
+		-- holds the body .2-.45 s longer) it crackles over the body while held.
+		task.spawn(function()
+			local born=os.clock()
+			while os.clock()-born<(if big then .5 else .4) do
+				task.wait(.05)
+				if not fx.folder.Parent then return end
+				-- (Studio: .08 wide arcs were lost on the body) two, thicker
+				for k=1,2 do
+					local from=p+scatter()*(.4+math.random()*.8)
+					jag(fx,from,from+scatter()*(1.4+math.random()*1.4),if k==1 then CORE else color,.13,.1)
+				end
+			end
 		end)
 		K.sparks(fx.folder,p,CORE,if big then 24 else 16,30)
 		K.flash(fx.folder,p,CORE,1,if big then 6 else 4.5,.12,.1)

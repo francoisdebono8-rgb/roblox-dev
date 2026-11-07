@@ -282,7 +282,8 @@ test("wire: Wire Trap binds, chakra + tool runs lightning down it, Dragon Flame 
 	H.step(c,.4)
 	assert(b.reaction=="Bound","the bind ended under the current")
 	assert(c:request(a,slot(a,"FireBloom"),b.root.Position),"Dragon Flame refused after the current")
-	until_(c,.6,function() return b.reaction=="Knockdown" end,"Dragon Flame did not follow the wire")
+	-- (06-07/11) the fire runs the wire first (Chakra.WireRun studs/s), then burns.
+	until_(c,1.1,function() return b.reaction=="Knockdown" end,"Dragon Flame did not follow the wire")
 end)
 
 test("a missed wire stays stretched: binds on contact, carries fire, is cut by wind",function()
@@ -522,7 +523,7 @@ test("the wire is one object: Wire Trap holds the body on a line from the hand, 
 	local current=impactWith(c3,"conduct")
 	assert(current and (current.from-c3.launchPoint(s,"Kunai")).Magnitude<1e-3,"the current did not leave the hand")
 	assert(c3:request(s,slot(s,"FireBloom"),m.root.Position),"Dragon Flame refused")
-	until_(c3,.6,function() return impactWith(c3,"dragonflame")~=nil end,"the Dragon Flame did not run the wire")
+	until_(c3,1.1,function() return impactWith(c3,"dragonflame")~=nil end,"the Dragon Flame did not run the wire")
 	local flame=impactWith(c3,"dragonflame")
 	assert(flame.style=="fire" and flame.victim==m.id and (flame.to-m.root.Position).Magnitude<3,"the flame did not end on the body")
 	H.step(c3,.02)
@@ -551,8 +552,10 @@ test("a stretched wire that catches a body keeps its stake and its blade; the cu
 	assert(held.charged==nil and held.infusion==nil,"the wire stays charged after the current passed")
 	-- Fire: Dragon Flame runs from the stake to the body; the wire burns away.
 	assert(c:request(a,slot(a,"FireBloom"),b.root.Position),"Dragon Flame refused")
-	until_(c,.6,function() return impactWith(c,"dragonflame")~=nil end,"the Dragon Flame did not run the wire")
-	assert((impactWith(c,"dragonflame").from-stake).Magnitude<1e-3,"the flame did not start at the stake")
+	until_(c,1.1,function() return impactWith(c,"dragonflame")~=nil end,"the Dragon Flame did not run the wire")
+	-- (06/11) the run is its own contact ("dragonrun", from the stake); the
+	-- "dragonflame" contact is the blast where it arrives.
+	assert(impactWith(c,"dragonrun") and (impactWith(c,"dragonrun").from-stake).Magnitude<1e-3,"the flame did not start at the stake")
 	H.step(c,.02)
 	assert(#mine(c,a,"wirehold")==0,"the wire survived the flame")
 end)

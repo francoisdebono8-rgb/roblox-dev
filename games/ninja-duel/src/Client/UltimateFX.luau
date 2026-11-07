@@ -783,6 +783,69 @@ function UltimateFX.trigrams(fx,center,look,time)
 	end
 	Debris:AddItem(disc,time)
 end
+-- (07/11, Studio: the clash was a white ring on the floor, over at once)
+-- Rasengan into Chidori, the grind: for `duration` seconds the spinning blue
+-- sphere and the crackling lightning press into each other between the two
+-- held bodies, sparks thrown off where they meet; the burst follows (the
+-- server's second "jutsuclash" contact).
+local RASEN=rgb(120,190,255)
+local RASEN_CORE=rgb(226,244,255)
+local VOLT=rgb(176,214,255)
+local function grind(fx,impact,folder)
+	local mid=impact.position
+	local line=impact.direction or Vector3.zAxis
+	line=Vector3.new(line.X,0,line.Z)
+	line=if line.Magnitude>.05 then line.Unit else Vector3.zAxis
+	local life=math.max(.15,impact.duration or .4)
+	-- the Rasengan side: toward its holder (owner or victim of the contact)
+	local towardRasen=if impact.rasengan==impact.victim then line else -line
+	local holder=K.new("Model",{Name="JutsuGrind"},fx.folder)
+	local sphere=K.block(holder,Vector3.one*1.9,CFrame.new(mid+towardRasen*1),RASEN,Enum.Material.Neon)
+	sphere.Shape=Enum.PartType.Ball;sphere.Transparency=.35
+	local core=K.block(holder,Vector3.one*1.1,CFrame.new(mid+towardRasen*1),RASEN_CORE,Enum.Material.Neon)
+	core.Shape=Enum.PartType.Ball;core.Transparency=.1
+	local rings={}
+	for k=1,2 do
+		local ring=K.block(holder,Vector3.new(.08,2.6,2.6),CFrame.new(mid+towardRasen*1),RASEN_CORE,Enum.Material.Neon)
+		ring.Shape=Enum.PartType.Cylinder;ring.Transparency=.45;rings[k]=ring
+	end
+	local arcs=K.new("Model",{Name="Volt"},holder)
+	local born=os.clock()
+	local rng=Random.new()
+	K.sound(K.anchorPart(fx.folder,mid),K.SOUND.electric,.55,1.1)
+	K.sound(K.anchorPart(fx.folder,mid),K.SOUND.whoosh,.4,.6)
+	task.spawn(function()
+		local nextSpark=0
+		while holder.Parent and os.clock()-born<life do
+			local t=os.clock()-born
+			local swell=1+t/life*.5
+			local at=mid+towardRasen*1
+			sphere.Size=Vector3.one*1.9*swell;core.Size=Vector3.one*1.1*swell
+			sphere.CFrame=CFrame.new(at);core.CFrame=CFrame.new(at)
+			for k,ring in rings do ring.CFrame=CFrame.new(at)*CFrame.Angles(t*24*(if k==1 then 1 else -1),t*9,math.rad(90)*(k-1)) end
+			-- the lightning: jagged arcs out of the other side into the sphere
+			arcs:ClearAllChildren()
+			local from=mid-towardRasen*1.2
+			for _=1,7 do
+				local a=from+Vector3.new(rng:NextNumber(-1,1),rng:NextNumber(-1,1),rng:NextNumber(-1,1))*.9
+				local b=mid+Vector3.new(rng:NextNumber(-.6,.6),rng:NextNumber(-.6,.6),rng:NextNumber(-.6,.6))
+				local last=a
+				for k=1,3 do
+					local q=if k==3 then b else a:Lerp(b,k/3)+Vector3.new(rng:NextNumber(-.3,.3),rng:NextNumber(-.3,.3),rng:NextNumber(-.3,.3))
+					local len=(q-last).Magnitude
+					if len>.03 then K.block(arcs,Vector3.new(.08,.08,len),CFrame.lookAt(last:Lerp(q,.5),q),if rng:NextNumber()<.35 then RASEN_CORE else VOLT,Enum.Material.Neon) end
+					last=q
+				end
+			end
+			if t>=nextSpark then
+				nextSpark=t+.08
+				if K.sparks then K.sparks(fx.folder,mid,RASEN_CORE,6,24) end
+			end
+			task.wait(.03)
+		end
+		if holder.Parent then holder:Destroy() end
+	end)
+end
 local function impact(fx,impact,folder)
 	local style=impact.style
 	local p=impact.position
@@ -978,6 +1041,9 @@ local function impact(fx,impact,folder)
 	elseif style=="sandmelt" then
 		K.flash(fx.folder,p,rgb(255,150,60),.5,3,.18,.3)
 		K.smokePuff(fx.folder,p-Vector3.new(0,1.6,0),rgb(214,176,112),5,1.2)
+		return true
+	elseif style=="jutsuclash" and impact.phase=="grind" then
+		grind(fx,impact,folder)
 		return true
 	elseif style=="jutsuclash" then
 		K.flash(fx.folder,p,rgb(236,246,255),1.5,12,.3,.1)

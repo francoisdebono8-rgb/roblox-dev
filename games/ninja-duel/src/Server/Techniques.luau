@@ -363,6 +363,9 @@ Techniques.MirageCast = {
 		local victim = a.target
 		-- The Byakugan sees chakra, not light: the image has none.
 		if victim.def.Byakugan then
+			-- (07/11, Studio: a flash on his head, nothing else) the eye opens on
+			-- its own for a moment: he sees Itachi's chakra network, no image.
+			victim.sightUntil=math.max(victim.sightUntil or 0,c.now+1.8)
 			c:cue(victim,"BYAKUGAN • SEES THROUGH",1);c:cue(a,"GENJUTSU • SEEN THROUGH",1)
 			c:pushImpact(a.root.Position,"mirage",false,{owner=a.id,fighter=a.fighterId,phase="seen",victim=victim.id})
 			return
@@ -517,7 +520,7 @@ local function dragonFlame(c,a,pending)
 		-- the wire meanwhile (substitution) leaves it burning on nothing.
 		local Chakra=require(script.Parent.ChakraCombat)
 		local from=Chakra.wireStart(c,a)
-		local travel=math.clamp((b.root.Position-from).Magnitude/Chakra.WireRun,.12,.45)
+		local travel=math.clamp((b.root.Position-from).Magnitude/Chakra.WireRun,.25,.65)
 		b.reactionUntil=math.max(b.reactionUntil or 0,c.now+travel+.08)
 		a.wireBurnUntil=c.now+travel
 		Chakra.dragonRun(c,a,b,travel)
@@ -604,7 +607,7 @@ Techniques.Chidori={
 		local serial=a.attackSerial
 		if thrust then
 			c:schedule(c.now+thrust.spec.startup+thrust.spec.active+.02,function()
-				if a.health<=0 or a.attackSerial~=serial or a.hitConfirmed or a.state~="Recovery" then return end
+				if a.health<=0 or a.attackSerial~=serial or a.hitConfirmed or a.state~="Recovery" or (a.clashedAt or -10)>c.now-1 then return end
 				c:cue(a,"CHIDORI • MISSED • OPEN",.8)
 				if a.target and a.target.health>0 then c:cue(a.target,"CHIDORI MISSED • PUNISH",.8) end
 				Brawler.event(c,a,"ChidoriMissed")

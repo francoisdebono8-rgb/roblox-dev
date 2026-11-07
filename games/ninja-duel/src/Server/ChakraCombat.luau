@@ -672,7 +672,7 @@ end
 -- the wire: from his mouth (or the stake the wire is tied to) to the body,
 -- `travel` seconds; the client draws the flame travelling it and the wire
 -- burning behind it. Returns where it starts.
-Chakra.WireRun=60 -- studs/s
+Chakra.WireRun=34 -- studs/s (07/11: at 60 the run was over before the eye found it)
 function Chakra.wireStart(c,a) return wireStart(c,a) end
 function Chakra.dragonRun(c,a,b,travel)
 	local from=wireStart(c,a)

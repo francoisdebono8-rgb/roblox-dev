@@ -31,7 +31,7 @@ Interactions.PUDDLE={Radius=9,Time=6}
 Interactions.SOAK={Time=6}
 Interactions.CONDUCT={Damage=1.5,Stun=.8,Shock=6,ShockStun=.6,Cooldown=1.4}
 Interactions.WET={Speed=.7,Damage=1.3}
-Interactions.CLASH={Push=14,Chip=5}
+Interactions.CLASH={Push=14,Chip=5,Grind=.4}
 
 local FIRE_KINDS={fireball=true,phoenix=true,firebreath=true}
 local function isFire(p)
@@ -194,13 +194,24 @@ function Interactions.jutsuClash(c,a,b,p,q)
 	local line=flat(b.root.Position-a.root.Position)
 	line=if line.Magnitude>.1 then line.Unit else a.root.CFrame.LookVector
 	local tune=Interactions.CLASH
-	c:pushImpact(a.root.Position:Lerp(b.root.Position,.5),"jutsuclash",true,{direction=line,owner=a.id,victim=b.id})
+	-- (07/11, Studio: a white ring on the floor, over at once) The grind: the
+	-- two jutsu press into each other, both bodies held, then they burst.
+	local spinning=if rasengan(p) then a else b
+	c:pushImpact(a.root.Position:Lerp(b.root.Position,.5),"jutsuclash",false,{direction=line,owner=a.id,victim=b.id,phase="grind",duration=tune.Grind,rasengan=spinning.id})
 	for _,x in {a,b} do
-		c:chip(x.target or x,x,tune.Chip)
+		x.hitstopUntil=math.max(x.hitstopUntil or 0,c.now+tune.Grind)
 		c:cue(x,"RASENGAN • CHIDORI • CLASH",1)
 	end
-	a.hop={direction=-line,remaining=tune.Push,speed=44}
-	b.hop={direction=line,remaining=tune.Push,speed=44}
+	c:schedule(c.now+tune.Grind,function()
+		if c.match.phase~="Duel" then return end
+		c:pushImpact(a.root.Position:Lerp(b.root.Position,.5),"jutsuclash",true,{direction=line,owner=a.id,victim=b.id,phase="burst"})
+		for _,x in {a,b} do
+			if x.health>0 then c:chip(x.target or x,x,tune.Chip) end
+		end
+		if c.match.phase~="Duel" then return end
+		a.hop={direction=-line,remaining=tune.Push,speed=44}
+		b.hop={direction=line,remaining=tune.Push,speed=44}
+	end)
 	return true
 end
 
