@@ -262,3 +262,14 @@ Sortie B2 (audit §6) : un joueur seul a un objectif ; deux joueurs se trouvent,
 
 Hors bêta (audit §4–§6, gates L1 / F1) : file « duel rapide » sur tout le jeu (seulement si le test en ligne la montre nécessaire), entonnoir par source, page Roblox et publicité, hub, progression, classé, boutique, nouveaux persos, tournoi entre joueurs ; risque de droits Naruto à trancher avant toute promotion payante. Restent à l'utilisateur : testeurs débutants, vrai téléphone, deux comptes, vidéos des trois premières minutes. Questions ouvertes (lot 5) : format du tournoi rapide ; monnaie dès la bêta ou avec la boutique.
 
+
+## DEC-035 — Une source, quatre places ; le Mac rangé sous `~/Documents/NinjaDuel` (07/11)
+
+Décision utilisateur ([issue #45](https://github.com/francoisdebono8-rgb/roblox-dev/issues/45), complétée le **07/11 à 13 h 25** : « auditer et réorganiser les fichiers Ninja Duel présents sur mon Mac… un espace de travail propre et unique, avec des archives… demande-moi mon accord avant toute suppression définitive »).
+
+- Branche d'intégration : `claude/ninja-duel-2026-10-14` ; branches courtes `work/<rôle>-<sujet>` et PR testées. Les quatre discussions (DEV, CLIPS, ANIMATION/VFX, OUTILLAGE) se transmettent le travail par Git, les fichiers et les issues ([RUNBOOK](../tools/RUNBOOK_4_DISCUSSIONS.md)).
+- GAME, DEV, QA et FILM sont **quatre profils du même commit** (`build.py`, `--debug`, `--qa`, `--capture`), avec le même `runtimeFingerprint`. Plus de place copiée à la main ni de `ND-Test-vNN` : une ancienne version se reconstruit par son commit.
+- Sur le Mac : `~/Documents/NinjaDuel/PLACES/` contient les quatre places actives (`ND-JEU`, `ND-DEV`, `ND-QA`, `ND-FILM`), mises à jour par `_outils/actualiser_places.sh` ; `MEDIA`, `BLENDER`, `LAB`, `ARCHIVES`, `_maintenance` à côté ; anciens dossiers en alias.
+- Réorganiser sans détruire est autorisé ; **supprimer demande l'accord explicite** du propriétaire sur une liste de chemins exacts (DELETED WITH APPROVAL). Publication Roblox : toujours sur son feu vert.
+
+Résultat : [MAC_CLEANUP_RESULT](../reports/mac-local-2026-11-07/MAC_CLEANUP_RESULT.md).

@@ -19,6 +19,8 @@ Comparer Git et checkpoint avant action. Claude reste l’implémenteur principa
 
 Les [archives](docs/archive/README.md) sont des références historiques uniquement. Les guides techniques/recherches aident à localiser un contrat ou une source ; ils ne définissent pas une huitième vérité opérationnelle. Lire seulement ce qui est utile aux IDs traités. Mettre à jour les propriétaires concernés après chaque bloc, sans créer de nouvelle mission/handoff autonome.
 
+Places Studio (GAME, DEV, QA, FILM : quatre profils du même commit), Mac du propriétaire (`~/Documents/NinjaDuel`) et passage du travail entre les quatre discussions : [RUNBOOK](docs/tools/RUNBOOK_4_DISCUSSIONS.md).
+
 Avant chaque nouveau gros bloc, vérifier la boîte de réception SINCE_LAST_CLAUDE et accuser les entrées intégrées selon EXECUTION_RULES. Ne jamais traiter « le dernier fichier ajouté » comme la mission globale.
 
 Pour un lot de personnages, lire DEC-026 puis uniquement les Combat Bibles V1 concernées via [ROSTER_20](docs/characters/ROSTER_20.md). Le roster cible17+3 diffère du runtime courant ; les premières fiches de61eb585 sont remplacées. Les bibles fixent la chorégraphie cible et réservent les systèmes futurs ; elles ne prouvent pas une migration faite ni un PASS Studio et n’interrompent pas le bloc en cours.

@@ -1094,7 +1094,20 @@ Sortie commune : trois Lights/Heavy physiques distincts, branche seulement aprè
 - summary: Traçabilité manifest source commit/date
 - sources: [PROJECT_STRUCTURE](../tools/PROJECT_STRUCTURE.md); [MAINTENANCE_BACKLOG_SOURCE](../archive/tools/MAINTENANCE_BACKLOG_SOURCE.md); [ORCHESTRATION_REFACTOR](../archive/reports/ORCHESTRATION_REFACTOR.md)
 - validation: HEAD, hash artifact, source/timestamp reproductibles, aucun faux native PASS
-- evidence: Hashes/fingerprint déjà présents ; builders LF/UTF-8 et clés POSIX depuis `b085d97` (rebuild Windows identique octet par octet) ; source commit/date non systématiques
+- evidence: Hashes/fingerprint déjà présents ; builders LF/UTF-8 et clés POSIX depuis `b085d97` (rebuild Windows identique octet par octet). 07/11 (OPS-004, PR #46, `9fdc528`) : chaque manifeste porte `sourceCommit` (dernier commit des entrées du build), `headCommit`, `sourceDirty`, `profile`, `runtimeFingerprint` ; rebuild sur le Mac depuis GitHub identique octet par octet au `dist/` de `b64ce82`. Date de build non enregistrée (volontairement : elle casserait la reproductibilité)
+- outcome: PENDING
+
+## OPS-004 — Une source, quatre places, Mac rangé (issue #45)
+
+- status: PARTIAL
+- priority: P0
+- dependencies: OPS-001, OPS-002
+- subsystem: build
+- character: ALL
+- summary: Réparer l'architecture Git/Studio : GAME, DEV/QA et CAPTURE variantes d'un même commit (`runtimeFingerprint`), places du Mac rangées dans un espace unique avec archives, workflow des quatre discussions
+- sources: [issue #45](https://github.com/francoisdebono8-rgb/roblox-dev/issues/45); [DEC-035](DECISIONS.md); [MAC_LOCAL_INVENTORY](../reports/mac-local-2026-11-07/MAC_LOCAL_INVENTORY.md); [MAC_CLEANUP_RESULT](../reports/mac-local-2026-11-07/MAC_CLEANUP_RESULT.md); [RUNBOOK](../tools/RUNBOOK_4_DISCUSSIONS.md)
+- validation: Les 4 profils d'un commit ont le même runtimeFingerprint (test_build_isolation) ; rebuild sur une autre machine identique octet par octet ; ND-DEV et ND-FILM ouvertes et jouées dans Studio avec la ligne d'identité ; inventaire sha1 avant/après sans perte ; suppressions seulement avec accord
+- evidence: 07/11 : PR #46 (`69c3159`) + `9fdc528` (profil `--capture`, outils de la fabrique portés dans tools/capture avec provenance, manifestes), build `b64ce82` ; Mac : 4 716 fichiers sha1 avant/après, 0 perte, 45 places archivées, `PLACES/` reconstruit sur le Mac = `dist/` GitHub (sha256), ND-DEV (duel Minato/Itachi par devcall) et ND-FILM (duel lancé par le canal NDFactory) jouées dans Studio, même RUNTIME `1dfa3dbc4a16` ; fichiers propres au Mac archivés sur `archive/mac-local-2026-11-07` (`23f33f3`). Restent : suppressions en attente d'accord, ND-JEU/ND-QA non ouvertes (QA native NEEDS STUDIO), revue `claude/vfx-redesign`, PR du reste de `claude/ninja-duel-tutorial-v2`, `claude/perception-sharingan` (9 suites en échec), assets IDs/permissions dans le manifeste
 - outcome: PENDING
 
 ## OPS-003 — Mesures performance et continuité
