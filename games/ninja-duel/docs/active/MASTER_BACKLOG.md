@@ -110,6 +110,19 @@ Studio (3 par lot) : **S22** trois légers+lourd à vitesse normale : anticipati
 
 **M7 — Gate du bloc combat, vingt et continuité** (QA-001/005, CHR-EXT-002, AI-001/BAL-001). Commit de preuves/limites final : vraie sélection des20, au moins une séquence continue par fighter (neutral→chaîne→route→air/outils/jutsu→défense→KO/reset), état spécial utilisé et contré, matchups à risque réciproques (puppet/garde, brume/visée, charges/ruée, absorption/projectiles ; anciens clones/vent). Source/hash exacts, manette physique distincte si disponible, résultats humains non inférés des suites. Ne corriger que les régressions de sortie ciblées dans des commits séparés ; rapport/synchronisation avant autre gros bloc DEC-021.
 
+## QA-006 — Batterie native de la place QA remise au niveau du jeu
+
+- status: OPEN
+- priority: P2
+- dependencies: QA-003
+- subsystem: qa
+- character: ALL
+- summary: `Server/NativeQA` (lancée au Play de ND-QA) date du prototype à quatre persos du 10/10 (Velmora, clips Bangla, appariements 4×4) ; 16 de ses 37 cas échouent sur le jeu actuel. La réécrire sur les contrats actuels (ou retirer les cas devenus sans objet, raison écrite) pour qu'un échec y signale à nouveau une régression
+- sources: [CURRENT_STATE 07/11](CURRENT_STATE.md); [RUNBOOK § 2](../tools/RUNBOOK_4_DISCUSSIONS.md)
+- validation: ND-QA au Play : chaque cas PASS ou retiré avec sa raison ; un bug volontaire fait tomber le cas qui le couvre
+- evidence: 07/11 : ND-QA `0e579bf` (après intégration Sharingan) 21 PASS / 16 FAIL ; la même place construite à `2a314ff` (avant) 21 PASS / 16 FAIL, mêmes cas (mur, feinte, fenêtre active, Feu/Vent, quatre appariements, canaux, garde, Read ×2, ancre, IA, manette « Grab », contacts, slam, dépendances Bangla). Dernier résultat connu avant : 29 PASS / 3 FAIL le 10/10
+- outcome: PENDING
+
 ## QA-005 — Contrôles natifs Mac/PC/manette puis périmètre mobile
 
 - status: OPEN
@@ -1107,7 +1120,7 @@ Sortie commune : trois Lights/Heavy physiques distincts, branche seulement aprè
 - summary: Réparer l'architecture Git/Studio : GAME, DEV/QA et CAPTURE variantes d'un même commit (`runtimeFingerprint`), places du Mac rangées dans un espace unique avec archives, workflow des quatre discussions
 - sources: [issue #45](https://github.com/francoisdebono8-rgb/roblox-dev/issues/45); [DEC-035](DECISIONS.md); [MAC_LOCAL_INVENTORY](../reports/mac-local-2026-11-07/MAC_LOCAL_INVENTORY.md); [MAC_CLEANUP_RESULT](../reports/mac-local-2026-11-07/MAC_CLEANUP_RESULT.md); [RUNBOOK](../tools/RUNBOOK_4_DISCUSSIONS.md)
 - validation: Les 4 profils d'un commit ont le même runtimeFingerprint (test_build_isolation) ; rebuild sur une autre machine identique octet par octet ; ND-DEV et ND-FILM ouvertes et jouées dans Studio avec la ligne d'identité ; inventaire sha1 avant/après sans perte ; suppressions seulement avec accord
-- evidence: 07/11 : PR #46 (`69c3159`) + `9fdc528` (profil `--capture`, outils de la fabrique portés dans tools/capture avec provenance, manifestes), build `b64ce82` ; Mac : 4 716 fichiers sha1 avant/après, 0 perte, 45 places archivées, `PLACES/` reconstruit sur le Mac = `dist/` GitHub (sha256), ND-DEV (duel Minato/Itachi par devcall) et ND-FILM (duel lancé par le canal NDFactory) jouées dans Studio, même RUNTIME `1dfa3dbc4a16` ; fichiers propres au Mac archivés sur `archive/mac-local-2026-11-07` (`23f33f3`). Restent : suppressions en attente d'accord, ND-JEU/ND-QA non ouvertes (QA native NEEDS STUDIO), revue `claude/vfx-redesign`, PR du reste de `claude/ninja-duel-tutorial-v2`, `claude/perception-sharingan` (9 suites en échec), assets IDs/permissions dans le manifeste
+- evidence: 07/11 : PR #46 (`69c3159`) + `9fdc528` (profil `--capture`, outils de la fabrique portés dans tools/capture avec provenance, manifestes), build `b64ce82` ; Mac : 4 716 fichiers sha1 avant/après, 0 perte, 45 places archivées, `PLACES/` reconstruit sur le Mac = `dist/` GitHub (sha256), ND-DEV (duel Minato/Itachi par devcall) et ND-FILM (duel lancé par le canal NDFactory) jouées dans Studio, même RUNTIME `1dfa3dbc4a16` ; fichiers propres au Mac archivés sur `archive/mac-local-2026-11-07` (`23f33f3`). 07/11 après-midi : `claude/perception-sharingan` intégrée (`work/dev-45-sharingan`, `0e579bf`) : suite headless 42 PASS / 0 échec, `test_build_isolation` 11/11 ; places du Mac reconstruites à `0e579bf`, RUNTIME `aec22310b144` dans les quatre ; NATIVE_STUDIO : ND-DEV (8 interactions Sharingan), ND-JEU (sélection → PLAY → manche aux vraies touches, `release @ 0e579bf`, pas de DevHooks), ND-QA (batterie native 21/16, identique à la place construite avant l'intégration, voir QA-006) ; rushes supprimés avec accord : 12,9 Go, 11 exports finaux vérifiés ([résultat § 7](../reports/mac-local-2026-11-07/MAC_CLEANUP_RESULT.md)). Restent : revue `claude/vfx-redesign`, PR du reste de `claude/ninja-duel-tutorial-v2`, assets IDs/permissions dans le manifeste, HUMAN_FEEL (manette)
 - outcome: PENDING
 
 ## OPS-003 — Mesures performance et continuité

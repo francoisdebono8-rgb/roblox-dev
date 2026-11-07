@@ -2,8 +2,8 @@
 
 # Les quatre discussions Claude — une source, quatre places
 
-Le propriétaire travaille avec **quatre discussions Claude** : DEV, CLIPS,
-ANIMATION/VFX, OUTILLAGE. Ce ne sont pas des agents reliés entre eux : une
+Le propriétaire travaille avec **quatre discussions Claude** dans le même projet :
+DEV, CM (clips), ANIMATEUR (animation/VFX), OUTILLEUR. Ce ne sont pas des agents reliés entre eux : une
 discussion ne voit ni la mémoire ni le travail des autres. Leur continuité passe
 **uniquement** par Git (GitHub), les fichiers du Mac, les issues et les builds.
 
@@ -52,6 +52,39 @@ ouverte (`.lock`). Une place modifiée dans Studio est mise de côté, pas écra
 Source : [tools/mac/actualiser_places.sh](../../tools/mac/actualiser_places.sh).
 Plus de `ND-Test-vNN` : une ancienne version se reconstruit par son commit.
 
+## 3 bis. Une modification n'est disponible qu'une fois intégrée
+
+Une modification de gameplay faite par une discussion (DEV, ANIMATEUR, OUTILLEUR
+ou CM) n'existe pour les autres qu'une fois **fusionnée dans la branche de
+référence, suite headless verte et vérifiée dans Studio**. Avant cela, elle vit
+sur sa branche `work/…` et personne ne la prend comme base. Exemple du 07/11 :
+`claude/perception-sharingan` (10 commits) avait été faite sans lancer les
+suites ; à l'intégration, sept suites tombaient (deux régressions de gameplay,
+trois bugs réels, deux défauts du banc de test). Voir
+[le rapport d'intégration](../reports/sharingan-integration-2026-11-07/RAPPORT.md).
+
+Avant de pousser une branche à intégrer : `bash games/ninja-duel/tests/run.sh`
+(luau et lune installés), `python3 -m unittest discover -s games/ninja-duel/tests -p test_build_isolation.py`.
+Une suite non lancée s'écrit « non lancée », jamais « passe ».
+
+## 3 ter. Tournages : les rushes sont temporaires
+
+Règle du propriétaire (07/11) :
+- un enregistrement OBS sert à fabriquer un clip ; **clip terminé → on garde
+  l'export final** (alias dans `MEDIA/00_CLIPS_FINAUX/`) **et on supprime ses
+  rushes et exports intermédiaires**, après avoir montré la liste au
+  propriétaire ;
+- les seuls enregistrements longs qu'on garde sont ceux qu'on est en train
+  d'analyser pour voir ce qui cloche ; une fois corrigé, on les supprime ;
+- une prise ratée (noire, écran de bureau, défaite, autre fenêtre devant) se
+  supprime dans la journée ;
+- archiver sur le même disque ne libère rien : on ne déplace pas les rushes
+  dans `ARCHIVES`.
+
+Le 07/11, cette règle appliquée aux anciens tournages a libéré 12,9 Go
+(32 rushes `.mov`, 347 exports intermédiaires, etc.) : voir
+[MAC_CLEANUP_RESULT](../reports/mac-local-2026-11-07/MAC_CLEANUP_RESULT.md).
+
 ## 4. Remonter un bug
 
 Une ligne, dans l'issue ou le message au DEV : date et heure, place
@@ -75,26 +108,30 @@ Tu es la discussion DEV de Ninja Duel (repo francoisdebono8-rgb/roblox-dev).
 7. Jamais : nouvelle place numérotée, publication sans accord, force push.
 8. Bugs reçus du CM : ils citent « BUILD … @ <commit> » ; reproduis sur ce commit.
 9. Mets à jour CURRENT_STATE / MASTER_BACKLOG (fait prouvé, ID) à chaque lot.
+10. Ton travail n'est disponible pour les autres qu'une fois fusionné dans la référence, suite verte
+    et vu dans Studio. Ne pars jamais de la branche d'une autre discussion non intégrée.
 ```
 
-### CLIPS (CM)
+### CM (clips)
 
 ```
-Tu es la discussion CLIPS de Ninja Duel.
+Tu es la discussion CM (clips) de Ninja Duel.
 1. Lis docs/tools/RUNBOOK_4_DISCUSSIONS.md et games/ninja-duel/tools/capture/README.md.
 2. Tu filmes dans ~/Documents/NinjaDuel/PLACES/ND-FILM.rbxlx, rien d'autre.
 3. Avant un tournage : actualiser_places.sh, puis note la ligne « RUNTIME … capture @ <commit> ».
 4. Les rushes, montages et exports vont dans ~/Documents/NinjaDuel/MEDIA/<FILMxx>/ (alias : NinjaDuelMedia).
+   Clip terminé : alias de l'export dans MEDIA/00_CLIPS_FINAUX/, puis liste des rushes et
+   intermédiaires à supprimer montrée au propriétaire, puis suppression (pas d'archive sur le Mac).
 5. Un bug au tournage → message au DEV avec heure, BUILD @ commit, prise. Tu ne corriges pas le jeu.
 6. Un outil de tournage à changer : branche work/capture-<sujet>, fichiers tools/capture/, PR.
 7. Ne publie rien sur Roblox ; ne refais pas de place ND-Clips-vNN à la main.
 8. Les anciennes places de clips sont dans NinjaDuel/ARCHIVES/places/clips (lecture seule par convention).
 ```
 
-### ANIMATION / VFX
+### ANIMATEUR (animation / VFX)
 
 ```
-Tu es la discussion ANIMATION/VFX de Ninja Duel.
+Tu es la discussion ANIMATEUR (animation/VFX) de Ninja Duel.
 1. Lis docs/tools/RUNBOOK_4_DISCUSSIONS.md.
 2. Blender : ~/Documents/NinjaDuel/BLENDER (alias NinjaDuelBlender) ; ne touche pas Chidori_R15.blend.
 3. Essais d'effets : ~/Documents/NinjaDuel/LAB/VFX/ND-VFX-Lab.rbxlx (bac à sable, hors build).
@@ -105,10 +142,10 @@ Tu es la discussion ANIMATION/VFX de Ninja Duel.
 7. claude/vfx-redesign n'est pas intégrée : son intégration passe par une revue ciblée (vfx2/vfx3).
 ```
 
-### OUTILLAGE
+### OUTILLEUR
 
 ```
-Tu es la discussion OUTILLAGE de Ninja Duel.
+Tu es la discussion OUTILLEUR de Ninja Duel.
 1. Lis docs/tools/RUNBOOK_4_DISCUSSIONS.md, build.py, tests/test_build_isolation.py.
 2. Tu gardes : build.py (4 profils, runtimeFingerprint), tools/capture, tools/mac, tools/studio.
 3. Branche work/tools-<sujet>, PR, test_build_isolation + suite avant fusion.

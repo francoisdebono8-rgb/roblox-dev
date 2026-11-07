@@ -52,5 +52,27 @@ dans le sens de Studio (une image par pas, valeurs par défaut des BasePart).
 
 ## 3. Résultat
 
-Voir [CURRENT_STATE](../../active/CURRENT_STATE.md) pour le commit fusionné,
-la suite complète et la vérification Studio.
+| | Référence `2a314ff` | Branche `8afa3cc` (fusion brute) | Intégré `0e579bf` |
+|---|---|---|---|
+| Suites headless | 39 PASS, 2 en échec | 9 en échec | **42 PASS, 0 échec** |
+| `test_build_isolation` | 11/11 | — | 11/11 |
+| QA native (ND-QA au Play) | 21 PASS / 16 FAIL | — | 21 PASS / 16 FAIL, mêmes cas ([QA-006](../../active/MASTER_BACKLOG.md)) |
+| RUNTIME des quatre places | `1dfa3dbc4a16` | — | `aec22310b144` |
+
+Studio (places du Mac reconstruites à `0e579bf`, sonde
+[`sharingan_integration.luau`](../../../tools/studio/probes/sharingan_integration.luau)) :
+
+| Interaction | Place | Vu |
+|---|---|---|
+| Foule de Naruto + prise de corps | ND-DEV | 10 clones ; la touche prend un clone à 17,4 studs |
+| Byakugan contre Mirage | ND-DEV | réseau de chakra dessiné sur Itachi |
+| Sharingan de Kakashi : copie | ND-DEV | Grande boule de feu copiée puis lancée ; la case revient au Dragon aqueux |
+| Ninken | ND-DEV | Sasuke tenu (Bound) |
+| Foudre dans l'eau | ND-DEV | arcs sur toute la flaque |
+| Katon le long du fil | ND-DEV | Flamme du dragon jusqu'à Itachi lié |
+| Rasengan contre Chidori | ND-DEV | relâchés ensemble : JutsuClash des deux côtés, les deux projetés (−3 PV chacun), cratère |
+| Poursuite après lanceur | ND-DEV | arrivée 0,35 s, 2 coups en l'air, écrasement, à hauteur du corps |
+| Partie joueur | ND-JEU | `release @ 0e579bf`, pas de DevHooks ; Naruto contre Neji aux vraies touches, Rasengan lâché, aucune erreur |
+
+Non vérifié par Claude : la manette, et le jugement à l'œil en partie réelle
+(HUMAN_FEEL PENDING).

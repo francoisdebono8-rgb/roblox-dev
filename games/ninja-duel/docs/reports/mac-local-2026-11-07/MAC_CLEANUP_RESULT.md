@@ -22,8 +22,8 @@ possibles attend l'accord du propriétaire (§ 6).
 | `Roblox/ND-Test-Sharingan.rbxlx` | **BLOCKED** : laissée en place, c'est le fichier actif de la discussion « perception-sharingan », réécrit à 12 h 18. |
 | `MEDIA/ND-Clips-integ-0611.rbxlx` | **BLOCKED** : ouverte dans Studio, laissée en place (archiver une fois fermée) |
 | 6 captures et 2 enregistrements d'écran à la racine de Documents | **INVENTORIED**, laissés en place : le propriétaire doit confirmer qu'ils sont Ninja Duel |
-| Rushes OBS `.mov` (34 fichiers, 10,3 Go) | **INVENTORIED**, gardés. Ce sont des rushes : aucune suppression proposée. |
-| **DELETED WITH APPROVAL** | **aucun** (en attente de réponse) |
+| Rushes OBS `.mov` (32 dans MEDIA, 10,3 Go) | **DELETED WITH APPROVAL** (reprise 07/11, § 7) : tous rattachés à un clip terminé (export final vérifié) ou à un travail clos |
+| **DELETED WITH APPROVAL** | 3 063 fichiers, 12,9 Go, lots A à G validés par le propriétaire (« tous », 07/11 14 h 35) : § 7 |
 
 ## 2. Avant / après
 
@@ -35,8 +35,8 @@ possibles attend l'accord du propriétaire (§ 6).
 | Places `.rbxlx` dans `~/Documents/Roblox` | 39 places + `server.rbxl` | `ND-Test-Sharingan` (autre discussion) + `server.rbxl` |
 | Dossiers Ninja Duel à la racine de Documents | 4 (`NinjaDuelMedia`, `NinjaDuelBlender`, `NinjaDuelVFX`, `NDLooks`) + places dans `Roblox` | 1 dossier `NinjaDuel`, plus 4 alias de compatibilité |
 | Même jeu dans DEV, JEU, FILM ? | non vérifiable (fingerprints différents par profil, places de clips faites à la main) | oui : `runtimeFingerprint` `1dfa3dbc4a16` dans les 4 places, affiché au Play |
-| Volume Ninja Duel | 14,37 Go | 14,45 Go (+ 4 places neuves 47 Mo, copies des Téléchargements 11 Mo, inventaires) |
-| Doublons exacts | 177,6 Mo | inchangé (suppression en attente d'accord) |
+| Volume Ninja Duel | 14,37 Go | 14,45 Go après rangement, **1,3 Go** après les suppressions validées |
+| Doublons exacts | 177,6 Mo | supprimés (lots D et G) |
 
 ## 3. GitHub = Mac = Studio
 
@@ -80,7 +80,7 @@ et `ND-FILM` sont en tête des récents de Studio.
 - Annulation complète du rangement : `bash ~/Documents/NinjaDuel/_maintenance/restaurer.sh`
   (dans un Terminal macOS ; il retire les alias puis remet chaque élément en place).
 
-## 6. Suppressions proposées — en attente d'accord explicite
+## 6. Première proposition (599 Mo), remplacée par les lots du § 7
 
 Rien n'est supprimé sans un « oui » du propriétaire, avec la liste exacte
 ci-dessous. Fichier sur le Mac : `NinjaDuel/_maintenance/PROPOSITION_SUPPRESSION.tsv`.
@@ -189,3 +189,55 @@ ci-dessous. Fichier sur le Mac : `NinjaDuel/_maintenance/PROPOSITION_SUPPRESSION
 | `Documents/NinjaDuel/ARCHIVES/places/test-debug/ND-Test-v37.rbxlx` | 11.6 Mo | build d’un commit connu, tous ses scripts sont dans Git |
 | `Documents/NinjaDuel/ARCHIVES/places/test-debug/ND-Test-v38.rbxlx` | 11.6 Mo | build d’un commit connu, tous ses scripts sont dans Git |
 | `Documents/NinjaDuel/ARCHIVES/places/test-debug/ND-Test-v39.rbxlx` | 11.8 Mo | build d’un commit connu, tous ses scripts sont dans Git |
+
+
+## 7. Reprise du 07/11 : les rushes triés, 12,9 Go supprimés
+
+Demande du propriétaire (issue #45, reprise) : clip terminé → garder l'export
+final, supprimer rushes et intermédiaires ; ne rien « archiver » sur le même
+disque. Méthode :
+- les 32 `.mov` ouverts un par un (deux images chacun, durée, date de prise) ;
+- chacun rattaché à son clip ;
+- les 11 exports finaux relus en entier (`ffmpeg -f null`), sans erreur ;
+- alias des exports finaux dans `MEDIA/00_CLIPS_FINAUX/`.
+
+| Clip | Export final gardé | Vérifié |
+|---|---|---|
+| FILM01 Minato vs Neji « The Kunai Was Bait » | `FILM01_KUNAI_TRAP/04_EXPORT/v7/…_MASTER_9x16_v7.mp4` (+ preuve de gameplay non coupée) | 11,1 s, 1080×1920, 0 erreur |
+| FILM02 Lee vs Itachi « Speed isn't enough » (v5 livrée) | `…/LeeItachi_SpeedIsntEnough_v5.mp4` | 29,7 s, 0 erreur |
+| FILM03 Naruto vs Minato « Who Wins? » (v1) | `…/NarutoMinato_WhoWins_v1.mp4` | 23,4 s, 0 erreur |
+| B1 Itachi vs Kakashi | `…_MASTER_9x16.mp4`, `…_CLEAN_9x16.mp4` | 17,7 s, 0 erreur |
+| Legend01 Naruto vs Sasuke | les deux exports du 04/11 | 18,2 s, 0 erreur |
+| Who Wins 01 / 02, Tournoi « Who Wins » | les trois `_FINAL.mp4` | 0 erreur |
+
+Lots validés (« tous ») et supprimés :
+
+| Lot | Contenu | Volume |
+|---|---|---|
+| A | 22 rushes OBS des clips terminés, dont 5 prises vides ou noires | 8,41 Go |
+| B | 2 rushes de FILM03 (rangés par erreur dans FILM02) | 1,03 Go |
+| C | 8 enregistrements hors clip : mission FEEL, revue des jutsu du 05/11 au soir | 0,83 Go |
+| D | 347 exports intermédiaires, plans découpés, sélections, copies d'exports | 1,84 Go |
+| E | 35 anciennes places v22, v30–v39 | 0,39 Go |
+| F | 2 606 rendus PNG de revue Blender | 0,35 Go |
+| G | 43 doublons et déchets (Téléchargements, mixamo, `.blend1`, verrous, `server.rbxl`) | 0,06 Go |
+
+Résultat mesuré (`df` sur le volume) :
+- espace libre : 27 087 512 Kio avant, 38 285 852 Kio après (de 25,8 à 36,5 Gio, soit **+11,5 Go**) ;
+- fichiers supprimés : 3 063, pour 12,9 Go ;
+- 55 dossiers vidés retirés ;
+- 0 fichier ignoré.
+
+L'écart entre les deux chiffres était en train de se résorber au fil des
+mesures. Nous ne l'avons pas vérifié, mais il vient probablement de la gestion
+d'espace de macOS.
+
+Le journal ligne par ligne est dans `_maintenance/SUPPRIME_2026-11-07.tsv`, les lots dans
+`_maintenance/LOTS_SUPPRESSION_2026-11-07.tsv`. Restent gardés :
+- les exports finaux ;
+- `jobs/devlog01` : aucun export final n'a été trouvé ;
+- les miniatures, textes et scripts ;
+- les places de clips et de la passe jutsu (des scripts uniques) ;
+- les copies d'octobre dans `ARCHIVES/telechargements`.
+
+La règle est inscrite pour les tournages futurs dans le [RUNBOOK](../../tools/RUNBOOK_4_DISCUSSIONS.md) (§ 3 ter).

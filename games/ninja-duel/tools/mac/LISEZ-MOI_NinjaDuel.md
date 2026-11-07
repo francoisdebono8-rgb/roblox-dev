@@ -6,6 +6,7 @@
 | **Tester le jeu comme un joueur** | `PLACES/ND-JEU.rbxlx` |
 | **Filmer** (prises, caméras, décors de tournage) | `PLACES/ND-FILM.rbxlx` |
 | (agents) lancer la batterie de tests natifs | `PLACES/ND-QA.rbxlx` |
+| **Retrouver un clip terminé** | `MEDIA/00_CLIPS_FINAUX/` (un alias par clip) |
 
 Les quatre sortent **du même commit GitHub** : même jeu, seuls les outils
 changent. Le commit et les empreintes sont dans `PLACES/VERSION.md`. Au Play,
@@ -42,6 +43,10 @@ une place modifiée dans Studio : il la met de côté dans `_maintenance/`.
   même jeu que les autres.
 - Plus de nouvelles places numérotées (`ND-Test-v40`…). Une ancienne version
   se reconstruit : `actualiser_places.sh <commit>`.
+- Les enregistrements OBS sont temporaires : clip terminé → on garde l'export
+  final (alias dans `MEDIA/00_CLIPS_FINAUX/`), on supprime les rushes et les
+  exports intermédiaires (liste montrée au propriétaire avant). Un long
+  enregistrement ne se garde que le temps d'analyser ce qui cloche.
 - Un bug vu en jouant ou au tournage : noter l'heure et la ligne
   `[NinjaDuel] BUILD … @ <commit>` de la sortie Studio, et l'envoyer à la
   discussion DEV.
