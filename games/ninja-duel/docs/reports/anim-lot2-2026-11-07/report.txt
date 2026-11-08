@@ -1,0 +1,38 @@
+clip                   stride avant->après (studs)  cadence x à 19/45   pic jambe °/s
+Kakashi  Run.B   sq 0.75  3.93 ->  5.22   len 0.60->0.67   glisse   0% ->   0%   x2.90 -> x2.43    1191 ->  1373
+Kakashi  Run.F   sq 0.80  5.84 ->  7.62   len 0.70->0.77   glisse   0% ->   0%   x2.28 -> x1.91    1388 ->  1467
+Kakashi  Run.L   sq 0.85  5.53 ->  6.98   len 0.63->0.70   glisse   0% ->   0%   x2.18 -> x1.91    1691 ->  1590
+Kakashi  Sprint  sq 0.85  5.91 ->  8.60   len 0.50->0.53   glisse   0% ->   0%   x3.81 -> x2.79    1928 ->  2096
+Minato   Run.B   sq 0.90  3.76 ->  3.41   len 0.60->0.57   glisse   0% ->   0%   x3.03 -> x3.16    1191 ->  1219
+Minato   Run.F   sq 1.00  5.18 ->  3.94   len 0.70->0.67   glisse   0% ->   0%   x2.57 -> x3.21    1388 ->  1423
+Minato   Run.L   sq 1.00  6.36 ->  6.07   len 0.63->0.60   glisse   0% ->   0%   x1.89 -> x1.88    1691 ->  1513
+Minato   Sprint  sq 0.80  5.36 ->  8.66   len 0.50->0.53   glisse   0% ->   0%   x4.20 -> x2.77    1928 ->  2057
+Neji     Run.B   sq 0.75  3.93 ->  5.08   len 0.60->0.63   glisse   0% ->   0%   x2.90 -> x2.37    1191 ->  1482
+Neji     Run.F   sq 0.90  5.84 ->  7.40   len 0.70->0.73   glisse   0% ->   0%   x2.28 -> x1.88    1388 ->  1440
+Neji     Run.L   sq 0.95  5.53 ->  6.48   len 0.63->0.67   glisse   0% ->   0%   x2.18 -> x1.95    1691 ->  1720
+Neji     Sprint  sq 0.85  5.91 ->  8.60   len 0.50->0.53   glisse   0% ->   0%   x3.81 -> x2.79    1928 ->  2096
+Lee      Run.B   sq 0.60  3.78 ->  5.69   len 0.60->0.70   glisse   0% ->   0%   x3.02 -> x2.34    1191 ->  1576
+Lee      Run.F   sq 0.80  5.54 ->  8.13   len 0.70->0.80   glisse   0% ->   0%   x2.40 -> x1.87    1388 ->  1731
+Lee      Run.L   sq 0.95  5.84 ->  7.35   len 0.63->0.73   glisse   0% ->   0%   x2.06 -> x1.89    1691 ->  1503
+Lee      Sprint  sq 0.85  5.89 ->  9.54   len 0.50->0.53   glisse   0% ->   0%   x3.82 -> x2.51    1928 ->  2385
+Naruto   Run.B   sq 0.65  3.93 ->  6.06   len 0.60->0.63   glisse   0% ->   0%   x2.90 -> x1.98    1191 ->  1650
+Naruto   Run.F   sq 1.00  5.84 ->  7.51   len 0.70->0.73   glisse   0% ->   0%   x2.28 -> x1.86    1388 ->  1527
+Naruto   Run.L   sq 1.00  5.53 ->  6.15   len 0.63->0.67   glisse   0% ->   0%   x2.18 -> x2.06    1691 ->  1775
+Naruto   Sprint  sq 0.85  5.89 ->  8.77   len 0.50->0.53   glisse   0% ->   0%   x3.82 -> x2.74    1928 ->  2263
+Sasuke   Run.B   sq 0.70  3.93 ->  6.16   len 0.60->0.63   glisse   0% ->   0%   x2.90 -> x1.95    1191 ->  1531
+Sasuke   Run.F   sq 1.00  5.84 ->  6.31   len 0.70->0.73   glisse   0% ->   0%   x2.28 -> x2.21    1388 ->  1457
+Sasuke   Run.L   sq 1.00  5.53 ->  6.80   len 0.63->0.67   glisse   0% ->   0%   x2.18 -> x1.86    1691 ->  1733
+Sasuke   Sprint  sq 0.85  5.91 ->  9.32   len 0.50->0.53   glisse   0% ->   0%   x3.81 -> x2.57    1928 ->  2180
+Itachi   Run.B   sq 0.75  3.93 ->  5.42   len 0.60->0.67   glisse   0% ->   0%   x2.90 -> x2.34    1191 ->  1248
+Itachi   Run.F   sq 0.85  5.84 ->  7.81   len 0.70->0.77   glisse   0% ->   0%   x2.28 -> x1.86    1388 ->  1418
+Itachi   Run.L   sq 0.90  5.53 ->  7.01   len 0.63->0.70   glisse   0% ->   0%   x2.18 -> x1.90    1691 ->  1603
+Itachi   Sprint  sq 0.85  5.91 ->  8.93   len 0.50->0.53   glisse   0% ->   0%   x3.81 -> x2.69    1928 ->  2096
+Gaara    Run.B   sq 0.90  2.90 ->  3.83   len 0.60->0.63   glisse   0% ->   0%   x3.93 -> x3.14     894 ->   893
+Gaara    Run.F   sq 0.85  4.12 ->  5.84   len 0.70->0.73   glisse   0% ->   0%   x3.23 -> x2.39    1041 ->  1207
+Gaara    Run.L   sq 0.90  3.82 ->  4.97   len 0.63->0.67   glisse   0% ->   0%   x3.15 -> x2.55    1269 ->  1410
+Gaara    Sprint  sq 0.80  4.04 ->  6.83   len 0.50->0.53   glisse   0% ->   0%   x5.57 -> x3.51    1446 ->  1472
+
+ressemblance avec Sasuke (écart moyen, degrés) : avant -> après
+Run.F   Naruto 2->7  Gaara 21->22  Lee 13->16  Neji 2->4  Itachi 5->7  Kakashi 1->6  Minato 1->5
+Sprint  Naruto 1->3  Gaara 28->30  Lee 0->3  Neji 0->2  Itachi 2->3  Kakashi 0->3  Minato 0->2
+Walk.F  Naruto 9->9  Gaara 18->19  Lee 12->12  Neji 8->8  Itachi 8->9  Kakashi 5->6  Minato 8->9

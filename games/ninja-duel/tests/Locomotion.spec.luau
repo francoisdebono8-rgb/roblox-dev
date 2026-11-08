@@ -48,20 +48,20 @@ local function run(fid,speed)
  end
  return glide/math.max(planted,1)/speed,capped/math.max(legFrames,1),planted
 end
-test("the run's planted foot holds the floor (it slid at ~46 % of the body's speed, Gaara 64 %)",function()
+test("the run's planted foot holds the floor (it slid at ~46 % of the body's speed, Gaara 64 %; lot 2 bounds: ~6 %)",function()
  local sum=0
  for _,fid in BETA do
   local ratio,_,planted=run(fid,19)
   assert(planted>20,fid..": the feet never touched the floor in a run ("..planted..")")
-  assert(ratio<.38,string.format("%s: a planted foot slid at %.0f %% of the run's speed",fid,ratio*100))
+  assert(ratio<.2,string.format("%s: a planted foot slid at %.0f %% of the run's speed",fid,ratio*100))
   sum+=ratio
  end
- assert(sum/#BETA<.18,string.format("the run's planted feet slide at %.0f %% of the speed on average",sum/#BETA*100))
+ assert(sum/#BETA<.1,string.format("the run's planted feet slide at %.0f %% of the speed on average",sum/#BETA*100))
 end)
-test("the sprint's planted foot glides at most about a third of the body's speed (it was ~45 %)",function()
+test("the sprint's planted foot holds the floor (it was ~45 %, ~24 % after lot 1, ~8 % with the lot 2 bounds)",function()
  for _,fid in BETA do
   local ratio,capped=run(fid,45)
-  assert(ratio<.36,string.format("%s: a sprint stance foot glided at %.0f %% of the speed",fid,ratio*100))
+  assert(ratio<.2,string.format("%s: a sprint stance foot glided at %.0f %% of the speed",fid,ratio*100))
   -- The legs are not played so fast that they live at the joint speed cap.
   assert(capped<.2,string.format("%s: %.0f %% of the sprint's leg frames at the joint cap",fid,capped*100))
  end
