@@ -29,6 +29,8 @@ Panneau ouvert : Input reçoit un état non-Duel, donc aucune action de combat n
 
 **Volumes** : racines en bleu, vraies Parts `BanglaHitbox` du duel en rouge (adornments locaux, aucune propriété ni collision modifiée). Une boîte de startup n’est pas une fenêtre active confirmée ; projectiles et hazards n’utilisent pas cette Part. Désactiver pour mesurer le rendu sans adornments.
 
+**F7** : outil visuel (lumière, ombres, visibilité des effets, liste de tout ce qui casse) — voir [OUTIL_VISUEL_F7](OUTIL_VISUEL_F7.md).
+
 ## Command Bar (côté **Server**, pendant le Play)
 
 ```lua
