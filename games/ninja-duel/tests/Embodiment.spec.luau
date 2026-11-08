@@ -313,6 +313,26 @@ test("a breakable trunk cracks, then falls; the stadium wall only carries its ma
  assert(wall:GetAttribute("WorldState")=="Cracked","the wall broke or never cracked: "..tostring(wall:GetAttribute("WorldState")))
 end)
 
+test("no mark on an invisible surface; an invisible trunk still cracks and falls (F7 tool 08/11: a crater at y=33 on the boundary)",function()
+ local c=H.duel("Flashstep","Mirage")
+ local w=World.state(c)
+ -- The courtyard's boundary: invisible concrete, hit on its top and its face.
+ local boundary=surface("Concrete",V.new(2,40,60));boundary.Name="Boundary";boundary.Transparency=1;boundary:SetAttribute("NinjaWall",true)
+ World.impact(c,{part=boundary,position=V.new(10,33.2,0),normal=V.yAxis,energy=200,contact="blast",element="fire"})
+ World.impact(c,hitOn(boundary,80,"blunt"))
+ assert(#w.scars==0,#w.scars.." mark(s) drawn on the invisible boundary")
+ -- A field tree's box round its mesh: no mark, the same wear (it still falls).
+ local trunk=surface("Wood",V.new(2.6,30,2.6),true);trunk.Name="Field tree";trunk.Transparency=1
+ local broke=false
+ for _=1,12 do local r=World.impact(c,hitOn(trunk,60,"blunt"));if r and r.broken then broke=true;break end end
+ assert(broke and trunk:GetAttribute("WorldState")=="Broken","the invisible trunk never broke")
+ for _,s in w.scars do assert(s.surface~=trunk and s.surface~=boundary,"a "..s.kind.." drawn on an invisible surface") end
+ -- A visible wall still carries its marks.
+ local before=#w.scars
+ World.impact(c,hitOn(surface("Concrete",V.new(2,40,60)),80,"blunt",nil,V.new(8.7,3,20)))
+ assert(#w.scars==before+1,"a visible wall lost its marks")
+end)
+
 test("a body thrown into a worn tree goes through it; into a sound one, it splats and marks it",function()
  local Brawler=H.load("Server/Brawler")
  local Config=H.load("Shared/Config")

@@ -347,8 +347,16 @@ local function draw(scar,class)
 	if RELIEF[scar.kind] then relief(scar,palette) end
 end
 -- Leave (or deepen) a scar. Returns the scar entry.
+-- (08/11, F7 tool: a crater floating 33 studs up, on the courtyard's invisible
+-- boundary) A mark is drawn only on what the eye sees. An invisible collider
+-- (the courtyard's Boundary, a field tree's box round its Blender mesh)
+-- carries none; its wear still counts, so a tree still cracks and falls.
+WorldReaction.INVISIBLE=.95
+function WorldReaction.visible(part)
+	return not (part and part:IsA("BasePart") and part.Transparency>=WorldReaction.INVISIBLE)
+end
 function WorldReaction.scar(c,kind,surface,position,normal,energy,along,class)
-	if not SHAPES[kind] then return nil end
+	if not SHAPES[kind] or not WorldReaction.visible(surface) then return nil end
 	local w=state(c)
 	-- The same mark close to an old one deepens it instead of stacking parts.
 	for k=#w.scars,1,-1 do
