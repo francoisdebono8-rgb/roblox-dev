@@ -4993,7 +4993,7 @@ return {
       <Item class="StringValue" referent="ND34">
         <Properties>
           <string name="Name">SourceCommit</string>
-          <string name="Value">3e562174f2ff-dirty</string>
+          <string name="Value">8fd432f65c1e</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND35">
