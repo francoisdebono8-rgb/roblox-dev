@@ -5094,7 +5094,7 @@ return {
       <Item class="StringValue" referent="ND32">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">9c21d73a231cd97d9a138572896243d64d1bcbd3d5ac8fce45d8756ce2b61898</string>
+          <string name="Value">6aa113d3cd2537bad5d1cb09bc0bd75b6ab074043ad5503ad65e223d98f05fdc</string>
         </Properties>
       </Item>
       <Item class="StringValue" referent="ND33">
@@ -5112,7 +5112,7 @@ return {
       <Item class="StringValue" referent="ND35">
         <Properties>
           <string name="Name">SourceCommit</string>
-          <string name="Value">00f5d495b091-dirty</string>
+          <string name="Value">3e562174f2ff-dirty</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND36">
@@ -47833,8 +47833,18 @@ local FX_ROOTS={NinjaDuelFX=true,VfxMesh=true,NinjaUltimateFX=true,Effects=true,
 local MARK_ROOTS={WorldMemory=true}
 local MARK_NAMES={"Scar","Mark","Crater","Crack","Scorch","Burn","Rubble","Furrow","Trench","Slab"}
 local HITBOX={BanglaHitbox=true}
+-- The menu's 3D sets are lit and filmed only in the menu: not the duel's picture.
+local SKIP_ROOTS={NinjaDuelMenuStage=true,NinjaDuelPortraitStage=true}
+-- Solid pieces of broken ground (Client/GroundFX) belong with the ground marks.
+local GROUND_PIECES={GroundBlock=true}
 
 local function rgb(r,g,b) return Color3.fromRGB(r,g,b) end
+-- Lighting.Technology is not readable by game scripts (Studio sets it); kept
+-- behind a pcall so the readout says so instead of breaking.
+local function techName()
+	local ok,name=pcall(function() return Lighting.Technology.Name end)
+	return if ok then name else "non lisible en jeu"
+end
 local SEV={erreur={order=1,color=rgb(255,96,86),label="ERREUR"},voir={order=2,color=rgb(255,190,80),label="À VOIR"},info={order=3,color=rgb(170,180,196),label="INFO"}}
 
 -- Test lighting. Values for « Fin d'après-midi » are the filming setup of
@@ -47888,7 +47898,37 @@ local function fighterOf(inst)
 	return nil
 end
 local function isMarkName(name)
+	if string.find(name,"Marked",1,true) then return false end -- Minato's marked kunai is a weapon, not a mark
 	for _,prefix in MARK_NAMES do if string.find(name,prefix,1,true) then return true end end
+	return false
+end
+-- Marks drawn flat on the ground or a wall (server ground damage, scars,
+-- craters, scorches): only these must touch a surface. Seals, glyphs and
+-- burning pieces can stand or float by design.
+local FLAT_MARKS={"Scar","Crater","Crack","Scorch","FXGround"}
+local function flatMark(inst)
+	local node=inst
+	while node and node~=workspace do
+		if MARK_ROOTS[node.Name] then return true end
+		if FX_ROOTS[node.Name] then return false end
+		for _,word in FLAT_MARKS do if string.find(node.Name,word,1,true) then return true end end
+		node=node.Parent
+	end
+	return false
+end
+-- Highlights that are meant to stay (ink outline, chakra rims, auras).
+local function deliberate(name)
+	for _,word in {"Ink","Rim","Aura","Outline","Line","Mode"} do if string.find(name,word,1,true) then return true end end
+	return false
+end
+-- A ground mark is often a model of plain parts (FireScorch made of Wedges):
+-- the name that says « mark » can be on any ancestor below the effect folder.
+local function markAncestor(inst)
+	local node=inst
+	while node and node~=workspace and not FX_ROOTS[node.Name] do
+		if isMarkName(node.Name) or node.Name=="FXGround" or GROUND_PIECES[node.Name] then return true end
+		node=node.Parent
+	end
 	return false
 end
 local function visiblePart(p)
@@ -47908,19 +47948,19 @@ function Visual.install(ctx,dev)
 	-- Every effect-like object is followed from its birth (age, family, where).
 	local tracked=setmetatable({},{__mode="k"})
 	local function classify(inst)
-		if isOwn(inst) then return nil end
+		if isOwn(inst) or rootOf(inst,SKIP_ROOTS) then return nil end
 		if inst:IsA("ParticleEmitter") then return "particles"
 		elseif inst:IsA("Beam") or inst:IsA("Trail") then return "beams"
 		elseif inst:IsA("Light") then return "lights"
 		elseif inst:IsA("Highlight") then return "highlights"
 		elseif inst:IsA("BillboardGui") or (inst:IsA("SurfaceGui") and inst.Adornee) then return "sprites"
 		elseif inst:IsA("Decal") then
-			if rootOf(inst,MARK_ROOTS) or isMarkName(inst.Name) or (inst.Parent and isMarkName(inst.Parent.Name)) then return "marks" end
+			if rootOf(inst,MARK_ROOTS) or markAncestor(inst) then return "marks" end
 			if rootOf(inst,FX_ROOTS) then return "shapes" end
 			return nil
 		elseif inst:IsA("BasePart") then
 			if HITBOX[inst.Name] or inst:IsA("Terrain") then return nil end
-			if rootOf(inst,MARK_ROOTS) or (isMarkName(inst.Name) and not fighterOf(inst)) then return "marks" end
+			if rootOf(inst,MARK_ROOTS) or (markAncestor(inst) and not fighterOf(inst)) then return "marks" end
 			if rootOf(inst,FX_ROOTS) or inst.Name=="LocalImpact" then return "shapes" end
 			return nil
 		end
@@ -47929,7 +47969,10 @@ function Visual.install(ctx,dev)
 	local function track(inst)
 		if tracked[inst] then return end
 		local family=classify(inst)
-		if family then tracked[inst]={family=family,born=os.clock(),body=fighterOf(inst)} end
+		if family then
+			local body=fighterOf(inst)
+			tracked[inst]={family=family,born=os.clock(),body=body,fx=body~=nil or rootOf(inst,FX_ROOTS)~=nil or inst.Parent==workspace.Terrain or (inst.Parent~=nil and inst.Parent.Parent==workspace.Terrain)}
+		end
 	end
 
 	-- ------------------------------------------------------------ issues
@@ -47998,13 +48041,24 @@ function Visual.install(ctx,dev)
 			return
 		end
 		local seen=assetSeen[id]
-		if seen=="bad" then report("erreur","Image ou maillage qui ne charge pas",id,inst,"asset|"..id) return end
-		if seen=="ok" then return end
+		if seen and seen.ok then return end
+		local now=os.clock()
+		if seen and now-seen.at&lt;4 then
+			report("erreur","Image ou maillage qui ne charge pas",id,inst,"asset|"..id)
+			return
+		end
 		local ok,status=pcall(function() return ContentProvider:GetAssetFetchStatus(id) end)
 		if not ok then return end
-		if status==Enum.AssetFetchStatus.Success then assetSeen[id]="ok"
+		if status==Enum.AssetFetchStatus.Success then
+			assetSeen[id]={ok=true,at=now}
+			-- Failed first, loaded later (Roblox « content representation is
+			-- being generated »): the effect was invisible the first times only.
+			local entry=issues["asset|"..id]
+			if entry and entry.sev=="erreur" then
+				entry.sev="voir";entry.title="Image qui a d'abord échoué, puis s'est chargée";entry.detail=id.." (l'effet était invisible au début)";dirty=true
+			end
 		elseif status==Enum.AssetFetchStatus.Failure or status==Enum.AssetFetchStatus.TimedOut then
-			assetSeen[id]="bad"
+			assetSeen[id]={ok=false,at=now}
 			report("erreur","Image ou maillage qui ne charge pas",id,inst,"asset|"..id)
 		end
 	end
@@ -48133,6 +48187,7 @@ function Visual.install(ctx,dev)
 	local highlightSince=setmetatable({},{__mode="k"})
 	local trackSince=setmetatable({},{__mode="k"})
 	local markChecked=setmetatable({},{__mode="k"})
+	local blockedSince=nil
 	local rayParams=RaycastParams.new();rayParams.FilterType=Enum.RaycastFilterType.Exclude
 	local function floorUnder(position,exclude)
 		rayParams.FilterDescendantsInstances=exclude
@@ -48151,7 +48206,7 @@ function Visual.install(ctx,dev)
 	local function scan()
 		local now=os.clock()
 		table.clear(flagged)
-		local c={particles=0,particlesOn=0,beams=0,lights=0,lightsShadow=0,highlights=0,sprites=0,shapes=0,marks=0,total=0}
+		local c={particles=0,particlesOn=0,beams=0,lights=0,fxLights=0,lightsShadow=0,highlights=0,sprites=0,shapes=0,marks=0,total=0}
 		local bodies=fighters()
 		-- The floor probe skips bodies, effects and the marks themselves.
 		local exclude={}
@@ -48169,6 +48224,7 @@ function Visual.install(ctx,dev)
 			if not inst.Parent then tracked[inst]=nil;continue end
 			if isOwn(inst) then tracked[inst]=nil;continue end
 			c.total+=1
+			if info.family=="shapes" and markAncestor(inst) then info.family="marks" end
 			local family=info.family
 			local age=now-info.born
 			if hidden[family] then hide(inst,family) end
@@ -48183,15 +48239,20 @@ function Visual.install(ctx,dev)
 			elseif family=="lights" then
 				if inst.Enabled then
 					c.lights+=1
-					if inst.Shadows then c.lightsShadow+=1;flagged[inst]=true;report("voir","Lumière d'effet avec ombres (coûteux, ombres qui tremblent)",inst.Name,inst) end
-					if inst.Brightness&gt;10 then flagged[inst]=true;report("voir","Lumière très forte (éblouit)",string.format("%s, luminosité %.0f",inst.Name,inst.Brightness),inst) end
+					if info.fx then
+						c.fxLights+=1
+						if inst.Shadows then c.lightsShadow+=1;flagged[inst]=true;report("voir","Lumière d'effet avec ombres (coûteux, ombres qui tremblent)",inst.Name,inst) end
+						if inst.Brightness&gt;10 then flagged[inst]=true;report("voir","Lumière très forte (éblouit)",string.format("%s, luminosité %.0f",inst.Name,inst.Brightness),inst) end
+					end
 				end
 			elseif family=="highlights" then
 				if inst.Enabled then
 					c.highlights+=1
-					if inst.Name~="NinjaInkLine" and inst.FillTransparency&lt;.95 then
+					if not deliberate(inst.Name) and inst.FillTransparency&lt;.95 then
 						local since=highlightSince[inst] or now;highlightSince[inst]=since
 						if now-since&gt;4 then flagged[inst]=true;report("voir","Surbrillance restée allumée",string.format("%s sur %s, %.0f s",inst.Name,inst.Parent and inst.Parent.Name or "?",now-since),inst) end
+					else
+						highlightSince[inst]=nil
 					end
 				end
 			elseif family=="sprites" then
@@ -48207,27 +48268,40 @@ function Visual.install(ctx,dev)
 					local vis=visiblePart(inst)
 					if family=="shapes" then
 						if inst.CanCollide and not inst:FindFirstAncestorWhichIsA("Model") then flagged[inst]=true;report("erreur","Effet qui bloque les corps (CanCollide)",inst.Name,inst) end
-						if vis and inst.CastShadow then flagged[inst]=true;report("voir","Effet qui projette une ombre",string.format("%s (%s)",inst.Name,inst.Material.Name),inst) end
+						local glowing=inst.Material==Enum.Material.Neon or inst.Material==Enum.Material.ForceField or inst.Material==Enum.Material.Glass
+						if vis and inst.CastShadow and glowing then flagged[inst]=true;report("voir","Effet lumineux qui projette une ombre",string.format("%s (%s)",inst.Name,inst.Material.Name),inst)
+						elseif vis and inst.CastShadow and inst.Transparency&gt;.2 then report("info","Objet qui s'efface en gardant toute son ombre",string.format("%s (%s, transparence %.2f)",inst.Name,inst.Material.Name,inst.Transparency),inst) end
 						if vis and inst.Material==Enum.Material.Neon then
 							local s=inst.Size;local dims={s.X,s.Y,s.Z};table.sort(dims)
 							local area=dims[2]*dims[3]*(1-inst.Transparency)
 							neonArea+=area
 							if area&gt;80 then flagged[inst]=true;report("voir","Grande surface Néon (éblouit)",string.format("%s, %.0f studs²",inst.Name,area),inst) end
 						end
-						if age&gt;20 and not inst:GetAttribute("Persistent") then flagged[inst]=true;report("voir","Effet qui ne disparaît pas",string.format("%s, %.0f s",inst.Name,age),inst) end
+						if vis and age&gt;20 and not inst:GetAttribute("Persistent") then flagged[inst]=true;report("voir","Effet qui ne disparaît pas",string.format("%s, %.0f s",inst.Name,age),inst) end
 						if vis and camPos and inst.Size.Magnitude&gt;4 then
 							local rel=inst.CFrame:PointToObjectSpace(camPos);local h=inst.Size/2
 							if math.abs(rel.X)&lt;h.X and math.abs(rel.Y)&lt;h.Y and math.abs(rel.Z)&lt;h.Z then report("voir","La caméra est dans un effet (écran couvert)",inst.Name,inst) end
 						end
-					elseif vis and (not markChecked[inst] or now-markChecked[inst]&gt;5) and age&gt;.5 then
+					elseif vis and (not markChecked[inst] or now-markChecked[inst]&gt;5) and age&gt;.5 and not GROUND_PIECES[inst.Name] then
 						markChecked[inst]=now
 						local probe=table.clone(exclude);table.insert(probe,inst)
 						local hit=floorUnder(p,probe)
+						-- Thin axis = the side the mark is drawn on (floor or wall):
+						-- it has to touch a surface there, within half a stud.
+						local s=inst.Size;local cf=inst.CFrame
+						local axis,thick=cf.RightVector,s.X
+						if s.Y&lt;thick then axis,thick=cf.UpVector,s.Y end
+						if s.Z&lt;thick then axis,thick=cf.LookVector,s.Z end
+						rayParams.FilterDescendantsInstances=probe
+						local reach=thick/2+.6
+						local touch=workspace:Raycast(p,axis*reach,rayParams) or workspace:Raycast(p,-axis*reach,rayParams)
+						if not touch and hit and p.Y-hit.Position.Y&gt;.6 and flatMark(inst) then
+							flagged[inst]=true
+							report("voir","Marque au sol en l'air",string.format("%s, %.1f studs au-dessus du sol, aucune surface sous sa face",inst.Name,p.Y-hit.Position.Y),inst)
+						end
 						if hit then
-							local bottom=p.Y-inst.Size.Y/2
-							local top=p.Y+inst.Size.Y/2
-							if bottom&gt;hit.Position.Y+1.2 and inst.Size.Y&lt;3 then flagged[inst]=true;report("voir","Marque au sol en l'air",string.format("%s, %.1f studs au-dessus du sol",inst.Name,bottom-hit.Position.Y),inst) end
-							if top&lt;hit.Position.Y-.4 then report("info","Marque enterrée (invisible)",inst.Name,inst) end
+							local half=.5*(math.abs(cf.RightVector.Y)*s.X+math.abs(cf.UpVector.Y)*s.Y+math.abs(cf.LookVector.Y)*s.Z)
+							if p.Y+half&lt;hit.Position.Y-.4 then report("info","Marque enterrée (invisible)",inst.Name,inst) end
 						end
 					end
 				end
@@ -48237,7 +48311,7 @@ function Visual.install(ctx,dev)
 		if c.highlights&gt;HIGHLIGHT_LIMIT-6 then
 			report("erreur","Trop de surbrillances",string.format("%d sur %d : au-delà, Roblox n'en dessine plus (les contours des corps disparaissent)",c.highlights,HIGHLIGHT_LIMIT),nil,"highlight-limit")
 		end
-		if c.lights&gt;10 then report("voir","Trop de lumières d'effet en même temps",tostring(c.lights),nil,"light-count") end
+		if c.fxLights&gt;10 then report("voir","Trop de lumières d'effet en même temps",tostring(c.fxLights),nil,"light-count") end
 		if c.total&gt;800 then report("voir","Trop d'objets d'effet en même temps",tostring(c.total),nil,"fx-count") end
 		c.neonArea=neonArea
 		-- Bodies: invisible for long, or an animation that never loaded.
@@ -48262,20 +48336,36 @@ function Visual.install(ctx,dev)
 				end
 			end
 		end
+		-- Decor between the camera and the player's fighter (a trunk, a wall):
+		-- the player loses sight of himself.
+		local me=player.Character
+		local head=me and (me:FindFirstChild("Head") or me:FindFirstChild("HumanoidRootPart"))
+		if head and camPos then
+			rayParams.FilterDescendantsInstances=exclude
+			local hitCam=workspace:Raycast(camPos,head.Position-camPos,rayParams)
+			if hitCam and hitCam.Instance.Transparency&lt;.5 and not fighterOf(hitCam.Instance) then
+				blockedSince=blockedSince or now
+				if now-blockedSince&gt;.8 then report("voir","Le décor cache le joueur",string.format("%s, depuis %.1f s",hitCam.Instance.Name,now-blockedSince),hitCam.Instance,"occlusion|"..hitCam.Instance.Name) end
+			else
+				blockedSince=nil
+			end
+		end
 		-- Lighting the tool did not set.
 		if preset=="jeu" then
 			if not Lighting.GlobalShadows then report("voir","Ombres globales coupées (Lighting.GlobalShadows)","",nil,"light-globalshadows") end
 			if math.abs(Lighting.ExposureCompensation)&gt;1 then report("info","Exposition inhabituelle",string.format("%.2f",Lighting.ExposureCompensation),nil,"light-exposure") end
 		end
-		local tech=Lighting.Technology
-		if tech==Enum.Technology.Voxel or tech==Enum.Technology.Compatibility then report("info","Ombres grossières : technologie "..tech.Name,"",nil,"light-tech") end
+		local tech=techName()
+		if tech=="Voxel" or tech=="Compatibility" then report("info","Ombres grossières : technologie "..tech,"",nil,"light-tech") end
 		counters=c
 	end
 
 	-- ------------------------------------------------------------ interface
 	local gui=Instance.new("ScreenGui");gui.Name="DevVisualPanel";gui.ResetOnSpawn=false;gui.DisplayOrder=111;gui.Enabled=false;gui.IgnoreGuiInset=false
 	gui.Parent=playerGui
-	local panel=Instance.new("Frame");panel.Name="DevVisualFrame";panel.Size=UDim2.fromOffset(420,590);panel.Position=UDim2.new(0,16,.5,-295)
+	-- Fits small Studio viewports: as tall as the screen allows, 590 px at most.
+	local panel=Instance.new("Frame");panel.Name="DevVisualFrame";panel.AnchorPoint=Vector2.new(0,.5);panel.Size=UDim2.new(0,420,1,-48);panel.Position=UDim2.new(0,16,.5,0)
+	local cap=Instance.new("UISizeConstraint");cap.MaxSize=Vector2.new(420,590);cap.Parent=panel
 	panel.BackgroundColor3=rgb(18,22,28);panel.BackgroundTransparency=.04;panel.BorderSizePixel=0;panel.Parent=gui
 	local function label(parent,text,size,pos,textSize,bold)
 		local l=Instance.new("TextLabel");l.BackgroundTransparency=1;l.Size=size;l.Position=pos;l.TextColor3=rgb(236,238,244);l.TextSize=textSize or 13
@@ -48418,8 +48508,8 @@ function Visual.install(ctx,dev)
 		for _,e in order do if e.sev=="erreur" then nErr+=1 elseif e.sev=="voir" then nVoir+=1 else nInfo+=1 end end
 		local partMem=0
 		pcall(function() partMem=Stats:GetMemoryUsageMbForTag(Enum.DeveloperMemoryTag.GraphicsParticles) end)
-		local line=string.format('FPS &lt;font color="%s"&gt;%d&lt;/font&gt; · effets %d · particules %d (%d allumés) · lumières &lt;font color="%s"&gt;%d&lt;/font&gt; · surbrillances &lt;font color="%s"&gt;%d/%d&lt;/font&gt;',
-			color(60-fps,15,30),fps,c.total,c.particles,c.particlesOn,color(c.lights,8,11),c.lights,color(c.highlights,20,25),c.highlights,HIGHLIGHT_LIMIT)
+		local line=string.format('FPS &lt;font color="%s"&gt;%d&lt;/font&gt; · effets %d · particules %d (%d allumés) · lumières d’effet &lt;font color="%s"&gt;%d&lt;/font&gt; · surbrillances &lt;font color="%s"&gt;%d/%d&lt;/font&gt;',
+			color(60-fps,15,30),fps,c.total,c.particles,c.particlesOn,color(c.fxLights,8,11),c.fxLights,color(c.highlights,20,25),c.highlights,HIGHLIGHT_LIMIT)
 		local problems=string.format('&lt;font color="#ff6056"&gt;%d erreur(s)&lt;/font&gt; · &lt;font color="#ffbe50"&gt;%d à voir&lt;/font&gt; · %d info',nErr,nVoir,nInfo)
 		if self.mode==2 then
 			local recent={}
@@ -48434,14 +48524,14 @@ function Visual.install(ctx,dev)
 				table.insert(post,e.Name.." "..state)
 			end
 			lightText.Text=string.format(
-				"&lt;b&gt;Éclairage %s&lt;/b&gt;%s&lt;br/&gt;Heure %.1f h · latitude %.0f° · luminosité %.2f · exposition %.2f&lt;br/&gt;Ombres globales &lt;b&gt;%s&lt;/b&gt; · douceur %.2f · technologie &lt;b&gt;%s&lt;/b&gt;&lt;br/&gt;Ambiance %s · extérieur %s&lt;br/&gt;Diffus %.2f · spéculaire %.2f&lt;br/&gt;Post-effets : %s&lt;br/&gt;Lumières d'effet allumées : %d (dont %d avec ombres) · surface Néon visible %.0f studs²",
+				"&lt;b&gt;Éclairage %s&lt;/b&gt;%s&lt;br/&gt;Heure %.1f h · latitude %.0f° · luminosité %.2f · exposition %.2f&lt;br/&gt;Ombres globales &lt;b&gt;%s&lt;/b&gt; · douceur %.2f · technologie &lt;b&gt;%s&lt;/b&gt;&lt;br/&gt;Ambiance %s · extérieur %s&lt;br/&gt;Diffus %.2f · spéculaire %.2f&lt;br/&gt;Post-effets : %s&lt;br/&gt;Lumières allumées : %d, dont %d d'effet (%d avec ombres) · surface Néon visible %.0f studs²",
 				if preset=="jeu" then "du jeu (Client/WorldLook)" else "de test : "..preset,
 				if WorldLook and WorldLook.borrowed then " — &lt;font color=\"#ffbe50\"&gt;le jeu ne le réimpose pas tant que l'outil le tient&lt;/font&gt;" else "",
 				Lighting.ClockTime,Lighting.GeographicLatitude,Lighting.Brightness,Lighting.ExposureCompensation,
-				if Lighting.GlobalShadows then "ON" else "OFF",Lighting.ShadowSoftness,Lighting.Technology.Name,
+				if Lighting.GlobalShadows then "ON" else "OFF",Lighting.ShadowSoftness,techName(),
 				Lighting.Ambient:ToHex(),Lighting.OutdoorAmbient:ToHex(),Lighting.EnvironmentDiffuseScale,Lighting.EnvironmentSpecularScale,
-				if #post&gt;0 then table.concat(post,", ") else "aucun",c.lights,c.lightsShadow,c.neonArea or 0)
-			for k,b in presetButtons do b.BackgroundColor3=if k==preset then rgb(70,96,140) else rgb(43,51,65) end end
+				if #post&gt;0 then table.concat(post,", ") else "aucun",c.lights,c.fxLights,c.lightsShadow,c.neonArea or 0)
+			for k,b in presetButtons do b.BackgroundColor3=if k==preset then rgb(70,96,140) else rgb(43,51,65) end
 		elseif self.tab=="effets" then
 			fxText.Text=string.format("%s&lt;br/&gt;Émetteurs de particules %d (%d allumés) · mémoire particules %.1f Mo&lt;br/&gt;Faisceaux / traînées %d · sprites 2D %d&lt;br/&gt;Formes d'effet %d · marques au sol %d&lt;br/&gt;Instances du jeu %d · saccades (&amp;gt;60 ms) %d, pire %.0f ms%s",
 				line,c.particles,c.particlesOn,partMem,c.beams,c.sprites,c.shapes,c.marks,Stats.InstanceCount,frameSpikes,worstFrame*1000,
@@ -48482,7 +48572,7 @@ function Visual.install(ctx,dev)
 	self.counters=function() return counters end
 	self.lightingState=function()
 		return {preset=preset,borrowed=WorldLook and WorldLook.borrowed or false,clock=Lighting.ClockTime,latitude=Lighting.GeographicLatitude,brightness=Lighting.Brightness,
-			exposure=Lighting.ExposureCompensation,globalShadows=Lighting.GlobalShadows,technology=Lighting.Technology.Name,ambient=Lighting.Ambient:ToHex(),outdoor=Lighting.OutdoorAmbient:ToHex()}
+			exposure=Lighting.ExposureCompensation,globalShadows=Lighting.GlobalShadows,technology=techName(),ambient=Lighting.Ambient:ToHex(),outdoor=Lighting.OutdoorAmbient:ToHex()}
 	end
 
 	-- Agents read the same report from Studio (execute_luau on the client):
@@ -48490,7 +48580,8 @@ function Visual.install(ctx,dev)
 	local bindable=Instance.new("BindableFunction");bindable.Name="Report";bindable.Parent=gui
 	bindable.OnInvoke=function(op,arg)
 		if op=="preset" then applyPreset(arg) elseif op=="hide" then setFamily(arg,true) elseif op=="show" then setFamily(arg,false)
-		elseif op=="mode" then self:setMode(tonumber(arg) or 0) elseif op=="restore" then Visual.restore(self) elseif op=="clear" then table.clear(issues);table.clear(order) end
+		elseif op=="mode" then self:setMode(tonumber(arg) or 0) elseif op=="restore" then Visual.restore(self) elseif op=="clear" then table.clear(issues);table.clear(order)
+		elseif op=="tab" and pages[arg] then selectTab(arg) end
 		return HttpService:JSONEncode(Visual.snapshot(self))
 	end
 
@@ -48498,20 +48589,25 @@ function Visual.install(ctx,dev)
 	for _,root in {workspace,playerGui} do
 		for _,d in root:GetDescendants() do track(d) end
 		root.DescendantAdded:Connect(function(d)
-			track(d)
-			local info=tracked[d]
-			if info then
-				if hidden[info.family] then task.defer(hide,d,info.family) end
-				if info.family=="particles" and frozen then pcall(function() d.TimeScale=frozen end) end
-			end
+			-- A frame later: the game names and places what it creates after parenting it.
+			task.defer(function()
+				if not d.Parent then return end
+				track(d)
+				local info=tracked[d]
+				if info then
+					if hidden[info.family] then hide(d,info.family) end
+					if info.family=="particles" and frozen then pcall(function() d.TimeScale=frozen end) end
+				end
+			end)
 		end)
 	end
 	Lighting.ChildAdded:Connect(function(e) if hidden.post and (e:IsA("PostEffect") or e:IsA("Atmosphere")) then task.defer(setFamily,"post",true) end end)
 	local acc,last=0,0
+	local installedAt=os.clock()
 	local frames,frameClock=0,os.clock()
 	RunService.RenderStepped:Connect(function(dt)
 		frames+=1
-		if dt&gt;.06 then
+		if dt&gt;.06 and dt&lt;2 and os.clock()-installedAt&gt;10 then
 			frameSpikes+=1;worstFrame=math.max(worstFrame,dt)
 			if dt&gt;.12 then report("info","Saccade : une image a duré "..math.floor(dt*1000).." ms",string.format("%d objets d'effet vivants",counters.total or 0),nil,"spike") end
 		end

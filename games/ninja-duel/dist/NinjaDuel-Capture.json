@@ -1,7 +1,7 @@
 {
   "version": "0.13.0-arena-combo",
   "artifact": "NinjaDuel-Capture.rbxlx",
-  "sha256": "6c8fde360c7625bfb4d2009722c4315ea70a46ba1fe2172f5587ef2ef9f4f0fe",
+  "sha256": "76918d9fb0ca13e64a4cad246b898803d148de25c7858fc89e1a3119ef195ffa",
   "sources": {
     "src/Client/ArenaDress.luau": "bd92aa3bf3c37a36fd9d2b1f02971921d9c5e981788abe9594a098425bf3cb0e",
     "src/Client/AuthoredClips.luau": "d85a832ad37061e75823f4cd78be73d5939383e22401c20229fe4cf656c79cc3",
@@ -71,7 +71,7 @@
     "src/Client/CopyFX.luau": "b642f7fba6bac1682dbedf5acf146235609f4a1ccedced29ebcd2d08d8b317bb",
     "src/Client/CupScreen.luau": "a8cdd0eb475ed0fb0e6eb7fb3d8262d190af7ee50684dd3fa33f3527a90d199f",
     "src/Client/DevClient.luau": "7df7f0879b1198b9d9bea292b65059516084207b6f4547533f9643523400d338",
-    "src/Client/DevVisual.luau": "c00e51e80c58f93b9c8ffd063ffa17edfb697bd9d0ce0510a3e55bf1e096ecd8",
+    "src/Client/DevVisual.luau": "c71fd0943572b29c1ff1d7c7b9144e7106658ae9d140ba0f1d1667cb54f9acc3",
     "src/Client/DevVolumes.luau": "1b557735b22d3dde87a14d9b8adcba8374012f2204916e66d7ad65aff52e007f",
     "src/Client/Effects.luau": "69ee7e80402325f4f1c3ba1b501a04936e8e7d1699ddef0fceb90874b1311dae",
     "src/Client/ElementFX.luau": "b8d299507867a751bf95df0b8b6395cfa12cc9d69b8ad303bb59f5cde01347ed",
@@ -213,11 +213,11 @@
   },
   "sourceEquality": "PASS",
   "debugOnly": true,
-  "buildFingerprint": "9c21d73a231cd97d9a138572896243d64d1bcbd3d5ac8fce45d8756ce2b61898",
+  "buildFingerprint": "6aa113d3cd2537bad5d1cb09bc0bd75b6ab074043ad5503ad65e223d98f05fdc",
   "profile": "capture",
   "runtimeFingerprint": "4e69e489591cae74a832a4ce52903b36ed2929fc7f390406196d70f26d8a59b0",
-  "sourceCommit": "00f5d495b0911f38a191016f505ab04d3692368c",
-  "headCommit": "00f5d495b0911f38a191016f505ab04d3692368c",
+  "sourceCommit": "3e562174f2ff7ab5e57fd192240df38fe606d68d",
+  "headCommit": "3e562174f2ff7ab5e57fd192240df38fe606d68d",
   "sourceDirty": true,
   "captureTools": {
     "tools/capture/studio/ClipKit.client.luau": "7889f16ee2fa12b5367d104b26d449f0734a271975421617800df53ec80a1a07",
