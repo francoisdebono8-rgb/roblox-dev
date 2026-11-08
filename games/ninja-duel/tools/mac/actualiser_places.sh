@@ -35,10 +35,13 @@ def sha(p):
     with open(p, 'rb') as f:
         for c in iter(lambda: f.read(1 << 22), b''): h.update(c)
     return h.hexdigest()
+# Toutes les places ou aucune : une seule ouverte dans Studio arrête tout AVANT
+# la première copie (sinon ND-JEU passait au nouveau commit et les autres non).
+opened = [n for n in names.values() if os.path.exists(os.path.join(places, n + '.rbxlx.lock'))]
+if opened:
+    sys.exit('Ouverte(s) dans Studio : ' + ', '.join(opened) + ' — aucune place modifiée. Fermer puis relancer.')
 for k, n in names.items():
     target = os.path.join(places, n + '.rbxlx')
-    if os.path.exists(target + '.lock'):
-        sys.exit(f'{n} est ouverte dans Studio ({n}.rbxlx.lock) : fermer Studio puis relancer.')
     old_manifest = os.path.join(places, n + '.json')
     if os.path.exists(target) and os.path.exists(old_manifest):
         if sha(target) != json.load(open(old_manifest)).get('sha256'):
