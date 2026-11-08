@@ -245,4 +245,46 @@ test("pad, free, backed into the arena wall: the lens swings along it too",funct
 	assert(onScreen(b.root.Position,2),"free on a pad, the swing lost the opponent")
 end)
 
+-- (08/11, F7 tool, finding 7: the lens behind a tree trunk hid the player) A
+-- field tree is an invisible box (World) carrying the Blender tree
+-- (ArenaMeshData "Tree": trunk and crown pieces, sizes at scale 1).
+local function fieldTree(at,scale)
+	local R=H.roblox
+	local folder=R.Instance.new("Folder");folder.Name="Match"
+	local yard=R.Instance.new("Folder");yard.Name="Courtyard";yard.Parent=folder
+	local box=R.Instance.new("Part");box.Name="Field tree";box.Transparency=1;box.LocalTransparencyModifier=0
+	box.Size=V.new(2.2,15,2.2)*scale;box.Position=at+V.new(0,7.5*scale,0);box.Parent=yard
+	local function piece(name,offset,size)
+		local p=R.Instance.new("MeshPart");p.Name="Tree_"..name;p.LocalTransparencyModifier=0;p.Size=size*scale;p.Position=at+offset*scale;p.Parent=box
+		return p
+	end
+	return folder,box,piece("Trunk",V.new(-.2,9.77,.19),V.new(7.51,19.54,9.49)),piece("Leaves",V.new(.3,19.16,-.22),V.new(18.7,13.1,21.9))
+end
+
+test("a field tree's trunk across the line from the lens to the player fades; its crown overhead stays",function()
+	local cam=Camera.new()
+	local folder,_,trunk,leaves=fieldTree(V.new(0,0,14),.85)
+	-- The lens behind the trunk, at body height (the line crosses the trunk
+	-- 4 studs up, its centre is 8 studs up).
+	cam:fadeDecor(folder,V.new(0,3,0),nil,V.new(0,5,24),1)
+	assert(trunk.LocalTransparencyModifier>=.69,"the trunk between the lens and the player stayed opaque")
+	assert(leaves.LocalTransparencyModifier<.01,"the crown above the line faded")
+	-- The line well beside the tree: the trunk comes back.
+	cam:fadeDecor(folder,V.new(12,3,0),nil,V.new(12,5,24),2)
+	assert(trunk.LocalTransparencyModifier<.01,"the trunk stayed faded once out of the line")
+end)
+
+test("the lens's ray stopped by a tree's invisible box fades the tree it carries; a visible prop fades alone",function()
+	local _,box,trunk,leaves=fieldTree(V.new(0,0,14),.85)
+	local faded={}
+	Camera.fadeHit(box,faded)
+	assert(faded[box] and faded[trunk] and faded[leaves],"the Blender tree under the invisible box was not faded")
+	local R=H.roblox
+	local crate=R.Instance.new("Part");crate.Name="Crate"
+	local lid=R.Instance.new("Part");lid.Parent=crate
+	local only={}
+	Camera.fadeHit(crate,only)
+	assert(only[crate] and not only[lid],"a visible prop faded what it carries")
+end)
+
 print(("CameraFeel: %d passed"):format(passed))

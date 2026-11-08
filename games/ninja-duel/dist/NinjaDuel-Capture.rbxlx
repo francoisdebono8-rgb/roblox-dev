@@ -5094,13 +5094,13 @@ return {
       <Item class="StringValue" referent="ND32">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">6aa113d3cd2537bad5d1cb09bc0bd75b6ab074043ad5503ad65e223d98f05fdc</string>
+          <string name="Value">71e04a4d213115efe32bb0dcd4a9b6907bca58ddb29dc63c7d77e6b8eba290ca</string>
         </Properties>
       </Item>
       <Item class="StringValue" referent="ND33">
         <Properties>
           <string name="Name">RuntimeFingerprint</string>
-          <string name="Value">4e69e489591cae74a832a4ce52903b36ed2929fc7f390406196d70f26d8a59b0</string>
+          <string name="Value">7e7b96adee1fe16ac318752857057361ef539a17f96567a38a7df2bc8f5b2a3c</string>
         </Properties>
       </Item>
       <Item class="StringValue" referent="ND34">
@@ -5112,7 +5112,7 @@ return {
       <Item class="StringValue" referent="ND35">
         <Properties>
           <string name="Name">SourceCommit</string>
-          <string name="Value">8fd432f65c1e</string>
+          <string name="Value">c2d0d23b45b4</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND36">
@@ -29416,8 +29416,16 @@ local function draw(scar,class)
 	if RELIEF[scar.kind] then relief(scar,palette) end
 end
 -- Leave (or deepen) a scar. Returns the scar entry.
+-- (08/11, F7 tool: a crater floating 33 studs up, on the courtyard's invisible
+-- boundary) A mark is drawn only on what the eye sees. An invisible collider
+-- (the courtyard's Boundary, a field tree's box round its Blender mesh)
+-- carries none; its wear still counts, so a tree still cracks and falls.
+WorldReaction.INVISIBLE=.95
+function WorldReaction.visible(part)
+	return not (part and part:IsA("BasePart") and part.Transparency&gt;=WorldReaction.INVISIBLE)
+end
 function WorldReaction.scar(c,kind,surface,position,normal,energy,along,class)
-	if not SHAPES[kind] then return nil end
+	if not SHAPES[kind] or not WorldReaction.visible(surface) then return nil end
 	local w=state(c)
 	-- The same mark close to an old one deepens it instead of stacking parts.
 	for k=#w.scars,1,-1 do
@@ -44709,6 +44717,18 @@ local function solid(part)
 	return part.Name=="Training floor" or string.sub(part.Name,1,8)=="Boundary" or part:GetAttribute("NinjaWall")==true or part.Size.Magnitude&gt;40
 end
 Camera.solid=solid
+-- (08/11, F7 tool: the lens behind a field tree hid the player) A field tree
+-- is an invisible box (World: cover, line of sight, breakable) carrying the
+-- Blender tree. The lens's ray stops on the box, and fading the box alone
+-- changed nothing on screen: an invisible part in the way fades what it
+-- carries.
+local function fadeHit(part,faded)
+	faded[part]=true
+	if part.Transparency&gt;=.95 and part.GetDescendants then
+		for _,d in part:GetDescendants() do if d:IsA("BasePart") then faded[d]=true end end
+	end
+end
+Camera.fadeHit=fadeHit
 function Camera.new()
 	-- (DEC-031, user 03/11: "on est sur du Storm total") Free by default:
 	-- the mouse turns the lens, SHIFT locks on.
@@ -44896,7 +44916,7 @@ function Camera:fadeDecor(folder,a,target,lens,clock)
 			local center=nil
 			for _,d in yard:GetDescendants() do
 				if d:IsA("BasePart") and (string.sub(d.Name,1,5)=="Bush_" or string.sub(d.Name,1,5)=="Tree_") then
-					table.insert(list,{part=d,center=d.Position,radius=math.max(d.Size.X,d.Size.Z)*.5,top=d.Position.Y+d.Size.Y*.5})
+					table.insert(list,{part=d,center=d.Position,radius=math.max(d.Size.X,d.Size.Z)*.5,top=d.Position.Y+d.Size.Y*.5,bottom=d.Position.Y-d.Size.Y*.5})
 				end
 				if d.Name=="Training floor" then center=d.Position end
 			end
@@ -44920,13 +44940,19 @@ function Camera:fadeDecor(folder,a,target,lens,clock)
 		local flat=Vector3.new(p.X-item.center.X,0,p.Z-item.center.Z).Magnitude
 		return flat&lt;item.radius+2.5 and p.Y-3&lt;item.top
 	end
+	-- (08/11, F7 tool) Across the line over the piece's whole height, not
+	-- near its centre: a trunk's centre stands 7 to 9 studs up, and a line at
+	-- body height through the trunk passed "too far" from it - the trunk hid
+	-- the player and stayed opaque.
 	local function across(item)
 		if not lens then return false end
 		local seg=a-lens
-		local len=seg.Magnitude
-		if len&lt;.1 then return false end
-		local t=math.clamp((item.center-lens):Dot(seg)/(len*len),0,1)
-		return (lens+seg*t-item.center).Magnitude&lt;item.radius*.9
+		if seg.Magnitude&lt;.1 then return false end
+		local flat=Vector3.new(seg.X,0,seg.Z)
+		local len2=flat:Dot(flat)
+		local t=if len2&gt;1e-4 then math.clamp(Vector3.new(item.center.X-lens.X,0,item.center.Z-lens.Z):Dot(flat)/len2,0,1) else 0
+		local p=lens+seg*t
+		return Vector3.new(p.X-item.center.X,0,p.Z-item.center.Z).Magnitude&lt;item.radius*.9 and p.Y&gt;item.bottom-1 and p.Y&lt;item.top+1
 	end
 	for _,item in list do
 		local part=item.part
@@ -45265,13 +45291,13 @@ function Camera:update(data,dt)
 	for _=1,6 do
 		if not hit or solid(hit.Instance) then break end
 		if not fadeBody(hit.Instance) then
-			faded[hit.Instance]=true
+			fadeHit(hit.Instance,faded)
 			table.insert(exclude,hit.Instance)
 		end
 		ray.FilterDescendantsInstances=exclude
 		hit=cast()
 	end
-	for part in self.faded or {} do if not faded[part] and part.Parent then part.LocalTransparencyModifier=0 end end
+	for part in self.faded or {} do if not faded[part] and part.Parent then part.LocalTransparencyModifier=if self.decorFaded and self.decorFaded[part] then DECOR_FADE else 0 end end
 	for part in faded do part.LocalTransparencyModifier=.72 end
 	self.faded=faded
 	local squeeze=0
@@ -45428,11 +45454,11 @@ function Camera:update(data,dt)
 				for _,d in model:GetDescendants() do if d:IsA("BasePart") then faded[d]=true end end
 				table.insert(exclude,model)
 			else
-				faded[hit.Instance]=true;table.insert(exclude,hit.Instance)
+				fadeHit(hit.Instance,faded);table.insert(exclude,hit.Instance)
 			end
 		end
 		if hit then eye=hit.Position+hit.Normal*1.2+Vector3.new(0,math.max(0,(eye-look).Magnitude-hit.Distance)*.4,0) end
-		for part in self.faded or {} do if not faded[part] and part.Parent then part.LocalTransparencyModifier=0 end end
+		for part in self.faded or {} do if not faded[part] and part.Parent then part.LocalTransparencyModifier=if self.decorFaded and self.decorFaded[part] then DECOR_FADE else 0 end end
 		for part in faded do part.LocalTransparencyModifier=.72 end
 		self.faded=faded
 		local cf=CFrame.lookAt(eye,look)*shake
