@@ -2459,6 +2459,8 @@ require(script.Parent.ChakraFX).install(FX,{new=new,block=block,tween=tween,soun
 -- chains, Itachi's reads and geometry, Sasuke's curse and Chidori).
 require(script.Parent.IdentityFX).install(FX,{new=new,block=block,tween=tween,sound=sound,flash=flash,shockRing=shockRing,burst=burst,
 	smokePuff=smokePuff,sparks=sparks,floorUnder=floorUnder,anchorPart=anchorPart,weldAll=weldAll,num=num,seq=seq,TEX=TEX,SOUND=SOUND,BUILD=BUILD})
+-- (Lot 3 animation, 08/11) Each awakening's own look for the whole state.
+require(script.Parent.AwakenFX).install(FX,{new=new,floorUnder=floorUnder})
 -- Family objects of the roster breadth pass (Shared/Looks): every kind gets
 -- its own model, flight, contact and ground look; buffs and slows on bodies.
 require(script.Parent.FamilyFX).install(FX,{new=new,block=block,tween=tween,sound=sound,flash=flash,shockRing=shockRing,burst=burst,
