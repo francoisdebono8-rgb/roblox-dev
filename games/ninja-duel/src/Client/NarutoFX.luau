@@ -10,6 +10,7 @@ local Debris=game:GetService("Debris")
 local NarutoFX={}
 local K -- Effects' helpers, handed over by install()
 local Face=require(game:GetService("ReplicatedStorage").NinjaDuel.Face)
+local AwakenFX=require(script.Parent.AwakenFX)
 NarutoFX.clock=os.clock -- (headless tests drive time)
 local NARUTO="Legion"
 local SMOKE=Color3.fromRGB(240,240,244)
@@ -307,8 +308,8 @@ local function shroud(fx,model)
 		local r=math.max(head.Size.X,head.Size.Y)*.5
 		for _,side in {-1,1} do
 			-- (a wedge's sharp corner is its top back: the ear points up and back)
-			local ear=K.block(holder,Vector3.new(.18,.8,.5),head.CFrame*CFrame.new(side*r*.62,r*1.12,.1)*CFrame.Angles(math.rad(-8),0,math.rad(-side*18)),FOX,Enum.Material.Neon,"WedgePart")
-			ear.Name="FoxEar";ear.Transparency=.12;ear.Anchored=false;ear.Massless=true
+			local ear=K.block(holder,Vector3.new(.18,.8,.5),head.CFrame*CFrame.new(side*r*.62,r*1.12,.1)*CFrame.Angles(math.rad(-8),0,math.rad(-side*18)),FOX,Enum.Material.ForceField,"WedgePart")
+			ear.Name="FoxEar";ear.Transparency=0;ear.Anchored=false;ear.Massless=true -- (lot 3: the shell's boiling chakra, not plain Neon)
 			K.new("WeldConstraint",{Part0=head,Part1=ear},ear)
 		end
 	end
@@ -334,6 +335,14 @@ local function cloak(fx,model,actor,st)
 			local u=(k-1)/(TAIL-1)
 			local p=K.block(tail,Vector3.one*(1.05-u*.7),hips.CFrame,if k==TAIL then FOX_CORE else FOX,Enum.Material.Neon)
 			p.Shape=Enum.PartType.Ball;p.Transparency=.1+u*.35
+			-- (Lot 3, 08/11: a row of plain Neon balls read as an old Roblox
+			-- game, VFX bible) the tail is drawn as red chakra burning along
+			-- the same line; the balls only carry the flame.
+			p.Transparency=1
+			AwakenFX.emitter(p,"flame",{Rate=14-u*6,Lifetime=NumberRange.new(.22,.36),Speed=NumberRange.new(.2,.8),Acceleration=Vector3.new(0,3,0),
+				Color=ColorSequence.new(Color3.fromRGB(255,120,70)),LightEmission=.45,
+				Size=NumberSequence.new({NumberSequenceKeypoint.new(0,2.6-u*1.4),NumberSequenceKeypoint.new(1,.5)}),
+				Transparency=NumberSequence.new({NumberSequenceKeypoint.new(0,.2),NumberSequenceKeypoint.new(1,1)})})
 			table.insert(parts,p)
 		end
 		st.tail=tail;st.tailParts=parts

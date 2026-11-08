@@ -537,6 +537,19 @@ Studio (3 par lot) : **S22** trois légers+lourd à vitesse normale : anticipati
 - evidence: —
 - outcome: PENDING
 
+## ANIM-007 — Jutsu et éveils : chaque technique se voit et a son corps
+
+- status: IN_PROGRESS
+- priority: P1
+- dependencies: ANIM-006
+- subsystem: animation, vfx
+- character: les 8 de la bêta
+- summary: chaque éveil a son aspect propre pendant tout l'état (pas seulement l'entrée) ; chaque jutsu a un corps (clip) et un effet lisibles, y compris en qualité graphique basse ; aucune technique sans animation
+- sources: utilisateur 08/11 « passer aux animations visuelles des techniques jutsu, éveil ; il y a des techniques qui n'ont pas encore d'animation du tout » (consigné dans le [rapport lot 3](../reports/anim-lot3-2026-11-08/RAPPORT.md)) ; bible VFX du 06/11
+- validation: Studio ND-DEV, qualité 10 puis 3, les 72 techniques et les 8 éveils revus à l'œil ; verdict du joueur
+- evidence: (08/11) [lot 3](../reports/anim-lot3-2026-11-08/RAPPORT.md) : audit Studio des 72 techniques (corps et effets enregistrés) et des 8 éveils ; `Client/AwakenFX` (8 éveils refaits), queue de Naruto sans Neon ; `AwakenFX.spec` ; vu partiellement en Studio (Lee, Naruto), version finale non revue (ND-FILM occupait le Mac)
+- outcome: PENDING
+
 ## EMB-001 — Ninja Embodiment — le joueur devient le ninja (parent)
 
 - status: IN_PROGRESS
