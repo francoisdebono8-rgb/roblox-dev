@@ -64,6 +64,12 @@ function DevHooks.install(matches)
 	local logRemote=Instance.new("RemoteEvent");logRemote.Name="NinjaDuelDevLog";logRemote.Parent=game:GetService("ReplicatedStorage")
 	local clientLog={}
 	local clientInfo={}
+	-- (08/11) The F7 visual tool (Client/DevVisual) lists the server's errors
+	-- and warnings next to the client's.
+	game:GetService("LogService").MessageOut:Connect(function(message,kind)
+		local k=if kind==Enum.MessageType.MessageError then "error" elseif kind==Enum.MessageType.MessageWarning then "warning" else nil
+		if k then logRemote:FireAllClients("serverlog",{k=k,m=string.sub(message,1,400)}) end
+	end)
 	logRemote.OnServerEvent:Connect(function(_,kind,payload)
 		if kind=="log" and type(payload)=="string" then
 			table.insert(clientLog,payload);while #clientLog>60 do table.remove(clientLog,1) end

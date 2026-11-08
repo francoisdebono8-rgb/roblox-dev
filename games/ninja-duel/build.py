@@ -26,7 +26,7 @@ STUDIO_ONLY=PROFILE!='release'
 # profiler, report, self-test, and the optional chakra lab (Chakra*).
 DEBUG_SOURCES={'DevHooks.luau','CombatInspector.luau','CombatDebug.client.luau',
     'DevTools.luau','DevCommands.luau','DevScenarios.luau','DevProfiler.luau','DevReport.luau','DevQA.luau','DevMetrics.luau',
-    'DevClient.luau','DevVolumes.luau','ChakraLab.luau','ChakraDev.luau','ChakraStudioView.luau','ChakraStudioQA.luau','DevRosterCheck.luau','DevGateCheck.luau','DevFlight.luau','TutorialBot.luau','TutorialProbe.luau','Repro.luau'}
+    'DevClient.luau','DevVolumes.luau','DevVisual.luau','ChakraLab.luau','ChakraDev.luau','ChakraStudioView.luau','ChakraStudioQA.luau','DevRosterCheck.luau','DevGateCheck.luau','DevFlight.luau','TutorialBot.luau','TutorialProbe.luau','Repro.luau'}
 def included(p):
     return (args.qa or p.stem!='NativeQA') and (STUDIO_ONLY or p.name not in DEBUG_SOURCES)
 def runtime(p):

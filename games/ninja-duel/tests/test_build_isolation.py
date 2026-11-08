@@ -16,14 +16,15 @@ ROOT = Path(__file__).resolve().parents[1]
 # chakra lab (docs/tools/DEVTOOLS.md). build.py's DEBUG_SOURCES must list them.
 INSPECTOR = {'DevHooks', 'CombatInspector', 'CombatDebug'}
 DEV_TOOLS = {'DevTools', 'DevCommands', 'DevScenarios', 'DevProfiler', 'DevReport', 'DevQA', 'DevMetrics',
-             'DevClient', 'DevVolumes', 'ChakraLab', 'ChakraDev', 'ChakraStudioView', 'ChakraStudioQA', 'DevRosterCheck', 'DevGateCheck', 'TutorialBot', 'TutorialProbe', 'Repro'}
+             'DevClient', 'DevVolumes', 'DevVisual', 'ChakraLab', 'ChakraDev', 'ChakraStudioView', 'ChakraStudioQA', 'DevRosterCheck', 'DevGateCheck', 'TutorialBot', 'TutorialProbe', 'Repro'}
 DEBUG_ONLY = INSPECTOR | DEV_TOOLS
 # The filming place's tools (tools/capture/studio), in the capture place only.
 CAPTURE_TOOLS = {'ClipKit', 'HiraishinKunai', 'ShotRunner', 'Sets', 'SetSnapshot', 'NDFactoryBoot'}
 PROFILES = ('NinjaDuel.json', 'NinjaDuel-Debug.json', 'NinjaDuel-QA.json', 'NinjaDuel-Capture.json')
 # Strings that only the debug-only modules contain (remote, GUI, Output and folder names).
 MARKERS = ('NinjaDuelDevControl', 'NinjaDuelDevPanel', 'NinjaDuelDevMeasure', 'DevObservedVolume', '[NinjaDuelPerf]',
-           '[NinjaDuelDevQA]', '[NinjaDuelChakraQA]', 'NinjaDuelChakraLab', 'NinjaDuelCombatDebug')
+           '[NinjaDuelDevQA]', '[NinjaDuelChakraQA]', 'NinjaDuelChakraLab', 'NinjaDuelCombatDebug',
+           'DevVisualPanel', '[NinjaDuelVisual]')
 
 
 def scripts(filename):

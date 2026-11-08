@@ -21,7 +21,7 @@ function Dev.install(ctx)
 	local probeModule=script.Parent:FindFirstChild("TutorialProbe")
 	if probeModule then pcall(function() require(probeModule).install(ctx) end) end
 	local m=Metrics.new()
-	local self={panelOpen=false,metrics=m,blocked={phase="DevPanel"}}
+	local self={panelOpen=false,f6Open=false,metrics=m,blocked={phase="DevPanel"}}
 	local track={};local lastPacket=nil;local packetAt=0;local epoch=nil
 	local control=nil;local busy=false;local profile=false
 	local gui=Instance.new("ScreenGui");gui.Name="NinjaDuelDevPanel";gui.ResetOnSpawn=false;gui.DisplayOrder=110;gui.Enabled=false
@@ -74,10 +74,14 @@ function Dev.install(ctx)
 		volumes:set(not volumes.enabled)
 		status.Text=if volumes.enabled then "Volumes : racines bleues / hitboxes rouges" else "Volumes OFF"
 	end)
+	-- Combat input is held while F6's panel or F7's panel (DevVisual) is open.
+	function self:refreshBlocking()
+		self.panelOpen=self.f6Open==true or (self.visual~=nil and self.visual.blocking==true)
+	end
 	function self:toggle(open)
-		if open==nil then open=not self.panelOpen end
-		if open==self.panelOpen then return end
-		self.panelOpen=open;gui.Enabled=open
+		if open==nil then open=not self.f6Open end
+		if open==self.f6Open then return end
+		self.f6Open=open;gui.Enabled=open;self:refreshBlocking()
 		local gs=game:GetService("GuiService")
 		if open then
 			selectedBefore=gs.SelectedObject
@@ -127,6 +131,12 @@ function Dev.install(ctx)
 			end
 		end
 	end)
+	-- F7: light, shadows, effect visibility and the live problem list (DevVisual).
+	local visualModule=script.Parent:FindFirstChild("DevVisual")
+	if visualModule then
+		local ok,err=pcall(function() self.visual=require(visualModule).install(ctx,self) end)
+		if not ok then warn("[NinjaDuel] F7 visual tool unavailable: "..tostring(err)) end
+	end
 	task.spawn(function()
 		-- Both channels are created by the server's DevHooks at ReplicatedStorage root.
 		control=RS:WaitForChild("NinjaDuelDevControl",15)
