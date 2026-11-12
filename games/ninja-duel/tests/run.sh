@@ -45,6 +45,7 @@ run Engagement "$LUNE" run tests/Engagement.spec.luau
 run Look "$LUNE" run tests/Look.spec.luau
 run Stage "$LUNE" run tests/Stage.spec.luau
 run AIVariety "$LUNE" run tests/AIVariety.spec.luau
+run HudText "$LUNE" run tests/HudText.spec.luau
 run Spacing "$LUNE" run tests/Spacing.spec.luau
 run StepSpeeds "$LUNE" run tests/StepSpeeds.spec.luau
 run ReactionSides "$LUNE" run tests/ReactionSides.spec.luau

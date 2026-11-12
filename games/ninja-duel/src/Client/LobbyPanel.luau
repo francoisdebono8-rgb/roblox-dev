@@ -14,6 +14,8 @@
 local Players=game:GetService("Players")
 local UIS=game:GetService("UserInputService")
 local Shared=game:GetService("ReplicatedStorage").NinjaDuel
+-- (QA 12/11) capitals that keep the long vowels and accents.
+local Text=require(Shared.Text)
 local Fighters=require(Shared.Fighters)
 local Panel={};Panel.__index=Panel
 
@@ -158,7 +160,7 @@ function Panel:receive(data)
 		if data.text then self:status(data.text,"bad") end
 	elseif data.kind=="sent" then
 		self.sentId=data.id
-		self:status("CHALLENGE SENT TO "..string.upper(tostring(data.to)).."  •  WAITING…","info",true)
+		self:status("CHALLENGE SENT TO "..Text.upper(tostring(data.to)).."  •  WAITING…","info",true)
 	elseif data.kind=="status" then
 		if self.sentId and data.tone=="bad" then self.sentId=nil end
 		self:status(data.text,data.tone,false)
@@ -179,11 +181,11 @@ function Panel:drawInvite()
 	self.inviteCard.Visible=invite~=nil
 	if not invite then return end
 	local def=Fighters[invite.fighter or ""]
-	self.inviteText.Text=string.upper(invite.from).." CHALLENGES YOU"
+	self.inviteText.Text=Text.upper(invite.from).." CHALLENGES YOU"
 	local pad=false
 	pcall(function() pad=UIS:GetLastInputType().Name:match("^Gamepad")~=nil end)
 	local keys=if not pad then "ENTER ACCEPTS  •  BACKSPACE DECLINES" elseif self.phase=="Duel" then "SELECT ACCEPTS" else "A ACCEPTS  •  B DECLINES"
-	self.inviteSub.Text=(if def then "WITH "..string.upper(def.Name).."  •  " else "")..keys
+	self.inviteSub.Text=(if def then "WITH "..Text.upper(def.Name).."  •  " else "")..keys
 	if pad and self.phase~="Duel" then
 		pcall(function() game:GetService("GuiService").SelectedObject=self.acceptButton end)
 	end
@@ -228,9 +230,9 @@ function Panel:drawList()
 		local def=Fighters[e.fighter or ""]
 		local accent=if def then Color3.fromRGB(table.unpack(def.Color)) else P.muted
 		local bar=K.frame(row,UDim2.fromOffset(0,0),UDim2.new(0,6,1,0),accent,0);bar.ZIndex=74
-		local name=K.text(row,(if e.friend then "★ " else "")..string.upper(e.name),UDim2.fromOffset(18,6),UDim2.fromOffset(340,28),24,P.paper,K.TITLE_FONT)
+		local name=K.text(row,(if e.friend then "★ " else "")..Text.upper(e.name),UDim2.fromOffset(18,6),UDim2.fromOffset(340,28),24,P.paper,K.TITLE_FONT)
 		name.ZIndex=74;name.TextScaled=true;K.create("UITextSizeConstraint",name,{MaxTextSize=24})
-		local info=(if def then string.upper(def.Name).."  •  " else "")..(if e.dnd then "DO NOT DISTURB" else STATE[e.state] or "")..(if e.here then "  •  THIS SERVER" else "")
+		local info=(if def then Text.upper(def.Name).."  •  " else "")..(if e.dnd then "DO NOT DISTURB" else STATE[e.state] or "")..(if e.here then "  •  THIS SERVER" else "")
 		local sub=K.text(row,info,UDim2.fromOffset(18,34),UDim2.fromOffset(440,18),12,P.muted,K.BODY_FONT);sub.ZIndex=74
 		local label=if e.pending then "SENT…" elseif available then "CHALLENGE" else "BUSY"
 		local b=K.button(row,label,UDim2.fromOffset(500,8),UDim2.fromOffset(186,42),function()

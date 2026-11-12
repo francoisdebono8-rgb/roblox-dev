@@ -6,6 +6,8 @@ local Fighters=require(Shared.Fighters)
 -- (Beta 03/11) the select screen offers the beta's fighters only (Shared/BetaRoster).
 local Roster=require(Shared.BetaRoster)
 local Controls=require(Shared.Controls)
+-- (QA 12/11) capitals that keep the long vowels and accents (Shared/Text).
+local Text=require(Shared.Text)
 -- (05/11) The face button of each jutsu slot on a pad (R1 is the row's).
 local PAD_FACE={"□","△","○","×","D↑"}
 local ChakraMoves=require(Shared.ChakraMoves)
@@ -209,7 +211,7 @@ function UI.new(parent,send)
 		corner(tablet,5)
 		local edge=create("UIStroke",tablet,{Color=accent,Thickness=1.5,Transparency=.55,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
 		local glow=frame(tablet,UDim2.fromOffset(0,0),UDim2.new(0,6,1,0),accent,0)
-		local label=text(tablet,string.upper(def.Name),UDim2.fromOffset(12,0),UDim2.fromOffset(W-16,H),22,palette.paper,TITLE_FONT,Enum.TextXAlignment.Center)
+		local label=text(tablet,Text.upper(def.Name),UDim2.fromOffset(12,0),UDim2.fromOffset(W-16,H),22,palette.paper,TITLE_FONT,Enum.TextXAlignment.Center)
 		label.TextScaled=true;create("UITextSizeConstraint",label,{MaxTextSize=22})
 		-- The pick's tag sits on the plate's top edge (above it, it covered the
 		-- row above when a second-row plate was picked).
@@ -240,7 +242,7 @@ function UI.new(parent,send)
 	self.levelButton=button(shell,"AI LEVEL  •  EASY",UDim2.fromOffset(600,712),UDim2.fromOffset(400,52),function()
 		if self.picking then return end
 		self.aiLevel=LEVEL_NEXT[self.aiLevel] or "easy"
-		self.levelButton.Text="AI LEVEL  •  "..string.upper(self.aiLevel)
+		self.levelButton.Text="AI LEVEL  •  "..Text.upper(self.aiLevel)
 	end)
 	self.levelButton.TextSize=24
 	self.startButton.TextSize=32
@@ -417,7 +419,11 @@ function UI.new(parent,send)
 	frame(self.hud,UDim2.new(.5,-46,0,48),UDim2.fromOffset(92,3),palette.red,0)
 	self.cue=text(self.hud,"",UDim2.new(.5,-300,0,124),UDim2.fromOffset(600,40),30,palette.paper,TITLE_FONT,Enum.TextXAlignment.Center)
 	create("UIStroke",self.cue,{Color=palette.ink,Thickness=2,ApplyStrokeMode=Enum.ApplyStrokeMode.Contextual})
-	self.channel=text(self.hud,"",UDim2.new(.5,-250,0,166),UDim2.fromOffset(500,28),15,palette.muted,BODY_FONT,Enum.TextXAlignment.Center)
+	-- (QA 12/11: « BUSY — STILL IN YOUR MOVE » read too loud mid-screen) the
+	-- quiet line is a whisper: smaller, half see-through (never in autopilot,
+	-- Matches:view sends no quiet reason for a fighter the player does not drive).
+	self.channel=text(self.hud,"",UDim2.new(.5,-250,0,166),UDim2.fromOffset(500,24),13,palette.muted,BODY_FONT,Enum.TextXAlignment.Center)
+	self.channel.TextTransparency=.4
 	self.statusLine=text(self.hud,"",UDim2.new(0,24,1,-44),UDim2.fromOffset(396,18),14,palette.paper)
 	-- (User 03/11) No key list on the fight screen: the controls sheet has it.
 	self.statusLine.Visible=false
@@ -648,9 +654,9 @@ function UI:refreshSelection()
 		local st=self.stages and self.stages[side]
 		local def=Fighters[id]
 		if st and def then
-			st.name.Text=string.upper(def.FullName or def.Name)
+			st.name.Text=Text.upper(def.FullName or def.Name)
 			st.name.TextColor3=accentOf(def):Lerp(palette.paper,.3)
-			st.sub.Text=string.format("AGE %d  •  %s",def.Age or 13,string.upper(def.Title or ""))
+			st.sub.Text=string.format("AGE %d  •  %s",def.Age or 13,Text.upper(def.Title or ""))
 			st.note.Text=def.Description or ""
 			st.choosing.Visible=self.side==side and not self.picking
 			local accent=accentOf(def)
@@ -665,8 +671,8 @@ function UI:refreshSelection()
 			end
 		end
 	end
-	self.matchup.Text=string.upper((p.Name).."  VS  "..(o.Name))
-	self.routeNote.Text=if p.Routes then string.upper(p.Name).." STRINGS  "..Controls.localize(p.Routes) else ""
+	self.matchup.Text=Text.upper((p.Name).."  VS  "..(o.Name))
+	self.routeNote.Text=if p.Routes then Text.upper(p.Name).." STRINGS  "..Controls.localize(p.Routes) else ""
 end
 -- The controls sheet: opened over any screen, built for the device in hand
 -- and the fighter being played.
@@ -704,18 +710,18 @@ function UI:buildControls(pad)
 	local id=if self.selection.Visible or not own then self.player else h.fighterId
 	local def=Fighters[id or ""]
 	local y=410
-	local head=text(body,if def then string.upper(def.FullName or def.Name) else "YOUR FIGHTER",UDim2.fromOffset(0,y),UDim2.fromOffset(1048,28),24,palette.gold,TITLE_FONT);head.ZIndex=43
+	local head=text(body,if def then Text.upper(def.FullName or def.Name) else "YOUR FIGHTER",UDim2.fromOffset(0,y),UDim2.fromOffset(1048,28),24,palette.gold,TITLE_FONT);head.ZIndex=43
 	local combo=Controls.comboHelp(MoveGraphs[id or ""] or {},pad)
 	local strings=text(body,combo,UDim2.fromOffset(0,y+32),UDim2.fromOffset(1048,40),15,palette.text,BODY_FONT);strings.ZIndex=43
 	if def and def.Techniques then
 		local names={}
-		for i,spec in def.Techniques do if i<=5 then table.insert(names,(if pad then Controls.TechniquePad[i] else tostring(i)).."  "..string.upper(spec.Name or spec.Id or "")) end end
+		for i,spec in def.Techniques do if i<=5 then table.insert(names,(if pad then Controls.TechniquePad[i] else tostring(i)).."  "..Text.upper(spec.Name or spec.Id or "")) end end
 		local jutsu=text(body,table.concat(names,"     "),UDim2.fromOffset(0,y+78),UDim2.fromOffset(1048,22),15,palette.paper,TITLE_FONT);jutsu.ZIndex=43
 		jutsu.TextScaled=true;create("UITextSizeConstraint",jutsu,{MaxTextSize=15})
 		if def.SealJutsu then
 			local key=if pad then {"□","△","○","×","D↑"} else {"1","2","3","4","5"}
 			local seals={}
-			for i,spec in def.SealJutsu do table.insert(seals,key[i].."  "..string.upper(spec.Name)) end
+			for i,spec in def.SealJutsu do table.insert(seals,key[i].."  "..Text.upper(spec.Name)) end
 			local sealRow=text(body,(if pad then "HOLD L2 + R1  " else "HOLD C  ")..table.concat(seals,"     "),UDim2.fromOffset(0,y+104),UDim2.fromOffset(1048,22),15,palette.gold,BODY_FONT);sealRow.ZIndex=43
 			sealRow.TextScaled=true;create("UITextSizeConstraint",sealRow,{MaxTextSize=15})
 		end
@@ -762,7 +768,7 @@ function UI:sealHud(h,pad,page)
 			local glyphs={}
 			for _,v in spec.Signs do table.insert(glyphs,SealJutsu.Glyphs[v]) end
 			local ready=remaining==0 and h.chakra>=spec.Cost and not sealed
-			row.Text=key[i].."   "..string.upper(spec.Name).."  "..table.concat(glyphs,"")..(if remaining>0 then string.format("   %.1fs",remaining) elseif h.chakra<spec.Cost then "   NEED CHAKRA" else "")
+			row.Text=key[i].."   "..Text.upper(spec.Name).."  "..table.concat(glyphs,"")..(if remaining>0 then string.format("   %.1fs",remaining) elseif h.chakra<spec.Cost then "   NEED CHAKRA" else "")
 			row.TextColor3=if ready and held then palette.gold elseif ready then palette.paper else palette.muted
 		end
 	end
@@ -853,7 +859,7 @@ function UI:lobby(data)
 	if self.picking then
 		if Fighters[online.me or ""] then self.player=online.me end
 		self.opponentPick=online.them
-		self.opponentLabel.Text="OPPONENT  •  "..string.upper(online.opponent or "")..(if online.theirReady then "  •  READY" else "")
+		self.opponentLabel.Text="OPPONENT  •  "..Text.upper(online.opponent or "")..(if online.theirReady then "  •  READY" else "")
 		self.startButton.Text=if online.ready then "READY  •  WAITING FOR OPPONENT" else "READY"
 		self.tutorialButton.Text="LEAVE"
 		self.notice.Text=string.format("ONLINE 1v1  •  THE DUEL STARTS IN %d s",math.ceil(online.remaining or 0))
@@ -890,7 +896,7 @@ function UI:lobby(data)
 end
 local function fullName(actor)
 	local def=Fighters[actor.fighterId]
-	return string.upper(def and def.FullName or actor.fighter or "")
+	return Text.upper(def and def.FullName or actor.fighter or "")
 end
 local function subtitle(actor)
 	local def=Fighters[actor.fighterId]
@@ -919,6 +925,10 @@ local QUIET={BUSY="BUSY — STILL IN YOUR MOVE",REACTING="STILL HIT",COOLDOWN="R
 	["ULTIMATE NOT READY"]="ULTIMATE NOT READY",["NO SUBSTITUTION"]="NO SUBSTITUTION LEFT"}
 function UI.quietText(reason)
 	return QUIET[reason] or reason
+end
+-- Whether the cue on screen already tells the player to chase.
+function UI.cueNamesChase(cue)
+	return type(cue)=="string" and (string.find(cue,"CHASE",1,true)~=nil or string.find(cue,"PURSUE",1,true)~=nil)
 end
 -- A plate's chakra network (Neji): four pips, lit per closed point (a fresh one
 -- pops), shown whenever the opponent fights with the Gentle Fist; the chakra
@@ -1094,7 +1104,7 @@ function UI:render(data)
 	self.roundSub.Text=if data.cup and data.cup.next and data.cup.next.roundName then data.cup.next.roundName else "PRODIGY TOURNAMENT"
 	-- (a match watched in the tournament: neither fighter is the player)
 	self.hp.name.Text=fullName(h);self.hp.title.Text=if data.spectate then "AI  •  "..subtitle(h) else subtitle(h).."  •  YOU"
-	self.enemy.name.Text=fullName(b);self.enemy.title.Text=(if data.online then string.upper(data.online.opponent or "OPPONENT") else "AI").."  •  "..subtitle(b)
+	self.enemy.name.Text=fullName(b);self.enemy.title.Text=(if data.online then Text.upper(data.online.opponent or "OPPONENT") else "AI").."  •  "..subtitle(b)
 	for _,pair in {{self.hp,h},{self.enemy,b}} do
 		local widget,actor=pair[1],pair[2]
 		-- The fighter's initial in the medallion, his colour on its ring.
@@ -1248,7 +1258,9 @@ function UI:render(data)
 		-- The row ends at the right edge whatever the kit's size.
 		ui.box.Position=UDim2.new(1,-24-(#h.techniques-i+1)*150+6,1,-84)
 		ui.key.Text=if pad then PAD_FACE[i] else string.format("%d",i)
-		ui.title.Text=string.upper(tech.name)
+		-- (QA 12/11: « NARUTO UZUMAKI RENDAN » went small on two lines) the
+		-- card takes the jutsu's short name when it has one (Fighters `CardName`).
+		ui.title.Text=Text.upper(tech.card or tech.name)
 		-- Sealed by the 64 Palms: every jutsu greys out and says why.
 		local sealed=(h.sealed or 0)>0
 		local ready=tech.remaining==0 and tech.condition and h.chakra>=tech.cost and not sealed
@@ -1319,7 +1331,9 @@ function UI:render(data)
 		-- (Audit 04/11) the pad's feint is R1 + R2 and its throw break L1 + □.
 		elseif h.state=="Startup" and h.attackName=="Heavy" then (if pad then P.Feint.." — FEINT" else K.Feint.." — FEINT")
 		elseif h.reaction=="Grabbed" then (if pad then P.Grab.." — THROW BREAK" else K.Grab.." — THROW BREAK")
-		elseif h.pursuit>0 then (if pad then "× — CHASE" else Controls.KeyLabel.Pursuit.." / SPACE — CHASE")
+		-- (QA 12/11: « KNOCK AWAY • E TO CHASE » and « E / SPACE – CHASE » at
+		-- once) the chase is said once: the cue says it, the hint stays quiet.
+		elseif h.pursuit>0 and not UI.cueNamesChase(self.cue.Text) then (if pad then "× — CHASE" else Controls.KeyLabel.Pursuit.." / SPACE — CHASE")
 		elseif (h.combo or 0)>=2 and h.state=="Recovery" and not h.airborne and (h.comboHits or 0)==0 and b.reaction then Controls.comboHelp(MoveGraphs[h.fighterId] or {},pad)
 		else ""
 	-- (Tournament, audit 04/11) watching an AI match: its prompts are not his.
@@ -1360,7 +1374,7 @@ function UI:render(data)
 		self.rematchButton.Text=if data.cup.out and not data.spectate then "SEE WHO WINS IT  •  THE BRACKET" else "CONTINUE  •  THE BRACKET"
 		if data.spectate then
 			local def=Fighters[winner.fighterId or ""]
-			self.resultTitle.Text=string.upper(def and def.Name or "")..(if (data.roundsToWin or 1)>1 and data.wins then string.format("  %d–%d",math.max(data.wins.human or 0,data.wins.bot or 0),math.min(data.wins.human or 0,data.wins.bot or 0)) else "")
+			self.resultTitle.Text=Text.upper(def and def.Name or "")..(if (data.roundsToWin or 1)>1 and data.wins then string.format("  %d–%d",math.max(data.wins.human or 0,data.wins.bot or 0),math.min(data.wins.human or 0,data.wins.bot or 0)) else "")
 			self.resultTitle.TextColor3=palette.gold
 			self.resultSeal.Text="勝";self.resultSeal.BackgroundColor3=palette.red
 			self.resultNote.Text="One more name moves up the bracket."

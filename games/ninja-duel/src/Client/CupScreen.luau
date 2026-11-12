@@ -3,6 +3,8 @@
 -- card. House ink cards (UI.kit); the server decides every result and every
 -- next match, the buttons only send CupFight / CupSkip / CupStart / CupLeave.
 local Shared=game:GetService("ReplicatedStorage").NinjaDuel
+-- (QA 12/11) capitals that keep the long vowels and accents.
+local Text=require(Shared.Text)
 local Fighters=require(Shared.Fighters)
 local Cup={};Cup.__index=Cup
 
@@ -122,7 +124,7 @@ function Cup.new(ui,send,kit)
 end
 local function nameOf(id)
 	local def=Fighters[id or ""]
-	return if def then string.upper(def.Name) else "?"
+	return if def then Text.upper(def.Name) else "?"
 end
 function Cup:press(which)
 	local cup=self.cup
@@ -233,7 +235,7 @@ function Cup:render(data)
 	-- (pad focus after the UI's own screen change has settled)
 	local function focus(target) task.delay(.25,function() pcall(function() game:GetService("GuiService").SelectedObject=target end) end) end
 	if phase=="Champion" and data.cup and data.cup.champion then
-		self.championName.Text=string.upper((Fighters[data.cup.seats[data.cup.champion]] or {}).FullName or "")
+		self.championName.Text=Text.upper((Fighters[data.cup.seats[data.cup.champion]] or {}).FullName or "")
 		if self.lastPhase~="Champion" then focus(self.championAgain) end
 	elseif phase=="Bracket" and self.lastPhase~="Bracket" then
 		focus(self.primary)

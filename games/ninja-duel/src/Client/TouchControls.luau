@@ -14,6 +14,8 @@ local UIS=game:GetService("UserInputService")
 local RunService=game:GetService("RunService")
 local Players=game:GetService("Players")
 local Fighters=require(game:GetService("ReplicatedStorage").NinjaDuel.Fighters)
+-- (QA 12/11) capitals that keep the long vowels and accents.
+local Text=require(game:GetService("ReplicatedStorage").NinjaDuel.Text)
 
 local Touch={};Touch.__index=Touch
 Touch.REFERENCE=390 -- the design height (a phone held sideways)
@@ -206,7 +208,7 @@ function Touch:releaseAll()
 	self.chakra=false
 end
 local function short(name)
-	name=string.upper(tostring(name or ""))
+	name=Text.upper(tostring(name or ""))
 	-- the jutsu's own word: its last one, cut to fit a thumb-sized button
 	local last=name:match("([%w%-]+)%s*$") or name
 	return string.sub(last,1,9)

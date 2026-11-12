@@ -327,7 +327,7 @@ function Matches:view(s,cursor,mine,theirs)
 			-- (06/11) Kakashi's copy slot shows the jutsu his Sharingan copied.
 			local copied=Copy.slotSpec(s.combat,a,i)
 			local spec=copied or own
-			ready[i]={id=spec.Id,name=spec.Name,cost=spec.Cost,remaining=math.max(0,(a.cooldowns[spec.Id] or 0)-now),requires=spec.Requires,condition=not spec.Requires or (spec.Requires=="Anchor" and Techniques.sealOf(s.combat,a,now)~=nil) or (spec.Requires=="Target" and s.combat:targetValid(a,a.target,spec.Range,0.35))}
+			ready[i]={id=spec.Id,name=spec.Name,card=spec.CardName,cost=spec.Cost,remaining=math.max(0,(a.cooldowns[spec.Id] or 0)-now),requires=spec.Requires,condition=not spec.Requires or (spec.Requires=="Anchor" and Techniques.sealOf(s.combat,a,now)~=nil) or (spec.Requires=="Target" and s.combat:targetValid(a,a.target,spec.Range,0.35))}
 			-- (06/11) A key that does something else while the technique's work is
 			-- out (Naruto's crowd: TAKE A BODY) shows that instead.
 			local technique=Techniques[spec.Id]
@@ -346,7 +346,7 @@ function Matches:view(s,cursor,mine,theirs)
 		return {id=a.id,fighterId=a.fighterId,fighter=a.def.Name,sealReady=sealReady,sealing=sealing,health=a.health,maxHealth=a.def.Health,chakra=a.chakra,maxChakra=a.def.Chakra or Config.Chakra,stamina=a.stamina or 100,state=a.state,
 			techniques=ready,position=a.root.Position,channel=if a.state=="TechniqueChannel" then math.max(0,a.untilTime-s.combat.now) else 0,
 			anchor=a.anchor and a.anchor.position,illusion=math.max(0,a.illusionUntil-s.combat.now),decoy=a.decoyPosition,
-			cue=if a.cueUntil>s.combat.now then a.cue else "",quiet=if (a.quietUntil or 0)>s.combat.now then a.quiet else nil,dodge=math.max(0,a.dodgeUntil-s.combat.now),read=math.max(0,a.readUntil-s.combat.now),
+			cue=if a.cueUntil>s.combat.now then a.cue else "",quiet=if (a.quietUntil or 0)>s.combat.now and not (s.autopilot or s.spectate) then a.quiet else nil,dodge=math.max(0,a.dodgeUntil-s.combat.now),read=math.max(0,a.readUntil-s.combat.now),
 			speed=a.locomotion.Magnitude,airborne=a.airborne,sprinting=a.model:GetAttribute("MovementSprinting")==true,
 			landStrong=a.model:GetAttribute("MovementHardLanding")==true,pursuit=math.max(0,a.pursuitUntil-s.combat.now),combo=a.combo,
 			subCharges=a.subCharges,chakraLoad=if a.chakraLoad and a.chakraLoad.untilTime>s.combat.now then a.chakraLoad.nature else nil,infused=(a.pending and a.pending.chakraFlow) or (if a.state=="Recovery" and a.flowShown and a.flowShown.serial==a.attackSerial then a.flowShown.nature else nil),wall=a.wall~=nil,wallMode=a.wall and a.wall.mode or nil,wallSide=a.wall and a.wall.side or nil,reaction=a.reaction,guardImpact=math.max(0,(a.guardImpact or 0)-s.combat.now),attackName=a.attackName,attackElapsed=s.combat.now-(a.attackStarted or 0),whiffed=if a.state=="Recovery" and a.attackWhiffed then true else nil,airHold=a.airHold,impactSerial=a.impactSerial or 0,impactHeavy=a.impactHeavy,impactStyle=a.impactStyle,
