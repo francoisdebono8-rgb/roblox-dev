@@ -67,5 +67,20 @@ test("a fault in a recipe never stops the frame",function()
  AwakenFX.RECIPES.Lion.hold=saved
  assert(ok,"the error reached Effects")
 end)
+test("the images are fetched at start; one Roblox will not serve gets a built-in stand-in",function()
+ local list=AwakenFX.preloadList()
+ assert(#list>=10,"preload list too short ("..#list..")")
+ local spark=AwakenFX.ID.spark
+ local provider={PreloadAsync=function(_,ids,cb)
+  for _,id in ids do if cb then cb(id,if id==spark then Enum.AssetFetchStatus.Failure else Enum.AssetFetchStatus.Success) end end
+ end}
+ H.envBase.task=H.envBase.task or {}
+ local failed=AwakenFX.preload(provider)
+ assert(#failed==1 and failed[1]==spark,"failure not kept")
+ local part=Instance.new("Part")
+ local e=AwakenFX.emitter(part,"spark",{Rate=1})
+ assert(e.Texture~=spark and string.find(e.Texture,"rbxasset://",1,true),"no stand-in for an image that fails")
+ AwakenFX.failed[spark]=nil
+end)
 for k,v in saved do H.envBase[k]=v end
 print(string.format("NinjaDuel awakenings: %d PASS (headless; the look is a Studio check)",passed))

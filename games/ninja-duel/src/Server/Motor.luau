@@ -1,6 +1,7 @@
 -- Server movement authority. This module owns locomotion, landing and safe
 -- action travel; AI and human actors use the same movement profile.
 local Config=require(game:GetService("ReplicatedStorage").NinjaDuel.Config)
+local StepSpeeds=require(game:GetService("ReplicatedStorage").NinjaDuel.StepSpeeds)
 local Place1Movement=require(script.Parent.Place1Movement)
 local Place1Parkour=require(script.Parent.Place1Parkour)
 -- This adapter retains swept action travel and the NinjaWall extension only.
@@ -331,7 +332,9 @@ function Motor.step(a,c,dt,now)
  if a.state=="Guarding" then limit=Config.GuardSpeed
  elseif a.state=="TechniqueChannel" then limit=Config.ChannelSpeed
  elseif a.state=="Stunned" or a.state=="Defeated" or a.state=="Dodging" or a.state=="Pursuit" or a.state=="Rush" then limit=0
- elseif a.state~="Neutral" then limit=profile.AttackWalkSpeed end
+ -- (12/11, feel audit M1) The end of a blow walks no faster than the legs
+ -- the ANIMATEUR gives it (Shared/StepSpeeds); AttackWalkSpeed until then.
+ elseif a.state~="Neutral" then limit=StepSpeeds.recovery(a.fighterId,profile.AttackWalkSpeed) end
  -- Movement overhaul (Studio, real keys): a jump-in air strike with no air
  -- hold (nobody in reach) rides the leap: the attack walk cap braked a
  -- sprint leap from ~52 to ~12 studs/s mid-swing. It keeps its speed, never
@@ -372,17 +375,23 @@ function Motor.step(a,c,dt,now)
   end
  end
 	 if locomotion.Magnitude>limit then
-	  if a.state~="Neutral" and limit==profile.AttackWalkSpeed and not a.airborne then
+	  if a.state~="Neutral" and limit==StepSpeeds.recovery(a.fighterId,profile.AttackWalkSpeed) and not a.airborne then
 	   -- (Fluidity pass, user reference 28/10) A strike thrown on the move
 	   -- does not brake the body to a walk in one frame: the run carries into
 	   -- it and settles to the attack walk over ~0.1 s, the body keeps moving
 	   -- under the blow instead of planting.
-	   local excess=(locomotion.Magnitude-limit)*math.exp(-dt/.06)
-	   locomotion=locomotion.Unit*(limit+excess)
+	   -- (12/11, feel audit M1) The excess is what the body really had last
+	   -- frame, fading: the walk asks for its full speed again every frame, so
+	   -- a fade worked out from this frame's ask held the body at the cap + 85 %
+	   -- of the excess for the whole recovery (Sasuke 18 studs/s for a cap of
+	   -- 14), and a body starting from rest got a run it never had.
+	   local had=math.max(0,(a.walkGiven or 0)-limit)
+	   locomotion=locomotion.Unit*(limit+math.min(locomotion.Magnitude-limit,had*math.exp(-dt/.06)))
 	  else
 	   locomotion=locomotion.Unit*limit
 	  end
 	 end
+	 a.walkGiven=locomotion.Magnitude
 	 a.locomotion=locomotion
 	 a.hum.WalkSpeed=locomotion.Magnitude
 	 a.hum:Move(if locomotion.Magnitude>.01 then locomotion.Unit else Vector3.zero,false)

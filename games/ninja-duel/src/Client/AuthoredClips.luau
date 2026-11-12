@@ -50,4 +50,13 @@ for name,clip in require(script.Parent.AuthoredClips46) do all[name]=clip end
 for name,clip in require(script.Parent.AuthoredClips47) do all[name]=clip end
 for name,clip in require(script.Parent.AuthoredClips48) do all[name]=clip end
 for name,clip in require(script.Parent.AuthoredClips49) do all[name]=clip end
+for name,clip in require(script.Parent.AuthoredClips50) do all[name]=clip end
+for name,clip in require(script.Parent.AuthoredClips51) do all[name]=clip end
+for name,clip in require(script.Parent.AuthoredClips52) do all[name]=clip end
+for name,clip in require(script.Parent.AuthoredClips53) do all[name]=clip end
+for name,clip in require(script.Parent.AuthoredClips54) do all[name]=clip end
+for name,clip in require(script.Parent.AuthoredClips55) do all[name]=clip end
+for name,clip in require(script.Parent.AuthoredClips56) do all[name]=clip end
+for name,clip in require(script.Parent.AuthoredClips57) do all[name]=clip end
+for name,clip in require(script.Parent.AuthoredClips58) do all[name]=clip end
 return all

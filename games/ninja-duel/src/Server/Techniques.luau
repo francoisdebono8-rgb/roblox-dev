@@ -261,6 +261,7 @@ Techniques.Flashstep = {
 		a.flashUntil=now+(if awake and tune.Arrival then tune.Arrival else .55);a.teleportAt=now
 		a.teleportSerial=(a.teleportSerial or 0)+1
 		c:pushImpact(target,"teleport",false,{owner=a.id,fighter=a.fighterId,from=departure,to=target,projectile=seal.flying and seal.flying.id,awake=awake,body=seal.virtual==true})
+		c:travelStart(a,"teleport","FlyingThunderGod",departure,target,0)
 		local left=#seals(c,a,now)
 		if seal.virtual then c:cue(a,"YELLOW FLASH • FLYING THUNDER GOD TO THE BODY",.7)
 		else c:cue(a,if left>0 then "FLYING THUNDER GOD • "..left.." SEAL"..(if left>1 then "S" else "").." LEFT" else "FLYING THUNDER GOD",.7) end

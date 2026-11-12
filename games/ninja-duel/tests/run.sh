@@ -37,9 +37,15 @@ run Feedback   "$LUNE" run tests/Feedback.spec.luau
 run Animation  "$LUNE" run tests/Animation.spec.luau
 run Locomotion "$LUNE" run tests/Locomotion.spec.luau
 run AwakenFX "$LUNE" run tests/AwakenFX.spec.luau
+run LightBudget "$LUNE" run tests/LightBudget.spec.luau
+run Lightning "$LUNE" run tests/Lightning.spec.luau
 run Movement   "$LUNE" run tests/Movement.spec.luau
 run CombatFeel "$LUNE" run tests/CombatFeel.spec.luau
 run Engagement "$LUNE" run tests/Engagement.spec.luau
+run Spacing "$LUNE" run tests/Spacing.spec.luau
+run StepSpeeds "$LUNE" run tests/StepSpeeds.spec.luau
+run ReactionSides "$LUNE" run tests/ReactionSides.spec.luau
+run Travel "$LUNE" run tests/Travel.spec.luau
 run Embodiment "$LUNE" run tests/Embodiment.spec.luau
 run Fluidity   "$LUNE" run tests/Fluidity.spec.luau
 run Control    "$LUNE" run tests/Control.spec.luau

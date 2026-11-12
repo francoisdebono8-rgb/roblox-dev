@@ -2148,8 +2148,9 @@ function FX:fighter(model,actor,dt)
 				Color=ColorSequence.new(Color3.fromRGB(170,210,255)),LightEmission=1,Size=num({{0,4.2},{1,5.6}}),
 				Transparency=num({{0,0},{1,.2}}),Rotation=NumberRange.new(0,360)})
 			-- A hard white-blue core in the palm, pulsing.
-			local ball=block(self.folder,Vector3.one*1.2,hand.CFrame,Color3.fromRGB(214,234,255),Enum.Material.Neon)
-			ball.Shape=Enum.PartType.Ball;ball.Transparency=.1;ball.Name="ChidoriCore"
+			-- (12/11, VFX bible: never plain Neon) a crackling shell; the bolts are LightningFX's.
+			local ball=block(self.folder,Vector3.one*1.2,hand.CFrame,Color3.fromRGB(214,234,255),Enum.Material.ForceField)
+			ball.Shape=Enum.PartType.Ball;ball.Transparency=.2;ball.Name="ChidoriCore"
 			aura.chidori.ball=ball;aura.chidori.hand=hand
 			aura.chidori.light.Range=16
 		end
@@ -2343,7 +2344,13 @@ function FX:fighter(model,actor,dt)
 			end
 		elseif aura.mouth then
 			aura.mouth.Rate=0;aura.mouthLight.Brightness=0;Kit.setRate(aura.mouthCel,0)
-			if aura.orb then aura.orb.Transparency=1;Kit.setRate(aura.orbFlames,0) end
+			-- (OUTILLEUR, F7, 08/11) the charge ball stayed in NinjaDuelFX
+			-- 26-46 s after the jutsu, 120 studs from the fighters: it goes
+			-- with the charge (finished or broken), its last flames fading.
+			if aura.orb then
+				Kit.setRate(aura.orbFlames,0);aura.orb.Transparency=1
+				Debris:AddItem(aura.orb,.5);aura.orb=nil;aura.orbFlames=nil
+			end
 		end
 	end
 	self:identity(model,actor,aura)
@@ -2461,6 +2468,12 @@ require(script.Parent.IdentityFX).install(FX,{new=new,block=block,tween=tween,so
 	smokePuff=smokePuff,sparks=sparks,floorUnder=floorUnder,anchorPart=anchorPart,weldAll=weldAll,num=num,seq=seq,TEX=TEX,SOUND=SOUND,BUILD=BUILD})
 -- (Lot 3 animation, 08/11) Each awakening's own look for the whole state.
 require(script.Parent.AwakenFX).install(FX,{new=new,floorUnder=floorUnder})
+-- (OUTILLEUR, F7, 08/11) At most 8 effect lights lit at once, never shadowed.
+require(script.Parent.LightBudgetFX).start()
+-- (Feel audit 07/11) The path of a one-frame relocation (Lightning Strike, Lightning Cut), before FamilyFX's puffs.
+require(script.Parent.DashTrailFX).install(FX,{new=new,flash=flash,shockRing=shockRing,burst=burst,floorUnder=floorUnder,sound=sound,anchorPart=anchorPart,TEX=TEX,SOUND=SOUND})
+-- (12/11) Real bolts for the Chidori and the Raikiri (LightningBoltFX, from SamyBlue/Lightning-Beams, MIT).
+require(script.Parent.LightningFX).install(FX,{floorUnder=floorUnder})
 -- Family objects of the roster breadth pass (Shared/Looks): every kind gets
 -- its own model, flight, contact and ground look; buffs and slows on bodies.
 require(script.Parent.FamilyFX).install(FX,{new=new,block=block,tween=tween,sound=sound,flash=flash,shockRing=shockRing,burst=burst,

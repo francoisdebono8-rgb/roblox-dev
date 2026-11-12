@@ -24,6 +24,7 @@ local Effects=nil
 -- Blender-authored clips (Client/AuthoredMotion): where one exists for a
 -- strike or a technique, it replaces the procedural pose below.
 local Authored=nil
+local guardStep -- (feel audit 07/11) defined with guardTargets
 do
 	local okA,mod=pcall(function() return require(script.Parent.AuthoredMotion) end)
 	if okA then Authored=mod end
@@ -2614,10 +2615,24 @@ local function authoredReaction(actor)
 	local angle=rad(actor.hitAngle or 0)
 	local from,side=math.cos(angle),math.sin(angle)
 	local twist=actor.hitTwist or 1
+	-- (Feel audit 07/11, ANIMATEUR clips_feel) A blow from behind or from the
+	-- side has its own throw and its own hold (".Back", ".Side", same angles
+	-- as Hit.Back / Hit.Side): the victim is no longer turned to face it
+	-- (Itachi launched by Minato turned 176 degrees in one frame).
+	local function directional(base)
+		-- same order and thresholds as HitStun's Hit.Side / Hit.Back
+		if math.abs(side)>.6 and Authored.has(F.."."..base..".Side") then return base..".Side",side<0 end
+		if from<-.4 and Authored.has(F.."."..base..".Back") then return base..".Back",twist<0 end
+		return base,side<0
+	end
 	if kind=="Launched" or kind=="Juggled" then
 		-- (ANIM-005) The clip opens on the stance; a body already in the air
 		-- (and every juggle hit) starts on the whip, the transition carries it.
-		local p=play("Launched",elapsed+3/60,side<0);if p then return p,RATE.authored,"Launched" end
+		local name,mirror=directional("Launched")
+		local p=play(name,elapsed+3/60,mirror);if p then return p,RATE.authored,name..(if mirror then ".L" else "") end
+	elseif kind=="Grabbed" then
+		local name,mirror=directional("Grabbed")
+		local p=play(name,elapsed,mirror);if p then return p,RATE.authored,name..(if mirror then ".L" else "") end
 	elseif kind=="Knockdown" then
 		local p=play("Knockdown",elapsed*Authored.length(F..".Knockdown")/.34,side<0);if p then return p,RATE.authored,"Knockdown" end
 	elseif kind=="Knockback" then
@@ -2625,7 +2640,8 @@ local function authoredReaction(actor)
 		LANDINGS[actor.id or ""]=land
 		if actor.airborne then
 			land.groundAt=nil
-			local p=play("Knockback",elapsed+2/60,side<0);if p then return p,RATE.authored,"Knockback" end
+			local name,mirror=directional("Knockback")
+			local p=play(name,elapsed+2/60,mirror);if p then return p,RATE.authored,name..(if mirror then ".L" else "") end
 		else
 			land.groundAt=land.groundAt or elapsedTime
 			-- The skid ends in his own stance: never mirrored (the lead foot stays).
@@ -2683,6 +2699,18 @@ local function authoredReaction(actor)
 	end
 	return nil
 end
+-- (12/11) For the tests: which authored reaction clip a body in this state plays.
+Motion._authoredReaction=authoredReaction
+-- (12/11, feel audit M5) A body just arrived from a one-frame travel (the duel
+-- state's `travel`, Server Combat:travelStart): its own arrival clip
+-- (F.<Tech>.Arrive, ANIMATEUR clips_feel), when it has one.
+local function arrivalClip(subject)
+	local travel=subject.travel
+	if not (Authored and travel and travel.arrived and travel.kind=="teleport") then return nil end
+	local name=tostring(subject.fighterId).."."..tostring(travel.id)..".Arrive"
+	return if Authored.has(name) then name else nil
+end
+Motion._arrivalClip=arrivalClip
 local function reactionTargets(actor,feet)
 	local authoredPose,authoredRate,clip=authoredReaction(actor)
 	if authoredPose then return authoredPose,authoredRate,clip end
@@ -2935,6 +2963,33 @@ local function guardTargets(fighterId,impact)
 	end
 	return build(merge(base,{root={y=-.6,pitch=8-6*absorbed,z=.2*absorbed},torso={pitch=10-10*absorbed,yaw=-4},head={pitch=10},
 		ra={raise=92,out=-34,twist=42,elbow=112,wrist=-10},la={raise=96,out=-30,twist=40,elbow=108,wrist=-10}})),RATE.guard
+end
+-- (Feel audit 07/11, ANIMATEUR clips_feel) The guard moving: up to 33
+-- studs/s in a fixed pose (28-38 slides a minute). Pas chassés toward the
+-- way the body goes (B/F/L/R in its own frame), their cadence scaled to the
+-- real speed (authored at meta.speed, at most 1.8x); pushed faster than a
+-- step can follow, the braced skid. A blow on the guard keeps its impact.
+local GUARD_STEP_MIN,GUARD_SKID,GUARD_CADENCE=1.5,12,1.8
+guardStep=function(char,subject,dt)
+	if not Authored or (subject.guardImpact or 0)>0 then return nil end
+	local F=tostring(subject.fighterId)
+	local root=char:FindFirstChild("HumanoidRootPart")
+	if not root then return nil end
+	local v=planar(root.AssemblyLinearVelocity)
+	local speed=v.Magnitude
+	if speed<GUARD_STEP_MIN then return nil end
+	if speed>GUARD_SKID and Authored.has(F..".Guard.Skid") then
+		return Authored.sample(F..".Guard.Skid",elapsedTime),RATE.authored
+	end
+	local rel=root.CFrame:VectorToObjectSpace(v)
+	local dir=if math.abs(rel.Z)>=math.abs(rel.X) then (if rel.Z>0 then "B" else "F") else (if rel.X<0 then "L" else "R")
+	local name=F..".Guard.Step."..dir
+	local clip=Authored.has(name) and Authored.clip(name)
+	if not clip then return nil end
+	local s=stateOf(char)
+	local authoredSpeed=(clip.meta and clip.meta.speed) or 6
+	s.guardStepT=(s.guardStepT or 0)+(dt or 1/60)*math.min(GUARD_CADENCE,speed/authoredSpeed)
+	return Authored.sample(name,s.guardStepT),RATE.authored
 end
 -- A dash is pushed off a leg: for its first few frames the body drops and
 -- the pushing leg drives against the ground, then the glide takes over.
@@ -3453,7 +3508,8 @@ function Motion.present(char,actor,clock,dt)
 		return "wall"
 	end
 	if subject.state=="Guarding" then
-		local targets,rate=guardTargets(subject.fighterId,subject.guardImpact)
+		local targets,rate=guardStep(char,subject,dt)
+		if not targets then targets,rate=guardTargets(subject.fighterId,subject.guardImpact) end
 		apply(char,targets,rate,dt)
 		return "guard"
 	end
@@ -3490,6 +3546,26 @@ function Motion.present(char,actor,clock,dt)
 		end
 		apply(char,targets,RATE.cast,dt)
 		return "technique"
+	end
+	-- (12/11, feel audit M5) Arrived out of a one-frame travel (Lightning Strike,
+	-- Lightning Cut): the ANIMATEUR's arrival, from the moment the body arrived,
+	-- instead of the procedural landing; a strike that starts takes over.
+	local arrive=not swinging and arrivalClip(subject)
+	if arrive then
+		local travel=subject.travel
+		if memo.arriveSerial~=travel.serial then memo.arriveSerial=travel.serial;memo.arriveAt=elapsedTime-math.clamp(travel.arrived or 0,0,.25) end
+		local t=elapsedTime-memo.arriveAt
+		if t<Authored.length(arrive) then
+			local targets=table.clone(Authored.sample(arrive,t))
+			if subject.airborne then
+				for joint in JOINTS do if not UPPER[joint] and joint~="Root" then targets[joint]=base[joint] end end
+			else
+				targets.__feet=authoredFeet(char,targets,dt)
+			end
+			mark(char,"arrive:"..arrive,.1)
+			apply(char,targets,RATE.authored,dt)
+			return "technique"
+		end
 	end
 	if casting and not swinging and Authored then
 		-- (Blender-first) an authored technique: Channel (or Form), Hold while a

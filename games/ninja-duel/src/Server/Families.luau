@@ -745,6 +745,7 @@ F.Teleport={
 			a.root.CFrame=CFrame.lookAt(a.root.Position,a.root.Position+line)
 			a.teleportAt=c.now
 			c:pushImpact(destination,"teleport",false,{owner=a.id,from=from,to=destination,kind=spec.Kind})
+			c:travelStart(a,"teleport",spec.Id,from,destination,0)
 			c:cue(a,string.upper(spec.Name),.6)
 			brawler().event(c,a,"TeleportShort")
 			return
@@ -776,6 +777,7 @@ F.Teleport={
 		local bonus=1
 		if spec.InZone and Families.inOwnZone(c,a,b) then bonus=spec.InZone;c:cue(a,"FROM THE "..string.upper(spec.ZoneName or "zone"),.6) end
 		c:pushImpact(destination,"teleport",false,{owner=a.id,from=from,to=destination,kind=spec.Kind})
+		c:travelStart(a,"teleport",spec.Id,from,destination,0)
 		c:cue(a,string.upper(spec.Name),.6)
 		if ring then
 			local v=spec.Ring.Volley or {}

@@ -152,7 +152,11 @@ function Ultimates.sequence(c,a,b,u)
 	local line=flat(b.root.Position-a.root.Position)
 	if line.Magnitude<.1 then line=flat(a.root.CFrame.LookVector) end
 	local frame=Scripts.frame(Vector3.new(b.root.Position.X,ground,b.root.Position.Z),line)
-	lookAt(a,b);lookAt(b,a)
+	-- (12/11, feel audit M3: Kakashi caught in HitStun turned 155 deg in one
+	-- frame, Itachi 176 deg) The caster faces him at once (his own startup
+	-- already turned him); the caught body is turned by its path, at a rate
+	-- (Ultimates.VICTIM_TURN, Ultimates.step), not snapped here.
+	lookAt(a,b)
 	local seq={c=c,a=a,b=b,u=u,spec=spec,t0=t0,frame=frame,blows=0,ground=ground,bodies={}}
 	seq.startA=frame.anchor(a.root.Position);seq.startB=frame.anchor(b.root.Position)
 	-- Faces: the caster at the other body, the held one as it was caught.
@@ -255,6 +259,7 @@ end
 
 -- Server step: both bodies on their paths (no physics of their own), and the
 -- caster's glide in the startup of a lunge.
+Ultimates.VICTIM_TURN=900
 function Ultimates.step(c)
 	for _,x in c.actors do
 		local glide=x.ultimateGlide
@@ -292,6 +297,17 @@ function Ultimates.step(c)
 				if face=="away" then dir=-dir end
 			end
 			dir=flat(dir)
+			-- (12/11, feel audit M3) The caught body turns to its path's facing
+			-- at VICTIM_TURN (a blow hauls it round, ~0.2 s for a half turn), as a
+			-- held body does (Brawler.GRAB_TURN); it was set in one frame.
+			local dt=math.clamp(c.now-(run.lastAt or c.now),0,.1);run.lastAt=c.now
+			local look=flat(x.root.CFrame.LookVector)
+			if x==seq.b and dir.Magnitude>.05 and look.Magnitude>.05 then
+				local want,cur=dir.Unit,look.Unit
+				local angle=math.atan2(cur:Cross(want).Y,cur:Dot(want))
+				local step=math.clamp(angle,-math.rad(Ultimates.VICTIM_TURN)*dt,math.rad(Ultimates.VICTIM_TURN)*dt)
+				dir=CFrame.fromAxisAngle(Vector3.yAxis,step):VectorToWorldSpace(cur)
+			end
 			x.model:PivotTo(if dir.Magnitude>.05 then CFrame.lookAt(p,p+dir.Unit) else CFrame.new(p))
 			x.root.AssemblyLinearVelocity=Vector3.zero
 			if p.Y>seq.ground+.4 then x.airborne=true;x.airHold=c.now+.25 end

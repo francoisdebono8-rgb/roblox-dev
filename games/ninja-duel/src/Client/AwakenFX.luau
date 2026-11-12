@@ -56,8 +56,28 @@ local function seq(points)
 end
 local function range(a,b) return NumberRange.new(a,b or a) end
 -- One emitter. `spec` uses ParticleEmitter property names; tex names a texture.
+-- (08/11) Four of the uploaded images still came back Failure in Studio
+-- (spark, formula, lightning, shards): a texture Roblox will not serve is
+-- swapped for a built-in one rather than drawing nothing.
+local FALLBACK={spark="rbxasset://textures/particles/sparkles_main.dds",lightning="rbxasset://textures/particles/sparkles_main.dds",
+	glyph="rbxasset://textures/particles/forcefield_glow_main.dds",debris="rbxasset://textures/particles/sparkles_main.dds",
+	smoke="rbxasset://textures/particles/smoke_main.dds",dust="rbxasset://textures/particles/smoke_main.dds",
+	fireBurst="rbxasset://textures/particles/fire_main.dds",flame="rbxasset://textures/particles/fire_main.dds",
+	ring="rbxasset://textures/particles/explosion01_shockwave_main.dds",leaf="rbxasset://textures/particles/sparkles_main.dds",
+	feather="rbxasset://textures/particles/sparkles_main.dds"}
+AwakenFX.failed={}
 local function emitter(parent,tex,spec)
 	local e=Instance.new("ParticleEmitter")
+	if ID[tex] and AwakenFX.failed[ID[tex]] and FALLBACK[tex] then
+		e.Texture=FALLBACK[tex]
+		e.LightInfluence=0
+		for k,v in spec do
+			if (k=="Size" or k=="Transparency") and typeof(v)=="NumberRange" then v=NumberSequence.new(v.Min+(v.Max-v.Min)*math.random()) end
+			(e::any)[k]=v
+		end
+		e.Parent=parent
+		return e
+	end
 	e.Texture=ID[tex] or tex
 	if LAYOUT[tex] then
 		e.FlipbookLayout=LAYOUT[tex]
@@ -428,7 +448,7 @@ local function fighter(fx,model,actor,dt)
 		end
 		-- The shared mantle (Effects) is replaced by this layer's own.
 		local aura=fx.auras and fx.auras[model]
-		if aura and aura.mantle and aura.mantle.emitter then aura.mantle.emitter.Enabled=false;aura.mantle.light.Enabled=false end
+		if aura and aura.mantle and aura.mantle.emitter then aura.mantle.emitter.Enabled=false;aura.mantle.light.Brightness=0 end -- (the light budget owns Enabled)
 	elseif not open and st.open then
 		clear(st,true)
 	end
@@ -447,8 +467,40 @@ local function safe(fx,model,actor,dt)
 		if not reported then reported=true;warn("[AwakenFX] "..tostring(err)) end
 	end
 end
+-- (OUTILLEUR, F7, 08/11) Four of these images came out empty the first
+-- times: Roblox answered "Asset content representation is being generated"
+-- and only served them seconds later. They are fetched as soon as the client
+-- starts (the menu, the intro), not the first time an awakening opens.
+function AwakenFX.preloadList()
+	local list={}
+	for _,id in ID do if string.sub(id,1,13)=="rbxassetid://" then table.insert(list,id) end end
+	table.sort(list)
+	return list
+end
+function AwakenFX.preload(provider)
+	provider=provider or game:GetService("ContentProvider")
+	local failed={}
+	local ok=pcall(function()
+		provider:PreloadAsync(AwakenFX.preloadList(),function(id,status)
+			if status~=Enum.AssetFetchStatus.Success then table.insert(failed,id) end
+		end)
+	end)
+	-- One more pass for the ones still being generated on Roblox's side.
+	if ok and #failed>0 then
+		task.wait(3)
+		local still={}
+		pcall(function() provider:PreloadAsync(failed,function(id,status)
+			if status~=Enum.AssetFetchStatus.Success then table.insert(still,id) end
+		end) end)
+		failed=still
+		for _,id in still do AwakenFX.failed[id]=true end
+		if #still>0 then warn("[AwakenFX] images Roblox does not serve, built-in stand-ins used: "..table.concat(still," ")) end
+	end
+	return failed
+end
 function AwakenFX.install(FX,kit)
 	K=kit
 	table.insert(FX.layers,{name="Awaken",fighter=safe})
+	task.spawn(AwakenFX.preload)
 end
 return AwakenFX
