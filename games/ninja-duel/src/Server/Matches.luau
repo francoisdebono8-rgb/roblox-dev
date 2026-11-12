@@ -5,6 +5,8 @@ local Fighters=require(Shared.Fighters)
 local BetaRoster=require(Shared.BetaRoster)
 local Rules=require(Shared.Rules)
 local World=require(script.Parent.World)
+local Stage=require(script.Parent.Stage)
+local ArenaMeshes=require(script.Parent.ArenaMeshes)
 local Combat=require(script.Parent.Combat)
 local AI=require(script.Parent.AI)
 local Tutorial=require(script.Parent.Tutorial)
@@ -106,11 +108,72 @@ function Matches:session(player)
 	Matches.measure(player,s,"joined")
 	return s
 end
+-- The duel goes: its bodies, effects and marks. (QA 12/11) The lane's
+-- stadium stays for the next duel (Server/Stage); Matches:dropStage takes it.
 function Matches:destroy(s)
 	if s.combat then s.combat:clear() end
 	if s.human then AntiCheat.clear(s.human) end
+	if s.folder then
+		for _,child in s.folder:GetChildren() do
+			if child~=s.stage then child:Destroy() end
+		end
+	end
+	s.tutorial=nil; s.combat=nil; s.ai=nil; s.human=nil; s.bot=nil
+end
+-- The lane and its stadium (the player left).
+function Matches:dropStage(s)
 	if s.folder then s.folder:Destroy() end
-	s.tutorial=nil; s.folder=nil; s.combat=nil; s.ai=nil; s.human=nil; s.bot=nil
+	s.folder=nil; s.stage=nil; s.stageRecord=nil
+end
+function Matches:laneFolder(s)
+	if not (s.folder and s.folder.Parent) then
+		s.folder=Instance.new("Folder"); s.folder.Name="Duel_"..s.lane; s.folder.Parent=self.folder
+		s.stage=nil; s.stageRecord=nil
+	end
+	return s.folder
+end
+-- (QA 12/11, gel au BEGIN) A lane with no stadium gets one while its player
+-- is on the roster: built away from the world once the arena's meshes are in
+-- (a stadium built before falls back to the old part-built decor), then
+-- revealed a few pieces a frame (Stage.reveal). The first BEGIN finds it in
+-- place; a duel that starts sooner takes the rest at once (Matches:stageFor).
+Matches.STAGE_WAIT=20
+function Matches:prepareStage(s)
+	if s.stage and s.stage.Parent or s.stagePreparing then return end
+	s.stagePreparing=true
+	task.spawn(function()
+		for _=1,Matches.STAGE_WAIT*4 do
+			if ArenaMeshes.state~="loading" then break end
+			task.wait(.25)
+		end
+		s.stagePreparing=nil
+		if self.sessions[s.owner]~=s or (s.stage and s.stage.Parent) then return end
+		local holder=Instance.new("Folder")
+		local yard=World.arena(holder,Matches.laneOrigin(s.lane))
+		if not yard then holder:Destroy(); return end
+		local folder=self:laneFolder(s)
+		s.stage=yard; s.stageRecord=nil; s.stageDressed=ArenaMeshes.ready()
+		Stage.reveal(yard,folder,function()
+			if s.stage==yard then s.stageRecord=Stage.remember(yard) end
+		end)
+		holder:Destroy()
+	end)
+end
+-- The lane's stadium, whole for a new duel: the one built ahead or the last
+-- duel's with its damage undone. Built here only when there is none, it lost
+-- a piece, or it was built with the part decor before the meshes came in.
+function Matches:stageFor(s)
+	local folder=self:laneFolder(s)
+	local yard=s.stage
+	if yard and yard.Parent==folder and (s.stageDressed or not ArenaMeshes.ready()) then
+		Stage.finish(yard)
+		if s.stageRecord and Stage.restore(s.stageRecord) then return yard end
+	end
+	if yard then yard:Destroy() end
+	s.stage=World.arena(folder,s.origin)
+	s.stageRecord=if s.stage then Stage.remember(s.stage) else nil
+	s.stageDressed=ArenaMeshes.ready()
+	return s.stage
 end
 function Matches:selection(player,notice)
 	local s=self:session(player)
@@ -122,6 +185,7 @@ function Matches:selection(player,notice)
 	self:send(player,{phase="Selection",epoch=s.epoch,notice=notice})
 	-- (Lobby, 04/11) in a duel server the roster is the lobby: back home.
 	if self.lobby then self.lobby:onSelection(player) end
+	self:prepareStage(s)
 end
 -- `options` (optional): {player=spec, bot=spec, bracket=id} skill builds (see
 -- Matches.resolveKit). An invalid or over-budget build refuses the start. No
@@ -144,9 +208,10 @@ function Matches:start(player,playerId,botId,training,options)
 	self:destroy(s); s.epoch+=1
 	s.playerId=playerId; s.botId=botId; s.winner=nil; s.phase="Duel"; s.origin=Matches.laneOrigin(s.lane)
 	s.options=options
-	s.folder=Instance.new("Folder"); s.folder.Name="Duel_"..s.lane; s.folder.Parent=self.folder
+	-- (QA 12/11) The lane's stadium is the one already in the world, its
+	-- last duel's damage undone: only the two bodies are new at BEGIN.
+	self:stageFor(s)
 	s.effects=Instance.new("Folder"); s.effects.Name="Effects"; s.effects.Parent=s.folder
-	World.arena(s.folder,s.origin)
 	s.combat=Combat.new(s); s.combat.now=workspace:GetServerTimeNow()
 	local function actor(id,def,position,look,kit)
 		local model,hum,root,joints=World.rig(s.folder,Fighters[def],CFrame.lookAt(position,look),id)
@@ -556,7 +621,7 @@ function Matches:remove(player)
 		if s.online and self.online then self.online:leave(player,s) end
 		-- (B1 lot 2) left before finishing a first duel: an abandon, measured.
 		if s.metrics and not s.metrics.duelAt then print(string.format("[NinjaDuelFirst] %s left %.1fs (stage %s)",tostring(player.UserId),os.clock()-(s.metrics.joined or os.clock()),tostring(s.firstStage or s.phase))) end
-		self:destroy(s); self.sessions[player]=nil
+		self:destroy(s); self:dropStage(s); self.sessions[player]=nil
 	end
 end
 return Matches

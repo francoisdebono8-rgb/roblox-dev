@@ -2359,10 +2359,13 @@ end
 -- The stands react to the fight: big moments bring spectators to their feet,
 -- banners sway in the wind. Local-only motion of anchored decor.
 function FX:crowdOf(folder)
-	if self.crowdFolder==folder then return end
-	self.crowdFolder=folder
-	self.crowd={};self.banners={}
+	-- (QA 12/11) A lane keeps its stadium between duels (Server/Stage): the
+	-- crowd is read once per stadium, and once it has fully arrived.
 	local yard=folder and folder:FindFirstChild("Courtyard")
+	if self.crowdFolder==folder and self.crowdYard==yard then return end
+	if yard and yard:GetAttribute("Building") then return end
+	self.crowdFolder=folder;self.crowdYard=yard
+	self.crowd={};self.banners={}
 	local decor=yard and yard:FindFirstChild("Decor")
 	if not decor then return end
 	for _,m in decor:GetChildren() do

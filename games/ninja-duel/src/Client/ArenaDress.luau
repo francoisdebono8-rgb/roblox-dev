@@ -184,10 +184,25 @@ function ArenaDress.dress(courtyard)
 	if not ok then warn("[NinjaDuel] arena dress: "..tostring(err)) end
 end
 
+-- (QA 12/11, gel au BEGIN) The stadium's content fetched while the player is
+-- still on the roster (meshes, textures), not at the first BEGIN.
+function ArenaDress.preload(courtyard)
+	local ok,provider=pcall(function() return game:GetService("ContentProvider") end)
+	if not ok or not provider then return end
+	pcall(function() provider:PreloadAsync({courtyard}) end)
+end
+
 function ArenaDress.start()
 	local function check(d)
 		if d.Name=="Courtyard" and d:IsA("Folder") then
-			task.delay(.5,function() if d.Parent then ArenaDress.dress(d) end end)
+			task.spawn(function()
+				-- (QA 12/11) A lane's stadium now comes a few pieces a frame
+				-- (Server/Stage, Building until the last one): dressed and
+				-- fetched once it is whole.
+				while d.Parent and d:GetAttribute("Building") do task.wait(.25) end
+				task.wait(.5)
+				if d.Parent then ArenaDress.dress(d);ArenaDress.preload(d) end
+			end)
 		end
 	end
 	for _,d in workspace:GetDescendants() do check(d) end
