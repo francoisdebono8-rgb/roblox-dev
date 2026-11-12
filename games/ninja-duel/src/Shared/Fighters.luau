@@ -311,7 +311,7 @@ local Fighters = {
 				HoldState = { Time = 3, Drain = 5, Strike = "DashAttack", Air = "Slam", Variant = "Rasengan", AirVariant = "RasenganDrop", Damage = 22,
 					Reaction = "Knockback", Impulse = Vector3.new(0, 22, 74), Stun = .62, Rasengan = true, World = { contact = "energy", element = "wind" }, Style = "burst", Name = "Rasengan", Reach = 9, Event = "Rasengan" }, Hint = "A clone shapes it at his side • strike the clone and it fails • ends a clean string" },
 			{ Id = "MassShadowClone", Name = "Multi Shadow Clone", Cost = 40, Channel = 0.3, Active = 0.08, Recovery = 0.2, Cooldown = 18, Interruptible = true, Range = 26, Hint = "A crowd of ten clones rings the opponent • press again: take a clone's body (the stick picks it)" },
-			{ Id = "NarutoRendan", Name = "Naruto Uzumaki Rendan", Family = "Sequence", Opener = "Launcher", Cost = 22, Channel = 0.12, Active = 0.04, Recovery = 0.3, Cooldown = 9, Interruptible = true, Range = 13, Hint = "His clones send him up, then the heel down" },
+			{ Id = "NarutoRendan", Name = "Naruto Uzumaki Rendan", CardName = "Uzumaki Rendan", Family = "Sequence", Opener = "Launcher", Cost = 22, Channel = 0.12, Active = 0.04, Recovery = 0.3, Cooldown = 9, Interruptible = true, Range = 13, Hint = "His clones send him up, then the heel down" },
 		},
 	},
 	-- Roster wave (DEC-015): Temari between the Chunin Exam and the Sasuke
@@ -464,7 +464,7 @@ local Fighters = {
 				-- (User 28/10) Like Sasuke's Chidori: formed, it stays in the hand.
 				State = { Time = 2.6, Drain = 6, Strike = "ChidoriThrust", Air = "ChidoriThrust", Damage = 22, World = { contact = "energy", element = "lightning" }, Style = "chidori", Name = "Lightning Blade" },
 				Range = 20, Damage = 22, Hint = "Charge, then a lightning thrust • a miss leaves him open", AI = { Min = 4, Max = 16, Punish = true } },
-			{ Id = "TrackingFang", Name = "Summoning: Tracking Fang", Family = "Projectile", Kind = "hounds", Ground = true, Cost = 22, Channel = 0.3, Active = 0.08, Recovery = 0.3, Cooldown = 8, Interruptible = true,
+			{ Id = "TrackingFang", Name = "Summoning: Tracking Fang", CardName = "Tracking Fang", Family = "Projectile", Kind = "hounds", Ground = true, Cost = 22, Channel = 0.3, Active = 0.08, Recovery = 0.3, Cooldown = 8, Interruptible = true,
 				Range = 30, Speed = 50, Damage = 4, Radius = 1.6, Bind = 1.1, Hint = "Four hounds dig to his legs, burst out and hold him • dodged, they chase him • one blow sends a hound away" },
 			{ Id = "LightningCut", Name = "Lightning Cut", Family = "Teleport", To = "Behind", Distance = 3.2, Move = "DashAttack", Armed = true, Element = "Lightning", Cost = 18, Channel = 0.08, Active = 0.02, Recovery = 0.16, Cooldown = 6, Interruptible = true, Range = 22, Damage = 14, Invuln = 0.12, Kind = "lightning", Hint = "Tantô drawn: through the body in one cut, out behind it" },
 		},
