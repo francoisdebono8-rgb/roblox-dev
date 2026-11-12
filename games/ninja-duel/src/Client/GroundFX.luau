@@ -18,6 +18,7 @@ local Debris=game:GetService("Debris")
 local RunService=game:GetService("RunService")
 local GroundFX={}
 local K -- Effects' helpers, handed over by install()
+local ShadowFX=require(script.Parent.ShadowFX)
 
 -- Blocks thrown per scar kind: {count, size, speed}.
 GroundFX.BREAK={crater={10,.9,26},gouge={7,.7,20},trench={8,.7,18},crack={6,.6,15},skid={1,.35,7}}
@@ -103,7 +104,7 @@ function GroundFX.tear(fx,at,kind,material,color,along)
 		local s=size*(.6+math.random()*.8)
 		local block=K.block(fx.folder,Vector3.new(s*1.3,s*.7,s),CFrame.new(at+out*s*.8+Vector3.new(0,s*.3,0))*CFrame.Angles(math.random()*6,math.random()*6,math.random()*6),
 			color:Lerp(Color3.new(0,0,0),math.random()*.18),material)
-		block.Name="GroundBlock";block.CastShadow=true
+		block.Name="GroundBlock";ShadowFX.keep(block)
 		live[block]={vel=out*speed*(.45+math.random()*.6)+Vector3.new(0,speed*(.7+math.random()*.6),0),
 			spin=Vector3.new(math.random()-.5,math.random()-.5,math.random()-.5)*14,rot=block.CFrame.Rotation,
 			floor=floorY,half=s*.35,age=0,life=2.6+math.random()*1.4}

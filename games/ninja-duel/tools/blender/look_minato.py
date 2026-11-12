@@ -12,8 +12,9 @@ from mathutils import Vector
 OUT = os.environ.get("ND_OUT", "/tmp")
 reset()
 UT = REST["UpperTorso"]; LT = REST["LowerTorso"]
-SKIN = (252, 224, 196); HAIR, HAIR_S = (255, 218, 80), (236, 182, 44)
-WHITE, WHITE_S = (236, 238, 242), (206, 210, 220); NAVY = (36, 48, 96)
+# (12/11) off-white and toned skin for the new light; seams and folds on the whites (nd_kit)
+SKIN = skin_tone((252, 224, 196)); HAIR, HAIR_S = (255, 218, 80), (236, 182, 44)
+WHITE, WHITE_S = off_white((236, 238, 242)), (198, 202, 212); NAVY = (36, 48, 96)
 head(SKIN)
 torso(WHITE)
 collar(WHITE_S, y=.74, height=.3, hx=.8, hz=.7, thick=.12)
@@ -25,6 +26,8 @@ hips(WHITE)
 finish(band(.42, .22, .87, .51, thick=.06, center=LT, n=3.4), "LowerTorso", "HemBand", NAVY)
 arms(WHITE, WHITE, cuff=NAVY)
 legs(WHITE, cuff=NAVY)
+shirt_detail(WHITE)
+trouser_detail(WHITE)
 for side, s in (("Left", -1), ("Right", 1)):
     for body, r, h in (("UpperArm", .39, 1.2), ("LowerArm", .345, 1.05), ("UpperLeg", .445, 1.3), ("LowerLeg", .425, 1.1)):
         c = REST[side + body]

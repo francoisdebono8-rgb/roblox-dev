@@ -251,11 +251,12 @@ local D=Looks.dressers
 -- collar, a red swirl on the back, the blue-cloth headband, wild blond spikes,
 -- whisker marks, a grin never far away.
 D.Naruto=function(model,def)
-	local skin=rgb(252,220,186)
+	-- (12/11, the new light) off-white clothes and toned skins: no pure white left
+	local skin=rgb(238,208,176)
 	local hair,hairShade=rgb(255,212,64),rgb(236,170,34)
 	local orange,orangeDark=rgb(250,128,30),rgb(220,96,20)
 	local navy=rgb(34,48,104)
-	local white=rgb(246,244,236)
+	local white=rgb(226,224,217)
 	Looks.form(model,skin)
 	paint(model,{"UpperTorso","LowerTorso"},orange);paint(model,ARMS,orange);paint(model,LEGS,orange)
 	-- Navy yoke over the shoulders, front and back.
@@ -303,10 +304,10 @@ end
 -- on the back, white shorts, pale arm warmers, leg wraps, blue-black hair
 -- with the spikes swept back and long bangs framing the face.
 D.Sasuke=function(model,def)
-	local skin=rgb(250,226,204)
+	local skin=rgb(238,215,194)
 	local hair,hairShade=rgb(30,34,56),rgb(46,54,88)
 	local navy,navyDark=rgb(36,46,96),rgb(26,32,70)
-	local white=rgb(238,236,230)
+	local white=rgb(226,224,218)
 	local warm=rgb(222,222,230)
 	Looks.form(model,skin)
 	paint(model,{"UpperTorso","LeftUpperArm","RightUpperArm"},navy)
@@ -326,7 +327,7 @@ D.Sasuke=function(model,def)
 		local top=Instance.new("Frame");top.Size=UDim2.fromScale(1,.5);top.BackgroundTransparency=1;top.ClipsDescendants=true;top.Parent=gui
 		disc(top,UDim2.fromScale(.5,1),UDim2.fromScale(.92,1.84),rgb(214,40,40))
 		local bottom=Instance.new("Frame");bottom.Position=UDim2.fromScale(0,.5);bottom.Size=UDim2.fromScale(1,.5);bottom.BackgroundTransparency=1;bottom.ClipsDescendants=true;bottom.Parent=gui
-		disc(bottom,UDim2.fromScale(.5,0),UDim2.fromScale(.92,1.84),rgb(246,244,240))
+		disc(bottom,UDim2.fromScale(.5,0),UDim2.fromScale(.92,1.84),rgb(226,224,220))
 	end)
 	sandals(model,navyDark,skin)
 	hairBase(model,hair)
@@ -356,7 +357,7 @@ end
 -- brick-red hair, no brows, the dark rings round pale teal eyes, the red mark
 -- on his forehead.
 D.Gaara=function(model,def)
-	local skin=rgb(250,228,212)
+	local skin=rgb(238,217,202)
 	local hair,hairShade=rgb(190,52,40),rgb(150,36,30)
 	local coat,coatDark=rgb(122,46,44),rgb(92,32,34)
 	local grey=rgb(110,104,104)
@@ -408,11 +409,11 @@ end
 -- Rock Lee (13): the green jumpsuit, orange leg warmers, the headband worn as
 -- a belt, bandaged hands, a glossy black bowl cut, round eyes, huge brows.
 D["Rock Lee"]=function(model,def)
-	local skin=rgb(252,222,192)
+	local skin=rgb(238,210,181)
 	local green,greenDark=rgb(56,170,74),rgb(40,132,58)
 	local warmer=rgb(250,134,40)
 	local hair=rgb(16,16,22)
-	local wrap=rgb(244,240,228)
+	local wrap=rgb(226,222,211)
 	Looks.form(model,skin)
 	paint(model,{"UpperTorso","LowerTorso"},green);paint(model,ARMS,green);paint(model,LEGS,green)
 	-- Vest-cut seams of the jumpsuit, the zip.
@@ -446,11 +447,11 @@ end
 -- bandaged right thigh and arm, long dark-brown hair tied low, the headband,
 -- pale eyes without pupils.
 D.Neji=function(model,def)
-	local skin=rgb(252,228,206)
+	local skin=rgb(238,215,195)
 	local hair,hairShade=rgb(70,46,36),rgb(96,64,48)
-	local shirt,shirtShade=rgb(236,230,216),rgb(204,196,180)
+	local shirt,shirtShade=rgb(226,220,207),rgb(196,188,172)
 	local shorts=rgb(64,58,62)
-	local wrap=rgb(246,244,238)
+	local wrap=rgb(226,224,218)
 	Looks.form(model,skin)
 	paint(model,{"UpperTorso"},shirt);paint(model,ARMS,shirt)
 	paint(model,{"LowerTorso","LeftUpperLeg","RightUpperLeg"},shorts);paint(model,{"LeftLowerLeg","RightLowerLeg"},skin)
@@ -473,7 +474,7 @@ D.Neji=function(model,def)
 		blob(model,"Head","SideHair",Vector3.new(.34,1.5,.9),CFrame.new(s*.9,-.2,.22),hair)
 	end
 	blob(model,"Head","BackHair",Vector3.new(1.8,1.6,.6),CFrame.new(0,-.25,.84),hair)
-	ring(model,"Head","HairTie",-.95,.14,.46,rgb(240,236,226))
+	ring(model,"Head","HairTie",-.95,.14,.46,rgb(226,222,211))
 	-- The tail falls down the back, from the head down to the waist.
 	blob(model,"UpperTorso","HairTail",Vector3.new(.5,1.7,.34),CFrame.new(0,-.1,.62),hair)
 	lock(model,"HairTip",Vector3.new(0,-.9,.62),Vector3.new(0,-1,.05),.6,.48,.32,hairShade,"UpperTorso")
@@ -495,7 +496,7 @@ end
 -- eyes, the Sharingan, and a sword on his back, longer than Kakashi's tanto
 -- (hilt over the right shoulder; hilt parts are Sheathed*).
 D.Itachi=function(model,def)
-	local skin=rgb(248,224,204)
+	local skin=rgb(238,215,196)
 	local hair,hairShade=rgb(24,24,32),rgb(44,44,58)
 	local shirt=rgb(32,32,44)
 	local armor,armorShade=rgb(186,184,204),rgb(150,148,170)
@@ -560,9 +561,9 @@ end
 -- hood down round the collar, a fishnet undershirt at the neck, the zip,
 -- spiky blond hair with short bangs, calm blue eyes, a quiet smile.
 D.Minato=function(model,def)
-	local skin=rgb(252,224,196)
+	local skin=rgb(238,212,185)
 	local hair,hairShade=rgb(255,218,80),rgb(236,182,44)
-	local white,whiteShade=rgb(236,238,242),rgb(206,210,220)
+	local white,whiteShade=rgb(220,222,226),rgb(198,202,212)
 	local navy=rgb(36,48,96)
 	Looks.form(model,skin)
 	paint(model,{"UpperTorso","LowerTorso"},white);paint(model,ARMS,white);paint(model,LEGS,white)
@@ -608,7 +609,7 @@ end
 -- tanto sheathed across his back (hilt over the right shoulder). Hilt parts
 -- are named Sheathed*: the client hides them while the blade is drawn.
 D.Kakashi=function(model,def)
-	local skin=rgb(250,226,204)
+	local skin=rgb(238,215,194)
 	local hair,hairShade=rgb(214,220,230),rgb(170,178,194)
 	local suit,suitDark=rgb(30,32,42),rgb(20,22,30)
 	local leather,leatherDark=rgb(124,82,56),rgb(96,62,42)

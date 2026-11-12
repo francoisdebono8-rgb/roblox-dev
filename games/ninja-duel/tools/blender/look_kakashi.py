@@ -13,7 +13,8 @@ from mathutils import Vector
 OUT = os.environ.get("ND_OUT", "/tmp")
 reset()
 UT = REST["UpperTorso"]; LT = REST["LowerTorso"]
-SKIN = (250, 226, 204); HAIR, HAIR_S = (214, 220, 230), (170, 178, 194)
+# (12/11) off-white and toned skin for the new light; seams and folds on the whites (nd_kit)
+SKIN = skin_tone((250, 226, 204)); HAIR, HAIR_S = (214, 220, 230), (170, 178, 194)
 SUIT, SUIT_D = (30, 32, 42), (20, 22, 30); LEATHER = (124, 82, 56); METAL = (176, 182, 196); BELT = (206, 190, 150)
 head(SKIN)
 o = head_loft(H, -.97, -.24, grow=.03, steps=10, sides=56, cap_top=False); finish(o, "Head", "Mask", SUIT, smooth=50)

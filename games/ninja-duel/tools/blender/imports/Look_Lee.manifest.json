@@ -80,9 +80,9 @@
   "Head__Skin": {
    "body": "Head",
    "color": [
-    252,
-    222,
-    192
+    238,
+    210,
+    181
    ],
    "material": "SmoothPlastic",
    "reflectance": 0
@@ -150,9 +150,9 @@
   "LeftLowerArm__Forearm": {
    "body": "LeftLowerArm",
    "color": [
-    244,
-    240,
-    228
+    226,
+    222,
+    211
    ],
    "material": "SmoothPlastic",
    "reflectance": 0
@@ -170,9 +170,9 @@
   "RightLowerArm__Forearm": {
    "body": "RightLowerArm",
    "color": [
-    244,
-    240,
-    228
+    226,
+    222,
+    211
    ],
    "material": "SmoothPlastic",
    "reflectance": 0
@@ -180,9 +180,9 @@
   "LeftHand__Fist": {
    "body": "LeftHand",
    "color": [
-    244,
-    240,
-    228
+    226,
+    222,
+    211
    ],
    "material": "SmoothPlastic",
    "reflectance": 0
@@ -190,9 +190,9 @@
   "RightHand__Fist": {
    "body": "RightHand",
    "color": [
-    244,
-    240,
-    228
+    226,
+    222,
+    211
    ],
    "material": "SmoothPlastic",
    "reflectance": 0
@@ -280,9 +280,9 @@
   "LeftFoot__Toes": {
    "body": "LeftFoot",
    "color": [
-    252,
-    222,
-    192
+    238,
+    210,
+    181
    ],
    "material": "SmoothPlastic",
    "reflectance": 0
@@ -320,9 +320,9 @@
   "RightFoot__Toes": {
    "body": "RightFoot",
    "color": [
-    252,
-    222,
-    192
+    238,
+    210,
+    181
    ],
    "material": "SmoothPlastic",
    "reflectance": 0

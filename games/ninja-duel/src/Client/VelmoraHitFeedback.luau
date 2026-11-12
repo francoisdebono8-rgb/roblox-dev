@@ -46,7 +46,7 @@ local look={
 }
 local function anchorAt(position)
 	local anchor=Instance.new("Part")
-	anchor.Name="LocalImpact";anchor.Anchored=true;anchor.CanCollide=false;anchor.CanQuery=false
+	anchor.Name="LocalImpact";anchor.Anchored=true;anchor.CastShadow=false;anchor.CanCollide=false;anchor.CanQuery=false
 	anchor.Transparency=1;anchor.Size=Vector3.one;anchor.Position=position;anchor.Parent=workspace
 	return anchor
 end
@@ -63,7 +63,7 @@ function Feedback.burst(position,color,damage,blocked)
 	local light=Instance.new("PointLight");light.Color=color;light.Brightness=(if blocked then 5 else 3);light.Range=(if blocked then 11 else 8);light.Parent=anchor
 	TweenService:Create(light,TweenInfo.new(.2),{Brightness=0}):Play()
 	for i=1,(if blocked then 10 else 7) do
-		local shard=Instance.new("Part");shard.Anchored=true;shard.CanCollide=false;shard.CanQuery=false;shard.Material=Enum.Material.Neon;shard.Color=color;shard.Size=Vector3.new(.08,.08,math.random(5,11)/10);shard.CFrame=CFrame.lookAt(position,position+Vector3.new(math.random()-0.5,math.random()-0.5,math.random()-0.5));shard.Parent=workspace
+		local shard=Instance.new("Part");shard.Anchored=true;shard.CastShadow=false;shard.CanCollide=false;shard.CanQuery=false;shard.Material=Enum.Material.Neon;shard.Color=color;shard.Size=Vector3.new(.08,.08,math.random(5,11)/10);shard.CFrame=CFrame.lookAt(position,position+Vector3.new(math.random()-0.5,math.random()-0.5,math.random()-0.5));shard.Parent=workspace
 		TweenService:Create(shard,TweenInfo.new(.18,Enum.EasingStyle.Quad),{CFrame=shard.CFrame*CFrame.new(0,0,-math.random(2,5)),Transparency=1}):Play();Debris:AddItem(shard,.22)
 	end
 	if damage and damage>0 then
@@ -153,7 +153,7 @@ function Feedback.impact(style,position,impact)
 		local direction=Vector3.new(math.random()-0.5,math.random()-0.5,math.random()-0.5)
 		if direction.Magnitude<.01 then direction=Vector3.yAxis end
 		local shard=Instance.new("Part")
-		shard.Anchored=true;shard.CanCollide=false;shard.CanQuery=false;shard.Material=Enum.Material.Neon
+		shard.Anchored=true;shard.CanCollide=false;shard.CanQuery=false;shard.Material=Enum.Material.Neon;shard.CastShadow=false
 		shard.Color=spec.color;shard.Size=Vector3.new(.08,.08,math.random(5,12)/10)
 		shard.CFrame=CFrame.lookAt(position,position+direction.Unit)*CFrame.Angles(0,0,math.random()*math.pi)
 		shard.Parent=workspace
@@ -165,7 +165,7 @@ function Feedback.impact(style,position,impact)
 		-- Wall dust: a flat puff pushed away from the surface, no screen shake.
 		for i=1,7 do
 			local puff=Instance.new("Part")
-			puff.Anchored=true;puff.CanCollide=false;puff.CanQuery=false
+			puff.Anchored=true;puff.CanCollide=false;puff.CanQuery=false;puff.CastShadow=false
 			puff.Material=Enum.Material.Slate;puff.Color=Color3.fromRGB(176,170,152)
 			puff.Size=Vector3.new(.3,.3,.3);puff.Transparency=.35
 			puff.CFrame=CFrame.new(position+Vector3.new((math.random()-.5)*2,(math.random()-.5)*2,(math.random()-.5)*2))
@@ -177,7 +177,7 @@ function Feedback.impact(style,position,impact)
 	end
 	if style=="slam" or style=="landing" then
 		local ring=Instance.new("Part")
-		ring.Anchored=true;ring.CanCollide=false;ring.CanQuery=false;ring.Material=Enum.Material.Neon
+		ring.Anchored=true;ring.CanCollide=false;ring.CanQuery=false;ring.Material=Enum.Material.Neon;ring.CastShadow=false
 		ring.Color=spec.color;ring.Shape=Enum.PartType.Cylinder;ring.Size=Vector3.new(.12,3,3)
 		ring.CFrame=CFrame.new(position-Vector3.new(0,2.4,0))*CFrame.Angles(0,0,math.pi/2)
 		ring.Transparency=.25;ring.Parent=workspace

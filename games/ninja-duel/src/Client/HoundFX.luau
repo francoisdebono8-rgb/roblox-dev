@@ -42,6 +42,7 @@ function HoundFX.build(index)
 	local coat=HoundFX.COATS[(index-1)%#HoundFX.COATS+1]
 	local color,pale,s=coat[1],coat[2],coat[3]
 	local m=Instance.new("Model");m.Name="Ninken"
+	m:SetAttribute("KeepShadow",true) -- a solid dog: it keeps its shadow (ShadowFX)
 	local root=part(m,"HoundRoot",Vector3.one*.2,color);root.Transparency=1;root.Anchored=true
 	m.PrimaryPart=root
 	local function v(x,y,z) return Vector3.new(x,y,z)*s end

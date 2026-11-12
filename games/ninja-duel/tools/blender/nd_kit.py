@@ -307,3 +307,121 @@ def band_crown(color, count=14, band=BAND, length=.55, width=.5, up=.9, skip_fro
         el = math.degrees(math.asin(min(.99, (band[1] + .06 - .1) / .9)))
         spec.append((az, el, length, width, up, .05))
     return spec
+
+
+# ---------------------------------------------------------------------------
+# (12/11) The game lights up (DEV light pass: sun, shadows, halo threshold
+# 2.2). A pure white garment or a near-white skin goes flat under it: one
+# blown-out shape with no form. Whites become off-white (blanc cassé), skins
+# come down a little, and the white garments get the details that hold the
+# light: seams (a thin raised line, a shade darker) and folds (creases at the
+# elbows, the waist, the backs of the knees, gathers at the hem).
+CLOTH_MAX = 226   # the brightest channel of a white garment
+SKIN_MAX = 238    # the brightest channel of a skin
+
+def toned(rgb, top):
+    """Same hue, brightest channel brought down to `top` (no-op below it)."""
+    m = max(rgb)
+    if m <= top:
+        return tuple(rgb)
+    k = top / m
+    return tuple(int(round(c * k)) for c in rgb)
+
+def off_white(rgb):
+    return toned(rgb, CLOTH_MAX)
+
+def skin_tone(rgb):
+    return toned(rgb, SKIN_MAX)
+
+def shade(rgb, k=.84):
+    return tuple(int(round(c * k)) for c in rgb)
+
+def _surface(center, hx, hz, n, a, y, out=.012):
+    """A point on a loft section (angle a, height y), pushed `out` off it."""
+    c, s = math.cos(a), math.sin(a)
+    x = (hx + out) * math.copysign(abs(c) ** (2 / n), c)
+    z = (hz + out) * math.copysign(abs(s) ** (2 / n), s)
+    return (center[0] + x, center[1] + y, center[2] + z)
+
+def seam_line(body, center, section, a, y0, y1, color, width=.032, thick=.022, steps=8, name="Seam"):
+    """A vertical seam on a loft (`section` = hx, hz, n) at angle `a`."""
+    hx, hz, n = section
+    pts = [_surface(center, hx, hz, n, a, y0 + (y1 - y0) * k / steps) for k in range(steps + 1)]
+    c, s = math.cos(a), math.sin(a)
+    ob = lock_path(pts, lambda p: (c, 0, s), width, thick, sides=6, taper=0)
+    return finish(ob, body, name, color, smooth=50)
+
+def seam_ring(body, center, y, section, color, height=.03, grow=.012, name="Seam"):
+    """A seam (or a stitched hem) round a loft at height y."""
+    hx, hz, n = section
+    return finish(band(y, height, hx + grow, hz + grow, thick=.03, center=center, n=n), body, name, color, smooth=60)
+
+def creases(body, center, section, a, y, color, count=3, span=.5, gap=.07, bow=.05, length=.34, name="Crease"):
+    """Short bowed folds stacked at height y (the inside of an elbow, the back
+    of a knee, a waist): `count` ribbons across the surface around angle a."""
+    hx, hz, n = section
+    out = []
+    for k in range(count):
+        yk = y + (k - (count - 1) / 2) * gap
+        half = span * (1 - .22 * abs(k - (count - 1) / 2))
+        pts = []
+        for i in range(7):
+            t = i / 6
+            ai = a + (t - .5) * half
+            pts.append(_surface(center, hx, hz, n, ai, yk - bow * math.sin(t * math.pi), out=.008))
+        out.append(lock_path(pts, lambda p, a=a: (math.cos(a), 0, math.sin(a)), .026, .03, sides=6, taper=0))
+    return finish(join(out, name), body, name, color, smooth=50)
+
+FRONT, BACK, RIGHT, LEFT = -math.pi / 2, math.pi / 2, 0.0, math.pi
+
+def shirt_detail(color, hem=None, length=.62):
+    """Seams and folds of a white top: side seams, shoulder and under-arm
+    seams of the sleeves, creases inside the elbows, a stitched hem."""
+    seam, fold = shade(color, .82), shade(color, .88)
+    ut = REST["UpperTorso"]
+    for a in (RIGHT, LEFT):
+        seam_line("UpperTorso", ut, (.87, .49, SQ), a, -.62, .5, seam, name="SideSeam")
+    for side, s in (("Left", -1), ("Right", 1)):
+        ua, la = REST[side + "UpperArm"], REST[side + "LowerArm"]
+        inner = LEFT if s > 0 else RIGHT
+        seam_ring(side + "UpperArm", ua, .45, (.4, .38, 3), seam, name="ShoulderSeam")
+        seam_line(side + "UpperArm", ua, (.39, .37, 3), inner, -.62, .4, seam, name="ArmSeam")
+        seam_line(side + "LowerArm", la, (.345, .335, 3), inner, -.46, .56, seam, name="ArmSeam")
+        creases(side + "UpperArm", ua, (.385, .365, 3), FRONT, -.5, fold, count=3, span=.9, name="ElbowFold")
+        creases(side + "LowerArm", la, (.345, .335, 3), FRONT, .45, fold, count=2, span=.8, name="ElbowFold")
+    lt = REST["LowerTorso"]
+    if hem is not None:
+        seam_ring("LowerTorso", lt, -length + .07, (.86, .5, SQ), seam, name="Hem")
+    creases("UpperTorso", ut, (.87, .49, SQ), FRONT, -.55, fold, count=2, span=.7, bow=.03, name="WaistFold")
+
+def trouser_detail(color, lower=True, waist=True):
+    """Seams and folds of white trousers / shorts: outer leg seams, the
+    gathers under the waistband, creases behind the knees."""
+    seam, fold = shade(color, .82), shade(color, .88)
+    lt = REST["LowerTorso"]
+    for side, s in (("Left", -1), ("Right", 1)):
+        ul, ll = REST[side + "UpperLeg"], REST[side + "LowerLeg"]
+        outer = RIGHT if s > 0 else LEFT
+        seam_line(side + "UpperLeg", ul, (.43, .42, 3), outer, -.62, .62, seam, name="LegSeam")
+        creases(side + "UpperLeg", ul, (.42, .41, 3), FRONT, .45, fold, count=2, span=.7, bow=.035, name="HipFold")
+        if lower:
+            seam_line(side + "LowerLeg", ll, (.42, .41, 3), outer, -.5, .58, seam, name="LegSeam")
+            creases(side + "LowerLeg", ll, (.42, .41, 3), BACK, .45, fold, count=3, span=.9, name="KneeFold")
+    if waist:
+        creases("LowerTorso", lt, (.84, .48, SQ), FRONT, .4, fold, count=2, span=.9, bow=.025, name="WaistGather")
+
+def wrap_detail(side, y, height, color, body="LowerLeg", grow=.05):
+    """A bandage wrap: the turns of the cloth, slanted lines round it."""
+    c = REST[side + body]
+    r = (.43 if body == "UpperLeg" else .41) + grow + .005
+    seam = shade(color, .84)
+    turns = max(2, int(height / .14))
+    out = []
+    for k in range(turns):
+        y0 = y - height / 2 + height * (k + .5) / turns
+        pts = []
+        for i in range(13):
+            a = 2 * math.pi * i / 12
+            pts.append(_surface(c, r, r - .01, 3, a, y0 + .05 * (i / 12 - .5), out=.004))
+        out.append(lock_path(pts, lambda p, c=c: (p[0] - c[0], 0, p[2] - c[2]), .024, .02, sides=6, taper=0))
+    return finish(join(out, "WrapTurns"), side + body, "WrapTurns", seam, smooth=50)

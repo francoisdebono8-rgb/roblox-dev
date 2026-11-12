@@ -321,6 +321,8 @@ end
 -- ------------------------------------------------------------------ state
 function FX.new()
 	local folder=Instance.new("Folder");folder.Name="NinjaDuelFX";folder.Parent=workspace
+	-- (12/11, the game casts shadows) light has none; rocks and debris keep theirs (ShadowFX).
+	pcall(function() require(script.Parent.ShadowFX).watch(folder) end)
 	-- Decode the VFX textures now, before the first contact needs them.
 	if task and task.defer then task.defer(function() pcall(Kit.warm) end) end
 	-- (Reference quality) the world's marks (Server/WorldReaction scars) are
@@ -1323,7 +1325,8 @@ function FX:substitute(position,to,fighter,model)
 		crows(self.folder,position,10,11)
 	else
 		-- The classic: a wooden log takes the hit in his place.
-		local holder=new("Model",{Name="SubstitutionLog"},self.folder)
+		local holder=new("Model",{Name="SubstitutionLog"})
+		pcall(holder.SetAttribute,holder,"KeepShadow",true);holder.Parent=self.folder -- a solid log: it keeps its shadow
 		local stand=CFrame.new(position-Vector3.new(0,.6,0))*CFrame.Angles(0,math.random()*math.pi*2,0)*CFrame.Angles(0,0,math.rad(84))
 		local log=block(holder,Vector3.new(3.6,1.25,1.25),stand,Color3.fromRGB(110,74,44),Enum.Material.Wood)
 		log.Shape=Enum.PartType.Cylinder;log.Anchored=false;log.CanCollide=true;log.Massless=false;log.CastShadow=true

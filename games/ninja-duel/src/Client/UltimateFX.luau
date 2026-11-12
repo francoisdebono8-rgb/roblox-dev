@@ -15,6 +15,7 @@ local Debris=game:GetService("Debris")
 local UltimateFX={}
 local Scripts=require(game:GetService("ReplicatedStorage").NinjaDuel.UltimateScripts)
 local K -- Effects' helpers, handed over by install()
+local ShadowFX=require(script.Parent.ShadowFX)
 UltimateFX.clock=os.clock -- (headless tests drive time)
 
 local function rgb(r,g,b) return Color3.fromRGB(r,g,b) end
@@ -181,6 +182,7 @@ function UltimateFX.crater(fx,p,color,size)
 	for k=1,10 do
 		local a=k/10*math.pi*2+rng:NextNumber()*.4
 		local rock=K.block(fx.folder,Vector3.one*(.5+rng:NextNumber()*.9)*size,CFrame.new(floor+Vector3.new(math.cos(a)*1.6,.3,math.sin(a)*1.6))*CFrame.Angles(rng:NextNumber()*3,rng:NextNumber()*3,0),rgb(120,112,100),Enum.Material.Slate)
+		ShadowFX.keep(rock)
 		local out=floor+Vector3.new(math.cos(a)*(4+rng:NextNumber()*3)*size,.2,math.sin(a)*(4+rng:NextNumber()*3)*size)
 		K.tween(rock,.35,{CFrame=CFrame.new(out+Vector3.new(0,1.5,0))*CFrame.Angles(rng:NextNumber()*6,rng:NextNumber()*6,0)},Enum.EasingStyle.Quad,Enum.EasingDirection.Out)
 		task.delay(.35,function() if rock.Parent then K.tween(rock,.3,{CFrame=CFrame.new(out),Transparency=.2},Enum.EasingStyle.Quad,Enum.EasingDirection.In) end end)
@@ -458,6 +460,7 @@ CUE.gates=function(ctx)
 		local a=k/8*math.pi*2
 		local at=ctx.floor(p)+Vector3.new(math.cos(a)*2.2,.2,math.sin(a)*2.2)
 		local rock=K.block(ctx.fx.folder,Vector3.one*(.4+rng:NextNumber()*.5),CFrame.new(at),rgb(130,120,104),Enum.Material.Slate)
+		ShadowFX.keep(rock)
 		K.tween(rock,.6,{CFrame=CFrame.new(at+Vector3.new(0,2+rng:NextNumber()*2,0))*CFrame.Angles(rng:NextNumber()*4,rng:NextNumber()*4,0)},Enum.EasingStyle.Sine)
 		task.delay(.7,function() if rock.Parent then K.tween(rock,.3,{CFrame=CFrame.new(at),Transparency=1},Enum.EasingStyle.Quad,Enum.EasingDirection.In) end end)
 		Debris:AddItem(rock,1.1)

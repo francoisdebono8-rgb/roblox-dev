@@ -204,7 +204,7 @@ local function originPart()
 	if origin and origin.Parent then return origin end
 	origin=Instance.new("Part")
 	origin.Name="FXSpriteOrigin";origin.Anchored=true;origin.CanCollide=false;origin.CanQuery=false;origin.CanTouch=false
-	origin.Transparency=1;origin.Size=Vector3.new(.2,.2,.2);origin.CFrame=CFrame.new()
+	origin.Transparency=1;origin.Size=Vector3.new(.2,.2,.2);origin.CFrame=CFrame.new();origin.CastShadow=false
 	origin.Parent=workspace
 	return origin
 end

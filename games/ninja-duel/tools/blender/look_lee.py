@@ -11,8 +11,9 @@ from mathutils import Vector
 OUT = os.environ.get("ND_OUT", "/tmp")
 reset()
 UT = REST["UpperTorso"]; LT = REST["LowerTorso"]
-SKIN = (252, 222, 192); GREEN, GREEN_D = (56, 170, 74), (40, 132, 58)
-WARMER, ROLL = (250, 134, 40), (230, 110, 30); HAIR = (16, 16, 22); WRAP = (244, 240, 228); BELT = (190, 40, 40)
+# (12/11) off-white and toned skin for the new light; seams and folds on the whites (nd_kit)
+SKIN = skin_tone((252, 222, 192)); GREEN, GREEN_D = (56, 170, 74), (40, 132, 58)
+WARMER, ROLL = (250, 134, 40), (230, 110, 30); HAIR = (16, 16, 22); WRAP = off_white((244, 240, 228)); BELT = (190, 40, 40)
 head(SKIN)
 torso(GREEN)
 collar(GREEN_D, y=.74, height=.22, hx=.72, hz=.62, thick=.1)
