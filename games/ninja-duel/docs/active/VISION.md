@@ -1,6 +1,6 @@
 # Vision durable
 
-Ninja Duel est un **arena fighter 3D systémique** centré sur la fantasy d’incarner un ninja, pas simplement d’exécuter un moveset. Le joueur incarne **son propre ninja**, qui porte le **kit d’un prodige** (DEC-036) : il se bat exactement comme ce prodige, avec ses déplacements, ses coups, ses jutsu, ses animations et ses effets. Les prodiges restent des personnages définis, reconnaissables et fidèles à leur logique de combat ; le joueur apprend à exploiter leur kit, leur chakra, leurs outils, leurs techniques et l’espace. Ce qui appartient au joueur est surtout visuel (tenues, couleurs, accessoires), plus de très légères variantes de build. Le combat constitue la valeur centrale ; les affrontements humains, la maîtrise, le classement et la progression donnent une raison de revenir.
+Ninja Duel est un **arena fighter 3D systémique** centré sur la fantasy d’incarner un ninja, pas simplement d’exécuter un moveset. Le joueur incarne **son propre ninja — son avatar Roblox, avec tout ce qu’il a acheté —**, qui porte le **kit d’un prodige** (DEC-036) : il se bat exactement comme ce prodige, avec ses déplacements, ses coups, ses jutsu, ses animations et ses effets. Les prodiges restent des personnages définis, reconnaissables et fidèles à leur logique de combat ; le joueur apprend à exploiter leur kit, leur chakra, leurs outils, leurs techniques et l’espace. Ce qui appartient au joueur est surtout visuel (tenues, couleurs, accessoires), plus de très légères variantes de build. Le combat constitue la valeur centrale ; les affrontements humains, la maîtrise, le classement et la progression donnent une raison de revenir.
 
 ## Fantasy centrale — « si j’étais réellement ce ninja, qu’est-ce que j’essaierais de faire ? »
 
@@ -46,7 +46,7 @@ Le jeu ne doit ni ressembler à un simple lobby Roblox rempli de téléporteurs,
 
 Le hub sert à donner une existence au jeu, à rendre les autres joueurs et leur progression visibles, et à relier naturellement les systèmes ; il ne doit jamais ralentir l’accès au combat. Cible : un joueur qui connaît le jeu peut être en situation de combat en quelques dizaines de secondes. Les menus restent disponibles partout pour les opérations rapides ; le monde donne le contexte et le sentiment d’appartenance.
 
-Première arrivée visée : courte mise en scène de tournoi → création rapide de son ninja → choix du premier kit de prodige parmi une sélection de départ → tutoriel de combat court et utile → premier duel IA → retour libre dans le hub. Ensuite, aucune longue chaîne de quêtes obligatoires. Le joueur choisit entre entraînement, progression, duel/tournoi et exploration légère de l’enceinte.
+Première arrivée visée : courte mise en scène de tournoi → entrée avec son propre avatar Roblox → choix du premier kit de prodige parmi une sélection de départ → tutoriel de combat court et utile → premier duel IA → retour libre dans le hub. Ensuite, aucune longue chaîne de quêtes obligatoires. Le joueur choisit entre entraînement, progression, duel/tournoi et exploration légère de l’enceinte.
 
 Le hub doit rester dense : zone d’entraînement, accès tournoi, progression/maîtrise, classement/champions, profil et quelques points sociaux/visuels. Pas de ville ouverte vide, pas de PNJ « tue cinq bandits », pas de marche artificiellement longue pour ouvrir un menu.
 
@@ -84,7 +84,7 @@ La progression gratuite doit rester viable ; payer doit surtout donner **plus vi
 
 Formulation courte : **A systemic 3D ninja arena fighter where simple inputs unlock deep, situational combat expression.**
 
-Axe d’expérience : **Crée ton ninja. Prends le style d’un prodige. Maîtrise-le. Entre dans le tournoi.**
+Axe d’expérience : **Ton avatar. Le style d’un prodige. Maîtrise-le. Entre dans le tournoi.**
 
 Le jalon produit est le roster jouable en breadth-first, puis une alpha publique comme terrain de développement en conditions réelles. Les chiffres, arbitrages et limites en vigueur appartiennent à [DECISIONS](DECISIONS.md), les critères de réalisation au [backlog](MASTER_BACKLOG.md), les preuves à [CURRENT_STATE](CURRENT_STATE.md). Les anciennes ambitions de League/Path et de plus grand roster ne constituent pas un périmètre supplémentaire.
 

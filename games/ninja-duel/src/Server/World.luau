@@ -532,6 +532,7 @@ local function fighterGroup()
 		physics:CollisionGroupSetCollidable("NinjaFighters","NinjaFighters",false)
 	end)
 end
+World.fighterGroup=fighterGroup
 -- (DEC-036) The prodigy whose look a body wears, with the body's own colours:
 -- the kit `def` fights, this dresses. A prodigy's own body is his own def
 -- (the same table: he is built exactly as before).
@@ -552,6 +553,39 @@ function World.lookDef(body,def)
 		if v~=nil then out=out or setmetatable({},{__index=base});out[key]=v end
 	end
 	return out or base
+end
+-- (DEC-036, 12/11: the player fights in his own Roblox avatar) The rig's
+-- skeleton as data, the same numbers World.rig builds with (tests/Avatar.spec
+-- checks they stay equal): the body parts' sizes and rest centres (root
+-- space) and the joints (part0, part1, C0, C1). Server/AvatarBody puts a
+-- Roblox avatar on this skeleton, so every Blender clip, the feet on the floor
+-- and the reach are the same whatever the avatar.
+World.RIG={
+	parts={
+		LowerTorso={Vector3.new(2,1,1),Vector3.new(0,0,0)},UpperTorso={Vector3.new(2,1.4,1),Vector3.new(0,1.15,0)},
+		Head={Vector3.new(1.5,1.5,1.5),Vector3.new(0,2.45,0)},
+	},
+	joints={
+		{"Root","HumanoidRootPart","LowerTorso",Vector3.zero,Vector3.zero},
+		{"Waist","LowerTorso","UpperTorso",Vector3.new(0,0.65,0),Vector3.new(0,-0.5,0)},
+		{"Neck","UpperTorso","Head",Vector3.new(0,0.9,0),Vector3.new(0,-0.55,0)},
+	},
+}
+for _,side in {-1,1} do
+	local prefix=if side==-1 then "Left" else "Right"
+	local P,J=World.RIG.parts,World.RIG.joints
+	P[prefix.."UpperArm"]={Vector3.new(0.8,1.1,0.8),Vector3.new(side*1.45,0.72,0)}
+	P[prefix.."LowerArm"]={Vector3.new(0.76,0.95,0.76),Vector3.new(side*1.45,-0.28,0)}
+	P[prefix.."Hand"]={Vector3.new(0.72,0.5,0.72),Vector3.new(side*1.45,-1.0,0)}
+	P[prefix.."UpperLeg"]={Vector3.new(0.85,1.1,0.85),Vector3.new(side*0.5,-0.85,0)}
+	P[prefix.."LowerLeg"]={Vector3.new(0.8,1.05,0.8),Vector3.new(side*0.5,-1.75,0)}
+	P[prefix.."Foot"]={Vector3.new(0.8,0.42,1.15),Vector3.new(side*0.5,-2.55,-0.15)}
+	table.insert(J,{prefix.."Shoulder","UpperTorso",prefix.."UpperArm",Vector3.new(side*1.05,0.45,0),Vector3.new(-side*0.4,0.5,0)})
+	table.insert(J,{prefix.."Elbow",prefix.."UpperArm",prefix.."LowerArm",Vector3.new(0,-0.55,0),Vector3.new(0,0.45,0)})
+	table.insert(J,{prefix.."Wrist",prefix.."LowerArm",prefix.."Hand",Vector3.new(0,-0.48,0),Vector3.new(0,0.25,0)})
+	table.insert(J,{prefix.."Hip","LowerTorso",prefix.."UpperLeg",Vector3.new(side*0.5,-0.55,0),Vector3.new(0,0.5,0)})
+	table.insert(J,{prefix.."Knee",prefix.."UpperLeg",prefix.."LowerLeg",Vector3.new(0,-0.55,0),Vector3.new(0,0.5,0)})
+	table.insert(J,{prefix.."Ankle",prefix.."LowerLeg",prefix.."Foot",Vector3.new(0,-0.5,0),Vector3.new(0,0.2,0.15)})
 end
 -- `worn` (optional, a Shared/Appearance body): what the fighter looks like;
 -- the kit `def` decides everything else. Without one, the prodigy's own body.
