@@ -24,6 +24,7 @@ local Effects=nil
 -- Blender-authored clips (Client/AuthoredMotion): where one exists for a
 -- strike or a technique, it replaces the procedural pose below.
 local Authored=nil
+local guardStep -- (feel audit 07/11) defined with guardTargets
 do
 	local okA,mod=pcall(function() return require(script.Parent.AuthoredMotion) end)
 	if okA then Authored=mod end
@@ -2953,6 +2954,33 @@ local function guardTargets(fighterId,impact)
 	return build(merge(base,{root={y=-.6,pitch=8-6*absorbed,z=.2*absorbed},torso={pitch=10-10*absorbed,yaw=-4},head={pitch=10},
 		ra={raise=92,out=-34,twist=42,elbow=112,wrist=-10},la={raise=96,out=-30,twist=40,elbow=108,wrist=-10}})),RATE.guard
 end
+-- (Feel audit 07/11, ANIMATEUR clips_feel) The guard moving: up to 33
+-- studs/s in a fixed pose (28-38 slides a minute). Pas chassés toward the
+-- way the body goes (B/F/L/R in its own frame), their cadence scaled to the
+-- real speed (authored at meta.speed, at most 1.8x); pushed faster than a
+-- step can follow, the braced skid. A blow on the guard keeps its impact.
+local GUARD_STEP_MIN,GUARD_SKID,GUARD_CADENCE=1.5,12,1.8
+guardStep=function(char,subject,dt)
+	if not Authored or (subject.guardImpact or 0)>0 then return nil end
+	local F=tostring(subject.fighterId)
+	local root=char:FindFirstChild("HumanoidRootPart")
+	if not root then return nil end
+	local v=planar(root.AssemblyLinearVelocity)
+	local speed=v.Magnitude
+	if speed<GUARD_STEP_MIN then return nil end
+	if speed>GUARD_SKID and Authored.has(F..".Guard.Skid") then
+		return Authored.sample(F..".Guard.Skid",elapsedTime),RATE.authored
+	end
+	local rel=root.CFrame:VectorToObjectSpace(v)
+	local dir=if math.abs(rel.Z)>=math.abs(rel.X) then (if rel.Z>0 then "B" else "F") else (if rel.X<0 then "L" else "R")
+	local name=F..".Guard.Step."..dir
+	local clip=Authored.has(name) and Authored.clip(name)
+	if not clip then return nil end
+	local s=stateOf(char)
+	local authoredSpeed=(clip.meta and clip.meta.speed) or 6
+	s.guardStepT=(s.guardStepT or 0)+(dt or 1/60)*math.min(GUARD_CADENCE,speed/authoredSpeed)
+	return Authored.sample(name,s.guardStepT),RATE.authored
+end
 -- A dash is pushed off a leg: for its first few frames the body drops and
 -- the pushing leg drives against the ground, then the glide takes over.
 local DASH_PUSH=.08
@@ -3470,7 +3498,8 @@ function Motion.present(char,actor,clock,dt)
 		return "wall"
 	end
 	if subject.state=="Guarding" then
-		local targets,rate=guardTargets(subject.fighterId,subject.guardImpact)
+		local targets,rate=guardStep(char,subject,dt)
+		if not targets then targets,rate=guardTargets(subject.fighterId,subject.guardImpact) end
 		apply(char,targets,rate,dt)
 		return "guard"
 	end
