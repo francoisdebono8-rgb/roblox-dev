@@ -4,6 +4,8 @@ local Looks=require(script.Parent.Looks)
 local LookMeshes=require(script.Parent.LookMeshes)
 local ArenaMeshes=require(script.Parent.ArenaMeshes)
 local Face=require(game:GetService("ReplicatedStorage").NinjaDuel.Face)
+local Appearance=require(game:GetService("ReplicatedStorage").NinjaDuel.Appearance)
+local Fighters=require(game:GetService("ReplicatedStorage").NinjaDuel.Fighters)
 local function part(parent, name, size, cf, color, material)
 	local p = Instance.new("Part")
 	p.Name, p.Size, p.CFrame = name, size, cf
@@ -530,13 +532,37 @@ local function fighterGroup()
 		physics:CollisionGroupSetCollidable("NinjaFighters","NinjaFighters",false)
 	end)
 end
-function World.rig(parent, def, cf, name)
+-- (DEC-036) The prodigy whose look a body wears, with the body's own colours:
+-- the kit `def` fights, this dresses. A prodigy's own body is his own def
+-- (the same table: he is built exactly as before).
+local byName=nil
+function World.lookDef(body,def)
+	if not body then return def end
+	local base=def
+	if body.look~=nil and body.look~=def.Name then
+		if not byName then
+			byName={}
+			for _,d in Fighters do if type(d)=="table" and d.Name and not byName[d.Name] then byName[d.Name]=d end end
+		end
+		base=byName[body.look] or def
+	end
+	local out=nil
+	for _,key in Appearance.COLOURS do
+		local v=body[string.lower(key)]
+		if v~=nil then out=out or setmetatable({},{__index=base});out[key]=v end
+	end
+	return out or base
+end
+-- `worn` (optional, a Shared/Appearance body): what the fighter looks like;
+-- the kit `def` decides everything else. Without one, the prodigy's own body.
+function World.rig(parent, def, cf, name, worn)
 	fighterGroup()
 	local model = Instance.new("Model"); model.Name=name; model.Parent=parent
-	local skin=Color3.fromRGB(table.unpack(def.Skin))
-	local outfit=Color3.fromRGB(table.unpack(def.Outfit))
+	local look=World.lookDef(worn,def)
+	local skin=Color3.fromRGB(table.unpack(look.Skin))
+	local outfit=Color3.fromRGB(table.unpack(look.Outfit))
 	local pants=Color3.fromRGB(35,43,54)
-	local color=Color3.fromRGB(table.unpack(def.Color))
+	local color=Color3.fromRGB(table.unpack(look.Color))
 	local root=part(model,"HumanoidRootPart",Vector3.new(2,2,1),cf,outfit)
 	root.Transparency=1
 	local function body(name,size,offset,tint)
@@ -574,7 +600,7 @@ function World.rig(parent, def, cf, name)
 		joint(prefix.."Knee",legTop,legLow,Vector3.new(0,-0.55,0),Vector3.new(0,0.5,0))
 		joint(prefix.."Ankle",legLow,foot,Vector3.new(0,-0.5,0),Vector3.new(0,0.2,0.15))
 	end
-	local hair=body("Hair",Vector3.new(1.65,0.55,1.65),Vector3.new(0,3,0),Color3.fromRGB(table.unpack(def.Hair)))
+	local hair=body("Hair",Vector3.new(1.65,0.55,1.65),Vector3.new(0,3,0),Color3.fromRGB(table.unpack(look.Hair)))
 	joint("HairJoint",head,hair,Vector3.new(0,0.57,0),Vector3.new(0,-0.25,0))
 	local sash=body("Sash",Vector3.new(2.1,0.25,1.1),Vector3.new(0,-0.4,0),color)
 	joint("SashJoint",lower,sash,Vector3.new(0,-0.4,0),Vector3.zero)
@@ -588,7 +614,7 @@ function World.rig(parent, def, cf, name)
 			piece.Massless=piece~=root
 		end
 	end
-	World.dress(model,def)
+	World.dress(model,def,worn)
 	model.PrimaryPart=root; root:SetNetworkOwner(nil)
 	-- Fighters pass through each other physically; Combat keeps them apart.
 	for _,p in model:GetDescendants() do if p:IsA("BasePart") then p.CollisionGroup="NinjaFighters" end end
@@ -1158,7 +1184,10 @@ function World.defaultFace(model,def)
 	Face.useShape("can")
 	Face.BoxProfile=saved
 end
-function World.dress(model,def)
+-- `def` is the kit; `body` (optional) the look worn (DEC-036). The costume
+-- is the look's; the pieces that serve a technique are marked KitItem.
+function World.dress(model,def,body)
+	def=World.lookDef(body,def)
 	soften(model)
 	-- The rig's coloured test sash is replaced by each costume's own belt.
 	local sash=model:FindFirstChild("Sash");if sash then sash.Transparency=1 end
@@ -1195,6 +1224,19 @@ function World.dress(model,def)
 			local weld=p:FindFirstChildOfClass("WeldConstraint")
 			p.CastShadow=not (p==head or (weld and weld.Part0==head))
 		end
+	end
+	World.markKitItems(model,def)
+end
+-- (DEC-036, AVATAR-001 step 2) The pieces of the worn look that serve one of
+-- its prodigy's techniques (Shared/Appearance.KitItems) carry KitItem = that
+-- prodigy's id. Marking only: no rule of play reads it yet.
+function World.markKitItems(model,lookDef)
+	local owner=nil
+	for id,d in Fighters do if d==lookDef or (type(d)=="table" and d.Name==lookDef.Name) then owner=id;break end end
+	if not owner or not Appearance.KitItems[owner] then return end
+	-- (Costume pieces are the model's own children, as dress reads them above.)
+	for _,p in model:GetChildren() do
+		if p:IsA("BasePart") and Appearance.isKitItem(owner,p.Name) then p:SetAttribute("KitItem",owner) end
 	end
 end
 -- The breadth-pass costume modules get the costume helpers (no require back
