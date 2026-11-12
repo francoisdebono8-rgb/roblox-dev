@@ -8,6 +8,7 @@ local Roster=require(Shared.BetaRoster)
 local Controls=require(Shared.Controls)
 -- (QA 12/11) capitals that keep the long vowels and accents (Shared/Text).
 local Text=require(Shared.Text)
+local Config=require(Shared.Config)
 -- (05/11) The face button of each jutsu slot on a pad (R1 is the row's).
 local PAD_FACE={"□","△","○","×","D↑"}
 local ChakraMoves=require(Shared.ChakraMoves)
@@ -1079,7 +1080,7 @@ function UI:render(data)
 		self.introRightName.Text=fullName(b);self.introRightTitle.Text=subtitle(b)
 		self.introLeftName.TextColor3=accentOf(Fighters[h.fighterId]);self.introRightName.TextColor3=accentOf(Fighters[b.fighterId])
 		self.introRound.Text="PRODIGY TOURNAMENT  —  ROUND "..(data.round or 1)..(if (data.round or 1)>1 and (data.wins and (data.wins.human==1 and data.wins.bot==1)) then "  •  FINAL ROUND" else "")
-		self.introBegin.Text=if data.intro<.75 then "始め!  BEGIN" else ""
+		self.introBegin.Text=if data.intro<(Config.IntroBegin or .75) then "始め!  BEGIN" else ""
 		if self.introShown~=data.epoch then
 			self.introShown=data.epoch
 			self.introLeft.Position=UDim2.new(-.5,0,1,-118);self.introRight.Position=UDim2.new(1,0,1,-118)

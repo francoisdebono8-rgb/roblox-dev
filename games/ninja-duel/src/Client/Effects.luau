@@ -2412,6 +2412,17 @@ function FX:update(data,dt,folder)
 		-- layers run so an awakening that ended takes its cloak, tail, flush
 		-- and lit eye with it (they stayed, the tail frozen in the air).
 		if data and data.phase=="Result" then
+			-- (QA 12/11: 23 effect pieces and a light still there 3 s after
+			-- Kakashi-Itachi, a light after Lee-Minato) The server cleared the
+			-- round (Combat:clear: hazards, seals, zones): the client's burning
+			-- patches, seal marks and their lights, and the zones' looks follow
+			-- (they were only stepped during the duel, so they stayed).
+			pcall(self.hazardsStep,self,data)
+			for _,key in {"human","bot"} do
+				local actor=data[key]
+				if actor then pcall(self.seal,self,actor.id or key,actor,folder) end
+			end
+			for _,layer in FX.layers do if layer.frame then pcall(layer.frame,self,data,dt,folder) end end
 			for _,key in {"human","bot"} do
 				local actor=data[key]
 				local model=actor and folder and folder:FindFirstChild(actor.id or "")

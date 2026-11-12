@@ -148,6 +148,10 @@ return {
 	-- Where each fighter starts (studs from the centre): far enough apart that
 	-- the round opens on an approach, not on a punch.
 	StartDistance = 24,
+	-- (QA 12/11) The intro's « BEGIN » shows over the last IntroBegin seconds
+	-- (Client/UI) and the camera eases from the close-ups into the duel frame
+	-- over the same seconds (Client/Camera): the player is in the frame at BEGIN.
+	IntroBegin = 0.75,
 	-- Server-side Animator playback (donor clips, default locomotion). Off: the
 	-- client motion engine animates every body.
 	DonorAnimations = false,

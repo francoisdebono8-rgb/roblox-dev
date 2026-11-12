@@ -8,6 +8,7 @@
 --  * framing modes blend over several frames; impact shake and FOV kicks are
 --    reserved for heavy moments.
 local Camera={}; Camera.__index=Camera
+local Config=require(game:GetService("ReplicatedStorage").NinjaDuel.Config)
 local framing={
  -- (Fluidity pass, user reference 28/10) close behind the shoulder: the
  -- body fills the frame, every motion of it reads; the opponent ahead.
@@ -562,7 +563,7 @@ function Camera:update(data,dt)
 	-- orbit framed both bodies from 20+ studs, so an entrance pose was a few
 	-- pixels. Fighting-game entrance instead (Storm 4, Tekken 8): each
 	-- fighter in turn, three-quarter front, close enough that the pose reads,
-	-- a slow dolly across; then the camera eases into the duel frame.
+	-- a slow dolly across; then, at BEGIN, a cut to the duel frame.
 	if (data.intro or 0)>0 then
 		self.introTotal=math.max(self.introTotal or 0,data.intro)
 		local total,left=self.introTotal,data.intro
@@ -578,13 +579,21 @@ function Camera:update(data,dt)
 		local sign=if first then 1 else -1
 		local closeFocus=subject+Vector3.new(0,1.3-u*.3,0)
 		local close=closeFocus+toward*(6.2+u*1.2)+across*sign*(2.6-u*1.6)+Vector3.new(0,.4+u*.3,0)
-		local out=math.clamp((.5-left)/.5,0,1)
-		out=out*out*(3-2*out)
-		focus=closeFocus:Lerp(focus,out)
-		desired=close:Lerp(desired,out)
-		self.focus=focus
+		-- (QA 12/11: at BEGIN only the opponent was in the frame, far, the
+		-- player behind the lens) BEGIN cuts to the duel frame, as a fighting
+		-- game cuts to play: the old ease crossed the whole gap between the two
+		-- (some 50 studs) and found the player only after the fight had begun.
+		-- The rig's own focus keeps following the player during the shots (it
+		-- was set to each shot's focus), so the cut lands on a settled frame.
+		local begun=left<(Config.IntroBegin or .75)
+		if not begun then focus=closeFocus;desired=close end
+		-- Each change of shot is a cut (the follow below glided it across the
+		-- gap, through the bodies).
+		local shot=if begun then "duel" elseif first then "first" else "second"
+		if self.introShot and self.introShot~=shot then self.cutNow=true end
+		self.introShot=shot
 	else
-		self.introTotal=nil
+		self.introTotal=nil;self.introShot=nil
 	end
 	self.fovKick*=math.exp(-dt*9)
 	local speed=data.human.speed or 0
@@ -822,7 +831,7 @@ function Camera:update(data,dt)
 		cf=CFrame.lookAt(cf.Position,cf.Position+look)
 	end
 	if film then camera.CFrame=cf;self.rigCF=nil;return end
-	if fresh or not self.rigCF then self.rigCF=cf; self.lastEpoch=data.epoch
+	if fresh or not self.rigCF or self.cutNow then self.rigCF=cf; self.lastEpoch=data.epoch;self.cutNow=nil
 	else
 		-- Follow tightly enough for teleports, but never jump more than a few
 		-- studs in one frame.
