@@ -37,6 +37,7 @@ run Feedback   "$LUNE" run tests/Feedback.spec.luau
 run Animation  "$LUNE" run tests/Animation.spec.luau
 run Locomotion "$LUNE" run tests/Locomotion.spec.luau
 run AwakenFX "$LUNE" run tests/AwakenFX.spec.luau
+run Lightning "$LUNE" run tests/Lightning.spec.luau
 run Movement   "$LUNE" run tests/Movement.spec.luau
 run CombatFeel "$LUNE" run tests/CombatFeel.spec.luau
 run Engagement "$LUNE" run tests/Engagement.spec.luau

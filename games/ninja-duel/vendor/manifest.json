@@ -14,6 +14,10 @@
     "velmora": {
       "repository": "https://github.com/yashveer-singh-speaks/velmora",
       "commit": "402f4f3bea6d24aae2942de0dbb72c80d428b843"
+    },
+    "lightningbeams": {
+      "repository": "https://github.com/SamyBlue/Lightning-Beams",
+      "commit": "406c3b9328d2115dc62cbdf3e6b2d38f693cae3f"
     }
   },
   "originalFiles": {
@@ -24,7 +28,9 @@
     "vendor/place1/LICENSE": "4894c48ad81da8dda9a2ae27c0ee15998315bd3bd382370e6cc4025cc9b26785",
     "vendor/place1/original/FirstPersonMovementController.client.lua": "1866259fd5e0b2402105bf22a6753e78dc6f231d147a9f0f9ff43f66e991b8aa",
     "vendor/place1/original/ParkourTraversalController.client.lua": "1ac37006dbd3ffdb13a156afe12296b8dbd0ca4865ad79188c2dffb7b533351d",
-    "vendor/velmora/LICENSE": "7ba3f76ede3904ebc64045b7cea4d5347795a8a1c307bb884c062ae75e830d49"
+    "vendor/velmora/LICENSE": "7ba3f76ede3904ebc64045b7cea4d5347795a8a1c307bb884c062ae75e830d49",
+    "vendor/lightningbeams/LICENSE": "18c0fc751e0957d5690d9f71a5f9d93904e1e47d6771d3ea647118b0fea02422",
+    "vendor/lightningbeams/original/LightningBolt.lua": "8092d751d7ced0655526a8307b38c6ffe93856b365d8186e6275a6ef56c5b640"
   },
   "assets": {
     "assets/BanglaAssets.rbxmx": "6e99f5f67e6c34ac8a81d739431554b1495f0f5cd1dd1870a39eeb8bf23e1983"

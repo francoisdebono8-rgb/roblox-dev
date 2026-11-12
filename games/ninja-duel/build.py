@@ -99,7 +99,7 @@ item(shared,'StringValue','RuntimeFingerprint',[('Value','string',runtime_finger
 item(shared,'StringValue','BuildProfile',[('Value','string',PROFILE)])
 item(shared,'StringValue','SourceCommit',[('Value','string',SOURCE_COMMIT[:12]+('-dirty' if SOURCE_DIRTY else ''))])
 licenses=item(shared,'Folder','ThirdPartyLicenses')
-for vendor in ('bangla','place1','velmora'):
+for vendor in ('bangla','place1','velmora','lightningbeams'):
     item(licenses,'StringValue',vendor,[('Value','string',(ROOT/'vendor'/vendor/'LICENSE').read_text(encoding='utf-8'))])
 server=item(xml,'ServerScriptService','ServerScriptService')
 sources(item(server,'Folder','NinjaDuelServer'), ROOT/'src/Server')
