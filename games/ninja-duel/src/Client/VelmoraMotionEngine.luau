@@ -2701,6 +2701,16 @@ local function authoredReaction(actor)
 end
 -- (12/11) For the tests: which authored reaction clip a body in this state plays.
 Motion._authoredReaction=authoredReaction
+-- (12/11, feel audit M5) A body just arrived from a one-frame travel (the duel
+-- state's `travel`, Server Combat:travelStart): its own arrival clip
+-- (F.<Tech>.Arrive, ANIMATEUR clips_feel), when it has one.
+local function arrivalClip(subject)
+	local travel=subject.travel
+	if not (Authored and travel and travel.arrived and travel.kind=="teleport") then return nil end
+	local name=tostring(subject.fighterId).."."..tostring(travel.id)..".Arrive"
+	return if Authored.has(name) then name else nil
+end
+Motion._arrivalClip=arrivalClip
 local function reactionTargets(actor,feet)
 	local authoredPose,authoredRate,clip=authoredReaction(actor)
 	if authoredPose then return authoredPose,authoredRate,clip end
@@ -3536,6 +3546,26 @@ function Motion.present(char,actor,clock,dt)
 		end
 		apply(char,targets,RATE.cast,dt)
 		return "technique"
+	end
+	-- (12/11, feel audit M5) Arrived out of a one-frame travel (Lightning Strike,
+	-- Lightning Cut): the ANIMATEUR's arrival, from the moment the body arrived,
+	-- instead of the procedural landing; a strike that starts takes over.
+	local arrive=not swinging and arrivalClip(subject)
+	if arrive then
+		local travel=subject.travel
+		if memo.arriveSerial~=travel.serial then memo.arriveSerial=travel.serial;memo.arriveAt=elapsedTime-math.clamp(travel.arrived or 0,0,.25) end
+		local t=elapsedTime-memo.arriveAt
+		if t<Authored.length(arrive) then
+			local targets=table.clone(Authored.sample(arrive,t))
+			if subject.airborne then
+				for joint in JOINTS do if not UPPER[joint] and joint~="Root" then targets[joint]=base[joint] end end
+			else
+				targets.__feet=authoredFeet(char,targets,dt)
+			end
+			mark(char,"arrive:"..arrive,.1)
+			apply(char,targets,RATE.authored,dt)
+			return "technique"
+		end
 	end
 	if casting and not swinging and Authored then
 		-- (Blender-first) an authored technique: Channel (or Form), Hold while a

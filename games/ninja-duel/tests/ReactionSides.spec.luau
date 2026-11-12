@@ -2,8 +2,8 @@
 -- victims turned round at once (Itachi 176 deg, Kakashi in HitStun 155 deg in
 -- one frame: both caught by an ultimate; Sasuke grabbed from behind, 179 deg,
 -- fixed by lot 1).
---   1. Shared/ReactionSides.Grabbed (set by the ANIMATEUR) is only true with
---      the hold's back and side clips for every fighter.
+--   1. Shared/ReactionSides.Grabbed (filled by the ANIMATEUR) lists only
+--      fighters whose hold has its back and side clips.
 --   2. The client picks the back or side clip of a throw (Launched,
 --      Knockback) and of a hold as soon as it exists, the frontal one until.
 --   3. With the hold's clips in, the held body is not hauled round.
@@ -25,15 +25,13 @@ local Ultimates=H.load("Server/Ultimates")
 local function yaw(a) local l=a.root.CFrame.LookVector return math.atan2(-l.X,-l.Z) end
 local function turned(y0,y1) local d=(y1-y0)%(2*math.pi) if d>math.pi then d-=2*math.pi end return math.abs(math.deg(d)) end
 
-test("the hold is marked with back and side clips only when every fighter has them",function()
+test("a fighter is listed for the hold's back and side clips only when he has them",function()
  local fighters={}
  for id in H.fighters do if Authored.has(id..".Hit.Body") then table.insert(fighters,id) end end
  assert(#fighters>=8,"fixture: "..#fighters.." fighters with authored reactions")
- if ReactionSides.Grabbed==true then
-  for _,id in fighters do
-   for _,clip in ReactionSides.Clips.Grabbed do
-    assert(Authored.has(id.."."..clip),"Grabbed is marked true but "..id.."."..clip.." is missing")
-   end
+ for id in ReactionSides.Grabbed do
+  for _,clip in {"Grabbed",table.unpack(ReactionSides.Clips.Grabbed)} do
+   assert(Authored.has(id.."."..clip),id.." is listed for the hold but "..id.."."..clip.." is missing")
   end
  end
  -- HitStun's back and side clips are in (ANIM-005): the reference the others follow.
@@ -44,29 +42,30 @@ end)
 
 test("the client plays a throw's or a hold's back or side clip as soon as it exists",function()
  assert(Motion._authoredReaction,"the engine does not expose its reaction choice")
- local extra={}
+ local function clip(fighter,reaction,angle,airborne)
+  local _,_,name=Motion._authoredReaction({fighterId=fighter,id="t",reaction=reaction,reactionElapsed=.1,hitAngle=angle,airborne=airborne,hitTwist=1})
+  -- (".L": the mirrored side, part of the clip's identity)
+  return if name then (string.gsub(name,"%.L$","")) else nil
+ end
+ -- Sasuke: the ANIMATEUR's clips (PR #58).
+ assert(clip("Lion","Launched",180,true)=="Launched.Back","from behind: "..tostring(clip("Lion","Launched",180,true)))
+ assert(clip("Lion","Juggled",-95,true)=="Launched.Side","from the side: "..tostring(clip("Lion","Juggled",-95,true)))
+ assert(clip("Lion","Launched",10,true)=="Launched","from the front: "..tostring(clip("Lion","Launched",10,true)))
+ assert(clip("Lion","Knockback",90,true)=="Knockback.Side","thrown from the side: "..tostring(clip("Lion","Knockback",90,true)))
+ assert(clip("Lion","Grabbed",180,false)=="Grabbed.Back","held from behind: "..tostring(clip("Lion","Grabbed",180,false)))
+ assert(clip("Lion","Grabbed",0,false)=="Grabbed","held from the front: "..tostring(clip("Lion","Grabbed",0,false)))
+ -- Any other fighter: throws are shared reactions (AuthoredMotion borrows
+ -- Sasuke's), so their back and side clips play for him too; a hold is his
+ -- own (not shared): none until delivered, then its variant.
+ local extra={["Zz.Hit.Body"]="Lion.Hit.Body"}
  local has,sample=Authored.has,Authored.sample
  Authored.has=function(name) return extra[name]~=nil or has(name) end
  Authored.sample=function(name,t) return sample(extra[name] or name,t) end
  local ok,err=pcall(function()
-  local function clip(reaction,angle,airborne)
-   local _,_,name=Motion._authoredReaction({fighterId="Lion",id="t",reaction=reaction,reactionElapsed=.1,hitAngle=angle,airborne=airborne,hitTwist=1})
-   -- (".L": the mirrored side, part of the clip's identity)
-   return if name then (string.gsub(name,"%.L$","")) else nil
-  end
-  -- Before the ANIMATEUR's clips: the frontal ones (the hold: procedural).
-  assert(clip("Launched",180,true)=="Launched","from behind, before the clip: "..tostring(clip("Launched",180,true)))
-  assert(clip("Knockback",90,true)=="Knockback","from the side, before the clip: "..tostring(clip("Knockback",90,true)))
-  assert(clip("Grabbed",180,false)==nil,"the hold has no clip yet but played "..tostring(clip("Grabbed",180,false)))
-  -- Delivered (stood in for by the frontal clips' frames).
-  extra["Lion.Launched.Back"]="Lion.Launched";extra["Lion.Launched.Side"]="Lion.Launched"
-  extra["Lion.Knockback.Side"]="Lion.Knockback";extra["Lion.Grabbed.Back"]="Lion.Launched"
-  assert(clip("Launched",180,true)=="Launched.Back","from behind: "..tostring(clip("Launched",180,true)))
-  assert(clip("Juggled",-95,true)=="Launched.Side","from the side: "..tostring(clip("Juggled",-95,true)))
-  assert(clip("Launched",10,true)=="Launched","from the front: "..tostring(clip("Launched",10,true)))
-  assert(clip("Knockback",90,true)=="Knockback.Side","thrown from the side: "..tostring(clip("Knockback",90,true)))
-  assert(clip("Knockback",180,true)=="Knockback","thrown from behind, no Back clip yet: "..tostring(clip("Knockback",180,true)))
-  assert(clip("Grabbed",180,false)=="Grabbed.Back","held from behind: "..tostring(clip("Grabbed",180,false)))
+  assert(clip("Zz","Launched",180,true)=="Launched.Back","a shared throw from behind: "..tostring(clip("Zz","Launched",180,true)))
+  assert(clip("Zz","Grabbed",180,false)==nil,"no hold clip, yet one played: "..tostring(clip("Zz","Grabbed",180,false)))
+  extra["Zz.Grabbed.Back"]="Lion.Grabbed.Back"
+  assert(clip("Zz","Grabbed",180,false)=="Grabbed.Back","held from behind, delivered: "..tostring(clip("Zz","Grabbed",180,false)))
  end)
  Authored.has,Authored.sample=has,sample
  assert(ok,err)
@@ -86,10 +85,13 @@ test("with the hold's clips in, a body grabbed from behind is not hauled round",
   assert(held,"setup: the grab did not hold")
   return most
  end
- assert(grabbed()>=60,"setup: without the clips the held body is no longer hauled round")
- ReactionSides.Grabbed=true
+ assert(ReactionSides.Grabbed.Lion,"fixture: Sasuke's hold clips are listed")
+ ReactionSides.Grabbed.Lion=nil
+ local okOff,off=pcall(grabbed)
+ ReactionSides.Grabbed.Lion=true
  local ok,result=pcall(grabbed)
- ReactionSides.Grabbed=false
+ assert(okOff,off)
+ assert(off>=60,"setup: without the clips the held body is no longer hauled round")
  assert(ok,result)
  assert(result<=2,string.format("with the hold's clips the held body still turned %.0f deg",result))
 end)

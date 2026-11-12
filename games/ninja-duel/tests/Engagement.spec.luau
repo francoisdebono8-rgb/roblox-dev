@@ -107,6 +107,10 @@ test("a blow lands only on what is in front of it",function()
 end)
 
 test("a body grabbed from behind is hauled round to the grabber, not spun in one frame",function()
+ -- (12/11) Only while the hold has no back/side clips (Shared/ReactionSides
+ -- .Grabbed); with them the body keeps its facing (tests/ReactionSides).
+ local Sides=H.load("Shared/ReactionSides");local was=Sides.Grabbed.Lion;Sides.Grabbed.Lion=nil
+ local ok,err=pcall(function()
  local c,a,b=H.duel("Legion","Lion")
  b.ai=nil;a.ai=nil
  c:relocate(a,V.new(0,3,0));c:relocate(b,V.new(0,3,-2.6))
@@ -125,6 +129,9 @@ test("a body grabbed from behind is hauled round to the grabber, not spun in one
  assert(held,"the grab did not hold the body")
  assert(worst<=Brawler.GRAB_TURN*.01+1,string.format("the held body turned %.0f deg in one 10 ms step",worst))
  assert(off(b,a)<=25,string.format("0.6 s into the hold the body still does not face the grabber (%.0f deg off)",off(b,a)))
+ end)
+ Sides.Grabbed.Lion=was
+ assert(ok,err)
 end)
 
 print(string.format("NinjaDuel engagement (game feel lot 1): %d PASS (headless; the look is a Studio check)",passed))

@@ -1642,7 +1642,7 @@ function Brawler.step(c,a,dt)
    local look=Vector3.new(b.root.CFrame.LookVector.X,0,b.root.CFrame.LookVector.Z)
    -- (12/11, feel audit M3) With the hold's back and side clips in
    -- (Shared/ReactionSides.Grabbed), the held body is not hauled round at all.
-   if ReactionSides.Grabbed==true and look.Magnitude>.01 then want=look end
+   if ReactionSides.keepsFacing("Grabbed",b.fighterId) and look.Magnitude>.01 then want=look end
    if want.Magnitude>.01 and look.Magnitude>.01 then
     want=want.Unit;look=look.Unit
     local angle=math.atan2(look:Cross(want).Y,look:Dot(want))

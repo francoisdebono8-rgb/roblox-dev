@@ -77,4 +77,14 @@ test("a blow taken on the way ends the travel",function()
  assert(c:travelView(a)==nil,"the travel outlived the blow")
 end)
 
+test("a body just arrived from Lightning Strike or Lightning Cut plays the ANIMATEUR's arrival",function()
+ local Motion=H.load("Client/VelmoraMotionEngine")
+ assert(Motion._arrivalClip,"the engine does not expose its arrival choice")
+ local function clip(fighter,kind,id,arrived) return Motion._arrivalClip({fighterId=fighter,travel={serial=1,kind=kind,id=id,arrived=arrived}}) end
+ assert(clip("Flashstep","teleport","LightningStrike",.05)=="Flashstep.LightningStrike.Arrive","Minato: "..tostring(clip("Flashstep","teleport","LightningStrike",.05)))
+ assert(clip("Copycat","teleport","LightningCut",.05)=="Copycat.LightningCut.Arrive","Kakashi: "..tostring(clip("Copycat","teleport","LightningCut",.05)))
+ assert(clip("Flashstep","teleport","LightningStrike",nil)==nil,"an arrival before the body arrived")
+ assert(clip("Lion","dash","Rush",.05)==nil,"a dash with no arrival clip got one")
+end)
+
 print(string.format("NinjaDuel travel (feel audit M5, for the ANIMATEUR's arrivals): %d PASS",passed))
