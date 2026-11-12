@@ -19,12 +19,19 @@ local function rgb(r,g,b) return Color3.fromRGB(r,g,b) end
 -- faces across: the wall throws a long shadow over the earth, bodies get a lit
 -- side and a shade side; the shade is cool and darker than before, so the
 -- image has depth instead of the flat, all-lit midday of a default place.
+-- (12/11, QA test of b822ee5, setting validated by François) The image was
+-- burnt white: the world's shadows were off (GlobalShadows false: neither the
+-- build nor this look set it) and the light too strong (Brightness 3.6,
+-- exposure +0.12, ambients 84/80/100 and 126/120/142, bloom from 1.25): white
+-- clothes and faces became glowing blocks. Shadows on, less light, a darker
+-- fill, a bloom only on what really shines.
 local LIGHT={
-	ClockTime=16.9,GeographicLatitude=36,Brightness=3.6,ExposureCompensation=.12,
-	EnvironmentDiffuseScale=.7,EnvironmentSpecularScale=.32,ShadowSoftness=.12,
-	Ambient=rgb(84,80,100),OutdoorAmbient=rgb(126,120,142),
+	ClockTime=16.9,GeographicLatitude=36,Brightness=2.4,ExposureCompensation=-.35,GlobalShadows=true,
+	EnvironmentDiffuseScale=.5,EnvironmentSpecularScale=.4,ShadowSoftness=.18,
+	Ambient=rgb(60,56,72),OutdoorAmbient=rgb(96,92,112),
 	ColorShift_Top=rgb(255,212,164),ColorShift_Bottom=rgb(84,104,160),
 }
+WorldLook.LIGHT=LIGHT
 local function effect(class,name,props)
 	local e=Lighting:FindFirstChild(name)
 	if not e then e=Instance.new(class);e.Name=name;e.Parent=Lighting end
@@ -44,13 +51,13 @@ function WorldLook.apply()
 	for _,atmo in Lighting:GetChildren() do
 		if atmo:IsA("Atmosphere") then
 			any=true
-			atmo.Density=.3;atmo.Offset=.2;atmo.Color=rgb(236,214,190);atmo.Decay=rgb(112,100,128);atmo.Glare=.55;atmo.Haze=1.6
+			atmo.Density=.3;atmo.Offset=.2;atmo.Color=rgb(236,214,190);atmo.Decay=rgb(112,100,128);atmo.Glare=.2;atmo.Haze=1.1
 		end
 	end
 	if not any then Instance.new("Atmosphere",Lighting);return WorldLook.apply() end
-	effect("ColorCorrectionEffect","NinjaLookGrade",{Saturation=.16,Contrast=.18,Brightness=-.015,TintColor=rgb(255,244,234)})
-	effect("BloomEffect","NinjaLookBloom",{Intensity=.65,Size=30,Threshold=1.25})
-	effect("SunRaysEffect","NinjaLookRays",{Intensity=.07,Spread=.75})
+	effect("ColorCorrectionEffect","NinjaLookGrade",{Saturation=.22,Contrast=.26,Brightness=-.02,TintColor=rgb(255,246,236)})
+	effect("BloomEffect","NinjaLookBloom",{Intensity=.3,Size=22,Threshold=2.2})
+	effect("SunRaysEffect","NinjaLookRays",{Intensity=.04,Spread=.75})
 	effect("DepthOfFieldEffect","NinjaLookDepth",{FarIntensity=.18,FocusDistance=40,InFocusRadius=75,NearIntensity=0})
 	local terrain=workspace:FindFirstChildOfClass("Terrain")
 	if terrain then
