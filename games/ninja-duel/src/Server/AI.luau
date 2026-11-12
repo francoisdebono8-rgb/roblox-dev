@@ -393,11 +393,41 @@ function AI:habit(move)
 	for _,m in self.recent or {} do if m==move then n+=1 end end
 	return n>=2
 end
+-- (QA test of b822ee5, 12/11: AI against AI, Sasuke 9 Wall Dives in 95 s,
+-- Itachi 20 blades, Naruto 12 Multi Shadow Clone; Neji never placed his 64
+-- Palms or his Rotation.) What the bot did lately, by move: a move it has
+-- used `limit` times in the last `window` seconds waits; a technique it has
+-- not placed yet this round is owed one, and taken on a looser condition.
+AI.Variety={Tool={2,10},WallRun={1,16},Flashstep={1,6},Technique={2,30},OweAfter=14,OweChance=.35}
+function AI:used(key,now)
+	local uses=self.uses or {}
+	self.uses=uses
+	table.insert(uses,{key=key,at=now})
+	while #uses>0 and now-uses[1].at>30 do table.remove(uses,1) end
+	self.placed=self.placed or {}
+	self.placed[key]=true
+end
+function AI:tired(key,now,rule)
+	rule=rule or AI.Variety[key]
+	if not rule then return false end
+	local n=0
+	for _,u in self.uses or {} do if u.key==key and now-u.at<=rule[2] then n+=1 end end
+	return n>=rule[1]
+end
+-- A technique of the kit not placed yet, once the round has run a while.
+function AI:owed(id,now)
+	return not (self.placed and self.placed[id]) and now-(self.roundStart or now)>=AI.Variety.OweAfter
+end
 function AI:update(now)
 	local c,a=self.combat,self.actor; local target=a.target; local tune=self.tune
 	if c.match.phase~="Duel" or a.health<=0 or target.health<=0 then a.move=Vector3.zero; return end
 	if now<self.nextTick then return end
 	self.nextTick=now+tune.Tick
+	self.roundStart=self.roundStart or now
+	-- (QA 12/11: Sasuke-Gaara had no K.O. in 95 s) A round that drags on
+	-- (LateFrom s, full at +LateSpan) presses: no more probing or breathing,
+	-- keener dashes, jutsu sooner.
+	local late=math.clamp((now-self.roundStart-(tune.LateFrom or 40))/(tune.LateSpan or 25),0,1)
 	-- (easy) a beat at the start of the round: guard up, it lets him come.
 	if tune.Opening then
 		self.openedAt=self.openedAt or now
@@ -453,6 +483,7 @@ function AI:update(now)
 		self.probing=true;self.modeUntil=now+1.2+self.rng:NextNumber()*1.4;self.probeRange=10+self.rng:NextNumber()*8
 	end
 	self.wasHurt=hurt
+	if late>=.5 then self.probing=false;self.breathUntil=nil end
 	local calm=self.probing or now<(self.breathUntil or 0)
 	-- Probing happens at tool range: spacing, throws and reads before running in.
 	if self.probing then desired+=self.probeRange or 14 elseif calm then desired+=4 end
@@ -480,15 +511,21 @@ function AI:update(now)
 	if outOfLane then a.move=outOfLane+toward*.25;Brawler.event(c,a,"LaneAvoid") end
 	-- Space is a resource: backing off drifts toward the open middle, so the
 	-- wall is a choice (wall run, splat) and not where every retreat ends.
+	-- (QA 12/11: the fights slid to the edge, against the trees and bushes,
+	-- the camera behind a trunk) The drift starts at CentreFrom studs from
+	-- the middle (it began 98 out, among the trees) and holds while pressing
+	-- in too, weaker.
 	local centre=(a.root.Position-c.match.origin)*Vector3.new(1,0,1)
-	local edge=math.clamp((centre.Magnitude-(Config.ArenaRadius-45))/30,0,1)
-	if edge>0 and radial<.5 and centre.Magnitude>.1 then a.move-=centre.Unit*edge*.9 end
+	local edge=math.clamp((centre.Magnitude-(tune.CentreFrom or 40))/(tune.CentreSpan or 40),0,1)
+	if edge>0 and centre.Magnitude>.1 then a.move-=centre.Unit*edge*(if radial<.5 then .9 else .7) end
 	-- (Embodiment) A ninja moves through the terrain: spacing at range, it
 	-- drifts to the scenery (a boulder to stand behind, a trunk, the wall),
 	-- so the exchanges that follow happen where the space can be used.
 	if self.probing and not holding and not fooled then
 		local spot=Perception.nearest(c,a.root.Position,tune.Terrain or 50)
-		if spot and spot.distance>5 then
+		-- (QA 12/11) not to the trees and the wall's foot: the fight stays in the open.
+		local inside=spot and spot.position and ((spot.position-c.match.origin)*Vector3.new(1,0,1)).Magnitude<=(tune.CentreFrom or 40)+25
+		if spot and spot.distance>5 and (inside or not spot.position) then
 			a.move+=spot.direction*(tune.TerrainPull or .9)
 			if (self.terrainAt or -9)<now-3 then self.terrainAt=now;Brawler.event(c,a,"Perceive:terrain:"..spot.kind) end
 		end
@@ -501,7 +538,10 @@ function AI:update(now)
 		if now<self.feintOut then
 			a.move=-toward+tangent*(self.strafeSign or 1)*.4;a.sprinting=false
 			if edge>0 and centre.Magnitude>.1 then a.move-=centre.Unit*edge end
-			if self.feintThrow and now>=self.feintThrow then self.feintThrow=nil;c:request(a,"Tool",target.root.Position) end
+			if self.feintThrow and now>=self.feintThrow then
+				self.feintThrow=nil
+				if not self:tired("Tool",now) and c:request(a,"Tool",target.root.Position) then self:used("Tool",now) end
+			end
 		else self.feintOut=nil end
 	elseif self.feintIn then
 		if now<self.feintIn then a.move=toward;a.sprinting=true
@@ -534,8 +574,10 @@ function AI:update(now)
 		a.move=(outward+tangent*.25).Unit;a.sprinting=true
 		return
 	end
-	if fromCenter.Magnitude>Config.ArenaRadius-22 and distance>11 and distance<44 and a.state=="Neutral" and not a.airborne and self.rng:NextNumber()<tune.WallRun then
+	if fromCenter.Magnitude>Config.ArenaRadius-22 and distance>11 and distance<44 and a.state=="Neutral" and not a.airborne and self.rng:NextNumber()<tune.WallRun
+		and not self:tired("WallRun",now) then
 		self.wallRun=now+1.1;self.wallSide=if self.rng:NextNumber()<.5 then 1 else -1
+		self:used("WallRun",now)
 		return
 	end
 	-- (06/11) A speed jutsu (Shared/Sight): eyes without the Sharingan do not
@@ -575,9 +617,9 @@ function AI:update(now)
 		if kind=="arc" then a.move=(tangent*(self.reposSide or 1)+away*.35).Unit;a.sprinting=true
 		elseif kind=="out" then a.move=(away+tangent*(self.reposSide or 1)*.5).Unit;a.sprinting=true
 		else a.move=(away*.6+tangent*(self.reposSide or 1)).Unit;a.sprinting=distance<10 end
-		if not self.reposThrown and distance>7 and free and self.rng:NextNumber()<.5 then
+		if not self.reposThrown and distance>7 and free and self.rng:NextNumber()<.5 and not self:tired("Tool",now) then
 			self.reposThrown=true
-			if press(c,a,"Tool","neutral",0,target.root.Position) then return end
+			if press(c,a,"Tool","neutral",0,target.root.Position) then self:used("Tool",now);return end
 		end
 		return
 	end
@@ -618,6 +660,12 @@ function AI:update(now)
  local remembered=self.threatAt and now-self.threatAt>=latency and now-self.threatAt<.9
  if remembered and distance<9 and a.state=="Neutral" and not a.reaction then
   self.threatAt=nil
+  -- (QA 12/11) Neji answers a strike he saw coming with his Rotation now and
+  -- then (this read came first and always raised the guard: no Kaiten in a match).
+  local spin=slotOf(a,"Rotation")
+  if spin and distance<6.5 and target.state~="Recovery" and self.rng:NextNumber()<(if self:owed("Rotation",now) then .6 else .3) and c:request(a,spin) then
+   self:used("Rotation",now);return
+  end
   if target.state=="Recovery" then
    a.move=toward;a.sprinting=true
    if distance<6 then c:request(a,"Attack") else c:request(a,"Dodge") end
@@ -630,7 +678,7 @@ function AI:update(now)
  end
 	-- Neji: a strike about to land at close range is a Rotation read.
 	if reactedThreat and a.state=="Neutral" and distance<6.5 and slotOf(a,"Rotation") and self.rng:NextNumber()<.3 then
-		if c:request(a,(slotOf(a,"Rotation"))) then return end
+		if c:request(a,(slotOf(a,"Rotation"))) then self:used("Rotation",now);return end
 	end
 	if a.state=="Startup" and a.attackName=="Heavy" and now-a.attackStarted>.08 and self.rng:NextNumber()<(if minato then .18 else .3) then c:request(a,"Feint");return end
 	-- A newly observed telegraph may alter movement, but cannot trigger an
@@ -726,9 +774,9 @@ function AI:update(now)
 	-- A marked kunai that is about to pass the opponent is a teleport cue.
 	if minato and a.state=="Neutral" then
 		local seal=Techniques.sealOf(c,a,now)
-		if seal and (seal-target.root.Position).Magnitude<7 and (c:markedInFlight(a) or self.rng:NextNumber()<.5) then
+		if seal and (seal-target.root.Position).Magnitude<7 and (c:markedInFlight(a) or self.rng:NextNumber()<.5) and not self:tired("Flashstep",now) then
 			local slot=slotOf(a,"Flashstep")
-			if slot and c:request(a,slot) then return end
+			if slot and c:request(a,slot) then self:used("Flashstep",now);return end
 		end
 	end
 	-- A body launched straight up above him is out of reach too: the flat
@@ -761,10 +809,15 @@ function AI:update(now)
 			end
 			a.move=Vector3.zero;press(c,a,"Attack");return
 		end
-		-- Neji: end a string with Vacuum Palm.
+		-- Neji: end a string with Vacuum Palm, or (QA 12/11) close the points
+		-- with the 64 Palms while the body is still within reach.
 		if a.fighterId=="GentleFist" and a.combo>=2 and roll<.18 then
 			local palm=slotOf(a,"VacuumPalm")
-			if palm and c:request(a,palm,target.root.Position) then return end
+			if palm and c:request(a,palm,target.root.Position) then self:used("VacuumPalm",now);return end
+		end
+		if a.fighterId=="GentleFist" and a.combo>=2 and roll>=.18 and roll<(if self:owed("SixtyFourPalms",now) then .6 else .34) and distance<5 then
+			local palms=slotOf(a,"SixtyFourPalms")
+			if palms and c:request(a,palms,target.root.Position) then self:used("SixtyFourPalms",now);return end
 		end
 		local nearWall=fromCenter.Magnitude>Config.ArenaRadius-22
 		if a.combo>=2 then
@@ -790,13 +843,15 @@ function AI:update(now)
 	-- (06/11) Naruto with his crowd out: now and then he takes the body of
 	-- the clone most behind the opponent (the same key again) and strikes from
 	-- there, so the real one is never where he was.
+	-- (QA 12/11: 12 presses of that key in 95 s) A switch is a press of the
+	-- Multi Shadow Clone: it counts with the casts (twice in 22 s at most).
 	if a.crowd and now>=(self.switchAt or 0) and #Bodies.crowd(c,a,"clone")>0 then
-		self.switchAt=now+1.1+self.rng:NextNumber()*1.6
-		if self.rng:NextNumber()<.6 then
+		self.switchAt=now+2.6+self.rng:NextNumber()*2.4
+		if self.rng:NextNumber()<.5 and not self:tired("MassShadowClone",now,AI.Variety.Technique) then
 			for slot,spec in a.def.Techniques do
 				if spec.Id=="MassShadowClone" then
 					a.move=Vector3.zero
-					if c:request(a,"Technique"..slot,target.root.Position) then return end
+					if c:request(a,"Technique"..slot,target.root.Position) then self:used("MassShadowClone",now);return end
 				end
 			end
 		end
@@ -810,8 +865,28 @@ function AI:update(now)
 		if to.Magnitude>.5 then a.move=to.Unit;if press(c,a,"Attack","neutral",0) then return end end
 	end
 	if a.chakra<18 then a.move=-toward+tangent*0.2; return end
+	-- (QA 12/11: Neji never placed his 64 Palms or his Rotation in a match)
+	-- A jutsu of the kit not placed yet this round is tried in its range,
+	-- outside the jutsu pace, every couple of seconds until it is placed.
+	-- (Not the ones that only answer something: a read, a teleport to a seal,
+	-- a held or formed jutsu, which keep their own rules.)
+	if now>=(self.oweTryAt or 0) then
+		for slot,spec in a.def.Techniques do
+			if not spec.Copied and not spec.Hold and not spec.State and spec.Id~="Read" and spec.Id~="Flashstep"
+				and self:owed(spec.Id,now) and distance<(spec.Range or 20)+1 and (a.cooldowns[spec.Id] or 0)<=now and a.chakra>=(spec.Cost or 0) then
+				self.oweTryAt=now+1.2+self.rng:NextNumber()*1.2
+				if self.rng:NextNumber()<.5 and c:request(a,"Technique"..slot,target.root.Position) then
+					self:used(spec.Id,now);self.lastTech=spec.Id
+					self.techReadyAt=now+(tune.TechniqueGap or 0)+self.rng:NextNumber()*(tune.TechniqueJitter or 0)
+					return
+				end
+				break
+			end
+		end
+	end
 	-- (Rock Lee has no blade to probe with: his tool is the deflecting kick.)
-	if distance>7 and distance<46 and a.def.Tool~="Deflect" and self.rng:NextNumber()<(if a.def.Name=="Itachi" then 0.11 else 0.09)*(if self.probing then tune.ProbeTool else 1) and target.state~="Guarding" then
+	if distance>7 and distance<46 and a.def.Tool~="Deflect" and self.rng:NextNumber()<(if a.def.Name=="Itachi" then 0.11 else 0.09)*(if self.probing then tune.ProbeTool else 1) and target.state~="Guarding"
+		and not self:tired("Tool",now) then
 		-- A tool master sometimes throws the geometry instead (side + tool).
 		if a.def.ToolMastery and a.def.ToolMastery.Geometry and self.rng:NextNumber()<.4 then
 			a.move=tangent*(if self.rng:NextNumber()<.5 then 1 else -1)
@@ -820,7 +895,7 @@ function AI:update(now)
 		-- comfortable reserve is infused; a body-chakra fighter (Neji) keeps the blade.
 		self.probeThrows=(self.probeThrows or 0)+1
 		local infuse=self.probeThrows%3==0 and not a.def.GentleFist and a.chakra>=(a.def.Chakra or Config.Chakra)*.6
-		if c:request(a,"Tool",target.root.Position,nil,if infuse then {chakra=true} else nil) then return end
+		if c:request(a,"Tool",target.root.Position,nil,if infuse then {chakra=true} else nil) then self:used("Tool",now);return end
 	end
 	-- Choose by capabilities/technique identifiers, never by a second bot combat engine.
 	-- Jutsu are paced: after one, a few seconds of movement, tools and reads
@@ -828,7 +903,7 @@ function AI:update(now)
 	-- reach) is not; a recovery seen from range is still neutral.
 	local punish=target.state=="Stunned" or target.reaction=="Bound"
 		or ((target.state=="Recovery" or target.state=="TechniqueRecovery") and distance<7)
-	if self.rng:NextNumber()<tune.Technique and (now>=(self.techReadyAt or 0) or punish) then
+	if self.rng:NextNumber()<tune.Technique*(1+late) and (now>=(self.techReadyAt or 0)-late*(tune.TechniqueGap or 0)*.5 or punish) then
 		-- A kit made only of family techniques is scanned from a rotating slot
 		-- (the whole kit gets used, not slot 1 first); a kit with bespoke
 		-- techniques keeps its authored priority order.
@@ -838,6 +913,7 @@ function AI:update(now)
 		for slot,spec in a.def.Techniques do
 			if spec.State and not a.bodyState and distance>7 and distance<(spec.Range or 20) and self.rng:NextNumber()<(tune.StateForm or .35)
 				and c:request(a,"Technique"..slot,target.root.Position) then
+				self:used(spec.Id,now);self.lastTech=spec.Id
 				self.techReadyAt=now+(tune.TechniqueGap or 0)+self.rng:NextNumber()*(tune.TechniqueJitter or 0);return
 			end
 		end
@@ -854,7 +930,8 @@ function AI:update(now)
 			elseif spec.Id=="Flashstep" then local seal=Techniques.sealOf(c,a,now);use=seal~=nil and (distance>14 or (seal-target.root.Position).Magnitude<7)
 			elseif spec.Id=="BurstStrike" then use=distance<7 and (target.state=="Recovery" or target.state=="Stunned" or target.state=="TechniqueRecovery")
 			elseif spec.Id=="Read" then use=distance<8 and danger and reacted
-			elseif spec.Id=="NeedleFan" then use=distance>8 and distance<36
+			-- (QA 12/11: Itachi, 20 blades in 95 s) the fan is one choice among his jutsu, not the default.
+			elseif spec.Id=="NeedleFan" then use=distance>8 and distance<36 and self.rng:NextNumber()<.45
 			elseif spec.Id=="MirageCast" then use=distance>10 and distance<21 and (target.state=="Recovery" or target.state=="Guarding" or self.rng:NextNumber()<0.18) end
 			if spec.Id=="FireBloom" then use=distance>6 and distance<46 and c:lineOfSight(a,target) and (target.state=="Recovery" or target.state=="TechniqueChannel" or self.rng:NextNumber()<0.32) end
 			if spec.Id=="WireTrap" then use=distance>7 and distance<28 and c:lineOfSight(a,target) and self.rng:NextNumber()<.4 end
@@ -889,7 +966,15 @@ function AI:update(now)
 			if spec.Family and not use then use=familyWants(self,c,a,target,spec,distance,danger) end
 			-- A copied jutsu with no rule of its own: used while it is his, in its range.
 			if spec.Copied and not use and not spec.Family then use=distance<(spec.Range or 20) and self.rng:NextNumber()<.4 end
+			-- (QA 12/11) Variety: the same jutsu twice in a row mostly waits for
+			-- another (4 times in 5), a third one within Technique[2] s waits;
+			-- a jutsu of the kit not placed yet this round is taken in its range.
+			if use and (self.lastTech==spec.Id and self.rng:NextNumber()<.8 or self:tired(spec.Id,now,AI.Variety.Technique)) and not punish then use=false end
+			if not use and not spec.Copied and spec.Id~="Read" and spec.Id~="Flashstep" and self:owed(spec.Id,now) then
+				use=distance<(spec.Range or 20)+1 and self.rng:NextNumber()<AI.Variety.OweChance
+			end
 			if use and c:request(a,"Technique"..slot,aim) then
+				self:used(spec.Id,now);self.lastTech=spec.Id
 				-- A held technique (spec.Hold): the bot holds it for a while of its
 				-- choosing, longer when the opponent is far (more time to see it).
 				if spec.Hold then
@@ -993,7 +1078,7 @@ function AI:update(now)
 		if distance<5.5 and c:request(a,"Attack") then self.plan=nil end
 		return
 	elseif self.plan=="straight" then self.plan=nil end
-	if distance<math.max(8,reach) and self.rng:NextNumber()<tune.Aggression then
+	if distance<math.max(8,reach) and self.rng:NextNumber()<math.min(.95,tune.Aggression+late*.2) then
 		c:request(a,if a.grabVictim then "Attack" elseif distance<5 and self.rng:NextNumber()<.12 then "Grab" elseif self.rng:NextNumber()<.16 then "Heavy" else "Attack")
 	end
 	-- Out-ranged (sand lashes): close the gap instead of waiting at its edge.
@@ -1012,6 +1097,7 @@ function AI:update(now)
 	local keen=.1*(DASH[a.fighterId] or 1)
 	if (self.entryUntil or 0)>now then keen*=4 elseif distance>desired+10 then keen*=2 end
 	if zoner then keen*=1.3 end
+	keen*=1+late*1.5
 	if not calm and distance>dashFrom and distance<44 and target.state~="Startup" and target.state~="TechniqueChannel" and target.state~="Guarding"
 		and self.rng:NextNumber()<keen and not laneOnPath(c,a,target) then
 		if c:request(a,"Pursuit") then self.entryUntil=nil;return end
