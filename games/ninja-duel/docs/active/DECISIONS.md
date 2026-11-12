@@ -273,3 +273,14 @@ Décision utilisateur ([issue #45](https://github.com/francoisdebono8-rgb/roblox
 - Réorganiser sans détruire est autorisé ; **supprimer demande l'accord explicite** du propriétaire sur une liste de chemins exacts (DELETED WITH APPROVAL). Publication Roblox : toujours sur son feu vert.
 
 Résultat : [MAC_CLEANUP_RESULT](../reports/mac-local-2026-11-07/MAC_CLEANUP_RESULT.md).
+
+## DEC-036 — Le ninja du joueur porte le kit d’un prodige (12/11)
+
+Décision utilisateur du **12/11 à 16 h 29**, en réponse à la question « les prodiges seulement, son propre ninja seulement, ou les deux ? » : l’option des deux, précisée ainsi : on garde toutes les attaques et on continue de faire les prodiges ; le joueur peut les jouer avec son propre perso ; les modifications sont très légères (le build), l’essentiel porte sur les tenues ; au début, un perso a un build, comme si on clonait les capacités du prodige sur lui. Ainsi tout ce qui est fait pour la bêta puis pour les 20 prodiges reste utilisable. Remplace la phrase de VISION « le shinobi personnel à créer est abandonné ».
+
+- **Deux couches.** Le **kit** est le prodige : stats (cohérentes avec l’histoire), déplacements, coups, combos, jutsu, signes, ultime, éveil, animations Blender, effets. Le **corps** est le ninja du joueur : visage, cheveux, peau, tenue, couleurs, accessoires sans effet.
+- **Un objet qui sert à une technique appartient au kit** et apparaît sur le ninja qui le porte : la gourde de Gaara, le sabre de Kakashi, les kunai marqués de Minato, les poids de Lee ; les yeux (Sharingan, Byakugan) s’allument sur les yeux du ninja ; les clones sont des copies du ninja.
+- **Un seul squelette R15**, aux proportions pour lesquelles les animations sont faites : on varie les pièces, pas la longueur des membres.
+- **Modifications légères seulement** : les variantes de build (arbres DEC-024), jamais un autre moveset ; budgets standardisés en tournoi inchangés. Au départ, un build par ninja = un kit cloné.
+- **Les prodiges restent** : adversaires IA, tableau du tournoi, fiches et vidéos ; leur apparence d’origine reste jouable.
+- **Ordre** : séparer kit et corps dans le code sans changement visible (chaque prodige garde son corps d’origine) ; marquer les pièces de kit ; essayer chaque kit sur l’Ōtsutsuki, premier corps de joueur, dans Studio ; sauvegarde du profil ; créateur v1 ; puis hub, tenues à gagner, boutique cosmétique.

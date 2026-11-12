@@ -1214,3 +1214,16 @@ Sortie commune : trois Lights/Heavy physiques distincts, branche seulement aprè
 - validation: Profils d’IA par budget (débutant ~20–30 SP, moyen ~40–50, difficile ~60–70, boss de tournoi ~80+, légendaire proche du max) au lieu de tricher sur les stats ; utilisables comme outil d’équilibrage
 - evidence: 2026-10-16 DEC-012 : ouvert par la mission 2026-10-16 (merge `5c6f3be`) : cinq paliers d’IA par fighter construits uniquement depuis l’arbre (débutant 23–27 SP, moyen 43–46, difficile 65–69, boss 88–95, légendaire 118–132), `Config.AI` inchangé ; `Matches:start(…, options)` validé côté serveur. TECHNICAL PASS. L’IA n’exploite pas encore les nœuds d’entrée pure (cancels, Air Exit)
 - outcome: PENDING
+
+## AVATAR-001 — Le ninja du joueur porte le kit d’un prodige
+
+- status: OPEN
+- priority: P2
+- dependencies: PROG-001
+- subsystem: progression
+- character: ALL
+- summary: Séparer le kit (le prodige) et le corps (le ninja du joueur), puis jouer chaque kit avec son propre ninja
+- sources: [DEC-036](DECISIONS.md#dec-036--le-ninja-du-joueur-porte-le-kit-dun-prodige-1211)
+- validation: (1) kit et corps séparés dans le code, chaque prodige rebâti à l’identique avec son corps d’origine (test headless + Studio) ; (2) pièces de kit marquées (gourde, sabre, kunai marqués, poids, yeux) ; (3) chacun des 8 kits joué dans Studio sur le corps de l’Ōtsutsuki : animations, yeux, clones, objets, effets ; (4) apparence, kits, build et tenues sauvegardés dans le profil ; (5) créateur v1 (quelques pièces Blender par emplacement, couleurs). Aucune puissance liée à la tenue.
+- evidence: Décision utilisateur DEC-036 du 12/11 ; aucun code encore. Aujourd’hui l’apparence est choisie par le nom du perso (Server/Looks, Server/LookMeshes, World.dress).
+- outcome: PENDING
