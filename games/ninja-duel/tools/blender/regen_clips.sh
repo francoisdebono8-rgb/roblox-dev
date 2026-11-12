@@ -19,4 +19,6 @@ python3 tools/blender/clips_to_luau.py src/Client/AuthoredClips.luau \
   $O/clips_Ult_GentleFist.json $O/clips_Ult_Mirage.json $O/clips_Ult_Flashstep.json $O/clips_Ult_Copycat.json \
   $O/clips_Ult_Victim.json \
   $O/clips_Gaps_Copycat.json $O/clips_Gaps_Legion.json $O/clips_Gaps_Lion.json $O/clips_Gaps_Mirage.json \
-  $O/clips_Gaps_Flashstep.json $O/clips_Gaps_GentleFist.json $O/clips_Gaps_Leaf.json $O/clips_Gaps_Sand.json
+  $O/clips_Gaps_Flashstep.json $O/clips_Gaps_GentleFist.json $O/clips_Gaps_Leaf.json $O/clips_Gaps_Sand.json \
+  $O/clips_Lion_feel.json $O/clips_Flashstep_feel.json $O/clips_Mirage_feel.json $O/clips_Legion_feel.json \
+  $O/clips_Copycat_feel.json $O/clips_Sand_feel.json $O/clips_Leaf_feel.json $O/clips_GentleFist_feel.json
