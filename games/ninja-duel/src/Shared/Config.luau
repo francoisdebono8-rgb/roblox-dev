@@ -119,6 +119,17 @@ return {
 	-- contact cone is +-acos(Contact.Facing) around the striker's facing (was
 	-- +-87 deg: a fist going forward knocked down a body beside it).
 	Contact = {Facing = 0.5},
+	-- (12/11, feel audit M2: bodies inside each other, contact down to 2 studs,
+	-- a fighter standing in one lying on the floor) Two standing bodies are
+	-- eased toward Gap studs apart (root to root) and never left closer than
+	-- Floor (every strike's step-in stops at 2.4 studs or more). A body lying on
+	-- the floor is LyingHalf studs long each way along its facing; a standing
+	-- body is kept LyingGap studs from that line. Passing through (a dodge, a
+	-- rush line), a hold and an ultimate are left alone.
+	Bodies = {Gap = 3, Floor = 2.5, LyingHalf = 2.8, LyingGap = 2.0},
+	-- (12/11) A travel (Combat:travelStart: a teleport jutsu, a signature
+	-- dash) stays in the duel state Show s after its arrival: the arrival pose.
+	Travel = {Show = 1.0},
 	-- (DEC-032 §3) Hand seals: the weave stays open Open s for the first seal,
 	-- then Gap s between seals.
 	Seals = {Open = 1.4, Gap = 0.9},

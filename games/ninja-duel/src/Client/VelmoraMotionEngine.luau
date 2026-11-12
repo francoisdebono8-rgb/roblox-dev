@@ -2614,10 +2614,19 @@ local function authoredReaction(actor)
 	local angle=rad(actor.hitAngle or 0)
 	local from,side=math.cos(angle),math.sin(angle)
 	local twist=actor.hitTwist or 1
+	-- (12/11, feel audit M3) Thrown from behind or from the side: its own clip
+	-- as soon as the ANIMATEUR has made it (Shared/ReactionSides.Clips), the
+	-- frontal one until then. Same choice as HitStun's Hit.Back / Hit.Side.
+	local function sided(base)
+		if from<-.4 and Authored.has(F.."."..base..".Back") then return base..".Back",twist<0 end
+		if math.abs(side)>.6 and Authored.has(F.."."..base..".Side") then return base..".Side",side<0 end
+		return base,side<0
+	end
 	if kind=="Launched" or kind=="Juggled" then
 		-- (ANIM-005) The clip opens on the stance; a body already in the air
 		-- (and every juggle hit) starts on the whip, the transition carries it.
-		local p=play("Launched",elapsed+3/60,side<0);if p then return p,RATE.authored,"Launched" end
+		local name,mirror=sided("Launched")
+		local p=play(name,elapsed+3/60,mirror);if p then return p,RATE.authored,name end
 	elseif kind=="Knockdown" then
 		local p=play("Knockdown",elapsed*Authored.length(F..".Knockdown")/.34,side<0);if p then return p,RATE.authored,"Knockdown" end
 	elseif kind=="Knockback" then
@@ -2625,12 +2634,18 @@ local function authoredReaction(actor)
 		LANDINGS[actor.id or ""]=land
 		if actor.airborne then
 			land.groundAt=nil
-			local p=play("Knockback",elapsed+2/60,side<0);if p then return p,RATE.authored,"Knockback" end
+			local name,mirror=sided("Knockback")
+			local p=play(name,elapsed+2/60,mirror);if p then return p,RATE.authored,name end
 		else
 			land.groundAt=land.groundAt or elapsedTime
 			-- The skid ends in his own stance: never mirrored (the lead foot stays).
 			local p=play("Knockback.Land",elapsedTime-land.groundAt,false);if p then return p,RATE.authored,"Knockback.Land" end
 		end
+	elseif kind=="Grabbed" then
+		-- (12/11, M3) Held: the ANIMATEUR's clips when they exist (front, back,
+		-- side); the procedural hold below until then.
+		local name,mirror=sided("Grabbed")
+		local p=play(name,elapsed,mirror);if p then return p,RATE.authored,name end
 	elseif kind=="GuardStun" then
 		local p=play("Guard.Impact",elapsed,false);if p then return p,RATE.authored,"Guard.Impact" end
 	elseif kind=="HitStun" then
@@ -2683,6 +2698,8 @@ local function authoredReaction(actor)
 	end
 	return nil
 end
+-- (12/11) For the tests: which authored reaction clip a body in this state plays.
+Motion._authoredReaction=authoredReaction
 local function reactionTargets(actor,feet)
 	local authoredPose,authoredRate,clip=authoredReaction(actor)
 	if authoredPose then return authoredPose,authoredRate,clip end

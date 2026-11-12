@@ -288,6 +288,7 @@ local function behind(c,a,b,label,kind)
 	a.invulnerableUntil=math.max(a.invulnerableUntil or 0,c.now+.25)
 	a.teleportAt=c.now
 	c:pushImpact(to,"teleport",false,{owner=a.id,from=from,to=to,kind=kind})
+	c:travelStart(a,"teleport",kind or label,from,to,0)
 	c:cue(a,label,.5)
 	return true
 end
@@ -315,6 +316,7 @@ ChakraFlow.OnDash={
 		a.invulnerableUntil=math.max(a.invulnerableUntil or 0,c.now+.3)
 		a.teleportAt=c.now
 		c:pushImpact(to,"teleport",false,{owner=a.id,from=from,to=to,kind="crows"})
+		c:travelStart(a,"teleport","CrowScatter",from,to,0)
 		c:cue(a,"CROW SCATTER",.5)
 		return true
 	end,

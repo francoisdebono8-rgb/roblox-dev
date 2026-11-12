@@ -96,6 +96,7 @@ le même fichier chacune de son côté :
 | Rendu des corps, caméra, prédiction | **DEV** | `src/Client/Camera.luau`, `Presentation.luau`, `BodyViews.luau`, `VelmoraMotionEngine.luau` (le moteur qui pose les clips), `Input.luau` |
 | Poses, clips, transitions corporelles, mouvements de jutsu | **ANIMATEUR** | `src/Client/AuthoredClips*.luau`, `AuthoredJutsu*.luau`, `AuthoredMotion.luau`, `~/Documents/NinjaDuel/BLENDER`, `motion-lab/` |
 | Effets visuels des jutsu | **ANIMATEUR** | `src/Client/*FX.luau` (ChakraFX, LeeFX, UltimateFX, ElementFX…), `assets/` des effets |
+| Tables que l'ANIMATEUR remplit, lues par le moteur (12/11) | **ANIMATEUR** (valeurs) · DEV (code) | `src/Shared/StepSpeeds.luau` : vitesse des pas de fin de coup et de garde qui glisse, par perso (M1) ; `src/Shared/ReactionSides.luau` : `Grabbed=true` quand les clips de saisie de dos et de côté sont là (M3). Les variantes `.Back` / `.Side` de Launched et Knockback sont prises toutes seules dès qu'elles existent. Les déplacements des jutsu et des dashes arrivent dans l'état du duel (`travel`, voir `Combat:travelStart`) pour les arrivées et les traînées (M5) |
 
 Règles :
 - **Le timing appartient au DEV.** Un clip s'aligne sur la mise en garde, la phase active et la récupération de `Shared/Attacks`. Si l'ANIMATEUR a besoin d'un autre timing, il le demande au DEV (issue étiquetée `besoin-dev`) au lieu de changer les chiffres.

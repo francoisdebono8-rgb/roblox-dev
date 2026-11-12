@@ -9,6 +9,7 @@ local Perception=require(script.Parent.Perception)
 local BodyState=require(script.Parent.BodyState)
 local Config=require(Shared.Config)
 local Rules=require(Shared.Rules)
+local ReactionSides=require(Shared.ReactionSides)
 -- Bodies that are not actors (Naruto's shadow clones): strikes they carry
 -- out, strikes they take first, strikes aimed at them.
 local Bodies=require(script.Parent.Bodies)
@@ -398,6 +399,7 @@ function Brawler.arrive(c,a)
  a.arrivalRecovery=true
  a.rushArriveUntil=c.now+Config.Rush.Arrive
  Brawler.event(c,a,"RushArrive")
+ c:travelArrive(a)
 end
 -- Kill a kinetic burst (dash, chase) down to `carry` studs/s along its line.
 function Brawler.brake(a,carry)
@@ -410,7 +412,7 @@ end
 -- Itachi's feint: guard or dodge during his dash stops it where he is; an
 -- afterimage carries on the illusion of the approach.
 function Brawler.feintRush(c,a)
- a.rush=nil;a.rushArriveUntil=0;a.aimIntent=nil
+ a.rush=nil;a.rushArriveUntil=0;a.aimIntent=nil;a.travel=nil
  Brawler.brake(a,0)
  c:setState(a,"Neutral",0)
  c:pushImpact(a.root.Position,"afterimage",false,{owner=a.id,fighter=a.fighterId,variant="feint"})
@@ -454,6 +456,8 @@ function Brawler.react(c,a,kind,velocity,duration,source,cause)
  a.pending=nil;a.buffered=nil;a.attackName=nil;a.guardHeld=false;a.state="Neutral";a.untilTime=c.now
  -- Hit out of it: his own strings and re-entry are over.
  Brawler.resetStrings(a);a.rush=nil;a.arrivalRecovery=nil;a.rushArriveUntil=0
+ -- (12/11) A blow taken on the way ends a travel (Combat:travelStart).
+ a.travel=nil
  a.locomotion=Vector3.zero
  if airReactions[kind] then a.airborne=true end
  if kind=="Knockdown" then
@@ -554,7 +558,7 @@ function Brawler.start(c,a,name)
  -- A strike pressed out of a dash or a chase (the arrival strike) takes over
  -- from it: the burst's speed does not carry the body on through its startup
  -- (Studio: rush -> dash attack slid 1.9 studs into the opponent).
- if a.state=="Rush" or a.state=="Pursuit" then a.rush=nil;a.aimIntent=nil;Brawler.brake(a,Config.Rush.Carry or 8) end
+ if a.state=="Rush" or a.state=="Pursuit" then a.rush=nil;a.aimIntent=nil;Brawler.brake(a,Config.Rush.Carry or 8);c:travelArrive(a) end
  a.attackWhiffed=nil
  -- Any new strike drops a pending running-strike hand-back (it is for the
  -- run after the swing, not for the next blow of a string).
@@ -1636,6 +1640,9 @@ function Brawler.step(c,a,dt)
    -- frame) the held body is hauled round to the grabber over ~0.2 s.
    local want=a.root.Position-grip;want=Vector3.new(want.X,0,want.Z)
    local look=Vector3.new(b.root.CFrame.LookVector.X,0,b.root.CFrame.LookVector.Z)
+   -- (12/11, feel audit M3) With the hold's back and side clips in
+   -- (Shared/ReactionSides.Grabbed), the held body is not hauled round at all.
+   if ReactionSides.Grabbed==true and look.Magnitude>.01 then want=look end
    if want.Magnitude>.01 and look.Magnitude>.01 then
     want=want.Unit;look=look.Unit
     local angle=math.atan2(look:Cross(want).Y,look:Dot(want))

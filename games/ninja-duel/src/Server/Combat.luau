@@ -1,5 +1,6 @@
 local Shared = game:GetService("ReplicatedStorage").NinjaDuel
 local Config = require(Shared.Config)
+local StepSpeeds = require(Shared.StepSpeeds)
 local Fighters = require(Shared.Fighters)
 local SealJutsu = require(Shared.SealJutsu)
 local Rules = require(Shared.Rules)
@@ -75,6 +76,39 @@ function Combat:clamp(p)
 	local flat=Vector3.new(p.X-o.X,0,p.Z-o.Z)
 	if flat.Magnitude>r then flat=flat.Unit*r end
 	return Vector3.new(o.X+flat.X,math.clamp(p.Y,o.Y+3,o.Y+Config.ArenaHeight),o.Z+flat.Z)
+end
+-- (12/11, feel audit M5; the ANIMATEUR's arrivals) A body that travels on its
+-- own - a teleport jutsu (Lightning Strike, Lightning Cut, Dynamic Entry, the
+-- Flying Thunder God, a chakra-flow step), a signature dash (the re-entry rush
+-- of each fighter, Temari's wind step) - says where from, where to, when it
+-- left and when it arrived:
+--   a.travel = {serial, kind = "teleport" | "dash", id (the jutsu's Id or the
+--     dash style's name), from, to, t0, t1 (planned arrival), arrivedAt}
+--   sent in the duel state (`travel`, Combat:travelView) while it runs and for
+--   Config.Travel.Show s after the arrival, and as impacts "travel" (phase
+--   "depart", then "arrive"). A blow taken on the way ends it (Brawler.react).
+function Combat:travelStart(a,kind,id,from,to,duration)
+	a.travelSerial=(a.travelSerial or 0)+1
+	duration=math.max(0,duration or 0)
+	a.travel={serial=a.travelSerial,kind=kind,id=id,from=from,to=to,t0=self.now,t1=self.now+duration}
+	self:pushImpact(from,"travel",false,{owner=a.id,fighter=a.fighterId,phase="depart",kind=kind,id=id,from=from,to=to,duration=duration,serial=a.travelSerial})
+	if duration<=0 then self:travelArrive(a) end
+end
+function Combat:travelArrive(a)
+	local t=a.travel
+	if not t or t.arrivedAt then return end
+	t.arrivedAt=self.now;t.to=a.root.Position
+	self:pushImpact(a.root.Position,"travel",false,{owner=a.id,fighter=a.fighterId,phase="arrive",kind=t.kind,id=t.id,from=t.from,to=t.to,serial=t.serial})
+end
+-- What the client gets: nil when nothing travels (or arrived long ago).
+function Combat:travelView(a)
+	local t=a.travel
+	if not t then return nil end
+	-- (a dash cut short some way the arrival did not see: it arrived where it is)
+	if not t.arrivedAt and self.now>t.t1+.5 then self:travelArrive(a) end
+	if t.arrivedAt and self.now-t.arrivedAt>Config.Travel.Show then a.travel=nil;return nil end
+	return {serial=t.serial,kind=t.kind,id=t.id,from=t.from,to=t.to,elapsed=self.now-t.t0,
+		arriveIn=if t.arrivedAt then 0 else math.max(0,t.t1-self.now),arrived=if t.arrivedAt then self.now-t.arrivedAt else nil}
 end
 function Combat:relocate(a,p)
 	-- A real teleport (seal, substitution, setup): the client snaps on it and
@@ -937,6 +971,7 @@ function Combat:rush(a)
 	-- Itachi: the approach starts from an afterimage left where he stood.
 	if style.afterimage then self:pushImpact(departure,"afterimage",false,{owner=a.id,fighter=a.fighterId,variant="reengage"}) end
 	self:pushImpact(departure,"chase",false,{owner=a.id,fighter=a.fighterId,variant=style.name,mode="dash",to=plan.goal,sealed=plan.sealed})
+	self:travelStart(a,"dash",style.name or "Rush",departure,plan.goal,duration)
 	return true
 end
 -- Awakening: once per match, below a third of health. A shockwave buys space,
@@ -1858,7 +1893,10 @@ function Combat:updateActor(a,dt)
 	-- frame (a 0.4-1.15 stud pop); the guard now skids back over a few frames.
 	if a.guardSlide then
 		local g=a.guardSlide
-		local step=math.min(g.remaining,g.speed*dt)
+		-- (12/11, feel audit M1) No faster than the guard's skid clip slides its
+		-- feet (Shared/StepSpeeds, from the ANIMATEUR): same distance, longer.
+		local cap=StepSpeeds.guardSkid(a.fighterId)
+		local step=math.min(g.remaining,math.min(g.speed,cap or math.huge)*dt)
 		if step>0 and not a.reaction then g.remaining-=Motor.travel(a,self,g.dir,step) end
 		g.speed=math.max(g.speed*math.exp(-dt*6),4)
 		if g.remaining<=.01 or a.reaction then a.guardSlide=nil end
@@ -1868,6 +1906,10 @@ function Combat:updateActor(a,dt)
 	if a.strikeCarry and (a.state=="Recovery" or (a.state=="Active" and (a.travelRemaining or 0)<=.05)) and not a.reaction and a.strikeCarry.dir then
 		local carry=a.strikeCarry
 		carry.slide=(carry.slide or carry.speed)*math.exp(-dt*3) -- (real keys: at 6 the slide was ~3 studs/s by the end of the recovery, a visible stop before the hand-back)
+		-- (12/11, feel audit M1) What is left of the run is a walk the end-of-blow
+		-- legs can show (Shared/StepSpeeds), when the ANIMATEUR has given it.
+		local legs=StepSpeeds.recovery(a.fighterId,nil)
+		if legs then carry.slide=math.min(carry.slide,legs) end
 		-- Never into the opponent: the slide stops short of a body ahead.
 		local ahead=a.target and a.target.root and (a.target.root.Position-a.root.Position)
 		local blocked=ahead and Vector3.new(ahead.X,0,ahead.Z).Magnitude<4.5 and ahead:Dot(carry.dir)>0
@@ -2595,17 +2637,56 @@ function Combat:updateHazards()
 end
 -- Bodies do not collide physically (that made fighters climb each other);
 -- two grounded fighters closer than a body width are eased apart instead.
+-- (12/11, feel audit M2) On the floor (thrown down, lying, getting up): the
+-- body is a line along its facing, not a point at its root.
+function Combat.lying(a)
+	return not a.airborne and (a.reaction=="Knockdown" or a.reaction=="Wakeup" or a.reaction=="Down" or a.groundPose~=nil)
+end
+-- Going through the other body on purpose: a dodge, a rush line.
+local function passing(a) return a.state=="Dodging" or (a.rush~=nil and a.rush.line~=nil) end
 function Combat:separate()
 	local a,b=self.actors[1],self.actors[2]
 	if not a or not b or a.health<=0 or b.health<=0 or a.grabVictim or b.grabVictim then return end
 	if a.ultimateRunning or b.ultimateRunning then return end
+	local B=Config.Bodies
 	local delta=b.root.Position-a.root.Position
+	if math.abs(delta.Y)>4 then return end
+	-- (12/11, M2: Sasuke standing in Naruto on the floor) A standing body is
+	-- moved off the length of a lying one; the lying body does not slide.
+	local la,lb=Combat.lying(a),Combat.lying(b)
+	if la~=lb then
+		local down,up=if la then a else b,if la then b else a
+		if passing(up) then return end
+		local look=down.root.CFrame.LookVector
+		local axis=Vector3.new(look.X,0,look.Z)
+		axis=if axis.Magnitude>.05 then axis.Unit else Vector3.new(0,0,-1)
+		local rel=up.root.Position-down.root.Position
+		rel=Vector3.new(rel.X,0,rel.Z)
+		local along=math.clamp(rel:Dot(axis),-B.LyingHalf,B.LyingHalf)
+		local off=rel-axis*along
+		local dist=off.Magnitude
+		if dist>=B.LyingGap then return end
+		-- Out to the nearer side; dead on the line, to the side he faces away from.
+		local out=if dist>.05 then off.Unit else Vector3.new(-axis.Z,0,axis.X)
+		Motor.travel(up,self,out,B.LyingGap-dist)
+		return
+	end
+	if la and lb then return end
 	local flat=Vector3.new(delta.X,0,delta.Z)
 	local gap=flat.Magnitude
-	if gap>=3 or math.abs(delta.Y)>4 then return end
-	local push=math.min(3-gap,.35)*.5
+	if gap>=B.Gap then return end
 	local dir=if gap>.05 then flat.Unit else a.root.CFrame.RightVector
-	Motor.travel(a,self,-dir,push);Motor.travel(b,self,dir,push)
+	-- Eased apart toward Gap; and never left inside Floor (a lunge into a lunge
+	-- closed 1 to 2 studs in a frame, the ease opened 0.35). A wall behind one
+	-- body sends the rest of the correction to the other.
+	local push=math.min(B.Gap-gap,.35)*.5
+	local hard=if passing(a) or passing(b) then 0 else math.max(0,B.Floor-gap)*.5
+	local movedA=Motor.travel(a,self,-dir,push+hard)
+	local movedB=Motor.travel(b,self,dir,push+hard)
+	local short=(push+hard)*2-movedA-movedB
+	if hard>0 and short>.01 then
+		if movedA<push+hard-.01 then Motor.travel(b,self,dir,short) else Motor.travel(a,self,-dir,short) end
+	end
 	-- Combat convergence (Studio: kinetic bursts carried one body into the
 	-- other): inside a body width neither root keeps velocity into the other,
 	-- the contact a physical collision would have made. A dodge passes.

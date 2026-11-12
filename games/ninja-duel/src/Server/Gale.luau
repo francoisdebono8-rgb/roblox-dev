@@ -259,6 +259,7 @@ function Gale.reposition(c,a,style)
 	a.rushArriveUntil=c.now+duration+tune.Arrive
 	Brawler.event(c,a,"Rush");Brawler.event(c,a,"Reengage");Brawler.event(c,a,"WindStep")
 	c:pushImpact(a.root.Position,"chase",false,{owner=a.id,fighter=a.fighterId,variant=style.name,mode="dash",to=goal,reposition=mode})
+	c:travelStart(a,"dash",style.name or "WindStep",a.rush.from,goal,duration)
 	c:cue(a,"WIND STEP",.4)
 	return true
 end
