@@ -51,7 +51,8 @@ test("the client plays a throw's or a hold's back or side clip as soon as it exi
  local ok,err=pcall(function()
   local function clip(reaction,angle,airborne)
    local _,_,name=Motion._authoredReaction({fighterId="Lion",id="t",reaction=reaction,reactionElapsed=.1,hitAngle=angle,airborne=airborne,hitTwist=1})
-   return name
+   -- (".L": the mirrored side, part of the clip's identity)
+   return if name then (string.gsub(name,"%.L$","")) else nil
   end
   -- Before the ANIMATEUR's clips: the frontal ones (the hold: procedural).
   assert(clip("Launched",180,true)=="Launched","from behind, before the clip: "..tostring(clip("Launched",180,true)))
