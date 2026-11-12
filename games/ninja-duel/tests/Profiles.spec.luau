@@ -99,7 +99,7 @@ test("validation refuses tampered or future profiles instead of repairing them",
  broken(function(q) q.fighters.GentleFist.builds.X={nodes={"PointStep"}} end,"build X")
  broken(function(q) q.fighters.GentleFist.selected="Missing" end,"selected build missing")
  broken(function(q) q.fighters.Sand=S.fighter() end,"No skill tree")
- broken(function(q) q.schemaVersion=2 end,"header")
+ broken(function(q) q.schemaVersion=3 end,"header")
  broken(function(q) q.fighters.GentleFist.earned=0/0 end,"Unsafe")
  assert(S.migrate({schemaVersion=99})==nil,"a future schema was accepted")
  assert(S.migrate(p),"a valid profile was refused")

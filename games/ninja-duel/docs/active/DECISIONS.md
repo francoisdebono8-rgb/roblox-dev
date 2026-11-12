@@ -285,3 +285,17 @@ Décision utilisateur du **12/11 à 16 h 29**, en réponse à la question « les
 - **Modifications légères seulement** : les variantes de build (arbres DEC-024), jamais un autre moveset ; budgets standardisés en tournoi inchangés. Au départ, un build par ninja = un kit cloné.
 - **Les prodiges restent** : adversaires IA, tableau du tournoi, fiches et vidéos ; leur apparence d’origine reste jouable.
 - **Ordre** : séparer kit et corps dans le code sans changement visible (chaque prodige garde son corps d’origine) ; marquer les pièces de kit ; essayer chaque kit sur l’Ōtsutsuki, premier corps de joueur, dans Studio ; sauvegarde du profil ; créateur v1 ; puis hub, tenues à gagner, boutique cosmétique.
+
+## DEC-037 — Le chemin des maîtres : un kit sur trois, puis chaque maître apprend le sien ; on vend le temps, pas la victoire (12/11)
+
+Décisions utilisateur du **12/11, 17 h 02 à 17 h 21** : au début, le joueur choisit un kit parmi trois et doit ensuite débloquer tous les autres ; une fois débloqués, il choisit son kit entre deux matchs ; pas de mélange de kits ; « un maître qui t’apprend son kit et qui t’emmène à débloquer un autre kit » ; « on veut que les gens paient », pas de tirage au sort pour les kits, mais une attente qui pousse à payer est assumée ; « lance les premiers travaux… dès qu’on aura les premières bases, on pourra l’intégrer à la bêta ».
+
+- **Départ** : un kit parmi Naruto, Sasuke et Lee (`Shared/Masters.Starters`, proposition par défaut, à confirmer).
+- **Maîtres** : chaque kit a son maître, le prodige lui-même ; il enseigne quand le joueur a `Masters.Need` de maîtrise dans un kit lié (carte `Masters.Map`, d’après l’histoire ; depuis chaque départ, tous les kits sont atteignables) et qu’il gagne son duel (IA `hard`). Les épreuves d’entraînement du maître viendront ensuite.
+- **Maîtrise** : gagnée par un duel décidé avec un kit appris (finir, gagner, chaque jutsu différent une fois, moins contre l’IA facile) ; jamais en entraînement, match regardé, pilote automatique ou en ligne pour l’instant.
+- **Kits en pratique** : l’entraînement et le tutoriel prennent n’importe quel kit ; un duel qui compte (roster, tournoi, en ligne) exige un kit appris.
+- **Argent** : un kit peut s’acheter tout de suite (produit développeur par kit, accordé une seule fois par reçu, sauvegardé avant de répondre à Roblox) ; passe 2x maîtrise ; cosmétiques, accès anticipé, abonnement, serveurs privés à venir. Jamais de tirage au sort ; le classé et le tournoi gardent un budget égal (DEC-024). Les points de compétence ne s’achètent toujours pas.
+- **Sauvegarde** : profil v2 (`kits` : appris, départ, kit choisi, maîtrise, reçus), chargé à l’arrivée, sauvegardé toutes les 30 s, au départ et à l’arrêt du serveur.
+- **Interrupteur** : `Config.Progression.Enabled` reste à `false` jusqu’à l’écran du roster (choix du départ, carte des maîtres, achat) ; `Live` ouvre le DataStore réel ; les identifiants de produits sont créés par l’utilisateur sur Roblox.
+- **Risque** : les noms et personnages de Naruto dans un jeu qui encaisse ; à trancher avant d’activer les achats (déjà noté dans le plan bêta).
+

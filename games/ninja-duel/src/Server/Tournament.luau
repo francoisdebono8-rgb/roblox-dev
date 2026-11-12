@@ -108,6 +108,8 @@ end
 function Tournament:start(player,fighter)
 	local m=self.matches
 	if type(fighter)~="string" or not table.find(BetaRoster,fighter) or not Fighters[fighter] then return false end
+	-- (DEC-037) the player's fighter in the cup: a learned kit.
+	if not require(script.Parent.Progression).owns(player,fighter) then return false end
 	local s=m:session(player)
 	if s.online then return false end
 	m:destroy(s)

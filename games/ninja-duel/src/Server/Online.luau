@@ -70,6 +70,8 @@ end
 function Online:enter(player,s,action,payload)
 	local id=fighter(payload.player)
 	if not id then return self:notice(player,s,"CHOOSE A FIGHTER FIRST") end
+	-- (DEC-037) an online duel counts: a learned kit.
+	if not require(script.Parent.Progression).owns(player,id) then return self:notice(player,s,"KIT NOT LEARNED YET — TRY IT IN PRACTICE") end
 	local entry={player=player,session=s,fighter=id}
 	if action=="Join" then
 		local code=cleanCode(payload.code)
@@ -146,6 +148,7 @@ function Online:pick(d,seat,action,payload)
 	if seat.ready then return end
 	if action=="Pick" then
 		local id=fighter(payload.player)
+		if id and not require(script.Parent.Progression).owns(seat.player,id) then id=nil end
 		if id and id~=seat.fighter then seat.fighter=id;self:broadcast(d) end
 	elseif action=="Confirm" then
 		seat.ready=true

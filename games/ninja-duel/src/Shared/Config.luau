@@ -175,6 +175,11 @@ return {
 	-- before the strike (guard / sidestep / counter-poke, no reaction latency:
 	-- a guess), probing at range uses tools and step-in feints, and a fighter
 	-- that just got hit backs off to neutral instead of mashing back.
+	-- (DEC-037, 12/11) The masters' path (Server/Progression, Shared/Masters):
+	-- off until the roster screen shows it; Live opens the live DataStore;
+	-- Products maps a kit to its Developer Product id (empty: nothing sold);
+	-- MasteryPass is the 2x mastery game pass id (0: none).
+	Progression = { Enabled = false, Live = false, Products = {}, MasteryPass = 0 },
 	AI = { Tick = 0.18, Reaction = 0.38, Aggression = 0.72, Defense = 0.58, Technique = 0.34,
 		TechniqueGap = 2.6, TechniqueJitter = 2.6, ReadGuard = 0.3, ReadDodge = 0.16, ReadPoke = 0.22, GuardRead = 0.07,
 		Feint = 0.1, ProbeTool = 2.4, Disengage = 0.45, WallRun = 0.35,
