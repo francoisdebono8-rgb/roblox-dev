@@ -398,14 +398,22 @@ function QA.run(matches)
 		assert(s.human.state=="Neutral")
 		matches:request(player,{action="Move",epoch=s.epoch-1,direction=Vector3.xAxis}); assert(s.human.move==Vector3.zero)
 		for _=1,2 do
+			-- (QA 12/11) The lane keeps its stadium between duels, the last
+			-- duel's damage undone: a wall panel cracked dark comes back.
+			local stage=s.stage; assert(stage and stage.Parent==s.folder,"the duel has no stadium in its lane")
+			local panel=stage:FindFirstChild("Boundary"); local colour=panel and panel.Color
+			if panel then panel.Color=Color3.new(0,0,0); panel:SetAttribute("WorldState","Cracked") end
 			s.combat:damage(s.human,s.bot,1000,false,true)
-			local old=s.folder; assert(s.phase=="Result" or s.finishing)
+			local oldBody=s.human.model; assert(s.phase=="Result" or s.finishing)
 			s.lastLifecycle=-10; matches:request(player,{action="Rematch",epoch=s.epoch})
-			assert(s.phase=="Duel" and old.Parent==nil and s.human.health==125)
+			assert(s.phase=="Duel" and oldBody.Parent==nil and s.human.health==125)
+			assert(s.stage==stage and stage.Parent==s.folder,"the rematch rebuilt the stadium")
+			if panel then assert(panel.Color==colour and panel:GetAttribute("WorldState")==nil,"the cracked wall panel stayed cracked") end
 		end
 		assert(s.epoch==oldEpoch+2)
 		s.combat:damage(s.human,s.bot,1000,false,true); s.lastLifecycle=-10
-		matches:request(player,{action="Selection",epoch=s.epoch}); assert(s.phase=="Selection" and not s.folder)
+		matches:request(player,{action="Selection",epoch=s.epoch}); assert(s.phase=="Selection" and s.human==nil)
+		for _,child in (if s.folder then s.folder:GetChildren() else {}) do assert(child==s.stage,"the roster kept "..child.Name.." of the last duel") end
 		s.lastLifecycle=-10; matches:request(player,{action="Start",epoch=s.epoch,player="Mirage",bot="Flashstep"})
 		assert(s.phase=="Duel" and s.human.def.Name=="Itachi")
 		matches:selection(player)

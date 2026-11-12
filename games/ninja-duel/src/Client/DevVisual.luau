@@ -793,26 +793,38 @@ function Visual.install(ctx,dev)
 	end
 
 	-- Follow every effect from now on.
+	-- (QA 12/11, gel au BEGIN) What arrives is queued and classified at most
+	-- TRACK_BUDGET a frame: a duel's start brought some two thousand objects
+	-- in one frame, each walked up to the workspace several times (60,000
+	-- reads in one frame in the micro-profiler).
+	local TRACK_BUDGET=150
+	local queue,head,tail={},1,0
 	for _,root in {workspace,playerGui} do
 		for _,d in root:GetDescendants() do track(d) end
-		root.DescendantAdded:Connect(function(d)
-			-- A frame later: the game names and places what it creates after parenting it.
-			task.defer(function()
-				if not d.Parent then return end
+		root.DescendantAdded:Connect(function(d) tail+=1;queue[tail]=d end)
+	end
+	local function drain()
+		local budget=TRACK_BUDGET
+		while head<=tail and budget>0 do
+			local d=queue[head];queue[head]=nil;head+=1;budget-=1
+			-- A frame later at least: the game names and places what it creates after parenting it.
+			if d.Parent then
 				track(d)
 				local info=tracked[d]
 				if info then
 					if hidden[info.family] then hide(d,info.family) end
 					if info.family=="particles" and frozen then pcall(function() d.TimeScale=frozen end) end
 				end
-			end)
-		end)
+			end
+		end
+		if head>tail then head,tail=1,0 end
 	end
 	Lighting.ChildAdded:Connect(function(e) if hidden.post and (e:IsA("PostEffect") or e:IsA("Atmosphere")) then task.defer(setFamily,"post",true) end end)
 	local acc,last=0,0
 	local installedAt=os.clock()
 	local frames,frameClock=0,os.clock()
 	RunService.RenderStepped:Connect(function(dt)
+		pcall(drain)
 		frames+=1
 		if dt>.06 and dt<2 and os.clock()-installedAt>10 then
 			frameSpikes+=1;worstFrame=math.max(worstFrame,dt)

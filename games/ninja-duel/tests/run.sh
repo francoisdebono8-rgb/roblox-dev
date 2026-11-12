@@ -43,6 +43,7 @@ run Movement   "$LUNE" run tests/Movement.spec.luau
 run CombatFeel "$LUNE" run tests/CombatFeel.spec.luau
 run Engagement "$LUNE" run tests/Engagement.spec.luau
 run Look "$LUNE" run tests/Look.spec.luau
+run Stage "$LUNE" run tests/Stage.spec.luau
 run Spacing "$LUNE" run tests/Spacing.spec.luau
 run StepSpeeds "$LUNE" run tests/StepSpeeds.spec.luau
 run ReactionSides "$LUNE" run tests/ReactionSides.spec.luau

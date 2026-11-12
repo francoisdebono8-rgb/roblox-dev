@@ -240,6 +240,9 @@ function Camera:fadeDecor(folder,a,target,lens,clock)
 	local yard=folder and folder:FindFirstChild("Courtyard")
 	local list=self.decorList
 	if yard~=self.decorYard then
+		-- (QA 12/11) A stadium still arriving (Server/Stage) is read once
+		-- it is whole, not half.
+		if yard and yard:GetAttribute("Building") then return end
 		list={}
 		if yard then
 			local center=nil
