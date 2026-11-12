@@ -280,6 +280,7 @@ Décision utilisateur du **12/11 à 16 h 29**, en réponse à la question « les
 
 - **Deux couches.** Le **kit** est le prodige : stats (cohérentes avec l’histoire), déplacements, coups, combos, jutsu, signes, ultime, éveil, animations Blender, effets. Le **corps** est le ninja du joueur : visage, cheveux, peau, tenue, couleurs, accessoires sans effet.
 - **Un objet qui sert à une technique appartient au kit** et apparaît sur le ninja qui le porte : la gourde de Gaara, le sabre de Kakashi, les kunai marqués de Minato, les poids de Lee ; les yeux (Sharingan, Byakugan) s’allument sur les yeux du ninja ; les clones sont des copies du ninja.
+- **À préciser : l’usage des objets de kit et l’arbre.** Précision de l’utilisateur (12/11, 16 h 34) : les objets ne seront peut-être pas utilisables au début, puis utilisables selon les niveaux de l’arbre ; la forme de l’arbre et ce à quoi il sert restent à définir. D’ici là, les objets de kit sont seulement repérés (ce qu’ils sont, à quel kit ils appartiennent), sans règle de jeu nouvelle.
 - **Un seul squelette R15**, aux proportions pour lesquelles les animations sont faites : on varie les pièces, pas la longueur des membres.
 - **Modifications légères seulement** : les variantes de build (arbres DEC-024), jamais un autre moveset ; budgets standardisés en tournoi inchangés. Au départ, un build par ninja = un kit cloné.
 - **Les prodiges restent** : adversaires IA, tableau du tournoi, fiches et vidéos ; leur apparence d’origine reste jouable.
