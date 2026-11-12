@@ -672,10 +672,11 @@ test("the AI uses his kit: clones in neutral, the Rasengan with a clone out, the
  end
  assert(ev(p,"NarutoRendan")>0,"the bot never brought Naruto Rendan down after the barrage (air hits "..ev(p,"AirHit")..")")
  -- Probing at range (beyond the step-in feints): the third throw is the
- -- transformed kunai.
+ -- transformed kunai. (QA 12/11: a bot throws two blades in ten seconds at
+ -- most, AI.Variety.Tool: the third one comes after the tenth second.)
  local c4,r,s=H.duel("Legion","Mirage");place(c4,r,s,22)
  local w=bot(AI,c4,r,11);w.techReadyAt=c4.now+60;w.probing=true;w.probeRange=16
- for _=1,200 do w:update(c4.now);H.step(c4,.02);if ev(r,"CloneKunai")>0 then break end end
+ for _=1,800 do w:update(c4.now);H.step(c4,.02);if ev(r,"CloneKunai")>0 then break end end
  assert(ev(r,"CloneKunai")>0,"the bot never threw the transformed kunai")
 end)
 test("every fighter's AI answers a clone: one winding up at its side is struck first, the target stays the real Naruto",function()

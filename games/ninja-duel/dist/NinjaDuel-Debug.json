@@ -1,7 +1,7 @@
 {
   "version": "0.13.0-arena-combo",
   "artifact": "NinjaDuel-Debug.rbxlx",
-  "sha256": "1de1f1f3fbe76192a5ca4bf8e85c244ec50c72db57ce76634e4f0e38037fa316",
+  "sha256": "bffa977c4ec6f90fb4454798de78dd51ea9a6010afec577357dcd537225ff2b4",
   "sources": {
     "src/Client/ArenaDress.luau": "e2da1115cb48480b2effa3170a1670d3bb44d5bcbdfd9bbdbb3e60ee302b5360",
     "src/Client/AuthoredClips.luau": "1799da3d96178392fe44c90470fca30d7b11acde9bb45c0e2c5660bd940d6715",
@@ -120,7 +120,7 @@
     "src/Client/Wave4FX.luau": "c1e221d9e1a447a47ad1ce8156f033eeeca952819e4ef8d6c4ff169542a51e3d",
     "src/Client/Wave4Motion.luau": "dbaa24f6396ab4ffafc7a0e0ac021154f94150ae70a76a2e67b645673c6c1fad",
     "src/Client/WorldLook.luau": "4b55d6a5135253ae6b3d28c1dd4507708e88dd92bc87227b444686e852ab5ea4",
-    "src/Server/AI.luau": "5642ecbcec6045eeb6c571987646d2ed356fa12d0e8b6566454973289cb6c929",
+    "src/Server/AI.luau": "f0289d07db95ad3c495e2e2706e193f9053082f66643f3b8886a89fe9b7d77db",
     "src/Server/Animation.luau": "fefda60e04e9246a262dcbc1b0d21e8eaa5206e2ba5d4790472939561a62cf89",
     "src/Server/ArenaMeshData.luau": "5bf21bfa9aec5954c73fdd397fd883847a5a434123a9d14f95cf28e89e47e47e",
     "src/Server/ArenaMeshes.luau": "789fb2af1a6b68466a76259d27bb4fc8b8cc8f68a992a144d3fc3d4746c0432e",
@@ -229,11 +229,11 @@
   },
   "sourceEquality": "PASS",
   "debugOnly": true,
-  "buildFingerprint": "c16b8998584294f6a671384192b25479e6a54f356bf9609beebfd1daa3187283",
+  "buildFingerprint": "0a443b30be95af2520e9eb9ee579a6f146d7d27305319e48582b08791fa6d8bc",
   "profile": "debug",
-  "runtimeFingerprint": "e5c9dac6805c22bd1144735c5672d3ae3528718d8d235cd486dc783fb0cce419",
-  "sourceCommit": "d8c3ec26dd326591b69c1c16f9e5392a188e0428",
-  "headCommit": "d8c3ec26dd326591b69c1c16f9e5392a188e0428",
+  "runtimeFingerprint": "301a5be655798ef5b45f91872b1434aec48f44cc19d8cbc872bfb763df14e173",
+  "sourceCommit": "6e7e284418cdb4d58693d7d233bc8f78bc4de9e4",
+  "headCommit": "6e7e284418cdb4d58693d7d233bc8f78bc4de9e4",
   "sourceDirty": false,
   "captureTools": {},
   "donorAssets": {
