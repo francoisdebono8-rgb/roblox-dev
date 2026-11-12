@@ -105,7 +105,9 @@ server=item(xml,'ServerScriptService','ServerScriptService')
 sources(item(server,'Folder','NinjaDuelServer'), ROOT/'src/Server')
 starter=item(xml,'StarterPlayer','StarterPlayer', [('CameraMinZoomDistance','float',8),('CameraMaxZoomDistance','float',32)])
 sources(item(item(starter,'StarterPlayerScripts','StarterPlayerScripts'),'Folder','NinjaDuelClient'),ROOT/'src/Client')
-item(xml,'Lighting','Lighting', [('Technology','token',4),('LightingStyle','token',0),('PrioritizeLightingQuality','bool','true'),('ClockTime','float',15),('Brightness','float',2.5),('Ambient','Color3',{'R':0.42,'G':0.48,'B':0.55}),('OutdoorAmbient','Color3',{'R':0.55,'G':0.58,'B':0.6})])
+# (12/11) GlobalShadows written out: left out of the file it came up false (no
+# shadow in the world); the client's look (Client/WorldLook) sets it too.
+item(xml,'Lighting','Lighting', [('Technology','token',4),('LightingStyle','token',0),('PrioritizeLightingQuality','bool','true'),('GlobalShadows','bool','true'),('ClockTime','float',15),('Brightness','float',2.5),('Ambient','Color3',{'R':0.42,'G':0.48,'B':0.55}),('OutdoorAmbient','Color3',{'R':0.55,'G':0.58,'B':0.6})])
 item(xml,'SoundService','SoundService')
 if args.capture:
     folders={}
