@@ -1217,7 +1217,7 @@ Sortie commune : trois Lights/Heavy physiques distincts, branche seulement aprè
 
 ## AVATAR-001 — Le ninja du joueur porte le kit d’un prodige
 
-- status: OPEN
+- status: PARTIAL
 - priority: P2
 - dependencies: PROG-001
 - subsystem: progression
@@ -1225,5 +1225,5 @@ Sortie commune : trois Lights/Heavy physiques distincts, branche seulement aprè
 - summary: Séparer le kit (le prodige) et le corps (le ninja du joueur), puis jouer chaque kit avec son propre ninja
 - sources: [DEC-036](DECISIONS.md#dec-036--le-ninja-du-joueur-porte-le-kit-dun-prodige-1211)
 - validation: (1) kit et corps séparés dans le code, chaque prodige rebâti à l’identique avec son corps d’origine (test headless + Studio) ; (2) pièces de kit marquées (gourde, sabre, kunai marqués, poids, yeux) ; (3) chacun des 8 kits joué dans Studio sur le corps de l’Ōtsutsuki : animations, yeux, clones, objets, effets ; (4) apparence, kits, build et tenues sauvegardés dans le profil ; (5) créateur v1 (quelques pièces Blender par emplacement, couleurs). Aucune puissance liée à la tenue.
-- evidence: Décision utilisateur DEC-036 du 12/11 ; aucun code encore. Aujourd’hui l’apparence est choisie par le nom du perso (Server/Looks, Server/LookMeshes, World.dress).
+- evidence: Décision utilisateur DEC-036 du 12/11. Étapes 1 et 2 dans le code (12/11, `279cc69`) : `Shared/Appearance` (un corps = le look d’un prodige + couleurs), `World.rig(…, worn)` / `World.dress(model, kit, body)` / `World.lookDef` (sans corps, le prodige est son propre def : bâti à l’identique), `World.markKitItems` (gourde et sangle de Gaara, tanto rangé de Kakashi, marque maudite de Sasuke, veines du Byakugan de Neji : attribut KitItem, aucune règle de jeu). TECHNICAL PASS (suite `Appearance`, 5). Pas encore vu dans Studio ; étapes 3 à 5 à faire.
 - outcome: PENDING
