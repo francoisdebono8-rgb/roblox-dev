@@ -1,7 +1,7 @@
 {
   "version": "0.13.0-arena-combo",
   "artifact": "NinjaDuel-Debug.rbxlx",
-  "sha256": "bf053d81a516618f5c91b58af5ee36315ba9a714ef3a4f52929f2b1f9458dee5",
+  "sha256": "6a7ca4381e78190376692baa49d152ec93040c4f6cfbb16cbe44f9b676b4e935",
   "sources": {
     "src/Client/ArenaDress.luau": "bd92aa3bf3c37a36fd9d2b1f02971921d9c5e981788abe9594a098425bf3cb0e",
     "src/Client/AuthoredClips.luau": "d85a832ad37061e75823f4cd78be73d5939383e22401c20229fe4cf656c79cc3",
@@ -96,7 +96,7 @@
     "src/Client/UI.luau": "616d267b5b056aaca120ecc0d7bc9ef151bd8397d32683cd05cdc7fbe26bc849",
     "src/Client/UltimateFX.luau": "9155596a11943f1d112481c89fd12b4e5e41475f108434e74c5c5fe0daecb081",
     "src/Client/VelmoraHitFeedback.luau": "244306f55b8c1b24b765dbb25760643c163be5a271da9cff408e72ce0679f68e",
-    "src/Client/VelmoraMotionEngine.luau": "83a1753510877e9a14dfb5ddbe2c3a36611883bb2519ea37918fe4a421696527",
+    "src/Client/VelmoraMotionEngine.luau": "dc80549da12a17fa2a7ab77ed3b0ac92e20cde3dd7c6c1a868d8701fd2d91a56",
     "src/Client/VfxAtlas.luau": "667e2fae948f3b1425896c6fa5d5177066a743e19609c7165909a9455b7124dd",
     "src/Client/VfxKit.luau": "2a4952ce7dbefa90232dc60bd187dd7dddecbb9f9936bfa7fd8c47b4c5541187",
     "src/Client/Wave1FX.luau": "9139f26f0d2ae492c3a10c23919bc998b216789554a512359672b1e6a04db451",
@@ -215,11 +215,11 @@
   },
   "sourceEquality": "PASS",
   "debugOnly": true,
-  "buildFingerprint": "2b17ec1be6ecd2c87eb9f84cae5a0424d1e70ed7e4c5f52b48c3fe4cacea65e3",
+  "buildFingerprint": "796c05730bb1abcc37f2048cbdd33a5f3a5acff546bc08cf66a46b3e10295b59",
   "profile": "debug",
-  "runtimeFingerprint": "7e0412ae5d362a0b9ade548e226d403143b83eba6e3bc69bed81ea192fa2e132",
-  "sourceCommit": "d3b2f4725504908a3b9deb097640e7f0816be76f",
-  "headCommit": "d3b2f4725504908a3b9deb097640e7f0816be76f",
+  "runtimeFingerprint": "32bc1034d3749bf872f52cd696090d93c205cbb24bb6c2944618290d5e1fa0a8",
+  "sourceCommit": "1a4977134e9455d6aea24d486f819049540736c8",
+  "headCommit": "1a4977134e9455d6aea24d486f819049540736c8",
   "sourceDirty": false,
   "captureTools": {},
   "donorAssets": {
