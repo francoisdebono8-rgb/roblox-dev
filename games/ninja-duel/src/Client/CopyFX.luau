@@ -7,6 +7,13 @@
 -- Effects. Presentation only.
 local CopyFX={}
 local K -- Effects' helpers, handed over by install()
+local Face=require(game:GetService("ReplicatedStorage").NinjaDuel.Face)
+-- (13/11, issue #73) The read must read in a vertical medium shot (8 studs):
+-- the gaze is a thin red line with a soft glow round it, and the Sharingan
+-- itself appears big at his eye for the read (a drawn eye of BIG studs, the
+-- commas turning: Face.drawSharingan, the count of Face.SHARINGAN.Copycat),
+-- the anime's close-up on the eye without cutting the shot.
+CopyFX.BIG=1.15
 CopyFX.clock=os.clock -- (headless tests drive time)
 local RED=Color3.fromRGB(235,30,40)
 local CORE=Color3.fromRGB(255,170,160)
@@ -35,16 +42,22 @@ local function read(fx,impact,folder)
 	local from=K.block(holder,Vector3.one*.05,eye,RED,Enum.Material.Neon);from.Transparency=1
 	local to=K.block(holder,Vector3.one*.05,eye,RED,Enum.Material.Neon);to.Transparency=1
 	local a0=K.new("Attachment",{},from);local a1=K.new("Attachment",{},to)
-	local line=K.new("Beam",{Attachment0=a0,Attachment1=a1,Width0=.09,Width1=.025,FaceCamera=true,Segments=1,LightEmission=1,LightInfluence=0,
-		Color=ColorSequence.new(RED),Transparency=NumberSequence.new({NumberSequenceKeypoint.new(0,.1),NumberSequenceKeypoint.new(.6,.65),NumberSequenceKeypoint.new(1,.92)})},holder)
-	local tomoe={}
-	for k=1,3 do
-		local ball=K.block(holder,Vector3.one*.11,eye,DARK,Enum.Material.Neon)
-		ball.Shape=Enum.PartType.Ball
-		tomoe[k]=ball
-	end
-	local ring=K.block(holder,Vector3.new(.03,.4,.4),eye,RED,Enum.Material.Neon,"Part")
-	ring.Shape=Enum.PartType.Cylinder;ring.Transparency=.5
+	local line=K.new("Beam",{Attachment0=a0,Attachment1=a1,Width0=.13,Width1=.035,FaceCamera=true,Segments=1,LightEmission=1,LightInfluence=0,
+		Color=ColorSequence.new(CORE,RED),Transparency=NumberSequence.new({NumberSequenceKeypoint.new(0,0),NumberSequenceKeypoint.new(.6,.55),NumberSequenceKeypoint.new(1,.9)})},holder)
+	-- its glow: wider, fainter, the same fade
+	K.new("Beam",{Attachment0=a0,Attachment1=a1,Width0=.5,Width1=.12,FaceCamera=true,Segments=1,LightEmission=1,LightInfluence=0,
+		Color=ColorSequence.new(RED),Transparency=NumberSequence.new({NumberSequenceKeypoint.new(0,.55),NumberSequenceKeypoint.new(.6,.82),NumberSequenceKeypoint.new(1,.97)})},holder)
+	-- The eye, big: red iris, dark ring, the commas turning (a billboard at the eye).
+	local tomoe=nil
+	local board=K.new("BillboardGui",{Name="SharinganRead",Adornee=from,Size=UDim2.fromScale(.2,.2),LightInfluence=0,AlwaysOnTop=false,MaxDistance=160},holder)
+	local disc=K.new("Frame",{AnchorPoint=Vector2.new(.5,.5),Position=UDim2.fromScale(.5,.5),Size=UDim2.fromScale(1,1),BackgroundColor3=RED,BorderSizePixel=0},board)
+	K.new("UICorner",{CornerRadius=UDim.new(.5,0)},disc)
+	K.new("UIStroke",{Thickness=2,Color=DARK,Transparency=.1},disc)
+	local pupil=K.new("Frame",{AnchorPoint=Vector2.new(.5,.5),Position=UDim2.fromScale(.5,.5),Size=UDim2.fromScale(.22,.22),BackgroundColor3=DARK,BorderSizePixel=0,ZIndex=3},disc)
+	K.new("UICorner",{CornerRadius=UDim.new(.5,0)},pupil)
+	local drawing=Face.drawSharingan(disc,Face.tomoeFor("Copycat",false))
+	drawing.Visible=true
+	local ring=board
 	-- (Studio only, for filming: workspace.NDCopyHold = seconds holds the read.)
 	local ok,hold=pcall(function() return workspace:GetAttribute("NDCopyHold") end)
 	local last=if ok and type(hold)=="number" then hold else math.clamp(impact.channel or .3,.35,.7)
@@ -69,14 +82,23 @@ local function frame(fx,data,dt,folder)
 		else
 			r.from.CFrame=eye;r.to.CFrame=CFrame.new(handOf(r.caster) or eye.Position)
 			r.line.Enabled=fade<.95
-			-- Three tomoe turning round the eye, in the plane of the face.
-			for k,ball in r.tomoe do
-				local a=t*14+k*2*math.pi/3
-				ball.CFrame=eye*CFrame.new(math.cos(a)*.24,math.sin(a)*.24,-.04)
-				ball.Transparency=fade
+			-- The big eye: it opens in .12 s, the commas turn, it fades with the read.
+			local open=math.clamp(t/.12,0,1)
+			local k=CopyFX.BIG*(.25+.75*(1-(1-open)^3))*(1-.4*fade)
+			r.ring.Size=UDim2.fromScale(k,k)
+			local disc=r.ring:FindFirstChildOfClass("Frame")
+			if disc then
+				disc.BackgroundTransparency=fade
+				local drawing=disc:FindFirstChild("Sharingan")
+				if drawing then drawing.Rotation=t*420 end
+				for _,d in disc:GetDescendants() do
+					if d:IsA("Frame") then
+						if d:GetAttribute("Base")==nil then d:SetAttribute("Base",d.BackgroundTransparency) end
+						d.BackgroundTransparency=math.max(d:GetAttribute("Base"),fade)
+					end
+					if d:IsA("UIStroke") then d.Transparency=math.max(.1,fade) end
+				end
 			end
-			r.ring.CFrame=eye*CFrame.Angles(0,math.rad(90),0)*CFrame.new(.03,0,0)
-			r.ring.Transparency=.5+.5*fade
 		end
 	end
 end

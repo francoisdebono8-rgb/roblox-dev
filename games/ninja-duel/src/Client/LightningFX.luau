@@ -35,8 +35,25 @@ function LightningFX.holding(actor)
 	if (actor.attackVariant=="Chidori" or actor.attackVariant=="ChidoriDive") and (st=="Startup" or st=="Active") then return "Chidori" end
 	return nil
 end
+-- (13/11, issue #73) A point that rides on a part (the hand): the bolt reads
+-- it every frame, so the arcs stay IN the hand at a run, on the wall, in the
+-- dive, instead of being left behind where the hand was.
+function LightningFX.onPart(part,offset,axis)
+	return setmetatable({},{__index=function(_,k)
+		local cf=part.CFrame*CFrame.new(offset)
+		if k=="WorldPosition" then return cf.Position end
+		if k=="WorldAxis" then return part.CFrame:VectorToWorldSpace(axis or Vector3.yAxis) end
+		return nil
+	end})
+end
 local function arc(from,to,look,width,life,radius)
-	local b=Bolt.new(Bolt.point(from,(to-from).Unit),Bolt.point(to,(to-from).Unit),math.clamp(math.floor((to-from).Magnitude*3),6,18))
+	local p0=if typeof(from)=="Vector3" then Bolt.point(from) else from
+	local p1=if typeof(to)=="Vector3" then Bolt.point(to) else to
+	local d=p1.WorldPosition-p0.WorldPosition
+	local axis=if d.Magnitude>1e-3 then d.Unit else Vector3.yAxis
+	if typeof(from)=="Vector3" then p0=Bolt.point(from,axis) end
+	if typeof(to)=="Vector3" then p1=Bolt.point(to,axis) end
+	local b=Bolt.new(p0,p1,math.clamp(math.floor(d.Magnitude*3),6,18))
 	b.Color=look.core;b.GlowColor=look.glow
 	b.Thickness=width;b.MinRadius=0;b.MaxRadius=radius or .35
 	b.Frequency=2.2;b.AnimationSpeed=12
@@ -63,9 +80,11 @@ local function fighter(fx,model,actor,dt)
 	if now>=st.next then
 		st.next=now+.06+rng:NextNumber()*.04
 		local n=math.max(1,look.birds-2+rng:NextInteger(0,2))
+		local palmLocal=Vector3.new(0,-.35,0)
 		for _=1,n do
 			local dir=random(rng)
-			arc(palm,palm+dir*look.reach*(.5+rng:NextNumber()*.6),look,.09+rng:NextNumber()*.05,.08+rng:NextNumber()*.06,.4)
+			local reach=look.reach*(.5+rng:NextNumber()*.6)
+			arc(LightningFX.onPart(hand,palmLocal,dir),LightningFX.onPart(hand,palmLocal+dir*reach,dir),look,.09+rng:NextNumber()*.05,.08+rng:NextNumber()*.06,.4)
 		end
 	end
 	local root=model:FindFirstChild("HumanoidRootPart")
@@ -76,7 +95,7 @@ local function fighter(fx,model,actor,dt)
 		local floor=K.floorUnder and K.floorUnder(fx,palm,1,7)
 		if floor then
 			local back=if speed>1 then -Vector3.new(v.X,0,v.Z).Unit*1.4 else random(rng)*Vector3.new(1,0,1)
-			arc(palm,floor.Position+back,look,.12,.12,.55)
+			arc(LightningFX.onPart(hand,Vector3.new(0,-.35,0)),floor.Position+back,look,.12,.12,.55)
 		end
 	end
 end
