@@ -123,38 +123,38 @@ local function pivotOf(m)
 	return ok and cf or nil
 end
 -- Head, torso, hands, eyes and every visible body part of a model (cached 0.5 s).
+-- The rig's own parts give the geometry (the look meshes Head__*, *__Fist ride
+-- on them and may be rotated); a rig part may be invisible, its place is right.
 local partCache=setmetatable({},{__mode="k"})
 local function partsOf(m)
 	local e=partCache[m]
 	local now=os.clock()
 	if e and now-e.t<0.5 then return e end
 	e={t=now,head=nil,torso=nil,hands={},eyes={},all={}}
+	local looks,faceEyes,eyeStrip={},{},nil
 	for _,d in m:GetDescendants() do
 		if d:IsA("BasePart") and d.Name~="HumanoidRootPart" then
 			local n=d.Name
-			if d.Transparency<0.9 then
-				if d.Size.Magnitude>0.3 then table.insert(e.all,d) end
-				if isHead(n) and (not e.head or n=="Head") then e.head=d
-				elseif (n=="UpperTorso" or n=="Torso") and not e.torso then e.torso=d
-				elseif n=="LeftHand" or n=="RightHand" or n=="Left Arm" or n=="Right Arm" then table.insert(e.hands,d) end
-			end
-			if string.find(n,"Eye",1,true) then table.insert(e.eyes,d) end
-		elseif d:IsA("Attachment") and string.find(d.Name,"Eye",1,true) then
-			table.insert(e.eyes,d)
+			if d.Transparency<0.9 and d.Size.Magnitude>0.3 then table.insert(e.all,d) end
+			if n=="Head" then e.head=d
+			elseif isHead(n) then looks[n]=d
+			elseif n=="UpperTorso" or (n=="Torso" and not e.torso) then e.torso=d
+			elseif n=="LeftHand" or n=="RightHand" or n=="Left Arm" or n=="Right Arm" then table.insert(e.hands,d)
+			elseif n=="FaceEye" then table.insert(faceEyes,d)
+			elseif n=="Eyes" then eyeStrip=d end
 		end
 	end
+	e.head=e.head or looks.Head__Skin or select(2,next(looks))
+	e.eyes=#faceEyes>0 and faceEyes or (eyeStrip and {eyeStrip} or {})
 	partCache[m]=e
 	return e
 end
 local function eyePoints(parts)
 	local list={}
-	for _,x in parts.eyes do
-		if x.Parent then table.insert(list,x:IsA("Attachment") and x.WorldPosition or x.Position) end
-		if #list>=2 then break end
-	end
+	for _,x in parts.eyes do if x.Parent then table.insert(list,x.Position) end end
 	if #list==0 and parts.head then
 		local h=parts.head
-		for _,s in {-1,1} do table.insert(list,(h.CFrame*CFrame.new(s*0.18*h.Size.X,0.1*h.Size.Y,-0.5*h.Size.Z)).Position) end
+		for _,s in {-1,1} do table.insert(list,(h.CFrame*CFrame.new(s*0.2*h.Size.X,0,-0.55*h.Size.Z)).Position) end
 	end
 	return list
 end
@@ -645,7 +645,7 @@ function Assist.install(ctx,dev)
 				local _,inBand=project(cam,x.parts.torso.Position)
 				torsoIn=inBand
 			end
-			local top=x.parts.head.Position+V(0,x.parts.head.Size.Y/2,0)
+			local top=x.parts.head.Position+V(0,x.parts.head.Size.Y*0.9,0) -- the hair above the rig's head
 			local feet=(x.root and x.root.Position or x.cf.Position)-V(0,3,0)
 			local topV=cam:WorldToViewportPoint(top)
 			local feetV=cam:WorldToViewportPoint(feet)
