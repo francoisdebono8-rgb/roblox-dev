@@ -557,7 +557,11 @@ end
 -- the kit `def` decides everything else. Without one, the prodigy's own body.
 function World.rig(parent, def, cf, name, worn)
 	fighterGroup()
-	local model = Instance.new("Model"); model.Name=name; model.Parent=parent
+	-- (13/11, #72, gel au BEGIN) Built away from the world and put in it once,
+	-- at the end: measured in Studio, a body built inside the arena spent
+	-- 40 ms of the duel's start parenting its costume pieces one by one into
+	-- the live world, and each piece reached the client as its own message.
+	local model = Instance.new("Model"); model.Name=name
 	local look=World.lookDef(worn,def)
 	local skin=Color3.fromRGB(table.unpack(look.Skin))
 	local outfit=Color3.fromRGB(table.unpack(look.Outfit))
@@ -615,9 +619,12 @@ function World.rig(parent, def, cf, name, worn)
 		end
 	end
 	World.dress(model,def,worn)
-	model.PrimaryPart=root; root:SetNetworkOwner(nil)
+	model.PrimaryPart=root
 	-- Fighters pass through each other physically; Combat keeps them apart.
 	for _,p in model:GetDescendants() do if p:IsA("BasePart") then p.CollisionGroup="NinjaFighters" end end
+	model.Parent=parent
+	-- (the network owner is set once the body is in the world: Roblox refuses it before)
+	root:SetNetworkOwner(nil)
 	return model,hum,root,joints
 end
 -- --------------------------------------------------------------- costumes

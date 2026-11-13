@@ -1,7 +1,7 @@
 {
   "version": "0.13.0-arena-combo",
   "artifact": "NinjaDuel-QA.rbxlx",
-  "sha256": "1b13a8cc5e867fe6b20ab1fc6a222f67e35b237630226be24f3b03803bfd12bf",
+  "sha256": "24ce7b8c3ee4afa70d3b22e8b3396103210961a0ba811e5ba2639cf93368d6b7",
   "sources": {
     "src/Client/ArenaDress.luau": "e2da1115cb48480b2effa3170a1670d3bb44d5bcbdfd9bbdbb3e60ee302b5360",
     "src/Client/AuthoredClips.luau": "1799da3d96178392fe44c90470fca30d7b11acde9bb45c0e2c5660bd940d6715",
@@ -195,7 +195,7 @@
     "src/Server/Wave2Kit.luau": "49dff3ee2e1dfb21a45904eca78f067a50a024d808145a18532797e30d5749b6",
     "src/Server/Wave3Kit.luau": "9fa83afb7d16647a1edeb80ab462019eecea113c6304797e8f6629b92f58881a",
     "src/Server/Wave4Kit.luau": "14b41f6af66e84734b44ab9f5370abfea7947a717bf2eb283c805bb96f13c7ba",
-    "src/Server/World.luau": "a3ffe47ecf9c17058d5701b92d94551d75a59cba6da227202442646da6762414",
+    "src/Server/World.luau": "a1cf12f34d4bb3f2a288889797317bdb040509f82016dca149846c1a5fd49697",
     "src/Server/WorldReaction.luau": "3a5ce9c59e269dfcf9ca960780d645baafb6308d4ab82f1de08d47f3f1977a14",
     "src/Server/Zones.luau": "cf6fc363aa57424ae1bcb243586e7bda5547f1c68601901115a71c34c95434b2",
     "src/Shared/ActionContext.luau": "27afa6defb5f94ae59b8d8e6addaa6409340c09fb34d347eb8c1fbc0cdcae8b3",
@@ -233,12 +233,12 @@
   },
   "sourceEquality": "PASS",
   "debugOnly": true,
-  "buildFingerprint": "c05ae8f2e7c6aa88f495d2a6767634de0e9d70ff6bfb058a48ba23e7ed9dca84",
+  "buildFingerprint": "c49d1088ea138e83da46a5f1a0edbe954f2bac8b8f586a8d9eb2138c9f3e9e7c",
   "profile": "qa",
-  "runtimeFingerprint": "4623d2149ea0c6ed86ec3c098b7c82b033e7af8c6ccd2ad071aa57960978ef97",
-  "sourceCommit": "6028f6d7fcb8463e0586321beb0949fbf471772c",
-  "headCommit": "6028f6d7fcb8463e0586321beb0949fbf471772c",
-  "sourceDirty": false,
+  "runtimeFingerprint": "0cc9f98a2f71849017ebd146764d7b1ce9518ffd039cb3abb39ecb790cd1ab4c",
+  "sourceCommit": "dd261363280f13266acc8256422f1b59da217833",
+  "headCommit": "3d9dcc84bd07bf1766f5cbdd4dbdf16b55f710f3",
+  "sourceDirty": true,
   "captureTools": {},
   "donorAssets": {
     "assets/BanglaAssets.rbxmx": "6e99f5f67e6c34ac8a81d739431554b1495f0f5cd1dd1870a39eeb8bf23e1983"
