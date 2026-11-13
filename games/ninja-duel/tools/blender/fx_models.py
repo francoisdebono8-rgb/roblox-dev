@@ -474,6 +474,79 @@ def trigrams():
     loft(disc, fr + [[v * .001 for v in fr[0]]], rgb(150, 160, 255), cap0=False, cap1=False)
     return [disc, lines, yin]
 
+
+# ---------------------------------------------------------------- creatures
+# Kakashi's ninken (Client/HoundFX): Pakkun the small tan pug-nosed one, then
+# the pack; the Konoha headband round the forehead. The body (head, ears,
+# headband, tail) is one model, each leg another (on the dog's hip joints).
+# Units: the dog at scale 1, its root at mid-body height, front +y here.
+COATS = [(rgb(204, 168, 118), rgb(236, 214, 180)), (rgb(104, 104, 116), rgb(196, 196, 204)),
+         (rgb(122, 90, 62), rgb(206, 184, 150)), (rgb(58, 56, 62), rgb(214, 210, 206))]
+
+
+def ninken(i):
+    coat, pale = COATS[i]
+    fur = Piece("Fur", "Fabric")
+    dark = Piece("Dark", "SmoothPlastic")
+    band = Piece("Headband", "Fabric")
+    plate = Piece("Plate", "Metal", flat=True)
+    def furcol(p, k):
+        belly = smooth((-p.z - .05) / .2) if p.y < .55 else 0
+        muzzle = smooth((p.y - 1.15) / .1)
+        n = noise.noise(p * 7) * .06
+        return lerp(lerp(coat, pale, max(belly, muzzle)), rgb(0, 0, 0), max(0, n))
+    # the body: rump to a deep chest
+    prof = [(-.8, .3, .3, .06), (-.55, .42, .4, .04), (-.1, .36, .36, 0), (.3, .45, .48, -.02), (.62, .36, .42, .06), (.75, .18, .2, .14)]
+    rings = []
+    for j in range(17):
+        y = -.8 + 1.55 * j / 16
+        w, h, z0 = interp(prof, y)
+        rings.append([Vector((math.cos(a) * w, y, z0 + math.sin(a) * h)) for a in [s_ / 18 * math.tau for s_ in range(18)]])
+    loft(fur, rings, furcol)
+    # neck and head
+    tube(fur, [Vector((0, .5, .25)), Vector((0, .7, .45)), Vector((0, .85, .55))], lambda k: .26 - .04 * k, furcol, sides=12)
+    ellipsoid(fur, (0, .95, .62), (.3, .3, .28), furcol, seg=14, rings=9)
+    # the muzzle, a little open on the bite
+    tube(fur, [Vector((0, 1.1, .56)), Vector((0, 1.26, .52)), Vector((0, 1.38, .5))], lambda k: .16 - .04 * k, furcol, sides=10, shape=lambda a, k: (1, .8))
+    tube(fur, [Vector((0, 1.08, .42)), Vector((0, 1.24, .36)), Vector((0, 1.32, .34))], lambda k: .1 - .03 * k, pale, sides=8, shape=lambda a, k: (1, .5))
+    ellipsoid(dark, (0, 1.42, .55), (.07, .05, .05), rgb(20, 18, 20), seg=8, rings=5)
+    ellipsoid(dark, (0, 1.25, .45), (.1, .1, .03), rgb(120, 30, 40), seg=8, rings=4)
+    for side in (-1, 1):
+        ellipsoid(dark, (side * .15, 1.17, .7), (.045, .03, .05), rgb(16, 14, 16), seg=8, rings=5)
+        # ears: soft triangles, up and back
+        tube(fur, [Vector((side * .18, .9, .82)), Vector((side * .26, .82, 1.02)), Vector((side * .3, .74, 1.12))],
+             lambda k: .12 * (1 - k) + .01, lambda p, k: lerp(coat, rgb(30, 26, 26), k * .5), sides=6, shape=lambda a, k: (1, .35))
+    # the Konoha headband round the forehead, its plate on the front
+    br = []
+    for jj in range(2):
+        z = .74 + jj * .1
+        br.append([Vector((math.cos(a) * .3, .95 + math.sin(a) * .3, z)) for a in [s_ / 20 * math.tau for s_ in range(20)]])
+    br = [[Vector((v.x, .95 + (v.y - .95), v.z)) for v in r] for r in br]
+    loft(band, br, rgb(40, 52, 96), cap0=False, cap1=False)
+    p0 = Vector((0, 1.24, .79))
+    loft(plate, [[p0 + Vector((-.13, 0, -.05)), p0 + Vector((.13, 0, -.05)), p0 + Vector((.13, 0, .05)), p0 + Vector((-.13, 0, .05))],
+                 [p0 + Vector((-.13, .03, -.05)), p0 + Vector((.13, .03, -.05)), p0 + Vector((.13, .03, .05)), p0 + Vector((-.13, .03, .05))]],
+         rgb(190, 196, 206))
+    # the tail, up and curled
+    tube(fur, [Vector((0, -.75, .2)), Vector((0, -.95, .45)), Vector((0, -.9, .7)), Vector((0, -.78, .78))], lambda k: .09 * (1 - k * .6), furcol, sides=8)
+    # the mantle: a short dark vest over the back
+    vest = Piece("Vest", "Fabric")
+    vr = []
+    for j in range(9):
+        y = -.45 + .95 * j / 8
+        w, h, z0 = interp(prof, y)
+        vr.append([Vector((math.cos(a) * w * 1.06, y, z0 + math.sin(a) * h * 1.06)) for a in [math.radians(-20 + 220 * q / 12) for q in range(13)]])
+    loft(vest, vr, rgb(48, 54, 74), closed=False, cap0=False, cap1=False)
+    return [fur, dark, band, plate, vest]
+
+
+def ninken_leg(i):
+    coat, pale = COATS[i]
+    leg = Piece("Leg", "Fabric")
+    tube(leg, [Vector((0, 0, .05)), Vector((0, .02, -.3)), Vector((0, -.04, -.55)), Vector((0, .02, -.68))], lambda k: .1 - .03 * k, lambda p, k: lerp(coat, pale, k * .6), sides=8)
+    ellipsoid(leg, (0, .06, -.71), (.08, .11, .05), pale, seg=8, rings=5)
+    return [leg]
+
 # ---------------------------------------------------------------- dragons
 # Kakashi's Suiryūdan and Doryūdan (user 13/11: « les dragons ça va pas trop,
 # cherche des modèles de dragons en 3D »): the anime's eastern dragon, fierce,
@@ -669,6 +742,8 @@ def dragon_seg(st):
 
 
 MODELS = {
+    **{"Ninken%d" % (i + 1): (lambda i=i: ninken(i)) for i in range(4)},
+    **{"NinkenLeg%d" % (i + 1): (lambda i=i: ninken_leg(i)) for i in range(4)},
     "Rock": rock,
     "Katana": katana,
     "TsukuyomiCross": tsukuyomi_cross,
@@ -745,7 +820,7 @@ def render(out_dir, names=None):
         return
     if names and any("Dragon" in n for n in names):
         pass
-    views = {"Trigrams": (.1, -.3, 1), "TsukuyomiCross": (.6, -1, .3), "BandageWrap": (1, -1, .4), "WaterDragonHead": (1.3, .7, .35), "EarthDragonHead": (1.3, .7, .35), "Shuriken": (0.25, -0.5, 1.0), "SandCoffin": (1, -1.6, .35), "SandPillar": (1, -1.6, .45)}
+    views = {"Ninken1": (1.2, .8, .4), "Ninken2": (1.2, .8, .4), "Trigrams": (.1, -.3, 1), "TsukuyomiCross": (.6, -1, .3), "BandageWrap": (1, -1, .4), "WaterDragonHead": (1.3, .7, .35), "EarthDragonHead": (1.3, .7, .35), "Shuriken": (0.25, -0.5, 1.0), "SandCoffin": (1, -1.6, .35), "SandPillar": (1, -1.6, .45)}
     for name, fn in MODELS.items():
         if names and name not in names:
             continue

@@ -16,6 +16,7 @@ local UltimateFX={}
 local Scripts=require(game:GetService("ReplicatedStorage").NinjaDuel.UltimateScripts)
 local Face=require(game:GetService("ReplicatedStorage").NinjaDuel.Face)
 local MeshKit=require(script.Parent.MeshKit)
+local HoundFX=require(script.Parent.HoundFX)
 local K -- Effects' helpers, handed over by install()
 UltimateFX.clock=os.clock -- (headless tests drive time)
 
@@ -810,6 +811,21 @@ CUE.hounds=function(ctx)
 		local a=k/8*math.pi*2+.2
 		local spot=ctx.floor(p)+Vector3.new(math.cos(a)*1.5,0,math.sin(a)*1.5)
 		local look=CFrame.lookAt(spot,Vector3.new(p.X,spot.Y,p.Z))
+		-- (13/11) the modelled ninken (Client/HoundFX) out of the floor, biting
+		if MeshKit.has("Ninken1") then
+			local ok,dog=pcall(function() return (HoundFX.build(k%4+1)) end)
+			if ok and dog then
+				dog.Name="Hound";dog.Parent=ctx.fx.folder
+				local lift=dog:GetAttribute("Lift") or .8
+				local aim=CFrame.lookAt(spot,Vector3.new(p.X,spot.Y,p.Z))
+				local root=dog.PrimaryPart
+				root.CFrame=aim*CFrame.new(0,-1.6,0)*CFrame.Angles(math.rad(35),0,0)
+				K.tween(root,.15,{CFrame=aim*CFrame.new(0,lift+rng:NextNumber()*.3,.2)*CFrame.Angles(math.rad(-12),0,0)})
+				K.smokePuff(ctx.fx.folder,spot+Vector3.new(0,.5,0),rgb(196,184,160),3,1)
+				table.insert(hounds,dog)
+				continue
+			end
+		end
 		local dog=K.new("Model",{Name="Hound"},ctx.fx.folder)
 		local tone=if k%3==0 then rgb(120,96,70) else rgb(70,70,80)
 		local body=K.block(dog,Vector3.new(.9,.9,1.8),look*CFrame.new(0,-1.4,0),tone,Enum.Material.SmoothPlastic)
