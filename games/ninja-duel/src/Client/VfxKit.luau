@@ -383,7 +383,7 @@ function Kit.burst(parent,position,texture,count,props)
 		elseif d.Y<-.99 then e.EmissionDirection=Enum.NormalId.Bottom
 		else at.WorldCFrame=CFrame.lookAt(position,position+d)*CFrame.Angles(-math.pi/2,0,0) end
 	end
-	e:Emit(count)
+	do local ndCount=count;e:Emit(ndCount);pcall(e.SetAttribute,e,"NDEmitCount",ndCount);pcall(e.SetAttribute,e,"NDEmit",os.clock()) end
 	return e,h
 end
 

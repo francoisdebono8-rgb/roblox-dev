@@ -642,7 +642,7 @@ local function burst(parent,position,props,count)
 	local holder=anchorPart(parent,position);holder.Transparency=1
 	local at=new("Attachment",{},holder)
 	local e=emitter(at,props)
-	e:Emit(math.max(1,math.floor((count or 1)*Kit.amount+.5)))
+	do local ndCount=math.max(1,math.floor((count or 1)*Kit.amount+.5));e:Emit(ndCount);pcall(e.SetAttribute,e,"NDEmitCount",ndCount);pcall(e.SetAttribute,e,"NDEmit",os.clock()) end
 	Debris:AddItem(holder,3)
 	return holder
 end
@@ -1374,10 +1374,24 @@ function FX:substitute(position,to,fighter,model)
 		local stand=CFrame.new(position-Vector3.new(0,.6,0))*CFrame.Angles(0,math.random()*math.pi*2,0)*CFrame.Angles(0,0,math.rad(84))
 		local log=block(holder,Vector3.new(3.6,1.25,1.25),stand,Color3.fromRGB(110,74,44),Enum.Material.Wood)
 		log.Shape=Enum.PartType.Cylinder;log.Anchored=false;log.CanCollide=true;log.Massless=false;log.CastShadow=true
-		for _,x in {-1.81,1.81} do
-			local cut=block(holder,Vector3.new(.04,1.12,1.12),stand*CFrame.new(x,0,0),Color3.fromRGB(214,180,128),Enum.Material.Wood)
-			cut.Shape=Enum.PartType.Cylinder;cut.Anchored=false;cut.Massless=true
-			new("WeldConstraint",{Part0=log,Part1=cut},cut)
+		-- (13/11) the modelled log (MeshKit "SubLog": ridged bark, ringed cut
+		-- ends, a branch stub, the gash of the blow) rides the physics cylinder
+		local carved=MeshKit.model("SubLog")
+		if carved then
+			log.Transparency=1
+			local croot=carved.PrimaryPart
+			carved:PivotTo(stand)
+			for _,c in carved:GetChildren() do c.Parent=holder end
+			carved:Destroy()
+			croot.Anchored=false;croot.Massless=true
+			new("WeldConstraint",{Part0=log,Part1=croot},croot)
+			for _,d in holder:GetChildren() do if d:IsA("BasePart") and d~=log and d~=croot then d.CastShadow=true end end
+		else
+			for _,x in {-1.81,1.81} do
+				local cut=block(holder,Vector3.new(.04,1.12,1.12),stand*CFrame.new(x,0,0),Color3.fromRGB(214,180,128),Enum.Material.Wood)
+				cut.Shape=Enum.PartType.Cylinder;cut.Anchored=false;cut.Massless=true
+				new("WeldConstraint",{Part0=log,Part1=cut},cut)
+			end
 		end
 		holder.PrimaryPart=log
 		-- a nudge so it tips over instead of balancing on its end
@@ -1385,7 +1399,7 @@ function FX:substitute(position,to,fighter,model)
 		log.AssemblyAngularVelocity=stand.LookVector*2.2
 		task.delay(2.6,function()
 			if not holder.Parent then return end
-			for _,d in holder:GetChildren() do if d:IsA("BasePart") then tween(d,.5,{Transparency=1}) end end
+			for _,d in holder:GetChildren() do if d:IsA("BasePart") and d.Transparency<1 then tween(d,.5,{Transparency=1}) end end
 		end)
 		Debris:AddItem(holder,3.2)
 	end
@@ -1544,7 +1558,7 @@ function FX:handGlow(model,color,time)
 			local at=new("Attachment",{Name="ChakraPalm"},hand)
 			local e=emitter(at,{Texture=TEX.glow,Rate=0,Lifetime=NumberRange.new(.12,.2),Speed=NumberRange.new(0,1),
 				Color=ColorSequence.new(color),LightEmission=1,Size=num({{0,1.4},{1,.4}}),Transparency=num({{0,.25},{1,1}}),LockedToPart=true})
-			e:Emit(10)
+			do local ndCount=10;e:Emit(ndCount);pcall(e.SetAttribute,e,"NDEmitCount",ndCount);pcall(e.SetAttribute,e,"NDEmit",os.clock()) end
 			local light=new("PointLight",{Color=color,Brightness=3,Range=6,Shadows=false},at)
 			tween(light,time,{Brightness=0})
 			Debris:AddItem(at,time+.1)

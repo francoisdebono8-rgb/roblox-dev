@@ -87,7 +87,7 @@ local function curtain(fx,cf,size,count,up)
 		EmissionDirection=Enum.NormalId.Top,Speed=NumberRange.new(up*.5,up),Lifetime=NumberRange.new(.4,.75),SpreadAngle=Vector2.new(15,15),
 		Color=ColorSequence.new(SAND),LightEmission=0,LightInfluence=1,Size=K.num({{0,1.2},{.5,2},{1,1.4}}),Transparency=K.num({{0,.15},{.7,.35},{1,1}}),
 		Acceleration=Vector3.new(0,-30,0),Drag=1,Rotation=NumberRange.new(0,360),RotSpeed=NumberRange.new(-40,40)},box)
-	e:Emit(count)
+	do local ndCount=count;e:Emit(ndCount);pcall(e.SetAttribute,e,"NDEmitCount",ndCount);pcall(e.SetAttribute,e,"NDEmit",os.clock()) end
 	Debris:AddItem(box,1.2)
 	return box
 end
@@ -105,7 +105,7 @@ local function sandBody(fx,model,at)
 			local e=K.new("ParticleEmitter",{Enabled=false,Texture=K.TEX.smoke,Shape=Enum.ParticleEmitterShape.Box,ShapeStyle=Enum.ParticleEmitterShapeStyle.Volume,
 				Speed=NumberRange.new(0,1.5),Lifetime=NumberRange.new(.45,.75),Color=ColorSequence.new(SAND),LightEmission=0,LightInfluence=1,
 				Size=K.num({{0,.9},{1,.5}}),Transparency=K.num({{0,.1},{.6,.3},{1,1}}),Acceleration=Vector3.new(0,-45,0),Rotation=NumberRange.new(0,360)},box)
-			e:Emit(math.clamp(math.floor(d.Size.X*d.Size.Y*d.Size.Z*4),4,18))
+			do local ndCount=math.clamp(math.floor(d.Size.X*d.Size.Y*d.Size.Z*4),4,18);e:Emit(ndCount);pcall(e.SetAttribute,e,"NDEmitCount",ndCount);pcall(e.SetAttribute,e,"NDEmit",os.clock()) end
 		end
 	end
 	grains(fx,at,20,8,true)
@@ -242,7 +242,7 @@ STYLES.sandburial=function(fx,impact)
 		Speed=NumberRange.new(14,20),Lifetime=NumberRange.new(.18,.26),Color=ColorSequence.new(SAND),LightEmission=0,LightInfluence=1,
 		Size=K.num({{0,2.4},{1,1.4}}),Transparency=K.num({{0,.1},{1,.4}}),Rotation=NumberRange.new(0,360)},shell)
 	shell.Size=Vector3.one*8
-	e:Emit(70)
+	do local ndCount=70;e:Emit(ndCount);pcall(e.SetAttribute,e,"NDEmitCount",ndCount);pcall(e.SetAttribute,e,"NDEmit",os.clock()) end
 	Debris:AddItem(shell,.6)
 	task.delay(.16,function()
 		dust(fx,at,30,3)

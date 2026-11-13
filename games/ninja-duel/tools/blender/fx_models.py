@@ -628,6 +628,44 @@ def flame_shell(core, mid, outer, tongues):
     ellipsoid(pc, (0, 0, 0), (.5, .5, .5), col, seg=26, rings=16, bump=bump)
     return [pc]
 
+
+def sub_log():
+    """The substitution log: a cut length of trunk, 3.6 long (along x), radius
+    .62: ridged bark, two pale cut ends with their growth rings, a branch
+    stub, and the fresh gash of the blow it took."""
+    bark = Piece("Bark", "Wood", flat=True)
+    ends = Piece("Ends", "Wood")
+    rings = []
+    S, X = 22, 14
+    for i in range(X + 1):
+        x = -1.8 + 3.6 * i / X
+        ring = []
+        for s_ in range(S):
+            a = s_ / S * math.tau
+            r = .62 * (1 + .07 * abs(math.sin(a * 7 + x * .4)) + .04 * noise.noise(Vector((x * 2, a * 2, 0))))
+            ring.append(Vector((x, math.cos(a) * r, math.sin(a) * r)))
+        rings.append(ring)
+    def bcol(p, k):
+        a = math.atan2(p.z, p.y)
+        g = abs(math.sin(a * 7 + p.x * .4))
+        gash = abs(p.x - .3) < .5 and p.z > .3 and abs(p.y) < .35
+        if gash:
+            return rgb(214, 176, 120)
+        return lerp(rgb(64, 42, 28), rgb(112, 78, 50), g * .8 + noise.noise(p * 3) * .2)
+    loft(bark, rings, bcol, cap0=False, cap1=False)
+    for x, sgn in ((-1.8, -1), (1.8, 1)):
+        cr = []
+        for j in range(5):
+            r = .6 * (1 - j / 4)
+            cr.append([Vector((x + sgn * .003 * j, math.cos(a) * r, math.sin(a) * r)) for a in [s_ / S * math.tau for s_ in range(S)]])
+        def ecol(p, k):
+            r = math.hypot(p.y, p.z)
+            ring = .5 + .5 * math.sin(r * 38)
+            return lerp(rgb(214, 180, 128), rgb(180, 140, 92), ring * .6) if r < .55 else rgb(120, 86, 56)
+        loft(ends, cr, ecol, cap0=False, cap1=False)
+    tube(bark, [Vector((-.6, 0, .55)), Vector((-.75, .1, .95)), Vector((-.8, .12, 1.05))], lambda k: .16 - .06 * k, rgb(78, 52, 34), sides=7)
+    return [bark, ends]
+
 # ---------------------------------------------------------------- the floor
 # (13/11, user: « les traces sur le sol » at the same level) Damage is
 # geometry, not a flat picture: grooves torn into the floor with their broken
@@ -1023,6 +1061,7 @@ def dragon_seg(st):
 
 
 MODELS = {
+    "SubLog": sub_log,
     "EarthWall": earth_wall,
     "EarthHand": earth_hand,
     "FlameMidLion": lambda: flame_shell(rgb(255, 252, 225), rgb(255, 196, 70), rgb(255, 112, 24), .5),

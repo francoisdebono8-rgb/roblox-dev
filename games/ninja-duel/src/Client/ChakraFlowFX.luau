@@ -148,7 +148,7 @@ local function aimed(fx,at,dir,props,count)
 		holder.CFrame=CFrame.lookAt(at,at+dir)*CFrame.Angles(-math.pi/2,0,0)
 	end
 	local e=particles(K.new("Attachment",{},holder),props)
-	e:Emit(math.max(1,math.floor(count*(Kit.amount or 1)+.5)))
+	do local ndCount=math.max(1,math.floor(count*(Kit.amount or 1)+.5));e:Emit(ndCount);pcall(e.SetAttribute,e,"NDEmitCount",ndCount);pcall(e.SetAttribute,e,"NDEmit",os.clock()) end
 	Debris:AddItem(holder,2)
 end
 local function fireRamp(color)
@@ -442,9 +442,9 @@ TICK.Wind=function(fx,a,model,now,dt,on,keep)
 	ease(a,if on then .55 elseif keep then .3 else 0,dt)
 	if on and now>=(a.nextRing or 0) then
 		a.nextRing=now+.13
-		a.rise:Emit(1)
+		do local ndCount=1;a.rise:Emit(ndCount);pcall(a.rise.SetAttribute,a.rise,"NDEmitCount",ndCount);pcall(a.rise.SetAttribute,a.rise,"NDEmit",os.clock()) end
 		a.ringCount=(a.ringCount or 0)+1
-		if a.spiral and a.ringCount%2==0 then a.spiral:Emit(1) end
+		if a.spiral and a.ringCount%2==0 then do local ndCount=1;a.spiral:Emit(ndCount);pcall(a.spiral.SetAttribute,a.spiral,"NDEmitCount",ndCount);pcall(a.spiral.SetAttribute,a.spiral,"NDEmit",os.clock()) end end
 	end
 end
 TICK.Sand=function(fx,a,model,now,dt,on,keep)
@@ -464,7 +464,7 @@ TICK.Strength=function(fx,a,model,now,dt,on,keep)
 	ease(a,0,dt)
 	if on and a.stomp and now>=(a.nextStomp or 0) then
 		a.nextStomp=now+.5
-		a.stomp:Emit(9)
+		do local ndCount=9;a.stomp:Emit(ndCount);pcall(a.stomp.SetAttribute,a.stomp,"NDEmitCount",ndCount);pcall(a.stomp.SetAttribute,a.stomp,"NDEmit",os.clock()) end
 		play(a.root,{{"heavy",.1,.5}})
 	end
 end
