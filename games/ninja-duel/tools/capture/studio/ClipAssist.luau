@@ -23,6 +23,7 @@
 --   NDScene = "B_chidori"       la scène en cours (sinon : NDBeat de ClipKit)
 --   NDShot  = "T2"              la caméra / la prise en cours (sinon : NDTake)
 --   NDClock = 12.34             le temps de la scène (replay), noté image par image
+--   NDCut   = true              écran noir entre deux scènes : rien n'est jugé
 -- et NDWarmup, écrit par « Préparer l'image » (os.clock()) pour qu'un script de
 -- scène lance son préchauffage des effets.
 --
@@ -32,7 +33,7 @@
 --   r:Invoke("rec","start","M1") / r:Invoke("rec","stop")   (comme NDRec)
 --   r:Invoke("frames",{from=1,count=600}) le journal image par image de la dernière prise
 --   r:Invoke("prepare") / r:Invoke("restore")
---   r:Invoke("actors",{a,b})             les deux corps (replay) ; nil = le duel
+--   r:Invoke("actors",{a,b},{"Sasuke","Kakashi"})  les deux corps (replay) et leurs noms ; nil = le duel
 --   r:Invoke("quality",12)               le niveau de qualité réglé (si la lecture se trompe)
 --   r:Invoke("set",{clean=0.5,back=120}) régler un seuil (voir T)
 --   r:Invoke("ignore",{"A:inside","sun"}) ne plus signaler ces défauts (préfixes d'id)
@@ -159,10 +160,13 @@ local function eyePoints(parts)
 end
 local function quality()
 	local level,auto=nil,nil
-	pcall(function()
-		local q=settings().Rendering.QualityLevel
-		if q==Enum.QualityLevel.Automatic then auto=true else level=tonumber(tostring(q):match("(%d+)$")) end
-	end)
+	for _,prop in {"EditQualityLevel","QualityLevel"} do
+		pcall(function()
+			local q=settings().Rendering[prop]
+			if q==Enum.QualityLevel.Automatic then auto=auto or true else level=level or tonumber(tostring(q):match("(%d+)$")) end
+		end)
+		if level then auto=false;break end
+	end
 	if level==nil and auto==nil then
 		pcall(function()
 			local q=UserSettings():GetService("UserGameSettings").SavedQualityLevel
@@ -238,6 +242,7 @@ function Assist.install(ctx,dev)
 		return nil
 	end
 	local function nameOf(key,m,data)
+		if self.actorNames and self.actorNames[key=="A" and 1 or 2] then return tostring(self.actorNames[key=="A" and 1 or 2]) end
 		local d=data and data[key=="A" and "human" or "bot"]
 		if d and d.fighter then return tostring(d.fighter) end
 		if m then return tostring(m:GetAttribute("Fighter") or m.Name) end
@@ -545,6 +550,7 @@ function Assist.install(ctx,dev)
 		-- Scene by scene (NDScene / NDBeat), from the frame log.
 		local scenes,cur={},nil
 		for _,f in tk.frames do
+			if f.black or not f.scene then cur=nil;continue end
 			local key=(f.scene or "")..(f.shot and ("|"..f.shot) or "")
 			if not cur or cur.key~=key then
 				if cur then cur.t1=f.w end
@@ -982,7 +988,7 @@ function Assist.install(ctx,dev)
 		recButton.BackgroundColor3=take and rgb(150,40,40) or rgb(52,58,70)
 		local ck=self.check or {}
 		local function item(ok,text,detail)
-			local mark=ok==nil and '<font color="#8A94A3">?</font>' or ok and '<font color="#5AC878">✓</font>' or '<font color="#EB5050">✗</font>'
+			local mark=ok==nil and '<font color="#8A94A3">?</font>' or ok and '<font color="#5AC878">✓</font>' or '<font color="#EB5050">×</font>'
 			return mark.." "..text..(detail and (' <font color="#8A94A3">'..detail.."</font>") or "")
 		end
 		checkText.Text=table.concat({
@@ -1040,7 +1046,7 @@ function Assist.install(ctx,dev)
 	button(buttons,"Préparer l'image",prepare,{Size=UDim2.fromOffset(122,26)})
 	button(buttons,"Rétablir",restore,{Size=UDim2.fromOffset(70,26)})
 	button(buttons,"Repères",function() self.guides=not self.guides end,{Size=UDim2.fromOffset(70,26)})
-	button(buttons,"✕",function() self:show(false) end,{Size=UDim2.fromOffset(28,26)})
+	button(buttons,"×",function() self:show(false) end,{Size=UDim2.fromOffset(28,26)})
 	function self:show(on) self.shown=on==true end
 	UIS.InputBegan:Connect(function(key,processed)
 		if not processed and key.KeyCode==Enum.KeyCode.F4 then self:show(not self.shown) end
@@ -1053,6 +1059,7 @@ function Assist.install(ctx,dev)
 
 	local function logFrame(now,cam)
 		local f={f=frameNo,w=r3(now-take.start),dt=r3(fpsWin[#fpsWin] and fpsWin[#fpsWin][2] or 0)}
+		if attr("NDCut")==true then f.black=true end
 		local st=attr("NDClock")
 		if type(st)=="number" then f.st=r3(st) end
 		f.scene=attr("NDScene") or attr("NDBeat");f.shot=attr("NDShot") or attr("NDTake");f.act=attr("NDAct")
@@ -1107,11 +1114,13 @@ function Assist.install(ctx,dev)
 		if lastCam then
 			local move=(pos-lastCam.pos).Magnitude
 			local turn=math.deg(math.acos(math.clamp(look:Dot(lastCam.look),-1,1)))
-			if move>T.cutMove or turn>T.cutTurn then
+			if attr("NDCut")==true then
+				-- inside a black gap: no cut, no jump
+			elseif move>T.cutMove or turn>T.cutTurn or math.abs(fov-lastCam.fov)>6 then
 				if take then table.insert(take.cuts,r3(now-take.start)) end
 				if now-lastCut<T.cutGap then event("cuts",WARN,"cadrage","deux coupes en "..fmt(now-lastCut).." s",now) end
 				lastCut=now
-			elseif (move>T.jumpMove and move>4*motion.move and move>2.5*bodyMove+0.3) or (turn>T.jumpTurn and turn>4*motion.turn and bodyMove<0.5) or math.abs(fov-lastCam.fov)>6 then
+			elseif (move>T.jumpMove and move>4*motion.move and move>2.5*bodyMove+0.3) or (turn>T.jumpTurn and turn>4*motion.turn and bodyMove<0.5) then
 				event("jump",WARN,"cadrage",string.format("saut de caméra (%s studs, %d°)",fmt(move),math.floor(turn)),now)
 			else
 				motion.move=motion.move*0.9+move*0.1;motion.turn=motion.turn*0.9+turn*0.1
@@ -1119,7 +1128,12 @@ function Assist.install(ctx,dev)
 		end
 		lastCam={pos=pos,look=look,fov=fov}
 		tickAcc+=dt
-		if tickAcc>=T.tick then
+		local black=attr("NDCut")==true
+		if black then
+			-- A black gap between two beats of a program: nothing to judge.
+			for id,c in live do if c.group=="tick" then closeSpan(c);live[id]=nil end end
+			tickAcc=0
+		elseif tickAcc>=T.tick then
 			tickAcc=0
 			local ok,err=pcall(tickChecks,now)
 			if not ok then warn("[NinjaDuelClip] tick: "..tostring(err)) end
@@ -1165,7 +1179,9 @@ function Assist.install(ctx,dev)
 			return HttpService:JSONEncode({total=#list,from=from,frames=out,counter=self.counterGeometry})
 		elseif op=="prepare" then prepare()
 		elseif op=="restore" then restore()
-		elseif op=="actors" then self.actorsOverride=(type(arg)=="table" and arg[1] and arg[2]) and {arg[1],arg[2]} or nil
+		elseif op=="actors" then
+			self.actorsOverride=(type(arg)=="table" and arg[1] and arg[2]) and {arg[1],arg[2]} or nil
+			self.actorNames=type(extra)=="table" and extra or nil
 		elseif op=="quality" then self.declaredQuality=tonumber(arg)
 		elseif op=="set" and type(arg)=="table" then for k,v in arg do if T[k]~=nil and type(v)=="number" then T[k]=v end end
 		elseif op=="ignore" then

@@ -191,6 +191,7 @@ function P.run(beats, gap, slow)
 		local c0 = os.clock()
 		for _, beat in beats do
 			blk.Enabled = true
+			workspace:SetAttribute("NDCut", true)
 			workspace:SetAttribute("NDScene", nil)
 			local a, b = R.t0 + beat.a, R.t0 + beat.b
 			local segs = {}
@@ -207,6 +208,7 @@ function P.run(beats, gap, slow)
 			task.wait(gap)
 			blk.Enabled = false
 			workspace:SetAttribute("NDScene", beat.name)
+			workspace:SetAttribute("NDCut", nil)
 			table.insert(P.log, {beat = beat.name, at = os.clock() - c0})
 			local rt, spd = a, P.speedAt(beat, beat.a)
 			local holdLeft, easeT, finished = beat.hold or 0, nil, false
@@ -241,10 +243,12 @@ function P.run(beats, gap, slow)
 			table.insert(P.log, {beat = beat.name .. " end", at = os.clock() - c0})
 		end
 		blk.Enabled = true
+		workspace:SetAttribute("NDCut", true)
 		workspace:SetAttribute("NDScene", nil)
 		workspace:SetAttribute("NDAct", nil)
 		task.wait(0.4)
 		if P.f4 then workspace:SetAttribute("NDRec", nil) end
+		workspace:SetAttribute("NDCut", nil)
 		P.done = true
 	end)
 end
