@@ -137,6 +137,13 @@ function Dev.install(ctx)
 		local ok,err=pcall(function() self.visual=require(visualModule).install(ctx,self) end)
 		if not ok then warn("[NinjaDuel] F7 visual tool unavailable: "..tostring(err)) end
 	end
+	-- F4: the filming assistant, in the FILM place only (build.py --capture
+	-- adds tools/capture/studio/ClipAssist.luau to ReplicatedStorage).
+	local clipModule=RS:FindFirstChild("ClipAssist",true)
+	if clipModule and clipModule:IsA("ModuleScript") then
+		local ok,err=pcall(function() self.clip=require(clipModule).install(ctx,self) end)
+		if not ok then warn("[NinjaDuel] F4 filming assistant unavailable: "..tostring(err)) end
+	end
 	task.spawn(function()
 		-- Both channels are created by the server's DevHooks at ReplicatedStorage root.
 		control=RS:WaitForChild("NinjaDuelDevControl",15)

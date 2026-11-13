@@ -31,6 +31,8 @@ Panneau ouvert : Input reçoit un état non-Duel, donc aucune action de combat n
 
 **F7** : outil visuel (lumière, ombres, visibilité des effets, liste de tout ce qui casse) — voir [OUTIL_VISUEL_F7](OUTIL_VISUEL_F7.md).
 
+**F4** (place FILM seulement) : assistant de tournage (liste de contrôle avant la prise, défauts de cadrage, de lumière et d'image en direct, plages propres de chaque prise) — voir [OUTIL_TOURNAGE_F4](OUTIL_TOURNAGE_F4.md).
+
 ## Command Bar (côté **Server**, pendant le Play)
 
 ```lua

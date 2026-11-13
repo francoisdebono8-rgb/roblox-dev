@@ -1,7 +1,7 @@
 {
   "version": "0.13.0-arena-combo",
   "artifact": "NinjaDuel-Debug.rbxlx",
-  "sha256": "56011e74f2e01a26342aee44d4a3be3234e0ad65aacf46b2cfb0ee38aa22278d",
+  "sha256": "0b5e8423d5424b4c777368170de2be177f5058eda9d7a768b1d3384548ea588e",
   "sources": {
     "src/Client/ArenaDress.luau": "e2da1115cb48480b2effa3170a1670d3bb44d5bcbdfd9bbdbb3e60ee302b5360",
     "src/Client/AuthoredClips.luau": "1799da3d96178392fe44c90470fca30d7b11acde9bb45c0e2c5660bd940d6715",
@@ -80,7 +80,7 @@
     "src/Client/CopyFX.luau": "d33c7a67f97baad35bbb252dd56712d968a8070c832e44ebf57c303bff3f8cb8",
     "src/Client/CupScreen.luau": "3c8612640ec37bd9389eb57f259fb766d3b5fa184c99a37fb38f89651f7e98bb",
     "src/Client/DashTrailFX.luau": "75b67abed7ae12fe6ae7c0d3da646d6e6f9c45df990788d2a51607d049a59c88",
-    "src/Client/DevClient.luau": "7df7f0879b1198b9d9bea292b65059516084207b6f4547533f9643523400d338",
+    "src/Client/DevClient.luau": "e0db3fbb334cf3eb3af0990848c46026665119d9bb0f1af760b616003583a898",
     "src/Client/DevVisual.luau": "e52649078c5c9ea338d6d3f287bf5814d97a4cc5a2c5ecd45736c934dfcc9bca",
     "src/Client/DevVolumes.luau": "1b557735b22d3dde87a14d9b8adcba8374012f2204916e66d7ad65aff52e007f",
     "src/Client/Effects.luau": "c1f673273aa337d862fd41b3e3c70a968e1fd2bf9f6fd11b0204c79bc7e5e039",
@@ -232,12 +232,12 @@
   },
   "sourceEquality": "PASS",
   "debugOnly": true,
-  "buildFingerprint": "9dc28cfe2a53c3dc6dec3a82f5315e126b384125bde19f5a9e9176099112a805",
+  "buildFingerprint": "d3a5ae5f7d321e1cf4760a9ab33191d9691e355e5a398dd529613afbdfaedfec",
   "profile": "debug",
   "runtimeFingerprint": "0cc9f98a2f71849017ebd146764d7b1ce9518ffd039cb3abb39ecb790cd1ab4c",
-  "sourceCommit": "dd261363280f13266acc8256422f1b59da217833",
-  "headCommit": "3d9dcc84bd07bf1766f5cbdd4dbdf16b55f710f3",
-  "sourceDirty": true,
+  "sourceCommit": "8519bc4a3a4239d61dd7e3a4b7735800ec9f20ac",
+  "headCommit": "8519bc4a3a4239d61dd7e3a4b7735800ec9f20ac",
+  "sourceDirty": false,
   "captureTools": {},
   "donorAssets": {
     "assets/BanglaAssets.rbxmx": "6e99f5f67e6c34ac8a81d739431554b1495f0f5cd1dd1870a39eeb8bf23e1983"

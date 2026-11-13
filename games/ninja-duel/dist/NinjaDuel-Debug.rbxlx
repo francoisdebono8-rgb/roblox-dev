@@ -5390,7 +5390,7 @@ return {
       <Item class="StringValue" referent="ND36">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">9dc28cfe2a53c3dc6dec3a82f5315e126b384125bde19f5a9e9176099112a805</string>
+          <string name="Value">d3a5ae5f7d321e1cf4760a9ab33191d9691e355e5a398dd529613afbdfaedfec</string>
         </Properties>
       </Item>
       <Item class="StringValue" referent="ND37">
@@ -5408,7 +5408,7 @@ return {
       <Item class="StringValue" referent="ND39">
         <Properties>
           <string name="Name">SourceCommit</string>
-          <string name="Value">dd261363280f-dirty</string>
+          <string name="Value">8519bc4a3a42</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND40">
@@ -50305,6 +50305,13 @@ function Dev.install(ctx)
 	if visualModule then
 		local ok,err=pcall(function() self.visual=require(visualModule).install(ctx,self) end)
 		if not ok then warn("[NinjaDuel] F7 visual tool unavailable: "..tostring(err)) end
+	end
+	-- F4: the filming assistant, in the FILM place only (build.py --capture
+	-- adds tools/capture/studio/ClipAssist.luau to ReplicatedStorage).
+	local clipModule=RS:FindFirstChild("ClipAssist",true)
+	if clipModule and clipModule:IsA("ModuleScript") then
+		local ok,err=pcall(function() self.clip=require(clipModule).install(ctx,self) end)
+		if not ok then warn("[NinjaDuel] F4 filming assistant unavailable: "..tostring(err)) end
 	end
 	task.spawn(function()
 		-- Both channels are created by the server's DevHooks at ReplicatedStorage root.

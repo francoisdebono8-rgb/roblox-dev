@@ -1,7 +1,7 @@
 {
   "version": "0.13.0-arena-combo",
   "artifact": "NinjaDuel-Capture.rbxlx",
-  "sha256": "b0ff5e360db2040e129dd54f8840fe682cd8390e19903909d57c9259af5fe19a",
+  "sha256": "25c9479bd437bea2fecc3d139a7625626c78c22dfc9a2ed8b505618b00fcc156",
   "sources": {
     "src/Client/ArenaDress.luau": "e2da1115cb48480b2effa3170a1670d3bb44d5bcbdfd9bbdbb3e60ee302b5360",
     "src/Client/AuthoredClips.luau": "1799da3d96178392fe44c90470fca30d7b11acde9bb45c0e2c5660bd940d6715",
@@ -80,7 +80,7 @@
     "src/Client/CopyFX.luau": "d33c7a67f97baad35bbb252dd56712d968a8070c832e44ebf57c303bff3f8cb8",
     "src/Client/CupScreen.luau": "3c8612640ec37bd9389eb57f259fb766d3b5fa184c99a37fb38f89651f7e98bb",
     "src/Client/DashTrailFX.luau": "75b67abed7ae12fe6ae7c0d3da646d6e6f9c45df990788d2a51607d049a59c88",
-    "src/Client/DevClient.luau": "7df7f0879b1198b9d9bea292b65059516084207b6f4547533f9643523400d338",
+    "src/Client/DevClient.luau": "e0db3fbb334cf3eb3af0990848c46026665119d9bb0f1af760b616003583a898",
     "src/Client/DevVisual.luau": "e52649078c5c9ea338d6d3f287bf5814d97a4cc5a2c5ecd45736c934dfcc9bca",
     "src/Client/DevVolumes.luau": "1b557735b22d3dde87a14d9b8adcba8374012f2204916e66d7ad65aff52e007f",
     "src/Client/Effects.luau": "c1f673273aa337d862fd41b3e3c70a968e1fd2bf9f6fd11b0204c79bc7e5e039",
@@ -232,19 +232,23 @@
   },
   "sourceEquality": "PASS",
   "debugOnly": true,
-  "buildFingerprint": "5e1f561a493a0eeb71d7add537cac4f250a0a6b3c2b3befab24aa5b7ce63f7d5",
+  "buildFingerprint": "ec3b808a3daaf7c8000addf24c4aa4351572b04a1aa7849508030f1b26758aa5",
   "profile": "capture",
   "runtimeFingerprint": "0cc9f98a2f71849017ebd146764d7b1ce9518ffd039cb3abb39ecb790cd1ab4c",
-  "sourceCommit": "dd261363280f13266acc8256422f1b59da217833",
-  "headCommit": "3d9dcc84bd07bf1766f5cbdd4dbdf16b55f710f3",
-  "sourceDirty": true,
+  "sourceCommit": "8519bc4a3a4239d61dd7e3a4b7735800ec9f20ac",
+  "headCommit": "8519bc4a3a4239d61dd7e3a4b7735800ec9f20ac",
+  "sourceDirty": false,
   "captureTools": {
     "tools/capture/studio/ClipKit.client.luau": "7889f16ee2fa12b5367d104b26d449f0734a271975421617800df53ec80a1a07",
     "tools/capture/studio/HiraishinKunai.luau": "e7d88a5489cb6ad8c14caf8a1e89a83ca92fecbd599f843202ad8df81c955a05",
     "tools/capture/studio/ShotRunner.server.luau": "16fa35c202b6ac3533421b139b47212ea42ae5a6053b1db00d573fafbb2f5bfe",
     "tools/capture/studio/Sets.luau": "d2f59ad3356a3cb1a7577ecba56ab05fb1d795e2f537d33a11b290dc48ce8a71",
     "tools/capture/studio/SetSnapshot.luau": "9476b4279e98fd577ca05d07648cea44176bf5803af450e77796c14fe1816704",
-    "tools/capture/studio/NDFactoryBoot.server.luau": "a256bc22204d8068dae32e877981e459a7a8a1e5a31a8965d161071e33c6c608"
+    "tools/capture/studio/NDFactoryBoot.server.luau": "a256bc22204d8068dae32e877981e459a7a8a1e5a31a8965d161071e33c6c608",
+    "tools/capture/studio/ClipAssist.luau": "dce6275d7a567be0c4f1749357d8a1929619adcc514e21f11472252e2375fb16",
+    "tools/capture/studio/ClipSight.luau": "d4776a189fc4ffd28aea395765a51cd9acfb5339f3bca2f6163774a04847f281",
+    "tools/capture/studio/NDReplay.luau": "6ce721e8f95012d09ef38355e461823bb23957038b0d4b75d121fce75a72fe0c",
+    "tools/capture/studio/NDDirector.luau": "9f368e22457e7fab0e13aaf72176114caee976ae3951e37da4cf5753e119e294"
   },
   "donorAssets": {
     "assets/BanglaAssets.rbxmx": "6e99f5f67e6c34ac8a81d739431554b1495f0f5cd1dd1870a39eeb8bf23e1983"

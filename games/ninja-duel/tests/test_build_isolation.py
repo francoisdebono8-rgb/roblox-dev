@@ -19,12 +19,12 @@ DEV_TOOLS = {'DevTools', 'DevCommands', 'DevScenarios', 'DevProfiler', 'DevRepor
              'DevClient', 'DevVolumes', 'DevVisual', 'ChakraLab', 'ChakraDev', 'ChakraStudioView', 'ChakraStudioQA', 'DevRosterCheck', 'DevGateCheck', 'TutorialBot', 'TutorialProbe', 'Repro'}
 DEBUG_ONLY = INSPECTOR | DEV_TOOLS
 # The filming place's tools (tools/capture/studio), in the capture place only.
-CAPTURE_TOOLS = {'ClipKit', 'HiraishinKunai', 'ShotRunner', 'Sets', 'SetSnapshot', 'NDFactoryBoot'}
+CAPTURE_TOOLS = {'ClipKit', 'HiraishinKunai', 'ShotRunner', 'Sets', 'SetSnapshot', 'NDFactoryBoot', 'ClipAssist', 'ClipSight', 'NDReplay', 'NDDirector'}
 PROFILES = ('NinjaDuel.json', 'NinjaDuel-Debug.json', 'NinjaDuel-QA.json', 'NinjaDuel-Capture.json')
 # Strings that only the debug-only modules contain (remote, GUI, Output and folder names).
 MARKERS = ('NinjaDuelDevControl', 'NinjaDuelDevPanel', 'NinjaDuelDevMeasure', 'DevObservedVolume', '[NinjaDuelPerf]',
            '[NinjaDuelDevQA]', '[NinjaDuelChakraQA]', 'NinjaDuelChakraLab', 'NinjaDuelCombatDebug',
-           'DevVisualPanel', '[NinjaDuelVisual]')
+           'DevVisualPanel', '[NinjaDuelVisual]', 'ClipAssistPanel', '[NinjaDuelClip]')
 
 
 def scripts(filename):
