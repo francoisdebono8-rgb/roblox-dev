@@ -325,6 +325,155 @@ def sand_clump():
 
 
 
+
+# ---------------------------------------------------------------- ultimates
+def rock():
+    """A broken stone (craters, the floor Lee's gates lift): faceted, 1 stud."""
+    pc = Piece("Rock", "Slate", flat=True)
+    ellipsoid(pc, (0, 0, 0), (.55, .45, .38), lambda p, k: lerp(rgb(96, 88, 78), rgb(150, 140, 124), max(0, min(1, .5 + p.z * 1.2 + noise.noise(p * 4) * .3))),
+              seg=9, rings=6, bump=lambda d: .3 * noise.noise(d * 1.7 + Vector((5, 2, 1))))
+    return [pc]
+
+
+def katana():
+    """A katana for Itachi's Tsukuyomi (the swords): a long curved blade,
+    dark grip; 4.2 long, the point to the front, the grip centre at the origin."""
+    blade = Piece("Blade", "Metal", flat=True)
+    grip = Piece("Grip", "Fabric")
+    fit = Piece("Fittings", "Metal")
+    wrapped_grip(grip, -.95, .05, .07, rgb(20, 20, 24), rgb(70, 22, 26), sides=14, steps=30, pitch=.12, diamond=True)
+    rings = []
+    for y in (.06, .1):
+        rings.append([Vector((math.cos(a) * .15, y, math.sin(a) * .13)) for a in [s / 24 * math.tau for s in range(24)]])
+    loft(fit, rings, rgb(40, 40, 46))
+    rs = []
+    H, T, steps = .15, .045, 26
+    for i in range(steps):
+        u = i / (steps - 1)
+        y = .1 + 3.1 * u
+        curve = .18 * u * u
+        top, bot = H / 2, -H / 2
+        if u > .9:
+            v = (u - .9) / .1
+            bot = -H / 2 + H * v ** 1.4 * .95
+        sh = bot + (top - bot) * .66
+        tt = T * (1 - .3 * u)
+        rs.append([Vector((0, y, bot + curve)), Vector((tt * .55, y, sh + curve)), Vector((tt * .5, y, top + curve)),
+                   Vector((-tt * .5, y, top + curve)), Vector((-tt * .55, y, sh + curve))])
+    def bcol(p, k):
+        ring = rs[min(k, len(rs) - 1)]
+        u = (p.z - ring[0].z) / max(1e-4, ring[2].z - ring[0].z)
+        return rgb(220, 226, 236) if u < .3 else rgb(120, 126, 138)
+    loft(blade, rs, bcol, tip1=rs[-1][2] + Vector((0, .05, -.01)))
+    return [blade, grip, fit]
+
+
+def tsukuyomi_cross():
+    """The cross of the Tsukuyomi: two rough timbers lashed with rope; the
+    post 9 high (base at 0), the bar 6 wide at 5.4."""
+    wood = Piece("Timber", "Wood", flat=True)
+    rope = Piece("Rope", "Fabric")
+    def timber(a, b, w, d):
+        pts = [a.lerp(b, i / 12) for i in range(13)]
+        def col(p, k):
+            g = noise.noise(Vector((p.x * 9, p.y * 9, p.z * .8)) if abs(b.z - a.z) > 1 else Vector((p.x * .8, p.y * 9, p.z * 9)))
+            return lerp(rgb(34, 20, 18), rgb(70, 44, 36), max(0, min(1, .5 + g * .9)))
+        tube(wood, pts, lambda k: 1, col, sides=4, shape=lambda t, k: ((w + .03 * noise.noise(Vector((k * 7, t, 0)))) * 1.41, (d + .03 * noise.noise(Vector((t, k * 7, 1)))) * 1.41), twist=0)
+    timber(Vector((0, 0, -.2)), Vector((0, 0, 9)), .36, .26)
+    timber(Vector((-3, -.05, 5.4)), Vector((3, -.05, 5.4)), .3, .22)
+    for x in (-2.3, 2.3, 0):
+        for j in range(4):
+            z = 5.4 + (j - 1.5) * .09
+            pts = [Vector((x + .2 * math.cos(a), -.05 + .2 * math.sin(a), z + .02 * math.sin(a * 3))) for a in [i / 12 * math.tau for i in range(13)]]
+            tube(rope, pts, .035, rgb(150, 120, 80), sides=5)
+    return [wood, rope]
+
+
+def bandage_wrap():
+    """Lee's bandage wound round the held body: a ribbon spiralling up a
+    radius-1.05 column, 4.6 high, centred, frayed ends loose."""
+    pc = Piece("Bandage", "Fabric")
+    rows_in, rows_out = [], []
+    N = 140
+    for i in range(N + 1):
+        u = i / N
+        a = u * math.tau * 4.2
+        z = -2.3 + 4.6 * u
+        r = 1.05 + .04 * math.sin(a * 3)
+        tilt = .28
+        c, sn = math.cos(a), math.sin(a)
+        rows_in.append(Vector((c * r, sn * r, z - tilt / 2)))
+        rows_out.append(Vector((c * r, sn * r, z + tilt / 2)))
+    for k, (a, b) in enumerate(((rows_in, rows_out),)):
+        pass
+    # a thin ribbon: two sheets a hair apart so it reads from inside and out
+    def col(p, k):
+        return lerp(rgb(214, 206, 188), rgb(246, 242, 232), max(0, min(1, .6 + noise.noise(p * 6) * .5)))
+    strips = [[rows_in[i], rows_out[i], rows_out[i] * 1.03, rows_in[i] * 1.03] for i in range(N + 1)]
+    loft(pc, strips, col, cap0=True, cap1=True)
+    return [pc]
+
+
+def trigrams():
+    """Neji's Hakke field on the floor: the circle, the eight trigrams (three
+    lines each, broken or whole), the yin-yang at the centre. 16 across, flat."""
+    lines = Piece("Trigrams", "Neon")
+    disc = Piece("Field", "Neon", alpha=.72)
+    col = rgb(206, 214, 255)
+    # rings
+    for r, w in ((7.6, .12), (7.25, .05), (4.6, .06)):
+        rows = []
+        for i in range(97):
+            a = i / 96 * math.tau
+            rows.append([Vector((math.cos(a) * (r - w), math.sin(a) * (r - w), 0)), Vector((math.cos(a) * (r + w), math.sin(a) * (r + w), 0)),
+                         Vector((math.cos(a) * (r + w), math.sin(a) * (r + w), .03)), Vector((math.cos(a) * (r - w), math.sin(a) * (r - w), .03))])
+        loft(lines, rows, col, cap0=False, cap1=False)
+    # the eight trigrams (King Wen order, outer line first)
+    TRI = ["111", "000", "100", "010", "001", "011", "101", "110"]
+    for k, code in enumerate(TRI):
+        a = k * math.pi / 4
+        d = Vector((math.cos(a), math.sin(a), 0))
+        t = Vector((-math.sin(a), math.cos(a), 0))
+        for j, bit in enumerate(code):
+            r = 6.7 - j * .5
+            segs = [(-.9, .9)] if bit == "1" else [(-.9, -.15), (.15, .9)]
+            for s0, s1 in segs:
+                c = d * r
+                p = [c + t * s0 - d * .14, c + t * s1 - d * .14, c + t * s1 + d * .14, c + t * s0 + d * .14]
+                loft(lines, [[q for q in p], [q + Vector((0, 0, .04)) for q in p]], col)
+    # the yin-yang: a disc of two halves, the dots
+    rows = []
+    for i in range(65):
+        a = i / 64 * math.tau
+        rows.append(Vector((math.cos(a) * 1.6, math.sin(a) * 1.6, 0)))
+    yin = Piece("Taiji", "Neon")
+    from mathutils.geometry import tessellate_polygon
+    def poly(pts, cc, z=.02):
+        tris = tessellate_polygon([[Vector((p[0], p[1], 0)) for p in pts]])
+        idx = [yin.add(Vector((p[0], p[1], z)), cc) for p in pts]
+        for t in tris:
+            yin.face(idx[t[0]], idx[t[1]], idx[t[2]])
+    R = 1.6
+    light = []
+    for i in range(33):
+        a = -math.pi / 2 + math.pi * i / 32
+        light.append((math.cos(a) * R, math.sin(a) * R))
+    for i in range(1, 17):
+        a = math.pi / 2 + math.pi * i / 16
+        light.append((math.cos(a) * R / 2, R / 2 + math.sin(a) * R / 2))
+    for i in range(1, 16):
+        a = math.pi / 2 - math.pi * i / 16
+        light.append((math.cos(a) * R / 2, -R / 2 + math.sin(a) * R / 2))
+    dark = [(-x, -y) for x, y in light]
+    poly(light, col)
+    poly(dark, rgb(60, 70, 130))
+    for cy, cc in ((R / 2, rgb(60, 70, 130)), (-R / 2, col)):
+        poly([(math.cos(a) * .22, cy + math.sin(a) * .22) for a in [i / 16 * math.tau for i in range(16)]], cc, z=.04)
+    # the faint field
+    fr = [[Vector((math.cos(a) * 7.6, math.sin(a) * 7.6, -.01)) for a in [i / 64 * math.tau for i in range(64)]]]
+    loft(disc, fr + [[v * .001 for v in fr[0]]], rgb(150, 160, 255), cap0=False, cap1=False)
+    return [disc, lines, yin]
+
 # ---------------------------------------------------------------- dragons
 # Kakashi's Suiryūdan and Doryūdan (user 13/11: « les dragons ça va pas trop,
 # cherche des modèles de dragons en 3D »): the anime's eastern dragon, fierce,
@@ -520,6 +669,11 @@ def dragon_seg(st):
 
 
 MODELS = {
+    "Rock": rock,
+    "Katana": katana,
+    "TsukuyomiCross": tsukuyomi_cross,
+    "BandageWrap": bandage_wrap,
+    "Trigrams": trigrams,
     "WaterDragonHead": lambda: dragon_head(DRAGON["Water"]),
     "WaterDragonSeg": lambda: dragon_seg(DRAGON["Water"]),
     "EarthDragonHead": lambda: dragon_head(DRAGON["Earth"]),
@@ -591,7 +745,7 @@ def render(out_dir, names=None):
         return
     if names and any("Dragon" in n for n in names):
         pass
-    views = {"WaterDragonHead": (1.3, .7, .35), "EarthDragonHead": (1.3, .7, .35), "Shuriken": (0.25, -0.5, 1.0), "SandCoffin": (1, -1.6, .35), "SandPillar": (1, -1.6, .45)}
+    views = {"Trigrams": (.1, -.3, 1), "TsukuyomiCross": (.6, -1, .3), "BandageWrap": (1, -1, .4), "WaterDragonHead": (1.3, .7, .35), "EarthDragonHead": (1.3, .7, .35), "Shuriken": (0.25, -0.5, 1.0), "SandCoffin": (1, -1.6, .35), "SandPillar": (1, -1.6, .45)}
     for name, fn in MODELS.items():
         if names and name not in names:
             continue

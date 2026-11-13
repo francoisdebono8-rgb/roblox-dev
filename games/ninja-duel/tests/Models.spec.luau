@@ -11,7 +11,7 @@ local function test(name,fn)
  if ok then passed+=1;print("PASS "..name) else print("FAIL "..name..": "..tostring(err));error(name..": "..tostring(err),0) end
 end
 test("the props the game asks for are all modelled",function()
- for _,name in {"Kunai","MarkedKunai","Shuriken","Tanto","SandCoffin","SandPillar","SandClump","WaterDragonHead","WaterDragonSeg","EarthDragonHead","EarthDragonSeg"} do
+ for _,name in {"Kunai","MarkedKunai","Shuriken","Tanto","SandCoffin","SandPillar","SandClump","WaterDragonHead","WaterDragonSeg","EarthDragonHead","EarthDragonSeg","Rock","Katana","TsukuyomiCross","BandageWrap","Trigrams"} do
   assert(MeshKit.Data[name],"missing model "..name)
  end
 end)
