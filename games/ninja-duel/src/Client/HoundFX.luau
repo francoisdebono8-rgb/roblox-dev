@@ -8,6 +8,7 @@
 -- burst out of the floor, the bite, the puff when one is sent away. One
 -- identity layer installed into Effects. Presentation only.
 local HoundFX={}
+local MeshKit=require(script.Parent.MeshKit)
 local K -- Effects' helpers, handed over by install()
 HoundFX.clock=os.clock -- (headless tests drive time)
 local SMOKE=Color3.fromRGB(236,236,240)
@@ -46,6 +47,34 @@ function HoundFX.build(index)
 	m.PrimaryPart=root
 	local function v(x,y,z) return Vector3.new(x,y,z)*s end
 	local function at(x,y,z) return CFrame.new(x*s,y*s,z*s) end
+	-- (13/11) the modelled dog (tools/blender/fx_models.py: fur, muzzle open on
+	-- the bite, ears, the headband and its plate, a vest, a curled tail; legs
+	-- on the same hip joints) once MeshKit has it; the part-built one below
+	-- otherwise.
+	local ci=(index-1)%#HoundFX.COATS+1
+	local body=MeshKit.model("Ninken"..ci)
+	if body and MeshKit.has("NinkenLeg"..ci) then
+		body:ScaleTo(s)
+		body:PivotTo(root.CFrame)
+		local broot=body.PrimaryPart
+		for _,c in body:GetChildren() do c.Parent=m end
+		body:Destroy()
+		broot.Anchored=false;broot.Massless=true
+		local w=Instance.new("WeldConstraint");w.Part0=root;w.Part1=broot;w.Parent=broot
+		for _,d in m:GetDescendants() do if d:IsA("BasePart") and d~=root and d~=broot then d.CastShadow=true end end
+		local legs={}
+		for _,side in {-1,1} do
+			for _,z in {-.5,.55} do
+				local leg,o=MeshKit.part("NinkenLeg"..ci)
+				leg.Size*=s;leg.Anchored=false;leg.Massless=true;leg.CastShadow=true;leg.Parent=m
+				local j=Instance.new("Motor6D");j.Name="Hip";j.Part0=root;j.Part1=leg
+				j.C0=at(side*.3,-.15,z);j.C1=CFrame.new(-o*s)
+				j.Parent=root
+				table.insert(legs,{joint=j,phase=(if z<0 then 0 else math.pi)+(if side<0 then 0 else math.pi)})
+			end
+		end
+		return m,HoundFX.finish(m,legs,s)
+	end
 	weld(root,part(m,"Body",v(1,.85,1.6),color,Enum.PartType.Ball),at(0,0,.1))
 	weld(root,part(m,"Belly",v(.78,.5,1.2),pale,Enum.PartType.Ball),at(0,-.18,.1))
 	weld(root,part(m,"Chest",v(.92,.9,.85),color,Enum.PartType.Ball),at(0,.12,-.5))
@@ -75,7 +104,11 @@ function HoundFX.build(index)
 			table.insert(legs,{joint=j,phase=(if z<0 then 0 else math.pi)+(if side<0 then 0 else math.pi)})
 		end
 	end
-	-- The dust it raises under the floor (a separate anchor at floor level).
+	return m,HoundFX.finish(m,legs,s)
+end
+-- The dust it raises under the floor (a separate anchor at floor level), its
+-- lift, its rig.
+function HoundFX.finish(m,legs,s)
 	local dust=part(m,"Dust",Vector3.one*.2,DUST);dust.Transparency=1;dust.Anchored=true
 	local e=Instance.new("ParticleEmitter")
 	e.Texture="rbxasset://textures/particles/smoke_main.dds";e.Rate=0;e.Lifetime=NumberRange.new(.45,.8)
@@ -85,7 +118,7 @@ function HoundFX.build(index)
 	e.Transparency=NumberSequence.new({NumberSequenceKeypoint.new(0,.3),NumberSequenceKeypoint.new(1,1)})
 	e.Parent=dust
 	m:SetAttribute("Lift",.8*s)
-	return m,{legs=legs,dust=dust,emitter=e,scale=s,rise=-2.4}
+	return {legs=legs,dust=dust,emitter=e,scale=s,rise=-2.4}
 end
 -- Every frame (BodyViews): the dog where the server has it, posed by state.
 function HoundFX.pose(view,entry,dt)

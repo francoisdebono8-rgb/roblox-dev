@@ -107,7 +107,7 @@ local function floorSprite(folder,position,tex,color,from,to,time,transparency)
 	local e=emitter(holder,tex,{Enabled=false,Orientation=Enum.ParticleOrientation.VelocityPerpendicular,EmissionDirection=Enum.NormalId.Top,
 		Speed=range(.01),Lifetime=range(time),Rotation=range(0,360),Color=ColorSequence.new(color),LightEmission=.6,
 		Size=seq({{0,from},{.35,to*.8},{1,to}}),Transparency=seq({{0,transparency or .15},{.6,(transparency or .15)+.3},{1,1}}),ZOffset=.2})
-	e:Emit(1)
+	do local ndCount=1;e:Emit(ndCount);pcall(e.SetAttribute,e,"NDEmitCount",ndCount);pcall(e.SetAttribute,e,"NDEmit",os.clock()) end
 	Debris:AddItem(holder,time+.2)
 	return holder
 end
@@ -119,7 +119,7 @@ local function burst(folder,position,tex,count,spec)
 	holder.Transparency=1;holder.Size=Vector3.one*.2;holder.CFrame=CFrame.new(position);holder.Parent=folder
 	local e=emitter(holder,tex,spec)
 	e.Enabled=false
-	e:Emit(count)
+	do local ndCount=count;e:Emit(ndCount);pcall(e.SetAttribute,e,"NDEmitCount",ndCount);pcall(e.SetAttribute,e,"NDEmit",os.clock()) end
 	Debris:AddItem(holder,(spec.Lifetime and spec.Lifetime.Max or 1)+.2)
 end
 AwakenFX.burst=burst
