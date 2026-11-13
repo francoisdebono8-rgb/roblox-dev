@@ -9,6 +9,24 @@
 --
 --   local D=require(ReplicatedStorage.NDFactory.NDDirector)   -- also shared.NDD, shared.NDP
 --
+-- 13/11 evening (claude/demandes-outilleur-prises-humain-2026-11-13): the
+-- director judges each shot as a viewer would (ClipJudge) and chooses the angle
+-- itself where the written one fails:
+--  * every segment is checked every D.cfg.step s of replay before REC: decor
+--    in front of the face or the body (bushes and tree tops included), a body
+--    in front, the actor seen from behind or looking into the lens, the lens on
+--    the side the sun does not light, the actor under a third of the band;
+--    where a viewer would say no, the director cuts to the best azimuth around
+--    the actor (p.lock = true keeps the written shot; kind "auto" = let it choose);
+--  * never wider: the one who acts fills at least D.cfg.minShare of the band;
+--  * never out of the enclosure (World.WALL_RADIUS);
+--  * the render is slow by default (P.slow = 0.25, sped up x4 in the edit):
+--    speeds, eases and holds follow the screen's time, a frozen frame advances
+--    the replay by at most P.maxStep, and a beat with a frozen frame is played
+--    again (P.retakes);
+--  * D.beatsFromMoments(NDReplay.highlights()): a program from a real match's
+--    strongest moments.
+--
 -- Framing rule for the 9:16 band: keep the ACTOR centred.
 --  front  : in front of fighter `a` (yaw from his look), looking at him
 --  ots    : behind the other fighter, offset `off`, looking at `a` (a's face, the other's shoulder)
@@ -18,12 +36,24 @@
 --  center : both fighters, camera on the line from their midpoint to the arena centre (near walls)
 local R = require(script.Parent.NDReplay)
 local Sight = require(script.Parent.ClipSight)
+local J = require(script.Parent.ClipJudge)
 shared.NDR = R
 local RunService = game:GetService("RunService")
 local UP = Vector3.yAxis
 local CENTER = Vector3.new(0, 3, 0)
 local D = {}
 shared.NDD = D
+D.cfg = {
+	auto = true,      -- check every segment and change the angle where a viewer would say no
+	minShare = 1 / 3, -- the one who acts fills at least this share of the band's height (0: off)
+	step = 0.25,      -- replay seconds between two checks of a segment
+	thetaStep = 15,   -- the azimuths tried around the actor
+	bad = 250,        -- a score this high: a viewer says no
+	minShot = 0.7,    -- the shortest shot the director cuts to (FILM09 shots: 0.7 to 1.2 s)
+	sun = 1.0,        -- cost per degree beyond 60° between the lens and the sun, around the actor
+	verbose = true,   -- print the director's choices in Output
+}
+D.planLog = {}
 
 local rp = RaycastParams.new(); rp.FilterType = Enum.RaycastFilterType.Exclude
 local op = OverlapParams.new(); op.FilterType = Enum.RaycastFilterType.Exclude
@@ -40,8 +70,40 @@ local function camPos(A, B, theta, d, h, hground)
 	return Vector3.new(A.X + horiz.X, y, A.Z + horiz.Z)
 end
 
+-- Never wider than D.cfg.minShare of the band for the one who acts, never out of the enclosure.
+local function settle(cf, fov, A, t)
+	if not cf then return cf, fov end
+	local ca = R.fighterCF(A, t)
+	if not ca then return cf, fov end
+	local pos, look = cf.Position, cf.LookVector
+	local aim = pos + look * math.max(1, (ca.Position - pos):Dot(look))
+	if (D.cfg.minShare or 0) > 0 then
+		local g = R.ghostFighter(A)
+		local h = g and J.height(g) or 5.5
+		local dmax = h / (2 * math.tan(math.rad(fov / 2)) * D.cfg.minShare) * 0.97
+		local depth = (ca.Position - pos):Dot(look)
+		if depth > dmax then pos += look * (depth - dmax) end
+	end
+	if not J.inside(pos, 3) then
+		local c, r = J.arena()
+		local f = J.flat(pos - c)
+		if f.Magnitude > 1e-3 then
+			f = f.Unit * (r - 3)
+			pos = Vector3.new(c.X + f.X, pos.Y, c.Z + f.Z)
+			return CFrame.lookAt(pos, aim), fov
+		end
+	end
+	return CFrame.lookAt(pos, pos + look), fov
+end
+
+local rawShot
 function D.shot(kind, t, p)
 	p = p or {}
+	local cf, fov = rawShot(kind, t, p)
+	return settle(cf, fov, p.a or "human", t)
+end
+function rawShot(kind, t, p)
+	if kind == "auto" then kind = "best" end
 	local A = p.a or "human"; local B = if A == "human" then "bot" else "human"
 	local ca, cb = R.fighterCF(A, t), R.fighterCF(B, t)
 	if not ca or not cb then return nil end
@@ -111,6 +173,161 @@ function D.pickSide(kind, t, p)
 	return best, bestScore
 end
 
+----------------------------------------------------------------------------
+-- The viewer's judgement (ClipJudge) and the director's own choice of angle.
+----------------------------------------------------------------------------
+-- The scene at replay time t, seen from the actor `Ak` ("human" / "bot"): the
+-- ghosts are moved to t (no sound, no burst: lastApplied is cleared).
+local function sceneAt(t, Ak)
+	if R.folder and R.folder.Parent ~= workspace then R.folder.Parent = workspace end
+	R.lastApplied = nil
+	R.apply(t)
+	R.lastApplied = nil
+	local Bk = if Ak == "human" then "bot" else "human"
+	local actor, other = R.ghostFighter(Ak), R.ghostFighter(Bk)
+	if not actor or not actor.Parent then return nil end
+	local r = J.rig(actor)
+	local center = r.root and r.root.Position or actor:GetPivot().Position
+	local parts = {}
+	for _, d in R.folder:GetDescendants() do
+		if d:IsA("BasePart") and d.Transparency < 0.6 and d.Size.Magnitude > 0.3 and not d:IsDescendantOf(actor) and (d.Position - center).Magnitude < 45 then
+			table.insert(parts, d)
+		end
+	end
+	return {actor = actor, other = other, parts = parts, decor = Sight.subset(center, 70), head = r.head and r.head.Position or center + UP * 1.5}
+end
+D.sceneAt = sceneAt
+
+-- How a viewer would judge a camera (the ghosts at its time): lower is better,
+-- D.cfg.bad and above a viewer says no. -> score, reasons
+function D.judge(cf, fov, ctx)
+	local actor, other = ctx.actor, ctx.other
+	local pos = cf.Position
+	local s, why = 0, {}
+	local function add(n, text) s += n; if text then table.insert(why, text) end end
+	if not J.inside(pos, 2) then add(1000, "hors de l'enceinte") end
+	if blockedLens(pos) then add(1000, "objectif dans le décor") end
+	local v = J.visible(pos, actor, {parts = ctx.parts, others = {other}, decor = ctx.decor})
+	local dF, dB = v.faceBy["décor"] or 0, v.bodyBy["décor"] or 0
+	if dF > 0.15 or dB > 0.15 then add(300, string.format("décor %d %% (%s)", math.floor(math.max(dF, dB) * 100 + 0.5), v.what["décor"] or "?")) end
+	add(200 * dF + 150 * dB)
+	local bF = (v.faceBy.corps or 0) + (v.faceBy.clone or 0)
+	local bB = (v.bodyBy.corps or 0) + (v.bodyBy.clone or 0)
+	if bF >= 0.6 or bB >= 0.6 then add(300, "caché par un corps") end
+	add(150 * bF + 80 * bB)
+	local face = J.facing(pos, actor)
+	if face > 115 then add(300, string.format("de dos (%d°)", math.floor(face))) elseif face > 50 then add((face - 50) * 2.5) end
+	local _, _, lens = J.gaze(actor, pos)
+	if lens < 15 then add(120, "regarde l'objectif") end
+	local sunF, sunDir = J.sun()
+	if sunF then
+		local side = J.sunSide(pos, actor)
+		if side > 60 then add((side - 60) * D.cfg.sun, if side > 120 then "contre-jour" else nil) end
+		if cf.LookVector:Dot(sunDir) > math.cos(math.rad(35)) then add(150, "face au soleil") end
+	end
+	local share = J.share(cf, fov, actor)
+	if share < D.cfg.minShare then add((D.cfg.minShare - share) * 900, string.format("petit (%d %%)", math.floor(share * 100 + 0.5))) end
+	local x, y = J.ndc(cf, fov, ctx.head)
+	if not x or math.abs(x) > 0.9 or math.abs(y) > 1 then add(300, "hors du cadre") end
+	return s, why
+end
+
+local function angleGap(a, b) local d = math.abs((a - b + 180) % 360 - 180); return d end
+-- The shots tried for a segment: the written one, then every azimuth around the actor.
+local function candidates(seg)
+	local list = {}
+	local p = seg.p
+	local own = seg.kind == "best" or seg.kind == "auto"
+	if seg.kind ~= "auto" then table.insert(list, {kind = seg.kind, p = p, pref = 0, written = true}) end
+	local want = p.want or (seg.kind == "best" and p.theta) or 40
+	for th = -180 + D.cfg.thetaStep, 180, D.cfg.thetaStep do
+		local q = {a = p.a, theta = th, d = own and p.d or 9, h = own and p.h or 1.8, lookh = p.lookh, lead = p.lead,
+			fov = own and p.fov or 50, hground = p.hground}
+		table.insert(list, {kind = "best", p = q, pref = 25 + math.min(angleGap(th, want), angleGap(th, -want)) * 0.3})
+	end
+	return list
+end
+
+-- Cut a segment into shots a viewer accepts (sub-segments, absolute times).
+function D.plan(seg)
+	local Ak = seg.p.a or "human"
+	local cands = candidates(seg)
+	local step = D.cfg.step
+	local times = {}
+	local t = seg.from
+	while t < seg.to - 1e-3 do table.insert(times, t); t += step end
+	if #times == 0 then times = {seg.from} end
+	local cost, why = {}, {}
+	for c in cands do cost[c] = {}; why[c] = {} end
+	local yieldAt = os.clock()
+	for i, ti in times do
+		local ctx = sceneAt(ti, Ak)
+		for c, cand in cands do
+			local sc, w = 2000, {"pas d'image"}
+			if ctx then
+				local cf, fov = D.shot(cand.kind, ti, cand.p)
+				if cf then sc, w = D.judge(cf, fov, ctx) end
+			end
+			cost[c][i], why[c][i] = sc, w
+		end
+		if os.clock() - yieldAt > 0.2 and coroutine.isyieldable() then task.wait(); yieldAt = os.clock() end
+	end
+	-- the longest acceptable run from each point; the same shot as before is preferred
+	local n, runs, i, prevC = #times, {}, 1, nil
+	local minN = math.max(1, math.ceil(D.cfg.minShot / step - 1e-6))
+	while i <= n do
+		local bestC, bestU, bestLen
+		for c, cand in cands do
+			local len, sum = 0, 0
+			for j = i, n do
+				if cost[c][j] >= D.cfg.bad then break end
+				len += 1; sum += cost[c][j] + cand.pref
+			end
+			local u = if len == 0 then -1e9 - cost[c][i] else len - 2 * (sum / len) / D.cfg.bad + (if c == prevC then 1 else 0)
+			if not bestU or u > bestU then bestC, bestU, bestLen = c, u, len end
+		end
+		local len = math.max(bestLen, 1)
+		if len < minN then len = math.min(n - i + 1, minN) end
+		if #runs > 0 and len < minN then
+			runs[#runs].i1 = i + len - 1 -- a short tail stays with the shot before
+		elseif #runs > 0 and runs[#runs].c == bestC then
+			runs[#runs].i1 = i + len - 1
+		else
+			table.insert(runs, {c = bestC, i0 = i, i1 = i + len - 1})
+		end
+		prevC = bestC
+		i += len
+	end
+	local out = {}
+	for k, r in runs do
+		local cand = cands[r.c]
+		local from = if k == 1 then seg.from else times[r.i0] - step / 2
+		local to = if k == #runs then seg.to else times[runs[k + 1].i0] - step / 2
+		local x = {from = from, to = to, kind = cand.kind, p = table.clone(cand.p), tau = seg.tau}
+		if cand.written then x.push, x.pushEnd = seg.push, seg.pushEnd end
+		local worst, reasons = 0, nil
+		for j = r.i0, r.i1 do if cost[r.c][j] > worst then worst, reasons = cost[r.c][j], why[r.c][j] end end
+		local writtenBad = nil
+		if not cand.written and cands[1].written then
+			for j = r.i0, r.i1 do
+				if cost[1][j] >= D.cfg.bad then writtenBad = string.format("%.2f s : %s", times[j] - R.t0, table.concat(why[1][j], ", ")); break end
+			end
+		end
+		local entry = {from = from - R.t0, to = to - R.t0, kind = cand.kind, theta = cand.p.theta, written = cand.written == true,
+			worst = math.floor(worst), reasons = reasons, writtenFailed = writtenBad}
+		table.insert(D.planLog, entry)
+		if D.cfg.verbose then
+			print(string.format("[NDDirector] %.2f–%.2f s : %s%s%s%s", entry.from, entry.to,
+				if cand.written then "plan écrit (" .. cand.kind .. ")" else string.format("angle choisi θ=%d°", cand.p.theta or 0),
+				if worst >= D.cfg.bad then " — AUCUN ANGLE PROPRE : " .. table.concat(reasons or {}, ", ") else "",
+				if writtenBad then " — le plan écrit échouait à " .. writtenBad else "",
+				if entry.worst > 0 and worst < D.cfg.bad and reasons and #reasons > 0 then " (" .. table.concat(reasons, ", ") .. ")" else ""))
+		end
+		table.insert(out, x)
+	end
+	return out
+end
+
 -- one camera function over segments {from, to, kind, p, tau, push, pushEnd} (absolute times)
 function D.track(segs, tau)
 	refreshFilters()
@@ -119,6 +336,16 @@ function D.track(segs, tau)
 		if s.kind == "best" and not s.p.theta then s.p.theta = D.pick(s.from, s.p) end
 		if (s.kind == "pair" or s.kind == "ots") and type(s.p.side) ~= "number" then s.p.side = D.pickSide(s.kind, s.from, s.p) end
 	end
+	-- the viewer's check: where the written shot fails, the director cuts to another angle
+	local planned = {}
+	for _, s in segs do
+		if s.kind == "auto" or (D.cfg.auto and not s.p.lock) then
+			for _, x in D.plan(s) do table.insert(planned, x) end
+		else
+			table.insert(planned, s)
+		end
+	end
+	segs = planned
 	local cur, curSeg, lastT
 	local fn = function(t)
 		local seg
@@ -174,73 +401,109 @@ function P.speedAt(beat, rel)
 	for _, k in beat.speeds or {} do if rel >= k[1] then s = k[2] end end
 	return s
 end
--- `slow` (optional): render the whole program at this fraction of real time
--- (0.25 = a quarter-speed render, sped up x4 in the edit: every frame distinct).
+-- `slow`: render the whole program at this fraction of real time (default
+-- P.slow = 0.25: a quarter-speed render, sped up x4 in the edit, every final
+-- frame distinct; 1 = real time, with the sounds).
+P.slow = 0.25
+P.maxStep = 1 / 30 -- a frozen frame advances the replay by at most this (real seconds): no jump after a freeze
+P.retakes = 1      -- a beat with a frozen frame is played again (this many times); the edit keeps the clean one
+P.hitch = 0.05     -- a frame longer than this on screen (after the speed-up) is a frozen frame
+
+-- One beat, black before it. Returns true when a frame froze during it.
+local function playBeat(beat, track, gap, slow, c0)
+	local cam = workspace.CurrentCamera
+	local camFn, segAt = track[1], track[2]
+	blk.Enabled = true
+	workspace:SetAttribute("NDCut", true)
+	workspace:SetAttribute("NDScene", nil)
+	local a, b = R.t0 + beat.a, R.t0 + beat.b
+	R.lastApplied = nil
+	R.apply(a)
+	local cf, fov = camFn(a)
+	if cf then cam.CFrame = cf; cam.FieldOfView = fov end
+	task.wait(gap)
+	blk.Enabled = false
+	workspace:SetAttribute("NDScene", beat.name)
+	workspace:SetAttribute("NDCut", nil)
+	table.insert(P.log, {beat = beat.name, at = os.clock() - c0})
+	local rt, spd = a, P.speedAt(beat, beat.a)
+	local holdLeft, easeT, finished, frozen = beat.hold or 0, nil, false, false
+	local meanDt = 1 / 60
+	RunService:BindToRenderStep("NDProgram", Enum.RenderPriority.Last.Value + 300, function(dt)
+		-- the screen's time: what this frame lasts once the slow render is sped up
+		local step = math.min(dt, P.maxStep or dt)
+		local sdt = step * slow
+		if dt * slow > (P.hitch or 0.05) and dt > 2.5 * meanDt then frozen = true end
+		meanDt = meanDt * 0.95 + math.min(dt, 0.1) * 0.05
+		local rel = rt - R.t0
+		local target = P.speedAt(beat, rel)
+		local eased = false
+		if beat.ease and rel >= beat.ease[1] then
+			easeT = (easeT or 0) + sdt
+			local k = math.clamp(easeT / beat.ease[2], 0, 1)
+			target *= (1 - k) ^ 2
+			eased = k >= 1
+		end
+		spd += (target - spd) * (1 - math.exp(-sdt / 0.06))
+		-- particles, trails, beams and sounds follow the effective speed
+		if math.abs(spd * slow - (R.speed or 1)) > 0.02 then R.setSpeed(spd * slow) end
+		rt = math.min(rt + step * spd * slow, b)
+		R.apply(rt)
+		-- who must be seen: the beat's `act`, else the segment's fighter
+		local seg = segAt(rt)
+		local act = beat.act or (seg and seg.p and (seg.p.a == "bot" and "B" or seg.p.a == "human" and "A")) or nil
+		workspace:SetAttribute("NDAct", act)
+		lab.Text = string.format("%s %.2f", beat.name:sub(1, 1), rt - R.t0)
+		local c2, f2 = camFn(rt)
+		if c2 then cam.CFrame = c2; cam.FieldOfView = f2 end
+		if rt >= b or eased then
+			if holdLeft > 0 then holdLeft -= sdt else finished = true end
+		end
+	end)
+	while not finished do task.wait() end
+	RunService:UnbindFromRenderStep("NDProgram")
+	table.insert(P.log, {beat = beat.name .. " end", at = os.clock() - c0, frozen = frozen})
+	return frozen
+end
+
 function P.run(beats, gap, slow)
 	gap = gap or 1.0
-	slow = slow or 1
+	slow = slow or P.slow or 1
 	P.log, P.done = {}, false
 	tcg.Enabled = P.showTC
 	local cam = workspace.CurrentCamera
 	cam.CameraType = Enum.CameraType.Scriptable
 	R.folder.Parent = workspace
 	game:GetService("UserInputService").MouseIconEnabled = false
-	workspace:SetAttribute("NDShot", P.shot)
-	if P.f4 then workspace:SetAttribute("NDRec", (P.shot or "replay") .. " " .. os.date("%H:%M:%S")) end
+	blk.Enabled = true
+	workspace:SetAttribute("NDCut", true)
 	task.spawn(function()
-		local c0 = os.clock()
-		for _, beat in beats do
-			blk.Enabled = true
-			workspace:SetAttribute("NDCut", true)
-			workspace:SetAttribute("NDScene", nil)
-			local a, b = R.t0 + beat.a, R.t0 + beat.b
+		-- Every beat's shots are checked and chosen before REC, behind the black screen.
+		D.planLog = {}
+		local tracks = {}
+		for i, beat in beats do
 			local segs = {}
 			for _, s in beat.segs do
 				local c = table.clone(s); c.p = table.clone(s.p or {})
+				if not c.p.a and type(beat.act) == "string" and #beat.act == 1 then c.p.a = if beat.act == "B" then "bot" else "human" end
 				c.from = R.t0 + math.max(s.from, beat.a); c.to = R.t0 + s.to
 				table.insert(segs, c)
 			end
-			local camFn, segAt = D.track(segs)
-			R.lastApplied = nil
-			R.apply(a)
-			local cf, fov = camFn(a)
-			if cf then cam.CFrame = cf; cam.FieldOfView = fov end
-			task.wait(gap)
-			blk.Enabled = false
-			workspace:SetAttribute("NDScene", beat.name)
-			workspace:SetAttribute("NDCut", nil)
-			table.insert(P.log, {beat = beat.name, at = os.clock() - c0})
-			local rt, spd = a, P.speedAt(beat, beat.a)
-			local holdLeft, easeT, finished = beat.hold or 0, nil, false
-			RunService:BindToRenderStep("NDProgram", Enum.RenderPriority.Last.Value + 300, function(dt)
-				local rel = rt - R.t0
-				local target = P.speedAt(beat, rel)
-				local eased = false
-				if beat.ease and rel >= beat.ease[1] then
-					easeT = (easeT or 0) + dt
-					local k = math.clamp(easeT / beat.ease[2], 0, 1)
-					target *= (1 - k) ^ 2
-					eased = k >= 1
-				end
-				spd += (target - spd) * (1 - math.exp(-dt / 0.06))
-				-- particles, trails, beams and sounds follow the effective speed
-				if math.abs(spd * slow - (R.speed or 1)) > 0.05 then R.setSpeed(spd * slow) end
-				rt = math.min(rt + dt * spd * slow, b)
-				R.apply(rt)
-				-- who must be seen: the beat's `act`, else the segment's fighter
-				local seg = segAt(rt)
-				local act = beat.act or (seg and seg.p and (seg.p.a == "bot" and "B" or seg.p.a == "human" and "A")) or nil
-				workspace:SetAttribute("NDAct", act)
-				lab.Text = string.format("%s %.2f", beat.name:sub(1, 1), rt - R.t0)
-				local c2, f2 = camFn(rt)
-				if c2 then cam.CFrame = c2; cam.FieldOfView = f2 end
-				if rt >= b or eased then
-					if holdLeft > 0 then holdLeft -= dt * slow else finished = true end
-				end
-			end)
-			while not finished do task.wait() end
-			RunService:UnbindFromRenderStep("NDProgram")
-			table.insert(P.log, {beat = beat.name .. " end", at = os.clock() - c0})
+			if D.cfg.verbose then print("[NDDirector] " .. tostring(beat.name) .. " : choix des plans") end
+			tracks[i] = {D.track(segs)}
+		end
+		workspace:SetAttribute("NDSlow", if slow < 1 then slow else nil)
+		workspace:SetAttribute("NDShot", P.shot)
+		if P.f4 then workspace:SetAttribute("NDRec", (P.shot or "replay") .. " " .. os.date("%H:%M:%S")) end
+		local c0 = os.clock()
+		for i, beat in beats do
+			local tries = 0
+			while true do
+				local frozen = playBeat(beat, tracks[i], gap, slow, c0)
+				tries += 1
+				if not frozen or tries > (P.retakes or 0) then break end
+				print("[NDDirector] " .. tostring(beat.name) .. " : image figée, le temps est rejoué")
+			end
 		end
 		blk.Enabled = true
 		workspace:SetAttribute("NDCut", true)
@@ -249,8 +512,39 @@ function P.run(beats, gap, slow)
 		task.wait(0.4)
 		if P.f4 then workspace:SetAttribute("NDRec", nil) end
 		workspace:SetAttribute("NDCut", nil)
+		workspace:SetAttribute("NDSlow", nil)
+		R.setSpeed(1)
 		P.done = true
 	end)
+end
+
+-- A program from a real match's strongest moments (NDReplay.highlights()): one
+-- beat per moment, the camera on whoever leads the action (the hitter of a hit),
+-- the angles left to the director.
+function D.beatsFromMoments(h, opts)
+	opts = opts or {}
+	local beats = {}
+	for i, m in (h and h.moments) or {} do
+		local segs = {}
+		for _, l in m.lines do
+			local who = if l.actor == "B" then "bot" else "human"
+			local at = math.max(m.from, l.t - 0.4)
+			local cur = segs[#segs]
+			if not cur or cur.p.a ~= who then
+				if cur then cur.to = at end
+				table.insert(segs, {from = if #segs == 0 then m.from else at, to = m.to, kind = "auto", p = {a = who}})
+			end
+		end
+		if #segs == 0 then segs = {{from = m.from, to = m.to, kind = "auto", p = {a = "human"}}} end
+		-- a shot shorter than D.cfg.minShot stays with the one before
+		local merged = {}
+		for _, s in segs do
+			local prev = merged[#merged]
+			if prev and s.to - s.from < D.cfg.minShot then prev.to = s.to else table.insert(merged, s) end
+		end
+		table.insert(beats, {name = (opts.prefix or "M") .. i, a = m.from, b = m.to, segs = merged, hold = opts.hold or 0.3})
+	end
+	return beats
 end
 
 return D

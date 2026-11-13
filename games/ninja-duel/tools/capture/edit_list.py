@@ -56,6 +56,8 @@ def edit_list(takes):
             'cleanShare': scene.get('cleanShare'),
             'clean': scene.get('clean'),
             'errors': scene.get('errors'),
+            # what a viewer sees in that shot (F4's timeline, 13/11 evening)
+            'timeline': scene.get('timeline') or [],
             'others': [{'shot': s.get('shot'), 'take': t.get('label'), 'cleanShare': s.get('cleanShare'), 'errors': s.get('errors')}
                        for i, _, t, s in options[key] if i != index],
         })

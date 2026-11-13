@@ -5474,7 +5474,7 @@ return {
       <Item class="StringValue" referent="ND37">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">91d57256f3a69c14ba80390aee62600aa7bbc6921643e44ef851403610256c9f</string>
+          <string name="Value">19bae9d13ef9cd9b36c4c84c8803d93dcb1772d65196efec51a9d1077352f40e</string>
         </Properties>
       </Item>
       <Item class="StringValue" referent="ND38">
@@ -5492,7 +5492,7 @@ return {
       <Item class="StringValue" referent="ND40">
         <Properties>
           <string name="Name">SourceCommit</string>
-          <string name="Value">d6c9b7ba9e70</string>
+          <string name="Value">69a381d0b6de</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND41">
@@ -6488,8 +6488,22 @@ return K
 -- les plages propres, scène par scène, et un journal image par image.
 --
 -- Rien de ce qu'il dessine n'entre dans la bande 9:16 que garde OBS : panneau
--- dans la marge gauche, compteur d'images dans la marge droite, traits de
--- couleur à 24 points de la bande (cachés pendant une prise).
+-- dans la marge gauche, traits de couleur à 24 points de la bande. Pendant une
+-- prise, plus rien de F4 n'est à l'écran (demande 11 du 13/11) : panneau,
+-- traits, repères et compteur sont cachés dès REC.
+--
+-- Revu le 13/11 au soir (claude/demandes-outilleur-prises-humain-2026-11-13) :
+-- une prise que F4 laisse passer doit être une prise que François ne rejette
+-- pas. F4 juge comme un spectateur, avec ClipJudge :
+--   A:decor      plus de 15 % du visage ou du corps caché par le décor (buissons compris)
+--   A:ombre      visage ou corps à l'ombre, ou caméra à contre-jour (remplace light:)
+--   A:small      celui qui agit fait moins d'un tiers de la hauteur de la bande
+--   A:regard     il ne regarde pas l'autre (plus de 60°) à portée ou en fonçant, ou il regarde l'objectif
+--   A:course     vitesse de sprint sans la pose de sprint ninja, ou pieds qui glissent
+--   A:noye, A:illisible, illisible   effets sur le corps de celui qui agit ou sur la bande
+--   outside      caméra hors de l'enceinte
+-- et tient la ligne de temps de ce qui est vu (qui frappe qui, quel jutsu, qui
+-- tombe), avec ses moments forts. Rien n'est jugé hors de la phase Duel.
 --
 -- Tout se pilote aussi par des attributs de workspace, lisibles d'un script du
 -- CM quel que soit l'endroit où il tourne (barre de commande, Studio MCP) :
@@ -6498,6 +6512,7 @@ return K
 --   NDScene = "B_chidori"       la scène en cours (sinon : NDBeat de ClipKit)
 --   NDShot  = "T2"              la caméra / la prise en cours (sinon : NDTake)
 --   NDClock = 12.34             le temps de la scène (replay), noté image par image
+--   NDSlow  = 0.25              rendu au ralenti (NDDirector) : les durées sont jugées en temps d'écran
 --   NDCut   = true              écran noir entre deux scènes : rien n'est jugé
 -- et NDWarmup, écrit par « Préparer l'image » (os.clock()) pour qu'un script de
 -- scène lance son préchauffage des effets.
@@ -6512,7 +6527,10 @@ return K
 --   r:Invoke("quality",12)               le niveau de qualité réglé (si la lecture se trompe)
 --   r:Invoke("set",{clean=0.5,back=120}) régler un seuil (voir T)
 --   r:Invoke("ignore",{"A:inside","sun"}) ne plus signaler ces défauts (préfixes d'id)
---   r:Invoke("show",true) · ("guides",false) · ("allowHud",true) · ("counter",false) · ("linesDuringRec",true)
+--   r:Invoke("timeline")                 la ligne de temps de ce qui est vu (texte)
+--   r:Invoke("preset","midi")            la lumière F7 que « Préparer l'image » met (false : ne pas y toucher)
+--   r:Invoke("show",true) · ("guides",false) · ("allowHud",true) · ("counter",true) · ("syncFlash",true)
+--   r:Invoke("linesDuringRec",true) · ("panelDuringRec",true)   (contre la demande 11 : seulement pour un essai)
 local Players=game:GetService("Players")
 local RunService=game:GetService("RunService")
 local UIS=game:GetService("UserInputService")
@@ -6524,6 +6542,8 @@ local StarterGui=game:GetService("StarterGui")
 
 local Sight=nil
 pcall(function() Sight=require(script.Parent:WaitForChild("ClipSight",2)) end)
+local Judge=nil
+pcall(function() Judge=require(script.Parent:WaitForChild("ClipJudge",2)) end)
 
 local Assist={}
 local V=Vector3.new
@@ -6534,12 +6554,25 @@ local ERR,WARN,INFO=3,2,1
 local SEVNAME={[3]="ERREUR",[2]="À VOIR",[1]="INFO"}
 local SEVCOLOR={[3]=rgb(235,80,80),[2]=rgb(240,170,60),[1]=rgb(150,170,190)}
 local OK_COLOR=rgb(90,200,120)
-local OWNER={cadrage="cadrage",reglage="réglage",machine="machine",jeu="jeu → DEV/ANIM"}
+local OWNER={cadrage="cadrage",reglage="réglage",machine="machine",jeu="jeu → DEV/ANIM",scene="scène (script du CM) ou jeu"}
 local T={
 	tick=1/15,              -- body checks per second
 	hold=0.15,              -- a framing fault counts once it lasts this long
 	back=115,               -- seen from behind beyond this angle (degrees)
-	small=0.18,             -- a body under this share of the image height is small
+	small=1/3,              -- the one who acts fills at least this share of the band's height (request 5)
+	decor=0.15,             -- share of the face or the body the decor may hide (request 1)
+	shade=0.6,              -- share of the face or the body in the shade (request 4)
+	sunSide=120,            -- the lens this far round from the sun: backlight (degrees)
+	regard=60,              -- the head and the chest this far from the other: not looking at him (request 2)
+	regardRange=15,         -- ... while closer than this (studs) or charging at him
+	charge=8,               -- studs/s toward the other: charging
+	lensLook=15,            -- the head this close to the lens: looking into it
+	sprint=30,              -- studs/s on the ground: a sprint (walk 19, sprint 45), request 3
+	slideSpeed=8,           -- above this speed the planted foot is watched
+	slide=0.6,              -- the slowest foot faster than this share of the body for 0.3 s: sliding
+	fxDrown=0.5,            -- share of a body under an effect: drowned
+	unreadable=0.7,         -- share of the band, or of the acting body, under effects: unreadable (request 6)
+	unreadableHold=0.3,
 	opening=2,              -- the first seconds of a take: the hook
 	hitch=0.05,             -- a frame longer than this, and 3x the mean, is a frozen image
 	fpsWarn=50,fpsErr=32,   -- a 30 fps video needs 32
@@ -6550,8 +6583,6 @@ local T={
 	cutGap=0.5,             -- two cuts closer than this
 	clean=0.5,              -- shortest clean range listed (FILM09 shots: 0.7 to 1.2 s)
 	inside=1.0,             -- two roots closer than this
-	bodyLight=1.5,          -- a coloured light on a body this long is a fault
-	fxLight=4,              -- a technique's light this long is a fault
 	lines=24,               -- the band's side lines, this far outside it (points)
 }
 -- Server states in which a fighter is doing something (Matches:view `state`).
@@ -6566,13 +6597,6 @@ local function flat(v) return V(v.X,0,v.Z) end
 local function isHead(n) return n=="Head" or n:sub(1,6)=="Head__" end
 local function hex(c) return string.format("#%02X%02X%02X",math.floor(c.R*255+.5),math.floor(c.G*255+.5),math.floor(c.B*255+.5)) end
 local function esc(s) return (tostring(s):gsub("&amp;","&amp;amp;"):gsub("&lt;","&amp;lt;"):gsub("&gt;","&amp;gt;")) end
-local function hueName(c)
-	local h,s=c:ToHSV()
-	if s&lt;0.25 then return "blanche" end
-	h*=360
-	if h&lt;15 or h&gt;=345 then return "rouge" elseif h&lt;40 then return "orange" elseif h&lt;70 then return "jaune"
-	elseif h&lt;165 then return "verte" elseif h&lt;255 then return "bleue" elseif h&lt;300 then return "violette" else return "rose" end
-end
 local function attr(name)
 	local v=workspace:GetAttribute(name)
 	if v~=nil then return v end
@@ -6605,7 +6629,7 @@ local function partsOf(m)
 	local e=partCache[m]
 	local now=os.clock()
 	if e and now-e.t&lt;0.5 then return e end
-	e={t=now,head=nil,torso=nil,hands={},eyes={},all={}}
+	e={t=now,head=nil,torso=nil,hands={},eyes={},all={},feet={}}
 	local looks,faceEyes,eyeStrip={},{},nil
 	for _,d in m:GetDescendants() do
 		if d:IsA("BasePart") and d.Name~="HumanoidRootPart" then
@@ -6615,6 +6639,7 @@ local function partsOf(m)
 			elseif isHead(n) then looks[n]=d
 			elseif n=="UpperTorso" or (n=="Torso" and not e.torso) then e.torso=d
 			elseif n=="LeftHand" or n=="RightHand" or n=="Left Arm" or n=="Right Arm" then table.insert(e.hands,d)
+			elseif n=="LeftFoot" or n=="RightFoot" then table.insert(e.feet,d)
 			elseif n=="FaceEye" then table.insert(faceEyes,d)
 			elseif n=="Eyes" then eyeStrip=d end
 		end
@@ -6662,8 +6687,8 @@ function Assist.install(ctx,dev)
 	if not RunService:IsStudio() then return nil end
 	local player=Players.LocalPlayer
 	local playerGui=player:WaitForChild("PlayerGui")
-	local self={shown=false,guides=true,allowHud=false,counterOn=true,linesDuringRec=false,actorsOverride=nil,
-		declaredQuality=nil,ignore={},check={},T=T}
+	local self={shown=false,guides=true,allowHud=false,counterOn=false,syncFlash=false,linesDuringRec=false,panelDuringRec=false,
+		preset="midi",actorsOverride=nil,declaredQuality=nil,ignore={},check={},T=T}
 	local installedAt=os.clock()
 	local frameNo=0
 	local live={}        -- id -&gt; condition {id,group,sev,owner,text,since,seen,open,minDur}
@@ -6674,6 +6699,11 @@ function Assist.install(ctx,dev)
 	local band={x0=0,x1=0,w=0,h=0}
 
 	local function rel(t) return take and (t-take.start) or 0 end
+	-- A slow render (NDDirector, workspace.NDSlow = 0.25): 0.3 s on screen last 1.2 s here.
+	local function slowFactor()
+		local k=tonumber(workspace:GetAttribute("NDSlow"))
+		return (k and k&gt;0 and k&lt;=1) and k or 1
+	end
 	local function ignored(id)
 		for prefix in self.ignore do if string.sub(id,1,#prefix)==prefix then return true end end
 		return false
@@ -6689,7 +6719,7 @@ function Assist.install(ctx,dev)
 		if ignored(id) then return end
 		local c=live[id]
 		if not c then c={id=id,since=stamp};live[id]=c end
-		c.group,c.sev,c.owner,c.text,c.seen,c.minDur=group,sev,owner,text,stamp,minDur or T.hold
+		c.group,c.sev,c.owner,c.text,c.seen,c.minDur=group,sev,owner,text,stamp,(minDur or T.hold)/slowFactor()
 		if not c.open and stamp-c.since&gt;=c.minDur then c.open=true end
 	end
 	local function sweep(group,stamp)
@@ -6718,20 +6748,49 @@ function Assist.install(ctx,dev)
 		if ok and type(data)=="table" and data.phase=="Duel" and not self.actorsOverride then return data end
 		return nil
 	end
-	local function nameOf(key,m,data)
+	-- The phase of the duel: the game's, or the one NDReplay writes on its ghosts.
+	local function phaseOf(A,B)
+		if self.actorsOverride then
+			local p=A and A:GetAttribute("NDPhase")
+			return (type(p)=="string" and p~="") and p or nil
+		end
+		local ok,d=pcall(function() return ctx and ctx.state and ctx.state() end)
+		if ok and type(d)=="table" and type(d.phase)=="string" then return d.phase end
+		return nil
+	end
+	local function koOf(data,A)
+		if data then return data.ko==true end
+		return A and A:GetAttribute("NDKO")==true or false
+	end
+	-- One fighter's state: the duel's snapshot, or the attributes NDReplay writes
+	-- on its ghosts ({name, state, reaction, health, maxHealth, attack, cast, ...}).
+	local function statusOf(key,m,data)
+		local d=data and data[key=="A" and "human" or "bot"]
+		if d then
+			return {name=d.fighter,state=d.state,reaction=d.reaction,health=d.health,maxHealth=d.maxHealth,attack=d.attackName,cast=d.castId,
+				parry=d.events and d.events.Parry,awaken=d.events and d.events.Awaken,airborne=d.airborne,sprinting=d.sprinting}
+		end
+		if m and m:GetAttribute("NDState")~=nil then
+			local function a(n) local v=m:GetAttribute(n);if v=="" then return nil end;return v end
+			return {name=a("NDFighter"),state=a("NDState"),reaction=a("NDReaction"),health=a("NDHealth"),maxHealth=a("NDMaxHealth"),attack=a("NDAttack"),cast=a("NDCast"),
+				parry=a("NDParry"),awaken=a("NDAwaken"),airborne=a("NDAir"),sprinting=a("MovementSprinting")}
+		end
+		return nil
+	end
+	local function nameOf(key,m,data,st)
 		if self.actorNames and self.actorNames[key=="A" and 1 or 2] then return tostring(self.actorNames[key=="A" and 1 or 2]) end
 		local d=data and data[key=="A" and "human" or "bot"]
 		if d and d.fighter then return tostring(d.fighter) end
+		if st and st.name then return tostring(st.name) end
 		if m then return tostring(m:GetAttribute("Fighter") or m.Name) end
 		return key
 	end
 	-- true = acting (must be seen), false = not, nil = unknown (a replay with no NDAct)
-	local function actingOf(key,data)
+	local function actingOf(key,st)
 		local act=attr("NDAct")
 		if type(act)=="string" and act~="" then return string.find(act,key,1,true)~=nil end
-		local d=data and data[key=="A" and "human" or "bot"]
-		if not d then return nil end
-		return ACT[d.state]==true and d.reaction==nil
+		if not st then return nil end
+		return ACT[st.state]==true and st.reaction==nil
 	end
 
 	-- Other bodies near the fighters (clones, live or replayed), refreshed twice a second.
@@ -6863,6 +6922,8 @@ function Assist.install(ctx,dev)
 		cells[i]=frame(counter,{BackgroundColor3=rgb(0,0,0),Size=UDim2.fromOffset(CELL,CELL),Position=UDim2.fromOffset(4+i*CELL,24)})
 	end
 	cells[0].BackgroundColor3=rgb(255,255,255)
+	-- The sync mark (off by default): 2 white frames in the band's top-left corner at REC.
+	local syncMark=frame(gui,{Name="SyncMark",BackgroundColor3=rgb(255,255,255),Size=UDim2.fromOffset(36,36),Visible=false})
 
 	local panel=frame(gui,{Name="Panel",BackgroundColor3=rgb(20,23,30),BackgroundTransparency=0.08,Position=UDim2.fromOffset(8,8),Visible=false})
 	local corner=Instance.new("UICorner");corner.CornerRadius=UDim.new(0,6);corner.Parent=panel
@@ -6906,9 +6967,9 @@ function Assist.install(ctx,dev)
 	local reminders=block()
 	reminders.TextColor3=rgb(150,158,170);reminders.TextSize=12
 	reminders.Text="• OBS : une prise par enregistrement, puis regarder le fichier en entier.\n"
-		.."• OBS sur un autre bureau ; un clic sur la barre de titre de Studio avant de lancer.\n"
+		.."• OBS sur le même bureau que Studio, aperçu OBS caché ; un clic sur la barre de titre de Studio avant de lancer.\n"
 		.."• Aucune autre place en Play pendant la prise.\n"
-		.."• OBS filme aussi le compteur d'images (marge droite) ; CapCut recadre sur la bande.\n"
+		.."• Rien de F4 n'est à l'écran pendant la prise. Pour caler le rush : Report:Invoke(\"syncFlash\",true) (2 images blanches dans le coin de la bande à REC), ou le temps du replay (NDClock) du journal.\n"
 		.."• Personne ne touche le Mac pendant la prise."
 
 	local chip=button(gui,"🎬 F4",function() self:show(true) end,{Name="Chip",Size=UDim2.fromOffset(64,26),Position=UDim2.fromOffset(8,8),Visible=true})
@@ -6955,6 +7016,16 @@ function Assist.install(ctx,dev)
 		end
 		pcall(function() StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.All,false) end)
 		UIS.MouseIconEnabled=false
+		-- The filming light (request 4): F7's « midi » by default, the sun high.
+		if self.preset then
+			pcall(function()
+				local v=dev and dev.visual
+				if v and v.applyPreset then
+					saved.preset=v.lightingState and v.lightingState().preset or "jeu"
+					v.applyPreset(self.preset)
+				end
+			end)
+		end
 	end
 	-- The game turns its look and its HUD back on (a new round, WorldLook): while
 	-- the image is prepared, keep them off (8 times a second) until « Rétablir ».
@@ -6976,12 +7047,16 @@ function Assist.install(ctx,dev)
 		for e in saved.effects do if e.Parent then e.Enabled=true end end
 		for t,on in saved.core do pcall(function() StarterGui:SetCoreGuiEnabled(t,on) end) end
 		UIS.MouseIconEnabled=saved.mouse
+		if saved.preset then
+			pcall(function() dev.visual.applyPreset((saved.preset=="perso" or saved.preset=="") and "jeu" or saved.preset) end)
+		end
 		saved=nil
 	end
 
 	--------------------------------------------------------------------
 	-- The take: start, stop, summary.
 	--------------------------------------------------------------------
+	local timelineLine -- defined with the checks
 	local function buildLine()
 		local s=ReplicatedStorage:FindFirstChild("NinjaDuel")
 		local function v(n) local x=s and s:FindFirstChild(n);return x and x.Value or "?" end
@@ -7024,15 +7099,15 @@ function Assist.install(ctx,dev)
 			if e.sev&gt;=WARN then table.insert(soft,{e.t-0.05,e.t+0.05}) end
 		end
 		local byText={}
-		local function note(sev,owner,text,t0,t1)
-			local key=text:gsub("%d+[,.]?%d*","#")
+		local function note(id,sev,owner,text,t0,t1)
+			local key=(id or "").."|"..text:gsub("%d+[,.]?%d*","#")
 			local e=byText[key]
-			if not e then e={sev=sev,owner=owner,text=text,total=0,at={}};byText[key]=e end
+			if not e then e={id=id,sev=sev,owner=owner,text=text,total=0,at={}};byText[key]=e end
 			e.sev=math.max(e.sev,sev);e.total=r3(e.total+math.max(0,t1-t0))
 			table.insert(e.at,{r3(t0),r3(t1)})
 		end
-		for _,s in tk.spans do note(s.sev,s.owner,s.text,s.t0,s.t1) end
-		for _,e in tk.events do note(e.sev,e.owner,e.text,e.t,e.t) end
+		for _,s in tk.spans do note(s.id,s.sev,s.owner,s.text,s.t0,s.t1) end
+		for _,e in tk.events do note(e.id,e.sev,e.owner,e.text,e.t,e.t) end
 		local faults={}
 		for _,e in byText do table.insert(faults,e) end
 		table.sort(faults,function(a,b) if a.sev~=b.sev then return a.sev&gt;b.sev end;return a.total&gt;b.total end)
@@ -7059,20 +7134,35 @@ function Assist.install(ctx,dev)
 			local errs=0
 			for _,r in merge(bad) do if r[2]&gt;s.t0 and r[1]&lt;s.t1 then errs+=1 end end
 			s.errors=errs
+			-- What is seen in this shot (request 7).
+			s.timeline={}
+			for _,e in tk.timeline do if e.t and e.t&gt;=s.t0 and e.t&lt;=s.t1 then table.insert(s.timeline,timelineLine(e)) end end
 		end
-		return {label=tk.label,duration=r3(dur),build=tk.build,clean=clean(bad,0,dur),cleanStrict=clean(soft,0,dur),counts=counts,
+		-- The strongest moments of the take (request 10), on the take's clock.
+		local moments=nil
+		if Judge and #tk.timeline&gt;0 then
+			local evs={}
+			for _,e in tk.timeline do if e.t then table.insert(evs,{t=e.t,w=e.w or 1,text=e.text}) end end
+			moments=Judge.moments(evs,{t0=0,t1=dur})
+		end
+		return {label=tk.label,duration=r3(dur),build=tk.build,slow=tk.slow,clean=clean(bad,0,dur),cleanStrict=clean(soft,0,dur),counts=counts,
 			faults=faults,scenes=scenes,cuts=tk.cuts,hitches=tk.hitches,spans=tk.spans,events=tk.events,frames=tk.frames,
-			counter={first=tk.firstFrame,last=frameNo,bits=BITS}}
+			timeline=tk.timeline,moments=moments,counter={first=tk.firstFrame,last=frameNo,bits=BITS}}
 	end
+	local applyVisibility -- set below: nothing of F4 on screen during a take
+	local syncLeft=0
 	local function startTake(name)
 		if take then return end
-		take={label=name or ("prise "..os.date("%H:%M:%S")),start=os.clock(),spans={},events={},cuts={},hitches=0,frames={},firstFrame=frameNo+1,build=buildLine()}
+		take={label=name or ("prise "..os.date("%H:%M:%S")),start=os.clock(),spans={},events={},cuts={},hitches=0,frames={},timeline={},
+			firstFrame=frameNo+1,build=buildLine(),slow=workspace:GetAttribute("NDSlow")}
+		if self.syncFlash then syncLeft=2 end
+		if applyVisibility then applyVisibility() end
 		print("[NinjaDuelClip] REC "..take.label.." | frame "..(frameNo+1).." | "..take.build)
 	end
 	local function public(s)
 		if not s then return nil end
-		return {label=s.label,duration=s.duration,build=s.build,clean=s.clean,cleanStrict=s.cleanStrict,counts=s.counts,faults=s.faults,
-			scenes=s.scenes,cuts=s.cuts,hitches=s.hitches,spans=s.spans,events=s.events,counter=s.counter,frames=#s.frames}
+		return {label=s.label,duration=s.duration,build=s.build,slow=s.slow,clean=s.clean,cleanStrict=s.cleanStrict,counts=s.counts,faults=s.faults,
+			scenes=s.scenes,cuts=s.cuts,hitches=s.hitches,spans=s.spans,events=s.events,timeline=s.timeline,moments=s.moments,counter=s.counter,frames=#s.frames}
 	end
 	local function stopTake()
 		if not take then return last end
@@ -7080,6 +7170,7 @@ function Assist.install(ctx,dev)
 		for _,c in live do closeSpan(c,now) end
 		last=summarize(take,now)
 		take=nil
+		if applyVisibility then applyVisibility() end
 		print("[NinjaDuelClip] "..HttpService:JSONEncode(public(last)))
 		return last
 	end
@@ -7093,9 +7184,12 @@ function Assist.install(ctx,dev)
 	local lastCut=-math.huge
 	local lastRoots={}
 	local flashSince=setmetatable({},{__mode="k"})
-	local lightSince=setmetatable({},{__mode="k"})
-	local lights={}
 	local highlights={}
+	local tickN=0
+	local prevState,memo=nil,{}
+	local lastTick={}          -- key -&gt; {t, root, lf, rf}: the kinematics between two ticks
+	local slideWin={A={},B={}} -- key -&gt; recent {t, ratio} of the planted foot's speed to the body's
+	local liveTimeline={}      -- the last events seen outside a take
 
 	local function project(cam,p)
 		local v=cam:WorldToViewportPoint(p)
@@ -7106,13 +7200,99 @@ function Assist.install(ctx,dev)
 		if v.Z&lt;=0 then return nil end
 		return {r3((v.X-band.x0)/math.max(1,band.w)),r3(v.Y/math.max(1,band.h))}
 	end
+	local function pct(x) return math.floor(x*100+0.5) end
+
+	-- Effect parts near the fighters (the game's, or the replay's ghosts that are
+	-- not bodies): they hide, drown or fill the image. Refreshed 5 times a second.
+	local fxAt,fxList=0,{}
+	local function fxParts(A,B)
+		local now=os.clock()
+		if now-fxAt&lt;0.2 then return fxList end
+		fxAt=now;fxList={}
+		local ra,rb=rootOf(A),rootOf(B)
+		if not ra and not rb then return fxList end
+		for _,n in {"NinjaDuelFX","Effects","NinjaUltimateFX","VfxMesh","NDReplay"} do
+			local r=workspace:FindFirstChild(n)
+			for _,d in r and r:GetDescendants() or {} do
+				if d:IsA("BasePart") and d.Transparency&lt;0.6 and d.Size.Magnitude&gt;0.4 and not (A and d:IsDescendantOf(A)) and not (B and d:IsDescendantOf(B)) then
+					local p=d.Position
+					if (ra and (p-ra.Position).Magnitude&lt;45) or (rb and (p-rb.Position).Magnitude&lt;45) then
+						local m=d:FindFirstAncestorWhichIsA("Model")
+						if not (m and m:FindFirstChildOfClass("Humanoid")) then table.insert(fxList,d) end
+					end
+				end
+			end
+		end
+		return fxList
+	end
+	-- The names of the effects drawn in the band (for the timeline).
+	local function fxNames(cam,list)
+		local seen,out={},{}
+		for _,p in list do
+			local _,inBand=project(cam,p.Position)
+			if inBand then
+				local n=Judge and Judge.name(p) or p.Name
+				if not seen[n] then seen[n]=true;table.insert(out,n);if #out&gt;=3 then break end end
+			end
+		end
+		return out
+	end
+	-- What a viewer sees of one fighter, in words.
+	local function seenText(x)
+		if not x then return "absent" end
+		if not x.inBand then return "hors cadre" end
+		local v=x.vis
+		local bits={}
+		if v then
+			if v.face&gt;=0.85 and v.body&gt;=0.6 then
+				local by=next(v.faceBy) or next(v.bodyBy)
+				return "caché"..(by and (" ("..by..")") or "")
+			end
+			for _,k in {"décor","corps","clone","effet"} do
+				local s=math.max(v.faceBy[k] or 0,v.bodyBy[k] or 0)
+				if s&gt;T.decor then table.insert(bits,k.." "..pct(s).." %") end
+			end
+		end
+		if x.backAng and x.backAng&gt;T.back then table.insert(bits,"de dos") end
+		if x.share and x.share&lt;T.small then table.insert(bits,"petit ("..pct(x.share).." %)") end
+		return #bits&gt;0 and ("vu, "..table.concat(bits,", ")) or "vu"
+	end
+	local function noteEvent(e,info,cam,fx,now)
+		local parts={}
+		for _,k in {"A","B"} do
+			local x=info[k]
+			if x then table.insert(parts,x.name.." "..seenText(x)) end
+		end
+		local st=attr("NDClock")
+		local entry={t=take and r3(rel(now)) or nil,st=type(st)=="number" and r3(st) or nil,scene=attr("NDScene") or attr("NDBeat"),shot=attr("NDShot") or attr("NDTake"),
+			who=info[e.who] and info[e.who].name or e.who,kind=e.kind,w=r3(e.w),text=e.text,seen=table.concat(parts," · "),fx=fxNames(cam,fx)}
+		if take then table.insert(take.timeline,entry) end
+		entry.at=now
+		table.insert(liveTimeline,entry)
+		while #liveTimeline&gt;40 do table.remove(liveTimeline,1) end
+	end
+	function timelineLine(e)
+		local when=e.t and (fmt(e.t).." s") or "—"
+		if e.st then when=when.." (replay "..fmt(e.st)..")" end
+		return when.." "..e.text.." — "..e.seen..(#(e.fx or {})&gt;0 and (" · effets à l'image : "..table.concat(e.fx,", ")) or "")
+	end
 
 	local function tickChecks(now)
 		local G="tick"
+		tickN+=1
 		local cam=workspace.CurrentCamera
 		local camPos,look=cam.CFrame.Position,cam.CFrame.LookVector
 		local data=duelData()
 		local A,B=actors()
+		-- Before the duel and after the K.O. (phase Result), nothing is judged.
+		local phase=phaseOf(A,B)
+		self.phase=phase
+		if phase and phase~="Duel" then
+			self.info={}
+			sweep(G,now);sweep("shade",now);sweep("fx",now)
+			prevState=nil;table.clear(lastTick)
+			return
+		end
 		local info={}
 		for _,key in {"A","B"} do
 			local m=key=="A" and A or B
@@ -7120,11 +7300,21 @@ function Assist.install(ctx,dev)
 				local parts=partsOf(m)
 				local cf=pivotOf(m)
 				if parts.head and cf then
-					info[key]={m=m,name=nameOf(key,m,data),acting=actingOf(key,data),parts=parts,root=rootOf(m),cf=cf}
+					local st=statusOf(key,m,data)
+					info[key]={key=key,m=m,st=st,name=nameOf(key,m,data,st),acting=actingOf(key,st),parts=parts,root=rootOf(m),cf=cf}
 				end
 			end
 		end
 		local extra=otherBodies(A,B)
+		local fx=fxParts(A,B)
+		local mid,nMid=V(0,0,0),0
+		for _,x in info do mid+=x.cf.Position;nMid+=1 end
+		local decor=nil
+		if Sight and nMid&gt;0 then
+			mid/=nMid
+			decor=Sight.subset((camPos+mid)/2,(camPos-mid).Magnitude/2+30)
+		end
+		local opening=take and now-take.start&lt;T.opening*(1/slowFactor())
 		local shares={}
 		for key,x in info do
 			local other=info[key=="A" and "B" or "A"]
@@ -7136,58 +7326,76 @@ function Assist.install(ctx,dev)
 				local _,inBand=project(cam,x.parts.torso.Position)
 				torsoIn=inBand
 			end
+			x.inBand=headIn or torsoIn
 			local top=x.parts.head.Position+V(0,x.parts.head.Size.Y*0.9,0) -- the hair above the rig's head
 			local feet=(x.root and x.root.Position or x.cf.Position)-V(0,3,0)
 			local topV=cam:WorldToViewportPoint(top)
 			local feetV=cam:WorldToViewportPoint(feet)
-			if headV.Z&gt;0 then shares[key]=math.abs(feetV.Y-topV.Y)/math.max(1,band.h) end
+			if headV.Z&gt;0 then shares[key]=math.abs(feetV.Y-topV.Y)/math.max(1,band.h);x.share=shares[key] end
 			-- Out of the band.
-			if not headIn and not torsoIn then
+			if not x.inBand then
 				if x.acting==true then hold(G,now,id.."out",ERR,"cadrage",name.." agit hors du cadre")
 				elseif other and other.acting==true and attr("NDAct")==nil then hold(G,now,id.."out",WARN,"cadrage","l'action à deux n'est cadrée qu'à moitié : "..name.." hors du cadre",0.3) end
 			elseif headIn and topV.Z&gt;0 and topV.Y&lt;0 then
 				hold(G,now,id.."top",WARN,"cadrage","tête de "..name.." coupée en haut",0.3)
 			end
 			-- The other body right in front of the lens (an over-the-shoulder too close).
-			if x.acting~=true and (headIn or torsoIn) then
+			if x.acting~=true and x.inBand then
 				local dist=((x.root and x.root.Position or x.cf.Position)-camPos).Magnitude
 				if dist&lt;4.5 then hold(G,now,id.."front",WARN,"cadrage",name.." au premier plan, à "..fmt(dist).." studs de l'objectif (il bouche une partie de l'image)",0.3) end
 			end
-			if headIn or torsoIn then
+			if x.inBand then
 				-- Seen from behind while acting.
 				local fwd=flat(x.cf.LookVector)
 				local toCam=flat(camPos-x.cf.Position)
 				if fwd.Magnitude&gt;0.1 and toCam.Magnitude&gt;0.1 then
 					local ang=math.deg(math.acos(math.clamp(fwd.Unit:Dot(toCam.Unit),-1,1)))
+					x.backAng=ang
 					if ang&gt;T.back then
 						if x.acting==true then hold(G,now,id.."back",ERR,"cadrage",name.." filmé de dos pendant son action ("..math.floor(ang).."°)")
 						elseif x.acting==nil then hold(G,now,id.."back",WARN,"cadrage",name.." de dos ("..math.floor(ang).."°)",0.5) end
 					end
 				end
-				-- Something between the lens and the body.
+				-- What stands between the lens and the face or the body: the decor
+				-- (bushes and tree tops included), a body, an effect (request 1, 6).
 				local bodies={}
 				if other then for _,p in other.parts.all do table.insert(bodies,p) end end
 				for _,p in extra do table.insert(bodies,p) end
-				local ignore={x.m}
-				local hb=firstBlocker(camPos,x.parts.head.Position,ignore,bodies)
-				local tb=nil
-				if x.parts.torso then tb=firstBlocker(camPos,x.parts.torso.Position,ignore,bodies) end
-				local blocker=hb or tb
-				if blocker then
-					local kind,what=classify(blocker,A,B,data)
-					local full=hb~=nil and (tb~=nil or not x.parts.torso)
-					local by=(kind=="corps" and ("le corps de "..what)) or (kind=="clone" and ("un clone ("..what..")")) or (kind=="effet" and ("un effet ("..what..")")) or ("le décor ("..what..")")
-					if kind=="effet" then
-						if full and x.acting~=false then hold(G,now,id.."hid",WARN,"cadrage",name.." caché par "..by,0.6) end
-					elseif full then
+				if Judge then
+					local list=table.clone(bodies)
+					for _,p in fx do table.insert(list,p) end
+					local v=Judge.visible(camPos,x.m,{parts=list,others={other and other.m or nil},decor=decor})
+					x.vis=v
+					local dF,dB=v.faceBy["décor"] or 0,v.bodyBy["décor"] or 0
+					if dF&gt;T.decor or dB&gt;T.decor then
+						local part=dF&gt;=dB and "visage" or "corps"
+						hold(G,now,id.."decor",x.acting==true and ERR or WARN,"cadrage",string.format("%s de %s caché à %d %% par le décor (%s)",part,name,pct(math.max(dF,dB)),v.what["décor"] or "?"),x.acting==true and 0.15 or 0.3)
+					end
+					local bF=(v.faceBy.corps or 0)+(v.faceBy.clone or 0)
+					local bB=(v.bodyBy.corps or 0)+(v.bodyBy.clone or 0)
+					if bF&gt;=0.6 or bB&gt;=0.6 then
+						local by=(v.faceBy.corps or v.bodyBy.corps) and ("le corps de "..(other and other.name or "l'autre")) or ("un clone ("..(v.what.clone or "?")..")")
 						hold(G,now,id.."hid",x.acting==false and WARN or ERR,"cadrage",name.." caché par "..by)
-					elseif x.acting~=false then
+					elseif (bF&gt;=0.4 or bB&gt;=0.4) and x.acting~=false then
+						local by=(v.faceBy.corps or v.bodyBy.corps) and ("le corps de "..(other and other.name or "l'autre")) or ("un clone ("..(v.what.clone or "?")..")")
 						hold(G,now,id.."hid",WARN,"cadrage",name.." à moitié caché par "..by,0.25)
 					end
-				elseif x.acting==true and #x.parts.hands&gt;0 then
-					local hidden=0
-					for _,h in x.parts.hands do if firstBlocker(camPos,h.Position,ignore,bodies) then hidden+=1 end end
-					if hidden==#x.parts.hands then hold(G,now,id.."hands",WARN,"cadrage","on ne voit pas les mains de "..name.." (le geste est caché)",0.3) end
+					-- Drowned in an effect: his own fire, the other's jutsu.
+					local nF,nB=math.max(1,v.nFace),math.max(1,v.nBody)
+					local fxShare=((v.faceBy.effet or 0)*nF+(v.bodyBy.effet or 0)*nB)/(nF+nB)
+					if fxShare&gt;=T.unreadable and x.acting==true then
+						hold(G,now,id.."illisible",ERR,"cadrage",string.format("%s avalé par un effet (%s, %d %% du corps) : illisible",name,v.what.effet or "?",pct(fxShare)),T.unreadableHold)
+					elseif fxShare&gt;=T.fxDrown and x.acting~=false then
+						hold(G,now,id.."noye",WARN,"cadrage",string.format("%s noyé dans un effet (%s, %d %% du corps)",name,v.what.effet or "?",pct(fxShare)),0.3)
+					end
+				else
+					-- (ClipJudge missing) the old line of sight: head and torso only.
+					local hb=firstBlocker(camPos,x.parts.head.Position,{x.m},bodies)
+					local tb=x.parts.torso and firstBlocker(camPos,x.parts.torso.Position,{x.m},bodies) or nil
+					if hb and (tb or not x.parts.torso) then
+						local kind,what=classify(hb,A,B,data)
+						if kind~="effet" then hold(G,now,id.."hid",x.acting==false and WARN or ERR,"cadrage",name.." caché par "..kind.." ("..what..")") end
+					end
 				end
 			end
 			-- The interface TikTok and Shorts put over the video.
@@ -7196,21 +7404,75 @@ function Assist.install(ctx,dev)
 				local vv=headV.Y/math.max(1,band.h)
 				if vv&gt;0.8 or (u&gt;0.84 and vv&gt;0.3 and vv&lt;0.8) then hold(G,now,id.."ui",INFO,"cadrage","visage de "..name.." sous l'interface TikTok",0.5) end
 			end
+			-- Too small (request 5): the one who acts fills at least a third of the band's height.
+			if x.acting==true and shares[key] and x.inBand and shares[key]&lt;T.small then
+				hold(G,now,id.."small",opening and ERR or WARN,"cadrage",string.format("%s trop petit : %d %% de la hauteur (il faut au moins %d %%)%s",name,pct(shares[key]),pct(T.small),opening and " — les 2 premières secondes décident" or ""),opening and 0.1 or 0.5)
+			end
+			-- Kinematics since the last tick: speed, charge, feet.
+			local r=x.root and x.root.Position or x.cf.Position
+			local lf,rf=x.parts.feet[1],x.parts.feet[2]
+			local prev=lastTick[key]
+			lastTick[key]={t=now,root=r,lf=lf and lf.Position,rf=rf and rf.Position}
+			local st=x.st
+			local busy=st and (st.reaction~=nil or st.airborne==true or st.state=="Rush" or st.state=="Pursuit" or st.state=="Dodging" or st.state=="Defeated" or st.state=="Stunned")
+			if prev and now-prev.t&gt;0 and now-prev.t&lt;0.3 then
+				local dt=now-prev.t
+				local vel=flat(r-prev.root)/dt
+				local speed=vel.Magnitude
+				-- The look (request 2): toward the other while in reach or charging at him;
+				-- never into the lens.
+				if Judge and other and x.acting~=false and not busy then
+					local oPos=other.parts.head and other.parts.head.Position or (other.root and other.root.Position) or other.cf.Position
+					local toO=flat(oPos-r)
+					local charging=toO.Magnitude&gt;0.1 and vel:Dot(toO.Unit)&gt;T.charge
+					if toO.Magnitude&lt;T.regardRange or charging then
+						local headAng,chestAng=Judge.gaze(x.m,oPos)
+						local _,_,lensAng=Judge.gaze(x.m,camPos)
+						if x.inBand and lensAng&lt;T.lensLook and (camPos-x.parts.head.Position).Magnitude&lt;40 then
+							hold(G,now,id.."regard",x.acting==true and ERR or WARN,"scene",name.." regarde l'objectif au lieu de "..other.name,0.3)
+						elseif x.inBand and math.min(headAng,chestAng)&gt;T.regard then
+							hold(G,now,id.."regard",x.acting==true and ERR or WARN,"scene",string.format("%s ne regarde pas %s (%d°)%s",name,other.name,math.floor(math.min(headAng,chestAng)),charging and " en fonçant sur lui" or ""),0.3)
+						end
+					end
+				end
+				-- The run (request 3): a sprint speed needs the ninja sprint pose,
+				-- and the feet must not slide.
+				if st and not busy and x.inBand then
+					local win=slideWin[key]
+					if speed&gt;=T.slideSpeed and prev.lf and prev.rf and lf and rf then
+						local fl=flat(lf.Position-prev.lf).Magnitude/dt
+						local fr=flat(rf.Position-prev.rf).Magnitude/dt
+						table.insert(win,{t=now,ratio=math.min(fl,fr)/speed,speed=speed})
+					else
+						table.clear(win)
+					end
+					while win[1] and now-win[1].t&gt;0.45 do table.remove(win,1) end
+					local sliding=#win&gt;=4 and now-win[1].t&gt;=0.3
+					if sliding then for _,w in win do if w.ratio&lt;T.slide then sliding=false;break end end end
+					if sliding then
+						hold(G,now,id.."course",WARN,"jeu",string.format("les pieds de %s glissent (%d studs/s, pied d'appui à %d %% de la vitesse)",name,math.floor(speed),pct(win[#win].ratio)),0)
+					elseif speed&gt;=T.sprint and st.sprinting~=true and (st.state=="Neutral" or st.state==nil) then
+						hold(G,now,id.."course",WARN,"jeu",string.format("%s court à %d studs/s sans la pose de sprint ninja (MovementSprinting éteint)",name,math.floor(speed)),0.3)
+					end
+				else
+					table.clear(slideWin[key])
+				end
+			end
 		end
-		-- Both small: the hook needs the fighters big.
-		if shares.A and shares.B then
+		-- No one known to act (a replay with no NDAct): the bigger one still needs a third.
+		if shares.A and shares.B and info.A.acting==nil and info.B.acting==nil then
 			local big=math.max(shares.A,shares.B)
 			if big&lt;T.small then
-				if take and now-take.start&lt;T.opening then
-					hold(G,now,"small",ERR,"cadrage",string.format("ouverture : persos trop petits (%d %% de la hauteur) — les 2 premières secondes décident",math.floor(big*100)),0.1)
-				else
-					hold(G,now,"small",WARN,"cadrage",string.format("persos petits à l'image (%d %% de la hauteur)",math.floor(big*100)),1.5)
-				end
+				hold(G,now,"small",opening and ERR or WARN,"cadrage",string.format("persos trop petits (%d %% de la hauteur, il faut %d %%)%s",pct(big),pct(T.small),opening and " — les 2 premières secondes décident" or ""),opening and 0.1 or 1)
 			end
 		end
 		-- Two bodies in one place: a game fault, filmed as it is.
 		if info.A and info.B and info.A.root and info.B.root then
 			if (info.A.root.Position-info.B.root.Position).Magnitude&lt;T.inside then hold(G,now,"inside",WARN,"jeu","corps l'un dans l'autre ("..info.A.name.." / "..info.B.name..")",0.4) end
+		end
+		-- The lens out of the enclosure (behind the wall), request 1.
+		if Judge and not Judge.inside(camPos,0) then
+			hold(G,now,"outside",ERR,"cadrage","caméra hors de l'enceinte (derrière le mur) : la ramener dans l'arène",0.1)
 		end
 		-- Something stuck on the lens.
 		local cf=cam.CFrame
@@ -7247,12 +7509,12 @@ function Assist.install(ctx,dev)
 		if sun.Y&gt;0.03 and look:Dot(sun)&gt;math.cos(math.rad(T.sun)) then
 			hold(G,now,"sun",WARN,"cadrage","caméra face au soleil (éblouissement) : garder le soleil derrière l'objectif",0.3)
 		end
-		-- A full-body flash that stays (overexposes the shot).
+		-- A full-body flash that stays on a fighter in the image (overexposes the shot).
 		for h in highlights do
 			if h.Parent and h.Enabled and h.FillTransparency&lt;0.35 then
 				local target=h.Adornee or h.Parent
 				local who=nil
-				for _,x in info do if target==x.m or (target and target:IsDescendantOf(x.m)) then who=x.name end end
+				for _,x in info do if x.inBand and (target==x.m or (target and target:IsDescendantOf(x.m))) then who=x.name end end
 				if who then
 					flashSince[h]=flashSince[h] or now
 					if now-flashSince[h]&gt;0.3 then hold(G,now,"flash:"..who,WARN,"jeu","flash plein corps sur "..who.." (surexpose)",0) end
@@ -7261,29 +7523,57 @@ function Assist.install(ctx,dev)
 				flashSince[h]=nil
 			end
 		end
-		-- A coloured light that stays on a fighter (the pink Kakashi of FILM04):
-		-- a body light over T.bodyLight s, a technique's light over T.fxLight s.
-		for _,l in lights do
-			local hot=false
-			if l.Parent and l.Enabled and l.Brightness&gt;1 then
-				local _,s=l.Color:ToHSV()
-				local at=(l.Parent:IsA("BasePart") and l.Parent.Position) or (l.Parent:IsA("Attachment") and l.Parent.WorldPosition) or nil
-				if at and s&gt;0.45 then
-					local range=(l:IsA("PointLight") or l:IsA("SpotLight")) and l.Range or 8
-					for _,x in info do
-						if (x.parts.head.Position-at).Magnitude&lt;range*0.8 then
-							hot=true
-							lightSince[l]=lightSince[l] or now
-							local onBody=l:IsDescendantOf(x.m)
-							local limit=onBody and T.bodyLight or T.fxLight
-							if now-lightSince[l]&gt;limit then
-								hold(G,now,"light:"..x.name,WARN,"jeu","lumière "..hueName(l.Color).." qui reste sur "..x.name.." (teinte la peau et le sol)"..(onBody and "" or " — lumière d'effet"),0)
-							end
-						end
+		-- In the shade (request 4), 4 times a second: the shadow of a wall, a tree,
+		-- the stand on the face or the body, or the lens on the side the sun does
+		-- not light (backlight). Replaces the old coloured-light alerts.
+		if Judge and tickN%4==0 then
+			local sunF,sunDir=Judge.sun()
+			for key,x in info do
+				if x.inBand then
+					local body,face,night=Judge.shadow(x.m)
+					x.shade={r3(face),r3(body)}
+					if night then
+						hold("shade",now,"nuit",ERR,"reglage","nuit : le soleil est couché (« Préparer l'image » met la lumière « midi »)",0)
+					elseif face&gt;=T.shade or body&gt;=T.shade then
+						hold("shade",now,key..":ombre",x.acting==true and ERR or WARN,"cadrage",string.format("%s à l'ombre (visage %d %%, corps %d %%) : changer d'angle ou de place",x.name,pct(face),pct(body)),0.4)
+					elseif sunF and sunDir.Y&lt;0.8 and Judge.sunSide(camPos,x.m)&gt;T.sunSide and x.acting~=false then
+						hold("shade",now,key..":ombre",WARN,"cadrage",x.name.." à contre-jour : la caméra voit le côté sans soleil — se placer du côté du soleil",0.5)
 					end
 				end
 			end
-			if not hot then lightSince[l]=nil end
+			sweep("shade",now)
+		end
+		-- An unreadable image (request 6), 5 times a second: effects or a flash over
+		-- more than T.unreadable of the band.
+		if Sight and tickN%3==0 then
+			local cover=0
+			for _,root in {Lighting,cam} do
+				for _,e in root:GetChildren() do
+					if e:IsA("ColorCorrectionEffect") and e.Enabled and e.Brightness&gt;=0.2 and e.Name~="NinjaLookGrade" then cover=1 end
+				end
+			end
+			if cover&lt;1 and #fx&gt;0 then
+				local hits,n=0,0
+				for i=1,5 do
+					for j=1,8 do
+						local ray=cam:ViewportPointToRay(band.x0+band.w*(i-0.5)/5,band.h*(j-0.5)/8)
+						n+=1
+						if Sight.parts(ray.Origin,ray.Origin+ray.Direction*120,fx,0) then hits+=1 end
+					end
+				end
+				cover=hits/n
+			end
+			self.fxCover=cover
+			if cover&gt;=T.unreadable then
+				hold("fx",now,"illisible",ERR,"cadrage",string.format("image illisible : effets ou flash sur %d %% de l'image",pct(cover)),T.unreadableHold)
+			end
+			sweep("fx",now)
+		end
+		-- What happens, and whether a viewer sees it (request 7).
+		if Judge and info.A and info.B and info.A.st and info.B.st then
+			local cur={A=info.A.st,B=info.B.st,ko=koOf(data,A)}
+			for _,e in Judge.events(prevState,cur,now,memo) do noteEvent(e,info,cam,fx,now) end
+			prevState=cur
 		end
 		self.info=info
 		sweep(G,now)
@@ -7356,8 +7646,8 @@ function Assist.install(ctx,dev)
 		local cursor=UIS.MouseIconEnabled and mouse.X&gt;band.x0 and mouse.X&lt;band.x1
 		check.cursor=not cursor
 		if cursor then hold(G,now,"cursor",WARN,"reglage","curseur de la souris dans l'image",0.5) end
-		-- Lights and highlights near the fighters, checked 15 times a second by tickChecks.
-		table.clear(lights);table.clear(highlights)
+		-- Highlights near the fighters, checked 15 times a second by tickChecks.
+		table.clear(highlights)
 		local A,B=actors()
 		check.duel=A~=nil and B~=nil
 		local roots={}
@@ -7366,7 +7656,7 @@ function Assist.install(ctx,dev)
 		if B then table.insert(roots,B) end
 		for _,r in roots do
 			for _,d in r:GetDescendants() do
-				if d:IsA("Light") then table.insert(lights,d) elseif d:IsA("Highlight") then highlights[d]=true end
+				if d:IsA("Highlight") then highlights[d]=true end
 			end
 		end
 		self.check=check
@@ -7416,6 +7706,7 @@ function Assist.install(ctx,dev)
 		lineR.Position=UDim2.fromOffset(band.x1+T.lines,0)
 		guides.Position=UDim2.fromOffset(band.x0,0);guides.Size=UDim2.new(0,w,1,0)
 		counter.Position=UDim2.fromOffset(band.x1+T.lines+12,8)
+		syncMark.Position=UDim2.fromOffset(band.x0+4,4)
 		local margin=band.x0-T.lines-16
 		panel.Size=UDim2.new(0,math.clamp(margin,240,380),1,-16)
 		self.narrow=margin&lt;240
@@ -7465,14 +7756,20 @@ function Assist.install(ctx,dev)
 		P.sun.Visible=sun.Magnitude&gt;0.05
 		if sun.Magnitude&gt;0.05 then sun=sun.Unit;P.sun.Position=UDim2.fromOffset(75+sun.X*68,75+sun.Z*68) end
 	end
+	-- Nothing of F4 on screen during a take (request 11), from the very frame REC starts.
+	applyVisibility=function()
+		local rec=take~=nil
+		lineL.Visible=not rec or self.linesDuringRec;lineR.Visible=lineL.Visible
+		guides.Visible=self.guides and self.shown and not rec
+		panel.Visible=self.shown and (not rec or (self.panelDuringRec and not self.narrow))
+		chip.Visible=not self.shown and not rec
+		counter.Visible=self.counterOn and (rec or self.shown)
+		syncMark.Visible=syncLeft&gt;0
+	end
 	local function render(now)
 		local w=worst()
 		local color=w&gt;=ERR and SEVCOLOR[ERR] or w&gt;=WARN and SEVCOLOR[WARN] or OK_COLOR
 		lineL.BackgroundColor3=color;lineR.BackgroundColor3=color
-		lineL.Visible=take==nil or self.linesDuringRec;lineR.Visible=lineL.Visible
-		guides.Visible=self.guides and take==nil
-		panel.Visible=self.shown and not (take and self.narrow)
-		chip.Visible=not self.shown
 		if not self.shown then return end
 		warnNarrow.Text=self.narrow and '&lt;font color="#F0AA3C"&gt;Fenêtre étroite : le panneau couvre la bande 9:16 ; il se cache pendant une prise.&lt;/font&gt;' or ""
 		warnNarrow.Visible=self.narrow==true
@@ -7573,6 +7870,9 @@ function Assist.install(ctx,dev)
 				local hands={}
 				for _,h in x.parts.hands do if h.Parent then table.insert(hands,uv(cam,h.Position) or false) end end
 				e.hands=hands
+				if x.vis then e.see={r3(1-x.vis.face),r3(1-x.vis.body)} end
+				if x.share then e.size=r3(x.share) end
+				if x.shade then e.shade=x.shade end
 				f[key]=e
 			end
 		end
@@ -7585,15 +7885,17 @@ function Assist.install(ctx,dev)
 		frameNo+=1
 		table.insert(fpsWin,{now,dt})
 		while fpsWin[1] and now-fpsWin[1][1]&gt;2 do table.remove(fpsWin,1) end
-		counter.Visible=self.counterOn and (take~=nil or self.shown)
+		applyVisibility()
 		if counter.Visible then drawCounter() end
+		if syncLeft&gt;0 then syncLeft-=1 end
 		-- A frozen image: a frame much longer than the ones around it.
-		if now-installedAt&gt;3 and dt&gt;T.hitch then
+		local sdt=dt*slowFactor() -- what the frame lasts on screen once a slow render is sped up
+		if now-installedAt&gt;3 and sdt&gt;T.hitch then
 			local sum=0
 			for _,f in fpsWin do sum+=f[2] end
 			local mean=#fpsWin&gt;0 and sum/#fpsWin or dt
-			if dt&gt;3*mean or dt&gt;0.1 then
-				event("hitch",take and ERR or WARN,"machine",string.format("image figée (%d ms)",math.floor(dt*1000)),now)
+			if dt&gt;3*mean or sdt&gt;0.1 then
+				event("hitch",take and ERR or WARN,"machine",string.format("image figée (%d ms à l'écran)",math.floor(sdt*1000)),now)
 				if take then take.hitches+=1 end
 			end
 		end
@@ -7629,7 +7931,7 @@ function Assist.install(ctx,dev)
 		local black=attr("NDCut")==true
 		if black then
 			-- A black gap between two beats of a program: nothing to judge.
-			for id,c in live do if c.group=="tick" then closeSpan(c);live[id]=nil end end
+			for id,c in live do if c.group=="tick" or c.group=="shade" or c.group=="fx" then closeSpan(c);live[id]=nil end end
 			tickAcc=0
 		elseif tickAcc&gt;=T.tick then
 			tickAcc=0
@@ -7661,7 +7963,9 @@ function Assist.install(ctx,dev)
 		for _,e in liveLines(now) do table.insert(list,{id=e.id,severity=SEVNAME[e.sev],owner=OWNER[e.owner],text=e.text,seconds=e.dur,ago=e.ago}) end
 		return {shown=self.shown,recording=take~=nil,takeSeconds=take and (now-take.start) or nil,label=take and take.label or nil,frame=frameNo,
 			check=self.check,quality=self.quality,fps=self.fps,narrow=self.narrow,band={x0=band.x0,x1=band.x1,height=band.h},
-			counter=self.counterGeometry,thresholds=T,ignore=self.ignore,now=list,last=public(last),build=buildLine()}
+			counter=self.counterGeometry,thresholds=T,ignore=self.ignore,now=list,last=public(last),build=buildLine(),
+			phase=self.phase,fxCover=self.fxCover,preset=self.preset,judge=Judge~=nil,
+			recent=(function() local out={};for i=math.max(1,#liveTimeline-9),#liveTimeline do table.insert(out,timelineLine(liveTimeline[i])) end;return out end)()}
 	end
 	local bindable=Instance.new("BindableFunction");bindable.Name="Report";bindable.Parent=gui
 	bindable.OnInvoke=function(op,arg,extra)
@@ -7687,8 +7991,16 @@ function Assist.install(ctx,dev)
 		elseif op=="show" then self:show(arg~=false)
 		elseif op=="guides" then self.guides=arg~=false
 		elseif op=="allowHud" then self.allowHud=arg==true
-		elseif op=="counter" then self.counterOn=arg~=false
+		elseif op=="counter" then self.counterOn=arg==true
+		elseif op=="syncFlash" then self.syncFlash=arg==true
 		elseif op=="linesDuringRec" then self.linesDuringRec=arg==true
+		elseif op=="panelDuringRec" then self.panelDuringRec=arg==true
+		elseif op=="preset" then self.preset=(type(arg)=="string" and arg~="") and arg or nil
+		elseif op=="timeline" then
+			local src=(take and take.timeline) or (last and last.timeline) or liveTimeline
+			local lines={}
+			for _,e in src do table.insert(lines,timelineLine(e)) end
+			return table.concat(lines,"\n")
 		end
 		return HttpService:JSONEncode(snapshot())
 	end
@@ -7757,14 +8069,25 @@ local function enter(cf,h,a,d)
 end
 Sight.enter=enter
 
--- The first unqueryable decor box between a and b (fraction along the segment).
-function Sight.decor(a,b,margin)
+-- The decor boxes within r of a point (a smaller list for many rays around one place).
+function Sight.subset(center,r)
 	Sight.refresh()
+	local list={}
+	for _,x in boxes do
+		if (x.c-center).Magnitude&lt;=x.r+r then table.insert(list,x) end
+	end
+	return list
+end
+
+-- The first unqueryable decor box between a and b (fraction along the segment).
+-- list: a Sight.subset (all the boxes by default).
+function Sight.decor(a,b,margin,list)
+	if not list then Sight.refresh() end
 	local d=b-a
 	local L2=d:Dot(d)
 	if L2&lt;1e-6 then return nil end
 	local best,bt=nil,1-(margin or 0.02)
-	for _,x in boxes do
+	for _,x in list or boxes do
 		local t=math.clamp((x.c-a):Dot(d)/L2,0,1)
 		if (a+d*t-x.c).Magnitude&lt;=x.r then
 			local th=enter(x.cf,x.h,a,d)
@@ -7836,6 +8159,15 @@ return Sight
 --     follow M.speed, so a quarter-speed render is a real slow motion;
 --   * workspace.NDClock carries the replay time (seconds from the start of the
 --     recording) for the filming assistant F4 and the frame log.
+-- 13/11 evening (claude/demandes-outilleur-prises-humain-2026-11-13):
+--   * the duel itself is recorded (the game's snapshots: state, reaction,
+--     health, technique of each fighter, the K.O.) and written on the ghosts as
+--     attributes (NDState, NDReaction, NDHealth, NDFighter, NDPhase, ...), so F4
+--     knows who acts and stops judging after the K.O. during a replay;
+--   * events() and highlights(): the moments of the match ranked by intensity
+--     (hits, reactions, jutsu, dodges, parries, reversals, K.O.), 3 or 4 of them
+--     proposed in real order; rank() compares several matches;
+--   * a frozen frame (Studio hitch) advances the replay by at most maxStep.
 -- Records every moving thing outside the static map: both fighters, their clones,
 -- effect parts, attachments, emitters, beams, lights, highlights, decals, sprites.
 -- Replay = anchored copies ("ghosts") moved to the recorded values; positions are
@@ -7843,6 +8175,9 @@ return Sight
 local RunService = game:GetService("RunService")
 local SoundService = game:GetService("SoundService")
 local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local J = nil
+pcall(function() J = require(script.Parent:WaitForChild("ClipJudge", 2)) end)
 
 local M = {}
 M.list = {}
@@ -7852,8 +8187,10 @@ M.frames = {}
 M.roots = {}
 M.sounds = {}
 M.emits = {}
+M.duel = {}             -- the duel's states {t, phase, ko, A = fighter, B = fighter}, on change
 M.recording = false
-M.version = 2
+M.version = 3
+M.maxStep = 1 / 30      -- a frozen frame advances the replay by at most this (real seconds)
 M.emitDefault = 12
 M.soundOn = true        -- play the recorded sounds during a replay
 M.soundMinSpeed = 0.9   -- below this speed the replay is silent (the edit uses soundLog)
@@ -8066,10 +8403,33 @@ local function sample()
 	table.insert(M.frames, t)
 end
 
+-- The duel's state, as the game sends it to this client (ReplicatedStorage.NinjaDuel.Action).
+local function fighterState(d)
+	if type(d) ~= "table" then return nil end
+	return {name = d.fighter, state = d.state, reaction = d.reaction, health = d.health, maxHealth = d.maxHealth,
+		attack = d.attackName, cast = d.castId, parry = d.events and d.events.Parry, awaken = d.events and d.events.Awaken,
+		airborne = d.airborne == true, sprinting = d.sprinting == true}
+end
+local KEYS = {"name", "state", "reaction", "health", "maxHealth", "attack", "cast", "parry", "awaken", "airborne", "sprinting"}
+local function same(a, b)
+	if not a or not b then return a == b end
+	for _, k in KEYS do if a[k] ~= b[k] then return false end end
+	return true
+end
+local function noteDuel(data)
+	if not M.recording or type(data) ~= "table" or type(data.human) ~= "table" then return end
+	local s = {t = now(), phase = data.phase, ko = data.ko == true, A = fighterState(data.human), B = fighterState(data.bot)}
+	local last = M.duel[#M.duel]
+	if not last or last.phase ~= s.phase or last.ko ~= s.ko or not same(last.A, s.A) or not same(last.B, s.B) then
+		table.insert(M.duel, s)
+	end
+end
+
 function M.reset()
 	M.stop()
 	if M.folder then M.folder:Destroy() end
-	M.list, M.ghostOf, M.origOf, M.frames, M.roots, M.sounds, M.emits = {}, {}, {}, {}, {}, {}, {}
+	M.list, M.ghostOf, M.origOf, M.frames, M.roots, M.sounds, M.emits, M.duel = {}, {}, {}, {}, {}, {}, {}, {}
+	M.lastState = nil
 	table.clear(soundLast)
 	M.prevT = nil
 	M.prepared = false
@@ -8108,6 +8468,12 @@ function M.start(fighters, others)
 		end
 	end
 	for _, d in workspace:GetDescendants() do if d:IsA("Sound") then watchSound(d) end end
+	-- The duel itself: who does what, health, the K.O.
+	local nd = ReplicatedStorage:FindFirstChild("NinjaDuel")
+	local remote = nd and nd:FindFirstChild("Action")
+	if remote and remote:IsA("RemoteEvent") then
+		table.insert(conns, remote.OnClientEvent:Connect(noteDuel))
+	end
 	M.recording = true
 	RunService:BindToRenderStep("NDReplayRec", Enum.RenderPriority.Last.Value + 50, function()
 		if M.recording then sample() end
@@ -8281,6 +8647,40 @@ local function crossings(a, b)
 	end
 end
 
+-- The duel's state at replay time t, written on the ghosts for F4.
+local function stateAt(t)
+	local list = M.duel
+	local n = #list
+	if n == 0 or t &lt; list[1].t then return nil end
+	local lo, hi = 1, n
+	while lo &lt; hi do
+		local mid = (lo + hi + 1) // 2
+		if list[mid].t &lt;= t then lo = mid else hi = mid - 1 end
+	end
+	return list[lo]
+end
+M.stateAt = stateAt
+local ATTRS = {{"NDFighter", "name"}, {"NDState", "state"}, {"NDReaction", "reaction"}, {"NDHealth", "health"}, {"NDMaxHealth", "maxHealth"},
+	{"NDAttack", "attack"}, {"NDCast", "cast"}, {"NDParry", "parry"}, {"NDAwaken", "awaken"}, {"NDAir", "airborne"}, {"MovementSprinting", "sprinting"}}
+local function writeState(t)
+	local s = stateAt(t)
+	if s == M.lastState then return end
+	M.lastState = s
+	for key, f in {human = "A", bot = "B"} do
+		local g = M.ghostFighter(key)
+		if g then
+			local fs = s and s[f]
+			for _, a in ATTRS do
+				local v = fs and fs[a[2]]
+				if fs and v == nil and type(fs.state) == "string" then v = "" end
+				pcall(function() g:SetAttribute(a[1], v) end)
+			end
+			g:SetAttribute("NDPhase", s and s.phase or nil)
+			g:SetAttribute("NDKO", s and s.ko or nil)
+		end
+	end
+end
+
 M.lastApplied = nil
 function M.apply(t)
 	if not M.prepared then M.prepare() end
@@ -8317,6 +8717,7 @@ function M.apply(t)
 	if #parts &gt; 0 then workspace:BulkMoveTo(parts, cfs, Enum.BulkMoveMode.FireCFrameChanged) end
 	if forward then crossings(M.lastApplied, t) end
 	M.lastApplied = t
+	if #M.duel &gt; 0 then writeState(t) end
 	workspace:SetAttribute("NDClock", math.floor((t - M.t0) * 1000 + 0.5) / 1000)
 end
 
@@ -8368,7 +8769,7 @@ function M.play(a, b, speed, camFn, onDone)
 	M.playing = true
 	RunService:BindToRenderStep("NDReplayPlay", Enum.RenderPriority.Last.Value + 300, function(dt)
 		if not M.playing then return end
-		if not M.paused then rt += dt * M.speed end
+		if not M.paused then rt += math.min(dt, M.maxStep or dt) * M.speed end
 		if rt &gt;= b then rt = b end
 		M.rt = rt
 		M.apply(rt)
@@ -8412,6 +8813,51 @@ function M.soundLog()
 	return out
 end
 
+-- What happened in the match (seconds from the start of the recording): hits,
+-- reactions, jutsu, dodges, parries, awakenings, reversals, the K.O.
+function M.events()
+	local out, memo = {}, {}
+	if not J then return out end
+	for i = 2, #M.duel do
+		for _, e in J.events(M.duel[i - 1], M.duel[i], M.duel[i].t - M.t0, memo) do table.insert(out, e) end
+	end
+	return out
+end
+
+-- The strongest moments of the match, in real order (request 10 of 13/11):
+-- {score, perMinute, dead (share of dead time), moments = {{from, to, score, lines}}}.
+-- opts: n (4), len (6 s), pre (0.8 s), post (1.5 s), label.
+function M.highlights(opts)
+	opts = opts or {}
+	if not J then return nil end
+	local evs = M.events()
+	local t1 = (M.t1 or M.frames[#M.frames] or M.t0) - M.t0
+	local r = J.moments(evs, {n = opts.n or 4, len = opts.len, pre = opts.pre, post = opts.post, t0 = 0, t1 = t1})
+	r.label = opts.label or M.label
+	r.events = #evs
+	local last = M.duel[#M.duel]
+	r.fighters = {last and last.A and last.A.name, last and last.B and last.B.name}
+	return r
+end
+local function f2(x) return (string.format("%.2f", x):gsub("%.", ",")) end
+function M.highlightsText(opts)
+	local r = M.highlights(opts)
+	if not r then return "ClipJudge absent" end
+	local out = {string.format("%s · %d évènements · intensité %d (%d par minute) · temps morts %d %%", tostring(r.label or "match"), r.events,
+		math.floor(r.score), math.floor(r.perMinute), math.floor(r.dead * 100))}
+	for i, m in r.moments do
+		table.insert(out, string.format("M%d  %s–%s s  (intensité %d)", i, f2(m.from), f2(m.to), math.floor(m.score)))
+		for _, l in m.lines do table.insert(out, string.format("     %s s  %s", f2(l.t), l.text)) end
+	end
+	return table.concat(out, "\n")
+end
+-- Several matches (their highlights()), the liveliest first.
+function M.rank(list)
+	local out = table.clone(list)
+	table.sort(out, function(a, b) return (a.perMinute or 0) &gt; (b.perMinute or 0) end)
+	return out
+end
+
 function M.stats()
 	local nParts, nTracks, nEntries, bursts, stamped = 0, 0, 0, 0, 0
 	for _, it in M.list do
@@ -8422,7 +8868,7 @@ function M.stats()
 	end
 	return {items = #M.list, parts = nParts, tracks = nTracks, entries = nEntries, frames = #M.frames,
 		dur = M.t1 and M.t0 and (M.t1 - M.t0), roots = #M.roots, sounds = #M.sounds, burstEmitters = bursts,
-		stampedEmitters = stamped, stampedBursts = #M.emits}
+		stampedEmitters = stamped, stampedBursts = #M.emits, duelStates = #M.duel}
 end
 
 return M
@@ -8443,6 +8889,24 @@ return M
 --
 --   local D=require(ReplicatedStorage.NDFactory.NDDirector)   -- also shared.NDD, shared.NDP
 --
+-- 13/11 evening (claude/demandes-outilleur-prises-humain-2026-11-13): the
+-- director judges each shot as a viewer would (ClipJudge) and chooses the angle
+-- itself where the written one fails:
+--  * every segment is checked every D.cfg.step s of replay before REC: decor
+--    in front of the face or the body (bushes and tree tops included), a body
+--    in front, the actor seen from behind or looking into the lens, the lens on
+--    the side the sun does not light, the actor under a third of the band;
+--    where a viewer would say no, the director cuts to the best azimuth around
+--    the actor (p.lock = true keeps the written shot; kind "auto" = let it choose);
+--  * never wider: the one who acts fills at least D.cfg.minShare of the band;
+--  * never out of the enclosure (World.WALL_RADIUS);
+--  * the render is slow by default (P.slow = 0.25, sped up x4 in the edit):
+--    speeds, eases and holds follow the screen's time, a frozen frame advances
+--    the replay by at most P.maxStep, and a beat with a frozen frame is played
+--    again (P.retakes);
+--  * D.beatsFromMoments(NDReplay.highlights()): a program from a real match's
+--    strongest moments.
+--
 -- Framing rule for the 9:16 band: keep the ACTOR centred.
 --  front  : in front of fighter `a` (yaw from his look), looking at him
 --  ots    : behind the other fighter, offset `off`, looking at `a` (a's face, the other's shoulder)
@@ -8452,12 +8916,24 @@ return M
 --  center : both fighters, camera on the line from their midpoint to the arena centre (near walls)
 local R = require(script.Parent.NDReplay)
 local Sight = require(script.Parent.ClipSight)
+local J = require(script.Parent.ClipJudge)
 shared.NDR = R
 local RunService = game:GetService("RunService")
 local UP = Vector3.yAxis
 local CENTER = Vector3.new(0, 3, 0)
 local D = {}
 shared.NDD = D
+D.cfg = {
+	auto = true,      -- check every segment and change the angle where a viewer would say no
+	minShare = 1 / 3, -- the one who acts fills at least this share of the band's height (0: off)
+	step = 0.25,      -- replay seconds between two checks of a segment
+	thetaStep = 15,   -- the azimuths tried around the actor
+	bad = 250,        -- a score this high: a viewer says no
+	minShot = 0.7,    -- the shortest shot the director cuts to (FILM09 shots: 0.7 to 1.2 s)
+	sun = 1.0,        -- cost per degree beyond 60° between the lens and the sun, around the actor
+	verbose = true,   -- print the director's choices in Output
+}
+D.planLog = {}
 
 local rp = RaycastParams.new(); rp.FilterType = Enum.RaycastFilterType.Exclude
 local op = OverlapParams.new(); op.FilterType = Enum.RaycastFilterType.Exclude
@@ -8474,8 +8950,40 @@ local function camPos(A, B, theta, d, h, hground)
 	return Vector3.new(A.X + horiz.X, y, A.Z + horiz.Z)
 end
 
+-- Never wider than D.cfg.minShare of the band for the one who acts, never out of the enclosure.
+local function settle(cf, fov, A, t)
+	if not cf then return cf, fov end
+	local ca = R.fighterCF(A, t)
+	if not ca then return cf, fov end
+	local pos, look = cf.Position, cf.LookVector
+	local aim = pos + look * math.max(1, (ca.Position - pos):Dot(look))
+	if (D.cfg.minShare or 0) &gt; 0 then
+		local g = R.ghostFighter(A)
+		local h = g and J.height(g) or 5.5
+		local dmax = h / (2 * math.tan(math.rad(fov / 2)) * D.cfg.minShare) * 0.97
+		local depth = (ca.Position - pos):Dot(look)
+		if depth &gt; dmax then pos += look * (depth - dmax) end
+	end
+	if not J.inside(pos, 3) then
+		local c, r = J.arena()
+		local f = J.flat(pos - c)
+		if f.Magnitude &gt; 1e-3 then
+			f = f.Unit * (r - 3)
+			pos = Vector3.new(c.X + f.X, pos.Y, c.Z + f.Z)
+			return CFrame.lookAt(pos, aim), fov
+		end
+	end
+	return CFrame.lookAt(pos, pos + look), fov
+end
+
+local rawShot
 function D.shot(kind, t, p)
 	p = p or {}
+	local cf, fov = rawShot(kind, t, p)
+	return settle(cf, fov, p.a or "human", t)
+end
+function rawShot(kind, t, p)
+	if kind == "auto" then kind = "best" end
 	local A = p.a or "human"; local B = if A == "human" then "bot" else "human"
 	local ca, cb = R.fighterCF(A, t), R.fighterCF(B, t)
 	if not ca or not cb then return nil end
@@ -8545,6 +9053,161 @@ function D.pickSide(kind, t, p)
 	return best, bestScore
 end
 
+----------------------------------------------------------------------------
+-- The viewer's judgement (ClipJudge) and the director's own choice of angle.
+----------------------------------------------------------------------------
+-- The scene at replay time t, seen from the actor `Ak` ("human" / "bot"): the
+-- ghosts are moved to t (no sound, no burst: lastApplied is cleared).
+local function sceneAt(t, Ak)
+	if R.folder and R.folder.Parent ~= workspace then R.folder.Parent = workspace end
+	R.lastApplied = nil
+	R.apply(t)
+	R.lastApplied = nil
+	local Bk = if Ak == "human" then "bot" else "human"
+	local actor, other = R.ghostFighter(Ak), R.ghostFighter(Bk)
+	if not actor or not actor.Parent then return nil end
+	local r = J.rig(actor)
+	local center = r.root and r.root.Position or actor:GetPivot().Position
+	local parts = {}
+	for _, d in R.folder:GetDescendants() do
+		if d:IsA("BasePart") and d.Transparency &lt; 0.6 and d.Size.Magnitude &gt; 0.3 and not d:IsDescendantOf(actor) and (d.Position - center).Magnitude &lt; 45 then
+			table.insert(parts, d)
+		end
+	end
+	return {actor = actor, other = other, parts = parts, decor = Sight.subset(center, 70), head = r.head and r.head.Position or center + UP * 1.5}
+end
+D.sceneAt = sceneAt
+
+-- How a viewer would judge a camera (the ghosts at its time): lower is better,
+-- D.cfg.bad and above a viewer says no. -&gt; score, reasons
+function D.judge(cf, fov, ctx)
+	local actor, other = ctx.actor, ctx.other
+	local pos = cf.Position
+	local s, why = 0, {}
+	local function add(n, text) s += n; if text then table.insert(why, text) end end
+	if not J.inside(pos, 2) then add(1000, "hors de l'enceinte") end
+	if blockedLens(pos) then add(1000, "objectif dans le décor") end
+	local v = J.visible(pos, actor, {parts = ctx.parts, others = {other}, decor = ctx.decor})
+	local dF, dB = v.faceBy["décor"] or 0, v.bodyBy["décor"] or 0
+	if dF &gt; 0.15 or dB &gt; 0.15 then add(300, string.format("décor %d %% (%s)", math.floor(math.max(dF, dB) * 100 + 0.5), v.what["décor"] or "?")) end
+	add(200 * dF + 150 * dB)
+	local bF = (v.faceBy.corps or 0) + (v.faceBy.clone or 0)
+	local bB = (v.bodyBy.corps or 0) + (v.bodyBy.clone or 0)
+	if bF &gt;= 0.6 or bB &gt;= 0.6 then add(300, "caché par un corps") end
+	add(150 * bF + 80 * bB)
+	local face = J.facing(pos, actor)
+	if face &gt; 115 then add(300, string.format("de dos (%d°)", math.floor(face))) elseif face &gt; 50 then add((face - 50) * 2.5) end
+	local _, _, lens = J.gaze(actor, pos)
+	if lens &lt; 15 then add(120, "regarde l'objectif") end
+	local sunF, sunDir = J.sun()
+	if sunF then
+		local side = J.sunSide(pos, actor)
+		if side &gt; 60 then add((side - 60) * D.cfg.sun, if side &gt; 120 then "contre-jour" else nil) end
+		if cf.LookVector:Dot(sunDir) &gt; math.cos(math.rad(35)) then add(150, "face au soleil") end
+	end
+	local share = J.share(cf, fov, actor)
+	if share &lt; D.cfg.minShare then add((D.cfg.minShare - share) * 900, string.format("petit (%d %%)", math.floor(share * 100 + 0.5))) end
+	local x, y = J.ndc(cf, fov, ctx.head)
+	if not x or math.abs(x) &gt; 0.9 or math.abs(y) &gt; 1 then add(300, "hors du cadre") end
+	return s, why
+end
+
+local function angleGap(a, b) local d = math.abs((a - b + 180) % 360 - 180); return d end
+-- The shots tried for a segment: the written one, then every azimuth around the actor.
+local function candidates(seg)
+	local list = {}
+	local p = seg.p
+	local own = seg.kind == "best" or seg.kind == "auto"
+	if seg.kind ~= "auto" then table.insert(list, {kind = seg.kind, p = p, pref = 0, written = true}) end
+	local want = p.want or (seg.kind == "best" and p.theta) or 40
+	for th = -180 + D.cfg.thetaStep, 180, D.cfg.thetaStep do
+		local q = {a = p.a, theta = th, d = own and p.d or 9, h = own and p.h or 1.8, lookh = p.lookh, lead = p.lead,
+			fov = own and p.fov or 50, hground = p.hground}
+		table.insert(list, {kind = "best", p = q, pref = 25 + math.min(angleGap(th, want), angleGap(th, -want)) * 0.3})
+	end
+	return list
+end
+
+-- Cut a segment into shots a viewer accepts (sub-segments, absolute times).
+function D.plan(seg)
+	local Ak = seg.p.a or "human"
+	local cands = candidates(seg)
+	local step = D.cfg.step
+	local times = {}
+	local t = seg.from
+	while t &lt; seg.to - 1e-3 do table.insert(times, t); t += step end
+	if #times == 0 then times = {seg.from} end
+	local cost, why = {}, {}
+	for c in cands do cost[c] = {}; why[c] = {} end
+	local yieldAt = os.clock()
+	for i, ti in times do
+		local ctx = sceneAt(ti, Ak)
+		for c, cand in cands do
+			local sc, w = 2000, {"pas d'image"}
+			if ctx then
+				local cf, fov = D.shot(cand.kind, ti, cand.p)
+				if cf then sc, w = D.judge(cf, fov, ctx) end
+			end
+			cost[c][i], why[c][i] = sc, w
+		end
+		if os.clock() - yieldAt &gt; 0.2 and coroutine.isyieldable() then task.wait(); yieldAt = os.clock() end
+	end
+	-- the longest acceptable run from each point; the same shot as before is preferred
+	local n, runs, i, prevC = #times, {}, 1, nil
+	local minN = math.max(1, math.ceil(D.cfg.minShot / step - 1e-6))
+	while i &lt;= n do
+		local bestC, bestU, bestLen
+		for c, cand in cands do
+			local len, sum = 0, 0
+			for j = i, n do
+				if cost[c][j] &gt;= D.cfg.bad then break end
+				len += 1; sum += cost[c][j] + cand.pref
+			end
+			local u = if len == 0 then -1e9 - cost[c][i] else len - 2 * (sum / len) / D.cfg.bad + (if c == prevC then 1 else 0)
+			if not bestU or u &gt; bestU then bestC, bestU, bestLen = c, u, len end
+		end
+		local len = math.max(bestLen, 1)
+		if len &lt; minN then len = math.min(n - i + 1, minN) end
+		if #runs &gt; 0 and len &lt; minN then
+			runs[#runs].i1 = i + len - 1 -- a short tail stays with the shot before
+		elseif #runs &gt; 0 and runs[#runs].c == bestC then
+			runs[#runs].i1 = i + len - 1
+		else
+			table.insert(runs, {c = bestC, i0 = i, i1 = i + len - 1})
+		end
+		prevC = bestC
+		i += len
+	end
+	local out = {}
+	for k, r in runs do
+		local cand = cands[r.c]
+		local from = if k == 1 then seg.from else times[r.i0] - step / 2
+		local to = if k == #runs then seg.to else times[runs[k + 1].i0] - step / 2
+		local x = {from = from, to = to, kind = cand.kind, p = table.clone(cand.p), tau = seg.tau}
+		if cand.written then x.push, x.pushEnd = seg.push, seg.pushEnd end
+		local worst, reasons = 0, nil
+		for j = r.i0, r.i1 do if cost[r.c][j] &gt; worst then worst, reasons = cost[r.c][j], why[r.c][j] end end
+		local writtenBad = nil
+		if not cand.written and cands[1].written then
+			for j = r.i0, r.i1 do
+				if cost[1][j] &gt;= D.cfg.bad then writtenBad = string.format("%.2f s : %s", times[j] - R.t0, table.concat(why[1][j], ", ")); break end
+			end
+		end
+		local entry = {from = from - R.t0, to = to - R.t0, kind = cand.kind, theta = cand.p.theta, written = cand.written == true,
+			worst = math.floor(worst), reasons = reasons, writtenFailed = writtenBad}
+		table.insert(D.planLog, entry)
+		if D.cfg.verbose then
+			print(string.format("[NDDirector] %.2f–%.2f s : %s%s%s%s", entry.from, entry.to,
+				if cand.written then "plan écrit (" .. cand.kind .. ")" else string.format("angle choisi θ=%d°", cand.p.theta or 0),
+				if worst &gt;= D.cfg.bad then " — AUCUN ANGLE PROPRE : " .. table.concat(reasons or {}, ", ") else "",
+				if writtenBad then " — le plan écrit échouait à " .. writtenBad else "",
+				if entry.worst &gt; 0 and worst &lt; D.cfg.bad and reasons and #reasons &gt; 0 then " (" .. table.concat(reasons, ", ") .. ")" else ""))
+		end
+		table.insert(out, x)
+	end
+	return out
+end
+
 -- one camera function over segments {from, to, kind, p, tau, push, pushEnd} (absolute times)
 function D.track(segs, tau)
 	refreshFilters()
@@ -8553,6 +9216,16 @@ function D.track(segs, tau)
 		if s.kind == "best" and not s.p.theta then s.p.theta = D.pick(s.from, s.p) end
 		if (s.kind == "pair" or s.kind == "ots") and type(s.p.side) ~= "number" then s.p.side = D.pickSide(s.kind, s.from, s.p) end
 	end
+	-- the viewer's check: where the written shot fails, the director cuts to another angle
+	local planned = {}
+	for _, s in segs do
+		if s.kind == "auto" or (D.cfg.auto and not s.p.lock) then
+			for _, x in D.plan(s) do table.insert(planned, x) end
+		else
+			table.insert(planned, s)
+		end
+	end
+	segs = planned
 	local cur, curSeg, lastT
 	local fn = function(t)
 		local seg
@@ -8608,73 +9281,109 @@ function P.speedAt(beat, rel)
 	for _, k in beat.speeds or {} do if rel &gt;= k[1] then s = k[2] end end
 	return s
 end
--- `slow` (optional): render the whole program at this fraction of real time
--- (0.25 = a quarter-speed render, sped up x4 in the edit: every frame distinct).
+-- `slow`: render the whole program at this fraction of real time (default
+-- P.slow = 0.25: a quarter-speed render, sped up x4 in the edit, every final
+-- frame distinct; 1 = real time, with the sounds).
+P.slow = 0.25
+P.maxStep = 1 / 30 -- a frozen frame advances the replay by at most this (real seconds): no jump after a freeze
+P.retakes = 1      -- a beat with a frozen frame is played again (this many times); the edit keeps the clean one
+P.hitch = 0.05     -- a frame longer than this on screen (after the speed-up) is a frozen frame
+
+-- One beat, black before it. Returns true when a frame froze during it.
+local function playBeat(beat, track, gap, slow, c0)
+	local cam = workspace.CurrentCamera
+	local camFn, segAt = track[1], track[2]
+	blk.Enabled = true
+	workspace:SetAttribute("NDCut", true)
+	workspace:SetAttribute("NDScene", nil)
+	local a, b = R.t0 + beat.a, R.t0 + beat.b
+	R.lastApplied = nil
+	R.apply(a)
+	local cf, fov = camFn(a)
+	if cf then cam.CFrame = cf; cam.FieldOfView = fov end
+	task.wait(gap)
+	blk.Enabled = false
+	workspace:SetAttribute("NDScene", beat.name)
+	workspace:SetAttribute("NDCut", nil)
+	table.insert(P.log, {beat = beat.name, at = os.clock() - c0})
+	local rt, spd = a, P.speedAt(beat, beat.a)
+	local holdLeft, easeT, finished, frozen = beat.hold or 0, nil, false, false
+	local meanDt = 1 / 60
+	RunService:BindToRenderStep("NDProgram", Enum.RenderPriority.Last.Value + 300, function(dt)
+		-- the screen's time: what this frame lasts once the slow render is sped up
+		local step = math.min(dt, P.maxStep or dt)
+		local sdt = step * slow
+		if dt * slow &gt; (P.hitch or 0.05) and dt &gt; 2.5 * meanDt then frozen = true end
+		meanDt = meanDt * 0.95 + math.min(dt, 0.1) * 0.05
+		local rel = rt - R.t0
+		local target = P.speedAt(beat, rel)
+		local eased = false
+		if beat.ease and rel &gt;= beat.ease[1] then
+			easeT = (easeT or 0) + sdt
+			local k = math.clamp(easeT / beat.ease[2], 0, 1)
+			target *= (1 - k) ^ 2
+			eased = k &gt;= 1
+		end
+		spd += (target - spd) * (1 - math.exp(-sdt / 0.06))
+		-- particles, trails, beams and sounds follow the effective speed
+		if math.abs(spd * slow - (R.speed or 1)) &gt; 0.02 then R.setSpeed(spd * slow) end
+		rt = math.min(rt + step * spd * slow, b)
+		R.apply(rt)
+		-- who must be seen: the beat's `act`, else the segment's fighter
+		local seg = segAt(rt)
+		local act = beat.act or (seg and seg.p and (seg.p.a == "bot" and "B" or seg.p.a == "human" and "A")) or nil
+		workspace:SetAttribute("NDAct", act)
+		lab.Text = string.format("%s %.2f", beat.name:sub(1, 1), rt - R.t0)
+		local c2, f2 = camFn(rt)
+		if c2 then cam.CFrame = c2; cam.FieldOfView = f2 end
+		if rt &gt;= b or eased then
+			if holdLeft &gt; 0 then holdLeft -= sdt else finished = true end
+		end
+	end)
+	while not finished do task.wait() end
+	RunService:UnbindFromRenderStep("NDProgram")
+	table.insert(P.log, {beat = beat.name .. " end", at = os.clock() - c0, frozen = frozen})
+	return frozen
+end
+
 function P.run(beats, gap, slow)
 	gap = gap or 1.0
-	slow = slow or 1
+	slow = slow or P.slow or 1
 	P.log, P.done = {}, false
 	tcg.Enabled = P.showTC
 	local cam = workspace.CurrentCamera
 	cam.CameraType = Enum.CameraType.Scriptable
 	R.folder.Parent = workspace
 	game:GetService("UserInputService").MouseIconEnabled = false
-	workspace:SetAttribute("NDShot", P.shot)
-	if P.f4 then workspace:SetAttribute("NDRec", (P.shot or "replay") .. " " .. os.date("%H:%M:%S")) end
+	blk.Enabled = true
+	workspace:SetAttribute("NDCut", true)
 	task.spawn(function()
-		local c0 = os.clock()
-		for _, beat in beats do
-			blk.Enabled = true
-			workspace:SetAttribute("NDCut", true)
-			workspace:SetAttribute("NDScene", nil)
-			local a, b = R.t0 + beat.a, R.t0 + beat.b
+		-- Every beat's shots are checked and chosen before REC, behind the black screen.
+		D.planLog = {}
+		local tracks = {}
+		for i, beat in beats do
 			local segs = {}
 			for _, s in beat.segs do
 				local c = table.clone(s); c.p = table.clone(s.p or {})
+				if not c.p.a and type(beat.act) == "string" and #beat.act == 1 then c.p.a = if beat.act == "B" then "bot" else "human" end
 				c.from = R.t0 + math.max(s.from, beat.a); c.to = R.t0 + s.to
 				table.insert(segs, c)
 			end
-			local camFn, segAt = D.track(segs)
-			R.lastApplied = nil
-			R.apply(a)
-			local cf, fov = camFn(a)
-			if cf then cam.CFrame = cf; cam.FieldOfView = fov end
-			task.wait(gap)
-			blk.Enabled = false
-			workspace:SetAttribute("NDScene", beat.name)
-			workspace:SetAttribute("NDCut", nil)
-			table.insert(P.log, {beat = beat.name, at = os.clock() - c0})
-			local rt, spd = a, P.speedAt(beat, beat.a)
-			local holdLeft, easeT, finished = beat.hold or 0, nil, false
-			RunService:BindToRenderStep("NDProgram", Enum.RenderPriority.Last.Value + 300, function(dt)
-				local rel = rt - R.t0
-				local target = P.speedAt(beat, rel)
-				local eased = false
-				if beat.ease and rel &gt;= beat.ease[1] then
-					easeT = (easeT or 0) + dt
-					local k = math.clamp(easeT / beat.ease[2], 0, 1)
-					target *= (1 - k) ^ 2
-					eased = k &gt;= 1
-				end
-				spd += (target - spd) * (1 - math.exp(-dt / 0.06))
-				-- particles, trails, beams and sounds follow the effective speed
-				if math.abs(spd * slow - (R.speed or 1)) &gt; 0.05 then R.setSpeed(spd * slow) end
-				rt = math.min(rt + dt * spd * slow, b)
-				R.apply(rt)
-				-- who must be seen: the beat's `act`, else the segment's fighter
-				local seg = segAt(rt)
-				local act = beat.act or (seg and seg.p and (seg.p.a == "bot" and "B" or seg.p.a == "human" and "A")) or nil
-				workspace:SetAttribute("NDAct", act)
-				lab.Text = string.format("%s %.2f", beat.name:sub(1, 1), rt - R.t0)
-				local c2, f2 = camFn(rt)
-				if c2 then cam.CFrame = c2; cam.FieldOfView = f2 end
-				if rt &gt;= b or eased then
-					if holdLeft &gt; 0 then holdLeft -= dt * slow else finished = true end
-				end
-			end)
-			while not finished do task.wait() end
-			RunService:UnbindFromRenderStep("NDProgram")
-			table.insert(P.log, {beat = beat.name .. " end", at = os.clock() - c0})
+			if D.cfg.verbose then print("[NDDirector] " .. tostring(beat.name) .. " : choix des plans") end
+			tracks[i] = {D.track(segs)}
+		end
+		workspace:SetAttribute("NDSlow", if slow &lt; 1 then slow else nil)
+		workspace:SetAttribute("NDShot", P.shot)
+		if P.f4 then workspace:SetAttribute("NDRec", (P.shot or "replay") .. " " .. os.date("%H:%M:%S")) end
+		local c0 = os.clock()
+		for i, beat in beats do
+			local tries = 0
+			while true do
+				local frozen = playBeat(beat, tracks[i], gap, slow, c0)
+				tries += 1
+				if not frozen or tries &gt; (P.retakes or 0) then break end
+				print("[NDDirector] " .. tostring(beat.name) .. " : image figée, le temps est rejoué")
+			end
 		end
 		blk.Enabled = true
 		workspace:SetAttribute("NDCut", true)
@@ -8683,11 +9392,442 @@ function P.run(beats, gap, slow)
 		task.wait(0.4)
 		if P.f4 then workspace:SetAttribute("NDRec", nil) end
 		workspace:SetAttribute("NDCut", nil)
+		workspace:SetAttribute("NDSlow", nil)
+		R.setSpeed(1)
 		P.done = true
 	end)
 end
 
+-- A program from a real match's strongest moments (NDReplay.highlights()): one
+-- beat per moment, the camera on whoever leads the action (the hitter of a hit),
+-- the angles left to the director.
+function D.beatsFromMoments(h, opts)
+	opts = opts or {}
+	local beats = {}
+	for i, m in (h and h.moments) or {} do
+		local segs = {}
+		for _, l in m.lines do
+			local who = if l.actor == "B" then "bot" else "human"
+			local at = math.max(m.from, l.t - 0.4)
+			local cur = segs[#segs]
+			if not cur or cur.p.a ~= who then
+				if cur then cur.to = at end
+				table.insert(segs, {from = if #segs == 0 then m.from else at, to = m.to, kind = "auto", p = {a = who}})
+			end
+		end
+		if #segs == 0 then segs = {{from = m.from, to = m.to, kind = "auto", p = {a = "human"}}} end
+		-- a shot shorter than D.cfg.minShot stays with the one before
+		local merged = {}
+		for _, s in segs do
+			local prev = merged[#merged]
+			if prev and s.to - s.from &lt; D.cfg.minShot then prev.to = s.to else table.insert(merged, s) end
+		end
+		table.insert(beats, {name = (opts.prefix or "M") .. i, a = m.from, b = m.to, segs = merged, hold = opts.hold or 0.3})
+	end
+	return beats
+end
+
 return D
+</ProtectedString>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="ND278">
+        <Properties>
+          <string name="Name">ClipJudge</string>
+          <ProtectedString name="Source">--!nocheck
+-- ClipJudge (FILM place): what a viewer sees of a fighter, and what happens in a match.
+-- Shared by the filming assistant F4 (to judge a take), NDDirector (to choose
+-- the angle itself) and NDReplay (to rank the moments of a match). Asked by the
+-- CM on 13/11 (claude/demandes-outilleur-prises-humain-2026-11-13): a take F4
+-- lets through must be a take the owner does not reject.
+--   visible(cam, model, opts)   share of the face / the body hidden, by kind of blocker
+--   shadow(model)               share of the face / the body the sun does not reach
+--   backlit(cam, model)         the lens sees the side the sun does not light
+--   facing(cam, model)          angle between the fighter's look and the lens
+--   gaze(model, point)          angle between the head (or the chest) and a point
+--   share(camCF, fov, model)    the fighter's height as a share of the 9:16 band
+--   arena() / inside(pos)       the enclosure (World.WALL_RADIUS)
+--   events(prev, cur, t, memo)  what happened between two states of the duel
+--   moments(events, opts)       the strongest moments of a match, in real order
+local Sight = require(script.Parent.ClipSight)
+local Lighting = game:GetService("Lighting")
+
+local J = {}
+local V = Vector3.new
+local function flat(v) return V(v.X, 0, v.Z) end
+local function angle(a, b)
+	if a.Magnitude &lt; 1e-3 or b.Magnitude &lt; 1e-3 then return 0 end
+	return math.deg(math.acos(math.clamp(a.Unit:Dot(b.Unit), -1, 1)))
+end
+J.flat, J.angle = flat, angle
+
+-- The rig's own parts give the geometry (the look meshes ride on them).
+local cache = setmetatable({}, {__mode = "k"})
+function J.rig(model)
+	local e = cache[model]
+	local now = os.clock()
+	if e and now - e.t &lt; 0.5 then return e end
+	e = {t = now, parts = {}, all = {}}
+	for _, d in model:GetDescendants() do
+		if d:IsA("BasePart") then
+			e.parts[d.Name] = e.parts[d.Name] or d
+			if d.Transparency &lt; 0.9 and d.Name ~= "HumanoidRootPart" and d.Size.Magnitude &gt; 0.3 then table.insert(e.all, d) end
+		end
+	end
+	local p = e.parts
+	e.head = p.Head or p.Head__Skin
+	e.torso = p.UpperTorso or p.Torso
+	e.root = p.HumanoidRootPart or model.PrimaryPart
+	cache[model] = e
+	return e
+end
+
+-- Points a viewer reads: the face (5), the trunk (4), hands and feet.
+function J.samples(model)
+	local r = J.rig(model)
+	local face, body = {}, {}
+	local h = r.head
+	if h then
+		local s = h.Size
+		for _, o in {V(0, 0, -0.45), V(-0.3, 0.2, -0.4), V(0.3, 0.2, -0.4), V(-0.3, -0.25, -0.4), V(0.3, -0.25, -0.4)} do
+			table.insert(face, (h.CFrame * CFrame.new(o.X * s.X, o.Y * s.Y, o.Z * s.Z)).Position)
+		end
+	end
+	local t = r.torso
+	if t then
+		local s = t.Size
+		for _, o in {V(-0.35, 0.3, 0), V(0.35, 0.3, 0), V(-0.3, -0.35, 0), V(0.3, -0.35, 0)} do
+			table.insert(body, (t.CFrame * CFrame.new(o.X * s.X, o.Y * s.Y, 0)).Position)
+		end
+	end
+	for _, n in {"LeftHand", "RightHand", "LeftFoot", "RightFoot", "LeftLowerLeg", "RightLowerLeg"} do
+		local p = r.parts[n]
+		if p then table.insert(body, p.Position) end
+	end
+	return face, body
+end
+
+local rayParams = RaycastParams.new()
+rayParams.FilterType = Enum.RaycastFilterType.Exclude
+-- What stops the segment a -&gt; b: a queryable opaque part, the unqueryable decor
+-- (`decor`: a Sight.subset, all of it by default), or one of `parts`.
+local function blocker(a, b, ignore, parts, decor)
+	local exclude = table.clone(ignore)
+	local dir = b - a
+	local len = dir.Magnitude
+	if len &lt; 1e-3 then return nil end
+	local best, bestT = nil, 0.97
+	for _ = 1, 5 do
+		rayParams.FilterDescendantsInstances = exclude
+		local hit = workspace:Raycast(a, dir, rayParams)
+		if not hit then break end
+		local p = hit.Instance
+		if p.Transparency &lt; 0.6 and p.LocalTransparencyModifier &lt; 0.6 then
+			local t = (hit.Position - a).Magnitude / len
+			if t &lt; bestT then best, bestT = p, t end
+			break
+		end
+		table.insert(exclude, p)
+	end
+	local d, dt = Sight.decor(a, b, 0.03, decor)
+	if d and dt &lt; bestT then best, bestT = d, dt end
+	if parts and #parts &gt; 0 then
+		local q, qt = Sight.parts(a, b, parts, 0.03)
+		if q and qt &lt; bestT then best, bestT = q, qt end
+	end
+	return best
+end
+J.blocker = blocker
+
+local FX = {NinjaDuelFX = true, Effects = true, NinjaUltimateFX = true, VfxMesh = true, WorldMemory = true, NDReplay = true}
+-- "corps" (one of `others`), "clone" (any other body), "effet" (the game's
+-- effects, and in the replay every ghost that is not a body), or "décor".
+function J.kind(p, others)
+	for _, m in others or {} do
+		if m and p:IsDescendantOf(m) then return "corps" end
+	end
+	local m = p:FindFirstAncestorWhichIsA("Model")
+	while m and m ~= workspace do
+		if m:FindFirstChildOfClass("Humanoid") then return "clone" end
+		m = m.Parent and m.Parent:IsA("Model") and m.Parent or nil
+	end
+	local a = p
+	while a and a ~= workspace do
+		if FX[a.Name] then return "effet" end
+		a = a.Parent
+	end
+	return "décor"
+end
+-- A readable name for what blocks: the model (or the effect) it belongs to.
+function J.name(p)
+	local a = p
+	while a.Parent and a.Parent ~= workspace and not FX[a.Parent.Name] and not (a.Parent:IsA("Folder") and a.Parent.Parent == workspace) do
+		if a.Parent:IsA("Model") and a.Parent:FindFirstChildOfClass("Humanoid") then return a.Parent.Name end
+		a = a.Parent
+	end
+	return a.Name
+end
+
+-- Share of the face and of the body hidden from `camPos`, by kind of blocker.
+-- opts.ignore: instances never counted (the fighter himself is always ignored)
+-- opts.parts: extra parts to test (the other body, clones, effect meshes: the
+-- replay's ghosts and the game's look meshes are unqueryable)
+-- opts.others: models counted as "corps"
+-- opts.decor: a Sight.subset around the fighter (faster for many rays)
+-- -&gt; {face, body (0..1 hidden), faceBy = {kind = share}, bodyBy, what = {kind = name}}
+function J.visible(camPos, model, opts)
+	opts = opts or {}
+	local face, body = J.samples(model)
+	local ignore = {model}
+	for _, x in opts.ignore or {} do table.insert(ignore, x) end
+	local res = {face = 0, body = 0, faceBy = {}, bodyBy = {}, what = {}, nFace = #face, nBody = #body}
+	local function count(list, by)
+		if #list == 0 then return 0 end
+		local hidden = 0
+		for _, p in list do
+			local b = blocker(camPos, p, ignore, opts.parts, opts.decor)
+			if b then
+				hidden += 1
+				local k = J.kind(b, opts.others)
+				by[k] = (by[k] or 0) + 1 / #list
+				res.what[k] = res.what[k] or J.name(b)
+			end
+		end
+		return hidden / #list
+	end
+	res.face = count(face, res.faceBy)
+	res.body = count(body, res.bodyBy)
+	return res
+end
+
+-- Share of the face and of the body the sun does not reach (the shadow of a
+-- wall, a tree, the stand). Night: 1, 1, "nuit".
+function J.shadow(model, decor)
+	local sun = Lighting:GetSunDirection()
+	if sun.Y &lt; 0.02 then return 1, 1, "nuit" end
+	local face, body = J.samples(model)
+	local function shaded(list)
+		if #list == 0 then return 0 end
+		local n = 0
+		for _, p in list do
+			if blocker(p + sun * 0.6, p + sun * 300, {model}, nil, decor) then n += 1 end
+		end
+		return n / #list
+	end
+	return shaded(body), shaded(face)
+end
+
+-- The sun on the ground plane (unit), nil when it is (almost) overhead or down.
+function J.sun()
+	local sun = Lighting:GetSunDirection()
+	local f = flat(sun)
+	if sun.Y &lt; 0.02 or f.Magnitude &lt; 0.15 then return nil, sun end
+	return f.Unit, sun
+end
+-- The lens sees the side of the fighter the sun does not light (backlight):
+-- the angle around the fighter between the lens and the sun, in degrees.
+function J.sunSide(camPos, model)
+	local sunF = J.sun()
+	if not sunF then return 0 end
+	local r = J.rig(model)
+	local at = r.root and r.root.Position or model:GetPivot().Position
+	return angle(flat(camPos - at), sunF)
+end
+
+function J.facing(camPos, model)
+	local r = J.rig(model)
+	local cf = r.root and r.root.CFrame or model:GetPivot()
+	return angle(flat(cf.LookVector), flat(camPos - cf.Position))
+end
+
+-- Where the fighter looks, against a point (the other fighter, the lens):
+-- the head's angle, the chest's angle (ground plane), and the head's 3D angle.
+function J.gaze(model, point)
+	local r = J.rig(model)
+	local h, t = r.head, r.torso or r.root
+	if not h then return 0, 0, 0 end
+	local head = angle(flat(h.CFrame.LookVector), flat(point - h.Position))
+	local chest = t and angle(flat(t.CFrame.LookVector), flat(point - t.Position)) or head
+	return head, chest, angle(h.CFrame.LookVector, point - h.Position)
+end
+
+-- The enclosure: centre and radius of the arena wall (World.WALL_RADIUS = 145).
+J.WALL = 145
+function J.arena()
+	local c = workspace:GetAttribute("NDArenaCenter")
+	if typeof(c) == "Vector3" then return c, J.WALL end
+	local cy = workspace:FindFirstChild("Courtyard")
+	if cy then
+		local ok, cf = pcall(function() return cy:GetPivot() end)
+		if ok and cf then return V(cf.Position.X, 0, cf.Position.Z), J.WALL end
+	end
+	return V(0, 0, 0), J.WALL
+end
+function J.inside(pos, margin)
+	local c, r = J.arena()
+	return flat(pos - c).Magnitude &lt;= r - (margin or 3)
+end
+
+function J.height(model)
+	local r = J.rig(model)
+	if r.head and r.root then
+		return math.max(3, (r.head.Position.Y + r.head.Size.Y * 0.9) - (r.root.Position.Y - 3))
+	end
+	return 5.5
+end
+-- The top of the hair and the soles: what "the fighter's height" means on screen.
+function J.ends(model)
+	local r = J.rig(model)
+	local top = r.head and (r.head.Position + V(0, r.head.Size.Y * 0.9, 0)) or model:GetPivot().Position + V(0, 2.5, 0)
+	local feet = (r.root and r.root.Position or model:GetPivot().Position) - V(0, 3, 0)
+	return top, feet
+end
+
+-- The camera distance at which a fighter fills `share` of the frame height.
+function J.maxDistance(model, fov, share)
+	return J.height(model) / (2 * math.tan(math.rad(fov / 2)) * share)
+end
+
+-- A point in the kept 9:16 band of a camera (CFrame + vertical FOV), without a
+-- Camera object: x, y in -1..1 inside the band (y up), depth in studs.
+J.BAND = 9 / 16
+function J.ndc(camCF, fov, p)
+	local l = camCF:PointToObjectSpace(p)
+	local depth = -l.Z
+	if depth &lt;= 1e-3 then return nil, nil, depth end
+	local tv = math.tan(math.rad(fov / 2))
+	return l.X / (depth * tv * J.BAND), l.Y / (depth * tv), depth
+end
+-- The fighter's height (hair to soles) as a share of the band's height.
+function J.share(camCF, fov, model)
+	local top, feet = J.ends(model)
+	local _, yt, dt = J.ndc(camCF, fov, top)
+	local _, yf, df = J.ndc(camCF, fov, feet)
+	if not yt or not yf or dt &lt;= 0 or df &lt;= 0 then return 0 end
+	return math.abs(yt - yf) / 2
+end
+
+----------------------------------------------------------------------------
+-- What happens in a match: events between two states, and the strong moments.
+-- A state: {phase, ko, A = fighter, B = fighter}; a fighter: {name, state,
+-- reaction, health, maxHealth, attack, cast, parry, awaken} (the duel snapshot,
+-- or the attributes the replay writes on its ghosts).
+----------------------------------------------------------------------------
+local REACT = {Knockdown = {4, "au sol"}, Launched = {5, "projeté en l'air"}, WallSplat = {5, "écrasé contre le mur"},
+	Knockback = {3, "repoussé"}, Juggled = {3, "jonglé"}, Grabbed = {3, "saisi"}, Bound = {3, "immobilisé"}, HitStun = {1, "sonné"}}
+J.REACT = REACT
+function J.events(prev, cur, t, memo)
+	local out = {}
+	if not prev or not cur then return out end
+	memo = memo or {}
+	-- who: the fighter it happens to; actor: the one the camera should follow (the hitter for a hit)
+	local function add(who, kind, w, text, actor) table.insert(out, {t = t, who = who, kind = kind, w = w, text = text, actor = actor or who}) end
+	local ko = false
+	for _, k in {"A", "B"} do
+		local a, b = prev[k], cur[k]
+		if a and b then
+			local name = b.name or k
+			local ok = k == "A" and "B" or "A"
+			local o = cur[ok]
+			local oname = o and o.name or "l'adversaire"
+			if b.health and a.health then
+				if b.health &lt;= 0 and a.health &gt; 0 then
+					ko = true
+					add(k, "ko", 10, "K.O. : " .. name .. " tombe", ok)
+				elseif b.health &lt; a.health - 0.5 then
+					local share = (a.health - b.health) / math.max(1, b.maxHealth or 100)
+					add(k, "touche", 3 + 20 * share, string.format("%s frappe %s (−%d PV)", oname, name, math.floor(a.health - b.health + 0.5)), ok)
+				end
+			end
+			local r = b.reaction and REACT[b.reaction]
+			if r and b.reaction ~= a.reaction then add(k, "réaction", r[1], name .. " " .. r[2], ok) end
+			local what = b.cast or b.attack
+			if b.state ~= a.state then
+				if b.state == "TechniqueChannel" then add(k, "jutsu", 3, name .. " prépare " .. (what or "un jutsu"))
+				elseif b.state == "TechniqueActive" then add(k, "jutsu", 5, name .. " lance " .. (what or "son jutsu"))
+				elseif b.state == "Dodging" then add(k, "esquive", 2, name .. " esquive")
+				elseif b.state == "Rush" or b.state == "Pursuit" then add(k, "fonce", 2, name .. " fonce sur " .. oname)
+				elseif b.state == "Guarding" then add(k, "garde", 1, name .. " se met en garde")
+				elseif b.state == "Startup" then add(k, "coup", 1, name .. " attaque" .. (what and (" (" .. what .. ")") or "")) end
+			elseif b.state == "Startup" and b.attack and b.attack ~= a.attack then
+				add(k, "coup", 1, name .. " enchaîne (" .. b.attack .. ")")
+			end
+			if (b.parry or 0) &gt; (a.parry or 0) then add(k, "parade", 4, name .. " pare") end
+			if (b.awaken or 0) &gt; (a.awaken or 0) then add(k, "éveil", 6, name .. " s'éveille") end
+		end
+	end
+	if cur.ko and not prev.ko and not ko and cur.A and cur.B then
+		local loser = (cur.A.health or 1) &lt;= (cur.B.health or 1) and "A" or "B"
+		add(loser, "ko", 10, "K.O. : " .. (cur[loser].name or loser) .. " tombe")
+	end
+	-- A reversal: the one ahead on health changes.
+	if cur.A and cur.B and cur.A.health and cur.B.health then
+		local lead = cur.A.health / math.max(1, cur.A.maxHealth or 100) - cur.B.health / math.max(1, cur.B.maxHealth or 100)
+		local leader = lead &gt; 0.04 and "A" or lead &lt; -0.04 and "B" or nil
+		if leader and memo.leader and leader ~= memo.leader then
+			add(leader, "retournement", 6, "retournement : " .. (cur[leader].name or leader) .. " repasse devant")
+		end
+		if leader then memo.leader = leader end
+	end
+	return out
+end
+
+-- The strongest moments of a list of events (seconds), in real order.
+-- opts: n (4), len (longest moment, 6 s), pre (0.8 s before the first event),
+-- post (1.5 s after the last), t0 / t1 (the range).
+-- -&gt; {score, perMinute, dead (share of the time with nothing within 1.5 s), moments = {{from, to, score, lines}}}
+function J.moments(events, opts)
+	opts = opts or {}
+	local n, len, pre, post = opts.n or 4, opts.len or 6, opts.pre or 0.8, opts.post or 1.5
+	local list = table.clone(events)
+	table.sort(list, function(a, b) return a.t &lt; b.t end)
+	local t0 = opts.t0 or (list[1] and list[1].t or 0)
+	local t1 = opts.t1 or (list[#list] and list[#list].t or t0)
+	local total = 0
+	for _, e in list do total += e.w end
+	local dur = math.max(1e-3, t1 - t0)
+	-- dead time: no event within 1.5 s
+	local live, at = 0, t0
+	for _, e in list do
+		local a, b = math.max(at, e.t - 1.5), math.min(t1, e.t + 1.5)
+		if b &gt; a then live += b - a; at = b end
+	end
+	local chosen = {}
+	local function overlaps(a, b)
+		for _, m in chosen do if a &lt; m.to and b &gt; m.from then return true end end
+		return false
+	end
+	for _ = 1, n do
+		local best = nil
+		for i, e in list do
+			local from = math.max(t0, e.t - pre)
+			if not overlaps(from, from + 0.01) then
+				local score, last = 0, e
+				for j = i, #list do
+					local f = list[j]
+					if f.t + post - from &gt; len then break end
+					score += f.w
+					last = f
+				end
+				local to = math.min(t1 + post, last.t + post)
+				if not overlaps(from, to) and (not best or score &gt; best.score) then best = {from = from, to = to, score = score, i = i, last = last} end
+			end
+		end
+		if not best or best.score &lt;= 0 then break end
+		best.lines = {}
+		for j = best.i, #list do
+			local f = list[j]
+			if f.t &gt; best.last.t then break end
+			table.insert(best.lines, {t = f.t, text = f.text, w = f.w, who = f.who, actor = f.actor, kind = f.kind})
+		end
+		best.i, best.last = nil, nil
+		table.insert(chosen, best)
+	end
+	table.sort(chosen, function(a, b) return a.from &lt; b.from end)
+	return {score = total, perMinute = total / dur * 60, dead = 1 - math.min(1, live / dur), duration = dur, moments = chosen}
+end
+
+return J
 </ProtectedString>
         </Properties>
       </Item>

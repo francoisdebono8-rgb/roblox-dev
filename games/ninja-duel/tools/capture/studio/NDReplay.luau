@@ -13,6 +13,15 @@
 --     follow M.speed, so a quarter-speed render is a real slow motion;
 --   * workspace.NDClock carries the replay time (seconds from the start of the
 --     recording) for the filming assistant F4 and the frame log.
+-- 13/11 evening (claude/demandes-outilleur-prises-humain-2026-11-13):
+--   * the duel itself is recorded (the game's snapshots: state, reaction,
+--     health, technique of each fighter, the K.O.) and written on the ghosts as
+--     attributes (NDState, NDReaction, NDHealth, NDFighter, NDPhase, ...), so F4
+--     knows who acts and stops judging after the K.O. during a replay;
+--   * events() and highlights(): the moments of the match ranked by intensity
+--     (hits, reactions, jutsu, dodges, parries, reversals, K.O.), 3 or 4 of them
+--     proposed in real order; rank() compares several matches;
+--   * a frozen frame (Studio hitch) advances the replay by at most maxStep.
 -- Records every moving thing outside the static map: both fighters, their clones,
 -- effect parts, attachments, emitters, beams, lights, highlights, decals, sprites.
 -- Replay = anchored copies ("ghosts") moved to the recorded values; positions are
@@ -20,6 +29,9 @@
 local RunService = game:GetService("RunService")
 local SoundService = game:GetService("SoundService")
 local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local J = nil
+pcall(function() J = require(script.Parent:WaitForChild("ClipJudge", 2)) end)
 
 local M = {}
 M.list = {}
@@ -29,8 +41,10 @@ M.frames = {}
 M.roots = {}
 M.sounds = {}
 M.emits = {}
+M.duel = {}             -- the duel's states {t, phase, ko, A = fighter, B = fighter}, on change
 M.recording = false
-M.version = 2
+M.version = 3
+M.maxStep = 1 / 30      -- a frozen frame advances the replay by at most this (real seconds)
 M.emitDefault = 12
 M.soundOn = true        -- play the recorded sounds during a replay
 M.soundMinSpeed = 0.9   -- below this speed the replay is silent (the edit uses soundLog)
@@ -243,10 +257,33 @@ local function sample()
 	table.insert(M.frames, t)
 end
 
+-- The duel's state, as the game sends it to this client (ReplicatedStorage.NinjaDuel.Action).
+local function fighterState(d)
+	if type(d) ~= "table" then return nil end
+	return {name = d.fighter, state = d.state, reaction = d.reaction, health = d.health, maxHealth = d.maxHealth,
+		attack = d.attackName, cast = d.castId, parry = d.events and d.events.Parry, awaken = d.events and d.events.Awaken,
+		airborne = d.airborne == true, sprinting = d.sprinting == true}
+end
+local KEYS = {"name", "state", "reaction", "health", "maxHealth", "attack", "cast", "parry", "awaken", "airborne", "sprinting"}
+local function same(a, b)
+	if not a or not b then return a == b end
+	for _, k in KEYS do if a[k] ~= b[k] then return false end end
+	return true
+end
+local function noteDuel(data)
+	if not M.recording or type(data) ~= "table" or type(data.human) ~= "table" then return end
+	local s = {t = now(), phase = data.phase, ko = data.ko == true, A = fighterState(data.human), B = fighterState(data.bot)}
+	local last = M.duel[#M.duel]
+	if not last or last.phase ~= s.phase or last.ko ~= s.ko or not same(last.A, s.A) or not same(last.B, s.B) then
+		table.insert(M.duel, s)
+	end
+end
+
 function M.reset()
 	M.stop()
 	if M.folder then M.folder:Destroy() end
-	M.list, M.ghostOf, M.origOf, M.frames, M.roots, M.sounds, M.emits = {}, {}, {}, {}, {}, {}, {}
+	M.list, M.ghostOf, M.origOf, M.frames, M.roots, M.sounds, M.emits, M.duel = {}, {}, {}, {}, {}, {}, {}, {}
+	M.lastState = nil
 	table.clear(soundLast)
 	M.prevT = nil
 	M.prepared = false
@@ -285,6 +322,12 @@ function M.start(fighters, others)
 		end
 	end
 	for _, d in workspace:GetDescendants() do if d:IsA("Sound") then watchSound(d) end end
+	-- The duel itself: who does what, health, the K.O.
+	local nd = ReplicatedStorage:FindFirstChild("NinjaDuel")
+	local remote = nd and nd:FindFirstChild("Action")
+	if remote and remote:IsA("RemoteEvent") then
+		table.insert(conns, remote.OnClientEvent:Connect(noteDuel))
+	end
 	M.recording = true
 	RunService:BindToRenderStep("NDReplayRec", Enum.RenderPriority.Last.Value + 50, function()
 		if M.recording then sample() end
@@ -458,6 +501,40 @@ local function crossings(a, b)
 	end
 end
 
+-- The duel's state at replay time t, written on the ghosts for F4.
+local function stateAt(t)
+	local list = M.duel
+	local n = #list
+	if n == 0 or t < list[1].t then return nil end
+	local lo, hi = 1, n
+	while lo < hi do
+		local mid = (lo + hi + 1) // 2
+		if list[mid].t <= t then lo = mid else hi = mid - 1 end
+	end
+	return list[lo]
+end
+M.stateAt = stateAt
+local ATTRS = {{"NDFighter", "name"}, {"NDState", "state"}, {"NDReaction", "reaction"}, {"NDHealth", "health"}, {"NDMaxHealth", "maxHealth"},
+	{"NDAttack", "attack"}, {"NDCast", "cast"}, {"NDParry", "parry"}, {"NDAwaken", "awaken"}, {"NDAir", "airborne"}, {"MovementSprinting", "sprinting"}}
+local function writeState(t)
+	local s = stateAt(t)
+	if s == M.lastState then return end
+	M.lastState = s
+	for key, f in {human = "A", bot = "B"} do
+		local g = M.ghostFighter(key)
+		if g then
+			local fs = s and s[f]
+			for _, a in ATTRS do
+				local v = fs and fs[a[2]]
+				if fs and v == nil and type(fs.state) == "string" then v = "" end
+				pcall(function() g:SetAttribute(a[1], v) end)
+			end
+			g:SetAttribute("NDPhase", s and s.phase or nil)
+			g:SetAttribute("NDKO", s and s.ko or nil)
+		end
+	end
+end
+
 M.lastApplied = nil
 function M.apply(t)
 	if not M.prepared then M.prepare() end
@@ -494,6 +571,7 @@ function M.apply(t)
 	if #parts > 0 then workspace:BulkMoveTo(parts, cfs, Enum.BulkMoveMode.FireCFrameChanged) end
 	if forward then crossings(M.lastApplied, t) end
 	M.lastApplied = t
+	if #M.duel > 0 then writeState(t) end
 	workspace:SetAttribute("NDClock", math.floor((t - M.t0) * 1000 + 0.5) / 1000)
 end
 
@@ -545,7 +623,7 @@ function M.play(a, b, speed, camFn, onDone)
 	M.playing = true
 	RunService:BindToRenderStep("NDReplayPlay", Enum.RenderPriority.Last.Value + 300, function(dt)
 		if not M.playing then return end
-		if not M.paused then rt += dt * M.speed end
+		if not M.paused then rt += math.min(dt, M.maxStep or dt) * M.speed end
 		if rt >= b then rt = b end
 		M.rt = rt
 		M.apply(rt)
@@ -589,6 +667,51 @@ function M.soundLog()
 	return out
 end
 
+-- What happened in the match (seconds from the start of the recording): hits,
+-- reactions, jutsu, dodges, parries, awakenings, reversals, the K.O.
+function M.events()
+	local out, memo = {}, {}
+	if not J then return out end
+	for i = 2, #M.duel do
+		for _, e in J.events(M.duel[i - 1], M.duel[i], M.duel[i].t - M.t0, memo) do table.insert(out, e) end
+	end
+	return out
+end
+
+-- The strongest moments of the match, in real order (request 10 of 13/11):
+-- {score, perMinute, dead (share of dead time), moments = {{from, to, score, lines}}}.
+-- opts: n (4), len (6 s), pre (0.8 s), post (1.5 s), label.
+function M.highlights(opts)
+	opts = opts or {}
+	if not J then return nil end
+	local evs = M.events()
+	local t1 = (M.t1 or M.frames[#M.frames] or M.t0) - M.t0
+	local r = J.moments(evs, {n = opts.n or 4, len = opts.len, pre = opts.pre, post = opts.post, t0 = 0, t1 = t1})
+	r.label = opts.label or M.label
+	r.events = #evs
+	local last = M.duel[#M.duel]
+	r.fighters = {last and last.A and last.A.name, last and last.B and last.B.name}
+	return r
+end
+local function f2(x) return (string.format("%.2f", x):gsub("%.", ",")) end
+function M.highlightsText(opts)
+	local r = M.highlights(opts)
+	if not r then return "ClipJudge absent" end
+	local out = {string.format("%s · %d évènements · intensité %d (%d par minute) · temps morts %d %%", tostring(r.label or "match"), r.events,
+		math.floor(r.score), math.floor(r.perMinute), math.floor(r.dead * 100))}
+	for i, m in r.moments do
+		table.insert(out, string.format("M%d  %s–%s s  (intensité %d)", i, f2(m.from), f2(m.to), math.floor(m.score)))
+		for _, l in m.lines do table.insert(out, string.format("     %s s  %s", f2(l.t), l.text)) end
+	end
+	return table.concat(out, "\n")
+end
+-- Several matches (their highlights()), the liveliest first.
+function M.rank(list)
+	local out = table.clone(list)
+	table.sort(out, function(a, b) return (a.perMinute or 0) > (b.perMinute or 0) end)
+	return out
+end
+
 function M.stats()
 	local nParts, nTracks, nEntries, bursts, stamped = 0, 0, 0, 0, 0
 	for _, it in M.list do
@@ -599,7 +722,7 @@ function M.stats()
 	end
 	return {items = #M.list, parts = nParts, tracks = nTracks, entries = nEntries, frames = #M.frames,
 		dur = M.t1 and M.t0 and (M.t1 - M.t0), roots = #M.roots, sounds = #M.sounds, burstEmitters = bursts,
-		stampedEmitters = stamped, stampedBursts = #M.emits}
+		stampedEmitters = stamped, stampedBursts = #M.emits, duelStates = #M.duel}
 end
 
 return M
