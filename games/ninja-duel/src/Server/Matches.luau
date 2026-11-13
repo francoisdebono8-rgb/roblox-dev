@@ -7,6 +7,7 @@ local Rules=require(Shared.Rules)
 local World=require(script.Parent.World)
 local Stage=require(script.Parent.Stage)
 local ArenaMeshes=require(script.Parent.ArenaMeshes)
+local AvatarBody=require(script.Parent.AvatarBody)
 local Combat=require(script.Parent.Combat)
 local AI=require(script.Parent.AI)
 local Tutorial=require(script.Parent.Tutorial)
@@ -214,7 +215,13 @@ function Matches:start(player,playerId,botId,training,options)
 	s.effects=Instance.new("Folder"); s.effects.Name="Effects"; s.effects.Parent=s.folder
 	s.combat=Combat.new(s); s.combat.now=workspace:GetServerTimeNow()
 	local function actor(id,def,position,look,kit)
-		local model,hum,root,joints=World.rig(s.folder,Fighters[def],CFrame.lookAt(position,look),id)
+		local cf=CFrame.lookAt(position,look)
+		-- (DEC-036) The player's own Roblox avatar wearing the kit, when the
+		-- session asks for it and the avatar is built (Server/AvatarBody);
+		-- otherwise the prodigy's own body.
+		local model,hum,root,joints
+		if id=="PlayerFighter" and s.avatarBody then model,hum,root,joints=AvatarBody.rig(player,s.folder,def,Fighters[def],cf,id) end
+		if not model then model,hum,root,joints=World.rig(s.folder,Fighters[def],cf,id) end
 		return s.combat:add(id,model,hum,root,joints,def,kit)
 	end
 	s.human=actor("PlayerFighter",playerId,s.origin+Vector3.new(0,3,Config.StartDistance),s.origin+Vector3.new(0,3,-Config.StartDistance),playerKit)
@@ -622,6 +629,7 @@ function Matches:remove(player)
 		-- (B1 lot 2) left before finishing a first duel: an abandon, measured.
 		if s.metrics and not s.metrics.duelAt then print(string.format("[NinjaDuelFirst] %s left %.1fs (stage %s)",tostring(player.UserId),os.clock()-(s.metrics.joined or os.clock()),tostring(s.firstStage or s.phase))) end
 		self:destroy(s); self:dropStage(s); self.sessions[player]=nil
+		AvatarBody.forget(player)
 	end
 end
 return Matches

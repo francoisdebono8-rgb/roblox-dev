@@ -1222,8 +1222,8 @@ Sortie commune : trois Lights/Heavy physiques distincts, branche seulement aprè
 - dependencies: PROG-001
 - subsystem: progression
 - character: ALL
-- summary: Séparer le kit (le prodige) et le corps (le ninja du joueur), puis jouer chaque kit avec son propre ninja
+- summary: Le joueur se bat dans son propre avatar Roblox (tout ce qu’il a acheté), avec le kit d’un prodige
 - sources: [DEC-036](DECISIONS.md#dec-036--le-ninja-du-joueur-porte-le-kit-dun-prodige-1211)
-- validation: (1) kit et corps séparés dans le code, chaque prodige rebâti à l’identique avec son corps d’origine (test headless + Studio) ; (2) pièces de kit marquées (gourde, sabre, kunai marqués, poids, yeux) ; (3) chacun des 8 kits joué dans Studio sur le corps de l’Ōtsutsuki : animations, yeux, clones, objets, effets ; (4) apparence, kits, build et tenues sauvegardés dans le profil ; (5) créateur v1 (quelques pièces Blender par emplacement, couleurs). Aucune puissance liée à la tenue.
+- validation: (1) kit et corps séparés, chaque prodige rebâti à l’identique (fait) ; (2) pièces de kit marquées (fait) ; (3) l’avatar Roblox de l’utilisateur construit à la taille standard et posé sur le squelette du jeu (`Server/AvatarBody`, test headless), puis chacun des 8 kits joué avec lui dans Studio : animations, pieds, vêtements superposés, accessoires, objets de kit, effets des yeux, clones ; (4) choix sauvegardé dans le profil ; (5) pièces ninja du jeu par-dessus l’avatar. Aucune puissance liée à l’apparence.
 - evidence: Décision utilisateur DEC-036 du 12/11. Étapes 1 et 2 dans le code (12/11, `279cc69`) : `Shared/Appearance` (un corps = le look d’un prodige + couleurs), `World.rig(…, worn)` / `World.dress(model, kit, body)` / `World.lookDef` (sans corps, le prodige est son propre def : bâti à l’identique), `World.markKitItems` (gourde et sangle de Gaara, tanto rangé de Kakashi, marque maudite de Sasuke, veines du Byakugan de Neji : attribut KitItem, aucune règle de jeu). TECHNICAL PASS (suite `Appearance`, 5). Pas encore vu dans Studio ; étapes 3 à 5 à faire.
 - outcome: PENDING
