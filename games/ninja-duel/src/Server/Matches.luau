@@ -8,6 +8,8 @@ local World=require(script.Parent.World)
 local Stage=require(script.Parent.Stage)
 local ArenaMeshes=require(script.Parent.ArenaMeshes)
 local AvatarBody=require(script.Parent.AvatarBody)
+local Progression=require(script.Parent.Progression)
+local Masters=require(Shared.Masters)
 local Combat=require(script.Parent.Combat)
 local AI=require(script.Parent.AI)
 local Tutorial=require(script.Parent.Tutorial)
@@ -176,6 +178,11 @@ function Matches:stageFor(s)
 	s.stageDressed=ArenaMeshes.ready()
 	return s.stage
 end
+-- (DEC-037) A profile just loaded: the roster learns the player's kits.
+function Matches:kitsLoaded(player)
+	local s=self.sessions[player]
+	if s and s.phase=="Selection" then self:send(player,{phase="Selection",epoch=s.epoch,kits=Progression.view(player)}) end
+end
 function Matches:selection(player,notice)
 	local s=self:session(player)
 	if s.online and self.online then self.online:leave(player,s) end
@@ -183,7 +190,8 @@ function Matches:selection(player,notice)
 	player.Character=nil; s.phase="Selection"; s.epoch+=1
 	-- Back on the roster: a tournament in progress ends here.
 	s.cup=nil;s.cupMatch=nil;s.spectate=nil;s.autopilot=nil;s.cupPilot=nil
-	self:send(player,{phase="Selection",epoch=s.epoch,notice=notice})
+	s.masterTrial=nil
+	self:send(player,{phase="Selection",epoch=s.epoch,notice=notice,kits=Progression.view(player)})
 	-- (Lobby, 04/11) in a duel server the roster is the lobby: back home.
 	if self.lobby then self.lobby:onSelection(player) end
 	self:prepareStage(s)
@@ -255,6 +263,17 @@ function Matches:roundOver(s,winner,notify,advance)
 	local decided=s.wins[winner.id]>=s.roundsToWin
 	s.matchPoint=decided
 	if decided and not s.tutorial and not s.online and s.owner then Matches.measure(s.owner,s,"duel") end
+	-- (DEC-037) The masters' path: mastery for the kit fought with; a master's
+	-- duel won teaches his kit. Shown on the result screen (snapshot `progress`).
+	if decided and not s.online and s.owner and s.human then
+		local won=winner==s.human
+		local gained=Progression.duelEnded(s.owner,s,won)
+		s.progress={mastery=gained and gained.mastery,gained=gained~=nil,fighter=s.playerId}
+		if s.masterTrial and won then
+			local ok=Progression.learnFromMaster(s.owner,s.masterTrial)
+			if ok then s.progress.learned=s.masterTrial end
+		end
+	end
 	if not s.online and s.owner and s.human then Matches.logPresses(s.owner,s.human) end
 	local finishEpoch=s.epoch
 	notify()
@@ -273,6 +292,8 @@ end
 -- the first duel of a new player), stronger each round of the cup.
 Matches.LEVELS={easy=true,normal=true,hard=true}
 function Matches.aiLevel(s)
+	-- (DEC-037) A master's duel: the prodigy at his level.
+	if s.masterTrial then return Masters.DuelLevel end
 	if s.cup then
 		if s.spectate then return "normal" end
 		local m=s.cup.match or 1
@@ -445,7 +466,9 @@ function Matches:view(s,cursor,mine,theirs)
 		projectiles=projectiles,hazards=hazards,zones=Zones.snapshot(s.combat,now),serverNow=now,intro=math.max(0,(s.introUntil or 0)-now),ko=s.finishing==true,
 		round=s.round or 1,wins={human=wins[mine.id] or 0,bot=wins[theirs.id] or 0},roundsToWin=s.roundsToWin or 1,matchPoint=s.matchPoint,
 		-- (Tournament) the bracket in play, and a match the player only watches.
-		cup=if s.cup and self.tournament then self.tournament:view(s.cup) else nil,spectate=s.spectate==true}
+		cup=if s.cup and self.tournament then self.tournament:view(s.cup) else nil,spectate=s.spectate==true,
+		-- (DEC-037) the masters' path: mastery gained, a kit learned, the master being fought.
+		progress=s.progress,master=s.masterTrial}
 end
 function Matches:request(player,payload)
 	local s=self:session(player); local clock=os.clock()
@@ -487,10 +510,44 @@ function Matches:request(player,payload)
 		if not self:start(player,payload.player,rival,true) then s.firstStage=nil end
 		return
 	end
+	-- (DEC-037) The masters' path from the roster: the starter, the kit for the
+	-- next duels, a master's duel, a kit bought.
+	if action=="ChooseStarter" or action=="SelectKit" or action=="MasterTrial" or action=="BuyKit" then
+		if clock-s.lastLifecycle<0.8 or s.phase~="Selection" or not Progression.enabled() then return end
+		if type(payload.player)~="string" then return end
+		s.lastLifecycle=clock
+		if action=="ChooseStarter" or action=="SelectKit" then
+			local ok,why
+			if action=="ChooseStarter" then ok,why=Progression.chooseStarter(player,payload.player) else ok,why=Progression.select(player,payload.player) end
+			self:send(player,{phase="Selection",epoch=s.epoch,kits=Progression.view(player),notice=if ok then nil else string.upper(tostring(why))})
+		elseif action=="MasterTrial" then
+			local master=payload.master
+			local h=Progression.handles[player]
+			local can,why=Masters.canLearn(h and h.data.kits,master)
+			if not can or not Progression.owns(player,payload.player) then
+				self:send(player,{phase="Selection",epoch=s.epoch,kits=Progression.view(player),notice=string.upper(tostring(if can then "Kit not learned" else why))})
+				return
+			end
+			s.masterTrial=master;s.firstStage=nil
+			if not self:start(player,payload.player,master,false) then s.masterTrial=nil end
+		elseif action=="BuyKit" then
+			local product=(Config.Progression and Config.Progression.Products or {})[payload.player]
+			if product and not Progression.owns(player,payload.player) then
+				pcall(function() game:GetService("MarketplaceService"):PromptProductPurchase(player,product) end)
+			end
+		end
+		return
+	end
 	if action=="Start" or action=="Tutorial" or action=="Rematch" or action=="Selection" then
 		if clock-s.lastLifecycle<0.8 then return end
 		if (action=="Start" or action=="Tutorial") and s.phase=="Selection" then
 			if type(payload.player)~="string" or type(payload.bot)~="string" then return end
+			-- (DEC-037) A duel that counts takes a learned kit; practice takes any.
+			if action=="Start" and not Progression.owns(player,payload.player) then
+				self:send(player,{phase="Selection",epoch=s.epoch,kits=Progression.view(player),notice="KIT NOT LEARNED YET — TRY IT IN PRACTICE"})
+				return
+			end
+			s.masterTrial=nil
 			s.lastLifecycle=clock;s.firstStage=nil
 			if type(payload.level)=="string" and Matches.LEVELS[payload.level] then s.aiLevel=payload.level end
 			self:start(player,payload.player,payload.bot,action=="Tutorial")
@@ -580,6 +637,10 @@ function Matches:act(s,actor,payload,clock)
   return
  end
  local ok,reason=s.combat:request(actor,action,aim,clientTime,if payload.chakra==true then {chakra=true} else nil)
+	-- (DEC-037) The jutsu this duel saw (mastery counts each different one once).
+	if ok and type(action)=="string" and (string.sub(action,1,9)=="Technique" or string.sub(action,1,4)=="Seal") then
+		actor.usedJutsu=actor.usedJutsu or {};actor.usedJutsu[action]=true
+	end
 	if padJump and action=="Pursuit" and ok==false then action="Jump";ok,reason=s.combat:request(actor,"Jump",aim,clientTime,nil) end
 	if ok==false and not actor.latePress then Matches.countPress(actor,"refused",reason) end
 	-- (05/11) A press refused while the body takes a blow says how to get out
