@@ -1,7 +1,7 @@
 {
   "version": "0.13.0-arena-combo",
   "artifact": "NinjaDuel-Capture.rbxlx",
-  "sha256": "03d563352a2a24345bd98406187ba6527357cfd2795688e8ce0f9bbd3294dc76",
+  "sha256": "6d62b6877c8a663be6f39318c89a74d4c8d90ed2aeb64ebde0af5645922e2fe3",
   "sources": {
     "src/Client/ArenaDress.luau": "e2da1115cb48480b2effa3170a1670d3bb44d5bcbdfd9bbdbb3e60ee302b5360",
     "src/Client/AuthoredClips.luau": "1799da3d96178392fe44c90470fca30d7b11acde9bb45c0e2c5660bd940d6715",
@@ -251,11 +251,11 @@
   },
   "sourceEquality": "PASS",
   "debugOnly": true,
-  "buildFingerprint": "91d57256f3a69c14ba80390aee62600aa7bbc6921643e44ef851403610256c9f",
+  "buildFingerprint": "19bae9d13ef9cd9b36c4c84c8803d93dcb1772d65196efec51a9d1077352f40e",
   "profile": "capture",
   "runtimeFingerprint": "93cfbc05c1fc00b5bc59477a39497898c3bc374898b0e0b186e0662c42cadb85",
-  "sourceCommit": "d6c9b7ba9e70c40f07eba60b60732afc0ffffecf",
-  "headCommit": "d6c9b7ba9e70c40f07eba60b60732afc0ffffecf",
+  "sourceCommit": "69a381d0b6de3cb4fb7dd99072218b669114af9b",
+  "headCommit": "69a381d0b6de3cb4fb7dd99072218b669114af9b",
   "sourceDirty": false,
   "captureTools": {
     "tools/capture/studio/ClipKit.client.luau": "7889f16ee2fa12b5367d104b26d449f0734a271975421617800df53ec80a1a07",
@@ -264,10 +264,11 @@
     "tools/capture/studio/Sets.luau": "d2f59ad3356a3cb1a7577ecba56ab05fb1d795e2f537d33a11b290dc48ce8a71",
     "tools/capture/studio/SetSnapshot.luau": "9476b4279e98fd577ca05d07648cea44176bf5803af450e77796c14fe1816704",
     "tools/capture/studio/NDFactoryBoot.server.luau": "a256bc22204d8068dae32e877981e459a7a8a1e5a31a8965d161071e33c6c608",
-    "tools/capture/studio/ClipAssist.luau": "dce6275d7a567be0c4f1749357d8a1929619adcc514e21f11472252e2375fb16",
-    "tools/capture/studio/ClipSight.luau": "d4776a189fc4ffd28aea395765a51cd9acfb5339f3bca2f6163774a04847f281",
-    "tools/capture/studio/NDReplay.luau": "6ce721e8f95012d09ef38355e461823bb23957038b0d4b75d121fce75a72fe0c",
-    "tools/capture/studio/NDDirector.luau": "9f368e22457e7fab0e13aaf72176114caee976ae3951e37da4cf5753e119e294"
+    "tools/capture/studio/ClipAssist.luau": "cd8fb1720dabd6ea9f3b2765a25834f4cb46b19eeedff596e9b7aa83fd37b6b0",
+    "tools/capture/studio/ClipSight.luau": "157b59fa4829fcfdf27676193ac75b0a89a4cff39129f50b66217526b00dbec9",
+    "tools/capture/studio/NDReplay.luau": "2951c7224a5604a077a103e590fff3e18520128fb12944be171dd8f804c9531e",
+    "tools/capture/studio/NDDirector.luau": "1fa9ee0e0737e48a99b18316d91d0fb16c468ff72ec97abaa0c6e4fe80a12ea0",
+    "tools/capture/studio/ClipJudge.luau": "2cc7d1fa9a02ca2f351087f64f577d91f8584d4b48d3b3b663f18ef51a8c8977"
   },
   "donorAssets": {
     "assets/BanglaAssets.rbxmx": "6e99f5f67e6c34ac8a81d739431554b1495f0f5cd1dd1870a39eeb8bf23e1983"
