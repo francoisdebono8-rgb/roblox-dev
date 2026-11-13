@@ -1241,3 +1241,16 @@ Sortie commune : trois Lights/Heavy physiques distincts, branche seulement aprè
 - evidence: 12/11 : étape (1) faite (`Shared/Masters`, `Server/Progression`, `ProfileSchema` v2, gardes dans `Matches`, `Tournament`, `Online`) ; suite `Masters` 8 PASS. 13/11 (boucle bêta) : étapes (2) et (3) écrites (`Shared/MastersView`, `Client/UI`) : premier kit parmi trois, kits verrouillés grisés avec ce qui manque, barre de maîtrise, bouton du duel du maître, « essayer » à l’entraînement, bouton d’achat quand Roblox vend le kit, ligne de maîtrise et kit appris sur l’écran de résultat ; le kit joué devient le choix du roster ; suite `MastersView` 6 PASS. Allumé dans la configuration (`Enabled`, `Live`), sans produit en vente ; étape (4) à faire dans Studio, publication sur autorisation.
 - outcome: PENDING
 
+## HUB-001 — Konoha : le village entre deux duels, les maîtres chez eux
+
+- status: PARTIAL
+- priority: P1
+- dependencies: MASTERS-001
+- subsystem: progression
+- character: ALL
+- summary: Entre deux duels, le joueur marche dans Konoha avec son avatar. Les maîtres l’attendent chacun chez lui, et le surveillant de la salle de l’examen ouvre le tableau des duels.
+- sources: [DEC-038](DECISIONS.md#dec-038--la-boucle-dans-le-monde--konoha-et-la-salle-de-lexamen-les-maîtres-chez-eux-des-arbres-payés-par-la-maîtrise-1311)
+- validation: (1) village construit et maîtres posés sur un sol solide (test sans écran) ; (2) Studio : arrivée par la porte, premiers déplacements (course, second saut, toits, échelles), marqueurs, carte du maître et ses boutons, tableau au surveillant, retour devant la salle après un duel ; (3) habillage Blender des bâtiments, de la statue et des visages ; (4) maîtres animés (attitudes propres à chacun) ; (5) mesures : temps jusqu’au premier maître, puis jusqu’au premier duel.
+- evidence: 13/11 : `Shared/HubMap`, `Server/Hub` (environ 1 450 pièces, dont 391 solides), `Client/HubClient`, `MastersView.card` ; le roster devient le tableau du surveillant ; le résultat ramène « BACK TO KONOHA ». Suites `Hub` 5 PASS et `MastersView` 7 PASS. Aperçus calculés depuis le code ; pas encore vu dans Studio.
+- outcome: PENDING
+

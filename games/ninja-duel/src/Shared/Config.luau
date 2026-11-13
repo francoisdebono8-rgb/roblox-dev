@@ -187,6 +187,10 @@ return {
 	-- (DEC-036) The player's fighter is his own Roblox avatar wearing the kit
 	-- (Server/AvatarBody); the AI's and the watched fighters stay the prodigies.
 	AvatarBody = { Enabled = true },
+	-- (DEC-038, 13/11) Between duels the player walks Konoha as his own avatar:
+	-- the masters at home, the exam hall's proctor opens the board of duels.
+	-- Off: the roster screen, as before.
+	Hub = { Enabled = true },
 	AI = { Tick = 0.18, Reaction = 0.38, Aggression = 0.72, Defense = 0.58, Technique = 0.34,
 		TechniqueGap = 2.6, TechniqueJitter = 2.6, ReadGuard = 0.3, ReadDodge = 0.16, ReadPoke = 0.22, GuardRead = 0.07,
 		Feint = 0.1, ProbeTool = 2.4, Disengage = 0.45, WallRun = 0.35,

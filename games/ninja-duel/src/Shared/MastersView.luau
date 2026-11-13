@@ -90,6 +90,34 @@ function V.action(kits,id)
 		note=string.format("%s TEACHES WHOEVER HAS %d MASTERY WITH %s (BEST: %d).",who,Masters.Need,from,m.best or 0)}
 end
 
+-- (DEC-038) The master's card in Konoha: what his three buttons do for this
+-- player. primary / second / third = {label, send = {action, payload}} or
+-- {label, tree = kit} (opens the tree), nil when absent.
+function V.card(kits,id)
+	local FirstMinute=require(script.Parent.FirstMinute)
+	local act=V.action(kits,id)
+	local who=name(id)
+	local out={note=act.note,kind=act.kind}
+	local rival=FirstMinute.rival(id) or "Lion"
+	if act.kind=="wait" then out.primary={label="LOADING YOUR KITS…"}
+	elseif act.kind=="choose" then out.primary={label="TAKE HIS KIT",send={"ChooseStarter",{player=id}}}
+	elseif act.kind=="master" then out.primary={label="DUEL THE MASTER",send={"MasterTrial",{player=act.via,master=id}}}
+	elseif act.kind=="try" then out.primary={label="TRY HIS KIT",send={"Tutorial",{player=id,bot=rival}}}
+	else
+		local first=kits~=nil and kits.state=="ready" and kits.starter==id and (kits.mastery and kits.mastery[id] or 0)==0
+		if first then out.primary={label="YOUR FIRST DUEL",send={"First",{player=id}}}
+		else out.primary={label="SPAR WITH "..who,send={"Start",{player=id,bot=id,level="normal"}}} end
+	end
+	local extra={}
+	local tree=kits and kits.trees and kits.trees[id]
+	if tree then table.insert(extra,{label=if (tree.free or 0)>0 then "SKILL TREE • "..tree.free else "SKILL TREE",tree=id}) end
+	if act.product then table.insert(extra,{label="BUY HIS KIT",send={"BuyKit",{player=id}}}) end
+	if act.kind=="choose" or act.kind=="master" then table.insert(extra,{label="TRY HIS KIT",send={"Tutorial",{player=id,bot=rival}}}) end
+	if act.kind=="play" and kits and kits.owned and kits.owned[id] and kits.selected~=id then table.insert(extra,{label="MAKE IT MY KIT",send={"SelectKit",{player=id}}}) end
+	out.second=extra[1];out.third=extra[2]
+	return out
+end
+
 -- The result screen's line: mastery earned, a kit learned, a master waiting.
 function V.result(progress,kits)
 	if type(progress)~="table" then return nil end
