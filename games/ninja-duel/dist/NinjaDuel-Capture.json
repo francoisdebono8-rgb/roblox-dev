@@ -1,7 +1,7 @@
 {
   "version": "0.13.0-arena-combo",
   "artifact": "NinjaDuel-Capture.rbxlx",
-  "sha256": "e735dd13be23b34b97fe16604c910ab1857efc4d4ad8070573acc5d2f0739d1d",
+  "sha256": "25c9479bd437bea2fecc3d139a7625626c78c22dfc9a2ed8b505618b00fcc156",
   "sources": {
     "src/Client/ArenaDress.luau": "e2da1115cb48480b2effa3170a1670d3bb44d5bcbdfd9bbdbb3e60ee302b5360",
     "src/Client/AuthoredClips.luau": "1799da3d96178392fe44c90470fca30d7b11acde9bb45c0e2c5660bd940d6715",
@@ -232,11 +232,11 @@
   },
   "sourceEquality": "PASS",
   "debugOnly": true,
-  "buildFingerprint": "62f787f55b7fbb8f2145a127c0281e187a59e7abb1ccfa5844b6759dc795101a",
+  "buildFingerprint": "ec3b808a3daaf7c8000addf24c4aa4351572b04a1aa7849508030f1b26758aa5",
   "profile": "capture",
   "runtimeFingerprint": "0cc9f98a2f71849017ebd146764d7b1ce9518ffd039cb3abb39ecb790cd1ab4c",
-  "sourceCommit": "c7e79d1c5597eb6cdab1cec09f2c011e4d560b74",
-  "headCommit": "c7e79d1c5597eb6cdab1cec09f2c011e4d560b74",
+  "sourceCommit": "8519bc4a3a4239d61dd7e3a4b7735800ec9f20ac",
+  "headCommit": "8519bc4a3a4239d61dd7e3a4b7735800ec9f20ac",
   "sourceDirty": false,
   "captureTools": {
     "tools/capture/studio/ClipKit.client.luau": "7889f16ee2fa12b5367d104b26d449f0734a271975421617800df53ec80a1a07",
@@ -245,7 +245,7 @@
     "tools/capture/studio/Sets.luau": "d2f59ad3356a3cb1a7577ecba56ab05fb1d795e2f537d33a11b290dc48ce8a71",
     "tools/capture/studio/SetSnapshot.luau": "9476b4279e98fd577ca05d07648cea44176bf5803af450e77796c14fe1816704",
     "tools/capture/studio/NDFactoryBoot.server.luau": "a256bc22204d8068dae32e877981e459a7a8a1e5a31a8965d161071e33c6c608",
-    "tools/capture/studio/ClipAssist.luau": "d89db39390d145c4597265e449012a465f688c2e4ca99f29d51ec3b535ef18ce",
+    "tools/capture/studio/ClipAssist.luau": "dce6275d7a567be0c4f1749357d8a1929619adcc514e21f11472252e2375fb16",
     "tools/capture/studio/ClipSight.luau": "d4776a189fc4ffd28aea395765a51cd9acfb5339f3bca2f6163774a04847f281",
     "tools/capture/studio/NDReplay.luau": "6ce721e8f95012d09ef38355e461823bb23957038b0d4b75d121fce75a72fe0c",
     "tools/capture/studio/NDDirector.luau": "9f368e22457e7fab0e13aaf72176114caee976ae3951e37da4cf5753e119e294"

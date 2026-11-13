@@ -5390,7 +5390,7 @@ return {
       <Item class="StringValue" referent="ND36">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">62f787f55b7fbb8f2145a127c0281e187a59e7abb1ccfa5844b6759dc795101a</string>
+          <string name="Value">ec3b808a3daaf7c8000addf24c4aa4351572b04a1aa7849508030f1b26758aa5</string>
         </Properties>
       </Item>
       <Item class="StringValue" referent="ND37">
@@ -5408,7 +5408,7 @@ return {
       <Item class="StringValue" referent="ND39">
         <Properties>
           <string name="Name">SourceCommit</string>
-          <string name="Value">c7e79d1c5597</string>
+          <string name="Value">8519bc4a3a42</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND40">
@@ -6596,7 +6596,9 @@ function Assist.install(ctx,dev)
 	end
 	local function closeSpan(c,at)
 		if take and c.open then
-			table.insert(take.spans,{id=c.id,sev=c.sev,owner=c.owner,text=c.text,t0=r3(math.max(0,rel(c.since))),t1=r3(math.max(0,rel(at or c.seen)))})
+			local t0,t1=r3(math.max(0,rel(c.since))),r3(math.max(0,rel(at or c.seen)))
+			-- a fault that ended before the take began (seen once at its very start) is not part of it
+			if t1&gt;t0 then table.insert(take.spans,{id=c.id,sev=c.sev,owner=c.owner,text=c.text,t0=t0,t1=t1}) end
 		end
 	end
 	local function hold(group,stamp,id,sev,owner,text,minDur)
@@ -6869,6 +6871,20 @@ function Assist.install(ctx,dev)
 		end
 		pcall(function() StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.All,false) end)
 		UIS.MouseIconEnabled=false
+	end
+	-- The game turns its look and its HUD back on (a new round, WorldLook): while
+	-- the image is prepared, keep them off (8 times a second) until « Rétablir ».
+	local function enforce()
+		if not saved then return end
+		for _,g in playerGui:GetChildren() do
+			if g:IsA("ScreenGui") and g~=gui and g.Enabled and not DEV_GUIS[g.Name] and string.sub(g.Name,1,2)~="ND" then saved.guis[g]=true;g.Enabled=false end
+		end
+		for _,root in {Lighting,workspace.CurrentCamera} do
+			for _,e in root:GetChildren() do
+				if (e:IsA("DepthOfFieldEffect") or e:IsA("SunRaysEffect")) and e.Enabled then saved.effects[e]=true;e.Enabled=false end
+			end
+		end
+		if UIS.MouseIconEnabled then UIS.MouseIconEnabled=false end
 	end
 	local function restore()
 		if not saved then return end
@@ -7547,7 +7563,7 @@ function Assist.install(ctx,dev)
 		end
 		if now-drawAt&gt;=1/8 then
 			drawAt=now
-			local ok,err=pcall(function() layoutBand();render(now) end)
+			local ok,err=pcall(function() enforce();layoutBand();render(now) end)
 			if not ok then warn("[NinjaDuelClip] draw: "..tostring(err)) end
 		end
 	end)

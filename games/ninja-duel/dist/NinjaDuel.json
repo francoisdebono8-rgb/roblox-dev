@@ -1,7 +1,7 @@
 {
   "version": "0.13.0-arena-combo",
   "artifact": "NinjaDuel.rbxlx",
-  "sha256": "ba3e7592bf0786a8871e4a38a6f32dfaff231e3ab7999f0dbaa2b39e8b892e9e",
+  "sha256": "853fdbe715be3d9e14f0fe79e1e055a72a3d3d0b90401d39ddb8e235b7be0abd",
   "sources": {
     "src/Client/ArenaDress.luau": "e2da1115cb48480b2effa3170a1670d3bb44d5bcbdfd9bbdbb3e60ee302b5360",
     "src/Client/AuthoredClips.luau": "1799da3d96178392fe44c90470fca30d7b11acde9bb45c0e2c5660bd940d6715",
@@ -212,8 +212,8 @@
   "buildFingerprint": "0cc9f98a2f71849017ebd146764d7b1ce9518ffd039cb3abb39ecb790cd1ab4c",
   "profile": "release",
   "runtimeFingerprint": "0cc9f98a2f71849017ebd146764d7b1ce9518ffd039cb3abb39ecb790cd1ab4c",
-  "sourceCommit": "c7e79d1c5597eb6cdab1cec09f2c011e4d560b74",
-  "headCommit": "c7e79d1c5597eb6cdab1cec09f2c011e4d560b74",
+  "sourceCommit": "8519bc4a3a4239d61dd7e3a4b7735800ec9f20ac",
+  "headCommit": "8519bc4a3a4239d61dd7e3a4b7735800ec9f20ac",
   "sourceDirty": false,
   "captureTools": {},
   "donorAssets": {
