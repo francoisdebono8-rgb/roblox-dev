@@ -5159,13 +5159,13 @@ return {
       <Item class="StringValue" referent="ND35">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">442c759bd28d47612a92cd3e1967f323d2db23ec7c67f305e09093b04071f200</string>
+          <string name="Value">8298f4793d2274fc9f641bb5ef62d31101c113dd4b2b266a02cc1c5f313726dd</string>
         </Properties>
       </Item>
       <Item class="StringValue" referent="ND36">
         <Properties>
           <string name="Name">RuntimeFingerprint</string>
-          <string name="Value">442c759bd28d47612a92cd3e1967f323d2db23ec7c67f305e09093b04071f200</string>
+          <string name="Value">8298f4793d2274fc9f641bb5ef62d31101c113dd4b2b266a02cc1c5f313726dd</string>
         </Properties>
       </Item>
       <Item class="StringValue" referent="ND37">
@@ -5177,7 +5177,7 @@ return {
       <Item class="StringValue" referent="ND38">
         <Properties>
           <string name="Name">SourceCommit</string>
-          <string name="Value">279cc69bd3a0</string>
+          <string name="Value">dd6d1c693ccb</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND39">
@@ -6701,7 +6701,12 @@ function Bangla.begin(c,a,p)
  hitbox.Parent=c.match.effects
  p.donor={hitbox=hitbox,Hits={},action=Combo.Actions[p.name] or 'MegaPunch'}
  -- The donor used Debris for lifetime; c.effects also cleans interrupted swings.
- table.insert(c.effects,{part=hitbox,expires=c.now+p.spec.startup+p.spec.active+.05})
+ -- (13/11, #72: the Chidori dive off the wall missed a body 40 studs away)
+ -- A sized window (the wall dive's flight, the slam's descent: p.slamWindow,
+ -- Combat's Active) keeps the hitbox for the whole of it, not the authored
+ -- active alone: the dive arrived after the box was gone.
+ local window=math.max(p.spec.active,p.slamWindow or 0)
+ table.insert(c.effects,{part=hitbox,expires=c.now+p.spec.startup+window+.05})
  sound(a.root,'rbxassetid://5835032207')
  a.model:SetAttribute('CombatBase','BanglaBattlegrounds')
 end
@@ -6725,6 +6730,10 @@ function Bangla.tryHit(c,a,p)
   if hit:IsDescendantOf(target.model) and not donor.Hits[target.id] then
    -- (07/11, game feel) only what is in front of the blow (Config.Contact).
    if not c:targetValid(a,target,p.spec.range,p.spec.facing or Config.Contact.Facing,p.from) then continue end
+   -- (13/11, #72: the Chidori dive at a body getting up) The rising body's
+   -- short protection lets a strike pass, it does not spend it: a strike
+   -- still out when he is up lands (a dodge or a substitution still eats it).
+   if target.reaction=="Wakeup" and (target.invulnerableUntil or 0)&gt;c.now then continue end
    donor.Hits[target.id]=true
    local delta=frame.Position-target.root.Position
    local frontal=delta.Magnitude&lt;.001 or target.root.CFrame.LookVector:Dot(delta.Unit)&gt;.15
@@ -12837,7 +12846,9 @@ function Combat:requestInner(a,action,aim,clientTime,opts)
 	-- The Sharingan across the field may copy it; a copied one is spent.
 	Copy.cast(self,a,spec)
 	self:awakenTechnique(a,spec)
-	a.pending={kind="Technique",spec=spec,implementation=technique,aim=aim or a.target.root.Position,variant=variant,cancelled=cancelled}
+	a.pending={kind="Technique",spec=spec,implementation=technique,aim=aim or a.target.root.Position,variant=variant,cancelled=cancelled,
+		-- (13/11, #72) a copied held jutsu goes as big as the eye saw it
+		charge=if spec.Copied then spec.SeenCharge else nil}
 	-- A technique may set itself up as its channel begins (Naruto's Rasengan
 	-- calls the clone that shapes it, and its channel follows).
 	if technique.start then technique.start(self,a,a.pending);spec=a.pending.spec end
@@ -12872,12 +12883,17 @@ function Combat.charging(c,a,pending,now)
 	local key=a.techHold
 	if not hold or not key or not key.down then return false end
 	local slotSpec=a.def.Techniques and a.def.Techniques[key.slot]
-	if not slotSpec or slotSpec.Id~=pending.spec.Id then return false end
-	pending.chargeStart=pending.chargeStart or now
+	-- (13/11, #72) Kakashi's copy slot holds a copied jutsu the way its owner
+	-- holds it (the slot's own spec is his Water Dragon).
+	local copied=pending.spec.Copied and a.def.Copy and key.slot==(a.def.Copy.Slot or 1)
+	if not copied and (not slotSpec or slotSpec.Id~=pending.spec.Id) then return false end
+	-- A copy starts from what the eye saw gathered (Copy.released).
+	pending.chargeStart=pending.chargeStart or now-(pending.charge or 0)*(hold.Time or 1)
 	local held=now-pending.chargeStart
 	local cost=(hold.Cost or 0)/(hold.Time or 1)*(1/30)
 	if held&gt;=(hold.Time or 1) or a.chakra&lt;cost then pending.charge=math.min(1,held/(hold.Time or 1));return false end
-	if not pending.charge then
+	if not pending.gathering then
+		pending.gathering=true
 		c:cue(a,string.upper(pending.spec.Name).." • HOLD TO GATHER",hold.Time)
 		require(script.Parent.Brawler).event(c,a,"Hold:"..pending.spec.Id)
 	end
@@ -13052,6 +13068,8 @@ function Combat:updateActor(a,dt)
 			a.untilTime=now+1/30
 		elseif a.state=="TechniqueChannel" and pending then
 			a.techCharge=nil
+			-- What a held jutsu gathered, for the Sharingan that copied it.
+			Copy.released(self,a,pending)
 			-- State changes before payoff so simultaneous channels resolve deterministically.
 			self:setState(a,"TechniqueActive",pending.spec.Active)
 			-- (Embodiment) A technique that is a state of the body forms it
@@ -14071,7 +14089,7 @@ function Copy.cast(c,a,spec)
 				copied.Copied=true;copied.CopiedFrom=a.def.Name
 				-- (a charge buried as its owner's is not his: it goes off as cast)
 				copied.Charge=nil
-				k.copy={spec=copied,slot=tune.Slot or 1,uses=tune.Uses or 1,at=c.now,untilT=c.now+(tune.Life or 15),from=a.fighterId}
+				k.copy={spec=copied,slot=tune.Slot or 1,uses=tune.Uses or 1,at=c.now,untilT=c.now+(tune.Life or 15),from=a.fighterId,source=a,sourceAt=c.now}
 				-- The bodies a copied jutsu makes are tuned like its owner's.
 				if a.def.Bodies then k.borrowedBodies=a.def.Bodies end
 				c:pushImpact(k.root.Position,"copy",false,{owner=k.id,fighter=k.fighterId,from=a.id,technique=spec.Id,name=spec.Name,channel=spec.Channel or .3})
@@ -14081,11 +14099,25 @@ function Copy.cast(c,a,spec)
 		end
 	end
 end
+-- (13/11, #72: « Kakashi la copie et la lui renvoie ») A held jutsu (spec.Hold:
+-- Sasuke's Great Fireball) leaves its owner's hands: the eye saw it gathered,
+-- and the copy goes as big as it was seen (SeenCharge). Combat calls this
+-- when the owner's channel ends, with what he gathered.
+function Copy.released(c,a,pending)
+	if not pending or not pending.spec or not pending.spec.Hold then return end
+	local charge=math.clamp(pending.charge or 0,0,1)
+	for _,k in c.actors do
+		local copy=k.copy
+		if k~=a and copy and copy.source==a and copy.sourceAt==a.castStarted and copy.spec.Id==pending.spec.Id then
+			copy.spec.SeenCharge=charge
+		end
+	end
+end
 -- Snapshot (Matches): what he holds, for the eye and the slot.
 function Copy.view(c,a)
 	local copy=a.copy
 	if not copy then return nil end
-	return {id=copy.spec.Id,name=copy.spec.Name,remaining=math.max(0,copy.untilT-c.now),uses=copy.uses,from=copy.from}
+	return {id=copy.spec.Id,name=copy.spec.Name,remaining=math.max(0,copy.untilT-c.now),uses=copy.uses,from=copy.from,charge=copy.spec.SeenCharge}
 end
 return Copy
 </ProtectedString>
