@@ -1116,7 +1116,9 @@ function Assist.install(ctx,dev)
 			local turn=math.deg(math.acos(math.clamp(look:Dot(lastCam.look),-1,1)))
 			if attr("NDCut")==true then
 				-- inside a black gap: no cut, no jump
-			elseif move>T.cutMove or turn>T.cutTurn or math.abs(fov-lastCam.fov)>6 then
+			-- A cut: more than the bodies themselves could explain in this frame (a slow
+			-- frame at 15 i/s carries four frames of motion).
+			elseif move>math.max(T.cutMove*math.max(1,dt*60),3*bodyMove+2) or turn>T.cutTurn*math.max(1,dt*30) or math.abs(fov-lastCam.fov)>6 then
 				if take then table.insert(take.cuts,r3(now-take.start)) end
 				if now-lastCut<T.cutGap then event("cuts",WARN,"cadrage","deux coupes en "..fmt(now-lastCut).." s",now) end
 				lastCut=now
