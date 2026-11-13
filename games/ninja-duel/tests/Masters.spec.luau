@@ -18,14 +18,14 @@ local Repo=H.load("Server/ProfileRepository")
 local Masters=H.load("Shared/Masters")
 local Config=H.load("Shared/Config")
 
-test("the profile v2 keeps the kits; a v1 profile gains an empty kits record",function()
+test("the profile keeps the kits (v2, now v3 with the wallet); a v1 profile gains an empty kits record",function()
 	local p=S.new("dev_kits")
-	assert(p.schemaVersion==2 and p.kits and next(p.kits.owned)==nil,"a new profile has no kits record")
+	assert(p.schemaVersion==S.Version and p.kits and next(p.kits.owned)==nil,"a new profile has no kits record")
 	assert(S.validate(p))
 	local v1={schemaVersion=1,id="dev_old",fighters={},sequence=3}
 	local m,why=S.migrate(v1)
-	assert(m and m.schemaVersion==2 and m.kits and m.sequence==3,"v1 did not migrate: "..tostring(why))
-	assert(S.migrate({schemaVersion=3,id="dev_x",fighters={},sequence=0})==nil,"a future schema was accepted")
+	assert(m and m.schemaVersion==S.Version and m.kits and m.wallet and m.style and m.sequence==3,"v1 did not migrate: "..tostring(why))
+	assert(S.migrate({schemaVersion=S.Version+1,id="dev_x",fighters={},sequence=0})==nil,"a future schema was accepted")
 	local bad=S.copy(p);bad.kits.owned.Nobody=true
 	assert(not S.validate(bad),"an unknown kit was accepted")
 	local bad2=S.copy(p);bad2.kits.selected="Lion"

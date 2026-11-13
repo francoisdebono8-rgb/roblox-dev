@@ -286,7 +286,20 @@ function UI.new(parent,send)
 			local made,panel=pcall(TreePanel.new,UI.kit,self.gui,send)
 			if made then self.treePanel=panel end
 		end
+		-- (13/11) The shop: kits, weapon looks, style, passes, Ryō.
+		local okShop,ShopPanel=pcall(function() return require(script.Parent.ShopPanel) end)
+		if okShop and ShopPanel then
+			local made,panel=pcall(ShopPanel.new,UI.kit,self.gui,send,function(kitId)
+				if self.treePanel then self.treePanel:show(kitId,self.kits) end
+			end)
+			if made then self.shopPanel=panel end
+		end
 	end
+	-- The shop from the roster (in Konoha it is on the HUD).
+	self.shopButton=button(shell,"SHOP",UDim2.fromOffset(1040,24),UDim2.fromOffset(240,48),function()
+		if self.shopPanel and not self.picking then self.shopPanel:show(self.kits) end
+	end,palette.gold)
+	self.shopButton.TextSize=24;self.shopButton.TextColor3=palette.ink;self.shopButton.Visible=false
 	self.startButton.TextSize=32
 	self.startStroke=create("UIStroke",self.startButton,{Color=palette.paper,Thickness=2.5,Transparency=.2,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
 	-- (04/11) The Prodigy Tournament against the AI (Server/Tournament).
@@ -939,6 +952,7 @@ end
 function UI:setKits(kits)
 	self.kits=kits
 	if self.treePanel then self.treePanel:refresh(kits) end
+	if self.shopPanel then self.shopPanel:refresh(kits) end
 	if type(kits)~="table" or kits.state~="ready" then return end
 	local want=nil
 	if kits.selected and kits.owned and kits.owned[kits.selected] then want=kits.selected
@@ -973,6 +987,7 @@ function UI:lobby(data)
 	self.lastLobby=data
 	local full=data.phase=="Selection" and not self.simple
 	if self.boardClose then self.boardClose.Visible=data.phase=="Selection" and Config.Hub~=nil and Config.Hub.Enabled==true and self.onBoardClose~=nil end
+	if self.shopButton then self.shopButton.Visible=data.phase=="Selection" and self.kits~=nil and self.shopPanel~=nil end
 	-- the strings' notes are for the full roster (jargon on a first look)
 	self.routeNote.Visible=not self.simple
 	self.onlineRow.Visible=full
@@ -1136,6 +1151,7 @@ function UI:render(data)
 	self.onlineInfo=data.online
 	-- (DEC-038) the tree is a roster screen: a duel closes it.
 	if self.treePanel and data.phase~="Selection" and self.treePanel:shown() then self.treePanel:hide() end
+	if self.shopPanel and data.phase~="Selection" and self.shopPanel:shown() then self.shopPanel:hide() end
 	-- (DEC-038) In Konoha the roster is the proctor's board: shown only open.
 	self.selection.Visible=(data.phase=="Selection" and not self.hubWalk) or data.phase=="Pick"; self.hud.Visible=data.phase=="Duel" and not introActive; self.result.Visible=data.phase=="Result"
 	self.queue.Visible=data.phase=="Queue"

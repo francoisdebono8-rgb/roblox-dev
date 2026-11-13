@@ -191,6 +191,15 @@ return {
 	-- the masters at home, the exam hall's proctor opens the board of duels.
 	-- Off: the roster screen, as before.
 	Hub = { Enabled = true },
+	-- (13/11) The shop's Roblox ids, created by the owner on the game's page
+	-- (0 or absent: shown SOON, nothing sold). Products: a Robux look by its
+	-- Shared/Shop key; RyoPacks: Ryō for Robux; Passes: game passes (the 2x
+	-- mastery pass is Progression.MasteryPass).
+	Shop = {
+		Products = { KunaiGold = 0, TantoShadow = 0 },
+		RyoPacks = { { amount = 1000, product = 0 }, { amount = 3000, product = 0 }, { amount = 8000, product = 0 } },
+		Passes = { VIP = 0, EarlyAccess = 0, BuildSlots = 0 },
+	},
 	AI = { Tick = 0.18, Reaction = 0.38, Aggression = 0.72, Defense = 0.58, Technique = 0.34,
 		TechniqueGap = 2.6, TechniqueJitter = 2.6, ReadGuard = 0.3, ReadDodge = 0.16, ReadPoke = 0.22, GuardRead = 0.07,
 		Feint = 0.1, ProbeTool = 2.4, Disengage = 0.45, WallRun = 0.35,

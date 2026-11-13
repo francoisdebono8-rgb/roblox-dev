@@ -311,3 +311,32 @@ Demande de l’utilisateur du **13/11 à 17 h 11** : « il faut vraiment que je 
 - **Les objets de kit sont des nœuds** : la gourde de Gaara, les poids de Lee et le tanto de Kakashi. L’objet est porté dès le départ, mais le ninja **du joueur** ne s’en sert qu’une fois le nœud acquis : sans lui, pas de bouclier de sable, pas de « Remove the Weights », un tanto qui reste au fourreau. Les prodiges eux-mêmes gardent tout : l’IA, les maîtres, le tournoi vu et les films. Exception : le kunai marqué de Minato est le cœur de son kit ; son nœud d’objet reste « Kunai Recall », qui ramasse un kunai planté.
 - **Où l’arbre s’applique** : dans les duels qui comptent avec un kit appris, dans le duel du maître et en entraînement avec un kit appris. Un kit seulement essayé, le tournoi et le 1v1 en ligne gardent le kit entier du prodige, à budget égal (DEC-024).
 
+## DEC-039 — La boutique, le Ryō et les paliers de l’arbre (13/11)
+
+Demande de l’utilisateur du **13/11 à 18 h 03** : « Continue et on voit tout ce qui est boutique, UI, design, aussi vraiment les arbres de compétences, vraiment comment ça va marcher, les armes ». Les écrans ont été posés dans la planche de design « Ninja Duel : boutique, arbres et armes », puis construits dans le jeu. Les prix en Robux et les identifiants Roblox restent à fixer par l’utilisateur.
+
+- **Deux monnaies.**
+  - Le **Ryō** se gagne en jouant. Duel fini : 20 ; gagné : +30 ; la première victoire du jour compte double ; duel du maître gagné : +150. Il achète des apparences seulement, jamais un kit ni un point (`Shared/Shop`).
+  - Les **Robux** achètent :
+    - du temps : un kit tout de suite, la maîtrise ×2 ;
+    - du statut : VIP ;
+    - l’accès anticipé au prochain prodige ;
+    - les apparences rares ;
+    - des paquets de Ryō.
+  - Les identifiants sont dans `Config.Shop`. Tant qu’ils valent 0, l’offre s’affiche « SOON » et rien n’est vendu.
+- **La boutique** a cinq onglets : KITS, WEAPONS, STYLE, PASSES, RYŌ. On l’ouvre depuis le HUD de Konoha (bouton SHOP, avec le Ryō affiché) et depuis le roster.
+- **Les armes.** Tout ninja porte un kunai. Les objets de kit (gourde, poids, tanto) se gagnent dans l’arbre (DEC-038). La boutique vend leur **apparence**, jamais un chiffre :
+  - kunai et shuriken, peints en main, en vol et une fois plantés ;
+  - le tanto de Kakashi ;
+  - la gourde de Gaara.
+
+  Les poids de Lee auront leur apparence quand leur modèle Blender existera.
+- **Le style** : un bandeau de Konoha sur l’avatar du joueur (`Server/Headband`), en duel comme à Konoha (bleu de base, noir, rouge, ou aucun).
+- **Les paliers de l’arbre** (`Shared/TreeTiers`). Chaque nœud a son palier (`Tier`) :
+  - **palier I** dès le départ : l’objet du kit et les petits nœuds ;
+  - **palier II** à 300 de maîtrise, quand le maître suivant ouvre sa porte : les routes, les esquives, les murs ;
+  - **palier III** à 800 : les coups signature.
+
+  Un nœud n’attend jamais un nœud d’un palier plus haut. Chaque palier contient assez de points pour qu’il reste un vrai choix. Le panneau de l’arbre dessine les paliers en lignes et les branches en colonnes.
+- **Profil v3** : un portefeuille (Ryō, jour de la dernière première victoire) et les apparences (possédées, portées). Le passage depuis la v2 se fait sans perte. Un achat en Robux est accordé une seule fois par reçu, et seulement une fois le profil sauvegardé.
+

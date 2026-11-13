@@ -518,7 +518,7 @@ end
 -- The player's own avatar in the village (the default character and controls).
 -- `where`: "gate" (arrival) or "hall" (back from a duel). Asynchronous; a duel
 -- that starts meanwhile wins (Hub.leave bumps the serial).
-function Hub.enter(player,where)
+function Hub.enter(player,where,looks)
 	if typeof(player)~="Instance" or not Hub.folder then return end
 	local serial=(Hub.bodies[player] and Hub.bodies[player].serial or 0)+1
 	Hub.bodies[player]={serial=serial}
@@ -533,6 +533,8 @@ function Hub.enter(player,where)
 		end
 		character:SetAttribute("NinjaHubBody",true)
 		entry.character=character
+		-- (13/11, the shop) the headband he chose, on his own avatar.
+		pcall(function() require(script.Parent.Headband).fromLooks(character,looks) end)
 		local spot=HubMap.Spawns[where] or HubMap.Spawns.gate
 		local at=O+spot.at+Vector3.new(0,3.5,0)
 		pcall(function() character:PivotTo(CFrame.lookAt(at,at+spot.face)) end)
@@ -541,10 +543,18 @@ function Hub.enter(player,where)
 			hum.Died:Connect(function()
 				task.wait(2)
 				local now=Hub.bodies[player]
-				if now and now.serial==serial and player.Parent then Hub.enter(player,"gate") end
+				if now and now.serial==serial and player.Parent then Hub.enter(player,"gate",looks) end
 			end)
 		end
 	end)
+end
+-- A look changed while he walks (the shop): his headband, at once.
+function Hub.restyle(player,looks)
+	local entry=Hub.bodies[player]
+	local character=entry and entry.character
+	if character and character.Parent and character:GetAttribute("NinjaHubBody") then
+		pcall(function() require(script.Parent.Headband).fromLooks(character,looks) end)
+	end
 end
 function Hub.leave(player)
 	local entry=Hub.bodies[player]

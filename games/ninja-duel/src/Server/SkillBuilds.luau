@@ -503,6 +503,24 @@ function SkillBuilds.checkTree(fighterId)
 		end
 	end
 	for name,count in groups do if count<2 then fail("exclusive group "..name.." needs two options") end end
+	-- (13/11) Tiers: every node has one, and its prerequisites sit in its tier
+	-- or below (a tier II node never waits for a tier III one).
+	for _,node in tree.Nodes do
+		if node.Tier~=1 and node.Tier~=2 and node.Tier~=3 then fail(tostring(node.Id)..": tier") end
+		for _,need in node.Requires or {} do
+			local other=ids[need]
+			if other and (other.Tier or 1)>(node.Tier or 1) then fail(tostring(node.Id).." (tier "..tostring(node.Tier)..") waits for "..need.." (tier "..tostring(other.Tier)..")") end
+		end
+		for _,need in node.RequiresAny or {} do
+			local other=ids[need]
+			if other and (other.Tier or 1)>(node.Tier or 1) then fail(tostring(node.Id).." waits for "..need.." above its tier") end
+		end
+	end
+	local tierCost={0,0,0}
+	for _,node in tree.Nodes do if node.Tier then tierCost[node.Tier]+=node.Cost end end
+	-- The first tier gives a choice before the second opens (Masters.points
+	-- at 300 mastery = 30 points), and every tier holds something.
+	if tierCost[1]<35 or tierCost[2]<25 or tierCost[3]<20 then fail("tier points "..tierCost[1].."/"..tierCost[2].."/"..tierCost[3]) end
 	for kind in SkillBuilds.KINDS do if not kinds[kind] then fail("no "..kind.." node") end end
 	-- Requirements exist, cannot sit in the node's own exclusive group, no cycle.
 	for _,node in tree.Nodes do

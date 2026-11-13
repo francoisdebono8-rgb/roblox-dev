@@ -42,6 +42,16 @@ function Hub.new(ui,camera,send,controls)
 	self.goal=K.text(ui.gui,"",UDim2.new(.5,-420,0,18),UDim2.fromOffset(840,30),17,P.gold,K.TITLE_FONT,Enum.TextXAlignment.Center)
 	K.create("UIStroke",self.goal,{Color=P.ink,Thickness=2.5,ApplyStrokeMode=Enum.ApplyStrokeMode.Contextual})
 	self.goal.Visible=false
+	-- (13/11) The shop and the Ryō, top right.
+	self.shopBox=K.frame(ui.gui,UDim2.new(1,-300,0,18),UDim2.fromOffset(282,60),K.CARD,1)
+	self.shopBox.Visible=false;self.shopBox.ZIndex=20
+	local wallet=K.frame(self.shopBox,UDim2.fromOffset(0,0),UDim2.fromOffset(120,60),K.CARD,.12);K.corner(wallet,10)
+	K.text(wallet,"RYŌ",UDim2.fromOffset(12,6),UDim2.fromOffset(96,14),10,P.muted,K.BODY_FONT,Enum.TextXAlignment.Right)
+	self.ryoLabel=K.text(wallet,"0",UDim2.fromOffset(12,20),UDim2.fromOffset(96,34),28,P.gold,K.TITLE_FONT,Enum.TextXAlignment.Right)
+	local shop=K.button(self.shopBox,"SHOP",UDim2.fromOffset(132,0),UDim2.fromOffset(150,60),function()
+		if self.ui.shopPanel then self.ui.shopPanel:show(self.kits) end
+	end,P.red)
+	shop.TextSize=28
 	self.keys=K.text(ui.gui,"",UDim2.new(.5,-360,1,-34),UDim2.fromOffset(720,22),14,P.paper,K.BODY_FONT,Enum.TextXAlignment.Center)
 	K.create("UIStroke",self.keys,{Color=P.ink,Thickness=2,ApplyStrokeMode=Enum.ApplyStrokeMode.Contextual})
 	self.keys.Visible=false
@@ -93,12 +103,13 @@ end
 -- Controls and lens: the village walk, or the board (the roster) over it.
 function Hub:apply()
 	local walking=self.active and not self.board
-	-- The tree panel over the village: the walk waits behind it.
-	local panel=self.ui.treePanel and self.ui.treePanel:shown()
+	-- The tree panel or the shop over the village: the walk waits behind it.
+	local panel=(self.ui.treePanel and self.ui.treePanel:shown()) or (self.ui.shopPanel and self.ui.shopPanel:shown()) or false
 	self.panelOpen=panel
 	self.ui.hubWalk=walking
 	self.camera.hubWalk=walking
 	self.hud.Visible=walking;self.goal.Visible=walking and self.goal.Text~="";self.keys.Visible=walking
+	self.shopBox.Visible=walking and self.kits~=nil and self.ui.shopPanel~=nil
 	if not walking then self.card.Visible=false end
 	pcall(function()
 		if walking and not panel then self.controls:Enable() else self.controls:Disable() end
@@ -141,7 +152,7 @@ function Hub:jumpRequest()
 end
 function Hub:step(dt)
 	if not self.active then return end
-	if (self.ui.treePanel and self.ui.treePanel:shown())~=self.panelOpen then self:apply() end
+	if ((self.ui.treePanel and self.ui.treePanel:shown()) or (self.ui.shopPanel and self.ui.shopPanel:shown()) or false)~=self.panelOpen then self:apply() end
 	local character=Players.LocalPlayer.Character
 	local hum=character and character:FindFirstChildOfClass("Humanoid")
 	local root=character and character:FindFirstChild("HumanoidRootPart")
@@ -222,6 +233,8 @@ function Hub:refreshHud(position)
 		goal="DUELS AND THE TOURNAMENT  •  THE PROCTOR, IN THE EXAM HALL"
 	end
 	self.kitLabel.Text=kitLine
+	self.ryoLabel.Text=tostring(kits and kits.ryo or 0)
+	self.shopBox.Visible=self.active and not self.board and kits~=nil and self.ui.shopPanel~=nil
 	self.goal.Text=goal
 	self.goal.Visible=self.active and not self.board and goal~=""
 	local pad=UIS.GamepadEnabled and UIS:GetLastInputType()==Enum.UserInputType.Gamepad1

@@ -121,9 +121,13 @@ end
 -- The result screen's line: mastery earned, a kit learned, a master waiting.
 function V.result(progress,kits)
 	if type(progress)~="table" then return nil end
-	if progress.learned then return name(progress.learned).."'S KIT IS YOURS  •  PICK IT ON THE ROSTER" end
+	if progress.learned then
+		return name(progress.learned).."'S KIT IS YOURS"..(if (progress.ryo or 0)>0 then string.format("  •  +%d RYŌ",progress.ryo) else "")
+	end
 	if not progress.gained then return nil end
 	local line=string.format("+%d MASTERY  •  %s %d / %d",progress.amount or 0,name(progress.fighter),progress.mastery or 0,progress.need or Masters.Need)
+	-- (13/11) the Ryō it paid (the day's first win counts double).
+	if (progress.ryo or 0)>0 then line..=string.format("  •  +%d RYŌ%s",progress.ryo,if progress.firstWin then " (FIRST WIN ×2)" else "") end
 	if (progress.mastery or 0)>=(progress.need or Masters.Need) then
 		local leads={}
 		for _,master in V.leadsTo(progress.fighter) do
