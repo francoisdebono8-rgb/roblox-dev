@@ -5390,7 +5390,7 @@ return {
       <Item class="StringValue" referent="ND36">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">5e1f561a493a0eeb71d7add537cac4f250a0a6b3c2b3befab24aa5b7ce63f7d5</string>
+          <string name="Value">62f787f55b7fbb8f2145a127c0281e187a59e7abb1ccfa5844b6759dc795101a</string>
         </Properties>
       </Item>
       <Item class="StringValue" referent="ND37">
@@ -5408,7 +5408,7 @@ return {
       <Item class="StringValue" referent="ND39">
         <Properties>
           <string name="Name">SourceCommit</string>
-          <string name="Value">dd261363280f-dirty</string>
+          <string name="Value">c7e79d1c5597</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND40">
@@ -6383,6 +6383,2211 @@ function K.build(): Model
 end
 
 return K
+</ProtectedString>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="ND255">
+        <Properties>
+          <string name="Name">ClipAssist</string>
+          <ProtectedString name="Source">--!nocheck
+-- Assistant de tournage (F4) — place FILM seulement (build.py --capture).
+--
+-- Demandé le 13/11/2026 : un outil dans Studio pour que le CM tourne ses clips
+-- sans défaut d'image, d'éclairage, de cadrage ni de caméra, et qu'il voie
+-- tout de suite les erreurs qu'il fait. Revu le 13/11 après la relecture du CM
+-- (claude/revue-outil-f4-par-le-cm-2026-11-13).
+--
+-- Il ne change pas le jeu : il lit la caméra, les deux corps (vivants ou
+-- fantômes du replay NDReplay), la lumière et l'écran, et signale ce qui abîme
+-- une prise, avec qui doit corriger : cadrage, réglage, machine, jeu.
+-- Pendant une prise (REC), chaque défaut est daté ; à l'arrêt, le résumé donne
+-- les plages propres, scène par scène, et un journal image par image.
+--
+-- Rien de ce qu'il dessine n'entre dans la bande 9:16 que garde OBS : panneau
+-- dans la marge gauche, compteur d'images dans la marge droite, traits de
+-- couleur à 24 points de la bande (cachés pendant une prise).
+--
+-- Tout se pilote aussi par des attributs de workspace, lisibles d'un script du
+-- CM quel que soit l'endroit où il tourne (barre de commande, Studio MCP) :
+--   NDRec   = "nom de la prise" démarre une prise ; false/nil l'arrête
+--   NDAct   = "A" | "B" | "AB"  qui agit / doit être vu (sinon : l'état du duel)
+--   NDScene = "B_chidori"       la scène en cours (sinon : NDBeat de ClipKit)
+--   NDShot  = "T2"              la caméra / la prise en cours (sinon : NDTake)
+--   NDClock = 12.34             le temps de la scène (replay), noté image par image
+--   NDCut   = true              écran noir entre deux scènes : rien n'est jugé
+-- et NDWarmup, écrit par « Préparer l'image » (os.clock()) pour qu'un script de
+-- scène lance son préchauffage des effets.
+--
+-- Agents (Studio MCP, côté Client, pendant le Play) :
+--   local r=game.Players.LocalPlayer.PlayerGui.ClipAssistPanel.Report
+--   print(r:Invoke())                    état JSON
+--   r:Invoke("rec","start","M1") / r:Invoke("rec","stop")   (comme NDRec)
+--   r:Invoke("frames",{from=1,count=600}) le journal image par image de la dernière prise
+--   r:Invoke("prepare") / r:Invoke("restore")
+--   r:Invoke("actors",{a,b},{"Sasuke","Kakashi"})  les deux corps (replay) et leurs noms ; nil = le duel
+--   r:Invoke("quality",12)               le niveau de qualité réglé (si la lecture se trompe)
+--   r:Invoke("set",{clean=0.5,back=120}) régler un seuil (voir T)
+--   r:Invoke("ignore",{"A:inside","sun"}) ne plus signaler ces défauts (préfixes d'id)
+--   r:Invoke("show",true) · ("guides",false) · ("allowHud",true) · ("counter",false) · ("linesDuringRec",true)
+local Players=game:GetService("Players")
+local RunService=game:GetService("RunService")
+local UIS=game:GetService("UserInputService")
+local Lighting=game:GetService("Lighting")
+local HttpService=game:GetService("HttpService")
+local LogService=game:GetService("LogService")
+local ReplicatedStorage=game:GetService("ReplicatedStorage")
+local StarterGui=game:GetService("StarterGui")
+
+local Sight=nil
+pcall(function() Sight=require(script.Parent:WaitForChild("ClipSight",2)) end)
+
+local Assist={}
+local V=Vector3.new
+local rgb=Color3.fromRGB
+-- The kept band, as ClipKit frames it: 9:16, full height, centred.
+local CROPW=830/1480
+local ERR,WARN,INFO=3,2,1
+local SEVNAME={[3]="ERREUR",[2]="À VOIR",[1]="INFO"}
+local SEVCOLOR={[3]=rgb(235,80,80),[2]=rgb(240,170,60),[1]=rgb(150,170,190)}
+local OK_COLOR=rgb(90,200,120)
+local OWNER={cadrage="cadrage",reglage="réglage",machine="machine",jeu="jeu → DEV/ANIM"}
+local T={
+	tick=1/15,              -- body checks per second
+	hold=0.15,              -- a framing fault counts once it lasts this long
+	back=115,               -- seen from behind beyond this angle (degrees)
+	small=0.18,             -- a body under this share of the image height is small
+	opening=2,              -- the first seconds of a take: the hook
+	hitch=0.05,             -- a frame longer than this, and 3x the mean, is a frozen image
+	fpsWarn=50,fpsErr=32,   -- a 30 fps video needs 32
+	lens=2.2,               -- studs in front of the lens
+	sun=35,                 -- degrees between the lens and the sun
+	cutMove=6,cutTurn=30,   -- more than this in one frame: a cut
+	jumpMove=0.9,jumpTurn=8,-- a jump: more than this, 4x the recent motion and 2.5x the bodies' own motion
+	cutGap=0.5,             -- two cuts closer than this
+	clean=0.5,              -- shortest clean range listed (FILM09 shots: 0.7 to 1.2 s)
+	inside=1.0,             -- two roots closer than this
+	bodyLight=1.5,          -- a coloured light on a body this long is a fault
+	fxLight=4,              -- a technique's light this long is a fault
+	lines=24,               -- the band's side lines, this far outside it (points)
+}
+-- Server states in which a fighter is doing something (Matches:view `state`).
+local ACT={Startup=true,Active=true,Recovery=true,Rush=true,Pursuit=true,Dodging=true,
+	TechniqueChannel=true,TechniqueActive=true,TechniqueRecovery=true}
+local FX_ROOTS={"NinjaDuelFX","Effects","NinjaUltimateFX","VfxMesh","WorldMemory"}
+local DEV_GUIS={NinjaDuelDevPanel="F6",DevVisualPanel="F7",DevVisualHud="F7"}
+
+local function fmt(t) return (string.format("%.2f",t):gsub("0$",""):gsub("%.",",")) end
+local function r3(x) return math.floor(x*1000+0.5)/1000 end
+local function flat(v) return V(v.X,0,v.Z) end
+local function isHead(n) return n=="Head" or n:sub(1,6)=="Head__" end
+local function hex(c) return string.format("#%02X%02X%02X",math.floor(c.R*255+.5),math.floor(c.G*255+.5),math.floor(c.B*255+.5)) end
+local function esc(s) return (tostring(s):gsub("&amp;","&amp;amp;"):gsub("&lt;","&amp;lt;"):gsub("&gt;","&amp;gt;")) end
+local function hueName(c)
+	local h,s=c:ToHSV()
+	if s&lt;0.25 then return "blanche" end
+	h*=360
+	if h&lt;15 or h&gt;=345 then return "rouge" elseif h&lt;40 then return "orange" elseif h&lt;70 then return "jaune"
+	elseif h&lt;165 then return "verte" elseif h&lt;255 then return "bleue" elseif h&lt;300 then return "violette" else return "rose" end
+end
+local function attr(name)
+	local v=workspace:GetAttribute(name)
+	if v~=nil then return v end
+	local o=workspace:FindFirstChild(name)
+	if o and o:IsA("ValueBase") then return o.Value end
+	return nil
+end
+
+local function duelModels()
+	local root=workspace:FindFirstChild("NinjaDuels")
+	if not root then return nil end
+	for _,duel in root:GetChildren() do
+		local a,b=duel:FindFirstChild("PlayerFighter"),duel:FindFirstChild("AIFighter")
+		if a and b then return a,b end
+	end
+	return nil
+end
+local function rootOf(m) return m and (m:FindFirstChild("HumanoidRootPart") or m.PrimaryPart) end
+local function pivotOf(m)
+	local r=rootOf(m)
+	if r then return r.CFrame end
+	local ok,cf=pcall(function() return m:GetPivot() end)
+	return ok and cf or nil
+end
+-- Head, torso, hands, eyes and every visible body part of a model (cached 0.5 s).
+-- The rig's own parts give the geometry (the look meshes Head__*, *__Fist ride
+-- on them and may be rotated); a rig part may be invisible, its place is right.
+local partCache=setmetatable({},{__mode="k"})
+local function partsOf(m)
+	local e=partCache[m]
+	local now=os.clock()
+	if e and now-e.t&lt;0.5 then return e end
+	e={t=now,head=nil,torso=nil,hands={},eyes={},all={}}
+	local looks,faceEyes,eyeStrip={},{},nil
+	for _,d in m:GetDescendants() do
+		if d:IsA("BasePart") and d.Name~="HumanoidRootPart" then
+			local n=d.Name
+			if d.Transparency&lt;0.9 and d.Size.Magnitude&gt;0.3 then table.insert(e.all,d) end
+			if n=="Head" then e.head=d
+			elseif isHead(n) then looks[n]=d
+			elseif n=="UpperTorso" or (n=="Torso" and not e.torso) then e.torso=d
+			elseif n=="LeftHand" or n=="RightHand" or n=="Left Arm" or n=="Right Arm" then table.insert(e.hands,d)
+			elseif n=="FaceEye" then table.insert(faceEyes,d)
+			elseif n=="Eyes" then eyeStrip=d end
+		end
+	end
+	e.head=e.head or looks.Head__Skin or select(2,next(looks))
+	e.eyes=#faceEyes&gt;0 and faceEyes or (eyeStrip and {eyeStrip} or {})
+	partCache[m]=e
+	return e
+end
+local function eyePoints(parts)
+	local list={}
+	for _,x in parts.eyes do if x.Parent then table.insert(list,x.Position) end end
+	if #list==0 and parts.head then
+		local h=parts.head
+		for _,s in {-1,1} do table.insert(list,(h.CFrame*CFrame.new(s*0.2*h.Size.X,0,-0.55*h.Size.Z)).Position) end
+	end
+	return list
+end
+local function quality()
+	local level,auto=nil,nil
+	for _,prop in {"EditQualityLevel","QualityLevel"} do
+		pcall(function()
+			local q=settings().Rendering[prop]
+			if q==Enum.QualityLevel.Automatic then auto=auto or true else level=level or tonumber(tostring(q):match("(%d+)$")) end
+		end)
+		if level then auto=false;break end
+	end
+	if level==nil and auto==nil then
+		pcall(function()
+			local q=UserSettings():GetService("UserGameSettings").SavedQualityLevel
+			if q==Enum.SavedQualitySetting.Automatic then auto=true else level=tonumber(tostring(q):match("(%d+)$")) end
+		end)
+	end
+	return level,auto
+end
+-- Is this error the game's own (not a filming script, a Studio command, a plugin, a dev tool)?
+local function gameError(message)
+	if string.find(message,"NDFactory",1,true) or string.find(message,"ClipAssist",1,true) then return false end
+	if string.find(message,"NinjaDuelClient%.Dev") or string.find(message,"NinjaDuelServer%.Dev") then return false end
+	return string.find(message,"NinjaDuelClient.",1,true)~=nil or string.find(message,"NinjaDuelServer.",1,true)~=nil
+		or string.find(message,"ReplicatedStorage.NinjaDuel.",1,true)~=nil
+end
+
+function Assist.install(ctx,dev)
+	if not RunService:IsStudio() then return nil end
+	local player=Players.LocalPlayer
+	local playerGui=player:WaitForChild("PlayerGui")
+	local self={shown=false,guides=true,allowHud=false,counterOn=true,linesDuringRec=false,actorsOverride=nil,
+		declaredQuality=nil,ignore={},check={},T=T}
+	local installedAt=os.clock()
+	local frameNo=0
+	local live={}        -- id -&gt; condition {id,group,sev,owner,text,since,seen,open,minDur}
+	local recent={}      -- instant events {t,sev,owner,text}
+	local take=nil       -- the take being recorded
+	local last=nil       -- the last take's summary (with spans, events, frames)
+	local saved=nil      -- what "prepare" changed, for "restore"
+	local band={x0=0,x1=0,w=0,h=0}
+
+	local function rel(t) return take and (t-take.start) or 0 end
+	local function ignored(id)
+		for prefix in self.ignore do if string.sub(id,1,#prefix)==prefix then return true end end
+		return false
+	end
+	local function closeSpan(c,at)
+		if take and c.open then
+			table.insert(take.spans,{id=c.id,sev=c.sev,owner=c.owner,text=c.text,t0=r3(math.max(0,rel(c.since))),t1=r3(math.max(0,rel(at or c.seen)))})
+		end
+	end
+	local function hold(group,stamp,id,sev,owner,text,minDur)
+		if ignored(id) then return end
+		local c=live[id]
+		if not c then c={id=id,since=stamp};live[id]=c end
+		c.group,c.sev,c.owner,c.text,c.seen,c.minDur=group,sev,owner,text,stamp,minDur or T.hold
+		if not c.open and stamp-c.since&gt;=c.minDur then c.open=true end
+	end
+	local function sweep(group,stamp)
+		for id,c in live do
+			if c.group==group and c.seen~=stamp then closeSpan(c);live[id]=nil end
+		end
+	end
+	local function event(id,sev,owner,text,now)
+		if ignored(id) then return end
+		table.insert(recent,{t=now,sev=sev,owner=owner,text=text})
+		while #recent&gt;40 do table.remove(recent,1) end
+		if take then table.insert(take.events,{id=id,t=r3(rel(now)),sev=sev,owner=owner,text=text}) end
+	end
+
+	-- Which two bodies, who they are, who is acting.
+	local function actors()
+		if self.actorsOverride then
+			local a,b=self.actorsOverride[1],self.actorsOverride[2]
+			if a and a.Parent and b and b.Parent then return a,b end
+			self.actorsOverride=nil
+		end
+		return duelModels()
+	end
+	local function duelData()
+		local ok,data=pcall(function() return ctx and ctx.state and ctx.state() end)
+		if ok and type(data)=="table" and data.phase=="Duel" and not self.actorsOverride then return data end
+		return nil
+	end
+	local function nameOf(key,m,data)
+		if self.actorNames and self.actorNames[key=="A" and 1 or 2] then return tostring(self.actorNames[key=="A" and 1 or 2]) end
+		local d=data and data[key=="A" and "human" or "bot"]
+		if d and d.fighter then return tostring(d.fighter) end
+		if m then return tostring(m:GetAttribute("Fighter") or m.Name) end
+		return key
+	end
+	-- true = acting (must be seen), false = not, nil = unknown (a replay with no NDAct)
+	local function actingOf(key,data)
+		local act=attr("NDAct")
+		if type(act)=="string" and act~="" then return string.find(act,key,1,true)~=nil end
+		local d=data and data[key=="A" and "human" or "bot"]
+		if not d then return nil end
+		return ACT[d.state]==true and d.reaction==nil
+	end
+
+	-- Other bodies near the fighters (clones, live or replayed), refreshed twice a second.
+	local extraAt,extraParts=0,{}
+	local function otherBodies(A,B)
+		local now=os.clock()
+		if now-extraAt&lt;0.5 then return extraParts end
+		extraAt=now;extraParts={}
+		local ra=rootOf(A)
+		if not ra then return extraParts end
+		local seen={}
+		for _,n in {"NinjaDuels","NinjaDuelBodies","NDReplay","NinjaDuelFX"} do
+			local root=workspace:FindFirstChild(n)
+			for _,d in root and root:GetDescendants() or {} do
+				if d:IsA("Humanoid") then
+					local m=d.Parent
+					if m and m~=A and m~=B and not seen[m] and not (A and A:IsDescendantOf(m)) and not (B and B:IsDescendantOf(m)) then
+						seen[m]=true
+						local r=rootOf(m)
+						if r and (r.Position-ra.Position).Magnitude&lt;40 then
+							for _,p in partsOf(m).all do table.insert(extraParts,p) end
+						end
+					end
+				end
+			end
+		end
+		return extraParts
+	end
+
+	local rayParams=RaycastParams.new();rayParams.FilterType=Enum.RaycastFilterType.Exclude
+	-- The nearest thing between `from` and `to`: queryable world (raycast), the
+	-- unqueryable decor (Sight), and the given body parts (live or replay ghosts).
+	local function firstBlocker(from,to,ignore,bodies)
+		local exclude={}
+		for _,x in ignore do table.insert(exclude,x) end
+		local dir=to-from
+		local len=dir.Magnitude
+		if len&lt;1e-3 then return nil end
+		local best,bestT,bestHit=nil,1,nil
+		for _=1,6 do
+			rayParams.FilterDescendantsInstances=exclude
+			local hit=workspace:Raycast(from,dir,rayParams)
+			if not hit then break end
+			local p=hit.Instance
+			if p.Transparency&lt;0.6 and p.LocalTransparencyModifier&lt;0.6 then
+				best,bestT,bestHit=p,(hit.Position-from).Magnitude/len,hit
+				break
+			end
+			table.insert(exclude,p)
+		end
+		if Sight then
+			local p,t=Sight.decor(from,to,0.03)
+			if p and t&lt;bestT then best,bestT,bestHit=p,t,nil end
+			if bodies and #bodies&gt;0 then
+				local q,u=Sight.parts(from,to,bodies,0.03)
+				if q and u&lt;bestT then best,bestT,bestHit=q,u,nil end
+			end
+		end
+		return best,bestHit
+	end
+	local function underFx(p)
+		for _,n in FX_ROOTS do
+			local r=workspace:FindFirstChild(n)
+			if r and p:IsDescendantOf(r) then return true end
+		end
+		return false
+	end
+	-- "corps" (a fighter), "clone" (any other body), "effet", or "décor"
+	local function classify(p,A,B,data)
+		if A and p:IsDescendantOf(A) then return "corps",nameOf("A",A,data) end
+		if B and p:IsDescendantOf(B) then return "corps",nameOf("B",B,data) end
+		local m=p:FindFirstAncestorWhichIsA("Model")
+		while m and m~=workspace do
+			if m:FindFirstChildOfClass("Humanoid") then return "clone",m.Name end
+			m=m.Parent and m.Parent:IsA("Model") and m.Parent or nil
+		end
+		if underFx(p) then return "effet",p.Name end
+		local holder=p:FindFirstAncestorWhichIsA("Model")
+		return "décor",(holder and holder~=workspace and holder.Name or p.Name)
+	end
+
+	--------------------------------------------------------------------
+	-- Interface.
+	--------------------------------------------------------------------
+	local gui=Instance.new("ScreenGui");gui.Name="ClipAssistPanel";gui.ResetOnSpawn=false;gui.IgnoreGuiInset=true
+	gui.DisplayOrder=1100;gui.ZIndexBehavior=Enum.ZIndexBehavior.Sibling;gui.Enabled=true;gui.Parent=playerGui
+	-- ClipKit's NDHideUI hides every ScreenGui: this one stays (nothing of it is in the band).
+	gui:GetPropertyChangedSignal("Enabled"):Connect(function() if not gui.Enabled then task.defer(function() gui.Enabled=true end) end end)
+	local function frame(parent,props)
+		local f=Instance.new("Frame");f.BorderSizePixel=0
+		for k,v in props do f[k]=v end
+		f.Parent=parent
+		return f
+	end
+	local function label(parent,props)
+		local t=Instance.new("TextLabel");t.BackgroundTransparency=1;t.Font=Enum.Font.Gotham;t.TextSize=13;t.TextColor3=rgb(230,232,236)
+		t.TextXAlignment=Enum.TextXAlignment.Left;t.TextYAlignment=Enum.TextYAlignment.Top;t.TextWrapped=true;t.RichText=true
+		for k,v in props do t[k]=v end
+		t.Parent=parent
+		return t
+	end
+	local function button(parent,text,onClick,props)
+		local b=Instance.new("TextButton");b.AutoButtonColor=true;b.BorderSizePixel=0;b.BackgroundColor3=rgb(52,58,70);b.TextColor3=rgb(240,240,240)
+		b.Font=Enum.Font.GothamBold;b.TextSize=13;b.Text=text;b.Size=UDim2.fromOffset(100,26)
+		for k,v in props or {} do b[k]=v end
+		b.Parent=parent
+		local corner=Instance.new("UICorner");corner.CornerRadius=UDim.new(0,4);corner.Parent=b
+		b.MouseButton1Click:Connect(onClick)
+		return b
+	end
+	local lineL=frame(gui,{Name="BandLeft",BackgroundColor3=OK_COLOR,Size=UDim2.new(0,3,1,0)})
+	local lineR=frame(gui,{Name="BandRight",BackgroundColor3=OK_COLOR,Size=UDim2.new(0,3,1,0)})
+	local guides=frame(gui,{Name="Guides",BackgroundTransparency=1})
+	for i=1,2 do
+		frame(guides,{BackgroundColor3=rgb(255,255,255),BackgroundTransparency=0.7,Size=UDim2.new(0,1,1,0),Position=UDim2.new(i/3,0,0,0)})
+		frame(guides,{BackgroundColor3=rgb(255,255,255),BackgroundTransparency=0.7,Size=UDim2.new(1,0,0,1),Position=UDim2.new(0,0,i/3,0)})
+	end
+	-- What TikTok and Shorts lay over the video: the caption at the bottom, the buttons on the right.
+	frame(guides,{BackgroundColor3=rgb(255,90,90),BackgroundTransparency=0.88,Size=UDim2.new(1,0,0.2,0),Position=UDim2.new(0,0,0.8,0)})
+	frame(guides,{BackgroundColor3=rgb(255,90,90),BackgroundTransparency=0.88,Size=UDim2.new(0.16,0,0.5,0),Position=UDim2.new(0.84,0,0.3,0)})
+
+	-- The frame counter, in the right margin: digits for people, 24 bits for a script
+	-- (white = 1, least significant bit first, between a white and a black guard cell).
+	local BITS,CELL=24,8
+	local counter=frame(gui,{Name="FrameCounter",BackgroundColor3=rgb(0,0,0),Size=UDim2.fromOffset((BITS+2)*CELL+8,CELL+30),Visible=false})
+	local counterText=label(counter,{Text="",Font=Enum.Font.Code,TextSize=18,TextColor3=rgb(255,255,255),Size=UDim2.new(1,-8,0,20),Position=UDim2.fromOffset(4,2)})
+	local cells={}
+	for i=0,BITS+1 do
+		cells[i]=frame(counter,{BackgroundColor3=rgb(0,0,0),Size=UDim2.fromOffset(CELL,CELL),Position=UDim2.fromOffset(4+i*CELL,24)})
+	end
+	cells[0].BackgroundColor3=rgb(255,255,255)
+
+	local panel=frame(gui,{Name="Panel",BackgroundColor3=rgb(20,23,30),BackgroundTransparency=0.08,Position=UDim2.fromOffset(8,8),Visible=false})
+	local corner=Instance.new("UICorner");corner.CornerRadius=UDim.new(0,6);corner.Parent=panel
+	local pad=Instance.new("UIPadding");pad.PaddingLeft=UDim.new(0,10);pad.PaddingRight=UDim.new(0,10);pad.PaddingTop=UDim.new(0,8);pad.PaddingBottom=UDim.new(0,8);pad.Parent=panel
+	local scroll=Instance.new("ScrollingFrame");scroll.BackgroundTransparency=1;scroll.BorderSizePixel=0;scroll.Size=UDim2.fromScale(1,1)
+	scroll.ScrollBarThickness=4;scroll.AutomaticCanvasSize=Enum.AutomaticSize.Y;scroll.CanvasSize=UDim2.new();scroll.Parent=panel
+	local layout=Instance.new("UIListLayout");layout.Padding=UDim.new(0,6);layout.SortOrder=Enum.SortOrder.LayoutOrder;layout.Parent=scroll
+	local order=0
+	local function row(h)
+		order+=1
+		return frame(scroll,{BackgroundTransparency=1,Size=UDim2.new(1,-6,0,h),LayoutOrder=order})
+	end
+	local function section(title)
+		order+=1
+		label(scroll,{Text=title,Font=Enum.Font.GothamBold,TextSize=12,TextColor3=rgb(160,170,185),Size=UDim2.new(1,-6,0,16),LayoutOrder=order})
+	end
+	local function block()
+		order+=1
+		return label(scroll,{Text="",Size=UDim2.new(1,-6,0,0),AutomaticSize=Enum.AutomaticSize.Y,LayoutOrder=order})
+	end
+	local head=row(28)
+	label(head,{Text="&lt;b&gt;TOURNAGE&lt;/b&gt; · F4",TextSize=15,Size=UDim2.new(1,-150,1,0),TextYAlignment=Enum.TextYAlignment.Center})
+	local timer=label(head,{Text="",TextSize=14,Size=UDim2.fromOffset(52,28),Position=UDim2.new(1,-150,0,0),TextYAlignment=Enum.TextYAlignment.Center,TextXAlignment=Enum.TextXAlignment.Right})
+	local recButton
+	local warnNarrow=block()
+	local sceneText=block()
+	section("AVANT DE TOURNER")
+	local checkText=block()
+	local buttons=row(26)
+	local hl=Instance.new("UIListLayout");hl.FillDirection=Enum.FillDirection.Horizontal;hl.Padding=UDim.new(0,6);hl.Parent=buttons
+	section("EN CE MOMENT")
+	local liveText=block()
+	section("PLAN VU DU DESSUS")
+	local plan=row(150)
+	local planBox=frame(plan,{BackgroundColor3=rgb(32,36,46),Size=UDim2.fromOffset(150,150)})
+	label(plan,{Text='&lt;font color="#5AA0FF"&gt;●&lt;/font&gt; A  &lt;font color="#FF6A6A"&gt;●&lt;/font&gt; B\n&lt;font color="#FFFFFF"&gt;▲&lt;/font&gt; caméra\n&lt;font color="#FFD24A"&gt;●&lt;/font&gt; soleil\ntrait = regard',TextSize=12,
+		Size=UDim2.new(1,-160,1,0),Position=UDim2.fromOffset(160,0),TextColor3=rgb(170,178,190)})
+	section("DERNIÈRE PRISE")
+	local lastText=block()
+	section("À FAIRE À LA MAIN")
+	local reminders=block()
+	reminders.TextColor3=rgb(150,158,170);reminders.TextSize=12
+	reminders.Text="• OBS : une prise par enregistrement, puis regarder le fichier en entier.\n"
+		.."• OBS sur un autre bureau ; un clic sur la barre de titre de Studio avant de lancer.\n"
+		.."• Aucune autre place en Play pendant la prise.\n"
+		.."• OBS filme aussi le compteur d'images (marge droite) ; CapCut recadre sur la bande.\n"
+		.."• Personne ne touche le Mac pendant la prise."
+
+	local chip=button(gui,"🎬 F4",function() self:show(true) end,{Name="Chip",Size=UDim2.fromOffset(64,26),Position=UDim2.fromOffset(8,8),Visible=true})
+
+	local function dot(color,size)
+		local f=frame(planBox,{BackgroundColor3=color,Size=UDim2.fromOffset(size,size),AnchorPoint=Vector2.new(0.5,0.5),ZIndex=3})
+		local c=Instance.new("UICorner");c.CornerRadius=UDim.new(1,0);c.Parent=f
+		return f
+	end
+	local function line(color,thick)
+		return frame(planBox,{BackgroundColor3=color,AnchorPoint=Vector2.new(0.5,0.5),Size=UDim2.fromOffset(1,thick or 2),ZIndex=2})
+	end
+	local P={A=dot(rgb(90,160,255),9),B=dot(rgb(255,106,106),9),cam=dot(rgb(255,255,255),7),sun=dot(rgb(255,210,74),9),
+		lookA=line(rgb(90,160,255)),lookB=line(rgb(255,106,106)),lookCam=line(rgb(255,255,255),1),fovL=line(rgb(255,255,255),1),fovR=line(rgb(255,255,255),1)}
+	local function placeLine(l,a,b)
+		local d=b-a
+		l.Position=UDim2.fromOffset((a.X+b.X)/2,(a.Y+b.Y)/2)
+		l.Size=UDim2.fromOffset(math.max(1,d.Magnitude),l.Size.Y.Offset)
+		l.Rotation=math.deg(math.atan2(d.Y,d.X))
+	end
+
+	--------------------------------------------------------------------
+	-- Prepare / restore the image (this screen only).
+	--------------------------------------------------------------------
+	local function prepare()
+		workspace:SetAttribute("NDWarmup",os.clock())
+		if saved then return end
+		saved={guis={},effects={},mouse=UIS.MouseIconEnabled,core={}}
+		for _,t in Enum.CoreGuiType:GetEnumItems() do
+			if t~=Enum.CoreGuiType.All then
+				local ok,on=pcall(function() return StarterGui:GetCoreGuiEnabled(t) end)
+				if ok then saved.core[t]=on end
+			end
+		end
+		pcall(function() if dev and dev.toggle then dev:toggle(false) end end)
+		pcall(function() if dev and dev.visual and dev.visual.setMode then dev.visual:setMode(0) end end)
+		for _,g in playerGui:GetChildren() do
+			if g:IsA("ScreenGui") and g~=gui and g.Enabled and not DEV_GUIS[g.Name] and string.sub(g.Name,1,2)~="ND" then saved.guis[g]=true;g.Enabled=false end
+		end
+		for _,root in {Lighting,workspace.CurrentCamera} do
+			for _,e in root:GetChildren() do
+				if (e:IsA("DepthOfFieldEffect") or e:IsA("SunRaysEffect")) and e.Enabled then saved.effects[e]=true;e.Enabled=false end
+			end
+		end
+		pcall(function() StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.All,false) end)
+		UIS.MouseIconEnabled=false
+	end
+	local function restore()
+		if not saved then return end
+		for g in saved.guis do if g.Parent then g.Enabled=true end end
+		for e in saved.effects do if e.Parent then e.Enabled=true end end
+		for t,on in saved.core do pcall(function() StarterGui:SetCoreGuiEnabled(t,on) end) end
+		UIS.MouseIconEnabled=saved.mouse
+		saved=nil
+	end
+
+	--------------------------------------------------------------------
+	-- The take: start, stop, summary.
+	--------------------------------------------------------------------
+	local function buildLine()
+		local s=ReplicatedStorage:FindFirstChild("NinjaDuel")
+		local function v(n) local x=s and s:FindFirstChild(n);return x and x.Value or "?" end
+		return "BUILD "..string.sub(tostring(v("BuildFingerprint")),1,12).." | RUNTIME "..string.sub(tostring(v("RuntimeFingerprint")),1,12).." @ "..tostring(v("SourceCommit"))
+	end
+	local function merge(list)
+		table.sort(list,function(a,b) return a[1]&lt;b[1] end)
+		local out={}
+		for _,r in list do
+			local top=out[#out]
+			if top and r[1]&lt;=top[2]+0.05 then top[2]=math.max(top[2],r[2]) else table.insert(out,{r[1],r[2]}) end
+		end
+		return out
+	end
+	local function clean(bad,a,b)
+		local out,at={},a
+		for _,r in merge(bad) do
+			if r[2]&gt;a and r[1]&lt;b then
+				if r[1]-at&gt;=T.clean then table.insert(out,{r3(at),r3(r[1])}) end
+				at=math.max(at,r[2])
+			end
+		end
+		if b-at&gt;=T.clean then table.insert(out,{r3(at),r3(b)}) end
+		return out
+	end
+	local function ranges(list)
+		local parts={}
+		for _,r in list do table.insert(parts,fmt(r[1]).."–"..fmt(r[2]).." s") end
+		return #parts&gt;0 and table.concat(parts," ; ") or "aucune"
+	end
+	local function summarize(tk,now)
+		local dur=math.max(0,now-tk.start)
+		local bad,soft={},{}
+		for _,s in tk.spans do
+			if s.sev&gt;=ERR then table.insert(bad,{s.t0,s.t1}) end
+			if s.sev&gt;=WARN then table.insert(soft,{s.t0,s.t1}) end
+		end
+		for _,e in tk.events do
+			if e.sev&gt;=ERR then table.insert(bad,{e.t-0.05,e.t+0.05}) end
+			if e.sev&gt;=WARN then table.insert(soft,{e.t-0.05,e.t+0.05}) end
+		end
+		local byText={}
+		local function note(sev,owner,text,t0,t1)
+			local key=text:gsub("%d+[,.]?%d*","#")
+			local e=byText[key]
+			if not e then e={sev=sev,owner=owner,text=text,total=0,at={}};byText[key]=e end
+			e.sev=math.max(e.sev,sev);e.total=r3(e.total+math.max(0,t1-t0))
+			table.insert(e.at,{r3(t0),r3(t1)})
+		end
+		for _,s in tk.spans do note(s.sev,s.owner,s.text,s.t0,s.t1) end
+		for _,e in tk.events do note(e.sev,e.owner,e.text,e.t,e.t) end
+		local faults={}
+		for _,e in byText do table.insert(faults,e) end
+		table.sort(faults,function(a,b) if a.sev~=b.sev then return a.sev&gt;b.sev end;return a.total&gt;b.total end)
+		local counts={err=0,warn=0,info=0}
+		for _,f in faults do if f.sev&gt;=ERR then counts.err+=1 elseif f.sev&gt;=WARN then counts.warn+=1 else counts.info+=1 end end
+		-- Scene by scene (NDScene / NDBeat), from the frame log.
+		local scenes,cur={},nil
+		for _,f in tk.frames do
+			if f.black or not f.scene then cur=nil;continue end
+			local key=(f.scene or "")..(f.shot and ("|"..f.shot) or "")
+			if not cur or cur.key~=key then
+				if cur then cur.t1=f.w end
+				cur={key=key,scene=f.scene,shot=f.shot,t0=f.w,t1=f.w,st0=f.st}
+				table.insert(scenes,cur)
+			end
+			cur.t1=f.w;cur.st1=f.st
+		end
+		for _,s in scenes do
+			s.key=nil
+			s.clean=clean(bad,s.t0,s.t1)
+			local cleanTime=0
+			for _,r in s.clean do cleanTime+=r[2]-r[1] end
+			s.cleanShare=r3(s.t1&gt;s.t0 and cleanTime/(s.t1-s.t0) or 0)
+			local errs=0
+			for _,r in merge(bad) do if r[2]&gt;s.t0 and r[1]&lt;s.t1 then errs+=1 end end
+			s.errors=errs
+		end
+		return {label=tk.label,duration=r3(dur),build=tk.build,clean=clean(bad,0,dur),cleanStrict=clean(soft,0,dur),counts=counts,
+			faults=faults,scenes=scenes,cuts=tk.cuts,hitches=tk.hitches,spans=tk.spans,events=tk.events,frames=tk.frames,
+			counter={first=tk.firstFrame,last=frameNo,bits=BITS}}
+	end
+	local function startTake(name)
+		if take then return end
+		take={label=name or ("prise "..os.date("%H:%M:%S")),start=os.clock(),spans={},events={},cuts={},hitches=0,frames={},firstFrame=frameNo+1,build=buildLine()}
+		print("[NinjaDuelClip] REC "..take.label.." | frame "..(frameNo+1).." | "..take.build)
+	end
+	local function public(s)
+		if not s then return nil end
+		return {label=s.label,duration=s.duration,build=s.build,clean=s.clean,cleanStrict=s.cleanStrict,counts=s.counts,faults=s.faults,
+			scenes=s.scenes,cuts=s.cuts,hitches=s.hitches,spans=s.spans,events=s.events,counter=s.counter,frames=#s.frames}
+	end
+	local function stopTake()
+		if not take then return last end
+		local now=os.clock()
+		for _,c in live do closeSpan(c,now) end
+		last=summarize(take,now)
+		take=nil
+		print("[NinjaDuelClip] "..HttpService:JSONEncode(public(last)))
+		return last
+	end
+
+	--------------------------------------------------------------------
+	-- Checks.
+	--------------------------------------------------------------------
+	local fpsWin={}
+	local lastCam=nil
+	local motion={move=0.3,turn=1.5}
+	local lastCut=-math.huge
+	local lastRoots={}
+	local flashSince=setmetatable({},{__mode="k"})
+	local lightSince=setmetatable({},{__mode="k"})
+	local lights={}
+	local highlights={}
+
+	local function project(cam,p)
+		local v=cam:WorldToViewportPoint(p)
+		return v,(v.Z&gt;0 and v.X&gt;=band.x0 and v.X&lt;=band.x1 and v.Y&gt;=0 and v.Y&lt;=band.h)
+	end
+	local function uv(cam,p)
+		local v=cam:WorldToViewportPoint(p)
+		if v.Z&lt;=0 then return nil end
+		return {r3((v.X-band.x0)/math.max(1,band.w)),r3(v.Y/math.max(1,band.h))}
+	end
+
+	local function tickChecks(now)
+		local G="tick"
+		local cam=workspace.CurrentCamera
+		local camPos,look=cam.CFrame.Position,cam.CFrame.LookVector
+		local data=duelData()
+		local A,B=actors()
+		local info={}
+		for _,key in {"A","B"} do
+			local m=key=="A" and A or B
+			if m and m.Parent then
+				local parts=partsOf(m)
+				local cf=pivotOf(m)
+				if parts.head and cf then
+					info[key]={m=m,name=nameOf(key,m,data),acting=actingOf(key,data),parts=parts,root=rootOf(m),cf=cf}
+				end
+			end
+		end
+		local extra=otherBodies(A,B)
+		local shares={}
+		for key,x in info do
+			local other=info[key=="A" and "B" or "A"]
+			local id=key..":"
+			local name=x.name
+			local headV,headIn=project(cam,x.parts.head.Position)
+			local torsoIn=headIn
+			if x.parts.torso then
+				local _,inBand=project(cam,x.parts.torso.Position)
+				torsoIn=inBand
+			end
+			local top=x.parts.head.Position+V(0,x.parts.head.Size.Y*0.9,0) -- the hair above the rig's head
+			local feet=(x.root and x.root.Position or x.cf.Position)-V(0,3,0)
+			local topV=cam:WorldToViewportPoint(top)
+			local feetV=cam:WorldToViewportPoint(feet)
+			if headV.Z&gt;0 then shares[key]=math.abs(feetV.Y-topV.Y)/math.max(1,band.h) end
+			-- Out of the band.
+			if not headIn and not torsoIn then
+				if x.acting==true then hold(G,now,id.."out",ERR,"cadrage",name.." agit hors du cadre")
+				elseif other and other.acting==true and attr("NDAct")==nil then hold(G,now,id.."out",WARN,"cadrage","l'action à deux n'est cadrée qu'à moitié : "..name.." hors du cadre",0.3) end
+			elseif headIn and topV.Z&gt;0 and topV.Y&lt;0 then
+				hold(G,now,id.."top",WARN,"cadrage","tête de "..name.." coupée en haut",0.3)
+			end
+			-- The other body right in front of the lens (an over-the-shoulder too close).
+			if x.acting~=true and (headIn or torsoIn) then
+				local dist=((x.root and x.root.Position or x.cf.Position)-camPos).Magnitude
+				if dist&lt;4.5 then hold(G,now,id.."front",WARN,"cadrage",name.." au premier plan, à "..fmt(dist).." studs de l'objectif (il bouche une partie de l'image)",0.3) end
+			end
+			if headIn or torsoIn then
+				-- Seen from behind while acting.
+				local fwd=flat(x.cf.LookVector)
+				local toCam=flat(camPos-x.cf.Position)
+				if fwd.Magnitude&gt;0.1 and toCam.Magnitude&gt;0.1 then
+					local ang=math.deg(math.acos(math.clamp(fwd.Unit:Dot(toCam.Unit),-1,1)))
+					if ang&gt;T.back then
+						if x.acting==true then hold(G,now,id.."back",ERR,"cadrage",name.." filmé de dos pendant son action ("..math.floor(ang).."°)")
+						elseif x.acting==nil then hold(G,now,id.."back",WARN,"cadrage",name.." de dos ("..math.floor(ang).."°)",0.5) end
+					end
+				end
+				-- Something between the lens and the body.
+				local bodies={}
+				if other then for _,p in other.parts.all do table.insert(bodies,p) end end
+				for _,p in extra do table.insert(bodies,p) end
+				local ignore={x.m}
+				local hb=firstBlocker(camPos,x.parts.head.Position,ignore,bodies)
+				local tb=nil
+				if x.parts.torso then tb=firstBlocker(camPos,x.parts.torso.Position,ignore,bodies) end
+				local blocker=hb or tb
+				if blocker then
+					local kind,what=classify(blocker,A,B,data)
+					local full=hb~=nil and (tb~=nil or not x.parts.torso)
+					local by=(kind=="corps" and ("le corps de "..what)) or (kind=="clone" and ("un clone ("..what..")")) or (kind=="effet" and ("un effet ("..what..")")) or ("le décor ("..what..")")
+					if kind=="effet" then
+						if full and x.acting~=false then hold(G,now,id.."hid",WARN,"cadrage",name.." caché par "..by,0.6) end
+					elseif full then
+						hold(G,now,id.."hid",x.acting==false and WARN or ERR,"cadrage",name.." caché par "..by)
+					elseif x.acting~=false then
+						hold(G,now,id.."hid",WARN,"cadrage",name.." à moitié caché par "..by,0.25)
+					end
+				elseif x.acting==true and #x.parts.hands&gt;0 then
+					local hidden=0
+					for _,h in x.parts.hands do if firstBlocker(camPos,h.Position,ignore,bodies) then hidden+=1 end end
+					if hidden==#x.parts.hands then hold(G,now,id.."hands",WARN,"cadrage","on ne voit pas les mains de "..name.." (le geste est caché)",0.3) end
+				end
+			end
+			-- The interface TikTok and Shorts put over the video.
+			if x.acting==true and headIn then
+				local u=(headV.X-band.x0)/math.max(1,band.w)
+				local vv=headV.Y/math.max(1,band.h)
+				if vv&gt;0.8 or (u&gt;0.84 and vv&gt;0.3 and vv&lt;0.8) then hold(G,now,id.."ui",INFO,"cadrage","visage de "..name.." sous l'interface TikTok",0.5) end
+			end
+		end
+		-- Both small: the hook needs the fighters big.
+		if shares.A and shares.B then
+			local big=math.max(shares.A,shares.B)
+			if big&lt;T.small then
+				if take and now-take.start&lt;T.opening then
+					hold(G,now,"small",ERR,"cadrage",string.format("ouverture : persos trop petits (%d %% de la hauteur) — les 2 premières secondes décident",math.floor(big*100)),0.1)
+				else
+					hold(G,now,"small",WARN,"cadrage",string.format("persos petits à l'image (%d %% de la hauteur)",math.floor(big*100)),1.5)
+				end
+			end
+		end
+		-- Two bodies in one place: a game fault, filmed as it is.
+		if info.A and info.B and info.A.root and info.B.root then
+			if (info.A.root.Position-info.B.root.Position).Magnitude&lt;T.inside then hold(G,now,"inside",WARN,"jeu","corps l'un dans l'autre ("..info.A.name.." / "..info.B.name..")",0.4) end
+		end
+		-- Something stuck on the lens.
+		local cf=cam.CFrame
+		local all={}
+		for _,x in info do for _,p in x.parts.all do table.insert(all,p) end end
+		for _,p in extra do table.insert(all,p) end
+		for _,d in {cf.LookVector,(cf*CFrame.Angles(0,math.rad(12),0)).LookVector,(cf*CFrame.Angles(0,math.rad(-12),0)).LookVector,(cf*CFrame.Angles(math.rad(8),0,0)).LookVector,(cf*CFrame.Angles(math.rad(-8),0,0)).LookVector} do
+			local p,hit=firstBlocker(camPos,camPos+d*T.lens,{},all)
+			if p and not (hit and hit.Normal.Y&gt;=0.8) then
+				local kind,what=classify(p,A,B,data)
+				local sev=(kind=="corps" or kind=="clone" or kind=="décor") and ERR or WARN
+				hold(G,now,"lens",sev,"cadrage",(kind=="corps" and ("le corps de "..what) or what).." collé à l'objectif (image bouchée)",0.1)
+				break
+			end
+		end
+		-- The lens inside a wall, a tree or an effect.
+		local ok,inside=pcall(function() return workspace:GetPartBoundsInRadius(camPos,0.25) end)
+		if ok then
+			for _,p in inside do
+				if not p:IsA("Terrain") and p.Transparency&lt;0.6 and p.LocalTransparencyModifier&lt;0.6 then
+					local lp=p.CFrame:PointToObjectSpace(camPos)
+					local h=p.Size/2
+					if math.abs(lp.X)&lt;h.X and math.abs(lp.Y)&lt;h.Y and math.abs(lp.Z)&lt;h.Z then
+						local kind,what=classify(p,A,B,data)
+						if kind=="effet" then hold(G,now,"insidecam",WARN,"cadrage","caméra dans un effet ("..what..")",0.2)
+						else hold(G,now,"insidecam",ERR,"cadrage","caméra dans "..(kind=="décor" and ("le décor ("..what..")") or what),0.1) end
+						break
+					end
+				end
+			end
+		end
+		-- Facing the sun.
+		local sun=Lighting:GetSunDirection()
+		if sun.Y&gt;0.03 and look:Dot(sun)&gt;math.cos(math.rad(T.sun)) then
+			hold(G,now,"sun",WARN,"cadrage","caméra face au soleil (éblouissement) : garder le soleil derrière l'objectif",0.3)
+		end
+		-- A full-body flash that stays (overexposes the shot).
+		for h in highlights do
+			if h.Parent and h.Enabled and h.FillTransparency&lt;0.35 then
+				local target=h.Adornee or h.Parent
+				local who=nil
+				for _,x in info do if target==x.m or (target and target:IsDescendantOf(x.m)) then who=x.name end end
+				if who then
+					flashSince[h]=flashSince[h] or now
+					if now-flashSince[h]&gt;0.3 then hold(G,now,"flash:"..who,WARN,"jeu","flash plein corps sur "..who.." (surexpose)",0) end
+				end
+			else
+				flashSince[h]=nil
+			end
+		end
+		-- A coloured light that stays on a fighter (the pink Kakashi of FILM04):
+		-- a body light over T.bodyLight s, a technique's light over T.fxLight s.
+		for _,l in lights do
+			local hot=false
+			if l.Parent and l.Enabled and l.Brightness&gt;1 then
+				local _,s=l.Color:ToHSV()
+				local at=(l.Parent:IsA("BasePart") and l.Parent.Position) or (l.Parent:IsA("Attachment") and l.Parent.WorldPosition) or nil
+				if at and s&gt;0.45 then
+					local range=(l:IsA("PointLight") or l:IsA("SpotLight")) and l.Range or 8
+					for _,x in info do
+						if (x.parts.head.Position-at).Magnitude&lt;range*0.8 then
+							hot=true
+							lightSince[l]=lightSince[l] or now
+							local onBody=l:IsDescendantOf(x.m)
+							local limit=onBody and T.bodyLight or T.fxLight
+							if now-lightSince[l]&gt;limit then
+								hold(G,now,"light:"..x.name,WARN,"jeu","lumière "..hueName(l.Color).." qui reste sur "..x.name.." (teinte la peau et le sol)"..(onBody and "" or " — lumière d'effet"),0)
+							end
+						end
+					end
+				end
+			end
+			if not hot then lightSince[l]=nil end
+		end
+		self.info=info
+		sweep(G,now)
+	end
+
+	local function guiCovers(g)
+		for _,o in g:GetDescendants() do
+			if o:IsA("GuiObject") and o.AbsoluteSize.X&gt;4 and o.AbsoluteSize.Y&gt;4 then
+				local drawn=(o.BackgroundTransparency&lt;0.95) or ((o:IsA("TextLabel") or o:IsA("TextButton")) and o.Text~="" and o.TextTransparency&lt;0.9) or ((o:IsA("ImageLabel") or o:IsA("ImageButton")) and o.Image~="" and o.ImageTransparency&lt;0.9)
+				if drawn then
+					local p,s=o.AbsolutePosition,o.AbsoluteSize
+					if p.X&lt;band.x1 and p.X+s.X&gt;band.x0 and p.Y&lt;band.h and p.Y+s.Y&gt;0 then
+						local visible=o.Visible
+						local a=o.Parent
+						while visible and a and a~=g do
+							if a:IsA("GuiObject") and not a.Visible then visible=false end
+							a=a.Parent
+						end
+						if visible then return o end
+					end
+				end
+			end
+		end
+		return nil
+	end
+
+	local function slowChecks(now)
+		local G="slow"
+		local check={}
+		local sum=0
+		for _,f in fpsWin do sum+=f[2] end
+		local fps=#fpsWin&gt;10 and sum&gt;0 and #fpsWin/sum or nil
+		self.fps=fps
+		if fps then check.fps=fps&gt;=T.fpsWarn end
+		if fps and now-installedAt&gt;5 then
+			if fps&lt;T.fpsErr then hold(G,now,"fps",take and ERR or WARN,"machine",string.format("Studio à %d i/s : fenêtre au premier plan ? autre place en Play ? Mac occupé ?",math.floor(fps)),0)
+			elseif fps&lt;T.fpsWarn then hold(G,now,"fps",WARN,"machine",string.format("Studio à %d i/s (assez pour 30 i/s, mais sans marge)",math.floor(fps)),0) end
+		end
+		-- Graphics quality: declared by the CM if the reading is wrong in Studio.
+		local level,auto=quality()
+		if self.declaredQuality then level,auto=self.declaredQuality,false end
+		self.quality=auto and "Automatique" or level
+		if auto then check.quality=false elseif level then check.quality=true end
+		if auto then hold(G,now,"quality",WARN,"reglage","qualité graphique lue « Automatique » : mettre un niveau fixe (si la lecture est fausse, Report:Invoke(\"quality\",N))",0) end
+		local dof,rays=false,false
+		for _,root in {Lighting,workspace.CurrentCamera} do
+			for _,e in root:GetChildren() do
+				if e:IsA("DepthOfFieldEffect") and e.Enabled then dof=true end
+				if e:IsA("SunRaysEffect") and e.Enabled and e.Intensity&gt;0.01 then rays=true end
+			end
+		end
+		check.dof=not dof;check.rays=not rays;check.shadows=Lighting.GlobalShadows
+		if dof then hold(G,now,"dof",ERR,"reglage","profondeur de champ allumée (elle fait saccader la prise)",0) end
+		if rays then hold(G,now,"rays",WARN,"reglage","rayons du soleil allumés (éblouissent)",0) end
+		if not Lighting.GlobalShadows then hold(G,now,"shadows",WARN,"reglage","ombres coupées (GlobalShadows)",0) end
+		-- What is drawn over the band: the game's HUD, the dev panels (filming overlays ND* excepted).
+		local hud,panels=false,{}
+		for _,g in playerGui:GetChildren() do
+			if g:IsA("ScreenGui") and g~=gui and g.Enabled and (DEV_GUIS[g.Name] or string.sub(g.Name,1,2)~="ND") then
+				if guiCovers(g) then
+					if DEV_GUIS[g.Name] then panels[DEV_GUIS[g.Name]]=true else hud=true end
+				end
+			end
+		end
+		check.hud=not hud or self.allowHud
+		check.panels=next(panels)==nil
+		if hud and not self.allowHud then hold(G,now,"hud",WARN,"reglage","HUD du jeu dans l'image (« Préparer l'image » le cache)",0) end
+		for k in panels do hold(G,now,"panel"..k,ERR,"reglage","panneau "..k.." ouvert dans l'image",0) end
+		local mouse=UIS:GetMouseLocation()
+		local cursor=UIS.MouseIconEnabled and mouse.X&gt;band.x0 and mouse.X&lt;band.x1
+		check.cursor=not cursor
+		if cursor then hold(G,now,"cursor",WARN,"reglage","curseur de la souris dans l'image",0.5) end
+		-- Lights and highlights near the fighters, checked 15 times a second by tickChecks.
+		table.clear(lights);table.clear(highlights)
+		local A,B=actors()
+		check.duel=A~=nil and B~=nil
+		local roots={}
+		for _,n in FX_ROOTS do local r=workspace:FindFirstChild(n);if r then table.insert(roots,r) end end
+		if A then table.insert(roots,A) end
+		if B then table.insert(roots,B) end
+		for _,r in roots do
+			for _,d in r:GetDescendants() do
+				if d:IsA("Light") then table.insert(lights,d) elseif d:IsA("Highlight") then highlights[d]=true end
+			end
+		end
+		self.check=check
+		sweep(G,now)
+	end
+
+	--------------------------------------------------------------------
+	-- The game's own errors while filming (not the CM's scripts, Studio commands or plugins).
+	--------------------------------------------------------------------
+	LogService.MessageOut:Connect(function(message,kind)
+		if kind==Enum.MessageType.MessageError and gameError(message) then
+			event("error",ERR,"jeu","erreur de script (client) : "..string.sub(message,1,140),os.clock())
+		end
+	end)
+	task.spawn(function()
+		local log=ReplicatedStorage:WaitForChild("NinjaDuelDevLog",15)
+		if not log then return end
+		log.OnClientEvent:Connect(function(kind,payload)
+			if kind=="serverlog" and type(payload)=="table" and payload.k=="error" and gameError(tostring(payload.m)) then
+				event("error",ERR,"jeu","erreur de script (serveur) : "..string.sub(tostring(payload.m),1,140),os.clock())
+			end
+		end)
+	end)
+
+	--------------------------------------------------------------------
+	-- Drawing.
+	--------------------------------------------------------------------
+	local function worst()
+		local w=0
+		for _,c in live do if c.open and c.sev&gt;w then w=c.sev end end
+		local now=os.clock()
+		for _,e in recent do if now-e.t&lt;1.5 and e.sev&gt;w then w=e.sev end end
+		return w
+	end
+	local function liveLines(now)
+		local list={}
+		for id,c in live do if c.open then table.insert(list,{id=id,sev=c.sev,owner=c.owner,text=c.text,dur=now-c.since}) end end
+		for _,e in recent do if now-e.t&lt;4 then table.insert(list,{sev=e.sev,owner=e.owner,text=e.text,ago=now-e.t}) end end
+		table.sort(list,function(a,b) if a.sev~=b.sev then return a.sev&gt;b.sev end;return (a.dur or 0)&gt;(b.dur or 0) end)
+		return list
+	end
+	local function layoutBand()
+		local vp=workspace.CurrentCamera.ViewportSize
+		local w=math.min(vp.X,vp.Y*CROPW)
+		band.x0=(vp.X-w)/2;band.x1=band.x0+w;band.w=w;band.h=vp.Y
+		lineL.Position=UDim2.fromOffset(band.x0-T.lines-3,0)
+		lineR.Position=UDim2.fromOffset(band.x1+T.lines,0)
+		guides.Position=UDim2.fromOffset(band.x0,0);guides.Size=UDim2.new(0,w,1,0)
+		counter.Position=UDim2.fromOffset(band.x1+T.lines+12,8)
+		local margin=band.x0-T.lines-16
+		panel.Size=UDim2.new(0,math.clamp(margin,240,380),1,-16)
+		self.narrow=margin&lt;240
+		self.counterGeometry={x=band.x1+T.lines+12+4,y=8+24,cell=CELL,bits=BITS,
+			layout="points from the top-left of the viewport (x2 on Retina): cell 0 white guard, cells 1..24 the frame number (white=1, least significant first), cell 25 black guard"}
+	end
+	local function drawCounter()
+		counterText.Text=string.format("%07d",frameNo%10000000)
+		local n=frameNo
+		for i=1,BITS do
+			cells[i].BackgroundColor3=(n%2==1) and rgb(255,255,255) or rgb(0,0,0)
+			n=n//2
+		end
+		cells[BITS+1].BackgroundColor3=rgb(0,0,0)
+	end
+	local function drawPlan()
+		local info=self.info or {}
+		local cam=workspace.CurrentCamera
+		local pts={cam.CFrame.Position}
+		for _,x in info do table.insert(pts,x.cf.Position) end
+		local c=V(0,0,0)
+		for _,p in pts do c+=p end
+		c/=#pts
+		local span=12
+		for _,p in pts do span=math.max(span,(flat(p-c)).Magnitude*1.25) end
+		local s=70/span
+		local function at(p) local d=p-c;return Vector2.new(75+d.X*s,75+d.Z*s) end
+		for _,key in {"A","B"} do
+			local x=info[key]
+			P[key].Visible=x~=nil;P["look"..key].Visible=x~=nil
+			if x then
+				local p=at(x.cf.Position)
+				P[key].Position=UDim2.fromOffset(p.X,p.Y)
+				local f=flat(x.cf.LookVector);if f.Magnitude&gt;0.1 then f=f.Unit end
+				placeLine(P["look"..key],p,p+Vector2.new(f.X,f.Z)*16)
+			end
+		end
+		local cp=at(cam.CFrame.Position)
+		P.cam.Position=UDim2.fromOffset(cp.X,cp.Y)
+		local l=flat(cam.CFrame.LookVector);if l.Magnitude&gt;0.1 then l=l.Unit end
+		local half=math.rad(cam.FieldOfView/2*CROPW)
+		local function rot(v,a) return Vector2.new(v.X*math.cos(a)-v.Z*math.sin(a),v.X*math.sin(a)+v.Z*math.cos(a)) end
+		placeLine(P.lookCam,cp,cp+Vector2.new(l.X,l.Z)*40)
+		placeLine(P.fovL,cp,cp+rot(l,half)*60)
+		placeLine(P.fovR,cp,cp+rot(l,-half)*60)
+		local sun=flat(Lighting:GetSunDirection())
+		P.sun.Visible=sun.Magnitude&gt;0.05
+		if sun.Magnitude&gt;0.05 then sun=sun.Unit;P.sun.Position=UDim2.fromOffset(75+sun.X*68,75+sun.Z*68) end
+	end
+	local function render(now)
+		local w=worst()
+		local color=w&gt;=ERR and SEVCOLOR[ERR] or w&gt;=WARN and SEVCOLOR[WARN] or OK_COLOR
+		lineL.BackgroundColor3=color;lineR.BackgroundColor3=color
+		lineL.Visible=take==nil or self.linesDuringRec;lineR.Visible=lineL.Visible
+		guides.Visible=self.guides and take==nil
+		panel.Visible=self.shown and not (take and self.narrow)
+		chip.Visible=not self.shown
+		if not self.shown then return end
+		warnNarrow.Text=self.narrow and '&lt;font color="#F0AA3C"&gt;Fenêtre étroite : le panneau couvre la bande 9:16 ; il se cache pendant une prise.&lt;/font&gt;' or ""
+		warnNarrow.Visible=self.narrow==true
+		local scene,shot,act=attr("NDScene") or attr("NDBeat"),attr("NDShot") or attr("NDTake"),attr("NDAct")
+		sceneText.Text=string.format('&lt;font color="#8A94A3"&gt;scène&lt;/font&gt; %s  &lt;font color="#8A94A3"&gt;caméra&lt;/font&gt; %s  &lt;font color="#8A94A3"&gt;qui agit&lt;/font&gt; %s',
+			esc(scene or "—"),esc(shot or "—"),esc(act or "état du duel"))
+		timer.Text=take and string.format('&lt;font color="#EB5050"&gt;● %s&lt;/font&gt;',fmt(now-take.start)) or ""
+		recButton.Text=take and "■ STOP" or "● REC"
+		recButton.BackgroundColor3=take and rgb(150,40,40) or rgb(52,58,70)
+		local ck=self.check or {}
+		local function item(ok,text,detail)
+			local mark=ok==nil and '&lt;font color="#8A94A3"&gt;?&lt;/font&gt;' or ok and '&lt;font color="#5AC878"&gt;✓&lt;/font&gt;' or '&lt;font color="#EB5050"&gt;×&lt;/font&gt;'
+			return mark.." "..text..(detail and (' &lt;font color="#8A94A3"&gt;'..detail.."&lt;/font&gt;") or "")
+		end
+		checkText.Text=table.concat({
+			item(ck.duel,"Combat trouvé",self.actorsOverride and "(corps choisis à la main)" or nil),
+			item(ck.quality,"Qualité graphique fixe",self.quality and ("("..tostring(self.quality)..(self.declaredQuality and ", déclarée" or "")..")") or nil),
+			item(ck.fps,"Image fluide (≥ "..T.fpsWarn.." i/s)",self.fps and ("("..math.floor(self.fps).." i/s)") or nil),
+			item(ck.dof,"Profondeur de champ coupée"),
+			item(ck.rays,"Rayons du soleil coupés"),
+			item(ck.shadows,"Ombres allumées"),
+			item(ck.hud,"HUD du jeu hors de l'image",self.allowHud and "(HUD voulu)" or nil),
+			item(ck.panels,"Panneaux F6 / F7 fermés"),
+			item(ck.cursor,"Curseur hors de l'image"),
+		},"\n")
+		local lines={}
+		for i,e in liveLines(now) do
+			if i&gt;10 then break end
+			local tag=string.format('&lt;font color="%s"&gt;&lt;b&gt;%s&lt;/b&gt;&lt;/font&gt;',hex(SEVCOLOR[e.sev]),SEVNAME[e.sev])
+			local when=e.dur and (" · "..fmt(e.dur).." s") or (" · il y a "..fmt(e.ago).." s")
+			table.insert(lines,tag.." "..esc(e.text)..'&lt;font color="#8A94A3"&gt; · '..OWNER[e.owner]..when..(e.id and (" · "..e.id) or "").."&lt;/font&gt;")
+		end
+		liveText.Text=#lines&gt;0 and table.concat(lines,"\n") or '&lt;font color="#5AC878"&gt;Rien à signaler.&lt;/font&gt;'
+		if last then
+			local f={}
+			table.insert(f,string.format("&lt;b&gt;%s&lt;/b&gt; · %s s · %d erreur(s), %d à voir",esc(last.label),fmt(last.duration),last.counts.err,last.counts.warn))
+			table.insert(f,'&lt;font color="#5AC878"&gt;Plages propres :&lt;/font&gt; '..ranges(last.clean))
+			table.insert(f,'&lt;font color="#8A94A3"&gt;Sans rien « à voir » : '..ranges(last.cleanStrict).."&lt;/font&gt;")
+			for i,s in last.scenes do
+				if i&gt;8 then break end
+				if s.scene or s.shot then
+					table.insert(f,string.format('&lt;font color="#8A94A3"&gt;scène&lt;/font&gt; %s %s · %d %% propre',esc(s.scene or "—"),esc(s.shot or ""),math.floor(s.cleanShare*100)))
+				end
+			end
+			for i,x in last.faults do
+				if i&gt;8 then break end
+				local at={}
+				for j,r in x.at do if j&lt;=5 then table.insert(at,fmt(r[1])) end end
+				table.insert(f,string.format('&lt;font color="%s"&gt;%s&lt;/font&gt; %s &lt;font color="#8A94A3"&gt;· %s · à %s s&lt;/font&gt;',hex(SEVCOLOR[x.sev]),SEVNAME[x.sev],esc(x.text),OWNER[x.owner],table.concat(at,", ")))
+			end
+			if #last.cuts&gt;0 then
+				local cuts={}
+				for i,t in last.cuts do if i&lt;=12 then table.insert(cuts,fmt(t)) end end
+				table.insert(f,'&lt;font color="#8A94A3"&gt;Coupes caméra à '..table.concat(cuts,", ").." s&lt;/font&gt;")
+			end
+			lastText.Text=table.concat(f,"\n")
+		else
+			lastText.Text='&lt;font color="#8A94A3"&gt;Pas encore de prise. « ● REC » au moment où OBS démarre (ou workspace.NDRec), « ■ STOP » à l\'arrêt.&lt;/font&gt;'
+		end
+		drawPlan()
+	end
+
+	--------------------------------------------------------------------
+	-- The per-frame loop: counter, camera, frozen frames, frame log.
+	--------------------------------------------------------------------
+	recButton=button(head,"● REC",function() if take then stopTake() else startTake() end end,{Size=UDim2.fromOffset(84,26),Position=UDim2.new(1,-90,0,1)})
+	button(buttons,"Préparer l'image",prepare,{Size=UDim2.fromOffset(122,26)})
+	button(buttons,"Rétablir",restore,{Size=UDim2.fromOffset(70,26)})
+	button(buttons,"Repères",function() self.guides=not self.guides end,{Size=UDim2.fromOffset(70,26)})
+	button(buttons,"×",function() self:show(false) end,{Size=UDim2.fromOffset(28,26)})
+	function self:show(on) self.shown=on==true end
+	UIS.InputBegan:Connect(function(key,processed)
+		if not processed and key.KeyCode==Enum.KeyCode.F4 then self:show(not self.shown) end
+	end)
+	-- workspace.NDRec: a scene script starts and stops takes without a click.
+	workspace:GetAttributeChangedSignal("NDRec"):Connect(function()
+		local v=workspace:GetAttribute("NDRec")
+		if v and v~="" then startTake(type(v)=="string" and v or nil) else stopTake() end
+	end)
+
+	local function logFrame(now,cam)
+		local f={f=frameNo,w=r3(now-take.start),dt=r3(fpsWin[#fpsWin] and fpsWin[#fpsWin][2] or 0)}
+		if attr("NDCut")==true then f.black=true end
+		local st=attr("NDClock")
+		if type(st)=="number" then f.st=r3(st) end
+		f.scene=attr("NDScene") or attr("NDBeat");f.shot=attr("NDShot") or attr("NDTake");f.act=attr("NDAct")
+		local cf=cam.CFrame
+		f.cam={r3(cf.Position.X),r3(cf.Position.Y),r3(cf.Position.Z),r3(cf.LookVector.X),r3(cf.LookVector.Y),r3(cf.LookVector.Z),r3(cam.FieldOfView)}
+		local open={}
+		for id,c in live do if c.open and c.sev&gt;=WARN then table.insert(open,id) end end
+		if #open&gt;0 then f.def=open end
+		for key,x in self.info or {} do
+			if x.m.Parent and x.parts.head then
+				local e={face=uv(cam,(x.parts.head.CFrame*CFrame.new(0,0,-0.5*x.parts.head.Size.Z)).Position),head=uv(cam,x.parts.head.Position)}
+				local eyes={}
+				for _,p in eyePoints(x.parts) do table.insert(eyes,uv(cam,p) or false) end
+				e.eyes=eyes
+				local hands={}
+				for _,h in x.parts.hands do if h.Parent then table.insert(hands,uv(cam,h.Position) or false) end end
+				e.hands=hands
+				f[key]=e
+			end
+		end
+		table.insert(take.frames,f)
+	end
+
+	local tickAcc,slowAt,drawAt=0,0,0
+	RunService:BindToRenderStep("NinjaDuelClipAssist",Enum.RenderPriority.Last.Value+400,function(dt)
+		local now=os.clock()
+		frameNo+=1
+		table.insert(fpsWin,{now,dt})
+		while fpsWin[1] and now-fpsWin[1][1]&gt;2 do table.remove(fpsWin,1) end
+		counter.Visible=self.counterOn and (take~=nil or self.shown)
+		if counter.Visible then drawCounter() end
+		-- A frozen image: a frame much longer than the ones around it.
+		if now-installedAt&gt;3 and dt&gt;T.hitch then
+			local sum=0
+			for _,f in fpsWin do sum+=f[2] end
+			local mean=#fpsWin&gt;0 and sum/#fpsWin or dt
+			if dt&gt;3*mean or dt&gt;0.1 then
+				event("hitch",take and ERR or WARN,"machine",string.format("image figée (%d ms)",math.floor(dt*1000)),now)
+				if take then take.hitches+=1 end
+			end
+		end
+		-- The camera: a cut, or a jump inside a shot that the bodies' own motion does not explain.
+		local cam=workspace.CurrentCamera
+		local cf=cam.CFrame
+		local pos,look,fov=cf.Position,cf.LookVector,cam.FieldOfView
+		local bodyMove=0
+		for key,x in self.info or {} do
+			local p=x.root and x.root.Position or (x.m.Parent and x.cf.Position)
+			if p and lastRoots[key] then bodyMove=math.max(bodyMove,(p-lastRoots[key]).Magnitude) end
+			lastRoots[key]=p
+		end
+		if lastCam then
+			local move=(pos-lastCam.pos).Magnitude
+			local turn=math.deg(math.acos(math.clamp(look:Dot(lastCam.look),-1,1)))
+			if attr("NDCut")==true then
+				-- inside a black gap: no cut, no jump
+			-- A cut: more than the bodies themselves could explain in this frame (a slow
+			-- frame at 15 i/s carries four frames of motion).
+			elseif move&gt;math.max(T.cutMove*math.max(1,dt*60),3*bodyMove+2) or turn&gt;T.cutTurn*math.max(1,dt*30) or math.abs(fov-lastCam.fov)&gt;6 then
+				if take then table.insert(take.cuts,r3(now-take.start)) end
+				if now-lastCut&lt;T.cutGap then event("cuts",WARN,"cadrage","deux coupes en "..fmt(now-lastCut).." s",now) end
+				lastCut=now
+			elseif (move&gt;T.jumpMove and move&gt;4*motion.move and move&gt;2.5*bodyMove+0.3) or (turn&gt;T.jumpTurn and turn&gt;4*motion.turn and bodyMove&lt;0.5) then
+				event("jump",WARN,"cadrage",string.format("saut de caméra (%s studs, %d°)",fmt(move),math.floor(turn)),now)
+			else
+				motion.move=motion.move*0.9+move*0.1;motion.turn=motion.turn*0.9+turn*0.1
+			end
+		end
+		lastCam={pos=pos,look=look,fov=fov}
+		tickAcc+=dt
+		local black=attr("NDCut")==true
+		if black then
+			-- A black gap between two beats of a program: nothing to judge.
+			for id,c in live do if c.group=="tick" then closeSpan(c);live[id]=nil end end
+			tickAcc=0
+		elseif tickAcc&gt;=T.tick then
+			tickAcc=0
+			local ok,err=pcall(tickChecks,now)
+			if not ok then warn("[NinjaDuelClip] tick: "..tostring(err)) end
+		end
+		if take then
+			local ok,err=pcall(logFrame,now,cam)
+			if not ok then warn("[NinjaDuelClip] frame: "..tostring(err)) end
+		end
+		if now-slowAt&gt;=1 then
+			slowAt=now
+			local ok,err=pcall(slowChecks,now)
+			if not ok then warn("[NinjaDuelClip] slow: "..tostring(err)) end
+		end
+		if now-drawAt&gt;=1/8 then
+			drawAt=now
+			local ok,err=pcall(function() layoutBand();render(now) end)
+			if not ok then warn("[NinjaDuelClip] draw: "..tostring(err)) end
+		end
+	end)
+
+	--------------------------------------------------------------------
+	-- For agents and scene scripts.
+	--------------------------------------------------------------------
+	local function snapshot()
+		local now=os.clock()
+		local list={}
+		for _,e in liveLines(now) do table.insert(list,{id=e.id,severity=SEVNAME[e.sev],owner=OWNER[e.owner],text=e.text,seconds=e.dur,ago=e.ago}) end
+		return {shown=self.shown,recording=take~=nil,takeSeconds=take and (now-take.start) or nil,label=take and take.label or nil,frame=frameNo,
+			check=self.check,quality=self.quality,fps=self.fps,narrow=self.narrow,band={x0=band.x0,x1=band.x1,height=band.h},
+			counter=self.counterGeometry,thresholds=T,ignore=self.ignore,now=list,last=public(last),build=buildLine()}
+	end
+	local bindable=Instance.new("BindableFunction");bindable.Name="Report";bindable.Parent=gui
+	bindable.OnInvoke=function(op,arg,extra)
+		if op=="rec" then
+			if arg=="start" then startTake(extra) elseif arg=="stop" then stopTake() end
+		elseif op=="frames" then
+			local src=take or last
+			local list=src and src.frames or {}
+			local from=type(arg)=="table" and tonumber(arg.from) or 1
+			local count=type(arg)=="table" and tonumber(arg.count) or 600
+			local out={}
+			for i=from,math.min(#list,from+count-1) do table.insert(out,list[i]) end
+			return HttpService:JSONEncode({total=#list,from=from,frames=out,counter=self.counterGeometry})
+		elseif op=="prepare" then prepare()
+		elseif op=="restore" then restore()
+		elseif op=="actors" then
+			self.actorsOverride=(type(arg)=="table" and arg[1] and arg[2]) and {arg[1],arg[2]} or nil
+			self.actorNames=type(extra)=="table" and extra or nil
+		elseif op=="quality" then self.declaredQuality=tonumber(arg)
+		elseif op=="set" and type(arg)=="table" then for k,v in arg do if T[k]~=nil and type(v)=="number" then T[k]=v end end
+		elseif op=="ignore" then
+			if type(arg)=="table" then for _,id in arg do self.ignore[tostring(id)]=true end else table.clear(self.ignore) end
+		elseif op=="show" then self:show(arg~=false)
+		elseif op=="guides" then self.guides=arg~=false
+		elseif op=="allowHud" then self.allowHud=arg==true
+		elseif op=="counter" then self.counterOn=arg~=false
+		elseif op=="linesDuringRec" then self.linesDuringRec=arg==true
+		end
+		return HttpService:JSONEncode(snapshot())
+	end
+	self.prepare=prepare;self.restore=restore;self.startTake=startTake;self.stopTake=stopTake;self.snapshot=snapshot
+	_G.NDClipAssist=self
+	print("[NinjaDuelClip] assistant de tournage prêt (F4) | "..buildLine())
+	return self
+end
+
+return Assist
+</ProtectedString>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="ND256">
+        <Properties>
+          <string name="Name">ClipSight</string>
+          <ProtectedString name="Source">--!nocheck
+-- ClipSight (FILM place): lines of sight that also see what a raycast cannot.
+--  * the decor the game builds unqueryable (bushes and tree tops of
+--    Client/ArenaDress, Server/World props: CanQuery=false), collected every
+--    few seconds as boxes;
+--  * any list of parts given by the caller (the replay's ghost bodies are
+--    anchored copies with CanQuery=false, so a raycast passes through them).
+-- Used by ClipAssist (F4) for "hidden by", and by NDDirector to pick a clear angle.
+local Sight={}
+local SKIP={NinjaDuels=true,NinjaDuelBodies=true,NinjaDuelFX=true,Effects=true,NinjaUltimateFX=true,VfxMesh=true,WorldMemory=true,NDReplay=true}
+local boxes={}
+local builtAt=-math.huge
+Sight.refreshEvery=5
+
+function Sight.refresh(force)
+	if not force and os.clock()-builtAt&lt;Sight.refreshEvery then return end
+	builtAt=os.clock()
+	table.clear(boxes)
+	for _,root in workspace:GetChildren() do
+		if not SKIP[root.Name] and not root:IsA("Camera") and not root:IsA("Terrain") then
+			local list=root:IsA("BasePart") and {root} or root:GetDescendants()
+			for _,p in list do
+				if p:IsA("BasePart") and not p.CanQuery and p.Transparency&lt;0.5 then
+					local m=p.Size.Magnitude
+					if m&gt;1.2 and m&lt;120 then table.insert(boxes,{part=p,cf=p.CFrame,h=p.Size/2,c=p.Position,r=m/2}) end
+				end
+			end
+		end
+	end
+end
+
+-- Segment a -&gt; a+d against one box (slab test in the box's space): entry fraction or nil.
+local function enter(cf,h,a,d)
+	local o=cf:PointToObjectSpace(a)
+	local v=cf:VectorToObjectSpace(d)
+	local t0,t1=0,1
+	for _,ax in {"X","Y","Z"} do
+		local oo,vv,hh=o[ax],v[ax],h[ax]
+		if math.abs(vv)&lt;1e-9 then
+			if oo&lt;-hh or oo&gt;hh then return nil end
+		else
+			local ta,tb=(-hh-oo)/vv,(hh-oo)/vv
+			if ta&gt;tb then ta,tb=tb,ta end
+			if ta&gt;t0 then t0=ta end
+			if tb&lt;t1 then t1=tb end
+			if t0&gt;t1 then return nil end
+		end
+	end
+	return t0
+end
+Sight.enter=enter
+
+-- The first unqueryable decor box between a and b (fraction along the segment).
+function Sight.decor(a,b,margin)
+	Sight.refresh()
+	local d=b-a
+	local L2=d:Dot(d)
+	if L2&lt;1e-6 then return nil end
+	local best,bt=nil,1-(margin or 0.02)
+	for _,x in boxes do
+		local t=math.clamp((x.c-a):Dot(d)/L2,0,1)
+		if (a+d*t-x.c).Magnitude&lt;=x.r then
+			local th=enter(x.cf,x.h,a,d)
+			if th and th&lt;bt then best,bt=x.part,th end
+		end
+	end
+	return best,best and bt or nil
+end
+
+-- The first of `parts` (live CFrames) between a and b.
+function Sight.parts(a,b,parts,margin)
+	local d=b-a
+	local L2=d:Dot(d)
+	if L2&lt;1e-6 then return nil end
+	local best,bt=nil,1-(margin or 0.02)
+	for _,p in parts do
+		if p.Parent and p.Transparency&lt;0.6 then
+			local c=p.Position
+			local t=math.clamp((c-a):Dot(d)/L2,0,1)
+			if (a+d*t-c).Magnitude&lt;=p.Size.Magnitude/2 then
+				local th=enter(p.CFrame,p.Size/2,a,d)
+				if th and th&lt;bt then best,bt=p,th end
+			end
+		end
+	end
+	return best,best and bt or nil
+end
+
+-- An unqueryable decor box within r of a point (a lens placed in a bush).
+function Sight.near(pos,r)
+	Sight.refresh()
+	for _,x in boxes do
+		if (x.c-pos).Magnitude&lt;=x.r+r then
+			local o=x.cf:PointToObjectSpace(pos)
+			local q=Vector3.new(math.clamp(o.X,-x.h.X,x.h.X),math.clamp(o.Y,-x.h.Y,x.h.Y),math.clamp(o.Z,-x.h.Z,x.h.Z))
+			if (o-q).Magnitude&lt;=r then return x.part end
+		end
+	end
+	return nil
+end
+
+-- A raycast plus the unqueryable decor: true when nothing is in the way.
+function Sight.clear(a,b,params)
+	local hit=workspace:Raycast(a,b-a,params)
+	if hit then return false,hit.Instance end
+	local p=Sight.decor(a,b,0.02)
+	return p==nil,p
+end
+
+return Sight
+</ProtectedString>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="ND257">
+        <Properties>
+          <string name="Name">NDReplay</string>
+          <ProtectedString name="Source">--!nocheck
+-- NDReplay (FILM place only, client): record a REAL match frame by frame, then
+-- replay it as many times as needed, at any speed, with any camera.
+-- Written by the CM for FILM08 (12/11/2026, MEDIA/FILM08_SASUKE_GAARA/scripts),
+-- brought into the repository by the OUTILLEUR on 13/11 (claude/revue-outil-f4-par-le-cm):
+--   * the sounds: every Sound that plays is noted (instant, id, volume, speed,
+--     place); the replay plays them again at normal speed, and soundLog() gives
+--     the list for the edit (a slow render has no usable sound);
+--   * the particle bursts (ParticleEmitter:Emit()): an emitter that stamps
+--     NDEmit / NDEmitCount after Emit() is replayed exactly; any other emitter
+--     born switched off gets one burst of `emitDefault` when it appears;
+--   * the speed: particles (TimeScale), trails, beam textures and the sounds
+--     follow M.speed, so a quarter-speed render is a real slow motion;
+--   * workspace.NDClock carries the replay time (seconds from the start of the
+--     recording) for the filming assistant F4 and the frame log.
+-- Records every moving thing outside the static map: both fighters, their clones,
+-- effect parts, attachments, emitters, beams, lights, highlights, decals, sprites.
+-- Replay = anchored copies ("ghosts") moved to the recorded values; positions are
+-- interpolated between samples (except teleports), so a slow replay is smooth.
+local RunService = game:GetService("RunService")
+local SoundService = game:GetService("SoundService")
+local Players = game:GetService("Players")
+
+local M = {}
+M.list = {}
+M.ghostOf = {}
+M.origOf = {}
+M.frames = {}
+M.roots = {}
+M.sounds = {}
+M.emits = {}
+M.recording = false
+M.version = 2
+M.emitDefault = 12
+M.soundOn = true        -- play the recorded sounds during a replay
+M.soundMinSpeed = 0.9   -- below this speed the replay is silent (the edit uses soundLog)
+
+local nextId = 0
+local queue, queued = {}, {}
+local conns = {}
+local soundLast = setmetatable({}, {__mode = "k"})
+
+local PROPS = {
+	{"BasePart", {{"CFrame", "cf"}, {"Size", "v3"}, {"Transparency", "n"}, {"Color", "c3"}}},
+	{"Attachment", {{"CFrame", "cf"}}},
+	{"ParticleEmitter", {{"Enabled", "s"}, {"Rate", "s"}}},
+	{"Beam", {{"Enabled", "s"}, {"Width0", "n"}, {"Width1", "n"}, {"Transparency", "s"}, {"Color", "s"}}},
+	{"Trail", {{"Enabled", "s"}}},
+	{"Light", {{"Enabled", "s"}, {"Brightness", "n"}, {"Range", "n"}, {"Color", "c3"}}},
+	{"Highlight", {{"Enabled", "s"}, {"FillTransparency", "n"}, {"OutlineTransparency", "n"}, {"FillColor", "c3"}}},
+	{"Decal", {{"Transparency", "n"}}},
+	{"SpecialMesh", {{"Scale", "v3"}, {"Offset", "v3"}}},
+	{"BillboardGui", {{"Enabled", "s"}, {"Size", "s"}}},
+	{"ImageLabel", {{"ImageTransparency", "n"}, {"ImageRectOffset", "s"}, {"Rotation", "n"}, {"ImageColor3", "c3"}, {"Size", "s"}, {"Visible", "s"}}},
+}
+local EXCL = {"Courtyard", "NinjaDuelArenaDress", "NinjaDuelMenuStage", "NDReplay"}
+
+local function now() return workspace:GetServerTimeNow() end
+
+local function excluded(inst)
+	local terrain, cam = workspace.Terrain, workspace.CurrentCamera
+	if inst == terrain or inst:IsDescendantOf(terrain) then return true end
+	if cam and (inst == cam or inst:IsDescendantOf(cam)) then return true end
+	for _, n in EXCL do
+		if inst.Name == n or inst:FindFirstAncestor(n) then return true end
+	end
+	return false
+end
+
+local function propsFor(inst)
+	local res
+	for _, e in PROPS do
+		if inst:IsA(e[1]) then
+			res = res or {}
+			for _, p in e[2] do table.insert(res, p) end
+		end
+	end
+	return res
+end
+
+local function push(it, key, v, t)
+	local tr = it.tracks[key]
+	if not tr then tr = {}; it.tracks[key] = tr end
+	local n = #tr
+	if n &gt; 0 and M.prevT and tr[n][1] &lt; M.prevT - 1e-6 then
+		tr[n + 1] = {M.prevT, tr[n][2]}
+		n += 1
+	end
+	tr[n + 1] = {t, v}
+end
+
+-- Sounds: noted when they start (Played and Playing both fire on Play(): one note).
+local function watchSound(s)
+	if soundLast[s] ~= nil then return end
+	soundLast[s] = -math.huge
+	local function note()
+		if not M.recording or not s.Playing then return end
+		local t = now()
+		if t - soundLast[s] &lt; 0.05 then return end
+		soundLast[s] = t
+		local p = s.Parent
+		local pos = nil
+		if p and p:IsA("BasePart") then pos = p.Position elseif p and p:IsA("Attachment") then pos = p.WorldPosition end
+		table.insert(M.sounds, {t = t, id = s.SoundId, volume = s.Volume, speed = s.PlaybackSpeed, pos = pos, looped = s.Looped,
+			name = s.Name, start = s.TimePosition, length = s.TimeLength, rolloff = s.RollOffMaxDistance})
+	end
+	table.insert(conns, s.Played:Connect(function() task.defer(note) end))
+	table.insert(conns, s:GetPropertyChangedSignal("Playing"):Connect(note))
+	if s.Playing then note() end
+end
+
+local KILL = {"LuaSourceContainer", "JointInstance", "WeldConstraint", "Constraint", "Sound", "BodyMover", "ForceField", "ProximityPrompt", "ClickDetector"}
+local function prep(g, isFighter)
+	local all = g:GetDescendants()
+	table.insert(all, 1, g)
+	for _, d in all do
+		local kill = false
+		for _, c in KILL do if d:IsA(c) then kill = true break end end
+		if kill and d ~= g then
+			d:Destroy()
+		elseif d:IsA("BasePart") then
+			d.Anchored = true; d.CanCollide = false; d.CanTouch = false; d.CanQuery = false
+		elseif d:IsA("Humanoid") then
+			pcall(function()
+				d.EvaluateStateMachine = false
+				d.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None
+				d.HealthDisplayType = Enum.HumanoidHealthDisplayType.AlwaysOff
+			end)
+		elseif d:IsA("BillboardGui") and (isFighter or d:FindFirstChildWhichIsA("TextLabel", true)) then
+			d.Enabled = false
+			d:SetAttribute("NDRskip", true)
+		end
+	end
+end
+
+local function adopt(X, t, isFighter)
+	if not X.Parent or not X:IsDescendantOf(workspace) then return end
+	local all = X:GetDescendants()
+	table.insert(all, 1, X)
+	for _, d in all do
+		if d:GetAttribute("NDR") == nil then
+			nextId += 1
+			d:SetAttribute("NDR", nextId)
+		end
+		pcall(function() d.Archivable = true end)
+		if d:IsA("Sound") then watchSound(d) end
+	end
+	local g = X:Clone()
+	if not g then return end
+	local gall = g:GetDescendants()
+	table.insert(gall, 1, g)
+	for _, gd in gall do
+		local id = gd:GetAttribute("NDR")
+		if id then M.ghostOf[id] = gd end
+	end
+	prep(g, isFighter)
+	-- references that point outside the copied tree
+	for _, gd in g:GetDescendants() do
+		if gd:IsA("Beam") or gd:IsA("Trail") then
+			for _, k in {"Attachment0", "Attachment1"} do
+				local a = gd[k]
+				local id = a and a:GetAttribute("NDR")
+				if id and M.ghostOf[id] and M.ghostOf[id] ~= a then gd[k] = M.ghostOf[id] end
+			end
+		elseif gd:IsA("Highlight") and gd.Adornee then
+			local id = gd.Adornee:GetAttribute("NDR")
+			if id and M.ghostOf[id] then gd.Adornee = M.ghostOf[id] end
+		end
+	end
+	local pid = X.Parent and X.Parent:GetAttribute("NDR")
+	local rootParent = (pid and M.ghostOf[pid]) or M.folder
+	for _, d in all do
+		local id = d:GetAttribute("NDR")
+		local gd = M.ghostOf[id]
+		if gd and (gd.Parent or gd == g) and not gd:GetAttribute("NDRskip") then
+			local props = propsFor(d)
+			if d == X or props then
+				local it = {id = id, inst = d, ghost = gd, props = props, tracks = {}, last = {},
+					gparent = if d == X then rootParent else gd.Parent, root = d == X, lastAlive = true}
+				push(it, "__alive", true, t)
+				if props then
+					for _, p in props do
+						local v = d[p[1]]
+						it.last[p[1]] = v
+						push(it, p[1], v, t)
+					end
+				end
+				if d:IsA("ParticleEmitter") then
+					-- A burst emitter: born switched off. Exact bursts if the effect stamps NDEmit.
+					it.burst = (not d.Enabled) or d.Rate == 0
+					table.insert(conns, d:GetAttributeChangedSignal("NDEmit"):Connect(function()
+						if M.recording then
+							it.stamped = true
+							table.insert(M.emits, {t = now(), it = it, count = d:GetAttribute("NDEmitCount") or M.emitDefault})
+						end
+					end))
+				end
+				table.insert(M.list, it)
+				M.origOf[id] = d
+			end
+		end
+	end
+	g.Parent = nil
+	table.insert(M.roots, {inst = X, ghost = g, t = t, fighter = isFighter})
+	return g
+end
+
+local function sample()
+	local t = now()
+	if #queue &gt; 0 then
+		local q = queue
+		queue, queued = {}, {}
+		local inQ = {}
+		for _, x in q do inQ[x] = true end
+		for _, x in q do
+			local p = x.Parent
+			local nested = false
+			while p and p ~= workspace do
+				if inQ[p] then nested = true break end
+				p = p.Parent
+			end
+			if not nested and x:GetAttribute("NDR") == nil then adopt(x, t, false) end
+		end
+	end
+	for _, it in M.list do
+		local inst = it.inst
+		local alive = inst.Parent ~= nil and inst:IsDescendantOf(workspace)
+		if alive ~= it.lastAlive then
+			push(it, "__alive", alive, t)
+			it.lastAlive = alive
+		end
+		if alive and it.props then
+			for _, p in it.props do
+				local v = inst[p[1]]
+				if v ~= it.last[p[1]] then
+					push(it, p[1], v, t)
+					it.last[p[1]] = v
+				end
+			end
+		end
+	end
+	M.prevT = t
+	table.insert(M.frames, t)
+end
+
+function M.reset()
+	M.stop()
+	if M.folder then M.folder:Destroy() end
+	M.list, M.ghostOf, M.origOf, M.frames, M.roots, M.sounds, M.emits = {}, {}, {}, {}, {}, {}, {}
+	table.clear(soundLast)
+	M.prevT = nil
+	M.prepared = false
+end
+
+-- fighters: {human = model, bot = model}; others: instances present at the start
+function M.start(fighters, others)
+	M.reset()
+	M.folder = Instance.new("Folder")
+	M.folder.Name = "NDReplay"
+	M.folder.Parent = nil
+	local t = now()
+	M.t0 = t
+	M.fighters = {}
+	for key, model in fighters do
+		adopt(model, t, true)
+		local hrp = model:FindFirstChild("HumanoidRootPart")
+		M.fighters[key] = {model = model, id = model:GetAttribute("NDR"), hrp = hrp and hrp:GetAttribute("NDR"),
+			head = model:FindFirstChild("Head") and model.Head:GetAttribute("NDR")}
+	end
+	for _, x in others or {} do adopt(x, t, false) end
+	table.insert(conns, workspace.DescendantAdded:Connect(function(x)
+		if not M.recording then return end
+		if x:IsA("Sound") then watchSound(x) end
+		if not queued[x] and not excluded(x) then
+			queued[x] = true
+			table.insert(queue, x)
+		end
+	end))
+	-- Sounds that never enter workspace (2D sounds of the hit feedback and the HUD).
+	local pg = Players.LocalPlayer and Players.LocalPlayer:FindFirstChildOfClass("PlayerGui")
+	for _, root in {SoundService, pg} do
+		if root then
+			for _, d in root:GetDescendants() do if d:IsA("Sound") then watchSound(d) end end
+			table.insert(conns, root.DescendantAdded:Connect(function(x) if x:IsA("Sound") then watchSound(x) end end))
+		end
+	end
+	for _, d in workspace:GetDescendants() do if d:IsA("Sound") then watchSound(d) end end
+	M.recording = true
+	RunService:BindToRenderStep("NDReplayRec", Enum.RenderPriority.Last.Value + 50, function()
+		if M.recording then sample() end
+	end)
+	return t
+end
+
+function M.stop()
+	M.recording = false
+	pcall(function() RunService:UnbindFromRenderStep("NDReplayRec") end)
+	for _, c in conns do c:Disconnect() end
+	conns = {}
+	if #M.frames &gt; 0 then M.t1 = M.frames[#M.frames] end
+end
+
+-- value lookup -----------------------------------------------------------------
+local function valueAt(tr, t, mode)
+	local n = #tr
+	if t &lt;= tr[1][1] then return tr[1][2] end
+	if t &gt;= tr[n][1] then return tr[n][2] end
+	local lo, hi = 1, n
+	while hi - lo &gt; 1 do
+		local mid = (lo + hi) // 2
+		if tr[mid][1] &lt;= t then lo = mid else hi = mid end
+	end
+	local a, b = tr[lo], tr[hi]
+	local dt = b[1] - a[1]
+	if mode == "s" or dt &gt; 0.25 or dt &lt;= 0 then return a[2] end
+	local f = (t - a[1]) / dt
+	if mode == "cf" then
+		if (b[2].Position - a[2].Position).Magnitude &gt; 6 then return if f &lt; 0.5 then a[2] else b[2] end
+		return a[2]:Lerp(b[2], f)
+	elseif mode == "n" then
+		return a[2] + (b[2] - a[2]) * f
+	else
+		return a[2]:Lerp(b[2], f)
+	end
+end
+M.valueAt = valueAt
+
+function M.itemById(id)
+	for _, it in M.list do if it.id == id then return it end end
+end
+
+-- world CFrame of a recorded part (by NDR id) at time t
+local cache = {}
+function M.cfAt(id, t)
+	local it = cache[id]
+	if not it then it = M.itemById(id); cache[id] = it end
+	if not it or not it.tracks.CFrame then return nil end
+	return valueAt(it.tracks.CFrame, t, "cf")
+end
+function M.fighterCF(key, t)
+	local f = M.fighters[key]
+	return f and M.cfAt(f.hrp, t)
+end
+-- the ghost model of a fighter ("human" / "bot"), for the filming assistant F4
+function M.ghostFighter(key)
+	local f = M.fighters and M.fighters[key]
+	return f and M.ghostOf[f.id]
+end
+
+-- live world on/off during the replay (client-local reparent)
+local BIN = 0.5
+function M.prepare()
+	local t0 = M.t0
+	M.bins = {}
+	M.shown = {}
+	table.clear(cache)
+	local nConst = 0
+	for _, it in M.list do
+		it.isPart = it.ghost:IsA("BasePart")
+		local al = it.tracks.__alive
+		local aStart = al[1][1]
+		local aEnd = M.t1 or al[#al][1]
+		if al[#al][2] == false then aEnd = al[#al][1] end
+		it.aStart, it.aEnd = aStart, aEnd
+		it.cur = {}
+		it.live = {}
+		if it.props then
+			for _, p in it.props do
+				local tr = it.tracks[p[1]]
+				if tr then
+					local const = true
+					local v1 = tr[1][2]
+					for i = 2, #tr do if tr[i][2] ~= v1 then const = false break end end
+					if const then
+						nConst += 1
+						if p[1] == "CFrame" and it.isPart then it.ghost.CFrame = v1 else pcall(function() it.ghost[p[1]] = v1 end) end
+					else
+						table.insert(it.live, p)
+					end
+				end
+			end
+		end
+		for k = math.floor((aStart - t0) / BIN), math.floor((aEnd - t0) / BIN) do
+			local b = M.bins[k]
+			if not b then b = {}; M.bins[k] = b end
+			table.insert(b, it)
+		end
+	end
+	for _, it in M.list do it.ghost.Parent = nil end
+	table.sort(M.sounds, function(a, b) return a.t &lt; b.t end)
+	table.sort(M.emits, function(a, b) return a.t &lt; b.t end)
+	M.prepared = true
+	return nConst
+end
+
+local function at(it, key, tr, t, mode)
+	local n = #tr
+	if t &lt;= tr[1][1] then return tr[1][2] end
+	if t &gt;= tr[n][1] then return tr[n][2] end
+	local i = it.cur[key] or 1
+	if i &gt;= n or tr[i][1] &gt; t then
+		-- binary search
+		local lo, hi = 1, n
+		while hi - lo &gt; 1 do
+			local mid = (lo + hi) // 2
+			if tr[mid][1] &lt;= t then lo = mid else hi = mid end
+		end
+		i = lo
+	else
+		while i &lt; n - 1 and tr[i + 1][1] &lt;= t do i += 1 end
+	end
+	it.cur[key] = i
+	local a, b = tr[i], tr[i + 1]
+	local dt = b[1] - a[1]
+	if mode == "s" or dt &gt; 0.25 or dt &lt;= 0 then return a[2] end
+	local f = (t - a[1]) / dt
+	if mode == "cf" then
+		if (b[2].Position - a[2].Position).Magnitude &gt; 6 then return if f &lt; 0.5 then a[2] else b[2] end
+		return a[2]:Lerp(b[2], f)
+	elseif mode == "n" then
+		return a[2] + (b[2] - a[2]) * f
+	else
+		return a[2]:Lerp(b[2], f)
+	end
+end
+
+-- Sounds and stamped bursts between two replay times (forward only).
+local function playSound(s)
+	if not M.soundOn or M.speed &lt; M.soundMinSpeed or s.id == "" then return end
+	local snd = Instance.new("Sound")
+	snd.SoundId = s.id; snd.Volume = s.volume; snd.PlaybackSpeed = s.speed * M.speed; snd.Looped = false
+	pcall(function() snd.TimePosition = s.start or 0 end)
+	local holder
+	if s.pos then
+		holder = Instance.new("Part")
+		holder.Anchored = true; holder.CanCollide = false; holder.CanQuery = false; holder.CanTouch = false
+		holder.Transparency = 1; holder.Size = Vector3.new(0.2, 0.2, 0.2); holder.CFrame = CFrame.new(s.pos)
+		holder.Name = "NDReplaySound"; holder.Parent = M.folder
+		if s.rolloff then snd.RollOffMaxDistance = s.rolloff end
+		snd.Parent = holder
+	else
+		snd.Parent = SoundService
+	end
+	snd:Play()
+	task.delay(math.min(math.max((s.length or 2) / math.max(s.speed * M.speed, 0.1), 0.5), 12), function()
+		snd:Destroy(); if holder then holder:Destroy() end
+	end)
+end
+local function crossings(a, b)
+	if b &lt;= a then return end
+	for _, s in M.sounds do
+		if s.t &gt; b then break end
+		if s.t &gt; a then playSound(s) end
+	end
+	for _, e in M.emits do
+		if e.t &gt; b then break end
+		if e.t &gt; a and e.it.ghost.Parent then pcall(function() e.it.ghost:Emit(e.count) end) end
+	end
+end
+
+M.lastApplied = nil
+function M.apply(t)
+	if not M.prepared then M.prepare() end
+	local k = math.floor((t - M.t0) / BIN)
+	local bin = M.bins[k] or {}
+	local nowShown = {}
+	local parts, cfs = {}, {}
+	local forward = M.lastApplied ~= nil and t &gt; M.lastApplied and t - M.lastApplied &lt; 1
+	for _, it in bin do
+		local alive = t &gt;= it.aStart and t &lt;= it.aEnd and at(it, "__alive", it.tracks.__alive, t, "s")
+		local g = it.ghost
+		if alive then
+			nowShown[it] = true
+			if g.Parent ~= it.gparent then g.Parent = it.gparent end
+			for _, p in it.live do
+				local v = at(it, p[1], it.tracks[p[1]], t, p[2])
+				if p[1] == "CFrame" and it.isPart then
+					parts[#parts + 1] = g
+					cfs[#cfs + 1] = v
+				elseif g[p[1]] ~= v then
+					g[p[1]] = v
+				end
+			end
+			-- an unstamped burst emitter: one burst when it appears
+			if forward and it.burst and not it.stamped and not M.shown[it] then
+				pcall(function() g:Emit(it.inst:GetAttribute("NDEmitCount") or M.emitDefault) end)
+			end
+		end
+	end
+	for it in M.shown do
+		if not nowShown[it] and it.ghost.Parent ~= nil then it.ghost.Parent = nil end
+	end
+	M.shown = nowShown
+	if #parts &gt; 0 then workspace:BulkMoveTo(parts, cfs, Enum.BulkMoveMode.FireCFrameChanged) end
+	if forward then crossings(M.lastApplied, t) end
+	M.lastApplied = t
+	workspace:SetAttribute("NDClock", math.floor((t - M.t0) * 1000 + 0.5) / 1000)
+end
+
+M.hidden = {}
+function M.hideLive(list)
+	M.holder = M.holder or Instance.new("Folder")
+	M.holder.Name = "NDReplayLiveHidden"
+	M.holder.Parent = game:GetService("ReplicatedStorage")
+	for _, x in list do
+		if x and x.Parent then
+			table.insert(M.hidden, {x, x.Parent})
+			x.Parent = M.holder
+		end
+	end
+end
+function M.showLive()
+	for _, h in M.hidden do pcall(function() h[1].Parent = h[2] end) end
+	M.hidden = {}
+end
+
+-- Everything that runs on its own clock follows the replay speed.
+function M.setSpeed(speed)
+	M.speed = speed
+	for _, it in M.list do
+		local g = it.ghost
+		if g:IsA("ParticleEmitter") then g.TimeScale = speed
+		elseif g:IsA("Trail") then
+			it.baseLife = it.baseLife or it.inst.Lifetime
+			g.Lifetime = it.baseLife / math.max(speed, 0.05)
+		elseif g:IsA("Beam") then
+			it.baseTex = it.baseTex or it.inst.TextureSpeed
+			g.TextureSpeed = it.baseTex * speed
+		end
+	end
+end
+M.speed = 1
+
+-- play [a, b] of the recording at `speed`; camFn(t) -&gt; CFrame, fov (optional)
+function M.play(a, b, speed, camFn, onDone)
+	M.halt()
+	M.folder.Parent = workspace
+	for _, it in M.list do it.isPart = it.ghost:IsA("BasePart") end
+	M.setSpeed(speed)
+	local rt = a
+	M.rt = rt
+	M.lastApplied = nil
+	local cam = workspace.CurrentCamera
+	if camFn then cam.CameraType = Enum.CameraType.Scriptable end
+	M.playing = true
+	RunService:BindToRenderStep("NDReplayPlay", Enum.RenderPriority.Last.Value + 300, function(dt)
+		if not M.playing then return end
+		if not M.paused then rt += dt * M.speed end
+		if rt &gt;= b then rt = b end
+		M.rt = rt
+		M.apply(rt)
+		if camFn then
+			local cf, fov = camFn(rt, dt)
+			if cf then cam.CFrame = cf end
+			if fov then cam.FieldOfView = fov end
+		end
+		if rt &gt;= b and not M.paused then
+			M.paused = true
+			if onDone then task.spawn(onDone) end
+		end
+	end)
+end
+function M.halt()
+	M.playing = false
+	M.paused = false
+	pcall(function() RunService:UnbindFromRenderStep("NDReplayPlay") end)
+end
+function M.seek(t, camFn)
+	M.folder.Parent = workspace
+	for _, it in M.list do it.isPart = it.ghost:IsA("BasePart") end
+	M.lastApplied = nil
+	M.apply(t)
+	if camFn then
+		local cam = workspace.CurrentCamera
+		cam.CameraType = Enum.CameraType.Scriptable
+		local cf, fov = camFn(t, 1)
+		if cf then cam.CFrame = cf end
+		if fov then cam.FieldOfView = fov end
+	end
+end
+
+-- The sounds of the recording, for the edit: seconds from the start of the recording.
+function M.soundLog()
+	local out = {}
+	for _, s in M.sounds do
+		table.insert(out, {t = math.floor((s.t - M.t0) * 1000 + 0.5) / 1000, id = s.id, volume = s.volume, speed = s.speed,
+			name = s.name, length = s.length, looped = s.looped, pos = s.pos and {s.pos.X, s.pos.Y, s.pos.Z} or nil})
+	end
+	return out
+end
+
+function M.stats()
+	local nParts, nTracks, nEntries, bursts, stamped = 0, 0, 0, 0, 0
+	for _, it in M.list do
+		if it.inst:IsA("BasePart") then nParts += 1 end
+		if it.burst then bursts += 1 end
+		if it.stamped then stamped += 1 end
+		for _, tr in it.tracks do nTracks += 1; nEntries += #tr end
+	end
+	return {items = #M.list, parts = nParts, tracks = nTracks, entries = nEntries, frames = #M.frames,
+		dur = M.t1 and M.t0 and (M.t1 - M.t0), roots = #M.roots, sounds = #M.sounds, burstEmitters = bursts,
+		stampedEmitters = stamped, stampedBursts = #M.emits}
+end
+
+return M
+</ProtectedString>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="ND258">
+        <Properties>
+          <string name="Name">NDDirector</string>
+          <ProtectedString name="Source">--!nocheck
+-- NDDirector (FILM place only, client): cameras and the take program for NDReplay.
+-- Written by the CM for FILM08 (12/11/2026), brought into the repository by the
+-- OUTILLEUR on 13/11. Changes: the line of sight also sees the bushes and tree
+-- tops (Sight: they are unqueryable, a raycast went through them); the program
+-- tells the filming assistant F4 the scene, the shot, who acts and the replay
+-- time (workspace NDScene, NDShot, NDAct, NDClock), and can start and stop its
+-- take (P.f4); the FILM08 beats moved to docs/tools/OUTIL_TOURNAGE_F4.md.
+--
+--   local D=require(ReplicatedStorage.NDFactory.NDDirector)   -- also shared.NDD, shared.NDP
+--
+-- Framing rule for the 9:16 band: keep the ACTOR centred.
+--  front  : in front of fighter `a` (yaw from his look), looking at him
+--  ots    : behind the other fighter, offset `off`, looking at `a` (a's face, the other's shoulder)
+--  best   : like front/ots but the azimuth around `a` is searched once per segment
+--           (clear line of sight, inside the arena, not in a bush, other fighter not blocking)
+--  pair   : both fighters, camera square to their line, distance fitted to the band
+--  center : both fighters, camera on the line from their midpoint to the arena centre (near walls)
+local R = require(script.Parent.NDReplay)
+local Sight = require(script.Parent.ClipSight)
+shared.NDR = R
+local RunService = game:GetService("RunService")
+local UP = Vector3.yAxis
+local CENTER = Vector3.new(0, 3, 0)
+local D = {}
+shared.NDD = D
+
+local rp = RaycastParams.new(); rp.FilterType = Enum.RaycastFilterType.Exclude
+local op = OverlapParams.new(); op.FilterType = Enum.RaycastFilterType.Exclude
+local function refreshFilters() rp.FilterDescendantsInstances = {R.folder}; op.FilterDescendantsInstances = {R.folder}; Sight.refresh(true) end
+local function flat(v) local f = v * Vector3.new(1, 0, 1); return if f.Magnitude &gt; 1e-3 then f.Unit else Vector3.xAxis end
+local function clear(a, b) return (Sight.clear(a, b, rp)) end
+local function blockedLens(pos) return #workspace:GetPartBoundsInRadius(pos, 1.6, op) &gt; 0 or Sight.near(pos, 1.2) ~= nil end
+D.flat, D.clear = flat, clear
+
+local function camPos(A, B, theta, d, h, hground)
+	local f = flat(B - A); local r = f:Cross(UP); local th = math.rad(theta)
+	local horiz = (f * math.cos(th) + r * math.sin(th)) * d
+	local y = if hground then math.min(A.Y, B.Y) + hground else A.Y + h
+	return Vector3.new(A.X + horiz.X, y, A.Z + horiz.Z)
+end
+
+function D.shot(kind, t, p)
+	p = p or {}
+	local A = p.a or "human"; local B = if A == "human" then "bot" else "human"
+	local ca, cb = R.fighterCF(A, t), R.fighterCF(B, t)
+	if not ca or not cb then return nil end
+	local pa, pb = ca.Position, cb.Position
+	local dir = flat(pa - pb); local side = dir:Cross(UP) * (p.side or 1)
+	if kind == "ots" then
+		local pos = pb - dir * (p.back or 5) + side * (p.off or 3) + UP * (p.h or 2)
+		return CFrame.lookAt(pos, pa + UP * (p.lookh or 0.8)), p.fov or 50
+	elseif kind == "front" then
+		local v = CFrame.fromAxisAngle(UP, math.rad(p.yaw or 30)):VectorToWorldSpace(flat(ca.LookVector))
+		local pos = pa + v * (p.d or 9) + UP * (p.h or 1.5)
+		return CFrame.lookAt(pos, pa + UP * (p.lookh or 0.6) + (pb - pa) * (p.lead or 0)), p.fov or 50
+	elseif kind == "best" then
+		local pos = camPos(pa, pb, p.theta or 40, p.d or 9, p.h or 1.8, p.hground)
+		return CFrame.lookAt(pos, pa + UP * (p.lookh or 1.0) + (pb - pa) * (p.lead or 0)), p.fov or 50
+	elseif kind == "pair" then
+		local a, b = R.fighterCF("human", t).Position + UP * 0.6, R.fighterCF("bot", t).Position + UP * 0.6
+		local mid = (a + b) / 2; local ax = b - a; local r = flat(ax):Cross(UP)
+		local fov = p.fov or 60; local tv = math.tan(math.rad(fov / 2)); local th = tv * 0.5625
+		local dH = ((ax * Vector3.new(1, 0, 1)).Magnitude / 2 + (p.mh or 2)) / th
+		local dV = (math.abs(ax.Y) / 2 + (p.mv or 3.5)) / tv
+		local d = math.clamp(math.max(dH, dV), p.dmin or 9, p.dmax or 24)
+		local s = p.side or 1
+		local off = r * s * d
+		if p.swing then off = CFrame.fromAxisAngle(UP, math.rad(p.swing * s)) * off end
+		return CFrame.lookAt(mid + off + UP * (p.h or 1.5), mid + UP * (p.lookh or 0)), fov
+	elseif kind == "center" then
+		local mid = (pa + pb) / 2; local toC = flat(CENTER - mid); local r = toC:Cross(UP); local yw = math.rad(p.yaw or 0)
+		local pos = mid + (toC * math.cos(yw) + r * math.sin(yw)) * (p.d or 15)
+		pos = Vector3.new(pos.X, math.min(pa.Y, pb.Y) + (p.h or 2), pos.Z)
+		return CFrame.lookAt(pos, mid + UP * (p.lookh or 0)), p.fov or 60
+	end
+end
+
+function D.pick(t, p)
+	local Ak = p.a or "human"; local Bk = if Ak == "human" then "bot" else "human"
+	local A, B = R.fighterCF(Ak, t).Position, R.fighterCF(Bk, t).Position
+	local best, bestScore
+	for theta = -170, 170, 10 do
+		local pos = camPos(A, B, theta, p.d or 9, p.h or 1.8, p.hground)
+		local score = math.abs(math.abs(theta) - (p.want or 40))
+		local headA = A + UP * 1.5
+		if not clear(pos, headA) then score += 1000 end
+		if not clear(pos, B + UP) then score += 60 end
+		if Vector2.new(pos.X, pos.Z).Magnitude &gt; 150 then score += 500 end
+		if blockedLens(pos) then score += 1000 end
+		local toA, toB = headA - pos, B + UP - pos
+		if toB.Magnitude &lt; toA.Magnitude and math.deg(math.acos(math.clamp(toA.Unit:Dot(toB.Unit), -1, 1))) &lt; 12 then score += 200 end
+		if not bestScore or score &lt; bestScore then best, bestScore = theta, score end
+	end
+	return best, bestScore
+end
+
+function D.pickSide(kind, t, p)
+	local best, bestScore
+	for _, s in {1, -1} do
+		local q = table.clone(p); q.side = s
+		local cf = D.shot(kind, t, q)
+		if cf then
+			local pos = cf.Position
+			local score = (pos - CENTER).Magnitude * 0.05
+			for _, k in {"human", "bot"} do if not clear(pos, R.fighterCF(k, t).Position + UP) then score += 1000 end end
+			if blockedLens(pos) then score += 1000 end
+			if not bestScore or score &lt; bestScore then best, bestScore = s, score end
+		end
+	end
+	return best, bestScore
+end
+
+-- one camera function over segments {from, to, kind, p, tau, push, pushEnd} (absolute times)
+function D.track(segs, tau)
+	refreshFilters()
+	for _, s in segs do
+		s.p = s.p or {}
+		if s.kind == "best" and not s.p.theta then s.p.theta = D.pick(s.from, s.p) end
+		if (s.kind == "pair" or s.kind == "ots") and type(s.p.side) ~= "number" then s.p.side = D.pickSide(s.kind, s.from, s.p) end
+	end
+	local cur, curSeg, lastT
+	local fn = function(t)
+		local seg
+		for _, s in segs do if t &gt;= s.from and t &lt; s.to then seg = s break end end
+		seg = seg or segs[#segs]
+		local cf, fov = D.shot(seg.kind, t, seg.p)
+		if not cf then return nil end
+		if seg.push then
+			local k = math.clamp((t - seg.from) / math.max((seg.pushEnd or seg.to) - seg.from, 0.01), 0, 1)
+			cf = cf + cf.LookVector * seg.push * (1 - (1 - k) ^ 2)
+		end
+		if seg ~= curSeg or not cur or not lastT or t &lt; lastT then
+			cur = {pos = cf.Position, at = cf.Position + cf.LookVector * 10, fov = fov}; curSeg = seg
+		else
+			local a = 1 - math.exp(-math.max(t - lastT, 0) / (seg.tau or tau or 0.08))
+			cur.pos = cur.pos:Lerp(cf.Position, a); cur.at = cur.at:Lerp(cf.Position + cf.LookVector * 10, a)
+			cur.fov += (fov - cur.fov) * a
+		end
+		lastT = t
+		return CFrame.lookAt(cur.pos, cur.at), cur.fov
+	end
+	return fn, function(t)
+		for _, s in segs do if t &gt;= s.from and t &lt; s.to then return s end end
+		return segs[#segs]
+	end
+end
+
+-- the take program: beats one after another, black between them (CapCut cuts on it),
+-- speed ramps baked in (real slow motion), ease to a stop by SCREEN time, optional timecode
+local P = {}
+shared.NDP = P
+P.f4 = false      -- true: one F4 take for the whole program (workspace.NDRec)
+P.shot = nil      -- the camera map's name, written to workspace.NDShot (B3: one program per map)
+local pg = game.Players.LocalPlayer.PlayerGui
+local function gui(name, order)
+	local g = pg:FindFirstChild(name) or Instance.new("ScreenGui")
+	g.Name = name; g.IgnoreGuiInset = true; g.DisplayOrder = order; g.ResetOnSpawn = false; g.Parent = pg
+	return g
+end
+local blk = gui("NDBlack", 1000)
+local fr = blk:FindFirstChild("F") or Instance.new("Frame")
+fr.Name = "F"; fr.Size = UDim2.fromScale(1, 1); fr.BackgroundColor3 = Color3.new(); fr.BorderSizePixel = 0; fr.Parent = blk
+blk.Enabled = false
+local tcg = gui("NDTC", 900)
+local lab = tcg:FindFirstChild("L") or Instance.new("TextLabel")
+lab.Name = "L"; lab.AnchorPoint = Vector2.new(0.5, 0); lab.Position = UDim2.fromScale(0.5, 0.03); lab.Size = UDim2.fromOffset(160, 34)
+lab.BackgroundColor3 = Color3.new(); lab.BackgroundTransparency = 0.3; lab.TextColor3 = Color3.new(1, 1, 0); lab.TextSize = 26; lab.Font = Enum.Font.Code; lab.Parent = tcg
+P.showTC = false
+tcg.Enabled = false
+
+function P.speedAt(beat, rel)
+	local s = 1
+	for _, k in beat.speeds or {} do if rel &gt;= k[1] then s = k[2] end end
+	return s
+end
+-- `slow` (optional): render the whole program at this fraction of real time
+-- (0.25 = a quarter-speed render, sped up x4 in the edit: every frame distinct).
+function P.run(beats, gap, slow)
+	gap = gap or 1.0
+	slow = slow or 1
+	P.log, P.done = {}, false
+	tcg.Enabled = P.showTC
+	local cam = workspace.CurrentCamera
+	cam.CameraType = Enum.CameraType.Scriptable
+	R.folder.Parent = workspace
+	game:GetService("UserInputService").MouseIconEnabled = false
+	workspace:SetAttribute("NDShot", P.shot)
+	if P.f4 then workspace:SetAttribute("NDRec", (P.shot or "replay") .. " " .. os.date("%H:%M:%S")) end
+	task.spawn(function()
+		local c0 = os.clock()
+		for _, beat in beats do
+			blk.Enabled = true
+			workspace:SetAttribute("NDCut", true)
+			workspace:SetAttribute("NDScene", nil)
+			local a, b = R.t0 + beat.a, R.t0 + beat.b
+			local segs = {}
+			for _, s in beat.segs do
+				local c = table.clone(s); c.p = table.clone(s.p or {})
+				c.from = R.t0 + math.max(s.from, beat.a); c.to = R.t0 + s.to
+				table.insert(segs, c)
+			end
+			local camFn, segAt = D.track(segs)
+			R.lastApplied = nil
+			R.apply(a)
+			local cf, fov = camFn(a)
+			if cf then cam.CFrame = cf; cam.FieldOfView = fov end
+			task.wait(gap)
+			blk.Enabled = false
+			workspace:SetAttribute("NDScene", beat.name)
+			workspace:SetAttribute("NDCut", nil)
+			table.insert(P.log, {beat = beat.name, at = os.clock() - c0})
+			local rt, spd = a, P.speedAt(beat, beat.a)
+			local holdLeft, easeT, finished = beat.hold or 0, nil, false
+			RunService:BindToRenderStep("NDProgram", Enum.RenderPriority.Last.Value + 300, function(dt)
+				local rel = rt - R.t0
+				local target = P.speedAt(beat, rel)
+				local eased = false
+				if beat.ease and rel &gt;= beat.ease[1] then
+					easeT = (easeT or 0) + dt
+					local k = math.clamp(easeT / beat.ease[2], 0, 1)
+					target *= (1 - k) ^ 2
+					eased = k &gt;= 1
+				end
+				spd += (target - spd) * (1 - math.exp(-dt / 0.06))
+				-- particles, trails, beams and sounds follow the effective speed
+				if math.abs(spd * slow - (R.speed or 1)) &gt; 0.05 then R.setSpeed(spd * slow) end
+				rt = math.min(rt + dt * spd * slow, b)
+				R.apply(rt)
+				-- who must be seen: the beat's `act`, else the segment's fighter
+				local seg = segAt(rt)
+				local act = beat.act or (seg and seg.p and (seg.p.a == "bot" and "B" or seg.p.a == "human" and "A")) or nil
+				workspace:SetAttribute("NDAct", act)
+				lab.Text = string.format("%s %.2f", beat.name:sub(1, 1), rt - R.t0)
+				local c2, f2 = camFn(rt)
+				if c2 then cam.CFrame = c2; cam.FieldOfView = f2 end
+				if rt &gt;= b or eased then
+					if holdLeft &gt; 0 then holdLeft -= dt * slow else finished = true end
+				end
+			end)
+			while not finished do task.wait() end
+			RunService:UnbindFromRenderStep("NDProgram")
+			table.insert(P.log, {beat = beat.name .. " end", at = os.clock() - c0})
+		end
+		blk.Enabled = true
+		workspace:SetAttribute("NDCut", true)
+		workspace:SetAttribute("NDScene", nil)
+		workspace:SetAttribute("NDAct", nil)
+		task.wait(0.4)
+		if P.f4 then workspace:SetAttribute("NDRec", nil) end
+		workspace:SetAttribute("NDCut", nil)
+		P.done = true
+	end)
+end
+
+return D
 </ProtectedString>
         </Properties>
       </Item>
@@ -51231,6 +53436,13 @@ function Dev.install(ctx)
 	if visualModule then
 		local ok,err=pcall(function() self.visual=require(visualModule).install(ctx,self) end)
 		if not ok then warn("[NinjaDuel] F7 visual tool unavailable: "..tostring(err)) end
+	end
+	-- F4: the filming assistant, in the FILM place only (build.py --capture
+	-- adds tools/capture/studio/ClipAssist.luau to ReplicatedStorage).
+	local clipModule=RS:FindFirstChild("ClipAssist",true)
+	if clipModule and clipModule:IsA("ModuleScript") then
+		local ok,err=pcall(function() self.clip=require(clipModule).install(ctx,self) end)
+		if not ok then warn("[NinjaDuel] F4 filming assistant unavailable: "..tostring(err)) end
 	end
 	task.spawn(function()
 		-- Both channels are created by the server's DevHooks at ReplicatedStorage root.
