@@ -35,6 +35,7 @@
 -- pitch and layering.
 local Debris=game:GetService("Debris")
 local Kit=require(script.Parent.VfxKit)
+local ShadowFX=require(script.Parent.ShadowFX)
 
 local ChakraFlowFX={}
 local K -- Effects' helpers, handed over by install()
@@ -210,7 +211,7 @@ local function pebbles(fx,at,color,count)
 	for _=1,count do
 		local size=.25+math.random()*.3
 		local rock=K.block(fx.folder,Vector3.one*size,CFrame.new(at)*CFrame.Angles(math.random()*6,math.random()*6,0),color,Enum.Material.Slate)
-		rock.Name="ChakraPebble"
+		rock.Name="ChakraPebble";ShadowFX.keep(rock)
 		local a=math.random()*math.pi*2
 		local out=Vector3.new(math.cos(a),0,math.sin(a))*(1.5+math.random()*2)
 		K.tween(rock,.22,{CFrame=CFrame.new(at+out*.6+Vector3.new(0,1.4+math.random(),0))})
@@ -849,7 +850,7 @@ local function impact(fx,i,folder)
 		if i.sig=="EarthSpike" then
 			local ok=pcall(function()
 				local spike=Instance.new("Part");spike.Name="EarthSpike";spike.Anchored=true;spike.CanCollide=false;spike.CanQuery=false
-				spike.Material=Enum.Material.Slate;spike.Color=color;spike.Size=Vector3.new(1.5,.2,1.5)
+				spike.Material=Enum.Material.Slate;spike.Color=color;spike.Size=Vector3.new(1.5,.2,1.5);ShadowFX.keep(spike)
 				local base=CFrame.new(p)*CFrame.Angles(0,math.rad(45),math.rad(4))
 				spike.CFrame=base;spike.Parent=fx.folder
 				local TS=game:GetService("TweenService")

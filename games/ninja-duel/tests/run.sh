@@ -42,6 +42,7 @@ run Lightning "$LUNE" run tests/Lightning.spec.luau
 run Sharingan "$LUNE" run tests/Sharingan.spec.luau
 run Toad "$LUNE" run tests/Toad.spec.luau
 run Models "$LUNE" run tests/Models.spec.luau
+run Shadow "$LUNE" run tests/Shadow.spec.luau
 run Movement   "$LUNE" run tests/Movement.spec.luau
 run CombatFeel "$LUNE" run tests/CombatFeel.spec.luau
 run Engagement "$LUNE" run tests/Engagement.spec.luau

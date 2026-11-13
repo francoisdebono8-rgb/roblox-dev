@@ -80,9 +80,9 @@
   "Head__Skin": {
    "body": "Head",
    "color": [
-    252,
-    228,
-    206
+    238,
+    215,
+    195
    ],
    "material": "SmoothPlastic",
    "reflectance": 0
@@ -90,9 +90,9 @@
   "UpperTorso__Chest": {
    "body": "UpperTorso",
    "color": [
-    236,
-    230,
-    216
+    226,
+    220,
+    207
    ],
    "material": "SmoothPlastic",
    "reflectance": 0
@@ -100,9 +100,9 @@
   "UpperTorso__Fold": {
    "body": "UpperTorso",
    "color": [
-    204,
     196,
-    180
+    188,
+    172
    ],
    "material": "SmoothPlastic",
    "reflectance": 0
@@ -110,9 +110,9 @@
   "LowerTorso__Hips": {
    "body": "LowerTorso",
    "color": [
-    236,
-    230,
-    216
+    226,
+    220,
+    207
    ],
    "material": "SmoothPlastic",
    "reflectance": 0
@@ -130,9 +130,9 @@
   "LeftLowerLeg__Shin": {
    "body": "LeftLowerLeg",
    "color": [
-    252,
-    228,
-    206
+    238,
+    215,
+    195
    ],
    "material": "SmoothPlastic",
    "reflectance": 0
@@ -150,9 +150,9 @@
   "RightLowerLeg__Shin": {
    "body": "RightLowerLeg",
    "color": [
-    252,
-    228,
-    206
+    238,
+    215,
+    195
    ],
    "material": "SmoothPlastic",
    "reflectance": 0
@@ -160,9 +160,19 @@
   "LeftLowerLeg__Wrap": {
    "body": "LeftLowerLeg",
    "color": [
-    246,
-    244,
-    238
+    226,
+    224,
+    219
+   ],
+   "material": "SmoothPlastic",
+   "reflectance": 0
+  },
+  "LeftLowerLeg__WrapTurns": {
+   "body": "LeftLowerLeg",
+   "color": [
+    190,
+    188,
+    184
    ],
    "material": "SmoothPlastic",
    "reflectance": 0
@@ -170,9 +180,19 @@
   "RightLowerLeg__Wrap": {
    "body": "RightLowerLeg",
    "color": [
-    246,
-    244,
-    238
+    226,
+    224,
+    219
+   ],
+   "material": "SmoothPlastic",
+   "reflectance": 0
+  },
+  "RightLowerLeg__WrapTurns": {
+   "body": "RightLowerLeg",
+   "color": [
+    190,
+    188,
+    184
    ],
    "material": "SmoothPlastic",
    "reflectance": 0
@@ -180,9 +200,19 @@
   "RightUpperLeg__Wrap": {
    "body": "RightUpperLeg",
    "color": [
-    246,
-    244,
-    238
+    226,
+    224,
+    219
+   ],
+   "material": "SmoothPlastic",
+   "reflectance": 0
+  },
+  "RightUpperLeg__WrapTurns": {
+   "body": "RightUpperLeg",
+   "color": [
+    190,
+    188,
+    184
    ],
    "material": "SmoothPlastic",
    "reflectance": 0
@@ -200,9 +230,9 @@
   "LeftUpperArm__Sleeve": {
    "body": "LeftUpperArm",
    "color": [
-    236,
-    230,
-    216
+    226,
+    220,
+    207
    ],
    "material": "SmoothPlastic",
    "reflectance": 0
@@ -210,9 +240,9 @@
   "LeftLowerArm__Forearm": {
    "body": "LeftLowerArm",
    "color": [
-    236,
-    230,
-    216
+    226,
+    220,
+    207
    ],
    "material": "SmoothPlastic",
    "reflectance": 0
@@ -220,9 +250,9 @@
   "LeftLowerArm__Cuff": {
    "body": "LeftLowerArm",
    "color": [
-    204,
     196,
-    180
+    188,
+    172
    ],
    "material": "SmoothPlastic",
    "reflectance": 0
@@ -230,9 +260,9 @@
   "RightUpperArm__Sleeve": {
    "body": "RightUpperArm",
    "color": [
-    236,
-    230,
-    216
+    226,
+    220,
+    207
    ],
    "material": "SmoothPlastic",
    "reflectance": 0
@@ -240,9 +270,9 @@
   "RightLowerArm__Forearm": {
    "body": "RightLowerArm",
    "color": [
-    236,
-    230,
-    216
+    226,
+    220,
+    207
    ],
    "material": "SmoothPlastic",
    "reflectance": 0
@@ -250,9 +280,119 @@
   "RightLowerArm__Cuff": {
    "body": "RightLowerArm",
    "color": [
-    204,
     196,
-    180
+    188,
+    172
+   ],
+   "material": "SmoothPlastic",
+   "reflectance": 0
+  },
+  "UpperTorso__SideSeam": {
+   "body": "UpperTorso",
+   "color": [
+    185,
+    180,
+    170
+   ],
+   "material": "SmoothPlastic",
+   "reflectance": 0
+  },
+  "LeftUpperArm__ArmSeam": {
+   "body": "LeftUpperArm",
+   "color": [
+    185,
+    180,
+    170
+   ],
+   "material": "SmoothPlastic",
+   "reflectance": 0
+  },
+  "LeftLowerArm__ArmSeam": {
+   "body": "LeftLowerArm",
+   "color": [
+    185,
+    180,
+    170
+   ],
+   "material": "SmoothPlastic",
+   "reflectance": 0
+  },
+  "LeftUpperArm__ElbowFold": {
+   "body": "LeftUpperArm",
+   "color": [
+    199,
+    194,
+    182
+   ],
+   "material": "SmoothPlastic",
+   "reflectance": 0
+  },
+  "LeftLowerArm__ElbowFold": {
+   "body": "LeftLowerArm",
+   "color": [
+    199,
+    194,
+    182
+   ],
+   "material": "SmoothPlastic",
+   "reflectance": 0
+  },
+  "RightUpperArm__ArmSeam": {
+   "body": "RightUpperArm",
+   "color": [
+    185,
+    180,
+    170
+   ],
+   "material": "SmoothPlastic",
+   "reflectance": 0
+  },
+  "RightLowerArm__ArmSeam": {
+   "body": "RightLowerArm",
+   "color": [
+    185,
+    180,
+    170
+   ],
+   "material": "SmoothPlastic",
+   "reflectance": 0
+  },
+  "RightUpperArm__ElbowFold": {
+   "body": "RightUpperArm",
+   "color": [
+    199,
+    194,
+    182
+   ],
+   "material": "SmoothPlastic",
+   "reflectance": 0
+  },
+  "RightLowerArm__ElbowFold": {
+   "body": "RightLowerArm",
+   "color": [
+    199,
+    194,
+    182
+   ],
+   "material": "SmoothPlastic",
+   "reflectance": 0
+  },
+  "LowerTorso__Hem": {
+   "body": "LowerTorso",
+   "color": [
+    185,
+    180,
+    170
+   ],
+   "material": "SmoothPlastic",
+   "reflectance": 0
+  },
+  "UpperTorso__WaistFold": {
+   "body": "UpperTorso",
+   "color": [
+    199,
+    194,
+    182
    ],
    "material": "SmoothPlastic",
    "reflectance": 0
@@ -260,9 +400,9 @@
   "LeftHand__Fist": {
    "body": "LeftHand",
    "color": [
-    252,
-    228,
-    206
+    238,
+    215,
+    195
    ],
    "material": "SmoothPlastic",
    "reflectance": 0
@@ -270,9 +410,9 @@
   "RightHand__Fist": {
    "body": "RightHand",
    "color": [
-    252,
-    228,
-    206
+    238,
+    215,
+    195
    ],
    "material": "SmoothPlastic",
    "reflectance": 0
@@ -300,9 +440,9 @@
   "LeftFoot__Toes": {
    "body": "LeftFoot",
    "color": [
-    252,
-    228,
-    206
+    238,
+    215,
+    195
    ],
    "material": "SmoothPlastic",
    "reflectance": 0
@@ -340,9 +480,9 @@
   "RightFoot__Toes": {
    "body": "RightFoot",
    "color": [
-    252,
-    228,
-    206
+    238,
+    215,
+    195
    ],
    "material": "SmoothPlastic",
    "reflectance": 0
@@ -400,9 +540,9 @@
   "Head__HairTie": {
    "body": "Head",
    "color": [
-    240,
-    236,
-    226
+    226,
+    222,
+    213
    ],
    "material": "SmoothPlastic",
    "reflectance": 0

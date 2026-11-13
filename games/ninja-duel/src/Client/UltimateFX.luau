@@ -19,6 +19,7 @@ local MeshKit=require(script.Parent.MeshKit)
 local HoundFX=require(script.Parent.HoundFX)
 local VfxKit=require(script.Parent.VfxKit)
 local K -- Effects' helpers, handed over by install()
+local ShadowFX=require(script.Parent.ShadowFX)
 UltimateFX.clock=os.clock -- (headless tests drive time)
 
 local function rgb(r,g,b) return Color3.fromRGB(r,g,b) end
@@ -91,12 +92,13 @@ end
 
 -- (13/11) A modelled stone (MeshKit "Rock") or, until ready, a slate block.
 local function stone(parent,size,cf)
+	-- A rock keeps its shadow (#62 light pass: light effects cast none, rocks do).
 	local r=MeshKit.part("Rock")
 	if r then
 		r.Size=Vector3.new(size,size*.8,size*.9)*1.25;r.CFrame=cf;r.Parent=parent
-		return r
+		return ShadowFX.keep(r)
 	end
-	return K.block(parent,Vector3.one*size,cf,rgb(120,112,100),Enum.Material.Slate)
+	return ShadowFX.keep(K.block(parent,Vector3.one*size,cf,rgb(120,112,100),Enum.Material.Slate))
 end
 UltimateFX.stone=stone
 -- A modelled prop's root moved (its pieces are welded to it): tween the root.
