@@ -657,6 +657,11 @@ function Assist.install(ctx,dev)
 			elseif headIn and topV.Z>0 and topV.Y<0 then
 				hold(G,now,id.."top",WARN,"cadrage","tête de "..name.." coupée en haut",0.3)
 			end
+			-- The other body right in front of the lens (an over-the-shoulder too close).
+			if x.acting~=true and (headIn or torsoIn) then
+				local dist=((x.root and x.root.Position or x.cf.Position)-camPos).Magnitude
+				if dist<4.5 then hold(G,now,id.."front",WARN,"cadrage",name.." au premier plan, à "..fmt(dist).." studs de l'objectif (il bouche une partie de l'image)",0.3) end
+			end
 			if headIn or torsoIn then
 				-- Seen from behind while acting.
 				local fwd=flat(x.cf.LookVector)
