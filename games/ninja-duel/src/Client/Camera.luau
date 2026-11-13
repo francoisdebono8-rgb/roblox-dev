@@ -313,7 +313,10 @@ function Camera:update(data,dt)
 	pcall(self.mouse,self,data)
 	-- Roster, online queue and fighter pick: no duel on screen yet.
 	if not data or (data.phase~="Duel" and data.phase~="Result") or not data.human or not data.bot then
-		self.lastHealth=nil; self.lastEnemyHealth=nil; camera.FieldOfView=70
+		self.lastHealth=nil; self.lastEnemyHealth=nil
+		-- (DEC-038) Walking Konoha: Roblox's own follow lens (Client/HubClient).
+		if self.hubWalk then return end
+		camera.FieldOfView=70
 		camera.CameraType=Enum.CameraType.Scriptable
 		-- The roster and the online pick film the fighters' set (Client/MenuStage).
 		if self.menuShot and data and (data.phase=="Selection" or data.phase=="Pick") then

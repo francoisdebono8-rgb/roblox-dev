@@ -99,7 +99,17 @@ pcall(function()
 end)
 -- Disable the default movement controller; server receives finite normalized intent.
 local playerModule=player:WaitForChild("PlayerScripts"):WaitForChild("PlayerModule")
-require(playerModule):GetControls():Disable()
+local controlModule=require(playerModule):GetControls()
+controlModule:Disable()
+-- (DEC-038) Konoha between duels: the walk, the masters, the proctor's board.
+local hubClient=nil
+pcall(function()
+	local HubClient=require(script.Parent.HubClient)
+	if HubClient.enabled() then
+		hubClient=HubClient.new(ui,camera,send,controlModule)
+		ui.onBoardClose=function() hubClient:closeBoard() end
+	end
+end)
 remote.OnClientEvent:Connect(function(data)
 	if data.epoch<(current.epoch or 0) then return end
 	if data.epoch~=current.epoch or data.phase~=current.phase then input:resync() end
@@ -114,7 +124,9 @@ remote.OnClientEvent:Connect(function(data)
 	-- (05/11) the chakra button held alone (pad L2, keyboard Z): the row names
 	-- what it infuses (UI, Shared/ChakraMoves).
 	data.chakraPage=if input.pad then input.chakraPad==true and not input.modifier else input.chakra==true and not input.sealKey
-	current=data; presentation.receivedAt=os.clock(); presentation:impacts(data,camera); ui:render(data)
+	current=data; presentation.receivedAt=os.clock(); presentation:impacts(data,camera)
+	if hubClient then pcall(hubClient.render,hubClient,data) end
+	ui:render(data)
 	if lobbyPanel then lobbyPanel:render(data) end
 	cupScreen:render(data)
 	if touch then touch:render(data) end

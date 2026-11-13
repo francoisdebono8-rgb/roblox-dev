@@ -25,6 +25,9 @@ local BuildPresets=require(script.Parent.BuildPresets)
 local Zones=require(script.Parent.Zones)
 local FirstMinute=require(Shared.FirstMinute)
 local Matches={}; Matches.__index=Matches
+-- (DEC-038) Konoha between duels (Server/Hub), when the village is built.
+local Hub=require(script.Parent.Hub)
+function Matches.hubOn() return Config.Hub~=nil and Config.Hub.Enabled==true and Hub.built==true end
 -- Skill builds (PROG-001..003) are resolved and validated here, on the server:
 -- a spec is {nodes={...}, unlocked={[id]=true}} (unlocked = the profile's set)
 -- or, for the AI, {preset="Hard"}; with a ranked bracket the build must also
@@ -199,6 +202,12 @@ function Matches:selection(player,notice)
 	s.cup=nil;s.cupMatch=nil;s.spectate=nil;s.autopilot=nil;s.cupPilot=nil
 	s.masterTrial=nil
 	self:send(player,{phase="Selection",epoch=s.epoch,notice=notice,kits=Progression.view(player)})
+	-- (DEC-038) Between duels the player walks Konoha as his own avatar:
+	-- through the gate the first time, out of the exam hall after a duel.
+	if Matches.hubOn() then
+		Hub.enter(player,if s.hubVisited then "hall" else "gate")
+		s.hubVisited=true
+	end
 	-- (Lobby, 04/11) in a duel server the roster is the lobby: back home.
 	if self.lobby then self.lobby:onSelection(player) end
 	self:prepareStage(s)
@@ -228,6 +237,8 @@ function Matches:start(player,playerId,botId,training,options)
 		botKit=result
 	end
 	self:destroy(s); s.epoch+=1
+	-- (DEC-038) The walk in Konoha ends: the duel's body takes over.
+	if Matches.hubOn() then Hub.leave(player) end
 	s.playerId=playerId; s.botId=botId; s.winner=nil; s.phase="Duel"; s.origin=Matches.laneOrigin(s.lane)
 	s.options=options
 	-- (QA 12/11) The lane's stadium is the one already in the world, its
@@ -719,6 +730,7 @@ function Matches:remove(player)
 		if s.metrics and not s.metrics.duelAt then print(string.format("[NinjaDuelFirst] %s left %.1fs (stage %s)",tostring(player.UserId),os.clock()-(s.metrics.joined or os.clock()),tostring(s.firstStage or s.phase))) end
 		self:destroy(s); self:dropStage(s); self.sessions[player]=nil
 		AvatarBody.forget(player)
+		Hub.forget(player)
 	end
 end
 return Matches

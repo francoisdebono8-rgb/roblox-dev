@@ -179,6 +179,8 @@ function Online:fight(d)
 	a.target=b;b.target=a
 	for _,seat in d.seats do
 		if seat.present then
+			-- (DEC-038) the walk in Konoha ends: the duel's body takes over.
+			pcall(function() require(script.Parent.Hub).leave(seat.player) end)
 			seat.player.Character=seat.actor.model
 			-- The body stays server-simulated even as the player's character.
 			pcall(function() seat.actor.root:SetNetworkOwner(nil) end)

@@ -268,6 +268,11 @@ function UI.new(parent,send)
 		if act.product then send("BuyKit",{player=self.player}) end
 	end,palette.gold)
 	self.buyButton.TextSize=24;self.buyButton.TextColor3=palette.ink;self.buyButton.Visible=false
+	-- (DEC-038) In Konoha the roster is the proctor's board: back to the walk.
+	self.boardClose=button(shell,"BACK TO KONOHA",UDim2.fromOffset(1300,24),UDim2.fromOffset(260,48),function()
+		if self.onBoardClose then self.onBoardClose() end
+	end)
+	self.boardClose.TextSize=22;self.boardClose.Visible=false
 	-- (DEC-038) A learned kit's skill tree: its points come from its mastery.
 	self.treeButton=button(shell,"SKILL TREE",UDim2.fromOffset(1140,712),UDim2.fromOffset(400,52),function()
 		if self.picking or not self.treePanel then return end
@@ -967,6 +972,7 @@ function UI:lobby(data)
 	end
 	self.lastLobby=data
 	local full=data.phase=="Selection" and not self.simple
+	if self.boardClose then self.boardClose.Visible=data.phase=="Selection" and Config.Hub~=nil and Config.Hub.Enabled==true and self.onBoardClose~=nil end
 	-- the strings' notes are for the full roster (jargon on a first look)
 	self.routeNote.Visible=not self.simple
 	self.onlineRow.Visible=full
@@ -1130,7 +1136,8 @@ function UI:render(data)
 	self.onlineInfo=data.online
 	-- (DEC-038) the tree is a roster screen: a duel closes it.
 	if self.treePanel and data.phase~="Selection" and self.treePanel:shown() then self.treePanel:hide() end
-	self.selection.Visible=data.phase=="Selection" or data.phase=="Pick"; self.hud.Visible=data.phase=="Duel" and not introActive; self.result.Visible=data.phase=="Result"
+	-- (DEC-038) In Konoha the roster is the proctor's board: shown only open.
+	self.selection.Visible=(data.phase=="Selection" and not self.hubWalk) or data.phase=="Pick"; self.hud.Visible=data.phase=="Duel" and not introActive; self.result.Visible=data.phase=="Result"
 	self.queue.Visible=data.phase=="Queue"
 	if self.screenFx then self.screenFx.Visible=data.phase=="Duel" and not introActive and not (FXKit and FXKit.calm) end
 	self.intro.Visible=introActive
@@ -1472,7 +1479,7 @@ function UI:render(data)
 	end
 	-- (Tournament) continue the bracket; a match watched names its winner.
 	self.inCup=data.cup~=nil
-	self.rosterButton.Text=if self.inCup then "LEAVE THE TOURNAMENT" else "RETURN TO THE ROSTER"
+	self.rosterButton.Text=if self.inCup then "LEAVE THE TOURNAMENT" elseif Config.Hub and Config.Hub.Enabled then "BACK TO KONOHA" else "RETURN TO THE ROSTER"
 	if self.inCup then
 		self.rematchButton.Text=if data.cup.out and not data.spectate then "SEE WHO WINS IT  •  THE BRACKET" else "CONTINUE  •  THE BRACKET"
 		if data.spectate then

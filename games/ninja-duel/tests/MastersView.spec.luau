@@ -75,6 +75,30 @@ test("the result screen: mastery earned, the masters who now teach, a kit learne
 	assert(V.result(nil)==nil and V.result({gained=false})==nil,"practice says nothing")
 end)
 
+test("(DEC-038) the master's card in Konoha: take his kit, the first duel, spar, his duel, try, buy, the tree",function()
+	local new={state="ready",owned={},mastery={},masters={},needStarter=true}
+	local c=V.card(new,"Leaf")
+	assert(c.primary.label=="TAKE HIS KIT" and c.primary.send[1]=="ChooseStarter" and c.primary.send[2].player=="Leaf","a starter's card")
+	assert(c.second and c.second.send[1]=="Tutorial","a starter can be tried before he is taken")
+	assert(V.card(new,"Sand").primary.send[1]=="Tutorial","a master not open yet only lets him try")
+	local mine={state="ready",owned={Leaf=true},mastery={Leaf=0},starter="Leaf",selected="Leaf",masters={},trees={Leaf={points=0,free=0}}}
+	c=V.card(mine,"Leaf")
+	assert(c.primary.label=="YOUR FIRST DUEL" and c.primary.send[1]=="First","the first duel after taking the kit")
+	assert(c.second and c.second.tree=="Leaf","his tree from his card")
+	mine.mastery.Leaf=120;mine.trees.Leaf={points=12,free=2}
+	c=V.card(mine,"Leaf")
+	assert(c.primary.send[1]=="Start" and c.primary.send[2].bot=="Leaf" and string.find(c.second.label,"2"),"spar with him, the tree's points")
+	mine.masters.GentleFist={ready=true,via="Leaf"}
+	c=V.card(mine,"GentleFist")
+	assert(c.primary.label=="DUEL THE MASTER" and c.primary.send[2].player=="Leaf" and c.primary.send[2].master=="GentleFist","the master's duel from his card")
+	mine.masters.Sand={ready=false,best=120,product=9002}
+	c=V.card(mine,"Sand")
+	assert(c.second and c.second.send[1]=="BuyKit","buy his kit from his card")
+	mine.owned.Lion=true
+	assert(V.card(mine,"Lion").third==nil and V.card(mine,"Lion").second.send[1]=="SelectKit","make an owned kit the one he fights with")
+	assert(V.card(nil,"Leaf").primary.send[1]=="Start","the path off: every master spars")
+end)
+
 test("every master's kit leads somewhere and every kit is led to",function()
 	for _,id in BetaRoster do
 		assert(Masters.isKit(id),id.." is not on the path")

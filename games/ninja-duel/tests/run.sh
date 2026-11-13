@@ -56,6 +56,7 @@ run Avatar "$LUNE" run tests/Avatar.spec.luau
 run Masters "$LUNE" run tests/Masters.spec.luau
 run MastersView "$LUNE" run tests/MastersView.spec.luau
 run Trees "$LUNE" run tests/Trees.spec.luau
+run Hub "$LUNE" run tests/Hub.spec.luau
 run Spacing "$LUNE" run tests/Spacing.spec.luau
 run StepSpeeds "$LUNE" run tests/StepSpeeds.spec.luau
 run ReactionSides "$LUNE" run tests/ReactionSides.spec.luau
