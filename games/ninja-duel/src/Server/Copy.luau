@@ -80,7 +80,7 @@ function Copy.cast(c,a,spec)
 				copied.Copied=true;copied.CopiedFrom=a.def.Name
 				-- (a charge buried as its owner's is not his: it goes off as cast)
 				copied.Charge=nil
-				k.copy={spec=copied,slot=tune.Slot or 1,uses=tune.Uses or 1,at=c.now,untilT=c.now+(tune.Life or 15),from=a.fighterId}
+				k.copy={spec=copied,slot=tune.Slot or 1,uses=tune.Uses or 1,at=c.now,untilT=c.now+(tune.Life or 15),from=a.fighterId,source=a,sourceAt=c.now}
 				-- The bodies a copied jutsu makes are tuned like its owner's.
 				if a.def.Bodies then k.borrowedBodies=a.def.Bodies end
 				c:pushImpact(k.root.Position,"copy",false,{owner=k.id,fighter=k.fighterId,from=a.id,technique=spec.Id,name=spec.Name,channel=spec.Channel or .3})
@@ -90,10 +90,24 @@ function Copy.cast(c,a,spec)
 		end
 	end
 end
+-- (13/11, #72: « Kakashi la copie et la lui renvoie ») A held jutsu (spec.Hold:
+-- Sasuke's Great Fireball) leaves its owner's hands: the eye saw it gathered,
+-- and the copy goes as big as it was seen (SeenCharge). Combat calls this
+-- when the owner's channel ends, with what he gathered.
+function Copy.released(c,a,pending)
+	if not pending or not pending.spec or not pending.spec.Hold then return end
+	local charge=math.clamp(pending.charge or 0,0,1)
+	for _,k in c.actors do
+		local copy=k.copy
+		if k~=a and copy and copy.source==a and copy.sourceAt==a.castStarted and copy.spec.Id==pending.spec.Id then
+			copy.spec.SeenCharge=charge
+		end
+	end
+end
 -- Snapshot (Matches): what he holds, for the eye and the slot.
 function Copy.view(c,a)
 	local copy=a.copy
 	if not copy then return nil end
-	return {id=copy.spec.Id,name=copy.spec.Name,remaining=math.max(0,copy.untilT-c.now),uses=copy.uses,from=copy.from}
+	return {id=copy.spec.Id,name=copy.spec.Name,remaining=math.max(0,copy.untilT-c.now),uses=copy.uses,from=copy.from,charge=copy.spec.SeenCharge}
 end
 return Copy

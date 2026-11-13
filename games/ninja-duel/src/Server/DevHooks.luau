@@ -31,6 +31,21 @@ function DevHooks.delayRequests(matches,settings,clock,random)
 		end
 	end
 end
+-- The "act" op's press (the film and QA seats). (13/11, #72) A technique key
+-- held like a player's: options.hold = seconds the key stays down from the
+-- press, through which a held jutsu gathers (the Great Fireball full is hold
+-- 1.25: its 0.32 s of signs, then 0.9 s gathering). Without it, a tap (a key
+-- left held by an earlier press is let go).
+function DevHooks.press(c,actor,action,aim,options)
+	local slot=tonumber(string.match(tostring(action),"^Technique(%d)$"))
+	if slot then
+		local hold=options and tonumber(options.hold)
+		local key={slot=slot,down=hold~=nil and hold>0}
+		actor.techHold=key
+		if key.down then c:schedule(c.now+hold,function() key.down=false end) end
+	end
+	return c:request(actor,action,aim,nil,options)
+end
 function DevHooks.install(matches)
 	-- Debug-only probes (DevGateCheck) reach the live session through this.
 	-- The command bar has its own module cache, so a gate is started from it
@@ -234,7 +249,7 @@ function DevHooks.install(matches)
 			-- The human seat is a player (late presses, Combat: Config.Late), as
 			-- through Matches:act; the bot seat stays the AI's.
 			if arg1~="bot" then actor.playerInput=true end
-			local ok,reason=c:request(actor,arg2,arg3,nil,if type(arg4)=="table" then arg4 else nil)
+			local ok,reason=DevHooks.press(c,actor,arg2,arg3,if type(arg4)=="table" then arg4 else nil)
 			return {ok=ok,reason=reason}
 		elseif op=="scripted" then
 			-- Ignore the local client's (idle) move packets while a tool drives the human.
