@@ -340,7 +340,7 @@ function Assist.install(ctx,dev)
 	-- Interface.
 	--------------------------------------------------------------------
 	local gui=Instance.new("ScreenGui");gui.Name="ClipAssistPanel";gui.ResetOnSpawn=false;gui.IgnoreGuiInset=true
-	gui.DisplayOrder=120;gui.ZIndexBehavior=Enum.ZIndexBehavior.Sibling;gui.Enabled=true;gui.Parent=playerGui
+	gui.DisplayOrder=1100;gui.ZIndexBehavior=Enum.ZIndexBehavior.Sibling;gui.Enabled=true;gui.Parent=playerGui
 	-- ClipKit's NDHideUI hides every ScreenGui: this one stays (nothing of it is in the band).
 	gui:GetPropertyChangedSignal("Enabled"):Connect(function() if not gui.Enabled then task.defer(function() gui.Enabled=true end) end end)
 	local function frame(parent,props)
