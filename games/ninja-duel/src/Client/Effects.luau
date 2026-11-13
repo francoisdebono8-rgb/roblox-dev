@@ -285,8 +285,21 @@ function FX.buildFireball(caster)
 	FX.fireRoll[model]=look.roll
 	local root=block(model,Vector3.new(1,1,1),CFrame.new(),look.core,Enum.Material.Neon);root.Name="Root"
 	root.Shape=Enum.PartType.Ball;root.Transparency=.05
-	local mid=block(model,Vector3.new(1,1,1),CFrame.new(),look.mid,Enum.Material.Neon);mid.Shape=Enum.PartType.Ball;mid.Transparency=.35;mid.Name="Mid"
-	local outer=block(model,Vector3.new(1,1,1),CFrame.new(),look.outer,Enum.Material.Neon);outer.Shape=Enum.PartType.Ball;outer.Transparency=.62;outer.Name="Outer"
+	-- (13/11) the fire round the core is modelled (MeshKit "FlameMid/Outer"..):
+	-- lumpy, its tongues licking back along the flight; balls until ready
+	local suffix=if caster=="Lion" or caster=="Mirage" then caster else ""
+	local function shell(name,color,alpha)
+		local p=MeshKit.part("Flame"..name..suffix)
+		if p then
+			p:SetAttribute("UnitSize",p.Size);p.Size=p.Size;p.Parent=model
+		else
+			p=block(model,Vector3.new(1,1,1),CFrame.new(),color,Enum.Material.Neon);p.Shape=Enum.PartType.Ball
+		end
+		p.Transparency=alpha;p.Name=name;p.CFrame=CFrame.new()
+		return p
+	end
+	local mid=shell("Mid",look.mid,.35)
+	local outer=shell("Outer",look.outer,.62)
 	weldAll(root,{mid,outer})
 	local at=new("Attachment",{},root)
 	if look.tail then
@@ -560,8 +573,8 @@ function FX:stepProjectiles(dt)
 			local wobble=1+math.sin(os.clock()*31)*.05
 			entry.root.Size=Vector3.one*radius*1.15*wobble
 			local mid=entry.model:FindFirstChild("Mid");local outer=entry.model:FindFirstChild("Outer")
-			if mid then mid.Size=Vector3.one*radius*1.7 end
-			if outer then outer.Size=Vector3.one*radius*2.25*wobble end
+			if mid then mid.Size=(mid:GetAttribute("UnitSize") or Vector3.one)*radius*1.7 end
+			if outer then outer.Size=(outer:GetAttribute("UnitSize") or Vector3.one)*radius*2.25*wobble end
 			local flames=entry.root:FindFirstChildOfClass("Attachment")
 			if flames then
 				local f=flames:FindFirstChild("Flames");if f then f.Size=num({{0,radius*1.1},{.4,radius*1.9},{1,radius*.6}}) end

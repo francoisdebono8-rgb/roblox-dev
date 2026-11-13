@@ -539,6 +539,95 @@ def explosive_tag():
         loft(ink, rr, rgb(176, 30, 30), closed=False, cap0=False, cap1=False)
     return [paper, ink]
 
+
+# ---------------------------------------------------------------- Kakashi's Doton
+EARTH = rgb(132, 104, 74)
+EARTH_D = rgb(84, 66, 48)
+EARTH_HI = rgb(170, 142, 106)
+
+
+def earth_wall():
+    """Doton: Earth Wall. A slab of packed earth torn up from the floor: 7
+    wide, 5 high, 1.4 thick, bowed toward the enemy, its top jagged, strata
+    across it, cracks, a skirt of rubble at its foot. Base at 0, front -y
+    here (Roblox -z: it faces the way he looks)."""
+    wall = Piece("Wall", "Slate", flat=True)
+    rubble = Piece("Rubble", "Slate", flat=True)
+    rng = random.Random(7)
+    X, Z = 26, 14
+    tops = [4.2 + .5 * math.sin(i * .9) + rng.uniform(-.5, .5) + (rng.uniform(.3, .9) if rng.random() < .25 else 0) for i in range(X + 1)]
+    def surf(front):
+        rows = []
+        for j in range(Z + 1):
+            v = j / Z
+            row = []
+            for i in range(X + 1):
+                u = i / X
+                x = -3.5 + 7 * u
+                z = v * tops[i] - .3
+                bow = .6 * (1 - (2 * u - 1) ** 2)
+                th = .7 * (1 - .35 * v) * (1 + .15 * noise.noise(Vector((x * .9, z * .9, 0))))
+                y = -bow + (-th if front else th) + .12 * noise.noise(Vector((x * 2, z * 2, 3 if front else 7)))
+                row.append(Vector((x, y, z)))
+            rows.append(row)
+        return rows
+    def col(p, k):
+        strata = math.sin(p.z * 3.2 + noise.noise(p * .8) * 2)
+        c = lerp(EARTH_D, EARTH_HI, .45 + .3 * strata + .25 * noise.noise(p * 2.5))
+        if p.z < .5:
+            c = lerp(c, EARTH_D, .5)
+        return c
+    F, B = surf(True), surf(False)
+    loft(wall, F, col, closed=False, cap0=False, cap1=False)
+    loft(wall, [list(reversed(r)) for r in B], col, closed=False, cap0=False, cap1=False)
+    # close the top and the ends
+    loft(wall, [[F[-1][i], B[-1][i]] for i in range(X + 1)], col, closed=False, cap0=False, cap1=False)
+    for i in (0, X):
+        loft(wall, [[F[j][i], B[j][i]] for j in range(Z + 1)], col, closed=False, cap0=False, cap1=False)
+    for k in range(16):
+        x = rng.uniform(-3.8, 3.8)
+        y = rng.choice((-1, 1)) * rng.uniform(.9, 1.8)
+        ellipsoid(rubble, (x, y, .05), (rng.uniform(.2, .45), rng.uniform(.2, .4), rng.uniform(.15, .3)), lambda p, kk: lerp(EARTH_D, EARTH, .5 + noise.noise(p * 3) * .5),
+                  seg=7, rings=5, bump=lambda d: .25 * noise.noise(d * 2 + Vector((k, 0, 0))))
+    return [wall, rubble]
+
+
+def earth_hand():
+    """Doton: Headhunter, the hand of earth out of the floor: a mound of
+    broken earth and a rocky hand, the fingers clawed to close on the legs.
+    1.8 high, base at 0, the palm facing front (-y here)."""
+    hand = Piece("Hand", "Slate", flat=True)
+    mound = Piece("Mound", "Slate", flat=True)
+    rough_c = lambda p, k: lerp(EARTH_D, EARTH_HI, max(0, min(1, .5 + noise.noise(p * 4) * .6)))
+    ellipsoid(mound, (0, 0, -.05), (1.0, .9, .35), rough_c, seg=12, rings=6, bump=lambda d: .3 * noise.noise(d * 2.5))
+    # forearm and palm
+    tube(hand, [Vector((0, .1, 0)), Vector((0, .05, .55)), Vector((0, -.02, .95))], lambda k: .32 - .06 * k, rough_c, sides=9, shape=lambda a, k: (1.1, .8))
+    ellipsoid(hand, (0, -.05, 1.1), (.36, .2, .3), rough_c, seg=10, rings=7, bump=lambda d: .12 * noise.noise(d * 3))
+    for j, x in enumerate((-.24, -.08, .08, .24)):
+        b = Vector((x, -.08, 1.32))
+        L = .5 if j in (1, 2) else .42
+        tube(hand, [b, b + Vector((x * .2, -.12, L * .6)), b + Vector((x * .3, -.42, L * .9)), b + Vector((x * .3, -.6, L * .7))],
+             lambda k: .085 - .03 * k, rough_c, sides=6)
+    b = Vector((.34, -.12, 1.0))
+    tube(hand, [b, b + Vector((.18, -.2, .2)), b + Vector((.1, -.45, .3))], lambda k: .09 - .03 * k, rough_c, sides=6)
+    return [mound, hand]
+
+
+def flame_shell(core, mid, outer, tongues):
+    """The fire round the Great Fireball: a ball of flame whose tongues lick
+    back along the flight (+y here is the front; tongues go to -y). Diameter 1."""
+    pc = Piece("Shell", "Neon")
+    def bump(d):
+        n = noise.noise(d * 2.6) * .22 + noise.noise(d * 5.5) * .1
+        back = max(0.0, -d.y)
+        lick = max(0.0, noise.noise(Vector((d.x * 4, d.z * 4, 1.7))))
+        return n + tongues * back ** 1.3 * (.25 + 1.4 * lick)
+    def col(p, k):
+        r = p.length * 2
+        return lerp(lerp(core, mid, smooth(r - .2)), outer, smooth((r - .9) / .8))
+    ellipsoid(pc, (0, 0, 0), (.5, .5, .5), col, seg=26, rings=16, bump=bump)
+    return [pc]
+
 # ---------------------------------------------------------------- the floor
 # (13/11, user: « les traces sur le sol » at the same level) Damage is
 # geometry, not a flat picture: grooves torn into the floor with their broken
@@ -934,6 +1023,14 @@ def dragon_seg(st):
 
 
 MODELS = {
+    "EarthWall": earth_wall,
+    "EarthHand": earth_hand,
+    "FlameMidLion": lambda: flame_shell(rgb(255, 252, 225), rgb(255, 196, 70), rgb(255, 112, 24), .5),
+    "FlameOuterLion": lambda: flame_shell(rgb(255, 196, 70), rgb(255, 130, 30), rgb(220, 70, 18), .9),
+    "FlameMidMirage": lambda: flame_shell(rgb(255, 214, 150), rgb(236, 92, 28), rgb(160, 22, 14), .6),
+    "FlameOuterMirage": lambda: flame_shell(rgb(236, 92, 28), rgb(180, 40, 18), rgb(110, 16, 10), 1.1),
+    "FlameMid": lambda: flame_shell(rgb(255, 240, 180), rgb(255, 150, 40), rgb(230, 70, 20), .5),
+    "FlameOuter": lambda: flame_shell(rgb(255, 150, 40), rgb(230, 90, 24), rgb(180, 50, 16), .9),
     "FumaShuriken": fuma_shuriken,
     "ExplosiveTag": explosive_tag,
     "GroundCrack": ground_crack,
@@ -1017,7 +1114,7 @@ def render(out_dir, names=None):
         return
     if names and any("Dragon" in n for n in names):
         pass
-    views = {"FumaShuriken": (.2, -.5, 1), "ExplosiveTag": (.3, -.4, 1), "GroundCrack": (.3, -.8, .9), "GroundCrater": (.3, -.8, .7), "LegWeight": (.8, -1, .5), "Ninken1": (1.2, .8, .4), "Ninken2": (1.2, .8, .4), "Trigrams": (.1, -.3, 1), "TsukuyomiCross": (.6, -1, .3), "BandageWrap": (1, -1, .4), "WaterDragonHead": (1.3, .7, .35), "EarthDragonHead": (1.3, .7, .35), "Shuriken": (0.25, -0.5, 1.0), "SandCoffin": (1, -1.6, .35), "SandPillar": (1, -1.6, .45)}
+    views = {"EarthWall": (.6, -1, .4), "EarthHand": (.7, -1, .4), "FlameOuterLion": (1, -.3, .3), "FumaShuriken": (.2, -.5, 1), "ExplosiveTag": (.3, -.4, 1), "GroundCrack": (.3, -.8, .9), "GroundCrater": (.3, -.8, .7), "LegWeight": (.8, -1, .5), "Ninken1": (1.2, .8, .4), "Ninken2": (1.2, .8, .4), "Trigrams": (.1, -.3, 1), "TsukuyomiCross": (.6, -1, .3), "BandageWrap": (1, -1, .4), "WaterDragonHead": (1.3, .7, .35), "EarthDragonHead": (1.3, .7, .35), "Shuriken": (0.25, -0.5, 1.0), "SandCoffin": (1, -1.6, .35), "SandPillar": (1, -1.6, .45)}
     for name, fn in MODELS.items():
         if names and name not in names:
             continue

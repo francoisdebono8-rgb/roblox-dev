@@ -10,6 +10,7 @@ local Fighters=require(Shared.Fighters)
 local ToadFX=require(script.Parent.ToadFX)
 local DragonFX=require(script.Parent.DragonFX)
 local MeshKit=require(script.Parent.MeshKit)
+local VfxKit=require(script.Parent.VfxKit)
 local FamilyFX={}
 -- Studio/test switch: drawing errors surface instead of being swallowed.
 FamilyFX.strict=false
@@ -122,7 +123,7 @@ function FamilyFX.install(FX,kit)
 		-- tail for a hound; a dorsal and a tail fin, no legs, for a shark.
 		-- (13/11) a hound is the modelled ninken (MeshKit, Client/HoundFX's
 		-- dogs): standing, legs set, scaled to the look's length
-		if look.zone~="water" and MeshKit.has("Ninken3") then
+		if (look==Looks.hounds or look==Looks.dog) and MeshKit.has("Ninken3") then
 			local coat=if (look.color[1]+look.color[2]+look.color[3])>600 then 2 else 3
 			local dog=MeshKit.model("Ninken"..coat)
 			if dog and MeshKit.has("NinkenLeg"..coat) then
@@ -410,6 +411,14 @@ function FamilyFX.install(FX,kit)
 	-- sweep back (the fuma's curve), a pale edge on each, a faint spin ring at
 	-- the blade tips, and it spins flat about the vertical, fast.
 	local function giantShuriken(look)
+		-- (13/11) the modelled Fūma (MeshKit "FumaShuriken", radius 1)
+		if MeshKit.has("FumaShuriken") then
+			local f=MeshKit.model("FumaShuriken")
+			f.Name="FamilyFuma"
+			f:ScaleTo(look.size[1]/2)
+			trail(f.PrimaryPart,math.max(look.trail,.1),c3(look.color),.12)
+			return f
+		end
 		local m=new("Model",{Name="FamilyFuma"})
 		local d=look.size[1]
 		local t=math.max(look.size[2],.08)
@@ -438,6 +447,22 @@ function FamilyFX.install(FX,kit)
 		new("Trail",{Attachment0=a0,Attachment1=a1,Color=ColorSequence.new(edgeTone),Lifetime=.09,LightEmission=.3,FaceCamera=false,
 			Transparency=num({{0,.55},{1,1}})},root)
 		return m
+	end
+	-- (13/11) Doton: Headhunter: the modelled hand of earth (MeshKit "EarthHand")
+	if Looks.earthhand then
+		local plain=BUILD.earthhand
+		BUILD.earthhand=function()
+			local h=MeshKit.model("EarthHand")
+			if not h then return if plain then plain() else nil end
+			h.Name="FamilyBeast"
+			h:ScaleTo(Looks.earthhand.size[2]/1.8)
+			h:PivotTo(CFrame.new(0,-Looks.earthhand.size[2]*.45,0))
+			local root=h.PrimaryPart
+			root.CFrame=CFrame.new()
+			for _,d in h:GetDescendants() do if d:IsA("BasePart") and d~=root then d.CastShadow=true end end
+			spray(root,Color3.fromRGB(150,128,100),30,.6,3)
+			return h
+		end
 	end
 	for _,kind in {"fuma","windmill"} do
 		local look=Looks[kind]
@@ -606,6 +631,22 @@ function FamilyFX.install(FX,kit)
 	end
 	-- Bones out of the floor (Kimimaro's Dance of the Larch): a ring of spikes.
 	ZONES.spikes=function(holder,h,look)
+		if look==Looks.earthwall then
+			-- (13/11) the Earth Wall's ground: broken earth and stones round
+			-- him (it was a ring of bone spikes, Kimimaro's)
+			local d=decal(holder,h,c3(look.color2),.75)
+			for i=1,9 do
+				local angle=i/9*math.pi*2+math.sin(i*3)
+				local r=h.radius*(.55+.35*((i*7)%3)/2)
+				local s=.6+((i*5)%4)*.25
+				local rock=MeshKit.part("Rock")
+				if rock then
+					rock.Size=Vector3.new(s,s*.7,s*.9);rock.CFrame=CFrame.new(holder.Position+Vector3.new(math.cos(angle)*r,s*.2,math.sin(angle)*r))*CFrame.Angles(i,i*2,0)
+					rock.CastShadow=true;rock.Parent=d
+				end
+			end
+			return nil,d
+		end
 		local d=decal(holder,h,c3(look.color2),.6)
 		for i=1,10 do
 			local angle=i/10*math.pi*2
@@ -945,6 +986,35 @@ function FamilyFX.install(FX,kit)
 				end)
 				burst(fx.folder,origin,{Texture=TEX.smoke,Lifetime=NumberRange.new(.5,1),Speed=NumberRange.new(6,14),SpreadAngle=Vector2.new(80,80),
 					Color=ColorSequence.new(c3(look.color)),LightInfluence=1,Size=num({{0,1.2},{1,3}}),Transparency=num({{0,.2},{1,1}}),Drag=2},24)
+				return true
+			end
+			if style=="look" and impact.kind=="earthwall" and MeshKit.has("EarthWall") then
+				-- (13/11) Doton: Earth Wall: the slab of earth tears up out of the
+				-- floor in front of him, stands while the zone lasts, then sinks
+				local look=Looks.earthwall
+				local dir=impact.direction or Vector3.new(0,0,-1)
+				dir=Vector3.new(dir.X,0,dir.Z);dir=if dir.Magnitude>.05 then dir.Unit else Vector3.new(0,0,-1)
+				local base=impact.position+dir*2.6
+				local floor=floorUnder(fx,base,3,14)
+				local y=if floor then floor.Position.Y else impact.position.Y-2.9
+				local at=Vector3.new(base.X,y,base.Z)
+				local wall=MeshKit.model("EarthWall")
+				local stand=CFrame.lookAt(at,at+dir)
+				wall.PrimaryPart.CFrame=stand*CFrame.new(0,-5.2,0)
+				pcall(wall.SetAttribute,wall,"KeepShadow",true)
+				for _,d in wall:GetDescendants() do if d:IsA("BasePart") and d.Name~="Root" then d.CastShadow=true end end
+				wall.Parent=fx.folder
+				tween(wall.PrimaryPart,.22,{CFrame=stand},Enum.EasingStyle.Back,Enum.EasingDirection.Out)
+				smokePuff(fx.folder,at+Vector3.new(0,1,0),Color3.fromRGB(176,160,138),20,2.6)
+				shockRing(fx.folder,at+Vector3.new(0,.1,0),c3(look.color2),2,12,.4)
+				VfxKit.mark(fx.folder,"GroundCrack",at-dir*.6,Vector3.yAxis,6,3.4,.8)
+				sound(anchorPart(fx.folder,at),SOUND.heavy,.6,.7)
+				task.delay(3,function()
+					if not wall.Parent then return end
+					tween(wall.PrimaryPart,.5,{CFrame=stand*CFrame.new(0,-5.4,0)},Enum.EasingStyle.Quad,Enum.EasingDirection.In)
+					smokePuff(fx.folder,at+Vector3.new(0,.8,0),Color3.fromRGB(176,160,138),12,2.2)
+				end)
+				Debris:AddItem(wall,3.6)
 				return true
 			end
 			if style=="look" then
