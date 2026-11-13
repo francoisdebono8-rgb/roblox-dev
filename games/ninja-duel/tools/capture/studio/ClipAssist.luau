@@ -479,6 +479,20 @@ function Assist.install(ctx,dev)
 		pcall(function() StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.All,false) end)
 		UIS.MouseIconEnabled=false
 	end
+	-- The game turns its look and its HUD back on (a new round, WorldLook): while
+	-- the image is prepared, keep them off (8 times a second) until « Rétablir ».
+	local function enforce()
+		if not saved then return end
+		for _,g in playerGui:GetChildren() do
+			if g:IsA("ScreenGui") and g~=gui and g.Enabled and not DEV_GUIS[g.Name] and string.sub(g.Name,1,2)~="ND" then saved.guis[g]=true;g.Enabled=false end
+		end
+		for _,root in {Lighting,workspace.CurrentCamera} do
+			for _,e in root:GetChildren() do
+				if (e:IsA("DepthOfFieldEffect") or e:IsA("SunRaysEffect")) and e.Enabled then saved.effects[e]=true;e.Enabled=false end
+			end
+		end
+		if UIS.MouseIconEnabled then UIS.MouseIconEnabled=false end
+	end
 	local function restore()
 		if not saved then return end
 		for g in saved.guis do if g.Parent then g.Enabled=true end end
@@ -1156,7 +1170,7 @@ function Assist.install(ctx,dev)
 		end
 		if now-drawAt>=1/8 then
 			drawAt=now
-			local ok,err=pcall(function() layoutBand();render(now) end)
+			local ok,err=pcall(function() enforce();layoutBand();render(now) end)
 			if not ok then warn("[NinjaDuelClip] draw: "..tostring(err)) end
 		end
 	end)
