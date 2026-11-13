@@ -39,6 +39,7 @@ dans la place FILM et que les quatre profils partagent runtime et commit.
 | `ServerStorage.NDFactory.Sets` | `studio/Sets.luau` |
 | `ServerStorage.NDFactory.SetSnapshot` | `studio/SetSnapshot.luau` |
 | `ServerScriptService.NDFactoryBoot` (Script, Studio seulement) | `studio/NDFactoryBoot.server.luau` |
+| `ReplicatedStorage.NDFactory.ClipAssist` (chargé par `Client/DevClient`) | `studio/ClipAssist.luau` : l'assistant de tournage **F4**, voir [OUTIL_TOURNAGE_F4](../../docs/tools/OUTIL_TOURNAGE_F4.md) |
 
 C'est la disposition qu'utilisait `make_clip_place.py` de la fabrique CLIPS.
 Les décors se construisent dans Studio : `require(game.ServerStorage.NDFactory.Sets).all()`.
