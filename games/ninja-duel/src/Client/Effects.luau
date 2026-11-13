@@ -6,6 +6,10 @@
 local Debris=game:GetService("Debris")
 local TweenService=game:GetService("TweenService")
 local Kit=require(script.Parent.VfxKit)
+-- (13/11) The modelled props (weapons...): built once in the background; until
+-- they are ready (or headless) the part-built ones below are used.
+local MeshKit=require(script.Parent.MeshKit)
+pcall(function() task.spawn(MeshKit.prepare) end)
 local Face=require(game:GetService("ReplicatedStorage").NinjaDuel.Face)
 local FX={};FX.__index=FX
 -- Cel flame streams of the fireballs in flight (VfxKit), by model.
@@ -163,6 +167,8 @@ end
 -- Kunai built along -Z (point first). The grip centre is the origin, so the
 -- same model sits correctly in a hand and flies point-first.
 function FX.buildKunai(marked)
+	local modelled=MeshKit.model(if marked then "MarkedKunai" else "Kunai")
+	if modelled then return modelled end
 	local model=new("Model",{Name=if marked then "MarkedKunai" else "Kunai"})
 	local root=block(model,Vector3.new(.1,.1,.1),CFrame.new(),Color3.new(),nil);root.Name="Root";root.Transparency=1
 	local parts={}
@@ -200,6 +206,8 @@ end
 -- along -Z like the kunai (grip centre at the origin). White-wrapped grip,
 -- small round guard, a long straight blade with a pale chakra edge.
 function FX.buildTanto()
+	local modelled=MeshKit.model("Tanto")
+	if modelled then return modelled end
 	local model=new("Model",{Name="Tanto"})
 	local root=block(model,Vector3.new(.1,.1,.1),CFrame.new(),Color3.new(),nil);root.Name="Root";root.Transparency=1
 	local grip=block(model,Vector3.new(.62,.15,.15),CFrame.new(0,0,.18)*CFrame.Angles(0,math.pi/2,0),Color3.fromRGB(232,230,222),Enum.Material.Fabric)
@@ -221,6 +229,8 @@ function FX.buildTanto()
 	return model
 end
 function FX.buildShuriken()
+	local modelled=MeshKit.model("Shuriken")
+	if modelled then return modelled end
 	local model=new("Model",{Name="Shuriken"})
 	local root=block(model,Vector3.new(.1,.1,.1),CFrame.new(),Color3.new());root.Name="Root";root.Transparency=1
 	local parts={}
@@ -275,8 +285,21 @@ function FX.buildFireball(caster)
 	FX.fireRoll[model]=look.roll
 	local root=block(model,Vector3.new(1,1,1),CFrame.new(),look.core,Enum.Material.Neon);root.Name="Root"
 	root.Shape=Enum.PartType.Ball;root.Transparency=.05
-	local mid=block(model,Vector3.new(1,1,1),CFrame.new(),look.mid,Enum.Material.Neon);mid.Shape=Enum.PartType.Ball;mid.Transparency=.35;mid.Name="Mid"
-	local outer=block(model,Vector3.new(1,1,1),CFrame.new(),look.outer,Enum.Material.Neon);outer.Shape=Enum.PartType.Ball;outer.Transparency=.62;outer.Name="Outer"
+	-- (13/11) the fire round the core is modelled (MeshKit "FlameMid/Outer"..):
+	-- lumpy, its tongues licking back along the flight; balls until ready
+	local suffix=if caster=="Lion" or caster=="Mirage" then caster else ""
+	local function shell(name,color,alpha)
+		local p=MeshKit.part("Flame"..name..suffix)
+		if p then
+			p:SetAttribute("UnitSize",p.Size);p.Size=p.Size;p.Parent=model
+		else
+			p=block(model,Vector3.new(1,1,1),CFrame.new(),color,Enum.Material.Neon);p.Shape=Enum.PartType.Ball
+		end
+		p.Transparency=alpha;p.Name=name;p.CFrame=CFrame.new()
+		return p
+	end
+	local mid=shell("Mid",look.mid,.35)
+	local outer=shell("Outer",look.outer,.62)
 	weldAll(root,{mid,outer})
 	local at=new("Attachment",{},root)
 	if look.tail then
@@ -321,6 +344,8 @@ end
 -- ------------------------------------------------------------------ state
 function FX.new()
 	local folder=Instance.new("Folder");folder.Name="NinjaDuelFX";folder.Parent=workspace
+	-- (12/11, the game casts shadows) light has none; rocks and debris keep theirs (ShadowFX).
+	pcall(function() require(script.Parent.ShadowFX).watch(folder) end)
 	-- Decode the VFX textures now, before the first contact needs them.
 	if task and task.defer then task.defer(function() pcall(Kit.warm) end) end
 	-- (Reference quality) the world's marks (Server/WorldReaction scars) are
@@ -550,8 +575,8 @@ function FX:stepProjectiles(dt)
 			local wobble=1+math.sin(os.clock()*31)*.05
 			entry.root.Size=Vector3.one*radius*1.15*wobble
 			local mid=entry.model:FindFirstChild("Mid");local outer=entry.model:FindFirstChild("Outer")
-			if mid then mid.Size=Vector3.one*radius*1.7 end
-			if outer then outer.Size=Vector3.one*radius*2.25*wobble end
+			if mid then mid.Size=(mid:GetAttribute("UnitSize") or Vector3.one)*radius*1.7 end
+			if outer then outer.Size=(outer:GetAttribute("UnitSize") or Vector3.one)*radius*2.25*wobble end
 			local flames=entry.root:FindFirstChildOfClass("Attachment")
 			if flames then
 				local f=flames:FindFirstChild("Flames");if f then f.Size=num({{0,radius*1.1},{.4,radius*1.9},{1,radius*.6}}) end
@@ -619,7 +644,7 @@ local function burst(parent,position,props,count)
 	local holder=anchorPart(parent,position);holder.Transparency=1
 	local at=new("Attachment",{},holder)
 	local e=emitter(at,props)
-	e:Emit(math.max(1,math.floor((count or 1)*Kit.amount+.5)))
+	do local ndCount=math.max(1,math.floor((count or 1)*Kit.amount+.5));e:Emit(ndCount);pcall(e.SetAttribute,e,"NDEmitCount",ndCount);pcall(e.SetAttribute,e,"NDEmit",os.clock()) end
 	Debris:AddItem(holder,3)
 	return holder
 end
@@ -1347,14 +1372,29 @@ function FX:substitute(position,to,fighter,model)
 		crows(self.folder,position,10,11)
 	else
 		-- The classic: a wooden log takes the hit in his place.
-		local holder=new("Model",{Name="SubstitutionLog"},self.folder)
+		local holder=new("Model",{Name="SubstitutionLog"})
+		pcall(holder.SetAttribute,holder,"KeepShadow",true);holder.Parent=self.folder -- a solid log: it keeps its shadow
 		local stand=CFrame.new(position-Vector3.new(0,.6,0))*CFrame.Angles(0,math.random()*math.pi*2,0)*CFrame.Angles(0,0,math.rad(84))
 		local log=block(holder,Vector3.new(3.6,1.25,1.25),stand,Color3.fromRGB(110,74,44),Enum.Material.Wood)
 		log.Shape=Enum.PartType.Cylinder;log.Anchored=false;log.CanCollide=true;log.Massless=false;log.CastShadow=true
-		for _,x in {-1.81,1.81} do
-			local cut=block(holder,Vector3.new(.04,1.12,1.12),stand*CFrame.new(x,0,0),Color3.fromRGB(214,180,128),Enum.Material.Wood)
-			cut.Shape=Enum.PartType.Cylinder;cut.Anchored=false;cut.Massless=true
-			new("WeldConstraint",{Part0=log,Part1=cut},cut)
+		-- (13/11) the modelled log (MeshKit "SubLog": ridged bark, ringed cut
+		-- ends, a branch stub, the gash of the blow) rides the physics cylinder
+		local carved=MeshKit.model("SubLog")
+		if carved then
+			log.Transparency=1
+			local croot=carved.PrimaryPart
+			carved:PivotTo(stand)
+			for _,c in carved:GetChildren() do c.Parent=holder end
+			carved:Destroy()
+			croot.Anchored=false;croot.Massless=true
+			new("WeldConstraint",{Part0=log,Part1=croot},croot)
+			for _,d in holder:GetChildren() do if d:IsA("BasePart") and d~=log and d~=croot then d.CastShadow=true end end
+		else
+			for _,x in {-1.81,1.81} do
+				local cut=block(holder,Vector3.new(.04,1.12,1.12),stand*CFrame.new(x,0,0),Color3.fromRGB(214,180,128),Enum.Material.Wood)
+				cut.Shape=Enum.PartType.Cylinder;cut.Anchored=false;cut.Massless=true
+				new("WeldConstraint",{Part0=log,Part1=cut},cut)
+			end
 		end
 		holder.PrimaryPart=log
 		-- a nudge so it tips over instead of balancing on its end
@@ -1362,7 +1402,7 @@ function FX:substitute(position,to,fighter,model)
 		log.AssemblyAngularVelocity=stand.LookVector*2.2
 		task.delay(2.6,function()
 			if not holder.Parent then return end
-			for _,d in holder:GetChildren() do if d:IsA("BasePart") then tween(d,.5,{Transparency=1}) end end
+			for _,d in holder:GetChildren() do if d:IsA("BasePart") and d.Transparency<1 then tween(d,.5,{Transparency=1}) end end
 		end)
 		Debris:AddItem(holder,3.2)
 	end
@@ -1521,7 +1561,7 @@ function FX:handGlow(model,color,time)
 			local at=new("Attachment",{Name="ChakraPalm"},hand)
 			local e=emitter(at,{Texture=TEX.glow,Rate=0,Lifetime=NumberRange.new(.12,.2),Speed=NumberRange.new(0,1),
 				Color=ColorSequence.new(color),LightEmission=1,Size=num({{0,1.4},{1,.4}}),Transparency=num({{0,.25},{1,1}}),LockedToPart=true})
-			e:Emit(10)
+			do local ndCount=10;e:Emit(ndCount);pcall(e.SetAttribute,e,"NDEmitCount",ndCount);pcall(e.SetAttribute,e,"NDEmit",os.clock()) end
 			local light=new("PointLight",{Color=color,Brightness=3,Range=6,Shadows=false},at)
 			tween(light,time,{Brightness=0})
 			Debris:AddItem(at,time+.1)

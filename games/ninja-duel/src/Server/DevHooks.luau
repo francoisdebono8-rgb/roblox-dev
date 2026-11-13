@@ -198,6 +198,16 @@ function DevHooks.install(matches)
 		if op=="interactions" then return interactions(arg1,arg2) end
 		if op=="contracts" then
 			return table.clone(Inspector.ToolHooks)
+		elseif op=="avatar" then
+			-- (DEC-036, Studio trial) arg1 true: the player's next duels in his
+			-- own Roblox avatar (built in the background); false: the prodigy's body.
+			if not player then return "no player" end
+			local AvatarBody=require(script.Parent.AvatarBody)
+			local session=matches:session(player)
+			session.avatarBody=arg1~=false
+			if session.avatarBody then AvatarBody.prepare(player) end
+			local state,reason=AvatarBody.state(player)
+			return {on=session.avatarBody,state=state,reason=reason}
 		elseif op=="start" then
 			if not player then return "no player" end
 			if s and s.phase~="Selection" then matches:selection(player) end

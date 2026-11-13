@@ -37,7 +37,11 @@ def runtime(p):
 CAPTURE=ROOT/'tools/capture/studio'
 CAPTURE_LAYOUT=[('ReplicatedStorage','ModuleScript','ClipKit','ClipKit.client.luau'),('ReplicatedStorage','ModuleScript','HiraishinKunai','HiraishinKunai.luau'),
     ('ServerStorage','ModuleScript','ShotRunner','ShotRunner.server.luau'),('ServerStorage','ModuleScript','Sets','Sets.luau'),('ServerStorage','ModuleScript','SetSnapshot','SetSnapshot.luau'),
-    ('ServerScriptService','Script','NDFactoryBoot','NDFactoryBoot.server.luau')]
+    ('ServerScriptService','Script','NDFactoryBoot','NDFactoryBoot.server.luau'),
+    # (13/11) the filming assistant (F4), loaded by Client/DevClient when present.
+    ('ReplicatedStorage','ModuleScript','ClipAssist','ClipAssist.luau'),
+    # (13/11) the CM's replay (FILM08) and its director, and the line of sight they share.
+    ('ReplicatedStorage','ModuleScript','ClipSight','ClipSight.luau'),('ReplicatedStorage','ModuleScript','NDReplay','NDReplay.luau'),('ReplicatedStorage','ModuleScript','NDDirector','NDDirector.luau')]
 capture_files=[CAPTURE/f for *_,f in CAPTURE_LAYOUT] if args.capture else []
 import subprocess
 def git(*a):

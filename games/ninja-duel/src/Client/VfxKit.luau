@@ -205,7 +205,7 @@ local function originPart()
 	if origin and origin.Parent then return origin end
 	origin=Instance.new("Part")
 	origin.Name="FXSpriteOrigin";origin.Anchored=true;origin.CanCollide=false;origin.CanQuery=false;origin.CanTouch=false
-	origin.Transparency=1;origin.Size=Vector3.new(.2,.2,.2);origin.CFrame=CFrame.new()
+	origin.Transparency=1;origin.Size=Vector3.new(.2,.2,.2);origin.CFrame=CFrame.new();origin.CastShadow=false
 	origin.Parent=workspace
 	return origin
 end
@@ -383,7 +383,7 @@ function Kit.burst(parent,position,texture,count,props)
 		elseif d.Y<-.99 then e.EmissionDirection=Enum.NormalId.Bottom
 		else at.WorldCFrame=CFrame.lookAt(position,position+d)*CFrame.Angles(-math.pi/2,0,0) end
 	end
-	e:Emit(count)
+	do local ndCount=count;e:Emit(ndCount);pcall(e.SetAttribute,e,"NDEmitCount",ndCount);pcall(e.SetAttribute,e,"NDEmit",os.clock()) end
 	return e,h
 end
 
@@ -436,7 +436,35 @@ function Kit.burn(parent,position,normal,size,hold,fade,color,transparency)
 	Debris:AddItem(p,hold+fade+.1)
 	return p
 end
+-- (13/11, user: « les traces sur le sol » at the modelled level) A modelled
+-- mark (MeshKit "GroundCrack" / "GroundCrater": grooves torn into the floor
+-- with their broken lips, plates pushed up), laid on the surface, turned at
+-- random, sinking away when it fades. nil until the meshes are ready.
+function Kit.mark(parent,name,position,normal,size,hold,fade)
+	local okKit,MeshKit=pcall(require,script.Parent.MeshKit)
+	if not okKit or not MeshKit.has(name) then return nil end
+	local m=MeshKit.model(name)
+	normal=(normal or Vector3.yAxis).Unit
+	local side=if math.abs(normal.Y)>.9 then Vector3.xAxis else Vector3.yAxis
+	local right=side:Cross(normal).Unit
+	local cf=CFrame.fromMatrix(position,right,normal)*CFrame.Angles(0,math.random()*math.pi*2,0)
+	m:ScaleTo(math.max(.2,size/2))
+	m:PivotTo(cf*CFrame.new(0,-.3,0))
+	m.Parent=parent
+	-- it breaks open in a blink, then lies there
+	tween(m.PrimaryPart,.08,{CFrame=cf})
+	task.delay(hold,function()
+		if not m.Parent then return end
+		for _,d in m:GetDescendants() do if d:IsA("BasePart") and d.Name~="Root" then tween(d,fade,{Transparency=1}) end end
+	end)
+	Debris:AddItem(m,hold+fade+.1)
+	return m
+end
 function Kit.ground(parent,position,normal,texture,size,hold,fade,color,transparency)
+	if texture=="crack" then
+		local m=Kit.mark(parent,"GroundCrack",position,normal,size*.55,hold,fade)
+		if m then return m end
+	end
 	if texture=="scorch" then return Kit.burn(parent,position,normal,size*Kit.BURN.shrink,hold,fade,color,transparency) end
 	if not Kit.has(texture) then return nil end
 	normal=(normal or Vector3.yAxis).Unit

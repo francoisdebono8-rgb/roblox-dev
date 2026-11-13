@@ -40,6 +40,9 @@ run AwakenFX "$LUNE" run tests/AwakenFX.spec.luau
 run LightBudget "$LUNE" run tests/LightBudget.spec.luau
 run Lightning "$LUNE" run tests/Lightning.spec.luau
 run Sharingan "$LUNE" run tests/Sharingan.spec.luau
+run Toad "$LUNE" run tests/Toad.spec.luau
+run Models "$LUNE" run tests/Models.spec.luau
+run Shadow "$LUNE" run tests/Shadow.spec.luau
 run Movement   "$LUNE" run tests/Movement.spec.luau
 run CombatFeel "$LUNE" run tests/CombatFeel.spec.luau
 run Engagement "$LUNE" run tests/Engagement.spec.luau
@@ -49,6 +52,8 @@ run AIVariety "$LUNE" run tests/AIVariety.spec.luau
 run HudText "$LUNE" run tests/HudText.spec.luau
 run Leftovers "$LUNE" run tests/Leftovers.spec.luau
 run Appearance "$LUNE" run tests/Appearance.spec.luau
+run Avatar "$LUNE" run tests/Avatar.spec.luau
+run Masters "$LUNE" run tests/Masters.spec.luau
 run Spacing "$LUNE" run tests/Spacing.spec.luau
 run StepSpeeds "$LUNE" run tests/StepSpeeds.spec.luau
 run ReactionSides "$LUNE" run tests/ReactionSides.spec.luau

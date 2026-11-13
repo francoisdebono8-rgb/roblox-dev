@@ -10,6 +10,9 @@ require(script.Parent.ArenaMeshes).preload()
 -- The select screen's fighters, built once with the duel's rig (Server/Portraits).
 require(script.Parent.Portraits).start()
 local matches=Matches.new(remote)
+-- (DEC-037) The masters' path: profiles loaded, saved, kits learned and
+-- bought (off while Config.Progression.Enabled is false).
+require(script.Parent.Progression).start(function(player) matches:kitsLoaded(player) end)
 -- (04/11) Players online and challenges between them, across the servers.
 local lobby=require(script.Parent.Lobby).new(matches)
 matches.lobby=lobby

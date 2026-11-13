@@ -35,6 +35,7 @@
 -- pitch and layering.
 local Debris=game:GetService("Debris")
 local Kit=require(script.Parent.VfxKit)
+local ShadowFX=require(script.Parent.ShadowFX)
 
 local ChakraFlowFX={}
 local K -- Effects' helpers, handed over by install()
@@ -148,7 +149,7 @@ local function aimed(fx,at,dir,props,count)
 		holder.CFrame=CFrame.lookAt(at,at+dir)*CFrame.Angles(-math.pi/2,0,0)
 	end
 	local e=particles(K.new("Attachment",{},holder),props)
-	e:Emit(math.max(1,math.floor(count*(Kit.amount or 1)+.5)))
+	do local ndCount=math.max(1,math.floor(count*(Kit.amount or 1)+.5));e:Emit(ndCount);pcall(e.SetAttribute,e,"NDEmitCount",ndCount);pcall(e.SetAttribute,e,"NDEmit",os.clock()) end
 	Debris:AddItem(holder,2)
 end
 local function fireRamp(color)
@@ -210,7 +211,7 @@ local function pebbles(fx,at,color,count)
 	for _=1,count do
 		local size=.25+math.random()*.3
 		local rock=K.block(fx.folder,Vector3.one*size,CFrame.new(at)*CFrame.Angles(math.random()*6,math.random()*6,0),color,Enum.Material.Slate)
-		rock.Name="ChakraPebble"
+		rock.Name="ChakraPebble";ShadowFX.keep(rock)
 		local a=math.random()*math.pi*2
 		local out=Vector3.new(math.cos(a),0,math.sin(a))*(1.5+math.random()*2)
 		K.tween(rock,.22,{CFrame=CFrame.new(at+out*.6+Vector3.new(0,1.4+math.random(),0))})
@@ -442,9 +443,9 @@ TICK.Wind=function(fx,a,model,now,dt,on,keep)
 	ease(a,if on then .55 elseif keep then .3 else 0,dt)
 	if on and now>=(a.nextRing or 0) then
 		a.nextRing=now+.13
-		a.rise:Emit(1)
+		do local ndCount=1;a.rise:Emit(ndCount);pcall(a.rise.SetAttribute,a.rise,"NDEmitCount",ndCount);pcall(a.rise.SetAttribute,a.rise,"NDEmit",os.clock()) end
 		a.ringCount=(a.ringCount or 0)+1
-		if a.spiral and a.ringCount%2==0 then a.spiral:Emit(1) end
+		if a.spiral and a.ringCount%2==0 then do local ndCount=1;a.spiral:Emit(ndCount);pcall(a.spiral.SetAttribute,a.spiral,"NDEmitCount",ndCount);pcall(a.spiral.SetAttribute,a.spiral,"NDEmit",os.clock()) end end
 	end
 end
 TICK.Sand=function(fx,a,model,now,dt,on,keep)
@@ -464,7 +465,7 @@ TICK.Strength=function(fx,a,model,now,dt,on,keep)
 	ease(a,0,dt)
 	if on and a.stomp and now>=(a.nextStomp or 0) then
 		a.nextStomp=now+.5
-		a.stomp:Emit(9)
+		do local ndCount=9;a.stomp:Emit(ndCount);pcall(a.stomp.SetAttribute,a.stomp,"NDEmitCount",ndCount);pcall(a.stomp.SetAttribute,a.stomp,"NDEmit",os.clock()) end
 		play(a.root,{{"heavy",.1,.5}})
 	end
 end
@@ -849,7 +850,7 @@ local function impact(fx,i,folder)
 		if i.sig=="EarthSpike" then
 			local ok=pcall(function()
 				local spike=Instance.new("Part");spike.Name="EarthSpike";spike.Anchored=true;spike.CanCollide=false;spike.CanQuery=false
-				spike.Material=Enum.Material.Slate;spike.Color=color;spike.Size=Vector3.new(1.5,.2,1.5)
+				spike.Material=Enum.Material.Slate;spike.Color=color;spike.Size=Vector3.new(1.5,.2,1.5);ShadowFX.keep(spike)
 				local base=CFrame.new(p)*CFrame.Angles(0,math.rad(45),math.rad(4))
 				spike.CFrame=base;spike.Parent=fx.folder
 				local TS=game:GetService("TweenService")

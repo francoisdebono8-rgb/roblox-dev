@@ -8,6 +8,8 @@
 local Debris=game:GetService("Debris")
 
 local LeeFX={}
+local VfxKit=require(script.Parent.VfxKit)
+local MeshKit=require(script.Parent.MeshKit)
 local K -- Effects' helpers, handed over by install()
 LeeFX.clock=os.clock -- (headless tests drive time)
 local LEE="Leaf"
@@ -34,6 +36,12 @@ end
 -- Cracks and a ring of dust where a body was driven into the floor.
 local function crater(fx,at,size)
 	local y=ground(fx,at,at.Y-2.8)
+	-- (13/11) the modelled crater: a sunk bowl, plates pushed up, cracks
+	if VfxKit.mark(fx.folder,"GroundCrater",Vector3.new(at.X,y,at.Z),Vector3.yAxis,size*.75,1.6,.8) then
+		K.shockRing(fx.folder,Vector3.new(at.X,y+.1,at.Z),DUST,2,size*2.2,.35)
+		kickDust(fx,Vector3.new(at.X,y+.8,at.Z),22,2.4)
+		return
+	end
 	local holder=K.new("Model",{Name="LotusCrater"},fx.folder)
 	local disc=K.block(holder,Vector3.new(.06,size,size),CFrame.new(at.X,y+.04,at.Z)*CFrame.Angles(0,0,math.pi/2),Color3.fromRGB(70,62,54),Enum.Material.Slate)
 	disc.Shape=Enum.PartType.Cylinder;disc.Transparency=.35
@@ -97,8 +105,39 @@ local function gateOpens(fx,impact)
 	if gate>=3 then crater(fx,at,3+gate) end
 	K.sound(K.anchorPart(fx.folder,at),K.SOUND.boom,.25+gate*.05,1.6-gate*.08)
 end
+-- (13/11, user: « les poids ») Remove the Weights: the two training weights
+-- come off his shins and drop like anvils (modelled: MeshKit "LegWeight"),
+-- each one cratering the floor where it lands; they stay there a moment.
+local function dropWeights(fx,impact,folder)
+	local model=folder and folder:FindFirstChild(impact.owner or "")
+	local at=impact.position
+	local y=ground(fx,at,at.Y-2.8)
+	for i,name in {"LeftLowerLeg","RightLowerLeg"} do
+		local shin=model and model:FindFirstChild(name)
+		local from=if shin then shin.CFrame else CFrame.new(at+Vector3.new(i==1 and -.5 or .5,-1.8,0))
+		local w=MeshKit.model("LegWeight")
+		local land=Vector3.new(from.Position.X+(i==1 and -.35 or .35),y+.36,from.Position.Z+.2)
+		if w then
+			w.Name="LeeWeight";w.PrimaryPart.CFrame=from;w.Parent=fx.folder
+			local rest=CFrame.new(land)*CFrame.Angles(math.rad(90),math.rad(i*37),0)
+			K.tween(w.PrimaryPart,.3,{CFrame=rest},Enum.EasingStyle.Quad,Enum.EasingDirection.In)
+			task.delay(2.6,function()
+				if not w.Parent then return end
+				for _,d in w:GetDescendants() do if d:IsA("BasePart") and d.Name~="Root" then K.tween(d,.5,{Transparency=1}) end end
+			end)
+			Debris:AddItem(w,3.2)
+		end
+		task.delay(.3,function()
+			if not VfxKit.mark(fx.folder,"GroundCrater",Vector3.new(land.X,y,land.Z),Vector3.yAxis,1.9,2.4,.6) then crater(fx,land,2.2) end
+			kickDust(fx,Vector3.new(land.X,y+.5,land.Z),12,1.6)
+			K.shockRing(fx.folder,Vector3.new(land.X,y+.1,land.Z),DUST,1.5,7,.3)
+			K.sound(K.anchorPart(fx.folder,land),K.SOUND.boom,.45,1.5)
+		end)
+	end
+end
 local function impact(fx,data,folder)
 	if data.fighter~=LEE then return false end
+	if data.style=="cast" and data.technique=="RemoveWeights" then dropWeights(fx,data,folder);return true end
 	local style=data.style
 	if style=="awaken" then awaken(fx,data,folder);return true end
 	if style=="gate" then gateOpens(fx,data);return true end

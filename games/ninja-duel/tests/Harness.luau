@@ -429,7 +429,13 @@ function Harness.stubScene()
  local function instance(class)
   local o={ClassName=class,Name=class,children={},props={}}
   -- (BasePart default: client sight effects read it on bodies.)
-  if class=="Part" or class=="WedgePart" or class=="MeshPart" then o.props.LocalTransparencyModifier=0 end
+  -- (13/11 integration: the modelled props, logs and fireball shells of #77
+  -- read these, as Roblox gives every part and every instance.)
+  if class=="Part" or class=="WedgePart" or class=="MeshPart" then o.props.LocalTransparencyModifier=0;o.props.Transparency=0 end
+  local attributes={}
+  o.GetAttribute=function(_,k) return attributes[k] end
+  o.SetAttribute=function(_,k,v) attributes[k]=v end
+  o.GetAttributes=function() return table.clone(attributes) end
   local mt={}
   mt.__index=function(t,k)
    if k=="Parent" then return rawget(t,"_parent") end

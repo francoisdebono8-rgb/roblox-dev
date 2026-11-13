@@ -15,7 +15,11 @@ local Debris=game:GetService("Debris")
 local UltimateFX={}
 local Scripts=require(game:GetService("ReplicatedStorage").NinjaDuel.UltimateScripts)
 local Face=require(game:GetService("ReplicatedStorage").NinjaDuel.Face)
+local MeshKit=require(script.Parent.MeshKit)
+local HoundFX=require(script.Parent.HoundFX)
+local VfxKit=require(script.Parent.VfxKit)
 local K -- Effects' helpers, handed over by install()
+local ShadowFX=require(script.Parent.ShadowFX)
 UltimateFX.clock=os.clock -- (headless tests drive time)
 
 local function rgb(r,g,b) return Color3.fromRGB(r,g,b) end
@@ -84,6 +88,40 @@ function UltimateFX.grade(fx,look,time)
 	task.delay(time,function()
 		if cc.Parent then K.tween(cc,.3,{TintColor=Color3.new(1,1,1),Saturation=0,Contrast=0});Debris:AddItem(cc,.35) end
 	end)
+end
+
+-- (13/11) A modelled stone (MeshKit "Rock") or, until ready, a slate block.
+local function stone(parent,size,cf)
+	-- A rock keeps its shadow (#62 light pass: light effects cast none, rocks do).
+	local r=MeshKit.part("Rock")
+	if r then
+		r.Size=Vector3.new(size,size*.8,size*.9)*1.25;r.CFrame=cf;r.Parent=parent
+		return ShadowFX.keep(r)
+	end
+	return ShadowFX.keep(K.block(parent,Vector3.one*size,cf,rgb(120,112,100),Enum.Material.Slate))
+end
+UltimateFX.stone=stone
+-- A modelled prop's root moved (its pieces are welded to it): tween the root.
+local function prop(name,parent,cf)
+	local m=MeshKit.model(name)
+	if not m then return nil end
+	m.PrimaryPart.CFrame=cf
+	m.Parent=parent
+	return m
+end
+local function fadeModel(m,time,to)
+	for _,d in m:GetDescendants() do
+		if d:IsA("BasePart") and d.Name~="Root" then
+			local base=d:GetAttribute("BaseAlpha")
+			if base==nil then base=d.Transparency;d:SetAttribute("BaseAlpha",base) end
+			K.tween(d,time,{Transparency=if to==1 then 1 else base})
+		end
+	end
+end
+local function hideModel(m)
+	for _,d in m:GetDescendants() do
+		if d:IsA("BasePart") and d.Name~="Root" then d:SetAttribute("BaseAlpha",d.Transparency);d.Transparency=1 end
+	end
 end
 
 local function modelFor(folder,id) return folder and folder:FindFirstChild(id or "") end
@@ -181,15 +219,17 @@ function UltimateFX.crater(fx,p,color,size)
 	local rng=Random.new(math.floor(p.X*7+p.Z*13))
 	for k=1,10 do
 		local a=k/10*math.pi*2+rng:NextNumber()*.4
-		local rock=K.block(fx.folder,Vector3.one*(.5+rng:NextNumber()*.9)*size,CFrame.new(floor+Vector3.new(math.cos(a)*1.6,.3,math.sin(a)*1.6))*CFrame.Angles(rng:NextNumber()*3,rng:NextNumber()*3,0),rgb(120,112,100),Enum.Material.Slate)
+		local rock=stone(fx.folder,(.5+rng:NextNumber()*.9)*size,CFrame.new(floor+Vector3.new(math.cos(a)*1.6,.3,math.sin(a)*1.6))*CFrame.Angles(rng:NextNumber()*3,rng:NextNumber()*3,0))
 		local out=floor+Vector3.new(math.cos(a)*(4+rng:NextNumber()*3)*size,.2,math.sin(a)*(4+rng:NextNumber()*3)*size)
 		K.tween(rock,.35,{CFrame=CFrame.new(out+Vector3.new(0,1.5,0))*CFrame.Angles(rng:NextNumber()*6,rng:NextNumber()*6,0)},Enum.EasingStyle.Quad,Enum.EasingDirection.Out)
 		task.delay(.35,function() if rock.Parent then K.tween(rock,.3,{CFrame=CFrame.new(out),Transparency=.2},Enum.EasingStyle.Quad,Enum.EasingDirection.In) end end)
 		task.delay(1.6,function() if rock.Parent then K.tween(rock,.4,{Transparency=1}) end end)
 		Debris:AddItem(rock,2.1)
 	end
-	-- the crack: a dark star of grooves
-	for k=1,7 do
+	-- the crater itself, modelled (sunk bowl, plates pushed up, cracks), or
+	-- the old dark star of grooves
+	local modelled=VfxKit.mark(fx.folder,"GroundCrater",floor,Vector3.yAxis,5*size,2,.6)
+	for k=1,if modelled then 0 else 7 do
 		local a=k/7*math.pi*2
 		local len=(3+k%3)*size
 		local c=K.block(fx.folder,Vector3.new(.25,.06,len),CFrame.new(floor+Vector3.new(math.cos(a)*len/2,.06,math.sin(a)*len/2))*CFrame.Angles(0,-a+math.pi/2,0),rgb(40,34,30),Enum.Material.Slate)
@@ -319,7 +359,13 @@ local function sandMass(ctx)
 	local N=110
 	for i=1,N do
 		local s=.45+rng:NextNumber()*.85
-		local g=K.block(fx.folder,Vector3.new(s,s*.8,s),CFrame.new(from),if i%3==0 then SAND_DARK else SAND,Enum.Material.Sand)
+		-- (13/11) modelled clods of sand (tools/blender/fx_models.py) once ready
+		local g=MeshKit.part("SandClump")
+		if g then
+			g.Size=Vector3.new(s,s*.8,s)*1.15;g.CFrame=CFrame.new(from);g.Parent=fx.folder
+		else
+			g=K.block(fx.folder,Vector3.new(s,s*.8,s),CFrame.new(from),if i%3==0 then SAND_DARK else SAND,Enum.Material.Sand)
+		end
 		g.Name="SandGrain"
 		-- Its place on the body: a shell round it, low first (the legs), up to the head.
 		local h=(i/N)
@@ -335,10 +381,27 @@ local function sandMass(ctx)
 	local stain=K.block(fx.folder,Vector3.new(.08,1,1),CFrame.new(ctx.floor(ctx.vpos())+Vector3.new(0,.05,0))*CFrame.Angles(0,0,math.rad(90)),SAND,Enum.Material.Sand)
 	stain.Shape=Enum.PartType.Cylinder;stain.Name="SandStain"
 	K.tween(stain,.8,{Size=Vector3.new(.08,9,9)})
-	local shell=K.block(fx.folder,Vector3.new(.1,.1,.1),CFrame.new(ctx.vpos()),SAND,Enum.Material.Sand)
-	shell.Shape=Enum.PartType.Ball;shell.Name="SandCocoon";shell.Transparency=1
-	local column=K.block(fx.folder,Vector3.new(.1,2.2,2.2),CFrame.new(ctx.floor()),SAND_DARK,Enum.Material.Sand)
-	column.Shape=Enum.PartType.Cylinder;column.Name="SandColumn";column.Transparency=1
+	-- (13/11, user: « sur Gaara il y a une colonne un peu bizarre qui s'élève »)
+	-- The cocoon was a smooth ball and the column a plain dark cylinder: they
+	-- are now modelled (fx_models.py): the coffin wraps the body from the feet
+	-- up in thick spiral bands of sand, and a twisting rope of sand, flared into
+	-- the floor and cupped at the top, lifts it. Primitives stay as the fallback.
+	local shell=MeshKit.part("SandCoffin")
+	if shell then
+		mass.coffin=shell.Size;shell.CFrame=CFrame.new(ctx.vpos());shell.Parent=fx.folder
+	else
+		shell=K.block(fx.folder,Vector3.new(.1,.1,.1),CFrame.new(ctx.vpos()),SAND,Enum.Material.Sand)
+		shell.Shape=Enum.PartType.Ball
+	end
+	shell.Name="SandCocoon";shell.Transparency=1
+	local column=MeshKit.part("SandPillar")
+	if column then
+		mass.pillar=column.Size;column.CFrame=CFrame.new(ctx.floor());column.Parent=fx.folder
+	else
+		column=K.block(fx.folder,Vector3.new(.1,2.2,2.2),CFrame.new(ctx.floor()),SAND_DARK,Enum.Material.Sand)
+		column.Shape=Enum.PartType.Cylinder
+	end
+	column.Name="SandColumn";column.Transparency=1
 	mass.stain,mass.shell,mass.column=stain,shell,column
 	local t0=ctx.t()
 	ctx.loop(ctx.time+.5,function(t)
@@ -368,14 +431,30 @@ local function sandMass(ctx)
 			if cf then g.part.CFrame=cf end
 		end
 		if mass.shellSize>0 then
-			shell.CFrame=vcf
-			shell.Size=Vector3.new(2.5,5.4,2.5)*mass.shellSize*mass.scale
+			if mass.coffin then
+				-- it climbs from the feet: full width soon, full height last
+				local k=mass.shellSize
+				local base=mass.coffin*.97*mass.scale
+				shell.Size=Vector3.new(base.X*(.72+.28*k),base.Y*k,base.Z*(.72+.28*k))
+				shell.CFrame=vcf*CFrame.new(0,-base.Y*(1-k)/2,0)
+			else
+				shell.CFrame=vcf
+				shell.Size=Vector3.new(2.5,5.4,2.5)*mass.shellSize*mass.scale
+			end
 		end
 		if mass.columnOn then
 			local top=vcf.Position.Y-2.6*mass.scale
 			local h=math.max(.2,top-floorY)
-			column.CFrame=CFrame.new(vcf.Position.X,floorY+h/2,vcf.Position.Z)*CFrame.Angles(0,0,math.rad(90))
-			column.Size=Vector3.new(h,2.4*mass.scale,2.4*mass.scale)
+			if mass.pillar then
+				-- rooted .4 under the floor, its cup under the coffin, turning
+				local tall=h+.4
+				local w=.8*mass.scale
+				column.Size=Vector3.new(mass.pillar.X*w,tall,mass.pillar.Z*w)
+				column.CFrame=CFrame.new(vcf.Position.X,floorY-.4+tall/2,vcf.Position.Z)*CFrame.Angles(0,t*1.4,0)
+			else
+				column.CFrame=CFrame.new(vcf.Position.X,floorY+h/2,vcf.Position.Z)*CFrame.Angles(0,0,math.rad(90))
+				column.Size=Vector3.new(h,2.4*mass.scale,2.4*mass.scale)
+			end
 		end
 	end)
 	return mass
@@ -458,7 +537,7 @@ CUE.gates=function(ctx)
 	for k=1,8 do
 		local a=k/8*math.pi*2
 		local at=ctx.floor(p)+Vector3.new(math.cos(a)*2.2,.2,math.sin(a)*2.2)
-		local rock=K.block(ctx.fx.folder,Vector3.one*(.4+rng:NextNumber()*.5),CFrame.new(at),rgb(130,120,104),Enum.Material.Slate)
+		local rock=stone(ctx.fx.folder,.4+rng:NextNumber()*.5,CFrame.new(at))
 		K.tween(rock,.6,{CFrame=CFrame.new(at+Vector3.new(0,2+rng:NextNumber()*2,0))*CFrame.Angles(rng:NextNumber()*4,rng:NextNumber()*4,0)},Enum.EasingStyle.Sine)
 		task.delay(.7,function() if rock.Parent then K.tween(rock,.3,{CFrame=CFrame.new(at),Transparency=1},Enum.EasingStyle.Quad,Enum.EasingDirection.In) end end)
 		Debris:AddItem(rock,1.1)
@@ -484,19 +563,31 @@ CUE.bandage=function(ctx)
 		local to=ctx.vpos()
 		local d=to-from
 		if d.Magnitude>.1 then strip.Size=Vector3.new(.22,.06,d.Magnitude);strip.CFrame=CFrame.lookAt(from:Lerp(to,.5),to) end
-		if #wraps<5 and t>2.36+#wraps*.05 then
-			local w=K.block(fx.folder,Vector3.new(.25,2.3,2.3),CFrame.new(to),rgb(240,236,226),Enum.Material.Fabric)
-			w.Shape=Enum.PartType.Cylinder;w.Transparency=.15
-			table.insert(wraps,w)
+		-- (13/11) the bandage wound round him: a modelled spiral ribbon
+		-- (MeshKit "BandageWrap") that turns, or the old rings
+		if not wraps.model and wraps.tried==nil and t>2.36 then
+			wraps.tried=true
+			wraps.model=prop("BandageWrap",fx.folder,CFrame.new(to))
 		end
-		for i,w in wraps do
-			w.CFrame=CFrame.new(to+Vector3.new(0,-1.6+i*.65,0))*CFrame.Angles(0,t*9+i,math.rad(90))
-			w.Size=Vector3.new(.25,1.9,1.9)
+		if wraps.model then
+			local k=math.clamp((t-2.36)/.2,.2,1)
+			wraps.model.PrimaryPart.CFrame=CFrame.new(to+Vector3.new(0,-.4*(1-k),0))*CFrame.Angles(0,t*9,0)
+		else
+			if #wraps<5 and t>2.36+#wraps*.05 then
+				local w=K.block(fx.folder,Vector3.new(.25,2.3,2.3),CFrame.new(to),rgb(240,236,226),Enum.Material.Fabric)
+				w.Shape=Enum.PartType.Cylinder;w.Transparency=.15
+				table.insert(wraps,w)
+			end
+			for i,w in wraps do
+				w.CFrame=CFrame.new(to+Vector3.new(0,-1.6+i*.65,0))*CFrame.Angles(0,t*9+i,math.rad(90))
+				w.Size=Vector3.new(.25,1.9,1.9)
+			end
 		end
 	end)
 	task.delay(math.max(0,3.15-ctx.t()),function()
 		strip:Destroy()
 		for _,w in wraps do w:Destroy() end
+		if wraps.model then wraps.model:Destroy() end
 	end)
 end
 CUE.spin=function(ctx)
@@ -600,6 +691,14 @@ CUE.cross=function(ctx)
 	local p=ctx.vpos()
 	local back=ctx.frame.f*.75
 	local cf=CFrame.lookAt(ctx.floor(p)+back,ctx.floor(p)+back-ctx.frame.f)
+	-- (13/11) a modelled cross of rough timber lashed with rope
+	local cross=prop("TsukuyomiCross",ctx.fx.folder,cf)
+	if cross then
+		cross.Name="TsukuyomiCross"
+		hideModel(cross);fadeModel(cross,.25,0)
+		task.delay(math.max(0,3.3-ctx.t()),function() cross:Destroy() end)
+		return
+	end
 	local post=K.block(ctx.fx.folder,Vector3.new(.7,9,.5),cf*CFrame.new(0,4.5,0),rgb(30,18,18),Enum.Material.Wood)
 	local bar=K.block(ctx.fx.folder,Vector3.new(6,.6,.5),cf*CFrame.new(0,5.4,0),rgb(30,18,18),Enum.Material.Wood)
 	post.Name="TsukuyomiCross";bar.Name="TsukuyomiCross"
@@ -614,10 +713,18 @@ CUE.swords=function(ctx)
 		local a=rng:NextNumber()*math.pi*2
 		local dir=Vector3.new(math.cos(a),(rng:NextNumber()-.3)*.6,math.sin(a)).Unit
 		local tip=p+Vector3.new(0,rng:NextNumber()*1.6-.4,0)
-		local blade=K.block(ctx.fx.folder,Vector3.new(.12,.3,3.6),CFrame.lookAt(tip+dir*5,tip),rgb(30,30,34),Enum.Material.Metal)
-		K.tween(blade,.08,{CFrame=CFrame.lookAt(tip+dir*1.4,tip)},Enum.EasingStyle.Linear)
-		task.delay(.35,function() if blade.Parent then K.tween(blade,.1,{Transparency=1}) end end)
-		Debris:AddItem(blade,.5)
+		-- (13/11) modelled katanas (MeshKit "Katana": the point 3.2 ahead of the grip)
+		local sword=prop("Katana",ctx.fx.folder,CFrame.lookAt(tip+dir*6.4,tip))
+		if sword then
+			K.tween(sword.PrimaryPart,.08,{CFrame=CFrame.lookAt(tip+dir*2.4,tip)},Enum.EasingStyle.Linear)
+			task.delay(.35,function() if sword.Parent then fadeModel(sword,.1,1) end end)
+			Debris:AddItem(sword,.5)
+		else
+			local blade=K.block(ctx.fx.folder,Vector3.new(.12,.3,3.6),CFrame.lookAt(tip+dir*5,tip),rgb(30,30,34),Enum.Material.Metal)
+			K.tween(blade,.08,{CFrame=CFrame.lookAt(tip+dir*1.4,tip)},Enum.EasingStyle.Linear)
+			task.delay(.35,function() if blade.Parent then K.tween(blade,.1,{Transparency=1}) end end)
+			Debris:AddItem(blade,.5)
+		end
 	end
 	K.flash(ctx.fx.folder,p,ctx.look.core,.8,4,.15,.3)
 	K.sound(K.anchorPart(ctx.fx.folder,p),K.SOUND.swish,.6,.8)
@@ -631,6 +738,16 @@ end
 
 -- Minato -----------------------------------------------------------------
 UltimateFX.kunai=function(fx,from,to,look)
+	-- (13/11) his three-pronged kunai, modelled (MeshKit "MarkedKunai")
+	local stuck=CFrame.lookAt(to+Vector3.new(0,.4,0),to+Vector3.new(0,-1,0))
+	local mk=prop("MarkedKunai",fx.folder,CFrame.lookAt(from,to))
+	if mk then
+		mk.Name="FlashKunai"
+		K.tween(mk.PrimaryPart,.2,{CFrame=stuck},Enum.EasingStyle.Linear)
+		task.delay(.22,function() if mk.Parent then K.shockRing(fx.folder,to+Vector3.new(0,.1,0),look.core,.5,3,.3) end end)
+		Debris:AddItem(mk,3.6)
+		return
+	end
 	local k=K.block(fx.folder,Vector3.new(.16,.16,1.1),CFrame.lookAt(from,to),rgb(60,60,66),Enum.Material.Metal)
 	k.Name="FlashKunai"
 	local mark=K.block(fx.folder,Vector3.new(.06,.06,.5),CFrame.lookAt(from,to)*CFrame.new(0,0,.55),look.core,Enum.Material.Neon)
@@ -673,7 +790,9 @@ CUE.timeStart=function(ctx)
 	for _,s in ctx.streaks or {} do
 		if s.Parent then K.tween(s,.25,{Transparency=1,Size=s.Size*Vector3.new(.2,.2,1)});Debris:AddItem(s,.3) end
 	end
-	for _,d in ctx.fx.folder:GetChildren() do if d.Name=="FlashKunai" then K.tween(d,.2,{Transparency=1}) end end
+	for _,d in ctx.fx.folder:GetChildren() do
+		if d.Name=="FlashKunai" then if d:IsA("Model") then fadeModel(d,.2,1) else K.tween(d,.2,{Transparency=1}) end end
+	end
 end
 CUE.cutsLand=function(ctx)
 	local p=ctx.vpos()
@@ -697,6 +816,21 @@ CUE.hounds=function(ctx)
 		local a=k/8*math.pi*2+.2
 		local spot=ctx.floor(p)+Vector3.new(math.cos(a)*1.5,0,math.sin(a)*1.5)
 		local look=CFrame.lookAt(spot,Vector3.new(p.X,spot.Y,p.Z))
+		-- (13/11) the modelled ninken (Client/HoundFX) out of the floor, biting
+		if MeshKit.has("Ninken1") then
+			local ok,dog=pcall(function() return (HoundFX.build(k%4+1)) end)
+			if ok and dog then
+				dog.Name="Hound";dog.Parent=ctx.fx.folder
+				local lift=dog:GetAttribute("Lift") or .8
+				local aim=CFrame.lookAt(spot,Vector3.new(p.X,spot.Y,p.Z))
+				local root=dog.PrimaryPart
+				root.CFrame=aim*CFrame.new(0,-1.6,0)*CFrame.Angles(math.rad(35),0,0)
+				K.tween(root,.15,{CFrame=aim*CFrame.new(0,lift+rng:NextNumber()*.3,.2)*CFrame.Angles(math.rad(-12),0,0)})
+				K.smokePuff(ctx.fx.folder,spot+Vector3.new(0,.5,0),rgb(196,184,160),3,1)
+				table.insert(hounds,dog)
+				continue
+			end
+		end
 		local dog=K.new("Model",{Name="Hound"},ctx.fx.folder)
 		local tone=if k%3==0 then rgb(120,96,70) else rgb(70,70,80)
 		local body=K.block(dog,Vector3.new(.9,.9,1.8),look*CFrame.new(0,-1.4,0),tone,Enum.Material.SmoothPlastic)
@@ -777,6 +911,18 @@ function UltimateFX.handCharge(fx,model,look,time,big)
 end
 -- The eight trigrams: a ring on the floor with its eight marks.
 function UltimateFX.trigrams(fx,center,look,time)
+	-- (13/11) the Hakke field modelled: circles, the eight trigrams, the
+	-- yin-yang (MeshKit "Trigrams", 16 across), turning slowly under them
+	local field=prop("Trigrams",fx.folder,CFrame.new(center))
+	if field then
+		field.Name="Trigrams"
+		hideModel(field);fadeModel(field,.25,0)
+		local root=field.PrimaryPart
+		K.tween(root,time,{CFrame=CFrame.new(center)*CFrame.Angles(0,math.rad(40),0)},Enum.EasingStyle.Linear)
+		task.delay(math.max(0,time-.3),function() if field.Parent then fadeModel(field,.3,1) end end)
+		Debris:AddItem(field,time)
+		return
+	end
 	local disc=K.block(fx.folder,Vector3.new(.06,16,16),CFrame.new(center)*CFrame.Angles(0,0,math.rad(90)),look.core,Enum.Material.Neon,"Part")
 	disc.Name="Trigrams";disc.Shape=Enum.PartType.Cylinder;disc.Transparency=.75
 	for k=0,7 do
