@@ -179,6 +179,7 @@ end
 -- The scene at replay time t, seen from the actor `Ak` ("human" / "bot"): the
 -- ghosts are moved to t (no sound, no burst: lastApplied is cleared).
 local function sceneAt(t, Ak)
+	if R.folder and R.folder.Parent ~= workspace then R.folder.Parent = workspace end
 	R.lastApplied = nil
 	R.apply(t)
 	R.lastApplied = nil
