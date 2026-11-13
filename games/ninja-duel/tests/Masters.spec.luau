@@ -181,6 +181,52 @@ test("on: a duel that counts takes a learned kit, practice takes any; a master's
 	Config.Progression.Enabled=false
 end)
 
+test("(DEC-038) a learned kit fights with its tree: objects earned, nodes on; a kit only tried is whole",function()
+	Config.Progression.Enabled=true
+	Progression.repo=nil;Progression.init(Repo.memoryStore())
+	local m=Matches.new(remote)
+	local player={UserId=503,Name="P503",DisplayName="P503",Parent=H.Players}
+	m:selection(player)
+	assert(Progression.load(player),"the profile did not load")
+	local s=m.sessions[player]
+	local function send(action,extra)
+		s.lastLifecycle=-10
+		local payload={action=action,epoch=s.epoch}
+		for k,v in extra or {} do payload[k]=v end
+		m:request(player,payload)
+	end
+	local function weights()
+		for _,spec in s.human.def.Techniques do if spec.Id=="RemoveWeights" then return spec end end
+	end
+	send("ChooseStarter",{player="Leaf"})
+	local tree=sent[player].kits.trees.Leaf
+	assert(tree and tree.points==0 and tree.free==0,"a new kit's tree has points")
+	send("Start",{player="Leaf",bot="Lion"})
+	assert(s.phase=="Duel" and weights().Locked==true,"his Lee took the weights off without Gai's permission")
+	m:selection(player)
+	send("LearnNode",{player="Leaf",node="Weights"})
+	assert(string.find(sent[player].notice or "","POINTS"),"a node learned with no points: "..tostring(sent[player].notice))
+	assert(Progression.run(player,"gainMastery",{fighter="Leaf",amount=120}))
+	send("LearnNode",{player="Leaf",node="Weights"})
+	tree=sent[player].kits.trees.Leaf
+	assert(tree.points==12 and tree.free==2 and table.find(tree.active,"Weights"),"the node is not on: "..tostring(tree.free))
+	send("Start",{player="Leaf",bot="Lion"})
+	assert(s.phase=="Duel" and not weights().Locked,"the node did not reach the duel")
+	m:selection(player)
+	send("SetNode",{player="Leaf",node="Weights",on=false})
+	send("Start",{player="Leaf",bot="Lion"})
+	assert(weights().Locked==true,"turned off, the node still fought")
+	m:selection(player)
+	-- A kit he only tries is the prodigy's whole kit (the gourd's shield too).
+	send("Tutorial",{player="Sand",bot="Lion"})
+	assert(s.phase=="Duel" and s.human.def.SandShield~=nil,"a kit tried in practice lost its object")
+	m:selection(player)
+	-- The AI's prodigy is never gated.
+	send("Start",{player="Leaf",bot="Sand"})
+	assert(s.bot.def.SandShield~=nil,"the AI's Gaara lost his gourd")
+	Config.Progression.Enabled=false
+end)
+
 test("a purchase is granted once, and only once the profile is saved",function()
 	Config.Progression.Enabled=true;Config.Progression.Products={Flashstep=9001}
 	Progression.repo=nil

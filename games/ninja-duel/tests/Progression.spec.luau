@@ -201,7 +201,7 @@ test("build validation: unknown, duplicate, missing prerequisite, exclusive pair
  local ok,total=SkillBuilds.validate("Flashstep",{"KunaiRecall","SealInk"},{budget=14})
  assert(ok and total==14,"a valid build listed out of order was refused")
  assert(not SkillBuilds.validate("Flashstep","SealInk"),"a non-list build passed")
- assert(not SkillBuilds.validate("Sand",{}),"a fighter without a tree accepted a build")
+ assert(not SkillBuilds.validate("Mist",{}),"a fighter without a tree accepted a build")
  -- Same nodes in any order give the same kit (effects stack in tree order).
  assert(not diff(kit("Mirage",{"QuickRead","EconomicRead","ReadCancel"}).def,kit("Mirage",{"ReadCancel","EconomicRead","QuickRead"}).def),"order changed the kit")
 end)
