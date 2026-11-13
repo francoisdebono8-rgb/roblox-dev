@@ -1634,7 +1634,9 @@ function Combat:requestInner(a,action,aim,clientTime,opts)
 	-- The Sharingan across the field may copy it; a copied one is spent.
 	Copy.cast(self,a,spec)
 	self:awakenTechnique(a,spec)
-	a.pending={kind="Technique",spec=spec,implementation=technique,aim=aim or a.target.root.Position,variant=variant,cancelled=cancelled}
+	a.pending={kind="Technique",spec=spec,implementation=technique,aim=aim or a.target.root.Position,variant=variant,cancelled=cancelled,
+		-- (13/11, #72) a copied held jutsu goes as big as the eye saw it
+		charge=if spec.Copied then spec.SeenCharge else nil}
 	-- A technique may set itself up as its channel begins (Naruto's Rasengan
 	-- calls the clone that shapes it, and its channel follows).
 	if technique.start then technique.start(self,a,a.pending);spec=a.pending.spec end
@@ -1669,12 +1671,17 @@ function Combat.charging(c,a,pending,now)
 	local key=a.techHold
 	if not hold or not key or not key.down then return false end
 	local slotSpec=a.def.Techniques and a.def.Techniques[key.slot]
-	if not slotSpec or slotSpec.Id~=pending.spec.Id then return false end
-	pending.chargeStart=pending.chargeStart or now
+	-- (13/11, #72) Kakashi's copy slot holds a copied jutsu the way its owner
+	-- holds it (the slot's own spec is his Water Dragon).
+	local copied=pending.spec.Copied and a.def.Copy and key.slot==(a.def.Copy.Slot or 1)
+	if not copied and (not slotSpec or slotSpec.Id~=pending.spec.Id) then return false end
+	-- A copy starts from what the eye saw gathered (Copy.released).
+	pending.chargeStart=pending.chargeStart or now-(pending.charge or 0)*(hold.Time or 1)
 	local held=now-pending.chargeStart
 	local cost=(hold.Cost or 0)/(hold.Time or 1)*(1/30)
 	if held>=(hold.Time or 1) or a.chakra<cost then pending.charge=math.min(1,held/(hold.Time or 1));return false end
-	if not pending.charge then
+	if not pending.gathering then
+		pending.gathering=true
 		c:cue(a,string.upper(pending.spec.Name).." • HOLD TO GATHER",hold.Time)
 		require(script.Parent.Brawler).event(c,a,"Hold:"..pending.spec.Id)
 	end
@@ -1849,6 +1856,8 @@ function Combat:updateActor(a,dt)
 			a.untilTime=now+1/30
 		elseif a.state=="TechniqueChannel" and pending then
 			a.techCharge=nil
+			-- What a held jutsu gathered, for the Sharingan that copied it.
+			Copy.released(self,a,pending)
 			-- State changes before payoff so simultaneous channels resolve deterministically.
 			self:setState(a,"TechniqueActive",pending.spec.Active)
 			-- (Embodiment) A technique that is a state of the body forms it
