@@ -14,6 +14,7 @@ local Debris=game:GetService("Debris")
 
 local UltimateFX={}
 local Scripts=require(game:GetService("ReplicatedStorage").NinjaDuel.UltimateScripts)
+local Face=require(game:GetService("ReplicatedStorage").NinjaDuel.Face)
 local K -- Effects' helpers, handed over by install()
 UltimateFX.clock=os.clock -- (headless tests drive time)
 
@@ -559,6 +560,9 @@ end
 
 -- Itachi -----------------------------------------------------------------
 CUE.eye=function(ctx)
+	-- (13/11, #73, François: only Itachi has it, at given moments) the
+	-- Mangekyō turns in his own eyes for the rest of the Tsukuyomi
+	Face.mangekyoFor(ctx.casterModel,math.max(.8,(ctx.time or 3.4)-ctx.t()))
 	-- the Mangekyo fills the screen for a moment
 	local s=screen(ctx.fx)
 	if s then
@@ -900,6 +904,8 @@ local function impact(fx,impact,folder)
 	elseif style=="tsukuyomi" then
 		local look=UltimateFX.LOOK.tsukuyomi
 		K.shockRing(fx.folder,p,look.core,1,10,.6)
+		-- (13/11, #73) the genjutsu is cast with the Mangekyō
+		Face.mangekyoFor(modelFor(folder,impact.owner),impact.time or 1.5)
 		-- The held body's player sees the red world; the caster only the ring.
 		local mine=false
 		pcall(function()

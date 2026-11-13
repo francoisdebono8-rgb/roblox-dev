@@ -29,6 +29,7 @@ Kit.IDS={
 	lightning="", -- nd_lightning_flip.png 2x2 flipbook (white)
 }
 local BUILTIN={
+	glow="rbxasset://textures/particles/forcefield_glow_main.dds",
 	fire="rbxasset://textures/particles/fire_main.dds",
 	smoke="rbxasset://textures/particles/smoke_main.dds",
 	star="rbxasset://textures/particles/sparkles_main.dds",
@@ -411,7 +412,32 @@ function Kit.floorUnder(position,exclude,depth)
 	params.FilterDescendantsInstances=exclude or {}
 	return workspace:Raycast(position+Vector3.new(0,2,0),Vector3.new(0,-(depth or 14),0),params)
 end
+-- (13/11, issue #73) A burn on the floor: a soft dark stain, no shape of its
+-- own, with a warm edge that cools in a moment. The radial "scorch" streaks
+-- read as a black 2D impact star under the Great Fireball (06/11 to 12/11):
+-- every scorch is drawn as this now.
+Kit.BURN={core=Color3.fromRGB(30,22,16),ember=Color3.fromRGB(255,128,48),shrink=.62}
+function Kit.burn(parent,position,normal,size,hold,fade,color,transparency)
+	normal=(normal or Vector3.yAxis).Unit
+	local side=if math.abs(normal.Y)>.9 then Vector3.xAxis else Vector3.yAxis
+	local right=side:Cross(normal).Unit
+	local cf=CFrame.fromMatrix(position+normal*.04,right,normal)*CFrame.Angles(0,math.random()*math.pi*2,0)
+	local sx,sz=size*(.85+math.random()*.3),size*(.85+math.random()*.3)
+	local p=new("Part",{Name="FXBurn",Size=Vector3.new(sx*.6,.05,sz*.6),CFrame=cf,Transparency=1,
+		Anchored=true,CanCollide=false,CanQuery=false,CanTouch=false,CastShadow=false},parent)
+	local white=color==nil or (color.R>.95 and color.G>.95 and color.B>.95)
+	local core=new("Decal",{Texture=BUILTIN.glow,Face=Enum.NormalId.Top,Color3=if white then Kit.BURN.core else color:Lerp(Kit.BURN.core,.6),Transparency=1},p)
+	local ember=new("Decal",{Texture=BUILTIN.glow,Face=Enum.NormalId.Top,Color3=Kit.BURN.ember,Transparency=1},p)
+	tween(core,.12,{Transparency=math.max(.22,transparency or 0)})
+	tween(ember,.06,{Transparency=.35})
+	task.delay(.08,function() if ember.Parent then tween(ember,.7,{Transparency=1}) end end)
+	tween(p,.14,{Size=Vector3.new(sx,.05,sz)},Enum.EasingStyle.Quad)
+	task.delay(hold,function() if core.Parent then tween(core,fade,{Transparency=1}) end end)
+	Debris:AddItem(p,hold+fade+.1)
+	return p
+end
 function Kit.ground(parent,position,normal,texture,size,hold,fade,color,transparency)
+	if texture=="scorch" then return Kit.burn(parent,position,normal,size*Kit.BURN.shrink,hold,fade,color,transparency) end
 	if not Kit.has(texture) then return nil end
 	normal=(normal or Vector3.yAxis).Unit
 	-- A flat part whose top face lies on the surface, spun at random.

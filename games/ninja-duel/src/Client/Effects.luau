@@ -731,10 +731,13 @@ function FX.tenketsuWorld(model,id)
 	return (part.CFrame*spec[2]).Position,part
 end
 -- Two red points and a thin glint across the eyes: the Sharingan reading.
+-- (13/11, #73) Kakashi has ONE Sharingan: his left eye only.
 local function eyeGlint(parent,model)
 	local head=model and model:FindFirstChild("Head")
 	if not head then return end
-	for _,x in {-.22,.22} do flash(parent,(head.CFrame*CFrame.new(x,.1,-.62)).Position,SHARINGAN,.12,.55,.22,0) end
+	local one=false
+	pcall(function() one=model:GetAttribute("LookMeshes")=="Kakashi" or model:GetAttribute("Fighter")=="Copycat" end)
+	for _,x in (if one then {-.22} else {-.22,.22}) do flash(parent,(head.CFrame*CFrame.new(x,.1,-.62)).Position,SHARINGAN,.12,.55,.22,0) end
 	local streak=block(parent,Vector3.new(1,.05,.05),head.CFrame*CFrame.new(0,.1,-.64),SHARINGAN,Enum.Material.Neon)
 	streak.Transparency=.1
 	tween(streak,.26,{Size=Vector3.new(2.4,.02,.02),Transparency=1})
@@ -744,6 +747,22 @@ local function eyeGlint(parent,model)
 	Debris:AddItem(light,.35)
 end
 FX.eyeGlint=eyeGlint
+-- (13/11, #73) A red glow round each lit Sharingan (or the one eye, `only`):
+-- a camera-facing halo on the eye's plate, so the eye reads in a medium shot.
+function FX.eyeGlow(aura,face,on,only)
+	for _,g in aura.eyeGlows or {} do if g.Parent then g:Destroy() end end
+	aura.eyeGlows=nil
+	if not on or not face then return end
+	aura.eyeGlows={}
+	for _,e in face.eyes or {} do
+		if e.part and not (only and e.side~=only) then
+			local b=new("BillboardGui",{Name="EyeGlow",Adornee=e.part,Size=UDim2.fromScale(.62,.62),LightInfluence=0,AlwaysOnTop=false,
+				MaxDistance=120,ZIndexBehavior=Enum.ZIndexBehavior.Sibling},e.part)
+			new("ImageLabel",{Image=TEX.glow,BackgroundTransparency=1,Size=UDim2.fromScale(1,1),ImageColor3=Color3.fromRGB(255,40,40),ImageTransparency=.35},b)
+			table.insert(aura.eyeGlows,b)
+		end
+	end
+end
 -- Sharingan Read / Focus read: the eyes, the afterimage where he stood that
 -- the swing bites, a dry cut. A whiff read is the eyes and a ring only.
 function FX:readCue(impact,folder)
@@ -1317,8 +1336,13 @@ function FX:substitute(position,to,fighter,model)
 	-- fantôme blanc ») No white copy of the body any more: the swap is hidden
 	-- in a thick poof of smoke the size of the body, and the log is found
 	-- standing in it where he stood (bark, two pale cut ends), then it topples.
-	smokePuff(self.folder,position,Color3.fromRGB(242,242,246),26,2.8)
-	smokePuff(self.folder,position-Vector3.new(0,1.8,0),Color3.fromRGB(232,232,236),14,2.2)
+	-- (13/11, issue #73: « elle ressemble à un fantôme blanc ») The poof was a
+	-- body-sized white cloud for nearly 3 s: it WAS the ghost, and the log
+	-- inside it was gone by the time it cleared. The poof is now a short grey
+	-- puff that thins in a second, low on the floor, and the log stays to be
+	-- seen (it falls, lies there, then fades).
+	smokePuff(self.folder,position-Vector3.new(0,.6,0),Color3.fromRGB(206,202,196),13,1.1)
+	smokePuff(self.folder,position-Vector3.new(0,2,0),Color3.fromRGB(190,184,176),9,.9)
 	if fighter=="Mirage" then
 		crows(self.folder,position,10,11)
 	else
@@ -1336,11 +1360,11 @@ function FX:substitute(position,to,fighter,model)
 		-- a nudge so it tips over instead of balancing on its end
 		log.AssemblyLinearVelocity=Vector3.new(0,2,0)
 		log.AssemblyAngularVelocity=stand.LookVector*2.2
-		task.delay(1.7,function()
+		task.delay(2.6,function()
 			if not holder.Parent then return end
-			for _,d in holder:GetChildren() do if d:IsA("BasePart") then tween(d,.4,{Transparency=1}) end end
+			for _,d in holder:GetChildren() do if d:IsA("BasePart") then tween(d,.5,{Transparency=1}) end end
 		end)
-		Debris:AddItem(holder,2.2)
+		Debris:AddItem(holder,3.2)
 	end
 	if to then smokePuff(self.folder,to,Color3.fromRGB(236,236,240),8,1.4) end
 	sound(anchorPart(self.folder,position),SOUND.whoosh,.4,.9)
@@ -2025,27 +2049,40 @@ function FX:fighter(model,actor,dt)
 			iris.Material=Enum.Material.Neon
 			iris.Color=if lit then Color3.fromRGB(255,36,36) else Color3.fromRGB(205,18,28)
 		end
-		-- Drawn faces (Shared/Face): Itachi's Sharingan always shows and burns
-		-- brighter when lit; Sasuke's comes with the reads, the casts and the
-		-- awakening.
-		if aura.face then
-			local want=if lit then "lit" elseif actor.fighterId=="Mirage" then "on" else "off"
-			if aura.eyeTint~=want then
-				aura.eyeTint=want
-				if want=="off" then Face.tint(aura.face,nil) else Face.tint(aura.face,if want=="lit" then Color3.fromRGB(255,40,40) else Color3.fromRGB(214,30,36),"sharingan") end
-			end
-		end
 		if aura.eyeLight then aura.eyeLight.Brightness=if lit then 2.2 else .5 end
 	end
-	-- Kakashi's awakening uncovers his one Sharingan (04/11: it was only a red
-	-- mantle; the left eye now turns, commas and all, while it lasts).
-	-- (06/11) It also shows while he holds a copied jutsu (Server/Copy): the
-	-- opponent sees that Kakashi has his jutsu.
-	if actor.fighterId=="Copycat" and aura.face then
-		local want=if ((actor.awaken or 0)>0 or actor.copy~=nil) and (actor.health or 1)>0 then "lit" else "off"
-		if aura.eyeTint~=want then
-			aura.eyeTint=want
-			if want=="off" then Face.tint(aura.face,nil) else Face.tint(aura.face,Color3.fromRGB(226,30,40),"sharingan",-1) end
+	-- (13/11, issue #73) The drawn Sharingan of every Uchiha and of Kakashi,
+	-- with its own number of commas per fighter and per form (Face.SHARINGAN:
+	-- Sasuke and Kakashi 2, 3 awakened for now; Itachi, Shisui, Madara 3).
+	--   Itachi: always on, brighter when lit; the Mangekyō only at its moments
+	--     (Face.mangekyoFor: his Tsukuyomi).
+	--   Sasuke, Shisui, Madara: with the reads, the casts, the counters, the
+	--     intro and the awakening.
+	--   Kakashi: ONE eye, his left (under the headband), while awakened or
+	--     while he holds a copied jutsu (Server/Copy); the right eye stays his.
+	-- A lit eye also gets a red glow round it (EyeGlow): the drawn eye is a few
+	-- pixels in a medium shot, the glow says "Sharingan" from 8 studs.
+	if aura.face and Face.SHARINGAN and Face.SHARINGAN[actor.fighterId or ""] then
+		local id=actor.fighterId
+		local alive=(actor.health or 1)>0
+		local awake=(actor.awaken or 0)>0
+		local lit=(actor.read or 0)>0 or (actor.counter or 0)>0 or (actor.intro or 0)>0 or awake
+			or actor.castId=="MirageCast" or actor.castId=="Read" or actor.castId=="FireBloom" or actor.castId=="PhoenixFlower" or actor.castId=="Chidori"
+			or actor.castId=="ShisuiGenjutsu"
+		local want
+		if not alive then want="off"
+		elseif id=="Mirage" then want=if Face.mangekyoOn(model) then "mangekyo" elseif lit then "lit" else "on"
+		elseif id=="Copycat" then want=if awake or actor.copy~=nil then "lit" else "off"
+		else want=if lit then "lit" else "off" end
+		local count=Face.tomoeFor(id,awake)
+		local key=want..count
+		if aura.eyeTint~=key then
+			aura.eyeTint=key
+			local only=if id=="Copycat" then -1 else nil
+			if want=="off" then Face.tint(aura.face,nil)
+			elseif want=="mangekyo" then Face.tint(aura.face,Color3.fromRGB(230,24,32),"mangekyo",only)
+			else Face.tint(aura.face,if want=="lit" then Color3.fromRGB(255,40,40) else Color3.fromRGB(214,30,36),"sharingan",only,count) end
+			FX.eyeGlow(aura,aura.face,want~="off" and want~="on",only)
 		end
 	end
 	self:expression(model,actor,aura)
@@ -2133,20 +2170,30 @@ function FX:fighter(model,actor,dt)
 	if chidori and not aura.chidori and (actor.health or 1)>0 then
 		local hand=model:FindFirstChild("RightHand") or root
 		local at=new("Attachment",{Name="Chidori"},hand)
+		-- (13/11, issue #73) The Chidori must read while Sasuke runs, climbs
+		-- the wall and dives: the sparks and the core ride WITH the hand
+		-- (LockedToPart; in world space they were left behind at speed and the
+		-- hand ran out of its own lightning), and a short blue streak trails
+		-- the hand when it moves.
 		local e=new("ParticleEmitter",{Texture=TEX.spark,Rate=220,Lifetime=NumberRange.new(.05,.14),Speed=NumberRange.new(6,16),SpreadAngle=Vector2.new(180,180),
 			Color=ColorSequence.new(Color3.fromRGB(190,220,255)),LightEmission=1,LightInfluence=0,Size=num({{0,1.1},{1,0}}),Transparency=num({{0,0},{1,1}}),
-			Rotation=NumberRange.new(0,360),RotSpeed=NumberRange.new(-400,400)},at)
+			Rotation=NumberRange.new(0,360),RotSpeed=NumberRange.new(-400,400),LockedToPart=true},at)
 		local core=new("ParticleEmitter",{Texture=TEX.glow,Rate=40,Lifetime=NumberRange.new(.08,.12),Speed=NumberRange.new(0,0),
-			Color=ColorSequence.new(Color3.fromRGB(220,236,255)),LightEmission=1,LightInfluence=0,Size=num({{0,1.4},{1,1.0}}),Transparency=num({{0,.2},{1,1}})},at)
+			Color=ColorSequence.new(Color3.fromRGB(220,236,255)),LightEmission=1,LightInfluence=0,Size=num({{0,1.6},{1,1.2}}),Transparency=num({{0,.15},{1,1}}),LockedToPart=true},at)
 		local light=new("PointLight",{Color=Color3.fromRGB(150,190,255),Brightness=1.6,Range=8,Shadows=false},at)
-		aura.chidori={attachment=at,emitter=e,core=core,light=light}
+		local t0=new("Attachment",{Name="ChidoriTrail0",Position=Vector3.new(0,.35,0)},hand)
+		local t1=new("Attachment",{Name="ChidoriTrail1",Position=Vector3.new(0,-.35,0)},hand)
+		local trail=new("Trail",{Attachment0=t0,Attachment1=t1,Lifetime=.16,MinLength=.05,FaceCamera=true,LightEmission=1,LightInfluence=0,
+			Color=ColorSequence.new(Color3.fromRGB(235,245,255),Color3.fromRGB(90,150,255)),
+			Transparency=num({{0,.1},{1,1}}),WidthScale=num({{0,1},{1,.2}})},hand)
+		aura.chidori={attachment=at,emitter=e,core=core,light=light,trail=trail,trailAt={t0,t1}}
 		if Kit.has("lightning") then
 			-- (Reference quality) the birds: arcs of lightning thrown out of the
 			-- hand, flickering through our own bolt sheet.
 			aura.chidori.bolts=Kit.stream(at,"lightning",{Rate=45,Lifetime=NumberRange.new(.05,.1),Speed=NumberRange.new(0,0),
 				FlipbookMode=Enum.ParticleFlipbookMode.Random,
 				Color=ColorSequence.new(Color3.fromRGB(170,210,255)),LightEmission=1,Size=num({{0,4.2},{1,5.6}}),
-				Transparency=num({{0,0},{1,.2}}),Rotation=NumberRange.new(0,360)})
+				Transparency=num({{0,0},{1,.2}}),Rotation=NumberRange.new(0,360),LockedToPart=true})
 			-- A hard white-blue core in the palm, pulsing.
 			-- (12/11, VFX bible: never plain Neon) a crackling shell; the bolts are LightningFX's.
 			local ball=block(self.folder,Vector3.one*1.2,hand.CFrame,Color3.fromRGB(214,234,255),Enum.Material.ForceField)
@@ -2159,6 +2206,8 @@ function FX:fighter(model,actor,dt)
 		aura.chidori.crackleAt=os.clock()
 	elseif not chidori and aura.chidori then
 		aura.chidori.emitter.Enabled=false;aura.chidori.core.Enabled=false
+		if aura.chidori.trail then aura.chidori.trail.Enabled=false;Debris:AddItem(aura.chidori.trail,.3) end
+		for _,a in aura.chidori.trailAt or {} do Debris:AddItem(a,.3) end
 		Kit.stop(aura.chidori.bolts)
 		if aura.chidori.ball then aura.chidori.ball:Destroy() end
 		Debris:AddItem(aura.chidori.attachment,.4)
@@ -2514,6 +2563,8 @@ require(script.Parent.PerceptionFX).install(FX,{block=block,sound=sound,anchorPa
 require(script.Parent.ByakuganFX).install(FX,{block=block,sound=sound,anchorPart=anchorPart,SOUND=SOUND})
 -- (06/11) Kakashi's Sharingan copy: the read and the copied cast (Server/Copy).
 require(script.Parent.CopyFX).install(FX,{new=new,block=block,tween=tween,sound=sound,flash=flash,burst=burst,anchorPart=anchorPart,num=num,TEX=TEX,SOUND=SOUND})
+-- (13/11, #73) Kakashi's hand seals read as seals: chakra between the palms, a beat on each seal.
+require(script.Parent.SealFX).install(FX,{new=new,tween=tween,flash=flash,burst=burst,num=num,TEX=TEX})
 -- (06/11) Kakashi's ninken: diving in, bursting out, the bite (Server/Hounds).
 require(script.Parent.HoundFX).install(FX,{new=new,block=block,tween=tween,sound=sound,flash=flash,burst=burst,anchorPart=anchorPart,num=num,smokePuff=smokePuff,TEX=TEX,SOUND=SOUND})
 -- (06/11) Water carries lightning: drips on a soaked body, the current in the water (Server/Interactions).
