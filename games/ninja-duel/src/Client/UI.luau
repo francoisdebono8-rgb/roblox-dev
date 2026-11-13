@@ -13,6 +13,10 @@ local Config=require(Shared.Config)
 local PAD_FACE={"□","△","○","×","D↑"}
 local ChakraMoves=require(Shared.ChakraMoves)
 local FirstMinute=require(Shared.FirstMinute)
+-- (Beta loop 13/11, DEC-037) the masters' path on the roster: the first kit,
+-- the locked ones, the masters who teach (Shared/MastersView).
+local MastersView=require(Shared.MastersView)
+local Masters=require(Shared.Masters)
 -- (B1 lot 3) the effects switch lives in the VFX kit (absent in headless tests)
 local okKit,FXKit=pcall(function() return require(script.Parent.VfxKit) end)
 if not okKit then FXKit=nil end
@@ -219,8 +223,11 @@ function UI.new(parent,send)
 		local seal=text(shell,"",UDim2.fromOffset(x+W-52,y-7),UDim2.fromOffset(48,14),12,palette.paper,TITLE_FONT,Enum.TextXAlignment.Center)
 		seal.ZIndex=3
 		seal.BackgroundColor3=palette.red;seal.BackgroundTransparency=1;corner(seal,4)
+		-- (Beta loop) the kit's mastery, a thin gold line along the plate's foot.
+		local bar=frame(tablet,UDim2.new(0,6,1,-3),UDim2.new(0,0,0,3),palette.gold,0)
+		bar.Visible=false
 		tablet.Activated:Connect(function() self:pick(self.side,id) end)
-		local t={tablet=tablet,edge=edge,glow=glow,label=label,seal=seal,other=seal,accent=accent,x=x,y=y,w=W,hover=false}
+		local t={tablet=tablet,edge=edge,glow=glow,label=label,seal=seal,other=seal,accent=accent,x=x,y=y,w=W,hover=false,bar=bar}
 		pcall(function()
 			tablet.MouseEnter:Connect(function() t.hover=true;self:liftTablet(t) end)
 			tablet.MouseLeave:Connect(function() t.hover=false;self:liftTablet(t) end)
@@ -231,7 +238,14 @@ function UI.new(parent,send)
 	-- The action row: training, online, private duel by code, and the stage.
 	local below=800
 	self.startButton=button(shell,"ENTER THE STAGE",UDim2.fromOffset(1140,below),UDim2.fromOffset(400,58),function()
-		if self.picking then send("Confirm")
+		if self.picking then send("Confirm");return end
+		-- (Beta loop) the masters' path decides first: the first kit taken, a
+		-- master's duel, a kit not learned yet tried in training.
+		local act=MastersView.action(self.kits,self.player)
+		if act.kind=="wait" then return
+		elseif act.kind=="choose" then send("ChooseStarter",{player=self.player})
+		elseif act.kind=="master" then send("MasterTrial",{player=act.via,master=self.player})
+		elseif act.kind=="try" then send("Tutorial",{player=self.player,bot=self.bot})
 		elseif self.simple then send("First",{player=self.player})
 		else send("Start",{player=self.player,bot=self.bot,level=self.aiLevel}) end
 	end,palette.red)
@@ -246,6 +260,14 @@ function UI.new(parent,send)
 		self.levelButton.Text="AI LEVEL  •  "..Text.upper(self.aiLevel)
 	end)
 	self.levelButton.TextSize=24
+	-- (Beta loop, DEC-037) A kit not learned yet can be bought at once, when
+	-- Roblox sells it (Config.Progression.Products); never a random draw.
+	self.buyButton=button(shell,"BUY THIS KIT",UDim2.fromOffset(1140,712),UDim2.fromOffset(400,52),function()
+		if self.picking then return end
+		local act=MastersView.action(self.kits,self.player)
+		if act.product then send("BuyKit",{player=self.player}) end
+	end,palette.gold)
+	self.buyButton.TextSize=24;self.buyButton.TextColor3=palette.ink;self.buyButton.Visible=false
 	self.startButton.TextSize=32
 	self.startStroke=create("UIStroke",self.startButton,{Color=palette.paper,Thickness=2.5,Transparency=.2,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
 	-- (04/11) The Prodigy Tournament against the AI (Server/Tournament).
@@ -538,6 +560,9 @@ function UI.new(parent,send)
 	inkTitle(self.resultTitle)
 	self.resultName=text(resultBox,"",UDim2.fromOffset(30,92),UDim2.fromOffset(540,36),30,palette.gold,TITLE_FONT,Enum.TextXAlignment.Center)
 	self.resultNote=text(resultBox,"",UDim2.fromOffset(30,132),UDim2.fromOffset(540,44),15,palette.muted,BODY_FONT,Enum.TextXAlignment.Center)
+	-- (Beta loop) the mastery earned, a kit learned (Shared/MastersView.result).
+	self.resultProgress=text(resultBox,"",UDim2.fromOffset(30,172),UDim2.fromOffset(540,20),15,palette.gold,TITLE_FONT,Enum.TextXAlignment.Center)
+	self.resultProgress.TextScaled=true;create("UITextSizeConstraint",self.resultProgress,{MaxTextSize=17})
 	-- In a tournament the card continues the bracket instead of a rematch.
 	self.rematchButton=button(resultBox,"REMATCH",UDim2.fromOffset(30,196),UDim2.fromOffset(540,52),function() send(if self.inCup then "CupBracket" else "Rematch") end,palette.red)
 	self.rosterButton=button(resultBox,"RETURN TO THE ROSTER",UDim2.fromOffset(30,260),UDim2.fromOffset(540,52),function() send(if self.inCup then "CupLeave" else "Selection") end)
@@ -648,6 +673,21 @@ function UI:refreshSelection()
 		t.seal.TextColor3=if t.mine then palette.paper else palette.ink
 		t.seal.BackgroundTransparency=if picked then 0 else 1
 		t.tablet.BackgroundColor3=if picked then Color3.fromRGB(44,38,48) else Color3.fromRGB(22,19,25)
+		-- (Beta loop) a kit not learned yet is dimmed and tagged; a learned one
+		-- shows its mastery.
+		local kit=MastersView.tablet(self.kits,id)
+		t.label.TextTransparency=if kit.locked then .5 else 0
+		if t.bar then
+			t.bar.Visible=(kit.progress or 0)>0
+			t.bar.Size=UDim2.new(kit.progress or 0,if kit.progress then -6 else 0,0,3)
+		end
+		if not picked and kit.tag~="" then
+			local bright=kit.status=="master" or kit.status=="starter"
+			t.seal.Text=kit.tag
+			t.seal.BackgroundTransparency=0
+			t.seal.BackgroundColor3=if bright then palette.gold else Color3.fromRGB(44,40,48)
+			t.seal.TextColor3=if bright then palette.ink else palette.muted
+		end
 		self:liftTablet(t)
 	end
 	local p,o=Fighters[self.player],Fighters[other]
@@ -659,6 +699,11 @@ function UI:refreshSelection()
 			st.name.TextColor3=accentOf(def):Lerp(palette.paper,.3)
 			st.sub.Text=string.format("AGE %d  •  %s",def.Age or 13,Text.upper(def.Title or ""))
 			st.note.Text=def.Description or ""
+			-- (Beta loop) your stage says where this kit stands on your path.
+			if side=="player" and self.kits and not self.picking then
+				local act=MastersView.action(self.kits,id)
+				if act.note then st.note.Text=act.note end
+			end
 			st.choosing.Visible=self.side==side and not self.picking
 			local accent=accentOf(def)
 			st.underline.BackgroundColor3=accent
@@ -673,6 +718,15 @@ function UI:refreshSelection()
 		end
 	end
 	self.matchup.Text=Text.upper((p.Name).."  VS  "..(o.Name))
+	-- (Beta loop) the stage button says what it will do with this kit.
+	if not self.picking and self.startButton then
+		local act=MastersView.action(self.kits,self.player)
+		self.startButton.Text=act.label or (if self.simple then "PLAY" else "ENTER THE STAGE")
+	end
+	if self.buyButton then
+		local act=MastersView.action(self.kits,self.player)
+		self.buyButton.Visible=act.product~=nil and not self.picking and (self.lastLobby==nil or self.lastLobby.phase=="Selection")
+	end
 	self.routeNote.Text=if p.Routes then Text.upper(p.Name).." STRINGS  "..Controls.localize(p.Routes) else ""
 end
 -- The controls sheet: opened over any screen, built for the device in hand
@@ -853,6 +907,22 @@ function UI:choose(id)
 	if self.onlineInfo and self.onlineInfo.ready then return end
 	self.player=id;self:refreshSelection();self.send("Pick",{player=id})
 end
+-- (Beta loop) the server's word on the player's kits (Progression.view, nil when
+-- the path is off). The first time they are known, the roster stands on the
+-- kit he last fought with, or on a starter for a new player.
+function UI:setKits(kits)
+	self.kits=kits
+	if type(kits)~="table" or kits.state~="ready" then return end
+	local want=nil
+	if kits.selected and kits.owned and kits.owned[kits.selected] then want=kits.selected
+	elseif kits.needStarter and not Masters.isStarter(self.player) then want=Masters.Starters[1] end
+	if want and not self.kitsSeeded then
+		self.player=want
+		if self.simple then self.bot=FirstMinute.rival(want) or self.bot end
+		if self.bot==want then for i,other in Roster do if other==want then self.bot=Roster[i%#Roster+1] break end end end
+	end
+	self.kitsSeeded=true
+end
 -- Roster, online waiting screen and online pick (the roster in versus mode).
 function UI:lobby(data)
 	local online=data.online
@@ -866,10 +936,12 @@ function UI:lobby(data)
 		self.notice.Text=string.format("ONLINE 1v1  •  THE DUEL STARTS IN %d s",math.ceil(online.remaining or 0))
 	else
 		self.opponentPick=nil
+		if data.phase=="Selection" then self:setKits(data.kits) end
 		self.opponentLabel.Text=if self.simple then "YOUR RIVAL" else "OPPONENT (AI)"
 		self.startButton.Text=if self.simple then "PLAY" else "ENTER THE STAGE"
 		self.tutorialButton.Text=if self.simple then "ALL MODES" else "TRAINING"
-		self.notice.Text=data.notice or (if self.simple then "PICK YOUR NINJA, THEN PLAY  •  30 SECONDS ON THE FIELD, THEN YOUR FIRST DUEL" else "")
+		self.notice.Text=data.notice or (if self.kits and self.kits.needStarter then "CHOOSE YOUR FIRST KIT  •  NARUTO, SASUKE OR LEE  •  THE OTHER KITS ARE TAUGHT BY THEIR MASTERS"
+			elseif self.simple then "PICK YOUR NINJA, THEN PLAY  •  30 SECONDS ON THE FIELD, THEN YOUR FIRST DUEL" else "")
 	end
 	self.lastLobby=data
 	local full=data.phase=="Selection" and not self.simple
@@ -1360,6 +1432,12 @@ function UI:render(data)
 	self.resultName.Text=fullName(winner).."  ADVANCES"
 	if Fighters[winner.fighterId or ""] then self.resultName.TextColor3=accentOf(Fighters[winner.fighterId]):Lerp(palette.paper,.25) end
 	self.resultNote.Text=if won then "The judges saw it too. The bracket waits for no one." else "Read the commitment. Find a better opening — prodigies learn fastest from defeat."
+	-- (Beta loop) the masters' path: what this duel earned.
+	self.resultProgress.Text=MastersView.result(data.progress,self.kits) or ""
+	if data.master then
+		self.resultName.Text="THE MASTER'S DUEL"
+		self.resultNote.Text=if won then "Your master saw enough." else "Your master is not convinced yet. Come back stronger."
+	end
 	-- Online: a rematch needs both players; a forfeit says so.
 	local online=data.online
 	self.rematchButton.Text=if not online then "REMATCH" elseif online.opponentLeft then "OPPONENT LEFT" elseif online.rematch then "WAITING FOR OPPONENT…"

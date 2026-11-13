@@ -138,6 +138,9 @@ function Tournament:fight(player)
 	else
 		first=cup.seats[a];second=cup.seats[b]
 	end
+	-- (DEC-036) Known before the bodies are built: a match he only watches is
+	-- two prodigies, his own is fought in his avatar.
+	s.spectate=if mine then nil else true
 	local ok=m:start(player,first,second,false,options)
 	if not ok and options then ok=m:start(player,first,second,false,nil) end
 	if not ok then return end
