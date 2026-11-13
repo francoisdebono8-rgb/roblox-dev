@@ -161,8 +161,12 @@ test("on: a duel that counts takes a learned kit, practice takes any; a master's
 	duel(true)
 	local after=Progression.view(player).mastery.Leaf or 0
 	assert(after>before,"a won duel earned no mastery")
+	assert(s.progress and s.progress.amount==after-before and s.progress.need==Masters.Need,"the result screen does not get what was earned")
 	while (Progression.view(player).mastery.Leaf or 0)<Masters.Need do duel(true) end
 	assert(Progression.view(player).masters.GentleFist.ready,"Neji does not teach after the mastery")
+	-- (Beta loop) the roster fights his duel with the kit that earned it.
+	assert(Progression.view(player).masters.GentleFist.via=="Leaf","Neji's duel is not fought with Lee")
+	assert(Progression.view(player).selected=="Leaf","the kit fought with is not the roster's pick")
 	-- Neji's duel: the master at his level; won, his kit is learned.
 	send("MasterTrial",{player="Leaf",master="GentleFist"})
 	assert(s.phase=="Duel" and s.botId=="GentleFist" and s.masterTrial=="GentleFist" and Matches.aiLevel(s)==Masters.DuelLevel,"the master's duel did not start")

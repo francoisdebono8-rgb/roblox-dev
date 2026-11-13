@@ -109,6 +109,12 @@ function Matches:session(player)
 		metrics={joined=os.clock()},owner=player}
 	self.sessions[player]=s
 	Matches.measure(player,s,"joined")
+	-- (DEC-036, beta loop 13/11) The player fights in his own Roblox avatar,
+	-- built once in the background; until it is ready, the prodigy's body.
+	if Config.AvatarBody and Config.AvatarBody.Enabled==true and type(player)=="userdata" then
+		s.avatarBody=true
+		pcall(AvatarBody.prepare,player)
+	end
 	return s
 end
 -- The duel goes: its bodies, effects and marks. (QA 12/11) The lane's
@@ -228,7 +234,8 @@ function Matches:start(player,playerId,botId,training,options)
 		-- session asks for it and the avatar is built (Server/AvatarBody);
 		-- otherwise the prodigy's own body.
 		local model,hum,root,joints
-		if id=="PlayerFighter" and s.avatarBody then model,hum,root,joints=AvatarBody.rig(player,s.folder,def,Fighters[def],cf,id) end
+		-- (A tournament match he only watches is two prodigies.)
+		if id=="PlayerFighter" and s.avatarBody and not s.spectate then model,hum,root,joints=AvatarBody.rig(player,s.folder,def,Fighters[def],cf,id) end
 		if not model then model,hum,root,joints=World.rig(s.folder,Fighters[def],cf,id) end
 		return s.combat:add(id,model,hum,root,joints,def,kit)
 	end
@@ -236,6 +243,8 @@ function Matches:start(player,playerId,botId,training,options)
 	s.bot=actor("AIFighter",botId,s.origin+Vector3.new(0,3,-Config.StartDistance),s.origin+Vector3.new(0,3,Config.StartDistance),botKit)
 	s.human.target=s.bot; s.bot.target=s.human; s.human.locked=true; s.bot.locked=true
 	player.Character=s.human.model
+	-- (Beta loop) a learned kit he fights with is his roster's pick next time.
+	if not s.spectate then Progression.remember(player,playerId) end
 	s.ai=AI.new(s.combat,s.bot,player.UserId%100000+ s.epoch,Matches.aiLevel(s))
 	s.finishing=false
 	-- Tournament rounds: first to two (one in training).
@@ -268,7 +277,7 @@ function Matches:roundOver(s,winner,notify,advance)
 	if decided and not s.online and s.owner and s.human then
 		local won=winner==s.human
 		local gained=Progression.duelEnded(s.owner,s,won)
-		s.progress={mastery=gained and gained.mastery,gained=gained~=nil,fighter=s.playerId}
+		s.progress={mastery=gained and gained.mastery,gained=gained~=nil,amount=gained and gained.amount,fighter=s.playerId,need=Masters.Need}
 		if s.masterTrial and won then
 			local ok=Progression.learnFromMaster(s.owner,s.masterTrial)
 			if ok then s.progress.learned=s.masterTrial end

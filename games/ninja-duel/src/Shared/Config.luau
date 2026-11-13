@@ -179,7 +179,14 @@ return {
 	-- off until the roster screen shows it; Live opens the live DataStore;
 	-- Products maps a kit to its Developer Product id (empty: nothing sold);
 	-- MasteryPass is the 2x mastery game pass id (0: none).
-	Progression = { Enabled = false, Live = false, Products = {}, MasteryPass = 0 },
+	-- (Beta loop, 13/11: « qu'on soit proche de la vraie boucle du jeu ») On in
+	-- the beta: a new player picks one kit among three, the others are taught by
+	-- their masters. Live = the published game's own store (progress kept
+	-- between visits); Studio always uses the DEV store.
+	Progression = { Enabled = true, Live = true, Products = {}, MasteryPass = 0 },
+	-- (DEC-036) The player's fighter is his own Roblox avatar wearing the kit
+	-- (Server/AvatarBody); the AI's and the watched fighters stay the prodigies.
+	AvatarBody = { Enabled = true },
 	AI = { Tick = 0.18, Reaction = 0.38, Aggression = 0.72, Defense = 0.58, Technique = 0.34,
 		TechniqueGap = 2.6, TechniqueJitter = 2.6, ReadGuard = 0.3, ReadDodge = 0.16, ReadPoke = 0.22, GuardRead = 0.07,
 		Feint = 0.1, ProbeTool = 2.4, Disengage = 0.45, WallRun = 0.35,

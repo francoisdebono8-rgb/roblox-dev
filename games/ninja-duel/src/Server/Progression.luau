@@ -30,7 +30,9 @@ P.LoadTries=5
 P.LoadRetry=3
 
 function P.config() return Config.Progression or {} end
-function P.enabled() return P.config().Enabled==true end
+-- On once Config says so AND the profiles' store is up (Server/Main starts it):
+-- a server or a headless suite that never starts it keeps every kit open.
+function P.enabled() return P.config().Enabled==true and P.repo~=nil end
 function P.profileId(player) return "u_"..tostring(player.UserId) end
 
 -- The store: the DataStore when Roblox gives it, else memory for this session.
@@ -94,7 +96,8 @@ function P.view(player)
 	out.starter=k.starter;out.selected=k.selected;out.needStarter=k.starter==nil
 	for id in Masters.Map do
 		local ok,why,best=Masters.canLearn(k,id)
-		out.masters[id]={ready=ok,missing=if ok then nil else why,best=best,product=(P.config().Products or {})[id]}
+		-- `via`: the learned kit he fights the master's duel with.
+		out.masters[id]={ready=ok,via=if ok then why else nil,missing=if ok then nil else why,best=best,product=(P.config().Products or {})[id]}
 	end
 	return out
 end
@@ -118,6 +121,13 @@ end
 function P.chooseStarter(player,id) return P.run(player,"chooseStarter",{fighter=id}) end
 function P.select(player,id) return P.run(player,"selectKit",{fighter=id}) end
 function P.learnFromMaster(player,id) return P.run(player,"learnKit",{fighter=id,via="master"}) end
+-- The kit he fights with becomes the roster's pick next time (no command when
+-- it already is, nor for a kit he does not own: practice).
+function P.remember(player,id)
+	if not P.enabled() or not P.ready(player) then return end
+	local k=P.handles[player].data.kits
+	if k.owned[id] and k.selected~=id then P.select(player,id) end
+end
 
 -- A decided duel: mastery for the kit fought with, when it is owned and the
 -- duel counts (not practice, not a watched match, not an autopilot).
@@ -132,6 +142,7 @@ function P.duelEnded(player,s,won)
 	if P.boost[player] then amount=math.min(Masters.Gain.Max,amount*2) end
 	if amount<=0 then return nil end
 	local ok,result=P.run(player,"gainMastery",{fighter=id,amount=amount})
+	if ok and type(result)=="table" then result.amount=amount end
 	return if ok then result else nil
 end
 
@@ -155,6 +166,8 @@ function P.processReceipt(info)
 	local ok=P.run(player,"learnKit",{fighter=kit,via="purchase",receipt=receipt})
 	if not ok then return Decision.NotProcessedYet end
 	local saved=P.repo:save(h)
+	-- (Beta loop) the roster shows the kit bought without a return trip.
+	if saved and P.onLoaded then task.spawn(pcall,P.onLoaded,player) end
 	return if saved then Decision.PurchaseGranted else Decision.NotProcessedYet
 end
 
@@ -170,8 +183,9 @@ end
 -- The live hooks (Server/Main): load on join (then `onLoaded(player)`),
 -- release on leave, save every 10 s check, everything on shutdown, receipts.
 function P.start(onLoaded)
-	if not P.enabled() or P.started then return end
+	if P.config().Enabled~=true or P.started then return end
 	P.started=true
+	P.onLoaded=onLoaded
 	P.init()
 	local function join(player)
 		task.spawn(function()

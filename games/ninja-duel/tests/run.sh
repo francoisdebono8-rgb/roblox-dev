@@ -54,6 +54,7 @@ run Leftovers "$LUNE" run tests/Leftovers.spec.luau
 run Appearance "$LUNE" run tests/Appearance.spec.luau
 run Avatar "$LUNE" run tests/Avatar.spec.luau
 run Masters "$LUNE" run tests/Masters.spec.luau
+run MastersView "$LUNE" run tests/MastersView.spec.luau
 run Spacing "$LUNE" run tests/Spacing.spec.luau
 run StepSpeeds "$LUNE" run tests/StepSpeeds.spec.luau
 run ReactionSides "$LUNE" run tests/ReactionSides.spec.luau
