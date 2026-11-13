@@ -147,7 +147,61 @@ function FamilyFX.install(FX,kit)
 	-- length, each following the path the head really took (a snake, not a
 	-- stiff rod waving); the water dragon also has horns and a jaw.
 	local function segmentsFor(look) return math.clamp(math.floor(look.size[3]/1.1),6,18) end
+	-- (13/11, issue #73: « le Dragon de terre se résume à quelques blocs de
+	-- roche ») The Doton dragon is rock: a wedge head with a snout, an open
+	-- lower jaw, horns swept back, brow ridges and ember eyes; a body of
+	-- tumbling slabs (each its own tilt, two tones), a ridge of spines on its
+	-- back; earth and pebbles pouring off it as it goes. Every part keeps its
+	-- shadow (a solid thing, ShadowFX).
+	local function earthSerpent(look)
+		local m=new("Model",{Name="FamilySerpent"})
+		pcall(m.SetAttribute,m,"KeepShadow",true)
+		local s=look.size
+		local rock,dark=c3(look.color),c3(look.color2)
+		local rng=Random.new()
+		local w=s[1]
+		local head=block(m,Vector3.new(w*1.25,w*.95,w*1.6),CFrame.new(),rock,Enum.Material.Slate)
+		local parts={}
+		local n=segmentsFor(look)
+		for i=1,n do
+			local k=1-(i/n)*.7
+			local seg=block(m,Vector3.new(w*k,w*k*.9,w*k*1.3),CFrame.new(0,0,i*s[3]/(n+1)),if i%2==0 then dark else rock,Enum.Material.Slate)
+			seg.Name="Segment"..i;seg.Anchored=true
+			-- a spine on every other slab, leaning back
+			if i%2==1 and i<n-1 then
+				local spine=block(m,Vector3.new(w*k*.28,w*k*.7,w*k*.5),CFrame.new(0,w*k*.55,i*s[3]/(n+1)+w*k*.1)*CFrame.Angles(math.rad(-28),0,0),dark,Enum.Material.Slate)
+				spine.Anchored=false;spine.Massless=true
+				new("WeldConstraint",{Part0=seg,Part1=spine},seg)
+			end
+			table.insert(parts,seg)
+		end
+		local attach={}
+		-- snout and the open lower jaw
+		table.insert(attach,block(m,Vector3.new(w*.9,w*.5,w*.9),CFrame.new(0,w*.12,-w*1.05)*CFrame.Angles(math.rad(8),0,0),rock,Enum.Material.Slate))
+		table.insert(attach,block(m,Vector3.new(w*.8,w*.26,w*1.0),CFrame.new(0,-w*.42,-w*.85)*CFrame.Angles(math.rad(-24),0,0),dark,Enum.Material.Slate))
+		for _,side in {-1,1} do
+			-- horns swept back, brow ridge, ember eye
+			table.insert(attach,block(m,Vector3.new(w*.16,w*.2,w*1.1),CFrame.new(side*w*.42,w*.55,w*.55)*CFrame.Angles(math.rad(24),math.rad(side*14),0),dark,Enum.Material.Slate))
+			table.insert(attach,block(m,Vector3.new(w*.36,w*.14,w*.4),CFrame.new(side*w*.34,w*.42,-w*.62)*CFrame.Angles(0,0,math.rad(side*-14)),dark,Enum.Material.Slate))
+			local eye=ball(m,Vector3.new(w*.16,w*.12,w*.08),CFrame.new(side*w*.36,w*.3,-w*.8),Color3.fromRGB(255,170,60),Enum.Material.Glass,.05)
+			eye.CastShadow=false
+			table.insert(attach,eye)
+		end
+		for _,a in attach do
+			a.Anchored=false;a.Massless=true
+			new("WeldConstraint",{Part0=head,Part1=a},head)
+		end
+		head.CFrame=head.CFrame*CFrame.Angles(0,0,math.rad(rng:NextNumber(-4,4)))
+		m.PrimaryPart=head
+		-- earth pouring off: dust behind the head, pebbles falling
+		spray(head,Color3.fromRGB(150,128,100),40,w*.5,3)
+		local at=new("Attachment",{Position=Vector3.new(0,-w*.3,w*.4)},head)
+		new("ParticleEmitter",{Texture=TEX.spark,Rate=28,Lifetime=NumberRange.new(.4,.7),Speed=NumberRange.new(1,3),SpreadAngle=Vector2.new(60,60),
+			Color=ColorSequence.new(dark),LightInfluence=1,Size=num({{0,.35},{1,.25}}),Acceleration=Vector3.new(0,-40,0),EmissionDirection=Enum.NormalId.Bottom},at)
+		return m
+	end
 	SHAPES.serpent=function(look)
+		if look.zone=="crater" or look.launch=="Ground" then return earthSerpent(look) end
 		local m=new("Model",{Name="FamilySerpent"})
 		local s=look.size
 		local water=look.zone=="water"

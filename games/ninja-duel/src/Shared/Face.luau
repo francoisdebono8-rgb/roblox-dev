@@ -103,6 +103,104 @@ local function sz(w,h,x,y) return UDim2.fromScale(x/w,y/h) end
 local EW,EH=.62,.82 -- eye plate
 local MW,MH=.7,.42 -- mouth plate
 
+-- (13/11, issue #73, François) The Sharingan, one per fighter and per form:
+-- real commas (tomoe), not dots; how many is a setting, easy to change back
+-- ("forme de base" = outside the awakening; the awakened count is François's
+-- "oui peut-être": he judges it in play). Only Itachi has the Mangekyō at this
+-- age, and only at given moments (his Tsukuyomi): Face.mangekyoFor.
+Face.SHARINGAN={
+	Lion={base=2,awake=3},    -- Sasuke (awake: the Curse Mark)
+	Copycat={base=2,awake=3}, -- Kakashi, one eye (awake: the uncovered Sharingan)
+	Mirage={base=3,awake=3,mangekyo=true}, -- Itachi
+	Flicker={base=3,awake=3}, -- Shisui (no Mangekyō yet: Wave2)
+	Rival={base=3,awake=3},   -- Madara, child
+}
+local ALIAS={Sasuke="Lion",Kakashi="Copycat",Itachi="Mirage",Shisui="Flicker",Madara="Rival"}
+function Face.tomoeFor(id,awake)
+	local s=Face.SHARINGAN[id or ""] or Face.SHARINGAN[ALIAS[id or ""] or ""]
+	if not s then return 3 end
+	return math.clamp(if awake then (s.awake or s.base) else s.base,1,3)
+end
+-- Where the commas sit for 1, 2 or 3 (degrees, 0 = right, screen y down).
+Face.TOMOE_LAYOUT={{-90},{-90,90},{-90,30,150}}
+local INK=Color3.fromRGB(16,8,10)
+-- One comma: a round head and a tail that tapers off along the ring,
+-- trailing behind the way the pattern turns.
+local function comma(parent,i)
+	local head=new("Frame",{Name="Tomoe",AnchorPoint=Vector2.new(.5,.5),Size=UDim2.fromScale(.22,.22),BackgroundColor3=INK,BorderSizePixel=0,ZIndex=3},parent)
+	round(head,.5)
+	local tail=new("Frame",{Name="Tail",AnchorPoint=Vector2.new(0,.5),Position=UDim2.fromScale(.5,.5),Size=UDim2.fromScale(1.5,.78),
+		BackgroundColor3=INK,BorderSizePixel=0,ZIndex=3},head)
+	round(tail,.5)
+	new("UIGradient",{Transparency=NumberSequence.new({NumberSequenceKeypoint.new(0,0),NumberSequenceKeypoint.new(.55,0),NumberSequenceKeypoint.new(1,.85)})},tail)
+	head:SetAttribute("Slot",i)
+	return head
+end
+-- Places `count` commas (1-3) on a drawing made by Face.drawSharingan.
+function Face.setTomoe(drawing,count)
+	if not drawing then return end
+	count=math.clamp(count or 3,1,3)
+	local layout=Face.TOMOE_LAYOUT[count]
+	for _,t in drawing:GetChildren() do
+		if t.Name=="Tomoe" then
+			local slot=t:GetAttribute("Slot") or 1
+			local deg=layout[slot]
+			t.Visible=deg~=nil
+			if deg then
+				local a=math.rad(deg)
+				t.Position=UDim2.fromScale(.5+.3*math.cos(a),.5+.3*math.sin(a))
+				-- the tail follows the ring backward (the pattern turns clockwise)
+				t.Rotation=deg-90-24
+			end
+		end
+	end
+	drawing:SetAttribute("Tomoe",count)
+end
+-- The Sharingan drawn into `parent` (an iris, or a billboard): a square
+-- overlay with the dark ring the commas ride on.
+function Face.drawSharingan(parent,count)
+	local d=new("Frame",{Name="Sharingan",AnchorPoint=Vector2.new(.5,.5),Position=UDim2.fromScale(.5,.5),Size=UDim2.fromScale(1,1),
+		BackgroundTransparency=1,Visible=false,ZIndex=2},parent)
+	new("UIAspectRatioConstraint",{AspectRatio=1},d)
+	local ring=new("Frame",{Name="Ring",AnchorPoint=Vector2.new(.5,.5),Position=UDim2.fromScale(.5,.5),Size=UDim2.fromScale(.6,.6),BackgroundTransparency=1,ZIndex=2},d)
+	round(ring,.5)
+	new("UIStroke",{Thickness=2,Color=INK,Transparency=.15},ring)
+	for i=1,3 do comma(d,i) end
+	Face.setTomoe(d,count or 3)
+	return d
+end
+-- Itachi's Mangekyō: a black pinwheel of three curved blades round the pupil.
+function Face.drawMangekyo(parent)
+	local d=new("Frame",{Name="Mangekyo",AnchorPoint=Vector2.new(.5,.5),Position=UDim2.fromScale(.5,.5),Size=UDim2.fromScale(1,1),
+		BackgroundTransparency=1,Visible=false,ZIndex=2},parent)
+	new("UIAspectRatioConstraint",{AspectRatio=1},d)
+	local core=new("Frame",{Name="Core",AnchorPoint=Vector2.new(.5,.5),Position=UDim2.fromScale(.5,.5),Size=UDim2.fromScale(.3,.3),BackgroundColor3=INK,BorderSizePixel=0,ZIndex=3},d)
+	round(core,.5)
+	for k=0,2 do
+		local a=k*120
+		-- each blade: out from the pupil, then bent along the rim
+		for _,seg in {{r=.13,len=.34,bend=10,w=.2,off=0},{r=.33,len=.3,bend=62,w=.16,off=22},{r=.44,len=.16,bend=95,w=.1,off=38}} do
+			local ang=math.rad(a+seg.off)
+			local blade=new("Frame",{Name="Blade",AnchorPoint=Vector2.new(.5,.5),Position=UDim2.fromScale(.5+seg.r*math.cos(ang),.5+seg.r*math.sin(ang)),
+				Size=UDim2.fromScale(seg.len,seg.w),Rotation=a+seg.bend,BackgroundColor3=INK,BorderSizePixel=0,ZIndex=3},d)
+			round(blade,.5)
+		end
+	end
+	local rim=new("Frame",{Name="Rim",AnchorPoint=Vector2.new(.5,.5),Position=UDim2.fromScale(.5,.5),Size=UDim2.fromScale(.94,.94),BackgroundTransparency=1,ZIndex=2},d)
+	round(rim,.5)
+	new("UIStroke",{Thickness=2,Color=INK,Transparency=.3},rim)
+	return d
+end
+-- (client) Itachi's eyes turn to the Mangekyō for `seconds` (Effects reads it).
+function Face.mangekyoFor(model,seconds,clock)
+	if not model then return end
+	pcall(function() model:SetAttribute("NDMangekyoUntil",(clock or os.clock)()+seconds) end)
+end
+function Face.mangekyoOn(model,clock)
+	local ok,v=pcall(function() return model:GetAttribute("NDMangekyoUntil") end)
+	return ok and type(v)=="number" and v>(clock or os.clock)()
+end
+
 -- spec fields (all optional): iris, irisDark, pupil (false = none), style
 -- ("normal" | "round" | "pale" | "ringed"), sclera (Vector2 studs), eyeX,
 -- eyeY, brow (Color3, false = none), browThick, lash, skin, mood (the idle
@@ -139,15 +237,13 @@ function Face.build(model,spec)
 				BackgroundColor3=Color3.fromRGB(16,14,20),BorderSizePixel=0},e.iris)
 			round(e.pupil,.5)
 		end
-		-- Sharingan commas, shown by Face.tint(..., "sharingan").
+		-- The Sharingan (real commas, their number per fighter: Face.SHARINGAN),
+		-- shown by Face.tint(..., "sharingan"); the Mangekyō only for those
+		-- who have it (spec.mangekyo).
 		e.tomoe={}
-		for k=0,2 do
-			local a=math.rad(k*120-90)
-			local t=new("Frame",{Name="Tomoe",AnchorPoint=Vector2.new(.5,.5),Position=UDim2.fromScale(.5+.3*math.cos(a),.52+.3*math.sin(a)),Size=UDim2.fromScale(.2,.2),
-				BackgroundColor3=Color3.fromRGB(16,10,12),BorderSizePixel=0,Visible=spec.sharingan==true},e.iris)
-			round(t,.5)
-			table.insert(e.tomoe,t)
-		end
+		e.sharingan=Face.drawSharingan(e.iris,spec.tomoe or 3)
+		e.sharingan.Visible=spec.sharingan==true
+		if spec.mangekyo then e.mangekyo=Face.drawMangekyo(e.iris) end
 		e.shine=new("Frame",{Name="Shine",AnchorPoint=Vector2.new(.5,.5),Position=UDim2.fromScale(.34,.3),Size=UDim2.fromScale(.32,.26),
 			BackgroundColor3=Color3.new(1,1,1),BorderSizePixel=0},e.iris)
 		round(e.shine,.5)
@@ -262,7 +358,10 @@ function Face.find(model)
 					lash=gui:FindFirstChild("Lash"),flick=gui:FindFirstChild("Flick"),brow=gui:FindFirstChild("Brow"),ring=gui:FindFirstChild("Ring"),
 					gradient=iris and iris:FindFirstChildOfClass("UIGradient"),closed={},tomoe={}}
 				for _,c in gui:GetChildren() do if c.Name=="Closed" then table.insert(e.closed,c) end end
-				if iris then for _,t in iris:GetChildren() do if t.Name=="Tomoe" then table.insert(e.tomoe,t) end end end
+				if iris then
+					for _,t in iris:GetChildren() do if t.Name=="Tomoe" then table.insert(e.tomoe,t) end end -- (places built before 13/11)
+					e.sharingan=iris:FindFirstChild("Sharingan");e.mangekyo=iris:FindFirstChild("Mangekyo")
+				end
 				e.side=if (model:FindFirstChild("Head") and (model.Head.CFrame:PointToObjectSpace(p.Position).X>0)) then 1 else -1
 				table.insert(face.eyes,e)
 			end
@@ -410,14 +509,17 @@ function Face.set(face,name,blink)
 	return face
 end
 
--- Iris colour override (nil restores): "sharingan" shows the commas. `only`
--- (-1 his left, 1 his right) tints one eye: Kakashi's single Sharingan.
-function Face.tint(face,color,kind,only)
+-- Iris colour override (nil restores): "sharingan" shows the commas
+-- (`count` of them, 1-3, default 3), "mangekyo" the Mangekyō where the face
+-- has one (else the three commas). `only` (-1 his left, 1 his right) tints one
+-- eye: Kakashi's single Sharingan; the other eye is restored.
+function Face.tint(face,tint,kind,only,count)
 	if not face then return end
 	for _,e in face.eyes do
 		if not e.iris then continue end
-		if color and only and e.side~=only then continue end
 		e.restore=e.restore or {color=e.iris.BackgroundColor3,gradient=e.gradient and e.gradient.Color}
+		-- this eye's colour (nil: restored)
+		local color=if tint~=nil and not (only and e.side~=only) then tint else nil
 		if color then
 			e.iris.BackgroundColor3=color
 			if e.gradient then e.gradient.Color=ColorSequence.new(color:Lerp(Color3.new(),.35),color) end
@@ -425,9 +527,19 @@ function Face.tint(face,color,kind,only)
 			e.iris.BackgroundColor3=e.restore.color
 			if e.gradient and e.restore.gradient then e.gradient.Color=e.restore.gradient end
 		end
-		for _,t in e.tomoe do t.Visible=color~=nil and kind=="sharingan" end
+		local mangekyo=color~=nil and kind=="mangekyo" and e.mangekyo~=nil
+		local sharingan=color~=nil and (kind=="sharingan" or (kind=="mangekyo" and not mangekyo))
+		for _,t in e.tomoe do t.Visible=sharingan end
+		if e.sharingan then
+			e.sharingan.Visible=sharingan
+			if sharingan then Face.setTomoe(e.sharingan,if kind=="mangekyo" then 3 else count) end
+		end
+		if e.mangekyo then e.mangekyo.Visible=mangekyo end
 		e.tintKind=if color then kind else nil
-		if e.pupil then e.pupil.Size=if kind=="fox" and color then UDim2.fromScale(.16,.62) else UDim2.fromScale(.42,.42) end
+		if e.pupil then
+			e.pupil.Visible=not mangekyo
+			e.pupil.Size=if kind=="fox" and color then UDim2.fromScale(.16,.62) elseif sharingan then UDim2.fromScale(.26,.26) else UDim2.fromScale(.42,.42)
+		end
 		e.gui.LightInfluence=if color then .1 else .55
 	end
 end

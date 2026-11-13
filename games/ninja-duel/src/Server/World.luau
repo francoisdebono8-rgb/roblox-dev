@@ -1180,7 +1180,9 @@ function World.defaultFace(model,def)
 	local hair=Color3.fromRGB(table.unpack(def.Hair or {40,32,30}))
 	local iris=if def.Iris then Color3.fromRGB(table.unpack(def.Iris)) else Color3.fromRGB(table.unpack(def.Color or {80,70,60})):Lerp(Color3.fromRGB(30,26,30),.45)
 	pcall(Face.build,model,{iris=iris,irisDark=iris:Lerp(Color3.new(0,0,0),.5),skin=Color3.fromRGB(table.unpack(def.Skin or {250,224,200})),
-		brow=hair:Lerp(Color3.new(0,0,0),.15),lash=Color3.fromRGB(26,22,28),mood="calm",sclera=Vector2.new(.3,.27),eyeX=.3,eyeY=-.04})
+		brow=hair:Lerp(Color3.new(0,0,0),.15),lash=Color3.fromRGB(26,22,28),mood="calm",sclera=Vector2.new(.3,.27),eyeX=.3,eyeY=-.04,
+		-- (13/11) the Uchiha of the later waves (Shisui, Madara) carry a Sharingan
+		tomoe=Face.tomoeFor(def.Name)})
 	Face.useShape("can")
 	Face.BoxProfile=saved
 end

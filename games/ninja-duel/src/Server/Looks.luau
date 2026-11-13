@@ -347,7 +347,7 @@ D.Sasuke=function(model,def)
 		local mark=piece(model,"Head","CurseMark",Vector3.new(.12,.2,.03),Face.onHead(-58-k*7,-.42+k*.16,.01)*A(0,0,R(20-k*15)),rgb(14,10,16),{mesh="Sphere",shadow=false})
 		if mark then mark.Transparency=1 end
 	end
-	Face.build(model,{iris=rgb(46,46,70),irisDark=rgb(16,16,26),skin=skin,brow=rgb(30,34,56),lash=rgb(20,20,30),mood="cool"})
+	Face.build(model,{iris=rgb(46,46,70),irisDark=rgb(16,16,26),skin=skin,brow=rgb(30,34,56),lash=rgb(20,20,30),mood="cool",tomoe=Face.tomoeFor("Lion")})
 	settle(model)
 end
 
@@ -551,7 +551,7 @@ D.Itachi=function(model,def)
 	for _,s in {-1,1} do
 		piece(model,"Head","TearLine",Vector3.new(.025,.2,.02),Face.onHead(s*30,-.28,.012)*A(0,0,R(s*-12)),rgb(150,110,104),{shadow=false})
 	end
-	Face.build(model,{iris=rgb(214,30,36),irisDark=rgb(140,10,20),skin=skin,brow=hair,lash=rgb(20,18,24),mood="cool",lids=.1,sharingan=true})
+	Face.build(model,{iris=rgb(214,30,36),irisDark=rgb(140,10,20),skin=skin,brow=hair,lash=rgb(20,18,24),mood="cool",lids=.1,sharingan=true,tomoe=Face.tomoeFor("Mirage"),mangekyo=true})
 	settle(model)
 end
 
@@ -657,7 +657,7 @@ D.Kakashi=function(model,def)
 	end
 	for _,x in {-.4,-.1,.22} do lock(model,"Fringe",Vector3.new(x,.74,-.52),Vector3.new(x*.3-.15,-1,-.8),.6,.32,.2,hair) end
 	for _,s in {-1,1} do lock(model,"SideLock",Vector3.new(s*.86,.3,-.3),Vector3.new(s*.15,-1,-.1),.7,.3,.2,hair) end
-	Face.build(model,{iris=rgb(60,60,70),irisDark=rgb(24,24,30),skin=skin,brow=rgb(150,156,170),lash=rgb(30,30,38),mood="lazy",mouth=false,lids=.42,eyeY=.02})
+	Face.build(model,{iris=rgb(60,60,70),irisDark=rgb(24,24,30),skin=skin,brow=rgb(150,156,170),lash=rgb(30,30,38),mood="lazy",mouth=false,lids=.42,eyeY=.02,tomoe=Face.tomoeFor("Copycat")})
 	settle(model)
 end
 
