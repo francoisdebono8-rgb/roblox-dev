@@ -6,6 +6,10 @@
 local Debris=game:GetService("Debris")
 local TweenService=game:GetService("TweenService")
 local Kit=require(script.Parent.VfxKit)
+-- (13/11) The modelled props (weapons...): built once in the background; until
+-- they are ready (or headless) the part-built ones below are used.
+local MeshKit=require(script.Parent.MeshKit)
+pcall(function() task.spawn(MeshKit.prepare) end)
 local Face=require(game:GetService("ReplicatedStorage").NinjaDuel.Face)
 local FX={};FX.__index=FX
 -- Cel flame streams of the fireballs in flight (VfxKit), by model.
@@ -163,6 +167,8 @@ end
 -- Kunai built along -Z (point first). The grip centre is the origin, so the
 -- same model sits correctly in a hand and flies point-first.
 function FX.buildKunai(marked)
+	local modelled=MeshKit.model(if marked then "MarkedKunai" else "Kunai")
+	if modelled then return modelled end
 	local model=new("Model",{Name=if marked then "MarkedKunai" else "Kunai"})
 	local root=block(model,Vector3.new(.1,.1,.1),CFrame.new(),Color3.new(),nil);root.Name="Root";root.Transparency=1
 	local parts={}
@@ -200,6 +206,8 @@ end
 -- along -Z like the kunai (grip centre at the origin). White-wrapped grip,
 -- small round guard, a long straight blade with a pale chakra edge.
 function FX.buildTanto()
+	local modelled=MeshKit.model("Tanto")
+	if modelled then return modelled end
 	local model=new("Model",{Name="Tanto"})
 	local root=block(model,Vector3.new(.1,.1,.1),CFrame.new(),Color3.new(),nil);root.Name="Root";root.Transparency=1
 	local grip=block(model,Vector3.new(.62,.15,.15),CFrame.new(0,0,.18)*CFrame.Angles(0,math.pi/2,0),Color3.fromRGB(232,230,222),Enum.Material.Fabric)
@@ -221,6 +229,8 @@ function FX.buildTanto()
 	return model
 end
 function FX.buildShuriken()
+	local modelled=MeshKit.model("Shuriken")
+	if modelled then return modelled end
 	local model=new("Model",{Name="Shuriken"})
 	local root=block(model,Vector3.new(.1,.1,.1),CFrame.new(),Color3.new());root.Name="Root";root.Transparency=1
 	local parts={}

@@ -8,6 +8,7 @@ local Looks=require(Shared.Looks)
 local SealJutsu=require(game:GetService("ReplicatedStorage").NinjaDuel.SealJutsu)
 local Fighters=require(Shared.Fighters)
 local ToadFX=require(script.Parent.ToadFX)
+local DragonFX=require(script.Parent.DragonFX)
 local FamilyFX={}
 -- Studio/test switch: drawing errors surface instead of being swallowed.
 FamilyFX.strict=false
@@ -266,9 +267,32 @@ function FamilyFX.install(FX,kit)
 			Color=ColorSequence.new(foam),LightEmission=.3,LightInfluence=.6,Size=num({{0,.3},{1,.15}}),Acceleration=Vector3.new(0,-36,0),EmissionDirection=Enum.NormalId.Bottom},at)
 		return m
 	end
+	-- (13/11) The modelled dragons (Client/DragonFX), with what pours off them;
+	-- the part-built ones above stay until the meshes are ready.
+	local function modelledDragon(style,look)
+		local m=DragonFX.build(style,look,segmentsFor(look))
+		if not m then return nil end
+		local head=m.PrimaryPart
+		local w=look.size[1]
+		if style=="Water" then
+			local light=c3(look.color)
+			local foam=Color3.fromRGB(226,244,255)
+			glow(head,light,look.light)
+			spray(head,light,70,w*.6,4)
+			local at=new("Attachment",{Position=Vector3.new(0,-w*.3,w*.5)},head)
+			new("ParticleEmitter",{Texture=TEX.spark,Rate=36,Lifetime=NumberRange.new(.35,.6),Speed=NumberRange.new(1,3),SpreadAngle=Vector2.new(70,70),
+				Color=ColorSequence.new(foam),LightEmission=.3,LightInfluence=.6,Size=num({{0,.3},{1,.15}}),Acceleration=Vector3.new(0,-36,0),EmissionDirection=Enum.NormalId.Bottom},at)
+		else
+			spray(head,Color3.fromRGB(150,128,100),40,w*.5,3)
+			local at=new("Attachment",{Position=Vector3.new(0,-w*.3,w*.4)},head)
+			new("ParticleEmitter",{Texture=TEX.spark,Rate=28,Lifetime=NumberRange.new(.4,.7),Speed=NumberRange.new(1,3),SpreadAngle=Vector2.new(60,60),
+				Color=ColorSequence.new(c3(look.color2)),LightInfluence=1,Size=num({{0,.35},{1,.25}}),Acceleration=Vector3.new(0,-40,0),EmissionDirection=Enum.NormalId.Bottom},at)
+		end
+		return m
+	end
 	SHAPES.serpent=function(look)
-		if look.zone=="crater" or look.launch=="Ground" then return earthSerpent(look) end
-		if look.zone=="water" and look.size[3]>=12 then return waterDragon(look) end
+		if look.zone=="crater" or look.launch=="Ground" then return modelledDragon("Earth",look) or earthSerpent(look) end
+		if look.zone=="water" and look.size[3]>=12 then return modelledDragon("Water",look) or waterDragon(look) end
 		local m=new("Model",{Name="FamilySerpent"})
 		local s=look.size
 		local water=look.zone=="water"

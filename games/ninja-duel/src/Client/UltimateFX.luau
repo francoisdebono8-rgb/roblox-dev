@@ -15,6 +15,7 @@ local Debris=game:GetService("Debris")
 local UltimateFX={}
 local Scripts=require(game:GetService("ReplicatedStorage").NinjaDuel.UltimateScripts)
 local Face=require(game:GetService("ReplicatedStorage").NinjaDuel.Face)
+local MeshKit=require(script.Parent.MeshKit)
 local K -- Effects' helpers, handed over by install()
 UltimateFX.clock=os.clock -- (headless tests drive time)
 
@@ -319,7 +320,13 @@ local function sandMass(ctx)
 	local N=110
 	for i=1,N do
 		local s=.45+rng:NextNumber()*.85
-		local g=K.block(fx.folder,Vector3.new(s,s*.8,s),CFrame.new(from),if i%3==0 then SAND_DARK else SAND,Enum.Material.Sand)
+		-- (13/11) modelled clods of sand (tools/blender/fx_models.py) once ready
+		local g=MeshKit.part("SandClump")
+		if g then
+			g.Size=Vector3.new(s,s*.8,s)*1.15;g.CFrame=CFrame.new(from);g.Parent=fx.folder
+		else
+			g=K.block(fx.folder,Vector3.new(s,s*.8,s),CFrame.new(from),if i%3==0 then SAND_DARK else SAND,Enum.Material.Sand)
+		end
 		g.Name="SandGrain"
 		-- Its place on the body: a shell round it, low first (the legs), up to the head.
 		local h=(i/N)
@@ -335,10 +342,27 @@ local function sandMass(ctx)
 	local stain=K.block(fx.folder,Vector3.new(.08,1,1),CFrame.new(ctx.floor(ctx.vpos())+Vector3.new(0,.05,0))*CFrame.Angles(0,0,math.rad(90)),SAND,Enum.Material.Sand)
 	stain.Shape=Enum.PartType.Cylinder;stain.Name="SandStain"
 	K.tween(stain,.8,{Size=Vector3.new(.08,9,9)})
-	local shell=K.block(fx.folder,Vector3.new(.1,.1,.1),CFrame.new(ctx.vpos()),SAND,Enum.Material.Sand)
-	shell.Shape=Enum.PartType.Ball;shell.Name="SandCocoon";shell.Transparency=1
-	local column=K.block(fx.folder,Vector3.new(.1,2.2,2.2),CFrame.new(ctx.floor()),SAND_DARK,Enum.Material.Sand)
-	column.Shape=Enum.PartType.Cylinder;column.Name="SandColumn";column.Transparency=1
+	-- (13/11, user: « sur Gaara il y a une colonne un peu bizarre qui s'élève »)
+	-- The cocoon was a smooth ball and the column a plain dark cylinder: they
+	-- are now modelled (fx_models.py): the coffin wraps the body from the feet
+	-- up in thick spiral bands of sand, and a twisting rope of sand, flared into
+	-- the floor and cupped at the top, lifts it. Primitives stay as the fallback.
+	local shell=MeshKit.part("SandCoffin")
+	if shell then
+		mass.coffin=shell.Size;shell.CFrame=CFrame.new(ctx.vpos());shell.Parent=fx.folder
+	else
+		shell=K.block(fx.folder,Vector3.new(.1,.1,.1),CFrame.new(ctx.vpos()),SAND,Enum.Material.Sand)
+		shell.Shape=Enum.PartType.Ball
+	end
+	shell.Name="SandCocoon";shell.Transparency=1
+	local column=MeshKit.part("SandPillar")
+	if column then
+		mass.pillar=column.Size;column.CFrame=CFrame.new(ctx.floor());column.Parent=fx.folder
+	else
+		column=K.block(fx.folder,Vector3.new(.1,2.2,2.2),CFrame.new(ctx.floor()),SAND_DARK,Enum.Material.Sand)
+		column.Shape=Enum.PartType.Cylinder
+	end
+	column.Name="SandColumn";column.Transparency=1
 	mass.stain,mass.shell,mass.column=stain,shell,column
 	local t0=ctx.t()
 	ctx.loop(ctx.time+.5,function(t)
@@ -368,14 +392,30 @@ local function sandMass(ctx)
 			if cf then g.part.CFrame=cf end
 		end
 		if mass.shellSize>0 then
-			shell.CFrame=vcf
-			shell.Size=Vector3.new(2.5,5.4,2.5)*mass.shellSize*mass.scale
+			if mass.coffin then
+				-- it climbs from the feet: full width soon, full height last
+				local k=mass.shellSize
+				local base=mass.coffin*.97*mass.scale
+				shell.Size=Vector3.new(base.X*(.72+.28*k),base.Y*k,base.Z*(.72+.28*k))
+				shell.CFrame=vcf*CFrame.new(0,-base.Y*(1-k)/2,0)
+			else
+				shell.CFrame=vcf
+				shell.Size=Vector3.new(2.5,5.4,2.5)*mass.shellSize*mass.scale
+			end
 		end
 		if mass.columnOn then
 			local top=vcf.Position.Y-2.6*mass.scale
 			local h=math.max(.2,top-floorY)
-			column.CFrame=CFrame.new(vcf.Position.X,floorY+h/2,vcf.Position.Z)*CFrame.Angles(0,0,math.rad(90))
-			column.Size=Vector3.new(h,2.4*mass.scale,2.4*mass.scale)
+			if mass.pillar then
+				-- rooted .4 under the floor, its cup under the coffin, turning
+				local tall=h+.4
+				local w=.8*mass.scale
+				column.Size=Vector3.new(mass.pillar.X*w,tall,mass.pillar.Z*w)
+				column.CFrame=CFrame.new(vcf.Position.X,floorY-.4+tall/2,vcf.Position.Z)*CFrame.Angles(0,t*1.4,0)
+			else
+				column.CFrame=CFrame.new(vcf.Position.X,floorY+h/2,vcf.Position.Z)*CFrame.Angles(0,0,math.rad(90))
+				column.Size=Vector3.new(h,2.4*mass.scale,2.4*mass.scale)
+			end
 		end
 	end)
 	return mass
