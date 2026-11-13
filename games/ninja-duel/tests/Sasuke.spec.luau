@@ -167,6 +167,47 @@ test("Chidori out of a jump (05/11, lot 3): the dive at him, the lightning hand 
  assert(x.attackName=="ChidoriThrust","on the ground the release is "..tostring(x.attackName))
 end)
 
+test("Chidori held up the wall (13/11, #72): it lasts the run and the climb, and the dive lands far off and on a body getting up",function()
+ -- Sasuke forms it 12 studs from the wall, sprints in, climbs a moment and
+ -- dives at Kakashi `gap` studs from the wall. Before: past ~26 studs the
+ -- strike's box was gone before the dive arrived (its life was the authored
+ -- active, not the flight), and a body getting up spent the strike.
+ local function dive(gap,rising)
+  H.clearWalls();H.addWall(10)
+  local c,a,b=H.duel("Lion","Copycat")
+  c:relocate(a,V.new(-2,3,0));c:relocate(b,V.new(10-gap,3,1))
+  a.root.CFrame=H.C.lookAt(a.root.Position,V.new(20,3,0))
+  b.root.CFrame=H.C.lookAt(b.root.Position,V.new(-60,3,1))
+  a.move=V.zero;b.move=V.zero
+  H.step(c,.01)
+  assert(c:request(a,slot(a,"Chidori"),V.new(20,3,0)),"Chidori refused")
+  until_(c,1.2,function() return a.bodyState~=nil end,"the Chidori was never held")
+  local formed=c.now
+  a.sprinting=true
+  local on=nil
+  for _=1,300 do
+   a.move=V.new(1,0,0);a.lastMove=os.clock()
+   H.step(c,.01)
+   if a.wall and not on then on=c.now end
+   if on and c.now-on>=.2 then break end
+  end
+  assert(on and a.wall,"he never got on the wall")
+  assert(a.bodyState~=nil,"the Chidori went out on the way up the wall")
+  a.move=V.zero;a.sprinting=false
+  if rising then b.reaction="Wakeup";b.reactionUntil=c.now+.24;b.invulnerableUntil=c.now+.24 end
+  local health=b.health
+  assert(c:request(a,"Attack"),"the strike off the wall does not release it")
+  assert(a.attackName=="WallDive" and a.attackVariant=="ChidoriDive","off the wall the release is "..tostring(a.attackName).."/"..tostring(a.attackVariant))
+  until_(c,1,function() return b.health<health end,string.format("the dive at %d studs%s never landed",gap,if rising then " (getting up)" else ""))
+  assert(b.reaction=="Knockdown","the dive did not put him down: "..tostring(b.reaction))
+  -- Formed, run, climbed and landed inside the Chidori's own time.
+  local held=nil
+  for _,t in a.def.Techniques do if t.Id=="Chidori" then held=t.State.Time end end
+  assert(c.now-formed<held,string.format("the whole run took %.2f s",c.now-formed))
+ end
+ dive(16);dive(40);dive(10,true);dive(24,true)
+end)
+
 test("curse mark: faster and harder, and it eats his health (never to a KO)",function()
  local c,a,b=H.duel("Lion","Flashstep")
  place(c,a,b,V.new(0,3,9),V.new(0,3,-9))
