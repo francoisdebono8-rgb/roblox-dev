@@ -51,7 +51,11 @@ test("the solid effects ask for their shadow",function()
  assert(has("src/Client/HoundFX.luau",'m:SetAttribute("KeepShadow",true)'),"hounds")
  assert(has("src/Client/Effects.luau",'pcall(holder.SetAttribute,holder,"KeepShadow",true)'),"substitution log")
  assert(has("src/Client/Effects.luau","ShadowFX).watch(folder)"),"the guard is not installed")
- local _,n=string.gsub(fs.readFile("src/Client/UltimateFX.luau"),"ShadowFX.keep%(rock%)","")
- assert(n==2,"ultimate rocks: "..n)
+ -- (13/11 integration with #77) The ultimates' rocks are modelled now and all
+ -- come from one helper, UltimateFX.stone: it keeps the shadow of both kinds.
+ local ultimate=fs.readFile("src/Client/UltimateFX.luau")
+ assert(string.find(ultimate,"return ShadowFX.keep(r)",1,true) and string.find(ultimate,"return ShadowFX.keep(K.block(parent",1,true),"ultimate rocks: the stone helper does not keep their shadow")
+ local _,stones=string.gsub(ultimate,"[^%w]stone%(","")
+ assert(stones>=2,"the crater's and the gates' rocks no longer come from the stone helper: "..stones)
 end)
 print(passed.." passed")
