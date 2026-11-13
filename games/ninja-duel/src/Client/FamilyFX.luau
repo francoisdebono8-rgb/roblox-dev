@@ -68,7 +68,18 @@ function FamilyFX.install(FX,kit)
 		trail(shaft,math.max(look.trail,.08),c3(look.color),.08)
 		return m
 	end
+	-- (13/11) the thrown objects modelled (MeshKit): the Fūma shuriken of the
+	-- Windmill jutsu and the explosive tag; the rest keep the cut shape.
+	local MODELLED_BLADE={[Looks.windmill or false]="FumaShuriken",[Looks.fuma or false]="FumaShuriken",[Looks.tag or false]="ExplosiveTag"}
 	SHAPES.blade=function(look)
+		local name=MODELLED_BLADE[look]
+		if name and MeshKit.has(name) then
+			local m=MeshKit.model(name)
+			m.Name="FamilyBlade"
+			if name=="FumaShuriken" then m:ScaleTo(look.size[1]/2) end
+			trail(m.PrimaryPart,math.max(look.trail,.1),c3(look.color),.12)
+			return m
+		end
 		local m=new("Model",{Name="FamilyBlade"})
 		local s=look.size
 		local glass=look.hit=="shatter"
@@ -443,6 +454,14 @@ function FamilyFX.install(FX,kit)
 	for kind,look in Looks do
 		if FX.poses[kind] then continue end
 		local shape=look.shape
+		if look==Looks.windmill or look==Looks.fuma then
+			-- the Fūma shuriken spins flat, fast
+			FX.poses[kind]=function(_,entry,p,age,cf,dt)
+				entry.spin+=dt*26
+				return cf*CFrame.Angles(0,entry.spin,0)
+			end
+			continue
+		end
 		if shape=="needle" or shape=="blade" then
 			FX.poses[kind]=function(_,entry,p,age,cf,dt)
 				entry.spin+=dt*(if shape=="needle" then 6 else 2)

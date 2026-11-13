@@ -476,6 +476,69 @@ def trigrams():
 
 
 
+
+# ---------------------------------------------------------------- thrown objects
+def fuma_shuriken():
+    """The Fūma shuriken (Sasuke's Windmill): four long hooked blades folded
+    round a ring grip, bevelled to the edge. Radius 1, flat (spun about y)."""
+    blade = Piece("Blades", "Metal", flat=True)
+    hub = Piece("Hub", "Metal")
+    N = 160
+    t = .06
+    def R(a):
+        u = (a % (math.pi / 2)) / (math.pi / 2)  # 0 at a blade's root edge, 1 at the next
+        # a long blade sweeping back: the tip early, the hollow after it
+        if u < .18:
+            return .28 + .72 * (u / .18) ** .7
+        return .28 + .72 * (1 - (u - .18) / .82) ** 2.2
+    rows = []
+    for kind in ("bot", "mid_b", "edge", "mid_t", "top"):
+        ring = []
+        for i in range(N):
+            a = i / N * math.tau
+            d = Vector((math.cos(a), math.sin(a), 0))
+            r = R(a)
+            if kind == "edge":
+                p = d * r
+            elif kind in ("mid_t", "mid_b"):
+                p = d * max(.3, r * .7) + Vector((0, 0, t if kind == "mid_t" else -t))
+            else:
+                p = d * .26 + Vector((0, 0, t * .9 if kind == "top" else -t * .9))
+            ring.append(p)
+        rows.append(ring)
+    loft(blade, rows, lambda p, k: EDGE if k == 2 else lerp(STEEL, STEEL_HI, .3), cap0=False, cap1=False)
+    # the hub: a thick ring with a wrapped grip bar across it
+    torus(hub, (0, 0, 0), Matrix.Identity(3), .24, .07, lerp(STEEL, STEEL_HI, .1), seg=28, sides=8)
+    wrapped_grip(hub, -.22, .22, .045, CLOTH, CLOTH_HI, sides=10, steps=14, pitch=.06)
+    return [blade, hub]
+
+
+def explosive_tag():
+    """A paper explosive tag: off-white, the red seal strokes down it, a
+    slight curl. .5 wide, 1.1 long (front -z = here +y), flat."""
+    paper = Piece("Paper", "SmoothPlastic", flat=False)
+    ink = Piece("Ink", "SmoothPlastic")
+    rows = []
+    for j in range(12):
+        v = j / 11
+        y = -.55 + 1.1 * v
+        rows.append([Vector((-.25 + .5 * i / 6, y, .04 * math.sin(v * math.pi) + .02 * ((i / 6 - .5) ** 2) * 4)) for i in range(7)])
+    loft(paper, rows, rgb(236, 226, 196), closed=False, cap0=False, cap1=False)
+    back = [[v + Vector((0, 0, -.006)) for v in reversed(r)] for r in rows]
+    loft(paper, back, rgb(220, 210, 180), closed=False, cap0=False, cap1=False)
+    def z_at(x, y):
+        v = (y + .55) / 1.1
+        return .04 * math.sin(v * math.pi) + .02 * ((x / .5) ** 2) * 4 + .006
+    strokes = [((0, -.4), (0, .4), .035), ((-.12, .25), (.12, .25), .025), ((-.14, .05), (.14, .05), .025),
+               ((-.1, -.15), (.12, -.2), .022), ((-.15, .38), (.15, .42), .02), ((-.13, -.33), (.13, -.36), .02)]
+    for (x0, y0), (x1, y1), w in strokes:
+        pts = [Vector((x0 + (x1 - x0) * u, y0 + (y1 - y0) * u, 0)) for u in [i / 6 for i in range(7)]]
+        d = (pts[-1] - pts[0]).normalized()
+        nrm = Vector((-d.y, d.x, 0))
+        rr = [[p + nrm * w + Vector((0, 0, z_at(p.x, p.y))), p - nrm * w + Vector((0, 0, z_at(p.x, p.y)))] for p in pts]
+        loft(ink, rr, rgb(176, 30, 30), closed=False, cap0=False, cap1=False)
+    return [paper, ink]
+
 # ---------------------------------------------------------------- the floor
 # (13/11, user: « les traces sur le sol » at the same level) Damage is
 # geometry, not a flat picture: grooves torn into the floor with their broken
@@ -871,6 +934,8 @@ def dragon_seg(st):
 
 
 MODELS = {
+    "FumaShuriken": fuma_shuriken,
+    "ExplosiveTag": explosive_tag,
     "GroundCrack": ground_crack,
     "GroundCrater": ground_crater,
     "LegWeight": leg_weight,
@@ -952,7 +1017,7 @@ def render(out_dir, names=None):
         return
     if names and any("Dragon" in n for n in names):
         pass
-    views = {"GroundCrack": (.3, -.8, .9), "GroundCrater": (.3, -.8, .7), "LegWeight": (.8, -1, .5), "Ninken1": (1.2, .8, .4), "Ninken2": (1.2, .8, .4), "Trigrams": (.1, -.3, 1), "TsukuyomiCross": (.6, -1, .3), "BandageWrap": (1, -1, .4), "WaterDragonHead": (1.3, .7, .35), "EarthDragonHead": (1.3, .7, .35), "Shuriken": (0.25, -0.5, 1.0), "SandCoffin": (1, -1.6, .35), "SandPillar": (1, -1.6, .45)}
+    views = {"FumaShuriken": (.2, -.5, 1), "ExplosiveTag": (.3, -.4, 1), "GroundCrack": (.3, -.8, .9), "GroundCrater": (.3, -.8, .7), "LegWeight": (.8, -1, .5), "Ninken1": (1.2, .8, .4), "Ninken2": (1.2, .8, .4), "Trigrams": (.1, -.3, 1), "TsukuyomiCross": (.6, -1, .3), "BandageWrap": (1, -1, .4), "WaterDragonHead": (1.3, .7, .35), "EarthDragonHead": (1.3, .7, .35), "Shuriken": (0.25, -0.5, 1.0), "SandCoffin": (1, -1.6, .35), "SandPillar": (1, -1.6, .45)}
     for name, fn in MODELS.items():
         if names and name not in names:
             continue
