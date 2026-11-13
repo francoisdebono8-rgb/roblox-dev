@@ -17,6 +17,7 @@ local Scripts=require(game:GetService("ReplicatedStorage").NinjaDuel.UltimateScr
 local Face=require(game:GetService("ReplicatedStorage").NinjaDuel.Face)
 local MeshKit=require(script.Parent.MeshKit)
 local HoundFX=require(script.Parent.HoundFX)
+local VfxKit=require(script.Parent.VfxKit)
 local K -- Effects' helpers, handed over by install()
 UltimateFX.clock=os.clock -- (headless tests drive time)
 
@@ -223,8 +224,10 @@ function UltimateFX.crater(fx,p,color,size)
 		task.delay(1.6,function() if rock.Parent then K.tween(rock,.4,{Transparency=1}) end end)
 		Debris:AddItem(rock,2.1)
 	end
-	-- the crack: a dark star of grooves
-	for k=1,7 do
+	-- the crater itself, modelled (sunk bowl, plates pushed up, cracks), or
+	-- the old dark star of grooves
+	local modelled=VfxKit.mark(fx.folder,"GroundCrater",floor,Vector3.yAxis,5*size,2,.6)
+	for k=1,if modelled then 0 else 7 do
 		local a=k/7*math.pi*2
 		local len=(3+k%3)*size
 		local c=K.block(fx.folder,Vector3.new(.25,.06,len),CFrame.new(floor+Vector3.new(math.cos(a)*len/2,.06,math.sin(a)*len/2))*CFrame.Angles(0,-a+math.pi/2,0),rgb(40,34,30),Enum.Material.Slate)

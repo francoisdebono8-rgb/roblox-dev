@@ -4,7 +4,7 @@
 -- (Roblox: x right, y up, front -z; studs), h = its half extents, n vertices,
 -- m triangles, d = the packed mesh (see tools/blender/nd_mesh.piece_luau).
 local all={}
-for _,name in {"MeshData1","MeshData2","MeshData3","MeshData4","MeshData5","MeshData6","MeshData7"} do
+for _,name in {"MeshData1","MeshData2","MeshData3","MeshData4","MeshData5","MeshData6","MeshData7","MeshData8"} do
 	for k,v in require(script.Parent[name]) do all[k]=v end
 end
 return all

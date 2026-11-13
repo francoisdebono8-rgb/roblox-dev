@@ -475,6 +475,135 @@ def trigrams():
     return [disc, lines, yin]
 
 
+
+# ---------------------------------------------------------------- the floor
+# (13/11, user: « les traces sur le sol » at the same level) Damage is
+# geometry, not a flat picture: grooves torn into the floor with their broken
+# lips, slabs pushed up and tilted. Radius 1 (scaled to the hit), lying in the
+# floor plane (z up here = Roblox y), a hair above it.
+STONE = rgb(128, 120, 108)
+STONE_HI = rgb(170, 162, 148)
+GROOVE = rgb(30, 26, 24)
+
+
+def cracks(groove, lip, rng, n, r0, length, width, z=.02):
+    for k in range(n):
+        a = k / n * math.tau + rng.uniform(-.6, .6)
+        p = Vector((math.cos(a) * r0, math.sin(a) * r0, 0))
+        d = Vector((math.cos(a), math.sin(a), 0))
+        pts = [p.copy()]
+        L = length * rng.uniform(.45, 1.15)
+        steps = 11
+        for i in range(steps):
+            d = (d + Vector((rng.uniform(-.8, .8), rng.uniform(-.8, .8), 0))).normalized()
+            p = p + d * L / steps * rng.uniform(.6, 1.4)
+            pts.append(p.copy())
+            if i in (3, 6) and rng.random() < .55:
+                bd = (d + Vector((-d.y, d.x, 0)) * rng.choice((-1, 1)) * .9).normalized()
+                q = p.copy()
+                bpts = [q.copy()]
+                for _ in range(3):
+                    bd = (bd + Vector((rng.uniform(-.4, .4), rng.uniform(-.4, .4), 0))).normalized()
+                    q = q + bd * L / steps * .8
+                    bpts.append(q.copy())
+                ribbon(groove, lip, bpts, width * .6, z)
+        ribbon(groove, lip, pts, width, z)
+
+
+def ribbon(groove, lip, pts, width, z):
+    """A groove along pts, tapering to nothing, with a raised broken lip on each side."""
+    m = len(pts)
+    rows, lips_l, lips_r = [], [], []
+    for i, p in enumerate(pts):
+        a = pts[max(0, i - 1)]
+        b = pts[min(m - 1, i + 1)]
+        t = (b - a).normalized()
+        nrm = Vector((-t.y, t.x, 0))
+        w = width * (1 - i / (m - 1)) ** .8 + .004
+        rows.append([p + nrm * w + Vector((0, 0, z)), p + Vector((0, 0, z - .01)), p - nrm * w + Vector((0, 0, z))])
+        lips_l.append([p + nrm * w + Vector((0, 0, z)), p + nrm * (w * 1.35) + Vector((0, 0, z + w * .35)), p + nrm * (w * 1.8) + Vector((0, 0, z * .5))])
+        lips_r.append([p - nrm * (w * 1.8) + Vector((0, 0, z * .5)), p - nrm * (w * 1.35) + Vector((0, 0, z + w * .35)), p - nrm * w + Vector((0, 0, z))])
+    loft(groove, rows, GROOVE, closed=False, cap0=False, cap1=False)
+    loft(lip, lips_l, lambda p, k: lerp(STONE, GROOVE, .25), closed=False, cap0=False, cap1=False)
+    loft(lip, lips_r, lambda p, k: lerp(STONE, GROOVE, .25), closed=False, cap0=False, cap1=False)
+
+
+def slab(pc, rng, center, size, tilt_dir, tilt, lift):
+    """A broken plate of floor pushed up and tilted (an irregular polygon prism)."""
+    n = rng.randint(5, 7)
+    pts = []
+    for i in range(n):
+        a = i / n * math.tau + rng.uniform(-.25, .25)
+        r = size * rng.uniform(.6, 1.0)
+        pts.append(Vector((math.cos(a) * r, math.sin(a) * r, 0)))
+    R = Matrix.Rotation(tilt, 3, Vector((-tilt_dir.y, tilt_dir.x, 0)))
+    top = [center + R @ p + Vector((0, 0, lift)) for p in pts]
+    bot = [Vector((q.x, q.y, -.05)) for q in top]
+    loft(pc, [bot, top], lambda p, k: lerp(STONE, STONE_HI, .7) if k == 1 else lerp(STONE, GROOVE, .4))
+
+
+def ground_crack(seed=3):
+    rng = random.Random(seed)
+    groove = Piece("Groove", "Slate", flat=True)
+    lip = Piece("Lip", "Slate", flat=True)
+    cracks(groove, lip, rng, 6, .06, .95, .028)
+    shards = Piece("Shards", "Slate", flat=True)
+    for k in range(5):
+        a = rng.uniform(0, math.tau)
+        r = rng.uniform(.05, .22)
+        c = Vector((math.cos(a) * r, math.sin(a) * r, 0))
+        slab(shards, rng, c, rng.uniform(.06, .1), Vector((math.cos(a), math.sin(a), 0)), rng.uniform(.3, .6), rng.uniform(.02, .06))
+    return [groove, lip, shards]
+
+
+def ground_crater(seed=5):
+    """A body driven into the floor: a sunk dark bowl, a ring of plates
+    pushed up and tilted outward, cracks running from the rim."""
+    rng = random.Random(seed)
+    groove = Piece("Groove", "Slate", flat=True)
+    lip = Piece("Lip", "Slate", flat=True)
+    bowl = Piece("Bowl", "Slate", flat=True)
+    rings = []
+    for j in range(5):
+        r = .48 * j / 4
+        z = -.12 * (1 - (j / 4) ** 2) + .02
+        rings.append([Vector((math.cos(a) * r * (1 + .08 * math.sin(a * 5)), math.sin(a) * r * (1 + .08 * math.sin(a * 5)), z)) for a in [i / 20 * math.tau for i in range(20)]])
+    loft(bowl, rings[1:], lambda p, k: lerp(GROOVE, STONE, k / 6), tip0=Vector((0, 0, -.1)), cap1=False)
+    plates = Piece("Plates", "Slate", flat=True)
+    n = 11
+    for k in range(n):
+        a = k / n * math.tau + rng.uniform(-.15, .15)
+        d = Vector((math.cos(a), math.sin(a), 0))
+        slab(plates, rng, d * rng.uniform(.52, .62), rng.uniform(.13, .18), d, rng.uniform(.35, .7), rng.uniform(.06, .12))
+    cracks(groove, lip, rng, 7, .6, .5, .022)
+    return [bowl, plates, groove, lip]
+
+
+def leg_weight():
+    """Lee's training weight: a heavy pad wrapped round the shin, two straps
+    and their buckles. Round the shin's centre, 0.6 tall."""
+    pad = Piece("Pad", "Fabric")
+    strap = Piece("Straps", "Fabric")
+    metal = Piece("Buckles", "Metal", flat=True)
+    rings = []
+    for j in range(7):
+        z = -.3 + .6 * j / 6
+        bulge = 1 + .08 * math.sin(math.pi * j / 6)
+        rings.append([Vector((math.cos(a) * .36 * bulge, math.sin(a) * .36 * bulge, z)) for a in [i / 24 * math.tau for i in range(24)]])
+    def pcol(p, k):
+        seam = abs(((math.atan2(p.y, p.x) / math.tau) * 6) % 1 - .5) < .05
+        return rgb(70, 72, 80) if not seam else rgb(46, 46, 52)
+    loft(pad, rings, pcol, cap0=False, cap1=False)
+    inner = [[Vector((v.x * .78, v.y * .78, v.z)) for v in r] for r in rings]
+    loft(pad, [list(reversed(r)) for r in inner], rgb(40, 40, 46), cap0=False, cap1=False)
+    for zc in (-.15, .15):
+        rr = [[Vector((math.cos(a) * .395, math.sin(a) * .395, z)) for a in [i / 24 * math.tau for i in range(24)]] for z in (zc - .05, zc + .05)]
+        loft(strap, rr, rgb(120, 84, 52), cap0=False, cap1=False)
+        c = Vector((0, -.41, zc))
+        loft(metal, [[c + Vector((-.07, 0, -.065)), c + Vector((.07, 0, -.065)), c + Vector((.07, 0, .065)), c + Vector((-.07, 0, .065))],
+                     [c + Vector((-.07, -.03, -.065)), c + Vector((.07, -.03, -.065)), c + Vector((.07, -.03, .065)), c + Vector((-.07, -.03, .065))]], rgb(176, 168, 140))
+    return [pad, strap, metal]
+
 # ---------------------------------------------------------------- creatures
 # Kakashi's ninken (Client/HoundFX): Pakkun the small tan pug-nosed one, then
 # the pack; the Konoha headband round the forehead. The body (head, ears,
@@ -742,6 +871,9 @@ def dragon_seg(st):
 
 
 MODELS = {
+    "GroundCrack": ground_crack,
+    "GroundCrater": ground_crater,
+    "LegWeight": leg_weight,
     **{"Ninken%d" % (i + 1): (lambda i=i: ninken(i)) for i in range(4)},
     **{"NinkenLeg%d" % (i + 1): (lambda i=i: ninken_leg(i)) for i in range(4)},
     "Rock": rock,
@@ -820,7 +952,7 @@ def render(out_dir, names=None):
         return
     if names and any("Dragon" in n for n in names):
         pass
-    views = {"Ninken1": (1.2, .8, .4), "Ninken2": (1.2, .8, .4), "Trigrams": (.1, -.3, 1), "TsukuyomiCross": (.6, -1, .3), "BandageWrap": (1, -1, .4), "WaterDragonHead": (1.3, .7, .35), "EarthDragonHead": (1.3, .7, .35), "Shuriken": (0.25, -0.5, 1.0), "SandCoffin": (1, -1.6, .35), "SandPillar": (1, -1.6, .45)}
+    views = {"GroundCrack": (.3, -.8, .9), "GroundCrater": (.3, -.8, .7), "LegWeight": (.8, -1, .5), "Ninken1": (1.2, .8, .4), "Ninken2": (1.2, .8, .4), "Trigrams": (.1, -.3, 1), "TsukuyomiCross": (.6, -1, .3), "BandageWrap": (1, -1, .4), "WaterDragonHead": (1.3, .7, .35), "EarthDragonHead": (1.3, .7, .35), "Shuriken": (0.25, -0.5, 1.0), "SandCoffin": (1, -1.6, .35), "SandPillar": (1, -1.6, .45)}
     for name, fn in MODELS.items():
         if names and name not in names:
             continue

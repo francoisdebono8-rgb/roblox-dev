@@ -9,6 +9,7 @@ local SealJutsu=require(game:GetService("ReplicatedStorage").NinjaDuel.SealJutsu
 local Fighters=require(Shared.Fighters)
 local ToadFX=require(script.Parent.ToadFX)
 local DragonFX=require(script.Parent.DragonFX)
+local MeshKit=require(script.Parent.MeshKit)
 local FamilyFX={}
 -- Studio/test switch: drawing errors surface instead of being swallowed.
 FamilyFX.strict=false
@@ -108,6 +109,28 @@ function FamilyFX.install(FX,kit)
 		-- A creature read from its silhouette: a long body, the head raised
 		-- forward with a pale snout and a dark nose, ears up, four legs and a
 		-- tail for a hound; a dorsal and a tail fin, no legs, for a shark.
+		-- (13/11) a hound is the modelled ninken (MeshKit, Client/HoundFX's
+		-- dogs): standing, legs set, scaled to the look's length
+		if look.zone~="water" and MeshKit.has("Ninken3") then
+			local coat=if (look.color[1]+look.color[2]+look.color[3])>600 then 2 else 3
+			local dog=MeshKit.model("Ninken"..coat)
+			if dog and MeshKit.has("NinkenLeg"..coat) then
+				dog.Name="FamilyBeast"
+				local root=dog.PrimaryPart
+				for _,side in {-1,1} do
+					for _,z in {-.5,.55} do
+						local leg,o=MeshKit.part("NinkenLeg"..coat)
+						-- the dog's frame: front -z, hips .3 out, .15 under the root
+						leg.CFrame=CFrame.new(side*.3,-.15,z)*CFrame.new(o)*CFrame.Angles(math.rad(z*20),0,0)
+						leg.Anchored=false;leg.Massless=true;leg.Parent=dog
+						new("WeldConstraint",{Part0=root,Part1=leg},root)
+					end
+				end
+				dog:ScaleTo(look.size[3]/2.4)
+				for _,d in dog:GetDescendants() do if d:IsA("BasePart") and d~=root then d.CastShadow=true end end
+				return dog
+			end
+		end
 		local m=new("Model",{Name="FamilyBeast"})
 		local s=look.size
 		local w,h,l=s[1],s[2],s[3]
