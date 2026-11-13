@@ -205,7 +205,9 @@ function Assist.install(ctx,dev)
 	end
 	local function closeSpan(c,at)
 		if take and c.open then
-			table.insert(take.spans,{id=c.id,sev=c.sev,owner=c.owner,text=c.text,t0=r3(math.max(0,rel(c.since))),t1=r3(math.max(0,rel(at or c.seen)))})
+			local t0,t1=r3(math.max(0,rel(c.since))),r3(math.max(0,rel(at or c.seen)))
+			-- a fault that ended before the take began (seen once at its very start) is not part of it
+			if t1>t0 then table.insert(take.spans,{id=c.id,sev=c.sev,owner=c.owner,text=c.text,t0=t0,t1=t1}) end
 		end
 	end
 	local function hold(group,stamp,id,sev,owner,text,minDur)
