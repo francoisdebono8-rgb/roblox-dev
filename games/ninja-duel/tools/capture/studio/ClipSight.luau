@@ -1,5 +1,5 @@
 --!nocheck
--- Sight (FILM place): lines of sight that also see what a raycast cannot.
+-- ClipSight (FILM place): lines of sight that also see what a raycast cannot.
 --  * the decor the game builds unqueryable (bushes and tree tops of
 --    Client/ArenaDress, Server/World props: CanQuery=false), collected every
 --    few seconds as boxes;

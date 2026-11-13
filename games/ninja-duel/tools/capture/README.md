@@ -40,7 +40,7 @@ dans la place FILM et que les quatre profils partagent runtime et commit.
 | `ServerStorage.NDFactory.SetSnapshot` | `studio/SetSnapshot.luau` |
 | `ServerScriptService.NDFactoryBoot` (Script, Studio seulement) | `studio/NDFactoryBoot.server.luau` |
 | `ReplicatedStorage.NDFactory.ClipAssist` (chargé par `Client/DevClient`) | `studio/ClipAssist.luau` : l'assistant de tournage **F4**, voir [OUTIL_TOURNAGE_F4](../../docs/tools/OUTIL_TOURNAGE_F4.md) |
-| `ReplicatedStorage.NDFactory.NDReplay`, `.NDDirector`, `.Sight` | le replay du CM (FILM08), ses caméras et son programme, les lignes de vue qui voient les buissons : même guide |
+| `ReplicatedStorage.NDFactory.NDReplay`, `.NDDirector`, `.ClipSight` | le replay du CM (FILM08), ses caméras et son programme, les lignes de vue qui voient les buissons : même guide |
 
 `edit_list.py` : le meilleur plan de chaque scène à partir de plusieurs prises F4 (même guide).
 

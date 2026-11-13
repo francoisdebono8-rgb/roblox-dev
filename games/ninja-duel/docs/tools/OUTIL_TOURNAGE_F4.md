@@ -11,7 +11,7 @@ Tout est dans la place **FILM** seulement (`build.py --capture`, `ReplicatedStor
 | `tools/capture/studio/ClipAssist.luau` | l'assistant **F4** : liste de contrôle, défauts en direct, prises, journal image par image ; chargé par `Client/DevClient` |
 | `tools/capture/studio/NDReplay.luau` | le replay du CM (FILM08) : enregistrer un vrai match, le rejouer à n'importe quelle vitesse |
 | `tools/capture/studio/NDDirector.luau` | ses caméras (`front`, `ots`, `best`, `pair`, `center`) et le programme de prises |
-| `tools/capture/studio/Sight.luau` | les lignes de vue qui voient aussi les buissons et les corps du replay |
+| `tools/capture/studio/ClipSight.luau` | les lignes de vue qui voient aussi les buissons et les corps du replay |
 | `tools/capture/edit_list.py` | le meilleur plan de chaque scène, à partir de plusieurs prises |
 
 Aucun ne change le jeu.
@@ -135,7 +135,7 @@ Ce qui a changé par rapport au FILM08 :
 - **Les sons.** Chaque son qui part est noté : instant, id, volume, vitesse et lieu. Le replay les rejoue à vitesse normale. En dessous de 0,9 il se tait, et `R.soundLog()` donne la liste au montage, en secondes depuis le début de l'enregistrement.
 - **Les gerbes de particules (`Emit`).** Un émetteur qui écrit `NDEmit` (l'heure) et `NDEmitCount` (le nombre) après `Emit()` est rejoué exactement. Les autres émetteurs nés éteints font une gerbe de `R.emitDefault` (12) à leur apparition. Demande à l'ANIMATEUR : ajouter cette ligne dans les assistants d'émission (`VfxKit`, `Effects`, `SandFX`, `AwakenFX`, `ChakraFlowFX`).
 - **Le ralenti.** `P.run(beats, gap, 0.25)` rejoue tout le programme au quart de la vitesse : particules (`TimeScale`), traînées, textures des faisceaux et paliers de vitesse des scènes compris. Le montage accélère ×4 : chaque image finale est une vraie image distincte. Un Mac qui rame met plus de temps, mais ne saccade pas.
-- **Les buissons.** Les rayons des caméras `best`, `pair` et `ots` voient maintenant les buissons et les cimes (`Sight`). Une caméra n'est plus placée dans un buisson.
+- **Les buissons.** Les rayons des caméras `best`, `pair` et `ots` voient maintenant les buissons et les cimes (`ClipSight`). Une caméra n'est plus placée dans un buisson.
 - **Les informations pour F4.** Le programme écrit `NDScene`, `NDShot`, `NDAct` (le `act` de la scène, sinon le perso du segment), `NDClock` et `NDCut` pendant les noirs.
 
 Exemple de scène (FILM08) :

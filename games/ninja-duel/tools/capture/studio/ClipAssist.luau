@@ -48,7 +48,7 @@ local ReplicatedStorage=game:GetService("ReplicatedStorage")
 local StarterGui=game:GetService("StarterGui")
 
 local Sight=nil
-pcall(function() Sight=require(script.Parent:WaitForChild("Sight",2)) end)
+pcall(function() Sight=require(script.Parent:WaitForChild("ClipSight",2)) end)
 
 local Assist={}
 local V=Vector3.new

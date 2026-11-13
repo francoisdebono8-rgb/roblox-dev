@@ -17,7 +17,7 @@
 --  pair   : both fighters, camera square to their line, distance fitted to the band
 --  center : both fighters, camera on the line from their midpoint to the arena centre (near walls)
 local R = require(script.Parent.NDReplay)
-local Sight = require(script.Parent.Sight)
+local Sight = require(script.Parent.ClipSight)
 shared.NDR = R
 local RunService = game:GetService("RunService")
 local UP = Vector3.yAxis
