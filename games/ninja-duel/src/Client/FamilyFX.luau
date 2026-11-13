@@ -7,6 +7,7 @@ local Shared=game:GetService("ReplicatedStorage").NinjaDuel
 local Looks=require(Shared.Looks)
 local SealJutsu=require(game:GetService("ReplicatedStorage").NinjaDuel.SealJutsu)
 local Fighters=require(Shared.Fighters)
+local ToadFX=require(script.Parent.ToadFX)
 local FamilyFX={}
 -- Studio/test switch: drawing errors surface instead of being swallowed.
 FamilyFX.strict=false
@@ -200,8 +201,74 @@ function FamilyFX.install(FX,kit)
 			Color=ColorSequence.new(dark),LightInfluence=1,Size=num({{0,.35},{1,.25}}),Acceleration=Vector3.new(0,-40,0),EmissionDirection=Enum.NormalId.Bottom},at)
 		return m
 	end
+	-- (13/11, user: « on a plusieurs [animations] qui sont pas au point ») The
+	-- Water Dragon was a thin striped worm with a ball for a head (seen in an
+	-- offline render of this very builder, tools/fx_preview). Now an eastern
+	-- dragon of water: a long skull with a raised snout and an open jaw, fangs,
+	-- swept-back horns, long whiskers trailing from the snout, a crest of fins
+	-- down the neck, pale glinting eyes; a body of translucent glassy water
+	-- segments, a fin on every other one, paler belly; spray and drops coming
+	-- off it. Same path-following segments as before (Segment1..n).
+	local function waterDragon(look)
+		local m=new("Model",{Name="FamilySerpent"})
+		local s=look.size
+		local w=s[1]
+		local deep,light=c3(look.color2),c3(look.color)
+		local foam=Color3.fromRGB(226,244,255)
+		local function water(p,t) p.Material=Enum.Material.Glass;p.Transparency=t or .18;p.Reflectance=.12;return p end
+		local head=water(ball(m,Vector3.new(w*1.05,w*.8,w*1.5),CFrame.new(),light),.12)
+		local attach={}
+		local function add(p) table.insert(attach,p);return p end
+		-- the snout, raised, and the open lower jaw
+		add(water(ball(m,Vector3.new(w*.72,w*.42,w*1.25),CFrame.new(0,w*.08,-w*1.05)*CFrame.Angles(math.rad(8),0,0),light),.12))
+		add(water(ball(m,Vector3.new(w*.62,w*.24,w*1.05),CFrame.new(0,-w*.32,-w*.95)*CFrame.Angles(math.rad(-26),0,0),deep),.15))
+		-- the mouth inside, dark
+		add(ball(m,Vector3.new(w*.55,w*.18,w*.8),CFrame.new(0,-w*.14,-w*.9)*CFrame.Angles(math.rad(-12),0,0),Color3.fromRGB(16,40,90),Enum.Material.SmoothPlastic))
+		for _,side in {-1,1} do
+			-- fangs, up and down
+			add(block(m,Vector3.new(w*.07,w*.2,w*.07),CFrame.new(side*w*.22,-w*.08,-w*1.45)*CFrame.Angles(math.rad(180),0,0),foam,Enum.Material.SmoothPlastic,"WedgePart"))
+			add(block(m,Vector3.new(w*.06,w*.16,w*.06),CFrame.new(side*w*.2,-w*.3,-w*1.3),foam,Enum.Material.SmoothPlastic,"WedgePart"))
+			-- horns swept back, two tines each
+			add(water(block(m,Vector3.new(w*.12,w*.12,w*1.3),CFrame.new(side*w*.32,w*.48,w*.55)*CFrame.Angles(math.rad(22),math.rad(side*10),0),deep),.1))
+			add(water(block(m,Vector3.new(w*.09,w*.09,w*.55),CFrame.new(side*w*.42,w*.62,w*.35)*CFrame.Angles(math.rad(55),math.rad(side*25),0),deep),.1))
+			-- whiskers from the snout, trailing back and out
+			add(water(block(m,Vector3.new(w*.05,w*.05,w*1.9),CFrame.new(side*w*.5,-w*.02,-w*.55)*CFrame.Angles(math.rad(-6),math.rad(side*-22),0),foam),.25))
+			-- the eye: pale, a dark slit, under a brow ridge
+			add(ball(m,Vector3.new(w*.2,w*.14,w*.12),CFrame.new(side*w*.36,w*.22,-w*.62),Color3.fromRGB(236,250,255),Enum.Material.SmoothPlastic))
+			add(block(m,Vector3.new(w*.03,w*.12,w*.02),CFrame.new(side*w*.36,w*.22,-w*.69),Color3.fromRGB(10,24,60),Enum.Material.SmoothPlastic))
+			add(water(ball(m,Vector3.new(w*.32,w*.12,w*.36),CFrame.new(side*w*.34,w*.34,-w*.6)*CFrame.Angles(0,0,math.rad(side*-16)),deep),.1))
+		end
+		-- the crest down the back of the head
+		for k=0,2 do
+			add(water(block(m,Vector3.new(w*.06,w*(.5-k*.1),w*.5),CFrame.new(0,w*.5,w*(.1+k*.38))*CFrame.Angles(math.rad(-30),0,0),foam,Enum.Material.Glass,"WedgePart"),.2))
+		end
+		for _,a in attach do
+			a.Anchored=false;a.Massless=true;a.CanCollide=false
+			new("WeldConstraint",{Part0=head,Part1=a},head)
+		end
+		local n=segmentsFor(look)
+		for i=1,n do
+			local k=1-(i/n)*.74
+			local seg=water(ball(m,Vector3.new(w*k*.9,w*k*.8,w*k*1.5),CFrame.new(0,0,i*s[3]/(n+1)),if i%2==0 then deep else light),.16)
+			seg.Name="Segment"..i;seg.Anchored=true
+			if i%2==1 and i<n then
+				local fin=water(block(m,Vector3.new(w*k*.06,w*k*.5,w*k*.7),CFrame.new(0,w*k*.5,i*s[3]/(n+1))*CFrame.Angles(math.rad(-25),0,0),foam,Enum.Material.Glass,"WedgePart"),.22)
+				fin.Anchored=false;fin.Massless=true;fin.CanCollide=false
+				new("WeldConstraint",{Part0=seg,Part1=fin},seg)
+			end
+		end
+		m.PrimaryPart=head
+		glow(head,light,look.light)
+		spray(head,light,70,w*.6,4)
+		-- drops falling off it
+		local at=new("Attachment",{Position=Vector3.new(0,-w*.3,w*.5)},head)
+		new("ParticleEmitter",{Texture=TEX.spark,Rate=36,Lifetime=NumberRange.new(.35,.6),Speed=NumberRange.new(1,3),SpreadAngle=Vector2.new(70,70),
+			Color=ColorSequence.new(foam),LightEmission=.3,LightInfluence=.6,Size=num({{0,.3},{1,.15}}),Acceleration=Vector3.new(0,-36,0),EmissionDirection=Enum.NormalId.Bottom},at)
+		return m
+	end
 	SHAPES.serpent=function(look)
 		if look.zone=="crater" or look.launch=="Ground" then return earthSerpent(look) end
+		if look.zone=="water" and look.size[3]>=12 then return waterDragon(look) end
 		local m=new("Model",{Name="FamilySerpent"})
 		local s=look.size
 		local water=look.zone=="water"
@@ -876,34 +943,14 @@ function FamilyFX.install(FX,kit)
 				local dir=impact.direction or Vector3.new(0,0,-1)
 				local frame=CFrame.lookAt(at,at+Vector3.new(dir.X,0,dir.Z))
 				smokePuff(fx.folder,at+Vector3.new(0,.6,0),Color3.fromRGB(240,236,230),22,3.4)
-				local m=new("Model",{Name="Gamakichi"},fx.folder)
-				local skin,vest=c3(look.color),c3(look.color2)
-				local body=block(m,Vector3.new(2.4,1.7,2.6),frame*CFrame.new(0,.85,0),skin,Enum.Material.SmoothPlastic)
-				new("SpecialMesh",{MeshType=Enum.MeshType.Sphere},body)
-				local belly=block(m,Vector3.new(1.9,1.2,.5),frame*CFrame.new(0,.7,-1.15),Color3.fromRGB(252,214,160),Enum.Material.SmoothPlastic)
-				new("SpecialMesh",{MeshType=Enum.MeshType.Sphere},belly)
-				local cape=block(m,Vector3.new(2.5,.9,1.6),frame*CFrame.new(0,1.35,.5),vest,Enum.Material.Fabric)
-				new("SpecialMesh",{MeshType=Enum.MeshType.Sphere},cape)
-				for _,side in {-1,1} do
-					local eye=block(m,Vector3.new(.7,.7,.7),frame*CFrame.new(side*.62,1.75,-.7),Color3.fromRGB(250,246,230),Enum.Material.SmoothPlastic)
-					new("SpecialMesh",{MeshType=Enum.MeshType.Sphere},eye)
-					local pupil=block(m,Vector3.new(.32,.44,.2),frame*CFrame.new(side*.62,1.75,-1.02),Color3.fromRGB(20,16,14),Enum.Material.SmoothPlastic)
-					new("SpecialMesh",{MeshType=Enum.MeshType.Sphere},pupil)
-					local leg=block(m,Vector3.new(.7,.5,1.2),frame*CFrame.new(side*1.1,.25,-.3),skin,Enum.Material.SmoothPlastic)
-					new("SpecialMesh",{MeshType=Enum.MeshType.Sphere},leg)
-				end
-				local parts={}
-				for _,p in m:GetChildren() do if p:IsA("BasePart") then table.insert(parts,{p,p.Size}) ;p.Size=p.Size*.2 end end
-				for _,e in parts do tween(e[1],.16,{Size=e[2]}) end
-				-- the cheeks puff as it spits
-				task.delay(.1,function() if body.Parent then tween(body,.08,{Size=Vector3.new(2.7,1.9,2.6)}) end end)
-				task.delay(.22,function() if body.Parent then tween(body,.12,{Size=Vector3.new(2.4,1.7,2.6)}) end end)
+				-- (13/11, user: « la grenouille de Naruto, c'est pas bon ») the
+				-- toad of tools/blender/fx_toad.py: it hops out, lands, spits, sits,
+				-- blinks, and goes in a puff (Client/ToadFX).
 				local life=impact.time or 1.4
-				task.delay(life,function()
-					if not m.Parent then return end
+				local ok=pcall(ToadFX.summon,fx.folder,frame,life,function()
 					smokePuff(fx.folder,at+Vector3.new(0,.8,0),Color3.fromRGB(240,236,230),16,2.6)
-					m:Destroy()
 				end)
+				if not ok then smokePuff(fx.folder,at+Vector3.new(0,.8,0),Color3.fromRGB(240,236,230),16,2.6) end
 				return true
 			elseif style=="drain" then
 				local owner=folder and folder:FindFirstChild(impact.owner or "")

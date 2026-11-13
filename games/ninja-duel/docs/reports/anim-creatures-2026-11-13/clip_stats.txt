@@ -1,0 +1,72 @@
+== least motion (sum of joint ranges, deg), jutsu/technique clips
+    13  Copycat.TrackingFang.Release
+    13  Mirage.Read.Release
+    19  Flashstep.Flashstep.Release
+    23  Mirage.FireBloom.Hold
+    25  Lion.Chidori.Hold
+    26  Lion.FireBloom.Hold
+    26  Mirage.MirageCast.Release
+    46  Mirage.SharinganParalysis.Release
+    62  GentleFist.ByakuganSight.Release
+    66  Flashstep.SealingTrap.Release
+    82  Sand.SandCoffin.Release
+    93  Flashstep.Flashstep.Channel
+   101  Sand.ThirdEye.Release
+   109  Flashstep.Quickstep.Channel
+   133  GentleFist.SixtyFourPalms.Channel
+   137  Sand.Quicksand.Release
+   137  Sand.SandClone.Channel
+   141  Mirage.PhoenixSageFire.Release
+   143  Leaf.LeafGreatWhirlwind.Channel
+   158  Sand.SandShuriken.Channel
+   167  Mirage.Read.Channel
+   170  Sand.ThirdEye.Channel
+   177  Sand.SandArmor.Channel
+   181  GentleFist.VacuumPalm.Channel
+   186  Sand.SandSpikes.Release
+   199  Sand.SandCoffin.Channel
+   200  Flashstep.Quickstep.Release
+   209  Legion.CloneRasengan.Channel
+   234  Sand.DesertWave.Release
+   241  Mirage.FireBloom.Release
+   241  Flashstep.SpaceTimeBarrier.Channel
+   242  Leaf.Nunchaku.Channel
+   256  Legion.ShadowClone.Channel
+   259  Copycat.Awaken
+   268  Mirage.Awaken
+   270  Lion.SharinganCounter.Channel
+   277  GentleFist.LegPoints.Channel
+   280  Mirage.MirageCast.Recover
+   282  Mirage.MirageCast.Channel
+   286  GentleFist.SixtyFourPalms.Release
+== same clip name, near-identical between fighters
+Air1                   1/28 pairs < 4°: Copycat-Legion 3.9
+AirDrive               1/21 pairs < 4°: Copycat-Legion 3.9
+AirFlip                15/21 pairs < 4°: Legion-Lion 0.8, Leaf-Legion 1.6, Copycat-Flashstep 1.7, Copycat-Mirage 1.7
+AirSwitch              7/21 pairs < 4°: Copycat-Flashstep 1.4, Legion-Lion 1.6, Leaf-Legion 2.8, Legion-Flashstep 3.6
+Cartwheel              28/28 pairs < 4°: Copycat-Flashstep 0.4, Copycat-Legion 0.4, Copycat-Lion 0.4, Copycat-Mirage 0.4
+Chase                  28/28 pairs < 4°: Copycat-Flashstep 0.7, Copycat-Legion 0.7, Copycat-Lion 0.7, Copycat-Mirage 0.7
+Dash.F                 4/28 pairs < 4°: Legion-Lion 2.4, Legion-Flashstep 2.6, Legion-Sand 3.1, Lion-Flashstep 3.3
+Down                   28/28 pairs < 4°: Copycat-Flashstep 0.4, Copycat-Legion 0.4, Copycat-Lion 0.4, Copycat-Mirage 0.4
+Flip                   21/28 pairs < 4°: Leaf-Flashstep 0.5, Leaf-Lion 0.5, Lion-Flashstep 0.5, Leaf-Legion 1.0
+Grab                   1/28 pairs < 4°: Legion-Lion 3.6
+Guard                  5/28 pairs < 4°: Copycat-Mirage 2.8, Legion-Flashstep 3.1, Legion-Lion 3.2, Copycat-Flashstep 3.5
+Guard.Impact           5/28 pairs < 4°: Copycat-Mirage 2.7, Legion-Flashstep 3.2, Legion-Lion 3.2, Copycat-Flashstep 3.7
+Guard.Skid             5/28 pairs < 4°: Copycat-Mirage 2.4, Flashstep-Legion 3.0, Legion-Lion 3.3, Flashstep-Mirage 3.7
+Handspring             28/28 pairs < 4°: Copycat-Flashstep 0.5, Copycat-Lion 0.5, Copycat-Mirage 0.5, Copycat-Sand 0.5
+Idle                   1/36 pairs < 4°: Legion-Flashstep 2.4
+Jump.Air               21/28 pairs < 4°: Leaf-Legion 0.5, Legion-Flashstep 0.5, Legion-Lion 0.5, Leaf-Flashstep 0.5
+Jump.Leap              16/28 pairs < 4°: Leaf-Flashstep 0.5, Leaf-Lion 0.5, Lion-Flashstep 0.5, Copycat-Flashstep 0.8
+Knockdown              28/28 pairs < 4°: Copycat-Sand 0.5, Flashstep-Copycat 0.5, Flashstep-GentleFist 0.5, Flashstep-Leaf 0.5
+Land                   16/28 pairs < 4°: Flashstep-Leaf 0.5, Flashstep-Lion 0.5, Leaf-Lion 0.5, Flashstep-Legion 1.2
+Run.B                  3/28 pairs < 4°: GentleFist-Lion 2.8, Mirage-Copycat 2.9, GentleFist-Copycat 3.9
+Run.L                  1/28 pairs < 4°: GentleFist-Lion 2.9
+Run.R                  4/28 pairs < 4°: GentleFist-Lion 2.7, Mirage-Copycat 3.0, GentleFist-Copycat 3.9, Flashstep-Lion 4.0
+Sprint                 16/28 pairs < 4°: Mirage-Copycat 2.0, GentleFist-Lion 2.1, Leaf-Legion 2.1, GentleFist-Copycat 2.2
+Throw                  1/28 pairs < 4°: Legion-Lion 3.8
+Throw.Kunai            1/6 pairs < 4°: Flashstep-Legion 3.9
+ThrowUp                1/28 pairs < 4°: Flashstep-Legion 3.9
+Walk.B                 7/28 pairs < 4°: Flashstep-Mirage 1.4, Flashstep-GentleFist 1.5, GentleFist-Mirage 1.8, GentleFist-Legion 2.3
+Walk.F                 3/28 pairs < 4°: GentleFist-Mirage 2.2, Flashstep-GentleFist 2.3, Flashstep-Mirage 2.5
+Walk.L                 3/28 pairs < 4°: Flashstep-GentleFist 2.1, GentleFist-Mirage 2.5, Flashstep-Mirage 2.9
+Walk.R                 3/28 pairs < 4°: Flashstep-GentleFist 2.1, GentleFist-Mirage 2.5, Flashstep-Mirage 2.9
