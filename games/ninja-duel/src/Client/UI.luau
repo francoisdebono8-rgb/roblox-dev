@@ -268,6 +268,20 @@ function UI.new(parent,send)
 		if act.product then send("BuyKit",{player=self.player}) end
 	end,palette.gold)
 	self.buyButton.TextSize=24;self.buyButton.TextColor3=palette.ink;self.buyButton.Visible=false
+	-- (DEC-038) A learned kit's skill tree: its points come from its mastery.
+	self.treeButton=button(shell,"SKILL TREE",UDim2.fromOffset(1140,712),UDim2.fromOffset(400,52),function()
+		if self.picking or not self.treePanel then return end
+		self.treePanel:show(self.player,self.kits)
+	end)
+	self.treeButton.TextSize=24;self.treeButton.Visible=false
+	create("UIStroke",self.treeButton,{Color=palette.gold,Thickness=2,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
+	do
+		local ok,TreePanel=pcall(function() return require(script.Parent.TreePanel) end)
+		if ok and TreePanel then
+			local made,panel=pcall(TreePanel.new,UI.kit,self.gui,send)
+			if made then self.treePanel=panel end
+		end
+	end
 	self.startButton.TextSize=32
 	self.startStroke=create("UIStroke",self.startButton,{Color=palette.paper,Thickness=2.5,Transparency=.2,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
 	-- (04/11) The Prodigy Tournament against the AI (Server/Tournament).
@@ -725,7 +739,14 @@ function UI:refreshSelection()
 	end
 	if self.buyButton then
 		local act=MastersView.action(self.kits,self.player)
-		self.buyButton.Visible=act.product~=nil and not self.picking and (self.lastLobby==nil or self.lastLobby.phase=="Selection")
+		local roster=not self.picking and (self.lastLobby==nil or self.lastLobby.phase=="Selection")
+		self.buyButton.Visible=act.product~=nil and roster
+		-- (DEC-038) A learned kit with a tree: its points and nodes.
+		local tree=self.kits and self.kits.trees and self.kits.trees[self.player]
+		if self.treeButton then
+			self.treeButton.Visible=tree~=nil and roster and not self.buyButton.Visible
+			if tree then self.treeButton.Text=if (tree.free or 0)>0 then "SKILL TREE  •  "..tree.free.." POINTS" else "SKILL TREE" end
+		end
 	end
 	self.routeNote.Text=if p.Routes then Text.upper(p.Name).." STRINGS  "..Controls.localize(p.Routes) else ""
 end
@@ -912,6 +933,7 @@ end
 -- kit he last fought with, or on a starter for a new player.
 function UI:setKits(kits)
 	self.kits=kits
+	if self.treePanel then self.treePanel:refresh(kits) end
 	if type(kits)~="table" or kits.state~="ready" then return end
 	local want=nil
 	if kits.selected and kits.owned and kits.owned[kits.selected] then want=kits.selected
@@ -1106,6 +1128,8 @@ function UI:render(data)
 	end
 	local introActive=data.phase=="Duel" and (data.intro or 0)>0
 	self.onlineInfo=data.online
+	-- (DEC-038) the tree is a roster screen: a duel closes it.
+	if self.treePanel and data.phase~="Selection" and self.treePanel:shown() then self.treePanel:hide() end
 	self.selection.Visible=data.phase=="Selection" or data.phase=="Pick"; self.hud.Visible=data.phase=="Duel" and not introActive; self.result.Visible=data.phase=="Result"
 	self.queue.Visible=data.phase=="Queue"
 	if self.screenFx then self.screenFx.Visible=data.phase=="Duel" and not introActive and not (FXKit and FXKit.calm) end

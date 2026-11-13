@@ -205,7 +205,85 @@ function S.Commands.gainMastery(p,args)
 	assert(k.owned[args.fighter],"Kit not learned")
 	assert(S.integer(args.amount,Masters.Gain.Max) and args.amount>0,"Invalid amount")
 	k.mastery[args.fighter]=math.min(Masters.MaxMastery,(k.mastery[args.fighter] or 0)+args.amount)
-	return {fighter=args.fighter,mastery=k.mastery[args.fighter]}
+	-- (DEC-038) The kit's tree grows with its mastery.
+	local points=S.syncPoints(p,args.fighter)
+	return {fighter=args.fighter,mastery=k.mastery[args.fighter],points=points}
+end
+-- The tree's points follow the kit's mastery (never down: a point already
+-- earned stays). Returns the points earned, nil for a kit without a tree.
+function S.syncPoints(p,fighterId)
+	if not SkillBuilds.tree(fighterId) then return nil end
+	local r=record(p,fighterId)
+	r.earned=math.max(r.earned,math.min(S.MaxPoints,Masters.points(p.kits.mastery[fighterId] or 0)))
+	return r.earned
+end
+-- (DEC-038) The tree at the master's: a node bought with the kit's points goes
+-- straight into the kit's build ("Main", selected), when it fits beside the
+-- nodes already active (an exclusive choice keeps the first one).
+function S.Commands.syncPoints(p,args)
+	assert(p.kits.owned[args.fighter],"Kit not learned")
+	return {fighter=args.fighter,points=S.syncPoints(p,args.fighter)}
+end
+S.MainBuild="Main"
+local function mainNodes(r)
+	local build=r.builds[S.MainBuild]
+	return if build then S.copy(build.nodes) else {}
+end
+local function setMain(fighterId,r,nodes)
+	local ok,reason=SkillBuilds.validate(fighterId,nodes,{unlocked=r.unlocked})
+	assert(ok,reason)
+	r.builds[S.MainBuild]={nodes=SkillBuilds.apply(fighterId,nodes).nodes}
+	r.selected=S.MainBuild
+end
+function S.Commands.learnNode(p,args)
+	assert(p.kits.owned[args.fighter],"Kit not learned")
+	local r=record(p,args.fighter)
+	S.Commands.unlock(p,{fighter=args.fighter,node=args.node})
+	local nodes=mainNodes(r)
+	table.insert(nodes,args.node)
+	local active=false
+	if SkillBuilds.validate(args.fighter,nodes,{unlocked=r.unlocked}) then setMain(args.fighter,r,nodes);active=true
+	elseif r.builds[S.MainBuild]==nil then setMain(args.fighter,r,mainNodes(r)) end
+	return {fighter=args.fighter,node=args.node,active=active,free=r.earned-S.spent(args.fighter,r)}
+end
+-- Turn an unlocked node on or off in the kit's build. On: its exclusive
+-- alternative goes off. Off: the nodes that require it go off too.
+function S.Commands.setNode(p,args)
+	assert(p.kits.owned[args.fighter],"Kit not learned")
+	local r=record(p,args.fighter)
+	local node=SkillBuilds.node(args.fighter,args.node)
+	assert(node and r.unlocked[node.Id],"Node not unlocked")
+	local nodes=mainNodes(r)
+	local set={}
+	for _,id in nodes do set[id]=true end
+	if args.on==true then
+		if node.Exclusive then
+			for id in set do
+				local other=SkillBuilds.node(args.fighter,id)
+				if other and other.Exclusive==node.Exclusive then set[id]=nil end
+			end
+		end
+		set[node.Id]=true
+	else
+		set[node.Id]=nil
+		local changed=true
+		while changed do
+			changed=false
+			for id in set do
+				local other=SkillBuilds.node(args.fighter,id)
+				for _,need in other and other.Requires or {} do if not set[need] then set[id]=nil;changed=true end end
+				if other and other.RequiresAny then
+					local any=false
+					for _,need in other.RequiresAny do if set[need] then any=true end end
+					if not any then set[id]=nil;changed=true end
+				end
+			end
+		end
+	end
+	local list={}
+	for id in set do table.insert(list,id) end
+	setMain(args.fighter,r,list)
+	return {fighter=args.fighter,node=node.Id,on=args.on==true,active=r.builds[S.MainBuild].nodes}
 end
 -- A kit learned: from its master (his duel won, the mastery condition met) or
 -- bought (a receipt, granted once whatever happens to the save after it).

@@ -1072,6 +1072,8 @@ end
 -- and slash (Sasuke vs Itachi, Kakashi vs Obito), and Shinobi Striker / Storm
 -- where the kunai is a common stance, not a character's move.
 function Combat:arm(a)
+	-- (DEC-038) Kakashi's tanto not earned yet on a player's tree: sheathed.
+	if a.def.WeaponLocked then self:cue(a,(if a.def.Weapon then a.def.Weapon.Name else "BLADE").." • LEARN IT ON THE TREE",.8);return false,"Locked" end
 	if a.airborne or not Rules.canAct(a,self.now) then return false,"Busy" end
 	if self.now<(a.armAt or 0) then return false,"Too soon" end
 	a.armed=not a.armed;a.armAt=self.now+.25
@@ -1145,7 +1147,7 @@ function Combat.linkable(c,a,action)
 	local spec=a.sealCast
 	local slot=tonumber(string.match(action,"^Technique([1-5])$"))
 	if not spec and slot then spec=a.def.Techniques[slot] end
-	if not spec then return false end
+	if not spec or spec.Locked then return false end
 	-- A listed string cancel keeps its own shortened wind-up (Combat:requestInner).
 	local graph=Brawler.graph(a) or {}
 	if not a.sealCast and graph.stringCancels and graph.stringCancels[spec.Id] then return false end
@@ -1488,7 +1490,7 @@ function Combat:requestInner(a,action,aim,clientTime,opts)
 	local cancelGraph=Brawler.graph(a) or {}
 	-- The technique's own condition is checked before the string is spent (a
 	-- teleport cancel needs a seal); the original cancels have none.
-	if cancelSpec and cancelGraph.stringCancels and cancelGraph.stringCancels[cancelSpec.Id] and a.state=="Recovery" and a.chainOpen and self.now>=(a.chainAt or 0)
+	if cancelSpec and not cancelSpec.Locked and cancelGraph.stringCancels and cancelGraph.stringCancels[cancelSpec.Id] and a.state=="Recovery" and a.chainOpen and self.now>=(a.chainAt or 0)
 		and (a.cooldowns[cancelSpec.Id] or 0)<=self.now and a.chakra>=cancelSpec.Cost and Techniques[cancelSpec.Id].check(self,a,cancelSpec,self.now) then
 		Bangla.close(a.pending);a.pending=nil;a.attackName=nil;a.chainOpen=false;a.state="Neutral";a.untilTime=self.now
 		a.stringCancel=cancelSpec.Id
@@ -1573,6 +1575,8 @@ function Combat:requestInner(a,action,aim,clientTime,opts)
 	-- (Audit 03/11, B04) Key 5 with a fighter of four techniques: nothing
 	-- happens, quietly (the press came back as "UNKNOWN ACTION" on screen).
 	if not spec then return false,if slot then "Empty slot" else "Unknown action" end
+	-- (DEC-038) A kit object not earned yet on a player's tree (Lee's weights).
+	if spec.Locked then self:cue(a,string.upper(spec.Name).." • LEARN IT ON THE TREE",.8);return false,"Locked" end
 	local technique=Techniques[spec.Id]
 	-- (06/11) A technique whose work is out answers its key again itself
 	-- (Naruto's crowd: the press takes a clone's body), before its cooldown
@@ -1583,7 +1587,7 @@ function Combat:requestInner(a,action,aim,clientTime,opts)
 	end
 	-- (Stage 6) A blade technique draws the blade itself (Kakashi's Lightning
 	-- Cut): the tanto comes out with the signs, it stays out after.
-	if spec.Armed and not a.armed then
+	if spec.Armed and not a.armed and not a.def.WeaponLocked then
 		a.armed=true;a.armAt=self.now+.25
 		Brawler.event(self,a,"Draw")
 	end

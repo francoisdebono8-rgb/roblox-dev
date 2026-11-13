@@ -47,7 +47,7 @@ test("points are granted by the server; unlocking follows prerequisites and spen
  p=run(p,"unlock",{fighter="Flashstep",node="FlashEconomy"})
  refused(p,"unlock",{fighter="Flashstep",node="StringFlash"},"Not enough skill points")
  refused(p,"unlock",{fighter="Flashstep",node="Nope"},"Unknown node")
- refused(p,"unlock",{fighter="Sand",node="Nope"},"No skill tree")
+ refused(p,"unlock",{fighter="Mist",node="Nope"},"No skill tree")
  refused(p,"grant",{fighter="Flashstep",amount=-5},"Invalid amount")
  refused(p,"grant",{fighter="Flashstep",amount=S.MaxPoints},"Point cap")
  -- Both options of an exclusive choice can be owned; a build picks one.
@@ -98,7 +98,7 @@ test("validation refuses tampered or future profiles instead of repairing them",
  broken(function(q) q.fighters.GentleFist.unlocked.KaitenCancel=true;q.fighters.GentleFist.earned=50;q.fighters.GentleFist.unlocked.PrecisePalms=nil end,"requires PrecisePalms")
  broken(function(q) q.fighters.GentleFist.builds.X={nodes={"PointStep"}} end,"build X")
  broken(function(q) q.fighters.GentleFist.selected="Missing" end,"selected build missing")
- broken(function(q) q.fighters.Sand=S.fighter() end,"No skill tree")
+ broken(function(q) q.fighters.Mist=S.fighter() end,"No skill tree")
  broken(function(q) q.schemaVersion=3 end,"header")
  broken(function(q) q.fighters.GentleFist.earned=0/0 end,"Unsafe")
  assert(S.migrate({schemaVersion=99})==nil,"a future schema was accepted")

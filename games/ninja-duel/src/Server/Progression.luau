@@ -24,6 +24,7 @@ local Config=require(Shared.Config)
 local Masters=require(Shared.Masters)
 local S=require(script.Parent.ProfileSchema)
 local Repo=require(script.Parent.ProfileRepository)
+local SkillBuilds=require(script.Parent.SkillBuilds)
 
 local P={handles=setmetatable({},{__mode="k"}),states=setmetatable({},{__mode="k"}),boost=setmetatable({},{__mode="k"}),repo=nil}
 P.LoadTries=5
@@ -99,7 +100,49 @@ function P.view(player)
 		-- `via`: the learned kit he fights the master's duel with.
 		out.masters[id]={ready=ok,via=if ok then why else nil,missing=if ok then nil else why,best=best,product=(P.config().Products or {})[id]}
 	end
+	-- (DEC-038) Each learned kit's tree: its points, what is unlocked and
+	-- what is active in its build (the nodes themselves are Shared/SkillTrees).
+	out.trees={}
+	for id in k.owned do
+		if SkillBuilds.tree(id) then
+			local r=h.data.fighters[id]
+			local earned=math.max(r and r.earned or 0,Masters.points(k.mastery[id] or 0))
+			local unlocked,active={},{}
+			if r then
+				for node in r.unlocked do table.insert(unlocked,node) end
+				local nodes=S.selection(h.data,id)
+				for _,node in nodes or {} do table.insert(active,node) end
+			end
+			out.trees[id]={points=earned,free=earned-(if r then S.spent(id,r) else 0),unlocked=unlocked,active=active}
+		end
+	end
 	return out
+end
+-- (DEC-038) The tree at the master's: buy a node with the kit's points (it
+-- goes into the kit's build), or turn an unlocked node on or off.
+function P.learnNode(player,kit,node)
+	if not P.enabled() or not P.ready(player) then return false,"Profile not loaded" end
+	local h=P.handles[player]
+	-- Points owed by mastery earned before the trees existed.
+	if h.data.kits.owned[kit] and SkillBuilds.tree(kit) then
+		local r=h.data.fighters[kit]
+		if not r or r.earned<Masters.points(h.data.kits.mastery[kit] or 0) then P.run(player,"syncPoints",{fighter=kit}) end
+	end
+	return P.run(player,"learnNode",{fighter=kit,node=node})
+end
+function P.setNode(player,kit,node,on) return P.run(player,"setNode",{fighter=kit,node=node,on=on==true}) end
+-- The build a player's own kit fights with in a duel that counts or in
+-- practice with a learned kit: his active nodes, the kit objects he has not
+-- earned taken away (gated). nil: the prodigy's whole kit (the path is off,
+-- the profile failed, the kit is not his, or it has no tree).
+function P.kitSpec(player,kit)
+	if not P.enabled() or not P.ready(player) or not SkillBuilds.tree(kit) then return nil end
+	local h=P.handles[player]
+	if not h.data.kits.owned[kit] then return nil end
+	local nodes,unlocked=S.selection(h.data,kit)
+	local set={}
+	for _,id in nodes or {} do set[id]=true end
+	return {nodes=nodes or {},unlocked=unlocked or set,gated=true}
 end
 
 -- Whether a player may fight a duel that counts with this kit.

@@ -38,8 +38,9 @@ function Matches.resolveKit(fighterId,spec,bracket)
 		if not nodes then return false,"Unknown AI preset" end
 	end
 	local kit,reason
-	if bracket~=nil then kit,reason=SkillBuilds.admit(bracket,fighterId,nodes,spec.unlocked)
-	else kit,reason=SkillBuilds.build(fighterId,nodes,{unlocked=spec.unlocked}) end
+	-- (DEC-038) gated: a player's own kit, its objects earned on his tree only.
+	if bracket~=nil then kit,reason=SkillBuilds.admit(bracket,fighterId,nodes,spec.unlocked,{gated=spec.gated==true})
+	else kit,reason=SkillBuilds.build(fighterId,nodes,{unlocked=spec.unlocked,gated=spec.gated==true}) end
 	if not kit then return false,reason end
 	return true,kit
 end
@@ -211,6 +212,12 @@ function Matches:start(player,playerId,botId,training,options)
 	-- (Beta 03/11) only the beta's fighters (Shared/BetaRoster), whatever a client asks for.
 	if not table.find(BetaRoster,playerId) or not table.find(BetaRoster,botId) then return false,"Not in the beta" end
 	local playerKit,botKit
+	-- (DEC-038) A learned kit fights with the player's own tree (his build,
+	-- the objects he earned); a kit he only tries is the prodigy's whole kit.
+	if options==nil and not s.spectate and not s.online then
+		local spec=Progression.kitSpec(player,playerId)
+		if spec then options={player=spec} end
+	end
 	if options~=nil then
 		if type(options)~="table" then return false,"Invalid options" end
 		local ok,result=Matches.resolveKit(playerId,options.player,options.bracket)
@@ -521,6 +528,18 @@ function Matches:request(player,payload)
 	end
 	-- (DEC-037) The masters' path from the roster: the starter, the kit for the
 	-- next duels, a master's duel, a kit bought.
+	-- (DEC-038) The tree of a learned kit: a node bought with its points, an
+	-- unlocked node turned on or off. Between duels only.
+	if action=="LearnNode" or action=="SetNode" then
+		if clock-s.lastLifecycle<0.25 or s.phase~="Selection" or not Progression.enabled() then return end
+		if type(payload.player)~="string" or type(payload.node)~="string" or #payload.node>32 then return end
+		s.lastLifecycle=clock
+		local ok,why
+		if action=="LearnNode" then ok,why=Progression.learnNode(player,payload.player,payload.node)
+		else ok,why=Progression.setNode(player,payload.player,payload.node,payload.on==true) end
+		self:send(player,{phase="Selection",epoch=s.epoch,kits=Progression.view(player),notice=if ok then nil else string.upper(tostring(why))})
+		return
+	end
 	if action=="ChooseStarter" or action=="SelectKit" or action=="MasterTrial" or action=="BuyKit" then
 		if clock-s.lastLifecycle<0.8 or s.phase~="Selection" or not Progression.enabled() then return end
 		if type(payload.player)~="string" then return end

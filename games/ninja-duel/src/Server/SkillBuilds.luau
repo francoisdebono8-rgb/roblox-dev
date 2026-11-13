@@ -31,6 +31,12 @@ local RATIO={
 	["def.GentleFist.Drain"]={1,1.2},["def.GentleFist.Duration"]={1,1.35},
 	["def.Byakugan.BlindSpot"]={1,1.06},["def.Awakening.HealthDrain"]={.65,1},
 	["tech.Cost"]={.75,1},["tech.Cooldown"]={.7,1},["tech.Channel"]={.7,1},["tech.Active"]={1,1.4},["tech.Range"]={1,1.3},
+	-- (13/11, DEC-038) the trees of Naruto, Gaara, Lee and Kakashi.
+	["def.Bodies.clone.Cost"]={.75,1},["def.Bodies.clone.Life"]={1,1.3},["def.Bodies.clone.Max"]={1,1.5},
+	["def.SandShield.Regen"]={.8,1},["def.SandShield.Charges"]={1,1.34},
+	["def.Awakening.Regen"]={1,1.15},["def.Awakening.ShieldRegen"]={1,1.25},["def.Awakening.CostScale"]={.85,1},["def.Awakening.Speed"]={1,1.05},
+	["def.Copy.Life"]={1,1.35},["def.Copy.Uses"]={1,2},["def.Weapon.Reach"]={1,1.35},["def.Deflect.Radius"]={1,1.2},
+	["graph.airFinisher.healthCost"]={.6,1},
 }
 -- Technique fields the shared pipeline reads for every technique, and the
 -- techniques whose own implementation reads spec.Range.
@@ -73,6 +79,22 @@ SkillBuilds.OPTIONAL={
 	["tech.WireTrap.WallPin"]={Fields={Range={Max=12},Bind={Max=1.5}},Hook="Techniques.wireBind"},
 	["tech.PhoenixFlower.WiredBlades"]={Max=1,Hook="Elements.phoenix"},
 	["tech.Chidori.WallCharge"]={Min=.25,Max=.62,Hook="Combat:request (Chidori from a wall run)"},
+	-- (13/11, DEC-038) A kit object a player's ninja has earned (the Item
+	-- node's own flag; SkillBuilds.build gated=true locks what it lacks).
+	["def.Items.*"]={Key="item",Value=true,Hook="SkillBuilds.build (gated kits)"},
+	-- One rider of the substitution on a kit that already has its own
+	-- (Naruto's clone swap, Lee's Rupture) or none (Gaara, Kakashi).
+	["def.Substitution.FreeRush"]={Max=1,Hook="Combat:substitute (free counter-rush)"},
+	["def.Substitution.Counter"]={Max=.8,Hook="Combat:substitute (counter window) / Brawler.counterStart"},
+	["def.Awakening.Heal"]={Max=2,Hook="Techniques.curseDrain (health back while awakened)"},
+	["tech.RemoveWeights.Drop"]={Fields={Radius={Max=6},Damage={Max=8}},Hook="Families.Buff (the weights crater the floor)"},
+}
+-- (DEC-038) What a player's kit lacks while an Item node is not active: the
+-- only paths an Item node's Without may name, and how.
+SkillBuilds.WITHOUT={
+	["def.SandShield"]={op="clear",Hook="Combat (no shield charges without the gourd)"},
+	["def.WeaponLocked"]={op="set",value=true,Hook="Combat:arm (the tanto stays sheathed)"},
+	["tech.*.Locked"]={op="set",value=true,Hook="Combat:requestInner (the technique is refused)"},
 }
 -- Ranked brackets (PROG-002): inside a bracket every fighter may ACTIVATE at
 -- most Budget skill points, whatever he has unlocked. Progression gives more
@@ -258,10 +280,41 @@ function SkillBuilds.apply(fighterId,nodes)
 	return kit
 end
 -- Validate then apply: the only way server code should obtain a kit.
+-- opts.gated (DEC-038): a PLAYER's kit. Every kit object whose Item node is
+-- not active is taken away (its Without), and kit.locks lists the objects.
+-- The prodigies themselves (the AI, the masters, the films) are never gated.
 function SkillBuilds.build(fighterId,nodes,opts)
 	local ok,reason=SkillBuilds.validate(fighterId,nodes,opts)
 	if not ok then return nil,reason end
-	return SkillBuilds.apply(fighterId,nodes)
+	local kit=SkillBuilds.apply(fighterId,nodes)
+	if opts and opts.gated then SkillBuilds.gate(kit) end
+	return kit
+end
+function SkillBuilds.gate(kit)
+	kit.locks=kit.locks or {}
+	local active={}
+	for _,id in kit.nodes do active[id]=true end
+	for _,node in (Trees[kit.fighterId] or {Nodes={}}).Nodes do
+		if node.Item and not active[node.Id] then
+			for _,rule in node.Without or {} do
+				local holder,key=locate(kit,rule[1],false)
+				if holder then
+					if rule[2]=="clear" then holder[key]=nil else holder[key]=copy(rule[3]) end
+				end
+			end
+			table.insert(kit.locks,node.Item)
+		end
+	end
+	kit.gated=true
+	return kit
+end
+-- The Item nodes of a tree, in order ({id, item}).
+function SkillBuilds.items(fighterId)
+	local list={}
+	for _,node in (Trees[fighterId] or {Nodes={}}).Nodes do
+		if node.Item then table.insert(list,{id=node.Id,item=node.Item}) end
+	end
+	return list
 end
 function SkillBuilds.bracket(id)
 	for _,bracket in SkillBuilds.Brackets do if bracket.Id==id then return bracket end end
@@ -274,7 +327,7 @@ function SkillBuilds.admit(bracketId,fighterId,nodes,unlocked,opts)
 	local bracket=SkillBuilds.bracket(bracketId)
 	if not bracket then return nil,"Unknown bracket" end
 	if not bracket.Enabled and not (opts and opts.allowClosed) then return nil,"Bracket closed" end
-	local kit,reason=SkillBuilds.build(fighterId,nodes,{budget=bracket.Budget,unlocked=unlocked})
+	local kit,reason=SkillBuilds.build(fighterId,nodes,{budget=bracket.Budget,unlocked=unlocked,gated=opts and opts.gated})
 	if not kit then return nil,reason end
 	kit.bracket=bracket.Id;kit.budget=bracket.Budget
 	return kit
@@ -371,6 +424,7 @@ local function checkValue(fighterId,path,op,value,errors)
 	end
 	if spec.Key=="technique" and not techniqueOf(Fighters[fighterId],key) then return fail("unknown technique key") end
 	if spec.Key=="attack" and not Attacks[key] then return fail("unknown move key") end
+	if spec.Key=="item" and (type(key)~="string" or not string.match(key,"^%a%w*$")) then return fail("bad item key") end
 	if spec.Kind=="attack" and not Attacks[value] then return fail("unknown move") end
 	if spec.Kind=="payoff" and not PAYOFFS[value] then return fail("unknown route payoff") end
 	if spec.Value~=nil and value~=spec.Value then return fail("value must be "..tostring(spec.Value)) end
@@ -419,6 +473,27 @@ function SkillBuilds.checkTree(fighterId)
 			for k=before+1,#errors do errors[k]=fighterId.."."..tostring(id)..": "..errors[k] end
 			if op=="set" and canonical(fighterId,path)==nil then addsBehaviour=true end
 			if node.Kind=="stat" and path~="def.Health" and path~="def.Chakra" and path~="def.ChakraRegen" then fail(tostring(id)..": a stat node only changes health or chakra") end
+		end
+		-- (DEC-038) A kit object: a major tool node that sets its own Items flag,
+		-- and whose Without only names the declared locks.
+		if node.Item~=nil or node.Without~=nil then
+			if type(node.Item)~="string" or not node.Major or node.Kind~="tool" or node.Exclusive then fail(tostring(id)..": an item node is a major tool node, never exclusive") end
+			local own=false
+			for _,effect in node.Effects or {} do if effect[1]=="def.Items."..tostring(node.Item) and effect[2]=="set" and effect[3]==true then own=true end end
+			if not own then fail(tostring(id)..": an item node sets def.Items."..tostring(node.Item)) end
+			if type(node.Without)~="table" or #node.Without==0 then fail(tostring(id)..": an item node says what a player lacks without it") end
+			for _,rule in node.Without or {} do
+				local path=rule[1]
+				local declared=SkillBuilds.WITHOUT[path] or (type(path)=="string" and string.match(path,"^tech%.%w+%.Locked$") and SkillBuilds.WITHOUT["tech.*.Locked"])
+				if not declared then fail(tostring(id)..": undeclared lock "..tostring(path))
+				elseif rule[2]~=declared.op or (declared.op=="set" and rule[3]~=declared.value) then fail(tostring(id)..": lock "..path.." must be "..declared.op)
+				elseif declared.op=="clear" and canonical(fighterId,path)==nil then fail(tostring(id)..": nothing to take away at "..path)
+				elseif string.match(path,"^tech%.") and not techniqueOf(Fighters[fighterId],string.match(path,"^tech%.(%w+)%.")) then fail(tostring(id)..": unknown technique in "..path) end
+			end
+		else
+			for _,effect in node.Effects or {} do
+				if type(effect[1])=="string" and string.match(effect[1],"^def%.Items%.") then fail(tostring(id)..": only an item node sets def.Items") end
+			end
 		end
 		if node.Major then
 			if node.Kind=="stat" then fail(tostring(id)..": a major node cannot be a stat") end
