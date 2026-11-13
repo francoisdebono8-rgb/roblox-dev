@@ -5159,13 +5159,13 @@ return {
       <Item class="StringValue" referent="ND35">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">8298f4793d2274fc9f641bb5ef62d31101c113dd4b2b266a02cc1c5f313726dd</string>
+          <string name="Value">cee2e91cccde0fa6db9abf46c74894bf818364a4b9c0a49491033b40966a0c3b</string>
         </Properties>
       </Item>
       <Item class="StringValue" referent="ND36">
         <Properties>
           <string name="Name">RuntimeFingerprint</string>
-          <string name="Value">8298f4793d2274fc9f641bb5ef62d31101c113dd4b2b266a02cc1c5f313726dd</string>
+          <string name="Value">cee2e91cccde0fa6db9abf46c74894bf818364a4b9c0a49491033b40966a0c3b</string>
         </Properties>
       </Item>
       <Item class="StringValue" referent="ND37">
@@ -5177,7 +5177,7 @@ return {
       <Item class="StringValue" referent="ND38">
         <Properties>
           <string name="Name">SourceCommit</string>
-          <string name="Value">dd6d1c693ccb</string>
+          <string name="Value">dd261363280f</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND39">
@@ -25794,7 +25794,11 @@ end
 -- the kit `def` decides everything else. Without one, the prodigy's own body.
 function World.rig(parent, def, cf, name, worn)
 	fighterGroup()
-	local model = Instance.new("Model"); model.Name=name; model.Parent=parent
+	-- (13/11, #72, gel au BEGIN) Built away from the world and put in it once,
+	-- at the end: measured in Studio, a body built inside the arena spent
+	-- 40 ms of the duel's start parenting its costume pieces one by one into
+	-- the live world, and each piece reached the client as its own message.
+	local model = Instance.new("Model"); model.Name=name
 	local look=World.lookDef(worn,def)
 	local skin=Color3.fromRGB(table.unpack(look.Skin))
 	local outfit=Color3.fromRGB(table.unpack(look.Outfit))
@@ -25852,9 +25856,12 @@ function World.rig(parent, def, cf, name, worn)
 		end
 	end
 	World.dress(model,def,worn)
-	model.PrimaryPart=root; root:SetNetworkOwner(nil)
+	model.PrimaryPart=root
 	-- Fighters pass through each other physically; Combat keeps them apart.
 	for _,p in model:GetDescendants() do if p:IsA("BasePart") then p.CollisionGroup="NinjaFighters" end end
+	model.Parent=parent
+	-- (the network owner is set once the body is in the world: Roblox refuses it before)
+	root:SetNetworkOwner(nil)
 	return model,hum,root,joints
 end
 -- --------------------------------------------------------------- costumes

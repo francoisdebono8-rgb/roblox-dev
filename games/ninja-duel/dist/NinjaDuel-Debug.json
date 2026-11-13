@@ -1,7 +1,7 @@
 {
   "version": "0.13.0-arena-combo",
   "artifact": "NinjaDuel-Debug.rbxlx",
-  "sha256": "10f26077e1611b1e9bea7585c87cc16692eadf4619de588d7758e8638147e632",
+  "sha256": "9a6dfb26de1d7e506e4a98a2da5a8d3eebf8acef1f940e940151610b451711a8",
   "sources": {
     "src/Client/ArenaDress.luau": "e2da1115cb48480b2effa3170a1670d3bb44d5bcbdfd9bbdbb3e60ee302b5360",
     "src/Client/AuthoredClips.luau": "1799da3d96178392fe44c90470fca30d7b11acde9bb45c0e2c5660bd940d6715",
@@ -193,7 +193,7 @@
     "src/Server/Wave2Kit.luau": "49dff3ee2e1dfb21a45904eca78f067a50a024d808145a18532797e30d5749b6",
     "src/Server/Wave3Kit.luau": "9fa83afb7d16647a1edeb80ab462019eecea113c6304797e8f6629b92f58881a",
     "src/Server/Wave4Kit.luau": "14b41f6af66e84734b44ab9f5370abfea7947a717bf2eb283c805bb96f13c7ba",
-    "src/Server/World.luau": "9ddb4e7a768c6b7c872c776bc0ffc530d12a2dac901cb60e21a3e2ae43058419",
+    "src/Server/World.luau": "d144bdfa844b32975715ee7369df23923321b9b5a97f921b1a5a02b1a13d1fad",
     "src/Server/WorldReaction.luau": "3a5ce9c59e269dfcf9ca960780d645baafb6308d4ab82f1de08d47f3f1977a14",
     "src/Server/Zones.luau": "cf6fc363aa57424ae1bcb243586e7bda5547f1c68601901115a71c34c95434b2",
     "src/Shared/ActionContext.luau": "27afa6defb5f94ae59b8d8e6addaa6409340c09fb34d347eb8c1fbc0cdcae8b3",
@@ -231,11 +231,11 @@
   },
   "sourceEquality": "PASS",
   "debugOnly": true,
-  "buildFingerprint": "902c5f457ca2714fda071b6964c542090d06c5bce0f8f87b03432feae2729f2a",
+  "buildFingerprint": "bcbfcb355daddd7cc9aa179e09feb9a3e37f224fa5ee2399d53cb708c0aa099e",
   "profile": "debug",
-  "runtimeFingerprint": "8298f4793d2274fc9f641bb5ef62d31101c113dd4b2b266a02cc1c5f313726dd",
-  "sourceCommit": "dd6d1c693ccb980efbd7e6be8d1be524b883a614",
-  "headCommit": "dd6d1c693ccb980efbd7e6be8d1be524b883a614",
+  "runtimeFingerprint": "cee2e91cccde0fa6db9abf46c74894bf818364a4b9c0a49491033b40966a0c3b",
+  "sourceCommit": "dd261363280f13266acc8256422f1b59da217833",
+  "headCommit": "dd261363280f13266acc8256422f1b59da217833",
   "sourceDirty": false,
   "captureTools": {},
   "donorAssets": {
