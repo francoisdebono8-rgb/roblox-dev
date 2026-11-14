@@ -47,8 +47,10 @@ function Presentation:hitstop(keys,style,direction,now)
 end
 -- The struck body's flash on a guessed contact (the server's own contact,
 -- when it comes, does not flash it a second time: Effects reads `tinted`).
+Presentation.HIT_TINT=Color3.fromRGB(255,86,52)
 function Presentation.flash(model,strength,time)
-	Kit.tint(model,Color3.fromRGB(255,244,236),time,strength)
+	-- (14/11, CM QA A3) red-orange, as the comment of Kit.tint always said
+	Kit.tint(model,Presentation.HIT_TINT,time,strength)
 end
 function Presentation:frozen(key,now)
 	local f=self.freeze[key]
