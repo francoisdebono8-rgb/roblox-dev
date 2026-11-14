@@ -77,6 +77,28 @@ C'est l'exemple de François : « la fissure qui devrait être au sol est dans l
 ### A7. Un bloc de « verre » autour du perso qui fonce
 ![A7](A7_bloc_de_verre.jpg)
 
+## Corps et physique (ajout du 14/11, 14 h)
+
+Cette passe répond à une remarque de François. La première revue parlait des effets, mais pas de ce qu'on voit le plus : des mouvements qu'un corps ne peut pas faire et des coups qui ne tapent pas avec une vraie physique.
+
+Méthode :
+- tout le combat F06 a été mesuré dans le replay, image par image (angles de chaque articulation, pieds au sol, réaction à chaque coup) ;
+- les pires moments ont été regardés, au ralenti ou en image fixe du replay.
+
+Les chiffres complets, avec les secondes, sont dans [`D6_mesures_F06.txt`](D6_mesures_F06.txt).
+
+### D6 (DEV). Coup en course : il rentre dedans, puis les deux se repoussent
+![D6](D6_coup_en_course_sans_coup.jpg)
+
+### D7 (DEV). Touché par un perso qui lui tourne le dos, puis attiré vers lui
+![D7](D7_touche_de_dos.jpg)
+
+### A8 (ANIMATEUR). Des articulations qu'un corps ne peut pas faire
+![A8](A8_articulations_impossibles.jpg)
+
+### A9 (ANIMATEUR et DEV). Ils glissent sans marcher
+![A9](A9_glisse_sans_marcher.jpg)
+
 ## Écartés : ces défauts viennent de nos outils de tournage, pas du jeu
 
 - La caméra de côté perd parfois les deux persos et filme une arène vide.
