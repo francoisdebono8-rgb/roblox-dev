@@ -7466,13 +7466,13 @@ return {
       <Item class="StringValue" referent="ND58">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">68dab6a73c656791f536f20ae8510505d66c2cfe1a8432275804ad366fce4379</string>
+          <string name="Value">de57ab992503e923b4daf8c5ac920aa31460a974366dd7c99a172ecf7c581470</string>
         </Properties>
       </Item>
       <Item class="StringValue" referent="ND59">
         <Properties>
           <string name="Name">RuntimeFingerprint</string>
-          <string name="Value">68dab6a73c656791f536f20ae8510505d66c2cfe1a8432275804ad366fce4379</string>
+          <string name="Value">de57ab992503e923b4daf8c5ac920aa31460a974366dd7c99a172ecf7c581470</string>
         </Properties>
       </Item>
       <Item class="StringValue" referent="ND60">
@@ -7484,7 +7484,7 @@ return {
       <Item class="StringValue" referent="ND61">
         <Properties>
           <string name="Name">SourceCommit</string>
-          <string name="Value">8386196adfb7</string>
+          <string name="Value">1719f03044fb</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND62">
@@ -54714,7 +54714,7 @@ function FX.formulaGround(parent,surface,normal,radius,tone)
 		local a=turn+(i-1)/#FX.FORMULA*math.pi*2
 		local l=new("TextLabel",{BackgroundTransparency=1,Size=UDim2.fromScale(.7/size*1.4,.7/size*1.4),AnchorPoint=Vector2.new(.5,.5),
 			Position=UDim2.fromScale(.5+math.sin(a)*radius/size,.5-math.cos(a)*radius/size),Rotation=math.deg(a),Text=ch,TextScaled=true,
-			Font=Enum.Font.GothamBlack,TextColor3=tone,TextStrokeColor3=Color3.fromRGB(110,60,0),TextStrokeTransparency=.35,TextTransparency=1},gui)
+			Font=Enum.Font.BuilderSansExtraBold,TextColor3=tone,TextStrokeColor3=Color3.fromRGB(110,60,0),TextStrokeTransparency=.35,TextTransparency=1},gui)
 		table.insert(labels,l)
 	end
 	return plate,labels
@@ -63972,8 +63972,13 @@ function Panel.new(kit,gui,send,ui)
 	self.P=P
 	self.root=kit.frame(gui,UDim2.fromOffset(0,0),UDim2.fromScale(1,1),P.ink,1)
 	self.root.ZIndex=72;self.root.Visible=false
-	local card=kit.inkCard(kit.frame(self.root,UDim2.new(0,24,.5,0),UDim2.fromOffset(Panel.W,Panel.H),kit.CARD,0))
+	-- (DA v3, DESIGN, validée le 14/11 22 h 35) une case de planche manga :
+	-- papier, encre noire, un seul rouge ; la ligne choisie en bande d'encre
+	local M=kit.MANGA or {paper=Color3.fromRGB(255,253,248),ink=Color3.fromRGB(20,16,17),red=Color3.fromRGB(195,18,29),cream=Color3.fromRGB(246,238,222),redSoft=Color3.fromRGB(240,120,110)}
+	self.M=M
+	local card=kit.frame(self.root,UDim2.new(0,24,.5,0),UDim2.fromOffset(Panel.W,Panel.H),M.paper,0)
 	card.AnchorPoint=Vector2.new(0,.5);card.ZIndex=73
+	kit.create("UIStroke",card,{Color=M.ink,Thickness=4,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
 	self.card=card
 	local scale=kit.create("UIScale",card,{Scale=1})
 	local function fit()
@@ -63981,29 +63986,43 @@ function Panel.new(kit,gui,send,ui)
 		scale.Scale=math.clamp(math.min((v.Y-40)/Panel.H,(v.X*.55)/Panel.W),.45,1.1)
 	end
 	pcall(function() workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(fit) end);fit()
-	kit.inkTitle(kit.text(card,"YOUR NINJA",UDim2.fromOffset(24,18),UDim2.fromOffset(392,48),44,P.paper,kit.TITLE_FONT))
-	self.sub=kit.text(card,"",UDim2.fromOffset(26,66),UDim2.fromOffset(392,40),14,P.gold,kit.BODY_FONT)
+	kit.text(card,"YOUR NINJA",UDim2.fromOffset(24,14),UDim2.fromOffset(392,52),52,M.ink,kit.TITLE_FONT)
+	kit.frame(card,UDim2.fromOffset(24,62),UDim2.fromOffset(170,5),M.red,0)
+	self.sub=kit.text(card,"",UDim2.fromOffset(26,72),UDim2.fromOffset(392,36),14,M.ink,kit.BODY_FONT)
 	self.sub.TextWrapped=true;self.sub.TextYAlignment=Enum.TextYAlignment.Top
 	local y=112
 	for _,slot in Panel.ROWS do
-		local row=kit.frame(card,UDim2.fromOffset(20,y),UDim2.fromOffset(400,62),P.panel,.1)
-		kit.corner(row,8)
-		kit.text(row,Shop.Slots[slot].name,UDim2.fromOffset(60,4),UDim2.fromOffset(280,16),11,P.muted,kit.BODY_FONT,Enum.TextXAlignment.Center)
-		local name=kit.text(row,"",UDim2.fromOffset(60,20),UDim2.fromOffset(280,36),20,P.paper,kit.TITLE_FONT,Enum.TextXAlignment.Center)
+		local row=kit.frame(card,UDim2.fromOffset(20,y),UDim2.fromOffset(400,62),M.paper,0)
+		kit.create("UIStroke",row,{Color=M.ink,Thickness=2,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
+		local label=kit.text(row,Shop.Slots[slot].name,UDim2.fromOffset(62,4),UDim2.fromOffset(276,16),12,M.ink,kit.BODY_FONT,Enum.TextXAlignment.Center)
+		local name=kit.text(row,"",UDim2.fromOffset(62,20),UDim2.fromOffset(276,36),22,M.ink,kit.STRONG_FONT or kit.BODY_FONT,Enum.TextXAlignment.Center)
 		name.TextScaled=true
-		kit.create("UITextSizeConstraint",name,{MaxTextSize=20,MinTextSize=10})
-		local prev=kit.button(row,"&lt;",UDim2.fromOffset(6,7),UDim2.fromOffset(48,48),function() self:step(slot,-1) end)
-		local nxt=kit.button(row,"&gt;",UDim2.fromOffset(346,7),UDim2.fromOffset(48,48),function() self:step(slot,1) end)
-		prev.TextSize=28;nxt.TextSize=28
-		self.rows[slot]={frame=row,name=name,prev=prev,next=nxt}
+		kit.create("UITextSizeConstraint",name,{MaxTextSize=22,MinTextSize=12})
+		local prev=kit.button(row,"‹",UDim2.fromOffset(4,4),UDim2.fromOffset(54,54),function() self:step(slot,-1) end,M.ink)
+		local nxt=kit.button(row,"›",UDim2.fromOffset(342,4),UDim2.fromOffset(54,54),function() self:step(slot,1) end,M.ink)
+		for _,b in {prev,nxt} do b.TextSize=34;b.TextColor3=M.cream;b.Font=kit.STRONG_FONT or kit.BODY_FONT end
+		row.InputBegan:Connect(function(input) if input.UserInputType==Enum.UserInputType.MouseButton1 or input.UserInputType==Enum.UserInputType.Touch then self:select(slot) end end)
+		self.rows[slot]={frame=row,name=name,label=label,prev=prev,next=nxt}
 		y+=70
 	end
-	self.done=kit.button(card,"",UDim2.fromOffset(20,Panel.H-74),UDim2.fromOffset(400,56),function() self:finish() end,P.red)
-	self.done.TextSize=28
-	self.foot=kit.text(card,"Masters' outfits, more pieces and weapons: in the SHOP.",UDim2.fromOffset(20,Panel.H-16),UDim2.fromOffset(400,14),11,P.muted,kit.BODY_FONT,Enum.TextXAlignment.Center)
+	self.done=kit.button(card,"",UDim2.fromOffset(20,Panel.H-74),UDim2.fromOffset(400,56),function() self:finish() end,M.red)
+	self.done.TextSize=30;self.done.TextColor3=M.cream
+	-- DONE: a red « APPROVED » stamp prints (0.25 s), then the card goes
+	self.stamp=kit.text(card,"APPROVED",UDim2.new(.5,-150,.5,-50),UDim2.fromOffset(300,100),64,M.red,kit.TITLE_FONT,Enum.TextXAlignment.Center)
+	self.stamp.Rotation=-12;self.stamp.Visible=false;self.stamp.ZIndex=90
+	kit.create("UIStroke",self.stamp,{Color=M.red,Thickness=4,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
+	self.foot=kit.text(card,"Inspirations' outfits and weapons: SHOP › STYLE. More pieces at the market.",UDim2.fromOffset(20,Panel.H-16),UDim2.fromOffset(400,14),12,M.ink,kit.BODY_FONT,Enum.TextXAlignment.Center)
+	self.sel="top"
 	pcall(function()
-		UIS.InputBegan:Connect(function(input)
-			if input.KeyCode==Enum.KeyCode.ButtonB and self.root.Visible then self:finish() end
+		UIS.InputBegan:Connect(function(input,processed)
+			if not self.root.Visible then return end
+			local key=input.KeyCode
+			if key==Enum.KeyCode.ButtonB then self:finish()
+			elseif processed then return
+			-- (DA v3) the keyboard: ↑↓ a row, ←→ a piece, Enter DONE
+			elseif key==Enum.KeyCode.Up or key==Enum.KeyCode.Down then self:move(if key==Enum.KeyCode.Up then -1 else 1)
+			elseif key==Enum.KeyCode.Left or key==Enum.KeyCode.Right then self:step(self.sel,if key==Enum.KeyCode.Left then -1 else 1)
+			elseif key==Enum.KeyCode.Return or key==Enum.KeyCode.KeypadEnter then self:finish() end
 		end)
 	end)
 	-- The camera on his face while the card is open; it opens by itself on
@@ -64040,9 +64059,34 @@ function Panel:hide()
 end
 -- DONE: only once he wears a top (or a master's outfit).
 function Panel:finish()
-	if not self:dressed() then return end
+	if not self:dressed() or self.stamping then return end
 	self.seen=true
-	self:hide()
+	self.stamping=true
+	self.stamp.Visible=true;self.stamp.TextTransparency=1
+	pcall(function()
+		local TweenService=game:GetService("TweenService")
+		TweenService:Create(self.stamp,TweenInfo.new(.12),{TextTransparency=0}):Play()
+	end)
+	task.delay(.25,function()
+		self.stamp.Visible=false;self.stamping=false
+		self:hide()
+	end)
+end
+-- The rows a player can be on (the master's outfit only once he owns one).
+function Panel:selectable()
+	local out={}
+	local style=self.kits and self.kits.style
+	for _,slot in Panel.ROWS do
+		if slot~="set" or #Panel.options(style,"set")&gt;1 then table.insert(out,slot) end
+	end
+	return out
+end
+function Panel:select(slot) self.sel=slot;self:draw() end
+function Panel:move(step)
+	local rows=self:selectable()
+	local at=table.find(rows,self.sel) or 1
+	self.sel=rows[(at-1+step)%#rows+1]
+	self:draw()
 end
 function Panel:refresh(kits)
 	self.kits=kits
@@ -64063,16 +64107,27 @@ function Panel:draw()
 		local row=self.rows[slot]
 		local id=worn[slot]
 		local item=id and Shop.item(id)
-		row.frame.Visible=slot~="set" or ownsSet
+		local M=self.M
 		local covered=set and not set.none and slot~="set" and slot~="headband"
-		row.name.Text=if covered then "("..set.name..")" elseif item then item.name elseif slot=="headband" then (Shop.default("headband") or {name=""}).name else "NOTHING"
-		row.name.TextColor3=if covered then P.muted elseif item or slot=="headband" then P.paper else P.muted
+		local on=self.sel==slot
+		-- (DA v3) always shown; disabled until he owns one
+		local locked=slot=="set" and not ownsSet
+		row.prev.Visible=not locked;row.next.Visible=not locked
+		row.name.Text=if locked then "GET ONE IN THE SHOP › STYLE" elseif covered then "("..set.name..")" elseif item then item.name elseif slot=="headband" then (Shop.default("headband") or {name=""}).name else "NOTHING"
+		-- the chosen row: a band of ink, cream text, its count in soft red
+		row.frame.BackgroundColor3=if on then M.ink else M.paper
+		row.name.TextColor3=if on then M.cream elseif locked or covered then Color3.fromRGB(120,112,108) else M.ink
+		local options=Panel.options(style,slot)
+		local index=0
+		for i,o in options do if o.id==id then index=i end end
+		row.label.Text=Shop.Slots[slot].name..(if #options&gt;0 and not locked then string.format("  %d/%d",math.max(index,0),#options) else "")
+		row.label.TextColor3=if on then M.redSoft else M.ink
 	end
 	local dressed=self:dressed()
 	self.sub.Text=if dressed then "Your own avatar in your ninja gear, in Konoha and in every duel." else "You arrive with your own avatar. Pick what your ninja wears: a top first."
 	self.done.Text=if dressed then "DONE" else "PICK A TOP"
 	self.done.AutoButtonColor=dressed
-	self.done.BackgroundColor3=if dressed then P.red else P.ink
+	self.done.BackgroundColor3=if dressed then self.M.red else Color3.fromRGB(120,112,108)
 end
 -- Every frame while open: the camera in front of him, his body on the right
 -- of the card. Twice a second: opens by itself on his first walk.
@@ -67181,7 +67236,7 @@ function Touch.new(input,send,getState,toggleLock,camera)
 	local function button(parent,name,label,center,size,color,down,up)
 		local b=new("TextButton",{Name=name,Text=label,Size=UDim2.fromOffset(size,size),AnchorPoint=Vector2.new(.5,.5),
 			Position=UDim2.fromOffset(center.X,center.Y),BackgroundColor3=color or INK,BackgroundTransparency=.3,AutoButtonColor=false,
-			TextColor3=PAPER,Font=Enum.Font.GothamBlack,TextScaled=true,Active=true},parent)
+			TextColor3=PAPER,Font=Enum.Font.BuilderSansExtraBold,TextScaled=true,Active=true},parent)
 		round(b);new("UIStroke",{Color=PAPER,Transparency=.45,Thickness=1.5,ApplyStrokeMode=Enum.ApplyStrokeMode.Border},b)
 		new("UIPadding",{PaddingLeft=UDim.new(.16,0),PaddingRight=UDim.new(.16,0),PaddingTop=UDim.new(.2,0),PaddingBottom=UDim.new(.2,0)},b)
 		b.InputBegan:Connect(function(io)
@@ -67698,8 +67753,18 @@ local palette={
 	gold=Color3.fromRGB(230,184,86),blue=Color3.fromRGB(82,177,244),crimson=Color3.fromRGB(222,70,80),
 	track=Color3.fromRGB(46,42,48),locked=Color3.fromRGB(38,36,42),
 }
+-- (DA v3, DESIGN, validée par François le 14/11 à 22 h 35) Le registre des
+-- polices, toutes natives : Bangers pour les titres (jamais une phrase),
+-- Builder Sans pour tout ce qu'on lit pour agir (Gotham, retirée par Roblox,
+-- tombait en silence sur Montserrat, 12 % plus large), Comic Neue Angular
+-- (Cartoon) pour les voix, Permanent Marker pour 1 à 3 mots d'annotation.
 local TITLE_FONT=Enum.Font.Bangers
-local BODY_FONT=Enum.Font.GothamBold
+local BODY_FONT=Enum.Font.BuilderSansBold
+local STRONG_FONT=Enum.Font.BuilderSansExtraBold
+local VOICE_FONT=Enum.Font.Cartoon
+local NOTE_FONT=Enum.Font.PermanentMarker
+-- La planche de manga : papier, encre, un seul rouge d'accent.
+local MANGA={paper=Color3.fromRGB(255,253,248),ink=Color3.fromRGB(20,16,17),red=Color3.fromRGB(195,18,29),cream=Color3.fromRGB(246,238,222),redSoft=Color3.fromRGB(240,120,110)}
 local function create(class,parent,props)
 	local x=Instance.new(class)
 	for k,v in props do x[k]=v end
@@ -67759,7 +67824,7 @@ local function cornerClose(root,onClose)
 end
 -- (Lobby, 04/11) the same look for the players-online panel (Client/LobbyPanel).
 UI.kit={palette=palette,create=create,frame=frame,text=text,corner=corner,inkCard=inkCard,inkTitle=inkTitle,button=button,
-	TITLE_FONT=TITLE_FONT,BODY_FONT=BODY_FONT,CARD=CARD,fitScale=fitScale,cornerClose=cornerClose,SMALL=SMALL}
+	TITLE_FONT=TITLE_FONT,BODY_FONT=BODY_FONT,STRONG_FONT=STRONG_FONT,VOICE_FONT=VOICE_FONT,NOTE_FONT=NOTE_FONT,MANGA=MANGA,CARD=CARD,fitScale=fitScale,cornerClose=cornerClose,SMALL=SMALL}
 local function accentOf(def) return Color3.fromRGB(table.unpack(def.Color)) end
 function UI.new(parent,send)
 	-- (B1 lot 2) `simple`: the first roster a player sees is PLAY and the
@@ -67810,7 +67875,7 @@ function UI.new(parent,send)
 	local title=text(shell,"PRODIGY TOURNAMENT",UDim2.fromOffset(150,18),UDim2.fromOffset(900,70),62,palette.paper,TITLE_FONT)
 	create("UIStroke",title,{Color=palette.ink,Thickness=3,ApplyStrokeMode=Enum.ApplyStrokeMode.Contextual})
 	text(shell,"Eight future legends to start, more every update. Twelve to fourteen years old. One stage — before they become who they are meant to be.",
-		UDim2.fromOffset(152,84),UDim2.fromOffset(1100,20),15,palette.muted,Enum.Font.GothamMedium)
+		UDim2.fromOffset(152,84),UDim2.fromOffset(1100,20),15,palette.muted,Enum.Font.BuilderSansMedium)
 	local banner=frame(shell,UDim2.fromOffset(1534,0),UDim2.fromOffset(44,280),palette.paper,0)
 	create("UIStroke",banner,{Color=palette.red,Thickness=2})
 	text(banner,"天\n才\n忍\n者\n大\n会",UDim2.fromOffset(0,12),UDim2.fromOffset(44,240),26,palette.red,BODY_FONT,Enum.TextXAlignment.Center).LineHeight=.95
@@ -67838,7 +67903,7 @@ function UI.new(parent,send)
 		local nameScale=create("UIScale",name,{Scale=1})
 		create("UIStroke",name,{Color=palette.ink,Thickness=3,ApplyStrokeMode=Enum.ApplyStrokeMode.Contextual})
 		local sub=text(box,"",UDim2.fromOffset(2,426),UDim2.fromOffset(546,18),14,palette.gold,BODY_FONT,align)
-		local note=text(box,"",UDim2.fromOffset(2,446),UDim2.fromOffset(546,40),14,palette.text,Enum.Font.GothamMedium,align)
+		local note=text(box,"",UDim2.fromOffset(2,446),UDim2.fromOffset(546,40),14,palette.text,Enum.Font.BuilderSansMedium,align)
 		note.TextYAlignment=Enum.TextYAlignment.Top
 		box.Activated:Connect(function() if not self.picking or side=="player" then self.side=side;self:refreshSelection() end end)
 		return {box=box,flash=flash,underline=underline,nameScale=nameScale,tag=tag,tagText=tagText,choosing=choosing,name=name,sub=sub,note=note,shown=nil,right=right}
@@ -69273,12 +69338,12 @@ function UltimateFX.banner(fx,name,color,time,subtitle)
 	local bottom=K.new("Frame",{BackgroundColor3=Color3.new(),BorderSizePixel=0,Size=UDim2.new(1,0,0,0),AnchorPoint=Vector2.new(0,1),Position=UDim2.fromScale(0,1)},screen)
 	K.tween(top,.22,{Size=UDim2.new(1,0,.11,0)});K.tween(bottom,.22,{Size=UDim2.new(1,0,.11,0)})
 	local title=K.new("TextLabel",{BackgroundTransparency=1,Size=UDim2.new(1,0,0,64),AnchorPoint=Vector2.new(.5,1),Position=UDim2.new(.5,0,1,-18),
-		Font=Enum.Font.GothamBlack,Text=name or "",TextColor3=color,TextSize=46,TextTransparency=1,TextStrokeTransparency=.2,TextStrokeColor3=Color3.new()},screen)
+		Font=Enum.Font.Bangers,Text=name or "",TextColor3=color,TextSize=46,TextTransparency=1,TextStrokeTransparency=.2,TextStrokeColor3=Color3.new()},screen)
 	K.tween(title,.2,{TextTransparency=0})
 	local sub=nil
 	if subtitle then
 		sub=K.new("TextLabel",{Name="Count",BackgroundTransparency=1,Size=UDim2.new(1,0,0,30),AnchorPoint=Vector2.new(.5,0),Position=UDim2.new(.5,0,0,22),
-			Font=Enum.Font.GothamBold,Text=subtitle,TextColor3=Color3.new(1,1,1),TextSize=26,TextStrokeTransparency=.3},screen)
+			Font=Enum.Font.BuilderSansBold,Text=subtitle,TextColor3=Color3.new(1,1,1),TextSize=26,TextStrokeTransparency=.3},screen)
 	end
 	fx.ultimateScreen={screen=screen,top=top,bottom=bottom,title=title,sub=sub,ends=UltimateFX.clock()+(time or 3.4)}
 	task.delay(time or 3.4,function() UltimateFX.closeBanner(fx,screen) end)
@@ -69405,7 +69470,7 @@ function UltimateFX.textPop(fx,text,color,size,hold)
 	local s=screen(fx)
 	if not s then return nil end
 	local label=K.new("TextLabel",{BackgroundTransparency=1,Size=UDim2.new(1,0,0,(size or 70)*1.4),AnchorPoint=Vector2.new(.5,.5),Position=UDim2.fromScale(.5,.38),
-		Font=Enum.Font.GothamBlack,Text=text,TextColor3=color,TextSize=(size or 70)*1.7,TextStrokeTransparency=0,TextStrokeColor3=Color3.new(),TextTransparency=0},s)
+		Font=Enum.Font.Bangers,Text=text,TextColor3=color,TextSize=(size or 70)*1.7,TextStrokeTransparency=0,TextStrokeColor3=Color3.new(),TextTransparency=0},s)
 	K.tween(label,.12,{TextSize=size or 70})
 	task.delay(hold or .5,function() if label.Parent then K.tween(label,.2,{TextTransparency=1,TextStrokeTransparency=1}) end end)
 	Debris:AddItem(label,(hold or .5)+.3)
