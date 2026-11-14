@@ -77,6 +77,8 @@ function Hub.new(ui,camera,send,controls)
 		local master=prompt:GetAttribute("NinjaMaster")
 		if master then self:showCard(master) return end
 		if prompt:GetAttribute("NinjaBoard") then self:openBoard() end
+		-- (14/11) the market: the looks sold for Ryō
+		if prompt:GetAttribute("NinjaMarket") and self.ui.shopPanel then self:hideCard();self.ui.shopPanel:show(self.kits,"WEAPONS","market") end
 	end)
 	-- The run and the second jump.
 	self.leapUsed=false
@@ -181,7 +183,7 @@ function Hub:step(dt)
 		-- The masters arrive after the village (their portraits first).
 		local count=0
 		for _ in self.markers do count+=1 end
-		if count<9 then self:refreshMarkers() end
+		if count<10 then self:refreshMarkers() end
 		self:refreshHud(root.Position)
 		for _,marker in self.markers do
 			if marker.model and marker.model.Parent and marker.distance then
@@ -265,11 +267,13 @@ function Hub:refreshMarkers()
 	local P=self.K.palette
 	for _,model in holder:GetChildren() do
 		local id=model:GetAttribute("NinjaMaster")
-		local key=id or (model:GetAttribute("NinjaBoard") and "Proctor")
+		local key=id or (model:GetAttribute("NinjaBoard") and "Proctor") or (model:GetAttribute("NinjaMarket") and "Market")
 		if key and (not self.markers[key] or self.markers[key].model~=model) then
 			if self.markers[key] then self.markers[key].gui:Destroy() end
-			local title=if id then nameOf(id) else "THE PROCTOR"
-			self.markers[key]=self:marker(model,id,title,if id then HubMap.Masters[id] and HubMap.Masters[id].place else HubMap.Proctor.place)
+			local title=if id then nameOf(id) elseif key=="Market" then "THE MARKET" else "THE PROCTOR"
+			local place=if id then HubMap.Masters[id] and HubMap.Masters[id].place elseif key=="Market" then HubMap.Market.place else HubMap.Proctor.place
+			self.markers[key]=self:marker(model,id,title,place)
+			if self.markers[key] then self.markers[key].key=key end
 		end
 	end
 	for key,marker in self.markers do
@@ -285,6 +289,10 @@ function Hub:refreshMarkers()
 				local loud=status=="starter" or status=="master"
 				marker.gui.AlwaysOnTop=loud
 				marker.gui.MaxDistance=if loud then 2000 else 140
+			elseif marker.key=="Market" then
+				-- seen in the market's lanes only
+				marker.tag.Text="LOOKS FOR RYŌ"
+				marker.gui.AlwaysOnTop=false;marker.gui.MaxDistance=120
 			else
 				marker.tag.Text="DUELS  •  TOURNAMENT"
 				marker.gui.AlwaysOnTop=true;marker.gui.MaxDistance=2000

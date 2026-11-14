@@ -68,6 +68,11 @@ M.Masters={
 		line="Plant your mark first. The speed comes after."},
 }
 
+-- (14/11, François: « on va créer une boutique propre au jeu avec des Ryō »)
+-- The market of Konoha, at the crossing of its lanes: the looks sold for Ryō
+-- (Client/ShopPanel in its "market" mode; the SHOP sells for Robux).
+M.Market={at=Vector3.new(158,0,62),place="THE MARKET STREETS"}
+
 -- (14/11, user: « les têtes sont moches […] à terme ça sera les champions, on
 -- peut mettre le dev aussi et des trucs drôles pour l'instant ») The four
 -- heads on the cliff: the game's creator (1), the last three tournament
