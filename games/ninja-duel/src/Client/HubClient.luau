@@ -443,7 +443,7 @@ function Hub:train()
 	local FirstMinute=require(Shared.FirstMinute)
 	local kit=self:trainingKit() or kits.selected
 	self:hideCard()
-	self.send("Tutorial",{player=kit,bot=FirstMinute.rival(kit) or "Lion"})
+	self.send("Tutorial",{player=kit,bot=FirstMinute.rival(kit) or "Lion",here="Training"})
 end
 
 -- ------------------------------------------------------------------ the card
@@ -512,7 +512,15 @@ function Hub:press(which)
 		if self.ui.treePanel then self.ui.treePanel:show(item.tree,self.kits) end
 		return
 	end
-	if item.send then self.send(item.send[1],item.send[2]) end
+	if item.send then
+		-- (14/11) a duel asked at the master's home is fought there, when the
+		-- server finds him there (Matches.villageSite)
+		local payload=item.send[2]
+		if type(payload)=="table" and (item.send[1]=="Start" or item.send[1]=="First" or item.send[1]=="MasterTrial") then
+			payload=table.clone(payload);payload.here=self.cardId
+		end
+		self.send(item.send[1],payload)
+	end
 end
 
 return Hub

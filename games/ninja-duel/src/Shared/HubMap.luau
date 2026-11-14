@@ -49,17 +49,23 @@ M.Proctor={kit="Professor",at=Vector3.new(0,0,-52),face=Vector3.new(0,0,1),
 	name="THE PROCTOR",place="THE EXAM HALL",line="Duels, the tournament, players from everywhere: it all starts on this floor."}
 
 -- The masters, each at home. `line`: what he says when the player comes to him.
+-- `duel` (14/11, Config.Hub.VillageDuels): where a duel started at his home
+-- is fought, in the village (its centre on the ground, the radius the bodies
+-- are held in); without it, the stadium.
 -- (14/11, measured in Studio: Roblox's paths from the gate) each faces the way
 -- a player walks up to him. Naruto, Gaara and Kakashi showed their side or
 -- back (67, 84 and 64 degrees off), Lee 35; now under 10.
 M.Masters={
 	Legion={place="ICHIRAKU RAMEN",at=Vector3.new(-15,0,110),face=Vector3.new(.45,0,.9),
+		duel={at=Vector3.new(0,0,140),radius=34},
 		line="A bowl first, then the clones. Nobody beats me at either!"},
 	Lion={place="THE UCHIHA PIER",at=Vector3.new(176,1.6,-60),face=Vector3.new(-1,0,0),
 		line="Fire starts in the chest, not in the hands. Show me yours."},
 	Leaf={place="TRAINING GROUND THREE",at=Vector3.new(-118,0,28),face=Vector3.new(.85,0,.53),
+		duel={at=Vector3.new(-132,0,30),radius=40},
 		line="Five hundred laps, then we talk. Or one honest fight, right now!"},
 	GentleFist={place="THE HYŪGA COMPOUND",at=Vector3.new(-146,0,-98),face=Vector3.new(1,0,0),
+		duel={at=Vector3.new(-152,0,-104),radius=36},
 		line="The Byakugan sees every opening you leave. Close them first."},
 	Sand={place="THE EXAM HALL'S BALCONY",at=Vector3.new(-49,12.5,-78),face=Vector3.new(.1,0,1),
 		line="The sand decides who is worth it. It has not decided about you."},
@@ -74,7 +80,7 @@ M.Masters={
 -- (14/11, audit: « que notre perso puisse combattre, qu'on puisse apprendre »)
 -- Training Ground Three's dummy: E there trains with his kit (Server/Hub
 -- places the prompt, Client/HubClient answers it).
-M.Training={at=Vector3.new(-150,0,16),place="TRAINING GROUND THREE"}
+M.Training={at=Vector3.new(-150,0,16),place="TRAINING GROUND THREE",duel={at=Vector3.new(-132,0,30),radius=40}}
 
 -- (14/11, user: « les têtes sont moches […] à terme ça sera les champions, on
 -- peut mettre le dev aussi et des trucs drôles pour l'instant ») The four
