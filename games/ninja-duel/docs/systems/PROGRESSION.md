@@ -2,7 +2,14 @@
 
 # Progression par arbres de compétences — référence données
 
-IDs PROG-001 (arbres), PROG-002 (budgets classés), PROG-003 (IA à budget). Rapport, preuves et décisions : [PROGRESSION_FOUNDATION](../archive/reports/PROGRESSION_FOUNDATION.md). Tout est serveur ; aucun module client ne lit ces données aujourd’hui.
+IDs PROG-001 (arbres), PROG-002 (budgets classés), PROG-003 (IA à budget). Rapport, preuves et décisions : [PROGRESSION_FOUNDATION](../archive/reports/PROGRESSION_FOUNDATION.md).
+
+**Depuis le 13/11 ([DEC-038](../active/DECISIONS.md)) :**
+- Les huit kits de la bêta ont leur arbre.
+- Les données vivent dans `Shared/SkillTrees`, que le panneau `Client/TreePanel` dessine via `Shared/TreeView`. `Server/SkillTrees` renvoie simplement au module partagé.
+- Les points viennent de la maîtrise du kit (`Masters.points` : 1 point pour 10 de maîtrise).
+- Les commandes `learnNode`, `setNode` et `syncPoints` tiennent le build « Main » de chaque kit.
+- `Progression.kitSpec` donne au duel le build du joueur, avec les objets de kit qu’il n’a pas acquis retirés (`SkillBuilds.build`, option `gated`).
 
 Règle de fond : le fighter à 0 SP est exactement le kit de [Fighters](../../src/Shared/Fighters.luau) + [MoveGraphs](../../src/Shared/MoveGraphs.luau). Un nœud approfondit une mécanique existante ; un nœud **majeur** ajoute une règle, une route ou un comportement absent du kit de base (ce que le joueur FAIT ou VOIT), jamais un simple chiffre.
 
@@ -10,7 +17,7 @@ Règle de fond : le fighter à 0 SP est exactement le kit de [Fighters](../../sr
 
 | Module | Rôle |
 |---|---|
-| [SkillTrees](../../src/Server/SkillTrees.luau) | Données : un arbre par fighter CORE4 (nœuds, coûts, prérequis, choix exclusifs, effets, textes Shows/Counter, label lore DEC-005) |
+| [SkillTrees](../../src/Shared/SkillTrees.luau) | Données : un arbre par kit de la bêta (les 4 CORE4 + Naruto, Gaara, Lee, Kakashi depuis le 13/11) (nœuds, coûts, prérequis, choix exclusifs, effets, textes Shows/Counter, label lore DEC-005) |
 | [SkillBuilds](../../src/Server/SkillBuilds.luau) | Pur : validation d’un build actif, application (kit effectif), intégrité des arbres, brackets classés, admission |
 | [BuildPresets](../../src/Server/BuildPresets.luau) | Données : un build d’exemple par bracket et par fighter, builds IA par palier |
 | [ProfileSchema](../../src/Server/ProfileSchema.luau) | Profil versionné (SP gagnés, nœuds débloqués, builds sauvés par fighter), commandes serveur idempotentes |
@@ -18,7 +25,7 @@ Règle de fond : le fighter à 0 SP est exactement le kit de [Fighters](../../sr
 
 ## Nœud
 
-`Id` (stable, jamais recyclé : il est sauvé dans les profils), `Name`, `Branch`, `Kind` (`stat`, `property`, `route`, `airwall`, `counter`, `substitution`, `tool`, `jutsu`, `awakening`), `Major`, `Cost` (1–20 SP, prix du déblocage **et** de l’activation), `Requires` (tous), `RequiresAny` (au moins un), `Exclusive` (groupe : au plus un nœud actif du groupe), `Effects`, `Shows`, `Counter`, `Lore`.
+`Id` (stable, jamais recyclé : il est sauvé dans les profils), `Item` et `Without` pour un nœud d’objet de kit (DEC-038 : ce qui manque au kit d’un joueur sans le nœud, liste fermée `SkillBuilds.WITHOUT`), `Name`, `Branch`, `Kind` (`stat`, `property`, `route`, `airwall`, `counter`, `substitution`, `tool`, `jutsu`, `awakening`), `Major`, `Cost` (1–20 SP, prix du déblocage **et** de l’activation), `Requires` (tous), `RequiresAny` (au moins un), `Exclusive` (groupe : au plus un nœud actif du groupe), `Effects`, `Shows`, `Counter`, `Lore`.
 
 Effet : `{chemin, op, valeur}` avec `op` = `set` | `add` | `mul`.
 

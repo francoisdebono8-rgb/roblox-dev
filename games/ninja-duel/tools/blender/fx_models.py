@@ -316,6 +316,83 @@ def sand_wave():
     return [pc]
 
 
+def sand_shield():
+    """(14/11, FILM10 F10-2) Suna no Tate, the automatic shield (Chunin
+    prelims, Lee's kunai stopped an inch from Gaara's face; vs Sasuke): a
+    curved sheet of sand that rears up between him and the blow, wrapping
+    round it, its surface running with the streams that built it, the top
+    rolling over in lobes like a breaking wave, the foot pooling on the floor.
+    3.6 wide, 4.6 high, curved round him (the hollow toward +y: he stands
+    there, the blow comes from -y). Base at 0."""
+    sheet = Piece("Sheet", "Sand")
+    skirt = Piece("Skirt", "Sand")
+    X, Z = 30, 22
+    R = 2.2                      # radius of the curve round him
+    half = math.radians(54)      # the arc's half angle
+    def lobe(u):
+        return 4.2 + .6 * abs(math.sin(u * math.pi * 3.5 + .4)) + .25 * noise.noise(Vector((u * 5, 1.7, 0)))
+    def surf(front):
+        rows = []
+        for j in range(Z + 1):
+            v = j / Z
+            row = []
+            for i in range(X + 1):
+                u = i / X
+                a = -half + 2 * half * u
+                env = math.sin(u * math.pi) ** .5             # lower at the wings
+                top = lobe(u) * (.55 + .45 * env)
+                z = v * top
+                # streams: ridges that wind up the sheet
+                ridge = .13 * math.sin(a * 13 + z * 1.9) + .08 * noise.noise(Vector((a * 4, z * 1.6, 2)))
+                th = (.34 - .16 * v) * (1 + ridge * 2)
+                curl = .8 * smooth((v - .7) / .3) ** 1.6 * (.6 + .4 * env)   # the crest rolls toward the blow
+                r = R + (th / 2 if front else -th / 2) + ridge + curl
+                x, y = math.sin(a) * r, R - math.cos(a) * r     # the arc's centre at (0, R): he stands there
+                row.append(Vector((x, y - (.1 if front else 0), z)))
+            rows.append(row)
+        return rows
+    def col(p, k):
+        a = math.atan2(p.x, R - p.y)
+        ridge = math.sin(a * 13 + p.z * 1.9)
+        lit = .5 + .4 * ridge + .25 * noise.noise(p * 2.6) + .2 * noise.noise(p * 9)
+        c = lerp(SAND_DARK, SAND_HI, max(0, min(1, lit)))
+        if p.z < .6:
+            c = lerp(c, SAND_DARK, .45 * (1 - p.z / .6))
+        return c
+    F, B = surf(True), surf(False)
+    loft(sheet, F, col, closed=False, cap0=False, cap1=False)
+    loft(sheet, [list(reversed(r)) for r in B], col, closed=False, cap0=False, cap1=False)
+    loft(sheet, [[F[-1][i], B[-1][i]] for i in range(X + 1)], col, closed=False, cap0=False, cap1=False)
+    for i in (0, X):
+        loft(sheet, [[F[j][i], B[j][i]] for j in range(Z + 1)], col, closed=False, cap0=False, cap1=False)
+    # the pool at its foot: a low lumpy ring of poured sand
+    rings = []
+    S = 34
+    for k in range(5):
+        w = k / 4
+        ring = []
+        for sidx in range(S + 1):
+            u = sidx / S
+            a = -half * 1.15 + 2 * half * 1.15 * u
+            r = R - .7 + 1.4 * w + .12 * noise.noise(Vector((a * 3, w * 2, 5)))
+            z = .32 * math.sin(w * math.pi) ** .8 * (.6 + .4 * math.sin(u * math.pi)) + .04
+            ring.append(Vector((math.sin(a) * r, R - math.cos(a) * r, z)))
+        rings.append(ring)
+    loft(skirt, rings, lambda p, k: lerp(SAND_DARK, SAND, .5 + .5 * noise.noise(p * 3)), closed=False, cap0=False, cap1=False)
+    return [sheet, skirt]
+
+
+def sand_stream():
+    """(FILM10) The sand pouring out of the gourd to build the shield: a rope
+    of sand 1 stud long along -y (stretched between the gourd and the wall at
+    run time), twisting, thicker where it leaves the gourd."""
+    pc = Piece("Stream", "Sand")
+    pts = [Vector((.05 * math.sin(i * .9), -i / 12, .04 * math.cos(i * 1.1))) for i in range(13)]
+    tube(pc, pts, lambda k: .2 * (1 - .45 * k), lambda p, k: lerp(SAND_DARK, SAND_HI, max(0, min(1, .5 + noise.noise(p * 9) * .6))),
+         sides=12, twist=2.4, shape=lambda th, k: (1 + .12 * math.sin(th * 4 + k * 9), 1 + .12 * math.cos(th * 3 + k * 7)))
+    return [pc]
+
+
 def sand_clump():
     """One clod of sand (the grains of the flood): a lumpy flattened lump, 1 stud."""
     pc = Piece("Clump", "Sand")
@@ -1087,6 +1164,8 @@ MODELS = {
     "EarthDragonHead": lambda: dragon_head(DRAGON["Earth"]),
     "EarthDragonSeg": lambda: dragon_seg(DRAGON["Earth"]),
     "SandClump": sand_clump,
+    "SandShield": sand_shield,
+    "SandStream": sand_stream,
     "Kunai": lambda: kunai(False),
     "MarkedKunai": lambda: kunai(True),
     "Shuriken": shuriken,
@@ -1153,7 +1232,7 @@ def render(out_dir, names=None):
         return
     if names and any("Dragon" in n for n in names):
         pass
-    views = {"EarthWall": (.6, -1, .4), "EarthHand": (.7, -1, .4), "FlameOuterLion": (1, -.3, .3), "FumaShuriken": (.2, -.5, 1), "ExplosiveTag": (.3, -.4, 1), "GroundCrack": (.3, -.8, .9), "GroundCrater": (.3, -.8, .7), "LegWeight": (.8, -1, .5), "Ninken1": (1.2, .8, .4), "Ninken2": (1.2, .8, .4), "Trigrams": (.1, -.3, 1), "TsukuyomiCross": (.6, -1, .3), "BandageWrap": (1, -1, .4), "WaterDragonHead": (1.3, .7, .35), "EarthDragonHead": (1.3, .7, .35), "Shuriken": (0.25, -0.5, 1.0), "SandCoffin": (1, -1.6, .35), "SandPillar": (1, -1.6, .45)}
+    views = {"EarthWall": (.6, -1, .4), "EarthHand": (.7, -1, .4), "FlameOuterLion": (1, -.3, .3), "FumaShuriken": (.2, -.5, 1), "ExplosiveTag": (.3, -.4, 1), "GroundCrack": (.3, -.8, .9), "GroundCrater": (.3, -.8, .7), "LegWeight": (.8, -1, .5), "Ninken1": (1.2, .8, .4), "Ninken2": (1.2, .8, .4), "Trigrams": (.1, -.3, 1), "TsukuyomiCross": (.6, -1, .3), "BandageWrap": (1, -1, .4), "WaterDragonHead": (1.3, .7, .35), "EarthDragonHead": (1.3, .7, .35), "Shuriken": (0.25, -0.5, 1.0), "SandCoffin": (1, -1.6, .35), "SandPillar": (1, -1.6, .45), "SandShield": (.8, -1.3, .45), "SandStream": (1, -.3, .5)}
     for name, fn in MODELS.items():
         if names and name not in names:
             continue

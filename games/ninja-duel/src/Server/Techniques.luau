@@ -1124,6 +1124,11 @@ end
 function Techniques.curseDrain(c,a,dt,now)
 	local tune=a.def.Awakening
 	Techniques.gateStep(c,a,now)
+	-- (DEC-038, Naruto's tree: Fox Healing) the Nine-Tails' chakra closes his
+	-- wounds while it burns.
+	if tune and tune.Heal and (a.awakenUntil or 0)>now and a.health>0 and a.health<(a.def.Health or 100) then
+		a.health=math.min(a.def.Health or 100,a.health+tune.Heal*dt);a.hum.Health=math.max(1,a.health)
+	end
 	if not (tune and tune.HealthDrain) or (a.awakenUntil or 0)<=now or a.health<=1 then a.curseHunger=false;return end
 	local rate=tune.HealthDrain
 	-- Lee's gates: each one open costs a fifth more of the full drain.

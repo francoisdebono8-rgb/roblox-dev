@@ -15,6 +15,33 @@
 local MeshKit={ready={},state="idle",error=nil}
 local okData,Data=pcall(require,script.Parent.MeshData)
 MeshKit.Data=if okData then Data else {}
+-- (14/11) Konoha's buildings and props (tools/blender/konoha_models.py writes
+-- Client/HubMeshData; Client/HubDress puts them in the village): built after
+-- the weapons, so a duel's props are never late because of a house.
+MeshKit.Late={}
+do
+	local okHub,HubData=pcall(require,script.Parent.HubMeshData)
+	if okHub and type(HubData)=="table" then
+		for name,pieces in HubData do MeshKit.Data[name]=pieces;MeshKit.Late[name]=true end
+	end
+end
+-- (14/11, DEV: 7-12 s building the village on the player's computer, the
+-- village changing shape meanwhile) Pieces published as meshes
+-- (tools/blender/hub_fbx.py -> Studio import -> hub_to_luau.py) are loaded by
+-- their id like any mesh; only the others are still built here.
+do
+	-- (the headless suite's script has no instance tree: pcall)
+	local _,module=pcall(function() return script.Parent:FindFirstChild("HubMeshAssets") end)
+	local okAssets,Assets=false,nil
+	if module then okAssets,Assets=pcall(require,module) end
+	if okAssets and type(Assets)=="table" then
+		for name,ids in Assets do
+			for _,spec in MeshKit.Data[name] or {} do
+				if ids[spec.name] then spec.asset=ids[spec.name] end
+			end
+		end
+	end
+end
 
 -- base64 -> buffer
 local B64={}
@@ -71,8 +98,27 @@ for _,name in {"Metal","Fabric","Sand","Slate","Rock","Glass","Neon","Wood","Smo
 	if ok then MATERIAL[name]=m end
 end
 
+local function fromAsset(spec)
+	local AssetService=game:GetService("AssetService")
+	local part=AssetService:CreateMeshPartAsync(Content.fromUri(spec.asset),{CollisionFidelity=Enum.CollisionFidelity.Box})
+	return part
+end
 local function build(spec)
 	local AssetService=game:GetService("AssetService")
+	if spec.asset then
+		local ok,part=pcall(fromAsset,spec)
+		if ok and part then
+			part.Name=spec.name
+			part.Anchored=true;part.CanCollide=false;part.CanQuery=false;part.CanTouch=false;part.CastShadow=false
+			part.Color=Color3.new(1,1,1)
+			part.Material=MATERIAL[spec.mat] or Enum.Material.SmoothPlastic
+			part.Transparency=spec.alpha or 0
+			part.Reflectance=spec.reflect or 0
+			part.Size=Vector3.new(spec.h[1]*2,spec.h[2]*2,spec.h[3]*2)
+			MeshKit.fromAssets=(MeshKit.fromAssets or 0)+1
+			return part
+		end
+	end
 	local em=AssetService:CreateEditableMesh({})
 	local pos,col,tri=MeshKit.unpack(spec)
 	local ids,cols=table.create(#pos),table.create(#pos)
@@ -110,7 +156,22 @@ local function build(spec)
 			em:SetFaceNormals(f,list)
 		end
 	end
-	local part=AssetService:CreateMeshPartAsync(Content.fromObject(em))
+	-- (14/11, CM QA: « Failed to create empty EditableMesh … memory budget » at
+	-- every Play) A client holds only a handful of live EditableMeshes, and a
+	-- MeshPart made straight from one keeps it alive: the budget ran out after
+	-- a few pieces. Each piece is baked into static content
+	-- (AssetService:CreateDataModelContentAsync) and its EditableMesh freed;
+	-- only where baking is unavailable is the live mesh kept (as before).
+	local part
+	local okBake,result,content=pcall(function() return AssetService:CreateDataModelContentAsync(Content.fromObject(em)) end)
+	if okBake and result==Enum.CreateContentResult.Success and content then
+		part=AssetService:CreateMeshPartAsync(content)
+		em:Destroy()
+		MeshKit.baked=(MeshKit.baked or 0)+1
+	else
+		part=AssetService:CreateMeshPartAsync(Content.fromObject(em))
+		MeshKit.live=(MeshKit.live or 0)+1
+	end
 	part.Name=spec.name
 	part.Anchored=true;part.CanCollide=false;part.CanQuery=false;part.CanTouch=false;part.CastShadow=false
 	part.Color=Color3.new(1,1,1)
@@ -123,29 +184,64 @@ local function build(spec)
 end
 
 -- Builds every template (yields between models so a frame never stalls).
+MeshKit.WORKERS=4
 function MeshKit.prepare(names)
 	if MeshKit.state=="loading" or MeshKit.state=="failed" then return end
 	MeshKit.state="loading"
 	local okService=pcall(function() return game:GetService("AssetService").CreateEditableMesh end)
 	if not okService then MeshKit.state="failed";MeshKit.error="no AssetService";return end
-	for name,pieces in MeshKit.Data do
-		if MeshKit.ready[name] or (names and not table.find(names,name)) then continue end
-		local made={}
-		local ok,err=pcall(function()
-			for _,spec in pieces do table.insert(made,{part=build(spec),o=Vector3.new(spec.o[1],spec.o[2],spec.o[3]),name=spec.name}) end
-		end)
-		if not ok then
-			MeshKit.state="failed";MeshKit.error=tostring(err)
-			warn("[NinjaDuel] MeshKit: modelled props unavailable, primitives kept: "..tostring(err))
+	-- (14/11, measured in Studio: the 76 models took 11 s one after another,
+	-- the village changing in waves for 12 s after the arrival) Each pass
+	-- builds MeshKit.WORKERS models at once (each build waits on the engine,
+	-- not on the frame).
+	for pass=1,2 do
+		local queue={}
+		for name in MeshKit.Data do
+			if (pass==1)==(MeshKit.Late[name]==true) then continue end
+			if MeshKit.ready[name] or (names and not table.find(names,name)) then continue end
+			table.insert(queue,name)
+		end
+		table.sort(queue)
+		local failed=nil
+		local running=0
+		local function one(name)
+			local pieces=MeshKit.Data[name]
+			local made={}
+			local ok,err=pcall(function()
+				for _,spec in pieces do table.insert(made,{part=build(spec),o=Vector3.new(spec.o[1],spec.o[2],spec.o[3]),name=spec.name}) end
+			end)
+			if not ok then
+				-- a village mesh that fails leaves its parts (Client/HubDress);
+				-- the weapons stop here as before
+				if MeshKit.Late[name] then
+					warn("[NinjaDuel] MeshKit: "..name.." unavailable, its parts kept: "..tostring(err))
+				else
+					failed=failed or tostring(err)
+				end
+				return
+			end
+			MeshKit.ready[name]=made
+		end
+		for _,name in queue do
+			if failed then break end
+			while running>=MeshKit.WORKERS do task.wait() end
+			running+=1
+			task.spawn(function() one(name);running-=1 end)
+		end
+		while running>0 do task.wait() end
+		if failed then
+			MeshKit.state="failed";MeshKit.error=failed
+			warn("[NinjaDuel] MeshKit: modelled props unavailable, primitives kept: "..failed)
 			return
 		end
-		MeshKit.ready[name]=made
-		task.wait()
+		if pass==1 then MeshKit.weaponsReady=true end
 	end
 	MeshKit.state="ready"
 end
 
 function MeshKit.has(name) return MeshKit.ready[name]~=nil end
+-- A built model's pieces: {part (the template), o (its centre), name}, or nil.
+function MeshKit.pieces(name) return MeshKit.ready[name] end
 
 function MeshKit.model(name)
 	local t=MeshKit.ready[name]

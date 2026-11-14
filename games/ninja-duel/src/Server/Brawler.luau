@@ -578,6 +578,9 @@ function Brawler.start(c,a,name)
 		spec.chainTool=profile.chainTool;spec.depth=profile.depth or spec.depth;spec.damageScale=profile.damage;spec.offset=profile.offset or spec.offset;spec.width=profile.width or spec.width;spec.impulse=Vector3.new(spec.impulse.X,profile.impulseY or spec.impulse.Y,profile.impulseZ or spec.impulse.Z)
 		-- A weapon's reach: the step-in stops further out (Temari's iron fan).
 		spec.contact=profile.contact or spec.contact
+		-- (QA 14/11, D1) A reach the fighter's profile draws (Gaara's sand
+		-- lashes, Temari's fan) is not a fist's: the body-contact rules leave it.
+		if profile.range or profile.depth then spec.bodyDepth=nil end
 	end
  -- A drawn kunai (Combat:arm, global): the string and heavy cut with it.
  -- A fighter's own blade (def.Weapon: Kakashi's tanto) cuts further, on the
@@ -664,6 +667,7 @@ function Brawler.start(c,a,name)
 	local side=a.root.CFrame.RightVector*(spec.angle or 0)
 	a.travelDirection=(flat+side).Unit;a.state="Startup";a.untilTime=c.now+spec.startup
  if proxy then Bodies.bind(c,a,a.pending,proxy,kind) end
+ Brawler.lunge(c,a,spec,flat,(proxy~=nil and proxy~=false) or (body~=nil and body~=false))
  if spec.air or name=="Slam" then
   -- The air hold carries a string that works (or the first swing of a jump,
   -- and the slam): mashed whiffs used to keep a body hovering a stud above the
@@ -694,6 +698,40 @@ function Brawler.start(c,a,name)
  if name=="WallDive" then a.airborne=true;a.airHold=c.now+spec.startup end
  Brawler.event(c,a,name)
  return true
+end
+-- (QA 14/11, D1: « que la portée réelle soit celle qu'on voit, ou ajouter une
+-- avancée visible vers la cible avant l'impact ») A body's own blow pressed
+-- at a body a little past its step-in steps all the way in to its contact
+-- distance (Config.Contact.Lunge studs more at most), on the line it faces:
+-- the blow lands where it is seen to reach (BanglaCombat.reaches) instead of
+-- landing short. A body still flying away (a knock-away, a chase's arrival)
+-- is met where it will be when the blow comes out. Not a blow another body
+-- carries, not an air string's (the striker does not step in the air), not a
+-- volume authored longer than the body (sand, claws, a fan).
+function Brawler.lunge(c,a,spec,flat,carried,scale)
+ if carried or spec.air or not a.target or a.target.health<=0 or spec.bodyDepth==nil then return 0 end
+ if math.abs((spec.depth or 0)-(spec.chakraReach or 0)-spec.bodyDepth)>1e-4 then return 0 end
+ local b=a.target
+ -- (a knock-away slows down fast, as Combat moves it: ~8 a second)
+ local v=b.reactionVelocity or b.root.AssemblyLinearVelocity
+ local t=spec.travelTime or ((spec.startup or 0)+(spec.active or 0))
+ local ahead=b.root.Position+Vector3.new(v.X,0,v.Z)*((1-math.exp(-8*t))/8)
+ -- Under a genjutsu image the body steps at what it sees (Itachi's Mirage).
+ if a.decoyPosition and (a.illusionUntil or 0)>c.now then ahead=a.decoyPosition end
+ local d=ahead-a.root.Position
+ local gap=Vector3.new(d.X,0,d.Z)
+ if math.abs(d.Y)>4 or gap.Magnitude<.1 or flat.Magnitude<.1 or flat.Unit:Dot(gap.Unit)<(if scale then .2 else .7) then return 0 end
+ local contact=spec.contact or 3.6
+ local need=gap.Magnitude-contact
+ local extra=need-(spec.travel or 0)
+ -- (a body already struck and flying away is followed further: the string's
+ -- next blow, a chase's arrival; a cold press at a standing body is not)
+ if extra<=0 or extra>(Config.Contact.Lunge or 1.5)*(scale or (if b.reaction then 2.5 else 1)) then return 0 end
+ spec.travel=need;a.travelRemaining=need
+ -- the step in is over by the time the blow comes out: it lands on its first
+ -- active frame, as a blow in reach does (the string's timing is unchanged)
+ spec.travelTime=math.max(spec.startup or .1,.08)
+ return extra
 end
 -- Disengage branch: hop out of the string while a blade (Minato) or a pair of
 -- shuriken (Itachi) covers the retreat. Ends the string; buys space, not damage.
@@ -806,7 +844,17 @@ function Brawler.request(c,a,action)
   a.flashUntil=0;a.state="Neutral";a.untilTime=c.now;a.pending=nil;pending=nil
   local gap=(a.target.root.Position-a.root.Position).Magnitude
   -- The arrival strike (Brawler.hit reads it: a chain carried through the jump).
-  local function arrival(ok) a.flashStrike=a.attackSerial;return ok end
+  local function arrival(ok)
+   a.flashStrike=a.attackSerial
+   -- (QA 14/11, D1) a chase's arrival strike meets the body it chased, still
+   -- flying away, further in than a plain press would step (Combat steers
+   -- it to the body through its active frames too)
+   if ok and a.pending and a.pending.kind=="Brawl" then
+    local look=a.root.CFrame.LookVector
+    Brawler.lunge(c,a,a.pending.spec,Vector3.new(look.X,0,look.Z),a.pending.from~=nil,3)
+   end
+   return ok
+  end
   if action=="Heavy" then
    if a.airborne then return arrival(Brawler.start(c,a,"Slam")) end
    return arrival(Brawler.start(c,a,"Launcher"))
@@ -1559,7 +1607,17 @@ function Brawler.hit(c,a,p)
  end
  -- (A carried strike drives the body away from its carrier: a clone's kick
  -- from behind sends it toward Naruto.)
- local forward=(p.from or a.root.CFrame).LookVector
+ -- (QA 14/11, D7: Sasuke struck by a Kakashi running past, then pulled
+ -- toward him) The body goes away from the blow, from where it came to the
+ -- body: along the striker's facing only while that faces the body.
+ -- A throw keeps the direction the stick gave it.
+ local frame=p.from or a.root.CFrame
+ local forward=frame.LookVector
+ local away=b.root.Position-frame.Position;away=Vector3.new(away.X,0,away.Z)
+ if away.Magnitude>.2 and p.name~="Throw" and p.name~="ThrowUp" then
+  local look=Vector3.new(forward.X,0,forward.Z)
+  forward=if look.Magnitude>.1 and look.Unit:Dot(away.Unit)>.7 then look.Unit else away.Unit
+ end
  -- Skill build (Wall Palm): the knockback of the listed moves aims at a wall
  -- in reach in front of the attacker, when there is one.
  local steer=a.def.WallSteer

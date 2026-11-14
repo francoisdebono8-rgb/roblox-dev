@@ -138,6 +138,9 @@ function Tournament:fight(player)
 	else
 		first=cup.seats[a];second=cup.seats[b]
 	end
+	-- (DEC-036) Known before the bodies are built: a match he only watches is
+	-- two prodigies, his own is fought in his avatar.
+	s.spectate=if mine then nil else true
 	local ok=m:start(player,first,second,false,options)
 	if not ok and options then ok=m:start(player,first,second,false,nil) end
 	if not ok then return end
@@ -204,6 +207,8 @@ function Tournament:advance(player,s)
 		cup.over=true
 		cup.champion=cup.winners[7]
 		if cup.champion==cup.me then
+			-- (14/11) his face on Konoha's cliff, on every server
+			pcall(function() require(script.Parent.ChampionCliff).champion(player) end)
 			s.epoch+=1
 			s.autopilot=nil;s.spectate=nil;s.cupPilot=nil
 			self.matches:destroy(s)

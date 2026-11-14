@@ -61,6 +61,16 @@ function Masters.canLearn(kits,id)
 	return false,"Needs "..Masters.Need.." mastery in "..table.concat(rule.from," or "),best
 end
 
+-- (DEC-038, 13/11) Skill points come from the kit's own mastery: every
+-- PointEvery mastery is one point of that kit's tree. A kit bought brings no
+-- point: the tree grows by playing it.
+Masters.PointEvery=10
+Masters.MaxPoints=999
+function Masters.points(mastery)
+	if type(mastery)~="number" or mastery~=mastery then return 0 end
+	return math.clamp(math.floor(mastery/Masters.PointEvery),0,Masters.MaxPoints)
+end
+
 -- Mastery for one decided duel. r = {won, techniques (distinct jutsu used),
 -- level ("easy"|"normal"|"hard")}.
 function Masters.duelGain(r)

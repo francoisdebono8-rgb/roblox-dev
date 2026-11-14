@@ -91,7 +91,8 @@ function Cup.new(ui,send,kit)
 	local championScale=K.create("UIScale",champion,{Scale=1})
 	local function fitChampion()
 		local size=workspace.CurrentCamera.ViewportSize
-		championScale.Scale=math.clamp(math.min(size.X/1100,size.Y/640),.5,1.2)
+		-- (14/11) the old floor capped by what fits a narrow window
+		championScale.Scale=math.min(math.clamp(math.min(size.X/1100,size.Y/640),.5,1.2),K.fitScale(size,740,500,1.2))
 	end
 	workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(fitChampion);fitChampion()
 	self.championCard=champion
@@ -112,7 +113,7 @@ function Cup.new(ui,send,kit)
 	local bannerScale=K.create("UIScale",banner,{Scale=1})
 	local function fitBanner()
 		local size=workspace.CurrentCamera.ViewportSize
-		bannerScale.Scale=math.clamp(math.min(size.X/1500,size.Y/860),.55,1.2)
+		bannerScale.Scale=math.min(math.clamp(math.min(size.X/1500,size.Y/860),.55,1.2),K.fitScale(size,680,200,1.2))
 	end
 	workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(fitBanner);fitBanner()
 	self.banner=banner

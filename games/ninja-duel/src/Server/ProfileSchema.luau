@@ -10,7 +10,12 @@
 -- time; skill points still never come from a purchase).
 local SkillBuilds=require(script.Parent.SkillBuilds)
 local Masters=require(game:GetService("ReplicatedStorage").NinjaDuel.Masters)
-local S={Version=2,MaxPoints=999,MaxBuilds=8,MaxSequence=1000000000,MaxReceipts=50}
+local TreeTiers=require(game:GetService("ReplicatedStorage").NinjaDuel.TreeTiers)
+local Shop=require(game:GetService("ReplicatedStorage").NinjaDuel.Shop)
+-- Version 3 (13/11, the shop): the wallet (Ryō, earned by playing or bought
+-- in packs; the day of the last first win) and the looks (owned, and the one
+-- worn in each slot: Shared/Shop). A look never changes a number.
+local S={Version=3,MaxPoints=999,MaxBuilds=8,MaxSequence=1000000000,MaxReceipts=50}
 S.copy=SkillBuilds.copy
 function S.integer(n,max)
 	return type(n)=="number" and n==n and n>=0 and n%1==0 and n<=(max or S.MaxSequence)
@@ -52,9 +57,11 @@ function S.serializable(value)
 end
 function S.new(id)
 	assert(S.profileId(id),"Profile id must be u_<UserId> or dev_<name>")
-	return {schemaVersion=S.Version,id=id,fighters={},sequence=0,kits=S.kits()}
+	return {schemaVersion=S.Version,id=id,fighters={},sequence=0,kits=S.kits(),wallet=S.wallet(),style=S.style()}
 end
 function S.kits() return {owned={},mastery={},receipts={}} end
+function S.wallet() return {ryo=0} end
+function S.style() return {owned={},equipped={}} end
 function S.fighter() return {earned=0,unlocked={},builds={}} end
 -- Skill points spent on unlocks (derived, never stored).
 function S.spent(fighterId,record)
@@ -103,11 +110,32 @@ local function kitsValid(k)
 	for i,r in k.receipts do if type(i)~="number" or not S.id(r) then return false,"receipt" end end
 	return true
 end
+local function walletValid(w)
+	if type(w)~="table" or not S.integer(w.ryo,Shop.MaxRyo) then return false,"ryo" end
+	if w.winDay~=nil and (type(w.winDay)~="string" or #w.winDay>10) then return false,"win day" end
+	return true
+end
+local function styleValid(st)
+	if type(st)~="table" or type(st.owned)~="table" or type(st.equipped)~="table" then return false,"style record" end
+	for id,flag in st.owned do
+		local item=Shop.item(id)
+		if flag~=true or not item then return false,"unknown look "..tostring(id) end
+	end
+	for slot,id in st.equipped do
+		local item=Shop.item(id)
+		if not Shop.Slots[slot] or not item or item.slot~=slot or not (item.base or st.owned[id]) then return false,"look worn in "..tostring(slot) end
+	end
+	return true
+end
 function S.validate(p)
 	if not S.serializable(p) then return false,"Unsafe serialized data" end
 	if type(p)~="table" or p.schemaVersion~=S.Version or not S.profileId(p.id) or not S.integer(p.sequence) or type(p.fighters)~="table" then return false,"Profile header/version" end
 	local okKits,whyKits=kitsValid(p.kits)
 	if not okKits then return false,"kits: "..whyKits end
+	local okWallet,whyWallet=walletValid(p.wallet)
+	if not okWallet then return false,"wallet: "..whyWallet end
+	local okStyle,whyStyle=styleValid(p.style)
+	if not okStyle then return false,"style: "..whyStyle end
 	for fighterId,record in p.fighters do
 		if not SkillBuilds.tree(fighterId) then return false,"No skill tree for "..tostring(fighterId) end
 		local ok,reason=fighterValid(fighterId,record)
@@ -123,6 +151,10 @@ function S.migrate(raw)
 	if not S.serializable(raw) or type(raw)~="table" then return nil,"Unknown/future schema" end
 	if raw.schemaVersion==1 then
 		raw=S.copy(raw);raw.schemaVersion=2;raw.kits=S.kits()
+	end
+	-- Version 2 gains an empty wallet and the base looks.
+	if raw.schemaVersion==2 then
+		raw=S.copy(raw);raw.schemaVersion=3;raw.wallet=S.wallet();raw.style=S.style()
 	end
 	if raw.schemaVersion~=S.Version then return nil,"Unknown/future schema" end
 	local p=S.copy(raw)
@@ -205,7 +237,90 @@ function S.Commands.gainMastery(p,args)
 	assert(k.owned[args.fighter],"Kit not learned")
 	assert(S.integer(args.amount,Masters.Gain.Max) and args.amount>0,"Invalid amount")
 	k.mastery[args.fighter]=math.min(Masters.MaxMastery,(k.mastery[args.fighter] or 0)+args.amount)
-	return {fighter=args.fighter,mastery=k.mastery[args.fighter]}
+	-- (DEC-038) The kit's tree grows with its mastery.
+	local points=S.syncPoints(p,args.fighter)
+	return {fighter=args.fighter,mastery=k.mastery[args.fighter],points=points}
+end
+-- The tree's points follow the kit's mastery (never down: a point already
+-- earned stays). Returns the points earned, nil for a kit without a tree.
+function S.syncPoints(p,fighterId)
+	if not SkillBuilds.tree(fighterId) then return nil end
+	local r=record(p,fighterId)
+	r.earned=math.max(r.earned,math.min(S.MaxPoints,Masters.points(p.kits.mastery[fighterId] or 0)))
+	return r.earned
+end
+-- (DEC-038) The tree at the master's: a node bought with the kit's points goes
+-- straight into the kit's build ("Main", selected), when it fits beside the
+-- nodes already active (an exclusive choice keeps the first one).
+function S.Commands.syncPoints(p,args)
+	assert(p.kits.owned[args.fighter],"Kit not learned")
+	return {fighter=args.fighter,points=S.syncPoints(p,args.fighter)}
+end
+S.MainBuild="Main"
+local function mainNodes(r)
+	local build=r.builds[S.MainBuild]
+	return if build then S.copy(build.nodes) else {}
+end
+local function setMain(fighterId,r,nodes)
+	local ok,reason=SkillBuilds.validate(fighterId,nodes,{unlocked=r.unlocked})
+	assert(ok,reason)
+	r.builds[S.MainBuild]={nodes=SkillBuilds.apply(fighterId,nodes).nodes}
+	r.selected=S.MainBuild
+end
+function S.Commands.learnNode(p,args)
+	assert(p.kits.owned[args.fighter],"Kit not learned")
+	-- (13/11) The tree opens in tiers with the kit's mastery (Shared/TreeTiers).
+	local node=SkillBuilds.node(args.fighter,args.node)
+	assert(node,"Unknown node")
+	local need=TreeTiers.need(node)
+	assert((p.kits.mastery[args.fighter] or 0)>=need,"Tier "..TreeTiers.Names[TreeTiers.of(node)].." opens at "..need.." mastery")
+	local r=record(p,args.fighter)
+	S.Commands.unlock(p,{fighter=args.fighter,node=args.node})
+	local nodes=mainNodes(r)
+	table.insert(nodes,args.node)
+	local active=false
+	if SkillBuilds.validate(args.fighter,nodes,{unlocked=r.unlocked}) then setMain(args.fighter,r,nodes);active=true
+	elseif r.builds[S.MainBuild]==nil then setMain(args.fighter,r,mainNodes(r)) end
+	return {fighter=args.fighter,node=args.node,active=active,free=r.earned-S.spent(args.fighter,r)}
+end
+-- Turn an unlocked node on or off in the kit's build. On: its exclusive
+-- alternative goes off. Off: the nodes that require it go off too.
+function S.Commands.setNode(p,args)
+	assert(p.kits.owned[args.fighter],"Kit not learned")
+	local r=record(p,args.fighter)
+	local node=SkillBuilds.node(args.fighter,args.node)
+	assert(node and r.unlocked[node.Id],"Node not unlocked")
+	local nodes=mainNodes(r)
+	local set={}
+	for _,id in nodes do set[id]=true end
+	if args.on==true then
+		if node.Exclusive then
+			for id in set do
+				local other=SkillBuilds.node(args.fighter,id)
+				if other and other.Exclusive==node.Exclusive then set[id]=nil end
+			end
+		end
+		set[node.Id]=true
+	else
+		set[node.Id]=nil
+		local changed=true
+		while changed do
+			changed=false
+			for id in set do
+				local other=SkillBuilds.node(args.fighter,id)
+				for _,need in other and other.Requires or {} do if not set[need] then set[id]=nil;changed=true end end
+				if other and other.RequiresAny then
+					local any=false
+					for _,need in other.RequiresAny do if set[need] then any=true end end
+					if not any then set[id]=nil;changed=true end
+				end
+			end
+		end
+	end
+	local list={}
+	for id in set do table.insert(list,id) end
+	setMain(args.fighter,r,list)
+	return {fighter=args.fighter,node=node.Id,on=args.on==true,active=r.builds[S.MainBuild].nodes}
 end
 -- A kit learned: from its master (his duel won, the mastery condition met) or
 -- bought (a receipt, granted once whatever happens to the save after it).
@@ -233,6 +348,59 @@ function S.Commands.selectKit(p,args)
 	p.kits.selected=args.fighter
 	return {fighter=args.fighter}
 end
+-- ------------------------------------------------------------ the shop
+-- (13/11) Ryō from a decided duel (the server computes it, Shop.duelRyo);
+-- `day` marks the day's first win once it is paid.
+function S.Commands.earnRyo(p,args)
+	assert(S.integer(args.amount,10000) and args.amount>0,"Invalid amount")
+	local w=p.wallet
+	w.ryo=math.min(Shop.MaxRyo,w.ryo+args.amount)
+	if args.day~=nil then assert(type(args.day)=="string" and #args.day<=10,"Invalid day");w.winDay=args.day end
+	return {ryo=w.ryo,amount=args.amount}
+end
+-- A look bought with Ryō: paid once, worn at once.
+function S.Commands.buyItem(p,args)
+	local item=Shop.item(args.item)
+	assert(item,"Unknown look")
+	assert(item.ryo and not item.base,"Not sold for Ryō")
+	assert(not p.style.owned[item.id],"Already yours")
+	assert(p.wallet.ryo>=item.ryo,"Not enough Ryō")
+	p.wallet.ryo-=item.ryo
+	p.style.owned[item.id]=true
+	p.style.equipped[item.slot]=item.id
+	return {item=item.id,ryo=p.wallet.ryo}
+end
+-- Bought with Robux (a receipt): a look, or a pack of Ryō. Once per receipt.
+local function receipt(p,id)
+	assert(S.id(id),"Receipt required")
+	local k=p.kits
+	assert(not table.find(k.receipts,id),"Receipt already granted")
+	table.insert(k.receipts,id)
+	while #k.receipts>S.MaxReceipts do table.remove(k.receipts,1) end
+end
+function S.Commands.grantItem(p,args)
+	local item=Shop.item(args.item)
+	assert(item and item.robux,"Not sold for Robux")
+	receipt(p,args.receipt)
+	p.style.owned[item.id]=true
+	p.style.equipped[item.slot]=item.id
+	return {item=item.id}
+end
+function S.Commands.grantRyo(p,args)
+	assert(S.integer(args.amount,1000000) and args.amount>0,"Invalid amount")
+	receipt(p,args.receipt)
+	p.wallet.ryo=math.min(Shop.MaxRyo,p.wallet.ryo+args.amount)
+	return {ryo=p.wallet.ryo}
+end
+-- Wear a look the player owns (or a base one) in its slot.
+function S.Commands.equipItem(p,args)
+	local item=Shop.item(args.item)
+	assert(item,"Unknown look")
+	assert(item.base or p.style.owned[item.id],"Not yours")
+	p.style.equipped[item.slot]=item.id
+	return {item=item.id,slot=item.slot}
+end
+
 -- Copy/validate/commit. The same sequence and kind replays the stored result
 -- (an ambiguous save or a repeated request never applies twice); an older or
 -- skipped sequence is refused.

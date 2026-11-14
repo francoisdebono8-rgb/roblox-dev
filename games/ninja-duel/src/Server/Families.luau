@@ -223,6 +223,27 @@ function Families.contact(c,a,b,spec,direction,damaged,guarded,position)
 		end
 	end
 end
+function Families.dropWeights(c,a,drop)
+	local at=a.root.Position
+	local floor=workspace:Raycast(at+Vector3.new(0,2,0),Vector3.new(0,-30,0),c:rayParams(true))
+	local ground=if floor then floor.Position else at-Vector3.new(0,3,0)
+	c:pushImpact(ground,"slam",true,{owner=a.id,kind="weights",radius=drop.Radius or 5})
+	pcall(function()
+		require(script.Parent.WorldReaction).scar(c,"crater",floor and floor.Instance or nil,ground,Vector3.yAxis,40,nil,"earth")
+	end)
+	local b=a.target
+	if b and b.health>0 and c.match.phase=="Duel" then
+		local d=b.root.Position-at
+		if flat(d).Magnitude<=(drop.Radius or 5) and math.abs(d.Y)<6 then
+			c.damageTag="weights"
+			local hit=c:damage(a,b,drop.Damage or 6,false,false)
+			c.damageTag=nil
+			if c.match.phase~="Duel" then return end
+			Families.contact(c,a,b,{Knock=14,Lift=4,React="Knockdown",Stun=.7},d,hit,hit and b.impactStyle=="block",b.root.Position)
+		end
+	end
+	brawler().event(c,a,"WeightsDrop")
+end
 -- Poison: damage over time (needles, a puppet's blades, a snake's fangs).
 -- A fresh dose replaces the running one; it never staggers.
 function Families.poison(c,a,b,spec)
@@ -697,6 +718,9 @@ F.Buff={
 		c:pushImpact(a.root.Position,"buff",true,{owner=a.id,kind=spec.Kind,technique=spec.Id,time=spec.Time or 5})
 		c:cue(a,string.upper(spec.Name),.8)
 		brawler().event(c,a,"Buff")
+		-- (DEC-038, Lee's tree: Falling Weights) the weights he drops crater the
+		-- floor at his feet; an opponent standing there is knocked down.
+		if spec.Drop then Families.dropWeights(c,a,spec.Drop) end
 	end,
 }
 -- A relocation onto the opponent (Behind, Side, Aim) needs the body inside

@@ -18,14 +18,14 @@ local Repo=H.load("Server/ProfileRepository")
 local Masters=H.load("Shared/Masters")
 local Config=H.load("Shared/Config")
 
-test("the profile v2 keeps the kits; a v1 profile gains an empty kits record",function()
+test("the profile keeps the kits (v2, now v3 with the wallet); a v1 profile gains an empty kits record",function()
 	local p=S.new("dev_kits")
-	assert(p.schemaVersion==2 and p.kits and next(p.kits.owned)==nil,"a new profile has no kits record")
+	assert(p.schemaVersion==S.Version and p.kits and next(p.kits.owned)==nil,"a new profile has no kits record")
 	assert(S.validate(p))
 	local v1={schemaVersion=1,id="dev_old",fighters={},sequence=3}
 	local m,why=S.migrate(v1)
-	assert(m and m.schemaVersion==2 and m.kits and m.sequence==3,"v1 did not migrate: "..tostring(why))
-	assert(S.migrate({schemaVersion=3,id="dev_x",fighters={},sequence=0})==nil,"a future schema was accepted")
+	assert(m and m.schemaVersion==S.Version and m.kits and m.wallet and m.style and m.sequence==3,"v1 did not migrate: "..tostring(why))
+	assert(S.migrate({schemaVersion=S.Version+1,id="dev_x",fighters={},sequence=0})==nil,"a future schema was accepted")
 	local bad=S.copy(p);bad.kits.owned.Nobody=true
 	assert(not S.validate(bad),"an unknown kit was accepted")
 	local bad2=S.copy(p);bad2.kits.selected="Lion"
@@ -161,8 +161,12 @@ test("on: a duel that counts takes a learned kit, practice takes any; a master's
 	duel(true)
 	local after=Progression.view(player).mastery.Leaf or 0
 	assert(after>before,"a won duel earned no mastery")
+	assert(s.progress and s.progress.amount==after-before and s.progress.need==Masters.Need,"the result screen does not get what was earned")
 	while (Progression.view(player).mastery.Leaf or 0)<Masters.Need do duel(true) end
 	assert(Progression.view(player).masters.GentleFist.ready,"Neji does not teach after the mastery")
+	-- (Beta loop) the roster fights his duel with the kit that earned it.
+	assert(Progression.view(player).masters.GentleFist.via=="Leaf","Neji's duel is not fought with Lee")
+	assert(Progression.view(player).selected=="Leaf","the kit fought with is not the roster's pick")
 	-- Neji's duel: the master at his level; won, his kit is learned.
 	send("MasterTrial",{player="Leaf",master="GentleFist"})
 	assert(s.phase=="Duel" and s.botId=="GentleFist" and s.masterTrial=="GentleFist" and Matches.aiLevel(s)==Masters.DuelLevel,"the master's duel did not start")
@@ -174,6 +178,52 @@ test("on: a duel that counts takes a learned kit, practice takes any; a master's
 	Progression.release(player)
 	Progression.repo=nil;Progression.init(store)
 	assert(Progression.load(player) and Progression.owns(player,"GentleFist") and Progression.owns(player,"Leaf"),"the kits were not saved")
+	Config.Progression.Enabled=false
+end)
+
+test("(DEC-038) a learned kit fights with its tree: objects earned, nodes on; a kit only tried is whole",function()
+	Config.Progression.Enabled=true
+	Progression.repo=nil;Progression.init(Repo.memoryStore())
+	local m=Matches.new(remote)
+	local player={UserId=503,Name="P503",DisplayName="P503",Parent=H.Players}
+	m:selection(player)
+	assert(Progression.load(player),"the profile did not load")
+	local s=m.sessions[player]
+	local function send(action,extra)
+		s.lastLifecycle=-10
+		local payload={action=action,epoch=s.epoch}
+		for k,v in extra or {} do payload[k]=v end
+		m:request(player,payload)
+	end
+	local function weights()
+		for _,spec in s.human.def.Techniques do if spec.Id=="RemoveWeights" then return spec end end
+	end
+	send("ChooseStarter",{player="Leaf"})
+	local tree=sent[player].kits.trees.Leaf
+	assert(tree and tree.points==0 and tree.free==0,"a new kit's tree has points")
+	send("Start",{player="Leaf",bot="Lion"})
+	assert(s.phase=="Duel" and weights().Locked==true,"his Lee took the weights off without Gai's permission")
+	m:selection(player)
+	send("LearnNode",{player="Leaf",node="Weights"})
+	assert(string.find(sent[player].notice or "","POINTS"),"a node learned with no points: "..tostring(sent[player].notice))
+	assert(Progression.run(player,"gainMastery",{fighter="Leaf",amount=120}))
+	send("LearnNode",{player="Leaf",node="Weights"})
+	tree=sent[player].kits.trees.Leaf
+	assert(tree.points==12 and tree.free==2 and table.find(tree.active,"Weights"),"the node is not on: "..tostring(tree.free))
+	send("Start",{player="Leaf",bot="Lion"})
+	assert(s.phase=="Duel" and not weights().Locked,"the node did not reach the duel")
+	m:selection(player)
+	send("SetNode",{player="Leaf",node="Weights",on=false})
+	send("Start",{player="Leaf",bot="Lion"})
+	assert(weights().Locked==true,"turned off, the node still fought")
+	m:selection(player)
+	-- A kit he only tries is the prodigy's whole kit (the gourd's shield too).
+	send("Tutorial",{player="Sand",bot="Lion"})
+	assert(s.phase=="Duel" and s.human.def.SandShield~=nil,"a kit tried in practice lost its object")
+	m:selection(player)
+	-- The AI's prodigy is never gated.
+	send("Start",{player="Leaf",bot="Sand"})
+	assert(s.bot.def.SandShield~=nil,"the AI's Gaara lost his gourd")
 	Config.Progression.Enabled=false
 end)
 

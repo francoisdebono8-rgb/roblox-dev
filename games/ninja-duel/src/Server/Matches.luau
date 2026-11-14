@@ -25,6 +25,15 @@ local BuildPresets=require(script.Parent.BuildPresets)
 local Zones=require(script.Parent.Zones)
 local FirstMinute=require(Shared.FirstMinute)
 local Matches={}; Matches.__index=Matches
+-- (DEC-038) Konoha between duels (Server/Hub), when the village is built.
+local Hub=require(script.Parent.Hub)
+function Matches.hubOn() return Config.Hub~=nil and Config.Hub.Enabled==true and Hub.built==true end
+-- A refusal for the screen: the reason a command gave, without the module
+-- and line an error carries, in capitals that keep their accents.
+function Matches.refusal(why)
+	local text=string.gsub(tostring(why),"^.-:%d+: ","")
+	return require(Shared.Text).upper(text)
+end
 -- Skill builds (PROG-001..003) are resolved and validated here, on the server:
 -- a spec is {nodes={...}, unlocked={[id]=true}} (unlocked = the profile's set)
 -- or, for the AI, {preset="Hard"}; with a ranked bracket the build must also
@@ -38,8 +47,9 @@ function Matches.resolveKit(fighterId,spec,bracket)
 		if not nodes then return false,"Unknown AI preset" end
 	end
 	local kit,reason
-	if bracket~=nil then kit,reason=SkillBuilds.admit(bracket,fighterId,nodes,spec.unlocked)
-	else kit,reason=SkillBuilds.build(fighterId,nodes,{unlocked=spec.unlocked}) end
+	-- (DEC-038) gated: a player's own kit, its objects earned on his tree only.
+	if bracket~=nil then kit,reason=SkillBuilds.admit(bracket,fighterId,nodes,spec.unlocked,{gated=spec.gated==true})
+	else kit,reason=SkillBuilds.build(fighterId,nodes,{unlocked=spec.unlocked,gated=spec.gated==true}) end
 	if not kit then return false,reason end
 	return true,kit
 end
@@ -109,6 +119,12 @@ function Matches:session(player)
 		metrics={joined=os.clock()},owner=player}
 	self.sessions[player]=s
 	Matches.measure(player,s,"joined")
+	-- (DEC-036, beta loop 13/11) The player fights in his own Roblox avatar,
+	-- built once in the background; until it is ready, the prodigy's body.
+	if Config.AvatarBody and Config.AvatarBody.Enabled==true and type(player)=="userdata" then
+		s.avatarBody=true
+		pcall(AvatarBody.prepare,player)
+	end
 	return s
 end
 -- The duel goes: its bodies, effects and marks. (QA 12/11) The lane's
@@ -191,7 +207,15 @@ function Matches:selection(player,notice)
 	-- Back on the roster: a tournament in progress ends here.
 	s.cup=nil;s.cupMatch=nil;s.spectate=nil;s.autopilot=nil;s.cupPilot=nil
 	s.masterTrial=nil
-	self:send(player,{phase="Selection",epoch=s.epoch,notice=notice,kits=Progression.view(player)})
+	local view=Progression.view(player)
+	self:send(player,{phase="Selection",epoch=s.epoch,notice=notice,kits=view})
+	-- (DEC-038) Between duels the player walks Konoha as his own avatar:
+	-- through the gate the first time, out of the exam hall after a duel.
+	if Matches.hubOn() then
+		Hub.badge(player,view)
+		Hub.enter(player,if s.hubVisited then "hall" else "gate",Progression.looks(player))
+		s.hubVisited=true
+	end
 	-- (Lobby, 04/11) in a duel server the roster is the lobby: back home.
 	if self.lobby then self.lobby:onSelection(player) end
 	self:prepareStage(s)
@@ -205,6 +229,12 @@ function Matches:start(player,playerId,botId,training,options)
 	-- (Beta 03/11) only the beta's fighters (Shared/BetaRoster), whatever a client asks for.
 	if not table.find(BetaRoster,playerId) or not table.find(BetaRoster,botId) then return false,"Not in the beta" end
 	local playerKit,botKit
+	-- (DEC-038) A learned kit fights with the player's own tree (his build,
+	-- the objects he earned); a kit he only tries is the prodigy's whole kit.
+	if options==nil and not s.spectate and not s.online then
+		local spec=Progression.kitSpec(player,playerId)
+		if spec then options={player=spec} end
+	end
 	if options~=nil then
 		if type(options)~="table" then return false,"Invalid options" end
 		local ok,result=Matches.resolveKit(playerId,options.player,options.bracket)
@@ -215,6 +245,8 @@ function Matches:start(player,playerId,botId,training,options)
 		botKit=result
 	end
 	self:destroy(s); s.epoch+=1
+	-- (DEC-038) The walk in Konoha ends: the duel's body takes over.
+	if Matches.hubOn() then Hub.leave(player) end
 	s.playerId=playerId; s.botId=botId; s.winner=nil; s.phase="Duel"; s.origin=Matches.laneOrigin(s.lane)
 	s.options=options
 	-- (QA 12/11) The lane's stadium is the one already in the world, its
@@ -228,7 +260,8 @@ function Matches:start(player,playerId,botId,training,options)
 		-- session asks for it and the avatar is built (Server/AvatarBody);
 		-- otherwise the prodigy's own body.
 		local model,hum,root,joints
-		if id=="PlayerFighter" and s.avatarBody then model,hum,root,joints=AvatarBody.rig(player,s.folder,def,Fighters[def],cf,id) end
+		-- (A tournament match he only watches is two prodigies.)
+		if id=="PlayerFighter" and s.avatarBody and not s.spectate then model,hum,root,joints=AvatarBody.rig(player,s.folder,def,Fighters[def],cf,id,Progression.looks(player)) end
 		if not model then model,hum,root,joints=World.rig(s.folder,Fighters[def],cf,id) end
 		return s.combat:add(id,model,hum,root,joints,def,kit)
 	end
@@ -236,6 +269,10 @@ function Matches:start(player,playerId,botId,training,options)
 	s.bot=actor("AIFighter",botId,s.origin+Vector3.new(0,3,-Config.StartDistance),s.origin+Vector3.new(0,3,Config.StartDistance),botKit)
 	s.human.target=s.bot; s.bot.target=s.human; s.human.locked=true; s.bot.locked=true
 	player.Character=s.human.model
+	-- (13/11) The looks his own ninja wears (Shared/Shop): his weapons' skins.
+	if not s.spectate then s.human.looks=Progression.looks(player) end
+	-- (Beta loop) a learned kit he fights with is his roster's pick next time.
+	if not s.spectate then Progression.remember(player,playerId) end
 	s.ai=AI.new(s.combat,s.bot,player.UserId%100000+ s.epoch,Matches.aiLevel(s))
 	s.finishing=false
 	-- Tournament rounds: first to two (one in training).
@@ -268,7 +305,8 @@ function Matches:roundOver(s,winner,notify,advance)
 	if decided and not s.online and s.owner and s.human then
 		local won=winner==s.human
 		local gained=Progression.duelEnded(s.owner,s,won)
-		s.progress={mastery=gained and gained.mastery,gained=gained~=nil,fighter=s.playerId}
+		s.progress={mastery=gained and gained.mastery,gained=gained~=nil and gained.amount~=nil,amount=gained and gained.amount,fighter=s.playerId,need=Masters.Need,
+			points=gained and gained.points,ryo=gained and gained.ryo,firstWin=gained and gained.firstWin}
 		if s.masterTrial and won then
 			local ok=Progression.learnFromMaster(s.owner,s.masterTrial)
 			if ok then s.progress.learned=s.masterTrial end
@@ -417,6 +455,8 @@ function Matches:view(s,cursor,mine,theirs)
 			tenketsuSevere=(a.tenketsuUntil or 0)>now and (a.tenketsu or 0)>=4,
 			illusionKind=if (a.illusionUntil or 0)>now then a.illusionKind else nil,
 			curseHunger=a.curseHunger==true,
+			-- (13/11) the looks of the player's own ninja (Shared/Shop).
+			looks=a.looks,
 			-- Chakra on the body: the lightning stun it is locked in, the
 			-- ground fire it stands in (ChakraCombat, Combat:updateHazards).
 			shocked=if (a.shockUntil or 0)>now and (a.state=="Stunned" or a.reaction=="Bound") then a.shockUntil-now else 0,
@@ -512,6 +552,40 @@ function Matches:request(player,payload)
 	end
 	-- (DEC-037) The masters' path from the roster: the starter, the kit for the
 	-- next duels, a master's duel, a kit bought.
+	-- (DEC-038) The tree of a learned kit: a node bought with its points, an
+	-- unlocked node turned on or off. Between duels only.
+	if action=="LearnNode" or action=="SetNode" then
+		if clock-s.lastLifecycle<0.25 or s.phase~="Selection" or not Progression.enabled() then return end
+		if type(payload.player)~="string" or type(payload.node)~="string" or #payload.node>32 then return end
+		s.lastLifecycle=clock
+		local ok,why
+		if action=="LearnNode" then ok,why=Progression.learnNode(player,payload.player,payload.node)
+		else ok,why=Progression.setNode(player,payload.player,payload.node,payload.on==true) end
+		self:send(player,{phase="Selection",epoch=s.epoch,kits=Progression.view(player),notice=if ok then nil else Matches.refusal(why)})
+		return
+	end
+	-- (13/11) The shop: a look for Ryō, a look worn, a Robux offer prompted
+	-- (a look, a pack of Ryō, a pass). Between duels only.
+	if action=="BuyItem" or action=="EquipItem" or action=="BuyRobux" or action=="BuyPass" then
+		if clock-s.lastLifecycle<0.25 or s.phase~="Selection" or not Progression.enabled() then return end
+		s.lastLifecycle=clock
+		local ok,why=true,nil
+		if action=="BuyItem" and type(payload.item)=="string" then ok,why=Progression.buyItem(player,payload.item)
+			if ok and Matches.hubOn() then Hub.restyle(player,Progression.looks(player)) end
+		elseif action=="EquipItem" and type(payload.item)=="string" then ok,why=Progression.equipItem(player,payload.item)
+			if ok and Matches.hubOn() then Hub.restyle(player,Progression.looks(player)) end
+		elseif action=="BuyRobux" and type(payload.product)=="number" and payload.product>0 then
+			local known=Progression.productFor(payload.product)
+			if known then pcall(function() game:GetService("MarketplaceService"):PromptProductPurchase(player,payload.product) end) end
+			return
+		elseif action=="BuyPass" and type(payload.pass)=="string" then
+			local id=if payload.pass=="MasteryPass" then (Config.Progression and Config.Progression.MasteryPass) else ((Config.Shop and Config.Shop.Passes or {})[payload.pass])
+			if type(id)=="number" and id>0 then pcall(function() game:GetService("MarketplaceService"):PromptGamePassPurchase(player,id) end) end
+			return
+		end
+		self:send(player,{phase="Selection",epoch=s.epoch,kits=Progression.view(player),notice=if ok then nil else Matches.refusal(why)})
+		return
+	end
 	if action=="ChooseStarter" or action=="SelectKit" or action=="MasterTrial" or action=="BuyKit" then
 		if clock-s.lastLifecycle<0.8 or s.phase~="Selection" or not Progression.enabled() then return end
 		if type(payload.player)~="string" then return end
@@ -519,13 +593,16 @@ function Matches:request(player,payload)
 		if action=="ChooseStarter" or action=="SelectKit" then
 			local ok,why
 			if action=="ChooseStarter" then ok,why=Progression.chooseStarter(player,payload.player) else ok,why=Progression.select(player,payload.player) end
-			self:send(player,{phase="Selection",epoch=s.epoch,kits=Progression.view(player),notice=if ok then nil else string.upper(tostring(why))})
+			local view=Progression.view(player)
+			self:send(player,{phase="Selection",epoch=s.epoch,kits=view,notice=if ok then nil else Matches.refusal(why)})
+			-- (14/11) the kit over his head in Konoha follows his choice
+			if ok and Matches.hubOn() then Hub.badge(player,view) end
 		elseif action=="MasterTrial" then
 			local master=payload.master
 			local h=Progression.handles[player]
 			local can,why=Masters.canLearn(h and h.data.kits,master)
 			if not can or not Progression.owns(player,payload.player) then
-				self:send(player,{phase="Selection",epoch=s.epoch,kits=Progression.view(player),notice=string.upper(tostring(if can then "Kit not learned" else why))})
+				self:send(player,{phase="Selection",epoch=s.epoch,kits=Progression.view(player),notice=Matches.refusal(if can then "Kit not learned" else why)})
 				return
 			end
 			s.masterTrial=master;s.firstStage=nil
@@ -691,6 +768,7 @@ function Matches:remove(player)
 		if s.metrics and not s.metrics.duelAt then print(string.format("[NinjaDuelFirst] %s left %.1fs (stage %s)",tostring(player.UserId),os.clock()-(s.metrics.joined or os.clock()),tostring(s.firstStage or s.phase))) end
 		self:destroy(s); self:dropStage(s); self.sessions[player]=nil
 		AvatarBody.forget(player)
+		Hub.forget(player)
 	end
 end
 return Matches

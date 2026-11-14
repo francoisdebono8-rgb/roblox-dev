@@ -28,6 +28,17 @@ local function blocked()
 	return set
 end
 
+-- The list card's largest scale that fits a window of `viewport` pixels:
+-- 760 x 620 with a margin, its centre at 57 % of the height.
+function Panel.fit(viewport,kit)
+	return math.min(kit.fitScale(viewport,800,680,1.2),(viewport.Y*.43-6)/310)
+end
+function Panel.closeRect(viewport,kit)
+	local size=viewport
+	local s=math.min(math.clamp(math.min(size.X/1500,size.Y/860),.5,1.2),Panel.fit(size,kit))
+	local left,top=size.X/2-380*s,size.Y*.57-310*s
+	return {x=left+396*s,y=top+540*s,w=340*s,h=56*s,scale=s}
+end
 function Panel.new(ui,remote,kit)
 	local K=kit
 	local P=K.palette
@@ -47,7 +58,9 @@ function Panel.new(ui,remote,kit)
 	local scale=K.create("UIScale",card,{Scale=1})
 	local function fit()
 		local size=workspace.CurrentCamera.ViewportSize
-		scale.Scale=math.clamp(math.min(size.X/1500,size.Y/860),.5,1.2)
+		-- (14/11) never wider or taller than the window (a narrow one too):
+		-- the old floor of .5 is capped by what fits, CLOSE stays on screen.
+		scale.Scale=math.min(math.clamp(math.min(size.X/1500,size.Y/860),.5,1.2),Panel.fit(size,K))
 	end
 	workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(fit);fit()
 	local title=K.inkTitle(K.text(card,"PLAYERS ONLINE",UDim2.fromOffset(28,16),UDim2.fromOffset(704,50),44,P.paper,K.TITLE_FONT))
@@ -71,7 +84,7 @@ function Panel.new(ui,remote,kit)
 	local topScale=K.create("UIScale",top,{Scale=1})
 	local function fitTop()
 		local size=workspace.CurrentCamera.ViewportSize
-		topScale.Scale=math.clamp(math.min(size.X/1500,size.Y/860),.55,1.2)
+		topScale.Scale=math.min(math.clamp(math.min(size.X/1500,size.Y/860),.55,1.2),K.fitScale(size,660,170,1.2))
 	end
 	workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(fitTop);fitTop()
 	local invite=K.inkCard(K.frame(top,UDim2.fromOffset(0,0),UDim2.fromOffset(620,112),K.CARD,0),10)

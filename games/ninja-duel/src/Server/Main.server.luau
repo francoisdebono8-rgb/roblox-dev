@@ -2,6 +2,9 @@ local Players=game:GetService("Players")
 local RunService=game:GetService("RunService")
 local Shared=game:GetService("ReplicatedStorage"):WaitForChild("NinjaDuel")
 Players.CharacterAutoLoads=false
+-- (14/11) The game's light before any player joins: what a client receives
+-- on joining is already the look it holds (Shared/Look).
+pcall(function() require(Shared:WaitForChild("Look")).apply() end)
 local remote=Instance.new("RemoteEvent"); remote.Name="Action"; remote.Parent=Shared
 local Matches=require(script.Parent.Matches)
 -- Blender-made costume meshes load in the background (Server/LookMeshes).
@@ -10,6 +13,10 @@ require(script.Parent.ArenaMeshes).preload()
 -- The select screen's fighters, built once with the duel's rig (Server/Portraits).
 require(script.Parent.Portraits).start()
 local matches=Matches.new(remote)
+-- (DEC-038) Konoha: the village the player walks between duels, the masters
+-- at home, the proctor's board of duels (Server/Hub). Built before the first
+-- player's selection puts him at the gate.
+if require(game:GetService("ReplicatedStorage").NinjaDuel.Config).Hub.Enabled==true then require(script.Parent.Hub).start() end
 -- (DEC-037) The masters' path: profiles loaded, saved, kits learned and
 -- bought (off while Config.Progression.Enabled is false).
 require(script.Parent.Progression).start(function(player) matches:kitsLoaded(player) end)

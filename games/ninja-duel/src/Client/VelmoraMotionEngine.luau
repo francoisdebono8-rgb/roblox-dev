@@ -125,13 +125,53 @@ local function fromRot(v)
 	return CFrame.fromAxisAngle(v/m,m)
 end
 Motion._damper=damper
+-- (14/11, CM QA A8: « des articulations qu'un corps ne peut pas faire ») Measured
+-- on the F06 replay: a head turned 119 deg on a torso facing front, elbows
+-- bent backwards 25-40 deg, knees forwards 35-69 deg, a foot folded 120-176
+-- deg onto the shin. Every pose (authored clips, procedural poses, the leg
+-- solver, the transitions between them) is held inside a body's range as it
+-- is published: elbow and knee bend one way only, the neck turns 80 deg at
+-- most, the ankle folds 50 deg.
+-- (DEV review) A per-axis clamp of XYZ Euler angles could jump on a composed
+-- rotation (a bent knee that also twists): the angles are read as a swing of
+-- the limb's long axis (Y) then a twist about it, R = Rx(x)*Rz(z)*Ry(y):
+-- x = the bend (atan2: continuous over a whole fold), z = the sideways swing
+-- (small in every range, far from its pole), y = the twist. Clamping these
+-- moves a pose continuously; a pose in range is returned untouched.
+local R=math.rad
+Motion.LIMITS={
+	Neck={x={R(-60),R(55)},y={R(-80),R(80)},z={R(-40),R(40)}},
+	RightElbow={x={R(-6),R(150)},y={R(-70),R(70)},z={R(-20),R(20)}},
+	LeftElbow={x={R(-6),R(150)},y={R(-70),R(70)},z={R(-20),R(20)}},
+	RightKnee={x={R(-155),R(6)},y={R(-20),R(20)},z={R(-12),R(12)}},
+	LeftKnee={x={R(-155),R(6)},y={R(-20),R(20)},z={R(-12),R(12)}},
+	RightAnkle={x={R(-50),R(50)},y={R(-35),R(35)},z={R(-30),R(30)}},
+	LeftAnkle={x={R(-50),R(50)},y={R(-35),R(35)},z={R(-30),R(30)}},
+}
+-- The (x bend, z swing, y twist) of a rotation, R = Rx(x)*Rz(z)*Ry(y).
+function Motion.swingTwist(cf)
+	local v=cf.UpVector
+	local x=math.atan2(v.Z,v.Y)
+	local z=math.asin(math.clamp(-v.X,-1,1))
+	local t=(CFrame.Angles(x,0,0)*CFrame.Angles(0,0,z)):Inverse()*cf.Rotation
+	local tx=t.RightVector
+	return x,z,math.atan2(-tx.Z,tx.X)
+end
+function Motion.limit(key,cf)
+	local l=Motion.LIMITS[key]
+	if not l then return cf end
+	local x,z,y=Motion.swingTwist(cf)
+	local cx,cy,cz=math.clamp(x,l.x[1],l.x[2]),math.clamp(y,l.y[1],l.y[2]),math.clamp(z,l.z[1],l.z[2])
+	if cx==x and cy==y and cz==z then return cf end
+	return CFrame.new(cf.Position)*CFrame.Angles(cx,0,0)*CFrame.Angles(0,0,cz)*CFrame.Angles(0,cy,0)
+end
 -- Write one joint: damp the owned pose towards the target, limit the angular
 -- step, then publish it as the Motor6D transform.
 local function write(char,key,target,rate,dt)
 	local joint=motor(char,key)
 	if not joint then return end
 	local s=stateOf(char)
-	if not dt then s.pose[key]=target;joint.Transform=target;return end
+	if not dt then target=Motion.limit(key,target);s.pose[key]=target;joint.Transform=target;return end
 	local current=s.pose[key] or joint.Transform
 	local inert=s.inert[key]
 	if s.capture and rate==RATE.authored then
@@ -147,14 +187,16 @@ local function write(char,key,target,rate,dt)
 		inert.vr-=tv;inert.vp-=(target.Position-inert.t0.Position)/dt
 		inert.t0=nil
 	end
-	local desired=target
+	-- (DEV review) the spring aims inside the body's range: it never pushes
+	-- against the stop (no shiver at the end of a high kick or a guard)
+	local desired=Motion.limit(key,target)
 	if inert then
 		inert.r,inert.vr=damper(inert.r,inert.vr,inert.half,dt)
 		inert.p,inert.vp=damper(inert.p,inert.vp,inert.half,dt)
 		if inert.r.Magnitude<1e-3 and inert.vr.Magnitude<1e-2 and inert.p.Magnitude<1e-3 and inert.vp.Magnitude<1e-2 then
 			s.inert[key]=nil
 		else
-			desired=target*(CF(inert.p)*fromRot(inert.r))
+			desired=Motion.limit(key,target*(CF(inert.p)*fromRot(inert.r)))
 		end
 	end
 	local nextCF
@@ -183,7 +225,9 @@ local function write(char,key,target,rate,dt)
 	-- motion may carry the Root that fast, or the feet land late.)
 	local maxMove=(if rate==RATE.authored then 90 else 14)*dt
 	if move.Magnitude>maxMove then nextCF=CF(current.Position+move.Unit*maxMove)*nextCF.Rotation end
-	-- The drawn velocity (joint space), for the next transition.
+	nextCF=Motion.limit(key,nextCF)
+	-- The drawn velocity (joint space), for the next transition: measured on
+	-- the published (limited) pose, so a joint held at its stop has no speed.
 	local vel=s.vel[key] or {}
 	vel.w=rotVec(current:Inverse()*nextCF)/dt;vel.v=(nextCF.Position-current.Position)/dt
 	s.vel[key]=vel
@@ -1923,18 +1967,35 @@ Motion._ankleFrame=ankleFrame
 -- out of a running strike); a foot the clip lifts leaves from where it really
 -- was and joins the clip's path over a few frames (a step, not a glide). A
 -- locked foot the body has carried out of reach is released the same way.
-local function authoredFeet(char,pose,dt,cycle)
+Motion.TURN_STEP=.55 -- studs: a planted foot a turn carries this far off its place steps
+local function authoredFeet(char,pose,dt,cycle,reach)
 	local s=stateOf(char)
+	-- (FILM10) the standing / slow-cycle feet keep their own memory: the gait is
+	-- also computed under a strike (its base), and sharing the strike's feet
+	-- restarted them every frame.
+	local box=s
+	if reach or cycle=="loco" then s.locoFeet=s.locoFeet or {};box=s.locoFeet end
+	if cycle=="loco" then cycle=true end
 	local root=char:FindFirstChild("HumanoidRootPart")
 	if not root then return nil end
 	dt=dt or 1/60
-	local fresh=not s.af or elapsedTime-(s.afAt or -1)>.2
-	if fresh then s.af={} end
-	s.afAt=elapsedTime
 	local rootCF=root.CFrame
+	-- (FILM10: « Minato qui se pose après la téléportation ») A body that
+	-- jumped (a teleport, a flicker) starts on its new spot: its feet held at
+	-- the old one used to be released into a step across the whole arena.
+	local warped=box.afRoot~=nil and (rootCF.Position-box.afRoot).Magnitude>3
+	box.afRoot=rootCF.Position
+	-- A new source of feet (standing / cycle / a clip of its own) starts fresh,
+	-- as it did when only clips held feet: carried over, a stance foot read the
+	-- jump to the strike's pose as speed and never planted.
+	local source=if reach then "turn" elseif cycle then "cycle" else "clip"
+	local fresh=not box.af or elapsedTime-(box.afAt or -1)>.2 or warped or box.afSource~=source
+	box.afSource=source
+	if fresh then box.af={} end
+	box.afAt=elapsedTime
 	local feet={}
 	for _,key in {"R","L"} do
-		local f=s.af[key]
+		local f=box.af[key]
 		local frame=ankleFrame(pose,key)
 		local clipPos=frame.Position
 		if not f then
@@ -1947,7 +2008,7 @@ local function authoredFeet(char,pose,dt,cycle)
 				if here.Magnitude>.12 and here.Magnitude<2.5 then f.off=here;f.offV=Vector3.zero;f.release=true end
 			end
 		end
-		s.af[key]=f
+		box.af[key]=f
 		local speed=if f.prev then (clipPos-f.prev).Magnitude/dt else 0
 		f.prev=clipPos
 		local low=clipPos.Y-ANKLE_Y<(if f.planted then .3 else .16)
@@ -1970,7 +2031,7 @@ local function authoredFeet(char,pose,dt,cycle)
 			local hip=(pose.Root or IDENTITY)*Vector3.new(if key=="R" then .5 else -.5,-.55,0)
 			-- (A running cycle lets a held foot go sooner: a long swing back
 			-- from far behind the hips twisted the solved leg.)
-			if (here-hip).Magnitude>L1+L2-.04 or (here-clipPos).Magnitude>(if cycle==true then .75 else 1.3) then
+			if (here-hip).Magnitude>L1+L2-.04 or (here-clipPos).Magnitude>(reach or (if cycle==true then .75 else 1.3)) then
 				-- Out of reach: let it go, it steps back under the body.
 				f.planted=false;f.off=here-clipPos;f.release=true;f.offV=Vector3.zero
 			else
@@ -1990,7 +2051,9 @@ local function authoredFeet(char,pose,dt,cycle)
 				-- moved it a third of the way on the release frame: a knee snap).
 				f.off,f.offV=damper(f.off,f.offV or Vector3.zero,.055,dt)
 				local u=1-f.off.Magnitude/f.swing0
-				lift=4*u*(1-u)*math.min(.55,f.swing0*.35)
+				-- (FILM10) a short step still leaves the floor visibly (a turn's
+				-- half-stud steps lifted 6 cm: they read as a slide)
+				lift=4*u*(1-u)*math.max(.18,math.min(.55,f.swing0*.35))
 			else
 				f.off=Vector3.zero;f.swing0=nil;f.offV=Vector3.zero
 			end
@@ -2190,6 +2253,18 @@ local function authoredLocomotion(char,actor,fighterId,dt)
 		-- once the body has carried it out of reach.
 		pose=table.clone(pose)
 		pose.__feet=authoredFeet(char,pose,dt,true)
+	elseif speed>.4 then
+		-- (FILM10 / A9) a cycle played slower or faster than it was drawn (a
+		-- step back after a string, a slow strafe) holds its planted foot too
+		pose=table.clone(pose)
+		pose.__feet=authoredFeet(char,pose,dt,"loco")
+	else
+		-- (14/11, FILM10 / A9: « Gaara qui se tourne ») Standing still, the
+		-- feet were the clip's, in the body's frame: a turn on the spot swung
+		-- them round with it (a pivot on skates). They hold the floor; once
+		-- the turn has carried one half a stud off its place it steps there.
+		pose=table.clone(pose)
+		pose.__feet=authoredFeet(char,pose,dt,nil,Motion.TURN_STEP)
 	end
 	local trackTorso,trackHead=trackOf(root,actor)
 	local feet=pose.__feet
@@ -2975,7 +3050,11 @@ guardStep=function(char,subject,dt)
 	local F=tostring(subject.fighterId)
 	local root=char:FindFirstChild("HumanoidRootPart")
 	if not root then return nil end
-	local v=planar(root.AssemblyLinearVelocity)
+	-- (14/11, CM QA A9) A drawn body is carried by CFrame on its smoothed
+	-- track: its part velocity is zero, so the guard never stepped and glided
+	-- with its feet still. The fighter's own (server) velocity drives it.
+	local v=planar(subject.velocity or Vector3.zero)
+	if v.Magnitude<1e-3 then v=planar(root.AssemblyLinearVelocity) end
 	local speed=v.Magnitude
 	if speed<GUARD_STEP_MIN then return nil end
 	if speed>GUARD_SKID and Authored.has(F..".Guard.Skid") then
@@ -3096,11 +3175,30 @@ local function setVisible(item,visible)
 	item.visible=visible
 	for _,entry in item.parts do entry.part.Transparency=if visible then entry.base else 1 end
 end
-local function weaponsFor(char,fighterId)
+-- (13/11, the shop) The looks of the player's own ninja (Shared/Shop by
+-- slot) paint his blades and his kit's objects (Effects.paint).
+local ShopData=nil
+local function lookColors(looks,slot)
+	local id=looks and looks[slot]
+	if not id then return nil end
+	ShopData=ShopData or (Fighters and require(game:GetService("ReplicatedStorage").NinjaDuel.Shop))
+	local item=ShopData and ShopData.item(id)
+	return item and item.colors
+end
+local function weaponsFor(char,fighterId,looks)
 	local items=weapons[char]
 	if items then return items end
 	items={}
 	weapons[char]=items
+	-- The gourd of Gaara's kit wears its look (its pieces, on whatever body).
+	local gourd=lookColors(looks,"gourd")
+	if gourd and gourd.Body then
+		for _,d in char:GetDescendants() do
+			if d:IsA("BasePart") and (d.Name=="Gourd" or d.Name=="GourdTop" or d.Name=="GourdNeck" or d.Name=="GourdWaist" or string.match(d.Name,"__Gourd$")) then
+				d.Color=Color3.fromRGB(gourd.Body[1],gourd.Body[2],gourd.Body[3])
+			end
+		end
+	end
 	local kind=familyOf(fighterId).weapons
 	local minato=kind=="kunai"
 	local palms=kind=="palms"
@@ -3111,7 +3209,7 @@ local function weaponsFor(char,fighterId)
 	local own=Fighters and Fighters[fighterId] and Fighters[fighterId].Weapon
 	if right then pcall(function()
 		Effects=Effects or require(script.Parent.Effects)
-		local blade=if own and own.Kind=="Tanto" then Effects.buildTanto() else Effects.buildKunai(false)
+		local blade=if own and own.Kind=="Tanto" then Effects.paint(Effects.buildTanto(),lookColors(looks,"tanto")) else Effects.paint(Effects.buildKunai(false),lookColors(looks,"kunai"))
 		items.drawn=makeItem(right,blade,LION_KUNAI_C0)
 	end) end
 	if kind=="none" then for _,item in items do setVisible(item,false) end return items end
@@ -3119,16 +3217,17 @@ local function weaponsFor(char,fighterId)
 	if not hand then weapons[char]=nil;return nil end
 	local ok=pcall(function()
 		Effects=Effects or require(script.Parent.Effects)
+		local kunaiLook=lookColors(looks,"kunai")
 		if palms then
-			items.throw=makeItem(hand,Effects.buildKunai(false),CF(0,-.16,-.08)*ANG(math.rad(10),0,0))
+			items.throw=makeItem(hand,Effects.paint(Effects.buildKunai(false),kunaiLook),CF(0,-.16,-.08)*ANG(math.rad(10),0,0))
 		elseif minato then
 			-- Reverse grip: blade out of the little-finger side, along the forearm.
-			items.melee=makeItem(hand,Effects.buildKunai(false),CF(0,-.14,.12)*ANG(math.rad(-12),math.pi,0))
-			items.throw=makeItem(hand,Effects.buildKunai(false),CF(0,-.16,-.08)*ANG(math.rad(10),0,0))
+			items.melee=makeItem(hand,Effects.paint(Effects.buildKunai(false),kunaiLook),CF(0,-.14,.12)*ANG(math.rad(-12),math.pi,0))
+			items.throw=makeItem(hand,Effects.paint(Effects.buildKunai(false),kunaiLook),CF(0,-.16,-.08)*ANG(math.rad(10),0,0))
 			items.marked=makeItem(hand,Effects.buildKunai(true),CF(0,-.16,-.08)*ANG(math.rad(10),0,0))
 		else
-			items.shuriken=makeItem(hand,Effects.buildShuriken(),CF(0,-.34,-.08)*ANG(0,0,math.pi/2))
-			if kind=="wire" then items.melee=makeItem(hand,Effects.buildKunai(false),LION_KUNAI_C0) end
+			items.shuriken=makeItem(hand,Effects.paint(Effects.buildShuriken(),lookColors(looks,"shuriken")),CF(0,-.34,-.08)*ANG(0,0,math.pi/2))
+			if kind=="wire" then items.melee=makeItem(hand,Effects.paint(Effects.buildKunai(false),kunaiLook),LION_KUNAI_C0) end
 		end
 	end)
 	if not ok then
@@ -3143,7 +3242,7 @@ local function weaponsFor(char,fighterId)
 	return items
 end
 function Motion.weapon(char,actor)
-	local items=weaponsFor(char,actor.fighterId)
+	local items=weaponsFor(char,actor.fighterId,actor.looks)
 	if not items then return end
 	local kind=familyOf(actor.fighterId).weapons
 	local minato=kind=="kunai"
@@ -3328,6 +3427,7 @@ local function brakePosture(targets,w)
 	out.Left=ANG(rad(18*w),0,rad(-26*w))*(targets.Left or IDENTITY)
 	return out
 end
+Motion.PIVOT_MIN=60 -- degrees a standing body turns before it steps round
 function Motion.present(char,actor,clock,dt)
 	local elapsed=clock or {}
 	local subject=actor
@@ -3362,6 +3462,48 @@ function Motion.present(char,actor,clock,dt)
 		end
 	else
 		memo.ultClip=nil
+	end
+	-- (FILM10, A9: Gaara turning on the spot slid his feet round with the body)
+	-- A standing body that turns more than PIVOT_MIN plays its fighter's
+	-- <F>.Pivot.<R|L><90|180> (the ANIMATOR's steps: the front foot lifts and
+	-- sets down); the server turns the root, the clip moves the legs, the
+	-- planted feet hold (authoredFeet).
+	do
+		local root=char:FindFirstChild("HumanoidRootPart")
+		local standing=root and not subject.airborne and not subject.reaction and (subject.speed or 0)<1.5
+			and (subject.state=="Neutral" or subject.state=="Guarding")
+		if root and standing and Authored and subject.fighterId then
+			local look=root.CFrame.LookVector
+			local yaw=math.deg(math.atan2(-look.X,-look.Z))
+			memo.pivotYaw=memo.pivotYaw or yaw
+			local diff=(yaw-memo.pivotYaw+540)%360-180
+			if not memo.pivot and math.abs(diff)>Motion.PIVOT_MIN then
+				local side=if diff<0 then "R" else "L"
+				local amount=if math.abs(diff)>=135 then "180" else "90"
+				local name=tostring(subject.fighterId)..".Pivot."..side..amount
+				if Authored.has(name) then memo.pivot={clip=name,at=elapsedTime} end
+				memo.pivotYaw=yaw
+			end
+			local p=memo.pivot
+			if p then
+				local t=elapsedTime-p.at
+				if t<Authored.length(p.clip) then
+					local targets=table.clone(Authored.sample(p.clip,t))
+					targets.Root=nil -- the server already turned the body
+					targets.__feet=authoredFeet(char,targets,dt)
+					mark(char,"pivot:"..p.clip,.07)
+					apply(char,targets,RATE.authored,dt)
+					return "pivot"
+				end
+				memo.pivot=nil
+			end
+		else
+			memo.pivot=nil
+			if root then
+				local look=root.CFrame.LookVector
+				memo.pivotYaw=math.deg(math.atan2(-look.X,-look.Z))
+			end
+		end
 	end
 	-- Studio: the dodge clock only restarted when the last *defense* state
 	-- differed, and nothing cleared it between dodges, so every dodge after the
@@ -3509,7 +3651,21 @@ function Motion.present(char,actor,clock,dt)
 	end
 	if subject.state=="Guarding" then
 		local targets,rate=guardStep(char,subject,dt)
-		if not targets then targets,rate=guardTargets(subject.fighterId,subject.guardImpact) end
+		if targets then
+			-- (A9) the guard's steps put their feet on the floor (locked where they land)
+			targets=table.clone(targets)
+			if not subject.airborne then targets.__feet=authoredFeet(char,targets,dt,true) end
+		else
+			targets,rate=guardTargets(subject.fighterId,subject.guardImpact)
+			-- (A9) a held guard carried by the body (a parry pushed back, a slow
+			-- drift) keeps its feet on the floor and steps after them, as a
+			-- standing hit does, instead of riding the body like skates.
+			-- (FILM10) and a guard turning on the spot pivots on its feet, stepping
+			if not subject.airborne then
+				local moving=planar(subject.velocity or Vector3.zero).Magnitude>.5
+				targets=table.clone(targets);targets.__feet=authoredFeet(char,targets,dt,nil,if moving then nil else Motion.TURN_STEP)
+			end
+		end
 		apply(char,targets,rate,dt)
 		return "guard"
 	end
@@ -3782,6 +3938,33 @@ function Motion.present(char,actor,clock,dt)
 	local throw=subject.throwKind and THROWS[subject.throwKind]
 	if subject.castId=="WindCut" and math.abs((subject.castElapsed or 99)-(subject.throwElapsed or -99))<.08 then throw=THROWS.WindCut end
 	local throwElapsed=subject.throwElapsed or 99
+	-- (FILM10, A9 « les pieds qui glissent ») Brawler.disengage, the hop out
+	-- of a string (Recovery, no strike, a blade thrown, the body carried back
+	-- at 46 studs/s): the legs ran backwards in place under the throw. Their
+	-- own clip now (the ANIMATOR's <F>.Disengage: crouch, push off both feet,
+	-- 5 studs in the air, land on both feet that hold), from the throw's
+	-- start; the upper body keeps the throw.
+	local hopClip=Authored and subject.fighterId and tostring(subject.fighterId)..".Disengage"
+	if hopClip and Authored.has(hopClip) and subject.throwKind and throwElapsed>=0 and not subject.attackName and not subject.airborne then
+		local c=Authored.clip(hopClip)
+		local key=tostring(subject.throwKind)..":"..string.format("%.2f",elapsedTime-throwElapsed)
+		if subject.state=="Recovery" and (subject.speed or 0)>20 and throwElapsed<.15 and memo.hopKey==nil then
+			memo.hopKey=key;memo.hopAt=elapsedTime-throwElapsed
+		end
+		local t=if memo.hopAt then elapsedTime-memo.hopAt else 99
+		if memo.hopAt and t<c.length then
+			local pose=Authored.sample(hopClip,t)
+			base=table.clone(base)
+			for joint,cf in pose do if not UPPER[joint] then base[joint]=cf end end
+			-- landed: the feet hold where they touched
+			if t>=(c.markers.land or c.length*.5) then base.__feet=authoredFeet(char,base,dt) end
+			mark(char,"legs:"..hopClip,.07)
+		else
+			memo.hopAt=nil;memo.hopKey=nil
+		end
+	else
+		memo.hopAt=nil;memo.hopKey=nil
+	end
 	-- (Wind Cut keeps its own slash: the clip is looked up under its name.)
 	local throwName=if throw==THROWS.WindCut then "WindCut" else subject.throwKind
 	local throwClip=Authored and throwName and tostring(subject.fighterId)..".Throw."..tostring(throwName)

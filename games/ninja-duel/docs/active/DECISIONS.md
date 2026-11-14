@@ -298,5 +298,45 @@ Décisions utilisateur du **12/11, 17 h 02 à 17 h 21** : au début, le joueur c
 - **Argent** : un kit peut s’acheter tout de suite (produit développeur par kit, accordé une seule fois par reçu, sauvegardé avant de répondre à Roblox) ; passe 2x maîtrise ; cosmétiques, accès anticipé, abonnement, serveurs privés à venir. Jamais de tirage au sort ; le classé et le tournoi gardent un budget égal (DEC-024). Les points de compétence ne s’achètent toujours pas.
 - **Sauvegarde** : profil v2 (`kits` : appris, départ, kit choisi, maîtrise, reçus), chargé à l’arrivée, sauvegardé toutes les 30 s, au départ et à l’arrêt du serveur.
 - **Interrupteur** : `Config.Progression.Enabled` reste à `false` jusqu’à l’écran du roster (choix du départ, carte des maîtres, achat) ; `Live` ouvre le DataStore réel ; les identifiants de produits sont créés par l’utilisateur sur Roblox.
+- **Allumé dans la bêta (13/11)**, sur la demande de l’utilisateur « avance maintenant sur la bêta qu’on soit proche de la vraie boucle du jeu » : `Enabled` et `Live` passent à `true` avec l’écran du roster (`Shared/MastersView`) ; le serveur ne l’applique que si le magasin des profils a démarré, sinon tous les kits restent ouverts. Le corps du joueur est son avatar Roblox dans ses propres duels (`Config.AvatarBody`, DEC-036). Rien n’est vendu tant que `Products` est vide. Le jeu publié ne change qu’à la prochaine publication, qui reste soumise à l’autorisation de l’utilisateur.
 - **Risque** : les noms et personnages de Naruto dans un jeu qui encaisse ; à trancher avant d’activer les achats (déjà noté dans le plan bêta).
+
+## DEC-038 — La boucle dans le monde : Konoha et la salle de l’examen, les maîtres chez eux, des arbres payés par la maîtrise (13/11)
+
+Demande de l’utilisateur du **13/11 à 17 h 11** : « il faut vraiment que je travaille la boucle en mode le décor, les scènes, où est-ce qu’on va choisir le maître, […] les premiers déplacements. Du coup, il faut faire les arbres de compétences réelles ». Les quatre choix suivants ont été faits par l’utilisateur à 17 h 14, chacun étant l’option recommandée.
+
+- **Le décor** : un village de Konoha compact. On y trouve la porte d’arrivée, une rue, le terrain d’entraînement, le quartier Uchiha, la maison Hyûga, les toits et les visages des Hokage. Au centre se trouve la salle des préliminaires de l’examen Chûnin : c’est de là que partent les duels et le tournoi. L’avatar du joueur arrive par la porte.
+- **Les maîtres** : chacun attend chez lui, et le joueur marche jusqu’à eux. Il y prend son premier kit, se fait enseigner les autres, affronte le duel du maître et consulte l’arbre. Ceux qui n’enseignent pas encore sont visibles et disent ce qui manque.
+- **Les arbres** : chaque kit de la bêta a son arbre réel (`Shared/SkillTrees`, de 120 à 150 points au maximum). Les points viennent de la maîtrise du kit : un point pour 10 de maîtrise (`Masters.points`). Jouer un kit fait donc grandir son arbre. Un kit acheté n’apporte aucun point, et les points ne s’achètent pas. Un nœud appris entre aussitôt dans le build du kit ; on l’allume ou on l’éteint entre deux matchs.
+- **Les objets de kit sont des nœuds** : la gourde de Gaara, les poids de Lee et le tanto de Kakashi. L’objet est porté dès le départ, mais le ninja **du joueur** ne s’en sert qu’une fois le nœud acquis : sans lui, pas de bouclier de sable, pas de « Remove the Weights », un tanto qui reste au fourreau. Les prodiges eux-mêmes gardent tout : l’IA, les maîtres, le tournoi vu et les films. Exception : le kunai marqué de Minato est le cœur de son kit ; son nœud d’objet reste « Kunai Recall », qui ramasse un kunai planté.
+- **Où l’arbre s’applique** : dans les duels qui comptent avec un kit appris, dans le duel du maître et en entraînement avec un kit appris. Un kit seulement essayé, le tournoi et le 1v1 en ligne gardent le kit entier du prodige, à budget égal (DEC-024).
+
+## DEC-039 — La boutique, le Ryō et les paliers de l’arbre (13/11)
+
+Demande de l’utilisateur du **13/11 à 18 h 03** : « Continue et on voit tout ce qui est boutique, UI, design, aussi vraiment les arbres de compétences, vraiment comment ça va marcher, les armes ». Les écrans ont été posés dans la planche de design « Ninja Duel : boutique, arbres et armes », puis construits dans le jeu. Les prix en Robux et les identifiants Roblox restent à fixer par l’utilisateur.
+
+- **Deux monnaies.**
+  - Le **Ryō** se gagne en jouant. Duel fini : 20 ; gagné : +30 ; la première victoire du jour compte double ; duel du maître gagné : +150. Il achète des apparences seulement, jamais un kit ni un point (`Shared/Shop`).
+  - Les **Robux** achètent :
+    - du temps : un kit tout de suite, la maîtrise ×2 ;
+    - du statut : VIP ;
+    - l’accès anticipé au prochain prodige ;
+    - les apparences rares ;
+    - des paquets de Ryō.
+  - Les identifiants sont dans `Config.Shop`. Tant qu’ils valent 0, l’offre s’affiche « SOON » et rien n’est vendu.
+- **La boutique** a cinq onglets : KITS, WEAPONS, STYLE, PASSES, RYŌ. On l’ouvre depuis le HUD de Konoha (bouton SHOP, avec le Ryō affiché) et depuis le roster.
+- **Les armes.** Tout ninja porte un kunai. Les objets de kit (gourde, poids, tanto) se gagnent dans l’arbre (DEC-038). La boutique vend leur **apparence**, jamais un chiffre :
+  - kunai et shuriken, peints en main, en vol et une fois plantés ;
+  - le tanto de Kakashi ;
+  - la gourde de Gaara.
+
+  Les poids de Lee auront leur apparence quand leur modèle Blender existera.
+- **Le style** : un bandeau de Konoha sur l’avatar du joueur (`Server/Headband`), en duel comme à Konoha (bleu de base, noir, rouge, ou aucun).
+- **Les paliers de l’arbre** (`Shared/TreeTiers`). Chaque nœud a son palier (`Tier`) :
+  - **palier I** dès le départ : l’objet du kit et les petits nœuds ;
+  - **palier II** à 300 de maîtrise, quand le maître suivant ouvre sa porte : les routes, les esquives, les murs ;
+  - **palier III** à 800 : les coups signature.
+
+  Un nœud n’attend jamais un nœud d’un palier plus haut. Chaque palier contient assez de points pour qu’il reste un vrai choix. Le panneau de l’arbre dessine les paliers en lignes et les branches en colonnes.
+- **Profil v3** : un portefeuille (Ryō, jour de la dernière première victoire) et les apparences (possédées, portées). Le passage depuis la v2 se fait sans perte. Un achat en Robux est accordé une seule fois par reçu, et seulement une fois le profil sauvegardé.
 

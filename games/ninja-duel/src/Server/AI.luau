@@ -428,10 +428,22 @@ function AI:update(now)
 	-- (LateFrom s, full at +LateSpan) presses: no more probing or breathing,
 	-- keener dashes, jutsu sooner.
 	local late=math.clamp((now-self.roundStart-(tune.LateFrom or 40))/(tune.LateSpan or 25),0,1)
-	-- (easy) a beat at the start of the round: guard up, it lets him come.
+	-- (easy) a beat at the start of the round: it lets him come.
+	-- (QA 14/11, D5: after the 2.6 s BEGIN the easy bot stood 2.5 s more in
+	-- guard, « comme si le jeu était bloqué ») It comes in at a walk, circling,
+	-- from the first second; it still throws nothing in that beat.
 	if tune.Opening then
 		self.openedAt=self.openedAt or now
-		if now-self.openedAt<tune.Opening then a.move=Vector3.zero;return end
+		if now-self.openedAt<tune.Opening then
+			local d=target.root.Position-a.root.Position;d=Vector3.new(d.X,0,d.Z)
+			local toward=if d.Magnitude>.1 then d.Unit else Vector3.zAxis
+			local around=Vector3.new(-toward.Z,0,toward.X)
+			self.openSide=self.openSide or (if self.rng:NextNumber()<.5 then 1 else -1)
+			local move=(if d.Magnitude>9 then toward*.8 else Vector3.zero)+around*self.openSide*.6
+			a.move=if move.Magnitude>1 then move.Unit else move
+			a.sprinting=false
+			return
+		end
 	end
 	-- No exemption from a shroud: lost in it, the bot aims at where it last saw him.
 	if Families.shrouded(c,a) then a.fogAim=self.lastSeen or target.root.Position

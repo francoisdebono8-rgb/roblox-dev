@@ -118,20 +118,12 @@ local function pavilion(parent,cf,width,depth,height,tiers)
 		end
 	end
 end
+-- (14/11) The game's one light (Shared/Look), the same the client holds:
+-- this used to be another afternoon (sun at 14.6, its own grade and bloom),
+-- replicated a second after the client's look and overwritten again.
 local function atmosphere()
-	local Lighting=game:GetService("Lighting")
-	if Lighting:FindFirstChild("NinjaDuelAtmosphere") then return end
-	-- Bright exam-day afternoon, as in the anime: clear sky, warm sun, soft haze.
-	Lighting.ClockTime=14.6;Lighting.GeographicLatitude=30
-	Lighting.Brightness=3;Lighting.EnvironmentDiffuseScale=.7;Lighting.EnvironmentSpecularScale=.3
-	Lighting.Ambient=rgb(104,104,104);Lighting.OutdoorAmbient=rgb(150,146,138)
-	pcall(function() Lighting.Technology=Enum.Technology.Future end)
-	pcall(function() Lighting.LightingStyle=Enum.LightingStyle.Realistic end)
-	local atmo=Instance.new("Atmosphere");atmo.Name="NinjaDuelAtmosphere";atmo.Density=.26;atmo.Offset=.1
-	atmo.Color=rgb(214,222,226);atmo.Decay=rgb(140,150,160);atmo.Glare=.2;atmo.Haze=.9;atmo.Parent=Lighting
-	local cc=Instance.new("ColorCorrectionEffect");cc.Name="NinjaDuelGrade";cc.Saturation=.14;cc.Contrast=.06;cc.Brightness=.02;cc.TintColor=rgb(255,250,242);cc.Parent=Lighting
-	local bloom=Instance.new("BloomEffect");bloom.Name="NinjaDuelBloom";bloom.Intensity=.45;bloom.Size=24;bloom.Threshold=1.5;bloom.Parent=Lighting
-	local rays=Instance.new("SunRaysEffect");rays.Name="NinjaDuelRays";rays.Intensity=.04;rays.Spread=.6;rays.Parent=Lighting
+	local okLook,Look=pcall(require,game:GetService("ReplicatedStorage"):WaitForChild("NinjaDuel"):WaitForChild("Look"))
+	if okLook and Look then Look.apply(game:GetService("Lighting"),workspace:FindFirstChildOfClass("Terrain")) end
 end
 World.atmosphere=atmosphere
 -- --------------------------------------------- the stadium, Blender pass 2

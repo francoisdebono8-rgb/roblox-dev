@@ -20,6 +20,10 @@ local attacks={
  Light5=move(.10,.12,Combo.comboDelay-.23,Combo.Damage.Punch,3.4),
  Heavy=move(.30,.17,.52,14,5.4,"Knockdown",Vector3.new(0,12,34),.68),
  Launcher=move(.17,.14,.28,8,3.2,"Launched",Vector3.new(0,58,13),1.18),
+ -- (QA 14/11, D6: the running blow landed 0.00-0.05 s into its clip) Its
+ -- timing stays (a 0.12 s wind-up cut Lee's routes from 8 to 1 in the AI
+ -- duels): the contact rules (BanglaCombat.reaches, Combat:separate) and
+ -- the clip's first frames (animator) carry the fix.
  DashAttack=move(.07,.15,.27,7,8.2,"HitStun",Vector3.new(0,3,13),.31),
  Air1=move(.08,.13,.18,6,2.8,"Juggled",Vector3.new(0,15,8),.62),
  Air2=move(.09,.14,.19,7,3.1,"Juggled",Vector3.new(0,10,12),.64),
@@ -118,6 +122,11 @@ for name,spec in attacks do
   -- contact distance: it now reaches a quarter stud past it.
   spec.depth=spec.contact+.25-1;spec.offset=(1+spec.contact+.25)/2
  end
+ -- (QA 14/11, D1) A volume derived here from the range (8/10 of it, far past
+ -- the body's reach) is capped to the contact distance (BanglaCombat.reaches).
+ -- A string's light (its volume already ends a quarter stud past contact) and
+ -- a move that sets its own depth later (sand, claws, a fan) keep theirs.
+ if not Combo.Actions[name] then spec.bodyDepth=spec.depth end
  spec.animation=name;spec.feedback=spec.reaction;spec.chain=name=="Light1" or name=="Light2" or name=="Light4" or name=="Light5" or name=="Air1" or name=="Air2" or name=="DashAttack" or name=="AngleStep" or name=="Riposte"
   or name=="FeintStep" or name=="CircleStep" or name=="AirSwitch" or name=="VaultKick"
  spec.air=name=="Air1" or name=="Air2" or name=="AirDrive" or name=="AirSpike" or name=="AirSwitch" or name=="AirFlip"
@@ -232,7 +241,7 @@ for name,m in {
  HeadDive=move(.12,.16,.42,10,9,"Knockdown",Vector3.new(0,10,46),.7),
 } do
  m.animation=name;m.feedback=m.reaction;m.chain=false;m.air=false
- m.depth=m.range*.8;m.offset=m.range*.4
+ m.depth=m.range*.8;m.offset=m.range*.4;m.bodyDepth=m.depth
  attacks[name]=m
 end
 for name,shape in {
@@ -276,7 +285,7 @@ for name,m in {
  DropStrike=move(.07,.15,.24,8,1.2,"HitStun",Vector3.new(0,-6,10),.4),
 } do
  m.animation=name;m.feedback=m.reaction;m.chain=false;m.air=false
- m.depth=m.range*.8;m.offset=m.range*.4
+ m.depth=m.range*.8;m.offset=m.range*.4;m.bodyDepth=m.depth
  attacks[name]=m
 end
 for name,shape in {

@@ -36,6 +36,8 @@ run Regression "$LUNE" run tests/Regression.spec.luau
 run Feedback   "$LUNE" run tests/Feedback.spec.luau
 run Animation  "$LUNE" run tests/Animation.spec.luau
 run Locomotion "$LUNE" run tests/Locomotion.spec.luau
+run BodyRange  "$LUNE" run tests/BodyRange.spec.luau
+run Film10Feet "$LUNE" run tests/Film10Feet.spec.luau
 run AwakenFX "$LUNE" run tests/AwakenFX.spec.luau
 run LightBudget "$LUNE" run tests/LightBudget.spec.luau
 run Lightning "$LUNE" run tests/Lightning.spec.luau
@@ -54,6 +56,10 @@ run Leftovers "$LUNE" run tests/Leftovers.spec.luau
 run Appearance "$LUNE" run tests/Appearance.spec.luau
 run Avatar "$LUNE" run tests/Avatar.spec.luau
 run Masters "$LUNE" run tests/Masters.spec.luau
+run MastersView "$LUNE" run tests/MastersView.spec.luau
+run Trees "$LUNE" run tests/Trees.spec.luau
+run Hub "$LUNE" run tests/Hub.spec.luau
+run Shop "$LUNE" run tests/Shop.spec.luau
 run Spacing "$LUNE" run tests/Spacing.spec.luau
 run StepSpeeds "$LUNE" run tests/StepSpeeds.spec.luau
 run ReactionSides "$LUNE" run tests/ReactionSides.spec.luau

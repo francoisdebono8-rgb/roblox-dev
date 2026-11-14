@@ -118,7 +118,12 @@ return {
 	-- (07/11, same audit) A blow lands on what is in front of it: the brawl
 	-- contact cone is +-acos(Contact.Facing) around the striker's facing (was
 	-- +-87 deg: a fist going forward knocked down a body beside it).
-	Contact = {Facing = 0.5},
+	-- (QA 14/11, D1: 29 body strikes in 115 landed with the limb more than a
+	-- stud short of the body) A body's blow lands only within its contact
+	-- distance + Slack (root to root); a press within Lunge studs past its
+	-- step-in steps all the way in, so the blow is seen to reach (2.5 times
+	-- that after a body already struck, 3 times for a chase's arrival).
+	Contact = {Facing = 0.5, Slack = 1.5, Lunge = 1.5},
 	-- (12/11, feel audit M2: bodies inside each other, contact down to 2 studs,
 	-- a fighter standing in one lying on the floor) Two standing bodies are
 	-- eased toward Gap studs apart (root to root) and never left closer than
@@ -179,7 +184,30 @@ return {
 	-- off until the roster screen shows it; Live opens the live DataStore;
 	-- Products maps a kit to its Developer Product id (empty: nothing sold);
 	-- MasteryPass is the 2x mastery game pass id (0: none).
-	Progression = { Enabled = false, Live = false, Products = {}, MasteryPass = 0 },
+	-- (Beta loop, 13/11: « qu'on soit proche de la vraie boucle du jeu ») On in
+	-- the beta: a new player picks one kit among three, the others are taught by
+	-- their masters. Live = the published game's own store (progress kept
+	-- between visits); Studio always uses the DEV store.
+	Progression = { Enabled = true, Live = true, Products = {}, MasteryPass = 0 },
+	-- (DEC-036) The player's fighter is his own Roblox avatar wearing the kit
+	-- (Server/AvatarBody); the AI's and the watched fighters stay the prodigies.
+	AvatarBody = { Enabled = true },
+	-- (DEC-038, 13/11) Between duels the player walks Konoha as his own avatar:
+	-- the masters at home, the exam hall's proctor opens the board of duels.
+	-- Off: the roster screen, as before.
+	-- (14/11) DevUserId: whose avatar is carved first on the cliff
+	-- (Server/ChampionCliff); nil = the game's creator (game.CreatorId), so a
+	-- local file in Studio shows the funny head there.
+	Hub = { Enabled = true, DevUserId = nil },
+	-- (13/11) The shop's Roblox ids, created by the owner on the game's page
+	-- (0 or absent: shown SOON, nothing sold). Products: a Robux look by its
+	-- Shared/Shop key; RyoPacks: Ryō for Robux; Passes: game passes (the 2x
+	-- mastery pass is Progression.MasteryPass).
+	Shop = {
+		Products = { KunaiGold = 0, TantoShadow = 0 },
+		RyoPacks = { { amount = 1000, product = 0 }, { amount = 3000, product = 0 }, { amount = 8000, product = 0 } },
+		Passes = { VIP = 0, EarlyAccess = 0, BuildSlots = 0 },
+	},
 	AI = { Tick = 0.18, Reaction = 0.38, Aggression = 0.72, Defense = 0.58, Technique = 0.34,
 		TechniqueGap = 2.6, TechniqueJitter = 2.6, ReadGuard = 0.3, ReadDodge = 0.16, ReadPoke = 0.22, GuardRead = 0.07,
 		Feint = 0.1, ProbeTool = 2.4, Disengage = 0.45, WallRun = 0.35,

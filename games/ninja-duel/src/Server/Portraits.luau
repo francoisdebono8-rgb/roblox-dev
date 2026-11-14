@@ -25,6 +25,8 @@ local STANCE={
 	Neck=CFrame.Angles(math.rad(2),math.rad(6),0),
 }
 
+-- (DEC-038) The hub's masters and proctor stand in the same stance.
+Portraits.STANCE=STANCE
 local function strip(model)
 	for _,d in model:GetDescendants() do
 		if d:IsA("Script") or d:IsA("LocalScript") or d:IsA("Sound") or d:IsA("ParticleEmitter") or d:IsA("Light") then d:Destroy()
@@ -34,6 +36,7 @@ local function strip(model)
 	if hum then hum.DisplayDistanceType=Enum.HumanoidDisplayDistanceType.None;hum.HealthDisplayType=Enum.HumanoidHealthDisplayType.AlwaysOff end
 end
 
+Portraits.strip=strip
 function Portraits.build()
 	if ReplicatedStorage:FindFirstChild("NinjaDuelPortraits") then return end
 	local World=require(script.Parent.World)

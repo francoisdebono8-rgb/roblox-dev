@@ -3,6 +3,15 @@ local RunService=game:GetService("RunService")
 local player=Players.LocalPlayer
 local shared=game:GetService("ReplicatedStorage"):WaitForChild("NinjaDuel")
 local remote=shared:WaitForChild("Action")
+-- (14/11) The first seconds behind a curtain while the first screens load
+-- (Client/Curtain): nothing comes in piece by piece.
+pcall(function()
+	local hubOn=false
+	pcall(function() local Config=require(shared:WaitForChild("Config"));hubOn=Config.Hub~=nil and Config.Hub.Enabled==true end)
+	require(script.Parent.Curtain).start(player:WaitForChild("PlayerGui"),{
+		hub=hubOn,meshKit=require(script.Parent.MeshKit),hubDress=require(script.Parent.HubDress),
+		effects=require(script.Parent.Effects),shared=shared})
+end)
 pcall(function() game:GetService("StarterGui"):SetCoreGuiEnabled(Enum.CoreGuiType.Health,false); game:GetService("StarterGui"):SetCoreGuiEnabled(Enum.CoreGuiType.Chat,false); game:GetService("StarterGui"):SetCoreGuiEnabled(Enum.CoreGuiType.PlayerList,false) end)
 -- (Audit B01) Key names as printed on this keyboard (AZERTY: ZQSD to move,
 -- A to dodge), before any text that names a key is built.
@@ -99,7 +108,25 @@ pcall(function()
 end)
 -- Disable the default movement controller; server receives finite normalized intent.
 local playerModule=player:WaitForChild("PlayerScripts"):WaitForChild("PlayerModule")
-require(playerModule):GetControls():Disable()
+local controlModule=require(playerModule):GetControls()
+controlModule:Disable()
+-- (DEC-038) Konoha between duels: the walk, the masters, the proctor's board.
+local hubClient=nil
+pcall(function()
+	local HubClient=require(script.Parent.HubClient)
+	if HubClient.enabled() then
+		hubClient=HubClient.new(ui,camera,send,controlModule)
+		ui.onBoardClose=function() hubClient:closeBoard() end
+		-- (14/11) the village in its Blender models, as they get built
+		pcall(function() require(script.Parent.HubDress).start() end)
+		-- (14/11) the players met in the village: a name tag, CHALLENGE
+		if lobbyPanel then
+			pcall(function()
+				require(script.Parent.HubPlayers).new(UI.kit,function(payload) lobbyPanel:send(payload) end,function() return hubClient.active end):start()
+			end)
+		end
+	end
+end)
 remote.OnClientEvent:Connect(function(data)
 	if data.epoch<(current.epoch or 0) then return end
 	if data.epoch~=current.epoch or data.phase~=current.phase then input:resync() end
@@ -114,7 +141,11 @@ remote.OnClientEvent:Connect(function(data)
 	-- (05/11) the chakra button held alone (pad L2, keyboard Z): the row names
 	-- what it infuses (UI, Shared/ChakraMoves).
 	data.chakraPage=if input.pad then input.chakraPad==true and not input.modifier else input.chakra==true and not input.sealKey
-	current=data; presentation.receivedAt=os.clock(); presentation:impacts(data,camera); ui:render(data)
+	current=data; presentation.receivedAt=os.clock(); presentation:impacts(data,camera)
+	if hubClient then pcall(hubClient.render,hubClient,data) end
+	-- (13/11, the shop) a thrown blade wears its thrower's look.
+	pcall(function() require(script.Parent.Effects).setLooks(data) end)
+	ui:render(data)
 	if lobbyPanel then lobbyPanel:render(data) end
 	cupScreen:render(data)
 	if touch then touch:render(data) end
