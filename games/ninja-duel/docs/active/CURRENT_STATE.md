@@ -1,3 +1,10 @@
+**L'avatar du joueur dans le duel (14/11, branche `claude/avatar-articulations`, [AVATAR-001](MASTER_BACKLOG.md))**
+- **Vu dans Studio** (ND-JEU `a8d9fd0`, premier duel d'un nouveau joueur avec Naruto) : le joueur se battait dans le corps de Naruto, pas dans son propre avatar. La console disait « [AvatarBody] no joint Root ».
+- **Cause** : Roblox construit maintenant les articulations d'un avatar en AnimationConstraint (mise à niveau des articulations des avatars), sans Motor6D. `AvatarBody.fit` ne trouvait aucun Motor6D et refusait tous les avatars ; le duel retombait sur le corps du prodige.
+- **Correction** : `AvatarBody.motorize` remplace chaque contrainte par le Motor6D qu'elle représente (Part0 et Part1 sont les pièces de ses attachments, C0 et C1 leurs repères), avant `fit`. Dans Studio, l'avatar du compte de François (15 contraintes) passe `fit` avec ses 15 articulations.
+- **Tests** : `Avatar` 5 PASS (le nouveau échoue sans la correction).
+- **Pas prouvé** : le duel joué avec l'avatar (pieds, vêtements, objets de kit, effets) reste à voir dans Studio.
+
 **Intégration du 12/11 : audit feel DEV (#60) + ANIMATEUR (#56, #58, #59) en une fois** (utilisateur : « intègre tt »)
 - **Une seule branche** : #56 (effets : préchargement des images, budget de lumières, charge du Katon), #59 (demande moteur : réactions selon le côté du coup, pas chassés en garde) et #58 (130 clips : éjection et saisie de dos et de côté, pas chassés, pivots, arrivées ; trace des déplacements ; foudre Lightning Beams) sont fusionnées dans `claude/feel-audit-lot2` (#60). Deux conflits, résolus en gardant les deux côtés : `Effects.luau` (budget de lumières + trace et foudre) et `tests/run.sh`.
 - **Câblé côté DEV** :
