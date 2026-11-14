@@ -652,6 +652,20 @@ function Hub.placeProctor(holder)
 end
 
 -- ------------------------------------------------------------------ the walkers
+-- (DEC-040) His avatar's description without its clothes, at the standard
+-- scales, fetched once per player (yields). nil: Roblox gave none (the
+-- default character then).
+Hub.descs=setmetatable({},{__mode="k"})
+function Hub.description(player)
+	if Hub.descs[player]~=nil then return Hub.descs[player] or nil end
+	local desc=nil
+	pcall(function()
+		desc=require(script.Parent.AvatarBody).description(player.UserId)
+		if desc then require(script.Parent.Outfit).strip(desc) end
+	end)
+	Hub.descs[player]=desc or false
+	return desc
+end
 -- The player's own avatar in the village (the default character and controls).
 -- `where`: "gate" (arrival) or "hall" (back from a duel). Asynchronous; a duel
 -- that starts meanwhile wins (Hub.leave bumps the serial).
@@ -661,7 +675,12 @@ function Hub.enter(player,where,looks)
 	Hub.bodies[player]={serial=serial}
 	task.spawn(function()
 		if not player.Parent then return end
-		local ok=pcall(function() player:LoadCharacter() end)
+		-- (DEC-040) his avatar without its clothes (body, face, hair) at the
+		-- game's standard scales, then the outfit he chose (Server/Outfit)
+		local desc=Hub.description(player)
+		local ok=pcall(function()
+			if desc then player:LoadCharacterWithHumanoidDescription(desc:Clone()) else player:LoadCharacter() end
+		end)
 		local entry=Hub.bodies[player]
 		local character=player.Character
 		if not ok or not entry or entry.serial~=serial or not character then
@@ -672,6 +691,7 @@ function Hub.enter(player,where,looks)
 		entry.character=character
 		-- (13/11, the shop) the headband he chose, on his own avatar.
 		pcall(function() require(script.Parent.Headband).fromLooks(character,looks) end)
+		pcall(function() require(script.Parent.Outfit).wear(character,looks) end)
 		local spot=HubMap.Spawns[where] or HubMap.Spawns.gate
 		local at=O+spot.at+Vector3.new(0,3.5,0)
 		pcall(function() character:PivotTo(CFrame.lookAt(at,at+spot.face)) end)
@@ -703,6 +723,7 @@ function Hub.restyle(player,looks)
 	local character=entry and entry.character
 	if character and character.Parent and character:GetAttribute("NinjaHubBody") then
 		pcall(function() require(script.Parent.Headband).fromLooks(character,looks) end)
+		pcall(function() require(script.Parent.Outfit).wear(character,looks) end)
 	end
 end
 function Hub.leave(player)

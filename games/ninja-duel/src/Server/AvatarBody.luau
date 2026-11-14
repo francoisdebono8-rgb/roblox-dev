@@ -45,6 +45,9 @@ function AvatarBody.prepare(player)
 	task.spawn(function()
 		local desc,why=AvatarBody.description(player.UserId)
 		local ok,model=false,why
+		-- (DEC-040) body, face and hair: the clothes come off, the ninja
+		-- outfit he chose goes on in each duel (Server/Outfit)
+		if desc then pcall(function() require(script.Parent.Outfit).strip(desc) end) end
 		if desc then
 			ok,model=pcall(function() return Players:CreateHumanoidModelFromDescription(desc,Enum.HumanoidRigType.R15) end)
 		end
@@ -173,6 +176,7 @@ function AvatarBody.rig(player,parent,kitId,def,cf,name,looks)
 	root.CFrame=cf;root.Transparency=1
 	AvatarBody.wearKit(model,kitId,def)
 	pcall(function() require(script.Parent.Headband).fromLooks(model,looks) end)
+	pcall(function() require(script.Parent.Outfit).wear(model,looks) end)
 	model:SetAttribute("Avatar",player.UserId)
 	model.PrimaryPart=root
 	model.Parent=parent

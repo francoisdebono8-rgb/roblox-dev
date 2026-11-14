@@ -204,7 +204,7 @@ return {
 	-- Shared/Shop key; RyoPacks: Ryō for Robux; Passes: game passes (the 2x
 	-- mastery pass is Progression.MasteryPass).
 	Shop = {
-		Products = { KunaiGold = 0, TantoShadow = 0 },
+		Products = { KunaiGold = 0, TantoShadow = 0, SetItachi = 0, SetMinato = 0 },
 		RyoPacks = { { amount = 1000, product = 0 }, { amount = 3000, product = 0 }, { amount = 8000, product = 0 } },
 		Passes = { VIP = 0, EarlyAccess = 0, BuildSlots = 0 },
 	},
