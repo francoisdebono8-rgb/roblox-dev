@@ -940,155 +940,170 @@ def hokage_cliff():
     return [rock, top, far, grass]
 
 
-# ---------------------------------------------------------------- the funny heads (HeadFunny1..4)
-# François 14/11: « les têtes sont moches […] à terme ça sera les champions,
-# on peut mettre le dev aussi, et des trucs drôles pour l'instant ». The
-# server carves the creator's and the last champions' avatars; an empty place
-# (or an avatar that will not load) shows one of these. Origin at the head's
-# centre, face to +z (the village), inside the solid 26 x 30 x 8 box; hair or
-# a prop may stick out above and behind, into the cliff. Stone, nothing from
-# an anime.
-STONE_HEAD = rgb(150, 134, 116)
-STONE_DEEP = rgb(84, 72, 62)
+# ---------------------------------------------------------------- the carved heads (HeadFunny1..4)
+# François 14/11: the cartoon heads « ne vont pas du tout, sois moins
+# enfant »: four heads carved in the cliff like a monument, real anatomy as a
+# relief (brow ridge, sockets, the nose's bridge and wings, cheekbones, the
+# folds, lips, chin, jaw), weathered stone, each its own person: an elder with
+# a beard, a scarred warrior, a calm young man, a woman with her hair up.
+# Generic: nobody's portrait, no symbol. (The names stay HeadFunny1..4: the
+# placeholders until the server carves the avatars.) Origin at the centre,
+# face to +z, inside 26 x 30 x 8; hair may run over and behind into the rock.
+STONE_FACE = rgb(156, 142, 124)
+STONE_SHADE = rgb(92, 82, 70)
 
 
-def head_base(pc, round_=False, square=False):
-    """The carved head: a face slab bulging to z +3.6, the skull behind it,
-    cheeks round or square. Returns the colour function."""
-    hc = lambda p, k=0: jitter(STONE_HEAD, p, .07, .25)
-    rings = []
-    for j in range(15):
-        v = j / 14
-        y = -14.5 + 29 * v
-        if round_:
-            wv = 12.6 * math.sin(math.pi * (.06 + .88 * v)) ** .55
-        elif square:
-            wv = 12.4 * (1 - .25 * max(0, (v - .85) / .15) ** 2) * (1 - .15 * max(0, (.12 - v) / .12))
-        else:
-            wv = 12.2 * math.sin(math.pi * (.12 + .78 * v)) ** .5
-        wv = max(wv, 1.0)
-        # a closed section: the face bulging to +3.6..4, the back of the skull to -4
-        ring = []
-        for i in range(24):
-            a = i / 24 * math.tau
-            cx, cz = math.cos(a), math.sin(a)
-            x = wv * (abs(cx) ** (.6 if square else .85)) * (1 if cx >= 0 else -1)
-            z = (3.7 * abs(cz) ** .28) if cz > 0 else (-3.8 * abs(cz) ** .7)
-            ring.append(Vector((x, y, z)))
-        rings.append(ring)
-    loft(pc, rings, hc, tip0=Vector((0, -15, 0)), tip1=Vector((0, 15, 0)))
-    for sx in (-1, 1):
-        ellipsoid(pc, (sx * 12.6, 0, -.5), (1.4, 3.6, 2.2), hc, seg=8, rings=5)
-    return hc
+def g2(x, y, cx, cy, sx, sy):
+    return math.exp(-(((x - cx) / sx) ** 2 + ((y - cy) / sy) ** 2))
 
 
-def groove(pc, pts, w, depth=.35, col=None, z=None):
-    """A line carved into the face along pts (x, y): a dark channel."""
-    col = col or STONE_DEEP
-    for a, b in zip(pts, pts[1:]):
-        a3 = Vector((a[0], a[1], 0))
-        b3 = Vector((b[0], b[1], 0))
-        d = b3 - a3
-        L = d.length
-        ang = math.atan2(d.y, d.x)
-        zz = (z if z is not None else 3.75)
-        box(pc, T((a3.x + b3.x) / 2, (a3.y + b3.y) / 2, zz) @ Rz(ang), (L + w, w, depth * 2), col)
+def relief_face(pc, p):
+    """The face as a carved relief z(x, y) on a dense grid, colour darkening
+    in hollows and with rain stains under the brows."""
+    old, jaw, smile, brow_in, scar, soft = p["old"], p["jaw"], p["smile"], p["brow_in"], p["scar"], p["soft"]
+    W, Hh = 11.6 + jaw * .6, 14.6
+    def z_at(x, y):
+        e = (x / W) ** 2 + (y / Hh) ** 2
+        if e >= 1:
+            return -3.6, 0.0
+        base = -3.6 + 6.0 * (1 - e) ** .42
+        # the jaw: wider and squarer low on the face for a strong jaw
+        base += jaw * .5 * g2(x, y, 0, -11, 9, 3)
+        f = 0.0
+        f += (1.0 - .3 * soft) * math.exp(-((y - 4.6 + brow_in * abs(x) * .06) / 1.0) ** 2) * math.exp(-(x / 8.5) ** 6)   # brow ridge
+        for sx in (-1, 1):
+            f -= 1.7 * g2(x, y, sx * 4.3, 2.4, 2.4, 1.5)                    # eye socket
+            f += .9 * g2(x, y, sx * 4.3, 2.3, 1.3, .75)                      # the eye
+            f += .25 * g2(x, y, sx * 4.3, 3.15, 1.6, .25)                    # upper lid
+            f += (.9 - .4 * soft) * g2(x, y, sx * 6.6, -.4, 2.6, 1.8)        # cheekbone
+            f -= (.5 + .3 * old) * g2(x * 1.0 + sx * 0, y, sx * (3.0 + .25 * (-5 - y)), -6.4, .5, 2.4)  # nasolabial fold
+            f -= .4 * g2(x, y, sx * 9.6, 4.0, 1.4, 3)                        # temple
+            if old:
+                for k in range(3):
+                    f -= .18 * g2(x, y, sx * (6.6 + .6 * k), 1.6 + .7 * k, .9, .12)  # crow's feet
+            f += .3 * g2(x, y, sx * (3.1 + smile * .5), -8.2 + smile * .6, .7, .6)  # mouth corners
+        # the nose: bridge, tip, wings, nostrils
+        bridge = math.exp(-((x) / (.8 + .1 * (3 - y))) ** 2) if -4.6 < y < 3.4 else 0
+        f += (1.3 + .7 * (3.4 - y) / 8) * bridge * smooth((3.4 - y) / 1.5)
+        f += 2.6 * g2(x, y, 0, -4.4, 1.3, 1.1)
+        for sx in (-1, 1):
+            f += 1.25 * g2(x, y, sx * 1.55, -4.9, .85, .75)
+            f -= .7 * g2(x, y, sx * 1.0, -5.5, .45, .3)
+        # philtrum, lips, mouth line, chin
+        f += .35 * g2(x, y, 0, -6.4, .5, .8)
+        f += .75 * g2(x, y, 0, -7.55 + smile * .1, 2.9, .5) * (1 - .3 * smile * abs(x) / 3)
+        f += .85 * g2(x, y, 0, -9.0, 2.5, .6)
+        f -= .9 * g2(x, y, 0, -8.25 + smile * .08 * x * x / 3, 3.3, .2)
+        f -= .45 * g2(x, y, 0, -10.2, 2.4, .4)
+        f += 1.1 * g2(x, y, 0, -12.3, 3.4 + jaw, 1.4)
+        # forehead lines for the old one
+        if old:
+            for k in range(3):
+                f -= .2 * g2(x, y, 0, 6.6 + .9 * k, 5.5, .14)
+        # the scar: a deep diagonal cut across the cheek and brow
+        if scar:
+            d = abs((y - 1.0) - (-1.15) * (x - 4.5)) / 1.52
+            if -4 < x - 4.5 < 4.5:
+                f -= .55 * math.exp(-(d / .25) ** 2)
+                f += .25 * math.exp(-((d - .4) / .2) ** 2)
+        z = base + 1.45 * f * smooth((1 - e) * 3) ** .5
+        return min(z, 3.95), f
+    X, Y = 64, 74
+    idx = []
+    for j in range(Y + 1):
+        y = -15 + 30 * j / Y
+        row = []
+        for i in range(X + 1):
+            x = -13 + 26 * i / X
+            z, f = z_at(x, y)
+            hollow = smooth(-f / 1.2) * .7
+            stain = .25 * smooth((4.0 - y) / 6) * smooth((y + 6) / 4) * max(0, noise.noise(Vector((x * .9, 0, 3)))) if abs(x) < 9 else 0
+            c = lerp(jitter(STONE_FACE, Vector((x, y, z)), .05, .35), STONE_SHADE, min(.85, hollow + stain + (.6 if z <= -3.9 else 0)))
+            row.append(pc.add(Vector((x, y, z)), c))
+        idx.append(row)
+    for j in range(Y):
+        for i in range(X):
+            q = (idx[j][i], idx[j][i + 1], idx[j + 1][i + 1], idx[j + 1][i])
+            if all(pc.v[k].z <= -3.59 for k in q):
+                continue
+            pc.face(*q)
+    return z_at
 
 
-def head_noob():
-    """A round, beaming « noob » head: two big dot eyes, a wide smile carved
-    deep, round cheeks, a cowlick."""
+def hair_mass(pc, center, radii, col, strands=22, depth=.18, y_min=None, part=False, seg=40, rings=18):
+    """A carved mass of hair: an ellipsoid (its poles up and down, so no pole
+    faces the village) with grooves running down along the strands, like a
+    stone bust; optionally parted in the middle."""
+    c = Vector(center)
+    def bump(d):
+        # built with y and z swapped: here d.z is up, d.y is to the front
+        th = math.atan2(d.x, d.y)
+        g = depth * .5 * (abs(math.sin(th * strands * 1.6)) ** .5 - .5) + .04 * noise.noise(Vector((d.x * 6, d.y * 6, d.z * 2)))
+        if part:
+            g -= .45 * math.exp(-(d.x / .07) ** 2) * max(0, d.z)
+        return g
+    i0 = len(pc.v)
+    ellipsoid(pc, (0, 0, 0), (radii[0], radii[2], radii[1]), col, seg=seg, rings=rings, bump=bump)
+    for i in range(i0, len(pc.v)):
+        v = pc.v[i]
+        pc.v[i] = c + Vector((v.x, v.z, v.y))
+    for i in range(i0, len(pc.v)):
+        pc.c[i] = col(pc.v[i], 0) if callable(col) else col
+
+
+def carved_hair(pc, style, z_at):
+    hc = lambda p, k=0: lerp(jitter(lerp(STONE_FACE, STONE_SHADE, .2), p, .06, .3), STONE_SHADE, .35 * smooth((-p.z - 1) / 3))
+    deep = lambda p, k=0: lerp(STONE_SHADE, rgb(60, 54, 48), .3)
+    if style == "elder":
+        hair_mass(pc, (0, 9.4, -2.4), (12.8, 7.8, 4.6), hc, strands=26, y_min=8.0, part=False)
+        for sx in (-1, 1):
+            hair_mass(pc, (sx * 11.6, -1, -1.2), (2.6, 12.5, 2.8), hc, strands=10, depth=.25, seg=14, rings=10)
+            tube(pc, [Vector((sx * .5, -6.5, z_at(0, -6.5)[0] - .1)), Vector((sx * 3.2, -7.4, 2.9)), Vector((sx * 5.2, -10.0, 2.0))],
+                 lambda kk: .9 * (1 - .45 * kk) + .2, hc, sides=8)
+        hair_mass(pc, (0, -11.6, .6), (6.0, 4.6, 2.8), hc, strands=40, depth=.25, seg=20, rings=10)
+    elif style == "warrior":
+        hair_mass(pc, (0, 10.0, -2.6), (12.4, 6.6, 4.4), hc, strands=34, depth=.22, y_min=9.0)
+        band = []
+        for j in range(3):
+            y = 8.4 + .7 * j
+            band.append([Vector((x, y, max(z_at(x, y)[0], -3.4) + .3)) for x in [-11.8 + 23.6 * i / 18 for i in range(19)]])
+        loft(pc, band, deep, closed=False, cap0=False, cap1=False)
+        for k in range(6):
+            x0 = -9 + 3.6 * k
+            b0 = Vector((x0, 13.4, -1.0))
+            tip = b0 + Vector((x0 * .25, 3.6 + .8 * math.sin(k * 2.1), -3.6))
+            tube(pc, [b0, (b0 + tip) / 2 + Vector((0, .5, .3)), tip], lambda kk: 2.4 * (1 - kk) + .2, hc, sides=8)
+    elif style == "calm":
+        hair_mass(pc, (0, 9.4, -2.4), (13.0, 7.8, 4.8), hc, strands=28, y_min=7.6, part=True)
+        for sx in (-1, 1):
+            hair_mass(pc, (sx * 11.2, -.5, -1.0), (2.4, 10.5, 3.0), hc, strands=12, depth=.25, seg=14, rings=10)
+    else:
+        hair_mass(pc, (0, 9.4, -2.5), (12.4, 7.2, 4.6), hc, strands=30, y_min=8.2)
+        hair_mass(pc, (0, 16.4, -2.4), (4.4, 3.4, 3.2), hc, strands=16, depth=.3, seg=16, rings=8)
+        tube(pc, [Vector((-5.2, 17.8, -1)), Vector((5.6, 15.8, -2.8))], .35, deep, sides=6)
+        for sx in (-1, 1):
+            b0 = Vector((sx * 10.2, 6.5, max(z_at(sx * 10.2, 6.5)[0], -2) + .1))
+            tube(pc, [b0, b0 + Vector((sx * .6, -6, .3)), b0 + Vector((-sx * .4, -11, -.4))], lambda kk: .9 * (1 - .5 * kk), hc, sides=7)
+
+
+def carved_head(params, style):
     pc = Piece("Head", "Rock", flat=True)
-    hc = head_base(pc, round_=True)
+    z_at = relief_face(pc, params)
+    # ears, carved in the side of the head
     for sx in (-1, 1):
-        ellipsoid(pc, (sx * 4.4, 3.4, 3.2), (1.5, 2.0, .9), STONE_DEEP, seg=10, rings=6)
-        ellipsoid(pc, (sx * 7.6, -2.2, 3.0), (2.4, 1.8, 1.2), lambda p, k: lerp(STONE_HEAD, rgb(176, 150, 126), .5), seg=8, rings=5)
-    pts = [(math.cos(a) * 6.4, -2.6 + math.sin(a) * 4.2) for a in [math.pi + math.pi * i / 10 for i in range(11)]]
-    groove(pc, pts, .9, .45, z=3.5)
-    ellipsoid(pc, (0, 0, 4.1), (1.2, 1.0, .8), hc, seg=8, rings=5)
-    tube(pc, [Vector((0, 13.4, -1)), Vector((.8, 16.5, -.4)), Vector((-1.2, 18.0, .2))], lambda k: 1.6 * (1 - k) + .2, hc, sides=6)
-    return [pc]
+        ellipsoid(pc, (sx * 12.0, 1.5, -1.2), (1.2, 3.4, 1.8), lambda p, k: jitter(STONE_FACE, p, .06, .3), seg=8, rings=6)
+        ellipsoid(pc, (sx * 12.3, 1.5, -.6), (.5, 2.2, .7), STONE_SHADE, seg=6, rings=4)
+    hair = Piece("Hair", "Rock", flat=True)
+    carved_hair(hair, style, z_at)
+    return [pc, hair]
 
 
-def head_shades():
-    """Slicked-back hair, big rectangular sunglasses polished dark, a smug
-    lopsided grin, a toothpick."""
-    pc = Piece("Head", "Rock", flat=True)
-    glass = Piece("Shades", "Marble", flat=True)
-    hc = head_base(pc, square=True)
-    for sx in (-1, 1):
-        box(glass, T(sx * 4.8, 4.0, 3.9) @ Rz(sx * -.05), (7.6, 4.2, .9), lambda p, f: lerp(rgb(30, 32, 36), rgb(90, 96, 104), .6 if f == "pz" and p.y > 4.6 else 0))
-    box(glass, T(0, 5.0, 3.9), (2.4, .8, .7), rgb(30, 32, 36))
-    for sx in (-1, 1):
-        box(glass, T(sx * 9.4, 4.6, 1.6), (.7, .7, 4.8), rgb(30, 32, 36))
-    groove(pc, [(-5, -6.6), (-1, -7.4), (3, -7.0), (6.2, -5.2)], .9, .45)
-    tube(pc, [Vector((5.6, -6.2, 3.6)), Vector((9.8, -5.0, 4.4))], .3, rgb(176, 150, 110), sides=5)
-    prism(pc, [(-1.4, -3.2), (1.4, -3.2), (.4, 2.2), (-.4, 2.2)], T(0, -1.0, 3.8), 1.6, hc)
-    hair = lambda p, k: jitter(STONE_DEEP, p, .1, .3)
-    rows = []
-    for j in range(7):
-        v = j / 6
-        rows.append([Vector((x, 11 + 4.5 * math.sin(v * math.pi * .5) + .8 * math.sin(x * .9), 3.4 - 9 * v)) for x in [-13 + 26 * i / 12 for i in range(13)]])
-    loft(pc, rows, hair, closed=False, cap0=False, cap1=False)
-    for x in range(-11, 12, 3):
-        box(pc, T(x, 13.6, -1) @ Rx(-.9), (.4, 6, .4), STONE_DEEP)
-    return [pc, glass]
-
-
-def head_sleeper():
-    """Fast asleep: eyes shut in two arcs, the mouth open, a snot bubble out
-    of the nose, drool, and three carved Z rising over the head."""
-    pc = Piece("Head", "Rock", flat=True)
-    bub = Piece("Bubble", "Marble", flat=False)
-    hc = head_base(pc)
-    for sx in (-1, 1):
-        pts = [(sx * 4.6 + math.cos(a) * 2.4, 3.6 - math.sin(a) * 1.2) for a in [math.pi * i / 6 for i in range(7)]]
-        groove(pc, pts, .7, .4)
-        groove(pc, [(sx * 2.6, 7.4), (sx * 6.6, 6.8)], .8, .35, col=STONE_HEAD, z=3.9)
-    ellipsoid(pc, (0, -7.2, 3.3), (2.0, 1.4, .8), STONE_DEEP, seg=10, rings=6)
-    groove(pc, [(1.6, -8.2), (2.0, -10.5), (2.3, -12)], .5, .3, col=rgb(110, 96, 84))
-    prism(pc, [(-1.5, -3.0), (1.5, -3.0), (.5, 2.4), (-.5, 2.4)], T(0, -.6, 3.8), 1.8, hc)
-    # the snot bubble: a smooth polished sphere hanging from a nostril
-    ellipsoid(bub, (1.6, -4.4, 6.2), (2.2, 2.2, 2.2), lambda p, k: lerp(rgb(170, 176, 172), rgb(220, 226, 224), smooth((p.y + 4.4) / 2.2)), seg=14, rings=9)
-    for k, (x, y, s_) in enumerate(((10, 12, 2.0), (13.5, 16, 2.8), (17.5, 21, 3.6))):
-        zpts = [(x - s_, y + s_), (x + s_, y + s_), (x - s_, y - s_), (x + s_, y - s_)]
-        for a, b in zip(zpts, zpts[1:]):
-            d = Vector((b[0] - a[0], b[1] - a[1], 0))
-            box(pc, T((a[0] + b[0]) / 2, (a[1] + b[1]) / 2, -1) @ Rz(math.atan2(d.y, d.x)), (d.length + 1.3, 1.3, 2.0), hc)
-    # a nightcap flopping over the top
-    tube(pc, [Vector((-8, 12, -1)), Vector((0, 17.5, -1.5)), Vector((7, 16, -2)), Vector((9, 12.5, -1))], lambda k: 6.5 * (1 - k) + .8, hc, sides=10)
-    ellipsoid(pc, (9.4, 11.6, -1), (1.6, 1.6, 1.6), hc, seg=8, rings=5)
-    return [pc, bub]
-
-
-def head_ramen():
-    """Shocked: brows shot up, eyes wide, the mouth a big O, a fat bowl of
-    ramen upturned on the head, noodles hanging over the face, two
-    chopsticks still in it."""
-    pc = Piece("Head", "Rock", flat=True)
-    hc = head_base(pc, round_=True)
-    for sx in (-1, 1):
-        ellipsoid(pc, (sx * 4.8, 2.4, 3.0), (2.6, 2.8, 1.0), lambda p, k: lerp(STONE_HEAD, rgb(186, 170, 150), .6), seg=12, rings=6)
-        ellipsoid(pc, (sx * 4.6, 2.2, 3.7), (.9, .9, .6), STONE_DEEP, seg=8, rings=5)
-        groove(pc, [(sx * 2.6, 7.8), (sx * 5, 8.8), (sx * 7.2, 8.2)], .8, .4, col=STONE_DEEP, z=3.6)
-    ellipsoid(pc, (0, -7.4, 3.2), (2.6, 3.4, .9), STONE_DEEP, seg=12, rings=6)
-    prism(pc, [(-1.2, -2.6), (1.2, -2.6), (.4, 2), (-.4, 2)], T(0, -1.6, 3.8), 1.6, hc)
-    # sweat drops
-    for x, y in ((-10.4, 6), (10.8, 3.6)):
-        ellipsoid(pc, (x, y, 2.6), (.7, 1.1, .6), rgb(176, 168, 156), seg=6, rings=4)
-    # the bowl, mouth down, over the crown
-    rings = []
-    for y, r in ((10.2, 13.6), (10.8, 14.0), (14.5, 12.2), (17.4, 8.6), (18.4, 5.0)):
-        rings.append([Vector((math.cos(a) * r, y, math.sin(a) * r * .55 - 1.4)) for a in [i / 20 * math.tau for i in range(20)]])
-    loft(pc, rings, lambda p, k: jitter(rgb(160, 120, 96), p, .06, .3) if k < 3 else jitter(rgb(140, 104, 82), p, .06, .3), cap0=False)
-    cyl(pc, T(0, 18.4, -1.4), 5.4, 1.2, rgb(130, 96, 76), sides=16)
-    # noodles over the rim and down the forehead
-    for k in range(9):
-        x = -10 + k * 2.5
-        tube(pc, [Vector((x, 10.8, 5.2)), Vector((x + .2, 9.4, 4.6)), Vector((x + .1, 7.8 + (k % 3) * .7, 4.3))], .5, rgb(206, 184, 140), sides=6)
-    for sx in (-1, 1):
-        tube(pc, [Vector((sx * 3, 14, 2)), Vector((sx * 7, 24, -1.5))], .45, rgb(120, 90, 66), sides=5)
-    return [pc]
+HEADS = {
+    "HeadFunny1": ({"old": 1, "jaw": .6, "smile": 0, "brow_in": 1.0, "scar": 0, "soft": 0}, "elder"),
+    "HeadFunny2": ({"old": 0, "jaw": 1.2, "smile": -.4, "brow_in": 1.4, "scar": 1, "soft": 0}, "warrior"),
+    "HeadFunny3": ({"old": 0, "jaw": .3, "smile": .2, "brow_in": .2, "scar": 0, "soft": .3}, "calm"),
+    "HeadFunny4": ({"old": 0, "jaw": -.6, "smile": .5, "brow_in": -.3, "scar": 0, "soft": 1}, "bun"),
+}
 
 def faces_terrace():
     st = Piece("Stone", "Slate", flat=True)
@@ -1142,10 +1157,7 @@ MODELS = {
     "NakaShrine": naka_shrine,
     "Torii": torii,
     "HokageCliff": hokage_cliff,
-    "HeadFunny1": head_noob,
-    "HeadFunny2": head_shades,
-    "HeadFunny3": head_sleeper,
-    "HeadFunny4": head_ramen,
+    **{name: (lambda name=name: carved_head(*HEADS[name])) for name in HEADS},
     "FacesTerrace": faces_terrace,
     "HouseGable_24x20x2": lambda: house("Gable", 24, 20, 2),
     "HouseShop_24x20x2": lambda: house("Shop", 24, 20, 2),
