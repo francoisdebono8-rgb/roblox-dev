@@ -858,25 +858,40 @@ def torii():
 
 
 def hokage_cliff():
-    """The cliff alone (its solid box stays 330 x 92 x 32, front at z -232):
-    a real rock silhouette. Its face has buttresses and cracks, a ledge set
-    back above the heads, an irregular crest with boulders and notches, its
-    top broken (seen from the sky it is no flat striped wall), and mountains
-    behind. The heads are separate (HeadFunny1..4, or the avatars)."""
+    """The cliff alone, composed after the anime's monument (the faces of the
+    village's leaders carved into a mountain over the village): a sheer face
+    of warm sandstone, a carved niche round each of the four places (the heads
+    sit IN the rock, not stuck on it), a rounded hill above, thick with
+    forest, and the mountains behind. Its solid box stays 330 x 92 x 32,
+    front at z -232. The heads themselves are HeadFunny1..4 or the avatars."""
     rock = Piece("Cliff", "Rock", flat=True)
-    top = Piece("Crest", "Rock", flat=True)
+    top = Piece("Hill", "Rock", flat=True)
+    forest = Piece("Forest", "Grass", flat=True)
+    trunks = Piece("Trunks", "Wood", flat=True)
     far = Piece("Mountains", "Rock", flat=True)
-    grass = Piece("Moss", "Grass", flat=True)
+    SAND = rgb(176, 146, 108)
+    SAND_D = rgb(128, 102, 76)
+    HEADS_X = (-75, -25, 25, 75)
     def rc(p, k=0):
-        strata = math.sin(p.y * .38 + noise.noise(p * .02) * 2.5)
-        c = lerp(C["rockDark"], C["rock"], .5 + .28 * strata + .25 * noise.noise(p * .07))
-        return grime(c, p, 0, 10, .3)
+        strata = math.sin(p.y * .32 + noise.noise(p * .02) * 2.2)
+        c = lerp(SAND_D, SAND, .55 + .25 * strata + .25 * noise.noise(p * .06))
+        # streaks running down the face (rain)
+        c = lerp(c, SAND_D, .3 * max(0, noise.noise(Vector((p.x * .25, 0, 1)))) * smooth((88 - p.y) / 30))
+        return grime(c, p, 0, 10, .25)
     def crest(x):
-        return 92 + 9 * noise.noise(Vector((x * .018, 3.1, 0))) + 4 * noise.noise(Vector((x * .06, 7.7, 0))) \
-            + 7 * max(0, math.sin(x * .021 + 1.2)) ** 3
-    # the face: a grid (x, y) pushed out by buttresses and in by cracks, a
-    # ledge set back 5 above y 80 (over the heads), rounded where it meets the top
-    X, Y = 66, 26
+        # a mesa with rounded shoulders: the ends fall away like a mountain's
+        shoulder = 1 - .55 * smooth((abs(x) - 95) / 70)
+        return (94 + 4 * noise.noise(Vector((x * .02, 3.1, 0))) + 2 * noise.noise(Vector((x * .07, 7.7, 0)))) * shoulder
+    def niche(x, y):
+        """How deep the carving goes behind a head: a rounded arch round each place."""
+        d = 0.0
+        for hx in HEADS_X:
+            u = (x - hx) / 16.5
+            v = (y - 59) / 21
+            e = u * u + v * v if v < 0 else u * u * (1 + v * .2) + v * v * .7
+            d = max(d, smooth((1.05 - e) / .25))
+        return d
+    X, Y = 110, 34
     rows = []
     for j in range(Y + 1):
         v = j / Y
@@ -885,59 +900,66 @@ def hokage_cliff():
             x = -165 + 330 * i / X
             yt = crest(x)
             y = yt * v
-            butt = 5.0 * max(0, math.cos(x * .062)) ** 4 if not any(abs(x - hx) < 15 for hx in (-75, -25, 25, 75)) else 0
-            crack = -4.0 * max(0, 1 - abs(math.sin(x * .047 + 2)) * 7)
-            back = 5 * smooth((y - 78) / 4) + 3 * smooth((y - yt + 6) / 6)
-            dz = 2.4 * noise.noise(Vector((x * .045, y * .05, 0))) + 1.2 * noise.noise(Vector((x * .15, y * .15, 3))) + butt + crack - back
+            n = niche(x, y)
+            dz = 1.6 * noise.noise(Vector((x * .05, y * .05, 0))) + .7 * noise.noise(Vector((x * .2, y * .2, 3)))
+            dz += 2.0 * max(0, math.cos(x * .05 + 1)) ** 6 * (1 - n)       # buttresses between the places
+            dz -= 3.5 * n                                                  # the carved niche
+            dz -= 2.5 * smooth((y - yt + 8) / 8)                           # the face rounds over into the hill
+            dz -= 14 * smooth((abs(x) - 120) / 45)                         # the ends turn back into the mountain
             row.append(Vector((x, y, -232 + dz)))
         rows.append(row)
-    loft(rock, rows, rc, closed=False, cap0=False, cap1=False)
-    # the top: from the crest back to z -264, broken, a few boulders, moss in hollows
-    Zs = 6
-    trows = [rows[-1]]
-    for k in range(1, Zs + 1):
-        z = -232 - 7 - 25 * k / Zs
-        trows.append([Vector((p.x, crest(p.x) + 3 * noise.noise(Vector((p.x * .05, z * .1, 2))) + 2 * k / Zs, z)) for p in rows[-1]])
-    loft(top, trows, lambda p, kk: lerp(rc(p), C["leafDark"], .55 * max(0, noise.noise(p * .06))), closed=False, cap0=False, cap1=False)
-    rng = random.Random(9)
-    for k in range(18):
-        x = rng.uniform(-160, 160)
-        z = rng.uniform(-262, -238)
-        y = crest(x) + 1
-        s_ = rng.uniform(2.5, 6)
-        ellipsoid(top, (x, y, z), (s_ * 1.3, s_, s_), rc, seg=7, rings=4, bump=lambda d, k=k: .3 * noise.noise(d * 2 + Vector((k, 0, 0))))
-    for k in range(10):
-        x = rng.uniform(-150, 150)
-        ellipsoid(grass, (x, crest(x) + 1.5, rng.uniform(-258, -242)), (rng.uniform(6, 12), 1.6, rng.uniform(4, 7)),
-                  lambda p, kk: jitter(C["leafDark"], p, .15, .2), seg=8, rings=3)
-    # the ends: closed, rough
+    def fc(p, k):
+        c = rc(p)
+        n = niche(p.x, p.y)
+        # the carved stone is paler and smoother (worked), its edge shadowed
+        return lerp(lerp(c, lerp(SAND, rgb(196, 172, 136), .4), .6 * n), SAND_D, .5 * smooth(1 - abs(n - .5) * 4) * (n > .05))
+    loft(rock, rows, fc, closed=False, cap0=False, cap1=False)
     for i in (0, X):
         loft(rock, [[rows[j][i] for j in range(Y + 1)], [Vector((rows[j][i].x, rows[j][i].y, -264)) for j in range(Y + 1)]], rc, closed=False, cap0=False, cap1=False)
-    # mountains behind, bluer with the distance
-    for k, (x, z, h, w) in enumerate(((-130, -340, 150, 70), (-40, -380, 185, 90), (60, -350, 165, 75), (150, -370, 140, 70), (5, -320, 118, 55), (-190, -390, 130, 60), (200, -400, 125, 60))):
-        n = 14
-        lv = 6
-        rings = []
+    # the hill above: rounded, from the crest back and up, earth and moss
+    hrows = [rows[-1]]
+    for k in range(1, 9):
+        t = k / 8
+        z = -234 - 2.5 - 40 * t
+        hrows.append([Vector((p.x * (1 - .1 * t), crest(p.x) + 22 * math.sin(t * math.pi * .55) * (1 - (p.x / 175) ** 4), z)) for p in rows[-1]])
+    loft(top, hrows, lambda p, kk: lerp(rgb(92, 84, 60), rgb(70, 92, 52), smooth((p.y - 96) / 6)), closed=False, cap0=False, cap1=False)
+    # the forest on the hill: tree crowns packed together, trunks at the edge
+    rng = random.Random(11)
+    shades = (C["leafDark"], C["leaf"], C["leafLight"])
+    for k in range(110):
+        x = rng.uniform(-150, 150)
+        t = rng.uniform(0, 1) ** .7
+        z = -236 - 38 * t
+        base = crest(x * (1 - .1 * t)) + 22 * math.sin(t * math.pi * .55) * (1 - (x / 175) ** 4)
+        h = rng.uniform(8, 14)
+        r = rng.uniform(6, 10)
+        if t < .25:
+            cyl(trunks, T(x, base - 1, z), .7, h * .6, C["bark"], sides=5)
+        tone = shades[rng.randrange(3)]
+        ellipsoid(forest, (x, base + h * .55 + r * .5, z), (r, r * .85, r), lambda p, kk, tone=tone: lerp(jitter(tone, p, .12, .5), C["leafDark"], .3 * smooth((base + h * .4 - p.y) / 4)),
+                  seg=7, rings=5, bump=lambda d, k=k: .25 * noise.noise(d * 2 + Vector((k, 0, 1))))
+    # the mountains behind, bluer with the distance
+    for k, (x, z, h, w) in enumerate(((-150, -360, 170, 80), (-50, -400, 210, 100), (60, -380, 190, 85), (160, -390, 165, 80), (230, -420, 150, 70), (-230, -420, 145, 70))):
+        n, lv = 14, 6
         rr = random.Random(k * 31)
         tipx, tipz = x + rr.uniform(-12, 12), z + rr.uniform(-8, 8)
+        rings = []
         for j in range(lv):
             v = j / lv
-            y = 30 + (h - 30) * v
+            y = 40 + (h - 40) * v
             ring = []
             for i in range(n):
                 a = i / n * math.tau
                 ridge = 1 + .35 * math.cos(a * 3 + k) * (1 - v) + .2 * noise.noise(Vector((math.cos(a) * 2, math.sin(a) * 2, k + v * 3)))
                 r = w * (1 - v) ** 1.25 * ridge
-                cx = x + (tipx - x) * v
-                cz = z + (tipz - z) * v
-                ring.append(Vector((cx + math.cos(a) * r, y + 6 * noise.noise(Vector((a, v * 4, k))), cz + math.sin(a) * r * .7)))
+                ring.append(Vector((x + (tipx - x) * v + math.cos(a) * r, y + 6 * noise.noise(Vector((a, v * 4, k))), z + (tipz - z) * v + math.sin(a) * r * .7)))
             rings.append(ring)
         def mc(p, kk, k=k):
-            c = lerp(rgb(98, 106, 112), rgb(132, 146, 160), .4 + .2 * (k % 3) / 2)
-            c = lerp(c, rgb(84, 90, 92), .35 * max(0, math.sin(p.y * .25 + noise.noise(p * .02) * 3)))
-            return lerp(c, rgb(176, 184, 192), smooth((p.y - 135) / 40) * .7)
+            c = lerp(rgb(104, 112, 118), rgb(138, 152, 166), .5)
+            c = lerp(c, rgb(84, 92, 96), .3 * max(0, math.sin(p.y * .25 + noise.noise(p * .02) * 3)))
+            return lerp(c, rgb(184, 192, 200), smooth((p.y - 150) / 40) * .7)
         loft(far, rings, mc, cap0=False, tip1=Vector((tipx, h, tipz)))
-    return [rock, top, far, grass]
+    return [rock, top, forest, trunks, far]
 
 
 # ---------------------------------------------------------------- the carved heads (HeadFunny1..4)

@@ -2,7 +2,7 @@
 -- Konoha's modelled pieces (docs/systems/HUB_DRESS.md), in MeshData's
 -- format: model name -> its pieces. A big model spans several chunks.
 local all={}
-for _,name in {"HubMeshData1","HubMeshData2","HubMeshData3","HubMeshData4","HubMeshData5","HubMeshData6","HubMeshData7","HubMeshData8","HubMeshData9","HubMeshData10","HubMeshData11","HubMeshData12","HubMeshData13","HubMeshData14","HubMeshData15","HubMeshData16","HubMeshData17","HubMeshData18","HubMeshData19","HubMeshData20","HubMeshData21","HubMeshData22","HubMeshData23","HubMeshData24","HubMeshData25","HubMeshData26","HubMeshData27","HubMeshData28","HubMeshData29","HubMeshData30","HubMeshData31","HubMeshData32","HubMeshData33"} do
+for _,name in {"HubMeshData1","HubMeshData2","HubMeshData3","HubMeshData4","HubMeshData5","HubMeshData6","HubMeshData7","HubMeshData8","HubMeshData9","HubMeshData10","HubMeshData11","HubMeshData12","HubMeshData13","HubMeshData14","HubMeshData15","HubMeshData16","HubMeshData17","HubMeshData18","HubMeshData19","HubMeshData20","HubMeshData21","HubMeshData22","HubMeshData23","HubMeshData24","HubMeshData25","HubMeshData26","HubMeshData27","HubMeshData28","HubMeshData29","HubMeshData30","HubMeshData31","HubMeshData32","HubMeshData33","HubMeshData34","HubMeshData35"} do
 	for _,pair in require(script.Parent[name]) do
 		local list=all[pair[1]]
 		if not list then list={};all[pair[1]]=list end
