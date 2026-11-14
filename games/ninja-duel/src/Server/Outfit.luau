@@ -115,7 +115,8 @@ function Outfit.wear(model,looks)
 	local ids=Outfit.items(looks)
 	if #ids==0 then return nil end
 	local holder=Instance.new("Model");holder.Name="NinjaOutfit";holder:SetAttribute("NinjaOutfit",table.concat(ids,","))
-	holder.Parent=model
+	-- (built whole before it is parented: the client's OutfitDress sees it
+	-- once, with all its pieces)
 	for _,id in ids do
 		local item=Shop.item(id)
 		if item and item.pieces and not item.none then
@@ -124,6 +125,7 @@ function Outfit.wear(model,looks)
 			end
 		end
 	end
+	holder.Parent=model
 	return holder
 end
 
