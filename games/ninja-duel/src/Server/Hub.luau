@@ -692,7 +692,8 @@ function Hub.enter(player,where,looks)
 		entry.character=character
 		-- (13/11, the shop) the headband he chose, on his own avatar.
 		pcall(function() require(script.Parent.Headband).fromLooks(character,looks) end)
-		local spot=HubMap.Spawns[where] or HubMap.Spawns.gate
+		-- (14/11) back from a duel in the village: where it was fought
+		local spot=if type(where)=="table" then where else HubMap.Spawns[where] or HubMap.Spawns.gate
 		local at=O+spot.at+Vector3.new(0,3.5,0)
 		pcall(function() character:PivotTo(CFrame.lookAt(at,at+spot.face)) end)
 		local hum=character:FindFirstChildOfClass("Humanoid")
