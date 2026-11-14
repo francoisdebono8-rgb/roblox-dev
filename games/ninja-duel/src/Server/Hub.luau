@@ -62,11 +62,17 @@ local function unit(parent,name,dress,at,scale,length)
 end
 local function keep(p) p:SetAttribute("Keep",true) return p end
 Hub.unit=unit
--- A slab on the ground between two points (x,z), `width` wide.
+-- A slab on the ground between two points (x,z), `width` wide. (14/11, seen
+-- in the assembled render) each slab sits a hair above the one before, so
+-- two that cross never flicker into each other (the lanes, the street and
+-- the plaza).
+local paths=0
 local function path(parent,ax,az,bx,bz,width,color,material)
 	local a,b=Vector3.new(ax,0,az),Vector3.new(bx,0,bz)
 	local d=b-a
-	local cf=CFrame.lookAt(O+(a+b)/2+Vector3.new(0,.06,0),O+b+Vector3.new(0,.06,0))
+	paths+=1
+	local lift=.06+(paths%10)*.006
+	local cf=CFrame.lookAt(O+(a+b)/2+Vector3.new(0,lift,0),O+b+Vector3.new(0,lift,0))
 	return deco(parent,"Path",Vector3.new(width,.12,d.Magnitude+width*.5),cf,color,material or Enum.Material.Ground)
 end
 local function sign(target,face,text,color,background)
@@ -221,7 +227,7 @@ local function ground(f)
 	end
 	-- Streets and paths.
 	deco(f,"Street",Vector3.new(26,.12,172),rel(0,.06,124),C.cobble,Enum.Material.Cobblestone)
-	deco(f,"Plaza",Vector3.new(124,.12,64),rel(0,.06,10),C.cobble,Enum.Material.Cobblestone)
+	deco(f,"Plaza",Vector3.new(124,.12,64),rel(0,.03,10),C.cobble,Enum.Material.Cobblestone)
 	path(f,-62,24,-96,30,10,C.earth)
 	path(f,-62,-12,-108,-100,9,C.earth)
 	path(f,62,-8,96,-45,9,C.earth)

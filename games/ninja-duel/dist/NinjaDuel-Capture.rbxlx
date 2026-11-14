@@ -6654,13 +6654,13 @@ return {
       <Item class="StringValue" referent="ND43">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">cbedee97463977a9327f49db6a010efc7e7da6d93bccc467f907c0bf2a967805</string>
+          <string name="Value">2f781a9f8036945e5581c300fcc56783556bea6bec91ec9b5daea3e91d791083</string>
         </Properties>
       </Item>
       <Item class="StringValue" referent="ND44">
         <Properties>
           <string name="Name">RuntimeFingerprint</string>
-          <string name="Value">7cbf4a8f4da9d5c84f7d29248239f13aaad9bce7b1bfcafc228320b443df3031</string>
+          <string name="Value">a4555b1f9b536dd847ebdedbb8814ce443b033593f71fc525743dad278f2b8a3</string>
         </Properties>
       </Item>
       <Item class="StringValue" referent="ND45">
@@ -6672,7 +6672,7 @@ return {
       <Item class="StringValue" referent="ND46">
         <Properties>
           <string name="Name">SourceCommit</string>
-          <string name="Value">caf45d07df05-dirty</string>
+          <string name="Value">283783a4bab0-dirty</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND47">
@@ -22921,11 +22921,17 @@ local function unit(parent,name,dress,at,scale,length)
 end
 local function keep(p) p:SetAttribute("Keep",true) return p end
 Hub.unit=unit
--- A slab on the ground between two points (x,z), `width` wide.
+-- A slab on the ground between two points (x,z), `width` wide. (14/11, seen
+-- in the assembled render) each slab sits a hair above the one before, so
+-- two that cross never flicker into each other (the lanes, the street and
+-- the plaza).
+local paths=0
 local function path(parent,ax,az,bx,bz,width,color,material)
 	local a,b=Vector3.new(ax,0,az),Vector3.new(bx,0,bz)
 	local d=b-a
-	local cf=CFrame.lookAt(O+(a+b)/2+Vector3.new(0,.06,0),O+b+Vector3.new(0,.06,0))
+	paths+=1
+	local lift=.06+(paths%10)*.006
+	local cf=CFrame.lookAt(O+(a+b)/2+Vector3.new(0,lift,0),O+b+Vector3.new(0,lift,0))
 	return deco(parent,"Path",Vector3.new(width,.12,d.Magnitude+width*.5),cf,color,material or Enum.Material.Ground)
 end
 local function sign(target,face,text,color,background)
@@ -23080,7 +23086,7 @@ local function ground(f)
 	end
 	-- Streets and paths.
 	deco(f,"Street",Vector3.new(26,.12,172),rel(0,.06,124),C.cobble,Enum.Material.Cobblestone)
-	deco(f,"Plaza",Vector3.new(124,.12,64),rel(0,.06,10),C.cobble,Enum.Material.Cobblestone)
+	deco(f,"Plaza",Vector3.new(124,.12,64),rel(0,.03,10),C.cobble,Enum.Material.Cobblestone)
 	path(f,-62,24,-96,30,10,C.earth)
 	path(f,-62,-12,-108,-100,9,C.earth)
 	path(f,62,-8,96,-45,9,C.earth)

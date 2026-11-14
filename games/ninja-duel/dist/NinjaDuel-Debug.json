@@ -1,7 +1,7 @@
 {
   "version": "0.13.0-arena-combo",
   "artifact": "NinjaDuel-Debug.rbxlx",
-  "sha256": "e5ec76d9126b5bafa0fe34951607e9e44501fdb7c0b747a60e01c5dded83cd9a",
+  "sha256": "54aff8ea262c5c09964dfcc05960572147752dfe5c3e36028189a9e71a6d29b3",
   "sources": {
     "src/Client/ArenaDress.luau": "e2da1115cb48480b2effa3170a1670d3bb44d5bcbdfd9bbdbb3e60ee302b5360",
     "src/Client/AuthoredClips.luau": "1799da3d96178392fe44c90470fca30d7b11acde9bb45c0e2c5660bd940d6715",
@@ -185,7 +185,7 @@
     "src/Server/Gale.luau": "547090e9c9cba26b7073f3acd2080fdb2274491291579d3a971efb71c25c389c",
     "src/Server/Headband.luau": "5be6fe49f7448a8cb41bd9f8463202c085ab2980ed20be53558acca8d5933cc9",
     "src/Server/Hounds.luau": "88d29fccbd7a635182364878a550c38259acc696c81cdce8910741866002d33d",
-    "src/Server/Hub.luau": "3140981168bf241866f97b23d0db58e87610a3e54739bd64ad828e61d60f7878",
+    "src/Server/Hub.luau": "a62227a9445e95f20e3b9f80da64ca08e1a8d3db4ad516525c29f7d7941d9f35",
     "src/Server/Interactions.luau": "2be46e9af1ec1b03604577365985bb8d8ac0145735cf3a881ce32cdce3c53e91",
     "src/Server/Legion.luau": "950dba719e3e278517f29db02c51011aabd1d7f1fa17e36edaac23ed51633798",
     "src/Server/Lobby.luau": "a5a98dbce3e32f76c0919be2a355921b731dc5364c9e4ea7bdc42dcb31a96e1e",
@@ -265,11 +265,11 @@
   },
   "sourceEquality": "PASS",
   "debugOnly": true,
-  "buildFingerprint": "282ee7c3f4b2a959309a915dbda43cafe4f054d5f92e8f6dd5c760ca631bc1b5",
+  "buildFingerprint": "3720772e8207010a22fdeeca63a9175491b4b879be6d4e3b273b70493b6c1b57",
   "profile": "debug",
-  "runtimeFingerprint": "7cbf4a8f4da9d5c84f7d29248239f13aaad9bce7b1bfcafc228320b443df3031",
-  "sourceCommit": "caf45d07df0505626f07b82d194bbd4eb93dad88",
-  "headCommit": "f59dc71f4b0ab309811813319678697e21b6a1ac",
+  "runtimeFingerprint": "a4555b1f9b536dd847ebdedbb8814ce443b033593f71fc525743dad278f2b8a3",
+  "sourceCommit": "283783a4bab09a17d19a51be56990e3cbed2f87c",
+  "headCommit": "3f67c512c3adff316013f27e8eb90adfcd08e4d8",
   "sourceDirty": true,
   "captureTools": {},
   "donorAssets": {
