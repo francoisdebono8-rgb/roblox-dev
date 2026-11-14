@@ -49,24 +49,32 @@ M.Proctor={kit="Professor",at=Vector3.new(0,0,-52),face=Vector3.new(0,0,1),
 	name="THE PROCTOR",place="THE EXAM HALL",line="Duels, the tournament, players from everywhere: it all starts on this floor."}
 
 -- The masters, each at home. `line`: what he says when the player comes to him.
+-- (14/11, measured in Studio: Roblox's paths from the gate) each faces the way
+-- a player walks up to him. Naruto, Gaara and Kakashi showed their side or
+-- back (67, 84 and 64 degrees off), Lee 35; now under 10.
 M.Masters={
-	Legion={place="ICHIRAKU RAMEN",at=Vector3.new(-15,0,110),face=Vector3.new(1,0,0),
+	Legion={place="ICHIRAKU RAMEN",at=Vector3.new(-15,0,110),face=Vector3.new(.45,0,.9),
 		line="A bowl first, then the clones. Nobody beats me at either!"},
 	Lion={place="THE UCHIHA PIER",at=Vector3.new(176,1.6,-60),face=Vector3.new(-1,0,0),
 		line="Fire starts in the chest, not in the hands. Show me yours."},
-	Leaf={place="TRAINING GROUND THREE",at=Vector3.new(-118,0,28),face=Vector3.new(1,0,0),
+	Leaf={place="TRAINING GROUND THREE",at=Vector3.new(-118,0,28),face=Vector3.new(.85,0,.53),
 		line="Five hundred laps, then we talk. Or one honest fight, right now!"},
 	GentleFist={place="THE HYŪGA COMPOUND",at=Vector3.new(-146,0,-98),face=Vector3.new(1,0,0),
 		line="The Byakugan sees every opening you leave. Close them first."},
-	Sand={place="THE EXAM HALL'S BALCONY",at=Vector3.new(-49,12.5,-78),face=Vector3.new(1,0,0),
+	Sand={place="THE EXAM HALL'S BALCONY",at=Vector3.new(-49,12.5,-78),face=Vector3.new(.1,0,1),
 		line="The sand decides who is worth it. It has not decided about you."},
-	Copycat={place="THE MEMORIAL STONE",at=Vector3.new(-165,0,72),face=Vector3.new(1,0,-.5),
+	Copycat={place="THE MEMORIAL STONE",at=Vector3.new(-165,0,72),face=Vector3.new(.82,0,.57),
 		line="Copy first, understand later. Show me something worth copying."},
 	Mirage={place="THE UCHIHA SHRINE'S TORII",at=Vector3.new(178,14.9,-108),face=Vector3.new(-1,0,.4),
 		line="You see only what I let you see. Look closer."},
 	Flashstep={place="UNDER THE HOKAGE FACES",at=Vector3.new(0,24,-214),face=Vector3.new(0,0,1),
 		line="Plant your mark first. The speed comes after."},
 }
+
+-- (14/11, audit: « que notre perso puisse combattre, qu'on puisse apprendre »)
+-- Training Ground Three's dummy: E there trains with his kit (Server/Hub
+-- places the prompt, Client/HubClient answers it).
+M.Training={at=Vector3.new(-150,0,16),place="TRAINING GROUND THREE"}
 
 -- (14/11, user: « les têtes sont moches […] à terme ça sera les champions, on
 -- peut mettre le dev aussi et des trucs drôles pour l'instant ») The four

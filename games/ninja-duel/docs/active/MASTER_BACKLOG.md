@@ -1255,6 +1255,19 @@ Sortie commune : trois Lights/Heavy physiques distincts, branche seulement aprè
 - evidence_addendum: 14/11 (branche `claude/konoha-premier-parcours`) : parcours nouveau joueur corrigé dans le code avant le passage Studio : HUD placé sous la barre Roblox et à l'échelle (`Client/HubLayout`), objectif en titre et lieux (`MastersView.goal`), premier duel signalé après le premier kit, RUN tactile, carte du maître hors des boutons tactiles, focus manette, B/Y/L3. Suites `HubLayout` 6 PASS, `MastersView` 8 PASS. Mesure (5) calculée sur la carte, en ligne droite depuis la porte : Naruto 83 studs (≈ 5 s à pied, 3 s en courant), Lee 202, Sasuke 307, le surveillant 244. Studio : à faire.
 - outcome: PENDING
 
+## HUB-002 — Konoha vivante : combattre et apprendre dans le village
+
+- status: PARTIAL
+- priority: P1
+- dependencies: HUB-001
+- subsystem: progression
+- character: ALL
+- summary: (14/11, François : « que se balader dans la ville ça soit cool, qu'il y ait plusieurs endroits dans la ville, que notre perso puisse combattre, qu'on puisse apprendre. Les maîtres ils sont peut-être pas bien en placement ») Konoha ne doit pas être un couloir entre deux menus : le combat accessible de partout, des lieux qui servent, des leçons jouées chez les maîtres.
+- sources: [DEC-038](DECISIONS.md#dec-038--la-boucle-dans-le-monde--konoha-et-la-salle-de-lexamen-les-maîtres-chez-eux-des-arbres-payés-par-la-maîtrise-1311), VISION (« pas de ville ouverte vide », « les menus restent disponibles partout »)
+- validation: (1) tests sans écran : les maîtres font face au joueur qui arrive, DUELS ouvre le tableau, le mannequin lance l'entraînement ; (2) Studio : DUELS (bouton, B, R1) depuis la porte, le mannequin du terrain n° 3, les maîtres vus de face en arrivant ; (3) décisions de François : duels des maîtres joués chez eux dans le village, arbre en ligne, leçons jouées ; (4) mesure : temps de la porte au premier combat.
+- evidence: 14/11 (audit DEV, mesures Studio, chemins de Roblox depuis la porte) : Naruto, Gaara et Kakashi tournaient le côté ou le dos au joueur qui arrive (67°, 84°, 64°), Lee 35° ; le tableau des duels n'était qu'au surveillant (239 studs, 15 s à pied) ; on ne combat pas dans la ville ; le terrain n° 3 n'avait aucune fonction. Branche `claude/konoha-ville-vivante` : les quatre maîtres tournés vers l'arrivée (moins de 10°), un bouton DUELS en haut à droite avec B (clavier, pas pendant la saisie du chat) et R1 (manette) qui ouvrent le tableau de partout, sauf au-dessus d'une carte ou d'un panneau ; le mannequin du terrain n° 3 : E « TRAIN » lance l'entraînement avec son kit (celui de Lee pour un joueur qui n'en a pas). Suites `Hub` 13 PASS, `HubLayout` 6 PASS. Studio : à faire.
+- outcome: PENDING
+
 ## SHOP-001 — La boutique et le Ryō
 
 - status: PARTIAL

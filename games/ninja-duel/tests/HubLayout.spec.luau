@@ -143,7 +143,8 @@ test("Konoha's HUD: placed by the layout, the goal follows the player, touch and
 		local UI=H.load("Client/UI")
 		local ui=UI.new(H.envBase.Instance.new("PlayerGui"),function() end)
 		local Hub=H.load("Client/HubClient")
-		local hub=Hub.new(ui,{},function() end,{Enable=function() end,Disable=function() end})
+		local sent={}
+		local hub=Hub.new(ui,{},function(action,payload) table.insert(sent,{action,payload}) end,{Enable=function() end,Disable=function() end})
 		local new={state="ready",owned={},mastery={},masters={},needStarter=true,trees={},ryo=0,style={owned={},equipped={}}}
 		hub:render({phase="Selection",kits=new})
 		-- a laptop: the place box under Roblox's bar, the goal under the top row
@@ -151,10 +152,17 @@ test("Konoha's HUD: placed by the layout, the goal follows the player, touch and
 		assert(hub.goal.Visible and hub.goalHead.Text=="CHOOSE YOUR FIRST MASTER","a new player's goal: "..hub.goalHead.Text)
 		assert(string.find(hub.goalSub.Text,"ICHIRAKU RAMEN",1,true) and hub.goal.Position.Y.Offset>=140,"the goal's places or row: "..hub.goalSub.Text)
 		assert(not hub.runButton.Visible and hub.keys.Visible,"keys: no RUN button, the key line")
+		-- (14/11) the training dummy: no kit yet, Lee's (his ground)
+		hub:train()
+		assert(#sent==1 and sent[1][1]=="Tutorial" and sent[1][2].player=="Leaf","a new player trains with Lee's kit")
 		-- his first kit taken: the goal points at the first duel
 		local mine={state="ready",owned={Leaf=true},mastery={Leaf=0},starter="Leaf",selected="Leaf",masters={},trees={Leaf={points=0,free=0}},ryo=0,style={owned={},equipped={}}}
 		hub:render({phase="Selection",kits=mine})
 		assert(hub.goalHead.Text=="YOUR FIRST DUEL" and string.find(hub.goalSub.Text,"LEE"),"after the first kit: "..hub.goalHead.Text)
+		mine.selected="Lion";mine.owned.Lion=true
+		hub:train()
+		assert(sent[2][2].player=="Lion" and sent[2][2].bot~=nil,"he trains with his own kit: "..tostring(sent[2][2].player))
+		mine.selected="Leaf";mine.owned.Lion=nil
 		-- talking to a master: the goal steps aside, the card is on screen
 		hub:showCard("Leaf")
 		assert(hub.card.Visible and not hub.goal.Visible,"the card and the goal")
@@ -188,7 +196,25 @@ test("Konoha's HUD: placed by the layout, the goal follows the player, touch and
 		ui.shopPanel:hide()
 		for _,fn in began do fn({KeyCode=Enum.KeyCode.ButtonL3}) end
 		assert(hub.runLatch==false,"L3 toggles the latch (it was on)")
-		assert(string.find(hub.keys.Text,"Y SHOP",1,true),"the pad's key line: "..hub.keys.Text)
+		assert(string.find(hub.keys.Text,"Y SHOP",1,true) and string.find(hub.keys.Text,"R1 DUELS",1,true),"the pad's key line: "..hub.keys.Text)
+		-- (14/11) the board of duels from anywhere: R1, the keyboard's B (not
+		-- while typing), the DUELS button; never over a master's card
+		for _,fn in began do fn({KeyCode=Enum.KeyCode.ButtonR1}) end
+		assert(hub.board,"R1 opens the board of duels")
+		hub:closeBoard()
+		for _,fn in began do fn({KeyCode=Enum.KeyCode.B},true) end
+		assert(not hub.board,"B typed in the chat opened the board")
+		for _,fn in began do fn({KeyCode=Enum.KeyCode.B},false) end
+		assert(hub.board,"B opens the board of duels")
+		hub:closeBoard()
+		hub:showCard("Leaf")
+		for _,fn in began do fn({KeyCode=Enum.KeyCode.ButtonR1}) end
+		assert(not hub.board,"R1 opened the board over the card")
+		hub:hideCard()
+		hub.duelsButton.click()
+		assert(hub.board and not hub.shopBox.Visible,"the DUELS button opens the board")
+		hub:closeBoard()
+		assert(hub.shopBox.Visible and hub.duelsButton.Text=="DUELS","the top right is back")
 		Config.Hub=hubWas
 	end)
 	H.envBase.game.GetService=baseGet
