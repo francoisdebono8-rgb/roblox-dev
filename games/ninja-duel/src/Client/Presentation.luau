@@ -939,6 +939,20 @@ end
 -- happened, so sound and VFX never lead or lag the animation.
 function Presentation:impacts(data,camera)
  self.camera=camera or self.camera
+ -- (QA 14/11, D4: a new fight began among the last one's flying rocks, gone
+ -- only 0.8 s in) The first packet of a new epoch (the roster, a new duel, the
+ -- next round of a cup), whatever its phase, empties the effects
+ -- (NinjaDuelFX) and the drawn bodies (NinjaDuelBodies) at once: they used to
+ -- wait for the first duel frame drawn, and a roster packet followed by a
+ -- duel packet in the same frame never reached the roster's own clean-up.
+ if data.epoch~=nil and data.epoch~=self.packetEpoch then
+  local first=self.packetEpoch==nil
+  self.packetEpoch=data.epoch
+  if not first then
+   self.fx.epoch=data.epoch;self.fx:reset()
+   self.bodies:reset();self.bodies.epoch=data.epoch
+  end
+ end
  -- Projectiles first, so a contact in the same packet can finish its blade.
  if data.phase=="Duel" then self.fx:sync(data) end
  if not data.impacts then return end

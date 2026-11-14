@@ -118,7 +118,12 @@ return {
 	-- (07/11, same audit) A blow lands on what is in front of it: the brawl
 	-- contact cone is +-acos(Contact.Facing) around the striker's facing (was
 	-- +-87 deg: a fist going forward knocked down a body beside it).
-	Contact = {Facing = 0.5},
+	-- (QA 14/11, D1: 29 body strikes in 115 landed with the limb more than a
+	-- stud short of the body) A body's blow lands only within its contact
+	-- distance + Slack (root to root); a press within Lunge studs past its
+	-- step-in steps all the way in, so the blow is seen to reach (2.5 times
+	-- that after a body already struck, 3 times for a chase's arrival).
+	Contact = {Facing = 0.5, Slack = 1.5, Lunge = 1.5},
 	-- (12/11, feel audit M2: bodies inside each other, contact down to 2 studs,
 	-- a fighter standing in one lying on the floor) Two standing bodies are
 	-- eased toward Gap studs apart (root to root) and never left closer than

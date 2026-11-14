@@ -277,6 +277,10 @@ local attacks={
  Light5=move(.10,.12,Combo.comboDelay-.23,Combo.Damage.Punch,3.4),
  Heavy=move(.30,.17,.52,14,5.4,"Knockdown",Vector3.new(0,12,34),.68),
  Launcher=move(.17,.14,.28,8,3.2,"Launched",Vector3.new(0,58,13),1.18),
+ -- (QA 14/11, D6: the running blow landed 0.00-0.05 s into its clip) Its
+ -- timing stays (a 0.12 s wind-up cut Lee's routes from 8 to 1 in the AI
+ -- duels): the contact rules (BanglaCombat.reaches, Combat:separate) and
+ -- the clip's first frames (animator) carry the fix.
  DashAttack=move(.07,.15,.27,7,8.2,"HitStun",Vector3.new(0,3,13),.31),
  Air1=move(.08,.13,.18,6,2.8,"Juggled",Vector3.new(0,15,8),.62),
  Air2=move(.09,.14,.19,7,3.1,"Juggled",Vector3.new(0,10,12),.64),
@@ -375,6 +379,11 @@ for name,spec in attacks do
   -- contact distance: it now reaches a quarter stud past it.
   spec.depth=spec.contact+.25-1;spec.offset=(1+spec.contact+.25)/2
  end
+ -- (QA 14/11, D1) A volume derived here from the range (8/10 of it, far past
+ -- the body's reach) is capped to the contact distance (BanglaCombat.reaches).
+ -- A string's light (its volume already ends a quarter stud past contact) and
+ -- a move that sets its own depth later (sand, claws, a fan) keep theirs.
+ if not Combo.Actions[name] then spec.bodyDepth=spec.depth end
  spec.animation=name;spec.feedback=spec.reaction;spec.chain=name=="Light1" or name=="Light2" or name=="Light4" or name=="Light5" or name=="Air1" or name=="Air2" or name=="DashAttack" or name=="AngleStep" or name=="Riposte"
   or name=="FeintStep" or name=="CircleStep" or name=="AirSwitch" or name=="VaultKick"
  spec.air=name=="Air1" or name=="Air2" or name=="AirDrive" or name=="AirSpike" or name=="AirSwitch" or name=="AirFlip"
@@ -489,7 +498,7 @@ for name,m in {
  HeadDive=move(.12,.16,.42,10,9,"Knockdown",Vector3.new(0,10,46),.7),
 } do
  m.animation=name;m.feedback=m.reaction;m.chain=false;m.air=false
- m.depth=m.range*.8;m.offset=m.range*.4
+ m.depth=m.range*.8;m.offset=m.range*.4;m.bodyDepth=m.depth
  attacks[name]=m
 end
 for name,shape in {
@@ -533,7 +542,7 @@ for name,m in {
  DropStrike=move(.07,.15,.24,8,1.2,"HitStun",Vector3.new(0,-6,10),.4),
 } do
  m.animation=name;m.feedback=m.reaction;m.chain=false;m.air=false
- m.depth=m.range*.8;m.offset=m.range*.4
+ m.depth=m.range*.8;m.offset=m.range*.4;m.bodyDepth=m.depth
  attacks[name]=m
 end
 for name,shape in {
@@ -774,7 +783,12 @@ return {
 	-- (07/11, same audit) A blow lands on what is in front of it: the brawl
 	-- contact cone is +-acos(Contact.Facing) around the striker's facing (was
 	-- +-87 deg: a fist going forward knocked down a body beside it).
-	Contact = {Facing = 0.5},
+	-- (QA 14/11, D1: 29 body strikes in 115 landed with the limb more than a
+	-- stud short of the body) A body's blow lands only within its contact
+	-- distance + Slack (root to root); a press within Lunge studs past its
+	-- step-in steps all the way in, so the blow is seen to reach (2.5 times
+	-- that after a body already struck, 3 times for a chase's arrival).
+	Contact = {Facing = 0.5, Slack = 1.5, Lunge = 1.5},
 	-- (12/11, feel audit M2: bodies inside each other, contact down to 2 studs,
 	-- a fighter standing in one lying on the floor) Two standing bodies are
 	-- eased toward Gap studs apart (root to root) and never left closer than
@@ -5474,13 +5488,13 @@ return {
       <Item class="StringValue" referent="ND37">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">91d57256f3a69c14ba80390aee62600aa7bbc6921643e44ef851403610256c9f</string>
+          <string name="Value">ffc1b61a5cc1d2da5c1f256df005298aa2dbba152f7e8b9f2bad9868cfba55a0</string>
         </Properties>
       </Item>
       <Item class="StringValue" referent="ND38">
         <Properties>
           <string name="Name">RuntimeFingerprint</string>
-          <string name="Value">93cfbc05c1fc00b5bc59477a39497898c3bc374898b0e0b186e0662c42cadb85</string>
+          <string name="Value">3d9015dcc16c5c896e9995a6fdc5ea83aecd43d77157ea2ffa1a763d5e01a622</string>
         </Properties>
       </Item>
       <Item class="StringValue" referent="ND39">
@@ -5492,7 +5506,7 @@ return {
       <Item class="StringValue" referent="ND40">
         <Properties>
           <string name="Name">SourceCommit</string>
-          <string name="Value">d6c9b7ba9e70</string>
+          <string name="Value">d6c9b7ba9e70-dirty</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND41">
@@ -9134,10 +9148,22 @@ function AI:update(now)
 	-- (LateFrom s, full at +LateSpan) presses: no more probing or breathing,
 	-- keener dashes, jutsu sooner.
 	local late=math.clamp((now-self.roundStart-(tune.LateFrom or 40))/(tune.LateSpan or 25),0,1)
-	-- (easy) a beat at the start of the round: guard up, it lets him come.
+	-- (easy) a beat at the start of the round: it lets him come.
+	-- (QA 14/11, D5: after the 2.6 s BEGIN the easy bot stood 2.5 s more in
+	-- guard, « comme si le jeu était bloqué ») It comes in at a walk, circling,
+	-- from the first second; it still throws nothing in that beat.
 	if tune.Opening then
 		self.openedAt=self.openedAt or now
-		if now-self.openedAt&lt;tune.Opening then a.move=Vector3.zero;return end
+		if now-self.openedAt&lt;tune.Opening then
+			local d=target.root.Position-a.root.Position;d=Vector3.new(d.X,0,d.Z)
+			local toward=if d.Magnitude&gt;.1 then d.Unit else Vector3.zAxis
+			local around=Vector3.new(-toward.Z,0,toward.X)
+			self.openSide=self.openSide or (if self.rng:NextNumber()&lt;.5 then 1 else -1)
+			local move=(if d.Magnitude&gt;9 then toward*.8 else Vector3.zero)+around*self.openSide*.6
+			a.move=if move.Magnitude&gt;1 then move.Unit else move
+			a.sprinting=false
+			return
+		end
 	end
 	-- No exemption from a shroud: lost in it, the bot aims at where it last saw him.
 	if Families.shrouded(c,a) then a.fogAim=self.lastSeen or target.root.Position
@@ -10298,6 +10324,29 @@ end
 function Bangla.close(p)
  if p and p.donor then p.donor.hitbox:Destroy() end
 end
+-- (QA 14/11, D1) Whether a fresh blow thrown from `from` reaches a body at
+-- `to`: within its contact distance + Config.Contact.Slack (flat, root to
+-- root), a chakra load adding its visible reach. A volume authored longer than
+-- the body's (Gaara's sand, the Nine-Tails' claws, Temari's fan) is its reach.
+local RUNNING={DashAttack=true,FlyingKick=true,HeadDive=true,Tackle=true,Heavy=true,KneeStrike=true,Sweep=true,Launcher=true}
+function Bangla.reaches(p,from,to,target)
+ local spec=p.spec
+ -- (a string's next blow on a body already reeling: the string's own timing
+ -- holds it, and the attacker is on him; the rule is for a fresh blow)
+ if target and target.reaction then return true end
+ -- (the AI duels showed the rule on every fresh blow broke the strings'
+ -- rhythm: it holds the running blows, D6/D7's, and the heavy ones)
+ if not RUNNING[p.name] then return true end
+ -- (an air string's blows: the air hold keeps the two bodies together and
+ -- the striker does not step in the air; their reach stays the volume's)
+ if spec.air then return true end
+ -- (the depth before a chakra load: a loaded sand strike keeps its sand)
+ if spec.bodyDepth==nil or math.abs((spec.depth or 0)-(spec.chakraReach or 0)-spec.bodyDepth)&gt;1e-4 then return true end
+ local Config=require(game:GetService("ReplicatedStorage").NinjaDuel.Config)
+ local reach=(spec.contact or 3.6)+(Config.Contact.Slack or .9)+(spec.chakraReach or 0)
+ local d=to-from
+ return Vector3.new(d.X,0,d.Z).Magnitude&lt;=reach
+end
 function Bangla.tryHit(c,a,p)
  local donor=p.donor;local target=a.target
  if not donor or not donor.hitbox.Parent or not target or target.health&lt;=0 then return false end
@@ -10310,6 +10359,9 @@ function Bangla.tryHit(c,a,p)
  hitbox.CFrame=frame*CFrame.new(0,0,-(p.spec.offset or 2))
  local params=OverlapParams.new();params.FilterType=Enum.RaycastFilterType.Include
  params.FilterDescendantsInstances={target.model}
+ -- (QA 14/11, D1) a body's own blow (its volume not authored longer: no sand,
+ -- no claw, no fan) lands only where the limb is seen to reach the body.
+ if not Bangla.reaches(p,frame.Position,target.root.Position,target) then return false end
  -- Touched on a teleported anchored part was unreliable; query the same volume.
  for _,hit in workspace:GetPartBoundsInBox(hitbox.CFrame,hitbox.Size,params) do
   if hit:IsDescendantOf(target.model) and not donor.Hits[target.id] then
@@ -11631,6 +11683,9 @@ function Brawler.start(c,a,name)
 		spec.chainTool=profile.chainTool;spec.depth=profile.depth or spec.depth;spec.damageScale=profile.damage;spec.offset=profile.offset or spec.offset;spec.width=profile.width or spec.width;spec.impulse=Vector3.new(spec.impulse.X,profile.impulseY or spec.impulse.Y,profile.impulseZ or spec.impulse.Z)
 		-- A weapon's reach: the step-in stops further out (Temari's iron fan).
 		spec.contact=profile.contact or spec.contact
+		-- (QA 14/11, D1) A reach the fighter's profile draws (Gaara's sand
+		-- lashes, Temari's fan) is not a fist's: the body-contact rules leave it.
+		if profile.range or profile.depth then spec.bodyDepth=nil end
 	end
  -- A drawn kunai (Combat:arm, global): the string and heavy cut with it.
  -- A fighter's own blade (def.Weapon: Kakashi's tanto) cuts further, on the
@@ -11717,6 +11772,7 @@ function Brawler.start(c,a,name)
 	local side=a.root.CFrame.RightVector*(spec.angle or 0)
 	a.travelDirection=(flat+side).Unit;a.state="Startup";a.untilTime=c.now+spec.startup
  if proxy then Bodies.bind(c,a,a.pending,proxy,kind) end
+ Brawler.lunge(c,a,spec,flat,(proxy~=nil and proxy~=false) or (body~=nil and body~=false))
  if spec.air or name=="Slam" then
   -- The air hold carries a string that works (or the first swing of a jump,
   -- and the slam): mashed whiffs used to keep a body hovering a stud above the
@@ -11747,6 +11803,40 @@ function Brawler.start(c,a,name)
  if name=="WallDive" then a.airborne=true;a.airHold=c.now+spec.startup end
  Brawler.event(c,a,name)
  return true
+end
+-- (QA 14/11, D1: « que la portée réelle soit celle qu'on voit, ou ajouter une
+-- avancée visible vers la cible avant l'impact ») A body's own blow pressed
+-- at a body a little past its step-in steps all the way in to its contact
+-- distance (Config.Contact.Lunge studs more at most), on the line it faces:
+-- the blow lands where it is seen to reach (BanglaCombat.reaches) instead of
+-- landing short. A body still flying away (a knock-away, a chase's arrival)
+-- is met where it will be when the blow comes out. Not a blow another body
+-- carries, not an air string's (the striker does not step in the air), not a
+-- volume authored longer than the body (sand, claws, a fan).
+function Brawler.lunge(c,a,spec,flat,carried,scale)
+ if carried or spec.air or not a.target or a.target.health&lt;=0 or spec.bodyDepth==nil then return 0 end
+ if math.abs((spec.depth or 0)-(spec.chakraReach or 0)-spec.bodyDepth)&gt;1e-4 then return 0 end
+ local b=a.target
+ -- (a knock-away slows down fast, as Combat moves it: ~8 a second)
+ local v=b.reactionVelocity or b.root.AssemblyLinearVelocity
+ local t=spec.travelTime or ((spec.startup or 0)+(spec.active or 0))
+ local ahead=b.root.Position+Vector3.new(v.X,0,v.Z)*((1-math.exp(-8*t))/8)
+ -- Under a genjutsu image the body steps at what it sees (Itachi's Mirage).
+ if a.decoyPosition and (a.illusionUntil or 0)&gt;c.now then ahead=a.decoyPosition end
+ local d=ahead-a.root.Position
+ local gap=Vector3.new(d.X,0,d.Z)
+ if math.abs(d.Y)&gt;4 or gap.Magnitude&lt;.1 or flat.Magnitude&lt;.1 or flat.Unit:Dot(gap.Unit)&lt;(if scale then .2 else .7) then return 0 end
+ local contact=spec.contact or 3.6
+ local need=gap.Magnitude-contact
+ local extra=need-(spec.travel or 0)
+ -- (a body already struck and flying away is followed further: the string's
+ -- next blow, a chase's arrival; a cold press at a standing body is not)
+ if extra&lt;=0 or extra&gt;(Config.Contact.Lunge or 1.5)*(scale or (if b.reaction then 2.5 else 1)) then return 0 end
+ spec.travel=need;a.travelRemaining=need
+ -- the step in is over by the time the blow comes out: it lands on its first
+ -- active frame, as a blow in reach does (the string's timing is unchanged)
+ spec.travelTime=math.max(spec.startup or .1,.08)
+ return extra
 end
 -- Disengage branch: hop out of the string while a blade (Minato) or a pair of
 -- shuriken (Itachi) covers the retreat. Ends the string; buys space, not damage.
@@ -11859,7 +11949,17 @@ function Brawler.request(c,a,action)
   a.flashUntil=0;a.state="Neutral";a.untilTime=c.now;a.pending=nil;pending=nil
   local gap=(a.target.root.Position-a.root.Position).Magnitude
   -- The arrival strike (Brawler.hit reads it: a chain carried through the jump).
-  local function arrival(ok) a.flashStrike=a.attackSerial;return ok end
+  local function arrival(ok)
+   a.flashStrike=a.attackSerial
+   -- (QA 14/11, D1) a chase's arrival strike meets the body it chased, still
+   -- flying away, further in than a plain press would step (Combat steers
+   -- it to the body through its active frames too)
+   if ok and a.pending and a.pending.kind=="Brawl" then
+    local look=a.root.CFrame.LookVector
+    Brawler.lunge(c,a,a.pending.spec,Vector3.new(look.X,0,look.Z),a.pending.from~=nil,3)
+   end
+   return ok
+  end
   if action=="Heavy" then
    if a.airborne then return arrival(Brawler.start(c,a,"Slam")) end
    return arrival(Brawler.start(c,a,"Launcher"))
@@ -12612,7 +12712,17 @@ function Brawler.hit(c,a,p)
  end
  -- (A carried strike drives the body away from its carrier: a clone's kick
  -- from behind sends it toward Naruto.)
- local forward=(p.from or a.root.CFrame).LookVector
+ -- (QA 14/11, D7: Sasuke struck by a Kakashi running past, then pulled
+ -- toward him) The body goes away from the blow, from where it came to the
+ -- body: along the striker's facing only while that faces the body.
+ -- A throw keeps the direction the stick gave it.
+ local frame=p.from or a.root.CFrame
+ local forward=frame.LookVector
+ local away=b.root.Position-frame.Position;away=Vector3.new(away.X,0,away.Z)
+ if away.Magnitude&gt;.2 and p.name~="Throw" and p.name~="ThrowUp" then
+  local look=Vector3.new(forward.X,0,forward.Z)
+  forward=if look.Magnitude&gt;.1 and look.Unit:Dot(away.Unit)&gt;.7 then look.Unit else away.Unit
+ end
  -- Skill build (Wall Palm): the knockback of the listed moves aims at a wall
  -- in reach in front of the attacker, when there is one.
  local steer=a.def.WallSteer
@@ -14286,6 +14396,9 @@ function ChakraFlow.strike(c,a,name,spec)
 	if a.armed and a.def.Weapon then reach+=1.5 end
 	spec.range=(spec.range or 5)+reach
 	spec.depth=(spec.depth or 2)+reach
+	-- (QA 14/11, D1) the load is seen round the blow: it reaches that much
+	-- further than the body (BanglaCombat.reaches)
+	spec.chakraReach=reach
 	spec.impulse=spec.impulse*(T.Impulse*(shape.impulse or 1)*(sigShape.impulse or 1))
 	c:pushImpact(a.root.Position,"chakrastrike",false,{owner=a.id,fighter=a.fighterId,nature=nature,move=name,sig=sig})
 	c:cue(a,if sig then ChakraFlow.SigLabel[sig] else ChakraFlow.Label[nature].." • "..ChakraFlow.moveLabel(name),.5)
@@ -17233,7 +17346,10 @@ function Combat:updateActor(a,dt)
 			-- Combat convergence: the step-in steers during the startup only. Once
 			-- the strike is out it is committed: a body that slipped aside is
 			-- overshot (a whiff that reads), not followed by a magnet.
-			if flatTarget.Magnitude&gt;.1 and a.state=="Startup" then a.travelDirection=(a.travelDirection:Lerp(flatTarget.Unit,math.min(1,dt*10))).Unit end
+			-- (QA 14/11, D1) a chase's arrival strike follows the body it chased
+			-- through its active frames (Brawler.lunge sized its reach).
+			local arrival=a.flashStrike~=nil and a.flashStrike==a.attackSerial
+			if flatTarget.Magnitude&gt;.1 and (a.state=="Startup" or arrival) then a.travelDirection=(a.travelDirection:Lerp(flatTarget.Unit,math.min(1,dt*10))).Unit end
 			local distance=math.min(a.travelRemaining,a.pending.spec.travel*drive*dt/a.pending.spec.travelTime,flatTarget.Magnitude-gap)
 			a.travelRemaining-=Motor.travel(a,self,a.travelDirection,distance)
 		end
@@ -17767,6 +17883,10 @@ function Combat.lying(a)
 end
 -- Going through the other body on purpose: a dodge, a rush line.
 local function passing(a) return a.state=="Dodging" or (a.rush~=nil and a.rush.line~=nil) end
+-- The running blows (D6/D7, QA 14/11): they arrive at the body, they do not
+-- push it (Combat:separate) and they land only from a body's reach
+-- (BanglaCombat.reaches).
+Combat.RUNNING={DashAttack=true,FlyingKick=true,HeadDive=true,Tackle=true}
 function Combat:separate()
 	local a,b=self.actors[1],self.actors[2]
 	if not a or not b or a.health&lt;=0 or b.health&lt;=0 or a.grabVictim or b.grabVictim then return end
@@ -17804,11 +17924,26 @@ function Combat:separate()
 	-- body sends the rest of the correction to the other.
 	local push=math.min(B.Gap-gap,.35)*.5
 	local hard=if passing(a) or passing(b) then 0 else math.max(0,B.Floor-gap)*.5
-	local movedA=Motor.travel(a,self,-dir,push+hard)
-	local movedB=Motor.travel(b,self,dir,push+hard)
+	-- (QA 14/11, D6: a running blow went into the body, then both flew apart
+	-- like magnets; D7: a body struck then pulled back) A body driving into
+	-- the other (a blow's step-in, a run, a chase) stops at the contact: it
+	-- takes the whole correction, the struck one is not shoved back at it.
+	-- (A string's step-in still nudges the body it strikes: the routes of the
+	-- AI duels need it, Lee's and Naruto's fell from 8 to 4 without.)
+	local driving=function(x)
+		if x.reaction then return false end
+		if x.state=="Rush" or x.state=="Pursuit" then return true end
+		local q=x.pending
+		return (x.state=="Startup" or x.state=="Active") and q~=nil and q.kind=="Brawl" and Combat.RUNNING[q.name]==true
+	end
+	local da,db=driving(a),driving(b)
+	local shareA,shareB=1,1
+	if da and not db then shareA,shareB=2,0 elseif db and not da then shareA,shareB=0,2 end
+	local movedA=Motor.travel(a,self,-dir,(push+hard)*shareA)
+	local movedB=Motor.travel(b,self,dir,(push+hard)*shareB)
 	local short=(push+hard)*2-movedA-movedB
 	if hard&gt;0 and short&gt;.01 then
-		if movedA&lt;push+hard-.01 then Motor.travel(b,self,dir,short) else Motor.travel(a,self,-dir,short) end
+		if movedA&lt;(push+hard)*shareA-.01 then Motor.travel(b,self,dir,short) else Motor.travel(a,self,-dir,short) end
 	end
 	-- Combat convergence (Studio: kinetic bursts carried one body into the
 	-- other): inside a body width neither root keeps velocity into the other,
@@ -65067,6 +65202,20 @@ end
 -- happened, so sound and VFX never lead or lag the animation.
 function Presentation:impacts(data,camera)
  self.camera=camera or self.camera
+ -- (QA 14/11, D4: a new fight began among the last one's flying rocks, gone
+ -- only 0.8 s in) The first packet of a new epoch (the roster, a new duel, the
+ -- next round of a cup), whatever its phase, empties the effects
+ -- (NinjaDuelFX) and the drawn bodies (NinjaDuelBodies) at once: they used to
+ -- wait for the first duel frame drawn, and a roster packet followed by a
+ -- duel packet in the same frame never reached the roster's own clean-up.
+ if data.epoch~=nil and data.epoch~=self.packetEpoch then
+  local first=self.packetEpoch==nil
+  self.packetEpoch=data.epoch
+  if not first then
+   self.fx.epoch=data.epoch;self.fx:reset()
+   self.bodies:reset();self.bodies.epoch=data.epoch
+  end
+ end
  -- Projectiles first, so a contact in the same packet can finish its blade.
  if data.phase=="Duel" then self.fx:sync(data) end
  if not data.impacts then return end

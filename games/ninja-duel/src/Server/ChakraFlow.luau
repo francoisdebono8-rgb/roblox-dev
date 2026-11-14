@@ -121,6 +121,9 @@ function ChakraFlow.strike(c,a,name,spec)
 	if a.armed and a.def.Weapon then reach+=1.5 end
 	spec.range=(spec.range or 5)+reach
 	spec.depth=(spec.depth or 2)+reach
+	-- (QA 14/11, D1) the load is seen round the blow: it reaches that much
+	-- further than the body (BanglaCombat.reaches)
+	spec.chakraReach=reach
 	spec.impulse=spec.impulse*(T.Impulse*(shape.impulse or 1)*(sigShape.impulse or 1))
 	c:pushImpact(a.root.Position,"chakrastrike",false,{owner=a.id,fighter=a.fighterId,nature=nature,move=name,sig=sig})
 	c:cue(a,if sig then ChakraFlow.SigLabel[sig] else ChakraFlow.Label[nature].." • "..ChakraFlow.moveLabel(name),.5)

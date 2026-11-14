@@ -484,6 +484,8 @@ test("AI neutral rhythm: paced jutsu, reads into melee range, step-in feints",fu
   local c,a,b,match=H.duel("Flashstep","Mirage")
   c:relocate(a,V.new(0,3,12));c:relocate(b,V.new(0,3,-12))
   local last,worstGap,techniques,guards,conversions,teleported={},math.huge,0,0,0,{}
+  local started
+  local placed={}
   local request=c.request
   c.request=function(self,actor,action,...)
    local accepted,reason=request(self,actor,action,...)
@@ -500,7 +502,15 @@ test("AI neutral rhythm: paced jutsu, reads into melee range, step-in feints",fu
     local spec=actor.def.Techniques[tonumber(string.match(action,"%d+"))]
     local conversion=spec and (spec.Id=="Flashstep" or (teleported[actor] and self.now-teleported[actor]<.8))
     if spec and spec.Id=="Flashstep" then teleported[actor]=self.now end
-    if not punish and not conversion and last[actor] then worstGap=math.min(worstGap,self.now-last[actor]) end
+    -- (QA 12/11) a round that drags on presses: past LateFrom the gap shrinks
+    -- by design (AI:update `late`); the pacing is measured before it.
+    local early=self.now-(started or self.now)<(Config.AI.LateFrom or 40)
+    -- (QA 12/11) a jutsu of the kit not placed yet this round is owed and
+    -- tried outside the pace (AI: owed); its first use is not paced.
+    placed[actor]=placed[actor] or {}
+    local owed=spec~=nil and not placed[actor][spec.Id]
+    if spec then placed[actor][spec.Id]=true end
+    if not punish and not conversion and not owed and last[actor] and early then worstGap=math.min(worstGap,self.now-last[actor]) end
     if not conversion then techniques+=1 else conversions+=1 end
     -- Only a neutral jutsu starts the pacing window the next one is measured from.
     if not conversion and not punish then last[actor]=self.now end
@@ -509,6 +519,7 @@ test("AI neutral rhythm: paced jutsu, reads into melee range, step-in feints",fu
    return accepted,reason
   end
   local one,two=AI.new(c,a,7),AI.new(c,b,14)
+  started=c.now
   local feints0=match.events.FeintStep or 0
   local t=0
   while t<60 do
