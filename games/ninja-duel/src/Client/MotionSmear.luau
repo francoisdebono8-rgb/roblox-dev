@@ -55,23 +55,30 @@ local function ghost(model:Model,pose:{[string]:CFrame},shift:Vector3,transparen
 	Debris:AddItem(holder,life+.05)
 end
 
+-- (14/11, CM QA A2: « traits de vitesse = poteaux noirs verticaux ») The
+-- streaks were drawn upright whatever the motion, in the ghosts' near-black:
+-- a body thrown up left a column of black poles from the sky to the floor.
+-- They lie along the motion now (3D: up, down, slanted), pale, and are gone
+-- with their tween.
+local STREAK=Color3.fromRGB(236,240,248)
 local function streaks(at:Vector3,count:number,direction:Vector3)
 	local f=folder()
+	local dir=if direction.Magnitude>1e-3 then direction.Unit else Vector3.zAxis
+	local side=dir:Cross(if math.abs(dir.Y)>.9 then Vector3.xAxis else Vector3.yAxis).Unit
+	local lift=side:Cross(dir).Unit
 	for _=1,count do
 		local s=Instance.new("Part")
 		s.Anchored=true;s.CanCollide=false;s.CanQuery=false;s.CanTouch=false;s.CastShadow=false
-		s.Material=Enum.Material.SmoothPlastic;s.Color=GHOST
-		local length=2+math.random()*2.2
-		s.Size=Vector3.new(.05,length,.05)
-		local side=direction:Cross(Vector3.yAxis)
-		if side.Magnitude<1e-3 then side=Vector3.xAxis end
-		side=side.Unit
-		local offset=side*((math.random()-.5)*3.4)+Vector3.new(0,(math.random()-.3)*2.4,0)-direction*(math.random()*1.5)
-		s.CFrame=CFrame.new(at+offset)
-		s.Transparency=.35
+		s.Material=Enum.Material.SmoothPlastic;s.Color=STREAK
+		local length=1.6+math.random()*1.6
+		s.Size=Vector3.new(.05,.05,length)
+		local offset=side*((math.random()-.5)*3)+lift*((math.random()-.5)*2.4)-dir*(math.random()*1.5)
+		local p=at+offset
+		s.CFrame=CFrame.lookAt(p,p+dir)
+		s.Transparency=.5
 		s.Parent=f
-		TweenService:Create(s,TweenInfo.new(STREAK_LIFE,Enum.EasingStyle.Quad,Enum.EasingDirection.In),{Transparency=1,Size=Vector3.new(.03,length*1.4,.03)}):Play()
-		Debris:AddItem(s,STREAK_LIFE+.05)
+		TweenService:Create(s,TweenInfo.new(STREAK_LIFE,Enum.EasingStyle.Quad,Enum.EasingDirection.In),{Transparency=1,Size=Vector3.new(.03,.03,length*1.4)}):Play()
+		task.delay(STREAK_LIFE+.02,function() s:Destroy() end)
 	end
 end
 
@@ -85,7 +92,6 @@ function Smear.step(st:State,model:Model?,dt:number)
 	local pose=snapshot(model)
 	if st.pos and st.pose then
 		local delta=pos-(st.pos::Vector3)
-		local flat=Vector3.new(delta.X,0,delta.Z)
 		if delta.Magnitude>JUMP and delta.Magnitude<80 then
 			-- A teleport: copies across the gap, fading the farther back they are.
 			-- (Partie 0: four dense copies read as a cloud of dark cubes; three
@@ -94,11 +100,11 @@ function Smear.step(st:State,model:Model?,dt:number)
 				local u=k/4
 				ghost(model,pose,-delta*(1-u),.6+.15*(1-u),LIFE*1.3)
 			end
-			streaks(pos-delta*.5,6,if flat.Magnitude>.1 then flat.Unit else Vector3.zAxis)
+			streaks(pos-delta*.5,6,delta)
 			st.at=now
 		elseif delta.Magnitude/math.max(dt,1e-3)>SPEED and now-(st.at or 0)>=CADENCE then
 			ghost(model,st.pose::{[string]:CFrame},Vector3.zero,.68,LIFE)
-			streaks(pos,2,if flat.Magnitude>.1 then flat.Unit else Vector3.zAxis)
+			streaks(pos,2,delta)
 			st.at=now
 		end
 	end

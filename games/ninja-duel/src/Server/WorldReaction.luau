@@ -249,7 +249,12 @@ local function relief(scar,palette)
 		local r=size*.5
 		local spin=hash(seed+Vector3.new(9,1,4))*math.pi*2
 		local squash=.72+hash(seed+Vector3.new(2,8,5))*.28
-		local lean=18+hash(seed+Vector3.new(6,3,7))*26
+		-- (14/11, CM QA A1/A4: « la fissure sort du sol comme un mur », « des
+		-- dalles de la taille d'un perso ») Slabs as wide as the crater's radius,
+		-- their outer edge lifted 18-68°, stood knee- to waist-high round the
+		-- bodies. They lie in the floor now: narrower (1.4 studs at most),
+		-- tilted a few degrees, their edges a few centimetres proud.
+		local lean=4+hash(seed+Vector3.new(6,3,7))*6
 		local function around(a,d)
 			return math.cos(a+spin)*d,math.sin(a+spin)*d*squash
 		end
@@ -262,11 +267,11 @@ local function relief(scar,palette)
 			local a=(k/n)*math.pi*2+(h-.5)*1.1
 			local off=math.abs((a-gapAt+math.pi)%(2*math.pi)-math.pi)
 			if off>=gapWidth*.5 and h>.12 then
-				local w=r*(.45+h*.5)
+				local w=math.min(r*(.3+h*.3),1.4)
 				local y,z=around(a,r*(.88+h*.2))
-				local at=base*CFrame.new(.12+h*.15,y,z)
+				local at=base*CFrame.new(.02+h*.05,y,z)
 				-- face the centre, then lift the outer edge (pitch about the tangent)
-				local cf=at*CFrame.Angles(a+spin,0,0)*CFrame.Angles(0,0,math.rad(lean+h*24))
+				local cf=at*CFrame.Angles(a+spin,0,0)*CFrame.Angles(0,0,math.rad(lean+h*6))
 				-- plates, not blocks (Studio: thick ones read as boxes)
 				chunk(p,cf,Vector3.new(.16+h*.16,w*(.6+h*.3),w),material,if k%3==0 then under else slab)
 			end
@@ -277,7 +282,7 @@ local function relief(scar,palette)
 			local h=hash(seed+Vector3.new(k*5,k*.3,k*1.1))
 			local a=throw+(h-.5)*3.4
 			local y,z=around(a,r*(1.05+h*.8))
-			local st=.22+h*.4
+			local st=.12+h*.2
 			chunk(p,base*CFrame.new(st*.4,y,z)*CFrame.Angles(h*3,h*5,h*2),Vector3.new(st,st*1.2,st*.9),material,slab)
 		end
 		-- At most two cracks out of the rim, none for a small crater: grooves of
@@ -311,16 +316,16 @@ local function relief(scar,palette)
 			local z=(k/(n+1)-.5)*size*1.05
 			local sideSign=if k%2==0 then 1 else -1
 			local len=size/n*(1.15+h*.45)
-			local w=math.max(.7,width*2+size*.14)*(.8+h*.45)
-			local thick=.32+h*.3
-			local at=base*CFrame.new(thick*.12,sideSign*(width*.5+w*.42),z)
-			local cf=at*CFrame.Angles(sideSign*math.rad(14+h*22),0,0)*CFrame.Angles(0,math.rad((h-.5)*16),0)
+			local w=math.min(math.max(.7,width*2+size*.14)*(.8+h*.45),1.1)
+			local thick=.18+h*.14
+			local at=base*CFrame.new(-thick*.1,sideSign*(width*.5+w*.42),z)
+			local cf=at*CFrame.Angles(sideSign*math.rad(4+h*6),0,0)*CFrame.Angles(0,math.rad((h-.5)*16),0)
 			chunk(p,cf,Vector3.new(thick,w,len),material,if k%3==0 then under else slab)
 		end
 		for k=1,math.clamp(math.floor(size*.8),2,5) do
 			local h=hash(seed+Vector3.new(k*5.3,k*.7,k*2.9))
 			local sideSign=if h>.5 then 1 else -1
-			local st=.22+h*.3
+			local st=.12+h*.16
 			chunk(p,base*CFrame.new(st*.35,sideSign*(width+.5+h*1.2),(h-.5)*size*.9)*CFrame.Angles(h*4,h*6,h*3),Vector3.new(st,st*1.3,st),material,slab)
 		end
 	end

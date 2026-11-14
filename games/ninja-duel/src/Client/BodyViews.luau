@@ -134,21 +134,33 @@ end
 -- own body: a clone in that line, or right against the lens, fades to a ghost
 -- (as an obstacle near the camera would) so the player still sees himself
 -- and the fight.
+-- (14/11, CM QA A6: « le mur de clones cache tout ») In a fight seen from
+-- outside (a film, a spectator), the crowd round the struck body hid it: no
+-- one saw who hit whom. Every fighter the clone does not belong to is kept in
+-- sight the same way: a clone in the line to him, or pressed against him,
+-- fades to a ghost.
 BodyViews.FADE=.7
+BodyViews.CLOSE=3.2 -- studs: a clone this close to the body it strikes fades
 function BodyViews:fade(view,dt)
 	local camera=workspace.CurrentCamera
-	local me=self.focus
 	local want=0
-	if camera and me then
+	if camera then
 		local lens=camera.CFrame.Position
 		local root=view.model.PrimaryPart
 		local p=if root then root.Position else view.pos
-		local line=me-lens
-		local length=line.Magnitude
-		if length>.5 then
-			local along=(p-lens):Dot(line/length)
-			local off=((p-lens)-line/length*along).Magnitude
-			if (along>0 and along<length-1 and off<2.6) or (p-lens).Magnitude<4 then want=BodyViews.FADE end
+		if (p-lens).Magnitude<4 then want=BodyViews.FADE end
+		for _,target in self.targets or {self.focus} do
+			if want>0 then break end
+			local at=if typeof(target)=="Vector3" then target else target.pos
+			local owner=if typeof(target)=="table" then target.model else nil
+			local line=at-lens
+			local length=line.Magnitude
+			if length>.5 then
+				local along=(p-lens):Dot(line/length)
+				local off=((p-lens)-line/length*along).Magnitude
+				if along>0 and along<length-1 and off<2.6 then want=BodyViews.FADE end
+			end
+			if owner and owner~=view.owner and Vector3.new(p.X-at.X,0,p.Z-at.Z).Magnitude<BodyViews.CLOSE then want=BodyViews.FADE end
 		end
 	end
 	local now=view.fadeNow or 0
@@ -210,6 +222,14 @@ function BodyViews:update(data,dt,folder)
 	local mine=data.human and folder and folder:FindFirstChild(data.human.id or "")
 	local mineRoot=mine and mine:FindFirstChild("HumanoidRootPart")
 	self.focus=if mineRoot then mineRoot.Position else nil
+	-- Every fighter's body (A6): the clones of one never hide the other.
+	local targets={}
+	for _,actor in {data.human,data.bot} do
+		local model=actor and folder and folder:FindFirstChild(actor.id or "")
+		local root=model and model:FindFirstChild("HumanoidRootPart")
+		if root then table.insert(targets,{model=model,pos=root.Position}) end
+	end
+	self.targets=if #targets>0 then targets else nil
 	-- Copies made ahead for a crowd (one a frame, out of the workspace).
 	for _,actor in {data.human,data.bot} do
 		local want=actor and crowdSize(actor.fighterId) or 0

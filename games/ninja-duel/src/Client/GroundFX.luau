@@ -21,7 +21,12 @@ local K -- Effects' helpers, handed over by install()
 local ShadowFX=require(script.Parent.ShadowFX)
 
 -- Blocks thrown per scar kind: {count, size, speed}.
-GroundFX.BREAK={crater={10,.9,26},gouge={7,.7,20},trench={8,.7,18},crack={6,.6,15},skid={1,.35,7}}
+-- (14/11, CM QA A4: « débris géants devant la caméra ou en l'air ») Blocks up
+-- to 1.6 studs thrown 6 studs up passed in front of the faces. Three times
+-- smaller now, a few more of them, and thrown low: they fly out along the
+-- floor and land at once (a hop of a stud at most), never at head height.
+GroundFX.BREAK={crater={12,.3,26},gouge={9,.25,20},trench={10,.24,18},crack={8,.2,15},skid={2,.14,7}}
+GroundFX.LOFT=.4 -- the throw's vertical share of `speed` (it was 0.7 to 1.3)
 -- Contact styles whose blow reaches the ground (a dust ring under them).
 GroundFX.HEAVY={heavy=.8,launcher=.9,slam=1.2,finisher=1,groundbounce=1.2,wall=.6,wallbounce=.8,worldbreak=1.3,
 	chidori=1,rasengan=1.1,fire=1,palmburst=.8,clash=.7,awaken=1.1}
@@ -105,9 +110,9 @@ function GroundFX.tear(fx,at,kind,material,color,along)
 		local block=K.block(fx.folder,Vector3.new(s*1.3,s*.7,s),CFrame.new(at+out*s*.8+Vector3.new(0,s*.3,0))*CFrame.Angles(math.random()*6,math.random()*6,math.random()*6),
 			color:Lerp(Color3.new(0,0,0),math.random()*.18),material)
 		block.Name="GroundBlock";ShadowFX.keep(block)
-		live[block]={vel=out*speed*(.45+math.random()*.6)+Vector3.new(0,speed*(.7+math.random()*.6),0),
+		live[block]={vel=out*speed*(.35+math.random()*.45)+Vector3.new(0,speed*GroundFX.LOFT*(.7+math.random()*.6),0),
 			spin=Vector3.new(math.random()-.5,math.random()-.5,math.random()-.5)*14,rot=block.CFrame.Rotation,
-			floor=floorY,half=s*.35,age=0,life=2.6+math.random()*1.4}
+			floor=floorY,half=s*.35,age=0,life=1.6+math.random()*1}
 	end
 	ensureStep()
 	-- the dust of the broken ground

@@ -110,7 +110,22 @@ local function build(spec)
 			em:SetFaceNormals(f,list)
 		end
 	end
-	local part=AssetService:CreateMeshPartAsync(Content.fromObject(em))
+	-- (14/11, CM QA: « Failed to create empty EditableMesh … memory budget » at
+	-- every Play) A client holds only a handful of live EditableMeshes, and a
+	-- MeshPart made straight from one keeps it alive: the budget ran out after
+	-- a few pieces. Each piece is baked into static content
+	-- (AssetService:CreateDataModelContentAsync) and its EditableMesh freed;
+	-- only where baking is unavailable is the live mesh kept (as before).
+	local part
+	local okBake,result,content=pcall(function() return AssetService:CreateDataModelContentAsync(Content.fromObject(em)) end)
+	if okBake and result==Enum.CreateContentResult.Success and content then
+		part=AssetService:CreateMeshPartAsync(content)
+		em:Destroy()
+		MeshKit.baked=(MeshKit.baked or 0)+1
+	else
+		part=AssetService:CreateMeshPartAsync(Content.fromObject(em))
+		MeshKit.live=(MeshKit.live or 0)+1
+	end
 	part.Name=spec.name
 	part.Anchored=true;part.CanCollide=false;part.CanQuery=false;part.CanTouch=false;part.CastShadow=false
 	part.Color=Color3.new(1,1,1)

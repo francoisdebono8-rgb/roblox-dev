@@ -219,9 +219,10 @@ function UltimateFX.crater(fx,p,color,size)
 	local rng=Random.new(math.floor(p.X*7+p.Z*13))
 	for k=1,10 do
 		local a=k/10*math.pi*2+rng:NextNumber()*.4
-		local rock=stone(fx.folder,(.5+rng:NextNumber()*.9)*size,CFrame.new(floor+Vector3.new(math.cos(a)*1.6,.3,math.sin(a)*1.6))*CFrame.Angles(rng:NextNumber()*3,rng:NextNumber()*3,0))
+		-- (14/11, CM QA A4) stones a third of the size, thrown low: never in front of a face
+		local rock=stone(fx.folder,(.2+rng:NextNumber()*.3)*size,CFrame.new(floor+Vector3.new(math.cos(a)*1.6,.3,math.sin(a)*1.6))*CFrame.Angles(rng:NextNumber()*3,rng:NextNumber()*3,0))
 		local out=floor+Vector3.new(math.cos(a)*(4+rng:NextNumber()*3)*size,.2,math.sin(a)*(4+rng:NextNumber()*3)*size)
-		K.tween(rock,.35,{CFrame=CFrame.new(out+Vector3.new(0,1.5,0))*CFrame.Angles(rng:NextNumber()*6,rng:NextNumber()*6,0)},Enum.EasingStyle.Quad,Enum.EasingDirection.Out)
+		K.tween(rock,.3,{CFrame=CFrame.new(out+Vector3.new(0,.6,0))*CFrame.Angles(rng:NextNumber()*6,rng:NextNumber()*6,0)},Enum.EasingStyle.Quad,Enum.EasingDirection.Out)
 		task.delay(.35,function() if rock.Parent then K.tween(rock,.3,{CFrame=CFrame.new(out),Transparency=.2},Enum.EasingStyle.Quad,Enum.EasingDirection.In) end end)
 		task.delay(1.6,function() if rock.Parent then K.tween(rock,.4,{Transparency=1}) end end)
 		Debris:AddItem(rock,2.1)
