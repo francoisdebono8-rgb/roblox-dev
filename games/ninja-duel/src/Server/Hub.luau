@@ -11,6 +11,12 @@
 -- duel takes that body away (Matches:start) and the result brings him back
 -- out of the hall's door. Presentation and walking only: no gameplay rule
 -- lives here (kits, masters and trees are Server/Progression's).
+-- (14/11) The Blender dressing (docs/systems/HUB_DRESS.md): each building or
+-- prop is a "unit", a Model tagged with the name of its modelled mesh
+-- (attribute Dress) and where it goes (DressAt, DressScale, DressLength). The
+-- parts stay: they are the collisions and what shows until the mesh is built;
+-- Client/HubDress hides them and puts the mesh in their place. A part tagged
+-- Keep (a sign with its text, the hall's floor) stays visible.
 local Players=game:GetService("Players")
 local ReplicatedStorage=game:GetService("ReplicatedStorage")
 local Shared=ReplicatedStorage.NinjaDuel
@@ -43,6 +49,19 @@ local function part(parent,name,size,cf,color,material,collide)
 	return p
 end
 local function deco(parent,name,size,cf,color,material) return part(parent,name,size,cf,color,material,false) end
+-- A unit of the dressing: a Model whose parts the client swaps for the mesh
+-- `dress` placed at `at` (CFrame), scaled by `scale` (Vector3) and, for a
+-- wall, repeated along `length` (docs/systems/HUB_DRESS.md).
+local function unit(parent,name,dress,at,scale,length)
+	local m=Instance.new("Model");m.Name=name
+	m:SetAttribute("Dress",dress);m:SetAttribute("DressAt",at)
+	if scale then m:SetAttribute("DressScale",scale) end
+	if length then m:SetAttribute("DressLength",length) end
+	m.Parent=parent
+	return m
+end
+local function keep(p) p:SetAttribute("Keep",true) return p end
+Hub.unit=unit
 -- A slab on the ground between two points (x,z), `width` wide.
 local function path(parent,ax,az,bx,bz,width,color,material)
 	local a,b=Vector3.new(ax,0,az),Vector3.new(bx,0,bz)
@@ -59,6 +78,7 @@ end
 local function tree(parent,x,z,height,spread)
 	height=height or 14;spread=spread or 6
 	local seed=(x*7+z*13)%5
+	parent=unit(parent,"Tree",if seed<2 then "TreeA" elseif seed<4 then "TreeB" else "TreeC",rel(x,0,z),Vector3.new(spread/6,height/14,spread/6))
 	part(parent,"Tree",Vector3.new(2.2,height,2.2),rel(x,height/2,z),C.bark,Enum.Material.Wood)
 	local top=rel(x,height+spread*.2,z)
 	local crown=deco(parent,"Crown",Vector3.one*spread*1.9,top,if seed<2 then C.leafDark else C.leaf,Enum.Material.Grass)
@@ -71,6 +91,7 @@ local function tree(parent,x,z,height,spread)
 	end
 end
 local function lantern(parent,cf,light)
+	parent=unit(parent,"PaperLantern","PaperLantern",cf)
 	local l=deco(parent,"Lantern",Vector3.new(1.6,2.2,1.6),cf,C.lantern,Enum.Material.Fabric)
 	l.Shape=Enum.PartType.Cylinder;l.Size=Vector3.new(2.2,1.6,1.6);l.CFrame=cf*CFrame.Angles(0,0,math.pi/2)
 	deco(parent,"LanternCap",Vector3.new(1.2,.3,1.2),cf*CFrame.new(0,1.2,0),C.black)
@@ -119,7 +140,12 @@ end
 local function house(parent,cf,w,d,floors,wall,roofColor,opts)
 	opts=opts or {}
 	local h=floors*8
-	local model=Instance.new("Model");model.Name=opts.name or "House";model.Parent=parent
+	local model=Instance.new("Model");model.Name=opts.name or "House"
+	if opts.dress then
+		-- the mesh's street face is its +x: a house facing -x turns round
+		model:SetAttribute("Dress",opts.dress);model:SetAttribute("DressAt",cf*CFrame.Angles(0,if (opts.front or 1)<0 then math.pi else 0,0))
+	end
+	model.Parent=parent
 	part(model,"Walls",Vector3.new(w,h,d),cf*CFrame.new(0,h/2,0),wall,Enum.Material.Plaster)
 	deco(model,"Base",Vector3.new(w+.3,1,d+.3),cf*CFrame.new(0,.5,0),C.woodDark,Enum.Material.Wood)
 	for f=1,floors-1 do deco(model,"Band",Vector3.new(w+.3,.6,d+.3),cf*CFrame.new(0,f*8,0),C.wood,Enum.Material.Wood) end
@@ -151,7 +177,7 @@ local function house(parent,cf,w,d,floors,wall,roofColor,opts)
 		roof(model,cf*CFrame.new(0,h,0),w,d,roofColor,opts.along or "z",opts.pitch or 24,1.6)
 	end
 	if opts.sign then
-		local board=deco(model,"Sign",Vector3.new(.3,2.4,7),face*CFrame.new(front*.4,h-2.2,0),C.woodDark,Enum.Material.Wood)
+		local board=keep(deco(model,"Sign",Vector3.new(.3,2.4,7),face*CFrame.new(front*.4,h-2.2,0),C.woodDark,Enum.Material.Wood))
 		sign(board,if front>0 then Enum.NormalId.Right else Enum.NormalId.Left,opts.sign,C.cloth)
 	end
 	return model
@@ -159,6 +185,9 @@ end
 local function wall(parent,ax,az,bx,bz,height,color,cap)
 	local a,b=Vector3.new(ax,0,az),Vector3.new(bx,0,bz)
 	local d=b-a
+	local foot=CFrame.lookAt(O+(a+b)/2,O+b)
+	local high=height>=20
+	parent=unit(parent,"Wall",if high then "VillageWall" else "CompoundWall",foot,Vector3.new(1,height/(if high then 26 else 10),1),d.Magnitude)
 	local cf=CFrame.lookAt(O+(a+b)/2+Vector3.new(0,height/2,0),O+b+Vector3.new(0,height/2,0))
 	local w=part(parent,"Wall",Vector3.new(2,height,d.Magnitude),cf,color,Enum.Material.Plaster)
 	deco(parent,"WallCap",Vector3.new(3,.8,d.Magnitude+1),cf*CFrame.new(0,height/2+.4,0),cap or C.roofTile)
@@ -204,13 +233,15 @@ local function ground(f)
 	end
 end
 local function gate(f)
+	local village=f
+	f=unit(village,"KonohaGate","KonohaGate",CFrame.new(O))
 	for _,x in {-21,21} do
 		part(f,"GatePillar",Vector3.new(6,44,6),rel(x,22,206),C.red,Enum.Material.Wood)
 		deco(f,"PillarFoot",Vector3.new(7.4,3,7.4),rel(x,1.5,206),C.stone,Enum.Material.Slate)
 	end
 	part(f,"GateBeam",Vector3.new(54,5,6),rel(0,42.5,206),C.red,Enum.Material.Wood)
 	part(f,"GateRoof",Vector3.new(62,1.4,12),rel(0,46,206),C.roofTile,Enum.Material.Slate)
-	local plate=deco(f,"GatePlate",Vector3.new(14,4.2,.4),rel(0,38,202.7),C.woodDark,Enum.Material.Wood)
+	local plate=keep(deco(f,"GatePlate",Vector3.new(14,4.2,.4),rel(0,38,202.7),C.woodDark,Enum.Material.Wood))
 	sign(plate,Enum.NormalId.Front,"KONOHA",rgb(236,190,90))
 	-- The two great doors, open against the walls.
 	for _,side in {-1,1} do
@@ -220,12 +251,14 @@ local function gate(f)
 		deco(f,"DoorBand",Vector3.new(1.6,1,18),hinge*CFrame.new(0,-8,-9),C.woodDark,Enum.Material.Wood)
 	end
 	-- The village wall either side of the gate.
+	f=village
 	wall(f,-24,206,-292,206,26,C.plasterWarm)
 	wall(f,24,206,292,206,26,C.plasterWarm)
 	-- The gatekeepers' booth.
-	part(f,"Booth",Vector3.new(10,3.4,4),rel(34,1.7,188),C.wood,Enum.Material.Wood)
-	for _,x in {29.5,38.5} do deco(f,"BoothPost",Vector3.new(.8,9,.8),rel(x,4.5,190),C.woodDark,Enum.Material.Wood) end
-	part(f,"BoothRoof",Vector3.new(12,.8,7),rel(34,9.2,189),C.roofTile,Enum.Material.Slate)
+	local booth=unit(f,"GateBooth","GateBooth",CFrame.new(O))
+	part(booth,"Booth",Vector3.new(10,3.4,4),rel(34,1.7,188),C.wood,Enum.Material.Wood)
+	for _,x in {29.5,38.5} do deco(booth,"BoothPost",Vector3.new(.8,9,.8),rel(x,4.5,190),C.woodDark,Enum.Material.Wood) end
+	part(booth,"BoothRoof",Vector3.new(12,.8,7),rel(34,9.2,189),C.roofTile,Enum.Material.Slate)
 	local spawn=Instance.new("SpawnLocation")
 	spawn.Name="HubSpawn";spawn.Anchored=true;spawn.CanCollide=false;spawn.CanQuery=false;spawn.Transparency=1
 	spawn.Size=Vector3.new(6,1,6);spawn.CFrame=rel(0,.5,192);spawn.Neutral=true;spawn.Duration=0;spawn.Enabled=true
@@ -236,11 +269,12 @@ local function street(f)
 	-- West side: houses, a shop and Ichiraku.
 	local west={{182,2,C.plaster,C.roofBlue},{158,2,C.plasterWarm,C.roofTerra,"TOOLS"},{134,1,C.plasterGreen,C.roofGreen,"TEA"},{86,2,C.plaster,C.roofTerra},{62,2,C.plasterWarm,C.roofBlue}}
 	for _,h in west do
-		house(f,rel(-31,0,h[1]),24,20,h[2],h[3],h[4],{front=1,sign=h[5],noren=if h[5] then C.roofBlue else nil})
-		house(f,rel(-58,0,h[1]),22,20,2,C.plasterWarm,C.roofDark,{front=1,door=false})
+		house(f,rel(-31,0,h[1]),24,20,h[2],h[3],h[4],{front=1,sign=h[5],noren=if h[5] then C.roofBlue else nil,
+			dress=string.format("%s_24x20x%d",if h[5] then "HouseShop" else "HouseGable",h[2])})
+		house(f,rel(-58,0,h[1]),22,20,2,C.plasterWarm,C.roofDark,{front=1,door=false,dress="HouseBack_22x20x2"})
 	end
 	-- Ichiraku: the ramen stand, its counter, stools and curtains.
-	local ichi=Instance.new("Model");ichi.Name="Ichiraku";ichi.Parent=f
+	local ichi=unit(f,"Ichiraku","Ichiraku",CFrame.new(O))
 	part(ichi,"Kitchen",Vector3.new(10,9,22),rel(-37,4.5,110),C.plasterWarm,Enum.Material.Plaster)
 	part(ichi,"Counter",Vector3.new(2.6,3.4,20),rel(-24,1.7,110),C.woodLight,Enum.Material.Wood)
 	deco(ichi,"CounterTop",Vector3.new(3.4,.4,20.6),rel(-24,3.6,110),C.wood,Enum.Material.Wood)
@@ -252,27 +286,36 @@ local function street(f)
 	local over=part(ichi,"StandRoof",Vector3.new(24,.8,26),rel(-30,9.6,110)*CFrame.Angles(0,0,math.rad(-8)),C.roofTerra,Enum.Material.SmoothPlastic)
 	over.Name="StandRoof"
 	for k=-4,4 do deco(ichi,"Noren",Vector3.new(.08,2.4,2),rel(-19.3,7.6,110+k*2.2),if k%2==0 then C.cloth else rgb(226,220,206),Enum.Material.Fabric) end
-	local board=deco(ichi,"IchirakuSign",Vector3.new(.3,2.2,12),rel(-19.1,9.6,110),C.red,Enum.Material.Wood)
+	local board=keep(deco(ichi,"IchirakuSign",Vector3.new(.3,2.2,12),rel(-19.1,9.6,110),C.red,Enum.Material.Wood))
 	sign(board,Enum.NormalId.Right,"ICHIRAKU RAMEN",C.cloth)
 	lantern(ichi,rel(-18.6,7,99.4),true);lantern(ichi,rel(-18.6,7,120.6),true)
 	-- East side: the rooftop run, flat roofs at 16 studs with short gaps, a
 	-- truss and crates to get up; a higher row behind.
 	for k,z in {182,158,134,110,86,62} do
-		house(f,rel(30,0,z),24,20,2,if k%2==0 then C.plaster else C.plasterGreen,C.roofDark,{front=-1,flat=true,name="Rooftop"})
-		if k%2==1 then house(f,rel(56,0,z-11),22,18,3,C.plasterWarm,C.roofDark,{front=-1,flat=true,door=false,name="HighRoof"}) end
+		house(f,rel(30,0,z),24,20,2,if k%2==0 then C.plaster else C.plasterGreen,C.roofDark,{front=-1,flat=true,name="Rooftop",dress="HouseFlat_24x20x2"})
+		if k%2==1 then
+			house(f,rel(56,0,z-11),22,18,3,C.plasterWarm,C.roofDark,{front=-1,flat=true,door=false,name="HighRoof",dress="HouseFlat_22x18x3"})
+			-- (14/11) a water tank on the high roof's back corner (solid)
+			local tank=unit(f,"WaterTank","WaterTank",rel(61,25,z-15))
+			local body=part(tank,"Tank",Vector3.new(7,6,6),rel(61,28.5,z-15)*CFrame.Angles(0,0,math.pi/2),C.woodLight,Enum.Material.Wood)
+			body.Shape=Enum.PartType.Cylinder
+		end
 	end
 	for _,z in {176,90} do
+		local ladder=unit(f,"LadderUnit","Ladder",rel(17,8,z))
 		local truss=Instance.new("TrussPart");truss.Name="Ladder";truss.Anchored=true;truss.Size=Vector3.new(2,16,2);truss.CFrame=rel(17,8,z)
-		truss.Color=C.woodLight;truss.Material=Enum.Material.Wood;truss.Parent=f
+		truss.Color=C.woodLight;truss.Material=Enum.Material.Wood;truss.Parent=ladder
 	end
 	-- Crates up to the first roof from the gate's side.
 	for _,c in {{22,2,196,4},{26,4,198.5,4,8},{30,6,196,4,12}} do
-		part(f,"Crate",Vector3.new(c[4],c[5] or c[4],c[4]),rel(c[1],(c[5] or c[4])/2,c[3]),C.woodLight,Enum.Material.WoodPlanks)
+		local size=Vector3.new(c[4],c[5] or c[4],c[4])
+		local crate=unit(f,"Crate","Crate",rel(c[1],size.Y/2,c[3]),size/4)
+		part(crate,"Crate",size,rel(c[1],size.Y/2,c[3]),C.woodLight,Enum.Material.WoodPlanks)
 	end
 	-- Lanterns along the street.
 	for z=60,190,26 do
 		for _,x in {-13.5,13.5} do
-			part(f,"LampPost",Vector3.new(.6,7,.6),rel(x,3.5,z),C.woodDark,Enum.Material.Wood)
+			part(unit(f,"LampPost","LampPost",rel(x,0,z)),"LampPost",Vector3.new(.6,7,.6),rel(x,3.5,z),C.woodDark,Enum.Material.Wood)
 			lantern(f,rel(x,7.6,z),z%52==8)
 		end
 	end
@@ -280,24 +323,26 @@ end
 local function plaza(f)
 	tree(f,-44,30,16,7);tree(f,44,30,16,7)
 	for _,x in {-24,24} do
-		part(f,"Bench",Vector3.new(8,1,2.4),rel(x,1.6,32),C.wood,Enum.Material.Wood)
-		for _,dx in {-3,3} do deco(f,"BenchLeg",Vector3.new(.6,1.2,2),rel(x+dx,.6,32),C.woodDark,Enum.Material.Wood) end
+		local bench=unit(f,"Bench","Bench",rel(x,0,32))
+		part(bench,"Bench",Vector3.new(8,1,2.4),rel(x,1.6,32),C.wood,Enum.Material.Wood)
+		for _,dx in {-3,3} do deco(bench,"BenchLeg",Vector3.new(.6,1.2,2),rel(x+dx,.6,32),C.woodDark,Enum.Material.Wood) end
 	end
 	-- The board of the exam, beside the hall's door.
 	for _,x in {22,34} do part(f,"BoardPost",Vector3.new(.8,9,.8),rel(x,4.5,-16),C.woodDark,Enum.Material.Wood) end
 	local board=part(f,"ExamBoard",Vector3.new(12.6,6,.6),rel(28,5.4,-16),C.woodLight,Enum.Material.Wood)
 	sign(board,Enum.NormalId.Back,"CHŪNIN EXAM • PRELIMINARIES",C.woodDark)
 	for _,x in {-12,12} do
-		part(f,"StoneLantern",Vector3.new(2.4,5,2.4),rel(x,2.5,-14),C.stone,Enum.Material.Slate)
-		local cap=deco(f,"LanternRoof",Vector3.new(3.6,.8,3.6),rel(x,5.4,-14),C.stoneDark,Enum.Material.Slate)
+		local stone=unit(f,"StoneLantern","StoneLantern",rel(x,0,-14))
+		part(stone,"StoneLantern",Vector3.new(2.4,5,2.4),rel(x,2.5,-14),C.stone,Enum.Material.Slate)
+		local cap=deco(stone,"LanternRoof",Vector3.new(3.6,.8,3.6),rel(x,5.4,-14),C.stoneDark,Enum.Material.Slate)
 		local glow=Instance.new("PointLight");glow.Color=rgb(255,196,140);glow.Range=12;glow.Brightness=.7;glow.Parent=cap
 	end
 end
 local function hall(f)
-	local m=Instance.new("Model");m.Name="ExamHall";m.Parent=f
+	local m=unit(f,"ExamHall","ExamHall",CFrame.new(O))
 	local H,T=30,2
 	-- Floor and walls; the door faces the plaza (z = -22).
-	part(m,"HallFloor",Vector3.new(110,.4,98),rel(0,.2,-72),C.stone,Enum.Material.Slate)
+	keep(part(m,"HallFloor",Vector3.new(110,.4,98),rel(0,.2,-72),C.stone,Enum.Material.Slate))
 	part(m,"WallW",Vector3.new(T,H,100),rel(-56,H/2,-72),C.plaster,Enum.Material.Plaster)
 	part(m,"WallE",Vector3.new(T,H,100),rel(56,H/2,-72),C.plaster,Enum.Material.Plaster)
 	part(m,"WallN",Vector3.new(114,H,T),rel(0,H/2,-122),C.plaster,Enum.Material.Plaster)
@@ -306,7 +351,7 @@ local function hall(f)
 	part(m,"Lintel",Vector3.new(18,H-14,T),rel(0,14+(H-14)/2,-22),C.plaster,Enum.Material.Plaster)
 	for _,x in {-10,10} do part(m,"DoorPost",Vector3.new(2,14,3),rel(x,7,-22),C.red,Enum.Material.Wood) end
 	deco(m,"DoorBeam",Vector3.new(24,2,3.4),rel(0,15,-21.4),C.red,Enum.Material.Wood)
-	local plate=deco(m,"HallPlate",Vector3.new(16,3.6,.4),rel(0,19.5,-20.6),C.woodDark,Enum.Material.Wood)
+	local plate=keep(deco(m,"HallPlate",Vector3.new(16,3.6,.4),rel(0,19.5,-20.6),C.woodDark,Enum.Material.Wood))
 	sign(plate,Enum.NormalId.Back,"EXAM HALL",rgb(236,190,90))
 	-- Wooden columns on the outer faces.
 	for z=-34,-112,-13 do for _,x in {-57.2,57.2} do deco(m,"Column",Vector3.new(1.4,H,1.4),rel(x,H/2,z),C.wood,Enum.Material.Wood) end end
@@ -338,17 +383,19 @@ local function hall(f)
 	end
 	-- Warm light under the roof.
 	for _,z in {-40,-70,-100} do
-		local holder=deco(m,"HallLight",Vector3.new(1,1,1),rel(0,24,z),C.woodDark);holder.Transparency=1
+		local holder=keep(deco(m,"HallLight",Vector3.new(1,1,1),rel(0,24,z),C.woodDark));holder.Transparency=1
 		local light=Instance.new("PointLight");light.Color=rgb(255,214,170);light.Range=48;light.Brightness=1.1;light.Parent=holder
 	end
 end
 local function training(f)
 	deco(f,"TrainingEarth",Vector3.new(.12,60,60),rel(-132,.07,36)*CFrame.Angles(0,0,math.pi/2),C.earth,Enum.Material.Ground).Shape=Enum.PartType.Cylinder
 	for _,p in {{-124,46},{-132,49},{-140,46}} do
-		local stump=part(f,"Stump",Vector3.new(5,3,3),rel(p[1],2.5,p[2])*CFrame.Angles(0,0,math.pi/2),C.woodLight,Enum.Material.Wood)
+		local stump=part(unit(f,"Stump","Stump",rel(p[1],0,p[2])),"Stump",Vector3.new(5,3,3),rel(p[1],2.5,p[2])*CFrame.Angles(0,0,math.pi/2),C.woodLight,Enum.Material.Wood)
 		stump.Shape=Enum.PartType.Cylinder
 	end
 	-- A dummy and a target with kunai in it.
+	local village=f
+	f=unit(village,"TrainingProps","TrainingProps",CFrame.new(O))
 	part(f,"Dummy",Vector3.new(1.4,7,1.4),rel(-150,3.5,16),C.wood,Enum.Material.Wood)
 	deco(f,"DummyArms",Vector3.new(6,1,1),rel(-150,5.4,16),C.wood,Enum.Material.Wood)
 	part(f,"TargetPost",Vector3.new(.8,6,.8),rel(-162,3,30),C.woodDark,Enum.Material.Wood)
@@ -356,70 +403,81 @@ local function training(f)
 	target.Shape=Enum.PartType.Cylinder;target.CFrame=rel(-161.6,5.6,30)
 	deco(f,"Bull",Vector3.new(.5,1.4,1.4),rel(-161.4,5.6,30),C.red).Shape=Enum.PartType.Cylinder
 	-- The fence along the ground.
+	f=village
 	for x=-196,-82,8 do
-		part(f,"Fence",Vector3.new(8,.5,.4),rel(x+4,2.4,-16),C.wood,Enum.Material.Wood)
-		deco(f,"FencePost",Vector3.new(.6,3,.6),rel(x,1.5,-16),C.woodDark,Enum.Material.Wood)
+		local fence=unit(f,"FenceSegment","FenceSegment",rel(x+4,0,-16))
+		part(fence,"Fence",Vector3.new(8,.5,.4),rel(x+4,2.4,-16),C.wood,Enum.Material.Wood)
+		deco(fence,"FencePost",Vector3.new(.6,3,.6),rel(x,1.5,-16),C.woodDark,Enum.Material.Wood)
 	end
 	-- The memorial stone.
-	part(f,"MemorialBase",Vector3.new(8,1,6),rel(-172,.5,78),C.stoneDark,Enum.Material.Slate)
-	part(f,"MemorialStone",Vector3.new(1.6,7,4.6),rel(-172,4.5,78)*CFrame.Angles(0,math.rad(-20),0),C.black,Enum.Material.Marble)
+	local memorial=unit(f,"MemorialStone","MemorialStone",CFrame.new(O))
+	part(memorial,"MemorialBase",Vector3.new(8,1,6),rel(-172,.5,78),C.stoneDark,Enum.Material.Slate)
+	part(memorial,"MemorialStone",Vector3.new(1.6,7,4.6),rel(-172,4.5,78)*CFrame.Angles(0,math.rad(-20),0),C.black,Enum.Material.Marble)
 	for _,p in {{-178,60},{-186,88},{-160,94},{-196,40},{-110,84},{-96,68},{-186,10},{-100,0}} do tree(f,p[1],p[2],15,6.5) end
 end
 local function hyuga(f)
 	local x1,x2,z1,z2=-212,-108,-162,-52
 	wall(f,x1,z1,x2,z1,10,C.plaster);wall(f,x1,z2,x2,z2,10,C.plaster);wall(f,x1,z1,x1,z2,10,C.plaster)
 	wall(f,x2,z1,x2,-112,10,C.plaster);wall(f,x2,-94,x2,z2,10,C.plaster)
+	deco(f,"Gravel",Vector3.new(54,.12,104),rel(-136,.07,-107),C.gravel,Enum.Material.Pebble)
+	local trees=f
+	f=unit(trees,"HyugaCompound","HyugaCompound",CFrame.new(O))
 	for _,z in {-112,-94} do part(f,"GatePost",Vector3.new(2,13,2),rel(x2,6.5,z),C.woodDark,Enum.Material.Wood) end
 	part(f,"GateRoof",Vector3.new(6,1,22),rel(x2,13.4,-103),C.roofDark,Enum.Material.Slate)
-	deco(f,"Gravel",Vector3.new(54,.12,104),rel(-136,.07,-107),C.gravel,Enum.Material.Pebble)
 	local main=house(f,rel(-186,0,-107),34,96,1,C.plaster,C.roofDark,{front=1,along="z",pitch=20,name="HyugaHouse",door=true})
 	main.Name="HyugaHouse"
 	part(f,"Engawa",Vector3.new(4,1,90),rel(-167,1,-107),C.woodLight,Enum.Material.WoodPlanks)
 	part(f,"TrainingPost",Vector3.new(1.4,6.4,1.4),rel(-132,3.2,-104),C.wood,Enum.Material.Wood)
 	for k=0,7 do deco(f,"PostMark",Vector3.new(1.5,.25,1.5),rel(-132,1.2+k*.6,-104),C.woodDark,Enum.Material.Wood) end
-	tree(f,-124,-140,13,5.5);tree(f,-124,-68,12,5)
+	tree(trees,-124,-140,13,5.5);tree(trees,-124,-68,12,5)
 end
 local function uchiha(f)
 	local x1,x2,z1,z2=96,216,-166,-30
 	wall(f,x1,z1,x2,z1,10,C.plaster);wall(f,x1,z2,x2,z2,10,C.plaster);wall(f,x2,z1,x2,z2,10,C.plaster)
 	wall(f,x1,z1,x1,-52,10,C.plaster);wall(f,x1,-38,x1,z2,10,C.plaster)
-	for _,z in {-52,-38} do part(f,"GatePost",Vector3.new(2.2,14,2.2),rel(x1,7,z),C.redDark,Enum.Material.Wood) end
-	part(f,"GateBeam",Vector3.new(3,1.6,20),rel(x1,14,-45),C.redDark,Enum.Material.Wood)
+	local gateUnit=unit(f,"UchihaGate","UchihaGate",CFrame.new(O))
+	for _,z in {-52,-38} do part(gateUnit,"GatePost",Vector3.new(2.2,14,2.2),rel(x1,7,z),C.redDark,Enum.Material.Wood) end
+	part(gateUnit,"GateBeam",Vector3.new(3,1.6,20),rel(x1,14,-45),C.redDark,Enum.Material.Wood)
 	crest(f,rel(x1-1.3,9,-58))
 	crest(f,rel(x1-1.3,9,-32))
 	-- Houses of the clan, the fan on their walls.
 	for _,z in {-150,-124,-98} do
-		local h=house(f,rel(118,0,z),26,20,2,C.plaster,C.roofDark,{front=1,name="UchihaHouse"})
+		local h=house(f,rel(118,0,z),26,20,2,C.plaster,C.roofDark,{front=1,name="UchihaHouse",dress="HouseUchiha_26x20x2"})
 		crest(f,rel(131.2,11,z))
 		h.Name="UchihaHouse"
 	end
 	-- The pier into the lake.
-	part(f,"Pier",Vector3.new(30,.8,5),rel(165,1.2,-60),C.woodLight,Enum.Material.WoodPlanks)
-	for x=152,178,6 do for _,z in {-62.2,-57.8} do part(f,"PierPost",Vector3.new(.8,4,.8),rel(x,-1,z),C.woodDark,Enum.Material.Wood) end end
+	local pier=unit(f,"UchihaPier","UchihaPier",CFrame.new(O))
+	part(pier,"Pier",Vector3.new(30,.8,5),rel(165,1.2,-60),C.woodLight,Enum.Material.WoodPlanks)
+	for x=152,178,6 do for _,z in {-62.2,-57.8} do part(pier,"PierPost",Vector3.new(.8,4,.8),rel(x,-1,z),C.woodDark,Enum.Material.Wood) end end
 	-- The Naka shrine and its torii.
-	part(f,"ShrineBase",Vector3.new(34,1.6,26),rel(182,.8,-138),C.stoneDark,Enum.Material.Slate)
-	local shrine=house(f,rel(182,1.6,-140),24,18,1,C.plaster,C.roofDark,{front=1,door=false,along="x",pitch=26,name="NakaShrine"})
+	local shrineUnit=unit(f,"NakaShrineUnit","NakaShrine",CFrame.new(O))
+	part(shrineUnit,"ShrineBase",Vector3.new(34,1.6,26),rel(182,.8,-138),C.stoneDark,Enum.Material.Slate)
+	local shrine=house(shrineUnit,rel(182,1.6,-140),24,18,1,C.plaster,C.roofDark,{front=1,door=false,along="x",pitch=26,name="NakaShrine"})
 	shrine.Name="NakaShrine"
-	for _,x in {171,185} do part(f,"Torii",Vector3.new(1.6,14,1.6),rel(x,7,-108),C.red,Enum.Material.Wood) end
-	part(f,"ToriiBeam",Vector3.new(20,1.4,2),rel(178,14.2,-108),C.red,Enum.Material.Wood)
-	part(f,"ToriiTie",Vector3.new(16,1,1.4),rel(178,11.6,-108),C.red,Enum.Material.Wood)
+	local torii=unit(f,"Torii","Torii",CFrame.new(O))
+	for _,x in {171,185} do part(torii,"Torii",Vector3.new(1.6,14,1.6),rel(x,7,-108),C.red,Enum.Material.Wood) end
+	part(torii,"ToriiBeam",Vector3.new(20,1.4,2),rel(178,14.2,-108),C.red,Enum.Material.Wood)
+	part(torii,"ToriiTie",Vector3.new(16,1,1.4),rel(178,11.6,-108),C.red,Enum.Material.Wood)
 	tree(f,108,-70,13,5.5);tree(f,206,-150,14,6);tree(f,140,-42,12,5)
 end
 local function faces(f)
 	-- The cliff and four carved heads; the terrace in front, the stairs up.
-	part(f,"Cliff",Vector3.new(330,92,32),rel(0,46,-248),C.rock,Enum.Material.Rock)
+	local cliff=unit(f,"HokageCliff","HokageCliff",CFrame.new(O))
+	part(cliff,"Cliff",Vector3.new(330,92,32),rel(0,46,-248),C.rock,Enum.Material.Rock)
 	for k,x in {-75,-25,25,75} do
-		local head=part(f,"Face",Vector3.new(26,30,8),rel(x,58,-230),C.rock,Enum.Material.Rock)
-		deco(f,"Brow",Vector3.new(22,3,2),head.CFrame*CFrame.new(0,5,4.6),C.rockDark,Enum.Material.Rock)
-		deco(f,"Nose",Vector3.new(3,6,3),head.CFrame*CFrame.new(0,0,5.2),C.rockDark,Enum.Material.Rock)
-		deco(f,"Hair",Vector3.new(28,8,9),head.CFrame*CFrame.new(0,17,-.4),if k%2==0 then C.rockDark else C.rock,Enum.Material.Rock)
+		local head=part(cliff,"Face",Vector3.new(26,30,8),rel(x,58,-230),C.rock,Enum.Material.Rock)
+		deco(cliff,"Brow",Vector3.new(22,3,2),head.CFrame*CFrame.new(0,5,4.6),C.rockDark,Enum.Material.Rock)
+		deco(cliff,"Nose",Vector3.new(3,6,3),head.CFrame*CFrame.new(0,0,5.2),C.rockDark,Enum.Material.Rock)
+		deco(cliff,"Hair",Vector3.new(28,8,9),head.CFrame*CFrame.new(0,17,-.4),if k%2==0 then C.rockDark else C.rock,Enum.Material.Rock)
 	end
-	part(f,"Terrace",Vector3.new(84,24,26),rel(0,12,-219),C.stone,Enum.Material.Slate)
-	for _,x in {-41,41} do part(f,"TerraceRail",Vector3.new(1,3,26),rel(x,25.5,-219),C.woodDark,Enum.Material.Wood) end
+	local terrace=unit(f,"FacesTerrace","FacesTerrace",CFrame.new(O))
+	part(terrace,"Terrace",Vector3.new(84,24,26),rel(0,12,-219),C.stone,Enum.Material.Slate)
+	for _,x in {-41,41} do part(terrace,"TerraceRail",Vector3.new(1,3,26),rel(x,25.5,-219),C.woodDark,Enum.Material.Wood) end
 	-- The front rail leaves the stairs' mouth open in the middle.
-	for _,x in {-26,26} do part(f,"TerraceRail",Vector3.new(30,3,1),rel(x,25.5,-206.5),C.woodDark,Enum.Material.Wood) end
+	for _,x in {-26,26} do part(terrace,"TerraceRail",Vector3.new(30,3,1),rel(x,25.5,-206.5),C.woodDark,Enum.Material.Wood) end
 	for step=1,24 do
-		part(f,"Step",Vector3.new(20,step,2.8),rel(0,step/2,-140-(step-1)*2.8),C.stone,Enum.Material.Slate)
+		part(terrace,"Step",Vector3.new(20,step,2.8),rel(0,step/2,-140-(step-1)*2.8),C.stone,Enum.Material.Slate)
 	end
 	for _,x in {-11,11} do
 		for step=4,24,4 do lantern(f,rel(x,step+3,-140-(step-1)*2.8),step%8==0) end

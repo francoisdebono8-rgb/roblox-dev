@@ -10,6 +10,7 @@ H.envBase.Instance=roblox.Instance
 H.envBase.UDim2=roblox.UDim2;H.envBase.UDim=roblox.UDim;H.envBase.Vector2=roblox.Vector2
 local Instance=roblox.Instance
 local Vector3=roblox.Vector3
+local CFrame=roblox.CFrame
 local HubMap=H.load("Shared/HubMap")
 local BetaRoster=H.load("Shared/BetaRoster")
 local passed=0
@@ -119,6 +120,107 @@ test("a duel takes the walker away; a table player (the suites) is never spawned
 	Config.Hub.Enabled=false
 	assert(not Matches.hubOn())
 	Config.Hub.Enabled=was
+end)
+
+-- (14/11) The Blender dressing (docs/systems/HUB_DRESS.md): the ANIMATOR models,
+-- Client/HubDress swaps each unit's parts for its mesh on the client.
+local HubDress=H.load("Client/HubDress")
+test("the village is cut into units: every name in the contract, every contract name used, signs kept",function()
+	local used={}
+	for _,u in HubDress.units(folder) do
+		local name=u:GetAttribute("Dress")
+		assert(HubDress.NAMES[name],u:GetFullName().." is dressed as "..tostring(name).." (not in the contract)")
+		assert(typeof(u:GetAttribute("DressAt"))=="CFrame",u.Name.." has no place")
+		used[name]=(used[name] or 0)+1
+	end
+	for name in HubDress.NAMES do assert(used[name],name.." is in the contract but tags nothing") end
+	assert(used.PaperLantern>=20 and used.TreeA+used.TreeB+used.TreeC>=60 and used.HouseFlat_24x20x2==6,"counts")
+	-- the contract's doc names them all
+	local doc=require("@lune/fs").readFile("docs/systems/HUB_DRESS.md")
+	for name in HubDress.NAMES do assert(string.find(doc,name,1,true),name.." missing from HUB_DRESS.md") end
+	-- what must stay seen: the signs' text and the hall's floor
+	for _,name in {"GatePlate","HallPlate","IchirakuSign","HallFloor"} do
+		local p=folder:FindFirstChild(name,true)
+		assert(p and p:GetAttribute("Keep"),name.." would be hidden")
+	end
+	-- the walk's solids are all inside a unit or ground (nothing solid is
+	-- left out of the dressing but the ground, paths and edges)
+	local loose={}
+	for _,p in folder:GetDescendants() do
+		if p:IsA("BasePart") and p.Transparency<1 then
+			local inUnit=false
+			local node=p.Parent
+			while node and node~=folder do
+				-- (the masters and the proctor are bodies, not the village)
+				if node:GetAttribute("Dress") or node:FindFirstChildOfClass("Humanoid") or node:FindFirstChild("HumanoidRootPart") then inUnit=true;break end
+				node=node.Parent
+			end
+			if not inUnit then loose[p.Name]=(loose[p.Name] or 0)+1 end
+		end
+	end
+	local allowed={Ground=true,LakeBed=true,Shore=true,Street=true,Plaza=true,Path=true,Gravel=true,TrainingEarth=true,
+		BoardPost=true,ExamBoard=true,Crest=true,CrestWhite=true,CrestHandle=true}
+	for name,n in loose do assert(allowed[name],n.." "..name.." left out of the dressing") end
+	-- every mesh the ANIMATOR exports has a place
+	local data=H.load("Client/HubMeshData")
+	for name in data do assert(HubDress.NAMES[name],"HubMeshData exports "..name..", which nothing tags") end
+end)
+
+test("the dresser: a unit's parts hidden (not the kept ones, not a nested unit), its mesh placed, a wall in segments",function()
+	local function piece(size) local p=Instance.new("Part");p.Size=size;return p end
+	local made={}
+	local kit={
+		has=function(name) return name=="HouseShop_24x20x2" or name=="PaperLantern" or name=="VillageWall" or name=="TreeA" end,
+		pieces=function(name)
+			made[name]=true
+			return {{part=piece(Vector3.new(24,16,20)),o=Vector3.new(0,8,0),name="Walls"},{part=piece(Vector3.new(2,1,2)),o=Vector3.new(1,2,3),name="Trim"}}
+		end,
+	}
+	local holder=Instance.new("Folder")
+	local done={}
+	local n=HubDress.apply(folder,kit,holder,done)
+	assert(n>0 and #holder:GetChildren()>0,"nothing dressed")
+	-- a shop on the street: its walls hidden, its sign kept, its lantern dressed on its own
+	local shop
+	for _,u in HubDress.units(folder) do if u:GetAttribute("Dress")=="HouseShop_24x20x2" then shop=u;break end end
+	assert(shop and done[shop],"the shop was not dressed")
+	assert(shop:FindFirstChild("Walls").Transparency==1,"the shop's walls still show")
+	assert(shop:FindFirstChild("Walls").CanCollide,"the shop's walls lost their collision")
+	assert(shop:FindFirstChild("Sign").Transparency==0,"the shop's sign was hidden")
+	local lanternUnit=shop:FindFirstChild("PaperLantern")
+	assert(lanternUnit and done[lanternUnit],"the shop's lantern was not dressed on its own")
+	-- the copy sits at DressAt * o
+	local at=shop:GetAttribute("DressAt")
+	local first=done[shop][1]
+	assert((first.CFrame.Position-(at*CFrame.new(0,8,0)).Position).Magnitude<1e-3 and first.Anchored and not first.CanCollide,"misplaced")
+	-- a house facing -x turns round (the rooftops) — undressed here, its parts still show
+	for _,u in HubDress.units(folder) do
+		if u:GetAttribute("Dress")=="HouseFlat_24x20x2" then
+			assert(not done[u] and u:FindFirstChild("Walls").Transparency==0,"an undressed house was hidden")
+			local look=u:GetAttribute("DressAt").LookVector
+			assert(math.abs(look.Z-1)<1e-4,"a house facing -x is not turned round")
+		end
+	end
+	-- the village wall, 268 long: 27 segments of ~10, each stretched a little
+	for _,u in HubDress.units(folder) do
+		if u:GetAttribute("Dress")=="VillageWall" then
+			local spots=HubDress.spots(u)
+			assert(#spots==27 and math.abs(spots[1].scale.Z-268/27/10)<1e-6,"wall segments: "..#spots)
+			assert(#done[u]==27*2,"wall copies")
+			break
+		end
+	end
+	-- a tree: scaled by its height (14) and spread (6)
+	for _,u in HubDress.units(folder) do
+		if u:GetAttribute("Dress")=="TreeA" then
+			local s=u:GetAttribute("DressScale")
+			local copy=done[u][1]
+			assert((copy.Size-Vector3.new(24,16,20)*s).Magnitude<1e-3,"the tree was not scaled")
+			break
+		end
+	end
+	-- a second pass does nothing more
+	assert(HubDress.apply(folder,kit,holder,done)==0,"dressed twice")
 end)
 
 print(string.format("NinjaDuel hub Konoha (DEC-038): %d PASS",passed))
