@@ -358,3 +358,7 @@ Demande de l’utilisateur du **14/11 à 21 h 09** : « la maîtrise, t’es cen
   - plusieurs sortes de kunai et de shuriken.
 
   Ce sont des apparences seulement, jamais un chiffre (DEC-039). Les modèles sont faits par l’ANIMATEUR et les écrans par la discussion DESIGN.
+- **Deux comptoirs** (14/11, 21 h 31 : « tout ce qu’il y a dans la boutique, c’est des Robux. Et on va créer une boutique propre au jeu avec des Ryō. Mais en soi, la boutique, c’est vraiment pour que je gagne de l’argent »).
+  - La **SHOP** ne vend qu’en Robux : les kits, les tenues des maîtres, les apparences rares, les passes et les paquets de Ryō. Son but est de faire gagner de l’argent au jeu.
+  - Le **marché de Konoha** vend en Ryō, la monnaie gagnée en jouant : des apparences simples (kunai, shuriken, bandeaux, pièces de tenue). On y va à pied, au croisement des rues du marché.
+  - Une apparence a un seul prix, donc un seul comptoir. Ce qu’on possède se porte depuis les deux.

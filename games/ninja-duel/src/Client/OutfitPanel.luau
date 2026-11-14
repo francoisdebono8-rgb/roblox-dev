@@ -73,7 +73,7 @@ function Panel.new(kit,gui,send,ui)
 	end
 	self.done=kit.button(card,"",UDim2.fromOffset(20,Panel.H-74),UDim2.fromOffset(400,56),function() self:finish() end,P.red)
 	self.done.TextSize=28
-	self.foot=kit.text(card,"Masters' outfits, more pieces and weapons: in the SHOP.",UDim2.fromOffset(20,Panel.H-16),UDim2.fromOffset(400,14),11,P.muted,kit.BODY_FONT,Enum.TextXAlignment.Center)
+	self.foot=kit.text(card,"Your inspirations' outfits and weapons: in the SHOP. More pieces at the market.",UDim2.fromOffset(20,Panel.H-16),UDim2.fromOffset(400,14),11,P.muted,kit.BODY_FONT,Enum.TextXAlignment.Center)
 	pcall(function()
 		UIS.InputBegan:Connect(function(input)
 			if input.KeyCode==Enum.KeyCode.ButtonB and self.root.Visible then self:finish() end

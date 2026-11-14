@@ -26,6 +26,10 @@ test("the catalogue: every look has a slot, a price or is a base one, and every 
 		if item.robux then assert((Config.Shop.Products or {})[item.robux]~=nil,item.id.."'s product is not in Config.Shop") end
 		assert(item.none or item.colors,item.id.." has no colours")
 	end
+	-- (14/11) the masters' outfits are sold for Robux, at the SHOP
+	for _,item in Shop.inSlot("set") do
+		if not item.none then assert(item.robux and Shop.counter(item)=="shop",item.id.." is not a Robux look") end
+	end
 	for _,slot in Shop.SlotOrder do
 		if Shop.Slots[slot].outfit then
 			-- (DEC-040) he arrives without clothes: no default piece, but free ones
@@ -205,6 +209,28 @@ test("the screens build and draw: the shop's five tabs, the tree by tiers, the K
 			ui.shopPanel:show(kits,tab)
 			assert(ui.shopPanel:shown() and #ui.shopPanel.drawn>0,tab.." drew nothing")
 		end
+		-- (14/11, François: « tout ce qu'il y a dans la boutique, c'est des
+		-- Robux ») the SHOP sells nothing for Ryō; Konoha's market sells the
+		-- looks for Ryō, in two tabs
+		local style=kits.style
+		local function at(counter)
+			local ids,n={},0
+			for _,slot in {"kunai","shuriken","tanto","gourd"} do
+				for _,item in Shop.atCounter(slot,counter,style) do ids[item.id]=true;n+=1 end
+			end
+			return ids,n
+		end
+		local shop,nShop=at("shop")
+		assert(not shop.KunaiVermilion and shop.KunaiBlack and shop.KunaiGold and shop.KunaiSteel,"the SHOP: a Ryō look for sale, or his own Ryō look or a free one hidden")
+		local market,nMarket=at("market")
+		assert(market.KunaiVermilion and not market.KunaiGold and market.KunaiSteel,"the market sells for Robux, or not for Ryō")
+		ui.shopPanel:show(kits,"WEAPONS")
+		local drawnShop=#ui.shopPanel.drawn
+		ui.shopPanel:show(kits,"KITS","market")
+		assert(ui.shopPanel.tab=="WEAPONS" and not ui.shopPanel.tabs.KITS.Visible and not ui.shopPanel.tabs.PASSES.Visible and ui.shopPanel.title.Text=="MARKET","the market's tabs")
+		assert(drawnShop-#ui.shopPanel.drawn==nShop-nMarket,"the panel does not draw each counter's looks")
+		ui.shopPanel:show(kits,"WEAPONS")
+		assert(ui.shopPanel.tabs.KITS.Visible and ui.shopPanel.title.Text=="SHOP","the SHOP after the market")
 		ui.treePanel:show("Leaf",kits)
 		assert(ui.treePanel:shown() and ui.treePanel.tiles.Weights and ui.treePanel.tiles.HeavyDrop,"the tree's tiles")
 		assert(ui.treePanel.selected,"no node picked on opening")

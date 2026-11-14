@@ -105,6 +105,12 @@ test("the masters take their portraits, each with the prompt the client answers"
 		assert((feet-(HubMap.Origin+spot.at)).Magnitude<.05,id.." is not on his spot: "..tostring(feet))
 		if spot.at.Y>4 then assert(prompt.MaxActivationDistance>=20,id.." is out of reach up there") end
 	end
+	-- (14/11) the market's counter: the looks for Ryō
+	local market=holder:FindFirstChild("Market")
+	assert(market and market:GetAttribute("NinjaMarket")==true,"no market counter")
+	local mp=market:FindFirstChild("Talk",true)
+	assert(mp and mp:GetAttribute("NinjaMarket")==true,"the market's prompt")
+	assert(HubMap.placeAt(market.PrimaryPart.CFrame.Position).id=="Market","the counter is not in the market")
 end)
 
 test("a duel takes the walker away; a table player (the suites) is never spawned",function()

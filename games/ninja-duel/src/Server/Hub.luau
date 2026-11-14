@@ -626,6 +626,27 @@ function Hub.placeMasters(source)
 		end
 	end
 	Hub.placeProctor(holder)
+	Hub.placeMarket(holder)
+end
+-- (14/11, François: « on va créer une boutique propre au jeu avec des Ryō »)
+-- The market's counter, at the crossing of its lanes: E opens the looks sold
+-- for Ryō (Client/ShopPanel, "market"). An invisible anchor of its own (the
+-- village's units may be swapped for meshes); the stall's model is the
+-- ANIMATEUR's.
+function Hub.placeMarket(holder)
+	local spot=HubMap.Market
+	if not spot or holder:FindFirstChild("Market") then return end
+	local model=Instance.new("Model");model.Name="Market"
+	model:SetAttribute("NinjaMarket",true)
+	local anchor=Instance.new("Part");anchor.Name="Anchor"
+	anchor.Size=Vector3.new(1,1,1);anchor.Transparency=1;anchor.Anchored=true
+	anchor.CanCollide=false;anchor.CanQuery=false;anchor.CanTouch=false
+	anchor.CFrame=CFrame.new(O+spot.at+Vector3.new(0,4,0))
+	anchor.Parent=model
+	model.PrimaryPart=anchor
+	model.Parent=holder
+	local prompt=promptOn(model,"Market","BUY WITH RYŌ",spot.place,false)
+	if prompt then prompt:SetAttribute("NinjaMarket",true);prompt.MaxActivationDistance=14 end
 end
 -- The proctor on the hall's floor (the Professor's rig): the board of duels.
 function Hub.placeProctor(holder)

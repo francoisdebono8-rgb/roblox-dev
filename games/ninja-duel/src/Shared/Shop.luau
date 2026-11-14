@@ -29,7 +29,7 @@ Shop.Slots={
 	-- customisation de personnage ») The ninja outfit over his own avatar
 	-- (Server/Outfit): nothing until he chooses (`outfit`: no default piece);
 	-- a master's outfit (`set`) dresses the whole body over the others.
-	set={name="MASTER'S OUTFIT",kind="style",outfit=true},
+	set={name="INSPIRATION'S OUTFIT",kind="style",outfit=true},
 	top={name="TOP",kind="style",outfit=true},
 	bottom={name="BOTTOM",kind="style",outfit=true},
 	arms={name="ARMS",kind="style",outfit=true},
@@ -39,6 +39,11 @@ Shop.Slots={
 Shop.SlotOrder={"kunai","shuriken","tanto","gourd","headband","set","top","bottom","arms","feet"}
 Shop.OutfitSlots={"top","bottom","arms","feet"}
 
+-- (14/11, François: « tout ce qu'il y a dans la boutique, c'est des Robux. Et
+-- on va créer une boutique propre au jeu avec des Ryō […] la boutique, c'est
+-- vraiment pour que je gagne de l'argent ») Two counters: the SHOP sells for
+-- Robux (`robux`); the market of Konoha sells for Ryō (`ryo`), what a player
+-- earns in duels. A look has one price, so one counter (Shop.counter).
 -- The catalogue. `ryo` = price in Ryō; `robux` = the key of a Developer
 -- Product in Config.Shop.Products (no id there: not on sale yet); `base` =
 -- what everyone has from the start. `colors` = how the look paints the
@@ -93,17 +98,17 @@ Shop.Items={
 	-- colours from the anime at 12-14; the ANIMATEUR's models replace these
 	-- pieces when they exist (OutfitMeshes).
 	{id="SetNone",slot="set",name="MY OWN PIECES",base=true,none=true},
-	{id="SetNaruto",slot="set",kit="Legion",name="NARUTO'S JUMPSUIT",ryo=3000,colors={Orange={236,120,30},Blue={34,44,92},White={232,230,224}},
+	{id="SetNaruto",slot="set",kit="Legion",name="NARUTO'S JUMPSUIT",robux="SetNaruto",colors={Orange={236,120,30},Blue={34,44,92},White={232,230,224}},
 		pieces={{on="UpperTorso",c="Orange"},{on="UpperTorso",kind="shoulders",c="Blue"},{on="UpperTorso",kind="collar",c="White",h=.12},{on="LowerTorso",c="Orange"},{on="UpperArm",c="Orange"},{on="LowerArm",c="Orange",h=.85},{on="UpperLeg",c="Orange"},{on="LowerLeg",c="Orange",h=.7},{on="LowerLeg",kind="band",c="White",y0=.62,h=.12},{on="Foot",c="Blue",pad=.05}}},
-	{id="SetSasuke",slot="set",kit="Lion",name="SASUKE'S HIGH COLLAR",ryo=3000,colors={Navy={30,40,86},White={232,230,224},Wrap={226,222,212}},
+	{id="SetSasuke",slot="set",kit="Lion",name="SASUKE'S HIGH COLLAR",robux="SetSasuke",colors={Navy={30,40,86},White={232,230,224},Wrap={226,222,212}},
 		pieces={{on="UpperTorso",c="Navy"},{on="UpperTorso",kind="collar",c="Navy",h=.3},{on="LowerTorso",c="White"},{on="UpperArm",c="Navy",h=.4},{on="LowerArm",kind="band",c="Navy",y0=.1,h=.8},{on="UpperLeg",c="White",h=.7},{on="LowerLeg",kind="band",c="Wrap",y0=.1,h=.75},{on="Foot",c="Navy",pad=.05}}},
-	{id="SetLee",slot="set",kit="Leaf",name="LEE'S GREEN SUIT",ryo=3000,colors={Green={46,140,60},Orange={230,120,40},Red={190,40,36}},
+	{id="SetLee",slot="set",kit="Leaf",name="LEE'S GREEN SUIT",robux="SetLee",colors={Green={46,140,60},Orange={230,120,40},Red={190,40,36}},
 		pieces={{on="UpperTorso",c="Green"},{on="LowerTorso",c="Green"},{on="LowerTorso",kind="band",c="Red",y0=.05,h=.22},{on="UpperArm",c="Green"},{on="LowerArm",c="Green"},{on="UpperLeg",c="Green"},{on="LowerLeg",c="Orange",pad=.12},{on="Foot",c="Green",pad=.05}}},
-	{id="SetNeji",slot="set",kit="GentleFist",name="NEJI'S ROBE",ryo=3000,colors={Robe={226,222,208},Dark={60,56,64},Wrap={226,222,212}},
+	{id="SetNeji",slot="set",kit="GentleFist",name="NEJI'S ROBE",robux="SetNeji",colors={Robe={226,222,208},Dark={60,56,64},Wrap={226,222,212}},
 		pieces={{on="UpperTorso",c="Robe"},{on="LowerTorso",c="Robe"},{on="LowerTorso",kind="tail",c="Robe",h=.9},{on="UpperArm",c="Robe"},{on="LowerArm",c="Robe",h=.6},{on="UpperLeg",c="Dark"},{on="LowerLeg",kind="band",c="Wrap",y0=.05,h=.6},{on="Foot",c="Dark",pad=.05}}},
-	{id="SetGaara",slot="set",kit="Sand",name="GAARA'S COAT",ryo=3000,colors={Coat={110,34,36},Sash={206,196,170},Dark={44,40,46}},
+	{id="SetGaara",slot="set",kit="Sand",name="GAARA'S COAT",robux="SetGaara",colors={Coat={110,34,36},Sash={206,196,170},Dark={44,40,46}},
 		pieces={{on="UpperTorso",c="Coat"},{on="UpperTorso",kind="sash",c="Sash"},{on="LowerTorso",c="Coat"},{on="LowerTorso",kind="tail",c="Coat",h=1.2},{on="UpperArm",c="Coat"},{on="LowerArm",c="Coat",h=.8},{on="UpperLeg",c="Dark"},{on="LowerLeg",c="Dark"},{on="Foot",c="Dark",pad=.05}}},
-	{id="SetKakashi",slot="set",kit="Copycat",name="KAKASHI'S FLAK VEST",ryo=3000,colors={Navy={36,42,66},Vest={86,98,70},Wrap={226,222,212}},
+	{id="SetKakashi",slot="set",kit="Copycat",name="KAKASHI'S FLAK VEST",robux="SetKakashi",colors={Navy={36,42,66},Vest={86,98,70},Wrap={226,222,212}},
 		pieces={{on="UpperTorso",c="Navy"},{on="UpperTorso",kind="vest",c="Vest"},{on="UpperTorso",kind="collar",c="Navy",h=.22},{on="LowerTorso",c="Navy"},{on="UpperArm",c="Navy"},{on="LowerArm",c="Navy"},{on="UpperLeg",c="Navy"},{on="LowerLeg",c="Navy"},{on="LowerLeg",kind="band",c="Wrap",y0=.5,h=.3},{on="Foot",c="Navy",pad=.05}}},
 	{id="SetItachi",slot="set",kit="Mirage",name="ITACHI'S ANBU GEAR",robux="SetItachi",colors={Black={26,26,32},Grey={150,152,158},Guard={176,180,186}},
 		pieces={{on="UpperTorso",c="Black"},{on="UpperTorso",kind="vest",c="Grey"},{on="LowerTorso",c="Black"},{on="UpperArm",c="Black",h=.5},{on="LowerArm",c="Guard",y0=.2,h=.65,pad=.1,mat="Metal"},{on="UpperLeg",c="Black"},{on="LowerLeg",c="Black"},{on="Foot",c="Black",pad=.05}}},
@@ -113,6 +118,22 @@ Shop.Items={
 local byId={}
 for _,item in Shop.Items do byId[item.id]=item end
 function Shop.item(id) return byId[id] end
+-- Where a look is sold: "shop" (Robux), "market" (Ryō), nil (free).
+function Shop.counter(item)
+	if item.robux then return "shop" elseif item.ryo then return "market" end
+	return nil
+end
+-- What a counter shows of a slot: what it sells, the free looks, and what he
+-- owns from the other counter (so he can wear it from either).
+function Shop.atCounter(slot,counter,style)
+	local out={}
+	for _,item in Shop.inSlot(slot) do
+		local sold=Shop.counter(item)
+		local owned=style and style.owned and style.owned[item.id]
+		if sold==counter or sold==nil or owned then table.insert(out,item) end
+	end
+	return out
+end
 -- What each slot wears when the player chose nothing (the outfit: nothing,
 -- DEC-040).
 function Shop.default(slot)
