@@ -222,7 +222,8 @@ local function ground(f)
 	end)
 	for k=0,13 do
 		local a=k/14*math.pi*2
-		local r=deco(f,"Shore",Vector3.new(4+k%3,1.6,3+k%2),rel(179+math.sin(a)*28,0,-67+math.cos(a)*30),C.stone,Enum.Material.Rock)
+		-- (14/11, the assembled render: white bricks round the lake) wet rock
+		local r=deco(f,"Shore",Vector3.new(4+k%3,1.6,3+k%2),rel(179+math.sin(a)*28,0,-67+math.cos(a)*30),if k%2==0 then C.rock else C.rockDark,Enum.Material.Rock)
 		r.CFrame=r.CFrame*CFrame.Angles(0,a,0)
 	end
 	-- Streets and paths.
@@ -468,14 +469,18 @@ local function uchiha(f)
 	tree(f,108,-70,13,5.5);tree(f,206,-150,14,6);tree(f,140,-42,12,5)
 end
 local function faces(f)
-	-- The cliff and four carved heads; the terrace in front, the stairs up.
+	-- The cliff; the four heads each a unit of their own (14/11): a funny head
+	-- (the ANIMATOR's HeadFunny1..4) until Server/ChampionCliff carves the
+	-- creator or a champion there (it turns the unit DressOff).
 	local cliff=unit(f,"HokageCliff","HokageCliff",CFrame.new(O))
 	part(cliff,"Cliff",Vector3.new(330,92,32),rel(0,46,-248),C.rock,Enum.Material.Rock)
-	for k,x in {-75,-25,25,75} do
-		local head=part(cliff,"Face",Vector3.new(26,30,8),rel(x,58,-230),C.rock,Enum.Material.Rock)
-		deco(cliff,"Brow",Vector3.new(22,3,2),head.CFrame*CFrame.new(0,5,4.6),C.rockDark,Enum.Material.Rock)
-		deco(cliff,"Nose",Vector3.new(3,6,3),head.CFrame*CFrame.new(0,0,5.2),C.rockDark,Enum.Material.Rock)
-		deco(cliff,"Hair",Vector3.new(28,8,9),head.CFrame*CFrame.new(0,17,-.4),if k%2==0 then C.rockDark else C.rock,Enum.Material.Rock)
+	for k,at in HubMap.Heads do
+		local slot=unit(f,"CliffHead","HeadFunny"..k,CFrame.new(O+at))
+		slot:SetAttribute("HeadSlot",k)
+		local head=part(slot,"Face",Vector3.new(26,30,8),CFrame.new(O+at),C.rock,Enum.Material.Rock)
+		deco(slot,"Brow",Vector3.new(22,3,2),head.CFrame*CFrame.new(0,5,4.6),C.rockDark,Enum.Material.Rock)
+		deco(slot,"Nose",Vector3.new(3,6,3),head.CFrame*CFrame.new(0,0,5.2),C.rockDark,Enum.Material.Rock)
+		deco(slot,"Hair",Vector3.new(28,8,9),head.CFrame*CFrame.new(0,17,-.4),if k%2==0 then C.rockDark else C.rock,Enum.Material.Rock)
 	end
 	local terrace=unit(f,"FacesTerrace","FacesTerrace",CFrame.new(O))
 	part(terrace,"Terrace",Vector3.new(84,24,26),rel(0,12,-219),C.stone,Enum.Material.Slate)
@@ -701,6 +706,8 @@ end
 -- Server start (Main): build, then the masters once the portraits exist.
 function Hub.start()
 	Hub.build(workspace)
+	-- (14/11) the creator and the champions carved on the cliff
+	pcall(function() require(script.Parent.ChampionCliff).begin(Hub.folder) end)
 	task.spawn(function()
 		local source=ReplicatedStorage:WaitForChild("NinjaDuelPortraits",120)
 		if source then
