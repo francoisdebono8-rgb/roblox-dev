@@ -128,7 +128,7 @@ function Panel:draw()
 	elseif self.tab=="STYLE" then
 		-- (DEC-040) the masters' outfits on his own avatar, then the pieces;
 		-- MY NINJA opens the outfit card (Client/OutfitPanel)
-		self:drawLooks({"set","headband"},"STYLE","The masters' outfits and ninja pieces over your own avatar, in Konoha and in every duel.")
+		self:drawLooks({"set","headband"},"STYLE","Your inspirations' outfits and ninja pieces over your own avatar, in Konoha and in every duel.")
 		if self.onOutfit then
 			local b=self:add(self.kit.button(self.card,"MY NINJA",UDim2.fromOffset(Panel.CLOSE.X-230,Panel.CLOSE.Y),UDim2.fromOffset(210,Panel.CLOSE.H),function() self:hide();self.onOutfit() end,self.P.gold))
 			b.TextColor3=self.P.ink;b.TextSize=24

@@ -869,7 +869,7 @@ return {
 	-- Shared/Shop key; RyoPacks: Ryō for Robux; Passes: game passes (the 2x
 	-- mastery pass is Progression.MasteryPass).
 	Shop = {
-		Products = { KunaiGold = 0, TantoShadow = 0, SetItachi = 0, SetMinato = 0 },
+		Products = { KunaiGold = 0, TantoShadow = 0, SetNaruto = 0, SetSasuke = 0, SetLee = 0, SetNeji = 0, SetGaara = 0, SetKakashi = 0, SetItachi = 0, SetMinato = 0 },
 		RyoPacks = { { amount = 1000, product = 0 }, { amount = 3000, product = 0 }, { amount = 8000, product = 0 } },
 		Passes = { VIP = 0, EarlyAccess = 0, BuildSlots = 0 },
 	},
@@ -2196,6 +2196,11 @@ M.Masters={
 		line="Plant your mark first. The speed comes after."},
 }
 
+-- (14/11, François: « on va créer une boutique propre au jeu avec des Ryō »)
+-- The market of Konoha, at the crossing of its lanes: the looks sold for Ryō
+-- (Client/ShopPanel in its "market" mode; the SHOP sells for Robux).
+M.Market={at=Vector3.new(158,0,62),place="THE MARKET STREETS"}
+
 -- (14/11, user: « les têtes sont moches […] à terme ça sera les champions, on
 -- peut mettre le dev aussi et des trucs drôles pour l'instant ») The four
 -- heads on the cliff: the game's creator (1), the last three tournament
@@ -3351,7 +3356,7 @@ Shop.Slots={
 	-- customisation de personnage ») The ninja outfit over his own avatar
 	-- (Server/Outfit): nothing until he chooses (`outfit`: no default piece);
 	-- a master's outfit (`set`) dresses the whole body over the others.
-	set={name="MASTER'S OUTFIT",kind="style",outfit=true},
+	set={name="INSPIRATION'S OUTFIT",kind="style",outfit=true},
 	top={name="TOP",kind="style",outfit=true},
 	bottom={name="BOTTOM",kind="style",outfit=true},
 	arms={name="ARMS",kind="style",outfit=true},
@@ -3361,6 +3366,11 @@ Shop.Slots={
 Shop.SlotOrder={"kunai","shuriken","tanto","gourd","headband","set","top","bottom","arms","feet"}
 Shop.OutfitSlots={"top","bottom","arms","feet"}
 
+-- (14/11, François: « tout ce qu'il y a dans la boutique, c'est des Robux. Et
+-- on va créer une boutique propre au jeu avec des Ryō […] la boutique, c'est
+-- vraiment pour que je gagne de l'argent ») Two counters: the SHOP sells for
+-- Robux (`robux`); the market of Konoha sells for Ryō (`ryo`), what a player
+-- earns in duels. A look has one price, so one counter (Shop.counter).
 -- The catalogue. `ryo` = price in Ryō; `robux` = the key of a Developer
 -- Product in Config.Shop.Products (no id there: not on sale yet); `base` =
 -- what everyone has from the start. `colors` = how the look paints the
@@ -3415,17 +3425,17 @@ Shop.Items={
 	-- colours from the anime at 12-14; the ANIMATEUR's models replace these
 	-- pieces when they exist (OutfitMeshes).
 	{id="SetNone",slot="set",name="MY OWN PIECES",base=true,none=true},
-	{id="SetNaruto",slot="set",kit="Legion",name="NARUTO'S JUMPSUIT",ryo=3000,colors={Orange={236,120,30},Blue={34,44,92},White={232,230,224}},
+	{id="SetNaruto",slot="set",kit="Legion",name="NARUTO'S JUMPSUIT",robux="SetNaruto",colors={Orange={236,120,30},Blue={34,44,92},White={232,230,224}},
 		pieces={{on="UpperTorso",c="Orange"},{on="UpperTorso",kind="shoulders",c="Blue"},{on="UpperTorso",kind="collar",c="White",h=.12},{on="LowerTorso",c="Orange"},{on="UpperArm",c="Orange"},{on="LowerArm",c="Orange",h=.85},{on="UpperLeg",c="Orange"},{on="LowerLeg",c="Orange",h=.7},{on="LowerLeg",kind="band",c="White",y0=.62,h=.12},{on="Foot",c="Blue",pad=.05}}},
-	{id="SetSasuke",slot="set",kit="Lion",name="SASUKE'S HIGH COLLAR",ryo=3000,colors={Navy={30,40,86},White={232,230,224},Wrap={226,222,212}},
+	{id="SetSasuke",slot="set",kit="Lion",name="SASUKE'S HIGH COLLAR",robux="SetSasuke",colors={Navy={30,40,86},White={232,230,224},Wrap={226,222,212}},
 		pieces={{on="UpperTorso",c="Navy"},{on="UpperTorso",kind="collar",c="Navy",h=.3},{on="LowerTorso",c="White"},{on="UpperArm",c="Navy",h=.4},{on="LowerArm",kind="band",c="Navy",y0=.1,h=.8},{on="UpperLeg",c="White",h=.7},{on="LowerLeg",kind="band",c="Wrap",y0=.1,h=.75},{on="Foot",c="Navy",pad=.05}}},
-	{id="SetLee",slot="set",kit="Leaf",name="LEE'S GREEN SUIT",ryo=3000,colors={Green={46,140,60},Orange={230,120,40},Red={190,40,36}},
+	{id="SetLee",slot="set",kit="Leaf",name="LEE'S GREEN SUIT",robux="SetLee",colors={Green={46,140,60},Orange={230,120,40},Red={190,40,36}},
 		pieces={{on="UpperTorso",c="Green"},{on="LowerTorso",c="Green"},{on="LowerTorso",kind="band",c="Red",y0=.05,h=.22},{on="UpperArm",c="Green"},{on="LowerArm",c="Green"},{on="UpperLeg",c="Green"},{on="LowerLeg",c="Orange",pad=.12},{on="Foot",c="Green",pad=.05}}},
-	{id="SetNeji",slot="set",kit="GentleFist",name="NEJI'S ROBE",ryo=3000,colors={Robe={226,222,208},Dark={60,56,64},Wrap={226,222,212}},
+	{id="SetNeji",slot="set",kit="GentleFist",name="NEJI'S ROBE",robux="SetNeji",colors={Robe={226,222,208},Dark={60,56,64},Wrap={226,222,212}},
 		pieces={{on="UpperTorso",c="Robe"},{on="LowerTorso",c="Robe"},{on="LowerTorso",kind="tail",c="Robe",h=.9},{on="UpperArm",c="Robe"},{on="LowerArm",c="Robe",h=.6},{on="UpperLeg",c="Dark"},{on="LowerLeg",kind="band",c="Wrap",y0=.05,h=.6},{on="Foot",c="Dark",pad=.05}}},
-	{id="SetGaara",slot="set",kit="Sand",name="GAARA'S COAT",ryo=3000,colors={Coat={110,34,36},Sash={206,196,170},Dark={44,40,46}},
+	{id="SetGaara",slot="set",kit="Sand",name="GAARA'S COAT",robux="SetGaara",colors={Coat={110,34,36},Sash={206,196,170},Dark={44,40,46}},
 		pieces={{on="UpperTorso",c="Coat"},{on="UpperTorso",kind="sash",c="Sash"},{on="LowerTorso",c="Coat"},{on="LowerTorso",kind="tail",c="Coat",h=1.2},{on="UpperArm",c="Coat"},{on="LowerArm",c="Coat",h=.8},{on="UpperLeg",c="Dark"},{on="LowerLeg",c="Dark"},{on="Foot",c="Dark",pad=.05}}},
-	{id="SetKakashi",slot="set",kit="Copycat",name="KAKASHI'S FLAK VEST",ryo=3000,colors={Navy={36,42,66},Vest={86,98,70},Wrap={226,222,212}},
+	{id="SetKakashi",slot="set",kit="Copycat",name="KAKASHI'S FLAK VEST",robux="SetKakashi",colors={Navy={36,42,66},Vest={86,98,70},Wrap={226,222,212}},
 		pieces={{on="UpperTorso",c="Navy"},{on="UpperTorso",kind="vest",c="Vest"},{on="UpperTorso",kind="collar",c="Navy",h=.22},{on="LowerTorso",c="Navy"},{on="UpperArm",c="Navy"},{on="LowerArm",c="Navy"},{on="UpperLeg",c="Navy"},{on="LowerLeg",c="Navy"},{on="LowerLeg",kind="band",c="Wrap",y0=.5,h=.3},{on="Foot",c="Navy",pad=.05}}},
 	{id="SetItachi",slot="set",kit="Mirage",name="ITACHI'S ANBU GEAR",robux="SetItachi",colors={Black={26,26,32},Grey={150,152,158},Guard={176,180,186}},
 		pieces={{on="UpperTorso",c="Black"},{on="UpperTorso",kind="vest",c="Grey"},{on="LowerTorso",c="Black"},{on="UpperArm",c="Black",h=.5},{on="LowerArm",c="Guard",y0=.2,h=.65,pad=.1,mat="Metal"},{on="UpperLeg",c="Black"},{on="LowerLeg",c="Black"},{on="Foot",c="Black",pad=.05}}},
@@ -3435,6 +3445,22 @@ Shop.Items={
 local byId={}
 for _,item in Shop.Items do byId[item.id]=item end
 function Shop.item(id) return byId[id] end
+-- Where a look is sold: "shop" (Robux), "market" (Ryō), nil (free).
+function Shop.counter(item)
+	if item.robux then return "shop" elseif item.ryo then return "market" end
+	return nil
+end
+-- What a counter shows of a slot: what it sells, the free looks, and what he
+-- owns from the other counter (so he can wear it from either).
+function Shop.atCounter(slot,counter,style)
+	local out={}
+	for _,item in Shop.inSlot(slot) do
+		local sold=Shop.counter(item)
+		local owned=style and style.owned and style.owned[item.id]
+		if sold==counter or sold==nil or owned then table.insert(out,item) end
+	end
+	return out
+end
 -- What each slot wears when the player chose nothing (the outfit: nothing,
 -- DEC-040).
 function Shop.default(slot)
@@ -6762,13 +6788,13 @@ return {
       <Item class="StringValue" referent="ND43">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">fd747e1108ff5e48fb027fd2a5dbacbca6dba3123163a104707bf1c49b76e86e</string>
+          <string name="Value">3ed84e87cd74b11db9cb712ef44d36796ab0366c310998e9680ead539d55bcb8</string>
         </Properties>
       </Item>
       <Item class="StringValue" referent="ND44">
         <Properties>
           <string name="Name">RuntimeFingerprint</string>
-          <string name="Value">fd747e1108ff5e48fb027fd2a5dbacbca6dba3123163a104707bf1c49b76e86e</string>
+          <string name="Value">3ed84e87cd74b11db9cb712ef44d36796ab0366c310998e9680ead539d55bcb8</string>
         </Properties>
       </Item>
       <Item class="StringValue" referent="ND45">
@@ -6780,7 +6806,7 @@ return {
       <Item class="StringValue" referent="ND46">
         <Properties>
           <string name="Name">SourceCommit</string>
-          <string name="Value">07107a8e0b13</string>
+          <string name="Value">af8e7a62b88d-dirty</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND47">
@@ -18880,6 +18906,27 @@ function Hub.placeMasters(source)
 		end
 	end
 	Hub.placeProctor(holder)
+	Hub.placeMarket(holder)
+end
+-- (14/11, François: « on va créer une boutique propre au jeu avec des Ryō »)
+-- The market's counter, at the crossing of its lanes: E opens the looks sold
+-- for Ryō (Client/ShopPanel, "market"). An invisible anchor of its own (the
+-- village's units may be swapped for meshes); the stall's model is the
+-- ANIMATEUR's.
+function Hub.placeMarket(holder)
+	local spot=HubMap.Market
+	if not spot or holder:FindFirstChild("Market") then return end
+	local model=Instance.new("Model");model.Name="Market"
+	model:SetAttribute("NinjaMarket",true)
+	local anchor=Instance.new("Part");anchor.Name="Anchor"
+	anchor.Size=Vector3.new(1,1,1);anchor.Transparency=1;anchor.Anchored=true
+	anchor.CanCollide=false;anchor.CanQuery=false;anchor.CanTouch=false
+	anchor.CFrame=CFrame.new(O+spot.at+Vector3.new(0,4,0))
+	anchor.Parent=model
+	model.PrimaryPart=anchor
+	model.Parent=holder
+	local prompt=promptOn(model,"Market","BUY WITH RYŌ",spot.place,false)
+	if prompt then prompt:SetAttribute("NinjaMarket",true);prompt.MaxActivationDistance=14 end
 end
 -- The proctor on the hall's floor (the Professor's rig): the board of duels.
 function Hub.placeProctor(holder)
@@ -57274,6 +57321,8 @@ function Hub.new(ui,camera,send,controls)
 		local master=prompt:GetAttribute("NinjaMaster")
 		if master then self:showCard(master) return end
 		if prompt:GetAttribute("NinjaBoard") then self:openBoard() end
+		-- (14/11) the market: the looks sold for Ryō
+		if prompt:GetAttribute("NinjaMarket") and self.ui.shopPanel then self:hideCard();self.ui.shopPanel:show(self.kits,"WEAPONS","market") end
 	end)
 	-- The run and the second jump.
 	self.leapUsed=false
@@ -57378,7 +57427,7 @@ function Hub:step(dt)
 		-- The masters arrive after the village (their portraits first).
 		local count=0
 		for _ in self.markers do count+=1 end
-		if count&lt;9 then self:refreshMarkers() end
+		if count&lt;10 then self:refreshMarkers() end
 		self:refreshHud(root.Position)
 		for _,marker in self.markers do
 			if marker.model and marker.model.Parent and marker.distance then
@@ -57462,11 +57511,13 @@ function Hub:refreshMarkers()
 	local P=self.K.palette
 	for _,model in holder:GetChildren() do
 		local id=model:GetAttribute("NinjaMaster")
-		local key=id or (model:GetAttribute("NinjaBoard") and "Proctor")
+		local key=id or (model:GetAttribute("NinjaBoard") and "Proctor") or (model:GetAttribute("NinjaMarket") and "Market")
 		if key and (not self.markers[key] or self.markers[key].model~=model) then
 			if self.markers[key] then self.markers[key].gui:Destroy() end
-			local title=if id then nameOf(id) else "THE PROCTOR"
-			self.markers[key]=self:marker(model,id,title,if id then HubMap.Masters[id] and HubMap.Masters[id].place else HubMap.Proctor.place)
+			local title=if id then nameOf(id) elseif key=="Market" then "THE MARKET" else "THE PROCTOR"
+			local place=if id then HubMap.Masters[id] and HubMap.Masters[id].place elseif key=="Market" then HubMap.Market.place else HubMap.Proctor.place
+			self.markers[key]=self:marker(model,id,title,place)
+			if self.markers[key] then self.markers[key].key=key end
 		end
 	end
 	for key,marker in self.markers do
@@ -57482,6 +57533,10 @@ function Hub:refreshMarkers()
 				local loud=status=="starter" or status=="master"
 				marker.gui.AlwaysOnTop=loud
 				marker.gui.MaxDistance=if loud then 2000 else 140
+			elseif marker.key=="Market" then
+				-- seen in the market's lanes only
+				marker.tag.Text="LOOKS FOR RYŌ"
+				marker.gui.AlwaysOnTop=false;marker.gui.MaxDistance=120
 			else
 				marker.tag.Text="DUELS  •  TOURNAMENT"
 				marker.gui.AlwaysOnTop=true;marker.gui.MaxDistance=2000
@@ -62377,7 +62432,7 @@ function Panel.new(kit,gui,send,ui)
 	end
 	self.done=kit.button(card,"",UDim2.fromOffset(20,Panel.H-74),UDim2.fromOffset(400,56),function() self:finish() end,P.red)
 	self.done.TextSize=28
-	self.foot=kit.text(card,"Masters' outfits, more pieces and weapons: in the SHOP.",UDim2.fromOffset(20,Panel.H-16),UDim2.fromOffset(400,14),11,P.muted,kit.BODY_FONT,Enum.TextXAlignment.Center)
+	self.foot=kit.text(card,"Your inspirations' outfits and weapons: in the SHOP. More pieces at the market.",UDim2.fromOffset(20,Panel.H-16),UDim2.fromOffset(400,14),11,P.muted,kit.BODY_FONT,Enum.TextXAlignment.Center)
 	pcall(function()
 		UIS.InputBegan:Connect(function(input)
 			if input.KeyCode==Enum.KeyCode.ButtonB and self.root.Visible then self:finish() end
@@ -65042,7 +65097,7 @@ function Panel.new(kit,gui,send,onTree)
 	end)
 	-- The side: the tabs and the Ryō.
 	local side=frame(card,UDim2.fromOffset(0,5),UDim2.fromOffset(SIDE,H-5),P.ink,.35)
-	kit.inkTitle(text(side,"SHOP",UDim2.fromOffset(24,24),UDim2.fromOffset(SIDE-48,56),54,P.paper,kit.TITLE_FONT))
+	self.title=kit.inkTitle(text(side,"SHOP",UDim2.fromOffset(24,24),UDim2.fromOffset(SIDE-48,56),54,P.paper,kit.TITLE_FONT))
 	self.tabs={}
 	for i,name in TABS do
 		local b=button(side,name,UDim2.fromOffset(20,100+(i-1)*64),UDim2.fromOffset(SIDE-40,54),function() self.tab=name;self:draw() end)
@@ -65072,9 +65127,16 @@ function Panel.closeRect(viewport,kit)
 end
 function Panel:shown() return self.root.Visible end
 function Panel:hide() self.root.Visible=false end
-function Panel:show(kits,tab)
+-- (14/11, François: « tout ce qu'il y a dans la boutique, c'est des Robux. Et
+-- on va créer une boutique propre au jeu avec des Ryō ») `counter`: "shop"
+-- (the SHOP: kits, looks, passes and Ryō for Robux) or "market" (Konoha's
+-- market: looks for Ryō, Server/Hub.placeMarket).
+Panel.TABS={shop=TABS,market={"WEAPONS","STYLE"}}
+function Panel:show(kits,tab,counter)
 	self.kits=kits
+	self.counter=counter or "shop"
 	if tab then self.tab=tab end
+	if not table.find(Panel.TABS[self.counter],self.tab) then self.tab=Panel.TABS[self.counter][1] end
 	self:draw()
 	self.root.Visible=true
 end
@@ -65088,8 +65150,14 @@ function Panel:draw()
 	for _,item in self.drawn do item:Destroy() end
 	self.drawn={}
 	local P=self.P
-	for name,b in self.tabs do
+	local counter=self.counter or "shop"
+	self.title.Text=if counter=="market" then "MARKET" else "SHOP"
+	local slot=0
+	for _,name in TABS do
+		local b=self.tabs[name]
 		local on=name==self.tab
+		b.Visible=table.find(Panel.TABS[counter],name)~=nil
+		if b.Visible then b.Position=UDim2.fromOffset(20,100+slot*64);slot+=1 end
 		b.BackgroundColor3=if on then P.red else P.panel
 		b.TextColor3=if on then P.paper else P.text
 	end
@@ -65099,7 +65167,7 @@ function Panel:draw()
 	elseif self.tab=="STYLE" then
 		-- (DEC-040) the masters' outfits on his own avatar, then the pieces;
 		-- MY NINJA opens the outfit card (Client/OutfitPanel)
-		self:drawLooks({"set","headband"},"STYLE","The masters' outfits and ninja pieces over your own avatar, in Konoha and in every duel.")
+		self:drawLooks({"set","headband"},"STYLE","Your inspirations' outfits and ninja pieces over your own avatar, in Konoha and in every duel.")
 		if self.onOutfit then
 			local b=self:add(self.kit.button(self.card,"MY NINJA",UDim2.fromOffset(Panel.CLOSE.X-230,Panel.CLOSE.Y),UDim2.fromOffset(210,Panel.CLOSE.H),function() self:hide();self.onOutfit() end,self.P.gold))
 			b.TextColor3=self.P.ink;b.TextSize=24
@@ -65166,7 +65234,8 @@ function Panel:drawLooks(slots,title,sub)
 	local K,P=self.kit,self.P
 	self.heading.Text=title
 	self.subheading.Text=sub
-	self.footer.Text="Ryō is earned in duels (the day's first win counts double) or bought in packs. Robux looks show SOON until they are on sale."
+	self.footer.Text=if self.counter=="market" then "Ryō is earned in duels, against other players and in tournaments (the day's first win counts double)."
+		else "Looks for Ryō are sold at Konoha's market. Robux looks show SOON until they are on sale."
 	local kits=self.kits
 	local style=kits and kits.style
 	local products=Config.Shop and Config.Shop.Products or {}
@@ -65179,7 +65248,7 @@ function Panel:drawLooks(slots,title,sub)
 		y+=32
 		-- (DEC-040) a slot of many looks (the masters' outfits) wraps
 		local perRow=math.max(1,math.floor((W-SIDE-70+14)/(cw+14)))
-		for k,item in Shop.inSlot(slot) do
+		for k,item in Shop.atCounter(slot,self.counter or "shop",style) do
 			local state=Shop.state(style,item,kits and kits.ryo or 0,products)
 			local x=((k-1)%perRow)*(cw+14)
 			if (k-1)%perRow==0 and k&gt;1 then y+=142 end
