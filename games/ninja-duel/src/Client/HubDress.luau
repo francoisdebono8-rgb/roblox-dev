@@ -17,8 +17,9 @@ HubDress.NAMES={
 	-- unique, modelled where they stand (their origin is the village's)
 	KonohaGate=true,GateBooth=true,Ichiraku=true,ExamHall=true,TrainingProps=true,MemorialStone=true,
 	HyugaCompound=true,UchihaGate=true,UchihaPier=true,NakaShrine=true,Torii=true,HokageCliff=true,FacesTerrace=true,
-	-- (the cliff's four places are not dressed: an empty niche until the
-	-- server carves the creator or a champion there, Server/ChampionCliff)
+	-- the cliff's four places: a funny head until the server carves the
+	-- creator or a champion there (Server/ChampionCliff turns it DressOff)
+	HeadFunny1=true,HeadFunny2=true,HeadFunny3=true,HeadFunny4=true,
 	-- repeated, in their own frame
 	HouseGable_24x20x2=true,HouseShop_24x20x2=true,HouseShop_24x20x1=true,HouseBack_22x20x2=true,HouseUchiha_26x20x2=true,
 	HouseFlat_24x20x2=true,HouseFlat_22x18x3=true,WaterTank=true,TreeA=true,TreeB=true,TreeC=true,
@@ -91,8 +92,7 @@ function HubDress.dress(unit,pieces,holder)
 	return made
 end
 
--- A unit the server turned DressOff (none today: the cliff's places are no
--- longer dressed, 14/11):
+-- A unit the server turned DressOff (a cliff place where a face is carved):
 -- its mesh copies go, its parts are the server's (hidden there). Turned
 -- back on, it is dressed again. Returns true when the unit is dressed now.
 function HubDress.sync(unit,kit,holder,done)

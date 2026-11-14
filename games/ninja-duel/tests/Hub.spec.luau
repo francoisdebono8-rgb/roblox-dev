@@ -159,9 +159,7 @@ test("the village is cut into units: every name in the contract, every contract 
 		end
 	end
 	local allowed={Ground=true,LakeBed=true,Shore=true,Street=true,Plaza=true,Path=true,Gravel=true,TrainingEarth=true,
-		BoardPost=true,ExamBoard=true,Crest=true,CrestWhite=true,CrestHandle=true,
-		-- the cliff's empty places stay as built (14/11: no head modelled there)
-		Niche=true,NicheRim=true,Plaque=true}
+		BoardPost=true,ExamBoard=true,Crest=true,CrestWhite=true,CrestHandle=true}
 	for name,n in loose do assert(allowed[name],n.." "..name.." left out of the dressing") end
 	-- every mesh the ANIMATOR exports has a place
 	local data=H.load("Client/HubMeshData")
@@ -327,9 +325,7 @@ end)
 
 -- (14/11, user: « à terme ça sera les champions, on peut mettre le dev aussi et
 -- des trucs drôles pour l'instant ») the cliff's four places.
--- (14/11, user: the carved heads, funny or generic, refused: « le prochain ici
--- sera peut-être toi ») an empty place is a niche whose plaque says so.
-test("the cliff: the creator carved first, the last three champions next, an empty niche and its plaque while a place is empty",function()
+test("the cliff: the creator carved first, the last three champions next, a funny head while a place is empty",function()
 	local Cliff=H.load("Server/ChampionCliff")
 	-- pure rules
 	local list=Cliff.push({},{id=7,name="A",at=1})
@@ -359,28 +355,19 @@ test("the cliff: the creator carved first, the last three champions next, an emp
 		store={GetAsync=function() return stored end,UpdateAsync=function(_,_,fn) stored=fn(stored) end},
 		messaging={PublishAsync=function(_,topic,data) table.insert(published,{topic=topic,data=data}) end,SubscribeAsync=function() end},
 		devId=function() return 42 end,head=fakeHead,spawn=function(fn,...) fn(...) end,now=function() return 100 end,
-		name=function(id) return if id==42 then "Maker" else nil end,
 	}
 	local cliff=Cliff.new(folder,svc):run()
 	local function slot(k) return cliff:slotUnit(k) end
-	local function plaque(k)
-		for _,d in slot(k):GetDescendants() do if d.Name=="PlaqueText" then return d.Text end end
-		return nil
-	end
-	local function niche(k) return slot(k):FindFirstChild("Niche") end
+	local function face(k) return slot(k):FindFirstChild("Face") end
 	assert(cliff.carved[1] and cliff.carved[1].model and cliff.carved[1].model.attrs.UserId==42,"the creator is not carved")
 	assert(cliff.carved[1].model.Parent==cliff.holder,"his head is not on the cliff")
 	local at=cliff.carved[1].model.at
 	assert((at.Position-(HubMap.Origin+HubMap.Heads[1]-Vector3.new(0,0,Cliff.SINK))).Magnitude<1e-3 and at.LookVector.Z>.99,"his head is misplaced or faces the cliff")
-	assert(plaque(1)=="MAKER • CREATOR" and slot(1):GetAttribute("Carved")==true,"place 1's plaque: "..tostring(plaque(1)))
-	for k=2,4 do
-		assert(plaque(k)==HubMap.EmptyHead and not slot(k):GetAttribute("Carved"),"place "..k.." is not an empty niche")
-		assert(niche(k) and niche(k).Transparency==0,"place "..k.." has no niche")
-	end
-	assert(not slot(1):FindFirstChild("Face",true),"a head's block is still built")
+	assert(slot(1):GetAttribute("DressOff")==true and face(1).Transparency==1 and face(1).CanCollide,"place 1 still shows its funny head")
+	for k=2,4 do assert(not slot(k):GetAttribute("DressOff") and face(k).Transparency==0,"place "..k.." lost its funny head") end
 	-- a champion: his face at once, the store and the other servers told
 	cliff:crown({UserId=7,Name="Seven"})
-	assert(cliff.carved[2].model.attrs.UserId==7 and plaque(2)=="CHAMPION • SEVEN","the champion is not carved: "..tostring(plaque(2)))
+	assert(cliff.carved[2].model.attrs.UserId==7 and slot(2):GetAttribute("DressOff"),"the champion is not carved")
 	assert(stored and stored[1].id==7 and published[1].topic==Cliff.TOPIC and published[1].data.id==7,"store / message")
 	-- three more: the newest first, the oldest goes, his stone head with him
 	local seven=cliff.carved[2].model
@@ -392,29 +379,29 @@ test("the cliff: the creator carved first, the last three champions next, an emp
 	other.folder=folder
 	other:refresh()
 	assert(#other.list==3 and other.list[1].id==10,"another server does not see the champions")
-	-- an avatar that cannot load (a local file in Studio): the niche stays empty
+	-- an avatar that cannot load (a local file in Studio): the funny head stays
 	fail[11]=true
 	cliff:crown({UserId=11,Name="Eleven"})
-	assert(plaque(2)==HubMap.EmptyHead and not slot(2):GetAttribute("Carved"),"a failed avatar left a name on an empty niche")
-	-- no creator known (a local file): place 1 is an empty niche
+	assert(not slot(2):GetAttribute("DressOff") and face(2).Transparency==0,"a failed avatar hid the funny head")
+	-- no creator known (a local file): place 1 is a funny head
 	local bare=Cliff.new(folder,{devId=function() return nil end,head=fakeHead,spawn=function(fn,...) fn(...) end,now=function() return 0 end}):run()
 	assert(not bare.carved[1],"place 1 carved without a creator")
 end)
 
-test("the dresser follows a unit turned DressOff: its model goes, and comes back",function()
+test("the dresser follows a carved place: its funny head goes, and comes back",function()
 	local function piece(size) local p=Instance.new("Part");p.Size=size;return p end
-	local kit={has=function(name) return name=="Torii" end,
+	local kit={has=function(name) return string.sub(name,1,9)=="HeadFunny" end,
 		pieces=function() return {{part=piece(Vector3.new(26,30,8)),o=Vector3.zero,name="Head"}} end}
 	local holder=Instance.new("Folder")
 	local done={}
 	local u
-	for _,x in HubDress.units(folder) do if x:GetAttribute("Dress")=="Torii" then u=x end end
+	for _,x in HubDress.units(folder) do if x:GetAttribute("HeadSlot")==3 then u=x end end
 	u:SetAttribute("DressOff",nil)
-	assert(HubDress.sync(u,kit,holder,done) and #done[u]==1,"the unit is not dressed")
+	assert(HubDress.sync(u,kit,holder,done) and #done[u]==1,"the funny head is not dressed")
 	u:SetAttribute("DressOff",true)
-	assert(not HubDress.sync(u,kit,holder,done) and done[u]==nil and #holder:GetChildren()==0,"the model stayed on a DressOff unit")
+	assert(not HubDress.sync(u,kit,holder,done) and done[u]==nil and #holder:GetChildren()==0,"the funny head stayed over a carved face")
 	u:SetAttribute("DressOff",nil)
-	assert(HubDress.sync(u,kit,holder,done) and #holder:GetChildren()==1,"the model did not come back")
+	assert(HubDress.sync(u,kit,holder,done) and #holder:GetChildren()==1,"the funny head did not come back")
 end)
 
 print(string.format("NinjaDuel hub Konoha (DEC-038): %d PASS",passed))
