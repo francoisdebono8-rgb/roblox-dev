@@ -30,7 +30,9 @@ end
 -- (tools/blender/hub_fbx.py -> Studio import -> hub_to_luau.py) are loaded by
 -- their id like any mesh; only the others are still built here.
 do
-	local okAssets,Assets=pcall(require,script.Parent.HubMeshAssets)
+	local module=script.Parent:FindFirstChild("HubMeshAssets")
+	local okAssets,Assets=false,nil
+	if module then okAssets,Assets=pcall(require,module) end
 	if okAssets and type(Assets)=="table" then
 		for name,ids in Assets do
 			for _,spec in MeshKit.Data[name] or {} do
