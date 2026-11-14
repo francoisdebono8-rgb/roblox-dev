@@ -144,7 +144,7 @@ BodyViews.CLOSE=3.2 -- studs: a clone this close to the body it strikes fades
 function BodyViews:fade(view,dt)
 	local camera=workspace.CurrentCamera
 	local want=0
-	if camera then
+	if camera and camera.CFrame and (self.targets or self.focus) then
 		local lens=camera.CFrame.Position
 		local root=view.model.PrimaryPart
 		local p=if root then root.Position else view.pos
