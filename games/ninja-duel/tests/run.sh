@@ -44,6 +44,7 @@ run Lightning "$LUNE" run tests/Lightning.spec.luau
 run Sharingan "$LUNE" run tests/Sharingan.spec.luau
 run Toad "$LUNE" run tests/Toad.spec.luau
 run Models "$LUNE" run tests/Models.spec.luau
+run OutfitMeshes "$LUNE" run tests/OutfitMeshes.spec.luau
 run Shadow "$LUNE" run tests/Shadow.spec.luau
 run Movement   "$LUNE" run tests/Movement.spec.luau
 run CombatFeel "$LUNE" run tests/CombatFeel.spec.luau
@@ -60,6 +61,8 @@ run MastersView "$LUNE" run tests/MastersView.spec.luau
 run Trees "$LUNE" run tests/Trees.spec.luau
 run Hub "$LUNE" run tests/Hub.spec.luau
 run Shop "$LUNE" run tests/Shop.spec.luau
+run HubLayout "$LUNE" run tests/HubLayout.spec.luau
+run Outfit "$LUNE" run tests/Outfit.spec.luau
 run Spacing "$LUNE" run tests/Spacing.spec.luau
 run StepSpeeds "$LUNE" run tests/StepSpeeds.spec.luau
 run ReactionSides "$LUNE" run tests/ReactionSides.spec.luau

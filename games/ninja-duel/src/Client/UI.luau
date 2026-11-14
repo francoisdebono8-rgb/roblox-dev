@@ -87,7 +87,8 @@ local function fitScale(viewport,w,h,max)
 end
 local function cornerClose(root,onClose)
 	-- under Roblox's top bar (58 px), in the window's top-right corner
-	local b=button(root,"✕",UDim2.new(1,-84,0,70),UDim2.fromOffset(66,66),onClose,palette.red)
+	-- (14/11, Studio: the title font has no "✕": an empty box)
+	local b=button(root,"X",UDim2.new(1,-84,0,70),UDim2.fromOffset(66,66),onClose,palette.red)
 	b.TextSize=34;b.ZIndex=(root.ZIndex or 1)+20;b.Visible=false
 	return b
 end
@@ -309,6 +310,15 @@ function UI.new(parent,send)
 				if self.treePanel then self.treePanel:show(kitId,self.kits) end
 			end)
 			if made then self.shopPanel=panel end
+		end
+		-- (DEC-040) His ninja: the outfit over his own avatar.
+		local okOutfit,OutfitPanel=pcall(function() return require(script.Parent.OutfitPanel) end)
+		if okOutfit and OutfitPanel then
+			local made,panel=pcall(OutfitPanel.new,UI.kit,self.gui,send,self)
+			if made then self.outfitPanel=panel end
+		end
+		if self.shopPanel and self.outfitPanel then
+			self.shopPanel.onOutfit=function() self.outfitPanel:show(self.kits) end
 		end
 	end
 	-- The shop from the roster (in Konoha it is on the HUD).
@@ -975,6 +985,7 @@ function UI:setKits(kits)
 	self.kits=kits
 	if self.treePanel then self.treePanel:refresh(kits) end
 	if self.shopPanel then self.shopPanel:refresh(kits) end
+	if self.outfitPanel then self.outfitPanel:refresh(kits) end
 	if type(kits)~="table" or kits.state~="ready" then return end
 	local want=nil
 	if kits.selected and kits.owned and kits.owned[kits.selected] then want=kits.selected
@@ -1003,7 +1014,7 @@ function UI:lobby(data)
 		self.opponentLabel.Text=if self.simple then "YOUR RIVAL" else "OPPONENT (AI)"
 		self.startButton.Text=if self.simple then "PLAY" else "ENTER THE STAGE"
 		self.tutorialButton.Text=if self.simple then "ALL MODES" else "TRAINING"
-		self.notice.Text=data.notice or (if self.kits and self.kits.needStarter then "CHOOSE YOUR FIRST KIT  •  NARUTO, SASUKE OR LEE  •  THE OTHER KITS ARE TAUGHT BY THEIR MASTERS"
+		self.notice.Text=data.notice or (if self.kits and self.kits.needStarter then "CHOOSE YOUR INSPIRATION  •  NARUTO, SASUKE OR LEE  •  EACH ONE LEADS YOU TO THE NEXT"
 			elseif self.simple then "PICK YOUR NINJA, THEN PLAY  •  30 SECONDS ON THE FIELD, THEN YOUR FIRST DUEL" else "")
 	end
 	self.lastLobby=data
@@ -1504,8 +1515,8 @@ function UI:render(data)
 	-- (Beta loop) the masters' path: what this duel earned.
 	self.resultProgress.Text=MastersView.result(data.progress,self.kits) or ""
 	if data.master then
-		self.resultName.Text="THE MASTER'S DUEL"
-		self.resultNote.Text=if won then "Your master saw enough." else "Your master is not convinced yet. Come back stronger."
+		self.resultName.Text="HIS DUEL"
+		self.resultNote.Text=if won then "He saw enough: his kit is yours." else "He is not convinced yet. Come back stronger."
 	end
 	-- Online: a rematch needs both players; a forfeit says so.
 	local online=data.online

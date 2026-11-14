@@ -26,7 +26,32 @@ test("the catalogue: every look has a slot, a price or is a base one, and every 
 		if item.robux then assert((Config.Shop.Products or {})[item.robux]~=nil,item.id.."'s product is not in Config.Shop") end
 		assert(item.none or item.colors,item.id.." has no colours")
 	end
-	for _,slot in Shop.SlotOrder do assert(Shop.default(slot),slot.." has no base look") end
+	-- (14/11) the masters' outfits are sold for Robux, at the SHOP
+	for _,item in Shop.inSlot("set") do
+		if not item.none then assert(item.robux and Shop.counter(item)=="shop",item.id.." is not a Robux look") end
+	end
+	for _,slot in Shop.SlotOrder do
+		if Shop.Slots[slot].outfit then
+			-- (DEC-040) he arrives without clothes: no default piece, but free ones
+			assert(Shop.default(slot)==nil,slot.." dresses him before he chooses")
+			local free=0
+			for _,item in Shop.inSlot(slot) do if item.base then free+=1 end end
+			assert(free>=1,slot.." has no free piece")
+		else assert(Shop.default(slot),slot.." has no base look") end
+	end
+	-- (DEC-040) every outfit piece covers real body parts; a master's
+	-- outfit is his kit's and is sold
+	local kinds={shell=true,band=true,collar=true,shoulders=true,vest=true,sash=true,tail=true}
+	local bodies={UpperTorso=true,LowerTorso=true,UpperArm=true,LowerArm=true,Hand=true,UpperLeg=true,LowerLeg=true,Foot=true,Head=true}
+	for _,item in Shop.Items do
+		if Shop.Slots[item.slot].outfit and not item.none then
+			assert(item.pieces and #item.pieces>0,item.id.." has no piece")
+			for _,p in item.pieces do
+				assert(bodies[p.on] and kinds[p.kind or "shell"] and item.colors[p.c],item.id.." has a bad piece")
+			end
+		end
+		if item.slot=="set" and not item.none then assert(item.kit and not item.base,item.id.." is free or nobody's") end
+	end
 	-- Never on sale: a kit by chance, a tree point (no such item can exist).
 	for _,item in Shop.Items do assert(item.slot~="points" and item.slot~="kit") end
 	assert(Shop.duelRyo({won=true,firstWinToday=true})==(Shop.Ryo.Finished+Shop.Ryo.Won)*2,"the first win of the day")
@@ -167,9 +192,11 @@ test("the screens build and draw: the shop's five tabs, the tree by tiers, the K
 	H.workspace.GetAttribute=function() return nil end
 	local baseNew=H.envBase.Instance.new
 	local saved=H.envBase.Instance
+	local made={}
 	H.envBase.Instance={new=function(class)
 		local x=baseNew(class)
 		x.Activated={Connect=function(_,fn) x.click=fn end}
+		table.insert(made,x)
 		return x
 	end}
 	local ok,err=pcall(function()
@@ -184,12 +211,47 @@ test("the screens build and draw: the shop's five tabs, the tree by tiers, the K
 			ui.shopPanel:show(kits,tab)
 			assert(ui.shopPanel:shown() and #ui.shopPanel.drawn>0,tab.." drew nothing")
 		end
+		-- (14/11, François: « tout ce qu'il y a dans la boutique, c'est des
+		-- Robux ») the SHOP sells nothing for Ryō; Konoha's market sells the
+		-- looks for Ryō, in two tabs
+		local style=kits.style
+		local function at(counter)
+			local ids,n={},0
+			for _,slot in {"kunai","shuriken","tanto","gourd"} do
+				for _,item in Shop.atCounter(slot,counter,style) do ids[item.id]=true;n+=1 end
+			end
+			return ids,n
+		end
+		local shop,nShop=at("shop")
+		assert(not shop.KunaiVermilion and shop.KunaiBlack and shop.KunaiGold and shop.KunaiSteel,"the SHOP: a Ryō look for sale, or his own Ryō look or a free one hidden")
+		local market,nMarket=at("market")
+		assert(market.KunaiVermilion and not market.KunaiGold and market.KunaiSteel,"the market sells for Robux, or not for Ryō")
+		ui.shopPanel:show(kits,"WEAPONS")
+		local drawnShop=#ui.shopPanel.drawn
+		ui.shopPanel:show(kits,"KITS","market")
+		assert(ui.shopPanel.tab=="WEAPONS" and not ui.shopPanel.tabs.KITS.Visible and not ui.shopPanel.tabs.PASSES.Visible and ui.shopPanel.title.Text=="MARKET","the market's tabs")
+		assert(drawnShop-#ui.shopPanel.drawn==nShop-nMarket,"the panel does not draw each counter's looks")
+		ui.shopPanel:show(kits,"WEAPONS")
+		assert(ui.shopPanel.tabs.KITS.Visible and ui.shopPanel.title.Text=="SHOP","the SHOP after the market")
 		ui.treePanel:show("Leaf",kits)
 		assert(ui.treePanel:shown() and ui.treePanel.tiles.Weights and ui.treePanel.tiles.HeavyDrop,"the tree's tiles")
 		assert(ui.treePanel.selected,"no node picked on opening")
 		-- Pressing the picked node's button asks the server.
 		ui.treePanel.selected="WeightsTempo";ui.treePanel:detail();ui.treePanel:press()
 		assert(sent[#sent].action=="LearnNode" and sent[#sent].extra.node=="WeightsTempo","the tree's button")
+		-- (14/11, the new player's walk) the shop's first kits: taken in one
+		-- press, the master's place named, TRY beside it
+		local new={state="ready",owned={},mastery={},masters={},needStarter=true,trees={},ryo=0,style={owned={},equipped={}}}
+		local from=#made
+		ui.shopPanel:show(new,"KITS")
+		local takes,places=0,0
+		for k=from+1,#made do
+			local d=made[k]
+			if d.Name=="TakeStarter" then takes+=1;if takes==1 then d.click() end end
+			if d.ClassName=="TextLabel" and type(d.Text)=="string" and string.find(d.Text,"Take it here, or meet him:",1,true) then places+=1 end
+		end
+		assert(takes==3 and places==3,string.format("the first kits in the shop: %d TAKE IT, %d places",takes,places))
+		assert(sent[#sent].action=="ChooseStarter" and sent[#sent].extra.player=="Legion","TAKE IT asks the server for the first kit")
 	end)
 	H.envBase.Instance=saved
 	assert(ok,err)

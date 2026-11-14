@@ -72,7 +72,8 @@ end
 -- The tournament stage is round: positions are held inside a circle so no
 -- corner of the old square limit reaches into the stands.
 function Combat:clamp(p)
-	local o=self.match.origin; local r=Config.ArenaRadius
+	-- (14/11, a duel in Konoha) a master's ground has its own radius.
+	local o=self.match.origin; local r=self.match.radius or Config.ArenaRadius
 	local flat=Vector3.new(p.X-o.X,0,p.Z-o.Z)
 	if flat.Magnitude>r then flat=flat.Unit*r end
 	return Vector3.new(o.X+flat.X,math.clamp(p.Y,o.Y+3,o.Y+Config.ArenaHeight),o.Z+flat.Z)
@@ -2200,7 +2201,7 @@ function Combat:updateActor(a,dt)
 	else Motor.step(a,self,dt,now) end
 	-- Server-owned humanoids + server-clamped arena coordinates.
 	local p=a.root.Position
-	if Vector3.new(p.X-self.match.origin.X,0,p.Z-self.match.origin.Z).Magnitude>Config.ArenaRadius or p.Y<self.match.origin.Y-3 then
+	if Vector3.new(p.X-self.match.origin.X,0,p.Z-self.match.origin.Z).Magnitude>(self.match.radius or Config.ArenaRadius) or p.Y<self.match.origin.Y-3 then
 		-- (Fluidity audit 05/11) A body pressed against the arena's edge is held
 		-- on it every frame: that is not a teleport. Declared as one (a new warp
 		-- serial each frame: 53 in 41 s of Studio duel, mostly through Wall

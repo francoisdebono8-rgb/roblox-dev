@@ -626,6 +626,47 @@ function Hub.placeMasters(source)
 		end
 	end
 	Hub.placeProctor(holder)
+	Hub.placeTraining(holder)
+	Hub.placeMarket(holder)
+end
+-- (14/11, audit: the training ground had three stumps and a dummy, and
+-- nothing to do there) The dummy of Training Ground Three: E trains with his
+-- kit (Client/HubClient sends the board's TRAINING). An invisible anchor of its
+-- own: the village's units may be swapped for meshes (MeshKit).
+function Hub.placeTraining(holder)
+	local spot=HubMap.Training
+	if not spot or holder:FindFirstChild("Training") then return end
+	local model=Instance.new("Model");model.Name="Training"
+	model:SetAttribute("NinjaTrain",true)
+	local anchor=Instance.new("Part");anchor.Name="Anchor"
+	anchor.Size=Vector3.new(1,1,1);anchor.Transparency=1;anchor.Anchored=true
+	anchor.CanCollide=false;anchor.CanQuery=false;anchor.CanTouch=false
+	anchor.CFrame=CFrame.new(O+spot.at+Vector3.new(0,5,0))
+	anchor.Parent=model
+	model.PrimaryPart=anchor
+	model.Parent=holder
+	local prompt=promptOn(model,"Training","TRAIN",spot.place,false)
+	if prompt then prompt:SetAttribute("NinjaTrain",true) end
+end
+-- (14/11, François: « on va créer une boutique propre au jeu avec des Ryō »)
+-- The market's counter, at the crossing of its lanes: E opens the looks sold
+-- for Ryō (Client/ShopPanel, "market"). An invisible anchor of its own (the
+-- village's units may be swapped for meshes); the stall's model is the
+-- ANIMATEUR's.
+function Hub.placeMarket(holder)
+	local spot=HubMap.Market
+	if not spot or holder:FindFirstChild("Market") then return end
+	local model=Instance.new("Model");model.Name="Market"
+	model:SetAttribute("NinjaMarket",true)
+	local anchor=Instance.new("Part");anchor.Name="Anchor"
+	anchor.Size=Vector3.new(1,1,1);anchor.Transparency=1;anchor.Anchored=true
+	anchor.CanCollide=false;anchor.CanQuery=false;anchor.CanTouch=false
+	anchor.CFrame=CFrame.new(O+spot.at+Vector3.new(0,4,0))
+	anchor.Parent=model
+	model.PrimaryPart=anchor
+	model.Parent=holder
+	local prompt=promptOn(model,"Market","BUY WITH RYŌ",spot.place,false)
+	if prompt then prompt:SetAttribute("NinjaMarket",true);prompt.MaxActivationDistance=14 end
 end
 -- The proctor on the hall's floor (the Professor's rig): the board of duels.
 function Hub.placeProctor(holder)
@@ -652,6 +693,20 @@ function Hub.placeProctor(holder)
 end
 
 -- ------------------------------------------------------------------ the walkers
+-- (DEC-040) His avatar's description without its clothes, at the standard
+-- scales, fetched once per player (yields). nil: Roblox gave none (the
+-- default character then).
+Hub.descs=setmetatable({},{__mode="k"})
+function Hub.description(player)
+	if Hub.descs[player]~=nil then return Hub.descs[player] or nil end
+	local desc=nil
+	pcall(function()
+		desc=require(script.Parent.AvatarBody).description(player.UserId)
+		if desc then require(script.Parent.Outfit).strip(desc) end
+	end)
+	Hub.descs[player]=desc or false
+	return desc
+end
 -- The player's own avatar in the village (the default character and controls).
 -- `where`: "gate" (arrival) or "hall" (back from a duel). Asynchronous; a duel
 -- that starts meanwhile wins (Hub.leave bumps the serial).
@@ -661,7 +716,12 @@ function Hub.enter(player,where,looks)
 	Hub.bodies[player]={serial=serial}
 	task.spawn(function()
 		if not player.Parent then return end
-		local ok=pcall(function() player:LoadCharacter() end)
+		-- (DEC-040) his avatar without its clothes (body, face, hair) at the
+		-- game's standard scales, then the outfit he chose (Server/Outfit)
+		local desc=Hub.description(player)
+		local ok=pcall(function()
+			if desc then player:LoadCharacterWithHumanoidDescription(desc:Clone()) else player:LoadCharacter() end
+		end)
 		local entry=Hub.bodies[player]
 		local character=player.Character
 		if not ok or not entry or entry.serial~=serial or not character then
@@ -672,7 +732,9 @@ function Hub.enter(player,where,looks)
 		entry.character=character
 		-- (13/11, the shop) the headband he chose, on his own avatar.
 		pcall(function() require(script.Parent.Headband).fromLooks(character,looks) end)
-		local spot=HubMap.Spawns[where] or HubMap.Spawns.gate
+		pcall(function() require(script.Parent.Outfit).wear(character,looks) end)
+		-- (14/11) back from a duel in the village: where it was fought
+		local spot=if type(where)=="table" then where else HubMap.Spawns[where] or HubMap.Spawns.gate
 		local at=O+spot.at+Vector3.new(0,3.5,0)
 		pcall(function() character:PivotTo(CFrame.lookAt(at,at+spot.face)) end)
 		local hum=character:FindFirstChildOfClass("Humanoid")
@@ -703,6 +765,7 @@ function Hub.restyle(player,looks)
 	local character=entry and entry.character
 	if character and character.Parent and character:GetAttribute("NinjaHubBody") then
 		pcall(function() require(script.Parent.Headband).fromLooks(character,looks) end)
+		pcall(function() require(script.Parent.Outfit).wear(character,looks) end)
 	end
 end
 function Hub.leave(player)

@@ -45,9 +45,14 @@ function AvatarBody.prepare(player)
 	task.spawn(function()
 		local desc,why=AvatarBody.description(player.UserId)
 		local ok,model=false,why
+		-- (DEC-040) body, face and hair: the clothes come off, the ninja
+		-- outfit he chose goes on in each duel (Server/Outfit)
+		if desc then pcall(function() require(script.Parent.Outfit).strip(desc) end) end
 		if desc then
 			ok,model=pcall(function() return Players:CreateHumanoidModelFromDescription(desc,Enum.HumanoidRigType.R15) end)
 		end
+		-- (14/11) Roblox's joints as AnimationConstraints: the Motor6Ds they are
+		if ok and model then pcall(AvatarBody.motorize,model) end
 		if ok and model then
 			entry.template=model;entry.state="ready"
 		else
@@ -69,6 +74,32 @@ function AvatarBody.forget(player)
 	local entry=AvatarBody.cache[player]
 	if entry and entry.template then entry.template:Destroy() end
 	AvatarBody.cache[player]=nil
+end
+
+-- (14/11, Studio: « [AvatarBody] no joint Root ») Roblox now builds an
+-- avatar's joints as AnimationConstraints (the avatar joint upgrade), not
+-- Motor6Ds: fit refused every avatar and the player fought in his prodigy's
+-- body. Each constraint becomes the Motor6D it stands for: Part0 and Part1
+-- are its attachments' parts, C0 and C1 their frames; the motor goes under
+-- Part1 as Roblox puts its own, and the constraint goes. `make` builds the
+-- motor (Instance.new; the suites pass their own). Returns how many.
+function AvatarBody.motorize(model,make)
+	make=make or function(class) return Instance.new(class) end
+	local count=0
+	for _,c in model:GetDescendants() do
+		if c:IsA("AnimationConstraint") then
+			local a0,a1=c.Attachment0,c.Attachment1
+			local p0,p1=a0 and a0.Parent,a1 and a1.Parent
+			if p0 and p1 and p0:IsA("BasePart") and p1:IsA("BasePart") then
+				local m=make("Motor6D")
+				m.Name=c.Name;m.Part0=p0;m.Part1=p1;m.C0=a0.CFrame;m.C1=a1.CFrame
+				m.Parent=p1
+				c:Destroy()
+				count+=1
+			end
+		end
+	end
+	return count
 end
 
 -- Puts an R15 model on the game's skeleton (World.RIG). Each joint keeps the
@@ -173,6 +204,7 @@ function AvatarBody.rig(player,parent,kitId,def,cf,name,looks)
 	root.CFrame=cf;root.Transparency=1
 	AvatarBody.wearKit(model,kitId,def)
 	pcall(function() require(script.Parent.Headband).fromLooks(model,looks) end)
+	pcall(function() require(script.Parent.Outfit).wear(model,looks) end)
 	model:SetAttribute("Avatar",player.UserId)
 	model.PrimaryPart=root
 	model.Parent=parent

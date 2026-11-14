@@ -60,14 +60,14 @@ test("with Lee learned: his kit plays and says where it leads; Neji waits for ma
 	kits.mastery.Leaf=Masters.Need
 	kits.masters.GentleFist={ready=true,via="Leaf"}
 	local ready=V.action(kits,"GentleFist")
-	assert(ready.kind=="master" and ready.label=="DUEL THE MASTER" and ready.via=="Leaf","Neji's duel: "..tostring(ready.kind))
-	assert(V.tablet(kits,"GentleFist").tag=="MASTER")
+	assert(ready.kind=="master" and ready.label=="DUEL HIM" and ready.via=="Leaf","Neji's duel: "..tostring(ready.kind))
+	assert(V.tablet(kits,"GentleFist").tag=="READY")
 end)
 
 test("the result screen: mastery earned, the masters who now teach, a kit learned",function()
 	local line=V.result({gained=true,amount=110,mastery=230,need=300,fighter="Leaf"})
 	assert(line and string.find(line,"+110 MASTERY") and string.find(line,"230 / 300"),tostring(line))
-	assert(not string.find(line,"WILL TEACH"),line)
+	assert(not string.find(line,"WANT TO MEET"),line)
 	line=V.result({gained=true,amount=110,mastery=340,need=300,fighter="Leaf"},{owned={Leaf=true,Sand=true}})
 	assert(string.find(line,"NEJI") and not string.find(line,"GAARA"),"a master already learned is still announced: "..line)
 	line=V.result({gained=true,amount=80,mastery=300,need=300,fighter="Leaf",learned="GentleFist"})
@@ -78,7 +78,7 @@ end)
 test("(DEC-038) the master's card in Konoha: take his kit, the first duel, spar, his duel, try, buy, the tree",function()
 	local new={state="ready",owned={},mastery={},masters={},needStarter=true}
 	local c=V.card(new,"Leaf")
-	assert(c.primary.label=="TAKE HIS KIT" and c.primary.send[1]=="ChooseStarter" and c.primary.send[2].player=="Leaf","a starter's card")
+	assert(c.primary.label=="HE'S MY INSPIRATION" and c.primary.send[1]=="ChooseStarter" and c.primary.send[2].player=="Leaf","a starter's card")
 	assert(c.second and c.second.send[1]=="Tutorial","a starter can be tried before he is taken")
 	assert(V.card(new,"Sand").primary.send[1]=="Tutorial","a master not open yet only lets him try")
 	local mine={state="ready",owned={Leaf=true},mastery={Leaf=0},starter="Leaf",selected="Leaf",masters={},trees={Leaf={points=0,free=0}}}
@@ -90,13 +90,70 @@ test("(DEC-038) the master's card in Konoha: take his kit, the first duel, spar,
 	assert(c.primary.send[1]=="Start" and c.primary.send[2].bot=="Leaf" and string.find(c.second.label,"2"),"spar with him, the tree's points")
 	mine.masters.GentleFist={ready=true,via="Leaf"}
 	c=V.card(mine,"GentleFist")
-	assert(c.primary.label=="DUEL THE MASTER" and c.primary.send[2].player=="Leaf" and c.primary.send[2].master=="GentleFist","the master's duel from his card")
+	assert(c.primary.label=="DUEL HIM" and c.primary.send[2].player=="Leaf" and c.primary.send[2].master=="GentleFist","the master's duel from his card")
 	mine.masters.Sand={ready=false,best=120,product=9002}
 	c=V.card(mine,"Sand")
 	assert(c.second and c.second.send[1]=="BuyKit","buy his kit from his card")
 	mine.owned.Lion=true
 	assert(V.card(mine,"Lion").third==nil and V.card(mine,"Lion").second.send[1]=="SelectKit","make an owned kit the one he fights with")
 	assert(V.card(nil,"Leaf").primary.send[1]=="Start","the path off: every master spars")
+end)
+
+-- (14/11, the new player's walk) Konoha's goal: a short head, then where to
+-- go; after the first kit it points at his first duel, not the proctor.
+test("Konoha's goal: the three masters, then the first duel, then a master or the proctor",function()
+	local HubMap=H.load("Shared/HubMap")
+	local g=V.goal(nil)
+	assert(g.head=="DUELS AND THE TOURNAMENT" and string.find(g.sub,"EXAM HALL"),"the path off: the proctor")
+	assert(V.goal({state="loading"}).head=="","loading: no goal yet")
+	local new={state="ready",owned={},mastery={},masters={},needStarter=true}
+	g=V.goal(new)
+	assert(g.head=="CHOOSE YOUR INSPIRATION","a new player's head: "..g.head)
+	-- (DEC-041) the three together by the gate, with their funny lines
+	assert(#g.items==1 and string.find(g.items[1],"BY THE GATE",1,true),"where they wait: "..tostring(g.items[1]))
+	local I=H.load("Shared/Inspirations")
+	for _,id in Masters.Starters do
+		assert(string.find(g.items[1],H.load("Shared/Text").upper(H.load("Shared/Fighters")[id].Name),1,true),id.." is not named")
+		local about=I.of(id)
+		assert(about and #about.title>3 and #about.line>40 and #about.with>15,id.." has no line")
+		assert(HubMap.Welcome[id] and HubMap.inside(HubMap.Welcome[id].at),id.." does not wait by the gate")
+		-- his mood (Client/HubMoods): joints of the rig only, never a broken limb
+		local Moods=H.load("Client/HubMoods")
+		local known={Root=true,Waist=true,Neck=true,LeftShoulder=true,RightShoulder=true,LeftElbow=true,RightElbow=true,LeftWrist=true,RightWrist=true,LeftHip=true,RightHip=true,LeftKnee=true,RightKnee=true,LeftAnkle=true,RightAnkle=true}
+		assert(Moods.Poses[id],id.." has no mood")
+		for t=0,20,.37 do
+			for joint,cf in Moods.Poses[id](t) do
+				assert(known[joint],id.." moves an unknown joint "..joint)
+				local x,y,z=cf:ToEulerAnglesXYZ()
+				for _,v in {x,y,z,cf.Position.X,cf.Position.Y,cf.Position.Z} do assert(v==v and math.abs(v)<math.rad(170),id.." "..joint.." goes wild at "..t) end
+			end
+		end
+		-- (DEC-041) the ANIMATEUR's authored loop replaces the code pose, on the same joints
+		local clip=Moods.authored(id)
+		assert(clip,id.." has no authored mood (Mood."..id..")")
+		for t=0,20,.41 do
+			for joint,cf in clip(t) do
+				assert(known[joint],id.." (authored) moves an unknown joint "..joint)
+				local x,y,z=cf:ToEulerAnglesXYZ()
+				for _,v in {x,y,z,cf.Position.X,cf.Position.Y,cf.Position.Z} do assert(v==v and math.abs(v)<math.rad(170),id.." (authored) "..joint.." goes wild at "..t) end
+			end
+		end
+		assert(HubMap.placeAt(HubMap.Origin+HubMap.Welcome[id].at).id=="Gate" or HubMap.placeAt(HubMap.Origin+HubMap.Welcome[id].at).id=="Street",id.." is not at the gate")
+	end
+	assert(#g.head<=30,"the head stays short")
+	local mine={state="ready",owned={Leaf=true},mastery={Leaf=0},starter="Leaf",selected="Leaf",masters={}}
+	assert(V.firstDuel(mine)=="Leaf","the first duel is pending")
+	g=V.goal(mine)
+	assert(g.head=="YOUR FIRST DUEL" and string.find(g.sub,"LEE") and string.find(g.sub,HubMap.Masters.Leaf.place,1,true),"after the first kit: "..g.head.." / "..g.sub)
+	mine.mastery.Leaf=48
+	assert(V.firstDuel(mine)==nil,"the first duel fought")
+	assert(V.goal(mine).head=="DUELS AND THE TOURNAMENT","no master ready: the proctor")
+	mine.masters.GentleFist={ready=true,via="Leaf"}
+	assert(string.find(V.goal(mine).head,"WANTS TO MEET YOU"),"a master ready")
+	-- the card agrees with the goal
+	mine.mastery.Leaf=0
+	assert(V.card(mine,"Leaf").primary.label=="YOUR FIRST DUEL","the card's first duel")
+	assert(V.firstDuel({state="ready",owned={},mastery={},starter="Leaf"})==nil,"a starter not owned is no first duel")
 end)
 
 test("every master's kit leads somewhere and every kit is led to",function()

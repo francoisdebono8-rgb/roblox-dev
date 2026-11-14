@@ -63,7 +63,9 @@ end)
 
 -- A standard Roblox R15 avatar, as Roblox builds it: its own part sizes, the
 -- motors inside their Part1, its own pivots (an Rthro-like taller build).
-local function fakeAvatar(scale,drop)
+-- (`constraints`: the joints as Roblox now builds them, AnimationConstraints
+-- between two attachments, no Motor6D.)
+local function fakeAvatar(scale,drop,constraints)
 	local objects={}
 	local Obj={}
 	Obj.__index=Obj
@@ -72,7 +74,7 @@ local function fakeAvatar(scale,drop)
 		table.insert(objects,o)
 		return o
 	end
-	function Obj:IsA(c) return c==self.ClassName or (c=="BasePart" and self.ClassName=="MeshPart") end
+	function Obj:IsA(c) return c==self.ClassName or (c=="BasePart" and (self.ClassName=="MeshPart" or self.ClassName=="Part")) end
 	function Obj:GetDescendants()
 		local out={}
 		local function walk(node) for _,o in objects do if o.Parent==node then table.insert(out,o);walk(o) end end end
@@ -80,6 +82,7 @@ local function fakeAvatar(scale,drop)
 		return out
 	end
 	function Obj:FindFirstChild(n) for _,o in objects do if o.Parent==self and o.Name==n then return o end end return nil end
+	function Obj:Destroy() self.Parent=nil end
 	local model=new("Model","Avatar",nil)
 	local s=scale or 1
 	local sizes={HumanoidRootPart=V.new(2,2,1),LowerTorso=V.new(2,.4,1)*s,UpperTorso=V.new(2,1.6,1)*s,Head=V.new(1.2,1.2,1.2)*s,
@@ -90,6 +93,12 @@ local function fakeAvatar(scale,drop)
 	for name,size in sizes do local p=new(if name=="HumanoidRootPart" then "Part" else "MeshPart",name,model);p.Size=size;parts[name]=p end
 	local function motor(name,p0,p1,c0,c1)
 		if name==drop then return end
+		if constraints then
+			local a0=new("Attachment",name.."RigAttachment",parts[p0]);a0.CFrame=c0
+			local a1=new("Attachment",name.."RigAttachment",parts[p1]);a1.CFrame=c1
+			local c=new("AnimationConstraint",name,parts[p1]);c.Attachment0=a0;c.Attachment1=a1
+			return
+		end
 		local m=new("Motor6D",name,parts[p1]);m.Part0=parts[p0];m.Part1=parts[p1];m.C0=c0;m.C1=c1
 	end
 	motor("Root","HumanoidRootPart","LowerTorso",CF.new(0,-.75*s,0),CF.new(0,-.2*s,0))
@@ -104,7 +113,7 @@ local function fakeAvatar(scale,drop)
 		motor(pre.."Knee",pre.."UpperLeg",pre.."LowerLeg",CF.new(0,-.41*s,0),CF.new(0,.4*s,0))
 		motor(pre.."Ankle",pre.."LowerLeg",pre.."Foot",CF.new(0,-.55*s,0),CF.new(0,.1*s,0))
 	end
-	return model,parts
+	return model,parts,function(class) return new(class,class,nil) end
 end
 
 test("an avatar is put on the game's skeleton: every pivot where the rig's is, motors under their Part0",function()
@@ -126,6 +135,31 @@ test("an avatar is put on the game's skeleton: every pivot where the rig's is, m
 		end
 		-- Each part keeps its own offset from its pivot (its own look).
 		assert(near(rest.Head.Position,World.RIG.parts.UpperTorso[2]+V.new(0,.9,0)+V.new(0,.5*scale,0)),"the head moved off its own neck offset")
+	end
+end)
+
+-- (14/11, Studio: « [AvatarBody] no joint Root ») Roblox builds the avatar's
+-- joints as AnimationConstraints now: without motorize, no avatar was ever
+-- fitted and the player fought in his prodigy's body.
+test("an avatar built with Roblox's new joints (AnimationConstraints) is fitted like one with motors",function()
+	local World=H.load("Server/World")
+	local AvatarBody=H.load("Server/AvatarBody")
+	local model,parts,make=fakeAvatar(1,nil,true)
+	local before=AvatarBody.fit(model,World.RIG)
+	assert(before==nil,"fixture: an avatar without motors was fitted")
+	local model2,parts2,make2=fakeAvatar(1,nil,true)
+	local n=AvatarBody.motorize(model2,make2)
+	assert(n==15,"motorize turned "..n.." constraints into motors, not 15")
+	for _,d in model2:GetDescendants() do assert(d.ClassName~="AnimationConstraint","a constraint was left: "..d.Name) end
+	local joints,rest=AvatarBody.fit(model2,World.RIG)
+	assert(joints,"the motorized avatar was refused: "..tostring(rest))
+	-- the same rest pose as an avatar built with motors
+	local ref,refParts=fakeAvatar(1)
+	local _,refRest=AvatarBody.fit(ref,World.RIG)
+	for name,cf in refRest do assert(rest[name] and near(rest[name].Position,cf.Position),name.." rests elsewhere than with motors") end
+	for _,j in World.RIG.joints do
+		local m=joints[j[1]]
+		assert(m.Part0==parts2[j[2]] and m.Part1==parts2[j[3]],j[1].." links the wrong parts")
 	end
 end)
 

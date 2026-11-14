@@ -183,6 +183,9 @@ local function build(spec)
 	return part
 end
 
+-- (DEC-040) One packed piece built on its own (the ninja outfit's pieces,
+-- Shared/OutfitMeshes, Client/OutfitDress): a MeshPart template, or an error.
+function MeshKit.build(spec) return build(spec) end
 -- Builds every template (yields between models so a frame never stalls).
 MeshKit.WORKERS=4
 function MeshKit.prepare(names)

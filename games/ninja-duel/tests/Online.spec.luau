@@ -419,6 +419,32 @@ test("rounds, KO beat and the result are mapped to each viewer",function()
 	assert(aiCreated==ai and d.ai==nil,"a new round created an AI")
 end)
 
+-- (DEC-040, user 14/11: « la maîtrise, t'es censé la gagner en affrontant des
+-- gens ») A decided duel against a player pays each seat's kit, once.
+test("a decided duel against a player earns each seat's kit its mastery, on his own result",function()
+	local Progression=H.load("Server/Progression")
+	local calls={}
+	local was=Progression.versusEnded
+	Progression.versusEnded=function(player,kit,won) table.insert(calls,{player=player,kit=kit,won=won}) return {amount=if won then 160 else 60,mastery=1,points=0} end
+	local ok,err=pcall(function()
+		local m=fresh()
+		local a,b=join(m,"Alpha","Bravo")
+		local d=fight(m,a,b)
+		d.introUntil=nil
+		local one,two=d.seats[1].actor,d.seats[2].actor
+		d.combat:damage(two,one,1000,false,false)
+		assert(#calls==0,"a round paid")
+		step(m,2.7);d.introUntil=nil
+		d.combat:damage(two,one,1000,false,false)
+		assert(#calls==2,"the decided duel paid "..#calls.." seats")
+		for _,c in calls do assert(c.won==(c.player==b),"the winner is not the one paid as winner") end
+		step(m,2.3)
+		assert(last(b).progress and last(b).progress.amount==160 and last(a).progress and last(a).progress.amount==60,"the result screens' mastery")
+	end)
+	Progression.versusEnded=was
+	assert(ok,err)
+end)
+
 test("a client resync (Ready) gets the packet of its current online phase",function()
 	local m=fresh()
 	local a,b=join(m,"Alpha","Bravo")

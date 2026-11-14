@@ -208,6 +208,44 @@ function P.duelEnded(player,s,won)
 	end
 	return out
 end
+-- (DEC-040) Mastery and Ryō for the kit `kit`: `amount` of mastery (the
+-- boost doubles it) and `ryo`. The result screen's table, or nil.
+local function reward(player,kit,amount,ryo,day)
+	if P.boost[player] then amount*=2 end
+	local out=nil
+	if amount>0 then
+		local ok,result=P.run(player,"gainMastery",{fighter=kit,amount=amount})
+		if ok and type(result)=="table" then out=result;out.amount=amount end
+	end
+	if ryo>0 then
+		local ok,result=P.run(player,"earnRyo",{amount=ryo,day=day})
+		if ok and type(result)=="table" then
+			out=out or {}
+			out.ryo=ryo;out.ryoTotal=result.ryo;out.firstWin=day~=nil
+		end
+	end
+	return out
+end
+-- (DEC-040, user 14/11: « t'es censé la gagner en affrontant des gens ») A
+-- duel against another player, decided: mastery for the kit he fought with
+-- when he has learned it (twice a duel against the AI), and a duel's Ryō.
+function P.versusEnded(player,kit,won,techniques)
+	if not P.enabled() or not P.ready(player) or not P.owns(player,kit) then return nil end
+	local h=P.handles[player]
+	local today=os.date("!%Y-%m-%d")
+	local first=won and h.data.wallet and h.data.wallet.winDay~=today
+	local amount=Masters.versusGain({won=won,techniques=techniques})
+	local ryo=Shop.duelRyo({won=won,firstWinToday=first})
+	return reward(player,kit,amount,ryo,if first then today else nil)
+end
+-- (DEC-040) The tournament's end for him: the champion's kit gets its bonus
+-- and the champion's Ryō; a lost final, the finalist's.
+function P.cupEnded(player,kit,champion)
+	if not P.enabled() or not P.ready(player) or not P.owns(player,kit) then return nil end
+	local amount=if champion then Masters.Gain.Champion else Masters.Gain.Finalist
+	local ryo=if champion then Shop.Ryo.Champion else Shop.Ryo.Finalist
+	return reward(player,kit,amount,ryo,nil)
+end
 -- (13/11) The shop between duels: a look for Ryō, a look worn.
 function P.buyItem(player,item) return P.run(player,"buyItem",{item=item}) end
 function P.equipItem(player,item) return P.run(player,"equipItem",{item=item}) end

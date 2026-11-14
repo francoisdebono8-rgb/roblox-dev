@@ -198,13 +198,17 @@ return {
 	-- (14/11) DevUserId: whose avatar is carved first on the cliff
 	-- (Server/ChampionCliff); nil = the game's creator (game.CreatorId), so a
 	-- local file in Studio shows the funny head there.
-	Hub = { Enabled = true, DevUserId = nil },
+	-- (14/11, François: « que notre perso puisse combattre » dans la ville)
+	-- VillageDuels: a duel started at a master's home (his card, the training
+	-- dummy) is fought there, in the village (HubMap.Masters[id].duel), not
+	-- in the stadium. The board's duels and the tournament stay in the stadium.
+	Hub = { Enabled = true, DevUserId = nil, VillageDuels = true },
 	-- (13/11) The shop's Roblox ids, created by the owner on the game's page
 	-- (0 or absent: shown SOON, nothing sold). Products: a Robux look by its
 	-- Shared/Shop key; RyoPacks: Ryō for Robux; Passes: game passes (the 2x
 	-- mastery pass is Progression.MasteryPass).
 	Shop = {
-		Products = { KunaiGold = 0, TantoShadow = 0 },
+		Products = { KunaiGold = 0, TantoShadow = 0, SetNaruto = 0, SetSasuke = 0, SetLee = 0, SetNeji = 0, SetGaara = 0, SetKakashi = 0, SetItachi = 0, SetMinato = 0 },
 		RyoPacks = { { amount = 1000, product = 0 }, { amount = 3000, product = 0 }, { amount = 8000, product = 0 } },
 		Passes = { VIP = 0, EarlyAccess = 0, BuildSlots = 0 },
 	},
