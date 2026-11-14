@@ -448,8 +448,23 @@ function Kit.mark(parent,name,position,normal,size,hold,fade)
 	local side=if math.abs(normal.Y)>.9 then Vector3.xAxis else Vector3.yAxis
 	local right=side:Cross(normal).Unit
 	local cf=CFrame.fromMatrix(position,right,normal)*CFrame.Angles(0,math.random()*math.pi*2,0)
-	m:ScaleTo(math.max(.2,size/2))
-	m:PivotTo(cf*CFrame.new(0,-.3,0))
+	-- (14/11, CM QA A1: « la fissure sort du sol comme un mur ») A uniform
+	-- scale lifted the plates of a 7-stud crater knee-high. The mark spreads
+	-- over the floor at its size, but its relief is capped: lips and plates
+	-- rise a few centimetres (0.3 stud at most), the bowl sinks as little.
+	local s=math.max(.2,size/2)
+	local up=math.min(s,1.2)
+	local holds={}
+	for _,w in m:GetDescendants() do if w:IsA("WeldConstraint") then w.Enabled=false;table.insert(holds,w) end end
+	for _,d in m:GetChildren() do
+		if d:IsA("BasePart") and d.Name~="Root" then
+			local o=d.CFrame.Position
+			d.Size=Vector3.new(d.Size.X*s,d.Size.Y*up,d.Size.Z*s)
+			d.CFrame=CFrame.new(o.X*s,o.Y*up,o.Z*s)
+		end
+	end
+	for _,w in holds do w.Enabled=true end
+	m:PivotTo(cf*CFrame.new(0,-.15,0))
 	m.Parent=parent
 	-- it breaks open in a blink, then lies there
 	tween(m.PrimaryPart,.08,{CFrame=cf})
@@ -494,9 +509,13 @@ function Kit.tint(model,color,time,strength)
 		h=new("Highlight",{Name="HitTint",DepthMode=Enum.HighlightDepthMode.Occluded,FillTransparency=1,OutlineTransparency=1},model)
 		tints[model]=h
 	end
+	-- (14/11, CM QA A3: « le perso touché devient un fantôme blanc ») A near-white
+	-- fill at 50 % for up to 0.2 s read as a clone vanishing or a substitution.
+	-- A hit is a short warm flash now: at most 0.1 s, the fill never stronger
+	-- than 30 %, the outline carrying it.
 	h.FillColor=color;h.OutlineColor=color
-	h.FillTransparency=1-(strength or .55);h.OutlineTransparency=.35
-	tween(h,time,{FillTransparency=1,OutlineTransparency=1},Enum.EasingStyle.Quad,Enum.EasingDirection.In)
+	h.FillTransparency=1-math.min(strength or .3,.3);h.OutlineTransparency=.2
+	tween(h,math.min(time or .1,.1),{FillTransparency=1,OutlineTransparency=1},Enum.EasingStyle.Quad,Enum.EasingDirection.In)
 end
 
 -- Cel dust from the floor (landings, slams, skids).

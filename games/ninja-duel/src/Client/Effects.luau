@@ -680,24 +680,26 @@ end
 -- so the silhouette reads as an image, not a body), over a faint Neon fill
 -- that fades first; the shell swells a little as it goes.
 FX.GHOST_FILL=.82
+-- (14/11, CM QA A7: « un bloc de verre autour du perso qui fonce ») Every part
+-- of the costume copied in ForceField, swelling to 110 % over a Neon fill,
+-- made a box of translucent plates round a dashing body that stayed behind
+-- it. The afterimage is the body alone now (its limbs, not the costume's
+-- blocks), a faint tint of the colour, the same size, left where the body
+-- was: a trail of poses, not a shell.
+FX.GHOST_LIMBS={Head=true,UpperTorso=true,LowerTorso=true,LeftUpperArm=true,RightUpperArm=true,LeftLowerArm=true,RightLowerArm=true,
+	LeftHand=true,RightHand=true,LeftUpperLeg=true,RightUpperLeg=true,LeftLowerLeg=true,RightLowerLeg=true,LeftFoot=true,RightFoot=true,
+	Torso=true,["Left Arm"]=true,["Right Arm"]=true,["Left Leg"]=true,["Right Leg"]=true}
 function FX:ghost(model,color,time,transparency)
 	if not model then return end
 	local holder=new("Model",{Name="Afterimage"},self.folder)
-	local edge=math.clamp((transparency or .45)-.05,.3,.7)
+	local start=math.clamp((transparency or .45)+.2,.6,.85)
 	for _,d in model:GetChildren() do
-		if d:IsA("BasePart") and d.Name~="HumanoidRootPart" and d.Transparency<.9 then
+		if d:IsA("BasePart") and FX.GHOST_LIMBS[d.Name] and d.Transparency<.9 then
 			local class=if d:IsA("WedgePart") then "WedgePart" else "Part"
-			local g=block(holder,d.Size,d.CFrame,color,Enum.Material.ForceField,class)
+			local g=block(holder,d.Size,d.CFrame,color,Enum.Material.SmoothPlastic,class)
 			if d:IsA("Part") then g.Shape=d.Shape end
-			g.Transparency=edge
-			tween(g,time,{Transparency=1,Size=d.Size*1.1})
-			-- the faint fill only on the body's big volumes (fewer parts to draw)
-			if d.Size.X*d.Size.Y*d.Size.Z>.3 then
-				local fill=block(holder,d.Size*.96,d.CFrame,color,Enum.Material.Neon,class)
-				if d:IsA("Part") then fill.Shape=d.Shape end
-				fill.Transparency=FX.GHOST_FILL
-				tween(fill,time*.6,{Transparency=1})
-			end
+			g.Transparency=start
+			tween(g,time,{Transparency=1,Size=d.Size*.92},Enum.EasingStyle.Quad,Enum.EasingDirection.In)
 		end
 	end
 	Debris:AddItem(holder,time+.1)
@@ -1001,7 +1003,7 @@ function FX:impact(impact,folder)
 	-- Not twice for a blow the client already flashed when it guessed it.
 	if impact.victim and impact.amount and not impact.tinted then
 		local weight=math.clamp(impact.amount/20,.25,1)
-		pcall(Kit.tint,modelFor(folder,impact.victim),if impact.guarded then Color3.fromRGB(255,214,120) else Color3.fromRGB(255,244,236),
+		pcall(Kit.tint,modelFor(folder,impact.victim),if impact.guarded then Color3.fromRGB(255,214,120) else Color3.fromRGB(255,86,52),
 			.09+.08*weight,if impact.guarded then .35 else .5+.35*weight)
 	end
 	for _,layer in FX.layers do if layer.impact and layer.impact(self,impact,folder) then return end end
@@ -1284,12 +1286,16 @@ function FX:explosion(position,normal,scale)
 		end)
 		burst(folder,position,{Texture=TEX.fireSpark,Lifetime=NumberRange.new(.6,1.3),Speed=NumberRange.new(24,50),SpreadAngle=Vector2.new(180,180),
 			Color=ColorSequence.new(Color3.fromRGB(255,196,110)),LightEmission=1,Size=num({{0,.6},{1,0}}),Drag=2,Acceleration=Vector3.new(0,-34,0)},40)
-		-- Debris: dark chips thrown out and falling.
+		-- Debris: chips thrown out and falling.
+		-- (14/11, CM QA A5: « carrés noirs dans le ciel après le feu ») Black
+		-- blocks thrown up to 15 studs read as broken pixels against the sky.
+		-- Smaller burnt stones, still glowing, thrown low and out: they stay
+		-- by the floor where the fire burnt.
 		for k=1,math.floor(9*scale) do
-			local chip=block(folder,Vector3.new(.5,.4,.45)*(.6+math.random()*.8),CFrame.new(position)*CFrame.Angles(math.random()*6,math.random()*6,0),
-				Color3.fromRGB(46,34,30),Enum.Material.Slate)
-			local out=Vector3.new(math.random()-.5,.4+math.random()*.8,math.random()-.5).Unit
-			local reach=(6+math.random()*9)*scale
+			local chip=block(folder,Vector3.new(.24,.2,.22)*(.6+math.random()*.8),CFrame.new(position)*CFrame.Angles(math.random()*6,math.random()*6,0),
+				Color3.fromRGB(122,64,40),Enum.Material.Slate)
+			local out=Vector3.new(math.random()-.5,.08+math.random()*.2,math.random()-.5).Unit
+			local reach=(3+math.random()*4)*scale
 			tween(chip,.55,{CFrame=chip.CFrame*CFrame.Angles(3,2,0)+out*reach},Enum.EasingStyle.Quad,Enum.EasingDirection.Out)
 			task.delay(.55,function() if chip.Parent then tween(chip,.35,{CFrame=chip.CFrame-Vector3.new(0,4,0),Transparency=1},Enum.EasingStyle.Quad,Enum.EasingDirection.In) end end)
 			Debris:AddItem(chip,1)
