@@ -6664,13 +6664,13 @@ return {
       <Item class="StringValue" referent="ND43">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">e9c873eeb23c6951c165b64a19c52e34e0b8cd00926e850a8b192b72733dfe98</string>
+          <string name="Value">e32a3248b11872af2d7a413506fad57128e97854eed6292f16ecc9ad3b2cd8da</string>
         </Properties>
       </Item>
       <Item class="StringValue" referent="ND44">
         <Properties>
           <string name="Name">RuntimeFingerprint</string>
-          <string name="Value">ba15768888e981a357ffa5184ac8e93b5ebc6409d90b50040300895905d3e0d8</string>
+          <string name="Value">32ff53bad20938c9ebacc70cb00df4adfd17ff38cb8e7419746d13e5a1344377</string>
         </Properties>
       </Item>
       <Item class="StringValue" referent="ND45">
@@ -6682,7 +6682,7 @@ return {
       <Item class="StringValue" referent="ND46">
         <Properties>
           <string name="Name">SourceCommit</string>
-          <string name="Value">ce85d488250d-dirty</string>
+          <string name="Value">31f4de0c4d96-dirty</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND47">
@@ -13342,7 +13342,8 @@ end
 function Cliff.defaultServices()
 	local svc={}
 	pcall(function() svc.store=game:GetService("DataStoreService"):GetDataStore(Cliff.STORE) end)
-	pcall(function() svc.messaging=game:GetService("MessagingService") end)
+	-- (a local file, PlaceId 0, has no messaging between servers)
+	if game.PlaceId~=0 then pcall(function() svc.messaging=game:GetService("MessagingService") end) end
 	svc.devId=function()
 		local id=Config.Hub and Config.Hub.DevUserId
 		if type(id)=="number" and id&gt;0 then return id end
@@ -13425,9 +13426,10 @@ function Cliff:run()
 	self.devId=self.svc.devId()
 	self:refresh()
 	self:apply()
+	-- (the subscription yields: never in the caller's thread)
 	local messaging=self.svc.messaging
 	if messaging then
-		pcall(function() messaging:SubscribeAsync(Cliff.TOPIC,function() self:refresh() end) end)
+		self.svc.spawn(function() pcall(function() messaging:SubscribeAsync(Cliff.TOPIC,function() self:refresh() end) end) end)
 	end
 	if self.svc.every then self.svc.every(Cliff.REFRESH,function() self:refresh() end) end
 	return self
@@ -20741,8 +20743,11 @@ end
 -- Server start (Main): build, then the masters once the portraits exist.
 function Hub.start()
 	Hub.build(workspace)
-	-- (14/11) the creator and the champions carved on the cliff
-	pcall(function() require(script.Parent.ChampionCliff).begin(Hub.folder) end)
+	-- (14/11) the creator and the champions carved on the cliff. Its own
+	-- thread: (14/11, seen in Studio) MessagingService:SubscribeAsync never
+	-- returned in a local file and held the whole server start (no roster,
+	-- no village, no progression).
+	task.spawn(function() pcall(function() require(script.Parent.ChampionCliff).begin(Hub.folder) end) end)
 	task.spawn(function()
 		local source=ReplicatedStorage:WaitForChild("NinjaDuelPortraits",120)
 		if source then
