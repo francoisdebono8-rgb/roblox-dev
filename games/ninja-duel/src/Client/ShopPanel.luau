@@ -19,6 +19,7 @@ local Fighters=require(Shared.Fighters)
 local Text=require(Shared.Text)
 local Config=require(Shared.Config)
 local FirstMinute=require(Shared.FirstMinute)
+local HubMap=require(Shared.HubMap)
 local Panel={}
 Panel.__index=Panel
 
@@ -87,12 +88,28 @@ function Panel.closeRect(viewport,kit)
 	return {x=left+Panel.CLOSE.X*s,y=top+Panel.CLOSE.Y*s,w=Panel.CLOSE.W*s,h=Panel.CLOSE.H*s,scale=s}
 end
 function Panel:shown() return self.root.Visible end
-function Panel:hide() self.root.Visible=false end
+-- (14/11) A pad gets the focus on the open tab (no button of the shop could
+-- be reached with a pad before) and gives it back when the shop closes.
+function Panel.padFocus(target)
+	pcall(function()
+		if game:GetService("UserInputService"):GetLastInputType().Name:sub(1,7)~="Gamepad" then return end
+		task.defer(function() pcall(function() game:GetService("GuiService").SelectedObject=target end) end)
+	end)
+end
+function Panel.dropFocus(root)
+	pcall(function()
+		local GuiService=game:GetService("GuiService")
+		local selected=GuiService.SelectedObject
+		if selected and selected:IsDescendantOf(root) then GuiService.SelectedObject=nil end
+	end)
+end
+function Panel:hide() self.root.Visible=false;Panel.dropFocus(self.root) end
 function Panel:show(kits,tab)
 	self.kits=kits
 	if tab then self.tab=tab end
 	self:draw()
 	self.root.Visible=true
+	Panel.padFocus(self.tabs[self.tab])
 end
 function Panel:refresh(kits)
 	self.kits=kits
@@ -149,16 +166,29 @@ function Panel:drawKits()
 			local from={}
 			for _,other in rule and rule.from or {} do table.insert(from,nameOf(other)) end
 			line=if status=="starterLocked" then "Take a first kit first." else "His master asks "..Masters.Need.." mastery with "..table.concat(from," or ").."."
-		elseif status=="starter" then line="Free: one of the three first kits." end
+		elseif status=="starter" then
+			-- (14/11) a new player looking here learns he can take it now, or
+			-- meet its master in Konoha
+			local spot=HubMap.Masters[id]
+			line="Free: one of the three first kits. Take it here, or meet him: "..(if spot then Text.upper(spot.place) else "IN KONOHA").."."
+		end
 		local body=K.text(card,line,UDim2.fromOffset(14,152),UDim2.new(1,-28,0,60),13,P.text,K.BODY_FONT)
 		body.TextYAlignment=Enum.TextYAlignment.Top
 		-- The buttons.
 		local rival=FirstMinute.rival(id) or "Lion"
 		if status=="owned" then
 			K.button(card,"SKILL TREE",UDim2.new(0,14,1,-58),UDim2.new(1,-28,0,44),function() if self.onTree then self.onTree(id) end end)
+		elseif status=="starter" then
+			-- (14/11) the first kit, taken in one press (DECISIONS: the first
+			-- minute, the ninja chosen in one gesture); TRY beside it
+			local take=K.button(card,"TAKE IT",UDim2.new(0,14,1,-58),UDim2.new(.58,-18,0,44),function() self.send("ChooseStarter",{player=id}) end,P.gold)
+			take.TextColor3=P.ink;take.Name="TakeStarter"
+			K.button(card,"TRY",UDim2.new(.58,4,1,-58),UDim2.new(.42,-18,0,44),function()
+				self.send("Tutorial",{player=id,bot=rival});self:hide()
+			end)
 		elseif status~="loading" and status~="open" then
 			local product=products[id]
-			local tryW=if product and product>0 and status~="starter" then .42 else 1
+			local tryW=if product and product>0 then .42 else 1
 			K.button(card,"TRY",UDim2.new(0,14,1,-58),UDim2.new(tryW,-(if tryW<1 then 18 else 28),0,44),function()
 				self.send("Tutorial",{player=id,bot=rival});self:hide()
 			end)

@@ -90,6 +90,42 @@ function V.action(kits,id)
 		note=string.format("%s TEACHES WHOEVER HAS %d MASTERY WITH %s (BEST: %d).",who,Masters.Need,from,m.best or 0)}
 end
 
+-- (14/11, new player's walk) The first kit taken, its first duel not fought
+-- yet: that kit's id, else nil. The master's card offers YOUR FIRST DUEL and
+-- Konoha's goal and marker point at him until the duel is fought.
+function V.firstDuel(kits)
+	if not kits or kits.state~="ready" or not kits.starter or not (kits.owned and kits.owned[kits.starter]) then return nil end
+	if (kits.mastery and kits.mastery[kits.starter] or 0)~=0 then return nil end
+	return kits.starter
+end
+
+-- (14/11, new player's walk) Konoha's goal: a short head and the line under
+-- it (where to go: `items`, joined in `sub`, or one a line on a narrow
+-- screen). Before, one line of a hundred letters ran under the shop
+-- and Roblox's buttons; a new player's three masters now sit under the head.
+function V.goal(kits)
+	local HubMap=require(script.Parent.HubMap)
+	local function place(id) local spot=HubMap.Masters[id] return spot and spot.place or "" end
+	local function goal(head,items) return {head=head,items=items,sub=table.concat(items,"      ")} end
+	local proctor=goal("DUELS AND THE TOURNAMENT",{"THE PROCTOR  •  "..HubMap.Proctor.place})
+	if not kits then return proctor end
+	if kits.state~="ready" then return goal("",{}) end
+	if kits.needStarter then
+		local where={}
+		for _,id in Masters.Starters do table.insert(where,name(id).." • "..place(id)) end
+		return goal("CHOOSE YOUR FIRST MASTER",where)
+	end
+	local first=V.firstDuel(kits)
+	if first then return goal("YOUR FIRST DUEL",{"TALK TO "..name(first).."  •  "..place(first)}) end
+	for _,id in Masters.Kits do
+		local m=kits.masters and kits.masters[id]
+		if m and m.ready and not (kits.owned and kits.owned[id]) then
+			return goal(name(id).." WILL TEACH YOU",{place(id)})
+		end
+	end
+	return proctor
+end
+
 -- (DEC-038) The master's card in Konoha: what his three buttons do for this
 -- player. primary / second / third = {label, send = {action, payload}} or
 -- {label, tree = kit} (opens the tree), nil when absent.
@@ -104,8 +140,7 @@ function V.card(kits,id)
 	elseif act.kind=="master" then out.primary={label="DUEL THE MASTER",send={"MasterTrial",{player=act.via,master=id}}}
 	elseif act.kind=="try" then out.primary={label="TRY HIS KIT",send={"Tutorial",{player=id,bot=rival}}}
 	else
-		local first=kits~=nil and kits.state=="ready" and kits.starter==id and (kits.mastery and kits.mastery[id] or 0)==0
-		if first then out.primary={label="YOUR FIRST DUEL",send={"First",{player=id}}}
+		if V.firstDuel(kits)==id then out.primary={label="YOUR FIRST DUEL",send={"First",{player=id}}}
 		else out.primary={label="SPAR WITH "..who,send={"Start",{player=id,bot=id,level="normal"}}} end
 	end
 	local extra={}

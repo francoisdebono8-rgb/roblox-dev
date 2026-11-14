@@ -99,6 +99,36 @@ test("(DEC-038) the master's card in Konoha: take his kit, the first duel, spar,
 	assert(V.card(nil,"Leaf").primary.send[1]=="Start","the path off: every master spars")
 end)
 
+-- (14/11, the new player's walk) Konoha's goal: a short head, then where to
+-- go; after the first kit it points at his first duel, not the proctor.
+test("Konoha's goal: the three masters, then the first duel, then a master or the proctor",function()
+	local HubMap=H.load("Shared/HubMap")
+	local g=V.goal(nil)
+	assert(g.head=="DUELS AND THE TOURNAMENT" and string.find(g.sub,"EXAM HALL"),"the path off: the proctor")
+	assert(V.goal({state="loading"}).head=="","loading: no goal yet")
+	local new={state="ready",owned={},mastery={},masters={},needStarter=true}
+	g=V.goal(new)
+	assert(g.head=="CHOOSE YOUR FIRST MASTER","a new player's head: "..g.head)
+	assert(#g.items==3,"one line per first master")
+	for k,id in Masters.Starters do
+		assert(string.find(g.items[k],HubMap.Masters[id].place,1,true),"the place of "..id.." is missing: "..g.items[k])
+	end
+	assert(#g.head<=30,"the head stays short")
+	local mine={state="ready",owned={Leaf=true},mastery={Leaf=0},starter="Leaf",selected="Leaf",masters={}}
+	assert(V.firstDuel(mine)=="Leaf","the first duel is pending")
+	g=V.goal(mine)
+	assert(g.head=="YOUR FIRST DUEL" and string.find(g.sub,"LEE") and string.find(g.sub,HubMap.Masters.Leaf.place,1,true),"after the first kit: "..g.head.." / "..g.sub)
+	mine.mastery.Leaf=48
+	assert(V.firstDuel(mine)==nil,"the first duel fought")
+	assert(V.goal(mine).head=="DUELS AND THE TOURNAMENT","no master ready: the proctor")
+	mine.masters.GentleFist={ready=true,via="Leaf"}
+	assert(string.find(V.goal(mine).head,"WILL TEACH YOU"),"a master ready")
+	-- the card agrees with the goal
+	mine.mastery.Leaf=0
+	assert(V.card(mine,"Leaf").primary.label=="YOUR FIRST DUEL","the card's first duel")
+	assert(V.firstDuel({state="ready",owned={},mastery={},starter="Leaf"})==nil,"a starter not owned is no first duel")
+end)
+
 test("every master's kit leads somewhere and every kit is led to",function()
 	for _,id in BetaRoster do
 		assert(Masters.isKit(id),id.." is not on the path")
