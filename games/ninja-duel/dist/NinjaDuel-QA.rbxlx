@@ -2328,6 +2328,20 @@ M.Masters={
 		line="Plant your mark first. The speed comes after."},
 }
 
+-- (DEC-041, user 14/11 21 h 49: « quand c'était comme un starter, c'était pas
+-- des fiches et tu vas vraiment les rencontrer avec ton personnage. Et tu vois,
+-- avec des petites animations, tu comprends leur état d'esprit », then
+-- « ensemble près de la porte ») For a new player the three first
+-- inspirations hang out together at the top of the main street, just inside
+-- the gate, each in his own mood (Client/HubMoods): Naruto showing off, Lee
+-- training, Sasuke leaning apart, half turned away. Once he has chosen, they
+-- are back home (Client/HubClient moves them, on his screen only).
+M.Welcome={
+	Legion={at=Vector3.new(-9,0,166),face=Vector3.new(.25,0,1)},
+	Leaf={at=Vector3.new(1,0,158),face=Vector3.new(0,0,1)},
+	Lion={at=Vector3.new(12,0,172),face=Vector3.new(-.75,0,.66)},
+}
+
 -- (14/11, audit: « que notre perso puisse combattre, qu'on puisse apprendre »)
 -- Training Ground Three's dummy: E there trains with his kit (Server/Hub
 -- places the prompt, Client/HubClient answers it).
@@ -2375,7 +2389,8 @@ return M
 -- sensei. Moi, j'imaginais plus un choix comme un choix de starter. Et on
 -- donne […] un peu des traits humoristiques ») The three first inspirations,
 -- picked like a starter: who he is, in one funny line, and what fighting like
--- him means. Shown by Client/StarterPanel; the order is Masters.Starters'.
+-- him means. Shown on his card when the player meets him (Client/HubClient),
+-- the three together by the gate (HubMap.Welcome).
 local I={}
 I.Lines={
 	Legion={title="THE LOUDMOUTH",
@@ -2863,9 +2878,10 @@ function V.goal(kits)
 	if not kits then return proctor end
 	if kits.state~="ready" then return goal("",{}) end
 	if kits.needStarter then
-		local where={}
-		for _,id in Masters.Starters do table.insert(where,name(id).." • "..place(id)) end
-		return goal("CHOOSE YOUR INSPIRATION",where)
+		-- (DEC-041) the three wait together just inside the gate
+		local who={}
+		for _,id in Masters.Starters do table.insert(who,name(id)) end
+		return goal("CHOOSE YOUR INSPIRATION",{table.concat(who,", ").." • RIGHT BY THE GATE"})
 	end
 	local first=V.firstDuel(kits)
 	if first then return goal("YOUR FIRST DUEL",{"TALK TO "..name(first).."  •  "..place(first)}) end
@@ -2888,7 +2904,7 @@ function V.card(kits,id)
 	local out={note=act.note,kind=act.kind}
 	local rival=FirstMinute.rival(id) or "Lion"
 	if act.kind=="wait" then out.primary={label="LOADING YOUR KITS…"}
-	elseif act.kind=="choose" then out.primary={label="TAKE HIS KIT",send={"ChooseStarter",{player=id}}}
+	elseif act.kind=="choose" then out.primary={label="HE'S MY INSPIRATION",send={"ChooseStarter",{player=id}}}
 	elseif act.kind=="master" then out.primary={label="DUEL HIM",send={"MasterTrial",{player=act.via,master=id}}}
 	elseif act.kind=="try" then out.primary={label="TRY HIS KIT",send={"Tutorial",{player=id,bot=rival}}}
 	else
@@ -6877,13 +6893,13 @@ return {
       <Item class="StringValue" referent="ND45">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">f8e5690b3b39b28f663032900a359d4fbfcd4071e66bad3aa03be89aa45350bb</string>
+          <string name="Value">80f52a266d4a113c171463049b888b6f91bef8bf3c4cf712f2f42ee1fca15dfa</string>
         </Properties>
       </Item>
       <Item class="StringValue" referent="ND46">
         <Properties>
           <string name="Name">RuntimeFingerprint</string>
-          <string name="Value">0bf409efbe9e53ee690cd79ea7095656440b68003e1e65dbbdf0170bd91c1211</string>
+          <string name="Value">0a1549f0ee37babba6d479c52b3f154087ad519322af7fc7df360d64d8c7ed2d</string>
         </Properties>
       </Item>
       <Item class="StringValue" referent="ND47">
@@ -6895,7 +6911,7 @@ return {
       <Item class="StringValue" referent="ND48">
         <Properties>
           <string name="Name">SourceCommit</string>
-          <string name="Value">152c515d543f</string>
+          <string name="Value">a5dc34ce8a3f</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND49">
@@ -61091,6 +61107,8 @@ local Masters=require(Shared.Masters)
 local Fighters=require(Shared.Fighters)
 local Text=require(Shared.Text)
 local HubLayout=require(script.Parent.HubLayout)
+local HubMoods=require(script.Parent.HubMoods)
+local Inspirations=require(Shared.Inspirations)
 local Hub={}
 Hub.__index=Hub
 -- (14/11) The run latched by L3 or the touch RUN button stops after this long
@@ -61164,8 +61182,13 @@ function Hub.new(ui,camera,send,controls)
 	self.cardPlace=K.text(card,"",UDim2.fromOffset(26,60),UDim2.fromOffset(440,20),14,P.gold,K.BODY_FONT)
 	self.cardLine=K.text(card,"",UDim2.fromOffset(26,86),UDim2.fromOffset(440,46),16,P.text,K.BODY_FONT)
 	self.cardLine.TextYAlignment=Enum.TextYAlignment.Top
+	-- (DEC-041) an inspiration's funny line runs three lines: it shrinks to fit
+	self.cardLine.TextWrapped=true;self.cardLine.TextScaled=true
+	K.create("UITextSizeConstraint",self.cardLine,{MaxTextSize=16,MinTextSize=11})
 	self.cardNote=K.text(card,"",UDim2.fromOffset(26,136),UDim2.fromOffset(440,58),14,P.gold,K.BODY_FONT)
 	self.cardNote.TextYAlignment=Enum.TextYAlignment.Top
+	self.cardNote.TextWrapped=true;self.cardNote.TextScaled=true
+	K.create("UITextSizeConstraint",self.cardNote,{MaxTextSize=14,MinTextSize=10})
 	self.primary=K.button(card,"",UDim2.fromOffset(24,204),UDim2.fromOffset(442,60),function() self:press("primary") end,P.red)
 	self.primary.TextSize=28
 	self.second=K.button(card,"",UDim2.fromOffset(24,276),UDim2.fromOffset(216,48),function() self:press("second") end)
@@ -61285,7 +61308,7 @@ end
 function Hub:apply()
 	local walking=self.active and not self.board
 	-- The tree panel or the shop over the village: the walk waits behind it.
-	local panel=(self.ui.treePanel and self.ui.treePanel:shown()) or (self.ui.shopPanel and self.ui.shopPanel:shown()) or (self.ui.starterPanel and self.ui.starterPanel:shown()) or false
+	local panel=(self.ui.treePanel and self.ui.treePanel:shown()) or (self.ui.shopPanel and self.ui.shopPanel:shown()) or false
 	self.panelOpen=panel
 	self.ui.hubWalk=walking
 	self.camera.hubWalk=walking
@@ -61345,7 +61368,7 @@ function Hub:jumpRequest()
 end
 function Hub:step(dt)
 	if not self.active then return end
-	if ((self.ui.treePanel and self.ui.treePanel:shown()) or (self.ui.shopPanel and self.ui.shopPanel:shown()) or (self.ui.starterPanel and self.ui.starterPanel:shown()) or false)~=self.panelOpen then self:apply() end
+	if ((self.ui.treePanel and self.ui.treePanel:shown()) or (self.ui.shopPanel and self.ui.shopPanel:shown()) or false)~=self.panelOpen then self:apply() end
 	local character=Players.LocalPlayer.Character
 	local hum=character and character:FindFirstChildOfClass("Humanoid")
 	local root=character and character:FindFirstChild("HumanoidRootPart")
@@ -61375,6 +61398,9 @@ function Hub:step(dt)
 	end
 	-- The card closes when he walks away from the master.
 	if self.cardId and self.cardAt and (root.Position-self.cardAt).Magnitude&gt;26 then self:hideCard() end
+	-- (DEC-041) the first three inspirations in their moods, when he is near
+	self.moodClock=(self.moodClock or 0)+dt
+	self:moods(root.Position)
 	self.clock=(self.clock or 0)+dt
 	if self.clock&gt;.25 then
 		self.clock=0
@@ -61449,10 +61475,65 @@ function Hub:marker(model,id,title,place)
 	local distance=K.text(gui,"",UDim2.fromOffset(0,50),UDim2.fromOffset(220,18),13,P.muted,K.BODY_FONT,Enum.TextXAlignment.Center)
 	return {gui=gui,model=model,id=id,name=name,tag=tag,distance=distance,place=place}
 end
+-- (DEC-041, user 14/11: « tu vas vraiment les rencontrer avec ton personnage
+-- […] ensemble près de la porte ») A new player meets the three first
+-- inspirations together just inside the gate (HubMap.Welcome); once he has
+-- chosen, they are back home. On his screen only: the models move here, their
+-- server prompt sleeps and a prompt of this screen takes its place (a prompt
+-- the server still places at home could not be reached at the gate).
+function Hub:welcome(holder)
+	local want=self.kits~=nil and self.kits.state=="ready" and self.kits.needStarter==true
+	self.homes=self.homes or {}
+	for id,spot in HubMap.Welcome do
+		local model=holder:FindFirstChild(id)
+		local root=model and (model.PrimaryPart or model:FindFirstChild("HumanoidRootPart"))
+		if model and root and model:GetAttribute("NinjaMaster")==id then
+			local entry=self.homes[id]
+			if want and not entry then
+				entry={pivot=model:GetPivot()}
+				self.homes[id]=entry
+				local at=HubMap.Origin+spot.at+Vector3.new(0,3,0)
+				local target=CFrame.lookAt(at,at+Vector3.new(spot.face.X,0,spot.face.Z))
+				model:PivotTo(target*root.CFrame:Inverse()*model:GetPivot())
+				local server=model:FindFirstChild("Talk",true)
+				if server then server.Enabled=false end
+				local prompt=Instance.new("ProximityPrompt")
+				prompt.Name="WelcomeTalk";prompt.ActionText="TALK";prompt.ObjectText=(Inspirations.of(id) or {}).title or ""
+				prompt.HoldDuration=0;prompt.MaxActivationDistance=12;prompt.RequiresLineOfSight=false
+				prompt.KeyboardKeyCode=Enum.KeyCode.E;prompt.GamepadKeyCode=Enum.KeyCode.ButtonX
+				prompt:SetAttribute("NinjaMaster",id)
+				prompt.Parent=root
+				entry.prompt=prompt
+			elseif not want and entry then
+				if entry.prompt then entry.prompt:Destroy() end
+				local server=model:FindFirstChild("Talk",true)
+				if server then server.Enabled=true end
+				HubMoods.clear(model)
+				model:PivotTo(entry.pivot)
+				self.homes[id]=nil
+			end
+		end
+	end
+end
+-- The three's moods (Client/HubMoods): while they wait for a new player at
+-- the gate, within sight of him.
+function Hub:moods(position)
+	if not self.homes then return end
+	local folder=workspace:FindFirstChild("NinjaDuelHub")
+	local holder=folder and folder:FindFirstChild("Masters")
+	if not holder then return end
+	for id in self.homes do
+		local model=holder:FindFirstChild(id)
+		if model and (model:GetPivot().Position-position).Magnitude&lt;160 then
+			pcall(HubMoods.apply,model,id,self.moodClock+#id)
+		end
+	end
+end
 function Hub:refreshMarkers()
 	local folder=workspace:FindFirstChild("NinjaDuelHub")
 	local holder=folder and folder:FindFirstChild("Masters")
 	if not holder then return end
+	self:welcome(holder)
 	local P=self.K.palette
 	for _,model in holder:GetChildren() do
 		local id=model:GetAttribute("NinjaMaster")
@@ -61553,6 +61634,22 @@ function Hub:fillCard()
 	self.cardLine.Text="« "..(spot and spot.line or "").." »"
 	local a=self:cardActions(id)
 	self.actions=a
+	-- (DEC-041) a first inspiration, met by the gate: who he is, in a funny
+	-- line, and what fighting like him means
+	local about=Inspirations.of(id)
+	if a.kind=="choose" and about then
+		self.cardPlace.Text=about.title.."  •  LIVES AT "..(spot and spot.place or "")
+		self.cardLine.Text=about.line
+		self.cardNote.Text=about.with
+		self.primary.Text=a.primary and a.primary.label or ""
+		self.primary.Visible=a.primary~=nil
+		self.primary.AutoButtonColor=true
+		for _,pair in {{self.second,a.second},{self.third,a.third}} do
+			pair[1].Visible=pair[2]~=nil
+			pair[1].Text=pair[2] and pair[2].label or ""
+		end
+		return
+	end
 	local owned=self.kits and self.kits.owned and self.kits.owned[id]
 	local note=a.note or ""
 	if owned and self.kits.mastery then
@@ -62531,6 +62628,124 @@ return {
         </Item>
         <Item class="ModuleScript" referent="ND270">
           <Properties>
+            <string name="Name">HubMoods</string>
+            <ProtectedString name="Source">-- The inspirations' moods in Konoha (DEC-041, user 14/11 21 h 49: « avec des
+-- petites animations, tu comprends leur état d'esprit »). Naruto can't keep
+-- still and shows off; Sasuke leans apart, arms crossed, looking away (now and
+-- then a glance at you, then away again); Lee trains: quick punches on the
+-- spot, bouncing. On the player's screen only (Motor6D.Transform, never
+-- replicated), on the master models of Server/Hub, over their guard stance.
+--
+-- An ANIMATEUR clip named "Mood.&lt;kit&gt;" (Client/AuthoredClips) replaces these
+-- code poses as soon as it exists: these are the placeholders that make the
+-- three readable until then.
+local Moods={}
+local A,r=CFrame.Angles,math.rad
+
+local function wave(t,speed,phase) return math.sin(t*speed+(phase or 0)) end
+-- 0 most of the time, 1 for `hold` seconds every `every` seconds (eased).
+local function every(t,period,hold,offset)
+	local u=(t+(offset or 0))%period
+	if u&gt;hold then return 0 end
+	return math.sin(math.pi*u/hold)
+end
+
+-- Each mood: the joints' rotations (and the root's lift) at time t.
+Moods.Poses={
+	-- Naruto: hands behind the head, bouncing on his heels, swaying, a big
+	-- grin to the side now and then.
+	Legion=function(t)
+		local bounce=math.abs(wave(t,4.2))*.18
+		local sway=wave(t,2.1)
+		local grin=every(t,5,1.2)
+		return {
+			Root=CFrame.new(0,bounce,0)*A(0,0,r(3*sway)),
+			Waist=A(r(-4),r(8*sway),0),
+			Neck=A(r(-6),r(-10*sway+24*grin),r(10*grin)),
+			LeftShoulder=A(r(118),r(10),r(-30)),RightShoulder=A(r(118),r(-10),r(30)),
+			LeftElbow=A(r(62),0,0),RightElbow=A(r(62),0,0),
+			LeftHip=A(r(-4),0,r(-2)),RightHip=A(r(4),0,r(2)),
+		}
+	end,
+	-- Sasuke: arms crossed tight, weight on one hip, head away; every six
+	-- seconds a short glance toward you, then away again.
+	Lion=function(t)
+		local breath=wave(t,1.4)
+		local glance=every(t,6,1.6,2)
+		return {
+			Root=CFrame.new(0,.03*breath,0)*A(0,0,r(-4)),
+			Waist=A(r(-2+breath),r(10),r(2)),
+			Neck=A(r(8-6*glance),r(-34+30*glance),0),
+			LeftShoulder=A(r(16),r(28),r(10)),RightShoulder=A(r(22),r(-30),r(-10)),
+			LeftElbow=A(r(34),0,0),RightElbow=A(r(26),0,0),
+			LeftHip=A(r(6),0,r(-8)),RightHip=A(r(-8),0,r(6)),
+			RightKnee=A(r(-16),0,0),
+		}
+	end,
+	-- Lee: punches on the spot, one arm then the other, bouncing like a
+	-- boxer; every eight seconds a fist raised high (« YOSH! »).
+	Leaf=function(t)
+		local beat=t*5
+		local side=math.floor(beat)%2
+		local hit=math.sin(math.pi*(beat%1))
+		local bounce=math.abs(wave(t,7))*.12
+		local cheer=every(t,8,1.4,5)
+		local rs=if side==0 then hit else 0
+		local ls=if side==1 then hit else 0
+		return {
+			Root=CFrame.new(0,bounce+.2*cheer,0),
+			Waist=A(r(-6),r(18*(rs-ls)),0),
+			Neck=A(r(4),r(-8*(rs-ls)),0),
+			RightShoulder=A(r(30*rs+100*cheer),r(-10*rs),0),RightElbow=A(r(-64*rs-60*cheer),0,0),
+			LeftShoulder=A(r(30*ls),r(10*ls),0),LeftElbow=A(r(-64*ls),0,0),
+			LeftHip=A(r(-8),0,r(-6)),RightHip=A(r(10),0,r(6)),
+			LeftKnee=A(r(-14),0,0),RightKnee=A(r(-10),0,0),
+		}
+	end,
+}
+
+-- The joints of a master model, by name (cached on the model).
+local joints=setmetatable({},{__mode="k"})
+function Moods.joints(model)
+	local j=joints[model]
+	if j then return j end
+	j={}
+	for _,d in model:GetDescendants() do
+		if d:IsA("Motor6D") then j[d.Name]=d end
+	end
+	joints[model]=j
+	-- The portraits are anchored part by part (Server/Portraits.strip): on
+	-- this screen only, the limbs hang from the root so the joints move them.
+	local root=model.PrimaryPart or model:FindFirstChild("HumanoidRootPart")
+	for _,d in model:GetDescendants() do
+		if d:IsA("BasePart") and d~=root then d.Anchored=false end
+	end
+	return j
+end
+
+-- Plays `id`'s mood on `model` at time t; `clip` (optional) samples an
+-- authored clip instead (name → joint CFrames). Returns whether it played.
+function Moods.apply(model,id,t,clip)
+	local pose=if clip then clip(t) else (Moods.Poses[id] and Moods.Poses[id](t))
+	if not pose then return false end
+	local j=Moods.joints(model)
+	for name,cf in pose do
+		local motor=j[name]
+		if motor then motor.Transform=cf end
+	end
+	return true
+end
+-- Back to the plain stance.
+function Moods.clear(model)
+	for _,motor in Moods.joints(model) do motor.Transform=CFrame.identity end
+end
+
+return Moods
+</ProtectedString>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="ND271">
+          <Properties>
             <string name="Name">HubPlayers</string>
             <ProtectedString name="Source">-- The players met in Konoha (14/11, « passons à la suite de la bêta »): the
 -- village is where the server's players walk between duels, so a duel between
@@ -62666,7 +62881,7 @@ return HubPlayers
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND271">
+        <Item class="ModuleScript" referent="ND272">
           <Properties>
             <string name="Name">IdentityFX</string>
             <ProtectedString name="Source">-- CORE4 identity on the client (mission NEXT_VALIDATION_ROSTER_SCALE §5): what
@@ -63376,7 +63591,7 @@ return IdentityFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND272">
+        <Item class="ModuleScript" referent="ND273">
           <Properties>
             <string name="Name">Input</string>
             <ProtectedString name="Source">local CAS=game:GetService("ContextActionService")
@@ -63706,7 +63921,7 @@ return Input
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND273">
+        <Item class="ModuleScript" referent="ND274">
           <Properties>
             <string name="Name">LeeFX</string>
             <ProtectedString name="Source">-- Rock Lee on the client (stress-test wave, DEC-015): the Fifth Gate (a green
@@ -63971,7 +64186,7 @@ return LeeFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND274">
+        <Item class="ModuleScript" referent="ND275">
           <Properties>
             <string name="Name">LightBudgetFX</string>
             <ProtectedString name="Source">-- The effect lights, kept to a budget (OUTILLEUR, F7 tool, 08/11).
@@ -64094,7 +64309,7 @@ return LightBudgetFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND275">
+        <Item class="ModuleScript" referent="ND276">
           <Properties>
             <string name="Name">LightningBoltFX</string>
             <ProtectedString name="Source">--[[
@@ -64345,7 +64560,7 @@ SOFTWARE.
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND276">
+        <Item class="ModuleScript" referent="ND277">
           <Properties>
             <string name="Name">LightningFX</string>
             <ProtectedString name="Source">-- (12/11) The lightning of the Chidori (Sasuke) and the Raikiri / Lightning
@@ -64482,7 +64697,7 @@ return LightningFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND277">
+        <Item class="ModuleScript" referent="ND278">
           <Properties>
             <string name="Name">LobbyPanel</string>
             <ProtectedString name="Source">-- Players online and challenges, the client's half (Server/Lobby, user 04/11:
@@ -64765,7 +64980,7 @@ return Panel
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="LocalScript" referent="ND278">
+        <Item class="LocalScript" referent="ND279">
           <Properties>
             <string name="Name">Main</string>
             <ProtectedString name="Source">local Players=game:GetService("Players")
@@ -65040,7 +65255,7 @@ print("[NinjaDuel] Client ready")
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND279">
+        <Item class="ModuleScript" referent="ND280">
           <Properties>
             <string name="Name">MenuStage</string>
             <ProtectedString name="Source">-- The select screen's two prodigies, in a real 3D set (user 02/11, "everything
@@ -65227,7 +65442,7 @@ return MenuStage
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND280">
+        <Item class="ModuleScript" referent="ND281">
           <Properties>
             <string name="Name">MeshData</string>
             <ProtectedString name="Source">-- Generated by tools/blender/fx_models.py. Do not edit: re-run the script.
@@ -65243,7 +65458,7 @@ return all
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND281">
+        <Item class="ModuleScript" referent="ND282">
           <Properties>
             <string name="Name">MeshData1</string>
             <ProtectedString name="Source">-- Generated by tools/blender/fx_models.py. Do not edit: re-run the script.
@@ -65286,7 +65501,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND282">
+        <Item class="ModuleScript" referent="ND283">
           <Properties>
             <string name="Name">MeshData10</string>
             <ProtectedString name="Source">-- Generated by tools/blender/fx_models.py. Do not edit: re-run the script.
@@ -65303,7 +65518,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND283">
+        <Item class="ModuleScript" referent="ND284">
           <Properties>
             <string name="Name">MeshData2</string>
             <ProtectedString name="Source">-- Generated by tools/blender/fx_models.py. Do not edit: re-run the script.
@@ -65350,7 +65565,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND284">
+        <Item class="ModuleScript" referent="ND285">
           <Properties>
             <string name="Name">MeshData3</string>
             <ProtectedString name="Source">-- Generated by tools/blender/fx_models.py. Do not edit: re-run the script.
@@ -65415,7 +65630,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND285">
+        <Item class="ModuleScript" referent="ND286">
           <Properties>
             <string name="Name">MeshData4</string>
             <ProtectedString name="Source">-- Generated by tools/blender/fx_models.py. Do not edit: re-run the script.
@@ -65462,7 +65677,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND286">
+        <Item class="ModuleScript" referent="ND287">
           <Properties>
             <string name="Name">MeshData5</string>
             <ProtectedString name="Source">-- Generated by tools/blender/fx_models.py. Do not edit: re-run the script.
@@ -65479,7 +65694,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND287">
+        <Item class="ModuleScript" referent="ND288">
           <Properties>
             <string name="Name">MeshData6</string>
             <ProtectedString name="Source">-- Generated by tools/blender/fx_models.py. Do not edit: re-run the script.
@@ -65512,7 +65727,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND288">
+        <Item class="ModuleScript" referent="ND289">
           <Properties>
             <string name="Name">MeshData7</string>
             <ProtectedString name="Source">-- Generated by tools/blender/fx_models.py. Do not edit: re-run the script.
@@ -65549,7 +65764,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND289">
+        <Item class="ModuleScript" referent="ND290">
           <Properties>
             <string name="Name">MeshData8</string>
             <ProtectedString name="Source">-- Generated by tools/blender/fx_models.py. Do not edit: re-run the script.
@@ -65576,7 +65791,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND290">
+        <Item class="ModuleScript" referent="ND291">
           <Properties>
             <string name="Name">MeshData9</string>
             <ProtectedString name="Source">-- Generated by tools/blender/fx_models.py. Do not edit: re-run the script.
@@ -65611,7 +65826,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND291">
+        <Item class="ModuleScript" referent="ND292">
           <Properties>
             <string name="Name">MeshKit</string>
             <ProtectedString name="Source">-- (13/11, user: « il va nous falloir des vrais modèles 3D, des vrais modèles de
@@ -65893,7 +66108,7 @@ return MeshKit
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND292">
+        <Item class="ModuleScript" referent="ND293">
           <Properties>
             <string name="Name">MotionSmear</string>
             <ProtectedString name="Source">-- Speed smear (fluidity pass, user reference 28/10). What the eye cannot
@@ -66042,7 +66257,7 @@ return Smear
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND293">
+        <Item class="ModuleScript" referent="ND294">
           <Properties>
             <string name="Name">NarutoFX</string>
             <ProtectedString name="Source">-- Naruto on the client (roster wave, several bodies): the puffs of smoke of
@@ -66462,7 +66677,7 @@ return NarutoFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND294">
+        <Item class="ModuleScript" referent="ND295">
           <Properties>
             <string name="Name">PerceptionFX</string>
             <ProtectedString name="Source">-- (06/11, « leur Sharingan sert à quelque chose ; un truc qui va trop vite,
@@ -66791,7 +67006,7 @@ return PerceptionFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND295">
+        <Item class="ModuleScript" referent="ND296">
           <Properties>
             <string name="Name">Presentation</string>
             <ProtectedString name="Source">-- Velmora's additive combat motion and hit feedback, retaining Ninja Duel's
@@ -68020,7 +68235,7 @@ return Presentation
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND296">
+        <Item class="ModuleScript" referent="ND297">
           <Properties>
             <string name="Name">SandFX</string>
             <ProtectedString name="Source">-- Gaara's sand on the client: the sand bullet and Sand Shuriken in flight, the
@@ -68811,7 +69026,7 @@ return SandFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND297">
+        <Item class="ModuleScript" referent="ND298">
           <Properties>
             <string name="Name">SealFX</string>
             <ProtectedString name="Source">-- (13/11, issue #73: « les signes de Kakashi ne sont que des poings devant la
@@ -68897,7 +69112,7 @@ return SealFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND298">
+        <Item class="ModuleScript" referent="ND299">
           <Properties>
             <string name="Name">ShadowFX</string>
             <ProtectedString name="Source">-- (12/11) The game casts shadows now (DEV light pass). Light does not cast a
@@ -68961,7 +69176,7 @@ return ShadowFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND299">
+        <Item class="ModuleScript" referent="ND300">
           <Properties>
             <string name="Name">ShopPanel</string>
             <ProtectedString name="Source">-- The shop (13/11, user: « on voit tout ce qui est boutique, UI, design, […]
@@ -69272,133 +69487,6 @@ function Panel:drawRyo()
 		string.format("Tournament: %d to the champion, %d to the finalist (soon)",R.Champion,R.Finalist),
 	}
 	for k,line in lines do K.text(earn,line,UDim2.fromOffset(18,56+(k-1)*30),UDim2.new(1,-36,0,24),15,P.text,K.BODY_FONT) end
-end
-
-return Panel
-</ProtectedString>
-          </Properties>
-        </Item>
-        <Item class="ModuleScript" referent="ND300">
-          <Properties>
-            <string name="Name">StarterPanel</string>
-            <ProtectedString name="Source">-- Choose your inspiration (DEC-041, user 14/11 21 h 35: « j'imaginais plus un
--- choix comme un choix de starter […] choisis ton inspi, ou va retrouver ton
--- inspiration, tu as le choix parmi les trois. Et après, un en amène
--- l'autre »). Naruto, Sasuke and Lee are genin of the player's age, not
--- sensei: three cards side by side, each with his funny line
--- (Shared/Inspirations) and where he waits in Konoha; HE'S MY INSPIRATION
--- takes his kit (the server's ChooseStarter), then the goal sends the player
--- to him for his first duel. It opens by itself on a new player's walk once
--- he is dressed (Client/OutfitPanel, when it exists); LATER closes it, the
--- goal still names the three.
-local RunService=game:GetService("RunService")
-local UIS=game:GetService("UserInputService")
-local GuiService=game:GetService("GuiService")
-local Players=game:GetService("Players")
-local Shared=game:GetService("ReplicatedStorage").NinjaDuel
-local Masters=require(Shared.Masters)
-local Fighters=require(Shared.Fighters)
-local HubMap=require(Shared.HubMap)
-local Shop=require(Shared.Shop)
-local Inspirations=require(Shared.Inspirations)
-local Text=require(Shared.Text)
-local Panel={}
-Panel.__index=Panel
-Panel.CW,Panel.CH,Panel.GAP=380,470,24
-Panel.W=3*Panel.CW+2*Panel.GAP
-Panel.H=Panel.CH+150
-
-local function rgb(c) return Color3.fromRGB(c[1],c[2],c[3]) end
-
--- Whether the card should open by itself: a new player walking in Konoha,
--- dressed (when the outfit card exists), no other panel open.
-function Panel.wanted(kits,walking,dressed,busy)
-	return walking==true and kits~=nil and kits.state=="ready" and kits.needStarter==true and dressed~=false and not busy
-end
-
-function Panel.new(kit,gui,send,ui)
-	local self=setmetatable({kit=kit,send=send,ui=ui,buttons={}},Panel)
-	local P=kit.palette
-	self.P=P
-	self.root=kit.frame(gui,UDim2.fromScale(0,0),UDim2.fromScale(1,1),Color3.fromRGB(6,5,8),.25)
-	self.root.ZIndex=74;self.root.Visible=false;self.root.Active=true
-	local holder=kit.frame(self.root,UDim2.fromScale(.5,.5),UDim2.fromOffset(Panel.W,Panel.H),P.ink,1)
-	holder.AnchorPoint=Vector2.new(.5,.5)
-	local scale=kit.create("UIScale",holder,{Scale=1})
-	local function fit() scale.Scale=kit.fitScale(workspace.CurrentCamera.ViewportSize,Panel.W+40,Panel.H+40,1.15) end
-	pcall(function() workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(fit) end);fit()
-	local title=kit.inkTitle(kit.text(holder,"CHOOSE YOUR INSPIRATION",UDim2.fromOffset(0,0),UDim2.new(1,0,0,64),58,P.paper,kit.TITLE_FONT,Enum.TextXAlignment.Center))
-	title.ZIndex=75
-	kit.text(holder,"Three genin your age. Fight like the one you pick; he will lead you to the others.",UDim2.fromOffset(0,66),UDim2.new(1,0,0,22),17,P.gold,kit.BODY_FONT,Enum.TextXAlignment.Center).ZIndex=75
-	for i,id in Masters.Starters do
-		local def=Fighters[id] or {}
-		local about=Inspirations.of(id) or {}
-		local spot=HubMap.Masters[id]
-		local card=kit.inkCard(kit.frame(holder,UDim2.fromOffset((i-1)*(Panel.CW+Panel.GAP),104),UDim2.fromOffset(Panel.CW,Panel.CH),kit.CARD,0))
-		card.ZIndex=75
-		kit.frame(card,UDim2.fromOffset(0,0),UDim2.new(1,0,0,8),rgb(def.Color or {200,200,200}),0).ZIndex=76
-		local name=kit.inkTitle(kit.text(card,Text.upper(def.Name or id),UDim2.fromOffset(22,20),UDim2.fromOffset(Panel.CW-44,56),52,P.paper,kit.TITLE_FONT))
-		name.ZIndex=76
-		kit.text(card,about.title or "",UDim2.fromOffset(24,78),UDim2.fromOffset(Panel.CW-48,22),18,rgb(def.Color or {230,184,86}),kit.TITLE_FONT).ZIndex=76
-		local line=kit.text(card,about.line or "",UDim2.fromOffset(24,112),UDim2.fromOffset(Panel.CW-48,120),17,P.text,kit.BODY_FONT)
-		line.TextWrapped=true;line.TextYAlignment=Enum.TextYAlignment.Top;line.ZIndex=76
-		local with=kit.text(card,about.with or "",UDim2.fromOffset(24,240),UDim2.fromOffset(Panel.CW-48,70),16,P.gold,kit.BODY_FONT)
-		with.TextWrapped=true;with.TextYAlignment=Enum.TextYAlignment.Top;with.ZIndex=76
-		kit.text(card,"HE WAITS AT  "..(spot and spot.place or ""),UDim2.fromOffset(24,322),UDim2.fromOffset(Panel.CW-48,18),12,P.muted,kit.BODY_FONT).ZIndex=76
-		local pick=kit.button(card,"HE'S MY INSPIRATION",UDim2.fromOffset(20,Panel.CH-84),UDim2.fromOffset(Panel.CW-40,62),function() self:choose(id) end,P.red)
-		pick.TextSize=26;pick.ZIndex=77
-		self.buttons[id]=pick
-	end
-	self.later=kit.button(holder,"LATER",UDim2.new(.5,-110,0,Panel.H-34),UDim2.fromOffset(220,40),function() self:hide();self.dismissed=true end)
-	self.later.TextSize=20
-	pcall(function()
-		UIS.InputBegan:Connect(function(input)
-			if input.KeyCode==Enum.KeyCode.ButtonB and self.root.Visible then self:hide();self.dismissed=true end
-		end)
-	end)
-	self.clock=0
-	RunService.Heartbeat:Connect(function(dt) self:watch(dt) end)
-	return self
-end
-
-function Panel:shown() return self.root.Visible end
-function Panel:show(kits)
-	if kits then self.kits=kits end
-	self.root.Visible=true
-	if UIS:GetLastInputType().Name:sub(1,7)=="Gamepad" then
-		local first=self.buttons[Masters.Starters[1]]
-		task.defer(function() pcall(function() GuiService.SelectedObject=first end) end)
-	end
-end
-function Panel:hide()
-	self.root.Visible=false
-	pcall(function()
-		local selected=GuiService.SelectedObject
-		if selected and selected:IsDescendantOf(self.root) then GuiService.SelectedObject=nil end
-	end)
-end
-function Panel:choose(id)
-	self.send("ChooseStarter",{player=id})
-	self.dismissed=true
-	self:hide()
-end
-function Panel:refresh(kits)
-	self.kits=kits
-	-- his kit taken (here, at the shop or at the inspiration's home): gone
-	if self.root.Visible and kits and not kits.needStarter then self:hide() end
-end
--- Twice a second: opens by itself for a new player walking in Konoha.
-function Panel:watch(dt)
-	self.clock+=dt
-	if self.clock&lt;.5 then return end
-	self.clock=0
-	if self.root.Visible or self.dismissed then return end
-	local ui=self.ui
-	if not ui or not Players.LocalPlayer.Character then return end
-	local kits=self.kits
-	local dressed=if Shop.dressed and kits then Shop.dressed(kits.style) else nil
-	local busy=(ui.shopPanel and ui.shopPanel:shown()) or (ui.treePanel and ui.treePanel:shown()) or (ui.outfitPanel and ui.outfitPanel:shown())
-	if Panel.wanted(kits,ui.hubWalk,dressed,busy) then self:show() end
 end
 
 return Panel
@@ -70614,12 +70702,6 @@ function UI.new(parent,send)
 			end)
 			if made then self.shopPanel=panel end
 		end
-		-- (DEC-041) Choose your inspiration: the three first kits, like a starter.
-		local okStarter,StarterPanel=pcall(function() return require(script.Parent.StarterPanel) end)
-		if okStarter and StarterPanel then
-			local made,panel=pcall(StarterPanel.new,UI.kit,self.gui,send,self)
-			if made then self.starterPanel=panel end
-		end
 	end
 	-- The shop from the roster (in Konoha it is on the HUD).
 	self.shopButton=button(shell,"SHOP",UDim2.fromOffset(1040,24),UDim2.fromOffset(240,48),function()
@@ -71285,7 +71367,6 @@ function UI:setKits(kits)
 	self.kits=kits
 	if self.treePanel then self.treePanel:refresh(kits) end
 	if self.shopPanel then self.shopPanel:refresh(kits) end
-	if self.starterPanel then self.starterPanel:refresh(kits) end
 	if type(kits)~="table" or kits.state~="ready" then return end
 	local want=nil
 	if kits.selected and kits.owned and kits.owned[kits.selected] then want=kits.selected
