@@ -2389,6 +2389,118 @@ return table.freeze({
       </Item>
       <Item class="ModuleScript" referent="ND19">
         <Properties>
+          <string name="Name">Look</string>
+          <ProtectedString name="Source">-- The game's one light (14/11, François: « toutes les textures n'apparaissent
+-- pas au même moment, les lumières, surtout dans l'écran d'accueil, quand on
+-- change de perso… même au début du match »). Measured in Studio on a
+-- first arrival: the place's light at 0.05 s, the client's look at 0.73 s,
+-- the server's own afternoon (another sun, another grade) at 1.79 s when the
+-- first arena was built, the client's look again at 1.86 s: the screen
+-- changed light three times in two seconds, and up to a second each time
+-- (the client looked once a second).
+--
+-- One table now, applied by the server at its start (Server/Main: what a
+-- client receives on joining is already this light) and by the client
+-- (Client/WorldLook), so a later apply changes nothing on screen.
+-- Presentation only.
+local Look={}
+local function rgb(r,g,b) return Color3.fromRGB(r,g,b) end
+
+-- (Look pass 2, 03/11; 12/11 QA of b822ee5, validated by François) a lower,
+-- warmer sun, shadows on, less light, a darker fill.
+Look.LIGHT={
+	ClockTime=16.9,GeographicLatitude=36,Brightness=2.4,ExposureCompensation=-.35,GlobalShadows=true,
+	EnvironmentDiffuseScale=.5,EnvironmentSpecularScale=.4,ShadowSoftness=.18,
+	Ambient=rgb(60,56,72),OutdoorAmbient=rgb(96,92,112),
+	ColorShift_Top=rgb(255,212,164),ColorShift_Bottom=rgb(84,104,160),
+}
+Look.ATMOSPHERE={Density=.3,Offset=.2,Color=rgb(236,214,190),Decay=rgb(112,100,128),Glare=.2,Haze=1.1}
+-- The graded image: more contrast and colour, a warm tint, a soft bloom, rays
+-- round the sun, the far stands softly out of focus.
+Look.EFFECTS={
+	{"ColorCorrectionEffect","NinjaLookGrade",{Saturation=.22,Contrast=.26,Brightness=-.02,TintColor=rgb(255,246,236)}},
+	{"BloomEffect","NinjaLookBloom",{Intensity=.3,Size=22,Threshold=2.2}},
+	{"SunRaysEffect","NinjaLookRays",{Intensity=.04,Spread=.75}},
+	{"DepthOfFieldEffect","NinjaLookDepth",{FarIntensity=.18,FocusDistance=40,InFocusRadius=75,NearIntensity=0}},
+}
+Look.CLOUDS={Cover=.52,Density=.62,Color=rgb(255,250,246)}
+-- The menu's studio (Client/MenuStage films the roster's fighters in a dark
+-- box: low ambient, no sky light; key and coloured back lights model them).
+Look.STUDIO={Ambient=rgb(40,36,46),OutdoorAmbient=rgb(40,36,46),ExposureCompensation=0,Brightness=0,
+	EnvironmentDiffuseScale=0,EnvironmentSpecularScale=0,ColorShift_Top=rgb(0,0,0),ColorShift_Bottom=rgb(0,0,0)}
+
+-- Equal as the engine stores them (floats are read back as float32).
+local function same(a,b)
+	if type(a)=="number" and type(b)=="number" then return math.abs(a-b)&lt;1e-3 end
+	if typeof(a)=="Color3" and typeof(b)=="Color3" then
+		return math.abs(a.R-b.R)&lt;.002 and math.abs(a.G-b.G)&lt;.002 and math.abs(a.B-b.B)&lt;.002
+	end
+	return a==b
+end
+Look.same=same
+local function set(obj,k,v)
+	pcall(function() if not same((obj::any)[k],v) then (obj::any)[k]=v end end)
+end
+
+-- The values a mode wants: the world's light, with the studio's over it.
+function Look.values(studio)
+	local out=table.clone(Look.LIGHT)
+	if studio then for k,v in Look.STUDIO do out[k]=v end end
+	return out
+end
+
+-- Sets the light, the air, the grade and the clouds; writes only what
+-- differs, so applying it twice changes nothing on screen.
+function Look.apply(lighting,terrain,studio)
+	lighting=lighting or game:GetService("Lighting")
+	for k,v in Look.values(studio) do set(lighting,k,v) end
+	set(lighting,"Technology",Enum.Technology.Future)
+	-- One air: every atmosphere gets the same values (the engine uses one).
+	local any=false
+	for _,atmo in lighting:GetChildren() do
+		if atmo:IsA("Atmosphere") then
+			any=true
+			for k,v in Look.ATMOSPHERE do set(atmo,k,v) end
+		end
+	end
+	if not any then
+		local atmo=Instance.new("Atmosphere");atmo.Name="NinjaLookAtmosphere"
+		for k,v in Look.ATMOSPHERE do (atmo::any)[k]=v end
+		atmo.Parent=lighting
+	end
+	for _,spec in Look.EFFECTS do
+		local class,name,props=spec[1],spec[2],spec[3]
+		local e=lighting:FindFirstChild(name)
+		if not e then e=Instance.new(class);e.Name=name;e.Parent=lighting end
+		for k,v in props do set(e,k,v) end
+	end
+	-- An older build's grade, bloom and rays (Server/World made them) stay off.
+	for _,name in {"NinjaDuelGrade","NinjaDuelBloom","NinjaDuelRays"} do
+		local e=lighting:FindFirstChild(name);if e and e.Enabled then e.Enabled=false end
+	end
+	terrain=terrain or workspace:FindFirstChildOfClass("Terrain")
+	if terrain then
+		local clouds=terrain:FindFirstChildOfClass("Clouds")
+		if not clouds then clouds=Instance.new("Clouds");clouds.Parent=terrain end
+		for k,v in Look.CLOUDS do set(clouds,k,v) end
+	end
+end
+
+-- True when the lighting already shows the mode (nothing to write).
+function Look.holds(lighting,studio)
+	for k,v in Look.values(studio) do
+		local ok,equal=pcall(function() return same((lighting::any)[k],v) end)
+		if ok and not equal then return false end
+	end
+	return true
+end
+
+return Look
+</ProtectedString>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="ND20">
+        <Properties>
           <string name="Name">Looks</string>
           <ProtectedString name="Source">-- How a family object looks (Families.luau, client FamilyFX): one entry per
 -- projectile/zone kind, shared by server (launch point, radius, contact
@@ -2499,7 +2611,7 @@ return {
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND20">
+      <Item class="ModuleScript" referent="ND21">
         <Properties>
           <string name="Name">Masters</string>
           <ProtectedString name="Source">-- The masters' path (user 12/11, 17 h 02-17 h 21; DEC-037): a new player
@@ -2588,7 +2700,7 @@ return Masters
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND21">
+      <Item class="ModuleScript" referent="ND22">
         <Properties>
           <string name="Name">MastersView</string>
           <ProtectedString name="Source">-- What the roster and the result screen say and do for a kit on the masters'
@@ -2735,7 +2847,7 @@ return V
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND22">
+      <Item class="ModuleScript" referent="ND23">
         <Properties>
           <string name="Name">MoveGraphs</string>
           <ProtectedString name="Source">-- Character move graphs: the data half of each fighter's combat identity.
@@ -2959,7 +3071,7 @@ return Graphs
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND23">
+      <Item class="ModuleScript" referent="ND24">
         <Properties>
           <string name="Name">OnlineProtocol</string>
           <ProtectedString name="Source">-- Online 1v1 (NET-001): shared tunables and the request vocabulary of the
@@ -2986,7 +3098,7 @@ return table.freeze({
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND24">
+      <Item class="ModuleScript" referent="ND25">
         <Properties>
           <string name="Name">ReactionSides</string>
           <ProtectedString name="Source">-- Back and side reaction clips. Feel audit of 07/11, M3 "victimes retournées
@@ -3031,7 +3143,7 @@ return ReactionSides
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND25">
+      <Item class="ModuleScript" referent="ND26">
         <Properties>
           <string name="Name">Roster</string>
           <ProtectedString name="Source">-- The playable roster, in menu order: the select screen, the AI soaks and the
@@ -3056,7 +3168,7 @@ return {
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND26">
+      <Item class="ModuleScript" referent="ND27">
         <Properties>
           <string name="Name">RosterMoves</string>
           <ProtectedString name="Source">-- Roster 20 batches (Shared/WaveN): a fighter's own strike, added to Attacks
@@ -3086,7 +3198,7 @@ return RosterMoves
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND27">
+      <Item class="ModuleScript" referent="ND28">
         <Properties>
           <string name="Name">RosterStaging</string>
           <ProtectedString name="Source">-- DEC-026 newcomers (Madara, Hashirama, Hiruzen as children, Shared/Wave4).
@@ -3096,7 +3208,7 @@ return {"Rival","Sapling","Professor"}
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND28">
+      <Item class="ModuleScript" referent="ND29">
         <Properties>
           <string name="Name">Rules</string>
           <ProtectedString name="Source">-- Pure policy shared by server combat and headless tests. Authority lives on server.
@@ -3139,7 +3251,7 @@ return Rules
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND29">
+      <Item class="ModuleScript" referent="ND30">
         <Properties>
           <string name="Name">SealJutsu</string>
           <ProtectedString name="Source">-- Hand-seal jutsu (DEC-032 §3, user 03/11: « plus de variété que 4 cases
@@ -3308,7 +3420,7 @@ return SealJutsu
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND30">
+      <Item class="ModuleScript" referent="ND31">
         <Properties>
           <string name="Name">Shop</string>
           <ProtectedString name="Source">-- The shop and the Ryō (13/11, user: « on voit tout ce qui est boutique, UI,
@@ -3417,7 +3529,7 @@ return Shop
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND31">
+      <Item class="ModuleScript" referent="ND32">
         <Properties>
           <string name="Name">Sight</string>
           <ProtectedString name="Source">-- (06/11, « leur Sharingan sert à quelque chose ») What a pair of eyes can
@@ -3523,7 +3635,7 @@ return Sight
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND32">
+      <Item class="ModuleScript" referent="ND33">
         <Properties>
           <string name="Name">SkillTrees</string>
           <ProtectedString name="Source">-- Fighter skill trees (PROG-001). Server data: what skill points buy for each
@@ -4150,7 +4262,7 @@ return {
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND33">
+      <Item class="ModuleScript" referent="ND34">
         <Properties>
           <string name="Name">StepSpeeds</string>
           <ProtectedString name="Source">-- Step speeds: how fast the feet of a clip carry the body (studs/s) without
@@ -4194,7 +4306,7 @@ return StepSpeeds
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND34">
+      <Item class="ModuleScript" referent="ND35">
         <Properties>
           <string name="Name">Text</string>
           <ProtectedString name="Source">-- Upper case for the screen (QA test of b822ee5, 12/11: « SōSHūHA »,
@@ -4220,7 +4332,7 @@ return Text
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND35">
+      <Item class="ModuleScript" referent="ND36">
         <Properties>
           <string name="Name">TreeTiers</string>
           <ProtectedString name="Source">-- The tiers of a kit's tree (13/11, user: « vraiment les arbres de compétences,
@@ -4263,7 +4375,7 @@ return T
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND36">
+      <Item class="ModuleScript" referent="ND37">
         <Properties>
           <string name="Name">TreeView</string>
           <ProtectedString name="Source">-- What the tree panel shows for a learned kit (DEC-038, user 13/11: « il faut
@@ -4392,7 +4504,7 @@ return V
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND37">
+      <Item class="ModuleScript" referent="ND38">
         <Properties>
           <string name="Name">UltimateScripts</string>
           <ProtectedString name="Source">-- The eight ultimates as scripts (stage 6, redone 02/11: "globalement tous
@@ -4742,7 +4854,7 @@ return Scripts
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND38">
+      <Item class="ModuleScript" referent="ND39">
         <Properties>
           <string name="Name">VelmoraCombatConfig</string>
           <ProtectedString name="Source">-- Adapted from Velmora src/shared/config/CombatConfig.luau.
@@ -4778,7 +4890,7 @@ return table.freeze({
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND39">
+      <Item class="ModuleScript" referent="ND40">
         <Properties>
           <string name="Name">Wave1</string>
           <ProtectedString name="Source">-- Roster 20, batch 1 (DEC-022): Haku, Zabuza, Kimimaro. This batch's shared
@@ -5025,7 +5137,7 @@ return {
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND40">
+      <Item class="ModuleScript" referent="ND41">
         <Properties>
           <string name="Name">Wave2</string>
           <ProtectedString name="Source">-- Roster 20, batch 2 (DEC-022): Shisui, Orochimaru, Kabuto. This batch's
@@ -5211,7 +5323,7 @@ return {
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND41">
+      <Item class="ModuleScript" referent="ND42">
         <Properties>
           <string name="Name">Wave3</string>
           <ProtectedString name="Source">-- Roster 20, batch 3 (DEC-022): Deidara, Sasori, Nagato, Killer Bee. This
@@ -5486,7 +5598,7 @@ return {
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND42">
+      <Item class="ModuleScript" referent="ND43">
         <Properties>
           <string name="Name">Wave4</string>
           <ProtectedString name="Source">-- DEC-026 newcomers: Madara, Hashirama and Hiruzen as children (the three
@@ -6680,35 +6792,35 @@ return {
           </Item>
         </Item>
       </Item>
-      <Item class="StringValue" referent="ND43">
-        <Properties>
-          <string name="Name">BuildFingerprint</string>
-          <string name="Value">1b93a972936dc78b07a13de02b98431e39695d5fb55b1e5bc214844c0661cbfc</string>
-        </Properties>
-      </Item>
       <Item class="StringValue" referent="ND44">
         <Properties>
-          <string name="Name">RuntimeFingerprint</string>
-          <string name="Value">6eb947de6ec2cf689e868ec899a43ae6255060bd300bd187e8d85d25ff13a6fa</string>
+          <string name="Name">BuildFingerprint</string>
+          <string name="Value">868e818e591d9eb04e3682ede3b1efa104e4d010977e487bf9bbea2c7fb78e6a</string>
         </Properties>
       </Item>
       <Item class="StringValue" referent="ND45">
+        <Properties>
+          <string name="Name">RuntimeFingerprint</string>
+          <string name="Value">d6b15823dc442590c1472a54637ce7324be87b67eaf3c417a777a5e072ce235b</string>
+        </Properties>
+      </Item>
+      <Item class="StringValue" referent="ND46">
         <Properties>
           <string name="Name">BuildProfile</string>
           <string name="Value">qa</string>
         </Properties>
       </Item>
-      <Item class="StringValue" referent="ND46">
+      <Item class="StringValue" referent="ND47">
         <Properties>
           <string name="Name">SourceCommit</string>
-          <string name="Value">b4969feeb5d4</string>
+          <string name="Value">3dcfb22b1fcb</string>
         </Properties>
       </Item>
-      <Item class="Folder" referent="ND47">
+      <Item class="Folder" referent="ND48">
         <Properties>
           <string name="Name">ThirdPartyLicenses</string>
         </Properties>
-        <Item class="StringValue" referent="ND48">
+        <Item class="StringValue" referent="ND49">
           <Properties>
             <string name="Name">bangla</string>
             <string name="Value">MIT License
@@ -6735,7 +6847,7 @@ SOFTWARE.
 </string>
           </Properties>
         </Item>
-        <Item class="StringValue" referent="ND49">
+        <Item class="StringValue" referent="ND50">
           <Properties>
             <string name="Name">place1</string>
             <string name="Value">MIT License
@@ -6762,7 +6874,7 @@ SOFTWARE.
 </string>
           </Properties>
         </Item>
-        <Item class="StringValue" referent="ND50">
+        <Item class="StringValue" referent="ND51">
           <Properties>
             <string name="Name">velmora</string>
             <string name="Value">MIT License
@@ -6789,7 +6901,7 @@ SOFTWARE.
 </string>
           </Properties>
         </Item>
-        <Item class="StringValue" referent="ND51">
+        <Item class="StringValue" referent="ND52">
           <Properties>
             <string name="Name">lightningbeams</string>
             <string name="Value">MIT License
@@ -6819,15 +6931,15 @@ SOFTWARE.
       </Item>
     </Item>
   </Item>
-  <Item class="ServerScriptService" referent="ND52">
+  <Item class="ServerScriptService" referent="ND53">
     <Properties>
       <string name="Name">ServerScriptService</string>
     </Properties>
-    <Item class="Folder" referent="ND53">
+    <Item class="Folder" referent="ND54">
       <Properties>
         <string name="Name">NinjaDuelServer</string>
       </Properties>
-      <Item class="ModuleScript" referent="ND54">
+      <Item class="ModuleScript" referent="ND55">
         <Properties>
           <string name="Name">AI</string>
           <ProtectedString name="Source">local Config=require(game:GetService("ReplicatedStorage").NinjaDuel.Config)
@@ -7954,7 +8066,7 @@ return AI
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND55">
+      <Item class="ModuleScript" referent="ND56">
         <Properties>
           <string name="Name">Animation</string>
           <ProtectedString name="Source">-- Bangla PunchMoves animation playback, adapted for server-owned human and AI R15.
@@ -8060,7 +8172,7 @@ return Animation
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND56">
+      <Item class="ModuleScript" referent="ND57">
         <Properties>
           <string name="Name">ArenaMeshData</string>
           <ProtectedString name="Source">-- Generated by tools/blender/arena_to_luau.py from the Studio import of
@@ -8134,7 +8246,7 @@ return {
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND57">
+      <Item class="ModuleScript" referent="ND58">
         <Properties>
           <string name="Name">ArenaMeshes</string>
           <ProtectedString name="Source">-- The stadium's scenery made in Blender (stage 5, user 29/10: the arena,
@@ -8210,7 +8322,7 @@ return ArenaMeshes
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND58">
+      <Item class="ModuleScript" referent="ND59">
         <Properties>
           <string name="Name">AvatarBody</string>
           <ProtectedString name="Source">-- The player's own Roblox avatar as his fighter's body (DEC-036, user 12/11
@@ -8400,7 +8512,7 @@ return AvatarBody
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND59">
+      <Item class="ModuleScript" referent="ND60">
         <Properties>
           <string name="Name">BanglaCombat</string>
           <ProtectedString name="Source">-- Adapted from BanglaBattlegrounds ServerScriptService/StarterCombat.
@@ -8527,7 +8639,7 @@ return Bangla
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND60">
+      <Item class="ModuleScript" referent="ND61">
         <Properties>
           <string name="Name">BanglaEvade</string>
           <ProtectedString name="Source">-- performEvade from Bangla WalkRunHandler (Dewan Mukto, MIT), adapted.
@@ -8607,7 +8719,7 @@ return Evade
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND61">
+      <Item class="ModuleScript" referent="ND62">
         <Properties>
           <string name="Name">Bodies</string>
           <ProtectedString name="Source">-- Light bodies that are not actors (roster hook H12): Naruto's shadow clones
@@ -9060,7 +9172,7 @@ return Bodies
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND62">
+      <Item class="ModuleScript" referent="ND63">
         <Properties>
           <string name="Name">BodyState</string>
           <ProtectedString name="Source">-- Ninja Embodiment (DEC-027, SYS-001 sustained chakra): a technique that is a
@@ -9215,7 +9327,7 @@ return BodyState
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND63">
+      <Item class="ModuleScript" referent="ND64">
         <Properties>
           <string name="Name">Brawler</string>
           <ProtectedString name="Source">local Shared=game:GetService("ReplicatedStorage").NinjaDuel
@@ -11110,7 +11222,7 @@ return Brawler
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND64">
+      <Item class="ModuleScript" referent="ND65">
         <Properties>
           <string name="Name">BuildPresets</string>
           <ProtectedString name="Source">-- Example ranked builds (PROG-002) and AI budget builds (PROG-003). Every
@@ -11238,7 +11350,7 @@ return Presets
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND65">
+      <Item class="ModuleScript" referent="ND66">
         <Properties>
           <string name="Name">ChakraCombat</string>
           <ProtectedString name="Source">-- ChakraCombat: the runtime adapter between the real duel (projectiles,
@@ -12300,7 +12412,7 @@ return Chakra
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND66">
+      <Item class="ModuleScript" referent="ND67">
         <Properties>
           <string name="Name">ChakraDev</string>
           <ProtectedString name="Source">-- Server-internal tool facade. Studio bindable or offline CLI, no client Remote.
@@ -12385,7 +12497,7 @@ return Dev
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND67">
+      <Item class="ModuleScript" referent="ND68">
         <Properties>
           <string name="Name">ChakraFlow</string>
           <ProtectedString name="Source">-- ChakraFlow: chakra into whatever the body does next (Freedom, user 28/10:
@@ -12748,7 +12860,7 @@ return ChakraFlow
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND68">
+      <Item class="ModuleScript" referent="ND69">
         <Properties>
           <string name="Name">ChakraInputPlan</string>
           <ProtectedString name="Source">-- Optional intent planner ONLY. Does not bind keys or send/change combat actions.
@@ -12776,7 +12888,7 @@ return P
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND69">
+      <Item class="ModuleScript" referent="ND70">
         <Properties>
           <string name="Name">ChakraLab</string>
           <ProtectedString name="Source">-- Explicit experimental sandbox: kinematic proxies, never the live projectiles.
@@ -12898,7 +13010,7 @@ return Lab
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND70">
+      <Item class="ModuleScript" referent="ND71">
         <Properties>
           <string name="Name">ChakraRules</string>
           <ProtectedString name="Source">-- Declarative matching only. No callbacks/code strings supplied by configuration.
@@ -12995,7 +13107,7 @@ return R
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND71">
+      <Item class="ModuleScript" referent="ND72">
         <Properties>
           <string name="Name">ChakraStudioQA</string>
           <ProtectedString name="Source">-- Explicit smoke test of the chakra lab, run by dev:Invoke("interactions","qa")
@@ -13041,7 +13153,7 @@ return QA
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND72">
+      <Item class="ModuleScript" referent="ND73">
         <Properties>
           <string name="Name">ChakraStudioView</string>
           <ProtectedString name="Source">-- Optional Studio proxy renderer. Only draws its own folder; no camera/UI changes.
@@ -13105,7 +13217,7 @@ return View
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND73">
+      <Item class="ModuleScript" referent="ND74">
         <Properties>
           <string name="Name">ChakraTuning</string>
           <ProtectedString name="Source">-- Live chakra interaction data (SYS-001 / TOOL-006): OBJECT + CHAKRA + NATURE /
@@ -13311,7 +13423,7 @@ return T
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND74">
+      <Item class="ModuleScript" referent="ND75">
         <Properties>
           <string name="Name">ChakraVectors</string>
           <ProtectedString name="Source">-- Serializable vector math: simulation/reporting has no Roblox instance dependency.
@@ -13337,7 +13449,7 @@ return V
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND75">
+      <Item class="ModuleScript" referent="ND76">
         <Properties>
           <string name="Name">ChampionCliff</string>
           <ProtectedString name="Source">-- The heads on Konoha's cliff (14/11, user: « les têtes sont moches […] à
@@ -13600,7 +13712,7 @@ return Cliff
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND76">
+      <Item class="ModuleScript" referent="ND77">
         <Properties>
           <string name="Name">Combat</string>
           <ProtectedString name="Source">local Shared = game:GetService("ReplicatedStorage").NinjaDuel
@@ -16423,7 +16535,7 @@ return Combat
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND77">
+      <Item class="ModuleScript" referent="ND78">
         <Properties>
           <string name="Name">CombatInspector</string>
           <ProtectedString name="Source">-- Read-only QA projection. Never imported by combat, movement or Motion Lab.
@@ -16493,7 +16605,7 @@ return Inspector
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND78">
+      <Item class="ModuleScript" referent="ND79">
         <Properties>
           <string name="Name">Copy</string>
           <ProtectedString name="Source">-- (06/11, user: « Kakashi : le Sharingan qui copie », after the @piercevile
@@ -16612,7 +16724,7 @@ return Copy
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND79">
+      <Item class="ModuleScript" referent="ND80">
         <Properties>
           <string name="Name">Costumes</string>
           <ProtectedString name="Source">-- Costumes of the roster breadth pass (ROSTER_20): each one registers under
@@ -16733,7 +16845,7 @@ return Costumes
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND80">
+      <Item class="ModuleScript" referent="ND81">
         <Properties>
           <string name="Name">CupOdds</string>
           <ProtectedString name="Source">-- The Prodigy Tournament's skipped matches (Server/Tournament): how often the
@@ -16755,7 +16867,7 @@ return {
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND81">
+      <Item class="ModuleScript" referent="ND82">
         <Properties>
           <string name="Name">DevCommands</string>
           <ProtectedString name="Source">-- Studio tooling boundary (Codex 33028b2, ported): the F6 panel's remote and
@@ -16786,7 +16898,7 @@ return Commands
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND82">
+      <Item class="ModuleScript" referent="ND83">
         <Properties>
           <string name="Name">DevFlight</string>
           <ProtectedString name="Source">-- Debug/QA places only (DevHooks.install): a flight recorder for a human
@@ -16916,7 +17028,7 @@ return Flight
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND83">
+      <Item class="ModuleScript" referent="ND84">
         <Properties>
           <string name="Name">DevGateCheck</string>
           <ProtectedString name="Source">-- Debug/QA places only (build.py DEBUG_SOURCES): QA-004 gate scenarios run
@@ -17437,7 +17549,7 @@ end
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND84">
+      <Item class="ModuleScript" referent="ND85">
         <Properties>
           <string name="Name">DevHooks</string>
           <ProtectedString name="Source">-- Studio-only playtest hooks. A BindableFunction in ServerStorage lets a Studio
@@ -17848,7 +17960,7 @@ return DevHooks
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND85">
+      <Item class="ModuleScript" referent="ND86">
         <Properties>
           <string name="Name">DevProfiler</string>
           <ProtectedString name="Source">-- Studio profiler (Codex 33028b2, ported): instance-level instrumentation,
@@ -17975,7 +18087,7 @@ return Profiler
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND86">
+      <Item class="ModuleScript" referent="ND87">
         <Properties>
           <string name="Name">DevQA</string>
           <ProtectedString name="Source">-- Native smoke of the Studio dev tools themselves (Codex 33028b2, ported).
@@ -18046,7 +18158,7 @@ return QA
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND87">
+      <Item class="ModuleScript" referent="ND88">
         <Properties>
           <string name="Name">DevReport</string>
           <ProtectedString name="Source">-- Profiler report export (Codex 33028b2, ported). Roblox truncates long Output
@@ -18081,7 +18193,7 @@ return Report
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND88">
+      <Item class="ModuleScript" referent="ND89">
         <Properties>
           <string name="Name">DevRosterCheck</string>
           <ProtectedString name="Source">-- Debug/QA places only (build.py DEBUG_SOURCES): a native Studio pass for
@@ -18207,7 +18319,7 @@ end
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND89">
+      <Item class="ModuleScript" referent="ND90">
         <Properties>
           <string name="Name">DevScenarios</string>
           <ProtectedString name="Source">-- Explicit QA setups (Codex 33028b2, ported to the current Matches API). Each
@@ -18303,7 +18415,7 @@ return Scenarios
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND90">
+      <Item class="ModuleScript" referent="ND91">
         <Properties>
           <string name="Name">DevTools</string>
           <ProtectedString name="Source">-- Studio dev-tool dispatcher (Codex 33028b2, ported): shared by the F6 panel
@@ -18387,7 +18499,7 @@ return Tools
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND91">
+      <Item class="ModuleScript" referent="ND92">
         <Properties>
           <string name="Name">DonorAnimations</string>
           <ProtectedString name="Source">-- R6 -&gt; R15 compatibility only; transforms/times remain the donor choreography.
@@ -18429,7 +18541,7 @@ return Donor
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND92">
+      <Item class="ModuleScript" referent="ND93">
         <Properties>
           <string name="Name">Elements</string>
           <ProtectedString name="Source">-- Element families define different gameplay primitives. Fire and Wind are
@@ -18563,7 +18675,7 @@ return Elements
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND93">
+      <Item class="ModuleScript" referent="ND94">
         <Properties>
           <string name="Name">Families</string>
           <ProtectedString name="Source">-- Reusable technique families and fighter traits (ROSTER_20_BREADTH_PASS).
@@ -19646,7 +19758,7 @@ return Families
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND94">
+      <Item class="ModuleScript" referent="ND95">
         <Properties>
           <string name="Name">Gale</string>
           <ProtectedString name="Source">-- Temari (Gale, roster wave): the wind fan, on the shared systems. Her kit
@@ -19972,7 +20084,7 @@ return Gale
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND95">
+      <Item class="ModuleScript" referent="ND96">
         <Properties>
           <string name="Name">Headband</string>
           <ProtectedString name="Source">-- The Konoha headband a player's own avatar wears (13/11, the shop: Shared/Shop
@@ -20034,7 +20146,7 @@ return Headband
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND96">
+      <Item class="ModuleScript" referent="ND97">
         <Properties>
           <string name="Name">Hounds</string>
           <ProtectedString name="Source">-- (06/11, « les chiens ninja qui sortent du sol ») Kakashi's ninken: Summoning:
@@ -20184,7 +20296,7 @@ return Hounds
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND97">
+      <Item class="ModuleScript" referent="ND98">
         <Properties>
           <string name="Name">Hub</string>
           <ProtectedString name="Source">-- Konoha, the hub (DEC-038, user 13/11: « travailler la boucle en mode le
@@ -20928,7 +21040,7 @@ return Hub
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND98">
+      <Item class="ModuleScript" referent="ND99">
         <Properties>
           <string name="Name">Interactions</string>
           <ProtectedString name="Source">-- Interactions between jutsu (stage 6, the approved move list, "Interactions:
@@ -21152,7 +21264,7 @@ return Interactions
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND99">
+      <Item class="ModuleScript" referent="ND100">
         <Properties>
           <string name="Name">Legion</string>
           <ProtectedString name="Source">-- Naruto Uzumaki (roster wave: Part I, the Chunin Exam to the Valley of the
@@ -21689,7 +21801,7 @@ return Legion
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND100">
+      <Item class="ModuleScript" referent="ND101">
         <Properties>
           <string name="Name">Lobby</string>
           <ProtectedString name="Source">-- Players online and challenges between them (user 04/11: « rentrer dans le
@@ -22235,7 +22347,7 @@ return Lobby
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND101">
+      <Item class="ModuleScript" referent="ND102">
         <Properties>
           <string name="Name">LookMeshData</string>
           <ProtectedString name="Source">-- Generated by tools/blender/looks_to_luau.py from the Studio imports of
@@ -22548,7 +22660,7 @@ return {
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND102">
+      <Item class="ModuleScript" referent="ND103">
         <Properties>
           <string name="Name">LookMeshes</string>
           <ProtectedString name="Source">-- Blender-made looks (user 29/10 14:37: "produis les designs sur Blender").
@@ -22652,7 +22764,7 @@ return LookMeshes
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND103">
+      <Item class="ModuleScript" referent="ND104">
         <Properties>
           <string name="Name">Looks</string>
           <ProtectedString name="Source">-- Looks of the 8 main fighters, final-beta pass (user 29/10 14:00-14:07:
@@ -23323,7 +23435,7 @@ return Looks
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="Script" referent="ND104">
+      <Item class="Script" referent="ND105">
         <Properties>
           <string name="Name">Main</string>
           <ProtectedString name="Source">workspace:SetAttribute("NinjaDuelDebug",true)
@@ -23332,6 +23444,9 @@ local Players=game:GetService("Players")
 local RunService=game:GetService("RunService")
 local Shared=game:GetService("ReplicatedStorage"):WaitForChild("NinjaDuel")
 Players.CharacterAutoLoads=false
+-- (14/11) The game's light before any player joins: what a client receives
+-- on joining is already the look it holds (Shared/Look).
+pcall(function() require(Shared:WaitForChild("Look")).apply() end)
 local remote=Instance.new("RemoteEvent"); remote.Name="Action"; remote.Parent=Shared
 local Matches=require(script.Parent.Matches)
 -- Blender-made costume meshes load in the background (Server/LookMeshes).
@@ -23378,7 +23493,7 @@ print("[NinjaDuel] Ready — select a fighter and start the duel")
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND105">
+      <Item class="ModuleScript" referent="ND106">
         <Properties>
           <string name="Name">Matches</string>
           <ProtectedString name="Source">local Players=game:GetService("Players")
@@ -24158,7 +24273,7 @@ return Matches
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND106">
+      <Item class="ModuleScript" referent="ND107">
         <Properties>
           <string name="Name">Motor</string>
           <ProtectedString name="Source">-- Server movement authority. This module owns locomotion, landing and safe
@@ -24565,7 +24680,7 @@ return Motor
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND107">
+      <Item class="ModuleScript" referent="ND108">
         <Properties>
           <string name="Name">NativeQA</string>
           <ProtectedString name="Source">-- Test-only module omitted from playable artifact.
@@ -25051,7 +25166,7 @@ return QA
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND108">
+      <Item class="ModuleScript" referent="ND109">
         <Properties>
           <string name="Name">Online</string>
           <ProtectedString name="Source">-- Online 1v1 (NET-001): casual queue, private duel codes, a short fighter
@@ -25404,7 +25519,7 @@ return Online
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND109">
+      <Item class="ModuleScript" referent="ND110">
         <Properties>
           <string name="Name">Perception</string>
           <ProtectedString name="Source">-- Ninja Embodiment (DEC-027): what a body perceives of the space around a
@@ -25513,7 +25628,7 @@ return Perception
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND110">
+      <Item class="ModuleScript" referent="ND111">
         <Properties>
           <string name="Name">Place1Movement</string>
           <ProtectedString name="Source">-- Adapted directly from Place1 FirstPersonMovementController (alexkkork, MIT).
@@ -25817,7 +25932,7 @@ return Movement
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND111">
+      <Item class="ModuleScript" referent="ND112">
         <Properties>
           <string name="Name">Place1Parkour</string>
           <ProtectedString name="Source">-- Adapted directly from Place1 ParkourTraversalController (alexkkork, MIT).
@@ -26299,7 +26414,7 @@ return Parkour
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND112">
+      <Item class="ModuleScript" referent="ND113">
         <Properties>
           <string name="Name">Portraits</string>
           <ProtectedString name="Source">-- The menu's fighters (UI pass 02/11, user: "be original in everything"): the
@@ -26402,7 +26517,7 @@ return Portraits
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND113">
+      <Item class="ModuleScript" referent="ND114">
         <Properties>
           <string name="Name">ProfileRepository</string>
           <ProtectedString name="Source">-- Progression profile persistence (PROG-001). One key per profile; an
@@ -26613,7 +26728,7 @@ return Repo
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND114">
+      <Item class="ModuleScript" referent="ND115">
         <Properties>
           <string name="Name">ProfileSchema</string>
           <ProtectedString name="Source">-- Fighter progression profile (PROG-001). Per fighter: the skill points earned,
@@ -27050,7 +27165,7 @@ return S
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND115">
+      <Item class="ModuleScript" referent="ND116">
         <Properties>
           <string name="Name">Progression</string>
           <ProtectedString name="Source">-- The masters' path on the server (DEC-037, user 12/11 17 h 02-17 h 21):
@@ -27367,7 +27482,7 @@ return P
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND116">
+      <Item class="ModuleScript" referent="ND117">
         <Properties>
           <string name="Name">Repro</string>
           <ProtectedString name="Source">-- Repro places (gameplay audit, 03/11). Each bug found by playing gets its
@@ -27488,7 +27603,7 @@ return Repro
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND117">
+      <Item class="ModuleScript" referent="ND118">
         <Properties>
           <string name="Name">SealKits</string>
           <ProtectedString name="Source">-- The seal jutsu that are not a plain family object (04/11, the user's kit
@@ -27679,7 +27794,7 @@ return SealKits
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND118">
+      <Item class="ModuleScript" referent="ND119">
         <Properties>
           <string name="Name">SkillBuilds</string>
           <ProtectedString name="Source">-- Skill builds (PROG-001/002). Pure, server-side: validates a fighter's ACTIVE
@@ -28261,7 +28376,7 @@ return SkillBuilds
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND119">
+      <Item class="ModuleScript" referent="ND120">
         <Properties>
           <string name="Name">SkillTrees</string>
           <ProtectedString name="Source">-- (13/11, DEC-038) The skill trees moved to Shared/SkillTrees: the client draws
@@ -28271,7 +28386,7 @@ return require(game:GetService("ReplicatedStorage").NinjaDuel.SkillTrees)
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND120">
+      <Item class="ModuleScript" referent="ND121">
         <Properties>
           <string name="Name">Stage</string>
           <ProtectedString name="Source">-- The lane's stadium between duels (QA test of b822ee5, 12/11: « gel à chaque
@@ -28405,7 +28520,7 @@ return Stage
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND121">
+      <Item class="ModuleScript" referent="ND122">
         <Properties>
           <string name="Name">Techniques</string>
           <ProtectedString name="Source">-- Each entry supplies prerequisites and payoff. The combat pipeline owns cost,
@@ -29565,7 +29680,7 @@ return Techniques
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND122">
+      <Item class="ModuleScript" referent="ND123">
         <Properties>
           <string name="Name">Tournament</string>
           <ProtectedString name="Source">-- The Prodigy Tournament against the AI (roadmap 04/11, step 2): the eight
@@ -29839,7 +29954,7 @@ return Tournament
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND123">
+      <Item class="ModuleScript" referent="ND124">
         <Properties>
           <string name="Name">Tutorial</string>
           <ProtectedString name="Source">-- Tutorial v2 (user 02/11: "un vrai tutoriel ... adapté pour chaque perso",
@@ -30241,7 +30356,7 @@ return Tutorial
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND124">
+      <Item class="ModuleScript" referent="ND125">
         <Properties>
           <string name="Name">TutorialBot</string>
           <ProtectedString name="Source">-- Debug/QA places only (build.py DEBUG_SOURCES). Plays the tutorial on its
@@ -30409,7 +30524,7 @@ return Bot
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND125">
+      <Item class="ModuleScript" referent="ND126">
         <Properties>
           <string name="Name">Ultimates</string>
           <ProtectedString name="Source">-- Ultimates (stage 6, the approved move list, "Ultimes"): one per main
@@ -30733,7 +30848,7 @@ return Ultimates
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND126">
+      <Item class="ModuleScript" referent="ND127">
         <Properties>
           <string name="Name">VelmoraAntiCheat</string>
           <ProtectedString name="Source">-- Adapted from Velmora src/server/Combat/CombatAntiCheat.luau.
@@ -30772,7 +30887,7 @@ return AntiCheat
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND127">
+      <Item class="ModuleScript" referent="ND128">
         <Properties>
           <string name="Name">VelmoraDefense</string>
           <ProtectedString name="Source">-- Adapted from Velmora CombatService guard/parry/dodge resolution.
@@ -30907,7 +31022,7 @@ return Defense
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND128">
+      <Item class="ModuleScript" referent="ND129">
         <Properties>
           <string name="Name">VelmoraHitDetection</string>
           <ProtectedString name="Source">-- Adapted from Velmora src/server/Combat/HitDetection.luau.
@@ -30958,7 +31073,7 @@ return HitDetection
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND129">
+      <Item class="ModuleScript" referent="ND130">
         <Properties>
           <string name="Name">Wave1Kit</string>
           <ProtectedString name="Source">-- Roster 20, batch 1 (Haku, Zabuza, Kimimaro): the batch's server side. All
@@ -31093,7 +31208,7 @@ return Kit
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND130">
+      <Item class="ModuleScript" referent="ND131">
         <Properties>
           <string name="Name">Wave2Kit</string>
           <ProtectedString name="Source">-- Roster 20, batch 2 (Shisui, Orochimaru, Kabuto): the batch's server side.
@@ -31207,7 +31322,7 @@ return Kit
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND131">
+      <Item class="ModuleScript" referent="ND132">
         <Properties>
           <string name="Name">Wave3Kit</string>
           <ProtectedString name="Source">-- Roster 20, batch 3 (Deidara, Sasori, Nagato, Killer Bee): the batch's
@@ -31393,7 +31508,7 @@ return Kit
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND132">
+      <Item class="ModuleScript" referent="ND133">
         <Properties>
           <string name="Name">Wave4Kit</string>
           <ProtectedString name="Source">-- DEC-026 newcomers (Madara, Hashirama, Hiruzen as children): the batch's
@@ -31500,7 +31615,7 @@ return Kit
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND133">
+      <Item class="ModuleScript" referent="ND134">
         <Properties>
           <string name="Name">World</string>
           <ProtectedString name="Source">local World = {}
@@ -31623,20 +31738,12 @@ local function pavilion(parent,cf,width,depth,height,tiers)
 		end
 	end
 end
+-- (14/11) The game's one light (Shared/Look), the same the client holds:
+-- this used to be another afternoon (sun at 14.6, its own grade and bloom),
+-- replicated a second after the client's look and overwritten again.
 local function atmosphere()
-	local Lighting=game:GetService("Lighting")
-	if Lighting:FindFirstChild("NinjaDuelAtmosphere") then return end
-	-- Bright exam-day afternoon, as in the anime: clear sky, warm sun, soft haze.
-	Lighting.ClockTime=14.6;Lighting.GeographicLatitude=30
-	Lighting.Brightness=3;Lighting.EnvironmentDiffuseScale=.7;Lighting.EnvironmentSpecularScale=.3
-	Lighting.Ambient=rgb(104,104,104);Lighting.OutdoorAmbient=rgb(150,146,138)
-	pcall(function() Lighting.Technology=Enum.Technology.Future end)
-	pcall(function() Lighting.LightingStyle=Enum.LightingStyle.Realistic end)
-	local atmo=Instance.new("Atmosphere");atmo.Name="NinjaDuelAtmosphere";atmo.Density=.26;atmo.Offset=.1
-	atmo.Color=rgb(214,222,226);atmo.Decay=rgb(140,150,160);atmo.Glare=.2;atmo.Haze=.9;atmo.Parent=Lighting
-	local cc=Instance.new("ColorCorrectionEffect");cc.Name="NinjaDuelGrade";cc.Saturation=.14;cc.Contrast=.06;cc.Brightness=.02;cc.TintColor=rgb(255,250,242);cc.Parent=Lighting
-	local bloom=Instance.new("BloomEffect");bloom.Name="NinjaDuelBloom";bloom.Intensity=.45;bloom.Size=24;bloom.Threshold=1.5;bloom.Parent=Lighting
-	local rays=Instance.new("SunRaysEffect");rays.Name="NinjaDuelRays";rays.Intensity=.04;rays.Spread=.6;rays.Parent=Lighting
+	local okLook,Look=pcall(require,game:GetService("ReplicatedStorage"):WaitForChild("NinjaDuel"):WaitForChild("Look"))
+	if okLook and Look then Look.apply(game:GetService("Lighting"),workspace:FindFirstChildOfClass("Terrain")) end
 end
 World.atmosphere=atmosphere
 -- --------------------------------------------- the stadium, Blender pass 2
@@ -32799,7 +32906,7 @@ return World
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND134">
+      <Item class="ModuleScript" referent="ND135">
         <Properties>
           <string name="Name">WorldReaction</string>
           <ProtectedString name="Source">-- Ninja Embodiment (DEC-027, EMB-004): the arena answers what happens in it.
@@ -33633,7 +33740,7 @@ return WorldReaction
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND135">
+      <Item class="ModuleScript" referent="ND136">
         <Properties>
           <string name="Name">Zones</string>
           <ProtectedString name="Source">-- Persistent typed zones (ROSTER_WAVE_HOOKS H06), beside Combat's hazards
@@ -33861,21 +33968,21 @@ return Zones
       </Item>
     </Item>
   </Item>
-  <Item class="StarterPlayer" referent="ND136">
+  <Item class="StarterPlayer" referent="ND137">
     <Properties>
       <string name="Name">StarterPlayer</string>
       <float name="CameraMinZoomDistance">8</float>
       <float name="CameraMaxZoomDistance">32</float>
     </Properties>
-    <Item class="StarterPlayerScripts" referent="ND137">
+    <Item class="StarterPlayerScripts" referent="ND138">
       <Properties>
         <string name="Name">StarterPlayerScripts</string>
       </Properties>
-      <Item class="Folder" referent="ND138">
+      <Item class="Folder" referent="ND139">
         <Properties>
           <string name="Name">NinjaDuelClient</string>
         </Properties>
-        <Item class="ModuleScript" referent="ND139">
+        <Item class="ModuleScript" referent="ND140">
           <Properties>
             <string name="Name">ArenaDress</string>
             <ProtectedString name="Source">-- The stadium as this screen shows it (look pass 03/11, user: "the brightness,
@@ -34092,7 +34199,7 @@ return ArenaDress
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND140">
+        <Item class="ModuleScript" referent="ND141">
           <Properties>
             <string name="Name">AuthoredClips</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -34160,7 +34267,7 @@ return all
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND141">
+        <Item class="ModuleScript" referent="ND142">
           <Properties>
             <string name="Name">AuthoredClips1</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -34478,7 +34585,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND142">
+        <Item class="ModuleScript" referent="ND143">
           <Properties>
             <string name="Name">AuthoredClips10</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -34864,7 +34971,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND143">
+        <Item class="ModuleScript" referent="ND144">
           <Properties>
             <string name="Name">AuthoredClips11</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -35012,7 +35119,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND144">
+        <Item class="ModuleScript" referent="ND145">
           <Properties>
             <string name="Name">AuthoredClips12</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -35313,7 +35420,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND145">
+        <Item class="ModuleScript" referent="ND146">
           <Properties>
             <string name="Name">AuthoredClips13</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -35546,7 +35653,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND146">
+        <Item class="ModuleScript" referent="ND147">
           <Properties>
             <string name="Name">AuthoredClips14</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -35762,7 +35869,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND147">
+        <Item class="ModuleScript" referent="ND148">
           <Properties>
             <string name="Name">AuthoredClips15</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -36148,7 +36255,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND148">
+        <Item class="ModuleScript" referent="ND149">
           <Properties>
             <string name="Name">AuthoredClips16</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -36313,7 +36420,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND149">
+        <Item class="ModuleScript" referent="ND150">
           <Properties>
             <string name="Name">AuthoredClips17</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -36461,7 +36568,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND150">
+        <Item class="ModuleScript" referent="ND151">
           <Properties>
             <string name="Name">AuthoredClips18</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -36779,7 +36886,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND151">
+        <Item class="ModuleScript" referent="ND152">
           <Properties>
             <string name="Name">AuthoredClips19</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -37063,7 +37170,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND152">
+        <Item class="ModuleScript" referent="ND153">
           <Properties>
             <string name="Name">AuthoredClips2</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -37296,7 +37403,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND153">
+        <Item class="ModuleScript" referent="ND154">
           <Properties>
             <string name="Name">AuthoredClips20</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -37546,7 +37653,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND154">
+        <Item class="ModuleScript" referent="ND155">
           <Properties>
             <string name="Name">AuthoredClips21</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -37881,7 +37988,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND155">
+        <Item class="ModuleScript" referent="ND156">
           <Properties>
             <string name="Name">AuthoredClips22</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -37978,7 +38085,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND156">
+        <Item class="ModuleScript" referent="ND157">
           <Properties>
             <string name="Name">AuthoredClips23</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -38262,7 +38369,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND157">
+        <Item class="ModuleScript" referent="ND158">
           <Properties>
             <string name="Name">AuthoredClips24</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -38495,7 +38602,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND158">
+        <Item class="ModuleScript" referent="ND159">
           <Properties>
             <string name="Name">AuthoredClips25</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -38677,7 +38784,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND159">
+        <Item class="ModuleScript" referent="ND160">
           <Properties>
             <string name="Name">AuthoredClips26</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -39063,7 +39170,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND160">
+        <Item class="ModuleScript" referent="ND161">
           <Properties>
             <string name="Name">AuthoredClips27</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -39262,7 +39369,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND161">
+        <Item class="ModuleScript" referent="ND162">
           <Properties>
             <string name="Name">AuthoredClips28</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -39495,7 +39602,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND162">
+        <Item class="ModuleScript" referent="ND163">
           <Properties>
             <string name="Name">AuthoredClips29</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -39779,7 +39886,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND163">
+        <Item class="ModuleScript" referent="ND164">
           <Properties>
             <string name="Name">AuthoredClips3</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -40029,7 +40136,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND164">
+        <Item class="ModuleScript" referent="ND165">
           <Properties>
             <string name="Name">AuthoredClips30</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -40296,7 +40403,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND165">
+        <Item class="ModuleScript" referent="ND166">
           <Properties>
             <string name="Name">AuthoredClips31</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -40529,7 +40636,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND166">
+        <Item class="ModuleScript" referent="ND167">
           <Properties>
             <string name="Name">AuthoredClips32</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -40864,7 +40971,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND167">
+        <Item class="ModuleScript" referent="ND168">
           <Properties>
             <string name="Name">AuthoredClips33</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -40978,7 +41085,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND168">
+        <Item class="ModuleScript" referent="ND169">
           <Properties>
             <string name="Name">AuthoredClips34</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -41279,7 +41386,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND169">
+        <Item class="ModuleScript" referent="ND170">
           <Properties>
             <string name="Name">AuthoredClips35</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -41512,7 +41619,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND170">
+        <Item class="ModuleScript" referent="ND171">
           <Properties>
             <string name="Name">AuthoredClips36</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -41728,7 +41835,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND171">
+        <Item class="ModuleScript" referent="ND172">
           <Properties>
             <string name="Name">AuthoredClips37</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -42046,7 +42153,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND172">
+        <Item class="ModuleScript" referent="ND173">
           <Properties>
             <string name="Name">AuthoredClips38</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -42347,7 +42454,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND173">
+        <Item class="ModuleScript" referent="ND174">
           <Properties>
             <string name="Name">AuthoredClips39</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -42444,7 +42551,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND174">
+        <Item class="ModuleScript" referent="ND175">
           <Properties>
             <string name="Name">AuthoredClips4</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -42694,7 +42801,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND175">
+        <Item class="ModuleScript" referent="ND176">
           <Properties>
             <string name="Name">AuthoredClips40</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -42944,7 +43051,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND176">
+        <Item class="ModuleScript" referent="ND177">
           <Properties>
             <string name="Name">AuthoredClips41</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -43194,7 +43301,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND177">
+        <Item class="ModuleScript" referent="ND178">
           <Properties>
             <string name="Name">AuthoredClips42</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -43410,7 +43517,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND178">
+        <Item class="ModuleScript" referent="ND179">
           <Properties>
             <string name="Name">AuthoredClips43</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -43813,7 +43920,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND179">
+        <Item class="ModuleScript" referent="ND180">
           <Properties>
             <string name="Name">AuthoredClips44</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -43927,7 +44034,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND180">
+        <Item class="ModuleScript" referent="ND181">
           <Properties>
             <string name="Name">AuthoredClips45</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -43973,7 +44080,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND181">
+        <Item class="ModuleScript" referent="ND182">
           <Properties>
             <string name="Name">AuthoredClips46</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -44019,7 +44126,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND182">
+        <Item class="ModuleScript" referent="ND183">
           <Properties>
             <string name="Name">AuthoredClips47</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -44065,7 +44172,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND183">
+        <Item class="ModuleScript" referent="ND184">
           <Properties>
             <string name="Name">AuthoredClips48</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -44111,7 +44218,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND184">
+        <Item class="ModuleScript" referent="ND185">
           <Properties>
             <string name="Name">AuthoredClips49</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -44140,7 +44247,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND185">
+        <Item class="ModuleScript" referent="ND186">
           <Properties>
             <string name="Name">AuthoredClips5</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -44407,7 +44514,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND186">
+        <Item class="ModuleScript" referent="ND187">
           <Properties>
             <string name="Name">AuthoredClips50</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -44641,7 +44748,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND187">
+        <Item class="ModuleScript" referent="ND188">
           <Properties>
             <string name="Name">AuthoredClips51</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -44909,7 +45016,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND188">
+        <Item class="ModuleScript" referent="ND189">
           <Properties>
             <string name="Name">AuthoredClips52</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -45177,7 +45284,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND189">
+        <Item class="ModuleScript" referent="ND190">
           <Properties>
             <string name="Name">AuthoredClips53</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -45428,7 +45535,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND190">
+        <Item class="ModuleScript" referent="ND191">
           <Properties>
             <string name="Name">AuthoredClips54</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -45679,7 +45786,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND191">
+        <Item class="ModuleScript" referent="ND192">
           <Properties>
             <string name="Name">AuthoredClips55</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -45930,7 +46037,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND192">
+        <Item class="ModuleScript" referent="ND193">
           <Properties>
             <string name="Name">AuthoredClips56</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -46198,7 +46305,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND193">
+        <Item class="ModuleScript" referent="ND194">
           <Properties>
             <string name="Name">AuthoredClips57</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -46466,7 +46573,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND194">
+        <Item class="ModuleScript" referent="ND195">
           <Properties>
             <string name="Name">AuthoredClips58</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -46734,7 +46841,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND195">
+        <Item class="ModuleScript" referent="ND196">
           <Properties>
             <string name="Name">AuthoredClips6</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -46865,7 +46972,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND196">
+        <Item class="ModuleScript" referent="ND197">
           <Properties>
             <string name="Name">AuthoredClips7</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -47149,7 +47256,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND197">
+        <Item class="ModuleScript" referent="ND198">
           <Properties>
             <string name="Name">AuthoredClips8</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -47433,7 +47540,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND198">
+        <Item class="ModuleScript" referent="ND199">
           <Properties>
             <string name="Name">AuthoredClips9</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -47666,7 +47773,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND199">
+        <Item class="ModuleScript" referent="ND200">
           <Properties>
             <string name="Name">AuthoredJutsu</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -47681,7 +47788,7 @@ return all
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND200">
+        <Item class="ModuleScript" referent="ND201">
           <Properties>
             <string name="Name">AuthoredJutsu1</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -48067,7 +48174,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND201">
+        <Item class="ModuleScript" referent="ND202">
           <Properties>
             <string name="Name">AuthoredJutsu2</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -48504,7 +48611,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND202">
+        <Item class="ModuleScript" referent="ND203">
           <Properties>
             <string name="Name">AuthoredJutsu3</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -48907,7 +49014,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND203">
+        <Item class="ModuleScript" referent="ND204">
           <Properties>
             <string name="Name">AuthoredJutsu4</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -49344,7 +49451,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND204">
+        <Item class="ModuleScript" referent="ND205">
           <Properties>
             <string name="Name">AuthoredJutsu5</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -49560,7 +49667,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND205">
+        <Item class="ModuleScript" referent="ND206">
           <Properties>
             <string name="Name">AuthoredMotion</string>
             <ProtectedString name="Source">-- Blender-authored body animation (DEC Blender-first pipeline): clips made in
@@ -49703,7 +49810,7 @@ return Authored
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND206">
+        <Item class="ModuleScript" referent="ND207">
           <Properties>
             <string name="Name">AwakenFX</string>
             <ProtectedString name="Source">-- The awakenings, seen for the whole state (lot 3 animation, 08/11).
@@ -50215,7 +50322,7 @@ return AwakenFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND207">
+        <Item class="ModuleScript" referent="ND208">
           <Properties>
             <string name="Name">BodyViews</string>
             <ProtectedString name="Source">-- Bodies that are not fighters (Server/Bodies: Naruto's shadow clones), drawn
@@ -50494,7 +50601,7 @@ return BodyViews
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND208">
+        <Item class="ModuleScript" referent="ND209">
           <Properties>
             <string name="Name">ByakuganFX</string>
             <ProtectedString name="Source">-- (06/11, « nous, pour le Byakugan, on voit des 1, 2, 3 pop sur le truc,
@@ -50765,7 +50872,7 @@ return ByakuganFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND209">
+        <Item class="ModuleScript" referent="ND210">
           <Properties>
             <string name="Name">Camera</string>
             <ProtectedString name="Source">-- Duel camera. A locked third-person rig that keeps both fighters readable:
@@ -51658,7 +51765,7 @@ return Camera
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND210">
+        <Item class="ModuleScript" referent="ND211">
           <Properties>
             <string name="Name">ChakraFX</string>
             <ProtectedString name="Source">-- Systemic chakra on the client, the player-facing layer (convergence 3,
@@ -52467,7 +52574,7 @@ return ChakraFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND211">
+        <Item class="ModuleScript" referent="ND212">
           <Properties>
             <string name="Name">ChakraFlowFX</string>
             <ProtectedString name="Source">-- ChakraFlow on the client (Freedom, user 28/10: chakra infusions): the load
@@ -53357,7 +53464,7 @@ return ChakraFlowFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="LocalScript" referent="ND212">
+        <Item class="LocalScript" referent="ND213">
           <Properties>
             <string name="Name">CombatDebug</string>
             <ProtectedString name="Source">-- Optional debug-build display, outbound server data only; no combat input.
@@ -53394,7 +53501,7 @@ end)
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND213">
+        <Item class="ModuleScript" referent="ND214">
           <Properties>
             <string name="Name">CopyFX</string>
             <ProtectedString name="Source">-- (06/11, « le Sharingan qui copie ») Kakashi's copy on screen (Server/Copy).
@@ -53526,7 +53633,7 @@ return CopyFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND214">
+        <Item class="ModuleScript" referent="ND215">
           <Properties>
             <string name="Name">CupScreen</string>
             <ProtectedString name="Source">-- The Prodigy Tournament on screen (Server/Tournament): the bracket between
@@ -53790,7 +53897,107 @@ return Cup
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND215">
+        <Item class="ModuleScript" referent="ND216">
+          <Properties>
+            <string name="Name">Curtain</string>
+            <ProtectedString name="Source">-- The first seconds behind a curtain (14/11, François: « toutes les textures
+-- n'apparaissent pas au même moment… surtout dans l'écran d'accueil… même au
+-- début du match »). Measured in Studio on a first arrival: the roster's
+-- fighters, the arena and the player's own avatar came in piece by piece,
+-- each mesh and image 0.4 to 1.4 s after it was shown; the village changed
+-- in waves for 12 s as its models were built.
+--
+-- The screen stays dark (the game's name) while ContentProvider fetches what
+-- the first screens show and MeshKit builds the models (the village is then
+-- dressed in one go, Client/HubDress), MAX seconds at most; then it fades.
+-- The effects' images and the replicated assets are fetched after, in the
+-- background, so a first impact or a first jutsu shows whole.
+-- Presentation only.
+local Players=game:GetService("Players")
+local TweenService=game:GetService("TweenService")
+local Curtain={}
+-- (measured 14/11: an 8 s curtain hid the village's models, but 8 s of a
+-- dark screen is long; the village is dressed in one go when they are built)
+Curtain.MAX=6
+Curtain.FADE=.4
+-- What the first screens show (each optional; the menu's set is made of the
+-- portraits' copies). Not waited for one after the other: a missing one held
+-- the fetch for 3 s each (measured: the assets came at 7.5 s instead of 2 s).
+Curtain.FIRST={"NinjaDuelPortraitStage","NinjaDuels"}
+
+-- The ids and instances to fetch for the effects (Client/Effects TEX, the
+-- replicated VFX), skipping the engine's own rbxasset:// files.
+function Curtain.later(fx,shared)
+	local list={}
+	for _,id in (fx and fx.TEX) or {} do
+		if type(id)=="string" and string.find(id,"^rbxassetid://") then table.insert(list,id) end
+	end
+	if shared then table.insert(list,shared) end
+	return list
+end
+
+-- True once nothing is left to wait for (pure: the suite reads it).
+function Curtain.ready(state)
+	local meshes=state.meshes==nil or state.meshes=="ready" or state.meshes=="failed"
+	local dressed=not state.hub or state.dressed==true
+	return state.fetched==true and meshes and dressed
+end
+
+function Curtain.start(playerGui,options)
+	options=options or {}
+	local gui=Instance.new("ScreenGui")
+	gui.Name="NinjaDuelCurtain";gui.IgnoreGuiInset=true;gui.DisplayOrder=1000;gui.ResetOnSpawn=false
+	local back=Instance.new("Frame")
+	back.Size=UDim2.fromScale(1,1);back.BackgroundColor3=Color3.fromRGB(14,12,18);back.BorderSizePixel=0;back.Parent=gui
+	local title=Instance.new("TextLabel")
+	title.AnchorPoint=Vector2.new(.5,.5);title.Position=UDim2.fromScale(.5,.5);title.Size=UDim2.fromScale(.5,.12)
+	title.BackgroundTransparency=1;title.Font=Enum.Font.Bangers;title.TextScaled=true
+	title.TextColor3=Color3.fromRGB(236,190,90);title.Text="NINJA DUEL";title.Parent=back
+	gui.Parent=playerGui
+	local CP=game:GetService("ContentProvider")
+	local state={fetched=false,hub=options.hub==true}
+	local left=0
+	local function fetch(get)
+		left+=1
+		task.spawn(function()
+			local x=get()
+			if x then pcall(function() CP:PreloadAsync({x}) end) end
+			left-=1
+			if left==0 then state.fetched=true end
+		end)
+	end
+	for _,name in Curtain.FIRST do fetch(function() return workspace:FindFirstChild(name) or workspace:WaitForChild(name,2) end) end
+	-- the player's own avatar, when he walks the village (3 s at most)
+	if state.hub then
+		fetch(function()
+			local t=os.clock()
+			while not Players.LocalPlayer.Character and os.clock()-t&lt;3 do task.wait(.1) end
+			return Players.LocalPlayer.Character
+		end)
+	end
+	task.spawn(function()
+		local t0=os.clock()
+		while os.clock()-t0&lt;Curtain.MAX do
+			local MeshKit=options.meshKit
+			state.meshes=MeshKit and MeshKit.state or nil
+			state.dressed=options.hubDress and options.hubDress.dressed
+			if Curtain.ready(state) then break end
+			task.wait(.1)
+		end
+		TweenService:Create(back,TweenInfo.new(Curtain.FADE),{BackgroundTransparency=1}):Play()
+		TweenService:Create(title,TweenInfo.new(Curtain.FADE),{TextTransparency=1}):Play()
+		task.delay(Curtain.FADE+.05,function() gui:Destroy() end)
+		-- after: the effects' images and the replicated assets
+		pcall(function() CP:PreloadAsync(Curtain.later(options.effects,options.shared)) end)
+	end)
+	return gui
+end
+
+return Curtain
+</ProtectedString>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="ND217">
           <Properties>
             <string name="Name">DashTrailFX</string>
             <ProtectedString name="Source">-- (Feel audit 07/11, need 4: « les jutsu de déplacement ») Minato's Lightning
@@ -53966,7 +54173,7 @@ return DashTrailFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND216">
+        <Item class="ModuleScript" referent="ND218">
           <Properties>
             <string name="Name">DevClient</string>
             <ProtectedString name="Source">-- Studio dev panel (F6) and bounded client measurements (Codex 33028b2, ported).
@@ -54137,7 +54344,7 @@ return Dev
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND217">
+        <Item class="ModuleScript" referent="ND219">
           <Properties>
             <string name="Name">DevVisual</string>
             <ProtectedString name="Source">-- Studio visual tool (F7): light, shadows, how visible every effect is, and a
@@ -55016,7 +55223,7 @@ return Visual
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND218">
+        <Item class="ModuleScript" referent="ND220">
           <Properties>
             <string name="Name">DevVolumes</string>
             <ProtectedString name="Source">-- Read-only Studio adornments (Codex 33028b2, ported): fighter roots in blue,
@@ -55060,7 +55267,7 @@ return Volumes
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND219">
+        <Item class="ModuleScript" referent="ND221">
           <Properties>
             <string name="Name">DragonFX</string>
             <ProtectedString name="Source">-- (13/11, user: « les dragons ça va pas trop, cherche des modèles de dragons
@@ -55115,7 +55322,7 @@ return DragonFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND220">
+        <Item class="ModuleScript" referent="ND222">
           <Properties>
             <string name="Name">Effects</string>
             <ProtectedString name="Source">-- Client-side combat VFX. Everything here is presentation driven by the server
@@ -55182,6 +55389,9 @@ local SOUND={
 	splash="rbxasset://sounds/impact_water.mp3",
 }
 FX.SOUND=SOUND
+-- (14/11) what Client/Curtain preloads (a first impact's particles showed
+-- 0.3 s late: their image was fetched at first use).
+FX.TEX=TEX
 -- Contacts that bring the crowd to its feet, by strength.
 local CHEER={chidori=1,groundbounce=.8,slam=1,launcher=.7,finisher=.8,fire=1,teleport=.9,parry=.8,substitute=.4,burst=.8,clash=.9,wall=.6,wallbounce=1,worldbreak=1,walltech=.5,repel=.9,trigram=.7}
 local HYUGA=Color3.fromRGB(190,208,255)
@@ -57777,7 +57987,7 @@ return FX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND221">
+        <Item class="ModuleScript" referent="ND223">
           <Properties>
             <string name="Name">ElementFX</string>
             <ProtectedString name="Source">-- (06/11, user: « c'est faux, la foudre ne va pas dans l'eau ») Water and
@@ -57918,7 +58128,7 @@ return ElementFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND222">
+        <Item class="ModuleScript" referent="ND224">
           <Properties>
             <string name="Name">FamilyFX</string>
             <ProtectedString name="Source">-- Family objects seen in play (roster breadth pass): every projectile kind of
@@ -59142,7 +59352,7 @@ return FamilyFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND223">
+        <Item class="ModuleScript" referent="ND225">
           <Properties>
             <string name="Name">GaleFX</string>
             <ProtectedString name="Source">-- Temari on the client (roster wave): the iron fan (closed on her back at rest,
@@ -59620,7 +59830,7 @@ return GaleFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND224">
+        <Item class="ModuleScript" referent="ND226">
           <Properties>
             <string name="Name">GaleMotion</string>
             <ProtectedString name="Source">-- Temari's motion family (roster wave, DEC-015): her stance, gait, clips,
@@ -59801,7 +60011,7 @@ return GaleMotion
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND225">
+        <Item class="ModuleScript" referent="ND227">
           <Properties>
             <string name="Name">GroundFX</string>
             <ProtectedString name="Source">-- The ground answering the fight, on the client (06/11, user: « applique-toi
@@ -59994,7 +60204,7 @@ return GroundFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND226">
+        <Item class="ModuleScript" referent="ND228">
           <Properties>
             <string name="Name">HoundFX</string>
             <ProtectedString name="Source">-- (06/11, « les chiens ninja qui sortent du sol ») Kakashi's ninken on screen
@@ -60199,7 +60409,7 @@ return HoundFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND227">
+        <Item class="ModuleScript" referent="ND229">
           <Properties>
             <string name="Name">HubClient</string>
             <ProtectedString name="Source">-- Konoha on the client (DEC-038, user 13/11: « le décor, les scènes, où est-ce
@@ -60557,7 +60767,7 @@ return Hub
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND228">
+        <Item class="ModuleScript" referent="ND230">
           <Properties>
             <string name="Name">HubDress</string>
             <ProtectedString name="Source">-- Konoha dressed in its Blender models (14/11, user: « les models 3d peuvent
@@ -60693,10 +60903,10 @@ function HubDress.start()
 	local MeshKit=require(script.Parent.MeshKit)
 	local hasAny=false
 	for name in HubDress.NAMES do if MeshKit.Data[name] then hasAny=true;break end end
-	if not hasAny then return end
+	if not hasAny then HubDress.dressed=true return end
 	task.spawn(function()
 		local root=workspace:WaitForChild("NinjaDuelHub",120)
-		if not root then return end
+		if not root then HubDress.dressed=true return end
 		local holder=Instance.new("Folder");holder.Name="NinjaDuelHubDress";holder.Parent=workspace
 		local done=setmetatable({},{__mode="k"})
 		local watched=setmetatable({},{__mode="k"})
@@ -60706,14 +60916,12 @@ function HubDress.start()
 			watched[unit]=true
 			unit:GetAttributeChangedSignal("DressOff"):Connect(function() HubDress.sync(unit,MeshKit,holder,done) end)
 		end
-		while root.Parent do
-			HubDress.apply(root,MeshKit,holder,done,watch)
-			if MeshKit.state=="ready" or MeshKit.state=="failed" then
-				HubDress.apply(root,MeshKit,holder,done,watch)
-				break
-			end
-			task.wait(1)
-		end
+		-- (14/11, François: « les textures n'apparaissent pas au même moment »)
+		-- The village is dressed in one go once every model is built: it was
+		-- dressed once a second as they came, in waves for 12 s.
+		while root.Parent and MeshKit.state~="ready" and MeshKit.state~="failed" do task.wait(.1) end
+		if root.Parent then HubDress.apply(root,MeshKit,holder,done,watch) end
+		HubDress.dressed=true
 	end)
 end
 
@@ -60721,7 +60929,7 @@ return HubDress
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND229">
+        <Item class="ModuleScript" referent="ND231">
           <Properties>
             <string name="Name">HubMeshData</string>
             <ProtectedString name="Source">-- Generated by tools/blender/konoha_models.py. Do not edit: re-run the script.
@@ -60739,7 +60947,7 @@ return all
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND230">
+        <Item class="ModuleScript" referent="ND232">
           <Properties>
             <string name="Name">HubMeshData1</string>
             <ProtectedString name="Source">-- Generated by tools/blender/konoha_models.py. Do not edit: re-run the script.
@@ -60759,7 +60967,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND231">
+        <Item class="ModuleScript" referent="ND233">
           <Properties>
             <string name="Name">HubMeshData10</string>
             <ProtectedString name="Source">-- Generated by tools/blender/konoha_models.py. Do not edit: re-run the script.
@@ -60771,7 +60979,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND232">
+        <Item class="ModuleScript" referent="ND234">
           <Properties>
             <string name="Name">HubMeshData11</string>
             <ProtectedString name="Source">-- Generated by tools/blender/konoha_models.py. Do not edit: re-run the script.
@@ -60799,7 +61007,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND233">
+        <Item class="ModuleScript" referent="ND235">
           <Properties>
             <string name="Name">HubMeshData12</string>
             <ProtectedString name="Source">-- Generated by tools/blender/konoha_models.py. Do not edit: re-run the script.
@@ -60813,7 +61021,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND234">
+        <Item class="ModuleScript" referent="ND236">
           <Properties>
             <string name="Name">HubMeshData13</string>
             <ProtectedString name="Source">-- Generated by tools/blender/konoha_models.py. Do not edit: re-run the script.
@@ -60825,7 +61033,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND235">
+        <Item class="ModuleScript" referent="ND237">
           <Properties>
             <string name="Name">HubMeshData14</string>
             <ProtectedString name="Source">-- Generated by tools/blender/konoha_models.py. Do not edit: re-run the script.
@@ -60837,7 +61045,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND236">
+        <Item class="ModuleScript" referent="ND238">
           <Properties>
             <string name="Name">HubMeshData15</string>
             <ProtectedString name="Source">-- Generated by tools/blender/konoha_models.py. Do not edit: re-run the script.
@@ -60853,7 +61061,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND237">
+        <Item class="ModuleScript" referent="ND239">
           <Properties>
             <string name="Name">HubMeshData16</string>
             <ProtectedString name="Source">-- Generated by tools/blender/konoha_models.py. Do not edit: re-run the script.
@@ -60875,7 +61083,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND238">
+        <Item class="ModuleScript" referent="ND240">
           <Properties>
             <string name="Name">HubMeshData17</string>
             <ProtectedString name="Source">-- Generated by tools/blender/konoha_models.py. Do not edit: re-run the script.
@@ -60895,7 +61103,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND239">
+        <Item class="ModuleScript" referent="ND241">
           <Properties>
             <string name="Name">HubMeshData18</string>
             <ProtectedString name="Source">-- Generated by tools/blender/konoha_models.py. Do not edit: re-run the script.
@@ -60925,7 +61133,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND240">
+        <Item class="ModuleScript" referent="ND242">
           <Properties>
             <string name="Name">HubMeshData19</string>
             <ProtectedString name="Source">-- Generated by tools/blender/konoha_models.py. Do not edit: re-run the script.
@@ -60959,7 +61167,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND241">
+        <Item class="ModuleScript" referent="ND243">
           <Properties>
             <string name="Name">HubMeshData2</string>
             <ProtectedString name="Source">-- Generated by tools/blender/konoha_models.py. Do not edit: re-run the script.
@@ -60987,7 +61195,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND242">
+        <Item class="ModuleScript" referent="ND244">
           <Properties>
             <string name="Name">HubMeshData20</string>
             <ProtectedString name="Source">-- Generated by tools/blender/konoha_models.py. Do not edit: re-run the script.
@@ -61003,7 +61211,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND243">
+        <Item class="ModuleScript" referent="ND245">
           <Properties>
             <string name="Name">HubMeshData21</string>
             <ProtectedString name="Source">-- Generated by tools/blender/konoha_models.py. Do not edit: re-run the script.
@@ -61021,7 +61229,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND244">
+        <Item class="ModuleScript" referent="ND246">
           <Properties>
             <string name="Name">HubMeshData22</string>
             <ProtectedString name="Source">-- Generated by tools/blender/konoha_models.py. Do not edit: re-run the script.
@@ -61041,7 +61249,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND245">
+        <Item class="ModuleScript" referent="ND247">
           <Properties>
             <string name="Name">HubMeshData23</string>
             <ProtectedString name="Source">-- Generated by tools/blender/konoha_models.py. Do not edit: re-run the script.
@@ -61055,7 +61263,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND246">
+        <Item class="ModuleScript" referent="ND248">
           <Properties>
             <string name="Name">HubMeshData24</string>
             <ProtectedString name="Source">-- Generated by tools/blender/konoha_models.py. Do not edit: re-run the script.
@@ -61077,7 +61285,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND247">
+        <Item class="ModuleScript" referent="ND249">
           <Properties>
             <string name="Name">HubMeshData25</string>
             <ProtectedString name="Source">-- Generated by tools/blender/konoha_models.py. Do not edit: re-run the script.
@@ -61097,7 +61305,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND248">
+        <Item class="ModuleScript" referent="ND250">
           <Properties>
             <string name="Name">HubMeshData26</string>
             <ProtectedString name="Source">-- Generated by tools/blender/konoha_models.py. Do not edit: re-run the script.
@@ -61117,7 +61325,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND249">
+        <Item class="ModuleScript" referent="ND251">
           <Properties>
             <string name="Name">HubMeshData27</string>
             <ProtectedString name="Source">-- Generated by tools/blender/konoha_models.py. Do not edit: re-run the script.
@@ -61133,7 +61341,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND250">
+        <Item class="ModuleScript" referent="ND252">
           <Properties>
             <string name="Name">HubMeshData28</string>
             <ProtectedString name="Source">-- Generated by tools/blender/konoha_models.py. Do not edit: re-run the script.
@@ -61147,7 +61355,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND251">
+        <Item class="ModuleScript" referent="ND253">
           <Properties>
             <string name="Name">HubMeshData29</string>
             <ProtectedString name="Source">-- Generated by tools/blender/konoha_models.py. Do not edit: re-run the script.
@@ -61167,7 +61375,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND252">
+        <Item class="ModuleScript" referent="ND254">
           <Properties>
             <string name="Name">HubMeshData3</string>
             <ProtectedString name="Source">-- Generated by tools/blender/konoha_models.py. Do not edit: re-run the script.
@@ -61189,7 +61397,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND253">
+        <Item class="ModuleScript" referent="ND255">
           <Properties>
             <string name="Name">HubMeshData30</string>
             <ProtectedString name="Source">-- Generated by tools/blender/konoha_models.py. Do not edit: re-run the script.
@@ -61211,7 +61419,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND254">
+        <Item class="ModuleScript" referent="ND256">
           <Properties>
             <string name="Name">HubMeshData31</string>
             <ProtectedString name="Source">-- Generated by tools/blender/konoha_models.py. Do not edit: re-run the script.
@@ -61235,7 +61443,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND255">
+        <Item class="ModuleScript" referent="ND257">
           <Properties>
             <string name="Name">HubMeshData32</string>
             <ProtectedString name="Source">-- Generated by tools/blender/konoha_models.py. Do not edit: re-run the script.
@@ -61283,7 +61491,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND256">
+        <Item class="ModuleScript" referent="ND258">
           <Properties>
             <string name="Name">HubMeshData33</string>
             <ProtectedString name="Source">-- Generated by tools/blender/konoha_models.py. Do not edit: re-run the script.
@@ -61297,7 +61505,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND257">
+        <Item class="ModuleScript" referent="ND259">
           <Properties>
             <string name="Name">HubMeshData4</string>
             <ProtectedString name="Source">-- Generated by tools/blender/konoha_models.py. Do not edit: re-run the script.
@@ -61309,7 +61517,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND258">
+        <Item class="ModuleScript" referent="ND260">
           <Properties>
             <string name="Name">HubMeshData5</string>
             <ProtectedString name="Source">-- Generated by tools/blender/konoha_models.py. Do not edit: re-run the script.
@@ -61321,7 +61529,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND259">
+        <Item class="ModuleScript" referent="ND261">
           <Properties>
             <string name="Name">HubMeshData6</string>
             <ProtectedString name="Source">-- Generated by tools/blender/konoha_models.py. Do not edit: re-run the script.
@@ -61333,7 +61541,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND260">
+        <Item class="ModuleScript" referent="ND262">
           <Properties>
             <string name="Name">HubMeshData7</string>
             <ProtectedString name="Source">-- Generated by tools/blender/konoha_models.py. Do not edit: re-run the script.
@@ -61345,7 +61553,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND261">
+        <Item class="ModuleScript" referent="ND263">
           <Properties>
             <string name="Name">HubMeshData8</string>
             <ProtectedString name="Source">-- Generated by tools/blender/konoha_models.py. Do not edit: re-run the script.
@@ -61359,7 +61567,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND262">
+        <Item class="ModuleScript" referent="ND264">
           <Properties>
             <string name="Name">HubMeshData9</string>
             <ProtectedString name="Source">-- Generated by tools/blender/konoha_models.py. Do not edit: re-run the script.
@@ -61375,7 +61583,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND263">
+        <Item class="ModuleScript" referent="ND265">
           <Properties>
             <string name="Name">HubPlayers</string>
             <ProtectedString name="Source">-- The players met in Konoha (14/11, « passons à la suite de la bêta »): the
@@ -61512,7 +61720,7 @@ return HubPlayers
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND264">
+        <Item class="ModuleScript" referent="ND266">
           <Properties>
             <string name="Name">IdentityFX</string>
             <ProtectedString name="Source">-- CORE4 identity on the client (mission NEXT_VALIDATION_ROSTER_SCALE §5): what
@@ -62222,7 +62430,7 @@ return IdentityFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND265">
+        <Item class="ModuleScript" referent="ND267">
           <Properties>
             <string name="Name">Input</string>
             <ProtectedString name="Source">local CAS=game:GetService("ContextActionService")
@@ -62552,7 +62760,7 @@ return Input
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND266">
+        <Item class="ModuleScript" referent="ND268">
           <Properties>
             <string name="Name">LeeFX</string>
             <ProtectedString name="Source">-- Rock Lee on the client (stress-test wave, DEC-015): the Fifth Gate (a green
@@ -62817,7 +63025,7 @@ return LeeFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND267">
+        <Item class="ModuleScript" referent="ND269">
           <Properties>
             <string name="Name">LightBudgetFX</string>
             <ProtectedString name="Source">-- The effect lights, kept to a budget (OUTILLEUR, F7 tool, 08/11).
@@ -62940,7 +63148,7 @@ return LightBudgetFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND268">
+        <Item class="ModuleScript" referent="ND270">
           <Properties>
             <string name="Name">LightningBoltFX</string>
             <ProtectedString name="Source">--[[
@@ -63191,7 +63399,7 @@ SOFTWARE.
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND269">
+        <Item class="ModuleScript" referent="ND271">
           <Properties>
             <string name="Name">LightningFX</string>
             <ProtectedString name="Source">-- (12/11) The lightning of the Chidori (Sasuke) and the Raikiri / Lightning
@@ -63328,7 +63536,7 @@ return LightningFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND270">
+        <Item class="ModuleScript" referent="ND272">
           <Properties>
             <string name="Name">LobbyPanel</string>
             <ProtectedString name="Source">-- Players online and challenges, the client's half (Server/Lobby, user 04/11:
@@ -63611,7 +63819,7 @@ return Panel
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="LocalScript" referent="ND271">
+        <Item class="LocalScript" referent="ND273">
           <Properties>
             <string name="Name">Main</string>
             <ProtectedString name="Source">local Players=game:GetService("Players")
@@ -63619,6 +63827,15 @@ local RunService=game:GetService("RunService")
 local player=Players.LocalPlayer
 local shared=game:GetService("ReplicatedStorage"):WaitForChild("NinjaDuel")
 local remote=shared:WaitForChild("Action")
+-- (14/11) The first seconds behind a curtain while the first screens load
+-- (Client/Curtain): nothing comes in piece by piece.
+pcall(function()
+	local hubOn=false
+	pcall(function() local Config=require(shared:WaitForChild("Config"));hubOn=Config.Hub~=nil and Config.Hub.Enabled==true end)
+	require(script.Parent.Curtain).start(player:WaitForChild("PlayerGui"),{
+		hub=hubOn,meshKit=require(script.Parent.MeshKit),hubDress=require(script.Parent.HubDress),
+		effects=require(script.Parent.Effects),shared=shared})
+end)
 pcall(function() game:GetService("StarterGui"):SetCoreGuiEnabled(Enum.CoreGuiType.Health,false); game:GetService("StarterGui"):SetCoreGuiEnabled(Enum.CoreGuiType.Chat,false); game:GetService("StarterGui"):SetCoreGuiEnabled(Enum.CoreGuiType.PlayerList,false) end)
 -- (Audit B01) Key names as printed on this keyboard (AZERTY: ZQSD to move,
 -- A to dodge), before any text that names a key is built.
@@ -63877,7 +64094,7 @@ print("[NinjaDuel] Client ready")
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND272">
+        <Item class="ModuleScript" referent="ND274">
           <Properties>
             <string name="Name">MenuStage</string>
             <ProtectedString name="Source">-- The select screen's two prodigies, in a real 3D set (user 02/11, "everything
@@ -64039,6 +64256,11 @@ local LIGHTING={Ambient=Color3.fromRGB(40,36,46),OutdoorAmbient=Color3.fromRGB(4
 function MenuStage:filmed(on)
 	if on==self.isFilmed then return end
 	self.isFilmed=on
+	-- (14/11) the game's one light owner (Client/WorldLook) switches to the
+	-- studio and back in the same frame; it used to be this copy, which the
+	-- world's look overwrote a second later.
+	local okLook,WorldLook=pcall(require,script.Parent:FindFirstChild("WorldLook"))
+	if okLook and WorldLook and WorldLook.setStudio then WorldLook.setStudio(on) return end
 	local Lighting=game:GetService("Lighting")
 	if on then
 		self.savedLighting={}
@@ -64059,7 +64281,7 @@ return MenuStage
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND273">
+        <Item class="ModuleScript" referent="ND275">
           <Properties>
             <string name="Name">MeshData</string>
             <ProtectedString name="Source">-- Generated by tools/blender/fx_models.py. Do not edit: re-run the script.
@@ -64075,7 +64297,7 @@ return all
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND274">
+        <Item class="ModuleScript" referent="ND276">
           <Properties>
             <string name="Name">MeshData1</string>
             <ProtectedString name="Source">-- Generated by tools/blender/fx_models.py. Do not edit: re-run the script.
@@ -64118,7 +64340,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND275">
+        <Item class="ModuleScript" referent="ND277">
           <Properties>
             <string name="Name">MeshData10</string>
             <ProtectedString name="Source">-- Generated by tools/blender/fx_models.py. Do not edit: re-run the script.
@@ -64131,7 +64353,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND276">
+        <Item class="ModuleScript" referent="ND278">
           <Properties>
             <string name="Name">MeshData2</string>
             <ProtectedString name="Source">-- Generated by tools/blender/fx_models.py. Do not edit: re-run the script.
@@ -64178,7 +64400,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND277">
+        <Item class="ModuleScript" referent="ND279">
           <Properties>
             <string name="Name">MeshData3</string>
             <ProtectedString name="Source">-- Generated by tools/blender/fx_models.py. Do not edit: re-run the script.
@@ -64243,7 +64465,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND278">
+        <Item class="ModuleScript" referent="ND280">
           <Properties>
             <string name="Name">MeshData4</string>
             <ProtectedString name="Source">-- Generated by tools/blender/fx_models.py. Do not edit: re-run the script.
@@ -64290,7 +64512,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND279">
+        <Item class="ModuleScript" referent="ND281">
           <Properties>
             <string name="Name">MeshData5</string>
             <ProtectedString name="Source">-- Generated by tools/blender/fx_models.py. Do not edit: re-run the script.
@@ -64307,7 +64529,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND280">
+        <Item class="ModuleScript" referent="ND282">
           <Properties>
             <string name="Name">MeshData6</string>
             <ProtectedString name="Source">-- Generated by tools/blender/fx_models.py. Do not edit: re-run the script.
@@ -64340,7 +64562,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND281">
+        <Item class="ModuleScript" referent="ND283">
           <Properties>
             <string name="Name">MeshData7</string>
             <ProtectedString name="Source">-- Generated by tools/blender/fx_models.py. Do not edit: re-run the script.
@@ -64377,7 +64599,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND282">
+        <Item class="ModuleScript" referent="ND284">
           <Properties>
             <string name="Name">MeshData8</string>
             <ProtectedString name="Source">-- Generated by tools/blender/fx_models.py. Do not edit: re-run the script.
@@ -64410,7 +64632,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND283">
+        <Item class="ModuleScript" referent="ND285">
           <Properties>
             <string name="Name">MeshData9</string>
             <ProtectedString name="Source">-- Generated by tools/blender/fx_models.py. Do not edit: re-run the script.
@@ -64433,7 +64655,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND284">
+        <Item class="ModuleScript" referent="ND286">
           <Properties>
             <string name="Name">MeshKit</string>
             <ProtectedString name="Source">-- (13/11, user: « il va nous falloir des vrais modèles 3D, des vrais modèles de
@@ -64586,15 +64808,28 @@ local function build(spec)
 end
 
 -- Builds every template (yields between models so a frame never stalls).
+MeshKit.WORKERS=4
 function MeshKit.prepare(names)
 	if MeshKit.state=="loading" or MeshKit.state=="failed" then return end
 	MeshKit.state="loading"
 	local okService=pcall(function() return game:GetService("AssetService").CreateEditableMesh end)
 	if not okService then MeshKit.state="failed";MeshKit.error="no AssetService";return end
+	-- (14/11, measured in Studio: the 76 models took 11 s one after another,
+	-- the village changing in waves for 12 s after the arrival) Each pass
+	-- builds MeshKit.WORKERS models at once (each build waits on the engine,
+	-- not on the frame).
 	for pass=1,2 do
-		for name,pieces in MeshKit.Data do
+		local queue={}
+		for name in MeshKit.Data do
 			if (pass==1)==(MeshKit.Late[name]==true) then continue end
 			if MeshKit.ready[name] or (names and not table.find(names,name)) then continue end
+			table.insert(queue,name)
+		end
+		table.sort(queue)
+		local failed=nil
+		local running=0
+		local function one(name)
+			local pieces=MeshKit.Data[name]
 			local made={}
 			local ok,err=pcall(function()
 				for _,spec in pieces do table.insert(made,{part=build(spec),o=Vector3.new(spec.o[1],spec.o[2],spec.o[3]),name=spec.name}) end
@@ -64604,14 +64839,24 @@ function MeshKit.prepare(names)
 				-- the weapons stop here as before
 				if MeshKit.Late[name] then
 					warn("[NinjaDuel] MeshKit: "..name.." unavailable, its parts kept: "..tostring(err))
-					continue
+				else
+					failed=failed or tostring(err)
 				end
-				MeshKit.state="failed";MeshKit.error=tostring(err)
-				warn("[NinjaDuel] MeshKit: modelled props unavailable, primitives kept: "..tostring(err))
 				return
 			end
 			MeshKit.ready[name]=made
-			task.wait()
+		end
+		for _,name in queue do
+			if failed then break end
+			while running&gt;=MeshKit.WORKERS do task.wait() end
+			running+=1
+			task.spawn(function() one(name);running-=1 end)
+		end
+		while running&gt;0 do task.wait() end
+		if failed then
+			MeshKit.state="failed";MeshKit.error=failed
+			warn("[NinjaDuel] MeshKit: modelled props unavailable, primitives kept: "..failed)
+			return
 		end
 		if pass==1 then MeshKit.weaponsReady=true end
 	end
@@ -64656,7 +64901,7 @@ return MeshKit
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND285">
+        <Item class="ModuleScript" referent="ND287">
           <Properties>
             <string name="Name">MotionSmear</string>
             <ProtectedString name="Source">-- Speed smear (fluidity pass, user reference 28/10). What the eye cannot
@@ -64805,7 +65050,7 @@ return Smear
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND286">
+        <Item class="ModuleScript" referent="ND288">
           <Properties>
             <string name="Name">NarutoFX</string>
             <ProtectedString name="Source">-- Naruto on the client (roster wave, several bodies): the puffs of smoke of
@@ -65225,7 +65470,7 @@ return NarutoFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND287">
+        <Item class="ModuleScript" referent="ND289">
           <Properties>
             <string name="Name">PerceptionFX</string>
             <ProtectedString name="Source">-- (06/11, « leur Sharingan sert à quelque chose ; un truc qui va trop vite,
@@ -65554,7 +65799,7 @@ return PerceptionFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND288">
+        <Item class="ModuleScript" referent="ND290">
           <Properties>
             <string name="Name">Presentation</string>
             <ProtectedString name="Source">-- Velmora's additive combat motion and hit feedback, retaining Ninja Duel's
@@ -66783,7 +67028,7 @@ return Presentation
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND289">
+        <Item class="ModuleScript" referent="ND291">
           <Properties>
             <string name="Name">SandFX</string>
             <ProtectedString name="Source">-- Gaara's sand on the client: the sand bullet and Sand Shuriken in flight, the
@@ -67406,7 +67651,7 @@ return SandFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND290">
+        <Item class="ModuleScript" referent="ND292">
           <Properties>
             <string name="Name">SealFX</string>
             <ProtectedString name="Source">-- (13/11, issue #73: « les signes de Kakashi ne sont que des poings devant la
@@ -67492,7 +67737,7 @@ return SealFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND291">
+        <Item class="ModuleScript" referent="ND293">
           <Properties>
             <string name="Name">ShadowFX</string>
             <ProtectedString name="Source">-- (12/11) The game casts shadows now (DEV light pass). Light does not cast a
@@ -67556,7 +67801,7 @@ return ShadowFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND292">
+        <Item class="ModuleScript" referent="ND294">
           <Properties>
             <string name="Name">ShopPanel</string>
             <ProtectedString name="Source">-- The shop (13/11, user: « on voit tout ce qui est boutique, UI, design, […]
@@ -67843,7 +68088,7 @@ return Panel
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND293">
+        <Item class="ModuleScript" referent="ND295">
           <Properties>
             <string name="Name">ToadFX</string>
             <ProtectedString name="Source">-- (13/11, user: « la grenouille de Naruto, c'est pas bon ») Gamakichi.
@@ -67961,7 +68206,7 @@ return ToadFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND294">
+        <Item class="ModuleScript" referent="ND296">
           <Properties>
             <string name="Name">ToadModel</string>
             <ProtectedString name="Source">-- Generated by tools/blender/fx_toad.py: Gamakichi's parts (13/11).
@@ -68010,7 +68255,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND295">
+        <Item class="ModuleScript" referent="ND297">
           <Properties>
             <string name="Name">TouchControls</string>
             <ProtectedString name="Source">-- Phone and tablet controls (audit 04/11: the experience is open to phones and
@@ -68285,7 +68530,7 @@ return Touch
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND296">
+        <Item class="ModuleScript" referent="ND298">
           <Properties>
             <string name="Name">TreePanel</string>
             <ProtectedString name="Source">-- The skill tree of a learned kit (DEC-038, user 13/11: « vraiment les arbres
@@ -68539,7 +68784,7 @@ return Panel
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND297">
+        <Item class="ModuleScript" referent="ND299">
           <Properties>
             <string name="Name">TutorialProbe</string>
             <ProtectedString name="Source">-- Debug/QA places only (build.py DEBUG_SOURCES). The tutorial as a test of the
@@ -68722,7 +68967,7 @@ return Probe
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND298">
+        <Item class="ModuleScript" referent="ND300">
           <Properties>
             <string name="Name">UI</string>
             <ProtectedString name="Source">-- Prodigy Tournament interface: roster/selection, online queue and fighter
@@ -70264,7 +70509,7 @@ return UI
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND299">
+        <Item class="ModuleScript" referent="ND301">
           <Properties>
             <string name="Name">UltimateFX</string>
             <ProtectedString name="Source">-- The ultimates on the client (stage 6, the approved move list, "Ultimes"):
@@ -71487,7 +71732,7 @@ return UltimateFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND300">
+        <Item class="ModuleScript" referent="ND302">
           <Properties>
             <string name="Name">VelmoraHitFeedback</string>
             <ProtectedString name="Source">-- Impact presentation. Adapted from Velmora src/client/Combat/HitFeedback.luau
@@ -71687,7 +71932,7 @@ return Feedback
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND301">
+        <Item class="ModuleScript" referent="ND303">
           <Properties>
             <string name="Name">VelmoraMotionEngine</string>
             <ProtectedString name="Source">-- Ninja Duel body animation. Started from Velmora's additive R15 layer (MIT) and
@@ -75615,7 +75860,7 @@ return Motion
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND302">
+        <Item class="ModuleScript" referent="ND304">
           <Properties>
             <string name="Name">VfxAtlas</string>
             <ProtectedString name="Source">-- GENERATED by tools/vfx_textures.py --pack: do not edit by hand.
@@ -77068,7 +77313,7 @@ HAOBECABDA1HBIA3HBGAmZ]]},
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND303">
+        <Item class="ModuleScript" referent="ND305">
           <Properties>
             <string name="Name">VfxKit</string>
             <ProtectedString name="Source">-- Presentation primitives on the project's own VFX textures
@@ -77623,7 +77868,7 @@ return Kit
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND304">
+        <Item class="ModuleScript" referent="ND306">
           <Properties>
             <string name="Name">Wave1FX</string>
             <ProtectedString name="Source">-- Roster 20, batch 1 (Haku, Zabuza, Kimimaro): the batch's own drawing,
@@ -77837,7 +78082,7 @@ return M
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND305">
+        <Item class="ModuleScript" referent="ND307">
           <Properties>
             <string name="Name">Wave1Motion</string>
             <ProtectedString name="Source">-- Roster batch 1 bodies authored from their Combat Bibles (DEC-026). First:
@@ -78138,7 +78383,7 @@ return Wave1Motion
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND306">
+        <Item class="ModuleScript" referent="ND308">
           <Properties>
             <string name="Name">Wave2FX</string>
             <ProtectedString name="Source">-- Roster 20, batch 2 (Shikamaru, Shino, Orochimaru): the batch's own drawing, installed by
@@ -78151,7 +78396,7 @@ return M
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND307">
+        <Item class="ModuleScript" referent="ND309">
           <Properties>
             <string name="Name">Wave3FX</string>
             <ProtectedString name="Source">-- Roster 20, batch 3 (Deidara, Sasori, Nagato, Killer Bee): the batch's own
@@ -78254,7 +78499,7 @@ return M
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND308">
+        <Item class="ModuleScript" referent="ND310">
           <Properties>
             <string name="Name">Wave3Motion</string>
             <ProtectedString name="Source">-- Roster batch 3 bodies authored from their Combat Bibles (DEC-026). First:
@@ -78381,7 +78626,7 @@ return Wave3Motion
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND309">
+        <Item class="ModuleScript" referent="ND311">
           <Properties>
             <string name="Name">Wave4FX</string>
             <ProtectedString name="Source">-- DEC-026 newcomers (Madara, Hashirama, Hiruzen as children): the weapons
@@ -78524,7 +78769,7 @@ return M
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND310">
+        <Item class="ModuleScript" referent="ND312">
           <Properties>
             <string name="Name">Wave4Motion</string>
             <ProtectedString name="Source">-- DEC-026 newcomers: the bodies of Madara, Hashirama and Hiruzen as children
@@ -78737,7 +78982,7 @@ return Wave4Motion
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND311">
+        <Item class="ModuleScript" referent="ND313">
           <Properties>
             <string name="Name">WorldLook</string>
             <ProtectedString name="Source">-- What the screen looks like (user 03/11: "the brightness, the graphics,
@@ -78757,55 +79002,22 @@ local RunService=game:GetService("RunService")
 local WorldLook={}
 
 local function rgb(r,g,b) return Color3.fromRGB(r,g,b) end
--- (Look pass 2, 03/11.) A lower, warmer sun from the side the camera mostly
--- faces across: the wall throws a long shadow over the earth, bodies get a lit
--- side and a shade side; the shade is cool and darker than before, so the
--- image has depth instead of the flat, all-lit midday of a default place.
--- (12/11, QA test of b822ee5, setting validated by François) The image was
--- burnt white: the world's shadows were off (GlobalShadows false: neither the
--- build nor this look set it) and the light too strong (Brightness 3.6,
--- exposure +0.12, ambients 84/80/100 and 126/120/142, bloom from 1.25): white
--- clothes and faces became glowing blocks. Shadows on, less light, a darker
--- fill, a bloom only on what really shines.
-local LIGHT={
-	ClockTime=16.9,GeographicLatitude=36,Brightness=2.4,ExposureCompensation=-.35,GlobalShadows=true,
-	EnvironmentDiffuseScale=.5,EnvironmentSpecularScale=.4,ShadowSoftness=.18,
-	Ambient=rgb(60,56,72),OutdoorAmbient=rgb(96,92,112),
-	ColorShift_Top=rgb(255,212,164),ColorShift_Bottom=rgb(84,104,160),
-}
+-- (14/11) The values live in Shared/Look: the server applies the same light
+-- at its start, so the client's apply changes nothing on screen.
+local Look=require(game:GetService("ReplicatedStorage"):WaitForChild("NinjaDuel"):WaitForChild("Look"))
+local LIGHT=Look.LIGHT
 WorldLook.LIGHT=LIGHT
-local function effect(class,name,props)
-	local e=Lighting:FindFirstChild(name)
-	if not e then e=Instance.new(class);e.Name=name;e.Parent=Lighting end
-	for k,v in props do pcall(function() (e::any)[k]=v end) end
-	return e
-end
+-- The menu's studio (Client/MenuStage asks for it while the board is filmed).
+WorldLook.studio=false
 
 function WorldLook.apply()
-	for k,v in LIGHT do pcall(function() (Lighting::any)[k]=v end) end
-	-- The server's own grade, bloom and rays are replaced by this look's.
-	for _,name in {"NinjaDuelGrade","NinjaDuelBloom","NinjaDuelRays"} do
-		local e=Lighting:FindFirstChild(name);if e then e.Enabled=false end
-	end
-	-- One air: the server's atmosphere and this look's would fight (the engine
-	-- uses one of them, either), so every atmosphere gets the same values.
-	local any=false
-	for _,atmo in Lighting:GetChildren() do
-		if atmo:IsA("Atmosphere") then
-			any=true
-			atmo.Density=.3;atmo.Offset=.2;atmo.Color=rgb(236,214,190);atmo.Decay=rgb(112,100,128);atmo.Glare=.2;atmo.Haze=1.1
-		end
-	end
-	if not any then Instance.new("Atmosphere",Lighting);return WorldLook.apply() end
-	effect("ColorCorrectionEffect","NinjaLookGrade",{Saturation=.22,Contrast=.26,Brightness=-.02,TintColor=rgb(255,246,236)})
-	effect("BloomEffect","NinjaLookBloom",{Intensity=.3,Size=22,Threshold=2.2})
-	effect("SunRaysEffect","NinjaLookRays",{Intensity=.04,Spread=.75})
-	effect("DepthOfFieldEffect","NinjaLookDepth",{FarIntensity=.18,FocusDistance=40,InFocusRadius=75,NearIntensity=0})
-	local terrain=workspace:FindFirstChildOfClass("Terrain")
-	if terrain then
-		local clouds=terrain:FindFirstChildOfClass("Clouds") or Instance.new("Clouds")
-		clouds.Cover=.52;clouds.Density=.62;clouds.Color=rgb(255,250,246);clouds.Parent=terrain
-	end
+	Look.apply(Lighting,workspace:FindFirstChildOfClass("Terrain"),WorldLook.studio)
+end
+-- The menu's studio on or off, in the same frame (it was MenuStage's own
+-- copy of the lighting, which the world's look overwrote a second later).
+function WorldLook.setStudio(on)
+	WorldLook.studio=on==true
+	if not WorldLook.borrowed then WorldLook.apply() end
 end
 
 -- The ink line round every fighter body (the duel's two, shadow clones, the
@@ -78839,14 +79051,29 @@ function WorldLook.start()
 	-- The stadium's own dressing on this screen (banners, ink circle, air).
 	local dress=script.Parent:FindFirstChild("ArenaDress")
 	if dress then pcall(function() require(dress).start() end) end
-	-- The look holds: anything that resets the lighting (a cutscene's grade
-	-- ends, the menu's studio gives the light back) finds it again.
+	-- The look holds: anything that changes the lighting (the server, a
+	-- cutscene's grade ending) finds it again before the next frame is drawn
+	-- (it was looked at once a second: up to a second of another light).
+	local queued=false
+	local function hold()
+		if queued or WorldLook.borrowed then return end
+		queued=true
+		task.defer(function()
+			queued=false
+			if not WorldLook.borrowed and not Look.holds(Lighting,WorldLook.studio) then WorldLook.apply() end
+		end)
+	end
+	for k in Look.values(true) do
+		pcall(function() Lighting:GetPropertyChangedSignal(k):Connect(hold) end)
+	end
+	Lighting.ChildAdded:Connect(hold)
+	-- (and once a second, as a safety)
 	local last=0
 	RunService.Heartbeat:Connect(function()
 		local t=os.clock()
 		if t-last&lt;1 then return end
 		last=t
-		if not WorldLook.borrowed and math.abs(Lighting.ClockTime-LIGHT.ClockTime)&gt;.01 then WorldLook.apply() end
+		if not WorldLook.borrowed and not Look.holds(Lighting,WorldLook.studio) then hold() end
 	end)
 end
 return WorldLook
@@ -78856,7 +79083,7 @@ return WorldLook
       </Item>
     </Item>
   </Item>
-  <Item class="Lighting" referent="ND312">
+  <Item class="Lighting" referent="ND314">
     <Properties>
       <string name="Name">Lighting</string>
       <token name="Technology">4</token>
@@ -78877,7 +79104,7 @@ return WorldLook
       </Color3>
     </Properties>
   </Item>
-  <Item class="SoundService" referent="ND313">
+  <Item class="SoundService" referent="ND315">
     <Properties>
       <string name="Name">SoundService</string>
     </Properties>
