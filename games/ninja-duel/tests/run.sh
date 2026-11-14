@@ -36,6 +36,7 @@ run Regression "$LUNE" run tests/Regression.spec.luau
 run Feedback   "$LUNE" run tests/Feedback.spec.luau
 run Animation  "$LUNE" run tests/Animation.spec.luau
 run Locomotion "$LUNE" run tests/Locomotion.spec.luau
+run BodyRange  "$LUNE" run tests/BodyRange.spec.luau
 run AwakenFX "$LUNE" run tests/AwakenFX.spec.luau
 run LightBudget "$LUNE" run tests/LightBudget.spec.luau
 run Lightning "$LUNE" run tests/Lightning.spec.luau
