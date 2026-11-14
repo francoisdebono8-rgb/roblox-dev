@@ -91,6 +91,17 @@ Elles sont modélisées dans leur propre repère, que le poseur place et met à 
 | CompoundWall | même repère | segment de 10 de long, 2 d'épais, 10 de haut, plus le chaperon |
 | Ladder | centre | échelle de 2 × 16 × 2 (la TrussPart reste pour grimper) |
 
+## Voir le village assemblé sans Studio
+Depuis `games/ninja-duel` :
+
+```
+lune run tools/hub_layout.luau /tmp/layout.json
+python3 tools/blender/konoha_village.py /tmp/layout.json /tmp/village [gate street plaza hall uchiha faces rooftops air]
+```
+
+- `hub_layout.luau` construit le village sans écran. Il écrit chaque copie à l'endroit où `Client/HubDress` la pose, et les Parts qui restent visibles.
+- `konoha_village.py` construit chaque modèle de `konoha_models.py` une fois, le duplique à chaque emplacement et rend les vues demandées (Cycles CPU, environ une minute par vue).
+
 ## Livraison
 - une PR empilée sur `claude/konoha-habillage`, avec les rendus de contrôle et une ligne dans HUB-001 ;
 - aucune publication Roblox sans l'accord de François ;
