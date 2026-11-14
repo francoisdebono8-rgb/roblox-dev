@@ -14,10 +14,14 @@
 local Players=game:GetService("Players")
 local TweenService=game:GetService("TweenService")
 local Curtain={}
-Curtain.MAX=8
+-- (measured 14/11: an 8 s curtain hid the village's models, but 8 s of a
+-- dark screen is long; the village is dressed in one go when they are built)
+Curtain.MAX=4
 Curtain.FADE=.4
--- What the first screens show (each optional).
-Curtain.FIRST={"NinjaDuelPortraitStage","NinjaDuelMenuStage","NinjaDuels"}
+-- What the first screens show (each optional; the menu's set is made of the
+-- portraits' copies). Not waited for one after the other: a missing one held
+-- the fetch for 3 s each (measured: the assets came at 7.5 s instead of 2 s).
+Curtain.FIRST={"NinjaDuelPortraitStage","NinjaDuels"}
 
 -- The ids and instances to fetch for the effects (Client/Effects TEX, the
 -- replicated VFX), skipping the engine's own rbxasset:// files.
@@ -50,21 +54,25 @@ function Curtain.start(playerGui,options)
 	gui.Parent=playerGui
 	local CP=game:GetService("ContentProvider")
 	local state={fetched=false,hub=options.hub==true}
-	task.spawn(function()
-		local list={}
-		for _,name in Curtain.FIRST do
-			local x=workspace:WaitForChild(name,3)
-			if x then table.insert(list,x) end
-		end
-		-- the player's own avatar, when he walks the village (3 s at most)
-		if state.hub then
+	local left=0
+	local function fetch(get)
+		left+=1
+		task.spawn(function()
+			local x=get()
+			if x then pcall(function() CP:PreloadAsync({x}) end) end
+			left-=1
+			if left==0 then state.fetched=true end
+		end)
+	end
+	for _,name in Curtain.FIRST do fetch(function() return workspace:FindFirstChild(name) or workspace:WaitForChild(name,2) end) end
+	-- the player's own avatar, when he walks the village (3 s at most)
+	if state.hub then
+		fetch(function()
 			local t=os.clock()
 			while not Players.LocalPlayer.Character and os.clock()-t<3 do task.wait(.1) end
-			if Players.LocalPlayer.Character then table.insert(list,Players.LocalPlayer.Character) end
-		end
-		pcall(function() CP:PreloadAsync(list) end)
-		state.fetched=true
-	end)
+			return Players.LocalPlayer.Character
+		end)
+	end
 	task.spawn(function()
 		local t0=os.clock()
 		while os.clock()-t0<Curtain.MAX do
