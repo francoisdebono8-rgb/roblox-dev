@@ -16,7 +16,7 @@ local TweenService=game:GetService("TweenService")
 local Curtain={}
 -- (measured 14/11: an 8 s curtain hid the village's models, but 8 s of a
 -- dark screen is long; the village is dressed in one go when they are built)
-Curtain.MAX=4
+Curtain.MAX=6
 Curtain.FADE=.4
 -- What the first screens show (each optional; the menu's set is made of the
 -- portraits' copies). Not waited for one after the other: a missing one held
