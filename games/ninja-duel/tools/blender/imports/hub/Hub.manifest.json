@@ -1,0 +1,2758 @@
+{
+ "pieces": {
+  "Bench__Wood": {
+   "alpha": 0,
+   "flat": true,
+   "mat": "Wood",
+   "model": "Bench",
+   "o": [
+    0.0,
+    0.8725,
+    0.0
+   ],
+   "piece": "Wood",
+   "reflect": 0,
+   "size": [
+    8.0,
+    1.745,
+    2.3
+   ]
+  },
+  "CompoundWall__Coping": {
+   "alpha": 0,
+   "flat": true,
+   "mat": "Slate",
+   "model": "CompoundWall",
+   "o": [
+    0.0,
+    10.4709,
+    0.17
+   ],
+   "piece": "Coping",
+   "reflect": 0,
+   "size": [
+    3.0887,
+    0.9417,
+    10.36
+   ]
+  },
+  "CompoundWall__Plaster": {
+   "alpha": 0,
+   "flat": true,
+   "mat": "Concrete",
+   "model": "CompoundWall",
+   "o": [
+    0.0,
+    5.0,
+    0.0
+   ],
+   "piece": "Plaster",
+   "reflect": 0,
+   "size": [
+    2.3,
+    10.0,
+    10.0
+   ]
+  },
+  "Crate__Planks": {
+   "alpha": 0,
+   "flat": true,
+   "mat": "Wood",
+   "model": "Crate",
+   "o": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "piece": "Planks",
+   "reflect": 0,
+   "size": [
+    4.15,
+    4.1012,
+    4.24
+   ]
+  },
+  "ExamHall__Banners": {
+   "alpha": 0,
+   "flat": true,
+   "mat": "Fabric",
+   "model": "ExamHall",
+   "o": [
+    0.0,
+    18.175,
+    -76.1
+   ],
+   "piece": "Banners",
+   "reflect": 0,
+   "size": [
+    109.8,
+    22.35,
+    89.8
+   ]
+  },
+  "ExamHall__Eaves": {
+   "alpha": 0,
+   "flat": true,
+   "mat": "Wood",
+   "model": "ExamHall",
+   "o": [
+    0.0,
+    42.2337,
+    -72.0
+   ],
+   "piece": "Eaves",
+   "reflect": 0,
+   "size": [
+    122.0199,
+    25.7237,
+    110.0
+   ]
+  },
+  "ExamHall__Lacquer": {
+   "alpha": 0,
+   "flat": true,
+   "mat": "Wood",
+   "model": "ExamHall",
+   "o": [
+    0.0,
+    8.35,
+    -21.5
+   ],
+   "piece": "Lacquer",
+   "reflect": 0,
+   "size": [
+    26.0,
+    16.7,
+    4.0
+   ]
+  },
+  "ExamHall__LanternCaps": {
+   "alpha": 0,
+   "flat": true,
+   "mat": "SmoothPlastic",
+   "model": "ExamHall",
+   "o": [
+    0.0,
+    9.485,
+    -76.0
+   ],
+   "piece": "LanternCaps",
+   "reflect": 0,
+   "size": [
+    87.0,
+    2.23,
+    72.9054
+   ]
+  },
+  "ExamHall__Lanterns": {
+   "alpha": 0,
+   "flat": false,
+   "mat": "Fabric",
+   "model": "ExamHall",
+   "o": [
+    0.0,
+    9.4,
+    -76.0
+   ],
+   "piece": "Lanterns",
+   "reflect": 0,
+   "size": [
+    85.0,
+    1.9,
+    73.3649
+   ]
+  },
+  "ExamHall__Openings": {
+   "alpha": 0,
+   "flat": true,
+   "mat": "SmoothPlastic",
+   "model": "ExamHall",
+   "o": [
+    0.0,
+    18.0,
+    -73.235
+   ],
+   "piece": "Openings",
+   "reflect": 0,
+   "size": [
+    114.46,
+    20.0,
+    95.47
+   ]
+  },
+  "ExamHall__Pillars": {
+   "alpha": 0,
+   "flat": true,
+   "mat": "Wood",
+   "model": "ExamHall",
+   "o": [
+    0.0,
+    15.025,
+    -76.0
+   ],
+   "piece": "Pillars",
+   "reflect": 0,
+   "size": [
+    90.6,
+    29.25,
+    78.0
+   ]
+  },
+  "ExamHall__Sleeves": {
+   "alpha": 0,
+   "flat": true,
+   "mat": "Fabric",
+   "model": "ExamHall",
+   "o": [
+    0.0,
+    5.2299,
+    -113.0
+   ],
+   "piece": "Sleeves",
+   "reflect": 0,
+   "size": [
+    108.3534,
+    11.1623,
+    9.9285
+   ]
+  },
+  "ExamHall__Statue": {
+   "alpha": 0,
+   "flat": true,
+   "mat": "Concrete",
+   "model": "ExamHall",
+   "o": [
+    0.0,
+    16.2118,
+    -112.3049
+   ],
+   "piece": "Statue",
+   "reflect": 0,
+   "size": [
+    22.954,
+    32.4237,
+    13.3903
+   ]
+  },
+  "ExamHall__Tiles": {
+   "alpha": 0,
+   "flat": true,
+   "mat": "Slate",
+   "model": "ExamHall",
+   "o": [
+    0.0,
+    0.51,
+    -72.0
+   ],
+   "piece": "Tiles",
+   "reflect": 0,
+   "size": [
+    110.0,
+    0.22,
+    98.0
+   ]
+  },
+  "ExamHall__TilesE": {
+   "alpha": 0,
+   "flat": true,
+   "mat": "Slate",
+   "model": "ExamHall",
+   "o": [
+    30.5,
+    42.9345,
+    -72.4
+   ],
+   "piece": "TilesE",
+   "reflect": 0,
+   "size": [
+    61.0,
+    24.9689,
+    109.2
+   ]
+  },
+  "ExamHall__TilesW": {
+   "alpha": 0,
+   "flat": true,
+   "mat": "Slate",
+   "model": "ExamHall",
+   "o": [
+    -29.7591,
+    43.3061,
+    -72.2444
+   ],
+   "piece": "TilesW",
+   "reflect": 0,
+   "size": [
+    62.4819,
+    25.7123,
+    112.3111
+   ]
+  },
+  "ExamHall__Timber": {
+   "alpha": 0,
+   "flat": true,
+   "mat": "Wood",
+   "model": "ExamHall",
+   "o": [
+    0.0,
+    15.0,
+    -71.625
+   ],
+   "piece": "Timber",
+   "reflect": 0,
+   "size": [
+    115.8,
+    30.0,
+    103.05
+   ]
+  },
+  "ExamHall__Walls": {
+   "alpha": 0,
+   "flat": true,
+   "mat": "Concrete",
+   "model": "ExamHall",
+   "o": [
+    0.0,
+    15.0,
+    -72.0
+   ],
+   "piece": "Walls",
+   "reflect": 0,
+   "size": [
+    114.0,
+    30.0,
+    102.0
+   ]
+  },
+  "FacesTerrace__Caps": {
+   "alpha": 0,
+   "flat": true,
+   "mat": "SmoothPlastic",
+   "model": "FacesTerrace",
+   "o": [
+    0.0,
+    17.01,
+    -176.4
+   ],
+   "piece": "Caps",
+   "reflect": 0,
+   "size": [
+    23.088,
+    22.38,
+    57.0348
+   ]
+  },
+  "FacesTerrace__Lanterns": {
+   "alpha": 0,
+   "flat": false,
+   "mat": "Fabric",
+   "model": "FacesTerrace",
+   "o": [
+    0.0,
+    17.0,
+    -176.4
+   ],
+   "piece": "Lanterns",
+   "reflect": 0,
+   "size": [
+    23.6,
+    22.2,
+    57.5599
+   ]
+  },
+  "FacesTerrace__Rails": {
+   "alpha": 0,
+   "flat": true,
+   "mat": "Wood",
+   "model": "FacesTerrace",
+   "o": [
+    0.0,
+    15.5,
+    -190.1
+   ],
+   "piece": "Rails",
+   "reflect": 0,
+   "size": [
+    83.0,
+    23.0,
+    83.8
+   ]
+  },
+  "FacesTerrace__Stone": {
+   "alpha": 0,
+   "flat": true,
+   "mat": "Slate",
+   "model": "FacesTerrace",
+   "o": [
+    0.0,
+    12.15,
+    -185.425
+   ],
+   "piece": "Stone",
+   "reflect": 0,
+   "size": [
+    84.6,
+    24.3,
+    93.75
+   ]
+  },
+  "FenceSegment__Wood": {
+   "alpha": 0,
+   "flat": true,
+   "mat": "Wood",
+   "model": "FenceSegment",
+   "o": [
+    -0.15,
+    1.57,
+    0.0
+   ],
+   "piece": "Wood",
+   "reflect": 0,
+   "size": [
+    8.3,
+    3.14,
+    0.64
+   ]
+  },
+  "GateBooth__Cloth": {
+   "alpha": 0,
+   "flat": true,
+   "mat": "Fabric",
+   "model": "GateBooth",
+   "o": [
+    33.65,
+    3.8,
+    188.55
+   ],
+   "piece": "Cloth",
+   "reflect": 0,
+   "size": [
+    4.7,
+    0.2,
+    1.1
+   ]
+  },
+  "GateBooth__Eaves": {
+   "alpha": 0,
+   "flat": true,
+   "mat": "Wood",
+   "model": "GateBooth",
+   "o": [
+    34.0,
+    9.1649,
+    189.0
+   ],
+   "piece": "Eaves",
+   "reflect": 0,
+   "size": [
+    12.4,
+    1.7153,
+    7.4
+   ]
+  },
+  "GateBooth__Tiles": {
+   "alpha": 0,
+   "flat": true,
+   "mat": "Slate",
+   "model": "GateBooth",
+   "o": [
+    33.5778,
+    9.8758,
+    189.0
+   ],
+   "piece": "Tiles",
+   "reflect": 0,
+   "size": [
+    12.9316,
+    1.5517,
+    7.4
+   ]
+  },
+  "GateBooth__Wood": {
+   "alpha": 0,
+   "flat": true,
+   "mat": "Wood",
+   "model": "GateBooth",
+   "o": [
+    34.0,
+    4.5,
+    188.85
+   ],
+   "piece": "Wood",
+   "reflect": 0,
+   "size": [
+    11.0,
+    9.0,
+    6.3
+   ]
+  },
+  "HeadSlot1__Block": {
+   "alpha": 0,
+   "flat": true,
+   "mat": "Rock",
+   "model": "HeadSlot1",
+   "o": [
+    0.0,
+    0.2,
+    0.055
+   ],
+   "piece": "Block",
+   "reflect": 0,
+   "size": [
+    24.4,
+    29.6,
+    7.71
+   ]
+  },
+  "HeadSlot1__Rope": {
+   "alpha": 0,
+   "flat": false,
+   "mat": "Fabric",
+   "model": "HeadSlot1",
+   "o": [
+    0.0,
+    4.5643,
+    5.7007
+   ],
+   "piece": "Rope",
+   "reflect": 0,
+   "size": [
+    21.68,
+    21.9287,
+    2.0214
+   ]
+  },
+  "HeadSlot1__Scaffold": {
+   "alpha": 0,
+   "flat": true,
+   "mat": "Wood",
+   "model": "HeadSlot1",
+   "o": [
+    0.0,
+    0.0,
+    6.0625
+   ],
+   "piece": "Scaffold",
+   "reflect": 0,
+   "size": [
+    23.0,
+    30.0,
+    2.525
+   ]
+  },
+  "HeadSlot1__Sketch": {
+   "alpha": 0,
+   "flat": true,
+   "mat": "SmoothPlastic",
+   "model": "HeadSlot1",
+   "o": [
+    0.0,
+    2.5,
+    3.51
+   ],
+   "piece": "Sketch",
+   "reflect": 0,
+   "size": [
+    16.245,
+    20.2577,
+    0.12
+   ]
+  },
+  "HeadSlot1__Tools": {
+   "alpha": 0,
+   "flat": true,
+   "mat": "Metal",
+   "model": "HeadSlot1",
+   "o": [
+    -1.4167,
+    7.8,
+    6.4
+   ],
+   "piece": "Tools",
+   "reflect": 0,
+   "size": [
+    12.2787,
+    2.4,
+    0.9136
+   ]
+  },
+  "HeadSlot2__Block": {
+   "alpha": 0,
+   "flat": true,
+   "mat": "Rock",
+   "model": "HeadSlot2",
+   "o": [
+    0.0,
+    0.2,
+    0.055
+   ],
+   "piece": "Block",
+   "reflect": 0,
+   "size": [
+    24.4,
+    29.6,
+    7.71
+   ]
+  },
+  "HeadSlot2__Rope": {
+   "alpha": 0,
+   "flat": false,
+   "mat": "Fabric",
+   "model": "HeadSlot2",
+   "o": [
+    0.0,
+    4.5661,
+    5.7011
+   ],
+   "piece": "Rope",
+   "reflect": 0,
+   "size": [
+    21.68,
+    21.9321,
+    2.0222
+   ]
+  },
+  "HeadSlot2__Scaffold": {
+   "alpha": 0,
+   "flat": true,
+   "mat": "Wood",
+   "model": "HeadSlot2",
+   "o": [
+    0.0,
+    0.0,
+    6.0625
+   ],
+   "piece": "Scaffold",
+   "reflect": 0,
+   "size": [
+    23.0,
+    30.0,
+    2.525
+   ]
+  },
+  "HeadSlot2__Sketch": {
+   "alpha": 0,
+   "flat": true,
+   "mat": "SmoothPlastic",
+   "model": "HeadSlot2",
+   "o": [
+    0.0,
+    2.5,
+    3.51
+   ],
+   "piece": "Sketch",
+   "reflect": 0,
+   "size": [
+    16.245,
+    20.2577,
+    0.12
+   ]
+  },
+  "HeadSlot2__Tools": {
+   "alpha": 0,
+   "flat": true,
+   "mat": "Metal",
+   "model": "HeadSlot2",
+   "o": [
+    1.4167,
+    7.8,
+    6.4
+   ],
+   "piece": "Tools",
+   "reflect": 0,
+   "size": [
+    12.2787,
+    2.4,
+    0.9136
+   ]
+  },
+  "HeadSlot3__Block": {
+   "alpha": 0,
+   "flat": true,
+   "mat": "Rock",
+   "model": "HeadSlot3",
+   "o": [
+    0.0,
+    0.2,
+    0.055
+   ],
+   "piece": "Block",
+   "reflect": 0,
+   "size": [
+    24.4,
+    29.6,
+    7.71
+   ]
+  },
+  "HeadSlot3__Rope": {
+   "alpha": 0,
+   "flat": false,
+   "mat": "Fabric",
+   "model": "HeadSlot3",
+   "o": [
+    0.0,
+    4.5643,
+    5.7007
+   ],
+   "piece": "Rope",
+   "reflect": 0,
+   "size": [
+    21.68,
+    21.9287,
+    2.0214
+   ]
+  },
+  "HeadSlot3__Scaffold": {
+   "alpha": 0,
+   "flat": true,
+   "mat": "Wood",
+   "model": "HeadSlot3",
+   "o": [
+    0.0,
+    0.0,
+    6.0625
+   ],
+   "piece": "Scaffold",
+   "reflect": 0,
+   "size": [
+    23.0,
+    30.0,
+    2.525
+   ]
+  },
+  "HeadSlot3__Sketch": {
+   "alpha": 0,
+   "flat": true,
+   "mat": "SmoothPlastic",
+   "model": "HeadSlot3",
+   "o": [
+    0.0,
+    2.5,
+    3.51
+   ],
+   "piece": "Sketch",
+   "reflect": 0,
+   "size": [
+    16.245,
+    20.2577,
+    0.12
+   ]
+  },
+  "HeadSlot3__Tools": {
+   "alpha": 0,
+   "flat": true,
+   "mat": "Metal",
+   "model": "HeadSlot3",
+   "o": [
+    -1.4167,
+    7.8,
+    6.4
+   ],
+   "piece": "Tools",
+   "reflect": 0,
+   "size": [
+    12.2787,
+    2.4,
+    0.9136
+   ]
+  },
+  "HeadSlot4__Block": {
+   "alpha": 0,
+   "flat": true,
+   "mat": "Rock",
+   "model": "HeadSlot4",
+   "o": [
+    0.0,
+    0.2,
+    0.055
+   ],
+   "piece": "Block",
+   "reflect": 0,
+   "size": [
+    24.4,
+    29.6,
+    7.71
+   ]
+  },
+  "HeadSlot4__Rope": {
+   "alpha": 0,
+   "flat": false,
+   "mat": "Fabric",
+   "model": "HeadSlot4",
+   "o": [
+    0.0,
+    4.5661,
+    5.7011
+   ],
+   "piece": "Rope",
+   "reflect": 0,
+   "size": [
+    21.68,
+    21.9321,
+    2.0222
+   ]
+  },
+  "HeadSlot4__Scaffold": {
+   "alpha": 0,
+   "flat": true,
+   "mat": "Wood",
+   "model": "HeadSlot4",
+   "o": [
+    0.0,
+    0.0,
+    6.0625
+   ],
+   "piece": "Scaffold",
+   "reflect": 0,
+   "size": [
+    23.0,
+    30.0,
+    2.525
+   ]
+  },
+  "HeadSlot4__Sketch": {
+   "alpha": 0,
+   "flat": true,
+   "mat": "SmoothPlastic",
+   "model": "HeadSlot4",
+   "o": [
+    0.0,
+    2.5,
+    3.51
+   ],
+   "piece": "Sketch",
+   "reflect": 0,
+   "size": [
+    16.245,
+    20.2577,
+    0.12
+   ]
+  },
+  "HeadSlot4__Tools": {
+   "alpha": 0,
+   "flat": true,
+   "mat": "Metal",
+   "model": "HeadSlot4",
+   "o": [
+    1.4167,
+    7.8,
+    6.4
+   ],
+   "piece": "Tools",
+   "reflect": 0,
+   "size": [
+    12.2787,
+    2.4,
+    0.9136
+   ]
+  },
+  "HokageCliff__Cliff": {
+   "alpha": 0,
+   "flat": true,
+   "mat": "Rock",
+   "model": "HokageCliff",
+   "o": [
+    0.0,
+    46.4114,
+    -265.2867
+   ],
+   "piece": "Cliff",
+   "reflect": 0,
+   "size": [
+    330.0,
+    92.8228,
+    69.4266
+   ]
+  },
+  "HokageCliff__Plateau": {
+   "alpha": 0,
+   "flat": true,
+   "mat": "Grass",
+   "model": "HokageCliff",
+   "o": [
+    0.0,
+    87.3833,
+    -266.3734
+   ],
+   "piece": "Plateau",
+   "reflect": 0,
+   "size": [
+    330.0,
+    11.1724,
+    67.2533
+   ]
+  },
+  "HokageCliff__Trees": {
+   "alpha": 0,
+   "flat": true,
+   "mat": "Grass",
+   "model": "HokageCliff",
+   "o": [
+    4.0471,
+    101.5803,
+    -258.674
+   ],
+   "piece": "Trees",
+   "reflect": 0,
+   "size": [
+    296.8083,
+    16.2463,
+    39.6338
+   ]
+  },
+  "HokageCliff__Trunks": {
+   "alpha": 0,
+   "flat": true,
+   "mat": "Wood",
+   "model": "HokageCliff",
+   "o": [
+    3.4579,
+    96.1517,
+    -258.5157
+   ],
+   "piece": "Trunks",
+   "reflect": 0,
+   "size": [
+    285.6348,
+    10.8548,
+    26.9002
+   ]
+  },
+  "HouseBack_22x20x2__Eaves": {
+   "alpha": 0,
+   "flat": true,
+   "mat": "Wood",
+   "model": "HouseBack_22x20x2",
+   "o": [
+    0.0,
+    18.718,
+    0.0
+   ],
+   "piece": "Eaves",
+   "reflect": 0,
+   "size": [
+    25.2302,
+    6.6838,
+    23.2
+   ]
+  },
+  "HouseBack_22x20x2__Openings": {
+   "alpha": 0,
+   "flat": true,
+   "mat": "SmoothPlastic",
+   "model": "HouseBack_22x20x2",
+   "o": [
+    0.0,
+    8.4,
+    0.0
+   ],
+   "piece": "Openings",
+   "reflect": 0,
+   "size": [
+    22.18,
+    10.6,
+    20.18
+   ]
+  },
+  "HouseBack_22x20x2__Tiles": {
+   "alpha": 0,
+   "flat": true,
+   "mat": "Slate",
+   "model": "HouseBack_22x20x2",
+   "o": [
+    0.0,
+    19.5695,
+    -0.0444
+   ],
+   "piece": "Tiles",
+   "reflect": 0,
+   "size": [
+    25.2,
+    6.239,
+    24.4111
+   ]
+  },
+  "HouseBack_22x20x2__Timber": {
+   "alpha": 0,
+   "flat": true,
+   "mat": "Wood",
+   "model": "HouseBack_22x20x2",
+   "o": [
+    0.0,
+    8.0,
+    0.0
+   ],
+   "piece": "Timber",
+   "reflect": 0,
+   "size": [
+    22.9,
+    16.0,
+    20.9
+   ]
+  },
+  "HouseBack_22x20x2__Walls": {
+   "alpha": 0,
+   "flat": true,
+   "mat": "Concrete",
+   "model": "HouseBack_22x20x2",
+   "o": [
+    0.0,
+    8.0,
+    0.0
+   ],
+   "piece": "Walls",
+   "reflect": 0,
+   "size": [
+    22.0,
+    16.0,
+    20.0
+   ]
+  },
+  "HouseFlat_22x18x3__Lantern": {
+   "alpha": 0,
+   "flat": false,
+   "mat": "Fabric",
+   "model": "HouseFlat_22x18x3",
+   "o": [
+    11.9,
+    6.0,
+    2.6
+   ],
+   "piece": "Lantern",
+   "reflect": 0,
+   "size": [
+    1.4,
+    1.9,
+    1.3649
+   ]
+  },
+  "HouseFlat_22x18x3__LanternCap": {
+   "alpha": 0,
+   "flat": false,
+   "mat": "SmoothPlastic",
+   "model": "HouseFlat_22x18x3",
+   "o": [
+    11.9,
+    6.01,
+    2.6
+   ],
+   "piece": "LanternCap",
+   "reflect": 0,
+   "size": [
+    0.952,
+    2.08,
+    0.9054
+   ]
+  },
+  "HouseFlat_22x18x3__Openings": {
+   "alpha": 0,
+   "flat": true,
+   "mat": "SmoothPlastic",
+   "model": "HouseFlat_22x18x3",
+   "o": [
+    0.0,
+    12.4,
+    0.0
+   ],
+   "piece": "Openings",
+   "reflect": 0,
+   "size": [
+    22.18,
+    18.6,
+    18.18
+   ]
+  },
+  "HouseFlat_22x18x3__Tiles": {
+   "alpha": 0,
+   "flat": true,
+   "mat": "Slate",
+   "model": "HouseFlat_22x18x3",
+   "o": [
+    0.0,
+    24.5,
+    0.0
+   ],
+   "piece": "Tiles",
+   "reflect": 0,
+   "size": [
+    23.2,
+    1.0,
+    19.2
+   ]
+  },
+  "HouseFlat_22x18x3__Timber": {
+   "alpha": 0,
+   "flat": true,
+   "mat": "Wood",
+   "model": "HouseFlat_22x18x3",
+   "o": [
+    0.15,
+    12.75,
+    0.0
+   ],
+   "piece": "Timber",
+   "reflect": 0,
+   "size": [
+    23.9,
+    25.9,
+    19.6
+   ]
+  },
+  "HouseFlat_22x18x3__Walls": {
+   "alpha": 0,
+   "flat": true,
+   "mat": "Concrete",
+   "model": "HouseFlat_22x18x3",
+   "o": [
+    0.0,
+    12.0,
+    0.0
+   ],
+   "piece": "Walls",
+   "reflect": 0,
+   "size": [
+    22.0,
+    24.0,
+    18.0
+   ]
+  },
+  "HouseFlat_24x20x2__Lantern": {
+   "alpha": 0,
+   "flat": false,
+   "mat": "Fabric",
+   "model": "HouseFlat_24x20x2",
+   "o": [
+    12.9,
+    6.0,
+    2.6
+   ],
+   "piece": "Lantern",
+   "reflect": 0,
+   "size": [
+    1.4,
+    1.9,
+    1.3649
+   ]
+  },
+  "HouseFlat_24x20x2__LanternCap": {
+   "alpha": 0,
+   "flat": false,
+   "mat": "SmoothPlastic",
+   "model": "HouseFlat_24x20x2",
+   "o": [
+    12.9,
+    6.01,
+    2.6
+   ],
+   "piece": "LanternCap",
+   "reflect": 0,
+   "size": [
+    0.952,
+    2.08,
+    0.9054
+   ]
+  },
+  "HouseFlat_24x20x2__Openings": {
+   "alpha": 0,
+   "flat": true,
+   "mat": "SmoothPlastic",
+   "model": "HouseFlat_24x20x2",
+   "o": [
+    0.0,
+    8.4,
+    0.0
+   ],
+   "piece": "Openings",
+   "reflect": 0,
+   "size": [
+    24.18,
+    10.6,
+    20.18
+   ]
+  },
+  "HouseFlat_24x20x2__Tiles": {
+   "alpha": 0,
+   "flat": true,
+   "mat": "Slate",
+   "model": "HouseFlat_24x20x2",
+   "o": [
+    0.0,
+    16.5,
+    0.0
+   ],
+   "piece": "Tiles",
+   "reflect": 0,
+   "size": [
+    25.2,
+    1.0,
+    21.2
+   ]
+  },
+  "HouseFlat_24x20x2__Timber": {
+   "alpha": 0,
+   "flat": true,
+   "mat": "Wood",
+   "model": "HouseFlat_24x20x2",
+   "o": [
+    0.15,
+    8.75,
+    0.0
+   ],
+   "piece": "Timber",
+   "reflect": 0,
+   "size": [
+    25.9,
+    17.9,
+    21.6
+   ]
+  },
+  "HouseFlat_24x20x2__Walls": {
+   "alpha": 0,
+   "flat": true,
+   "mat": "Concrete",
+   "model": "HouseFlat_24x20x2",
+   "o": [
+    0.0,
+    8.0,
+    0.0
+   ],
+   "piece": "Walls",
+   "reflect": 0,
+   "size": [
+    24.0,
+    16.0,
+    20.0
+   ]
+  },
+  "HouseGable_24x20x2__Eaves": {
+   "alpha": 0,
+   "flat": true,
+   "mat": "Wood",
+   "model": "HouseGable_24x20x2",
+   "o": [
+    0.0,
+    18.9406,
+    0.0
+   ],
+   "piece": "Eaves",
+   "reflect": 0,
+   "size": [
+    27.2302,
+    7.129,
+    23.2
+   ]
+  },
+  "HouseGable_24x20x2__Lantern": {
+   "alpha": 0,
+   "flat": false,
+   "mat": "Fabric",
+   "model": "HouseGable_24x20x2",
+   "o": [
+    12.9,
+    6.0,
+    2.6
+   ],
+   "piece": "Lantern",
+   "reflect": 0,
+   "size": [
+    1.4,
+    1.9,
+    1.3649
+   ]
+  },
+  "HouseGable_24x20x2__LanternCap": {
+   "alpha": 0,
+   "flat": false,
+   "mat": "SmoothPlastic",
+   "model": "HouseGable_24x20x2",
+   "o": [
+    12.9,
+    6.01,
+    2.6
+   ],
+   "piece": "LanternCap",
+   "reflect": 0,
+   "size": [
+    0.952,
+    2.08,
+    0.9054
+   ]
+  },
+  "HouseGable_24x20x2__Openings": {
+   "alpha": 0,
+   "flat": true,
+   "mat": "SmoothPlastic",
+   "model": "HouseGable_24x20x2",
+   "o": [
+    0.0,
+    8.4,
+    0.0
+   ],
+   "piece": "Openings",
+   "reflect": 0,
+   "size": [
+    24.18,
+    10.6,
+    20.18
+   ]
+  },
+  "HouseGable_24x20x2__Tiles": {
+   "alpha": 0,
+   "flat": true,
+   "mat": "Slate",
+   "model": "HouseGable_24x20x2",
+   "o": [
+    0.0,
+    19.7921,
+    -0.0444
+   ],
+   "piece": "Tiles",
+   "reflect": 0,
+   "size": [
+    27.2,
+    6.6843,
+    24.4111
+   ]
+  },
+  "HouseGable_24x20x2__Timber": {
+   "alpha": 0,
+   "flat": true,
+   "mat": "Wood",
+   "model": "HouseGable_24x20x2",
+   "o": [
+    0.325,
+    7.9,
+    0.0
+   ],
+   "piece": "Timber",
+   "reflect": 0,
+   "size": [
+    25.55,
+    16.2,
+    20.9
+   ]
+  },
+  "HouseGable_24x20x2__Walls": {
+   "alpha": 0,
+   "flat": true,
+   "mat": "Concrete",
+   "model": "HouseGable_24x20x2",
+   "o": [
+    0.0,
+    8.0,
+    0.0
+   ],
+   "piece": "Walls",
+   "reflect": 0,
+   "size": [
+    24.0,
+    16.0,
+    20.0
+   ]
+  },
+  "HouseShop_24x20x1__Cloth": {
+   "alpha": 0,
+   "flat": true,
+   "mat": "Fabric",
+   "model": "HouseShop_24x20x1",
+   "o": [
+    12.3,
+    5.38,
+    0.0
+   ],
+   "piece": "Cloth",
+   "reflect": 0,
+   "size": [
+    0.12,
+    2.36,
+    3.94
+   ]
+  },
+  "HouseShop_24x20x1__Eaves": {
+   "alpha": 0,
+   "flat": true,
+   "mat": "Wood",
+   "model": "HouseShop_24x20x1",
+   "o": [
+    0.0,
+    10.9406,
+    0.0
+   ],
+   "piece": "Eaves",
+   "reflect": 0,
+   "size": [
+    27.2302,
+    7.129,
+    23.2
+   ]
+  },
+  "HouseShop_24x20x1__Lantern": {
+   "alpha": 0,
+   "flat": false,
+   "mat": "Fabric",
+   "model": "HouseShop_24x20x1",
+   "o": [
+    12.9,
+    6.0,
+    2.6
+   ],
+   "piece": "Lantern",
+   "reflect": 0,
+   "size": [
+    1.4,
+    1.9,
+    1.3649
+   ]
+  },
+  "HouseShop_24x20x1__LanternCap": {
+   "alpha": 0,
+   "flat": false,
+   "mat": "SmoothPlastic",
+   "model": "HouseShop_24x20x1",
+   "o": [
+    12.9,
+    6.01,
+    2.6
+   ],
+   "piece": "LanternCap",
+   "reflect": 0,
+   "size": [
+    0.952,
+    2.08,
+    0.9054
+   ]
+  },
+  "HouseShop_24x20x1__Openings": {
+   "alpha": 0,
+   "flat": true,
+   "mat": "SmoothPlastic",
+   "model": "HouseShop_24x20x1",
+   "o": [
+    0.0,
+    4.4,
+    0.0
+   ],
+   "piece": "Openings",
+   "reflect": 0,
+   "size": [
+    24.18,
+    2.6,
+    20.18
+   ]
+  },
+  "HouseShop_24x20x1__Tiles": {
+   "alpha": 0,
+   "flat": true,
+   "mat": "Slate",
+   "model": "HouseShop_24x20x1",
+   "o": [
+    0.0,
+    11.7921,
+    -0.0444
+   ],
+   "piece": "Tiles",
+   "reflect": 0,
+   "size": [
+    27.2,
+    6.6843,
+    24.4111
+   ]
+  },
+  "HouseShop_24x20x1__Timber": {
+   "alpha": 0,
+   "flat": true,
+   "mat": "Wood",
+   "model": "HouseShop_24x20x1",
+   "o": [
+    0.325,
+    3.9,
+    0.0
+   ],
+   "piece": "Timber",
+   "reflect": 0,
+   "size": [
+    25.55,
+    8.2,
+    20.9
+   ]
+  },
+  "HouseShop_24x20x1__Walls": {
+   "alpha": 0,
+   "flat": true,
+   "mat": "Concrete",
+   "model": "HouseShop_24x20x1",
+   "o": [
+    0.0,
+    4.0,
+    0.0
+   ],
+   "piece": "Walls",
+   "reflect": 0,
+   "size": [
+    24.0,
+    8.0,
+    20.0
+   ]
+  },
+  "HouseShop_24x20x2__Cloth": {
+   "alpha": 0,
+   "flat": true,
+   "mat": "Fabric",
+   "model": "HouseShop_24x20x2",
+   "o": [
+    12.3,
+    5.38,
+    0.0
+   ],
+   "piece": "Cloth",
+   "reflect": 0,
+   "size": [
+    0.12,
+    2.36,
+    3.94
+   ]
+  },
+  "HouseShop_24x20x2__Eaves": {
+   "alpha": 0,
+   "flat": true,
+   "mat": "Wood",
+   "model": "HouseShop_24x20x2",
+   "o": [
+    0.0,
+    18.9406,
+    0.0
+   ],
+   "piece": "Eaves",
+   "reflect": 0,
+   "size": [
+    27.2302,
+    7.129,
+    23.2
+   ]
+  },
+  "HouseShop_24x20x2__Lantern": {
+   "alpha": 0,
+   "flat": false,
+   "mat": "Fabric",
+   "model": "HouseShop_24x20x2",
+   "o": [
+    12.9,
+    6.0,
+    2.6
+   ],
+   "piece": "Lantern",
+   "reflect": 0,
+   "size": [
+    1.4,
+    1.9,
+    1.3649
+   ]
+  },
+  "HouseShop_24x20x2__LanternCap": {
+   "alpha": 0,
+   "flat": false,
+   "mat": "SmoothPlastic",
+   "model": "HouseShop_24x20x2",
+   "o": [
+    12.9,
+    6.01,
+    2.6
+   ],
+   "piece": "LanternCap",
+   "reflect": 0,
+   "size": [
+    0.952,
+    2.08,
+    0.9054
+   ]
+  },
+  "HouseShop_24x20x2__Openings": {
+   "alpha": 0,
+   "flat": true,
+   "mat": "SmoothPlastic",
+   "model": "HouseShop_24x20x2",
+   "o": [
+    0.0,
+    8.4,
+    0.0
+   ],
+   "piece": "Openings",
+   "reflect": 0,
+   "size": [
+    24.18,
+    10.6,
+    20.18
+   ]
+  },
+  "HouseShop_24x20x2__Tiles": {
+   "alpha": 0,
+   "flat": true,
+   "mat": "Slate",
+   "model": "HouseShop_24x20x2",
+   "o": [
+    0.0,
+    19.7921,
+    -0.0444
+   ],
+   "piece": "Tiles",
+   "reflect": 0,
+   "size": [
+    27.2,
+    6.6843,
+    24.4111
+   ]
+  },
+  "HouseShop_24x20x2__Timber": {
+   "alpha": 0,
+   "flat": true,
+   "mat": "Wood",
+   "model": "HouseShop_24x20x2",
+   "o": [
+    0.325,
+    7.9,
+    0.0
+   ],
+   "piece": "Timber",
+   "reflect": 0,
+   "size": [
+    25.55,
+    16.2,
+    20.9
+   ]
+  },
+  "HouseShop_24x20x2__Walls": {
+   "alpha": 0,
+   "flat": true,
+   "mat": "Concrete",
+   "model": "HouseShop_24x20x2",
+   "o": [
+    0.0,
+    8.0,
+    0.0
+   ],
+   "piece": "Walls",
+   "reflect": 0,
+   "size": [
+    24.0,
+    16.0,
+    20.0
+   ]
+  },
+  "HouseUchiha_26x20x2__Eaves": {
+   "alpha": 0,
+   "flat": true,
+   "mat": "Wood",
+   "model": "HouseUchiha_26x20x2",
+   "o": [
+    0.0,
+    19.1632,
+    0.0
+   ],
+   "piece": "Eaves",
+   "reflect": 0,
+   "size": [
+    29.2302,
+    7.5742,
+    23.2
+   ]
+  },
+  "HouseUchiha_26x20x2__Lantern": {
+   "alpha": 0,
+   "flat": false,
+   "mat": "Fabric",
+   "model": "HouseUchiha_26x20x2",
+   "o": [
+    13.9,
+    6.0,
+    2.6
+   ],
+   "piece": "Lantern",
+   "reflect": 0,
+   "size": [
+    1.4,
+    1.9,
+    1.3649
+   ]
+  },
+  "HouseUchiha_26x20x2__LanternCap": {
+   "alpha": 0,
+   "flat": false,
+   "mat": "SmoothPlastic",
+   "model": "HouseUchiha_26x20x2",
+   "o": [
+    13.9,
+    6.01,
+    2.6
+   ],
+   "piece": "LanternCap",
+   "reflect": 0,
+   "size": [
+    0.952,
+    2.08,
+    0.9054
+   ]
+  },
+  "HouseUchiha_26x20x2__Openings": {
+   "alpha": 0,
+   "flat": true,
+   "mat": "SmoothPlastic",
+   "model": "HouseUchiha_26x20x2",
+   "o": [
+    0.0,
+    8.4,
+    0.0
+   ],
+   "piece": "Openings",
+   "reflect": 0,
+   "size": [
+    26.18,
+    10.6,
+    20.18
+   ]
+  },
+  "HouseUchiha_26x20x2__Tiles": {
+   "alpha": 0,
+   "flat": true,
+   "mat": "Slate",
+   "model": "HouseUchiha_26x20x2",
+   "o": [
+    0.0,
+    20.0148,
+    -0.0444
+   ],
+   "piece": "Tiles",
+   "reflect": 0,
+   "size": [
+    29.2,
+    7.1295,
+    24.4111
+   ]
+  },
+  "HouseUchiha_26x20x2__Timber": {
+   "alpha": 0,
+   "flat": true,
+   "mat": "Wood",
+   "model": "HouseUchiha_26x20x2",
+   "o": [
+    0.325,
+    8.1,
+    0.0
+   ],
+   "piece": "Timber",
+   "reflect": 0,
+   "size": [
+    27.55,
+    16.6,
+    20.9
+   ]
+  },
+  "HouseUchiha_26x20x2__Walls": {
+   "alpha": 0,
+   "flat": true,
+   "mat": "Concrete",
+   "model": "HouseUchiha_26x20x2",
+   "o": [
+    0.0,
+    8.0,
+    0.0
+   ],
+   "piece": "Walls",
+   "reflect": 0,
+   "size": [
+    26.0,
+    16.0,
+    20.0
+   ]
+  },
+  "HyugaCompound__Eaves": {
+   "alpha": 0,
+   "flat": true,
+   "mat": "Wood",
+   "model": "HyugaCompound",
+   "o": [
+    -154.8423,
+    11.2938,
+    -107.0
+   ],
+   "piece": "Eaves",
+   "reflect": 0,
+   "size": [
+    99.5249,
+    7.852,
+    99.2
+   ]
+  },
+  "HyugaCompound__GateTiles": {
+   "alpha": 0,
+   "flat": true,
+   "mat": "Slate",
+   "model": "HyugaCompound",
+   "o": [
+    -108.0,
+    14.1635,
+    -103.0
+   ],
+   "piece": "GateTiles",
+   "reflect": 0,
+   "size": [
+    5.8,
+    1.9269,
+    25.7
+   ]
+  },
+  "HyugaCompound__Shoji": {
+   "alpha": 0,
+   "flat": true,
+   "mat": "SmoothPlastic",
+   "model": "HyugaCompound",
+   "o": [
+    -168.95,
+    4.0,
+    -107.0
+   ],
+   "piece": "Shoji",
+   "reflect": 0,
+   "size": [
+    0.1,
+    5.6,
+    95.2
+   ]
+  },
+  "HyugaCompound__TilesE": {
+   "alpha": 0,
+   "flat": true,
+   "mat": "Slate",
+   "model": "HyugaCompound",
+   "o": [
+    -176.7,
+    11.9677,
+    -107.15
+   ],
+   "piece": "TilesE",
+   "reflect": 0,
+   "size": [
+    18.6,
+    7.0354,
+    98.9
+   ]
+  },
+  "HyugaCompound__TilesW": {
+   "alpha": 0,
+   "flat": true,
+   "mat": "Slate",
+   "model": "HyugaCompound",
+   "o": [
+    -194.6914,
+    12.2953,
+    -107.5333
+   ],
+   "piece": "TilesW",
+   "reflect": 0,
+   "size": [
+    19.8172,
+    7.6907,
+    100.4333
+   ]
+  },
+  "HyugaCompound__Timber": {
+   "alpha": 0,
+   "flat": true,
+   "mat": "Wood",
+   "model": "HyugaCompound",
+   "o": [
+    -155.05,
+    6.5,
+    -107.0
+   ],
+   "piece": "Timber",
+   "reflect": 0,
+   "size": [
+    96.7,
+    13.0,
+    96.8
+   ]
+  },
+  "HyugaCompound__Walls": {
+   "alpha": 0,
+   "flat": true,
+   "mat": "Concrete",
+   "model": "HyugaCompound",
+   "o": [
+    -186.0,
+    4.0,
+    -107.0
+   ],
+   "piece": "Walls",
+   "reflect": 0,
+   "size": [
+    34.0,
+    8.0,
+    96.0
+   ]
+  },
+  "Ichiraku__Awning": {
+   "alpha": 0,
+   "flat": true,
+   "mat": "Slate",
+   "model": "Ichiraku",
+   "o": [
+    -29.9791,
+    9.7485,
+    110.5
+   ],
+   "piece": "Awning",
+   "reflect": 0,
+   "size": [
+    23.8221,
+    3.7363,
+    26.95
+   ]
+  },
+  "Ichiraku__Caps": {
+   "alpha": 0,
+   "flat": true,
+   "mat": "SmoothPlastic",
+   "model": "Ichiraku",
+   "o": [
+    -18.6,
+    7.01,
+    110.0
+   ],
+   "piece": "Caps",
+   "reflect": 0,
+   "size": [
+    1.088,
+    2.38,
+    22.2347
+   ]
+  },
+  "Ichiraku__Kitchen": {
+   "alpha": 0,
+   "flat": true,
+   "mat": "Metal",
+   "model": "Ichiraku",
+   "o": [
+    -31.15,
+    5.1,
+    110.0
+   ],
+   "piece": "Kitchen",
+   "reflect": 0,
+   "size": [
+    3.7,
+    5.4,
+    16.0
+   ]
+  },
+  "Ichiraku__Lanterns": {
+   "alpha": 0,
+   "flat": false,
+   "mat": "Fabric",
+   "model": "Ichiraku",
+   "o": [
+    -18.6,
+    7.0,
+    110.0
+   ],
+   "piece": "Lanterns",
+   "reflect": 0,
+   "size": [
+    1.6,
+    2.2,
+    22.7599
+   ]
+  },
+  "Ichiraku__Noren": {
+   "alpha": 0,
+   "flat": true,
+   "mat": "Fabric",
+   "model": "Ichiraku",
+   "o": [
+    -19.3,
+    7.6,
+    110.0
+   ],
+   "piece": "Noren",
+   "reflect": 0,
+   "size": [
+    0.1,
+    2.4,
+    19.6
+   ]
+  },
+  "Ichiraku__Stools": {
+   "alpha": 0,
+   "flat": false,
+   "mat": "SmoothPlastic",
+   "model": "Ichiraku",
+   "o": [
+    -22.415,
+    2.04,
+    110.0753
+   ],
+   "piece": "Stools",
+   "reflect": 0,
+   "size": [
+    4.47,
+    4.08,
+    17.7494
+   ]
+  },
+  "Ichiraku__Walls": {
+   "alpha": 0,
+   "flat": true,
+   "mat": "Concrete",
+   "model": "Ichiraku",
+   "o": [
+    -37.0,
+    4.5,
+    110.0
+   ],
+   "piece": "Walls",
+   "reflect": 0,
+   "size": [
+    10.0,
+    9.0,
+    22.0
+   ]
+  },
+  "Ichiraku__Wood": {
+   "alpha": 0,
+   "flat": true,
+   "mat": "Wood",
+   "model": "Ichiraku",
+   "o": [
+    -30.2188,
+    5.5608,
+    110.0
+   ],
+   "piece": "Wood",
+   "reflect": 0,
+   "size": [
+    24.1623,
+    11.1215,
+    26.0
+   ]
+  },
+  "KonohaGate__Doors": {
+   "alpha": 0,
+   "flat": true,
+   "mat": "Wood",
+   "model": "KonohaGate",
+   "o": [
+    0.0,
+    19.0,
+    197.0
+   ],
+   "piece": "Doors",
+   "reflect": 0,
+   "size": [
+    37.4,
+    36.0,
+    18.0
+   ]
+  },
+  "KonohaGate__Eaves": {
+   "alpha": 0,
+   "flat": true,
+   "mat": "Wood",
+   "model": "KonohaGate",
+   "o": [
+    0.0,
+    46.4013,
+    206.0
+   ],
+   "piece": "Eaves",
+   "reflect": 0,
+   "size": [
+    60.0,
+    2.7816,
+    12.5
+   ]
+  },
+  "KonohaGate__Iron": {
+   "alpha": 0,
+   "flat": true,
+   "mat": "Metal",
+   "model": "KonohaGate",
+   "o": [
+    0.0,
+    19.0,
+    198.525
+   ],
+   "piece": "Iron",
+   "reflect": 0,
+   "size": [
+    48.3,
+    28.8,
+    21.25
+   ]
+  },
+  "KonohaGate__Lacquer": {
+   "alpha": 0,
+   "flat": true,
+   "mat": "Wood",
+   "model": "KonohaGate",
+   "o": [
+    0.0,
+    22.5,
+    206.0
+   ],
+   "piece": "Lacquer",
+   "reflect": 0,
+   "size": [
+    54.0,
+    45.0,
+    10.0
+   ]
+  },
+  "KonohaGate__Stone": {
+   "alpha": 0,
+   "flat": true,
+   "mat": "Slate",
+   "model": "KonohaGate",
+   "o": [
+    0.0,
+    22.85,
+    206.0
+   ],
+   "piece": "Stone",
+   "reflect": 0,
+   "size": [
+    60.0,
+    45.7,
+    10.0
+   ]
+  },
+  "KonohaGate__TilesN": {
+   "alpha": 0,
+   "flat": true,
+   "mat": "Slate",
+   "model": "KonohaGate",
+   "o": [
+    -0.1333,
+    47.2544,
+    203.275
+   ],
+   "piece": "TilesN",
+   "reflect": 0,
+   "size": [
+    61.4269,
+    2.5088,
+    7.05
+   ]
+  },
+  "KonohaGate__TilesS": {
+   "alpha": 0,
+   "flat": true,
+   "mat": "Slate",
+   "model": "KonohaGate",
+   "o": [
+    -0.4,
+    46.9885,
+    209.125
+   ],
+   "piece": "TilesS",
+   "reflect": 0,
+   "size": [
+    59.2,
+    1.9769,
+    6.25
+   ]
+  },
+  "Ladder__Wood": {
+   "alpha": 0,
+   "flat": true,
+   "mat": "Wood",
+   "model": "Ladder",
+   "o": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "piece": "Wood",
+   "reflect": 0,
+   "size": [
+    2.0,
+    16.0,
+    0.3
+   ]
+  },
+  "LampPost__Post": {
+   "alpha": 0,
+   "flat": true,
+   "mat": "Wood",
+   "model": "LampPost",
+   "o": [
+    0.0,
+    4.53,
+    0.0
+   ],
+   "piece": "Post",
+   "reflect": 0,
+   "size": [
+    1.0,
+    9.06,
+    1.0
+   ]
+  },
+  "MemorialStone__Base": {
+   "alpha": 0,
+   "flat": true,
+   "mat": "Slate",
+   "model": "MemorialStone",
+   "o": [
+    -172.0,
+    0.65,
+    78.0
+   ],
+   "piece": "Base",
+   "reflect": 0,
+   "size": [
+    8.0,
+    1.3,
+    6.0
+   ]
+  },
+  "MemorialStone__Stone": {
+   "alpha": 0,
+   "flat": true,
+   "mat": "Marble",
+   "model": "MemorialStone",
+   "o": [
+    -172.0,
+    4.5,
+    78.0
+   ],
+   "piece": "Stone",
+   "reflect": 0,
+   "size": [
+    3.0768,
+    7.0,
+    4.8698
+   ]
+  },
+  "NakaShrine__Base": {
+   "alpha": 0,
+   "flat": true,
+   "mat": "Slate",
+   "model": "NakaShrine",
+   "o": [
+    182.8,
+    0.81,
+    -138.0
+   ],
+   "piece": "Base",
+   "reflect": 0,
+   "size": [
+    35.6,
+    1.62,
+    26.0
+   ]
+  },
+  "NakaShrine__Eaves": {
+   "alpha": 0,
+   "flat": true,
+   "mat": "Wood",
+   "model": "NakaShrine",
+   "o": [
+    182.0,
+    12.2466,
+    -140.0
+   ],
+   "piece": "Eaves",
+   "reflect": 0,
+   "size": [
+    28.4,
+    6.532,
+    22.4403
+   ]
+  },
+  "NakaShrine__Tiles": {
+   "alpha": 0,
+   "flat": true,
+   "mat": "Slate",
+   "model": "NakaShrine",
+   "o": [
+    181.4889,
+    13.1105,
+    -140.0
+   ],
+   "piece": "Tiles",
+   "reflect": 0,
+   "size": [
+    28.8596,
+    6.1209,
+    22.4
+   ]
+  },
+  "NakaShrine__Timber": {
+   "alpha": 0,
+   "flat": true,
+   "mat": "Wood",
+   "model": "NakaShrine",
+   "o": [
+    182.1823,
+    5.6,
+    -140.0
+   ],
+   "piece": "Timber",
+   "reflect": 0,
+   "size": [
+    25.2645,
+    8.0,
+    18.9
+   ]
+  },
+  "NakaShrine__Walls": {
+   "alpha": 0,
+   "flat": true,
+   "mat": "Concrete",
+   "model": "NakaShrine",
+   "o": [
+    182.0,
+    5.6,
+    -140.0
+   ],
+   "piece": "Walls",
+   "reflect": 0,
+   "size": [
+    24.0,
+    8.0,
+    18.0
+   ]
+  },
+  "PaperLantern__Cap": {
+   "alpha": 0,
+   "flat": true,
+   "mat": "SmoothPlastic",
+   "model": "PaperLantern",
+   "o": [
+    0.0,
+    0.21,
+    0.0
+   ],
+   "piece": "Cap",
+   "reflect": 0,
+   "size": [
+    1.088,
+    2.78,
+    1.0347
+   ]
+  },
+  "PaperLantern__Paper": {
+   "alpha": 0,
+   "flat": false,
+   "mat": "Fabric",
+   "model": "PaperLantern",
+   "o": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "piece": "Paper",
+   "reflect": 0,
+   "size": [
+    1.6,
+    2.2,
+    1.5599
+   ]
+  },
+  "StoneLantern__Light": {
+   "alpha": 0,
+   "flat": true,
+   "mat": "Neon",
+   "model": "StoneLantern",
+   "o": [
+    -0.0,
+    3.8,
+    0.0
+   ],
+   "piece": "Light",
+   "reflect": 0,
+   "size": [
+    1.66,
+    0.9,
+    1.66
+   ]
+  },
+  "StoneLantern__Stone": {
+   "alpha": 0,
+   "flat": true,
+   "mat": "Slate",
+   "model": "StoneLantern",
+   "o": [
+    0.0,
+    3.3799,
+    0.0
+   ],
+   "piece": "Stone",
+   "reflect": 0,
+   "size": [
+    4.7118,
+    6.7598,
+    4.7118
+   ]
+  },
+  "Stump__Bark": {
+   "alpha": 0,
+   "flat": true,
+   "mat": "Wood",
+   "model": "Stump",
+   "o": [
+    0.0,
+    2.5,
+    -0.0721
+   ],
+   "piece": "Bark",
+   "reflect": 0,
+   "size": [
+    3.36,
+    5.0,
+    3.4397
+   ]
+  },
+  "Stump__Cut": {
+   "alpha": 0,
+   "flat": false,
+   "mat": "Wood",
+   "model": "Stump",
+   "o": [
+    0.0,
+    5.01,
+    0.0
+   ],
+   "piece": "Cut",
+   "reflect": 0,
+   "size": [
+    3.0,
+    0.0,
+    3.0
+   ]
+  },
+  "Torii__Kasagi": {
+   "alpha": 0,
+   "flat": true,
+   "mat": "Wood",
+   "model": "Torii",
+   "o": [
+    178.0,
+    7.9,
+    -108.0
+   ],
+   "piece": "Kasagi",
+   "reflect": 0,
+   "size": [
+    22.0,
+    15.8,
+    2.2
+   ]
+  },
+  "Torii__Lacquer": {
+   "alpha": 0,
+   "flat": true,
+   "mat": "Wood",
+   "model": "Torii",
+   "o": [
+    178.0,
+    7.0,
+    -108.0
+   ],
+   "piece": "Lacquer",
+   "reflect": 0,
+   "size": [
+    20.0,
+    14.0,
+    1.8
+   ]
+  },
+  "TrainingProps__Kunai": {
+   "alpha": 0,
+   "flat": true,
+   "mat": "Metal",
+   "model": "TrainingProps",
+   "o": [
+    -160.6178,
+    5.9377,
+    30.15
+   ],
+   "piece": "Kunai",
+   "reflect": 0,
+   "size": [
+    1.1734,
+    2.3747,
+    1.5951
+   ]
+  },
+  "TrainingProps__Rope": {
+   "alpha": 0,
+   "flat": false,
+   "mat": "Fabric",
+   "model": "TrainingProps",
+   "o": [
+    -150.0,
+    4.525,
+    16.0
+   ],
+   "piece": "Rope",
+   "reflect": 0,
+   "size": [
+    1.56,
+    4.05,
+    1.4836
+   ]
+  },
+  "TrainingProps__Target": {
+   "alpha": 0,
+   "flat": true,
+   "mat": "Wood",
+   "model": "TrainingProps",
+   "o": [
+    -161.585,
+    5.6,
+    30.0
+   ],
+   "piece": "Target",
+   "reflect": 0,
+   "size": [
+    0.43,
+    5.2,
+    5.2
+   ]
+  },
+  "TrainingProps__Wood": {
+   "alpha": 0,
+   "flat": true,
+   "mat": "Wood",
+   "model": "TrainingProps",
+   "o": [
+    -154.7,
+    4.2755,
+    22.75
+   ],
+   "piece": "Wood",
+   "reflect": 0,
+   "size": [
+    15.4,
+    8.5511,
+    15.3
+   ]
+  },
+  "TreeA__Leaves": {
+   "alpha": 0,
+   "flat": true,
+   "mat": "Grass",
+   "model": "TreeA",
+   "o": [
+    -0.7815,
+    13.7047,
+    -0.2619
+   ],
+   "piece": "Leaves",
+   "reflect": 0,
+   "size": [
+    14.6379,
+    8.8365,
+    14.8516
+   ]
+  },
+  "TreeA__Trunk": {
+   "alpha": 0,
+   "flat": true,
+   "mat": "Wood",
+   "model": "TreeA",
+   "o": [
+    -0.453,
+    7.7854,
+    0.5569
+   ],
+   "piece": "Trunk",
+   "reflect": 0,
+   "size": [
+    8.6709,
+    15.8644,
+    7.9514
+   ]
+  },
+  "TreeB__Leaves": {
+   "alpha": 0,
+   "flat": true,
+   "mat": "Grass",
+   "model": "TreeB",
+   "o": [
+    -1.2377,
+    14.6017,
+    -0.3714
+   ],
+   "piece": "Leaves",
+   "reflect": 0,
+   "size": [
+    14.7377,
+    9.1339,
+    16.8632
+   ]
+  },
+  "TreeB__Trunk": {
+   "alpha": 0,
+   "flat": true,
+   "mat": "Wood",
+   "model": "TreeB",
+   "o": [
+    -0.4805,
+    7.7811,
+    0.1494
+   ],
+   "piece": "Trunk",
+   "reflect": 0,
+   "size": [
+    6.9991,
+    15.855,
+    7.988
+   ]
+  },
+  "TreeC__Leaves": {
+   "alpha": 0,
+   "flat": true,
+   "mat": "Grass",
+   "model": "TreeC",
+   "o": [
+    -0.5939,
+    15.2712,
+    -0.2937
+   ],
+   "piece": "Leaves",
+   "reflect": 0,
+   "size": [
+    15.5091,
+    8.85,
+    14.966
+   ]
+  },
+  "TreeC__Trunk": {
+   "alpha": 0,
+   "flat": true,
+   "mat": "Wood",
+   "model": "TreeC",
+   "o": [
+    0.2,
+    7.7838,
+    1.0071
+   ],
+   "piece": "Trunk",
+   "reflect": 0,
+   "size": [
+    8.5676,
+    15.8609,
+    7.0336
+   ]
+  },
+  "UchihaGate__Lacquer": {
+   "alpha": 0,
+   "flat": true,
+   "mat": "Wood",
+   "model": "UchihaGate",
+   "o": [
+    96.0,
+    7.625,
+    -45.0
+   ],
+   "piece": "Lacquer",
+   "reflect": 0,
+   "size": [
+    3.6,
+    15.25,
+    22.0
+   ]
+  },
+  "UchihaPier__Planks": {
+   "alpha": 0,
+   "flat": true,
+   "mat": "Wood",
+   "model": "UchihaPier",
+   "o": [
+    165.235,
+    -0.67,
+    -60.0
+   ],
+   "piece": "Planks",
+   "reflect": 0,
+   "size": [
+    30.47,
+    4.66,
+    5.24
+   ]
+  },
+  "VillageWall__Coping": {
+   "alpha": 0,
+   "flat": true,
+   "mat": "Slate",
+   "model": "VillageWall",
+   "o": [
+    0.0,
+    26.4709,
+    0.17
+   ],
+   "piece": "Coping",
+   "reflect": 0,
+   "size": [
+    3.0887,
+    0.9417,
+    10.36
+   ]
+  },
+  "VillageWall__Plaster": {
+   "alpha": 0,
+   "flat": true,
+   "mat": "Concrete",
+   "model": "VillageWall",
+   "o": [
+    0.0,
+    13.0,
+    0.0
+   ],
+   "piece": "Plaster",
+   "reflect": 0,
+   "size": [
+    2.3,
+    26.0,
+    10.0
+   ]
+  },
+  "WaterTank__Hoops": {
+   "alpha": 0,
+   "flat": false,
+   "mat": "Metal",
+   "model": "WaterTank",
+   "o": [
+    0.0,
+    4.66,
+    0.0
+   ],
+   "piece": "Hoops",
+   "reflect": 0,
+   "size": [
+    6.12,
+    3.72,
+    6.12
+   ]
+  },
+  "WaterTank__Staves": {
+   "alpha": 0,
+   "flat": true,
+   "mat": "Wood",
+   "model": "WaterTank",
+   "o": [
+    0.0,
+    3.95,
+    0.0
+   ],
+   "piece": "Staves",
+   "reflect": 0,
+   "size": [
+    6.2,
+    7.9,
+    6.2
+   ]
+  }
+ }
+}

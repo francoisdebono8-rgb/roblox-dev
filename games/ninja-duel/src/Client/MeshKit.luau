@@ -25,6 +25,20 @@ do
 		for name,pieces in HubData do MeshKit.Data[name]=pieces;MeshKit.Late[name]=true end
 	end
 end
+-- (14/11, DEV: 7-12 s building the village on the player's computer, the
+-- village changing shape meanwhile) Pieces published as meshes
+-- (tools/blender/hub_fbx.py -> Studio import -> hub_to_luau.py) are loaded by
+-- their id like any mesh; only the others are still built here.
+do
+	local okAssets,Assets=pcall(require,script.Parent.HubMeshAssets)
+	if okAssets and type(Assets)=="table" then
+		for name,ids in Assets do
+			for _,spec in MeshKit.Data[name] or {} do
+				if ids[spec.name] then spec.asset=ids[spec.name] end
+			end
+		end
+	end
+end
 
 -- base64 -> buffer
 local B64={}
@@ -81,8 +95,27 @@ for _,name in {"Metal","Fabric","Sand","Slate","Rock","Glass","Neon","Wood","Smo
 	if ok then MATERIAL[name]=m end
 end
 
+local function fromAsset(spec)
+	local AssetService=game:GetService("AssetService")
+	local part=AssetService:CreateMeshPartAsync(Content.fromUri(spec.asset),{CollisionFidelity=Enum.CollisionFidelity.Box})
+	return part
+end
 local function build(spec)
 	local AssetService=game:GetService("AssetService")
+	if spec.asset then
+		local ok,part=pcall(fromAsset,spec)
+		if ok and part then
+			part.Name=spec.name
+			part.Anchored=true;part.CanCollide=false;part.CanQuery=false;part.CanTouch=false;part.CastShadow=false
+			part.Color=Color3.new(1,1,1)
+			part.Material=MATERIAL[spec.mat] or Enum.Material.SmoothPlastic
+			part.Transparency=spec.alpha or 0
+			part.Reflectance=spec.reflect or 0
+			part.Size=Vector3.new(spec.h[1]*2,spec.h[2]*2,spec.h[3]*2)
+			MeshKit.fromAssets=(MeshKit.fromAssets or 0)+1
+			return part
+		end
+	end
 	local em=AssetService:CreateEditableMesh({})
 	local pos,col,tri=MeshKit.unpack(spec)
 	local ids,cols=table.create(#pos),table.create(#pos)
