@@ -59,7 +59,7 @@ function Touch.new(input,send,getState,toggleLock,camera)
 	local function button(parent,name,label,center,size,color,down,up)
 		local b=new("TextButton",{Name=name,Text=label,Size=UDim2.fromOffset(size,size),AnchorPoint=Vector2.new(.5,.5),
 			Position=UDim2.fromOffset(center.X,center.Y),BackgroundColor3=color or INK,BackgroundTransparency=.3,AutoButtonColor=false,
-			TextColor3=PAPER,Font=Enum.Font.GothamBlack,TextScaled=true,Active=true},parent)
+			TextColor3=PAPER,Font=Enum.Font.BuilderSansExtraBold,TextScaled=true,Active=true},parent)
 		round(b);new("UIStroke",{Color=PAPER,Transparency=.45,Thickness=1.5,ApplyStrokeMode=Enum.ApplyStrokeMode.Border},b)
 		new("UIPadding",{PaddingLeft=UDim.new(.16,0),PaddingRight=UDim.new(.16,0),PaddingTop=UDim.new(.2,0),PaddingBottom=UDim.new(.2,0)},b)
 		b.InputBegan:Connect(function(io)

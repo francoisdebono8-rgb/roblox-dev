@@ -55,12 +55,12 @@ function UltimateFX.banner(fx,name,color,time,subtitle)
 	local bottom=K.new("Frame",{BackgroundColor3=Color3.new(),BorderSizePixel=0,Size=UDim2.new(1,0,0,0),AnchorPoint=Vector2.new(0,1),Position=UDim2.fromScale(0,1)},screen)
 	K.tween(top,.22,{Size=UDim2.new(1,0,.11,0)});K.tween(bottom,.22,{Size=UDim2.new(1,0,.11,0)})
 	local title=K.new("TextLabel",{BackgroundTransparency=1,Size=UDim2.new(1,0,0,64),AnchorPoint=Vector2.new(.5,1),Position=UDim2.new(.5,0,1,-18),
-		Font=Enum.Font.GothamBlack,Text=name or "",TextColor3=color,TextSize=46,TextTransparency=1,TextStrokeTransparency=.2,TextStrokeColor3=Color3.new()},screen)
+		Font=Enum.Font.Bangers,Text=name or "",TextColor3=color,TextSize=46,TextTransparency=1,TextStrokeTransparency=.2,TextStrokeColor3=Color3.new()},screen)
 	K.tween(title,.2,{TextTransparency=0})
 	local sub=nil
 	if subtitle then
 		sub=K.new("TextLabel",{Name="Count",BackgroundTransparency=1,Size=UDim2.new(1,0,0,30),AnchorPoint=Vector2.new(.5,0),Position=UDim2.new(.5,0,0,22),
-			Font=Enum.Font.GothamBold,Text=subtitle,TextColor3=Color3.new(1,1,1),TextSize=26,TextStrokeTransparency=.3},screen)
+			Font=Enum.Font.BuilderSansBold,Text=subtitle,TextColor3=Color3.new(1,1,1),TextSize=26,TextStrokeTransparency=.3},screen)
 	end
 	fx.ultimateScreen={screen=screen,top=top,bottom=bottom,title=title,sub=sub,ends=UltimateFX.clock()+(time or 3.4)}
 	task.delay(time or 3.4,function() UltimateFX.closeBanner(fx,screen) end)
@@ -187,7 +187,7 @@ function UltimateFX.textPop(fx,text,color,size,hold)
 	local s=screen(fx)
 	if not s then return nil end
 	local label=K.new("TextLabel",{BackgroundTransparency=1,Size=UDim2.new(1,0,0,(size or 70)*1.4),AnchorPoint=Vector2.new(.5,.5),Position=UDim2.fromScale(.5,.38),
-		Font=Enum.Font.GothamBlack,Text=text,TextColor3=color,TextSize=(size or 70)*1.7,TextStrokeTransparency=0,TextStrokeColor3=Color3.new(),TextTransparency=0},s)
+		Font=Enum.Font.Bangers,Text=text,TextColor3=color,TextSize=(size or 70)*1.7,TextStrokeTransparency=0,TextStrokeColor3=Color3.new(),TextTransparency=0},s)
 	K.tween(label,.12,{TextSize=size or 70})
 	task.delay(hold or .5,function() if label.Parent then K.tween(label,.2,{TextTransparency=1,TextStrokeTransparency=1}) end end)
 	Debris:AddItem(label,(hold or .5)+.3)

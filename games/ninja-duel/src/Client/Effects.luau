@@ -1710,7 +1710,7 @@ function FX.formulaGround(parent,surface,normal,radius,tone)
 		local a=turn+(i-1)/#FX.FORMULA*math.pi*2
 		local l=new("TextLabel",{BackgroundTransparency=1,Size=UDim2.fromScale(.7/size*1.4,.7/size*1.4),AnchorPoint=Vector2.new(.5,.5),
 			Position=UDim2.fromScale(.5+math.sin(a)*radius/size,.5-math.cos(a)*radius/size),Rotation=math.deg(a),Text=ch,TextScaled=true,
-			Font=Enum.Font.GothamBlack,TextColor3=tone,TextStrokeColor3=Color3.fromRGB(110,60,0),TextStrokeTransparency=.35,TextTransparency=1},gui)
+			Font=Enum.Font.BuilderSansExtraBold,TextColor3=tone,TextStrokeColor3=Color3.fromRGB(110,60,0),TextStrokeTransparency=.35,TextTransparency=1},gui)
 		table.insert(labels,l)
 	end
 	return plate,labels

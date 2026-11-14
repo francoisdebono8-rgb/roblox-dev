@@ -33,8 +33,18 @@ local palette={
 	gold=Color3.fromRGB(230,184,86),blue=Color3.fromRGB(82,177,244),crimson=Color3.fromRGB(222,70,80),
 	track=Color3.fromRGB(46,42,48),locked=Color3.fromRGB(38,36,42),
 }
+-- (DA v3, DESIGN, validée par François le 14/11 à 22 h 35) Le registre des
+-- polices, toutes natives : Bangers pour les titres (jamais une phrase),
+-- Builder Sans pour tout ce qu'on lit pour agir (Gotham, retirée par Roblox,
+-- tombait en silence sur Montserrat, 12 % plus large), Comic Neue Angular
+-- (Cartoon) pour les voix, Permanent Marker pour 1 à 3 mots d'annotation.
 local TITLE_FONT=Enum.Font.Bangers
-local BODY_FONT=Enum.Font.GothamBold
+local BODY_FONT=Enum.Font.BuilderSansBold
+local STRONG_FONT=Enum.Font.BuilderSansExtraBold
+local VOICE_FONT=Enum.Font.Cartoon
+local NOTE_FONT=Enum.Font.PermanentMarker
+-- La planche de manga : papier, encre, un seul rouge d'accent.
+local MANGA={paper=Color3.fromRGB(255,253,248),ink=Color3.fromRGB(20,16,17),red=Color3.fromRGB(195,18,29),cream=Color3.fromRGB(246,238,222),redSoft=Color3.fromRGB(240,120,110)}
 local function create(class,parent,props)
 	local x=Instance.new(class)
 	for k,v in props do x[k]=v end
@@ -94,7 +104,7 @@ local function cornerClose(root,onClose)
 end
 -- (Lobby, 04/11) the same look for the players-online panel (Client/LobbyPanel).
 UI.kit={palette=palette,create=create,frame=frame,text=text,corner=corner,inkCard=inkCard,inkTitle=inkTitle,button=button,
-	TITLE_FONT=TITLE_FONT,BODY_FONT=BODY_FONT,CARD=CARD,fitScale=fitScale,cornerClose=cornerClose,SMALL=SMALL}
+	TITLE_FONT=TITLE_FONT,BODY_FONT=BODY_FONT,STRONG_FONT=STRONG_FONT,VOICE_FONT=VOICE_FONT,NOTE_FONT=NOTE_FONT,MANGA=MANGA,CARD=CARD,fitScale=fitScale,cornerClose=cornerClose,SMALL=SMALL}
 local function accentOf(def) return Color3.fromRGB(table.unpack(def.Color)) end
 function UI.new(parent,send)
 	-- (B1 lot 2) `simple`: the first roster a player sees is PLAY and the
@@ -145,7 +155,7 @@ function UI.new(parent,send)
 	local title=text(shell,"PRODIGY TOURNAMENT",UDim2.fromOffset(150,18),UDim2.fromOffset(900,70),62,palette.paper,TITLE_FONT)
 	create("UIStroke",title,{Color=palette.ink,Thickness=3,ApplyStrokeMode=Enum.ApplyStrokeMode.Contextual})
 	text(shell,"Eight future legends to start, more every update. Twelve to fourteen years old. One stage — before they become who they are meant to be.",
-		UDim2.fromOffset(152,84),UDim2.fromOffset(1100,20),15,palette.muted,Enum.Font.GothamMedium)
+		UDim2.fromOffset(152,84),UDim2.fromOffset(1100,20),15,palette.muted,Enum.Font.BuilderSansMedium)
 	local banner=frame(shell,UDim2.fromOffset(1534,0),UDim2.fromOffset(44,280),palette.paper,0)
 	create("UIStroke",banner,{Color=palette.red,Thickness=2})
 	text(banner,"天\n才\n忍\n者\n大\n会",UDim2.fromOffset(0,12),UDim2.fromOffset(44,240),26,palette.red,BODY_FONT,Enum.TextXAlignment.Center).LineHeight=.95
@@ -173,7 +183,7 @@ function UI.new(parent,send)
 		local nameScale=create("UIScale",name,{Scale=1})
 		create("UIStroke",name,{Color=palette.ink,Thickness=3,ApplyStrokeMode=Enum.ApplyStrokeMode.Contextual})
 		local sub=text(box,"",UDim2.fromOffset(2,426),UDim2.fromOffset(546,18),14,palette.gold,BODY_FONT,align)
-		local note=text(box,"",UDim2.fromOffset(2,446),UDim2.fromOffset(546,40),14,palette.text,Enum.Font.GothamMedium,align)
+		local note=text(box,"",UDim2.fromOffset(2,446),UDim2.fromOffset(546,40),14,palette.text,Enum.Font.BuilderSansMedium,align)
 		note.TextYAlignment=Enum.TextYAlignment.Top
 		box.Activated:Connect(function() if not self.picking or side=="player" then self.side=side;self:refreshSelection() end end)
 		return {box=box,flash=flash,underline=underline,nameScale=nameScale,tag=tag,tagText=tagText,choosing=choosing,name=name,sub=sub,note=note,shown=nil,right=right}
