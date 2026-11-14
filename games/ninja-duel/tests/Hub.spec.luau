@@ -134,7 +134,7 @@ test("the village is cut into units: every name in the contract, every contract 
 		used[name]=(used[name] or 0)+1
 	end
 	for name in HubDress.NAMES do assert(used[name],name.." is in the contract but tags nothing") end
-	assert(used.PaperLantern>=20 and used.TreeA+used.TreeB+used.TreeC>=60 and used.HouseFlat_24x20x2==6,"counts")
+	assert(used.PaperLantern>=20 and used.TreeA+used.TreeB+used.TreeC>=60 and used.HouseFlat_24x20x2>=6,"counts")
 	-- the contract's doc names them all
 	local doc=require("@lune/fs").readFile("docs/systems/HUB_DRESS.md")
 	for name in HubDress.NAMES do assert(string.find(doc,name,1,true),name.." missing from HUB_DRESS.md") end
@@ -195,7 +195,7 @@ test("the dresser: a unit's parts hidden (not the kept ones, not a nested unit),
 	assert((first.CFrame.Position-(at*CFrame.new(0,8,0)).Position).Magnitude<1e-3 and first.Anchored and not first.CanCollide,"misplaced")
 	-- a house facing -x turns round (the rooftops) — undressed here, its parts still show
 	for _,u in HubDress.units(folder) do
-		if u:GetAttribute("Dress")=="HouseFlat_24x20x2" then
+		if u:GetAttribute("Dress")=="HouseFlat_24x20x2" and u.Name=="Rooftop" then
 			assert(not done[u] and u:FindFirstChild("Walls").Transparency==0,"an undressed house was hidden")
 			local look=u:GetAttribute("DressAt").LookVector
 			assert(math.abs(look.Z-1)<1e-4,"a house facing -x is not turned round")
@@ -286,6 +286,41 @@ test("the badge: his chosen kit and its mastery over his head, nothing for a kit
 	assert(p:GetAttribute("NinjaKit")==nil and p:GetAttribute("NinjaMastery")==nil,"an unlearned kit shown")
 	Hub.badge(p,nil)
 	assert(p:GetAttribute("NinjaKit")==nil,"the progression off")
+end)
+
+-- (14/11) the village was empty in the assembled render: two quarters of houses.
+test("the quarters: houses face their lane, no two houses overlap, the market and residences are named places",function()
+	local boxes={}
+	for _,w in folder:GetDescendants() do
+		if w:IsA("BasePart") and w.Name=="Walls" then
+			local cf,size=w.CFrame,w.Size
+			-- the footprint on the ground (x, z), whatever the yaw
+			local hx=math.abs(cf.RightVector.X)*size.X/2+math.abs(cf.LookVector.X)*size.Z/2
+			local hz=math.abs(cf.RightVector.Z)*size.X/2+math.abs(cf.LookVector.Z)*size.Z/2
+			table.insert(boxes,{x=cf.Position.X,z=cf.Position.Z,hx=hx,hz=hz,name=w.Parent.Name})
+		end
+	end
+	assert(#boxes>=55,"houses: "..#boxes)
+	for i=1,#boxes do for j=i+1,#boxes do
+		local a,b=boxes[i],boxes[j]
+		local overlap=math.abs(a.x-b.x)<a.hx+b.hx-.5 and math.abs(a.z-b.z)<a.hz+b.hz-.5
+		assert(not overlap,string.format("%s at (%.0f, %.0f) overlaps %s at (%.0f, %.0f)",a.name,a.x-HubMap.Origin.X,a.z-HubMap.Origin.Z,b.name,b.x-HubMap.Origin.X,b.z-HubMap.Origin.Z))
+	end end
+	-- every quarter house turns its front (its mesh's +x) to its lane
+	local n=0
+	for _,m in folder:GetDescendants() do
+		if m:IsA("Model") and m.Name=="QuarterHouse" then
+			n+=1
+			local at=m:GetAttribute("DressAt")
+			local z=at.Position.Z-HubMap.Origin.Z
+			local lane=if math.abs(z-56)<math.abs(z-150) then 56 else 150
+			local toward=if lane>z then 1 else -1
+			assert(math.abs(at.RightVector.Z-toward)<1e-3,string.format("a house at z %.0f turns its back to its lane",z))
+		end
+	end
+	assert(n>=30,"quarter houses: "..n)
+	assert(HubMap.placeAt(HubMap.Origin+Vector3.new(160,0,103)).id=="Market","the market is not named")
+	assert(HubMap.placeAt(HubMap.Origin+Vector3.new(-170,0,150)).id=="Residences","the residences are not named")
 end)
 
 print(string.format("NinjaDuel hub Konoha (DEC-038): %d PASS",passed))

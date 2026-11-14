@@ -2268,6 +2268,9 @@ M.Places={
 	{id="Uchiha",name="THE UCHIHA DISTRICT",at=Vector3.new(150,0,-90),radius=65},
 	{id="Rooftops",name="THE ROOFTOPS",at=Vector3.new(44,16,122),radius=40},
 	{id="Faces",name="THE HOKAGE FACES",at=Vector3.new(0,24,-214),radius=45},
+	-- (14/11) the two quarters of houses (Server/Hub.quarters)
+	{id="Market",name="THE MARKET STREETS",at=Vector3.new(160,0,103),radius=85},
+	{id="Residences",name="THE WEST RESIDENCES",at=Vector3.new(-170,0,150),radius=70},
 }
 
 -- The exam's proctor, on the hall's floor: the board of duels (the roster:
@@ -6651,13 +6654,13 @@ return {
       <Item class="StringValue" referent="ND43">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">537954c207f123c93ca7117d67cbef13fd8d6799db0dc16a266d07ecf1f384a5</string>
+          <string name="Value">2f781a9f8036945e5581c300fcc56783556bea6bec91ec9b5daea3e91d791083</string>
         </Properties>
       </Item>
       <Item class="StringValue" referent="ND44">
         <Properties>
           <string name="Name">RuntimeFingerprint</string>
-          <string name="Value">11de997075b6edb9711e48dfab17aaa17dc4c44eef8cb807eec37d2b423dd28d</string>
+          <string name="Value">a4555b1f9b536dd847ebdedbb8814ce443b033593f71fc525743dad278f2b8a3</string>
         </Properties>
       </Item>
       <Item class="StringValue" referent="ND45">
@@ -6669,7 +6672,7 @@ return {
       <Item class="StringValue" referent="ND46">
         <Properties>
           <string name="Name">SourceCommit</string>
-          <string name="Value">b5691fbfe190-dirty</string>
+          <string name="Value">283783a4bab0-dirty</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND47">
@@ -22918,11 +22921,17 @@ local function unit(parent,name,dress,at,scale,length)
 end
 local function keep(p) p:SetAttribute("Keep",true) return p end
 Hub.unit=unit
--- A slab on the ground between two points (x,z), `width` wide.
+-- A slab on the ground between two points (x,z), `width` wide. (14/11, seen
+-- in the assembled render) each slab sits a hair above the one before, so
+-- two that cross never flicker into each other (the lanes, the street and
+-- the plaza).
+local paths=0
 local function path(parent,ax,az,bx,bz,width,color,material)
 	local a,b=Vector3.new(ax,0,az),Vector3.new(bx,0,bz)
 	local d=b-a
-	local cf=CFrame.lookAt(O+(a+b)/2+Vector3.new(0,.06,0),O+b+Vector3.new(0,.06,0))
+	paths+=1
+	local lift=.06+(paths%10)*.006
+	local cf=CFrame.lookAt(O+(a+b)/2+Vector3.new(0,lift,0),O+b+Vector3.new(0,lift,0))
 	return deco(parent,"Path",Vector3.new(width,.12,d.Magnitude+width*.5),cf,color,material or Enum.Material.Ground)
 end
 local function sign(target,face,text,color,background)
@@ -23077,7 +23086,7 @@ local function ground(f)
 	end
 	-- Streets and paths.
 	deco(f,"Street",Vector3.new(26,.12,172),rel(0,.06,124),C.cobble,Enum.Material.Cobblestone)
-	deco(f,"Plaza",Vector3.new(124,.12,64),rel(0,.06,10),C.cobble,Enum.Material.Cobblestone)
+	deco(f,"Plaza",Vector3.new(124,.12,64),rel(0,.03,10),C.cobble,Enum.Material.Cobblestone)
 	path(f,-62,24,-96,30,10,C.earth)
 	path(f,-62,-12,-108,-100,9,C.earth)
 	path(f,62,-8,96,-45,9,C.earth)
@@ -23348,12 +23357,67 @@ local function forest(f)
 	for x=-240,240,30 do if math.abs(x)&gt;70 then tree(f,x,196,13,5.5) end end
 end
 
+-- (14/11, seen assembled in the Blender render: « le village paraît vide »)
+-- Two quarters of houses on the lawns that were empty: the market streets
+-- east of the rooftops (two lanes, shops and houses facing them, a cross
+-- lane), the west residences north of the training ground (one lane). Every
+-- house is one of the modelled kinds (docs/systems/HUB_DRESS.md), turned to
+-- face its lane.
+local SIGNS={"DANGO","TEA","WEAPONS","FLOWERS","BOOKS","TOOLS","SCROLLS","SWEETS"}
+local KINDS={
+	{dress="HouseGable_24x20x2",w=24,floors=2,wall="plaster",roof="roofBlue"},
+	{dress="HouseShop_24x20x2",w=24,floors=2,wall="plasterWarm",roof="roofTerra",shop=true},
+	{dress="HouseFlat_24x20x2",w=24,floors=2,wall="plasterGreen",roof="roofDark",flat=true},
+	{dress="HouseShop_24x20x1",w=24,floors=1,wall="plasterWarm",roof="roofGreen",shop=true},
+	{dress="HouseBack_22x20x2",w=22,floors=2,wall="plaster",roof="roofDark",door=false},
+	{dress="HouseGable_24x20x2",w=24,floors=2,wall="plasterGreen",roof="roofTerra"},
+}
+Hub.KINDS=KINDS
+-- A row of houses along a lane that runs along x at `laneZ` (`half`: half its
+-- width); `side` +1 north of it (facing -z), -1 south (facing +z).
+local function row(f,laneZ,half,side,xs,start)
+	local signs=0
+	for k,x in xs do
+		local kind=KINDS[(start+k-1)%#KINDS+1]
+		local z=laneZ+side*(half+2+kind.w/2)
+		-- the house's front (+x) turned to the lane: north faces -z, south +z
+		local cf=rel(x,0,z)*CFrame.Angles(0,if side&gt;0 then math.pi/2 else -math.pi/2,0)
+		local sign=nil
+		if kind.shop then signs+=1;sign=SIGNS[(start+signs)%#SIGNS+1] end
+		house(f,cf,kind.w,20,kind.floors,C[kind.wall],C[kind.roof],{front=1,flat=kind.flat,door=kind.door,sign=sign,
+			noren=if kind.shop then C.roofBlue else nil,dress=kind.dress,name="QuarterHouse"})
+	end
+end
+local function lamps(f,ax,bx,z,step)
+	for x=ax,bx,step do
+		part(unit(f,"LampPost","LampPost",rel(x,0,z)),"LampPost",Vector3.new(.6,7,.6),rel(x,3.5,z),C.woodDark,Enum.Material.Wood)
+		lantern(f,rel(x,7.6,z),false)
+	end
+end
+local function quarters(f)
+	-- The market streets: lanes at z 56 and 150 (12 wide), a cross lane at x 158.
+	path(f,72,56,250,56,12,C.cobble,Enum.Material.Cobblestone)
+	path(f,72,150,250,150,12,C.cobble,Enum.Material.Cobblestone)
+	path(f,158,56,158,150,10,C.cobble,Enum.Material.Cobblestone)
+	path(f,60,36,76,56,10,C.cobble,Enum.Material.Cobblestone)
+	local xs={86,110,134,182,206,230}
+	row(f,56,6,1,xs,0);row(f,56,6,-1,xs,2);row(f,150,6,1,xs,4);row(f,150,6,-1,xs,1)
+	lamps(f,98,242,61,48);lamps(f,98,242,145,48)
+	for x=96,240,36 do if math.abs(x-158)&gt;14 then tree(f,x,103,13,5.5) end end
+	-- The west residences: a lane at z 150, from the back of Ichiraku.
+	path(f,-246,150,-86,150,12,C.cobble,Enum.Material.Cobblestone)
+	path(f,-46,110,-90,150,9,C.earth)
+	local west={-232,-208,-184,-136,-112}
+	row(f,150,6,1,west,3);row(f,150,6,-1,west,5)
+	lamps(f,-220,-100,155,60)
+end
+
 -- Builds the village once per server (Main). Headless: the parts are built in
 -- the given parent.
 function Hub.build(parent)
 	if Hub.folder and Hub.folder.Parent then return Hub.folder end
 	local f=Instance.new("Folder");f.Name="NinjaDuelHub"
-	ground(f);gate(f);street(f);plaza(f);hall(f);training(f);hyuga(f);uchiha(f);faces(f);forest(f)
+	ground(f);gate(f);street(f);plaza(f);hall(f);training(f);hyuga(f);uchiha(f);faces(f);quarters(f);forest(f)
 	f.Parent=parent or workspace
 	Hub.folder=f;Hub.built=true
 	return f
