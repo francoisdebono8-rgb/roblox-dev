@@ -87,7 +87,8 @@ local function fitScale(viewport,w,h,max)
 end
 local function cornerClose(root,onClose)
 	-- under Roblox's top bar (58 px), in the window's top-right corner
-	local b=button(root,"✕",UDim2.new(1,-84,0,70),UDim2.fromOffset(66,66),onClose,palette.red)
+	-- (14/11, Studio: the title font has no "✕": an empty box)
+	local b=button(root,"X",UDim2.new(1,-84,0,70),UDim2.fromOffset(66,66),onClose,palette.red)
 	b.TextSize=34;b.ZIndex=(root.ZIndex or 1)+20;b.Visible=false
 	return b
 end

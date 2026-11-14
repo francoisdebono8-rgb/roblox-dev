@@ -92,7 +92,16 @@ function Panel.closeRect(viewport,kit)
 	return {x=left+Panel.CLOSE.X*s,y=top+Panel.CLOSE.Y*s,w=Panel.CLOSE.W*s,h=Panel.CLOSE.H*s,scale=s}
 end
 function Panel:shown() return self.root.Visible end
-function Panel:hide() self.root.Visible=false end
+-- (14/11) The pad's focus: on the picked node when the tree opens, given back
+-- when it closes (the same as Client/ShopPanel).
+function Panel:hide()
+	self.root.Visible=false
+	pcall(function()
+		local GuiService=game:GetService("GuiService")
+		local selected=GuiService.SelectedObject
+		if selected and selected:IsDescendantOf(self.root) then GuiService.SelectedObject=nil end
+	end)
+end
 
 function Panel:show(kitId,kits)
 	if self.kitId~=kitId then self.selected=nil end
@@ -100,6 +109,11 @@ function Panel:show(kitId,kits)
 	if self.selected and not TreeView.node(kitId,self.selected) then self.selected=nil end
 	self:draw()
 	self.root.Visible=true
+	local target=self.tiles[self.selected] or self.close
+	pcall(function()
+		if game:GetService("UserInputService"):GetLastInputType().Name:sub(1,7)~="Gamepad" then return end
+		task.defer(function() pcall(function() game:GetService("GuiService").SelectedObject=target end) end)
+	end)
 end
 function Panel:refresh(kits)
 	self.kits=kits

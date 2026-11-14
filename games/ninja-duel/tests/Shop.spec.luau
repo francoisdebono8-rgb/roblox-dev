@@ -167,9 +167,11 @@ test("the screens build and draw: the shop's five tabs, the tree by tiers, the K
 	H.workspace.GetAttribute=function() return nil end
 	local baseNew=H.envBase.Instance.new
 	local saved=H.envBase.Instance
+	local made={}
 	H.envBase.Instance={new=function(class)
 		local x=baseNew(class)
 		x.Activated={Connect=function(_,fn) x.click=fn end}
+		table.insert(made,x)
 		return x
 	end}
 	local ok,err=pcall(function()
@@ -190,6 +192,19 @@ test("the screens build and draw: the shop's five tabs, the tree by tiers, the K
 		-- Pressing the picked node's button asks the server.
 		ui.treePanel.selected="WeightsTempo";ui.treePanel:detail();ui.treePanel:press()
 		assert(sent[#sent].action=="LearnNode" and sent[#sent].extra.node=="WeightsTempo","the tree's button")
+		-- (14/11, the new player's walk) the shop's first kits: taken in one
+		-- press, the master's place named, TRY beside it
+		local new={state="ready",owned={},mastery={},masters={},needStarter=true,trees={},ryo=0,style={owned={},equipped={}}}
+		local from=#made
+		ui.shopPanel:show(new,"KITS")
+		local takes,places=0,0
+		for k=from+1,#made do
+			local d=made[k]
+			if d.Name=="TakeStarter" then takes+=1;if takes==1 then d.click() end end
+			if d.ClassName=="TextLabel" and type(d.Text)=="string" and string.find(d.Text,"Take it here, or meet him:",1,true) then places+=1 end
+		end
+		assert(takes==3 and places==3,string.format("the first kits in the shop: %d TAKE IT, %d places",takes,places))
+		assert(sent[#sent].action=="ChooseStarter" and sent[#sent].extra.player=="Legion","TAKE IT asks the server for the first kit")
 	end)
 	H.envBase.Instance=saved
 	assert(ok,err)
