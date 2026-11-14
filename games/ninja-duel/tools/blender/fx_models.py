@@ -87,15 +87,31 @@ def collar(pc, y0, y1, r, col, sides=16):
     loft(pc, [[Vector((math.cos(a) * r, y, math.sin(a) * r)) for a in [s / sides * math.tau for s in range(sides)]] for y in (y0, y1)], col)
 
 
-def kunai(marked=False):
+def kunai(marked=False, style="classic"):
+    """style (14/11, DEC-040 cosmetics): classic; "ring": a broad blade and a
+    big ring pommel on a long wrapped grip; "long": a slim long blade (a
+    throwing kunai)."""
     metal = Piece("Blade", "Metal", flat=True)
     grip = Piece("Grip", "Fabric")
     fit = Piece("Fittings", "Metal")
-    blade_leaf(metal, .24, .98 if not marked else 1.04, .17, .065, .05)
-    wrapped_grip(grip, -.42, .2, .058, CLOTH, CLOTH_HI)
-    collar(fit, .19, .26, .074, STEEL_HI)
-    collar(fit, -.45, -.41, .05, STEEL)
-    torus(fit, (0, -.555, 0), Matrix.Rotation(math.pi / 2, 3, "Y"), .118, .03, lerp(STEEL, STEEL_HI, .4))
+    if style == "ring":
+        blade_leaf(metal, .24, 1.02, .22, .075, .055)
+        wrapped_grip(grip, -.5, .2, .062, CLOTH, CLOTH_HI)
+        collar(fit, .19, .27, .08, STEEL_HI)
+        collar(fit, -.53, -.49, .055, STEEL)
+        torus(fit, (0, -.72, 0), Matrix.Rotation(math.pi / 2, 3, "Y"), .2, .034, lerp(STEEL, STEEL_HI, .4))
+    elif style == "long":
+        blade_leaf(metal, .24, 1.22, .12, .05, .042, at_max=.22)
+        wrapped_grip(grip, -.46, .2, .052, CLOTH, CLOTH_HI)
+        collar(fit, .19, .25, .066, STEEL_HI)
+        collar(fit, -.49, -.45, .046, STEEL)
+        torus(fit, (0, -.58, 0), Matrix.Rotation(math.pi / 2, 3, "Y"), .1, .026, lerp(STEEL, STEEL_HI, .4))
+    else:
+        blade_leaf(metal, .24, .98 if not marked else 1.04, .17, .065, .05)
+        wrapped_grip(grip, -.42, .2, .058, CLOTH, CLOTH_HI)
+        collar(fit, .19, .26, .074, STEEL_HI)
+        collar(fit, -.45, -.41, .05, STEEL)
+        torus(fit, (0, -.555, 0), Matrix.Rotation(math.pi / 2, 3, "Y"), .118, .03, lerp(STEEL, STEEL_HI, .4))
     pieces = [metal, grip, fit]
     if marked:
         # Minato's kunai: two prongs swept forward from the guard, and the
@@ -131,21 +147,22 @@ def kunai(marked=False):
     return pieces
 
 
-def shuriken():
-    """Four points, concave sides, a real hole, bevelled to sharp edges."""
+def shuriken(points=4, valley=.19, tip=.62, sharp=1.6):
+    """Four points, concave sides, a real hole, bevelled to sharp edges.
+    (14/11, DEC-040 cosmetics) points=6 / 8: the six-point star, the eight-point."""
     pc = Piece("Shuriken", "Metal", flat=False)
-    N = 96
+    N = 24 * points
+    step = math.tau / points
     def outline(a):
-        # straight-ish flanks from a valley (r .19 at 45 deg) to a sharp point
-        # (r .62), slightly hollowed
-        u = abs(((a % (math.pi / 2)) / (math.pi / 2)) - .5) * 2  # 1 at a point, 0 at a valley
-        return .19 + .43 * (u ** 1.6)
+        # straight-ish flanks from a valley to a sharp point, slightly hollowed
+        u = abs(((a % step) / step) - .5) * 2  # 1 at a point, 0 at a valley
+        return valley + (tip - valley) * (u ** sharp)
     hole, t = .068, .055
     rings_top = []
     for ring_kind in ("hole_b", "hole_t", "mid_t", "edge", "mid_b", "hole_b2"):
         ring = []
         for i in range(N):
-            a = i / N * math.tau + math.pi / 4
+            a = i / N * math.tau + step / 2
             R = outline(a)
             d = Vector((math.cos(a), math.sin(a), 0))
             if ring_kind in ("hole_b", "hole_b2"):
@@ -1169,6 +1186,11 @@ MODELS = {
     "Kunai": lambda: kunai(False),
     "MarkedKunai": lambda: kunai(True),
     "Shuriken": shuriken,
+    # (14/11, DEC-040) the cosmetic weapons of the Shop
+    "KunaiRing": lambda: kunai(False, "ring"),
+    "KunaiLong": lambda: kunai(False, "long"),
+    "Shuriken6": lambda: shuriken(6, valley=.17, tip=.56, sharp=1.4),
+    "Shuriken8": lambda: shuriken(8, valley=.2, tip=.5, sharp=1.2),
     "Tanto": tanto,
     "SandCoffin": sand_coffin,
     "SandPillar": sand_pillar,
@@ -1232,7 +1254,7 @@ def render(out_dir, names=None):
         return
     if names and any("Dragon" in n for n in names):
         pass
-    views = {"EarthWall": (.6, -1, .4), "EarthHand": (.7, -1, .4), "FlameOuterLion": (1, -.3, .3), "FumaShuriken": (.2, -.5, 1), "ExplosiveTag": (.3, -.4, 1), "GroundCrack": (.3, -.8, .9), "GroundCrater": (.3, -.8, .7), "LegWeight": (.8, -1, .5), "Ninken1": (1.2, .8, .4), "Ninken2": (1.2, .8, .4), "Trigrams": (.1, -.3, 1), "TsukuyomiCross": (.6, -1, .3), "BandageWrap": (1, -1, .4), "WaterDragonHead": (1.3, .7, .35), "EarthDragonHead": (1.3, .7, .35), "Shuriken": (0.25, -0.5, 1.0), "SandCoffin": (1, -1.6, .35), "SandPillar": (1, -1.6, .45), "SandShield": (.8, -1.3, .45), "SandStream": (1, -.3, .5)}
+    views = {"EarthWall": (.6, -1, .4), "EarthHand": (.7, -1, .4), "FlameOuterLion": (1, -.3, .3), "FumaShuriken": (.2, -.5, 1), "ExplosiveTag": (.3, -.4, 1), "GroundCrack": (.3, -.8, .9), "GroundCrater": (.3, -.8, .7), "LegWeight": (.8, -1, .5), "Ninken1": (1.2, .8, .4), "Ninken2": (1.2, .8, .4), "Trigrams": (.1, -.3, 1), "TsukuyomiCross": (.6, -1, .3), "BandageWrap": (1, -1, .4), "WaterDragonHead": (1.3, .7, .35), "EarthDragonHead": (1.3, .7, .35), "Shuriken": (0.25, -0.5, 1.0), "Shuriken6": (0.25, -0.5, 1.0), "Shuriken8": (0.25, -0.5, 1.0), "SandCoffin": (1, -1.6, .35), "SandPillar": (1, -1.6, .45), "SandShield": (.8, -1.3, .45), "SandStream": (1, -.3, .5)}
     for name, fn in MODELS.items():
         if names and name not in names:
             continue
