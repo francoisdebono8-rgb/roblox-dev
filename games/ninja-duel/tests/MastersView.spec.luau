@@ -78,7 +78,7 @@ end)
 test("(DEC-038) the master's card in Konoha: take his kit, the first duel, spar, his duel, try, buy, the tree",function()
 	local new={state="ready",owned={},mastery={},masters={},needStarter=true}
 	local c=V.card(new,"Leaf")
-	assert(c.primary.label=="TAKE HIS KIT" and c.primary.send[1]=="ChooseStarter" and c.primary.send[2].player=="Leaf","a starter's card")
+	assert(c.primary.label=="HE'S MY INSPIRATION" and c.primary.send[1]=="ChooseStarter" and c.primary.send[2].player=="Leaf","a starter's card")
 	assert(c.second and c.second.send[1]=="Tutorial","a starter can be tried before he is taken")
 	assert(V.card(new,"Sand").primary.send[1]=="Tutorial","a master not open yet only lets him try")
 	local mine={state="ready",owned={Leaf=true},mastery={Leaf=0},starter="Leaf",selected="Leaf",masters={},trees={Leaf={points=0,free=0}}}
@@ -109,9 +109,26 @@ test("Konoha's goal: the three masters, then the first duel, then a master or th
 	local new={state="ready",owned={},mastery={},masters={},needStarter=true}
 	g=V.goal(new)
 	assert(g.head=="CHOOSE YOUR INSPIRATION","a new player's head: "..g.head)
-	assert(#g.items==3,"one line per first master")
-	for k,id in Masters.Starters do
-		assert(string.find(g.items[k],HubMap.Masters[id].place,1,true),"the place of "..id.." is missing: "..g.items[k])
+	-- (DEC-041) the three together by the gate, with their funny lines
+	assert(#g.items==1 and string.find(g.items[1],"BY THE GATE",1,true),"where they wait: "..tostring(g.items[1]))
+	local I=H.load("Shared/Inspirations")
+	for _,id in Masters.Starters do
+		assert(string.find(g.items[1],H.load("Shared/Text").upper(H.load("Shared/Fighters")[id].Name),1,true),id.." is not named")
+		local about=I.of(id)
+		assert(about and #about.title>3 and #about.line>40 and #about.with>15,id.." has no line")
+		assert(HubMap.Welcome[id] and HubMap.inside(HubMap.Welcome[id].at),id.." does not wait by the gate")
+		-- his mood (Client/HubMoods): joints of the rig only, never a broken limb
+		local Moods=H.load("Client/HubMoods")
+		local known={Root=true,Waist=true,Neck=true,LeftShoulder=true,RightShoulder=true,LeftElbow=true,RightElbow=true,LeftWrist=true,RightWrist=true,LeftHip=true,RightHip=true,LeftKnee=true,RightKnee=true,LeftAnkle=true,RightAnkle=true}
+		assert(Moods.Poses[id],id.." has no mood")
+		for t=0,20,.37 do
+			for joint,cf in Moods.Poses[id](t) do
+				assert(known[joint],id.." moves an unknown joint "..joint)
+				local x,y,z=cf:ToEulerAnglesXYZ()
+				for _,v in {x,y,z,cf.Position.X,cf.Position.Y,cf.Position.Z} do assert(v==v and math.abs(v)<math.rad(170),id.." "..joint.." goes wild at "..t) end
+			end
+		end
+		assert(HubMap.placeAt(HubMap.Origin+HubMap.Welcome[id].at).id=="Gate" or HubMap.placeAt(HubMap.Origin+HubMap.Welcome[id].at).id=="Street",id.." is not at the gate")
 	end
 	assert(#g.head<=30,"the head stays short")
 	local mine={state="ready",owned={Leaf=true},mastery={Leaf=0},starter="Leaf",selected="Leaf",masters={}}

@@ -3,7 +3,8 @@
 -- sensei. Moi, j'imaginais plus un choix comme un choix de starter. Et on
 -- donne […] un peu des traits humoristiques ») The three first inspirations,
 -- picked like a starter: who he is, in one funny line, and what fighting like
--- him means. Shown by Client/StarterPanel; the order is Masters.Starters'.
+-- him means. Shown on his card when the player meets him (Client/HubClient),
+-- the three together by the gate (HubMap.Welcome).
 local I={}
 I.Lines={
 	Legion={title="THE LOUDMOUTH",
