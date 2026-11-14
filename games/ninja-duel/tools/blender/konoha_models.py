@@ -622,6 +622,65 @@ def ichiraku():
     return [walls, wdp, cloth, red, tiles, lamp, caps, steel]
 
 
+
+# the hall's inner pillars (Server/Hub HallPillar: x +/-43.6, these z, 2.5 across)
+HALL_PILLARS_Z = (-40, -58, -76, -94, -112)
+
+
+def statue_hands(stat, base):
+    """Two forearms and two hands in the seal, from `base` (the top of the
+    pedestal, centre). About 9 wide, 29 high. Facing +z."""
+    sc = lambda p, k=0: jitter(rgb(170, 164, 154), p, .06, .5)
+    sd = lambda p, k=0: jitter(rgb(140, 134, 124), p, .06, .5)
+    B = Vector(base)
+    wrist_y = 15.0
+    for side in (-1, 1):
+        # the forearm from a carved sleeve on the pedestal up to the wrist
+        a0 = B + Vector((side * 4.6, 0, 0))
+        a1 = B + Vector((side * 1.25, wrist_y, 0))
+        arm = [a0 + (a1 - a0) * t for t in (0, .25, .55, .8, 1.0)]
+        tube(stat, arm, lambda k: 2.15 - .65 * k, sc, sides=14)
+        sl = [a0 + (a1 - a0) * t for t in (0, .14, .3)]
+        tube(stat, sl, lambda k: 2.9 - .2 * k + .25 * math.sin(k * 7), sd, sides=14)
+        # the palm: a thick rounded slab, upright, its inside facing the other hand
+        hand0 = len(stat.v)
+        pc = B + Vector((side * 1.1, wrist_y + 2.4, 0))
+        rings = []
+        for j in range(7):
+            v = j / 6
+            y = -2.6 + 5.2 * v
+            w = 2.3 * (1 - .15 * (2 * v - 1) ** 4)
+            t_ = 1.05 * (1 - .2 * v)
+            ring = []
+            for i in range(12):
+                a = i / 12 * math.tau
+                ring.append(pc + Vector((math.cos(a) * t_, y, math.sin(a) * w)))
+            rings.append(ring)
+        loft(stat, rings, sc)
+        # index and middle fingers, straight up, side by side (z), three phalanges
+        for fz, L in ((-.85, 6.4), (.85, 6.8)):
+            root = pc + Vector((-side * .25, 2.5, fz))
+            pts = [root + Vector((0, L * u, 0)) for u in (0, .38, .68, 1.0)]
+            tube(stat, pts, lambda k: .78 - .14 * k + .06 * math.sin(k * math.pi * 3), sc, sides=10)
+            ellipsoid(stat, pts[-1], (.66, .6, .66), sc, seg=10, rings=6)
+        # ring and little fingers: over the top of the other hand's back, curled down
+        for j, fz in enumerate((-1.2, .2)):
+            root = pc + Vector((-side * .2, 2.2, fz - .5))
+            pts = [root, root + Vector((-side * 1.6, .9, .1)), root + Vector((-side * 3.0, .2, .2)), root + Vector((-side * 3.3, -1.5, .25))]
+            tube(stat, pts, lambda k: .72 - .1 * k, sc, sides=9)
+            ellipsoid(stat, pts[-1], (.6, .6, .6), sc, seg=8, rings=5)
+        # the thumb: from the heel of the palm, across the front of the other
+        th0 = pc + Vector((side * .2, -1.4, 2.0))
+        pts = [th0, th0 + Vector((-side * .8, 1.1, .9)), th0 + Vector((-side * 2.2, 1.8 + (.5 if side > 0 else 0), 1.2 + (.35 if side > 0 else 0)))]
+        tube(stat, pts, lambda k: .85 - .15 * k, sc, sides=10)
+        ellipsoid(stat, pts[-1], (.68, .62, .68), sc, seg=8, rings=5)
+        # the knuckles on the back of the hand
+        for j in range(4):
+            ellipsoid(stat, pc + Vector((side * .95, 2.2, -1.5 + j * 1.0)), (.4, .45, .45), sd, seg=8, rings=5)
+        # the hands big enough to read from the door: scaled up round the wrists
+        wc = B + Vector((0, wrist_y, 0))
+        stat.v[hand0:] = [wc + (v - wc) * 1.4 for v in stat.v[hand0:]]
+
 def exam_hall():
     """The hall without HallFloor, HallPlate, HallLight."""
     walls = Piece("Walls", "Concrete", flat=True)
@@ -683,26 +742,68 @@ def exam_hall():
             loft(cloth, rows, lambda p, k, col=col: lerp(col, rgb(20, 20, 24), .12 * (k % 2)), closed=False, cap0=False, cap1=False)
             box(cloth, T(side * 54.75, 25.2, z), (.3, .3, 5.6), C["woodDark"])
             box(cloth, T(side * 54.7, 18, z), (.12, 2.2, 2.2), rgb(214, 196, 150))
-    # the hand-sign statue: two forearms rising, the hands in a seal
+    # the hand-sign statue (François 14/11: « deux colonnes surmontées d'une
+    # forme ronde et lisse […] il faut des mains nettes, avec les doigts du
+    # signe bien visibles »): two sleeved forearms rising to two hands pressed
+    # palm to palm in the seal, index and middle fingers of both hands straight
+    # up together, the other fingers wrapped over the back of the other hand,
+    # the thumbs crossed in front. It faces the door (+z).
     box(stat, T(0, 2, -114), (22, 4, 10), lambda p, f: jitter(C["stoneDark"], p, .1, .9), cell=2)
     box(stat, T(0, 4.2, -114), (20, .4, 8.6), C["stone"])
-    sc = lambda p, k: jitter(C["stone"], p, .08, .6)
+    for k in range(3):
+        box(stat, T(0, 1 + k * 1.1, -108.9), (22.2, .12, .1), rgb(80, 76, 72))
+    statue_hands(stat, Vector((0, 4.4, -114)))
+    # (François 14/11: « l'intérieur de la salle est très vide ») a plank
+    # floor laid over HallFloor (its top at .4), pillars along the balconies'
+    # edge (Server/Hub's HallPillar parts, solid), more banners, lanterns.
+    floor = Piece("Planks", "Wood", flat=True)
+    rngf = random.Random(21)
+    for k in range(int(98 / 1.4)):
+        z = -121 + k * 1.4 + .7
+        segs = [(-55, -55 + rngf.uniform(18, 40))]
+        while segs[-1][1] < 55:
+            a0 = segs[-1][1]
+            segs.append((a0, min(55, a0 + rngf.uniform(16, 38))))
+        for a0, a1 in segs:
+            tone = jitter(lerp(C["woodLight"], C["wood"], rngf.uniform(0, .6)), (a0, z, 0), .1, .3)
+            box(floor, T((a0 + a1) / 2, .43, z), (a1 - a0 - .06, .06, 1.34), tone)
+    # a duel ring painted on the floor in the middle (no text)
+    for r0, col in ((14, C["redDark"]), (13.4, C["woodDark"])):
+        ring = []
+        for i in range(65):
+            a = i / 64 * math.tau
+            ring.append([Vector((math.cos(a) * r0, .47, -76 + math.sin(a) * r0)), Vector((math.cos(a) * (r0 - .5), .47, -76 + math.sin(a) * (r0 - .5)))])
+        loft(floor, [[r[0] for r in ring], [r[1] for r in ring]], col, closed=True, cap0=False, cap1=False)
+    pill = Piece("Pillars", "Wood", flat=True)
     for side in (-1, 1):
-        m = T(side * 3.6, 14, -114) @ Rz(side * math.radians(9))
-        a0 = m @ Vector((0, -11, 0))
-        a1 = m @ Vector((0, 9, 0))
-        tube(stat, [a0, (a0 + a1) / 2, a1], lambda k: 2.6 - .5 * k, sc, sides=12)
-        hand = m @ Vector((0, 13, 0))
-        ellipsoid(stat, hand, (2.6, 3.2, 2.1), sc, seg=12, rings=8)
-        for j, (dx, L) in enumerate(((-1.2, 6.0), (.4, 5.2))):
-            b = m @ Vector((side * dx, 15.6, 0))
-            t = m @ Vector((side * dx * .6, 15.6 + L, 0))
-            tube(stat, [b, t], lambda k: .75 - .15 * k, sc, sides=8)
-            ellipsoid(stat, t, (.62, .62, .62), sc, seg=8, rings=5)
-        for j in range(3):
-            b = m @ Vector((side * (-1.2 + j * .9), 14.4, 1.6))
-            tube(stat, [b, b + Vector((side * -.4, 1.2, .8))], lambda k: .6, sc, sides=7)
-    return [walls, wdp, red, tiles_a, tiles_b, under, cloth, stat, glass]
+        for z in HALL_PILLARS_Z:
+            x = side * 43.6
+            cyl(pill, T(x, .4, z), 1.25, 29.2, lambda q, k: grime(jitter(C["red"], q, .05, .5), q, 0, 3, .4), sides=12)
+            box(pill, T(x, .9, z), (3.2, 1.0, 3.2), C["stoneDark"])
+            box(pill, T(x, 28.6, z), (3.4, .9, 3.4), C["woodDark"])
+            box(pill, T(x, 29.3, z), (1.4, .7, 6.0), C["redDark"])
+            box(pill, T(x, 12.2, z), (2.9, .6, 2.9), C["woodDark"])
+    # more banners: tall ones hanging from the roof beams over the floor, and
+    # big ones on the north wall behind the statue
+    for k, x in enumerate((-30, -15, 15, 30)):
+        for z in (-48, -98):
+            col = C["red"] if (k + (z == -98)) % 2 == 0 else rgb(46, 64, 96)
+            rows = [[Vector((x - 2.2, 29 - 16 * v, z + .15 * math.sin(v * 3 + k))), Vector((x + 2.2, 29 - 16 * v, z + .15 * math.sin(v * 3 + k)))] for v in [j / 8 for j in range(9)]]
+            loft(cloth, rows, lambda q, kk, col=col: lerp(col, rgb(20, 20, 24), .1 * (kk % 2)), closed=False, cap0=False, cap1=False)
+            box(cloth, T(x, 29.2, z), (5.0, .3, .3), C["woodDark"])
+            box(cloth, T(x, 22, z + .05), (2.4, 2.4, .1), rgb(214, 196, 150))
+            box(cloth, T(x, 13.1, z), (4.4, .4, .3), C["woodDark"])
+    for x, col in ((-22, C["red"]), (22, rgb(46, 64, 96)), (-36, rgb(46, 64, 96)), (36, C["red"])):
+        rows = [[Vector((x - 4, 27 - 20 * v, -120.85)), Vector((x + 4, 27 - 20 * v, -120.85))] for v in [j / 8 for j in range(9)]]
+        loft(cloth, rows, col, closed=False, cap0=False, cap1=False)
+        box(cloth, T(x, 27.3, -120.8), (8.6, .4, .4), C["woodDark"])
+    lamp = Piece("Lanterns", "Fabric")
+    caps = Piece("LanternCaps", "SmoothPlastic", flat=True)
+    for side in (-1, 1):
+        for z in HALL_PILLARS_Z:
+            paper_lantern(lamp, caps, T(side * 41.8, 9.4, z), 1.4, 1.9)
+            box(caps, T(side * 42.7, 10.5, z), (1.6, .2, .2), C["woodDark"])
+    return [walls, wdp, red, tiles_a, tiles_b, under, cloth, stat, glass, floor, pill, lamp, caps]
 
 
 def training_props():

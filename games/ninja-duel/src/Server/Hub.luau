@@ -383,6 +383,11 @@ local function hall(f)
 			banner.Name="Banner"
 		end
 	end
+	-- (14/11) Pillars along the balconies' edge, up to the roof (the
+	-- ANIMATOR's ExamHall models them; solid here).
+	for _,side in {-1,1} do
+		for _,z in {-40,-58,-76,-94,-112} do part(m,"HallPillar",Vector3.new(2.5,29.6,2.5),rel(side*43.6,.4+14.8,z),C.red,Enum.Material.Wood) end
+	end
 	-- The hand-sign statue at the back.
 	part(m,"Pedestal",Vector3.new(22,4,10),rel(0,2,-114),C.stoneDark,Enum.Material.Slate)
 	for _,side in {-1,1} do
