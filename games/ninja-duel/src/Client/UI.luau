@@ -319,6 +319,7 @@ function UI.new(parent,send)
 		end
 		if self.shopPanel and self.outfitPanel then
 			self.shopPanel.onOutfit=function() self.outfitPanel:show(self.kits) end
+		end
 		-- (DEC-041) Choose your inspiration: the three first kits, like a starter.
 		local okStarter,StarterPanel=pcall(function() return require(script.Parent.StarterPanel) end)
 		if okStarter and StarterPanel then
