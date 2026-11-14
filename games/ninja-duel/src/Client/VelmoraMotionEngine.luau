@@ -125,13 +125,53 @@ local function fromRot(v)
 	return CFrame.fromAxisAngle(v/m,m)
 end
 Motion._damper=damper
+-- (14/11, CM QA A8: « des articulations qu'un corps ne peut pas faire ») Measured
+-- on the F06 replay: a head turned 119 deg on a torso facing front, elbows
+-- bent backwards 25-40 deg, knees forwards 35-69 deg, a foot folded 120-176
+-- deg onto the shin. Every pose (authored clips, procedural poses, the leg
+-- solver, the transitions between them) is held inside a body's range as it
+-- is published: elbow and knee bend one way only, the neck turns 80 deg at
+-- most, the ankle folds 50 deg.
+-- (DEV review) A per-axis clamp of XYZ Euler angles could jump on a composed
+-- rotation (a bent knee that also twists): the angles are read as a swing of
+-- the limb's long axis (Y) then a twist about it, R = Rx(x)*Rz(z)*Ry(y):
+-- x = the bend (atan2: continuous over a whole fold), z = the sideways swing
+-- (small in every range, far from its pole), y = the twist. Clamping these
+-- moves a pose continuously; a pose in range is returned untouched.
+local R=math.rad
+Motion.LIMITS={
+	Neck={x={R(-60),R(55)},y={R(-80),R(80)},z={R(-40),R(40)}},
+	RightElbow={x={R(-6),R(150)},y={R(-70),R(70)},z={R(-20),R(20)}},
+	LeftElbow={x={R(-6),R(150)},y={R(-70),R(70)},z={R(-20),R(20)}},
+	RightKnee={x={R(-155),R(6)},y={R(-20),R(20)},z={R(-12),R(12)}},
+	LeftKnee={x={R(-155),R(6)},y={R(-20),R(20)},z={R(-12),R(12)}},
+	RightAnkle={x={R(-50),R(50)},y={R(-35),R(35)},z={R(-30),R(30)}},
+	LeftAnkle={x={R(-50),R(50)},y={R(-35),R(35)},z={R(-30),R(30)}},
+}
+-- The (x bend, z swing, y twist) of a rotation, R = Rx(x)*Rz(z)*Ry(y).
+function Motion.swingTwist(cf)
+	local v=cf.UpVector
+	local x=math.atan2(v.Z,v.Y)
+	local z=math.asin(math.clamp(-v.X,-1,1))
+	local t=(CFrame.Angles(x,0,0)*CFrame.Angles(0,0,z)):Inverse()*cf.Rotation
+	local tx=t.RightVector
+	return x,z,math.atan2(-tx.Z,tx.X)
+end
+function Motion.limit(key,cf)
+	local l=Motion.LIMITS[key]
+	if not l then return cf end
+	local x,z,y=Motion.swingTwist(cf)
+	local cx,cy,cz=math.clamp(x,l.x[1],l.x[2]),math.clamp(y,l.y[1],l.y[2]),math.clamp(z,l.z[1],l.z[2])
+	if cx==x and cy==y and cz==z then return cf end
+	return CFrame.new(cf.Position)*CFrame.Angles(cx,0,0)*CFrame.Angles(0,0,cz)*CFrame.Angles(0,cy,0)
+end
 -- Write one joint: damp the owned pose towards the target, limit the angular
 -- step, then publish it as the Motor6D transform.
 local function write(char,key,target,rate,dt)
 	local joint=motor(char,key)
 	if not joint then return end
 	local s=stateOf(char)
-	if not dt then s.pose[key]=target;joint.Transform=target;return end
+	if not dt then target=Motion.limit(key,target);s.pose[key]=target;joint.Transform=target;return end
 	local current=s.pose[key] or joint.Transform
 	local inert=s.inert[key]
 	if s.capture and rate==RATE.authored then
@@ -147,14 +187,16 @@ local function write(char,key,target,rate,dt)
 		inert.vr-=tv;inert.vp-=(target.Position-inert.t0.Position)/dt
 		inert.t0=nil
 	end
-	local desired=target
+	-- (DEV review) the spring aims inside the body's range: it never pushes
+	-- against the stop (no shiver at the end of a high kick or a guard)
+	local desired=Motion.limit(key,target)
 	if inert then
 		inert.r,inert.vr=damper(inert.r,inert.vr,inert.half,dt)
 		inert.p,inert.vp=damper(inert.p,inert.vp,inert.half,dt)
 		if inert.r.Magnitude<1e-3 and inert.vr.Magnitude<1e-2 and inert.p.Magnitude<1e-3 and inert.vp.Magnitude<1e-2 then
 			s.inert[key]=nil
 		else
-			desired=target*(CF(inert.p)*fromRot(inert.r))
+			desired=Motion.limit(key,target*(CF(inert.p)*fromRot(inert.r)))
 		end
 	end
 	local nextCF
@@ -183,7 +225,9 @@ local function write(char,key,target,rate,dt)
 	-- motion may carry the Root that fast, or the feet land late.)
 	local maxMove=(if rate==RATE.authored then 90 else 14)*dt
 	if move.Magnitude>maxMove then nextCF=CF(current.Position+move.Unit*maxMove)*nextCF.Rotation end
-	-- The drawn velocity (joint space), for the next transition.
+	nextCF=Motion.limit(key,nextCF)
+	-- The drawn velocity (joint space), for the next transition: measured on
+	-- the published (limited) pose, so a joint held at its stop has no speed.
 	local vel=s.vel[key] or {}
 	vel.w=rotVec(current:Inverse()*nextCF)/dt;vel.v=(nextCF.Position-current.Position)/dt
 	s.vel[key]=vel
@@ -2975,7 +3019,11 @@ guardStep=function(char,subject,dt)
 	local F=tostring(subject.fighterId)
 	local root=char:FindFirstChild("HumanoidRootPart")
 	if not root then return nil end
-	local v=planar(root.AssemblyLinearVelocity)
+	-- (14/11, CM QA A9) A drawn body is carried by CFrame on its smoothed
+	-- track: its part velocity is zero, so the guard never stepped and glided
+	-- with its feet still. The fighter's own (server) velocity drives it.
+	local v=planar(subject.velocity or Vector3.zero)
+	if v.Magnitude<1e-3 then v=planar(root.AssemblyLinearVelocity) end
 	local speed=v.Magnitude
 	if speed<GUARD_STEP_MIN then return nil end
 	if speed>GUARD_SKID and Authored.has(F..".Guard.Skid") then
@@ -3529,7 +3577,19 @@ function Motion.present(char,actor,clock,dt)
 	end
 	if subject.state=="Guarding" then
 		local targets,rate=guardStep(char,subject,dt)
-		if not targets then targets,rate=guardTargets(subject.fighterId,subject.guardImpact) end
+		if targets then
+			-- (A9) the guard's steps put their feet on the floor (locked where they land)
+			targets=table.clone(targets)
+			if not subject.airborne then targets.__feet=authoredFeet(char,targets,dt,true) end
+		else
+			targets,rate=guardTargets(subject.fighterId,subject.guardImpact)
+			-- (A9) a held guard carried by the body (a parry pushed back, a slow
+			-- drift) keeps its feet on the floor and steps after them, as a
+			-- standing hit does, instead of riding the body like skates.
+			if not subject.airborne and planar(subject.velocity or Vector3.zero).Magnitude>.5 then
+				targets=table.clone(targets);targets.__feet=authoredFeet(char,targets,dt)
+			end
+		end
 		apply(char,targets,rate,dt)
 		return "guard"
 	end
