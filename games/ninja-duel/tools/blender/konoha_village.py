@@ -7,7 +7,7 @@ short, a tree too big) before anyone opens Studio.
 
   python3 konoha_village.py LAYOUT.json OUT_DIR [view ...]
 
-Views: gate, street, plaza, hall, uchiha, faces, rooftops, air.
+Views: gate, street, plaza, hall, uchiha, faces, rooftops, air, market, residences.
 """
 import json, math, os, sys
 import bpy
@@ -22,14 +22,16 @@ TO_BL = TO_RBX.inverted()
 
 # Camera (eye, target) in village coordinates (relative to HubMap.Origin).
 VIEWS = {
-    "gate": ((0, 9, 236), (0, 26, 200)),
+    "gate": ((0, 7, 234), (0, 18, 150)),
     "street": ((0, 6, 190), (0, 10, 60)),
     "plaza": ((-30, 8, 52), (6, 12, -40)),
-    "hall": ((0, 7, -30), (0, 10, -115)),
-    "uchiha": ((120, 12, -18), (180, 8, -100)),
-    "faces": ((0, 14, -96), (0, 52, -232)),
+    "hall": ((0, 8, -28), (0, 12, -115)),
+    "uchiha": ((106, 9, -36), (180, 8, -112)),
+    "faces": ((0, 10, -131), (0, 50, -232)),
     "rooftops": ((30, 24, 206), (34, 16, 92)),
     "air": ((240, 210, 300), (0, 0, -30)),
+    "market": ((76, 7, 56), (240, 9, 56)),
+    "residences": ((-92, 7, 150), (-246, 9, 150)),
 }
 
 
@@ -87,6 +89,14 @@ def build(layout):
     lake = bpy.context.object
     lake.matrix_world = TO_BL @ Matrix.Translation((179, -.45, -67)) @ Matrix.Diagonal((54, 1, 58, 1)) @ TO_BL.inverted()
     lake.data.materials.append(material("water", (.22, .36, .42)))
+    # the hall's warm lights under its roof (Server/Hub: HallLight, range 48)
+    for z in (-40, -70, -100):
+        light = bpy.data.objects.new("HallLight", bpy.data.lights.new("HallLight", "POINT"))
+        light.data.energy = 60000
+        light.data.color = (1, .84, .67)
+        light.data.shadow_soft_size = 2
+        light.location = TO_BL @ Vector((0, 24, z))
+        col.objects.link(light)
 
 
 def scene_setup():

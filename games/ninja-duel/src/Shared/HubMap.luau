@@ -38,6 +38,9 @@ M.Places={
 	{id="Uchiha",name="THE UCHIHA DISTRICT",at=Vector3.new(150,0,-90),radius=65},
 	{id="Rooftops",name="THE ROOFTOPS",at=Vector3.new(44,16,122),radius=40},
 	{id="Faces",name="THE HOKAGE FACES",at=Vector3.new(0,24,-214),radius=45},
+	-- (14/11) the two quarters of houses (Server/Hub.quarters)
+	{id="Market",name="THE MARKET STREETS",at=Vector3.new(160,0,103),radius=85},
+	{id="Residences",name="THE WEST RESIDENCES",at=Vector3.new(-170,0,150),radius=70},
 }
 
 -- The exam's proctor, on the hall's floor: the board of duels (the roster:
