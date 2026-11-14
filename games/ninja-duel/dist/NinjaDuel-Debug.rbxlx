@@ -2654,7 +2654,12 @@ Masters.MaxMastery=1000000
 -- Mastery earned by one decided duel with a kit the player owns: finishing
 -- it, winning it, and using that kit's own jutsu (variety, not spam: each
 -- different jutsu counts once, three at most). Easy AI counts for less.
-Masters.Gain={Finished=30,Won=50,PerTechnique=10,MaxTechniques=3,EasyScale=.6,Max=200}
+Masters.Gain={Finished=30,Won=50,PerTechnique=10,MaxTechniques=3,EasyScale=.6,Max=200,
+	-- (DEC-040, user 14/11: « la maîtrise, t'es censé la gagner en affrontant
+	-- des gens, en gagnant des tournois ») a duel against another player
+	-- counts twice a duel against the AI; the tournament won adds Champion
+	-- to the champion's kit, the final lost Finalist.
+	Versus=2,Champion=150,Finalist=60}
 
 function Masters.isKit(id)
 	return type(id)=="string" and table.find(Masters.Kits,id)~=nil
@@ -2697,6 +2702,14 @@ function Masters.duelGain(r)
 	local n=G.Finished+(if r.won then G.Won else 0)+math.min(r.techniques or 0,G.MaxTechniques)*G.PerTechnique
 	if r.level=="easy" then n*=G.EasyScale end
 	return math.clamp(math.floor(n+.5),0,G.Max)
+end
+
+-- (DEC-040) Mastery for a duel against another player, decided:
+-- r = {won, techniques}.
+function Masters.versusGain(r)
+	local G=Masters.Gain
+	local n=Masters.duelGain({won=r.won,techniques=r.techniques,level="normal"})*G.Versus
+	return math.clamp(math.floor(n+.5),0,G.Max*G.Versus)
 end
 
 return Masters
@@ -6798,13 +6811,13 @@ return {
       <Item class="StringValue" referent="ND44">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">080fe31738556a684c66019bca4d966d6412882b824490d48c80e2248d69a4fe</string>
+          <string name="Value">d3e3d766191d9219cf09ee86c734c3d95b651a4a6f671d3989dc073fe06922bc</string>
         </Properties>
       </Item>
       <Item class="StringValue" referent="ND45">
         <Properties>
           <string name="Name">RuntimeFingerprint</string>
-          <string name="Value">697bdf3b71eea4f86a729fbfd6f571a724c73199d1708473adf47994f5521081</string>
+          <string name="Value">32dd332f0eb28a884a91ccec329a1edba49367bfab7994622fa49fc646fba084</string>
         </Properties>
       </Item>
       <Item class="StringValue" referent="ND46">
@@ -6816,7 +6829,7 @@ return {
       <Item class="StringValue" referent="ND47">
         <Properties>
           <string name="Name">SourceCommit</string>
-          <string name="Value">39f88ed6d7b9</string>
+          <string name="Value">6c80f8aace65</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND48">
@@ -23813,6 +23826,20 @@ function Matches:roundOver(s,winner,notify,advance)
 			if ok then s.progress.learned=s.masterTrial end
 		end
 	end
+	-- (DEC-040) Against another player: each present seat's kit earns its
+	-- mastery (Progression.versusEnded), shown on his own result screen.
+	if decided and s.online and s.seats and not s.forfeit then
+		for _,seat in s.seats do
+			if seat.present and seat.actor and seat.player then
+				local used=0
+				for _ in seat.actor.usedJutsu or {} do used+=1 end
+				local won=winner==seat.actor
+				local gained=Progression.versusEnded(seat.player,seat.fighter,won,used)
+				seat.progress={mastery=gained and gained.mastery,gained=gained~=nil and gained.amount~=nil,amount=gained and gained.amount,fighter=seat.fighter,need=Masters.Need,
+					points=gained and gained.points,ryo=gained and gained.ryo,firstWin=gained and gained.firstWin}
+			end
+		end
+	end
 	if not s.online and s.owner and s.human then Matches.logPresses(s.owner,s.human) end
 	local finishEpoch=s.epoch
 	notify()
@@ -24825,6 +24852,8 @@ function Online:packet(d,seat)
 	end
 	local view=self.matches:view(d,seat,seat.actor,other.actor)
 	view.online=info
+	-- (DEC-040) his mastery and Ryō for this duel (Matches:roundOver)
+	if seat.progress and d.phase~="Pick" then view.progress=seat.progress end
 	return view
 end
 function Online:refresh(player,s)
@@ -24849,6 +24878,7 @@ function Online:fight(d)
 	local m=self.matches
 	self:teardown(d)
 	d.phase="Duel";d.winner=nil;d.forfeit=nil;d.finishing=false;d.matchPoint=false
+	for _,seat in d.seats do seat.progress=nil end
 	d.folder=Instance.new("Folder");d.folder.Name="Online_"..d.lane;d.folder.Parent=m.folder
 	d.effects=Instance.new("Folder");d.effects.Name="Effects";d.effects.Parent=d.folder
 	World.arena(d.folder,d.origin)
@@ -26894,6 +26924,44 @@ function P.duelEnded(player,s,won)
 		end
 	end
 	return out
+end
+-- (DEC-040) Mastery and Ryō for the kit `kit`: `amount` of mastery (the
+-- boost doubles it) and `ryo`. The result screen's table, or nil.
+local function reward(player,kit,amount,ryo,day)
+	if P.boost[player] then amount*=2 end
+	local out=nil
+	if amount&gt;0 then
+		local ok,result=P.run(player,"gainMastery",{fighter=kit,amount=amount})
+		if ok and type(result)=="table" then out=result;out.amount=amount end
+	end
+	if ryo&gt;0 then
+		local ok,result=P.run(player,"earnRyo",{amount=ryo,day=day})
+		if ok and type(result)=="table" then
+			out=out or {}
+			out.ryo=ryo;out.ryoTotal=result.ryo;out.firstWin=day~=nil
+		end
+	end
+	return out
+end
+-- (DEC-040, user 14/11: « t'es censé la gagner en affrontant des gens ») A
+-- duel against another player, decided: mastery for the kit he fought with
+-- when he has learned it (twice a duel against the AI), and a duel's Ryō.
+function P.versusEnded(player,kit,won,techniques)
+	if not P.enabled() or not P.ready(player) or not P.owns(player,kit) then return nil end
+	local h=P.handles[player]
+	local today=os.date("!%Y-%m-%d")
+	local first=won and h.data.wallet and h.data.wallet.winDay~=today
+	local amount=Masters.versusGain({won=won,techniques=techniques})
+	local ryo=Shop.duelRyo({won=won,firstWinToday=first})
+	return reward(player,kit,amount,ryo,if first then today else nil)
+end
+-- (DEC-040) The tournament's end for him: the champion's kit gets its bonus
+-- and the champion's Ryō; a lost final, the finalist's.
+function P.cupEnded(player,kit,champion)
+	if not P.enabled() or not P.ready(player) or not P.owns(player,kit) then return nil end
+	local amount=if champion then Masters.Gain.Champion else Masters.Gain.Finalist
+	local ryo=if champion then Shop.Ryo.Champion else Shop.Ryo.Finalist
+	return reward(player,kit,amount,ryo,nil)
 end
 -- (13/11) The shop between duels: a look for Ryō, a look worn.
 function P.buyItem(player,item) return P.run(player,"buyItem",{item=item}) end
@@ -29299,7 +29367,9 @@ function Tournament:view(cup)
 			mine=(a==cup.me or b==cup.me),lineA=la,lineB=lb}
 	end
 	return {seats=table.clone(cup.seats),me=cup.me,winners=table.clone(cup.winners),skipped=table.clone(cup.skipped),
-		next=next_,over=cup.over==true,champion=cup.champion,out=cup.out,eliminatedIn=cup.eliminatedIn}
+		next=next_,over=cup.over==true,champion=cup.champion,out=cup.out,eliminatedIn=cup.eliminatedIn,
+		-- (DEC-040) what the cup gave his kit: {amount (mastery), ryo}
+		reward=cup.reward and {amount=cup.reward.amount,ryo=cup.reward.ryo} or nil}
 end
 function Tournament:send(player,s,phase)
 	s.phase=phase or "Bracket"
@@ -29394,6 +29464,8 @@ function Tournament:matchOver(player,s)
 	s.cupPilot=nil
 	if mine and winnerSeat~=cup.me then
 		cup.out=true;cup.eliminatedIn=Tournament.RoundNames[Tournament.roundOf(cup.match)]
+		-- (DEC-040) a lost final: the finalist's mastery and Ryō
+		if cup.match==7 then cup.reward=require(script.Parent.Progression).cupEnded(player,cup.seats[cup.me],false) end
 	end
 	s.cupAdvanceReady=true
 end
@@ -29411,6 +29483,8 @@ function Tournament:advance(player,s)
 		if cup.champion==cup.me then
 			-- (14/11) his face on Konoha's cliff, on every server
 			pcall(function() require(script.Parent.ChampionCliff).champion(player) end)
+			-- (DEC-040) the champion's bonus to his kit, and his Ryō
+			if not cup.reward then cup.reward=require(script.Parent.Progression).cupEnded(player,cup.seats[cup.me],true) end
 			s.epoch+=1
 			s.autopilot=nil;s.spectate=nil;s.cupPilot=nil
 			self.matches:destroy(s)
@@ -53907,6 +53981,11 @@ function Cup:render(data)
 	local function focus(target) task.delay(.25,function() pcall(function() game:GetService("GuiService").SelectedObject=target end) end) end
 	if phase=="Champion" and data.cup and data.cup.champion then
 		self.championName.Text=Text.upper((Fighters[data.cup.seats[data.cup.champion]] or {}).FullName or "")
+		-- (DEC-040) what the cup gave his kit
+		local reward=data.cup.reward
+		if reward and ((reward.amount or 0)&gt;0 or (reward.ryo or 0)&gt;0) then
+			self.championName.Text..=string.format("  •  +%d MASTERY  •  +%d RYŌ",reward.amount or 0,reward.ryo or 0)
+		end
 		if self.lastPhase~="Champion" then focus(self.championAgain) end
 	elseif phase=="Bracket" and self.lastPhase~="Bracket" then
 		focus(self.primary)
@@ -68325,7 +68404,7 @@ function Panel:drawRyo()
 		string.format("A duel finished: %d  •  won: +%d",R.Finished,R.Won),
 		string.format("The day's first win: ×%d",R.FirstWinOfDay),
 		string.format("A master's duel won: +%d",R.MasterWon),
-		string.format("Tournament: %d to the champion, %d to the finalist (soon)",R.Champion,R.Finalist),
+		string.format("Tournament: %d to the champion, %d to the finalist",R.Champion,R.Finalist),
 	}
 	for k,line in lines do K.text(earn,line,UDim2.fromOffset(18,56+(k-1)*30),UDim2.new(1,-36,0,24),15,P.text,K.BODY_FONT) end
 end
