@@ -34,6 +34,29 @@ end
 function Bangla.close(p)
  if p and p.donor then p.donor.hitbox:Destroy() end
 end
+-- (QA 14/11, D1) Whether a fresh blow thrown from `from` reaches a body at
+-- `to`: within its contact distance + Config.Contact.Slack (flat, root to
+-- root), a chakra load adding its visible reach. A volume authored longer than
+-- the body's (Gaara's sand, the Nine-Tails' claws, Temari's fan) is its reach.
+local RUNNING={DashAttack=true,FlyingKick=true,HeadDive=true,Tackle=true,Heavy=true,KneeStrike=true,Sweep=true,Launcher=true}
+function Bangla.reaches(p,from,to,target)
+ local spec=p.spec
+ -- (a string's next blow on a body already reeling: the string's own timing
+ -- holds it, and the attacker is on him; the rule is for a fresh blow)
+ if target and target.reaction then return true end
+ -- (the AI duels showed the rule on every fresh blow broke the strings'
+ -- rhythm: it holds the running blows, D6/D7's, and the heavy ones)
+ if not RUNNING[p.name] then return true end
+ -- (an air string's blows: the air hold keeps the two bodies together and
+ -- the striker does not step in the air; their reach stays the volume's)
+ if spec.air then return true end
+ -- (the depth before a chakra load: a loaded sand strike keeps its sand)
+ if spec.bodyDepth==nil or math.abs((spec.depth or 0)-(spec.chakraReach or 0)-spec.bodyDepth)>1e-4 then return true end
+ local Config=require(game:GetService("ReplicatedStorage").NinjaDuel.Config)
+ local reach=(spec.contact or 3.6)+(Config.Contact.Slack or .9)+(spec.chakraReach or 0)
+ local d=to-from
+ return Vector3.new(d.X,0,d.Z).Magnitude<=reach
+end
 function Bangla.tryHit(c,a,p)
  local donor=p.donor;local target=a.target
  if not donor or not donor.hitbox.Parent or not target or target.health<=0 then return false end
@@ -46,6 +69,9 @@ function Bangla.tryHit(c,a,p)
  hitbox.CFrame=frame*CFrame.new(0,0,-(p.spec.offset or 2))
  local params=OverlapParams.new();params.FilterType=Enum.RaycastFilterType.Include
  params.FilterDescendantsInstances={target.model}
+ -- (QA 14/11, D1) a body's own blow (its volume not authored longer: no sand,
+ -- no claw, no fan) lands only where the limb is seen to reach the body.
+ if not Bangla.reaches(p,frame.Position,target.root.Position,target) then return false end
  -- Touched on a teleported anchored part was unreliable; query the same volume.
  for _,hit in workspace:GetPartBoundsInBox(hitbox.CFrame,hitbox.Size,params) do
   if hit:IsDescendantOf(target.model) and not donor.Hits[target.id] then
