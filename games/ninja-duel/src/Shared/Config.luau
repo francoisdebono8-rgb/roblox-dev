@@ -190,7 +190,10 @@ return {
 	-- (DEC-038, 13/11) Between duels the player walks Konoha as his own avatar:
 	-- the masters at home, the exam hall's proctor opens the board of duels.
 	-- Off: the roster screen, as before.
-	Hub = { Enabled = true },
+	-- (14/11) DevUserId: whose avatar is carved first on the cliff
+	-- (Server/ChampionCliff); nil = the game's creator (game.CreatorId), so a
+	-- local file in Studio shows the funny head there.
+	Hub = { Enabled = true, DevUserId = nil },
 	-- (13/11) The shop's Roblox ids, created by the owner on the game's page
 	-- (0 or absent: shown SOON, nothing sold). Products: a Robux look by its
 	-- Shared/Shop key; RyoPacks: Ryō for Robux; Passes: game passes (the 2x

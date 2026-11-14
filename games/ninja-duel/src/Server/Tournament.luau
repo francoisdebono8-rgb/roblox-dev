@@ -207,6 +207,8 @@ function Tournament:advance(player,s)
 		cup.over=true
 		cup.champion=cup.winners[7]
 		if cup.champion==cup.me then
+			-- (14/11) his face on Konoha's cliff, on every server
+			pcall(function() require(script.Parent.ChampionCliff).champion(player) end)
 			s.epoch+=1
 			s.autopilot=nil;s.spectate=nil;s.cupPilot=nil
 			self.matches:destroy(s)

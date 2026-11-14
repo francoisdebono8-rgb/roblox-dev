@@ -1008,7 +1008,7 @@ def relief_face(pc, p):
                 f += .25 * math.exp(-((d - .4) / .2) ** 2)
         z = base + 1.45 * f * smooth((1 - e) * 3) ** .5
         return min(z, 3.95), f
-    X, Y = 64, 74
+    X, Y = 50, 58
     idx = []
     for j in range(Y + 1):
         y = -15 + 30 * j / Y

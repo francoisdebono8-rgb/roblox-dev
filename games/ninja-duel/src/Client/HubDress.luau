@@ -17,6 +17,9 @@ HubDress.NAMES={
 	-- unique, modelled where they stand (their origin is the village's)
 	KonohaGate=true,GateBooth=true,Ichiraku=true,ExamHall=true,TrainingProps=true,MemorialStone=true,
 	HyugaCompound=true,UchihaGate=true,UchihaPier=true,NakaShrine=true,Torii=true,HokageCliff=true,FacesTerrace=true,
+	-- the cliff's four places: a funny head until the server carves the
+	-- creator or a champion there (Server/ChampionCliff turns it DressOff)
+	HeadFunny1=true,HeadFunny2=true,HeadFunny3=true,HeadFunny4=true,
 	-- repeated, in their own frame
 	HouseGable_24x20x2=true,HouseShop_24x20x2=true,HouseShop_24x20x1=true,HouseBack_22x20x2=true,HouseUchiha_26x20x2=true,
 	HouseFlat_24x20x2=true,HouseFlat_22x18x3=true,WaterTank=true,TreeA=true,TreeB=true,TreeC=true,
@@ -89,19 +92,35 @@ function HubDress.dress(unit,pieces,holder)
 	return made
 end
 
+-- A unit the server turned DressOff (a cliff place where a face is carved):
+-- its mesh copies go, its parts are the server's (hidden there). Turned
+-- back on, it is dressed again. Returns true when the unit is dressed now.
+function HubDress.sync(unit,kit,holder,done)
+	local off=unit:GetAttribute("DressOff")==true
+	if off then
+		if done[unit] then
+			for _,p in done[unit] do p:Destroy() end
+			done[unit]=nil
+		end
+		return false
+	end
+	if done[unit] then return true end
+	local name=unit:GetAttribute("Dress")
+	if not kit.has(name) then return false end
+	done[unit]=HubDress.dress(unit,kit.pieces(name),holder)
+	return true
+end
+
 -- Dresses every unit of the village whose mesh is ready. `kit`: MeshKit (or
 -- a stand-in with has/pieces). Returns how many units were dressed now.
-function HubDress.apply(root,kit,holder,done)
+-- `watch(unit)` (optional): called once per unit, to follow its DressOff.
+function HubDress.apply(root,kit,holder,done,watch)
 	done=done or {}
 	local count=0
 	for _,unit in HubDress.units(root) do
+		if watch then watch(unit) end
 		if done[unit] then continue end
-		local name=unit:GetAttribute("Dress")
-		if kit.has(name) then
-			local made=HubDress.dress(unit,kit.pieces(name),holder)
-			done[unit]=made
-			count+=1
-		end
+		if HubDress.sync(unit,kit,holder,done) then count+=1 end
 	end
 	return count
 end
@@ -118,10 +137,17 @@ function HubDress.start()
 		if not root then return end
 		local holder=Instance.new("Folder");holder.Name="NinjaDuelHubDress";holder.Parent=workspace
 		local done=setmetatable({},{__mode="k"})
+		local watched=setmetatable({},{__mode="k"})
+		-- the cliff's places change while the game runs (a new champion)
+		local function watch(unit)
+			if watched[unit] or unit:GetAttribute("HeadSlot")==nil then return end
+			watched[unit]=true
+			unit:GetAttributeChangedSignal("DressOff"):Connect(function() HubDress.sync(unit,MeshKit,holder,done) end)
+		end
 		while root.Parent do
-			HubDress.apply(root,MeshKit,holder,done)
+			HubDress.apply(root,MeshKit,holder,done,watch)
 			if MeshKit.state=="ready" or MeshKit.state=="failed" then
-				HubDress.apply(root,MeshKit,holder,done)
+				HubDress.apply(root,MeshKit,holder,done,watch)
 				break
 			end
 			task.wait(1)

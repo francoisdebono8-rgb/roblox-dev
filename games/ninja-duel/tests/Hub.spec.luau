@@ -134,7 +134,7 @@ test("the village is cut into units: every name in the contract, every contract 
 		used[name]=(used[name] or 0)+1
 	end
 	for name in HubDress.NAMES do assert(used[name],name.." is in the contract but tags nothing") end
-	assert(used.PaperLantern>=20 and used.TreeA+used.TreeB+used.TreeC>=60 and used.HouseFlat_24x20x2==6,"counts")
+	assert(used.PaperLantern>=20 and used.TreeA+used.TreeB+used.TreeC>=60 and used.HouseFlat_24x20x2>=6,"counts")
 	-- the contract's doc names them all
 	local doc=require("@lune/fs").readFile("docs/systems/HUB_DRESS.md")
 	for name in HubDress.NAMES do assert(string.find(doc,name,1,true),name.." missing from HUB_DRESS.md") end
@@ -195,7 +195,7 @@ test("the dresser: a unit's parts hidden (not the kept ones, not a nested unit),
 	assert((first.CFrame.Position-(at*CFrame.new(0,8,0)).Position).Magnitude<1e-3 and first.Anchored and not first.CanCollide,"misplaced")
 	-- a house facing -x turns round (the rooftops) — undressed here, its parts still show
 	for _,u in HubDress.units(folder) do
-		if u:GetAttribute("Dress")=="HouseFlat_24x20x2" then
+		if u:GetAttribute("Dress")=="HouseFlat_24x20x2" and u.Name=="Rooftop" then
 			assert(not done[u] and u:FindFirstChild("Walls").Transparency==0,"an undressed house was hidden")
 			local look=u:GetAttribute("DressAt").LookVector
 			assert(math.abs(look.Z-1)<1e-4,"a house facing -x is not turned round")
@@ -221,6 +221,187 @@ test("the dresser: a unit's parts hidden (not the kept ones, not a nested unit),
 	end
 	-- a second pass does nothing more
 	assert(HubDress.apply(folder,kit,holder,done)==0,"dressed twice")
+end)
+
+-- (14/11) The players met in the village: a name tag with the kit, CHALLENGE.
+test("players met in Konoha: a tag with the kit and mastery, CHALLENGE sends the lobby's challenge, none when busy",function()
+	local HubPlayers=H.load("Client/HubPlayers")
+	local Fighters=H.load("Shared/Fighters")
+	local Text=H.load("Shared/Text")
+	local Color3=roblox.Color3
+	local kit={palette={paper=Color3.new(1,1,1),gold=Color3.new(1,.8,.3),muted=Color3.new(.5,.5,.5),ink=Color3.new()},
+		create=function(class,parent,props) local x=Instance.new(class);for k,v in props or {} do x[k]=v end;x.Parent=parent;return x end,
+		text=function(parent,str) local l=Instance.new("TextLabel");l.Text=str;l.Parent=parent;return l end,
+		TITLE_FONT=roblox.Enum.Font.Bangers,BODY_FONT=roblox.Enum.Font.Gotham}
+	local world=Instance.new("Folder")
+	local function avatar(name)
+		local m=Instance.new("Model");m.Name=name
+		local head=Instance.new("Part");head.Name="Head";head.Parent=m
+		local root=Instance.new("Part");root.Name="HumanoidRootPart";root.Parent=m
+		m:SetAttribute("NinjaHubBody",true);m.Parent=world
+		return m
+	end
+	local function player(id,name)
+		local attrs={}
+		return {UserId=id,Name=name,DisplayName=name,Character=avatar(name),attrs=attrs,
+			GetAttribute=function(_,k) return attrs[k] end}
+	end
+	local me,bob=player(1,"Me"),player(7,"Bob")
+	me.attrs.NinjaKit="Sand"
+	bob.attrs.NinjaKit="Leaf";bob.attrs.NinjaMastery=120
+	local players={LocalPlayer=me,GetPlayers=function() return {me,bob} end}
+	local sent={}
+	local active=true
+	local holder=Instance.new("Folder")
+	local hp=HubPlayers.new(kit,function(payload) table.insert(sent,payload) end,function() return active end,players,holder)
+	hp:refresh()
+	local t=hp.tags[bob]
+	assert(t and t.gui.Parent==holder and t.gui.Adornee==bob.Character.Head,"no tag over Bob")
+	assert(not hp.tags[me],"a tag over himself")
+	assert(t.line.Text==Text.upper(Fighters.Leaf.Name).."  •  MASTERY 120","the line: "..t.line.Text)
+	assert(t.prompt.Parent==bob.Character.HumanoidRootPart and t.prompt.Enabled and t.prompt.ActionText=="CHALLENGE","the prompt")
+	-- E held: the lobby's challenge with his own kit, once (a second press soon after is ignored)
+	assert(hp:triggered(t.prompt) and sent[1].op=="challenge" and sent[1].to==7 and sent[1].fighter=="Sand","the challenge sent")
+	assert(not hp:triggered(t.prompt) and #sent==1,"challenged twice in a row")
+	-- do not disturb: shown, no prompt
+	bob.attrs.NinjaDnd=true;hp:refresh()
+	assert(t.line.Text=="DO NOT DISTURB" and not t.prompt.Enabled,"do not disturb")
+	bob.attrs.NinjaDnd=nil
+	-- in a duel himself: no prompt
+	active=false;hp:refresh();assert(not t.prompt.Enabled,"a prompt while in a duel")
+	active=true;hp:refresh();assert(t.prompt.Enabled,"the prompt did not come back")
+	-- Bob leaves the village (his duel): the tag goes
+	bob.Character:SetAttribute("NinjaHubBody",nil);hp:refresh()
+	assert(not hp.tags[bob] and t.gui.Parent==nil and t.prompt.Parent==nil,"the tag stayed after he left")
+	-- a new avatar: a new tag
+	bob.Character=avatar("Bob");hp:refresh()
+	assert(hp.tags[bob] and hp.tags[bob].character==bob.Character,"no tag on his new avatar")
+end)
+
+test("the badge: his chosen kit and its mastery over his head, nothing for a kit he has not learned",function()
+	local p=Instance.new("Folder") -- (an Instance with attributes, standing in for the Player)
+	Hub.badge(p,{selected="Leaf",owned={Leaf=true},mastery={Leaf=320}})
+	assert(p:GetAttribute("NinjaKit")=="Leaf" and p:GetAttribute("NinjaMastery")==320,"badge")
+	Hub.badge(p,{selected="Sand",owned={Leaf=true},mastery={}})
+	assert(p:GetAttribute("NinjaKit")==nil and p:GetAttribute("NinjaMastery")==nil,"an unlearned kit shown")
+	Hub.badge(p,nil)
+	assert(p:GetAttribute("NinjaKit")==nil,"the progression off")
+end)
+
+-- (14/11) the village was empty in the assembled render: two quarters of houses.
+test("the quarters: houses face their lane, no two houses overlap, the market and residences are named places",function()
+	local boxes={}
+	for _,w in folder:GetDescendants() do
+		if w:IsA("BasePart") and w.Name=="Walls" then
+			local cf,size=w.CFrame,w.Size
+			-- the footprint on the ground (x, z), whatever the yaw
+			local hx=math.abs(cf.RightVector.X)*size.X/2+math.abs(cf.LookVector.X)*size.Z/2
+			local hz=math.abs(cf.RightVector.Z)*size.X/2+math.abs(cf.LookVector.Z)*size.Z/2
+			table.insert(boxes,{x=cf.Position.X,z=cf.Position.Z,hx=hx,hz=hz,name=w.Parent.Name})
+		end
+	end
+	assert(#boxes>=55,"houses: "..#boxes)
+	for i=1,#boxes do for j=i+1,#boxes do
+		local a,b=boxes[i],boxes[j]
+		local overlap=math.abs(a.x-b.x)<a.hx+b.hx-.5 and math.abs(a.z-b.z)<a.hz+b.hz-.5
+		assert(not overlap,string.format("%s at (%.0f, %.0f) overlaps %s at (%.0f, %.0f)",a.name,a.x-HubMap.Origin.X,a.z-HubMap.Origin.Z,b.name,b.x-HubMap.Origin.X,b.z-HubMap.Origin.Z))
+	end end
+	-- every quarter house turns its front (its mesh's +x) to its lane
+	local n=0
+	for _,m in folder:GetDescendants() do
+		if m:IsA("Model") and m.Name=="QuarterHouse" then
+			n+=1
+			local at=m:GetAttribute("DressAt")
+			local z=at.Position.Z-HubMap.Origin.Z
+			local lane=if math.abs(z-56)<math.abs(z-150) then 56 else 150
+			local toward=if lane>z then 1 else -1
+			assert(math.abs(at.RightVector.Z-toward)<1e-3,string.format("a house at z %.0f turns its back to its lane",z))
+		end
+	end
+	assert(n>=30,"quarter houses: "..n)
+	assert(HubMap.placeAt(HubMap.Origin+Vector3.new(160,0,103)).id=="Market","the market is not named")
+	assert(HubMap.placeAt(HubMap.Origin+Vector3.new(-170,0,150)).id=="Residences","the residences are not named")
+end)
+
+-- (14/11, user: « à terme ça sera les champions, on peut mettre le dev aussi et
+-- des trucs drôles pour l'instant ») the cliff's four places.
+test("the cliff: the creator carved first, the last three champions next, a funny head while a place is empty",function()
+	local Cliff=H.load("Server/ChampionCliff")
+	-- pure rules
+	local list=Cliff.push({},{id=7,name="A",at=1})
+	list=Cliff.push(list,{id=8,name="B",at=2});list=Cliff.push(list,{id=9,name="C",at=3})
+	list=Cliff.push(list,{id=8,name="B",at=4})
+	assert(#list==3 and list[1].id==8 and list[2].id==9 and list[3].id==7,"one place each, newest first")
+	list=Cliff.push(list,{id=10,name="D",at=5})
+	assert(#list==3 and list[1].id==10 and list[3].id==9,"the oldest goes")
+	assert(#Cliff.clean({{id="x"},{id=-1},"junk",{id=3.5},{id=4,name=string.rep("n",40)}})==1,"the store's junk kept")
+	local plan=Cliff.plan(42,{{id=10},{id=8}})
+	assert(plan[1]==42 and plan[2]==10 and plan[3]==8 and plan[4]==nil,"the plan")
+	-- on fakes: the store, the messages, the stone heads
+	local stored=nil
+	local published={}
+	local heads={}
+	local fail={}
+	local function fakeHead(id)
+		if fail[id] then return nil end
+		local m={attrs={},Parent=nil}
+		function m:SetAttribute(k,v) self.attrs[k]=v end
+		function m:PivotTo(cf) self.at=cf end
+		function m:Destroy() self.destroyed=true;self.Parent=nil end
+		table.insert(heads,m)
+		return m
+	end
+	local svc={
+		store={GetAsync=function() return stored end,UpdateAsync=function(_,_,fn) stored=fn(stored) end},
+		messaging={PublishAsync=function(_,topic,data) table.insert(published,{topic=topic,data=data}) end,SubscribeAsync=function() end},
+		devId=function() return 42 end,head=fakeHead,spawn=function(fn,...) fn(...) end,now=function() return 100 end,
+	}
+	local cliff=Cliff.new(folder,svc):run()
+	local function slot(k) return cliff:slotUnit(k) end
+	local function face(k) return slot(k):FindFirstChild("Face") end
+	assert(cliff.carved[1] and cliff.carved[1].model and cliff.carved[1].model.attrs.UserId==42,"the creator is not carved")
+	assert(cliff.carved[1].model.Parent==cliff.holder,"his head is not on the cliff")
+	local at=cliff.carved[1].model.at
+	assert((at.Position-(HubMap.Origin+HubMap.Heads[1]-Vector3.new(0,0,Cliff.SINK))).Magnitude<1e-3 and at.LookVector.Z>.99,"his head is misplaced or faces the cliff")
+	assert(slot(1):GetAttribute("DressOff")==true and face(1).Transparency==1 and face(1).CanCollide,"place 1 still shows its funny head")
+	for k=2,4 do assert(not slot(k):GetAttribute("DressOff") and face(k).Transparency==0,"place "..k.." lost its funny head") end
+	-- a champion: his face at once, the store and the other servers told
+	cliff:crown({UserId=7,Name="Seven"})
+	assert(cliff.carved[2].model.attrs.UserId==7 and slot(2):GetAttribute("DressOff"),"the champion is not carved")
+	assert(stored and stored[1].id==7 and published[1].topic==Cliff.TOPIC and published[1].data.id==7,"store / message")
+	-- three more: the newest first, the oldest goes, his stone head with him
+	local seven=cliff.carved[2].model
+	cliff:crown({UserId=8,Name="Eight"});cliff:crown({UserId=9,Name="Nine"});cliff:crown({UserId=10,Name="Ten"})
+	assert(cliff.carved[2].id==10 and cliff.carved[3].id==9 and cliff.carved[4].id==8,"order")
+	assert(seven.destroyed,"the oldest champion's head stayed")
+	-- another server reads the same store
+	local other=Cliff.new(Instance.new("Folder"),svc)
+	other.folder=folder
+	other:refresh()
+	assert(#other.list==3 and other.list[1].id==10,"another server does not see the champions")
+	-- an avatar that cannot load (a local file in Studio): the funny head stays
+	fail[11]=true
+	cliff:crown({UserId=11,Name="Eleven"})
+	assert(not slot(2):GetAttribute("DressOff") and face(2).Transparency==0,"a failed avatar hid the funny head")
+	-- no creator known (a local file): place 1 is a funny head
+	local bare=Cliff.new(folder,{devId=function() return nil end,head=fakeHead,spawn=function(fn,...) fn(...) end,now=function() return 0 end}):run()
+	assert(not bare.carved[1],"place 1 carved without a creator")
+end)
+
+test("the dresser follows a carved place: its funny head goes, and comes back",function()
+	local function piece(size) local p=Instance.new("Part");p.Size=size;return p end
+	local kit={has=function(name) return string.sub(name,1,9)=="HeadFunny" end,
+		pieces=function() return {{part=piece(Vector3.new(26,30,8)),o=Vector3.zero,name="Head"}} end}
+	local holder=Instance.new("Folder")
+	local done={}
+	local u
+	for _,x in HubDress.units(folder) do if x:GetAttribute("HeadSlot")==3 then u=x end end
+	u:SetAttribute("DressOff",nil)
+	assert(HubDress.sync(u,kit,holder,done) and #done[u]==1,"the funny head is not dressed")
+	u:SetAttribute("DressOff",true)
+	assert(not HubDress.sync(u,kit,holder,done) and done[u]==nil and #holder:GetChildren()==0,"the funny head stayed over a carved face")
+	u:SetAttribute("DressOff",nil)
+	assert(HubDress.sync(u,kit,holder,done) and #holder:GetChildren()==1,"the funny head did not come back")
 end)
 
 print(string.format("NinjaDuel hub Konoha (DEC-038): %d PASS",passed))

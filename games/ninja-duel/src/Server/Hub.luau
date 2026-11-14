@@ -62,11 +62,17 @@ local function unit(parent,name,dress,at,scale,length)
 end
 local function keep(p) p:SetAttribute("Keep",true) return p end
 Hub.unit=unit
--- A slab on the ground between two points (x,z), `width` wide.
+-- A slab on the ground between two points (x,z), `width` wide. (14/11, seen
+-- in the assembled render) each slab sits a hair above the one before, so
+-- two that cross never flicker into each other (the lanes, the street and
+-- the plaza).
+local paths=0
 local function path(parent,ax,az,bx,bz,width,color,material)
 	local a,b=Vector3.new(ax,0,az),Vector3.new(bx,0,bz)
 	local d=b-a
-	local cf=CFrame.lookAt(O+(a+b)/2+Vector3.new(0,.06,0),O+b+Vector3.new(0,.06,0))
+	paths+=1
+	local lift=.06+(paths%10)*.006
+	local cf=CFrame.lookAt(O+(a+b)/2+Vector3.new(0,lift,0),O+b+Vector3.new(0,lift,0))
 	return deco(parent,"Path",Vector3.new(width,.12,d.Magnitude+width*.5),cf,color,material or Enum.Material.Ground)
 end
 local function sign(target,face,text,color,background)
@@ -216,12 +222,13 @@ local function ground(f)
 	end)
 	for k=0,13 do
 		local a=k/14*math.pi*2
-		local r=deco(f,"Shore",Vector3.new(4+k%3,1.6,3+k%2),rel(179+math.sin(a)*28,0,-67+math.cos(a)*30),C.stone,Enum.Material.Rock)
+		-- (14/11, the assembled render: white bricks round the lake) wet rock
+		local r=deco(f,"Shore",Vector3.new(4+k%3,1.6,3+k%2),rel(179+math.sin(a)*28,0,-67+math.cos(a)*30),if k%2==0 then C.rock else C.rockDark,Enum.Material.Rock)
 		r.CFrame=r.CFrame*CFrame.Angles(0,a,0)
 	end
 	-- Streets and paths.
 	deco(f,"Street",Vector3.new(26,.12,172),rel(0,.06,124),C.cobble,Enum.Material.Cobblestone)
-	deco(f,"Plaza",Vector3.new(124,.12,64),rel(0,.06,10),C.cobble,Enum.Material.Cobblestone)
+	deco(f,"Plaza",Vector3.new(124,.12,64),rel(0,.03,10),C.cobble,Enum.Material.Cobblestone)
 	path(f,-62,24,-96,30,10,C.earth)
 	path(f,-62,-12,-108,-100,9,C.earth)
 	path(f,62,-8,96,-45,9,C.earth)
@@ -462,14 +469,18 @@ local function uchiha(f)
 	tree(f,108,-70,13,5.5);tree(f,206,-150,14,6);tree(f,140,-42,12,5)
 end
 local function faces(f)
-	-- The cliff and four carved heads; the terrace in front, the stairs up.
+	-- The cliff; the four heads each a unit of their own (14/11): a funny head
+	-- (the ANIMATOR's HeadFunny1..4) until Server/ChampionCliff carves the
+	-- creator or a champion there (it turns the unit DressOff).
 	local cliff=unit(f,"HokageCliff","HokageCliff",CFrame.new(O))
 	part(cliff,"Cliff",Vector3.new(330,92,32),rel(0,46,-248),C.rock,Enum.Material.Rock)
-	for k,x in {-75,-25,25,75} do
-		local head=part(cliff,"Face",Vector3.new(26,30,8),rel(x,58,-230),C.rock,Enum.Material.Rock)
-		deco(cliff,"Brow",Vector3.new(22,3,2),head.CFrame*CFrame.new(0,5,4.6),C.rockDark,Enum.Material.Rock)
-		deco(cliff,"Nose",Vector3.new(3,6,3),head.CFrame*CFrame.new(0,0,5.2),C.rockDark,Enum.Material.Rock)
-		deco(cliff,"Hair",Vector3.new(28,8,9),head.CFrame*CFrame.new(0,17,-.4),if k%2==0 then C.rockDark else C.rock,Enum.Material.Rock)
+	for k,at in HubMap.Heads do
+		local slot=unit(f,"CliffHead","HeadFunny"..k,CFrame.new(O+at))
+		slot:SetAttribute("HeadSlot",k)
+		local head=part(slot,"Face",Vector3.new(26,30,8),CFrame.new(O+at),C.rock,Enum.Material.Rock)
+		deco(slot,"Brow",Vector3.new(22,3,2),head.CFrame*CFrame.new(0,5,4.6),C.rockDark,Enum.Material.Rock)
+		deco(slot,"Nose",Vector3.new(3,6,3),head.CFrame*CFrame.new(0,0,5.2),C.rockDark,Enum.Material.Rock)
+		deco(slot,"Hair",Vector3.new(28,8,9),head.CFrame*CFrame.new(0,17,-.4),if k%2==0 then C.rockDark else C.rock,Enum.Material.Rock)
 	end
 	local terrace=unit(f,"FacesTerrace","FacesTerrace",CFrame.new(O))
 	part(terrace,"Terrace",Vector3.new(84,24,26),rel(0,12,-219),C.stone,Enum.Material.Slate)
@@ -492,12 +503,67 @@ local function forest(f)
 	for x=-240,240,30 do if math.abs(x)>70 then tree(f,x,196,13,5.5) end end
 end
 
+-- (14/11, seen assembled in the Blender render: « le village paraît vide »)
+-- Two quarters of houses on the lawns that were empty: the market streets
+-- east of the rooftops (two lanes, shops and houses facing them, a cross
+-- lane), the west residences north of the training ground (one lane). Every
+-- house is one of the modelled kinds (docs/systems/HUB_DRESS.md), turned to
+-- face its lane.
+local SIGNS={"DANGO","TEA","WEAPONS","FLOWERS","BOOKS","TOOLS","SCROLLS","SWEETS"}
+local KINDS={
+	{dress="HouseGable_24x20x2",w=24,floors=2,wall="plaster",roof="roofBlue"},
+	{dress="HouseShop_24x20x2",w=24,floors=2,wall="plasterWarm",roof="roofTerra",shop=true},
+	{dress="HouseFlat_24x20x2",w=24,floors=2,wall="plasterGreen",roof="roofDark",flat=true},
+	{dress="HouseShop_24x20x1",w=24,floors=1,wall="plasterWarm",roof="roofGreen",shop=true},
+	{dress="HouseBack_22x20x2",w=22,floors=2,wall="plaster",roof="roofDark",door=false},
+	{dress="HouseGable_24x20x2",w=24,floors=2,wall="plasterGreen",roof="roofTerra"},
+}
+Hub.KINDS=KINDS
+-- A row of houses along a lane that runs along x at `laneZ` (`half`: half its
+-- width); `side` +1 north of it (facing -z), -1 south (facing +z).
+local function row(f,laneZ,half,side,xs,start)
+	local signs=0
+	for k,x in xs do
+		local kind=KINDS[(start+k-1)%#KINDS+1]
+		local z=laneZ+side*(half+2+kind.w/2)
+		-- the house's front (+x) turned to the lane: north faces -z, south +z
+		local cf=rel(x,0,z)*CFrame.Angles(0,if side>0 then math.pi/2 else -math.pi/2,0)
+		local sign=nil
+		if kind.shop then signs+=1;sign=SIGNS[(start+signs)%#SIGNS+1] end
+		house(f,cf,kind.w,20,kind.floors,C[kind.wall],C[kind.roof],{front=1,flat=kind.flat,door=kind.door,sign=sign,
+			noren=if kind.shop then C.roofBlue else nil,dress=kind.dress,name="QuarterHouse"})
+	end
+end
+local function lamps(f,ax,bx,z,step)
+	for x=ax,bx,step do
+		part(unit(f,"LampPost","LampPost",rel(x,0,z)),"LampPost",Vector3.new(.6,7,.6),rel(x,3.5,z),C.woodDark,Enum.Material.Wood)
+		lantern(f,rel(x,7.6,z),false)
+	end
+end
+local function quarters(f)
+	-- The market streets: lanes at z 56 and 150 (12 wide), a cross lane at x 158.
+	path(f,72,56,250,56,12,C.cobble,Enum.Material.Cobblestone)
+	path(f,72,150,250,150,12,C.cobble,Enum.Material.Cobblestone)
+	path(f,158,56,158,150,10,C.cobble,Enum.Material.Cobblestone)
+	path(f,60,36,76,56,10,C.cobble,Enum.Material.Cobblestone)
+	local xs={86,110,134,182,206,230}
+	row(f,56,6,1,xs,0);row(f,56,6,-1,xs,2);row(f,150,6,1,xs,4);row(f,150,6,-1,xs,1)
+	lamps(f,98,242,61,48);lamps(f,98,242,145,48)
+	for x=96,240,36 do if math.abs(x-158)>14 then tree(f,x,103,13,5.5) end end
+	-- The west residences: a lane at z 150, from the back of Ichiraku.
+	path(f,-246,150,-86,150,12,C.cobble,Enum.Material.Cobblestone)
+	path(f,-46,110,-90,150,9,C.earth)
+	local west={-232,-208,-184,-136,-112}
+	row(f,150,6,1,west,3);row(f,150,6,-1,west,5)
+	lamps(f,-220,-100,155,60)
+end
+
 -- Builds the village once per server (Main). Headless: the parts are built in
 -- the given parent.
 function Hub.build(parent)
 	if Hub.folder and Hub.folder.Parent then return Hub.folder end
 	local f=Instance.new("Folder");f.Name="NinjaDuelHub"
-	ground(f);gate(f);street(f);plaza(f);hall(f);training(f);hyuga(f);uchiha(f);faces(f);forest(f)
+	ground(f);gate(f);street(f);plaza(f);hall(f);training(f);hyuga(f);uchiha(f);faces(f);quarters(f);forest(f)
 	f.Parent=parent or workspace
 	Hub.folder=f;Hub.built=true
 	return f
@@ -606,6 +672,18 @@ function Hub.enter(player,where,looks)
 		end
 	end)
 end
+-- (14/11) What the others see over his head in the village (Client/HubPlayers):
+-- the kit he fights with and its mastery, as player attributes (replicated).
+-- `view`: Progression.view (nil when the progression is off: his name only).
+function Hub.badge(player,view)
+	if typeof(player)~="Instance" then return end
+	local kit=view and view.selected
+	if kit and not (view.owned and view.owned[kit]) then kit=nil end
+	pcall(function()
+		player:SetAttribute("NinjaKit",kit)
+		player:SetAttribute("NinjaMastery",if kit and view.mastery then view.mastery[kit] or 0 else nil)
+	end)
+end
 -- A look changed while he walks (the shop): his headband, at once.
 function Hub.restyle(player,looks)
 	local entry=Hub.bodies[player]
@@ -628,6 +706,8 @@ end
 -- Server start (Main): build, then the masters once the portraits exist.
 function Hub.start()
 	Hub.build(workspace)
+	-- (14/11) the creator and the champions carved on the cliff
+	pcall(function() require(script.Parent.ChampionCliff).begin(Hub.folder) end)
 	task.spawn(function()
 		local source=ReplicatedStorage:WaitForChild("NinjaDuelPortraits",120)
 		if source then
