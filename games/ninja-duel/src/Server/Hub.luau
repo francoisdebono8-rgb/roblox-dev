@@ -469,18 +469,32 @@ local function uchiha(f)
 	tree(f,108,-70,13,5.5);tree(f,206,-150,14,6);tree(f,140,-42,12,5)
 end
 local function faces(f)
-	-- The cliff; the four heads each a unit of their own (14/11): a funny head
-	-- (the ANIMATOR's HeadFunny1..4) until Server/ChampionCliff carves the
-	-- creator or a champion there (it turns the unit DressOff).
+	-- The cliff and its four places (14/11, user: the carved heads, funny or
+	-- generic, are refused). The creator's head and the tournament's last
+	-- three champions only (Server/ChampionCliff carves them from their
+	-- avatar). A place nobody holds stays an empty niche with its plaque:
+	-- « THE NEXT ONE HERE COULD BE YOU » (« le prochain ici sera peut-être
+	-- toi »); the plaque carries the name once a face is carved.
 	local cliff=unit(f,"HokageCliff","HokageCliff",CFrame.new(O))
 	part(cliff,"Cliff",Vector3.new(330,92,32),rel(0,46,-248),C.rock,Enum.Material.Rock)
 	for k,at in HubMap.Heads do
-		local slot=unit(f,"CliffHead","HeadFunny"..k,CFrame.new(O+at))
+		-- (not a unit of the dressing: the niche stays as built)
+		local slot=Instance.new("Model");slot.Name="CliffNiche"..k;slot.Parent=f
 		slot:SetAttribute("HeadSlot",k)
-		local head=part(slot,"Face",Vector3.new(26,30,8),CFrame.new(O+at),C.rock,Enum.Material.Rock)
-		deco(slot,"Brow",Vector3.new(22,3,2),head.CFrame*CFrame.new(0,5,4.6),C.rockDark,Enum.Material.Rock)
-		deco(slot,"Nose",Vector3.new(3,6,3),head.CFrame*CFrame.new(0,0,5.2),C.rockDark,Enum.Material.Rock)
-		deco(slot,"Hair",Vector3.new(28,8,9),head.CFrame*CFrame.new(0,17,-.4),if k%2==0 then C.rockDark else C.rock,Enum.Material.Rock)
+		-- the niche: a smoothed panel set into the rock, framed by a worn rim
+		local centre=O+at+Vector3.new(0,0,-1.6)
+		part(slot,"Niche",Vector3.new(24,30,.6),CFrame.new(centre),C.stone,Enum.Material.Slate)
+		deco(slot,"NicheRim",Vector3.new(27,1.6,1.4),CFrame.new(centre+Vector3.new(0,15.8,.4)),C.rockDark,Enum.Material.Rock)
+		deco(slot,"NicheRim",Vector3.new(27,1.6,1.4),CFrame.new(centre+Vector3.new(0,-15.8,.4)),C.rockDark,Enum.Material.Rock)
+		for _,x in {-12.8,12.8} do
+			deco(slot,"NicheRim",Vector3.new(1.6,30,1.4),CFrame.new(centre+Vector3.new(x,0,.4)),C.rockDark,Enum.Material.Rock)
+		end
+		-- the plaque under it, read from the terrace (the village is +z: Back)
+		local plaque=keep(part(slot,"Plaque",Vector3.new(20,3.4,.8),CFrame.new(centre+Vector3.new(0,-19,.6)),C.woodDark,Enum.Material.Wood))
+		local gui=sign(plaque,Enum.NormalId.Back,HubMap.EmptyHead,rgb(236,190,90))
+		gui.Name="PlaqueSign"
+		local label=gui:FindFirstChildOfClass("TextLabel")
+		if label then label.Name="PlaqueText" end
 	end
 	local terrace=unit(f,"FacesTerrace","FacesTerrace",CFrame.new(O))
 	part(terrace,"Terrace",Vector3.new(84,24,26),rel(0,12,-219),C.stone,Enum.Material.Slate)

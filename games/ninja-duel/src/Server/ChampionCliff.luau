@@ -6,11 +6,12 @@
 --       same on every server (a DataStore list, MessagingService to tell the
 --       other servers at once, a refresh every 5 minutes as a safety).
 -- Each one is his own Roblox avatar's head carved in stone by the server
--- (his head and its hair and hats, scaled to the cliff, in rock). While a
--- place is empty, or an avatar cannot load (a local file in Studio), the
--- place keeps its funny head (the ANIMATOR's HeadFunny1..4, Client/HubDress):
--- a carved place turns that unit DressOff and hides its parts (the solid
--- Face stays solid). Presentation only: no gameplay rule lives here.
+-- (his head and its hair and hats, scaled to the cliff, in rock), and the
+-- plaque under it carries his name. (14/11, user: the carved heads, funny or
+-- generic, are refused) While a place is empty, or an avatar cannot load (a
+-- local file in Studio), it stays an empty niche whose plaque reads
+-- HubMap.EmptyHead, « le prochain ici sera peut-être toi » (Server/Hub).
+-- Presentation only: no gameplay rule lives here.
 -- Roblox services are injected (ChampionCliff.new(folder, svc)) so the suite
 -- runs it on fakes (ChampionCliff.new(folder, svc):run()).
 local Shared=game:GetService("ReplicatedStorage").NinjaDuel
@@ -24,7 +25,7 @@ Cliff.STORE="NinjaDuelChampions"
 Cliff.KEY="latest_v1"
 Cliff.TOPIC="NinjaDuelChampion"
 Cliff.REFRESH=300
--- A carved head's height (the funny heads fill 26 x 30 x 8).
+-- A carved head's height (a niche is 24 x 30).
 Cliff.HEIGHT=28
 Cliff.STONE=Color3.fromRGB(150,136,118)
 -- How far into the cliff a head's centre sits (its face comes out of it).
@@ -52,7 +53,7 @@ function Cliff.push(list,entry)
 	end
 	return out
 end
--- Who goes where: {[1]=creator, [2..4]=champions} (nil: a funny head).
+-- Who goes where: {[1]=creator, [2..4]=champions} (nil: an empty niche).
 function Cliff.plan(devId,list)
 	local slots={}
 	if type(devId)=="number" and devId>0 then slots[1]=devId end
@@ -127,6 +128,11 @@ function Cliff.defaultServices()
 		return found
 	end
 	svc.head=Cliff.stoneHead
+	svc.name=function(userId)
+		local found=nil
+		pcall(function() found=game:GetService("Players"):GetNameFromUserIdAsync(userId) end)
+		return found
+	end
 	svc.spawn=function(fn,...) task.spawn(fn,...) end
 	svc.every=function(seconds,fn) task.spawn(function() while true do task.wait(seconds);fn() end end) end
 	svc.now=function() return os.time() end
@@ -145,15 +151,27 @@ function Cliff:slotUnit(k)
 	end
 	return nil
 end
--- The funny head back (or kept), its parts seen.
-function Cliff:release(k)
+-- A place's plaque: the name carved there, or the empty place's words.
+function Cliff:plaque(k,text)
 	local u=self:slotUnit(k)
 	if not u then return end
-	u:SetAttribute("DressOff",nil)
-	for _,p in u:GetDescendants() do if p:IsA("BasePart") then p.Transparency=0 end end
+	u:SetAttribute("Carved",text~=nil)
+	for _,d in u:GetDescendants() do
+		if d.Name=="PlaqueText" then d.Text=text or HubMap.EmptyHead end
+	end
+end
+-- The niche empty again.
+function Cliff:release(k)
+	self:plaque(k,nil)
+end
+-- The plaque's words for a carved place.
+function Cliff.title(k,name)
+	name=string.upper(string.sub(tostring(name or ""),1,24))
+	if k==1 then return if name~="" then name.." • CREATOR" else "THE CREATOR" end
+	return if name~="" then "CHAMPION • "..name else "CHAMPION"
 end
 -- A player's stone head at place k (asynchronous: a newer plan wins).
-function Cliff:carve(k,userId)
+function Cliff:carve(k,userId,name)
 	self.serial[k]=(self.serial[k] or 0)+1
 	local serial=self.serial[k]
 	self.svc.spawn(function()
@@ -164,11 +182,8 @@ function Cliff:carve(k,userId)
 		model:PivotTo(Cliff.placeOf(k))
 		model.Parent=self.holder
 		self.carved[k].model=model
-		local u=self:slotUnit(k)
-		if u then
-			u:SetAttribute("DressOff",true)
-			for _,p in u:GetDescendants() do if p:IsA("BasePart") then p.Transparency=1 end end
-		end
+		if name==nil and self.svc.name then name=self.svc.name(userId) end
+		self:plaque(k,Cliff.title(k,name))
 	end)
 end
 -- Every place to its plan: a new face carved, an old one taken away.
@@ -176,13 +191,14 @@ function Cliff:apply()
 	local slots=Cliff.plan(self.devId,self.list)
 	for k=1,#HubMap.Heads do
 		local want=slots[k]
+		local entry=if k>1 then self.list[k-1] else nil
 		local have=self.carved[k]
 		if want~=(have and have.id) then
 			if have and have.model then have.model:Destroy() end
 			self.carved[k]=nil
 			if want then
 				self.carved[k]={id=want}
-				self:carve(k,want)
+				self:carve(k,want,entry and entry.name)
 			else
 				self.serial[k]=(self.serial[k] or 0)+1
 				self:release(k)

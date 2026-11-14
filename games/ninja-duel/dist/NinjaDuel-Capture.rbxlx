@@ -848,7 +848,7 @@ return {
 	-- Off: the roster screen, as before.
 	-- (14/11) DevUserId: whose avatar is carved first on the cliff
 	-- (Server/ChampionCliff); nil = the game's creator (game.CreatorId), so a
-	-- local file in Studio shows the funny head there.
+	-- local file in Studio leaves that place an empty niche.
 	Hub = { Enabled = true, DevUserId = nil },
 	-- (13/11) The shop's Roblox ids, created by the owner on the game's page
 	-- (0 or absent: shown SOON, nothing sold). Products: a Robux look by its
@@ -2304,8 +2304,11 @@ M.Masters={
 -- (14/11, user: « les têtes sont moches […] à terme ça sera les champions, on
 -- peut mettre le dev aussi et des trucs drôles pour l'instant ») The four
 -- heads on the cliff: the game's creator (1), the last three tournament
--- champions (2 to 4, newest first), a funny head while a place is empty
--- (Server/ChampionCliff). Centres of the heads, facing the village (+z).
+-- champions (2 to 4, newest first), an empty niche and its plaque while a
+-- place is empty (14/11: the funny or generic heads were refused;
+-- Server/ChampionCliff). Centres of the heads, facing the village (+z).
+-- An empty place's plaque (14/11, user: « le prochain ici sera peut-être toi »).
+M.EmptyHead="THE NEXT ONE HERE COULD BE YOU"
 M.Heads={Vector3.new(-75,58,-230),Vector3.new(-25,58,-230),Vector3.new(25,58,-230),Vector3.new(75,58,-230)}
 
 -- The village's walk, for the HUD: the nearest place to a position (world).
@@ -6664,13 +6667,13 @@ return {
       <Item class="StringValue" referent="ND43">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">b6b679c2b638db07e98fceddc517aa0f6c63944c7596867ea0166683c364945d</string>
+          <string name="Value">1c7b7f605e85885b7ad7ddc27ec1e3cfb696570934b4c4e6d04cdbc5d4503825</string>
         </Properties>
       </Item>
       <Item class="StringValue" referent="ND44">
         <Properties>
           <string name="Name">RuntimeFingerprint</string>
-          <string name="Value">ba15768888e981a357ffa5184ac8e93b5ebc6409d90b50040300895905d3e0d8</string>
+          <string name="Value">9ef96d4fe910c9257a00219f67c3fe6220c5a74acd6e4d7fa243d2a0524f2980</string>
         </Properties>
       </Item>
       <Item class="StringValue" referent="ND45">
@@ -6682,7 +6685,7 @@ return {
       <Item class="StringValue" referent="ND46">
         <Properties>
           <string name="Name">SourceCommit</string>
-          <string name="Value">ce85d488250d-dirty</string>
+          <string name="Value">aae43ebe7eb2-dirty</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND47">
@@ -16313,11 +16316,12 @@ return V
 --       same on every server (a DataStore list, MessagingService to tell the
 --       other servers at once, a refresh every 5 minutes as a safety).
 -- Each one is his own Roblox avatar's head carved in stone by the server
--- (his head and its hair and hats, scaled to the cliff, in rock). While a
--- place is empty, or an avatar cannot load (a local file in Studio), the
--- place keeps its funny head (the ANIMATOR's HeadFunny1..4, Client/HubDress):
--- a carved place turns that unit DressOff and hides its parts (the solid
--- Face stays solid). Presentation only: no gameplay rule lives here.
+-- (his head and its hair and hats, scaled to the cliff, in rock), and the
+-- plaque under it carries his name. (14/11, user: the carved heads, funny or
+-- generic, are refused) While a place is empty, or an avatar cannot load (a
+-- local file in Studio), it stays an empty niche whose plaque reads
+-- HubMap.EmptyHead, « le prochain ici sera peut-être toi » (Server/Hub).
+-- Presentation only: no gameplay rule lives here.
 -- Roblox services are injected (ChampionCliff.new(folder, svc)) so the suite
 -- runs it on fakes (ChampionCliff.new(folder, svc):run()).
 local Shared=game:GetService("ReplicatedStorage").NinjaDuel
@@ -16331,7 +16335,7 @@ Cliff.STORE="NinjaDuelChampions"
 Cliff.KEY="latest_v1"
 Cliff.TOPIC="NinjaDuelChampion"
 Cliff.REFRESH=300
--- A carved head's height (the funny heads fill 26 x 30 x 8).
+-- A carved head's height (a niche is 24 x 30).
 Cliff.HEIGHT=28
 Cliff.STONE=Color3.fromRGB(150,136,118)
 -- How far into the cliff a head's centre sits (its face comes out of it).
@@ -16359,7 +16363,7 @@ function Cliff.push(list,entry)
 	end
 	return out
 end
--- Who goes where: {[1]=creator, [2..4]=champions} (nil: a funny head).
+-- Who goes where: {[1]=creator, [2..4]=champions} (nil: an empty niche).
 function Cliff.plan(devId,list)
 	local slots={}
 	if type(devId)=="number" and devId&gt;0 then slots[1]=devId end
@@ -16434,6 +16438,11 @@ function Cliff.defaultServices()
 		return found
 	end
 	svc.head=Cliff.stoneHead
+	svc.name=function(userId)
+		local found=nil
+		pcall(function() found=game:GetService("Players"):GetNameFromUserIdAsync(userId) end)
+		return found
+	end
 	svc.spawn=function(fn,...) task.spawn(fn,...) end
 	svc.every=function(seconds,fn) task.spawn(function() while true do task.wait(seconds);fn() end end) end
 	svc.now=function() return os.time() end
@@ -16452,15 +16461,27 @@ function Cliff:slotUnit(k)
 	end
 	return nil
 end
--- The funny head back (or kept), its parts seen.
-function Cliff:release(k)
+-- A place's plaque: the name carved there, or the empty place's words.
+function Cliff:plaque(k,text)
 	local u=self:slotUnit(k)
 	if not u then return end
-	u:SetAttribute("DressOff",nil)
-	for _,p in u:GetDescendants() do if p:IsA("BasePart") then p.Transparency=0 end end
+	u:SetAttribute("Carved",text~=nil)
+	for _,d in u:GetDescendants() do
+		if d.Name=="PlaqueText" then d.Text=text or HubMap.EmptyHead end
+	end
+end
+-- The niche empty again.
+function Cliff:release(k)
+	self:plaque(k,nil)
+end
+-- The plaque's words for a carved place.
+function Cliff.title(k,name)
+	name=string.upper(string.sub(tostring(name or ""),1,24))
+	if k==1 then return if name~="" then name.." • CREATOR" else "THE CREATOR" end
+	return if name~="" then "CHAMPION • "..name else "CHAMPION"
 end
 -- A player's stone head at place k (asynchronous: a newer plan wins).
-function Cliff:carve(k,userId)
+function Cliff:carve(k,userId,name)
 	self.serial[k]=(self.serial[k] or 0)+1
 	local serial=self.serial[k]
 	self.svc.spawn(function()
@@ -16471,11 +16492,8 @@ function Cliff:carve(k,userId)
 		model:PivotTo(Cliff.placeOf(k))
 		model.Parent=self.holder
 		self.carved[k].model=model
-		local u=self:slotUnit(k)
-		if u then
-			u:SetAttribute("DressOff",true)
-			for _,p in u:GetDescendants() do if p:IsA("BasePart") then p.Transparency=1 end end
-		end
+		if name==nil and self.svc.name then name=self.svc.name(userId) end
+		self:plaque(k,Cliff.title(k,name))
 	end)
 end
 -- Every place to its plan: a new face carved, an old one taken away.
@@ -16483,13 +16501,14 @@ function Cliff:apply()
 	local slots=Cliff.plan(self.devId,self.list)
 	for k=1,#HubMap.Heads do
 		local want=slots[k]
+		local entry=if k&gt;1 then self.list[k-1] else nil
 		local have=self.carved[k]
 		if want~=(have and have.id) then
 			if have and have.model then have.model:Destroy() end
 			self.carved[k]=nil
 			if want then
 				self.carved[k]={id=want}
-				self:carve(k,want)
+				self:carve(k,want,entry and entry.name)
 			else
 				self.serial[k]=(self.serial[k] or 0)+1
 				self:release(k)
@@ -23587,18 +23606,32 @@ local function uchiha(f)
 	tree(f,108,-70,13,5.5);tree(f,206,-150,14,6);tree(f,140,-42,12,5)
 end
 local function faces(f)
-	-- The cliff; the four heads each a unit of their own (14/11): a funny head
-	-- (the ANIMATOR's HeadFunny1..4) until Server/ChampionCliff carves the
-	-- creator or a champion there (it turns the unit DressOff).
+	-- The cliff and its four places (14/11, user: the carved heads, funny or
+	-- generic, are refused). The creator's head and the tournament's last
+	-- three champions only (Server/ChampionCliff carves them from their
+	-- avatar). A place nobody holds stays an empty niche with its plaque:
+	-- « THE NEXT ONE HERE COULD BE YOU » (« le prochain ici sera peut-être
+	-- toi »); the plaque carries the name once a face is carved.
 	local cliff=unit(f,"HokageCliff","HokageCliff",CFrame.new(O))
 	part(cliff,"Cliff",Vector3.new(330,92,32),rel(0,46,-248),C.rock,Enum.Material.Rock)
 	for k,at in HubMap.Heads do
-		local slot=unit(f,"CliffHead","HeadFunny"..k,CFrame.new(O+at))
+		-- (not a unit of the dressing: the niche stays as built)
+		local slot=Instance.new("Model");slot.Name="CliffNiche"..k;slot.Parent=f
 		slot:SetAttribute("HeadSlot",k)
-		local head=part(slot,"Face",Vector3.new(26,30,8),CFrame.new(O+at),C.rock,Enum.Material.Rock)
-		deco(slot,"Brow",Vector3.new(22,3,2),head.CFrame*CFrame.new(0,5,4.6),C.rockDark,Enum.Material.Rock)
-		deco(slot,"Nose",Vector3.new(3,6,3),head.CFrame*CFrame.new(0,0,5.2),C.rockDark,Enum.Material.Rock)
-		deco(slot,"Hair",Vector3.new(28,8,9),head.CFrame*CFrame.new(0,17,-.4),if k%2==0 then C.rockDark else C.rock,Enum.Material.Rock)
+		-- the niche: a smoothed panel set into the rock, framed by a worn rim
+		local centre=O+at+Vector3.new(0,0,-1.6)
+		part(slot,"Niche",Vector3.new(24,30,.6),CFrame.new(centre),C.stone,Enum.Material.Slate)
+		deco(slot,"NicheRim",Vector3.new(27,1.6,1.4),CFrame.new(centre+Vector3.new(0,15.8,.4)),C.rockDark,Enum.Material.Rock)
+		deco(slot,"NicheRim",Vector3.new(27,1.6,1.4),CFrame.new(centre+Vector3.new(0,-15.8,.4)),C.rockDark,Enum.Material.Rock)
+		for _,x in {-12.8,12.8} do
+			deco(slot,"NicheRim",Vector3.new(1.6,30,1.4),CFrame.new(centre+Vector3.new(x,0,.4)),C.rockDark,Enum.Material.Rock)
+		end
+		-- the plaque under it, read from the terrace (the village is +z: Back)
+		local plaque=keep(part(slot,"Plaque",Vector3.new(20,3.4,.8),CFrame.new(centre+Vector3.new(0,-19,.6)),C.woodDark,Enum.Material.Wood))
+		local gui=sign(plaque,Enum.NormalId.Back,HubMap.EmptyHead,rgb(236,190,90))
+		gui.Name="PlaqueSign"
+		local label=gui:FindFirstChildOfClass("TextLabel")
+		if label then label.Name="PlaqueText" end
 	end
 	local terrace=unit(f,"FacesTerrace","FacesTerrace",CFrame.new(O))
 	part(terrace,"Terrace",Vector3.new(84,24,26),rel(0,12,-219),C.stone,Enum.Material.Slate)
@@ -63033,9 +63066,8 @@ HubDress.NAMES={
 	-- unique, modelled where they stand (their origin is the village's)
 	KonohaGate=true,GateBooth=true,Ichiraku=true,ExamHall=true,TrainingProps=true,MemorialStone=true,
 	HyugaCompound=true,UchihaGate=true,UchihaPier=true,NakaShrine=true,Torii=true,HokageCliff=true,FacesTerrace=true,
-	-- the cliff's four places: a funny head until the server carves the
-	-- creator or a champion there (Server/ChampionCliff turns it DressOff)
-	HeadFunny1=true,HeadFunny2=true,HeadFunny3=true,HeadFunny4=true,
+	-- (the cliff's four places are not dressed: an empty niche until the
+	-- server carves the creator or a champion there, Server/ChampionCliff)
 	-- repeated, in their own frame
 	HouseGable_24x20x2=true,HouseShop_24x20x2=true,HouseShop_24x20x1=true,HouseBack_22x20x2=true,HouseUchiha_26x20x2=true,
 	HouseFlat_24x20x2=true,HouseFlat_22x18x3=true,WaterTank=true,TreeA=true,TreeB=true,TreeC=true,
@@ -63108,7 +63140,8 @@ function HubDress.dress(unit,pieces,holder)
 	return made
 end
 
--- A unit the server turned DressOff (a cliff place where a face is carved):
+-- A unit the server turned DressOff (none today: the cliff's places are no
+-- longer dressed, 14/11):
 -- its mesh copies go, its parts are the server's (hidden there). Turned
 -- back on, it is dressed again. Returns true when the unit is dressed now.
 function HubDress.sync(unit,kit,holder,done)

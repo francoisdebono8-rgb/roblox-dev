@@ -68,20 +68,17 @@ Elles sont modélisées aux coordonnées de `Server/Hub`, relatives à `HubMap.O
 | UchihaPier | ponton et pilotis |
 | NakaShrine | socle et sanctuaire |
 | Torii | le torii ; un maître se tient dessus à y = 14,9, le dessus de la poutre reste à cette hauteur |
-| HokageCliff | la falaise seule (14/11 : les têtes ont maintenant chacune leur place, voir plus bas) ; une vraie silhouette de roche |
+| HokageCliff | la falaise seule (14/11 : quatre niches devant elle, voir plus bas) ; une vraie silhouette de roche |
 | FacesTerrace | terrasse, rambardes, 24 marches |
 
 ### Les quatre places de la falaise (14/11)
-**Demande de François :** « les têtes sont moches […] à terme ça sera les champions, on peut mettre le dev aussi et des trucs drôles pour l'instant ».
+**Demandes de François :** « à terme ça sera les champions, on peut mettre le dev aussi » ; puis (14/11) les têtes sculptées, rigolotes ou génériques, sont refusées : seulement la tête du créateur et des places vides, « le prochain ici sera peut-être toi ».
 
 - **Place 1 :** l'avatar Roblox du créateur du jeu (`game.CreatorId`, ou `Config.Hub.DevUserId`).
 - **Places 2 à 4 :** les avatars des 3 derniers vainqueurs du tournoi, du plus récent au plus ancien. La liste est la même sur tous les serveurs (DataStore, MessagingService).
-- Le serveur sculpte chaque avatar dans la pierre (`Server/ChampionCliff`). Il retire alors la tête rigolote de la place : l'unité passe en `DressOff`, ses Parts deviennent invisibles, la boîte `Face` reste solide.
-- **Tant qu'une place est vide**, ou qu'un avatar ne se charge pas (fichier local dans Studio), elle montre sa tête rigolote :
-
-| Nom | Origine | Référence |
-|---|---|---|
-| HeadFunny1, HeadFunny2, HeadFunny3, HeadFunny4 | centre de la tête, visage vers +z (vers le village) ; les places sont à x = −75, −25, 25 et 75, y = 58, z = −230 (`HubMap.Heads`) | elles tiennent dans la boîte solide 26 × 30 × 8 ; cheveux ou accessoire peuvent dépasser au-dessus et derrière, dans la falaise. Drôles, rien de reconnaissable d'un anime : tête de « noob » ronde et souriante, lunettes de soleil, endormie avec une bulle de morve, qui éternue, un bol de ramen sur la tête… |
+- Le serveur sculpte chaque avatar dans la pierre (`Server/ChampionCliff`) devant sa niche, et la plaque sous la niche porte son nom (« NOM • CREATOR », « CHAMPION • NOM »).
+- **Tant qu'une place est vide**, ou qu'un avatar ne se charge pas (fichier local dans Studio), c'est une niche vide (`HeadNiche1..4`, primitives de `Server/Hub` : un panneau lissé et son rebord) et sa plaque dit `HubMap.EmptyHead` : « THE NEXT ONE HERE COULD BE YOU ».
+- **Plus rien à modéliser pour l'animateur ici** : les `HeadFunny1..4` sont retirées du contrat (les têtes de #91 ne sont plus posées). La falaise seule (`HokageCliff`) reste à habiller.
 
 ### B. Pièces répétées
 Elles sont modélisées dans leur propre repère, que le poseur place et met à l'échelle.

@@ -71,8 +71,11 @@ M.Masters={
 -- (14/11, user: « les têtes sont moches […] à terme ça sera les champions, on
 -- peut mettre le dev aussi et des trucs drôles pour l'instant ») The four
 -- heads on the cliff: the game's creator (1), the last three tournament
--- champions (2 to 4, newest first), a funny head while a place is empty
--- (Server/ChampionCliff). Centres of the heads, facing the village (+z).
+-- champions (2 to 4, newest first), an empty niche and its plaque while a
+-- place is empty (14/11: the funny or generic heads were refused;
+-- Server/ChampionCliff). Centres of the heads, facing the village (+z).
+-- An empty place's plaque (14/11, user: « le prochain ici sera peut-être toi »).
+M.EmptyHead="THE NEXT ONE HERE COULD BE YOU"
 M.Heads={Vector3.new(-75,58,-230),Vector3.new(-25,58,-230),Vector3.new(25,58,-230),Vector3.new(75,58,-230)}
 
 -- The village's walk, for the HUD: the nearest place to a position (world).

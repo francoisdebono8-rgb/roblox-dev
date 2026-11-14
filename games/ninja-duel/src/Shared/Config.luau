@@ -192,7 +192,7 @@ return {
 	-- Off: the roster screen, as before.
 	-- (14/11) DevUserId: whose avatar is carved first on the cliff
 	-- (Server/ChampionCliff); nil = the game's creator (game.CreatorId), so a
-	-- local file in Studio shows the funny head there.
+	-- local file in Studio leaves that place an empty niche.
 	Hub = { Enabled = true, DevUserId = nil },
 	-- (13/11) The shop's Roblox ids, created by the owner on the game's page
 	-- (0 or absent: shown SOON, nothing sold). Products: a Robux look by its
