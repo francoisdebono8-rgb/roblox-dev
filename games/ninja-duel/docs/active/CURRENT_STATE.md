@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 **L'avatar du joueur dans le duel (14/11, branche `claude/avatar-articulations`, [AVATAR-001](MASTER_BACKLOG.md))**
 - **Vu dans Studio** (ND-JEU `a8d9fd0`, premier duel d'un nouveau joueur avec Naruto) : le joueur se battait dans le corps de Naruto, pas dans son propre avatar. La console disait « [AvatarBody] no joint Root ».
 - **Cause** : Roblox construit maintenant les articulations d'un avatar en AnimationConstraint (mise à niveau des articulations des avatars), sans Motor6D. `AvatarBody.fit` ne trouvait aucun Motor6D et refusait tous les avatars ; le duel retombait sur le corps du prodige.
@@ -21,12 +20,10 @@
 - **Mesuré sans écran** (distance des pieds le long du sol, cinq situations debout de 10 s : adversaire qui tourne en garde et sans, écartement, dérive, garde/neutre) : Gaara 7,3 → 2,2 studs, Minato 5,7 → 1,0, Lee 5,4 → 0,7, Sasuke 5,5 → 1,0. En déplacement (marches 3 à 20 studs/s, pas latéral, arrêts et départs) : 23,7 → 22,0, 26,0 → 16,9, 13,6 → 7,7, 16,9 → 9,4. Quelques cas isolés montent un peu (Gaara marche à 6 : 7,2 → 7,6 ; Sasuke arrêts et départs : 0,1 → 1,0).
 - **Tests** : `Film10Feet` 4 PASS (les deux nouveaux échouent sans la correction), `Animation` 32 PASS.
 - **Pas prouvé** : rien n'est encore vu dans Studio. À confirmer au ralenti par le CM sur Minato contre Gaara.
-=======
 **Konoha : le village chargé depuis des modèles envoyés sur Roblox (14/11, branche `claude/hub-maillage`, [HUB-001](MASTER_BACKLOG.md))** (utilisateur : « Fais l'envoi du maillage »)
 - **Envoi** : les 38 FBX de l'ANIMATEUR (#97, `tools/blender/hub_fbx.py`) passés par l'importateur 3D de Studio, sur le compte de François. 35 modèles et 141 pièces sont importés ; 3 ont échoué (VillageWall, TreeB, HouseShop_24x20x1, 12 pièces), et ces pièces restent construites sur l'ordinateur du joueur comme avant. `tools/blender/imports/hub/Hub.studio.json`, puis `hub_to_luau.py`, donnent `Client/HubMeshAssets.luau`. Les 141 tailles correspondent au manifeste Blender.
 - **Vu dans Studio** (modules poussés à chaud dans ND-JEU `a8d9fd0`) : le village se charge par identifiant (287 pièces, aucune construite sur place). À 3,5 s de jeu tout est déjà en place, contre 7 à 12 s pour la construction mesurée le 14/11. Les couleurs de sommet passent : lanternes rouges, poutres, murs.
 - **Reste** : relancer les 3 modèles qui ont échoué.
->>>>>>> claude/hub-maillage
 
 **Intégration du 12/11 : audit feel DEV (#60) + ANIMATEUR (#56, #58, #59) en une fois** (utilisateur : « intègre tt »)
 - **Une seule branche** : #56 (effets : préchargement des images, budget de lumières, charge du Katon), #59 (demande moteur : réactions selon le côté du coup, pas chassés en garde) et #58 (130 clips : éjection et saisie de dos et de côté, pas chassés, pivots, arrivées ; trace des déplacements ; foudre Lightning Beams) sont fusionnées dans `claude/feel-audit-lot2` (#60). Deux conflits, résolus en gardant les deux côtés : `Effects.luau` (budget de lumières + trace et foudre) et `tests/run.sh`.
