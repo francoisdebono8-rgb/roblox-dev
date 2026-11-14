@@ -3427,6 +3427,7 @@ local function brakePosture(targets,w)
 	out.Left=ANG(rad(18*w),0,rad(-26*w))*(targets.Left or IDENTITY)
 	return out
 end
+Motion.PIVOT_MIN=60 -- degrees a standing body turns before it steps round
 function Motion.present(char,actor,clock,dt)
 	local elapsed=clock or {}
 	local subject=actor
@@ -3461,6 +3462,48 @@ function Motion.present(char,actor,clock,dt)
 		end
 	else
 		memo.ultClip=nil
+	end
+	-- (FILM10, A9: Gaara turning on the spot slid his feet round with the body)
+	-- A standing body that turns more than PIVOT_MIN plays its fighter's
+	-- <F>.Pivot.<R|L><90|180> (the ANIMATOR's steps: the front foot lifts and
+	-- sets down); the server turns the root, the clip moves the legs, the
+	-- planted feet hold (authoredFeet).
+	do
+		local root=char:FindFirstChild("HumanoidRootPart")
+		local standing=root and not subject.airborne and not subject.reaction and (subject.speed or 0)<1.5
+			and (subject.state=="Neutral" or subject.state=="Guarding")
+		if root and standing and Authored and subject.fighterId then
+			local look=root.CFrame.LookVector
+			local yaw=math.deg(math.atan2(-look.X,-look.Z))
+			memo.pivotYaw=memo.pivotYaw or yaw
+			local diff=(yaw-memo.pivotYaw+540)%360-180
+			if not memo.pivot and math.abs(diff)>Motion.PIVOT_MIN then
+				local side=if diff<0 then "R" else "L"
+				local amount=if math.abs(diff)>=135 then "180" else "90"
+				local name=tostring(subject.fighterId)..".Pivot."..side..amount
+				if Authored.has(name) then memo.pivot={clip=name,at=elapsedTime} end
+				memo.pivotYaw=yaw
+			end
+			local p=memo.pivot
+			if p then
+				local t=elapsedTime-p.at
+				if t<Authored.length(p.clip) then
+					local targets=table.clone(Authored.sample(p.clip,t))
+					targets.Root=nil -- the server already turned the body
+					targets.__feet=authoredFeet(char,targets,dt)
+					mark(char,"pivot:"..p.clip,.07)
+					apply(char,targets,RATE.authored,dt)
+					return "pivot"
+				end
+				memo.pivot=nil
+			end
+		else
+			memo.pivot=nil
+			if root then
+				local look=root.CFrame.LookVector
+				memo.pivotYaw=math.deg(math.atan2(-look.X,-look.Z))
+			end
+		end
 	end
 	-- Studio: the dodge clock only restarted when the last *defense* state
 	-- differed, and nothing cleared it between dodges, so every dodge after the
@@ -3895,6 +3938,33 @@ function Motion.present(char,actor,clock,dt)
 	local throw=subject.throwKind and THROWS[subject.throwKind]
 	if subject.castId=="WindCut" and math.abs((subject.castElapsed or 99)-(subject.throwElapsed or -99))<.08 then throw=THROWS.WindCut end
 	local throwElapsed=subject.throwElapsed or 99
+	-- (FILM10, A9 « les pieds qui glissent ») Brawler.disengage, the hop out
+	-- of a string (Recovery, no strike, a blade thrown, the body carried back
+	-- at 46 studs/s): the legs ran backwards in place under the throw. Their
+	-- own clip now (the ANIMATOR's <F>.Disengage: crouch, push off both feet,
+	-- 5 studs in the air, land on both feet that hold), from the throw's
+	-- start; the upper body keeps the throw.
+	local hopClip=Authored and subject.fighterId and tostring(subject.fighterId)..".Disengage"
+	if hopClip and Authored.has(hopClip) and subject.throwKind and throwElapsed>=0 and not subject.attackName and not subject.airborne then
+		local c=Authored.clip(hopClip)
+		local key=tostring(subject.throwKind)..":"..string.format("%.2f",elapsedTime-throwElapsed)
+		if subject.state=="Recovery" and (subject.speed or 0)>20 and throwElapsed<.15 and memo.hopKey==nil then
+			memo.hopKey=key;memo.hopAt=elapsedTime-throwElapsed
+		end
+		local t=if memo.hopAt then elapsedTime-memo.hopAt else 99
+		if memo.hopAt and t<c.length then
+			local pose=Authored.sample(hopClip,t)
+			base=table.clone(base)
+			for joint,cf in pose do if not UPPER[joint] then base[joint]=cf end end
+			-- landed: the feet hold where they touched
+			if t>=(c.markers.land or c.length*.5) then base.__feet=authoredFeet(char,base,dt) end
+			mark(char,"legs:"..hopClip,.07)
+		else
+			memo.hopAt=nil;memo.hopKey=nil
+		end
+	else
+		memo.hopAt=nil;memo.hopKey=nil
+	end
 	-- (Wind Cut keeps its own slash: the clip is looked up under its name.)
 	local throwName=if throw==THROWS.WindCut then "WindCut" else subject.throwKind
 	local throwClip=Authored and throwName and tostring(subject.fighterId)..".Throw."..tostring(throwName)
