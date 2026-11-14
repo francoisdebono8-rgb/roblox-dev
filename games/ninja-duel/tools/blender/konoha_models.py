@@ -891,7 +891,7 @@ def hokage_cliff():
             e = u * u + v * v if v < 0 else u * u * (1 + v * .2) + v * v * .7
             d = max(d, smooth((1.05 - e) / .25))
         return d
-    X, Y = 110, 34
+    X, Y = 96, 30
     rows = []
     for j in range(Y + 1):
         v = j / Y
@@ -937,7 +937,7 @@ def hokage_cliff():
             cyl(trunks, T(x, base - 1, z), .7, h * .6, C["bark"], sides=5)
         tone = shades[rng.randrange(3)]
         ellipsoid(forest, (x, base + h * .55 + r * .5, z), (r, r * .85, r), lambda p, kk, tone=tone: lerp(jitter(tone, p, .12, .5), C["leafDark"], .3 * smooth((base + h * .4 - p.y) / 4)),
-                  seg=7, rings=5, bump=lambda d, k=k: .25 * noise.noise(d * 2 + Vector((k, 0, 1))))
+                  seg=6, rings=4, bump=lambda d, k=k: .25 * noise.noise(d * 2 + Vector((k, 0, 1))))
     # the mountains behind, bluer with the distance
     for k, (x, z, h, w) in enumerate(((-150, -360, 170, 80), (-50, -400, 210, 100), (60, -380, 190, 85), (160, -390, 165, 80), (230, -420, 150, 70), (-230, -420, 145, 70))):
         n, lv = 14, 6
