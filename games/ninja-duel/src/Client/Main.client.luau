@@ -3,6 +3,15 @@ local RunService=game:GetService("RunService")
 local player=Players.LocalPlayer
 local shared=game:GetService("ReplicatedStorage"):WaitForChild("NinjaDuel")
 local remote=shared:WaitForChild("Action")
+-- (14/11) The first seconds behind a curtain while the first screens load
+-- (Client/Curtain): nothing comes in piece by piece.
+pcall(function()
+	local hubOn=false
+	pcall(function() local Config=require(shared:WaitForChild("Config"));hubOn=Config.Hub~=nil and Config.Hub.Enabled==true end)
+	require(script.Parent.Curtain).start(player:WaitForChild("PlayerGui"),{
+		hub=hubOn,meshKit=require(script.Parent.MeshKit),hubDress=require(script.Parent.HubDress),
+		effects=require(script.Parent.Effects),shared=shared})
+end)
 pcall(function() game:GetService("StarterGui"):SetCoreGuiEnabled(Enum.CoreGuiType.Health,false); game:GetService("StarterGui"):SetCoreGuiEnabled(Enum.CoreGuiType.Chat,false); game:GetService("StarterGui"):SetCoreGuiEnabled(Enum.CoreGuiType.PlayerList,false) end)
 -- (Audit B01) Key names as printed on this keyboard (AZERTY: ZQSD to move,
 -- A to dodge), before any text that names a key is built.

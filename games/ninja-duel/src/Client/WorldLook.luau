@@ -15,55 +15,22 @@ local RunService=game:GetService("RunService")
 local WorldLook={}
 
 local function rgb(r,g,b) return Color3.fromRGB(r,g,b) end
--- (Look pass 2, 03/11.) A lower, warmer sun from the side the camera mostly
--- faces across: the wall throws a long shadow over the earth, bodies get a lit
--- side and a shade side; the shade is cool and darker than before, so the
--- image has depth instead of the flat, all-lit midday of a default place.
--- (12/11, QA test of b822ee5, setting validated by François) The image was
--- burnt white: the world's shadows were off (GlobalShadows false: neither the
--- build nor this look set it) and the light too strong (Brightness 3.6,
--- exposure +0.12, ambients 84/80/100 and 126/120/142, bloom from 1.25): white
--- clothes and faces became glowing blocks. Shadows on, less light, a darker
--- fill, a bloom only on what really shines.
-local LIGHT={
-	ClockTime=16.9,GeographicLatitude=36,Brightness=2.4,ExposureCompensation=-.35,GlobalShadows=true,
-	EnvironmentDiffuseScale=.5,EnvironmentSpecularScale=.4,ShadowSoftness=.18,
-	Ambient=rgb(60,56,72),OutdoorAmbient=rgb(96,92,112),
-	ColorShift_Top=rgb(255,212,164),ColorShift_Bottom=rgb(84,104,160),
-}
+-- (14/11) The values live in Shared/Look: the server applies the same light
+-- at its start, so the client's apply changes nothing on screen.
+local Look=require(game:GetService("ReplicatedStorage"):WaitForChild("NinjaDuel"):WaitForChild("Look"))
+local LIGHT=Look.LIGHT
 WorldLook.LIGHT=LIGHT
-local function effect(class,name,props)
-	local e=Lighting:FindFirstChild(name)
-	if not e then e=Instance.new(class);e.Name=name;e.Parent=Lighting end
-	for k,v in props do pcall(function() (e::any)[k]=v end) end
-	return e
-end
+-- The menu's studio (Client/MenuStage asks for it while the board is filmed).
+WorldLook.studio=false
 
 function WorldLook.apply()
-	for k,v in LIGHT do pcall(function() (Lighting::any)[k]=v end) end
-	-- The server's own grade, bloom and rays are replaced by this look's.
-	for _,name in {"NinjaDuelGrade","NinjaDuelBloom","NinjaDuelRays"} do
-		local e=Lighting:FindFirstChild(name);if e then e.Enabled=false end
-	end
-	-- One air: the server's atmosphere and this look's would fight (the engine
-	-- uses one of them, either), so every atmosphere gets the same values.
-	local any=false
-	for _,atmo in Lighting:GetChildren() do
-		if atmo:IsA("Atmosphere") then
-			any=true
-			atmo.Density=.3;atmo.Offset=.2;atmo.Color=rgb(236,214,190);atmo.Decay=rgb(112,100,128);atmo.Glare=.2;atmo.Haze=1.1
-		end
-	end
-	if not any then Instance.new("Atmosphere",Lighting);return WorldLook.apply() end
-	effect("ColorCorrectionEffect","NinjaLookGrade",{Saturation=.22,Contrast=.26,Brightness=-.02,TintColor=rgb(255,246,236)})
-	effect("BloomEffect","NinjaLookBloom",{Intensity=.3,Size=22,Threshold=2.2})
-	effect("SunRaysEffect","NinjaLookRays",{Intensity=.04,Spread=.75})
-	effect("DepthOfFieldEffect","NinjaLookDepth",{FarIntensity=.18,FocusDistance=40,InFocusRadius=75,NearIntensity=0})
-	local terrain=workspace:FindFirstChildOfClass("Terrain")
-	if terrain then
-		local clouds=terrain:FindFirstChildOfClass("Clouds") or Instance.new("Clouds")
-		clouds.Cover=.52;clouds.Density=.62;clouds.Color=rgb(255,250,246);clouds.Parent=terrain
-	end
+	Look.apply(Lighting,workspace:FindFirstChildOfClass("Terrain"),WorldLook.studio)
+end
+-- The menu's studio on or off, in the same frame (it was MenuStage's own
+-- copy of the lighting, which the world's look overwrote a second later).
+function WorldLook.setStudio(on)
+	WorldLook.studio=on==true
+	if not WorldLook.borrowed then WorldLook.apply() end
 end
 
 -- The ink line round every fighter body (the duel's two, shadow clones, the
@@ -97,14 +64,29 @@ function WorldLook.start()
 	-- The stadium's own dressing on this screen (banners, ink circle, air).
 	local dress=script.Parent:FindFirstChild("ArenaDress")
 	if dress then pcall(function() require(dress).start() end) end
-	-- The look holds: anything that resets the lighting (a cutscene's grade
-	-- ends, the menu's studio gives the light back) finds it again.
+	-- The look holds: anything that changes the lighting (the server, a
+	-- cutscene's grade ending) finds it again before the next frame is drawn
+	-- (it was looked at once a second: up to a second of another light).
+	local queued=false
+	local function hold()
+		if queued or WorldLook.borrowed then return end
+		queued=true
+		task.defer(function()
+			queued=false
+			if not WorldLook.borrowed and not Look.holds(Lighting,WorldLook.studio) then WorldLook.apply() end
+		end)
+	end
+	for k in Look.values(true) do
+		pcall(function() Lighting:GetPropertyChangedSignal(k):Connect(hold) end)
+	end
+	Lighting.ChildAdded:Connect(hold)
+	-- (and once a second, as a safety)
 	local last=0
 	RunService.Heartbeat:Connect(function()
 		local t=os.clock()
 		if t-last<1 then return end
 		last=t
-		if not WorldLook.borrowed and math.abs(Lighting.ClockTime-LIGHT.ClockTime)>.01 then WorldLook.apply() end
+		if not WorldLook.borrowed and not Look.holds(Lighting,WorldLook.studio) then hold() end
 	end)
 end
 return WorldLook

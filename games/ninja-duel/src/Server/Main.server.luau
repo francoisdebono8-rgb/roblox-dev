@@ -2,6 +2,9 @@ local Players=game:GetService("Players")
 local RunService=game:GetService("RunService")
 local Shared=game:GetService("ReplicatedStorage"):WaitForChild("NinjaDuel")
 Players.CharacterAutoLoads=false
+-- (14/11) The game's light before any player joins: what a client receives
+-- on joining is already the look it holds (Shared/Look).
+pcall(function() require(Shared:WaitForChild("Look")).apply() end)
 local remote=Instance.new("RemoteEvent"); remote.Name="Action"; remote.Parent=Shared
 local Matches=require(script.Parent.Matches)
 -- Blender-made costume meshes load in the background (Server/LookMeshes).

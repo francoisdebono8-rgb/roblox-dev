@@ -157,6 +157,11 @@ local LIGHTING={Ambient=Color3.fromRGB(40,36,46),OutdoorAmbient=Color3.fromRGB(4
 function MenuStage:filmed(on)
 	if on==self.isFilmed then return end
 	self.isFilmed=on
+	-- (14/11) the game's one light owner (Client/WorldLook) switches to the
+	-- studio and back in the same frame; it used to be this copy, which the
+	-- world's look overwrote a second later.
+	local okLook,WorldLook=pcall(require,script.Parent:FindFirstChild("WorldLook"))
+	if okLook and WorldLook and WorldLook.setStudio then WorldLook.setStudio(on) return end
 	local Lighting=game:GetService("Lighting")
 	if on then
 		self.savedLighting={}

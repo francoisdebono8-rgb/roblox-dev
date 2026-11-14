@@ -148,15 +148,28 @@ local function build(spec)
 end
 
 -- Builds every template (yields between models so a frame never stalls).
+MeshKit.WORKERS=4
 function MeshKit.prepare(names)
 	if MeshKit.state=="loading" or MeshKit.state=="failed" then return end
 	MeshKit.state="loading"
 	local okService=pcall(function() return game:GetService("AssetService").CreateEditableMesh end)
 	if not okService then MeshKit.state="failed";MeshKit.error="no AssetService";return end
+	-- (14/11, measured in Studio: the 76 models took 11 s one after another,
+	-- the village changing in waves for 12 s after the arrival) Each pass
+	-- builds MeshKit.WORKERS models at once (each build waits on the engine,
+	-- not on the frame).
 	for pass=1,2 do
-		for name,pieces in MeshKit.Data do
+		local queue={}
+		for name in MeshKit.Data do
 			if (pass==1)==(MeshKit.Late[name]==true) then continue end
 			if MeshKit.ready[name] or (names and not table.find(names,name)) then continue end
+			table.insert(queue,name)
+		end
+		table.sort(queue)
+		local failed=nil
+		local running=0
+		local function one(name)
+			local pieces=MeshKit.Data[name]
 			local made={}
 			local ok,err=pcall(function()
 				for _,spec in pieces do table.insert(made,{part=build(spec),o=Vector3.new(spec.o[1],spec.o[2],spec.o[3]),name=spec.name}) end
@@ -166,14 +179,24 @@ function MeshKit.prepare(names)
 				-- the weapons stop here as before
 				if MeshKit.Late[name] then
 					warn("[NinjaDuel] MeshKit: "..name.." unavailable, its parts kept: "..tostring(err))
-					continue
+				else
+					failed=failed or tostring(err)
 				end
-				MeshKit.state="failed";MeshKit.error=tostring(err)
-				warn("[NinjaDuel] MeshKit: modelled props unavailable, primitives kept: "..tostring(err))
 				return
 			end
 			MeshKit.ready[name]=made
-			task.wait()
+		end
+		for _,name in queue do
+			if failed then break end
+			while running>=MeshKit.WORKERS do task.wait() end
+			running+=1
+			task.spawn(function() one(name);running-=1 end)
+		end
+		while running>0 do task.wait() end
+		if failed then
+			MeshKit.state="failed";MeshKit.error=failed
+			warn("[NinjaDuel] MeshKit: modelled props unavailable, primitives kept: "..failed)
+			return
 		end
 		if pass==1 then MeshKit.weaponsReady=true end
 	end
