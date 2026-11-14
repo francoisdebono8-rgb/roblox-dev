@@ -62,6 +62,9 @@ local SOUND={
 	splash="rbxasset://sounds/impact_water.mp3",
 }
 FX.SOUND=SOUND
+-- (14/11) what Client/Curtain preloads (a first impact's particles showed
+-- 0.3 s late: their image was fetched at first use).
+FX.TEX=TEX
 -- Contacts that bring the crowd to its feet, by strength.
 local CHEER={chidori=1,groundbounce=.8,slam=1,launcher=.7,finisher=.8,fire=1,teleport=.9,parry=.8,substitute=.4,burst=.8,clash=.9,wall=.6,wallbounce=1,worldbreak=1,walltech=.5,repel=.9,trigram=.7}
 local HYUGA=Color3.fromRGB(190,208,255)
