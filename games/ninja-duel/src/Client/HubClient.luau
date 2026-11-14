@@ -65,8 +65,13 @@ function Hub.new(ui,camera,send,controls)
 	local wallet=K.frame(self.shopBox,UDim2.fromOffset(0,0),UDim2.fromOffset(120,60),K.CARD,.12);K.corner(wallet,10)
 	K.text(wallet,"RYŌ",UDim2.fromOffset(12,6),UDim2.fromOffset(96,14),10,P.muted,K.BODY_FONT,Enum.TextXAlignment.Right)
 	self.ryoLabel=K.text(wallet,"0",UDim2.fromOffset(12,20),UDim2.fromOffset(96,34),28,P.gold,K.TITLE_FONT,Enum.TextXAlignment.Right)
-	local shop=K.button(self.shopBox,"SHOP",UDim2.fromOffset(132,0),UDim2.fromOffset(150,60),function() self:openShop() end,P.red)
-	shop.TextSize=28
+	-- (14/11, audit: the board of duels was only at the proctor's, 15 s from
+	-- the gate; VISION: « les menus restent disponibles partout ») DUELS opens
+	-- it from anywhere in the village (B, the pad's R1).
+	self.duelsButton=K.button(self.shopBox,"DUELS",UDim2.fromOffset(132,0),UDim2.fromOffset(140,60),function() self:openBoard() end,P.red)
+	self.duelsButton.TextSize=26
+	local shop=K.button(self.shopBox,"SHOP",UDim2.fromOffset(284,0),UDim2.fromOffset(140,60),function() self:openShop() end)
+	shop.TextSize=26
 	self.keys=K.text(ui.gui,"",UDim2.new(.5,-360,1,-34),UDim2.fromOffset(720,22),14,P.paper,K.BODY_FONT,Enum.TextXAlignment.Center)
 	K.create("UIStroke",self.keys,{Color=P.ink,Thickness=2,ApplyStrokeMode=Enum.ApplyStrokeMode.Contextual})
 	self.keys.Visible=false
@@ -104,6 +109,7 @@ function Hub.new(ui,camera,send,controls)
 		local master=prompt:GetAttribute("NinjaMaster")
 		if master then self:showCard(master) return end
 		if prompt:GetAttribute("NinjaBoard") then self:openBoard() end
+		if prompt:GetAttribute("NinjaTrain") then self:train() end
 	end)
 	-- The run and the second jump.
 	self.leapUsed=false
@@ -111,11 +117,14 @@ function Hub.new(ui,camera,send,controls)
 	UIS.JumpRequest:Connect(function() self:jumpRequest() end)
 	RunService.RenderStepped:Connect(function(dt) self:step(dt) end)
 	-- (14/11) The pad: L3 latches the run (held, it was a strain on the thumb
-	-- for every street), Y opens the shop, B closes a master's card.
+	-- for every street), Y opens the shop, B closes a master's card, R1 opens
+	-- the board of duels (the keyboard's B; not while he types in the chat).
 	UIS.InputBegan:Connect(function(input,processed)
 		if not self.active or self.board then return end
 		local key=input.KeyCode
-		if key==Enum.KeyCode.ButtonL3 and not self.panelOpen then
+		if (key==Enum.KeyCode.ButtonR1 or (key==Enum.KeyCode.B and not processed)) and not self.panelOpen and not self.card.Visible then
+			self:openBoard()
+		elseif key==Enum.KeyCode.ButtonL3 and not self.panelOpen then
 			self.runLatch=not self.runLatch;self.runMoved=false;self.restFor=0;self:paintRun()
 		elseif key==Enum.KeyCode.ButtonY and not self.panelOpen and not self.card.Visible then
 			self:openShop()
@@ -299,10 +308,12 @@ function Hub:step(dt)
 	self.clock=(self.clock or 0)+dt
 	if self.clock>.25 then
 		self.clock=0
-		-- The masters arrive after the village (their portraits first).
-		local count=0
+		-- The masters arrive after the village (their portraits first): the
+		-- masters, the proctor and the training dummy.
+		local count,want=0,2
 		for _ in self.markers do count+=1 end
-		if count<9 then self:refreshMarkers() end
+		for _ in HubMap.Masters do want+=1 end
+		if count<want then self:refreshMarkers() end
 		self:refreshHud(root.Position)
 		for _,marker in self.markers do
 			if marker.model and marker.model.Parent and marker.distance then
@@ -347,7 +358,7 @@ function Hub:refreshHud(position)
 	self.goalSub.Text=if self.lay and self.lay.goal.stack then table.concat(goal.items,"\n") else goal.sub
 	self:showHud()
 	local input=self:input()
-	self.keys.Text=if input=="pad" then "L3 RUN  •  A TWICE: LEAP  •  X TALK  •  Y SHOP" else "SHIFT RUN  •  SPACE TWICE: LEAP  •  E TALK"
+	self.keys.Text=if input=="pad" then "L3 RUN  •  A TWICE: LEAP  •  X TALK  •  Y SHOP  •  R1 DUELS" else "SHIFT RUN  •  SPACE TWICE: LEAP  •  E TALK  •  B DUELS"
 	self.cardFoot.Text=if input=="pad" then "B: CLOSE" elseif input=="touch" then "✕ OR WALK AWAY TO CLOSE" else "E: TALK  •  WALK AWAY TO CLOSE"
 end
 
@@ -375,11 +386,13 @@ function Hub:refreshMarkers()
 	local P=self.K.palette
 	for _,model in holder:GetChildren() do
 		local id=model:GetAttribute("NinjaMaster")
-		local key=id or (model:GetAttribute("NinjaBoard") and "Proctor")
+		local key=id or (model:GetAttribute("NinjaBoard") and "Proctor") or (model:GetAttribute("NinjaTrain") and "Training")
 		if key and (not self.markers[key] or self.markers[key].model~=model) then
 			if self.markers[key] then self.markers[key].gui:Destroy() end
-			local title=if id then nameOf(id) else "THE PROCTOR"
-			self.markers[key]=self:marker(model,id,title,if id then HubMap.Masters[id] and HubMap.Masters[id].place else HubMap.Proctor.place)
+			local title=if id then nameOf(id) elseif key=="Training" then "TRAINING" else "THE PROCTOR"
+			local place=if id then HubMap.Masters[id] and HubMap.Masters[id].place elseif key=="Training" then HubMap.Training.place else HubMap.Proctor.place
+			self.markers[key]=self:marker(model,id,title,place)
+			if self.markers[key] then self.markers[key].key=key end
 		end
 	end
 	for key,marker in self.markers do
@@ -398,6 +411,11 @@ function Hub:refreshMarkers()
 				local loud=status=="starter" or status=="master" or first
 				marker.gui.AlwaysOnTop=loud
 				marker.gui.MaxDistance=if loud then 2000 else 140
+			elseif marker.key=="Training" then
+				-- seen on the ground only (the masters guide a new player)
+				local kit=self:trainingKit()
+				marker.tag.Text=if kit then "TRY "..nameOf(kit).."'S KIT" else "YOUR KIT"
+				marker.gui.AlwaysOnTop=false;marker.gui.MaxDistance=140
 			else
 				marker.tag.Text="DUELS  •  TOURNAMENT"
 				-- (14/11, Studio: from the gate the proctor's marker sat on
@@ -408,6 +426,24 @@ function Hub:refreshMarkers()
 			end
 		end
 	end
+end
+
+-- ------------------------------------------------------------------ training
+-- The kit he trains with at the dummy: his own (owned and chosen), else Lee's
+-- (it is Lee's ground: TRY LEE'S KIT, as on Lee's card). nil = his own.
+function Hub:trainingKit()
+	local kits=self.kits
+	local selected=kits and kits.selected
+	if selected and kits.owned and kits.owned[selected] then return nil end
+	return "Leaf"
+end
+function Hub:train()
+	local kits=self.kits
+	if not kits or kits.state~="ready" then return end
+	local FirstMinute=require(Shared.FirstMinute)
+	local kit=self:trainingKit() or kits.selected
+	self:hideCard()
+	self.send("Tutorial",{player=kit,bot=FirstMinute.rival(kit) or "Lion",here="Training"})
 end
 
 -- ------------------------------------------------------------------ the card
@@ -476,7 +512,15 @@ function Hub:press(which)
 		if self.ui.treePanel then self.ui.treePanel:show(item.tree,self.kits) end
 		return
 	end
-	if item.send then self.send(item.send[1],item.send[2]) end
+	if item.send then
+		-- (14/11) a duel asked at the master's home is fought there, when the
+		-- server finds him there (Matches.villageSite)
+		local payload=item.send[2]
+		if type(payload)=="table" and (item.send[1]=="Start" or item.send[1]=="First" or item.send[1]=="MasterTrial") then
+			payload=table.clone(payload);payload.here=self.cardId
+		end
+		self.send(item.send[1],payload)
+	end
 end
 
 return Hub

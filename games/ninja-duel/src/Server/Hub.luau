@@ -626,6 +626,26 @@ function Hub.placeMasters(source)
 		end
 	end
 	Hub.placeProctor(holder)
+	Hub.placeTraining(holder)
+end
+-- (14/11, audit: the training ground had three stumps and a dummy, and
+-- nothing to do there) The dummy of Training Ground Three: E trains with his
+-- kit (Client/HubClient sends the board's TRAINING). An invisible anchor of its
+-- own: the village's units may be swapped for meshes (MeshKit).
+function Hub.placeTraining(holder)
+	local spot=HubMap.Training
+	if not spot or holder:FindFirstChild("Training") then return end
+	local model=Instance.new("Model");model.Name="Training"
+	model:SetAttribute("NinjaTrain",true)
+	local anchor=Instance.new("Part");anchor.Name="Anchor"
+	anchor.Size=Vector3.new(1,1,1);anchor.Transparency=1;anchor.Anchored=true
+	anchor.CanCollide=false;anchor.CanQuery=false;anchor.CanTouch=false
+	anchor.CFrame=CFrame.new(O+spot.at+Vector3.new(0,5,0))
+	anchor.Parent=model
+	model.PrimaryPart=anchor
+	model.Parent=holder
+	local prompt=promptOn(model,"Training","TRAIN",spot.place,false)
+	if prompt then prompt:SetAttribute("NinjaTrain",true) end
 end
 -- The proctor on the hall's floor (the Professor's rig): the board of duels.
 function Hub.placeProctor(holder)
@@ -672,7 +692,8 @@ function Hub.enter(player,where,looks)
 		entry.character=character
 		-- (13/11, the shop) the headband he chose, on his own avatar.
 		pcall(function() require(script.Parent.Headband).fromLooks(character,looks) end)
-		local spot=HubMap.Spawns[where] or HubMap.Spawns.gate
+		-- (14/11) back from a duel in the village: where it was fought
+		local spot=if type(where)=="table" then where else HubMap.Spawns[where] or HubMap.Spawns.gate
 		local at=O+spot.at+Vector3.new(0,3.5,0)
 		pcall(function() character:PivotTo(CFrame.lookAt(at,at+spot.face)) end)
 		local hum=character:FindFirstChildOfClass("Humanoid")

@@ -10,6 +10,7 @@ local ArenaMeshes=require(script.Parent.ArenaMeshes)
 local AvatarBody=require(script.Parent.AvatarBody)
 local Progression=require(script.Parent.Progression)
 local Masters=require(Shared.Masters)
+local HubMap=require(Shared.HubMap)
 local Combat=require(script.Parent.Combat)
 local AI=require(script.Parent.AI)
 local Tutorial=require(script.Parent.Tutorial)
@@ -65,6 +66,22 @@ end
 -- Each duel owns a stage far from every other one.
 function Matches.laneOrigin(lane)
 	return Vector3.new((lane-1)*520,0,0)
+end
+-- (14/11, François: « que notre perso puisse combattre » dans la ville) A duel
+-- started at a master's home (his card, the training dummy: `key`) is fought
+-- there, in the village, when he really stands there (his walker within reach
+-- of the ground). nil: the stadium.
+function Matches.villageSite(player,key)
+	if not Matches.hubOn() or not (Config.Hub and Config.Hub.VillageDuels==true) or type(key)~="string" then return nil end
+	local spot=if key=="Training" then HubMap.Training else HubMap.Masters[key]
+	local duel=spot and spot.duel
+	if not duel then return nil end
+	local centre=HubMap.Origin+duel.at
+	local body=Hub.bodies and Hub.bodies[player]
+	local character=body and body.character
+	local root=character and character:FindFirstChild("HumanoidRootPart")
+	if not root or (Vector3.new(root.Position.X,0,root.Position.Z)-Vector3.new(centre.X,0,centre.Z)).Magnitude>duel.radius+50 then return nil end
+	return {key=key,origin=centre,radius=duel.radius}
 end
 -- (B1 lot 2, DEC-034) What a new player's first minutes look like, measured
 -- on the server (Codex's audit §3: time to the first input, the first jutsu,
@@ -213,7 +230,8 @@ function Matches:selection(player,notice)
 	-- through the gate the first time, out of the exam hall after a duel.
 	if Matches.hubOn() then
 		Hub.badge(player,view)
-		Hub.enter(player,if s.hubVisited then "hall" else "gate",Progression.looks(player))
+		Hub.enter(player,s.returnTo or (if s.hubVisited then "hall" else "gate"),Progression.looks(player))
+		s.returnTo=nil
 		s.hubVisited=true
 	end
 	-- (Lobby, 04/11) in a duel server the roster is the lobby: back home.
@@ -249,9 +267,17 @@ function Matches:start(player,playerId,botId,training,options)
 	if Matches.hubOn() then Hub.leave(player) end
 	s.playerId=playerId; s.botId=botId; s.winner=nil; s.phase="Duel"; s.origin=Matches.laneOrigin(s.lane)
 	s.options=options
-	-- (QA 12/11) The lane's stadium is the one already in the world, its
-	-- last duel's damage undone: only the two bodies are new at BEGIN.
-	self:stageFor(s)
+	-- (14/11) A duel at a master's home: in the village, no stadium.
+	local site=s.nextSite;s.nextSite=nil
+	s.site=site;s.radius=site and site.radius or nil
+	if site then
+		s.origin=site.origin
+		s.returnTo={at=site.origin-HubMap.Origin+Vector3.new(0,0,site.radius*.5),face=Vector3.new(0,0,-1)}
+	else
+		-- (QA 12/11) The lane's stadium is the one already in the world, its
+		-- last duel's damage undone: only the two bodies are new at BEGIN.
+		self:stageFor(s)
+	end
 	s.effects=Instance.new("Folder"); s.effects.Name="Effects"; s.effects.Parent=s.folder
 	s.combat=Combat.new(s); s.combat.now=workspace:GetServerTimeNow()
 	local function actor(id,def,position,look,kit)
@@ -547,7 +573,9 @@ function Matches:request(player,payload)
 		local rival=FirstMinute.rival(payload.player)
 		if not rival then return end
 		s.lastLifecycle=clock;s.aiLevel="easy";s.firstStage="intro"
+		s.nextSite=Matches.villageSite(player,payload.here)
 		if not self:start(player,payload.player,rival,true) then s.firstStage=nil end
+		s.nextSite=nil
 		return
 	end
 	-- (DEC-037) The masters' path from the roster: the starter, the kit for the
@@ -606,7 +634,9 @@ function Matches:request(player,payload)
 				return
 			end
 			s.masterTrial=master;s.firstStage=nil
+			s.nextSite=Matches.villageSite(player,payload.here)
 			if not self:start(player,payload.player,master,false) then s.masterTrial=nil end
+			s.nextSite=nil
 		elseif action=="BuyKit" then
 			local product=(Config.Progression and Config.Progression.Products or {})[payload.player]
 			if product and not Progression.owns(player,payload.player) then
@@ -627,9 +657,15 @@ function Matches:request(player,payload)
 			s.masterTrial=nil
 			s.lastLifecycle=clock;s.firstStage=nil
 			if type(payload.level)=="string" and Matches.LEVELS[payload.level] then s.aiLevel=payload.level end
+			s.nextSite=Matches.villageSite(player,payload.here)
 			self:start(player,payload.player,payload.bot,action=="Tutorial")
+			s.nextSite=nil
 		elseif action=="Rematch" and (s.phase=="Result" or s.finishing) then
-			s.lastLifecycle=clock;s.firstStage=nil; self:start(player,s.playerId,s.botId,s.tutorial~=nil,s.options)
+			s.lastLifecycle=clock;s.firstStage=nil
+			-- (14/11) a rematch at a master's home stays there
+			s.nextSite=s.site;s.returnTo=nil
+			self:start(player,s.playerId,s.botId,s.tutorial~=nil,s.options)
+			s.nextSite=nil
 		elseif action=="Selection" and (s.phase=="Result" or s.finishing or s.tutorial) then s.lastLifecycle=clock; self:selection(player) end
 		return
 	end

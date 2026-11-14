@@ -105,6 +105,26 @@ test("the masters take their portraits, each with the prompt the client answers"
 		assert((feet-(HubMap.Origin+spot.at)).Magnitude<.05,id.." is not on his spot: "..tostring(feet))
 		if spot.at.Y>4 then assert(prompt.MaxActivationDistance>=20,id.." is out of reach up there") end
 	end
+	-- (14/11) the dummy of Training Ground Three: E trains (Client/HubClient)
+	local training=holder:FindFirstChild("Training")
+	assert(training and training:GetAttribute("NinjaTrain")==true,"no training spot")
+	local prompt=training:FindFirstChild("Talk",true)
+	assert(prompt and prompt:GetAttribute("NinjaTrain")==true and prompt.ActionText=="TRAIN","the training prompt")
+	assert(HubMap.placeAt(training.PrimaryPart.CFrame.Position).id=="Training","the dummy is not on the training ground")
+end)
+
+-- (14/11, audit in Studio: Roblox's paths from the gate end where a player
+-- walks up to each master; Naruto, Gaara and Kakashi showed him their side or
+-- their back) Each master faces the way he is walked up to.
+test("the masters face the player who walks up to them",function()
+	local arrive={Legion=Vector3.new(-7,0,126),Sand=Vector3.new(-47,0,-59),Copycat=Vector3.new(-149,0,83),Leaf=Vector3.new(-102,0,38)}
+	for id,from in arrive do
+		local spot=HubMap.Masters[id]
+		local toward=Vector3.new(from.X-spot.at.X,0,from.Z-spot.at.Z).Unit
+		local face=Vector3.new(spot.face.X,0,spot.face.Z).Unit
+		local off=math.deg(math.acos(math.clamp(toward:Dot(face),-1,1)))
+		assert(off<15,id.." looks "..math.floor(off).." degrees away from the player walking up")
+	end
 end)
 
 test("a duel takes the walker away; a table player (the suites) is never spawned",function()

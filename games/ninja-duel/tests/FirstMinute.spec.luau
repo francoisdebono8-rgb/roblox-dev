@@ -156,4 +156,54 @@ test("a bad PLAY is refused: an unknown fighter, or outside the roster",function
 	assert(s.epoch==epoch,"PLAY in a duel restarted it")
 end)
 
+-- (14/11, François: « que notre perso puisse combattre » dans la ville) A
+-- duel asked at a master's home is fought there, in the village, when the
+-- server finds the player's walker there; asked from the board, or from far
+-- away, it is the stadium's.
+test("a first duel asked at Lee's home is fought on Training Ground Three; elsewhere, the stadium",function()
+	local Hub=H.load("Server/Hub")
+	local HubMap=H.load("Shared/HubMap")
+	local Config=H.load("Shared/Config")
+	local builtWas,bodiesWas,enterWas=Hub.built,Hub.bodies,Hub.enter
+	Hub.built=true;Hub.enter=function() end
+	local ok,err=pcall(function()
+		local m,player=fresh()
+		local spot=HubMap.Masters.Leaf.duel
+		local centre=HubMap.Origin+spot.at
+		-- his walker in the village (Hub.enter makes it, a duel takes it away)
+		local function walkAt(position)
+			local root={Position=position}
+			Hub.bodies[player]={character={FindFirstChild=function(_,n) return if n=="HumanoidRootPart" then root else nil end,GetAttribute=function() return nil end}}
+		end
+		Hub.bodies={}
+		walkAt(centre+H.V.new(6,3,10))
+		send(m,player,"First",{player="Leaf",here="Leaf"})
+		local s=m.sessions[player]
+		assert(s.phase=="Duel" and s.site and s.site.key=="Leaf","the first duel did not stay at Lee's")
+		assert((s.origin-centre).Magnitude<1e-3 and s.radius==spot.radius,"not on the training ground: "..tostring(s.origin))
+		-- the bodies are held inside the ground's own circle
+		local far=s.combat:clamp(centre+H.V.new(200,3,0))
+		assert(math.abs((far-centre).Magnitude-spot.radius)<.5,"the circle is the stadium's: "..tostring(far))
+		-- back to Konoha: where it was fought
+		m:selection(player);walkAt(centre)
+		-- from the board (no `here`): the stadium
+		send(m,player,"Start",{player="Leaf",bot="Lion"})
+		assert(s.phase=="Duel" and s.site==nil and s.radius==nil and (s.origin-Matches.laneOrigin(s.lane)).Magnitude<1e-3,"a board duel left the stadium")
+		m:selection(player)
+		-- asked as if at Lee's while far away (a client's word only): the stadium
+		walkAt(HubMap.Origin+H.V.new(0,3,190))
+		send(m,player,"First",{player="Leaf",here="Leaf"})
+		assert(s.site==nil,"a duel came to the village from the gate")
+		m:selection(player)
+		-- the flag off: the stadium
+		walkAt(centre)
+		Config.Hub.VillageDuels=false
+		send(m,player,"First",{player="Leaf",here="Leaf"})
+		assert(s.site==nil,"VillageDuels off, yet in the village")
+		Config.Hub.VillageDuels=true
+	end)
+	Hub.built,Hub.bodies,Hub.enter=builtWas,bodiesWas,enterWas
+	assert(ok,err)
+end)
+
 print(("FirstMinute: %d passed"):format(passed))

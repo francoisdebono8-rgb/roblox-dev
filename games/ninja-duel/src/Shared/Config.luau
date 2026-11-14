@@ -198,7 +198,11 @@ return {
 	-- (14/11) DevUserId: whose avatar is carved first on the cliff
 	-- (Server/ChampionCliff); nil = the game's creator (game.CreatorId), so a
 	-- local file in Studio shows the funny head there.
-	Hub = { Enabled = true, DevUserId = nil },
+	-- (14/11, François: « que notre perso puisse combattre » dans la ville)
+	-- VillageDuels: a duel started at a master's home (his card, the training
+	-- dummy) is fought there, in the village (HubMap.Masters[id].duel), not
+	-- in the stadium. The board's duels and the tournament stay in the stadium.
+	Hub = { Enabled = true, DevUserId = nil, VillageDuels = true },
 	-- (13/11) The shop's Roblox ids, created by the owner on the game's page
 	-- (0 or absent: shown SOON, nothing sold). Products: a Robux look by its
 	-- Shared/Shop key; RyoPacks: Ryō for Robux; Passes: game passes (the 2x
