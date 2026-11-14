@@ -1969,6 +1969,7 @@ Motion._ankleFrame=ankleFrame
 -- locked foot the body has carried out of reach is released the same way.
 Motion.TURN_STEP=.55 -- studs: a planted foot a turn carries this far off its place steps
 Motion.STEP_LEAD=.14 -- of a step: up before it travels, over its spot before it sets down
+Motion.STEP_CARRIED=16 -- st/s: a body carried faster steps on the spring
 local function authoredFeet(char,pose,dt,cycle,reach,clock)
 	local s=stateOf(char)
 	-- (FILM10) the standing / slow-cycle feet keep their own memory: the gait is
@@ -1978,10 +1979,11 @@ local function authoredFeet(char,pose,dt,cycle,reach,clock)
 	if reach or cycle=="loco" then s.locoFeet=s.locoFeet or {};box=s.locoFeet end
 	if cycle=="loco" then cycle=true end
 	-- (14/11) the standing feet, a slow cycle's and a pivot's step on a clock
-	-- (see below); a strike's, a reaction's and a cycle the body outruns keep
-	-- the spring (their clips step, and a body thrown back at 46 st/s left a
-	-- foot held in the world far behind)
-	local timed=box~=s or clock==true
+	-- (see below) while the body is not carried fast; a strike's, a
+	-- reaction's and a cycle the body outruns keep the spring (their clips
+	-- step, and a body thrown back at 46 st/s left a foot held in the world
+	-- far behind)
+	local timed=(box~=s or clock==true)
 	local root=char:FindFirstChild("HumanoidRootPart")
 	if not root then return nil end
 	dt=dt or 1/60
@@ -1990,6 +1992,10 @@ local function authoredFeet(char,pose,dt,cycle,reach,clock)
 	-- jumped (a teleport, a flicker) starts on its new spot: its feet held at
 	-- the old one used to be released into a step across the whole arena.
 	local warped=box.afRoot~=nil and (rootCF.Position-box.afRoot).Magnitude>3
+	-- (14/11) how fast the body is carried (a step on a clock leaves from the
+	-- world: a body thrown or rushed left that foot far behind, Naruto's knee
+	-- 50 deg in a frame after his Rendan headless)
+	local carried=if box.afRoot~=nil and not warped then planar(rootCF.Position-box.afRoot).Magnitude/dt else 0
 	box.afRoot=rootCF.Position
 	-- A new source of feet (standing / cycle / a clip of its own) starts fresh,
 	-- as it did when only clips held feet: carried over, a stance foot read the
@@ -2047,7 +2053,9 @@ local function authoredFeet(char,pose,dt,cycle,reach,clock)
 			if f.planted then f.planted=false;f.off=rootCF:PointToObjectSpace(f.world)-clipPos;f.offV=Vector3.zero end
 		end
 		local lift=0
-		if not f.planted and (f.step~=nil or (timed and f.swing0==nil and f.off.Magnitude>.05)) then
+		-- (carried fast mid-step: the spring takes the step over from here)
+		if f.step and carried>=Motion.STEP_CARRIED then f.step=nil;f.swing0=math.max(f.off.Magnitude,.06);f.offV=Vector3.zero end
+		if not f.planted and (f.step~=nil or (timed and carried<Motion.STEP_CARRIED and f.swing0==nil and f.off.Magnitude>.05)) then
 			-- (14/11, FILM10 A9 « still ») The standing and slow-cycle feet: a
 			-- body facing a foe who circles it, or nudged apart, slid its feet
 			-- ~2 studs in 10 s headless (Gaara), 80 % of it in the spring's start
