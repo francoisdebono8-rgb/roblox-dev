@@ -62,7 +62,7 @@ M.Masters={
 	Lion={place="THE UCHIHA PIER",at=Vector3.new(176,1.6,-60),face=Vector3.new(-1,0,0),
 		line="Fire starts in the chest, not in the hands. Show me yours."},
 	Leaf={place="TRAINING GROUND THREE",at=Vector3.new(-118,0,28),face=Vector3.new(.85,0,.53),
-		duel={at=Vector3.new(-132,0,30),radius=40},
+		duel={at=Vector3.new(-136,0,10),radius=34},
 		line="Five hundred laps, then we talk. Or one honest fight, right now!"},
 	GentleFist={place="THE HYŪGA COMPOUND",at=Vector3.new(-146,0,-98),face=Vector3.new(1,0,0),
 		duel={at=Vector3.new(-152,0,-104),radius=36},
@@ -80,7 +80,7 @@ M.Masters={
 -- (14/11, audit: « que notre perso puisse combattre, qu'on puisse apprendre »)
 -- Training Ground Three's dummy: E there trains with his kit (Server/Hub
 -- places the prompt, Client/HubClient answers it).
-M.Training={at=Vector3.new(-150,0,16),place="TRAINING GROUND THREE",duel={at=Vector3.new(-132,0,30),radius=40}}
+M.Training={at=Vector3.new(-150,0,16),place="TRAINING GROUND THREE",duel={at=Vector3.new(-136,0,10),radius=34}}
 
 -- (14/11, user: « les têtes sont moches […] à terme ça sera les champions, on
 -- peut mettre le dev aussi et des trucs drôles pour l'instant ») The four
