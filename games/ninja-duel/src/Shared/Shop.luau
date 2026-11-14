@@ -102,11 +102,7 @@ Shop.Items={
 		pieces={{on="UpperTorso",c="Orange"},{on="UpperTorso",kind="shoulders",c="Blue"},{on="UpperTorso",kind="collar",c="White",h=.12},{on="LowerTorso",c="Orange"},{on="UpperArm",c="Orange"},{on="LowerArm",c="Orange",h=.85},{on="UpperLeg",c="Orange"},{on="LowerLeg",c="Orange",h=.7},{on="LowerLeg",kind="band",c="White",y0=.62,h=.12},{on="Foot",c="Blue",pad=.05}}},
 	{id="SetSasuke",slot="set",kit="Lion",name="SASUKE'S HIGH COLLAR",robux="SetSasuke",colors={Navy={30,40,86},White={232,230,224},Wrap={226,222,212}},
 		pieces={{on="UpperTorso",c="Navy"},{on="UpperTorso",kind="collar",c="Navy",h=.3},{on="LowerTorso",c="White"},{on="UpperArm",c="Navy",h=.4},{on="LowerArm",kind="band",c="Navy",y0=.1,h=.8},{on="UpperLeg",c="White",h=.7},{on="LowerLeg",kind="band",c="Wrap",y0=.1,h=.75},{on="Foot",c="Navy",pad=.05}}},
-<<<<<<< HEAD
-	{id="SetLee",slot="set",kit="Leaf",name="LEE'S GREEN SUIT",robux="SetLee",colors={Green={46,140,60},Orange={230,120,40},Red={190,40,36}},
-=======
-	{id="SetLee",slot="set",kit="Leaf",name="LEE'S GREEN SUIT",ryo=3000,colors={Green={46,140,60},Orange={230,120,40},Red={190,40,36},Wrap={226,222,212}},
->>>>>>> claude/tenue-modeles
+	{id="SetLee",slot="set",kit="Leaf",name="LEE'S GREEN SUIT",robux="SetLee",colors={Green={46,140,60},Orange={230,120,40},Red={190,40,36},Wrap={226,222,212}},
 		pieces={{on="UpperTorso",c="Green"},{on="LowerTorso",c="Green"},{on="LowerTorso",kind="band",c="Red",y0=.05,h=.22},{on="UpperArm",c="Green"},{on="LowerArm",c="Green"},{on="UpperLeg",c="Green"},{on="LowerLeg",c="Orange",pad=.12},{on="Foot",c="Green",pad=.05}}},
 	{id="SetNeji",slot="set",kit="GentleFist",name="NEJI'S ROBE",robux="SetNeji",colors={Robe={226,222,208},Dark={60,56,64},Wrap={226,222,212}},
 		pieces={{on="UpperTorso",c="Robe"},{on="LowerTorso",c="Robe"},{on="LowerTorso",kind="tail",c="Robe",h=.9},{on="UpperArm",c="Robe"},{on="LowerArm",c="Robe",h=.6},{on="UpperLeg",c="Dark"},{on="LowerLeg",kind="band",c="Wrap",y0=.05,h=.6},{on="Foot",c="Dark",pad=.05}}},
