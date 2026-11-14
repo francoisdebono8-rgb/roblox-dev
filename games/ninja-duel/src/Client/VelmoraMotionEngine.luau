@@ -1968,7 +1968,8 @@ Motion._ankleFrame=ankleFrame
 -- was and joins the clip's path over a few frames (a step, not a glide). A
 -- locked foot the body has carried out of reach is released the same way.
 Motion.TURN_STEP=.55 -- studs: a planted foot a turn carries this far off its place steps
-local function authoredFeet(char,pose,dt,cycle,reach)
+Motion.STEP_LEAD=.14 -- of a step: up before it travels, over its spot before it sets down
+local function authoredFeet(char,pose,dt,cycle,reach,clock)
 	local s=stateOf(char)
 	-- (FILM10) the standing / slow-cycle feet keep their own memory: the gait is
 	-- also computed under a strike (its base), and sharing the strike's feet
@@ -1976,6 +1977,11 @@ local function authoredFeet(char,pose,dt,cycle,reach)
 	local box=s
 	if reach or cycle=="loco" then s.locoFeet=s.locoFeet or {};box=s.locoFeet end
 	if cycle=="loco" then cycle=true end
+	-- (14/11) the standing feet, a slow cycle's and a pivot's step on a clock
+	-- (see below); a strike's, a reaction's and a cycle the body outruns keep
+	-- the spring (their clips step, and a body thrown back at 46 st/s left a
+	-- foot held in the world far behind)
+	local timed=box~=s or clock==true
 	local root=char:FindFirstChild("HumanoidRootPart")
 	if not root then return nil end
 	dt=dt or 1/60
@@ -2018,7 +2024,7 @@ local function authoredFeet(char,pose,dt,cycle,reach)
 		-- A foot released to step does not plant again before it has arrived.
 		-- (Also any swing still under way: planting it mid-arc dropped the foot
 		-- by its lift in one frame.)
-		local stepping=not f.planted and f.swing0~=nil and f.off.Magnitude>.12
+		local stepping=not f.planted and (f.step~=nil or (f.swing0~=nil and f.off.Magnitude>.12))
 		if not stepping then f.release=nil end
 		if low and still and not stepping then
 			if not f.planted then
@@ -2041,7 +2047,35 @@ local function authoredFeet(char,pose,dt,cycle,reach)
 			if f.planted then f.planted=false;f.off=rootCF:PointToObjectSpace(f.world)-clipPos;f.offV=Vector3.zero end
 		end
 		local lift=0
-		if not f.planted then
+		if not f.planted and (f.step~=nil or (timed and f.swing0==nil and f.off.Magnitude>.05)) then
+			-- (14/11, FILM10 A9 « still ») The standing and slow-cycle feet: a
+			-- body facing a foe who circles it, or nudged apart, slid its feet
+			-- ~2 studs in 10 s headless (Gaara), 80 % of it in the spring's start
+			-- and long tail along the floor under a lift of 4u(1-u). Their step
+			-- has a length of its own: it leaves from where the foot is in the
+			-- world, is up before it travels, and is over its spot (on the clip's
+			-- path) before it sets down, straight down.
+			if f.step or f.off.Magnitude>.05 then
+				if not f.step then
+					local d=f.off.Magnitude
+					f.step={from=rootCF:PointToWorldSpace(clipPos+f.off),d=d,t=0,dur=math.clamp(.1+.12*d,.12,.26),h=math.max(.18,math.min(.55,d*.35))}
+				end
+				local st=f.step
+				st.t+=dt
+				local p=math.min(st.t/st.dur,1)
+				local q=math.clamp((p-Motion.STEP_LEAD)/(1-2*Motion.STEP_LEAD),0,1)
+				-- (a clip foot still gliding into its own landing dragged it)
+				if q>=1 and not st.land then st.land=rootCF:PointToWorldSpace(clipPos) end
+				local w=st.land or st.from:Lerp(rootCF:PointToWorldSpace(clipPos),q*q*q*(q*(q*6-15)+10))
+				f.off=rootCF:PointToObjectSpace(w)-clipPos
+				lift=st.h*math.sin(math.pi*p)
+				-- set down: the next frame plants it where it is, or steps on
+				if p>=1 then f.step=nil end
+			else
+				f.off=Vector3.zero
+			end
+			f.offV=Vector3.zero;f.swing0=nil
+		elseif not f.planted then
 			-- A swing from where the foot really was onto the clip's path, lifted
 			-- off the floor in an arc (a step, never a skate).
 			if f.off.Magnitude>.05 then
@@ -2058,12 +2092,12 @@ local function authoredFeet(char,pose,dt,cycle,reach)
 				f.off=Vector3.zero;f.swing0=nil;f.offV=Vector3.zero
 			end
 		else
-			f.swing0=nil;f.offV=Vector3.zero
+			f.swing0=nil;f.offV=Vector3.zero;f.step=nil
 		end
 		-- A foot the clip kicks high stays the clip's own (free leg).
 		-- (A running cycle's free foot already on its clip path stays the clip's
 		-- own: the solver only takes a foot held on the floor or on its way back.)
-		local own=cycle==true and not f.planted and f.off.Magnitude<=.05
+		local own=cycle==true and not f.planted and not f.step and f.off.Magnitude<=.05
 		if clipPos.Y-ANKLE_Y<.9 and not own then
 			local rx,ry=frame:ToEulerAnglesYXZ()
 			local target=clipPos+f.off
@@ -3490,7 +3524,7 @@ function Motion.present(char,actor,clock,dt)
 				if t<Authored.length(p.clip) then
 					local targets=table.clone(Authored.sample(p.clip,t))
 					targets.Root=nil -- the server already turned the body
-					targets.__feet=authoredFeet(char,targets,dt)
+					targets.__feet=authoredFeet(char,targets,dt,nil,nil,true)
 					mark(char,"pivot:"..p.clip,.07)
 					apply(char,targets,RATE.authored,dt)
 					return "pivot"
