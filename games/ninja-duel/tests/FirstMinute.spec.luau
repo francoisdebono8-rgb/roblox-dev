@@ -184,6 +184,11 @@ test("a first duel asked at Lee's home is fought on Training Ground Three; elsew
 		-- the bodies are held inside the ground's own circle
 		local far=s.combat:clamp(centre+H.V.new(200,3,0))
 		assert(math.abs((far-centre).Magnitude-spot.radius)<.5,"the circle is the stadium's: "..tostring(far))
+		-- (Studio 14/11: the first minute's real duel went to the stadium) the
+		-- prompts done, the real duel stays on the training ground
+		s.tutorial.done=true
+		step(m,.05)
+		assert(s.firstStage=="duel" and s.tutorial==nil and s.site and s.site.key=="Leaf" and (s.origin-centre).Magnitude<1e-3,"the first minute's real duel left Lee's")
 		-- back to Konoha: where it was fought
 		m:selection(player);walkAt(centre)
 		-- from the board (no `here`): the stadium

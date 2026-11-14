@@ -792,7 +792,7 @@ function Matches:update(dt,now)
 				if s.tutorial then Tutorial.update(s,now,dt) elseif not s.botFrozen and not intro and not s.finishing then s.ai:update(now) end
 				-- (B1 lot 2) the first minute's last prompt done: its real duel.
 				if s.tutorial and s.tutorial.done and s.firstStage=="intro" then
-					s.firstStage="duel";s.aiLevel="easy";self:start(player,s.playerId,s.botId,false)
+					s.firstStage="duel";s.aiLevel="easy";s.nextSite=s.site;self:start(player,s.playerId,s.botId,false);s.nextSite=nil
 				end
 				if s.metrics and not s.metrics.jutsuAt and s.human and s.human.events then
 					for name in s.human.events do if string.sub(name,1,5)=="Cast:" then Matches.measure(player,s,"jutsu");break end end
