@@ -719,8 +719,11 @@ end
 -- Server start (Main): build, then the masters once the portraits exist.
 function Hub.start()
 	Hub.build(workspace)
-	-- (14/11) the creator and the champions carved on the cliff
-	pcall(function() require(script.Parent.ChampionCliff).begin(Hub.folder) end)
+	-- (14/11) the creator and the champions carved on the cliff. Its own
+	-- thread: (14/11, seen in Studio) MessagingService:SubscribeAsync never
+	-- returned in a local file and held the whole server start (no roster,
+	-- no village, no progression).
+	task.spawn(function() pcall(function() require(script.Parent.ChampionCliff).begin(Hub.folder) end) end)
 	task.spawn(function()
 		local source=ReplicatedStorage:WaitForChild("NinjaDuelPortraits",120)
 		if source then

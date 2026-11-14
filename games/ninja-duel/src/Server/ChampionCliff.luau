@@ -118,7 +118,8 @@ end
 function Cliff.defaultServices()
 	local svc={}
 	pcall(function() svc.store=game:GetService("DataStoreService"):GetDataStore(Cliff.STORE) end)
-	pcall(function() svc.messaging=game:GetService("MessagingService") end)
+	-- (a local file, PlaceId 0, has no messaging between servers)
+	if game.PlaceId~=0 then pcall(function() svc.messaging=game:GetService("MessagingService") end) end
 	svc.devId=function()
 		local id=Config.Hub and Config.Hub.DevUserId
 		if type(id)=="number" and id>0 then return id end
@@ -213,9 +214,10 @@ function Cliff:run()
 	self.devId=self.svc.devId()
 	self:refresh()
 	self:apply()
+	-- (the subscription yields: never in the caller's thread)
 	local messaging=self.svc.messaging
 	if messaging then
-		pcall(function() messaging:SubscribeAsync(Cliff.TOPIC,function() self:refresh() end) end)
+		self.svc.spawn(function() pcall(function() messaging:SubscribeAsync(Cliff.TOPIC,function() self:refresh() end) end) end)
 	end
 	if self.svc.every then self.svc.every(Cliff.REFRESH,function() self:refresh() end) end
 	return self
