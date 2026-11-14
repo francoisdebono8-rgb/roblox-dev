@@ -2124,7 +2124,10 @@ function Combat:updateActor(a,dt)
 			-- Combat convergence: the step-in steers during the startup only. Once
 			-- the strike is out it is committed: a body that slipped aside is
 			-- overshot (a whiff that reads), not followed by a magnet.
-			if flatTarget.Magnitude>.1 and a.state=="Startup" then a.travelDirection=(a.travelDirection:Lerp(flatTarget.Unit,math.min(1,dt*10))).Unit end
+			-- (QA 14/11, D1) a chase's arrival strike follows the body it chased
+			-- through its active frames (Brawler.lunge sized its reach).
+			local arrival=a.flashStrike~=nil and a.flashStrike==a.attackSerial
+			if flatTarget.Magnitude>.1 and (a.state=="Startup" or arrival) then a.travelDirection=(a.travelDirection:Lerp(flatTarget.Unit,math.min(1,dt*10))).Unit end
 			local distance=math.min(a.travelRemaining,a.pending.spec.travel*drive*dt/a.pending.spec.travelTime,flatTarget.Magnitude-gap)
 			a.travelRemaining-=Motor.travel(a,self,a.travelDirection,distance)
 		end
@@ -2658,6 +2661,10 @@ function Combat.lying(a)
 end
 -- Going through the other body on purpose: a dodge, a rush line.
 local function passing(a) return a.state=="Dodging" or (a.rush~=nil and a.rush.line~=nil) end
+-- The running blows (D6/D7, QA 14/11): they arrive at the body, they do not
+-- push it (Combat:separate) and they land only from a body's reach
+-- (BanglaCombat.reaches).
+Combat.RUNNING={DashAttack=true,FlyingKick=true,HeadDive=true,Tackle=true}
 function Combat:separate()
 	local a,b=self.actors[1],self.actors[2]
 	if not a or not b or a.health<=0 or b.health<=0 or a.grabVictim or b.grabVictim then return end
@@ -2695,11 +2702,26 @@ function Combat:separate()
 	-- body sends the rest of the correction to the other.
 	local push=math.min(B.Gap-gap,.35)*.5
 	local hard=if passing(a) or passing(b) then 0 else math.max(0,B.Floor-gap)*.5
-	local movedA=Motor.travel(a,self,-dir,push+hard)
-	local movedB=Motor.travel(b,self,dir,push+hard)
+	-- (QA 14/11, D6: a running blow went into the body, then both flew apart
+	-- like magnets; D7: a body struck then pulled back) A body driving into
+	-- the other (a blow's step-in, a run, a chase) stops at the contact: it
+	-- takes the whole correction, the struck one is not shoved back at it.
+	-- (A string's step-in still nudges the body it strikes: the routes of the
+	-- AI duels need it, Lee's and Naruto's fell from 8 to 4 without.)
+	local driving=function(x)
+		if x.reaction then return false end
+		if x.state=="Rush" or x.state=="Pursuit" then return true end
+		local q=x.pending
+		return (x.state=="Startup" or x.state=="Active") and q~=nil and q.kind=="Brawl" and Combat.RUNNING[q.name]==true
+	end
+	local da,db=driving(a),driving(b)
+	local shareA,shareB=1,1
+	if da and not db then shareA,shareB=2,0 elseif db and not da then shareA,shareB=0,2 end
+	local movedA=Motor.travel(a,self,-dir,(push+hard)*shareA)
+	local movedB=Motor.travel(b,self,dir,(push+hard)*shareB)
 	local short=(push+hard)*2-movedA-movedB
 	if hard>0 and short>.01 then
-		if movedA<push+hard-.01 then Motor.travel(b,self,dir,short) else Motor.travel(a,self,-dir,short) end
+		if movedA<(push+hard)*shareA-.01 then Motor.travel(b,self,dir,short) else Motor.travel(a,self,-dir,short) end
 	end
 	-- Combat convergence (Studio: kinetic bursts carried one body into the
 	-- other): inside a body width neither root keeps velocity into the other,
