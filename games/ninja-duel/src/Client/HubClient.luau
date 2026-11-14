@@ -76,7 +76,9 @@ function Hub.new(ui,camera,send,controls)
 		self.runLatch=not self.runLatch;self.runMoved=false;self.restFor=0;self:paintRun()
 	end,P.ink)
 	self.runButton.TextSize=20;self.runButton.Visible=false;self.runButton.ZIndex=25
-	K.corner(self.runButton,40)
+	-- round (the kit's button already has its corner: a second one is ignored)
+	local round=self.runButton:FindFirstChildOfClass("UICorner") or K.corner(self.runButton,6)
+	round.CornerRadius=UDim.new(.5,0)
 	K.create("UIStroke",self.runButton,{Color=P.paper,Transparency=.3,Thickness=2,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
 	-- The master's card (right of the screen, centred on a narrow one).
 	local card=K.inkCard(K.frame(ui.gui,UDim2.new(1,-520,.5,-190),UDim2.fromOffset(HubLayout.CARD.w,HubLayout.CARD.h),K.CARD,0))
@@ -93,7 +95,8 @@ function Hub.new(ui,camera,send,controls)
 	self.primary.TextSize=28
 	self.second=K.button(card,"",UDim2.fromOffset(24,276),UDim2.fromOffset(216,48),function() self:press("second") end)
 	self.third=K.button(card,"",UDim2.fromOffset(250,276),UDim2.fromOffset(216,48),function() self:press("third") end)
-	self.closeCard=K.button(card,"✕",UDim2.fromOffset(490-62,14),UDim2.fromOffset(44,44),function() self:hideCard() end)
+	-- (14/11, Studio: the title font has no "✕", the button showed an empty box)
+	self.closeCard=K.button(card,"X",UDim2.fromOffset(490-62,14),UDim2.fromOffset(44,44),function() self:hideCard() end)
 	self.cardFoot=K.text(card,"",UDim2.fromOffset(24,336),UDim2.fromOffset(442,24),12,P.muted,K.BODY_FONT,Enum.TextXAlignment.Center)
 	-- Prompts: a master, the proctor.
 	PPS.PromptTriggered:Connect(function(prompt)
@@ -397,7 +400,11 @@ function Hub:refreshMarkers()
 				marker.gui.MaxDistance=if loud then 2000 else 140
 			else
 				marker.tag.Text="DUELS  •  TOURNAMENT"
-				marker.gui.AlwaysOnTop=true;marker.gui.MaxDistance=2000
+				-- (14/11, Studio: from the gate the proctor's marker sat on
+				-- Naruto's, through the walls) while a new player has a master
+				-- to find or a first duel to fight, the proctor stays quiet
+				local busy=self.kits~=nil and (self.kits.needStarter==true or MastersView.firstDuel(self.kits)~=nil)
+				marker.gui.AlwaysOnTop=not busy;marker.gui.MaxDistance=if busy then 140 else 2000
 			end
 		end
 	end
