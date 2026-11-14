@@ -41,6 +41,7 @@ test("every kit of the beta has a real tree: valid, 120-150 SP, three wired majo
 		local majors=0
 		for _,node in SkillTrees[id].Nodes do if node.Major then majors+=1 end end
 		assert(majors>=3,id.." has "..majors.." major nodes")
+		for _,node in SkillTrees[id].Nodes do assert(node.Tier,id.."."..node.Id.." has no tier") end
 	end
 end)
 
@@ -152,11 +153,15 @@ test("points come from the kit's mastery; a node learned goes into the kit's bui
 	assert(fails("learnNode",{fighter="Leaf",node="Weights"}),"a node learned with no points")
 	local r=run("gainMastery",{fighter="Leaf",amount=110})
 	assert(r.points==11 and p.fighters.Leaf.earned==11,"110 mastery gave "..tostring(r.points).." points")
+	assert(fails("learnNode",{fighter="Leaf",node="RuptureRush"}),"a tier II node at 110 mastery")
 	r=run("learnNode",{fighter="Leaf",node="Weights"})
 	assert(r.active and p.fighters.Leaf.selected==S.MainBuild,"the node is not in the build")
 	assert(fails("learnNode",{fighter="Leaf",node="HeavyDrop"}),"9 points spent with 1 left")
 	assert(fails("learnNode",{fighter="Sand",node="Gourd"}),"a node of a kit not learned")
+	-- (13/11) The tiers: Falling Weights is tier III, it opens at 800 mastery.
 	for _=1,3 do run("gainMastery",{fighter="Leaf",amount=200}) end
+	assert(fails("learnNode",{fighter="Leaf",node="HeavyDrop"}),"a tier III node at 710 mastery")
+	run("gainMastery",{fighter="Leaf",amount=200})
 	run("learnNode",{fighter="Leaf",node="HeavyDrop"})
 	local nodes=S.selection(p,"Leaf")
 	assert(table.find(nodes,"Weights") and table.find(nodes,"HeavyDrop"),"the build lost a node")
@@ -183,7 +188,7 @@ test("points come from the kit's mastery; a node learned goes into the kit's bui
 end)
 
 test("the tree panel: statuses, the detail strip and its button",function()
-	local state={points=20,free=10,unlocked={"Weights"},active={"Weights"}}
+	local state={points=20,free=10,unlocked={"Weights"},active={"Weights"},mastery=900}
 	local layout=TreeView.layout("Leaf",state)
 	assert(layout and layout.title=="ROCK LEE'S TREE" and #layout.branches>=3,"layout")
 	local seen={}
@@ -200,6 +205,17 @@ test("the tree panel: statuses, the detail strip and its button",function()
 	d=TreeView.detail("Copycat",{points=0,free=0,unlocked={},active={}},"CutCancel")
 	assert(string.find(d.note,"PACK CALL"),"the exclusive choice is not said")
 	assert(TreeView.layout("Nobody",state)==nil)
+	-- The tiers: rows of the grid, closed under their mastery.
+	local young={points=11,free=1,unlocked={"Weights"},active={"Weights"},mastery=110}
+	layout=TreeView.layout("Leaf",young)
+	assert(#layout.tiers==3 and layout.tiers[1].open and not layout.tiers[2].open and layout.nextTier.need==300,"tier rows")
+	assert(math.abs(layout.progress-110/300)<1e-6,"progress to the next tier")
+	assert(TreeView.status("Leaf",young,TreeView.node("Leaf","RuptureRush"))=="tier","a tier II node at 110")
+	d=TreeView.detail("Leaf",young,"HeavyDrop")
+	assert(string.find(d.note,"TIER III OPENS AT 800"),"what the closed tier needs: "..tostring(d.note))
+	local cells=0
+	for _,row in layout.tiers do for _,cell in row.cells do cells+=#cell end end
+	assert(cells==#TreeView.tree("Leaf"),"a node is missing from the grid")
 end)
 
 print(string.format("NinjaDuel skill trees of the eight kits (DEC-038): %d PASS",passed))

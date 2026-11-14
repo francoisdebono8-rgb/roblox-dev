@@ -25,6 +25,7 @@ local Masters=require(Shared.Masters)
 local S=require(script.Parent.ProfileSchema)
 local Repo=require(script.Parent.ProfileRepository)
 local SkillBuilds=require(script.Parent.SkillBuilds)
+local Shop=require(Shared.Shop)
 
 local P={handles=setmetatable({},{__mode="k"}),states=setmetatable({},{__mode="k"}),boost=setmetatable({},{__mode="k"}),repo=nil}
 P.LoadTries=5
@@ -113,9 +114,13 @@ function P.view(player)
 				local nodes=S.selection(h.data,id)
 				for _,node in nodes or {} do table.insert(active,node) end
 			end
-			out.trees[id]={points=earned,free=earned-(if r then S.spent(id,r) else 0),unlocked=unlocked,active=active}
+			out.trees[id]={points=earned,free=earned-(if r then S.spent(id,r) else 0),unlocked=unlocked,active=active,mastery=k.mastery[id] or 0}
 		end
 	end
+	-- (13/11) The wallet and the looks, for the shop and the HUD.
+	out.ryo=h.data.wallet and h.data.wallet.ryo or 0
+	out.style={owned=S.copy(h.data.style and h.data.style.owned or {}),equipped=S.copy(h.data.style and h.data.style.equipped or {})}
+	out.boost=P.boost[player]==true
 	return out
 end
 -- (DEC-038) The tree at the master's: buy a node with the kit's points (it
@@ -183,20 +188,72 @@ function P.duelEnded(player,s,won)
 	for _ in (s.human and s.human.usedJutsu) or {} do used+=1 end
 	local amount=Masters.duelGain({won=won,techniques=used,level=s.aiLevel or "easy"})
 	if P.boost[player] then amount=math.min(Masters.Gain.Max,amount*2) end
-	if amount<=0 then return nil end
-	local ok,result=P.run(player,"gainMastery",{fighter=id,amount=amount})
-	if ok and type(result)=="table" then result.amount=amount end
-	return if ok then result else nil
+	local out=nil
+	if amount>0 then
+		local ok,result=P.run(player,"gainMastery",{fighter=id,amount=amount})
+		if ok and type(result)=="table" then out=result;out.amount=amount end
+	end
+	-- (13/11, the shop) Ryō for the duel: the day's first win counts double,
+	-- a master's duel won pays its own (Shared/Shop.Ryo).
+	local h=P.handles[player]
+	local today=os.date("!%Y-%m-%d")
+	local first=won and h.data.wallet and h.data.wallet.winDay~=today
+	local ryo=Shop.duelRyo({won=won,firstWinToday=first,master=s.masterTrial~=nil})
+	if ryo>0 then
+		local ok,result=P.run(player,"earnRyo",{amount=ryo,day=if first then today else nil})
+		if ok and type(result)=="table" then
+			out=out or {}
+			out.ryo=ryo;out.ryoTotal=result.ryo;out.firstWin=first
+		end
+	end
+	return out
+end
+-- (13/11) The shop between duels: a look for Ryō, a look worn.
+function P.buyItem(player,item) return P.run(player,"buyItem",{item=item}) end
+function P.equipItem(player,item) return P.run(player,"equipItem",{item=item}) end
+-- The looks the player's own ninja wears in a duel (each slot: the one he
+-- chose, else the base one). nil when the path is off.
+function P.looks(player)
+	if not P.enabled() or not P.ready(player) then return nil end
+	local h=P.handles[player]
+	local out={}
+	for _,slot in Shop.SlotOrder do
+		local id=h.data.style and h.data.style.equipped[slot]
+		local item=id and Shop.item(id) or Shop.default(slot)
+		if item and not item.none then out[slot]=item.id end
+	end
+	return out
+end
+-- The Roblox ids the shop sells with (Config.Shop), by what they grant.
+function P.shopConfig() return Config.Shop or {} end
+function P.productFor(productId)
+	for kit,product in P.config().Products or {} do if product==productId then return "kit",kit end end
+	for item,product in P.shopConfig().Products or {} do if product==productId then return "item",item end end
+	for _,pack in P.shopConfig().RyoPacks or {} do if pack.product==productId then return "ryo",pack.amount end end
+	return nil
 end
 
 -- A kit bought (MarketplaceService.ProcessReceipt): granted once per receipt,
 -- and Roblox is told it is granted only once the profile is saved.
 function P.processReceipt(info)
-	local products=P.config().Products or {}
-	local kit=nil
-	for id,product in products do if product==info.ProductId then kit=id end end
 	local Decision=Enum.ProductPurchaseDecision
-	if not kit then return Decision.NotProcessedYet end
+	local what,value=P.productFor(info.ProductId)
+	if not what then return Decision.NotProcessedYet end
+	-- (13/11) A look or a pack of Ryō: granted once per receipt, saved first.
+	if what~="kit" then
+		local player=Players:GetPlayerByUserId(info.PlayerId)
+		local h=player and P.handles[player]
+		if not h then return Decision.NotProcessedYet end
+		local receipt=string.gsub(tostring(info.PurchaseId),"[^%w_.:%-]","")
+		if not table.find(h.data.kits.receipts,receipt) then
+			local ok=if what=="item" then P.run(player,"grantItem",{item=value,receipt=receipt}) else P.run(player,"grantRyo",{amount=value,receipt=receipt})
+			if not ok then return Decision.NotProcessedYet end
+		end
+		local saved=P.repo:save(h)
+		if saved and P.onLoaded then task.spawn(pcall,P.onLoaded,player) end
+		return if saved then Decision.PurchaseGranted else Decision.NotProcessedYet
+	end
+	local kit=value
 	local player=Players:GetPlayerByUserId(info.PlayerId)
 	local h=player and P.handles[player]
 	if not h then return Decision.NotProcessedYet end
@@ -247,9 +304,8 @@ function P.start(onLoaded)
 		end
 	end)
 	game:BindToClose(function() if P.repo then P.repo:closeAll() end end)
-	if next(P.config().Products or {}) then
-		game:GetService("MarketplaceService").ProcessReceipt=P.processReceipt
-	end
+	-- (13/11) Kits, looks and Ryō packs: one receipt handler for them all.
+	game:GetService("MarketplaceService").ProcessReceipt=P.processReceipt
 end
 
 return P

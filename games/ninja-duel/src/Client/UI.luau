@@ -75,9 +75,25 @@ local function button(parent,value,position,size,callback,color)
 	if not color then create("UIStroke",b,{Color=palette.muted,Transparency=.55,Thickness=1.5,ApplyStrokeMode=Enum.ApplyStrokeMode.Border}) end
 	b.Activated:Connect(callback); return b
 end
+-- (14/11, a reader's report on PR #84) An overlay card always fits the
+-- window: in a narrow or portrait window (390 x 844) the old floor of the
+-- scale (0.4, 0.5) made the card wider than the screen and pushed its CLOSE
+-- off the right edge, so the panel could not be closed without a keyboard.
+-- The scale now follows the window down; when the card gets small (under
+-- SMALL), a large close mark anchored in the window's corner closes it.
+local SMALL=.6
+local function fitScale(viewport,w,h,max)
+	return math.max(.05,math.min(max or 1.2,viewport.X/w,viewport.Y/h))
+end
+local function cornerClose(root,onClose)
+	-- under Roblox's top bar (58 px), in the window's top-right corner
+	local b=button(root,"✕",UDim2.new(1,-84,0,70),UDim2.fromOffset(66,66),onClose,palette.red)
+	b.TextSize=34;b.ZIndex=(root.ZIndex or 1)+20;b.Visible=false
+	return b
+end
 -- (Lobby, 04/11) the same look for the players-online panel (Client/LobbyPanel).
 UI.kit={palette=palette,create=create,frame=frame,text=text,corner=corner,inkCard=inkCard,inkTitle=inkTitle,button=button,
-	TITLE_FONT=TITLE_FONT,BODY_FONT=BODY_FONT,CARD=CARD}
+	TITLE_FONT=TITLE_FONT,BODY_FONT=BODY_FONT,CARD=CARD,fitScale=fitScale,cornerClose=cornerClose,SMALL=SMALL}
 local function accentOf(def) return Color3.fromRGB(table.unpack(def.Color)) end
 function UI.new(parent,send)
 	-- (B1 lot 2) `simple`: the first roster a player sees is PLAY and the
@@ -286,7 +302,20 @@ function UI.new(parent,send)
 			local made,panel=pcall(TreePanel.new,UI.kit,self.gui,send)
 			if made then self.treePanel=panel end
 		end
+		-- (13/11) The shop: kits, weapon looks, style, passes, Ryō.
+		local okShop,ShopPanel=pcall(function() return require(script.Parent.ShopPanel) end)
+		if okShop and ShopPanel then
+			local made,panel=pcall(ShopPanel.new,UI.kit,self.gui,send,function(kitId)
+				if self.treePanel then self.treePanel:show(kitId,self.kits) end
+			end)
+			if made then self.shopPanel=panel end
+		end
 	end
+	-- The shop from the roster (in Konoha it is on the HUD).
+	self.shopButton=button(shell,"SHOP",UDim2.fromOffset(1040,24),UDim2.fromOffset(240,48),function()
+		if self.shopPanel and not self.picking then self.shopPanel:show(self.kits) end
+	end,palette.gold)
+	self.shopButton.TextSize=24;self.shopButton.TextColor3=palette.ink;self.shopButton.Visible=false
 	self.startButton.TextSize=32
 	self.startStroke=create("UIStroke",self.startButton,{Color=palette.paper,Thickness=2.5,Transparency=.2,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
 	-- (04/11) The Prodigy Tournament against the AI (Server/Tournament).
@@ -600,7 +629,13 @@ function UI.new(parent,send)
 	local sheet=inkCard(frame(self.controls,UDim2.fromScale(.5,.5),UDim2.fromOffset(1120,640),CARD,0))
 	sheet.AnchorPoint=Vector2.new(.5,.5);sheet.ZIndex=76
 	local sheetScale=create("UIScale",sheet,{Scale=1})
-	local function fitSheet() local v=workspace.CurrentCamera.ViewportSize;sheetScale.Scale=math.clamp(math.min(v.X/1220,v.Y/720),.5,1.2) end
+	-- (14/11) the sheet fits a narrow window too; small, a corner close.
+	local sheetCorner=cornerClose(self.controls,function() if self.controls.Visible then self:toggleControls() end end)
+	local function fitSheet()
+		local v=workspace.CurrentCamera.ViewportSize
+		sheetScale.Scale=fitScale(v,1220,720,1.2)
+		sheetCorner.Visible=sheetScale.Scale<SMALL
+	end
 	workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(fitSheet);fitSheet()
 	local sheetTitle=text(sheet,"CONTROLS",UDim2.fromOffset(36,20),UDim2.fromOffset(600,52),48,palette.paper,TITLE_FONT)
 	sheetTitle.ZIndex=42
@@ -939,6 +974,7 @@ end
 function UI:setKits(kits)
 	self.kits=kits
 	if self.treePanel then self.treePanel:refresh(kits) end
+	if self.shopPanel then self.shopPanel:refresh(kits) end
 	if type(kits)~="table" or kits.state~="ready" then return end
 	local want=nil
 	if kits.selected and kits.owned and kits.owned[kits.selected] then want=kits.selected
@@ -973,6 +1009,7 @@ function UI:lobby(data)
 	self.lastLobby=data
 	local full=data.phase=="Selection" and not self.simple
 	if self.boardClose then self.boardClose.Visible=data.phase=="Selection" and Config.Hub~=nil and Config.Hub.Enabled==true and self.onBoardClose~=nil end
+	if self.shopButton then self.shopButton.Visible=data.phase=="Selection" and self.kits~=nil and self.shopPanel~=nil end
 	-- the strings' notes are for the full roster (jargon on a first look)
 	self.routeNote.Visible=not self.simple
 	self.onlineRow.Visible=full
@@ -1136,6 +1173,7 @@ function UI:render(data)
 	self.onlineInfo=data.online
 	-- (DEC-038) the tree is a roster screen: a duel closes it.
 	if self.treePanel and data.phase~="Selection" and self.treePanel:shown() then self.treePanel:hide() end
+	if self.shopPanel and data.phase~="Selection" and self.shopPanel:shown() then self.shopPanel:hide() end
 	-- (DEC-038) In Konoha the roster is the proctor's board: shown only open.
 	self.selection.Visible=(data.phase=="Selection" and not self.hubWalk) or data.phase=="Pick"; self.hud.Visible=data.phase=="Duel" and not introActive; self.result.Visible=data.phase=="Result"
 	self.queue.Visible=data.phase=="Queue"

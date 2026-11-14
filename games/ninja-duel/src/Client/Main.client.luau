@@ -126,6 +126,8 @@ remote.OnClientEvent:Connect(function(data)
 	data.chakraPage=if input.pad then input.chakraPad==true and not input.modifier else input.chakra==true and not input.sealKey
 	current=data; presentation.receivedAt=os.clock(); presentation:impacts(data,camera)
 	if hubClient then pcall(hubClient.render,hubClient,data) end
+	-- (13/11, the shop) a thrown blade wears its thrower's look.
+	pcall(function() require(script.Parent.Effects).setLooks(data) end)
 	ui:render(data)
 	if lobbyPanel then lobbyPanel:render(data) end
 	cupScreen:render(data)

@@ -1185,7 +1185,7 @@ Sortie commune : trois Lights/Heavy physiques distincts, branche seulement aprè
 - summary: Arbres par personnage et maîtrises par pratique — architecture préparatoire
 - sources: [DEC-024](DECISIONS.md#dec-024--progression-double-et-tournoi-standardisé) ; [Proposition à valider](../systems/PROGRESSION_MASTERY_PROPOSAL.md) ; [demande intégrale](../archive/requests/2026-10-17-progression-mastery-architecture.md) ; [fondation historique](../archive/reports/PROGRESSION_FOUNDATION.md)
 - validation: Après validation produit et au bon moment de DEC-021 : identité niveau1 complète, compilation serveur bornée, acquisition/performance séparées, maîtrises qualifiées non spammables et non achetables, profils versionnés migrés sans perte. Trois pilotes Lee/Minato/Temari avant extension aux vingt ; Studio obligatoire. Le livrable architecture seul ne clôt pas le système.
-- evidence: Audit Codex b3f8ffb (17/10) : 75 nodes CORE4/35 majeurs/10 stat, validation SkillBuilds et profils V1 réutilisables ; pas de mastery acquise ni host de persistance. Proposition spécialisée livrée (modèle, politiques, risques, trois mini-arbres et étapes), non approuvée. tests/run.sh tenté mais Luau/Lune absents ; aucun nouveau PASS gameplay ni Studio. 13/11 (DEC-038, décision de l’utilisateur) : les arbres deviennent réels pour les huit kits de la bêta ; les points viennent de la maîtrise du kit ; les objets de kit (gourde, poids, tanto) sont des nœuds ; le panneau de l’arbre est sur le roster ; le build du joueur s’applique en duel. Suite `Trees` 9 PASS, `Masters` 9 PASS. Studio à faire.
+- evidence: Audit Codex b3f8ffb (17/10) : 75 nodes CORE4/35 majeurs/10 stat, validation SkillBuilds et profils V1 réutilisables ; pas de mastery acquise ni host de persistance. Proposition spécialisée livrée (modèle, politiques, risques, trois mini-arbres et étapes), non approuvée. tests/run.sh tenté mais Luau/Lune absents ; aucun nouveau PASS gameplay ni Studio. 13/11 (DEC-038, décision de l’utilisateur) : les arbres deviennent réels pour les huit kits de la bêta ; les points viennent de la maîtrise du kit ; les objets de kit (gourde, poids, tanto) sont des nœuds ; le panneau de l’arbre est sur le roster ; le build du joueur s’applique en duel. Suite `Trees` 9 PASS, `Masters` 9 PASS. Studio à faire. 13/11 (DEC-039) : paliers I, II et III ouverts par la maîtrise (0, 300, 800), un `Tier` par nœud, et le panneau dessiné en paliers et en branches.
 - outcome: PENDING
 - acceptance: Priorité Claude inchangée : roster V1 et séquence DEC-021. Aucune implémentation autorisée par la proposition. Les chiffres historiques de branche/arbre ne fixent pas le nouveau produit ; pas de remplacement du kit de base par des nodes.
 
@@ -1252,5 +1252,18 @@ Sortie commune : trois Lights/Heavy physiques distincts, branche seulement aprè
 - sources: [DEC-038](DECISIONS.md#dec-038--la-boucle-dans-le-monde--konoha-et-la-salle-de-lexamen-les-maîtres-chez-eux-des-arbres-payés-par-la-maîtrise-1311)
 - validation: (1) village construit et maîtres posés sur un sol solide (test sans écran) ; (2) Studio : arrivée par la porte, premiers déplacements (course, second saut, toits, échelles), marqueurs, carte du maître et ses boutons, tableau au surveillant, retour devant la salle après un duel ; (3) habillage Blender des bâtiments, de la statue et des visages ; (4) maîtres animés (attitudes propres à chacun) ; (5) mesures : temps jusqu’au premier maître, puis jusqu’au premier duel.
 - evidence: 13/11 : `Shared/HubMap`, `Server/Hub` (environ 1 450 pièces, dont 391 solides), `Client/HubClient`, `MastersView.card` ; le roster devient le tableau du surveillant ; le résultat ramène « BACK TO KONOHA ». Suites `Hub` 5 PASS et `MastersView` 7 PASS. Aperçus calculés depuis le code ; pas encore vu dans Studio.
+- outcome: PENDING
+
+## SHOP-001 — La boutique et le Ryō
+
+- status: PARTIAL
+- priority: P1
+- dependencies: MASTERS-001, HUB-001
+- subsystem: progression
+- character: ALL
+- summary: Le Ryō se gagne en jouant et achète des apparences. Les Robux achètent du temps, du statut et des apparences rares. La boutique a 5 onglets. Les apparences d’armes se voient en duel, et le bandeau est porté sur l’avatar.
+- sources: [DEC-039](DECISIONS.md#dec-039--la-boutique-le-ryō-et-les-paliers-de-larbre-1311)
+- validation: (1) catalogue, profil v3, gains de Ryō, achats, reçus, apparences dans le duel, bandeau (test sans écran) ; (2) Studio : les 5 onglets, l’achat et le port d’une apparence, le kunai et la gourde peints en duel, le bandeau dans Konoha ; (3) produits et passes créés par l’utilisateur sur Roblox, puis achat test ; (4) prix réglés avec les mesures.
+- evidence: 13/11 : `Shared/Shop`, `Client/ShopPanel`, `Server/Headband`, `ProfileSchema` v3, `Progression` (Ryō, apparences, reçus), `Effects.paint`. Suite `Shop` 6 PASS. Rien n’est encore vendu en Robux (identifiants à 0). 14/11 : signalement d’un lecteur sur la PR #84 (fenêtre étroite ou portrait, 390 × 844 : le plancher d’échelle 0,4 mettait le CLOSE de la boutique et de l’arbre hors de l’écran). Corrigé : `UI.kit.fitScale` (la carte tient toujours dans la fenêtre), grande croix de coin sous 0,6, B de la manette ferme ; même plafond pour la liste des joueurs, la feuille des contrôles, la carte du champion et le bandeau du spectateur. Suite `Shop` 7 PASS (8 tailles de fenêtre). Lisibilité en portrait : à juger dans Studio.
 - outcome: PENDING
 

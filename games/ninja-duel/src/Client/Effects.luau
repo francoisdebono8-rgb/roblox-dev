@@ -201,6 +201,43 @@ function FX.buildKunai(marked)
 	model.PrimaryPart=root
 	return model
 end
+-- (13/11, the shop) A look paints a weapon (Shared/Shop colors): the blade,
+-- the grip, the fittings, by the piece's name (Blender pieces) or else its
+-- material (metal = blade, cloth = grip). A glowing edge keeps its light.
+function FX.paint(model,colors)
+	if not model or type(colors)~="table" then return model end
+	for _,p in model:GetDescendants() do
+		if p:IsA("BasePart") and p.Transparency<1 and p.Material~=Enum.Material.Neon and p.Name~="SealTag" then
+			local n=p.Name
+			local key=nil
+			if string.find(n,"Blade") or n=="Tip" or n=="Body" then key="Blade"
+			elseif string.find(n,"Grip") or string.find(n,"Wrap") then key="Grip"
+			elseif string.find(n,"Fitting") or string.find(n,"Ring") or string.find(n,"Guard") then key="Ring"
+			elseif p.Material==Enum.Material.Metal then key="Blade"
+			elseif p.Material==Enum.Material.Fabric then key="Grip" end
+			local c=key and (colors[key] or colors.Blade)
+			if c then p.Color=Color3.fromRGB(c[1],c[2],c[3]) end
+		end
+	end
+	return model
+end
+-- The looks each fighter on screen wears, by actor id (Main: FX.setLooks
+-- from the snapshot): a thrown blade wears its thrower's.
+FX.looks={}
+function FX.setLooks(data)
+	for _,a in {data and data.human,data and data.bot} do
+		if type(a)=="table" and a.id then FX.looks[a.id]=a.looks end
+	end
+end
+local ShopData=nil
+function FX.lookColors(owner,slot)
+	local looks=owner and FX.looks[owner]
+	local id=looks and looks[slot]
+	if not id then return nil end
+	ShopData=ShopData or require(game:GetService("ReplicatedStorage").NinjaDuel.Shop)
+	local item=ShopData.item(id)
+	return item and item.colors
+end
 -- Four-point shuriken, flat in the XZ plane, spun about its own Y axis.
 -- Kakashi's White Light Chakra Sabre (user 29/10): a straight tanto built
 -- along -Z like the kunai (grip centre at the origin). White-wrapped grip,
@@ -387,8 +424,8 @@ local function flyingShuriken()
 	pcall(function() m:ScaleTo(FLYING_SHURIKEN) end)
 	return m
 end
-local BUILD={kunai=function() return FX.buildKunai(false) end,marked=function() return FX.buildKunai(true) end,wire=flyingShuriken,
-	shuriken=flyingShuriken,fireball=function(p) return FX.buildFireball(p and p.caster) end,wind=FX.buildWind,
+local BUILD={kunai=function(p) return FX.paint(FX.buildKunai(false),FX.lookColors(p and p.owner,"kunai")) end,marked=function() return FX.buildKunai(true) end,wire=flyingShuriken,
+	shuriken=function(p) return FX.paint(flyingShuriken(),FX.lookColors(p and p.owner,"shuriken")) end,fireball=function(p) return FX.buildFireball(p and p.caster) end,wind=FX.buildWind,
 	-- Vacuum Palm: a pale ring of compressed air (sized by the flight radius).
 	palm=function()
 		local model=new("Model",{Name="VacuumPalm"})
@@ -1225,6 +1262,7 @@ end
 function FX:stick(kind,position,normal,direction,owner)
 	if kind=="marked" then return end -- the seal renderer owns planted marked kunai
 	local model=if kind=="shuriken" then FX.buildShuriken() else FX.buildKunai(false)
+	FX.paint(model,FX.lookColors(owner,if kind=="shuriken" then "shuriken" else "kunai"))
 	model.Parent=self.folder
 	local into=direction.Unit
 	if into:Dot(normal)>-.2 then into=(into-normal*1.2).Unit end

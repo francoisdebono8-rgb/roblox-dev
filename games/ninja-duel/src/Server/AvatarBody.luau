@@ -135,7 +135,9 @@ end
 -- A fighter in the player's avatar: what World.rig returns (model, humanoid,
 -- root, joints), or nil when the avatar is not ready (the caller then builds
 -- the prodigy's body).
-function AvatarBody.rig(player,parent,kitId,def,cf,name)
+-- `looks` (optional, 13/11): the player's looks (Progression.looks): his
+-- headband goes on the avatar (Server/Headband).
+function AvatarBody.rig(player,parent,kitId,def,cf,name,looks)
 	local entry=AvatarBody.cache[player]
 	if not entry or entry.state~="ready" then return nil end
 	local W=world()
@@ -170,6 +172,7 @@ function AvatarBody.rig(player,parent,kitId,def,cf,name)
 	end
 	root.CFrame=cf;root.Transparency=1
 	AvatarBody.wearKit(model,kitId,def)
+	pcall(function() require(script.Parent.Headband).fromLooks(model,looks) end)
 	model:SetAttribute("Avatar",player.UserId)
 	model.PrimaryPart=root
 	model.Parent=parent

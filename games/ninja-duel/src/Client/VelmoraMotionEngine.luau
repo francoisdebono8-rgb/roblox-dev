@@ -3096,11 +3096,30 @@ local function setVisible(item,visible)
 	item.visible=visible
 	for _,entry in item.parts do entry.part.Transparency=if visible then entry.base else 1 end
 end
-local function weaponsFor(char,fighterId)
+-- (13/11, the shop) The looks of the player's own ninja (Shared/Shop by
+-- slot) paint his blades and his kit's objects (Effects.paint).
+local ShopData=nil
+local function lookColors(looks,slot)
+	local id=looks and looks[slot]
+	if not id then return nil end
+	ShopData=ShopData or (Fighters and require(game:GetService("ReplicatedStorage").NinjaDuel.Shop))
+	local item=ShopData and ShopData.item(id)
+	return item and item.colors
+end
+local function weaponsFor(char,fighterId,looks)
 	local items=weapons[char]
 	if items then return items end
 	items={}
 	weapons[char]=items
+	-- The gourd of Gaara's kit wears its look (its pieces, on whatever body).
+	local gourd=lookColors(looks,"gourd")
+	if gourd and gourd.Body then
+		for _,d in char:GetDescendants() do
+			if d:IsA("BasePart") and (d.Name=="Gourd" or d.Name=="GourdTop" or d.Name=="GourdNeck" or d.Name=="GourdWaist" or string.match(d.Name,"__Gourd$")) then
+				d.Color=Color3.fromRGB(gourd.Body[1],gourd.Body[2],gourd.Body[3])
+			end
+		end
+	end
 	local kind=familyOf(fighterId).weapons
 	local minato=kind=="kunai"
 	local palms=kind=="palms"
@@ -3111,7 +3130,7 @@ local function weaponsFor(char,fighterId)
 	local own=Fighters and Fighters[fighterId] and Fighters[fighterId].Weapon
 	if right then pcall(function()
 		Effects=Effects or require(script.Parent.Effects)
-		local blade=if own and own.Kind=="Tanto" then Effects.buildTanto() else Effects.buildKunai(false)
+		local blade=if own and own.Kind=="Tanto" then Effects.paint(Effects.buildTanto(),lookColors(looks,"tanto")) else Effects.paint(Effects.buildKunai(false),lookColors(looks,"kunai"))
 		items.drawn=makeItem(right,blade,LION_KUNAI_C0)
 	end) end
 	if kind=="none" then for _,item in items do setVisible(item,false) end return items end
@@ -3119,16 +3138,17 @@ local function weaponsFor(char,fighterId)
 	if not hand then weapons[char]=nil;return nil end
 	local ok=pcall(function()
 		Effects=Effects or require(script.Parent.Effects)
+		local kunaiLook=lookColors(looks,"kunai")
 		if palms then
-			items.throw=makeItem(hand,Effects.buildKunai(false),CF(0,-.16,-.08)*ANG(math.rad(10),0,0))
+			items.throw=makeItem(hand,Effects.paint(Effects.buildKunai(false),kunaiLook),CF(0,-.16,-.08)*ANG(math.rad(10),0,0))
 		elseif minato then
 			-- Reverse grip: blade out of the little-finger side, along the forearm.
-			items.melee=makeItem(hand,Effects.buildKunai(false),CF(0,-.14,.12)*ANG(math.rad(-12),math.pi,0))
-			items.throw=makeItem(hand,Effects.buildKunai(false),CF(0,-.16,-.08)*ANG(math.rad(10),0,0))
+			items.melee=makeItem(hand,Effects.paint(Effects.buildKunai(false),kunaiLook),CF(0,-.14,.12)*ANG(math.rad(-12),math.pi,0))
+			items.throw=makeItem(hand,Effects.paint(Effects.buildKunai(false),kunaiLook),CF(0,-.16,-.08)*ANG(math.rad(10),0,0))
 			items.marked=makeItem(hand,Effects.buildKunai(true),CF(0,-.16,-.08)*ANG(math.rad(10),0,0))
 		else
-			items.shuriken=makeItem(hand,Effects.buildShuriken(),CF(0,-.34,-.08)*ANG(0,0,math.pi/2))
-			if kind=="wire" then items.melee=makeItem(hand,Effects.buildKunai(false),LION_KUNAI_C0) end
+			items.shuriken=makeItem(hand,Effects.paint(Effects.buildShuriken(),lookColors(looks,"shuriken")),CF(0,-.34,-.08)*ANG(0,0,math.pi/2))
+			if kind=="wire" then items.melee=makeItem(hand,Effects.paint(Effects.buildKunai(false),kunaiLook),LION_KUNAI_C0) end
 		end
 	end)
 	if not ok then
@@ -3143,7 +3163,7 @@ local function weaponsFor(char,fighterId)
 	return items
 end
 function Motion.weapon(char,actor)
-	local items=weaponsFor(char,actor.fighterId)
+	local items=weaponsFor(char,actor.fighterId,actor.looks)
 	if not items then return end
 	local kind=familyOf(actor.fighterId).weapons
 	local minato=kind=="kunai"

@@ -6,6 +6,7 @@ local Trees=require(script.Parent.SkillTrees)
 local Fighters=require(script.Parent.Fighters)
 local Text=require(script.Parent.Text)
 local Masters=require(script.Parent.Masters)
+local TreeTiers=require(script.Parent.TreeTiers)
 local V={}
 
 local KIND_LABEL={stat="BODY",property="EDGE",route="ROUTE",airwall="WALL",counter="COUNTER",
@@ -23,6 +24,7 @@ local function nodeOf(kit,id)
 	return nil
 end
 V.node=nodeOf
+function V.tree(kit) return (Trees[kit] or {Nodes={}}).Nodes end
 
 local function missing(node,unlocked)
 	local out={}
@@ -36,11 +38,13 @@ local function missing(node,unlocked)
 end
 
 -- active · off (unlocked, not in the build) · learn (affordable now) ·
--- short (needs more points) · locked (a node before it first)
+-- short (needs more points) · tier (its tier needs more mastery) · locked
+-- (a node before it first)
 function V.status(kit,state,node)
 	local unlocked,active=sets(state)
 	if active[node.Id] then return "active" end
 	if unlocked[node.Id] then return "off" end
+	if (state and state.mastery or 0)<TreeTiers.need(node) then return "tier" end
 	if #missing(node,unlocked)>0 then return "locked" end
 	if (state and state.free or 0)>=node.Cost then return "learn" end
 	return "short"
@@ -57,8 +61,24 @@ function V.layout(kit,state)
 		local branch=byName[node.Branch]
 		if not branch then branch={name=Text.upper(node.Branch),nodes={}};byName[node.Branch]=branch;table.insert(out.branches,branch) end
 		table.insert(branch.nodes,{id=node.Id,name=node.Name,cost=node.Cost,kind=node.Kind,kindLabel=KIND_LABEL[node.Kind] or "",
-			major=node.Major==true,item=node.Item,status=V.status(kit,state,node)})
+			major=node.Major==true,item=node.Item,status=V.status(kit,state,node),tier=TreeTiers.of(node),requires=node.Requires})
 	end
+	-- The grid the panel draws: the tiers as rows, the branches as columns.
+	local mastery=state and state.mastery or 0
+	out.mastery=mastery
+	out.tiers={}
+	for t,need in TreeTiers.Need do
+		local row={index=t,name=TreeTiers.Names[t],need=need,open=mastery>=need,cells={}}
+		for b,branch in out.branches do
+			row.cells[b]={}
+			for _,node in branch.nodes do if node.tier==t then table.insert(row.cells[b],node) end end
+		end
+		table.insert(out.tiers,row)
+	end
+	local nextTier=nil
+	for _,row in out.tiers do if not row.open then nextTier=row break end end
+	out.nextTier=nextTier
+	out.progress=if nextTier then math.clamp(mastery/nextTier.need,0,1) else 1
 	out.subtitle=string.format("%d POINTS FREE  •  %d EARNED  •  1 POINT PER %d MASTERY WITH %s",out.free,out.points,Masters.PointEvery,Text.upper(def and def.Name or kit))
 	return out
 end
@@ -76,14 +96,18 @@ function V.detail(kit,state,id)
 		local other=nodeOf(kit,need)
 		table.insert(names,if other then Text.upper(other.Name) else Text.upper(need))
 	end
-	local head=Text.upper(node.Name).."  •  "..node.Cost.." POINTS  •  "..(KIND_LABEL[node.Kind] or "")
+	local head=Text.upper(node.Name).."  •  "..node.Cost.." POINTS  •  TIER "..TreeTiers.Names[TreeTiers.of(node)].."  •  "..(KIND_LABEL[node.Kind] or "")
 	if node.Item then head..="  •  KIT OBJECT" end
 	local action=nil
 	if status=="learn" then action={kind="learn",label="LEARN  •  "..node.Cost.." POINTS"}
 	elseif status=="off" then action={kind="on",label="TURN ON"}
 	elseif status=="active" then action={kind="off",label="TURN OFF"} end
 	local note=nil
-	if status=="locked" then note="FIRST: "..table.concat(names,", ")
+	if status=="tier" then
+		local def=Fighters[kit]
+		note=string.format("TIER %s OPENS AT %d MASTERY WITH %s (NOW %d)",TreeTiers.Names[TreeTiers.of(node)],TreeTiers.need(node),Text.upper(def and def.Name or kit),state and state.mastery or 0)
+		if #names>0 then note..="  •  THEN FIRST: "..table.concat(names,", ") end
+	elseif status=="locked" then note="FIRST: "..table.concat(names,", ")
 	elseif status=="short" then note=string.format("%d MORE POINTS: PLAY DUELS WITH THIS KIT",node.Cost-(state and state.free or 0)) end
 	if node.Exclusive then
 		local others={}
