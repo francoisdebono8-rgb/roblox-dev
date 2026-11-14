@@ -14,7 +14,7 @@ local BETA={"Lion","Legion","Sand","Leaf","GentleFist","Mirage","Copycat","Flash
 local EPS=math.rad(.5)
 local function inside(key,cf)
  local l=Motion.LIMITS[key]
- local x,y,z=cf:ToEulerAnglesXYZ()
+ local x,z,y=Motion.swingTwist(cf)
  return x>=l.x[1]-EPS and x<=l.x[2]+EPS and y>=l.y[1]-EPS and y<=l.y[2]+EPS and z>=l.z[1]-EPS and z<=l.z[2]+EPS,
   string.format("%s x=%.0f y=%.0f z=%.0f",key,math.deg(x),math.deg(y),math.deg(z))
 end
@@ -24,6 +24,27 @@ test("the limit folds an impossible joint back into the body's range",function()
  -- a joint inside its range is untouched
  local fine=H.C.Angles(math.rad(-40),0,0)
  assert(Motion.limit("LeftKnee",fine)==fine,"a bent knee was changed")
+end)
+-- (DEV review) a composed rotation (a fold that also twists and swings) moves
+-- continuously through the limit: no pose jumps from one frame to the next.
+test("the limit is continuous on composed rotations (knee and elbow folded, twisted and swung past their stops)",function()
+ local function angle(a,b) local _,t=(a:Inverse()*b):ToAxisAngle() return math.abs(t) end
+ for _,key in {"RightKnee","LeftElbow","Neck","RightAnkle"} do
+  for _,twist in {-50,-25,0,25,50} do
+   for _,sway in {-35,0,35} do
+    local prev,prevIn
+    for a=-175,175,1 do
+     local cf=H.C.Angles(math.rad(a),0,0)*H.C.Angles(0,0,math.rad(sway))*H.C.Angles(0,math.rad(twist),0)
+     local out=Motion.limit(key,cf)
+     if prev then
+      local d=math.deg(angle(prev,out))
+      assert(d<4.5,string.format("%s jumped %.1f deg at bend %d (twist %d, sway %d)",key,d,a,twist,sway))
+     end
+     prev=out
+    end
+   end
+  end
+ end
 end)
 -- Every fighter through a run, a guard pushed back, a hit, a dodge and his strikes.
 test("no drawn elbow, knee, ankle or neck leaves the body's range (8 fighters, run, guard, hits, dodge, strikes)",function()

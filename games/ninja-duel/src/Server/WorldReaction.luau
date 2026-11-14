@@ -252,9 +252,9 @@ local function relief(scar,palette)
 		-- (14/11, CM QA A1/A4: « la fissure sort du sol comme un mur », « des
 		-- dalles de la taille d'un perso ») Slabs as wide as the crater's radius,
 		-- their outer edge lifted 18-68°, stood knee- to waist-high round the
-		-- bodies. They lie in the floor now: narrower (1.4 studs at most),
-		-- tilted a few degrees, their edges a few centimetres proud.
-		local lean=4+hash(seed+Vector3.new(6,3,7))*6
+		-- bodies. Narrower now (1.4 studs at most); (DEV review: the arena's
+		-- damage must still read) tilted 12-28°, their edges 0.2-0.3 stud proud.
+		local lean=12+hash(seed+Vector3.new(6,3,7))*8
 		local function around(a,d)
 			return math.cos(a+spin)*d,math.sin(a+spin)*d*squash
 		end
@@ -269,9 +269,9 @@ local function relief(scar,palette)
 			if off>=gapWidth*.5 and h>.12 then
 				local w=math.min(r*(.3+h*.3),1.4)
 				local y,z=around(a,r*(.88+h*.2))
-				local at=base*CFrame.new(.02+h*.05,y,z)
+				local at=base*CFrame.new(.06+h*.08,y,z)
 				-- face the centre, then lift the outer edge (pitch about the tangent)
-				local cf=at*CFrame.Angles(a+spin,0,0)*CFrame.Angles(0,0,math.rad(lean+h*6))
+				local cf=at*CFrame.Angles(a+spin,0,0)*CFrame.Angles(0,0,math.rad(lean+h*8))
 				-- plates, not blocks (Studio: thick ones read as boxes)
 				chunk(p,cf,Vector3.new(.16+h*.16,w*(.6+h*.3),w),material,if k%3==0 then under else slab)
 			end
@@ -318,8 +318,8 @@ local function relief(scar,palette)
 			local len=size/n*(1.15+h*.45)
 			local w=math.min(math.max(.7,width*2+size*.14)*(.8+h*.45),1.1)
 			local thick=.18+h*.14
-			local at=base*CFrame.new(-thick*.1,sideSign*(width*.5+w*.42),z)
-			local cf=at*CFrame.Angles(sideSign*math.rad(4+h*6),0,0)*CFrame.Angles(0,math.rad((h-.5)*16),0)
+			local at=base*CFrame.new(thick*.05,sideSign*(width*.5+w*.42),z)
+			local cf=at*CFrame.Angles(sideSign*math.rad(12+h*16),0,0)*CFrame.Angles(0,math.rad((h-.5)*16),0)
 			chunk(p,cf,Vector3.new(thick,w,len),material,if k%3==0 then under else slab)
 		end
 		for k=1,math.clamp(math.floor(size*.8),2,5) do
