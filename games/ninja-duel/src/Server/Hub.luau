@@ -388,14 +388,17 @@ local function hall(f)
 	for _,side in {-1,1} do
 		for _,z in {-40,-58,-76,-94,-112} do part(m,"HallPillar",Vector3.new(2.5,29.6,2.5),rel(side*43.6,.4+14.8,z),C.red,Enum.Material.Wood) end
 	end
-	-- The hand-sign statue at the back.
-	part(m,"Pedestal",Vector3.new(22,4,10),rel(0,2,-114),C.stoneDark,Enum.Material.Slate)
+	-- The hand-sign statue at the back (14/11, after the anime's hall: two arms
+	-- in sleeves along the back wall, the joined hands rising in the middle,
+	-- enormous; the ANIMATOR's ExamHall models it). Solid: the sleeves, the
+	-- hands, the step.
 	for _,side in {-1,1} do
-		local arm=part(m,"StatueArm",Vector3.new(5,22,5),rel(side*3.6,14,-114)*CFrame.Angles(0,0,side*math.rad(9)),C.stone,Enum.Material.Concrete)
-		deco(m,"StatueHand",Vector3.new(5.6,6,4.4),arm.CFrame*CFrame.new(0,13,0),C.stone,Enum.Material.Concrete)
-		deco(m,"StatueFinger",Vector3.new(1.4,6,1.4),arm.CFrame*CFrame.new(side*-1.2,18.5,0),C.stone,Enum.Material.Concrete)
-		deco(m,"StatueFinger",Vector3.new(1.4,5.2,1.4),arm.CFrame*CFrame.new(side*.4,18.1,0),C.stone,Enum.Material.Concrete)
+		local sleeve=part(m,"StatueSleeve",Vector3.new(44,9.6,9.6),rel(side*32,5.2,-113),C.stone,Enum.Material.Fabric)
+		sleeve.Shape=Enum.PartType.Cylinder
 	end
+	part(m,"StatueStep",Vector3.new(14,1.8,12),rel(0,.9,-113),C.stoneDark,Enum.Material.Slate)
+	part(m,"StatueHands",Vector3.new(9,15,10),rel(0,13.5,-113),C.stone,Enum.Material.Concrete)
+	part(m,"StatueFingers",Vector3.new(4,12.5,5),rel(0,27,-113),C.stone,Enum.Material.Concrete)
 	-- Warm light under the roof.
 	for _,z in {-40,-70,-100} do
 		local holder=keep(deco(m,"HallLight",Vector3.new(1,1,1),rel(0,24,z),C.woodDark));holder.Transparency=1
