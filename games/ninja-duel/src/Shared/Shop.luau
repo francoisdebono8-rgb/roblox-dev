@@ -102,7 +102,11 @@ Shop.Items={
 		pieces={{on="UpperTorso",c="Orange"},{on="UpperTorso",kind="shoulders",c="Blue"},{on="UpperTorso",kind="collar",c="White",h=.12},{on="LowerTorso",c="Orange"},{on="UpperArm",c="Orange"},{on="LowerArm",c="Orange",h=.85},{on="UpperLeg",c="Orange"},{on="LowerLeg",c="Orange",h=.7},{on="LowerLeg",kind="band",c="White",y0=.62,h=.12},{on="Foot",c="Blue",pad=.05}}},
 	{id="SetSasuke",slot="set",kit="Lion",name="SASUKE'S HIGH COLLAR",robux="SetSasuke",colors={Navy={30,40,86},White={232,230,224},Wrap={226,222,212}},
 		pieces={{on="UpperTorso",c="Navy"},{on="UpperTorso",kind="collar",c="Navy",h=.3},{on="LowerTorso",c="White"},{on="UpperArm",c="Navy",h=.4},{on="LowerArm",kind="band",c="Navy",y0=.1,h=.8},{on="UpperLeg",c="White",h=.7},{on="LowerLeg",kind="band",c="Wrap",y0=.1,h=.75},{on="Foot",c="Navy",pad=.05}}},
+<<<<<<< HEAD
 	{id="SetLee",slot="set",kit="Leaf",name="LEE'S GREEN SUIT",robux="SetLee",colors={Green={46,140,60},Orange={230,120,40},Red={190,40,36}},
+=======
+	{id="SetLee",slot="set",kit="Leaf",name="LEE'S GREEN SUIT",ryo=3000,colors={Green={46,140,60},Orange={230,120,40},Red={190,40,36},Wrap={226,222,212}},
+>>>>>>> claude/tenue-modeles
 		pieces={{on="UpperTorso",c="Green"},{on="LowerTorso",c="Green"},{on="LowerTorso",kind="band",c="Red",y0=.05,h=.22},{on="UpperArm",c="Green"},{on="LowerArm",c="Green"},{on="UpperLeg",c="Green"},{on="LowerLeg",c="Orange",pad=.12},{on="Foot",c="Green",pad=.05}}},
 	{id="SetNeji",slot="set",kit="GentleFist",name="NEJI'S ROBE",robux="SetNeji",colors={Robe={226,222,208},Dark={60,56,64},Wrap={226,222,212}},
 		pieces={{on="UpperTorso",c="Robe"},{on="LowerTorso",c="Robe"},{on="LowerTorso",kind="tail",c="Robe",h=.9},{on="UpperArm",c="Robe"},{on="LowerArm",c="Robe",h=.6},{on="UpperLeg",c="Dark"},{on="LowerLeg",kind="band",c="Wrap",y0=.05,h=.6},{on="Foot",c="Dark",pad=.05}}},
@@ -112,7 +116,7 @@ Shop.Items={
 		pieces={{on="UpperTorso",c="Navy"},{on="UpperTorso",kind="vest",c="Vest"},{on="UpperTorso",kind="collar",c="Navy",h=.22},{on="LowerTorso",c="Navy"},{on="UpperArm",c="Navy"},{on="LowerArm",c="Navy"},{on="UpperLeg",c="Navy"},{on="LowerLeg",c="Navy"},{on="LowerLeg",kind="band",c="Wrap",y0=.5,h=.3},{on="Foot",c="Navy",pad=.05}}},
 	{id="SetItachi",slot="set",kit="Mirage",name="ITACHI'S ANBU GEAR",robux="SetItachi",colors={Black={26,26,32},Grey={150,152,158},Guard={176,180,186}},
 		pieces={{on="UpperTorso",c="Black"},{on="UpperTorso",kind="vest",c="Grey"},{on="LowerTorso",c="Black"},{on="UpperArm",c="Black",h=.5},{on="LowerArm",c="Guard",y0=.2,h=.65,pad=.1,mat="Metal"},{on="UpperLeg",c="Black"},{on="LowerLeg",c="Black"},{on="Foot",c="Black",pad=.05}}},
-	{id="SetMinato",slot="set",kit="Flashstep",name="MINATO'S JACKET",robux="SetMinato",colors={Blue={40,70,130},Navy={30,36,60},Wrap={226,222,212}},
+	{id="SetMinato",slot="set",kit="Flashstep",name="MINATO'S JACKET",robux="SetMinato",colors={Blue={40,70,130},Navy={30,36,60},Wrap={226,222,212},Coat={238,236,230},Flame={196,48,34},Vest={86,98,70}},
 		pieces={{on="UpperTorso",c="Blue"},{on="UpperTorso",kind="collar",c="Blue",h=.16},{on="LowerTorso",c="Navy"},{on="UpperArm",c="Blue"},{on="LowerArm",c="Blue",h=.8},{on="UpperLeg",c="Navy"},{on="LowerLeg",c="Navy",h=.7},{on="LowerLeg",kind="band",c="Wrap",y0=.62,h=.2},{on="Foot",c="Navy",pad=.05}}},
 }
 local byId={}

@@ -113,4 +113,28 @@ test("the card: what he may wear (free, owned), cycled both ways; dressed once h
 	assert(not Shop.dressed({owned={},equipped={set="SetNone"}}),"MY OWN PIECES without a top dresses him")
 end)
 
+-- (DEC-040, the ANIMATEUR's models, PR #111) On each screen the modelled
+-- pieces replace the cloth: placed by the contract of Shared/OutfitMeshes
+-- (scaled by the part's size over the standard part's, welded at the scaled
+-- offset), painted by the item's slot (or the model's new slot).
+test("the modelled pieces: placed by the body part's size, painted by the item's slot",function()
+	local Dress=H.load("Client/OutfitDress")
+	local Meshes=H.load("Shared/OutfitMeshes")
+	local ref=Meshes.Ref.UpperTorso
+	local torso=Instance.new("Part");torso.Size=Vector3.new(ref.X*2,ref.Y,ref.Z*1.5);torso.CFrame=CFrame.new(10,5,0)
+	local size,cf=Dress.place(torso,"UpperTorso",Vector3.new(1,1,1),Vector3.new(.5,.2,-.1))
+	assert(size and math.abs(size.X-2)<1e-4 and math.abs(size.Y-1)<1e-4 and math.abs(size.Z-1.5)<1e-4,"scaled by the part: "..tostring(size))
+	local p=cf.Position
+	assert(math.abs(p.X-11)<1e-4 and math.abs(p.Y-5.2)<1e-4 and math.abs(p.Z+.15)<1e-4,"the offset is not scaled: "..tostring(p))
+	assert(Dress.place(torso,"Tail",Vector3.one,Vector3.zero)==nil,"a part with no reference got placed")
+	-- every slot of every model gets a colour: the item's, else the new slot's
+	for id,model in Meshes.Items do
+		local item=Shop.item(id)
+		for _,piece in Meshes.Models[model] do
+			local c=(item.colors and item.colors[piece.slot]) or (Meshes.NewSlots[model] and Meshes.NewSlots[model][piece.slot])
+			assert(c,id.." has no colour for "..piece.slot)
+		end
+	end
+end)
+
 print(string.format("NinjaDuel outfit (DEC-040): %d PASS",passed))
