@@ -141,15 +141,33 @@ test("Konoha's HUD: placed by the layout, the goal follows the player, touch and
 		local Config=H.load("Shared/Config")
 		local hubWas=Config.Hub;Config.Hub={Enabled=true}
 		local UI=H.load("Client/UI")
-		local ui=UI.new(H.envBase.Instance.new("PlayerGui"),function() end)
-		local Hub=H.load("Client/HubClient")
 		local sent={}
+		local ui=UI.new(H.envBase.Instance.new("PlayerGui"),function(action,payload) table.insert(sent,{action,payload}) end)
+		local Hub=H.load("Client/HubClient")
 		local hub=Hub.new(ui,{},function(action,payload) table.insert(sent,{action,payload}) end,{Enable=function() end,Disable=function() end})
 		local new={state="ready",owned={},mastery={},masters={},needStarter=true,trees={},ryo=0,style={owned={},equipped={}}}
 		hub:render({phase="Selection",kits=new})
+		-- (DEC-041) choose your inspiration: three cards, a funny line each;
+		-- the pick takes his kit; it opens by itself for a new player only
+		local SP=H.load("Client/StarterPanel")
+		local I=H.load("Shared/Inspirations")
+		local M=H.load("Shared/Masters")
+		assert(ui.starterPanel,"no inspiration card")
+		for _,id in M.Starters do
+			local about=I.of(id)
+			assert(about and #about.title>3 and #about.line>40 and #about.with>15,id.." has no line")
+			assert(ui.starterPanel.buttons[id],id.." has no card")
+		end
+		assert(SP.wanted(new,true,nil,false) and not SP.wanted(new,false,nil,false) and not SP.wanted(new,true,false,false) and not SP.wanted(new,true,true,true),"when it opens")
+		assert(not SP.wanted({state="ready",needStarter=false},true,true,false),"it opens for a player with a kit")
+		ui.starterPanel:show(new)
+		assert(ui.starterPanel:shown(),"the card did not open")
+		ui.starterPanel.buttons.Lion.click()
+		assert(sent[#sent][1]=="ChooseStarter" and sent[#sent][2].player=="Lion" and not ui.starterPanel:shown(),"the pick: "..tostring(sent[#sent] and sent[#sent][1]))
+		table.clear(sent)
 		-- a laptop: the place box under Roblox's bar, the goal under the top row
 		assert(hub.hud.Visible and hub.hud.Position.Y.Offset==66 and hub.hud.Position.X.Offset==16,"the place box: "..tostring(hub.hud.Position))
-		assert(hub.goal.Visible and hub.goalHead.Text=="CHOOSE YOUR FIRST MASTER","a new player's goal: "..hub.goalHead.Text)
+		assert(hub.goal.Visible and hub.goalHead.Text=="CHOOSE YOUR INSPIRATION","a new player's goal: "..hub.goalHead.Text)
 		assert(string.find(hub.goalSub.Text,"ICHIRAKU RAMEN",1,true) and hub.goal.Position.Y.Offset>=140,"the goal's places or row: "..hub.goalSub.Text)
 		assert(not hub.runButton.Visible and hub.keys.Visible,"keys: no RUN button, the key line")
 		-- (14/11) the training dummy: no kit yet, Lee's (his ground)

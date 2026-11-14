@@ -1268,6 +1268,32 @@ Sortie commune : trois Lights/Heavy physiques distincts, branche seulement aprè
 - evidence: 14/11 (audit DEV, mesures Studio, chemins de Roblox depuis la porte) : Naruto, Gaara et Kakashi tournaient le côté ou le dos au joueur qui arrive (67°, 84°, 64°), Lee 35° ; le tableau des duels n'était qu'au surveillant (239 studs, 15 s à pied) ; on ne combat pas dans la ville ; le terrain n° 3 n'avait aucune fonction. Branche `claude/konoha-ville-vivante` : les quatre maîtres tournés vers l'arrivée (moins de 10°), un bouton DUELS en haut à droite avec B (clavier, pas pendant la saisie du chat) et R1 (manette) qui ouvrent le tableau de partout, sauf au-dessus d'une carte ou d'un panneau ; le mannequin du terrain n° 3 : E « TRAIN » lance l'entraînement avec son kit (celui de Lee pour un joueur qui n'en a pas). Suites `Hub` 13 PASS, `HubLayout` 6 PASS, suite complète verte. Vu dans Studio (ND-JEU `a8d9fd0` avec les modules poussés à chaud, clavier, 1334 × 591) : DUELS en haut à droite et « B DUELS » dans la ligne des touches ; B à la porte ouvre le tableau, BACK TO KONOHA ramène à la porte ; Naruto (au loin dans la rue) et Lee font face au joueur qui arrive ; le repère TRAINING « TRY ROCK LEE'S KIT » au-dessus du mannequin, visible sur le terrain seulement. Pas encore vu : R1 à la manette, l'invite TRAIN elle-même. Branche `claude/konoha-duels-au-village` (François : « que notre perso puisse combattre ») : `Config.Hub.VillageDuels` ; un duel demandé depuis la carte d'un maître (premier duel, entraînement avec lui, duel du maître) ou au mannequin se joue chez lui, sans stade : Lee et le mannequin au terrain n° 3 (centre (-136, 10), rayon 34), Naruto dans la rue principale (rayon 34), Neji dans la cour Hyûga (rayon 36) ; les autres maîtres restent au stade tant que leur lieu n'est pas vu (balcon, terrasse, torii, quai). Le serveur ne croit pas le client : le duel ne vient au village que si son avatar est sur place (`Matches.villageSite`) ; le tableau et le tournoi restent au stade ; la revanche et le vrai duel de la première minute restent sur place ; retour à Konoha là où il s'est battu. Suite `FirstMinute` 6 PASS. Vu dans Studio : le premier duel de Lee (consignes puis vrai duel, deux rounds) se joue sur le terrain n° 3 avec l'avatar, contre Minato, Lee qui regarde, la clôture et la salle derrière ; corps tenus à moins de 15 studs du centre ; aucune pièce du village cassée (2 859 avant et après). Restent : le bandeau du duel dit « PRODIGY TOURNAMENT », les autres joueurs qui passent ne sont pas écartés du combat, le retour sur place après le résultat n'a pas été vu (le test sans écran le couvre).
 - outcome: PENDING
 
+## INSPI-001 — Les inspirations : le premier choisi comme un starter
+
+- status: PARTIAL
+- priority: P1
+- dependencies: MASTERS-001, HUB-001
+- subsystem: progression
+- character: ALL
+- summary: (DEC-041) Les prodiges sont des inspirations de l'âge du joueur, pas des sensei. Le premier se choisit comme un starter parmi Naruto, Sasuke et Lee, avec un trait drôle chacun. Chacun mène ensuite au suivant.
+- sources: [DEC-041](DECISIONS.md#dec-041--des-inspirations-pas-des-maîtres--le-premier-choisi-comme-un-starter--larme-du-ninja-à-soi-1411)
+- validation: (1) tests sans écran : textes, cartes, choix, ouverture seule pour un nouveau joueur ; (2) Studio : la carte CHOOSE YOUR INSPIRATION à l'arrivée (après la tenue), le choix, puis le premier duel chez lui ; clavier, manette, téléphone ; (3) maquette de la session DESIGN.
+- evidence: 14/11 (branche `claude/inspirations-starter`) : `Shared/Inspirations` (titre, trait, « with him »), `Client/StarterPanel` (trois cartes, HE'S MY INSPIRATION envoie ChooseStarter, LATER, B à la manette, focus), textes de Konoha, de la boutique et du résultat passés de « master » à « inspiration ». Suites `HubLayout` 6 PASS, `MastersView` 8 PASS. Studio : à faire.
+- outcome: PENDING
+
+## WEAPON-002 — L'arme du ninja : choisie, achetée, avec ses propres coups
+
+- status: OPEN
+- priority: P1
+- dependencies: INSPI-001, SHOP-001
+- subsystem: combat
+- character: ALL
+- summary: (DEC-041) Une arme vue dans Naruto, choisie et achetée par le joueur, indépendante du kit, avec ses coups et ses animations, à puissance égale.
+- sources: [DEC-041](DECISIONS.md#dec-041--des-inspirations-pas-des-maîtres--le-premier-choisi-comme-un-starter--larme-du-ninja-à-soi-1411)
+- validation: (1) catalogue et équité (dégâts, portée et temps comparés aux coups du kit) ; (2) modèles et coups de l'ANIMATEUR ; (3) Studio : chaque arme sortie et utilisée en duel ; (4) produits Robux créés par l'utilisateur.
+- evidence: 14/11 : décision prise ; rien de construit.
+- outcome: PENDING
+
 ## SHOP-001 — La boutique et le Ryō
 
 - status: PARTIAL

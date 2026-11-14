@@ -311,6 +311,12 @@ function UI.new(parent,send)
 			end)
 			if made then self.shopPanel=panel end
 		end
+		-- (DEC-041) Choose your inspiration: the three first kits, like a starter.
+		local okStarter,StarterPanel=pcall(function() return require(script.Parent.StarterPanel) end)
+		if okStarter and StarterPanel then
+			local made,panel=pcall(StarterPanel.new,UI.kit,self.gui,send,self)
+			if made then self.starterPanel=panel end
+		end
 	end
 	-- The shop from the roster (in Konoha it is on the HUD).
 	self.shopButton=button(shell,"SHOP",UDim2.fromOffset(1040,24),UDim2.fromOffset(240,48),function()
@@ -976,6 +982,7 @@ function UI:setKits(kits)
 	self.kits=kits
 	if self.treePanel then self.treePanel:refresh(kits) end
 	if self.shopPanel then self.shopPanel:refresh(kits) end
+	if self.starterPanel then self.starterPanel:refresh(kits) end
 	if type(kits)~="table" or kits.state~="ready" then return end
 	local want=nil
 	if kits.selected and kits.owned and kits.owned[kits.selected] then want=kits.selected
@@ -1004,7 +1011,7 @@ function UI:lobby(data)
 		self.opponentLabel.Text=if self.simple then "YOUR RIVAL" else "OPPONENT (AI)"
 		self.startButton.Text=if self.simple then "PLAY" else "ENTER THE STAGE"
 		self.tutorialButton.Text=if self.simple then "ALL MODES" else "TRAINING"
-		self.notice.Text=data.notice or (if self.kits and self.kits.needStarter then "CHOOSE YOUR FIRST KIT  •  NARUTO, SASUKE OR LEE  •  THE OTHER KITS ARE TAUGHT BY THEIR MASTERS"
+		self.notice.Text=data.notice or (if self.kits and self.kits.needStarter then "CHOOSE YOUR INSPIRATION  •  NARUTO, SASUKE OR LEE  •  EACH ONE LEADS YOU TO THE NEXT"
 			elseif self.simple then "PICK YOUR NINJA, THEN PLAY  •  30 SECONDS ON THE FIELD, THEN YOUR FIRST DUEL" else "")
 	end
 	self.lastLobby=data
@@ -1505,8 +1512,8 @@ function UI:render(data)
 	-- (Beta loop) the masters' path: what this duel earned.
 	self.resultProgress.Text=MastersView.result(data.progress,self.kits) or ""
 	if data.master then
-		self.resultName.Text="THE MASTER'S DUEL"
-		self.resultNote.Text=if won then "Your master saw enough." else "Your master is not convinced yet. Come back stronger."
+		self.resultName.Text="HIS DUEL"
+		self.resultNote.Text=if won then "He saw enough: his kit is yours." else "He is not convinced yet. Come back stronger."
 	end
 	-- Online: a rematch needs both players; a forfeit says so.
 	local online=data.online
