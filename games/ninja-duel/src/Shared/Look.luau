@@ -16,8 +16,11 @@ local function rgb(r,g,b) return Color3.fromRGB(r,g,b) end
 
 -- (Look pass 2, 03/11; 12/11 QA of b822ee5, validated by François) a lower,
 -- warmer sun, shadows on, less light, a darker fill.
+-- (14/11, seen in Studio, François: « l'ombre est bizarre ») At 16.9 h the
+-- stadium wall's shadow covered the whole field: the fight happened in the
+-- dark. At 15.2 h the field is in the sun; the validated light levels stay.
 Look.LIGHT={
-	ClockTime=16.9,GeographicLatitude=36,Brightness=2.4,ExposureCompensation=-.35,GlobalShadows=true,
+	ClockTime=15.2,GeographicLatitude=36,Brightness=2.4,ExposureCompensation=-.35,GlobalShadows=true,
 	EnvironmentDiffuseScale=.5,EnvironmentSpecularScale=.4,ShadowSoftness=.18,
 	Ambient=rgb(60,56,72),OutdoorAmbient=rgb(96,92,112),
 	ColorShift_Top=rgb(255,212,164),ColorShift_Bottom=rgb(84,104,160),
