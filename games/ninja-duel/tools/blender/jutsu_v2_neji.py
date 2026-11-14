@@ -360,7 +360,7 @@ def rotation(arm):
     rc.key(8, merge(_spin(SPIN0 + 150, k=.6, lean=2), {"rf": RF(1.0, .7, y=.12, yaw=330, toe=-10),
                                                         "la": {"raise": 76, "out": 40, "elbow": 30}, "ra": {"raise": 90, "out": 30, "elbow": 70}}), "pass")
     land = P({"root": {"y": -.72, "yaw": 412 - 360 + 360, "z": -.02}, "torso": {"yaw": -26}},
-             la=lambda p: dict(GUARD_L, raise=72), ra=lambda p: dict(GUARD_R, raise=104))
+             la=lambda p: dict(GUARD_L, **{"raise": 72}), ra=lambda p: dict(GUARD_R, **{"raise": 104}))
     land["root"]["yaw"] = 414
     land["lf"] = LF(PIVOT[0], PIVOT[1], yaw=386)
     land["rf"] = RF(.88, .8, yaw=424)
@@ -439,7 +439,7 @@ def sixty_four(arm):
     rc.key(12, merge(fin, {"root": {"y": -1.22, "z": -.33}}), "ease")
     rise = P({"root": {"y": -.86, "z": -.12, "pitch": 6, "yaw": 48}, "torso": {"pitch": 4, "yaw": -24},
               "lf": LF(-.75, -1.55, yaw=20), "rf": RF(1.0, .7, y=.14, toe=-10, yaw=66)},
-             la=lambda p: dict(GUARD_L, raise=64), ra=lambda p: dict(GUARD_R, raise=94))
+             la=lambda p: dict(GUARD_L, **{"raise": 64}), ra=lambda p: dict(GUARD_R, **{"raise": 94}))
     rc.key(18, rise, "pass")
     rc.key(24, P({"root": {"z": -.2}, "lf": LF(-.75, -1.55, yaw=26), "rf": RF(.95, .55, yaw=64)}), "ease")
     rc.drag(["neck"], 1)
@@ -483,7 +483,7 @@ def byakugan(arm):
     out.append(re.build(markers={"contact": 2 / F}))
     rc = Shot(arm, N + "ByakuganSight.Recover")
     rc.key(0, see, "ease")
-    rc.key(5, merge(see, {"root": {"y": -.56}, "ra": dict(GUARD_R, raise=118, elbow=120)}), "pass")
+    rc.key(5, merge(see, {"root": {"y": -.56}, "ra": dict(GUARD_R, **{"raise": 118}, elbow=120)}), "pass")
     rc.key(12, S(), "ease")
     rc.drag(["hand.L"], 1)
     out.append(rc.build())
@@ -536,7 +536,7 @@ def hasangeki(arm):
     held = merge(th, {"root": {"z": -.68, "y": -1.04}})
     back = P({"root": {"y": -.82, "z": -.1, "pitch": 8, "yaw": 40}, "torso": {"pitch": 4, "yaw": -22},
               "lf": LF(-.64, -.95, y=.12, yaw=26), "rf": RF(.88, .8, yaw=60)},
-             la=lambda p: dict(GUARD_L, raise=60), ra=lambda p: dict(GUARD_R, raise=90))
+             la=lambda p: dict(GUARD_L, **{"raise": 60}), ra=lambda p: dict(GUARD_R, **{"raise": 90}))
     keys = [(0, gath, "launch"), (3, th, "impact"), (5, push, "ease"), (11, held, "ease"),
             (17, merge(held, {"root": {"z": -.64}}), "ease"), (24, back, "pass"), (30, P({"root": {"y": -.69}}), "ease")]
     re, rc = split(arm, N + "Hasangeki", keys, 5, 11, marker=3, drags=[(["neck"], 1), (["hand.L", "hand.R"], 1)])
@@ -587,7 +587,7 @@ def leg_points(arm):
     sh.key(12, merge(two, {"root": {"z": -.37, "y": -1.48}}), "ease")
     up = P({"travel": {"z": T}, "root": {"y": -.9, "z": -.66, "pitch": 9, "yaw": 42}, "torso": {"pitch": 6, "yaw": -22},
             "lf": LF(-.64, -.8 + T * 1.35, yaw=24), "rf": RF(.88, .8 + T * .6, y=.16, toe=-14, yaw=60)},
-           la=lambda p: dict(GUARD_L, raise=62), ra=lambda p: dict(GUARD_R, raise=92),
+           la=lambda p: dict(GUARD_L, **{"raise": 62}), ra=lambda p: dict(GUARD_R, **{"raise": 92}),
            head=look(-8))
     sh.key(19, up, "pass")
     sh.key(28, P({"travel": {"z": T}, "root": {"y": -.67, "z": -.02 + T * .35},
@@ -687,7 +687,7 @@ def trigram_field(arm):
            head=look(-2))
     rise = P({"root": {"y": -.86, "z": .04, "pitch": 4, "yaw": 38}, "torso": {"pitch": 2, "yaw": -20},
               "lf": LF(-1.15, -.6, y=.12, toe=-4, yaw=18)},
-             la=lambda p: dict(GUARD_L, raise=50, out=20), ra=lambda p: dict(GUARD_R, raise=86),
+             la=lambda p: dict(GUARD_L, **{"raise": 50}, out=20), ra=lambda p: dict(GUARD_R, **{"raise": 86}),
              head=look(-4))
     keys = [(0, g2, "launch"), (4, pr, "impact"), (7, merge(pr, {"root": {"y": -1.34}}), "ease"),
             (13, merge(pr, {"root": {"y": -1.32}}), "ease"), (20, rise, "pass"), (28, S(), "ease")]
@@ -762,7 +762,7 @@ def throw(arm):
     sh.key(13, follow, "ease")
     back = P({"root": {"y": -.74, "z": -.1, "pitch": 6, "yaw": 30}, "torso": {"pitch": 4, "yaw": -22},
               "rf": RF(.88, .8, toe=-6, yaw=56), "lf": LF(-.64, -.8, yaw=16)},
-             la=lambda p: dict(GUARD_L, raise=58, out=20), ra=lambda p: dict(GUARD_R, raise=80, out=10))
+             la=lambda p: dict(GUARD_L, **{"raise": 58}, out=20), ra=lambda p: dict(GUARD_R, **{"raise": 80}, out=10))
     sh.key(22, back, "pass")
     sh.key(34, S(), "ease")
     sh.drag(["neck"], 2)
