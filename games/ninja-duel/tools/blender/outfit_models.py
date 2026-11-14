@@ -1,0 +1,791 @@
+"""(14/11, DEV -> ANIMATEUR, DEC-040) The ninja outfit over the player's own
+avatar: modelled pieces fitted on the standard R15 body (Server/AvatarBody.SCALES:
+height/width/depth/head 1, body type 0, proportion 0), one mesh per body part
+and per colour slot (Cloth, Collar, Belt, Wrap...: Shared/Shop's `colors`
+keys, the game paints each slot).
+
+References (Part I, the age the game draws: 12-14), checked 14/11:
+  Naruto: orange track suit, the shoulders and upper back blue, a big white
+    stand-up collar zipped high, the trousers taped at the shin, blue sandals.
+  Sasuke: dark navy short-sleeved shirt with a very high open collar, white
+    arm warmers elbow-to-wrist, white shorts, wrapped shins.
+    (no clan crest: no logos in the game)
+  Lee: green one-piece suit, orange leg warmers rolled over the shins, a red
+    belt, bandaged forearms and hands.
+  Neji: loose off-white robe shirt with long sleeves and tails to the thigh,
+    dark shorts, a wrapped thigh.
+  Gaara: dark red long coat to mid-thigh, the beige strap across the chest
+    (the gourd's), dark trousers.
+  Kakashi: navy long-sleeved shirt and trousers, the green flak vest with its
+    scroll pockets and high collar, wrapped shins. (no spiral emblem)
+  Itachi (ANBU): black sleeveless top, grey breastplate, metal forearm guards,
+    black trousers. (no mask, no tattoo)
+  Minato: navy shirt, green flak vest, the short white coat with the flames
+    along its hem.
+Free pieces: the genin tunic, the high collar, the sleeveless top, the tied
+trousers, the wrapped shorts, arm wraps, arm guards, sandals.
+
+Frame: each piece is modelled round ITS body part's centre, in the Roblox
+frame (x right, y up, z back: the front is -z), on the reference part size
+REF[part]; at run time it is scaled by body.Size/REF (any avatar at the
+standard scales) and welded at body.CFrame*CFrame.new(o*scale).
+Vertex colours are light shading only (folds, seams, hems: 0.6-1); the
+MeshPart's Color is the slot's colour (they multiply).
+
+Run:
+  python3 outfit_models.py write ../../src/Shared   (OutfitMeshes + OutfitMeshData*)
+  python3 outfit_models.py render <dir> [items]      (a mannequin per outfit)
+"""
+import math, os, sys
+HERE = os.path.dirname(os.path.abspath(__file__))
+if HERE not in sys.path:
+    sys.path.insert(0, HERE)
+import bpy  # noqa: F401 (brings mathutils)
+from mathutils import Vector, noise
+from nd_mesh import Piece, loft, smooth, outward
+
+
+def lerp(a, b, t):
+    return a + (b - a) * t
+
+# The standard R15 body parts (Roblox's default body at scale 1): size and the
+# rest-pose centre relative to LowerTorso.
+REF = {
+    "UpperTorso": (2, 1.6, 1), "LowerTorso": (2, .4, 1),
+    "RightUpperArm": (1, 1.169, 1), "LeftUpperArm": (1, 1.169, 1),
+    "RightLowerArm": (1, 1.052, 1), "LeftLowerArm": (1, 1.052, 1),
+    "RightHand": (1, .3, 1), "LeftHand": (1, .3, 1),
+    "RightUpperLeg": (1, 1.217, 1), "LeftUpperLeg": (1, 1.217, 1),
+    "RightLowerLeg": (1, 1.193, 1), "LeftLowerLeg": (1, 1.193, 1),
+    "RightFoot": (1, .3, 1), "LeftFoot": (1, .3, 1),
+}
+REST = {
+    "LowerTorso": (0, 0, 0), "UpperTorso": (0, 1.0, 0), "Head": (0, 2.4, 0),
+    "RightUpperArm": (1.5, 1.2155, 0), "LeftUpperArm": (-1.5, 1.2155, 0),
+    "RightLowerArm": (1.5, .105, 0), "LeftLowerArm": (-1.5, .105, 0),
+    "RightHand": (1.5, -.571, 0), "LeftHand": (-1.5, -.571, 0),
+    "RightUpperLeg": (.5, -.8085, 0), "LeftUpperLeg": (-.5, -.8085, 0),
+    "RightLowerLeg": (.5, -2.0135, 0), "LeftLowerLeg": (-.5, -2.0135, 0),
+    "RightFoot": (.5, -2.76, 0), "LeftFoot": (-.5, -2.76, 0),
+}
+K = .957   # the section (a superellipse, p=16) at 45 deg reaches 0.957 of its half axis
+FIT = .5   # cloth sits close: the pads below are halved (legs touch on a blocky body)
+SEG = 28
+
+
+def size(part):
+    return Vector(REF[part])
+
+
+def section(a, b, n=SEG, fold=None, y=0.0, front_cut=None):
+    """A rounded-box ring (superellipse p=8) of half axes a (x), b (z) at height y.
+    fold(theta, y) adds an outward offset (cloth folds)."""
+    out = []
+    for i in range(n):
+        t = 2 * math.pi * i / n
+        c, s = math.cos(t), math.sin(t)
+        x = a * math.copysign(abs(c) ** .125, c)
+        z = b * math.copysign(abs(s) ** .125, s)
+        if fold:
+            d = fold(t, y)
+            r = math.hypot(x, z) or 1
+            x += x / r * d
+            z += z / r * d
+        out.append(Vector((x, y, z)))
+    return out
+
+
+def cloth_fold(amp=.025, freq=5.0, seed=0.0):
+    def f(t, y):
+        return amp * (.5 + .5 * noise.noise(Vector((math.cos(t) * freq * .3 + seed, y * freq, math.sin(t) * freq * .3))))
+    return f
+
+
+def shade(base=.92, var=.08, seed=0.0, ao_y=None):
+    """Light shading (multiplies the slot colour): folds lighter/darker, and
+    darker toward an edge y if ao_y=(y, width)."""
+    def c(p, k):
+        g = base + var * noise.noise(Vector((p.x * 3 + seed, p.y * 4, p.z * 3)))
+        if ao_y:
+            g -= .12 * max(0, 1 - abs(p.y - ao_y[0]) / ao_y[1])
+        g = max(.55, min(1, g))
+        return (g, g, g)
+    return c
+
+
+def shell(pc, part, y0, y1, pad=.07, flare0=0.0, flare1=0.0, folds=.02, rings=9, hem=True, seed=0.0, col=None, scale_x=1.0, scale_z=1.0):
+    """Cloth round a body part from y0 (fraction from its top) to y1, with a
+    rolled hem at the bottom (and top when hem='both')."""
+    S = size(part)
+    pad *= FIT
+    flare0 *= FIT
+    flare1 *= FIT
+    a0 = (S.x / 2 + pad) / K * scale_x
+    b0 = (S.z / 2 + pad) / K * scale_z
+    fold = cloth_fold(folds, 5, seed)
+    rows = []
+    for k in range(rings):
+        u = k / (rings - 1)
+        f = lerp(y0, y1, u)
+        y = S.y / 2 - f * S.y
+        fl = lerp(flare0, flare1, u)
+        rows.append(section(a0 + fl, b0 + fl, fold=fold, y=y))
+    if hem:
+        last = rows[-1]
+        y = last[0].y
+        roll = [Vector((p.x * 1.035, y - .02, p.z * 1.035)) for p in last]
+        under = [Vector((p.x * 1.0, y - .045, p.z * 1.0)) for p in last]
+        rows += [roll, under]
+        if hem == "both":
+            first = rows[0]
+            yt = first[0].y
+            rows = [[Vector((p.x, yt + .045, p.z)) for p in first], [Vector((p.x * 1.035, yt + .02, p.z * 1.035)) for p in first]] + rows
+    c = col or shade(seed=seed, ao_y=(rows[-1][0].y, .12))
+    if "Leg" in part:
+        # the inner side darker: two legs side by side on a blocky body read as two
+        base = c
+        def c(p, k, base=base):
+            g = base(p, k)
+            d = .3 * max(0.0, min(1.0, (-p.x - S.x * .25) / (S.x * .3)))
+            return tuple(max(.45, x - d) for x in g)
+    loft(pc, rows, c, cap0=False, cap1=False)
+    return rows
+
+
+def ribbed(pc, part, y0, y1, pad=.09, ribs=6, depth=.05, rings_per=3, col=None, spiral=0.0, seed=0.0):
+    """Wraps, leg warmers, rolled bands: bulging rings (spiral>0: a bandage
+    wound round, its turns shifting with the angle)."""
+    S = size(part)
+    pad *= FIT
+    a0 = (S.x / 2 + pad) / K
+    b0 = (S.z / 2 + pad) / K
+    n = ribs * rings_per + 1
+    rows = []
+    for k in range(n):
+        u = k / (n - 1)
+        y = S.y / 2 - lerp(y0, y1, u) * S.y
+        ring = []
+        for i in range(SEG):
+            t = 2 * math.pi * i / SEG
+            ph = u * ribs + spiral * t / (2 * math.pi)
+            bulge = depth * (.5 - .5 * math.cos(2 * math.pi * ph)) + .008 * noise.noise(Vector((t, y * 3, seed)))
+            c, s = math.cos(t), math.sin(t)
+            x = (a0 + bulge) * math.copysign(abs(c) ** .125, c)
+            z = (b0 + bulge) * math.copysign(abs(s) ** .125, s)
+            ring.append(Vector((x, y, z)))
+        rows.append(ring)
+
+    def c(p, ri):
+        u = ri / (n - 1)
+        t = math.atan2(p.z, p.x)
+        ph = (u * ribs + spiral * t / (2 * math.pi)) % 1.0
+        g = .74 + .26 * math.sin(math.pi * ph)
+        return (g, g, g)
+    loft(pc, rows, col or c, cap0=False, cap1=False)
+
+
+def collar(pc, part, h=.32, open_front=0.0, flare=.1, thick=.05, col=None, neck=(.64, .6), lean=0.0):
+    """A stand-up collar on the torso's top: a ring round the neck, rising h
+    and flaring; open_front (radians) leaves a V at the front."""
+    S = size(part)
+    top = S.y / 2
+    rows = []
+    n = SEG
+    for k, (dy, fl) in enumerate(((-.05, -.02), (0, 0), (h * .5, flare * .4), (h, flare), (h + .02, flare + thick * .6))):
+        ring = []
+        for i in range(n):
+            t = -math.pi / 2 + open_front / 2 + (2 * math.pi - open_front) * i / (n - 1)
+            c, s = math.cos(t), math.sin(t)
+            a, b = neck[0] + fl, neck[1] + fl   # absolute half axes: round the head's base (1.2 wide)
+            x = a * math.copysign(abs(c) ** .5, c)
+            z = b * math.copysign(abs(s) ** .5, s) + lean * dy
+            ring.append(Vector((x, top + dy, z)))
+        rows.append(ring)
+    # the inner face (thickness), back down
+    inner = [[Vector((p.x * (1 - thick / max(.1, abs(p.x) + abs(p.z))), p.y, p.z * (1 - thick / max(.1, abs(p.x) + abs(p.z))))) for p in r] for r in reversed(rows[1:4])]
+    loft(pc, rows + inner, col or shade(.95, .05), cap0=False, cap1=False, closed=open_front == 0)
+
+
+def flap(pc, part, x0, x1, y_top, length, z_side, pad=.08, flare=.25, folds=.03, rows=8, seed=0.0, col=None, hem_cut=None):
+    """A hanging panel (coat tails, a robe's skirt) from the bottom of a part:
+    front (z_side=-1) or back (+1), between x0 and x1 (fractions -1..1 of the
+    half width), falling `length` below y_top (fraction from the top)."""
+    S = size(part)
+    y0 = S.y / 2 - y_top * S.y
+    a = (S.x / 2 + pad)
+    zb = z_side * (S.z / 2 + pad)
+    cols = 14
+    grid = []
+    for k in range(rows):
+        u = k / (rows - 1)
+        y = y0 - u * length
+        row = []
+        for i in range(cols):
+            v = i / (cols - 1)
+            x = lerp(x0, x1, v) * a * (1 + flare * u)
+            z = zb + z_side * (flare * .5 * u) + z_side * folds * noise.noise(Vector((x * 2 + seed, y * 2, 0))) * (1 + 3 * u)
+            if hem_cut:
+                y_eff = y - hem_cut(v) * u
+            else:
+                y_eff = y
+            row.append(Vector((x, y_eff, z)))
+        grid.append(row)
+    # a little thickness: the same grid pushed in
+    loft(pc, grid, col or shade(.9, .1, seed, ao_y=(y0, .15)), cap0=False, cap1=False, closed=False)
+    back = [[Vector((p.x, p.y, p.z - z_side * .035)) for p in reversed(r)] for r in grid]
+    loft(pc, back, col or shade(.8, .05, seed), cap0=False, cap1=False, closed=False)
+
+
+def box(pc, c, half, col):
+    """A small box (pockets, plates, buckles)."""
+    cx, cy, cz = c
+    hx, hy, hz = half
+    rings = []
+    for y in (cy + hy, cy - hy):
+        rings.append([Vector((cx + sx * hx, y, cz + sz * hz)) for sx, sz in ((1, 1), (1, -1), (-1, -1), (-1, 1))])
+    loft(pc, rings, col, cap0=True, cap1=True)
+
+
+def plate(pc, part, y0, y1, pad, arc=(-.65, .65), thick=.06, col=None, front=True):
+    """A rigid curved plate over the front of a part (guards, breastplates)."""
+    S = size(part)
+    a = (S.x / 2 + pad) / K
+    b = (S.z / 2 + pad) / K
+    rows = []
+    n = 16
+    for y in (S.y / 2 - y0 * S.y, S.y / 2 - y1 * S.y):
+        for r in (1.0, 1.0 + thick / max(a, b)):
+            ring = []
+            for i in range(n):
+                t = (-math.pi / 2 if front else math.pi / 2) + lerp(arc[0], arc[1], i / (n - 1)) * math.pi / 2
+                c, s = math.cos(t), math.sin(t)
+                ring.append(Vector((a * r * math.copysign(abs(c) ** .125, c), y, b * r * math.copysign(abs(s) ** .125, s))))
+            rows.append(ring)
+    outer = [rows[1], rows[3]]
+    inner = [rows[0], rows[2]]
+    g = col or (lambda p, k: (.95, .95, .95))
+    loft(pc, outer, g, cap0=False, cap1=False, closed=False)
+    loft(pc, [list(reversed(inner[1])), list(reversed(inner[0]))], g, cap0=False, cap1=False, closed=False)
+    for edge in (0, n - 1):
+        loft(pc, [[rows[0][edge], rows[1][edge]], [rows[2][edge], rows[3][edge]]], g, cap0=False, cap1=False, closed=False)
+    loft(pc, [[rows[0][i], rows[1][i]] for i in range(n)], g, cap0=False, cap1=False, closed=False)
+    loft(pc, [[rows[3][i], rows[2][i]] for i in range(n)], g, cap0=False, cap1=False, closed=False)
+
+
+def sandal(pcs, part):
+    """The ninja sandal: a sole under the foot, a strap over the toes' root
+    and one round the heel and up to the ankle (the toes stay bare)."""
+    S = size(part)
+    sole = pcs("Sandal")
+    y = -S.y / 2
+    rows = []
+    for dy, grow in ((-.07, 0.0), (-.02, .02), (0.0, .0)):
+        rows.append(section(S.x / 2 / K + .04 + grow, S.z / 2 / K + .12 + grow, n=SEG, y=y + dy))
+    for r in rows:
+        for p in r:
+            p.z -= .06          # the toe end a little longer
+    loft(sole, rows, shade(.7, .06), cap0=True, cap1=True)
+    strap = pcs("Sandal")
+    shell(strap, part, .1, .55, pad=.035, folds=.004, rings=3, hem=False, col=shade(.9, .04), scale_z=1.0)
+
+
+def mirror(pc):
+    out = Piece(pc.name, pc.mat, pc.flat, pc.alpha, pc.reflect)
+    out.v = [Vector((-v.x, v.y, v.z)) for v in pc.v]
+    out.c = list(pc.c)
+    out.f = [tuple(reversed(f)) for f in pc.f]
+    return out
+
+
+# ---------------------------------------------------------------- outfits
+# Each builder returns [(part, slot, Piece)] in the Roblox frame of the part.
+# `both(fn, side_part)` builds a right-side piece and mirrors it to the left.
+
+class Out:
+    def __init__(self):
+        self.items = []
+
+    def add(self, part, slot, mat="Fabric", name=None):
+        pc = Piece(name or slot, mat)
+        self.items.append((part, slot, pc))
+        return pc
+
+    def both(self, part, slot, build, mat="Fabric"):
+        """build(pc, 'Right'+part) for the right; the left is its mirror."""
+        pc = self.add("Right" + part, slot, mat)
+        build(pc, "Right" + part)
+        left = mirror(pc)
+        self.items.append(("Left" + part, slot, left))
+        return pc
+
+
+def tunic_body(o, slot="Cloth", lower_h=.6, collar_v=True, sleeve=.55, seed=0.0):
+    pc = o.add("UpperTorso", slot)
+    shell(pc, "UpperTorso", .0, 1.0, pad=.07, flare1=.03, folds=.025, seed=seed, hem=False)
+    # the wrapped front: the left panel crosses over (a ridge from the neck down)
+    trim = o.add("UpperTorso", slot, name="Overlap")
+    S = size("UpperTorso")
+    pts = []
+    for k in range(10):
+        u = k / 9
+        pts.append(Vector((lerp(-.2, .55, u), S.y / 2 - u * S.y * .95, -(S.z / 2 + .07) / K - .012)))
+    rows = [[p + Vector((0, 0, 0)) for p in pts], [p + Vector((.05, 0, -.03)) for p in pts], [p + Vector((.12, 0, 0)) for p in pts]]
+    loft(trim, rows, shade(.82, .04), cap0=False, cap1=False, closed=False)
+    lo = o.add("LowerTorso", slot)
+    shell(lo, "LowerTorso", -.1, lower_h * 1.0 + .05, pad=.08, flare1=.06, folds=.02, seed=seed + 1)
+    if sleeve:
+        o.both("UpperArm", slot, lambda pc, part: shell(pc, part, -.04, sleeve, pad=.08, flare1=.06, folds=.025, seed=seed + 2))
+    return pc
+
+
+def item_tunic():
+    o = Out()
+    tunic_body(o)
+    return o.items
+
+
+def item_high_collar():
+    o = Out()
+    pc = o.add("UpperTorso", "Cloth")
+    shell(pc, "UpperTorso", 0, 1, pad=.07, folds=.02, hem=False)
+    lo = o.add("LowerTorso", "Cloth")
+    shell(lo, "LowerTorso", -.1, .65, pad=.08, flare1=.05)
+    o.both("UpperArm", "Cloth", lambda pc, part: shell(pc, part, -.04, .4, pad=.08, flare1=.05))
+    col = o.add("UpperTorso", "Collar")
+    collar(col, "UpperTorso", h=.36, flare=.08)
+    return o.items
+
+
+def item_sleeveless():
+    o = Out()
+    pc = o.add("UpperTorso", "Cloth")
+    shell(pc, "UpperTorso", .02, 1, pad=.06, folds=.02, hem=False, scale_x=.99)
+    lo = o.add("LowerTorso", "Cloth")
+    shell(lo, "LowerTorso", -.1, .45, pad=.07, hem=False)
+    belt = o.add("LowerTorso", "Belt")
+    ribbed(belt, "LowerTorso", .35, .75, pad=.1, ribs=1, depth=.03, rings_per=5)
+    knot = o.add("LowerTorso", "Belt", name="Knot")
+    box(knot, (.45, -.02, -(size("LowerTorso").z / 2 + .14)), (.09, .07, .04), shade(.85, .05))
+    return o.items
+
+
+def item_pants():
+    o = Out()
+    lo = o.add("LowerTorso", "Cloth")
+    shell(lo, "LowerTorso", .2, 1.05, pad=.08, hem=False)
+    o.both("UpperLeg", "Cloth", lambda pc, part: shell(pc, part, -.05, 1.02, pad=.1, flare1=.03, folds=.03, hem=False))
+    o.both("LowerLeg", "Cloth", lambda pc, part: shell(pc, part, -.02, .72, pad=.11, flare0=.03, flare1=.06, folds=.035, hem=False))
+    o.both("LowerLeg", "Tie", lambda pc, part: ribbed(pc, part, .68, .9, pad=.07, ribs=3, depth=.03, spiral=1.0))
+    return o.items
+
+
+def item_shorts():
+    o = Out()
+    lo = o.add("LowerTorso", "Cloth")
+    shell(lo, "LowerTorso", .2, 1.05, pad=.08, hem=False)
+    o.both("UpperLeg", "Cloth", lambda pc, part: shell(pc, part, -.05, .72, pad=.1, flare1=.06, folds=.03))
+    o.both("LowerLeg", "Wrap", lambda pc, part: ribbed(pc, part, .1, .85, pad=.035, ribs=9, depth=.025, spiral=1.0))
+    return o.items
+
+
+def item_arm_wraps():
+    o = Out()
+    o.both("LowerArm", "Wrap", lambda pc, part: ribbed(pc, part, .12, .98, pad=.03, ribs=10, depth=.022, spiral=1.0))
+    o.both("Hand", "Wrap", lambda pc, part: ribbed(pc, part, -.05, .75, pad=.025, ribs=2, depth=.02, spiral=1.0))
+    return o.items
+
+
+def item_arm_guards():
+    o = Out()
+    o.both("LowerArm", "Guard", lambda pc, part: plate(pc, part, .18, .82, .09, arc=(-.75, .75), thick=.05), mat="Metal")
+    o.both("LowerArm", "Strap", lambda pc, part: (ribbed(pc, part, .26, .36, pad=.05, ribs=1, depth=.01, rings_per=3),
+                                                  ribbed(pc, part, .66, .76, pad=.05, ribs=1, depth=.01, rings_per=3)))
+    return o.items
+
+
+def item_sandals():
+    o = Out()
+    for side in ("Right", "Left"):
+        def pcs(slot, side=side):
+            return o.add(side + "Foot", slot)
+        sandal(pcs, side + "Foot")
+    o.both("LowerLeg", "Sandal", lambda pc, part: ribbed(pc, part, .84, 1.0, pad=.04, ribs=1, depth=.015, rings_per=4))
+    return o.items
+
+
+# ---- the masters
+
+def zipper(o, part, slot, y0=0.0, y1=1.0, pad=.07):
+    pc = o.add(part, slot, name="Zip")
+    S = size(part)
+    z = -(S.z / 2 + pad) / K - .015
+    rows = []
+    for dz in (0, -.025, 0):
+        pass
+    left, mid, right = [], [], []
+    for k in range(12):
+        y = S.y / 2 - lerp(y0, y1, k / 11) * S.y
+        left.append(Vector((-.05, y, z + .005)))
+        mid.append(Vector((0, y, z - .02)))
+        right.append(Vector((.05, y, z + .005)))
+    loft(pc, [left, mid, right], shade(.88, .05), cap0=False, cap1=False, closed=False)
+    return pc
+
+
+def item_naruto():
+    o = Out()
+    up = o.add("UpperTorso", "Orange")
+    shell(up, "UpperTorso", .0, 1.0, pad=.09, flare1=.03, folds=.03, hem=False)
+    yoke = o.add("UpperTorso", "Blue", name="Yoke")
+    shell(yoke, "UpperTorso", -.02, .34, pad=.17, folds=0.0, hem=False)
+    zipper(o, "UpperTorso", "White", .0, 1.0, pad=.09)
+    col = o.add("UpperTorso", "White", name="Collar")
+    collar(col, "UpperTorso", h=.42, flare=.16, thick=.06, neck=(.66, .62))
+    lo = o.add("LowerTorso", "Orange")
+    shell(lo, "LowerTorso", -.15, 1.05, pad=.1, hem=False, folds=.03)
+    o.both("UpperArm", "Orange", lambda pc, part: shell(pc, part, -.05, 1.02, pad=.1, folds=.03, hem=False))
+    o.both("UpperArm", "Blue", lambda pc, part: shell(pc, part, -.06, .26, pad=.12, folds=.01, hem=False))
+    o.both("LowerArm", "Orange", lambda pc, part: shell(pc, part, -.02, .88, pad=.11, flare1=.05, folds=.035))
+    o.both("UpperLeg", "Orange", lambda pc, part: shell(pc, part, -.05, 1.02, pad=.12, folds=.04, hem=False))
+    o.both("LowerLeg", "Orange", lambda pc, part: shell(pc, part, -.02, .68, pad=.13, flare1=.08, folds=.045))
+    o.both("LowerLeg", "White", lambda pc, part: ribbed(pc, part, .6, .78, pad=.06, ribs=3, depth=.025, spiral=1.0))
+    _feet(o, "Blue")
+    return o.items
+
+
+def _feet(o, slot):
+    for side in ("Right", "Left"):
+        def pcs(s, side=side):
+            return o.add(side + "Foot", slot)
+        sandal(pcs, side + "Foot")
+    o.both("LowerLeg", slot, lambda pc, part: ribbed(pc, part, .84, 1.0, pad=.04, ribs=1, depth=.015, rings_per=4))
+
+
+def item_sasuke():
+    o = Out()
+    up = o.add("UpperTorso", "Navy")
+    shell(up, "UpperTorso", .0, 1.0, pad=.07, folds=.02, hem=False)
+    col = o.add("UpperTorso", "Navy", name="Collar")
+    collar(col, "UpperTorso", h=.5, open_front=.9, flare=.14, thick=.05, neck=(.66, .62))
+    lo = o.add("LowerTorso", "White")
+    shell(lo, "LowerTorso", -.1, 1.05, pad=.08, hem=False)
+    o.both("UpperArm", "Navy", lambda pc, part: shell(pc, part, -.05, .42, pad=.09, flare1=.05))
+    # the arm warmers: elbow to wrist, loose, a ridge at each end
+    o.both("LowerArm", "Wrap", lambda pc, part: shell(pc, part, -.06, .96, pad=.1, flare0=.03, flare1=.02, folds=.04, hem="both"))
+    o.both("UpperLeg", "White", lambda pc, part: shell(pc, part, -.05, .78, pad=.11, flare1=.07, folds=.035))
+    o.both("LowerLeg", "Wrap", lambda pc, part: ribbed(pc, part, .1, .8, pad=.035, ribs=8, depth=.022, spiral=1.0))
+    _feet(o, "Navy")
+    return o.items
+
+
+def item_lee():
+    o = Out()
+    up = o.add("UpperTorso", "Green")
+    shell(up, "UpperTorso", -.04, 1.0, pad=.04, folds=.01, hem=False)
+    lo = o.add("LowerTorso", "Green")
+    shell(lo, "LowerTorso", -.15, 1.05, pad=.05, hem=False, folds=.01)
+    belt = o.add("LowerTorso", "Red")
+    ribbed(belt, "LowerTorso", .0, .5, pad=.09, ribs=1, depth=.025, rings_per=6)
+    o.both("UpperArm", "Green", lambda pc, part: shell(pc, part, -.05, 1.02, pad=.05, folds=.01, hem=False))
+    o.both("LowerArm", "Green", lambda pc, part: shell(pc, part, -.02, .55, pad=.05, folds=.01, hem=False))
+    o.both("LowerArm", "Wrap", lambda pc, part: ribbed(pc, part, .5, .99, pad=.03, ribs=6, depth=.02, spiral=1.0))
+    o.both("UpperLeg", "Green", lambda pc, part: shell(pc, part, -.05, 1.02, pad=.05, folds=.01, hem=False))
+    o.both("LowerLeg", "Green", lambda pc, part: shell(pc, part, -.02, .2, pad=.05, folds=.01, hem=False))
+    # the leg warmers: thick, rolled, slumping on the ankle
+    o.both("LowerLeg", "Orange", lambda pc, part: ribbed(pc, part, .08, .95, pad=.2, ribs=6, depth=.045))
+    _feet(o, "Green")
+    return o.items
+
+
+def item_neji():
+    o = Out()
+    up = o.add("UpperTorso", "Robe")
+    shell(up, "UpperTorso", .0, 1.0, pad=.1, flare1=.06, folds=.04, hem=False)
+    trim = o.add("UpperTorso", "Robe", name="Overlap")
+    S = size("UpperTorso")
+    pts = [Vector((lerp(-.25, .5, k / 9), S.y / 2 - k / 9 * S.y * .9, -(S.z / 2 + .1) / K - .015)) for k in range(10)]
+    loft(trim, [pts, [p + Vector((.05, 0, -.03)) for p in pts], [p + Vector((.12, 0, 0)) for p in pts]], shade(.8, .04), cap0=False, cap1=False, closed=False)
+    lo = o.add("LowerTorso", "Robe")
+    shell(lo, "LowerTorso", -.15, 1.05, pad=.12, flare1=.06, hem=False, folds=.03)
+    for zs, name in ((-1, "TailFront"), (1, "TailBack")):
+        pc = o.add("LowerTorso", "Robe", name=name)
+        flap(pc, "LowerTorso", -1, 1, .9, 1.25, zs, pad=.13, flare=.22, folds=.04, seed=zs)
+    # long loose sleeves to the wrist
+    o.both("UpperArm", "Robe", lambda pc, part: shell(pc, part, -.06, 1.02, pad=.12, flare1=.06, folds=.045, hem=False))
+    o.both("LowerArm", "Robe", lambda pc, part: shell(pc, part, -.02, .62, pad=.18, flare0=.06, flare1=.16, folds=.05))
+    o.both("UpperLeg", "Dark", lambda pc, part: shell(pc, part, -.05, .75, pad=.1, flare1=.06, folds=.03))
+    o.both("LowerLeg", "Wrap", lambda pc, part: ribbed(pc, part, .05, .6, pad=.035, ribs=6, depth=.022, spiral=1.0))
+    _feet(o, "Dark")
+    return o.items
+
+
+def item_gaara():
+    o = Out()
+    up = o.add("UpperTorso", "Coat")
+    shell(up, "UpperTorso", .0, 1.0, pad=.1, flare1=.04, folds=.035, hem=False)
+    col = o.add("UpperTorso", "Coat", name="Collar")
+    collar(col, "UpperTorso", h=.16, flare=.05, neck=(.64, .6))
+    # the strap across the chest, right shoulder to left hip, front and back
+    sash = o.add("UpperTorso", "Sash")
+    S = size("UpperTorso")
+    a = (S.x / 2 + .14) / K
+    b = (S.z / 2 + .14) / K
+    rows = []
+    for w in (-.16, .16):
+        ring = []
+        for i in range(SEG):
+            t = 2 * math.pi * i / SEG
+            c, s = math.cos(t), math.sin(t)
+            x = a * math.copysign(abs(c) ** .125, c)
+            z = b * math.copysign(abs(s) ** .125, s)
+            y = x * .62 + w + .05 * math.sin(t * 3)
+            ring.append(Vector((x, y, z)))
+        rows.append(ring)
+    loft(sash, rows, shade(.9, .06), cap0=False, cap1=False)
+    lo = o.add("LowerTorso", "Coat")
+    shell(lo, "LowerTorso", -.15, 1.05, pad=.12, flare1=.08, hem=False, folds=.03)
+    for zs, name in ((-1, "TailFront"), (1, "TailBack")):
+        pc = o.add("LowerTorso", "Coat", name=name)
+        flap(pc, "LowerTorso", -1, 1, .9, 1.55, zs, pad=.14, flare=.25, folds=.045, seed=zs * 2)
+    o.both("UpperArm", "Coat", lambda pc, part: shell(pc, part, -.06, 1.02, pad=.1, folds=.035, hem=False))
+    o.both("LowerArm", "Coat", lambda pc, part: shell(pc, part, -.02, .84, pad=.11, flare1=.05, folds=.04))
+    o.both("UpperLeg", "Dark", lambda pc, part: shell(pc, part, -.05, 1.02, pad=.1, folds=.03, hem=False))
+    o.both("LowerLeg", "Dark", lambda pc, part: shell(pc, part, -.02, .78, pad=.11, flare1=.04, folds=.035))
+    _feet(o, "Dark")
+    return o.items
+
+
+def flak_vest(o, slot, collar_slot=None):
+    vest = o.add("UpperTorso", slot, name="Vest")
+    shell(vest, "UpperTorso", .02, 1.0, pad=.16, flare1=.02, folds=.012, hem=True, col=shade(.9, .05))
+    S = size("UpperTorso")
+    z = -(S.z / 2 + .16) / K - .03
+    pockets = o.add("UpperTorso", slot, name="Pockets")
+    for x in (-.62, -.22, .22, .62):
+        box(pockets, (x, -.22, z - .05), (.16, .22, .06), shade(.84, .04))
+        box(pockets, (x, .02, z - .07), (.17, .05, .07), shade(.95, .03))
+    col = o.add("UpperTorso", collar_slot or slot, name="Collar")
+    collar(col, "UpperTorso", h=.3, flare=.12, thick=.07, neck=(.7, .64))
+    return vest
+
+
+def item_kakashi():
+    o = Out()
+    up = o.add("UpperTorso", "Navy")
+    shell(up, "UpperTorso", .0, 1.0, pad=.06, folds=.02, hem=False)
+    flak_vest(o, "Vest")
+    lo = o.add("LowerTorso", "Navy")
+    shell(lo, "LowerTorso", -.15, 1.05, pad=.08, hem=False)
+    o.both("UpperArm", "Navy", lambda pc, part: shell(pc, part, -.05, 1.02, pad=.07, folds=.025, hem=False))
+    o.both("LowerArm", "Navy", lambda pc, part: shell(pc, part, -.02, .96, pad=.07, folds=.025))
+    o.both("UpperLeg", "Navy", lambda pc, part: shell(pc, part, -.05, 1.02, pad=.08, folds=.03, hem=False))
+    o.both("LowerLeg", "Navy", lambda pc, part: shell(pc, part, -.02, .5, pad=.09, folds=.03, hem=False))
+    o.both("LowerLeg", "Wrap", lambda pc, part: ribbed(pc, part, .45, .85, pad=.07, ribs=4, depth=.022, spiral=1.0))
+    _feet(o, "Navy")
+    return o.items
+
+
+def item_itachi():
+    o = Out()
+    up = o.add("UpperTorso", "Black")
+    shell(up, "UpperTorso", .02, 1.0, pad=.05, folds=.012, hem=False)
+    bp = o.add("UpperTorso", "Grey", name="Breastplate")
+    plate(bp, "UpperTorso", .04, .72, .12, arc=(-.95, .95), thick=.07)
+    back = o.add("UpperTorso", "Grey", name="Backplate")
+    plate(back, "UpperTorso", .04, .72, .12, arc=(-.95, .95), thick=.07, front=False)
+    straps = o.add("UpperTorso", "Black", name="Straps")
+    ribbed(straps, "UpperTorso", .74, .84, pad=.14, ribs=1, depth=.01, rings_per=3)
+    lo = o.add("LowerTorso", "Black")
+    shell(lo, "LowerTorso", -.15, 1.05, pad=.07, hem=False)
+    o.both("LowerArm", "Guard", lambda pc, part: plate(pc, part, .15, .85, .09, arc=(-.8, .8), thick=.05), mat="Metal")
+    o.both("LowerArm", "Black", lambda pc, part: shell(pc, part, .1, .92, pad=.05, folds=.01, hem=False))
+    o.both("UpperLeg", "Black", lambda pc, part: shell(pc, part, -.05, 1.02, pad=.08, folds=.03, hem=False))
+    o.both("LowerLeg", "Black", lambda pc, part: shell(pc, part, -.02, .85, pad=.09, folds=.03))
+    _feet(o, "Black")
+    return o.items
+
+
+FLAME = lambda v: .55 * (.5 + .5 * math.sin(v * math.pi * 14)) ** 2
+
+
+def item_minato():
+    o = Out()
+    up = o.add("UpperTorso", "Navy")
+    shell(up, "UpperTorso", .0, 1.0, pad=.06, folds=.02, hem=False)
+    flak_vest(o, "Vest")
+    # the short white coat over it: open in front, short wide sleeves, hem of flames
+    coat = o.add("UpperTorso", "Coat", name="Coat")
+    S = size("UpperTorso")
+    a = (S.x / 2 + .24) / K
+    b = (S.z / 2 + .26) / K
+    rows = []
+    for k in range(8):
+        y = S.y / 2 - k / 7 * S.y * 1.02
+        ring = []
+        for i in range(SEG - 6):
+            t = -math.pi / 2 + .5 + (2 * math.pi - 1.0) * i / (SEG - 7)
+            c, s = math.cos(t), math.sin(t)
+            d = .03 * noise.noise(Vector((t * 2, y * 3, 0)))
+            ring.append(Vector(((a + d) * math.copysign(abs(c) ** .125, c), y, (b + d) * math.copysign(abs(s) ** .125, s))))
+        rows.append(ring)
+    loft(coat, rows, shade(.95, .05), cap0=False, cap1=False, closed=False)
+    lo = o.add("LowerTorso", "Navy")
+    shell(lo, "LowerTorso", -.15, 1.05, pad=.08, hem=False)
+    # the coat hangs open in front: two front panels at the sides, one at the back
+    for zs, x0, x1, name in ((-1, -1.05, -.38, "CoatFrontL"), (-1, .38, 1.05, "CoatFrontR"), (1, -1.05, 1.05, "CoatBack")):
+        pc = o.add("LowerTorso", "Coat", name=name)
+        flap(pc, "LowerTorso", x0, x1, -.4, 1.0, zs, pad=.3, flare=.14, folds=.03, seed=zs * 3 + x0, hem_cut=FLAME)
+        fl = o.add("LowerTorso", "Flame", name="Flame" + name[4:])
+        flap(fl, "LowerTorso", x0, x1, 2.1, .32, zs, pad=.31, flare=.03, folds=.03, seed=zs * 3 + x0, hem_cut=lambda v: -FLAME(v) * 1.2,
+             col=shade(.95, .03))
+    o.both("UpperArm", "Coat", lambda pc, part: shell(pc, part, -.08, .55, pad=.16, flare1=.1, folds=.03))
+    o.both("UpperArm", "Navy", lambda pc, part: shell(pc, part, .4, 1.02, pad=.06, folds=.02, hem=False))
+    o.both("LowerArm", "Navy", lambda pc, part: shell(pc, part, -.02, .96, pad=.07, folds=.025))
+    o.both("UpperLeg", "Navy", lambda pc, part: shell(pc, part, -.05, 1.02, pad=.08, folds=.03, hem=False))
+    o.both("LowerLeg", "Navy", lambda pc, part: shell(pc, part, -.02, .6, pad=.09, folds=.03, hem=False))
+    o.both("LowerLeg", "Wrap", lambda pc, part: ribbed(pc, part, .55, .85, pad=.07, ribs=3, depth=.022, spiral=1.0))
+    _feet(o, "Navy")
+    return o.items
+
+
+# model name -> builder; Shop item id -> model name (colour variants share one)
+MODELS = {
+    "Tunic": item_tunic, "HighCollar": item_high_collar, "Sleeveless": item_sleeveless,
+    "Pants": item_pants, "Shorts": item_shorts, "ArmWraps": item_arm_wraps, "ArmGuards": item_arm_guards,
+    "Sandals": item_sandals,
+    "Naruto": item_naruto, "Sasuke": item_sasuke, "Lee": item_lee, "Neji": item_neji, "Gaara": item_gaara,
+    "Kakashi": item_kakashi, "Itachi": item_itachi, "Minato": item_minato,
+}
+ITEMS = {
+    "TopTunicNavy": "Tunic", "TopTunicBlack": "Tunic", "TopTunicGreen": "Tunic",
+    "TopHighCollar": "HighCollar", "TopSleeveless": "Sleeveless",
+    "BottomPantsDark": "Pants", "BottomPantsSand": "Pants", "BottomShorts": "Shorts",
+    "ArmsWraps": "ArmWraps", "ArmsGuards": "ArmGuards",
+    "FeetSandals": "Sandals", "FeetBlack": "Sandals",
+    "SetNaruto": "Naruto", "SetSasuke": "Sasuke", "SetLee": "Lee", "SetNeji": "Neji", "SetGaara": "Gaara",
+    "SetKakashi": "Kakashi", "SetItachi": "Itachi", "SetMinato": "Minato",
+}
+# Slots a model uses that Shared/Shop does not colour yet (DEV: add them).
+NEW_SLOTS = {"Minato": {"Coat": (238, 236, 230), "Flame": (196, 48, 34), "Vest": (86, 98, 70)},
+             "Lee": {"Wrap": (226, 222, 212)}}
+
+
+def to_blender_frame(pc):
+    """Roblox frame (x, y up, z back) -> nd_mesh's Blender frame (x, -z, y)."""
+    out = Piece(pc.name, pc.mat, pc.flat, pc.alpha, pc.reflect)
+    out.v = [Vector((v.x, -v.z, v.y)) for v in pc.v]
+    out.c, out.f = list(pc.c), list(pc.f)
+    return out
+
+
+def built(name):
+    out = []
+    for part, slot, pc in MODELS[name]():
+        b = to_blender_frame(pc)
+        outward(b)
+        out.append((part, slot, b))
+    return out
+
+
+def write(dst, limit=110000):
+    from nd_mesh import piece_luau, q
+    chunks, cur, sizeb = [], [], 0
+    report = []
+    for name in MODELS:
+        pieces = built(name)
+        tris = sum(len(p.tris()) for _, _, p in pieces)
+        report.append((name, len(pieces), tris))
+        for k, (part, slot, pc) in enumerate(pieces):
+            pc.name = "%s_%s_%d" % (part, slot, k)
+            text = "\t{%s,%s,%s,%s}," % (q(name), q(part), q(slot), piece_luau(pc))
+            if cur and sizeb + len(text) > limit:
+                chunks.append(cur); cur, sizeb = [], 0
+            cur.append(text); sizeb += len(text)
+    if cur:
+        chunks.append(cur)
+    head = "-- Generated by tools/blender/outfit_models.py. Do not edit: re-run the script.\n"
+    for f in os.listdir(dst):
+        if f.startswith("OutfitMeshData") and f.endswith(".luau"):
+            os.remove(os.path.join(dst, f))
+    for i, c in enumerate(chunks, 1):
+        with open(os.path.join(dst, "OutfitMeshData%d.luau" % i), "w") as fh:
+            fh.write(head + "-- {model, body part, colour slot, piece}, in order.\nreturn {\n" + "\n".join(c) + "\n}\n")
+    ref = ",".join("%s=Vector3.new(%g,%g,%g)" % (k, *v) for k, v in REF.items())
+    items = ",".join("%s=%s" % (k, q(v)) for k, v in ITEMS.items())
+    new_slots = ",".join("%s={%s}" % (m, ",".join("%s={%d,%d,%d}" % (s, *c) for s, c in v.items())) for m, v in NEW_SLOTS.items())
+    with open(os.path.join(dst, "OutfitMeshes.luau"), "w") as fh:
+        fh.write(head + """-- (DEC-040) The ninja outfit's modelled pieces (Server/Outfit): each Shop item
+-- (Items: id -> model) is a list of pieces, one per body part and colour slot.
+-- A piece is in MeshKit's packed format, modelled round its body part's
+-- centre on the standard R15 part size Ref[part]: scale it by body.Size/Ref,
+-- weld it at body.CFrame*CFrame.new(o*scale); its Color is the item's
+-- colors[slot] (the vertex colours are shading: they multiply).
+--   OutfitMeshes.Models[model] = {{on=<body part>, slot=<colour slot>, <piece>}, ...}
+local OutfitMeshes={}
+OutfitMeshes.Ref={%s}
+OutfitMeshes.Items={%s}
+-- Slots these models use that Shared/Shop has no colour for yet (a default)
+OutfitMeshes.NewSlots={%s}
+OutfitMeshes.Models={}
+for i=1,%d do
+	for _,row in require(script.Parent["OutfitMeshData"..i]) do
+		local list=OutfitMeshes.Models[row[1]]
+		if not list then list={};OutfitMeshes.Models[row[1]]=list end
+		local piece=row[4]
+		piece.on=row[2];piece.slot=row[3]
+		table.insert(list,piece)
+	end
+end
+function OutfitMeshes.forItem(id)
+	local model=OutfitMeshes.Items[id]
+	return model and OutfitMeshes.Models[model] or nil
+end
+return OutfitMeshes
+""" % (ref, items, new_slots, len(chunks)))
+    for name, n, t in report:
+        print("%-12s %3d pieces %6d tris" % (name, n, t))
+    print("chunks", len(chunks), "sizes", [sum(len(x) for x in c) for c in chunks])
+
+
+def render(dst, names=None):
+    import bpy
+    from nd_mesh import to_blender, render_set, clear
+    os.makedirs(dst, exist_ok=True)
+    SKIN = (0.93, 0.78, 0.62)
+    COLORS = {"Orange": (236, 120, 30), "Blue": (34, 44, 92), "White": (232, 230, 224), "Navy": (30, 40, 86),
+              "Wrap": (226, 222, 212), "Green": (46, 140, 60), "Red": (190, 40, 36), "Robe": (226, 222, 208),
+              "Dark": (60, 56, 64), "Coat": (110, 34, 36), "Sash": (206, 196, 170), "Vest": (86, 98, 70),
+              "Black": (26, 26, 32), "Grey": (150, 152, 158), "Guard": (176, 180, 186), "Cloth": (40, 48, 78),
+              "Collar": (34, 44, 92), "Belt": (150, 40, 36), "Tie": (210, 206, 196), "Strap": (36, 36, 44),
+              "Sandal": (40, 48, 78), "Flame": (196, 48, 34)}
+    for name in MODELS:
+        if names and name not in names:
+            continue
+        clear()
+        objs = []
+        # the mannequin: the R15 parts as boxes
+        for part, c in REST.items():
+            S = REF.get(part, (1.2, 1.2, 1.2))
+            pc = Piece(part, "SmoothPlastic")
+            hx, hy, hz = S[0] / 2, S[1] / 2, S[2] / 2
+            box(pc, (c[0], c[1], c[2]), (hx * .98, hy * .98, hz * .98), lambda p, k: SKIN)
+            objs.append(to_blender(to_blender_frame(pc)))
+        for part, slot, pc in built(name):
+            c = REST[part]
+            col = COLORS.get(slot, NEW_SLOTS.get(name, {}).get(slot, (150, 150, 150)))
+            if name == "Minato" and slot == "Coat":
+                col = (238, 236, 230)
+            tint = [x / 255 for x in col]
+            pc.c = [tuple(g * t for g, t in zip(cc, tint)) for cc in pc.c]
+            pc.v = [v + Vector((c[0], -c[2], c[1])) for v in pc.v]
+            objs.append(to_blender(pc))
+        for view, tag in (((.25, 1.0, .12), "front"), ((-.35, -1.0, .15), "back")):
+            render_set(objs, os.path.join(dst, "%s_%s.png" % (name, tag)), size=(360, 560), view=view, fill=1.05)
+        print("rendered", name, flush=True)
+
+
+if __name__ == "__main__":
+    if sys.argv[1] == "write":
+        write(sys.argv[2])
+    else:
+        render(sys.argv[2], sys.argv[3:] or None)
