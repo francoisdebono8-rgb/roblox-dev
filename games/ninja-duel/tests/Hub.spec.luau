@@ -111,6 +111,12 @@ test("the masters take their portraits, each with the prompt the client answers"
 	local prompt=training:FindFirstChild("Talk",true)
 	assert(prompt and prompt:GetAttribute("NinjaTrain")==true and prompt.ActionText=="TRAIN","the training prompt")
 	assert(HubMap.placeAt(training.PrimaryPart.CFrame.Position).id=="Training","the dummy is not on the training ground")
+	-- (14/11) the market's counter: the looks for Ryō
+	local market=holder:FindFirstChild("Market")
+	assert(market and market:GetAttribute("NinjaMarket")==true,"no market counter")
+	local mp=market:FindFirstChild("Talk",true)
+	assert(mp and mp:GetAttribute("NinjaMarket")==true,"the market's prompt")
+	assert(HubMap.placeAt(market.PrimaryPart.CFrame.Position).id=="Market","the counter is not in the market")
 end)
 
 -- (14/11, audit in Studio: Roblox's paths from the gate end where a player

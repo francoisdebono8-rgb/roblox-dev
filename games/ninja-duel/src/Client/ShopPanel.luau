@@ -59,7 +59,7 @@ function Panel.new(kit,gui,send,onTree)
 	end)
 	-- The side: the tabs and the Ryō.
 	local side=frame(card,UDim2.fromOffset(0,5),UDim2.fromOffset(SIDE,H-5),P.ink,.35)
-	kit.inkTitle(text(side,"SHOP",UDim2.fromOffset(24,24),UDim2.fromOffset(SIDE-48,56),54,P.paper,kit.TITLE_FONT))
+	self.title=kit.inkTitle(text(side,"SHOP",UDim2.fromOffset(24,24),UDim2.fromOffset(SIDE-48,56),54,P.paper,kit.TITLE_FONT))
 	self.tabs={}
 	for i,name in TABS do
 		local b=button(side,name,UDim2.fromOffset(20,100+(i-1)*64),UDim2.fromOffset(SIDE-40,54),function() self.tab=name;self:draw() end)
@@ -104,9 +104,16 @@ function Panel.dropFocus(root)
 	end)
 end
 function Panel:hide() self.root.Visible=false;Panel.dropFocus(self.root) end
-function Panel:show(kits,tab)
+-- (14/11, François: « tout ce qu'il y a dans la boutique, c'est des Robux. Et
+-- on va créer une boutique propre au jeu avec des Ryō ») `counter`: "shop"
+-- (the SHOP: kits, looks, passes and Ryō for Robux) or "market" (Konoha's
+-- market: looks for Ryō, Server/Hub.placeMarket).
+Panel.TABS={shop=TABS,market={"WEAPONS","STYLE"}}
+function Panel:show(kits,tab,counter)
 	self.kits=kits
+	self.counter=counter or "shop"
 	if tab then self.tab=tab end
+	if not table.find(Panel.TABS[self.counter],self.tab) then self.tab=Panel.TABS[self.counter][1] end
 	self:draw()
 	self.root.Visible=true
 	Panel.padFocus(self.tabs[self.tab])
@@ -121,15 +128,28 @@ function Panel:draw()
 	for _,item in self.drawn do item:Destroy() end
 	self.drawn={}
 	local P=self.P
-	for name,b in self.tabs do
+	local counter=self.counter or "shop"
+	self.title.Text=if counter=="market" then "MARKET" else "SHOP"
+	local slot=0
+	for _,name in TABS do
+		local b=self.tabs[name]
 		local on=name==self.tab
+		b.Visible=table.find(Panel.TABS[counter],name)~=nil
+		if b.Visible then b.Position=UDim2.fromOffset(20,100+slot*64);slot+=1 end
 		b.BackgroundColor3=if on then P.red else P.panel
 		b.TextColor3=if on then P.paper else P.text
 	end
 	self.ryo.Text=tostring(self.kits and self.kits.ryo or 0)
 	if self.tab=="KITS" then self:drawKits()
 	elseif self.tab=="WEAPONS" then self:drawLooks({"kunai","shuriken","tanto","gourd"},"WEAPONS","A look, never a number. Each kit keeps its own; the kit's objects (gourd, weights, tanto) are earned on its tree.")
-	elseif self.tab=="STYLE" then self:drawLooks({"headband"},"STYLE","Ninja pieces over your own Roblox avatar, in Konoha and in the duel. What you own on Roblox stays yours.")
+	elseif self.tab=="STYLE" then
+		-- (DEC-040) the masters' outfits on his own avatar, then the pieces;
+		-- MY NINJA opens the outfit card (Client/OutfitPanel)
+		self:drawLooks({"set","headband"},"STYLE","The masters' outfits and ninja pieces over your own avatar, in Konoha and in every duel.")
+		if self.onOutfit then
+			local b=self:add(self.kit.button(self.card,"MY NINJA",UDim2.fromOffset(Panel.CLOSE.X-230,Panel.CLOSE.Y),UDim2.fromOffset(210,Panel.CLOSE.H),function() self:hide();self.onOutfit() end,self.P.gold))
+			b.TextColor3=self.P.ink;b.TextSize=24
+		end
 	elseif self.tab=="PASSES" then self:drawPasses()
 	else self:drawRyo() end
 end
@@ -205,7 +225,8 @@ function Panel:drawLooks(slots,title,sub)
 	local K,P=self.kit,self.P
 	self.heading.Text=title
 	self.subheading.Text=sub
-	self.footer.Text="Ryō is earned in duels (the day's first win counts double) or bought in packs. Robux looks show SOON until they are on sale."
+	self.footer.Text=if self.counter=="market" then "Ryō is earned in duels, against other players and in tournaments (the day's first win counts double)."
+		else "Looks for Ryō are sold at Konoha's market. Robux looks show SOON until they are on sale."
 	local kits=self.kits
 	local style=kits and kits.style
 	local products=Config.Shop and Config.Shop.Products or {}
@@ -216,9 +237,12 @@ function Panel:drawLooks(slots,title,sub)
 		local label=info.name..(if info.kit then "  •  "..nameOf(info.kit) else "")
 		self:add(K.text(self.body,label,UDim2.fromOffset(0,y),UDim2.fromOffset(600,26),22,P.gold,K.TITLE_FONT))
 		y+=32
-		for k,item in Shop.inSlot(slot) do
+		-- (DEC-040) a slot of many looks (the masters' outfits) wraps
+		local perRow=math.max(1,math.floor((W-SIDE-70+14)/(cw+14)))
+		for k,item in Shop.atCounter(slot,self.counter or "shop",style) do
 			local state=Shop.state(style,item,kits and kits.ryo or 0,products)
-			local x=(k-1)*(cw+14)
+			local x=((k-1)%perRow)*(cw+14)
+			if (k-1)%perRow==0 and k>1 then y+=142 end
 			local cell=self:add(K.frame(self.body,UDim2.fromOffset(x,y),UDim2.fromOffset(cw,128),P.panel,0))
 			K.corner(cell,10)
 			if state.kind=="equipped" then K.create("UIStroke",cell,{Color=P.gold,Thickness=3,ApplyStrokeMode=Enum.ApplyStrokeMode.Border}) end
@@ -226,6 +250,13 @@ function Panel:drawLooks(slots,title,sub)
 			local swatch=K.frame(cell,UDim2.fromOffset(12,12),UDim2.new(1,-24,0,34),P.ink,0);K.corner(swatch,6)
 			local colors={}
 			for _,key in {"Blade","Body","Band","Grip","Ring","Plate"} do if item.colors and item.colors[key] then table.insert(colors,item.colors[key]) end end
+			if #colors==0 and item.colors then
+				-- (an outfit: its cloth colours, in a stable order)
+				local keys={}
+				for key in item.colors do table.insert(keys,key) end
+				table.sort(keys)
+				for _,key in keys do table.insert(colors,item.colors[key]) end
+			end
 			if #colors==0 then colors={{40,38,44}} end
 			for c,color in colors do
 				K.frame(swatch,UDim2.new((c-1)/#colors,2,0,2),UDim2.new(1/#colors,-4,1,-4),rgb(color),0)
@@ -303,7 +334,7 @@ function Panel:drawRyo()
 		string.format("A duel finished: %d  •  won: +%d",R.Finished,R.Won),
 		string.format("The day's first win: ×%d",R.FirstWinOfDay),
 		string.format("A master's duel won: +%d",R.MasterWon),
-		string.format("Tournament: %d to the champion, %d to the finalist (soon)",R.Champion,R.Finalist),
+		string.format("Tournament: %d to the champion, %d to the finalist",R.Champion,R.Finalist),
 	}
 	for k,line in lines do K.text(earn,line,UDim2.fromOffset(18,56+(k-1)*30),UDim2.new(1,-36,0,24),15,P.text,K.BODY_FONT) end
 end

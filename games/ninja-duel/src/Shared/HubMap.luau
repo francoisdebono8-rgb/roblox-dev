@@ -81,6 +81,10 @@ M.Masters={
 -- Training Ground Three's dummy: E there trains with his kit (Server/Hub
 -- places the prompt, Client/HubClient answers it).
 M.Training={at=Vector3.new(-150,0,16),place="TRAINING GROUND THREE",duel={at=Vector3.new(-132,0,30),radius=40}}
+-- (14/11, François: « on va créer une boutique propre au jeu avec des Ryō »)
+-- The market of Konoha, at the crossing of its lanes: the looks sold for Ryō
+-- (Client/ShopPanel in its "market" mode; the SHOP sells for Robux).
+M.Market={at=Vector3.new(158,0,62),place="THE MARKET STREETS"}
 
 -- (14/11, user: « les têtes sont moches […] à terme ça sera les champions, on
 -- peut mettre le dev aussi et des trucs drôles pour l'instant ») The four

@@ -97,7 +97,9 @@ function Tournament:view(cup)
 			mine=(a==cup.me or b==cup.me),lineA=la,lineB=lb}
 	end
 	return {seats=table.clone(cup.seats),me=cup.me,winners=table.clone(cup.winners),skipped=table.clone(cup.skipped),
-		next=next_,over=cup.over==true,champion=cup.champion,out=cup.out,eliminatedIn=cup.eliminatedIn}
+		next=next_,over=cup.over==true,champion=cup.champion,out=cup.out,eliminatedIn=cup.eliminatedIn,
+		-- (DEC-040) what the cup gave his kit: {amount (mastery), ryo}
+		reward=cup.reward and {amount=cup.reward.amount,ryo=cup.reward.ryo} or nil}
 end
 function Tournament:send(player,s,phase)
 	s.phase=phase or "Bracket"
@@ -192,6 +194,8 @@ function Tournament:matchOver(player,s)
 	s.cupPilot=nil
 	if mine and winnerSeat~=cup.me then
 		cup.out=true;cup.eliminatedIn=Tournament.RoundNames[Tournament.roundOf(cup.match)]
+		-- (DEC-040) a lost final: the finalist's mastery and Ryō
+		if cup.match==7 then cup.reward=require(script.Parent.Progression).cupEnded(player,cup.seats[cup.me],false) end
 	end
 	s.cupAdvanceReady=true
 end
@@ -209,6 +213,8 @@ function Tournament:advance(player,s)
 		if cup.champion==cup.me then
 			-- (14/11) his face on Konoha's cliff, on every server
 			pcall(function() require(script.Parent.ChampionCliff).champion(player) end)
+			-- (DEC-040) the champion's bonus to his kit, and his Ryō
+			if not cup.reward then cup.reward=require(script.Parent.Progression).cupEnded(player,cup.seats[cup.me],true) end
 			s.epoch+=1
 			s.autopilot=nil;s.spectate=nil;s.cupPilot=nil
 			self.matches:destroy(s)

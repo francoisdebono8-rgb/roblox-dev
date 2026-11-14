@@ -35,7 +35,12 @@ Masters.MaxMastery=1000000
 -- Mastery earned by one decided duel with a kit the player owns: finishing
 -- it, winning it, and using that kit's own jutsu (variety, not spam: each
 -- different jutsu counts once, three at most). Easy AI counts for less.
-Masters.Gain={Finished=30,Won=50,PerTechnique=10,MaxTechniques=3,EasyScale=.6,Max=200}
+Masters.Gain={Finished=30,Won=50,PerTechnique=10,MaxTechniques=3,EasyScale=.6,Max=200,
+	-- (DEC-040, user 14/11: « la maîtrise, t'es censé la gagner en affrontant
+	-- des gens, en gagnant des tournois ») a duel against another player
+	-- counts twice a duel against the AI; the tournament won adds Champion
+	-- to the champion's kit, the final lost Finalist.
+	Versus=2,Champion=150,Finalist=60}
 
 function Masters.isKit(id)
 	return type(id)=="string" and table.find(Masters.Kits,id)~=nil
@@ -78,6 +83,14 @@ function Masters.duelGain(r)
 	local n=G.Finished+(if r.won then G.Won else 0)+math.min(r.techniques or 0,G.MaxTechniques)*G.PerTechnique
 	if r.level=="easy" then n*=G.EasyScale end
 	return math.clamp(math.floor(n+.5),0,G.Max)
+end
+
+-- (DEC-040) Mastery for a duel against another player, decided:
+-- r = {won, techniques}.
+function Masters.versusGain(r)
+	local G=Masters.Gain
+	local n=Masters.duelGain({won=r.won,techniques=r.techniques,level="normal"})*G.Versus
+	return math.clamp(math.floor(n+.5),0,G.Max*G.Versus)
 end
 
 return Masters

@@ -139,6 +139,11 @@ test("his match: a duel against the next AI; lost, the bracket plays out without
 end)
 
 test("champion: three matches won, the champion's card; leaving ends the cup",function()
+	-- (DEC-040) the champion's bonus, once, for his kit, shown on his card
+	local Progression=H.load("Server/Progression")
+	local paid={}
+	local wasCup=Progression.cupEnded
+	Progression.cupEnded=function(_,kit,champion) table.insert(paid,{kit=kit,champion=champion}) return {amount=150,ryo=300} end
 	local m,player=fresh()
 	send(m,player,"CupStart",{player="Leaf"})
 	local s=m.sessions[player]
@@ -150,6 +155,9 @@ test("champion: three matches won, the champion's card; leaving ends the cup",fu
 	end
 	assert(s.phase=="Champion" and last(player).phase=="Champion","no champion's card")
 	assert(last(player).cup.champion==last(player).cup.me,"the champion is not him")
+	Progression.cupEnded=wasCup
+	assert(#paid==1 and paid[1].kit=="Leaf" and paid[1].champion==true,"the champion's bonus: "..#paid)
+	assert(last(player).cup.reward and last(player).cup.reward.amount==150 and last(player).cup.reward.ryo==300,"the card does not show the bonus")
 	-- (Audit 04/11) NEW TOURNAMENT on the champion's card starts a new bracket
 	local before=s.cup
 	send(m,player,"CupStart",{player="Leaf"})

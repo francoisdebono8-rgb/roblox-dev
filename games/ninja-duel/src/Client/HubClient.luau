@@ -110,6 +110,8 @@ function Hub.new(ui,camera,send,controls)
 		if master then self:showCard(master) return end
 		if prompt:GetAttribute("NinjaBoard") then self:openBoard() end
 		if prompt:GetAttribute("NinjaTrain") then self:train() end
+		-- (14/11) the market: the looks sold for Ryō
+		if prompt:GetAttribute("NinjaMarket") and self.ui.shopPanel then self:hideCard();self.ui.shopPanel:show(self.kits,"WEAPONS","market") end
 	end)
 	-- The run and the second jump.
 	self.leapUsed=false
@@ -215,7 +217,7 @@ end
 function Hub:apply()
 	local walking=self.active and not self.board
 	-- The tree panel or the shop over the village: the walk waits behind it.
-	local panel=(self.ui.treePanel and self.ui.treePanel:shown()) or (self.ui.shopPanel and self.ui.shopPanel:shown()) or false
+	local panel=(self.ui.treePanel and self.ui.treePanel:shown()) or (self.ui.shopPanel and self.ui.shopPanel:shown()) or (self.ui.outfitPanel and self.ui.outfitPanel:shown()) or false
 	self.panelOpen=panel
 	self.ui.hubWalk=walking
 	self.camera.hubWalk=walking
@@ -275,7 +277,7 @@ function Hub:jumpRequest()
 end
 function Hub:step(dt)
 	if not self.active then return end
-	if ((self.ui.treePanel and self.ui.treePanel:shown()) or (self.ui.shopPanel and self.ui.shopPanel:shown()) or false)~=self.panelOpen then self:apply() end
+	if ((self.ui.treePanel and self.ui.treePanel:shown()) or (self.ui.shopPanel and self.ui.shopPanel:shown()) or (self.ui.outfitPanel and self.ui.outfitPanel:shown()) or false)~=self.panelOpen then self:apply() end
 	local character=Players.LocalPlayer.Character
 	local hum=character and character:FindFirstChildOfClass("Humanoid")
 	local root=character and character:FindFirstChild("HumanoidRootPart")
@@ -309,8 +311,8 @@ function Hub:step(dt)
 	if self.clock>.25 then
 		self.clock=0
 		-- The masters arrive after the village (their portraits first): the
-		-- masters, the proctor and the training dummy.
-		local count,want=0,2
+		-- masters, the proctor, the training dummy and the market.
+		local count,want=0,3
 		for _ in self.markers do count+=1 end
 		for _ in HubMap.Masters do want+=1 end
 		if count<want then self:refreshMarkers() end
@@ -386,11 +388,11 @@ function Hub:refreshMarkers()
 	local P=self.K.palette
 	for _,model in holder:GetChildren() do
 		local id=model:GetAttribute("NinjaMaster")
-		local key=id or (model:GetAttribute("NinjaBoard") and "Proctor") or (model:GetAttribute("NinjaTrain") and "Training")
+		local key=id or (model:GetAttribute("NinjaBoard") and "Proctor") or (model:GetAttribute("NinjaTrain") and "Training") or (model:GetAttribute("NinjaMarket") and "Market")
 		if key and (not self.markers[key] or self.markers[key].model~=model) then
 			if self.markers[key] then self.markers[key].gui:Destroy() end
-			local title=if id then nameOf(id) elseif key=="Training" then "TRAINING" else "THE PROCTOR"
-			local place=if id then HubMap.Masters[id] and HubMap.Masters[id].place elseif key=="Training" then HubMap.Training.place else HubMap.Proctor.place
+			local title=if id then nameOf(id) elseif key=="Training" then "TRAINING" elseif key=="Market" then "THE MARKET" else "THE PROCTOR"
+			local place=if id then HubMap.Masters[id] and HubMap.Masters[id].place elseif key=="Training" then HubMap.Training.place elseif key=="Market" then HubMap.Market.place else HubMap.Proctor.place
 			self.markers[key]=self:marker(model,id,title,place)
 			if self.markers[key] then self.markers[key].key=key end
 		end
@@ -416,6 +418,10 @@ function Hub:refreshMarkers()
 				local kit=self:trainingKit()
 				marker.tag.Text=if kit then "TRY "..nameOf(kit).."'S KIT" else "YOUR KIT"
 				marker.gui.AlwaysOnTop=false;marker.gui.MaxDistance=140
+			elseif marker.key=="Market" then
+				-- seen in the market's lanes only
+				marker.tag.Text="LOOKS FOR RYŌ"
+				marker.gui.AlwaysOnTop=false;marker.gui.MaxDistance=120
 			else
 				marker.tag.Text="DUELS  •  TOURNAMENT"
 				-- (14/11, Studio: from the gate the proctor's marker sat on

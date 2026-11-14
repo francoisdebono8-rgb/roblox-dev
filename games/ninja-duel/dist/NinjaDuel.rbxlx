@@ -863,17 +863,13 @@ return {
 	-- (14/11) DevUserId: whose avatar is carved first on the cliff
 	-- (Server/ChampionCliff); nil = the game's creator (game.CreatorId), so a
 	-- local file in Studio shows the funny head there.
-	-- (14/11, François: « que notre perso puisse combattre » dans la ville)
-	-- VillageDuels: a duel started at a master's home (his card, the training
-	-- dummy) is fought there, in the village (HubMap.Masters[id].duel), not
-	-- in the stadium. The board's duels and the tournament stay in the stadium.
-	Hub = { Enabled = true, DevUserId = nil, VillageDuels = true },
+	Hub = { Enabled = true, DevUserId = nil },
 	-- (13/11) The shop's Roblox ids, created by the owner on the game's page
 	-- (0 or absent: shown SOON, nothing sold). Products: a Robux look by its
 	-- Shared/Shop key; RyoPacks: Ryō for Robux; Passes: game passes (the 2x
 	-- mastery pass is Progression.MasteryPass).
 	Shop = {
-		Products = { KunaiGold = 0, TantoShadow = 0 },
+		Products = { KunaiGold = 0, TantoShadow = 0, SetItachi = 0, SetMinato = 0 },
 		RyoPacks = { { amount = 1000, product = 0 }, { amount = 3000, product = 0 }, { amount = 8000, product = 0 } },
 		Passes = { VIP = 0, EarlyAccess = 0, BuildSlots = 0 },
 	},
@@ -2181,38 +2177,24 @@ M.Proctor={kit="Professor",at=Vector3.new(0,0,-52),face=Vector3.new(0,0,1),
 	name="THE PROCTOR",place="THE EXAM HALL",line="Duels, the tournament, players from everywhere: it all starts on this floor."}
 
 -- The masters, each at home. `line`: what he says when the player comes to him.
--- `duel` (14/11, Config.Hub.VillageDuels): where a duel started at his home
--- is fought, in the village (its centre on the ground, the radius the bodies
--- are held in); without it, the stadium.
--- (14/11, measured in Studio: Roblox's paths from the gate) each faces the way
--- a player walks up to him. Naruto, Gaara and Kakashi showed their side or
--- back (67, 84 and 64 degrees off), Lee 35; now under 10.
 M.Masters={
-	Legion={place="ICHIRAKU RAMEN",at=Vector3.new(-15,0,110),face=Vector3.new(.45,0,.9),
-		duel={at=Vector3.new(0,0,140),radius=34},
+	Legion={place="ICHIRAKU RAMEN",at=Vector3.new(-15,0,110),face=Vector3.new(1,0,0),
 		line="A bowl first, then the clones. Nobody beats me at either!"},
 	Lion={place="THE UCHIHA PIER",at=Vector3.new(176,1.6,-60),face=Vector3.new(-1,0,0),
 		line="Fire starts in the chest, not in the hands. Show me yours."},
-	Leaf={place="TRAINING GROUND THREE",at=Vector3.new(-118,0,28),face=Vector3.new(.85,0,.53),
-		duel={at=Vector3.new(-132,0,30),radius=40},
+	Leaf={place="TRAINING GROUND THREE",at=Vector3.new(-118,0,28),face=Vector3.new(1,0,0),
 		line="Five hundred laps, then we talk. Or one honest fight, right now!"},
 	GentleFist={place="THE HYŪGA COMPOUND",at=Vector3.new(-146,0,-98),face=Vector3.new(1,0,0),
-		duel={at=Vector3.new(-152,0,-104),radius=36},
 		line="The Byakugan sees every opening you leave. Close them first."},
-	Sand={place="THE EXAM HALL'S BALCONY",at=Vector3.new(-49,12.5,-78),face=Vector3.new(.1,0,1),
+	Sand={place="THE EXAM HALL'S BALCONY",at=Vector3.new(-49,12.5,-78),face=Vector3.new(1,0,0),
 		line="The sand decides who is worth it. It has not decided about you."},
-	Copycat={place="THE MEMORIAL STONE",at=Vector3.new(-165,0,72),face=Vector3.new(.82,0,.57),
+	Copycat={place="THE MEMORIAL STONE",at=Vector3.new(-165,0,72),face=Vector3.new(1,0,-.5),
 		line="Copy first, understand later. Show me something worth copying."},
 	Mirage={place="THE UCHIHA SHRINE'S TORII",at=Vector3.new(178,14.9,-108),face=Vector3.new(-1,0,.4),
 		line="You see only what I let you see. Look closer."},
 	Flashstep={place="UNDER THE HOKAGE FACES",at=Vector3.new(0,24,-214),face=Vector3.new(0,0,1),
 		line="Plant your mark first. The speed comes after."},
 }
-
--- (14/11, audit: « que notre perso puisse combattre, qu'on puisse apprendre »)
--- Training Ground Three's dummy: E there trains with his kit (Server/Hub
--- places the prompt, Client/HubClient answers it).
-M.Training={at=Vector3.new(-150,0,16),place="TRAINING GROUND THREE",duel={at=Vector3.new(-132,0,30),radius=40}}
 
 -- (14/11, user: « les têtes sont moches […] à terme ça sera les champions, on
 -- peut mettre le dev aussi et des trucs drôles pour l'instant ») The four
@@ -2553,7 +2535,12 @@ Masters.MaxMastery=1000000
 -- Mastery earned by one decided duel with a kit the player owns: finishing
 -- it, winning it, and using that kit's own jutsu (variety, not spam: each
 -- different jutsu counts once, three at most). Easy AI counts for less.
-Masters.Gain={Finished=30,Won=50,PerTechnique=10,MaxTechniques=3,EasyScale=.6,Max=200}
+Masters.Gain={Finished=30,Won=50,PerTechnique=10,MaxTechniques=3,EasyScale=.6,Max=200,
+	-- (DEC-040, user 14/11: « la maîtrise, t'es censé la gagner en affrontant
+	-- des gens, en gagnant des tournois ») a duel against another player
+	-- counts twice a duel against the AI; the tournament won adds Champion
+	-- to the champion's kit, the final lost Finalist.
+	Versus=2,Champion=150,Finalist=60}
 
 function Masters.isKit(id)
 	return type(id)=="string" and table.find(Masters.Kits,id)~=nil
@@ -2596,6 +2583,14 @@ function Masters.duelGain(r)
 	local n=G.Finished+(if r.won then G.Won else 0)+math.min(r.techniques or 0,G.MaxTechniques)*G.PerTechnique
 	if r.level=="easy" then n*=G.EasyScale end
 	return math.clamp(math.floor(n+.5),0,G.Max)
+end
+
+-- (DEC-040) Mastery for a duel against another player, decided:
+-- r = {won, techniques}.
+function Masters.versusGain(r)
+	local G=Masters.Gain
+	local n=Masters.duelGain({won=r.won,techniques=r.techniques,level="normal"})*G.Versus
+	return math.clamp(math.floor(n+.5),0,G.Max*G.Versus)
 end
 
 return Masters
@@ -2697,42 +2692,6 @@ function V.action(kits,id)
 		note=string.format("%s TEACHES WHOEVER HAS %d MASTERY WITH %s (BEST: %d).",who,Masters.Need,from,m.best or 0)}
 end
 
--- (14/11, new player's walk) The first kit taken, its first duel not fought
--- yet: that kit's id, else nil. The master's card offers YOUR FIRST DUEL and
--- Konoha's goal and marker point at him until the duel is fought.
-function V.firstDuel(kits)
-	if not kits or kits.state~="ready" or not kits.starter or not (kits.owned and kits.owned[kits.starter]) then return nil end
-	if (kits.mastery and kits.mastery[kits.starter] or 0)~=0 then return nil end
-	return kits.starter
-end
-
--- (14/11, new player's walk) Konoha's goal: a short head and the line under
--- it (where to go: `items`, joined in `sub`, or one a line on a narrow
--- screen). Before, one line of a hundred letters ran under the shop
--- and Roblox's buttons; a new player's three masters now sit under the head.
-function V.goal(kits)
-	local HubMap=require(script.Parent.HubMap)
-	local function place(id) local spot=HubMap.Masters[id] return spot and spot.place or "" end
-	local function goal(head,items) return {head=head,items=items,sub=table.concat(items,"      ")} end
-	local proctor=goal("DUELS AND THE TOURNAMENT",{"THE PROCTOR  •  "..HubMap.Proctor.place})
-	if not kits then return proctor end
-	if kits.state~="ready" then return goal("",{}) end
-	if kits.needStarter then
-		local where={}
-		for _,id in Masters.Starters do table.insert(where,name(id).." • "..place(id)) end
-		return goal("CHOOSE YOUR FIRST MASTER",where)
-	end
-	local first=V.firstDuel(kits)
-	if first then return goal("YOUR FIRST DUEL",{"TALK TO "..name(first).."  •  "..place(first)}) end
-	for _,id in Masters.Kits do
-		local m=kits.masters and kits.masters[id]
-		if m and m.ready and not (kits.owned and kits.owned[id]) then
-			return goal(name(id).." WILL TEACH YOU",{place(id)})
-		end
-	end
-	return proctor
-end
-
 -- (DEC-038) The master's card in Konoha: what his three buttons do for this
 -- player. primary / second / third = {label, send = {action, payload}} or
 -- {label, tree = kit} (opens the tree), nil when absent.
@@ -2747,7 +2706,8 @@ function V.card(kits,id)
 	elseif act.kind=="master" then out.primary={label="DUEL THE MASTER",send={"MasterTrial",{player=act.via,master=id}}}
 	elseif act.kind=="try" then out.primary={label="TRY HIS KIT",send={"Tutorial",{player=id,bot=rival}}}
 	else
-		if V.firstDuel(kits)==id then out.primary={label="YOUR FIRST DUEL",send={"First",{player=id}}}
+		local first=kits~=nil and kits.state=="ready" and kits.starter==id and (kits.mastery and kits.mastery[id] or 0)==0
+		if first then out.primary={label="YOUR FIRST DUEL",send={"First",{player=id}}}
 		else out.primary={label="SPAR WITH "..who,send={"Start",{player=id,bot=id,level="normal"}}} end
 	end
 	local extra={}
@@ -3387,9 +3347,19 @@ Shop.Slots={
 	tanto={name="TANTO",kind="weapon",kit="Copycat"},
 	gourd={name="GOURD",kind="weapon",kit="Sand"},
 	headband={name="HEADBAND",kind="style"},
+	-- (DEC-040, user 14/11: « il arrive genre nu et on ait un petit truc de
+	-- customisation de personnage ») The ninja outfit over his own avatar
+	-- (Server/Outfit): nothing until he chooses (`outfit`: no default piece);
+	-- a master's outfit (`set`) dresses the whole body over the others.
+	set={name="MASTER'S OUTFIT",kind="style",outfit=true},
+	top={name="TOP",kind="style",outfit=true},
+	bottom={name="BOTTOM",kind="style",outfit=true},
+	arms={name="ARMS",kind="style",outfit=true},
+	feet={name="FEET",kind="style",outfit=true},
 }
 -- (Lee's weights get their look once their Blender model exists.)
-Shop.SlotOrder={"kunai","shuriken","tanto","gourd","headband"}
+Shop.SlotOrder={"kunai","shuriken","tanto","gourd","headband","set","top","bottom","arms","feet"}
+Shop.OutfitSlots={"top","bottom","arms","feet"}
 
 -- The catalogue. `ryo` = price in Ryō; `robux` = the key of a Developer
 -- Product in Config.Shop.Products (no id there: not on sale yet); `base` =
@@ -3411,14 +3381,74 @@ Shop.Items={
 	{id="HeadbandBlack",slot="headband",name="BLACK HEADBAND",ryo=800,colors={Band={24,22,28},Plate={200,204,210}}},
 	{id="HeadbandRed",slot="headband",name="RED HEADBAND",ryo=800,colors={Band={170,40,34},Plate={200,204,210}}},
 	{id="HeadbandNone",slot="headband",name="NO HEADBAND",base=true,none=true},
+	-- (DEC-040) The outfit. `pieces` (Server/Outfit): what each piece covers
+	-- of the avatar's body, `on` a part (UpperArm = both sides), `h` the share
+	-- of its height from the top (`y0` where it starts), `pad` how far out.
+	-- Free pieces to start (`base`), one colour each.
+	{id="TopTunicNavy",slot="top",name="GENIN TUNIC • NAVY",base=true,colors={Cloth={40,48,78}},
+		pieces={{on="UpperTorso",c="Cloth"},{on="LowerTorso",c="Cloth",h=.6},{on="UpperArm",c="Cloth",h=.55}}},
+	{id="TopTunicBlack",slot="top",name="GENIN TUNIC • BLACK",base=true,colors={Cloth={30,30,36}},
+		pieces={{on="UpperTorso",c="Cloth"},{on="LowerTorso",c="Cloth",h=.6},{on="UpperArm",c="Cloth",h=.55}}},
+	{id="TopTunicGreen",slot="top",name="GENIN TUNIC • FOREST",base=true,colors={Cloth={52,74,52}},
+		pieces={{on="UpperTorso",c="Cloth"},{on="LowerTorso",c="Cloth",h=.6},{on="UpperArm",c="Cloth",h=.55}}},
+	{id="TopHighCollar",slot="top",name="HIGH COLLAR",base=true,colors={Cloth={34,44,92},Collar={34,44,92}},
+		pieces={{on="UpperTorso",c="Cloth"},{on="LowerTorso",c="Cloth",h=.6},{on="UpperArm",c="Cloth",h=.4},{on="UpperTorso",kind="collar",c="Collar"}}},
+	{id="TopSleeveless",slot="top",name="SLEEVELESS TOP",base=true,colors={Cloth={70,66,64},Belt={150,40,36}},
+		pieces={{on="UpperTorso",c="Cloth"},{on="LowerTorso",c="Cloth",h=.45},{on="LowerTorso",kind="band",c="Belt",y0=.4,h=.2}}},
+	{id="BottomPantsDark",slot="bottom",name="TIED PANTS • DARK",base=true,colors={Cloth={36,38,50},Tie={210,206,196}},
+		pieces={{on="LowerTorso",c="Cloth",y0=.4,h=.6},{on="UpperLeg",c="Cloth"},{on="LowerLeg",c="Cloth"},{on="LowerLeg",kind="band",c="Tie",y0=.72,h=.18}}},
+	{id="BottomPantsSand",slot="bottom",name="TIED PANTS • SAND",base=true,colors={Cloth={150,132,104},Tie={60,58,70}},
+		pieces={{on="LowerTorso",c="Cloth",y0=.4,h=.6},{on="UpperLeg",c="Cloth"},{on="LowerLeg",c="Cloth"},{on="LowerLeg",kind="band",c="Tie",y0=.72,h=.18}}},
+	{id="BottomShorts",slot="bottom",name="WRAPPED SHORTS",base=true,colors={Cloth={42,42,52},Wrap={226,222,212}},
+		pieces={{on="LowerTorso",c="Cloth",y0=.4,h=.6},{on="UpperLeg",c="Cloth",h=.75},{on="LowerLeg",kind="band",c="Wrap",y0=.1,h=.75}}},
+	{id="ArmsWraps",slot="arms",name="ARM WRAPS",base=true,colors={Wrap={226,222,212}},
+		pieces={{on="LowerArm",kind="band",c="Wrap",y0=.15,h=.8}}},
+	{id="ArmsGuards",slot="arms",name="ARM GUARDS",base=true,colors={Guard={120,124,132},Strap={36,36,44}},
+		pieces={{on="LowerArm",c="Guard",y0=.2,h=.65,pad=.1,mat="Metal"},{on="LowerArm",kind="band",c="Strap",y0=.3,h=.12}}},
+	{id="ArmsNone",slot="arms",name="BARE ARMS",base=true,none=true},
+	{id="FeetSandals",slot="feet",name="NINJA SANDALS",base=true,colors={Sandal={40,48,78}},
+		pieces={{on="Foot",c="Sandal",pad=.05},{on="LowerLeg",kind="band",c="Sandal",y0=.82,h=.18}}},
+	{id="FeetBlack",slot="feet",name="BLACK SANDALS",base=true,colors={Sandal={26,26,32}},
+		pieces={{on="Foot",c="Sandal",pad=.05},{on="LowerLeg",kind="band",c="Sandal",y0=.82,h=.18}}},
+	{id="FeetNone",slot="feet",name="BARE FEET",base=true,none=true},
+	-- The masters' outfits on his own avatar (« les skins des mentors »): their
+	-- colours from the anime at 12-14; the ANIMATEUR's models replace these
+	-- pieces when they exist (OutfitMeshes).
+	{id="SetNone",slot="set",name="MY OWN PIECES",base=true,none=true},
+	{id="SetNaruto",slot="set",kit="Legion",name="NARUTO'S JUMPSUIT",ryo=3000,colors={Orange={236,120,30},Blue={34,44,92},White={232,230,224}},
+		pieces={{on="UpperTorso",c="Orange"},{on="UpperTorso",kind="shoulders",c="Blue"},{on="UpperTorso",kind="collar",c="White",h=.12},{on="LowerTorso",c="Orange"},{on="UpperArm",c="Orange"},{on="LowerArm",c="Orange",h=.85},{on="UpperLeg",c="Orange"},{on="LowerLeg",c="Orange",h=.7},{on="LowerLeg",kind="band",c="White",y0=.62,h=.12},{on="Foot",c="Blue",pad=.05}}},
+	{id="SetSasuke",slot="set",kit="Lion",name="SASUKE'S HIGH COLLAR",ryo=3000,colors={Navy={30,40,86},White={232,230,224},Wrap={226,222,212}},
+		pieces={{on="UpperTorso",c="Navy"},{on="UpperTorso",kind="collar",c="Navy",h=.3},{on="LowerTorso",c="White"},{on="UpperArm",c="Navy",h=.4},{on="LowerArm",kind="band",c="Navy",y0=.1,h=.8},{on="UpperLeg",c="White",h=.7},{on="LowerLeg",kind="band",c="Wrap",y0=.1,h=.75},{on="Foot",c="Navy",pad=.05}}},
+	{id="SetLee",slot="set",kit="Leaf",name="LEE'S GREEN SUIT",ryo=3000,colors={Green={46,140,60},Orange={230,120,40},Red={190,40,36}},
+		pieces={{on="UpperTorso",c="Green"},{on="LowerTorso",c="Green"},{on="LowerTorso",kind="band",c="Red",y0=.05,h=.22},{on="UpperArm",c="Green"},{on="LowerArm",c="Green"},{on="UpperLeg",c="Green"},{on="LowerLeg",c="Orange",pad=.12},{on="Foot",c="Green",pad=.05}}},
+	{id="SetNeji",slot="set",kit="GentleFist",name="NEJI'S ROBE",ryo=3000,colors={Robe={226,222,208},Dark={60,56,64},Wrap={226,222,212}},
+		pieces={{on="UpperTorso",c="Robe"},{on="LowerTorso",c="Robe"},{on="LowerTorso",kind="tail",c="Robe",h=.9},{on="UpperArm",c="Robe"},{on="LowerArm",c="Robe",h=.6},{on="UpperLeg",c="Dark"},{on="LowerLeg",kind="band",c="Wrap",y0=.05,h=.6},{on="Foot",c="Dark",pad=.05}}},
+	{id="SetGaara",slot="set",kit="Sand",name="GAARA'S COAT",ryo=3000,colors={Coat={110,34,36},Sash={206,196,170},Dark={44,40,46}},
+		pieces={{on="UpperTorso",c="Coat"},{on="UpperTorso",kind="sash",c="Sash"},{on="LowerTorso",c="Coat"},{on="LowerTorso",kind="tail",c="Coat",h=1.2},{on="UpperArm",c="Coat"},{on="LowerArm",c="Coat",h=.8},{on="UpperLeg",c="Dark"},{on="LowerLeg",c="Dark"},{on="Foot",c="Dark",pad=.05}}},
+	{id="SetKakashi",slot="set",kit="Copycat",name="KAKASHI'S FLAK VEST",ryo=3000,colors={Navy={36,42,66},Vest={86,98,70},Wrap={226,222,212}},
+		pieces={{on="UpperTorso",c="Navy"},{on="UpperTorso",kind="vest",c="Vest"},{on="UpperTorso",kind="collar",c="Navy",h=.22},{on="LowerTorso",c="Navy"},{on="UpperArm",c="Navy"},{on="LowerArm",c="Navy"},{on="UpperLeg",c="Navy"},{on="LowerLeg",c="Navy"},{on="LowerLeg",kind="band",c="Wrap",y0=.5,h=.3},{on="Foot",c="Navy",pad=.05}}},
+	{id="SetItachi",slot="set",kit="Mirage",name="ITACHI'S ANBU GEAR",robux="SetItachi",colors={Black={26,26,32},Grey={150,152,158},Guard={176,180,186}},
+		pieces={{on="UpperTorso",c="Black"},{on="UpperTorso",kind="vest",c="Grey"},{on="LowerTorso",c="Black"},{on="UpperArm",c="Black",h=.5},{on="LowerArm",c="Guard",y0=.2,h=.65,pad=.1,mat="Metal"},{on="UpperLeg",c="Black"},{on="LowerLeg",c="Black"},{on="Foot",c="Black",pad=.05}}},
+	{id="SetMinato",slot="set",kit="Flashstep",name="MINATO'S JACKET",robux="SetMinato",colors={Blue={40,70,130},Navy={30,36,60},Wrap={226,222,212}},
+		pieces={{on="UpperTorso",c="Blue"},{on="UpperTorso",kind="collar",c="Blue",h=.16},{on="LowerTorso",c="Navy"},{on="UpperArm",c="Blue"},{on="LowerArm",c="Blue",h=.8},{on="UpperLeg",c="Navy"},{on="LowerLeg",c="Navy",h=.7},{on="LowerLeg",kind="band",c="Wrap",y0=.62,h=.2},{on="Foot",c="Navy",pad=.05}}},
 }
 local byId={}
 for _,item in Shop.Items do byId[item.id]=item end
 function Shop.item(id) return byId[id] end
--- What each slot wears when the player chose nothing.
+-- What each slot wears when the player chose nothing (the outfit: nothing,
+-- DEC-040).
 function Shop.default(slot)
+	if Shop.Slots[slot] and Shop.Slots[slot].outfit then return nil end
 	for _,item in Shop.Items do if item.slot==slot and item.base and not item.none then return item end end
 	return nil
+end
+-- (DEC-040) Whether he has chosen his outfit (a top, or a master's outfit):
+-- until then the character screen opens on his arrival.
+function Shop.dressed(style)
+	local e=style and style.equipped
+	if not e then return false end
+	local set=e.set and Shop.item(e.set)
+	return e.top~=nil or (set~=nil and not set.none)
 end
 function Shop.inSlot(slot)
 	local out={}
@@ -6732,13 +6762,13 @@ return {
       <Item class="StringValue" referent="ND43">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">e90387fd5c5117023d1e4be08da3f00a7ffaccdbd3639c224127f03a2ff16ba0</string>
+          <string name="Value">fd747e1108ff5e48fb027fd2a5dbacbca6dba3123163a104707bf1c49b76e86e</string>
         </Properties>
       </Item>
       <Item class="StringValue" referent="ND44">
         <Properties>
           <string name="Name">RuntimeFingerprint</string>
-          <string name="Value">e90387fd5c5117023d1e4be08da3f00a7ffaccdbd3639c224127f03a2ff16ba0</string>
+          <string name="Value">fd747e1108ff5e48fb027fd2a5dbacbca6dba3123163a104707bf1c49b76e86e</string>
         </Properties>
       </Item>
       <Item class="StringValue" referent="ND45">
@@ -6750,7 +6780,7 @@ return {
       <Item class="StringValue" referent="ND46">
         <Properties>
           <string name="Name">SourceCommit</string>
-          <string name="Value">8ddd3a7247bb-dirty</string>
+          <string name="Value">07107a8e0b13</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND47">
@@ -8309,11 +8339,12 @@ function AvatarBody.prepare(player)
 	task.spawn(function()
 		local desc,why=AvatarBody.description(player.UserId)
 		local ok,model=false,why
+		-- (DEC-040) body, face and hair: the clothes come off, the ninja
+		-- outfit he chose goes on in each duel (Server/Outfit)
+		if desc then pcall(function() require(script.Parent.Outfit).strip(desc) end) end
 		if desc then
 			ok,model=pcall(function() return Players:CreateHumanoidModelFromDescription(desc,Enum.HumanoidRigType.R15) end)
 		end
-		-- (14/11) Roblox's joints as AnimationConstraints: the Motor6Ds they are
-		if ok and model then pcall(AvatarBody.motorize,model) end
 		if ok and model then
 			entry.template=model;entry.state="ready"
 		else
@@ -8335,32 +8366,6 @@ function AvatarBody.forget(player)
 	local entry=AvatarBody.cache[player]
 	if entry and entry.template then entry.template:Destroy() end
 	AvatarBody.cache[player]=nil
-end
-
--- (14/11, Studio: « [AvatarBody] no joint Root ») Roblox now builds an
--- avatar's joints as AnimationConstraints (the avatar joint upgrade), not
--- Motor6Ds: fit refused every avatar and the player fought in his prodigy's
--- body. Each constraint becomes the Motor6D it stands for: Part0 and Part1
--- are its attachments' parts, C0 and C1 their frames; the motor goes under
--- Part1 as Roblox puts its own, and the constraint goes. `make` builds the
--- motor (Instance.new; the suites pass their own). Returns how many.
-function AvatarBody.motorize(model,make)
-	make=make or function(class) return Instance.new(class) end
-	local count=0
-	for _,c in model:GetDescendants() do
-		if c:IsA("AnimationConstraint") then
-			local a0,a1=c.Attachment0,c.Attachment1
-			local p0,p1=a0 and a0.Parent,a1 and a1.Parent
-			if p0 and p1 and p0:IsA("BasePart") and p1:IsA("BasePart") then
-				local m=make("Motor6D")
-				m.Name=c.Name;m.Part0=p0;m.Part1=p1;m.C0=a0.CFrame;m.C1=a1.CFrame
-				m.Parent=p1
-				c:Destroy()
-				count+=1
-			end
-		end
-	end
-	return count
 end
 
 -- Puts an R15 model on the game's skeleton (World.RIG). Each joint keeps the
@@ -8465,6 +8470,7 @@ function AvatarBody.rig(player,parent,kitId,def,cf,name,looks)
 	root.CFrame=cf;root.Transparency=1
 	AvatarBody.wearKit(model,kitId,def)
 	pcall(function() require(script.Parent.Headband).fromLooks(model,looks) end)
+	pcall(function() require(script.Parent.Outfit).wear(model,looks) end)
 	model:SetAttribute("Avatar",player.UserId)
 	model.PrimaryPart=root
 	model.Parent=parent
@@ -13437,8 +13443,7 @@ end
 -- The tournament stage is round: positions are held inside a circle so no
 -- corner of the old square limit reaches into the stands.
 function Combat:clamp(p)
-	-- (14/11, a duel in Konoha) a master's ground has its own radius.
-	local o=self.match.origin; local r=self.match.radius or Config.ArenaRadius
+	local o=self.match.origin; local r=Config.ArenaRadius
 	local flat=Vector3.new(p.X-o.X,0,p.Z-o.Z)
 	if flat.Magnitude&gt;r then flat=flat.Unit*r end
 	return Vector3.new(o.X+flat.X,math.clamp(p.Y,o.Y+3,o.Y+Config.ArenaHeight),o.Z+flat.Z)
@@ -15566,7 +15571,7 @@ function Combat:updateActor(a,dt)
 	else Motor.step(a,self,dt,now) end
 	-- Server-owned humanoids + server-clamped arena coordinates.
 	local p=a.root.Position
-	if Vector3.new(p.X-self.match.origin.X,0,p.Z-self.match.origin.Z).Magnitude&gt;(self.match.radius or Config.ArenaRadius) or p.Y&lt;self.match.origin.Y-3 then
+	if Vector3.new(p.X-self.match.origin.X,0,p.Z-self.match.origin.Z).Magnitude&gt;Config.ArenaRadius or p.Y&lt;self.match.origin.Y-3 then
 		-- (Fluidity audit 05/11) A body pressed against the arena's edge is held
 		-- on it every frame: that is not a teleport. Declared as one (a new warp
 		-- serial each frame: 53 in 41 s of Studio duel, mostly through Wall
@@ -18875,26 +18880,6 @@ function Hub.placeMasters(source)
 		end
 	end
 	Hub.placeProctor(holder)
-	Hub.placeTraining(holder)
-end
--- (14/11, audit: the training ground had three stumps and a dummy, and
--- nothing to do there) The dummy of Training Ground Three: E trains with his
--- kit (Client/HubClient sends the board's TRAINING). An invisible anchor of its
--- own: the village's units may be swapped for meshes (MeshKit).
-function Hub.placeTraining(holder)
-	local spot=HubMap.Training
-	if not spot or holder:FindFirstChild("Training") then return end
-	local model=Instance.new("Model");model.Name="Training"
-	model:SetAttribute("NinjaTrain",true)
-	local anchor=Instance.new("Part");anchor.Name="Anchor"
-	anchor.Size=Vector3.new(1,1,1);anchor.Transparency=1;anchor.Anchored=true
-	anchor.CanCollide=false;anchor.CanQuery=false;anchor.CanTouch=false
-	anchor.CFrame=CFrame.new(O+spot.at+Vector3.new(0,5,0))
-	anchor.Parent=model
-	model.PrimaryPart=anchor
-	model.Parent=holder
-	local prompt=promptOn(model,"Training","TRAIN",spot.place,false)
-	if prompt then prompt:SetAttribute("NinjaTrain",true) end
 end
 -- The proctor on the hall's floor (the Professor's rig): the board of duels.
 function Hub.placeProctor(holder)
@@ -18921,6 +18906,20 @@ function Hub.placeProctor(holder)
 end
 
 -- ------------------------------------------------------------------ the walkers
+-- (DEC-040) His avatar's description without its clothes, at the standard
+-- scales, fetched once per player (yields). nil: Roblox gave none (the
+-- default character then).
+Hub.descs=setmetatable({},{__mode="k"})
+function Hub.description(player)
+	if Hub.descs[player]~=nil then return Hub.descs[player] or nil end
+	local desc=nil
+	pcall(function()
+		desc=require(script.Parent.AvatarBody).description(player.UserId)
+		if desc then require(script.Parent.Outfit).strip(desc) end
+	end)
+	Hub.descs[player]=desc or false
+	return desc
+end
 -- The player's own avatar in the village (the default character and controls).
 -- `where`: "gate" (arrival) or "hall" (back from a duel). Asynchronous; a duel
 -- that starts meanwhile wins (Hub.leave bumps the serial).
@@ -18930,7 +18929,12 @@ function Hub.enter(player,where,looks)
 	Hub.bodies[player]={serial=serial}
 	task.spawn(function()
 		if not player.Parent then return end
-		local ok=pcall(function() player:LoadCharacter() end)
+		-- (DEC-040) his avatar without its clothes (body, face, hair) at the
+		-- game's standard scales, then the outfit he chose (Server/Outfit)
+		local desc=Hub.description(player)
+		local ok=pcall(function()
+			if desc then player:LoadCharacterWithHumanoidDescription(desc:Clone()) else player:LoadCharacter() end
+		end)
 		local entry=Hub.bodies[player]
 		local character=player.Character
 		if not ok or not entry or entry.serial~=serial or not character then
@@ -18941,8 +18945,8 @@ function Hub.enter(player,where,looks)
 		entry.character=character
 		-- (13/11, the shop) the headband he chose, on his own avatar.
 		pcall(function() require(script.Parent.Headband).fromLooks(character,looks) end)
-		-- (14/11) back from a duel in the village: where it was fought
-		local spot=if type(where)=="table" then where else HubMap.Spawns[where] or HubMap.Spawns.gate
+		pcall(function() require(script.Parent.Outfit).wear(character,looks) end)
+		local spot=HubMap.Spawns[where] or HubMap.Spawns.gate
 		local at=O+spot.at+Vector3.new(0,3.5,0)
 		pcall(function() character:PivotTo(CFrame.lookAt(at,at+spot.face)) end)
 		local hum=character:FindFirstChildOfClass("Humanoid")
@@ -18973,6 +18977,7 @@ function Hub.restyle(player,looks)
 	local character=entry and entry.character
 	if character and character.Parent and character:GetAttribute("NinjaHubBody") then
 		pcall(function() require(script.Parent.Headband).fromLooks(character,looks) end)
+		pcall(function() require(script.Parent.Outfit).wear(character,looks) end)
 	end
 end
 function Hub.leave(player)
@@ -21475,7 +21480,6 @@ local ArenaMeshes=require(script.Parent.ArenaMeshes)
 local AvatarBody=require(script.Parent.AvatarBody)
 local Progression=require(script.Parent.Progression)
 local Masters=require(Shared.Masters)
-local HubMap=require(Shared.HubMap)
 local Combat=require(script.Parent.Combat)
 local AI=require(script.Parent.AI)
 local Tutorial=require(script.Parent.Tutorial)
@@ -21531,22 +21535,6 @@ end
 -- Each duel owns a stage far from every other one.
 function Matches.laneOrigin(lane)
 	return Vector3.new((lane-1)*520,0,0)
-end
--- (14/11, François: « que notre perso puisse combattre » dans la ville) A duel
--- started at a master's home (his card, the training dummy: `key`) is fought
--- there, in the village, when he really stands there (his walker within reach
--- of the ground). nil: the stadium.
-function Matches.villageSite(player,key)
-	if not Matches.hubOn() or not (Config.Hub and Config.Hub.VillageDuels==true) or type(key)~="string" then return nil end
-	local spot=if key=="Training" then HubMap.Training else HubMap.Masters[key]
-	local duel=spot and spot.duel
-	if not duel then return nil end
-	local centre=HubMap.Origin+duel.at
-	local body=Hub.bodies and Hub.bodies[player]
-	local character=body and body.character
-	local root=character and character:FindFirstChild("HumanoidRootPart")
-	if not root or (Vector3.new(root.Position.X,0,root.Position.Z)-Vector3.new(centre.X,0,centre.Z)).Magnitude&gt;duel.radius+50 then return nil end
-	return {key=key,origin=centre,radius=duel.radius}
 end
 -- (B1 lot 2, DEC-034) What a new player's first minutes look like, measured
 -- on the server (Codex's audit §3: time to the first input, the first jutsu,
@@ -21695,8 +21683,7 @@ function Matches:selection(player,notice)
 	-- through the gate the first time, out of the exam hall after a duel.
 	if Matches.hubOn() then
 		Hub.badge(player,view)
-		Hub.enter(player,s.returnTo or (if s.hubVisited then "hall" else "gate"),Progression.looks(player))
-		s.returnTo=nil
+		Hub.enter(player,if s.hubVisited then "hall" else "gate",Progression.looks(player))
 		s.hubVisited=true
 	end
 	-- (Lobby, 04/11) in a duel server the roster is the lobby: back home.
@@ -21732,17 +21719,9 @@ function Matches:start(player,playerId,botId,training,options)
 	if Matches.hubOn() then Hub.leave(player) end
 	s.playerId=playerId; s.botId=botId; s.winner=nil; s.phase="Duel"; s.origin=Matches.laneOrigin(s.lane)
 	s.options=options
-	-- (14/11) A duel at a master's home: in the village, no stadium.
-	local site=s.nextSite;s.nextSite=nil
-	s.site=site;s.radius=site and site.radius or nil
-	if site then
-		s.origin=site.origin
-		s.returnTo={at=site.origin-HubMap.Origin+Vector3.new(0,0,site.radius*.5),face=Vector3.new(0,0,-1)}
-	else
-		-- (QA 12/11) The lane's stadium is the one already in the world, its
-		-- last duel's damage undone: only the two bodies are new at BEGIN.
-		self:stageFor(s)
-	end
+	-- (QA 12/11) The lane's stadium is the one already in the world, its
+	-- last duel's damage undone: only the two bodies are new at BEGIN.
+	self:stageFor(s)
 	s.effects=Instance.new("Folder"); s.effects.Name="Effects"; s.effects.Parent=s.folder
 	s.combat=Combat.new(s); s.combat.now=workspace:GetServerTimeNow()
 	local function actor(id,def,position,look,kit)
@@ -21801,6 +21780,20 @@ function Matches:roundOver(s,winner,notify,advance)
 		if s.masterTrial and won then
 			local ok=Progression.learnFromMaster(s.owner,s.masterTrial)
 			if ok then s.progress.learned=s.masterTrial end
+		end
+	end
+	-- (DEC-040) Against another player: each present seat's kit earns its
+	-- mastery (Progression.versusEnded), shown on his own result screen.
+	if decided and s.online and s.seats and not s.forfeit then
+		for _,seat in s.seats do
+			if seat.present and seat.actor and seat.player then
+				local used=0
+				for _ in seat.actor.usedJutsu or {} do used+=1 end
+				local won=winner==seat.actor
+				local gained=Progression.versusEnded(seat.player,seat.fighter,won,used)
+				seat.progress={mastery=gained and gained.mastery,gained=gained~=nil and gained.amount~=nil,amount=gained and gained.amount,fighter=seat.fighter,need=Masters.Need,
+					points=gained and gained.points,ryo=gained and gained.ryo,firstWin=gained and gained.firstWin}
+			end
 		end
 	end
 	if not s.online and s.owner and s.human then Matches.logPresses(s.owner,s.human) end
@@ -22038,9 +22031,7 @@ function Matches:request(player,payload)
 		local rival=FirstMinute.rival(payload.player)
 		if not rival then return end
 		s.lastLifecycle=clock;s.aiLevel="easy";s.firstStage="intro"
-		s.nextSite=Matches.villageSite(player,payload.here)
 		if not self:start(player,payload.player,rival,true) then s.firstStage=nil end
-		s.nextSite=nil
 		return
 	end
 	-- (DEC-037) The masters' path from the roster: the starter, the kit for the
@@ -22099,9 +22090,7 @@ function Matches:request(player,payload)
 				return
 			end
 			s.masterTrial=master;s.firstStage=nil
-			s.nextSite=Matches.villageSite(player,payload.here)
 			if not self:start(player,payload.player,master,false) then s.masterTrial=nil end
-			s.nextSite=nil
 		elseif action=="BuyKit" then
 			local product=(Config.Progression and Config.Progression.Products or {})[payload.player]
 			if product and not Progression.owns(player,payload.player) then
@@ -22122,15 +22111,9 @@ function Matches:request(player,payload)
 			s.masterTrial=nil
 			s.lastLifecycle=clock;s.firstStage=nil
 			if type(payload.level)=="string" and Matches.LEVELS[payload.level] then s.aiLevel=payload.level end
-			s.nextSite=Matches.villageSite(player,payload.here)
 			self:start(player,payload.player,payload.bot,action=="Tutorial")
-			s.nextSite=nil
 		elseif action=="Rematch" and (s.phase=="Result" or s.finishing) then
-			s.lastLifecycle=clock;s.firstStage=nil
-			-- (14/11) a rematch at a master's home stays there
-			s.nextSite=s.site;s.returnTo=nil
-			self:start(player,s.playerId,s.botId,s.tutorial~=nil,s.options)
-			s.nextSite=nil
+			s.lastLifecycle=clock;s.firstStage=nil; self:start(player,s.playerId,s.botId,s.tutorial~=nil,s.options)
 		elseif action=="Selection" and (s.phase=="Result" or s.finishing or s.tutorial) then s.lastLifecycle=clock; self:selection(player) end
 		return
 	end
@@ -22825,6 +22808,8 @@ function Online:packet(d,seat)
 	end
 	local view=self.matches:view(d,seat,seat.actor,other.actor)
 	view.online=info
+	-- (DEC-040) his mastery and Ryō for this duel (Matches:roundOver)
+	if seat.progress and d.phase~="Pick" then view.progress=seat.progress end
 	return view
 end
 function Online:refresh(player,s)
@@ -22849,6 +22834,7 @@ function Online:fight(d)
 	local m=self.matches
 	self:teardown(d)
 	d.phase="Duel";d.winner=nil;d.forfeit=nil;d.finishing=false;d.matchPoint=false
+	for _,seat in d.seats do seat.progress=nil end
 	d.folder=Instance.new("Folder");d.folder.Name="Online_"..d.lane;d.folder.Parent=m.folder
 	d.effects=Instance.new("Folder");d.effects.Name="Effects";d.effects.Parent=d.folder
 	World.arena(d.folder,d.origin)
@@ -23038,6 +23024,142 @@ return Online
       </Item>
       <Item class="ModuleScript" referent="ND93">
         <Properties>
+          <string name="Name">Outfit</string>
+          <ProtectedString name="Source">-- The ninja outfit over the player's own avatar (DEC-040, user 14/11: « que
+-- l'utilisateur ait juste son avatar mais il arrive genre nu et on ait un petit
+-- truc de customisation de personnage. Genre au début on propose des trucs
+-- simples mais qui font un peu de tenue ninja »).
+--
+-- Two things:
+--   * Outfit.strip: his Roblox avatar keeps its body, face and hair; its
+--     clothes and every other accessory come off (the walk in Konoha,
+--     Server/Hub; the duel's body, Server/AvatarBody).
+--   * Outfit.wear: the pieces he chose (Shared/Shop, slots set/top/bottom/
+--     arms/feet) are put on, welded to his body parts, never colliding nor
+--     hit. A piece is cloth over the part it covers, sized on that part, so it
+--     fits any avatar at the game's standard scales. The ANIMATEUR's modelled
+--     pieces (OutfitMeshes, when they exist) replace these by name.
+local Shop=require(game:GetService("ReplicatedStorage").NinjaDuel.Shop)
+local Outfit={}
+
+-- The rigid accessory lists of a description that come off (hair stays).
+Outfit.RIGID={"HatAccessory","FaceAccessory","NeckAccessory","ShouldersAccessory","FrontAccessory","BackAccessory","WaistAccessory"}
+
+-- His avatar without its clothes: body, face and hair. Changes `desc` (a
+-- HumanoidDescription) and returns it.
+function Outfit.strip(desc)
+	if not desc then return nil end
+	pcall(function() desc.Shirt=0;desc.Pants=0;desc.GraphicTShirt=0 end)
+	for _,key in Outfit.RIGID do pcall(function() (desc::any)[key]="" end) end
+	-- Layered clothing and shoes go; layered hair stays.
+	pcall(function()
+		local keep={}
+		for _,a in desc:GetAccessories(false) do
+			if a.AccessoryType==Enum.AccessoryType.Hair then table.insert(keep,a) end
+		end
+		desc:SetAccessories(keep,false)
+	end)
+	return desc
+end
+
+local function rgb(c) return Color3.fromRGB(c[1],c[2],c[3]) end
+-- `on` → the body parts it names (UpperArm: both sides).
+local SIDES={UpperArm=true,LowerArm=true,Hand=true,UpperLeg=true,LowerLeg=true,Foot=true}
+function Outfit.parts(model,on)
+	local out={}
+	local names=if SIDES[on] then {"Left"..on,"Right"..on} else {on}
+	for _,name in names do
+		local p=model:FindFirstChild(name)
+		if p and p:IsA("BasePart") then table.insert(out,p) end
+	end
+	return out
+end
+
+local function cloth(holder,body,name,size,offset,color,material)
+	local p=Instance.new("Part")
+	p.Name=name;p.Size=size;p.Color=color;p.Material=material
+	p.Anchored=false;p.CanCollide=false;p.CanQuery=false;p.CanTouch=false;p.Massless=true;p.CastShadow=false
+	p.TopSurface=Enum.SurfaceType.Smooth;p.BottomSurface=Enum.SurfaceType.Smooth
+	p.CFrame=body.CFrame*offset
+	local weld=Instance.new("WeldConstraint");weld.Part0=body;weld.Part1=p;weld.Parent=p
+	p.Parent=holder
+	return p
+end
+
+-- One piece on one body part. The kinds:
+--   shell (default): cloth round the part, `h` of its height from `y0`;
+--   band: a thin wrap round it (bandages, ties, belts);
+--   collar: a raised collar on the torso's top; shoulders: across the top;
+--   vest: a thicker shell on the torso with two pockets in front;
+--   sash: a band across the chest; tail: cloth hanging down from the hips.
+function Outfit.piece(holder,body,spec,colors)
+	local s=body.Size
+	local color=rgb((colors and colors[spec.c]) or {120,120,120})
+	local material=Enum.Material[spec.mat or "Fabric"] or Enum.Material.Fabric
+	local pad=spec.pad or .06
+	local kind=spec.kind or "shell"
+	local y0,h=spec.y0 or 0,spec.h or 1
+	-- (y0, h) as a box's centre and height along the part (its top is +Y/2)
+	local function along(top,height) return s.Y/2-top*s.Y-height*s.Y/2 end
+	if kind=="shell" or kind=="band" then
+		local grow=if kind=="band" then pad+.04 else pad
+		return cloth(holder,body,"Cloth",Vector3.new(s.X+2*grow,math.max(.05,h*s.Y),s.Z+2*grow),CFrame.new(0,along(y0,h),0),color,material)
+	elseif kind=="collar" then
+		local hh=(spec.h or .2)*s.Y
+		return cloth(holder,body,"Collar",Vector3.new(s.X*.62,hh,s.Z+2*pad),CFrame.new(0,s.Y/2+hh/2-.02,0),color,material)
+	elseif kind=="shoulders" then
+		return cloth(holder,body,"Shoulders",Vector3.new(s.X+2*pad+.04,s.Y*.22,s.Z+2*pad+.04),CFrame.new(0,s.Y/2-s.Y*.11,0),color,material)
+	elseif kind=="vest" then
+		local v=cloth(holder,body,"Vest",Vector3.new(s.X+2*pad+.14,s.Y*.86,s.Z+2*pad+.16),CFrame.new(0,-s.Y*.05,0),color,material)
+		for _,side in {-1,1} do
+			cloth(holder,body,"Pocket",Vector3.new(s.X*.26,s.Y*.22,.12),CFrame.new(side*s.X*.24,-s.Y*.18,-(s.Z/2+pad+.14)),color,material)
+		end
+		return v
+	elseif kind=="sash" then
+		return cloth(holder,body,"Sash",Vector3.new(s.X*1.25,s.Y*.18,s.Z+2*pad+.06),CFrame.new(0,0,0)*CFrame.Angles(0,0,math.rad(-38)),color,material)
+	elseif kind=="tail" then
+		local hh=h*s.Y*1.6
+		return cloth(holder,body,"Tail",Vector3.new(s.X+2*pad+.1,hh,s.Z+2*pad+.1),CFrame.new(0,-s.Y/2-hh/2+s.Y*.3,0),color,material)
+	end
+	return nil
+end
+
+-- What he wears, from his looks (Progression.looks): a master's outfit
+-- covers the four slots; else each slot's piece. Item ids, in order.
+function Outfit.items(looks)
+	if not looks then return {} end
+	if looks.set then return {looks.set} end
+	local out={}
+	for _,slot in Shop.OutfitSlots do if looks[slot] then table.insert(out,looks[slot]) end end
+	return out
+end
+
+-- Dresses `model` (an R15 body) in `looks`; an older outfit comes off first.
+-- Returns the outfit's holder (nil: nothing to wear).
+function Outfit.wear(model,looks)
+	if not model then return nil end
+	for _,old in model:GetChildren() do if old:GetAttribute("NinjaOutfit") then old:Destroy() end end
+	local ids=Outfit.items(looks)
+	if #ids==0 then return nil end
+	local holder=Instance.new("Model");holder.Name="NinjaOutfit";holder:SetAttribute("NinjaOutfit",table.concat(ids,","))
+	holder.Parent=model
+	for _,id in ids do
+		local item=Shop.item(id)
+		if item and item.pieces and not item.none then
+			for _,spec in item.pieces do
+				for _,body in Outfit.parts(model,spec.on) do Outfit.piece(holder,body,spec,item.colors) end
+			end
+		end
+	end
+	return holder
+end
+
+return Outfit
+</ProtectedString>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="ND94">
+        <Properties>
           <string name="Name">Perception</string>
           <ProtectedString name="Source">-- Ninja Embodiment (DEC-027): what a body perceives of the space around a
 -- fight. One shared read, used by the strike resolver (a body with its back
@@ -23145,7 +23267,7 @@ return Perception
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND94">
+      <Item class="ModuleScript" referent="ND95">
         <Properties>
           <string name="Name">Place1Movement</string>
           <ProtectedString name="Source">-- Adapted directly from Place1 FirstPersonMovementController (alexkkork, MIT).
@@ -23449,7 +23571,7 @@ return Movement
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND95">
+      <Item class="ModuleScript" referent="ND96">
         <Properties>
           <string name="Name">Place1Parkour</string>
           <ProtectedString name="Source">-- Adapted directly from Place1 ParkourTraversalController (alexkkork, MIT).
@@ -23931,7 +24053,7 @@ return Parkour
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND96">
+      <Item class="ModuleScript" referent="ND97">
         <Properties>
           <string name="Name">Portraits</string>
           <ProtectedString name="Source">-- The menu's fighters (UI pass 02/11, user: "be original in everything"): the
@@ -24034,7 +24156,7 @@ return Portraits
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND97">
+      <Item class="ModuleScript" referent="ND98">
         <Properties>
           <string name="Name">ProfileRepository</string>
           <ProtectedString name="Source">-- Progression profile persistence (PROG-001). One key per profile; an
@@ -24245,7 +24367,7 @@ return Repo
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND98">
+      <Item class="ModuleScript" referent="ND99">
         <Properties>
           <string name="Name">ProfileSchema</string>
           <ProtectedString name="Source">-- Fighter progression profile (PROG-001). Per fighter: the skill points earned,
@@ -24682,7 +24804,7 @@ return S
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND99">
+      <Item class="ModuleScript" referent="ND100">
         <Properties>
           <string name="Name">Progression</string>
           <ProtectedString name="Source">-- The masters' path on the server (DEC-037, user 12/11 17 h 02-17 h 21):
@@ -24895,6 +25017,44 @@ function P.duelEnded(player,s,won)
 	end
 	return out
 end
+-- (DEC-040) Mastery and Ryō for the kit `kit`: `amount` of mastery (the
+-- boost doubles it) and `ryo`. The result screen's table, or nil.
+local function reward(player,kit,amount,ryo,day)
+	if P.boost[player] then amount*=2 end
+	local out=nil
+	if amount&gt;0 then
+		local ok,result=P.run(player,"gainMastery",{fighter=kit,amount=amount})
+		if ok and type(result)=="table" then out=result;out.amount=amount end
+	end
+	if ryo&gt;0 then
+		local ok,result=P.run(player,"earnRyo",{amount=ryo,day=day})
+		if ok and type(result)=="table" then
+			out=out or {}
+			out.ryo=ryo;out.ryoTotal=result.ryo;out.firstWin=day~=nil
+		end
+	end
+	return out
+end
+-- (DEC-040, user 14/11: « t'es censé la gagner en affrontant des gens ») A
+-- duel against another player, decided: mastery for the kit he fought with
+-- when he has learned it (twice a duel against the AI), and a duel's Ryō.
+function P.versusEnded(player,kit,won,techniques)
+	if not P.enabled() or not P.ready(player) or not P.owns(player,kit) then return nil end
+	local h=P.handles[player]
+	local today=os.date("!%Y-%m-%d")
+	local first=won and h.data.wallet and h.data.wallet.winDay~=today
+	local amount=Masters.versusGain({won=won,techniques=techniques})
+	local ryo=Shop.duelRyo({won=won,firstWinToday=first})
+	return reward(player,kit,amount,ryo,if first then today else nil)
+end
+-- (DEC-040) The tournament's end for him: the champion's kit gets its bonus
+-- and the champion's Ryō; a lost final, the finalist's.
+function P.cupEnded(player,kit,champion)
+	if not P.enabled() or not P.ready(player) or not P.owns(player,kit) then return nil end
+	local amount=if champion then Masters.Gain.Champion else Masters.Gain.Finalist
+	local ryo=if champion then Shop.Ryo.Champion else Shop.Ryo.Finalist
+	return reward(player,kit,amount,ryo,nil)
+end
 -- (13/11) The shop between duels: a look for Ryō, a look worn.
 function P.buyItem(player,item) return P.run(player,"buyItem",{item=item}) end
 function P.equipItem(player,item) return P.run(player,"equipItem",{item=item}) end
@@ -24999,7 +25159,7 @@ return P
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND100">
+      <Item class="ModuleScript" referent="ND101">
         <Properties>
           <string name="Name">SealKits</string>
           <ProtectedString name="Source">-- The seal jutsu that are not a plain family object (04/11, the user's kit
@@ -25190,7 +25350,7 @@ return SealKits
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND101">
+      <Item class="ModuleScript" referent="ND102">
         <Properties>
           <string name="Name">SkillBuilds</string>
           <ProtectedString name="Source">-- Skill builds (PROG-001/002). Pure, server-side: validates a fighter's ACTIVE
@@ -25772,7 +25932,7 @@ return SkillBuilds
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND102">
+      <Item class="ModuleScript" referent="ND103">
         <Properties>
           <string name="Name">SkillTrees</string>
           <ProtectedString name="Source">-- (13/11, DEC-038) The skill trees moved to Shared/SkillTrees: the client draws
@@ -25782,7 +25942,7 @@ return require(game:GetService("ReplicatedStorage").NinjaDuel.SkillTrees)
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND103">
+      <Item class="ModuleScript" referent="ND104">
         <Properties>
           <string name="Name">Stage</string>
           <ProtectedString name="Source">-- The lane's stadium between duels (QA test of b822ee5, 12/11: « gel à chaque
@@ -25916,7 +26076,7 @@ return Stage
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND104">
+      <Item class="ModuleScript" referent="ND105">
         <Properties>
           <string name="Name">Techniques</string>
           <ProtectedString name="Source">-- Each entry supplies prerequisites and payoff. The combat pipeline owns cost,
@@ -27076,7 +27236,7 @@ return Techniques
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND105">
+      <Item class="ModuleScript" referent="ND106">
         <Properties>
           <string name="Name">Tournament</string>
           <ProtectedString name="Source">-- The Prodigy Tournament against the AI (roadmap 04/11, step 2): the eight
@@ -27178,7 +27338,9 @@ function Tournament:view(cup)
 			mine=(a==cup.me or b==cup.me),lineA=la,lineB=lb}
 	end
 	return {seats=table.clone(cup.seats),me=cup.me,winners=table.clone(cup.winners),skipped=table.clone(cup.skipped),
-		next=next_,over=cup.over==true,champion=cup.champion,out=cup.out,eliminatedIn=cup.eliminatedIn}
+		next=next_,over=cup.over==true,champion=cup.champion,out=cup.out,eliminatedIn=cup.eliminatedIn,
+		-- (DEC-040) what the cup gave his kit: {amount (mastery), ryo}
+		reward=cup.reward and {amount=cup.reward.amount,ryo=cup.reward.ryo} or nil}
 end
 function Tournament:send(player,s,phase)
 	s.phase=phase or "Bracket"
@@ -27273,6 +27435,8 @@ function Tournament:matchOver(player,s)
 	s.cupPilot=nil
 	if mine and winnerSeat~=cup.me then
 		cup.out=true;cup.eliminatedIn=Tournament.RoundNames[Tournament.roundOf(cup.match)]
+		-- (DEC-040) a lost final: the finalist's mastery and Ryō
+		if cup.match==7 then cup.reward=require(script.Parent.Progression).cupEnded(player,cup.seats[cup.me],false) end
 	end
 	s.cupAdvanceReady=true
 end
@@ -27290,6 +27454,8 @@ function Tournament:advance(player,s)
 		if cup.champion==cup.me then
 			-- (14/11) his face on Konoha's cliff, on every server
 			pcall(function() require(script.Parent.ChampionCliff).champion(player) end)
+			-- (DEC-040) the champion's bonus to his kit, and his Ryō
+			if not cup.reward then cup.reward=require(script.Parent.Progression).cupEnded(player,cup.seats[cup.me],true) end
 			s.epoch+=1
 			s.autopilot=nil;s.spectate=nil;s.cupPilot=nil
 			self.matches:destroy(s)
@@ -27350,7 +27516,7 @@ return Tournament
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND106">
+      <Item class="ModuleScript" referent="ND107">
         <Properties>
           <string name="Name">Tutorial</string>
           <ProtectedString name="Source">-- Tutorial v2 (user 02/11: "un vrai tutoriel ... adapté pour chaque perso",
@@ -27752,7 +27918,7 @@ return Tutorial
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND107">
+      <Item class="ModuleScript" referent="ND108">
         <Properties>
           <string name="Name">Ultimates</string>
           <ProtectedString name="Source">-- Ultimates (stage 6, the approved move list, "Ultimes"): one per main
@@ -28076,7 +28242,7 @@ return Ultimates
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND108">
+      <Item class="ModuleScript" referent="ND109">
         <Properties>
           <string name="Name">VelmoraAntiCheat</string>
           <ProtectedString name="Source">-- Adapted from Velmora src/server/Combat/CombatAntiCheat.luau.
@@ -28115,7 +28281,7 @@ return AntiCheat
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND109">
+      <Item class="ModuleScript" referent="ND110">
         <Properties>
           <string name="Name">VelmoraDefense</string>
           <ProtectedString name="Source">-- Adapted from Velmora CombatService guard/parry/dodge resolution.
@@ -28250,7 +28416,7 @@ return Defense
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND110">
+      <Item class="ModuleScript" referent="ND111">
         <Properties>
           <string name="Name">VelmoraHitDetection</string>
           <ProtectedString name="Source">-- Adapted from Velmora src/server/Combat/HitDetection.luau.
@@ -28301,7 +28467,7 @@ return HitDetection
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND111">
+      <Item class="ModuleScript" referent="ND112">
         <Properties>
           <string name="Name">Wave1Kit</string>
           <ProtectedString name="Source">-- Roster 20, batch 1 (Haku, Zabuza, Kimimaro): the batch's server side. All
@@ -28436,7 +28602,7 @@ return Kit
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND112">
+      <Item class="ModuleScript" referent="ND113">
         <Properties>
           <string name="Name">Wave2Kit</string>
           <ProtectedString name="Source">-- Roster 20, batch 2 (Shisui, Orochimaru, Kabuto): the batch's server side.
@@ -28550,7 +28716,7 @@ return Kit
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND113">
+      <Item class="ModuleScript" referent="ND114">
         <Properties>
           <string name="Name">Wave3Kit</string>
           <ProtectedString name="Source">-- Roster 20, batch 3 (Deidara, Sasori, Nagato, Killer Bee): the batch's
@@ -28736,7 +28902,7 @@ return Kit
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND114">
+      <Item class="ModuleScript" referent="ND115">
         <Properties>
           <string name="Name">Wave4Kit</string>
           <ProtectedString name="Source">-- DEC-026 newcomers (Madara, Hashirama, Hiruzen as children): the batch's
@@ -28843,7 +29009,7 @@ return Kit
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND115">
+      <Item class="ModuleScript" referent="ND116">
         <Properties>
           <string name="Name">World</string>
           <ProtectedString name="Source">local World = {}
@@ -30134,7 +30300,7 @@ return World
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND116">
+      <Item class="ModuleScript" referent="ND117">
         <Properties>
           <string name="Name">WorldReaction</string>
           <ProtectedString name="Source">-- Ninja Embodiment (DEC-027, EMB-004): the arena answers what happens in it.
@@ -30968,7 +31134,7 @@ return WorldReaction
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND117">
+      <Item class="ModuleScript" referent="ND118">
         <Properties>
           <string name="Name">Zones</string>
           <ProtectedString name="Source">-- Persistent typed zones (ROSTER_WAVE_HOOKS H06), beside Combat's hazards
@@ -31196,21 +31362,21 @@ return Zones
       </Item>
     </Item>
   </Item>
-  <Item class="StarterPlayer" referent="ND118">
+  <Item class="StarterPlayer" referent="ND119">
     <Properties>
       <string name="Name">StarterPlayer</string>
       <float name="CameraMinZoomDistance">8</float>
       <float name="CameraMaxZoomDistance">32</float>
     </Properties>
-    <Item class="StarterPlayerScripts" referent="ND119">
+    <Item class="StarterPlayerScripts" referent="ND120">
       <Properties>
         <string name="Name">StarterPlayerScripts</string>
       </Properties>
-      <Item class="Folder" referent="ND120">
+      <Item class="Folder" referent="ND121">
         <Properties>
           <string name="Name">NinjaDuelClient</string>
         </Properties>
-        <Item class="ModuleScript" referent="ND121">
+        <Item class="ModuleScript" referent="ND122">
           <Properties>
             <string name="Name">ArenaDress</string>
             <ProtectedString name="Source">-- The stadium as this screen shows it (look pass 03/11, user: "the brightness,
@@ -31427,7 +31593,7 @@ return ArenaDress
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND122">
+        <Item class="ModuleScript" referent="ND123">
           <Properties>
             <string name="Name">AuthoredClips</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -31498,7 +31664,7 @@ return all
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND123">
+        <Item class="ModuleScript" referent="ND124">
           <Properties>
             <string name="Name">AuthoredClips1</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -31816,7 +31982,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND124">
+        <Item class="ModuleScript" referent="ND125">
           <Properties>
             <string name="Name">AuthoredClips10</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -32202,7 +32368,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND125">
+        <Item class="ModuleScript" referent="ND126">
           <Properties>
             <string name="Name">AuthoredClips11</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -32350,7 +32516,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND126">
+        <Item class="ModuleScript" referent="ND127">
           <Properties>
             <string name="Name">AuthoredClips12</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -32651,7 +32817,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND127">
+        <Item class="ModuleScript" referent="ND128">
           <Properties>
             <string name="Name">AuthoredClips13</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -32884,7 +33050,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND128">
+        <Item class="ModuleScript" referent="ND129">
           <Properties>
             <string name="Name">AuthoredClips14</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -33100,7 +33266,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND129">
+        <Item class="ModuleScript" referent="ND130">
           <Properties>
             <string name="Name">AuthoredClips15</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -33486,7 +33652,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND130">
+        <Item class="ModuleScript" referent="ND131">
           <Properties>
             <string name="Name">AuthoredClips16</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -33651,7 +33817,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND131">
+        <Item class="ModuleScript" referent="ND132">
           <Properties>
             <string name="Name">AuthoredClips17</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -33799,7 +33965,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND132">
+        <Item class="ModuleScript" referent="ND133">
           <Properties>
             <string name="Name">AuthoredClips18</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -34117,7 +34283,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND133">
+        <Item class="ModuleScript" referent="ND134">
           <Properties>
             <string name="Name">AuthoredClips19</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -34401,7 +34567,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND134">
+        <Item class="ModuleScript" referent="ND135">
           <Properties>
             <string name="Name">AuthoredClips2</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -34634,7 +34800,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND135">
+        <Item class="ModuleScript" referent="ND136">
           <Properties>
             <string name="Name">AuthoredClips20</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -34884,7 +35050,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND136">
+        <Item class="ModuleScript" referent="ND137">
           <Properties>
             <string name="Name">AuthoredClips21</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -35219,7 +35385,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND137">
+        <Item class="ModuleScript" referent="ND138">
           <Properties>
             <string name="Name">AuthoredClips22</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -35316,7 +35482,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND138">
+        <Item class="ModuleScript" referent="ND139">
           <Properties>
             <string name="Name">AuthoredClips23</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -35600,7 +35766,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND139">
+        <Item class="ModuleScript" referent="ND140">
           <Properties>
             <string name="Name">AuthoredClips24</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -35833,7 +35999,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND140">
+        <Item class="ModuleScript" referent="ND141">
           <Properties>
             <string name="Name">AuthoredClips25</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -36015,7 +36181,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND141">
+        <Item class="ModuleScript" referent="ND142">
           <Properties>
             <string name="Name">AuthoredClips26</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -36401,7 +36567,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND142">
+        <Item class="ModuleScript" referent="ND143">
           <Properties>
             <string name="Name">AuthoredClips27</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -36600,7 +36766,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND143">
+        <Item class="ModuleScript" referent="ND144">
           <Properties>
             <string name="Name">AuthoredClips28</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -36833,7 +36999,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND144">
+        <Item class="ModuleScript" referent="ND145">
           <Properties>
             <string name="Name">AuthoredClips29</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -37117,7 +37283,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND145">
+        <Item class="ModuleScript" referent="ND146">
           <Properties>
             <string name="Name">AuthoredClips3</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -37367,7 +37533,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND146">
+        <Item class="ModuleScript" referent="ND147">
           <Properties>
             <string name="Name">AuthoredClips30</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -37634,7 +37800,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND147">
+        <Item class="ModuleScript" referent="ND148">
           <Properties>
             <string name="Name">AuthoredClips31</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -37867,7 +38033,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND148">
+        <Item class="ModuleScript" referent="ND149">
           <Properties>
             <string name="Name">AuthoredClips32</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -38202,7 +38368,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND149">
+        <Item class="ModuleScript" referent="ND150">
           <Properties>
             <string name="Name">AuthoredClips33</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -38316,7 +38482,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND150">
+        <Item class="ModuleScript" referent="ND151">
           <Properties>
             <string name="Name">AuthoredClips34</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -38617,7 +38783,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND151">
+        <Item class="ModuleScript" referent="ND152">
           <Properties>
             <string name="Name">AuthoredClips35</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -38850,7 +39016,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND152">
+        <Item class="ModuleScript" referent="ND153">
           <Properties>
             <string name="Name">AuthoredClips36</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -39066,7 +39232,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND153">
+        <Item class="ModuleScript" referent="ND154">
           <Properties>
             <string name="Name">AuthoredClips37</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -39384,7 +39550,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND154">
+        <Item class="ModuleScript" referent="ND155">
           <Properties>
             <string name="Name">AuthoredClips38</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -39685,7 +39851,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND155">
+        <Item class="ModuleScript" referent="ND156">
           <Properties>
             <string name="Name">AuthoredClips39</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -39782,7 +39948,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND156">
+        <Item class="ModuleScript" referent="ND157">
           <Properties>
             <string name="Name">AuthoredClips4</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -40032,7 +40198,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND157">
+        <Item class="ModuleScript" referent="ND158">
           <Properties>
             <string name="Name">AuthoredClips40</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -40282,7 +40448,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND158">
+        <Item class="ModuleScript" referent="ND159">
           <Properties>
             <string name="Name">AuthoredClips41</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -40532,7 +40698,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND159">
+        <Item class="ModuleScript" referent="ND160">
           <Properties>
             <string name="Name">AuthoredClips42</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -40748,7 +40914,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND160">
+        <Item class="ModuleScript" referent="ND161">
           <Properties>
             <string name="Name">AuthoredClips43</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -41151,7 +41317,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND161">
+        <Item class="ModuleScript" referent="ND162">
           <Properties>
             <string name="Name">AuthoredClips44</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -41265,7 +41431,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND162">
+        <Item class="ModuleScript" referent="ND163">
           <Properties>
             <string name="Name">AuthoredClips45</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -41311,7 +41477,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND163">
+        <Item class="ModuleScript" referent="ND164">
           <Properties>
             <string name="Name">AuthoredClips46</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -41357,7 +41523,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND164">
+        <Item class="ModuleScript" referent="ND165">
           <Properties>
             <string name="Name">AuthoredClips47</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -41403,7 +41569,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND165">
+        <Item class="ModuleScript" referent="ND166">
           <Properties>
             <string name="Name">AuthoredClips48</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -41449,7 +41615,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND166">
+        <Item class="ModuleScript" referent="ND167">
           <Properties>
             <string name="Name">AuthoredClips49</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -41478,7 +41644,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND167">
+        <Item class="ModuleScript" referent="ND168">
           <Properties>
             <string name="Name">AuthoredClips5</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -41745,7 +41911,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND168">
+        <Item class="ModuleScript" referent="ND169">
           <Properties>
             <string name="Name">AuthoredClips50</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -41979,7 +42145,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND169">
+        <Item class="ModuleScript" referent="ND170">
           <Properties>
             <string name="Name">AuthoredClips51</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -42247,7 +42413,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND170">
+        <Item class="ModuleScript" referent="ND171">
           <Properties>
             <string name="Name">AuthoredClips52</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -42515,7 +42681,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND171">
+        <Item class="ModuleScript" referent="ND172">
           <Properties>
             <string name="Name">AuthoredClips53</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -42766,7 +42932,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND172">
+        <Item class="ModuleScript" referent="ND173">
           <Properties>
             <string name="Name">AuthoredClips54</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -43017,7 +43183,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND173">
+        <Item class="ModuleScript" referent="ND174">
           <Properties>
             <string name="Name">AuthoredClips55</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -43268,7 +43434,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND174">
+        <Item class="ModuleScript" referent="ND175">
           <Properties>
             <string name="Name">AuthoredClips56</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -43536,7 +43702,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND175">
+        <Item class="ModuleScript" referent="ND176">
           <Properties>
             <string name="Name">AuthoredClips57</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -43804,7 +43970,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND176">
+        <Item class="ModuleScript" referent="ND177">
           <Properties>
             <string name="Name">AuthoredClips58</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -44072,7 +44238,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND177">
+        <Item class="ModuleScript" referent="ND178">
           <Properties>
             <string name="Name">AuthoredClips59</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -44275,7 +44441,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND178">
+        <Item class="ModuleScript" referent="ND179">
           <Properties>
             <string name="Name">AuthoredClips6</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -44406,7 +44572,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND179">
+        <Item class="ModuleScript" referent="ND180">
           <Properties>
             <string name="Name">AuthoredClips60</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -44609,7 +44775,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND180">
+        <Item class="ModuleScript" referent="ND181">
           <Properties>
             <string name="Name">AuthoredClips61</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -44709,7 +44875,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND181">
+        <Item class="ModuleScript" referent="ND182">
           <Properties>
             <string name="Name">AuthoredClips7</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -44993,7 +45159,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND182">
+        <Item class="ModuleScript" referent="ND183">
           <Properties>
             <string name="Name">AuthoredClips8</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -45277,7 +45443,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND183">
+        <Item class="ModuleScript" referent="ND184">
           <Properties>
             <string name="Name">AuthoredClips9</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -45510,7 +45676,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND184">
+        <Item class="ModuleScript" referent="ND185">
           <Properties>
             <string name="Name">AuthoredJutsu</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -45525,7 +45691,7 @@ return all
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND185">
+        <Item class="ModuleScript" referent="ND186">
           <Properties>
             <string name="Name">AuthoredJutsu1</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -45911,7 +46077,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND186">
+        <Item class="ModuleScript" referent="ND187">
           <Properties>
             <string name="Name">AuthoredJutsu2</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -46348,7 +46514,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND187">
+        <Item class="ModuleScript" referent="ND188">
           <Properties>
             <string name="Name">AuthoredJutsu3</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -46751,7 +46917,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND188">
+        <Item class="ModuleScript" referent="ND189">
           <Properties>
             <string name="Name">AuthoredJutsu4</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -47188,7 +47354,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND189">
+        <Item class="ModuleScript" referent="ND190">
           <Properties>
             <string name="Name">AuthoredJutsu5</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -47404,7 +47570,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND190">
+        <Item class="ModuleScript" referent="ND191">
           <Properties>
             <string name="Name">AuthoredMotion</string>
             <ProtectedString name="Source">-- Blender-authored body animation (DEC Blender-first pipeline): clips made in
@@ -47547,7 +47713,7 @@ return Authored
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND191">
+        <Item class="ModuleScript" referent="ND192">
           <Properties>
             <string name="Name">AwakenFX</string>
             <ProtectedString name="Source">-- The awakenings, seen for the whole state (lot 3 animation, 08/11).
@@ -48059,7 +48225,7 @@ return AwakenFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND192">
+        <Item class="ModuleScript" referent="ND193">
           <Properties>
             <string name="Name">BodyViews</string>
             <ProtectedString name="Source">-- Bodies that are not fighters (Server/Bodies: Naruto's shadow clones), drawn
@@ -48344,7 +48510,7 @@ return BodyViews
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND193">
+        <Item class="ModuleScript" referent="ND194">
           <Properties>
             <string name="Name">ByakuganFX</string>
             <ProtectedString name="Source">-- (06/11, « nous, pour le Byakugan, on voit des 1, 2, 3 pop sur le truc,
@@ -48615,7 +48781,7 @@ return ByakuganFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND194">
+        <Item class="ModuleScript" referent="ND195">
           <Properties>
             <string name="Name">Camera</string>
             <ProtectedString name="Source">-- Duel camera. A locked third-person rig that keeps both fighters readable:
@@ -49508,7 +49674,7 @@ return Camera
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND195">
+        <Item class="ModuleScript" referent="ND196">
           <Properties>
             <string name="Name">ChakraFX</string>
             <ProtectedString name="Source">-- Systemic chakra on the client, the player-facing layer (convergence 3,
@@ -50317,7 +50483,7 @@ return ChakraFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND196">
+        <Item class="ModuleScript" referent="ND197">
           <Properties>
             <string name="Name">ChakraFlowFX</string>
             <ProtectedString name="Source">-- ChakraFlow on the client (Freedom, user 28/10: chakra infusions): the load
@@ -51207,7 +51373,7 @@ return ChakraFlowFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND197">
+        <Item class="ModuleScript" referent="ND198">
           <Properties>
             <string name="Name">CopyFX</string>
             <ProtectedString name="Source">-- (06/11, « le Sharingan qui copie ») Kakashi's copy on screen (Server/Copy).
@@ -51339,7 +51505,7 @@ return CopyFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND198">
+        <Item class="ModuleScript" referent="ND199">
           <Properties>
             <string name="Name">CupScreen</string>
             <ProtectedString name="Source">-- The Prodigy Tournament on screen (Server/Tournament): the bracket between
@@ -51581,6 +51747,11 @@ function Cup:render(data)
 	local function focus(target) task.delay(.25,function() pcall(function() game:GetService("GuiService").SelectedObject=target end) end) end
 	if phase=="Champion" and data.cup and data.cup.champion then
 		self.championName.Text=Text.upper((Fighters[data.cup.seats[data.cup.champion]] or {}).FullName or "")
+		-- (DEC-040) what the cup gave his kit
+		local reward=data.cup.reward
+		if reward and ((reward.amount or 0)&gt;0 or (reward.ryo or 0)&gt;0) then
+			self.championName.Text..=string.format("  •  +%d MASTERY  •  +%d RYŌ",reward.amount or 0,reward.ryo or 0)
+		end
 		if self.lastPhase~="Champion" then focus(self.championAgain) end
 	elseif phase=="Bracket" and self.lastPhase~="Bracket" then
 		focus(self.primary)
@@ -51603,7 +51774,7 @@ return Cup
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND199">
+        <Item class="ModuleScript" referent="ND200">
           <Properties>
             <string name="Name">Curtain</string>
             <ProtectedString name="Source">-- The first seconds behind a curtain (14/11, François: « toutes les textures
@@ -51703,7 +51874,7 @@ return Curtain
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND200">
+        <Item class="ModuleScript" referent="ND201">
           <Properties>
             <string name="Name">DashTrailFX</string>
             <ProtectedString name="Source">-- (Feel audit 07/11, need 4: « les jutsu de déplacement ») Minato's Lightning
@@ -51879,7 +52050,7 @@ return DashTrailFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND201">
+        <Item class="ModuleScript" referent="ND202">
           <Properties>
             <string name="Name">DragonFX</string>
             <ProtectedString name="Source">-- (13/11, user: « les dragons ça va pas trop, cherche des modèles de dragons
@@ -51934,7 +52105,7 @@ return DragonFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND202">
+        <Item class="ModuleScript" referent="ND203">
           <Properties>
             <string name="Name">Effects</string>
             <ProtectedString name="Source">-- Client-side combat VFX. Everything here is presentation driven by the server
@@ -54599,7 +54770,7 @@ return FX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND203">
+        <Item class="ModuleScript" referent="ND204">
           <Properties>
             <string name="Name">ElementFX</string>
             <ProtectedString name="Source">-- (06/11, user: « c'est faux, la foudre ne va pas dans l'eau ») Water and
@@ -54740,7 +54911,7 @@ return ElementFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND204">
+        <Item class="ModuleScript" referent="ND205">
           <Properties>
             <string name="Name">FamilyFX</string>
             <ProtectedString name="Source">-- Family objects seen in play (roster breadth pass): every projectile kind of
@@ -55964,7 +56135,7 @@ return FamilyFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND205">
+        <Item class="ModuleScript" referent="ND206">
           <Properties>
             <string name="Name">GaleFX</string>
             <ProtectedString name="Source">-- Temari on the client (roster wave): the iron fan (closed on her back at rest,
@@ -56442,7 +56613,7 @@ return GaleFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND206">
+        <Item class="ModuleScript" referent="ND207">
           <Properties>
             <string name="Name">GaleMotion</string>
             <ProtectedString name="Source">-- Temari's motion family (roster wave, DEC-015): her stance, gait, clips,
@@ -56623,7 +56794,7 @@ return GaleMotion
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND207">
+        <Item class="ModuleScript" referent="ND208">
           <Properties>
             <string name="Name">GroundFX</string>
             <ProtectedString name="Source">-- The ground answering the fight, on the client (06/11, user: « applique-toi
@@ -56816,7 +56987,7 @@ return GroundFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND208">
+        <Item class="ModuleScript" referent="ND209">
           <Properties>
             <string name="Name">HoundFX</string>
             <ProtectedString name="Source">-- (06/11, « les chiens ninja qui sortent du sol ») Kakashi's ninken on screen
@@ -57021,7 +57192,7 @@ return HoundFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND209">
+        <Item class="ModuleScript" referent="ND210">
           <Properties>
             <string name="Name">HubClient</string>
             <ProtectedString name="Source">-- Konoha on the client (DEC-038, user 13/11: « le décor, les scènes, où est-ce
@@ -57038,7 +57209,6 @@ local Players=game:GetService("Players")
 local RunService=game:GetService("RunService")
 local UIS=game:GetService("UserInputService")
 local PPS=game:GetService("ProximityPromptService")
-local GuiService=game:GetService("GuiService")
 local Shared=game:GetService("ReplicatedStorage").NinjaDuel
 local Config=require(Shared.Config)
 local HubMap=require(Shared.HubMap)
@@ -57046,12 +57216,8 @@ local MastersView=require(Shared.MastersView)
 local Masters=require(Shared.Masters)
 local Fighters=require(Shared.Fighters)
 local Text=require(Shared.Text)
-local HubLayout=require(script.Parent.HubLayout)
 local Hub={}
 Hub.__index=Hub
--- (14/11) The run latched by L3 or the touch RUN button stops after this long
--- at rest (the duel's pad sprint does the same, DECISIONS socle 2).
-Hub.REST=.35
 
 Hub.WALK,Hub.RUN,Hub.JUMP,Hub.LEAP=16,30,56,54
 
@@ -57065,57 +57231,31 @@ function Hub.new(ui,camera,send,controls)
 	local K=ui.kit or require(script.Parent.UI).kit
 	self.K=K
 	local P=K.palette
-	-- The HUD: the place and the kit (top left), what to do next (top). Placed
-	-- and scaled by Client/HubLayout (Hub:layout) under Roblox's top bar.
-	self.hud=K.frame(ui.gui,UDim2.fromOffset(18,18),UDim2.fromOffset(HubLayout.HUD.w,HubLayout.HUD.h),K.CARD,.12)
+	-- The HUD: the place and the kit (top left), what to do next (top).
+	self.hud=K.frame(ui.gui,UDim2.fromOffset(18,18),UDim2.fromOffset(430,74),K.CARD,.12)
 	K.corner(self.hud,10);self.hud.Visible=false;self.hud.ZIndex=20
-	self.hudScale=K.create("UIScale",self.hud,{Scale=1})
 	self.placeLabel=K.text(self.hud,"",UDim2.fromOffset(14,8),UDim2.fromOffset(404,26),22,P.paper,K.TITLE_FONT)
 	self.kitLabel=K.text(self.hud,"",UDim2.fromOffset(14,38),UDim2.fromOffset(404,26),14,P.gold,K.BODY_FONT)
-	-- (14/11) The goal: a short head, and under it where to go (a new
-	-- player's three masters); the line shrinks to its box, never under the
-	-- shop or Roblox's buttons.
-	self.goal=K.frame(ui.gui,UDim2.fromOffset(0,18),UDim2.fromOffset(HubLayout.GOAL.w,HubLayout.GOAL.h),K.CARD,1)
-	self.goal.Visible=false;self.goal.ZIndex=20
-	self.goalScale=K.create("UIScale",self.goal,{Scale=1})
-	self.goalHead=K.text(self.goal,"",UDim2.fromOffset(0,0),UDim2.new(1,0,0,30),24,P.gold,K.TITLE_FONT,Enum.TextXAlignment.Center)
-	K.create("UIStroke",self.goalHead,{Color=P.ink,Thickness=2.5,ApplyStrokeMode=Enum.ApplyStrokeMode.Contextual})
-	self.goalSub=K.text(self.goal,"",UDim2.fromOffset(0,32),UDim2.new(1,0,0,22),16,P.paper,K.BODY_FONT,Enum.TextXAlignment.Center)
-	self.goalSub.TextWrapped=false;self.goalSub.TextScaled=true
-	K.create("UITextSizeConstraint",self.goalSub,{MaxTextSize=16,MinTextSize=9})
-	K.create("UIStroke",self.goalSub,{Color=P.ink,Thickness=2,ApplyStrokeMode=Enum.ApplyStrokeMode.Contextual})
+	self.goal=K.text(ui.gui,"",UDim2.new(.5,-420,0,18),UDim2.fromOffset(840,30),17,P.gold,K.TITLE_FONT,Enum.TextXAlignment.Center)
+	K.create("UIStroke",self.goal,{Color=P.ink,Thickness=2.5,ApplyStrokeMode=Enum.ApplyStrokeMode.Contextual})
+	self.goal.Visible=false
 	-- (13/11) The shop and the Ryō, top right.
-	self.shopBox=K.frame(ui.gui,UDim2.new(1,-300,0,18),UDim2.fromOffset(HubLayout.SHOP.w,HubLayout.SHOP.h),K.CARD,1)
+	self.shopBox=K.frame(ui.gui,UDim2.new(1,-300,0,18),UDim2.fromOffset(282,60),K.CARD,1)
 	self.shopBox.Visible=false;self.shopBox.ZIndex=20
-	self.shopScale=K.create("UIScale",self.shopBox,{Scale=1})
 	local wallet=K.frame(self.shopBox,UDim2.fromOffset(0,0),UDim2.fromOffset(120,60),K.CARD,.12);K.corner(wallet,10)
 	K.text(wallet,"RYŌ",UDim2.fromOffset(12,6),UDim2.fromOffset(96,14),10,P.muted,K.BODY_FONT,Enum.TextXAlignment.Right)
 	self.ryoLabel=K.text(wallet,"0",UDim2.fromOffset(12,20),UDim2.fromOffset(96,34),28,P.gold,K.TITLE_FONT,Enum.TextXAlignment.Right)
-	-- (14/11, audit: the board of duels was only at the proctor's, 15 s from
-	-- the gate; VISION: « les menus restent disponibles partout ») DUELS opens
-	-- it from anywhere in the village (B, the pad's R1).
-	self.duelsButton=K.button(self.shopBox,"DUELS",UDim2.fromOffset(132,0),UDim2.fromOffset(140,60),function() self:openBoard() end,P.red)
-	self.duelsButton.TextSize=26
-	local shop=K.button(self.shopBox,"SHOP",UDim2.fromOffset(284,0),UDim2.fromOffset(140,60),function() self:openShop() end)
-	shop.TextSize=26
+	local shop=K.button(self.shopBox,"SHOP",UDim2.fromOffset(132,0),UDim2.fromOffset(150,60),function()
+		if self.ui.shopPanel then self.ui.shopPanel:show(self.kits) end
+	end,P.red)
+	shop.TextSize=28
 	self.keys=K.text(ui.gui,"",UDim2.new(.5,-360,1,-34),UDim2.fromOffset(720,22),14,P.paper,K.BODY_FONT,Enum.TextXAlignment.Center)
 	K.create("UIStroke",self.keys,{Color=P.ink,Thickness=2,ApplyStrokeMode=Enum.ApplyStrokeMode.Contextual})
 	self.keys.Visible=false
-	-- (14/11) Touch: Roblox gives a thumbstick and a jump button, no run; a
-	-- RUN button left of the jump button latches the run (Hub:step).
-	self.runButton=K.button(ui.gui,"RUN",UDim2.fromOffset(0,0),UDim2.fromOffset(70,70),function()
-		self.runLatch=not self.runLatch;self.runMoved=false;self.restFor=0;self:paintRun()
-	end,P.ink)
-	self.runButton.TextSize=20;self.runButton.Visible=false;self.runButton.ZIndex=25
-	-- round (the kit's button already has its corner: a second one is ignored)
-	local round=self.runButton:FindFirstChildOfClass("UICorner") or K.corner(self.runButton,6)
-	round.CornerRadius=UDim.new(.5,0)
-	K.create("UIStroke",self.runButton,{Color=P.paper,Transparency=.3,Thickness=2,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
-	-- The master's card (right of the screen, centred on a narrow one).
-	local card=K.inkCard(K.frame(ui.gui,UDim2.new(1,-520,.5,-190),UDim2.fromOffset(HubLayout.CARD.w,HubLayout.CARD.h),K.CARD,0))
+	-- The master's card (right of the screen).
+	local card=K.inkCard(K.frame(ui.gui,UDim2.new(1,-520,.5,-190),UDim2.fromOffset(490,380),K.CARD,0))
 	card.Visible=false;card.ZIndex=30
 	self.card=card
-	self.cardScale=K.create("UIScale",card,{Scale=1})
 	self.cardName=K.inkTitle(K.text(card,"",UDim2.fromOffset(24,16),UDim2.fromOffset(360,46),40,P.paper,K.TITLE_FONT))
 	self.cardPlace=K.text(card,"",UDim2.fromOffset(26,60),UDim2.fromOffset(440,20),14,P.gold,K.BODY_FONT)
 	self.cardLine=K.text(card,"",UDim2.fromOffset(26,86),UDim2.fromOffset(440,46),16,P.text,K.BODY_FONT)
@@ -57126,100 +57266,20 @@ function Hub.new(ui,camera,send,controls)
 	self.primary.TextSize=28
 	self.second=K.button(card,"",UDim2.fromOffset(24,276),UDim2.fromOffset(216,48),function() self:press("second") end)
 	self.third=K.button(card,"",UDim2.fromOffset(250,276),UDim2.fromOffset(216,48),function() self:press("third") end)
-	-- (14/11, Studio: the title font has no "✕", the button showed an empty box)
-	self.closeCard=K.button(card,"X",UDim2.fromOffset(490-62,14),UDim2.fromOffset(44,44),function() self:hideCard() end)
-	self.cardFoot=K.text(card,"",UDim2.fromOffset(24,336),UDim2.fromOffset(442,24),12,P.muted,K.BODY_FONT,Enum.TextXAlignment.Center)
+	self.closeCard=K.button(card,"✕",UDim2.fromOffset(490-62,14),UDim2.fromOffset(44,44),function() self:hideCard() end)
+	K.text(card,"E: TALK  •  WALK AWAY TO CLOSE",UDim2.fromOffset(24,336),UDim2.fromOffset(442,24),12,P.muted,K.BODY_FONT,Enum.TextXAlignment.Center)
 	-- Prompts: a master, the proctor.
 	PPS.PromptTriggered:Connect(function(prompt)
 		if not self.active then return end
 		local master=prompt:GetAttribute("NinjaMaster")
 		if master then self:showCard(master) return end
 		if prompt:GetAttribute("NinjaBoard") then self:openBoard() end
-		if prompt:GetAttribute("NinjaTrain") then self:train() end
 	end)
 	-- The run and the second jump.
 	self.leapUsed=false
-	self.runLatch=false;self.restFor=0
 	UIS.JumpRequest:Connect(function() self:jumpRequest() end)
 	RunService.RenderStepped:Connect(function(dt) self:step(dt) end)
-	-- (14/11) The pad: L3 latches the run (held, it was a strain on the thumb
-	-- for every street), Y opens the shop, B closes a master's card, R1 opens
-	-- the board of duels (the keyboard's B; not while he types in the chat).
-	UIS.InputBegan:Connect(function(input,processed)
-		if not self.active or self.board then return end
-		local key=input.KeyCode
-		if (key==Enum.KeyCode.ButtonR1 or (key==Enum.KeyCode.B and not processed)) and not self.panelOpen and not self.card.Visible then
-			self:openBoard()
-		elseif key==Enum.KeyCode.ButtonL3 and not self.panelOpen then
-			self.runLatch=not self.runLatch;self.runMoved=false;self.restFor=0;self:paintRun()
-		elseif key==Enum.KeyCode.ButtonY and not self.panelOpen and not self.card.Visible then
-			self:openShop()
-		elseif key==Enum.KeyCode.ButtonB and self.card.Visible and not self.panelOpen then
-			-- (a panel open over the card closes first: panelOpen is last frame's)
-			self:hideCard()
-		end
-	end)
-	-- The layout follows the window and the way he plays (touch, pad, keys).
-	pcall(function() workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(function() self:layout() end) end)
-	-- (only when the way changes: mouse and keys alternate all the time)
-	pcall(function() UIS.LastInputTypeChanged:Connect(function()
-		local now=self:input()
-		if now~=self.lastInput then self.lastInput=now;self:layout();self:refreshHud() end
-	end) end)
-	self.lastInput=self:input()
-	self:layout()
 	return self
-end
-
--- ------------------------------------------------------------------ layout
--- The way he plays now: "touch", "pad" or "keys".
-function Hub:input()
-	local last=UIS:GetLastInputType()
-	if last==Enum.UserInputType.Touch then return "touch" end
-	if last.Name:sub(1,7)=="Gamepad" then return "pad" end
-	if UIS.TouchEnabled and not UIS.KeyboardEnabled and not UIS.GamepadEnabled then return "touch" end
-	return "keys"
-end
--- Places the HUD, the goal, the shop box, the card and the RUN button
--- (Client/HubLayout) under Roblox's top bar, for this window.
-function Hub:layout()
-	local camera=workspace.CurrentCamera
-	if not camera then return end
-	local inset=0
-	pcall(function() inset=GuiService:GetGuiInset().Y end)
-	local touch=self:input()=="touch"
-	local L=HubLayout.compute(camera.ViewportSize,inset,touch)
-	self.lay=L
-	local function at(gui,r) gui.Position=UDim2.fromOffset(math.floor(r.x+.5),math.floor(r.y+.5)) end
-	at(self.hud,L.hud);self.hudScale.Scale=L.scale
-	at(self.shopBox,L.shop);self.shopScale.Scale=L.scale
-	at(self.goal,L.goal);self.goalScale.Scale=L.scale
-	self.goal.Size=UDim2.fromOffset(L.goal.w/L.scale,L.goal.h/L.scale)
-	-- narrow: the places one a line under the head (Hub:refreshHud)
-	self.goalSub.Size=UDim2.new(1,0,0,if L.goal.stack then HubLayout.GOAL.stackH-34 else 22)
-	self.goalSub.TextWrapped=L.goal.stack==true
-	if self.goalSubText then self:refreshHud() end
-	at(self.card,L.card);self.cardScale.Scale=L.card.scale
-	if L.keys then
-		at(self.keys,L.keys);self.keys.Size=UDim2.fromOffset(L.keys.w,L.keys.h);self.keys.TextSize=math.max(11,math.floor(14*L.scale+.5))
-	end
-	if L.run then
-		at(self.runButton,L.run);self.runButton.Size=UDim2.fromOffset(L.run.w,L.run.h)
-		self.runButton.TextSize=math.floor(L.run.w*.28+.5)
-	end
-	self:paintRun()
-	self:apply()
-end
-function Hub:paintRun()
-	local P=self.K.palette
-	self.runButton.BackgroundColor3=if self.runLatch then P.gold else P.ink
-	self.runButton.TextColor3=if self.runLatch then P.ink else P.paper
-	self.runButton.BackgroundTransparency=if self.runLatch then 0 else .25
-end
-function Hub:openShop()
-	if not self.ui.shopPanel then return end
-	self:hideCard()
-	self.ui.shopPanel:show(self.kits)
 end
 
 -- ------------------------------------------------------------------ state
@@ -57241,12 +57301,13 @@ end
 function Hub:apply()
 	local walking=self.active and not self.board
 	-- The tree panel or the shop over the village: the walk waits behind it.
-	local panel=(self.ui.treePanel and self.ui.treePanel:shown()) or (self.ui.shopPanel and self.ui.shopPanel:shown()) or false
+	local panel=(self.ui.treePanel and self.ui.treePanel:shown()) or (self.ui.shopPanel and self.ui.shopPanel:shown()) or (self.ui.outfitPanel and self.ui.outfitPanel:shown()) or false
 	self.panelOpen=panel
 	self.ui.hubWalk=walking
 	self.camera.hubWalk=walking
+	self.hud.Visible=walking;self.goal.Visible=walking and self.goal.Text~="";self.keys.Visible=walking
+	self.shopBox.Visible=walking and self.kits~=nil and self.ui.shopPanel~=nil
 	if not walking then self.card.Visible=false end
-	self:showHud()
 	pcall(function()
 		if walking and not panel then self.controls:Enable() else self.controls:Disable() end
 	end)
@@ -57258,19 +57319,6 @@ function Hub:apply()
 		if hum and camera.CameraSubject~=hum then camera.CameraSubject=hum end
 		camera.FieldOfView=70
 	end
-end
--- What of the HUD shows (no controls, no camera: Hub:refreshHud calls it
--- four times a second).
-function Hub:showHud()
-	local walking=self.active and not self.board
-	local panel=self.panelOpen
-	local touch=self.lay~=nil and self.lay.touch
-	-- (a phone's card takes the top row: the place box and the shop step aside)
-	local talking=self.card.Visible and self.lay~=nil and self.lay.card.overTop==true
-	self.hud.Visible=walking and not talking;self.keys.Visible=walking and not touch
-	self.goal.Visible=walking and self.goalHead.Text~="" and not self.card.Visible
-	self.runButton.Visible=walking and touch and not panel
-	self.shopBox.Visible=walking and not talking and self.kits~=nil and self.ui.shopPanel~=nil
 end
 function Hub:openBoard()
 	self.board=true;self:hideCard();self:apply()
@@ -57301,7 +57349,7 @@ function Hub:jumpRequest()
 end
 function Hub:step(dt)
 	if not self.active then return end
-	if ((self.ui.treePanel and self.ui.treePanel:shown()) or (self.ui.shopPanel and self.ui.shopPanel:shown()) or false)~=self.panelOpen then self:apply() end
+	if ((self.ui.treePanel and self.ui.treePanel:shown()) or (self.ui.shopPanel and self.ui.shopPanel:shown()) or (self.ui.outfitPanel and self.ui.outfitPanel:shown()) or false)~=self.panelOpen then self:apply() end
 	local character=Players.LocalPlayer.Character
 	local hum=character and character:FindFirstChildOfClass("Humanoid")
 	local root=character and character:FindFirstChild("HumanoidRootPart")
@@ -57310,15 +57358,8 @@ function Hub:step(dt)
 		local camera=workspace.CurrentCamera
 		if camera.CameraSubject~=hum then camera.CameraType=Enum.CameraType.Custom;camera.CameraSubject=hum end
 	end
-	-- Shift held, or the run latched (L3, the touch RUN button) until he stops.
-	-- (Latched standing still, it waits for him to move: the rest that ends
-	-- it is the one after a run.)
-	if self.runLatch then
-		if hum.MoveDirection.Magnitude&gt;=.1 then self.runMoved=true;self.restFor=0
-		elseif self.runMoved then self.restFor=(self.restFor or 0)+dt end
-		if self.restFor&gt;Hub.REST then self.runLatch=false;self.runMoved=false;self.restFor=0;self:paintRun() end
-	end
-	local run=self.runLatch or UIS:IsKeyDown(Enum.KeyCode.LeftShift) or UIS:IsKeyDown(Enum.KeyCode.RightShift)
+	local run=UIS:IsKeyDown(Enum.KeyCode.LeftShift) or UIS:IsKeyDown(Enum.KeyCode.RightShift)
+	pcall(function() run=run or UIS:IsGamepadButtonDown(Enum.UserInputType.Gamepad1,Enum.KeyCode.ButtonL3) end)
 	hum.WalkSpeed=if run then Hub.RUN else Hub.WALK
 	hum.UseJumpPower=true;hum.JumpPower=Hub.JUMP
 	local state=hum:GetState()
@@ -57334,12 +57375,10 @@ function Hub:step(dt)
 	self.clock=(self.clock or 0)+dt
 	if self.clock&gt;.25 then
 		self.clock=0
-		-- The masters arrive after the village (their portraits first): the
-		-- masters, the proctor and the training dummy.
-		local count,want=0,2
+		-- The masters arrive after the village (their portraits first).
+		local count=0
 		for _ in self.markers do count+=1 end
-		for _ in HubMap.Masters do want+=1 end
-		if count&lt;want then self:refreshMarkers() end
+		if count&lt;9 then self:refreshMarkers() end
 		self:refreshHud(root.Position)
 		for _,marker in self.markers do
 			if marker.model and marker.model.Parent and marker.distance then
@@ -57363,6 +57402,7 @@ function Hub:refreshHud(position)
 	end
 	local kits=self.kits
 	local kitLine="EVERY KIT IS OPEN"
+	local goal=""
 	if kits and kits.state=="ready" then
 		local selected=kits.selected
 		if selected and kits.owned[selected] then
@@ -57372,20 +57412,30 @@ function Hub:refreshHud(position)
 		else
 			kitLine="NO KIT YET"
 		end
+		if kits.needStarter then
+			goal="CHOOSE YOUR FIRST MASTER  •  NARUTO AT ICHIRAKU  •  SASUKE ON THE UCHIHA PIER  •  LEE ON TRAINING GROUND THREE"
+		else
+			for _,id in Masters.Kits do
+				local m=kits.masters and kits.masters[id]
+				if m and m.ready and not kits.owned[id] then
+					goal=nameOf(id).." WILL TEACH YOU  •  "..(HubMap.Masters[id] and HubMap.Masters[id].place or "")
+					break
+				end
+			end
+			if goal=="" then goal="DUELS AND THE TOURNAMENT  •  THE PROCTOR, IN THE EXAM HALL" end
+		end
 	elseif kits and kits.state~="ready" then
 		kitLine="YOUR KITS ARE ON THEIR WAY…"
+	else
+		goal="DUELS AND THE TOURNAMENT  •  THE PROCTOR, IN THE EXAM HALL"
 	end
-	-- (14/11) The goal: a head and where to go (Shared/MastersView.goal).
-	local goal=MastersView.goal(kits)
 	self.kitLabel.Text=kitLine
 	self.ryoLabel.Text=tostring(kits and kits.ryo or 0)
-	self.goalSubText=goal.sub
-	self.goalHead.Text=goal.head
-	self.goalSub.Text=if self.lay and self.lay.goal.stack then table.concat(goal.items,"\n") else goal.sub
-	self:showHud()
-	local input=self:input()
-	self.keys.Text=if input=="pad" then "L3 RUN  •  A TWICE: LEAP  •  X TALK  •  Y SHOP  •  R1 DUELS" else "SHIFT RUN  •  SPACE TWICE: LEAP  •  E TALK  •  B DUELS"
-	self.cardFoot.Text=if input=="pad" then "B: CLOSE" elseif input=="touch" then "✕ OR WALK AWAY TO CLOSE" else "E: TALK  •  WALK AWAY TO CLOSE"
+	self.shopBox.Visible=self.active and not self.board and kits~=nil and self.ui.shopPanel~=nil
+	self.goal.Text=goal
+	self.goal.Visible=self.active and not self.board and goal~=""
+	local pad=UIS.GamepadEnabled and UIS:GetLastInputType()==Enum.UserInputType.Gamepad1
+	self.keys.Text=if pad then "L3 RUN  •  A TWICE: LEAP  •  X TALK" else "SHIFT RUN  •  SPACE TWICE: LEAP  •  E TALK"
 end
 
 local TAG={open={"",nil},loading={"…",nil},starter={"START HERE","gold"},starterLocked={"LATER","muted"},
@@ -57412,13 +57462,11 @@ function Hub:refreshMarkers()
 	local P=self.K.palette
 	for _,model in holder:GetChildren() do
 		local id=model:GetAttribute("NinjaMaster")
-		local key=id or (model:GetAttribute("NinjaBoard") and "Proctor") or (model:GetAttribute("NinjaTrain") and "Training")
+		local key=id or (model:GetAttribute("NinjaBoard") and "Proctor")
 		if key and (not self.markers[key] or self.markers[key].model~=model) then
 			if self.markers[key] then self.markers[key].gui:Destroy() end
-			local title=if id then nameOf(id) elseif key=="Training" then "TRAINING" else "THE PROCTOR"
-			local place=if id then HubMap.Masters[id] and HubMap.Masters[id].place elseif key=="Training" then HubMap.Training.place else HubMap.Proctor.place
-			self.markers[key]=self:marker(model,id,title,place)
-			if self.markers[key] then self.markers[key].key=key end
+			local title=if id then nameOf(id) else "THE PROCTOR"
+			self.markers[key]=self:marker(model,id,title,if id then HubMap.Masters[id] and HubMap.Masters[id].place else HubMap.Proctor.place)
 		end
 	end
 	for key,marker in self.markers do
@@ -57427,49 +57475,19 @@ function Hub:refreshMarkers()
 			if marker.id then
 				local status=self:status(marker.id)
 				local tag=TAG[status] or TAG.locked
-				-- (14/11) his first kit taken, its master waits for his first duel
-				local first=MastersView.firstDuel(self.kits)==marker.id
-				if first then tag={"YOUR FIRST DUEL","gold"} end
 				marker.tag.Text=tag[1]
 				marker.tag.TextColor3=P[tag[2] or "gold"] or P.gold
 				-- What matters now is seen through the walls: a new player's
-				-- three masters, a master who teaches him now, the first duel.
-				local loud=status=="starter" or status=="master" or first
+				-- three masters, a master who teaches him now.
+				local loud=status=="starter" or status=="master"
 				marker.gui.AlwaysOnTop=loud
 				marker.gui.MaxDistance=if loud then 2000 else 140
-			elseif marker.key=="Training" then
-				-- seen on the ground only (the masters guide a new player)
-				local kit=self:trainingKit()
-				marker.tag.Text=if kit then "TRY "..nameOf(kit).."'S KIT" else "YOUR KIT"
-				marker.gui.AlwaysOnTop=false;marker.gui.MaxDistance=140
 			else
 				marker.tag.Text="DUELS  •  TOURNAMENT"
-				-- (14/11, Studio: from the gate the proctor's marker sat on
-				-- Naruto's, through the walls) while a new player has a master
-				-- to find or a first duel to fight, the proctor stays quiet
-				local busy=self.kits~=nil and (self.kits.needStarter==true or MastersView.firstDuel(self.kits)~=nil)
-				marker.gui.AlwaysOnTop=not busy;marker.gui.MaxDistance=if busy then 140 else 2000
+				marker.gui.AlwaysOnTop=true;marker.gui.MaxDistance=2000
 			end
 		end
 	end
-end
-
--- ------------------------------------------------------------------ training
--- The kit he trains with at the dummy: his own (owned and chosen), else Lee's
--- (it is Lee's ground: TRY LEE'S KIT, as on Lee's card). nil = his own.
-function Hub:trainingKit()
-	local kits=self.kits
-	local selected=kits and kits.selected
-	if selected and kits.owned and kits.owned[selected] then return nil end
-	return "Leaf"
-end
-function Hub:train()
-	local kits=self.kits
-	if not kits or kits.state~="ready" then return end
-	local FirstMinute=require(Shared.FirstMinute)
-	local kit=self:trainingKit() or kits.selected
-	self:hideCard()
-	self.send("Tutorial",{player=kit,bot=FirstMinute.rival(kit) or "Lion",here="Training"})
 end
 
 -- ------------------------------------------------------------------ the card
@@ -57480,22 +57498,9 @@ function Hub:showCard(id)
 	self.cardAt=root and root.Position
 	self:fillCard()
 	self.card.Visible=self.active and not self.board
-	-- (14/11) While he talks, the goal steps aside (on a laptop or a phone
-	-- the card covers its row). With a pad the card's first button takes the
-	-- focus: without it no pad could press TAKE HIS KIT.
-	self:showHud()
-	if self.card.Visible and self:input()=="pad" then
-		local target=if self.primary.Visible then self.primary elseif self.second.Visible then self.second else self.closeCard
-		task.defer(function() pcall(function() GuiService.SelectedObject=target end) end)
-	end
 end
 function Hub:hideCard()
 	self.cardId=nil;self.card.Visible=false;self.actions=nil
-	pcall(function()
-		local selected=GuiService.SelectedObject
-		if selected and selected:IsDescendantOf(self.card) then GuiService.SelectedObject=nil end
-	end)
-	self:showHud()
 end
 -- What the three buttons do for this master (Shared/MastersView.card).
 function Hub:cardActions(id) return MastersView.card(self.kits,id) end
@@ -57538,22 +57543,14 @@ function Hub:press(which)
 		if self.ui.treePanel then self.ui.treePanel:show(item.tree,self.kits) end
 		return
 	end
-	if item.send then
-		-- (14/11) a duel asked at the master's home is fought there, when the
-		-- server finds him there (Matches.villageSite)
-		local payload=item.send[2]
-		if type(payload)=="table" and (item.send[1]=="Start" or item.send[1]=="First" or item.send[1]=="MasterTrial") then
-			payload=table.clone(payload);payload.here=self.cardId
-		end
-		self.send(item.send[1],payload)
-	end
+	if item.send then self.send(item.send[1],item.send[2]) end
 end
 
 return Hub
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND210">
+        <Item class="ModuleScript" referent="ND211">
           <Properties>
             <string name="Name">HubDress</string>
             <ProtectedString name="Source">-- Konoha dressed in its Blender models (14/11, user: « les models 3d peuvent
@@ -57715,169 +57712,7 @@ return HubDress
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND211">
-          <Properties>
-            <string name="Name">HubLayout</string>
-            <ProtectedString name="Source">-- Where Konoha's HUD sits in the window (14/11, the new player's walk, read
--- in the code before a Studio pass): the place-and-kit box sat at y 18 with
--- the HUD ignoring Roblox's inset, so under Roblox's menu and chat buttons;
--- the goal (840 px of a hundred letters) ran under the SHOP box on a laptop
--- (1280 to 1366 px); nothing was sized for a phone, and the master's card
--- (490 x 380) covered the touch jump button. Pure (no service): Client/
--- HubClient applies it, the headless suite checks it at every window size.
---
--- Rectangles are {x, y, w, h} in window pixels (the HUD's ScreenGui ignores
--- the inset, so y 0 is the top of the screen).
-local L={}
-
-L.MARGIN=16
-L.HUD={w=430,h=74}      -- the place and the kit, top left
-L.SHOP={w=424,h=60}     -- the Ryō, DUELS and SHOP, top right
-L.GOAL={w=840,h=58,stackH=96} -- what to do next: a head and the line under it
-L.STACK=700             -- narrower (in the goal's own units), one place a line
-L.CARD={w=490,h=380}    -- a master's card
-L.RUN=14                -- the gap between the touch RUN and jump buttons
-L.ROW=600               -- the goal shares the top row when it gets this much
-L.WIDE=1100             -- a narrower window centres the master's card
-
--- Roblox's touch jump button (PlayerModule, TouchJump): 70 px on a small
--- screen (its short side 500 or less), 120 otherwise, anchored bottom right.
-function L.jump(viewport)
-	local small=math.min(viewport.X,viewport.Y)&lt;=500
-	local size=if small then 70 else 120
-	local x=viewport.X-(size*1.5-10)
-	local y=if small then viewport.Y-size-20 else viewport.Y-size*1.75
-	return {x=x,y=y,w=size,h=size}
-end
-
--- The layout for a window of `viewport` pixels, under Roblox's top bar of
--- `insetY` pixels, with or without touch controls.
-function L.compute(viewport,insetY,touch)
-	local X,Y=viewport.X,viewport.Y
-	local m=L.MARGIN
-	-- The scale: a laptop's window keeps the full size; a phone (touch) keeps
-	-- its text readable (the place box's kit line is 14 px at 1).
-	local s=if touch then math.clamp(math.min(X/1060,Y/500),.7,1) else math.clamp(math.min(X/1280,Y/720),.55,1)
-	local top=math.max(insetY or 0,0)+8
-	local out={scale=s,top=top,touch=touch==true}
-	out.hud={x=m,y=top,w=L.HUD.w*s,h=L.HUD.h*s}
-	out.shop={x=X-m-L.SHOP.w*s,y=top,w=L.SHOP.w*s,h=L.SHOP.h*s}
-	-- A portrait phone: the two boxes do not fit side by side; the shop goes
-	-- under the place box, on the right.
-	if out.hud.x+out.hud.w+m&gt;out.shop.x then out.shop.y=top+out.hud.h+8 end
-	local below=math.max(out.hud.y+out.hud.h,out.shop.y+out.shop.h)+8
-	-- The goal: in the top row between the two boxes when there is room for
-	-- it, else on its own row under them.
-	local row=X-2*(m+math.max(out.hud.w,out.shop.w)+m)
-	local gw,gh=L.GOAL.w*s,L.GOAL.h*s
-	if row&gt;=L.ROW*s and out.shop.y==top then
-		local w=math.min(gw,row)
-		out.goal={x=X/2-w/2,y=top,w=w,h=gh}
-	else
-		local w=math.min(gw,X-2*m)
-		out.goal={x=X/2-w/2,y=below,w=w,h=gh}
-	end
-	-- Narrow (a portrait phone): the places under the head go one per line.
-	if out.goal.w/s&lt;L.STACK then
-		out.goal.stack=true
-		out.goal.h=L.GOAL.stackH*s
-	end
-	-- The master's card: on the right of a wide window (the village stays in
-	-- view), centred on a narrow one or with touch controls (clear of the
-	-- thumbstick's corner and the jump button).
-	-- Touch: a RUN button left of Roblox's jump button, the same size; the
-	-- key line at the bottom only without touch.
-	if touch then
-		local jump=L.jump(viewport)
-		out.jump=jump
-		out.run={x=jump.x-L.RUN-jump.w,y=jump.y,w=jump.w,h=jump.h}
-	else
-		out.keys={x=X/2-360*s,y=Y-34*s,w=720*s,h=22*s}
-	end
-	if X&gt;=L.WIDE and not touch then
-		local cs=math.min(s,(Y-below-m)/L.CARD.h)
-		local h=L.CARD.h*cs
-		out.card={x=X-30*s-L.CARD.w*cs,y=math.max(below,Y/2-h/2),w=L.CARD.w*cs,h=h,scale=cs}
-	else
-		-- Centred in what is left: under the top row, left of the RUN and
-		-- jump buttons (with touch), above the key line (without).
-		-- With touch the card takes the larger of two places: left of the
-		-- buttons (a landscape phone) or above them (a portrait one).
-		local function fit(right,bottom,from)
-			from=from or below
-			local cs=math.min(1,(right-m)/L.CARD.w,(bottom-from)/L.CARD.h)
-			local w,h=L.CARD.w*cs,L.CARD.h*cs
-			return {x=m+(right-m-w)/2,y=from+(bottom-from-h)/2,w=w,h=h,scale=cs}
-		end
-		if out.run then
-			-- (a phone's card takes the top row's place too: the place box
-			-- and the shop step aside while he talks, `overTop`)
-			local left,above=fit(out.run.x-8,Y-m,top),fit(X-m,math.min(out.run.y,out.jump.y)-8,top)
-			out.card=if above.scale&gt;left.scale then above else left
-			out.card.overTop=true
-		else
-			out.card=fit(X-m,out.keys.y-8)
-		end
-	end
-	return out
-end
-
--- Whether two rectangles overlap (the suite's check).
-function L.overlap(a,b)
-	return a.x&lt;b.x+b.w and b.x&lt;a.x+a.w and a.y&lt;b.y+b.h and b.y&lt;a.y+a.h
-end
-
-return L
-</ProtectedString>
-          </Properties>
-        </Item>
         <Item class="ModuleScript" referent="ND212">
-          <Properties>
-            <string name="Name">HubMeshAssets</string>
-            <ProtectedString name="Source">-- Generated by tools/blender/hub_to_luau.py from the Studio import of
--- tools/blender/hub_fbx.py. Konoha's pieces published as meshes: Client/MeshKit
--- loads these by id instead of building them on the player's computer.
-return {
-	["Bench"]={["Wood"]="rbxassetid://88504257246857"},
-	["CompoundWall"]={["Coping"]="rbxassetid://96855446545519",["Plaster"]="rbxassetid://131723196896346"},
-	["Crate"]={["Planks"]="rbxassetid://111206245507794"},
-	["ExamHall"]={["Banners"]="rbxassetid://93156594731199",["Eaves"]="rbxassetid://101232597652722",["Lacquer"]="rbxassetid://73235583523305",["LanternCaps"]="rbxassetid://103991335040242",["Lanterns"]="rbxassetid://133240679299665",["Openings"]="rbxassetid://86049132967326",["Pillars"]="rbxassetid://126373252346837",["Sleeves"]="rbxassetid://133438619143284",["Statue"]="rbxassetid://109591930511838",["Tiles"]="rbxassetid://115914358345480",["TilesE"]="rbxassetid://102233029523146",["TilesW"]="rbxassetid://123582312298908",["Timber"]="rbxassetid://111376810526035",["Walls"]="rbxassetid://127520145776294"},
-	["FacesTerrace"]={["Caps"]="rbxassetid://106153450294754",["Lanterns"]="rbxassetid://133960832191793",["Rails"]="rbxassetid://94066680410391",["Stone"]="rbxassetid://137254838923288"},
-	["FenceSegment"]={["Wood"]="rbxassetid://117385079875141"},
-	["GateBooth"]={["Cloth"]="rbxassetid://108009079118506",["Eaves"]="rbxassetid://80118037622125",["Tiles"]="rbxassetid://81376262341646",["Wood"]="rbxassetid://115614013768370"},
-	["HeadSlot1"]={["Block"]="rbxassetid://101848696864335",["Rope"]="rbxassetid://80074050995993",["Scaffold"]="rbxassetid://81532829458506",["Sketch"]="rbxassetid://102417610083237",["Tools"]="rbxassetid://75694830493145"},
-	["HeadSlot2"]={["Block"]="rbxassetid://98628276321459",["Rope"]="rbxassetid://88901941221540",["Scaffold"]="rbxassetid://93285768998834",["Sketch"]="rbxassetid://87001120943785",["Tools"]="rbxassetid://87200637969694"},
-	["HeadSlot3"]={["Block"]="rbxassetid://90642687110422",["Rope"]="rbxassetid://116589144157328",["Scaffold"]="rbxassetid://107259615549296",["Sketch"]="rbxassetid://109523680565310",["Tools"]="rbxassetid://100461239613001"},
-	["HeadSlot4"]={["Block"]="rbxassetid://107088461592100",["Rope"]="rbxassetid://136791230074868",["Scaffold"]="rbxassetid://110529164879350",["Sketch"]="rbxassetid://105931461717267",["Tools"]="rbxassetid://129978332460309"},
-	["HokageCliff"]={["Cliff"]="rbxassetid://72922423253325",["Plateau"]="rbxassetid://136039166976461",["Trees"]="rbxassetid://116648369722881",["Trunks"]="rbxassetid://111584300701170"},
-	["HouseBack_22x20x2"]={["Eaves"]="rbxassetid://100457141697563",["Openings"]="rbxassetid://127047101617124",["Tiles"]="rbxassetid://127934727204610",["Timber"]="rbxassetid://80940882651825",["Walls"]="rbxassetid://106884960117183"},
-	["HouseFlat_22x18x3"]={["Lantern"]="rbxassetid://108993776749365",["LanternCap"]="rbxassetid://133080253667574",["Openings"]="rbxassetid://90590598807175",["Tiles"]="rbxassetid://127312953090925",["Timber"]="rbxassetid://123838567361696",["Walls"]="rbxassetid://79141025403594"},
-	["HouseFlat_24x20x2"]={["Lantern"]="rbxassetid://73242430053351",["LanternCap"]="rbxassetid://104300240842099",["Openings"]="rbxassetid://96267177089836",["Tiles"]="rbxassetid://140372108231681",["Timber"]="rbxassetid://125698864944177",["Walls"]="rbxassetid://91167587939273"},
-	["HouseGable_24x20x2"]={["Eaves"]="rbxassetid://121919626718132",["Lantern"]="rbxassetid://108709517387713",["LanternCap"]="rbxassetid://129616618260421",["Openings"]="rbxassetid://92430271164296",["Tiles"]="rbxassetid://96529455605881",["Timber"]="rbxassetid://131837889259277",["Walls"]="rbxassetid://99651763573482"},
-	["HouseShop_24x20x2"]={["Cloth"]="rbxassetid://87973244182589",["Eaves"]="rbxassetid://113458844164909",["Lantern"]="rbxassetid://97717467757372",["LanternCap"]="rbxassetid://100931788645182",["Openings"]="rbxassetid://102989908144077",["Tiles"]="rbxassetid://127487219848344",["Timber"]="rbxassetid://113470139938452",["Walls"]="rbxassetid://112839647021571"},
-	["HouseUchiha_26x20x2"]={["Eaves"]="rbxassetid://86291919029288",["Lantern"]="rbxassetid://109311529773601",["LanternCap"]="rbxassetid://118774896962749",["Openings"]="rbxassetid://99053735905202",["Tiles"]="rbxassetid://118183742334870",["Timber"]="rbxassetid://94279424718314",["Walls"]="rbxassetid://134794511546027"},
-	["HyugaCompound"]={["Eaves"]="rbxassetid://99823944632428",["GateTiles"]="rbxassetid://116776419477652",["Shoji"]="rbxassetid://72103996747832",["TilesE"]="rbxassetid://107273123466455",["TilesW"]="rbxassetid://128652108009067",["Timber"]="rbxassetid://108081564914169",["Walls"]="rbxassetid://85034412809004"},
-	["Ichiraku"]={["Awning"]="rbxassetid://75312915026286",["Caps"]="rbxassetid://129680020672234",["Kitchen"]="rbxassetid://132997861196759",["Lanterns"]="rbxassetid://134932343598130",["Noren"]="rbxassetid://133478813076884",["Stools"]="rbxassetid://125970783091136",["Walls"]="rbxassetid://90204790051022",["Wood"]="rbxassetid://129811579103311"},
-	["KonohaGate"]={["Doors"]="rbxassetid://131815819534741",["Eaves"]="rbxassetid://112080596233606",["Iron"]="rbxassetid://80642821733154",["Lacquer"]="rbxassetid://99329389454676",["Stone"]="rbxassetid://136128927540714",["TilesN"]="rbxassetid://95110297455417",["TilesS"]="rbxassetid://116297241221632"},
-	["Ladder"]={["Wood"]="rbxassetid://72036273700090"},
-	["LampPost"]={["Post"]="rbxassetid://122437641289026"},
-	["MemorialStone"]={["Base"]="rbxassetid://132857150897315",["Stone"]="rbxassetid://74159124622978"},
-	["NakaShrine"]={["Base"]="rbxassetid://73578815374895",["Eaves"]="rbxassetid://130631534905684",["Tiles"]="rbxassetid://124988233445027",["Timber"]="rbxassetid://84346061694555",["Walls"]="rbxassetid://131648282390497"},
-	["PaperLantern"]={["Cap"]="rbxassetid://70525237072054",["Paper"]="rbxassetid://126245027860605"},
-	["StoneLantern"]={["Light"]="rbxassetid://117722536874624",["Stone"]="rbxassetid://120042346070357"},
-	["Stump"]={["Bark"]="rbxassetid://135709095687060",["Cut"]="rbxassetid://126581639633253"},
-	["Torii"]={["Kasagi"]="rbxassetid://98319858876513",["Lacquer"]="rbxassetid://87809822914884"},
-	["TrainingProps"]={["Kunai"]="rbxassetid://139688700011248",["Rope"]="rbxassetid://106323610917524",["Target"]="rbxassetid://121799912010011",["Wood"]="rbxassetid://126380283504127"},
-	["TreeA"]={["Leaves"]="rbxassetid://105341148675676",["Trunk"]="rbxassetid://110587501957765"},
-	["TreeC"]={["Leaves"]="rbxassetid://130211193063245",["Trunk"]="rbxassetid://93399025718821"},
-	["UchihaGate"]={["Lacquer"]="rbxassetid://73695640324489"},
-	["UchihaPier"]={["Planks"]="rbxassetid://121139699519354"},
-	["WaterTank"]={["Hoops"]="rbxassetid://119328218807419",["Staves"]="rbxassetid://94817374724275"},
-}
-</ProtectedString>
-          </Properties>
-        </Item>
-        <Item class="ModuleScript" referent="ND213">
           <Properties>
             <string name="Name">HubMeshData</string>
             <ProtectedString name="Source">-- Generated by tools/blender/konoha_models.py. Do not edit: re-run the script.
@@ -57895,7 +57730,7 @@ return all
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND214">
+        <Item class="ModuleScript" referent="ND213">
           <Properties>
             <string name="Name">HubMeshData1</string>
             <ProtectedString name="Source">-- Generated by tools/blender/konoha_models.py. Do not edit: re-run the script.
@@ -57915,7 +57750,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND215">
+        <Item class="ModuleScript" referent="ND214">
           <Properties>
             <string name="Name">HubMeshData10</string>
             <ProtectedString name="Source">-- Generated by tools/blender/konoha_models.py. Do not edit: re-run the script.
@@ -57927,7 +57762,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND216">
+        <Item class="ModuleScript" referent="ND215">
           <Properties>
             <string name="Name">HubMeshData11</string>
             <ProtectedString name="Source">-- Generated by tools/blender/konoha_models.py. Do not edit: re-run the script.
@@ -57955,7 +57790,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND217">
+        <Item class="ModuleScript" referent="ND216">
           <Properties>
             <string name="Name">HubMeshData12</string>
             <ProtectedString name="Source">-- Generated by tools/blender/konoha_models.py. Do not edit: re-run the script.
@@ -57969,7 +57804,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND218">
+        <Item class="ModuleScript" referent="ND217">
           <Properties>
             <string name="Name">HubMeshData13</string>
             <ProtectedString name="Source">-- Generated by tools/blender/konoha_models.py. Do not edit: re-run the script.
@@ -57981,7 +57816,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND219">
+        <Item class="ModuleScript" referent="ND218">
           <Properties>
             <string name="Name">HubMeshData14</string>
             <ProtectedString name="Source">-- Generated by tools/blender/konoha_models.py. Do not edit: re-run the script.
@@ -57993,7 +57828,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND220">
+        <Item class="ModuleScript" referent="ND219">
           <Properties>
             <string name="Name">HubMeshData15</string>
             <ProtectedString name="Source">-- Generated by tools/blender/konoha_models.py. Do not edit: re-run the script.
@@ -58009,7 +57844,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND221">
+        <Item class="ModuleScript" referent="ND220">
           <Properties>
             <string name="Name">HubMeshData16</string>
             <ProtectedString name="Source">-- Generated by tools/blender/konoha_models.py. Do not edit: re-run the script.
@@ -58031,7 +57866,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND222">
+        <Item class="ModuleScript" referent="ND221">
           <Properties>
             <string name="Name">HubMeshData17</string>
             <ProtectedString name="Source">-- Generated by tools/blender/konoha_models.py. Do not edit: re-run the script.
@@ -58051,7 +57886,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND223">
+        <Item class="ModuleScript" referent="ND222">
           <Properties>
             <string name="Name">HubMeshData18</string>
             <ProtectedString name="Source">-- Generated by tools/blender/konoha_models.py. Do not edit: re-run the script.
@@ -58081,7 +57916,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND224">
+        <Item class="ModuleScript" referent="ND223">
           <Properties>
             <string name="Name">HubMeshData19</string>
             <ProtectedString name="Source">-- Generated by tools/blender/konoha_models.py. Do not edit: re-run the script.
@@ -58115,7 +57950,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND225">
+        <Item class="ModuleScript" referent="ND224">
           <Properties>
             <string name="Name">HubMeshData2</string>
             <ProtectedString name="Source">-- Generated by tools/blender/konoha_models.py. Do not edit: re-run the script.
@@ -58143,7 +57978,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND226">
+        <Item class="ModuleScript" referent="ND225">
           <Properties>
             <string name="Name">HubMeshData20</string>
             <ProtectedString name="Source">-- Generated by tools/blender/konoha_models.py. Do not edit: re-run the script.
@@ -58159,7 +57994,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND227">
+        <Item class="ModuleScript" referent="ND226">
           <Properties>
             <string name="Name">HubMeshData21</string>
             <ProtectedString name="Source">-- Generated by tools/blender/konoha_models.py. Do not edit: re-run the script.
@@ -58177,7 +58012,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND228">
+        <Item class="ModuleScript" referent="ND227">
           <Properties>
             <string name="Name">HubMeshData22</string>
             <ProtectedString name="Source">-- Generated by tools/blender/konoha_models.py. Do not edit: re-run the script.
@@ -58197,7 +58032,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND229">
+        <Item class="ModuleScript" referent="ND228">
           <Properties>
             <string name="Name">HubMeshData23</string>
             <ProtectedString name="Source">-- Generated by tools/blender/konoha_models.py. Do not edit: re-run the script.
@@ -58211,7 +58046,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND230">
+        <Item class="ModuleScript" referent="ND229">
           <Properties>
             <string name="Name">HubMeshData24</string>
             <ProtectedString name="Source">-- Generated by tools/blender/konoha_models.py. Do not edit: re-run the script.
@@ -58233,7 +58068,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND231">
+        <Item class="ModuleScript" referent="ND230">
           <Properties>
             <string name="Name">HubMeshData25</string>
             <ProtectedString name="Source">-- Generated by tools/blender/konoha_models.py. Do not edit: re-run the script.
@@ -58253,7 +58088,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND232">
+        <Item class="ModuleScript" referent="ND231">
           <Properties>
             <string name="Name">HubMeshData26</string>
             <ProtectedString name="Source">-- Generated by tools/blender/konoha_models.py. Do not edit: re-run the script.
@@ -58273,7 +58108,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND233">
+        <Item class="ModuleScript" referent="ND232">
           <Properties>
             <string name="Name">HubMeshData27</string>
             <ProtectedString name="Source">-- Generated by tools/blender/konoha_models.py. Do not edit: re-run the script.
@@ -58289,7 +58124,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND234">
+        <Item class="ModuleScript" referent="ND233">
           <Properties>
             <string name="Name">HubMeshData28</string>
             <ProtectedString name="Source">-- Generated by tools/blender/konoha_models.py. Do not edit: re-run the script.
@@ -58303,7 +58138,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND235">
+        <Item class="ModuleScript" referent="ND234">
           <Properties>
             <string name="Name">HubMeshData29</string>
             <ProtectedString name="Source">-- Generated by tools/blender/konoha_models.py. Do not edit: re-run the script.
@@ -58323,7 +58158,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND236">
+        <Item class="ModuleScript" referent="ND235">
           <Properties>
             <string name="Name">HubMeshData3</string>
             <ProtectedString name="Source">-- Generated by tools/blender/konoha_models.py. Do not edit: re-run the script.
@@ -58345,7 +58180,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND237">
+        <Item class="ModuleScript" referent="ND236">
           <Properties>
             <string name="Name">HubMeshData30</string>
             <ProtectedString name="Source">-- Generated by tools/blender/konoha_models.py. Do not edit: re-run the script.
@@ -58367,7 +58202,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND238">
+        <Item class="ModuleScript" referent="ND237">
           <Properties>
             <string name="Name">HubMeshData31</string>
             <ProtectedString name="Source">-- Generated by tools/blender/konoha_models.py. Do not edit: re-run the script.
@@ -58391,7 +58226,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND239">
+        <Item class="ModuleScript" referent="ND238">
           <Properties>
             <string name="Name">HubMeshData32</string>
             <ProtectedString name="Source">-- Generated by tools/blender/konoha_models.py. Do not edit: re-run the script.
@@ -58439,7 +58274,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND240">
+        <Item class="ModuleScript" referent="ND239">
           <Properties>
             <string name="Name">HubMeshData33</string>
             <ProtectedString name="Source">-- Generated by tools/blender/konoha_models.py. Do not edit: re-run the script.
@@ -58453,7 +58288,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND241">
+        <Item class="ModuleScript" referent="ND240">
           <Properties>
             <string name="Name">HubMeshData4</string>
             <ProtectedString name="Source">-- Generated by tools/blender/konoha_models.py. Do not edit: re-run the script.
@@ -58465,7 +58300,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND242">
+        <Item class="ModuleScript" referent="ND241">
           <Properties>
             <string name="Name">HubMeshData5</string>
             <ProtectedString name="Source">-- Generated by tools/blender/konoha_models.py. Do not edit: re-run the script.
@@ -58477,7 +58312,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND243">
+        <Item class="ModuleScript" referent="ND242">
           <Properties>
             <string name="Name">HubMeshData6</string>
             <ProtectedString name="Source">-- Generated by tools/blender/konoha_models.py. Do not edit: re-run the script.
@@ -58489,7 +58324,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND244">
+        <Item class="ModuleScript" referent="ND243">
           <Properties>
             <string name="Name">HubMeshData7</string>
             <ProtectedString name="Source">-- Generated by tools/blender/konoha_models.py. Do not edit: re-run the script.
@@ -58501,7 +58336,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND245">
+        <Item class="ModuleScript" referent="ND244">
           <Properties>
             <string name="Name">HubMeshData8</string>
             <ProtectedString name="Source">-- Generated by tools/blender/konoha_models.py. Do not edit: re-run the script.
@@ -58515,7 +58350,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND246">
+        <Item class="ModuleScript" referent="ND245">
           <Properties>
             <string name="Name">HubMeshData9</string>
             <ProtectedString name="Source">-- Generated by tools/blender/konoha_models.py. Do not edit: re-run the script.
@@ -58531,7 +58366,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND247">
+        <Item class="ModuleScript" referent="ND246">
           <Properties>
             <string name="Name">HubPlayers</string>
             <ProtectedString name="Source">-- The players met in Konoha (14/11, « passons à la suite de la bêta »): the
@@ -58668,7 +58503,7 @@ return HubPlayers
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND248">
+        <Item class="ModuleScript" referent="ND247">
           <Properties>
             <string name="Name">IdentityFX</string>
             <ProtectedString name="Source">-- CORE4 identity on the client (mission NEXT_VALIDATION_ROSTER_SCALE §5): what
@@ -59378,7 +59213,7 @@ return IdentityFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND249">
+        <Item class="ModuleScript" referent="ND248">
           <Properties>
             <string name="Name">Input</string>
             <ProtectedString name="Source">local CAS=game:GetService("ContextActionService")
@@ -59708,7 +59543,7 @@ return Input
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND250">
+        <Item class="ModuleScript" referent="ND249">
           <Properties>
             <string name="Name">LeeFX</string>
             <ProtectedString name="Source">-- Rock Lee on the client (stress-test wave, DEC-015): the Fifth Gate (a green
@@ -59973,7 +59808,7 @@ return LeeFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND251">
+        <Item class="ModuleScript" referent="ND250">
           <Properties>
             <string name="Name">LightBudgetFX</string>
             <ProtectedString name="Source">-- The effect lights, kept to a budget (OUTILLEUR, F7 tool, 08/11).
@@ -60096,7 +59931,7 @@ return LightBudgetFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND252">
+        <Item class="ModuleScript" referent="ND251">
           <Properties>
             <string name="Name">LightningBoltFX</string>
             <ProtectedString name="Source">--[[
@@ -60347,7 +60182,7 @@ SOFTWARE.
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND253">
+        <Item class="ModuleScript" referent="ND252">
           <Properties>
             <string name="Name">LightningFX</string>
             <ProtectedString name="Source">-- (12/11) The lightning of the Chidori (Sasuke) and the Raikiri / Lightning
@@ -60484,7 +60319,7 @@ return LightningFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND254">
+        <Item class="ModuleScript" referent="ND253">
           <Properties>
             <string name="Name">LobbyPanel</string>
             <ProtectedString name="Source">-- Players online and challenges, the client's half (Server/Lobby, user 04/11:
@@ -60767,7 +60602,7 @@ return Panel
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="LocalScript" referent="ND255">
+        <Item class="LocalScript" referent="ND254">
           <Properties>
             <string name="Name">Main</string>
             <ProtectedString name="Source">local Players=game:GetService("Players")
@@ -61042,7 +60877,7 @@ print("[NinjaDuel] Client ready")
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND256">
+        <Item class="ModuleScript" referent="ND255">
           <Properties>
             <string name="Name">MenuStage</string>
             <ProtectedString name="Source">-- The select screen's two prodigies, in a real 3D set (user 02/11, "everything
@@ -61229,7 +61064,7 @@ return MenuStage
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND257">
+        <Item class="ModuleScript" referent="ND256">
           <Properties>
             <string name="Name">MeshData</string>
             <ProtectedString name="Source">-- Generated by tools/blender/fx_models.py. Do not edit: re-run the script.
@@ -61245,7 +61080,7 @@ return all
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND258">
+        <Item class="ModuleScript" referent="ND257">
           <Properties>
             <string name="Name">MeshData1</string>
             <ProtectedString name="Source">-- Generated by tools/blender/fx_models.py. Do not edit: re-run the script.
@@ -61288,7 +61123,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND259">
+        <Item class="ModuleScript" referent="ND258">
           <Properties>
             <string name="Name">MeshData10</string>
             <ProtectedString name="Source">-- Generated by tools/blender/fx_models.py. Do not edit: re-run the script.
@@ -61305,7 +61140,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND260">
+        <Item class="ModuleScript" referent="ND259">
           <Properties>
             <string name="Name">MeshData2</string>
             <ProtectedString name="Source">-- Generated by tools/blender/fx_models.py. Do not edit: re-run the script.
@@ -61352,7 +61187,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND261">
+        <Item class="ModuleScript" referent="ND260">
           <Properties>
             <string name="Name">MeshData3</string>
             <ProtectedString name="Source">-- Generated by tools/blender/fx_models.py. Do not edit: re-run the script.
@@ -61417,7 +61252,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND262">
+        <Item class="ModuleScript" referent="ND261">
           <Properties>
             <string name="Name">MeshData4</string>
             <ProtectedString name="Source">-- Generated by tools/blender/fx_models.py. Do not edit: re-run the script.
@@ -61464,7 +61299,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND263">
+        <Item class="ModuleScript" referent="ND262">
           <Properties>
             <string name="Name">MeshData5</string>
             <ProtectedString name="Source">-- Generated by tools/blender/fx_models.py. Do not edit: re-run the script.
@@ -61481,7 +61316,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND264">
+        <Item class="ModuleScript" referent="ND263">
           <Properties>
             <string name="Name">MeshData6</string>
             <ProtectedString name="Source">-- Generated by tools/blender/fx_models.py. Do not edit: re-run the script.
@@ -61514,7 +61349,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND265">
+        <Item class="ModuleScript" referent="ND264">
           <Properties>
             <string name="Name">MeshData7</string>
             <ProtectedString name="Source">-- Generated by tools/blender/fx_models.py. Do not edit: re-run the script.
@@ -61551,7 +61386,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND266">
+        <Item class="ModuleScript" referent="ND265">
           <Properties>
             <string name="Name">MeshData8</string>
             <ProtectedString name="Source">-- Generated by tools/blender/fx_models.py. Do not edit: re-run the script.
@@ -61578,7 +61413,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND267">
+        <Item class="ModuleScript" referent="ND266">
           <Properties>
             <string name="Name">MeshData9</string>
             <ProtectedString name="Source">-- Generated by tools/blender/fx_models.py. Do not edit: re-run the script.
@@ -61613,7 +61448,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND268">
+        <Item class="ModuleScript" referent="ND267">
           <Properties>
             <string name="Name">MeshKit</string>
             <ProtectedString name="Source">-- (13/11, user: « il va nous falloir des vrais modèles 3D, des vrais modèles de
@@ -61895,7 +61730,7 @@ return MeshKit
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND269">
+        <Item class="ModuleScript" referent="ND268">
           <Properties>
             <string name="Name">MotionSmear</string>
             <ProtectedString name="Source">-- Speed smear (fluidity pass, user reference 28/10). What the eye cannot
@@ -62044,7 +61879,7 @@ return Smear
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND270">
+        <Item class="ModuleScript" referent="ND269">
           <Properties>
             <string name="Name">NarutoFX</string>
             <ProtectedString name="Source">-- Naruto on the client (roster wave, several bodies): the puffs of smoke of
@@ -62461,6 +62296,187 @@ function NarutoFX.install(FX,kit)
 	table.insert(FX.layers,{name="Naruto",impact=impact,fighter=fighter})
 end
 return NarutoFX
+</ProtectedString>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="ND270">
+          <Properties>
+            <string name="Name">OutfitPanel</string>
+            <ProtectedString name="Source">-- His ninja (DEC-040, user 14/11: « il arrive genre nu et on ait un petit truc
+-- de customisation de personnage. Genre au début on propose des trucs simples
+-- mais qui font un peu de tenue ninja »). His own avatar arrives in Konoha
+-- without its clothes (Server/Outfit); this card, on the left, lets him pick
+-- what he wears, piece by piece (top, bottom, arms, feet, headband; a master's
+-- outfit once he owns one), the camera on his face so he sees it change on
+-- him. Every change is the server's (EquipItem: a free piece or one he owns).
+-- It opens by itself on his first walk in the village, until he has a top;
+-- the shop's STYLE tab opens it again.
+local RunService=game:GetService("RunService")
+local UIS=game:GetService("UserInputService")
+local GuiService=game:GetService("GuiService")
+local Players=game:GetService("Players")
+local Shared=game:GetService("ReplicatedStorage").NinjaDuel
+local Shop=require(Shared.Shop)
+local Panel={}
+Panel.__index=Panel
+Panel.W,Panel.H=440,600
+-- The rows, top to bottom (`set` only once he owns a master's outfit).
+Panel.ROWS={"set","top","bottom","arms","feet","headband"}
+
+-- What he can wear in a slot: the free pieces and the ones he owns, in the
+-- catalogue's order (`set`: his own pieces first).
+function Panel.options(style,slot)
+	local out={}
+	for _,item in Shop.inSlot(slot) do
+		if item.base or (style and style.owned and style.owned[item.id]) then table.insert(out,item) end
+	end
+	return out
+end
+-- The piece after (step 1) or before (-1) the one worn in `slot`.
+function Panel.cycle(style,slot,step)
+	local options=Panel.options(style,slot)
+	if #options==0 then return nil end
+	local worn=style and style.equipped and style.equipped[slot]
+	local at=0
+	for i,item in options do if item.id==worn then at=i end end
+	if at==0 then return if step&gt;0 then options[1] else options[#options] end
+	return options[(at-1+step)%#options+1]
+end
+
+function Panel.new(kit,gui,send,ui)
+	local self=setmetatable({kit=kit,send=send,ui=ui,rows={}},Panel)
+	local P=kit.palette
+	self.P=P
+	self.root=kit.frame(gui,UDim2.fromOffset(0,0),UDim2.fromScale(1,1),P.ink,1)
+	self.root.ZIndex=72;self.root.Visible=false
+	local card=kit.inkCard(kit.frame(self.root,UDim2.new(0,24,.5,0),UDim2.fromOffset(Panel.W,Panel.H),kit.CARD,0))
+	card.AnchorPoint=Vector2.new(0,.5);card.ZIndex=73
+	self.card=card
+	local scale=kit.create("UIScale",card,{Scale=1})
+	local function fit()
+		local v=workspace.CurrentCamera.ViewportSize
+		scale.Scale=math.clamp(math.min((v.Y-40)/Panel.H,(v.X*.55)/Panel.W),.45,1.1)
+	end
+	pcall(function() workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(fit) end);fit()
+	kit.inkTitle(kit.text(card,"YOUR NINJA",UDim2.fromOffset(24,18),UDim2.fromOffset(392,48),44,P.paper,kit.TITLE_FONT))
+	self.sub=kit.text(card,"",UDim2.fromOffset(26,66),UDim2.fromOffset(392,40),14,P.gold,kit.BODY_FONT)
+	self.sub.TextWrapped=true;self.sub.TextYAlignment=Enum.TextYAlignment.Top
+	local y=112
+	for _,slot in Panel.ROWS do
+		local row=kit.frame(card,UDim2.fromOffset(20,y),UDim2.fromOffset(400,62),P.panel,.1)
+		kit.corner(row,8)
+		kit.text(row,Shop.Slots[slot].name,UDim2.fromOffset(60,4),UDim2.fromOffset(280,16),11,P.muted,kit.BODY_FONT,Enum.TextXAlignment.Center)
+		local name=kit.text(row,"",UDim2.fromOffset(60,20),UDim2.fromOffset(280,36),20,P.paper,kit.TITLE_FONT,Enum.TextXAlignment.Center)
+		name.TextScaled=true
+		kit.create("UITextSizeConstraint",name,{MaxTextSize=20,MinTextSize=10})
+		local prev=kit.button(row,"&lt;",UDim2.fromOffset(6,7),UDim2.fromOffset(48,48),function() self:step(slot,-1) end)
+		local nxt=kit.button(row,"&gt;",UDim2.fromOffset(346,7),UDim2.fromOffset(48,48),function() self:step(slot,1) end)
+		prev.TextSize=28;nxt.TextSize=28
+		self.rows[slot]={frame=row,name=name,prev=prev,next=nxt}
+		y+=70
+	end
+	self.done=kit.button(card,"",UDim2.fromOffset(20,Panel.H-74),UDim2.fromOffset(400,56),function() self:finish() end,P.red)
+	self.done.TextSize=28
+	self.foot=kit.text(card,"Masters' outfits, more pieces and weapons: in the SHOP.",UDim2.fromOffset(20,Panel.H-16),UDim2.fromOffset(400,14),11,P.muted,kit.BODY_FONT,Enum.TextXAlignment.Center)
+	pcall(function()
+		UIS.InputBegan:Connect(function(input)
+			if input.KeyCode==Enum.KeyCode.ButtonB and self.root.Visible then self:finish() end
+		end)
+	end)
+	-- The camera on his face while the card is open; it opens by itself on
+	-- his first walk (twice a second: no cost).
+	self.clock=0
+	RunService.RenderStepped:Connect(function(dt) self:frame(dt) end)
+	return self
+end
+
+function Panel:shown() return self.root.Visible end
+function Panel:dressed() return Shop.dressed(self.kits and self.kits.style) end
+function Panel:show(kits)
+	if kits then self.kits=kits end
+	self:draw()
+	if not self.root.Visible then
+		self.root.Visible=true
+		local camera=workspace.CurrentCamera
+		self.cameraWas=camera.CameraType
+		if self.ui and self.ui.shopPanel and self.ui.shopPanel:shown() then self.ui.shopPanel:hide() end
+		if UIS:GetLastInputType().Name:sub(1,7)=="Gamepad" then
+			task.defer(function() pcall(function() GuiService.SelectedObject=self.rows.top.next end) end)
+		end
+	end
+end
+function Panel:hide()
+	if not self.root.Visible then return end
+	self.root.Visible=false
+	pcall(function()
+		local selected=GuiService.SelectedObject
+		if selected and selected:IsDescendantOf(self.card) then GuiService.SelectedObject=nil end
+	end)
+	local camera=workspace.CurrentCamera
+	camera.CameraType=Enum.CameraType.Custom
+end
+-- DONE: only once he wears a top (or a master's outfit).
+function Panel:finish()
+	if not self:dressed() then return end
+	self.seen=true
+	self:hide()
+end
+function Panel:refresh(kits)
+	self.kits=kits
+	if self.root.Visible then self:draw() end
+end
+function Panel:step(slot,step)
+	local style=self.kits and self.kits.style
+	local item=Panel.cycle(style,slot,step)
+	if item then self.send("EquipItem",{item=item.id}) end
+end
+function Panel:draw()
+	local style=self.kits and self.kits.style
+	local P=self.P
+	local ownsSet=#Panel.options(style,"set")&gt;1
+	local worn=style and style.equipped or {}
+	local set=worn.set and Shop.item(worn.set)
+	for _,slot in Panel.ROWS do
+		local row=self.rows[slot]
+		local id=worn[slot]
+		local item=id and Shop.item(id)
+		row.frame.Visible=slot~="set" or ownsSet
+		local covered=set and not set.none and slot~="set" and slot~="headband"
+		row.name.Text=if covered then "("..set.name..")" elseif item then item.name elseif slot=="headband" then (Shop.default("headband") or {name=""}).name else "NOTHING"
+		row.name.TextColor3=if covered then P.muted elseif item or slot=="headband" then P.paper else P.muted
+	end
+	local dressed=self:dressed()
+	self.sub.Text=if dressed then "Your own avatar in your ninja gear, in Konoha and in every duel." else "You arrive with your own avatar. Pick what your ninja wears: a top first."
+	self.done.Text=if dressed then "DONE" else "PICK A TOP"
+	self.done.AutoButtonColor=dressed
+	self.done.BackgroundColor3=if dressed then P.red else P.ink
+end
+-- Every frame while open: the camera in front of him, his body on the right
+-- of the card. Twice a second: opens by itself on his first walk.
+function Panel:frame(dt)
+	local character=Players.LocalPlayer.Character
+	local root=character and character:FindFirstChild("HumanoidRootPart")
+	if self.root.Visible and root then
+		local camera=workspace.CurrentCamera
+		if camera.CameraType~=Enum.CameraType.Scriptable then camera.CameraType=Enum.CameraType.Scriptable end
+		local cf=root.CFrame
+		local aim=cf.Position+Vector3.new(0,.4,0)+cf.RightVector*2.4
+		camera.CFrame=CFrame.lookAt(aim+cf.LookVector*10+Vector3.new(0,1.2,0),aim)
+	end
+	self.clock+=dt
+	if self.clock&lt;.5 then return end
+	self.clock=0
+	local kits=self.kits
+	local ui=self.ui
+	local busy=ui and ((ui.shopPanel and ui.shopPanel:shown()) or (ui.treePanel and ui.treePanel:shown()))
+	if not self.root.Visible and not self.seen and ui and ui.hubWalk and root and kits and kits.state=="ready" and kits.style and not self:dressed() and not busy then
+		self:show()
+	end
+	-- (a duel, the board: the card goes)
+	if self.root.Visible and ui and not ui.hubWalk then self:hide() end
+end
+
+return Panel
 </ProtectedString>
           </Properties>
         </Item>
@@ -64987,7 +65003,6 @@ local Fighters=require(Shared.Fighters)
 local Text=require(Shared.Text)
 local Config=require(Shared.Config)
 local FirstMinute=require(Shared.FirstMinute)
-local HubMap=require(Shared.HubMap)
 local Panel={}
 Panel.__index=Panel
 
@@ -65056,28 +65071,12 @@ function Panel.closeRect(viewport,kit)
 	return {x=left+Panel.CLOSE.X*s,y=top+Panel.CLOSE.Y*s,w=Panel.CLOSE.W*s,h=Panel.CLOSE.H*s,scale=s}
 end
 function Panel:shown() return self.root.Visible end
--- (14/11) A pad gets the focus on the open tab (no button of the shop could
--- be reached with a pad before) and gives it back when the shop closes.
-function Panel.padFocus(target)
-	pcall(function()
-		if game:GetService("UserInputService"):GetLastInputType().Name:sub(1,7)~="Gamepad" then return end
-		task.defer(function() pcall(function() game:GetService("GuiService").SelectedObject=target end) end)
-	end)
-end
-function Panel.dropFocus(root)
-	pcall(function()
-		local GuiService=game:GetService("GuiService")
-		local selected=GuiService.SelectedObject
-		if selected and selected:IsDescendantOf(root) then GuiService.SelectedObject=nil end
-	end)
-end
-function Panel:hide() self.root.Visible=false;Panel.dropFocus(self.root) end
+function Panel:hide() self.root.Visible=false end
 function Panel:show(kits,tab)
 	self.kits=kits
 	if tab then self.tab=tab end
 	self:draw()
 	self.root.Visible=true
-	Panel.padFocus(self.tabs[self.tab])
 end
 function Panel:refresh(kits)
 	self.kits=kits
@@ -65097,7 +65096,14 @@ function Panel:draw()
 	self.ryo.Text=tostring(self.kits and self.kits.ryo or 0)
 	if self.tab=="KITS" then self:drawKits()
 	elseif self.tab=="WEAPONS" then self:drawLooks({"kunai","shuriken","tanto","gourd"},"WEAPONS","A look, never a number. Each kit keeps its own; the kit's objects (gourd, weights, tanto) are earned on its tree.")
-	elseif self.tab=="STYLE" then self:drawLooks({"headband"},"STYLE","Ninja pieces over your own Roblox avatar, in Konoha and in the duel. What you own on Roblox stays yours.")
+	elseif self.tab=="STYLE" then
+		-- (DEC-040) the masters' outfits on his own avatar, then the pieces;
+		-- MY NINJA opens the outfit card (Client/OutfitPanel)
+		self:drawLooks({"set","headband"},"STYLE","The masters' outfits and ninja pieces over your own avatar, in Konoha and in every duel.")
+		if self.onOutfit then
+			local b=self:add(self.kit.button(self.card,"MY NINJA",UDim2.fromOffset(Panel.CLOSE.X-230,Panel.CLOSE.Y),UDim2.fromOffset(210,Panel.CLOSE.H),function() self:hide();self.onOutfit() end,self.P.gold))
+			b.TextColor3=self.P.ink;b.TextSize=24
+		end
 	elseif self.tab=="PASSES" then self:drawPasses()
 	else self:drawRyo() end
 end
@@ -65134,29 +65140,16 @@ function Panel:drawKits()
 			local from={}
 			for _,other in rule and rule.from or {} do table.insert(from,nameOf(other)) end
 			line=if status=="starterLocked" then "Take a first kit first." else "His master asks "..Masters.Need.." mastery with "..table.concat(from," or ").."."
-		elseif status=="starter" then
-			-- (14/11) a new player looking here learns he can take it now, or
-			-- meet its master in Konoha
-			local spot=HubMap.Masters[id]
-			line="Free: one of the three first kits. Take it here, or meet him: "..(if spot then Text.upper(spot.place) else "IN KONOHA").."."
-		end
+		elseif status=="starter" then line="Free: one of the three first kits." end
 		local body=K.text(card,line,UDim2.fromOffset(14,152),UDim2.new(1,-28,0,60),13,P.text,K.BODY_FONT)
 		body.TextYAlignment=Enum.TextYAlignment.Top
 		-- The buttons.
 		local rival=FirstMinute.rival(id) or "Lion"
 		if status=="owned" then
 			K.button(card,"SKILL TREE",UDim2.new(0,14,1,-58),UDim2.new(1,-28,0,44),function() if self.onTree then self.onTree(id) end end)
-		elseif status=="starter" then
-			-- (14/11) the first kit, taken in one press (DECISIONS: the first
-			-- minute, the ninja chosen in one gesture); TRY beside it
-			local take=K.button(card,"TAKE IT",UDim2.new(0,14,1,-58),UDim2.new(.58,-18,0,44),function() self.send("ChooseStarter",{player=id}) end,P.gold)
-			take.TextColor3=P.ink;take.Name="TakeStarter"
-			K.button(card,"TRY",UDim2.new(.58,4,1,-58),UDim2.new(.42,-18,0,44),function()
-				self.send("Tutorial",{player=id,bot=rival});self:hide()
-			end)
 		elseif status~="loading" and status~="open" then
 			local product=products[id]
-			local tryW=if product and product&gt;0 then .42 else 1
+			local tryW=if product and product&gt;0 and status~="starter" then .42 else 1
 			K.button(card,"TRY",UDim2.new(0,14,1,-58),UDim2.new(tryW,-(if tryW&lt;1 then 18 else 28),0,44),function()
 				self.send("Tutorial",{player=id,bot=rival});self:hide()
 			end)
@@ -65184,9 +65177,12 @@ function Panel:drawLooks(slots,title,sub)
 		local label=info.name..(if info.kit then "  •  "..nameOf(info.kit) else "")
 		self:add(K.text(self.body,label,UDim2.fromOffset(0,y),UDim2.fromOffset(600,26),22,P.gold,K.TITLE_FONT))
 		y+=32
+		-- (DEC-040) a slot of many looks (the masters' outfits) wraps
+		local perRow=math.max(1,math.floor((W-SIDE-70+14)/(cw+14)))
 		for k,item in Shop.inSlot(slot) do
 			local state=Shop.state(style,item,kits and kits.ryo or 0,products)
-			local x=(k-1)*(cw+14)
+			local x=((k-1)%perRow)*(cw+14)
+			if (k-1)%perRow==0 and k&gt;1 then y+=142 end
 			local cell=self:add(K.frame(self.body,UDim2.fromOffset(x,y),UDim2.fromOffset(cw,128),P.panel,0))
 			K.corner(cell,10)
 			if state.kind=="equipped" then K.create("UIStroke",cell,{Color=P.gold,Thickness=3,ApplyStrokeMode=Enum.ApplyStrokeMode.Border}) end
@@ -65194,6 +65190,13 @@ function Panel:drawLooks(slots,title,sub)
 			local swatch=K.frame(cell,UDim2.fromOffset(12,12),UDim2.new(1,-24,0,34),P.ink,0);K.corner(swatch,6)
 			local colors={}
 			for _,key in {"Blade","Body","Band","Grip","Ring","Plate"} do if item.colors and item.colors[key] then table.insert(colors,item.colors[key]) end end
+			if #colors==0 and item.colors then
+				-- (an outfit: its cloth colours, in a stable order)
+				local keys={}
+				for key in item.colors do table.insert(keys,key) end
+				table.sort(keys)
+				for _,key in keys do table.insert(colors,item.colors[key]) end
+			end
 			if #colors==0 then colors={{40,38,44}} end
 			for c,color in colors do
 				K.frame(swatch,UDim2.new((c-1)/#colors,2,0,2),UDim2.new(1/#colors,-4,1,-4),rgb(color),0)
@@ -65271,7 +65274,7 @@ function Panel:drawRyo()
 		string.format("A duel finished: %d  •  won: +%d",R.Finished,R.Won),
 		string.format("The day's first win: ×%d",R.FirstWinOfDay),
 		string.format("A master's duel won: +%d",R.MasterWon),
-		string.format("Tournament: %d to the champion, %d to the finalist (soon)",R.Champion,R.Finalist),
+		string.format("Tournament: %d to the champion, %d to the finalist",R.Champion,R.Finalist),
 	}
 	for k,line in lines do K.text(earn,line,UDim2.fromOffset(18,56+(k-1)*30),UDim2.new(1,-36,0,24),15,P.text,K.BODY_FONT) end
 end
@@ -65819,16 +65822,7 @@ function Panel.closeRect(viewport,kit)
 	return {x=left+Panel.CLOSE.X*s,y=top+Panel.CLOSE.Y*s,w=Panel.CLOSE.W*s,h=Panel.CLOSE.H*s,scale=s}
 end
 function Panel:shown() return self.root.Visible end
--- (14/11) The pad's focus: on the picked node when the tree opens, given back
--- when it closes (the same as Client/ShopPanel).
-function Panel:hide()
-	self.root.Visible=false
-	pcall(function()
-		local GuiService=game:GetService("GuiService")
-		local selected=GuiService.SelectedObject
-		if selected and selected:IsDescendantOf(self.root) then GuiService.SelectedObject=nil end
-	end)
-end
+function Panel:hide() self.root.Visible=false end
 
 function Panel:show(kitId,kits)
 	if self.kitId~=kitId then self.selected=nil end
@@ -65836,11 +65830,6 @@ function Panel:show(kitId,kits)
 	if self.selected and not TreeView.node(kitId,self.selected) then self.selected=nil end
 	self:draw()
 	self.root.Visible=true
-	local target=self.tiles[self.selected] or self.close
-	pcall(function()
-		if game:GetService("UserInputService"):GetLastInputType().Name:sub(1,7)~="Gamepad" then return end
-		task.defer(function() pcall(function() game:GetService("GuiService").SelectedObject=target end) end)
-	end)
 end
 function Panel:refresh(kits)
 	self.kits=kits
@@ -66082,8 +66071,7 @@ local function fitScale(viewport,w,h,max)
 end
 local function cornerClose(root,onClose)
 	-- under Roblox's top bar (58 px), in the window's top-right corner
-	-- (14/11, Studio: the title font has no "✕": an empty box)
-	local b=button(root,"X",UDim2.new(1,-84,0,70),UDim2.fromOffset(66,66),onClose,palette.red)
+	local b=button(root,"✕",UDim2.new(1,-84,0,70),UDim2.fromOffset(66,66),onClose,palette.red)
 	b.TextSize=34;b.ZIndex=(root.ZIndex or 1)+20;b.Visible=false
 	return b
 end
@@ -66305,6 +66293,15 @@ function UI.new(parent,send)
 				if self.treePanel then self.treePanel:show(kitId,self.kits) end
 			end)
 			if made then self.shopPanel=panel end
+		end
+		-- (DEC-040) His ninja: the outfit over his own avatar.
+		local okOutfit,OutfitPanel=pcall(function() return require(script.Parent.OutfitPanel) end)
+		if okOutfit and OutfitPanel then
+			local made,panel=pcall(OutfitPanel.new,UI.kit,self.gui,send,self)
+			if made then self.outfitPanel=panel end
+		end
+		if self.shopPanel and self.outfitPanel then
+			self.shopPanel.onOutfit=function() self.outfitPanel:show(self.kits) end
 		end
 	end
 	-- The shop from the roster (in Konoha it is on the HUD).
@@ -66971,6 +66968,7 @@ function UI:setKits(kits)
 	self.kits=kits
 	if self.treePanel then self.treePanel:refresh(kits) end
 	if self.shopPanel then self.shopPanel:refresh(kits) end
+	if self.outfitPanel then self.outfitPanel:refresh(kits) end
 	if type(kits)~="table" or kits.state~="ready" then return end
 	local want=nil
 	if kits.selected and kits.owned and kits.owned[kits.selected] then want=kits.selected
@@ -70929,9 +70927,7 @@ Motion._ankleFrame=ankleFrame
 -- was and joins the clip's path over a few frames (a step, not a glide). A
 -- locked foot the body has carried out of reach is released the same way.
 Motion.TURN_STEP=.55 -- studs: a planted foot a turn carries this far off its place steps
-Motion.STEP_LEAD=.14 -- of a step: up before it travels, over its spot before it sets down
-Motion.STEP_CARRIED=16 -- st/s: a body carried faster steps on the spring
-local function authoredFeet(char,pose,dt,cycle,reach,clock)
+local function authoredFeet(char,pose,dt,cycle,reach)
 	local s=stateOf(char)
 	-- (FILM10) the standing / slow-cycle feet keep their own memory: the gait is
 	-- also computed under a strike (its base), and sharing the strike's feet
@@ -70939,12 +70935,6 @@ local function authoredFeet(char,pose,dt,cycle,reach,clock)
 	local box=s
 	if reach or cycle=="loco" then s.locoFeet=s.locoFeet or {};box=s.locoFeet end
 	if cycle=="loco" then cycle=true end
-	-- (14/11) the standing feet, a slow cycle's and a pivot's step on a clock
-	-- (see below) while the body is not carried fast; a strike's, a
-	-- reaction's and a cycle the body outruns keep the spring (their clips
-	-- step, and a body thrown back at 46 st/s left a foot held in the world
-	-- far behind)
-	local timed=(box~=s or clock==true)
 	local root=char:FindFirstChild("HumanoidRootPart")
 	if not root then return nil end
 	dt=dt or 1/60
@@ -70953,10 +70943,6 @@ local function authoredFeet(char,pose,dt,cycle,reach,clock)
 	-- jumped (a teleport, a flicker) starts on its new spot: its feet held at
 	-- the old one used to be released into a step across the whole arena.
 	local warped=box.afRoot~=nil and (rootCF.Position-box.afRoot).Magnitude&gt;3
-	-- (14/11) how fast the body is carried (a step on a clock leaves from the
-	-- world: a body thrown or rushed left that foot far behind, Naruto's knee
-	-- 50 deg in a frame after his Rendan headless)
-	local carried=if box.afRoot~=nil and not warped then planar(rootCF.Position-box.afRoot).Magnitude/dt else 0
 	box.afRoot=rootCF.Position
 	-- A new source of feet (standing / cycle / a clip of its own) starts fresh,
 	-- as it did when only clips held feet: carried over, a stance foot read the
@@ -70991,7 +70977,7 @@ local function authoredFeet(char,pose,dt,cycle,reach,clock)
 		-- A foot released to step does not plant again before it has arrived.
 		-- (Also any swing still under way: planting it mid-arc dropped the foot
 		-- by its lift in one frame.)
-		local stepping=not f.planted and (f.step~=nil or (f.swing0~=nil and f.off.Magnitude&gt;.12))
+		local stepping=not f.planted and f.swing0~=nil and f.off.Magnitude&gt;.12
 		if not stepping then f.release=nil end
 		if low and still and not stepping then
 			if not f.planted then
@@ -71014,37 +71000,7 @@ local function authoredFeet(char,pose,dt,cycle,reach,clock)
 			if f.planted then f.planted=false;f.off=rootCF:PointToObjectSpace(f.world)-clipPos;f.offV=Vector3.zero end
 		end
 		local lift=0
-		-- (carried fast mid-step: the spring takes the step over from here)
-		if f.step and carried&gt;=Motion.STEP_CARRIED then f.step=nil;f.swing0=math.max(f.off.Magnitude,.06);f.offV=Vector3.zero end
-		if not f.planted and (f.step~=nil or (timed and carried&lt;Motion.STEP_CARRIED and f.swing0==nil and f.off.Magnitude&gt;.05)) then
-			-- (14/11, FILM10 A9 « still ») The standing and slow-cycle feet: a
-			-- body facing a foe who circles it, or nudged apart, slid its feet
-			-- ~2 studs in 10 s headless (Gaara), 80 % of it in the spring's start
-			-- and long tail along the floor under a lift of 4u(1-u). Their step
-			-- has a length of its own: it leaves from where the foot is in the
-			-- world, is up before it travels, and is over its spot (on the clip's
-			-- path) before it sets down, straight down.
-			if f.step or f.off.Magnitude&gt;.05 then
-				if not f.step then
-					local d=f.off.Magnitude
-					f.step={from=rootCF:PointToWorldSpace(clipPos+f.off),d=d,t=0,dur=math.clamp(.1+.12*d,.12,.26),h=math.max(.18,math.min(.55,d*.35))}
-				end
-				local st=f.step
-				st.t+=dt
-				local p=math.min(st.t/st.dur,1)
-				local q=math.clamp((p-Motion.STEP_LEAD)/(1-2*Motion.STEP_LEAD),0,1)
-				-- (a clip foot still gliding into its own landing dragged it)
-				if q&gt;=1 and not st.land then st.land=rootCF:PointToWorldSpace(clipPos) end
-				local w=st.land or st.from:Lerp(rootCF:PointToWorldSpace(clipPos),q*q*q*(q*(q*6-15)+10))
-				f.off=rootCF:PointToObjectSpace(w)-clipPos
-				lift=st.h*math.sin(math.pi*p)
-				-- set down: the next frame plants it where it is, or steps on
-				if p&gt;=1 then f.step=nil end
-			else
-				f.off=Vector3.zero
-			end
-			f.offV=Vector3.zero;f.swing0=nil
-		elseif not f.planted then
+		if not f.planted then
 			-- A swing from where the foot really was onto the clip's path, lifted
 			-- off the floor in an arc (a step, never a skate).
 			if f.off.Magnitude&gt;.05 then
@@ -71061,12 +71017,12 @@ local function authoredFeet(char,pose,dt,cycle,reach,clock)
 				f.off=Vector3.zero;f.swing0=nil;f.offV=Vector3.zero
 			end
 		else
-			f.swing0=nil;f.offV=Vector3.zero;f.step=nil
+			f.swing0=nil;f.offV=Vector3.zero
 		end
 		-- A foot the clip kicks high stays the clip's own (free leg).
 		-- (A running cycle's free foot already on its clip path stays the clip's
 		-- own: the solver only takes a foot held on the floor or on its way back.)
-		local own=cycle==true and not f.planted and not f.step and f.off.Magnitude&lt;=.05
+		local own=cycle==true and not f.planted and f.off.Magnitude&lt;=.05
 		if clipPos.Y-ANKLE_Y&lt;.9 and not own then
 			local rx,ry=frame:ToEulerAnglesYXZ()
 			local target=clipPos+f.off
@@ -72493,7 +72449,7 @@ function Motion.present(char,actor,clock,dt)
 				if t&lt;Authored.length(p.clip) then
 					local targets=table.clone(Authored.sample(p.clip,t))
 					targets.Root=nil -- the server already turned the body
-					targets.__feet=authoredFeet(char,targets,dt,nil,nil,true)
+					targets.__feet=authoredFeet(char,targets,dt)
 					mark(char,"pivot:"..p.clip,.07)
 					apply(char,targets,RATE.authored,dt)
 					return "pivot"

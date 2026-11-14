@@ -137,6 +137,8 @@ function Online:packet(d,seat)
 	end
 	local view=self.matches:view(d,seat,seat.actor,other.actor)
 	view.online=info
+	-- (DEC-040) his mastery and Ryō for this duel (Matches:roundOver)
+	if seat.progress and d.phase~="Pick" then view.progress=seat.progress end
 	return view
 end
 function Online:refresh(player,s)
@@ -161,6 +163,7 @@ function Online:fight(d)
 	local m=self.matches
 	self:teardown(d)
 	d.phase="Duel";d.winner=nil;d.forfeit=nil;d.finishing=false;d.matchPoint=false
+	for _,seat in d.seats do seat.progress=nil end
 	d.folder=Instance.new("Folder");d.folder.Name="Online_"..d.lane;d.folder.Parent=m.folder
 	d.effects=Instance.new("Folder");d.effects.Name="Effects";d.effects.Parent=d.folder
 	World.arena(d.folder,d.origin)

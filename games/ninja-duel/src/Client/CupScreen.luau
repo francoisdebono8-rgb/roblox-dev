@@ -237,6 +237,11 @@ function Cup:render(data)
 	local function focus(target) task.delay(.25,function() pcall(function() game:GetService("GuiService").SelectedObject=target end) end) end
 	if phase=="Champion" and data.cup and data.cup.champion then
 		self.championName.Text=Text.upper((Fighters[data.cup.seats[data.cup.champion]] or {}).FullName or "")
+		-- (DEC-040) what the cup gave his kit
+		local reward=data.cup.reward
+		if reward and ((reward.amount or 0)>0 or (reward.ryo or 0)>0) then
+			self.championName.Text..=string.format("  •  +%d MASTERY  •  +%d RYŌ",reward.amount or 0,reward.ryo or 0)
+		end
 		if self.lastPhase~="Champion" then focus(self.championAgain) end
 	elseif phase=="Bracket" and self.lastPhase~="Bracket" then
 		focus(self.primary)

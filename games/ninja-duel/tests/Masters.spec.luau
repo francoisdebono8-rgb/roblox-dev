@@ -84,6 +84,11 @@ test("a duel's mastery: finishing, winning, each different jutsu once, less agai
 	assert(Masters.duelGain({won=true,techniques=0,level="easy"})<G.Finished+G.Won)
 	local wins=math.ceil(Masters.Need/Masters.duelGain({won=true,techniques=2,level="normal"}))
 	assert(wins>=3 and wins<=6,"the first master needs "..wins.." good wins")
+	-- (DEC-040) another player counts twice the AI; the cup's bonuses
+	for _,r in {{won=true,techniques=2},{won=false,techniques=0}} do
+		assert(Masters.versusGain(r)==G.Versus*Masters.duelGain({won=r.won,techniques=r.techniques,level="normal"}),"a duel against a player")
+	end
+	assert(G.Versus>=2 and G.Champion>G.Finalist and G.Finalist>0,"the cup's bonuses")
 end)
 
 test("a kit bought is granted once per receipt, whatever the replays",function()
@@ -162,6 +167,16 @@ test("on: a duel that counts takes a learned kit, practice takes any; a master's
 	local after=Progression.view(player).mastery.Leaf or 0
 	assert(after>before,"a won duel earned no mastery")
 	assert(s.progress and s.progress.amount==after-before and s.progress.need==Masters.Need,"the result screen does not get what was earned")
+	-- (DEC-040) against another player: twice, with the duel's Ryō; the cup's
+	-- end pays the champion's kit; an unlearned kit earns nothing
+	local mastery0=Progression.view(player).mastery.Leaf
+	local ryo0=Progression.view(player).ryo or 0
+	local vs=Progression.versusEnded(player,"Leaf",true,2)
+	assert(vs and vs.amount==Masters.versusGain({won=true,techniques=2}) and Progression.view(player).mastery.Leaf==mastery0+vs.amount,"a won duel against a player")
+	assert((vs.ryo or 0)>0 and (Progression.view(player).ryo or 0)==ryo0+vs.ryo,"a duel against a player paid no Ryō")
+	assert(Progression.versusEnded(player,"Flashstep",true,2)==nil,"an unlearned kit earned mastery")
+	local cup=Progression.cupEnded(player,"Leaf",true)
+	assert(cup and cup.amount==Masters.Gain.Champion and cup.ryo==H.load("Shared/Shop").Ryo.Champion,"the champion's bonus")
 	while (Progression.view(player).mastery.Leaf or 0)<Masters.Need do duel(true) end
 	assert(Progression.view(player).masters.GentleFist.ready,"Neji does not teach after the mastery")
 	-- (Beta loop) the roster fights his duel with the kit that earned it.
