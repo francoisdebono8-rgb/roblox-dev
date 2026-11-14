@@ -435,11 +435,13 @@ local LASH={
 	DashAttack={{"RightHand",.45},{"LeftHand",-.45}},Sweep={{"RightHand",1.3,low=true}},
 	Slam={{"RightHand",.25,down=true},{"LeftHand",-.25,down=true}},
 	Light4={{"RightHand",1}},Light5={{"LeftHand",-1}},
-	SandHand={{"RightHand",.15},{"LeftHand",-.15}},SandLowWave={{"RightHand",.6,down=true},{"LeftHand",-.6,down=true}},SandGlide={{"RightHand",.8}},SandFist={{"RightHand",.5},{"LeftHand",-.5}},
+	SandHand={{"RightHand",.15,head=1.6},{"LeftHand",-.15,head=1.6}},SandLowWave={{"RightHand",.6,down=true},{"LeftHand",-.6,down=true}},SandGlide={{"RightHand",.8}},SandFist={{"RightHand",.5,head=2.2},{"LeftHand",-.5,head=2.2}},
 }
 -- The move's own timeline as the motion engine plays it (same per-fighter
 -- timings and lead), so the sand leaves the hand on the clip's contact key.
 local LEAD=.03
+SandFX.LASH_SEGS=7
+SandFX.LASH_THICK={.3,.95} -- studs: the lash's body at the hand and at its head
 local function timing(name)
 	local spec=Attacks[name] or Attacks.Light1
 	local profile=Fighters.Sand.AttackProfile and (Fighters.Sand.AttackProfile[name] or Fighters.Sand.AttackProfile[spec.clip or ""])
@@ -465,7 +467,20 @@ local function newLash(fx,spec)
 	local spray=K.new("ParticleEmitter",{Texture=K.TEX.smoke,Rate=0,Lifetime=NumberRange.new(.2,.4),Speed=NumberRange.new(1,3),SpreadAngle=Vector2.new(180,180),
 		Color=ColorSequence.new(SAND),LightEmission=0,LightInfluence=1,Size=K.num({{0,1.4},{1,2.2}}),Transparency=K.num({{0,.2},{1,1}}),Drag=4,
 		Rotation=NumberRange.new(0,360)},a1)
-	return {holder=holder,h0=h0,h1=h1,beams=beams,spray=spray,hand=spec[1],arc=spec[2],low=spec.low,down=spec.down}
+	-- (14/11, CM: « ses coups touchent de loin sans qu'on voie de sable ») The
+	-- Beams alone are flat and thin at fighting distance: the lash is also a
+	-- body of sand now, modelled segments (SandStream) along the same curve and
+	-- a clod at its head (SandClump; a fist-sized one for Sand Fist).
+	local segs={}
+	if MeshKit.has("SandStream") then
+		for i=1,SandFX.LASH_SEGS do
+			local p=MeshKit.part("SandStream")
+			if p then p.Material=GRAIN;p.Transparency=1;p.Parent=holder;segs[i]=p end
+		end
+	end
+	local head=MeshKit.part("SandClump")
+	if head then head.Material=GRAIN;head.Transparency=1;head.Parent=holder end
+	return {holder=holder,h0=h0,h1=h1,beams=beams,spray=spray,hand=spec[1],arc=spec[2],low=spec.low,down=spec.down,segs=segs,head=head,headSize=spec.head or 1}
 end
 local function dropLashes(st)
 	for _,l in st.lashes or {} do l.holder:Destroy() end
@@ -564,6 +579,33 @@ local function stepStrike(fx,model,actor,st)
 		curves(l.beams,(q1-from).Magnitude,(p1-q2).Magnitude)
 		widths(l.beams,.45*ext,1.5*ext)
 		l.spray.Rate=if ext>.6 then 60 else 0
+		-- the modelled body along the cut curve
+		local n=#l.segs
+		if n>0 then
+			local prev=from
+			for i=1,n do
+				local k=u*i/n
+				local a1=from:Lerp(mid,k)
+				local pt=a1:Lerp(mid:Lerp(tip,k),k)
+				local seg=l.segs[i]
+				local len=(pt-prev).Magnitude
+				local w=(SandFX.LASH_THICK[1]+(SandFX.LASH_THICK[2]-SandFX.LASH_THICK[1])*(i/n))*math.clamp(ext*1.4,0,1)
+				if len>.02 and w>.02 then
+					seg.Size=Vector3.new(w,w,len*1.15)
+					seg.CFrame=CFrame.lookAt((prev+pt)/2,prev)*CFrame.Angles(0,0,i*.9+SandFX.clock()*6)
+					seg.Transparency=0
+				else seg.Transparency=1 end
+				prev=pt
+			end
+		end
+		if l.head then
+			local size=1.1*l.headSize*math.clamp(ext*1.3,0,1)
+			if size>.05 then
+				l.head.Size=Vector3.new(size,size*.9,size*1.1)
+				l.head.CFrame=CFrame.lookAt(p1,p1+(p1-q2))*CFrame.Angles(SandFX.clock()*5,0,0)
+				l.head.Transparency=0
+			else l.head.Transparency=1 end
+		end
 	end
 	if not st.landed and t>=startup and not st.cut then
 		st.landed=true

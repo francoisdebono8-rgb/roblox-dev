@@ -219,7 +219,9 @@ def pivots(b, arm):
     the head finds the opponent first, the chest follows, the hips last (they
     overshoot a little and settle); the front foot turns on its ball and
     re-plants, the rear foot swings round wide. The strike that follows
-    starts from the stance, turned."""
+    starts from the stance, turned.
+    (14/11, FILM10) the front foot's re-plant lifted 10-14 cm: in the game it
+    read as the foot dragged round on the floor; it steps now (18-26 cm)."""
     S = b.stance
     out = []
     for name, ang in (("R90", 90), ("R180", 180), ("L90", -90), ("L180", -180)):
@@ -245,9 +247,9 @@ def pivots(b, arm):
         sh.key(1, merge(S, {"travel": {"yaw": ang / turn_f}, "lf": lf0, "rf": mid(rf0, rf1, .04, .12)}), "ease")
         sh.key(turn_f, merge(body(a * .72, a * .2, min(60, a * .45), {"ra": {"raise": S["ra"].get("raise", 30) + 10, "out": S["ra"].get("out", 0) + 22}}),
                              {"travel": {"yaw": ang}, "lf": ball, "rf": mid(rf0, rf1, .35, .3)}), "impact")
-        sh.key(turn_f + 1, merge(body(a * .62, a * .17, min(50, a * .38)), {"travel": {"yaw": ang}, "lf": mid(lf0, lf1, .08, .1), "rf": mid(rf0, rf1, .45, .3)}), "pass")
-        sh.key(turn_f + 4, merge(body(a * .3, a * .08, 6), {"travel": {"yaw": ang}, "lf": mid(lf0, lf1, .5, .14), "rf": mid(rf0, rf1, .8, .22)}), "pass")
-        sh.key(turn_f + 7, merge(body(-3, -2, 0), {"travel": {"yaw": ang}, "lf": mid(lf0, lf1, .92, .06), "rf": mid(rf0, rf1, .96, .06)}), "pass")
+        sh.key(turn_f + 1, merge(body(a * .62, a * .17, min(50, a * .38)), {"travel": {"yaw": ang}, "lf": mid(lf0, lf1, .08, .18), "rf": mid(rf0, rf1, .45, .3)}), "pass")
+        sh.key(turn_f + 4, merge(body(a * .3, a * .08, 6), {"travel": {"yaw": ang}, "lf": mid(lf0, lf1, .5, .26), "rf": mid(rf0, rf1, .8, .22)}), "pass")
+        sh.key(turn_f + 7, merge(body(-3, -2, 0), {"travel": {"yaw": ang}, "lf": mid(lf0, lf1, .92, .12), "rf": mid(rf0, rf1, .96, .12)}), "pass")
         sh.key(turn_f + 8, merge(body(-6, -3, 0), {"travel": {"yaw": ang}, "lf": lf1, "rf": rf1}), "impact")
         sh.key(turn_f + 12, merge(S, {"travel": {"yaw": ang}, "lf": lf1, "rf": rf1}), "ease")
         sh.drag(["shoulder.L", "shoulder.R"], 1)
