@@ -10,6 +10,23 @@
 -- three readable until then.
 local Moods={}
 local A,r=CFrame.Angles,math.rad
+-- (DEC-041, ANIMATEUR) the authored moods: tools/blender/job_moods.py ->
+-- Client/AuthoredClips "Mood.<kit>"; a clip's shoulder rows are named
+-- Right/Left (the motors RightShoulder/LeftShoulder).
+local okAuthored,Authored=pcall(require,script.Parent.AuthoredMotion)
+if not okAuthored then Authored=nil end
+local MOTOR={Right="RightShoulder",Left="LeftShoulder"}
+function Moods.authored(id)
+	local name="Mood."..tostring(id)
+	if not (Authored and Authored.has(name)) then return nil end
+	return function(t)
+		local pose=Authored.sample(name,t)
+		if not pose then return nil end
+		local out={}
+		for joint,cf in pose do out[MOTOR[joint] or joint]=cf end
+		return out
+	end
+end
 
 local function wave(t,speed,phase) return math.sin(t*speed+(phase or 0)) end
 -- 0 most of the time, 1 for `hold` seconds every `every` seconds (eased).
@@ -95,6 +112,7 @@ end
 -- Plays `id`'s mood on `model` at time t; `clip` (optional) samples an
 -- authored clip instead (name → joint CFrames). Returns whether it played.
 function Moods.apply(model,id,t,clip)
+	clip=clip or Moods.authored(id)
 	local pose=if clip then clip(t) else (Moods.Poses[id] and Moods.Poses[id](t))
 	if not pose then return false end
 	local j=Moods.joints(model)
