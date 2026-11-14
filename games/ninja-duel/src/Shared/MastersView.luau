@@ -111,9 +111,10 @@ function V.goal(kits)
 	if not kits then return proctor end
 	if kits.state~="ready" then return goal("",{}) end
 	if kits.needStarter then
-		local where={}
-		for _,id in Masters.Starters do table.insert(where,name(id).." • "..place(id)) end
-		return goal("CHOOSE YOUR INSPIRATION",where)
+		-- (DEC-041) the three wait together just inside the gate
+		local who={}
+		for _,id in Masters.Starters do table.insert(who,name(id)) end
+		return goal("CHOOSE YOUR INSPIRATION",{table.concat(who,", ").." • RIGHT BY THE GATE"})
 	end
 	local first=V.firstDuel(kits)
 	if first then return goal("YOUR FIRST DUEL",{"TALK TO "..name(first).."  •  "..place(first)}) end
@@ -136,7 +137,7 @@ function V.card(kits,id)
 	local out={note=act.note,kind=act.kind}
 	local rival=FirstMinute.rival(id) or "Lion"
 	if act.kind=="wait" then out.primary={label="LOADING YOUR KITS…"}
-	elseif act.kind=="choose" then out.primary={label="TAKE HIS KIT",send={"ChooseStarter",{player=id}}}
+	elseif act.kind=="choose" then out.primary={label="HE'S MY INSPIRATION",send={"ChooseStarter",{player=id}}}
 	elseif act.kind=="master" then out.primary={label="DUEL HIM",send={"MasterTrial",{player=act.via,master=id}}}
 	elseif act.kind=="try" then out.primary={label="TRY HIS KIT",send={"Tutorial",{player=id,bot=rival}}}
 	else
