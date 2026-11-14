@@ -1075,12 +1075,80 @@ def carved_head(params, style):
     return [pc, hair]
 
 
-HEADS = {
-    "HeadFunny1": ({"old": 1, "jaw": .6, "smile": 0, "brow_in": 1.0, "scar": 0, "soft": 0}, "elder"),
-    "HeadFunny2": ({"old": 0, "jaw": 1.2, "smile": -.4, "brow_in": 1.4, "scar": 1, "soft": 0}, "warrior"),
-    "HeadFunny3": ({"old": 0, "jaw": .3, "smile": .2, "brow_in": .2, "scar": 0, "soft": .3}, "calm"),
-    "HeadFunny4": ({"old": 0, "jaw": -.6, "smile": .5, "brow_in": -.3, "scar": 0, "soft": 1}, "bun"),
-}
+def empty_place(variant):
+    """François 14/11: « mets juste la tête du dev et des emplacements vides,
+    style : le prochain ici sera peut-être toi ». A place waiting for its
+    champion: the block roughed out of the cliff, chisel marks all over, the
+    outline of a head sketched on it in chalk, scaffolding in front (poles,
+    planks, a rope, a bucket of tools), and a blank stone plaque at the foot
+    for the text (a Part with a SurfaceGui, the server's: its frame is here,
+    its face at (0, -12.4, 4.0) is left free, 14 x 3.2). Same box as a head:
+    origin at the centre, front +z, 26 x 30 x 8."""
+    rng = random.Random(40 + variant)
+    blk = Piece("Block", "Rock", flat=True)
+    chalk = Piece("Sketch", "SmoothPlastic", flat=True)
+    wood = Piece("Scaffold", "Wood", flat=True)
+    rope = Piece("Rope", "Fabric")
+    iron = Piece("Tools", "Metal", flat=True)
+    SAND = rgb(184, 156, 120)
+    SAND_D = rgb(132, 106, 78)
+    # the roughed-out block: a blunt dome, faceted by the chisel
+    rings = []
+    for j in range(17):
+        v = j / 16
+        y = -10.5 + 25 * v
+        w = 12.2 * math.sin(math.pi * (.1 + .8 * v)) ** .45
+        ring = []
+        for i in range(20):
+            t = i / 20 * math.tau
+            cx, cz = math.cos(t), math.sin(t)
+            x = w * (abs(cx) ** .7) * (1 if cx >= 0 else -1)
+            z = (3.4 * abs(cz) ** .35) if cz > 0 else (-3.8 * abs(cz) ** .7)
+            chip = .35 * noise.noise(Vector((x * .7, y * .7, variant))) if cz > 0 else 0
+            ring.append(Vector((x, y, z + chip)))
+        rings.append(ring)
+    def bc(p, k):
+        c = lerp(SAND_D, SAND, .6 + .3 * noise.noise(p * .9))
+        return lerp(c, rgb(214, 196, 166), .35 * smooth((p.z - 2.6) / .8))  # fresh-cut stone paler
+    loft(blk, rings, bc, tip0=Vector((0, -11, -1)), tip1=Vector((0, 15, -1)))
+    # chisel marks: short pale scars
+    for k in range(26):
+        x, y = rng.uniform(-9, 9), rng.uniform(-8, 12)
+        box(blk, T(x, y, 3.45) @ Rz(rng.uniform(-.6, .6)), (rng.uniform(.8, 1.6), .18, .2), rgb(214, 198, 170))
+    # the outline of a head sketched in chalk: oval, the eye line, the nose line
+    pts = [(math.cos(a) * 8.0, 2.5 + math.sin(a) * 10.0) for a in [i / 24 * math.tau for i in range(25)]]
+    for (x0, y0), (x1, y1) in zip(pts, pts[1:]):
+        d = Vector((x1 - x0, y1 - y0, 0))
+        box(chalk, T((x0 + x1) / 2, (y0 + y1) / 2, 3.5) @ Rz(math.atan2(d.y, d.x)), (d.length + .25, .22, .1), rgb(236, 232, 222))
+    for (x0, y0, x1, y1) in ((-6, 4, 6, 4), (0, 4, 0, -2.5), (-3, -5.2, 3, -5.2)):
+        d = Vector((x1 - x0, y1 - y0, 0))
+        box(chalk, T((x0 + x1) / 2, (y0 + y1) / 2, 3.52) @ Rz(math.atan2(d.y, d.x)), (d.length + .2, .16, .1), rgb(232, 228, 216))
+    # the blank plaque at the foot (its frame; the text Part goes in front)
+    box(blk, T(0, -12.4, 3.0), (16, 4.4, 1.6), lambda p, f: jitter(SAND_D, p, .08, .5))
+    box(blk, T(0, -12.4, 3.86), (14.4, 3.4, .1), rgb(170, 144, 110))
+    # scaffolding: two poles, a plank walk, a rail, braces, lashings
+    side = 1 if variant % 2 else -1
+    for x in (-10.5, 10.5):
+        box(wood, T(x, 0, 6.2), (.5, 30, .5), lambda p, f: jitter(C["woodLight"], p, .1, 1))
+    for y in (-6, 6.5):
+        box(wood, T(0, y, 6.0), (23, .35, 2.4), lambda p, f: jitter(C["woodLight"], p, .12, 1.5))
+        for k in range(6):
+            box(wood, T(-10 + k * 4, y + .19, 6.0), (.06, .04, 2.4), C["woodDark"])
+        box(wood, T(0, y + 2.4, 7.2), (22, .25, .25), C["wood"])
+    box(wood, T(0, .3, 6.4) @ Rz(math.atan2(12.5, 21)), (24.4, .3, .3), C["wood"])
+    for x in (-10.5, 10.5):
+        for y in (-6, 6.5):
+            cyl(rope, T(x, y - .4, 6.2), .34, .8, C["rope"], sides=8)
+    # a rope hanging from the top, a bucket of tools on the planks
+    tube(rope, [Vector((side * 8, 15.5, 4.8)), Vector((side * 8.3, 9, 6.6)), Vector((side * 7.9, 7.2, 6.5))], .12, C["rope"], sides=5)
+    cyl(wood, T(-side * 7, 6.7, 6.2), .7, 1.2, C["woodDark"], sides=10, r2=.85)
+    for k in range(3):
+        box(iron, T(-side * 7 + (k - 1) * .3, 8.2, 6.2) @ Rz((k - 1) * .25), (.12, 1.6, .12), C["iron"])
+    box(iron, T(side * 4, 6.75, 6.4) @ Ry(.4), (1.4, .3, .4), C["iron"])
+    return [blk, chalk, wood, rope, iron]
+
+
+HEADS = {}
 
 def faces_terrace():
     st = Piece("Stone", "Slate", flat=True)
@@ -1134,7 +1202,7 @@ MODELS = {
     "NakaShrine": naka_shrine,
     "Torii": torii,
     "HokageCliff": hokage_cliff,
-    **{name: (lambda name=name: carved_head(*HEADS[name])) for name in HEADS},
+    **{"HeadFunny%d" % i: (lambda i=i: empty_place(i)) for i in range(1, 5)},
     "FacesTerrace": faces_terrace,
     "HouseGable_24x20x2": lambda: house("Gable", 24, 20, 2),
     "HouseShop_24x20x2": lambda: house("Shop", 24, 20, 2),
