@@ -312,6 +312,20 @@ function Matches:roundOver(s,winner,notify,advance)
 			if ok then s.progress.learned=s.masterTrial end
 		end
 	end
+	-- (DEC-040) Against another player: each present seat's kit earns its
+	-- mastery (Progression.versusEnded), shown on his own result screen.
+	if decided and s.online and s.seats and not s.forfeit then
+		for _,seat in s.seats do
+			if seat.present and seat.actor and seat.player then
+				local used=0
+				for _ in seat.actor.usedJutsu or {} do used+=1 end
+				local won=winner==seat.actor
+				local gained=Progression.versusEnded(seat.player,seat.fighter,won,used)
+				seat.progress={mastery=gained and gained.mastery,gained=gained~=nil and gained.amount~=nil,amount=gained and gained.amount,fighter=seat.fighter,need=Masters.Need,
+					points=gained and gained.points,ryo=gained and gained.ryo,firstWin=gained and gained.firstWin}
+			end
+		end
+	end
 	if not s.online and s.owner and s.human then Matches.logPresses(s.owner,s.human) end
 	local finishEpoch=s.epoch
 	notify()

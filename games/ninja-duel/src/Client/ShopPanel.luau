@@ -273,7 +273,7 @@ function Panel:drawRyo()
 		string.format("A duel finished: %d  •  won: +%d",R.Finished,R.Won),
 		string.format("The day's first win: ×%d",R.FirstWinOfDay),
 		string.format("A master's duel won: +%d",R.MasterWon),
-		string.format("Tournament: %d to the champion, %d to the finalist (soon)",R.Champion,R.Finalist),
+		string.format("Tournament: %d to the champion, %d to the finalist",R.Champion,R.Finalist),
 	}
 	for k,line in lines do K.text(earn,line,UDim2.fromOffset(18,56+(k-1)*30),UDim2.new(1,-36,0,24),15,P.text,K.BODY_FONT) end
 end

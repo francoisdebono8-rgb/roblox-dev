@@ -340,3 +340,21 @@ Demande de l’utilisateur du **13/11 à 18 h 03** : « Continue et on voit tout
   Un nœud n’attend jamais un nœud d’un palier plus haut. Chaque palier contient assez de points pour qu’il reste un vrai choix. Le panneau de l’arbre dessine les paliers en lignes et les branches en colonnes.
 - **Profil v3** : un portefeuille (Ryō, jour de la dernière première victoire) et les apparences (possédées, portées). Le passage depuis la v2 se fait sans perte. Un achat en Robux est accordé une seule fois par reçu, et seulement une fois le profil sauvegardé.
 
+
+## DEC-040 — La maîtrise se gagne contre des joueurs ; en ligne, même budget pour tous ; le joueur arrive sans tenue et s’habille en ninja (14/11)
+
+Demande de l’utilisateur du **14/11 à 21 h 09** : « la maîtrise, t’es censé la gagner en affrontant des gens, en gagnant des tournois, et peut-être pour des trucs spécifiques, avoir des leçons […] que l’utilisateur ait juste son avatar mais il arrive genre nu et on ait un petit truc de customisation de personnage […] on aura la boutique qui permettra d’acheter les skins des mentors, plus on en inventera, on va créer plusieurs sortes d’armes, plusieurs types de kunai ou de shuriken ». Ses deux choix, faits dans la foulée : « Même budget pour tous » et « Corps, visage, cheveux ».
+
+- **La maîtrise vient d’abord des autres joueurs.**
+  - Un duel en ligne décidé rapporte de la maîtrise au kit avec lequel on s’est battu, s’il est appris. Il en rapporte deux fois plus qu’un duel contre l’IA (`Masters.Gain.Versus`), et donne aussi le Ryō d’un duel.
+  - Gagner un tournoi donne un bonus de maîtrise au kit du champion, en plus des matchs, et un bonus de Ryō (`Masters.Gain.Champion`, `Shop.Ryo.Champion`).
+  - Les duels contre l’IA continuent de rapporter, pour qu’un joueur seul progresse aussi.
+- **Les leçons des maîtres** : une leçon jouée chez le maître, pour une chose précise de son kit (par exemple le premier clone de Naruto, les poids de Lee). Elle rapporte de la maîtrise ou ouvre un nœud. Le contenu se décide leçon par leçon.
+- **En ligne et dans les tournois entre joueurs, même budget pour tous.** Chaque joueur choisit ses nœuds avec le même nombre de points (`Config.Versus.Budget`), quel que soit son niveau. Tous les paliers sont ouverts dans ce build. La progression sert contre l’IA, chez les maîtres et pour les apparences. Contre un joueur, c’est le choix du build qui compte. DEC-038 est remplacée sur ce point : le kit entier du prodige ne sert plus en ligne.
+- **L’arrivée sans tenue.** Le joueur garde le corps, le visage et les cheveux de son avatar Roblox. Ses vêtements et ses autres accessoires sont retirés, dans Konoha comme en duel. À la première arrivée, un petit écran de personnalisation lui fait choisir une tenue ninja simple parmi des pièces gratuites : haut, bas, bandeau et couleurs.
+- **La boutique habille.**
+  - Tenues des maîtres sur son propre avatar (les « skins des mentors ») ;
+  - tenues inventées ;
+  - plusieurs sortes de kunai et de shuriken.
+
+  Ce sont des apparences seulement, jamais un chiffre (DEC-039). Les modèles sont faits par l’ANIMATEUR et les écrans par la discussion DESIGN.
