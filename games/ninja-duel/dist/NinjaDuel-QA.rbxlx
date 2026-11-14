@@ -863,7 +863,11 @@ return {
 	-- (14/11) DevUserId: whose avatar is carved first on the cliff
 	-- (Server/ChampionCliff); nil = the game's creator (game.CreatorId), so a
 	-- local file in Studio shows the funny head there.
-	Hub = { Enabled = true, DevUserId = nil },
+	-- (14/11, François: « que notre perso puisse combattre » dans la ville)
+	-- VillageDuels: a duel started at a master's home (his card, the training
+	-- dummy) is fought there, in the village (HubMap.Masters[id].duel), not
+	-- in the stadium. The board's duels and the tournament stay in the stadium.
+	Hub = { Enabled = true, DevUserId = nil, VillageDuels = true },
 	-- (13/11) The shop's Roblox ids, created by the owner on the game's page
 	-- (0 or absent: shown SOON, nothing sold). Products: a Robux look by its
 	-- Shared/Shop key; RyoPacks: Ryō for Robux; Passes: game passes (the 2x
@@ -2296,17 +2300,23 @@ M.Proctor={kit="Professor",at=Vector3.new(0,0,-52),face=Vector3.new(0,0,1),
 	name="THE PROCTOR",place="THE EXAM HALL",line="Duels, the tournament, players from everywhere: it all starts on this floor."}
 
 -- The masters, each at home. `line`: what he says when the player comes to him.
+-- `duel` (14/11, Config.Hub.VillageDuels): where a duel started at his home
+-- is fought, in the village (its centre on the ground, the radius the bodies
+-- are held in); without it, the stadium.
 -- (14/11, measured in Studio: Roblox's paths from the gate) each faces the way
 -- a player walks up to him. Naruto, Gaara and Kakashi showed their side or
 -- back (67, 84 and 64 degrees off), Lee 35; now under 10.
 M.Masters={
 	Legion={place="ICHIRAKU RAMEN",at=Vector3.new(-15,0,110),face=Vector3.new(.45,0,.9),
+		duel={at=Vector3.new(0,0,140),radius=34},
 		line="A bowl first, then the clones. Nobody beats me at either!"},
 	Lion={place="THE UCHIHA PIER",at=Vector3.new(176,1.6,-60),face=Vector3.new(-1,0,0),
 		line="Fire starts in the chest, not in the hands. Show me yours."},
 	Leaf={place="TRAINING GROUND THREE",at=Vector3.new(-118,0,28),face=Vector3.new(.85,0,.53),
+		duel={at=Vector3.new(-136,0,10),radius=34},
 		line="Five hundred laps, then we talk. Or one honest fight, right now!"},
 	GentleFist={place="THE HYŪGA COMPOUND",at=Vector3.new(-146,0,-98),face=Vector3.new(1,0,0),
+		duel={at=Vector3.new(-152,0,-104),radius=36},
 		line="The Byakugan sees every opening you leave. Close them first."},
 	Sand={place="THE EXAM HALL'S BALCONY",at=Vector3.new(-49,12.5,-78),face=Vector3.new(.1,0,1),
 		line="The sand decides who is worth it. It has not decided about you."},
@@ -2321,7 +2331,7 @@ M.Masters={
 -- (14/11, audit: « que notre perso puisse combattre, qu'on puisse apprendre »)
 -- Training Ground Three's dummy: E there trains with his kit (Server/Hub
 -- places the prompt, Client/HubClient answers it).
-M.Training={at=Vector3.new(-150,0,16),place="TRAINING GROUND THREE"}
+M.Training={at=Vector3.new(-150,0,16),place="TRAINING GROUND THREE",duel={at=Vector3.new(-136,0,10),radius=34}}
 
 -- (14/11, user: « les têtes sont moches […] à terme ça sera les champions, on
 -- peut mettre le dev aussi et des trucs drôles pour l'instant ») The four
@@ -6841,13 +6851,13 @@ return {
       <Item class="StringValue" referent="ND44">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">01faaaf5eb937a63b8ab0288438ae854559263a537f2c0f6be134ce831885311</string>
+          <string name="Value">aadfbe9139c4dbee723a830f69a28c65a3f26e855950ba6349eb1765260adeaa</string>
         </Properties>
       </Item>
       <Item class="StringValue" referent="ND45">
         <Properties>
           <string name="Name">RuntimeFingerprint</string>
-          <string name="Value">2a827869bc208a72adbc461b0f6d8a98a675af98a36a46c07af5372663fbb1ed</string>
+          <string name="Value">f5f46ca21c55bd35566631d1906d342c0385937e588a60b53b9bc94dd132ea4f</string>
         </Properties>
       </Item>
       <Item class="StringValue" referent="ND46">
@@ -6859,7 +6869,7 @@ return {
       <Item class="StringValue" referent="ND47">
         <Properties>
           <string name="Name">SourceCommit</string>
-          <string name="Value">e4f59c751281</string>
+          <string name="Value">559a5987b1fc</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND48">
@@ -13835,7 +13845,8 @@ end
 -- The tournament stage is round: positions are held inside a circle so no
 -- corner of the old square limit reaches into the stands.
 function Combat:clamp(p)
-	local o=self.match.origin; local r=Config.ArenaRadius
+	-- (14/11, a duel in Konoha) a master's ground has its own radius.
+	local o=self.match.origin; local r=self.match.radius or Config.ArenaRadius
 	local flat=Vector3.new(p.X-o.X,0,p.Z-o.Z)
 	if flat.Magnitude&gt;r then flat=flat.Unit*r end
 	return Vector3.new(o.X+flat.X,math.clamp(p.Y,o.Y+3,o.Y+Config.ArenaHeight),o.Z+flat.Z)
@@ -15963,7 +15974,7 @@ function Combat:updateActor(a,dt)
 	else Motor.step(a,self,dt,now) end
 	-- Server-owned humanoids + server-clamped arena coordinates.
 	local p=a.root.Position
-	if Vector3.new(p.X-self.match.origin.X,0,p.Z-self.match.origin.Z).Magnitude&gt;Config.ArenaRadius or p.Y&lt;self.match.origin.Y-3 then
+	if Vector3.new(p.X-self.match.origin.X,0,p.Z-self.match.origin.Z).Magnitude&gt;(self.match.radius or Config.ArenaRadius) or p.Y&lt;self.match.origin.Y-3 then
 		-- (Fluidity audit 05/11) A body pressed against the arena's edge is held
 		-- on it every frame: that is not a teleport. Declared as one (a new warp
 		-- serial each frame: 53 in 41 s of Studio duel, mostly through Wall
@@ -21040,7 +21051,8 @@ function Hub.enter(player,where,looks)
 		entry.character=character
 		-- (13/11, the shop) the headband he chose, on his own avatar.
 		pcall(function() require(script.Parent.Headband).fromLooks(character,looks) end)
-		local spot=HubMap.Spawns[where] or HubMap.Spawns.gate
+		-- (14/11) back from a duel in the village: where it was fought
+		local spot=if type(where)=="table" then where else HubMap.Spawns[where] or HubMap.Spawns.gate
 		local at=O+spot.at+Vector3.new(0,3.5,0)
 		pcall(function() character:PivotTo(CFrame.lookAt(at,at+spot.face)) end)
 		local hum=character:FindFirstChildOfClass("Humanoid")
@@ -23575,6 +23587,7 @@ local ArenaMeshes=require(script.Parent.ArenaMeshes)
 local AvatarBody=require(script.Parent.AvatarBody)
 local Progression=require(script.Parent.Progression)
 local Masters=require(Shared.Masters)
+local HubMap=require(Shared.HubMap)
 local Combat=require(script.Parent.Combat)
 local AI=require(script.Parent.AI)
 local Tutorial=require(script.Parent.Tutorial)
@@ -23630,6 +23643,22 @@ end
 -- Each duel owns a stage far from every other one.
 function Matches.laneOrigin(lane)
 	return Vector3.new((lane-1)*520,0,0)
+end
+-- (14/11, François: « que notre perso puisse combattre » dans la ville) A duel
+-- started at a master's home (his card, the training dummy: `key`) is fought
+-- there, in the village, when he really stands there (his walker within reach
+-- of the ground). nil: the stadium.
+function Matches.villageSite(player,key)
+	if not Matches.hubOn() or not (Config.Hub and Config.Hub.VillageDuels==true) or type(key)~="string" then return nil end
+	local spot=if key=="Training" then HubMap.Training else HubMap.Masters[key]
+	local duel=spot and spot.duel
+	if not duel then return nil end
+	local centre=HubMap.Origin+duel.at
+	local body=Hub.bodies and Hub.bodies[player]
+	local character=body and body.character
+	local root=character and character:FindFirstChild("HumanoidRootPart")
+	if not root or (Vector3.new(root.Position.X,0,root.Position.Z)-Vector3.new(centre.X,0,centre.Z)).Magnitude&gt;duel.radius+50 then return nil end
+	return {key=key,origin=centre,radius=duel.radius}
 end
 -- (B1 lot 2, DEC-034) What a new player's first minutes look like, measured
 -- on the server (Codex's audit §3: time to the first input, the first jutsu,
@@ -23778,7 +23807,8 @@ function Matches:selection(player,notice)
 	-- through the gate the first time, out of the exam hall after a duel.
 	if Matches.hubOn() then
 		Hub.badge(player,view)
-		Hub.enter(player,if s.hubVisited then "hall" else "gate",Progression.looks(player))
+		Hub.enter(player,s.returnTo or (if s.hubVisited then "hall" else "gate"),Progression.looks(player))
+		s.returnTo=nil
 		s.hubVisited=true
 	end
 	-- (Lobby, 04/11) in a duel server the roster is the lobby: back home.
@@ -23814,9 +23844,17 @@ function Matches:start(player,playerId,botId,training,options)
 	if Matches.hubOn() then Hub.leave(player) end
 	s.playerId=playerId; s.botId=botId; s.winner=nil; s.phase="Duel"; s.origin=Matches.laneOrigin(s.lane)
 	s.options=options
-	-- (QA 12/11) The lane's stadium is the one already in the world, its
-	-- last duel's damage undone: only the two bodies are new at BEGIN.
-	self:stageFor(s)
+	-- (14/11) A duel at a master's home: in the village, no stadium.
+	local site=s.nextSite;s.nextSite=nil
+	s.site=site;s.radius=site and site.radius or nil
+	if site then
+		s.origin=site.origin
+		s.returnTo={at=site.origin-HubMap.Origin+Vector3.new(0,0,site.radius*.5),face=Vector3.new(0,0,-1)}
+	else
+		-- (QA 12/11) The lane's stadium is the one already in the world, its
+		-- last duel's damage undone: only the two bodies are new at BEGIN.
+		self:stageFor(s)
+	end
 	s.effects=Instance.new("Folder"); s.effects.Name="Effects"; s.effects.Parent=s.folder
 	s.combat=Combat.new(s); s.combat.now=workspace:GetServerTimeNow()
 	local function actor(id,def,position,look,kit)
@@ -24112,7 +24150,9 @@ function Matches:request(player,payload)
 		local rival=FirstMinute.rival(payload.player)
 		if not rival then return end
 		s.lastLifecycle=clock;s.aiLevel="easy";s.firstStage="intro"
+		s.nextSite=Matches.villageSite(player,payload.here)
 		if not self:start(player,payload.player,rival,true) then s.firstStage=nil end
+		s.nextSite=nil
 		return
 	end
 	-- (DEC-037) The masters' path from the roster: the starter, the kit for the
@@ -24171,7 +24211,9 @@ function Matches:request(player,payload)
 				return
 			end
 			s.masterTrial=master;s.firstStage=nil
+			s.nextSite=Matches.villageSite(player,payload.here)
 			if not self:start(player,payload.player,master,false) then s.masterTrial=nil end
+			s.nextSite=nil
 		elseif action=="BuyKit" then
 			local product=(Config.Progression and Config.Progression.Products or {})[payload.player]
 			if product and not Progression.owns(player,payload.player) then
@@ -24192,9 +24234,15 @@ function Matches:request(player,payload)
 			s.masterTrial=nil
 			s.lastLifecycle=clock;s.firstStage=nil
 			if type(payload.level)=="string" and Matches.LEVELS[payload.level] then s.aiLevel=payload.level end
+			s.nextSite=Matches.villageSite(player,payload.here)
 			self:start(player,payload.player,payload.bot,action=="Tutorial")
+			s.nextSite=nil
 		elseif action=="Rematch" and (s.phase=="Result" or s.finishing) then
-			s.lastLifecycle=clock;s.firstStage=nil; self:start(player,s.playerId,s.botId,s.tutorial~=nil,s.options)
+			s.lastLifecycle=clock;s.firstStage=nil
+			-- (14/11) a rematch at a master's home stays there
+			s.nextSite=s.site;s.returnTo=nil
+			self:start(player,s.playerId,s.botId,s.tutorial~=nil,s.options)
+			s.nextSite=nil
 		elseif action=="Selection" and (s.phase=="Result" or s.finishing or s.tutorial) then s.lastLifecycle=clock; self:selection(player) end
 		return
 	end
@@ -24307,7 +24355,7 @@ function Matches:update(dt,now)
 				if s.tutorial then Tutorial.update(s,now,dt) elseif not s.botFrozen and not intro and not s.finishing then s.ai:update(now) end
 				-- (B1 lot 2) the first minute's last prompt done: its real duel.
 				if s.tutorial and s.tutorial.done and s.firstStage=="intro" then
-					s.firstStage="duel";s.aiLevel="easy";self:start(player,s.playerId,s.botId,false)
+					s.firstStage="duel";s.aiLevel="easy";s.nextSite=s.site;self:start(player,s.playerId,s.botId,false);s.nextSite=nil
 				end
 				if s.metrics and not s.metrics.jutsuAt and s.human and s.human.events then
 					for name in s.human.events do if string.sub(name,1,5)=="Cast:" then Matches.measure(player,s,"jutsu");break end end
@@ -61439,7 +61487,7 @@ function Hub:train()
 	local FirstMinute=require(Shared.FirstMinute)
 	local kit=self:trainingKit() or kits.selected
 	self:hideCard()
-	self.send("Tutorial",{player=kit,bot=FirstMinute.rival(kit) or "Lion"})
+	self.send("Tutorial",{player=kit,bot=FirstMinute.rival(kit) or "Lion",here="Training"})
 end
 
 -- ------------------------------------------------------------------ the card
@@ -61508,7 +61556,15 @@ function Hub:press(which)
 		if self.ui.treePanel then self.ui.treePanel:show(item.tree,self.kits) end
 		return
 	end
-	if item.send then self.send(item.send[1],item.send[2]) end
+	if item.send then
+		-- (14/11) a duel asked at the master's home is fought there, when the
+		-- server finds him there (Matches.villageSite)
+		local payload=item.send[2]
+		if type(payload)=="table" and (item.send[1]=="Start" or item.send[1]=="First" or item.send[1]=="MasterTrial") then
+			payload=table.clone(payload);payload.here=self.cardId
+		end
+		self.send(item.send[1],payload)
+	end
 end
 
 return Hub
