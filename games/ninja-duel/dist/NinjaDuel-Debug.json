@@ -1,7 +1,7 @@
 {
   "version": "0.13.0-arena-combo",
   "artifact": "NinjaDuel-Debug.rbxlx",
-  "sha256": "641bcff6b1181760f98e83ed7675d8a57ce787ab0b1bfa7c17cb20ff58c9b5ed",
+  "sha256": "ce0e20d94131d707d1c0125ac5285dee48e82f3e75ea356aa0b58597cbe082b4",
   "sources": {
     "src/Client/ArenaDress.luau": "e2da1115cb48480b2effa3170a1670d3bb44d5bcbdfd9bbdbb3e60ee302b5360",
     "src/Client/AuthoredClips.luau": "0b3c0031cf7df5b9087b69b50300cea5b74605f00eb160457ed1936b1b8ccc64",
@@ -97,6 +97,7 @@
     "src/Client/HoundFX.luau": "56fb435c7ca686a692956a9dfc0fb308df33b7b1efb8ae5ad72e191802926f6d",
     "src/Client/HubClient.luau": "1424b7c544cf799393808464607469e0499b9ed15f2be0f4a1334527f8f3d51f",
     "src/Client/HubDress.luau": "be41f132e096814609d28473ea33f041bc7184aecb9e895af089e51fcca7a2a9",
+    "src/Client/HubMeshAssets.luau": "95bfea0e317a5c34bf3879d9a15bb076d2ce3e939d34bf9aac7862dd5a2a5d2e",
     "src/Client/HubMeshData.luau": "4c5ee2596730e9ac39228b32d2af5e98299e12d8c566e3271bedbfd428521a91",
     "src/Client/HubMeshData1.luau": "8298b5b89cba4f75fe138e1a4218672220eeec8da97bf4d50c161ed151dc828b",
     "src/Client/HubMeshData10.luau": "a999a3e1daa45a5ecd9a388f8b3f66bf3497df81d99468f2873d1fac5e8b3a8e",
@@ -304,12 +305,12 @@
   },
   "sourceEquality": "PASS",
   "debugOnly": true,
-  "buildFingerprint": "080fe31738556a684c66019bca4d966d6412882b824490d48c80e2248d69a4fe",
+  "buildFingerprint": "94abd1a11ee60bca618fc9beccce6f69323b2b73d28918fb3faaf42ebd91169c",
   "profile": "debug",
-  "runtimeFingerprint": "697bdf3b71eea4f86a729fbfd6f571a724c73199d1708473adf47994f5521081",
+  "runtimeFingerprint": "743418899b5b42450f36a6397e5a79753de47366b1703e8f94c5f7a44e93f73a",
   "sourceCommit": "39f88ed6d7b94b65e3cb60de39beda8ad113ea7a",
-  "headCommit": "39f88ed6d7b94b65e3cb60de39beda8ad113ea7a",
-  "sourceDirty": false,
+  "headCommit": "a9db54c7b657c1b0983c5ae8d5c8960b94326b84",
+  "sourceDirty": true,
   "captureTools": {},
   "donorAssets": {
     "assets/BanglaAssets.rbxmx": "6e99f5f67e6c34ac8a81d739431554b1495f0f5cd1dd1870a39eeb8bf23e1983"

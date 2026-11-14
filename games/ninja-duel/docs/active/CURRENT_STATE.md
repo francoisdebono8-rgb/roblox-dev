@@ -1,3 +1,8 @@
+**Konoha : le village chargé depuis des modèles envoyés sur Roblox (14/11, branche `claude/hub-maillage`, [HUB-001](MASTER_BACKLOG.md))** (utilisateur : « Fais l'envoi du maillage »)
+- **Envoi** : les 38 FBX de l'ANIMATEUR (#97, `tools/blender/hub_fbx.py`) passés par l'importateur 3D de Studio, sur le compte de François. 35 modèles et 141 pièces sont importés ; 3 ont échoué (VillageWall, TreeB, HouseShop_24x20x1, 12 pièces), et ces pièces restent construites sur l'ordinateur du joueur comme avant. `tools/blender/imports/hub/Hub.studio.json`, puis `hub_to_luau.py`, donnent `Client/HubMeshAssets.luau`. Les 141 tailles correspondent au manifeste Blender.
+- **Vu dans Studio** (modules poussés à chaud dans ND-JEU `a8d9fd0`) : le village se charge par identifiant (287 pièces, aucune construite sur place). À 3,5 s de jeu tout est déjà en place, contre 7 à 12 s pour la construction mesurée le 14/11. Les couleurs de sommet passent : lanternes rouges, poutres, murs.
+- **Reste** : relancer les 3 modèles qui ont échoué.
+
 **Intégration du 12/11 : audit feel DEV (#60) + ANIMATEUR (#56, #58, #59) en une fois** (utilisateur : « intègre tt »)
 - **Une seule branche** : #56 (effets : préchargement des images, budget de lumières, charge du Katon), #59 (demande moteur : réactions selon le côté du coup, pas chassés en garde) et #58 (130 clips : éjection et saisie de dos et de côté, pas chassés, pivots, arrivées ; trace des déplacements ; foudre Lightning Beams) sont fusionnées dans `claude/feel-audit-lot2` (#60). Deux conflits, résolus en gardant les deux côtés : `Effects.luau` (budget de lumières + trace et foudre) et `tests/run.sh`.
 - **Câblé côté DEV** :

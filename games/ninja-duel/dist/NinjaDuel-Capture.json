@@ -1,7 +1,7 @@
 {
   "version": "0.13.0-arena-combo",
   "artifact": "NinjaDuel-Capture.rbxlx",
-  "sha256": "141059897f249a664467a4770270afbfb3e6d5fbec41c8576f2d79f54a305a22",
+  "sha256": "8ef286db1060289edb11ae2e12cb40b604f11baad9b21ee7f27efc904846e39a",
   "sources": {
     "src/Client/ArenaDress.luau": "e2da1115cb48480b2effa3170a1670d3bb44d5bcbdfd9bbdbb3e60ee302b5360",
     "src/Client/AuthoredClips.luau": "0b3c0031cf7df5b9087b69b50300cea5b74605f00eb160457ed1936b1b8ccc64",
@@ -97,6 +97,7 @@
     "src/Client/HoundFX.luau": "56fb435c7ca686a692956a9dfc0fb308df33b7b1efb8ae5ad72e191802926f6d",
     "src/Client/HubClient.luau": "1424b7c544cf799393808464607469e0499b9ed15f2be0f4a1334527f8f3d51f",
     "src/Client/HubDress.luau": "be41f132e096814609d28473ea33f041bc7184aecb9e895af089e51fcca7a2a9",
+    "src/Client/HubMeshAssets.luau": "95bfea0e317a5c34bf3879d9a15bb076d2ce3e939d34bf9aac7862dd5a2a5d2e",
     "src/Client/HubMeshData.luau": "4c5ee2596730e9ac39228b32d2af5e98299e12d8c566e3271bedbfd428521a91",
     "src/Client/HubMeshData1.luau": "8298b5b89cba4f75fe138e1a4218672220eeec8da97bf4d50c161ed151dc828b",
     "src/Client/HubMeshData10.luau": "a999a3e1daa45a5ecd9a388f8b3f66bf3497df81d99468f2873d1fac5e8b3a8e",
@@ -304,12 +305,12 @@
   },
   "sourceEquality": "PASS",
   "debugOnly": true,
-  "buildFingerprint": "cacfdeceac00f82bb0e7d2b9dd8364805a3556f91cc8f97a2c137c2556d43735",
+  "buildFingerprint": "719f99f61e66a06b98f265d390efa8304ef82650313d6369d3cd899fbad8b63b",
   "profile": "capture",
-  "runtimeFingerprint": "697bdf3b71eea4f86a729fbfd6f571a724c73199d1708473adf47994f5521081",
+  "runtimeFingerprint": "743418899b5b42450f36a6397e5a79753de47366b1703e8f94c5f7a44e93f73a",
   "sourceCommit": "39f88ed6d7b94b65e3cb60de39beda8ad113ea7a",
-  "headCommit": "39f88ed6d7b94b65e3cb60de39beda8ad113ea7a",
-  "sourceDirty": false,
+  "headCommit": "a9db54c7b657c1b0983c5ae8d5c8960b94326b84",
+  "sourceDirty": true,
   "captureTools": {
     "tools/capture/studio/ClipKit.client.luau": "7889f16ee2fa12b5367d104b26d449f0734a271975421617800df53ec80a1a07",
     "tools/capture/studio/HiraishinKunai.luau": "e7d88a5489cb6ad8c14caf8a1e89a83ca92fecbd599f843202ad8df81c955a05",
