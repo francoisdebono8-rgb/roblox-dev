@@ -207,10 +207,12 @@ function Matches:selection(player,notice)
 	-- Back on the roster: a tournament in progress ends here.
 	s.cup=nil;s.cupMatch=nil;s.spectate=nil;s.autopilot=nil;s.cupPilot=nil
 	s.masterTrial=nil
-	self:send(player,{phase="Selection",epoch=s.epoch,notice=notice,kits=Progression.view(player)})
+	local view=Progression.view(player)
+	self:send(player,{phase="Selection",epoch=s.epoch,notice=notice,kits=view})
 	-- (DEC-038) Between duels the player walks Konoha as his own avatar:
 	-- through the gate the first time, out of the exam hall after a duel.
 	if Matches.hubOn() then
+		Hub.badge(player,view)
 		Hub.enter(player,if s.hubVisited then "hall" else "gate",Progression.looks(player))
 		s.hubVisited=true
 	end
@@ -591,7 +593,10 @@ function Matches:request(player,payload)
 		if action=="ChooseStarter" or action=="SelectKit" then
 			local ok,why
 			if action=="ChooseStarter" then ok,why=Progression.chooseStarter(player,payload.player) else ok,why=Progression.select(player,payload.player) end
-			self:send(player,{phase="Selection",epoch=s.epoch,kits=Progression.view(player),notice=if ok then nil else Matches.refusal(why)})
+			local view=Progression.view(player)
+			self:send(player,{phase="Selection",epoch=s.epoch,kits=view,notice=if ok then nil else Matches.refusal(why)})
+			-- (14/11) the kit over his head in Konoha follows his choice
+			if ok and Matches.hubOn() then Hub.badge(player,view) end
 		elseif action=="MasterTrial" then
 			local master=payload.master
 			local h=Progression.handles[player]

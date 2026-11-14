@@ -110,6 +110,12 @@ pcall(function()
 		ui.onBoardClose=function() hubClient:closeBoard() end
 		-- (14/11) the village in its Blender models, as they get built
 		pcall(function() require(script.Parent.HubDress).start() end)
+		-- (14/11) the players met in the village: a name tag, CHALLENGE
+		if lobbyPanel then
+			pcall(function()
+				require(script.Parent.HubPlayers).new(UI.kit,function(payload) lobbyPanel:send(payload) end,function() return hubClient.active end):start()
+			end)
+		end
 	end
 end)
 remote.OnClientEvent:Connect(function(data)

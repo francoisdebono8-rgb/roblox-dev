@@ -320,4 +320,30 @@ test("client panel: the list, a challenge, an invitation answered, the status li
 	assert(ok,err)
 end)
 
+-- (14/11, challenges from Konoha) a duel that counts takes a learned kit:
+-- a crafted request naming an unlearned one goes with the kit he chose.
+test("a challenge and its answer carry a learned kit; an unlearned one gives way to the chosen kit",function()
+	local world=cloud()
+	local a=server(world,"A")
+	local learned={}
+	a.lobby.svc.owns=function(player,id) return learned[player.UserId] and learned[player.UserId][id]==true end
+	a.lobby.svc.kitOf=function(player) return learned[player.UserId] and learned[player.UserId].chosen end
+	local alice=join(a,"Alice");local carol=join(a,"Carol")
+	learned[alice.UserId]={Leaf=true,chosen="Leaf"}
+	learned[carol.UserId]={Sand=true,chosen="Sand"}
+	op(a,alice,{op="challenge",to=carol.UserId,fighter="Flashstep"})
+	local invite=lastOf(carol,"invite")
+	assert(invite and invite.fighter=="Leaf","the invitation names "..tostring(invite and invite.fighter))
+	op(a,carol,{op="answer",id=invite.id,accept=true,fighter="Mirage"})
+	local o=a.m.sessions[alice].online
+	assert(o and o.duel.seats[1].fighter=="Leaf" and o.duel.seats[2].fighter=="Sand",
+		"seats: "..tostring(o and o.duel.seats[1].fighter).." / "..tostring(o and o.duel.seats[2].fighter))
+	-- do not disturb shows on the player (Konoha's name tags)
+	local seen
+	local p=a.lobby.players[alice.UserId]
+	p.player.SetAttribute=function(_,k,v) if k=="NinjaDnd" then seen=v end end
+	op(a,alice,{op="dnd",on=true})
+	assert(seen==true,"do not disturb not shown on the player")
+end)
+
 print(("Lobby: %d passed"):format(passed))
