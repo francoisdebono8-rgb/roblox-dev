@@ -45,8 +45,13 @@ function Panel.new(kit,gui,send,ui)
 	self.P=P
 	self.root=kit.frame(gui,UDim2.fromOffset(0,0),UDim2.fromScale(1,1),P.ink,1)
 	self.root.ZIndex=72;self.root.Visible=false
-	local card=kit.inkCard(kit.frame(self.root,UDim2.new(0,24,.5,0),UDim2.fromOffset(Panel.W,Panel.H),kit.CARD,0))
+	-- (DA v3, DESIGN, validée le 14/11 22 h 35) une case de planche manga :
+	-- papier, encre noire, un seul rouge ; la ligne choisie en bande d'encre
+	local M=kit.MANGA or {paper=Color3.fromRGB(255,253,248),ink=Color3.fromRGB(20,16,17),red=Color3.fromRGB(195,18,29),cream=Color3.fromRGB(246,238,222),redSoft=Color3.fromRGB(240,120,110)}
+	self.M=M
+	local card=kit.frame(self.root,UDim2.new(0,24,.5,0),UDim2.fromOffset(Panel.W,Panel.H),M.paper,0)
 	card.AnchorPoint=Vector2.new(0,.5);card.ZIndex=73
+	kit.create("UIStroke",card,{Color=M.ink,Thickness=4,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
 	self.card=card
 	local scale=kit.create("UIScale",card,{Scale=1})
 	local function fit()
@@ -54,29 +59,43 @@ function Panel.new(kit,gui,send,ui)
 		scale.Scale=math.clamp(math.min((v.Y-40)/Panel.H,(v.X*.55)/Panel.W),.45,1.1)
 	end
 	pcall(function() workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(fit) end);fit()
-	kit.inkTitle(kit.text(card,"YOUR NINJA",UDim2.fromOffset(24,18),UDim2.fromOffset(392,48),44,P.paper,kit.TITLE_FONT))
-	self.sub=kit.text(card,"",UDim2.fromOffset(26,66),UDim2.fromOffset(392,40),14,P.gold,kit.BODY_FONT)
+	kit.text(card,"YOUR NINJA",UDim2.fromOffset(24,14),UDim2.fromOffset(392,52),52,M.ink,kit.TITLE_FONT)
+	kit.frame(card,UDim2.fromOffset(24,62),UDim2.fromOffset(170,5),M.red,0)
+	self.sub=kit.text(card,"",UDim2.fromOffset(26,72),UDim2.fromOffset(392,36),14,M.ink,kit.BODY_FONT)
 	self.sub.TextWrapped=true;self.sub.TextYAlignment=Enum.TextYAlignment.Top
 	local y=112
 	for _,slot in Panel.ROWS do
-		local row=kit.frame(card,UDim2.fromOffset(20,y),UDim2.fromOffset(400,62),P.panel,.1)
-		kit.corner(row,8)
-		kit.text(row,Shop.Slots[slot].name,UDim2.fromOffset(60,4),UDim2.fromOffset(280,16),11,P.muted,kit.BODY_FONT,Enum.TextXAlignment.Center)
-		local name=kit.text(row,"",UDim2.fromOffset(60,20),UDim2.fromOffset(280,36),20,P.paper,kit.TITLE_FONT,Enum.TextXAlignment.Center)
+		local row=kit.frame(card,UDim2.fromOffset(20,y),UDim2.fromOffset(400,62),M.paper,0)
+		kit.create("UIStroke",row,{Color=M.ink,Thickness=2,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
+		local label=kit.text(row,Shop.Slots[slot].name,UDim2.fromOffset(62,4),UDim2.fromOffset(276,16),12,M.ink,kit.BODY_FONT,Enum.TextXAlignment.Center)
+		local name=kit.text(row,"",UDim2.fromOffset(62,20),UDim2.fromOffset(276,36),22,M.ink,kit.STRONG_FONT or kit.BODY_FONT,Enum.TextXAlignment.Center)
 		name.TextScaled=true
-		kit.create("UITextSizeConstraint",name,{MaxTextSize=20,MinTextSize=10})
-		local prev=kit.button(row,"<",UDim2.fromOffset(6,7),UDim2.fromOffset(48,48),function() self:step(slot,-1) end)
-		local nxt=kit.button(row,">",UDim2.fromOffset(346,7),UDim2.fromOffset(48,48),function() self:step(slot,1) end)
-		prev.TextSize=28;nxt.TextSize=28
-		self.rows[slot]={frame=row,name=name,prev=prev,next=nxt}
+		kit.create("UITextSizeConstraint",name,{MaxTextSize=22,MinTextSize=12})
+		local prev=kit.button(row,"‹",UDim2.fromOffset(4,4),UDim2.fromOffset(54,54),function() self:step(slot,-1) end,M.ink)
+		local nxt=kit.button(row,"›",UDim2.fromOffset(342,4),UDim2.fromOffset(54,54),function() self:step(slot,1) end,M.ink)
+		for _,b in {prev,nxt} do b.TextSize=34;b.TextColor3=M.cream;b.Font=kit.STRONG_FONT or kit.BODY_FONT end
+		row.InputBegan:Connect(function(input) if input.UserInputType==Enum.UserInputType.MouseButton1 or input.UserInputType==Enum.UserInputType.Touch then self:select(slot) end end)
+		self.rows[slot]={frame=row,name=name,label=label,prev=prev,next=nxt}
 		y+=70
 	end
-	self.done=kit.button(card,"",UDim2.fromOffset(20,Panel.H-74),UDim2.fromOffset(400,56),function() self:finish() end,P.red)
-	self.done.TextSize=28
-	self.foot=kit.text(card,"Masters' outfits, more pieces and weapons: in the SHOP.",UDim2.fromOffset(20,Panel.H-16),UDim2.fromOffset(400,14),11,P.muted,kit.BODY_FONT,Enum.TextXAlignment.Center)
+	self.done=kit.button(card,"",UDim2.fromOffset(20,Panel.H-74),UDim2.fromOffset(400,56),function() self:finish() end,M.red)
+	self.done.TextSize=30;self.done.TextColor3=M.cream
+	-- DONE: a red « APPROVED » stamp prints (0.25 s), then the card goes
+	self.stamp=kit.text(card,"APPROVED",UDim2.new(.5,-150,.5,-50),UDim2.fromOffset(300,100),64,M.red,kit.TITLE_FONT,Enum.TextXAlignment.Center)
+	self.stamp.Rotation=-12;self.stamp.Visible=false;self.stamp.ZIndex=90
+	kit.create("UIStroke",self.stamp,{Color=M.red,Thickness=4,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
+	self.foot=kit.text(card,"Inspirations' outfits and weapons: SHOP › STYLE. More pieces at the market.",UDim2.fromOffset(20,Panel.H-16),UDim2.fromOffset(400,14),12,M.ink,kit.BODY_FONT,Enum.TextXAlignment.Center)
+	self.sel="top"
 	pcall(function()
-		UIS.InputBegan:Connect(function(input)
-			if input.KeyCode==Enum.KeyCode.ButtonB and self.root.Visible then self:finish() end
+		UIS.InputBegan:Connect(function(input,processed)
+			if not self.root.Visible then return end
+			local key=input.KeyCode
+			if key==Enum.KeyCode.ButtonB then self:finish()
+			elseif processed then return
+			-- (DA v3) the keyboard: ↑↓ a row, ←→ a piece, Enter DONE
+			elseif key==Enum.KeyCode.Up or key==Enum.KeyCode.Down then self:move(if key==Enum.KeyCode.Up then -1 else 1)
+			elseif key==Enum.KeyCode.Left or key==Enum.KeyCode.Right then self:step(self.sel,if key==Enum.KeyCode.Left then -1 else 1)
+			elseif key==Enum.KeyCode.Return or key==Enum.KeyCode.KeypadEnter then self:finish() end
 		end)
 	end)
 	-- The camera on his face while the card is open; it opens by itself on
@@ -113,9 +132,34 @@ function Panel:hide()
 end
 -- DONE: only once he wears a top (or a master's outfit).
 function Panel:finish()
-	if not self:dressed() then return end
+	if not self:dressed() or self.stamping then return end
 	self.seen=true
-	self:hide()
+	self.stamping=true
+	self.stamp.Visible=true;self.stamp.TextTransparency=1
+	pcall(function()
+		local TweenService=game:GetService("TweenService")
+		TweenService:Create(self.stamp,TweenInfo.new(.12),{TextTransparency=0}):Play()
+	end)
+	task.delay(.25,function()
+		self.stamp.Visible=false;self.stamping=false
+		self:hide()
+	end)
+end
+-- The rows a player can be on (the master's outfit only once he owns one).
+function Panel:selectable()
+	local out={}
+	local style=self.kits and self.kits.style
+	for _,slot in Panel.ROWS do
+		if slot~="set" or #Panel.options(style,"set")>1 then table.insert(out,slot) end
+	end
+	return out
+end
+function Panel:select(slot) self.sel=slot;self:draw() end
+function Panel:move(step)
+	local rows=self:selectable()
+	local at=table.find(rows,self.sel) or 1
+	self.sel=rows[(at-1+step)%#rows+1]
+	self:draw()
 end
 function Panel:refresh(kits)
 	self.kits=kits
@@ -136,16 +180,27 @@ function Panel:draw()
 		local row=self.rows[slot]
 		local id=worn[slot]
 		local item=id and Shop.item(id)
-		row.frame.Visible=slot~="set" or ownsSet
+		local M=self.M
 		local covered=set and not set.none and slot~="set" and slot~="headband"
-		row.name.Text=if covered then "("..set.name..")" elseif item then item.name elseif slot=="headband" then (Shop.default("headband") or {name=""}).name else "NOTHING"
-		row.name.TextColor3=if covered then P.muted elseif item or slot=="headband" then P.paper else P.muted
+		local on=self.sel==slot
+		-- (DA v3) always shown; disabled until he owns one
+		local locked=slot=="set" and not ownsSet
+		row.prev.Visible=not locked;row.next.Visible=not locked
+		row.name.Text=if locked then "GET ONE IN THE SHOP › STYLE" elseif covered then "("..set.name..")" elseif item then item.name elseif slot=="headband" then (Shop.default("headband") or {name=""}).name else "NOTHING"
+		-- the chosen row: a band of ink, cream text, its count in soft red
+		row.frame.BackgroundColor3=if on then M.ink else M.paper
+		row.name.TextColor3=if on then M.cream elseif locked or covered then Color3.fromRGB(120,112,108) else M.ink
+		local options=Panel.options(style,slot)
+		local index=0
+		for i,o in options do if o.id==id then index=i end end
+		row.label.Text=Shop.Slots[slot].name..(if #options>0 and not locked then string.format("  %d/%d",math.max(index,0),#options) else "")
+		row.label.TextColor3=if on then M.redSoft else M.ink
 	end
 	local dressed=self:dressed()
 	self.sub.Text=if dressed then "Your own avatar in your ninja gear, in Konoha and in every duel." else "You arrive with your own avatar. Pick what your ninja wears: a top first."
 	self.done.Text=if dressed then "DONE" else "PICK A TOP"
 	self.done.AutoButtonColor=dressed
-	self.done.BackgroundColor3=if dressed then P.red else P.ink
+	self.done.BackgroundColor3=if dressed then self.M.red else Color3.fromRGB(120,112,108)
 end
 -- Every frame while open: the camera in front of him, his body on the right
 -- of the card. Twice a second: opens by itself on his first walk.
