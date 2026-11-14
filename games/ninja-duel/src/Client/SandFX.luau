@@ -14,9 +14,11 @@ local Tween=game:GetService("TweenService")
 local Shared=game:GetService("ReplicatedStorage").NinjaDuel
 local Attacks=require(Shared.Attacks)
 local Fighters=require(Shared.Fighters)
+local MeshKit=require(script.Parent.MeshKit)
 
 local SandFX={}
 local K -- Effects' helpers, handed over by install()
+local FXM -- Effects itself (its model builders: the kunai the sand catches)
 SandFX.clock=os.clock -- (headless tests drive time)
 
 local SAND=Color3.fromRGB(212,176,118)
@@ -175,9 +177,115 @@ STYLES.sandburst=function(fx,impact)
 	curtain(fx,CFrame.new(impact.position.X,y+1,impact.position.Z),Vector3.new(5,1.5,5),40,14)
 	thud(fx,impact.position,.45,.8)
 end
--- The shield: an arc of sand streams snaps up between him and the blow with a
--- curtain of sand in front, then pours back down; a breaking blow bursts it.
-STYLES.sandshield=function(fx,impact)
+-- The shield (14/11, FILM10 F10-2: « des billes et une brume, rien ne se lit
+-- comme du sable qui sort de la gourde ») Suna no Tate as in the Chunin prelims:
+-- sand pours out of the gourd and rears up between him and the blow as a
+-- curved wall (SandShield, modelled: tools/blender/fx_models.py), in under a
+-- tenth of a second; a thrown kunai stays planted in it half a second, then
+-- drops; the wall pours back to the floor. A breaking blow bursts it. Where
+-- the models are not ready the arc of streams is drawn as before.
+SandFX.WALL_R=2.2 -- the wall's curve round him (the model's radius)
+SandFX.WALL_UP=.09 -- seconds to rear up
+SandFX.STUCK=.5 -- seconds a caught kunai stays planted
+local function gourdOf(model)
+	if not model then return nil end
+	for _,d in model:GetDescendants() do
+		if d:IsA("BasePart") and string.find(d.Name,"Gourd",1,true) then return d end
+	end
+	return nil
+end
+local function streamPart(parent,from,to)
+	local p=MeshKit.part("SandStream")
+	if not p then return nil end
+	local length=(to-from).Magnitude
+	p.Size=Vector3.new(p.Size.X*1.4,p.Size.Y*1.4,math.max(.2,length))
+	p.CFrame=CFrame.lookAt((from+to)/2,from) -- the thick end at the gourd
+	p.Parent=parent
+	return p
+end
+local function caught(fx,impact,wallFront,face)
+	local kind=impact.thrown
+	if kind~="kunai" and kind~="marked" and kind~="shuriken" then return end
+	local blade=if kind=="shuriken" then FXM.buildShuriken() else FXM.buildKunai(kind=="marked")
+	if not blade then return end
+	local height=math.clamp(impact.position.Y,wallFront.Y+1,wallFront.Y+4)
+	local grip=Vector3.new(wallFront.X,height,wallFront.Z)+face*.42
+	local cf=CFrame.lookAt(grip,grip-face)*CFrame.Angles(0,0,math.rad(math.random(-30,30)))
+	blade.Parent=fx.folder
+	blade:PivotTo(cf)
+	local root=blade.PrimaryPart or blade:FindFirstChild("Root")
+	for _,d in blade:GetDescendants() do if d:IsA("BasePart") then d.Anchored=true;d.CanCollide=false;d.CanQuery=false;d.CanTouch=false end end
+	grains(fx,grip-face*.3,8,8,false)
+	K.sound(K.anchorPart(fx.folder,grip),K.SOUND.land,.25,2.2)
+	task.delay(SandFX.STUCK,function()
+		if not blade.Parent then return end
+		-- the sand lets go: it tips and drops at his feet
+		local floor=Vector3.new(grip.X,wallFront.Y+.15,grip.Z)+face*.35
+		local start=os.clock()
+		local from=blade:GetPivot()
+		local conn
+		conn=game:GetService("RunService").Heartbeat:Connect(function()
+			local t=math.min(1,(os.clock()-start)/.28)
+			if not blade.Parent then conn:Disconnect();return end
+			local pos=from.Position:Lerp(floor,t*t)
+			blade:PivotTo(CFrame.new(pos)*from.Rotation*CFrame.Angles(t*1.4,0,0))
+			if t>=1 then conn:Disconnect() end
+		end)
+		task.delay(.9,function() if blade.Parent then blade:Destroy() end end)
+	end)
+	return root
+end
+local function modelledShield(fx,impact,folder)
+	local wall=MeshKit.model("SandShield")
+	if not wall then return false end
+	local face=flatUnit(impact.direction or Vector3.zAxis)
+	local breaking=impact.heavy==true
+	local body=folder and folder:FindFirstChild(impact.owner or "")
+	local root=body and body:FindFirstChild("HumanoidRootPart")
+	local centre=if root then root.Position else impact.position-face*1.6
+	local y=ground(fx,centre,centre.Y-3)
+	local foot=Vector3.new(centre.X,y,centre.Z)+face*SandFX.WALL_R
+	-- the hollow faces him (model -z), the crest rolls toward the blow
+	local cf=CFrame.lookAt(foot,foot-face)
+	wall.Parent=fx.folder
+	wall:PivotTo(cf*CFrame.new(0,-4.8,0))
+	K.tween(wall.PrimaryPart,SandFX.WALL_UP,{CFrame=cf},Enum.EasingStyle.Back,Enum.EasingDirection.Out)
+	-- out of the gourd: the stream that builds it
+	local gourd=gourdOf(body)
+	local holder=K.new("Model",{Name="SandShieldStream"},fx.folder)
+	if gourd then
+		local s=streamPart(holder,gourd.Position+Vector3.new(0,gourd.Size.Y*.35,0),foot+Vector3.new(0,3.2,0)-face*.4)
+		if s then
+			K.tween(s,.32,{Transparency=1},Enum.EasingStyle.Quad,Enum.EasingDirection.In)
+		end
+		grains(fx,gourd.Position,10,8,true)
+	end
+	Debris:AddItem(holder,.4)
+	dust(fx,foot+Vector3.new(0,.6,0),if breaking then 22 else 12,if breaking then 2.4 else 1.8)
+	grains(fx,impact.position,if breaking then 30 else 12,if breaking then 26 else 12,false)
+	thud(fx,impact.position,if breaking then .7 else .45,if breaking then .55 else .9)
+	local front=foot+face*.2
+	if not breaking then caught(fx,impact,front,face) end
+	local hold=if breaking then .12 else SandFX.STUCK+.1
+	task.delay(hold,function()
+		if not wall.Parent then return end
+		if breaking then
+			-- burst: the wall blows apart toward him and falls as grains
+			fx:cheer(.6)
+			for _,d in wall:GetChildren() do if d:IsA("BasePart") and d.Name~="Root" then K.tween(d,.2,{Transparency=1}) end end
+			grains(fx,foot+Vector3.new(0,2.4,0),40,24,true)
+			dust(fx,foot+Vector3.new(0,2,0),20,2.8)
+		else
+			-- pours back to the floor
+			K.tween(wall.PrimaryPart,.4,{CFrame=cf*CFrame.new(0,-4.6,0)},Enum.EasingStyle.Quad,Enum.EasingDirection.In)
+			grains(fx,foot+Vector3.new(0,1.5,0),14,6,false)
+		end
+	end)
+	Debris:AddItem(wall,hold+.5)
+	return true
+end
+STYLES.sandshield=function(fx,impact,folder)
+	if modelledShield(fx,impact,folder) then return end
 	local at=impact.position
 	local face=flatUnit(impact.direction or Vector3.zAxis)
 	local breaking=impact.heavy==true
@@ -479,12 +587,17 @@ local function stepCharges(fx,model,actor,st,dt)
 		local holder=K.new("Model",{Name="SandShieldCharges"},fx.folder)
 		local list={}
 		for i=1,max do
-			local orb=K.block(holder,Vector3.one*.5,root.CFrame,SAND,GRAIN);orb.Shape=Enum.PartType.Ball
+			-- (FILM10 F10-2: « pas en billes ») each charge is a rope of sand
+			-- running round the gourd (modelled); a ball only without the models
+			local orb=MeshKit.part("SandStream")
+			local rope=orb~=nil
+			if orb then orb.Parent=holder;orb.Material=GRAIN
+			else orb=K.block(holder,Vector3.one*.5,root.CFrame,SAND,GRAIN);orb.Shape=Enum.PartType.Ball end
 			K.new("ParticleEmitter",{Texture=K.TEX.smoke,Rate=14,Lifetime=NumberRange.new(.3,.5),Speed=NumberRange.new(0,.5),Color=ColorSequence.new(SAND_PALE),
 				LightEmission=0,LightInfluence=1,Size=K.num({{0,.6},{1,1}}),Transparency=K.num({{0,.5},{1,1}}),Rotation=NumberRange.new(0,360)},orb)
-			list[i]={part=orb,shown=0}
+			list[i]={part=orb,shown=0,rope=rope,base=orb.Size}
 		end
-		st.charges={holder=holder,list=list,spin=0,count=actor.shield or 0}
+		st.charges={holder=holder,list=list,spin=0,count=actor.shield or 0,gourd=gourdOf(model)}
 	end
 	local o=st.charges
 	local count=actor.shield or 0
@@ -492,13 +605,26 @@ local function stepCharges(fx,model,actor,st,dt)
 	o.count=count
 	o.spin+=dt*(if (actor.awaken or 0)>0 then 2.6 else 1.5)
 	local open=actor.state=="Startup" or actor.state=="Active" or actor.state=="Recovery" or actor.state=="Stunned" or actor.reaction~=nil
+	if o.gourd and not o.gourd.Parent then o.gourd=gourdOf(model) end
 	for i,e in o.list do
 		local want=if i<=count then (if open then .3 else 1) else 0
 		e.shown+=(want-e.shown)*math.min(1,dt*10)
 		local a=o.spin+(i-1)/#o.list*math.pi*2
-		e.part.CFrame=CFrame.new(root.Position+Vector3.new(math.cos(a)*2.1,-.5+math.sin(o.spin*2+i)*.18,math.sin(a)*2.1))
-		e.part.Size=Vector3.one*(.18+.3*e.shown)
-		e.part.Transparency=1-e.shown*.95
+		if e.rope and o.gourd then
+			-- round the gourd, tilted, each rope along its path (flowing sand)
+			local g=o.gourd.CFrame
+			local r=math.max(o.gourd.Size.X,o.gourd.Size.Z)*.5+.35
+			local h=(i-(#o.list+1)/2)*.45+math.sin(o.spin*2+i)*.12
+			local p=g.Position+Vector3.new(math.cos(a)*r,h,math.sin(a)*r)
+			local along=Vector3.new(-math.sin(a),.25,math.cos(a))
+			e.part.CFrame=CFrame.lookAt(p,p+along)
+			e.part.Size=Vector3.new(e.base.X*.8,e.base.Y*.8,.4+.9*e.shown)
+			e.part.Transparency=1-e.shown*.95
+		else
+			e.part.CFrame=CFrame.new(root.Position+Vector3.new(math.cos(a)*2.1,-.5+math.sin(o.spin*2+i)*.18,math.sin(a)*2.1))
+			e.part.Size=Vector3.one*(.18+.3*e.shown)
+			e.part.Transparency=1-e.shown*.95
+		end
 	end
 end
 -- Bound in Sand Coffin (any fighter whose opponent is Gaara): streams of sand
@@ -606,7 +732,7 @@ local function fighter(fx,model,actor,dt)
 end
 
 function SandFX.install(FX,kit)
-	K=kit
+	K=kit;FXM=FX
 	kit.BUILD.sand=buildBullet
 	kit.BUILD.sandwave=buildWave
 	FX.poses.sand=bulletPose
