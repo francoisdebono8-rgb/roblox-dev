@@ -30,7 +30,8 @@ end
 -- (tools/blender/hub_fbx.py -> Studio import -> hub_to_luau.py) are loaded by
 -- their id like any mesh; only the others are still built here.
 do
-	local module=script.Parent:FindFirstChild("HubMeshAssets")
+	-- (the headless suite's script has no instance tree: pcall)
+	local _,module=pcall(function() return script.Parent:FindFirstChild("HubMeshAssets") end)
 	local okAssets,Assets=false,nil
 	if module then okAssets,Assets=pcall(require,module) end
 	if okAssets and type(Assets)=="table" then
