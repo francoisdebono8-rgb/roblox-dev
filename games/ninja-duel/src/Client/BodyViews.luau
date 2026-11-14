@@ -123,6 +123,7 @@ function BodyViews:step(view,entry,dt)
 	if serial~=clock.serial then clock.serial=serial;clock.at=now-math.clamp(entry.actionElapsed or 0,0,.12) end
 	if entry.cast~=clock.cast then clock.cast=entry.cast;clock.castAt=now end
 	local acting=entry.action~=nil and (entry.state=="Startup" or entry.state=="Active" or entry.state=="Recovery")
+	view.acting=acting or entry.cast~=nil
 	local visual={fighterId=entry.fighterId,health=1,airborne=entry.airborne==true,velocity=velocity,speed=flat(velocity).Magnitude,
 		state=if acting then entry.state elseif entry.cast then "TechniqueChannel" else "Neutral",
 		attackName=if acting then entry.action else nil,attackVariant=if acting then entry.variant else nil,attackSerial=serial,
@@ -137,8 +138,8 @@ end
 -- (14/11, CM QA A6: « le mur de clones cache tout ») In a fight seen from
 -- outside (a film, a spectator), the crowd round the struck body hid it: no
 -- one saw who hit whom. Every fighter the clone does not belong to is kept in
--- sight the same way: a clone in the line to him, or pressed against him,
--- fades to a ghost.
+-- sight the same way: a clone in the line to him fades to a ghost, and (in a
+-- film or for a spectator only) a clone pressed against him.
 BodyViews.FADE=.7
 BodyViews.CLOSE=3.2 -- studs: a clone this close to the body it strikes fades
 function BodyViews:fade(view,dt)
@@ -160,7 +161,10 @@ function BodyViews:fade(view,dt)
 				local off=((p-lens)-line/length*along).Magnitude
 				if along>0 and along<length-1 and off<2.6 then want=BodyViews.FADE end
 			end
-			if owner and owner~=view.owner and Vector3.new(p.X-at.X,0,p.Z-at.Z).Magnitude<BodyViews.CLOSE then want=BodyViews.FADE end
+			-- (DEV review 2) only for a film or a spectator (no body is the
+			-- player's): in play the clones round the opponent stay solid.
+			local watching=self.watching or self.focus==nil
+			if owner and owner~=view.owner and watching and Vector3.new(p.X-at.X,0,p.Z-at.Z).Magnitude<BodyViews.CLOSE then want=BodyViews.FADE end
 		end
 	end
 	local now=view.fadeNow or 0
@@ -222,6 +226,8 @@ function BodyViews:update(data,dt,folder)
 	local mine=data.human and folder and folder:FindFirstChild(data.human.id or "")
 	local mineRoot=mine and mine:FindFirstChild("HumanoidRootPart")
 	self.focus=if mineRoot then mineRoot.Position else nil
+	-- (DEV review 2) a spectator or a film (data.spectate): nobody's body is played
+	self.watching=data.spectate==true
 	-- Every fighter's body (A6): the clones of one never hide the other.
 	local targets={}
 	for _,actor in {data.human,data.bot} do

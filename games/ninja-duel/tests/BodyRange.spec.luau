@@ -14,7 +14,7 @@ local BETA={"Lion","Legion","Sand","Leaf","GentleFist","Mirage","Copycat","Flash
 local EPS=math.rad(.5)
 local function inside(key,cf)
  local l=Motion.LIMITS[key]
- local x,y,z=cf:ToEulerAnglesXYZ()
+ local x,z,y=Motion.swingTwist(cf)
  return x>=l.x[1]-EPS and x<=l.x[2]+EPS and y>=l.y[1]-EPS and y<=l.y[2]+EPS and z>=l.z[1]-EPS and z<=l.z[2]+EPS,
   string.format("%s x=%.0f y=%.0f z=%.0f",key,math.deg(x),math.deg(y),math.deg(z))
 end
@@ -24,6 +24,27 @@ test("the limit folds an impossible joint back into the body's range",function()
  -- a joint inside its range is untouched
  local fine=H.C.Angles(math.rad(-40),0,0)
  assert(Motion.limit("LeftKnee",fine)==fine,"a bent knee was changed")
+end)
+-- (DEV review) a composed rotation (a fold that also twists and swings) moves
+-- continuously through the limit: no pose jumps from one frame to the next.
+test("the limit is continuous on composed rotations (knee and elbow folded, twisted and swung past their stops)",function()
+ local function angle(a,b) local _,t=(a:Inverse()*b):ToAxisAngle() return math.abs(t) end
+ for _,key in {"RightKnee","LeftElbow","Neck","RightAnkle"} do
+  for _,twist in {-50,-25,0,25,50} do
+   for _,sway in {-35,0,35} do
+    local prev,prevIn
+    for a=-175,175,1 do
+     local cf=H.C.Angles(math.rad(a),0,0)*H.C.Angles(0,0,math.rad(sway))*H.C.Angles(0,math.rad(twist),0)
+     local out=Motion.limit(key,cf)
+     if prev then
+      local d=math.deg(angle(prev,out))
+      assert(d<4.5,string.format("%s jumped %.1f deg at bend %d (twist %d, sway %d)",key,d,a,twist,sway))
+     end
+     prev=out
+    end
+   end
+  end
+ end
 end)
 -- Every fighter through a run, a guard pushed back, a hit, a dodge and his strikes.
 test("no drawn elbow, knee, ankle or neck leaves the body's range (8 fighters, run, guard, hits, dodge, strikes)",function()
@@ -73,6 +94,48 @@ test("a guard carried at 10 studs/s steps: its planted feet hold the floor (they
   end
   local share=glide/math.max(planted,1)/speed
   assert(share<.35,string.format("%s: a planted foot rode the guard at %.0f %% of its speed",fid,share*100))
+ end
+end)
+-- (FILM10) turning on the spot and arriving from a teleport: the feet hold
+-- the floor and step; they neither skate round with the body nor step across
+-- the arena from where it was.
+local function feet(fid,frames,setup)
+ local _,a=H.duel(fid,"Mirage")
+ local root=a.model.root
+ root.CFrame=H.C.new(0,3,0)
+ local actor={fighterId=fid,state="Neutral",health=100,attackElapsed=0,reactionElapsed=0,airborne=false,velocity=V.new(0,0,0),speed=0,hitAngle=0,hitStrength=.5,landing=false}
+ local glide,planted,last,worst=0,0,{},0
+ for i=1,frames do
+  local warp=setup(i,actor,root)
+  Motion.tick(1/60);Motion.present(a.model,actor,{},1/60)
+  local pose={}
+  for k,j in a.model.joints do pose[k]=j.Transform end
+  for _,side in {"R","L"} do
+   local frame=Motion._ankleFrame(pose,side)
+   local w=root.CFrame:PointToWorldSpace(frame.Position)
+   local h=frame.Position.Y-Motion._ankleY
+   local was=last[side]
+   if i>5 and not warp and was and h<.05 and was.h<.05 then
+    local v=V.new(w.X-was.w.X,0,w.Z-was.w.Z).Magnitude*60
+    glide+=v;planted+=1;worst=math.max(worst,v)
+   end
+   last[side]={w=w,h=h}
+  end
+ end
+ return glide/math.max(planted,1),worst
+end
+test("a turn on the spot (180 deg in 0.3 s) steps: the planted feet do not skate round with the body",function()
+ for _,fid in BETA do
+  for _,state in {"Neutral","Guarding"} do
+   local mean=feet(fid,60,function(i,a,root) a.state=state;if i>10 and i<=28 then root.CFrame=root.CFrame*H.C.Angles(0,math.pi/18,0) end end)
+   assert(mean<1.5,string.format("%s %s: planted feet skated at %.1f studs/s through the turn",fid,state,mean))
+  end
+ end
+end)
+test("after a teleport the feet start on the new spot (no step across the arena from the old one)",function()
+ for _,fid in BETA do
+  local _,worst=feet(fid,40,function(i,a,root) if i==10 then root.CFrame=H.C.new(6,3,-6);return true end return false end)
+  assert(worst<12,string.format("%s: a foot crossed %.0f studs/s after the warp",fid,worst))
  end
 end)
 print("NinjaDuel body range and footwork: "..passed.." PASS")

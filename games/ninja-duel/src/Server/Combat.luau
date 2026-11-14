@@ -311,7 +311,8 @@ function Combat:damage(attacker,victim,amount,heavy,readEligible)
 		-- (light, light, third hit) is how the shield is cracked.
 		attacker.hitConfirmed=true
 		local face=if delta.Magnitude>.1 then delta.Unit else victim.root.CFrame.LookVector
-		self:pushImpact(victim.root.Position+face*1.6,"sandshield",breaking,{owner=victim.id,direction=face})
+		-- (14/11, FILM10 F10-2) the thrown thing the sand caught (a kunai stays planted in it)
+		self:pushImpact(victim.root.Position+face*1.6,"sandshield",breaking,{owner=victim.id,direction=face,thrown=self.thrownHit and self.thrownHit.kind or nil})
 		Brawler.event(self,victim,"SandShield")
 		if breaking then
 			self:setState(victim,"Stunned",.5)
