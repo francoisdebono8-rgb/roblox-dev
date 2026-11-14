@@ -112,7 +112,14 @@ function Panel:draw()
 	self.ryo.Text=tostring(self.kits and self.kits.ryo or 0)
 	if self.tab=="KITS" then self:drawKits()
 	elseif self.tab=="WEAPONS" then self:drawLooks({"kunai","shuriken","tanto","gourd"},"WEAPONS","A look, never a number. Each kit keeps its own; the kit's objects (gourd, weights, tanto) are earned on its tree.")
-	elseif self.tab=="STYLE" then self:drawLooks({"headband"},"STYLE","Ninja pieces over your own Roblox avatar, in Konoha and in the duel. What you own on Roblox stays yours.")
+	elseif self.tab=="STYLE" then
+		-- (DEC-040) the masters' outfits on his own avatar, then the pieces;
+		-- MY NINJA opens the outfit card (Client/OutfitPanel)
+		self:drawLooks({"set","headband"},"STYLE","The masters' outfits and ninja pieces over your own avatar, in Konoha and in every duel.")
+		if self.onOutfit then
+			local b=self:add(self.kit.button(self.card,"MY NINJA",UDim2.fromOffset(Panel.CLOSE.X-230,Panel.CLOSE.Y),UDim2.fromOffset(210,Panel.CLOSE.H),function() self:hide();self.onOutfit() end,self.P.gold))
+			b.TextColor3=self.P.ink;b.TextSize=24
+		end
 	elseif self.tab=="PASSES" then self:drawPasses()
 	else self:drawRyo() end
 end
@@ -186,9 +193,12 @@ function Panel:drawLooks(slots,title,sub)
 		local label=info.name..(if info.kit then "  •  "..nameOf(info.kit) else "")
 		self:add(K.text(self.body,label,UDim2.fromOffset(0,y),UDim2.fromOffset(600,26),22,P.gold,K.TITLE_FONT))
 		y+=32
+		-- (DEC-040) a slot of many looks (the masters' outfits) wraps
+		local perRow=math.max(1,math.floor((W-SIDE-70+14)/(cw+14)))
 		for k,item in Shop.inSlot(slot) do
 			local state=Shop.state(style,item,kits and kits.ryo or 0,products)
-			local x=(k-1)*(cw+14)
+			local x=((k-1)%perRow)*(cw+14)
+			if (k-1)%perRow==0 and k>1 then y+=142 end
 			local cell=self:add(K.frame(self.body,UDim2.fromOffset(x,y),UDim2.fromOffset(cw,128),P.panel,0))
 			K.corner(cell,10)
 			if state.kind=="equipped" then K.create("UIStroke",cell,{Color=P.gold,Thickness=3,ApplyStrokeMode=Enum.ApplyStrokeMode.Border}) end
@@ -196,6 +206,13 @@ function Panel:drawLooks(slots,title,sub)
 			local swatch=K.frame(cell,UDim2.fromOffset(12,12),UDim2.new(1,-24,0,34),P.ink,0);K.corner(swatch,6)
 			local colors={}
 			for _,key in {"Blade","Body","Band","Grip","Ring","Plate"} do if item.colors and item.colors[key] then table.insert(colors,item.colors[key]) end end
+			if #colors==0 and item.colors then
+				-- (an outfit: its cloth colours, in a stable order)
+				local keys={}
+				for key in item.colors do table.insert(keys,key) end
+				table.sort(keys)
+				for _,key in keys do table.insert(colors,item.colors[key]) end
+			end
 			if #colors==0 then colors={{40,38,44}} end
 			for c,color in colors do
 				K.frame(swatch,UDim2.new((c-1)/#colors,2,0,2),UDim2.new(1/#colors,-4,1,-4),rgb(color),0)

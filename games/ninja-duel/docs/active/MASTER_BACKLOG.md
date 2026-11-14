@@ -1267,6 +1267,19 @@ Sortie commune : trois Lights/Heavy physiques distincts, branche seulement aprè
 - evidence: 14/11 (branche `claude/maitrise-joueurs-tournois`) : avant, un duel en ligne ne rapportait ni maîtrise ni Ryō, et le Ryō du champion était marqué « soon ». `Masters.Gain.Versus` (×2), `Champion` 150, `Finalist` 60 ; `Progression.versusEnded` et `Progression.cupEnded` ; `Matches:roundOver` paie chaque siège présent d'un duel en ligne décidé (pas sur un abandon) et l'écran de résultat de chacun le montre ; la carte du champion affiche le bonus ; la boutique ne dit plus « soon ». Suites `Masters` 9 PASS, `Online` 19 PASS, `Tournament` 8 PASS. Build à budget égal : à faire.
 - outcome: PENDING
 
+## STYLE-001 — Son ninja : l'avatar sans tenue, les pièces ninja, les tenues des maîtres
+
+- status: PARTIAL
+- priority: P1
+- dependencies: AVATAR-001, SHOP-001
+- subsystem: progression
+- character: ALL
+- summary: (DEC-040) Le joueur garde le corps, le visage et les cheveux de son avatar Roblox, sans ses vêtements ni ses autres accessoires. À sa première arrivée, il choisit une tenue ninja simple. La boutique vend les tenues des maîtres sur son avatar, des tenues inventées et des sortes de kunai et de shuriken.
+- sources: [DEC-040](DECISIONS.md#dec-040--la-maîtrise-se-gagne-contre-des-joueurs--en-ligne-même-budget-pour-tous--le-joueur-arrive-sans-tenue-et-shabille-en-ninja-1411)
+- validation: (1) tests sans écran : retrait des vêtements, pièces soudées sans collision, carte et cycle ; (2) Studio : arrivée sans vêtements, carte YOUR NINJA à la première arrivée, chaque pièce vue sur l'avatar, tenue d'un maître achetée et portée, même tenue en duel ; (3) modèles Blender de l'ANIMATEUR (pièces et tenues des maîtres, kunai et shuriken) ; (4) maquette de la carte par la session DESIGN.
+- evidence: 14/11 (branche `claude/tenue-ninja`) : `Server/Outfit` (`strip` : vêtements, chaussures et accessoires retirés, cheveux gardés ; `wear` : pièces de tissu taillées sur chaque partie du corps, soudées, jamais heurtées) ; Konoha charge l'avatar sans vêtements aux échelles standard (`LoadCharacterWithHumanoidDescription`), le duel aussi (`AvatarBody.prepare`) ; `Shared/Shop` : emplacements set/top/bottom/arms/feet, 14 pièces gratuites, 8 tenues de maîtres (6 en Ryō, Itachi et Minato en Robux « SOON ») ; `Client/OutfitPanel` (carte YOUR NINJA à gauche, caméra face à lui, s'ouvre seule tant qu'il n'a pas de haut) ; onglet STYLE avec MY NINJA. Suites `Outfit` 3 PASS, `Shop` 7 PASS. Pièces en tissu taillé en attendant les modèles de l'ANIMATEUR. Studio : à faire.
+- outcome: PENDING
+
 ## SHOP-001 — La boutique et le Ryō
 
 - status: PARTIAL

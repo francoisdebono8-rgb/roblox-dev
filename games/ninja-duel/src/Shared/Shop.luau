@@ -25,9 +25,19 @@ Shop.Slots={
 	tanto={name="TANTO",kind="weapon",kit="Copycat"},
 	gourd={name="GOURD",kind="weapon",kit="Sand"},
 	headband={name="HEADBAND",kind="style"},
+	-- (DEC-040, user 14/11: « il arrive genre nu et on ait un petit truc de
+	-- customisation de personnage ») The ninja outfit over his own avatar
+	-- (Server/Outfit): nothing until he chooses (`outfit`: no default piece);
+	-- a master's outfit (`set`) dresses the whole body over the others.
+	set={name="MASTER'S OUTFIT",kind="style",outfit=true},
+	top={name="TOP",kind="style",outfit=true},
+	bottom={name="BOTTOM",kind="style",outfit=true},
+	arms={name="ARMS",kind="style",outfit=true},
+	feet={name="FEET",kind="style",outfit=true},
 }
 -- (Lee's weights get their look once their Blender model exists.)
-Shop.SlotOrder={"kunai","shuriken","tanto","gourd","headband"}
+Shop.SlotOrder={"kunai","shuriken","tanto","gourd","headband","set","top","bottom","arms","feet"}
+Shop.OutfitSlots={"top","bottom","arms","feet"}
 
 -- The catalogue. `ryo` = price in Ryō; `robux` = the key of a Developer
 -- Product in Config.Shop.Products (no id there: not on sale yet); `base` =
@@ -49,14 +59,74 @@ Shop.Items={
 	{id="HeadbandBlack",slot="headband",name="BLACK HEADBAND",ryo=800,colors={Band={24,22,28},Plate={200,204,210}}},
 	{id="HeadbandRed",slot="headband",name="RED HEADBAND",ryo=800,colors={Band={170,40,34},Plate={200,204,210}}},
 	{id="HeadbandNone",slot="headband",name="NO HEADBAND",base=true,none=true},
+	-- (DEC-040) The outfit. `pieces` (Server/Outfit): what each piece covers
+	-- of the avatar's body, `on` a part (UpperArm = both sides), `h` the share
+	-- of its height from the top (`y0` where it starts), `pad` how far out.
+	-- Free pieces to start (`base`), one colour each.
+	{id="TopTunicNavy",slot="top",name="GENIN TUNIC • NAVY",base=true,colors={Cloth={40,48,78}},
+		pieces={{on="UpperTorso",c="Cloth"},{on="LowerTorso",c="Cloth",h=.6},{on="UpperArm",c="Cloth",h=.55}}},
+	{id="TopTunicBlack",slot="top",name="GENIN TUNIC • BLACK",base=true,colors={Cloth={30,30,36}},
+		pieces={{on="UpperTorso",c="Cloth"},{on="LowerTorso",c="Cloth",h=.6},{on="UpperArm",c="Cloth",h=.55}}},
+	{id="TopTunicGreen",slot="top",name="GENIN TUNIC • FOREST",base=true,colors={Cloth={52,74,52}},
+		pieces={{on="UpperTorso",c="Cloth"},{on="LowerTorso",c="Cloth",h=.6},{on="UpperArm",c="Cloth",h=.55}}},
+	{id="TopHighCollar",slot="top",name="HIGH COLLAR",base=true,colors={Cloth={34,44,92},Collar={34,44,92}},
+		pieces={{on="UpperTorso",c="Cloth"},{on="LowerTorso",c="Cloth",h=.6},{on="UpperArm",c="Cloth",h=.4},{on="UpperTorso",kind="collar",c="Collar"}}},
+	{id="TopSleeveless",slot="top",name="SLEEVELESS TOP",base=true,colors={Cloth={70,66,64},Belt={150,40,36}},
+		pieces={{on="UpperTorso",c="Cloth"},{on="LowerTorso",c="Cloth",h=.45},{on="LowerTorso",kind="band",c="Belt",y0=.4,h=.2}}},
+	{id="BottomPantsDark",slot="bottom",name="TIED PANTS • DARK",base=true,colors={Cloth={36,38,50},Tie={210,206,196}},
+		pieces={{on="LowerTorso",c="Cloth",y0=.4,h=.6},{on="UpperLeg",c="Cloth"},{on="LowerLeg",c="Cloth"},{on="LowerLeg",kind="band",c="Tie",y0=.72,h=.18}}},
+	{id="BottomPantsSand",slot="bottom",name="TIED PANTS • SAND",base=true,colors={Cloth={150,132,104},Tie={60,58,70}},
+		pieces={{on="LowerTorso",c="Cloth",y0=.4,h=.6},{on="UpperLeg",c="Cloth"},{on="LowerLeg",c="Cloth"},{on="LowerLeg",kind="band",c="Tie",y0=.72,h=.18}}},
+	{id="BottomShorts",slot="bottom",name="WRAPPED SHORTS",base=true,colors={Cloth={42,42,52},Wrap={226,222,212}},
+		pieces={{on="LowerTorso",c="Cloth",y0=.4,h=.6},{on="UpperLeg",c="Cloth",h=.75},{on="LowerLeg",kind="band",c="Wrap",y0=.1,h=.75}}},
+	{id="ArmsWraps",slot="arms",name="ARM WRAPS",base=true,colors={Wrap={226,222,212}},
+		pieces={{on="LowerArm",kind="band",c="Wrap",y0=.15,h=.8}}},
+	{id="ArmsGuards",slot="arms",name="ARM GUARDS",base=true,colors={Guard={120,124,132},Strap={36,36,44}},
+		pieces={{on="LowerArm",c="Guard",y0=.2,h=.65,pad=.1,mat="Metal"},{on="LowerArm",kind="band",c="Strap",y0=.3,h=.12}}},
+	{id="ArmsNone",slot="arms",name="BARE ARMS",base=true,none=true},
+	{id="FeetSandals",slot="feet",name="NINJA SANDALS",base=true,colors={Sandal={40,48,78}},
+		pieces={{on="Foot",c="Sandal",pad=.05},{on="LowerLeg",kind="band",c="Sandal",y0=.82,h=.18}}},
+	{id="FeetBlack",slot="feet",name="BLACK SANDALS",base=true,colors={Sandal={26,26,32}},
+		pieces={{on="Foot",c="Sandal",pad=.05},{on="LowerLeg",kind="band",c="Sandal",y0=.82,h=.18}}},
+	{id="FeetNone",slot="feet",name="BARE FEET",base=true,none=true},
+	-- The masters' outfits on his own avatar (« les skins des mentors »): their
+	-- colours from the anime at 12-14; the ANIMATEUR's models replace these
+	-- pieces when they exist (OutfitMeshes).
+	{id="SetNone",slot="set",name="MY OWN PIECES",base=true,none=true},
+	{id="SetNaruto",slot="set",kit="Legion",name="NARUTO'S JUMPSUIT",ryo=3000,colors={Orange={236,120,30},Blue={34,44,92},White={232,230,224}},
+		pieces={{on="UpperTorso",c="Orange"},{on="UpperTorso",kind="shoulders",c="Blue"},{on="UpperTorso",kind="collar",c="White",h=.12},{on="LowerTorso",c="Orange"},{on="UpperArm",c="Orange"},{on="LowerArm",c="Orange",h=.85},{on="UpperLeg",c="Orange"},{on="LowerLeg",c="Orange",h=.7},{on="LowerLeg",kind="band",c="White",y0=.62,h=.12},{on="Foot",c="Blue",pad=.05}}},
+	{id="SetSasuke",slot="set",kit="Lion",name="SASUKE'S HIGH COLLAR",ryo=3000,colors={Navy={30,40,86},White={232,230,224},Wrap={226,222,212}},
+		pieces={{on="UpperTorso",c="Navy"},{on="UpperTorso",kind="collar",c="Navy",h=.3},{on="LowerTorso",c="White"},{on="UpperArm",c="Navy",h=.4},{on="LowerArm",kind="band",c="Navy",y0=.1,h=.8},{on="UpperLeg",c="White",h=.7},{on="LowerLeg",kind="band",c="Wrap",y0=.1,h=.75},{on="Foot",c="Navy",pad=.05}}},
+	{id="SetLee",slot="set",kit="Leaf",name="LEE'S GREEN SUIT",ryo=3000,colors={Green={46,140,60},Orange={230,120,40},Red={190,40,36}},
+		pieces={{on="UpperTorso",c="Green"},{on="LowerTorso",c="Green"},{on="LowerTorso",kind="band",c="Red",y0=.05,h=.22},{on="UpperArm",c="Green"},{on="LowerArm",c="Green"},{on="UpperLeg",c="Green"},{on="LowerLeg",c="Orange",pad=.12},{on="Foot",c="Green",pad=.05}}},
+	{id="SetNeji",slot="set",kit="GentleFist",name="NEJI'S ROBE",ryo=3000,colors={Robe={226,222,208},Dark={60,56,64},Wrap={226,222,212}},
+		pieces={{on="UpperTorso",c="Robe"},{on="LowerTorso",c="Robe"},{on="LowerTorso",kind="tail",c="Robe",h=.9},{on="UpperArm",c="Robe"},{on="LowerArm",c="Robe",h=.6},{on="UpperLeg",c="Dark"},{on="LowerLeg",kind="band",c="Wrap",y0=.05,h=.6},{on="Foot",c="Dark",pad=.05}}},
+	{id="SetGaara",slot="set",kit="Sand",name="GAARA'S COAT",ryo=3000,colors={Coat={110,34,36},Sash={206,196,170},Dark={44,40,46}},
+		pieces={{on="UpperTorso",c="Coat"},{on="UpperTorso",kind="sash",c="Sash"},{on="LowerTorso",c="Coat"},{on="LowerTorso",kind="tail",c="Coat",h=1.2},{on="UpperArm",c="Coat"},{on="LowerArm",c="Coat",h=.8},{on="UpperLeg",c="Dark"},{on="LowerLeg",c="Dark"},{on="Foot",c="Dark",pad=.05}}},
+	{id="SetKakashi",slot="set",kit="Copycat",name="KAKASHI'S FLAK VEST",ryo=3000,colors={Navy={36,42,66},Vest={86,98,70},Wrap={226,222,212}},
+		pieces={{on="UpperTorso",c="Navy"},{on="UpperTorso",kind="vest",c="Vest"},{on="UpperTorso",kind="collar",c="Navy",h=.22},{on="LowerTorso",c="Navy"},{on="UpperArm",c="Navy"},{on="LowerArm",c="Navy"},{on="UpperLeg",c="Navy"},{on="LowerLeg",c="Navy"},{on="LowerLeg",kind="band",c="Wrap",y0=.5,h=.3},{on="Foot",c="Navy",pad=.05}}},
+	{id="SetItachi",slot="set",kit="Mirage",name="ITACHI'S ANBU GEAR",robux="SetItachi",colors={Black={26,26,32},Grey={150,152,158},Guard={176,180,186}},
+		pieces={{on="UpperTorso",c="Black"},{on="UpperTorso",kind="vest",c="Grey"},{on="LowerTorso",c="Black"},{on="UpperArm",c="Black",h=.5},{on="LowerArm",c="Guard",y0=.2,h=.65,pad=.1,mat="Metal"},{on="UpperLeg",c="Black"},{on="LowerLeg",c="Black"},{on="Foot",c="Black",pad=.05}}},
+	{id="SetMinato",slot="set",kit="Flashstep",name="MINATO'S JACKET",robux="SetMinato",colors={Blue={40,70,130},Navy={30,36,60},Wrap={226,222,212}},
+		pieces={{on="UpperTorso",c="Blue"},{on="UpperTorso",kind="collar",c="Blue",h=.16},{on="LowerTorso",c="Navy"},{on="UpperArm",c="Blue"},{on="LowerArm",c="Blue",h=.8},{on="UpperLeg",c="Navy"},{on="LowerLeg",c="Navy",h=.7},{on="LowerLeg",kind="band",c="Wrap",y0=.62,h=.2},{on="Foot",c="Navy",pad=.05}}},
 }
 local byId={}
 for _,item in Shop.Items do byId[item.id]=item end
 function Shop.item(id) return byId[id] end
--- What each slot wears when the player chose nothing.
+-- What each slot wears when the player chose nothing (the outfit: nothing,
+-- DEC-040).
 function Shop.default(slot)
+	if Shop.Slots[slot] and Shop.Slots[slot].outfit then return nil end
 	for _,item in Shop.Items do if item.slot==slot and item.base and not item.none then return item end end
 	return nil
+end
+-- (DEC-040) Whether he has chosen his outfit (a top, or a master's outfit):
+-- until then the character screen opens on his arrival.
+function Shop.dressed(style)
+	local e=style and style.equipped
+	if not e then return false end
+	local set=e.set and Shop.item(e.set)
+	return e.top~=nil or (set~=nil and not set.none)
 end
 function Shop.inSlot(slot)
 	local out={}

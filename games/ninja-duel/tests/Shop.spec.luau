@@ -26,7 +26,28 @@ test("the catalogue: every look has a slot, a price or is a base one, and every 
 		if item.robux then assert((Config.Shop.Products or {})[item.robux]~=nil,item.id.."'s product is not in Config.Shop") end
 		assert(item.none or item.colors,item.id.." has no colours")
 	end
-	for _,slot in Shop.SlotOrder do assert(Shop.default(slot),slot.." has no base look") end
+	for _,slot in Shop.SlotOrder do
+		if Shop.Slots[slot].outfit then
+			-- (DEC-040) he arrives without clothes: no default piece, but free ones
+			assert(Shop.default(slot)==nil,slot.." dresses him before he chooses")
+			local free=0
+			for _,item in Shop.inSlot(slot) do if item.base then free+=1 end end
+			assert(free>=1,slot.." has no free piece")
+		else assert(Shop.default(slot),slot.." has no base look") end
+	end
+	-- (DEC-040) every outfit piece covers real body parts; a master's
+	-- outfit is his kit's and is sold
+	local kinds={shell=true,band=true,collar=true,shoulders=true,vest=true,sash=true,tail=true}
+	local bodies={UpperTorso=true,LowerTorso=true,UpperArm=true,LowerArm=true,Hand=true,UpperLeg=true,LowerLeg=true,Foot=true,Head=true}
+	for _,item in Shop.Items do
+		if Shop.Slots[item.slot].outfit and not item.none then
+			assert(item.pieces and #item.pieces>0,item.id.." has no piece")
+			for _,p in item.pieces do
+				assert(bodies[p.on] and kinds[p.kind or "shell"] and item.colors[p.c],item.id.." has a bad piece")
+			end
+		end
+		if item.slot=="set" and not item.none then assert(item.kit and not item.base,item.id.." is free or nobody's") end
+	end
 	-- Never on sale: a kit by chance, a tree point (no such item can exist).
 	for _,item in Shop.Items do assert(item.slot~="points" and item.slot~="kit") end
 	assert(Shop.duelRyo({won=true,firstWinToday=true})==(Shop.Ryo.Finished+Shop.Ryo.Won)*2,"the first win of the day")
