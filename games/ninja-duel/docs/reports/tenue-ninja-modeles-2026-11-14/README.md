@@ -11,7 +11,8 @@ Demande du DEV : les vêtements modélisés de la tenue ninja, ajustés au corps
   - `Models[modèle]` est la liste des pièces `{on=<partie R15>, slot=<slot de couleur>, …}`.
   - `Ref[partie]` est la taille de référence de la partie R15 standard.
   - `NewSlots` liste les slots qui n'ont pas encore de couleur dans `Shared/Shop` : Minato `Coat`, `Flame`, `Vest` ; Lee `Wrap`.
-- **Pose en jeu.** Il faut des faces, des perso de 12 à 14 ans, mais pas de logos (pas d'emblème Uchiha, pas de spirale, pas de masque ANBU). Chaque pièce est modélisée autour du centre de sa partie, à la taille `Ref[partie]`. À l'exécution :
+- **Pas de logos** : pas d'emblème Uchiha, pas de spirale, pas de masque ANBU. Silhouettes de 12 à 14 ans (Partie I).
+- **Pose en jeu.** Chaque pièce est modélisée autour du centre de sa partie, à la taille `Ref[partie]`. À l'exécution :
   - taille = `taille du maillage × body.Size / Ref[partie]` ;
   - soudure à `body.CFrame * CFrame.new(o × body.Size / Ref[partie])` ;
   - `Color` = `colors[slot]` de l'objet de la Boutique, qui se multiplie avec les couleurs de sommets (de l'ombrage seulement, entre 0,45 et 1).
