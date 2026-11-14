@@ -1,7 +1,7 @@
 {
   "version": "0.13.0-arena-combo",
   "artifact": "NinjaDuel-Debug.rbxlx",
-  "sha256": "1d39b15751135958fc54264c3239cb254bd99d26acf955a1951ebf7b4ee720b0",
+  "sha256": "641bcff6b1181760f98e83ed7675d8a57ce787ab0b1bfa7c17cb20ff58c9b5ed",
   "sources": {
     "src/Client/ArenaDress.luau": "e2da1115cb48480b2effa3170a1670d3bb44d5bcbdfd9bbdbb3e60ee302b5360",
     "src/Client/AuthoredClips.luau": "0b3c0031cf7df5b9087b69b50300cea5b74605f00eb160457ed1936b1b8ccc64",
@@ -152,7 +152,7 @@
     "src/Client/MeshData7.luau": "3a92654dc7a29e764ab3b8ea2d81bd3303cb2480a01a6c70cb71038275c752db",
     "src/Client/MeshData8.luau": "ca2e0897d52d58cb39576b6defffb03af60e4962de14db4e1375cfdce65a3ea6",
     "src/Client/MeshData9.luau": "832a9a7c2072c32092831a91aa36566374df72d2d4e1101f7cf14ee69e438364",
-    "src/Client/MeshKit.luau": "e92cc3d332ddef3f02679bd7e23e3838f08ad69feafad98a14e667425d625baa",
+    "src/Client/MeshKit.luau": "f8053ed0747fb8ff73dcd59c8ee6d9db3436cd33a4f592d589cbdca5bf737d36",
     "src/Client/MotionSmear.luau": "d26cf8749b0ae04d209e6de929334264045b0790a0f745e5e64bffa3f34b2826",
     "src/Client/NarutoFX.luau": "aab946e3592b919716af31a51ae11ebd02b3c434bc92d396f589d8eb312dbc73",
     "src/Client/PerceptionFX.luau": "389a703028faa109c6f9f9ac258a0cac162d53e910f8e13be36255cb05ca4686",
@@ -304,11 +304,11 @@
   },
   "sourceEquality": "PASS",
   "debugOnly": true,
-  "buildFingerprint": "8200b2d08ca9f463f9accbac84925014b3c7d26b61458dd78de442673f540430",
+  "buildFingerprint": "080fe31738556a684c66019bca4d966d6412882b824490d48c80e2248d69a4fe",
   "profile": "debug",
-  "runtimeFingerprint": "406b64cd60505e5909ff0c0016cd028417f8ce74d49dad8bff6429fda9418c38",
-  "sourceCommit": "b6d0efc328f6ec81fc151d76fabc04a11744d8b3",
-  "headCommit": "b6d0efc328f6ec81fc151d76fabc04a11744d8b3",
+  "runtimeFingerprint": "697bdf3b71eea4f86a729fbfd6f571a724c73199d1708473adf47994f5521081",
+  "sourceCommit": "39f88ed6d7b94b65e3cb60de39beda8ad113ea7a",
+  "headCommit": "39f88ed6d7b94b65e3cb60de39beda8ad113ea7a",
   "sourceDirty": false,
   "captureTools": {},
   "donorAssets": {

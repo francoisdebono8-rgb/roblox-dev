@@ -6798,13 +6798,13 @@ return {
       <Item class="StringValue" referent="ND44">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">8200b2d08ca9f463f9accbac84925014b3c7d26b61458dd78de442673f540430</string>
+          <string name="Value">080fe31738556a684c66019bca4d966d6412882b824490d48c80e2248d69a4fe</string>
         </Properties>
       </Item>
       <Item class="StringValue" referent="ND45">
         <Properties>
           <string name="Name">RuntimeFingerprint</string>
-          <string name="Value">406b64cd60505e5909ff0c0016cd028417f8ce74d49dad8bff6429fda9418c38</string>
+          <string name="Value">697bdf3b71eea4f86a729fbfd6f571a724c73199d1708473adf47994f5521081</string>
         </Properties>
       </Item>
       <Item class="StringValue" referent="ND46">
@@ -6816,7 +6816,7 @@ return {
       <Item class="StringValue" referent="ND47">
         <Properties>
           <string name="Name">SourceCommit</string>
-          <string name="Value">b6d0efc328f6</string>
+          <string name="Value">39f88ed6d7b9</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND48">
@@ -64732,7 +64732,8 @@ end
 -- (tools/blender/hub_fbx.py -&gt; Studio import -&gt; hub_to_luau.py) are loaded by
 -- their id like any mesh; only the others are still built here.
 do
-	local module=script.Parent:FindFirstChild("HubMeshAssets")
+	-- (the headless suite's script has no instance tree: pcall)
+	local _,module=pcall(function() return script.Parent:FindFirstChild("HubMeshAssets") end)
 	local okAssets,Assets=false,nil
 	if module then okAssets,Assets=pcall(require,module) end
 	if okAssets and type(Assets)=="table" then
