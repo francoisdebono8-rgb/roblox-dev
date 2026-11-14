@@ -1,7 +1,11 @@
 {
   "version": "0.13.0-arena-combo",
   "artifact": "NinjaDuel-Capture.rbxlx",
+<<<<<<< HEAD
   "sha256": "42cd6b3762cc70c87900444bfba7f90468ffa03a28d608cbf94ed72ef10e1219",
+=======
+  "sha256": "8ef286db1060289edb11ae2e12cb40b604f11baad9b21ee7f27efc904846e39a",
+>>>>>>> claude/hub-maillage
   "sources": {
     "src/Client/ArenaDress.luau": "e2da1115cb48480b2effa3170a1670d3bb44d5bcbdfd9bbdbb3e60ee302b5360",
     "src/Client/AuthoredClips.luau": "0b3c0031cf7df5b9087b69b50300cea5b74605f00eb160457ed1936b1b8ccc64",
@@ -97,7 +101,11 @@
     "src/Client/HoundFX.luau": "56fb435c7ca686a692956a9dfc0fb308df33b7b1efb8ae5ad72e191802926f6d",
     "src/Client/HubClient.luau": "39089e3d1296bdfc7a14028190575f0f0eb9c77c6cde1b352d30ea225b695b6b",
     "src/Client/HubDress.luau": "be41f132e096814609d28473ea33f041bc7184aecb9e895af089e51fcca7a2a9",
+<<<<<<< HEAD
     "src/Client/HubLayout.luau": "5dc2f28e3255eb26d7d5f066bba09a2d1d4a12fbb25f6fae996368f260c5e56e",
+=======
+    "src/Client/HubMeshAssets.luau": "95bfea0e317a5c34bf3879d9a15bb076d2ce3e939d34bf9aac7862dd5a2a5d2e",
+>>>>>>> claude/hub-maillage
     "src/Client/HubMeshData.luau": "4c5ee2596730e9ac39228b32d2af5e98299e12d8c566e3271bedbfd428521a91",
     "src/Client/HubMeshData1.luau": "8298b5b89cba4f75fe138e1a4218672220eeec8da97bf4d50c161ed151dc828b",
     "src/Client/HubMeshData10.luau": "a999a3e1daa45a5ecd9a388f8b3f66bf3497df81d99468f2873d1fac5e8b3a8e",
@@ -305,12 +313,21 @@
   },
   "sourceEquality": "PASS",
   "debugOnly": true,
+<<<<<<< HEAD
   "buildFingerprint": "1965bba8c9ff25ce7cfde7d91726bb1934f58c97c96eb94fe55d3564168ff8ca",
   "profile": "capture",
   "runtimeFingerprint": "2a0274cef646f28ca14ee081bd26b89ea71d90c3dc5d25e013fd7148c0d3a686",
   "sourceCommit": "a8d9fd00e4eb35b4b95167413d3aca5dc1a791b2",
   "headCommit": "a8d9fd00e4eb35b4b95167413d3aca5dc1a791b2",
   "sourceDirty": false,
+=======
+  "buildFingerprint": "719f99f61e66a06b98f265d390efa8304ef82650313d6369d3cd899fbad8b63b",
+  "profile": "capture",
+  "runtimeFingerprint": "743418899b5b42450f36a6397e5a79753de47366b1703e8f94c5f7a44e93f73a",
+  "sourceCommit": "39f88ed6d7b94b65e3cb60de39beda8ad113ea7a",
+  "headCommit": "a9db54c7b657c1b0983c5ae8d5c8960b94326b84",
+  "sourceDirty": true,
+>>>>>>> claude/hub-maillage
   "captureTools": {
     "tools/capture/studio/ClipKit.client.luau": "7889f16ee2fa12b5367d104b26d449f0734a271975421617800df53ec80a1a07",
     "tools/capture/studio/HiraishinKunai.luau": "e7d88a5489cb6ad8c14caf8a1e89a83ca92fecbd599f843202ad8df81c955a05",

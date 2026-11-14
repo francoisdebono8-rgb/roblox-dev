@@ -863,7 +863,11 @@ return {
 	-- (14/11) DevUserId: whose avatar is carved first on the cliff
 	-- (Server/ChampionCliff); nil = the game's creator (game.CreatorId), so a
 	-- local file in Studio shows the funny head there.
-	Hub = { Enabled = true, DevUserId = nil },
+	-- (14/11, François: « que notre perso puisse combattre » dans la ville)
+	-- VillageDuels: a duel started at a master's home (his card, the training
+	-- dummy) is fought there, in the village (HubMap.Masters[id].duel), not
+	-- in the stadium. The board's duels and the tournament stay in the stadium.
+	Hub = { Enabled = true, DevUserId = nil, VillageDuels = true },
 	-- (13/11) The shop's Roblox ids, created by the owner on the game's page
 	-- (0 or absent: shown SOON, nothing sold). Products: a Robux look by its
 	-- Shared/Shop key; RyoPacks: Ryō for Robux; Passes: game passes (the 2x
@@ -2177,24 +2181,38 @@ M.Proctor={kit="Professor",at=Vector3.new(0,0,-52),face=Vector3.new(0,0,1),
 	name="THE PROCTOR",place="THE EXAM HALL",line="Duels, the tournament, players from everywhere: it all starts on this floor."}
 
 -- The masters, each at home. `line`: what he says when the player comes to him.
+-- `duel` (14/11, Config.Hub.VillageDuels): where a duel started at his home
+-- is fought, in the village (its centre on the ground, the radius the bodies
+-- are held in); without it, the stadium.
+-- (14/11, measured in Studio: Roblox's paths from the gate) each faces the way
+-- a player walks up to him. Naruto, Gaara and Kakashi showed their side or
+-- back (67, 84 and 64 degrees off), Lee 35; now under 10.
 M.Masters={
-	Legion={place="ICHIRAKU RAMEN",at=Vector3.new(-15,0,110),face=Vector3.new(1,0,0),
+	Legion={place="ICHIRAKU RAMEN",at=Vector3.new(-15,0,110),face=Vector3.new(.45,0,.9),
+		duel={at=Vector3.new(0,0,140),radius=34},
 		line="A bowl first, then the clones. Nobody beats me at either!"},
 	Lion={place="THE UCHIHA PIER",at=Vector3.new(176,1.6,-60),face=Vector3.new(-1,0,0),
 		line="Fire starts in the chest, not in the hands. Show me yours."},
-	Leaf={place="TRAINING GROUND THREE",at=Vector3.new(-118,0,28),face=Vector3.new(1,0,0),
+	Leaf={place="TRAINING GROUND THREE",at=Vector3.new(-118,0,28),face=Vector3.new(.85,0,.53),
+		duel={at=Vector3.new(-132,0,30),radius=40},
 		line="Five hundred laps, then we talk. Or one honest fight, right now!"},
 	GentleFist={place="THE HYŪGA COMPOUND",at=Vector3.new(-146,0,-98),face=Vector3.new(1,0,0),
+		duel={at=Vector3.new(-152,0,-104),radius=36},
 		line="The Byakugan sees every opening you leave. Close them first."},
-	Sand={place="THE EXAM HALL'S BALCONY",at=Vector3.new(-49,12.5,-78),face=Vector3.new(1,0,0),
+	Sand={place="THE EXAM HALL'S BALCONY",at=Vector3.new(-49,12.5,-78),face=Vector3.new(.1,0,1),
 		line="The sand decides who is worth it. It has not decided about you."},
-	Copycat={place="THE MEMORIAL STONE",at=Vector3.new(-165,0,72),face=Vector3.new(1,0,-.5),
+	Copycat={place="THE MEMORIAL STONE",at=Vector3.new(-165,0,72),face=Vector3.new(.82,0,.57),
 		line="Copy first, understand later. Show me something worth copying."},
 	Mirage={place="THE UCHIHA SHRINE'S TORII",at=Vector3.new(178,14.9,-108),face=Vector3.new(-1,0,.4),
 		line="You see only what I let you see. Look closer."},
 	Flashstep={place="UNDER THE HOKAGE FACES",at=Vector3.new(0,24,-214),face=Vector3.new(0,0,1),
 		line="Plant your mark first. The speed comes after."},
 }
+
+-- (14/11, audit: « que notre perso puisse combattre, qu'on puisse apprendre »)
+-- Training Ground Three's dummy: E there trains with his kit (Server/Hub
+-- places the prompt, Client/HubClient answers it).
+M.Training={at=Vector3.new(-150,0,16),place="TRAINING GROUND THREE",duel={at=Vector3.new(-132,0,30),radius=40}}
 
 -- (14/11, user: « les têtes sont moches […] à terme ça sera les champions, on
 -- peut mettre le dev aussi et des trucs drôles pour l'instant ») The four
@@ -6714,13 +6732,13 @@ return {
       <Item class="StringValue" referent="ND43">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">2a0274cef646f28ca14ee081bd26b89ea71d90c3dc5d25e013fd7148c0d3a686</string>
+          <string name="Value">e90387fd5c5117023d1e4be08da3f00a7ffaccdbd3639c224127f03a2ff16ba0</string>
         </Properties>
       </Item>
       <Item class="StringValue" referent="ND44">
         <Properties>
           <string name="Name">RuntimeFingerprint</string>
-          <string name="Value">2a0274cef646f28ca14ee081bd26b89ea71d90c3dc5d25e013fd7148c0d3a686</string>
+          <string name="Value">e90387fd5c5117023d1e4be08da3f00a7ffaccdbd3639c224127f03a2ff16ba0</string>
         </Properties>
       </Item>
       <Item class="StringValue" referent="ND45">
@@ -6732,7 +6750,7 @@ return {
       <Item class="StringValue" referent="ND46">
         <Properties>
           <string name="Name">SourceCommit</string>
-          <string name="Value">a8d9fd00e4eb</string>
+          <string name="Value">8ddd3a7247bb-dirty</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND47">
@@ -8294,6 +8312,8 @@ function AvatarBody.prepare(player)
 		if desc then
 			ok,model=pcall(function() return Players:CreateHumanoidModelFromDescription(desc,Enum.HumanoidRigType.R15) end)
 		end
+		-- (14/11) Roblox's joints as AnimationConstraints: the Motor6Ds they are
+		if ok and model then pcall(AvatarBody.motorize,model) end
 		if ok and model then
 			entry.template=model;entry.state="ready"
 		else
@@ -8315,6 +8335,32 @@ function AvatarBody.forget(player)
 	local entry=AvatarBody.cache[player]
 	if entry and entry.template then entry.template:Destroy() end
 	AvatarBody.cache[player]=nil
+end
+
+-- (14/11, Studio: « [AvatarBody] no joint Root ») Roblox now builds an
+-- avatar's joints as AnimationConstraints (the avatar joint upgrade), not
+-- Motor6Ds: fit refused every avatar and the player fought in his prodigy's
+-- body. Each constraint becomes the Motor6D it stands for: Part0 and Part1
+-- are its attachments' parts, C0 and C1 their frames; the motor goes under
+-- Part1 as Roblox puts its own, and the constraint goes. `make` builds the
+-- motor (Instance.new; the suites pass their own). Returns how many.
+function AvatarBody.motorize(model,make)
+	make=make or function(class) return Instance.new(class) end
+	local count=0
+	for _,c in model:GetDescendants() do
+		if c:IsA("AnimationConstraint") then
+			local a0,a1=c.Attachment0,c.Attachment1
+			local p0,p1=a0 and a0.Parent,a1 and a1.Parent
+			if p0 and p1 and p0:IsA("BasePart") and p1:IsA("BasePart") then
+				local m=make("Motor6D")
+				m.Name=c.Name;m.Part0=p0;m.Part1=p1;m.C0=a0.CFrame;m.C1=a1.CFrame
+				m.Parent=p1
+				c:Destroy()
+				count+=1
+			end
+		end
+	end
+	return count
 end
 
 -- Puts an R15 model on the game's skeleton (World.RIG). Each joint keeps the
@@ -13391,7 +13437,8 @@ end
 -- The tournament stage is round: positions are held inside a circle so no
 -- corner of the old square limit reaches into the stands.
 function Combat:clamp(p)
-	local o=self.match.origin; local r=Config.ArenaRadius
+	-- (14/11, a duel in Konoha) a master's ground has its own radius.
+	local o=self.match.origin; local r=self.match.radius or Config.ArenaRadius
 	local flat=Vector3.new(p.X-o.X,0,p.Z-o.Z)
 	if flat.Magnitude&gt;r then flat=flat.Unit*r end
 	return Vector3.new(o.X+flat.X,math.clamp(p.Y,o.Y+3,o.Y+Config.ArenaHeight),o.Z+flat.Z)
@@ -15519,7 +15566,7 @@ function Combat:updateActor(a,dt)
 	else Motor.step(a,self,dt,now) end
 	-- Server-owned humanoids + server-clamped arena coordinates.
 	local p=a.root.Position
-	if Vector3.new(p.X-self.match.origin.X,0,p.Z-self.match.origin.Z).Magnitude&gt;Config.ArenaRadius or p.Y&lt;self.match.origin.Y-3 then
+	if Vector3.new(p.X-self.match.origin.X,0,p.Z-self.match.origin.Z).Magnitude&gt;(self.match.radius or Config.ArenaRadius) or p.Y&lt;self.match.origin.Y-3 then
 		-- (Fluidity audit 05/11) A body pressed against the arena's edge is held
 		-- on it every frame: that is not a teleport. Declared as one (a new warp
 		-- serial each frame: 53 in 41 s of Studio duel, mostly through Wall
@@ -18828,6 +18875,26 @@ function Hub.placeMasters(source)
 		end
 	end
 	Hub.placeProctor(holder)
+	Hub.placeTraining(holder)
+end
+-- (14/11, audit: the training ground had three stumps and a dummy, and
+-- nothing to do there) The dummy of Training Ground Three: E trains with his
+-- kit (Client/HubClient sends the board's TRAINING). An invisible anchor of its
+-- own: the village's units may be swapped for meshes (MeshKit).
+function Hub.placeTraining(holder)
+	local spot=HubMap.Training
+	if not spot or holder:FindFirstChild("Training") then return end
+	local model=Instance.new("Model");model.Name="Training"
+	model:SetAttribute("NinjaTrain",true)
+	local anchor=Instance.new("Part");anchor.Name="Anchor"
+	anchor.Size=Vector3.new(1,1,1);anchor.Transparency=1;anchor.Anchored=true
+	anchor.CanCollide=false;anchor.CanQuery=false;anchor.CanTouch=false
+	anchor.CFrame=CFrame.new(O+spot.at+Vector3.new(0,5,0))
+	anchor.Parent=model
+	model.PrimaryPart=anchor
+	model.Parent=holder
+	local prompt=promptOn(model,"Training","TRAIN",spot.place,false)
+	if prompt then prompt:SetAttribute("NinjaTrain",true) end
 end
 -- The proctor on the hall's floor (the Professor's rig): the board of duels.
 function Hub.placeProctor(holder)
@@ -18874,7 +18941,8 @@ function Hub.enter(player,where,looks)
 		entry.character=character
 		-- (13/11, the shop) the headband he chose, on his own avatar.
 		pcall(function() require(script.Parent.Headband).fromLooks(character,looks) end)
-		local spot=HubMap.Spawns[where] or HubMap.Spawns.gate
+		-- (14/11) back from a duel in the village: where it was fought
+		local spot=if type(where)=="table" then where else HubMap.Spawns[where] or HubMap.Spawns.gate
 		local at=O+spot.at+Vector3.new(0,3.5,0)
 		pcall(function() character:PivotTo(CFrame.lookAt(at,at+spot.face)) end)
 		local hum=character:FindFirstChildOfClass("Humanoid")
@@ -21407,6 +21475,7 @@ local ArenaMeshes=require(script.Parent.ArenaMeshes)
 local AvatarBody=require(script.Parent.AvatarBody)
 local Progression=require(script.Parent.Progression)
 local Masters=require(Shared.Masters)
+local HubMap=require(Shared.HubMap)
 local Combat=require(script.Parent.Combat)
 local AI=require(script.Parent.AI)
 local Tutorial=require(script.Parent.Tutorial)
@@ -21462,6 +21531,22 @@ end
 -- Each duel owns a stage far from every other one.
 function Matches.laneOrigin(lane)
 	return Vector3.new((lane-1)*520,0,0)
+end
+-- (14/11, François: « que notre perso puisse combattre » dans la ville) A duel
+-- started at a master's home (his card, the training dummy: `key`) is fought
+-- there, in the village, when he really stands there (his walker within reach
+-- of the ground). nil: the stadium.
+function Matches.villageSite(player,key)
+	if not Matches.hubOn() or not (Config.Hub and Config.Hub.VillageDuels==true) or type(key)~="string" then return nil end
+	local spot=if key=="Training" then HubMap.Training else HubMap.Masters[key]
+	local duel=spot and spot.duel
+	if not duel then return nil end
+	local centre=HubMap.Origin+duel.at
+	local body=Hub.bodies and Hub.bodies[player]
+	local character=body and body.character
+	local root=character and character:FindFirstChild("HumanoidRootPart")
+	if not root or (Vector3.new(root.Position.X,0,root.Position.Z)-Vector3.new(centre.X,0,centre.Z)).Magnitude&gt;duel.radius+50 then return nil end
+	return {key=key,origin=centre,radius=duel.radius}
 end
 -- (B1 lot 2, DEC-034) What a new player's first minutes look like, measured
 -- on the server (Codex's audit §3: time to the first input, the first jutsu,
@@ -21610,7 +21695,8 @@ function Matches:selection(player,notice)
 	-- through the gate the first time, out of the exam hall after a duel.
 	if Matches.hubOn() then
 		Hub.badge(player,view)
-		Hub.enter(player,if s.hubVisited then "hall" else "gate",Progression.looks(player))
+		Hub.enter(player,s.returnTo or (if s.hubVisited then "hall" else "gate"),Progression.looks(player))
+		s.returnTo=nil
 		s.hubVisited=true
 	end
 	-- (Lobby, 04/11) in a duel server the roster is the lobby: back home.
@@ -21646,9 +21732,17 @@ function Matches:start(player,playerId,botId,training,options)
 	if Matches.hubOn() then Hub.leave(player) end
 	s.playerId=playerId; s.botId=botId; s.winner=nil; s.phase="Duel"; s.origin=Matches.laneOrigin(s.lane)
 	s.options=options
-	-- (QA 12/11) The lane's stadium is the one already in the world, its
-	-- last duel's damage undone: only the two bodies are new at BEGIN.
-	self:stageFor(s)
+	-- (14/11) A duel at a master's home: in the village, no stadium.
+	local site=s.nextSite;s.nextSite=nil
+	s.site=site;s.radius=site and site.radius or nil
+	if site then
+		s.origin=site.origin
+		s.returnTo={at=site.origin-HubMap.Origin+Vector3.new(0,0,site.radius*.5),face=Vector3.new(0,0,-1)}
+	else
+		-- (QA 12/11) The lane's stadium is the one already in the world, its
+		-- last duel's damage undone: only the two bodies are new at BEGIN.
+		self:stageFor(s)
+	end
 	s.effects=Instance.new("Folder"); s.effects.Name="Effects"; s.effects.Parent=s.folder
 	s.combat=Combat.new(s); s.combat.now=workspace:GetServerTimeNow()
 	local function actor(id,def,position,look,kit)
@@ -21944,7 +22038,9 @@ function Matches:request(player,payload)
 		local rival=FirstMinute.rival(payload.player)
 		if not rival then return end
 		s.lastLifecycle=clock;s.aiLevel="easy";s.firstStage="intro"
+		s.nextSite=Matches.villageSite(player,payload.here)
 		if not self:start(player,payload.player,rival,true) then s.firstStage=nil end
+		s.nextSite=nil
 		return
 	end
 	-- (DEC-037) The masters' path from the roster: the starter, the kit for the
@@ -22003,7 +22099,9 @@ function Matches:request(player,payload)
 				return
 			end
 			s.masterTrial=master;s.firstStage=nil
+			s.nextSite=Matches.villageSite(player,payload.here)
 			if not self:start(player,payload.player,master,false) then s.masterTrial=nil end
+			s.nextSite=nil
 		elseif action=="BuyKit" then
 			local product=(Config.Progression and Config.Progression.Products or {})[payload.player]
 			if product and not Progression.owns(player,payload.player) then
@@ -22024,9 +22122,15 @@ function Matches:request(player,payload)
 			s.masterTrial=nil
 			s.lastLifecycle=clock;s.firstStage=nil
 			if type(payload.level)=="string" and Matches.LEVELS[payload.level] then s.aiLevel=payload.level end
+			s.nextSite=Matches.villageSite(player,payload.here)
 			self:start(player,payload.player,payload.bot,action=="Tutorial")
+			s.nextSite=nil
 		elseif action=="Rematch" and (s.phase=="Result" or s.finishing) then
-			s.lastLifecycle=clock;s.firstStage=nil; self:start(player,s.playerId,s.botId,s.tutorial~=nil,s.options)
+			s.lastLifecycle=clock;s.firstStage=nil
+			-- (14/11) a rematch at a master's home stays there
+			s.nextSite=s.site;s.returnTo=nil
+			self:start(player,s.playerId,s.botId,s.tutorial~=nil,s.options)
+			s.nextSite=nil
 		elseif action=="Selection" and (s.phase=="Result" or s.finishing or s.tutorial) then s.lastLifecycle=clock; self:selection(player) end
 		return
 	end
@@ -56987,8 +57091,13 @@ function Hub.new(ui,camera,send,controls)
 	local wallet=K.frame(self.shopBox,UDim2.fromOffset(0,0),UDim2.fromOffset(120,60),K.CARD,.12);K.corner(wallet,10)
 	K.text(wallet,"RYŌ",UDim2.fromOffset(12,6),UDim2.fromOffset(96,14),10,P.muted,K.BODY_FONT,Enum.TextXAlignment.Right)
 	self.ryoLabel=K.text(wallet,"0",UDim2.fromOffset(12,20),UDim2.fromOffset(96,34),28,P.gold,K.TITLE_FONT,Enum.TextXAlignment.Right)
-	local shop=K.button(self.shopBox,"SHOP",UDim2.fromOffset(132,0),UDim2.fromOffset(150,60),function() self:openShop() end,P.red)
-	shop.TextSize=28
+	-- (14/11, audit: the board of duels was only at the proctor's, 15 s from
+	-- the gate; VISION: « les menus restent disponibles partout ») DUELS opens
+	-- it from anywhere in the village (B, the pad's R1).
+	self.duelsButton=K.button(self.shopBox,"DUELS",UDim2.fromOffset(132,0),UDim2.fromOffset(140,60),function() self:openBoard() end,P.red)
+	self.duelsButton.TextSize=26
+	local shop=K.button(self.shopBox,"SHOP",UDim2.fromOffset(284,0),UDim2.fromOffset(140,60),function() self:openShop() end)
+	shop.TextSize=26
 	self.keys=K.text(ui.gui,"",UDim2.new(.5,-360,1,-34),UDim2.fromOffset(720,22),14,P.paper,K.BODY_FONT,Enum.TextXAlignment.Center)
 	K.create("UIStroke",self.keys,{Color=P.ink,Thickness=2,ApplyStrokeMode=Enum.ApplyStrokeMode.Contextual})
 	self.keys.Visible=false
@@ -56998,7 +57107,9 @@ function Hub.new(ui,camera,send,controls)
 		self.runLatch=not self.runLatch;self.runMoved=false;self.restFor=0;self:paintRun()
 	end,P.ink)
 	self.runButton.TextSize=20;self.runButton.Visible=false;self.runButton.ZIndex=25
-	K.corner(self.runButton,40)
+	-- round (the kit's button already has its corner: a second one is ignored)
+	local round=self.runButton:FindFirstChildOfClass("UICorner") or K.corner(self.runButton,6)
+	round.CornerRadius=UDim.new(.5,0)
 	K.create("UIStroke",self.runButton,{Color=P.paper,Transparency=.3,Thickness=2,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
 	-- The master's card (right of the screen, centred on a narrow one).
 	local card=K.inkCard(K.frame(ui.gui,UDim2.new(1,-520,.5,-190),UDim2.fromOffset(HubLayout.CARD.w,HubLayout.CARD.h),K.CARD,0))
@@ -57015,7 +57126,8 @@ function Hub.new(ui,camera,send,controls)
 	self.primary.TextSize=28
 	self.second=K.button(card,"",UDim2.fromOffset(24,276),UDim2.fromOffset(216,48),function() self:press("second") end)
 	self.third=K.button(card,"",UDim2.fromOffset(250,276),UDim2.fromOffset(216,48),function() self:press("third") end)
-	self.closeCard=K.button(card,"✕",UDim2.fromOffset(490-62,14),UDim2.fromOffset(44,44),function() self:hideCard() end)
+	-- (14/11, Studio: the title font has no "✕", the button showed an empty box)
+	self.closeCard=K.button(card,"X",UDim2.fromOffset(490-62,14),UDim2.fromOffset(44,44),function() self:hideCard() end)
 	self.cardFoot=K.text(card,"",UDim2.fromOffset(24,336),UDim2.fromOffset(442,24),12,P.muted,K.BODY_FONT,Enum.TextXAlignment.Center)
 	-- Prompts: a master, the proctor.
 	PPS.PromptTriggered:Connect(function(prompt)
@@ -57023,6 +57135,7 @@ function Hub.new(ui,camera,send,controls)
 		local master=prompt:GetAttribute("NinjaMaster")
 		if master then self:showCard(master) return end
 		if prompt:GetAttribute("NinjaBoard") then self:openBoard() end
+		if prompt:GetAttribute("NinjaTrain") then self:train() end
 	end)
 	-- The run and the second jump.
 	self.leapUsed=false
@@ -57030,11 +57143,14 @@ function Hub.new(ui,camera,send,controls)
 	UIS.JumpRequest:Connect(function() self:jumpRequest() end)
 	RunService.RenderStepped:Connect(function(dt) self:step(dt) end)
 	-- (14/11) The pad: L3 latches the run (held, it was a strain on the thumb
-	-- for every street), Y opens the shop, B closes a master's card.
+	-- for every street), Y opens the shop, B closes a master's card, R1 opens
+	-- the board of duels (the keyboard's B; not while he types in the chat).
 	UIS.InputBegan:Connect(function(input,processed)
 		if not self.active or self.board then return end
 		local key=input.KeyCode
-		if key==Enum.KeyCode.ButtonL3 and not self.panelOpen then
+		if (key==Enum.KeyCode.ButtonR1 or (key==Enum.KeyCode.B and not processed)) and not self.panelOpen and not self.card.Visible then
+			self:openBoard()
+		elseif key==Enum.KeyCode.ButtonL3 and not self.panelOpen then
 			self.runLatch=not self.runLatch;self.runMoved=false;self.restFor=0;self:paintRun()
 		elseif key==Enum.KeyCode.ButtonY and not self.panelOpen and not self.card.Visible then
 			self:openShop()
@@ -57218,10 +57334,12 @@ function Hub:step(dt)
 	self.clock=(self.clock or 0)+dt
 	if self.clock&gt;.25 then
 		self.clock=0
-		-- The masters arrive after the village (their portraits first).
-		local count=0
+		-- The masters arrive after the village (their portraits first): the
+		-- masters, the proctor and the training dummy.
+		local count,want=0,2
 		for _ in self.markers do count+=1 end
-		if count&lt;9 then self:refreshMarkers() end
+		for _ in HubMap.Masters do want+=1 end
+		if count&lt;want then self:refreshMarkers() end
 		self:refreshHud(root.Position)
 		for _,marker in self.markers do
 			if marker.model and marker.model.Parent and marker.distance then
@@ -57266,7 +57384,7 @@ function Hub:refreshHud(position)
 	self.goalSub.Text=if self.lay and self.lay.goal.stack then table.concat(goal.items,"\n") else goal.sub
 	self:showHud()
 	local input=self:input()
-	self.keys.Text=if input=="pad" then "L3 RUN  •  A TWICE: LEAP  •  X TALK  •  Y SHOP" else "SHIFT RUN  •  SPACE TWICE: LEAP  •  E TALK"
+	self.keys.Text=if input=="pad" then "L3 RUN  •  A TWICE: LEAP  •  X TALK  •  Y SHOP  •  R1 DUELS" else "SHIFT RUN  •  SPACE TWICE: LEAP  •  E TALK  •  B DUELS"
 	self.cardFoot.Text=if input=="pad" then "B: CLOSE" elseif input=="touch" then "✕ OR WALK AWAY TO CLOSE" else "E: TALK  •  WALK AWAY TO CLOSE"
 end
 
@@ -57294,11 +57412,13 @@ function Hub:refreshMarkers()
 	local P=self.K.palette
 	for _,model in holder:GetChildren() do
 		local id=model:GetAttribute("NinjaMaster")
-		local key=id or (model:GetAttribute("NinjaBoard") and "Proctor")
+		local key=id or (model:GetAttribute("NinjaBoard") and "Proctor") or (model:GetAttribute("NinjaTrain") and "Training")
 		if key and (not self.markers[key] or self.markers[key].model~=model) then
 			if self.markers[key] then self.markers[key].gui:Destroy() end
-			local title=if id then nameOf(id) else "THE PROCTOR"
-			self.markers[key]=self:marker(model,id,title,if id then HubMap.Masters[id] and HubMap.Masters[id].place else HubMap.Proctor.place)
+			local title=if id then nameOf(id) elseif key=="Training" then "TRAINING" else "THE PROCTOR"
+			local place=if id then HubMap.Masters[id] and HubMap.Masters[id].place elseif key=="Training" then HubMap.Training.place else HubMap.Proctor.place
+			self.markers[key]=self:marker(model,id,title,place)
+			if self.markers[key] then self.markers[key].key=key end
 		end
 	end
 	for key,marker in self.markers do
@@ -57317,12 +57437,39 @@ function Hub:refreshMarkers()
 				local loud=status=="starter" or status=="master" or first
 				marker.gui.AlwaysOnTop=loud
 				marker.gui.MaxDistance=if loud then 2000 else 140
+			elseif marker.key=="Training" then
+				-- seen on the ground only (the masters guide a new player)
+				local kit=self:trainingKit()
+				marker.tag.Text=if kit then "TRY "..nameOf(kit).."'S KIT" else "YOUR KIT"
+				marker.gui.AlwaysOnTop=false;marker.gui.MaxDistance=140
 			else
 				marker.tag.Text="DUELS  •  TOURNAMENT"
-				marker.gui.AlwaysOnTop=true;marker.gui.MaxDistance=2000
+				-- (14/11, Studio: from the gate the proctor's marker sat on
+				-- Naruto's, through the walls) while a new player has a master
+				-- to find or a first duel to fight, the proctor stays quiet
+				local busy=self.kits~=nil and (self.kits.needStarter==true or MastersView.firstDuel(self.kits)~=nil)
+				marker.gui.AlwaysOnTop=not busy;marker.gui.MaxDistance=if busy then 140 else 2000
 			end
 		end
 	end
+end
+
+-- ------------------------------------------------------------------ training
+-- The kit he trains with at the dummy: his own (owned and chosen), else Lee's
+-- (it is Lee's ground: TRY LEE'S KIT, as on Lee's card). nil = his own.
+function Hub:trainingKit()
+	local kits=self.kits
+	local selected=kits and kits.selected
+	if selected and kits.owned and kits.owned[selected] then return nil end
+	return "Leaf"
+end
+function Hub:train()
+	local kits=self.kits
+	if not kits or kits.state~="ready" then return end
+	local FirstMinute=require(Shared.FirstMinute)
+	local kit=self:trainingKit() or kits.selected
+	self:hideCard()
+	self.send("Tutorial",{player=kit,bot=FirstMinute.rival(kit) or "Lion",here="Training"})
 end
 
 -- ------------------------------------------------------------------ the card
@@ -57391,7 +57538,15 @@ function Hub:press(which)
 		if self.ui.treePanel then self.ui.treePanel:show(item.tree,self.kits) end
 		return
 	end
-	if item.send then self.send(item.send[1],item.send[2]) end
+	if item.send then
+		-- (14/11) a duel asked at the master's home is fought there, when the
+		-- server finds him there (Matches.villageSite)
+		local payload=item.send[2]
+		if type(payload)=="table" and (item.send[1]=="Start" or item.send[1]=="First" or item.send[1]=="MasterTrial") then
+			payload=table.clone(payload);payload.here=self.cardId
+		end
+		self.send(item.send[1],payload)
+	end
 end
 
 return Hub
@@ -57577,7 +57732,7 @@ local L={}
 
 L.MARGIN=16
 L.HUD={w=430,h=74}      -- the place and the kit, top left
-L.SHOP={w=282,h=60}     -- the Ryō and SHOP, top right
+L.SHOP={w=424,h=60}     -- the Ryō, DUELS and SHOP, top right
 L.GOAL={w=840,h=58,stackH=96} -- what to do next: a head and the line under it
 L.STACK=700             -- narrower (in the goal's own units), one place a line
 L.CARD={w=490,h=380}    -- a master's card
@@ -57678,6 +57833,52 @@ return L
         </Item>
         <Item class="ModuleScript" referent="ND212">
           <Properties>
+            <string name="Name">HubMeshAssets</string>
+            <ProtectedString name="Source">-- Generated by tools/blender/hub_to_luau.py from the Studio import of
+-- tools/blender/hub_fbx.py. Konoha's pieces published as meshes: Client/MeshKit
+-- loads these by id instead of building them on the player's computer.
+return {
+	["Bench"]={["Wood"]="rbxassetid://88504257246857"},
+	["CompoundWall"]={["Coping"]="rbxassetid://96855446545519",["Plaster"]="rbxassetid://131723196896346"},
+	["Crate"]={["Planks"]="rbxassetid://111206245507794"},
+	["ExamHall"]={["Banners"]="rbxassetid://93156594731199",["Eaves"]="rbxassetid://101232597652722",["Lacquer"]="rbxassetid://73235583523305",["LanternCaps"]="rbxassetid://103991335040242",["Lanterns"]="rbxassetid://133240679299665",["Openings"]="rbxassetid://86049132967326",["Pillars"]="rbxassetid://126373252346837",["Sleeves"]="rbxassetid://133438619143284",["Statue"]="rbxassetid://109591930511838",["Tiles"]="rbxassetid://115914358345480",["TilesE"]="rbxassetid://102233029523146",["TilesW"]="rbxassetid://123582312298908",["Timber"]="rbxassetid://111376810526035",["Walls"]="rbxassetid://127520145776294"},
+	["FacesTerrace"]={["Caps"]="rbxassetid://106153450294754",["Lanterns"]="rbxassetid://133960832191793",["Rails"]="rbxassetid://94066680410391",["Stone"]="rbxassetid://137254838923288"},
+	["FenceSegment"]={["Wood"]="rbxassetid://117385079875141"},
+	["GateBooth"]={["Cloth"]="rbxassetid://108009079118506",["Eaves"]="rbxassetid://80118037622125",["Tiles"]="rbxassetid://81376262341646",["Wood"]="rbxassetid://115614013768370"},
+	["HeadSlot1"]={["Block"]="rbxassetid://101848696864335",["Rope"]="rbxassetid://80074050995993",["Scaffold"]="rbxassetid://81532829458506",["Sketch"]="rbxassetid://102417610083237",["Tools"]="rbxassetid://75694830493145"},
+	["HeadSlot2"]={["Block"]="rbxassetid://98628276321459",["Rope"]="rbxassetid://88901941221540",["Scaffold"]="rbxassetid://93285768998834",["Sketch"]="rbxassetid://87001120943785",["Tools"]="rbxassetid://87200637969694"},
+	["HeadSlot3"]={["Block"]="rbxassetid://90642687110422",["Rope"]="rbxassetid://116589144157328",["Scaffold"]="rbxassetid://107259615549296",["Sketch"]="rbxassetid://109523680565310",["Tools"]="rbxassetid://100461239613001"},
+	["HeadSlot4"]={["Block"]="rbxassetid://107088461592100",["Rope"]="rbxassetid://136791230074868",["Scaffold"]="rbxassetid://110529164879350",["Sketch"]="rbxassetid://105931461717267",["Tools"]="rbxassetid://129978332460309"},
+	["HokageCliff"]={["Cliff"]="rbxassetid://72922423253325",["Plateau"]="rbxassetid://136039166976461",["Trees"]="rbxassetid://116648369722881",["Trunks"]="rbxassetid://111584300701170"},
+	["HouseBack_22x20x2"]={["Eaves"]="rbxassetid://100457141697563",["Openings"]="rbxassetid://127047101617124",["Tiles"]="rbxassetid://127934727204610",["Timber"]="rbxassetid://80940882651825",["Walls"]="rbxassetid://106884960117183"},
+	["HouseFlat_22x18x3"]={["Lantern"]="rbxassetid://108993776749365",["LanternCap"]="rbxassetid://133080253667574",["Openings"]="rbxassetid://90590598807175",["Tiles"]="rbxassetid://127312953090925",["Timber"]="rbxassetid://123838567361696",["Walls"]="rbxassetid://79141025403594"},
+	["HouseFlat_24x20x2"]={["Lantern"]="rbxassetid://73242430053351",["LanternCap"]="rbxassetid://104300240842099",["Openings"]="rbxassetid://96267177089836",["Tiles"]="rbxassetid://140372108231681",["Timber"]="rbxassetid://125698864944177",["Walls"]="rbxassetid://91167587939273"},
+	["HouseGable_24x20x2"]={["Eaves"]="rbxassetid://121919626718132",["Lantern"]="rbxassetid://108709517387713",["LanternCap"]="rbxassetid://129616618260421",["Openings"]="rbxassetid://92430271164296",["Tiles"]="rbxassetid://96529455605881",["Timber"]="rbxassetid://131837889259277",["Walls"]="rbxassetid://99651763573482"},
+	["HouseShop_24x20x2"]={["Cloth"]="rbxassetid://87973244182589",["Eaves"]="rbxassetid://113458844164909",["Lantern"]="rbxassetid://97717467757372",["LanternCap"]="rbxassetid://100931788645182",["Openings"]="rbxassetid://102989908144077",["Tiles"]="rbxassetid://127487219848344",["Timber"]="rbxassetid://113470139938452",["Walls"]="rbxassetid://112839647021571"},
+	["HouseUchiha_26x20x2"]={["Eaves"]="rbxassetid://86291919029288",["Lantern"]="rbxassetid://109311529773601",["LanternCap"]="rbxassetid://118774896962749",["Openings"]="rbxassetid://99053735905202",["Tiles"]="rbxassetid://118183742334870",["Timber"]="rbxassetid://94279424718314",["Walls"]="rbxassetid://134794511546027"},
+	["HyugaCompound"]={["Eaves"]="rbxassetid://99823944632428",["GateTiles"]="rbxassetid://116776419477652",["Shoji"]="rbxassetid://72103996747832",["TilesE"]="rbxassetid://107273123466455",["TilesW"]="rbxassetid://128652108009067",["Timber"]="rbxassetid://108081564914169",["Walls"]="rbxassetid://85034412809004"},
+	["Ichiraku"]={["Awning"]="rbxassetid://75312915026286",["Caps"]="rbxassetid://129680020672234",["Kitchen"]="rbxassetid://132997861196759",["Lanterns"]="rbxassetid://134932343598130",["Noren"]="rbxassetid://133478813076884",["Stools"]="rbxassetid://125970783091136",["Walls"]="rbxassetid://90204790051022",["Wood"]="rbxassetid://129811579103311"},
+	["KonohaGate"]={["Doors"]="rbxassetid://131815819534741",["Eaves"]="rbxassetid://112080596233606",["Iron"]="rbxassetid://80642821733154",["Lacquer"]="rbxassetid://99329389454676",["Stone"]="rbxassetid://136128927540714",["TilesN"]="rbxassetid://95110297455417",["TilesS"]="rbxassetid://116297241221632"},
+	["Ladder"]={["Wood"]="rbxassetid://72036273700090"},
+	["LampPost"]={["Post"]="rbxassetid://122437641289026"},
+	["MemorialStone"]={["Base"]="rbxassetid://132857150897315",["Stone"]="rbxassetid://74159124622978"},
+	["NakaShrine"]={["Base"]="rbxassetid://73578815374895",["Eaves"]="rbxassetid://130631534905684",["Tiles"]="rbxassetid://124988233445027",["Timber"]="rbxassetid://84346061694555",["Walls"]="rbxassetid://131648282390497"},
+	["PaperLantern"]={["Cap"]="rbxassetid://70525237072054",["Paper"]="rbxassetid://126245027860605"},
+	["StoneLantern"]={["Light"]="rbxassetid://117722536874624",["Stone"]="rbxassetid://120042346070357"},
+	["Stump"]={["Bark"]="rbxassetid://135709095687060",["Cut"]="rbxassetid://126581639633253"},
+	["Torii"]={["Kasagi"]="rbxassetid://98319858876513",["Lacquer"]="rbxassetid://87809822914884"},
+	["TrainingProps"]={["Kunai"]="rbxassetid://139688700011248",["Rope"]="rbxassetid://106323610917524",["Target"]="rbxassetid://121799912010011",["Wood"]="rbxassetid://126380283504127"},
+	["TreeA"]={["Leaves"]="rbxassetid://105341148675676",["Trunk"]="rbxassetid://110587501957765"},
+	["TreeC"]={["Leaves"]="rbxassetid://130211193063245",["Trunk"]="rbxassetid://93399025718821"},
+	["UchihaGate"]={["Lacquer"]="rbxassetid://73695640324489"},
+	["UchihaPier"]={["Planks"]="rbxassetid://121139699519354"},
+	["WaterTank"]={["Hoops"]="rbxassetid://119328218807419",["Staves"]="rbxassetid://94817374724275"},
+}
+</ProtectedString>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="ND213">
+          <Properties>
             <string name="Name">HubMeshData</string>
             <ProtectedString name="Source">-- Generated by tools/blender/konoha_models.py. Do not edit: re-run the script.
 -- Konoha's modelled pieces (docs/systems/HUB_DRESS.md), in MeshData's
@@ -57694,7 +57895,7 @@ return all
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND213">
+        <Item class="ModuleScript" referent="ND214">
           <Properties>
             <string name="Name">HubMeshData1</string>
             <ProtectedString name="Source">-- Generated by tools/blender/konoha_models.py. Do not edit: re-run the script.
@@ -57714,7 +57915,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND214">
+        <Item class="ModuleScript" referent="ND215">
           <Properties>
             <string name="Name">HubMeshData10</string>
             <ProtectedString name="Source">-- Generated by tools/blender/konoha_models.py. Do not edit: re-run the script.
@@ -57726,7 +57927,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND215">
+        <Item class="ModuleScript" referent="ND216">
           <Properties>
             <string name="Name">HubMeshData11</string>
             <ProtectedString name="Source">-- Generated by tools/blender/konoha_models.py. Do not edit: re-run the script.
@@ -57754,7 +57955,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND216">
+        <Item class="ModuleScript" referent="ND217">
           <Properties>
             <string name="Name">HubMeshData12</string>
             <ProtectedString name="Source">-- Generated by tools/blender/konoha_models.py. Do not edit: re-run the script.
@@ -57768,7 +57969,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND217">
+        <Item class="ModuleScript" referent="ND218">
           <Properties>
             <string name="Name">HubMeshData13</string>
             <ProtectedString name="Source">-- Generated by tools/blender/konoha_models.py. Do not edit: re-run the script.
@@ -57780,7 +57981,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND218">
+        <Item class="ModuleScript" referent="ND219">
           <Properties>
             <string name="Name">HubMeshData14</string>
             <ProtectedString name="Source">-- Generated by tools/blender/konoha_models.py. Do not edit: re-run the script.
@@ -57792,7 +57993,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND219">
+        <Item class="ModuleScript" referent="ND220">
           <Properties>
             <string name="Name">HubMeshData15</string>
             <ProtectedString name="Source">-- Generated by tools/blender/konoha_models.py. Do not edit: re-run the script.
@@ -57808,7 +58009,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND220">
+        <Item class="ModuleScript" referent="ND221">
           <Properties>
             <string name="Name">HubMeshData16</string>
             <ProtectedString name="Source">-- Generated by tools/blender/konoha_models.py. Do not edit: re-run the script.
@@ -57830,7 +58031,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND221">
+        <Item class="ModuleScript" referent="ND222">
           <Properties>
             <string name="Name">HubMeshData17</string>
             <ProtectedString name="Source">-- Generated by tools/blender/konoha_models.py. Do not edit: re-run the script.
@@ -57850,7 +58051,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND222">
+        <Item class="ModuleScript" referent="ND223">
           <Properties>
             <string name="Name">HubMeshData18</string>
             <ProtectedString name="Source">-- Generated by tools/blender/konoha_models.py. Do not edit: re-run the script.
@@ -57880,7 +58081,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND223">
+        <Item class="ModuleScript" referent="ND224">
           <Properties>
             <string name="Name">HubMeshData19</string>
             <ProtectedString name="Source">-- Generated by tools/blender/konoha_models.py. Do not edit: re-run the script.
@@ -57914,7 +58115,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND224">
+        <Item class="ModuleScript" referent="ND225">
           <Properties>
             <string name="Name">HubMeshData2</string>
             <ProtectedString name="Source">-- Generated by tools/blender/konoha_models.py. Do not edit: re-run the script.
@@ -57942,7 +58143,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND225">
+        <Item class="ModuleScript" referent="ND226">
           <Properties>
             <string name="Name">HubMeshData20</string>
             <ProtectedString name="Source">-- Generated by tools/blender/konoha_models.py. Do not edit: re-run the script.
@@ -57958,7 +58159,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND226">
+        <Item class="ModuleScript" referent="ND227">
           <Properties>
             <string name="Name">HubMeshData21</string>
             <ProtectedString name="Source">-- Generated by tools/blender/konoha_models.py. Do not edit: re-run the script.
@@ -57976,7 +58177,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND227">
+        <Item class="ModuleScript" referent="ND228">
           <Properties>
             <string name="Name">HubMeshData22</string>
             <ProtectedString name="Source">-- Generated by tools/blender/konoha_models.py. Do not edit: re-run the script.
@@ -57996,7 +58197,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND228">
+        <Item class="ModuleScript" referent="ND229">
           <Properties>
             <string name="Name">HubMeshData23</string>
             <ProtectedString name="Source">-- Generated by tools/blender/konoha_models.py. Do not edit: re-run the script.
@@ -58010,7 +58211,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND229">
+        <Item class="ModuleScript" referent="ND230">
           <Properties>
             <string name="Name">HubMeshData24</string>
             <ProtectedString name="Source">-- Generated by tools/blender/konoha_models.py. Do not edit: re-run the script.
@@ -58032,7 +58233,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND230">
+        <Item class="ModuleScript" referent="ND231">
           <Properties>
             <string name="Name">HubMeshData25</string>
             <ProtectedString name="Source">-- Generated by tools/blender/konoha_models.py. Do not edit: re-run the script.
@@ -58052,7 +58253,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND231">
+        <Item class="ModuleScript" referent="ND232">
           <Properties>
             <string name="Name">HubMeshData26</string>
             <ProtectedString name="Source">-- Generated by tools/blender/konoha_models.py. Do not edit: re-run the script.
@@ -58072,7 +58273,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND232">
+        <Item class="ModuleScript" referent="ND233">
           <Properties>
             <string name="Name">HubMeshData27</string>
             <ProtectedString name="Source">-- Generated by tools/blender/konoha_models.py. Do not edit: re-run the script.
@@ -58088,7 +58289,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND233">
+        <Item class="ModuleScript" referent="ND234">
           <Properties>
             <string name="Name">HubMeshData28</string>
             <ProtectedString name="Source">-- Generated by tools/blender/konoha_models.py. Do not edit: re-run the script.
@@ -58102,7 +58303,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND234">
+        <Item class="ModuleScript" referent="ND235">
           <Properties>
             <string name="Name">HubMeshData29</string>
             <ProtectedString name="Source">-- Generated by tools/blender/konoha_models.py. Do not edit: re-run the script.
@@ -58122,7 +58323,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND235">
+        <Item class="ModuleScript" referent="ND236">
           <Properties>
             <string name="Name">HubMeshData3</string>
             <ProtectedString name="Source">-- Generated by tools/blender/konoha_models.py. Do not edit: re-run the script.
@@ -58144,7 +58345,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND236">
+        <Item class="ModuleScript" referent="ND237">
           <Properties>
             <string name="Name">HubMeshData30</string>
             <ProtectedString name="Source">-- Generated by tools/blender/konoha_models.py. Do not edit: re-run the script.
@@ -58166,7 +58367,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND237">
+        <Item class="ModuleScript" referent="ND238">
           <Properties>
             <string name="Name">HubMeshData31</string>
             <ProtectedString name="Source">-- Generated by tools/blender/konoha_models.py. Do not edit: re-run the script.
@@ -58190,7 +58391,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND238">
+        <Item class="ModuleScript" referent="ND239">
           <Properties>
             <string name="Name">HubMeshData32</string>
             <ProtectedString name="Source">-- Generated by tools/blender/konoha_models.py. Do not edit: re-run the script.
@@ -58238,7 +58439,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND239">
+        <Item class="ModuleScript" referent="ND240">
           <Properties>
             <string name="Name">HubMeshData33</string>
             <ProtectedString name="Source">-- Generated by tools/blender/konoha_models.py. Do not edit: re-run the script.
@@ -58252,7 +58453,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND240">
+        <Item class="ModuleScript" referent="ND241">
           <Properties>
             <string name="Name">HubMeshData4</string>
             <ProtectedString name="Source">-- Generated by tools/blender/konoha_models.py. Do not edit: re-run the script.
@@ -58264,7 +58465,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND241">
+        <Item class="ModuleScript" referent="ND242">
           <Properties>
             <string name="Name">HubMeshData5</string>
             <ProtectedString name="Source">-- Generated by tools/blender/konoha_models.py. Do not edit: re-run the script.
@@ -58276,7 +58477,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND242">
+        <Item class="ModuleScript" referent="ND243">
           <Properties>
             <string name="Name">HubMeshData6</string>
             <ProtectedString name="Source">-- Generated by tools/blender/konoha_models.py. Do not edit: re-run the script.
@@ -58288,7 +58489,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND243">
+        <Item class="ModuleScript" referent="ND244">
           <Properties>
             <string name="Name">HubMeshData7</string>
             <ProtectedString name="Source">-- Generated by tools/blender/konoha_models.py. Do not edit: re-run the script.
@@ -58300,7 +58501,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND244">
+        <Item class="ModuleScript" referent="ND245">
           <Properties>
             <string name="Name">HubMeshData8</string>
             <ProtectedString name="Source">-- Generated by tools/blender/konoha_models.py. Do not edit: re-run the script.
@@ -58314,7 +58515,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND245">
+        <Item class="ModuleScript" referent="ND246">
           <Properties>
             <string name="Name">HubMeshData9</string>
             <ProtectedString name="Source">-- Generated by tools/blender/konoha_models.py. Do not edit: re-run the script.
@@ -58330,7 +58531,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND246">
+        <Item class="ModuleScript" referent="ND247">
           <Properties>
             <string name="Name">HubPlayers</string>
             <ProtectedString name="Source">-- The players met in Konoha (14/11, « passons à la suite de la bêta »): the
@@ -58467,7 +58668,7 @@ return HubPlayers
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND247">
+        <Item class="ModuleScript" referent="ND248">
           <Properties>
             <string name="Name">IdentityFX</string>
             <ProtectedString name="Source">-- CORE4 identity on the client (mission NEXT_VALIDATION_ROSTER_SCALE §5): what
@@ -59177,7 +59378,7 @@ return IdentityFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND248">
+        <Item class="ModuleScript" referent="ND249">
           <Properties>
             <string name="Name">Input</string>
             <ProtectedString name="Source">local CAS=game:GetService("ContextActionService")
@@ -59507,7 +59708,7 @@ return Input
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND249">
+        <Item class="ModuleScript" referent="ND250">
           <Properties>
             <string name="Name">LeeFX</string>
             <ProtectedString name="Source">-- Rock Lee on the client (stress-test wave, DEC-015): the Fifth Gate (a green
@@ -59772,7 +59973,7 @@ return LeeFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND250">
+        <Item class="ModuleScript" referent="ND251">
           <Properties>
             <string name="Name">LightBudgetFX</string>
             <ProtectedString name="Source">-- The effect lights, kept to a budget (OUTILLEUR, F7 tool, 08/11).
@@ -59895,7 +60096,7 @@ return LightBudgetFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND251">
+        <Item class="ModuleScript" referent="ND252">
           <Properties>
             <string name="Name">LightningBoltFX</string>
             <ProtectedString name="Source">--[[
@@ -60146,7 +60347,7 @@ SOFTWARE.
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND252">
+        <Item class="ModuleScript" referent="ND253">
           <Properties>
             <string name="Name">LightningFX</string>
             <ProtectedString name="Source">-- (12/11) The lightning of the Chidori (Sasuke) and the Raikiri / Lightning
@@ -60283,7 +60484,7 @@ return LightningFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND253">
+        <Item class="ModuleScript" referent="ND254">
           <Properties>
             <string name="Name">LobbyPanel</string>
             <ProtectedString name="Source">-- Players online and challenges, the client's half (Server/Lobby, user 04/11:
@@ -60566,7 +60767,7 @@ return Panel
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="LocalScript" referent="ND254">
+        <Item class="LocalScript" referent="ND255">
           <Properties>
             <string name="Name">Main</string>
             <ProtectedString name="Source">local Players=game:GetService("Players")
@@ -60841,7 +61042,7 @@ print("[NinjaDuel] Client ready")
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND255">
+        <Item class="ModuleScript" referent="ND256">
           <Properties>
             <string name="Name">MenuStage</string>
             <ProtectedString name="Source">-- The select screen's two prodigies, in a real 3D set (user 02/11, "everything
@@ -61028,7 +61229,7 @@ return MenuStage
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND256">
+        <Item class="ModuleScript" referent="ND257">
           <Properties>
             <string name="Name">MeshData</string>
             <ProtectedString name="Source">-- Generated by tools/blender/fx_models.py. Do not edit: re-run the script.
@@ -61044,7 +61245,7 @@ return all
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND257">
+        <Item class="ModuleScript" referent="ND258">
           <Properties>
             <string name="Name">MeshData1</string>
             <ProtectedString name="Source">-- Generated by tools/blender/fx_models.py. Do not edit: re-run the script.
@@ -61087,7 +61288,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND258">
+        <Item class="ModuleScript" referent="ND259">
           <Properties>
             <string name="Name">MeshData10</string>
             <ProtectedString name="Source">-- Generated by tools/blender/fx_models.py. Do not edit: re-run the script.
@@ -61104,7 +61305,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND259">
+        <Item class="ModuleScript" referent="ND260">
           <Properties>
             <string name="Name">MeshData2</string>
             <ProtectedString name="Source">-- Generated by tools/blender/fx_models.py. Do not edit: re-run the script.
@@ -61151,7 +61352,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND260">
+        <Item class="ModuleScript" referent="ND261">
           <Properties>
             <string name="Name">MeshData3</string>
             <ProtectedString name="Source">-- Generated by tools/blender/fx_models.py. Do not edit: re-run the script.
@@ -61216,7 +61417,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND261">
+        <Item class="ModuleScript" referent="ND262">
           <Properties>
             <string name="Name">MeshData4</string>
             <ProtectedString name="Source">-- Generated by tools/blender/fx_models.py. Do not edit: re-run the script.
@@ -61263,7 +61464,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND262">
+        <Item class="ModuleScript" referent="ND263">
           <Properties>
             <string name="Name">MeshData5</string>
             <ProtectedString name="Source">-- Generated by tools/blender/fx_models.py. Do not edit: re-run the script.
@@ -61280,7 +61481,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND263">
+        <Item class="ModuleScript" referent="ND264">
           <Properties>
             <string name="Name">MeshData6</string>
             <ProtectedString name="Source">-- Generated by tools/blender/fx_models.py. Do not edit: re-run the script.
@@ -61313,7 +61514,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND264">
+        <Item class="ModuleScript" referent="ND265">
           <Properties>
             <string name="Name">MeshData7</string>
             <ProtectedString name="Source">-- Generated by tools/blender/fx_models.py. Do not edit: re-run the script.
@@ -61350,7 +61551,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND265">
+        <Item class="ModuleScript" referent="ND266">
           <Properties>
             <string name="Name">MeshData8</string>
             <ProtectedString name="Source">-- Generated by tools/blender/fx_models.py. Do not edit: re-run the script.
@@ -61377,7 +61578,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND266">
+        <Item class="ModuleScript" referent="ND267">
           <Properties>
             <string name="Name">MeshData9</string>
             <ProtectedString name="Source">-- Generated by tools/blender/fx_models.py. Do not edit: re-run the script.
@@ -61412,7 +61613,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND267">
+        <Item class="ModuleScript" referent="ND268">
           <Properties>
             <string name="Name">MeshKit</string>
             <ProtectedString name="Source">-- (13/11, user: « il va nous falloir des vrais modèles 3D, des vrais modèles de
@@ -61694,7 +61895,7 @@ return MeshKit
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND268">
+        <Item class="ModuleScript" referent="ND269">
           <Properties>
             <string name="Name">MotionSmear</string>
             <ProtectedString name="Source">-- Speed smear (fluidity pass, user reference 28/10). What the eye cannot
@@ -61843,7 +62044,7 @@ return Smear
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND269">
+        <Item class="ModuleScript" referent="ND270">
           <Properties>
             <string name="Name">NarutoFX</string>
             <ProtectedString name="Source">-- Naruto on the client (roster wave, several bodies): the puffs of smoke of
@@ -62263,7 +62464,7 @@ return NarutoFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND270">
+        <Item class="ModuleScript" referent="ND271">
           <Properties>
             <string name="Name">PerceptionFX</string>
             <ProtectedString name="Source">-- (06/11, « leur Sharingan sert à quelque chose ; un truc qui va trop vite,
@@ -62592,7 +62793,7 @@ return PerceptionFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND271">
+        <Item class="ModuleScript" referent="ND272">
           <Properties>
             <string name="Name">Presentation</string>
             <ProtectedString name="Source">-- Velmora's additive combat motion and hit feedback, retaining Ninja Duel's
@@ -63821,7 +64022,7 @@ return Presentation
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND272">
+        <Item class="ModuleScript" referent="ND273">
           <Properties>
             <string name="Name">SandFX</string>
             <ProtectedString name="Source">-- Gaara's sand on the client: the sand bullet and Sand Shuriken in flight, the
@@ -64612,7 +64813,7 @@ return SandFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND273">
+        <Item class="ModuleScript" referent="ND274">
           <Properties>
             <string name="Name">SealFX</string>
             <ProtectedString name="Source">-- (13/11, issue #73: « les signes de Kakashi ne sont que des poings devant la
@@ -64698,7 +64899,7 @@ return SealFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND274">
+        <Item class="ModuleScript" referent="ND275">
           <Properties>
             <string name="Name">ShadowFX</string>
             <ProtectedString name="Source">-- (12/11) The game casts shadows now (DEV light pass). Light does not cast a
@@ -64762,7 +64963,7 @@ return ShadowFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND275">
+        <Item class="ModuleScript" referent="ND276">
           <Properties>
             <string name="Name">ShopPanel</string>
             <ProtectedString name="Source">-- The shop (13/11, user: « on voit tout ce qui est boutique, UI, design, […]
@@ -65079,7 +65280,7 @@ return Panel
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND276">
+        <Item class="ModuleScript" referent="ND277">
           <Properties>
             <string name="Name">ToadFX</string>
             <ProtectedString name="Source">-- (13/11, user: « la grenouille de Naruto, c'est pas bon ») Gamakichi.
@@ -65197,7 +65398,7 @@ return ToadFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND277">
+        <Item class="ModuleScript" referent="ND278">
           <Properties>
             <string name="Name">ToadModel</string>
             <ProtectedString name="Source">-- Generated by tools/blender/fx_toad.py: Gamakichi's parts (13/11).
@@ -65246,7 +65447,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND278">
+        <Item class="ModuleScript" referent="ND279">
           <Properties>
             <string name="Name">TouchControls</string>
             <ProtectedString name="Source">-- Phone and tablet controls (audit 04/11: the experience is open to phones and
@@ -65521,7 +65722,7 @@ return Touch
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND279">
+        <Item class="ModuleScript" referent="ND280">
           <Properties>
             <string name="Name">TreePanel</string>
             <ProtectedString name="Source">-- The skill tree of a learned kit (DEC-038, user 13/11: « vraiment les arbres
@@ -65789,7 +65990,7 @@ return Panel
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND280">
+        <Item class="ModuleScript" referent="ND281">
           <Properties>
             <string name="Name">UI</string>
             <ProtectedString name="Source">-- Prodigy Tournament interface: roster/selection, online queue and fighter
@@ -65881,7 +66082,8 @@ local function fitScale(viewport,w,h,max)
 end
 local function cornerClose(root,onClose)
 	-- under Roblox's top bar (58 px), in the window's top-right corner
-	local b=button(root,"✕",UDim2.new(1,-84,0,70),UDim2.fromOffset(66,66),onClose,palette.red)
+	-- (14/11, Studio: the title font has no "✕": an empty box)
+	local b=button(root,"X",UDim2.new(1,-84,0,70),UDim2.fromOffset(66,66),onClose,palette.red)
 	b.TextSize=34;b.ZIndex=(root.ZIndex or 1)+20;b.Visible=false
 	return b
 end
@@ -67331,7 +67533,7 @@ return UI
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND281">
+        <Item class="ModuleScript" referent="ND282">
           <Properties>
             <string name="Name">UltimateFX</string>
             <ProtectedString name="Source">-- The ultimates on the client (stage 6, the approved move list, "Ultimes"):
@@ -68554,7 +68756,7 @@ return UltimateFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND282">
+        <Item class="ModuleScript" referent="ND283">
           <Properties>
             <string name="Name">VelmoraHitFeedback</string>
             <ProtectedString name="Source">-- Impact presentation. Adapted from Velmora src/client/Combat/HitFeedback.luau
@@ -68754,7 +68956,7 @@ return Feedback
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND283">
+        <Item class="ModuleScript" referent="ND284">
           <Properties>
             <string name="Name">VelmoraMotionEngine</string>
             <ProtectedString name="Source">-- Ninja Duel body animation. Started from Velmora's additive R15 layer (MIT) and
@@ -70727,7 +70929,9 @@ Motion._ankleFrame=ankleFrame
 -- was and joins the clip's path over a few frames (a step, not a glide). A
 -- locked foot the body has carried out of reach is released the same way.
 Motion.TURN_STEP=.55 -- studs: a planted foot a turn carries this far off its place steps
-local function authoredFeet(char,pose,dt,cycle,reach)
+Motion.STEP_LEAD=.14 -- of a step: up before it travels, over its spot before it sets down
+Motion.STEP_CARRIED=16 -- st/s: a body carried faster steps on the spring
+local function authoredFeet(char,pose,dt,cycle,reach,clock)
 	local s=stateOf(char)
 	-- (FILM10) the standing / slow-cycle feet keep their own memory: the gait is
 	-- also computed under a strike (its base), and sharing the strike's feet
@@ -70735,6 +70939,12 @@ local function authoredFeet(char,pose,dt,cycle,reach)
 	local box=s
 	if reach or cycle=="loco" then s.locoFeet=s.locoFeet or {};box=s.locoFeet end
 	if cycle=="loco" then cycle=true end
+	-- (14/11) the standing feet, a slow cycle's and a pivot's step on a clock
+	-- (see below) while the body is not carried fast; a strike's, a
+	-- reaction's and a cycle the body outruns keep the spring (their clips
+	-- step, and a body thrown back at 46 st/s left a foot held in the world
+	-- far behind)
+	local timed=(box~=s or clock==true)
 	local root=char:FindFirstChild("HumanoidRootPart")
 	if not root then return nil end
 	dt=dt or 1/60
@@ -70743,6 +70953,10 @@ local function authoredFeet(char,pose,dt,cycle,reach)
 	-- jumped (a teleport, a flicker) starts on its new spot: its feet held at
 	-- the old one used to be released into a step across the whole arena.
 	local warped=box.afRoot~=nil and (rootCF.Position-box.afRoot).Magnitude&gt;3
+	-- (14/11) how fast the body is carried (a step on a clock leaves from the
+	-- world: a body thrown or rushed left that foot far behind, Naruto's knee
+	-- 50 deg in a frame after his Rendan headless)
+	local carried=if box.afRoot~=nil and not warped then planar(rootCF.Position-box.afRoot).Magnitude/dt else 0
 	box.afRoot=rootCF.Position
 	-- A new source of feet (standing / cycle / a clip of its own) starts fresh,
 	-- as it did when only clips held feet: carried over, a stance foot read the
@@ -70777,7 +70991,7 @@ local function authoredFeet(char,pose,dt,cycle,reach)
 		-- A foot released to step does not plant again before it has arrived.
 		-- (Also any swing still under way: planting it mid-arc dropped the foot
 		-- by its lift in one frame.)
-		local stepping=not f.planted and f.swing0~=nil and f.off.Magnitude&gt;.12
+		local stepping=not f.planted and (f.step~=nil or (f.swing0~=nil and f.off.Magnitude&gt;.12))
 		if not stepping then f.release=nil end
 		if low and still and not stepping then
 			if not f.planted then
@@ -70800,7 +71014,37 @@ local function authoredFeet(char,pose,dt,cycle,reach)
 			if f.planted then f.planted=false;f.off=rootCF:PointToObjectSpace(f.world)-clipPos;f.offV=Vector3.zero end
 		end
 		local lift=0
-		if not f.planted then
+		-- (carried fast mid-step: the spring takes the step over from here)
+		if f.step and carried&gt;=Motion.STEP_CARRIED then f.step=nil;f.swing0=math.max(f.off.Magnitude,.06);f.offV=Vector3.zero end
+		if not f.planted and (f.step~=nil or (timed and carried&lt;Motion.STEP_CARRIED and f.swing0==nil and f.off.Magnitude&gt;.05)) then
+			-- (14/11, FILM10 A9 « still ») The standing and slow-cycle feet: a
+			-- body facing a foe who circles it, or nudged apart, slid its feet
+			-- ~2 studs in 10 s headless (Gaara), 80 % of it in the spring's start
+			-- and long tail along the floor under a lift of 4u(1-u). Their step
+			-- has a length of its own: it leaves from where the foot is in the
+			-- world, is up before it travels, and is over its spot (on the clip's
+			-- path) before it sets down, straight down.
+			if f.step or f.off.Magnitude&gt;.05 then
+				if not f.step then
+					local d=f.off.Magnitude
+					f.step={from=rootCF:PointToWorldSpace(clipPos+f.off),d=d,t=0,dur=math.clamp(.1+.12*d,.12,.26),h=math.max(.18,math.min(.55,d*.35))}
+				end
+				local st=f.step
+				st.t+=dt
+				local p=math.min(st.t/st.dur,1)
+				local q=math.clamp((p-Motion.STEP_LEAD)/(1-2*Motion.STEP_LEAD),0,1)
+				-- (a clip foot still gliding into its own landing dragged it)
+				if q&gt;=1 and not st.land then st.land=rootCF:PointToWorldSpace(clipPos) end
+				local w=st.land or st.from:Lerp(rootCF:PointToWorldSpace(clipPos),q*q*q*(q*(q*6-15)+10))
+				f.off=rootCF:PointToObjectSpace(w)-clipPos
+				lift=st.h*math.sin(math.pi*p)
+				-- set down: the next frame plants it where it is, or steps on
+				if p&gt;=1 then f.step=nil end
+			else
+				f.off=Vector3.zero
+			end
+			f.offV=Vector3.zero;f.swing0=nil
+		elseif not f.planted then
 			-- A swing from where the foot really was onto the clip's path, lifted
 			-- off the floor in an arc (a step, never a skate).
 			if f.off.Magnitude&gt;.05 then
@@ -70817,12 +71061,12 @@ local function authoredFeet(char,pose,dt,cycle,reach)
 				f.off=Vector3.zero;f.swing0=nil;f.offV=Vector3.zero
 			end
 		else
-			f.swing0=nil;f.offV=Vector3.zero
+			f.swing0=nil;f.offV=Vector3.zero;f.step=nil
 		end
 		-- A foot the clip kicks high stays the clip's own (free leg).
 		-- (A running cycle's free foot already on its clip path stays the clip's
 		-- own: the solver only takes a foot held on the floor or on its way back.)
-		local own=cycle==true and not f.planted and f.off.Magnitude&lt;=.05
+		local own=cycle==true and not f.planted and not f.step and f.off.Magnitude&lt;=.05
 		if clipPos.Y-ANKLE_Y&lt;.9 and not own then
 			local rx,ry=frame:ToEulerAnglesYXZ()
 			local target=clipPos+f.off
@@ -72249,7 +72493,7 @@ function Motion.present(char,actor,clock,dt)
 				if t&lt;Authored.length(p.clip) then
 					local targets=table.clone(Authored.sample(p.clip,t))
 					targets.Root=nil -- the server already turned the body
-					targets.__feet=authoredFeet(char,targets,dt)
+					targets.__feet=authoredFeet(char,targets,dt,nil,nil,true)
 					mark(char,"pivot:"..p.clip,.07)
 					apply(char,targets,RATE.authored,dt)
 					return "pivot"
@@ -72802,7 +73046,7 @@ return Motion
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND284">
+        <Item class="ModuleScript" referent="ND285">
           <Properties>
             <string name="Name">VfxAtlas</string>
             <ProtectedString name="Source">-- GENERATED by tools/vfx_textures.py --pack: do not edit by hand.
@@ -74255,7 +74499,7 @@ HAOBECABDA1HBIA3HBGAmZ]]},
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND285">
+        <Item class="ModuleScript" referent="ND286">
           <Properties>
             <string name="Name">VfxKit</string>
             <ProtectedString name="Source">-- Presentation primitives on the project's own VFX textures
@@ -74810,7 +75054,7 @@ return Kit
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND286">
+        <Item class="ModuleScript" referent="ND287">
           <Properties>
             <string name="Name">Wave1FX</string>
             <ProtectedString name="Source">-- Roster 20, batch 1 (Haku, Zabuza, Kimimaro): the batch's own drawing,
@@ -75024,7 +75268,7 @@ return M
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND287">
+        <Item class="ModuleScript" referent="ND288">
           <Properties>
             <string name="Name">Wave1Motion</string>
             <ProtectedString name="Source">-- Roster batch 1 bodies authored from their Combat Bibles (DEC-026). First:
@@ -75325,7 +75569,7 @@ return Wave1Motion
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND288">
+        <Item class="ModuleScript" referent="ND289">
           <Properties>
             <string name="Name">Wave2FX</string>
             <ProtectedString name="Source">-- Roster 20, batch 2 (Shikamaru, Shino, Orochimaru): the batch's own drawing, installed by
@@ -75338,7 +75582,7 @@ return M
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND289">
+        <Item class="ModuleScript" referent="ND290">
           <Properties>
             <string name="Name">Wave3FX</string>
             <ProtectedString name="Source">-- Roster 20, batch 3 (Deidara, Sasori, Nagato, Killer Bee): the batch's own
@@ -75441,7 +75685,7 @@ return M
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND290">
+        <Item class="ModuleScript" referent="ND291">
           <Properties>
             <string name="Name">Wave3Motion</string>
             <ProtectedString name="Source">-- Roster batch 3 bodies authored from their Combat Bibles (DEC-026). First:
@@ -75568,7 +75812,7 @@ return Wave3Motion
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND291">
+        <Item class="ModuleScript" referent="ND292">
           <Properties>
             <string name="Name">Wave4FX</string>
             <ProtectedString name="Source">-- DEC-026 newcomers (Madara, Hashirama, Hiruzen as children): the weapons
@@ -75711,7 +75955,7 @@ return M
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND292">
+        <Item class="ModuleScript" referent="ND293">
           <Properties>
             <string name="Name">Wave4Motion</string>
             <ProtectedString name="Source">-- DEC-026 newcomers: the bodies of Madara, Hashirama and Hiruzen as children
@@ -75924,7 +76168,7 @@ return Wave4Motion
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND293">
+        <Item class="ModuleScript" referent="ND294">
           <Properties>
             <string name="Name">WorldLook</string>
             <ProtectedString name="Source">-- What the screen looks like (user 03/11: "the brightness, the graphics,
@@ -76025,7 +76269,7 @@ return WorldLook
       </Item>
     </Item>
   </Item>
-  <Item class="Lighting" referent="ND294">
+  <Item class="Lighting" referent="ND295">
     <Properties>
       <string name="Name">Lighting</string>
       <token name="Technology">4</token>
@@ -76046,7 +76290,7 @@ return WorldLook
       </Color3>
     </Properties>
   </Item>
-  <Item class="SoundService" referent="ND295">
+  <Item class="SoundService" referent="ND296">
     <Properties>
       <string name="Name">SoundService</string>
     </Properties>
