@@ -47,6 +47,18 @@ function Lobby.defaultServices()
 		if code then options.ReservedServerAccessCode=code end
 		return options
 	end
+	-- (14/11) a duel that counts takes a learned kit (DEC-037): the fighter a
+	-- client names is checked against his profile, else his chosen kit goes.
+	svc.owns=function(player,id)
+		local ok,yes=pcall(function() return require(script.Parent.Progression).owns(player,id) end)
+		return not ok or yes==true
+	end
+	svc.kitOf=function(player)
+		local ok,view=pcall(function() return require(script.Parent.Progression).view(player) end)
+		local kit=ok and view and view.selected
+		if kit and view.owned and view.owned[kit] then return kit end
+		return nil
+	end
 	svc.friends=function(userId)
 		local set={}
 		local ok,pages=pcall(function() return game:GetService("Players"):GetFriendsAsync(userId) end)
@@ -272,12 +284,23 @@ function Lobby:challenge(p,to,fighter,now)
 	if not Lobby.challengeable(target.state) then return self:status(p,string.upper(target.name).." IS IN A DUEL","bad") end
 	p.lastChallenge=now
 	if fighter then p.fighter=fighter end
+	self:ownKit(p)
 	local rec={id=string.sub(self.svc.guid(),1,18),from=p.id,name=p.name,fighter=p.fighter,to=to,toName=target.name,
 		fromJob=self.svc.jobId,toJob=target.job,expires=now+Protocol.Tune.ChallengeLife}
 	self.outgoing[rec.id]=rec
 	self:send(p.player,{kind="sent",id=rec.id,to=target.name,remaining=Protocol.Tune.ChallengeLife})
 	self:deliver({k="ask",id=rec.id,to=to,toJob=target.job,from=p.id,name=p.name,fighter=p.fighter,fromJob=self.svc.jobId,expires=rec.expires})
 	if p.watching then self:list(p) end
+end
+-- (14/11) The kit a challenge or an answer carries is one he has learned:
+-- an unlearned one (a crafted request, a stale roster pick) gives way to the
+-- kit he chose. Without a progression (the specs' fakes) nothing changes.
+function Lobby:ownKit(p)
+	local svc=self.svc
+	if svc.owns and not svc.owns(p.player,p.fighter) then
+		local kit=svc.kitOf and svc.kitOf(p.player)
+		if kit then p.fighter=kit end
+	end
 end
 -- An invitation reaches the player it names (on this server).
 function Lobby:receive(p,msg)
@@ -299,6 +322,7 @@ function Lobby:answer(p,id,accept,fighter,now)
 	self:send(p.player,{kind="closed",id=id})
 	if now>rec.expires then return self:status(p,"THIS CHALLENGE HAS EXPIRED","bad") end
 	if fighter then p.fighter=fighter end
+	self:ownKit(p)
 	if not accept then return self:deliver({k="no",id=id,to=rec.from,toJob=rec.fromJob,reason="declined",name=p.name}) end
 	if not Lobby.challengeable(self:stateOf(p)) then return self:deliver({k="no",id=id,to=rec.from,toJob=rec.fromJob,reason="busy",name=p.name}) end
 	self:status(p,"ACCEPTED  •  WAITING FOR "..string.upper(rec.name))
@@ -454,6 +478,7 @@ function Lobby:request(player,payload)
 		p.lastOp=now
 	end
 	local fighter=if type(payload.fighter)=="string" and table.find(BetaRoster,payload.fighter) then payload.fighter else nil
+	if fighter and self.svc.owns and not self.svc.owns(player,fighter) then fighter=nil end
 	if op=="open" then p.watching=true;self:list(p)
 	elseif op=="close" then p.watching=false
 	elseif op=="fighter" then if fighter then p.fighter=fighter end
@@ -461,7 +486,11 @@ function Lobby:request(player,payload)
 		-- (Security review 04/11, finding 2) a flip publishes within 2 s, not
 		-- at once: toggled every 0.25 s it rewrote every presence entry 4 times
 		-- a second, on a MemoryStore quota shared by the whole experience.
-		if type(payload.on)=="boolean" then p.dnd=payload.on;self.nextPublish=math.min(self.nextPublish,now+2);self:send(p.player,{kind="dnd",on=p.dnd}) end
+		if type(payload.on)=="boolean" then
+			p.dnd=payload.on;self.nextPublish=math.min(self.nextPublish,now+2);self:send(p.player,{kind="dnd",on=p.dnd})
+			-- (14/11) the others in Konoha see it over his head: no CHALLENGE then
+			pcall(function() p.player:SetAttribute("NinjaDnd",p.dnd) end)
+		end
 	elseif op=="challenge" then
 		if type(payload.to)=="number" and payload.to==payload.to and payload.to>0 then self:challenge(p,math.floor(payload.to),fighter,now) end
 	elseif op=="answer" then
