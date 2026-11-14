@@ -128,6 +128,16 @@ test("Konoha's goal: the three masters, then the first duel, then a master or th
 				for _,v in {x,y,z,cf.Position.X,cf.Position.Y,cf.Position.Z} do assert(v==v and math.abs(v)<math.rad(170),id.." "..joint.." goes wild at "..t) end
 			end
 		end
+		-- (DEC-041) the ANIMATEUR's authored loop replaces the code pose, on the same joints
+		local clip=Moods.authored(id)
+		assert(clip,id.." has no authored mood (Mood."..id..")")
+		for t=0,20,.41 do
+			for joint,cf in clip(t) do
+				assert(known[joint],id.." (authored) moves an unknown joint "..joint)
+				local x,y,z=cf:ToEulerAnglesXYZ()
+				for _,v in {x,y,z,cf.Position.X,cf.Position.Y,cf.Position.Z} do assert(v==v and math.abs(v)<math.rad(170),id.." (authored) "..joint.." goes wild at "..t) end
+			end
+		end
 		assert(HubMap.placeAt(HubMap.Origin+HubMap.Welcome[id].at).id=="Gate" or HubMap.placeAt(HubMap.Origin+HubMap.Welcome[id].at).id=="Street",id.." is not at the gate")
 	end
 	assert(#g.head<=30,"the head stays short")
