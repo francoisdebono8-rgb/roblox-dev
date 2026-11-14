@@ -70,4 +70,67 @@ test("a standing Gaara turning more than 60 degrees steps round (Sand.Pivot)",fu
  end
 end)
 
+-- (14/11, A9 « still ») How far the feet travel along the floor: a foot's
+-- horizontal motion while it is within .12 stud of the lowest the feet go in
+-- that run (on both frames). A planted foot adds nothing; a step only its
+-- first and last few centimetres.
+local function slide(fighter,state,seconds,move,setup)
+ local _,a=H.duel(fighter,"Flashstep")
+ local root=a.model.root
+ root.CFrame=H.C.new(0,3,0)
+ local actor={fighterId=fighter,state=state,health=100,airborne=false,velocity=V.zero,speed=0}
+ if setup then setup(actor) end
+ local function ankles()
+  local p={}
+  for name,j in a.model.joints do p[name]=j.Transform end
+  return {root.CFrame*Motion._ankleFrame(p,"R").Position,root.CFrame*Motion._ankleFrame(p,"L").Position}
+ end
+ for i=1,30 do Motion.tick(1/60);Motion.present(a.model,actor,{},1/60) end
+ local frames={ankles()}
+ for i=1,math.floor(seconds*60) do
+  move(actor,root,i/60)
+  Motion.tick(1/60);Motion.present(a.model,actor,{},1/60)
+  table.insert(frames,ankles())
+ end
+ local floor=math.huge
+ for _,f in frames do floor=math.min(floor,f[1].Y,f[2].Y) end
+ local total=0
+ for i=2,#frames do for k=1,2 do
+  local p,q=frames[i-1][k],frames[i][k]
+  if p.Y-floor<.12 and q.Y-floor<.12 then total+=V.new(q.X-p.X,0,q.Z-p.Z).Magnitude end
+ end end
+ return total
+end
+local circling=function(_,r,t) r.CFrame=H.C.new(r.Position)*H.C.Angles(0,math.rad(20*t),0) end
+
+test("a standing body keeps its feet: facing a foe who circles, nudged, drifting, guard on and off",function()
+ -- Measured 14/11 for Gaara and Minato (the FILM10 pair), these five runs
+ -- (50 s each): 7.3 and 5.7 studs along the floor before (a turn's or a
+ -- nudge's step slid in at its start and out along its tail), 2.1 and 1.0
+ -- after. Lee 5.4 -> 0.6, Sasuke 5.5 -> 1.0.
+ local total=0
+ for _,F in {"Sand","Flashstep"} do
+  local n=0
+  total+=slide(F,"Neutral",10,circling)
+  total+=slide(F,"Guarding",10,circling)
+  total+=slide(F,"Neutral",10,function(_,r) n+=1;if n%30==0 then r.CFrame=r.CFrame+V.new(if n%60==0 then .25 else -.2,0,if n%90==0 then .2 else -.1) end end)
+  total+=slide(F,"Neutral",10,function(_,r) r.CFrame=r.CFrame+V.new(.8/60,0,0) end,function(a) a.speed=.8;a.velocity=V.new(.8,0,0) end)
+  total+=slide(F,"Neutral",10,function(a,_,t) a.state=if math.floor(t*2)%2==0 then "Guarding" else "Neutral" end)
+ end
+ assert(total<6,string.format("standing feet slid %.2f studs along the floor (13.6 before the fix)",total))
+end)
+
+test("walking, strafing, stop and go: the steps lift before they travel",function()
+ -- 14/11, Gaara and Minato, six 6-8 s runs each: 49.7 -> 38.7 studs.
+ local total=0
+ for _,F in {"Sand","Flashstep"} do
+  for _,sp in {3,6,12,20} do
+   total+=slide(F,"Neutral",6,function(_,r) r.CFrame=r.CFrame*H.C.new(0,0,-sp/60) end,function(a) a.speed=sp;a.velocity=V.new(0,0,-sp) end)
+  end
+  total+=slide(F,"Neutral",6,function(_,r) r.CFrame=r.CFrame+V.new(8/60,0,0) end,function(a) a.speed=8;a.velocity=V.new(8,0,0) end)
+  total+=slide(F,"Neutral",8,function(a,r,t) local on=math.floor(t*2)%2==0 a.speed=if on then 6 else 0;a.velocity=if on then V.new(0,0,-6) else V.zero;if on then r.CFrame=r.CFrame*H.C.new(0,0,-6/60) end end)
+ end
+ assert(total<44,string.format("moving feet slid %.2f studs along the floor (49.7 before the fix)",total))
+end)
+
 print(string.format("NinjaDuel FILM10 feet (A9): %d PASS",passed))
