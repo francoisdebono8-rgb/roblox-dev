@@ -18,6 +18,7 @@ local W,H=1500,800
 local GRID_X,GRID_Y,GRID_W,GRID_H=24,140,1036,592
 local DETAIL_X=1084
 local GUTTER=92
+Panel.CLOSE={X=W-156,Y=22,W=132,H=58}
 local TILE_H,TILE_GAP=40,6
 
 function Panel.new(kit,gui,send)
@@ -30,8 +31,21 @@ function Panel.new(kit,gui,send)
 	card.AnchorPoint=Vector2.new(.5,.5);card.ZIndex=75
 	self.card=card
 	local scale=create("UIScale",card,{Scale=1})
-	local function fit() local v=workspace.CurrentCamera.ViewportSize;scale.Scale=math.clamp(math.min(v.X/(W+60),v.Y/(H+40)),.4,1.2) end
+	-- (14/11, a reader's report on PR #84) the card fits any window: no floor
+	-- that pushes CLOSE off a narrow or portrait one (Panel.fit); small, a
+	-- close mark anchored in the window's corner, and the pad's B closes.
+	self.corner=kit.cornerClose(self.root,function() self:hide() end)
+	local function fit()
+		local v=workspace.CurrentCamera.ViewportSize
+		scale.Scale=Panel.fit(v,kit)
+		self.corner.Visible=scale.Scale<kit.SMALL
+	end
 	workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(fit);fit()
+	pcall(function()
+		game:GetService("UserInputService").InputBegan:Connect(function(input)
+			if input.KeyCode==Enum.KeyCode.ButtonB and self.root.Visible then self:hide() end
+		end)
+	end)
 	self.title=kit.inkTitle(text(card,"",UDim2.fromOffset(32,18),UDim2.fromOffset(700,56),52,P.paper,kit.TITLE_FONT))
 	self.subtitle=text(card,"",UDim2.fromOffset(34,76),UDim2.fromOffset(760,22),15,P.gold,kit.BODY_FONT)
 	-- Mastery towards the next tier, and the points.
@@ -42,7 +56,7 @@ function Panel.new(kit,gui,send)
 	local chip=frame(card,UDim2.fromOffset(W-290,22),UDim2.fromOffset(120,64),P.gold,0);corner(chip,10)
 	self.free=text(chip,"",UDim2.fromOffset(0,4),UDim2.fromOffset(120,34),34,P.ink,kit.TITLE_FONT,Enum.TextXAlignment.Center)
 	self.earned=text(chip,"",UDim2.fromOffset(0,40),UDim2.fromOffset(120,18),11,P.ink,kit.BODY_FONT,Enum.TextXAlignment.Center)
-	self.close=button(card,"CLOSE",UDim2.fromOffset(W-156,22),UDim2.fromOffset(132,58),function() self:hide() end,P.red)
+	self.close=button(card,"CLOSE",UDim2.fromOffset(Panel.CLOSE.X,Panel.CLOSE.Y),UDim2.fromOffset(Panel.CLOSE.W,Panel.CLOSE.H),function() self:hide() end,P.red)
 	-- The grid (scrolls when a tree is tall).
 	self.grid=create("ScrollingFrame",card,{Position=UDim2.fromOffset(GRID_X,GRID_Y),Size=UDim2.fromOffset(GRID_W,GRID_H),BackgroundTransparency=1,BorderSizePixel=0,
 		ScrollBarThickness=5,CanvasSize=UDim2.fromOffset(GRID_W,GRID_H),ScrollingDirection=Enum.ScrollingDirection.Y,ZIndex=76})
@@ -69,6 +83,14 @@ function Panel.new(kit,gui,send)
 	return self
 end
 
+-- The card's scale in a window of `viewport` pixels (it always fits).
+function Panel.fit(viewport,kit) return kit.fitScale(viewport,W+60,H+40,1.2) end
+-- Where CLOSE sits in the window, for the suites: {x, y, w, h} in pixels.
+function Panel.closeRect(viewport,kit)
+	local s=Panel.fit(viewport,kit)
+	local left,top=viewport.X/2-W*s/2,viewport.Y/2-H*s/2
+	return {x=left+Panel.CLOSE.X*s,y=top+Panel.CLOSE.Y*s,w=Panel.CLOSE.W*s,h=Panel.CLOSE.H*s,scale=s}
+end
 function Panel:shown() return self.root.Visible end
 function Panel:hide() self.root.Visible=false end
 

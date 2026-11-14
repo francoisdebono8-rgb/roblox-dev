@@ -75,9 +75,25 @@ local function button(parent,value,position,size,callback,color)
 	if not color then create("UIStroke",b,{Color=palette.muted,Transparency=.55,Thickness=1.5,ApplyStrokeMode=Enum.ApplyStrokeMode.Border}) end
 	b.Activated:Connect(callback); return b
 end
+-- (14/11, a reader's report on PR #84) An overlay card always fits the
+-- window: in a narrow or portrait window (390 x 844) the old floor of the
+-- scale (0.4, 0.5) made the card wider than the screen and pushed its CLOSE
+-- off the right edge, so the panel could not be closed without a keyboard.
+-- The scale now follows the window down; when the card gets small (under
+-- SMALL), a large close mark anchored in the window's corner closes it.
+local SMALL=.6
+local function fitScale(viewport,w,h,max)
+	return math.max(.05,math.min(max or 1.2,viewport.X/w,viewport.Y/h))
+end
+local function cornerClose(root,onClose)
+	-- under Roblox's top bar (58 px), in the window's top-right corner
+	local b=button(root,"✕",UDim2.new(1,-84,0,70),UDim2.fromOffset(66,66),onClose,palette.red)
+	b.TextSize=34;b.ZIndex=(root.ZIndex or 1)+20;b.Visible=false
+	return b
+end
 -- (Lobby, 04/11) the same look for the players-online panel (Client/LobbyPanel).
 UI.kit={palette=palette,create=create,frame=frame,text=text,corner=corner,inkCard=inkCard,inkTitle=inkTitle,button=button,
-	TITLE_FONT=TITLE_FONT,BODY_FONT=BODY_FONT,CARD=CARD}
+	TITLE_FONT=TITLE_FONT,BODY_FONT=BODY_FONT,CARD=CARD,fitScale=fitScale,cornerClose=cornerClose,SMALL=SMALL}
 local function accentOf(def) return Color3.fromRGB(table.unpack(def.Color)) end
 function UI.new(parent,send)
 	-- (B1 lot 2) `simple`: the first roster a player sees is PLAY and the
@@ -613,7 +629,13 @@ function UI.new(parent,send)
 	local sheet=inkCard(frame(self.controls,UDim2.fromScale(.5,.5),UDim2.fromOffset(1120,640),CARD,0))
 	sheet.AnchorPoint=Vector2.new(.5,.5);sheet.ZIndex=76
 	local sheetScale=create("UIScale",sheet,{Scale=1})
-	local function fitSheet() local v=workspace.CurrentCamera.ViewportSize;sheetScale.Scale=math.clamp(math.min(v.X/1220,v.Y/720),.5,1.2) end
+	-- (14/11) the sheet fits a narrow window too; small, a corner close.
+	local sheetCorner=cornerClose(self.controls,function() if self.controls.Visible then self:toggleControls() end end)
+	local function fitSheet()
+		local v=workspace.CurrentCamera.ViewportSize
+		sheetScale.Scale=fitScale(v,1220,720,1.2)
+		sheetCorner.Visible=sheetScale.Scale<SMALL
+	end
 	workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(fitSheet);fitSheet()
 	local sheetTitle=text(sheet,"CONTROLS",UDim2.fromOffset(36,20),UDim2.fromOffset(600,52),48,palette.paper,TITLE_FONT)
 	sheetTitle.ZIndex=42

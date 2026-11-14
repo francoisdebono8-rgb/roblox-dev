@@ -6651,13 +6651,13 @@ return {
       <Item class="StringValue" referent="ND43">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">ca37c49a0ff48e36950264eff4ae28019c4e1d14d957a6de4af19903abe39f19</string>
+          <string name="Value">068210035cccea18f3db0f5d57cc0e3de11acd04960ed934261408ab1e76d68c</string>
         </Properties>
       </Item>
       <Item class="StringValue" referent="ND44">
         <Properties>
           <string name="Name">RuntimeFingerprint</string>
-          <string name="Value">915e2ba5f6630af226df0840e7b68f8042252e1b347f6f76b3b2a6c08e688491</string>
+          <string name="Value">335be326c3387226e233adac7041ae3a7c170fd4876c5cddfc7c41863938f9fa</string>
         </Properties>
       </Item>
       <Item class="StringValue" referent="ND45">
@@ -6669,7 +6669,7 @@ return {
       <Item class="StringValue" referent="ND46">
         <Properties>
           <string name="Name">SourceCommit</string>
-          <string name="Value">93aef87fb2df-dirty</string>
+          <string name="Value">031a9c1e4eb5-dirty</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND47">
@@ -52991,7 +52991,8 @@ function Cup.new(ui,send,kit)
 	local championScale=K.create("UIScale",champion,{Scale=1})
 	local function fitChampion()
 		local size=workspace.CurrentCamera.ViewportSize
-		championScale.Scale=math.clamp(math.min(size.X/1100,size.Y/640),.5,1.2)
+		-- (14/11) the old floor capped by what fits a narrow window
+		championScale.Scale=math.min(math.clamp(math.min(size.X/1100,size.Y/640),.5,1.2),K.fitScale(size,740,500,1.2))
 	end
 	workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(fitChampion);fitChampion()
 	self.championCard=champion
@@ -53012,7 +53013,7 @@ function Cup.new(ui,send,kit)
 	local bannerScale=K.create("UIScale",banner,{Scale=1})
 	local function fitBanner()
 		local size=workspace.CurrentCamera.ViewportSize
-		bannerScale.Scale=math.clamp(math.min(size.X/1500,size.Y/860),.55,1.2)
+		bannerScale.Scale=math.min(math.clamp(math.min(size.X/1500,size.Y/860),.55,1.2),K.fitScale(size,680,200,1.2))
 	end
 	workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(fitBanner);fitBanner()
 	self.banner=banner
@@ -61763,6 +61764,17 @@ local function blocked()
 	return set
 end
 
+-- The list card's largest scale that fits a window of `viewport` pixels:
+-- 760 x 620 with a margin, its centre at 57 % of the height.
+function Panel.fit(viewport,kit)
+	return math.min(kit.fitScale(viewport,800,680,1.2),(viewport.Y*.43-6)/310)
+end
+function Panel.closeRect(viewport,kit)
+	local size=viewport
+	local s=math.min(math.clamp(math.min(size.X/1500,size.Y/860),.5,1.2),Panel.fit(size,kit))
+	local left,top=size.X/2-380*s,size.Y*.57-310*s
+	return {x=left+396*s,y=top+540*s,w=340*s,h=56*s,scale=s}
+end
 function Panel.new(ui,remote,kit)
 	local K=kit
 	local P=K.palette
@@ -61782,7 +61794,9 @@ function Panel.new(ui,remote,kit)
 	local scale=K.create("UIScale",card,{Scale=1})
 	local function fit()
 		local size=workspace.CurrentCamera.ViewportSize
-		scale.Scale=math.clamp(math.min(size.X/1500,size.Y/860),.5,1.2)
+		-- (14/11) never wider or taller than the window (a narrow one too):
+		-- the old floor of .5 is capped by what fits, CLOSE stays on screen.
+		scale.Scale=math.min(math.clamp(math.min(size.X/1500,size.Y/860),.5,1.2),Panel.fit(size,K))
 	end
 	workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(fit);fit()
 	local title=K.inkTitle(K.text(card,"PLAYERS ONLINE",UDim2.fromOffset(28,16),UDim2.fromOffset(704,50),44,P.paper,K.TITLE_FONT))
@@ -61806,7 +61820,7 @@ function Panel.new(ui,remote,kit)
 	local topScale=K.create("UIScale",top,{Scale=1})
 	local function fitTop()
 		local size=workspace.CurrentCamera.ViewportSize
-		topScale.Scale=math.clamp(math.min(size.X/1500,size.Y/860),.55,1.2)
+		topScale.Scale=math.min(math.clamp(math.min(size.X/1500,size.Y/860),.55,1.2),K.fitScale(size,660,170,1.2))
 	end
 	workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(fitTop);fitTop()
 	local invite=K.inkCard(K.frame(top,UDim2.fromOffset(0,0),UDim2.fromOffset(620,112),K.CARD,0),10)
@@ -65908,6 +65922,7 @@ Panel.__index=Panel
 local W,H=1500,800
 local SIDE=260
 local TABS={"KITS","WEAPONS","STYLE","PASSES","RYŌ"}
+Panel.CLOSE={X=W-170,Y=26,W=140,H=56}
 
 local function rgb(c) return Color3.fromRGB(c[1],c[2],c[3]) end
 local function upper(s) return Text.upper(s or "") end
@@ -65923,8 +65938,21 @@ function Panel.new(kit,gui,send,onTree)
 	card.AnchorPoint=Vector2.new(.5,.5);card.ZIndex=74
 	self.card=card
 	local scale=create("UIScale",card,{Scale=1})
-	local function fit() local v=workspace.CurrentCamera.ViewportSize;scale.Scale=math.clamp(math.min(v.X/(W+60),v.Y/(H+40)),.4,1.2) end
+	-- (14/11, a reader's report on PR #84) the card fits any window: no floor
+	-- that pushes CLOSE off a narrow or portrait one (Panel.fit); small, a
+	-- close mark anchored in the window's corner, and the pad's B closes.
+	self.corner=kit.cornerClose(self.root,function() self:hide() end)
+	local function fit()
+		local v=workspace.CurrentCamera.ViewportSize
+		scale.Scale=Panel.fit(v,kit)
+		self.corner.Visible=scale.Scale&lt;kit.SMALL
+	end
 	workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(fit);fit()
+	pcall(function()
+		game:GetService("UserInputService").InputBegan:Connect(function(input)
+			if input.KeyCode==Enum.KeyCode.ButtonB and self.root.Visible then self:hide() end
+		end)
+	end)
 	-- The side: the tabs and the Ryō.
 	local side=frame(card,UDim2.fromOffset(0,5),UDim2.fromOffset(SIDE,H-5),P.ink,.35)
 	kit.inkTitle(text(side,"SHOP",UDim2.fromOffset(24,24),UDim2.fromOffset(SIDE-48,56),54,P.paper,kit.TITLE_FONT))
@@ -65941,12 +65969,20 @@ function Panel.new(kit,gui,send,onTree)
 	-- The content.
 	self.heading=kit.inkTitle(text(card,"",UDim2.fromOffset(SIDE+40,26),UDim2.fromOffset(800,50),46,P.paper,kit.TITLE_FONT))
 	self.subheading=text(card,"",UDim2.fromOffset(SIDE+42,76),UDim2.fromOffset(900,22),15,P.gold,kit.BODY_FONT)
-	button(card,"CLOSE",UDim2.fromOffset(W-170,26),UDim2.fromOffset(140,56),function() self:hide() end,P.red)
+	button(card,"CLOSE",UDim2.fromOffset(Panel.CLOSE.X,Panel.CLOSE.Y),UDim2.fromOffset(Panel.CLOSE.W,Panel.CLOSE.H),function() self:hide() end,P.red)
 	self.body=frame(card,UDim2.fromOffset(SIDE+40,112),UDim2.fromOffset(W-SIDE-70,H-160),P.ink,1)
 	self.footer=text(card,"",UDim2.fromOffset(SIDE+40,H-40),UDim2.fromOffset(W-SIDE-70,20),12,P.muted,kit.BODY_FONT)
 	return self
 end
 
+-- The card's scale in a window of `viewport` pixels (it always fits).
+function Panel.fit(viewport,kit) return kit.fitScale(viewport,W+60,H+40,1.2) end
+-- Where CLOSE sits in the window, for the suites: {x, y, w, h} in pixels.
+function Panel.closeRect(viewport,kit)
+	local s=Panel.fit(viewport,kit)
+	local left,top=viewport.X/2-W*s/2,viewport.Y/2-H*s/2
+	return {x=left+Panel.CLOSE.X*s,y=top+Panel.CLOSE.Y*s,w=Panel.CLOSE.W*s,h=Panel.CLOSE.H*s,scale=s}
+end
 function Panel:shown() return self.root.Visible end
 function Panel:hide() self.root.Visible=false end
 function Panel:show(kits,tab)
@@ -66608,6 +66644,7 @@ local W,H=1500,800
 local GRID_X,GRID_Y,GRID_W,GRID_H=24,140,1036,592
 local DETAIL_X=1084
 local GUTTER=92
+Panel.CLOSE={X=W-156,Y=22,W=132,H=58}
 local TILE_H,TILE_GAP=40,6
 
 function Panel.new(kit,gui,send)
@@ -66620,8 +66657,21 @@ function Panel.new(kit,gui,send)
 	card.AnchorPoint=Vector2.new(.5,.5);card.ZIndex=75
 	self.card=card
 	local scale=create("UIScale",card,{Scale=1})
-	local function fit() local v=workspace.CurrentCamera.ViewportSize;scale.Scale=math.clamp(math.min(v.X/(W+60),v.Y/(H+40)),.4,1.2) end
+	-- (14/11, a reader's report on PR #84) the card fits any window: no floor
+	-- that pushes CLOSE off a narrow or portrait one (Panel.fit); small, a
+	-- close mark anchored in the window's corner, and the pad's B closes.
+	self.corner=kit.cornerClose(self.root,function() self:hide() end)
+	local function fit()
+		local v=workspace.CurrentCamera.ViewportSize
+		scale.Scale=Panel.fit(v,kit)
+		self.corner.Visible=scale.Scale&lt;kit.SMALL
+	end
 	workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(fit);fit()
+	pcall(function()
+		game:GetService("UserInputService").InputBegan:Connect(function(input)
+			if input.KeyCode==Enum.KeyCode.ButtonB and self.root.Visible then self:hide() end
+		end)
+	end)
 	self.title=kit.inkTitle(text(card,"",UDim2.fromOffset(32,18),UDim2.fromOffset(700,56),52,P.paper,kit.TITLE_FONT))
 	self.subtitle=text(card,"",UDim2.fromOffset(34,76),UDim2.fromOffset(760,22),15,P.gold,kit.BODY_FONT)
 	-- Mastery towards the next tier, and the points.
@@ -66632,7 +66682,7 @@ function Panel.new(kit,gui,send)
 	local chip=frame(card,UDim2.fromOffset(W-290,22),UDim2.fromOffset(120,64),P.gold,0);corner(chip,10)
 	self.free=text(chip,"",UDim2.fromOffset(0,4),UDim2.fromOffset(120,34),34,P.ink,kit.TITLE_FONT,Enum.TextXAlignment.Center)
 	self.earned=text(chip,"",UDim2.fromOffset(0,40),UDim2.fromOffset(120,18),11,P.ink,kit.BODY_FONT,Enum.TextXAlignment.Center)
-	self.close=button(card,"CLOSE",UDim2.fromOffset(W-156,22),UDim2.fromOffset(132,58),function() self:hide() end,P.red)
+	self.close=button(card,"CLOSE",UDim2.fromOffset(Panel.CLOSE.X,Panel.CLOSE.Y),UDim2.fromOffset(Panel.CLOSE.W,Panel.CLOSE.H),function() self:hide() end,P.red)
 	-- The grid (scrolls when a tree is tall).
 	self.grid=create("ScrollingFrame",card,{Position=UDim2.fromOffset(GRID_X,GRID_Y),Size=UDim2.fromOffset(GRID_W,GRID_H),BackgroundTransparency=1,BorderSizePixel=0,
 		ScrollBarThickness=5,CanvasSize=UDim2.fromOffset(GRID_W,GRID_H),ScrollingDirection=Enum.ScrollingDirection.Y,ZIndex=76})
@@ -66659,6 +66709,14 @@ function Panel.new(kit,gui,send)
 	return self
 end
 
+-- The card's scale in a window of `viewport` pixels (it always fits).
+function Panel.fit(viewport,kit) return kit.fitScale(viewport,W+60,H+40,1.2) end
+-- Where CLOSE sits in the window, for the suites: {x, y, w, h} in pixels.
+function Panel.closeRect(viewport,kit)
+	local s=Panel.fit(viewport,kit)
+	local left,top=viewport.X/2-W*s/2,viewport.Y/2-H*s/2
+	return {x=left+Panel.CLOSE.X*s,y=top+Panel.CLOSE.Y*s,w=Panel.CLOSE.W*s,h=Panel.CLOSE.H*s,scale=s}
+end
 function Panel:shown() return self.root.Visible end
 function Panel:hide() self.root.Visible=false end
 
@@ -67080,9 +67138,25 @@ local function button(parent,value,position,size,callback,color)
 	if not color then create("UIStroke",b,{Color=palette.muted,Transparency=.55,Thickness=1.5,ApplyStrokeMode=Enum.ApplyStrokeMode.Border}) end
 	b.Activated:Connect(callback); return b
 end
+-- (14/11, a reader's report on PR #84) An overlay card always fits the
+-- window: in a narrow or portrait window (390 x 844) the old floor of the
+-- scale (0.4, 0.5) made the card wider than the screen and pushed its CLOSE
+-- off the right edge, so the panel could not be closed without a keyboard.
+-- The scale now follows the window down; when the card gets small (under
+-- SMALL), a large close mark anchored in the window's corner closes it.
+local SMALL=.6
+local function fitScale(viewport,w,h,max)
+	return math.max(.05,math.min(max or 1.2,viewport.X/w,viewport.Y/h))
+end
+local function cornerClose(root,onClose)
+	-- under Roblox's top bar (58 px), in the window's top-right corner
+	local b=button(root,"✕",UDim2.new(1,-84,0,70),UDim2.fromOffset(66,66),onClose,palette.red)
+	b.TextSize=34;b.ZIndex=(root.ZIndex or 1)+20;b.Visible=false
+	return b
+end
 -- (Lobby, 04/11) the same look for the players-online panel (Client/LobbyPanel).
 UI.kit={palette=palette,create=create,frame=frame,text=text,corner=corner,inkCard=inkCard,inkTitle=inkTitle,button=button,
-	TITLE_FONT=TITLE_FONT,BODY_FONT=BODY_FONT,CARD=CARD}
+	TITLE_FONT=TITLE_FONT,BODY_FONT=BODY_FONT,CARD=CARD,fitScale=fitScale,cornerClose=cornerClose,SMALL=SMALL}
 local function accentOf(def) return Color3.fromRGB(table.unpack(def.Color)) end
 function UI.new(parent,send)
 	-- (B1 lot 2) `simple`: the first roster a player sees is PLAY and the
@@ -67618,7 +67692,13 @@ function UI.new(parent,send)
 	local sheet=inkCard(frame(self.controls,UDim2.fromScale(.5,.5),UDim2.fromOffset(1120,640),CARD,0))
 	sheet.AnchorPoint=Vector2.new(.5,.5);sheet.ZIndex=76
 	local sheetScale=create("UIScale",sheet,{Scale=1})
-	local function fitSheet() local v=workspace.CurrentCamera.ViewportSize;sheetScale.Scale=math.clamp(math.min(v.X/1220,v.Y/720),.5,1.2) end
+	-- (14/11) the sheet fits a narrow window too; small, a corner close.
+	local sheetCorner=cornerClose(self.controls,function() if self.controls.Visible then self:toggleControls() end end)
+	local function fitSheet()
+		local v=workspace.CurrentCamera.ViewportSize
+		sheetScale.Scale=fitScale(v,1220,720,1.2)
+		sheetCorner.Visible=sheetScale.Scale&lt;SMALL
+	end
 	workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(fitSheet);fitSheet()
 	local sheetTitle=text(sheet,"CONTROLS",UDim2.fromOffset(36,20),UDim2.fromOffset(600,52),48,palette.paper,TITLE_FONT)
 	sheetTitle.ZIndex=42

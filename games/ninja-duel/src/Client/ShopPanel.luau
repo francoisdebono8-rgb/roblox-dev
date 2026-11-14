@@ -25,6 +25,7 @@ Panel.__index=Panel
 local W,H=1500,800
 local SIDE=260
 local TABS={"KITS","WEAPONS","STYLE","PASSES","RYŌ"}
+Panel.CLOSE={X=W-170,Y=26,W=140,H=56}
 
 local function rgb(c) return Color3.fromRGB(c[1],c[2],c[3]) end
 local function upper(s) return Text.upper(s or "") end
@@ -40,8 +41,21 @@ function Panel.new(kit,gui,send,onTree)
 	card.AnchorPoint=Vector2.new(.5,.5);card.ZIndex=74
 	self.card=card
 	local scale=create("UIScale",card,{Scale=1})
-	local function fit() local v=workspace.CurrentCamera.ViewportSize;scale.Scale=math.clamp(math.min(v.X/(W+60),v.Y/(H+40)),.4,1.2) end
+	-- (14/11, a reader's report on PR #84) the card fits any window: no floor
+	-- that pushes CLOSE off a narrow or portrait one (Panel.fit); small, a
+	-- close mark anchored in the window's corner, and the pad's B closes.
+	self.corner=kit.cornerClose(self.root,function() self:hide() end)
+	local function fit()
+		local v=workspace.CurrentCamera.ViewportSize
+		scale.Scale=Panel.fit(v,kit)
+		self.corner.Visible=scale.Scale<kit.SMALL
+	end
 	workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(fit);fit()
+	pcall(function()
+		game:GetService("UserInputService").InputBegan:Connect(function(input)
+			if input.KeyCode==Enum.KeyCode.ButtonB and self.root.Visible then self:hide() end
+		end)
+	end)
 	-- The side: the tabs and the Ryō.
 	local side=frame(card,UDim2.fromOffset(0,5),UDim2.fromOffset(SIDE,H-5),P.ink,.35)
 	kit.inkTitle(text(side,"SHOP",UDim2.fromOffset(24,24),UDim2.fromOffset(SIDE-48,56),54,P.paper,kit.TITLE_FONT))
@@ -58,12 +72,20 @@ function Panel.new(kit,gui,send,onTree)
 	-- The content.
 	self.heading=kit.inkTitle(text(card,"",UDim2.fromOffset(SIDE+40,26),UDim2.fromOffset(800,50),46,P.paper,kit.TITLE_FONT))
 	self.subheading=text(card,"",UDim2.fromOffset(SIDE+42,76),UDim2.fromOffset(900,22),15,P.gold,kit.BODY_FONT)
-	button(card,"CLOSE",UDim2.fromOffset(W-170,26),UDim2.fromOffset(140,56),function() self:hide() end,P.red)
+	button(card,"CLOSE",UDim2.fromOffset(Panel.CLOSE.X,Panel.CLOSE.Y),UDim2.fromOffset(Panel.CLOSE.W,Panel.CLOSE.H),function() self:hide() end,P.red)
 	self.body=frame(card,UDim2.fromOffset(SIDE+40,112),UDim2.fromOffset(W-SIDE-70,H-160),P.ink,1)
 	self.footer=text(card,"",UDim2.fromOffset(SIDE+40,H-40),UDim2.fromOffset(W-SIDE-70,20),12,P.muted,kit.BODY_FONT)
 	return self
 end
 
+-- The card's scale in a window of `viewport` pixels (it always fits).
+function Panel.fit(viewport,kit) return kit.fitScale(viewport,W+60,H+40,1.2) end
+-- Where CLOSE sits in the window, for the suites: {x, y, w, h} in pixels.
+function Panel.closeRect(viewport,kit)
+	local s=Panel.fit(viewport,kit)
+	local left,top=viewport.X/2-W*s/2,viewport.Y/2-H*s/2
+	return {x=left+Panel.CLOSE.X*s,y=top+Panel.CLOSE.Y*s,w=Panel.CLOSE.W*s,h=Panel.CLOSE.H*s,scale=s}
+end
 function Panel:shown() return self.root.Visible end
 function Panel:hide() self.root.Visible=false end
 function Panel:show(kits,tab)

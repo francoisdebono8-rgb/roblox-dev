@@ -195,6 +195,62 @@ test("the screens build and draw: the shop's five tabs, the tree by tiers, the K
 	assert(ok,err)
 end)
 
+-- (14/11, a reader's report on PR #84) « À 390 × 844, le minimum de 0,4 donne
+-- une carte de 600 px de large. Le bouton CLOSE de la boutique commence à
+-- x = 427, celui de l'arbre à x = 433. » Every overlay now fits the window.
+test("every overlay fits a narrow or portrait window: its CLOSE on screen, a corner close when small",function()
+	local V=H.roblox.Vector2
+	H.envBase.UDim2=H.roblox.UDim2;H.envBase.UDim=H.roblox.UDim;H.envBase.Vector2=V
+	H.workspace.GetAttribute=function() return nil end
+	local baseNew=H.envBase.Instance.new
+	local saved=H.envBase.Instance
+	H.envBase.Instance={new=function(class)
+		local x=baseNew(class)
+		x.Activated={Connect=function(_,fn) x.click=fn end}
+		return x
+	end}
+	local ok,err=pcall(function()
+		local Tree,ShopPanel,Lobby=H.load("Client/TreePanel"),H.load("Client/ShopPanel"),H.load("Client/LobbyPanel")
+		local function inside(r,v,what)
+			assert(r.x>=0 and r.y>=0 and r.x+r.w<=v.X and r.y+r.h<=v.Y,
+				string.format("%s at %dx%d: CLOSE %.0f..%.0f x %.0f..%.0f is off screen",what,v.X,v.Y,r.x,r.x+r.w,r.y,r.y+r.h))
+		end
+		for _,size in {{390,844},{360,640},{844,390},{1024,600},{1280,720},{1600,900},{1920,1080},{2560,1440}} do
+			local v=V.new(size[1],size[2])
+			H.workspace.CurrentCamera={ViewportSize=v,GetPropertyChangedSignal=function() return {Connect=function() end} end}
+			local UI=H.load("Client/UI")
+			local ui=UI.new(baseNew("PlayerGui"),function() end)
+			local kit=UI.kit
+			for name,panel in {Tree=Tree,Shop=ShopPanel} do
+				local r=panel.closeRect(v,kit)
+				inside(r,v,name)
+				assert(1500*r.scale<=v.X and 800*r.scale<=v.Y,name.." card wider than the window at "..size[1])
+			end
+			inside(Lobby.closeRect(v,kit),v,"Players online")
+			local sheet=kit.fitScale(v,1220,720,1.2)
+			assert(1120*sheet<=v.X and 640*sheet<=v.Y,"the controls sheet is wider than the window at "..size[1])
+			-- small: the large corner close shows (and stays inside the window)
+			local small=ShopPanel.fit(v,kit)<kit.SMALL
+			assert(ui.shopPanel.corner.Visible==small and ui.treePanel.corner.Visible==small,
+				"corner close at "..size[1].."x"..size[2]..": "..tostring(ui.shopPanel.corner.Visible))
+			assert(v.X-84>=0 and 70+66<=v.Y,"the corner close is off screen")
+			-- big screens keep their look (the old scale where it already fitted)
+			if size[1]>=1600 then assert(math.abs(ShopPanel.fit(v,kit)-math.min(1.2,size[1]/1560,size[2]/840))<1e-6,"the big screen's scale changed") end
+		end
+		-- the corner close closes
+		local v=V.new(390,844)
+		H.workspace.CurrentCamera={ViewportSize=v,GetPropertyChangedSignal=function() return {Connect=function() end} end}
+		local UI=H.load("Client/UI")
+		local ui=UI.new(baseNew("PlayerGui"),function() end)
+		local kits={state="ready",owned={Leaf=true},mastery={Leaf=0},starter="Leaf",selected="Leaf",masters={},trees={},ryo=0,style={owned={},equipped={}}}
+		ui.shopPanel:show(kits,"KITS");assert(ui.shopPanel:shown(),"the shop did not open")
+		ui.shopPanel.corner.click();assert(not ui.shopPanel:shown(),"the corner close did not close the shop")
+	end)
+	H.envBase.Instance=saved
+	H.workspace.CurrentCamera={ViewportSize=H.roblox.Vector2.new(1600,900),GetPropertyChangedSignal=function() return {Connect=function() end} end}
+	assert(ok,err)
+end)
+
 test("the headband goes on an avatar's head, comes off for none, never for a weapon look",function()
 	H.envBase.Instance=roblox.Instance
 	local Headband=H.load("Server/Headband")
