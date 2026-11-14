@@ -362,3 +362,14 @@ Demande de l’utilisateur du **14/11 à 21 h 09** : « la maîtrise, t’es cen
   - La **SHOP** ne vend qu’en Robux : les kits, les tenues des maîtres, les apparences rares, les passes et les paquets de Ryō. Son but est de faire gagner de l’argent au jeu.
   - Le **marché de Konoha** vend en Ryō, la monnaie gagnée en jouant : des apparences simples (kunai, shuriken, bandeaux, pièces de tenue). On y va à pied, au croisement des rues du marché.
   - Une apparence a un seul prix, donc un seul comptoir. Ce qu’on possède se porte depuis les deux.
+
+## DEC-041 — Des inspirations, pas des maîtres ; le premier choisi comme un starter ; l’arme du ninja, à soi (14/11)
+
+Demande de l’utilisateur du **14/11 à 21 h 35** : « le choix du premier maître, qu’on va plutôt appeler modèle ou inspiration, parce qu’ils ont 13-14 ans, c’est pas des sensei. Moi, j’imaginais plus un choix comme un choix de starter. Et on donne […] un peu des traits humoristiques […] On choisit parmi ces trois-là dès le début pour tout le monde […] Et après, un en amène l’autre […] On n’a pas assez poussé les armes dans le jeu, mais qu’on puisse acheter genre une arme qu’on choisit, petite épée, grande épée… que des armes vues déjà dans Naruto. Et qu’on attribuera au personnage. Ça, c’est un peu indépendant du kit […] parce que c’est toi le ninja ». Il a choisi ensuite : l’arme « a ses propres coups ».
+
+- **Des inspirations.** Naruto, Sasuke, Lee et les autres ont l’âge du joueur. Ce sont des modèles qu’il imite, pas des sensei. Le jeu les appelle des **inspirations** à l’écran : CHOOSE YOUR INSPIRATION, DUEL HIM, WANTS TO MEET YOU. Dans le code, le module s’appelle toujours `Masters`.
+- **Le premier, comme un starter.** Pour tout le monde, au début : trois cartes côte à côte (Naruto, Sasuke, Lee), chacune avec un trait drôle et ce que veut dire se battre comme lui (`Shared/Inspirations`, `Client/StarterPanel`). Lee est le travailleur motivé qui ne sait faire aucun jutsu. Sasuke est le génie rancunier qui s’entraîne par pure haine. Naruto est la grande gueule pas très fine qui ne voit jamais qu’il perd. Le choix donne le kit, puis le joueur va retrouver son inspiration pour son premier duel. Chaque inspiration mène ensuite à la suivante (DEC-037).
+- **L’arme du ninja, à soi.** Indépendante du kit, elle est choisie et achetée par le joueur, parce que c’est lui le ninja. On ne prend que des armes vues dans Naruto : tanto, katana, grande épée de type Kubikiribōchō, lames de chakra, kusarigama, fūma shuriken, éventail de combat, bâton.
+  - Elle a **ses propres coups** et ses animations, à puissance égale : c’est un autre style, pas une arme plus forte.
+  - Son modèle et ses coups sont faits par l’ANIMATEUR. Le DEV les branche sur le bouton d’outil du combat.
+  - L’arme se vend en Robux à la SHOP, et certaines peut-être en Ryō au marché (DEC-040, les deux comptoirs).

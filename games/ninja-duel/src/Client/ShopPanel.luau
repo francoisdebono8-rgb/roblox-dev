@@ -158,7 +158,7 @@ end
 function Panel:drawKits()
 	local K,P=self.kit,self.P
 	self.heading.Text="THE KITS"
-	self.subheading.Text="Every kit is taught for free by its master in Konoha. Here you save time."
+	self.subheading.Text="Every kit is free in Konoha, from the ninja who inspires it. Here you save time."
 	self.footer.Text="A kit bought comes with no tree points: its tree grows as you play it. Never a random draw."
 	local kits=self.kits
 	local products=Config.Progression and Config.Progression.Products or {}
@@ -174,7 +174,7 @@ function Panel:drawKits()
 		local banner=K.frame(card,UDim2.fromOffset(0,0),UDim2.new(1,0,0,120),rgb(def and def.Color or {120,120,120}),0);K.corner(banner,12)
 		K.text(banner,nameOf(id),UDim2.fromOffset(14,70),UDim2.new(1,-28,0,44),40,P.ink,K.TITLE_FONT)
 		local tag=if status=="owned" then (if kits and kits.starter==id then "YOUR FIRST KIT" else "YOURS")
-			elseif status=="master" then "HE TEACHES YOU NOW" elseif status=="starter" then "A FIRST KIT" elseif status=="loading" then "…" elseif status=="open" then "OPEN" else "STILL CLOSED"
+			elseif status=="master" then "READY FOR YOU" elseif status=="starter" then "A FIRST KIT" elseif status=="loading" then "…" elseif status=="open" then "OPEN" else "STILL CLOSED"
 		K.text(card,tag,UDim2.fromOffset(14,130),UDim2.new(1,-28,0,18),12,if status=="owned" or status=="master" then P.gold else P.muted,K.BODY_FONT)
 		local line=""
 		if status=="owned" then
@@ -333,7 +333,7 @@ function Panel:drawRyo()
 	local lines={
 		string.format("A duel finished: %d  •  won: +%d",R.Finished,R.Won),
 		string.format("The day's first win: ×%d",R.FirstWinOfDay),
-		string.format("A master's duel won: +%d",R.MasterWon),
+		string.format("His duel won (a new inspiration): +%d",R.MasterWon),
 		string.format("Tournament: %d to the champion, %d to the finalist",R.Champion,R.Finalist),
 	}
 	for k,line in lines do K.text(earn,line,UDim2.fromOffset(18,56+(k-1)*30),UDim2.new(1,-36,0,24),15,P.text,K.BODY_FONT) end
