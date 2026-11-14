@@ -8,7 +8,7 @@
 -- Each one is his own Roblox avatar's head carved in stone by the server
 -- (his head and its hair and hats, scaled to the cliff, in rock). While a
 -- place is empty, or an avatar cannot load (a local file in Studio), the
--- place keeps its funny head (the ANIMATOR's HeadFunny1..4, Client/HubDress):
+-- place keeps its empty place (the ANIMATOR's HeadSlot1..4, Client/HubDress):
 -- a carved place turns that unit DressOff and hides its parts (the solid
 -- Face stays solid). Presentation only: no gameplay rule lives here.
 -- Roblox services are injected (ChampionCliff.new(folder, svc)) so the suite
@@ -24,8 +24,8 @@ Cliff.STORE="NinjaDuelChampions"
 Cliff.KEY="latest_v1"
 Cliff.TOPIC="NinjaDuelChampion"
 Cliff.REFRESH=300
--- A carved head's height (the funny heads fill 26 x 30 x 8).
-Cliff.HEIGHT=28
+-- A carved head's height (a place is 26 x 30 x 8 scaled by HubMap.HeadScale).
+Cliff.HEIGHT=28*HubMap.HeadScale.Y
 Cliff.STONE=Color3.fromRGB(150,136,118)
 -- How far into the cliff a head's centre sits (its face comes out of it).
 Cliff.SINK=4
@@ -145,12 +145,21 @@ function Cliff:slotUnit(k)
 	end
 	return nil
 end
--- The funny head back (or kept), its parts seen.
+-- What the plaque under place k says: the carved one, else the invitation.
+function Cliff:plate(k,text)
+	local u=self:slotUnit(k)
+	local plate=u and u:FindFirstChild("SlotPlate")
+	local label=plate and plate:FindFirstChildWhichIsA("TextLabel",true)
+	if label then label.Text=text end
+end
+Cliff.EMPTY="THE NEXT FACE HERE COULD BE YOURS"
+-- The empty place back (or kept), its parts seen.
 function Cliff:release(k)
 	local u=self:slotUnit(k)
 	if not u then return end
 	u:SetAttribute("DressOff",nil)
 	for _,p in u:GetDescendants() do if p:IsA("BasePart") then p.Transparency=0 end end
+	self:plate(k,Cliff.EMPTY)
 end
 -- A player's stone head at place k (asynchronous: a newer plan wins).
 function Cliff:carve(k,userId)
@@ -167,7 +176,10 @@ function Cliff:carve(k,userId)
 		local u=self:slotUnit(k)
 		if u then
 			u:SetAttribute("DressOff",true)
-			for _,p in u:GetDescendants() do if p:IsA("BasePart") then p.Transparency=1 end end
+			for _,p in u:GetDescendants() do if p:IsA("BasePart") and not p:GetAttribute("Keep") then p.Transparency=1 end end
+			local name=""
+			for _,e in self.list or {} do if e.id==userId then name=e.name end end
+			self:plate(k,if k==1 then "THE CREATOR" else string.upper("CHAMPION "..name))
 		end
 	end)
 end

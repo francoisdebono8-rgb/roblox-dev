@@ -861,7 +861,7 @@ def hokage_cliff():
     """The cliff alone, after the monument of the Naruto era (four faces,
     before the village climbed onto it): a sheer face of warm sandstone, its
     top a flat plateau with a few trees, no mountains behind. The faces stand
-    proud of the rock (HeadFunny1..4 or the avatars, placed by the server; the
+    proud of the rock (HeadSlot1..4 or the avatars, placed by the server; the
     face carries no niche, so they can sit anywhere, staggered). Its solid box
     stays 330 x 92 x 32, front at z -232."""
     rock = Piece("Cliff", "Rock", flat=True)
@@ -917,13 +917,13 @@ def hokage_cliff():
     return [rock, top, trees, trunks]
 
 
-# ---------------------------------------------------------------- the carved heads (HeadFunny1..4)
+# ---------------------------------------------------------------- the carved heads (unused since 14/11: HeadSlot1..4 are empty places)
 # François 14/11: the cartoon heads « ne vont pas du tout, sois moins
 # enfant »: four heads carved in the cliff like a monument, real anatomy as a
 # relief (brow ridge, sockets, the nose's bridge and wings, cheekbones, the
 # folds, lips, chin, jaw), weathered stone, each its own person: an elder with
 # a beard, a scarred warrior, a calm young man, a woman with her hair up.
-# Generic: nobody's portrait, no symbol. (The names stay HeadFunny1..4: the
+# Generic: nobody's portrait, no symbol. (Superseded by the empty places: the
 # placeholders until the server carves the avatars.) Origin at the centre,
 # face to +z, inside 26 x 30 x 8; hair may run over and behind into the rock.
 STONE_FACE = rgb(184, 156, 120)
@@ -1202,7 +1202,7 @@ MODELS = {
     "NakaShrine": naka_shrine,
     "Torii": torii,
     "HokageCliff": hokage_cliff,
-    **{"HeadFunny%d" % i: (lambda i=i: empty_place(i)) for i in range(1, 5)},
+    **{"HeadSlot%d" % i: (lambda i=i: empty_place(i)) for i in range(1, 5)},
     "FacesTerrace": faces_terrace,
     "HouseGable_24x20x2": lambda: house("Gable", 24, 20, 2),
     "HouseShop_24x20x2": lambda: house("Shop", 24, 20, 2),

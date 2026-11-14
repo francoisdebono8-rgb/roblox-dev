@@ -390,7 +390,7 @@ end)
 
 test("the dresser follows a carved place: its funny head goes, and comes back",function()
 	local function piece(size) local p=Instance.new("Part");p.Size=size;return p end
-	local kit={has=function(name) return string.sub(name,1,9)=="HeadFunny" end,
+	local kit={has=function(name) return string.sub(name,1,8)=="HeadSlot" end,
 		pieces=function() return {{part=piece(Vector3.new(26,30,8)),o=Vector3.zero,name="Head"}} end}
 	local holder=Instance.new("Folder")
 	local done={}

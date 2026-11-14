@@ -19,7 +19,7 @@ HubDress.NAMES={
 	HyugaCompound=true,UchihaGate=true,UchihaPier=true,NakaShrine=true,Torii=true,HokageCliff=true,FacesTerrace=true,
 	-- the cliff's four places: a funny head until the server carves the
 	-- creator or a champion there (Server/ChampionCliff turns it DressOff)
-	HeadFunny1=true,HeadFunny2=true,HeadFunny3=true,HeadFunny4=true,
+	HeadSlot1=true,HeadSlot2=true,HeadSlot3=true,HeadSlot4=true,
 	-- repeated, in their own frame
 	HouseGable_24x20x2=true,HouseShop_24x20x2=true,HouseShop_24x20x1=true,HouseBack_22x20x2=true,HouseUchiha_26x20x2=true,
 	HouseFlat_24x20x2=true,HouseFlat_22x18x3=true,WaterTank=true,TreeA=true,TreeB=true,TreeC=true,

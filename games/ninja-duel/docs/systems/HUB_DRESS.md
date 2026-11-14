@@ -81,7 +81,7 @@ Elles sont modélisées aux coordonnées de `Server/Hub`, relatives à `HubMap.O
 
 | Nom | Origine | Référence |
 |---|---|---|
-| HeadFunny1, HeadFunny2, HeadFunny3, HeadFunny4 | centre de la tête, visage vers +z (vers le village) ; les places sont à x = −75, −25, 25 et 75, y = 58, z = −230 (`HubMap.Heads`) | elles tiennent dans la boîte solide 26 × 30 × 8 ; cheveux ou accessoire peuvent dépasser au-dessus et derrière, dans la falaise. Drôles, rien de reconnaissable d'un anime : tête de « noob » ronde et souriante, lunettes de soleil, endormie avec une bulle de morve, qui éternue, un bol de ramen sur la tête… |
+| HeadSlot1, HeadSlot2, HeadSlot3, HeadSlot4 | centre de la place, visage vers +z (vers le village) ; places décalées (`HubMap.Heads`), mises à l'échelle par `HubMap.HeadScale` (1,92 ; 1,92 ; 2,4) | modèle fait pour 26 × 30 × 8 (environ 50 × 58 × 19 en jeu) : une **place vide** qui attend son champion (bloc dégrossi, contour à la craie, échafaudage, plaque). La plaque `SlotPlate` reste en Part (Keep) : « THE NEXT FACE HERE COULD BE YOURS », puis le nom de celui qui est sculpté (`Server/ChampionCliff`). François 14/11 : seule la tête du créateur est sculptée, pas de têtes de remplacement. |
 
 ### B. Pièces répétées
 Elles sont modélisées dans leur propre repère, que le poseur place et met à l'échelle.
