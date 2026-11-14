@@ -148,6 +148,8 @@ Tu es la discussion CM (clips) de Ninja Duel.
 5. Un bug au tournage → message au DEV avec heure, BUILD @ commit, prise. Tu ne corriges pas le jeu.
    Pendant chaque prise : assistant F4 (docs/tools/OUTIL_TOURNAGE_F4.md). « Préparer l'image », REC quand OBS
    démarre, STOP à l'arrêt ; on ne monte que les plages propres ; une ligne « jeu » part au DEV ou à l'ANIMATEUR.
+   Replay : le directeur choisit l'angle là où le plan écrit échoue, rend au quart de vitesse (sons : sound_cues.py),
+   et R.highlightsText() donne les moments forts d'un vrai match.
 6. Un outil de tournage à changer : branche work/capture-<sujet>, fichiers tools/capture/, PR.
 7. Ne publie rien sur Roblox ; ne refais pas de place ND-Clips-vNN à la main.
 8. Les anciennes places de clips sont dans NinjaDuel/ARCHIVES/places/clips (lecture seule par convention).

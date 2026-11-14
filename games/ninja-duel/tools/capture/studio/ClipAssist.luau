@@ -13,8 +13,22 @@
 -- les plages propres, scène par scène, et un journal image par image.
 --
 -- Rien de ce qu'il dessine n'entre dans la bande 9:16 que garde OBS : panneau
--- dans la marge gauche, compteur d'images dans la marge droite, traits de
--- couleur à 24 points de la bande (cachés pendant une prise).
+-- dans la marge gauche, traits de couleur à 24 points de la bande. Pendant une
+-- prise, plus rien de F4 n'est à l'écran (demande 11 du 13/11) : panneau,
+-- traits, repères et compteur sont cachés dès REC.
+--
+-- Revu le 13/11 au soir (claude/demandes-outilleur-prises-humain-2026-11-13) :
+-- une prise que F4 laisse passer doit être une prise que François ne rejette
+-- pas. F4 juge comme un spectateur, avec ClipJudge :
+--   A:decor      plus de 15 % du visage ou du corps caché par le décor (buissons compris)
+--   A:ombre      visage ou corps à l'ombre, ou caméra à contre-jour (remplace light:)
+--   A:small      celui qui agit fait moins d'un tiers de la hauteur de la bande
+--   A:regard     il ne regarde pas l'autre (plus de 60°) à portée ou en fonçant, ou il regarde l'objectif
+--   A:course     vitesse de sprint sans la pose de sprint ninja, ou pieds qui glissent
+--   A:noye, A:illisible, illisible   effets sur le corps de celui qui agit ou sur la bande
+--   outside      caméra hors de l'enceinte
+-- et tient la ligne de temps de ce qui est vu (qui frappe qui, quel jutsu, qui
+-- tombe), avec ses moments forts. Rien n'est jugé hors de la phase Duel.
 --
 -- Tout se pilote aussi par des attributs de workspace, lisibles d'un script du
 -- CM quel que soit l'endroit où il tourne (barre de commande, Studio MCP) :
@@ -23,6 +37,7 @@
 --   NDScene = "B_chidori"       la scène en cours (sinon : NDBeat de ClipKit)
 --   NDShot  = "T2"              la caméra / la prise en cours (sinon : NDTake)
 --   NDClock = 12.34             le temps de la scène (replay), noté image par image
+--   NDSlow  = 0.25              rendu au ralenti (NDDirector) : les durées sont jugées en temps d'écran
 --   NDCut   = true              écran noir entre deux scènes : rien n'est jugé
 -- et NDWarmup, écrit par « Préparer l'image » (os.clock()) pour qu'un script de
 -- scène lance son préchauffage des effets.
@@ -37,7 +52,10 @@
 --   r:Invoke("quality",12)               le niveau de qualité réglé (si la lecture se trompe)
 --   r:Invoke("set",{clean=0.5,back=120}) régler un seuil (voir T)
 --   r:Invoke("ignore",{"A:inside","sun"}) ne plus signaler ces défauts (préfixes d'id)
---   r:Invoke("show",true) · ("guides",false) · ("allowHud",true) · ("counter",false) · ("linesDuringRec",true)
+--   r:Invoke("timeline")                 la ligne de temps de ce qui est vu (texte)
+--   r:Invoke("preset","midi")            la lumière F7 que « Préparer l'image » met (false : ne pas y toucher)
+--   r:Invoke("show",true) · ("guides",false) · ("allowHud",true) · ("counter",true) · ("syncFlash",true)
+--   r:Invoke("linesDuringRec",true) · ("panelDuringRec",true)   (contre la demande 11 : seulement pour un essai)
 local Players=game:GetService("Players")
 local RunService=game:GetService("RunService")
 local UIS=game:GetService("UserInputService")
@@ -49,6 +67,8 @@ local StarterGui=game:GetService("StarterGui")
 
 local Sight=nil
 pcall(function() Sight=require(script.Parent:WaitForChild("ClipSight",2)) end)
+local Judge=nil
+pcall(function() Judge=require(script.Parent:WaitForChild("ClipJudge",2)) end)
 
 local Assist={}
 local V=Vector3.new
@@ -59,12 +79,25 @@ local ERR,WARN,INFO=3,2,1
 local SEVNAME={[3]="ERREUR",[2]="À VOIR",[1]="INFO"}
 local SEVCOLOR={[3]=rgb(235,80,80),[2]=rgb(240,170,60),[1]=rgb(150,170,190)}
 local OK_COLOR=rgb(90,200,120)
-local OWNER={cadrage="cadrage",reglage="réglage",machine="machine",jeu="jeu → DEV/ANIM"}
+local OWNER={cadrage="cadrage",reglage="réglage",machine="machine",jeu="jeu → DEV/ANIM",scene="scène (script du CM) ou jeu"}
 local T={
 	tick=1/15,              -- body checks per second
 	hold=0.15,              -- a framing fault counts once it lasts this long
 	back=115,               -- seen from behind beyond this angle (degrees)
-	small=0.18,             -- a body under this share of the image height is small
+	small=1/3,              -- the one who acts fills at least this share of the band's height (request 5)
+	decor=0.15,             -- share of the face or the body the decor may hide (request 1)
+	shade=0.6,              -- share of the face or the body in the shade (request 4)
+	sunSide=120,            -- the lens this far round from the sun: backlight (degrees)
+	regard=60,              -- the head and the chest this far from the other: not looking at him (request 2)
+	regardRange=15,         -- ... while closer than this (studs) or charging at him
+	charge=8,               -- studs/s toward the other: charging
+	lensLook=15,            -- the head this close to the lens: looking into it
+	sprint=30,              -- studs/s on the ground: a sprint (walk 19, sprint 45), request 3
+	slideSpeed=8,           -- above this speed the planted foot is watched
+	slide=0.6,              -- the slowest foot faster than this share of the body for 0.3 s: sliding
+	fxDrown=0.5,            -- share of a body under an effect: drowned
+	unreadable=0.7,         -- share of the band, or of the acting body, under effects: unreadable (request 6)
+	unreadableHold=0.3,
 	opening=2,              -- the first seconds of a take: the hook
 	hitch=0.05,             -- a frame longer than this, and 3x the mean, is a frozen image
 	fpsWarn=50,fpsErr=32,   -- a 30 fps video needs 32
@@ -75,8 +108,6 @@ local T={
 	cutGap=0.5,             -- two cuts closer than this
 	clean=0.5,              -- shortest clean range listed (FILM09 shots: 0.7 to 1.2 s)
 	inside=1.0,             -- two roots closer than this
-	bodyLight=1.5,          -- a coloured light on a body this long is a fault
-	fxLight=4,              -- a technique's light this long is a fault
 	lines=24,               -- the band's side lines, this far outside it (points)
 }
 -- Server states in which a fighter is doing something (Matches:view `state`).
@@ -91,13 +122,6 @@ local function flat(v) return V(v.X,0,v.Z) end
 local function isHead(n) return n=="Head" or n:sub(1,6)=="Head__" end
 local function hex(c) return string.format("#%02X%02X%02X",math.floor(c.R*255+.5),math.floor(c.G*255+.5),math.floor(c.B*255+.5)) end
 local function esc(s) return (tostring(s):gsub("&","&amp;"):gsub("<","&lt;"):gsub(">","&gt;")) end
-local function hueName(c)
-	local h,s=c:ToHSV()
-	if s<0.25 then return "blanche" end
-	h*=360
-	if h<15 or h>=345 then return "rouge" elseif h<40 then return "orange" elseif h<70 then return "jaune"
-	elseif h<165 then return "verte" elseif h<255 then return "bleue" elseif h<300 then return "violette" else return "rose" end
-end
 local function attr(name)
 	local v=workspace:GetAttribute(name)
 	if v~=nil then return v end
@@ -130,7 +154,7 @@ local function partsOf(m)
 	local e=partCache[m]
 	local now=os.clock()
 	if e and now-e.t<0.5 then return e end
-	e={t=now,head=nil,torso=nil,hands={},eyes={},all={}}
+	e={t=now,head=nil,torso=nil,hands={},eyes={},all={},feet={}}
 	local looks,faceEyes,eyeStrip={},{},nil
 	for _,d in m:GetDescendants() do
 		if d:IsA("BasePart") and d.Name~="HumanoidRootPart" then
@@ -140,6 +164,7 @@ local function partsOf(m)
 			elseif isHead(n) then looks[n]=d
 			elseif n=="UpperTorso" or (n=="Torso" and not e.torso) then e.torso=d
 			elseif n=="LeftHand" or n=="RightHand" or n=="Left Arm" or n=="Right Arm" then table.insert(e.hands,d)
+			elseif n=="LeftFoot" or n=="RightFoot" then table.insert(e.feet,d)
 			elseif n=="FaceEye" then table.insert(faceEyes,d)
 			elseif n=="Eyes" then eyeStrip=d end
 		end
@@ -187,8 +212,8 @@ function Assist.install(ctx,dev)
 	if not RunService:IsStudio() then return nil end
 	local player=Players.LocalPlayer
 	local playerGui=player:WaitForChild("PlayerGui")
-	local self={shown=false,guides=true,allowHud=false,counterOn=true,linesDuringRec=false,actorsOverride=nil,
-		declaredQuality=nil,ignore={},check={},T=T}
+	local self={shown=false,guides=true,allowHud=false,counterOn=false,syncFlash=false,linesDuringRec=false,panelDuringRec=false,
+		preset="midi",actorsOverride=nil,declaredQuality=nil,ignore={},check={},T=T}
 	local installedAt=os.clock()
 	local frameNo=0
 	local live={}        -- id -> condition {id,group,sev,owner,text,since,seen,open,minDur}
@@ -199,6 +224,11 @@ function Assist.install(ctx,dev)
 	local band={x0=0,x1=0,w=0,h=0}
 
 	local function rel(t) return take and (t-take.start) or 0 end
+	-- A slow render (NDDirector, workspace.NDSlow = 0.25): 0.3 s on screen last 1.2 s here.
+	local function slowFactor()
+		local k=tonumber(workspace:GetAttribute("NDSlow"))
+		return (k and k>0 and k<=1) and k or 1
+	end
 	local function ignored(id)
 		for prefix in self.ignore do if string.sub(id,1,#prefix)==prefix then return true end end
 		return false
@@ -214,7 +244,7 @@ function Assist.install(ctx,dev)
 		if ignored(id) then return end
 		local c=live[id]
 		if not c then c={id=id,since=stamp};live[id]=c end
-		c.group,c.sev,c.owner,c.text,c.seen,c.minDur=group,sev,owner,text,stamp,minDur or T.hold
+		c.group,c.sev,c.owner,c.text,c.seen,c.minDur=group,sev,owner,text,stamp,(minDur or T.hold)/slowFactor()
 		if not c.open and stamp-c.since>=c.minDur then c.open=true end
 	end
 	local function sweep(group,stamp)
@@ -243,20 +273,49 @@ function Assist.install(ctx,dev)
 		if ok and type(data)=="table" and data.phase=="Duel" and not self.actorsOverride then return data end
 		return nil
 	end
-	local function nameOf(key,m,data)
+	-- The phase of the duel: the game's, or the one NDReplay writes on its ghosts.
+	local function phaseOf(A,B)
+		if self.actorsOverride then
+			local p=A and A:GetAttribute("NDPhase")
+			return (type(p)=="string" and p~="") and p or nil
+		end
+		local ok,d=pcall(function() return ctx and ctx.state and ctx.state() end)
+		if ok and type(d)=="table" and type(d.phase)=="string" then return d.phase end
+		return nil
+	end
+	local function koOf(data,A)
+		if data then return data.ko==true end
+		return A and A:GetAttribute("NDKO")==true or false
+	end
+	-- One fighter's state: the duel's snapshot, or the attributes NDReplay writes
+	-- on its ghosts ({name, state, reaction, health, maxHealth, attack, cast, ...}).
+	local function statusOf(key,m,data)
+		local d=data and data[key=="A" and "human" or "bot"]
+		if d then
+			return {name=d.fighter,state=d.state,reaction=d.reaction,health=d.health,maxHealth=d.maxHealth,attack=d.attackName,cast=d.castId,
+				parry=d.events and d.events.Parry,awaken=d.events and d.events.Awaken,airborne=d.airborne,sprinting=d.sprinting}
+		end
+		if m and m:GetAttribute("NDState")~=nil then
+			local function a(n) local v=m:GetAttribute(n);if v=="" then return nil end;return v end
+			return {name=a("NDFighter"),state=a("NDState"),reaction=a("NDReaction"),health=a("NDHealth"),maxHealth=a("NDMaxHealth"),attack=a("NDAttack"),cast=a("NDCast"),
+				parry=a("NDParry"),awaken=a("NDAwaken"),airborne=a("NDAir"),sprinting=a("MovementSprinting")}
+		end
+		return nil
+	end
+	local function nameOf(key,m,data,st)
 		if self.actorNames and self.actorNames[key=="A" and 1 or 2] then return tostring(self.actorNames[key=="A" and 1 or 2]) end
 		local d=data and data[key=="A" and "human" or "bot"]
 		if d and d.fighter then return tostring(d.fighter) end
+		if st and st.name then return tostring(st.name) end
 		if m then return tostring(m:GetAttribute("Fighter") or m.Name) end
 		return key
 	end
 	-- true = acting (must be seen), false = not, nil = unknown (a replay with no NDAct)
-	local function actingOf(key,data)
+	local function actingOf(key,st)
 		local act=attr("NDAct")
 		if type(act)=="string" and act~="" then return string.find(act,key,1,true)~=nil end
-		local d=data and data[key=="A" and "human" or "bot"]
-		if not d then return nil end
-		return ACT[d.state]==true and d.reaction==nil
+		if not st then return nil end
+		return ACT[st.state]==true and st.reaction==nil
 	end
 
 	-- Other bodies near the fighters (clones, live or replayed), refreshed twice a second.
@@ -388,6 +447,8 @@ function Assist.install(ctx,dev)
 		cells[i]=frame(counter,{BackgroundColor3=rgb(0,0,0),Size=UDim2.fromOffset(CELL,CELL),Position=UDim2.fromOffset(4+i*CELL,24)})
 	end
 	cells[0].BackgroundColor3=rgb(255,255,255)
+	-- The sync mark (off by default): 2 white frames in the band's top-left corner at REC.
+	local syncMark=frame(gui,{Name="SyncMark",BackgroundColor3=rgb(255,255,255),Size=UDim2.fromOffset(36,36),Visible=false})
 
 	local panel=frame(gui,{Name="Panel",BackgroundColor3=rgb(20,23,30),BackgroundTransparency=0.08,Position=UDim2.fromOffset(8,8),Visible=false})
 	local corner=Instance.new("UICorner");corner.CornerRadius=UDim.new(0,6);corner.Parent=panel
@@ -431,9 +492,9 @@ function Assist.install(ctx,dev)
 	local reminders=block()
 	reminders.TextColor3=rgb(150,158,170);reminders.TextSize=12
 	reminders.Text="• OBS : une prise par enregistrement, puis regarder le fichier en entier.\n"
-		.."• OBS sur un autre bureau ; un clic sur la barre de titre de Studio avant de lancer.\n"
+		.."• OBS sur le même bureau que Studio, aperçu OBS caché ; un clic sur la barre de titre de Studio avant de lancer.\n"
 		.."• Aucune autre place en Play pendant la prise.\n"
-		.."• OBS filme aussi le compteur d'images (marge droite) ; CapCut recadre sur la bande.\n"
+		.."• Rien de F4 n'est à l'écran pendant la prise. Pour caler le rush : Report:Invoke(\"syncFlash\",true) (2 images blanches dans le coin de la bande à REC), ou le temps du replay (NDClock) du journal.\n"
 		.."• Personne ne touche le Mac pendant la prise."
 
 	local chip=button(gui,"🎬 F4",function() self:show(true) end,{Name="Chip",Size=UDim2.fromOffset(64,26),Position=UDim2.fromOffset(8,8),Visible=true})
@@ -480,6 +541,16 @@ function Assist.install(ctx,dev)
 		end
 		pcall(function() StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.All,false) end)
 		UIS.MouseIconEnabled=false
+		-- The filming light (request 4): F7's « midi » by default, the sun high.
+		if self.preset then
+			pcall(function()
+				local v=dev and dev.visual
+				if v and v.applyPreset then
+					saved.preset=v.lightingState and v.lightingState().preset or "jeu"
+					v.applyPreset(self.preset)
+				end
+			end)
+		end
 	end
 	-- The game turns its look and its HUD back on (a new round, WorldLook): while
 	-- the image is prepared, keep them off (8 times a second) until « Rétablir ».
@@ -501,12 +572,16 @@ function Assist.install(ctx,dev)
 		for e in saved.effects do if e.Parent then e.Enabled=true end end
 		for t,on in saved.core do pcall(function() StarterGui:SetCoreGuiEnabled(t,on) end) end
 		UIS.MouseIconEnabled=saved.mouse
+		if saved.preset then
+			pcall(function() dev.visual.applyPreset((saved.preset=="perso" or saved.preset=="") and "jeu" or saved.preset) end)
+		end
 		saved=nil
 	end
 
 	--------------------------------------------------------------------
 	-- The take: start, stop, summary.
 	--------------------------------------------------------------------
+	local timelineLine -- defined with the checks
 	local function buildLine()
 		local s=ReplicatedStorage:FindFirstChild("NinjaDuel")
 		local function v(n) local x=s and s:FindFirstChild(n);return x and x.Value or "?" end
@@ -549,15 +624,15 @@ function Assist.install(ctx,dev)
 			if e.sev>=WARN then table.insert(soft,{e.t-0.05,e.t+0.05}) end
 		end
 		local byText={}
-		local function note(sev,owner,text,t0,t1)
-			local key=text:gsub("%d+[,.]?%d*","#")
+		local function note(id,sev,owner,text,t0,t1)
+			local key=(id or "").."|"..text:gsub("%d+[,.]?%d*","#")
 			local e=byText[key]
-			if not e then e={sev=sev,owner=owner,text=text,total=0,at={}};byText[key]=e end
+			if not e then e={id=id,sev=sev,owner=owner,text=text,total=0,at={}};byText[key]=e end
 			e.sev=math.max(e.sev,sev);e.total=r3(e.total+math.max(0,t1-t0))
 			table.insert(e.at,{r3(t0),r3(t1)})
 		end
-		for _,s in tk.spans do note(s.sev,s.owner,s.text,s.t0,s.t1) end
-		for _,e in tk.events do note(e.sev,e.owner,e.text,e.t,e.t) end
+		for _,s in tk.spans do note(s.id,s.sev,s.owner,s.text,s.t0,s.t1) end
+		for _,e in tk.events do note(e.id,e.sev,e.owner,e.text,e.t,e.t) end
 		local faults={}
 		for _,e in byText do table.insert(faults,e) end
 		table.sort(faults,function(a,b) if a.sev~=b.sev then return a.sev>b.sev end;return a.total>b.total end)
@@ -584,20 +659,35 @@ function Assist.install(ctx,dev)
 			local errs=0
 			for _,r in merge(bad) do if r[2]>s.t0 and r[1]<s.t1 then errs+=1 end end
 			s.errors=errs
+			-- What is seen in this shot (request 7).
+			s.timeline={}
+			for _,e in tk.timeline do if e.t and e.t>=s.t0 and e.t<=s.t1 then table.insert(s.timeline,timelineLine(e)) end end
 		end
-		return {label=tk.label,duration=r3(dur),build=tk.build,clean=clean(bad,0,dur),cleanStrict=clean(soft,0,dur),counts=counts,
+		-- The strongest moments of the take (request 10), on the take's clock.
+		local moments=nil
+		if Judge and #tk.timeline>0 then
+			local evs={}
+			for _,e in tk.timeline do if e.t then table.insert(evs,{t=e.t,w=e.w or 1,text=e.text}) end end
+			moments=Judge.moments(evs,{t0=0,t1=dur})
+		end
+		return {label=tk.label,duration=r3(dur),build=tk.build,slow=tk.slow,clean=clean(bad,0,dur),cleanStrict=clean(soft,0,dur),counts=counts,
 			faults=faults,scenes=scenes,cuts=tk.cuts,hitches=tk.hitches,spans=tk.spans,events=tk.events,frames=tk.frames,
-			counter={first=tk.firstFrame,last=frameNo,bits=BITS}}
+			timeline=tk.timeline,moments=moments,counter={first=tk.firstFrame,last=frameNo,bits=BITS}}
 	end
+	local applyVisibility -- set below: nothing of F4 on screen during a take
+	local syncLeft=0
 	local function startTake(name)
 		if take then return end
-		take={label=name or ("prise "..os.date("%H:%M:%S")),start=os.clock(),spans={},events={},cuts={},hitches=0,frames={},firstFrame=frameNo+1,build=buildLine()}
+		take={label=name or ("prise "..os.date("%H:%M:%S")),start=os.clock(),spans={},events={},cuts={},hitches=0,frames={},timeline={},
+			firstFrame=frameNo+1,build=buildLine(),slow=workspace:GetAttribute("NDSlow")}
+		if self.syncFlash then syncLeft=2 end
+		if applyVisibility then applyVisibility() end
 		print("[NinjaDuelClip] REC "..take.label.." | frame "..(frameNo+1).." | "..take.build)
 	end
 	local function public(s)
 		if not s then return nil end
-		return {label=s.label,duration=s.duration,build=s.build,clean=s.clean,cleanStrict=s.cleanStrict,counts=s.counts,faults=s.faults,
-			scenes=s.scenes,cuts=s.cuts,hitches=s.hitches,spans=s.spans,events=s.events,counter=s.counter,frames=#s.frames}
+		return {label=s.label,duration=s.duration,build=s.build,slow=s.slow,clean=s.clean,cleanStrict=s.cleanStrict,counts=s.counts,faults=s.faults,
+			scenes=s.scenes,cuts=s.cuts,hitches=s.hitches,spans=s.spans,events=s.events,timeline=s.timeline,moments=s.moments,counter=s.counter,frames=#s.frames}
 	end
 	local function stopTake()
 		if not take then return last end
@@ -605,6 +695,7 @@ function Assist.install(ctx,dev)
 		for _,c in live do closeSpan(c,now) end
 		last=summarize(take,now)
 		take=nil
+		if applyVisibility then applyVisibility() end
 		print("[NinjaDuelClip] "..HttpService:JSONEncode(public(last)))
 		return last
 	end
@@ -618,9 +709,12 @@ function Assist.install(ctx,dev)
 	local lastCut=-math.huge
 	local lastRoots={}
 	local flashSince=setmetatable({},{__mode="k"})
-	local lightSince=setmetatable({},{__mode="k"})
-	local lights={}
 	local highlights={}
+	local tickN=0
+	local prevState,memo=nil,{}
+	local lastTick={}          -- key -> {t, root, lf, rf}: the kinematics between two ticks
+	local slideWin={A={},B={}} -- key -> recent {t, ratio} of the planted foot's speed to the body's
+	local liveTimeline={}      -- the last events seen outside a take
 
 	local function project(cam,p)
 		local v=cam:WorldToViewportPoint(p)
@@ -631,13 +725,99 @@ function Assist.install(ctx,dev)
 		if v.Z<=0 then return nil end
 		return {r3((v.X-band.x0)/math.max(1,band.w)),r3(v.Y/math.max(1,band.h))}
 	end
+	local function pct(x) return math.floor(x*100+0.5) end
+
+	-- Effect parts near the fighters (the game's, or the replay's ghosts that are
+	-- not bodies): they hide, drown or fill the image. Refreshed 5 times a second.
+	local fxAt,fxList=0,{}
+	local function fxParts(A,B)
+		local now=os.clock()
+		if now-fxAt<0.2 then return fxList end
+		fxAt=now;fxList={}
+		local ra,rb=rootOf(A),rootOf(B)
+		if not ra and not rb then return fxList end
+		for _,n in {"NinjaDuelFX","Effects","NinjaUltimateFX","VfxMesh","NDReplay"} do
+			local r=workspace:FindFirstChild(n)
+			for _,d in r and r:GetDescendants() or {} do
+				if d:IsA("BasePart") and d.Transparency<0.6 and d.Size.Magnitude>0.4 and not (A and d:IsDescendantOf(A)) and not (B and d:IsDescendantOf(B)) then
+					local p=d.Position
+					if (ra and (p-ra.Position).Magnitude<45) or (rb and (p-rb.Position).Magnitude<45) then
+						local m=d:FindFirstAncestorWhichIsA("Model")
+						if not (m and m:FindFirstChildOfClass("Humanoid")) then table.insert(fxList,d) end
+					end
+				end
+			end
+		end
+		return fxList
+	end
+	-- The names of the effects drawn in the band (for the timeline).
+	local function fxNames(cam,list)
+		local seen,out={},{}
+		for _,p in list do
+			local _,inBand=project(cam,p.Position)
+			if inBand then
+				local n=Judge and Judge.name(p) or p.Name
+				if not seen[n] then seen[n]=true;table.insert(out,n);if #out>=3 then break end end
+			end
+		end
+		return out
+	end
+	-- What a viewer sees of one fighter, in words.
+	local function seenText(x)
+		if not x then return "absent" end
+		if not x.inBand then return "hors cadre" end
+		local v=x.vis
+		local bits={}
+		if v then
+			if v.face>=0.85 and v.body>=0.6 then
+				local by=next(v.faceBy) or next(v.bodyBy)
+				return "caché"..(by and (" ("..by..")") or "")
+			end
+			for _,k in {"décor","corps","clone","effet"} do
+				local s=math.max(v.faceBy[k] or 0,v.bodyBy[k] or 0)
+				if s>T.decor then table.insert(bits,k.." "..pct(s).." %") end
+			end
+		end
+		if x.backAng and x.backAng>T.back then table.insert(bits,"de dos") end
+		if x.share and x.share<T.small then table.insert(bits,"petit ("..pct(x.share).." %)") end
+		return #bits>0 and ("vu, "..table.concat(bits,", ")) or "vu"
+	end
+	local function noteEvent(e,info,cam,fx,now)
+		local parts={}
+		for _,k in {"A","B"} do
+			local x=info[k]
+			if x then table.insert(parts,x.name.." "..seenText(x)) end
+		end
+		local st=attr("NDClock")
+		local entry={t=take and r3(rel(now)) or nil,st=type(st)=="number" and r3(st) or nil,scene=attr("NDScene") or attr("NDBeat"),shot=attr("NDShot") or attr("NDTake"),
+			who=info[e.who] and info[e.who].name or e.who,kind=e.kind,w=r3(e.w),text=e.text,seen=table.concat(parts," · "),fx=fxNames(cam,fx)}
+		if take then table.insert(take.timeline,entry) end
+		entry.at=now
+		table.insert(liveTimeline,entry)
+		while #liveTimeline>40 do table.remove(liveTimeline,1) end
+	end
+	function timelineLine(e)
+		local when=e.t and (fmt(e.t).." s") or "—"
+		if e.st then when=when.." (replay "..fmt(e.st)..")" end
+		return when.." "..e.text.." — "..e.seen..(#(e.fx or {})>0 and (" · effets à l'image : "..table.concat(e.fx,", ")) or "")
+	end
 
 	local function tickChecks(now)
 		local G="tick"
+		tickN+=1
 		local cam=workspace.CurrentCamera
 		local camPos,look=cam.CFrame.Position,cam.CFrame.LookVector
 		local data=duelData()
 		local A,B=actors()
+		-- Before the duel and after the K.O. (phase Result), nothing is judged.
+		local phase=phaseOf(A,B)
+		self.phase=phase
+		if phase and phase~="Duel" then
+			self.info={}
+			sweep(G,now);sweep("shade",now);sweep("fx",now)
+			prevState=nil;table.clear(lastTick)
+			return
+		end
 		local info={}
 		for _,key in {"A","B"} do
 			local m=key=="A" and A or B
@@ -645,11 +825,21 @@ function Assist.install(ctx,dev)
 				local parts=partsOf(m)
 				local cf=pivotOf(m)
 				if parts.head and cf then
-					info[key]={m=m,name=nameOf(key,m,data),acting=actingOf(key,data),parts=parts,root=rootOf(m),cf=cf}
+					local st=statusOf(key,m,data)
+					info[key]={key=key,m=m,st=st,name=nameOf(key,m,data,st),acting=actingOf(key,st),parts=parts,root=rootOf(m),cf=cf}
 				end
 			end
 		end
 		local extra=otherBodies(A,B)
+		local fx=fxParts(A,B)
+		local mid,nMid=V(0,0,0),0
+		for _,x in info do mid+=x.cf.Position;nMid+=1 end
+		local decor=nil
+		if Sight and nMid>0 then
+			mid/=nMid
+			decor=Sight.subset((camPos+mid)/2,(camPos-mid).Magnitude/2+30)
+		end
+		local opening=take and now-take.start<T.opening*(1/slowFactor())
 		local shares={}
 		for key,x in info do
 			local other=info[key=="A" and "B" or "A"]
@@ -661,58 +851,76 @@ function Assist.install(ctx,dev)
 				local _,inBand=project(cam,x.parts.torso.Position)
 				torsoIn=inBand
 			end
+			x.inBand=headIn or torsoIn
 			local top=x.parts.head.Position+V(0,x.parts.head.Size.Y*0.9,0) -- the hair above the rig's head
 			local feet=(x.root and x.root.Position or x.cf.Position)-V(0,3,0)
 			local topV=cam:WorldToViewportPoint(top)
 			local feetV=cam:WorldToViewportPoint(feet)
-			if headV.Z>0 then shares[key]=math.abs(feetV.Y-topV.Y)/math.max(1,band.h) end
+			if headV.Z>0 then shares[key]=math.abs(feetV.Y-topV.Y)/math.max(1,band.h);x.share=shares[key] end
 			-- Out of the band.
-			if not headIn and not torsoIn then
+			if not x.inBand then
 				if x.acting==true then hold(G,now,id.."out",ERR,"cadrage",name.." agit hors du cadre")
 				elseif other and other.acting==true and attr("NDAct")==nil then hold(G,now,id.."out",WARN,"cadrage","l'action à deux n'est cadrée qu'à moitié : "..name.." hors du cadre",0.3) end
 			elseif headIn and topV.Z>0 and topV.Y<0 then
 				hold(G,now,id.."top",WARN,"cadrage","tête de "..name.." coupée en haut",0.3)
 			end
 			-- The other body right in front of the lens (an over-the-shoulder too close).
-			if x.acting~=true and (headIn or torsoIn) then
+			if x.acting~=true and x.inBand then
 				local dist=((x.root and x.root.Position or x.cf.Position)-camPos).Magnitude
 				if dist<4.5 then hold(G,now,id.."front",WARN,"cadrage",name.." au premier plan, à "..fmt(dist).." studs de l'objectif (il bouche une partie de l'image)",0.3) end
 			end
-			if headIn or torsoIn then
+			if x.inBand then
 				-- Seen from behind while acting.
 				local fwd=flat(x.cf.LookVector)
 				local toCam=flat(camPos-x.cf.Position)
 				if fwd.Magnitude>0.1 and toCam.Magnitude>0.1 then
 					local ang=math.deg(math.acos(math.clamp(fwd.Unit:Dot(toCam.Unit),-1,1)))
+					x.backAng=ang
 					if ang>T.back then
 						if x.acting==true then hold(G,now,id.."back",ERR,"cadrage",name.." filmé de dos pendant son action ("..math.floor(ang).."°)")
 						elseif x.acting==nil then hold(G,now,id.."back",WARN,"cadrage",name.." de dos ("..math.floor(ang).."°)",0.5) end
 					end
 				end
-				-- Something between the lens and the body.
+				-- What stands between the lens and the face or the body: the decor
+				-- (bushes and tree tops included), a body, an effect (request 1, 6).
 				local bodies={}
 				if other then for _,p in other.parts.all do table.insert(bodies,p) end end
 				for _,p in extra do table.insert(bodies,p) end
-				local ignore={x.m}
-				local hb=firstBlocker(camPos,x.parts.head.Position,ignore,bodies)
-				local tb=nil
-				if x.parts.torso then tb=firstBlocker(camPos,x.parts.torso.Position,ignore,bodies) end
-				local blocker=hb or tb
-				if blocker then
-					local kind,what=classify(blocker,A,B,data)
-					local full=hb~=nil and (tb~=nil or not x.parts.torso)
-					local by=(kind=="corps" and ("le corps de "..what)) or (kind=="clone" and ("un clone ("..what..")")) or (kind=="effet" and ("un effet ("..what..")")) or ("le décor ("..what..")")
-					if kind=="effet" then
-						if full and x.acting~=false then hold(G,now,id.."hid",WARN,"cadrage",name.." caché par "..by,0.6) end
-					elseif full then
+				if Judge then
+					local list=table.clone(bodies)
+					for _,p in fx do table.insert(list,p) end
+					local v=Judge.visible(camPos,x.m,{parts=list,others={other and other.m or nil},decor=decor})
+					x.vis=v
+					local dF,dB=v.faceBy["décor"] or 0,v.bodyBy["décor"] or 0
+					if dF>T.decor or dB>T.decor then
+						local part=dF>=dB and "visage" or "corps"
+						hold(G,now,id.."decor",x.acting==true and ERR or WARN,"cadrage",string.format("%s de %s caché à %d %% par le décor (%s)",part,name,pct(math.max(dF,dB)),v.what["décor"] or "?"),x.acting==true and 0.15 or 0.3)
+					end
+					local bF=(v.faceBy.corps or 0)+(v.faceBy.clone or 0)
+					local bB=(v.bodyBy.corps or 0)+(v.bodyBy.clone or 0)
+					if bF>=0.6 or bB>=0.6 then
+						local by=(v.faceBy.corps or v.bodyBy.corps) and ("le corps de "..(other and other.name or "l'autre")) or ("un clone ("..(v.what.clone or "?")..")")
 						hold(G,now,id.."hid",x.acting==false and WARN or ERR,"cadrage",name.." caché par "..by)
-					elseif x.acting~=false then
+					elseif (bF>=0.4 or bB>=0.4) and x.acting~=false then
+						local by=(v.faceBy.corps or v.bodyBy.corps) and ("le corps de "..(other and other.name or "l'autre")) or ("un clone ("..(v.what.clone or "?")..")")
 						hold(G,now,id.."hid",WARN,"cadrage",name.." à moitié caché par "..by,0.25)
 					end
-				elseif x.acting==true and #x.parts.hands>0 then
-					local hidden=0
-					for _,h in x.parts.hands do if firstBlocker(camPos,h.Position,ignore,bodies) then hidden+=1 end end
-					if hidden==#x.parts.hands then hold(G,now,id.."hands",WARN,"cadrage","on ne voit pas les mains de "..name.." (le geste est caché)",0.3) end
+					-- Drowned in an effect: his own fire, the other's jutsu.
+					local nF,nB=math.max(1,v.nFace),math.max(1,v.nBody)
+					local fxShare=((v.faceBy.effet or 0)*nF+(v.bodyBy.effet or 0)*nB)/(nF+nB)
+					if fxShare>=T.unreadable and x.acting==true then
+						hold(G,now,id.."illisible",ERR,"cadrage",string.format("%s avalé par un effet (%s, %d %% du corps) : illisible",name,v.what.effet or "?",pct(fxShare)),T.unreadableHold)
+					elseif fxShare>=T.fxDrown and x.acting~=false then
+						hold(G,now,id.."noye",WARN,"cadrage",string.format("%s noyé dans un effet (%s, %d %% du corps)",name,v.what.effet or "?",pct(fxShare)),0.3)
+					end
+				else
+					-- (ClipJudge missing) the old line of sight: head and torso only.
+					local hb=firstBlocker(camPos,x.parts.head.Position,{x.m},bodies)
+					local tb=x.parts.torso and firstBlocker(camPos,x.parts.torso.Position,{x.m},bodies) or nil
+					if hb and (tb or not x.parts.torso) then
+						local kind,what=classify(hb,A,B,data)
+						if kind~="effet" then hold(G,now,id.."hid",x.acting==false and WARN or ERR,"cadrage",name.." caché par "..kind.." ("..what..")") end
+					end
 				end
 			end
 			-- The interface TikTok and Shorts put over the video.
@@ -721,21 +929,75 @@ function Assist.install(ctx,dev)
 				local vv=headV.Y/math.max(1,band.h)
 				if vv>0.8 or (u>0.84 and vv>0.3 and vv<0.8) then hold(G,now,id.."ui",INFO,"cadrage","visage de "..name.." sous l'interface TikTok",0.5) end
 			end
+			-- Too small (request 5): the one who acts fills at least a third of the band's height.
+			if x.acting==true and shares[key] and x.inBand and shares[key]<T.small then
+				hold(G,now,id.."small",opening and ERR or WARN,"cadrage",string.format("%s trop petit : %d %% de la hauteur (il faut au moins %d %%)%s",name,pct(shares[key]),pct(T.small),opening and " — les 2 premières secondes décident" or ""),opening and 0.1 or 0.5)
+			end
+			-- Kinematics since the last tick: speed, charge, feet.
+			local r=x.root and x.root.Position or x.cf.Position
+			local lf,rf=x.parts.feet[1],x.parts.feet[2]
+			local prev=lastTick[key]
+			lastTick[key]={t=now,root=r,lf=lf and lf.Position,rf=rf and rf.Position}
+			local st=x.st
+			local busy=st and (st.reaction~=nil or st.airborne==true or st.state=="Rush" or st.state=="Pursuit" or st.state=="Dodging" or st.state=="Defeated" or st.state=="Stunned")
+			if prev and now-prev.t>0 and now-prev.t<0.3 then
+				local dt=now-prev.t
+				local vel=flat(r-prev.root)/dt
+				local speed=vel.Magnitude
+				-- The look (request 2): toward the other while in reach or charging at him;
+				-- never into the lens.
+				if Judge and other and x.acting~=false and not busy then
+					local oPos=other.parts.head and other.parts.head.Position or (other.root and other.root.Position) or other.cf.Position
+					local toO=flat(oPos-r)
+					local charging=toO.Magnitude>0.1 and vel:Dot(toO.Unit)>T.charge
+					if toO.Magnitude<T.regardRange or charging then
+						local headAng,chestAng=Judge.gaze(x.m,oPos)
+						local _,_,lensAng=Judge.gaze(x.m,camPos)
+						if x.inBand and lensAng<T.lensLook and (camPos-x.parts.head.Position).Magnitude<40 then
+							hold(G,now,id.."regard",x.acting==true and ERR or WARN,"scene",name.." regarde l'objectif au lieu de "..other.name,0.3)
+						elseif x.inBand and math.min(headAng,chestAng)>T.regard then
+							hold(G,now,id.."regard",x.acting==true and ERR or WARN,"scene",string.format("%s ne regarde pas %s (%d°)%s",name,other.name,math.floor(math.min(headAng,chestAng)),charging and " en fonçant sur lui" or ""),0.3)
+						end
+					end
+				end
+				-- The run (request 3): a sprint speed needs the ninja sprint pose,
+				-- and the feet must not slide.
+				if st and not busy and x.inBand then
+					local win=slideWin[key]
+					if speed>=T.slideSpeed and prev.lf and prev.rf and lf and rf then
+						local fl=flat(lf.Position-prev.lf).Magnitude/dt
+						local fr=flat(rf.Position-prev.rf).Magnitude/dt
+						table.insert(win,{t=now,ratio=math.min(fl,fr)/speed,speed=speed})
+					else
+						table.clear(win)
+					end
+					while win[1] and now-win[1].t>0.45 do table.remove(win,1) end
+					local sliding=#win>=4 and now-win[1].t>=0.3
+					if sliding then for _,w in win do if w.ratio<T.slide then sliding=false;break end end end
+					if sliding then
+						hold(G,now,id.."course",WARN,"jeu",string.format("les pieds de %s glissent (%d studs/s, pied d'appui à %d %% de la vitesse)",name,math.floor(speed),pct(win[#win].ratio)),0)
+					elseif speed>=T.sprint and st.sprinting~=true and (st.state=="Neutral" or st.state==nil) then
+						hold(G,now,id.."course",WARN,"jeu",string.format("%s court à %d studs/s sans la pose de sprint ninja (MovementSprinting éteint)",name,math.floor(speed)),0.3)
+					end
+				else
+					table.clear(slideWin[key])
+				end
+			end
 		end
-		-- Both small: the hook needs the fighters big.
-		if shares.A and shares.B then
+		-- No one known to act (a replay with no NDAct): the bigger one still needs a third.
+		if shares.A and shares.B and info.A.acting==nil and info.B.acting==nil then
 			local big=math.max(shares.A,shares.B)
 			if big<T.small then
-				if take and now-take.start<T.opening then
-					hold(G,now,"small",ERR,"cadrage",string.format("ouverture : persos trop petits (%d %% de la hauteur) — les 2 premières secondes décident",math.floor(big*100)),0.1)
-				else
-					hold(G,now,"small",WARN,"cadrage",string.format("persos petits à l'image (%d %% de la hauteur)",math.floor(big*100)),1.5)
-				end
+				hold(G,now,"small",opening and ERR or WARN,"cadrage",string.format("persos trop petits (%d %% de la hauteur, il faut %d %%)%s",pct(big),pct(T.small),opening and " — les 2 premières secondes décident" or ""),opening and 0.1 or 1)
 			end
 		end
 		-- Two bodies in one place: a game fault, filmed as it is.
 		if info.A and info.B and info.A.root and info.B.root then
 			if (info.A.root.Position-info.B.root.Position).Magnitude<T.inside then hold(G,now,"inside",WARN,"jeu","corps l'un dans l'autre ("..info.A.name.." / "..info.B.name..")",0.4) end
+		end
+		-- The lens out of the enclosure (behind the wall), request 1.
+		if Judge and not Judge.inside(camPos,0) then
+			hold(G,now,"outside",ERR,"cadrage","caméra hors de l'enceinte (derrière le mur) : la ramener dans l'arène",0.1)
 		end
 		-- Something stuck on the lens.
 		local cf=cam.CFrame
@@ -772,12 +1034,12 @@ function Assist.install(ctx,dev)
 		if sun.Y>0.03 and look:Dot(sun)>math.cos(math.rad(T.sun)) then
 			hold(G,now,"sun",WARN,"cadrage","caméra face au soleil (éblouissement) : garder le soleil derrière l'objectif",0.3)
 		end
-		-- A full-body flash that stays (overexposes the shot).
+		-- A full-body flash that stays on a fighter in the image (overexposes the shot).
 		for h in highlights do
 			if h.Parent and h.Enabled and h.FillTransparency<0.35 then
 				local target=h.Adornee or h.Parent
 				local who=nil
-				for _,x in info do if target==x.m or (target and target:IsDescendantOf(x.m)) then who=x.name end end
+				for _,x in info do if x.inBand and (target==x.m or (target and target:IsDescendantOf(x.m))) then who=x.name end end
 				if who then
 					flashSince[h]=flashSince[h] or now
 					if now-flashSince[h]>0.3 then hold(G,now,"flash:"..who,WARN,"jeu","flash plein corps sur "..who.." (surexpose)",0) end
@@ -786,29 +1048,57 @@ function Assist.install(ctx,dev)
 				flashSince[h]=nil
 			end
 		end
-		-- A coloured light that stays on a fighter (the pink Kakashi of FILM04):
-		-- a body light over T.bodyLight s, a technique's light over T.fxLight s.
-		for _,l in lights do
-			local hot=false
-			if l.Parent and l.Enabled and l.Brightness>1 then
-				local _,s=l.Color:ToHSV()
-				local at=(l.Parent:IsA("BasePart") and l.Parent.Position) or (l.Parent:IsA("Attachment") and l.Parent.WorldPosition) or nil
-				if at and s>0.45 then
-					local range=(l:IsA("PointLight") or l:IsA("SpotLight")) and l.Range or 8
-					for _,x in info do
-						if (x.parts.head.Position-at).Magnitude<range*0.8 then
-							hot=true
-							lightSince[l]=lightSince[l] or now
-							local onBody=l:IsDescendantOf(x.m)
-							local limit=onBody and T.bodyLight or T.fxLight
-							if now-lightSince[l]>limit then
-								hold(G,now,"light:"..x.name,WARN,"jeu","lumière "..hueName(l.Color).." qui reste sur "..x.name.." (teinte la peau et le sol)"..(onBody and "" or " — lumière d'effet"),0)
-							end
-						end
+		-- In the shade (request 4), 4 times a second: the shadow of a wall, a tree,
+		-- the stand on the face or the body, or the lens on the side the sun does
+		-- not light (backlight). Replaces the old coloured-light alerts.
+		if Judge and tickN%4==0 then
+			local sunF,sunDir=Judge.sun()
+			for key,x in info do
+				if x.inBand then
+					local body,face,night=Judge.shadow(x.m)
+					x.shade={r3(face),r3(body)}
+					if night then
+						hold("shade",now,"nuit",ERR,"reglage","nuit : le soleil est couché (« Préparer l'image » met la lumière « midi »)",0)
+					elseif face>=T.shade or body>=T.shade then
+						hold("shade",now,key..":ombre",x.acting==true and ERR or WARN,"cadrage",string.format("%s à l'ombre (visage %d %%, corps %d %%) : changer d'angle ou de place",x.name,pct(face),pct(body)),0.4)
+					elseif sunF and sunDir.Y<0.8 and Judge.sunSide(camPos,x.m)>T.sunSide and x.acting~=false then
+						hold("shade",now,key..":ombre",WARN,"cadrage",x.name.." à contre-jour : la caméra voit le côté sans soleil — se placer du côté du soleil",0.5)
 					end
 				end
 			end
-			if not hot then lightSince[l]=nil end
+			sweep("shade",now)
+		end
+		-- An unreadable image (request 6), 5 times a second: effects or a flash over
+		-- more than T.unreadable of the band.
+		if Sight and tickN%3==0 then
+			local cover=0
+			for _,root in {Lighting,cam} do
+				for _,e in root:GetChildren() do
+					if e:IsA("ColorCorrectionEffect") and e.Enabled and e.Brightness>=0.2 and e.Name~="NinjaLookGrade" then cover=1 end
+				end
+			end
+			if cover<1 and #fx>0 then
+				local hits,n=0,0
+				for i=1,5 do
+					for j=1,8 do
+						local ray=cam:ViewportPointToRay(band.x0+band.w*(i-0.5)/5,band.h*(j-0.5)/8)
+						n+=1
+						if Sight.parts(ray.Origin,ray.Origin+ray.Direction*120,fx,0) then hits+=1 end
+					end
+				end
+				cover=hits/n
+			end
+			self.fxCover=cover
+			if cover>=T.unreadable then
+				hold("fx",now,"illisible",ERR,"cadrage",string.format("image illisible : effets ou flash sur %d %% de l'image",pct(cover)),T.unreadableHold)
+			end
+			sweep("fx",now)
+		end
+		-- What happens, and whether a viewer sees it (request 7).
+		if Judge and info.A and info.B and info.A.st and info.B.st then
+			local cur={A=info.A.st,B=info.B.st,ko=koOf(data,A)}
+			for _,e in Judge.events(prevState,cur,now,memo) do noteEvent(e,info,cam,fx,now) end
+			prevState=cur
 		end
 		self.info=info
 		sweep(G,now)
@@ -881,8 +1171,8 @@ function Assist.install(ctx,dev)
 		local cursor=UIS.MouseIconEnabled and mouse.X>band.x0 and mouse.X<band.x1
 		check.cursor=not cursor
 		if cursor then hold(G,now,"cursor",WARN,"reglage","curseur de la souris dans l'image",0.5) end
-		-- Lights and highlights near the fighters, checked 15 times a second by tickChecks.
-		table.clear(lights);table.clear(highlights)
+		-- Highlights near the fighters, checked 15 times a second by tickChecks.
+		table.clear(highlights)
 		local A,B=actors()
 		check.duel=A~=nil and B~=nil
 		local roots={}
@@ -891,7 +1181,7 @@ function Assist.install(ctx,dev)
 		if B then table.insert(roots,B) end
 		for _,r in roots do
 			for _,d in r:GetDescendants() do
-				if d:IsA("Light") then table.insert(lights,d) elseif d:IsA("Highlight") then highlights[d]=true end
+				if d:IsA("Highlight") then highlights[d]=true end
 			end
 		end
 		self.check=check
@@ -941,6 +1231,7 @@ function Assist.install(ctx,dev)
 		lineR.Position=UDim2.fromOffset(band.x1+T.lines,0)
 		guides.Position=UDim2.fromOffset(band.x0,0);guides.Size=UDim2.new(0,w,1,0)
 		counter.Position=UDim2.fromOffset(band.x1+T.lines+12,8)
+		syncMark.Position=UDim2.fromOffset(band.x0+4,4)
 		local margin=band.x0-T.lines-16
 		panel.Size=UDim2.new(0,math.clamp(margin,240,380),1,-16)
 		self.narrow=margin<240
@@ -990,14 +1281,20 @@ function Assist.install(ctx,dev)
 		P.sun.Visible=sun.Magnitude>0.05
 		if sun.Magnitude>0.05 then sun=sun.Unit;P.sun.Position=UDim2.fromOffset(75+sun.X*68,75+sun.Z*68) end
 	end
+	-- Nothing of F4 on screen during a take (request 11), from the very frame REC starts.
+	applyVisibility=function()
+		local rec=take~=nil
+		lineL.Visible=not rec or self.linesDuringRec;lineR.Visible=lineL.Visible
+		guides.Visible=self.guides and self.shown and not rec
+		panel.Visible=self.shown and (not rec or (self.panelDuringRec and not self.narrow))
+		chip.Visible=not self.shown and not rec
+		counter.Visible=self.counterOn and (rec or self.shown)
+		syncMark.Visible=syncLeft>0
+	end
 	local function render(now)
 		local w=worst()
 		local color=w>=ERR and SEVCOLOR[ERR] or w>=WARN and SEVCOLOR[WARN] or OK_COLOR
 		lineL.BackgroundColor3=color;lineR.BackgroundColor3=color
-		lineL.Visible=take==nil or self.linesDuringRec;lineR.Visible=lineL.Visible
-		guides.Visible=self.guides and take==nil
-		panel.Visible=self.shown and not (take and self.narrow)
-		chip.Visible=not self.shown
 		if not self.shown then return end
 		warnNarrow.Text=self.narrow and '<font color="#F0AA3C">Fenêtre étroite : le panneau couvre la bande 9:16 ; il se cache pendant une prise.</font>' or ""
 		warnNarrow.Visible=self.narrow==true
@@ -1098,6 +1395,9 @@ function Assist.install(ctx,dev)
 				local hands={}
 				for _,h in x.parts.hands do if h.Parent then table.insert(hands,uv(cam,h.Position) or false) end end
 				e.hands=hands
+				if x.vis then e.see={r3(1-x.vis.face),r3(1-x.vis.body)} end
+				if x.share then e.size=r3(x.share) end
+				if x.shade then e.shade=x.shade end
 				f[key]=e
 			end
 		end
@@ -1110,15 +1410,17 @@ function Assist.install(ctx,dev)
 		frameNo+=1
 		table.insert(fpsWin,{now,dt})
 		while fpsWin[1] and now-fpsWin[1][1]>2 do table.remove(fpsWin,1) end
-		counter.Visible=self.counterOn and (take~=nil or self.shown)
+		applyVisibility()
 		if counter.Visible then drawCounter() end
+		if syncLeft>0 then syncLeft-=1 end
 		-- A frozen image: a frame much longer than the ones around it.
-		if now-installedAt>3 and dt>T.hitch then
+		local sdt=dt*slowFactor() -- what the frame lasts on screen once a slow render is sped up
+		if now-installedAt>3 and sdt>T.hitch then
 			local sum=0
 			for _,f in fpsWin do sum+=f[2] end
 			local mean=#fpsWin>0 and sum/#fpsWin or dt
-			if dt>3*mean or dt>0.1 then
-				event("hitch",take and ERR or WARN,"machine",string.format("image figée (%d ms)",math.floor(dt*1000)),now)
+			if dt>3*mean or sdt>0.1 then
+				event("hitch",take and ERR or WARN,"machine",string.format("image figée (%d ms à l'écran)",math.floor(sdt*1000)),now)
 				if take then take.hitches+=1 end
 			end
 		end
@@ -1154,7 +1456,7 @@ function Assist.install(ctx,dev)
 		local black=attr("NDCut")==true
 		if black then
 			-- A black gap between two beats of a program: nothing to judge.
-			for id,c in live do if c.group=="tick" then closeSpan(c);live[id]=nil end end
+			for id,c in live do if c.group=="tick" or c.group=="shade" or c.group=="fx" then closeSpan(c);live[id]=nil end end
 			tickAcc=0
 		elseif tickAcc>=T.tick then
 			tickAcc=0
@@ -1186,7 +1488,9 @@ function Assist.install(ctx,dev)
 		for _,e in liveLines(now) do table.insert(list,{id=e.id,severity=SEVNAME[e.sev],owner=OWNER[e.owner],text=e.text,seconds=e.dur,ago=e.ago}) end
 		return {shown=self.shown,recording=take~=nil,takeSeconds=take and (now-take.start) or nil,label=take and take.label or nil,frame=frameNo,
 			check=self.check,quality=self.quality,fps=self.fps,narrow=self.narrow,band={x0=band.x0,x1=band.x1,height=band.h},
-			counter=self.counterGeometry,thresholds=T,ignore=self.ignore,now=list,last=public(last),build=buildLine()}
+			counter=self.counterGeometry,thresholds=T,ignore=self.ignore,now=list,last=public(last),build=buildLine(),
+			phase=self.phase,fxCover=self.fxCover,preset=self.preset,judge=Judge~=nil,
+			recent=(function() local out={};for i=math.max(1,#liveTimeline-9),#liveTimeline do table.insert(out,timelineLine(liveTimeline[i])) end;return out end)()}
 	end
 	local bindable=Instance.new("BindableFunction");bindable.Name="Report";bindable.Parent=gui
 	bindable.OnInvoke=function(op,arg,extra)
@@ -1212,8 +1516,16 @@ function Assist.install(ctx,dev)
 		elseif op=="show" then self:show(arg~=false)
 		elseif op=="guides" then self.guides=arg~=false
 		elseif op=="allowHud" then self.allowHud=arg==true
-		elseif op=="counter" then self.counterOn=arg~=false
+		elseif op=="counter" then self.counterOn=arg==true
+		elseif op=="syncFlash" then self.syncFlash=arg==true
 		elseif op=="linesDuringRec" then self.linesDuringRec=arg==true
+		elseif op=="panelDuringRec" then self.panelDuringRec=arg==true
+		elseif op=="preset" then self.preset=(type(arg)=="string" and arg~="") and arg or nil
+		elseif op=="timeline" then
+			local src=(take and take.timeline) or (last and last.timeline) or liveTimeline
+			local lines={}
+			for _,e in src do table.insert(lines,timelineLine(e)) end
+			return table.concat(lines,"\n")
 		end
 		return HttpService:JSONEncode(snapshot())
 	end
