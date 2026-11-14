@@ -131,10 +131,10 @@ function HubDress.start()
 	local MeshKit=require(script.Parent.MeshKit)
 	local hasAny=false
 	for name in HubDress.NAMES do if MeshKit.Data[name] then hasAny=true;break end end
-	if not hasAny then return end
+	if not hasAny then HubDress.dressed=true return end
 	task.spawn(function()
 		local root=workspace:WaitForChild("NinjaDuelHub",120)
-		if not root then return end
+		if not root then HubDress.dressed=true return end
 		local holder=Instance.new("Folder");holder.Name="NinjaDuelHubDress";holder.Parent=workspace
 		local done=setmetatable({},{__mode="k"})
 		local watched=setmetatable({},{__mode="k"})
@@ -144,14 +144,12 @@ function HubDress.start()
 			watched[unit]=true
 			unit:GetAttributeChangedSignal("DressOff"):Connect(function() HubDress.sync(unit,MeshKit,holder,done) end)
 		end
-		while root.Parent do
-			HubDress.apply(root,MeshKit,holder,done,watch)
-			if MeshKit.state=="ready" or MeshKit.state=="failed" then
-				HubDress.apply(root,MeshKit,holder,done,watch)
-				break
-			end
-			task.wait(1)
-		end
+		-- (14/11, François: « les textures n'apparaissent pas au même moment »)
+		-- The village is dressed in one go once every model is built: it was
+		-- dressed once a second as they came, in waves for 12 s.
+		while root.Parent and MeshKit.state~="ready" and MeshKit.state~="failed" do task.wait(.1) end
+		if root.Parent then HubDress.apply(root,MeshKit,holder,done,watch) end
+		HubDress.dressed=true
 	end)
 end
 
