@@ -50,14 +50,25 @@ local function enter(cf,h,a,d)
 end
 Sight.enter=enter
 
--- The first unqueryable decor box between a and b (fraction along the segment).
-function Sight.decor(a,b,margin)
+-- The decor boxes within r of a point (a smaller list for many rays around one place).
+function Sight.subset(center,r)
 	Sight.refresh()
+	local list={}
+	for _,x in boxes do
+		if (x.c-center).Magnitude<=x.r+r then table.insert(list,x) end
+	end
+	return list
+end
+
+-- The first unqueryable decor box between a and b (fraction along the segment).
+-- list: a Sight.subset (all the boxes by default).
+function Sight.decor(a,b,margin,list)
+	if not list then Sight.refresh() end
 	local d=b-a
 	local L2=d:Dot(d)
 	if L2<1e-6 then return nil end
 	local best,bt=nil,1-(margin or 0.02)
-	for _,x in boxes do
+	for _,x in list or boxes do
 		local t=math.clamp((x.c-a):Dot(d)/L2,0,1)
 		if (a+d*t-x.c).Magnitude<=x.r then
 			local th=enter(x.cf,x.h,a,d)
