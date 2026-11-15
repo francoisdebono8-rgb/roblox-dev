@@ -29,7 +29,7 @@ Shop.Slots={
 	-- customisation de personnage ») The ninja outfit over his own avatar
 	-- (Server/Outfit): nothing until he chooses (`outfit`: no default piece);
 	-- a master's outfit (`set`) dresses the whole body over the others.
-	set={name="MASTER'S OUTFIT",kind="style",outfit=true},
+	set={name="INSPIRATION'S OUTFIT",kind="style",outfit=true},
 	top={name="TOP",kind="style",outfit=true},
 	bottom={name="BOTTOM",kind="style",outfit=true},
 	arms={name="ARMS",kind="style",outfit=true},

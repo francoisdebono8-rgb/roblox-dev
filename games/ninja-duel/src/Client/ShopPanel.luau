@@ -225,7 +225,7 @@ function Panel:draw()
 	elseif self.tab=="STYLE" then
 		-- (DEC-040) the masters' outfits on his own avatar, then the pieces;
 		-- MY NINJA opens the outfit card (Client/OutfitPanel)
-		self:drawLooks({"set","headband"},"STYLE","The masters' outfits and ninja pieces over your own avatar, in Konoha and in every duel.")
+		self:drawLooks({"set","headband"},"STYLE","Your inspirations' outfits and ninja pieces over your own avatar, in Konoha and in every duel.")
 		if self.onOutfit then
 			local b=self:add(press(self.kit,self.card,"MY NINJA",UDim2.fromOffset(Panel.CLOSE.X-230,Panel.CLOSE.Y),UDim2.fromOffset(210,Panel.CLOSE.H),function() self:hide();self.onOutfit() end,"ink"))
 			b.TextSize=24
@@ -374,7 +374,7 @@ function Panel:drawLooks(slots,title,sub)
 				top=50
 			end
 			if item.kit then
-				K.text(cell,nameOf(item.kit).." · MASTER",UDim2.fromOffset(12,top),UDim2.new(1,-24,0,16),13,if state.kind=="equipped" then (M.redSoft or M.cream) else (M.brown or M.ink),STRONG)
+				K.text(cell,nameOf(item.kit).." · INSPIRATION",UDim2.fromOffset(12,top),UDim2.new(1,-24,0,16),13,if state.kind=="equipped" then (M.redSoft or M.cream) else (M.brown or M.ink),STRONG)
 				top+=16
 			end
 			local name=K.text(cell,item.name,UDim2.fromOffset(12,top),UDim2.new(1,-24,0,24),17,ink,STRONG)
