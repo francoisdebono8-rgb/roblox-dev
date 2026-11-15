@@ -638,6 +638,12 @@ test("the client UI renders the real roster, queue, pick, duel and result packet
 	d.introUntil=nil;step(m,.1);ui:render(last(a))
 	assert(ui.hud.Visible and not ui.intro.Visible and ui.enemy.title.Text:find("BRAVO",1,true) and ui.hp.title.Text:find("YOU",1,true))
 	assert(ui.hp.name.Text:find("NEJI",1,true) and ui.enemy.name.Text:find("ITACHI",1,true))
+	-- (HUD v3, DESIGN validated 14/11) no kit subtitle nor tournament name in
+	-- the fight, only the opponent player's name; cream for you, red for him;
+	-- the jutsu are paper scrolls on a rope, their words in ink
+	assert(not ui.hp.title.Visible and ui.enemy.title.Visible and not ui.roundSub.Visible,"HUD v3: the subtitles")
+	assert(ui.hp.fill.BackgroundColor3==ui.hp.base and ui.enemy.base~=ui.hp.base,"HUD v3: one colour per side")
+	assert(ui.jutsuRope.Visible and ui.techniqueButtons[1].box.BackgroundColor3~=nil and ui.techniqueButtons[1].title.TextColor3~=H.roblox.Color3.fromRGB(240,232,212),"HUD v3: the scrolls")
 	-- Two knockouts for Alpha: VICTORY from Alpha's side.
 	for _=1,2 do d.introUntil=nil;d.combat:damage(d.seats[1].actor,d.seats[2].actor,1000,false,false);step(m,2.7) end
 	ui:render(last(a))
