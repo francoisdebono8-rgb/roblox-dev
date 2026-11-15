@@ -236,6 +236,10 @@ test("the screens build and draw: the shop's five tabs, the tree by tiers, the K
 		assert(ui.shopPanel.tabs.KITS.Visible and ui.shopPanel.title.Text=="SHOP","the SHOP after the market")
 		ui.treePanel:show("Leaf",kits)
 		assert(ui.treePanel:shown() and ui.treePanel.tiles.Weights and ui.treePanel.tiles.HeavyDrop,"the tree's tiles")
+		-- (15/11, DA v3) a page of paper: learned and on in ink, to learn in red
+		local M=ui.treePanel.M
+		assert(ui.treePanel.card.BackgroundColor3==M.back,"the tree is not a paper page")
+		assert(ui.treePanel.tiles.Weights.BackgroundColor3==M.ink,"a node on is not a band of ink")
 		assert(ui.treePanel.selected,"no node picked on opening")
 		-- Pressing the picked node's button asks the server.
 		ui.treePanel.selected="WeightsTempo";ui.treePanel:detail();ui.treePanel:press()
