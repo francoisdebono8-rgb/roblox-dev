@@ -61,6 +61,9 @@ local function unit(parent,name,dress,at,scale,length)
 	return m
 end
 local function keep(p) p:SetAttribute("Keep",true) return p end
+-- The plaque of an empty place on the cliff (Server/ChampionCliff writes the
+-- carved one's name there instead).
+Hub.SLOT_TEXT="THE NEXT FACE HERE COULD BE YOURS"
 Hub.unit=unit
 -- A slab on the ground between two points (x,z), `width` wide. (14/11, seen
 -- in the assembled render) each slab sits a hair above the one before, so
@@ -380,14 +383,22 @@ local function hall(f)
 			banner.Name="Banner"
 		end
 	end
-	-- The hand-sign statue at the back.
-	part(m,"Pedestal",Vector3.new(22,4,10),rel(0,2,-114),C.stoneDark,Enum.Material.Slate)
+	-- (14/11) Pillars along the balconies' edge, up to the roof (the
+	-- ANIMATOR's ExamHall models them; solid here).
 	for _,side in {-1,1} do
-		local arm=part(m,"StatueArm",Vector3.new(5,22,5),rel(side*3.6,14,-114)*CFrame.Angles(0,0,side*math.rad(9)),C.stone,Enum.Material.Concrete)
-		deco(m,"StatueHand",Vector3.new(5.6,6,4.4),arm.CFrame*CFrame.new(0,13,0),C.stone,Enum.Material.Concrete)
-		deco(m,"StatueFinger",Vector3.new(1.4,6,1.4),arm.CFrame*CFrame.new(side*-1.2,18.5,0),C.stone,Enum.Material.Concrete)
-		deco(m,"StatueFinger",Vector3.new(1.4,5.2,1.4),arm.CFrame*CFrame.new(side*.4,18.1,0),C.stone,Enum.Material.Concrete)
+		for _,z in {-40,-58,-76,-94,-112} do part(m,"HallPillar",Vector3.new(2.5,29.6,2.5),rel(side*43.6,.4+14.8,z),C.red,Enum.Material.Wood) end
 	end
+	-- The hand-sign statue at the back (14/11, after the anime's hall: two arms
+	-- in sleeves along the back wall, the joined hands rising in the middle,
+	-- enormous; the ANIMATOR's ExamHall models it). Solid: the sleeves, the
+	-- hands, the step.
+	for _,side in {-1,1} do
+		local sleeve=part(m,"StatueSleeve",Vector3.new(44,9.6,9.6),rel(side*32,5.2,-113),C.stone,Enum.Material.Fabric)
+		sleeve.Shape=Enum.PartType.Cylinder
+	end
+	part(m,"StatueStep",Vector3.new(14,1.8,12),rel(0,.9,-113),C.stoneDark,Enum.Material.Slate)
+	part(m,"StatueHands",Vector3.new(9,15,10),rel(0,13.5,-113),C.stone,Enum.Material.Concrete)
+	part(m,"StatueFingers",Vector3.new(4,12.5,5),rel(0,27,-113),C.stone,Enum.Material.Concrete)
 	-- Warm light under the roof.
 	for _,z in {-40,-70,-100} do
 		local holder=keep(deco(m,"HallLight",Vector3.new(1,1,1),rel(0,24,z),C.woodDark));holder.Transparency=1
@@ -469,18 +480,20 @@ local function uchiha(f)
 	tree(f,108,-70,13,5.5);tree(f,206,-150,14,6);tree(f,140,-42,12,5)
 end
 local function faces(f)
-	-- The cliff; the four heads each a unit of their own (14/11): a funny head
-	-- (the ANIMATOR's HeadFunny1..4) until Server/ChampionCliff carves the
-	-- creator or a champion there (it turns the unit DressOff).
+	-- The cliff; the four places each a unit of their own (14/11): an empty
+	-- place waiting for its champion (the ANIMATOR's HeadSlot1..4: the block
+	-- roughed out, scaffolding, a blank plaque) until Server/ChampionCliff
+	-- carves the creator or a champion there (it turns the unit DressOff). The
+	-- plaque stays (Keep): « the next face here could be yours », then a name.
 	local cliff=unit(f,"HokageCliff","HokageCliff",CFrame.new(O))
 	part(cliff,"Cliff",Vector3.new(330,92,32),rel(0,46,-248),C.rock,Enum.Material.Rock)
 	for k,at in HubMap.Heads do
-		local slot=unit(f,"CliffHead","HeadFunny"..k,CFrame.new(O+at))
+		local s=HubMap.HeadScale
+		local slot=unit(f,"CliffHead","HeadSlot"..k,CFrame.new(O+at),s)
 		slot:SetAttribute("HeadSlot",k)
-		local head=part(slot,"Face",Vector3.new(26,30,8),CFrame.new(O+at),C.rock,Enum.Material.Rock)
-		deco(slot,"Brow",Vector3.new(22,3,2),head.CFrame*CFrame.new(0,5,4.6),C.rockDark,Enum.Material.Rock)
-		deco(slot,"Nose",Vector3.new(3,6,3),head.CFrame*CFrame.new(0,0,5.2),C.rockDark,Enum.Material.Rock)
-		deco(slot,"Hair",Vector3.new(28,8,9),head.CFrame*CFrame.new(0,17,-.4),if k%2==0 then C.rockDark else C.rock,Enum.Material.Rock)
+		part(slot,"Face",Vector3.new(26*s.X,30*s.Y,8*s.Z),CFrame.new(O+at),C.rock,Enum.Material.Rock)
+		local plate=keep(deco(slot,"SlotPlate",Vector3.new(14*s.X,3.2*s.Y,.3),CFrame.new(O+at+Vector3.new(0,-12.4*s.Y,3.95*s.Z)),C.rockDark,Enum.Material.Slate))
+		sign(plate,Enum.NormalId.Back,Hub.SLOT_TEXT,rgb(236,222,190))
 	end
 	local terrace=unit(f,"FacesTerrace","FacesTerrace",CFrame.new(O))
 	part(terrace,"Terrace",Vector3.new(84,24,26),rel(0,12,-219),C.stone,Enum.Material.Slate)

@@ -73,7 +73,12 @@ M.Masters={
 -- heads on the cliff: the game's creator (1), the last three tournament
 -- champions (2 to 4, newest first), a funny head while a place is empty
 -- (Server/ChampionCliff). Centres of the heads, facing the village (+z).
-M.Heads={Vector3.new(-75,58,-230),Vector3.new(-25,58,-230),Vector3.new(25,58,-230),Vector3.new(75,58,-230)}
+-- (14/11, François: the faces of the anime's monument are big, not aligned,
+-- and stand out of the rock) Four places, staggered, each 26 x 30 x 8 scaled
+-- by HeadScale (about 50 x 58 x 19): the back flush with the cliff (z -232),
+-- the face out to about -213; above the terrace (its top at y 24).
+M.Heads={Vector3.new(-96,58,-222.4),Vector3.new(-32,55,-222.4),Vector3.new(32,61,-222.4),Vector3.new(96,53,-222.4)}
+M.HeadScale=Vector3.new(1.92,1.92,2.4)
 
 -- The village's walk, for the HUD: the nearest place to a position (world).
 -- The smallest place he stands in (Ichiraku within the street), else the

@@ -195,7 +195,7 @@ def piece_luau(pc, scale=1.0):
     for v in vs:
         d = v - ctr
         for a, h in ((d.x, half.x), (d.y, half.y), (d.z, half.z)):
-            raw += struct.pack("<H", int(round((a / h * .5 + .5) * 65535)))
+            raw += struct.pack("<H", max(0, min(65535, int(round((a / h * .5 + .5) * 65535)))))
     for c in pc.c:
         raw += bytes(int(round(max(0, min(1, x)) * 255)) for x in c)
     for t in tris:
