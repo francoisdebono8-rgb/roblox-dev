@@ -106,7 +106,7 @@ end
 -- challenge each other fight where they are: the free open place of the
 -- village (HubMap.Streets) nearest to the two of them, within `reach` studs.
 -- nil: the stadium (one of them is not walking, or nothing is free near).
-Matches.StreetReach=260
+Matches.StreetReach=260*(HubMap.Scale or 1)
 function Matches:streetSite(players)
 	if not Matches.hubOn() or not (Config.Hub and Config.Hub.VillageDuels==true) then return nil end
 	local sum,n=Vector3.zero,0

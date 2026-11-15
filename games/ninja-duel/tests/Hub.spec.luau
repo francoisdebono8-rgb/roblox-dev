@@ -125,6 +125,8 @@ end)
 test("the masters face the player who walks up to them",function()
 	local arrive={Legion=Vector3.new(-7,0,126),Sand=Vector3.new(-47,0,-59),Copycat=Vector3.new(-149,0,83),Leaf=Vector3.new(-102,0,38)}
 	for id,from in arrive do
+		-- (15/11) measured at the village's first scale
+		from*=(HubMap.Scale or 1)
 		local spot=HubMap.Masters[id]
 		local toward=Vector3.new(from.X-spot.at.X,0,from.Z-spot.at.Z).Unit
 		local face=Vector3.new(spot.face.X,0,spot.face.Z).Unit
@@ -218,7 +220,9 @@ test("the dresser: a unit's parts hidden (not the kept ones, not a nested unit),
 	-- the copy sits at DressAt * o
 	local at=shop:GetAttribute("DressAt")
 	local first=done[shop][1]
-	assert((first.CFrame.Position-(at*CFrame.new(0,8,0)).Position).Magnitude<1e-3 and first.Anchored and not first.CanCollide,"misplaced")
+	-- (15/11) at the village's scale (DressScale)
+	local scale=shop:GetAttribute("DressScale") or Vector3.one
+	assert((first.CFrame.Position-(at*CFrame.new(Vector3.new(0,8,0)*scale)).Position).Magnitude<1e-3 and first.Anchored and not first.CanCollide,"misplaced")
 	-- a house facing -x turns round (the rooftops) — undressed here, its parts still show
 	for _,u in HubDress.units(folder) do
 		if u:GetAttribute("Dress")=="HouseFlat_24x20x2" and u.Name=="Rooftop" then
@@ -227,12 +231,16 @@ test("the dresser: a unit's parts hidden (not the kept ones, not a nested unit),
 			assert(math.abs(look.Z-1)<1e-4,"a house facing -x is not turned round")
 		end
 	end
-	-- the village wall, 268 long: 27 segments of ~10, each stretched a little
+	-- the village wall, 268 long at the first scale: whole segments of ~10,
+	-- each stretched a little (more of them at a bigger scale)
 	for _,u in HubDress.units(folder) do
 		if u:GetAttribute("Dress")=="VillageWall" then
+			local length=u:GetAttribute("DressLength")
+			assert(math.abs(length-268*(HubMap.Scale or 1))<1e-3,"the wall's length: "..length)
+			local n=math.round(length/10)
 			local spots=HubDress.spots(u)
-			assert(#spots==27 and math.abs(spots[1].scale.Z-268/27/10)<1e-6,"wall segments: "..#spots)
-			assert(#done[u]==27*2,"wall copies")
+			assert(#spots==n and math.abs(spots[1].scale.Z-length/n/10)<1e-4,"wall segments: "..#spots)
+			assert(#done[u]==n*2,"wall copies")
 			break
 		end
 	end
@@ -429,15 +437,18 @@ test("the quarters: houses face their lane, no two houses overlap, the market an
 		if m:IsA("Model") and m.Name=="QuarterHouse" then
 			n+=1
 			local at=m:GetAttribute("DressAt")
+			-- (15/11) the lanes at the village's scale
+			local k=HubMap.Scale or 1
 			local z=at.Position.Z-HubMap.Origin.Z
-			local lane=if math.abs(z-56)<math.abs(z-150) then 56 else 150
+			local lane=if math.abs(z-56*k)<math.abs(z-150*k) then 56*k else 150*k
 			local toward=if lane>z then 1 else -1
 			assert(math.abs(at.RightVector.Z-toward)<1e-3,string.format("a house at z %.0f turns its back to its lane",z))
 		end
 	end
 	assert(n>=30,"quarter houses: "..n)
-	assert(HubMap.placeAt(HubMap.Origin+Vector3.new(160,0,103)).id=="Market","the market is not named")
-	assert(HubMap.placeAt(HubMap.Origin+Vector3.new(-170,0,150)).id=="Residences","the residences are not named")
+	local k=HubMap.Scale or 1
+	assert(HubMap.placeAt(HubMap.Origin+Vector3.new(160,0,103)*k).id=="Market","the market is not named")
+	assert(HubMap.placeAt(HubMap.Origin+Vector3.new(-170,0,150)*k).id=="Residences","the residences are not named")
 end)
 
 -- (14/11, user: « à terme ça sera les champions, on peut mettre le dev aussi et

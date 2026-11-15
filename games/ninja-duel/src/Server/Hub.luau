@@ -487,8 +487,9 @@ local function faces(f)
 	-- plaque stays (Keep): « the next face here could be yours », then a name.
 	local cliff=unit(f,"HokageCliff","HokageCliff",CFrame.new(O))
 	part(cliff,"Cliff",Vector3.new(330,92,32),rel(0,46,-248),C.rock,Enum.Material.Rock)
-	for k,at in HubMap.Heads do
-		local s=HubMap.HeadScale
+	-- (15/11) built at the village's first scale, then scaled with it
+	for k,at in HubMap.Base.Heads do
+		local s=HubMap.Base.HeadScale
 		local slot=unit(f,"CliffHead","HeadSlot"..k,CFrame.new(O+at),s)
 		slot:SetAttribute("HeadSlot",k)
 		part(slot,"Face",Vector3.new(26*s.X,30*s.Y,8*s.Z),CFrame.new(O+at),C.rock,Enum.Material.Rock)
@@ -602,10 +603,52 @@ function Hub.forFights(f)
 	end
 	return walls,breakables
 end
+-- (15/11, François: « s'ils sont grands, fait tout un peu plus grand aussi »)
+-- The village built at its first scale, made `s` times bigger around the
+-- origin: every piece's size and place, the dressing's place and scale (a
+-- wall's segments keep their length: DressLength grows instead), the lights'
+-- reach, the signs' text at the same share of their board, the tiles of a
+-- texture, a mesh's own scale. The bodies (walkers, inspirations) keep theirs.
+function Hub.scaleVillage(f,s)
+	if s==1 then return 0 end
+	local function at(cf) return CFrame.new(O+(cf.Position-O)*s)*cf.Rotation end
+	local n=0
+	for _,d in f:GetDescendants() do
+		if d:IsA("BasePart") then
+			local size=d.Size*s
+			if d:IsA("TrussPart") then size=Vector3.new(d.Size.X,d.Size.Y*s,d.Size.Z) end
+			d.Size=size;d.CFrame=at(d.CFrame);n+=1
+		elseif d:IsA("Model") and d:GetAttribute("Dress") then
+			local dressAt=d:GetAttribute("DressAt")
+			if typeof(dressAt)=="CFrame" then d:SetAttribute("DressAt",at(dressAt)) end
+			local scale=d:GetAttribute("DressScale")
+			if typeof(scale)~="Vector3" then scale=Vector3.one end
+			local length=d:GetAttribute("DressLength")
+			if type(length)=="number" then
+				d:SetAttribute("DressLength",length*s)
+				d:SetAttribute("DressScale",Vector3.new(scale.X*s,scale.Y*s,scale.Z))
+			else
+				d:SetAttribute("DressScale",scale*s)
+			end
+		elseif d:IsA("Light") then
+			pcall(function() (d::any).Range*=s end)
+		elseif d:IsA("SurfaceGui") then
+			if d.SizingMode==Enum.SurfaceGuiSizingMode.PixelsPerStud then d.PixelsPerStud/=s end
+		elseif d:IsA("Texture") then
+			d.StudsPerTileU*=s;d.StudsPerTileV*=s
+		elseif d:IsA("SpecialMesh") and d.MeshType==Enum.MeshType.FileMesh then
+			d.Scale*=s
+		elseif d:IsA("Attachment") then
+			d.Position*=s
+		end
+	end
+	return n
+end
 function Hub.build(parent)
 	if Hub.folder and Hub.folder.Parent then return Hub.folder end
 	local f=Instance.new("Folder");f.Name="NinjaDuelHub"
 	ground(f);gate(f);street(f);plaza(f);hall(f);training(f);hyuga(f);uchiha(f);faces(f);quarters(f);forest(f)
+	Hub.scaleVillage(f,HubMap.Scale or 1)
 	Hub.forFights(f)
 	f.Parent=parent or workspace
 	Hub.folder=f;Hub.built=true
