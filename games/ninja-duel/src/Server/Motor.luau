@@ -4,6 +4,7 @@ local Config=require(game:GetService("ReplicatedStorage").NinjaDuel.Config)
 local StepSpeeds=require(game:GetService("ReplicatedStorage").NinjaDuel.StepSpeeds)
 local Place1Movement=require(script.Parent.Place1Movement)
 local Place1Parkour=require(script.Parent.Place1Parkour)
+local DuelQuery=require(script.Parent.DuelQuery)
 -- This adapter retains swept action travel and the NinjaWall extension only.
 -- Place1 owns free locomotion/jump/air steering/mantle/wall-hop at runtime.
 local Motor={}
@@ -19,7 +20,7 @@ local UP=Vector3.yAxis
 local function flat(v) return Vector3.new(v.X,0,v.Z) end
 function Motor.grounded(a,c)
 	local p=RaycastParams.new(); p.FilterType=Enum.RaycastFilterType.Exclude
-	p.FilterDescendantsInstances={a.model,c.match.effects}
+	p.FilterDescendantsInstances={a.model,c.match.effects};DuelQuery.apply(p)
 	p.RespectCanCollide=true
 	return workspace:Raycast(a.root.Position,Vector3.new(0,-3.6,0),p)~=nil
 end
@@ -93,7 +94,7 @@ function Motor.stepWall(a,c,dt,now)
 		Motor.detach(a,now,false);return false
 	end
 	local p=RaycastParams.new();p.FilterType=Enum.RaycastFilterType.Exclude
-	p.FilterDescendantsInstances={a.model,c.match.effects};p.RespectCanCollide=true
+	p.FilterDescendantsInstances={a.model,c.match.effects};p.RespectCanCollide=true;DuelQuery.apply(p)
 	local hit=workspace:Raycast(a.root.Position, -wall.normal*Config.Wall.Detect,p)
 	if not hit or hit.Normal:Dot(wall.normal)<0.72 or (hit.Instance~=wall.part and not hit.Instance:GetAttribute("NinjaWall")) then
 		Motor.detach(a,now,false);return false
@@ -149,7 +150,7 @@ function Motor.travel(a,c,direction,distance)
 	local start=a.root.Position
 	local vector=v.Unit*distance
 	local params=RaycastParams.new();params.FilterType=Enum.RaycastFilterType.Exclude
-	params.FilterDescendantsInstances={a.model,c.match.effects}
+	params.FilterDescendantsInstances={a.model,c.match.effects};DuelQuery.apply(params)
 	params.RespectCanCollide=true
 	local hit=workspace:Raycast(start,vector,params)
 	local advance=if hit then math.max(0,hit.Distance-2.1) else vector.Magnitude
@@ -176,7 +177,7 @@ end
 -- replicated velocity never disagree.
 local function paramsFor(a,c)
 	local params=RaycastParams.new();params.FilterType=Enum.RaycastFilterType.Exclude
-	params.FilterDescendantsInstances={a.model,c.match.effects};params.RespectCanCollide=true
+	params.FilterDescendantsInstances={a.model,c.match.effects};params.RespectCanCollide=true;DuelQuery.apply(params)
 	return params
 end
 local function approach(current,target,delta)

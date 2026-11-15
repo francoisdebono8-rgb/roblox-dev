@@ -81,7 +81,51 @@ function Matches.villageSite(player,key)
 	local character=body and body.character
 	local root=character and character:FindFirstChild("HumanoidRootPart")
 	if not root or (Vector3.new(root.Position.X,0,root.Position.Z)-Vector3.new(centre.X,0,centre.Z)).Magnitude>duel.radius+50 then return nil end
-	return {key=key,origin=centre,radius=duel.radius}
+	return {key=key,origin=centre,radius=duel.radius,place=spot.place}
+end
+-- (15/11) A place of the village holds one fight at a time: a duel at a
+-- master's home or a 1v1 in the street (Server/Online). `except`: the session
+-- or online duel asking (its own rematch keeps the place).
+function Matches:siteFree(key,except)
+	if type(key)~="string" then return true end
+	for _,s in self.sessions do
+		if s~=except and s.site and s.site.key==key and (s.phase=="Duel" or s.phase=="Result") then return false end
+	end
+	for d in (self.online and self.online.duels) or {} do
+		if d~=except and d.site and d.site.key==key and d.phase~="Pick" then return false end
+	end
+	return true
+end
+function Matches:freeVillageSite(player,key,except)
+	local site=Matches.villageSite(player,key)
+	if site and not self:siteFree(site.key,except) then return nil end
+	return site
+end
+-- (15/11, François: « des 1v1 vraiment comme ça sur la map », « j'ai bien
+-- aimé cette idée de combat rapproché ») Two players walking in Konoha who
+-- challenge each other fight where they are: the free open place of the
+-- village (HubMap.Streets) nearest to the two of them, within `reach` studs.
+-- nil: the stadium (one of them is not walking, or nothing is free near).
+Matches.StreetReach=260
+function Matches:streetSite(players)
+	if not Matches.hubOn() or not (Config.Hub and Config.Hub.VillageDuels==true) then return nil end
+	local sum,n=Vector3.zero,0
+	for _,player in players do
+		local body=Hub.bodies and Hub.bodies[player]
+		local root=body and body.character and body.character:FindFirstChild("HumanoidRootPart")
+		if not root then return nil end
+		sum+=root.Position;n+=1
+	end
+	if n==0 then return nil end
+	local middle=sum/n
+	local best,bestDistance=nil,Matches.StreetReach
+	for _,street in HubMap.Streets or {} do
+		local centre=HubMap.Origin+street.at
+		local distance=(Vector3.new(centre.X,0,centre.Z)-Vector3.new(middle.X,0,middle.Z)).Magnitude
+		if distance<bestDistance and self:siteFree(street.key) then best,bestDistance=street,distance end
+	end
+	if not best then return nil end
+	return {key=best.key,origin=HubMap.Origin+best.at,radius=best.radius,place=best.place,street=true}
 end
 -- (B1 lot 2, DEC-034) What a new player's first minutes look like, measured
 -- on the server (Codex's audit §3: time to the first input, the first jutsu,
@@ -548,7 +592,9 @@ function Matches:view(s,cursor,mine,theirs)
 		-- (Tournament) the bracket in play, and a match the player only watches.
 		cup=if s.cup and self.tournament then self.tournament:view(s.cup) else nil,spectate=s.spectate==true,
 		-- (DEC-037) the masters' path: mastery gained, a kit learned, the master being fought.
-		progress=s.progress,master=s.masterTrial}
+		progress=s.progress,master=s.masterTrial,
+		-- (15/11) a duel in the village: where it is fought (the banner says it)
+		site=if s.site then {key=s.site.key,place=s.site.place,radius=s.site.radius,street=s.site.street} else nil}
 end
 function Matches:request(player,payload)
 	local s=self:session(player); local clock=os.clock()
@@ -587,7 +633,7 @@ function Matches:request(player,payload)
 		local rival=FirstMinute.rival(payload.player)
 		if not rival then return end
 		s.lastLifecycle=clock;s.aiLevel="easy";s.firstStage="intro"
-		s.nextSite=Matches.villageSite(player,payload.here)
+		s.nextSite=self:freeVillageSite(player,payload.here,s)
 		if not self:start(player,payload.player,rival,true) then s.firstStage=nil end
 		s.nextSite=nil
 		return
@@ -648,7 +694,7 @@ function Matches:request(player,payload)
 				return
 			end
 			s.masterTrial=master;s.firstStage=nil
-			s.nextSite=Matches.villageSite(player,payload.here)
+			s.nextSite=self:freeVillageSite(player,payload.here,s)
 			if not self:start(player,payload.player,master,false) then s.masterTrial=nil end
 			s.nextSite=nil
 		elseif action=="BuyKit" then
@@ -671,7 +717,7 @@ function Matches:request(player,payload)
 			s.masterTrial=nil
 			s.lastLifecycle=clock;s.firstStage=nil
 			if type(payload.level)=="string" and Matches.LEVELS[payload.level] then s.aiLevel=payload.level end
-			s.nextSite=Matches.villageSite(player,payload.here)
+			s.nextSite=self:freeVillageSite(player,payload.here,s)
 			self:start(player,payload.player,payload.bot,action=="Tutorial")
 			s.nextSite=nil
 		elseif action=="Rematch" and (s.phase=="Result" or s.finishing) then

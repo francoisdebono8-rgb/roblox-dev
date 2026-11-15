@@ -730,6 +730,8 @@ function Hub.enter(player,where,looks)
 		end
 		character:SetAttribute("NinjaHubBody",true)
 		entry.character=character
+		-- (15/11) a passer-by never enters a street duel (Server/DuelQuery)
+		pcall(function() require(script.Parent.DuelQuery).walker(character) end)
 		-- (13/11, the shop) the headband he chose, on his own avatar.
 		pcall(function() require(script.Parent.Headband).fromLooks(character,looks) end)
 		pcall(function() require(script.Parent.Outfit).wear(character,looks) end)

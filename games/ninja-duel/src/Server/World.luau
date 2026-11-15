@@ -523,6 +523,8 @@ local function fighterGroup()
 		if not physics:IsCollisionGroupRegistered("NinjaFighters") then physics:RegisterCollisionGroup("NinjaFighters") end
 		physics:CollisionGroupSetCollidable("NinjaFighters","NinjaFighters",false)
 	end)
+	-- (15/11) the passers-by of a street duel (Server/DuelQuery)
+	pcall(function() require(script.Parent.DuelQuery).setup() end)
 end
 World.fighterGroup=fighterGroup
 -- (DEC-036) The prodigy whose look a body wears, with the body's own colours:

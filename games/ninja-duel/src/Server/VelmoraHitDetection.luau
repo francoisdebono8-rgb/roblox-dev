@@ -2,6 +2,7 @@
 -- Copyright (c) 2026 Yashveer Singh, MIT.
 -- Keeps the donor's short position history, interpolation, reach/cone and world LOS.
 local Tune=require(game:GetService('ReplicatedStorage').NinjaDuel.VelmoraCombatConfig)
+local DuelQuery=require(script.Parent.DuelQuery)
 local HitDetection={}
 local history={}
 function HitDetection.record(root,t)
@@ -30,7 +31,7 @@ function HitDetection.resolve(attackerRoot,range,arcAngle,origin,aim,t,candidate
 	local look=if aim.Magnitude>.001 then aim.Unit else attackerRoot.CFrame.LookVector
 	local exclude={effects,attackerRoot.Parent}
 	for _,root in candidates do if root.Parent then table.insert(exclude,root.Parent) end end
-	local ray=RaycastParams.new();ray.FilterType=Enum.RaycastFilterType.Exclude;ray.FilterDescendantsInstances=exclude;ray.IgnoreWater=true
+	local ray=RaycastParams.new();ray.FilterType=Enum.RaycastFilterType.Exclude;ray.FilterDescendantsInstances=exclude;ray.IgnoreWater=true;DuelQuery.apply(ray)
 	local best,bestPos,bestDistance=nil,nil,math.huge
 	for _,root in candidates do
 		if root~=attackerRoot and root.Parent then

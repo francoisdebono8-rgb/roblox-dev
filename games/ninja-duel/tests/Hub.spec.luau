@@ -249,6 +249,50 @@ test("the dresser: a unit's parts hidden (not the kept ones, not a nested unit),
 	assert(HubDress.apply(folder,kit,holder,done)==0,"dressed twice")
 end)
 
+-- (15/11, François: « il faudrait que la caméra s'adapte avec tous les
+-- bâtiments ») A duel's lens in Konoha: a house's walls stop it (it comes in
+-- front and swings along), a crate fades, and with it the mesh that dresses it.
+test("a duel's lens in Konoha: the houses stop it, a prop fades with its mesh, the streets' places are open",function()
+	local Camera=H.load("Client/Camera")
+	local was=H.workspace.FindFirstChild
+	H.workspace.FindFirstChild=function(_,name) if name=="NinjaDuelHub" then return folder end return nil end
+	local ok,err=pcall(function()
+		local shop,crate
+		for _,u in HubDress.units(folder) do
+			if u:GetAttribute("Dress")=="HouseShop_24x20x2" and not shop then shop=u end
+			if u:GetAttribute("Dress")=="Crate" and not crate then crate=u end
+		end
+		local walls=shop:FindFirstChild("Walls")
+		assert(Camera.solid(walls),"a house's walls do not stop the lens")
+		local box=crate:FindFirstChildWhichIsA("BasePart")
+		assert(box and not Camera.solid(box),"a crate stops the lens")
+		local loose=Instance.new("Part");loose.Size=Vector3.new(6,10,6)
+		assert(not Camera.solid(loose),"a prop outside the village stops the lens")
+		-- the crate dressed: its mesh fades with its box
+		local kit={has=function(name) return name=="Crate" end,pieces=function() local p=Instance.new("Part");p.Size=Vector3.new(4,4,4);return {{part=p,o=Vector3.zero}} end}
+		local holder=Instance.new("Folder")
+		local done={}
+		assert(HubDress.sync(crate,kit,holder,done),"the crate was not dressed")
+		local faded={}
+		Camera.fadeHit(box,faded)
+		assert(faded[box] and faded[done[crate][1]],"the crate's mesh stays in front of the lens")
+		-- turned off, the mesh is forgotten
+		crate:SetAttribute("DressOff",true)
+		HubDress.sync(crate,kit,holder,done)
+		assert(HubDress.copiesOf[box]==nil,"a removed mesh is still faded")
+		crate:SetAttribute("DressOff",nil)
+	end)
+	H.workspace.FindFirstChild=was
+	assert(ok,err)
+	-- the open places for a 1v1 in the street: each once, inside the village
+	local keys={}
+	for _,street in HubMap.Streets do
+		assert(not keys[street.key],"twice: "..street.key);keys[street.key]=true
+		assert(HubMap.inside(street.at) and street.radius>=30 and street.place,"a street place: "..street.key)
+	end
+	assert(#HubMap.Streets==3 and keys.Leaf and keys.Legion and keys.GentleFist and not keys.Training,"the streets' places: "..#HubMap.Streets)
+end)
+
 -- (14/11) The players met in the village: a name tag with the kit, CHALLENGE.
 test("players met in Konoha: a tag with the kit and mastery, CHALLENGE sends the lobby's challenge, none when busy",function()
 	local HubPlayers=H.load("Client/HubPlayers")

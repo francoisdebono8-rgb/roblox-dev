@@ -99,6 +99,26 @@ M.Training={at=Vector3.new(-150,0,16),place="TRAINING GROUND THREE",duel={at=Vec
 -- The market of Konoha, at the crossing of its lanes: the looks sold for Ryō
 -- (Client/ShopPanel in its "market" mode; the SHOP sells for Robux).
 M.Market={at=Vector3.new(158,0,62),place="THE MARKET STREETS"}
+-- (15/11, François: « J'aime bien ce que ça implique des combats dans la rue,
+-- des combats un peu partout sur la map ») Where a 1v1 between two players
+-- walking in Konoha is fought: the open places of the village already tried
+-- in Studio with a duel (Matches.streetSite picks the nearest free one).
+M.Streets={}
+do
+	local seen={}
+	local keys={}
+	for key,spot in M.Masters do if spot.duel then table.insert(keys,key) end end
+	table.sort(keys)
+	local function add(key,spot)
+		local at=spot.duel.at
+		local id=string.format("%d,%d",at.X,at.Z)
+		if seen[id] then return end
+		seen[id]=true
+		table.insert(M.Streets,{key=key,at=at,radius=spot.duel.radius,place=spot.place})
+	end
+	for _,key in keys do add(key,M.Masters[key]) end
+	add("Training",M.Training)
+end
 
 -- (14/11, user: « les têtes sont moches […] à terme ça sera les champions, on
 -- peut mettre le dev aussi et des trucs drôles pour l'instant ») The four
