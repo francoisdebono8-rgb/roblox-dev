@@ -137,4 +137,39 @@ test("the modelled pieces: placed by the body part's size, painted by the item's
 	end
 end)
 
+-- (15/11, François: « les tenues ne s'adaptent pas aux personnages ») A coat's
+-- tails hang from the hips along the legs: on hips twice the standard height
+-- (a bundle), the tails keep the legs' length, not twice it.
+test("a coat's tails follow the legs, not the hips' height",function()
+	local Dress=H.load("Client/OutfitDress")
+	local Meshes=H.load("Shared/OutfitMeshes")
+	local ref=Meshes.Ref.LowerTorso
+	local function body(hips)
+		local model=Instance.new("Model")
+		local lower=Instance.new("Part");lower.Name="LowerTorso";lower.Size=Vector3.new(ref.X,hips,ref.Z);lower.CFrame=CFrame.new(0,3,0);lower.Parent=model
+		for name,r in {RightUpperLeg=Meshes.Ref.RightUpperLeg,RightLowerLeg=Meshes.Ref.RightLowerLeg} do
+			local leg=Instance.new("Part");leg.Name=name;leg.Size=r;leg.Parent=model
+		end
+		return model,lower
+	end
+	-- Gaara's coat: 3.88 hips tall, its centre 2.34 hips below the hips' centre
+	local size0=Vector3.new(2.86,3.88*ref.Y,.26)
+	local o=Vector3.new(0,-2.34*ref.Y,-.71)
+	local m1,standard=body(ref.Y)
+	local s1,c1=Dress.place(standard,"LowerTorso",size0,o,m1)
+	assert(math.abs(s1.Y-size0.Y)<1e-3 and math.abs(c1.Position.Y-(3+o.Y))<1e-3,"the standard body's coat moved")
+	local m2,thick=body(ref.Y*2)
+	local s2,c2=Dress.place(thick,"LowerTorso",size0,o,m2)
+	local bottom1=c1.Position.Y-s1.Y/2-(3-standard.Size.Y/2)
+	local bottom2=c2.Position.Y-s2.Y/2-(3-thick.Size.Y/2)
+	assert(math.abs(bottom2-bottom1)<.05,string.format("the tails reach %.2f below the hips instead of %.2f",-bottom2,-bottom1))
+	assert(s2.Y<size0.Y*1.2,"the coat doubled with the hips: "..s2.Y)
+	-- without the legs (no model): the hips alone, as before
+	local s3=Dress.place(thick,"LowerTorso",size0,o)
+	assert(math.abs(s3.Y-size0.Y*2)<1e-3,"the old rule without legs")
+	-- the server's cloth tail: along the legs too
+	local Outfit=H.load("Server/Outfit")
+	assert(math.abs(Outfit.legScale(m2)-1)<1e-3 and Outfit.legScale(nil)==1,"the legs scale: "..tostring(Outfit.legScale(m2)))
+end)
+
 print(string.format("NinjaDuel outfit (DEC-040): %d PASS",passed))

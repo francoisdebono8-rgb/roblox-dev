@@ -25,11 +25,41 @@ end
 
 -- Where a piece goes on `body`: its size and its CFrame (the contract of
 -- Shared/OutfitMeshes).
-function Dress.place(body,on,size,o)
+-- (15/11, François: « les tenues ne s'adaptent pas aux personnages », the
+-- pieces measured against their parts) A coat's tails, a robe's skirt hang
+-- from the hips (LowerTorso) down along the legs, about four times the hips'
+-- own height: scaled by the hips alone, they came out one and a half to two
+-- and a half times too long on the avatars whose hips are thicker than the
+-- standard 0.4 (most bundles), and that far too low. The part of such a piece
+-- above the hips' bottom still follows the hips; the part below follows the
+-- legs (upper + lower leg against the standard's). `character`: the body's
+-- model (its legs); without it, the hips alone, as before.
+local LEGS={"RightUpperLeg","RightLowerLeg"}
+function Dress.legScale(character)
+	if not character or not okMeshes then return nil end
+	local have,want=0,0
+	for _,name in LEGS do
+		local leg=character:FindFirstChild(name)
+		local ref=OutfitMeshes.Ref[name]
+		if not (leg and leg:IsA("BasePart") and ref) then return nil end
+		have+=leg.Size.Y;want+=ref.Y
+	end
+	return have/want
+end
+function Dress.place(body,on,size,o,character)
 	local ref=okMeshes and OutfitMeshes.Ref[on]
 	if not ref then return nil end
 	local k=Vector3.new(body.Size.X/ref.X,body.Size.Y/ref.Y,body.Size.Z/ref.Z)
-	return size*k,body.CFrame*CFrame.new(o*k)
+	local bottom=o.Y-size.Y/2+ref.Y/2
+	local legs=if bottom<-.05 and on=="LowerTorso" then Dress.legScale(character) else nil
+	if not legs then return size*k,body.CFrame*CFrame.new(o*k) end
+	-- heights from the hips' bottom (standard units), then on this body
+	local top=o.Y+size.Y/2+ref.Y/2
+	local newTop=if top>0 then top*k.Y else top*legs
+	local newBottom=bottom*legs
+	local height=newTop-newBottom
+	local y=-body.Size.Y/2+(newTop+newBottom)/2
+	return Vector3.new(size.X*k.X,height,size.Z*k.Z),body.CFrame*CFrame.new(o.X*k.X,y,o.Z*k.Z)
 end
 
 -- The templates of a model, built once (yields): {part, on, slot, o}, or nil.
@@ -70,7 +100,7 @@ function Dress.wear(holder)
 			for _,entry in t do
 				local part=body:FindFirstChild(entry.on)
 				if part and part:IsA("BasePart") then
-					local size,cf=Dress.place(part,entry.on,entry.part.Size,entry.o)
+					local size,cf=Dress.place(part,entry.on,entry.part.Size,entry.o,body)
 					if size then
 						local p=entry.part:Clone()
 						p.Size=size;p.CFrame=cf
