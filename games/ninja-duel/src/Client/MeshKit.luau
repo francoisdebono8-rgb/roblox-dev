@@ -15,6 +15,16 @@
 local MeshKit={ready={},state="idle",error=nil}
 local okData,Data=pcall(require,script.Parent.MeshData)
 MeshKit.Data=if okData then Data else {}
+-- (14/11) Konoha's buildings and props (tools/blender/konoha_models.py writes
+-- Client/HubMeshData; Client/HubDress puts them in the village): built after
+-- the weapons, so a duel's props are never late because of a house.
+MeshKit.Late={}
+do
+	local okHub,HubData=pcall(require,script.Parent.HubMeshData)
+	if okHub and type(HubData)=="table" then
+		for name,pieces in HubData do MeshKit.Data[name]=pieces;MeshKit.Late[name]=true end
+	end
+end
 
 -- base64 -> buffer
 local B64={}
@@ -128,24 +138,36 @@ function MeshKit.prepare(names)
 	MeshKit.state="loading"
 	local okService=pcall(function() return game:GetService("AssetService").CreateEditableMesh end)
 	if not okService then MeshKit.state="failed";MeshKit.error="no AssetService";return end
-	for name,pieces in MeshKit.Data do
-		if MeshKit.ready[name] or (names and not table.find(names,name)) then continue end
-		local made={}
-		local ok,err=pcall(function()
-			for _,spec in pieces do table.insert(made,{part=build(spec),o=Vector3.new(spec.o[1],spec.o[2],spec.o[3]),name=spec.name}) end
-		end)
-		if not ok then
-			MeshKit.state="failed";MeshKit.error=tostring(err)
-			warn("[NinjaDuel] MeshKit: modelled props unavailable, primitives kept: "..tostring(err))
-			return
+	for pass=1,2 do
+		for name,pieces in MeshKit.Data do
+			if (pass==1)==(MeshKit.Late[name]==true) then continue end
+			if MeshKit.ready[name] or (names and not table.find(names,name)) then continue end
+			local made={}
+			local ok,err=pcall(function()
+				for _,spec in pieces do table.insert(made,{part=build(spec),o=Vector3.new(spec.o[1],spec.o[2],spec.o[3]),name=spec.name}) end
+			end)
+			if not ok then
+				-- a village mesh that fails leaves its parts (Client/HubDress);
+				-- the weapons stop here as before
+				if MeshKit.Late[name] then
+					warn("[NinjaDuel] MeshKit: "..name.." unavailable, its parts kept: "..tostring(err))
+					continue
+				end
+				MeshKit.state="failed";MeshKit.error=tostring(err)
+				warn("[NinjaDuel] MeshKit: modelled props unavailable, primitives kept: "..tostring(err))
+				return
+			end
+			MeshKit.ready[name]=made
+			task.wait()
 		end
-		MeshKit.ready[name]=made
-		task.wait()
+		if pass==1 then MeshKit.weaponsReady=true end
 	end
 	MeshKit.state="ready"
 end
 
 function MeshKit.has(name) return MeshKit.ready[name]~=nil end
+-- A built model's pieces: {part (the template), o (its centre), name}, or nil.
+function MeshKit.pieces(name) return MeshKit.ready[name] end
 
 function MeshKit.model(name)
 	local t=MeshKit.ready[name]

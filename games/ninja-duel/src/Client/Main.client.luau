@@ -108,6 +108,8 @@ pcall(function()
 	if HubClient.enabled() then
 		hubClient=HubClient.new(ui,camera,send,controlModule)
 		ui.onBoardClose=function() hubClient:closeBoard() end
+		-- (14/11) the village in its Blender models, as they get built
+		pcall(function() require(script.Parent.HubDress).start() end)
 	end
 end)
 remote.OnClientEvent:Connect(function(data)
