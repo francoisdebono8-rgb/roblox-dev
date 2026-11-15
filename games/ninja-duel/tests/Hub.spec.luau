@@ -223,4 +223,69 @@ test("the dresser: a unit's parts hidden (not the kept ones, not a nested unit),
 	assert(HubDress.apply(folder,kit,holder,done)==0,"dressed twice")
 end)
 
+-- (14/11) The players met in the village: a name tag with the kit, CHALLENGE.
+test("players met in Konoha: a tag with the kit and mastery, CHALLENGE sends the lobby's challenge, none when busy",function()
+	local HubPlayers=H.load("Client/HubPlayers")
+	local Fighters=H.load("Shared/Fighters")
+	local Text=H.load("Shared/Text")
+	local Color3=roblox.Color3
+	local kit={palette={paper=Color3.new(1,1,1),gold=Color3.new(1,.8,.3),muted=Color3.new(.5,.5,.5),ink=Color3.new()},
+		create=function(class,parent,props) local x=Instance.new(class);for k,v in props or {} do x[k]=v end;x.Parent=parent;return x end,
+		text=function(parent,str) local l=Instance.new("TextLabel");l.Text=str;l.Parent=parent;return l end,
+		TITLE_FONT=roblox.Enum.Font.Bangers,BODY_FONT=roblox.Enum.Font.Gotham}
+	local world=Instance.new("Folder")
+	local function avatar(name)
+		local m=Instance.new("Model");m.Name=name
+		local head=Instance.new("Part");head.Name="Head";head.Parent=m
+		local root=Instance.new("Part");root.Name="HumanoidRootPart";root.Parent=m
+		m:SetAttribute("NinjaHubBody",true);m.Parent=world
+		return m
+	end
+	local function player(id,name)
+		local attrs={}
+		return {UserId=id,Name=name,DisplayName=name,Character=avatar(name),attrs=attrs,
+			GetAttribute=function(_,k) return attrs[k] end}
+	end
+	local me,bob=player(1,"Me"),player(7,"Bob")
+	me.attrs.NinjaKit="Sand"
+	bob.attrs.NinjaKit="Leaf";bob.attrs.NinjaMastery=120
+	local players={LocalPlayer=me,GetPlayers=function() return {me,bob} end}
+	local sent={}
+	local active=true
+	local holder=Instance.new("Folder")
+	local hp=HubPlayers.new(kit,function(payload) table.insert(sent,payload) end,function() return active end,players,holder)
+	hp:refresh()
+	local t=hp.tags[bob]
+	assert(t and t.gui.Parent==holder and t.gui.Adornee==bob.Character.Head,"no tag over Bob")
+	assert(not hp.tags[me],"a tag over himself")
+	assert(t.line.Text==Text.upper(Fighters.Leaf.Name).."  •  MASTERY 120","the line: "..t.line.Text)
+	assert(t.prompt.Parent==bob.Character.HumanoidRootPart and t.prompt.Enabled and t.prompt.ActionText=="CHALLENGE","the prompt")
+	-- E held: the lobby's challenge with his own kit, once (a second press soon after is ignored)
+	assert(hp:triggered(t.prompt) and sent[1].op=="challenge" and sent[1].to==7 and sent[1].fighter=="Sand","the challenge sent")
+	assert(not hp:triggered(t.prompt) and #sent==1,"challenged twice in a row")
+	-- do not disturb: shown, no prompt
+	bob.attrs.NinjaDnd=true;hp:refresh()
+	assert(t.line.Text=="DO NOT DISTURB" and not t.prompt.Enabled,"do not disturb")
+	bob.attrs.NinjaDnd=nil
+	-- in a duel himself: no prompt
+	active=false;hp:refresh();assert(not t.prompt.Enabled,"a prompt while in a duel")
+	active=true;hp:refresh();assert(t.prompt.Enabled,"the prompt did not come back")
+	-- Bob leaves the village (his duel): the tag goes
+	bob.Character:SetAttribute("NinjaHubBody",nil);hp:refresh()
+	assert(not hp.tags[bob] and t.gui.Parent==nil and t.prompt.Parent==nil,"the tag stayed after he left")
+	-- a new avatar: a new tag
+	bob.Character=avatar("Bob");hp:refresh()
+	assert(hp.tags[bob] and hp.tags[bob].character==bob.Character,"no tag on his new avatar")
+end)
+
+test("the badge: his chosen kit and its mastery over his head, nothing for a kit he has not learned",function()
+	local p=Instance.new("Folder") -- (an Instance with attributes, standing in for the Player)
+	Hub.badge(p,{selected="Leaf",owned={Leaf=true},mastery={Leaf=320}})
+	assert(p:GetAttribute("NinjaKit")=="Leaf" and p:GetAttribute("NinjaMastery")==320,"badge")
+	Hub.badge(p,{selected="Sand",owned={Leaf=true},mastery={}})
+	assert(p:GetAttribute("NinjaKit")==nil and p:GetAttribute("NinjaMastery")==nil,"an unlearned kit shown")
+	Hub.badge(p,nil)
+	assert(p:GetAttribute("NinjaKit")==nil,"the progression off")
+end)
+
 print(string.format("NinjaDuel hub Konoha (DEC-038): %d PASS",passed))

@@ -606,6 +606,18 @@ function Hub.enter(player,where,looks)
 		end
 	end)
 end
+-- (14/11) What the others see over his head in the village (Client/HubPlayers):
+-- the kit he fights with and its mastery, as player attributes (replicated).
+-- `view`: Progression.view (nil when the progression is off: his name only).
+function Hub.badge(player,view)
+	if typeof(player)~="Instance" then return end
+	local kit=view and view.selected
+	if kit and not (view.owned and view.owned[kit]) then kit=nil end
+	pcall(function()
+		player:SetAttribute("NinjaKit",kit)
+		player:SetAttribute("NinjaMastery",if kit and view.mastery then view.mastery[kit] or 0 else nil)
+	end)
+end
 -- A look changed while he walks (the shop): his headband, at once.
 function Hub.restyle(player,looks)
 	local entry=Hub.bodies[player]
