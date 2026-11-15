@@ -31,14 +31,81 @@ Panel.CLOSE={X=W-170,Y=26,W=140,H=56}
 local function rgb(c) return Color3.fromRGB(c[1],c[2],c[3]) end
 local function upper(s) return Text.upper(s or "") end
 local function nameOf(id) local def=Fighters[id] return upper(def and def.Name or id) end
+-- 1250 -> "1,250"
+local function amount(n)
+	local s=tostring(math.floor(n or 0))
+	local out=s:reverse():gsub("(%d%d%d)","%1,"):reverse()
+	return (out:gsub("^,",""))
+end
+Panel.amount=amount
+local OFF=Color3.fromRGB(138,124,112)
+local function mangaOf(kit) return kit.MANGA or {paper=Color3.fromRGB(255,253,248),back=Color3.fromRGB(242,235,221),ink=Color3.fromRGB(20,16,17),red=Color3.fromRGB(195,18,29),cream=Color3.fromRGB(246,238,222),redSoft=Color3.fromRGB(255,156,138),brown=Color3.fromRGB(94,79,67),mid=Color3.fromRGB(58,47,40),off=OFF} end
+-- (DA v3, DESIGN, validated 14/11: Mix-Shop) one ink ring around a paper case
+local function ring(kit,gui,thick) return kit.create("UIStroke",gui,{Color=mangaOf(kit).ink,Thickness=thick or 3,ApplyStrokeMode=Enum.ApplyStrokeMode.Border}) end
+-- A button of the page: "red" (the action), "ink", "paper" (ringed in ink) or
+-- "off" (what cannot be pressed yet: grey, never red).
+local function press(kit,parent,label,position,size,callback,kind)
+	local M=mangaOf(kit)
+	local back=if kind=="red" then M.red elseif kind=="ink" then M.ink elseif kind=="off" then (M.off or OFF) else M.paper
+	local b=kit.button(parent,label,position,size,callback,back)
+	b.Font=kit.STRONG_FONT or kit.BODY_FONT;b.TextSize=20
+	b.TextColor3=if kind=="paper" then M.ink else M.cream
+	if kind=="paper" then ring(kit,b,3) end
+	if kind=="off" then b.AutoButtonColor=false end
+	return b
+end
+Panel.press=press
+-- A tag on a card's corner: WORN (red), OWNED (ink).
+local function tagOn(kit,parent,label,color)
+	local M=mangaOf(kit)
+	local t=kit.text(parent,label,UDim2.new(1,-96,0,-10),UDim2.fromOffset(88,24),14,M.cream,kit.STRONG_FONT or kit.BODY_FONT,Enum.TextXAlignment.Center)
+	t.BackgroundTransparency=0;t.BackgroundColor3=color;t.Rotation=3;t.ZIndex=(parent.ZIndex or 1)+3
+	return t
+end
+-- (DA v3, Mix-Shop) a master's outfit drawn as a little figure in its colours:
+-- the cloth where the set dresses a part, ink where it leaves the body bare.
+local FIGURE={
+	Head={.5,.02,.26,.16},UpperTorso={.5,.2,.4,.2},LowerTorso={.5,.4,.36,.1},
+	LeftUpperArm={.22,.2,.12,.16},RightUpperArm={.78,.2,.12,.16},LeftLowerArm={.22,.36,.12,.14},RightLowerArm={.78,.36,.12,.14},
+	LeftUpperLeg={.4,.5,.15,.2},RightUpperLeg={.6,.5,.15,.2},LeftLowerLeg={.4,.7,.15,.2},RightLowerLeg={.6,.7,.15,.2},
+	LeftFoot={.38,.9,.19,.07},RightFoot={.62,.9,.19,.07},
+}
+local function dressedOf(item)
+	local by={}
+	for _,piece in item and item.pieces or {} do
+		local color=item.colors and item.colors[piece.c]
+		if color and not by[piece.on] and (piece.kind==nil or piece.kind=="vest" or piece.kind=="tail") then by[piece.on]=color end
+	end
+	return by
+end
+Panel.dressedOf=dressedOf
+local function figure(kit,parent,item,position,size)
+	local M=mangaOf(kit)
+	local box=kit.frame(parent,position,size,M.paper,1)
+	local by=dressedOf(item)
+	for part,r in FIGURE do
+		local key=part:gsub("^Left",""):gsub("^Right","")
+		local color=by[key]
+		local f=kit.frame(box,UDim2.fromScale(r[1],r[2]),UDim2.fromScale(r[3],r[4]),if color then Color3.fromRGB(color[1],color[2],color[3]) else M.ink,0)
+		f.AnchorPoint=Vector2.new(.5,0)
+		if part=="Head" then kit.corner(f,40) else kit.corner(f,3) end
+	end
+	return box
+end
 
 function Panel.new(kit,gui,send,onTree)
 	local self=setmetatable({kit=kit,send=send,onTree=onTree,tab="KITS",drawn={}},Panel)
 	local P,create,frame,text,button,corner=kit.palette,kit.create,kit.frame,kit.text,kit.button,kit.corner
 	self.P=P
-	self.root=frame(gui,UDim2.fromScale(0,0),UDim2.fromScale(1,1),Color3.fromRGB(6,5,8),.2)
+	local M=mangaOf(kit)
+	self.M=M
+	local STRONG=kit.STRONG_FONT or kit.BODY_FONT
+	self.root=frame(gui,UDim2.fromScale(0,0),UDim2.fromScale(1,1),M.ink,.35)
 	self.root.ZIndex=73;self.root.Visible=false;self.root.Active=true
-	local card=kit.inkCard(frame(self.root,UDim2.fromScale(.5,.5),UDim2.fromOffset(W,H),kit.CARD,0))
+	-- (DA v3, DESIGN, validated 14/11: Mix-Shop) a page of the manga, not a
+	-- dark frame: paper, an ink edge, one red for what you can do.
+	local card=frame(self.root,UDim2.fromScale(.5,.5),UDim2.fromOffset(W,H),M.back,0)
+	corner(card,6);ring(kit,card,4)
 	card.AnchorPoint=Vector2.new(.5,.5);card.ZIndex=74
 	self.card=card
 	local scale=create("UIScale",card,{Scale=1})
@@ -58,24 +125,35 @@ function Panel.new(kit,gui,send,onTree)
 		end)
 	end)
 	-- The side: the tabs and the Ryō.
-	local side=frame(card,UDim2.fromOffset(0,5),UDim2.fromOffset(SIDE,H-5),P.ink,.35)
-	self.title=kit.inkTitle(text(side,"SHOP",UDim2.fromOffset(24,24),UDim2.fromOffset(SIDE-48,56),54,P.paper,kit.TITLE_FONT))
+	local side=frame(card,UDim2.fromOffset(0,0),UDim2.fromOffset(SIDE,H),M.paper,0)
+	corner(side,6)
+	local seam=frame(card,UDim2.fromOffset(SIDE-2,0),UDim2.fromOffset(4,H),M.ink,0)
+	seam.ZIndex=75
+	self.title=text(side,"SHOP",UDim2.fromOffset(22,10),UDim2.fromOffset(SIDE-40,92),88,M.ink,kit.TITLE_FONT)
+	local brush=frame(side,UDim2.fromOffset(26,94),UDim2.fromOffset(150,8),M.red,0);corner(brush,4);brush.Rotation=-2
 	self.tabs={}
+	self.tabMarks={}
 	for i,name in TABS do
-		local b=button(side,name,UDim2.fromOffset(20,100+(i-1)*64),UDim2.fromOffset(SIDE-40,54),function() self.tab=name;self:draw() end)
-		b.TextSize=26;b.TextXAlignment=Enum.TextXAlignment.Left
-		create("UIPadding",b,{PaddingLeft=UDim.new(0,18)})
+		local b=button(side,name,UDim2.fromOffset(16,120+(i-1)*62),UDim2.fromOffset(SIDE-32,52),function() self.tab=name;self:draw() end,M.paper)
+		b.TextSize=24;b.Font=STRONG;b.TextColor3=M.ink;b.TextXAlignment=Enum.TextXAlignment.Left
+		create("UIPadding",b,{PaddingLeft=UDim.new(0,20)})
+		-- the open tab: a band of ink, its name in cream, a red mark at its edge
+		local mark=frame(b,UDim2.fromOffset(0,6),UDim2.new(0,6,1,-12),M.red,0)
+		mark.Visible=false
 		self.tabs[name]=b
+		self.tabMarks[name]=mark
 	end
-	local wallet=frame(side,UDim2.new(0,20,1,-104),UDim2.new(1,-40,0,80),P.ink,0);corner(wallet,10)
-	text(wallet,"YOUR RYŌ",UDim2.fromOffset(16,10),UDim2.fromOffset(180,16),11,P.muted,kit.BODY_FONT)
-	self.ryo=text(wallet,"0",UDim2.fromOffset(16,28),UDim2.fromOffset(190,40),36,P.gold,kit.TITLE_FONT)
+	local wallet=frame(side,UDim2.new(0,20,1,-110),UDim2.new(1,-40,0,84),M.paper,0)
+	wallet.Rotation=2;ring(kit,wallet,3)
+	text(wallet,"YOUR RYŌ",UDim2.fromOffset(16,10),UDim2.fromOffset(180,18),14,M.brown or M.ink,STRONG)
+	self.ryo=text(wallet,"0",UDim2.fromOffset(16,30),UDim2.new(1,-32,0,44),40,M.ink,STRONG)
 	-- The content.
-	self.heading=kit.inkTitle(text(card,"",UDim2.fromOffset(SIDE+40,26),UDim2.fromOffset(800,50),46,P.paper,kit.TITLE_FONT))
-	self.subheading=text(card,"",UDim2.fromOffset(SIDE+42,76),UDim2.fromOffset(900,22),15,P.gold,kit.BODY_FONT)
-	button(card,"CLOSE",UDim2.fromOffset(Panel.CLOSE.X,Panel.CLOSE.Y),UDim2.fromOffset(Panel.CLOSE.W,Panel.CLOSE.H),function() self:hide() end,P.red)
-	self.body=frame(card,UDim2.fromOffset(SIDE+40,112),UDim2.fromOffset(W-SIDE-70,H-160),P.ink,1)
-	self.footer=text(card,"",UDim2.fromOffset(SIDE+40,H-40),UDim2.fromOffset(W-SIDE-70,20),12,P.muted,kit.BODY_FONT)
+	self.heading=text(card,"",UDim2.fromOffset(SIDE+40,18),UDim2.fromOffset(800,62),60,M.ink,kit.TITLE_FONT)
+	self.headLine=frame(card,UDim2.fromOffset(SIDE+42,78),UDim2.fromOffset(180,7),M.red,0);corner(self.headLine,4);self.headLine.Rotation=-1
+	self.subheading=text(card,"",UDim2.fromOffset(SIDE+42,88),UDim2.fromOffset(900,22),17,M.brown or M.ink,STRONG)
+	press(kit,card,"CLOSE",UDim2.fromOffset(Panel.CLOSE.X,Panel.CLOSE.Y),UDim2.fromOffset(Panel.CLOSE.W,Panel.CLOSE.H),function() self:hide() end,"paper").TextSize=24
+	self.body=frame(card,UDim2.fromOffset(SIDE+40,122),UDim2.fromOffset(W-SIDE-70,H-170),M.paper,1)
+	self.footer=text(card,"",UDim2.fromOffset(SIDE+40,H-42),UDim2.fromOffset(W-SIDE-70,24),16,M.mid or M.ink,kit.BODY_FONT)
 	return self
 end
 
@@ -136,10 +214,12 @@ function Panel:draw()
 		local on=name==self.tab
 		b.Visible=table.find(Panel.TABS[counter],name)~=nil
 		if b.Visible then b.Position=UDim2.fromOffset(20,100+slot*64);slot+=1 end
-		b.BackgroundColor3=if on then P.red else P.panel
-		b.TextColor3=if on then P.paper else P.text
+		b.BackgroundColor3=if on then self.M.ink else self.M.paper
+		b.TextColor3=if on then self.M.cream else self.M.ink
+		self.tabMarks[name].Visible=on
 	end
-	self.ryo.Text=tostring(self.kits and self.kits.ryo or 0)
+	self.ryo.Text=amount(self.kits and self.kits.ryo or 0)
+	self.footer.TextColor3=self.M.mid or self.M.ink
 	if self.tab=="KITS" then self:drawKits()
 	elseif self.tab=="WEAPONS" then self:drawLooks({"kunai","shuriken","tanto","gourd"},"WEAPONS","A look, never a number. Each kit keeps its own; the kit's objects (gourd, weights, tanto) are earned on its tree.")
 	elseif self.tab=="STYLE" then
@@ -147,8 +227,8 @@ function Panel:draw()
 		-- MY NINJA opens the outfit card (Client/OutfitPanel)
 		self:drawLooks({"set","headband"},"STYLE","The masters' outfits and ninja pieces over your own avatar, in Konoha and in every duel.")
 		if self.onOutfit then
-			local b=self:add(self.kit.button(self.card,"MY NINJA",UDim2.fromOffset(Panel.CLOSE.X-230,Panel.CLOSE.Y),UDim2.fromOffset(210,Panel.CLOSE.H),function() self:hide();self.onOutfit() end,self.P.gold))
-			b.TextColor3=self.P.ink;b.TextSize=24
+			local b=self:add(press(self.kit,self.card,"MY NINJA",UDim2.fromOffset(Panel.CLOSE.X-230,Panel.CLOSE.Y),UDim2.fromOffset(210,Panel.CLOSE.H),function() self:hide();self.onOutfit() end,"ink"))
+			b.TextSize=24
 		end
 	elseif self.tab=="PASSES" then self:drawPasses()
 	else self:drawRyo() end
@@ -156,26 +236,31 @@ end
 
 -- ------------------------------------------------------------------ kits
 function Panel:drawKits()
-	local K,P=self.kit,self.P
+	local K,M=self.kit,self.M
+	local STRONG=K.STRONG_FONT or K.BODY_FONT
 	self.heading.Text="THE KITS"
 	self.subheading.Text="Every kit is free in Konoha, from the ninja who inspires it. Here you save time."
 	self.footer.Text="A kit bought comes with no tree points: its tree grows as you play it. Never a random draw."
 	local kits=self.kits
 	local products=Config.Progression and Config.Progression.Products or {}
-	local cw,ch=(W-SIDE-70-3*16)/4,300
+	local cw,ch=(W-SIDE-70-3*16)/4,296
 	for i,id in Masters.Kits do
 		local col,row=(i-1)%4,math.floor((i-1)/4)
 		local def=Fighters[id]
 		local status=MastersView.status(kits,id)
 		local act=MastersView.action(kits,id)
-		local card=self:add(K.frame(self.body,UDim2.fromOffset(col*(cw+16),row*(ch+16)),UDim2.fromOffset(cw,ch),P.panel,0))
-		K.corner(card,12)
-		if status=="owned" or status=="master" then K.create("UIStroke",card,{Color=if status=="owned" then P.gold else P.red,Thickness=3,ApplyStrokeMode=Enum.ApplyStrokeMode.Border}) end
-		local banner=K.frame(card,UDim2.fromOffset(0,0),UDim2.new(1,0,0,120),rgb(def and def.Color or {120,120,120}),0);K.corner(banner,12)
-		K.text(banner,nameOf(id),UDim2.fromOffset(14,70),UDim2.new(1,-28,0,44),40,P.ink,K.TITLE_FONT)
+		local mine=status=="owned"
+		local card=self:add(K.frame(self.body,UDim2.fromOffset(col*(cw+16),row*(ch+16)),UDim2.fromOffset(cw,ch),M.paper,0))
+		K.corner(card,4)
+		local edge=ring(K,card,if status=="master" then 4 else 3)
+		if status=="master" then edge.Color=M.red end
+		-- the kit in its own colour, the one colour a case keeps (like the avatar)
+		local banner=K.frame(card,UDim2.fromOffset(6,6),UDim2.new(1,-12,0,108),rgb(def and def.Color or {120,120,120}),0);K.corner(banner,3)
+		K.text(banner,nameOf(id),UDim2.fromOffset(12,62),UDim2.new(1,-24,0,44),42,M.ink,K.TITLE_FONT)
+		if mine then tagOn(K,card,"YOURS",M.ink) elseif status=="master" then tagOn(K,card,"READY",M.red) end
 		local tag=if status=="owned" then (if kits and kits.starter==id then "YOUR FIRST KIT" else "YOURS")
 			elseif status=="master" then "READY FOR YOU" elseif status=="starter" then "A FIRST KIT" elseif status=="loading" then "…" elseif status=="open" then "OPEN" else "STILL CLOSED"
-		K.text(card,tag,UDim2.fromOffset(14,130),UDim2.new(1,-28,0,18),12,if status=="owned" or status=="master" then P.gold else P.muted,K.BODY_FONT)
+		K.text(card,tag,UDim2.fromOffset(14,124),UDim2.new(1,-28,0,20),15,if mine or status=="master" then M.red else (M.brown or M.ink),STRONG)
 		local line=""
 		if status=="owned" then
 			local tree=kits.trees and kits.trees[id]
@@ -192,102 +277,137 @@ function Panel:drawKits()
 			local spot=HubMap.Masters[id]
 			line="Free: one of the three first kits. Take it here, or meet him: "..(if spot then Text.upper(spot.place) else "IN KONOHA").."."
 		end
-		local body=K.text(card,line,UDim2.fromOffset(14,152),UDim2.new(1,-28,0,60),13,P.text,K.BODY_FONT)
+		local body=K.text(card,line,UDim2.fromOffset(14,148),UDim2.new(1,-28,0,80),16,M.mid or M.ink,K.BODY_FONT)
 		body.TextYAlignment=Enum.TextYAlignment.Top
 		-- The buttons.
 		local rival=FirstMinute.rival(id) or "Lion"
 		if status=="owned" then
-			K.button(card,"SKILL TREE",UDim2.new(0,14,1,-58),UDim2.new(1,-28,0,44),function() if self.onTree then self.onTree(id) end end)
+			press(K,card,"SKILL TREE",UDim2.new(0,14,1,-58),UDim2.new(1,-28,0,44),function() if self.onTree then self.onTree(id) end end,"ink")
 		elseif status=="starter" then
 			-- (14/11) the first kit, taken in one press (DECISIONS: the first
 			-- minute, the ninja chosen in one gesture); TRY beside it
-			local take=K.button(card,"TAKE IT",UDim2.new(0,14,1,-58),UDim2.new(.58,-18,0,44),function() self.send("ChooseStarter",{player=id}) end,P.gold)
-			take.TextColor3=P.ink;take.Name="TakeStarter"
-			K.button(card,"TRY",UDim2.new(.58,4,1,-58),UDim2.new(.42,-18,0,44),function()
+			local take=press(K,card,"TAKE IT",UDim2.new(0,14,1,-58),UDim2.new(.58,-18,0,44),function() self.send("ChooseStarter",{player=id}) end,"red")
+			take.Name="TakeStarter"
+			press(K,card,"TRY",UDim2.new(.58,4,1,-58),UDim2.new(.42,-18,0,44),function()
 				self.send("Tutorial",{player=id,bot=rival});self:hide()
-			end)
+			end,"paper")
 		elseif status~="loading" and status~="open" then
 			local product=products[id]
 			local tryW=if product and product>0 then .42 else 1
-			K.button(card,"TRY",UDim2.new(0,14,1,-58),UDim2.new(tryW,-(if tryW<1 then 18 else 28),0,44),function()
+			press(K,card,"TRY",UDim2.new(0,14,1,-58),UDim2.new(tryW,-(if tryW<1 then 18 else 28),0,44),function()
 				self.send("Tutorial",{player=id,bot=rival});self:hide()
-			end)
+			end,"paper")
 			if tryW<1 then
-				local buy=K.button(card,"LEARN NOW",UDim2.new(.42,4,1,-58),UDim2.new(.58,-18,0,44),function() self.send("BuyKit",{player=id}) end,P.gold)
-				buy.TextColor3=P.ink
+				press(K,card,"LEARN NOW",UDim2.new(.42,4,1,-58),UDim2.new(.58,-18,0,44),function() self.send("BuyKit",{player=id}) end,"red")
 			end
 		end
 	end
 end
 
 -- ------------------------------------------------------------------ looks
+-- (DA v3, Mix-Shop) what a look's button says and how it looks; `short`: the
+-- Ryō it still lacks.
+function Panel.lookButton(state,ryo)
+	if state.kind=="equipped" then return "WORN","off" end
+	if state.kind=="owned" then return "WEAR IT","paper" end
+	if state.kind=="ryo" then
+		if state.afford then return amount(state.price).." RYŌ","red" end
+		return "NEED "..amount(state.price-(ryo or 0)).." MORE","off",state.price-(ryo or 0)
+	end
+	if state.kind=="robux" then return "BUY · ROBUX","red" end
+	return "SOON","off"
+end
 function Panel:drawLooks(slots,title,sub)
-	local K,P=self.kit,self.P
+	local K,M=self.kit,self.M
+	local STRONG=K.STRONG_FONT or K.BODY_FONT
 	self.heading.Text=title
 	self.subheading.Text=sub
 	self.footer.Text=if self.counter=="market" then "Ryō is earned in duels, against other players and in tournaments (the day's first win counts double)."
 		else "Looks for Ryō are sold at Konoha's market. Robux looks show SOON until they are on sale."
 	local kits=self.kits
+	local ryo=kits and kits.ryo or 0
 	local style=kits and kits.style
 	local products=Config.Shop and Config.Shop.Products or {}
 	local y=0
 	local cw=210
+	local shortest
 	for _,slot in slots do
 		local info=Shop.Slots[slot]
 		local label=info.name..(if info.kit then "  •  "..nameOf(info.kit) else "")
-		self:add(K.text(self.body,label,UDim2.fromOffset(0,y),UDim2.fromOffset(600,26),22,P.gold,K.TITLE_FONT))
-		y+=32
-		-- (DEC-040) a slot of many looks (the masters' outfits) wraps
+		self:add(K.text(self.body,label,UDim2.fromOffset(0,y),UDim2.fromOffset(600,28),24,M.ink,K.TITLE_FONT))
+		y+=34
+		-- (DEC-040) a slot of many looks (the masters' outfits) wraps; an outfit
+		-- shows its figure in the set's colours (Mix-Shop)
+		local tall=info.outfit==true
+		local ch=if tall then 190 else 128
 		local perRow=math.max(1,math.floor((W-SIDE-70+14)/(cw+14)))
 		for k,item in Shop.atCounter(slot,self.counter or "shop",style) do
-			local state=Shop.state(style,item,kits and kits.ryo or 0,products)
+			local state=Shop.state(style,item,ryo,products)
 			local x=((k-1)%perRow)*(cw+14)
-			if (k-1)%perRow==0 and k>1 then y+=142 end
-			local cell=self:add(K.frame(self.body,UDim2.fromOffset(x,y),UDim2.fromOffset(cw,128),P.panel,0))
-			K.corner(cell,10)
-			if state.kind=="equipped" then K.create("UIStroke",cell,{Color=P.gold,Thickness=3,ApplyStrokeMode=Enum.ApplyStrokeMode.Border}) end
-			-- The swatch: the look's colours side by side.
-			local swatch=K.frame(cell,UDim2.fromOffset(12,12),UDim2.new(1,-24,0,34),P.ink,0);K.corner(swatch,6)
-			local colors={}
-			for _,key in {"Blade","Body","Band","Grip","Ring","Plate"} do if item.colors and item.colors[key] then table.insert(colors,item.colors[key]) end end
-			if #colors==0 and item.colors then
-				-- (an outfit: its cloth colours, in a stable order)
-				local keys={}
-				for key in item.colors do table.insert(keys,key) end
-				table.sort(keys)
-				for _,key in keys do table.insert(colors,item.colors[key]) end
+			if (k-1)%perRow==0 and k>1 then y+=ch+14 end
+			local cell=self:add(K.frame(self.body,UDim2.fromOffset(x,y),UDim2.fromOffset(cw,ch),if state.kind=="equipped" then M.ink else M.paper,0))
+			K.corner(cell,4)
+			local edge=ring(K,cell,3)
+			if state.kind=="equipped" then edge.Color=M.red;tagOn(K,cell,"WORN",M.red)
+			elseif state.kind=="owned" then tagOn(K,cell,"OWNED",M.ink) end
+			local ink=if state.kind=="equipped" then M.cream else M.ink
+			local top=10
+			if tall and item.pieces then
+				figure(K,cell,item,UDim2.fromOffset(cw/2-34,8),UDim2.fromOffset(68,84))
+				top=96
+			else
+				-- the swatch: the look's colours side by side
+				local swatch=K.frame(cell,UDim2.fromOffset(12,12),UDim2.new(1,-24,0,34),M.ink,0);K.corner(swatch,3)
+				local colors={}
+				for _,key in {"Blade","Body","Band","Grip","Ring","Plate"} do if item.colors and item.colors[key] then table.insert(colors,item.colors[key]) end end
+				if #colors==0 and item.colors then
+					-- (an outfit piece: its cloth colours, in a stable order)
+					local keys={}
+					for key in item.colors do table.insert(keys,key) end
+					table.sort(keys)
+					for _,key in keys do table.insert(colors,item.colors[key]) end
+				end
+				if #colors==0 then colors={{40,38,44}} end
+				for c,color in colors do
+					K.frame(swatch,UDim2.new((c-1)/#colors,2,0,2),UDim2.new(1/#colors,-4,1,-4),rgb(color),0)
+				end
+				top=50
 			end
-			if #colors==0 then colors={{40,38,44}} end
-			for c,color in colors do
-				K.frame(swatch,UDim2.new((c-1)/#colors,2,0,2),UDim2.new(1/#colors,-4,1,-4),rgb(color),0)
+			if item.kit then
+				K.text(cell,nameOf(item.kit).." · MASTER",UDim2.fromOffset(12,top),UDim2.new(1,-24,0,16),13,if state.kind=="equipped" then (M.redSoft or M.cream) else (M.brown or M.ink),STRONG)
+				top+=16
 			end
-			K.text(cell,item.name,UDim2.fromOffset(12,52),UDim2.new(1,-24,0,18),13,P.text,K.BODY_FONT)
-			local label=state.label
-			if state.kind=="ryo" and not state.afford then label="NEED "..state.price.." RYŌ" end
-			local color=if state.kind=="ryo" and state.afford then P.gold elseif state.kind=="robux" then P.red elseif state.kind=="owned" then P.panel else P.ink
-			local b=K.button(cell,label,UDim2.fromOffset(12,80),UDim2.new(1,-24,0,36),function()
+			local name=K.text(cell,item.name,UDim2.fromOffset(12,top),UDim2.new(1,-24,0,24),17,ink,STRONG)
+			name.TextScaled=true
+			K.create("UITextSizeConstraint",name,{MaxTextSize=17,MinTextSize=11})
+			local text,kind,short=Panel.lookButton(state,ryo)
+			if short and (shortest==nil or short<shortest) then shortest=short end
+			local b=press(K,cell,text,UDim2.new(0,12,1,-46),UDim2.new(1,-24,0,36),function()
 				if state.kind=="owned" then self.send("EquipItem",{item=item.id})
 				elseif state.kind=="ryo" and state.afford then self.send("BuyItem",{item=item.id})
 				elseif state.kind=="robux" then self.send("BuyRobux",{product=state.product}) end
-			end,color)
-			b.TextSize=18
-			if state.kind=="ryo" and state.afford then b.TextColor3=P.ink end
-			if state.kind=="equipped" or state.kind=="soon" or (state.kind=="ryo" and not state.afford) then b.AutoButtonColor=false;b.TextColor3=P.muted end
+			end,kind)
+			b.TextSize=17
 		end
-		y+=148
+		y+=ch+20
+	end
+	-- (Mix-Shop) what is missing, said once, with how to get it
+	if shortest then
+		self.footer.Text="You need "..amount(shortest).." more Ryō — win duels to earn them."
+		self.footer.TextColor3=M.red
 	end
 	if title=="WEAPONS" then
-		local how=self:add(K.frame(self.body,UDim2.fromOffset(0,y),UDim2.new(1,0,0,96),P.panel,0))
-		K.corner(how,10)
+		local how=self:add(K.frame(self.body,UDim2.fromOffset(0,y),UDim2.new(1,0,0,100),M.paper,0))
+		K.corner(how,4);ring(K,how,3)
 		local t=K.text(how,"IN A DUEL: every ninja carries a kunai (draw it, throw it; with chakra each kit makes something else of it). Sasuke and Itachi throw shuriken, Minato plants his marked kunai, Lee deflects blades. Gaara's gourd, Lee's weights and Kakashi's tanto are kit objects, earned on their tree.",
-			UDim2.fromOffset(16,12),UDim2.new(1,-32,1,-24),14,P.text,K.BODY_FONT)
+			UDim2.fromOffset(16,12),UDim2.new(1,-32,1,-24),16,M.mid or M.ink,K.BODY_FONT)
 		t.TextYAlignment=Enum.TextYAlignment.Top
 	end
 end
 
 -- ------------------------------------------------------------------ passes
 function Panel:drawPasses()
-	local K,P=self.kit,self.P
+	local K,M=self.kit,self.M
 	self.heading.Text="PASSES"
 	self.subheading.Text="Bought once, kept forever. Time and status, never a win."
 	self.footer.Text="Ranked and tournament duels give everyone the prodigy's whole kit, on an equal budget."
@@ -295,48 +415,48 @@ function Panel:drawPasses()
 	for i,pass in Shop.Passes do
 		local id=if pass.id=="MasteryPass" then (Config.Progression and Config.Progression.MasteryPass or 0) else (ids[pass.id] or 0)
 		local owned=pass.id=="MasteryPass" and self.kits and self.kits.boost
-		local cell=self:add(K.frame(self.body,UDim2.fromOffset(0,(i-1)*112),UDim2.new(1,0,0,100),P.panel,0))
-		K.corner(cell,10)
-		if i==1 then K.create("UIStroke",cell,{Color=P.red,Thickness=2,ApplyStrokeMode=Enum.ApplyStrokeMode.Border}) end
-		K.text(cell,pass.name,UDim2.fromOffset(18,12),UDim2.fromOffset(500,34),30,P.paper,K.TITLE_FONT)
-		local note=K.text(cell,pass.note,UDim2.fromOffset(18,50),UDim2.new(1,-260,0,40),14,P.text,K.BODY_FONT)
+		local cell=self:add(K.frame(self.body,UDim2.fromOffset(0,(i-1)*114),UDim2.new(1,-8,0,100),M.paper,0))
+		K.corner(cell,4)
+		local edge=ring(K,cell,if i==1 then 4 else 3)
+		if i==1 then edge.Color=M.red end
+		K.text(cell,pass.name,UDim2.fromOffset(18,10),UDim2.fromOffset(600,38),34,M.ink,K.TITLE_FONT)
+		local note=K.text(cell,pass.note,UDim2.fromOffset(18,50),UDim2.new(1,-260,0,42),16,M.mid or M.ink,K.BODY_FONT)
 		note.TextYAlignment=Enum.TextYAlignment.Top
+		if owned then tagOn(K,cell,"OWNED",M.ink) end
 		local label=if owned then "YOURS" elseif id>0 then "BUY" else "SOON"
-		local b=K.button(cell,label,UDim2.new(1,-220,.5,-26),UDim2.fromOffset(200,52),function()
+		press(K,cell,label,UDim2.new(1,-220,.5,-26),UDim2.fromOffset(200,52),function()
 			if not owned and id>0 then self.send("BuyPass",{pass=pass.id}) end
-		end,if id>0 and not owned then P.gold else P.ink)
-		if id>0 and not owned then b.TextColor3=P.ink else b.TextColor3=P.muted;b.AutoButtonColor=false end
+		end,if id>0 and not owned then "red" else "off").TextSize=22
 	end
 end
 
 -- ------------------------------------------------------------------ Ryō
 function Panel:drawRyo()
-	local K,P=self.kit,self.P
+	local K,M=self.kit,self.M
 	self.heading.Text="RYŌ"
 	self.subheading.Text="For looks only: never a kit, never a tree point."
 	self.footer.Text="Ryō packs show SOON until they are on sale."
 	local packs=Config.Shop and Config.Shop.RyoPacks or {}
 	for i,pack in packs do
-		local cell=self:add(K.frame(self.body,UDim2.fromOffset(0,(i-1)*96),UDim2.fromOffset(560,84),P.panel,0))
-		K.corner(cell,10)
-		K.text(cell,pack.amount.." RYŌ",UDim2.fromOffset(18,20),UDim2.fromOffset(300,44),34,P.gold,K.TITLE_FONT)
+		local cell=self:add(K.frame(self.body,UDim2.fromOffset(0,(i-1)*98),UDim2.fromOffset(560,84),M.paper,0))
+		K.corner(cell,4);ring(K,cell,3)
+		K.text(cell,amount(pack.amount).." RYŌ",UDim2.fromOffset(18,20),UDim2.fromOffset(300,44),38,M.ink,K.TITLE_FONT)
 		local on=(pack.product or 0)>0
-		local b=K.button(cell,if on then "BUY" else "SOON",UDim2.new(1,-180,.5,-24),UDim2.fromOffset(160,48),function()
+		press(K,cell,if on then "BUY" else "SOON",UDim2.new(1,-180,.5,-24),UDim2.fromOffset(160,48),function()
 			if on then self.send("BuyRobux",{product=pack.product}) end
-		end,if on then P.gold else P.ink)
-		b.TextColor3=if on then P.ink else P.muted
+		end,if on then "red" else "off").TextSize=22
 	end
 	local R=Shop.Ryo
-	local earn=self:add(K.frame(self.body,UDim2.fromOffset(600,0),UDim2.fromOffset(560,300),P.panel,0))
-	K.corner(earn,10)
-	K.text(earn,"EARNED BY PLAYING",UDim2.fromOffset(18,14),UDim2.fromOffset(500,34),28,P.paper,K.TITLE_FONT)
+	local earn=self:add(K.frame(self.body,UDim2.fromOffset(600,0),UDim2.fromOffset(560,300),M.ink,0))
+	K.corner(earn,4);earn.Rotation=-1
+	K.text(earn,"EARNED BY PLAYING",UDim2.fromOffset(18,14),UDim2.fromOffset(500,38),32,M.cream,K.TITLE_FONT)
 	local lines={
 		string.format("A duel finished: %d  •  won: +%d",R.Finished,R.Won),
 		string.format("The day's first win: ×%d",R.FirstWinOfDay),
 		string.format("His duel won (a new inspiration): +%d",R.MasterWon),
 		string.format("Tournament: %d to the champion, %d to the finalist",R.Champion,R.Finalist),
 	}
-	for k,line in lines do K.text(earn,line,UDim2.fromOffset(18,56+(k-1)*30),UDim2.new(1,-36,0,24),15,P.text,K.BODY_FONT) end
+	for k,line in lines do K.text(earn,line,UDim2.fromOffset(18,60+(k-1)*32),UDim2.new(1,-36,0,26),17,M.cream,K.STRONG_FONT or K.BODY_FONT) end
 end
 
 return Panel

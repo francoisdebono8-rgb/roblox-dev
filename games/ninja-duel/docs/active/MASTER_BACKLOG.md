@@ -1339,3 +1339,17 @@ Sortie commune : trois Lights/Heavy physiques distincts, branche seulement aprè
 - evidence_addendum: 14/11 (branche `claude/konoha-premier-parcours`) : un nouveau joueur prend son premier kit depuis la boutique (TAKE IT, avec le lieu du maître) ; la boutique et l'arbre donnent le focus à la manette et le rendent à la fermeture. Suite `Shop` 7 PASS (le premier kit pris depuis l'onglet KITS). Studio : à faire.
 - outcome: PENDING
 
+
+## UIDA-003 — La DA v3 (planche de manga) sur les écrans du jeu
+
+- status: PARTIAL
+- priority: P1
+- dependencies: STYLE-001, SHOP-001, HUB-001
+- subsystem: interface
+- character: ALL
+- summary: (DESIGN, validée par François le 14/11 à 22 h 35) Les écrans deviennent une planche de manga : papier #FFFDF8, encre #141011, un seul rouge #C3121D. Bangers pour les titres, Builder Sans pour ce qu'on lit pour agir, Cartoon pour les voix. François, le 15/11 : « c'était toujours les cadres IA ».
+- sources: projet `claude/da-v3-mix-manga-registre-polices-2026-11-14.md`, `claude/konoha-boutique-style-da-v3-2026-11-14.md` (maquettes Mix-KonohaWalk, Mix-Konoha, Mix-Shop)
+- validation: (1) tests sans écran : états des boutons de la boutique, Ryō manquants, figure des tenues, mise en page du HUD de Konoha ; (2) Studio, PC et iPhone 14 : HUD de Konoha sur la ville, bulle d'une inspiration, boutique (5 onglets et marché), carte de résultat ; (3) avis de François.
+- evidence: 15/11 (branche `claude/da-v3-konoha-boutique`) : HUD de Konoha (étiquette papier du lieu, bande d'encre NEXT soulignée de rouge, Ryō sur papier, DUELS à l'encre avec la touche B, SHOP rouge) ; carte d'une inspiration en bulle de manga (police des voix), nom sur une étiquette noire « NOM · INSPIRATION », bouton grisé quand il ne fait rien, LATER au lieu de X ; boutique en page de papier (onglets en bande d'encre, Ryō écrits 1,250, cartes papier cerclées d'encre, WORN rouge, OWNED noir, tenues des maîtres dessinées à leurs couleurs, « You need X more Ryō — win duels to earn them. ») ; la carte de la maison (résultat, contrôles, file, tuto, joueurs, tournoi, arbre) devient une case d'encre bordée de papier avec un trait de pinceau rouge. Suites `Shop` 8 PASS, `HubLayout` 6 PASS, `Hub` 13 PASS. Studio : à faire (ordinateur non relié le 15/11).
+- remaining: HUD de duel v3 (visages, barres au pinceau, techniques en rouleaux), arbre en page de papier, avatar dans la boutique STYLE, images de la PR #114 (envoi sur Roblox avec l'accord de François, Studio nécessaire).
+- outcome: PENDING
