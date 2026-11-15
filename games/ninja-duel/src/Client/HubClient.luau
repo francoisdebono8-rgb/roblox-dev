@@ -21,6 +21,8 @@ local Masters=require(Shared.Masters)
 local Fighters=require(Shared.Fighters)
 local Text=require(Shared.Text)
 local HubLayout=require(script.Parent.HubLayout)
+local HubMoods=require(script.Parent.HubMoods)
+local Inspirations=require(Shared.Inspirations)
 local Hub={}
 Hub.__index=Hub
 -- (14/11) The run latched by L3 or the touch RUN button stops after this long
@@ -94,8 +96,13 @@ function Hub.new(ui,camera,send,controls)
 	self.cardPlace=K.text(card,"",UDim2.fromOffset(26,60),UDim2.fromOffset(440,20),14,P.gold,K.BODY_FONT)
 	self.cardLine=K.text(card,"",UDim2.fromOffset(26,86),UDim2.fromOffset(440,46),16,P.text,K.BODY_FONT)
 	self.cardLine.TextYAlignment=Enum.TextYAlignment.Top
+	-- (DEC-041) an inspiration's funny line runs three lines: it shrinks to fit
+	self.cardLine.TextWrapped=true;self.cardLine.TextScaled=true
+	K.create("UITextSizeConstraint",self.cardLine,{MaxTextSize=16,MinTextSize=11})
 	self.cardNote=K.text(card,"",UDim2.fromOffset(26,136),UDim2.fromOffset(440,58),14,P.gold,K.BODY_FONT)
 	self.cardNote.TextYAlignment=Enum.TextYAlignment.Top
+	self.cardNote.TextWrapped=true;self.cardNote.TextScaled=true
+	K.create("UITextSizeConstraint",self.cardNote,{MaxTextSize=14,MinTextSize=10})
 	self.primary=K.button(card,"",UDim2.fromOffset(24,204),UDim2.fromOffset(442,60),function() self:press("primary") end,P.red)
 	self.primary.TextSize=28
 	self.second=K.button(card,"",UDim2.fromOffset(24,276),UDim2.fromOffset(216,48),function() self:press("second") end)
@@ -305,6 +312,9 @@ function Hub:step(dt)
 	end
 	-- The card closes when he walks away from the master.
 	if self.cardId and self.cardAt and (root.Position-self.cardAt).Magnitude>26 then self:hideCard() end
+	-- (DEC-041) the first three inspirations in their moods, when he is near
+	self.moodClock=(self.moodClock or 0)+dt
+	self:moods(root.Position)
 	self.clock=(self.clock or 0)+dt
 	if self.clock>.25 then
 		self.clock=0
@@ -363,7 +373,7 @@ function Hub:refreshHud(position)
 end
 
 local TAG={open={"",nil},loading={"…",nil},starter={"START HERE","gold"},starterLocked={"LATER","muted"},
-	owned={"YOUR KIT","paper"},master={"TEACHES YOU NOW","gold"},locked={"LOCKED","muted"}}
+	owned={"YOUR KIT","paper"},master={"READY FOR YOU","gold"},locked={"LOCKED","muted"}}
 function Hub:marker(model,id,title,place)
 	local K,P=self.K,self.K.palette
 	local head=model:FindFirstChild("Head",true) or model.PrimaryPart or model:FindFirstChildWhichIsA("BasePart",true)
@@ -379,10 +389,65 @@ function Hub:marker(model,id,title,place)
 	local distance=K.text(gui,"",UDim2.fromOffset(0,50),UDim2.fromOffset(220,18),13,P.muted,K.BODY_FONT,Enum.TextXAlignment.Center)
 	return {gui=gui,model=model,id=id,name=name,tag=tag,distance=distance,place=place}
 end
+-- (DEC-041, user 14/11: « tu vas vraiment les rencontrer avec ton personnage
+-- […] ensemble près de la porte ») A new player meets the three first
+-- inspirations together just inside the gate (HubMap.Welcome); once he has
+-- chosen, they are back home. On his screen only: the models move here, their
+-- server prompt sleeps and a prompt of this screen takes its place (a prompt
+-- the server still places at home could not be reached at the gate).
+function Hub:welcome(holder)
+	local want=self.kits~=nil and self.kits.state=="ready" and self.kits.needStarter==true
+	self.homes=self.homes or {}
+	for id,spot in HubMap.Welcome do
+		local model=holder:FindFirstChild(id)
+		local root=model and (model.PrimaryPart or model:FindFirstChild("HumanoidRootPart"))
+		if model and root and model:GetAttribute("NinjaMaster")==id then
+			local entry=self.homes[id]
+			if want and not entry then
+				entry={pivot=model:GetPivot()}
+				self.homes[id]=entry
+				local at=HubMap.Origin+spot.at+Vector3.new(0,3,0)
+				local target=CFrame.lookAt(at,at+Vector3.new(spot.face.X,0,spot.face.Z))
+				model:PivotTo(target*root.CFrame:Inverse()*model:GetPivot())
+				local server=model:FindFirstChild("Talk",true)
+				if server then server.Enabled=false end
+				local prompt=Instance.new("ProximityPrompt")
+				prompt.Name="WelcomeTalk";prompt.ActionText="TALK";prompt.ObjectText=(Inspirations.of(id) or {}).title or ""
+				prompt.HoldDuration=0;prompt.MaxActivationDistance=12;prompt.RequiresLineOfSight=false
+				prompt.KeyboardKeyCode=Enum.KeyCode.E;prompt.GamepadKeyCode=Enum.KeyCode.ButtonX
+				prompt:SetAttribute("NinjaMaster",id)
+				prompt.Parent=root
+				entry.prompt=prompt
+			elseif not want and entry then
+				if entry.prompt then entry.prompt:Destroy() end
+				local server=model:FindFirstChild("Talk",true)
+				if server then server.Enabled=true end
+				HubMoods.clear(model)
+				model:PivotTo(entry.pivot)
+				self.homes[id]=nil
+			end
+		end
+	end
+end
+-- The three's moods (Client/HubMoods): while they wait for a new player at
+-- the gate, within sight of him.
+function Hub:moods(position)
+	if not self.homes then return end
+	local folder=workspace:FindFirstChild("NinjaDuelHub")
+	local holder=folder and folder:FindFirstChild("Masters")
+	if not holder then return end
+	for id in self.homes do
+		local model=holder:FindFirstChild(id)
+		if model and (model:GetPivot().Position-position).Magnitude<160 then
+			pcall(HubMoods.apply,model,id,self.moodClock+#id)
+		end
+	end
+end
 function Hub:refreshMarkers()
 	local folder=workspace:FindFirstChild("NinjaDuelHub")
 	local holder=folder and folder:FindFirstChild("Masters")
 	if not holder then return end
+	self:welcome(holder)
 	local P=self.K.palette
 	for _,model in holder:GetChildren() do
 		local id=model:GetAttribute("NinjaMaster")
@@ -483,6 +548,22 @@ function Hub:fillCard()
 	self.cardLine.Text="« "..(spot and spot.line or "").." »"
 	local a=self:cardActions(id)
 	self.actions=a
+	-- (DEC-041) a first inspiration, met by the gate: who he is, in a funny
+	-- line, and what fighting like him means
+	local about=Inspirations.of(id)
+	if a.kind=="choose" and about then
+		self.cardPlace.Text=about.title.."  •  LIVES AT "..(spot and spot.place or "")
+		self.cardLine.Text=about.line
+		self.cardNote.Text=about.with
+		self.primary.Text=a.primary and a.primary.label or ""
+		self.primary.Visible=a.primary~=nil
+		self.primary.AutoButtonColor=true
+		for _,pair in {{self.second,a.second},{self.third,a.third}} do
+			pair[1].Visible=pair[2]~=nil
+			pair[1].Text=pair[2] and pair[2].label or ""
+		end
+		return
+	end
 	local owned=self.kits and self.kits.owned and self.kits.owned[id]
 	local note=a.note or ""
 	if owned and self.kits.mastery then
@@ -492,7 +573,7 @@ function Hub:fillCard()
 		if #leads>0 then
 			local names={}
 			for _,other in leads do table.insert(names,nameOf(other)) end
-			note..="  •  AT "..Masters.Need..": "..table.concat(names,", ").." WILL TEACH YOU"
+			note..="  •  AT "..Masters.Need..": "..table.concat(names,", ").." WANT TO MEET YOU"
 		end
 	end
 	self.cardNote.Text=note

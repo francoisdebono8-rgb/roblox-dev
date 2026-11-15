@@ -340,3 +340,21 @@ Demande de l’utilisateur du **13/11 à 18 h 03** : « Continue et on voit tout
   Un nœud n’attend jamais un nœud d’un palier plus haut. Chaque palier contient assez de points pour qu’il reste un vrai choix. Le panneau de l’arbre dessine les paliers en lignes et les branches en colonnes.
 - **Profil v3** : un portefeuille (Ryō, jour de la dernière première victoire) et les apparences (possédées, portées). Le passage depuis la v2 se fait sans perte. Un achat en Robux est accordé une seule fois par reçu, et seulement une fois le profil sauvegardé.
 
+
+## DEC-041 — Des inspirations, pas des maîtres ; le premier choisi comme un starter ; l’arme du ninja, à soi (14/11)
+
+Demande de l’utilisateur du **14/11 à 21 h 35** : « le choix du premier maître, qu’on va plutôt appeler modèle ou inspiration, parce qu’ils ont 13-14 ans, c’est pas des sensei. Moi, j’imaginais plus un choix comme un choix de starter. Et on donne […] un peu des traits humoristiques […] On choisit parmi ces trois-là dès le début pour tout le monde […] Et après, un en amène l’autre […] On n’a pas assez poussé les armes dans le jeu, mais qu’on puisse acheter genre une arme qu’on choisit, petite épée, grande épée… que des armes vues déjà dans Naruto. Et qu’on attribuera au personnage. Ça, c’est un peu indépendant du kit […] parce que c’est toi le ninja ». Il a choisi ensuite : l’arme « a ses propres coups ».
+
+- **Des inspirations.** Naruto, Sasuke, Lee et les autres ont l’âge du joueur. Ce sont des modèles qu’il imite, pas des sensei. Le jeu les appelle des **inspirations** à l’écran : CHOOSE YOUR INSPIRATION, DUEL HIM, WANTS TO MEET YOU. Dans le code, le module s’appelle toujours `Masters`.
+- **Le premier, comme un starter, rencontré en vrai** (21 h 49 : « c’était pas des fiches et tu vas vraiment les rencontrer avec ton personnage. Et tu vois, avec des petites animations, tu comprends leur état d’esprit, plus une description si tu veux » ; puis son choix : « ensemble près de la porte »).
+  - Pour un nouveau joueur, Naruto, Sasuke et Lee l’attendent ensemble juste après la porte, chacun dans son humeur (`HubMap.Welcome`, `Client/HubMoods`) :
+    - Naruto ne tient pas en place, mains derrière la tête ;
+    - Lee s’entraîne et boxe dans le vide ;
+    - Sasuke se tient à l’écart, bras croisés, et détourne la tête.
+  - Le joueur va de l’un à l’autre. Sa carte (E) donne son trait drôle et ce que veut dire se battre comme lui (`Shared/Inspirations`), avec le bouton HE’S MY INSPIRATION.
+  - Le choix donne le kit, et chacun rentre chez lui. Le joueur va retrouver son inspiration pour son premier duel. Chaque inspiration mène ensuite à la suivante (DEC-037).
+  - Les humeurs sont des poses de code en attendant les clips Blender de l’ANIMATEUR (`Mood.<kit>`).
+- **L’arme du ninja, à soi.** Indépendante du kit, elle est choisie et achetée par le joueur, parce que c’est lui le ninja. On ne prend que des armes vues dans Naruto : tanto, katana, grande épée de type Kubikiribōchō, lames de chakra, kusarigama, fūma shuriken, éventail de combat, bâton.
+  - Elle a **ses propres coups** et ses animations, à puissance égale : c’est un autre style, pas une arme plus forte.
+  - Son modèle et ses coups sont faits par l’ANIMATEUR. Le DEV les branche sur le bouton d’outil du combat.
+  - L’arme se vend en Robux à la SHOP, et certaines peut-être en Ryō au marché (DEC-040, les deux comptoirs).

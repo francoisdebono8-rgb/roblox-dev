@@ -49,7 +49,7 @@ function V.tablet(kits,id)
 	return {
 		status=status,
 		locked=status=="locked" or status=="starterLocked" or status=="master",
-		tag=if status=="master" then "MASTER" elseif status=="locked" or status=="starterLocked" then "LOCKED"
+		tag=if status=="master" then "READY" elseif status=="locked" or status=="starterLocked" then "LOCKED"
 			elseif status=="starter" then "START" else "",
 		progress=if status=="owned" then math.clamp(mastery/Masters.Need,0,1) else nil,
 	}
@@ -70,7 +70,7 @@ function V.action(kits,id)
 	end
 	if status=="starterLocked" then
 		return {kind="try",label="TRY IN TRAINING",
-			note=who.." TEACHES HIS KIT LATER. FIRST, TAKE "..names(Masters.Starters).."."}
+			note=who.." COMES LATER. FIRST, CHOOSE "..names(Masters.Starters).."."}
 	end
 	if status=="owned" then
 		local mastery=kits.mastery and kits.mastery[id] or 0
@@ -81,13 +81,13 @@ function V.action(kits,id)
 	end
 	local m=kits.masters and kits.masters[id] or {}
 	if status=="master" then
-		return {kind="master",label="DUEL THE MASTER",via=m.via,
+		return {kind="master",label="DUEL HIM",via=m.via,
 			note=who.." WAITS FOR YOU. BEAT HIM WITH "..name(m.via).." AND HIS KIT IS YOURS."}
 	end
 	local rule=Masters.Map[id]
-	local from=if rule then names(rule.from) else "HIS MASTER"
+	local from=if rule then names(rule.from) else "HIS INSPIRATION"
 	return {kind="try",label="TRY IN TRAINING",product=m.product,
-		note=string.format("%s TEACHES WHOEVER HAS %d MASTERY WITH %s (BEST: %d).",who,Masters.Need,from,m.best or 0)}
+		note=string.format("%s OPENS UP TO WHOEVER HAS %d MASTERY WITH %s (BEST: %d).",who,Masters.Need,from,m.best or 0)}
 end
 
 -- (14/11, new player's walk) The first kit taken, its first duel not fought
@@ -111,16 +111,17 @@ function V.goal(kits)
 	if not kits then return proctor end
 	if kits.state~="ready" then return goal("",{}) end
 	if kits.needStarter then
-		local where={}
-		for _,id in Masters.Starters do table.insert(where,name(id).." • "..place(id)) end
-		return goal("CHOOSE YOUR FIRST MASTER",where)
+		-- (DEC-041) the three wait together just inside the gate
+		local who={}
+		for _,id in Masters.Starters do table.insert(who,name(id)) end
+		return goal("CHOOSE YOUR INSPIRATION",{table.concat(who,", ").." • RIGHT BY THE GATE"})
 	end
 	local first=V.firstDuel(kits)
 	if first then return goal("YOUR FIRST DUEL",{"TALK TO "..name(first).."  •  "..place(first)}) end
 	for _,id in Masters.Kits do
 		local m=kits.masters and kits.masters[id]
 		if m and m.ready and not (kits.owned and kits.owned[id]) then
-			return goal(name(id).." WILL TEACH YOU",{place(id)})
+			return goal(name(id).." WANTS TO MEET YOU",{place(id)})
 		end
 	end
 	return proctor
@@ -136,8 +137,8 @@ function V.card(kits,id)
 	local out={note=act.note,kind=act.kind}
 	local rival=FirstMinute.rival(id) or "Lion"
 	if act.kind=="wait" then out.primary={label="LOADING YOUR KITS…"}
-	elseif act.kind=="choose" then out.primary={label="TAKE HIS KIT",send={"ChooseStarter",{player=id}}}
-	elseif act.kind=="master" then out.primary={label="DUEL THE MASTER",send={"MasterTrial",{player=act.via,master=id}}}
+	elseif act.kind=="choose" then out.primary={label="HE'S MY INSPIRATION",send={"ChooseStarter",{player=id}}}
+	elseif act.kind=="master" then out.primary={label="DUEL HIM",send={"MasterTrial",{player=act.via,master=id}}}
 	elseif act.kind=="try" then out.primary={label="TRY HIS KIT",send={"Tutorial",{player=id,bot=rival}}}
 	else
 		if V.firstDuel(kits)==id then out.primary={label="YOUR FIRST DUEL",send={"First",{player=id}}}
@@ -168,7 +169,7 @@ function V.result(progress,kits)
 		for _,master in V.leadsTo(progress.fighter) do
 			if not (kits and kits.owned and kits.owned[master]) then table.insert(leads,master) end
 		end
-		if #leads>0 then line..="  •  "..names(leads).." WILL TEACH YOU" end
+		if #leads>0 then line..="  •  "..names(leads).." WANT TO MEET YOU" end
 	end
 	return line
 end

@@ -1004,7 +1004,7 @@ function UI:lobby(data)
 		self.opponentLabel.Text=if self.simple then "YOUR RIVAL" else "OPPONENT (AI)"
 		self.startButton.Text=if self.simple then "PLAY" else "ENTER THE STAGE"
 		self.tutorialButton.Text=if self.simple then "ALL MODES" else "TRAINING"
-		self.notice.Text=data.notice or (if self.kits and self.kits.needStarter then "CHOOSE YOUR FIRST KIT  •  NARUTO, SASUKE OR LEE  •  THE OTHER KITS ARE TAUGHT BY THEIR MASTERS"
+		self.notice.Text=data.notice or (if self.kits and self.kits.needStarter then "CHOOSE YOUR INSPIRATION  •  NARUTO, SASUKE OR LEE  •  EACH ONE LEADS YOU TO THE NEXT"
 			elseif self.simple then "PICK YOUR NINJA, THEN PLAY  •  30 SECONDS ON THE FIELD, THEN YOUR FIRST DUEL" else "")
 	end
 	self.lastLobby=data
@@ -1505,8 +1505,8 @@ function UI:render(data)
 	-- (Beta loop) the masters' path: what this duel earned.
 	self.resultProgress.Text=MastersView.result(data.progress,self.kits) or ""
 	if data.master then
-		self.resultName.Text="THE MASTER'S DUEL"
-		self.resultNote.Text=if won then "Your master saw enough." else "Your master is not convinced yet. Come back stronger."
+		self.resultName.Text="HIS DUEL"
+		self.resultNote.Text=if won then "He saw enough: his kit is yours." else "He is not convinced yet. Come back stronger."
 	end
 	-- Online: a rematch needs both players; a forfeit says so.
 	local online=data.online

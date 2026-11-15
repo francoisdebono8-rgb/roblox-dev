@@ -141,16 +141,16 @@ test("Konoha's HUD: placed by the layout, the goal follows the player, touch and
 		local Config=H.load("Shared/Config")
 		local hubWas=Config.Hub;Config.Hub={Enabled=true}
 		local UI=H.load("Client/UI")
-		local ui=UI.new(H.envBase.Instance.new("PlayerGui"),function() end)
-		local Hub=H.load("Client/HubClient")
 		local sent={}
+		local ui=UI.new(H.envBase.Instance.new("PlayerGui"),function(action,payload) table.insert(sent,{action,payload}) end)
+		local Hub=H.load("Client/HubClient")
 		local hub=Hub.new(ui,{},function(action,payload) table.insert(sent,{action,payload}) end,{Enable=function() end,Disable=function() end})
 		local new={state="ready",owned={},mastery={},masters={},needStarter=true,trees={},ryo=0,style={owned={},equipped={}}}
 		hub:render({phase="Selection",kits=new})
 		-- a laptop: the place box under Roblox's bar, the goal under the top row
 		assert(hub.hud.Visible and hub.hud.Position.Y.Offset==66 and hub.hud.Position.X.Offset==16,"the place box: "..tostring(hub.hud.Position))
-		assert(hub.goal.Visible and hub.goalHead.Text=="CHOOSE YOUR FIRST MASTER","a new player's goal: "..hub.goalHead.Text)
-		assert(string.find(hub.goalSub.Text,"ICHIRAKU RAMEN",1,true) and hub.goal.Position.Y.Offset>=140,"the goal's places or row: "..hub.goalSub.Text)
+		assert(hub.goal.Visible and hub.goalHead.Text=="CHOOSE YOUR INSPIRATION","a new player's goal: "..hub.goalHead.Text)
+		assert(string.find(hub.goalSub.Text,"BY THE GATE",1,true) and hub.goal.Position.Y.Offset>=140,"the goal's places or row: "..hub.goalSub.Text)
 		assert(not hub.runButton.Visible and hub.keys.Visible,"keys: no RUN button, the key line")
 		-- (14/11) the training dummy: no kit yet, Lee's (his ground)
 		hub:train()

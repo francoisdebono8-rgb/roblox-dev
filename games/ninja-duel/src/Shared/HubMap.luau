@@ -77,6 +77,20 @@ M.Masters={
 		line="Plant your mark first. The speed comes after."},
 }
 
+-- (DEC-041, user 14/11 21 h 49: « quand c'était comme un starter, c'était pas
+-- des fiches et tu vas vraiment les rencontrer avec ton personnage. Et tu vois,
+-- avec des petites animations, tu comprends leur état d'esprit », then
+-- « ensemble près de la porte ») For a new player the three first
+-- inspirations hang out together at the top of the main street, just inside
+-- the gate, each in his own mood (Client/HubMoods): Naruto showing off, Lee
+-- training, Sasuke leaning apart, half turned away. Once he has chosen, they
+-- are back home (Client/HubClient moves them, on his screen only).
+M.Welcome={
+	Legion={at=Vector3.new(-9,0,166),face=Vector3.new(.25,0,1)},
+	Leaf={at=Vector3.new(1,0,158),face=Vector3.new(0,0,1)},
+	Lion={at=Vector3.new(12,0,172),face=Vector3.new(-.75,0,.66)},
+}
+
 -- (14/11, audit: « que notre perso puisse combattre, qu'on puisse apprendre »)
 -- Training Ground Three's dummy: E there trains with his kit (Server/Hub
 -- places the prompt, Client/HubClient answers it).
