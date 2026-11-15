@@ -487,8 +487,9 @@ local function faces(f)
 	-- plaque stays (Keep): « the next face here could be yours », then a name.
 	local cliff=unit(f,"HokageCliff","HokageCliff",CFrame.new(O))
 	part(cliff,"Cliff",Vector3.new(330,92,32),rel(0,46,-248),C.rock,Enum.Material.Rock)
-	for k,at in HubMap.Heads do
-		local s=HubMap.HeadScale
+	-- (15/11) built at the village's first scale, then scaled with it
+	for k,at in HubMap.Base.Heads do
+		local s=HubMap.Base.HeadScale
 		local slot=unit(f,"CliffHead","HeadSlot"..k,CFrame.new(O+at),s)
 		slot:SetAttribute("HeadSlot",k)
 		part(slot,"Face",Vector3.new(26*s.X,30*s.Y,8*s.Z),CFrame.new(O+at),C.rock,Enum.Material.Rock)
@@ -569,14 +570,125 @@ local function quarters(f)
 	local west={-232,-208,-184,-136,-112}
 	row(f,150,6,1,west,3);row(f,150,6,-1,west,5)
 	lamps(f,-220,-100,155,60)
+	Hub.alleys(f)
+end
+-- (15/11, François: « la carte est à refaire avec des vrais quartiers, plus de
+-- place un peu pour se battre, mais quand même dans des espaces resserrés »)
+-- The back alleys, between the Uchiha district's wall and the market: a
+-- narrow lane (7 wide) between two rows of small two-storey houses, a
+-- courtyard in its middle (about 58 x 37) with crates to break and walls to
+-- run on, and a passage behind the market's backs. Its houses wear the
+-- quarters' models narrowed to their size (DressScale).
+Hub.ALLEY={z=-3,width=7,depth=14,front=16,north={109,127,203,221,239,257},south={109,127,203,221,239,257},yard={x=165,z=-3}}
+function Hub.alleys(f)
+	local A=Hub.ALLEY
+	path(f,96,A.z,266,A.z,A.width,C.earth)
+	path(f,96,20,266,20,6,C.earth)
+	path(f,136,A.z,194,A.z,36,C.cobble,Enum.Material.Cobblestone)
+	local kinds={KINDS[1],KINDS[2],KINDS[3],KINDS[6]}
+	local n=0
+	for _,spec in {{xs=A.north,side=-1},{xs=A.south,side=1}} do
+		for _,x in spec.xs do
+			n+=1
+			local kind=kinds[(n-1)%#kinds+1]
+			local z=A.z+spec.side*(A.width/2+1+A.depth/2)
+			local cf=rel(x,0,z)*CFrame.Angles(0,if spec.side>0 then math.pi/2 else -math.pi/2,0)
+			local h=house(f,cf,A.depth,A.front,2,C[kind.wall],C[kind.roof],{front=1,flat=kind.flat,dress=kind.dress,name="AlleyHouse",
+				noren=if kind.shop then C.roofBlue else nil})
+			h:SetAttribute("DressScale",Vector3.new(A.depth/kind.w,1,A.front/20))
+		end
+	end
+	-- the courtyard: cover to break, light to fight by
+	for _,c in {{150,-12,4,2},{154.2,-12,4,2},{152.1,-12,4,6},{182,8,4,2},{186.5,6,4,2}} do
+		local size=Vector3.new(c[3],c[3],c[3])
+		local y=c[4]
+		local crate=unit(f,"Crate","Crate",rel(c[1],y,c[2]),size/4)
+		part(crate,"Crate",size,rel(c[1],y,c[2]),C.woodLight,Enum.Material.WoodPlanks)
+	end
+	local bench=unit(f,"Bench","Bench",rel(165,0,12))
+	part(bench,"Bench",Vector3.new(8,1,2.4),rel(165,1.6,12),C.wood,Enum.Material.Wood)
+	lamps(f,140,190,A.z-14,50)
+	return n
 end
 
 -- Builds the village once per server (Main). Headless: the parts are built in
 -- the given parent.
+-- (15/11, François: « les bâtiments n'ont pas de mur, pas de physique »,
+-- « une vraie adaptation avec les dégâts dans les murs ») What a street duel
+-- does with the village. Every solid upright piece big enough to stand on its
+-- side (a house's walls, the village walls, the hall, the gate's pillars) is
+-- a wall the fighters run on (NinjaWall, Server/Motor), and the props break
+-- (WorldBreakable, Server/WorldReaction) with a toughness of their own; the
+-- duel's end puts them back (WorldReaction.restore).
+Hub.BREAKABLE={Crate=40,Bench=60,FenceSegment=50,LampPost=45,StoneLantern=140,Stump=90}
+Hub.WALL_HEIGHT=7
+Hub.WALL_WIDTH=2
+function Hub.forFights(f)
+	local walls,breakables=0,0
+	for _,d in f:GetDescendants() do
+		if d:IsA("BasePart") and d.CanCollide then
+			local s=d.Size
+			if s.Y>=Hub.WALL_HEIGHT and math.max(s.X,s.Z)>=Hub.WALL_WIDTH*2 and math.min(s.X,s.Z)>=Hub.WALL_WIDTH*.5 then
+				d:SetAttribute("NinjaWall",true);walls+=1
+			end
+		end
+		if d:IsA("Model") and Hub.BREAKABLE[d:GetAttribute("Dress") or ""] then
+			for _,p in d:GetChildren() do
+				if p:IsA("BasePart") and p.CanQuery then
+					p:SetAttribute("WorldBreakable",true);p:SetAttribute("WorldToughness",Hub.BREAKABLE[d:GetAttribute("Dress")]);breakables+=1
+				end
+			end
+		end
+	end
+	return walls,breakables
+end
+-- (15/11, François: « s'ils sont grands, fait tout un peu plus grand aussi »)
+-- The village built at its first scale, made `s` times bigger around the
+-- origin: every piece's size and place, the dressing's place and scale (a
+-- wall's segments keep their length: DressLength grows instead), the lights'
+-- reach, the signs' text at the same share of their board, the tiles of a
+-- texture, a mesh's own scale. The bodies (walkers, inspirations) keep theirs.
+function Hub.scaleVillage(f,s)
+	if s==1 then return 0 end
+	local function at(cf) return CFrame.new(O+(cf.Position-O)*s)*cf.Rotation end
+	local n=0
+	for _,d in f:GetDescendants() do
+		if d:IsA("BasePart") then
+			local size=d.Size*s
+			if d:IsA("TrussPart") then size=Vector3.new(d.Size.X,d.Size.Y*s,d.Size.Z) end
+			d.Size=size;d.CFrame=at(d.CFrame);n+=1
+		elseif d:IsA("Model") and d:GetAttribute("Dress") then
+			local dressAt=d:GetAttribute("DressAt")
+			if typeof(dressAt)=="CFrame" then d:SetAttribute("DressAt",at(dressAt)) end
+			local scale=d:GetAttribute("DressScale")
+			if typeof(scale)~="Vector3" then scale=Vector3.one end
+			local length=d:GetAttribute("DressLength")
+			if type(length)=="number" then
+				d:SetAttribute("DressLength",length*s)
+				d:SetAttribute("DressScale",Vector3.new(scale.X*s,scale.Y*s,scale.Z))
+			else
+				d:SetAttribute("DressScale",scale*s)
+			end
+		elseif d:IsA("Light") then
+			pcall(function() (d::any).Range*=s end)
+		elseif d:IsA("SurfaceGui") then
+			if d.SizingMode==Enum.SurfaceGuiSizingMode.PixelsPerStud then d.PixelsPerStud/=s end
+		elseif d:IsA("Texture") then
+			d.StudsPerTileU*=s;d.StudsPerTileV*=s
+		elseif d:IsA("SpecialMesh") and d.MeshType==Enum.MeshType.FileMesh then
+			d.Scale*=s
+		elseif d:IsA("Attachment") then
+			d.Position*=s
+		end
+	end
+	return n
+end
 function Hub.build(parent)
 	if Hub.folder and Hub.folder.Parent then return Hub.folder end
 	local f=Instance.new("Folder");f.Name="NinjaDuelHub"
 	ground(f);gate(f);street(f);plaza(f);hall(f);training(f);hyuga(f);uchiha(f);faces(f);quarters(f);forest(f)
+	Hub.scaleVillage(f,HubMap.Scale or 1)
+	Hub.forFights(f)
 	f.Parent=parent or workspace
 	Hub.folder=f;Hub.built=true
 	return f

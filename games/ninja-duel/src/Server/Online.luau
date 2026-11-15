@@ -180,9 +180,11 @@ function Online:fight(d)
 	local c=Combat.new(d);c.now=workspace:GetServerTimeNow();d.combat=c
 	for index,seat in d.seats do
 		local side=if index==1 then 1 else -1
-		local from=d.origin+Vector3.new(0,3,side*Config.StartDistance)
+		-- (15/11) along the street a place runs (Matches.startOffset)
+		local off=m.startOffset(d)*side
+		local from=d.origin+Vector3.new(0,3,0)+off
 		local id="Duelist"..index
-		local model,hum,root,joints=World.rig(d.folder,Fighters[seat.fighter],CFrame.lookAt(from,d.origin+Vector3.new(0,3,-side*Config.StartDistance)),id)
+		local model,hum,root,joints=World.rig(d.folder,Fighters[seat.fighter],CFrame.lookAt(from,d.origin+Vector3.new(0,3,0)-off),id)
 		seat.actor=c:add(id,model,hum,root,joints,seat.fighter)
 		-- Two players: both start locked on, as the local duel's fighters do.
 		seat.actor.locked=true
@@ -195,7 +197,8 @@ function Online:fight(d)
 			-- (15/11) after a street duel each walks on from his side of it
 			if d.site then
 				local side=if seat.index==1 then 1 else -1
-				seat.session.returnTo={at=d.site.origin-HubMap.Origin+Vector3.new(0,0,side*d.site.radius*.5),face=Vector3.new(0,0,-side)}
+				local axis=d.site.axis or Vector3.zAxis
+				seat.session.returnTo={at=d.site.origin-HubMap.Origin+axis*side*d.site.radius*.5,face=-axis*side}
 			end
 			-- (DEC-038) the walk in Konoha ends: the duel's body takes over.
 			pcall(function() require(script.Parent.Hub).leave(seat.player) end)
@@ -227,6 +230,8 @@ end
 function Online:teardown(d)
 	local c=d.combat
 	d.combat=nil
+	-- (15/11) a street duel leaves Konoha's walls as they were
+	if c then pcall(function() require(script.Parent.WorldReaction).restore(c) end) end
 	if c then
 		c:clear()
 		for _,a in c.actors do AntiCheat.clear(a) end

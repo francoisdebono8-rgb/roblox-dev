@@ -29,7 +29,8 @@ Hub.__index=Hub
 -- at rest (the duel's pad sprint does the same, DECISIONS socle 2).
 Hub.REST=.35
 
-Hub.WALK,Hub.RUN,Hub.JUMP,Hub.LEAP=16,30,56,54
+-- (15/11) the village is 1.3 times bigger (HubMap.Scale): the run a little faster
+Hub.WALK,Hub.RUN,Hub.JUMP,Hub.LEAP=16,36,56,54
 
 local function upper(s) return Text.upper(s or "") end
 local function nameOf(id) local def=Fighters[id] return upper(def and def.Name or id) end

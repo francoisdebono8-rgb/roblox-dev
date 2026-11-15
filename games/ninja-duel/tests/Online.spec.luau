@@ -724,6 +724,19 @@ test("a 1v1 between two walkers is fought in Konoha's street, one fight per plac
 		send(m,c,"First",{player="Leaf",here="Leaf"})
 		assert(m.sessions[c].phase=="Duel" and m.sessions[c].site==nil,"two fights in one place")
 		m:selection(c)
+		-- (15/11) a lane of the market: the two start along the lane, not into its houses
+		local p,q=join(m,"Papa","Quebec")
+		local lane
+		for _,street in HubMap.Streets do if street.key=="MarketLane" then lane=street end end
+		local laneCentre=HubMap.Origin+lane.at
+		walkAt(p,laneCentre+V.new(3,3,0));walkAt(q,laneCentre+V.new(-3,3,0))
+		local laneSite=m:streetSite({p,q})
+		assert(laneSite and laneSite.key=="MarketLane","the market lane: "..tostring(laneSite and laneSite.key))
+		local dl=m.online:pair({player=p,session=m.sessions[p],fighter="Flashstep"},{player=q,session=m.sessions[q],fighter="Mirage"},"challenge")
+		dl.site=laneSite
+		send(m,p,"Confirm");send(m,q,"Confirm")
+		local ra,rb=dl.seats[1].actor.root.Position,dl.seats[2].actor.root.Position
+		assert(math.abs(ra.Z-rb.Z)<1e-3 and math.abs(ra.X-rb.X)>20,"the two start across the lane, into its houses")
 		-- far from every place: the stadium
 		local x,y=join(m,"Xray","Yankee")
 		walkAt(x,HubMap.Origin+V.new(0,3,700));walkAt(y,HubMap.Origin+V.new(4,3,700))

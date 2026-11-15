@@ -13,6 +13,14 @@ local M={}
 
 -- Far from the duel lanes (Matches.laneOrigin: x = (lane-1)*520, z = 0).
 M.Origin=Vector3.new(0,0,-2400)
+-- (15/11, François: « la taille des personnages, l'échelle de la map […] La
+-- taille des joueurs, bah, s'ils sont grands, fait tout un peu plus grand
+-- aussi ») The village is drawn below at the scale it was first built (a
+-- floor of 8 studs, a door of 6.4, for bodies of about 5.5); everything in it
+-- is `Scale` times bigger: the positions and the places here (M.applyScale,
+-- at the end of this file), the buildings, props and dressing in Server/Hub
+-- (Hub.scaleVillage). The bodies keep their size.
+M.Scale=1.3
 -- The walkable square (half sizes on x and z); invisible walls beyond.
 M.HalfX=290
 M.MinZ=-262
@@ -41,6 +49,8 @@ M.Places={
 	-- (14/11) the two quarters of houses (Server/Hub.quarters)
 	{id="Market",name="THE MARKET STREETS",at=Vector3.new(160,0,103),radius=85},
 	{id="Residences",name="THE WEST RESIDENCES",at=Vector3.new(-170,0,150),radius=70},
+	-- (15/11) between the Uchiha wall and the market (Server/Hub.alleys)
+	{id="Alleys",name="THE BACK ALLEYS",at=Vector3.new(180,0,-3),radius=60},
 }
 
 -- The exam's proctor, on the hall's floor: the board of duels (the roster:
@@ -118,6 +128,18 @@ do
 	end
 	for _,key in keys do add(key,M.Masters[key]) end
 	add("Training",M.Training)
+	-- (15/11, François: « des combats un peu partout sur la map », « dans
+	-- des espaces resserrés ») the street fights' own places: the plaza, a
+	-- market lane, the back alleys' courtyard and lane, the residences' lane.
+	-- `axis`: the way the street runs (the two fighters start along it,
+	-- `start` studs from the centre each).
+	for _,spot in {
+		{key="Plaza",at=Vector3.new(0,0,10),radius=28,place="THE PLAZA",axis=Vector3.xAxis,start=16},
+		{key="MarketLane",at=Vector3.new(115,0,56),radius=26,place="THE MARKET STREETS",axis=Vector3.xAxis,start=14},
+		{key="Courtyard",at=Vector3.new(165,0,-3),radius=24,place="THE BACK-ALLEY COURTYARD",axis=Vector3.xAxis,start=14},
+		{key="BackAlley",at=Vector3.new(232,0,-3),radius=20,place="THE BACK ALLEYS",axis=Vector3.xAxis,start=12},
+		{key="Residences",at=Vector3.new(-160,0,150),radius=24,place="THE WEST RESIDENCES",axis=Vector3.xAxis,start=12},
+	} do table.insert(M.Streets,spot) end
 end
 
 -- (14/11, user: « les têtes sont moches […] à terme ça sera les champions, on
@@ -131,6 +153,8 @@ end
 -- the face out to about -213; above the terrace (its top at y 24).
 M.Heads={Vector3.new(-96,58,-222.4),Vector3.new(-32,55,-222.4),Vector3.new(32,61,-222.4),Vector3.new(96,53,-222.4)}
 M.HeadScale=Vector3.new(1.92,1.92,2.4)
+-- (15/11) the cliff as Server/Hub builds it, before the village is scaled
+M.Base={Heads=table.clone(M.Heads),HeadScale=M.HeadScale}
 
 -- The village's walk, for the HUD: the nearest place to a position (world).
 -- The smallest place he stands in (Ichiraku within the street), else the
@@ -146,8 +170,30 @@ function M.placeAt(world)
 	return inside or near
 end
 function M.world(rel) return M.Origin+rel end
+-- (15/11) Every position and size of this map times `s` (once, at load).
+function M.applyScale(s)
+	if M.scaled or s==1 then return end
+	M.scaled=true
+	M.HalfX*=s;M.MinZ*=s;M.MaxZ*=s
+	for _,spot in M.Spawns do spot.at*=s end
+	for _,place in M.Places do place.at*=s;place.radius*=s end
+	M.Proctor.at*=s
+	for _,spot in M.Masters do
+		spot.at*=s
+		if spot.duel then spot.duel={at=spot.duel.at*s,radius=spot.duel.radius*s} end
+	end
+	for _,spot in M.Welcome do spot.at*=s end
+	M.Training.at*=s
+	if M.Training.duel then M.Training.duel={at=M.Training.duel.at*s,radius=M.Training.duel.radius*s} end
+	M.Market.at*=s
+	for k,at in M.Heads do M.Heads[k]=at*s end
+	M.HeadScale*=s
+	for _,street in M.Streets do street.at*=s;street.radius*=s;if street.start then street.start*=s end end
+end
 function M.inside(rel)
 	return math.abs(rel.X)<=M.HalfX and rel.Z>=M.MinZ and rel.Z<=M.MaxZ
 end
+
+M.applyScale(M.Scale)
 
 return M

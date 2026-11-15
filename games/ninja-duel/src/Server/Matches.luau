@@ -81,7 +81,17 @@ function Matches.villageSite(player,key)
 	local character=body and body.character
 	local root=character and character:FindFirstChild("HumanoidRootPart")
 	if not root or (Vector3.new(root.Position.X,0,root.Position.Z)-Vector3.new(centre.X,0,centre.Z)).Magnitude>duel.radius+50 then return nil end
-	return {key=key,origin=centre,radius=duel.radius,place=spot.place}
+	return {key=key,origin=centre,radius=duel.radius,place=spot.place,axis=duel.axis,start=duel.start}
+end
+-- (15/11) Where the two fighters start, from the centre: along the street a
+-- place runs (its `axis`), `start` studs away (the stadium's distance, held
+-- inside a small place's circle).
+function Matches.startOffset(s)
+	local site=s and s.site
+	local axis=site and site.axis or Vector3.zAxis
+	local half=Config.StartDistance
+	if site and site.start then half=site.start elseif site and site.radius then half=math.min(half,site.radius*.7) end
+	return axis*half
 end
 -- (15/11) A place of the village holds one fight at a time: a duel at a
 -- master's home or a 1v1 in the street (Server/Online). `except`: the session
@@ -106,7 +116,7 @@ end
 -- challenge each other fight where they are: the free open place of the
 -- village (HubMap.Streets) nearest to the two of them, within `reach` studs.
 -- nil: the stadium (one of them is not walking, or nothing is free near).
-Matches.StreetReach=260
+Matches.StreetReach=260*(HubMap.Scale or 1)
 function Matches:streetSite(players)
 	if not Matches.hubOn() or not (Config.Hub and Config.Hub.VillageDuels==true) then return nil end
 	local sum,n=Vector3.zero,0
@@ -125,7 +135,7 @@ function Matches:streetSite(players)
 		if distance<bestDistance and self:siteFree(street.key) then best,bestDistance=street,distance end
 	end
 	if not best then return nil end
-	return {key=best.key,origin=HubMap.Origin+best.at,radius=best.radius,place=best.place,street=true}
+	return {key=best.key,origin=HubMap.Origin+best.at,radius=best.radius,place=best.place,street=true,axis=best.axis,start=best.start}
 end
 -- (B1 lot 2, DEC-034) What a new player's first minutes look like, measured
 -- on the server (Codex's audit §3: time to the first input, the first jutsu,
@@ -191,6 +201,8 @@ end
 -- The duel goes: its bodies, effects and marks. (QA 12/11) The lane's
 -- stadium stays for the next duel (Server/Stage); Matches:dropStage takes it.
 function Matches:destroy(s)
+	-- (15/11) a duel fought in Konoha leaves its walls as they were
+	if s.combat then pcall(function() require(script.Parent.WorldReaction).restore(s.combat) end) end
 	if s.combat then s.combat:clear() end
 	if s.human then AntiCheat.clear(s.human) end
 	if s.folder then
@@ -316,7 +328,8 @@ function Matches:start(player,playerId,botId,training,options)
 	s.site=site;s.radius=site and site.radius or nil
 	if site then
 		s.origin=site.origin
-		s.returnTo={at=site.origin-HubMap.Origin+Vector3.new(0,0,site.radius*.5),face=Vector3.new(0,0,-1)}
+		local axis=site.axis or Vector3.zAxis
+		s.returnTo={at=site.origin-HubMap.Origin+axis*site.radius*.5,face=-axis}
 	else
 		-- (QA 12/11) The lane's stadium is the one already in the world, its
 		-- last duel's damage undone: only the two bodies are new at BEGIN.
@@ -335,8 +348,9 @@ function Matches:start(player,playerId,botId,training,options)
 		if not model then model,hum,root,joints=World.rig(s.folder,Fighters[def],cf,id) end
 		return s.combat:add(id,model,hum,root,joints,def,kit)
 	end
-	s.human=actor("PlayerFighter",playerId,s.origin+Vector3.new(0,3,Config.StartDistance),s.origin+Vector3.new(0,3,-Config.StartDistance),playerKit)
-	s.bot=actor("AIFighter",botId,s.origin+Vector3.new(0,3,-Config.StartDistance),s.origin+Vector3.new(0,3,Config.StartDistance),botKit)
+	local off,up=Matches.startOffset(s),Vector3.new(0,3,0)
+	s.human=actor("PlayerFighter",playerId,s.origin+up+off,s.origin+up-off,playerKit)
+	s.bot=actor("AIFighter",botId,s.origin+up-off,s.origin+up+off,botKit)
 	s.human.target=s.bot; s.bot.target=s.human; s.human.locked=true; s.bot.locked=true
 	player.Character=s.human.model
 	-- (13/11) The looks his own ninja wears (Shared/Shop): his weapons' skins.
@@ -444,7 +458,8 @@ function Matches:resetRound(s)
 		a.stamina=100;a.hitstopUntil=0;a.root.Anchored=false;a.hum.WalkSpeed=a.def.Speed
 		a.shieldCharges=a.def.SandShield and a.def.SandShield.Charges or 0
 	end
-	c:relocate(first,s.origin+Vector3.new(0,3,Config.StartDistance));c:relocate(second,s.origin+Vector3.new(0,3,-Config.StartDistance))
+	local off=Matches.startOffset(s)
+	c:relocate(first,s.origin+Vector3.new(0,3,0)+off);c:relocate(second,s.origin+Vector3.new(0,3,0)-off)
 	first.root.CFrame=CFrame.lookAt(first.root.Position,second.root.Position)
 	second.root.CFrame=CFrame.lookAt(second.root.Position,first.root.Position)
 	s.introUntil=c.now+1.8

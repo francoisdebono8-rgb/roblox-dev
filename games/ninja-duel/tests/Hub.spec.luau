@@ -125,6 +125,8 @@ end)
 test("the masters face the player who walks up to them",function()
 	local arrive={Legion=Vector3.new(-7,0,126),Sand=Vector3.new(-47,0,-59),Copycat=Vector3.new(-149,0,83),Leaf=Vector3.new(-102,0,38)}
 	for id,from in arrive do
+		-- (15/11) measured at the village's first scale
+		from*=(HubMap.Scale or 1)
 		local spot=HubMap.Masters[id]
 		local toward=Vector3.new(from.X-spot.at.X,0,from.Z-spot.at.Z).Unit
 		local face=Vector3.new(spot.face.X,0,spot.face.Z).Unit
@@ -218,7 +220,9 @@ test("the dresser: a unit's parts hidden (not the kept ones, not a nested unit),
 	-- the copy sits at DressAt * o
 	local at=shop:GetAttribute("DressAt")
 	local first=done[shop][1]
-	assert((first.CFrame.Position-(at*CFrame.new(0,8,0)).Position).Magnitude<1e-3 and first.Anchored and not first.CanCollide,"misplaced")
+	-- (15/11) at the village's scale (DressScale)
+	local scale=shop:GetAttribute("DressScale") or Vector3.one
+	assert((first.CFrame.Position-(at*CFrame.new(Vector3.new(0,8,0)*scale)).Position).Magnitude<1e-3 and first.Anchored and not first.CanCollide,"misplaced")
 	-- a house facing -x turns round (the rooftops) — undressed here, its parts still show
 	for _,u in HubDress.units(folder) do
 		if u:GetAttribute("Dress")=="HouseFlat_24x20x2" and u.Name=="Rooftop" then
@@ -227,12 +231,16 @@ test("the dresser: a unit's parts hidden (not the kept ones, not a nested unit),
 			assert(math.abs(look.Z-1)<1e-4,"a house facing -x is not turned round")
 		end
 	end
-	-- the village wall, 268 long: 27 segments of ~10, each stretched a little
+	-- the village wall, 268 long at the first scale: whole segments of ~10,
+	-- each stretched a little (more of them at a bigger scale)
 	for _,u in HubDress.units(folder) do
 		if u:GetAttribute("Dress")=="VillageWall" then
+			local length=u:GetAttribute("DressLength")
+			assert(math.abs(length-268*(HubMap.Scale or 1))<1e-3,"the wall's length: "..length)
+			local n=math.round(length/10)
 			local spots=HubDress.spots(u)
-			assert(#spots==27 and math.abs(spots[1].scale.Z-268/27/10)<1e-6,"wall segments: "..#spots)
-			assert(#done[u]==27*2,"wall copies")
+			assert(#spots==n and math.abs(spots[1].scale.Z-length/n/10)<1e-4,"wall segments: "..#spots)
+			assert(#done[u]==n*2,"wall copies")
 			break
 		end
 	end
@@ -247,6 +255,53 @@ test("the dresser: a unit's parts hidden (not the kept ones, not a nested unit),
 	end
 	-- a second pass does nothing more
 	assert(HubDress.apply(folder,kit,holder,done)==0,"dressed twice")
+end)
+
+-- (15/11, François: « les bâtiments n'ont pas de mur, pas de physique »,
+-- « une vraie adaptation avec les dégâts dans les murs ») The village's walls
+-- carry a wall run, its props break, and the duel's end puts them back.
+test("a street duel and the village: walls to run on, props that break, all put back after the duel",function()
+	local walls,props=0,{}
+	local house
+	for _,d in folder:GetDescendants() do
+		if d:IsA("BasePart") and d:GetAttribute("NinjaWall") then walls+=1 end
+		if d:IsA("BasePart") and d:GetAttribute("WorldBreakable") then table.insert(props,d) end
+		if d:IsA("Model") and d:GetAttribute("Dress")=="HouseShop_24x20x2" and not house then house=d end
+	end
+	assert(house and house:FindFirstChild("Walls"):GetAttribute("NinjaWall"),"a house's walls are not a wall to run on")
+	assert(walls>=60,"few walls to run on: "..walls)
+	assert(#props>=10,"few props break: "..#props)
+	for _,d in folder:GetDescendants() do
+		if d:IsA("BasePart") and d:GetAttribute("NinjaWall") then assert(d.Size.Y>=7,"a low piece is a wall: "..d.Name) end
+	end
+	-- a crate broken by a duel fought next to it, then put back
+	local crate
+	for _,p in props do if p.Name=="Crate" then crate=p;break end end
+	assert(crate,"no crate breaks")
+	local WorldReaction=H.load("Server/WorldReaction")
+	local stage=Instance.new("Folder")
+	local pushed=0
+	local c={match={folder=stage},now=0,pushImpact=function() pushed+=1 end}
+	local size,cf=crate.Size,crate.CFrame
+	local broken=false
+	for _=1,6 do
+		local r=WorldReaction.impact(c,{part=crate,position=crate.CFrame.Position,normal=Vector3.new(1,0,0),energy=40,contact="blunt",direction=Vector3.new(-1,0,0)})
+		if r and r.broken then broken=true;break end
+	end
+	assert(broken and crate:GetAttribute("WorldState")=="Broken" and crate.Size~=size,"the crate did not break")
+	assert(WorldReaction.restore(c)>=1,"nothing put back")
+	assert(crate.Size==size and crate.CFrame==cf and crate:GetAttribute("WorldState")==nil,"the crate stayed broken after the duel")
+	-- the stage's own pieces are the Stage's to put back, not this
+	local own=Instance.new("Part");own.Material=roblox.Enum.Material.Wood;own.Size=Vector3.new(4,4,4);own.Parent=stage
+	local c2={match={folder=stage},now=0,pushImpact=function() end}
+	WorldReaction.impact(c2,{part=own,position=Vector3.zero,normal=Vector3.new(1,0,0),energy=40,contact="blunt"})
+	assert(WorldReaction.state(c2).parts[own] and WorldReaction.state(c2).parts[own].original==nil,"the stage's pieces are kept twice")
+	-- on the client: its model hides while broken, comes back after
+	local copy=Instance.new("Part");copy.Transparency=.2;copy.Parent=Instance.new("Folder")
+	crate:SetAttribute("WorldState","Broken")
+	assert(HubDress.broken(crate,{copy}) and copy.Transparency==1 and crate.Transparency==0,"a broken crate's model still shows")
+	crate:SetAttribute("WorldState",nil)
+	assert(not HubDress.broken(crate,{copy}) and math.abs(copy.Transparency-.2)<1e-6 and crate.Transparency==1,"the crate's model did not come back")
 end)
 
 -- (15/11, François: « il faudrait que la caméra s'adapte avec tous les
@@ -288,9 +343,49 @@ test("a duel's lens in Konoha: the houses stop it, a prop fades with its mesh, t
 	local keys={}
 	for _,street in HubMap.Streets do
 		assert(not keys[street.key],"twice: "..street.key);keys[street.key]=true
-		assert(HubMap.inside(street.at) and street.radius>=30 and street.place,"a street place: "..street.key)
+		assert(HubMap.inside(street.at) and street.radius>=20 and street.place,"a street place: "..street.key)
 	end
-	assert(#HubMap.Streets==3 and keys.Leaf and keys.Legion and keys.GentleFist and not keys.Training,"the streets' places: "..#HubMap.Streets)
+	assert(#HubMap.Streets>=8 and keys.Leaf and keys.Legion and keys.GentleFist and not keys.Training,"the streets' places: "..#HubMap.Streets)
+	assert(keys.Plaza and keys.MarketLane and keys.Courtyard and keys.BackAlley and keys.Residences,"the streets' own places")
+	-- the back alleys: two rows of narrow houses facing their lane, a named place
+	local alley=0
+	for _,m in folder:GetDescendants() do
+		if m:IsA("Model") and m.Name=="AlleyHouse" then
+			alley+=1
+			local scale=m:GetAttribute("DressScale")
+			assert(scale and scale.X<(HubMap.Scale or 1) and scale.Z<(HubMap.Scale or 1),"an alley house wears a full-size model")
+			local walls=m:FindFirstChild("Walls")
+			assert(walls and walls:GetAttribute("NinjaWall"),"an alley house is not a wall to run on")
+		end
+	end
+	assert(alley==12,"alley houses: "..alley)
+	for _,street in HubMap.Streets do
+		if street.key=="Courtyard" or street.key=="BackAlley" then
+			assert(HubMap.placeAt(HubMap.Origin+street.at).id=="Alleys","the back alleys are not named")
+		end
+	end
+	-- (15/11) each place's centre and both starts are open ground: no wall,
+	-- house or prop where a fighter stands
+	local solids={}
+	for _,d in folder:GetDescendants() do
+		if d:IsA("BasePart") and d.CanCollide and d.Size.Y>=2 then table.insert(solids,d) end
+	end
+	local function blocked(point)
+		for _,p in solids do
+			local l=p.CFrame:PointToObjectSpace(point)
+			if math.abs(l.X)<=p.Size.X/2+1.5 and math.abs(l.Y)<=p.Size.Y/2 and math.abs(l.Z)<=p.Size.Z/2+1.5 then return p end
+		end
+		return nil
+	end
+	for _,street in HubMap.Streets do
+		local centre=HubMap.Origin+street.at+Vector3.new(0,3,0)
+		local axis=street.axis or Vector3.new(0,0,1)
+		local half=street.start or math.min(24,street.radius*.7)
+		for _,point in {centre,centre+axis*half,centre-axis*half} do
+			local wall=blocked(point)
+			assert(not wall,string.format("%s: a fighter starts inside %s",street.key,wall and wall:GetFullName() or "?"))
+		end
+	end
 end)
 
 -- (14/11) The players met in the village: a name tag with the kit, CHALLENGE.
@@ -382,15 +477,18 @@ test("the quarters: houses face their lane, no two houses overlap, the market an
 		if m:IsA("Model") and m.Name=="QuarterHouse" then
 			n+=1
 			local at=m:GetAttribute("DressAt")
+			-- (15/11) the lanes at the village's scale
+			local k=HubMap.Scale or 1
 			local z=at.Position.Z-HubMap.Origin.Z
-			local lane=if math.abs(z-56)<math.abs(z-150) then 56 else 150
+			local lane=if math.abs(z-56*k)<math.abs(z-150*k) then 56*k else 150*k
 			local toward=if lane>z then 1 else -1
 			assert(math.abs(at.RightVector.Z-toward)<1e-3,string.format("a house at z %.0f turns its back to its lane",z))
 		end
 	end
 	assert(n>=30,"quarter houses: "..n)
-	assert(HubMap.placeAt(HubMap.Origin+Vector3.new(160,0,103)).id=="Market","the market is not named")
-	assert(HubMap.placeAt(HubMap.Origin+Vector3.new(-170,0,150)).id=="Residences","the residences are not named")
+	local k=HubMap.Scale or 1
+	assert(HubMap.placeAt(HubMap.Origin+Vector3.new(160,0,103)*k).id=="Market","the market is not named")
+	assert(HubMap.placeAt(HubMap.Origin+Vector3.new(-170,0,150)*k).id=="Residences","the residences are not named")
 end)
 
 -- (14/11, user: « à terme ça sera les champions, on peut mettre le dev aussi et

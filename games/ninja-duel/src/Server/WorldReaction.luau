@@ -113,8 +113,47 @@ function WorldReaction.record(c,part)
 	local declared=part:GetAttribute("WorldToughness")
 	if type(declared)=="number" then max=declared end
 	rec={class=class,max=max,integrity=max,state="Intact",breakable=part:GetAttribute("WorldBreakable")==true,color=part.Color}
+	-- (15/11) a piece of the world outside the duel's own stage (Konoha's
+	-- walls and props in a street duel): kept as it is now, to be put back
+	-- when the duel ends (WorldReaction.restore). The stadium has its own
+	-- (Server/Stage).
+	local stage=c.match and c.match.folder
+	local outside=true
+	if stage then pcall(function() outside=not part:IsDescendantOf(stage) end) end
+	if outside then pcall(function() rec.original=WorldReaction.snapshot(part) end) end
 	w.parts[part]=rec
 	return rec
+end
+-- What a duel can change on a piece of the world (WorldReaction.breakPart,
+-- the cracks): its shape, its place, its colour, and those of what it carries.
+function WorldReaction.snapshot(part)
+	local kids={}
+	for _,child in part:GetChildren() do
+		if child:IsA("BasePart") then kids[child]={Size=child.Size,CFrame=child.CFrame,CanCollide=child.CanCollide} end
+	end
+	return {Size=part.Size,CFrame=part.CFrame,Color=part.Color,CanCollide=part.CanCollide,kids=kids}
+end
+-- (15/11, François: « dégâts dans les murs », « ils se réparent après le
+-- duel ») The duel is over: every piece of the world it marked outside its
+-- own stage is as it was. Its scars and rubble went with the duel's folder.
+-- Returns how many were put back.
+function WorldReaction.restore(c)
+	local w=c and c.world
+	if not w then return 0 end
+	local n=0
+	for part,rec in w.parts do
+		local o=rec.original
+		if o and part.Parent then
+			part.Size=o.Size;part.CFrame=o.CFrame;part.Color=o.Color;part.CanCollide=o.CanCollide
+			part:SetAttribute("WorldState",nil);part:SetAttribute("WorldIntegrity",nil)
+			for child,k in o.kids do
+				if child.Parent then child.Size=k.Size;child.CFrame=k.CFrame;child.CanCollide=k.CanCollide end
+			end
+			rec.state="Intact";rec.integrity=rec.max
+			n+=1
+		end
+	end
+	return n
 end
 
 -- ------------------------------------------------------------------ scars
