@@ -41,41 +41,59 @@ function Hub.new(ui,camera,send,controls)
 	local K=ui.kit or require(script.Parent.UI).kit
 	self.K=K
 	local P=K.palette
-	-- The HUD: the place and the kit (top left), what to do next (top). Placed
-	-- and scaled by Client/HubLayout (Hub:layout) under Roblox's top bar.
-	self.hud=K.frame(ui.gui,UDim2.fromOffset(18,18),UDim2.fromOffset(HubLayout.HUD.w,HubLayout.HUD.h),K.CARD,.12)
-	K.corner(self.hud,10);self.hud.Visible=false;self.hud.ZIndex=20
+	-- (DA v3, DESIGN, validated 14/11: « Konoha — PC, en balade ») A manga page
+	-- over the village: paper labels ringed with ink, the next goal on a band
+	-- of ink underlined in red, one red for the action. Placed and scaled by
+	-- Client/HubLayout (Hub:layout) under Roblox's top bar.
+	local M=K.MANGA or {paper=Color3.fromRGB(255,253,248),ink=Color3.fromRGB(20,16,17),red=Color3.fromRGB(195,18,29),cream=Color3.fromRGB(246,238,222),redSoft=Color3.fromRGB(240,120,110)}
+	self.M=M
+	local STRONG=K.STRONG_FONT or K.BODY_FONT
+	local BROWN=Color3.fromRGB(94,79,67)
+	local function inkRing(gui,thick) return K.create("UIStroke",gui,{Color=M.ink,Thickness=thick or 3,ApplyStrokeMode=Enum.ApplyStrokeMode.Border}) end
+	-- a keycap: the key to press, drawn as on the keyboard
+	local function keycap(parent,key,position)
+		local cap=K.text(parent,key,position,UDim2.fromOffset(30,24),15,M.ink,STRONG,Enum.TextXAlignment.Center)
+		cap.BackgroundColor3=M.paper;cap.BackgroundTransparency=0;cap.ZIndex=(parent.ZIndex or 1)+2
+		K.corner(cap,5);inkRing(cap,2)
+		return cap
+	end
+	self.hud=K.frame(ui.gui,UDim2.fromOffset(18,18),UDim2.fromOffset(HubLayout.HUD.w,HubLayout.HUD.h),M.paper,0)
+	self.hud.Visible=false;self.hud.ZIndex=20;self.hud.Rotation=-1.5
+	inkRing(self.hud,3)
 	self.hudScale=K.create("UIScale",self.hud,{Scale=1})
-	self.placeLabel=K.text(self.hud,"",UDim2.fromOffset(14,8),UDim2.fromOffset(404,26),22,P.paper,K.TITLE_FONT)
-	self.kitLabel=K.text(self.hud,"",UDim2.fromOffset(14,38),UDim2.fromOffset(404,26),14,P.gold,K.BODY_FONT)
-	-- (14/11) The goal: a short head, and under it where to go (a new
-	-- player's three masters); the line shrinks to its box, never under the
-	-- shop or Roblox's buttons.
-	self.goal=K.frame(ui.gui,UDim2.fromOffset(0,18),UDim2.fromOffset(HubLayout.GOAL.w,HubLayout.GOAL.h),K.CARD,1)
-	self.goal.Visible=false;self.goal.ZIndex=20
+	self.placeLabel=K.text(self.hud,"",UDim2.fromOffset(16,8),UDim2.fromOffset(400,28),24,M.ink,STRONG)
+	self.kitLabel=K.text(self.hud,"",UDim2.fromOffset(16,40),UDim2.fromOffset(400,24),16,Color3.fromRGB(58,47,40),K.BODY_FONT)
+	self.kitLabel.TextScaled=true
+	K.create("UITextSizeConstraint",self.kitLabel,{MaxTextSize=16,MinTextSize=10})
+	-- The goal: « NEXT » and where to go, cream on a band of ink, a red brush
+	-- stroke under it; never under the shop or Roblox's buttons.
+	self.goal=K.frame(ui.gui,UDim2.fromOffset(0,18),UDim2.fromOffset(HubLayout.GOAL.w,HubLayout.GOAL.h),M.ink,0)
+	self.goal.Visible=false;self.goal.ZIndex=20;self.goal.Rotation=-.8
 	self.goalScale=K.create("UIScale",self.goal,{Scale=1})
-	self.goalHead=K.text(self.goal,"",UDim2.fromOffset(0,0),UDim2.new(1,0,0,30),24,P.gold,K.TITLE_FONT,Enum.TextXAlignment.Center)
-	K.create("UIStroke",self.goalHead,{Color=P.ink,Thickness=2.5,ApplyStrokeMode=Enum.ApplyStrokeMode.Contextual})
-	self.goalSub=K.text(self.goal,"",UDim2.fromOffset(0,32),UDim2.new(1,0,0,22),16,P.paper,K.BODY_FONT,Enum.TextXAlignment.Center)
+	local brush=K.frame(self.goal,UDim2.new(.18,0,1,4),UDim2.new(.64,0,0,7),M.red,0)
+	brush.ZIndex=19;K.corner(brush,4)
+	self.goalHead=K.text(self.goal,"",UDim2.fromOffset(0,2),UDim2.new(1,0,0,26),18,M.redSoft,STRONG,Enum.TextXAlignment.Center)
+	self.goalSub=K.text(self.goal,"",UDim2.fromOffset(0,30),UDim2.new(1,0,0,24),20,M.cream,STRONG,Enum.TextXAlignment.Center)
 	self.goalSub.TextWrapped=false;self.goalSub.TextScaled=true
-	K.create("UITextSizeConstraint",self.goalSub,{MaxTextSize=16,MinTextSize=9})
-	K.create("UIStroke",self.goalSub,{Color=P.ink,Thickness=2,ApplyStrokeMode=Enum.ApplyStrokeMode.Contextual})
-	-- (13/11) The shop and the Ryō, top right.
-	self.shopBox=K.frame(ui.gui,UDim2.new(1,-300,0,18),UDim2.fromOffset(HubLayout.SHOP.w,HubLayout.SHOP.h),K.CARD,1)
+	K.create("UITextSizeConstraint",self.goalSub,{MaxTextSize=20,MinTextSize=10})
+	-- The Ryō on paper, DUELS in ink, SHOP in red, top right.
+	self.shopBox=K.frame(ui.gui,UDim2.new(1,-300,0,18),UDim2.fromOffset(HubLayout.SHOP.w,HubLayout.SHOP.h),M.paper,1)
 	self.shopBox.Visible=false;self.shopBox.ZIndex=20
 	self.shopScale=K.create("UIScale",self.shopBox,{Scale=1})
-	local wallet=K.frame(self.shopBox,UDim2.fromOffset(0,0),UDim2.fromOffset(120,60),K.CARD,.12);K.corner(wallet,10)
-	K.text(wallet,"RYŌ",UDim2.fromOffset(12,6),UDim2.fromOffset(96,14),10,P.muted,K.BODY_FONT,Enum.TextXAlignment.Right)
-	self.ryoLabel=K.text(wallet,"0",UDim2.fromOffset(12,20),UDim2.fromOffset(96,34),28,P.gold,K.TITLE_FONT,Enum.TextXAlignment.Right)
+	local wallet=K.frame(self.shopBox,UDim2.fromOffset(0,4),UDim2.fromOffset(120,52),M.paper,0)
+	wallet.Rotation=2;inkRing(wallet,3)
+	K.text(wallet,"RYŌ",UDim2.fromOffset(10,4),UDim2.fromOffset(100,14),12,BROWN,STRONG,Enum.TextXAlignment.Right)
+	self.ryoLabel=K.text(wallet,"0",UDim2.fromOffset(10,18),UDim2.fromOffset(100,30),28,M.ink,STRONG,Enum.TextXAlignment.Right)
 	-- (14/11, audit: the board of duels was only at the proctor's, 15 s from
 	-- the gate; VISION: « les menus restent disponibles partout ») DUELS opens
 	-- it from anywhere in the village (B, the pad's R1).
-	self.duelsButton=K.button(self.shopBox,"DUELS",UDim2.fromOffset(132,0),UDim2.fromOffset(140,60),function() self:openBoard() end,P.red)
-	self.duelsButton.TextSize=26
-	local shop=K.button(self.shopBox,"SHOP",UDim2.fromOffset(284,0),UDim2.fromOffset(140,60),function() self:openShop() end)
-	shop.TextSize=26
-	self.keys=K.text(ui.gui,"",UDim2.new(.5,-360,1,-34),UDim2.fromOffset(720,22),14,P.paper,K.BODY_FONT,Enum.TextXAlignment.Center)
-	K.create("UIStroke",self.keys,{Color=P.ink,Thickness=2,ApplyStrokeMode=Enum.ApplyStrokeMode.Contextual})
+	self.duelsButton=K.button(self.shopBox,"DUELS",UDim2.fromOffset(132,0),UDim2.fromOffset(140,60),function() self:openBoard() end,M.ink)
+	self.duelsButton.TextSize=32;self.duelsButton.TextColor3=M.cream;self.duelsButton.Rotation=-1.5
+	self.duelsKey=keycap(self.duelsButton,"B",UDim2.new(1,-24,0,-10))
+	local shop=K.button(self.shopBox,"SHOP",UDim2.fromOffset(284,0),UDim2.fromOffset(140,60),function() self:openShop() end,M.red)
+	shop.TextSize=34;shop.TextColor3=M.cream;shop.Rotation=-2
+	self.keys=K.text(ui.gui,"",UDim2.new(.5,-360,1,-34),UDim2.fromOffset(720,22),16,M.cream,K.BODY_FONT,Enum.TextXAlignment.Center)
+	K.create("UIStroke",self.keys,{Color=M.ink,Thickness=2.5,ApplyStrokeMode=Enum.ApplyStrokeMode.Contextual})
 	self.keys.Visible=false
 	-- (14/11) Touch: Roblox gives a thumbstick and a jump button, no run; a
 	-- RUN button left of the jump button latches the run (Hub:step).
@@ -87,29 +105,46 @@ function Hub.new(ui,camera,send,controls)
 	local round=self.runButton:FindFirstChildOfClass("UICorner") or K.corner(self.runButton,6)
 	round.CornerRadius=UDim.new(.5,0)
 	K.create("UIStroke",self.runButton,{Color=P.paper,Transparency=.3,Thickness=2,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
-	-- The master's card (right of the screen, centred on a narrow one).
-	local card=K.inkCard(K.frame(ui.gui,UDim2.new(1,-520,.5,-190),UDim2.fromOffset(HubLayout.CARD.w,HubLayout.CARD.h),K.CARD,0))
+	-- (DA v3, DESIGN, validated 14/11: « Konoha — PC, en parlant à un maître »)
+	-- The inspiration speaks in a manga bubble (the voice font), his name on a
+	-- black tag; red for the duel, paper for the rest. Right of the screen,
+	-- centred on a narrow one (Client/HubLayout).
+	local card=K.frame(ui.gui,UDim2.new(1,-520,.5,-190),UDim2.fromOffset(HubLayout.CARD.w,HubLayout.CARD.h),M.paper,1)
 	card.Visible=false;card.ZIndex=30
 	self.card=card
 	self.cardScale=K.create("UIScale",card,{Scale=1})
-	self.cardName=K.inkTitle(K.text(card,"",UDim2.fromOffset(24,16),UDim2.fromOffset(360,46),40,P.paper,K.TITLE_FONT))
-	self.cardPlace=K.text(card,"",UDim2.fromOffset(26,60),UDim2.fromOffset(440,20),14,P.gold,K.BODY_FONT)
-	self.cardLine=K.text(card,"",UDim2.fromOffset(26,86),UDim2.fromOffset(440,46),16,P.text,K.BODY_FONT)
+	local bubble=K.frame(card,UDim2.fromOffset(0,24),UDim2.fromOffset(490,176),M.paper,0)
+	bubble.ZIndex=30;K.corner(bubble,46);inkRing(bubble,4)
+	local tail=K.frame(card,UDim2.fromOffset(60,186),UDim2.fromOffset(26,26),M.paper,0)
+	tail.Rotation=45;tail.ZIndex=29;inkRing(tail,4)
+	self.cardBubble=bubble
+	local tag=K.frame(card,UDim2.fromOffset(6,6),UDim2.fromOffset(300,36),M.ink,0)
+	tag.Rotation=-3;tag.ZIndex=33
+	self.cardName=K.text(tag,"",UDim2.fromOffset(12,2),UDim2.fromOffset(276,32),24,M.cream,STRONG)
+	self.cardName.ZIndex=34;self.cardName.RichText=true
+	self.cardName.TextScaled=true
+	K.create("UITextSizeConstraint",self.cardName,{MaxTextSize=24,MinTextSize=12})
+	self.cardPlace=K.text(bubble,"",UDim2.fromOffset(30,22),UDim2.fromOffset(430,18),13,BROWN,STRONG,Enum.TextXAlignment.Center)
+	self.cardLine=K.text(bubble,"",UDim2.fromOffset(30,44),UDim2.fromOffset(430,74),22,M.ink,K.VOICE_FONT or K.BODY_FONT,Enum.TextXAlignment.Center)
 	self.cardLine.TextYAlignment=Enum.TextYAlignment.Top
 	-- (DEC-041) an inspiration's funny line runs three lines: it shrinks to fit
 	self.cardLine.TextWrapped=true;self.cardLine.TextScaled=true
-	K.create("UITextSizeConstraint",self.cardLine,{MaxTextSize=16,MinTextSize=11})
-	self.cardNote=K.text(card,"",UDim2.fromOffset(26,136),UDim2.fromOffset(440,58),14,P.gold,K.BODY_FONT)
+	K.create("UITextSizeConstraint",self.cardLine,{MaxTextSize=22,MinTextSize=12})
+	self.cardNote=K.text(bubble,"",UDim2.fromOffset(30,120),UDim2.fromOffset(430,44),14,M.red,STRONG,Enum.TextXAlignment.Center)
 	self.cardNote.TextYAlignment=Enum.TextYAlignment.Top
 	self.cardNote.TextWrapped=true;self.cardNote.TextScaled=true
 	K.create("UITextSizeConstraint",self.cardNote,{MaxTextSize=14,MinTextSize=10})
-	self.primary=K.button(card,"",UDim2.fromOffset(24,204),UDim2.fromOffset(442,60),function() self:press("primary") end,P.red)
-	self.primary.TextSize=28
-	self.second=K.button(card,"",UDim2.fromOffset(24,276),UDim2.fromOffset(216,48),function() self:press("second") end)
-	self.third=K.button(card,"",UDim2.fromOffset(250,276),UDim2.fromOffset(216,48),function() self:press("third") end)
-	-- (14/11, Studio: the title font has no "✕", the button showed an empty box)
-	self.closeCard=K.button(card,"X",UDim2.fromOffset(490-62,14),UDim2.fromOffset(44,44),function() self:hideCard() end)
-	self.cardFoot=K.text(card,"",UDim2.fromOffset(24,336),UDim2.fromOffset(442,24),12,P.muted,K.BODY_FONT,Enum.TextXAlignment.Center)
+	for _,g in {self.cardPlace,self.cardLine,self.cardNote} do g.ZIndex=31 end
+	self.primary=K.button(card,"",UDim2.fromOffset(24,218),UDim2.fromOffset(442,56),function() self:press("primary") end,M.red)
+	self.primary.TextSize=26;self.primary.TextColor3=M.cream;self.primary.Font=STRONG
+	self.second=K.button(card,"",UDim2.fromOffset(24,284),UDim2.fromOffset(216,46),function() self:press("second") end,M.paper)
+	self.third=K.button(card,"",UDim2.fromOffset(250,284),UDim2.fromOffset(216,46),function() self:press("third") end,M.paper)
+	for _,b in {self.second,self.third} do b.TextColor3=M.ink;b.Font=STRONG;b.TextSize=18;inkRing(b,3) end
+	-- (the mock-up's « Later »: B on a pad, or walk away)
+	self.closeCard=K.button(card,"LATER",UDim2.fromOffset(490-118,4),UDim2.fromOffset(112,38),function() self:hideCard() end,M.paper)
+	self.closeCard.TextColor3=M.ink;self.closeCard.Font=STRONG;self.closeCard.TextSize=18;self.closeCard.ZIndex=34;inkRing(self.closeCard,3)
+	self.cardFoot=K.text(card,"",UDim2.fromOffset(24,338),UDim2.fromOffset(442,24),14,M.cream,K.BODY_FONT,Enum.TextXAlignment.Center)
+	K.create("UIStroke",self.cardFoot,{Color=M.ink,Thickness=2,ApplyStrokeMode=Enum.ApplyStrokeMode.Contextual})
 	-- Prompts: a master, the proctor.
 	PPS.PromptTriggered:Connect(function(prompt)
 		if not self.active then return end
@@ -194,9 +229,9 @@ function Hub:layout()
 	self:apply()
 end
 function Hub:paintRun()
-	local P=self.K.palette
-	self.runButton.BackgroundColor3=if self.runLatch then P.gold else P.ink
-	self.runButton.TextColor3=if self.runLatch then P.ink else P.paper
+	local M=self.M
+	self.runButton.BackgroundColor3=if self.runLatch then M.red else M.ink
+	self.runButton.TextColor3=M.cream
 	self.runButton.BackgroundTransparency=if self.runLatch then 0 else .25
 end
 function Hub:openShop()
@@ -549,7 +584,9 @@ function Hub:fillCard()
 	if not id then return end
 	local spot=HubMap.Masters[id]
 	local def=Fighters[id]
-	self.cardName.Text=nameOf(id)
+	-- the black tag: « NAME · INSPIRATION », the suffix in soft red
+	local function tag(suffix) self.cardName.Text=nameOf(id)..(if suffix~="" then ' <font color="#FF9C8A">· '..suffix..'</font>' else "") end
+	tag("MASTER")
 	self.cardPlace.Text=upper((def and def.Title or "")).."  •  "..(spot and spot.place or "")
 	self.cardLine.Text="« "..(spot and spot.line or "").." »"
 	local a=self:cardActions(id)
@@ -558,12 +595,13 @@ function Hub:fillCard()
 	-- line, and what fighting like him means
 	local about=Inspirations.of(id)
 	if a.kind=="choose" and about then
+		tag("INSPIRATION")
 		self.cardPlace.Text=about.title.."  •  LIVES AT "..(spot and spot.place or "")
 		self.cardLine.Text=about.line
 		self.cardNote.Text=about.with
 		self.primary.Text=a.primary and a.primary.label or ""
 		self.primary.Visible=a.primary~=nil
-		self.primary.AutoButtonColor=true
+		self.primary.AutoButtonColor=true;self.primary.BackgroundColor3=self.M.red
 		for _,pair in {{self.second,a.second},{self.third,a.third}} do
 			pair[1].Visible=pair[2]~=nil
 			pair[1].Text=pair[2] and pair[2].label or ""
@@ -586,6 +624,8 @@ function Hub:fillCard()
 	self.primary.Text=a.primary and a.primary.label or ""
 	self.primary.Visible=a.primary~=nil
 	self.primary.AutoButtonColor=a.primary~=nil and a.primary.send~=nil
+	-- (DA v3) what cannot be pressed yet is grey, not red
+	self.primary.BackgroundColor3=if self.primary.AutoButtonColor or (a.primary and a.primary.tree) then self.M.red else Color3.fromRGB(138,124,112)
 	for _,pair in {{self.second,a.second},{self.third,a.third}} do
 		pair[1].Visible=pair[2]~=nil
 		pair[1].Text=pair[2] and pair[2].label or ""

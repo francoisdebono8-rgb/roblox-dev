@@ -11,6 +11,7 @@ local function test(name,fn)
 	local ok,err=pcall(fn);assert(ok,name..": "..tostring(err));passed+=1;print("PASS "..name)
 end
 local Shop=H.load("Shared/Shop")
+local harnessInstance=H.envBase.Instance -- (the headband suite swaps in real instances)
 local S=H.load("Server/ProfileSchema")
 local Repo=H.load("Server/ProfileRepository")
 local Config=H.load("Shared/Config")
@@ -333,6 +334,47 @@ test("the headband goes on an avatar's head, comes off for none, never for a wea
 	local count=0
 	for _,c in model:GetChildren() do if c:GetAttribute("NinjaHeadband") then count+=1 end end
 	assert(count==1,"two headbands at once")
+end)
+
+-- (15/11, François: « applique la DA ») the shop of the DA v3 (Mix-Shop):
+-- one red for what can be bought, grey and the Ryō missing for what cannot,
+-- WORN and OWNED said on the card, an outfit drawn in its own colours.
+test("DA v3 shop: the buttons' states, the Ryō still missing, the outfit's figure",function()
+	H.envBase.UDim2=H.roblox.UDim2;H.envBase.UDim=H.roblox.UDim;H.envBase.Vector2=H.roblox.Vector2
+	H.workspace.CurrentCamera={ViewportSize=H.roblox.Vector2.new(1600,900),GetPropertyChangedSignal=function() return {Connect=function() end} end}
+	local Panel=H.load("Client/ShopPanel")
+	assert(Panel.amount(1250)=="1,250" and Panel.amount(0)=="0" and Panel.amount(999)=="999" and Panel.amount(1000000)=="1,000,000","the Ryō are not written 1,250")
+	local function says(state,ryo) local t,k,short=Panel.lookButton(state,ryo) return t,k,short end
+	local t,k=says({kind="ryo",price=3000,afford=true},3200);assert(t=="3,000 RYŌ" and k=="red","an affordable look is not red: "..t)
+	local t2,k2,short=says({kind="ryo",price=3000,afford=false},1250);assert(k2=="off" and short==1750 and t2=="NEED 1,750 MORE","a look too dear: "..t2)
+	assert(select(2,says({kind="equipped"}))=="off" and select(1,says({kind="equipped"}))=="WORN","the worn look")
+	assert(select(2,says({kind="owned"}))=="paper","an owned look is not a plain button")
+	assert(select(2,says({kind="robux",product=1}))=="red" and select(2,says({kind="soon"}))=="off","Robux / soon")
+	-- the masters' outfits: a figure in the set's own colours
+	local naruto=Shop.item("SetNaruto")
+	local by=Panel.dressedOf(naruto)
+	assert(by.UpperTorso and by.UpperTorso[1]==236 and by.Foot and by.Foot[3]==92,"Naruto's figure is not orange with blue feet")
+	-- the market: the line of the Ryō missing, in red, under the looks
+	H.workspace.GetAttribute=function() return nil end
+	local baseNew=harnessInstance.new
+	local saved=H.envBase.Instance
+	H.envBase.Instance={new=function(class)
+		local x=baseNew(class)
+		x.Activated={Connect=function(_,fn) x.click=fn end}
+		return x
+	end}
+	local ok,err=pcall(function()
+		local UI=H.load("Client/UI")
+		local ui=UI.new(baseNew("PlayerGui"),function() end)
+		local kits={state="ready",owned={Leaf=true},mastery={Leaf=0},starter="Leaf",selected="Leaf",masters={},trees={},ryo=10,style={owned={},equipped={}}}
+		ui.shopPanel:show(kits,"WEAPONS","market")
+		assert(string.find(ui.shopPanel.footer.Text,"more Ryō — win duels to earn them",1,true),"no line for the Ryō missing: "..ui.shopPanel.footer.Text)
+		assert(ui.shopPanel.ryo.Text=="10","the wallet")
+		kits.ryo=999999;ui.shopPanel:refresh(kits)
+		assert(not string.find(ui.shopPanel.footer.Text,"more Ryō",1,true) and ui.shopPanel.ryo.Text=="999,999","rich, the line stays")
+	end)
+	H.envBase.Instance=saved
+	assert(ok,tostring(err))
 end)
 
 print(string.format("NinjaDuel shop and Ryō (13/11): %d PASS",passed))

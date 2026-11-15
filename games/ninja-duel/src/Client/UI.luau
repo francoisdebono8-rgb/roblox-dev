@@ -44,7 +44,10 @@ local STRONG_FONT=Enum.Font.BuilderSansExtraBold
 local VOICE_FONT=Enum.Font.Cartoon
 local NOTE_FONT=Enum.Font.PermanentMarker
 -- La planche de manga : papier, encre, un seul rouge d'accent.
-local MANGA={paper=Color3.fromRGB(255,253,248),ink=Color3.fromRGB(20,16,17),red=Color3.fromRGB(195,18,29),cream=Color3.fromRGB(246,238,222),redSoft=Color3.fromRGB(240,120,110)}
+-- (DA v3, DESIGN 14/11) back: the page behind a full screen; brown and
+-- mid: the two muted inks; off: what cannot be pressed yet.
+local MANGA={paper=Color3.fromRGB(255,253,248),back=Color3.fromRGB(242,235,221),ink=Color3.fromRGB(20,16,17),red=Color3.fromRGB(195,18,29),
+	cream=Color3.fromRGB(246,238,222),redSoft=Color3.fromRGB(255,156,138),brown=Color3.fromRGB(94,79,67),mid=Color3.fromRGB(58,47,40),off=Color3.fromRGB(138,124,112)}
 local function create(class,parent,props)
 	local x=Instance.new(class)
 	for k,v in props do x[k]=v end
@@ -63,13 +66,17 @@ local function stroke(parent,color,thickness) return create("UIStroke",parent,{C
 -- house card: deep ink, rounded, a thin vermilion border and a vermilion
 -- brush line along its top; the controls sheet, the result, the queue and
 -- the tutorial panel are all this card.
-local CARD=Color3.fromRGB(16,14,19)
+-- (15/11, François: « c'était toujours les cadres IA »; DA v3, DESIGN,
+-- validated 14/11) The house card is now a case of the manga page: solid
+-- ink, square corners, a paper rim like the white between two panels, and a
+-- short red brush stroke over its title instead of a glowing frame.
+local CARD=MANGA.ink
 local function inkCard(card,radius)
-	card.BackgroundColor3=CARD;card.BackgroundTransparency=.04
-	create("UICorner",card,{CornerRadius=UDim.new(0,radius or 12)})
-	create("UIStroke",card,{Color=palette.red,Thickness=2,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
-	local line=create("Frame",card,{Position=UDim2.fromOffset(0,0),Size=UDim2.new(1,0,0,5),BackgroundColor3=palette.red,BorderSizePixel=0})
-	create("UICorner",line,{CornerRadius=UDim.new(0,radius or 12)})
+	card.BackgroundColor3=CARD;card.BackgroundTransparency=0
+	create("UICorner",card,{CornerRadius=UDim.new(0,math.min(radius or 4,4))})
+	create("UIStroke",card,{Color=MANGA.paper,Thickness=3,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
+	local line=create("Frame",card,{Position=UDim2.fromOffset(18,-4),Size=UDim2.new(.32,0,0,8),BackgroundColor3=MANGA.red,BorderSizePixel=0,Rotation=-1})
+	create("UICorner",line,{CornerRadius=UDim.new(0,4)})
 	return card
 end
 local function inkTitle(label)
