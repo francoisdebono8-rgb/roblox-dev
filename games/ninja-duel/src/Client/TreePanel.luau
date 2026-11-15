@@ -25,9 +25,18 @@ function Panel.new(kit,gui,send)
 	local self=setmetatable({kit=kit,send=send,tiles={},drawn={}},Panel)
 	local P,create,frame,text,button,corner=kit.palette,kit.create,kit.frame,kit.text,kit.button,kit.corner
 	self.P=P
-	self.root=frame(gui,UDim2.fromScale(0,0),UDim2.fromScale(1,1),Color3.fromRGB(6,5,8),.2)
+	-- (DA v3, DESIGN validated 14/11; François 15/11: « c'était toujours les
+	-- cadres IA ») the tree is a page of the manga, as the shop: paper, ink,
+	-- one red for what can be learned.
+	local M=Panel.colors(kit)
+	self.M=M
+	local STRONG=kit.STRONG_FONT or kit.BODY_FONT
+	local function ring(gui,thick) return create("UIStroke",gui,{Color=M.ink,Thickness=thick or 3,ApplyStrokeMode=Enum.ApplyStrokeMode.Border}) end
+	self.ring=ring
+	self.root=frame(gui,UDim2.fromScale(0,0),UDim2.fromScale(1,1),M.ink,.35)
 	self.root.ZIndex=74;self.root.Visible=false;self.root.Active=true
-	local card=kit.inkCard(frame(self.root,UDim2.fromScale(.5,.5),UDim2.fromOffset(W,H),kit.CARD,0))
+	local card=frame(self.root,UDim2.fromScale(.5,.5),UDim2.fromOffset(W,H),M.back,0)
+	corner(card,6);ring(card,4)
 	card.AnchorPoint=Vector2.new(.5,.5);card.ZIndex=75
 	self.card=card
 	local scale=create("UIScale",card,{Scale=1})
@@ -46,43 +55,53 @@ function Panel.new(kit,gui,send)
 			if input.KeyCode==Enum.KeyCode.ButtonB and self.root.Visible then self:hide() end
 		end)
 	end)
-	self.title=kit.inkTitle(text(card,"",UDim2.fromOffset(32,18),UDim2.fromOffset(700,56),52,P.paper,kit.TITLE_FONT))
-	self.subtitle=text(card,"",UDim2.fromOffset(34,76),UDim2.fromOffset(760,22),15,P.gold,kit.BODY_FONT)
+	self.title=text(card,"",UDim2.fromOffset(32,12),UDim2.fromOffset(700,62),58,M.ink,kit.TITLE_FONT)
+	local brush=frame(card,UDim2.fromOffset(34,72),UDim2.fromOffset(200,7),M.red,0);corner(brush,4);brush.Rotation=-1
+	self.subtitle=text(card,"",UDim2.fromOffset(34,84),UDim2.fromOffset(760,22),17,M.brown,STRONG)
 	-- Mastery towards the next tier, and the points.
-	self.tierLabel=text(card,"",UDim2.fromOffset(W-640,30),UDim2.fromOffset(330,20),14,P.paper,kit.BODY_FONT)
-	self.tierNext=text(card,"",UDim2.fromOffset(W-640,30),UDim2.fromOffset(330,20),14,P.muted,kit.BODY_FONT,Enum.TextXAlignment.Right)
-	local track=frame(card,UDim2.fromOffset(W-640,56),UDim2.fromOffset(330,10),P.track,0);corner(track,5)
-	self.tierFill=frame(track,UDim2.fromOffset(0,0),UDim2.new(0,0,1,0),P.gold,0);corner(self.tierFill,5)
-	local chip=frame(card,UDim2.fromOffset(W-290,22),UDim2.fromOffset(120,64),P.gold,0);corner(chip,10)
-	self.free=text(chip,"",UDim2.fromOffset(0,4),UDim2.fromOffset(120,34),34,P.ink,kit.TITLE_FONT,Enum.TextXAlignment.Center)
-	self.earned=text(chip,"",UDim2.fromOffset(0,40),UDim2.fromOffset(120,18),11,P.ink,kit.BODY_FONT,Enum.TextXAlignment.Center)
-	self.close=button(card,"CLOSE",UDim2.fromOffset(Panel.CLOSE.X,Panel.CLOSE.Y),UDim2.fromOffset(Panel.CLOSE.W,Panel.CLOSE.H),function() self:hide() end,P.red)
+	self.tierLabel=text(card,"",UDim2.fromOffset(W-640,28),UDim2.fromOffset(330,20),16,M.ink,STRONG)
+	self.tierNext=text(card,"",UDim2.fromOffset(W-640,28),UDim2.fromOffset(330,20),15,M.brown,STRONG,Enum.TextXAlignment.Right)
+	local track=frame(card,UDim2.fromOffset(W-640,56),UDim2.fromOffset(330,12),M.paper,0);corner(track,6);ring(track,2)
+	self.tierFill=frame(track,UDim2.fromOffset(0,0),UDim2.new(0,0,1,0),M.red,0);corner(self.tierFill,6)
+	local chip=frame(card,UDim2.fromOffset(W-290,20),UDim2.fromOffset(120,66),M.paper,0);chip.Rotation=2;ring(chip,3)
+	self.free=text(chip,"",UDim2.fromOffset(0,4),UDim2.fromOffset(120,36),36,M.ink,STRONG,Enum.TextXAlignment.Center)
+	self.earned=text(chip,"",UDim2.fromOffset(0,42),UDim2.fromOffset(120,18),12,M.brown,STRONG,Enum.TextXAlignment.Center)
+	self.close=button(card,"CLOSE",UDim2.fromOffset(Panel.CLOSE.X,Panel.CLOSE.Y),UDim2.fromOffset(Panel.CLOSE.W,Panel.CLOSE.H),function() self:hide() end,M.paper)
+	self.close.TextColor3=M.ink;self.close.Font=STRONG;self.close.TextSize=24;ring(self.close,3)
 	-- The grid (scrolls when a tree is tall).
 	self.grid=create("ScrollingFrame",card,{Position=UDim2.fromOffset(GRID_X,GRID_Y),Size=UDim2.fromOffset(GRID_W,GRID_H),BackgroundTransparency=1,BorderSizePixel=0,
 		ScrollBarThickness=5,CanvasSize=UDim2.fromOffset(GRID_W,GRID_H),ScrollingDirection=Enum.ScrollingDirection.Y,ZIndex=76})
 	-- The picked node.
-	local detail=frame(card,UDim2.fromOffset(DETAIL_X,GRID_Y),UDim2.fromOffset(W-DETAIL_X-24,GRID_H),P.ink,.1)
-	corner(detail,12);create("UIStroke",detail,{Color=P.red,Thickness=2,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
+	local detail=frame(card,UDim2.fromOffset(DETAIL_X,GRID_Y),UDim2.fromOffset(W-DETAIL_X-24,GRID_H),M.paper,0)
+	corner(detail,4);ring(detail,3)
 	local DW=W-DETAIL_X-24
-	self.kicker=text(detail,"",UDim2.fromOffset(20,18),UDim2.fromOffset(DW-40,18),12,P.gold,kit.BODY_FONT)
-	self.head=text(detail,"",UDim2.fromOffset(20,40),UDim2.fromOffset(DW-40,84),38,P.paper,kit.TITLE_FONT)
+	self.kicker=text(detail,"",UDim2.fromOffset(20,18),UDim2.fromOffset(DW-40,18),14,M.red,STRONG)
+	self.head=text(detail,"",UDim2.fromOffset(20,40),UDim2.fromOffset(DW-40,84),40,M.ink,kit.TITLE_FONT)
 	self.head.TextYAlignment=Enum.TextYAlignment.Top
-	self.shows=text(detail,"",UDim2.fromOffset(20,132),UDim2.fromOffset(DW-40,150),16,P.text,kit.BODY_FONT)
+	self.shows=text(detail,"",UDim2.fromOffset(20,132),UDim2.fromOffset(DW-40,150),17,M.mid,kit.BODY_FONT)
 	self.shows.TextYAlignment=Enum.TextYAlignment.Top
-	self.counter=text(detail,"",UDim2.fromOffset(20,290),UDim2.fromOffset(DW-40,60),13,P.muted,kit.BODY_FONT)
+	self.counter=text(detail,"",UDim2.fromOffset(20,290),UDim2.fromOffset(DW-40,60),15,M.brown,kit.BODY_FONT)
 	self.counter.TextYAlignment=Enum.TextYAlignment.Top
-	self.note=text(detail,"",UDim2.fromOffset(20,356),UDim2.fromOffset(DW-40,90),13,P.gold,kit.BODY_FONT)
+	self.note=text(detail,"",UDim2.fromOffset(20,356),UDim2.fromOffset(DW-40,90),15,M.red,STRONG)
 	self.note.TextYAlignment=Enum.TextYAlignment.Top
-	self.action=button(detail,"",UDim2.new(0,20,1,-80),UDim2.new(1,-40,0,60),function() self:press() end,P.red)
-	self.action.TextSize=26;self.action.Visible=false
+	self.action=button(detail,"",UDim2.new(0,20,1,-80),UDim2.new(1,-40,0,60),function() self:press() end,M.red)
+	self.action.TextSize=26;self.action.Font=STRONG;self.action.Visible=false
+	self.actionRing=ring(self.action,3);self.actionRing.Enabled=false
 	-- The legend under the grid.
 	self.legend=text(card,"ON  •  LEARNED, OFF  •  TO LEARN  •  NOT ENOUGH POINTS  •  TIER CLOSED  •  WAITS FOR A NODE",
-		UDim2.fromOffset(GRID_X,H-56),UDim2.fromOffset(GRID_W,20),12,P.muted,kit.BODY_FONT)
+		UDim2.fromOffset(GRID_X,H-56),UDim2.fromOffset(GRID_W,20),14,M.mid,STRONG)
 	self.footer=text(card,"A learned node stays learned: turn nodes on and off between duels. Ranked and tournament duels give everyone the prodigy's whole kit, on an equal budget.",
-		UDim2.fromOffset(GRID_X,H-34),UDim2.fromOffset(W-48,20),12,P.muted,kit.BODY_FONT)
+		UDim2.fromOffset(GRID_X,H-34),UDim2.fromOffset(W-48,20),13,M.brown,kit.BODY_FONT)
 	return self
 end
 
+-- (DA v3) the page's colours (UI.kit.MANGA), and what a tile of each state wears.
+function Panel.colors(kit)
+	local M=kit.MANGA or {}
+	return {paper=M.paper or Color3.fromRGB(255,253,248),back=M.back or Color3.fromRGB(242,235,221),ink=M.ink or Color3.fromRGB(20,16,17),
+		red=M.red or Color3.fromRGB(195,18,29),cream=M.cream or Color3.fromRGB(246,238,222),brown=M.brown or Color3.fromRGB(94,79,67),
+		mid=M.mid or Color3.fromRGB(58,47,40),off=M.off or Color3.fromRGB(138,124,112)}
+end
 -- The card's scale in a window of `viewport` pixels (it always fits).
 function Panel.fit(viewport,kit) return kit.fitScale(viewport,W+60,H+40,1.2) end
 -- Where CLOSE sits in the window, for the suites: {x, y, w, h} in pixels.
@@ -120,14 +139,18 @@ function Panel:refresh(kits)
 	if self.root.Visible then self:draw() end
 end
 
+-- (DA v3) on: a band of ink, its words cream (as a picked row of YOUR
+-- NINJA); learned and off: paper ringed in ink; to learn: the red; not enough
+-- points, a closed tier, waiting for a node: grey words on the page.
 local STYLE={
-	active={bg="gold",text="ink",alpha=0,stroke=nil,tag="ON"},
-	off={bg="panel",text="paper",alpha=0,stroke="gold",tag="OFF"},
-	learn={bg="red",text="paper",alpha=0,stroke=nil},
-	short={bg="panel",text="muted",alpha=0,stroke=nil},
-	tier={bg="ink",text="muted",alpha=.1,stroke="track"},
-	locked={bg="ink",text="muted",alpha=.1,stroke="track"},
+	active={bg="ink",text="cream",alpha=0,stroke=nil,tag="ON"},
+	off={bg="paper",text="ink",alpha=0,stroke="ink",tag="OFF"},
+	learn={bg="red",text="cream",alpha=0,stroke=nil},
+	short={bg="paper",text="off",alpha=0,stroke="off"},
+	tier={bg="back",text="off",alpha=0,stroke="off"},
+	locked={bg="back",text="off",alpha=0,stroke="off"},
 }
+Panel.STYLE=STYLE
 
 function Panel:state() return self.kits and self.kits.trees and self.kits.trees[self.kitId] end
 
@@ -150,7 +173,7 @@ function Panel:draw()
 	local function add(item) table.insert(self.drawn,item);return item end
 	-- Branch headers.
 	for b,branch in layout.branches do
-		add(K.text(self.grid,branch.name,UDim2.fromOffset(colX(b),0),UDim2.fromOffset(colW,24),18,P.gold,K.TITLE_FONT,Enum.TextXAlignment.Center))
+		add(K.text(self.grid,branch.name,UDim2.fromOffset(colX(b),0),UDim2.fromOffset(colW,24),20,self.M.ink,K.TITLE_FONT,Enum.TextXAlignment.Center))
 	end
 	local y=34
 	local at={}
@@ -158,11 +181,11 @@ function Panel:draw()
 		local tallest=0
 		for b=1,n do tallest=math.max(tallest,#row.cells[b]) end
 		local height=math.max(1,tallest)*(TILE_H+TILE_GAP)+10
-		add(K.frame(self.grid,UDim2.fromOffset(0,y-6),UDim2.fromOffset(GRID_W-12,2),P.track,0))
-		local label=add(K.text(self.grid,row.name,UDim2.fromOffset(0,y),UDim2.fromOffset(GUTTER-8,40),40,if row.open then P.gold else P.muted,K.TITLE_FONT))
+		add(K.frame(self.grid,UDim2.fromOffset(0,y-6),UDim2.fromOffset(GRID_W-12,2),self.M.ink,0))
+		local label=add(K.text(self.grid,row.name,UDim2.fromOffset(0,y),UDim2.fromOffset(GUTTER-8,40),40,if row.open then self.M.red else self.M.off,K.TITLE_FONT))
 		label.TextYAlignment=Enum.TextYAlignment.Top
 		add(K.text(self.grid,if row.need==0 then "FROM THE START" elseif row.open then "MASTERY "..row.need.." • OPEN" else "MASTERY "..row.need,
-			UDim2.fromOffset(0,y+42),UDim2.fromOffset(GUTTER-8,30),11,if row.open then P.muted else P.muted,K.BODY_FONT))
+			UDim2.fromOffset(0,y+42),UDim2.fromOffset(GUTTER-8,30),12,if row.open then self.M.brown else self.M.off,K.STRONG_FONT or K.BODY_FONT))
 		for b=1,n do
 			for k,node in row.cells[b] do
 				local ty=y+(k-1)*(TILE_H+TILE_GAP)
@@ -179,7 +202,7 @@ function Panel:draw()
 				local from,to=at[need],at[node.id]
 				if from and to and from.col==to.col and to.y>from.y then
 					local line=add(K.frame(self.grid,UDim2.fromOffset(from.x+12,from.y+TILE_H),UDim2.fromOffset(3,to.y-from.y-TILE_H),
-						if node.status=="active" or node.status=="off" then P.gold else P.track,0))
+						if node.status=="active" or node.status=="off" then self.M.ink else self.M.off,0))
 					line.ZIndex=76
 				end
 			end
@@ -198,21 +221,23 @@ end
 function Panel:tile(node,x,y,w)
 	local K,P=self.kit,self.P
 	local style=STYLE[node.status] or STYLE.locked
-	local tile=K.create("TextButton",self.grid,{Text="",Position=UDim2.fromOffset(x,y),Size=UDim2.fromOffset(w,TILE_H),BackgroundColor3=P[style.bg] or P.panel,
+	local M=self.M
+	local tile=K.create("TextButton",self.grid,{Text="",Position=UDim2.fromOffset(x,y),Size=UDim2.fromOffset(w,TILE_H),BackgroundColor3=M[style.bg] or M.paper,
 		BackgroundTransparency=style.alpha,BorderSizePixel=0,AutoButtonColor=true,ZIndex=77})
 	table.insert(self.drawn,tile)
-	K.corner(tile,7)
+	K.corner(tile,3)
 	if style.stroke or node.item then
-		K.create("UIStroke",tile,{Color=P[if node.item and node.status=="active" then "paper" else (style.stroke or "gold")],Thickness=if node.item then 3 else 1.5,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
+		-- a kit object (the gourd, the weights) wears a red ring
+		K.create("UIStroke",tile,{Color=if node.item then M.red else (M[style.stroke] or M.ink),Thickness=if node.item then 3 else 2,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
 	end
-	local color=P[style.text] or P.text
-	local name=K.text(tile,string.upper(node.name),UDim2.fromOffset(10,3),UDim2.new(1,-54,0,20),if node.major then 18 else 13,color,if node.major then K.TITLE_FONT else K.BODY_FONT)
+	local color=M[style.text] or M.ink
+	local name=K.text(tile,string.upper(node.name),UDim2.fromOffset(10,3),UDim2.new(1,-54,0,20),if node.major then 18 else 14,color,if node.major then K.TITLE_FONT else (K.STRONG_FONT or K.BODY_FONT))
 	name.TextTruncate=Enum.TextTruncate.AtEnd;name.TextWrapped=false;name.ZIndex=78
 	local sub=if node.item then "KIT OBJECT" elseif node.status=="tier" then "TIER "..(if node.tier==2 then "II" else "III").." CLOSED"
 		elseif node.status=="locked" then "WAITS FOR A NODE" elseif node.status=="learn" then "TO LEARN" else node.kindLabel
-	local tag=K.text(tile,sub,UDim2.fromOffset(10,22),UDim2.new(1,-54,0,14),9,color,K.BODY_FONT)
+	local tag=K.text(tile,sub,UDim2.fromOffset(10,22),UDim2.new(1,-54,0,14),11,color,K.BODY_FONT)
 	tag.TextTransparency=.15;tag.ZIndex=78
-	local right=K.text(tile,style.tag or tostring(node.cost),UDim2.new(1,-46,0,0),UDim2.fromOffset(40,TILE_H),18,color,K.TITLE_FONT,Enum.TextXAlignment.Center)
+	local right=K.text(tile,style.tag or tostring(node.cost),UDim2.new(1,-46,0,0),UDim2.fromOffset(40,TILE_H),18,color,K.STRONG_FONT or K.TITLE_FONT,Enum.TextXAlignment.Center)
 	right.ZIndex=78
 	tile.Activated:Connect(function() self.selected=node.id;self:detail() end)
 	self.tiles[node.id]=tile
@@ -223,7 +248,7 @@ function Panel:detail()
 	for id,tile in self.tiles do
 		local mark=tile:FindFirstChild("Picked")
 		if id==self.selected and not mark then
-			local m=self.kit.create("UIStroke",tile,{Color=self.P.paper,Thickness=3,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
+			local m=self.kit.create("UIStroke",tile,{Color=self.M.red,Thickness=3,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
 			m.Name="Picked"
 		elseif id~=self.selected and mark then mark:Destroy() end
 	end
@@ -247,8 +272,10 @@ function Panel:detail()
 	self.action.Visible=d.action~=nil
 	if d.action then
 		self.action.Text=d.action.label
-		self.action.BackgroundColor3=if d.action.kind=="learn" then self.P.red elseif d.action.kind=="on" then self.P.gold else self.P.panel
-		self.action.TextColor3=if d.action.kind=="on" then self.P.ink else self.P.text
+		-- (DA v3) learn in red, turn on in ink, turn off on paper ringed in ink
+		self.action.BackgroundColor3=if d.action.kind=="learn" then self.M.red elseif d.action.kind=="on" then self.M.ink else self.M.paper
+		self.action.TextColor3=if d.action.kind=="learn" or d.action.kind=="on" then self.M.cream else self.M.ink
+		self.actionRing.Enabled=d.action.kind~="learn" and d.action.kind~="on"
 	end
 end
 
