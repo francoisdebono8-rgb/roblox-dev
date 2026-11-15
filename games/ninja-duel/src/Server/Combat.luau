@@ -6,6 +6,7 @@ local SealJutsu = require(Shared.SealJutsu)
 local Rules = require(Shared.Rules)
 local World = require(script.Parent.World)
 local Motor = require(script.Parent.Motor)
+local DuelQuery = require(script.Parent.DuelQuery)
 local Animation = require(script.Parent.Animation)
 local Techniques = require(script.Parent.Techniques)
 -- Reusable technique families and fighter traits (roster breadth pass).
@@ -124,12 +125,12 @@ function Combat:rayParams(excludeActors)
 	local exclude={self.match.effects}
 	if excludeActors then for _,a in self.actors do table.insert(exclude,a.model) end end
 	params.FilterDescendantsInstances=exclude
-	return params
+	return DuelQuery.apply(params)
 end
 function Combat:overlapParams()
 	local p=OverlapParams.new(); p.FilterType=Enum.RaycastFilterType.Exclude
 	local exclude={self.match.effects}; for _,a in self.actors do table.insert(exclude,a.model) end
-	p.FilterDescendantsInstances=exclude; return p
+	p.FilterDescendantsInstances=exclude; return DuelQuery.apply(p)
 end
 function Combat:lineOfSight(a,b)
 	local delta=b.root.Position-a.root.Position
@@ -2595,7 +2596,7 @@ function Combat:updateProjectiles(dt)
 			local ray=RaycastParams.new(); ray.FilterType=Enum.RaycastFilterType.Exclude
 			local exclude={self.match.effects,p.a.model}
 			if radius>0 and target then table.insert(exclude,target.model) end
-			ray.FilterDescendantsInstances=exclude
+			ray.FilterDescendantsInstances=exclude;DuelQuery.apply(ray)
 			local hit=workspace:Raycast(p.position,step,ray)
 			if hit then
 				if target and hit.Instance:IsDescendantOf(target.model) then

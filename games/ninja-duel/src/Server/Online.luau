@@ -11,6 +11,7 @@ local Shared=game:GetService("ReplicatedStorage").NinjaDuel
 local Config=require(Shared.Config)
 local Fighters=require(Shared.Fighters)
 local Protocol=require(Shared.OnlineProtocol)
+local HubMap=require(Shared.HubMap)
 local World=require(script.Parent.World)
 local Combat=require(script.Parent.Combat)
 local AntiCheat=require(script.Parent.VelmoraAntiCheat)
@@ -166,7 +167,16 @@ function Online:fight(d)
 	for _,seat in d.seats do seat.progress=nil end
 	d.folder=Instance.new("Folder");d.folder.Name="Online_"..d.lane;d.folder.Parent=m.folder
 	d.effects=Instance.new("Folder");d.effects.Name="Effects";d.effects.Parent=d.folder
-	World.arena(d.folder,d.origin)
+	-- (15/11, François: « des combats dans la rue ») two players who challenged
+	-- each other in Konoha fight in its street (Matches:streetSite, set by
+	-- Server/Lobby), no stadium; the place taken meanwhile: the stadium.
+	if d.site and not m:siteFree(d.site.key,d) then d.site=nil end
+	if d.site then
+		d.origin=d.site.origin;d.radius=d.site.radius
+	else
+		d.origin=m.laneOrigin(d.lane);d.radius=nil
+		World.arena(d.folder,d.origin)
+	end
 	local c=Combat.new(d);c.now=workspace:GetServerTimeNow();d.combat=c
 	for index,seat in d.seats do
 		local side=if index==1 then 1 else -1
@@ -182,6 +192,11 @@ function Online:fight(d)
 	a.target=b;b.target=a
 	for _,seat in d.seats do
 		if seat.present then
+			-- (15/11) after a street duel each walks on from his side of it
+			if d.site then
+				local side=if seat.index==1 then 1 else -1
+				seat.session.returnTo={at=d.site.origin-HubMap.Origin+Vector3.new(0,0,side*d.site.radius*.5),face=Vector3.new(0,0,-side)}
+			end
 			-- (DEC-038) the walk in Konoha ends: the duel's body takes over.
 			pcall(function() require(script.Parent.Hub).leave(seat.player) end)
 			seat.player.Character=seat.actor.model

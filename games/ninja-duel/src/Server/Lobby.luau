@@ -369,12 +369,17 @@ end
 -- Both players here: straight into the online pick (Server/Online).
 function Lobby:pairHere(a,b,fa,fb)
 	local m=self.matches
+	-- (15/11, François: « des 1v1 vraiment comme ça sur la map ») both walking
+	-- in Konoha: the fight is in the street nearest to them (Matches:streetSite)
+	local site=nil
+	pcall(function() site=m:streetSite({a.player,b.player}) end)
 	for _,p in {a,b} do
 		local s=m:session(p.player)
 		if s.phase~="Selection" or s.online then m:selection(p.player) end
 	end
 	local sa,sb=m:session(a.player),m:session(b.player)
-	m.online:pair({player=a.player,session=sa,fighter=fa},{player=b.player,session=sb,fighter=fb},"challenge")
+	local d=m.online:pair({player=a.player,session=sa,fighter=fa},{player=b.player,session=sb,fighter=fb},"challenge")
+	if d then d.site=site end
 end
 function Lobby:depart(p,code,opponent)
 	if type(code)~="string" or #code>200 then return end

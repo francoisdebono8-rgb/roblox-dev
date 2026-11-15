@@ -106,6 +106,18 @@ end
 UI.kit={palette=palette,create=create,frame=frame,text=text,corner=corner,inkCard=inkCard,inkTitle=inkTitle,button=button,
 	TITLE_FONT=TITLE_FONT,BODY_FONT=BODY_FONT,STRONG_FONT=STRONG_FONT,VOICE_FONT=VOICE_FONT,NOTE_FONT=NOTE_FONT,MANGA=MANGA,CARD=CARD,fitScale=fitScale,cornerClose=cornerClose,SMALL=SMALL}
 local function accentOf(def) return Color3.fromRGB(table.unpack(def.Color)) end
+-- (15/11, audit: a duel at a master's home still said « PRODIGY TOURNAMENT »)
+-- What the duel's banner calls the place of the fight: the village's place
+-- (a master's home, the street of a 1v1), the tournament, an online duel.
+function UI.stageName(data)
+	local site=data and data.site
+	if site and type(site.place)=="string" and site.place~="" then
+		return (if site.street then "STREET DUEL  •  " else "KONOHA  •  ")..Text.upper(site.place)
+	end
+	if data and data.cup then return "PRODIGY TOURNAMENT" end
+	if data and data.online then return "ONLINE DUEL" end
+	return "PRODIGY TOURNAMENT"
+end
 function UI.new(parent,send)
 	-- (B1 lot 2) `simple`: the first roster a player sees is PLAY and the
 	-- fighters, nothing else (ALL MODES opens the rest; any finished duel too).
@@ -503,7 +515,7 @@ function UI.new(parent,send)
 	self.hp=plate("left")
 	self.enemy=plate("right")
 	self.round=text(self.hud,"ROUND 1",UDim2.new(.5,-120,0,22),UDim2.fromOffset(240,30),26,palette.paper,TITLE_FONT,Enum.TextXAlignment.Center)
-	self.roundSub=text(self.hud,"PRODIGY TOURNAMENT",UDim2.new(.5,-120,0,55),UDim2.fromOffset(240,16),13,palette.paper,BODY_FONT,Enum.TextXAlignment.Center)
+	self.roundSub=text(self.hud,"PRODIGY TOURNAMENT",UDim2.new(.5,-190,0,55),UDim2.fromOffset(380,16),13,palette.paper,BODY_FONT,Enum.TextXAlignment.Center)
 	-- (UI pass 02/11) Over the sky and the wall the grey subtitle disappeared.
 	create("UIStroke",self.roundSub,{Color=palette.ink,Thickness=1.2,Transparency=.2,ApplyStrokeMode=Enum.ApplyStrokeMode.Contextual})
 	create("UIStroke",self.round,{Color=palette.ink,Thickness=2,ApplyStrokeMode=Enum.ApplyStrokeMode.Contextual})
@@ -1241,7 +1253,7 @@ function UI:render(data)
 		self.introLeftName.Text=fullName(h);self.introLeftTitle.Text=subtitle(h)
 		self.introRightName.Text=fullName(b);self.introRightTitle.Text=subtitle(b)
 		self.introLeftName.TextColor3=accentOf(Fighters[h.fighterId]);self.introRightName.TextColor3=accentOf(Fighters[b.fighterId])
-		self.introRound.Text="PRODIGY TOURNAMENT  —  ROUND "..(data.round or 1)..(if (data.round or 1)>1 and (data.wins and (data.wins.human==1 and data.wins.bot==1)) then "  •  FINAL ROUND" else "")
+		self.introRound.Text=UI.stageName(data).."  —  ROUND "..(data.round or 1)..(if (data.round or 1)>1 and (data.wins and (data.wins.human==1 and data.wins.bot==1)) then "  •  FINAL ROUND" else "")
 		self.introBegin.Text=if data.intro<(Config.IntroBegin or .75) then "始め!  BEGIN" else ""
 		if self.introShown~=data.epoch then
 			self.introShown=data.epoch
@@ -1264,7 +1276,7 @@ function UI:render(data)
 	self.ko.Visible=data.ko==true
 	self.round.Text=if data.matchPoint and data.ko then "MATCH" else "ROUND "..(data.round or 1)
 	-- (in the tournament, the stage of the bracket under the round)
-	self.roundSub.Text=if data.cup and data.cup.next and data.cup.next.roundName then data.cup.next.roundName else "PRODIGY TOURNAMENT"
+	self.roundSub.Text=if data.cup and data.cup.next and data.cup.next.roundName then data.cup.next.roundName else UI.stageName(data)
 	-- (a match watched in the tournament: neither fighter is the player)
 	self.hp.name.Text=fullName(h);self.hp.title.Text=if data.spectate then "AI  •  "..subtitle(h) else subtitle(h).."  •  YOU"
 	self.enemy.name.Text=fullName(b);self.enemy.title.Text=(if data.online then Text.upper(data.online.opponent or "OPPONENT") else "AI").."  •  "..subtitle(b)

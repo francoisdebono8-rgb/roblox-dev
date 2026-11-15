@@ -1,6 +1,7 @@
 local Shared=game:GetService("ReplicatedStorage").NinjaDuel
 local Attacks=require(Shared.Attacks)
 local Motor=require(script.Parent.Motor)
+local DuelQuery=require(script.Parent.DuelQuery)
 local Bangla=require(script.Parent.BanglaCombat)
 local MoveGraphs=require(Shared.MoveGraphs)
 local ActionContext=require(Shared.ActionContext)
@@ -1253,7 +1254,7 @@ function Brawler.propContact(c,a,velocity)
  local flat=Vector3.new(velocity.X,0,velocity.Z)
  if flat.Magnitude<8 then return nil end
  local params=OverlapParams.new();params.FilterType=Enum.RaycastFilterType.Exclude
- params.FilterDescendantsInstances={a.model,c.match.effects}
+ params.FilterDescendantsInstances={a.model,c.match.effects};DuelQuery.apply(params)
  local centre=a.root.Position-Vector3.new(0,1,0)+flat.Unit*1.2
  for _,part in workspace:GetPartBoundsInBox(CFrame.lookAt(centre,centre+flat),Vector3.new(2.4,4,2.6),params) do
   if part.GetAttribute and part:GetAttribute("WorldBreakable") and part:GetAttribute("WorldState")~="Broken" then

@@ -43,8 +43,20 @@ end
 -- wall in every piece (the wall, its cap: a lens lifted over a fight along the
 -- wall used to slip through the cap into the stands), anything marked as a
 -- wall, and any very large part. Smaller fighting-space props fade instead.
+-- (15/11, François: « il faudrait que la caméra s'adapte avec tous les
+-- bâtiments ») In a duel fought in Konoha the village's houses, walls and
+-- roofs stop the lens as the stadium's wall does: it comes in front of them
+-- and swings along them (Camera:steerAroundWall) instead of sitting behind a
+-- house. Smaller things (a crate, a lamp, a bench) fade, with their mesh.
+Camera.BUILDING=18
+local hubFolder=nil
+local function village(part)
+	if not (hubFolder and hubFolder.Parent) then hubFolder=workspace:FindFirstChild("NinjaDuelHub") end
+	return hubFolder~=nil and part:IsDescendantOf(hubFolder)
+end
 local function solid(part)
 	return part.Name=="Training floor" or string.sub(part.Name,1,8)=="Boundary" or part:GetAttribute("NinjaWall")==true or part.Size.Magnitude>40
+		or (part.CanCollide==true and part.Size.Magnitude>=Camera.BUILDING and village(part))
 end
 Camera.solid=solid
 -- (08/11, F7 tool: the lens behind a field tree hid the player) A field tree
@@ -52,11 +64,20 @@ Camera.solid=solid
 -- Blender tree. The lens's ray stops on the box, and fading the box alone
 -- changed nothing on screen: an invisible part in the way fades what it
 -- carries.
+local dressOf=nil
 local function fadeHit(part,faded)
 	faded[part]=true
 	if part.Transparency>=.95 and part.GetDescendants then
 		for _,d in part:GetDescendants() do if d:IsA("BasePart") then faded[d]=true end end
 	end
+	-- (15/11) a village prop is an invisible box dressed by a mesh
+	-- (Client/HubDress): the mesh fades with it
+	if dressOf==nil then
+		local ok,HubDress=pcall(function() return require(script.Parent.HubDress) end)
+		dressOf=if ok and HubDress and HubDress.copiesOf then HubDress.copiesOf else false
+	end
+	local copies=dressOf and dressOf[part]
+	if copies then for _,copy in copies do if copy.Parent then faded[copy]=true end end end
 end
 Camera.fadeHit=fadeHit
 function Camera.new()

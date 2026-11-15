@@ -669,6 +669,63 @@ end)
 -- (FEEL 05/11, AVANT defect 3) A press that arrives late (a hitch, a ping
 -- spike: 402 ms measured in Studio) plays instead of vanishing; it is counted
 -- as late, its stale time is not kept, and a press past 1 s is still dropped.
+-- (15/11, François: « des 1v1 vraiment comme ça sur la map », « j'ai bien
+-- aimé cette idée de combat rapproché ») Two players walking in Konoha who
+-- challenge each other fight in the nearest free place of the village, not in
+-- a stadium; the banner names it; each walks on from his side; a place holds
+-- one fight; far from every place, the stadium.
+test("a 1v1 between two walkers is fought in Konoha's street, one fight per place",function()
+	local Hub=H.load("Server/Hub")
+	local HubMap=H.load("Shared/HubMap")
+	local Config=H.load("Shared/Config")
+	local builtWas,bodiesWas,enterWas=Hub.built,Hub.bodies,Hub.enter
+	local enabledWas,villageWas=Config.Hub.Enabled,Config.Hub.VillageDuels
+	Hub.built=true;Hub.enter=function() end;Hub.bodies={}
+	Config.Hub.Enabled=true;Config.Hub.VillageDuels=true
+	local ok,err=pcall(function()
+		local m=fresh()
+		local a,b,c=join(m,"Alpha","Bravo","Charlie")
+		local function walkAt(player,position)
+			local root={Position=position}
+			Hub.bodies[player]={character={FindFirstChild=function(_,n) return if n=="HumanoidRootPart" then root else nil end,GetAttribute=function() return nil end}}
+		end
+		local centre=HubMap.Origin+HubMap.Training.duel.at
+		walkAt(a,centre+V.new(5,3,0));walkAt(b,centre+V.new(-5,3,8))
+		local site=m:streetSite({a,b})
+		assert(site and site.key=="Leaf" and site.street and site.radius==HubMap.Training.duel.radius,"the street place: "..tostring(site and site.key))
+		local before=arenas
+		local d=m.online:pair({player=a,session=m.sessions[a],fighter="Flashstep"},{player=b,session=m.sessions[b],fighter="Mirage"},"challenge")
+		d.site=site
+		send(m,a,"Confirm");send(m,b,"Confirm")
+		assert(d.phase=="Duel" and (d.origin-centre).Magnitude<1e-3 and d.radius==site.radius,"not fought in the street")
+		assert(arenas==before,"a stadium was built for a street duel")
+		local far=d.combat:clamp(centre+V.new(200,3,0))
+		assert(math.abs((far-centre).Magnitude-site.radius)<.5,"the street's circle is the stadium's")
+		assert(last(a).site and last(a).site.place==HubMap.Masters.Leaf.place and last(a).site.street,"the packet does not name the street")
+		local UI=H.load("Client/UI")
+		assert(UI.stageName(last(a))=="STREET DUEL  •  "..HubMap.Masters.Leaf.place,"the banner: "..UI.stageName(last(a)))
+		assert(UI.stageName({cup={}})=="PRODIGY TOURNAMENT" and UI.stageName({online={}})=="ONLINE DUEL","the banner elsewhere")
+		local back=m.sessions[a].returnTo
+		assert(back and (back.at-(centre-HubMap.Origin+V.new(0,0,site.radius*.5))).Magnitude<1e-3,"he does not walk on from the street")
+		-- the place holds one fight: a duel asked at Lee's meanwhile is the stadium's
+		assert(not m:siteFree("Leaf") and m:siteFree("Leaf",d),"the street is not taken")
+		walkAt(c,centre)
+		send(m,c,"First",{player="Leaf",here="Leaf"})
+		assert(m.sessions[c].phase=="Duel" and m.sessions[c].site==nil,"two fights in one place")
+		m:selection(c)
+		-- far from every place: the stadium
+		local x,y=join(m,"Xray","Yankee")
+		walkAt(x,HubMap.Origin+V.new(0,3,700));walkAt(y,HubMap.Origin+V.new(4,3,700))
+		assert(m:streetSite({x,y})==nil,"a street duel far from the village's places")
+		-- one of them not walking: the stadium
+		Hub.bodies[y]=nil;walkAt(x,centre)
+		assert(m:streetSite({x,y})==nil,"a street duel with a player not in the village")
+	end)
+	Hub.built,Hub.bodies,Hub.enter=builtWas,bodiesWas,enterWas
+	Config.Hub.Enabled,Config.Hub.VillageDuels=enabledWas,villageWas
+	assert(ok,err)
+end)
+
 test("a late press (0.3-1 s old) plays and is counted; past 1 s it is dropped",function()
 	local m=fresh()
 	local a,b=join(m,"Alpha","Bravo")

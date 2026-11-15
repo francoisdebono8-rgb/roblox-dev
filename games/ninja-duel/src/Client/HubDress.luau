@@ -28,6 +28,9 @@ HubDress.NAMES={
 }
 -- A wall's segment is 10 studs long (along its z).
 HubDress.SEGMENT=10
+-- (15/11) a hidden part -> the mesh copies standing for it: the duel camera
+-- fades what it really sees (Client/Camera.fadeHit).
+HubDress.copiesOf=setmetatable({},{__mode="k"})
 
 -- The units under `root` (a unit inside a unit too).
 function HubDress.units(root)
@@ -87,7 +90,7 @@ function HubDress.dress(unit,pieces,holder)
 		end
 	end
 	if #made>0 then
-		for _,part in HubDress.parts(unit) do part.Transparency=1 end
+		for _,part in HubDress.parts(unit) do part.Transparency=1;HubDress.copiesOf[part]=made end
 	end
 	return made
 end
@@ -101,6 +104,7 @@ function HubDress.sync(unit,kit,holder,done)
 		if done[unit] then
 			for _,p in done[unit] do p:Destroy() end
 			done[unit]=nil
+			for _,part in HubDress.parts(unit) do HubDress.copiesOf[part]=nil end
 		end
 		return false
 	end
