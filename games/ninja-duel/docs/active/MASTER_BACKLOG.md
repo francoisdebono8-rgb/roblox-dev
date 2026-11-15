@@ -1329,7 +1329,7 @@ Sortie commune : trois Lights/Heavy physiques distincts, branche seulement aprè
 
 - status: PARTIAL
 - priority: P1
-- dependencies: UIDA-003
+- dependencies: STYLE-001, SHOP-001
 - subsystem: interface
 - character: ALL
 - summary: (DESIGN, principe validé par François le 14/11 à 22 h 49, planches Mix-Duel et Mix-DuelPhone) Pas de bulle en plein combat ; une case par combattant en haut ; la vie en trait de pinceau (crème pour toi, rouge pour l'adversaire, traîne rose) ; le chakra en trait bleu fin ; les techniques en parchemins sur une corde qui brûlent par le bas en recharge ; l'ultime en parchemin rouge ; retirés : sous-titre kit/maîtrise, nom du tournoi, crans d'ultime en double, aide des mudras, grand compteur de combo.
