@@ -47,7 +47,7 @@ python3 -c "import bpy; print(bpy.app.version_string)"
   - moins de blanc et de lumière, plus de détails ;
   - tuiles, poutres, chevrons sous les avant-toits, lanternes en papier, bois patiné.
 - **Droits :**
-  - les 4 têtes de la falaise sont des têtes sculptées génériques, pas des portraits reconnaissables ;
+  - les têtes rigolotes de la falaise ne représentent personne de reconnaissable ;
   - aucun logo (feuille, éventail) dans les modèles.
 
 ## Les noms
@@ -68,8 +68,20 @@ Elles sont modélisées aux coordonnées de `Server/Hub`, relatives à `HubMap.O
 | UchihaPier | ponton et pilotis |
 | NakaShrine | socle et sanctuaire |
 | Torii | le torii ; un maître se tient dessus à y = 14,9, le dessus de la poutre reste à cette hauteur |
-| HokageCliff | falaise et 4 têtes ; les têtes sont solides (26 × 30 × 8) |
+| HokageCliff | la falaise seule (14/11 : les têtes ont maintenant chacune leur place, voir plus bas) ; une vraie silhouette de roche |
 | FacesTerrace | terrasse, rambardes, 24 marches |
+
+### Les quatre places de la falaise (14/11)
+**Demande de François :** « les têtes sont moches […] à terme ça sera les champions, on peut mettre le dev aussi et des trucs drôles pour l'instant ».
+
+- **Place 1 :** l'avatar Roblox du créateur du jeu (`game.CreatorId`, ou `Config.Hub.DevUserId`).
+- **Places 2 à 4 :** les avatars des 3 derniers vainqueurs du tournoi, du plus récent au plus ancien. La liste est la même sur tous les serveurs (DataStore, MessagingService).
+- Le serveur sculpte chaque avatar dans la pierre (`Server/ChampionCliff`). Il retire alors la tête rigolote de la place : l'unité passe en `DressOff`, ses Parts deviennent invisibles, la boîte `Face` reste solide.
+- **Tant qu'une place est vide**, ou qu'un avatar ne se charge pas (fichier local dans Studio), elle montre sa tête rigolote :
+
+| Nom | Origine | Référence |
+|---|---|---|
+| HeadFunny1, HeadFunny2, HeadFunny3, HeadFunny4 | centre de la tête, visage vers +z (vers le village) ; les places sont à x = −75, −25, 25 et 75, y = 58, z = −230 (`HubMap.Heads`) | elles tiennent dans la boîte solide 26 × 30 × 8 ; cheveux ou accessoire peuvent dépasser au-dessus et derrière, dans la falaise. Drôles, rien de reconnaissable d'un anime : tête de « noob » ronde et souriante, lunettes de soleil, endormie avec une bulle de morve, qui éternue, un bol de ramen sur la tête… |
 
 ### B. Pièces répétées
 Elles sont modélisées dans leur propre repère, que le poseur place et met à l'échelle.

@@ -68,6 +68,13 @@ M.Masters={
 		line="Plant your mark first. The speed comes after."},
 }
 
+-- (14/11, user: « les têtes sont moches […] à terme ça sera les champions, on
+-- peut mettre le dev aussi et des trucs drôles pour l'instant ») The four
+-- heads on the cliff: the game's creator (1), the last three tournament
+-- champions (2 to 4, newest first), a funny head while a place is empty
+-- (Server/ChampionCliff). Centres of the heads, facing the village (+z).
+M.Heads={Vector3.new(-75,58,-230),Vector3.new(-25,58,-230),Vector3.new(25,58,-230),Vector3.new(75,58,-230)}
+
 -- The village's walk, for the HUD: the nearest place to a position (world).
 -- The smallest place he stands in (Ichiraku within the street), else the
 -- nearest one.

@@ -323,4 +323,85 @@ test("the quarters: houses face their lane, no two houses overlap, the market an
 	assert(HubMap.placeAt(HubMap.Origin+Vector3.new(-170,0,150)).id=="Residences","the residences are not named")
 end)
 
+-- (14/11, user: « à terme ça sera les champions, on peut mettre le dev aussi et
+-- des trucs drôles pour l'instant ») the cliff's four places.
+test("the cliff: the creator carved first, the last three champions next, a funny head while a place is empty",function()
+	local Cliff=H.load("Server/ChampionCliff")
+	-- pure rules
+	local list=Cliff.push({},{id=7,name="A",at=1})
+	list=Cliff.push(list,{id=8,name="B",at=2});list=Cliff.push(list,{id=9,name="C",at=3})
+	list=Cliff.push(list,{id=8,name="B",at=4})
+	assert(#list==3 and list[1].id==8 and list[2].id==9 and list[3].id==7,"one place each, newest first")
+	list=Cliff.push(list,{id=10,name="D",at=5})
+	assert(#list==3 and list[1].id==10 and list[3].id==9,"the oldest goes")
+	assert(#Cliff.clean({{id="x"},{id=-1},"junk",{id=3.5},{id=4,name=string.rep("n",40)}})==1,"the store's junk kept")
+	local plan=Cliff.plan(42,{{id=10},{id=8}})
+	assert(plan[1]==42 and plan[2]==10 and plan[3]==8 and plan[4]==nil,"the plan")
+	-- on fakes: the store, the messages, the stone heads
+	local stored=nil
+	local published={}
+	local heads={}
+	local fail={}
+	local function fakeHead(id)
+		if fail[id] then return nil end
+		local m={attrs={},Parent=nil}
+		function m:SetAttribute(k,v) self.attrs[k]=v end
+		function m:PivotTo(cf) self.at=cf end
+		function m:Destroy() self.destroyed=true;self.Parent=nil end
+		table.insert(heads,m)
+		return m
+	end
+	local svc={
+		store={GetAsync=function() return stored end,UpdateAsync=function(_,_,fn) stored=fn(stored) end},
+		messaging={PublishAsync=function(_,topic,data) table.insert(published,{topic=topic,data=data}) end,SubscribeAsync=function() end},
+		devId=function() return 42 end,head=fakeHead,spawn=function(fn,...) fn(...) end,now=function() return 100 end,
+	}
+	local cliff=Cliff.new(folder,svc):run()
+	local function slot(k) return cliff:slotUnit(k) end
+	local function face(k) return slot(k):FindFirstChild("Face") end
+	assert(cliff.carved[1] and cliff.carved[1].model and cliff.carved[1].model.attrs.UserId==42,"the creator is not carved")
+	assert(cliff.carved[1].model.Parent==cliff.holder,"his head is not on the cliff")
+	local at=cliff.carved[1].model.at
+	assert((at.Position-(HubMap.Origin+HubMap.Heads[1]-Vector3.new(0,0,Cliff.SINK))).Magnitude<1e-3 and at.LookVector.Z>.99,"his head is misplaced or faces the cliff")
+	assert(slot(1):GetAttribute("DressOff")==true and face(1).Transparency==1 and face(1).CanCollide,"place 1 still shows its funny head")
+	for k=2,4 do assert(not slot(k):GetAttribute("DressOff") and face(k).Transparency==0,"place "..k.." lost its funny head") end
+	-- a champion: his face at once, the store and the other servers told
+	cliff:crown({UserId=7,Name="Seven"})
+	assert(cliff.carved[2].model.attrs.UserId==7 and slot(2):GetAttribute("DressOff"),"the champion is not carved")
+	assert(stored and stored[1].id==7 and published[1].topic==Cliff.TOPIC and published[1].data.id==7,"store / message")
+	-- three more: the newest first, the oldest goes, his stone head with him
+	local seven=cliff.carved[2].model
+	cliff:crown({UserId=8,Name="Eight"});cliff:crown({UserId=9,Name="Nine"});cliff:crown({UserId=10,Name="Ten"})
+	assert(cliff.carved[2].id==10 and cliff.carved[3].id==9 and cliff.carved[4].id==8,"order")
+	assert(seven.destroyed,"the oldest champion's head stayed")
+	-- another server reads the same store
+	local other=Cliff.new(Instance.new("Folder"),svc)
+	other.folder=folder
+	other:refresh()
+	assert(#other.list==3 and other.list[1].id==10,"another server does not see the champions")
+	-- an avatar that cannot load (a local file in Studio): the funny head stays
+	fail[11]=true
+	cliff:crown({UserId=11,Name="Eleven"})
+	assert(not slot(2):GetAttribute("DressOff") and face(2).Transparency==0,"a failed avatar hid the funny head")
+	-- no creator known (a local file): place 1 is a funny head
+	local bare=Cliff.new(folder,{devId=function() return nil end,head=fakeHead,spawn=function(fn,...) fn(...) end,now=function() return 0 end}):run()
+	assert(not bare.carved[1],"place 1 carved without a creator")
+end)
+
+test("the dresser follows a carved place: its funny head goes, and comes back",function()
+	local function piece(size) local p=Instance.new("Part");p.Size=size;return p end
+	local kit={has=function(name) return string.sub(name,1,9)=="HeadFunny" end,
+		pieces=function() return {{part=piece(Vector3.new(26,30,8)),o=Vector3.zero,name="Head"}} end}
+	local holder=Instance.new("Folder")
+	local done={}
+	local u
+	for _,x in HubDress.units(folder) do if x:GetAttribute("HeadSlot")==3 then u=x end end
+	u:SetAttribute("DressOff",nil)
+	assert(HubDress.sync(u,kit,holder,done) and #done[u]==1,"the funny head is not dressed")
+	u:SetAttribute("DressOff",true)
+	assert(not HubDress.sync(u,kit,holder,done) and done[u]==nil and #holder:GetChildren()==0,"the funny head stayed over a carved face")
+	u:SetAttribute("DressOff",nil)
+	assert(HubDress.sync(u,kit,holder,done) and #holder:GetChildren()==1,"the funny head did not come back")
+end)
+
 print(string.format("NinjaDuel hub Konoha (DEC-038): %d PASS",passed))
