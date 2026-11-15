@@ -381,4 +381,21 @@ test("DA v3 shop: the buttons' states, the Ryō still missing, the outfit's figu
 	assert(ok,tostring(err))
 end)
 
+-- (15/11, DA v3 Mix-Shop) the STYLE preview: a still copy of his own avatar,
+-- its scripts and its own outfit taken off, the character left as it was.
+test("the STYLE preview: a still copy of his avatar, without its scripts nor its outfit",function()
+	local Preview=H.load("Client/StylePreview")
+	local Instance=roblox.Instance
+	local character=Instance.new("Model");character.Archivable=false
+	local root=Instance.new("Part");root.Name="HumanoidRootPart";root.Parent=character
+	local head=Instance.new("Part");head.Name="Head";head.Parent=character
+	Instance.new("LocalScript").Parent=character
+	local outfit=Instance.new("Model");outfit.Name="NinjaOutfit";outfit.Parent=character
+	local copy=Preview.copy(character)
+	assert(copy and copy:FindFirstChild("Head") and copy:FindFirstChild("Head").Anchored,"no still copy")
+	assert(not copy:FindFirstChildOfClass("LocalScript") and not copy:FindFirstChild("NinjaOutfit"),"the copy kept a script or his outfit")
+	assert(character.Archivable==false and character:FindFirstChild("NinjaOutfit"),"his own character was changed")
+	assert(Preview.copy(nil)==nil,"a copy of nobody")
+end)
+
 print(string.format("NinjaDuel shop and Ryō (13/11): %d PASS",passed))

@@ -127,6 +127,7 @@ function Panel.new(kit,gui,send,onTree)
 	-- The side: the tabs and the Ryō.
 	local side=frame(card,UDim2.fromOffset(0,0),UDim2.fromOffset(SIDE,H),M.paper,0)
 	corner(side,6)
+	self.side=side
 	local seam=frame(card,UDim2.fromOffset(SIDE-2,0),UDim2.fromOffset(4,H),M.ink,0)
 	seam.ZIndex=75
 	self.title=text(side,"SHOP",UDim2.fromOffset(22,10),UDim2.fromOffset(SIDE-40,92),88,M.ink,kit.TITLE_FONT)
@@ -226,12 +227,15 @@ function Panel:draw()
 		-- (DEC-040) the masters' outfits on his own avatar, then the pieces;
 		-- MY NINJA opens the outfit card (Client/OutfitPanel)
 		self:drawLooks({"set","headband"},"STYLE","Your inspirations' outfits and ninja pieces over your own avatar, in Konoha and in every duel.")
+		-- (Mix-Shop) his avatar in the side, wearing the outfit pointed at
+		self:preview(nil)
 		if self.onOutfit then
 			local b=self:add(press(self.kit,self.card,"MY NINJA",UDim2.fromOffset(Panel.CLOSE.X-230,Panel.CLOSE.Y),UDim2.fromOffset(210,Panel.CLOSE.H),function() self:hide();self.onOutfit() end,"ink"))
 			b.TextSize=24
 		end
 	elseif self.tab=="PASSES" then self:drawPasses()
 	else self:drawRyo() end
+	if self.stylePreview and self.tab~="STYLE" then self.stylePreview.view.Visible=false end
 end
 
 -- ------------------------------------------------------------------ kits
@@ -388,6 +392,14 @@ function Panel:drawLooks(slots,title,sub)
 				elseif state.kind=="robux" then self.send("BuyRobux",{product=state.product}) end
 			end,kind)
 			b.TextSize=17
+			-- (Mix-Shop) an outfit pointed at (the mouse, a pad's selection) is
+			-- worn by the avatar in the side
+			if info.outfit then
+				pcall(function()
+					cell.MouseEnter:Connect(function() self:preview(item.id) end)
+					b.SelectionGained:Connect(function() self:preview(item.id) end)
+				end)
+			end
 		end
 		y+=ch+20
 	end
@@ -403,6 +415,22 @@ function Panel:drawLooks(slots,title,sub)
 			UDim2.fromOffset(16,12),UDim2.new(1,-32,1,-24),16,M.mid or M.ink,K.BODY_FONT)
 		t.TextYAlignment=Enum.TextYAlignment.Top
 	end
+end
+
+-- (DA v3, Mix-Shop) the avatar in the side column of STYLE: `itemId` worn
+-- (nil: his own outfit). Built the first time; no character, nothing shown.
+function Panel:preview(itemId)
+	local ok,err=pcall(function()
+		local player=game:GetService("Players").LocalPlayer
+		local character=player and player.Character
+		if not self.stylePreview then
+			local Preview=require(script.Parent.StylePreview)
+			self.stylePreview=Preview.new(self.side,UDim2.fromOffset(16,440),UDim2.fromOffset(SIDE-32,230))
+		end
+		self.stylePreview.view.Visible=character~=nil
+		if character then self.stylePreview:show(itemId,character) end
+	end)
+	return ok,err
 end
 
 -- ------------------------------------------------------------------ passes
