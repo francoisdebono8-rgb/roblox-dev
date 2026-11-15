@@ -1,3 +1,13 @@
+**Intégration du 15/11 (DEV, sans Studio ; [UIDA-003](MASTER_BACKLOG.md), [UIDA-004](MASTER_BACKLOG.md), [HUB-002](MASTER_BACKLOG.md), [STYLE-001](MASTER_BACKLOG.md))**
+
+François (15/11) : « fais tout ce que tu n'as pas encore fait et intègre tout » ; « je veux plus que tu testes dans le studio […] moi je joue et je te dis ce qui va pas ».
+
+- **Dans la branche principale :**
+  - PR #115 à #124 : DA v3 sur Konoha, la boutique, l'arbre et le HUD de duel ; face-cam en direct ; parchemin de l'ultime ; 1v1 dans la rue et passants écartés ; caméra devant les maisons ; murs où l'on court ; objets qui cassent, village réparé après le duel ; village 1,3 fois plus grand ; quartier des ruelles et huit lieux de combat de rue ; tenues longues qui suivent les jambes ; aperçu de l'avatar dans STYLE.
+  - Les PR des autres discussions : #114 (images du DESIGN dans `assets/ui`, pas encore envoyées sur Roblox), #101 (ANIMATEUR), #85 (OUTILLEUR, F4 spectateur) ; les notes de #103 ; le texte « inspirations » de #109.
+- **Vérifié sans écran** : suite complète verte (73 suites), quatre builds, isolation, documents, architecture.
+- **Pas vu** : aucun rendu dans Studio. François juge en jouant.
+
 **L'avatar du joueur dans le duel (14/11, branche `claude/avatar-articulations`, [AVATAR-001](MASTER_BACKLOG.md))**
 - **Vu dans Studio** (ND-JEU `a8d9fd0`, premier duel d'un nouveau joueur avec Naruto) : le joueur se battait dans le corps de Naruto, pas dans son propre avatar. La console disait « [AvatarBody] no joint Root ».
 - **Cause** : Roblox construit maintenant les articulations d'un avatar en AnimationConstraint (mise à niveau des articulations des avatars), sans Motor6D. `AvatarBody.fit` ne trouvait aucun Motor6D et refusait tous les avatars ; le duel retombait sur le corps du prodige.
