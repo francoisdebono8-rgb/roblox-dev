@@ -191,6 +191,8 @@ end
 -- The duel goes: its bodies, effects and marks. (QA 12/11) The lane's
 -- stadium stays for the next duel (Server/Stage); Matches:dropStage takes it.
 function Matches:destroy(s)
+	-- (15/11) a duel fought in Konoha leaves its walls as they were
+	if s.combat then pcall(function() require(script.Parent.WorldReaction).restore(s.combat) end) end
 	if s.combat then s.combat:clear() end
 	if s.human then AntiCheat.clear(s.human) end
 	if s.folder then

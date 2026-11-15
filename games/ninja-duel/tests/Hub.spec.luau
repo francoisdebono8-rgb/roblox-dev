@@ -249,6 +249,53 @@ test("the dresser: a unit's parts hidden (not the kept ones, not a nested unit),
 	assert(HubDress.apply(folder,kit,holder,done)==0,"dressed twice")
 end)
 
+-- (15/11, François: « les bâtiments n'ont pas de mur, pas de physique »,
+-- « une vraie adaptation avec les dégâts dans les murs ») The village's walls
+-- carry a wall run, its props break, and the duel's end puts them back.
+test("a street duel and the village: walls to run on, props that break, all put back after the duel",function()
+	local walls,props=0,{}
+	local house
+	for _,d in folder:GetDescendants() do
+		if d:IsA("BasePart") and d:GetAttribute("NinjaWall") then walls+=1 end
+		if d:IsA("BasePart") and d:GetAttribute("WorldBreakable") then table.insert(props,d) end
+		if d:IsA("Model") and d:GetAttribute("Dress")=="HouseShop_24x20x2" and not house then house=d end
+	end
+	assert(house and house:FindFirstChild("Walls"):GetAttribute("NinjaWall"),"a house's walls are not a wall to run on")
+	assert(walls>=60,"few walls to run on: "..walls)
+	assert(#props>=10,"few props break: "..#props)
+	for _,d in folder:GetDescendants() do
+		if d:IsA("BasePart") and d:GetAttribute("NinjaWall") then assert(d.Size.Y>=7,"a low piece is a wall: "..d.Name) end
+	end
+	-- a crate broken by a duel fought next to it, then put back
+	local crate
+	for _,p in props do if p.Name=="Crate" then crate=p;break end end
+	assert(crate,"no crate breaks")
+	local WorldReaction=H.load("Server/WorldReaction")
+	local stage=Instance.new("Folder")
+	local pushed=0
+	local c={match={folder=stage},now=0,pushImpact=function() pushed+=1 end}
+	local size,cf=crate.Size,crate.CFrame
+	local broken=false
+	for _=1,6 do
+		local r=WorldReaction.impact(c,{part=crate,position=crate.CFrame.Position,normal=Vector3.new(1,0,0),energy=40,contact="blunt",direction=Vector3.new(-1,0,0)})
+		if r and r.broken then broken=true;break end
+	end
+	assert(broken and crate:GetAttribute("WorldState")=="Broken" and crate.Size~=size,"the crate did not break")
+	assert(WorldReaction.restore(c)>=1,"nothing put back")
+	assert(crate.Size==size and crate.CFrame==cf and crate:GetAttribute("WorldState")==nil,"the crate stayed broken after the duel")
+	-- the stage's own pieces are the Stage's to put back, not this
+	local own=Instance.new("Part");own.Material=roblox.Enum.Material.Wood;own.Size=Vector3.new(4,4,4);own.Parent=stage
+	local c2={match={folder=stage},now=0,pushImpact=function() end}
+	WorldReaction.impact(c2,{part=own,position=Vector3.zero,normal=Vector3.new(1,0,0),energy=40,contact="blunt"})
+	assert(WorldReaction.state(c2).parts[own] and WorldReaction.state(c2).parts[own].original==nil,"the stage's pieces are kept twice")
+	-- on the client: its model hides while broken, comes back after
+	local copy=Instance.new("Part");copy.Transparency=.2;copy.Parent=Instance.new("Folder")
+	crate:SetAttribute("WorldState","Broken")
+	assert(HubDress.broken(crate,{copy}) and copy.Transparency==1 and crate.Transparency==0,"a broken crate's model still shows")
+	crate:SetAttribute("WorldState",nil)
+	assert(not HubDress.broken(crate,{copy}) and math.abs(copy.Transparency-.2)<1e-6 and crate.Transparency==1,"the crate's model did not come back")
+end)
+
 -- (15/11, François: « il faudrait que la caméra s'adapte avec tous les
 -- bâtiments ») A duel's lens in Konoha: a house's walls stop it (it comes in
 -- front and swings along), a crate fades, and with it the mesh that dresses it.

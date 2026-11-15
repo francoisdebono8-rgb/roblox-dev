@@ -573,10 +573,40 @@ end
 
 -- Builds the village once per server (Main). Headless: the parts are built in
 -- the given parent.
+-- (15/11, François: « les bâtiments n'ont pas de mur, pas de physique »,
+-- « une vraie adaptation avec les dégâts dans les murs ») What a street duel
+-- does with the village. Every solid upright piece big enough to stand on its
+-- side (a house's walls, the village walls, the hall, the gate's pillars) is
+-- a wall the fighters run on (NinjaWall, Server/Motor), and the props break
+-- (WorldBreakable, Server/WorldReaction) with a toughness of their own; the
+-- duel's end puts them back (WorldReaction.restore).
+Hub.BREAKABLE={Crate=40,Bench=60,FenceSegment=50,LampPost=45,StoneLantern=140,Stump=90}
+Hub.WALL_HEIGHT=7
+Hub.WALL_WIDTH=2
+function Hub.forFights(f)
+	local walls,breakables=0,0
+	for _,d in f:GetDescendants() do
+		if d:IsA("BasePart") and d.CanCollide then
+			local s=d.Size
+			if s.Y>=Hub.WALL_HEIGHT and math.max(s.X,s.Z)>=Hub.WALL_WIDTH*2 and math.min(s.X,s.Z)>=Hub.WALL_WIDTH*.5 then
+				d:SetAttribute("NinjaWall",true);walls+=1
+			end
+		end
+		if d:IsA("Model") and Hub.BREAKABLE[d:GetAttribute("Dress") or ""] then
+			for _,p in d:GetChildren() do
+				if p:IsA("BasePart") and p.CanQuery then
+					p:SetAttribute("WorldBreakable",true);p:SetAttribute("WorldToughness",Hub.BREAKABLE[d:GetAttribute("Dress")]);breakables+=1
+				end
+			end
+		end
+	end
+	return walls,breakables
+end
 function Hub.build(parent)
 	if Hub.folder and Hub.folder.Parent then return Hub.folder end
 	local f=Instance.new("Folder");f.Name="NinjaDuelHub"
 	ground(f);gate(f);street(f);plaza(f);hall(f);training(f);hyuga(f);uchiha(f);faces(f);quarters(f);forest(f)
+	Hub.forFights(f)
 	f.Parent=parent or workspace
 	Hub.folder=f;Hub.built=true
 	return f

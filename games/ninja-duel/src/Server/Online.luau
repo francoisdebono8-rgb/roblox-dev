@@ -227,6 +227,8 @@ end
 function Online:teardown(d)
 	local c=d.combat
 	d.combat=nil
+	-- (15/11) a street duel leaves Konoha's walls as they were
+	if c then pcall(function() require(script.Parent.WorldReaction).restore(c) end) end
 	if c then
 		c:clear()
 		for _,a in c.actors do AntiCheat.clear(a) end

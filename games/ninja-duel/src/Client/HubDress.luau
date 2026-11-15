@@ -90,9 +90,36 @@ function HubDress.dress(unit,pieces,holder)
 		end
 	end
 	if #made>0 then
-		for _,part in HubDress.parts(unit) do part.Transparency=1;HubDress.copiesOf[part]=made end
+		for _,part in HubDress.parts(unit) do
+			part.Transparency=1;HubDress.copiesOf[part]=made
+			-- (15/11) a prop broken in a street duel: its model goes, the
+			-- broken piece the server left (a stump, a mound) shows; put back
+			-- after the duel, the model returns
+			if part:GetAttribute("WorldBreakable") then
+				pcall(function()
+					part:GetAttributeChangedSignal("WorldState"):Connect(function() HubDress.broken(part,made) end)
+				end)
+			end
+		end
 	end
 	return made
+end
+
+-- A dressed prop's piece broken (or put back): its model hides (or shows).
+function HubDress.broken(part,made)
+	local broken=part:GetAttribute("WorldState")=="Broken"
+	part.Transparency=if broken then 0 else 1
+	for _,copy in made do
+		if copy.Parent then
+			if broken then
+				if copy:GetAttribute("DressTransparency")==nil then copy:SetAttribute("DressTransparency",copy.Transparency) end
+				copy.Transparency=1
+			else
+				copy.Transparency=copy:GetAttribute("DressTransparency") or 0
+			end
+		end
+	end
+	return broken
 end
 
 -- A unit the server turned DressOff (a cliff place where a face is carved):
