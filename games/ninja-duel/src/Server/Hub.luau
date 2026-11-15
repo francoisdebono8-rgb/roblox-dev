@@ -570,6 +570,45 @@ local function quarters(f)
 	local west={-232,-208,-184,-136,-112}
 	row(f,150,6,1,west,3);row(f,150,6,-1,west,5)
 	lamps(f,-220,-100,155,60)
+	Hub.alleys(f)
+end
+-- (15/11, François: « la carte est à refaire avec des vrais quartiers, plus de
+-- place un peu pour se battre, mais quand même dans des espaces resserrés »)
+-- The back alleys, between the Uchiha district's wall and the market: a
+-- narrow lane (7 wide) between two rows of small two-storey houses, a
+-- courtyard in its middle (about 58 x 37) with crates to break and walls to
+-- run on, and a passage behind the market's backs. Its houses wear the
+-- quarters' models narrowed to their size (DressScale).
+Hub.ALLEY={z=-3,width=7,depth=14,front=16,north={109,127,203,221,239,257},south={109,127,203,221,239,257},yard={x=165,z=-3}}
+function Hub.alleys(f)
+	local A=Hub.ALLEY
+	path(f,96,A.z,266,A.z,A.width,C.earth)
+	path(f,96,20,266,20,6,C.earth)
+	path(f,136,A.z,194,A.z,36,C.cobble,Enum.Material.Cobblestone)
+	local kinds={KINDS[1],KINDS[2],KINDS[3],KINDS[6]}
+	local n=0
+	for _,spec in {{xs=A.north,side=-1},{xs=A.south,side=1}} do
+		for _,x in spec.xs do
+			n+=1
+			local kind=kinds[(n-1)%#kinds+1]
+			local z=A.z+spec.side*(A.width/2+1+A.depth/2)
+			local cf=rel(x,0,z)*CFrame.Angles(0,if spec.side>0 then math.pi/2 else -math.pi/2,0)
+			local h=house(f,cf,A.depth,A.front,2,C[kind.wall],C[kind.roof],{front=1,flat=kind.flat,dress=kind.dress,name="AlleyHouse",
+				noren=if kind.shop then C.roofBlue else nil})
+			h:SetAttribute("DressScale",Vector3.new(A.depth/kind.w,1,A.front/20))
+		end
+	end
+	-- the courtyard: cover to break, light to fight by
+	for _,c in {{150,-12,4,2},{154.2,-12,4,2},{152.1,-12,4,6},{182,8,4,2},{186.5,6,4,2}} do
+		local size=Vector3.new(c[3],c[3],c[3])
+		local y=c[4]
+		local crate=unit(f,"Crate","Crate",rel(c[1],y,c[2]),size/4)
+		part(crate,"Crate",size,rel(c[1],y,c[2]),C.woodLight,Enum.Material.WoodPlanks)
+	end
+	local bench=unit(f,"Bench","Bench",rel(165,0,12))
+	part(bench,"Bench",Vector3.new(8,1,2.4),rel(165,1.6,12),C.wood,Enum.Material.Wood)
+	lamps(f,140,190,A.z-14,50)
+	return n
 end
 
 -- Builds the village once per server (Main). Headless: the parts are built in

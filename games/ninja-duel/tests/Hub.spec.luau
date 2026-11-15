@@ -343,9 +343,49 @@ test("a duel's lens in Konoha: the houses stop it, a prop fades with its mesh, t
 	local keys={}
 	for _,street in HubMap.Streets do
 		assert(not keys[street.key],"twice: "..street.key);keys[street.key]=true
-		assert(HubMap.inside(street.at) and street.radius>=30 and street.place,"a street place: "..street.key)
+		assert(HubMap.inside(street.at) and street.radius>=20 and street.place,"a street place: "..street.key)
 	end
-	assert(#HubMap.Streets==3 and keys.Leaf and keys.Legion and keys.GentleFist and not keys.Training,"the streets' places: "..#HubMap.Streets)
+	assert(#HubMap.Streets>=8 and keys.Leaf and keys.Legion and keys.GentleFist and not keys.Training,"the streets' places: "..#HubMap.Streets)
+	assert(keys.Plaza and keys.MarketLane and keys.Courtyard and keys.BackAlley and keys.Residences,"the streets' own places")
+	-- the back alleys: two rows of narrow houses facing their lane, a named place
+	local alley=0
+	for _,m in folder:GetDescendants() do
+		if m:IsA("Model") and m.Name=="AlleyHouse" then
+			alley+=1
+			local scale=m:GetAttribute("DressScale")
+			assert(scale and scale.X<(HubMap.Scale or 1) and scale.Z<(HubMap.Scale or 1),"an alley house wears a full-size model")
+			local walls=m:FindFirstChild("Walls")
+			assert(walls and walls:GetAttribute("NinjaWall"),"an alley house is not a wall to run on")
+		end
+	end
+	assert(alley==12,"alley houses: "..alley)
+	for _,street in HubMap.Streets do
+		if street.key=="Courtyard" or street.key=="BackAlley" then
+			assert(HubMap.placeAt(HubMap.Origin+street.at).id=="Alleys","the back alleys are not named")
+		end
+	end
+	-- (15/11) each place's centre and both starts are open ground: no wall,
+	-- house or prop where a fighter stands
+	local solids={}
+	for _,d in folder:GetDescendants() do
+		if d:IsA("BasePart") and d.CanCollide and d.Size.Y>=2 then table.insert(solids,d) end
+	end
+	local function blocked(point)
+		for _,p in solids do
+			local l=p.CFrame:PointToObjectSpace(point)
+			if math.abs(l.X)<=p.Size.X/2+1.5 and math.abs(l.Y)<=p.Size.Y/2 and math.abs(l.Z)<=p.Size.Z/2+1.5 then return p end
+		end
+		return nil
+	end
+	for _,street in HubMap.Streets do
+		local centre=HubMap.Origin+street.at+Vector3.new(0,3,0)
+		local axis=street.axis or Vector3.new(0,0,1)
+		local half=street.start or math.min(24,street.radius*.7)
+		for _,point in {centre,centre+axis*half,centre-axis*half} do
+			local wall=blocked(point)
+			assert(not wall,string.format("%s: a fighter starts inside %s",street.key,wall and wall:GetFullName() or "?"))
+		end
+	end
 end)
 
 -- (14/11) The players met in the village: a name tag with the kit, CHALLENGE.

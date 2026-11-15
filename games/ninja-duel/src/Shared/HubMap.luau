@@ -49,6 +49,8 @@ M.Places={
 	-- (14/11) the two quarters of houses (Server/Hub.quarters)
 	{id="Market",name="THE MARKET STREETS",at=Vector3.new(160,0,103),radius=85},
 	{id="Residences",name="THE WEST RESIDENCES",at=Vector3.new(-170,0,150),radius=70},
+	-- (15/11) between the Uchiha wall and the market (Server/Hub.alleys)
+	{id="Alleys",name="THE BACK ALLEYS",at=Vector3.new(180,0,-3),radius=60},
 }
 
 -- The exam's proctor, on the hall's floor: the board of duels (the roster:
@@ -126,6 +128,18 @@ do
 	end
 	for _,key in keys do add(key,M.Masters[key]) end
 	add("Training",M.Training)
+	-- (15/11, François: « des combats un peu partout sur la map », « dans
+	-- des espaces resserrés ») the street fights' own places: the plaza, a
+	-- market lane, the back alleys' courtyard and lane, the residences' lane.
+	-- `axis`: the way the street runs (the two fighters start along it,
+	-- `start` studs from the centre each).
+	for _,spot in {
+		{key="Plaza",at=Vector3.new(0,0,10),radius=28,place="THE PLAZA",axis=Vector3.xAxis,start=16},
+		{key="MarketLane",at=Vector3.new(115,0,56),radius=26,place="THE MARKET STREETS",axis=Vector3.xAxis,start=14},
+		{key="Courtyard",at=Vector3.new(165,0,-3),radius=24,place="THE BACK-ALLEY COURTYARD",axis=Vector3.xAxis,start=14},
+		{key="BackAlley",at=Vector3.new(232,0,-3),radius=20,place="THE BACK ALLEYS",axis=Vector3.xAxis,start=12},
+		{key="Residences",at=Vector3.new(-160,0,150),radius=24,place="THE WEST RESIDENCES",axis=Vector3.xAxis,start=12},
+	} do table.insert(M.Streets,spot) end
 end
 
 -- (14/11, user: « les têtes sont moches […] à terme ça sera les champions, on
@@ -174,7 +188,7 @@ function M.applyScale(s)
 	M.Market.at*=s
 	for k,at in M.Heads do M.Heads[k]=at*s end
 	M.HeadScale*=s
-	for _,street in M.Streets do street.at*=s;street.radius*=s end
+	for _,street in M.Streets do street.at*=s;street.radius*=s;if street.start then street.start*=s end end
 end
 function M.inside(rel)
 	return math.abs(rel.X)<=M.HalfX and rel.Z>=M.MinZ and rel.Z<=M.MaxZ
