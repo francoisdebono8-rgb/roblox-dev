@@ -644,6 +644,11 @@ test("the client UI renders the real roster, queue, pick, duel and result packet
 	assert(not ui.hp.title.Visible and ui.enemy.title.Visible and not ui.roundSub.Visible,"HUD v3: the subtitles")
 	assert(ui.hp.fill.BackgroundColor3==ui.hp.base and ui.enemy.base~=ui.hp.base,"HUD v3: one colour per side")
 	assert(ui.jutsuRope.Visible and ui.techniqueButtons[1].box.BackgroundColor3~=nil and ui.techniqueButtons[1].title.TextColor3~=H.roblox.Color3.fromRGB(240,232,212),"HUD v3: the scrolls")
+	-- the ultimate's red scroll at the head of the rope: filling, then READY with its key
+	assert(ui.ultimateScroll.box.Visible and ui.ultimateScroll.ready.Text~="READY","HUD v3: the ultimate scroll at the start")
+	local UIm=H.load("Client/UI")
+	assert(UIm.ultimateScroll(ui.ultimateScroll,{ultimate=100,ultimateReady=true},false,4) and ui.ultimateScroll.ready.Text=="READY" and ui.ultimateScroll.key.Text=="Y" and ui.ultimateScroll.seal.Visible,"HUD v3: the ultimate ready")
+	assert(not UIm.ultimateScroll(ui.ultimateScroll,{ultimate=40},true,4) and ui.ultimateScroll.ready.Text=="40%" and not ui.ultimateScroll.seal.Visible,"HUD v3: the ultimate filling")
 	-- Two knockouts for Alpha: VICTORY from Alpha's side.
 	for _=1,2 do d.introUntil=nil;d.combat:damage(d.seats[1].actor,d.seats[2].actor,1000,false,false);step(m,2.7) end
 	ui:render(last(a))

@@ -524,7 +524,7 @@ function UI.new(parent,send)
 		-- changes in the fight (UI.awakening), under the plate.
 		local awake=text(box,"",UDim2.fromOffset(X(96,460),112),UDim2.fromOffset(460,26),15,palette.gold,TITLE_FONT,align)
 		create("UIStroke",awake,{Color=palette.ink,Thickness=1.5,ApplyStrokeMode=Enum.ApplyStrokeMode.Contextual})
-		return {box=box,name=name,title=title,fill=fill,lag=lag,chakra=chakra,ultimate=ultimate,status=status,pips=pips,subLabel=subLabel,medals=medals,points=points,pointsShown=0,awake=awake,initial=initial,ring=ring,glow=glow,right=right,base=base}
+		return {box=box,name=name,title=title,fill=fill,lag=lag,chakra=chakra,ultimate=ultimate,status=status,pips=pips,subLabel=subLabel,medals=medals,points=points,pointsShown=0,awake=awake,initial=initial,ring=ring,glow=glow,right=right,base=base,medallion=medallion}
 	end
 	self.hp=plate("left")
 	self.enemy=plate("right")
@@ -596,6 +596,27 @@ function UI.new(parent,send)
 		ember.AnchorPoint=Vector2.new(0,.5)
 		title.ZIndex=(box.ZIndex or 1)+2;status.ZIndex=(box.ZIndex or 1)+2
 		self.techniqueButtons[i]={box=box,key=key,title=title,status=status,cool=cool,ember=ember}
+	end
+	-- (HUD v3: « l'ultime : le parchemin rouge ; la jauge le remplit, puis il
+	-- affiche READY ») at the head of the rope: dark while it fills, red rising
+	-- from the bottom, READY with its key once full (UI.ultimateScroll).
+	do
+		local box=frame(self.hud,UDim2.new(1,-24-5*150+6-132,1,-84),UDim2.fromOffset(124,60),UI.CHAR,0)
+		corner(box,3);box.Rotation=-2;box.ClipsDescendants=false
+		local edge=create("UIStroke",box,{Color=MANGA.ink,Thickness=2.5,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
+		local fill=frame(box,UDim2.fromScale(0,1),UDim2.fromScale(1,0),MANGA.red,0)
+		fill.AnchorPoint=Vector2.new(0,1);corner(fill,3)
+		local head=text(box,"ULTIMATE",UDim2.fromOffset(8,4),UDim2.new(1,-16,0,16),13,MANGA.cream,STRONG_FONT,Enum.TextXAlignment.Center)
+		local ready=text(box,"",UDim2.fromOffset(4,20),UDim2.new(1,-8,0,36),30,MANGA.cream,TITLE_FONT,Enum.TextXAlignment.Center)
+		create("UIStroke",ready,{Color=MANGA.ink,Thickness=2,ApplyStrokeMode=Enum.ApplyStrokeMode.Contextual})
+		local seal=frame(box,UDim2.new(1,-22,0,-10),UDim2.fromOffset(34,26),MANGA.cream,0)
+		seal.Rotation=5;corner(seal,4)
+		create("UIStroke",seal,{Color=MANGA.ink,Thickness=2,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
+		local key=text(seal,"",UDim2.fromScale(0,0),UDim2.fromScale(1,1),15,MANGA.red,STRONG_FONT,Enum.TextXAlignment.Center)
+		key.TextScaled=true;create("UITextSizeConstraint",key,{MaxTextSize=15})
+		for _,g in {fill,head,ready,seal} do g.ZIndex=(box.ZIndex or 1)+1 end
+		key.ZIndex=(box.ZIndex or 1)+2
+		self.ultimateScroll={box=box,fill=fill,head=head,ready=ready,seal=seal,key=key,edge=edge}
 	end
 	-- (05/11, user on the pad) "R1 + □" did not fit the 28 px seal: on a pad
 	-- each seal shows its face button and the row is prefixed by the R1 it
@@ -1201,6 +1222,24 @@ function UI.conversion(h,pad)
 end
 -- (Stage 6) the ultimate bar on a plate; full, it burns gold and (on the
 -- player's own plate) says which buttons fire it.
+-- (HUD v3) The red scroll of the ultimate, at the head of the rope: `shown`
+-- jutsu scrolls after it.
+function UI.ultimateScroll(scroll,actor,pad,shown)
+	if not scroll then return end
+	local level=math.clamp((actor.ultimate or 0)/100,0,1)
+	local ready=actor.ultimateReady==true
+	scroll.box.Visible=true
+	scroll.box.Position=UDim2.new(1,-24-(shown or 0)*150+6-132,1,-84)
+	scroll.fill.Size=UDim2.fromScale(1,if ready then 1 else level)
+	scroll.ready.Text=if ready then "READY" else string.format("%d%%",math.floor(level*100))
+	scroll.ready.TextSize=if ready then 30 else 22
+	scroll.key.Text=if pad then Controls.PadLabel.Ultimate else Controls.KeyLabel.Ultimate
+	scroll.seal.Visible=ready
+	-- full, it smoulders: a slow ember on its edge
+	local stroke=scroll.edge
+	if stroke then stroke.Color=if ready then MANGA.ink:Lerp(UI.EMBER,.5+.5*math.sin(os.clock()*6)) else MANGA.ink end
+	return ready
+end
 function UI.ultimate(widget,actor,pad,mine)
 	if not widget.ultimate then return end
 	local level=math.clamp((actor.ultimate or 0)/100,0,1)
@@ -1212,6 +1251,29 @@ function UI.ultimate(widget,actor,pad,mine)
 	widget.status.TextColor3=if ready then Color3.fromRGB(255,200,90) else palette.muted
 	if ready then
 		widget.status.Text..="   •   ULTIMATE READY"..(if mine then " ("..(if pad then Controls.PadLabel.Ultimate else Controls.KeyLabel.Ultimate)..")" else "")
+	end
+end
+-- (HUD v3, DESIGN validated 14/11; François 15/11: « une image animée du
+-- visage ») Each case films its fighter's head live (Client/FaceCam), every
+-- rendered frame (Main's camera step): `mine` and `theirs` are the two
+-- fighters' models. Without a head (none yet, a body being rebuilt) the case
+-- shows the fighter's initial as before.
+function UI:faceCams(data,mine,theirs)
+	if not data or (data.phase~="Duel" and data.phase~="Result") then return end
+	local ok,FaceCam=pcall(function() return require(script.Parent.FaceCam) end)
+	if not ok then return end
+	local now=os.clock()
+	for _,pair in {{self.hp,mine},{self.enemy,theirs}} do
+		local widget,model=pair[1],pair[2]
+		if widget.faceCam==nil and widget.medallion then
+			local built,cam=pcall(FaceCam.new,widget.medallion)
+			widget.faceCam=if built then cam else false
+		end
+		if widget.faceCam then
+			widget.faceCam:watch(model)
+			local live=widget.faceCam:step(now)
+			widget.initial.Visible=not live
+		end
 	end
 end
 function UI:render(data)
@@ -1505,7 +1567,8 @@ function UI:render(data)
 	-- the rope over the scrolls, as long as the row
 	local shown=if chakraPage then #ChakraMoves.Slots else #h.techniques
 	self.jutsuRope.Visible=shown>0
-	self.jutsuRope.Position=UDim2.new(1,-24-shown*150+6,1,-90);self.jutsuRope.Size=UDim2.fromOffset(math.max(0,shown*150-6),3)
+	self.jutsuRope.Position=UDim2.new(1,-24-shown*150+6-132,1,-90);self.jutsuRope.Size=UDim2.fromOffset(math.max(0,shown*150-6+132),3)
+	UI.ultimateScroll(self.ultimateScroll,h,pad,shown)
 	self:sealHud(h,pad,data.sealPage)
 	local caption=self.jutsuCaption
 	caption.Text=if chakraPage then (if pad then P0.Chakra else K0.Chakra).." +" else "R1 +"
@@ -1515,18 +1578,18 @@ function UI:render(data)
 	-- "HOLD C" slip sat under the buttons.
 	if data.touch then
 		for _,b in self.techniqueButtons do b.box.Visible=false end
-		self.sealPanel.Visible=false;self.jutsuRope.Visible=false
+		self.sealPanel.Visible=false;self.jutsuRope.Visible=false;self.ultimateScroll.box.Visible=false
 	end
 	-- (B1 lot 2) the first minute and its duel: the signature's slot only,
 	-- no seal page; the rest shows from the next duel on.
 	if data.first then
 		for i,b in self.techniqueButtons do if i~=FirstMinute.SignatureSlot then b.box.Visible=false end end
-		self.sealPanel.Visible=false;self.sealWeave.Text="";self.jutsuRope.Visible=false
+		self.sealPanel.Visible=false;self.sealWeave.Text="";self.jutsuRope.Visible=false;self.ultimateScroll.box.Visible=false
 	end
 	-- (Tournament) watching a match: none of these are the player's.
 	if data.spectate then
 		for _,b in self.techniqueButtons do b.box.Visible=false end
-		self.sealPanel.Visible=false;self.sealWeave.Text="";self.jutsuRope.Visible=false
+		self.sealPanel.Visible=false;self.sealWeave.Text="";self.jutsuRope.Visible=false;self.ultimateScroll.box.Visible=false
 	end
 	-- The caption sits left of the first card still shown (pad only).
 	local leftmost=nil

@@ -164,6 +164,14 @@ RunService:BindToRenderStep("NinjaDuelCamera",Enum.RenderPriority.Camera.Value,f
 	camera.menuOpen=(dev~=nil and dev.panelOpen==true)
 	mouse.TargetFilter=player.Character
 	camera:update(current,dt)
+	-- (HUD v3) the two heads filmed live in their cases (Client/FaceCam)
+	if current.phase=="Duel" or current.phase=="Result" then
+		local mine=player.Character
+		local folder=mine and mine.Parent
+		local theirs=Presentation.opponent(current,folder)
+		if not mine and theirs and theirs.Parent and current.human then mine=theirs.Parent:FindFirstChild(current.human.id or "") end
+		pcall(ui.faceCams,ui,current,mine,theirs)
+	end
 	-- (DEC-030 Partie 1, responsiveness) The stick goes out the frame it
 	-- changes, not on the next 80 ms tick (that alone cost up to 80 ms on every
 	-- start, stop and turn); the tick stays as a heartbeat.
