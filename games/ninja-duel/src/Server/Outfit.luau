@@ -65,7 +65,16 @@ end
 --   collar: a raised collar on the torso's top; shoulders: across the top;
 --   vest: a thicker shell on the torso with two pockets in front;
 --   sash: a band across the chest; tail: cloth hanging down from the hips.
-function Outfit.piece(holder,body,spec,colors)
+-- (15/11) The legs' length against the standard R15's (2.41), for what hangs
+-- from the hips (a tail): its length follows the legs, not the hips' height
+-- (0.4 standard, often 0.6 to 1 on a bundle).
+Outfit.LEGS=1.217+1.193
+function Outfit.legScale(model)
+	local up,low=model and model:FindFirstChild("RightUpperLeg"),model and model:FindFirstChild("RightLowerLeg")
+	if not (up and low) then return 1 end
+	return (up.Size.Y+low.Size.Y)/Outfit.LEGS
+end
+function Outfit.piece(holder,body,spec,colors,legs)
 	local s=body.Size
 	local color=rgb((colors and colors[spec.c]) or {120,120,120})
 	local material=Enum.Material[spec.mat or "Fabric"] or Enum.Material.Fabric
@@ -91,7 +100,8 @@ function Outfit.piece(holder,body,spec,colors)
 	elseif kind=="sash" then
 		return cloth(holder,body,"Sash",Vector3.new(s.X*1.25,s.Y*.18,s.Z+2*pad+.06),CFrame.new(0,0,0)*CFrame.Angles(0,0,math.rad(-38)),color,material)
 	elseif kind=="tail" then
-		local hh=h*s.Y*1.6
+		-- the standard hips (0.4) times 1.6, along the legs
+		local hh=h*.4*1.6*(legs or 1)
 		return cloth(holder,body,"Tail",Vector3.new(s.X+2*pad+.1,hh,s.Z+2*pad+.1),CFrame.new(0,-s.Y/2-hh/2+s.Y*.3,0),color,material)
 	end
 	return nil
@@ -121,7 +131,7 @@ function Outfit.wear(model,looks)
 		local item=Shop.item(id)
 		if item and item.pieces and not item.none then
 			for _,spec in item.pieces do
-				for _,body in Outfit.parts(model,spec.on) do Outfit.piece(holder,body,spec,item.colors) end
+				for _,body in Outfit.parts(model,spec.on) do Outfit.piece(holder,body,spec,item.colors,Outfit.legScale(model)) end
 			end
 		end
 	end
