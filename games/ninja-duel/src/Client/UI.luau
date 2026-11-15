@@ -45,6 +45,13 @@ local VOICE_FONT=Enum.Font.Cartoon
 local NOTE_FONT=Enum.Font.PermanentMarker
 -- La planche de manga : papier, encre, un seul rouge d'accent.
 local MANGA={paper=Color3.fromRGB(255,253,248),ink=Color3.fromRGB(20,16,17),red=Color3.fromRGB(195,18,29),cream=Color3.fromRGB(246,238,222),redSoft=Color3.fromRGB(240,120,110)}
+-- (HUD v3, DESIGN validated 14/11) the pink trail of the blows just taken,
+-- the chakra's blue written on paper, a burnt scroll and its ember.
+UI.TRAIL=Color3.fromRGB(255,156,138)
+UI.CHAKRA_INK=Color3.fromRGB(36,110,214)
+UI.CHAR=Color3.fromRGB(43,29,22)
+UI.EMBER=Color3.fromRGB(255,138,40)
+UI.OFF=Color3.fromRGB(138,124,112)
 local function create(class,parent,props)
 	local x=Instance.new(class)
 	for k,v in props do x[k]=v end
@@ -421,11 +428,14 @@ function UI.new(parent,send)
 		local align=if right then Enum.TextXAlignment.Right else Enum.TextXAlignment.Left
 		local function X(x,w) return if right then 560-x-w else x end
 		-- The medallion.
-		local medallion=frame(box,UDim2.fromOffset(X(0,88),0),UDim2.fromOffset(88,88),Color3.fromRGB(14,12,17),0)
-		create("UICorner",medallion,{CornerRadius=UDim.new(.5,0)})
-		local ring=create("UIStroke",medallion,{Color=palette.paper,Thickness=3,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
-		local glow=frame(medallion,UDim2.fromScale(.5,.45),UDim2.fromScale(.9,.9),palette.red,.7)
-		glow.AnchorPoint=Vector2.new(.5,.5);create("UICorner",glow,{CornerRadius=UDim.new(.5,0)})
+		-- (HUD v3, DESIGN validated 14/11) a case of the manga page: ink inside,
+		-- the white between two panels around it, a little tilt.
+		local medallion=frame(box,UDim2.fromOffset(X(0,88),0),UDim2.fromOffset(88,88),MANGA.ink,0)
+		create("UICorner",medallion,{CornerRadius=UDim.new(0,3)})
+		medallion.Rotation=if right then 2 else -2
+		local ring=create("UIStroke",medallion,{Color=MANGA.paper,Thickness=3,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
+		local glow=frame(medallion,UDim2.fromScale(.5,.45),UDim2.fromScale(.9,.9),palette.red,1)
+		glow.AnchorPoint=Vector2.new(.5,.5)
 		-- The fighter's initial in brush capitals (a ViewportFrame cannot draw
 		-- the faces: they are SurfaceGuis).
 		local initial=text(medallion,"",UDim2.fromScale(0,.04),UDim2.fromScale(1,1),58,palette.paper,TITLE_FONT,Enum.TextXAlignment.Center)
@@ -433,39 +443,36 @@ function UI.new(parent,send)
 		-- Name, title, substitution diamonds.
 		local name=text(box,"",UDim2.fromOffset(X(100,360),0),UDim2.fromOffset(360,34),32,palette.paper,TITLE_FONT,align)
 		create("UIStroke",name,{Color=palette.ink,Thickness=2.5,ApplyStrokeMode=Enum.ApplyStrokeMode.Contextual})
-		local title=text(box,"",UDim2.fromOffset(X(102,400),32),UDim2.fromOffset(400,16),13,palette.paper,BODY_FONT,align)
+		local title=text(box,"",UDim2.fromOffset(X(102,400),32),UDim2.fromOffset(400,16),13,palette.paper,STRONG_FONT,align)
 		create("UIStroke",title,{Color=palette.ink,Thickness=1,Transparency=.3,ApplyStrokeMode=Enum.ApplyStrokeMode.Contextual})
+		-- (HUD v3: « retiré du HUD : le sous-titre kit/maîtrise ») only an
+		-- online opponent's name is said there (UI:render)
+		title.Visible=false
 		-- Health: ink edge, dark well, the trail of lost health, the fill.
 		-- A soft ink shadow under the whole plate keeps it readable on the sky.
-		local shade=frame(box,UDim2.fromOffset(X(84,480),-6),UDim2.fromOffset(480,128),Color3.fromRGB(8,7,10),.55)
-		shade.ZIndex=0;corner(shade,14)
-		if hasSequences then create("UIGradient",shade,{Rotation=if right then 180 else 0,Transparency=NumberSequence.new({NumberSequenceKeypoint.new(0,0),NumberSequenceKeypoint.new(.7,.35),NumberSequenceKeypoint.new(1,1)})}) end
-		local track=frame(box,UDim2.fromOffset(X(96,464),52),UDim2.fromOffset(464,22),Color3.fromRGB(20,18,24),0)
-		corner(track,4)
-		create("UIStroke",track,{Color=palette.ink,Thickness=3,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
-		local lag=frame(track,UDim2.fromScale(0,0),UDim2.fromScale(1,1),Color3.fromRGB(240,220,190))
-		corner(lag,3)
-		local fill=frame(track,UDim2.fromScale(0,0),UDim2.fromScale(1,1),palette.gold)
-		corner(fill,3)
-		local shine=frame(fill,UDim2.fromOffset(0,2),UDim2.new(1,0,0,5),Color3.new(1,1,1),.6)
-		corner(shine,3)
-		-- Light from above on the fill and the trail; a dark well under them.
-		if hasSequences then
-			create("UIGradient",fill,{Rotation=90,Color=ColorSequence.new(Color3.new(1,1,1),Color3.fromRGB(170,150,130))})
-			create("UIGradient",lag,{Rotation=90,Color=ColorSequence.new(Color3.new(1,1,1),Color3.fromRGB(200,180,160))})
-			create("UIGradient",track,{Rotation=90,Color=ColorSequence.new(Color3.fromRGB(60,54,66),Color3.fromRGB(20,18,24))})
-		end
+		-- (HUD v3) no dark plate behind: the ink of each piece carries it.
+		-- Health is one brush stroke, cream for you and red for the opponent,
+		-- the pink trail the blows just taken.
+		local track=frame(box,UDim2.fromOffset(X(96,464),52),UDim2.fromOffset(464,22),MANGA.ink,0)
+		corner(track,11)
+		track.Rotation=if right then .8 else -.8
+		create("UIStroke",track,{Color=MANGA.ink,Thickness=3,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
+		local lag=frame(track,UDim2.fromScale(0,0),UDim2.fromScale(1,1),UI.TRAIL)
+		corner(lag,11)
+		local base=if right then MANGA.red else MANGA.cream
+		local fill=frame(track,UDim2.fromScale(0,0),UDim2.fromScale(1,1),base)
+		corner(fill,11)
 		if right then lag.AnchorPoint=Vector2.new(1,0);lag.Position=UDim2.fromScale(1,0);fill.AnchorPoint=Vector2.new(1,0);fill.Position=UDim2.fromScale(1,0) end
-		local chakraTrack=frame(box,UDim2.fromOffset(X(96,400),78),UDim2.fromOffset(400,6),Color3.fromRGB(20,18,24))
+		local chakraTrack=frame(box,UDim2.fromOffset(X(96,400),78),UDim2.fromOffset(400,6),MANGA.ink)
 		corner(chakraTrack,3)
 		local chakra=frame(chakraTrack,UDim2.fromScale(0,0),UDim2.fromScale(1,1),palette.blue)
 		if right then chakra.AnchorPoint=Vector2.new(1,0);chakra.Position=UDim2.fromScale(1,0) end
 		-- (Stage 6) the ultimate gauge: it fills by hitting and being hit; full,
 		-- it burns and the plate says how to fire it.
-		local ultimateTrack=frame(box,UDim2.fromOffset(X(96,400),87),UDim2.fromOffset(400,6),Color3.fromRGB(20,18,24))
-		local ultimate=frame(ultimateTrack,UDim2.fromScale(0,0),UDim2.fromScale(0,1),Color3.fromRGB(255,150,40))
+		local ultimateTrack=frame(box,UDim2.fromOffset(X(96,400),87),UDim2.fromOffset(400,6),MANGA.ink)
+		local ultimate=frame(ultimateTrack,UDim2.fromScale(0,0),UDim2.fromScale(0,1),MANGA.red)
 		if right then ultimate.AnchorPoint=Vector2.new(1,0);ultimate.Position=UDim2.fromScale(1,0) end
-		for k=1,3 do frame(ultimateTrack,UDim2.fromScale(k/4,0),UDim2.new(0,2,1,0),palette.ink,0) end
+		-- (HUD v3: « les crans d'ultime en double » retirés)
 		local status=text(box,"",UDim2.fromOffset(X(98,460),96),UDim2.fromOffset(460,16),13,palette.muted,BODY_FONT,align)
 		create("UIStroke",status,{Color=palette.ink,Thickness=1,Transparency=.3,ApplyStrokeMode=Enum.ApplyStrokeMode.Contextual})
 		-- Neji's chakra points closed on this fighter: four pips at the far end of
@@ -498,7 +505,7 @@ function UI.new(parent,send)
 		-- changes in the fight (UI.awakening), under the plate.
 		local awake=text(box,"",UDim2.fromOffset(X(96,460),112),UDim2.fromOffset(460,26),15,palette.gold,TITLE_FONT,align)
 		create("UIStroke",awake,{Color=palette.ink,Thickness=1.5,ApplyStrokeMode=Enum.ApplyStrokeMode.Contextual})
-		return {box=box,name=name,title=title,fill=fill,lag=lag,chakra=chakra,ultimate=ultimate,status=status,pips=pips,subLabel=subLabel,medals=medals,points=points,pointsShown=0,awake=awake,initial=initial,ring=ring,glow=glow,right=right}
+		return {box=box,name=name,title=title,fill=fill,lag=lag,chakra=chakra,ultimate=ultimate,status=status,pips=pips,subLabel=subLabel,medals=medals,points=points,pointsShown=0,awake=awake,initial=initial,ring=ring,glow=glow,right=right,base=base}
 	end
 	self.hp=plate("left")
 	self.enemy=plate("right")
@@ -506,6 +513,8 @@ function UI.new(parent,send)
 	self.roundSub=text(self.hud,"PRODIGY TOURNAMENT",UDim2.new(.5,-120,0,55),UDim2.fromOffset(240,16),13,palette.paper,BODY_FONT,Enum.TextXAlignment.Center)
 	-- (UI pass 02/11) Over the sky and the wall the grey subtitle disappeared.
 	create("UIStroke",self.roundSub,{Color=palette.ink,Thickness=1.2,Transparency=.2,ApplyStrokeMode=Enum.ApplyStrokeMode.Contextual})
+	-- (HUD v3: « le nom du tournoi » retiré du combat; the intro still says it)
+	self.roundSub.Visible=false
 	create("UIStroke",self.round,{Color=palette.ink,Thickness=2,ApplyStrokeMode=Enum.ApplyStrokeMode.Contextual})
 	frame(self.hud,UDim2.new(.5,-46,0,48),UDim2.fromOffset(92,3),palette.red,0)
 	self.cue=text(self.hud,"",UDim2.new(.5,-300,0,124),UDim2.fromOffset(600,40),30,palette.paper,TITLE_FONT,Enum.TextXAlignment.Center)
@@ -536,27 +545,38 @@ function UI.new(parent,send)
 	end
 	self.comboMine=counter("left")
 	self.comboTheirs=counter("right")
+	-- (HUD v3: « le grand compteur de combo » retiré) kept built, never shown
+	UI.COMBO_COUNTER=false
 	self.techniqueButtons={}
 	-- (UI redesign 02/11) The jutsu cards leave the middle of the screen, where
 	-- the camera puts the fighter's own body: a row in the bottom right corner,
 	-- each card an ink slip with its key on a vermilion seal.
+	-- (HUD v3, DESIGN validated 14/11) The jutsu are paper scrolls hung on a
+	-- rope: the key on a red seal, the chakra cost in blue (the only blue of
+	-- the screen besides the chakra bar); on cooldown the scroll burns from
+	-- the bottom up, an ember line on the char, the seconds in Builder Sans.
+	self.jutsuRope=frame(self.hud,UDim2.new(1,-24-5*150+6,1,-90),UDim2.fromOffset(5*150-6,3),MANGA.ink,0)
 	for i=1,5 do
-		local box=frame(self.hud,UDim2.new(1,-24-(5-i+1)*150+6,1,-84),UDim2.fromOffset(144,60),Color3.fromRGB(22,19,26),.05)
-		corner(box,8)
-		create("UIStroke",box,{Color=palette.paper,Thickness=1.5,Transparency=.7,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
-		if hasSequences then create("UIGradient",box,{Rotation=90,Color=ColorSequence.new(Color3.fromRGB(70,62,78),Color3.fromRGB(22,19,26))}) end
-		local seal=frame(box,UDim2.fromOffset(-8,-8),UDim2.fromOffset(28,28),palette.red,0)
-		seal.Rotation=-6;corner(seal,5)
-		create("UIStroke",seal,{Color=palette.ink,Thickness=2,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
-		local key=text(seal,"",UDim2.fromScale(0,0),UDim2.fromScale(1,1),18,palette.paper,TITLE_FONT,Enum.TextXAlignment.Center)
+		local box=frame(self.hud,UDim2.new(1,-24-(5-i+1)*150+6,1,-84),UDim2.fromOffset(144,60),MANGA.cream,0)
+		corner(box,3)
+		box.Rotation=if i%2==0 then 1.2 else -1.2
+		create("UIStroke",box,{Color=MANGA.ink,Thickness=2.5,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
+		local seal=frame(box,UDim2.fromOffset(-8,-8),UDim2.fromOffset(28,28),MANGA.red,0)
+		seal.Rotation=-6;corner(seal,4)
+		create("UIStroke",seal,{Color=MANGA.ink,Thickness=2,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
+		local key=text(seal,"",UDim2.fromScale(0,0),UDim2.fromScale(1,1),18,MANGA.cream,STRONG_FONT,Enum.TextXAlignment.Center)
 		-- (05/11) a word fits too (the chakra page's LMB, SPACE)
 		key.TextScaled=true;create("UITextSizeConstraint",key,{MaxTextSize=18})
-		local title=text(box,"",UDim2.fromOffset(26,6),UDim2.fromOffset(112,28),17,palette.paper,TITLE_FONT)
-		title.TextScaled=true;create("UITextSizeConstraint",title,{MaxTextSize=18})
-		local status=text(box,"",UDim2.fromOffset(10,38),UDim2.fromOffset(126,16),12,Color3.fromRGB(140,190,250))
-		local cool=frame(box,UDim2.fromScale(0,1),UDim2.fromScale(1,0),palette.ink,.3)
-		cool.AnchorPoint=Vector2.new(0,1);corner(cool,8)
-		self.techniqueButtons[i]={box=box,key=key,title=title,status=status,cool=cool}
+		local title=text(box,"",UDim2.fromOffset(26,6),UDim2.fromOffset(112,28),17,MANGA.ink,STRONG_FONT)
+		title.TextScaled=true;create("UITextSizeConstraint",title,{MaxTextSize=17})
+		local status=text(box,"",UDim2.fromOffset(10,38),UDim2.fromOffset(126,16),13,UI.CHAKRA_INK,STRONG_FONT)
+		-- the char climbing from the bottom, its ember edge on top
+		local cool=frame(box,UDim2.fromScale(0,1),UDim2.fromScale(1,0),UI.CHAR,.08)
+		cool.AnchorPoint=Vector2.new(0,1);corner(cool,3)
+		local ember=frame(cool,UDim2.fromScale(0,0),UDim2.new(1,0,0,3),UI.EMBER,0)
+		ember.AnchorPoint=Vector2.new(0,.5)
+		title.ZIndex=(box.ZIndex or 1)+2;status.ZIndex=(box.ZIndex or 1)+2
+		self.techniqueButtons[i]={box=box,key=key,title=title,status=status,cool=cool,ember=ember}
 	end
 	-- (05/11, user on the pad) "R1 + □" did not fit the 28 px seal: on a pad
 	-- each seal shows its face button and the row is prefixed by the R1 it
@@ -888,9 +908,11 @@ end
 function UI:sealHud(h,pad,page)
 	local def=Fighters[h.fighterId or ""]
 	local list=def and def.SealJutsu
-	self.sealPanel.Visible=list~=nil
-	if not list then self.sealWeave.Text="";return end
+	if not list then self.sealPanel.Visible=false;self.sealWeave.Text="";return end
 	local held=not h.wall and pageHeld(pad,page)
+	-- (HUD v3: « l'aide des mudras » retirée du combat) the list shows while
+	-- the seal page is held, to weave; at rest the Controls sheet (Tab) has it
+	self.sealPanel.Visible=held
 	local key=if pad then {"□","△","○","×","D↑"} else {"1","2","3","4","5"}
 	self.sealHead.Text="HAND SEALS  •  "..(if pad then "HOLD L2 + R1" else "HOLD "..(Controls.KeyLabel.WallDetach or "C"))
 	self.sealPanel.BackgroundTransparency=if held then .02 else .35
@@ -1268,6 +1290,8 @@ function UI:render(data)
 	-- (a match watched in the tournament: neither fighter is the player)
 	self.hp.name.Text=fullName(h);self.hp.title.Text=if data.spectate then "AI  •  "..subtitle(h) else subtitle(h).."  •  YOU"
 	self.enemy.name.Text=fullName(b);self.enemy.title.Text=(if data.online then Text.upper(data.online.opponent or "OPPONENT") else "AI").."  •  "..subtitle(b)
+	-- (HUD v3) the only subtitle left: the player you are fighting
+	self.enemy.title.Visible=data.online~=nil
 	for _,pair in {{self.hp,h},{self.enemy,b}} do
 		local widget,actor=pair[1],pair[2]
 		-- The fighter's initial in the medallion, his colour on its ring.
@@ -1280,10 +1304,11 @@ function UI:render(data)
 		end
 		local ratio=math.clamp(actor.health/actor.maxHealth,0,1)
 		widget.fill.Size=UDim2.fromScale(ratio,1)
-		widget.fill.BackgroundColor3=if ratio>.5 then palette.gold elseif ratio>.25 then Color3.fromRGB(236,134,60) else palette.red
+		-- (HUD v3) one colour per side, cream for you and red for him
+		widget.fill.BackgroundColor3=widget.base or palette.gold
 		-- In danger the bar throbs; with the ultimate full the medallion's ring burns.
 		local t=os.clock()
-		if ratio<=.25 and ratio>0 then widget.fill.BackgroundColor3=palette.red:Lerp(Color3.fromRGB(255,120,110),.5+.5*math.sin(t*9)) end
+		if ratio<=.25 and ratio>0 then widget.fill.BackgroundColor3=(widget.base or palette.red):Lerp(if widget.right then MANGA.paper else UI.TRAIL,.5+.5*math.sin(t*9)) end
 		if actor.ultimateReady then
 			widget.ring.Color=Color3.fromRGB(255,200,80):Lerp(Color3.fromRGB(255,120,40),.5+.5*math.sin(t*6))
 			widget.ring.Thickness=4
@@ -1350,7 +1375,7 @@ function UI:render(data)
 			widget.hits.TextColor3=if hits>=8 then Color3.fromRGB(255,96,80) elseif hits>=5 then palette.gold else palette.paper
 			widget.hits.Rotation=-4
 			widget.detail.Text=string.format("%d DMG  •  NEXT x%.2f",math.floor((victim.comboDamage or 0)+.5),scale)
-			widget.box.Visible=true
+			widget.box.Visible=UI.COMBO_COUNTER~=false
 			if hits~=widget.shown then
 				widget.shown=hits
 				widget.hits.TextSize=64
@@ -1409,10 +1434,10 @@ function UI:render(data)
 		for i,slot in ChakraMoves.Slots do
 			local ui=self.techniqueButtons[i]
 			ui.box.Visible=true;ui.box.Position=UDim2.new(1,-24-(5-i+1)*150+6,1,-84)
-			ui.key.Text=keys[i];ui.key.TextColor3=palette.gold
-			ui.title.Text=ChakraMoves.name(h.fighterId,slot);ui.title.TextColor3=palette.gold
-			ui.status.Text="CHAKRA";ui.box.BackgroundTransparency=0
-			ui.cool.Size=UDim2.fromScale(1,0);ui.wasReady=nil
+			ui.key.Text=keys[i];ui.key.TextColor3=MANGA.cream
+			ui.title.Text=ChakraMoves.name(h.fighterId,slot);ui.title.TextColor3=MANGA.red
+			ui.status.Text="CHAKRA";ui.status.TextColor3=UI.CHAKRA_INK;ui.box.BackgroundTransparency=0
+			ui.cool.Size=UDim2.fromScale(1,0);ui.ember.Visible=false;ui.wasReady=nil
 		end
 	end
 	for i,tech in (if chakraPage then {} else h.techniques) do
@@ -1436,10 +1461,12 @@ function UI:render(data)
 			local count=#(h.seals or {})
 			ui.status.Text=count.." SEAL"..(if count>1 then "S" else "").."  •  "..ui.status.Text
 		end
-		ui.box.BackgroundTransparency=if ready then .05 else .35
-		-- (05/11) R1 held on a pad: the row it opens is lit, the buttons in gold.
-		ui.key.TextColor3=if data.jutsuPage then palette.gold else palette.paper
-		if data.jutsuPage then ui.box.BackgroundTransparency=0 end
+		-- (HUD v3) a scroll stays paper: what is not ready greys its words
+		ui.box.BackgroundTransparency=0
+		ui.status.TextColor3=if sealed or not tech.condition then MANGA.red elseif tech.remaining>0 then MANGA.ink elseif h.chakra<tech.cost then MANGA.red else UI.CHAKRA_INK
+		-- (05/11) R1 held on a pad: the row it opens is lit (white paper).
+		ui.key.TextColor3=MANGA.cream
+		ui.box.BackgroundColor3=if data.jutsuPage then MANGA.paper else MANGA.cream
 		if ready and ui.wasReady==false then
 			pcall(function()
 				ui.flash=ui.flash or (function() local f=Instance.new("Frame");f.BackgroundColor3=palette.paper;f.BorderSizePixel=0;f.Size=UDim2.fromScale(1,1);f.ZIndex=5;local c=Instance.new("UICorner");c.CornerRadius=UDim.new(0,8);c.Parent=f;f.Parent=ui.box;return f end)()
@@ -1448,10 +1475,18 @@ function UI:render(data)
 			end)
 		end
 		ui.wasReady=ready
-		ui.title.TextColor3=if tech.copied then (if ready then Color3.fromRGB(255,86,86) else Color3.fromRGB(150,60,60)) elseif ready then palette.paper else palette.muted
-		ui.cool.Size=UDim2.fromScale(1,math.clamp(math.max(tech.remaining/6,if sealed then h.sealed/5 else 0),0,1))
+		ui.title.TextColor3=if tech.copied then (if ready then MANGA.red else UI.OFF) elseif ready then MANGA.ink else UI.OFF
+		local burnt=math.clamp(math.max(tech.remaining/6,if sealed then h.sealed/5 else 0),0,1)
+		ui.cool.Size=UDim2.fromScale(1,burnt)
+		ui.ember.Visible=burnt>0
+		-- the seconds over the char, light
+		if tech.remaining>0 and burnt>.5 then ui.status.TextColor3=MANGA.cream end
 	end
 	if not chakraPage then for i=#h.techniques+1,5 do self.techniqueButtons[i].box.Visible=false end end
+	-- the rope over the scrolls, as long as the row
+	local shown=if chakraPage then #ChakraMoves.Slots else #h.techniques
+	self.jutsuRope.Visible=shown>0
+	self.jutsuRope.Position=UDim2.new(1,-24-shown*150+6,1,-90);self.jutsuRope.Size=UDim2.fromOffset(math.max(0,shown*150-6),3)
 	self:sealHud(h,pad,data.sealPage)
 	local caption=self.jutsuCaption
 	caption.Text=if chakraPage then (if pad then P0.Chakra else K0.Chakra).." +" else "R1 +"
@@ -1461,18 +1496,18 @@ function UI:render(data)
 	-- "HOLD C" slip sat under the buttons.
 	if data.touch then
 		for _,b in self.techniqueButtons do b.box.Visible=false end
-		self.sealPanel.Visible=false
+		self.sealPanel.Visible=false;self.jutsuRope.Visible=false
 	end
 	-- (B1 lot 2) the first minute and its duel: the signature's slot only,
 	-- no seal page; the rest shows from the next duel on.
 	if data.first then
 		for i,b in self.techniqueButtons do if i~=FirstMinute.SignatureSlot then b.box.Visible=false end end
-		self.sealPanel.Visible=false;self.sealWeave.Text=""
+		self.sealPanel.Visible=false;self.sealWeave.Text="";self.jutsuRope.Visible=false
 	end
 	-- (Tournament) watching a match: none of these are the player's.
 	if data.spectate then
 		for _,b in self.techniqueButtons do b.box.Visible=false end
-		self.sealPanel.Visible=false;self.sealWeave.Text=""
+		self.sealPanel.Visible=false;self.sealWeave.Text="";self.jutsuRope.Visible=false
 	end
 	-- The caption sits left of the first card still shown (pad only).
 	local leftmost=nil
