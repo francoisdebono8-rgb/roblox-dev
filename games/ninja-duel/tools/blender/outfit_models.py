@@ -832,7 +832,12 @@ def render_bodies(dst, names=None):
             for part, c in REST.items():
                 S = REF.get(part, (1.2, 1.2, 1.2))
                 pc = Piece(part, "SmoothPlastic")
-                box(pc, (0, 0, 0), (S[0] / 2 * .98, S[1] / 2 * .98, S[2] / 2 * .98), lambda p, kk: SKIN)
+                if part == "Head":  # the classic head: a rounded cylinder, not a box
+                    rings = [[Vector((math.cos(t) * r, y, math.sin(t) * r)) for t in [i / 16 * math.tau for i in range(16)]]
+                             for y, r in ((-.6, .5), (-.5, .6), (.5, .6), (.6, .5))]
+                    loft(pc, rings, lambda p, kk: SKIN)
+                else:
+                    box(pc, (0, 0, 0), (S[0] / 2 * .98, S[1] / 2 * .98, S[2] / 2 * .98), lambda p, kk: SKIN)
                 b = to_blender_frame(pc)
                 b.v = [place(v, part) for v in b.v]
                 if back:
