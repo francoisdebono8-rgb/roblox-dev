@@ -231,9 +231,14 @@ test("the screens build and draw: the shop's five tabs, the tree by tiers, the K
 		local drawnShop=#ui.shopPanel.drawn
 		ui.shopPanel:show(kits,"KITS","market")
 		assert(ui.shopPanel.tab=="WEAPONS" and not ui.shopPanel.tabs.KITS.Visible and not ui.shopPanel.tabs.PASSES.Visible and ui.shopPanel.title.Text=="MARKET","the market's tabs")
+		assert(ui.shopPanel.currency.Text=="PAID WITH RYŌ","the market's money")
 		assert(drawnShop-#ui.shopPanel.drawn==nShop-nMarket,"the panel does not draw each counter's looks")
 		ui.shopPanel:show(kits,"WEAPONS")
 		assert(ui.shopPanel.tabs.KITS.Visible and ui.shopPanel.title.Text=="SHOP","the SHOP after the market")
+		-- (DESIGN 19/11) each counter says its money; the passes page is VIP & PASSES, VIP first
+		assert(ui.shopPanel.currency.Text=="PAID WITH ROBUX" and ui.shopPanel.tabs.PASSES.Text=="VIP & PASSES","the SHOP's money and its passes tab")
+		ui.shopPanel.tab="PASSES";ui.shopPanel:draw()
+		assert(ui.shopPanel.heading.Text=="VIP & PASSES","the passes page")
 		ui.treePanel:show("Leaf",kits)
 		assert(ui.treePanel:shown() and ui.treePanel.tiles.Weights and ui.treePanel.tiles.HeavyDrop,"the tree's tiles")
 		-- (15/11, DA v3) a page of paper: learned and on in ink, to learn in red
