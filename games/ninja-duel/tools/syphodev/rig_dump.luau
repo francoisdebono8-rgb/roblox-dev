@@ -38,9 +38,10 @@ local low=math.huge
 for name,spec in RIG.parts do
 	if string.find(name,"Foot") then low=math.min(low,centre[name].Y-spec[1].Y/2) end
 end
-local function v(x) return {x.X,x.Y,x.Z} end
+local function r(x) return math.round(x*1e4)/1e4 end
+local function v(x) return {r(x.X),r(x.Y),r(x.Z)} end
 local ID={{1,0,0},{0,1,0},{0,0,1}}
-local out={hrp={0,-low,0},parts={},joints={},
+local out={hrp={0,r(-low),0},parts={},joints={},
 	-- read by the Ninja Duel names patch of r6_clip.py
 	root_joint="Root",up_joints={"Root","Waist","Neck"},torsos={"LowerTorso","UpperTorso"},
 	feet={"RightFoot","LeftFoot"},arms={"RightHand","LeftHand","RightLowerArm","LeftLowerArm"},
@@ -58,6 +59,25 @@ for _,j in RIG.joints do
 	table.insert(out.joints,{name=j[1],part0=j[2],part1=j[3],
 		c0={pos=v(j[4]),rows=ID},c1={pos=v(j[5]),rows=ID}})
 	out.clip_keys[j[1]]=if j[1]=="RightShoulder" then "Right" elseif j[1]=="LeftShoulder" then "Left" else j[1]
+end
+-- --check <rig.json>: the committed rig.json (read by the Mac renders, which
+-- have no Lune) must still be the game's skeleton; tests/run.sh runs this.
+if process.args[1]=="--check" then
+	local function same(a,b)
+		if type(a)~=type(b) then return false end
+		if type(a)=="number" then return math.abs(a-b)<1e-6 end
+		if type(a)~="table" then return a==b end
+		for k,x in a do if not same(x,b[k]) then return false end end
+		for k in b do if a[k]==nil then return false end end
+		return true
+	end
+	local saved=serde.decode("json",fs.readFile(process.args[2]))
+	if not same(saved,serde.decode("json",serde.encode("json",out))) then
+		print("FAIL "..process.args[2].." is not World.RIG any more: run lune run tools/syphodev/rig_dump.luau "..process.args[2])
+		process.exit(1)
+	end
+	print(("PASS rig.json = World.RIG (%d parts, %d joints)"):format(nparts,#RIG.joints))
+	return
 end
 local path=process.args[1] or "rig.json"
 fs.writeFile(path,serde.encode("json",out,true))
