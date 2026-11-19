@@ -648,7 +648,9 @@ test("the client UI renders the real roster, queue, pick, duel and result packet
 	assert(ui.ultimateScroll.box.Visible and ui.ultimateScroll.ready.Text~="READY","HUD v3: the ultimate scroll at the start")
 	local UIm=H.load("Client/UI")
 	assert(UIm.ultimateScroll(ui.ultimateScroll,{ultimate=100,ultimateReady=true},false,4) and ui.ultimateScroll.ready.Text=="READY" and ui.ultimateScroll.key.Text=="Y" and ui.ultimateScroll.seal.Visible,"HUD v3: the ultimate ready")
-	assert(not UIm.ultimateScroll(ui.ultimateScroll,{ultimate=40},true,4) and ui.ultimateScroll.ready.Text=="40%" and not ui.ultimateScroll.seal.Visible,"HUD v3: the ultimate filling")
+	assert(not UIm.ultimateScroll(ui.ultimateScroll,{ultimate=40},true,4) and ui.ultimateScroll.ready.Text=="40%" and ui.ultimateScroll.seal.Visible and ui.ultimateScroll.key.Text~="","HUD v3: the ultimate filling (DESIGN 15/11: its key always on top)")
+	-- (DESIGN 15/11, Mix-Duel) the scrolls hang tall and narrow on the rope, the numbers gone from the plate
+	assert(ui.techniqueButtons[1].box.Size.Y.Offset>ui.techniqueButtons[1].box.Size.X.Offset and ui.hp.status.Text=="" and ui.hp.medallion.Size.X.Offset>=112,"DESIGN 15/11: the tall scrolls and the face-cam case")
 	-- Two knockouts for Alpha: VICTORY from Alpha's side.
 	for _=1,2 do d.introUntil=nil;d.combat:damage(d.seats[1].actor,d.seats[2].actor,1000,false,false);step(m,2.7) end
 	ui:render(last(a))

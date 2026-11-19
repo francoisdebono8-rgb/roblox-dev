@@ -15,3 +15,14 @@ All are transparent PNGs, except the paper, which is opaque inside its rough edg
 | halftone_tile.png | 64×64 | Dot screentone: ScaleType Tile, TileSize 64×64 px, ImageTransparency ~0.7 | — |
 
 Tint: the stamps and brush strokes are already red; for another colour, export black and use ImageColor3.
+
+## Added 15/11 (HUD de duel v3, DESIGN)
+
+| File | Size | Use | 9-slice |
+|---|---|---|---|
+| paper_tag_9s.png | 128×256 | Paper of a jutsu scroll (tinted cream by ImageColor3) | Rect(24, 24, 104, 232) |
+| brush_bar_9s.png | 256×40 | Brush stroke of the health bar (white, tinted) | Rect(28, 0, 228, 40) |
+| icons/icon_*.png | 128×128 | Jutsu pictograms, black on transparent (tinted with ImageColor3; no kanji) | — |
+
+`src/Shared/UIAssets.luau` maps each file to its Roblox id and each jutsu to its pictogram.
+**To make them show:** in Studio, Asset Manager > Import, select every PNG of this folder and of `icons/`, then copy each id (`rbxassetid://…`) into `UIAssets.Ids` under the file's name (without `.png`). Until an id is filled, the screens draw a plain fallback (flat colour, ink outline, the jutsu's short name).
