@@ -395,6 +395,9 @@ function Matches:roundOver(s,winner,notify,advance)
 			local ok=Progression.learnFromMaster(s.owner,s.masterTrial)
 			if ok then s.progress.learned=s.masterTrial end
 		end
+		-- (19/11, DEV 6) what this duel brought closer: the next node, the
+		-- next tier, the inspirations that will want to meet him
+		s.progress.ahead=Progression.ahead(s.owner,s.playerId)
 	end
 	-- (DEC-040) Against another player: each present seat's kit earns its
 	-- mastery (Progression.versusEnded), shown on his own result screen.
@@ -406,7 +409,8 @@ function Matches:roundOver(s,winner,notify,advance)
 				local won=winner==seat.actor
 				local gained=Progression.versusEnded(seat.player,seat.fighter,won,used)
 				seat.progress={mastery=gained and gained.mastery,gained=gained~=nil and gained.amount~=nil,amount=gained and gained.amount,fighter=seat.fighter,need=Masters.Need,
-					points=gained and gained.points,ryo=gained and gained.ryo,firstWin=gained and gained.firstWin}
+					points=gained and gained.points,ryo=gained and gained.ryo,firstWin=gained and gained.firstWin,
+					ahead=Progression.ahead(seat.player,seat.fighter)}
 			end
 		end
 	end

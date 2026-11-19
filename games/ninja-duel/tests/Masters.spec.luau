@@ -167,6 +167,20 @@ test("on: a duel that counts takes a learned kit, practice takes any; a master's
 	local after=Progression.view(player).mastery.Leaf or 0
 	assert(after>before,"a won duel earned no mastery")
 	assert(s.progress and s.progress.amount==after-before and s.progress.need==Masters.Need,"the result screen does not get what was earned")
+	-- (19/11, DEV 6; OUTILLEUR in Studio: the result showed no next node nor
+	-- next inspiration) what the duel brought closer
+	local ahead=s.progress.ahead
+	assert(ahead and ahead.kit=="Leaf" and ahead.mastery==after,"the result screen does not get what comes next")
+	assert(ahead.node and ahead.node.id and ahead.node.name and ahead.node.cost>0,"no next node of Lee's tree")
+	local free=Progression.view(player).trees.Leaf.free
+	assert(ahead.node.free==free,"the next node's free points "..tostring(ahead.node.free).." are not the tree's "..tostring(free))
+	local spent=Progression.view(player).trees.Leaf.points-free
+	assert(ahead.node.mastery==math.max(0,(spent+ahead.node.cost)*Masters.PointEvery-after),"the mastery missing for the node: "..ahead.node.mastery)
+	assert(ahead.tier and ahead.tier.name=="II" and ahead.tier.mastery==300-after,"the next tier and what opens it")
+	local names={}
+	for _,i in ahead.inspirations do names[i.kit]=i.mastery end
+	assert(names.GentleFist==Masters.Need-after and names.Sand==Masters.Need-after,"Neji and Gaara, whom Lee leads to, are not announced")
+	assert(Progression.aheadOf({kits={owned={},mastery={}}},"Leaf")==nil,"a kit not learned has a next step")
 	-- (DEC-040) against another player: twice, with the duel's Ryō; the cup's
 	-- end pays the champion's kit; an unlearned kit earns nothing
 	local mastery0=Progression.view(player).mastery.Leaf
