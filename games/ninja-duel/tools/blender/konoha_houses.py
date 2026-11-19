@@ -64,15 +64,16 @@ def wall(pc, m, size, base, cell=3.5):
     km.box(pc, m, size, km.wall_col(base), cell=cell)
 
 
-def window(frame, glass, m, w=2.8, h=2.4, shutter=None):
+def window(frame, glass, m, w=2.8, h=2.4, shutter=None, cross=True):
     """A lean window facing +Z at m: a dark pane, a sill and a head, one lattice cross."""
     km = K()
     C = km.C
     km.box(glass, m @ T(0, 0, .02), (w, h, .12), rgb(46, 42, 40))
     km.box(frame, m @ T(0, -h / 2 - .14, .16), (w + .5, .26, .42), C["wood"])
     km.box(frame, m @ T(0, h / 2 + .12, .12), (w + .4, .24, .3), C["woodDark"])
-    km.box(frame, m @ T(0, 0, .1), (.12, h, .1), C["woodLight"])
-    km.box(frame, m @ T(0, 0, .1), (w, .12, .1), C["woodLight"])
+    if cross:
+        km.box(frame, m @ T(0, 0, .1), (.12, h, .1), C["woodLight"])
+        km.box(frame, m @ T(0, 0, .1), (w, .12, .1), C["woodLight"])
     if shutter:
         km.box(frame, m @ T(-w / 2 - .7, 0, .1), (1.1, h + .2, .14), shutter)
 
@@ -259,8 +260,8 @@ def machiya():
     km.box(timber, T(0, FLOOR, 0), (w + .4, .6, d + .4), C["wood"])
     km.box(timber, T(0, h - .2, 0), (w + .3, .4, d + .3), C["woodDark"])
     km.box(glass, T(1.8, 3.2, d / 2 + .03), (9.6, 4.6, .1), rgb(40, 34, 30))
-    for k in range(12):
-        km.box(timber, T(-2.8 + k * .84, 3.2, d / 2 + .18), (.22, 4.6, .22), C["woodLight"])
+    for k in range(10):
+        km.box(timber, T(-2.6 + k * 1.0, 3.2, d / 2 + .18), (.24, 4.6, .24), C["woodLight"])
     km.box(timber, T(1.8, 5.6, d / 2 + .2), (10, .3, .3), C["woodDark"])
     km.box(timber, T(1.8, .95, d / 2 + .2), (10, .3, .3), C["woodDark"])
     door(timber, T(-5.6, 0, d / 2 + .05), 3.2, 5.8)
@@ -277,8 +278,8 @@ def machiya():
         window(timber, glass, T(-w / 2 - .05, FLOOR + 3.4, z) @ Ry(-math.pi / 2), 2.6, 2.2)
     # a small balcony rail under the upper windows
     km.box(timber, T(0, FLOOR + 1.6, d / 2 + .7), (w - 3, .25, .25), C["wood"])
-    for k in range(7):
-        km.box(timber, T(-w / 2 + 1.5 + k * (w - 3) / 6, FLOOR + 1.0, d / 2 + .7), (.2, 1.2, .2), C["wood"])
+    for k in range(5):
+        km.box(timber, T(-w / 2 + 1.5 + k * (w - 3) / 4, FLOOR + 1.0, d / 2 + .7), (.2, 1.2, .2), C["wood"])
     gable(tiles, timber, T(0, h, 0), w, d, 26, 1.5, C["roofTile"], courses=3, ribs=8)
     lantern(cloth, metal, T(-3.4, 5.2, d / 2 + .7))
     km.box(cloth, T(-5.6, 6.6, d / 2 + .3), (3.6, 1.6, .08), C["roofBlue"])  # a short noren
@@ -377,19 +378,18 @@ def apartment():
         y = f * FLOOR
         for u, x in enumerate((-8, 0, 8)):
             door(timber, T(x - 1.8, y + .3, d / 2 - 1.55), 2.6, 5.0, (C["roofBlue"], C["redDark"], C["wood"])[(u + f) % 3])
-            window(timber, glass, T(x + 1.9, y + 4.0, d / 2 - 1.55), 2.6, 2.0)
+            window(timber, glass, T(x + 1.9, y + 4.0, d / 2 - 1.55), 2.6, 2.0, cross=False)
         if f > 0:
             km.box(walls, T(0, y, d / 2 - .8), (w + .6, .45, 1.8), trim)
             km.box(timber, T(0, y + 2.2, d / 2 + .05), (w + .4, .25, .25), C["iron"])
-            for k in range(9):
-                km.box(metal, T(-w / 2 + .5 + k * (w - 1) / 8, y + 1.1, d / 2 + .05), (.16, 2.2, .16), C["iron"])
-        for z in (-5, 1):
-            window(timber, glass, T(w / 2 + .05, y + 4.0, z) @ Ry(math.pi / 2), 2.4, 2.0)
+            for k in range(5):
+                km.box(metal, T(-w / 2 + .5 + k * (w - 1) / 4, y + 1.1, d / 2 + .05), (.16, 2.2, .16), C["iron"])
+        window(timber, glass, T(w / 2 + .05, y + 4.0, -2) @ Ry(math.pi / 2), 2.4, 2.0, cross=False)
         for x in (-6, 6):
-            window(timber, glass, T(x, y + 4.0, -d / 2 - .05) @ Ry(math.pi), 3.0, 2.0)
+            window(timber, glass, T(x, y + 4.0, -d / 2 - .05) @ Ry(math.pi), 3.0, 2.0, cross=False)
     # the outside stair up the west side, the roof, two tanks, laundry poles
-    for k in range(10):
-        km.box(timber, T(-w / 2 - 1.4, .7 + k * 1.4, -d / 2 + 2 + k * 1.2), (2.4, .3, 1.2), C["iron"])
+    for k in range(8):
+        km.box(timber, T(-w / 2 - 1.4, .9 + k * 1.75, -d / 2 + 2 + k * 1.5), (2.4, .3, 1.5), C["iron"])
     km.box(metal, T(-w / 2 - 2.5, 7.5, 0), (.2, 1.0, d - 2), C["iron"])
     km.box(tiles, T(0, h + .25, 0), (w + .5, .5, d + .5), C["roofDark"])
     for sx, sz, lx, lz in ((0, 1, w + .8, .4), (0, -1, w + .8, .4), (1, 0, .4, d + .8), (-1, 0, .4, d + .8)):
