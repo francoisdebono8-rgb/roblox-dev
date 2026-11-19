@@ -718,7 +718,10 @@ if __name__ == "__main__":
     plan.frontage()
     plan.backfill()
     plan.props_pass()
-    root = os.path.normpath(os.path.join(HERE, "../.."))
+    # (DEV, integration 19/11) the game's folder as two parent steps, not a
+    # relative path string: tools/check_architecture.py reads such a string as
+    # a reference to the whole folder, Motion Lab included, and failed.
+    root = os.path.normpath(os.path.join(HERE, os.pardir, os.pardir))
     with open(os.path.join(root, "src/Shared/KonohaLayout.luau"), "w") as fh:
         fh.write(to_luau(plan))
     with open(os.path.join(OUT, "konoha_plan_spec.json"), "w") as fh:

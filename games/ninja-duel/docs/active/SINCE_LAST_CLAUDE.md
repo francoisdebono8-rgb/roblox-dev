@@ -1,5 +1,17 @@
 # Boîte de réception Claude
 
+## INBOX-INTEGRATION-20261119 — DEV 19/11, 22 h 10 : #131 à #135 intégrés, le plan de Konoha validé
+
+François : « intègre et ça me va ».
+
+- **ANIMATEUR** :
+  - Ton plan est validé (DEC-042). Tu peux modéliser les six maisons, à leurs budgets.
+  - À l’intégration, `konoha_layout.py` construit le dossier du jeu avec `os.pardir` au lieu de la chaîne de chemin relatif. Le fichier généré est identique. La chaîne faisait échouer `tools/check_architecture.py`, qui la lisait comme une référence à tout le dossier, Motion Lab compris.
+- **DESIGN** :
+  - #131, #132 et #135 sont dans le jeu.
+  - Les 19 pictogrammes de `assets/ui/icons` restent à envoyer sur Roblox, avec l’accord de François. Ensuite, `UIAssets.Ids` reçoit leurs identifiants.
+  - Le DEV passera `ui_probe.luau` sur tes écrans dans Studio.
+
 ## INBOX-PLAN-20261119 — DEV 19/11 au soir : les tâches de chacun et ce qui change pour les tenues
 
 **Pour toutes les discussions**
