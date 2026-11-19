@@ -2,18 +2,21 @@
 -- a new player's loop played headless on the real server modules (Matches,
 -- Progression, ProfileSchema on a memory store, Tutorial, Combat on harness
 -- rigs, Shop, Masters, SkillTrees):
---   arrivee   the profile loads, no kit yet, the outfit screen opens (not dressed)
---   tenue     a free top, bottoms and sandals worn: dressed
---   inspiration  one starter among three (ChooseStarter)
+--   arrivee   the profile loads, no kit yet, not dressed
+--   inspiration  one starter among three (ChooseStarter), at the gate
+--   tenue     a free top, bottoms and sandals worn: dressed (the outfit card
+--             opens once the inspiration is chosen: Studio, 19/11)
 --   duel      the first minute (First): the prompts, the FIRST HIT really
 --             landed on the partner (Move then Attack through Matches:request),
 --             then the real duel won
 --   gains     what the result screen gets (snapshot `progress`), its line
 --   marche    duels until the cheapest look of the market is affordable, bought, worn
 --   arbre     duels until the cheapest first-tier node of the kit is affordable, learned
--- and the estimated play time until the first hit: the UI and the walks in
--- Konoha (assumptions below, to be measured in Studio, task 3) plus the
--- simulated first minute up to the hit.
+-- and the estimated play time until the first hit: the screens (assumptions
+-- below), the walk from the gate to the three inspirations (the first duel is
+-- asked at the door: "YOUR FIRST DUEL" on the master's card, Studio 19/11) and
+-- the simulated first minute up to the hit. The Studio run of 19/11 (README)
+-- measured what the game itself takes on each step, on PC and on a phone.
 --
 -- Used by tests/Loop.spec.luau (fails when a step breaks) and by
 -- tools/loopbot/run.luau (the report). Run from games/ninja-duel:
@@ -29,10 +32,12 @@ local Bot={}
 -- What a new player takes outside the simulation (seconds). Assumptions until
 -- the Studio run (task 3) measures them; change them here, not in the spec.
 Bot.UI={
-	arrive=3,        -- the gate, the camera settles, the outfit screen is read
+	arrive=3,        -- the gate, the camera settles, the objective is read
+	talk=1,          -- E (or a tap) at the inspiration: his card opens
+	choose=5,        -- his card read, HE'S MY INSPIRATION
 	dressPerSlot=2.5,-- one choice on the outfit card (top, bottoms, feet)
-	choose=5,        -- the three inspirations' lines read, one picked
-	askDuel=2,       -- E at the master's, the duel loads
+	done=1,          -- DONE on the outfit card
+	askDuel=2,       -- YOUR FIRST DUEL read and pressed (the duel starts 0.2 s later in Studio)
 	readPrompt=1,    -- a prompt of the first minute read before acting (in the simulation)
 }
 Bot.Target=60      -- the plan's goal: the first hit in under 60 s
@@ -184,8 +189,16 @@ function Bot.run(kit)
 		assert(Progression.load(player),"the profile did not load")
 		local v=view()
 		assert(v and v.needStarter,"a new player already has a kit")
-		assert(not Shop.dressed(v.style),"a new player arrives dressed: the outfit screen would not open")
-		return "profil chargé, aucun kit, pas habillé : l'écran de tenue s'ouvre"
+		assert(not Shop.dressed(v.style),"a new player arrives dressed")
+		return "profil chargé, aucun kit, pas habillé"
+	end)
+
+	stage("inspiration",function()
+		assert(Masters.isStarter(kit),kit.." is not one of the three starters")
+		send("ChooseStarter",{player=kit})
+		assert(notice()==nil,"refused: "..tostring(notice()))
+		assert(Progression.owns(player,kit) and view().selected==kit,"the starter was not taken")
+		return "kit "..kit.." appris et choisi"
 	end)
 
 	stage("tenue",function()
@@ -202,14 +215,6 @@ function Bot.run(kit)
 		assert(Shop.dressed(v.style),"still not dressed after "..table.concat(worn,", "))
 		for i,slot in {"top","bottom","feet"} do assert(v.style.equipped[slot]==worn[i],"not worn: "..worn[i]) end
 		return "porte "..table.concat(worn,", ")
-	end)
-
-	stage("inspiration",function()
-		assert(Masters.isStarter(kit),kit.." is not one of the three starters")
-		send("ChooseStarter",{player=kit})
-		assert(notice()==nil,"refused: "..tostring(notice()))
-		assert(Progression.owns(player,kit) and view().selected==kit,"the starter was not taken")
-		return "kit "..kit.." appris et choisi"
 	end)
 
 	-- The first minute: the prompts against the rival, the first hit landed.
@@ -335,12 +340,12 @@ function Bot.run(kit)
 	-- The estimate until the first hit.
 	local w=Bot.walks(kit)
 	local parts={
-		{"arrivée, écran de tenue lu",Bot.UI.arrive},
-		{"tenue (3 choix)",Bot.UI.dressPerSlot*3},
+		{"arrivée, objectif lu",Bot.UI.arrive},
 		{string.format("marche de la porte aux inspirations (%.0f studs)",w.toDoor),w.doorSeconds},
+		{"E à l'inspiration, sa fiche",Bot.UI.talk},
 		{"choix de l'inspiration",Bot.UI.choose},
-		{string.format("marche jusque chez %s (%.0f studs)",kit,w.toHome),w.homeSeconds},
-		{"duel demandé, chargé",Bot.UI.askDuel},
+		{"tenue (3 choix) et DONE",Bot.UI.dressPerSlot*3+Bot.UI.done},
+		{"YOUR FIRST DUEL, à la porte",Bot.UI.askDuel},
 		{"première minute jusqu'au coup (simulée)",sim.firstHit or 0},
 	}
 	local total=0
