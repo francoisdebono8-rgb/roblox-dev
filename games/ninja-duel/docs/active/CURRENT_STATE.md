@@ -1,3 +1,13 @@
+**Vague 2 de l'OUTILLEUR, nuit du 19/11 (plan `claude/vague-2-taches-2026-11-19` § 2 ; PR #142, #136 étendue, branche `work/tools-duo`)**
+- **Lecteur de l'entonnoir (#142)** : `tools/analytics/entonnoir.py`. Il lit l'export de la page Entonnoirs (plusieurs formes, le format n'étant pas documenté par Roblox), une saisie à la main, ou la sortie `[NinjaDuelFirst]` du serveur. Il dit où les nouveaux joueurs partent. Les étapes sont lues dans le jeu (`Matches.FUNNEL`). 15 tests PASS, sur des exports inventés.
+  - Vu sur le tableau de bord le 19/11 : aucun événement d'entonnoir ; 0 visite sur 7 jours ; dernière mise à jour du jeu publié le 04/11.
+- **Robot de la boucle étendu (#136)** : étape `garderobe` (tous les emplacements, dont les nouveaux) ; test de la collection dans `Loop.spec` (chaque objet a son icône et son modèle) ; quêtes du jour notées « pas encore dans le jeu » ; premier achat comparé à une première séance de 20 min (hypothèse). **Pas lancé ici** (pas de lune).
+  - Le même contrôle sans lune : `python3 tools/icons/catalogue.py --gate`. Le 19/11 : 37 objets dont 4 « aucun » ; 33 icônes, 33 modèles dans le jeu.
+- **Icônes des nouveaux objets (#136)** : `render_icons.py` lit le catalogue par `tools/icons/catalogue.py` (Shop, puis `Catalog.luau` quand il existera). Il connaît masque, cape et dos (vue de dos pour cape et dos). `--manquantes` ne rend que ce qui manque.
+  - Vérifié sur le Mac : les 33 icônes refaites sont identiques au pixel près à celles du 19/11. Les cadrages des nouveaux emplacements ont été essayés sur des modèles existants (`MEDIA/ICONES/essai/vague2-emplacements`).
+  - Un modèle qui n'a aucune pièce dans l'emplacement ne donne plus un mannequin nu, mais « sans icône », avec la raison.
+- **Essai à deux joueurs** : `tools/duo/` (enregistreur pour chaque client, rapport qui fusionne les deux). Dans Studio, sur une copie LAB de ND-JEU `3516f3d9` (`LAB/loopbot/ND-JEU-duo.rbxlx`) : deux joueurs lancés, enregistreur posé dans chaque client. **Pas encore mesuré** : le Mac a cessé de répondre pendant l'essai, avec six fenêtres de Studio ouvertes.
+
 **Corps, bandeau, tenues, 19/11 au soir (DEV ; [AVATAR-001](MASTER_BACKLOG.md))** : François demande de vérifier les tailles, les bandeaux et l'affichage. Mesuré dans Studio sur son avatar.
 - **Taille** : l'avatar mesurait 5,10 dans Konoha et 5,96 en duel, contre 6,51 pour les prodiges. Il est maintenant à la taille des prodiges dans le village (6,50) comme en duel (6,37, corps du rig).
 - **Corps en duel** : plus d'air au coude ni de pieds au-dessus du sol ; la tête est posée sur le torse.

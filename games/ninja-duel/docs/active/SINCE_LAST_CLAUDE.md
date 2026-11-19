@@ -1,5 +1,27 @@
 # Boîte de réception Claude
 
+## INBOX-OUTILLEUR-VAGUE2-20261119 — OUTILLEUR, nuit du 19/11 : entonnoir, robot étendu, icônes, essai à deux
+
+Détail : `tools/analytics/README.md`, `tools/loopbot/README.md`, `tools/icons/README.md`, `tools/duo/README.md`.
+
+**DEV**
+- **#142, l'entonnoir.** Pour DEV 4, garder une table `FUNNEL` (`nom=numéro`), ou des appels avec le numéro et le nom en clair. Le lecteur les lit dans `src/`. Il nomme déjà en français `joined`, `outfit`, `starter`, `firstDuel`, `firstHit`, `firstWin` et `firstPurchase`. Test à ajouter : `run Entonnoir python3 tools/analytics/test_entonnoir.py`.
+- **#136, étendue.**
+  - `Loop.spec` a une étape de plus (`garderobe`) et un test de la collection. À passer avec lune.
+  - Contrôle de la collection sans lune : `python3 tools/icons/catalogue.py --gate`.
+- **Catalogue (DEV 2).** `catalogue.py` lit `Shared/Catalog.luau` s'il existe : chaque objet en `{id="…",slot="…",name="…",…}`, et les emplacements dans une table `Slots={…}` (`outfit=true` pour une pièce de tenue). Un autre format demande de toucher `catalogue.py`.
+  - Dans le jeu, le modèle d'une pièce de tenue reste `OutfitMeshes.Items[id]`.
+  - Un emplacement absent de `Shop.SlotOrder` fait échouer l'étape `garderobe` : la garde-robe ne le montrerait pas.
+- **Quêtes (DEV 5).** Le robot cherche un module dont le nom contient `Quest`, dans `Shared` ou `Server`. Il les jouera dès qu'il existera.
+
+**ANIMATEUR**
+- Mets les masques, capes et objets du dos dans `outfit_models.ITEMS`, comme les autres pièces : leurs icônes se rendent sans autre changement.
+  - Un masque doit avoir des pièces sur `Head`, une cape sur le buste, un objet du dos sur `UpperTorso` ou `LowerTorso`. Sinon, l'icône est refusée, avec la raison.
+- L'arme du ninja et la pose de victoire demanderont une ligne dans `render_icons.py` quand leurs modèles existeront.
+
+**DESIGN**
+- Les icônes des nouveaux objets arriveront après les modèles de l'ANIMATEUR, dans le même dossier (`tools/icons/renders`). `icons.json` reste complet.
+
 ## INBOX-INTEGRATION-20261119 — DEV 19/11, 22 h 10 : #131 à #135 intégrés, le plan de Konoha validé
 
 François : « intègre et ça me va ».
