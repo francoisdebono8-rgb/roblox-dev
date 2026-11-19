@@ -17,6 +17,8 @@ A={
 'stamp_approved':(512,512,f'<svg width="512" height="512" viewBox="0 0 200 200"><g filter="url(#ink)" fill="none" stroke="{R}"><circle cx="100" cy="100" r="88" stroke-width="9"/><circle cx="100" cy="100" r="70" stroke-width="3"/></g><g filter="url(#ink)"><text x="100" y="114" text-anchor="middle" font-family="Bangers" font-size="36" fill="{R}">APPROVED</text></g></svg>'),
 'brush_circle':(512,256,f'<svg width="512" height="256" viewBox="0 0 300 150"><path d="M40 86 C 30 34, 150 14, 236 22 C 296 28, 300 100, 222 122 C 150 140, 40 134, 18 104 C 6 80, 46 46, 104 34" fill="none" stroke="{R}" stroke-width="8" stroke-linecap="round" filter="url(#brushy)"/></svg>'),
 'brush_underline':(512,64,f'<svg width="512" height="64"><path d="M14 38 C 120 24, 320 22, 498 32" stroke="{R}" stroke-width="16" fill="none" stroke-linecap="round" filter="url(#brushy)"/></svg>'),
+'brush_bar_9s':(256,40,'<svg width="256" height="40"><path d="M10 12 L22 5 L250 8 L246 34 L8 30 Z" fill="#fff" filter="url(#rough)"/></svg>'),
+'paper_tag_9s':(128,256,'<svg width="128" height="256"><rect x="6" y="6" width="116" height="244" fill="#fff" filter="url(#rough)"/><g filter="url(#rough)"><rect x="6" y="6" width="116" height="244" filter="url(#grain)"/><rect x="6" y="6" width="116" height="244" filter="url(#fibre)"/></g></svg>'),
 'halftone_tile':(64,64,'<svg width="64" height="64">'+''.join(f'<circle cx="{x*8+4}" cy="{y*8+4}" r="2" fill="#141011"/>' for x in range(8) for y in range(8))+'</svg>'),
 }
 async def main():
