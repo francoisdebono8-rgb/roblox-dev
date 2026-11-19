@@ -1,3 +1,11 @@
+**Corps, bandeau, tenues, 19/11 au soir (DEV ; [AVATAR-001](MASTER_BACKLOG.md))** : François demande de vérifier les tailles, les bandeaux et l'affichage. Mesuré dans Studio sur son avatar.
+- **Taille** : l'avatar mesurait 5,10 dans Konoha et 5,96 en duel, contre 6,51 pour les prodiges. Il est maintenant à la taille des prodiges dans le village (6,50) comme en duel (6,37, corps du rig).
+- **Corps en duel** : plus d'air au coude ni de pieds au-dessus du sol ; la tête est posée sur le torse.
+- **Bandeau** : sur le front, plus sur les yeux.
+- **Tenues** : en SmoothPlastic. En Fabric, elles sortaient presque noires.
+- **Vérifs** : suite 76 PASS. Vu à chaud dans Studio ; la place reconstruite reste à rouvrir.
+- **Le plan pour toutes les discussions** est dans le projet : `claude/plan-vrai-jeu-taches-2026-11-19.md`.
+
 **La méthode SyphoDev appliquée au jeu actuel, 19/11 au soir (DEV ; [METH-001](MASTER_BACKLOG.md), [§ 15 du guide](../tools/METHODE_SYPHODEV.md))** : François demande de vérifier tout ce qui est en place avec la méthode et d'adapter ce qui ne passe pas.
 - **Intégré :**
   - #127, les clips : boucles refermées, sauts d'une image lissés, porte `SyphoClips` ;

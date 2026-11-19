@@ -16,6 +16,12 @@ local Dress={templates={},building={},dressed=setmetatable({},{__mode="k"})}
 
 local function rgb(c) return Color3.fromRGB(c[1],c[2],c[3]) end
 
+-- (19/11, seen in Studio) Under the game's darker light (12/11) the Fabric
+-- material reads near-black whatever its colour: a sand tunic, a green one and
+-- Naruto's orange all came out as dark knit, beside prodigies dressed in
+-- SmoothPlastic. A cloth piece wears the prodigies' material, its colour shows.
+Dress.MATERIAL={[Enum.Material.Fabric]=Enum.Material.SmoothPlastic}
+function Dress.material(m) return Dress.MATERIAL[m] or m end
 -- An item's colour for a slot: the Shop's, else the model's new slot.
 function Dress.color(item,model,slot)
 	local c=item and item.colors and item.colors[slot]
@@ -106,6 +112,7 @@ function Dress.wear(holder)
 						p.Size=size;p.CFrame=cf
 						p.Anchored=false;p.Massless=true;p.CanCollide=false;p.CanQuery=false;p.CanTouch=false
 						p.Color=Dress.color(item,model,entry.slot)
+						p.Material=Dress.material(p.Material)
 						local w=Instance.new("WeldConstraint");w.Part0=part;w.Part1=p;w.Parent=p
 						p.Parent=folder
 						n+=1

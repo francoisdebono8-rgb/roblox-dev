@@ -77,7 +77,10 @@ end
 function Outfit.piece(holder,body,spec,colors,legs)
 	local s=body.Size
 	local color=rgb((colors and colors[spec.c]) or {120,120,120})
-	local material=Enum.Material[spec.mat or "Fabric"] or Enum.Material.Fabric
+	-- (19/11, seen in Studio) Fabric reads near-black under the game's light:
+	-- the cloth wears the prodigies' SmoothPlastic (Client/OutfitDress does the same).
+	local material=Enum.Material[spec.mat or "SmoothPlastic"] or Enum.Material.SmoothPlastic
+	if material==Enum.Material.Fabric then material=Enum.Material.SmoothPlastic end
 	local pad=spec.pad or .06
 	local kind=spec.kind or "shell"
 	local y0,h=spec.y0 or 0,spec.h or 1

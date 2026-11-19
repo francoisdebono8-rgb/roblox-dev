@@ -860,6 +860,9 @@ function Hub.enter(player,where,looks)
 		end
 		character:SetAttribute("NinjaHubBody",true)
 		entry.character=character
+		-- (19/11) the prodigies' height, as in his duels (AvatarBody.grow),
+		-- before the headband and the outfit are sized on his body
+		pcall(function() require(script.Parent.AvatarBody).grow(character) end)
 		-- (15/11) a passer-by never enters a street duel (Server/DuelQuery)
 		pcall(function() require(script.Parent.DuelQuery).walker(character) end)
 		-- (13/11, the shop) the headband he chose, on his own avatar.
