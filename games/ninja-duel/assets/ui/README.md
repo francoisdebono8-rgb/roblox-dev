@@ -26,3 +26,6 @@ Tint: the stamps and brush strokes are already red; for another colour, export b
 
 `src/Shared/UIAssets.luau` maps each file to its Roblox id and each jutsu to its pictogram.
 **To make them show:** in Studio, Asset Manager > Import, select every PNG of this folder and of `icons/`, then copy each id (`rbxassetid://…`) into `UIAssets.Ids` under the file's name (without `.png`). Until an id is filled, the screens draw a plain fallback (flat colour, ink outline, the jutsu's short name).
+## Item icons (19/11, OUTILLEUR PR #136, placed by DESIGN)
+
+`items/<ItemId>.png`: one icon per catalogue item (512 px, transparent), rendered from the ANIMATEUR's models. `items/icons.json` lists them. For them to show in the wardrobe, the market and the shop, import them like the other images and put each id in `UIAssets.Ids` under `item_<ItemId>` (once `UIAssets` is in, PR #131).

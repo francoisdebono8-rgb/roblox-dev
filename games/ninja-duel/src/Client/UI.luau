@@ -1389,6 +1389,9 @@ function UI:render(data)
 	self.cue.Position=UDim2.new(.5,-300,0,124)
 	self.hint.Position=UDim2.new(.5,-260,0,200)
 	if data.tutorial then
+		-- (DESIGN 19/11, OUTILLEUR on an iPhone 13: SKIP STEP sat on the
+		-- step's title) on a phone the card starts right of SKIP STEP
+		self.tutorialPanel.Position=if data.touch then UDim2.new(0,140,0,150) else UDim2.new(0,24,0,170)
 		self.tutorialTitle.Text=data.tutorial.index.." / "..data.tutorial.total.."  "..data.tutorial.title
 		-- (B1; UI review 04/11: a phone was told "WASD" and "BACKSPACE")
 		local tut=data.tutorial
