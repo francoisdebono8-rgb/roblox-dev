@@ -1,7 +1,7 @@
 {
   "version": "0.13.0-arena-combo",
   "artifact": "NinjaDuel-Capture.rbxlx",
-  "sha256": "339dd3b7cb34e7f63d8a7529532d3c697add34fdba05f7f03ec8d40086731627",
+  "sha256": "218f9e299f94cc03f0bd4ae347624ac2376904dfd4c068ea014a515027abf994",
   "sources": {
     "src/Client/ArenaDress.luau": "e2da1115cb48480b2effa3170a1670d3bb44d5bcbdfd9bbdbb3e60ee302b5360",
     "src/Client/AuthoredClips.luau": "8528a9d2e35a860d1a330bf243d7baebb3fe80885c016bec6d633a062b97f5c2",
@@ -335,8 +335,8 @@
   "buildFingerprint": "57f97698844e4f73a28c338e71a17c5c29c8f70f136704a58b27d3060c539825",
   "profile": "capture",
   "runtimeFingerprint": "b9aeafc8bd68a756e87cc75249cd0112bdb8bb98771353c5f207f4b3d7fe7292",
-  "sourceCommit": "6e130715beae21053acda25351cc96188ac0b982",
-  "headCommit": "6e130715beae21053acda25351cc96188ac0b982",
+  "sourceCommit": "3f17356e744ff411bcf5fc326cbb5a05a1f48a35",
+  "headCommit": "3f17356e744ff411bcf5fc326cbb5a05a1f48a35",
   "sourceDirty": false,
   "captureTools": {
     "tools/capture/studio/ClipKit.client.luau": "7889f16ee2fa12b5367d104b26d449f0734a271975421617800df53ec80a1a07",
