@@ -26,7 +26,7 @@ local S=require(script.Parent.ProfileSchema)
 local Repo=require(script.Parent.ProfileRepository)
 local SkillBuilds=require(script.Parent.SkillBuilds)
 local Shop=require(Shared.Shop)
-local Daily=require(Shared.Daily)
+local Daily=require(Shared.DailyQuests)
 local Exam=require(Shared.Exam)
 local Codes=require(Shared.Codes)
 
@@ -282,7 +282,7 @@ function P.duelEnded(player,s,won)
 	return P.daily(player,out,{duel=1,win=if won then 1 else 0,jutsu=used,flawless=if won and lost==0 then 1 else 0,cup=if won and s.cup then 1 else 0})
 end
 -- (19/11, vague 2 DEV 5) A counted duel's events for the day's quests and
--- the days in a row (Shared/Daily); what they paid joins the result
+-- the days in a row (Shared/DailyQuests); what they paid joins the result
 -- screen's table `out` as out.daily {ryo, completed, streak, total}.
 function P.daily(player,out,events)
 	if not P.enabled() or not P.ready(player) then return out end

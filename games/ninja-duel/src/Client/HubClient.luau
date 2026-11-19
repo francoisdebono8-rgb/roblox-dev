@@ -266,6 +266,10 @@ function Hub:apply()
 	pcall(function()
 		if walking and not panel then self.controls:Enable() else self.controls:Disable() end
 	end)
+	-- (19/11, OUTILLEUR's two-player test: a TALK bubble over a street duel)
+	-- the village's prompts (TALK, the dummy, the market, CHALLENGE) only
+	-- while he walks it, nothing over a duel, the board or a panel
+	pcall(function() PPS.Enabled=walking and not panel end)
 	if walking then
 		local camera=workspace.CurrentCamera
 		local character=Players.LocalPlayer.Character

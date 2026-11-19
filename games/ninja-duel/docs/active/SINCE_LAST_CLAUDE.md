@@ -1,5 +1,30 @@
 # Boîte de réception Claude
 
+## INBOX-RETOURS-OUTILLEUR-20261119 — DEV 19/11, nuit : réponses à l'OUTILLEUR (vague 2, § « À transmettre »)
+
+**OUTILLEUR**
+- **Le format de `Matches.FUNNEL`** : chaque nom d'étape est associé à son rang, de 1 à 9 : joined, inspiration, dressed, started, hit, duel, won, bought, node.
+  - L'étape est envoyée à `AnalyticsService:LogOnboardingFunnelStepEvent(player, rang, nom)`, une fois par joueur et seulement en avançant.
+  - Chaque étape est aussi une ligne `[NinjaDuelFirst] <UserId> <étape> <secondes depuis l'arrivée>`. `input` et `jutsu` ne sont que dans ces lignes.
+- **Le duel en ligne compte** comme un duel contre l'IA. `started` est noté au début, `hit` au premier coup qui touche, `duel` et `won` à la fin. Chaque joueur est mesuré dans sa propre session.
+- **Le format de `Catalog.luau`** est dans son en-tête, une entrée par objet :
+  - `id` : stable, ne jamais le renommer ;
+  - `slot` : un emplacement de `Shop.Slots` ;
+  - `name` ;
+  - le prix : `ryo`, `robux` (une clé de `Config.Shop.Products`) ou `base` ; `none` pour « rien dans l'emplacement » ;
+  - `kit` pour les objets d'arme ;
+  - `colors` ;
+  - `pieces` : `{on, kind, c, y0, h}`.
+- **Les quêtes s'appellent maintenant `Shared/DailyQuests`** (l'ancien nom était `Shared/Daily`).
+  - Ce qu'il te faut : `DailyQuests.today(day)` pour les 3 quêtes du jour, `DailyQuests.record(r, day, events)` pour ce qu'elles paient, et `DailyQuests.Streak` pour les jours d'affilée.
+- **`Loop.spec` passe avec lune** (4 PASS). Il est dans `tests/run.sh` et dans `TEST_RUNNERS`. Ton robot lit maintenant la vitesse du village dans `HubMove`.
+- **Les UserId négatifs sont acceptés dans Studio seulement** (`Lobby.target`). Un serveur en ligne les refuse toujours.
+- **Le joueur bloqué sur `Ichiraku.StandRoof`** est corrigé dans les duels du village (`Combat:unstick`). Un corps vivant, au-dessus du sol du duel, qui demande à bouger sans bouger pendant 2,5 s est reposé au sol. Il est posé sur le premier point vers le centre du duel où le sol est celui du duel. L'attribut `Unstuck` du modèle note l'heure.
+- **La bulle TALK pendant le duel** est corrigée. Les invites du village (TALK, mannequin, marché, CHALLENGE) n'apparaissent que pendant la marche (`HubClient:apply`, `ProximityPromptService.Enabled`).
+
+**DESIGN**
+- J'ai ajouté une ligne dans `HubClient:apply` : `PPS.Enabled = walking and not panel`. Aucune invite ne s'affiche pendant un duel, sur le tableau ou quand un panneau est ouvert.
+
 ## INBOX-CODES-20261119 — DEV 19/11, nuit : les codes (demande du CM, vague 2 § 3)
 
 **CM : `Shared/Codes.luau` est à toi.** La liste est une donnée : une ligne par code. L'en-tête explique chaque champ.
