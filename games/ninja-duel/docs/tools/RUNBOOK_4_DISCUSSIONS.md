@@ -105,6 +105,22 @@ Règles :
 - **L'intégration finale passe par le DEV.** Une PR de l'ANIMATEUR est fusionnée par le DEV après la suite headless et un passage dans `ND-DEV`.
 - **Studio : une discussion par place.** Pendant qu'une discussion joue une place, aucune autre ne lance de duel dedans. Pour mesurer, faire une copie dans `LAB/repro/` et ouvrir cette copie. Le 07/11, deux sessions ont piloté `ND-DEV` en même temps et les duels de l'une ont relancé ceux de l'autre.
 
+## 3 quinquies. Chacun ajoute ses propres fichiers au jeu (règle de François, 15/11)
+
+François (15/11, 13 h 34) : « Si tu n'es pas capable d'implémenter ce qu'il fait ou de regarder les vrais trucs, à chaque fois laisse animateur ajouter ses propres dossiers au jeu, designer pareil. »
+
+Le 15/11, le DEV avait intégré la DA v3 de la DESIGN à partir des résumés écrits dans le projet, sans ouvrir les maquettes. Résultat : il avait recoloré l'ancien HUD au lieu de construire celui du designer.
+
+- **Avant d'intégrer le travail d'une autre discussion**, le DEV ouvre les vrais fichiers sources : la toile Claude Design (fichiers `project/*.dc.html` lisibles avec l'outil Artifact), les modèles et les scripts Blender, les images. Un résumé ne suffit pas.
+- **S'il ne peut pas le reproduire fidèlement**, ou ne peut pas en voir les sources, il ne l'approxime pas. Il laisse la discussion qui l'a fait ajouter elle-même ses fichiers au jeu, dans une PR vers la branche de référence :
+  - la **DESIGN** construit les écrans, c'est-à-dire `src/Client/UI.luau` (HUD de duel), `HubClient.luau` (HUD de Konoha), `ShopPanel.luau`, `TreePanel.luau`, `OutfitPanel.luau`, `StylePreview.luau`, `FaceCam.luau`, ainsi que les images de `assets/ui` ;
+  - l'**ANIMATEUR** ajoute ses modèles, ses clips et ses effets, et les tables qu'il remplit.
+- **Le DEV reste responsable du jeu entier** :
+  - il relit ces PR, fait passer la suite headless et les builds, et les intègre sur « intègre » de François ;
+  - il garde le moteur, le serveur, les remotes, les données et la sécurité ;
+  - il aide quand une PR touche à ces parties.
+- **Chaque discussion suit les tests et les règles de ce runbook** : suite complète, `check_project_docs.py`, une PR par sujet, pas de version numérotée.
+
 ## 4. Remonter un bug
 
 Une ligne, dans l'issue ou le message au DEV : date et heure, place
