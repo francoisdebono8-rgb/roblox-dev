@@ -254,8 +254,14 @@ et de son monstre, étendue au R15. Elle ne demande pas le rig Gumroad.
    écrit le JSON du jeu. Il garde la même courbe et le même slerp que le rendu, et renomme les
    épaules en « Right » et « Left ». **L'ANIMATEUR** le fusionne et lance
    `tools/blender/clips_to_luau.py` : les `AuthoredClips` sont à lui.
-7. Dans Studio : jouer le clip sur un combattant, vérifier sa durée et la position de chaque
-   partie par rapport au rendu (< 0,0001 stud), puis le test des jambes.
+7. Dans Studio, par le MCP : `studio_parity.py` construit un vrai combattant, joue le clip
+   avec le décodeur du jeu et compare chaque partie. **Le 19/11, sur le corps lu dans
+   Studio : 0,000057 stud au pire, durée 0,5 s exacte.** Contre `World.RIG`, le même contrôle
+   a trouvé **0,21 stud** d'écart. Les prodiges passent par `Looks.form`, qui resserre les
+   épaules de 0,21 et monte la tête de 0,15, alors qu'un avatar de joueur garde `World.RIG`.
+   Un clip se cale donc sur le squelette où il sera joué (`rig_prodigy.json` ou `rig.json`).
+   C'est la raison d'être de ce contrôle dans la vidéo. Il reste le test des jambes pour les
+   gardes et les idles.
 8. **Jambes figées chez nous** : un clip peut ne poser que le haut du corps. Le moteur saute
    les articulations absentes (`AuthoredMotion.decode`, liste `UPPER`). Une garde ou un idle
    qui doit laisser marcher ne clé que `Waist`, `Neck` et les bras.

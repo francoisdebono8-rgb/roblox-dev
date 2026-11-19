@@ -514,3 +514,21 @@ y then 0.000. Watch keys at fractional frame times: a round()-based frame range 
 Also: r6_clip's ground solve only looks at FEET; for rolls, flips and get-ups ground on every part's corners.
 A straight forward roll on R6 passes through standing on the 1.25-stud head (torso centre rises ~1.5 studs
 mid-roll); tuck limbs to ~110-128 deg swing and keep the tuck until the last quarter so the shape stays round.
+
+## 44. Render the body the game actually poses: read it out of Studio (Ninja Duel, 2026-11-19)
+
+A skeleton kept as data next to the code (Ninja Duel's `World.RIG`) is not proof of the body the
+players see: a later pass in the game (`Looks.form`) moved the shoulders in by 0.21 stud and the head up
+by 0.15 on the prodigies, while the players' own avatars keep the data skeleton. Every number in
+`r6_clip.py` passed on the data rig; the Studio parity check (the step that compares Studio's posed
+parts with the render) came back 0.21 stud off, and 0.000057 once the rig was read out of Studio.
+Rule: build `rig.json` from the joints read in a Play session of the real game (Motor6D C0/C1 after
+every look/costume pass), one rig per body family, and run the parity check before trusting a clip.
+
+## 45. Blender 5 renamed the EEVEE engine back (2026-11-19)
+
+`BLENDER_EEVEE_NEXT` (Blender 4.2-4.x) is `BLENDER_EEVEE` again in Blender 5; setting the old name
+raises a TypeError and the render never starts. `anim_render.py`, `r6_clip.py` and
+`roblox-3d-model/scripts/render_check.py` now pick whichever name the running Blender has. A cloud
+session's `bpy` renders EEVEE in software (~20 s a frame): use `--no-render` there for the numbers
+and render on a machine with a GPU.

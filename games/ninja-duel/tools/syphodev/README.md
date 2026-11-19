@@ -23,7 +23,26 @@ scripts du skill vont dans `skill-scripts/`, ce dossier dans `nd/` et les rendus
 `anim/`. Le rendu se lance par le MCP Blender (`execute_blender_code_for_cli`), qui démarre
 un second Blender avec la même ligne de commande.
 
-Contrôle de parité dans Studio, c'est l'étape 10 de la vidéo. Jouer le clip sur un
-combattant du jeu, puis comparer la position de chaque partie à l'image de contact avec le
-monde posé de `report.json`. L'écart doit rester sous 0,0001 stud. On vérifie aussi que la
-durée jouée est la durée d'auteur.
+## Deux squelettes : choisir celui sur lequel le clip sera joué
+
+- `rig.json` est `World.RIG`, le squelette des avatars des joueurs (AvatarBody). `tests/run.sh`
+  le garde égal au jeu.
+- `rig_prodigy.json` est le corps d'un prodige tel que le jeu le construit, **lu dans Studio**
+  comme le fait SyphoDev. `Looks.form` y resserre les épaules (C0 x ±0,84 au lieu de ±1,05) et
+  y monte la tête (Neck C0 y 1,05 au lieu de 0,9). Il faut le relire si `Looks.form` change :
+  lancer `studio_rig.luau` sur le serveur d'un Play après la preuve ci-dessous, puis
+  `python3 tools/syphodev/rig_from_studio.py sortie.json tools/syphodev/rig.json > tools/syphodev/rig_prodigy.json`.
+
+## Preuve dans Studio (étapes 10 et 11 de la vidéo)
+
+```bash
+python3 tools/syphodev/studio_parity.py luau tools/syphodev/rig_prodigy.json work/anim/clips.json SyphoDemo.Cross 0 2 4 6 8 10 11 13 15 > proof.luau
+# proof.luau s'exécute par le MCP (execute_luau, datamodel Server, en Play). Il construit un vrai
+# combattant (World.rig), passe le clip au décodeur du jeu (AuthoredMotion), écrit les
+# Motor6D.Transform et relit chaque partie. On enregistre sa sortie JSON, puis :
+python3 tools/syphodev/studio_parity.py check tools/syphodev/rig_prodigy.json work/anim/clips.json SyphoDemo.Cross studio.json
+```
+
+Résultat du 19/11 sur un prodige, pour le direct du droit : durée 0,5 s (= la durée d'auteur),
+pièces à **0,000057 stud au pire** du calcul, sur 9 images. Contre `rig.json`, la même mesure
+donnait **0,21 stud** : c'est ainsi que l'écart de `Looks.form` a été trouvé.
