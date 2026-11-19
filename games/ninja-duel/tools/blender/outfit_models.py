@@ -723,6 +723,8 @@ def write(dst, limit=110000):
             fh.write(head + "-- {model, body part, colour slot, piece}, in order.\nreturn {\n" + "\n".join(c) + "\n}\n")
     ref = ",".join("%s=Vector3.new(%g,%g,%g)" % (k, *v) for k, v in REF.items())
     items = ",".join("%s=%s" % (k, q(v)) for k, v in ITEMS.items())
+    sets = ",\n\t".join("%s={kind=\"set\",name=%s,parts={%s}}" % (k, q(nm), ",".join("{model=%s,colors={%s}}" % (q(m), ",".join("%s={%d,%d,%d}" % (sl, *c) for sl, c in cols.items())) for m, cols in parts))
+                          for k, (nm, parts) in wardrobe_models.SETS.items())
     catalog = ",\n\t".join("%s={kind=%s,model=%s,name=%s,colors={%s}}" % (k, q(kind), q(m), q(nm), ",".join("%s={%d,%d,%d}" % (s, *c) for s, c in cols.items()))
                              for k, (kind, m, nm, cols) in CATALOG.items())
     new_slots = ",".join("%s={%s}" % (m, ",".join("%s={%d,%d,%d}" % (s, *c) for s, c in v.items())) for m, v in NEW_SLOTS.items())
@@ -744,6 +746,8 @@ OutfitMeshes.NewSlots={%s}
 -- Masks, headbands and hoods sit on the Head (Ref.Head), capes and back items on the torso.
 OutfitMeshes.Catalog={
 	%s,
+	-- the six invented outfits: bundles of the pieces above, each in the set's colours
+	%s,
 }
 OutfitMeshes.Models={}
 for i=1,%d do
@@ -760,7 +764,7 @@ function OutfitMeshes.forItem(id)
 	return model and OutfitMeshes.Models[model] or nil
 end
 return OutfitMeshes
-""" % (ref, items, new_slots, catalog, len(chunks)))
+""" % (ref, items, new_slots, catalog, sets, len(chunks)))
     for name, n, t in report:
         print("%-12s %3d pieces %6d tris" % (name, n, t))
     print("chunks", len(chunks), "sizes", [sum(len(x) for x in c) for c in chunks])
@@ -814,13 +818,20 @@ def render_bodies(dst, names=None):
     from nd_mesh import to_blender, render_set, clear
     os.makedirs(dst, exist_ok=True)
     SKIN = (0.93, 0.78, 0.62)
-    for name in MODELS:
+    for name in list(MODELS) + list(wardrobe_models.SETS):
         if names and name not in names:
             continue
         clear()
         objs = []
-        cols = NEW_SLOTS.get(name, {})
-        pieces = built(name)
+        if name in wardrobe_models.SETS:  # a bundle: each piece in the set's colours
+            pieces, tints = [], []
+            for m, cmap in wardrobe_models.SETS[name][1]:
+                for entry in built(m):
+                    pieces.append(entry)
+                    tints.append(cmap)
+        else:
+            pieces = built(name)
+            tints = [NEW_SLOTS.get(name, {})] * len(pieces)
         for k, (back, (tag, f)) in enumerate([(b, bd) for b in (False, True) for bd in BODIES]):
             dx = (k - 2.5) * 3.6
             turn = -1 if back else 1
@@ -843,7 +854,7 @@ def render_bodies(dst, names=None):
                 if back:
                     b.f = [tuple(fc) for fc in b.f]
                 objs.append(to_blender(b))
-            for part, slot, pc in pieces:
+            for (part, slot, pc), cols in zip(pieces, tints):
                 q = Piece(pc.name, pc.mat, pc.flat)
                 q.v = [place(v, part) for v in pc.v]
                 q.f = list(pc.f)

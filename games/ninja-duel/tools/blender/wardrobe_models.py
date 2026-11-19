@@ -697,49 +697,39 @@ def item_open_boots():
 
 
 # ------------------------------------------------------------------ the six invented outfits
-def combine(*parts):
-    """Pieces of several builders as one outfit; (builder, {old slot: new slot})."""
-    out = []
-    for fn, rename in parts:
-        for part, slot, pc in fn():
-            out.append((part, rename.get(slot, slot), pc))
-    return out
-
-
+# A set is a bundle of the pieces above, each in the set's own colours (no mesh of its own:
+# the pieces are shared). id -> (name, [(model, {slot: colour})]).
 SETS = {
-    # id: (model, name, pieces, colours)
-    "SetEmberMonk": ("EmberMonk", "Ember Monk", lambda: combine(
-        (item_gi, {"Cloth": "Robe", "Overlap": "Robe", "Belt": "Belt"}), (item_hakama, {"Cloth": "Trousers", "Belt": "Belt"}),
-        (item_bracers, {}), (item_geta, {}), (item_headband_hachimaki, {})),
-        {"Robe": (232, 120, 40), "Trousers": (120, 34, 36), "Belt": (40, 36, 40), "Leather": (96, 64, 44), "Metal": (200, 200, 206),
-         "Wood": (164, 120, 80), "Strap": (190, 40, 36), "Band": (236, 232, 220)}),
-    "SetMistHunter": ("MistHunter", "Mist Hunter", lambda: combine(
-        (item_turtleneck, {"Cloth": "Suit"}), (item_cargo_pants, {"Cloth": "Suit", "Tie": "Tie", "Pocket": "Tie"}),
-        (item_gauntlets, {}), (item_boots, {}), (item_mask_cat, {}), (item_scarf, {})),
-        {"Suit": (58, 96, 128), "Tie": (210, 210, 214), "Leather": (52, 56, 66), "Metal": (176, 182, 190), "Strap": (40, 42, 50),
-         "Mask": (240, 240, 236), "Paint": (70, 120, 200), "Scarf": (170, 210, 226)}),
-    "SetStormCourier": ("StormCourier", "Storm Courier", lambda: combine(
-        (item_track_jacket, {"Cloth": "Jacket", "Trim": "Trim"}), (item_long_shorts, {"Cloth": "Shorts", "Belt": "Trim"}),
-        (item_fingerless, {}), (item_tabi, {}), (item_back_pouch, {"Leather": "Pouch", "Strap": "Pouch"}), (item_headband_classic, {})),
-        {"Jacket": (238, 200, 40), "Trim": (36, 40, 52), "Shorts": (36, 40, 52), "Leather": (36, 40, 52), "Metal": (200, 204, 210),
-         "Cloth": (236, 232, 222), "Sole": (60, 60, 64), "Pouch": (150, 110, 70), "Band": (36, 40, 52), "Plate": (200, 204, 210)}),
-    "SetShadowScout": ("ShadowScout", "Shadow Scout", lambda: combine(
-        (item_mesh_shirt, {"Cloth": "Mesh"}), (item_sash_top, {"Cloth": "Top", "Sash": "Sash"}), (item_wrap_pants, {"Cloth": "Trousers", "Wrap": "Wrap"}),
-        (item_arm_warmers, {"Cloth": "Wrap"}), (item_wrapped_feet, {}), (item_mask_cloth, {"Cloth": "Mask"}), (item_back_sword, {})),
-        {"Mesh": (90, 90, 100), "Top": (46, 48, 60), "Sash": (150, 40, 60), "Trousers": (46, 48, 60), "Wrap": (200, 196, 186),
-         "Mask": (46, 48, 60), "Sheath": (30, 30, 36), "Metal": (190, 190, 196), "Grip": (150, 40, 60), "Strap": (30, 30, 36)}),
-    "SetLeafMedic": ("LeafMedic", "Leaf Medic", lambda: combine(
-        (item_chunin_vest, {"Cloth": "Suit", "Vest": "Vest"}), (item_leggings, {"Cloth": "Suit", "Weights": "Pouch"}),
-        (item_elbow_pads, {"Pad": "Pouch"}), (item_open_boots, {}), (item_headband_neck, {})),
-        {"Suit": (64, 70, 92), "Vest": (110, 150, 92), "Pouch": (236, 232, 222), "Strap": (40, 42, 50), "Leather": (64, 70, 92),
-         "Band": (64, 70, 92), "Plate": (200, 204, 210)}),
-    "SetSandNomad": ("SandNomad", "Sand Nomad", lambda: combine(
-        (item_haori, {"Cloth": "Coat", "Under": "Under", "Trim": "Trim"}), (item_wrap_skirt, {"Cloth": "Coat", "Under": "Under", "Belt": "Trim"}),
-        (item_long_sleeves, {"Cloth": "Under", "Trim": "Trim"}), (item_shin_guards, {}), (item_cloak_hooded, {"Cape": "Cloak"}),
-        (item_back_scroll, {})),
-        {"Coat": (196, 150, 90), "Under": (110, 60, 46), "Trim": (230, 200, 120), "Sandal": (90, 64, 44), "Metal": (176, 160, 130),
-         "Strap": (90, 64, 44), "Cloak": (214, 186, 140), "Paper": (240, 230, 200), "Wood": (120, 80, 50)}),
+    "SetEmberMonk": ("Ember Monk", [
+        ("Gi", {"Cloth": (232, 120, 40), "Belt": (40, 36, 40)}), ("Hakama", {"Cloth": (120, 34, 36), "Belt": (40, 36, 40)}),
+        ("Bracers", {"Leather": (96, 64, 44), "Metal": (200, 200, 206)}), ("Geta", {"Wood": (164, 120, 80), "Strap": (190, 40, 36)}),
+        ("Hachimaki", {"Band": (236, 232, 220)})]),
+    "SetMistHunter": ("Mist Hunter", [
+        ("Turtleneck", {"Cloth": (58, 96, 128)}), ("CargoPants", {"Cloth": (58, 96, 128), "Tie": (210, 210, 214), "Pocket": (46, 80, 108)}),
+        ("Gauntlets", {"Leather": (52, 56, 66), "Metal": (176, 182, 190)}), ("Boots", {"Leather": (52, 56, 66), "Strap": (40, 42, 50)}),
+        ("MaskCat", {"Mask": (240, 240, 236), "Paint": (70, 120, 200), "Strap": (40, 42, 50)}), ("Scarf", {"Scarf": (170, 210, 226)})]),
+    "SetStormCourier": ("Storm Courier", [
+        ("TrackJacket", {"Cloth": (238, 200, 40), "Trim": (36, 40, 52)}), ("LongShorts", {"Cloth": (36, 40, 52), "Belt": (238, 200, 40)}),
+        ("Fingerless", {"Leather": (36, 40, 52), "Metal": (200, 204, 210)}), ("Tabi", {"Cloth": (236, 232, 222), "Sole": (60, 60, 64)}),
+        ("BackPouch", {"Leather": (150, 110, 70), "Metal": (200, 204, 210), "Strap": (60, 50, 44)}),
+        ("HeadbandClassic", {"Band": (36, 40, 52), "Plate": (200, 204, 210)})]),
+    "SetShadowScout": ("Shadow Scout", [
+        ("MeshShirt", {"Cloth": (90, 90, 100)}), ("SashTop", {"Cloth": (46, 48, 60), "Sash": (150, 40, 60)}),
+        ("WrapPants", {"Cloth": (46, 48, 60), "Wrap": (200, 196, 186)}), ("ArmWarmers", {"Cloth": (200, 196, 186)}),
+        ("WrappedFeet", {"Wrap": (200, 196, 186)}), ("MaskCloth", {"Cloth": (46, 48, 60)}),
+        ("BackSword", {"Sheath": (30, 30, 36), "Metal": (190, 190, 196), "Grip": (150, 40, 60), "Strap": (30, 30, 36)})]),
+    "SetLeafMedic": ("Leaf Medic", [
+        ("ChuninVest", {"Cloth": (64, 70, 92), "Vest": (110, 150, 92)}), ("Leggings", {"Cloth": (64, 70, 92), "Weights": (236, 232, 222)}),
+        ("ElbowPads", {"Pad": (236, 232, 222), "Strap": (40, 42, 50)}), ("OpenBoots", {"Leather": (64, 70, 92)}),
+        ("HeadbandNeck", {"Band": (64, 70, 92), "Plate": (200, 204, 210)})]),
+    "SetSandNomad": ("Sand Nomad", [
+        ("Haori", {"Cloth": (196, 150, 90), "Under": (110, 60, 46), "Trim": (230, 200, 120)}),
+        ("WrapSkirt", {"Cloth": (196, 150, 90), "Under": (110, 60, 46), "Belt": (230, 200, 120)}),
+        ("ShinGuards", {"Sandal": (90, 64, 44), "Metal": (176, 160, 130), "Strap": (90, 64, 44)}),
+        ("CloakHooded", {"Cape": (214, 186, 140)}),
+        ("BackScroll", {"Paper": (240, 230, 200), "Wood": (120, 80, 50), "Strap": (90, 64, 44)})]),
 }
+
 
 # model -> builder
 MODELS = {
@@ -766,8 +756,6 @@ MODELS = {
     "Boots": item_boots, "Tabi": item_tabi, "Geta": item_geta, "ShinGuards": item_shin_guards, "WrappedFeet": item_wrapped_feet,
     "OpenBoots": item_open_boots,
 }
-for _id, (_model, _name, _fn, _c) in SETS.items():
-    MODELS[_model] = _fn
 
 # The catalogue entries (Shared/Catalog, DEV 2): id -> (kind, model, name, colours by slot).
 # kind: top, bottom, arms, feet, headband, mask, cape, back, set. Colours chosen to read in
@@ -832,5 +820,6 @@ CATALOG = {
     "BackSword": ("back", "BackSword", "Sheathed Blade", {"Sheath": C(30, 30, 36), "Metal": C(200, 190, 140), "Grip": C(196, 44, 44), "Strap": C(60, 50, 44)}),
     "BackFuma": ("back", "BackFuma", "Folded Fuma", {"Metal": C(176, 182, 190), "Grip": C(60, 50, 44), "Strap": C(60, 50, 44)}),
 }
-for _id, (_model, _name, _fn, _c) in SETS.items():
-    CATALOG[_id] = ("set", _model, _name, _c)
+for _id, (_name, _parts) in SETS.items():
+    for _m, _c in _parts:
+        assert _m in MODELS, (_id, _m)
