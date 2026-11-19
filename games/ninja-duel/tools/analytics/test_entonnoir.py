@@ -140,6 +140,15 @@ class ServerOutput(unittest.TestCase):
             self.assertIn("premier achat", E.analyse(f, PLAN)["missing"])
 
 
+class StudioOutput(unittest.TestCase):
+    def test_a_real_studio_run_where_nobody_leaves(self):
+        # the server's own lines, Studio, two test players (19/11)
+        f = E.read(EX / "studio_duo_20261119.log", NOW)[0]
+        self.assertEqual([s.users for s in f.steps], [2, 2])
+        r = E.analyse(f, NOW)
+        self.assertIn("Personne ne part", E.text(r))
+
+
 class Command(unittest.TestCase):
     def test_the_report_names_the_step(self):
         out = io.StringIO()

@@ -499,7 +499,9 @@ def text(report: dict) -> str:
             cells.append(f"   à {fmt(r['median_s'], 1)} s (médiane)")
         lines.append("".join(cells))
     w = report["worst"]
-    if w:
+    if w and not (w["lost"] or w["lost_points"]):
+        lines.append("Personne ne part entre les étapes lues.")
+    elif w:
         who = (f"{fmt(w['lost'])} joueur{'s' if w['lost'] >= 2 else ''}, {fmt(w['lost_rate'], 0)} % de ceux qui arrivent à « {w['from']} »"
                if w["lost"] is not None else f"{fmt(w['lost_rate'], 0)} % de ceux qui arrivent à « {w['from']} »")
         lines.append(f"Où ils partent le plus : entre « {w['from']} » et « {w['to']} » ({who}).")

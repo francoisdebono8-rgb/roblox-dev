@@ -1,0 +1,11 @@
+Sortie réelle du serveur, Studio, essai à deux joueurs du 19/11 (LAB ND-JEU-duo, 3516f3d9) : deux joueurs de test, pas des joueurs
+[NinjaDuel] progression: no DataStore here, profiles kept in memory for this session
+[NinjaDuel] BUILD ee9528aa31e976085879430797bd8d88e6ca85c93c873cf6834ba5f2d71cb526 | RUNTIME ee9528aa31e976085879430797bd8d88e6ca85c93c873cf6834ba5f2d71cb526 | release @ 8d1dc427c6de
+[NinjaDuelFirst] -1 joined 0.0s
+AnalyticsService: LogOnboardingFunnelStepEvent event fired.
+[NinjaDuelFirst] -2 joined 0.0s
+AnalyticsService: LogOnboardingFunnelStepEvent event fired.
+[NinjaDuelFirst] -2 input 9.2s
+AnalyticsService: LogOnboardingFunnelStepEvent event fired.
+[NinjaDuelFirst] -1 input 771.2s
+AnalyticsService: LogOnboardingFunnelStepEvent event fired.
