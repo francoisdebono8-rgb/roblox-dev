@@ -65,12 +65,20 @@ def measure(a, b):
         add("retour à Konoha", rec["who"], back,
             (f"à {back['d'].get('at')}" + (f", rue « {back['d']['street']} »" if back["d"].get("street") else ""))
             if back else "")
+    # the game's part: from the input that asked for it (E held, Enter, the
+    # click) to what it did, on the same client
+    for s in steps:
+        rec = challenger if s["who"] == challenger["who"] else (other if s["who"] == other["who"] else None)
+        if rec and s["t"] is not None and s["step"] in ("défi envoyé", "invitation acceptée", "retour à Konoha"):
+            inputs = [e["t"] for e in rec["events"] if e["k"] == "in" and s["t"] - 5 <= e["t"] <= s["t"]]
+            if inputs:
+                s["afterInput"] = round(s["t"] - inputs[-1], 2)
     for s in steps:
         s["since"] = round(s["t"] - t0, 2) if (s["t"] is not None and t0 is not None) else None
     prev = None
     for s in steps:
         if s["t"] is not None:
-            s["gap"] = round(s["t"] - prev, 2) if prev is not None else 0.0
+            s["gap"] = max(0.0, round(s["t"] - prev, 2)) if prev is not None else 0.0
             prev = s["t"]
     return {"challenger": challenger["who"], "challenged": other["who"], "steps": steps,
             "complete": all(s["t"] is not None for s in steps)}
@@ -83,7 +91,8 @@ def text(m):
         gap = f"(+{s['gap']:.2f})" if s.get("gap") is not None else "        "
         who = f" [{s['who']}]" if s["who"] else ""
         missing = "" if s["t"] is not None else "  PAS VU"
-        out.append(f"  {when} {gap:>9}  {s['step']}{who}{(' : ' + s['detail']) if s['detail'] else ''}{missing}")
+        game = f" (jeu : {s['afterInput']:.2f} s après l'entrée)" if s.get("afterInput") is not None else ""
+        out.append(f"  {when} {gap:>9}  {s['step']}{who}{(' : ' + s['detail']) if s['detail'] else ''}{game}{missing}")
     out.append("Parcours complet." if m["complete"] else "Parcours incomplet : une étape n'a pas été vue.")
     return "\n".join(out)
 

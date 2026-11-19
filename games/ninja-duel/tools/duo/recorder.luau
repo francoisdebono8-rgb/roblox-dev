@@ -86,7 +86,12 @@ table.insert(rec.conns,RunService.Heartbeat:Connect(function()
 	end
 end))
 
--- (client 1) the duel fought on its own, through the keyboard's own remote
+-- (client 1) the duel fought on its own, through the keyboard's own remote.
+-- Studio 19/11: Minato's strikes lift the opponent onto the roofs of the
+-- street (Ichiraku's stand roof, 11 studs up), where the pilot cannot reach
+-- him on foot: then it throws the Marked Kunai at him and takes the Flying
+-- Thunder God (Technique1, Technique3: Minato's own way up). On the ground,
+-- it closes in and strikes within 6 studs.
 local pilot=nil
 function rec.pilot(on)
 	if pilot then pilot.on=false;pilot=nil end
@@ -95,20 +100,22 @@ function rec.pilot(on)
 	pilot={on=true}
 	local p=pilot
 	task.spawn(function()
-		local nextHit=0
+		local nextHit,nextJutsu=0,0
 		while p.on do
 			local d=L.data
-			if d and d.phase=="Duel" and d.human and d.bot and (d.intro or 0)<=0 and not d.ko then
-				local mine=d.human.position or (me.Character and me.Character:FindFirstChild("HumanoidRootPart") and me.Character.HumanoidRootPart.Position)
-				local theirs=d.bot.position
-				if typeof(mine)=="Vector3" and typeof(theirs)=="Vector3" then
-					local gap=(theirs-mine)*Vector3.new(1,0,1)
-					local dir=if gap.Magnitude>4 then gap.Unit else Vector3.zero
-					remote:FireServer({action="Move",epoch=L.epoch,direction=dir,locked=true,sprint=false})
-					if gap.Magnitude<=6 and os.clock()>=nextHit then
-						remote:FireServer({action="Attack",epoch=L.epoch,clientTime=workspace:GetServerTimeNow()})
-						nextHit=os.clock()+.35
-					end
+			if d and d.phase=="Duel" and d.human and d.bot and (d.intro or 0)<=0 and not d.ko and typeof(d.human.position)=="Vector3" and typeof(d.bot.position)=="Vector3" then
+				local gap=(d.bot.position-d.human.position)*Vector3.new(1,0,1)
+				local dy=d.bot.position.Y-d.human.position.Y
+				remote:FireServer({action="Move",epoch=L.epoch,direction=if gap.Magnitude>2 then gap.Unit else Vector3.zero,locked=true,sprint=false})
+				if dy>6 and gap.Magnitude<=12 and os.clock()>=nextJutsu then
+					remote:FireServer({action="Technique1",epoch=L.epoch,clientTime=workspace:GetServerTimeNow(),aim=d.bot.position})
+					task.wait(.8)
+					remote:FireServer({action="Technique3",epoch=L.epoch,clientTime=workspace:GetServerTimeNow(),aim=d.bot.position})
+					note("pilot","up")
+					nextJutsu=os.clock()+4
+				elseif gap.Magnitude<=6 and math.abs(dy)<=6 and os.clock()>=nextHit then
+					remote:FireServer({action="Attack",epoch=L.epoch,clientTime=workspace:GetServerTimeNow()})
+					nextHit=os.clock()+.35
 				end
 			end
 			task.wait(.1)
