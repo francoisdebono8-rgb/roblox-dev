@@ -132,10 +132,15 @@ function Panel.new(kit,gui,send,onTree)
 	seam.ZIndex=75
 	self.title=text(side,"SHOP",UDim2.fromOffset(22,10),UDim2.fromOffset(SIDE-40,92),88,M.ink,kit.TITLE_FONT)
 	local brush=frame(side,UDim2.fromOffset(26,94),UDim2.fromOffset(150,8),M.red,0);corner(brush,4);brush.Rotation=-2
+	-- (DESIGN 19/11, vague 2 § DESIGN 4: « la SHOP en Robux et le marché en
+	-- Ryō bien séparés ») each counter says what it takes, on a band under
+	-- its name: red for Robux (the SHOP), ink for Ryō (the market)
+	self.currency=text(side,"",UDim2.fromOffset(20,104),UDim2.new(1,-40,0,30),18,M.cream,STRONG,Enum.TextXAlignment.Center)
+	self.currency.BackgroundTransparency=0;self.currency.Rotation=-1
 	self.tabs={}
 	self.tabMarks={}
 	for i,name in TABS do
-		local b=button(side,name,UDim2.fromOffset(16,120+(i-1)*62),UDim2.fromOffset(SIDE-32,52),function() self.tab=name;self:draw() end,M.paper)
+		local b=button(side,Panel.TAB_LABEL[name] or name,UDim2.fromOffset(16,120+(i-1)*62),UDim2.fromOffset(SIDE-32,52),function() self.tab=name;self:draw() end,M.paper)
 		b.TextSize=24;b.Font=STRONG;b.TextColor3=M.ink;b.TextXAlignment=Enum.TextXAlignment.Left
 		create("UIPadding",b,{PaddingLeft=UDim.new(0,20)})
 		-- the open tab: a band of ink, its name in cream, a red mark at its edge
@@ -188,6 +193,8 @@ function Panel:hide() self.root.Visible=false;Panel.dropFocus(self.root) end
 -- (the SHOP: kits, looks, passes and Ryō for Robux) or "market" (Konoha's
 -- market: looks for Ryō, Server/Hub.placeMarket).
 Panel.TABS={shop=TABS,market={"WEAPONS","STYLE"}}
+-- (DESIGN 19/11) what a tab says: the passes page is VIP & PASSES
+Panel.TAB_LABEL={PASSES="VIP & PASSES",["RYŌ"]="BUY RYŌ"}
 function Panel:show(kits,tab,counter)
 	self.kits=kits
 	self.counter=counter or "shop"
@@ -209,12 +216,15 @@ function Panel:draw()
 	local P=self.P
 	local counter=self.counter or "shop"
 	self.title.Text=if counter=="market" then "MARKET" else "SHOP"
+	self.currency.Text=if counter=="market" then "PAID WITH RYŌ" else "PAID WITH ROBUX"
+	self.currency.BackgroundColor3=if counter=="market" then self.M.ink else self.M.red
+	self.side.BackgroundColor3=if counter=="market" then (self.M.back or self.M.paper) else self.M.paper
 	local slot=0
 	for _,name in TABS do
 		local b=self.tabs[name]
 		local on=name==self.tab
 		b.Visible=table.find(Panel.TABS[counter],name)~=nil
-		if b.Visible then b.Position=UDim2.fromOffset(20,100+slot*64);slot+=1 end
+		if b.Visible then b.Position=UDim2.fromOffset(20,146+slot*64);slot+=1 end
 		b.BackgroundColor3=if on then self.M.ink else self.M.paper
 		b.TextColor3=if on then self.M.cream else self.M.ink
 		self.tabMarks[name].Visible=on
@@ -436,23 +446,27 @@ end
 -- ------------------------------------------------------------------ passes
 function Panel:drawPasses()
 	local K,M=self.kit,self.M
-	self.heading.Text="PASSES"
-	self.subheading.Text="Bought once, kept forever. Time and status, never a win."
+	self.heading.Text="VIP & PASSES"
+	self.subheading.Text="Bought once, kept forever. Time and status, never a win. SOON: not on sale yet."
 	self.footer.Text="Ranked and tournament duels give everyone the prodigy's whole kit, on an equal budget."
 	local ids=Config.Shop and Config.Shop.Passes or {}
-	for i,pass in Shop.Passes do
+	-- (DESIGN 19/11) VIP first and largest, the others under it
+	local order={}
+	for _,pass in Shop.Passes do if pass.id=="VIP" then table.insert(order,1,pass) else table.insert(order,pass) end end
+	for i,pass in order do
 		local id=if pass.id=="MasteryPass" then (Config.Progression and Config.Progression.MasteryPass or 0) else (ids[pass.id] or 0)
 		local owned=pass.id=="MasteryPass" and self.kits and self.kits.boost
-		local cell=self:add(K.frame(self.body,UDim2.fromOffset(0,(i-1)*114),UDim2.new(1,-8,0,100),M.paper,0))
+		local top=if i==1 then 0 else 150+(i-2)*108
+		local cell=self:add(K.frame(self.body,UDim2.fromOffset(0,top),UDim2.new(1,-8,0,if i==1 then 136 else 96),if i==1 then M.ink else M.paper,0))
 		K.corner(cell,4)
 		local edge=ring(K,cell,if i==1 then 4 else 3)
 		if i==1 then edge.Color=M.red end
-		K.text(cell,pass.name,UDim2.fromOffset(18,10),UDim2.fromOffset(600,38),34,M.ink,K.TITLE_FONT)
-		local note=K.text(cell,pass.note,UDim2.fromOffset(18,50),UDim2.new(1,-260,0,42),16,M.mid or M.ink,K.BODY_FONT)
+		K.text(cell,pass.name,UDim2.fromOffset(18,10),UDim2.fromOffset(600,if i==1 then 56 else 38),if i==1 then 52 else 34,if i==1 then M.cream else M.ink,K.TITLE_FONT)
+		local note=K.text(cell,pass.note,UDim2.fromOffset(18,if i==1 then 70 else 50),UDim2.new(1,-260,0,if i==1 then 56 else 42),if i==1 then 19 else 17,if i==1 then M.cream else (M.mid or M.ink),K.BODY_FONT)
 		note.TextYAlignment=Enum.TextYAlignment.Top
 		if owned then tagOn(K,cell,"OWNED",M.ink) end
 		local label=if owned then "YOURS" elseif id>0 then "BUY" else "SOON"
-		press(K,cell,label,UDim2.new(1,-220,.5,-26),UDim2.fromOffset(200,52),function()
+		press(K,cell,label,UDim2.new(1,-220,.5,-30),UDim2.fromOffset(200,60),function()
 			if not owned and id>0 then self.send("BuyPass",{pass=pass.id}) end
 		end,if id>0 and not owned then "red" else "off").TextSize=22
 	end
