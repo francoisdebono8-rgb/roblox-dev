@@ -13,6 +13,16 @@ Détail : `tools/analytics/README.md`, `tools/loopbot/README.md`, `tools/icons/R
   - Dans le jeu, le modèle d'une pièce de tenue reste `OutfitMeshes.Items[id]`.
   - Un emplacement absent de `Shop.SlotOrder` fait échouer l'étape `garderobe` : la garde-robe ne le montrerait pas.
 - **Quêtes (DEV 5).** Le robot cherche un module dont le nom contient `Quest`, dans `Shared` ou `Server`. Il les jouera dès qu'il existera.
+- **#144, l'essai à deux dans Studio** (détail : `tools/duo/README.md`).
+  - `Server/Lobby:request` ignore un défi si `to<=0`. Or les joueurs de test de Studio ont des UserId négatifs : aucun défi ne part dans un essai à plusieurs. Accepter un id négatif quand `RunService:IsStudio()` rendrait l'essai possible sans patch.
+  - **Un joueur reste bloqué sur `Workspace.NinjaDuelHub.Ichiraku.StandRoof`.**
+    - Où : rue « Legion », position (-24,5 ; 14,54 ; -2254,8).
+    - Comment il y est arrivé : envoyé en l'air par les coups légers de Minato.
+    - Ce qu'on a vu : état Neutral ; plus de 30 s sans bouger, malgré `Move` dans quatre directions ; corps non ancré, qui ne touche rien.
+    - Conséquence : l'adversaire ne peut plus l'atteindre à pied.
+  - Une bulle TALK (un maître de Konoha) s'affiche pendant un duel de rue.
+  - Le duel en ligne ne compte pas comme « premier duel » dans l'entonnoir (`not s.online`). À décider pour DEV 4.
+  - Profils dans Studio à plusieurs : « Profile id required ». Tous les kits sont ouverts, donc la progression ne se teste pas à deux.
 
 **ANIMATEUR**
 - Mets les masques, capes et objets du dos dans `outfit_models.ITEMS`, comme les autres pièces : leurs icônes se rendent sans autre changement.
