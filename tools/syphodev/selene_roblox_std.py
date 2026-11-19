@@ -1,0 +1,117 @@
+#!/usr/bin/env python3
+"""Write Selene's Roblox standard library (roblox.yml) without `selene generate-roblox-std`.
+
+The roblox-code skill's lint gate is Selene with `std = "roblox"`. Selene builds that
+library by downloading the Roblox API dump itself, and its HTTP client cannot go
+through the cloud sessions' proxy ("error when getting API dump"). This is a direct
+port of selene 0.29.0's generator (selene/src/roblox/generate_std.rs): Python fetches
+the same dump and Selene's own roblox_base.yml, then writes the same YAML.
+
+    python3 tools/syphodev/selene_roblox_std.py <project dir>    # writes <dir>/roblox.yml
+"""
+import json
+import sys
+import time
+import urllib.request
+from pathlib import Path
+
+import yaml
+
+SELENE = "0.29.0"
+DUMP = "https://raw.githubusercontent.com/CloneTrooper1019/Roblox-Client-Tracker/roblox/API-Dump.json"
+BASE = f"https://raw.githubusercontent.com/Kampfkarren/selene/{SELENE}/selene-lib/default_std/roblox_base.yml"
+DEPRECATED = {"message": "this property is deprecated.", "replace": []}
+
+
+def fetch(url):
+    with urllib.request.urlopen(url, timeout=60) as r:
+        return r.read().decode("utf-8")
+
+
+def main(out_dir):
+    api = json.loads(fetch(DUMP))
+    std = yaml.safe_load(fetch(BASE))
+    classes = {c["Name"]: c for c in api["Classes"]}
+    structs = std.setdefault("structs", {})
+    globals_ = std.setdefault("globals", {})
+
+    def members(table, name):
+        c = classes[name]
+        for m in c.get("Members", []):
+            kind, mname, tags = m["MemberType"], m["Name"], m.get("Tags") or []
+            if kind == "Callback":
+                field = {"property": "override-fields"}
+            elif kind == "Event":
+                field = {"struct": "Event"}
+            elif kind == "Function":
+                field = {"args": [{"required": False, "type": "any"} for _ in m.get("Parameters", [])],
+                         "method": True}
+            elif kind == "Property":
+                sec = m.get("Security", {})
+                if isinstance(sec, str) or sec.get("Read") != "None" or sec.get("Write") != "None":
+                    continue
+                vt = m.get("ValueType", {})
+                if vt.get("Category") == "Class":
+                    struct(vt["Name"])
+                    field = {"struct": vt["Name"]}
+                elif vt.get("Category") == "DataType":
+                    field = {"any": True}  # selene is lax here too (has_custom_methods)
+                else:
+                    field = {"property": "read-only" if "ReadOnly" in tags else "override-fields"}
+            else:
+                continue
+            if "Deprecated" in tags:
+                field = dict(field, deprecated=DEPRECATED)
+            table[mname] = field
+        if c["Superclass"] != "<<<ROOT>>>":
+            members(table, c["Superclass"])
+
+    def struct(name):
+        if name in structs:
+            return
+        structs[name] = {}
+        table = {"*": {"struct": "Instance"}}
+        members(table, name)
+        structs[name] = table
+
+    for g, cname in (("game", "DataModel"), ("plugin", "Plugin"), ("script", "Script"), ("workspace", "Workspace")):
+        struct(cname)
+        globals_[g] = {"struct": cname}
+
+    for e in api["Enums"]:
+        globals_[f"Enum.{e['Name']}.GetEnumItems"] = {"args": [], "method": True, "must_use": True}
+        for item in e["Items"]:
+            globals_[f"Enum.{e['Name']}.{item['Name']}"] = {"struct": "EnumItem"}
+            for legacy in item.get("LegacyNames", []) or []:
+                globals_[f"Enum.{e['Name']}.{legacy}"] = {
+                    "struct": "EnumItem",
+                    "deprecated": {"message": f"Enum.{e['Name']}.{legacy} was replaced with Enum.{e['Name']}.{item['Name']}",
+                                   "replace": [f"Enum.{e['Name']}.{item['Name']}"]}}
+
+    creatable = [c["Name"] for c in api["Classes"] if "NotCreatable" not in (c.get("Tags") or [])]
+    globals_["Instance.new"] = {
+        "args": [{"required": True, "type": creatable},
+                 {"required": False, "type": {"display": "Instance"},
+                  "deprecated": {"message": "set the instance's parent separately", "replace": []}}],
+        "must_use": True}
+    services = [c["Name"] for c in api["Classes"] if "Service" in (c.get("Tags") or [])]
+    structs["DataModel"]["GetService"] = {"args": [{"required": True, "type": services}],
+                                           "method": True, "must_use": True}
+
+    std["roblox_classes"] = {
+        c["Name"]: {"superclass": c["Superclass"],
+                    "events": [m["Name"] for m in c.get("Members", []) if m["MemberType"] == "Event"],
+                    "properties": [m["Name"] for m in c.get("Members", []) if m["MemberType"] == "Property"]}
+        for c in api["Classes"]}
+    std["last_updated"] = int(time.time())
+    std["last_selene_version"] = SELENE
+
+    out = Path(out_dir) / "roblox.yml"
+    with open(out, "w") as f:
+        f.write(f"# This file was @generated by tools/syphodev/selene_roblox_std.py (port of selene {SELENE} generate-roblox-std)\n")
+        yaml.safe_dump(std, f, sort_keys=False, allow_unicode=True)
+    print(f"wrote {out} ({len(structs)} structs, {len(globals_)} globals)")
+
+
+if __name__ == "__main__":
+    main(sys.argv[1] if len(sys.argv) > 1 else ".")

@@ -1,0 +1,315 @@
+{
+ "name": "SyphoDemo.Cross",
+ "_intent": "right cross from an orthodox guard: left foot forward, both fists at chin height; hips and chest turn left to throw the right fist straight at head height; the right arm ends straight just above horizontal; both feet stay planted; back to guard",
+ "fps": 30,
+ "duration": 0.5,
+ "loop": false,
+ "priority": "Action",
+ "markers": [
+  [
+   "contact",
+   0.2667
+  ]
+ ],
+ "auto_ground": true,
+ "keyframes": [
+  {
+   "t": 0.0,
+   "ease": "in",
+   "_note": "guard",
+   "joints": {
+    "Root": {
+     "turn": -12
+    },
+    "Waist": {
+     "turn": -10,
+     "pitch": 4
+    },
+    "Neck": {
+     "turn": 18
+    },
+    "RightShoulder": {
+     "swing": 65,
+     "spread": 6,
+     "twist": 35
+    },
+    "RightElbow": {
+     "swing": 95
+    },
+    "RightWrist": {
+     "swing": 0
+    },
+    "LeftShoulder": {
+     "swing": 69,
+     "spread": 6,
+     "twist": -35
+    },
+    "LeftElbow": {
+     "swing": 95
+    },
+    "LeftWrist": {
+     "swing": 0
+    },
+    "LeftHip": {
+     "swing": 16,
+     "spread": 4
+    },
+    "LeftKnee": {
+     "swing": -16
+    },
+    "LeftAnkle": {
+     "swing": 0
+    },
+    "RightHip": {
+     "swing": -12,
+     "spread": 4
+    },
+    "RightKnee": {
+     "swing": 0
+    },
+    "RightAnkle": {
+     "swing": 12
+    }
+   }
+  },
+  {
+   "t": 0.0667,
+   "ease": "in",
+   "_note": "anticipation: coil away, guard tightens",
+   "joints": {
+    "Root": {
+     "turn": -12
+    },
+    "Waist": {
+     "turn": -30,
+     "pitch": 0
+    },
+    "Neck": {
+     "turn": 40
+    },
+    "RightShoulder": {
+     "swing": 62,
+     "spread": 12,
+     "twist": 30
+    },
+    "RightElbow": {
+     "swing": 100
+    },
+    "RightWrist": {
+     "swing": 0
+    },
+    "LeftShoulder": {
+     "swing": 70,
+     "spread": 10,
+     "twist": -30
+    },
+    "LeftElbow": {
+     "swing": 100
+    },
+    "LeftWrist": {
+     "swing": 0
+    },
+    "LeftHip": {
+     "swing": 16,
+     "spread": 4
+    },
+    "LeftKnee": {
+     "swing": -16
+    },
+    "LeftAnkle": {
+     "swing": 0
+    },
+    "RightHip": {
+     "swing": -12,
+     "spread": 4
+    },
+    "RightKnee": {
+     "swing": 0
+    },
+    "RightAnkle": {
+     "swing": 12
+    }
+   }
+  },
+  {
+   "t": 0.2667,
+   "ease": "out",
+   "_note": "contact: right fist straight out at head height",
+   "joints": {
+    "Root": {
+     "turn": -12
+    },
+    "Waist": {
+     "turn": 34,
+     "pitch": 14
+    },
+    "Neck": {
+     "turn": -50,
+     "pitch": -18
+    },
+    "RightShoulder": {
+     "swing": 104,
+     "spread": -6,
+     "twist": 0
+    },
+    "RightElbow": {
+     "swing": 6
+    },
+    "RightWrist": {
+     "swing": 0
+    },
+    "LeftShoulder": {
+     "swing": 69,
+     "spread": 6,
+     "twist": -35
+    },
+    "LeftElbow": {
+     "swing": 98
+    },
+    "LeftWrist": {
+     "swing": 0
+    },
+    "LeftHip": {
+     "swing": 16,
+     "spread": 4
+    },
+    "LeftKnee": {
+     "swing": -16
+    },
+    "LeftAnkle": {
+     "swing": 0
+    },
+    "RightHip": {
+     "swing": -12,
+     "spread": 4
+    },
+    "RightKnee": {
+     "swing": 0
+    },
+    "RightAnkle": {
+     "swing": 12
+    }
+   }
+  },
+  {
+   "t": 0.3667,
+   "ease": "smooth",
+   "_note": "follow-through: overshoot the twist by about 8 degrees",
+   "joints": {
+    "Root": {
+     "turn": -12
+    },
+    "Waist": {
+     "turn": 42,
+     "pitch": 14
+    },
+    "Neck": {
+     "turn": -60,
+     "pitch": -16
+    },
+    "RightShoulder": {
+     "swing": 100,
+     "spread": -2,
+     "twist": 0
+    },
+    "RightElbow": {
+     "swing": 14
+    },
+    "RightWrist": {
+     "swing": 0
+    },
+    "LeftShoulder": {
+     "swing": 69,
+     "spread": 6,
+     "twist": -35
+    },
+    "LeftElbow": {
+     "swing": 98
+    },
+    "LeftWrist": {
+     "swing": 0
+    },
+    "LeftHip": {
+     "swing": 16,
+     "spread": 4
+    },
+    "LeftKnee": {
+     "swing": -16
+    },
+    "LeftAnkle": {
+     "swing": 0
+    },
+    "RightHip": {
+     "swing": -12,
+     "spread": 4
+    },
+    "RightKnee": {
+     "swing": 0
+    },
+    "RightAnkle": {
+     "swing": 12
+    }
+   }
+  },
+  {
+   "t": 0.5,
+   "ease": "smooth",
+   "_note": "recovery: back to guard",
+   "joints": {
+    "Root": {
+     "turn": -12
+    },
+    "Waist": {
+     "turn": -10,
+     "pitch": 4
+    },
+    "Neck": {
+     "turn": 18
+    },
+    "RightShoulder": {
+     "swing": 65,
+     "spread": 6,
+     "twist": 35
+    },
+    "RightElbow": {
+     "swing": 95
+    },
+    "RightWrist": {
+     "swing": 0
+    },
+    "LeftShoulder": {
+     "swing": 69,
+     "spread": 6,
+     "twist": -35
+    },
+    "LeftElbow": {
+     "swing": 95
+    },
+    "LeftWrist": {
+     "swing": 0
+    },
+    "LeftHip": {
+     "swing": 16,
+     "spread": 4
+    },
+    "LeftKnee": {
+     "swing": -16
+    },
+    "LeftAnkle": {
+     "swing": 0
+    },
+    "RightHip": {
+     "swing": -12,
+     "spread": 4
+    },
+    "RightKnee": {
+     "swing": 0
+    },
+    "RightAnkle": {
+     "swing": 12
+    }
+   }
+  }
+ ],
+ "_pass": 4
+}
