@@ -1,0 +1,12 @@
+Défi dans Konoha : Player1 défie Player2
+    0.00 s   (+0.00)  défi envoyé [Player1] (jeu : 0.44 s après l'entrée)
+    0.01 s   (+0.01)  invitation reçue [Player2]
+    7.72 s   (+7.72)  invitation acceptée [Player2] (jeu : 0.05 s après l'entrée)
+    7.72 s   (+0.00)  choix du combattant [les deux]
+   23.37 s  (+15.65)  duel [les deux] : dans la rue « Legion », Flashstep contre Flashstep
+   23.41 s   (+0.04)  corps du duel [Player1] : à [0, 3, -2194], rue « Legion »
+   29.02 s   (+5.61)  premier coup
+  323.01 s (+293.99)  résultat [les deux] : manches 0-0 → 1-0 → 2-0
+  339.77 s  (+16.76)  retour à Konoha [Player1] : à [0, 3, -2196], rue « Legion » (jeu : 0.67 s après l'entrée)
+  353.32 s  (+13.55)  retour à Konoha [Player2] : à [0, 3, -2241], rue « Legion » (jeu : 0.65 s après l'entrée)
+Parcours complet.
