@@ -655,6 +655,12 @@ test("the client UI renders the real roster, queue, pick, duel and result packet
 	for _=1,2 do d.introUntil=nil;d.combat:damage(d.seats[1].actor,d.seats[2].actor,1000,false,false);step(m,2.7) end
 	ui:render(last(a))
 	assert(ui.result.Visible and ui.resultTitle.Text:find("VICTORY",1,true) and ui.rematchButton.Text=="REMATCH")
+	-- (DESIGN 19/11) the result says what was earned and what comes next; no kanji on the stamp
+	ui:resultEarned({gained=true,fighter="Ninja",mastery=128,amount=80,need=300,ryo=120,firstWin=true})
+	assert(ui.resultGains.Visible and ui.resultRyo.Text=="+120 RYŌ" and ui.resultFirstWin.Visible and ui.resultGain.Text=="+80","DESIGN 19/11: the gains")
+	assert(ui.resultNext.Text:find("2 more mastery for your next tree point",1,true),"DESIGN 19/11: the next tree point ("..ui.resultNext.Text..")")
+	assert(ui.resultSeal.Text=="WIN" and ui.rematchButton.Size.Y.Offset>=72,"DESIGN 19/11: the stamp and the big buttons")
+	ui:resultEarned(nil);assert(not ui.resultGains.Visible,"DESIGN 19/11: nothing earned, no block")
 	lifecycle(m,b,"Rematch");ui:render(last(a))
 	assert(ui.rematchButton.Text:find("OPPONENT IS READY",1,true))
 	m:remove(b);ui:render(last(a))
