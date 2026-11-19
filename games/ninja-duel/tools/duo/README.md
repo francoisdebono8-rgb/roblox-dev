@@ -61,12 +61,12 @@ Sur `LAB/loopbot/ND-JEU-duo.rbxlx` (ND-JEU `3516f3d9`, RUNTIME `ee9528aa31e9`). 
 **Ce qu'on a trouvé (NATIVE_STUDIO, vu par Claude, pas par François) :**
 - **Aucun défi ne part dans Studio.** Les joueurs de test ont des UserId négatifs (-1, -2), et `Server/Lobby` ne prend un défi que si `to>0`. Le serveur l'ignore sans rien dire. En ligne, les UserId sont positifs : seul l'essai est touché. Contournement : `studio_lobby_patch.luau`.
 - **Pas de progression dans Studio à plusieurs** : « profile not loaded (Profile id required): every kit open ». Les deux joueurs arrivent sans fiche d'inspiration, avec tous les kits ouverts. Le choix du combattant propose Minato aux deux.
-- **Bloqué sur un toit de la rue.** Les coups de Minato envoient l'adversaire en l'air, jusque sur les toits d'Ichiraku. Le joueur 2 s'est retrouvé sur `Ichiraku.StandRoof`, à 11 studs de haut, en état Neutral. Là, ni un déplacement dans quatre directions, ni un saut ne l'ont fait bouger (position identique pendant plus de 30 s). Le joueur 1, en bas, ne l'atteignait plus. Le duel n'a fini que par le kunai marqué puis le Dieu du Tonnerre Volant de Minato.
+- **Bloqué sur un toit de la rue.** Les coups de Minato envoient l'adversaire en l'air, jusque sur les toits d'Ichiraku. Le joueur 2 s'est retrouvé sur `Ichiraku.StandRoof`, à 11 studs de haut, en état Neutral. Là, des déplacements dans quatre directions ne l'ont pas fait bouger : sa position est restée identique pendant plus de 30 s. Côté serveur, le corps n'était pas ancré, et aucune pièce ne le touchait dans une boîte de 4 × 6 × 4 studs. Le saut, tel que je l'ai envoyé (`Jump` seul), n'a fait sauter personne, même au sol : rien à en conclure. Le joueur 1, en bas, ne l'atteignait plus. Le duel n'a fini que par le kunai marqué puis le Dieu du Tonnerre Volant de Minato.
 - **TALK pendant le duel** : une bulle TALK de Konoha s'est affichée plusieurs fois chez le joueur 1, pendant le duel de rue et au retour.
 - **Le premier duel en ligne ne compte pas dans l'entonnoir** : la sortie du serveur n'a que `joined` et `input` (le duel en ligne n'est pas un « premier duel fini »). Lue par `tools/analytics/entonnoir.py` : « personne ne part entre les étapes lues ».
 
 ## Ce que l'essai ne dit pas
 
-- La tension d'un vrai duel entre deux personnes : le joueur 1 est piloté, le joueur 2 ne se défend pas.
+- La tension d'un vrai duel entre deux personnes : le joueur 1 est piloté ; le joueur 2 ne frappe pas, il marche seulement vers l'adversaire.
 - Le réseau réel : les deux clients et le serveur tournent sur la même machine.
 - Le temps d'un joueur entre deux gestes : on lit la part du jeu (l'écart entre une entrée et ce qu'elle déclenche).
