@@ -23,7 +23,7 @@ for _,kit in {"Leaf","Lion","Legion"} do
 		assert(r.ok,"broken at « "..tostring(r.failed).." »: "..tostring(r.steps[#r.steps] and r.steps[#r.steps].detail))
 		local ids={}
 		for _,st in r.steps do table.insert(ids,st.id) end
-		assert(table.concat(ids,",")=="arrivee,inspiration,tenue,duel,gains,marche,arbre","the steps: "..table.concat(ids,","))
+		assert(table.concat(ids,",")=="arrivee,inspiration,tenue,duel,gains,marche,arbre,garderobe","the steps: "..table.concat(ids,","))
 		-- the first hit is a real one, landed within the first minute's prompts
 		assert(r.firstHit.simulated and r.firstHit.simulated>0 and r.firstHit.simulated<45,"the first hit: "..tostring(r.firstHit.simulated))
 		assert(r.firstHit.total>r.firstHit.simulated,"the estimate lost its walks and screens")
@@ -47,6 +47,15 @@ test("the estimate follows Konoha's walk speed and map, and the plan's target",f
 		assert(Bot.walks(kit).doorSeconds<5,kit..": the inspirations are no longer by the gate")
 	end
 	assert(Bot.Target==60,"the plan's target is 60 s")
+end)
+
+-- (vague 2, OUTILLEUR 2) the collection: each look its icon and its model
+test("every look of the catalogue has its icon and its model in the game",function()
+	local c=Bot.collection()
+	assert(c.looks>=30,"too few looks read: "..c.looks)
+	assert(#c.unknownSlot==0,"looks in a slot Shop.Slots does not know: "..table.concat(c.unknownSlot,", "))
+	assert(#c.noModel==0,"looks without their model in the game: "..table.concat(c.noModel,", "))
+	assert(#c.noIcon==0,"looks without their icon (render them: tools/icons/README.md): "..table.concat(c.noIcon,", "))
 end)
 
 print(("Loop: %d passed"):format(passed))

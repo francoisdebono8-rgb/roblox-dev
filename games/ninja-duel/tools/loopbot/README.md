@@ -11,8 +11,17 @@ Il joue la boucle d'un nouveau joueur avec les vrais modules du serveur, sans é
 | `gains` | Lit ce que reçoit l'écran de résultat (`progress`) et sa ligne (`MastersView.result`) | Il n'y a ni maîtrise, ni Ryō, ni la première victoire du jour |
 | `marche` | Enchaîne des duels gagnés jusqu'à pouvoir payer l'objet le moins cher du marché, puis l'achète | L'achat est refusé, l'objet n'est pas porté, ou il reste hors de portée après 60 duels |
 | `arbre` | Attend de pouvoir payer le nœud le moins cher du premier palier, puis l'apprend (`LearnNode`) | Le nœud n'est pas dans la build |
+| `garderobe` | Parcourt tous les emplacements du catalogue, dont les nouveaux (masque, cape, dos) dès qu'ils existent. Dans chaque emplacement qui a un objet gratuit, il le porte (`EquipItem`) | Un emplacement de `Shop.Slots` n'est pas montré par la garde-robe (`Shop.SlotOrder`), ou un objet gratuit n'est pas porté |
 
 Il le fait pour les trois inspirations du départ (Naruto, Sasuke, Lee).
+
+**La collection** (vague 2) : un test à part de `Loop.spec` vérifie que chaque objet du catalogue a :
+- son icône, dans `tools/icons/renders` ;
+- son modèle dans le jeu : les pièces modélisées de l'ANIMATEUR (`Shared/OutfitMeshes`) pour une pièce de tenue, ou l'objet que le jeu construit lui-même pour les armes et le bandeau.
+
+Le même contrôle existe sans lune : `python3 tools/icons/catalogue.py --gate`.
+
+**Pas encore dans le jeu** : les quêtes du jour (DEV 5). Le robot le dit dans son rapport, sans échouer. Il les jouera quand le module existera.
 
 ```sh
 # depuis games/ninja-duel
@@ -44,6 +53,8 @@ Premier coup estimé : 26 s (objectif 60 s : tenu)
 ## La boucle
 
 Le rapport dit aussi après combien de duels gagnés l'objet le moins cher du marché, puis le nœud le moins cher de l'arbre, deviennent abordables. Il traduit ce nombre en minutes de jeu : un duel compte pour 90 s, plus 20 s entre deux duels (hypothèses de `LoopBot`).
+
+La vague 2 veut le premier achat dans la première séance. Le rapport dit s'il tombe dans une séance de 20 minutes (`Bot.FirstSession`, une hypothèse). Ce n'est pas un échec du test : le prix du marché est une décision de François.
 
 ## Le même parcours joué dans Studio (tâche 3)
 

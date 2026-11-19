@@ -12,6 +12,11 @@
 --   gains     what the result screen gets (snapshot `progress`), its line
 --   marche    duels until the cheapest look of the market is affordable, bought, worn
 --   arbre     duels until the cheapest first-tier node of the kit is affordable, learned
+--   garderobe every slot of the catalogue shown by the wardrobe, and a free look
+--             worn in each slot that has one (vague 2: the new slots mask, cape, back)
+-- Bot.collection(): every look has its icon (tools/icons/renders) and its
+-- model in the game (vague 2, OUTILLEUR 2; the same without lune:
+-- python3 tools/icons/catalogue.py --gate).
 -- and the estimated play time until the first hit: the screens (assumptions
 -- below), the walk from the gate to the three inspirations (the first duel is
 -- asked at the door: "YOUR FIRST DUEL" on the master's card, Studio 19/11) and
@@ -44,6 +49,7 @@ Bot.Target=60      -- the plan's goal: the first hit in under 60 s
 Bot.MaxDuels=60    -- past this many duels, the market or the tree is out of reach
 Bot.DuelSeconds=90 -- a duel against the AI, for the play time of the loop (assumption)
 Bot.BetweenDuels=20 -- the result screen, back to Konoha, the next duel (assumption)
+Bot.FirstSession=20 -- (vague 2) the first purchase should come in the first session: its length in minutes (assumption)
 
 -- Konoha's walk speed, read from the client that sets it (Client/HubClient:
 -- `Hub.WALK,Hub.RUN,... = 16,36,...`), so a change there changes the estimate.
@@ -112,6 +118,35 @@ function Bot.cheapestNode(kit)
 		if (node.Tier or 1)==1 and free and (not best or node.Cost<best.Cost) then best=node end
 	end
 	return best
+end
+-- (vague 2, OUTILLEUR 2) Every look of the catalogue has its icon for the
+-- screens (tools/icons/renders, tools/icons/render_icons.py) and its model in
+-- the game: the ANIMATEUR's modelled pieces for an outfit slot
+-- (Shared/OutfitMeshes), the props the game builds itself for the weapons and
+-- the headband (Client/Effects, Server/Headband).
+Bot.BuiltByGame={kunai=true,shuriken=true,tanto=true,gourd=true,headband=true}
+Bot.Icons="tools/icons/renders"
+function Bot.collection()
+	local Meshes=H.load("Shared/OutfitMeshes")
+	local out={looks=0,none=0,slots={},noIcon={},noModel={},unknownSlot={}}
+	for _,item in Shop.Items do
+		out.slots[item.slot]=(out.slots[item.slot] or 0)+1
+		if not Shop.Slots[item.slot] then table.insert(out.unknownSlot,item.id.." ("..item.slot..")") end
+		if item.none then out.none+=1;continue end
+		out.looks+=1
+		if not fs.isFile(Bot.Icons.."/"..item.id..".png") then table.insert(out.noIcon,item.id) end
+		if not (Bot.BuiltByGame[item.slot] or Meshes.forItem(item.id)) then table.insert(out.noModel,item.id) end
+	end
+	return out
+end
+-- (vague 2, DEV 5) The daily quests, once the game has them: their module.
+function Bot.questsModule()
+	for _,dir in {"Shared","Server"} do
+		for _,name in fs.readDir("src/"..dir) do
+			if string.find(name,"Quest") and string.match(name,"%.luau$") then return dir.."/"..string.gsub(name,"%.luau$","") end
+		end
+	end
+	return nil
 end
 -- The walks of a new player in Konoha, straight lines at walk speed: the gate
 -- to the three inspirations at the door, then to the chosen one's home.
@@ -337,6 +372,34 @@ function Bot.run(kit)
 		return string.format("%s (%d points) abordable après %d duel(s), appris",node.Id,node.Cost,nodeAt)
 	end)
 
+	-- (vague 2) The wardrobe's slots, the new ones included: each slot of the
+	-- catalogue is one the wardrobe shows (Shop.SlotOrder), and a free look of
+	-- each slot that has one can be worn.
+	stage("garderobe",function()
+		local worn,empty,hidden={},{},{}
+		for slot in Shop.Slots do
+			if not table.find(Shop.SlotOrder,slot) then table.insert(hidden,slot) end
+		end
+		table.sort(hidden)
+		assert(#hidden==0,"slots the wardrobe does not show (Shop.SlotOrder): "..table.concat(hidden,", "))
+		for _,slot in Shop.SlotOrder do
+			local free=nil
+			for _,x in Shop.inSlot(slot) do if x.base and not x.none then free=x;break end end
+			if not free then table.insert(empty,slot);continue end
+			send("EquipItem",{item=free.id})
+			assert(notice()==nil,"refused "..free.id..": "..tostring(notice()))
+			assert(view().style.equipped[slot]==free.id,free.id.." not worn in "..slot)
+			table.insert(worn,slot)
+		end
+		report.wardrobe={slots=#Shop.SlotOrder,worn=worn,noFree=empty}
+		return string.format("%d emplacements ; un objet gratuit porté dans %s%s",#Shop.SlotOrder,table.concat(worn,", "),
+			if #empty>0 then " ; rien de gratuit dans "..table.concat(empty,", ") else "")
+	end)
+
+	-- (vague 2, DEV 5) The daily quests are not in the game yet: noted, not failed.
+	report.pending={}
+	if not Bot.questsModule() then table.insert(report.pending,"quêtes du jour (DEV 5)") end
+
 	-- The estimate until the first hit.
 	local w=Bot.walks(kit)
 	local parts={
@@ -352,7 +415,10 @@ function Bot.run(kit)
 	for _,p in parts do total+=p[2] end
 	report.firstHit={total=r1(total),parts=parts,target=Bot.Target,within=total<=Bot.Target,simulated=sim.firstHit and r1(sim.firstHit)}
 	local function minutes(n) return r1(n*(Bot.DuelSeconds+Bot.BetweenDuels)/60) end
-	if loop.market then loop.market.minutes=minutes(loop.market.duels) end
+	if loop.market then
+		loop.market.minutes=minutes(loop.market.duels)
+		loop.market.firstSession=loop.market.minutes<=Bot.FirstSession
+	end
 	if loop.node then loop.node.minutes=minutes(loop.node.duels) end
 	report.loop=loop
 	report.duels=duels
@@ -370,8 +436,10 @@ function Bot.text(r)
 		for _,p in r.firstHit.parts do table.insert(out,("     %5.1f s  %s"):format(p[2],p[1])) end
 	end
 	local l=r.loop or {}
-	if l.market then table.insert(out,("Premier achat au marché : %d duels (≈ %.0f min de jeu)"):format(l.market.duels,l.market.minutes)) end
+	if l.market then table.insert(out,("Premier achat au marché : %d duels (≈ %.0f min de jeu ; dans une première séance de %d min : %s)"):format(
+		l.market.duels,l.market.minutes,Bot.FirstSession,if l.market.firstSession then "oui" else "NON")) end
 	if l.node then table.insert(out,("Premier nœud de l'arbre : %d duels (≈ %.0f min de jeu)"):format(l.node.duels,l.node.minutes)) end
+	if r.pending and #r.pending>0 then table.insert(out,"Pas encore dans le jeu : "..table.concat(r.pending,", ")) end
 	return table.concat(out,"\n")
 end
 

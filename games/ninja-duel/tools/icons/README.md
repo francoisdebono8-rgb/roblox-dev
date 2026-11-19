@@ -32,7 +32,35 @@ blender --background --python games/ninja-duel/tools/icons/render_icons.py -- <d
 
 Le rendu prend une dizaine de secondes pour tout le catalogue sur le MacBook Air. Le 19/11, il a été lancé par le MCP Blender, avec une sortie dans `~/Documents/NinjaDuel/MEDIA/ICONES/2026-11-19/`.
 
-Un nouvel emplacement (masque, cape, dos, arme du ninja) demande une ligne dans `BUILD` et, s'il s'agit d'une pièce de tenue, son cadrage dans `SLOT_PARTS`.
+Pour ne rendre que les objets qui n'ont pas encore d'icône dans le dossier de sortie :
+
+```sh
+blender --background --python games/ninja-duel/tools/icons/render_icons.py -- <dossier de sortie> --manquantes
+```
+
+`icons.json` reste complet : les objets qui ne sont pas rendus cette fois gardent leur ligne.
+
+## Ce qui manque
+
+```sh
+python3 tools/icons/catalogue.py               # chaque objet : son icône, son modèle dans le jeu, le modèle de son icône
+python3 tools/icons/catalogue.py --gate        # sort en erreur si un objet n'a pas son icône ou son modèle
+python3 tools/icons/catalogue.py --manquantes  # la liste des objets sans icône
+```
+
+Il lit le catalogue sans Blender : `Shop.Items` et, dès que le DEV l'ajoute, `Shared/Catalog.luau` (vague 2, DEV 2). Le robot de la boucle fait le même contrôle dans `tests/Loop.spec.luau`.
+
+## Les nouveaux emplacements (vague 2)
+
+| Emplacement | Cadrage | Vue |
+|---|---|---|
+| masque | la tête du mannequin | trois quarts face |
+| cape | le buste, les bras et le haut des jambes | trois quarts **dos** |
+| dos | le buste | trois quarts **dos** |
+
+Il suffit que l'ANIMATEUR mette ces objets dans `outfit_models.ITEMS`, comme les autres pièces de tenue. Un emplacement que `render_icons.py` ne connaît pas encore est rendu comme une pièce de tenue si l'objet est dans `outfit_models.ITEMS`. Sinon, il est listé « sans icône », avec la raison.
+
+L'arme du ninja et la pose de victoire sont réservées. Elles demanderont leur propre ligne dans `BUILD` quand leurs modèles existeront (vague 2, DEV 3 et ANIMATEUR 3).
 
 ## Limites
 

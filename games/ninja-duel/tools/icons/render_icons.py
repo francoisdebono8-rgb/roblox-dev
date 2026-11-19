@@ -2,7 +2,7 @@
 § 4 OUTILLEUR 2): every look of Shared/Shop rendered from the ANIMATEUR's
 Blender models, same angle, same light, transparent PNG, for the DESIGN.
 
-  blender --background --python render_icons.py -- OUT_DIR [ids...]
+  blender --background --python render_icons.py -- OUT_DIR [ids... | --manquantes]
 
 Models (read from tools/blender, never changed here):
   top, bottom, arms, feet, set   outfit_models.py (the pieces the game welds),
@@ -33,32 +33,10 @@ SAMPLES = 16
 
 
 # ----------------------------------------------------------------- the catalogue
-def catalogue():
-    """Shared/Shop.Items, read from the Luau source."""
-    text = open(os.path.join(GAME, "src", "Shared", "Shop.luau"), encoding="utf-8").read()
-    block = text[text.index("Shop.Items={"):text.index("local byId")]
-    items = []
-    for chunk in block.split("{id=")[1:]:
-        head = re.match(r'"(\w+)",slot="(\w+)"', chunk)
-        name = re.search(r'name="([^"]+)"', chunk)
-        if not head or not name:
-            continue
-        item = {"id": head.group(1), "slot": head.group(2), "name": name.group(1)}
-        item["none"] = "none=true" in chunk.split("pieces=")[0]
-        m = re.search(r"ryo=(\d+)", chunk)
-        item["counter"] = "shop" if 'robux="' in chunk else ("market" if m else "free")
-        if m:
-            item["ryo"] = int(m.group(1))
-        k = re.search(r'kit="(\w+)"', chunk)
-        if k:
-            item["kit"] = k.group(1)
-        colors = {}
-        src = chunk.split("pieces=")[0]
-        for key, r, g, b in re.findall(r"(\w+)=\{(\d+),(\d+),(\d+)\}", src):
-            colors[key] = (int(r), int(g), int(b))
-        item["colors"] = colors
-        items.append(item)
-    return items
+# The same reader as the coverage check (tools/icons/catalogue.py): Shop.Items
+# and, once it exists, Shared/Catalog.luau.
+sys.path.insert(0, HERE)
+from catalogue import catalogue  # noqa: E402
 
 
 # ----------------------------------------------------------------- rendering
@@ -133,6 +111,16 @@ SLOT_PARTS = {
 # the share of a body part's height kept at its bottom (the sandals would be
 # small under two whole shins)
 CROP = {"feet": {"RightLowerLeg": .35, "LeftLowerLeg": .35}}
+# (vague 2, DEV 2) the new slots, once the ANIMATEUR models them in
+# outfit_models.ITEMS: a mask on the head, a cape and what is carried on the
+# back seen from behind (three-quarter back, the same light).
+SLOT_PARTS.update({
+    "mask": ["Head"],
+    "cape": ["UpperTorso", "LowerTorso", "RightUpperArm", "LeftUpperArm", "RightUpperLeg", "LeftUpperLeg"],
+    "back": ["UpperTorso", "LowerTorso"],
+})
+VIEW_BACK = (-0.42, -1.0, 0.30)
+VIEWS = {"cape": VIEW_BACK, "back": VIEW_BACK}
 
 
 def mannequin(parts, crop=None):
@@ -274,14 +262,40 @@ def headband(item):
 
 
 BUILD = {"top": outfit, "bottom": outfit, "arms": outfit, "feet": outfit, "set": outfit,
+         "mask": outfit, "cape": outfit, "back": outfit,
          "kunai": weapon, "shuriken": weapon, "tanto": weapon, "gourd": gourd, "headband": headband}
 
 
+def builder(item):
+    """The slot's builder; a slot it does not know yet is drawn as an outfit
+    piece when the ANIMATEUR has modelled the look in outfit_models.ITEMS."""
+    if item["slot"] in BUILD:
+        return BUILD[item["slot"]]
+    import outfit_models as OM
+    if item["id"] in OM.ITEMS:
+        return outfit
+    return lambda _item: (None, "emplacement « %s » inconnu de render_icons.py (ajouter une ligne à BUILD)" % item["slot"])
+
+
 def main(out, only=None):
+    """Renders the looks (all, or the ids in `only`; "--manquantes": those
+    without a PNG in `out` yet) and keeps icons.json whole: the entries of the
+    looks not rendered this time stay as they were."""
     os.makedirs(out, exist_ok=True)
+    looks = catalogue()
+    if only and "--manquantes" in only:
+        only = [it["id"] for it in looks if not it["none"] and not os.path.isfile(os.path.join(out, it["id"] + ".png"))]
+        print("missing:", " ".join(only) or "none", flush=True)
+    path_json = os.path.join(out, "icons.json")
+    before = {}
+    if os.path.isfile(path_json):
+        with open(path_json, encoding="utf-8") as f:
+            before = {e["id"]: e for e in json.load(f).get("icons", [])}
     manifest = []
-    for item in catalogue():
-        if only and item["id"] not in only:
+    for item in looks:
+        if only is not None and item["id"] not in only:
+            if item["id"] in before:
+                manifest.append(before[item["id"]])
             continue
         entry = {k: item[k] for k in ("id", "slot", "name", "counter") if k in item}
         if "ryo" in item:
@@ -293,7 +307,7 @@ def main(out, only=None):
             continue
         clear()
         try:
-            objs, source = BUILD[item["slot"]](item)
+            objs, source = builder(item)(item)
         except Exception as e:  # a model that does not build is listed, not hidden
             objs, source = None, "échec : %s" % e
         entry["model"] = source
@@ -303,11 +317,13 @@ def main(out, only=None):
             print("NO ICON", item["id"], source, flush=True)
             continue
         path = os.path.join(out, item["id"] + ".png")
-        render(objs, path)
+        render(objs, path, VIEWS.get(item["slot"], VIEW))
         entry["icon"] = item["id"] + ".png"
+        if item["slot"] in VIEWS:
+            entry["view"] = VIEWS[item["slot"]]
         manifest.append(entry)
         print("icon", item["id"], flush=True)
-    with open(os.path.join(out, "icons.json"), "w", encoding="utf-8") as f:
+    with open(path_json, "w", encoding="utf-8") as f:
         json.dump({"size": SIZE, "view": VIEW, "icons": manifest}, f, ensure_ascii=False, indent=1)
     return manifest
 
