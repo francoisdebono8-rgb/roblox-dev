@@ -102,6 +102,20 @@ function Outfit.piece(holder,body,spec,colors,legs)
 		return v
 	elseif kind=="sash" then
 		return cloth(holder,body,"Sash",Vector3.new(s.X*1.25,s.Y*.18,s.Z+2*pad+.06),CFrame.new(0,0,0)*CFrame.Angles(0,0,math.rad(-38)),color,material)
+	elseif kind=="cape" then
+		-- (19/11, vague 2) a cape off the shoulders, down the back to the knees
+		local len=s.Y*2.3*(legs or 1)
+		local cape=cloth(holder,body,"Cape",Vector3.new(s.X*1.08,len,.1),CFrame.new(0,s.Y/2-len/2+.02,s.Z/2+pad+.08)*CFrame.Angles(math.rad(-4),0,0),color,material)
+		cloth(holder,body,"Shoulders",Vector3.new(s.X+2*pad+.04,s.Y*.14,s.Z+2*pad+.04),CFrame.new(0,s.Y/2-s.Y*.07,0),color,material)
+		return cape
+	elseif kind=="scroll" then
+		-- (19/11, vague 2) a big scroll across the back, its two caps
+		local len=s.Y*1.5
+		local cap=colors and colors.Cap and rgb(colors.Cap) or color
+		local at=CFrame.new(0,0,s.Z/2+pad+.32)*CFrame.Angles(0,0,math.rad(38))
+		local roll=cloth(holder,body,"Scroll",Vector3.new(.5,len,.5),at,color,material)
+		for _,side in {-1,1} do cloth(holder,body,"ScrollCap",Vector3.new(.56,.14,.56),at*CFrame.new(0,side*(len/2+.05),0),cap,material) end
+		return roll
 	elseif kind=="tail" then
 		-- the standard hips (0.4) times 1.6, along the legs
 		local hh=h*.4*1.6*(legs or 1)
@@ -111,12 +125,19 @@ function Outfit.piece(holder,body,spec,colors,legs)
 end
 
 -- What he wears, from his looks (Progression.looks): a master's outfit
--- covers the four slots; else each slot's piece. Item ids, in order.
+-- covers the four slots; else each slot's piece; then the accessories (mask,
+-- cape, back). Item ids, in order.
 function Outfit.items(looks)
 	if not looks then return {} end
-	if looks.set then return {looks.set} end
 	local out={}
-	for _,slot in Shop.OutfitSlots do if looks[slot] then table.insert(out,looks[slot]) end end
+	if looks.set then
+		table.insert(out,looks.set)
+	else
+		for _,slot in Shop.OutfitSlots do if looks[slot] then table.insert(out,looks[slot]) end end
+	end
+	-- (19/11, vague 2) the accessories go over either: a mask, a cape, what
+	-- he carries on his back
+	for _,slot in Shop.AccessorySlots or {} do if looks[slot] then table.insert(out,looks[slot]) end end
 	return out
 end
 
@@ -136,6 +157,10 @@ function Outfit.wear(model,looks)
 			for _,spec in item.pieces do
 				for _,body in Outfit.parts(model,spec.on) do Outfit.piece(holder,body,spec,item.colors,Outfit.legScale(model)) end
 			end
+			-- (19/11) each cloth piece knows its look: the client hides only the
+			-- pieces of the looks it has a model for (a cape stays over a
+			-- modelled tunic)
+			for _,p in holder:GetChildren() do if p:GetAttribute("NinjaItem")==nil then p:SetAttribute("NinjaItem",id) end end
 		end
 	end
 	holder.Parent=model

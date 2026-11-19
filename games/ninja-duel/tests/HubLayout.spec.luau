@@ -176,7 +176,7 @@ test("Konoha's HUD: placed by the layout, the goal follows the player, touch and
 		assert(hub.runButton.Visible and not hub.keys.Visible,"touch: the RUN button")
 		assert(hub.runButton.Position.X.Offset==665 and hub.runButton.Position.Y.Offset==300,"RUN beside the jump button: "..tostring(hub.runButton.Position))
 		hub.runButton.click()
-		assert(hub.runLatch,"RUN latches the run")
+		assert(hub.move.runLatch,"RUN latches the run (Client/HubMove)")
 		hub:showCard("Leaf")
 		assert(hub.card.Visible and not hub.hud.Visible and not hub.shopBox.Visible,"a phone's card takes the top row")
 		assert(hub.cardScale.Scale>=.75,"the phone's card scale: "..hub.cardScale.Scale)
@@ -195,7 +195,7 @@ test("Konoha's HUD: placed by the layout, the goal follows the player, touch and
 		assert(ui.shopPanel:shown(),"Y opens the shop")
 		ui.shopPanel:hide()
 		for _,fn in began do fn({KeyCode=Enum.KeyCode.ButtonL3}) end
-		assert(hub.runLatch==false,"L3 toggles the latch (it was on)")
+		assert(hub.move.runLatch==false,"L3 toggles the latch (it was on)")
 		assert(string.find(hub.keys.Text,"Y SHOP",1,true) and string.find(hub.keys.Text,"R1 DUELS",1,true),"the pad's key line: "..hub.keys.Text)
 		-- (14/11) the board of duels from anywhere: R1, the keyboard's B (not
 		-- while typing), the DUELS button; never over a master's card
@@ -222,6 +222,22 @@ test("Konoha's HUD: placed by the layout, the goal follows the player, touch and
 	H.envBase.Instance=savedInstance
 	H.workspace.CurrentCamera={ViewportSize=roblox.Vector2.new(1600,900),GetPropertyChangedSignal=function() return {Connect=function() end} end}
 	assert(ok,err)
+end)
+
+-- (19/11, vague 2 DEV 1) The screen (HubClient, DESIGN) and the walk
+-- (HubMove, DEV) in their own files: the screen never drives the body.
+test("the village's screen and the walk are two files: HubClient draws, HubMove moves",function()
+	local fs=require("@lune/fs")
+	local screen=fs.readFile("src/Client/HubClient.luau")
+	-- (the inspirations' moods still pose their own models: model:PivotTo)
+	for _,word in {"WalkSpeed","JumpPower","AssemblyLinearVelocity","character:PivotTo"} do
+		assert(not string.find(screen,word,1,true),"HubClient still moves the body ("..word..")")
+	end
+	local walk=fs.readFile("src/Client/HubMove.luau")
+	for _,word in {"WalkSpeed","JumpPower","AssemblyLinearVelocity","character:PivotTo"} do
+		assert(string.find(walk,word,1,true),"HubMove does not do "..word)
+	end
+	assert(not string.find(walk,"Instance.new",1,true),"HubMove draws something")
 end)
 
 print(string.format("NinjaDuel Konoha HUD layout: %d PASS",passed))

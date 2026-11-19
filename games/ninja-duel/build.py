@@ -173,6 +173,8 @@ TEST_RUNNERS.append(('lune','tests/Prediction.spec.luau'))
 # (OUTILLEUR, 19/11) The new player's loop played on the real server modules,
 # gate to a node of the tree, for the three starters (tools/loopbot).
 TEST_RUNNERS.append(('lune','tests/Loop.spec.luau'))
+# (19/11, vague 2 DEV 3) The ninja's own weapon: the contract with the ANIMATEUR, equal power.
+TEST_RUNNERS.append(('lune','tests/NinjaWeapons.spec.luau'))
 def run_automated():
     tool={}
     import os

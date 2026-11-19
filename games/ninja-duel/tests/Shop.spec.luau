@@ -42,7 +42,7 @@ test("the catalogue: every look has a slot, a price or is a base one, and every 
 	end
 	-- (DEC-040) every outfit piece covers real body parts; a master's
 	-- outfit is his kit's and is sold
-	local kinds={shell=true,band=true,collar=true,shoulders=true,vest=true,sash=true,tail=true}
+	local kinds={shell=true,band=true,collar=true,shoulders=true,vest=true,sash=true,tail=true,cape=true,scroll=true}
 	local bodies={UpperTorso=true,LowerTorso=true,UpperArm=true,LowerArm=true,Hand=true,UpperLeg=true,LowerLeg=true,Foot=true,Head=true}
 	for _,item in Shop.Items do
 		if Shop.Slots[item.slot].outfit and not item.none then
@@ -172,11 +172,17 @@ test("a duel pays Ryō (the day's first win twice), the shop sells and dresses, 
 	send("BuyItem",{item="HeadbandRed"})
 	local kits=sent[player].kits
 	assert(kits.style.owned.HeadbandRed and kits.style.equipped.headband=="HeadbandRed" and kits.ryo==ryo-800,"the headband was not sold: "..tostring(sent[player].notice).." ryo "..tostring(kits.ryo).." of "..tostring(ryo))
+	-- (19/11, vague 2 DEV 4) the funnel saw the first look bought, not the refusal
+	assert(s.metrics.boughtAt,"the funnel did not see the first look bought")
 	send("BuyItem",{item="KunaiBlack"})
 	assert(sent[player].notice=="NOT ENOUGH RYŌ","a look too dear did not say why: "..tostring(sent[player].notice))
 	send("EquipItem",{item="HeadbandNone"})
 	assert(sent[player].kits.style.equipped.headband=="HeadbandNone")
 	send("EquipItem",{item="HeadbandRed"})
+	-- (funnel) a headband is not an outfit: not dressed yet; a top is
+	assert(not s.metrics.dressedAt,"a headband counted as dressed")
+	send("EquipItem",{item="TopTunicNavy"})
+	assert(s.metrics.dressedAt,"the funnel did not see him dressed")
 	-- The duel wears them: the snapshot carries the player's looks.
 	send("Start",{player="Leaf",bot="Lion",level="normal"})
 	assert(s.human.looks and s.human.looks.headband=="HeadbandRed" and s.human.looks.kunai=="KunaiSteel","the duel's looks")
@@ -415,7 +421,12 @@ test("MY NINJA: the wardrobe lists every slot's pieces, his first, and opens fro
 		assert(ui.wardrobe:shown() and (not ui.outfitPanel or ui.outfitPanel:shown()),"open, and Konoha's walk sees it")
 		ui.wardrobe:open("kunai")
 		assert(#ui.wardrobe.cards==#Shop.inSlot("kunai"),"one card per kunai")
-		assert(ui.wardrobe.tabs.mask and ui.wardrobe.tabs.mask.future and ui.wardrobe.tabs.mask.count.Text=="SOON","the slots to come")
+		-- (19/11, vague 2 DEV 2) mask, cape and back are in the catalogue now;
+		-- the ninja's weapon and the victory pose are still to come
+		assert(ui.wardrobe.tabs.mask and not ui.wardrobe.tabs.mask.future and ui.wardrobe.tabs.cape and ui.wardrobe.tabs.back,"the accessories' tabs")
+		assert(ui.wardrobe.tabs.weapon and ui.wardrobe.tabs.weapon.future and ui.wardrobe.tabs.weapon.count.Text=="SOON","the slots to come")
+		ui.wardrobe:open("cape")
+		assert(#ui.wardrobe.cards==#Shop.inSlot("cape"),"one card per cape")
 		assert(ui.wardrobe.close.Size.X.Offset>=64,"a big close")
 		ui.wardrobe:hide();assert(not ui.wardrobe:shown())
 	end)

@@ -197,4 +197,41 @@ test("a coat's tails follow the legs, not the hips' height",function()
 	assert(math.abs(Outfit.legScale(m2)-1)<1e-3 and Outfit.legScale(nil)==1,"the legs scale: "..tostring(Outfit.legScale(m2)))
 end)
 
+-- (19/11, vague 2 DEV 2) The accessories: over a set or the pieces, each
+-- cloth piece knowing its look, so the client hides only what it has a model
+-- for (a cape stays over a modelled tunic).
+test("the accessories: a mask, a cape and a scroll over Lee's suit; each piece knows its look",function()
+	local model=body()
+	Outfit.wear(model,{set="SetLee",mask="MaskCloth",cape="CapeTravel",back="BackScroll"})
+	local list,holder=pieces(model)
+	assert(holder:GetAttribute("NinjaOutfit")=="SetLee,MaskCloth,CapeTravel,BackScroll","what he wears: "..tostring(holder:GetAttribute("NinjaOutfit")))
+	local by={}
+	for _,p in list do
+		local of=p:GetAttribute("NinjaItem")
+		assert(of,p.Name.." does not know its look")
+		by[of]=(by[of] or 0)+1
+	end
+	assert(by.SetLee and by.MaskCloth and by.CapeTravel and by.BackScroll,"a look built nothing")
+	local cape,scroll
+	for _,p in list do
+		if p.Name=="Cape" then cape=p elseif p.Name=="Scroll" then scroll=p end
+	end
+	local torso=model.UpperTorso
+	assert(cape and cape.Size.Y>torso.Size.Y*2,"the cape does not reach the knees")
+	assert(scroll,"no scroll on the back")
+	-- the mask: on the head, under the eyes (its top at the head's centre)
+	for _,p in list do
+		if p:GetAttribute("NinjaItem")=="MaskCloth" then
+			local w=p:FindFirstChildOfClass("WeldConstraint")
+			assert(w.Part0==model.Head,"the mask is not on the head")
+		end
+	end
+	-- the pieces alone: the accessories still go on, a set's absence changes nothing
+	Outfit.wear(model,{top="TopTunicNavy",cape="CapeTravel"})
+	local _,h2=pieces(model)
+	assert(h2:GetAttribute("NinjaOutfit")=="TopTunicNavy,CapeTravel","a cape over the pieces")
+	local fs=require("@lune/fs")
+	assert(string.find(fs.readFile("src/Client/OutfitDress.luau"),"of==nil or modelled[of]",1,true),"the client hides every cloth piece, modelled or not")
+end)
+
 print(string.format("NinjaDuel outfit (DEC-040): %d PASS",passed))
