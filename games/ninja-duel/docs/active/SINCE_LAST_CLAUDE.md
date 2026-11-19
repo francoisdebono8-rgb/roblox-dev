@@ -167,6 +167,38 @@ Le plan de la vague est dans le projet claude.ai : `claude/vague-2-taches-2026-1
   - `UI.resultLine` : ADVANCES seulement dans le tournoi, WINS ailleurs ;
   - `UI:resultEarned` : le prochain nœud par son nom.
 
+## INBOX-OUTILLEUR-VAGUE2-20261119 — OUTILLEUR, nuit du 19/11 : entonnoir, robot étendu, icônes, essai à deux
+
+Détail : `tools/analytics/README.md`, `tools/loopbot/README.md`, `tools/icons/README.md`, `tools/duo/README.md`.
+
+**DEV**
+- **#142, l'entonnoir.** Pour DEV 4, garder une table `FUNNEL` (`nom=numéro`), ou des appels avec le numéro et le nom en clair. Le lecteur les lit dans `src/`. Il nomme déjà en français `joined`, `outfit`, `starter`, `firstDuel`, `firstHit`, `firstWin` et `firstPurchase`. Test à ajouter : `run Entonnoir python3 tools/analytics/test_entonnoir.py`.
+- **#136, étendue.**
+  - `Loop.spec` a une étape de plus (`garderobe`) et un test de la collection. À passer avec lune.
+  - Contrôle de la collection sans lune : `python3 tools/icons/catalogue.py --gate`.
+- **Catalogue (DEV 2).** `catalogue.py` lit `Shared/Catalog.luau` s'il existe : chaque objet en `{id="…",slot="…",name="…",…}`, et les emplacements dans une table `Slots={…}` (`outfit=true` pour une pièce de tenue). Un autre format demande de toucher `catalogue.py`.
+  - Dans le jeu, le modèle d'une pièce de tenue reste `OutfitMeshes.Items[id]`.
+  - Un emplacement absent de `Shop.SlotOrder` fait échouer l'étape `garderobe` : la garde-robe ne le montrerait pas.
+- **Quêtes (DEV 5).** Le robot cherche un module dont le nom contient `Quest`, dans `Shared` ou `Server`. Il les jouera dès qu'il existera.
+- **#144, l'essai à deux dans Studio** (détail : `tools/duo/README.md`).
+  - `Server/Lobby:request` ignore un défi si `to<=0`. Or les joueurs de test de Studio ont des UserId négatifs : aucun défi ne part dans un essai à plusieurs. Accepter un id négatif quand `RunService:IsStudio()` rendrait l'essai possible sans patch.
+  - **Un joueur reste bloqué sur `Workspace.NinjaDuelHub.Ichiraku.StandRoof`.**
+    - Où : rue « Legion », position (-24,5 ; 14,54 ; -2254,8).
+    - Comment il y est arrivé : envoyé en l'air par les coups légers de Minato.
+    - Ce qu'on a vu : état Neutral ; plus de 30 s sans bouger, malgré `Move` dans quatre directions ; corps non ancré, qui ne touche rien.
+    - Conséquence : l'adversaire ne peut plus l'atteindre à pied.
+  - Une bulle TALK (un maître de Konoha) s'affiche pendant un duel de rue.
+  - Le duel en ligne ne compte pas comme « premier duel » dans l'entonnoir (`not s.online`). À décider pour DEV 4.
+  - Profils dans Studio à plusieurs : « Profile id required ». Tous les kits sont ouverts, donc la progression ne se teste pas à deux.
+
+**ANIMATEUR**
+- Mets les masques, capes et objets du dos dans `outfit_models.ITEMS`, comme les autres pièces : leurs icônes se rendent sans autre changement.
+  - Un masque doit avoir des pièces sur `Head`, une cape sur le buste, un objet du dos sur `UpperTorso` ou `LowerTorso`. Sinon, l'icône est refusée, avec la raison.
+- L'arme du ninja et la pose de victoire demanderont une ligne dans `render_icons.py` quand leurs modèles existeront.
+
+**DESIGN**
+- Les icônes des nouveaux objets arriveront après les modèles de l'ANIMATEUR, dans le même dossier (`tools/icons/renders`). `icons.json` reste complet.
+
 ## INBOX-INTEGRATION-20261119 — DEV 19/11, 22 h 10 : #131 à #135 intégrés, le plan de Konoha validé
 
 François : « intègre et ça me va ».
@@ -202,9 +234,9 @@ Détail : `tools/loopbot/README.md` et `tools/icons/README.md`, branche `work/to
 
 **DEV**
 - `tests/Loop.spec.luau` n'a pas pu tourner ici : pas de lune. À passer avec lune avant de l'ajouter à `TEST_RUNNERS` (`build.py`).
-- L'écran de résultat ne reçoit pas encore le prochain nœud ni l'inspiration suivante (`progress`, tâche 6). Le robot le note sans échouer.
+- L'écran de résultat ne reçoit pas encore le prochain nœud ni l'inspiration suivante (`progress`, tâche 6 ; c'est #138). Le robot le note sans échouer.
 - Le premier duel s'appelle « PRODIGY TOURNAMENT » à l'intro et « … ADVANCES » à la défaite.
-- Le bandeau est sur les yeux (vu dans Studio).
+- Le bandeau était sur les yeux (vu dans Studio sur `bbcfffb7`) ; #133 le pose sur le front.
 
 **DESIGN**
 - Les icônes des 33 objets sont dans `tools/icons/renders` (PNG transparents de 512 px, manifeste `icons.json`, planche `_planche.png`), à placer dans `assets/ui`.
