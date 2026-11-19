@@ -150,6 +150,8 @@ test("on: a duel that counts takes a learned kit, practice takes any; a master's
 	m:selection(player)
 	send("ChooseStarter",{player="Leaf"})
 	assert(Progression.owns(player,"Leaf") and sent[player].kits.selected=="Leaf","the starter was not taken")
+	-- (19/11, vague 2 DEV 4) the funnel follows the loop: the inspiration chosen
+	assert(s.metrics.inspirationAt,"the funnel did not see the inspiration chosen")
 	-- Duels with Lee: mastery, two different jutsu each time.
 	local function duel(won,botId)
 		send("Start",{player="Leaf",bot=botId or "Lion",level="normal"})
@@ -166,6 +168,10 @@ test("on: a duel that counts takes a learned kit, practice takes any; a master's
 	duel(true)
 	local after=Progression.view(player).mastery.Leaf or 0
 	assert(after>before,"a won duel earned no mastery")
+	assert(s.metrics.startedAt and s.metrics.duelAt and s.metrics.wonAt,"the funnel did not see the duel started, decided and won")
+	local order={}
+	for step,n in Matches.FUNNEL do order[n]=step end
+	assert(#order==9 and order[1]=="joined" and order[2]=="inspiration" and order[3]=="dressed" and order[9]=="node","the funnel's steps: "..table.concat(order,", "))
 	assert(s.progress and s.progress.amount==after-before and s.progress.need==Masters.Need,"the result screen does not get what was earned")
 	-- (DEC-040) against another player: twice, with the duel's Ryō; the cup's
 	-- end pays the champion's kit; an unlearned kit earns nothing

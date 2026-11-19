@@ -140,7 +140,14 @@ test("measures: joined, the first input, the first jutsu, in order and once",fun
 	assert(not s.metrics.jutsuAt)
 	s.human.events=s.human.events or {};s.human.events["Cast:FireBloom"]=1
 	step(m,.1)
-	assert(s.metrics.jutsuAt and s.metrics.funnel==3,"the first jutsu was not measured")
+	-- (19/11, vague 2 DEV 4) the jutsu stays in the log; the funnel follows
+	-- the loop (Matches.FUNNEL): PLAY started his first duel
+	assert(s.metrics.jutsuAt,"the first jutsu was not measured")
+	assert(s.metrics.startedAt and s.metrics.funnel==4,"the funnel did not see the first duel start: "..tostring(s.metrics.funnel))
+	-- his first blow that lands
+	s.bot.health=s.bot.def.Health-1
+	step(m,.1)
+	assert(s.metrics.hitAt and s.metrics.funnel==5,"the funnel did not see the first blow land")
 end)
 
 test("a bad PLAY is refused: an unknown fighter, or outside the roster",function()

@@ -98,11 +98,13 @@ function Dress.wear(holder)
 	local ids=string.split(holder:GetAttribute("NinjaOutfit") or "",",")
 	local folder=Instance.new("Folder");folder.Name="NinjaOutfitMesh"
 	local n=0
+	local modelled={}
 	for _,id in ids do
 		local model=OutfitMeshes.Items[id]
 		local item=Shop.item(id)
 		local t=model and Dress.template(model)
 		if t and holder.Parent==body then
+			modelled[id]=true
 			for _,entry in t do
 				local part=body:FindFirstChild(entry.on)
 				if part and part:IsA("BasePart") then
@@ -123,8 +125,12 @@ function Dress.wear(holder)
 	end
 	if n==0 or holder.Parent~=body then folder:Destroy() return 0 end
 	folder.Parent=body
-	-- the server's cloth pieces of the items now modelled: hidden here
-	local function hide(piece) if piece:IsA("BasePart") then piece.LocalTransparencyModifier=1 end end
+	-- the server's cloth pieces of the items now modelled: hidden here (19/11:
+	-- only those; a look without a model, a cape, a scroll, stays in cloth)
+	local function hide(piece)
+		local of=piece:GetAttribute("NinjaItem")
+		if piece:IsA("BasePart") and (of==nil or modelled[of]) then piece.LocalTransparencyModifier=1 end
+	end
 	for _,piece in holder:GetChildren() do hide(piece) end
 	holder.ChildAdded:Connect(hide)
 	Dress.dressed[holder]=folder

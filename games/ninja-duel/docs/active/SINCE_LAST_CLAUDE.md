@@ -1,5 +1,48 @@
 # Boîte de réception Claude
 
+## INBOX-VAGUE2-DEV-20261119 — DEV 19/11, nuit : ce que la DEV livre pour la vague 2
+
+Le plan de la vague est dans le projet claude.ai : `claude/vague-2-taches-2026-11-19.md`.
+
+**DESIGN**
+- `HubClient` est séparé de la marche. La marche, la course, le second saut et la chute vers la porte sont dans `Client/HubMove` (DEV). `HubClient` ne garde que l'écran, et il est à toi. Un test garde la frontière : `HubClient` ne touche plus au corps du joueur.
+- Le catalogue a trois emplacements portés : `mask`, `cape` et `back`.
+- J'ai ajouté une ligne dans deux de tes fichiers :
+  - `Wardrobe.W.SLOTS` reçoit mask, cape et back ;
+  - l'onglet STYLE de `ShopPanel` liste mask, cape et back.
+
+  L'arme du ninja et la pose de victoire restent en SOON.
+
+**ANIMATEUR**
+- **`Shared/Catalog.luau` est à toi.** Toutes les apparences y sont. L'en-tête explique chaque champ. Les règles restent dans `Shared/Shop` (DEV).
+- **Nouveaux emplacements :** mask (sur la tête, sous les yeux), cape (des épaules aux genoux), back (dans le dos).
+- **Premiers objets en tissu :** MaskCloth, CapeTravel et BackScroll. Leur modèle remplacera le tissu par le nom de l'objet (`OutfitMeshes`).
+- **Changement dans le jeu :** il ne cache plus que le tissu des objets qui ont un modèle. Une cape sans modèle reste visible sur une tunique modélisée.
+- **`Shared/NinjaWeapons.luau` est le contrat des 8 armes.**
+  - Il donne pour chacune :
+    - le modèle `NinjaWeapon_<Id>` : origine à la poignée, +Y vers la pointe ;
+    - les clips `Weapon.<Id>.Draw`, `.Guard` et un par coup de `Moves` ;
+    - le nombre d'images de chaque coup : `NinjaWeapons.frames(id, move)`, à 60 images par seconde.
+  - Puissance égale, vérifiée par `tests/NinjaWeapons.spec` : un coup plus lent frappe plus fort d'autant, et la portée se paie en vitesse.
+  - Commence par le katana et la kusarigama.
+
+**OUTILLEUR**
+- **L'entonnoir d'accueil** (`Matches.FUNNEL`, `AnalyticsService:LogOnboardingFunnelStepEvent`) suit maintenant la boucle, dans l'ordre :
+
+  | Étape | Nom | Moment |
+  |---|---|---|
+  | 1 | joined | arrivée |
+  | 2 | inspiration | inspiration choisie |
+  | 3 | dressed | tenue choisie |
+  | 4 | started | premier duel lancé |
+  | 5 | hit | premier coup porté |
+  | 6 | duel | premier duel terminé |
+  | 7 | won | premier duel gagné |
+  | 8 | bought | premier achat |
+  | 9 | node | premier nœud de l'arbre |
+
+- Chaque étape est aussi écrite dans la sortie, en `[NinjaDuelFirst] <id> <étape> <s>`.
+
 ## INBOX-INTEGRATION-20261119 — DEV 19/11, 22 h 10 : #131 à #135 intégrés, le plan de Konoha validé
 
 François : « intègre et ça me va ».

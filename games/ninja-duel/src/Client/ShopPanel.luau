@@ -226,7 +226,7 @@ function Panel:draw()
 	elseif self.tab=="STYLE" then
 		-- (DEC-040) the masters' outfits on his own avatar, then the pieces;
 		-- MY NINJA opens the outfit card (Client/OutfitPanel)
-		self:drawLooks({"set","headband"},"STYLE","Your inspirations' outfits and ninja pieces over your own avatar, in Konoha and in every duel.")
+		self:drawLooks({"set","headband","mask","cape","back"},"STYLE","Your inspirations' outfits and ninja pieces over your own avatar, in Konoha and in every duel.")
 		-- (Mix-Shop) his avatar in the side, wearing the outfit pointed at
 		self:preview(nil)
 		if self.onOutfit then

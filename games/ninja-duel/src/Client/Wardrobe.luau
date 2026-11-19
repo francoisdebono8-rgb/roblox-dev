@@ -21,7 +21,8 @@ local W={}
 W.__index=W
 W.W,W.H=1180,660
 -- The slots, in the order they are read (the future ones after).
-W.SLOTS={"set","top","bottom","arms","feet","headband","kunai","shuriken","tanto","gourd"}
+W.SLOTS={"set","top","bottom","arms","feet","mask","cape","back","headband","kunai","shuriken","tanto","gourd"}
+-- (19/11, DEV: the catalogue has mask, cape and back now; they leave W.FUTURE by themselves)
 W.FUTURE={{id="mask",name="MASK"},{id="cape",name="CAPE"},{id="back",name="ON THE BACK"},{id="weapon",name="NINJA WEAPON"},{id="pose",name="VICTORY POSE"}}
 W.CARD=152
 W.COLS=4

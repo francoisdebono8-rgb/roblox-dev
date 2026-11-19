@@ -10,6 +10,7 @@ local ArenaMeshes=require(script.Parent.ArenaMeshes)
 local AvatarBody=require(script.Parent.AvatarBody)
 local Progression=require(script.Parent.Progression)
 local Masters=require(Shared.Masters)
+local Shop=require(Shared.Shop)
 local HubMap=require(Shared.HubMap)
 local Combat=require(script.Parent.Combat)
 local AI=require(script.Parent.AI)
@@ -143,7 +144,11 @@ end
 -- ([NinjaDuelFirst]) and, in the published game, Roblox's onboarding funnel
 -- (AnalyticsService, in order and once each; skipped quietly where the
 -- service is unavailable, as in the tests).
-Matches.FUNNEL={joined=1,input=2,jutsu=3,duel=4}
+-- (19/11, vague 2 DEV 4) The funnel follows the loop as it is now (Konoha,
+-- the inspirations, the outfit, the first duel at the gate, the market, the
+-- tree): where new players stop is read from these steps (OUTILLEUR: the
+-- Creator Dashboard's export). `input` and `jutsu` stay in the log only.
+Matches.FUNNEL={joined=1,inspiration=2,dressed=3,started=4,hit=5,duel=6,won=7,bought=8,node=9}
 function Matches.measure(player,s,step)
 	local m=s.metrics
 	if not m or m[step.."At"] then return end
@@ -323,6 +328,8 @@ function Matches:start(player,playerId,botId,training,options)
 	if Matches.hubOn() then Hub.leave(player) end
 	s.playerId=playerId; s.botId=botId; s.winner=nil; s.phase="Duel"; s.origin=Matches.laneOrigin(s.lane)
 	s.options=options
+	-- (19/11, funnel) his first duel begins (a watched match is not his)
+	if not s.spectate then Matches.measure(player,s,"started") end
 	-- (14/11) A duel at a master's home: in the village, no stadium.
 	local site=s.nextSite;s.nextSite=nil
 	s.site=site;s.radius=site and site.radius or nil
@@ -383,7 +390,10 @@ function Matches:roundOver(s,winner,notify,advance)
 	s.wins[winner.id]=(s.wins[winner.id] or 0)+1
 	local decided=s.wins[winner.id]>=s.roundsToWin
 	s.matchPoint=decided
-	if decided and not s.tutorial and not s.online and s.owner then Matches.measure(s.owner,s,"duel") end
+	if decided and not s.tutorial and not s.online and s.owner then
+		Matches.measure(s.owner,s,"duel")
+		if s.human and winner==s.human then Matches.measure(s.owner,s,"won") end
+	end
 	-- (DEC-037) The masters' path: mastery for the kit fought with; a master's
 	-- duel won teaches his kit. Shown on the result screen (snapshot `progress`).
 	if decided and not s.online and s.owner and s.human then
@@ -663,6 +673,7 @@ function Matches:request(player,payload)
 		s.lastLifecycle=clock
 		local ok,why
 		if action=="LearnNode" then ok,why=Progression.learnNode(player,payload.player,payload.node)
+			if ok then Matches.measure(player,s,"node") end
 		else ok,why=Progression.setNode(player,payload.player,payload.node,payload.on==true) end
 		self:send(player,{phase="Selection",epoch=s.epoch,kits=Progression.view(player),notice=if ok then nil else Matches.refusal(why)})
 		return
@@ -675,8 +686,12 @@ function Matches:request(player,payload)
 		local ok,why=true,nil
 		if action=="BuyItem" and type(payload.item)=="string" then ok,why=Progression.buyItem(player,payload.item)
 			if ok and Matches.hubOn() then Hub.restyle(player,Progression.looks(player)) end
+			if ok then Matches.measure(player,s,"bought") end
 		elseif action=="EquipItem" and type(payload.item)=="string" then ok,why=Progression.equipItem(player,payload.item)
 			if ok and Matches.hubOn() then Hub.restyle(player,Progression.looks(player)) end
+			-- (19/11, funnel) dressed: a top or an inspiration's outfit on
+			local view=if ok then Progression.view(player) else nil
+			if view and Shop.dressed(view.style) then Matches.measure(player,s,"dressed") end
 		elseif action=="BuyRobux" and type(payload.product)=="number" and payload.product>0 then
 			local known=Progression.productFor(payload.product)
 			if known then pcall(function() game:GetService("MarketplaceService"):PromptProductPurchase(player,payload.product) end) end
@@ -696,6 +711,7 @@ function Matches:request(player,payload)
 		if action=="ChooseStarter" or action=="SelectKit" then
 			local ok,why
 			if action=="ChooseStarter" then ok,why=Progression.chooseStarter(player,payload.player) else ok,why=Progression.select(player,payload.player) end
+			if ok and action=="ChooseStarter" then Matches.measure(player,s,"inspiration") end
 			local view=Progression.view(player)
 			self:send(player,{phase="Selection",epoch=s.epoch,kits=view,notice=if ok then nil else Matches.refusal(why)})
 			-- (14/11) the kit over his head in Konoha follows his choice
@@ -854,6 +870,10 @@ function Matches:update(dt,now)
 				-- (B1 lot 2) the first minute's last prompt done: its real duel.
 				if s.tutorial and s.tutorial.done and s.firstStage=="intro" then
 					s.firstStage="duel";s.aiLevel="easy";s.nextSite=s.site;self:start(player,s.playerId,s.botId,false);s.nextSite=nil
+				end
+				-- (19/11, funnel) his first blow that lands: the other body hurt
+				if s.metrics and not s.metrics.hitAt and s.bot and s.bot.def and s.bot.health and s.bot.health<s.bot.def.Health then
+					Matches.measure(player,s,"hit")
 				end
 				if s.metrics and not s.metrics.jutsuAt and s.human and s.human.events then
 					for name in s.human.events do if string.sub(name,1,5)=="Cast:" then Matches.measure(player,s,"jutsu");break end end
