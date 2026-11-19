@@ -220,9 +220,7 @@ local function ground(f)
 	end
 	slab(-310,lx1,-280,236);slab(lx2,310,-280,236);slab(lx1,lx2,-280,lz1);slab(lx1,lx2,lz2,236)
 	part(f,"LakeBed",Vector3.new(lx2-lx1,1,lz2-lz1),rel((lx1+lx2)/2,-4.5,(lz1+lz2)/2),C.rockDark,Enum.Material.Mud)
-	pcall(function()
-		workspace.Terrain:FillBlock(rel((lx1+lx2)/2,-2.2,(lz1+lz2)/2),Vector3.new(lx2-lx1,3.6,lz2-lz1),Enum.Material.Water)
-	end)
+	-- The water itself is Terrain: Hub.water, once the village has its scale.
 	for k=0,13 do
 		local a=k/14*math.pi*2
 		-- (14/11, the assembled render: white bricks round the lake) wet rock
@@ -683,11 +681,31 @@ function Hub.scaleVillage(f,s)
 	end
 	return n
 end
+-- (19/11, the SyphoDev map check; François 15/11: « chez Itachi il y a de l'eau,
+-- tout à l'heure je pouvais nager, maintenant je peux plus ») The Uchiha lake's
+-- water is Terrain, which Hub.scaleVillage does not move: since the village
+-- grew (HubMap.Scale 1.3) the hole and its bed moved out and the water stayed
+-- behind, under the grass. It is filled here, after the scale, exactly in the
+-- hole: the lake bed's box (x, z) from just over the bed up to just under the
+-- ground's top. Returns the block's CFrame and size (tests/Hub.spec).
+function Hub.water(f)
+	local bed=f:FindFirstChild("LakeBed")
+	if not bed then return nil end
+	local at=bed.CFrame.Position
+	local top=at.Y+bed.Size.Y/2
+	local surface=O.Y-.4*(HubMap.Scale or 1)
+	local size=Vector3.new(bed.Size.X,surface-top,bed.Size.Z)
+	local cf=CFrame.new(at.X,(top+surface)/2,at.Z)
+	pcall(function() workspace.Terrain:FillBlock(cf,size,Enum.Material.Water) end)
+	Hub.lake={cf=cf,size=size}
+	return cf,size
+end
 function Hub.build(parent)
 	if Hub.folder and Hub.folder.Parent then return Hub.folder end
 	local f=Instance.new("Folder");f.Name="NinjaDuelHub"
 	ground(f);gate(f);street(f);plaza(f);hall(f);training(f);hyuga(f);uchiha(f);faces(f);quarters(f);forest(f)
 	Hub.scaleVillage(f,HubMap.Scale or 1)
+	Hub.water(f)
 	Hub.forFights(f)
 	f.Parent=parent or workspace
 	Hub.folder=f;Hub.built=true
