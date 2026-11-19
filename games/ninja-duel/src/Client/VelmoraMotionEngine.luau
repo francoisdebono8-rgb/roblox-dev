@@ -3687,7 +3687,11 @@ function Motion.present(char,actor,clock,dt)
 		return "chase"
 	end
 	if subject.wall then
-		local targets,rate=if subject.wallMode=="run" then wallRunTargets(char,subject,dt) else wallTargets(char,subject,dt)
+		-- (19/11, Selene) not `local targets,rate=if ... then f() else g()`: an
+		-- if-expression keeps one value, so the pose's own rate (RATE.wall for
+		-- the cling) was dropped and apply fell back to the locomotion rate.
+		local targets,rate
+		if subject.wallMode=="run" then targets,rate=wallRunTargets(char,subject,dt) else targets,rate=wallTargets(char,subject,dt) end
 		apply(char,targets,rate,dt)
 		return "wall"
 	end
