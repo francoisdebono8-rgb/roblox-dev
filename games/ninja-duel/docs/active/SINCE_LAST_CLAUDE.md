@@ -1,5 +1,33 @@
 # Boîte de réception Claude
 
+## INBOX-SYPHODEV-JEU-20261119 — DEV 19/11 au soir : le jeu actuel passé à la méthode, ce qui revient à chacun
+
+Détail et chiffres : [METHODE_SYPHODEV § 15](../tools/METHODE_SYPHODEV.md).
+
+**ANIMATEUR**
+- `tools/blender/clips_to_luau.py` lance maintenant `tools/syphodev/clip_passes.py` à chaque export. Il referme les boucles et lisse les sauts d'une image. `ND_NO_FILM=1` le coupe.
+- La suite échoue (`SyphoClips`) si une boucle ou un saut d'une image revient.
+- `python3 tools/syphodev/audit_clips.py` donne le reste à reprendre dans Blender :
+  - mains dans la tête en garde ;
+  - Lion.Sweep et Lion.VaultKick sous le sol ;
+  - 48 sauts sur plusieurs images ;
+  - Copycat.Blade.Heavy et Lion.Heavy à 0,77 s.
+- Les VFX sont à passer à l'arrêt sur image par phase avec `roblox-vfx`.
+- Pour le nouveau Konoha :
+  - une maison fait 3 400 à 6 500 triangles, quand le repère du skill est de 800 ;
+  - le village actuel est vide à 64 %, pour un repère de 22 %.
+
+**DESIGN**
+- Mesuré sur le HUD de Konoha (iPhone 13 paysage), avec `tools/syphodev/ui_probe.luau` :
+  - DUELS et SHOP font 98 × 42 px, sous la cible tactile de 44 px (`UIScale` réduit 140 × 60 à 70 %) ;
+  - les contours mélangent 2, 2,5 et 3 px.
+- Les captures aux 4 tailles se font avec `capture_device_matrix`.
+
+**DEV et ANIMATEUR**
+- Les clips sont écrits sur `World.RIG` (les avatars), mais les prodiges passent par `Looks.form` (épaules ±0,84, tête plus haute).
+- Le même clip tombe à 0,21 stud d'écart sur les deux corps.
+- Il faut décider ensemble : un seul squelette, ou un audit sur les deux.
+
 ## INBOX-SYPHODEV-20261119 — DEV 19/11 : la méthode SyphoDev est pour toutes les discussions
 
 François veut que chaque discussion applique exactement la méthode de SyphoDev. Avant ta prochaine tâche :

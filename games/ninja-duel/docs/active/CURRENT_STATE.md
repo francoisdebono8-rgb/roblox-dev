@@ -1,3 +1,18 @@
+**La méthode SyphoDev appliquée au jeu actuel, 19/11 au soir (DEV ; [METH-001](MASTER_BACKLOG.md), [§ 15 du guide](../tools/METHODE_SYPHODEV.md))** : François demande de vérifier tout ce qui est en place avec la méthode et d'adapter ce qui ne passe pas.
+- **Intégré :**
+  - #127, les clips : boucles refermées, sauts d'une image lissés, porte `SyphoClips` ;
+  - #128, l'eau du lac Uchiha dans son trou : vu dans Studio, on nage ;
+  - #129, un vrai bug trouvé par Selene, la pose du mur qui perdait sa vitesse : porte `SyphoLint` ;
+  - #130, outils et résultats.
+- **Konoha au prouveur :** 341 toits sur 348 en marchant, aucun piège, rien qui flotte ni ne scintille.
+- **Vérifs :** suite complète 76 PASS.
+- **Reste, par discussion :**
+  - ANIMATEUR : mains dans la tête en garde, deux coups sous le sol, VFX à l'arrêt sur image, maisons à 6 000 triangles ;
+  - DESIGN : boutons DUELS et SHOP sous 44 px sur téléphone, contours mélangés ;
+  - DEV et ANIMATEUR : décider d'un ou de deux squelettes.
+
+Seul le bain dans le lac a été vu en jeu par l'IA. Rien n'a été vu par François.
+
 **Intégration du 19/11 (DEV ; [METH-001](MASTER_BACKLOG.md))** : la PR #126 est fusionnée sur la référence, sur « intègre » de François. Elle apporte la méthode SyphoDev : skills, agents, outillage, route d'animation et preuve dans Studio. Le runtime du jeu ne change pas (aucun fichier `src/`) et les places sont reconstruites. Vérifs : suite complète 74 PASS avec Lune 0.10.5, quatre builds, isolation, documents et architecture PASS.
 
 **Méthode SyphoDev, 19/11 (DEV ; [METH-001](MASTER_BACKLOG.md), guide [METHODE_SYPHODEV](../tools/METHODE_SYPHODEV.md))** : ses skills et agents sont installés dans `.claude/` pour toutes les discussions, avec des `LOCAL.md` remplis pour Ninja Duel. L'outillage cloud passe par `bash tools/syphodev/setup_cloud.sh`. Les contrôles du setup sont verts. La route d'animation joint-space tourne sur le squelette du jeu : le direct du droit d'exemple passe 4 passes chiffrées, puis il est rendu sur le Mac en 15 s. Reste la preuve dans Studio. Technique et Mac seulement : rien n'est vu par François.

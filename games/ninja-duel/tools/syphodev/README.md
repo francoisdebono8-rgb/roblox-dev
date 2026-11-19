@@ -46,3 +46,37 @@ python3 tools/syphodev/studio_parity.py check tools/syphodev/rig_prodigy.json wo
 Résultat du 19/11 sur un prodige, pour le direct du droit : durée 0,5 s (= la durée d'auteur),
 pièces à **0,000057 stud au pire** du calcul, sur 9 images. Contre `rig.json`, la même mesure
 donnait **0,21 stud** : c'est ainsi que l'écart de `Looks.form` a été trouvé.
+
+## Le jeu actuel au contrôle (19/11 au soir)
+
+François, le 19/11 : appliquer la méthode à tout ce qui est déjà dans le jeu, et adapter ce qui
+ne passe pas. Les résultats sont au § 15 de [METHODE_SYPHODEV](../../docs/tools/METHODE_SYPHODEV.md).
+
+```bash
+# Animations : les 862 clips posés sur le squelette, image par image (dans tests/run.sh : SyphoClips)
+LUNE=... python3 tools/syphodev/audit_clips.py --gate          # échoue si une boucle ou un saut d'une image revient
+LUNE=... python3 tools/syphodev/audit_clips.py                 # rapport complet : sol, glissement, mains dans le corps
+# clip_passes.py tourne seul dans tools/blender/clips_to_luau.py à chaque export (ND_NO_FILM=1 le coupe)
+
+# Konoha au prouveur de carte (roblox-map) : environ 11 min à 4 studs, 2 min 30 à 8 (RES=8)
+lune run tools/syphodev/konoha_dump.luau work/map/konoha.json       # le village que Hub.build construit
+python3 tools/syphodev/konoha_spec.py work/map/konoha.json work/map/konoha_spec.json
+python3 tools/syphodev/konoha_prove.py work/map/konoha_spec.json work/map/konoha_report.json > work/map/konoha_report.txt
+```
+
+`konoha_prove.py` lance le prouveur du skill sans le modifier. Il ajoute seulement un index
+spatial à deux de ses boucles : le prouveur seul n'avait pas fini après 14 minutes sur 711 pièces.
+Le profil de marche est `konoha_profile.json` : gravité 140, marche 16, course 36, saut 56 et
+second saut 54 (`HubClient`).
+
+**Interface :** `ui_probe.luau` s'exécute côté client pendant un Play, par le MCP Studio
+(`execute_luau`, datamodel Client). Choisir d'abord l'appareil avec `set_device_simulator`
+(robloxstudio-mcp). La sonde mesure en pixels réels :
+- les cibles tactiles de moins de 44 px ;
+- les textes de moins de 11 px ;
+- ce qui sort de l'écran ou passe sous la barre Roblox ;
+- les blocs qui se chevauchent ;
+- les épaisseurs de contour en usage.
+
+Ensuite, `capture_device_matrix` (cible `client-1`) prend les 4 tailles. L'orientation se
+règle seulement sur les téléphones et les tablettes.

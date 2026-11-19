@@ -469,3 +469,61 @@ Ces étapes sont demandées au moment où une étape en a besoin, jamais avant :
 - `r6_clip.py` lit les noms d'articulations depuis `rig.json`, pour le R15. Trois renderers
   acceptent le nom EEVEE de Blender 5. Ces retouches sont marquées « (Ninja Duel, 2026-11-19) »
   dans les scripts, comme SyphoDev invite à personnaliser ses skills.
+
+## 15. Appliquée au jeu actuel (19/11 au soir)
+
+François, le 19/11 à 20 h 02 : « tout ce que tu as emmagasiné, la méthode et tout, tu l'intègres
+au jeu actuel. Donc que tu vérifies que tout ce qui est déjà en place, ben, faut peut-être
+l'adapter. » Chaque discipline a reçu la preuve de son skill. Les commandes sont dans
+[tools/syphodev/README.md](../../tools/syphodev/README.md).
+
+### Ce qui a été corrigé et intégré
+
+| Domaine | Contrôle SyphoDev | Trouvé | Fait |
+|---|---|---|---|
+| Animations | `roblox-animation` : chaque image des 862 clips posée sur le squelette, chiffres d'abord | 89 boucles qui ne se referment pas, 114 sauts d'une image | #127 : 1 boucle (voulue) et 48 sauts restent. Les passes tournent à chaque export (`clips_to_luau.py`), la suite les garde (`SyphoClips`) |
+| Konoha, l'eau | `roblox-map` : le prouveur sur le village construit | L'eau en Terrain posée avant l'agrandissement ×1,3, hors du trou | #128 : `Hub.water` après `scaleVillage`. Studio : on nage dans le lac |
+| Code | `roblox-code` : Selene | La pose du mur perdait sa vitesse (une expression `if` ne garde qu'une valeur) | #129 : corrigé ; `SyphoLint` garde ce motif hors de `src/` |
+
+### Konoha au prouveur (711 pièces solides, 39 345 points où l'on tient debout, résolution 4 studs)
+
+- **Toits.** 348 surfaces hautes :
+  - 341 s'atteignent en marchant, avec le saut et le second saut ;
+  - 6 seulement en courant : le grand toit de la salle de l'examen, à 55 studs ;
+  - 1 jamais : le toit de la porte, à 60 studs.
+- **Pièges :** aucun. Partout où l'on monte, on peut redescendre jusqu'à l'arrivée.
+- **Pièces :** aucune ne flotte, et aucune face superposée ne peut scintiller (P1 et P10 PASS).
+- **Chevauchements :** 248, tous des joints de construction (toits dans les murs, pignons sous les toits, marches). Rien ne se voit.
+- **Espace vide :** 64 % des cases sont à plus de 26 studs de tout objet, pour un repère de 22 % dans le skill. Le village est très ouvert, alors que François veut « plus de place pour se battre, mais dans des espaces resserrés ». C'est une donnée d'entrée pour le nouveau Konoha de l'ANIMATEUR.
+- **Lacune du modèle :** le prouveur ne connaît qu'un saut. Le profil lui donne un saut unique qui monte aussi haut que saut + second saut, avec moins de temps en l'air, donc une portée prudente.
+- **Lacune de l'outil :** la conversion des toits inclinés autour de Z s'était trompée d'axe. Elle est corrigée dans `konoha_spec.py`.
+
+### Ce qui reste, par discussion
+
+- **ANIMATEUR (`AuthoredClips`, FX, Blender)**
+  - Mains dans la tête : 307 clips signalés, dont 42 gardes. Les boîtes en signalent trop, mais les poings devant le visage se voient en jeu.
+  - Corps sous le sol : Lion.Sweep (main −2,4), Lion.VaultKick (tête −2,43).
+  - 48 sauts sur plusieurs images, par exemple Flashstep.Ultimate et Leaf.GorikiSenpu.
+  - Coups trop longs : Copycat.Blade.Heavy et Lion.Heavy font 0,77 s.
+  - Glissement des pieds au-dessus de 6 studs/s dans 297 clips. C'est mesuré sur le clip brut, avant le blocage des pieds du moteur (ANIM-002).
+  - VFX : pas encore passés à l'arrêt sur image par phase (préparation, contact, dissipation) avec `roblox-vfx`. Les défauts A1 à A7 du 14/11 restent la liste de départ.
+  - Modèles, comptés depuis les données du jeu :
+    - le village pose 518 copies pour 722 752 triangles, sous le plafond total du skill (1,5 million) ;
+    - une maison fait 3 400 à 6 500 triangles, quand le repère du skill est de 800 par maison ;
+    - ExamHall seul fait 36 940 triangles ;
+    - aucune pièce ne dépasse la limite Roblox de 20 000 ;
+    - les effets font 68 052 triangles en tout (44 modèles) ;
+    - les tenues font 86 756 triangles en tout (16 modèles, 8 000 à 11 400 par personnage).
+- **DESIGN (interface)**
+  - **Mesures** au simulateur iPhone 13 en paysage (749 × 388 pixels utiles), avec `ui_probe.luau` sur le HUD de Konoha :
+    - les boutons DUELS et SHOP font 98 × 42 px, sous la cible tactile de 44 px ;
+    - les contours mélangent 3 px (×2), 2,5 px (×11) et 2 px (×13) ;
+    - aucun chevauchement, aucun texte trop petit, rien hors de l'écran.
+  - **Cause** : `UIScale` réduit des boutons de 140 × 60 à 70 %.
+  - **Captures** aux 4 tailles du skill, prises avec `capture_device_matrix` : 720p, iPhone 13, iPad, 1080p.
+- **DEV et ANIMATEUR, à décider ensemble : deux squelettes.**
+  - Les clips sont écrits sur `World.RIG`, celui des avatars.
+  - Les prodiges passent par `Looks.form`, qui a les épaules à ±0,84 au lieu de ±1,05 et la tête plus haute.
+  - Le même clip ne tombe donc pas au même endroit sur les deux corps (0,21 stud). C'est à relier au bandeau mal placé et à la taille qui change (liste du 15/11).
+  - L'audit des clips utilise le squelette des prodiges.
+- **Sons** (`roblox-sfx` : `IsLoaded`, puis `TimeLength` mesuré dans Studio) : tous les sons du jeu se chargent. Le coup de poing est lent au premier chargement.

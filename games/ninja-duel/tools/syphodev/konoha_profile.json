@@ -1,0 +1,21 @@
+{
+  "name": "konoha",
+  "source": "Ninja Duel's village walk (Client/HubClient: Hub.WALK, Hub.RUN, Hub.JUMP, Hub.LEAP) and the place's gravity (build.py: Workspace.Gravity 140). 19/11, for SyphoDev's prover.",
+  "note": "The prover models one jump. Konoha has a second one (the LEAP: double tap space, vertical speed set to 54 in the air once per jump). jumpPower below is the single jump that reaches the same top: jump 56 to its apex (56^2/280 = 11.2) then the leap (54^2/280 = 10.41) = 21.61 studs, i.e. sqrt(2*140*21.61) = 77.8. Its airtime (1.11 s) is SHORTER than the real jump+leap (about 1.34 s), so the horizontal reach is conservative.",
+  "gravity":        { "value": 140,  "src": "config", "note": "build.py Workspace.Gravity" },
+  "jumpPower":      { "value": 77.8, "src": "derived", "note": "jump 56 + leap 54 (HubClient), see note" },
+  "walkSpeed":      { "value": 16,   "src": "config", "note": "Hub.WALK" },
+  "sprintSpeed":    { "value": 36,   "src": "config", "note": "Hub.RUN (shift, L3, RUN button)" },
+  "slideEntryCap":  { "value": 36,   "src": "config", "note": "the prover's generous envelope takes off at this speed: Hub.RUN, the fastest the village walk goes" },
+  "jumpApex":       { "value": 21.61, "src": "derived" },
+  "jumpAirtime":    { "value": 1.111, "src": "derived" },
+  "jumpDistance":   { "src": "derived", "walk": 17.8, "sprint": 40.0 },
+  "autoStep":       { "value": 2.0,  "src": "assumed", "note": "Roblox auto-step" },
+  "maxWalkSlope":   { "value": 89,   "src": "config", "note": "Humanoid.MaxSlopeAngle default (HubClient does not set it)" },
+  "designMaxSlope": { "value": 45,   "src": "design" },
+  "charHeight":     { "value": 5.0,  "src": "assumed" },
+  "charRadius":     { "value": 2.0,  "src": "assumed" },
+  "eyeHeight":      { "value": 4.5,  "src": "assumed" },
+  "ragdollRecovery": { "value": 0.0, "src": "config", "note": "no ragdoll while walking in Konoha" },
+  "abilities": {}
+}
