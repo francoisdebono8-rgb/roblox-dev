@@ -1376,3 +1376,22 @@ Sortie commune : trois Lights/Heavy physiques distincts, branche seulement aprè
 - evidence_addendum_2: 15/11 (branche `claude/boutique-apercu`, maquette Mix-Shop : « à gauche, ton avatar portant la tenue survolée ») : dans l'onglet STYLE, la colonne de gauche montre une copie immobile de l'avatar du joueur (`Client/StylePreview`, sans ses scripts ni sa tenue) ; la tenue pointée dans la grille (souris sur la carte, sélection à la manette) est posée sur la copie avec les mêmes pièces modélisées qu'en jeu (`OutfitDress.wear`) ; rien n'est acheté ni porté en pointant. Suite `Shop` 9 PASS. Images de la PR #114 intégrées au dépôt (`assets/ui`).
 - remaining: envoi des images de la PR #114 sur Roblox (Studio ou ordinateur relié) puis leur emploi (papier, bords d'encre, tampons) ; pictogrammes des techniques (DESIGN).
 - outcome: PENDING
+
+## METH-001 — Méthode SyphoDev installée pour toutes les discussions
+
+- status: IN_PROGRESS
+- priority: P1
+- dependencies: NONE
+- subsystem: outillage
+- character: ALL
+- summary: (François, 19/11 : « regarde ces vidéos et applique exactement ce qu'ils font ; tous les détails doivent être retenus : les animations, l'IA qui teste sans faire 8000 essais, les API, les VFX ») Les skills et agents libres de SyphoDev sont dans `.claude/`, leurs `LOCAL.md` sont remplis pour Ninja Duel, l'outillage cloud vient de `tools/syphodev`, la route d'animation joint-space tourne sur le squelette du jeu (rig.json vérifié par `tests/run.sh`) et le guide est écrit (`docs/tools/METHODE_SYPHODEV.md`, RUNBOOK § 4 bis).
+- sources: [METHODE_SYPHODEV](../tools/METHODE_SYPHODEV.md) ; [vidéo animations](https://www.youtube.com/watch?v=dlx_kf6jT08) ; [vidéo jeu de capture](https://www.youtube.com/watch?v=jJtZmZ3Hz9k) ; [tutoriel complet](https://www.youtube.com/watch?v=afuKhenJldY) ; [SyphoDev-yt/roblox-ai-skills](https://github.com/SyphoDev-yt/roblox-ai-skills)
+- validation: (1) contrôle d'installation du skill de setup : portes de code, prouveur de carte, vérificateur UI, Blender cloud et Mac ; (2) une animation du jeu passe toute la route (chiffres, images, GIF, export AuthoredClips) ; (3) preuve dans Studio par le MCP : clip joué à sa durée, parties à moins de 0,0001 stud du rendu, jambes ; (4) chaque discussion s'en sert sur sa prochaine tâche.
+- evidence: 19/11 (branche `claude/methode-syphodev`) : 4 portes vertes sur un projet `roblox-code` neuf (Rojo 7.6.1, Lune 0.8.9, Selene 0.29.0 avec la bibliothèque Roblox portée, StyLua 2.3.1) ; `prove.py minimal` WARN (P11 seul, attendu) ; `coin_hud` 0 échec ; Blender 5.2.3 en `bpy` dans le cloud et sur le Mac par le MCP Blender. Direct du droit `examples/cross.json` en 4 passes : pieds qui glissaient de 0,41 stud → 0 ; poing passé de la poitrine (y 3,63) au menton (y 4,64) ; garde trop ouverte (x 2,12) resserrée par un balayage chiffré de 36 essais en 30 s sans rendu ; 4 triangles de main dans le torse → 0 ; rendu de 32 images en 15,3 s sur le Mac, planche et GIF relus. Constat en passant : les centres de `World.RIG.parts` ne sont pas ceux que la chaîne des Motor6D impose en jeu (bras 0,38 plus haut, pieds 0,25 plus bas), à relier au bandeau mal placé (liste du 15/11).
+- evidence_addendum: 19/11, preuve dans Studio, faite par l'IA avec le MCP officiel (ND-DEV construit du commit, ouvert par File > Open from File, Play) :
+  - un vrai combattant (`World.rig`) joue le direct du droit avec le décodeur du jeu (`AuthoredMotion`) ;
+  - durée 0,5 s, égale à la durée d'auteur ;
+  - parties à 0,000057 stud au pire du calcul sur le corps lu dans Studio (`rig_prodigy.json`), soit la même parité que la vidéo (moins de 1/10 000) ;
+  - contre `World.RIG`, 0,21 stud : `Looks.form` resserre les épaules (C0 ±0,84 au lieu de ±1,05) et monte la tête (Neck 1,05 au lieu de 0,9) sur les prodiges, alors que les avatars gardent `World.RIG`. Le même clip ne tombe donc pas au même endroit sur un prodige et sur un avatar. C'est à relier au bandeau mal placé et à la taille qui change (liste du 15/11).
+- remaining: test des jambes sur une garde ou un idle ; étapes de François (§ 13 du guide : permissions MCP pour Open Cloud, comptes Hugging Face et Cloudflare, packs VFX) ; premier lancement VFX sur le Mac ; usage par l'ANIMATEUR et le DESIGN.
+- outcome: PENDING

@@ -1,5 +1,15 @@
 # Boîte de réception Claude
 
+## INBOX-SYPHODEV-20261119 — DEV 19/11 : la méthode SyphoDev est pour toutes les discussions
+
+François veut que chaque discussion applique exactement la méthode de SyphoDev. Avant ta prochaine tâche :
+1. lis [METHODE_SYPHODEV](../tools/METHODE_SYPHODEV.md) (§ 3, comment l'IA teste sans 8000 essais ; § 12, ce que ta discussion en prend) ;
+2. lance `bash tools/syphodev/setup_cloud.sh` à la racine du dépôt ;
+3. utilise le skill de ta discipline (`roblox-animation`, `roblox-vfx`, `roblox-ui`, `roblox-map`, `roblox-3d-model`, `roblox-sfx`, `roblox-code`) ;
+4. écris dans le skill chaque correction validée par François.
+
+ANIMATEUR : la route joint-space est prête sur notre squelette (`tools/syphodev/README.md`, exemple `examples/cross.json`). Les `AuthoredClips` restent à toi.
+
 ## INBOX-VFX-STUDIO-20261104 — ACK Claude 04/11 22 h 40 (installé ; test comparatif proposé, pas lancé)
 
 **Fait (Claude, 04/11, 22 h 40) :** vérifié sur la page officielle (create.roblox.com, asset 135581141962270) : **VFX Studio**, par **@XxOmqxXNerd**, catégorie Plugins / Éclairage et ambiance, **gratuit**, 95 % (800+ votes), créé le 31/05/2025, mis à jour le 07/09/2026. Installé depuis la Boîte à outils de Studio (le même résultat : « VFX Studio — By @XxOmqxXNerd — FREE », pas « VFX Studio Pro » à 4,99 $). **Preuve dans Studio** : bouton Toolbox « Installed », onglet Plugins avec « VFX Studio » et « Toggle Panels », panneau VFX Studio ouvert (VFX, Mesh, Properties, Scripts, Sounds, Textures), barre d'outils flottante dans la vue. Le plugin a demandé l'accès Internet à `raw.githubusercontent.com` ; l'utilisateur a répondu « Autoriser » (révocable dans Plugins > Plugin Management). Rien n'a été ajouté au jeu ni publié.

@@ -3,3 +3,4 @@ __pycache__/
 *.lock
 *.rbxlx.autosave
 dist/repro/
+work/

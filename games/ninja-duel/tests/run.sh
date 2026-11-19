@@ -57,6 +57,7 @@ run HudText "$LUNE" run tests/HudText.spec.luau
 run Leftovers "$LUNE" run tests/Leftovers.spec.luau
 run Appearance "$LUNE" run tests/Appearance.spec.luau
 run Avatar "$LUNE" run tests/Avatar.spec.luau
+run SyphoRig  "$LUNE" run tools/syphodev/rig_dump.luau --check tools/syphodev/rig.json
 run Masters "$LUNE" run tests/Masters.spec.luau
 run MastersView "$LUNE" run tests/MastersView.spec.luau
 run Trees "$LUNE" run tests/Trees.spec.luau
