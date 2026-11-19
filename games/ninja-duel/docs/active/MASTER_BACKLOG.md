@@ -1393,5 +1393,13 @@ Sortie commune : trois Lights/Heavy physiques distincts, branche seulement aprè
   - durée 0,5 s, égale à la durée d'auteur ;
   - parties à 0,000057 stud au pire du calcul sur le corps lu dans Studio (`rig_prodigy.json`), soit la même parité que la vidéo (moins de 1/10 000) ;
   - contre `World.RIG`, 0,21 stud : `Looks.form` resserre les épaules (C0 ±0,84 au lieu de ±1,05) et monte la tête (Neck 1,05 au lieu de 0,9) sur les prodiges, alors que les avatars gardent `World.RIG`. Le même clip ne tombe donc pas au même endroit sur un prodige et sur un avatar. C'est à relier au bandeau mal placé et à la taille qui change (liste du 15/11).
-- remaining: test des jambes sur une garde ou un idle ; étapes de François (§ 13 du guide : permissions MCP pour Open Cloud, comptes Hugging Face et Cloudflare, packs VFX) ; premier lancement VFX sur le Mac ; usage par l'ANIMATEUR et le DESIGN.
+- evidence_jeu_actuel: 19/11 au soir (François : « tu l'intègres au jeu actuel… vérifie que tout ce qui est déjà en place… faut peut-être l'adapter »), détail au § 15 du guide :
+  - #127, les 862 clips audités : boucles 89 → 1 et sauts d'une image 114 → 48 ; passes dans `clips_to_luau.py`, porte `SyphoClips` ;
+  - #128, l'eau du lac remise dans son trou : vu dans Studio, état `Swimming` ;
+  - #129, Selene sur `src/` : un vrai bug corrigé (vitesse de la pose du mur), porte `SyphoLint` ;
+  - prouveur de carte sur Konoha (`konoha_prove.py`) : 341 toits sur 348 en marchant, 6 en courant, aucun piège, aucune pièce flottante ni face qui scintille ;
+  - sonde UI (`ui_probe.luau`) sur iPhone 13 : DUELS et SHOP à 42 px, contours mélangés, demandé au DESIGN ;
+  - triangles comptés : village 722 752 posés, maisons à 3 400–6 500 contre un repère de 800 ;
+  - sons : tous se chargent.
+- remaining: (jeu actuel) ANIMATEUR : mains dans la tête en garde, Lion.Sweep et Lion.VaultKick sous le sol, sauts sur plusieurs images, VFX à l'arrêt sur image par phase, triangles des maisons ; DESIGN : cibles tactiles et contours du HUD de Konoha ; DEV et ANIMATEUR : un ou deux squelettes (World.RIG ou Looks.form) ; test des jambes sur une garde ou un idle ; étapes de François (§ 13 du guide : permissions MCP pour Open Cloud, comptes Hugging Face et Cloudflare, packs VFX) ; premier lancement VFX sur le Mac ; usage par l'ANIMATEUR et le DESIGN.
 - outcome: PENDING
