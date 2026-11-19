@@ -56,6 +56,9 @@ test("every look of the catalogue has its icon and its model in the game",functi
 	assert(#c.unknownSlot==0,"looks in a slot Shop.Slots does not know: "..table.concat(c.unknownSlot,", "))
 	assert(#c.noModel==0,"looks without their model in the game: "..table.concat(c.noModel,", "))
 	assert(#c.noIcon==0,"looks without their icon (render them: tools/icons/README.md): "..table.concat(c.noIcon,", "))
+	-- the accessories in cloth until modelled: listed, never more than 6
+	assert(#c.waiting<=6,"too many accessories waiting for their model: "..table.concat(c.waiting,", "))
+	if #c.waiting>0 then print("  waiting for their model and icon (ANIMATEUR, then OUTILLEUR): "..table.concat(c.waiting,", ")) end
 end)
 
 print(("Loop: %d passed"):format(passed))

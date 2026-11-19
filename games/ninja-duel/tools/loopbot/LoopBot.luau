@@ -134,12 +134,17 @@ Bot.BuiltByGame={kunai=true,shuriken=true,tanto=true,gourd=true,headband=true}
 Bot.Icons="tools/icons/renders"
 function Bot.collection()
 	local Meshes=H.load("Shared/OutfitMeshes")
-	local out={looks=0,none=0,slots={},noIcon={},noModel={},unknownSlot={}}
+	local out={looks=0,none=0,slots={},noIcon={},noModel={},unknownSlot={},waiting={}}
 	for _,item in Shop.Items do
 		out.slots[item.slot]=(out.slots[item.slot] or 0)+1
 		if not Shop.Slots[item.slot] then table.insert(out.unknownSlot,item.id.." ("..item.slot..")") end
 		if item.none then out.none+=1;continue end
 		out.looks+=1
+		-- (DEV, integration 19/11) a worn accessory (mask, cape, back) is new
+		-- and drawn in cloth by Server/Outfit until the ANIMATEUR models it:
+		-- waiting, the same list as tests/OutfitMeshes.spec (6 at most); its
+		-- icon comes with its model (no icon of a bare dummy)
+		if Shop.Slots[item.slot] and Shop.Slots[item.slot].accessory and not Meshes.forItem(item.id) then table.insert(out.waiting,item.id);continue end
 		if not fs.isFile(Bot.Icons.."/"..item.id..".png") then table.insert(out.noIcon,item.id) end
 		if not (Bot.BuiltByGame[item.slot] or Meshes.forItem(item.id)) then table.insert(out.noModel,item.id) end
 	end
