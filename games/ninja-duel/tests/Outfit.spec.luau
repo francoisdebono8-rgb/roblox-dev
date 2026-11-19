@@ -83,14 +83,19 @@ test("wear: the chosen pieces welded on his parts, never colliding nor hit; a ma
 	assert(h2 and h2~=holder and holder.Parent==nil,"the old outfit stayed")
 	assert(h2:GetAttribute("NinjaOutfit")=="SetLee","the master's outfit does not cover the rest: "..tostring(h2:GetAttribute("NinjaOutfit")))
 	assert(#again>=10,"Lee's suit is thin")
-	-- every master's outfit and every free piece builds
+	-- every master's outfit and every free piece builds; (19/11, seen in
+	-- Studio) none in Fabric, which reads near-black under the game's light
 	for _,item in Shop.Items do
 		if Shop.Slots[item.slot].outfit and not item.none then
 			local m=body()
 			Outfit.wear(m,{[item.slot]=item.id})
-			assert(#pieces(m)>0,item.id.." builds nothing")
+			local made=pieces(m)
+			assert(#made>0,item.id.." builds nothing")
+			for _,p in made do assert(not string.find(tostring(p.Material),"Fabric"),item.id.." "..p.Name.." is Fabric: its colour does not show") end
 		end
 	end
+	local fs=require("@lune/fs")
+	assert(string.find(fs.readFile("src/Client/OutfitDress.luau"),"p.Material=Dress.material(p.Material)",1,true),"the modelled pieces keep Fabric")
 	-- taken off
 	Outfit.wear(model,{})
 	assert(model:FindFirstChild("NinjaOutfit")==nil,"the outfit did not come off")

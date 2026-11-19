@@ -123,6 +123,10 @@ test("an avatar is put on the game's skeleton: every pivot where the rig's is, m
 		local model,parts=fakeAvatar(scale)
 		local joints,rest=AvatarBody.fit(model,World.RIG)
 		assert(joints,"fit refused a complete avatar: "..tostring(rest))
+		-- (19/11) The rig's pivots are where its motors put them, parent to
+		-- child (Part0 * C0 = Part1 * C1), as on every prodigy in a duel.
+		local chain={HumanoidRootPart=V.zero}
+		for _,j in World.RIG.joints do chain[j[3]]=chain[j[2]]+j[4]-j[5] end
 		for _,j in World.RIG.joints do
 			local m=joints[j[1]]
 			assert(m and m.Parent==parts[j[2]],j[1].." is not under its Part0 "..j[2])
@@ -130,12 +134,48 @@ test("an avatar is put on the game's skeleton: every pivot where the rig's is, m
 			local pivot0=rest[j[2]]*m.C0
 			local pivot1=rest[j[3]]*m.C1
 			assert(near(pivot0.Position,pivot1.Position),j[1].." does not close at rest")
-			local rigParent=if j[2]=="HumanoidRootPart" then V.zero else World.RIG.parts[j[2]][2]
-			assert(near(pivot0.Position,rigParent+j[4]),j[1].." pivot "..tostring(pivot0.Position).." is not the rig's")
+			assert(near(pivot0.Position,chain[j[2]]+j[4]),j[1].." pivot "..tostring(pivot0.Position).." is not the rig's")
 		end
-		-- Each part keeps its own offset from its pivot (its own look).
-		assert(near(rest.Head.Position,World.RIG.parts.UpperTorso[2]+V.new(0,.9,0)+V.new(0,.5*scale,0)),"the head moved off its own neck offset")
+		-- (19/11) The body is the rig's: every part but the head takes the rig's
+		-- size and sits where the rig's does on its pivot (no air at the elbow,
+		-- no torso swallowing the head, the soles on the rig's floor).
+		for _,j in World.RIG.joints do
+			if j[3]~="Head" then
+				local size=World.RIG.parts[j[3]][1]
+				assert(near(parts[j[3]].Size,size),j[3].." keeps its own size "..tostring(parts[j[3]].Size).." on the rig's "..tostring(size))
+				assert(near(rest[j[3]].Position,chain[j[3]]),j[3].." is not where the rig's is")
+			end
+		end
+		-- The head keeps its size (its hair is fitted to it) and sits on the
+		-- torso as the rig's: its bottom where the rig's head bottom is.
+		local rigHead,rigC1=World.RIG.parts.Head[1],World.RIG.joints[3][5]
+		local neck=chain.UpperTorso+V.new(0,.9,0)
+		assert(near(parts.Head.Size,V.new(1.2,1.2,1.2)*scale),"the head was resized")
+		local sole=rest.RightFoot.Position.Y-parts.RightFoot.Size.Y/2
+		assert(math.abs(sole+3.01)<1e-3,"the soles are not on the prodigies' floor (3.01 under the root): "..sole)
+		local bottom=rest.Head.Position.Y-parts.Head.Size.Y/2
+		assert(math.abs(bottom-(neck.Y-(rigHead.Y/2+rigC1.Y)))<1e-4,"the head does not sit on the torso: its bottom at "..bottom)
 	end
+end)
+
+-- (19/11, measured in Studio: the avatar 5.10 studs tall in Konoha, 5.96 in a
+-- duel, the prodigies 6.51) Every avatar grows to the prodigies' height before
+-- anything is worn: measured from its joints at rest, soles to crown.
+test("an avatar grows to the prodigies' height, measured from its joints at rest",function()
+	local AvatarBody=H.load("Server/AvatarBody")
+	local small=AvatarBody.restHeight((fakeAvatar(1)))
+	local big=AvatarBody.restHeight((fakeAvatar(1.25)))
+	assert(small and big,"the rest height was not measured")
+	assert(math.abs(big/small-1.25)<.02,"the measure does not follow the body's size: "..small.." and "..big)
+	local k=AvatarBody.growth((fakeAvatar(1)))
+	assert(math.abs(small*k-AvatarBody.HEIGHT)<1e-3,"the avatar does not reach "..AvatarBody.HEIGHT..": "..small.." x "..k)
+	local withConstraints=AvatarBody.restHeight((fakeAvatar(1,nil,true)))
+	assert(withConstraints and math.abs(withConstraints-small)<1e-4,"Roblox's new joints (AnimationConstraints) are not measured like motors")
+	assert(AvatarBody.growth((fakeAvatar(1,"LeftKnee")))>0,"an incomplete body broke the measure")
+	-- The village and the duel grow the same body the same way.
+	local fs=require("@lune/fs")
+	assert(string.find(fs.readFile("src/Server/Hub.luau"),"AvatarBody).grow(character)",1,true),"the village does not grow the walker")
+	assert(string.find(fs.readFile("src/Server/AvatarBody.luau"),"entry.growth=AvatarBody.grow(model)",1,true),"the duel's avatar does not grow")
 end)
 
 -- (14/11, Studio: « [AvatarBody] no joint Root ») Roblox builds the avatar's
@@ -182,6 +222,40 @@ test("everything bought stays: only the size sliders are reset",function()
 	for _,removed in {"Accessory","Shirt","Pants","Clothing","WrapLayer","BodyColors"} do
 		assert(not string.find(src,'IsA("'..removed..'")',1,true),"AvatarBody removes "..removed)
 	end
+end)
+
+
+-- (19/11, seen in Studio) The plate sat across the eyes of a dynamic head (16 %
+-- of the head's box above its centre, and a dynamic head's box runs from the
+-- chin to the crown); the band was a square whose corners stood out.
+test("the headband sits on the brow, above the eyes, as a ring round the head",function()
+	local roblox=require("@lune/roblox")
+	H.envBase.Instance=roblox.Instance
+	local Headband=H.load("Server/Headband")
+	local model=roblox.Instance.new("Model")
+	local head=roblox.Instance.new("MeshPart");head.Name="Head";head.Size=V.new(1.2,1.2,1.2);head.Parent=model
+	local face=roblox.Instance.new("Attachment");face.Name="FaceFrontAttachment";face.Position=V.new(0,-.01,-.59);face.Parent=head
+	local hat=roblox.Instance.new("Attachment");hat.Name="HatAttachment";hat.Position=V.new(0,.61,0);hat.Parent=head
+	local band=Headband.wear(model,"HeadbandBlue")
+	assert(band,"no headband")
+	local plate,strips=nil,{}
+	for _,p in band:GetChildren() do
+		if p.Name=="Plate" then plate=p elseif p.Name=="Band" then table.insert(strips,p) end
+	end
+	assert(plate and #strips==8,"the band is not a ring of eight strips with its plate ("..#strips..")")
+	local at=head.CFrame:PointToObjectSpace(plate.CFrame.Position)
+	assert(at.Y-plate.Size.Y/2>.2,"the plate comes down over the eyes: its bottom at "..(at.Y-plate.Size.Y/2))
+	assert(at.Y+plate.Size.Y/2<.61,"the plate is above the crown")
+	assert(at.Z<-.6,"the plate is not in front of the face")
+	for _,p in strips do
+		local c=head.CFrame:PointToObjectSpace(p.CFrame.Position)
+		assert(math.abs(c.Y-at.Y)<1e-3,"a strip is off the plate's height")
+		assert((c.X/.6)^2+(c.Z/.6)^2>.8,"a strip runs inside the head")
+	end
+	-- An old blocky head (no attachments): a little above its centre.
+	local old=roblox.Instance.new("Model")
+	local block=roblox.Instance.new("Part");block.Name="Head";block.Size=V.new(1.2,1.2,1.2);block.Parent=old
+	assert(math.abs(Headband.brow(block)-.324)<1e-3,"a blocky head's brow moved")
 end)
 
 print(string.format("NinjaDuel avatar body (DEC-036): %d PASS",passed))

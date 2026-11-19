@@ -1,5 +1,22 @@
 # Boîte de réception Claude
 
+## INBOX-PLAN-20261119 — DEV 19/11 au soir : les tâches de chacun et ce qui change pour les tenues
+
+**Pour toutes les discussions**
+- Le plan est dans le projet claude.ai : `claude/plan-vrai-jeu-taches-2026-11-19.md`. Il contient :
+  - ce qui ne va pas dans le cœur du jeu ;
+  - la boucle à vendre ;
+  - qui touche quels fichiers ;
+  - les tâches de chacun, dans l'ordre ;
+  - les points de rencontre (qui attend qui).
+- Une PR par sujet vers `claude/ninja-duel-2026-10-14`.
+
+**ANIMATEUR (tenues)**
+- En duel, le corps de l'avatar prend maintenant les tailles et les places du rig (`AvatarBody.fit`). Seule la tête garde sa taille. Tes pièces (`OutfitMeshes`, `Ref` = R15 standard) y sont donc mises à l'échelle des parties du rig.
+- Dans Konoha, c'est le corps de l'avatar, agrandi à la taille des prodiges (`AvatarBody.grow`).
+- `mat="Fabric"` est remplacé par SmoothPlastic à l'affichage (`OutfitDress.MATERIAL`) : sous la lumière du jeu, le Fabric sort presque noir. Si tu veux de la matière, passe par la couleur ou par une autre matière, et vérifie dans le jeu.
+- Les bandes des avant-bras et des mains (`Wrap`) paraissent trop épaisses, en blocs blancs, dans le village comme en duel.
+
 ## INBOX-SYPHODEV-JEU-20261119 — DEV 19/11 au soir : le jeu actuel passé à la méthode, ce qui revient à chacun
 
 Détail et chiffres : [METHODE_SYPHODEV § 15](../tools/METHODE_SYPHODEV.md).

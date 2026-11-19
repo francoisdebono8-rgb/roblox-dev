@@ -53,6 +53,8 @@ function AvatarBody.prepare(player)
 		end
 		-- (14/11) Roblox's joints as AnimationConstraints: the Motor6Ds they are
 		if ok and model then pcall(AvatarBody.motorize,model) end
+		-- (19/11) the prodigies' height, as in the village (Hub.enter)
+		if ok and model then entry.growth=AvatarBody.grow(model) end
 		if ok and model then
 			entry.template=model;entry.state="ready"
 		else
@@ -62,6 +64,74 @@ function AvatarBody.prepare(player)
 	end)
 	return entry.state
 end
+-- (19/11, measured in Studio on the owner's avatar) The avatar stood 5.10
+-- studs tall in Konoha and 5.96 in a duel, while the prodigies stand 6.51: the
+-- inspirations, his own age, were a head taller than him, his size changed
+-- between the village and the duel, and in the duel his limbs were pulled
+-- apart on the rig's pivots (0.2 stud of air at the elbow, arms off the
+-- torso). Every avatar is now scaled whole, its own proportions kept, to the
+-- prodigies' height (soles to the top of the head, at rest), in the village
+-- and in the duel, before anything is worn on it. The skeleton the duel plays
+-- on does not change (World.RIG): only how big the body drawn on it is.
+AvatarBody.HEIGHT=6.5
+AvatarBody.GROW={.8,1.6}
+-- The model's rest pose, from its joints alone (Motor6Ds, or the
+-- AnimationConstraints Roblox builds now): soles to the top of the head.
+-- nil when the chain from the root to the head and a foot is incomplete.
+function AvatarBody.restHeight(model)
+	local links={}
+	for _,d in model:GetDescendants() do
+		if d:IsA("Motor6D") and d.Part0 and d.Part1 then
+			links[d.Part1]={d.Part0,d.C0,d.C1}
+		elseif d:IsA("AnimationConstraint") then
+			local a0,a1=d.Attachment0,d.Attachment1
+			if a0 and a1 and a0.Parent and a1.Parent then links[a1.Parent]={a0.Parent,a0.CFrame,a1.CFrame} end
+		end
+	end
+	local root=model:FindFirstChild("HumanoidRootPart")
+	if not root then return nil end
+	local rest={}
+	local function frame(part,depth)
+		if part==root then return CFrame.new() end
+		if rest[part] then return rest[part] end
+		local link=links[part]
+		if not link or depth>24 then return nil end
+		local above=frame(link[1],depth+1)
+		if not above then return nil end
+		rest[part]=above*link[2]*link[3]:Inverse()
+		return rest[part]
+	end
+	local head=model:FindFirstChild("Head")
+	local top=head and frame(head,0)
+	if not top then return nil end
+	local low
+	for _,name in {"LeftFoot","RightFoot"} do
+		local foot=model:FindFirstChild(name)
+		local at=foot and frame(foot,0)
+		if at then
+			local bottom=at.Position.Y-foot.Size.Y/2
+			low=if low then math.min(low,bottom) else bottom
+		end
+	end
+	if not low then return nil end
+	return top.Position.Y+head.Size.Y/2-low
+end
+-- How much the avatar grows to stand AvatarBody.HEIGHT tall (1 when it cannot
+-- be measured).
+function AvatarBody.growth(model)
+	local height=AvatarBody.restHeight(model)
+	if not height or height<=0 then return 1 end
+	return math.clamp(AvatarBody.HEIGHT/height,AvatarBody.GROW[1],AvatarBody.GROW[2])
+end
+-- Scales the avatar (Model:ScaleTo: parts, joints, attachments, accessories);
+-- returns the factor applied.
+function AvatarBody.grow(model)
+	local k=AvatarBody.growth(model)
+	if math.abs(k-1)<.01 then return 1 end
+	local ok=pcall(function() model:ScaleTo(model:GetScale()*k) end)
+	return if ok then k else 1
+end
+
 function AvatarBody.ready(player)
 	local entry=AvatarBody.cache[player]
 	return entry~=nil and entry.state=="ready"
@@ -102,9 +172,9 @@ function AvatarBody.motorize(model,make)
 	return count
 end
 
--- Puts an R15 model on the game's skeleton (World.RIG). Each joint keeps the
--- avatar's own C1 (the part's offset from its pivot) and gets the C0 that
--- puts the pivot where the rig's is; the motors move under their Part0, where
+-- Puts an R15 model on the game's skeleton (World.RIG). Each part takes the
+-- rig's size and offset from its pivot (19/11; the head keeps its size), and
+-- each joint gets the C0 that puts the pivot where the rig's is; the motors move under their Part0, where
 -- the motion engine looks for them (Client/VelmoraMotionEngine). Returns the
 -- joints by name and the parts' rest frames (root space), or nil and the
 -- missing joint. Pure geometry: no Roblox service.
@@ -115,7 +185,7 @@ function AvatarBody.fit(model,rig)
 		if d:IsA("Motor6D") then motors[d.Name]=d end
 	end
 	local rest={HumanoidRootPart=CFrame.new()}
-	local pivotOf={HumanoidRootPart=Vector3.zero}
+	local chain={HumanoidRootPart=Vector3.zero}
 	local joints={}
 	for _,j in rig.joints do
 		local name,p0,p1,c0=j[1],j[2],j[3],j[4]
@@ -123,9 +193,32 @@ function AvatarBody.fit(model,rig)
 		if not m or not m.Part0 or not m.Part1 then return nil,name end
 		local parentRest=rest[p0]
 		if not parentRest then return nil,name end
-		-- The rig's pivot for this joint, in root space.
-		local rigParent=if p0=="HumanoidRootPart" then Vector3.zero else rig.parts[p0][2]
-		local pivot=rigParent+c0
+		-- The rig's pivot for this joint, in root space: where its motors put it
+		-- (19/11: the table's part centres, which World.rig only starts the
+		-- parts at, are not that for the arms and the legs; taken as the
+		-- parent's place, they put the avatar's elbows 0.38 and its ankles 0.35
+		-- higher than every prodigy's, hence the air at the elbow and the feet
+		-- above the floor).
+		local from=chain[p0]
+		if not from then return nil,name end
+		local pivot=from+c0
+		chain[p1]=pivot-(j[5] or Vector3.zero)
+		-- (19/11, seen in Studio) The avatar's own parts on the rig's pivots
+		-- overlapped or left air (its torso taller than the rig's: the head sank
+		-- into it and a coat's collar rose over the face; 0.2 stud of air at the
+		-- elbow; feet 0.16 to 0.25 above the floor). The body is now the rig's:
+		-- each part takes the rig's size and sits where the rig's does on its
+		-- pivot, with the avatar's own meshes, colours, face and hair. The head
+		-- keeps its own size (the hair is fitted to it: AvatarBody.grow brought
+		-- it to the prodigies' height) and sits on the torso as the rig's does.
+		local size,c1=rig.parts[p1] and rig.parts[p1][1],j[5]
+		if p1=="Head" and size and c1 then
+			local below=size.Y/2+c1.Y -- the rig's head bottom under its neck pivot
+			m.C1=CFrame.new(c1.X,-(m.Part1.Size.Y/2-below),c1.Z)*m.C1.Rotation
+		elseif size and c1 then
+			m.Part1.Size=size
+			m.C1=CFrame.new(c1)*m.C1.Rotation
+		end
 		local pivotCF=CFrame.new(pivot)*m.C1.Rotation
 		local childRest=pivotCF*m.C1:Inverse()
 		m.C0=parentRest:Inverse()*pivotCF
@@ -183,6 +276,10 @@ function AvatarBody.rig(player,parent,kitId,def,cf,name,looks)
 	local hum=model:FindFirstChildOfClass("Humanoid")
 	local root=model:FindFirstChild("HumanoidRootPart")
 	if not hum or not root then model:Destroy();return nil end
+	-- (19/11) the avatar grew to the prodigies' height (AvatarBody.grow), its
+	-- root with it; the duel's root stays the rig's, which HipHeight 2 and the
+	-- feet on the floor are measured on.
+	root.Size=Vector3.new(2,2,1)
 	pcall(function() hum.AutomaticScalingEnabled=false end)
 	hum.RigType=Enum.HumanoidRigType.R15;hum.RequiresNeck=true;hum.BreakJointsOnDeath=false
 	hum.MaxHealth=def.Health;hum.Health=def.Health;hum.WalkSpeed=def.Speed

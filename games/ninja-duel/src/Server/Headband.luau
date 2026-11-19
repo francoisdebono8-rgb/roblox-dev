@@ -19,6 +19,23 @@ local function piece(model,head,name,size,offset,color,material)
 	return p
 end
 
+-- The band's height and how far round the head it sits (head's half sizes).
+Headband.HEIGHT=.15
+Headband.REACH=1.07
+-- Where the brow is on this head, in its own frame: BROW of the way from the
+-- eyes' level (the face's front attachment) up to the top of the head (the
+-- hat attachment). A head without them (an old blocky head): 27 % of its
+-- height above its centre.
+Headband.BROW=.6
+function Headband.brow(head)
+	local face=head:FindFirstChild("FaceFrontAttachment")
+	local top=head:FindFirstChild("HatAttachment") or head:FindFirstChild("HairAttachment")
+	if face and top and face:IsA("Attachment") and top:IsA("Attachment") and top.Position.Y>face.Position.Y then
+		return face.Position.Y+(top.Position.Y-face.Position.Y)*Headband.BROW
+	end
+	return head.Size.Y*.27
+end
+
 -- Puts the look `itemId` (a headband of Shared/Shop) on `model`; any older
 -- headband comes off first. Returns the band, or nil (no head, no headband).
 function Headband.wear(model,itemId)
@@ -31,20 +48,37 @@ function Headband.wear(model,itemId)
 	local s=head.Size
 	local holder=Instance.new("Model");holder.Name="NinjaHeadband";holder:SetAttribute("NinjaHeadband",item.id)
 	holder.Parent=model
-	-- The cloth: a ring of four strips just outside the head, at the brow.
-	local y=s.Y*.16
+	-- (19/11, seen in Studio) The plate sat across the eyes of a dynamic head:
+	-- its height was a share of the head's box (16 % above the centre), and the
+	-- box of a dynamic head runs from the chin to the crown. The band now sits
+	-- on the brow, between the eyes' level (the face's front attachment) and
+	-- the top of the head, and it is a ring of eight strips round the head's
+	-- oval instead of a square whose corners stood out.
+	local y=Headband.brow(head)
+	local h=s.Y*Headband.HEIGHT
 	local band=rgb(item.colors.Band)
-	local w,d=s.X*1.06,s.Z*1.06
-	piece(holder,head,"Band",Vector3.new(w,s.Y*.2,.06),CFrame.new(0,y,-d/2),band,Enum.Material.Fabric)
-	piece(holder,head,"Band",Vector3.new(w,s.Y*.2,.06),CFrame.new(0,y,d/2),band,Enum.Material.Fabric)
-	piece(holder,head,"Band",Vector3.new(.06,s.Y*.2,d),CFrame.new(-w/2,y,0),band,Enum.Material.Fabric)
-	piece(holder,head,"Band",Vector3.new(.06,s.Y*.2,d),CFrame.new(w/2,y,0),band,Enum.Material.Fabric)
-	-- The two tails behind.
-	for _,side in {-1,1} do
-		piece(holder,head,"Tail",Vector3.new(.14,s.Y*.5,.04),CFrame.new(side*.12,y-s.Y*.26,d/2+.05)*CFrame.Angles(math.rad(14),0,math.rad(side*8)),band,Enum.Material.Fabric)
+	local a,b=s.X/2*Headband.REACH,s.Z/2*Headband.REACH
+	local corners={}
+	for i=0,7 do
+		local phi=math.rad(-67.5+i*45) -- a strip centred on the brow (-Z) and one at the back
+		table.insert(corners,Vector3.new(a*math.cos(phi),y,b*math.sin(phi)))
 	end
-	-- The plate on the brow.
-	piece(holder,head,"Plate",Vector3.new(w*.62,s.Y*.17,.05),CFrame.new(0,y,-d/2-.05),rgb(item.colors.Plate or {200,204,210}),Enum.Material.Metal)
+	for i=1,8 do
+		local p0,p1=corners[i],corners[i%8+1]
+		local along=p1-p0
+		local mid=(p0+p1)/2
+		local right=along.Unit
+		local frame=CFrame.fromMatrix(mid,right,Vector3.yAxis,right:Cross(Vector3.yAxis))
+		piece(holder,head,"Band",Vector3.new(along.Magnitude+.04,h,.05),frame,band,Enum.Material.Fabric)
+	end
+	-- The two tails behind, from the knot.
+	local back=b*math.cos(math.rad(22.5))
+	for _,side in {-1,1} do
+		piece(holder,head,"Tail",Vector3.new(.14,s.Y*.5,.04),CFrame.new(side*.12,y-s.Y*.26,back+.05)*CFrame.Angles(math.rad(14),0,math.rad(side*8)),band,Enum.Material.Fabric)
+	end
+	-- The plate on the brow, as wide as the front strip.
+	local front=-b*math.cos(math.rad(22.5))
+	piece(holder,head,"Plate",Vector3.new(a*.8,h*.86,.05),CFrame.new(0,y,front-.05),rgb(item.colors.Plate or {200,204,210}),Enum.Material.Metal)
 	return holder
 end
 
