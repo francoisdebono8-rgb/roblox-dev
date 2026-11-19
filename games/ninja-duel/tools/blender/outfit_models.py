@@ -808,8 +808,9 @@ BODIES = (("thin", (.82, 1.0, .85)), ("wide", (1.3, 1.0, 1.25)), ("tall", (1.0, 
 
 def render_bodies(dst, names=None):
     """(19/11, vague 2) Each model tried on three avatar bodies (thin, wide, tall: every part's
-    size times these, as Client/OutfitDress scales a piece by body.Size/Ref), from the front
-    (left three) and the back (right three), in its first catalogue colourway."""
+    size times these, as Client/OutfitDress scales a piece by body.Size/Ref), seen from the
+    front (the three on the right) and from the back (the three on the left), in its first
+    catalogue colourway."""
     from nd_mesh import to_blender, render_set, clear
     os.makedirs(dst, exist_ok=True)
     SKIN = (0.93, 0.78, 0.62)
@@ -844,7 +845,7 @@ def render_bodies(dst, names=None):
                 tint = [x / 255 for x in cols.get(slot, (150, 150, 150))]
                 q.c = [tuple(g * t for g, t in zip(cc, tint)) for cc in pc.c]
                 objs.append(to_blender(q))
-        render_set(objs, os.path.join(dst, "%s.png" % name), size=(1080, 380), view=(.12, -1.0, .1), fill=.62, world=(.7, .72, .76))
+        render_set(objs, os.path.join(dst, "%s.png" % name), size=(1500, 520), view=(.1, 1.0, .12), fill=.56, world=(.7, .72, .76))
         print("BODIES", name, sum(len(p.tris()) for _, _, p in pieces), flush=True)
 
 
