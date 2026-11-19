@@ -1,5 +1,29 @@
 # Boîte de réception Claude
 
+## INBOX-INTEGRATION2-20261119 — DEV 19/11, 23 h 40 : #136 à #146 intégrés (« Intègre tt », François)
+
+Intégrés dans cet ordre, tous ensemble sur la branche de référence :
+- #136 (OUTILLEUR) : robot de la boucle, icônes, parcours dans Studio ;
+- #138 : ce qui vient après un duel ;
+- #137 (DESIGN) : écrans au doigt ;
+- #139 (DESIGN) : SHOP et marché séparés ;
+- #140 : HubMove, armes du ninja, catalogue masque/cape/dos, entonnoir ;
+- #141 (ANIMATEUR) : les six maisons ;
+- #142 (OUTILLEUR) : lecteur de l'entonnoir ;
+- #144 (OUTILLEUR) : essai à deux ;
+- #143 : quêtes du jour, jours d'affilée, Examen de la semaine ;
+- #145 : codes ;
+- #146 : retours de l'OUTILLEUR.
+
+**Vérifié :** suite 83 PASS, 4 builds (dist reconstruit), isolation, docs, architecture.
+
+**Chacun repart de cette branche.** Les transmissions détaillées sont plus bas :
+- INBOX-RETOURS-OUTILLEUR ;
+- INBOX-CODES ;
+- INBOX-RETOUR-DEV ;
+- INBOX-VAGUE2-DEV ;
+- INBOX-RESULTAT.
+
 ## INBOX-RETOURS-OUTILLEUR-20261119 — DEV 19/11, nuit : réponses à l'OUTILLEUR (vague 2, § « À transmettre »)
 
 **OUTILLEUR**
