@@ -2,7 +2,7 @@
 
 Rojo 7.6.1, Wally 0.3.2, Selene 0.29.0, StyLua 2.3.1 and Lune 0.8.9 come from `bash tools/syphodev/setup_cloud.sh`. In a scaffold, put `~/tools/lune-0.8.9` first on PATH (the scaffold pins it) and write Selene's Roblox std with `python3 tools/syphodev/selene_roblox_std.py <project>` (Selene cannot download it through the proxy).
 
-Ninja Duel itself is not a Knit project: its four gates are `python3 build.py` (with "", --debug, --qa, --capture), `bash tests/run.sh` (Lune >= 0.10.5), `python3 tests/test_build_isolation.py` and the docs/architecture checks. The skill's rules apply as written: code lives in files, tunables in Config, pure rules tested headless, one remotes file, traps written down.
+Ninja Duel itself is not a Knit project: its four gates are `python3 build.py` (with "", --debug, --qa, --capture), `LUNE=~/tools/lune-0.10.5/lune bash tests/run.sh` (exactly Lune 0.10.5), `python3 tests/test_build_isolation.py` and the docs/architecture checks. The skill's rules apply as written: code lives in files, tunables in Config, pure rules tested headless, one remotes file, traps written down.
 
 ## My preferences
 

@@ -10,7 +10,7 @@
 ## Tools (preflight.py checks these live)
 
 - Blender: cloud sessions run `bash tools/syphodev/setup_cloud.sh` (Blender 5.2.3 as `bpy` + a `blender` command). On the Mac: Blender 5.2.3 LTS in /Applications, driven through the Blender MCP (`execute_blender_code_for_cli`).
-- Rojo 7.6.1, Wally 0.3.2, Selene 0.29.0, StyLua 2.3.1, Lune 0.8.9 (+ Lune 0.11.1 for Ninja Duel's own tests): installed per cloud session by `tools/syphodev/setup_cloud.sh`. Ninja Duel's own gates are `build.py`, `tests/run.sh`, `tests/test_build_isolation.py`, `tools/check_project_docs.py`, `../../tools/check_architecture.py`.
+- Rojo 7.6.1, Wally 0.3.2, Selene 0.29.0, StyLua 2.3.1, Lune 0.8.9 (+ Lune 0.10.5 for Ninja Duel's own tests: 0.11.x has no Enum.KeyCode.Unknown): installed per cloud session by `tools/syphodev/setup_cloud.sh`. Ninja Duel's own gates are `build.py`, `tests/run.sh`, `tests/test_build_isolation.py`, `tools/check_project_docs.py`, `../../tools/check_architecture.py`.
 
 ## Roblox Studio MCP
 

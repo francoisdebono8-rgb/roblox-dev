@@ -113,6 +113,23 @@ personnages, ce qui a été fait, ce qui était attendu, prise vidéo ou capture
 Le DEV corrige sur une branche `work/dev-…`. Après la fusion, le CM relance
 `actualiser_places.sh` et vérifie que le `@ <commit>` affiché a changé.
 
+## 4 bis. La méthode SyphoDev, pour toutes les discussions (19/11)
+
+François, le 19/11 : appliquer exactement la méthode des vidéos de SyphoDev. Ses skills
+sont dans `.claude/skills/` (`create-roblox-game`, `roblox-*`) et ses agents dans
+`.claude/agents/`. Chaque discussion les a dès qu'elle ouvre le dépôt. Ce qu'on retient :
+
+- Le guide est [METHODE_SYPHODEV.md](METHODE_SYPHODEV.md) : chaque détail des vidéos, ce que
+  chaque discussion en prend (§ 12) et ce que seul François peut faire (§ 13).
+- En début de session cloud : `bash tools/syphodev/setup_cloud.sh` à la racine du dépôt.
+- On vérifie avec des **chiffres d'abord**, puis une image regardée une fois. Chaque
+  discipline a sa preuve (§ 3) et on ne fait pas un rendu pour une question qu'une sonde
+  résout.
+- Les rendus Blender se font sur le Mac par le MCP Blender, en arrière-plan, sans prendre
+  l'écran. Les chiffres se font dans le cloud.
+- Quand François signale un défaut et qu'il est corrigé, la correction est écrite dans le
+  skill concerné, avec sa raison.
+
 ## 5. Fiches de démarrage (à coller au début de chaque discussion)
 
 ### DEV

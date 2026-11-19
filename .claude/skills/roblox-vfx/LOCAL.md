@@ -5,7 +5,7 @@
 - Sink port: 48752 (recipe_server.py; only when it runs on the Mac next to Studio. From a cloud session, harvested recipes come back through `execute_luau` output instead). Value: 48752
 - Studio window: maximised and in the foreground for screenshots, AFTER announcing it to François.
 - Blender: `blender` (cloud, tools/syphodev/setup_cloud.sh) or Blender 5.2.3 on the Mac. Value: blender
-- Lune folder: any folder whose `rokit.toml`/`aftman.toml` lists Lune; in the cloud `lune` 0.11.1 is on PATH from `~/tools`. Value: ~/tools
+- Lune folder: any folder whose `rokit.toml`/`aftman.toml` lists Lune; in the cloud `~/tools/lune-0.10.5/lune` (setup_cloud.sh). Value: ~/tools
 - VFX research folder: `games/ninja-duel/work/vfx-research` (not committed). Value: games/ninja-duel/work/vfx-research
 - Open Cloud key: not used (uploads through the Studio MCP's `open_cloud_invoke`). Value:
 - Texture library and meshes: build once per cloud session with the First run commands. Value: built 2026-11-19 (cloud session), rebuild in a new session

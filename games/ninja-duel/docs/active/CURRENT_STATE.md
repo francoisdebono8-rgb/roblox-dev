@@ -1,3 +1,5 @@
+**Méthode SyphoDev, 19/11 (DEV ; [METH-001](MASTER_BACKLOG.md), guide [METHODE_SYPHODEV](../tools/METHODE_SYPHODEV.md))** : ses skills et agents sont installés dans `.claude/` pour toutes les discussions, avec des `LOCAL.md` remplis pour Ninja Duel. L'outillage cloud passe par `bash tools/syphodev/setup_cloud.sh`. Les contrôles du setup sont verts. La route d'animation joint-space tourne sur le squelette du jeu : le direct du droit d'exemple passe 4 passes chiffrées, puis il est rendu sur le Mac en 15 s. Reste la preuve dans Studio. Technique et Mac seulement : rien n'est vu par François.
+
 **Intégration du 15/11 (DEV, sans Studio ; [UIDA-003](MASTER_BACKLOG.md), [UIDA-004](MASTER_BACKLOG.md), [HUB-002](MASTER_BACKLOG.md), [STYLE-001](MASTER_BACKLOG.md))**
 
 François (15/11) : « fais tout ce que tu n'as pas encore fait et intègre tout » ; « je veux plus que tu testes dans le studio […] moi je joue et je te dis ce qui va pas ».
