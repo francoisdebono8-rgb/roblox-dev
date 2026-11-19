@@ -1,3 +1,17 @@
+**Robot de la boucle, icônes et parcours dans Studio, 19/11 au soir (OUTILLEUR ; plan `claude/plan-vrai-jeu-taches-2026-11-19` § 4 ; branche `work/tools-loopbot`)**
+- **Robot de la boucle :** `tests/Loop.spec.luau` et `tools/loopbot/`. Il joue sur les vrais modules du serveur, pour les trois inspirations : arrivée, inspiration, tenue, première minute jusqu'à un vrai coup sur le partenaire, gains, achat au marché, nœud de l'arbre. Il donne aussi le temps estimé jusqu'au premier coup.
+  - **Pas lancé ici** : pas de lune dans cet environnement, son téléchargement a été refusé. La structure et les noms sont vérifiés. Il reste à le passer avec lune avant de l'ajouter à `TEST_RUNNERS`.
+- **Icônes :** les 33 objets du catalogue (`tools/icons/renders`), rendus le 19/11 avec Blender 5.2 sur le Mac, à partir des modèles de l'ANIMATEUR (`outfit_models.py`, `fx_models.py`, la gourde de `look_gaara.py`) et, pour les bandeaux, de la géométrie du jeu. Même angle, même lumière, PNG transparents de 512 px. Le manifeste dit quel modèle a fait chaque icône.
+- **Vu dans Studio (NATIVE_STUDIO)** sur une copie LAB de ND-JEU `bbcfffb7`, avec de vraies entrées, sur PC puis sur un iPhone 13 simulé :
+  - Le parcours : la porte, Lee à 35 studs, sa fiche, HE'S MY INSPIRATION, puis la fiche YOUR NINJA (3 choix et DONE), puis YOUR FIRST DUEL **à la porte**.
+  - Le jeu met 0,1 à 0,2 s entre chaque bouton et son effet. Le premier coup arrive vers 25 s avec les hypothèses d'écran du robot (cible : 60 s).
+  - Le résultat montre la maîtrise et les Ryō, mais pas le prochain nœud.
+  - Sur téléphone :
+    - boutons de tenue 31 px, DONE 32 px, SKILL TREE 37 px, LATER 30 px, DUELS et SHOP 42 px ;
+    - la fiche YOUR NINJA couvre la moitié de celle de Lee ;
+    - SKIP STEP couvre le titre de la consigne.
+  - Détail : `tools/loopbot/README.md`. Rien n'a été vu par François.
+
 **La méthode SyphoDev appliquée au jeu actuel, 19/11 au soir (DEV ; [METH-001](MASTER_BACKLOG.md), [§ 15 du guide](../tools/METHODE_SYPHODEV.md))** : François demande de vérifier tout ce qui est en place avec la méthode et d'adapter ce qui ne passe pas.
 - **Intégré :**
   - #127, les clips : boucles refermées, sauts d'une image lissés, porte `SyphoClips` ;
