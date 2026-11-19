@@ -144,14 +144,19 @@ def outfit(item):
         return None, "pas de modèle dans outfit_models.ITEMS"
     parts = SLOT_PARTS.get(item["slot"]) or list(OM.REST.keys())
     objs = mannequin(parts, CROP.get(item["slot"]))
+    shown = 0
     for part, slot, pc in OM.built(model):
         if part not in parts:
             continue
+        shown += 1
         c = OM.REST[part]
         col = item["colors"].get(slot) or OM.NEW_SLOTS.get(model, {}).get(slot) or (150, 150, 150)
         tint(pc, col)
         pc.v = [v + Vector((c[0], -c[2], c[1])) for v in pc.v]
         objs.append(to_blender(pc))
+    if not shown:
+        # a bare mannequin would pass for an icon: none, with the reason
+        return None, "outfit_models.py · %s n'a aucune pièce sur %s" % (model, ", ".join(parts))
     return objs, "outfit_models.py · " + model
 
 
