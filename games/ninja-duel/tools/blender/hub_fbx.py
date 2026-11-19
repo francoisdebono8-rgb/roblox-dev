@@ -64,6 +64,10 @@ def export(out_dir, names=None):
         print("exported", path, flush=True)
     imp = os.path.join(HERE, "imports", "hub")
     os.makedirs(imp, exist_ok=True)
+    if names:  # a partial export keeps the other models' entries
+        path = os.path.join(imp, "Hub.manifest.json")
+        old = json.load(open(path))["pieces"] if os.path.exists(path) else {}
+        manifest = {**{k: v for k, v in old.items() if v["model"] not in names}, **manifest}
     with open(os.path.join(imp, "Hub.manifest.json"), "w") as f:
         json.dump({"pieces": manifest}, f, indent=1, sort_keys=True)
     print(len(manifest), "pieces in", len({m["model"] for m in manifest.values()}), "models")

@@ -1403,6 +1403,11 @@ MODELS = {
     "Ladder": ladder,
 }
 
+# (19/11, DEC-042) the six houses of the new Konoha, under KonohaLayout's model names
+# (tools/blender/konoha_houses.py, 800 to 2 000 triangles each)
+import konoha_houses  # noqa: E402
+MODELS.update(konoha_houses.MODELS)
+
 
 def write(src_dir, limit=110000):
     """HubMeshData.luau (the index) and HubMeshData1..n: chunks under `limit`
@@ -1415,6 +1420,8 @@ def write(src_dir, limit=110000):
         v, t = stats(pieces)
         worst = max(len(p.tris()) for p in pieces)
         assert worst < 20000 and max(len(p.v) for p in pieces) < 60000, (name, worst)
+        if name in konoha_houses.REF:
+            konoha_houses.check(name, pieces)
         report.append((name, v, t))
         for pc in pieces:
             text = "\t{%s,%s}," % (q(name), piece_luau(pc))

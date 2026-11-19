@@ -454,6 +454,9 @@ MODELS = {
 
 def check(name, ps):
     from nd_mesh import stats
+    import konoha_layout
+    lay = konoha_layout.HOUSES[name]
+    assert (lay[5][0], lay[5][1], lay[1], lay[0]) == REF[name], "%s: KonohaLayout.HOUSES disagrees with REF" % name
     _, t = stats(ps)
     assert MIN_TRIS <= t <= REF[name][3], "%s: %d triangles (budget %d to %d)" % (name, t, MIN_TRIS, REF[name][3])
     return t

@@ -138,13 +138,15 @@ WALLS = [
 
 # --- the six houses (each a reusable model; budget in triangles) -----------------------------
 HOUSES = {
-    # model: (tris budget, height base studs, w range, d range, what it is)
-    "small_house": (900, 8, (12, 16), (12, 16), "one floor, plaster, tiled roof, one window"),
-    "machiya": (1400, 13, (14, 20), (14, 20), "two-storey timber townhouse, deep eaves, sliding doors"),
-    "tank_house": (1800, 18, (14, 20), (14, 18), "plaster block, three floors, round water tank on the roof"),
-    "shop_house": (1500, 13, (16, 24), (14, 18), "shop below (noren, awning, sign board), living above"),
-    "apartment": (2000, 22, (20, 28), (14, 18), "four-floor block, balconies, two tanks"),
-    "clan_house": (1600, 10, (18, 26), (14, 20), "traditional hall on a stone base, engawa, hip roof"),
+    # model: (tris budget, wall top, w range, d range, what it is, the model's own w x d)
+    # tools/blender/konoha_houses.py models them at (w, d, wall top); the builder scales X and Z
+    # to each lot and keeps the height (19/11: heights are the models' measured wall tops).
+    "small_house": (900, 7, (12, 16), (12, 16), "one floor, plaster, tiled roof, porch roof", (14, 14)),
+    "machiya": (1400, 14, (14, 20), (14, 20), "two-storey timber townhouse, lattice front, lean-to eave", (17, 17)),
+    "tank_house": (1800, 21, (14, 20), (14, 18), "ochre plaster block, three floors, round water tank on the roof", (17, 16)),
+    "shop_house": (1500, 14, (16, 24), (14, 18), "shop below (counter, noren, awning, sign board), living above", (20, 16)),
+    "apartment": (2000, 21, (20, 28), (14, 18), "three-floor walkway block, outside stair, two tanks", (24, 16)),
+    "clan_house": (1600, 9, (18, 26), (14, 20), "hall on a stone base, engawa, shoji, hip roof", (22, 17)),
 }
 MIX = {
     "Residences": [("machiya", 4), ("small_house", 3), ("tank_house", 3), ("apartment", 1)],
@@ -277,13 +279,14 @@ class Plan:
         return mix[-1][0]
 
     def house(self, model, x, z, yaw, gap=4.0):
-        _, h, wr, dr, _ = HOUSES[model]
+        _, h, wr, dr, _, _ = HOUSES[model]
         w = round(self.rng.uniform(*wr))
         d = round(self.rng.uniform(*dr))
         r = rect_of(x, z, w, d, yaw)
         if not self.free(r, gap):
             return None
-        self.add(f"H{len(self.buildings) + 1}", model, x, z, w, d, h + self.rng.choice((0, 0, 2, -1)), yaw)
+        self.rng.choice((0, 0, 2, -1))  # (kept: the validated plan's draw order) the model sets the height
+        self.add(f"H{len(self.buildings) + 1}", model, x, z, w, d, h, yaw)
         return w
 
     def frontage(self):
@@ -300,7 +303,7 @@ class Plan:
                     district = district_at(px + (0 if along_x else side * (wd / 2 + 9)),
                                            pz + (side * (wd / 2 + 9) if along_x else 0))
                     model = self.pick(district)
-                    _, _, wr, dr, _ = HOUSES[model]
+                    _, _, wr, dr, _, _ = HOUSES[model]
                     dd = (dr[0] + dr[1]) / 2
                     off = wd / 2 + 1.5 + dd / 2
                     # the door looks at the street: yaw 0 = the front faces +Z
@@ -442,7 +445,7 @@ def to_luau(plan):
     L.append("-- The house models: triangle budget (800 to 2 000), base height, what each is.")
     L.append("M.Houses={")
     for k, v in HOUSES.items():
-        L.append(f'\t{k}={{tris={v[0]},height={v[1]},what="{v[4]}"}},')
+        L.append(f'\t{k}={{tris={v[0]},height={v[1]},width={v[5][0]},depth={v[5][1]},what="{v[4]}"}},')
     L.append("}")
     L.append("-- Buildings: {model, x, z, w, d, h, yaw, district, landmark id or nil}. yaw 0: the door")
     L.append("-- looks at +Z; w along the building's own X. Footprint and height in base studs.")
@@ -681,7 +684,7 @@ def board_png(plan, mini_path, report_path, path):
         (mid, "", None),
         (mid, "Six maisons réutilisées (triangles)", (255, 220, 120)),
     ]
-    for m, (t, h, wr, dr_, what) in HOUSES.items():
+    for m, (t, h, wr, dr_, what, _) in HOUSES.items():
         n = sum(1 for b in houses if b["model"] == m)
         lines.append((sm, f"  {m} x{n} : {t} - {what}", (230, 230, 230)))
     lines += [

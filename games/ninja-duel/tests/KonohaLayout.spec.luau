@@ -79,6 +79,7 @@ test("six house models, each 800 to 2 000 triangles, and every house one of them
 	for name,m in K.Houses do
 		count+=1
 		assert(m.tris>=800 and m.tris<=2000,name..": "..m.tris.." triangles")
+		assert(m.width>0 and m.depth>0 and m.height>0,name..": the model's own size")
 	end
 	assert(count==6,"six models, got "..count)
 	for i,b in K.Buildings do
