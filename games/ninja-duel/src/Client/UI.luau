@@ -675,25 +675,64 @@ function UI.new(parent,send)
 	create("UIStroke",self.introBegin,{Color=palette.red,Thickness=4,ApplyStrokeMode=Enum.ApplyStrokeMode.Contextual})
 	self.intro.Visible=false
 	-- --------------------------------------------------------------- result
-	self.result=frame(self.gui,UDim2.fromScale(0,0),UDim2.fromScale(1,1),palette.ink,.25)
-	local resultBox=inkCard(frame(self.result,UDim2.new(.5,-300,.5,-170),UDim2.fromOffset(600,340),CARD,0))
+	-- (DESIGN 19/11, plan § 2 and § 4: « après un duel, on voit mal ce qu'on
+	-- a gagné ») The result is a page of the manga: the verdict on a band of
+	-- ink (red for a win), a stamp beside it (WIN / LOSS, no kanji), then
+	-- WHAT YOU EARNED: the Ryō (the day's first win doubled says so), the
+	-- kit's mastery bar with this duel's share in red, and what comes next:
+	-- the next tree point, the masters who want to meet you. Then two big
+	-- buttons (at least 44 px on a phone: the card fits the window).
+	self.result=frame(self.gui,UDim2.fromScale(0,0),UDim2.fromScale(1,1),MANGA.ink,.35)
+	local RW,RH=720,580
+	local resultBox=frame(self.result,UDim2.fromScale(.5,.5),UDim2.fromOffset(RW,RH),MANGA.paper,0)
+	resultBox.AnchorPoint=Vector2.new(.5,.5)
+	create("UIStroke",resultBox,{Color=MANGA.ink,Thickness=4,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
 	self.resultBox=resultBox
 	self.resultScale=create("UIScale",resultBox,{Scale=1})
-	-- The judges' seal, stamped on the card: 勝 for a win, 敗 for a loss.
-	self.resultSeal=text(resultBox,"",UDim2.fromOffset(600-70,-34),UDim2.fromOffset(96,96),64,palette.paper,BODY_FONT,Enum.TextXAlignment.Center)
-	self.resultSeal.BackgroundColor3=palette.red;self.resultSeal.BackgroundTransparency=0;self.resultSeal.Rotation=12;corner(self.resultSeal,10)
-	create("UIStroke",self.resultSeal,{Color=palette.paper,Thickness=3,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
+	self.resultFit=1
+	local function fitResult()
+		self.resultFit=fitScale(workspace.CurrentCamera.ViewportSize,RW+60,RH+60,1)
+		self.resultScale.Scale=self.resultFit
+	end
+	workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(fitResult);fitResult()
+	self.resultBand=frame(resultBox,UDim2.fromOffset(-8,22),UDim2.new(1,16,0,96),MANGA.ink,0)
+	self.resultBand.Rotation=-1
+	self.resultTitle=text(self.resultBand,"",UDim2.fromOffset(28,4),UDim2.new(1,-200,1,-8),72,MANGA.cream,TITLE_FONT,Enum.TextXAlignment.Left)
+	self.resultTitle.TextScaled=true;create("UITextSizeConstraint",self.resultTitle,{MaxTextSize=72})
+	-- the stamp: a red ring and a word (the stamp image once imported)
+	self.resultSeal=text(resultBox,"",UDim2.fromOffset(RW-170,4),UDim2.fromOffset(132,132),40,MANGA.red,TITLE_FONT,Enum.TextXAlignment.Center)
+	self.resultSeal.BackgroundColor3=MANGA.paper;self.resultSeal.BackgroundTransparency=0;self.resultSeal.Rotation=-12;corner(self.resultSeal,66)
+	create("UIStroke",self.resultSeal,{Color=MANGA.red,Thickness=6,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
 	self.resultSealScale=create("UIScale",self.resultSeal,{Scale=1})
-	self.resultTitle=text(resultBox,"",UDim2.fromOffset(30,18),UDim2.fromOffset(540,70),72,palette.paper,TITLE_FONT,Enum.TextXAlignment.Center)
-	inkTitle(self.resultTitle)
-	self.resultName=text(resultBox,"",UDim2.fromOffset(30,92),UDim2.fromOffset(540,36),30,palette.gold,TITLE_FONT,Enum.TextXAlignment.Center)
-	self.resultNote=text(resultBox,"",UDim2.fromOffset(30,132),UDim2.fromOffset(540,44),15,palette.muted,BODY_FONT,Enum.TextXAlignment.Center)
-	-- (Beta loop) the mastery earned, a kit learned (Shared/MastersView.result).
-	self.resultProgress=text(resultBox,"",UDim2.fromOffset(30,172),UDim2.fromOffset(540,20),15,palette.gold,TITLE_FONT,Enum.TextXAlignment.Center)
-	self.resultProgress.TextScaled=true;create("UITextSizeConstraint",self.resultProgress,{MaxTextSize=17})
+	self.resultName=text(resultBox,"",UDim2.fromOffset(30,132),UDim2.new(1,-60,0,32),28,MANGA.ink,STRONG_FONT,Enum.TextXAlignment.Center)
+	self.resultNote=text(resultBox,"",UDim2.fromOffset(40,166),UDim2.new(1,-80,0,52),21,MANGA.brown,VOICE_FONT,Enum.TextXAlignment.Center)
+	-- WHAT YOU EARNED
+	local gains=frame(resultBox,UDim2.fromOffset(30,226),UDim2.new(1,-60,0,206),MANGA.cream,0)
+	create("UIStroke",gains,{Color=MANGA.ink,Thickness=4,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
+	self.resultGains=gains
+	text(gains,"WHAT YOU EARNED",UDim2.fromOffset(18,10),UDim2.fromOffset(400,22),18,MANGA.red,STRONG_FONT)
+	self.resultRyo=text(gains,"",UDim2.fromOffset(18,34),UDim2.fromOffset(300,50),46,MANGA.ink,TITLE_FONT)
+	self.resultFirstWin=text(gains,"FIRST WIN OF THE DAY  ×2",UDim2.new(1,-300,0,44),UDim2.fromOffset(282,32),18,MANGA.cream,STRONG_FONT,Enum.TextXAlignment.Center)
+	self.resultFirstWin.BackgroundColor3=MANGA.red;self.resultFirstWin.BackgroundTransparency=0;self.resultFirstWin.Rotation=2
+	self.resultKit=text(gains,"",UDim2.fromOffset(18,92),UDim2.new(1,-120,0,24),20,MANGA.ink,STRONG_FONT)
+	self.resultGain=text(gains,"",UDim2.new(1,-118,0,92),UDim2.fromOffset(100,24),24,MANGA.red,TITLE_FONT,Enum.TextXAlignment.Right)
+	local bar=frame(gains,UDim2.fromOffset(18,120),UDim2.new(1,-36,0,24),MANGA.ink,0)
+	self.resultBarBefore=frame(bar,UDim2.fromOffset(3,3),UDim2.new(0,0,1,-6),MANGA.paper,0)
+	self.resultBarGain=frame(bar,UDim2.fromOffset(3,3),UDim2.new(0,0,1,-6),MANGA.red,0)
+	self.resultBar=bar
+	self.resultNext=text(gains,"",UDim2.fromOffset(18,152),UDim2.new(1,-36,0,46),19,MANGA.mid,BODY_FONT)
+	-- (Beta loop) the one-line summary stays for the tests and the logs
+	self.resultProgress=text(resultBox,"",UDim2.fromOffset(30,0),UDim2.fromOffset(10,10),15,MANGA.ink,STRONG_FONT)
+	self.resultProgress.Visible=false
 	-- In a tournament the card continues the bracket instead of a rematch.
-	self.rematchButton=button(resultBox,"REMATCH",UDim2.fromOffset(30,196),UDim2.fromOffset(540,52),function() send(if self.inCup then "CupBracket" else "Rematch") end,palette.red)
-	self.rosterButton=button(resultBox,"RETURN TO THE ROSTER",UDim2.fromOffset(30,260),UDim2.fromOffset(540,52),function() send(if self.inCup then "CupLeave" else "Selection") end)
+	self.rematchButton=button(resultBox,"REMATCH",UDim2.fromOffset(30,RH-112),UDim2.fromOffset(318,80),function() send(if self.inCup then "CupBracket" else "Rematch") end,MANGA.red)
+	self.rosterButton=button(resultBox,"RETURN TO THE ROSTER",UDim2.fromOffset(RW-348,RH-112),UDim2.fromOffset(318,80),function() send(if self.inCup then "CupLeave" else "Selection") end,MANGA.ink)
+	for _,bt in {self.rematchButton,self.rosterButton} do
+		bt.TextColor3=MANGA.cream;bt.TextScaled=true;bt.TextWrapped=true
+		create("UITextSizeConstraint",bt,{MaxTextSize=30})
+		create("UIPadding",bt,{PaddingLeft=UDim.new(0,12),PaddingRight=UDim.new(0,12)})
+		create("UIStroke",bt,{Color=MANGA.ink,Thickness=4,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
+	end
 	-- ------------------------------------------------------------ controls
 	-- (User 03/11: "the keys should be in a menu rather than on the screen
 	-- all the time".) TAB (pad: START) opens the controls sheet over any
@@ -998,8 +1037,8 @@ end
 -- The result card drops in and the judges' seal is stamped on it.
 function UI:stampResult()
 	pcall(function()
-		self.resultScale.Scale=1.12
-		Tween:Create(self.resultScale,TweenInfo.new(.35,Enum.EasingStyle.Back,Enum.EasingDirection.Out,0,false,.2),{Scale=1}):Play()
+		self.resultScale.Scale=1.12*(self.resultFit or 1)
+		Tween:Create(self.resultScale,TweenInfo.new(.35,Enum.EasingStyle.Back,Enum.EasingDirection.Out,0,false,.2),{Scale=self.resultFit or 1}):Play()
 		self.resultSealScale.Scale=2.6
 		Tween:Create(self.resultSealScale,TweenInfo.new(.22,Enum.EasingStyle.Quad,Enum.EasingDirection.In,0,false,.55),{Scale=1}):Play()
 	end)
@@ -1633,14 +1672,14 @@ function UI:render(data)
 	local won=data.winner=="PlayerFighter"
 	local winner=if won then h else b
 	self.resultTitle.Text=(if won then "VICTORY" else "DEFEAT")..(if (data.roundsToWin or 1)>1 and data.wins then string.format("  %d–%d",data.wins.human or 0,data.wins.bot or 0) else "")
-	self.resultTitle.TextColor3=if won then palette.gold else palette.crimson
-	self.resultSeal.Text=if won then "勝" else "敗"
-	self.resultSeal.BackgroundColor3=if won then palette.red else Color3.fromRGB(60,56,64)
+	self.resultTitle.TextColor3=MANGA.cream
+	self.resultBand.BackgroundColor3=if won then MANGA.red else MANGA.ink
+	self.resultSeal.Text=if won then "WIN" else "LOSS"
 	self.resultName.Text=fullName(winner).."  ADVANCES"
-	if Fighters[winner.fighterId or ""] then self.resultName.TextColor3=accentOf(Fighters[winner.fighterId]):Lerp(palette.paper,.25) end
 	self.resultNote.Text=if won then "The judges saw it too. The bracket waits for no one." else "Read the commitment. Find a better opening — prodigies learn fastest from defeat."
 	-- (Beta loop) the masters' path: what this duel earned.
 	self.resultProgress.Text=MastersView.result(data.progress,self.kits) or ""
+	self:resultEarned(data.progress)
 	if data.master then
 		self.resultName.Text="HIS DUEL"
 		self.resultNote.Text=if won then "He saw enough: his kit is yours." else "He is not convinced yet. Come back stronger."
@@ -1661,8 +1700,8 @@ function UI:render(data)
 		if data.spectate then
 			local def=Fighters[winner.fighterId or ""]
 			self.resultTitle.Text=Text.upper(def and def.Name or "")..(if (data.roundsToWin or 1)>1 and data.wins then string.format("  %d–%d",math.max(data.wins.human or 0,data.wins.bot or 0),math.min(data.wins.human or 0,data.wins.bot or 0)) else "")
-			self.resultTitle.TextColor3=palette.gold
-			self.resultSeal.Text="勝";self.resultSeal.BackgroundColor3=palette.red
+			self.resultBand.BackgroundColor3=MANGA.red
+			self.resultSeal.Text="WIN"
 			self.resultNote.Text="One more name moves up the bracket."
 		elseif won then
 			self.resultNote.Text="Your name moves up the bracket."
@@ -1670,5 +1709,57 @@ function UI:render(data)
 			self.resultNote.Text="Your tournament ends here. The bracket plays out without you."
 		end
 	end
+end
+-- (DESIGN 19/11) WHAT YOU EARNED, from the server's word on the duel
+-- (Matches: progress = mastery after, amount gained, need, points, ryo,
+-- firstWin, learned). Says what comes next: the next point of the kit's
+-- tree (Masters.PointEvery) and the masters who want to meet you
+-- (MastersView.leadsTo, at Masters.Need).
+function UI:resultEarned(progress)
+	local p=if type(progress)=="table" then progress else nil
+	self.resultGains.Visible=p~=nil and (p.gained or p.learned or (p.ryo or 0)>0)
+	if not self.resultGains.Visible then return end
+	local ryo=p.ryo or 0
+	self.resultRyo.Text=if ryo>0 then string.format("+%d RYŌ",ryo) else "NO RYŌ THIS TIME"
+	self.resultFirstWin.Visible=p.firstWin==true
+	local id=p.fighter or p.learned
+	local def=Fighters[id or ""]
+	local who=if def then Text.upper(def.Name or "") else "YOUR KIT"
+	if p.learned then
+		self.resultKit.Text=who.."'S KIT IS YOURS"
+		self.resultGain.Text="";self.resultBar.Visible=false
+		self.resultNext.Text="Pick it at the roster or wear it in Konoha. Its tree starts now."
+		return
+	end
+	self.resultBar.Visible=true
+	local after=p.mastery or 0
+	local gain=p.amount or 0
+	local need=p.need or Masters.Need
+	local every=Masters.PointEvery or 10
+	-- the bar shows the stretch to the next master meeting, then the stretch to
+	-- the next tree point once past it
+	local span=if after<need then need else every
+	local from=if after<need then 0 else after-(after%every)
+	local before=math.max(from,after-gain)
+	local function scale(v) return math.clamp((v-from)/span,0,1) end
+	self.resultBarBefore.Size=UDim2.new(scale(before),-6*scale(before),1,-6)
+	self.resultBarGain.Position=UDim2.new(scale(before),3,0,3)
+	self.resultBarGain.Size=UDim2.new(scale(after)-scale(before),0,1,-6)
+	self.resultKit.Text=string.format("%s MASTERY  %d",who,after)
+	self.resultGain.Text=if gain>0 then string.format("+%d",gain) else ""
+	local lines={}
+	local toPoint=every-(after%every)
+	table.insert(lines,string.format("%d more mastery for your next tree point.",toPoint))
+	local leads={}
+	for _,master in MastersView.leadsTo(id) do
+		if not (self.kits and self.kits.owned and self.kits.owned[master]) then
+			local m=Fighters[master];table.insert(leads,if m then m.Name else master)
+		end
+	end
+	if #leads>0 then
+		local list=table.concat(leads,", ")
+		table.insert(lines,if after>=need then list.." want to meet you in Konoha." else string.format("%d more: %s will want to meet you.",need-after,list))
+	end
+	self.resultNext.Text=table.concat(lines,"  ")
 end
 return UI
