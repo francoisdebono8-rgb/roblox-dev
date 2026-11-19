@@ -65,6 +65,7 @@ run MastersView "$LUNE" run tests/MastersView.spec.luau
 run Trees "$LUNE" run tests/Trees.spec.luau
 run Hub "$LUNE" run tests/Hub.spec.luau
 run Shop "$LUNE" run tests/Shop.spec.luau
+run Weapons    "$LUNE" run tests/NinjaWeapons.spec.luau
 run HubLayout "$LUNE" run tests/HubLayout.spec.luau
 run KonohaLayout "$LUNE" run tests/KonohaLayout.spec.luau
 run Outfit "$LUNE" run tests/Outfit.spec.luau
