@@ -64,6 +64,30 @@ local function boxContains(p,point,grow)
 	local s=p.Size/2+Vector3.new(grow,grow,grow)
 	return math.abs(d.X)<=s.X and math.abs(d.Y)<=s.Y and math.abs(d.Z)<=s.Z
 end
+test("the Uchiha lake has its water in its hole, at the village's scale (19/11: swimming came back)",function()
+	-- (SyphoDev map check: the water body is where the map says it is.) Terrain is
+	-- not a part: scaling the village left the water behind, under the grass.
+	local bed=folder:FindFirstChild("LakeBed")
+	assert(bed and Hub.lake,"no lake: "..tostring(bed).." "..tostring(Hub.lake))
+	local w,s=Hub.lake.cf.Position,Hub.lake.size
+	local function near(a,b) return math.abs(a-b)<1e-3 end
+	local b=bed.CFrame.Position
+	assert(near(w.X,b.X) and near(w.Z,b.Z),"the water is not over its bed: "..tostring(w).." vs "..tostring(b))
+	assert(near(s.X,bed.Size.X) and near(s.Z,bed.Size.Z),"the water does not fill the hole: "..tostring(s).." vs "..tostring(bed.Size))
+	assert(w.Y-s.Y/2>=b.Y+bed.Size.Y/2-1e-3,"the water goes through the lake bed")
+	assert(s.Y>=3.5,"too shallow to swim: "..s.Y)
+	-- No grass over the water: every Ground slab stays out of the lake's box.
+	for _,g in folder:GetChildren() do
+		if g.Name=="Ground" then
+			local p,gs=g.CFrame.Position,g.Size
+			local apartX=math.abs(p.X-w.X)>=(gs.X+s.X)/2-1e-3
+			local apartZ=math.abs(p.Z-w.Z)>=(gs.Z+s.Z)/2-1e-3
+			assert(apartX or apartZ,"a ground slab covers the lake")
+		end
+	end
+	assert(w.Y+s.Y/2<=HubMap.Origin.Y,"the water rises over the ground")
+end)
+
 test("each master and the proctor stand on solid ground, out of every wall",function()
 	local spots={Proctor=HubMap.Proctor}
 	for id,spot in HubMap.Masters do spots[id]=spot end
