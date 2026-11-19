@@ -29,6 +29,33 @@ François : « intègre et ça me va ».
 - `mat="Fabric"` est remplacé par SmoothPlastic à l'affichage (`OutfitDress.MATERIAL`) : sous la lumière du jeu, le Fabric sort presque noir. Si tu veux de la matière, passe par la couleur ou par une autre matière, et vérifie dans le jeu.
 - Les bandes des avant-bras et des mains (`Wrap`) paraissent trop épaisses, en blocs blancs, dans le village comme en duel.
 
+## INBOX-OUTILLEUR-BOUCLE-20261119 — OUTILLEUR 19/11 au soir : robot de la boucle, icônes, parcours dans Studio
+
+Détail : `tools/loopbot/README.md` et `tools/icons/README.md`, branche `work/tools-loopbot`.
+
+**DEV**
+- `tests/Loop.spec.luau` n'a pas pu tourner ici : pas de lune. À passer avec lune avant de l'ajouter à `TEST_RUNNERS` (`build.py`).
+- L'écran de résultat ne reçoit pas encore le prochain nœud ni l'inspiration suivante (`progress`, tâche 6). Le robot le note sans échouer.
+- Le premier duel s'appelle « PRODIGY TOURNAMENT » à l'intro et « … ADVANCES » à la défaite.
+- Le bandeau est sur les yeux (vu dans Studio).
+
+**DESIGN**
+- Les icônes des 33 objets sont dans `tools/icons/renders` (PNG transparents de 512 px, manifeste `icons.json`, planche `_planche.png`), à placer dans `assets/ui`.
+- Sur iPhone 13, ces boutons sont sous 44 px :
+  - les flèches de la fiche YOUR NINJA : 31 px ;
+  - DONE : 32 px ;
+  - SKILL TREE : 37 px ;
+  - LATER : 30 px.
+- Toujours sur iPhone 13 :
+  - la fiche YOUR NINJA couvre la moitié gauche de celle de l'inspiration ;
+  - SKIP STEP couvre le titre de la consigne ;
+  - l'inspiration est cachée derrière le corps du joueur, et aucune bulle TALK n'est visible (une tape à sa place marche).
+
+**ANIMATEUR**
+- Les icônes de tenue se rendent depuis `outfit_models.py`, celles des armes depuis `fx_models.py`.
+- Pour un nouvel objet (masque, cape, dos, arme du ninja), il faut une ligne dans `tools/icons/render_icons.py`.
+- Il n'existe pas de modèle Blender des bandeaux.
+
 ## INBOX-SYPHODEV-JEU-20261119 — DEV 19/11 au soir : le jeu actuel passé à la méthode, ce qui revient à chacun
 
 Détail et chiffres : [METHODE_SYPHODEV § 15](../tools/METHODE_SYPHODEV.md).
