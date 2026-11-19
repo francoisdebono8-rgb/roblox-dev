@@ -7651,13 +7651,13 @@ return {
       <Item class="StringValue" referent="ND59">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">1c53c34037aa0137016b884be3034e0d92111f34004973dfbaa9e5af8a33f71b</string>
+          <string name="Value">8d5a44a13ae67bfaaeda105c2ccb4a0f943ee718ce6ab215d182561a1186636f</string>
         </Properties>
       </Item>
       <Item class="StringValue" referent="ND60">
         <Properties>
           <string name="Name">RuntimeFingerprint</string>
-          <string name="Value">086787b2fae7f743c384c28c1ef7318515e60a862e8bb1d1bb5dab0d15f3549a</string>
+          <string name="Value">95213cc1e90d8925111a7326c06034443086901649672dc14daabaa4dea54eaa</string>
         </Properties>
       </Item>
       <Item class="StringValue" referent="ND61">
@@ -7669,7 +7669,7 @@ return {
       <Item class="StringValue" referent="ND62">
         <Properties>
           <string name="Name">SourceCommit</string>
-          <string name="Value">d054629cb72f</string>
+          <string name="Value">2ff74a19e684</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND63">
@@ -79765,7 +79765,11 @@ function Motion.present(char,actor,clock,dt)
 		return "chase"
 	end
 	if subject.wall then
-		local targets,rate=if subject.wallMode=="run" then wallRunTargets(char,subject,dt) else wallTargets(char,subject,dt)
+		-- (19/11, Selene) not `local targets,rate=if ... then f() else g()`: an
+		-- if-expression keeps one value, so the pose's own rate (RATE.wall for
+		-- the cling) was dropped and apply fell back to the locomotion rate.
+		local targets,rate
+		if subject.wallMode=="run" then targets,rate=wallRunTargets(char,subject,dt) else targets,rate=wallTargets(char,subject,dt) end
 		apply(char,targets,rate,dt)
 		return "wall"
 	end

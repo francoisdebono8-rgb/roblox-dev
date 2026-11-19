@@ -1,7 +1,7 @@
 {
   "version": "0.13.0-arena-combo",
   "artifact": "NinjaDuel-Capture.rbxlx",
-  "sha256": "a9402e891bb5883668093dd212fd392a6bfd3134bb8880a3329841572303c322",
+  "sha256": "70071222190dfc1cc99071dd179e5bad5aebe0543938b942d321e0e55d75450b",
   "sources": {
     "src/Client/ArenaDress.luau": "e2da1115cb48480b2effa3170a1670d3bb44d5bcbdfd9bbdbb3e60ee302b5360",
     "src/Client/AuthoredClips.luau": "8528a9d2e35a860d1a330bf243d7baebb3fe80885c016bec6d633a062b97f5c2",
@@ -180,7 +180,7 @@
     "src/Client/UI.luau": "e3262f49a3758162327c2009c984847d0b2afd0bdfdbecbd506520c00937e405",
     "src/Client/UltimateFX.luau": "1a86233e15b03ce94569c6aef00183942350cab444203391a9f05fbe5da443e2",
     "src/Client/VelmoraHitFeedback.luau": "f98d1832e6e21aeb20afca931531d7fccdd3b8cec74cb7e6921511d0dc892e69",
-    "src/Client/VelmoraMotionEngine.luau": "81ac1f9ab8e8f34fb4eb3f544684a6f6ea6f7857513e70084d44b96bc74f8989",
+    "src/Client/VelmoraMotionEngine.luau": "1968537a4b13cac268f380cade6bf220ab9433599a399523f6d03a8d37898899",
     "src/Client/VfxAtlas.luau": "667e2fae948f3b1425896c6fa5d5177066a743e19609c7165909a9455b7124dd",
     "src/Client/VfxKit.luau": "643cba51e9834cb9d5905663273d79a6498bf4b7faf5a61fca7e09a848c3e534",
     "src/Client/Wave1FX.luau": "9139f26f0d2ae492c3a10c23919bc998b216789554a512359672b1e6a04db451",
@@ -332,11 +332,11 @@
   },
   "sourceEquality": "PASS",
   "debugOnly": true,
-  "buildFingerprint": "ef2394afdfd87160c0a16a275d1d09675fe88aec728a42e832655c8f84d3c68a",
+  "buildFingerprint": "aebd631d3ae9b88eb500db71f56ec060ca3e76301d4406a3d105a234e17f490a",
   "profile": "capture",
-  "runtimeFingerprint": "086787b2fae7f743c384c28c1ef7318515e60a862e8bb1d1bb5dab0d15f3549a",
-  "sourceCommit": "d054629cb72f75d738dbe3da7aac8be140167955",
-  "headCommit": "d054629cb72f75d738dbe3da7aac8be140167955",
+  "runtimeFingerprint": "95213cc1e90d8925111a7326c06034443086901649672dc14daabaa4dea54eaa",
+  "sourceCommit": "2ff74a19e684025d005fda6e35ea60a2bd20430a",
+  "headCommit": "2ff74a19e684025d005fda6e35ea60a2bd20430a",
   "sourceDirty": false,
   "captureTools": {
     "tools/capture/studio/ClipKit.client.luau": "7889f16ee2fa12b5367d104b26d449f0734a271975421617800df53ec80a1a07",
