@@ -1,0 +1,5 @@
+# Exemple inventé : recopié de l'écran, une étape par ligne
+arrivée 120
+première entrée 115
+premier jutsu 60
+premier duel 41
