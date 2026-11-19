@@ -67,6 +67,7 @@ run Hub "$LUNE" run tests/Hub.spec.luau
 run Shop "$LUNE" run tests/Shop.spec.luau
 run HubLayout "$LUNE" run tests/HubLayout.spec.luau
 run KonohaLayout "$LUNE" run tests/KonohaLayout.spec.luau
+run Loop       "$LUNE" run tests/Loop.spec.luau
 run Outfit "$LUNE" run tests/Outfit.spec.luau
 run Spacing "$LUNE" run tests/Spacing.spec.luau
 run StepSpeeds "$LUNE" run tests/StepSpeeds.spec.luau

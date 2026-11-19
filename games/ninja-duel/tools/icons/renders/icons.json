@@ -1,0 +1,312 @@
+{
+ "size": 512,
+ "view": [
+  0.42,
+  1.0,
+  0.3
+ ],
+ "icons": [
+  {
+   "id": "KunaiSteel",
+   "slot": "kunai",
+   "name": "KONOHA STEEL",
+   "counter": "free",
+   "model": "fx_models.py · kunai",
+   "icon": "KunaiSteel.png"
+  },
+  {
+   "id": "KunaiBlack",
+   "slot": "kunai",
+   "name": "BLACK KUNAI",
+   "counter": "market",
+   "ryo": 1500,
+   "model": "fx_models.py · kunai",
+   "icon": "KunaiBlack.png"
+  },
+  {
+   "id": "KunaiVermilion",
+   "slot": "kunai",
+   "name": "VERMILION KUNAI",
+   "counter": "market",
+   "ryo": 1200,
+   "model": "fx_models.py · kunai",
+   "icon": "KunaiVermilion.png"
+  },
+  {
+   "id": "KunaiGold",
+   "slot": "kunai",
+   "name": "MARKED GOLD KUNAI",
+   "counter": "shop",
+   "model": "fx_models.py · kunai",
+   "icon": "KunaiGold.png"
+  },
+  {
+   "id": "ShurikenSteel",
+   "slot": "shuriken",
+   "name": "STEEL SHURIKEN",
+   "counter": "free",
+   "model": "fx_models.py · shuriken",
+   "icon": "ShurikenSteel.png"
+  },
+  {
+   "id": "ShurikenBlack",
+   "slot": "shuriken",
+   "name": "BLACK SHURIKEN",
+   "counter": "market",
+   "ryo": 1500,
+   "model": "fx_models.py · shuriken",
+   "icon": "ShurikenBlack.png"
+  },
+  {
+   "id": "TantoWhite",
+   "slot": "tanto",
+   "name": "WHITE LIGHT",
+   "counter": "free",
+   "model": "fx_models.py · tanto",
+   "icon": "TantoWhite.png"
+  },
+  {
+   "id": "TantoShadow",
+   "slot": "tanto",
+   "name": "SHADOW EDGE",
+   "counter": "shop",
+   "model": "fx_models.py · tanto",
+   "icon": "TantoShadow.png"
+  },
+  {
+   "id": "GourdClay",
+   "slot": "gourd",
+   "name": "CLAY GOURD",
+   "counter": "free",
+   "model": "look_gaara.py · Gourd (sans son export)",
+   "icon": "GourdClay.png"
+  },
+  {
+   "id": "GourdLacquer",
+   "slot": "gourd",
+   "name": "LACQUERED GOURD",
+   "counter": "market",
+   "ryo": 2000,
+   "model": "look_gaara.py · Gourd (sans son export)",
+   "icon": "GourdLacquer.png"
+  },
+  {
+   "id": "HeadbandBlue",
+   "slot": "headband",
+   "name": "KONOHA HEADBAND",
+   "counter": "free",
+   "model": "Server/Headband (géométrie du jeu, pas de modèle Blender)",
+   "icon": "HeadbandBlue.png"
+  },
+  {
+   "id": "HeadbandBlack",
+   "slot": "headband",
+   "name": "BLACK HEADBAND",
+   "counter": "market",
+   "ryo": 800,
+   "model": "Server/Headband (géométrie du jeu, pas de modèle Blender)",
+   "icon": "HeadbandBlack.png"
+  },
+  {
+   "id": "HeadbandRed",
+   "slot": "headband",
+   "name": "RED HEADBAND",
+   "counter": "market",
+   "ryo": 800,
+   "model": "Server/Headband (géométrie du jeu, pas de modèle Blender)",
+   "icon": "HeadbandRed.png"
+  },
+  {
+   "id": "HeadbandNone",
+   "slot": "headband",
+   "name": "NO HEADBAND",
+   "counter": "free",
+   "icon": null,
+   "note": "aucun objet (case vide à l'écran)"
+  },
+  {
+   "id": "TopTunicNavy",
+   "slot": "top",
+   "name": "GENIN TUNIC • NAVY",
+   "counter": "free",
+   "model": "outfit_models.py · Tunic",
+   "icon": "TopTunicNavy.png"
+  },
+  {
+   "id": "TopTunicBlack",
+   "slot": "top",
+   "name": "GENIN TUNIC • BLACK",
+   "counter": "free",
+   "model": "outfit_models.py · Tunic",
+   "icon": "TopTunicBlack.png"
+  },
+  {
+   "id": "TopTunicGreen",
+   "slot": "top",
+   "name": "GENIN TUNIC • FOREST",
+   "counter": "free",
+   "model": "outfit_models.py · Tunic",
+   "icon": "TopTunicGreen.png"
+  },
+  {
+   "id": "TopHighCollar",
+   "slot": "top",
+   "name": "HIGH COLLAR",
+   "counter": "free",
+   "model": "outfit_models.py · HighCollar",
+   "icon": "TopHighCollar.png"
+  },
+  {
+   "id": "TopSleeveless",
+   "slot": "top",
+   "name": "SLEEVELESS TOP",
+   "counter": "free",
+   "model": "outfit_models.py · Sleeveless",
+   "icon": "TopSleeveless.png"
+  },
+  {
+   "id": "BottomPantsDark",
+   "slot": "bottom",
+   "name": "TIED PANTS • DARK",
+   "counter": "free",
+   "model": "outfit_models.py · Pants",
+   "icon": "BottomPantsDark.png"
+  },
+  {
+   "id": "BottomPantsSand",
+   "slot": "bottom",
+   "name": "TIED PANTS • SAND",
+   "counter": "free",
+   "model": "outfit_models.py · Pants",
+   "icon": "BottomPantsSand.png"
+  },
+  {
+   "id": "BottomShorts",
+   "slot": "bottom",
+   "name": "WRAPPED SHORTS",
+   "counter": "free",
+   "model": "outfit_models.py · Shorts",
+   "icon": "BottomShorts.png"
+  },
+  {
+   "id": "ArmsWraps",
+   "slot": "arms",
+   "name": "ARM WRAPS",
+   "counter": "free",
+   "model": "outfit_models.py · ArmWraps",
+   "icon": "ArmsWraps.png"
+  },
+  {
+   "id": "ArmsGuards",
+   "slot": "arms",
+   "name": "ARM GUARDS",
+   "counter": "free",
+   "model": "outfit_models.py · ArmGuards",
+   "icon": "ArmsGuards.png"
+  },
+  {
+   "id": "ArmsNone",
+   "slot": "arms",
+   "name": "BARE ARMS",
+   "counter": "free",
+   "icon": null,
+   "note": "aucun objet (case vide à l'écran)"
+  },
+  {
+   "id": "FeetSandals",
+   "slot": "feet",
+   "name": "NINJA SANDALS",
+   "counter": "free",
+   "model": "outfit_models.py · Sandals",
+   "icon": "FeetSandals.png"
+  },
+  {
+   "id": "FeetBlack",
+   "slot": "feet",
+   "name": "BLACK SANDALS",
+   "counter": "free",
+   "model": "outfit_models.py · Sandals",
+   "icon": "FeetBlack.png"
+  },
+  {
+   "id": "FeetNone",
+   "slot": "feet",
+   "name": "BARE FEET",
+   "counter": "free",
+   "icon": null,
+   "note": "aucun objet (case vide à l'écran)"
+  },
+  {
+   "id": "SetNone",
+   "slot": "set",
+   "name": "MY OWN PIECES",
+   "counter": "free",
+   "icon": null,
+   "note": "aucun objet (case vide à l'écran)"
+  },
+  {
+   "id": "SetNaruto",
+   "slot": "set",
+   "name": "NARUTO'S JUMPSUIT",
+   "counter": "shop",
+   "model": "outfit_models.py · Naruto",
+   "icon": "SetNaruto.png"
+  },
+  {
+   "id": "SetSasuke",
+   "slot": "set",
+   "name": "SASUKE'S HIGH COLLAR",
+   "counter": "shop",
+   "model": "outfit_models.py · Sasuke",
+   "icon": "SetSasuke.png"
+  },
+  {
+   "id": "SetLee",
+   "slot": "set",
+   "name": "LEE'S GREEN SUIT",
+   "counter": "shop",
+   "model": "outfit_models.py · Lee",
+   "icon": "SetLee.png"
+  },
+  {
+   "id": "SetNeji",
+   "slot": "set",
+   "name": "NEJI'S ROBE",
+   "counter": "shop",
+   "model": "outfit_models.py · Neji",
+   "icon": "SetNeji.png"
+  },
+  {
+   "id": "SetGaara",
+   "slot": "set",
+   "name": "GAARA'S COAT",
+   "counter": "shop",
+   "model": "outfit_models.py · Gaara",
+   "icon": "SetGaara.png"
+  },
+  {
+   "id": "SetKakashi",
+   "slot": "set",
+   "name": "KAKASHI'S FLAK VEST",
+   "counter": "shop",
+   "model": "outfit_models.py · Kakashi",
+   "icon": "SetKakashi.png"
+  },
+  {
+   "id": "SetItachi",
+   "slot": "set",
+   "name": "ITACHI'S ANBU GEAR",
+   "counter": "shop",
+   "model": "outfit_models.py · Itachi",
+   "icon": "SetItachi.png"
+  },
+  {
+   "id": "SetMinato",
+   "slot": "set",
+   "name": "MINATO'S JACKET",
+   "counter": "shop",
+   "model": "outfit_models.py · Minato",
+   "icon": "SetMinato.png"
+  }
+ ]
+}
