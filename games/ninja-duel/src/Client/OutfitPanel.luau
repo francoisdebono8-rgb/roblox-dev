@@ -54,13 +54,9 @@ function Panel.new(kit,gui,send,ui)
 	kit.create("UIStroke",card,{Color=M.ink,Thickness=4,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
 	self.card=card
 	local scale=kit.create("UIScale",card,{Scale=1})
-	local function fit()
-		local v=workspace.CurrentCamera.ViewportSize
-		scale.Scale=math.clamp(math.min((v.Y-40)/Panel.H,(v.X*.55)/Panel.W),.45,1.1)
-	end
-	pcall(function() workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(fit) end);fit()
-	kit.text(card,"YOUR NINJA",UDim2.fromOffset(24,14),UDim2.fromOffset(392,52),52,M.ink,kit.TITLE_FONT)
-	kit.frame(card,UDim2.fromOffset(24,62),UDim2.fromOffset(170,5),M.red,0)
+	self.scale=scale
+	self.title=kit.text(card,"YOUR NINJA",UDim2.fromOffset(24,14),UDim2.fromOffset(392,52),52,M.ink,kit.TITLE_FONT)
+	self.rule=kit.frame(card,UDim2.fromOffset(24,62),UDim2.fromOffset(170,5),M.red,0)
 	self.sub=kit.text(card,"",UDim2.fromOffset(26,72),UDim2.fromOffset(392,36),14,M.ink,kit.BODY_FONT)
 	self.sub.TextWrapped=true;self.sub.TextYAlignment=Enum.TextYAlignment.Top
 	local y=112
@@ -86,6 +82,21 @@ function Panel.new(kit,gui,send,ui)
 	kit.create("UIStroke",self.stamp,{Color=M.red,Thickness=4,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
 	self.foot=kit.text(card,"Inspirations' outfits and weapons: SHOP › STYLE. More pieces at the market.",UDim2.fromOffset(20,Panel.H-16),UDim2.fromOffset(400,14),12,M.ink,kit.BODY_FONT,Enum.TextXAlignment.Center)
 	self.sel="top"
+	-- (DESIGN 19/11, OUTILLEUR's measure on an iPhone 13: arrows 31 px, DONE
+	-- 32, the card over half of the inspiration's) A short window (a phone in
+	-- landscape) gets the compact card: a strip along the bottom, the rows in
+	-- three columns, so the scale stays high and every button is 44 px or
+	-- more; his face stays in view above it.
+	local function fit()
+		local v=workspace.CurrentCamera.ViewportSize
+		self:layout(v.Y<Panel.COMPACT_BELOW)
+		if self.compact then
+			scale.Scale=math.clamp(math.min((v.X-100)/Panel.CW,(v.Y*.62)/Panel.CH),.45,1.1)
+		else
+			scale.Scale=math.clamp(math.min((v.Y-40)/Panel.H,(v.X*.55)/Panel.W),.45,1.1)
+		end
+	end
+	pcall(function() workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(fit) end);fit()
 	pcall(function()
 		UIS.InputBegan:Connect(function(input,processed)
 			if not self.root.Visible then return end
@@ -103,6 +114,48 @@ function Panel.new(kit,gui,send,ui)
 	self.clock=0
 	RunService.RenderStepped:Connect(function(dt) self:frame(dt) end)
 	return self
+end
+
+Panel.COMPACT_BELOW=500
+Panel.CW,Panel.CH=1000,236
+-- The card's two shapes: the column on the left (PC), the strip along the
+-- bottom (a phone in landscape). Same rows and buttons, placed again.
+function Panel:layout(compact)
+	if compact==self.compact then return end
+	self.compact=compact
+	local card=self.card
+	if compact then
+		card.AnchorPoint=Vector2.new(.5,1);card.Position=UDim2.new(.5,0,1,-6);card.Size=UDim2.fromOffset(Panel.CW,Panel.CH)
+		self.title.TextSize=44;self.title.Position=UDim2.fromOffset(20,6);self.rule.Position=UDim2.fromOffset(20,52)
+		self.sub.Visible=false;self.foot.Visible=false
+		local i=0
+		for _,slot in Panel.ROWS do
+			local r=self.rows[slot]
+			local col,line=i%3,i//3
+			r.frame.Position=UDim2.fromOffset(20+col*324,74+line*78);r.frame.Size=UDim2.fromOffset(312,72)
+			r.prev.Position=UDim2.fromOffset(4,4);r.prev.Size=UDim2.fromOffset(64,64)
+			r.next.Position=UDim2.fromOffset(244,4);r.next.Size=UDim2.fromOffset(64,64)
+			r.label.Position=UDim2.fromOffset(72,4);r.label.Size=UDim2.fromOffset(168,18)
+			r.name.Position=UDim2.fromOffset(72,22);r.name.Size=UDim2.fromOffset(168,44)
+			i+=1
+		end
+		self.done.Position=UDim2.fromOffset(Panel.CW-280,4);self.done.Size=UDim2.fromOffset(260,64)
+	else
+		card.AnchorPoint=Vector2.new(0,.5);card.Position=UDim2.new(0,24,.5,0);card.Size=UDim2.fromOffset(Panel.W,Panel.H)
+		self.title.TextSize=52;self.title.Position=UDim2.fromOffset(24,14);self.rule.Position=UDim2.fromOffset(24,62)
+		self.sub.Visible=true;self.foot.Visible=true
+		local y=112
+		for _,slot in Panel.ROWS do
+			local r=self.rows[slot]
+			r.frame.Position=UDim2.fromOffset(20,y);r.frame.Size=UDim2.fromOffset(400,62)
+			r.prev.Position=UDim2.fromOffset(4,4);r.prev.Size=UDim2.fromOffset(54,54)
+			r.next.Position=UDim2.fromOffset(342,4);r.next.Size=UDim2.fromOffset(54,54)
+			r.label.Position=UDim2.fromOffset(62,4);r.label.Size=UDim2.fromOffset(276,16)
+			r.name.Position=UDim2.fromOffset(62,20);r.name.Size=UDim2.fromOffset(276,36)
+			y+=70
+		end
+		self.done.Position=UDim2.fromOffset(20,Panel.H-74);self.done.Size=UDim2.fromOffset(400,56)
+	end
 end
 
 -- (DESIGN 19/11) the wardrobe counts as this panel for Konoha (the walk
@@ -213,7 +266,8 @@ function Panel:frame(dt)
 		local camera=workspace.CurrentCamera
 		if camera.CameraType~=Enum.CameraType.Scriptable then camera.CameraType=Enum.CameraType.Scriptable end
 		local cf=root.CFrame
-		local aim=cf.Position+Vector3.new(0,.4,0)+cf.RightVector*2.4
+		-- (compact: the strip hides his legs; his face and chest centred above it)
+		local aim=if self.compact then cf.Position+Vector3.new(0,-1.6,0) else cf.Position+Vector3.new(0,.4,0)+cf.RightVector*2.4
 		camera.CFrame=CFrame.lookAt(aim+cf.LookVector*10+Vector3.new(0,1.2,0),aim)
 	end
 	self.clock+=dt

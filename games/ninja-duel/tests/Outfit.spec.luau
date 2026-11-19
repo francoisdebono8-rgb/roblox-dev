@@ -122,6 +122,26 @@ end)
 -- pieces replace the cloth: placed by the contract of Shared/OutfitMeshes
 -- (scaled by the part's size over the standard part's, welded at the scaled
 -- offset), painted by the item's slot (or the model's new slot).
+-- (DESIGN 19/11, OUTILLEUR's measure on an iPhone 13: arrows 31 px, DONE 32)
+-- a phone in landscape gets the strip along the bottom: three columns, the
+-- arrows and DONE at 44 px or more once scaled to 844 x 390.
+test("the card on a phone: a strip along the bottom, every button 44 px or more",function()
+	local P=OutfitPanel
+	local scale=math.clamp(math.min((844-100)/P.CW,(390*.62)/P.CH),.45,1.1)
+	assert(scale*64>=44,"arrows "..scale*64)
+	assert(390<P.COMPACT_BELOW,"an iPhone 13 in landscape is compact")
+	local fake={rows={},card={},title={},rule={},sub={},foot={},done={}}
+	for _,slot in P.ROWS do fake.rows[slot]={frame={},prev={},next={},label={},name={}} end
+	setmetatable(fake,P)
+	local savedU=H.envBase.UDim2;H.envBase.UDim2=roblox.UDim2
+	P.layout(fake,true)
+	assert(fake.rows.top.prev.Size.X.Offset*scale>=44 and fake.done.Size.Y.Offset*scale>=44,"the strip's buttons")
+	assert(fake.card.AnchorPoint.Y==1 and not fake.sub.Visible,"along the bottom, his face above")
+	P.layout(fake,false)
+	assert(fake.card.AnchorPoint.Y==.5 and fake.sub.Visible,"back to the column on a PC")
+	H.envBase.UDim2=savedU
+end)
+
 test("the modelled pieces: placed by the body part's size, painted by the item's slot",function()
 	local Dress=H.load("Client/OutfitDress")
 	local Meshes=H.load("Shared/OutfitMeshes")

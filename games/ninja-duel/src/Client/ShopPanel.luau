@@ -281,28 +281,28 @@ function Panel:drawKits()
 			local spot=HubMap.Masters[id]
 			line="Free: one of the three first kits. Take it here, or meet him: "..(if spot then Text.upper(spot.place) else "IN KONOHA").."."
 		end
-		local body=K.text(card,line,UDim2.fromOffset(14,148),UDim2.new(1,-28,0,80),16,M.mid or M.ink,K.BODY_FONT)
+		local body=K.text(card,line,UDim2.fromOffset(14,148),UDim2.new(1,-28,0,74),16,M.mid or M.ink,K.BODY_FONT)
 		body.TextYAlignment=Enum.TextYAlignment.Top
 		-- The buttons.
 		local rival=FirstMinute.rival(id) or "Lion"
 		if status=="owned" then
-			press(K,card,"SKILL TREE",UDim2.new(0,14,1,-58),UDim2.new(1,-28,0,44),function() if self.onTree then self.onTree(id) end end,"ink")
+			press(K,card,"SKILL TREE",UDim2.new(0,14,1,-70),UDim2.new(1,-28,0,56),function() if self.onTree then self.onTree(id) end end,"ink")
 		elseif status=="starter" then
 			-- (14/11) the first kit, taken in one press (DECISIONS: the first
 			-- minute, the ninja chosen in one gesture); TRY beside it
-			local take=press(K,card,"TAKE IT",UDim2.new(0,14,1,-58),UDim2.new(.58,-18,0,44),function() self.send("ChooseStarter",{player=id}) end,"red")
+			local take=press(K,card,"TAKE IT",UDim2.new(0,14,1,-70),UDim2.new(.58,-18,0,56),function() self.send("ChooseStarter",{player=id}) end,"red")
 			take.Name="TakeStarter"
-			press(K,card,"TRY",UDim2.new(.58,4,1,-58),UDim2.new(.42,-18,0,44),function()
+			press(K,card,"TRY",UDim2.new(.58,4,1,-70),UDim2.new(.42,-18,0,56),function()
 				self.send("Tutorial",{player=id,bot=rival});self:hide()
 			end,"paper")
 		elseif status~="loading" and status~="open" then
 			local product=products[id]
 			local tryW=if product and product>0 then .42 else 1
-			press(K,card,"TRY",UDim2.new(0,14,1,-58),UDim2.new(tryW,-(if tryW<1 then 18 else 28),0,44),function()
+			press(K,card,"TRY",UDim2.new(0,14,1,-70),UDim2.new(tryW,-(if tryW<1 then 18 else 28),0,56),function()
 				self.send("Tutorial",{player=id,bot=rival});self:hide()
 			end,"paper")
 			if tryW<1 then
-				press(K,card,"LEARN NOW",UDim2.new(.42,4,1,-58),UDim2.new(.58,-18,0,44),function() self.send("BuyKit",{player=id}) end,"red")
+				press(K,card,"LEARN NOW",UDim2.new(.42,4,1,-70),UDim2.new(.58,-18,0,56),function() self.send("BuyKit",{player=id}) end,"red")
 			end
 		end
 	end
