@@ -23,14 +23,13 @@ local Text=require(Shared.Text)
 local HubLayout=require(script.Parent.HubLayout)
 local HubMoods=require(script.Parent.HubMoods)
 local Inspirations=require(Shared.Inspirations)
+-- (19/11, vague 2 DEV 1) The walk itself (run, second jump, fall to the gate)
+-- is Client/HubMove (DEV); this module is the village's screen (DESIGN).
+local HubMove=require(script.Parent.HubMove)
 local Hub={}
 Hub.__index=Hub
--- (14/11) The run latched by L3 or the touch RUN button stops after this long
--- at rest (the duel's pad sprint does the same, DECISIONS socle 2).
-Hub.REST=.35
-
--- (15/11) the village is 1.3 times bigger (HubMap.Scale): the run a little faster
-Hub.WALK,Hub.RUN,Hub.JUMP,Hub.LEAP=16,36,56,54
+-- The walk's numbers, read from HubMove (tools and older tests read them here).
+Hub.REST,Hub.WALK,Hub.RUN,Hub.JUMP,Hub.LEAP=HubMove.REST,HubMove.WALK,HubMove.RUN,HubMove.JUMP,HubMove.LEAP
 
 local function upper(s) return Text.upper(s or "") end
 local function nameOf(id) local def=Fighters[id] return upper(def and def.Name or id) end
@@ -38,7 +37,7 @@ local function nameOf(id) local def=Fighters[id] return upper(def and def.Name o
 function Hub.enabled() return Config.Hub~=nil and Config.Hub.Enabled==true end
 
 function Hub.new(ui,camera,send,controls)
-	local self=setmetatable({ui=ui,camera=camera,send=send,controls=controls,active=false,board=false,markers={},kits=nil},Hub)
+	local self=setmetatable({ui=ui,camera=camera,send=send,controls=controls,active=false,board=false,markers={},kits=nil,move=HubMove.new()},Hub)
 	local K=ui.kit or require(script.Parent.UI).kit
 	self.K=K
 	local P=K.palette
@@ -99,7 +98,7 @@ function Hub.new(ui,camera,send,controls)
 	-- (14/11) Touch: Roblox gives a thumbstick and a jump button, no run; a
 	-- RUN button left of the jump button latches the run (Hub:step).
 	self.runButton=K.button(ui.gui,"RUN",UDim2.fromOffset(0,0),UDim2.fromOffset(70,70),function()
-		self.runLatch=not self.runLatch;self.runMoved=false;self.restFor=0;self:paintRun()
+		self.move:toggleRun();self:paintRun()
 	end,P.ink)
 	self.runButton.TextSize=20;self.runButton.Visible=false;self.runButton.ZIndex=25
 	-- round (the kit's button already has its corner: a second one is ignored)
@@ -156,9 +155,7 @@ function Hub.new(ui,camera,send,controls)
 		-- (14/11) the market: the looks sold for Ryō
 		if prompt:GetAttribute("NinjaMarket") and self.ui.shopPanel then self:hideCard();self.ui.shopPanel:show(self.kits,"WEAPONS","market") end
 	end)
-	-- The run and the second jump.
-	self.leapUsed=false
-	self.runLatch=false;self.restFor=0
+	-- The run and the second jump (Client/HubMove).
 	UIS.JumpRequest:Connect(function() self:jumpRequest() end)
 	RunService.RenderStepped:Connect(function(dt) self:step(dt) end)
 	-- (14/11) The pad: L3 latches the run (held, it was a strain on the thumb
@@ -170,7 +167,7 @@ function Hub.new(ui,camera,send,controls)
 		if (key==Enum.KeyCode.ButtonR1 or (key==Enum.KeyCode.B and not processed)) and not self.panelOpen and not self.card.Visible then
 			self:openBoard()
 		elseif key==Enum.KeyCode.ButtonL3 and not self.panelOpen then
-			self.runLatch=not self.runLatch;self.runMoved=false;self.restFor=0;self:paintRun()
+			self.move:toggleRun();self:paintRun()
 		elseif key==Enum.KeyCode.ButtonY and not self.panelOpen and not self.card.Visible then
 			self:openShop()
 		elseif key==Enum.KeyCode.ButtonB and self.card.Visible and not self.panelOpen then
@@ -231,9 +228,9 @@ function Hub:layout()
 end
 function Hub:paintRun()
 	local M=self.M
-	self.runButton.BackgroundColor3=if self.runLatch then M.red else M.ink
+	self.runButton.BackgroundColor3=if self.move.runLatch then M.red else M.ink
 	self.runButton.TextColor3=M.cream
-	self.runButton.BackgroundTransparency=if self.runLatch then 0 else .25
+	self.runButton.BackgroundTransparency=if self.move.runLatch then 0 else .25
 end
 function Hub:openShop()
 	if not self.ui.shopPanel then return end
@@ -303,51 +300,22 @@ end
 -- ------------------------------------------------------------------ the walk
 function Hub:jumpRequest()
 	if not self.active or self.board then return end
-	local character=Players.LocalPlayer.Character
-	local hum=character and character:FindFirstChildOfClass("Humanoid")
-	local root=character and character:FindFirstChild("HumanoidRootPart")
-	if not hum or not root then return end
-	local state=hum:GetState()
-	if (state==Enum.HumanoidStateType.Freefall or state==Enum.HumanoidStateType.Jumping) and not self.leapUsed and os.clock()-(self.jumpedAt or 0)>.18 then
-		-- A ninja's second jump: chakra under the feet.
-		self.leapUsed=true
-		local v=root.AssemblyLinearVelocity
-		root.AssemblyLinearVelocity=Vector3.new(v.X,Hub.LEAP,v.Z)
-		hum:ChangeState(Enum.HumanoidStateType.Jumping)
-	elseif state~=Enum.HumanoidStateType.Freefall then
-		self.jumpedAt=os.clock()
-	end
+	self.move:jump()
 end
 function Hub:step(dt)
 	if not self.active then return end
 	if ((self.ui.treePanel and self.ui.treePanel:shown()) or (self.ui.shopPanel and self.ui.shopPanel:shown()) or (self.ui.outfitPanel and self.ui.outfitPanel:shown()) or false)~=self.panelOpen then self:apply() end
 	local character=Players.LocalPlayer.Character
 	local hum=character and character:FindFirstChildOfClass("Humanoid")
-	local root=character and character:FindFirstChild("HumanoidRootPart")
-	if not hum or not root then return end
+	if not hum then return end
 	if not self.board then
 		local camera=workspace.CurrentCamera
 		if camera.CameraSubject~=hum then camera.CameraType=Enum.CameraType.Custom;camera.CameraSubject=hum end
 	end
-	-- Shift held, or the run latched (L3, the touch RUN button) until he stops.
-	-- (Latched standing still, it waits for him to move: the rest that ends
-	-- it is the one after a run.)
-	if self.runLatch then
-		if hum.MoveDirection.Magnitude>=.1 then self.runMoved=true;self.restFor=0
-		elseif self.runMoved then self.restFor=(self.restFor or 0)+dt end
-		if self.restFor>Hub.REST then self.runLatch=false;self.runMoved=false;self.restFor=0;self:paintRun() end
-	end
-	local run=self.runLatch or UIS:IsKeyDown(Enum.KeyCode.LeftShift) or UIS:IsKeyDown(Enum.KeyCode.RightShift)
-	hum.WalkSpeed=if run then Hub.RUN else Hub.WALK
-	hum.UseJumpPower=true;hum.JumpPower=Hub.JUMP
-	local state=hum:GetState()
-	if state==Enum.HumanoidStateType.Running or state==Enum.HumanoidStateType.Landed or state==Enum.HumanoidStateType.RunningNoPhysics then self.leapUsed=false end
-	-- Fell out of the village (into the lake's floor, off the cliff): the gate.
-	if root.Position.Y<HubMap.Origin.Y-40 then
-		local spot=HubMap.Spawns.gate
-		local at=HubMap.Origin+spot.at+Vector3.new(0,4,0)
-		character:PivotTo(CFrame.lookAt(at,at+spot.face))
-	end
+	-- The walk (Client/HubMove): the run, the second jump, the fall to the gate.
+	local root,ended=self.move:step(dt)
+	if ended then self:paintRun() end
+	if not root then return end
 	-- The card closes when he walks away from the master.
 	if self.cardId and self.cardAt and (root.Position-self.cardAt).Magnitude>26 then self:hideCard() end
 	-- (DEC-041) the first three inspirations in their moods, when he is near

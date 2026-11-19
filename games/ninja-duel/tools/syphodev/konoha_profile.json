@@ -1,6 +1,6 @@
 {
   "name": "konoha",
-  "source": "Ninja Duel's village walk (Client/HubClient: Hub.WALK, Hub.RUN, Hub.JUMP, Hub.LEAP) and the place's gravity (build.py: Workspace.Gravity 140). 19/11, for SyphoDev's prover.",
+  "source": "Ninja Duel's village walk (Client/HubMove: WALK, RUN, JUMP, LEAP; HubClient reads them as Hub.WALK...) and the place's gravity (build.py: Workspace.Gravity 140). 19/11, for SyphoDev's prover.",
   "note": "The prover models one jump. Konoha has a second one (the LEAP: double tap space, vertical speed set to 54 in the air once per jump). jumpPower below is the single jump that reaches the same top: jump 56 to its apex (56^2/280 = 11.2) then the leap (54^2/280 = 10.41) = 21.61 studs, i.e. sqrt(2*140*21.61) = 77.8. Its airtime (1.11 s) is SHORTER than the real jump+leap (about 1.34 s), so the horizontal reach is conservative.",
   "gravity":        { "value": 140,  "src": "config", "note": "build.py Workspace.Gravity" },
   "jumpPower":      { "value": 77.8, "src": "derived", "note": "jump 56 + leap 54 (HubClient), see note" },
