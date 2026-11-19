@@ -33,7 +33,7 @@ end
 
 test("the estimate follows Konoha's walk speed and map, and the plan's target",function()
 	local walk,run=Bot.walkSpeeds()
-	assert(walk>0 and run>walk,"the speeds read from HubClient: "..tostring(walk).." / "..tostring(run))
+	assert(walk>0 and run>walk,"the speeds read from HubMove (or HubClient): "..tostring(walk).." / "..tostring(run))
 	for _,kit in {"Leaf","Lion","Legion"} do
 		local w=Bot.walks(kit)
 		assert(w.toDoor>0 and w.toHome>0,kit..": no walk from the gate or to his home")

@@ -45,13 +45,19 @@ Bot.MaxDuels=60    -- past this many duels, the market or the tree is out of rea
 Bot.DuelSeconds=90 -- a duel against the AI, for the play time of the loop (assumption)
 Bot.BetweenDuels=20 -- the result screen, back to Konoha, the next duel (assumption)
 
--- Konoha's walk speed, read from the client that sets it (Client/HubClient:
--- `Hub.WALK,Hub.RUN,... = 16,36,...`), so a change there changes the estimate.
+-- Konoha's walk speed, read from the client that sets it, so a change there
+-- changes the estimate: Client/HubMove since the DEV split it out of HubClient
+-- (19/11, vague 2 DEV 1: `Move.WALK,Move.RUN,... = 16,36,...`), else HubClient
+-- (`Hub.WALK,Hub.RUN,... = 16,36,...`).
 function Bot.walkSpeeds()
-	local text=fs.readFile("src/Client/HubClient.luau")
-	local walk,run=string.match(text,"Hub%.WALK,Hub%.RUN[%w%.,]*=%s*([%d%.]+),%s*([%d%.]+)")
-	assert(walk and run,"HubClient no longer sets Hub.WALK, Hub.RUN in one line: update Bot.walkSpeeds")
-	return tonumber(walk),tonumber(run)
+	for _,source in {{"src/Client/HubMove.luau","Move"},{"src/Client/HubClient.luau","Hub"}} do
+		if fs.isFile(source[1]) then
+			local name=source[2]
+			local walk,run=string.match(fs.readFile(source[1]),name.."%.WALK,"..name.."%.RUN[%w%.,]*=%s*([%d%.]+),%s*([%d%.]+)")
+			if walk and run then return tonumber(walk),tonumber(run) end
+		end
+	end
+	error("neither HubMove nor HubClient sets WALK, RUN in one line: update Bot.walkSpeeds")
 end
 
 -- ----------------------------------------------------------------- the world
