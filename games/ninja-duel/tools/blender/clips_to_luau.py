@@ -221,6 +221,17 @@ def main(out, inputs):
         held += moving_holds(c)
         stepped += destep(c)
     print("film pass:", held, "dead holds made moving,", stepped, "stepped loop joints eased,", jitter, "ankle jitters smoothed")
+    # (19/11, SyphoDev audit, tools/syphodev/clip_passes.py) loops that do not close snap on every
+    # wrap; a joint that jumps for one sample and comes back is a one-frame pop. Both fixed here,
+    # on every export, so a re-export keeps them.
+    sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "syphodev"))
+    import clip_passes
+    closed = spikes = 0
+    for c in (clips.values() if not os.environ.get('ND_NO_FILM') else []):
+        a, s = clip_passes.apply(c)
+        closed += a
+        spikes += s
+    print("syphodev pass:", closed, "loop tracks closed,", spikes, "one-sample spikes smoothed")
     folder, base = os.path.dirname(out), os.path.basename(out)[:-5]
     for f in os.listdir(folder):
         if f.startswith(base) and f[len(base):-5].isdigit() and f.endswith(".luau"):
