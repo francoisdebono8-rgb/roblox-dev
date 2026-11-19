@@ -12,6 +12,11 @@ local SkillBuilds=require(script.Parent.SkillBuilds)
 local Masters=require(game:GetService("ReplicatedStorage").NinjaDuel.Masters)
 local TreeTiers=require(game:GetService("ReplicatedStorage").NinjaDuel.TreeTiers)
 local Shop=require(game:GetService("ReplicatedStorage").NinjaDuel.Shop)
+-- (19/11, vague 2 DEV 5) Two optional records, still version 3 (an older
+-- server keeps them untouched): `daily`, the day's quests and the days in a
+-- row (Shared/Daily), and `exam`, the week's exam (Shared/Exam).
+local Daily=require(game:GetService("ReplicatedStorage").NinjaDuel.Daily)
+local Exam=require(game:GetService("ReplicatedStorage").NinjaDuel.Exam)
 -- Version 3 (13/11, the shop): the wallet (Ryō, earned by playing or bought
 -- in packs; the day of the last first win) and the looks (owned, and the one
 -- worn in each slot: Shared/Shop). A look never changes a number.
@@ -136,6 +141,14 @@ function S.validate(p)
 	if not okWallet then return false,"wallet: "..whyWallet end
 	local okStyle,whyStyle=styleValid(p.style)
 	if not okStyle then return false,"style: "..whyStyle end
+	if p.daily~=nil then
+		local ok,why=Daily.valid(p.daily)
+		if not ok then return false,"daily: "..why end
+	end
+	if p.exam~=nil then
+		local ok,why=Exam.valid(p.exam)
+		if not ok then return false,"exam: "..why end
+	end
 	for fighterId,record in p.fighters do
 		if not SkillBuilds.tree(fighterId) then return false,"No skill tree for "..tostring(fighterId) end
 		local ok,reason=fighterValid(fighterId,record)
@@ -391,6 +404,40 @@ function S.Commands.grantRyo(p,args)
 	receipt(p,args.receipt)
 	p.wallet.ryo=math.min(Shop.MaxRyo,p.wallet.ryo+args.amount)
 	return {ryo=p.wallet.ryo}
+end
+-- ------------------------------------------------------------ coming back
+-- (19/11, vague 2 DEV 5) A counted duel's events on day `day` (the server's
+-- clock, Shared/Daily.day): the quests and the days in a row, their Ryō
+-- paid at once into the wallet.
+function S.Commands.dailyRecord(p,args)
+	assert(S.integer(args.day,10000000),"Invalid day")
+	assert(type(args.events)=="table","Invalid events")
+	local events={}
+	for name,n in args.events do
+		assert(Daily.Events[name] and S.integer(n,100),"Invalid event")
+		events[name]=n
+	end
+	p.daily=p.daily or Daily.new()
+	assert(args.day>=p.daily.day,"A day already past")
+	local paid=Daily.record(p.daily,args.day,events)
+	if paid.ryo>0 then p.wallet.ryo=math.min(Shop.MaxRyo,p.wallet.ryo+paid.ryo) end
+	paid.total=p.wallet.ryo
+	return paid
+end
+-- An attempt at the week's exam: its score (Shared/Exam.score), whether he
+-- won the final. Keeps the week's best; a new week starts over.
+function S.Commands.examResult(p,args)
+	assert(type(args.week)=="string" and #args.week==10,"Invalid week")
+	assert(S.integer(args.score,99999999),"Invalid score")
+	local r=p.exam
+	if not r or r.week~=args.week then
+		assert(not r or args.week>r.week,"A week already past")
+		r={week=args.week,best=0,passed=false};p.exam=r
+	end
+	local improved=args.score>r.best
+	if improved then r.best=args.score end
+	r.passed=r.passed or args.passed==true
+	return {week=r.week,best=r.best,improved=improved,passed=r.passed}
 end
 -- Wear a look the player owns (or a base one) in its slot.
 function S.Commands.equipItem(p,args)

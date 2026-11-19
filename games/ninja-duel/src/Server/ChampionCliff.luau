@@ -5,6 +5,9 @@
 --   2-4 the last three players who won the tournament, newest first, the
 --       same on every server (a DataStore list, MessagingService to tell the
 --       other servers at once, a refresh every 5 minutes as a safety).
+--       (19/11, vague 2 DEV 5) With the week's exam on (Config.Exam): the
+--       last exam's three best, the number 1 first (Cliff.week, from
+--       Server/WeeklyExam); a tournament won outside it no longer carves.
 -- Each one is his own Roblox avatar's head carved in stone by the server
 -- (his head and its hair and hats, scaled to the cliff, in rock). While a
 -- place is empty, or an avatar cannot load (a local file in Studio), the
@@ -38,7 +41,9 @@ function Cliff.clean(list)
 	for _,e in list do
 		if #out>=Cliff.MAX then break end
 		if type(e)=="table" and type(e.id)=="number" and e.id>0 and e.id==math.floor(e.id) then
-			table.insert(out,{id=e.id,name=string.sub(tostring(e.name or ""),1,24),at=tonumber(e.at) or 0})
+			-- (19/11, DEV 5) `rank`: his place in the week's exam (1 to 3)
+			local rank=if type(e.rank)=="number" and e.rank>=1 and e.rank<=Cliff.MAX then math.floor(e.rank) else nil
+			table.insert(out,{id=e.id,name=string.sub(tostring(e.name or ""),1,24),at=tonumber(e.at) or 0,rank=rank})
 		end
 	end
 	return out
@@ -154,6 +159,11 @@ function Cliff:plate(k,text)
 	if label then label.Text=text end
 end
 Cliff.EMPTY="THE NEXT FACE HERE COULD BE YOURS"
+-- A carved champion's plaque: the week's exam rank, else a tournament won.
+function Cliff.label(name,rank)
+	if rank then return string.upper(string.format("No %d OF THE WEEK  %s",rank,name)) end
+	return string.upper("CHAMPION "..name)
+end
 -- The empty place back (or kept), its parts seen.
 function Cliff:release(k)
 	local u=self:slotUnit(k)
@@ -178,9 +188,9 @@ function Cliff:carve(k,userId)
 		if u then
 			u:SetAttribute("DressOff",true)
 			for _,p in u:GetDescendants() do if p:IsA("BasePart") and not p:GetAttribute("Keep") then p.Transparency=1 end end
-			local name=""
-			for _,e in self.list or {} do if e.id==userId then name=e.name end end
-			self:plate(k,if k==1 then "THE CREATOR" else string.upper("CHAMPION "..name))
+			local name,rank="",nil
+			for _,e in self.list or {} do if e.id==userId then name=e.name;rank=e.rank end end
+			self:plate(k,if k==1 then "THE CREATOR" else Cliff.label(name,rank))
 		end
 	end)
 end
@@ -242,7 +252,29 @@ function Cliff.begin(folder)
 	Cliff.current=Cliff.new(folder):run()
 	return Cliff.current
 end
--- Called by Server/Tournament when a player wins the tournament.
+-- (19/11, vague 2 DEV 5) The week's exam is closed (Server/WeeklyExam): its
+-- three best ({{id,name}}, the number 1 first) take places 2 to 4 for the
+-- week after, here at once, then on every server.
+function Cliff.weekEntries(top,at)
+	local out={}
+	for i,e in top or {} do
+		if i>Cliff.MAX then break end
+		table.insert(out,{id=e.id,name=e.name,at=at or 0,rank=i})
+	end
+	return Cliff.clean(out)
+end
+function Cliff.week(top)
+	local svc=if Cliff.current then Cliff.current.svc else Cliff.defaultServices()
+	local entries=Cliff.weekEntries(top,svc.now())
+	if #entries==0 then return end
+	if Cliff.current then Cliff.current.list=entries;Cliff.current:apply() end
+	svc.spawn(function()
+		if svc.store then pcall(function() svc.store:UpdateAsync(Cliff.KEY,function() return entries end) end) end
+		if svc.messaging then pcall(function() svc.messaging:PublishAsync(Cliff.TOPIC,{week=true}) end) end
+	end)
+end
+-- Called by Server/Tournament when a player wins the tournament (only while
+-- the week's exam is off: with it, the cliff is the exam's).
 function Cliff.champion(player)
 	if Cliff.current then Cliff.current:crown(player) return end
 	-- no village on this server: the store still learns him

@@ -20,6 +20,8 @@ if require(game:GetService("ReplicatedStorage").NinjaDuel.Config).Hub.Enabled==t
 -- (DEC-037) The masters' path: profiles loaded, saved, kits learned and
 -- bought (off while Config.Progression.Enabled is false).
 require(script.Parent.Progression).start(function(player) matches:kitsLoaded(player) end)
+-- (19/11, vague 2 DEV 5) the week's exam: titles, the week closed, the cliff
+if require(game:GetService("ReplicatedStorage").NinjaDuel.Config).Exam.Enabled==true then require(script.Parent.WeeklyExam).begin() end
 -- (04/11) Players online and challenges between them, across the servers.
 local lobby=require(script.Parent.Lobby).new(matches)
 matches.lobby=lobby

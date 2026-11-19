@@ -16,6 +16,11 @@
 local Shared=game:GetService("ReplicatedStorage").NinjaDuel
 local Fighters=require(Shared.Fighters)
 local BetaRoster=require(Shared.BetaRoster)
+local Exam=require(Shared.Exam)
+-- (19/11, vague 2 DEV 5) A tournament started while the week's exam is open
+-- is an attempt at it (Server/WeeklyExam): each of his matches adds to its
+-- score, the end sends it; the champion card shows it (view `exam`).
+local function weekly() return require(script.Parent.WeeklyExam).get() end
 local Tournament={};Tournament.__index=Tournament
 
 -- The story's pairings in the quarter-finals (seats 1-2, 3-4, 5-6, 7-8):
@@ -99,7 +104,10 @@ function Tournament:view(cup)
 	return {seats=table.clone(cup.seats),me=cup.me,winners=table.clone(cup.winners),skipped=table.clone(cup.skipped),
 		next=next_,over=cup.over==true,champion=cup.champion,out=cup.out,eliminatedIn=cup.eliminatedIn,
 		-- (DEC-040) what the cup gave his kit: {amount (mastery), ryo}
-		reward=cup.reward and {amount=cup.reward.amount,ryo=cup.reward.ryo} or nil}
+		reward=cup.reward and {amount=cup.reward.amount,ryo=cup.reward.ryo} or nil,
+		-- (19/11, DEV 5) the week's exam: `examName` while this tournament
+		-- counts for it, `exam` its result once over {name,score,best,improved,passed}
+		examName=cup.exam and cup.exam.name or nil,exam=cup.examResult}
 end
 function Tournament:send(player,s,phase)
 	s.phase=phase or "Bracket"
@@ -117,6 +125,8 @@ function Tournament:start(player,fighter)
 	m:destroy(s)
 	local seats=table.clone(Tournament.Seats)
 	local cup={seats=seats,me=table.find(seats,fighter),winners={},skipped={},match=1,over=false}
+	local ok,attempt=pcall(function() return weekly():attempt() end)
+	cup.exam=if ok then attempt else nil
 	s.cup=cup
 	s.epoch+=1
 	self:send(player,s)
@@ -147,6 +157,7 @@ function Tournament:fight(player)
 	if not ok and options then ok=m:start(player,first,second,false,nil) end
 	if not ok then return end
 	s.cup=cup;s.cupMatch=cup.match;s.cupResolved=false
+	s.cupFoughtAt=if mine then os.clock() else nil
 	if not mine then
 		-- The first fighter is the autopilot's; the player only watches.
 		local AI=require(script.Parent.AI)
@@ -190,6 +201,14 @@ function Tournament:matchOver(player,s)
 		winnerSeat=if s.winner=="PlayerFighter" then a else b
 	end
 	cup.winners[cup.match]=winnerSeat
+	-- (19/11, DEV 5) his match, for the week's exam: won, rounds lost, health
+	-- kept, time fought
+	if mine and cup.exam then
+		local human=s.human
+		local health=if human and human.def and human.def.Health and human.def.Health>0 then (human.health or 0)/human.def.Health else 0
+		local lost=s.wins and s.bot and s.wins[s.bot.id] or 0
+		require(script.Parent.WeeklyExam).match(cup.exam,winnerSeat==cup.me,lost,health,if s.cupFoughtAt then os.clock()-s.cupFoughtAt else 0)
+	end
 	-- (the lens stays the spectator's until the bracket comes back)
 	s.cupPilot=nil
 	if mine and winnerSeat~=cup.me then
@@ -210,9 +229,15 @@ function Tournament:advance(player,s)
 	if cup.winners[7] then
 		cup.over=true
 		cup.champion=cup.winners[7]
+		-- (19/11, DEV 5) the attempt at the week's exam, sent once
+		if cup.exam and not cup.examResult then
+			local ok,result=pcall(function() return weekly():submit(player,cup.exam,cup.champion==cup.me) end)
+			cup.examResult=if ok then result else nil
+		end
 		if cup.champion==cup.me then
-			-- (14/11) his face on Konoha's cliff, on every server
-			pcall(function() require(script.Parent.ChampionCliff).champion(player) end)
+			-- (14/11) his face on Konoha's cliff, on every server (with the
+			-- week's exam on, the cliff is the exam's: Server/WeeklyExam)
+			if not Exam.config().Enabled then pcall(function() require(script.Parent.ChampionCliff).champion(player) end) end
 			-- (DEC-040) the champion's bonus to his kit, and his Ryō
 			if not cup.reward then cup.reward=require(script.Parent.Progression).cupEnded(player,cup.seats[cup.me],true) end
 			s.epoch+=1

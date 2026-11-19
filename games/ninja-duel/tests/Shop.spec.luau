@@ -163,7 +163,11 @@ test("a duel pays Ryō (the day's first win twice), the shop sells and dresses, 
 	local lost=duel(false)
 	assert(lost.ryo==Shop.Ryo.Finished,"a lost duel: "..tostring(lost.ryo))
 	local ryo=sent[player].kits.ryo
-	assert(ryo==first.ryo+second.ryo+lost.ryo,"the wallet: "..tostring(ryo))
+	-- (19/11, DEV 5) the day's quests and the days in a row pay too
+	local daily=0
+	for _,p in {first,second,lost} do daily+=(p.daily and p.daily.ryo or 0) end
+	assert(first.daily and first.daily.streak and first.daily.streak.days==1,"the first duel of the day did not count the day")
+	assert(ryo==first.ryo+second.ryo+lost.ryo+daily,"the wallet: "..tostring(ryo))
 	-- The shop: a headband for Ryō, worn at once (a few days of duels).
 	send("BuyItem",{item="HeadbandRed"})
 	assert(sent[player].notice=="NOT ENOUGH RYŌ","the refusal for the screen: "..tostring(sent[player].notice))

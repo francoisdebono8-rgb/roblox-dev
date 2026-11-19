@@ -166,6 +166,38 @@ test("champion: three matches won, the champion's card; leaving ends the cup",fu
 	assert(s.phase=="Selection" and s.cup==nil,"the cup outlived the roster")
 end)
 
+-- (19/11, vague 2 DEV 5) The week's exam: a tournament started while it is
+-- open is an attempt (Server/WeeklyExam); his own matches feed it, the end
+-- sends it once, the champion's card says it; the cliff is the exam's.
+test("the week's exam: the tournament counts, the card says so, the cliff waits for the week",function()
+	local W=H.load("Server/WeeklyExam")
+	local Cliff=H.load("Server/ChampionCliff")
+	local Progression=H.load("Server/Progression")
+	local wasCup,wasChampion,wasCurrent=Progression.cupEnded,Cliff.champion,W.current
+	Progression.cupEnded=function() return {amount=150,ryo=300} end
+	local carved=0
+	Cliff.champion=function() carved+=1 end
+	local sent={}
+	W.current={attempt=function() return {key="2026-11-20",matches=0,lost=0,hp=0,seconds=0,name="THE RANK EXAM"} end,
+		submit=function(_,player,a,passed) table.insert(sent,{a=a,passed=passed});return {name=a.name,score=1,best=1,improved=true,passed=passed} end}
+	local m,player=fresh()
+	send(m,player,"CupStart",{player="Leaf"})
+	local s=m.sessions[player]
+	assert(last(player).cup.examName=="THE RANK EXAM","the bracket does not say it counts")
+	for _=1,7 do
+		if s.cup.over then break end
+		local n=last(player).cup.next
+		if n.mine then send(m,player,"CupFight");finish(m,player,true);send(m,player,"CupBracket")
+		else send(m,player,"CupSkip") end
+	end
+	W.current=wasCurrent;Progression.cupEnded=wasCup;Cliff.champion=wasChampion
+	assert(s.phase=="Champion","no champion")
+	assert(#sent==1 and sent[1].passed==true and sent[1].a.matches==3,"the attempt: "..#sent.." sent, "..tostring(sent[1] and sent[1].a.matches).." matches")
+	assert(last(player).cup.exam and last(player).cup.exam.passed,"the card has no exam")
+	assert(carved==0,"carved on the cliff outside the week's close")
+	send(m,player,"CupLeave")
+end)
+
 -- (B1, 04/11) The AI's level: a duel takes the roster's choice (easy unless
 -- said otherwise, kept for the rematch, an unknown word refused); in the cup
 -- his matches climb easy, normal, hard; a watched match is normal.

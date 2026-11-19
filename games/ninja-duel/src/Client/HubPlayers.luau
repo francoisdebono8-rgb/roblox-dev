@@ -72,11 +72,15 @@ function HubPlayers:tag(other,character)
 	if not head or not root then return nil end
 	local gui=Instance.new("BillboardGui")
 	gui.Name="NinjaTag_"..other.Name
-	gui.Adornee=head;gui.Size=UDim2.fromOffset(260,58);gui.StudsOffset=Vector3.new(0,2.6,0)
+	gui.Adornee=head;gui.Size=UDim2.fromOffset(260,78);gui.StudsOffset=Vector3.new(0,3,0)
 	gui.MaxDistance=HubPlayers.SEEN;gui.LightInfluence=0;gui.AlwaysOnTop=false;gui.ResetOnSpawn=false
-	local name=K.text(gui,Text.upper(other.DisplayName or other.Name),UDim2.fromOffset(0,0),UDim2.fromOffset(260,32),26,P.paper,K.TITLE_FONT,Enum.TextXAlignment.Center)
+	-- (19/11, vague 2 DEV 5) his title of the week's exam (NinjaTitle, Server/
+	-- WeeklyExam): EXAM PASSED, TOP 3 OF THE WEEK
+	local title=K.text(gui,"",UDim2.fromOffset(0,0),UDim2.fromOffset(260,20),15,P.gold,K.TITLE_FONT,Enum.TextXAlignment.Center)
+	K.create("UIStroke",title,{Color=P.ink,Thickness=2,ApplyStrokeMode=Enum.ApplyStrokeMode.Contextual})
+	local name=K.text(gui,Text.upper(other.DisplayName or other.Name),UDim2.fromOffset(0,20),UDim2.fromOffset(260,32),26,P.paper,K.TITLE_FONT,Enum.TextXAlignment.Center)
 	K.create("UIStroke",name,{Color=P.ink,Thickness=2.5,ApplyStrokeMode=Enum.ApplyStrokeMode.Contextual})
-	local line=K.text(gui,"",UDim2.fromOffset(0,32),UDim2.fromOffset(260,22),15,P.gold,K.BODY_FONT,Enum.TextXAlignment.Center)
+	local line=K.text(gui,"",UDim2.fromOffset(0,52),UDim2.fromOffset(260,22),15,P.gold,K.BODY_FONT,Enum.TextXAlignment.Center)
 	K.create("UIStroke",line,{Color=P.ink,Thickness=2,ApplyStrokeMode=Enum.ApplyStrokeMode.Contextual})
 	gui.Parent=self.holder
 	local prompt=Instance.new("ProximityPrompt")
@@ -84,7 +88,7 @@ function HubPlayers:tag(other,character)
 	prompt.HoldDuration=.4;prompt.MaxActivationDistance=HubPlayers.REACH;prompt.RequiresLineOfSight=false
 	prompt:SetAttribute("NinjaChallenge",other.UserId)
 	prompt.Parent=root
-	local t={character=character,gui=gui,prompt=prompt,line=line}
+	local t={character=character,gui=gui,prompt=prompt,line=line,title=title}
 	self.tags[other]=t
 	return t
 end
@@ -107,6 +111,8 @@ function HubPlayers:refresh()
 				local text,dnd=HubPlayers.line(other)
 				t.line.Text=text
 				t.line.TextColor3=if dnd then self.kit.palette.muted else self.kit.palette.gold
+				local title=other:GetAttribute("NinjaTitle")
+				t.title.Text=if type(title)=="string" then Text.upper(title) else ""
 				t.prompt.Enabled=active and not dnd
 				t.gui.Enabled=active
 			end

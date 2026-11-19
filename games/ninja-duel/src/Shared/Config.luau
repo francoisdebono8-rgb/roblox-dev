@@ -203,6 +203,14 @@ return {
 	-- dummy) is fought there, in the village (HubMap.Masters[id].duel), not
 	-- in the stadium. The board's duels and the tournament stay in the stadium.
 	Hub = { Enabled = true, DevUserId = nil, VillageDuels = true },
+	-- (19/11, vague 2 DEV 5) The exam of the week (Shared/Exam, Server/
+	-- WeeklyExam): the prodigies' tournament played from Friday 18:00 to
+	-- Sunday 21:00, Paris time, counts for the week (titles, the cliff).
+	-- Name: THE RANK EXAM while François has not decided on the work's names
+	-- (CM, claude/cm-vague-2 § 1); THE CHUNIN EXAM if they are kept.
+	-- Days: 0 = Sunday … 6 = Saturday. Off: the cliff crowns every
+	-- tournament won, as before.
+	Exam = { Enabled = true, Name = "THE RANK EXAM", OpenDay = 5, OpenHour = 18, CloseDay = 0, CloseHour = 21 },
 	-- (13/11) The shop's Roblox ids, created by the owner on the game's page
 	-- (0 or absent: shown SOON, nothing sold). Products: a Robux look by its
 	-- Shared/Shop key; RyoPacks: Ryō for Robux; Passes: game passes (the 2x
