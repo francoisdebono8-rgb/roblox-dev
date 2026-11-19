@@ -13,6 +13,7 @@
 -- the server's Progression view. Opened from Konoha's HUD and the roster.
 local Shared=game:GetService("ReplicatedStorage").NinjaDuel
 local Shop=require(Shared.Shop)
+local Daily=require(Shared.Daily)
 local MastersView=require(Shared.MastersView)
 local Masters=require(Shared.Masters)
 local Fighters=require(Shared.Fighters)
@@ -497,8 +498,35 @@ function Panel:drawRyo()
 		string.format("The day's first win: ×%d",R.FirstWinOfDay),
 		string.format("His duel won (a new inspiration): +%d",R.MasterWon),
 		string.format("Tournament: %d to the champion, %d to the finalist",R.Champion,R.Finalist),
+		-- (19/11, vague 2 DEV 5) the day's quests and the days in a row
+		string.format("Daily quests: %d, %d and %d",Daily.Tiers[1].ryo,Daily.Tiers[2].ryo,Daily.Tiers[3].ryo),
+		string.format("Days in a row: %d up to %d on the seventh",Daily.Streak[1],Daily.Streak[#Daily.Streak]),
 	}
 	for k,line in lines do K.text(earn,line,UDim2.fromOffset(18,60+(k-1)*32),UDim2.new(1,-36,0,26),17,M.cream,K.STRONG_FONT or K.BODY_FONT) end
+	-- (19/11, the CM's codes: Shared/Codes) HAVE A CODE? The server checks it
+	-- (RedeemCode) and says what it gave, or why not, in the notice. A plain
+	-- field for now: the DESIGN's own (vague 2) will replace it.
+	local codes=self:add(K.frame(self.body,UDim2.fromOffset(0,316),UDim2.fromOffset(560,120),M.paper,0))
+	K.corner(codes,4);ring(K,codes,3)
+	K.text(codes,"HAVE A CODE?",UDim2.fromOffset(18,10),UDim2.fromOffset(400,30),26,M.ink,K.TITLE_FONT)
+	local field=K.create("TextBox",codes,{Position=UDim2.fromOffset(18,52),Size=UDim2.fromOffset(330,52),BackgroundColor3=M.cream,
+		Text="",PlaceholderText="TYPE IT HERE",PlaceholderColor3=M.brown or M.ink,TextColor3=M.ink,TextSize=24,
+		Font=K.STRONG_FONT or K.BODY_FONT,ClearTextOnFocus=false,TextXAlignment=Enum.TextXAlignment.Left})
+	K.create("UIPadding",field,{PaddingLeft=UDim.new(0,12)})
+	ring(K,field,2)
+	self.codeField=field
+	local function redeem()
+		local text=field.Text
+		if #text>0 then self.send("RedeemCode",{code=text}) end
+	end
+	-- Enter sends it too (the suites' fake TextBox has no signal)
+	pcall(function() field.FocusLost:Connect(function(enter) if enter then redeem() end end) end)
+	press(K,codes,"REDEEM",UDim2.fromOffset(364,52),UDim2.fromOffset(178,52),redeem,"red").TextSize=22
+	local said=self.codeNotice
+	if type(said)=="table" and type(said.text)=="string" then
+		local answer=K.text(codes,said.text,UDim2.fromOffset(200,14),UDim2.fromOffset(342,26),15,if said.ok then M.ink else M.red,K.STRONG_FONT or K.BODY_FONT,Enum.TextXAlignment.Right)
+		answer.TextScaled=true;K.create("UITextSizeConstraint",answer,{MaxTextSize=15,MinTextSize=10})
+	end
 end
 
 return Panel

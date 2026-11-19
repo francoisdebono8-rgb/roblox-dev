@@ -17,6 +17,9 @@ local Shop=require(game:GetService("ReplicatedStorage").NinjaDuel.Shop)
 -- row (Shared/Daily), and `exam`, the week's exam (Shared/Exam).
 local Daily=require(game:GetService("ReplicatedStorage").NinjaDuel.Daily)
 local Exam=require(game:GetService("ReplicatedStorage").NinjaDuel.Exam)
+-- (19/11) and `codes`: the codes he used and the mastery ×2 a code gave
+-- (Shared/Codes).
+local Codes=require(game:GetService("ReplicatedStorage").NinjaDuel.Codes)
 -- Version 3 (13/11, the shop): the wallet (Ryō, earned by playing or bought
 -- in packs; the day of the last first win) and the looks (owned, and the one
 -- worn in each slot: Shared/Shop). A look never changes a number.
@@ -148,6 +151,10 @@ function S.validate(p)
 	if p.exam~=nil then
 		local ok,why=Exam.valid(p.exam)
 		if not ok then return false,"exam: "..why end
+	end
+	if p.codes~=nil then
+		local ok,why=Codes.valid(p.codes)
+		if not ok then return false,"codes: "..why end
 	end
 	for fighterId,record in p.fighters do
 		if not SkillBuilds.tree(fighterId) then return false,"No skill tree for "..tostring(fighterId) end
@@ -438,6 +445,35 @@ function S.Commands.examResult(p,args)
 	if improved then r.best=args.score end
 	r.passed=r.passed or args.passed==true
 	return {week=r.week,best=r.best,improved=improved,passed=r.passed}
+end
+-- (19/11) A code typed by the player (already normalized), at the server's
+-- clock `now`: once per player, between its dates (Shared/Codes). Ryō to the
+-- wallet, mastery ×2 for a while (after a running one), or a look owned.
+function S.Commands.redeemCode(p,args)
+	assert(S.integer(args.now,2^40),"Invalid time")
+	local def=type(args.code)=="string" and Codes.get(args.code) or nil
+	assert(def,"Code not found")
+	local live,why=Codes.active(def,args.now)
+	assert(live,why)
+	local r=p.codes or {used={},boostUntil=0}
+	p.codes=r
+	assert(not r.used[def.code],"Code already used")
+	r.used[def.code]=math.floor(args.now/86400)
+	local out={code=def.code}
+	if def.ryo then
+		p.wallet.ryo=math.min(Shop.MaxRyo,p.wallet.ryo+def.ryo)
+		out.ryo=def.ryo
+	elseif def.boostMinutes then
+		r.boostUntil=math.max(r.boostUntil,args.now)+math.floor(def.boostMinutes*60)
+		out.minutes=def.boostMinutes;out.boostUntil=r.boostUntil
+	elseif def.item then
+		local item=Shop.item(def.item)
+		assert(item and not item.robux,"Code not found")
+		p.style.owned[item.id]=true
+		out.item=item.id
+	end
+	out.total=p.wallet.ryo
+	return out
 end
 -- Wear a look the player owns (or a base one) in its slot.
 function S.Commands.equipItem(p,args)
