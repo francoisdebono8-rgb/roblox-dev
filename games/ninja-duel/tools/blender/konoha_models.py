@@ -1415,7 +1415,13 @@ def write(src_dir, limit=110000):
     from nd_mesh import piece_luau, q
     chunks, cur, size = [], [], 0
     report = []
+    # (19/11) the new houses join HubMeshData once Client/HubDress tags them (HubDress.NAMES,
+    # DEV 6: Konoha built from KonohaLayout); until then they ship as FBX (hub_fbx.py) only
+    dress = open(os.path.join(src_dir, "HubDress.luau")).read() if os.path.exists(os.path.join(src_dir, "HubDress.luau")) else ""
     for name, fn in MODELS.items():
+        if name in konoha_houses.MODELS and '"%s"' % name not in dress and "%s=" % name not in dress:
+            print("not in HubDress.NAMES yet:", name)
+            continue
         pieces = blender(fn())
         v, t = stats(pieces)
         worst = max(len(p.tris()) for p in pieces)
