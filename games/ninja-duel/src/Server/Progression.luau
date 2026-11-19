@@ -123,6 +123,63 @@ function P.view(player)
 	out.boost=P.boost[player]==true
 	return out
 end
+-- (19/11, plan § 2 « la séance » and DEV 6; OUTILLEUR in Studio: the result
+-- showed the mastery and the Ryō, not what comes next) What a duel brings
+-- closer, for the result screen (Matches: progress.ahead):
+--   node: the cheapest node of the kit's tree he can take next (its tier open,
+--     its requirements unlocked): id, name, cost, the free points, and the
+--     mastery still missing for it (0: he can learn it now, at the tree);
+--   tier: the next tier, when it is not open yet: its name and the mastery
+--     that opens it;
+--   inspirations: the kits whose inspiration this kit leads to, not learned
+--     yet, with the mastery still missing (Masters.Need).
+-- Pure: `data` is the profile (kits, fighters). nil for a kit not learned.
+local TreeTiers=require(Shared.TreeTiers)
+function P.aheadOf(data,kit)
+	local k=data and data.kits
+	if not (k and k.owned and k.owned[kit]) then return nil end
+	local mastery=k.mastery and k.mastery[kit] or 0
+	local out={kit=kit,mastery=mastery,inspirations={}}
+	local tree=SkillBuilds.tree(kit)
+	if tree then
+		local r=data.fighters and data.fighters[kit] or S.fighter()
+		local unlocked=r.unlocked or {}
+		local earned=math.max(r.earned or 0,Masters.points(mastery))
+		local spent=S.spent(kit,r)
+		local best
+		for _,node in tree.Nodes or tree do
+			if type(node)=="table" and node.Id and not unlocked[node.Id] and mastery>=TreeTiers.need(node) then
+				local ok=true
+				for _,id in node.Requires or {} do if not unlocked[id] then ok=false end end
+				if node.RequiresAny and #node.RequiresAny>0 then
+					local any=false
+					for _,id in node.RequiresAny do if unlocked[id] then any=true end end
+					ok=ok and any
+				end
+				if ok and (not best or node.Cost<best.Cost) then best=node end
+			end
+		end
+		if best then
+			out.node={id=best.Id,name=best.Name,cost=best.Cost,free=earned-spent,
+				mastery=math.max(0,(spent+best.Cost)*Masters.PointEvery-mastery)}
+		end
+		local open=TreeTiers.open(mastery)
+		if TreeTiers.Need[open+1] then
+			out.tier={name=TreeTiers.Names[open+1],need=TreeTiers.Need[open+1],mastery=TreeTiers.Need[open+1]-mastery}
+		end
+	end
+	for id,rule in Masters.Map do
+		if not k.owned[id] and table.find(rule.from,kit) then
+			table.insert(out.inspirations,{kit=id,mastery=math.max(0,Masters.Need-mastery)})
+		end
+	end
+	table.sort(out.inspirations,function(a,b) return a.kit<b.kit end)
+	return out
+end
+function P.ahead(player,kit)
+	if not P.enabled() or not P.ready(player) then return nil end
+	return P.aheadOf(P.handles[player].data,kit)
+end
 -- (DEC-038) The tree at the master's: buy a node with the kit's points (it
 -- goes into the kit's build), or turn an unlocked node on or off.
 function P.learnNode(player,kit,node)

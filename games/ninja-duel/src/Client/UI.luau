@@ -154,7 +154,16 @@ function UI.stageName(data)
 	end
 	if data and data.cup then return "PRODIGY TOURNAMENT" end
 	if data and data.online then return "ONLINE DUEL" end
-	return "PRODIGY TOURNAMENT"
+	-- (19/11, OUTILLEUR in Studio: the first duel, at the gate, was called
+	-- « PRODIGY TOURNAMENT ») only the tournament says tournament.
+	if data and data.first then return "YOUR FIRST DUEL" end
+	if data and data.master then return "AN INSPIRATION'S DUEL" end
+	return "KONOHA  •  THE EXAM HALL"
+end
+-- Who the result names: « ADVANCES » only in the tournament's bracket.
+function UI.resultLine(data,name)
+	if data and data.cup then return name.."  ADVANCES" end
+	return name.."  WINS"
 end
 function UI.new(parent,send)
 	-- (B1 lot 2) `simple`: the first roster a player sees is PLAY and the
@@ -1741,8 +1750,8 @@ function UI:render(data)
 	self.resultTitle.TextColor3=MANGA.cream
 	self.resultBand.BackgroundColor3=if won then MANGA.red else MANGA.ink
 	self.resultSeal.Text=if won then "WIN" else "LOSS"
-	self.resultName.Text=fullName(winner).."  ADVANCES"
-	self.resultNote.Text=if won then "The judges saw it too. The bracket waits for no one." else "Read the commitment. Find a better opening — prodigies learn fastest from defeat."
+	self.resultName.Text=UI.resultLine(data,fullName(winner))
+	self.resultNote.Text=if won then (if data.cup then "The judges saw it too. The bracket waits for no one." else "Clean. Go again, or spend what you earned.") else "Read the commitment. Find a better opening — prodigies learn fastest from defeat."
 	-- (Beta loop) the masters' path: what this duel earned.
 	self.resultProgress.Text=MastersView.result(data.progress,self.kits) or ""
 	self:resultEarned(data.progress)
@@ -1815,7 +1824,15 @@ function UI:resultEarned(progress)
 	self.resultGain.Text=if gain>0 then string.format("+%d",gain) else ""
 	local lines={}
 	local toPoint=every-(after%every)
-	table.insert(lines,string.format("%d more mastery for your next tree point.",toPoint))
+	-- (19/11, DEV 6: the server sends what comes next, progress.ahead) the
+	-- next node by its name, else the next tree point as before
+	local node=p.ahead and p.ahead.node
+	if node and node.name then
+		table.insert(lines,if (node.mastery or 0)<=0 then string.format("%s is ready to learn at the tree.",Text.upper(node.name))
+			else string.format("%d more mastery: %s.",node.mastery,Text.upper(node.name)))
+	else
+		table.insert(lines,string.format("%d more mastery for your next tree point.",toPoint))
+	end
 	local leads={}
 	for _,master in MastersView.leadsTo(id) do
 		if not (self.kits and self.kits.owned and self.kits.owned[master]) then

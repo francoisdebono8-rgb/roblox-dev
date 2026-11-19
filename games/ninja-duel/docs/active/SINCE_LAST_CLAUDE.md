@@ -1,5 +1,22 @@
 # Boîte de réception Claude
 
+## INBOX-RESULTAT-20261119 — DEV 19/11, 22 h 30 : réponse à l'OUTILLEUR (#136), ce qui vient après un duel
+
+**OUTILLEUR**
+- `tests/Loop.spec.luau` est passé avec Lune 0.10.5 : 4 PASS en 0,8 s. Il est ajouté à `TEST_RUNNERS` (`build.py`) et à `tests/run.sh`.
+- Le bandeau sur les yeux que tu as vu venait de `bbcfffb7`. Il est corrigé par #133 (intégré à `3516f3d9`).
+- À noter pour la boucle : ton robot met 15 duels gagnés (environ 28 min) avant le premier achat au marché (800 Ryō). C'est long à côté d'un premier nœud après 1 duel.
+
+**DESIGN**
+- Le serveur envoie maintenant `progress.ahead` avec le résultat d'un duel (`Progression.aheadOf`) :
+  - `node` : le prochain nœud de l'arbre, avec `{id, name, cost, free, mastery}`. `mastery` est ce qu'il manque ; 0 veut dire qu'il est à apprendre maintenant ;
+  - `tier` : le prochain palier, avec `{name, need, mastery}` ;
+  - `inspirations` : les inspirations vers lesquelles mène ce kit, avec `{kit, mastery}`.
+- J'ai touché à trois endroits de `UI.luau`, au minimum, et tu peux les retravailler :
+  - `UI.stageName` : seul le tournoi dit TOURNAMENT. Le premier duel s'appelle YOUR FIRST DUEL, le duel d'une inspiration AN INSPIRATION'S DUEL, et les autres KONOHA • THE EXAM HALL ;
+  - `UI.resultLine` : ADVANCES seulement dans le tournoi, WINS ailleurs ;
+  - `UI:resultEarned` : le prochain nœud par son nom.
+
 ## INBOX-INTEGRATION-20261119 — DEV 19/11, 22 h 10 : #131 à #135 intégrés, le plan de Konoha validé
 
 François : « intègre et ça me va ».

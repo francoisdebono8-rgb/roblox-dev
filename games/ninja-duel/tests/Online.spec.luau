@@ -660,6 +660,11 @@ test("the client UI renders the real roster, queue, pick, duel and result packet
 	assert(ui.resultGains.Visible and ui.resultRyo.Text=="+120 RYŌ" and ui.resultFirstWin.Visible and ui.resultGain.Text=="+80","DESIGN 19/11: the gains")
 	assert(ui.resultNext.Text:find("2 more mastery for your next tree point",1,true),"DESIGN 19/11: the next tree point ("..ui.resultNext.Text..")")
 	assert(ui.resultSeal.Text=="WIN" and ui.rematchButton.Size.Y.Offset>=72,"DESIGN 19/11: the stamp and the big buttons")
+	-- (19/11, DEV 6) the next node by its name, from progress.ahead
+	ui:resultEarned({gained=true,fighter="Ninja",mastery=128,amount=80,need=300,ahead={node={name="Stubborn Clones",cost=4,mastery=12}}})
+	assert(ui.resultNext.Text:find("12 more mastery: STUBBORN CLONES",1,true),"the next node is not named ("..ui.resultNext.Text..")")
+	ui:resultEarned({gained=true,fighter="Ninja",mastery=128,amount=80,need=300,ahead={node={name="Stubborn Clones",cost=4,mastery=0}}})
+	assert(ui.resultNext.Text:find("STUBBORN CLONES is ready to learn",1,true),"a node ready to learn ("..ui.resultNext.Text..")")
 	ui:resultEarned(nil);assert(not ui.resultGains.Visible,"DESIGN 19/11: nothing earned, no block")
 	lifecycle(m,b,"Rematch");ui:render(last(a))
 	assert(ui.rematchButton.Text:find("OPPONENT IS READY",1,true))
@@ -724,6 +729,13 @@ test("a 1v1 between two walkers is fought in Konoha's street, one fight per plac
 		local UI=H.load("Client/UI")
 		assert(UI.stageName(last(a))=="STREET DUEL  •  "..HubMap.Masters.Leaf.place,"the banner: "..UI.stageName(last(a)))
 		assert(UI.stageName({cup={}})=="PRODIGY TOURNAMENT" and UI.stageName({online={}})=="ONLINE DUEL","the banner elsewhere")
+		-- (19/11, OUTILLEUR in Studio) only the tournament says tournament
+		for _,d in {{first="intro"},{master="Leaf"},{}} do
+			assert(not string.find(UI.stageName(d),"TOURNAMENT"),"a duel outside the tournament is called "..UI.stageName(d))
+			assert(not string.find(UI.resultLine(d,"NARUTO"),"ADVANCES"),"a duel outside the bracket says ADVANCES")
+		end
+		assert(UI.stageName({first="intro"})=="YOUR FIRST DUEL","the first duel's banner")
+		assert(UI.resultLine({cup={}},"NARUTO")=="NARUTO  ADVANCES","the bracket's winner advances")
 		local back=m.sessions[a].returnTo
 		assert(back and (back.at-(centre-HubMap.Origin+V.new(0,0,site.radius*.5))).Magnitude<1e-3,"he does not walk on from the street")
 		-- the place holds one fight: a duel asked at Lee's meanwhile is the stadium's
