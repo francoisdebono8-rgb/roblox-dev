@@ -1,0 +1,14 @@
+Exemple inventé : la sortie du serveur pendant un test (pas de vraies données)
+12:00:01.100  [NinjaDuelFirst] -1 joined 0.0s - Server
+12:00:09.300  [NinjaDuelFirst] -1 input 8.2s - Server
+12:00:31.000  [NinjaDuelFirst] -1 jutsu 29.9s - Server
+12:01:40.000  [NinjaDuelFirst] -1 duel 98.9s - Server
+12:00:02.000  [NinjaDuelFirst] -2 joined 0.0s - Server
+12:00:14.000  [NinjaDuelFirst] -2 input 12.0s - Server
+12:00:50.000  [NinjaDuelFirst] -2 left 48.0s (stage dodge) - Server
+12:00:03.000  [NinjaDuelFirst] -3 joined 0.0s - Server
+12:00:09.000  [NinjaDuelFirst] -3 input 6.0s - Server
+12:00:40.000  [NinjaDuelFirst] -3 jutsu 37.0s - Server
+12:02:00.000  [NinjaDuelFirst] -3 duel 117.0s - Server
+12:00:04.000  [NinjaDuelFirst] -4 joined 0.0s - Server
+12:00:30.000  [NinjaDuelFirst] -4 left 26.0s (stage move) - Server
