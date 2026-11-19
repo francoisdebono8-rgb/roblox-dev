@@ -648,11 +648,19 @@ test("the client UI renders the real roster, queue, pick, duel and result packet
 	assert(ui.ultimateScroll.box.Visible and ui.ultimateScroll.ready.Text~="READY","HUD v3: the ultimate scroll at the start")
 	local UIm=H.load("Client/UI")
 	assert(UIm.ultimateScroll(ui.ultimateScroll,{ultimate=100,ultimateReady=true},false,4) and ui.ultimateScroll.ready.Text=="READY" and ui.ultimateScroll.key.Text=="Y" and ui.ultimateScroll.seal.Visible,"HUD v3: the ultimate ready")
-	assert(not UIm.ultimateScroll(ui.ultimateScroll,{ultimate=40},true,4) and ui.ultimateScroll.ready.Text=="40%" and not ui.ultimateScroll.seal.Visible,"HUD v3: the ultimate filling")
+	assert(not UIm.ultimateScroll(ui.ultimateScroll,{ultimate=40},true,4) and ui.ultimateScroll.ready.Text=="40%" and ui.ultimateScroll.seal.Visible and ui.ultimateScroll.key.Text~="","HUD v3: the ultimate filling (DESIGN 15/11: its key always on top)")
+	-- (DESIGN 15/11, Mix-Duel) the scrolls hang tall and narrow on the rope, the numbers gone from the plate
+	assert(ui.techniqueButtons[1].box.Size.Y.Offset>ui.techniqueButtons[1].box.Size.X.Offset and ui.hp.status.Text=="" and ui.hp.medallion.Size.X.Offset>=112,"DESIGN 15/11: the tall scrolls and the face-cam case")
 	-- Two knockouts for Alpha: VICTORY from Alpha's side.
 	for _=1,2 do d.introUntil=nil;d.combat:damage(d.seats[1].actor,d.seats[2].actor,1000,false,false);step(m,2.7) end
 	ui:render(last(a))
 	assert(ui.result.Visible and ui.resultTitle.Text:find("VICTORY",1,true) and ui.rematchButton.Text=="REMATCH")
+	-- (DESIGN 19/11) the result says what was earned and what comes next; no kanji on the stamp
+	ui:resultEarned({gained=true,fighter="Ninja",mastery=128,amount=80,need=300,ryo=120,firstWin=true})
+	assert(ui.resultGains.Visible and ui.resultRyo.Text=="+120 RYŌ" and ui.resultFirstWin.Visible and ui.resultGain.Text=="+80","DESIGN 19/11: the gains")
+	assert(ui.resultNext.Text:find("2 more mastery for your next tree point",1,true),"DESIGN 19/11: the next tree point ("..ui.resultNext.Text..")")
+	assert(ui.resultSeal.Text=="WIN" and ui.rematchButton.Size.Y.Offset>=72,"DESIGN 19/11: the stamp and the big buttons")
+	ui:resultEarned(nil);assert(not ui.resultGains.Visible,"DESIGN 19/11: nothing earned, no block")
 	lifecycle(m,b,"Rematch");ui:render(last(a))
 	assert(ui.rematchButton.Text:find("OPPONENT IS READY",1,true))
 	m:remove(b);ui:render(last(a))

@@ -380,3 +380,22 @@ Demande de l’utilisateur du **14/11 à 21 h 35** : « le choix du premier maî
   - Elle a **ses propres coups** et ses animations, à puissance égale : c’est un autre style, pas une arme plus forte.
   - Son modèle et ses coups sont faits par l’ANIMATEUR. Le DEV les branche sur le bouton d’outil du combat.
   - L’arme se vend en Robux à la SHOP, et certaines peut-être en Ryō au marché (DEC-040, les deux comptoirs).
+
+## DEC-042 — Le plan du nouveau Konoha est validé (19/11)
+
+Réponse de l’utilisateur du **19/11 à 22 h 06** à la planche `docs/reports/konoha-plan-2026-11-19/plan_a_valider.png` (PR #134 de l’ANIMATEUR) : « intègre et ça me va ».
+
+- **Le plan** est `Shared/KonohaLayout.luau`, généré par `tools/blender/konoha_layout.py`. Il contient :
+  - les quartiers et les rues ;
+  - 154 maisons de six modèles, entre 800 et 2 000 triangles chacun ;
+  - les repères de Naruto, première partie ;
+  - les points d’intérêt de la minicarte (`Pois`).
+- **Ce qu’il garde de HubMap** : les arrivées, les 8 maîtres, l’examinateur, les duels de rue et le trio d’accueil restent à leur place.
+- **Les chiffres du prouveur de carte** :
+  - 18 % de vide, contre 64 % pour le village actuel ;
+  - chaque surface est atteignable comme déclaré ;
+  - le mur de 42 studs empêche de sortir depuis un toit.
+- **Suite, dans l’ordre** :
+  1. L’ANIMATEUR modélise les six maisons, à leurs budgets.
+  2. Le DEV fait construire `Server/Hub` à partir de `KonohaLayout`.
+  3. La DESIGN dessine la minicarte à partir de `KonohaLayout.Pois`.

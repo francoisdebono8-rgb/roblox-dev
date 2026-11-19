@@ -1228,6 +1228,24 @@ Sortie commune : trois Lights/Heavy physiques distincts, branche seulement aprè
 - validation: (1) kit et corps séparés, chaque prodige rebâti à l’identique (fait) ; (2) pièces de kit marquées (fait) ; (3) l’avatar Roblox de l’utilisateur construit à la taille standard et posé sur le squelette du jeu (`Server/AvatarBody`, test headless), puis chacun des 8 kits joué avec lui dans Studio : animations, pieds, vêtements superposés, accessoires, objets de kit, effets des yeux, clones ; (4) choix sauvegardé dans le profil ; (5) pièces ninja du jeu par-dessus l’avatar. Aucune puissance liée à l’apparence.
 - evidence: Décision utilisateur DEC-036 du 12/11. Étapes 1 et 2 dans le code (12/11, `279cc69`) : `Shared/Appearance` (un corps = le look d’un prodige + couleurs), `World.rig(…, worn)` / `World.dress(model, kit, body)` / `World.lookDef` (sans corps, le prodige est son propre def : bâti à l’identique), `World.markKitItems` (gourde et sangle de Gaara, tanto rangé de Kakashi, marque maudite de Sasuke, veines du Byakugan de Neji : attribut KitItem, aucune règle de jeu). TECHNICAL PASS (suite `Appearance`, 5). Pas encore vu dans Studio ; étapes 3 à 5 à faire.
 - evidence_addendum: 14/11 (Studio, ND-JEU `a8d9fd0`, premier duel d'un nouveau joueur avec Naruto) : le joueur se battait dans le corps du prodige, pas dans son avatar ; console « [AvatarBody] no joint Root ». Roblox construit maintenant les articulations d'un avatar en AnimationConstraint (mise à niveau des articulations), sans Motor6D, et `AvatarBody.fit` refusait tous les avatars. `AvatarBody.motorize` (branche `claude/avatar-articulations`) remet chaque contrainte en Motor6D (pièces et repères de ses attachments) : dans Studio, l'avatar du compte de François (15 contraintes) passe `fit` avec ses 15 articulations. Suite `Avatar` 5 PASS (le nouveau test échoue sans la correction). Studio après la correction (modules poussés à chaud dans la place `a8d9fd0`) : le premier duel se joue dans l'avatar du joueur, qui court et frappe, sans « no joint Root ». Reste : le duel complet et les 8 kits avec l'avatar (pieds, vêtements, objets de kit).
+- evidence_corps_1911: 19/11 au soir (François : « vérifie les tailles des persos, les bugs de bandeaux, d'affichage »). Mesuré dans Studio (place LAB, Play, son avatar) :
+  - **avant** : l'avatar mesurait 5,10 studs dans Konoha et 5,96 en duel, contre 6,51 pour les prodiges ;
+  - **avant, en duel** : 0,20 stud d'air au coude, les pieds 0,16 à 0,25 au-dessus du sol, la tête enfoncée dans le torse (le col de la tenue de Naruto couvrait le visage) ;
+  - **avant, le bandeau** : sa plaque passait sur les yeux d'une tête dynamique ;
+  - **avant, les tenues** : en Fabric, elles sortaient presque noires sous la lumière du jeu.
+- Cause du duel : `AvatarBody.fit` prenait les centres du tableau `World.RIG.parts` comme place du parent. Pour les bras et les jambes, ce ne sont pas ceux que les moteurs imposent.
+- Fait :
+  - `AvatarBody.grow` met chaque avatar à la taille des prodiges, dans le village et en duel ;
+  - `fit` place les pivots là où les moteurs du rig les mettent, et donne au corps les tailles du rig (la tête garde la sienne, posée sur le torse) ;
+  - le bandeau est sur le front (entre les yeux et le haut de la tête, d'après les attachements de la tête), en anneau de 8 bandes ;
+  - les tenues sont en SmoothPlastic, comme les prodiges.
+- Vu après correction (à chaud, dans le même Play) :
+  - Konoha : 6,50 de haut, pieds au sol ;
+  - duel : 6,37 de haut, pieds au sol, joints comme ceux d'un prodige ;
+  - bandeau au-dessus des yeux ;
+  - tenue de Naruto orange, col sous le menton.
+- Tests : Avatar 7 PASS, Outfit 5 PASS, suite complète 76 PASS.
+- Reste : la place reconstruite n'a pas été rouverte dans Studio ; les bandes des avant-bras et des mains, trop épaisses, sont pour l'ANIMATEUR.
 - outcome: PENDING
 
 ## MASTERS-001 — Le chemin des maîtres (départ, maîtres, maîtrise, achat)

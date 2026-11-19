@@ -23,6 +23,7 @@ if not okKit then FXKit=nil end
 local SealJutsu=require(Shared.SealJutsu)
 local MoveGraphs=require(Shared.MoveGraphs)
 local Protocol=require(Shared.OnlineProtocol)
+local UIAssets=require(Shared.UIAssets)
 local GuiService=game:GetService("GuiService")
 local UIS=game:GetService("UserInputService")
 local Tween=game:GetService("TweenService")
@@ -55,6 +56,15 @@ UI.CHAKRA_INK=Color3.fromRGB(36,110,214)
 UI.CHAR=Color3.fromRGB(43,29,22)
 UI.EMBER=Color3.fromRGB(255,138,40)
 UI.OFF=Color3.fromRGB(138,124,112)
+-- (DESIGN 15/11, Mix-Duel) the scrolls of the jutsu: size, step on the rope,
+-- the ultimate's, the margin from the screen's corner.
+UI.TAG={w=84,h=150,step=96,ultW=108,ultH=176,margin=28}
+-- Where the i-th of n jutsu scrolls hangs (the row ends at the right edge,
+-- tops on the rope).
+function UI.tagPos(i:number,n:number):UDim2
+	local T=UI.TAG
+	return UDim2.new(1,-T.margin-(n-i+1)*T.step+(T.step-T.w),1,-(T.margin+T.ultH))
+end
 local function create(class,parent,props)
 	local x=Instance.new(class)
 	for k,v in props do x[k]=v end
@@ -69,6 +79,20 @@ local function text(parent,value,position,size,fontSize,color,font,align)
 end
 local function corner(parent,radius) return create("UICorner",parent,{CornerRadius=UDim.new(0,radius or 6)}) end
 local function stroke(parent,color,thickness) return create("UIStroke",parent,{Color=color or palette.ink,Thickness=thickness or 2}) end
+-- (DESIGN 15/11) An image of the manga page (Shared/UIAssets) laid over a
+-- frame, sliced when it is a frame; nil while it is not imported, the frame
+-- under it is then the fallback.
+local function picture(parent,name,props)
+	local id=UIAssets.id(name)
+	if not id then return nil end
+	local img=Instance.new("ImageLabel")
+	img.Name=name;img.BackgroundTransparency=1;img.BorderSizePixel=0;img.Image=id;img.Size=UDim2.fromScale(1,1)
+	local slice=UIAssets.Slice[name]
+	if slice then img.ScaleType=Enum.ScaleType.Slice;img.SliceCenter=slice end
+	for k,v in props or {} do (img::any)[k]=v end
+	img.Parent=parent
+	return img
+end
 -- (User 03/11: "every banner and end screen needs one common identity".) The
 -- house card: deep ink, rounded, a thin vermilion border and a vermilion
 -- brush line along its top; the controls sheet, the result, the queue and
@@ -353,8 +377,14 @@ function UI.new(parent,send)
 			local made,panel=pcall(OutfitPanel.new,UI.kit,self.gui,send,self)
 			if made then self.outfitPanel=panel end
 		end
-		if self.shopPanel and self.outfitPanel then
-			self.shopPanel.onOutfit=function() self.outfitPanel:show(self.kits) end
+		-- (DESIGN 19/11) MY NINJA: the wardrobe, every slot and every piece
+		local okW,Wardrobe=pcall(function() return require(script.Parent.Wardrobe) end)
+		if okW and Wardrobe then
+			local made,panel=pcall(Wardrobe.new,UI.kit,self.gui,send,self)
+			if made then self.wardrobe=panel end
+		end
+		if self.shopPanel and (self.wardrobe or self.outfitPanel) then
+			self.shopPanel.onOutfit=function() if self.wardrobe then self.wardrobe:show(self.kits) else self.outfitPanel:show(self.kits) end end
 		end
 	end
 	-- The shop from the roster (in Konoha it is on the HUD).
@@ -449,18 +479,23 @@ function UI.new(parent,send)
 		-- The medallion.
 		-- (HUD v3, DESIGN validated 14/11) a case of the manga page: ink inside,
 		-- the white between two panels around it, a little tilt.
-		local medallion=frame(box,UDim2.fromOffset(X(0,88),0),UDim2.fromOffset(88,88),MANGA.ink,0)
+		-- (DESIGN 15/11, Mix-Duel) the face-cam's case: paper, a dot screentone,
+		-- an ink frame; FaceCam films the head inside it.
+		local medallion=frame(box,UDim2.fromOffset(X(0,112),0),UDim2.fromOffset(112,96),MANGA.paper,0)
+		medallion.ClipsDescendants=true
 		create("UICorner",medallion,{CornerRadius=UDim.new(0,3)})
 		medallion.Rotation=if right then 2 else -2
-		local ring=create("UIStroke",medallion,{Color=MANGA.paper,Thickness=3,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
+		local ring=create("UIStroke",medallion,{Color=MANGA.ink,Thickness=4,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
+		picture(medallion,"halftone_tile",{ScaleType=Enum.ScaleType.Tile,TileSize=UDim2.fromOffset(32,32),ImageTransparency=.78})
+		local inkFrame=picture(medallion,"ink_frame_9s",{ZIndex=(medallion.ZIndex or 1)+6,Size=UDim2.new(1,8,1,8),Position=UDim2.fromOffset(-4,-4)})
+		if inkFrame then ring.Transparency=1 end
 		local glow=frame(medallion,UDim2.fromScale(.5,.45),UDim2.fromScale(.9,.9),palette.red,1)
 		glow.AnchorPoint=Vector2.new(.5,.5)
 		-- The fighter's initial in brush capitals (a ViewportFrame cannot draw
 		-- the faces: they are SurfaceGuis).
-		local initial=text(medallion,"",UDim2.fromScale(0,.04),UDim2.fromScale(1,1),58,palette.paper,TITLE_FONT,Enum.TextXAlignment.Center)
-		create("UIStroke",initial,{Color=palette.ink,Thickness=2.5,ApplyStrokeMode=Enum.ApplyStrokeMode.Contextual})
+		local initial=text(medallion,"",UDim2.fromScale(0,.04),UDim2.fromScale(1,1),58,MANGA.ink,TITLE_FONT,Enum.TextXAlignment.Center)
 		-- Name, title, substitution diamonds.
-		local name=text(box,"",UDim2.fromOffset(X(100,360),0),UDim2.fromOffset(360,34),32,palette.paper,TITLE_FONT,align)
+		local name=text(box,"",UDim2.fromOffset(X(124,330),4),UDim2.fromOffset(330,32),28,MANGA.cream,STRONG_FONT,align)
 		create("UIStroke",name,{Color=palette.ink,Thickness=2.5,ApplyStrokeMode=Enum.ApplyStrokeMode.Contextual})
 		local title=text(box,"",UDim2.fromOffset(X(102,400),32),UDim2.fromOffset(400,16),13,palette.paper,STRONG_FONT,align)
 		create("UIStroke",title,{Color=palette.ink,Thickness=1,Transparency=.3,ApplyStrokeMode=Enum.ApplyStrokeMode.Contextual})
@@ -472,7 +507,7 @@ function UI.new(parent,send)
 		-- (HUD v3) no dark plate behind: the ink of each piece carries it.
 		-- Health is one brush stroke, cream for you and red for the opponent,
 		-- the pink trail the blows just taken.
-		local track=frame(box,UDim2.fromOffset(X(96,464),52),UDim2.fromOffset(464,22),MANGA.ink,0)
+		local track=frame(box,UDim2.fromOffset(X(122,438),42),UDim2.fromOffset(438,24),MANGA.ink,0)
 		corner(track,11)
 		track.Rotation=if right then .8 else -.8
 		create("UIStroke",track,{Color=MANGA.ink,Thickness=3,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
@@ -482,17 +517,19 @@ function UI.new(parent,send)
 		local fill=frame(track,UDim2.fromScale(0,0),UDim2.fromScale(1,1),base)
 		corner(fill,11)
 		if right then lag.AnchorPoint=Vector2.new(1,0);lag.Position=UDim2.fromScale(1,0);fill.AnchorPoint=Vector2.new(1,0);fill.Position=UDim2.fromScale(1,0) end
-		local chakraTrack=frame(box,UDim2.fromOffset(X(96,400),78),UDim2.fromOffset(400,6),MANGA.ink)
+		local chakraTrack=frame(box,UDim2.fromOffset(X(124,300),76),UDim2.fromOffset(300,6),MANGA.ink)
 		corner(chakraTrack,3)
 		local chakra=frame(chakraTrack,UDim2.fromScale(0,0),UDim2.fromScale(1,1),palette.blue)
 		if right then chakra.AnchorPoint=Vector2.new(1,0);chakra.Position=UDim2.fromScale(1,0) end
 		-- (Stage 6) the ultimate gauge: it fills by hitting and being hit; full,
 		-- it burns and the plate says how to fire it.
 		local ultimateTrack=frame(box,UDim2.fromOffset(X(96,400),87),UDim2.fromOffset(400,6),MANGA.ink)
+		-- (DESIGN 15/11) the ultimate lives on its red scroll only
+		ultimateTrack.Visible=false
 		local ultimate=frame(ultimateTrack,UDim2.fromScale(0,0),UDim2.fromScale(0,1),MANGA.red)
 		if right then ultimate.AnchorPoint=Vector2.new(1,0);ultimate.Position=UDim2.fromScale(1,0) end
 		-- (HUD v3: « les crans d'ultime en double » retirés)
-		local status=text(box,"",UDim2.fromOffset(X(98,460),96),UDim2.fromOffset(460,16),13,palette.muted,BODY_FONT,align)
+		local status=text(box,"",UDim2.fromOffset(X(124,436),88),UDim2.fromOffset(436,18),16,MANGA.cream,STRONG_FONT,align)
 		create("UIStroke",status,{Color=palette.ink,Thickness=1,Transparency=.3,ApplyStrokeMode=Enum.ApplyStrokeMode.Contextual})
 		-- Neji's chakra points closed on this fighter: four pips at the far end of
 		-- the chakra bar (both players read them), each lit as it closes.
@@ -517,8 +554,10 @@ function UI.new(parent,send)
 		-- Round wins: seals under the medallion.
 		local medals={}
 		for k=1,2 do
-			local m=frame(box,UDim2.fromOffset(X(26+(k-1)*22,14),94),UDim2.fromOffset(14,14),palette.track)
-			m.Rotation=45;table.insert(medals,m)
+			-- (DESIGN 15/11) round wins: red ink dots under the case
+			local m=frame(box,UDim2.fromOffset(X(38+(k-1)*22,14),104),UDim2.fromOffset(14,14),MANGA.ink)
+			corner(m,7);create("UIStroke",m,{Color=MANGA.red,Thickness=2.5,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
+			table.insert(medals,m)
 		end
 		-- The awakening while it burns: its name, the time left and what it
 		-- changes in the fight (UI.awakening), under the plate.
@@ -528,14 +567,15 @@ function UI.new(parent,send)
 	end
 	self.hp=plate("left")
 	self.enemy=plate("right")
-	self.round=text(self.hud,"ROUND 1",UDim2.new(.5,-120,0,22),UDim2.fromOffset(240,30),26,palette.paper,TITLE_FONT,Enum.TextXAlignment.Center)
+	self.round=text(self.hud,"ROUND 1",UDim2.new(.5,-80,0,18),UDim2.fromOffset(160,42),36,MANGA.cream,TITLE_FONT,Enum.TextXAlignment.Center)
+	-- (DESIGN 15/11, Mix-Duel) ROUND on a band of ink, a little tilted
+	self.round.BackgroundColor3=MANGA.ink;self.round.BackgroundTransparency=0;self.round.Rotation=-2
 	self.roundSub=text(self.hud,"PRODIGY TOURNAMENT",UDim2.new(.5,-190,0,55),UDim2.fromOffset(380,16),13,palette.paper,BODY_FONT,Enum.TextXAlignment.Center)
 	-- (UI pass 02/11) Over the sky and the wall the grey subtitle disappeared.
 	create("UIStroke",self.roundSub,{Color=palette.ink,Thickness=1.2,Transparency=.2,ApplyStrokeMode=Enum.ApplyStrokeMode.Contextual})
 	-- (HUD v3: « le nom du tournoi » retiré du combat; the intro still says it)
 	self.roundSub.Visible=false
 	create("UIStroke",self.round,{Color=palette.ink,Thickness=2,ApplyStrokeMode=Enum.ApplyStrokeMode.Contextual})
-	frame(self.hud,UDim2.new(.5,-46,0,48),UDim2.fromOffset(92,3),palette.red,0)
 	self.cue=text(self.hud,"",UDim2.new(.5,-300,0,124),UDim2.fromOffset(600,40),30,palette.paper,TITLE_FONT,Enum.TextXAlignment.Center)
 	create("UIStroke",self.cue,{Color=palette.ink,Thickness=2,ApplyStrokeMode=Enum.ApplyStrokeMode.Contextual})
 	-- (QA 12/11: « BUSY — STILL IN YOUR MOVE » read too loud mid-screen) the
@@ -574,49 +614,70 @@ function UI.new(parent,send)
 	-- rope: the key on a red seal, the chakra cost in blue (the only blue of
 	-- the screen besides the chakra bar); on cooldown the scroll burns from
 	-- the bottom up, an ember line on the char, the seconds in Builder Sans.
-	self.jutsuRope=frame(self.hud,UDim2.new(1,-24-5*150+6,1,-90),UDim2.fromOffset(5*150-6,3),MANGA.ink,0)
+	-- (DESIGN 15/11, Mix-Duel) The jutsu are paper scrolls (explosive tags)
+	-- hung on a rope in the bottom right: tall and narrow, the key in an ink
+	-- circle on top, the pictogram in the middle (Shared/UIAssets; the short
+	-- name while it is not imported), the chakra cost in blue at the foot.
+	-- On cooldown the scroll burns from the bottom up, an ember line on the
+	-- char, the seconds over it. The ultimate is the tall red scroll at the
+	-- head of the rope.
+	local TAG=UI.TAG
+	self.jutsuRope=frame(self.hud,UDim2.new(1,-TAG.margin-5*TAG.step-TAG.ultW,1,-(TAG.margin+TAG.ultH)-10),UDim2.fromOffset(5*TAG.step+TAG.ultW,3),MANGA.ink,0)
 	for i=1,5 do
-		local box=frame(self.hud,UDim2.new(1,-24-(5-i+1)*150+6,1,-84),UDim2.fromOffset(144,60),MANGA.cream,0)
-		corner(box,3)
-		box.Rotation=if i%2==0 then 1.2 else -1.2
-		create("UIStroke",box,{Color=MANGA.ink,Thickness=2.5,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
-		local seal=frame(box,UDim2.fromOffset(-8,-8),UDim2.fromOffset(28,28),MANGA.red,0)
-		seal.Rotation=-6;corner(seal,4)
-		create("UIStroke",seal,{Color=MANGA.ink,Thickness=2,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
+		local box=frame(self.hud,UI.tagPos(i,5),UDim2.fromOffset(TAG.w,TAG.h),MANGA.cream,0)
+		box.Rotation=({-3,2,-1.5,3,-2})[i]
+		box.ClipsDescendants=false
+		create("UIStroke",box,{Color=MANGA.ink,Thickness=2,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
+		local paper=picture(box,"paper_tag_9s",{ImageColor3=MANGA.cream})
+		if paper then box.BackgroundTransparency=1 end
+		-- the double red line of a tag
+		local line=frame(box,UDim2.fromOffset(6,6),UDim2.new(1,-12,1,-12),MANGA.red,1)
+		create("UIStroke",line,{Color=MANGA.red,Thickness=2,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
+		-- the string it hangs by
+		frame(box,UDim2.new(.5,-1,0,-12),UDim2.fromOffset(2,12),MANGA.ink,0)
+		local seal=frame(box,UDim2.new(.5,-16,0,10),UDim2.fromOffset(32,32),MANGA.ink,0)
+		corner(seal,16)
 		local key=text(seal,"",UDim2.fromScale(0,0),UDim2.fromScale(1,1),18,MANGA.cream,STRONG_FONT,Enum.TextXAlignment.Center)
 		-- (05/11) a word fits too (the chakra page's LMB, SPACE)
 		key.TextScaled=true;create("UITextSizeConstraint",key,{MaxTextSize=18})
-		local title=text(box,"",UDim2.fromOffset(26,6),UDim2.fromOffset(112,28),17,MANGA.ink,STRONG_FONT)
-		title.TextScaled=true;create("UITextSizeConstraint",title,{MaxTextSize=17})
-		local status=text(box,"",UDim2.fromOffset(10,38),UDim2.fromOffset(126,16),13,UI.CHAKRA_INK,STRONG_FONT)
+		local icon=create("ImageLabel",box,{Name="Pictogram",BackgroundTransparency=1,BorderSizePixel=0,Position=UDim2.new(.5,-24,0,52),Size=UDim2.fromOffset(48,48),ImageColor3=MANGA.ink,Visible=false})
+		local title=text(box,"",UDim2.fromOffset(6,48),UDim2.new(1,-12,0,52),16,MANGA.ink,STRONG_FONT,Enum.TextXAlignment.Center)
+		title.TextWrapped=true;title.TextScaled=true;create("UITextSizeConstraint",title,{MaxTextSize=16})
+		local status=text(box,"",UDim2.fromOffset(4,TAG.h-32),UDim2.new(1,-8,0,22),16,UI.CHAKRA_INK,STRONG_FONT,Enum.TextXAlignment.Center)
+		status.TextScaled=true;create("UITextSizeConstraint",status,{MaxTextSize=16})
 		-- the char climbing from the bottom, its ember edge on top
-		local cool=frame(box,UDim2.fromScale(0,1),UDim2.fromScale(1,0),UI.CHAR,.08)
-		cool.AnchorPoint=Vector2.new(0,1);corner(cool,3)
-		local ember=frame(cool,UDim2.fromScale(0,0),UDim2.new(1,0,0,3),UI.EMBER,0)
+		local cool=frame(box,UDim2.fromScale(0,1),UDim2.fromScale(1,0),UI.CHAR,.04)
+		cool.AnchorPoint=Vector2.new(0,1)
+		local ember=frame(cool,UDim2.fromScale(0,0),UDim2.new(1,0,0,4),UI.EMBER,0)
 		ember.AnchorPoint=Vector2.new(0,.5)
-		title.ZIndex=(box.ZIndex or 1)+2;status.ZIndex=(box.ZIndex or 1)+2
-		self.techniqueButtons[i]={box=box,key=key,title=title,status=status,cool=cool,ember=ember}
+		local top=(box.ZIndex or 1)+2
+		title.ZIndex=top;status.ZIndex=top;icon.ZIndex=top-1;seal.ZIndex=top;key.ZIndex=top+1
+		self.techniqueButtons[i]={box=box,key=key,title=title,status=status,cool=cool,ember=ember,icon=icon,seal=seal}
 	end
-	-- (HUD v3: « l'ultime : le parchemin rouge ; la jauge le remplit, puis il
-	-- affiche READY ») at the head of the rope: dark while it fills, red rising
-	-- from the bottom, READY with its key once full (UI.ultimateScroll).
+	-- (DESIGN 15/11) the ultimate: the tall red scroll; dark while the gauge
+	-- fills it from the bottom, red and READY once full, its key on top.
 	do
-		local box=frame(self.hud,UDim2.new(1,-24-5*150+6-132,1,-84),UDim2.fromOffset(124,60),UI.CHAR,0)
-		corner(box,3);box.Rotation=-2;box.ClipsDescendants=false
+		local box=frame(self.hud,UDim2.new(1,-TAG.margin-5*TAG.step-TAG.ultW,1,-(TAG.margin+TAG.ultH)),UDim2.fromOffset(TAG.ultW,TAG.ultH),UI.CHAR,0)
+		box.Rotation=3;box.ClipsDescendants=false
 		local edge=create("UIStroke",box,{Color=MANGA.ink,Thickness=2.5,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
+		frame(box,UDim2.new(.5,-1,0,-12),UDim2.fromOffset(2,12),MANGA.ink,0)
 		local fill=frame(box,UDim2.fromScale(0,1),UDim2.fromScale(1,0),MANGA.red,0)
-		fill.AnchorPoint=Vector2.new(0,1);corner(fill,3)
-		local head=text(box,"ULTIMATE",UDim2.fromOffset(8,4),UDim2.new(1,-16,0,16),13,MANGA.cream,STRONG_FONT,Enum.TextXAlignment.Center)
-		local ready=text(box,"",UDim2.fromOffset(4,20),UDim2.new(1,-8,0,36),30,MANGA.cream,TITLE_FONT,Enum.TextXAlignment.Center)
+		fill.AnchorPoint=Vector2.new(0,1)
+		local line=frame(box,UDim2.fromOffset(7,7),UDim2.new(1,-14,1,-14),MANGA.cream,1)
+		create("UIStroke",line,{Color=MANGA.cream,Thickness=2,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
+		local seal=frame(box,UDim2.new(.5,-18,0,12),UDim2.fromOffset(36,36),MANGA.cream,0)
+		corner(seal,18)
+		local key=text(seal,"",UDim2.fromScale(0,0),UDim2.fromScale(1,1),18,MANGA.ink,STRONG_FONT,Enum.TextXAlignment.Center)
+		key.TextScaled=true;create("UITextSizeConstraint",key,{MaxTextSize=18})
+		local icon=create("ImageLabel",box,{Name="Pictogram",BackgroundTransparency=1,BorderSizePixel=0,Position=UDim2.new(.5,-30,0,62),Size=UDim2.fromOffset(60,60),ImageColor3=MANGA.cream,Image=UIAssets.id("icon_flash") or "",Visible=UIAssets.id("icon_flash")~=nil})
+		local head=text(box,"ULTIMATE",UDim2.fromOffset(6,64),UDim2.new(1,-12,0,20),16,MANGA.cream,STRONG_FONT,Enum.TextXAlignment.Center)
+		head.Visible=not icon.Visible
+		local ready=text(box,"",UDim2.fromOffset(4,TAG.ultH-46),UDim2.new(1,-8,0,34),26,MANGA.cream,TITLE_FONT,Enum.TextXAlignment.Center)
 		create("UIStroke",ready,{Color=MANGA.ink,Thickness=2,ApplyStrokeMode=Enum.ApplyStrokeMode.Contextual})
-		local seal=frame(box,UDim2.new(1,-22,0,-10),UDim2.fromOffset(34,26),MANGA.cream,0)
-		seal.Rotation=5;corner(seal,4)
-		create("UIStroke",seal,{Color=MANGA.ink,Thickness=2,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
-		local key=text(seal,"",UDim2.fromScale(0,0),UDim2.fromScale(1,1),15,MANGA.red,STRONG_FONT,Enum.TextXAlignment.Center)
-		key.TextScaled=true;create("UITextSizeConstraint",key,{MaxTextSize=15})
-		for _,g in {fill,head,ready,seal} do g.ZIndex=(box.ZIndex or 1)+1 end
-		key.ZIndex=(box.ZIndex or 1)+2
-		self.ultimateScroll={box=box,fill=fill,head=head,ready=ready,seal=seal,key=key,edge=edge}
+		local top=(box.ZIndex or 1)+1
+		for _,g in {fill,head,ready,seal,icon,line} do g.ZIndex=top end
+		key.ZIndex=top+1
+		self.ultimateScroll={box=box,fill=fill,head=head,ready=ready,seal=seal,key=key,edge=edge,icon=icon}
 	end
 	-- (05/11, user on the pad) "R1 + □" did not fit the 28 px seal: on a pad
 	-- each seal shows its face button and the row is prefixed by the R1 it
@@ -675,25 +736,64 @@ function UI.new(parent,send)
 	create("UIStroke",self.introBegin,{Color=palette.red,Thickness=4,ApplyStrokeMode=Enum.ApplyStrokeMode.Contextual})
 	self.intro.Visible=false
 	-- --------------------------------------------------------------- result
-	self.result=frame(self.gui,UDim2.fromScale(0,0),UDim2.fromScale(1,1),palette.ink,.25)
-	local resultBox=inkCard(frame(self.result,UDim2.new(.5,-300,.5,-170),UDim2.fromOffset(600,340),CARD,0))
+	-- (DESIGN 19/11, plan § 2 and § 4: « après un duel, on voit mal ce qu'on
+	-- a gagné ») The result is a page of the manga: the verdict on a band of
+	-- ink (red for a win), a stamp beside it (WIN / LOSS, no kanji), then
+	-- WHAT YOU EARNED: the Ryō (the day's first win doubled says so), the
+	-- kit's mastery bar with this duel's share in red, and what comes next:
+	-- the next tree point, the masters who want to meet you. Then two big
+	-- buttons (at least 44 px on a phone: the card fits the window).
+	self.result=frame(self.gui,UDim2.fromScale(0,0),UDim2.fromScale(1,1),MANGA.ink,.35)
+	local RW,RH=720,580
+	local resultBox=frame(self.result,UDim2.fromScale(.5,.5),UDim2.fromOffset(RW,RH),MANGA.paper,0)
+	resultBox.AnchorPoint=Vector2.new(.5,.5)
+	create("UIStroke",resultBox,{Color=MANGA.ink,Thickness=4,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
 	self.resultBox=resultBox
 	self.resultScale=create("UIScale",resultBox,{Scale=1})
-	-- The judges' seal, stamped on the card: 勝 for a win, 敗 for a loss.
-	self.resultSeal=text(resultBox,"",UDim2.fromOffset(600-70,-34),UDim2.fromOffset(96,96),64,palette.paper,BODY_FONT,Enum.TextXAlignment.Center)
-	self.resultSeal.BackgroundColor3=palette.red;self.resultSeal.BackgroundTransparency=0;self.resultSeal.Rotation=12;corner(self.resultSeal,10)
-	create("UIStroke",self.resultSeal,{Color=palette.paper,Thickness=3,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
+	self.resultFit=1
+	local function fitResult()
+		self.resultFit=fitScale(workspace.CurrentCamera.ViewportSize,RW+60,RH+60,1)
+		self.resultScale.Scale=self.resultFit
+	end
+	workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(fitResult);fitResult()
+	self.resultBand=frame(resultBox,UDim2.fromOffset(-8,22),UDim2.new(1,16,0,96),MANGA.ink,0)
+	self.resultBand.Rotation=-1
+	self.resultTitle=text(self.resultBand,"",UDim2.fromOffset(28,4),UDim2.new(1,-200,1,-8),72,MANGA.cream,TITLE_FONT,Enum.TextXAlignment.Left)
+	self.resultTitle.TextScaled=true;create("UITextSizeConstraint",self.resultTitle,{MaxTextSize=72})
+	-- the stamp: a red ring and a word (the stamp image once imported)
+	self.resultSeal=text(resultBox,"",UDim2.fromOffset(RW-170,4),UDim2.fromOffset(132,132),40,MANGA.red,TITLE_FONT,Enum.TextXAlignment.Center)
+	self.resultSeal.BackgroundColor3=MANGA.paper;self.resultSeal.BackgroundTransparency=0;self.resultSeal.Rotation=-12;corner(self.resultSeal,66)
+	create("UIStroke",self.resultSeal,{Color=MANGA.red,Thickness=6,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
 	self.resultSealScale=create("UIScale",self.resultSeal,{Scale=1})
-	self.resultTitle=text(resultBox,"",UDim2.fromOffset(30,18),UDim2.fromOffset(540,70),72,palette.paper,TITLE_FONT,Enum.TextXAlignment.Center)
-	inkTitle(self.resultTitle)
-	self.resultName=text(resultBox,"",UDim2.fromOffset(30,92),UDim2.fromOffset(540,36),30,palette.gold,TITLE_FONT,Enum.TextXAlignment.Center)
-	self.resultNote=text(resultBox,"",UDim2.fromOffset(30,132),UDim2.fromOffset(540,44),15,palette.muted,BODY_FONT,Enum.TextXAlignment.Center)
-	-- (Beta loop) the mastery earned, a kit learned (Shared/MastersView.result).
-	self.resultProgress=text(resultBox,"",UDim2.fromOffset(30,172),UDim2.fromOffset(540,20),15,palette.gold,TITLE_FONT,Enum.TextXAlignment.Center)
-	self.resultProgress.TextScaled=true;create("UITextSizeConstraint",self.resultProgress,{MaxTextSize=17})
+	self.resultName=text(resultBox,"",UDim2.fromOffset(30,132),UDim2.new(1,-60,0,32),28,MANGA.ink,STRONG_FONT,Enum.TextXAlignment.Center)
+	self.resultNote=text(resultBox,"",UDim2.fromOffset(40,166),UDim2.new(1,-80,0,52),21,MANGA.brown,VOICE_FONT,Enum.TextXAlignment.Center)
+	-- WHAT YOU EARNED
+	local gains=frame(resultBox,UDim2.fromOffset(30,226),UDim2.new(1,-60,0,206),MANGA.cream,0)
+	create("UIStroke",gains,{Color=MANGA.ink,Thickness=4,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
+	self.resultGains=gains
+	text(gains,"WHAT YOU EARNED",UDim2.fromOffset(18,10),UDim2.fromOffset(400,22),18,MANGA.red,STRONG_FONT)
+	self.resultRyo=text(gains,"",UDim2.fromOffset(18,34),UDim2.fromOffset(300,50),46,MANGA.ink,TITLE_FONT)
+	self.resultFirstWin=text(gains,"FIRST WIN OF THE DAY  ×2",UDim2.new(1,-300,0,44),UDim2.fromOffset(282,32),18,MANGA.cream,STRONG_FONT,Enum.TextXAlignment.Center)
+	self.resultFirstWin.BackgroundColor3=MANGA.red;self.resultFirstWin.BackgroundTransparency=0;self.resultFirstWin.Rotation=2
+	self.resultKit=text(gains,"",UDim2.fromOffset(18,92),UDim2.new(1,-120,0,24),20,MANGA.ink,STRONG_FONT)
+	self.resultGain=text(gains,"",UDim2.new(1,-118,0,92),UDim2.fromOffset(100,24),24,MANGA.red,TITLE_FONT,Enum.TextXAlignment.Right)
+	local bar=frame(gains,UDim2.fromOffset(18,120),UDim2.new(1,-36,0,24),MANGA.ink,0)
+	self.resultBarBefore=frame(bar,UDim2.fromOffset(3,3),UDim2.new(0,0,1,-6),MANGA.paper,0)
+	self.resultBarGain=frame(bar,UDim2.fromOffset(3,3),UDim2.new(0,0,1,-6),MANGA.red,0)
+	self.resultBar=bar
+	self.resultNext=text(gains,"",UDim2.fromOffset(18,152),UDim2.new(1,-36,0,46),19,MANGA.mid,BODY_FONT)
+	-- (Beta loop) the one-line summary stays for the tests and the logs
+	self.resultProgress=text(resultBox,"",UDim2.fromOffset(30,0),UDim2.fromOffset(10,10),15,MANGA.ink,STRONG_FONT)
+	self.resultProgress.Visible=false
 	-- In a tournament the card continues the bracket instead of a rematch.
-	self.rematchButton=button(resultBox,"REMATCH",UDim2.fromOffset(30,196),UDim2.fromOffset(540,52),function() send(if self.inCup then "CupBracket" else "Rematch") end,palette.red)
-	self.rosterButton=button(resultBox,"RETURN TO THE ROSTER",UDim2.fromOffset(30,260),UDim2.fromOffset(540,52),function() send(if self.inCup then "CupLeave" else "Selection") end)
+	self.rematchButton=button(resultBox,"REMATCH",UDim2.fromOffset(30,RH-112),UDim2.fromOffset(318,80),function() send(if self.inCup then "CupBracket" else "Rematch") end,MANGA.red)
+	self.rosterButton=button(resultBox,"RETURN TO THE ROSTER",UDim2.fromOffset(RW-348,RH-112),UDim2.fromOffset(318,80),function() send(if self.inCup then "CupLeave" else "Selection") end,MANGA.ink)
+	for _,bt in {self.rematchButton,self.rosterButton} do
+		bt.TextColor3=MANGA.cream;bt.TextScaled=true;bt.TextWrapped=true
+		create("UITextSizeConstraint",bt,{MaxTextSize=30})
+		create("UIPadding",bt,{PaddingLeft=UDim.new(0,12),PaddingRight=UDim.new(0,12)})
+		create("UIStroke",bt,{Color=MANGA.ink,Thickness=4,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
+	end
 	-- ------------------------------------------------------------ controls
 	-- (User 03/11: "the keys should be in a menu rather than on the screen
 	-- all the time".) TAB (pad: START) opens the controls sheet over any
@@ -998,8 +1098,8 @@ end
 -- The result card drops in and the judges' seal is stamped on it.
 function UI:stampResult()
 	pcall(function()
-		self.resultScale.Scale=1.12
-		Tween:Create(self.resultScale,TweenInfo.new(.35,Enum.EasingStyle.Back,Enum.EasingDirection.Out,0,false,.2),{Scale=1}):Play()
+		self.resultScale.Scale=1.12*(self.resultFit or 1)
+		Tween:Create(self.resultScale,TweenInfo.new(.35,Enum.EasingStyle.Back,Enum.EasingDirection.Out,0,false,.2),{Scale=self.resultFit or 1}):Play()
 		self.resultSealScale.Scale=2.6
 		Tween:Create(self.resultSealScale,TweenInfo.new(.22,Enum.EasingStyle.Quad,Enum.EasingDirection.In,0,false,.55),{Scale=1}):Play()
 	end)
@@ -1058,6 +1158,7 @@ function UI:setKits(kits)
 	if self.treePanel then self.treePanel:refresh(kits) end
 	if self.shopPanel then self.shopPanel:refresh(kits) end
 	if self.outfitPanel then self.outfitPanel:refresh(kits) end
+	if self.wardrobe then self.wardrobe:refresh(kits) end
 	if type(kits)~="table" or kits.state~="ready" then return end
 	local want=nil
 	if kits.selected and kits.owned and kits.owned[kits.selected] then want=kits.selected
@@ -1229,12 +1330,13 @@ function UI.ultimateScroll(scroll,actor,pad,shown)
 	local level=math.clamp((actor.ultimate or 0)/100,0,1)
 	local ready=actor.ultimateReady==true
 	scroll.box.Visible=true
-	scroll.box.Position=UDim2.new(1,-24-(shown or 0)*150+6-132,1,-84)
+	local T=UI.TAG
+	scroll.box.Position=UDim2.new(1,-T.margin-(shown or 0)*T.step-T.ultW,1,-(T.margin+T.ultH))
 	scroll.fill.Size=UDim2.fromScale(1,if ready then 1 else level)
 	scroll.ready.Text=if ready then "READY" else string.format("%d%%",math.floor(level*100))
-	scroll.ready.TextSize=if ready then 30 else 22
+	scroll.ready.TextSize=if ready then 28 else 22
 	scroll.key.Text=if pad then Controls.PadLabel.Ultimate else Controls.KeyLabel.Ultimate
-	scroll.seal.Visible=ready
+	scroll.seal.Visible=true
 	-- full, it smoulders: a slow ember on its edge
 	local stroke=scroll.edge
 	if stroke then stroke.Color=if ready then MANGA.ink:Lerp(UI.EMBER,.5+.5*math.sin(os.clock()*6)) else MANGA.ink end
@@ -1248,8 +1350,9 @@ function UI.ultimate(widget,actor,pad,mine)
 	local pulse=.5+.5*math.sin(os.clock()*8)
 	widget.ultimate.BackgroundColor3=if ready then Color3.fromRGB(255,190+math.floor(50*pulse),60) else Color3.fromRGB(255,150,40)
 	-- (UI pass 02/11) Ready was only a word in the plate's smallest text.
-	widget.status.TextColor3=if ready then Color3.fromRGB(255,200,90) else palette.muted
-	if ready then
+	-- (DESIGN 15/11) the plate says nothing of it: the red scroll does
+	widget.status.TextColor3=MANGA.cream
+	if false and ready then
 		widget.status.Text..="   •   ULTIMATE READY"..(if mine then " ("..(if pad then Controls.PadLabel.Ultimate else Controls.KeyLabel.Ultimate)..")" else "")
 	end
 end
@@ -1380,7 +1483,7 @@ function UI:render(data)
 			local def=Fighters[actor.fighterId]
 			local accent=accentOf(def)
 			widget.faceFor=actor.fighterId
-			widget.ring.Color=accent;widget.glow.BackgroundColor3=accent
+			widget.glow.BackgroundColor3=accent
 			widget.initial.Text=string.sub(string.upper(def.Name or "?"),1,1)
 		end
 		local ratio=math.clamp(actor.health/actor.maxHealth,0,1)
@@ -1390,12 +1493,7 @@ function UI:render(data)
 		-- In danger the bar throbs; with the ultimate full the medallion's ring burns.
 		local t=os.clock()
 		if ratio<=.25 and ratio>0 then widget.fill.BackgroundColor3=(widget.base or palette.red):Lerp(if widget.right then MANGA.paper else UI.TRAIL,.5+.5*math.sin(t*9)) end
-		if actor.ultimateReady then
-			widget.ring.Color=Color3.fromRGB(255,200,80):Lerp(Color3.fromRGB(255,120,40),.5+.5*math.sin(t*6))
-			widget.ring.Thickness=4
-		elseif Fighters[actor.fighterId or ""] then
-			widget.ring.Color=accentOf(Fighters[actor.fighterId]);widget.ring.Thickness=3
-		end
+		-- (DESIGN 15/11) the case keeps its ink: the ultimate is on its scroll
 		-- (UI pass 02/11) The damage trail was re-tweened every frame with a
 		-- 0.25 s delay: each new tween cancelled the last before it started, so
 		-- the trail never drained and the lost health stayed drawn as a full
@@ -1411,7 +1509,8 @@ function UI:render(data)
 			end
 		end
 		widget.chakra.Size=UDim2.fromScale(math.clamp(actor.chakra/actor.maxChakra,0,1),1)
-		widget.status.Text=string.format("%d / %d",math.ceil(actor.health),actor.maxHealth)
+		-- (DESIGN 15/11) no numbers under the bar: only what changes the fight
+		widget.status.Text=""
 		UI.ultimate(widget,actor,pad,actor==h and not data.spectate)
 		-- Gentle Fist effects on this fighter: the closed points (pips), what
 		-- they cost (the chakra bar dims, its recovery is spelled out) and the
@@ -1426,10 +1525,11 @@ function UI:render(data)
 		local clones=0
 		for _,body in data.bodies or {} do if body.owner==actor.id and body.kind=="clone" and not body.ephemeral then clones+=1 end end
 		if clones>0 then widget.status.Text..="   •   CLONES "..clones end
+		widget.status.Text=(string.gsub(widget.status.Text,"^%s*•%s*",""))
 		local won=if actor==h then (data.wins and data.wins.human or 0) else (data.wins and data.wins.bot or 0)
 		for k,m in widget.medals do
 			m.Visible=(data.roundsToWin or 1)>1 and k<=(data.roundsToWin or 1)
-			m.BackgroundColor3=if k<=won then palette.gold else palette.track
+			m.BackgroundColor3=if k<=won then MANGA.red else MANGA.ink
 		end
 		local charges=actor.subCharges or 0
 		for k,pip in widget.pips do
@@ -1514,7 +1614,8 @@ function UI:render(data)
 		local keys=if pad then {P0.Light,P0.Heavy,P0.Jump,P0.Dodge,P0.Tool} else {K0.Light,K0.Heavy,K0.Jump,K0.Dodge,K0.Tool}
 		for i,slot in ChakraMoves.Slots do
 			local ui=self.techniqueButtons[i]
-			ui.box.Visible=true;ui.box.Position=UDim2.new(1,-24-(5-i+1)*150+6,1,-84)
+			ui.box.Visible=true;ui.box.Position=UI.tagPos(i,5)
+			ui.icon.Visible=false;ui.title.Visible=true
 			ui.key.Text=keys[i];ui.key.TextColor3=MANGA.cream
 			ui.title.Text=ChakraMoves.name(h.fighterId,slot);ui.title.TextColor3=MANGA.red
 			ui.status.Text="CHAKRA";ui.status.TextColor3=UI.CHAKRA_INK;ui.box.BackgroundTransparency=0
@@ -1525,7 +1626,10 @@ function UI:render(data)
 		local ui=self.techniqueButtons[i]
 		ui.box.Visible=true
 		-- The row ends at the right edge whatever the kit's size.
-		ui.box.Position=UDim2.new(1,-24-(#h.techniques-i+1)*150+6,1,-84)
+		ui.box.Position=UI.tagPos(i,#h.techniques)
+		-- (DESIGN 15/11) its pictogram, or its short name while not imported
+		local picto=UIAssets.id(UIAssets.iconName(tech.id))
+		ui.icon.Image=picto or "";ui.icon.Visible=picto~=nil;ui.title.Visible=picto==nil
 		ui.key.Text=if pad then PAD_FACE[i] else string.format("%d",i)
 		-- (QA 12/11: « NARUTO UZUMAKI RENDAN » went small on two lines) the
 		-- card takes the jutsu's short name when it has one (Fighters `CardName`).
@@ -1567,7 +1671,8 @@ function UI:render(data)
 	-- the rope over the scrolls, as long as the row
 	local shown=if chakraPage then #ChakraMoves.Slots else #h.techniques
 	self.jutsuRope.Visible=shown>0
-	self.jutsuRope.Position=UDim2.new(1,-24-shown*150+6-132,1,-90);self.jutsuRope.Size=UDim2.fromOffset(math.max(0,shown*150-6+132),3)
+	local T=UI.TAG
+	self.jutsuRope.Position=UDim2.new(1,-T.margin-shown*T.step-T.ultW-6,1,-(T.margin+T.ultH)-10);self.jutsuRope.Size=UDim2.fromOffset(shown*T.step+T.ultW+6,3)
 	UI.ultimateScroll(self.ultimateScroll,h,pad,shown)
 	self:sealHud(h,pad,data.sealPage)
 	local caption=self.jutsuCaption
@@ -1596,7 +1701,7 @@ function UI:render(data)
 	for i,b in self.techniqueButtons do if b.box.Visible then leftmost=leftmost or i end end
 	caption.Visible=(pad or chakraPage) and leftmost~=nil
 	local count=if chakraPage then 5 else #h.techniques
-	if leftmost then caption.Position=UDim2.new(1,-24-(count-leftmost+1)*150+6-62,1,-74) end
+	if leftmost then caption.Position=UDim2.new(1,-UI.TAG.margin-count*UI.TAG.step,1,-(UI.TAG.margin+UI.TAG.ultH)-54) end
 	local techOpen=h.reaction=="WallSplat" and (h.splatElapsed or 9)<.34
 	local conversion=UI.conversion(h,pad)
 	local K,P=Controls.KeyLabel,Controls.PadLabel
@@ -1633,14 +1738,14 @@ function UI:render(data)
 	local won=data.winner=="PlayerFighter"
 	local winner=if won then h else b
 	self.resultTitle.Text=(if won then "VICTORY" else "DEFEAT")..(if (data.roundsToWin or 1)>1 and data.wins then string.format("  %d–%d",data.wins.human or 0,data.wins.bot or 0) else "")
-	self.resultTitle.TextColor3=if won then palette.gold else palette.crimson
-	self.resultSeal.Text=if won then "勝" else "敗"
-	self.resultSeal.BackgroundColor3=if won then palette.red else Color3.fromRGB(60,56,64)
+	self.resultTitle.TextColor3=MANGA.cream
+	self.resultBand.BackgroundColor3=if won then MANGA.red else MANGA.ink
+	self.resultSeal.Text=if won then "WIN" else "LOSS"
 	self.resultName.Text=fullName(winner).."  ADVANCES"
-	if Fighters[winner.fighterId or ""] then self.resultName.TextColor3=accentOf(Fighters[winner.fighterId]):Lerp(palette.paper,.25) end
 	self.resultNote.Text=if won then "The judges saw it too. The bracket waits for no one." else "Read the commitment. Find a better opening — prodigies learn fastest from defeat."
 	-- (Beta loop) the masters' path: what this duel earned.
 	self.resultProgress.Text=MastersView.result(data.progress,self.kits) or ""
+	self:resultEarned(data.progress)
 	if data.master then
 		self.resultName.Text="HIS DUEL"
 		self.resultNote.Text=if won then "He saw enough: his kit is yours." else "He is not convinced yet. Come back stronger."
@@ -1661,8 +1766,8 @@ function UI:render(data)
 		if data.spectate then
 			local def=Fighters[winner.fighterId or ""]
 			self.resultTitle.Text=Text.upper(def and def.Name or "")..(if (data.roundsToWin or 1)>1 and data.wins then string.format("  %d–%d",math.max(data.wins.human or 0,data.wins.bot or 0),math.min(data.wins.human or 0,data.wins.bot or 0)) else "")
-			self.resultTitle.TextColor3=palette.gold
-			self.resultSeal.Text="勝";self.resultSeal.BackgroundColor3=palette.red
+			self.resultBand.BackgroundColor3=MANGA.red
+			self.resultSeal.Text="WIN"
 			self.resultNote.Text="One more name moves up the bracket."
 		elseif won then
 			self.resultNote.Text="Your name moves up the bracket."
@@ -1670,5 +1775,57 @@ function UI:render(data)
 			self.resultNote.Text="Your tournament ends here. The bracket plays out without you."
 		end
 	end
+end
+-- (DESIGN 19/11) WHAT YOU EARNED, from the server's word on the duel
+-- (Matches: progress = mastery after, amount gained, need, points, ryo,
+-- firstWin, learned). Says what comes next: the next point of the kit's
+-- tree (Masters.PointEvery) and the masters who want to meet you
+-- (MastersView.leadsTo, at Masters.Need).
+function UI:resultEarned(progress)
+	local p=if type(progress)=="table" then progress else nil
+	self.resultGains.Visible=p~=nil and (p.gained or p.learned or (p.ryo or 0)>0)
+	if not self.resultGains.Visible then return end
+	local ryo=p.ryo or 0
+	self.resultRyo.Text=if ryo>0 then string.format("+%d RYŌ",ryo) else "NO RYŌ THIS TIME"
+	self.resultFirstWin.Visible=p.firstWin==true
+	local id=p.fighter or p.learned
+	local def=Fighters[id or ""]
+	local who=if def then Text.upper(def.Name or "") else "YOUR KIT"
+	if p.learned then
+		self.resultKit.Text=who.."'S KIT IS YOURS"
+		self.resultGain.Text="";self.resultBar.Visible=false
+		self.resultNext.Text="Pick it at the roster or wear it in Konoha. Its tree starts now."
+		return
+	end
+	self.resultBar.Visible=true
+	local after=p.mastery or 0
+	local gain=p.amount or 0
+	local need=p.need or Masters.Need
+	local every=Masters.PointEvery or 10
+	-- the bar shows the stretch to the next master meeting, then the stretch to
+	-- the next tree point once past it
+	local span=if after<need then need else every
+	local from=if after<need then 0 else after-(after%every)
+	local before=math.max(from,after-gain)
+	local function scale(v) return math.clamp((v-from)/span,0,1) end
+	self.resultBarBefore.Size=UDim2.new(scale(before),-6*scale(before),1,-6)
+	self.resultBarGain.Position=UDim2.new(scale(before),3,0,3)
+	self.resultBarGain.Size=UDim2.new(scale(after)-scale(before),0,1,-6)
+	self.resultKit.Text=string.format("%s MASTERY  %d",who,after)
+	self.resultGain.Text=if gain>0 then string.format("+%d",gain) else ""
+	local lines={}
+	local toPoint=every-(after%every)
+	table.insert(lines,string.format("%d more mastery for your next tree point.",toPoint))
+	local leads={}
+	for _,master in MastersView.leadsTo(id) do
+		if not (self.kits and self.kits.owned and self.kits.owned[master]) then
+			local m=Fighters[master];table.insert(leads,if m then m.Name else master)
+		end
+	end
+	if #leads>0 then
+		local list=table.concat(leads,", ")
+		table.insert(lines,if after>=need then list.." want to meet you in Konoha." else string.format("%d more: %s will want to meet you.",need-after,list))
+	end
+	self.resultNext.Text=table.concat(lines,"  ")
 end
 return UI

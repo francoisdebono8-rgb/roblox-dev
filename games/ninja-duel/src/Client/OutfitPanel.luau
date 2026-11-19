@@ -105,7 +105,9 @@ function Panel.new(kit,gui,send,ui)
 	return self
 end
 
-function Panel:shown() return self.root.Visible end
+-- (DESIGN 19/11) the wardrobe counts as this panel for Konoha (the walk
+-- stops while either is open: HubClient asks this panel)
+function Panel:shown() return self.root.Visible or (self.ui and self.ui.wardrobe and self.ui.wardrobe:shown()) or false end
 function Panel:dressed() return Shop.dressed(self.kits and self.kits.style) end
 function Panel:show(kits)
 	if kits then self.kits=kits end

@@ -1,0 +1,27 @@
+# konoha_prove.py, res 4
+[PASS         ] P1  Grounding
+[PASS         ] P10  Coplanar surfaces
+[PASS         ] P11  Empty space
+                18% of 396 sampled cells have nothing within 26 studs (budget 22%)
+[INFO         ] P12  Entrances
+[PASS         ] P13  Feature dressing
+[INFO         ] P14  Props in water
+[INFO         ] P15  Clear routes
+[INFO         ] P16  Enclosure
+[PASS         ] P2  Standable surface
+                30560 nodes across 40 walk-connected components
+[PASS         ] P21  Performance budget
+                15 unique meshes, 676 placements, ~615,600 triangles, 720 instances, 532 shadow casters
+[PASS         ] P2b  Recovery margin
+[PASS         ] P3  Intent match
+[PASS         ] P4  Anchor legitimacy
+[INFO         ] P5  Sightlines
+[PASS         ] P6  Overlap
+[PASS         ] P7  Role coverage
+[INFO         ] P8  Symmetry
+[INFO         ] P9  Ring-out counterplay
+RESULT: PASS
+
+# même spec, res 2.5
+                17% of 396 sampled cells have nothing within 26 studs (budget 22%)
+RESULT: PASS

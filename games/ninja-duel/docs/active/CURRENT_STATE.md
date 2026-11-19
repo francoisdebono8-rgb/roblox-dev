@@ -1,3 +1,11 @@
+**Corps, bandeau, tenues, 19/11 au soir (DEV ; [AVATAR-001](MASTER_BACKLOG.md))** : François demande de vérifier les tailles, les bandeaux et l'affichage. Mesuré dans Studio sur son avatar.
+- **Taille** : l'avatar mesurait 5,10 dans Konoha et 5,96 en duel, contre 6,51 pour les prodiges. Il est maintenant à la taille des prodiges dans le village (6,50) comme en duel (6,37, corps du rig).
+- **Corps en duel** : plus d'air au coude ni de pieds au-dessus du sol ; la tête est posée sur le torse.
+- **Bandeau** : sur le front, plus sur les yeux.
+- **Tenues** : en SmoothPlastic. En Fabric, elles sortaient presque noires.
+- **Vérifs** : suite 76 PASS. Vu à chaud dans Studio ; la place reconstruite reste à rouvrir.
+- **Le plan pour toutes les discussions** est dans le projet : `claude/plan-vrai-jeu-taches-2026-11-19.md`.
+
 **Robot de la boucle, icônes et parcours dans Studio, 19/11 au soir (OUTILLEUR ; plan `claude/plan-vrai-jeu-taches-2026-11-19` § 4 ; branche `work/tools-loopbot`)**
 - **Robot de la boucle :** `tests/Loop.spec.luau` et `tools/loopbot/`. Il joue sur les vrais modules du serveur, pour les trois inspirations : arrivée, inspiration, tenue, première minute jusqu'à un vrai coup sur le partenaire, gains, achat au marché, nœud de l'arbre. Il donne aussi le temps estimé jusqu'au premier coup.
   - **Pas lancé ici** : pas de lune dans cet environnement, son téléchargement a été refusé. La structure et les noms sont vérifiés. Il reste à le passer avec lune avant de l'ajouter à `TEST_RUNNERS`.

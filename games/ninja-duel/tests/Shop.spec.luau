@@ -381,6 +381,43 @@ test("DA v3 shop: the buttons' states, the Ryō still missing, the outfit's figu
 	assert(ok,tostring(err))
 end)
 
+-- (DESIGN 19/11) MY NINJA, the wardrobe: every slot and every piece, what he
+-- can wear first, where the rest is had; the slots to come shown as SOON.
+test("MY NINJA: the wardrobe lists every slot's pieces, his first, and opens from the shop",function()
+	local W=H.load("Client/Wardrobe")
+	local style={owned={KunaiBlack=true},equipped={kunai="KunaiSteel",top="TopTunicNavy"}}
+	assert(W.state(style,Shop.item("KunaiSteel"))=="worn" and W.state(style,Shop.item("KunaiBlack"))=="owned","worn and owned")
+	assert(W.state(style,Shop.item("KunaiVermilion"))=="market" and W.state(style,Shop.item("KunaiGold"))=="shop","market in Ryō, shop in Robux")
+	local list=W.items(style,"kunai")
+	assert(list[1].id=="KunaiSteel" and list[2].id=="KunaiBlack","his pieces first")
+	local have,all=W.count(style,"kunai");assert(have==2 and all==#Shop.inSlot("kunai"),"the count")
+	H.workspace.GetAttribute=function() return nil end
+	local saved=H.envBase.Instance
+	local baseNew=harnessInstance.new
+	H.envBase.Instance={new=function(class)
+		local x=baseNew(class)
+		x.Activated={Connect=function(_,fn) x.click=fn end}
+		return x
+	end}
+	local ok,err=pcall(function()
+		local UI=H.load("Client/UI")
+		local sent={}
+		local ui=UI.new(baseNew("PlayerGui"),function(a,p) table.insert(sent,{a,p}) end)
+		assert(ui.wardrobe,"no wardrobe")
+		local kits={state="ready",owned={Leaf=true},mastery={Leaf=0},starter="Leaf",selected="Leaf",masters={},trees={},ryo=10,style=style}
+		ui.shopPanel.onOutfit()
+		ui.wardrobe:show(kits)
+		assert(ui.wardrobe:shown() and (not ui.outfitPanel or ui.outfitPanel:shown()),"open, and Konoha's walk sees it")
+		ui.wardrobe:open("kunai")
+		assert(#ui.wardrobe.cards==#Shop.inSlot("kunai"),"one card per kunai")
+		assert(ui.wardrobe.tabs.mask and ui.wardrobe.tabs.mask.future and ui.wardrobe.tabs.mask.count.Text=="SOON","the slots to come")
+		assert(ui.wardrobe.close.Size.X.Offset>=64,"a big close")
+		ui.wardrobe:hide();assert(not ui.wardrobe:shown())
+	end)
+	H.envBase.Instance=saved
+	assert(ok,tostring(err))
+end)
+
 -- (15/11, DA v3 Mix-Shop) the STYLE preview: a still copy of his own avatar,
 -- its scripts and its own outfit taken off, the character left as it was.
 test("the STYLE preview: a still copy of his avatar, without its scripts nor its outfit",function()

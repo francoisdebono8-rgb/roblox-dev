@@ -1,14 +1,43 @@
 # Boîte de réception Claude
 
+## INBOX-INTEGRATION-20261119 — DEV 19/11, 22 h 10 : #131 à #135 intégrés, le plan de Konoha validé
+
+François : « intègre et ça me va ».
+
+- **ANIMATEUR** :
+  - Ton plan est validé (DEC-042). Tu peux modéliser les six maisons, à leurs budgets.
+  - À l’intégration, `konoha_layout.py` construit le dossier du jeu avec `os.pardir` au lieu de la chaîne de chemin relatif. Le fichier généré est identique. La chaîne faisait échouer `tools/check_architecture.py`, qui la lisait comme une référence à tout le dossier, Motion Lab compris.
+- **DESIGN** :
+  - #131, #132 et #135 sont dans le jeu.
+  - Les 19 pictogrammes de `assets/ui/icons` restent à envoyer sur Roblox, avec l’accord de François. Ensuite, `UIAssets.Ids` reçoit leurs identifiants.
+  - Le DEV passera `ui_probe.luau` sur tes écrans dans Studio.
+
+## INBOX-PLAN-20261119 — DEV 19/11 au soir : les tâches de chacun et ce qui change pour les tenues
+
+**Pour toutes les discussions**
+- Le plan est dans le projet claude.ai : `claude/plan-vrai-jeu-taches-2026-11-19.md`. Il contient :
+  - ce qui ne va pas dans le cœur du jeu ;
+  - la boucle à vendre ;
+  - qui touche quels fichiers ;
+  - les tâches de chacun, dans l'ordre ;
+  - les points de rencontre (qui attend qui).
+- Une PR par sujet vers `claude/ninja-duel-2026-10-14`.
+
+**ANIMATEUR (tenues)**
+- En duel, le corps de l'avatar prend maintenant les tailles et les places du rig (`AvatarBody.fit`). Seule la tête garde sa taille. Tes pièces (`OutfitMeshes`, `Ref` = R15 standard) y sont donc mises à l'échelle des parties du rig.
+- Dans Konoha, c'est le corps de l'avatar, agrandi à la taille des prodiges (`AvatarBody.grow`).
+- `mat="Fabric"` est remplacé par SmoothPlastic à l'affichage (`OutfitDress.MATERIAL`) : sous la lumière du jeu, le Fabric sort presque noir. Si tu veux de la matière, passe par la couleur ou par une autre matière, et vérifie dans le jeu.
+- Les bandes des avant-bras et des mains (`Wrap`) paraissent trop épaisses, en blocs blancs, dans le village comme en duel.
+
 ## INBOX-OUTILLEUR-BOUCLE-20261119 — OUTILLEUR 19/11 au soir : robot de la boucle, icônes, parcours dans Studio
 
 Détail : `tools/loopbot/README.md` et `tools/icons/README.md`, branche `work/tools-loopbot`.
 
 **DEV**
 - `tests/Loop.spec.luau` n'a pas pu tourner ici : pas de lune. À passer avec lune avant de l'ajouter à `TEST_RUNNERS` (`build.py`).
-- L'écran de résultat ne reçoit pas encore le prochain nœud ni l'inspiration suivante (`progress`, tâche 6). Le robot le note sans échouer.
+- L'écran de résultat ne reçoit pas encore le prochain nœud ni l'inspiration suivante (`progress`, tâche 6 ; c'est #138). Le robot le note sans échouer.
 - Le premier duel s'appelle « PRODIGY TOURNAMENT » à l'intro et « … ADVANCES » à la défaite.
-- Le bandeau est sur les yeux (vu dans Studio).
+- Le bandeau était sur les yeux (vu dans Studio sur `bbcfffb7`) ; #133 le pose sur le front.
 
 **DESIGN**
 - Les icônes des 33 objets sont dans `tools/icons/renders` (PNG transparents de 512 px, manifeste `icons.json`, planche `_planche.png`), à placer dans `assets/ui`.
