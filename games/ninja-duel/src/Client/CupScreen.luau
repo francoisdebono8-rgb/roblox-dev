@@ -7,6 +7,15 @@ local Shared=game:GetService("ReplicatedStorage").NinjaDuel
 local Text=require(Shared.Text)
 local Fighters=require(Shared.Fighters)
 local Cup={};Cup.__index=Cup
+Cup.CHAMPION_NOTE="Eight prodigies entered the arena. One walks out with the tournament."
+-- (19/11, vague 2 DEV 5) The champion card's line for the week's exam
+-- (cup.exam, Server/WeeklyExam): nil when the tournament did not count.
+function Cup.examLine(exam)
+	if type(exam)~="table" or type(exam.name)~="string" then return nil end
+	local best=if exam.improved then "A NEW BEST FOR THE WEEK" else "YOUR BEST THIS WEEK STANDS"
+	if exam.passed then return string.format("%s: PASSED. %s. The week's three best go up on the cliff.",exam.name,best) end
+	return string.format("%s: %s.",exam.name,best)
+end
 
 local W,H=300,44
 local QF_Y={150,202,302,354,454,506,606,658}
@@ -101,7 +110,8 @@ function Cup.new(ui,send,kit)
 	K.create("UIStroke",seal,{Color=P.paper,Thickness=3,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
 	local ct=K.inkTitle(K.text(champion,"CHAMPION",UDim2.fromOffset(30,40),UDim2.fromOffset(640,90),88,P.gold,K.TITLE_FONT,Enum.TextXAlignment.Center));ct.ZIndex=51
 	self.championName=K.text(champion,"",UDim2.fromOffset(30,140),UDim2.fromOffset(640,44),36,P.paper,K.TITLE_FONT,Enum.TextXAlignment.Center);self.championName.ZIndex=51
-	local cn=K.text(champion,"Eight prodigies entered the arena. One walks out with the tournament.",UDim2.fromOffset(40,190),UDim2.fromOffset(620,44),16,P.muted,K.BODY_FONT,Enum.TextXAlignment.Center);cn.ZIndex=51
+	local cn=K.text(champion,Cup.CHAMPION_NOTE,UDim2.fromOffset(40,190),UDim2.fromOffset(620,44),16,P.muted,K.BODY_FONT,Enum.TextXAlignment.Center);cn.ZIndex=51
+	self.championNote=cn
 	local again=K.button(champion,"NEW TOURNAMENT",UDim2.fromOffset(40,262),UDim2.fromOffset(620,56),function() self.send("CupStart",{player=self.lastFighter}) end,P.red)
 	again.ZIndex=51
 	local back=K.button(champion,"BACK TO THE ROSTER",UDim2.fromOffset(40,330),UDim2.fromOffset(620,56),function() self.send("CupLeave") end)
@@ -242,6 +252,8 @@ function Cup:render(data)
 		if reward and ((reward.amount or 0)>0 or (reward.ryo or 0)>0) then
 			self.championName.Text..=string.format("  •  +%d MASTERY  •  +%d RYŌ",reward.amount or 0,reward.ryo or 0)
 		end
+		-- (19/11, vague 2 DEV 5) the week's exam: passed, and the week's best
+		self.championNote.Text=Cup.examLine(data.cup.exam) or Cup.CHAMPION_NOTE
 		if self.lastPhase~="Champion" then focus(self.championAgain) end
 	elseif phase=="Bracket" and self.lastPhase~="Bracket" then
 		focus(self.primary)

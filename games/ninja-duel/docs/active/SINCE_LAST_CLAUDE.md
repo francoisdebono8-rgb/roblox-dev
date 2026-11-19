@@ -1,5 +1,40 @@
 # Boîte de réception Claude
 
+## INBOX-RETOUR-DEV-20261119 — DEV 19/11, nuit : les raisons de revenir (vague 2, DEV 5)
+
+Quêtes du jour, jours d'affilée et Examen de la semaine. Les règles sont dans `Shared/Daily` et `Shared/Exam`, le côté serveur dans `Server/WeeklyExam`. Tests : `tests/Daily.spec.luau` et `tests/Exam.spec.luau`.
+
+**Les règles**
+- **3 quêtes par jour,** une facile (60 Ryō), une moyenne (90) et une difficile (150). Ce sont les mêmes pour tout le monde. Elles sont payées dès qu'elles sont faites, sans bouton à cliquer. Le jour change à 00 h UTC.
+- **Ce qui compte :** un duel que le profil compte, c'est-à-dire avec un kit appris, contre l'IA, en tournoi ou contre un joueur. L'entraînement ne compte pas.
+- **Jours d'affilée :** le premier duel du jour compte la journée. Un jour manqué fait repartir à 1. Les jours 1 à 7 rapportent 25, 35, 45, 55, 65, 80 puis 150 Ryō, et la semaine recommence.
+- **Examen de la semaine :** le tournoi des prodiges compte s'il est commencé entre le vendredi 18 h et le dimanche 21 h, heure de Paris (heure d'été comprise).
+  - Le score d'une tentative tient compte, dans l'ordre, des matchs gagnés, des manches perdues, des PV gardés et du temps. Seul le meilleur de la semaine compte.
+  - Le classement est un OrderedDataStore par semaine.
+  - Titres : EXAM PASSED jusqu'au prochain Examen ; TOP 3 OF THE WEEK jusqu'à la fermeture du suivant.
+  - À la fermeture, les 3 meilleurs vont sur la falaise, places 2 à 4, le n° 1 en premier. Un tournoi gagné en dehors de l'Examen ne sculpte plus de tête.
+- **Le nom :** `Config.Exam.Name` vaut « THE RANK EXAM » tant que François n'a pas décidé pour les noms. S'il garde les noms, ce sera « THE CHUNIN EXAM ».
+- **Dans Studio seulement :** l'attribut `NinjaExamOpen=true` sur `workspace` ouvre l'Examen tout de suite, pour l'essayer avant vendredi.
+
+**DESIGN** (vague 2, DESIGN 3 : les données sont prêtes)
+- `kits.daily` (`Progression.view`, phase Selection) : `{day, resetIn, quests={{id,text,tier,goal,progress,done,ryo}}, streak={days,counted,today,tomorrow}}`. C'est pour le panneau des quêtes dans Konoha.
+- `kits.exam` : `{enabled,name,key,open,opens,closes,in,best,passed}`. C'est pour le bandeau de l'Examen (ouvert ou fermé, temps restant).
+- `kits.title` contient le titre du joueur. L'attribut `NinjaTitle` est posé sur chaque Player.
+- **Écran de résultat :** `progress.daily` vaut `{ryo, completed={{id,text,ryo}}, streak={days,ryo}, total}`.
+  - J'ai mis une phrase provisoire dans `UI:resultEarned`, écrite par `Daily.line`. Le total des Ryō comprend les quêtes. `resultNext` rétrécit pour ne jamais être coupé. Remplace-la par ta ligne.
+- **Tournoi :** `cup.examName` est présent tant que le tournoi compte pour l'Examen. `cup.exam` vaut `{name,score,best,improved,passed}` à la fin.
+  - J'ai écrit une phrase provisoire sur la carte du champion : `Cup.examLine`, dans `championNote`.
+- **Au-dessus des autres joueurs dans Konoha** (`HubPlayers`) : une ligne de titre en or au-dessus du nom. Le badge passe de 58 à 78 px de haut.
+
+**OUTILLEUR**
+- Le robot de la boucle peut lire `Daily.today(day)` et `Daily.record` pour compter les Ryō des quêtes et des jours d'affilée dans le temps du premier achat (vague 2, OUTILLEUR 2).
+- L'entonnoir ne change pas.
+
+**CM**
+- Les règles de ton § 3 (Examen) sont dans le jeu : la fenêtre, le score, les titres EXAM PASSED et TOP 3 OF THE WEEK, la falaise du n° 1 au n° 3.
+- La première édition est simplement le premier vendredi qui suit la publication.
+- Les codes ne sont pas faits : c'est une autre PR DEV.
+
 ## INBOX-VAGUE2-DEV-20261119 — DEV 19/11, nuit : ce que la DEV livre pour la vague 2
 
 Le plan de la vague est dans le projet claude.ai : `claude/vague-2-taches-2026-11-19.md`.

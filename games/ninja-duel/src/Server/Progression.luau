@@ -26,9 +26,13 @@ local S=require(script.Parent.ProfileSchema)
 local Repo=require(script.Parent.ProfileRepository)
 local SkillBuilds=require(script.Parent.SkillBuilds)
 local Shop=require(Shared.Shop)
+local Daily=require(Shared.Daily)
+local Exam=require(Shared.Exam)
 
 local P={handles=setmetatable({},{__mode="k"}),states=setmetatable({},{__mode="k"}),boost=setmetatable({},{__mode="k"}),repo=nil}
 P.LoadTries=5
+-- The server's clock (UTC seconds; the suites set their own).
+P.now=function() return os.time() end
 P.LoadRetry=3
 
 function P.config() return Config.Progression or {} end
@@ -121,6 +125,12 @@ function P.view(player)
 	out.ryo=h.data.wallet and h.data.wallet.ryo or 0
 	out.style={owned=S.copy(h.data.style and h.data.style.owned or {}),equipped=S.copy(h.data.style and h.data.style.equipped or {})}
 	out.boost=P.boost[player]==true
+	-- (19/11, vague 2 DEV 5) the day's quests and the days in a row, the
+	-- week's exam: what the DESIGN's panels in Konoha show
+	out.daily=Daily.view(h.data.daily,P.now())
+	out.exam=Exam.view(h.data.exam,P.now())
+	local okTitle,title=pcall(function() return player:GetAttribute("NinjaTitle") end)
+	out.title=if okTitle and type(title)=="string" then title else nil
 	return out
 end
 -- (19/11, plan § 2 « la séance » and DEV 6; OUTILLEUR in Studio: the result
@@ -263,7 +273,35 @@ function P.duelEnded(player,s,won)
 			out.ryo=ryo;out.ryoTotal=result.ryo;out.firstWin=first
 		end
 	end
+	-- (19/11, vague 2 DEV 5) the day's quests and the days in a row
+	local lost=s.wins and s.bot and s.wins[s.bot.id] or 0
+	return P.daily(player,out,{duel=1,win=if won then 1 else 0,jutsu=used,flawless=if won and lost==0 then 1 else 0,cup=if won and s.cup then 1 else 0})
+end
+-- (19/11, vague 2 DEV 5) A counted duel's events for the day's quests and
+-- the days in a row (Shared/Daily); what they paid joins the result
+-- screen's table `out` as out.daily {ryo, completed, streak, total}.
+function P.daily(player,out,events)
+	if not P.enabled() or not P.ready(player) then return out end
+	local clean={}
+	for name,n in events do if Daily.Events[name] and type(n)=="number" and n>0 then clean[name]=math.min(100,math.floor(n)) end end
+	local ok,result=P.run(player,"dailyRecord",{day=Daily.day(P.now()),events=clean})
+	if ok and type(result)=="table" then
+		out=out or {}
+		out.daily=result
+		if (result.ryo or 0)>0 then out.ryoTotal=result.total end
+	end
 	return out
+end
+-- (19/11, vague 2 DEV 5) An attempt at the week's exam (Server/WeeklyExam):
+-- its score kept if it is the week's best. {week, best, improved, passed}.
+function P.examResult(player,week,score,passed)
+	if not P.enabled() or not P.ready(player) then return nil end
+	local ok,result=P.run(player,"examResult",{week=week,score=score,passed=passed==true})
+	return if ok and type(result)=="table" then result else nil
+end
+function P.examRecord(player)
+	local h=P.handles[player]
+	return h and h.data.exam
 end
 -- (DEC-040) Mastery and Ryō for the kit `kit`: `amount` of mastery (the
 -- boost doubles it) and `ryo`. The result screen's table, or nil.
@@ -286,14 +324,15 @@ end
 -- (DEC-040, user 14/11: « t'es censé la gagner en affrontant des gens ») A
 -- duel against another player, decided: mastery for the kit he fought with
 -- when he has learned it (twice a duel against the AI), and a duel's Ryō.
-function P.versusEnded(player,kit,won,techniques)
+function P.versusEnded(player,kit,won,techniques,lost)
 	if not P.enabled() or not P.ready(player) or not P.owns(player,kit) then return nil end
 	local h=P.handles[player]
 	local today=os.date("!%Y-%m-%d")
 	local first=won and h.data.wallet and h.data.wallet.winDay~=today
 	local amount=Masters.versusGain({won=won,techniques=techniques})
 	local ryo=Shop.duelRyo({won=won,firstWinToday=first})
-	return reward(player,kit,amount,ryo,if first then today else nil)
+	local out=reward(player,kit,amount,ryo,if first then today else nil)
+	return P.daily(player,out,{duel=1,win=if won then 1 else 0,jutsu=techniques or 0,flawless=if won and (lost or 0)==0 then 1 else 0})
 end
 -- (DEC-040) The tournament's end for him: the champion's kit gets its bonus
 -- and the champion's Ryō; a lost final, the finalist's.

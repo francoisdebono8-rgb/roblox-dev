@@ -17,6 +17,7 @@ local FirstMinute=require(Shared.FirstMinute)
 -- the locked ones, the masters who teach (Shared/MastersView).
 local MastersView=require(Shared.MastersView)
 local Masters=require(Shared.Masters)
+local Daily=require(Shared.Daily)
 -- (B1 lot 3) the effects switch lives in the VFX kit (absent in headless tests)
 local okKit,FXKit=pcall(function() return require(script.Parent.VfxKit) end)
 if not okKit then FXKit=nil end
@@ -791,6 +792,9 @@ function UI.new(parent,send)
 	self.resultBarGain=frame(bar,UDim2.fromOffset(3,3),UDim2.new(0,0,1,-6),MANGA.red,0)
 	self.resultBar=bar
 	self.resultNext=text(gains,"",UDim2.fromOffset(18,152),UDim2.new(1,-36,0,46),19,MANGA.mid,BODY_FONT)
+	-- (19/11, DEV 5) with the day's quests it may need three lines: smaller, never cut
+	self.resultNext.TextWrapped=true;self.resultNext.TextScaled=true
+	create("UITextSizeConstraint",self.resultNext,{MaxTextSize=19,MinTextSize=12})
 	-- (Beta loop) the one-line summary stays for the tests and the logs
 	self.resultProgress=text(resultBox,"",UDim2.fromOffset(30,0),UDim2.fromOffset(10,10),15,MANGA.ink,STRONG_FONT)
 	self.resultProgress.Visible=false
@@ -1795,18 +1799,22 @@ end
 -- (MastersView.leadsTo, at Masters.Need).
 function UI:resultEarned(progress)
 	local p=if type(progress)=="table" then progress else nil
-	self.resultGains.Visible=p~=nil and (p.gained or p.learned or (p.ryo or 0)>0)
+	local daily=p and type(p.daily)=="table" and (p.daily.ryo or 0) or 0
+	self.resultGains.Visible=p~=nil and (p.gained or p.learned or (p.ryo or 0)>0 or daily>0)
 	if not self.resultGains.Visible then return end
-	local ryo=p.ryo or 0
+	local ryo=(p.ryo or 0)+daily
 	self.resultRyo.Text=if ryo>0 then string.format("+%d RYŌ",ryo) else "NO RYŌ THIS TIME"
 	self.resultFirstWin.Visible=p.firstWin==true
+	-- (19/11, vague 2 DEV 5) what the day's quests and the days in a row paid
+	-- (the DESIGN's own line will replace it: vague 2, DESIGN 3)
+	local dailyText=Daily.line(p.daily)
 	local id=p.fighter or p.learned
 	local def=Fighters[id or ""]
 	local who=if def then Text.upper(def.Name or "") else "YOUR KIT"
 	if p.learned then
 		self.resultKit.Text=who.."'S KIT IS YOURS"
 		self.resultGain.Text="";self.resultBar.Visible=false
-		self.resultNext.Text="Pick it at the roster or wear it in Konoha. Its tree starts now."
+		self.resultNext.Text="Pick it at the roster or wear it in Konoha. Its tree starts now."..(if dailyText then "  "..dailyText else "")
 		return
 	end
 	self.resultBar.Visible=true
@@ -1846,6 +1854,7 @@ function UI:resultEarned(progress)
 		local list=table.concat(leads,", ")
 		table.insert(lines,if after>=need then list.." want to meet you in Konoha." else string.format("%d more: %s will want to meet you.",need-after,list))
 	end
+	if dailyText then table.insert(lines,1,dailyText) end
 	self.resultNext.Text=table.concat(lines,"  ")
 end
 return UI

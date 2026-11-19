@@ -400,7 +400,9 @@ function Matches:roundOver(s,winner,notify,advance)
 		local won=winner==s.human
 		local gained=Progression.duelEnded(s.owner,s,won)
 		s.progress={mastery=gained and gained.mastery,gained=gained~=nil and gained.amount~=nil,amount=gained and gained.amount,fighter=s.playerId,need=Masters.Need,
-			points=gained and gained.points,ryo=gained and gained.ryo,firstWin=gained and gained.firstWin}
+			points=gained and gained.points,ryo=gained and gained.ryo,firstWin=gained and gained.firstWin,
+			-- (19/11, vague 2 DEV 5) the day's quests done, the days in a row
+			daily=gained and gained.daily}
 		if s.masterTrial and won then
 			local ok=Progression.learnFromMaster(s.owner,s.masterTrial)
 			if ok then s.progress.learned=s.masterTrial end
@@ -417,10 +419,12 @@ function Matches:roundOver(s,winner,notify,advance)
 				local used=0
 				for _ in seat.actor.usedJutsu or {} do used+=1 end
 				local won=winner==seat.actor
-				local gained=Progression.versusEnded(seat.player,seat.fighter,won,used)
+				local lost=0
+				for id,n in s.wins do if id~=seat.actor.id then lost+=n end end
+				local gained=Progression.versusEnded(seat.player,seat.fighter,won,used,lost)
 				seat.progress={mastery=gained and gained.mastery,gained=gained~=nil and gained.amount~=nil,amount=gained and gained.amount,fighter=seat.fighter,need=Masters.Need,
 					points=gained and gained.points,ryo=gained and gained.ryo,firstWin=gained and gained.firstWin,
-					ahead=Progression.ahead(seat.player,seat.fighter)}
+					ahead=Progression.ahead(seat.player,seat.fighter),daily=gained and gained.daily}
 			end
 		end
 	end
