@@ -151,6 +151,11 @@ end
 -- the inspirations, the outfit, the first duel at the gate, the market, the
 -- tree): where new players stop is read from these steps (OUTILLEUR: the
 -- Creator Dashboard's export). `input` and `jutsu` stay in the log only.
+-- The format (for tools/analytics): step name -> its order, 1 to 9, sent to
+-- AnalyticsService:LogOnboardingFunnelStepEvent(player, order, name) once per
+-- player and only forward; every step is also one log line
+-- `[NinjaDuelFirst] <UserId> <step> <seconds since joined>`. A duel against a
+-- player counts like one against the AI (started, hit, duel, won).
 Matches.FUNNEL={joined=1,inspiration=2,dressed=3,started=4,hit=5,duel=6,won=7,bought=8,node=9}
 function Matches.measure(player,s,step)
 	local m=s.metrics
@@ -418,6 +423,13 @@ function Matches:roundOver(s,winner,notify,advance)
 	-- mastery (Progression.versusEnded), shown on his own result screen.
 	if decided and s.online and s.seats and not s.forfeit then
 		for _,seat in s.seats do
+			-- (19/11, OUTILLEUR's two-player test: « le duel en ligne ne compte
+			-- pas dans l'entonnoir ») a duel against a player counts as one
+			-- against the AI: decided, and won
+			if seat.present and seat.player and seat.session then
+				Matches.measure(seat.player,seat.session,"duel")
+				if winner==seat.actor then Matches.measure(seat.player,seat.session,"won") end
+			end
 			if seat.present and seat.actor and seat.player then
 				local used=0
 				for _ in seat.actor.usedJutsu or {} do used+=1 end

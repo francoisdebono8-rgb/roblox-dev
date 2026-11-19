@@ -17,7 +17,7 @@ local FirstMinute=require(Shared.FirstMinute)
 -- the locked ones, the masters who teach (Shared/MastersView).
 local MastersView=require(Shared.MastersView)
 local Masters=require(Shared.Masters)
-local Daily=require(Shared.Daily)
+local Daily=require(Shared.DailyQuests)
 -- (B1 lot 3) the effects switch lives in the VFX kit (absent in headless tests)
 local okKit,FXKit=pcall(function() return require(script.Parent.VfxKit) end)
 if not okKit then FXKit=nil end

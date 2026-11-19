@@ -176,10 +176,12 @@ TEST_RUNNERS.append(('lune','tests/Loop.spec.luau'))
 # (19/11, vague 2 DEV 3) The ninja's own weapon: the contract with the ANIMATEUR, equal power.
 TEST_RUNNERS.append(('lune','tests/NinjaWeapons.spec.luau'))
 # (19/11, vague 2 DEV 5) Reasons to come back: the day's quests, the days in a row, the week's exam.
-TEST_RUNNERS.append(('lune','tests/Daily.spec.luau'))
+TEST_RUNNERS.append(('lune','tests/DailyQuests.spec.luau'))
 TEST_RUNNERS.append(('lune','tests/Exam.spec.luau'))
 # (19/11) The CM's codes: checked, once per player, between their dates.
 TEST_RUNNERS.append(('lune','tests/Codes.spec.luau'))
+# (19/11) The OUTILLEUR's two-player test, fixed: a body stuck on a roof, Studio's test players, the funnel.
+TEST_RUNNERS.append(('lune','tests/VillageDuel.spec.luau'))
 def run_automated():
     tool={}
     import os

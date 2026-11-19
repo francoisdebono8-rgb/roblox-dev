@@ -1,4 +1,5 @@
--- Reasons to come back tomorrow (19/11, plan « vague 2 », DEV 5; the CM's
+-- The daily quests (DailyQuests: the name says Quest, for the OUTILLEUR's
+-- loop robot). Reasons to come back tomorrow (19/11, plan « vague 2 », DEV 5; the CM's
 -- market study: every big game of the genre has daily quests in its own
 -- currency and a reward that grows with the days in a row).
 --  * THREE QUESTS A DAY, paid in Ryō the moment one is done (no claim

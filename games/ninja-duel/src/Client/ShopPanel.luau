@@ -13,7 +13,7 @@
 -- the server's Progression view. Opened from Konoha's HUD and the roster.
 local Shared=game:GetService("ReplicatedStorage").NinjaDuel
 local Shop=require(Shared.Shop)
-local Daily=require(Shared.Daily)
+local Daily=require(Shared.DailyQuests)
 local MastersView=require(Shared.MastersView)
 local Masters=require(Shared.Masters)
 local Fighters=require(Shared.Fighters)

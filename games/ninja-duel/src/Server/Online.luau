@@ -202,6 +202,8 @@ function Online:fight(d)
 			end
 			-- (DEC-038) the walk in Konoha ends: the duel's body takes over.
 			pcall(function() require(script.Parent.Hub).leave(seat.player) end)
+			-- (19/11, OUTILLEUR) the funnel: a duel against a player counts
+			if seat.session then m.measure(seat.player,seat.session,"started") end
 			seat.player.Character=seat.actor.model
 			-- The body stays server-simulated even as the player's character.
 			pcall(function() seat.actor.root:SetNetworkOwner(nil) end)
@@ -343,6 +345,15 @@ function Online:update(dt,now)
 			-- The local duel's idle rule, for both players.
 			for _,seat in d.seats do if os.clock()-seat.actor.lastMove>0.4 then seat.actor.move=Vector3.zero end end
 			c:update(math.min(dt,0.1),now)
+			-- (19/11, OUTILLEUR's two-player test) the funnel counts a duel
+			-- against a player as one against the AI: his first blow that lands
+			for _,seat in d.seats do
+				local other=d.seats[3-seat.index].actor
+				local s=seat.session
+				if seat.present and s and s.metrics and not s.metrics.hitAt and other and other.def and other.health and other.health<other.def.Health then
+					self.matches.measure(seat.player,s,"hit")
+				end
+			end
 		end
 		-- Regular cadence, plus an immediate packet on a contact, throw or teleport.
 		local urgent=c.urgent and now>=(d.lastUrgent or 0)+.03

@@ -66,9 +66,10 @@ run Trees "$LUNE" run tests/Trees.spec.luau
 run Hub "$LUNE" run tests/Hub.spec.luau
 run Shop "$LUNE" run tests/Shop.spec.luau
 run Weapons    "$LUNE" run tests/NinjaWeapons.spec.luau
-run Daily      "$LUNE" run tests/Daily.spec.luau
+run Daily      "$LUNE" run tests/DailyQuests.spec.luau
 run Exam       "$LUNE" run tests/Exam.spec.luau
 run Codes      "$LUNE" run tests/Codes.spec.luau
+run VillageDuel "$LUNE" run tests/VillageDuel.spec.luau
 run HubLayout "$LUNE" run tests/HubLayout.spec.luau
 run KonohaLayout "$LUNE" run tests/KonohaLayout.spec.luau
 run Loop       "$LUNE" run tests/Loop.spec.luau

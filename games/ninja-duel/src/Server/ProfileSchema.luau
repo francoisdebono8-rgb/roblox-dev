@@ -14,8 +14,8 @@ local TreeTiers=require(game:GetService("ReplicatedStorage").NinjaDuel.TreeTiers
 local Shop=require(game:GetService("ReplicatedStorage").NinjaDuel.Shop)
 -- (19/11, vague 2 DEV 5) Two optional records, still version 3 (an older
 -- server keeps them untouched): `daily`, the day's quests and the days in a
--- row (Shared/Daily), and `exam`, the week's exam (Shared/Exam).
-local Daily=require(game:GetService("ReplicatedStorage").NinjaDuel.Daily)
+-- row (Shared/DailyQuests), and `exam`, the week's exam (Shared/Exam).
+local Daily=require(game:GetService("ReplicatedStorage").NinjaDuel.DailyQuests)
 local Exam=require(game:GetService("ReplicatedStorage").NinjaDuel.Exam)
 -- (19/11) and `codes`: the codes he used and the mastery ×2 a code gave
 -- (Shared/Codes).
@@ -414,7 +414,7 @@ function S.Commands.grantRyo(p,args)
 end
 -- ------------------------------------------------------------ coming back
 -- (19/11, vague 2 DEV 5) A counted duel's events on day `day` (the server's
--- clock, Shared/Daily.day): the quests and the days in a row, their Ryō
+-- clock, Shared/DailyQuests.day): the quests and the days in a row, their Ryō
 -- paid at once into the wallet.
 function S.Commands.dailyRecord(p,args)
 	assert(S.integer(args.day,10000000),"Invalid day")

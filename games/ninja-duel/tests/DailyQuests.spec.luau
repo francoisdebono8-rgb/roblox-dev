@@ -1,5 +1,5 @@
 -- Reasons to come back (19/11, plan « vague 2 », DEV 5): the day's three
--- quests in Ryō and the days in a row (Shared/Daily), kept in the profile
+-- quests in Ryō and the days in a row (Shared/DailyQuests), kept in the profile
 -- (ProfileSchema `daily`, command dailyRecord), paid by the duels the profile
 -- counts (Server/Progression), shown on the result screen (UI.dailyLine).
 -- Headless; the DESIGN's panel in Konoha is a Studio check.
@@ -8,7 +8,7 @@ local passed=0
 local function test(name,fn)
 	local ok,err=pcall(fn);assert(ok,name..": "..tostring(err));passed+=1;print("PASS "..name)
 end
-local Daily=H.load("Shared/Daily")
+local Daily=H.load("Shared/DailyQuests")
 local S=H.load("Server/ProfileSchema")
 local Repo=H.load("Server/ProfileRepository")
 local Config=H.load("Shared/Config")

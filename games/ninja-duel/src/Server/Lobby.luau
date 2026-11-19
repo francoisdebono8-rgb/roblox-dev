@@ -73,6 +73,18 @@ function Lobby.defaultServices()
 	return svc
 end
 
+
+-- Who a challenge may go to: a real player's id (above 0). In Studio, the
+-- test players of a local server have negative ids (19/11, OUTILLEUR: no
+-- challenge left in Studio): taken there, never on a live server.
+function Lobby.inStudio()
+	local ok,studio=pcall(function() return game:GetService("RunService"):IsStudio() end)
+	return ok and studio==true
+end
+function Lobby.target(to)
+	if type(to)~="number" or to~=to or to%1~=0 then return false end
+	return to>0 or (to<0 and Lobby.inStudio())
+end
 function Lobby.new(matches,services)
 	local svc=services or Lobby.defaultServices()
 	local self=setmetatable({matches=matches,svc=svc,players={},directory={},outgoing={},incoming={},
@@ -497,7 +509,7 @@ function Lobby:request(player,payload)
 			pcall(function() p.player:SetAttribute("NinjaDnd",p.dnd) end)
 		end
 	elseif op=="challenge" then
-		if type(payload.to)=="number" and payload.to==payload.to and payload.to>0 then self:challenge(p,math.floor(payload.to),fighter,now) end
+		if Lobby.target(payload.to) then self:challenge(p,math.floor(payload.to),fighter,now) end
 	elseif op=="answer" then
 		if type(payload.id)=="string" and #payload.id<=40 and type(payload.accept)=="boolean" then self:answer(p,payload.id,payload.accept,fighter,now) end
 	elseif op=="cancel" then

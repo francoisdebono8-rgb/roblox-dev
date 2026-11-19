@@ -120,6 +120,38 @@ function Combat:relocate(a,p)
 	a.model:PivotTo(CFrame.lookAt(self:clamp(p),self:clamp(p)+Vector3.new(look.X,0,look.Z)))
 	a.root.AssemblyLinearVelocity=Vector3.zero
 end
+-- (19/11, OUTILLEUR's two-player test in Studio: after Minato's blows a body
+-- stayed more than 30 s on the roof of Ichiraku's stand, every direction
+-- refused, the other unable to reach it) A living body that asks to move,
+-- stands above the duel's floor and has not moved for UNSTICK_AFTER seconds
+-- is put back on the floor: the first spot toward the centre of the duel's
+-- ground whose ground is the floor itself, else the centre. Duels in the
+-- village only (Combat:updateActor), where roofs and stalls are in reach.
+Combat.UNSTICK_AFTER=2.5
+Combat.UNSTICK_ABOVE=4.2
+Combat.UNSTICK_MOVED=1
+function Combat:unstick(a,now)
+	local p=a.root.Position
+	local o=self.match.origin
+	local asks=a.move~=nil and Vector3.new(a.move.X,0,a.move.Z).Magnitude>.5
+	if a.health<=0 or a.wall or not asks or p.Y<o.Y+Combat.UNSTICK_ABOVE then a.stuckAt=nil;a.stuckSince=nil;return false end
+	if not a.stuckAt or (p-a.stuckAt).Magnitude>Combat.UNSTICK_MOVED then a.stuckAt=p;a.stuckSince=now;return false end
+	if now-a.stuckSince<Combat.UNSTICK_AFTER then return false end
+	local params=self:rayParams(true)
+	local flat=Vector3.new(o.X-p.X,0,o.Z-p.Z)
+	local dir=if flat.Magnitude>.1 then flat.Unit else Vector3.xAxis
+	local spot=nil
+	for k=0,math.ceil(flat.Magnitude/2) do
+		local q=Vector3.new(p.X,o.Y,p.Z)+dir*math.min(k*2,flat.Magnitude)
+		local hit=workspace:Raycast(q+Vector3.new(0,40,0),Vector3.new(0,-50,0),params)
+		if hit and hit.Position.Y<=o.Y+1.5 then spot=Vector3.new(q.X,o.Y+3,q.Z);break end
+	end
+	self:relocate(a,spot or o+Vector3.new(0,3,0))
+	a.airborne=false;a.airHold=0;a.reaction=nil;a.reactionVelocity=nil;a.groundPose=nil
+	a.stuckAt=nil;a.stuckSince=nil
+	a.model:SetAttribute("Unstuck",now)
+	return true
+end
 function Combat:rayParams(excludeActors)
 	local params=RaycastParams.new(); params.FilterType=Enum.RaycastFilterType.Exclude
 	local exclude={self.match.effects}
@@ -2200,6 +2232,8 @@ function Combat:updateActor(a,dt)
 	elseif now<(a.airHold or 0) and a.airborne then
 		a.root.AssemblyLinearVelocity=Vector3.zero; a.hum:Move(Vector3.zero)
 	else Motor.step(a,self,dt,now) end
+	-- (19/11) a body stuck above the floor of a duel in Konoha: back on it
+	if self.match.radius then self:unstick(a,now) end
 	-- Server-owned humanoids + server-clamped arena coordinates.
 	local p=a.root.Position
 	if Vector3.new(p.X-self.match.origin.X,0,p.Z-self.match.origin.Z).Magnitude>(self.match.radius or Config.ArenaRadius) or p.Y<self.match.origin.Y-3 then
