@@ -28,6 +28,7 @@ local SkillBuilds=require(script.Parent.SkillBuilds)
 local Shop=require(Shared.Shop)
 local Daily=require(Shared.Daily)
 local Exam=require(Shared.Exam)
+local Codes=require(Shared.Codes)
 
 local P={handles=setmetatable({},{__mode="k"}),states=setmetatable({},{__mode="k"}),boost=setmetatable({},{__mode="k"}),repo=nil}
 P.LoadTries=5
@@ -125,6 +126,9 @@ function P.view(player)
 	out.ryo=h.data.wallet and h.data.wallet.ryo or 0
 	out.style={owned=S.copy(h.data.style and h.data.style.owned or {}),equipped=S.copy(h.data.style and h.data.style.equipped or {})}
 	out.boost=P.boost[player]==true
+	-- (19/11) a code's mastery ×2: the seconds it still runs (0: none)
+	local codes=h.data.codes
+	out.codeBoost=if codes then math.max(0,codes.boostUntil-P.now()) else 0
 	-- (19/11, vague 2 DEV 5) the day's quests and the days in a row, the
 	-- week's exam: what the DESIGN's panels in Konoha show
 	out.daily=Daily.view(h.data.daily,P.now())
@@ -254,7 +258,7 @@ function P.duelEnded(player,s,won)
 	local used=0
 	for _ in (s.human and s.human.usedJutsu) or {} do used+=1 end
 	local amount=Masters.duelGain({won=won,techniques=used,level=s.aiLevel or "easy"})
-	if P.boost[player] then amount=math.min(Masters.Gain.Max,amount*2) end
+	if P.boosted(player) then amount=math.min(Masters.Gain.Max,amount*2) end
 	local out=nil
 	if amount>0 then
 		local ok,result=P.run(player,"gainMastery",{fighter=id,amount=amount})
@@ -292,6 +296,21 @@ function P.daily(player,out,events)
 	end
 	return out
 end
+-- Mastery ×2: the pass (bought), or a code's while it runs.
+function P.boosted(player)
+	if P.boost[player] then return true end
+	local h=P.handles[player]
+	local codes=h and h.data.codes
+	return codes~=nil and codes.boostUntil>P.now()
+end
+-- (19/11) A code typed in the shop. ok, what it gave (Shared/Codes.thanks
+-- says it) or why not.
+function P.redeemCode(player,text)
+	if not P.enabled() or not P.ready(player) then return false,"Profile not loaded" end
+	local code=Codes.normalize(text)
+	if not code then return false,"Code not found" end
+	return P.run(player,"redeemCode",{code=code,now=P.now()})
+end
 -- (19/11, vague 2 DEV 5) An attempt at the week's exam (Server/WeeklyExam):
 -- its score kept if it is the week's best. {week, best, improved, passed}.
 function P.examResult(player,week,score,passed)
@@ -306,7 +325,7 @@ end
 -- (DEC-040) Mastery and Ryō for the kit `kit`: `amount` of mastery (the
 -- boost doubles it) and `ryo`. The result screen's table, or nil.
 local function reward(player,kit,amount,ryo,day)
-	if P.boost[player] then amount*=2 end
+	if P.boosted(player) then amount*=2 end
 	local out=nil
 	if amount>0 then
 		local ok,result=P.run(player,"gainMastery",{fighter=kit,amount=amount})

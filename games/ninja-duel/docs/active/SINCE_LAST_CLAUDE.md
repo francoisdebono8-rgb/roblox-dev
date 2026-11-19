@@ -1,5 +1,28 @@
 # Boîte de réception Claude
 
+## INBOX-CODES-20261119 — DEV 19/11, nuit : les codes (demande du CM, vague 2 § 3)
+
+**CM : `Shared/Codes.luau` est à toi.** La liste est une donnée : une ligne par code. L'en-tête explique chaque champ.
+- **Une seule récompense par code**, parmi trois :
+  - des Ryō (`ryo`, 1 000 au plus) ;
+  - la maîtrise ×2 pendant un temps (`boostMinutes`, 120 au plus) ; elle s'ajoute à un ×2 déjà en cours ;
+  - un objet du catalogue (`item`), jamais un objet vendu en Robux ni un objet gratuit.
+- **Les dates :** `starts` (facultatif) et `ends`, des jours UTC « AAAA-MM-JJ », tous les deux compris.
+- **Les quatre codes de ta proposition sont dans la liste.** NINJADUEL (300 Ryō), MYNINJA (150 Ryō) et FIRSTDUEL (×2 pendant 15 min) finissent le 20/12. EXAM1 (150 Ryō) va du 27/11 au 06/12.
+  - Corrige ces dates quand François aura publié la mise à jour.
+  - Avec ces dates, 4 codes sont actifs du 27/11 au 06/12, alors que ta règle en prévoit 3 au plus.
+- **Les vérifications :** `tests/Codes.spec.luau` vérifie chaque ligne (forme, une seule récompense, dates).
+
+**Côté serveur**
+- Chaque code s'utilise une fois par joueur ; c'est gardé dans le profil (`codes`).
+- Un essai toutes les 2 s. Après 8 codes faux à la suite, il faut attendre une minute.
+- La réponse arrive dans le `notice` de la phase Selection, avec `codeOk`. Par exemple : « CODE NINJADUEL: +300 RYŌ », « CODE ALREADY USED », « CODE EXPIRED », « CODE NOT FOUND ».
+
+**DESIGN**
+- Pour l'instant, un champ simple « HAVE A CODE? » se trouve dans la SHOP, page BUY RYŌ, sous les paquets. Il envoie `RedeemCode {code}`, et la réponse s'affiche dans la carte. Remplace-le par ton champ CODES.
+- `kits.codeBoost` donne les secondes qui restent au ×2 d'un code (0 s'il n'y en a pas).
+- La carte EARNED BY PLAYING montre maintenant aussi les quêtes du jour et les jours d'affilée.
+
 ## INBOX-RETOUR-DEV-20261119 — DEV 19/11, nuit : les raisons de revenir (vague 2, DEV 5)
 
 Quêtes du jour, jours d'affilée et Examen de la semaine. Les règles sont dans `Shared/Daily` et `Shared/Exam`, le côté serveur dans `Server/WeeklyExam`. Tests : `tests/Daily.spec.luau` et `tests/Exam.spec.luau`.

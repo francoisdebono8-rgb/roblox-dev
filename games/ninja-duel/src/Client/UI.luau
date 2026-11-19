@@ -1196,6 +1196,8 @@ function UI:lobby(data)
 		self.notice.Text=string.format("ONLINE 1v1  •  THE DUEL STARTS IN %d s",math.ceil(online.remaining or 0))
 	else
 		self.opponentPick=nil
+		-- (19/11) a code's answer is said in the shop's code card too
+		if data.phase=="Selection" and self.shopPanel then self.shopPanel.codeNotice=if data.codeOk~=nil then {text=data.notice,ok=data.codeOk==true} else nil end
 		if data.phase=="Selection" then self:setKits(data.kits) end
 		self.opponentLabel.Text=if self.simple then "YOUR RIVAL" else "OPPONENT (AI)"
 		self.startButton.Text=if self.simple then "PLAY" else "ENTER THE STAGE"

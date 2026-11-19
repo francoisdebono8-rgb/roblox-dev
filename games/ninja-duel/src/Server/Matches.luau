@@ -32,6 +32,9 @@ local Hub=require(script.Parent.Hub)
 function Matches.hubOn() return Config.Hub~=nil and Config.Hub.Enabled==true and Hub.built==true end
 -- A refusal for the screen: the reason a command gave, without the module
 -- and line an error carries, in capitals that keep their accents.
+Matches.CODE_GAP=2
+Matches.CODE_MISSES=8
+Matches.CODE_LOCK=60
 function Matches.refusal(why)
 	local text=string.gsub(tostring(why),"^.-:%d+: ","")
 	return require(Shared.Text).upper(text)
@@ -688,6 +691,25 @@ function Matches:request(player,payload)
 	end
 	-- (13/11) The shop: a look for Ryō, a look worn, a Robux offer prompted
 	-- (a look, a pack of Ryō, a pass). Between duels only.
+	-- (19/11) A code typed in the shop (Shared/Codes): one try every 2 s, and
+	-- after 8 wrong ones in a row a minute's wait (no guessing in bulk).
+	if action=="RedeemCode" then
+		if s.phase~="Selection" or not Progression.enabled() or type(payload.code)~="string" or #payload.code>40 then return end
+		if clock-(s.lastCode or -10)<Matches.CODE_GAP or clock<(s.codeLock or 0) then return end
+		s.lastCode=clock
+		local ok,result=Progression.redeemCode(player,payload.code)
+		local notice
+		if ok then
+			s.codeMisses=0
+			notice=require(Shared.Codes).thanks(result,Shop)
+		else
+			s.codeMisses=(s.codeMisses or 0)+1
+			if s.codeMisses>=Matches.CODE_MISSES then s.codeMisses=0;s.codeLock=clock+Matches.CODE_LOCK end
+			notice=Matches.refusal(result)
+		end
+		self:send(player,{phase="Selection",epoch=s.epoch,kits=Progression.view(player),notice=notice,codeOk=ok==true})
+		return
+	end
 	if action=="BuyItem" or action=="EquipItem" or action=="BuyRobux" or action=="BuyPass" then
 		if clock-s.lastLifecycle<0.25 or s.phase~="Selection" or not Progression.enabled() then return end
 		s.lastLifecycle=clock
