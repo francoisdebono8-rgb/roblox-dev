@@ -130,14 +130,21 @@ SLOT_PARTS = {
 }
 
 
-def mannequin(parts):
+# the share of a body part's height kept at its bottom (the sandals would be
+# small under two whole shins)
+CROP = {"feet": {"RightLowerLeg": .35, "LeftLowerLeg": .35}}
+
+
+def mannequin(parts, crop=None):
     import outfit_models as OM
     objs = []
     for part in parts:
         c = OM.REST[part]
         S = OM.REF.get(part, (1.2, 1.2, 1.2))
+        keep = (crop or {}).get(part, 1.0)
+        cy = c[1] - S[1] / 2 + S[1] * keep / 2
         pc = Piece(part, "SmoothPlastic")
-        box(pc, (c[0], c[1], c[2]), (S[0] / 2 * .98, S[1] / 2 * .98, S[2] / 2 * .98), SKIN)
+        box(pc, (c[0], cy, c[2]), (S[0] / 2 * .98, S[1] * keep / 2 * .98, S[2] / 2 * .98), SKIN)
         objs.append(to_blender(OM.to_blender_frame(pc)))
     return objs
 
@@ -148,7 +155,7 @@ def outfit(item):
     if not model:
         return None, "pas de modèle dans outfit_models.ITEMS"
     parts = SLOT_PARTS.get(item["slot"]) or list(OM.REST.keys())
-    objs = mannequin(parts)
+    objs = mannequin(parts, CROP.get(item["slot"]))
     for part, slot, pc in OM.built(model):
         if part not in parts:
             continue
