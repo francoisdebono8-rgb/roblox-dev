@@ -293,17 +293,18 @@ def main(out, only=None):
             before = {e["id"]: e for e in json.load(f).get("icons", [])}
     manifest = []
     for item in looks:
-        if only is not None and item["id"] not in only:
-            if item["id"] in before:
-                manifest.append(before[item["id"]])
-            continue
         entry = {k: item[k] for k in ("id", "slot", "name", "counter") if k in item}
         if "ryo" in item:
             entry["ryo"] = item["ryo"]
         if item["none"]:
+            # always listed: the screen draws an empty slot
             entry["icon"] = None
             entry["note"] = "aucun objet (case vide à l'écran)"
             manifest.append(entry)
+            continue
+        if only is not None and item["id"] not in only:
+            if item["id"] in before:
+                manifest.append(before[item["id"]])
             continue
         clear()
         try:
