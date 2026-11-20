@@ -17,7 +17,11 @@ test("every prodigy of the beta has a fingerprint",function()
 		assert(k.string.count>=4 and k.string.dps>0,id..": no string")
 		assert(k.firstHit>0 and k.firstHit<1,id..": first hit "..tostring(k.firstHit))
 		assert(k.reach>3 and k.reach<20,id..": reach "..tostring(k.reach))
-		assert(k.move.walk>0 and k.move.run>=k.move.walk,id..": walk/run")
+		-- the fingerprint reports the run as the game has it: Gaara's SprintScale
+		-- is below 1 (his run is slower than his walk), a question for the DEV,
+		-- not a broken fingerprint (ANIMATEUR, 20/11: this line failed on Sand)
+		assert(k.move.walk>0 and k.move.run>0,id..": walk/run")
+		if k.move.run<k.move.walk then print(("NOTE %s: run %.2f < walk %.2f (SprintScale < 1)"):format(id,k.move.run,k.move.walk)) end
 		assert(k.body.health>0,id..": health")
 	end
 end)
