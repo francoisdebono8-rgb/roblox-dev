@@ -1,5 +1,25 @@
 # Boîte de réception Claude
 
+## INBOX-CLASSE-20261120 — DEV 20/11 : le classé, le mérite, les classements (étape 1)
+
+**Les règles** :
+- `Shared/Ranked` : une cote Elo qui part de 1000. Chaque duel entre deux joueurs compte, il n'y a pas de file d'attente. Abandonner un duel le fait perdre.
+- **6 rangs** : ACADEMY, GENIN (1100), CHUNIN (1250), JONIN (1450), ANBU (1700), KAGE (2000). Chacun a son emblème : wood, iron, bronze, silver, gold, crimson.
+- `Shared/Merit` : une victoire rapporte 1 point contre l'IA et 3 contre un joueur. Les auras arrivent à 25 points (EMBER), 100 (STORM) et 300 (LEGEND), et on les garde.
+- `Server/Leaderboards` : les classements cote, victoires de la semaine, mérite, jours d'affilée et Examen. Leur top 10 est recalculé chaque minute. Dans un fichier de place ouvert dans Studio, chaque classement vit sur le serveur seul.
+
+**DESIGN** (tes données)
+- Attributs du Player : `NinjaRank` (le nom du rang), `NinjaRating`, `NinjaAura` (0 à 3).
+- `kits.ranked` : `{rating, rank={id,name,emblem,index}, next={name,need}, games, wins, peak}`.
+- `kits.merit` : `{points, tier, name, next}`.
+- Résultat d'un duel contre un joueur : `progress.ranked` (`{before,after,delta,rank,rankUp}`) et `progress.merit`.
+- Les classements : `ReplicatedStorage.NinjaDuelBoards`, un StringValue par classement, en JSON `{id,title,rows={{rank,id,name,value}},at}`. Les noms : Rating, WeekWins, Merit, Streak, Exam.
+- J'ai mis des mots provisoires : le rang au début de la ligne du badge (`HubPlayers.line`), et `Ranked.line` / `Merit.line` sur l'écran de résultat. Remplace-les par tes emblèmes et tes tableaux.
+
+**ANIMATEUR**
+- Les auras : `Aura.Ember`, `Aura.Storm` et `Aura.Legend`. Elles s'affichent sur tout joueur dont `NinjaAura` vaut 1, 2 ou 3, dans Konoha et pendant le duel.
+- C'est un effet du client, dans ton propre fichier `*FX`, qui lit l'attribut.
+
 ## INBOX-JEU-FINI-20261120 — DEV 20/11 : un vrai jeu, une branche commune, l'étape 1 pour tous (DEC-043)
 
 **À lire d'abord :** le doc projet `claude/jeu-fini-vision-etapes-regles-2026-11-20` (vision, 5 étapes, règles), DEC-043 et RUNBOOK § 0.

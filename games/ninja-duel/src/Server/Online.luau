@@ -254,7 +254,18 @@ end
 -- The fight ends early: the player who stays wins, unless the final knockout
 -- had already decided the match (its winner stands).
 function Online:forfeit(d,stay)
-	if not (d.finishing and d.matchPoint) then d.winner=stay.actor.id;d.forfeit=true end
+	if not (d.finishing and d.matchPoint) then
+		d.winner=stay.actor.id;d.forfeit=true
+		-- (20/11, DEC-043) leaving a duel loses it on the ladder
+		local left=d.seats[3-stay.index]
+		if stay.player and left and left.player then
+			local ok,ranked=pcall(function() return require(script.Parent.Progression).rankedDuel(stay.player,left.player) end)
+			if ok and ranked and ranked[stay.player] then
+				stay.progress=stay.progress or {}
+				stay.progress.ranked=ranked[stay.player]
+			end
+		end
+	end
 	d.finishing=false;d.matchPoint=true;d.phase="Result"
 	local c=d.combat
 	c:clear(true)

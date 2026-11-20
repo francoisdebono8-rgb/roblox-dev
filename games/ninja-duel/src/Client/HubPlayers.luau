@@ -29,7 +29,11 @@ function HubPlayers.line(player)
 	local kit=player:GetAttribute("NinjaKit")
 	if type(kit)~="string" then return "",false end
 	local mastery=player:GetAttribute("NinjaMastery")
-	return string.format("%s  •  MASTERY %d",nameOf(kit),if type(mastery)=="number" then mastery else 0),false
+	-- (20/11, DEC-043) his rank on the ladder first (the DESIGN's emblem will
+	-- stand beside it)
+	local rank=player:GetAttribute("NinjaRank")
+	local prefix=if type(rank)=="string" then rank.."  •  " else ""
+	return string.format("%s%s  •  MASTERY %d",prefix,nameOf(kit),if type(mastery)=="number" then mastery else 0),false
 end
 
 -- `kit`: UI.kit; `send(payload)`: the lobby remote (LobbyPanel:send);

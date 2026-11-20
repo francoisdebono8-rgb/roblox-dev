@@ -18,6 +18,8 @@ local FirstMinute=require(Shared.FirstMinute)
 local MastersView=require(Shared.MastersView)
 local Masters=require(Shared.Masters)
 local Daily=require(Shared.DailyQuests)
+local Ranked=require(Shared.Ranked)
+local Merit=require(Shared.Merit)
 -- (B1 lot 3) the effects switch lives in the VFX kit (absent in headless tests)
 local okKit,FXKit=pcall(function() return require(script.Parent.VfxKit) end)
 if not okKit then FXKit=nil end
@@ -1810,6 +1812,13 @@ function UI:resultEarned(progress)
 	-- (19/11, vague 2 DEV 5) what the day's quests and the days in a row paid
 	-- (the DESIGN's own line will replace it: vague 2, DESIGN 3)
 	local dailyText=Daily.line(p.daily)
+	-- (20/11, DEC-043) the ladder and merit: a rank won, an aura unlocked
+	-- (the DESIGN's own lines will replace these words)
+	local rankedText=Ranked.line(p.ranked)
+	local meritText=Merit.line(p.merit)
+	for _,extra in {meritText,rankedText} do
+		if extra then dailyText=if dailyText then extra.."  "..dailyText else extra end
+	end
 	local id=p.fighter or p.learned
 	local def=Fighters[id or ""]
 	local who=if def then Text.upper(def.Name or "") else "YOUR KIT"

@@ -182,6 +182,8 @@ TEST_RUNNERS.append(('lune','tests/Exam.spec.luau'))
 TEST_RUNNERS.append(('lune','tests/Codes.spec.luau'))
 # (19/11) The OUTILLEUR's two-player test, fixed: a body stuck on a roof, Studio's test players, the funnel.
 TEST_RUNNERS.append(('lune','tests/VillageDuel.spec.luau'))
+# (20/11, DEC-043) The ladder, merit and the leaderboards.
+TEST_RUNNERS.append(('lune','tests/Ranked.spec.luau'))
 def run_automated():
     tool={}
     import os

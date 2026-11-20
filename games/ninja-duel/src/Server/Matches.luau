@@ -422,6 +422,14 @@ function Matches:roundOver(s,winner,notify,advance)
 	-- (DEC-040) Against another player: each present seat's kit earns its
 	-- mastery (Progression.versusEnded), shown on his own result screen.
 	if decided and s.online and s.seats and not s.forfeit then
+		-- (20/11, DEC-043) the ranked ladder: every duel between two players
+		-- counts, both ratings move
+		local ranked={}
+		local w,l=nil,nil
+		for _,seat in s.seats do
+			if seat.player then if winner==seat.actor then w=seat.player else l=seat.player end end
+		end
+		if w and l then ranked=Progression.rankedDuel(w,l) end
 		for _,seat in s.seats do
 			-- (19/11, OUTILLEUR's two-player test: « le duel en ligne ne compte
 			-- pas dans l'entonnoir ») a duel against a player counts as one
@@ -439,7 +447,8 @@ function Matches:roundOver(s,winner,notify,advance)
 				local gained=Progression.versusEnded(seat.player,seat.fighter,won,used,lost)
 				seat.progress={mastery=gained and gained.mastery,gained=gained~=nil and gained.amount~=nil,amount=gained and gained.amount,fighter=seat.fighter,need=Masters.Need,
 					points=gained and gained.points,ryo=gained and gained.ryo,firstWin=gained and gained.firstWin,
-					ahead=Progression.ahead(seat.player,seat.fighter),daily=gained and gained.daily}
+					ahead=Progression.ahead(seat.player,seat.fighter),daily=gained and gained.daily,
+					ranked=ranked[seat.player],merit=gained and gained.merit}
 			end
 		end
 	end

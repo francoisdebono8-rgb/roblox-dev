@@ -29,6 +29,13 @@ local Shop=require(Shared.Shop)
 local Daily=require(Shared.DailyQuests)
 local Exam=require(Shared.Exam)
 local Codes=require(Shared.Codes)
+local Ranked=require(Shared.Ranked)
+local Merit=require(Shared.Merit)
+-- (20/11) the leaderboards, when the server runs them (Server/Leaderboards)
+local function boards()
+	local ok,L=pcall(function() return require(script.Parent.Leaderboards).current end)
+	return if ok then L else nil
+end
 
 local P={handles=setmetatable({},{__mode="k"}),states=setmetatable({},{__mode="k"}),boost=setmetatable({},{__mode="k"}),repo=nil}
 P.LoadTries=5
@@ -78,6 +85,7 @@ function P.load(player)
 		return nil
 	end
 	P.handles[player]=h;P.states[player]="ready"
+	P.badges(player)
 	local pass=P.config().MasteryPass or 0
 	if pass>0 then
 		pcall(function() P.boost[player]=game:GetService("MarketplaceService"):UserOwnsGamePassAsync(player.UserId,pass) end)
@@ -133,6 +141,9 @@ function P.view(player)
 	-- week's exam: what the DESIGN's panels in Konoha show
 	out.daily=Daily.view(h.data.daily,P.now())
 	out.exam=Exam.view(h.data.exam,P.now())
+	-- (20/11, DEC-043) his rank and his merit (the DESIGN's emblems and auras)
+	out.ranked=Ranked.view(h.data.ranked)
+	out.merit=Merit.view(h.data.merit)
 	local okTitle,title=pcall(function() return player:GetAttribute("NinjaTitle") end)
 	out.title=if okTitle and type(title)=="string" then title else nil
 	return out
@@ -293,8 +304,67 @@ function P.daily(player,out,events)
 		out=out or {}
 		out.daily=result
 		if (result.ryo or 0)>0 then out.ryoTotal=result.total end
+		local L=boards()
+		if L and result.streak then L:submit("Streak",player,result.streak.days) end
+	end
+	-- (20/11, DEC-043) a duel won: merit (`pvp` against a player)
+	if (events.win or 0)>0 then
+		local merit=P.merit(player,events.pvp==true)
+		if merit then out=out or {};out.merit=merit end
 	end
 	return out
+end
+-- (20/11, DEC-043) What everybody sees of him: NinjaRank (ACADEMY…KAGE),
+-- NinjaRating, NinjaAura (merit tier, 0 none), on his Player.
+function P.badges(player)
+	local h=P.handles[player]
+	if not h then return end
+	local ranked=Ranked.view(h.data.ranked)
+	local tier=Merit.tier(h.data.merit and h.data.merit.points or 0)
+	pcall(function()
+		player:SetAttribute("NinjaRank",ranked.rank.name)
+		player:SetAttribute("NinjaRating",ranked.rating)
+		player:SetAttribute("NinjaAura",tier)
+	end)
+end
+function P.rating(player)
+	local h=P.handles[player]
+	return if h and h.data.ranked then h.data.ranked.rating else Ranked.START
+end
+-- (20/11, DEC-043) A duel between two players, decided: both ratings move
+-- (each against the other's rating before the duel). A player whose profile
+-- is not loaded (left, Studio's test players) is skipped. Returns
+-- {[player]=result} (Shared/Ranked.record).
+function P.rankedDuel(winner,loser)
+	if not P.enabled() then return {} end
+	local wr,lr=P.rating(winner),P.rating(loser)
+	local out={}
+	for _,side in {{winner,lr,true},{loser,wr,false}} do
+		local player,theirs,won=side[1],side[2],side[3]
+		if player and P.ready(player) then
+			local ok,result=P.run(player,"rankedResult",{opponent=theirs,won=won})
+			if ok and type(result)=="table" then
+				out[player]=result
+				P.badges(player)
+				local L=boards()
+				if L then
+					L:submit("Rating",player,result.after)
+					if won then L:add("WeekWins",player,1) end
+				end
+			end
+		end
+	end
+	return out
+end
+-- (20/11, DEC-043) A won duel the profile counts: merit (Shared/Merit).
+function P.merit(player,pvp)
+	if not P.enabled() or not P.ready(player) then return nil end
+	local ok,result=P.run(player,"meritAdd",{pvp=pvp==true})
+	if not ok or type(result)~="table" then return nil end
+	if result.tierUp then P.badges(player) end
+	local L=boards()
+	if L then L:submit("Merit",player,result.points) end
+	return result
 end
 -- Mastery ×2: the pass (bought), or a code's while it runs.
 function P.boosted(player)
@@ -351,7 +421,7 @@ function P.versusEnded(player,kit,won,techniques,lost)
 	local amount=Masters.versusGain({won=won,techniques=techniques})
 	local ryo=Shop.duelRyo({won=won,firstWinToday=first})
 	local out=reward(player,kit,amount,ryo,if first then today else nil)
-	return P.daily(player,out,{duel=1,win=if won then 1 else 0,jutsu=techniques or 0,flawless=if won and (lost or 0)==0 then 1 else 0})
+	return P.daily(player,out,{duel=1,win=if won then 1 else 0,jutsu=techniques or 0,flawless=if won and (lost or 0)==0 then 1 else 0,pvp=true})
 end
 -- (DEC-040) The tournament's end for him: the champion's kit gets its bonus
 -- and the champion's Ryō; a lost final, the finalist's.

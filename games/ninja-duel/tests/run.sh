@@ -70,6 +70,7 @@ run Daily      "$LUNE" run tests/DailyQuests.spec.luau
 run Exam       "$LUNE" run tests/Exam.spec.luau
 run Codes      "$LUNE" run tests/Codes.spec.luau
 run VillageDuel "$LUNE" run tests/VillageDuel.spec.luau
+run Ranked     "$LUNE" run tests/Ranked.spec.luau
 run HubLayout "$LUNE" run tests/HubLayout.spec.luau
 run KonohaLayout "$LUNE" run tests/KonohaLayout.spec.luau
 run Loop       "$LUNE" run tests/Loop.spec.luau

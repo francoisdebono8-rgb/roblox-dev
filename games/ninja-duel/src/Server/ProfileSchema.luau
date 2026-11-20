@@ -20,6 +20,10 @@ local Exam=require(game:GetService("ReplicatedStorage").NinjaDuel.Exam)
 -- (19/11) and `codes`: the codes he used and the mastery ×2 a code gave
 -- (Shared/Codes).
 local Codes=require(game:GetService("ReplicatedStorage").NinjaDuel.Codes)
+-- (20/11, DEC-043) and `ranked` (the rating, Shared/Ranked) and `merit` (the
+-- auras earned by winning, Shared/Merit).
+local Ranked=require(game:GetService("ReplicatedStorage").NinjaDuel.Ranked)
+local Merit=require(game:GetService("ReplicatedStorage").NinjaDuel.Merit)
 -- Version 3 (13/11, the shop): the wallet (Ryō, earned by playing or bought
 -- in packs; the day of the last first win) and the looks (owned, and the one
 -- worn in each slot: Shared/Shop). A look never changes a number.
@@ -155,6 +159,14 @@ function S.validate(p)
 	if p.codes~=nil then
 		local ok,why=Codes.valid(p.codes)
 		if not ok then return false,"codes: "..why end
+	end
+	if p.ranked~=nil then
+		local ok,why=Ranked.valid(p.ranked)
+		if not ok then return false,"ranked: "..why end
+	end
+	if p.merit~=nil then
+		local ok,why=Merit.valid(p.merit)
+		if not ok then return false,"merit: "..why end
 	end
 	for fighterId,record in p.fighters do
 		if not SkillBuilds.tree(fighterId) then return false,"No skill tree for "..tostring(fighterId) end
@@ -474,6 +486,20 @@ function S.Commands.redeemCode(p,args)
 	end
 	out.total=p.wallet.ryo
 	return out
+end
+-- (20/11, DEC-043) A duel against another player: his rating moves against
+-- the opponent's (read by the server before either changes).
+function S.Commands.rankedResult(p,args)
+	assert(S.integer(args.opponent,Ranked.MAX),"Invalid rating")
+	assert(type(args.won)=="boolean","Invalid result")
+	p.ranked=p.ranked or Ranked.new()
+	return Ranked.record(p.ranked,args.opponent,args.won)
+end
+-- A duel won (counted by the profile): merit points, `pvp` against a player.
+function S.Commands.meritAdd(p,args)
+	assert(type(args.pvp)=="boolean","Invalid merit")
+	p.merit=p.merit or Merit.new()
+	return Merit.record(p.merit,args.pvp)
 end
 -- Wear a look the player owns (or a base one) in its slot.
 function S.Commands.equipItem(p,args)
