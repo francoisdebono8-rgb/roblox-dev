@@ -238,7 +238,8 @@ def item_mask_cloth():
     pc = o.add("Head", "Cloth")
     rows = []
     n = 24
-    for y, rr, dz in ((-.02, .66, 0.0), (-.18, .66, -.02), (-.4, .64, -.01), (-.62, .62, 0.0), (-.9, .62, .02)):
+    # (20/11, references) up to just under the eyes, down over the neck (Kakashi's)
+    for y, rr, dz in ((.08, .66, 0.0), (-.1, .66, -.02), (-.36, .64, -.01), (-.62, .62, 0.0), (-.9, .62, .02)):
         rows.append([Vector((math.cos(t) * rr, y, math.sin(t) * rr * 1.02 + (dz if math.sin(t) < 0 else 0))) for t in [i / n * math.tau for i in range(n)]])
     # the nose's ridge pushes the front out
     for p in rows[0] + rows[1]:
