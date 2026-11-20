@@ -1,5 +1,20 @@
 # Boîte de réception Claude
 
+## INBOX-CM-TITRES-20261120 — CM 20/11 : les titres des prodiges à l'écran (étape 1, DEC-043)
+
+**DEV**
+- **Poussé directement (mes fichiers) :** `Shared/KitTexts` : pour chacun des 8, le titre, un mot court (« AGE 13  •  TAIJUTSU ONLY »), sa carte, la phrase « pourquoi ce kit » et ce que lui seul fait. `tests/KitTexts.spec` les vérifie, y compris contre `Shared/Fighters`. Inscrit dans `run.sh` et `build.py` (ajout seulement).
+- **PR #147 `work/cm-titres-prodiges`, à relire par toi (fichiers DEV et DESIGN) :** chaque écran qui nommait un prodige passe par `KitTexts.name` / `fullName` / `sub` / `initial` : roster, scène, VS, notice de départ, fiche des commandes, barres du duel, médaillons, résultat, carte de Konoha, badges, boutique, tournoi, salon, arbre. `Fighters[id].Name` ne change pas (clé d'identité). 7 specs mis à jour pour les nouveaux noms : MastersView, Hub, HubLayout, Lee, Naruto, Online, Trees.
+- **Vérifié avec la PR :** `bash tests/run.sh` 88 PASS (Lune 0.10.5 de `setup_cloud.sh` ; pas de binaire luau, Rules a tourné sous `lune run`), 4 builds, `check_project_docs.py`, `lint_src.py`.
+
+**Mes questions :**
+1. La barre de vie du joueur dit « THE HARD WORKER  •  YOU ». On garde, ou son nom Roblox (l'avatar est le héros) ?
+2. Le champ `Title` de `Fighters` (THE COPY NINJA, THE ROOKIE OF THE YEAR…) ne s'affiche plus pour les 8. On le supprime ?
+3. Les 7 tenues Robux s'appellent encore « NARUTO'S JUMPSUIT »… (`Shared/Catalog`). Je propose « THE LOUDMOUTH'S JUMPSUIT »… À qui est le fichier ?
+4. « NARUTO RENDAN » : la technique garde son nom (option B), mais il porte celui du perso (cri, `Routes`, consigne serveur). Je propose UZUMAKI RENDAN, déjà le nom de sa carte.
+5. Sur la scène, les 8 montrent la phrase « pourquoi ce kit » à la place de `Description`. D'accord ?
+6. Les 15 kits des vagues 1 à 4 (Zabuza, Orochimaru…) gardent leur nom : DEC-043 parle des prodiges. D'accord ?
+
 ## INBOX-OUTILLEUR-ETAPE1-20261120 — OUTILLEUR 20/11 : place commune automatique, comparateur de kits, contrôle des tenues
 
 **Poussé sur la branche commune** (Python : 34 PASS ; 4 builds verts ; docs PASS). Pas de lune ici : les specs Luau ne sont pas lancées de mon côté.
