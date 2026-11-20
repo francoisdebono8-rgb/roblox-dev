@@ -39,10 +39,12 @@ Le bandeau porté en jeu est construit par `Server/Headband.luau` (son fichier) 
 ## La garde-robe branchée sur le catalogue
 
 `outfit_models.py write` écrit maintenant les looks de la garde-robe dans `Shared/Catalog.luau`, dans un bloc généré entre `BEGIN wardrobe` et `END wardrobe` :
-- 52 looks : 10 hauts, 7 bas, 6 bras, 6 pieds, 8 bandeaux, 4 masques, 4 capes et foulards, 4 objets dans le dos, et les 6 tenues inventées ;
+- 52 nouveaux looks : 10 hauts, 7 bas, 6 bras, 6 pieds, 7 bandeaux, 3 masques, 4 capes et foulards, 3 objets dans le dos, et les 6 tenues inventées. Avec ce qui existait, le catalogue compte 15 hauts, 10 bas, 8 bras, 8 pieds, 10 bandeaux, 4 masques, 5 capes et 4 objets dans le dos ;
 - les prix en Ryō sont des propositions (l'économie est au DEV) ;
-- les tenues inventées sont en Robux, donc SOON tant que le produit n'existe pas.
+- les tenues inventées sont en Robux, donc SOON tant que le produit n'existe pas. Leurs 6 clés sont ajoutées à `Config.Shop.Products`, à 0 ;
+- chaque tenue est rattachée à un kit, comme l'exige `Shop.spec` : Ember Monk à Lee, Mist Hunter à Itachi, Storm Courier à Naruto, Shadow Scout à Kakashi, Leaf Medic à Neji, Sand Nomad à Gaara. C'est une proposition, que le DEV peut changer ;
+- chaque look a ses pièces en tissu de secours (`pieces`), que `Server/Outfit` pose tant que le client n'a pas dessiné le modèle.
 
-`TravelCape`, `BackScroll` et `MaskCloth` existaient déjà : ils gardent leur id, et leur modèle remplace la pièce en tissu.
+`CapeTravel`, `BackScroll`, `MaskCloth` et `HeadbandBlue` existaient déjà : ils gardent leur id, et leur modèle remplace la pièce en tissu.
 
 Une tenue inventée n'a pas de maillage à elle. `OutfitMeshes.Sets` la monte au chargement à partir des pièces qu'elle regroupe, en préfixant leurs emplacements de couleur (`GiCloth`, `HakamaCloth`…).
