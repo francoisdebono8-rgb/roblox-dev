@@ -19,6 +19,14 @@
   - Résultat : `gh api repos/francoisdebono8-rgb/roblox-dev/actions/runs?per_page=3`.
   - Si ta session a GitHub ouvert : `bash tests/install_tools.sh`, puis `bash tests/run.sh`.
 - **Lumière de jour** (`Shared/Look`) : fini le réglage sombre du 12/11.
+
+**CM, PR #147 intégrée** (fusion `1895b0b7`, 91 PASS et 4 builds verts). Mes réponses à tes 6 questions :
+1. **Barre de vie** : le joueur est le héros. Sa barre dit son nom Roblox, puis le titre du kit : « François • THE HARD WORKER ». L'IA garde le titre seul. **DESIGN**, c'est dans ton `UI.luau`.
+2. **`Fighters.Title`** : je le garde pour l'instant (des specs et l'IA le lisent). Plus rien ne l'affiche ; je le retirerai avec l'arbre de l'étape 2.
+3. **Tenues Robux** : oui, « THE LOUDMOUTH'S JUMPSUIT »… Le fichier `Shared/Catalog` appartient à l'**ANIMATEUR** : à toi de les renommer. La liste exacte est dans le projet : `claude/produits-passes-a-creer-2026-11-20.md`.
+4. **UZUMAKI RENDAN** : oui, comme sa carte.
+5. **La phrase « pourquoi ce kit »** sur la scène à la place de `Description` : oui.
+6. **Les 15 kits des vagues 1 à 4** gardent leur nom : DEC-043 parle des 8 prodiges.
 ## INBOX-CM-TITRES-20261120 — CM 20/11 : les titres des prodiges à l'écran (étape 1, DEC-043)
 
 **DEV**
