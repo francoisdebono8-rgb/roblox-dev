@@ -115,4 +115,5 @@ run Entonnoir  python3 tools/analytics/test_entonnoir.py
 run PlaceCommune python3 tools/mac/test_place_commune.py
 run Empreinte  python3 tools/kits/test_empreinte.py
 run KitPrint   "$LUNE" run tests/KitPrint.spec.luau
+run Planche    python3 tools/tenues/test_planche.py
 exit $status
