@@ -15,8 +15,7 @@ UIAssets.Ids={
 	icon_kunai="",icon_bolt="",icon_mark="",icon_wind="",icon_flash="",icon_fire="",icon_spiral="",
 	icon_clone="",icon_sand="",icon_eye="",icon_palm="",icon_water="",icon_whirl="",icon_shuriken="",
 	icon_fist="",icon_weights="",icon_hound="",icon_wire="",icon_scroll="",
-	-- (DESIGN 20/11, step 1) the face-cam's cartoon expressions, the six ranks' emblems
-	face_hit="",face_guardbreak="",face_ko="",face_victory="",face_focus="",face_rage="",
+	-- (DESIGN 20/11, step 1) the six ranks' emblems
 	rank_academy="",rank_genin="",rank_chunin="",rank_jonin="",rank_anbu="",rank_kage="",
 }
 
