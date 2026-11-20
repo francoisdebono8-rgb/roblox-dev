@@ -14,16 +14,15 @@
 -- the real one several times a second. A plate turned away from the lens is
 -- hidden. Presentation only, on this client.
 --
--- (DESIGN 20/11, step 1: « la face-cam v2 : la tête du joueur en gros plan,
--- avec 6 expressions cartoon posées sur le visage ») v2: the lens closes in
--- on the head; and a cartoon expression is laid on the face when the duel
--- calls for one: HIT (a blow taken), GUARD BREAK, KO, VICTORY, FOCUS (a
--- technique held, seals woven), RAGE (awakened, or under a quarter of the
--- health). The drawings are images (Shared/UIAssets face_*); while one is not
--- imported a short ink mark says it. Over a prodigy's drawn face the
--- expression replaces his eyes and mouth for as long as it lasts.
-local okA,UIAssets=pcall(function() return require((game:GetService("ReplicatedStorage")::any).NinjaDuel.UIAssets) end)
-if not okA then UIAssets=nil end
+-- (DESIGN 20/11, step 1) v2: the lens closes in on the head, and the duel
+-- changes the face itself, live (François 20/11: « c'est des têtes… des images
+-- en live », the face that changes, no picture laid on it). HIT, GUARD BREAK,
+-- KO, VICTORY, FOCUS, RAGE each set a mood of Shared/Face (FaceCam.MOOD) on
+-- the face-cam's own copy of the drawn eyes and mouth; the fighter's real face
+-- in the arena is left to its own moods. When it ends, the copy follows the
+-- real face again.
+local okF,Face=pcall(function() return require((game:GetService("ReplicatedStorage")::any).NinjaDuel.Face) end)
+if not okF then Face=nil end
 local FaceCam={}
 FaceCam.__index=FaceCam
 
@@ -43,7 +42,7 @@ FaceCam.PLATES={FaceEye=true,FaceMouth=true}
 -- (v2) The expression a fighter's view calls for, or nil (his own face).
 -- `outcome`: "won" / "lost" at the result. The strongest first.
 FaceCam.EXPRESSIONS={"hit","guardbreak","ko","victory","focus","rage"}
-FaceCam.MARK={hit="!!",guardbreak="!?",ko="X  X",victory="^  ^",focus="...",rage="#"}
+FaceCam.MOOD={hit="hurt",guardbreak="stun",ko="ko",victory="win",focus="focus",rage="shout"}
 function FaceCam.expression(actor,outcome)
 	if type(actor)~="table" then return nil end
 	if outcome=="won" then return "victory" end
@@ -174,15 +173,6 @@ function FaceCam.new(parent)
 	overlay.Name="FaceDrawing";overlay.Size=UDim2.fromScale(1,1);overlay.BackgroundTransparency=1;overlay.ClipsDescendants=true
 	overlay.ZIndex=view.ZIndex+1
 	overlay.Parent=parent
-	-- (v2) the cartoon expression laid on the face, and its fallback mark
-	local face=Instance.new("ImageLabel")
-	face.Name="Expression";face.BackgroundTransparency=1;face.AnchorPoint=Vector2.new(.5,.5);face.Visible=false
-	face.ZIndex=overlay.ZIndex+3;face.Parent=overlay
-	local mark=Instance.new("TextLabel")
-	mark.Name="ExpressionMark";mark.BackgroundTransparency=1;mark.AnchorPoint=Vector2.new(1,0);mark.Position=UDim2.new(1,-4,0,2)
-	mark.Size=UDim2.fromScale(.6,.34);mark.TextScaled=true;mark.Font=Enum.Font.Bangers;mark.TextColor3=Color3.fromRGB(195,18,29)
-	mark.TextStrokeTransparency=0;mark.TextStrokeColor3=Color3.fromRGB(255,253,248);mark.Visible=false;mark.ZIndex=overlay.ZIndex+4;mark.Parent=overlay
-	self.face,self.mark=face,mark
 	self.view,self.lens,self.overlay,self.parent=view,lens,overlay,parent
 	self.copies={};self.plates={}
 	self.mirrorAt=0
@@ -239,20 +229,42 @@ function FaceCam:draw(plate)
 	plate.holder=holder
 end
 
+-- (v2) The face-cam's copy of the drawn face, as a Shared/Face face.
+function FaceCam:copyFace()
+	local face={eyes={},spec={}}
+	local head=self.model and self.model:FindFirstChild("Head")
+	for _,plate in self.plates do
+		local gui=plate.holder
+		if plate.part.Name=="FaceEye" then
+			local white=gui:FindFirstChild("White")
+			local iris=white and white:FindFirstChild("Iris")
+			local e={part=plate.part,gui=gui,white=white,iris=iris,pupil=iris and iris:FindFirstChild("Pupil"),lid=white and white:FindFirstChild("Lid"),
+				lash=gui:FindFirstChild("Lash"),flick=gui:FindFirstChild("Flick"),brow=gui:FindFirstChild("Brow"),ring=gui:FindFirstChild("Ring"),closed={},tomoe={}}
+			for _,c in gui:GetChildren() do if c.Name=="Closed" then table.insert(e.closed,c) end end
+			e.side=if head and head.CFrame:PointToObjectSpace(plate.part.Position).X>0 then 1 else -1
+			table.insert(face.eyes,e)
+		else
+			local curveBox=gui:FindFirstChild("Curve")
+			local open=gui:FindFirstChild("Open")
+			face.mouth={part=plate.part,gui=gui,line=gui:FindFirstChild("Line"),curveBox=curveBox,curve=curveBox and curveBox:FindFirstChild("Arc"),
+				open=open,tongue=open and open:FindFirstChild("Tongue"),upper=open and open:FindFirstChild("Teeth"),teeth=gui:FindFirstChild("Grit")}
+		end
+	end
+	return face
+end
+
 -- (v2) The expression shown (nil: his own face). Held at least .45 s so a
 -- quick flicker reads.
 function FaceCam:express(name,now)
 	now=now or os.clock()
 	if name==nil and self.expression and now<(self.expressionUntil or 0) then return end
-	if name~=self.expression then
-		self.expression=name
-		self.expressionUntil=now+.45
-		local id=name and UIAssets and UIAssets.id("face_"..name)
-		self.face.Image=id or ""
-		self.faceDrawn=id~=nil
-		self.mark.Text=name and FaceCam.MARK[name] or ""
+	if name==self.expression then return end
+	self.expression=name
+	self.expressionUntil=now+.45
+	for _,plate in self.plates do self:draw(plate) end -- back to the real face's drawing
+	if name and Face and #self.plates>0 then
+		pcall(Face.set,self:copyFace(),FaceCam.MOOD[name])
 	end
-	self.mark.Visible=name~=nil and not self.faceDrawn
 end
 
 -- Every frame: the copies where the real parts are, the lens, the drawings.
@@ -268,31 +280,18 @@ function FaceCam:step(now)
 	local lens=FaceCam.lens(head,torso)
 	self.lens.CFrame=lens
 	local size=self.view.AbsoluteSize
-	-- (v2) the expression on the face: at the head's front, its size, its roll
-	local drawn=self.expression~=nil and self.faceDrawn
-	self.face.Visible=false
-	if drawn then
-		local front=head.CFrame*CFrame.new(0,0,-head.Size.Z/2)
-		local x,y,perStud,ahead=FaceCam.project(lens,FaceCam.FOV,size,front.Position)
-		if ahead and FaceCam.facing(head,lens) then
-			local w=head.Size.X*perStud*1.05
-			self.face.Visible=true
-			self.face.Position=UDim2.fromOffset(x,y);self.face.Size=UDim2.fromOffset(w,w)
-			self.face.Rotation=FaceCam.roll(head,lens)
-		end
-	end
 	local mirror=now>=self.mirrorAt
 	if mirror then self.mirrorAt=now+FaceCam.MIRROR end
 	for _,plate in self.plates do
 		local part=plate.part
 		local x,y,perStud,front=FaceCam.project(lens,FaceCam.FOV,size,part.CFrame.Position)
-		local shown=front and part.Parent~=nil and FaceCam.facing(part,lens) and not self.face.Visible
+		local shown=front and part.Parent~=nil and FaceCam.facing(part,lens)
 		plate.holder.Visible=shown
 		if shown then
 			plate.holder.Position=UDim2.fromOffset(x,y)
 			plate.holder.Size=UDim2.fromOffset(part.Size.X*perStud,part.Size.Y*perStud)
 			plate.holder.Rotation=FaceCam.roll(part,lens)
-			if mirror then
+			if mirror and not self.expression then
 				local ok,same=pcall(FaceCam.mirror,plate.drawing,plate.holder)
 				if ok and not same then self:draw(plate) end
 			end

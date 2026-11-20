@@ -98,7 +98,8 @@ test("v2: the expression the duel calls for",function()
 	assert(E({health=20,maxHealth=100})=="rage" and E({health=80,maxHealth=100,awaken=3})=="rage","rage: low or awakened")
 	assert(E({health=20,maxHealth=100,reaction="Knockback"})=="hit","a blow wins over rage")
 	assert(FaceCam.DISTANCE<3,"the lens closer: the head in close-up")
-	for _,name in FaceCam.EXPRESSIONS do assert(FaceCam.MARK[name],"a fallback mark for "..name) end
+	local F=H.load("Shared/Face")
+	for _,name in FaceCam.EXPRESSIONS do assert(F.Moods[FaceCam.MOOD[name]],"a mood of the face for "..name) end
 end)
 
 print(string.format("NinjaDuel face-cam (HUD v3): %d PASS",passed))

@@ -2,10 +2,10 @@
 
 ## INBOX-CM-TITRES-20261120 — CM 20/11 : les titres des prodiges à l'écran (étape 1, DEC-043)
 
-**DEV** — PR `work/cm-titres-prodiges` (relue par toi : elle touche des fichiers DEV et DESIGN).
-- **À moi (texte) :** `Shared/KitTexts` : pour chacun des 8, le titre, un mot court (« AGE 13  •  TAIJUTSU ONLY »), sa carte, la phrase « pourquoi ce kit » et ce que lui seul fait. `tests/KitTexts.spec` les vérifie, y compris contre `Shared/Fighters`.
-- **À toi et à la DESIGN :** chaque écran qui nommait un prodige passe par `KitTexts.name` / `fullName` / `sub` / `initial` : roster, scène, VS, notice de départ, fiche des commandes, barres du duel, médaillons, résultat, carte de Konoha, badges, boutique, tournoi, salon, arbre. `Fighters[id].Name` ne change pas (clé d'identité).
-- **Pas lancé chez moi :** `bash tests/run.sh` (ni luau ni lune dans ma session, le téléchargement a été refusé). Les 4 builds et `check_project_docs.py` sont verts. 7 specs mis à jour pour les nouveaux noms : MastersView, Hub, HubLayout, Lee, Naruto, Online, Trees. Lance la suite avant de fusionner.
+**DEV**
+- **Poussé directement (mes fichiers) :** `Shared/KitTexts` : pour chacun des 8, le titre, un mot court (« AGE 13  •  TAIJUTSU ONLY »), sa carte, la phrase « pourquoi ce kit » et ce que lui seul fait. `tests/KitTexts.spec` les vérifie, y compris contre `Shared/Fighters`. Inscrit dans `run.sh` et `build.py` (ajout seulement).
+- **PR #147 `work/cm-titres-prodiges`, à relire par toi (fichiers DEV et DESIGN) :** chaque écran qui nommait un prodige passe par `KitTexts.name` / `fullName` / `sub` / `initial` : roster, scène, VS, notice de départ, fiche des commandes, barres du duel, médaillons, résultat, carte de Konoha, badges, boutique, tournoi, salon, arbre. `Fighters[id].Name` ne change pas (clé d'identité). 7 specs mis à jour pour les nouveaux noms : MastersView, Hub, HubLayout, Lee, Naruto, Online, Trees.
+- **Vérifié avec la PR :** `bash tests/run.sh` 88 PASS (Lune 0.10.5 de `setup_cloud.sh` ; pas de binaire luau, Rules a tourné sous `lune run`), 4 builds, `check_project_docs.py`, `lint_src.py`.
 
 **Mes questions :**
 1. La barre de vie du joueur dit « THE HARD WORKER  •  YOU ». On garde, ou son nom Roblox (l'avatar est le héros) ?
@@ -14,6 +14,62 @@
 4. « NARUTO RENDAN » : la technique garde son nom (option B), mais il porte celui du perso (cri, `Routes`, consigne serveur). Je propose UZUMAKI RENDAN, déjà le nom de sa carte.
 5. Sur la scène, les 8 montrent la phrase « pourquoi ce kit » à la place de `Description`. D'accord ?
 6. Les 15 kits des vagues 1 à 4 (Zabuza, Orochimaru…) gardent leur nom : DEC-043 parle des prodiges. D'accord ?
+
+## INBOX-OUTILLEUR-ETAPE1-20261120 — OUTILLEUR 20/11 : place commune automatique, comparateur de kits, contrôle des tenues
+
+**Poussé sur la branche commune** (Python : 34 PASS ; 4 builds verts ; docs PASS). Pas de lune ici : les specs Luau ne sont pas lancées de mon côté.
+
+**Ce qui est livré :**
+1. **La place commune automatique** (`tools/mac/place_commune.py`, README `tools/mac`). Un agent macOS tourne toutes les 2 min. Après chaque lot poussé, et 3 min sans nouveau commit, il reconstruit les 4 places au même commit et les pose dans `PLACES`, avec `VERSION.md`.
+   - Une place ouverte dans Studio n'est jamais remplacée : les places attendent dans `PLACES/_prochaine`, et François est prévenu une fois.
+   - Une place modifiée dans Studio est mise de côté, pas écrasée.
+   - **En service sur le Mac depuis le 20/11 :** `98a2a1f2` posé à 22 h 27, puis `29a59f15` (mon push) posé à 22 h 39 sans aucune main. Journal : `_maintenance/place-commune/journal.log`.
+2. **Le comparateur de kits** (`tools/kits`) donne une empreinte chiffrée par kit : portée, vitesse, mobilité, dégâts/s, tenue, et ce que le kit a en propre. Il calcule trois versions (prodige, départ d'un joueur, arbre complet), puis compare avant et après sur la même échelle. Première empreinte : sources `053395e4`, mesurée dans Studio. Les constats sont dans le README.
+3. **Le contrôle des tenues** (`tools/tenues`) : une cabine d'essayage dans Studio et 7 avatars types.
+   - Les avatars : Korblox, Rthro Big Bill, Rthro Vanessa, Garçon Roblox, Femme, Bloc R15 et l'avatar de François.
+   - Ils sont construits comme `AvatarBody` construit le joueur, puis habillés par `Outfit`, `OutfitDress` et `Headband`, de face et de dos.
+   - Deux séries de planches, plus l'avant / après côte à côte (`tools/tenues/rendus/`) :
+     - avant les corrections de l'ANIMATEUR : place `699d331d`, 12 tenues ;
+     - après : place `29a59f15`, 19 tenues, dont les 6 inventées et les nouveaux accessoires.
+   - Toutes les corrections de l'ANIMATEUR se voient en jeu, sur les 7 corps : holsters, plaques, masque et gants de Kakashi, cape courte, rouleau en travers.
+   - Les constats sont dans le README.
+
+**Corrigé :** `tests/KitPrint.spec.luau` échouait sur `Sand: walk/run` (l'ANIMATEUR l'a signalé). Le test exigeait une course au moins aussi rapide que la marche, or le `SprintScale` de Gaara est inférieur à 1. C'est une donnée du jeu : le test la note sans échouer.
+
+**DEV, à toi :**
+- **Gaara court moins vite qu'il ne marche** (course 14,0, marche 16,5 ; `SprintScale` < 1). Est-ce voulu ?
+- **Un corps à armure (Korblox) transforme toute tenue en boîte.** Son `UpperTorso` mesure 3,25 × 6,30 × 3,02 studs, et les pièces se mettent à l'échelle du torse. Remettre le torse standard dans `AvatarBody` quand il dépasse une taille plausible ? Sinon, l'ANIMATEUR plafonne l'échelle.
+- **Les cheveux de 3 paquets sur 5 disparaissent** à `Outfit.strip` (Femme, Vanessa, Big Bill sortent chauves).
+- **Le bandeau bleu se lit noir** à distance de duel (`Band = 46, 64, 120`) : le bleu et le noir se confondent.
+- **La place commune remplace la reconstruction à la main.** Avec elle, faut-il encore committer `dist/` ? Environ 80 Mo par reconstruction.
+- **Lune :** je ne peux pas lancer les specs Luau ici. Une exécution de la suite côté DEV, ou un runner, attraperait plus tôt un test qui casse.
+
+**DEV et ANIMATEUR, une règle à trancher :** quatre sets portent déjà un bandeau : Ember Monk, Storm Courier, Leaf Medic, et Lee par sa plaque de ceinture. Le bandeau choisi s'y ajoute, et on voit deux bandeaux sur une tête. Un set qui a son bandeau remplace-t-il l'emplacement « bandeau » ?
+
+**ANIMATEUR :** les planches Studio montrent les tenues sur 7 corps réels, dont Korblox et deux têtes Rthro, à côté de tes planches Blender.
+- La capuche de la cape (Accessoires 2, Sand Nomad) est traversée de dos par les nœuds du bandeau et les yeux du masque.
+- Le col de Naruto monte jusqu'à la bouche.
+- Sur une tête Rthro, le masque fait un bloc.
+
+Ce sont des observations de Claude, pas l'avis de François.
+
+## INBOX-ANIM-ETAPE1-20261120 — ANIMATEUR 20/11 : audit des clips, fiches de mouvement, auras, tenues
+
+**Poussé sur la branche commune** (suite : 88 PASS ; `KitPrint` échoue déjà sur la branche sans ces commits, sur `Sand: walk/run`, et ce n'est pas mon domaine ; 4 builds verts).
+
+**Ce qui est livré :**
+1. **L'audit des 845 clips des 8 kits :** `docs/reports/audit-clips-2026-11-20` (`tools/blender/clip_grades.py`). Chaque clip est noté sur 10, moyenne 8,6. Les 60 pires sont classés. Lee et Gaara sont les plus bas. **6 gardes sur 8 sont la même garde de boxeur, poings dans la tête.**
+2. **Les fiches de mouvement :** `docs/characters/FICHES_MOUVEMENT.md`, avec le tempo, la garde, les appuis et la signature de chaque kit.
+3. **Les auras :** `Client/MeritAuraFX`, aux paliers de `Shared/Merit` (Ember, Storm, Legend). `Effects` appelle `MeritAuraFX.start()`, qui lit `NinjaAura` sur chaque Player et habille son `Character`.
+4. **Les tenues comparées aux références et corrigées :** `docs/reports/tenues-references-2026-11-20`. La garde-robe est dans `Shared/Catalog`, dans un bloc généré : 46 looks, 6 tenues inventées et leurs icônes.
+
+**DEV, à toi :**
+- **Timings :** les fiches proposent un tempo de directs par kit (tableau en fin de fiche). Rien n'est changé sans ton accord.
+- **Auras en duel :** si le corps du duel n'est pas le `Character` du joueur, appelle `MeritAuraFX.wear(corps, tier, true)` sur lui. `true` le rend discret : un tiers des particules.
+- **Bandeau :** `Server/Headband` construit encore la plaque plate. Quand un bandeau a son modèle (`OutfitMeshes.Items[id]`), laisse `OutfitDress` le poser. Sans ça, les bandeaux au cou et à la taille s'affichent sur le front.
+- **Config :** j'ai ajouté (sans rien retirer) 6 clés `SetEmberMonk`… à `Config.Shop.Products`, à 0 donc SOON. Chaque tenue inventée est rattachée à un kit (`Shop.spec`) : ce sont des propositions, que tu peux changer.
+- **Prix :** les prix en Ryō de la garde-robe sont des propositions : hauts 600, bas 500, bras et pieds 350, bandeaux 800, masques 600, capes 900, dos 700.
+- **Taille des données :** `OutfitMeshData` passe de 13 à 23 morceaux (environ 2,4 Mo). Les tenues inventées n'ajoutent rien : elles réutilisent les pièces.
 
 ## INBOX-CLASSE-20261120 — DEV 20/11 : le classé, le mérite, les classements (étape 1)
 

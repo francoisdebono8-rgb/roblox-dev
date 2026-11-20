@@ -48,7 +48,10 @@ end)
 test("left and right are mirrors: a sleeve on each arm, a leg piece on each leg",function()
  for id,model in Outfit.Items do
   local count={}
-  for _,p in Outfit.Models[model] do count[p.on]=(count[p.on] or 0)+1 end
+  -- (20/11) a kunai holster is worn on one thigh (Part I): the only piece without its mirror
+  for _,p in Outfit.Models[model] do
+   if not string.find(p.name or "","_Holster",1,true) then count[p.on]=(count[p.on] or 0)+1 end
+  end
   for on,k in count do
    local other=if string.sub(on,1,5)=="Right" then "Left"..string.sub(on,6) elseif string.sub(on,1,4)=="Left" then "Right"..string.sub(on,5) else nil
    if other then assert(count[other]==k,id..": "..on.." "..k.." vs "..other.." "..tostring(count[other])) end

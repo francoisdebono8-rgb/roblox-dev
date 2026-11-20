@@ -58,6 +58,7 @@ REF = {
     "RightUpperLeg": (1, 1.217, 1), "LeftUpperLeg": (1, 1.217, 1),
     "RightLowerLeg": (1, 1.193, 1), "LeftLowerLeg": (1, 1.193, 1),
     "RightFoot": (1, .3, 1), "LeftFoot": (1, .3, 1),
+    "Head": (1.2, 1.2, 1.2),   # (19/11) masks, headbands, hoods: the classic head's box
 }
 REST = {
     "LowerTorso": (0, 0, 0), "UpperTorso": (0, 1.0, 0), "Head": (0, 2.4, 0),
@@ -390,8 +391,9 @@ def item_shorts():
 
 def item_arm_wraps():
     o = Out()
-    o.both("LowerArm", "Wrap", lambda pc, part: ribbed(pc, part, .12, .98, pad=.03, ribs=10, depth=.022, spiral=1.0))
-    o.both("Hand", "Wrap", lambda pc, part: ribbed(pc, part, -.05, .75, pad=.025, ribs=2, depth=.02, spiral=1.0))
+    # (19/11, vague 2: « trop épaisses ») close to the skin: a third of the old pad and depth
+    o.both("LowerArm", "Wrap", lambda pc, part: ribbed(pc, part, .12, .98, pad=.01, ribs=10, depth=.01, spiral=1.0))
+    o.both("Hand", "Wrap", lambda pc, part: ribbed(pc, part, -.05, .75, pad=.006, ribs=2, depth=.008, spiral=1.0))
     return o.items
 
 
@@ -450,7 +452,26 @@ def item_naruto():
     o.both("LowerLeg", "Orange", lambda pc, part: shell(pc, part, -.02, .68, pad=.13, flare1=.08, folds=.045))
     o.both("LowerLeg", "White", lambda pc, part: ribbed(pc, part, .6, .78, pad=.06, ribs=3, depth=.025, spiral=1.0))
     _feet(o, "Blue")
+    holster(o, "White", "Blue")
+    pouch = o.add("LowerTorso", "Blue", name="Pouch")   # (Part I) the tool pouch at the back of the belt
+    box(pouch, (.35, -.02, (size("LowerTorso").z / 2 + .1) / K + .08), (.22, .16, .09), shade(.9, .05))
     return o.items
+
+
+def holster(o, tape="Tape", pouch="Holster", side="Right"):
+    """(20/11, references) The kunai holster on the thigh (Part I: Naruto, Sasuke, Neji wear it
+    on the right): a white bandage round the thigh and the pouch strapped over it, on the
+    outside. One side only: the slots Tape/Holster are the asymmetric ones (OutfitMeshes.spec)."""
+    part = side + "UpperLeg"
+    t = o.add(part, tape, name="HolsterTape")
+    ribbed(t, part, .3, .52, pad=.14, ribs=3, depth=.015, spiral=1.0)
+    h = o.add(part, pouch, name="Holster")
+    S = size(part)
+    sx = 1 if side == "Right" else -1
+    x = sx * ((S.x / 2 + .07) / K + .06)
+    box(h, (x, -.05, -.02), (.07, .24, .2), shade(.88, .05))
+    box(h, (x + sx * .015, .14, -.02), (.075, .06, .21), shade(.96, .03))   # the flap
+    box(h, (x + sx * .03, -.3, -.02), (.05, .06, .12), shade(.8, .04))     # the kunai's ring under it
 
 
 def _feet(o, slot):
@@ -472,8 +493,12 @@ def item_sasuke():
     o.both("UpperArm", "Navy", lambda pc, part: shell(pc, part, -.05, .42, pad=.09, flare1=.05))
     # the arm warmers: elbow to wrist, loose, a ridge at each end
     o.both("LowerArm", "Wrap", lambda pc, part: shell(pc, part, -.06, .96, pad=.1, flare0=.03, flare1=.02, folds=.04, hem="both"))
+    # (20/11, references) the arm warmers' blue rims at both ends
+    o.both("LowerArm", "Navy", lambda pc, part: (ribbed(pc, part, -.04, .06, pad=.13, ribs=1, depth=.01, rings_per=3),
+                                                ribbed(pc, part, .86, .96, pad=.13, ribs=1, depth=.01, rings_per=3)))
     o.both("UpperLeg", "White", lambda pc, part: shell(pc, part, -.05, .78, pad=.11, flare1=.07, folds=.035))
-    o.both("LowerLeg", "Wrap", lambda pc, part: ribbed(pc, part, .1, .8, pad=.035, ribs=8, depth=.022, spiral=1.0))
+    # (20/11, references) Part I: bare shins (the wrapped shins were not his); the holster on the right thigh
+    holster(o, "Wrap", "Navy")
     _feet(o, "Navy")
     return o.items
 
@@ -486,9 +511,14 @@ def item_lee():
     shell(lo, "LowerTorso", -.15, 1.05, pad=.05, hem=False, folds=.01)
     belt = o.add("LowerTorso", "Red")
     ribbed(belt, "LowerTorso", .0, .5, pad=.09, ribs=1, depth=.025, rings_per=6)
+    # (20/11, references) the red belt IS his forehead protector: its metal plate in front
+    plt = o.add("LowerTorso", "Plate", mat="Metal", name="Plate")
+    box(plt, (0, .0, -(size("LowerTorso").z / 2 + .09) / K - .05), (.27, .1, .03), shade(.95, .03))
+    for x in (-.22, .22):
+        box(plt, (x, .0, -(size("LowerTorso").z / 2 + .09) / K - .085), (.025, .025, .01), shade(.7, .03))
     o.both("UpperArm", "Green", lambda pc, part: shell(pc, part, -.05, 1.02, pad=.05, folds=.01, hem=False))
     o.both("LowerArm", "Green", lambda pc, part: shell(pc, part, -.02, .55, pad=.05, folds=.01, hem=False))
-    o.both("LowerArm", "Wrap", lambda pc, part: ribbed(pc, part, .5, .99, pad=.03, ribs=6, depth=.02, spiral=1.0))
+    o.both("LowerArm", "Wrap", lambda pc, part: ribbed(pc, part, .5, .99, pad=.01, ribs=6, depth=.01, spiral=1.0))
     o.both("UpperLeg", "Green", lambda pc, part: shell(pc, part, -.05, 1.02, pad=.05, folds=.01, hem=False))
     o.both("LowerLeg", "Green", lambda pc, part: shell(pc, part, -.02, .2, pad=.05, folds=.01, hem=False))
     # the leg warmers: thick, rolled, slumping on the ankle
@@ -515,6 +545,7 @@ def item_neji():
     o.both("LowerArm", "Robe", lambda pc, part: shell(pc, part, -.02, .62, pad=.18, flare0=.06, flare1=.16, folds=.05))
     o.both("UpperLeg", "Dark", lambda pc, part: shell(pc, part, -.05, .75, pad=.1, flare1=.06, folds=.03))
     o.both("LowerLeg", "Wrap", lambda pc, part: ribbed(pc, part, .05, .6, pad=.035, ribs=6, depth=.022, spiral=1.0))
+    holster(o, "Wrap", "Dark")   # (20/11, references) the bandaged right thigh and its holster
     _feet(o, "Dark")
     return o.items
 
@@ -542,6 +573,9 @@ def item_gaara():
             ring.append(Vector((x, y, z)))
         rows.append(ring)
     loft(sash, rows, shade(.9, .06), cap0=False, cap1=False)
+    # (20/11, references) Part I: his forehead protector rides on the gourd's strap, over the chest
+    plt = o.add("UpperTorso", "Plate", mat="Metal", name="Plate")
+    box(plt, (-.36, -.2, -b - .05), (.21, .09, .03), shade(.95, .03))
     lo = o.add("LowerTorso", "Coat")
     shell(lo, "LowerTorso", -.15, 1.05, pad=.12, flare1=.08, hem=False, folds=.03)
     for zs, name in ((-1, "TailFront"), (1, "TailBack")):
@@ -582,6 +616,13 @@ def item_kakashi():
     o.both("LowerLeg", "Navy", lambda pc, part: shell(pc, part, -.02, .5, pad=.09, folds=.03, hem=False))
     o.both("LowerLeg", "Wrap", lambda pc, part: ribbed(pc, part, .45, .85, pad=.07, ribs=4, depth=.022, spiral=1.0))
     _feet(o, "Navy")
+    # (20/11, references) his fingerless gloves with a metal plate on the back of the hand,
+    # and the mask over the lower face
+    o.both("Hand", "Navy", lambda pc, part: shell(pc, part, -.08, .6, pad=.02, folds=.002, hem=True, rings=4))
+    o.both("Hand", "Guard", lambda pc, part: box(pc, (0, .02, -(size(part).z / 2 + .02) / K - .02), (.26, .07, .025), shade(.95, .02)), mat="Metal")
+    import wardrobe_models as W
+    for part, slot, pc in W.item_mask_cloth():
+        o.items.append((part, "Navy", pc))
     return o.items
 
 
@@ -669,6 +710,90 @@ ITEMS = {
 NEW_SLOTS = {"Minato": {"Coat": (238, 236, 230), "Flame": (196, 48, 34), "Vest": (86, 98, 70)},
              "Lee": {"Wrap": (226, 222, 212)}}
 
+# (19/11, vague 2) the wardrobe: many more pieces (tools/blender/wardrobe_models.py). Their
+# items are catalogue entries (CATALOG: Shared/Catalog, DEV 2), not Shop items yet; each model's
+# first colourway is its default (NewSlots), so a piece is never left without a colour.
+import wardrobe_models  # noqa: E402
+MODELS.update(wardrobe_models.MODELS)
+CATALOG = wardrobe_models.CATALOG
+for _id, (_kind, _model, _name, _cols) in CATALOG.items():
+    NEW_SLOTS.setdefault(_model, dict(_cols))
+
+
+# (20/11) the wardrobe's catalogue ids -> models; ids the catalogue already had keep their id
+# (their cloth stand-in is replaced by the model: CapeTravel, BackScroll, MaskCloth)
+WARDROBE_ITEMS = {k: v[1] for k, v in CATALOG.items()}
+WARDROBE_ITEMS["CapeTravel"] = "CapeShort"
+WARDROBE_ITEMS.update({k: k for k in wardrobe_models.SETS})
+# (the icon tool, tools/icons, reads ITEMS: every look with a model is there)
+ITEMS.update(WARDROBE_ITEMS)
+
+
+def _set_builder(set_id):
+    """A set's pieces for the previews and the icons (never written: OutfitMeshes.Sets builds
+    it at load), their colour slots prefixed by their model, as the catalogue colours them."""
+    def build():
+        out = []
+        for m, _ in wardrobe_models.SETS[set_id][1]:
+            out += [(part, m + slot, pc) for part, slot, pc in MODELS[m]()]
+        return out
+    return build
+
+
+for _sid in wardrobe_models.SETS:
+    MODELS[_sid] = _set_builder(_sid)
+PRICE = {"top": 600, "bottom": 500, "arms": 350, "feet": 350, "headband": 800, "mask": 600, "cape": 900, "back": 700}
+# A set belongs to a kit (Shop.spec): the inspiration whose spirit it carries (my proposal, the DEV's call)
+SET_KIT = {"SetEmberMonk": "Leaf", "SetMistHunter": "Mirage", "SetStormCourier": "Legion", "SetShadowScout": "Copycat",
+           "SetLeafMedic": "GentleFist", "SetSandNomad": "Sand"}
+# Server/Outfit's cloth stand-ins (Shared/Catalog `pieces`), until the client has drawn the model
+FALLBACK = {
+    "top": lambda c: ['{on="UpperTorso",c="%s"}' % c, '{on="LowerTorso",c="%s",h=.6}' % c, '{on="UpperArm",c="%s",h=.55}' % c],
+    "bottom": lambda c: ['{on="LowerTorso",c="%s",y0=.4,h=.6}' % c, '{on="UpperLeg",c="%s"}' % c, '{on="LowerLeg",c="%s"}' % c],
+    "arms": lambda c: ['{on="LowerArm",kind="band",c="%s",y0=.15,h=.8}' % c],
+    "feet": lambda c: ['{on="Foot",c="%s",pad=.05}' % c, '{on="LowerLeg",kind="band",c="%s",y0=.82,h=.18}' % c],
+    "mask": lambda c: ['{on="Head",kind="shell",c="%s",y0=.5,h=.5,pad=.04}' % c],
+    "cape": lambda c: ['{on="UpperTorso",kind="cape",c="%s"}' % c],
+    "back": lambda c: ['{on="UpperTorso",kind="scroll",c="%s"}' % c],
+}
+BEGIN, END = "\t-- BEGIN wardrobe (generated by tools/blender/outfit_models.py write: edit the generator)", "\t-- END wardrobe"
+
+
+def write_catalog(path):
+    """(20/11) The wardrobe's looks in Shared/Catalog: one generated block (between BEGIN and
+    END), the ids the catalogue already had are left where they are. Ryō prices are proposals
+    (the economy is the DEV's); a set is sold in Robux (SOON until its product exists)."""
+    import re
+    src = open(path).read()
+    have = set(re.findall(r'\{id="(\w+)"', src.split(BEGIN)[0] + (src.split(END)[1] if END in src else "")))
+    rows = []
+    c = lambda cols: ",".join("%s={%d,%d,%d}" % (k, *v) for k, v in cols.items())
+    for k, (kind, m, nm, cols) in CATALOG.items():
+        if k in have:
+            continue
+        extra = ',model="%s"' % m if kind == "headband" else ""
+        if kind == "headband" and "Plate" not in cols:
+            cols = dict(cols, Plate=(200, 204, 210))  # (Server/Headband paints a plate on every band)
+        first = next(iter(cols))
+        pc = "" if kind == "headband" else ",\n\t\tpieces={%s}" % ",".join(FALLBACK[kind](first))
+        rows.append('\t{id="%s",slot="%s",name="%s",ryo=%d,colors={%s}%s%s},' % (k, kind, nm.upper(), PRICE[kind], c(cols), extra, pc))
+    for k, (nm, parts) in wardrobe_models.SETS.items():
+        cols = {}
+        for m, cm in parts:
+            for sl, v in cm.items():
+                cols[m + sl] = v
+        top, low = parts[0][0] + next(iter(parts[0][1])), parts[1][0] + next(iter(parts[1][1]))
+        pcs = FALLBACK["top"](top) + FALLBACK["bottom"](low)[1:]
+        rows.append('\t{id="%s",slot="set",kit="%s",name="%s",robux="%s",colors={%s},\n\t\tpieces={%s}},' % (k, SET_KIT[k], nm.upper(), k, c(cols), ",".join(pcs)))
+    block = BEGIN + "\n" + "\n".join(rows) + "\n" + END
+    if BEGIN in src:
+        src = src.split(BEGIN)[0] + block + src.split(END)[1]
+    else:
+        i = src.rindex("}\n\nreturn Catalog")
+        src = src[:i] + block + "\n" + src[i:]
+    open(path, "w").write(src)
+    print("catalogue:", len(rows), "wardrobe looks")
+
 
 def to_blender_frame(pc):
     """Roblox frame (x, y up, z back) -> nd_mesh's Blender frame (x, -z, y)."""
@@ -691,18 +816,29 @@ def write(dst, limit=110000):
     from nd_mesh import piece_luau, q
     chunks, cur, sizeb = [], [], 0
     report = []
+    slots_of = {}
     for name in MODELS:
+        if name in wardrobe_models.SETS:
+            continue
         pieces = built(name)
+        slots_of[name] = {sl for _, sl, _ in pieces}
         tris = sum(len(p.tris()) for _, _, p in pieces)
         report.append((name, len(pieces), tris))
         for k, (part, slot, pc) in enumerate(pieces):
-            pc.name = "%s_%s_%d" % (part, slot, k)
+            # (a holster is worn on one side: its name says so, OutfitMeshes.spec lets it be)
+            pc.name = "%s_%s_%d%s" % (part, slot, k, "_Holster" if pc.name.startswith("Holster") else "")
             text = "\t{%s,%s,%s,%s}," % (q(name), q(part), q(slot), piece_luau(pc))
             if cur and sizeb + len(text) > limit:
                 chunks.append(cur); cur, sizeb = [], 0
             cur.append(text); sizeb += len(text)
     if cur:
         chunks.append(cur)
+    # every colour slot a catalogue entry or a set wears has its colour
+    for k, (kind, m, nm, cols) in CATALOG.items():
+        assert slots_of[m] <= set(cols), (k, sorted(slots_of[m] - set(cols)))
+    for k, (nm, parts) in wardrobe_models.SETS.items():
+        for m, cols in parts:
+            assert slots_of[m] <= set(cols), (k, m, sorted(slots_of[m] - set(cols)))
     head = "-- Generated by tools/blender/outfit_models.py. Do not edit: re-run the script.\n"
     for f in os.listdir(dst):
         if f.startswith("OutfitMeshData") and f.endswith(".luau"):
@@ -711,7 +847,13 @@ def write(dst, limit=110000):
         with open(os.path.join(dst, "OutfitMeshData%d.luau" % i), "w") as fh:
             fh.write(head + "-- {model, body part, colour slot, piece}, in order.\nreturn {\n" + "\n".join(c) + "\n}\n")
     ref = ",".join("%s=Vector3.new(%g,%g,%g)" % (k, *v) for k, v in REF.items())
-    items = ",".join("%s=%s" % (k, q(v)) for k, v in ITEMS.items())
+    items_all = dict(ITEMS)   # (a set is its own model, built at load: OutfitMeshes.Sets)
+    items = ",".join("%s=%s" % (k, q(v)) for k, v in items_all.items())
+    sets_lua = ",".join("%s={%s}" % (k, ",".join(q(m) for m, _ in parts)) for k, (nm, parts) in wardrobe_models.SETS.items())
+    sets = ",\n\t".join("%s={kind=\"set\",name=%s,parts={%s}}" % (k, q(nm), ",".join("{model=%s,colors={%s}}" % (q(m), ",".join("%s={%d,%d,%d}" % (sl, *c) for sl, c in cols.items())) for m, cols in parts))
+                          for k, (nm, parts) in wardrobe_models.SETS.items())
+    catalog = ",\n\t".join("%s={kind=%s,model=%s,name=%s,colors={%s}}" % (k, q(kind), q(m), q(nm), ",".join("%s={%d,%d,%d}" % (s, *c) for s, c in cols.items()))
+                             for k, (kind, m, nm, cols) in CATALOG.items())
     new_slots = ",".join("%s={%s}" % (m, ",".join("%s={%d,%d,%d}" % (s, *c) for s, c in v.items())) for m, v in NEW_SLOTS.items())
     with open(os.path.join(dst, "OutfitMeshes.luau"), "w") as fh:
         fh.write(head + """-- (DEC-040) The ninja outfit's modelled pieces (Server/Outfit): each Shop item
@@ -726,6 +868,14 @@ OutfitMeshes.Ref={%s}
 OutfitMeshes.Items={%s}
 -- Slots these models use that Shared/Shop has no colour for yet (a default)
 OutfitMeshes.NewSlots={%s}
+-- (19/11, vague 2) the wardrobe's new pieces, for Shared/Catalog (DEV 2): id -> its kind (top,
+-- bottom, arms, feet, headband, mask, cape, back, set), its model, its name, its colours by slot.
+-- Masks, headbands and hoods sit on the Head (Ref.Head), capes and back items on the torso.
+OutfitMeshes.Catalog={
+	%s,
+	-- the six invented outfits: bundles of the pieces above, each in the set's colours
+	%s,
+}
 OutfitMeshes.Models={}
 for i=1,%d do
 	for _,row in require(script.Parent["OutfitMeshData"..i]) do
@@ -736,12 +886,28 @@ for i=1,%d do
 		table.insert(list,piece)
 	end
 end
+-- (20/11) The invented outfits: bundles of the pieces above, no mesh of their own. Each
+-- piece is shared (a shallow copy), its colour slot prefixed by its model (Catalog colours
+-- them: GiCloth, HakamaCloth...).
+OutfitMeshes.Sets={%s}
+for set,models in OutfitMeshes.Sets do
+	local list={}
+	for _,model in models do
+		for _,piece in OutfitMeshes.Models[model] or {} do
+			local copy=table.clone(piece)
+			copy.slot=model..piece.slot
+			table.insert(list,copy)
+		end
+	end
+	OutfitMeshes.Models[set]=list
+end
 function OutfitMeshes.forItem(id)
 	local model=OutfitMeshes.Items[id]
 	return model and OutfitMeshes.Models[model] or nil
 end
 return OutfitMeshes
-""" % (ref, items, new_slots, len(chunks)))
+""" % (ref, items, new_slots, catalog, sets, len(chunks), sets_lua))
+    write_catalog(os.path.join(dst, "Catalog.luau"))
     for name, n, t in report:
         print("%-12s %3d pieces %6d tris" % (name, n, t))
     print("chunks", len(chunks), "sizes", [sum(len(x) for x in c) for c in chunks])
@@ -784,8 +950,83 @@ def render(dst, names=None):
         print("rendered", name, flush=True)
 
 
+def catalog_colors(model):
+    """The colours Shared/Catalog gives the first look that wears `model` (the masters' sets)."""
+    import re
+    path = os.path.join(HERE, "..", "..", "src", "Shared", "Catalog.luau")
+    src = open(path).read()
+    ids = [k for k, v in ITEMS.items() if v == model] + [k for k, v in WARDROBE_ITEMS.items() if v == model]
+    for k in ids:
+        m = re.search(r'\{id="%s".*?colors=\{(.*?)\}\}' % k, src)
+        if m:
+            return {sl: tuple(int(x) for x in rgb.split(",")) for sl, rgb in re.findall(r"(\w+)=\{(\d+,\d+,\d+)\}", m.group(1) + "}")}
+    return {}
+
+
+BODIES = (("thin", (.82, 1.0, .85)), ("wide", (1.3, 1.0, 1.25)), ("tall", (1.0, 1.25, 1.0)))
+
+
+def render_bodies(dst, names=None):
+    """(19/11, vague 2) Each model tried on three avatar bodies (thin, wide, tall: every part's
+    size times these, as Client/OutfitDress scales a piece by body.Size/Ref), seen from the
+    front (the three on the right) and from the back (the three on the left), in its first
+    catalogue colourway."""
+    from nd_mesh import to_blender, render_set, clear
+    os.makedirs(dst, exist_ok=True)
+    SKIN = (0.93, 0.78, 0.62)
+    for name in MODELS:
+        if names and name not in names:
+            continue
+        clear()
+        objs = []
+        if name in wardrobe_models.SETS:  # a bundle: each piece in the set's colours
+            pieces, tints = [], []
+            for m, cmap in wardrobe_models.SETS[name][1]:
+                for entry in built(m):
+                    pieces.append(entry)
+                    tints.append(cmap)
+        if name not in wardrobe_models.SETS:
+            pieces = built(name)
+            cols = dict(NEW_SLOTS.get(name, {}))
+            cols.update(catalog_colors(name))
+            tints = [cols] * len(pieces)
+        for k, (back, (tag, f)) in enumerate([(b, bd) for b in (False, True) for bd in BODIES]):
+            dx = (k - 2.5) * 3.6
+            turn = -1 if back else 1
+
+            def place(v, part):
+                c = REST[part]
+                x, y, z = v.x * f[0] + c[0] * f[0], v.y * f[2] - c[2] * f[2], v.z * f[1] + c[1] * f[1]
+                return Vector((x * turn + dx, y * turn, z))
+            for part, c in REST.items():
+                S = REF.get(part, (1.2, 1.2, 1.2))
+                pc = Piece(part, "SmoothPlastic")
+                if part == "Head":  # the classic head: a rounded cylinder, not a box
+                    rings = [[Vector((math.cos(t) * r, y, math.sin(t) * r)) for t in [i / 16 * math.tau for i in range(16)]]
+                             for y, r in ((-.6, .5), (-.5, .6), (.5, .6), (.6, .5))]
+                    loft(pc, rings, lambda p, kk: SKIN)
+                else:
+                    box(pc, (0, 0, 0), (S[0] / 2 * .98, S[1] / 2 * .98, S[2] / 2 * .98), lambda p, kk: SKIN)
+                b = to_blender_frame(pc)
+                b.v = [place(v, part) for v in b.v]
+                if back:
+                    b.f = [tuple(fc) for fc in b.f]
+                objs.append(to_blender(b))
+            for (part, slot, pc), cols in zip(pieces, tints):
+                q = Piece(pc.name, pc.mat, pc.flat)
+                q.v = [place(v, part) for v in pc.v]
+                q.f = list(pc.f)
+                tint = [x / 255 for x in cols.get(slot, (150, 150, 150))]
+                q.c = [tuple(g * t for g, t in zip(cc, tint)) for cc in pc.c]
+                objs.append(to_blender(q))
+        render_set(objs, os.path.join(dst, "%s.png" % name), size=(1500, 520), view=(.1, 1.0, .12), fill=.56, world=(.7, .72, .76))
+        print("BODIES", name, sum(len(p.tris()) for _, _, p in pieces), flush=True)
+
+
 if __name__ == "__main__":
-    if sys.argv[1] == "write":
+    if sys.argv[1] == "bodies":
+        render_bodies(sys.argv[2], sys.argv[3:] or None)
+    elif sys.argv[1] == "write":
         write(sys.argv[2])
     else:
         render(sys.argv[2], sys.argv[3:] or None)

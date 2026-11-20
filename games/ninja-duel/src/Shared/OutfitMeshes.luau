@@ -7,12 +7,73 @@
 -- colors[slot] (the vertex colours are shading: they multiply).
 --   OutfitMeshes.Models[model] = {{on=<body part>, slot=<colour slot>, <piece>}, ...}
 local OutfitMeshes={}
-OutfitMeshes.Ref={UpperTorso=Vector3.new(2,1.6,1),LowerTorso=Vector3.new(2,0.4,1),RightUpperArm=Vector3.new(1,1.169,1),LeftUpperArm=Vector3.new(1,1.169,1),RightLowerArm=Vector3.new(1,1.052,1),LeftLowerArm=Vector3.new(1,1.052,1),RightHand=Vector3.new(1,0.3,1),LeftHand=Vector3.new(1,0.3,1),RightUpperLeg=Vector3.new(1,1.217,1),LeftUpperLeg=Vector3.new(1,1.217,1),RightLowerLeg=Vector3.new(1,1.193,1),LeftLowerLeg=Vector3.new(1,1.193,1),RightFoot=Vector3.new(1,0.3,1),LeftFoot=Vector3.new(1,0.3,1)}
-OutfitMeshes.Items={TopTunicNavy="Tunic",TopTunicBlack="Tunic",TopTunicGreen="Tunic",TopHighCollar="HighCollar",TopSleeveless="Sleeveless",BottomPantsDark="Pants",BottomPantsSand="Pants",BottomShorts="Shorts",ArmsWraps="ArmWraps",ArmsGuards="ArmGuards",FeetSandals="Sandals",FeetBlack="Sandals",SetNaruto="Naruto",SetSasuke="Sasuke",SetLee="Lee",SetNeji="Neji",SetGaara="Gaara",SetKakashi="Kakashi",SetItachi="Itachi",SetMinato="Minato"}
+OutfitMeshes.Ref={UpperTorso=Vector3.new(2,1.6,1),LowerTorso=Vector3.new(2,0.4,1),RightUpperArm=Vector3.new(1,1.169,1),LeftUpperArm=Vector3.new(1,1.169,1),RightLowerArm=Vector3.new(1,1.052,1),LeftLowerArm=Vector3.new(1,1.052,1),RightHand=Vector3.new(1,0.3,1),LeftHand=Vector3.new(1,0.3,1),RightUpperLeg=Vector3.new(1,1.217,1),LeftUpperLeg=Vector3.new(1,1.217,1),RightLowerLeg=Vector3.new(1,1.193,1),LeftLowerLeg=Vector3.new(1,1.193,1),RightFoot=Vector3.new(1,0.3,1),LeftFoot=Vector3.new(1,0.3,1),Head=Vector3.new(1.2,1.2,1.2)}
+OutfitMeshes.Items={TopTunicNavy="Tunic",TopTunicBlack="Tunic",TopTunicGreen="Tunic",TopHighCollar="HighCollar",TopSleeveless="Sleeveless",BottomPantsDark="Pants",BottomPantsSand="Pants",BottomShorts="Shorts",ArmsWraps="ArmWraps",ArmsGuards="ArmGuards",FeetSandals="Sandals",FeetBlack="Sandals",SetNaruto="Naruto",SetSasuke="Sasuke",SetLee="Lee",SetNeji="Neji",SetGaara="Gaara",SetKakashi="Kakashi",SetItachi="Itachi",SetMinato="Minato",TopTrackJacketOrange="TrackJacket",TopTrackJacketRed="TrackJacket",TopMeshShirt="MeshShirt",TopHaori="Haori",TopChuninVest="ChuninVest",TopGiWhite="Gi",TopGiBlue="Gi",TopTurtleneckPlum="Turtleneck",TopTurtleneckTeal="Turtleneck",TopSashTop="SashTop",BottomHakamaNavy="Hakama",BottomHakamaGrey="Hakama",BottomCargo="CargoPants",BottomLeggings="Leggings",BottomWrapPants="WrapPants",BottomWrapSkirt="WrapSkirt",BottomLongShorts="LongShorts",ArmsWarmers="ArmWarmers",ArmsGauntlets="Gauntlets",ArmsBracers="Bracers",ArmsFingerless="Fingerless",ArmsElbowPads="ElbowPads",ArmsLongSleeves="LongSleeves",FeetBoots="Boots",FeetTabi="Tabi",FeetGeta="Geta",FeetShinGuards="ShinGuards",FeetWrapped="WrappedFeet",FeetOpenBoots="OpenBoots",HeadbandBlue="HeadbandClassic",HeadbandLongBlack="HeadbandLong",HeadbandScratched="HeadbandScratched",HeadbandHachimaki="Hachimaki",HeadbandBandana="HeadbandBandana",HeadbandBow="HeadbandBow",HeadbandNeck="HeadbandNeck",HeadbandWaist="HeadbandWaist",MaskFox="MaskFox",MaskCat="MaskCat",MaskCloth="MaskCloth",MaskRespirator="MaskRespirator",CapeShortRed="CapeShort",CapeLongWhite="CapeLong",CloakHooded="CloakHooded",ScarfRed="Scarf",BackScroll="BackScroll",BackPouch="BackPouch",BackSword="BackSword",BackFuma="BackFuma",CapeTravel="CapeShort",SetEmberMonk="SetEmberMonk",SetMistHunter="SetMistHunter",SetStormCourier="SetStormCourier",SetShadowScout="SetShadowScout",SetLeafMedic="SetLeafMedic",SetSandNomad="SetSandNomad"}
 -- Slots these models use that Shared/Shop has no colour for yet (a default)
-OutfitMeshes.NewSlots={Minato={Coat={238,236,230},Flame={196,48,34},Vest={86,98,70}},Lee={Wrap={226,222,212}}}
+OutfitMeshes.NewSlots={Minato={Coat={238,236,230},Flame={196,48,34},Vest={86,98,70}},Lee={Wrap={226,222,212}},TrackJacket={Cloth={236,120,30},Trim={34,44,92}},MeshShirt={Cloth={80,80,92}},Haori={Under={40,44,60},Cloth={170,210,226},Trim={236,232,222}},ChuninVest={Cloth={46,54,86},Vest={110,150,92}},Gi={Cloth={236,232,222},Belt={40,36,40}},Turtleneck={Cloth={120,60,120}},SashTop={Cloth={46,48,60},Sash={196,44,44}},Hakama={Cloth={46,54,96},Belt={236,232,222}},CargoPants={Cloth={96,110,70},Tie={226,222,212},Pocket={80,92,58}},Leggings={Cloth={46,140,60},Weights={236,120,30}},WrapPants={Cloth={140,100,70},Wrap={226,222,212}},WrapSkirt={Under={40,44,60},Cloth={196,60,90},Belt={236,200,80}},LongShorts={Cloth={60,100,170},Belt={36,36,40}},ArmWarmers={Cloth={236,232,222}},Gauntlets={Leather={96,64,44},Metal={190,194,200}},Bracers={Leather={140,70,40},Metal={210,190,120}},Fingerless={Leather={36,36,40},Metal={190,194,200}},ElbowPads={Pad={60,100,170},Strap={36,36,40}},LongSleeves={Cloth={170,60,60},Trim={236,200,80}},Boots={Leather={60,50,44},Strap={150,110,70}},Tabi={Cloth={236,232,222},Sole={60,60,64}},Geta={Wood={164,120,80},Strap={196,44,44}},ShinGuards={Sandal={46,54,96},Metal={190,194,200},Strap={36,36,40}},WrappedFeet={Wrap={226,222,212}},OpenBoots={Leather={40,44,70}},HeadbandClassic={Band={46,60,130},Plate={200,204,210}},HeadbandLong={Band={36,36,40},Plate={200,204,210}},HeadbandScratched={Band={110,40,44},Plate={170,174,180}},Hachimaki={Band={236,232,222}},HeadbandBandana={Band={60,100,170},Plate={200,204,210}},HeadbandBow={Band={220,80,120},Plate={200,204,210}},HeadbandNeck={Band={46,60,130},Plate={200,204,210}},HeadbandWaist={Band={130,60,140},Plate={200,204,210}},MaskFox={Mask={240,240,236},Paint={200,40,40},Strap={36,36,40}},MaskCat={Mask={240,240,236},Paint={60,100,200},Strap={36,36,40}},MaskCloth={Cloth={46,54,86}},MaskRespirator={Metal={150,156,166},Strap={36,36,40}},CapeShort={Cape={196,44,44},Trim={236,200,80}},CapeLong={Cape={236,232,222},Trim={196,60,40}},CloakHooded={Cape={110,90,70}},Scarf={Scarf={196,44,44}},BackScroll={Paper={240,230,200},Wood={120,80,50},Strap={196,44,44}},BackPouch={Leather={150,110,70},Metal={200,204,210},Strap={60,50,44}},BackSword={Sheath={30,30,36},Metal={200,190,140},Grip={196,44,44},Strap={60,50,44}},BackFuma={Metal={176,182,190},Grip={60,50,44},Strap={60,50,44}}}
+-- (19/11, vague 2) the wardrobe's new pieces, for Shared/Catalog (DEV 2): id -> its kind (top,
+-- bottom, arms, feet, headband, mask, cape, back, set), its model, its name, its colours by slot.
+-- Masks, headbands and hoods sit on the Head (Ref.Head), capes and back items on the torso.
+OutfitMeshes.Catalog={
+	TopTrackJacketOrange={kind="top",model="TrackJacket",name="Track Jacket",colors={Cloth={236,120,30},Trim={34,44,92}}},
+	TopTrackJacketRed={kind="top",model="TrackJacket",name="Track Jacket (Crimson)",colors={Cloth={196,44,44},Trim={36,36,40}}},
+	TopMeshShirt={kind="top",model="MeshShirt",name="Mesh Shirt",colors={Cloth={80,80,92}}},
+	TopHaori={kind="top",model="Haori",name="Short Haori",colors={Under={40,44,60},Cloth={170,210,226},Trim={236,232,222}}},
+	TopChuninVest={kind="top",model="ChuninVest",name="Chunin Vest",colors={Cloth={46,54,86},Vest={110,150,92}}},
+	TopGiWhite={kind="top",model="Gi",name="Training Gi",colors={Cloth={236,232,222},Belt={40,36,40}}},
+	TopGiBlue={kind="top",model="Gi",name="Training Gi (Indigo)",colors={Cloth={60,80,160},Belt={236,232,222}}},
+	TopTurtleneckPlum={kind="top",model="Turtleneck",name="Turtleneck",colors={Cloth={120,60,120}}},
+	TopTurtleneckTeal={kind="top",model="Turtleneck",name="Turtleneck (Teal)",colors={Cloth={30,130,130}}},
+	TopSashTop={kind="top",model="SashTop",name="Sash Top",colors={Cloth={46,48,60},Sash={196,44,44}}},
+	BottomHakamaNavy={kind="bottom",model="Hakama",name="Hakama",colors={Cloth={46,54,96},Belt={236,232,222}}},
+	BottomHakamaGrey={kind="bottom",model="Hakama",name="Hakama (Ash)",colors={Cloth={120,124,132},Belt={40,36,40}}},
+	BottomCargo={kind="bottom",model="CargoPants",name="Cargo Pants",colors={Cloth={96,110,70},Tie={226,222,212},Pocket={80,92,58}}},
+	BottomLeggings={kind="bottom",model="Leggings",name="Leggings & Weights",colors={Cloth={46,140,60},Weights={236,120,30}}},
+	BottomWrapPants={kind="bottom",model="WrapPants",name="Wrapped Trousers",colors={Cloth={140,100,70},Wrap={226,222,212}}},
+	BottomWrapSkirt={kind="bottom",model="WrapSkirt",name="Wrap Skirt",colors={Under={40,44,60},Cloth={196,60,90},Belt={236,200,80}}},
+	BottomLongShorts={kind="bottom",model="LongShorts",name="Long Shorts",colors={Cloth={60,100,170},Belt={36,36,40}}},
+	ArmsWarmers={kind="arms",model="ArmWarmers",name="Arm Warmers",colors={Cloth={236,232,222}}},
+	ArmsGauntlets={kind="arms",model="Gauntlets",name="Gauntlets",colors={Leather={96,64,44},Metal={190,194,200}}},
+	ArmsBracers={kind="arms",model="Bracers",name="Studded Bracers",colors={Leather={140,70,40},Metal={210,190,120}}},
+	ArmsFingerless={kind="arms",model="Fingerless",name="Fingerless Gloves",colors={Leather={36,36,40},Metal={190,194,200}}},
+	ArmsElbowPads={kind="arms",model="ElbowPads",name="Elbow Pads",colors={Pad={60,100,170},Strap={36,36,40}}},
+	ArmsLongSleeves={kind="arms",model="LongSleeves",name="Long Sleeves",colors={Cloth={170,60,60},Trim={236,200,80}}},
+	FeetBoots={kind="feet",model="Boots",name="High Boots",colors={Leather={60,50,44},Strap={150,110,70}}},
+	FeetTabi={kind="feet",model="Tabi",name="Tabi",colors={Cloth={236,232,222},Sole={60,60,64}}},
+	FeetGeta={kind="feet",model="Geta",name="Geta",colors={Wood={164,120,80},Strap={196,44,44}}},
+	FeetShinGuards={kind="feet",model="ShinGuards",name="Shin Guards",colors={Sandal={46,54,96},Metal={190,194,200},Strap={36,36,40}}},
+	FeetWrapped={kind="feet",model="WrappedFeet",name="Wrapped Feet",colors={Wrap={226,222,212}}},
+	FeetOpenBoots={kind="feet",model="OpenBoots",name="Open-Toe Boots",colors={Leather={40,44,70}}},
+	HeadbandBlue={kind="headband",model="HeadbandClassic",name="Forehead Protector",colors={Band={46,60,130},Plate={200,204,210}}},
+	HeadbandLongBlack={kind="headband",model="HeadbandLong",name="Long-Tail Protector",colors={Band={36,36,40},Plate={200,204,210}}},
+	HeadbandScratched={kind="headband",model="HeadbandScratched",name="Scratched Protector",colors={Band={110,40,44},Plate={170,174,180}}},
+	HeadbandHachimaki={kind="headband",model="Hachimaki",name="Hachimaki",colors={Band={236,232,222}}},
+	HeadbandBandana={kind="headband",model="HeadbandBandana",name="Bandana Protector",colors={Band={60,100,170},Plate={200,204,210}}},
+	HeadbandBow={kind="headband",model="HeadbandBow",name="Ribbon Protector",colors={Band={220,80,120},Plate={200,204,210}}},
+	HeadbandNeck={kind="headband",model="HeadbandNeck",name="Neck Protector",colors={Band={46,60,130},Plate={200,204,210}}},
+	HeadbandWaist={kind="headband",model="HeadbandWaist",name="Waist Protector",colors={Band={130,60,140},Plate={200,204,210}}},
+	MaskFox={kind="mask",model="MaskFox",name="Fox Mask",colors={Mask={240,240,236},Paint={200,40,40},Strap={36,36,40}}},
+	MaskCat={kind="mask",model="MaskCat",name="Cat Mask",colors={Mask={240,240,236},Paint={60,100,200},Strap={36,36,40}}},
+	MaskCloth={kind="mask",model="MaskCloth",name="Face Mask",colors={Cloth={46,54,86}}},
+	MaskRespirator={kind="mask",model="MaskRespirator",name="Respirator",colors={Metal={150,156,166},Strap={36,36,40}}},
+	CapeShortRed={kind="cape",model="CapeShort",name="Short Cape",colors={Cape={196,44,44},Trim={236,200,80}}},
+	CapeLongWhite={kind="cape",model="CapeLong",name="Long Cape",colors={Cape={236,232,222},Trim={196,60,40}}},
+	CloakHooded={kind="cape",model="CloakHooded",name="Hooded Cloak",colors={Cape={110,90,70}}},
+	ScarfRed={kind="cape",model="Scarf",name="Long Scarf",colors={Scarf={196,44,44}}},
+	BackScroll={kind="back",model="BackScroll",name="Great Scroll",colors={Paper={240,230,200},Wood={120,80,50},Strap={196,44,44}}},
+	BackPouch={kind="back",model="BackPouch",name="Tool Pouch",colors={Leather={150,110,70},Metal={200,204,210},Strap={60,50,44}}},
+	BackSword={kind="back",model="BackSword",name="Sheathed Blade",colors={Sheath={30,30,36},Metal={200,190,140},Grip={196,44,44},Strap={60,50,44}}},
+	BackFuma={kind="back",model="BackFuma",name="Folded Fuma",colors={Metal={176,182,190},Grip={60,50,44},Strap={60,50,44}}},
+	-- the six invented outfits: bundles of the pieces above, each in the set's colours
+	SetEmberMonk={kind="set",name="Ember Monk",parts={{model="Gi",colors={Cloth={232,120,40},Belt={40,36,40}}},{model="Hakama",colors={Cloth={120,34,36},Belt={40,36,40}}},{model="Bracers",colors={Leather={96,64,44},Metal={200,200,206}}},{model="Geta",colors={Wood={164,120,80},Strap={190,40,36}}},{model="Hachimaki",colors={Band={236,232,220}}}}},
+	SetMistHunter={kind="set",name="Mist Hunter",parts={{model="Turtleneck",colors={Cloth={58,96,128}}},{model="CargoPants",colors={Cloth={58,96,128},Tie={210,210,214},Pocket={46,80,108}}},{model="Gauntlets",colors={Leather={52,56,66},Metal={176,182,190}}},{model="Boots",colors={Leather={52,56,66},Strap={40,42,50}}},{model="MaskCat",colors={Mask={240,240,236},Paint={70,120,200},Strap={40,42,50}}},{model="Scarf",colors={Scarf={170,210,226}}}}},
+	SetStormCourier={kind="set",name="Storm Courier",parts={{model="TrackJacket",colors={Cloth={238,200,40},Trim={36,40,52}}},{model="LongShorts",colors={Cloth={36,40,52},Belt={238,200,40}}},{model="Fingerless",colors={Leather={36,40,52},Metal={200,204,210}}},{model="Tabi",colors={Cloth={236,232,222},Sole={60,60,64}}},{model="BackPouch",colors={Leather={150,110,70},Metal={200,204,210},Strap={60,50,44}}},{model="HeadbandClassic",colors={Band={36,40,52},Plate={200,204,210}}}}},
+	SetShadowScout={kind="set",name="Shadow Scout",parts={{model="MeshShirt",colors={Cloth={90,90,100}}},{model="SashTop",colors={Cloth={46,48,60},Sash={150,40,60}}},{model="WrapPants",colors={Cloth={46,48,60},Wrap={200,196,186}}},{model="ArmWarmers",colors={Cloth={200,196,186}}},{model="WrappedFeet",colors={Wrap={200,196,186}}},{model="MaskCloth",colors={Cloth={46,48,60}}},{model="BackSword",colors={Sheath={30,30,36},Metal={190,190,196},Grip={150,40,60},Strap={30,30,36}}}}},
+	SetLeafMedic={kind="set",name="Leaf Medic",parts={{model="ChuninVest",colors={Cloth={64,70,92},Vest={110,150,92}}},{model="Leggings",colors={Cloth={64,70,92},Weights={236,232,222}}},{model="ElbowPads",colors={Pad={236,232,222},Strap={40,42,50}}},{model="OpenBoots",colors={Leather={64,70,92}}},{model="HeadbandNeck",colors={Band={64,70,92},Plate={200,204,210}}}}},
+	SetSandNomad={kind="set",name="Sand Nomad",parts={{model="Haori",colors={Cloth={196,150,90},Under={110,60,46},Trim={230,200,120}}},{model="WrapSkirt",colors={Cloth={196,150,90},Under={110,60,46},Belt={230,200,120}}},{model="ShinGuards",colors={Sandal={90,64,44},Metal={176,160,130},Strap={90,64,44}}},{model="CloakHooded",colors={Cape={214,186,140}}},{model="BackScroll",colors={Paper={240,230,200},Wood={120,80,50},Strap={90,64,44}}}}},
+}
 OutfitMeshes.Models={}
-for i=1,13 do
+for i=1,23 do
 	for _,row in require(script.Parent["OutfitMeshData"..i]) do
 		local list=OutfitMeshes.Models[row[1]]
 		if not list then list={};OutfitMeshes.Models[row[1]]=list end
@@ -20,6 +81,21 @@ for i=1,13 do
 		piece.on=row[2];piece.slot=row[3]
 		table.insert(list,piece)
 	end
+end
+-- (20/11) The invented outfits: bundles of the pieces above, no mesh of their own. Each
+-- piece is shared (a shallow copy), its colour slot prefixed by its model (Catalog colours
+-- them: GiCloth, HakamaCloth...).
+OutfitMeshes.Sets={SetEmberMonk={"Gi","Hakama","Bracers","Geta","Hachimaki"},SetMistHunter={"Turtleneck","CargoPants","Gauntlets","Boots","MaskCat","Scarf"},SetStormCourier={"TrackJacket","LongShorts","Fingerless","Tabi","BackPouch","HeadbandClassic"},SetShadowScout={"MeshShirt","SashTop","WrapPants","ArmWarmers","WrappedFeet","MaskCloth","BackSword"},SetLeafMedic={"ChuninVest","Leggings","ElbowPads","OpenBoots","HeadbandNeck"},SetSandNomad={"Haori","WrapSkirt","ShinGuards","CloakHooded","BackScroll"}}
+for set,models in OutfitMeshes.Sets do
+	local list={}
+	for _,model in models do
+		for _,piece in OutfitMeshes.Models[model] or {} do
+			local copy=table.clone(piece)
+			copy.slot=model..piece.slot
+			table.insert(list,copy)
+		end
+	end
+	OutfitMeshes.Models[set]=list
 end
 function OutfitMeshes.forItem(id)
 	local model=OutfitMeshes.Items[id]

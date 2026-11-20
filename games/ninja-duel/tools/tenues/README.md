@@ -1,0 +1,110 @@
+# La cabine d'essayage (OUTILLEUR, 20/11)
+
+La cabine montre les tenues du jeu sur des avatars Roblox types, de face et de dos. C'est le contrôle des tenues de l'étape 1 (DEC-043, OUTILLEUR 3). L'ANIMATEUR s'en sert pour comparer les tenues et les bandeaux aux vraies références, puis les corriger sur l'avatar (ANIMATEUR 4) : ses planches Blender montrent la pièce, la cabine montre ce que le jeu en fait dans Studio.
+
+| Fichier | Rôle |
+|---|---|
+| `cabine.luau` | La cabine, dans Studio (Edit). Elle construit les avatars et les habille |
+| `studio_code.py` | Sort le code Luau d'une étape, à coller ou à passer à `execute_luau` |
+| `planche.py` | Recadre les captures et nomme chaque avatar sous sa silhouette. Sort une planche par tenue, plus la planche avant / après |
+| `rendus/` | Les planches (voir plus bas) |
+| `test_planche.py` | Les tests de la planche, sans Studio |
+
+## Les avatars
+
+Sept corps, dans cet ordre de gauche à droite sur la planche de face (inversé de dos) :
+
+| Avatar | Paquet | Pourquoi |
+|---|---|---|
+| Korblox | 192 | Un corps dont le torse porte une armure |
+| Rthro Big Bill | 363 | Une grande tête Rthro |
+| Rthro Vanessa | 551 | Une grande tête Rthro |
+| Garçon Roblox | 109 | Un torse avec un débardeur peint |
+| Femme | 239 | |
+| Bloc R15 | | Le corps par défaut |
+| François | | L'avatar du propriétaire |
+
+Chaque avatar est construit comme le jeu construit celui du joueur (`Server/AvatarBody`) :
+- les échelles standard ;
+- les vêtements et accessoires retirés, sauf les cheveux (`Outfit.strip`) ;
+- le corps grandi d'un bloc jusqu'à la taille des prodiges (6,5 studs).
+
+Studio ne résout aucune articulation en mode Édition : une tête Rthro restait 2 studs dans le torse. La cabine pose donc chaque pièce à son repos, depuis la racine (C0/C1), comme le squelette du jeu en partie.
+
+Ensuite, l'avatar est habillé comme en duel :
+1. les pièces de tissu de `Server/Outfit` ;
+2. par-dessus, les pièces modelées de l'ANIMATEUR (`Client/OutfitDress`), avec le tissu d'une tenue modelée caché comme sur le client ;
+3. le bandeau de `Server/Headband`.
+
+## Les tenues (`Cabine.ORDER`)
+
+- Les 8 sets des inspirations, avec le bandeau bleu (sauf Gaara).
+- Trois tenues de base du catalogue.
+- Deux tenues d'accessoires :
+  - masque, cape de voyage, rouleau ;
+  - masque de renard, cape à capuche, sabre, bandeau au cou.
+- Les 6 tenues inventées de la garde-robe (SOON).
+
+La gourde de Gaara n'apparaît pas : c'est l'objet de son kit, gagné sur l'arbre Sand et posé hors du vêtement.
+
+## Refaire les rendus
+
+1. **Ouvrir une copie LAB** de la place commune (`PLACES/ND-JEU.rbxlx`), jamais la place d'une autre discussion. Par exemple : `RobloxStudio -task EditFile -localPlaceFile ~/Documents/NinjaDuel/LAB/tenues/<copie>.rbxlx`. Rien n'est enregistré : la cabine est loin de la carte (`Cabine.ORIGIN`).
+2. **Construire les avatars.** Lancer `python3 tools/tenues/studio_code.py setup` et passer le code à Studio (Edit). Le chargement des avatars prend environ une minute. On peut aussi poser le module une fois dans `ServerStorage` (`NDCabineTool`), puis appeler `require(...).dress(...)`.
+3. **Capturer chaque tenue :**
+   - habiller : `studio_code.py dress SetNaruto` ;
+   - capturer depuis `studio_code.py camera front`, puis `camera back` (`Roblox_Studio screen_capture`, position et cible données) ;
+   - enregistrer sous `SetNaruto_front.jpg` et `SetNaruto_back.jpg`.
+
+   `Cabine.dress({})` déshabille tout le monde : ce sont les captures `Nu_front` et `Nu_back`.
+4. **Sortir les planches :** `python3 tools/tenues/planche.py <captures> tools/tenues/rendus/<date>_<place> "<place>"`.
+5. **Comparer deux places :** `python3 tools/tenues/planche.py --avant-apres <captures avant> <captures après> tools/tenues/rendus/avant-apres-<date>.jpg`. La planche met les tenues côte à côte, de face puis de dos.
+
+## Les rendus du 20/11
+
+| Dossier | Place | Tenues |
+|---|---|---|
+| `rendus/2026-11-20_avant` | ND-JEU `699d331d`, sources `053395e4`, avant les corrections de l'ANIMATEUR | 12 tenues |
+| `rendus/2026-11-20_apres` | ND-JEU `29a59f15`, sources `9311e840`, construite par la place commune, après ses corrections et la garde-robe | 19 tenues |
+| `rendus/avant-apres-2026-11-20-face.jpg`, `-dos.jpg` | Les deux places côte à côte | Les 12 tenues communes |
+
+Ces rendus sont des observations de Claude : captures Studio en mode Édition, pose de repos (TECHNICAL / NATIVE_STUDIO). Ce n'est pas l'avis de François. Les références à comparer restent celles de l'ANIMATEUR, qui a choisi de n'afficher aucun logo.
+
+### Ce que les corrections de l'ANIMATEUR changent en jeu
+
+Toutes les corrections se voient dans Studio, sur les 7 corps :
+
+| Tenue | Ce qui se voit maintenant |
+|---|---|
+| Naruto | Le holster de la cuisse et la sacoche dans le dos |
+| Sasuke | Les mollets nus, qui montrent les jambes propres de l'avatar : le pantalon peint du garçon, la peau de François |
+| Lee | La plaque sur la ceinture rouge |
+| Neji | Le holster |
+| Gaara | La plaque sur la sangle |
+| Kakashi | Le masque jusque sous les yeux, et les gants à plaque |
+| Cape de voyage | Une cape courte aux épaules (avant : un pan raide jusqu'au sol, sous la tunique) |
+| Rouleau | Porté en travers du dos |
+
+### Ce qui reste
+
+1. **Un corps à armure transforme toute tenue en boîte.**
+   - Mesures : le `UpperTorso` de Korblox fait 3,25 × 6,30 × 3,02 studs (le maillage inclut l'armure), contre 2,3–2,5 × 1,9–2,4 × 1,2–1,4 pour les six autres.
+   - Effet : les pièces se mettent à l'échelle du torse (`OutfitDress`, `body.Size / Ref`). Avec le set Naruto, Korblox mesure 8,33 studs de haut et 4,92 de profondeur. Les six autres : 6,6 à 7,2 de haut, 2 à 2,4 de profondeur.
+   - Conséquences : la tête est cachée, et le sabre, le rouleau et l'écharpe sortent très loin du corps.
+   - Pistes :
+     - DEV : dans `AvatarBody`, remettre le torse standard quand le torse dépasse une taille plausible ;
+     - ANIMATEUR : plafonner l'échelle des pièces.
+   - Test : refaire la planche ; Korblox doit avoir la silhouette des autres.
+2. **Deux bandeaux sur une tête.** Ember Monk (hachimaki), Storm Courier (bandeau classique), Leaf Medic (bandeau au cou) et Lee (la plaque de ceinture) portent déjà leur bandeau. Le bandeau choisi dans son emplacement s'ajoute par-dessus : chez Ember Monk, le hachimaki blanc recouvre la plaque.
+   - Règle à trancher (DEV / ANIMATEUR) : un set qui porte un bandeau remplace-t-il l'emplacement « bandeau » ?
+3. **La capuche est traversée.** C'est la cape à capuche (Accessoires 2, Sand Nomad). De dos, les nœuds du bandeau et les yeux du masque sortent à travers le tissu de la capuche.
+4. **Le bandeau au cou** choisi dans son emplacement s'affiche sur le front. `Server/Headband` ne connaît pas encore les modèles : c'est la demande de l'ANIMATEUR au DEV.
+5. **Le visage :**
+   - le col blanc de Naruto monte jusqu'à la bouche sur les sept avatars ;
+   - sur les têtes Rthro, le masque de Kakashi et le masque en tissu font un bloc devant un visage long.
+6. **Les cheveux :** Femme, Vanessa et Big Bill sortent chauves, car leurs cheveux ne passent pas `Outfit.strip`. François garde les siens.
+7. **Le bandeau bleu** se lit noir à cette distance (`Band = 46, 64, 120`). Le rouge se lit rouge. Le bleu (base A) et le noir (base B) se confondent.
+8. **Détails :**
+   - Lee : la ceinture rouge disparaît dans le dos du garçon Roblox, dont le torse est étroit ;
+   - Neji : sur les corps larges, le bas sombre dépasse sur les côtés de la robe ;
+   - Base B : de dos, les protège-bras ne montrent que deux sangles.

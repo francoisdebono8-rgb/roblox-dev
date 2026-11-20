@@ -1,3 +1,24 @@
+**Étape 1 de l'OUTILLEUR, 20/11 (DEC-043 ; doc projet `claude/jeu-fini-vision-etapes-regles-2026-11-20` § 3)**
+- **Place commune automatique** (`tools/mac/place_commune.py`) : l'agent macOS `com.ninjaduel.placecommune` est en service depuis le 20/11, toutes les 2 min. Après un lot poussé et 3 min de calme, il reconstruit les 4 places au même commit et les pose dans `PLACES`.
+  - Une place ouverte attend dans `PLACES/_prochaine` ; une place modifiée dans Studio est mise de côté.
+  - Premiers passages : `98a2a1f2` posé à 22 h 27, puis `29a59f15` posé à 22 h 39, sans intervention.
+  - 7 tests PASS (faux dépôt, faux build).
+- **Comparateur de kits** (`tools/kits`) : une empreinte chiffrée par kit (portée, vitesse, mobilité, dégâts/s, tenue, et ce qu'il a en propre), en trois versions (prodige, départ, arbre complet). Il compare avant et après sur la même échelle. Mesuré dans Studio, sources `053395e4` (TECHNICAL) :
+  - Kakashi et Sasuke sont les plus proches (écart 6/100) ; l'écart moyen entre les kits est de 20 ;
+  - le départ d'un joueur et l'arbre complet ne diffèrent que de 0 à 8 points ;
+  - Gaara court moins vite qu'il ne marche (`SprintScale` < 1) : question au DEV.
+- **Contrôle des tenues** (`tools/tenues`) : une cabine d'essayage dans Studio, en mode Édition, sur une copie LAB. 7 avatars types, construits comme `AvatarBody` et habillés comme en duel, rendus de face et de dos.
+  - Rendus avant (`699d331d`) et après (`29a59f15`) les corrections de l'ANIMATEUR, plus une planche avant / après.
+  - Observé par Claude (NATIVE_STUDIO, pas l'avis de François) :
+    - les corrections de l'ANIMATEUR se voient sur les 7 corps ;
+    - Korblox : torse de 6,30 studs de haut, toute tenue devient une boîte ;
+    - deux bandeaux sur une tête : un set qui a son bandeau, plus le bandeau choisi ;
+    - la capuche est traversée par le bandeau et le masque ;
+    - Femme, Vanessa et Big Bill perdent leurs cheveux ;
+    - le bandeau bleu se lit noir ;
+    - le col de Naruto monte jusqu'à la bouche.
+- `KitPrint.spec` corrigé : il exigeait course ≥ marche, ce que Gaara contredit.
+
 **Vague 2 de l'OUTILLEUR, nuit du 19/11 (plan `claude/vague-2-taches-2026-11-19` § 2 ; PR #142, #136 étendue, #144)**
 - **Lecteur de l'entonnoir (#142)** : `tools/analytics/entonnoir.py`. Il lit l'export de la page Entonnoirs (plusieurs formes, le format n'étant pas documenté par Roblox), une saisie à la main, ou la sortie `[NinjaDuelFirst]` du serveur. Il dit où les nouveaux joueurs partent. Les étapes sont lues dans le jeu (`Matches.FUNNEL`). 15 tests PASS, sur des exports inventés.
   - Vu sur le tableau de bord le 19/11 : aucun événement d'entonnoir ; 0 visite sur 7 jours ; dernière mise à jour du jeu publié le 04/11.
