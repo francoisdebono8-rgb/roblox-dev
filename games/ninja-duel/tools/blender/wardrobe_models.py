@@ -91,11 +91,11 @@ def engrave(pc, y, w, z=-.73, lines=2):
     o = O()
     for k in range(lines):
         yy = y + (k - (lines - 1) / 2) * .07
-        o.box(pc, (0, yy, z), (w * .32, .012, .01), lambda p, kk: (.55, .55, .58))
+        o.box(pc, (0, yy, z), (w * .24, .012, .01), lambda p, kk: (.55, .55, .58))
 
 
 # ------------------------------------------------------------------ headbands (Head unless said)
-def _protector(o, part="Head", y=BROW, tails=.55, plate=True, scratched=False, band_h=.17, plate_w=.5):
+def _protector(o, part="Head", y=BROW, tails=.55, plate=True, scratched=False, band_h=.17, plate_w=.66):
     band = o.add(part, "Band")
     head_ring(band, y, band_h)
     if plate:
@@ -103,6 +103,12 @@ def _protector(o, part="Head", y=BROW, tails=.55, plate=True, scratched=False, b
         plate_front(pl, y, plate_w, band_h * 1.25)
         mark = o.add(part, "Plate", mat="Metal", name="Engraving")
         engrave(mark, y, plate_w)
+        # (20/11, references) the plate is held by a rivet at each corner
+        for sx in (-1, 1):
+            for sy in (-1, 1):
+                xx = sx * plate_w * .43
+                O().box(mark, (xx, y + sy * band_h * .42, -.715 + .12 * (xx / (plate_w / 2)) ** 2),
+                        (.022, .022, .015), lambda p, k: (.62, .62, .66))
         if scratched:
             O().box(mark, (0, y, -.745), (plate_w * .42, .014, .01), lambda p, k: (.3, .3, .32))
     knot = o.add(part, "Band", name="Knot")
