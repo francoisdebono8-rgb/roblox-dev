@@ -49,14 +49,14 @@ test("the lens: in front of the chest, looking at the face; a plate seen where i
 	local head=Instance.new("Part");head.CFrame=CFrame.new(0,4.5,0)
 	local torso=Instance.new("Part");torso.CFrame=CFrame.lookAt(Vector3.new(0,3,0),Vector3.new(0,3,-1))
 	local lens=FaceCam.lens(head,torso)
-	assert(lens.Position.Z<-3.5 and math.abs(lens.Position.X)<1e-3,"the lens is not in front of him: "..tostring(lens.Position))
+	assert(lens.Position.Z<-(FaceCam.DISTANCE-.3) and math.abs(lens.Position.X)<1e-3,"the lens is not in front of him (v2: closer): "..tostring(lens.Position))
 	local size=Vector2.new(88,88)
 	local x,y,perStud,front=FaceCam.project(lens,FaceCam.FOV,size,head.CFrame.Position)
 	assert(front and math.abs(x-44)<1 and math.abs(y-44)<8,"the head is not in the middle: "..x..","..y)
 	local xr=FaceCam.project(lens,FaceCam.FOV,size,head.CFrame.Position+Vector3.new(-.3,0,0))
 	-- his left (-x when he faces -z) is on the picture's right
 	assert(xr>x,"left and right swapped")
-	assert(perStud>30 and perStud<46,"a stud is "..perStud.." px")
+	assert(perStud>50 and perStud<75,"(v2, close-up) a stud is "..perStud.." px")
 	local _,_,_,behind=FaceCam.project(lens,FaceCam.FOV,size,lens.Position+lens.LookVector*-2)
 	assert(not behind,"a point behind the lens is drawn")
 	-- an eye plate on his face, facing out (-z): seen, upright
@@ -84,6 +84,21 @@ test("the drawing is mirrored from the real face, and copied again when its shap
 	assert(w2.Size==white.Size and w2:FindFirstChild("Iris").Visible==false,"the lid did not close on the copy")
 	local tomoe=Instance.new("Frame");tomoe.Parent=iris
 	assert(not FaceCam.mirror(source,copy),"a new drawing (the Sharingan) is not noticed")
+end)
+
+-- (DESIGN 20/11, face-cam v2) the six cartoon expressions, the strongest first
+test("v2: the expression the duel calls for",function()
+	local E=FaceCam.expression
+	assert(E({health=50,maxHealth=100,state="Neutral"})==nil,"his own face at rest")
+	assert(E({health=50,maxHealth=100,reaction="HitStun"})=="hit","a blow taken")
+	assert(E({health=50,maxHealth=100,state="Stunned"})=="guardbreak","a guard broken")
+	assert(E({health=0,maxHealth=100})=="ko","K.O.")
+	assert(E({health=40,maxHealth=100},"won")=="victory" and E({health=40,maxHealth=100},"lost")=="ko","the result")
+	assert(E({health=50,maxHealth=100,techCharge=.4})=="focus","a technique held")
+	assert(E({health=20,maxHealth=100})=="rage" and E({health=80,maxHealth=100,awaken=3})=="rage","rage: low or awakened")
+	assert(E({health=20,maxHealth=100,reaction="Knockback"})=="hit","a blow wins over rage")
+	assert(FaceCam.DISTANCE<3,"the lens closer: the head in close-up")
+	for _,name in FaceCam.EXPRESSIONS do assert(FaceCam.MARK[name],"a fallback mark for "..name) end
 end)
 
 print(string.format("NinjaDuel face-cam (HUD v3): %d PASS",passed))

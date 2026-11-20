@@ -29,3 +29,12 @@ Tint: the stamps and brush strokes are already red; for another colour, export b
 ## Item icons (19/11, OUTILLEUR PR #136, placed by DESIGN)
 
 `items/<ItemId>.png`: one icon per catalogue item (512 px, transparent), rendered from the ANIMATEUR's models. `items/icons.json` lists them. For them to show in the wardrobe, the market and the shop, import them like the other images and put each id in `UIAssets.Ids` under `item_<ItemId>` (once `UIAssets` is in, PR #131).
+
+## Added 20/11 (step 1, DESIGN)
+
+| File | Size | Use |
+|---|---|---|
+| face_hit / face_guardbreak / face_ko / face_victory / face_focus / face_rage.png | 256×256 | The face-cam v2's cartoon expressions, laid on the face (eyes, brows, mouth and a manga mark) |
+| rank_academy / genin / chunin / jonin / anbu / kage.png | 256×256 | The six ranks' emblems (result, leaderboards, HUD, over the head) |
+
+Import them like the others and put each id in `UIAssets.Ids` under its file name.

@@ -438,6 +438,40 @@ test("MY NINJA: the wardrobe lists every slot's pieces, his first, and opens fro
 	assert(ok,tostring(err))
 end)
 
+-- (DESIGN 20/11, step 1) the ranks: emblems, the result's rank line, the leaderboards
+test("ranks: the result's line, the emblems and the leaderboards",function()
+	local A=H.load("Shared/UIAssets")
+	assert(#A.Ranks==6 and A.rank("GENIN").id=="genin" and A.rank("kage").name=="KAGE","the six ranks")
+	local L=H.load("Client/Leaderboard")
+	local list={}
+	for i=1,14 do table.insert(list,{place=i,name="N"..i,rank="genin",value=2000-i,you=i==13}) end
+	local rows=L.rows(list)
+	assert(#rows==L.ROWS+1 and rows[#rows].you,"the top ten, then his own row")
+	H.workspace.GetAttribute=function() return nil end
+	local saved=H.envBase.Instance
+	local baseNew=harnessInstance.new
+	H.envBase.Instance={new=function(class)
+		local x=baseNew(class)
+		x.Activated={Connect=function(_,fn) x.click=fn end}
+		return x
+	end}
+	local ok,err=pcall(function()
+		local UI=H.load("Client/UI")
+		assert(UI.rankLine({rank="genin",rating=1240,delta=18,next=1400})=="GENIN  1240  (+18)  •  160 to CHUNIN","the rank line: "..UI.rankLine({rank="genin",rating=1240,delta=18,next=1400}))
+		local ui=UI.new(baseNew("PlayerGui"),function() end)
+		ui:resultRanked({rank="chunin",rating=1500,delta=-12,next=1800})
+		assert(ui.resultRankRow.Visible and ui.resultRank.Text:find("CHUNIN  1500  (-12)",1,true),"the rank on the result")
+		ui:resultRanked(nil);assert(not ui.resultRankRow.Visible,"no rank sent, no line")
+		assert(ui.leaderboard,"no leaderboard")
+		ui:showLeaderboard({week={rating=list}})
+		assert(ui.leaderboard:shown() and #ui.leaderboard.drawn==L.ROWS+1 and not ui.leaderboard.empty.Visible,"the week's board")
+		ui.leaderboard.tab="all";ui.leaderboard:draw()
+		assert(ui.leaderboard.empty.Visible,"an empty board says so")
+	end)
+	H.envBase.Instance=saved
+	assert(ok,tostring(err))
+end)
+
 -- (15/11, DA v3 Mix-Shop) the STYLE preview: a still copy of his own avatar,
 -- its scripts and its own outfit taken off, the character left as it was.
 test("the STYLE preview: a still copy of his avatar, without its scripts nor its outfit",function()

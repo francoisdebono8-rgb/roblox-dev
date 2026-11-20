@@ -15,6 +15,9 @@ UIAssets.Ids={
 	icon_kunai="",icon_bolt="",icon_mark="",icon_wind="",icon_flash="",icon_fire="",icon_spiral="",
 	icon_clone="",icon_sand="",icon_eye="",icon_palm="",icon_water="",icon_whirl="",icon_shuriken="",
 	icon_fist="",icon_weights="",icon_hound="",icon_wire="",icon_scroll="",
+	-- (DESIGN 20/11, step 1) the face-cam's cartoon expressions, the six ranks' emblems
+	face_hit="",face_guardbreak="",face_ko="",face_victory="",face_focus="",face_rage="",
+	rank_academy="",rank_genin="",rank_chunin="",rank_jonin="",rank_anbu="",rank_kage="",
 }
 
 -- The 9-slice centre of each frame image (ScaleType Slice, SliceCenter).
@@ -55,6 +58,25 @@ end
 
 function UIAssets.iconName(techniqueId:string?):string
 	return "icon_"..((techniqueId and UIAssets.TechniqueIcon[techniqueId]) or "scroll")
+end
+
+-- (DESIGN 20/11, step 1) The six ranks, lowest first: their name and the
+-- emblem's colours (the drawing's fallback while the image is not imported).
+UIAssets.Ranks={
+	{id="academy",name="ACADEMY",fill=Color3.fromRGB(201,154,91),ink=Color3.fromRGB(20,16,17)},
+	{id="genin",name="GENIN",fill=Color3.fromRGB(185,194,204),ink=Color3.fromRGB(20,16,17)},
+	{id="chunin",name="CHUNIN",fill=Color3.fromRGB(94,138,74),ink=Color3.fromRGB(244,227,193)},
+	{id="jonin",name="JONIN",fill=Color3.fromRGB(47,74,58),ink=Color3.fromRGB(244,227,193)},
+	{id="anbu",name="ANBU",fill=Color3.fromRGB(242,239,232),ink=Color3.fromRGB(20,16,17)},
+	{id="kage",name="KAGE",fill=Color3.fromRGB(195,18,29),ink=Color3.fromRGB(255,194,61)},
+}
+-- A rank by its id or its name (any case), or nil.
+function UIAssets.rank(key:any):any
+	if type(key)=="number" then return UIAssets.Ranks[key] end
+	if type(key)~="string" then return nil end
+	local k=string.lower(key)
+	for i,r in UIAssets.Ranks do if r.id==k then return r,i end end
+	return nil
 end
 
 return UIAssets

@@ -144,8 +144,39 @@ local function cornerClose(root,onClose)
 	return b
 end
 -- (Lobby, 04/11) the same look for the players-online panel (Client/LobbyPanel).
+-- (DESIGN 20/11, step 1) A rank's emblem: the image (Shared/UIAssets rank_*)
+-- or, while it is not imported, a plate in the rank's colours with its name.
+local function rankBadge(parent,key,size,position)
+	local rank=UIAssets.rank(key) or UIAssets.Ranks[1]
+	local holder=frame(parent,position or UDim2.new(),UDim2.fromOffset(size,size),rank.fill,1)
+	holder.Name="RankBadge"
+	local id=UIAssets.id("rank_"..rank.id)
+	if id then
+		local img=Instance.new("ImageLabel")
+		img.BackgroundTransparency=1;img.BorderSizePixel=0;img.Size=UDim2.fromScale(1,1);img.Image=id;img.ZIndex=(holder.ZIndex or 1)+1;img.Parent=holder
+	else
+		holder.BackgroundTransparency=0;holder.Rotation=0
+		corner(holder,math.floor(size*.18))
+		create("UIStroke",holder,{Color=MANGA.ink,Thickness=math.max(2,math.floor(size/16)),ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
+		local t=text(holder,rank.name,UDim2.fromScale(.06,0),UDim2.fromScale(.88,1),math.floor(size*.3),rank.ink,STRONG_FONT,Enum.TextXAlignment.Center)
+		t.TextScaled=true;t.ZIndex=(holder.ZIndex or 1)+1
+	end
+	return holder
+end
+UI.rankBadge=rankBadge
+-- (DESIGN 20/11) the rank line: « GENIN  1240 (+18)  •  160 to CHUNIN »
+function UI.rankLine(r)
+	if type(r)~="table" then return "" end
+	local rank=UIAssets.rank(r.rank)
+	local line=string.format("%s  %d",rank and rank.name or Text.upper(tostring(r.rank or "")),math.floor(r.rating or 0))
+	if r.delta and r.delta~=0 then line..=string.format("  (%s%d)",if r.delta>0 then "+" else "",r.delta) end
+	local _,i=UIAssets.rank(r.rank)
+	local nextRank=i and UIAssets.Ranks[i+1]
+	if nextRank and r.next then line..=string.format("  •  %d to %s",math.max(0,math.ceil(r.next-(r.rating or 0))),nextRank.name) end
+	return line
+end
 UI.kit={palette=palette,create=create,frame=frame,text=text,corner=corner,inkCard=inkCard,inkTitle=inkTitle,button=button,
-	TITLE_FONT=TITLE_FONT,BODY_FONT=BODY_FONT,STRONG_FONT=STRONG_FONT,VOICE_FONT=VOICE_FONT,NOTE_FONT=NOTE_FONT,MANGA=MANGA,CARD=CARD,fitScale=fitScale,cornerClose=cornerClose,SMALL=SMALL}
+	TITLE_FONT=TITLE_FONT,BODY_FONT=BODY_FONT,STRONG_FONT=STRONG_FONT,VOICE_FONT=VOICE_FONT,NOTE_FONT=NOTE_FONT,MANGA=MANGA,CARD=CARD,fitScale=fitScale,cornerClose=cornerClose,SMALL=SMALL,rankBadge=rankBadge}
 local function accentOf(def) return Color3.fromRGB(table.unpack(def.Color)) end
 -- (15/11, audit: a duel at a master's home still said « PRODIGY TOURNAMENT »)
 -- What the duel's banner calls the place of the fight: the village's place
@@ -388,6 +419,12 @@ function UI.new(parent,send)
 		if okOutfit and OutfitPanel then
 			local made,panel=pcall(OutfitPanel.new,UI.kit,self.gui,send,self)
 			if made then self.outfitPanel=panel end
+		end
+		-- (DESIGN 20/11, step 1) the leaderboards (Client/Leaderboard)
+		local okL,Leaderboard=pcall(function() return require(script.Parent.Leaderboard) end)
+		if okL and Leaderboard then
+			local made,panel=pcall(Leaderboard.new,UI.kit,self.gui)
+			if made then self.leaderboard=panel end
 		end
 		-- (DESIGN 19/11) MY NINJA: the wardrobe, every slot and every piece
 		local okW,Wardrobe=pcall(function() return require(script.Parent.Wardrobe) end)
@@ -756,7 +793,7 @@ function UI.new(parent,send)
 	-- the next tree point, the masters who want to meet you. Then two big
 	-- buttons (at least 44 px on a phone: the card fits the window).
 	self.result=frame(self.gui,UDim2.fromScale(0,0),UDim2.fromScale(1,1),MANGA.ink,.35)
-	local RW,RH=720,580
+	local RW,RH=720,630
 	local resultBox=frame(self.result,UDim2.fromScale(.5,.5),UDim2.fromOffset(RW,RH),MANGA.paper,0)
 	resultBox.AnchorPoint=Vector2.new(.5,.5)
 	create("UIStroke",resultBox,{Color=MANGA.ink,Thickness=4,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
@@ -797,6 +834,15 @@ function UI.new(parent,send)
 	-- (19/11, DEV 5) with the day's quests it may need three lines: smaller, never cut
 	self.resultNext.TextWrapped=true;self.resultNext.TextScaled=true
 	create("UITextSizeConstraint",self.resultNext,{MaxTextSize=19,MinTextSize=12})
+	-- (DESIGN 20/11, step 1) the rank: its emblem and its line (rating, this
+	-- duel's change, what is left to the next rank). Shown when the server
+	-- sends `rank` with the result.
+	self.resultRankRow=frame(resultBox,UDim2.fromOffset(30,442),UDim2.new(1,-60,0,48),MANGA.ink,0)
+	self.resultRankRow.Rotation=-.6
+	self.resultRankBadgeAt=self.resultRankRow
+	self.resultRank=text(self.resultRankRow,"",UDim2.fromOffset(62,0),UDim2.new(1,-74,1,0),22,MANGA.cream,STRONG_FONT)
+	self.resultRank.TextScaled=true;create("UITextSizeConstraint",self.resultRank,{MaxTextSize=22})
+	self.resultRankRow.Visible=false
 	-- (Beta loop) the one-line summary stays for the tests and the logs
 	self.resultProgress=text(resultBox,"",UDim2.fromOffset(30,0),UDim2.fromOffset(10,10),15,MANGA.ink,STRONG_FONT)
 	self.resultProgress.Visible=false
@@ -1391,6 +1437,10 @@ function UI:faceCams(data,mine,theirs)
 		end
 		if widget.faceCam then
 			widget.faceCam:watch(model)
+			-- (DESIGN 20/11, face-cam v2) the expression the duel calls for
+			local actor=widget.actor
+			local outcome=if data.phase=="Result" and actor and data.winner then (if data.winner==actor.id then "won" else "lost") else nil
+			pcall(widget.faceCam.express,widget.faceCam,FaceCam.expression(actor,outcome),now)
 			local live=widget.faceCam:step(now)
 			widget.initial.Visible=not live
 		end
@@ -1498,6 +1548,7 @@ function UI:render(data)
 	self.enemy.title.Visible=data.online~=nil
 	for _,pair in {{self.hp,h},{self.enemy,b}} do
 		local widget,actor=pair[1],pair[2]
+		widget.actor=actor
 		-- The fighter's initial in the medallion, his colour on its ring.
 		if widget.faceFor~=actor.fighterId and Fighters[actor.fighterId or ""] then
 			local def=Fighters[actor.fighterId]
@@ -1766,6 +1817,7 @@ function UI:render(data)
 	-- (Beta loop) the masters' path: what this duel earned.
 	self.resultProgress.Text=MastersView.result(data.progress,self.kits) or ""
 	self:resultEarned(data.progress)
+	self:resultRanked(data.rank)
 	if data.master then
 		self.resultName.Text="HIS DUEL"
 		self.resultNote.Text=if won then "He saw enough: his kit is yours." else "He is not convinced yet. Come back stronger."
@@ -1801,6 +1853,18 @@ end
 -- firstWin, learned). Says what comes next: the next point of the kit's
 -- tree (Masters.PointEvery) and the masters who want to meet you
 -- (MastersView.leadsTo, at Masters.Need).
+-- (DESIGN 20/11) the leaderboards, from the server's boards (Client/Leaderboard)
+function UI:showLeaderboard(boards)
+	if self.leaderboard then self.leaderboard:show(boards) end
+end
+function UI:resultRanked(r)
+	self.resultRankRow.Visible=type(r)=="table" and r.rank~=nil
+	if not self.resultRankRow.Visible then return end
+	if self.resultRankBadge then self.resultRankBadge:Destroy() end
+	self.resultRankBadge=rankBadge(self.resultRankRow,r.rank,44,UDim2.fromOffset(6,2))
+	self.resultRank.Text=UI.rankLine(r)
+	self.resultRank.TextColor3=MANGA.cream
+end
 function UI:resultEarned(progress)
 	local p=if type(progress)=="table" then progress else nil
 	local daily=p and type(p.daily)=="table" and (p.daily.ryo or 0) or 0
