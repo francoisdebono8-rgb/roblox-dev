@@ -915,6 +915,19 @@ def render(dst, names=None):
         print("rendered", name, flush=True)
 
 
+def catalog_colors(model):
+    """The colours Shared/Catalog gives the first look that wears `model` (the masters' sets)."""
+    import re
+    path = os.path.join(HERE, "..", "..", "src", "Shared", "Catalog.luau")
+    src = open(path).read()
+    ids = [k for k, v in ITEMS.items() if v == model] + [k for k, v in WARDROBE_ITEMS.items() if v == model]
+    for k in ids:
+        m = re.search(r'\{id="%s".*?colors=\{(.*?)\}\}' % k, src)
+        if m:
+            return {sl: tuple(int(x) for x in rgb.split(",")) for sl, rgb in re.findall(r"(\w+)=\{(\d+,\d+,\d+)\}", m.group(1) + "}")}
+    return {}
+
+
 BODIES = (("thin", (.82, 1.0, .85)), ("wide", (1.3, 1.0, 1.25)), ("tall", (1.0, 1.25, 1.0)))
 
 
@@ -939,7 +952,9 @@ def render_bodies(dst, names=None):
                     tints.append(cmap)
         else:
             pieces = built(name)
-            tints = [NEW_SLOTS.get(name, {})] * len(pieces)
+            cols = dict(NEW_SLOTS.get(name, {}))
+            cols.update(catalog_colors(name))
+            tints = [cols] * len(pieces)
         for k, (back, (tag, f)) in enumerate([(b, bd) for b in (False, True) for bd in BODIES]):
             dx = (k - 2.5) * 3.6
             turn = -1 if back else 1
