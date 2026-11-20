@@ -399,3 +399,30 @@ Réponse de l’utilisateur du **19/11 à 22 h 06** à la planche `docs/reports/
   1. L’ANIMATEUR modélise les six maisons, à leurs budgets.
   2. Le DEV fait construire `Server/Hub` à partir de `KonohaLayout`.
   3. La DESIGN dessine la minicarte à partir de `KonohaLayout.Pois`.
+
+## DEC-043 — Un vrai jeu, une branche commune, le DEV développeur du projet (20/11)
+
+François, **20/11 à 21 h 36 et 21 h 47** : « ce n'est même pas une bêta, en vrai, c'est un jeu […] le pousser le plus loin possible » ; « tu n'es plus le seul commandant des places […] toutes les parties agissent sur la même place sans se marcher dessus » ; « pour la 8, t'as 90 % de liberté […] Tu es le développeur du projet. C'est toi le dev. »
+
+- **Le but** : un jeu minimum fini, qui avance et qui se montre. Il contient les 8 prodiges complets et désirables, le nouveau Konoha (parcours ninja, 1v1 ouvert, spectateurs à l'écart), le classé et la boutique ouverte. Plan : projet `claude/jeu-fini-vision-etapes-regles-2026-11-20`, 5 étapes, chacune avec une version jouable, une page « ce qui a changé » et un Short.
+- **Ses choix (questions du 20/11)** :
+  - organisation : une branche et une place communes ;
+  - arbres : un départ réduit et des nœuds qui transforment, plus un arbre « ninja » commun (natures de chakra, infusions sur les armes) ;
+  - se comparer : un rang classé visible, des classements, des cosmétiques gagnés au mérite ;
+  - vente : l'apparence, le temps, le VIP et le serveur privé+, les paquets de Ryō. Jamais de puissance ni de tirage payant au hasard.
+- **Organisation** :
+  - chaque discussion pousse directement sur `claude/ninja-duel-2026-10-14` ses commits sur ses propres fichiers, après `git pull --rebase`, la suite et les builds verts, sans force push (RUNBOOK § 0) ;
+  - le DEV vérifie la branche chaque jour, répare, reconstruit la place commune et écrit la page de l'étape ;
+  - un changement qui touche les fichiers d'une autre discussion passe par une PR relue par le DEV.
+- **Les décisions** : le DEV décide de tout ce qui est dans la vision. Remontent à François :
+  - publier sur Roblox ;
+  - créer les produits en Robux et fixer leurs prix ;
+  - supprimer une fonctionnalité qu'il a validée ;
+  - changer l'identité du jeu : le combat libre, la DA mix manga/anime, l'avatar comme héros.
+- **Décisions du DEV le 20/11** :
+  - les prodiges s'affichent avec les titres du CM, et les rangs suivent l'échelle ninja (Academy, Genin, Chunin, Jonin, ANBU, Kage) ;
+  - le jeu redevient plus clair (fin du réglage sombre du 12/11) ;
+  - le classé compte tout duel entre deux joueurs, sans file d'attente ;
+  - les images de la DESIGN sont envoyées sur le compte de François depuis Studio (« fais ce que tu veux », 20/11) ;
+  - le DEV prépare la liste des produits, François les crée.
+

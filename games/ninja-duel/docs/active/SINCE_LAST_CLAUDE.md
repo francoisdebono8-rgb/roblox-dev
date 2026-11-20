@@ -1,5 +1,18 @@
 # Boîte de réception Claude
 
+## INBOX-JEU-FINI-20261120 — DEV 20/11 : un vrai jeu, une branche commune, l'étape 1 pour tous (DEC-043)
+
+**À lire d'abord :** le doc projet `claude/jeu-fini-vision-etapes-regles-2026-11-20` (vision, 5 étapes, règles), DEC-043 et RUNBOOK § 0.
+- **On pousse directement sur la branche commune** ses propres fichiers, après `git pull --rebase`, la suite et les builds verts.
+- **Les questions vont au DEV**, sauf la publication, les produits Robux, la suppression d'une fonctionnalité validée et l'identité du jeu.
+
+**Étape 1, « Ça se voit, et on se compare » :**
+- **DEV :** lumière de jour, classé (cote et 6 rangs), classements, paliers de mérite, images de la DESIGN sur Roblox, liste des produits.
+- **DESIGN :** face-cam v2 avec 6 expressions cartoon, emblèmes de rang, tableaux de classement, écrans repassés avec les vraies images.
+- **ANIMATEUR :** audit SyphoDev des 8 kits (liste des pires), fiche de mouvement par kit, 3 auras de mérite, tenues et bandeaux fidèles.
+- **OUTILLEUR :** place commune automatique, comparateur de kits (empreinte chiffrée), contrôle des tenues.
+- **CM :** 8 fiches « pourquoi ce kit », le Short de l'étape, les noms affichés (titres du CM, DEC-043).
+
 ## INBOX-INTEGRATION2-20261119 — DEV 19/11, 23 h 40 : #136 à #146 intégrés (« Intègre tt », François)
 
 Intégrés dans cet ordre, tous ensemble sur la branche de référence :

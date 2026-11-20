@@ -7,6 +7,23 @@ DEV, CM (clips), ANIMATEUR (animation/VFX), OUTILLEUR. Ce ne sont pas des agents
 discussion ne voit ni la mémoire ni le travail des autres. Leur continuité passe
 **uniquement** par Git (GitHub), les fichiers du Mac, les issues et les builds.
 
+## 0. Depuis le 20/11 : une branche commune, une place commune (DEC-043)
+
+Ce paragraphe remplace, là où ils diffèrent, les § 1 (branches `work/…`), 3 bis et 3 quinquies (fusion sur « intègre »).
+
+- **Tout le monde pousse sur `claude/ninja-duel-2026-10-14`** ses propres fichiers (propriétaires : § 3 quater, § 3 quinquies et le plan du 20/11). Avant chaque poussée :
+  - `git pull --rebase` ;
+  - `bash tests/run.sh` vert ;
+  - les 4 builds verts ;
+  - `python3 tools/check_project_docs.py` vert.
+
+  Pas de force push. Une PR relue par le DEV seulement pour toucher les fichiers d'une autre discussion.
+- **Fichiers partagés** (`Config`, `build.py`/`TEST_RUNNERS`, `tests/run.sh`, `docs/active/*`) : on y ajoute seulement. Changer une règle du jeu passe par le DEV.
+- **Place commune** : après chaque lot, les 4 places sont reconstruites au même commit et copiées dans `~/Documents/NinjaDuel/PLACES`. Dans Studio, une discussion à la fois par place : on annonce quand on prend l'écran et quand on le rend.
+- **Le DEV** vérifie la branche chaque jour, répare, et écrit la page « ce qui a changé » de chaque étape. Il décide de ce qui est dans la vision.
+- **Ce qui remonte à François** : publier, créer les produits Robux et fixer leurs prix, supprimer une fonctionnalité qu'il a validée, changer l'identité du jeu.
+- **Le plan et les étapes** : projet `claude/jeu-fini-vision-etapes-regles-2026-11-20`.
+
 ## 1. La règle
 
 - **Une branche d'intégration** : `claude/ninja-duel-2026-10-14` (la
