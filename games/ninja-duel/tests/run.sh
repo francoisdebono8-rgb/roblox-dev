@@ -110,4 +110,6 @@ run Progression "$LUNE" run tests/Progression.spec.luau
 run Profiles   "$LUNE" run tests/Profiles.spec.luau
 run Preparation "$LUNE" run tests/Preparation.spec.luau
 run DevInfra   "$LUNE" run tests/DevInfra.spec.luau
+run Entonnoir  python3 tools/analytics/test_entonnoir.py
+run PlaceCommune python3 tools/mac/test_place_commune.py
 exit $status
