@@ -239,7 +239,7 @@ def item_mask_cloth():
     rows = []
     n = 24
     # (20/11, references) up to just under the eyes, down over the neck (Kakashi's)
-    for y, rr, dz in ((.08, .66, 0.0), (-.1, .66, -.02), (-.36, .64, -.01), (-.62, .62, 0.0), (-.9, .62, .02)):
+    for y, rr, dz in ((.08, .63, 0.0), (-.1, .63, -.02), (-.36, .61, -.01), (-.62, .58, 0.0), (-.9, .58, .02)):
         rows.append([Vector((math.cos(t) * rr, y, math.sin(t) * rr * 1.02 + (dz if math.sin(t) < 0 else 0))) for t in [i / n * math.tau for i in range(n)]])
     # the nose's ridge pushes the front out
     for p in rows[0] + rows[1]:
@@ -283,9 +283,10 @@ def item_cape_long():
     o = O().Out()
     _mantle(o, "Cape", pad=.24)
     pc = o.add("UpperTorso", "Cape", name="Back")
-    O().flap(pc, "UpperTorso", -1.1, 1.1, .1, 3.3, 1, pad=.24, flare=.3, folds=.05, seed=5)
+    # (20/11) shorter and hanging further back: the running legs swing behind the body
+    O().flap(pc, "UpperTorso", -1.1, 1.1, .1, 2.7, 1, pad=.24, flare=.5, folds=.05, seed=5)
     trim = o.add("UpperTorso", "Trim", name="Hem")
-    O().flap(trim, "UpperTorso", -1.1, 1.1, 2.12, .22, 1, pad=.25, flare=.02, folds=.05, seed=5)
+    O().flap(trim, "UpperTorso", -1.1, 1.1, 1.74, .22, 1, pad=.25 + .5 * .5 * .92, flare=.04, folds=.05, seed=5)
     return o.items
 
 
@@ -298,7 +299,8 @@ def item_cloak_hooded():
         f = o.add("UpperTorso", "Cape", name=name)
         O().flap(f, "UpperTorso", x0, x1, .1, 2.4, -1, pad=.26, flare=.12, folds=.04, seed=x0)
     hood = o.add("Head", "Cape", name="Hood")
-    dome(hood, -.45, r=(.74, .78), top=.82, rings=7, front_open=2.0, z_off=.06)
+    # (20/11, OUTILLEUR: the headband's knot and the mask came through it) roomier, further back
+    dome(hood, -.45, r=(.8, .84), top=.88, rings=7, front_open=2.2, z_off=.12)
     return o.items
 
 
@@ -392,7 +394,7 @@ def item_track_jacket():
     O().shell(up, "UpperTorso", 0, 1, pad=.09, flare1=.03, folds=.03, hem=False)
     O().zipper(o, "UpperTorso", "Trim", 0, 1, pad=.09)
     col = o.add("UpperTorso", "Trim", name="Collar")
-    O().collar(col, "UpperTorso", h=.34, flare=.12, thick=.05, neck=(.66, .62))
+    O().collar(col, "UpperTorso", h=.24, flare=.07, thick=.05, neck=(.63, .59))
     lo = o.add("LowerTorso", "Cloth")
     O().shell(lo, "LowerTorso", -.15, .9, pad=.1, hem=True, folds=.02)
     o.both("UpperArm", "Cloth", lambda pc, part: O().shell(pc, part, -.05, 1.02, pad=.1, folds=.03, hem=False))
@@ -429,9 +431,7 @@ def item_haori():
         rows.append([Vector(((a) * math.copysign(abs(math.cos(t)) ** .125, math.cos(t)), y, (b) * math.copysign(abs(math.sin(t)) ** .125, math.sin(t))))
                      for t in [-math.pi / 2 + .45 + (2 * math.pi - .9) * i / (O().SEG - 7) for i in range(O().SEG - 6)]])
     loft(coat, rows, O().shade(.93, .06), cap0=False, cap1=False, closed=False)
-    for zs, x0, x1, name in ((-1, -1.05, -.35, "FrontL"), (-1, .35, 1.05, "FrontR"), (1, -1.05, 1.05, "Back")):
-        pc = o.add("LowerTorso", "Cloth", name=name)
-        O().flap(pc, "LowerTorso", x0, x1, -.4, .95, zs, pad=.26, flare=.1, folds=.03, seed=zs + x0)
+    O().thigh_tails(o, "Cloth", .95, y_top=-.15, pad=.18, flare=.1)
     tie = o.add("UpperTorso", "Trim", name="Tie")
     for sx in (-1, 1):
         tube(tie, [Vector((sx * .32, .05, -.68)), Vector((sx * .05, -.05, -.7)), Vector((sx * .1, -.4, -.72))], .035, O().shade(.95, .03), sides=6)
@@ -551,9 +551,7 @@ def item_wrap_skirt():
     lo = o.add("LowerTorso", "Under")
     O().shell(lo, "LowerTorso", .2, 1.05, pad=.07, hem=False)
     o.both("UpperLeg", "Under", lambda pc, part: O().shell(pc, part, -.05, .45, pad=.08, folds=.02))
-    for zs, x0, x1, name in ((-1, -1.05, .2, "Front"), (1, -1.05, 1.05, "Back"), (-1, .25, 1.05, "Side")):
-        pc = o.add("LowerTorso", "Cloth", name=name)
-        O().flap(pc, "LowerTorso", x0, x1, .2, 1.05, zs, pad=.15, flare=.2, folds=.03, seed=x0 + zs)
+    O().thigh_tails(o, "Cloth", 1.05, y_top=-.05, pad=.13, flare=.18)
     belt = o.add("LowerTorso", "Belt")
     O().ribbed(belt, "LowerTorso", .0, .45, pad=.17, ribs=1, depth=.02, rings_per=4)
     return o.items
