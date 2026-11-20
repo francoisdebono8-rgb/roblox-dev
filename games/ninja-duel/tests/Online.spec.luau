@@ -619,7 +619,7 @@ test("the client UI renders the real roster, queue, pick, duel and result packet
 	ui:render(last(a))
 	assert(ui.selection.Visible and not ui.queue.Visible and ui.picking and not ui.onlineRow.Visible)
 	assert(ui.startButton.Text=="READY" and ui.tutorialButton.Text=="LEAVE" and ui.opponentLabel.Text:find("BRAVO",1,true))
-	assert(ui.notice.Text:find("STARTS IN",1,true) and ui.matchup.Text:find("ITACHI",1,true),"the opponent's pick is not on screen")
+	assert(ui.notice.Text:find("STARTS IN",1,true) and ui.matchup.Text:find("THE PERFECT BROTHER",1,true),"the opponent's pick is not on screen")
 	local bot=ui.bot
 	ui:pick("bot","Lion");assert(ui.bot==bot,"the opponent's half changed the local AI pick")
 	ui:pick("player","GentleFist")
@@ -634,10 +634,10 @@ test("the client UI renders the real roster, queue, pick, duel and result packet
 	send(m,b,"Confirm")
 	local d=duelOf(m,a)
 	ui:render(last(a))
-	assert(ui.intro.Visible and ui.introLeftName.Text:find("NEJI",1,true) and ui.introRightName.Text:find("ITACHI",1,true))
+	assert(ui.intro.Visible and ui.introLeftName.Text:find("THE FATED GENIUS",1,true) and ui.introRightName.Text:find("THE PERFECT BROTHER",1,true))
 	d.introUntil=nil;step(m,.1);ui:render(last(a))
 	assert(ui.hud.Visible and not ui.intro.Visible and ui.enemy.title.Text:find("BRAVO",1,true) and ui.hp.title.Text:find("YOU",1,true))
-	assert(ui.hp.name.Text:find("NEJI",1,true) and ui.enemy.name.Text:find("ITACHI",1,true))
+	assert(ui.hp.name.Text:find("THE FATED GENIUS",1,true) and ui.enemy.name.Text:find("THE PERFECT BROTHER",1,true))
 	-- (HUD v3, DESIGN validated 14/11) no kit subtitle nor tournament name in
 	-- the fight, only the opponent player's name; cream for you, red for him;
 	-- the jutsu are paper scrolls on a rope, their words in ink

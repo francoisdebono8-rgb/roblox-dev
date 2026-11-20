@@ -17,6 +17,8 @@ local Shared=game:GetService("ReplicatedStorage").NinjaDuel
 -- (QA 12/11) capitals that keep the long vowels and accents.
 local Text=require(Shared.Text)
 local Fighters=require(Shared.Fighters)
+-- (DEC-043, CM) a prodigy is shown by the CM's title (Shared/KitTexts); Fighters[id].Name stays the key
+local KitTexts=require(Shared.KitTexts)
 local Panel={};Panel.__index=Panel
 
 local STATE={free="ON THE ROSTER",training="VS THE AI",queue="SEARCHING",duel="IN A DUEL",cup="IN A TOURNAMENT"}
@@ -198,7 +200,7 @@ function Panel:drawInvite()
 	local pad=false
 	pcall(function() pad=UIS:GetLastInputType().Name:match("^Gamepad")~=nil end)
 	local keys=if not pad then "ENTER ACCEPTS  •  BACKSPACE DECLINES" elseif self.phase=="Duel" then "SELECT ACCEPTS" else "A ACCEPTS  •  B DECLINES"
-	self.inviteSub.Text=(if def then "WITH "..Text.upper(def.Name).."  •  " else "")..keys
+	self.inviteSub.Text=(if def then "WITH "..KitTexts.name(invite.fighter).."  •  " else "")..keys
 	if pad and self.phase~="Duel" then
 		pcall(function() game:GetService("GuiService").SelectedObject=self.acceptButton end)
 	end
@@ -245,7 +247,7 @@ function Panel:drawList()
 		local bar=K.frame(row,UDim2.fromOffset(0,0),UDim2.new(0,6,1,0),accent,0);bar.ZIndex=74
 		local name=K.text(row,(if e.friend then "★ " else "")..Text.upper(e.name),UDim2.fromOffset(18,6),UDim2.fromOffset(340,28),24,P.paper,K.TITLE_FONT)
 		name.ZIndex=74;name.TextScaled=true;K.create("UITextSizeConstraint",name,{MaxTextSize=24})
-		local info=(if def then Text.upper(def.Name).."  •  " else "")..(if e.dnd then "DO NOT DISTURB" else STATE[e.state] or "")..(if e.here then "  •  THIS SERVER" else "")
+		local info=(if def then KitTexts.name(e.fighter).."  •  " else "")..(if e.dnd then "DO NOT DISTURB" else STATE[e.state] or "")..(if e.here then "  •  THIS SERVER" else "")
 		local sub=K.text(row,info,UDim2.fromOffset(18,34),UDim2.fromOffset(440,18),12,P.muted,K.BODY_FONT);sub.ZIndex=74
 		local label=if e.pending then "SENT…" elseif available then "CHALLENGE" else "BUSY"
 		local b=K.button(row,label,UDim2.fromOffset(500,8),UDim2.fromOffset(186,42),function()

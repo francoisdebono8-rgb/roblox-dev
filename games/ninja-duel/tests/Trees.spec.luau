@@ -190,7 +190,7 @@ end)
 test("the tree panel: statuses, the detail strip and its button",function()
 	local state={points=20,free=10,unlocked={"Weights"},active={"Weights"},mastery=900}
 	local layout=TreeView.layout("Leaf",state)
-	assert(layout and layout.title=="ROCK LEE'S TREE" and #layout.branches>=3,"layout")
+	assert(layout and layout.title=="THE HARD WORKER'S TREE" and #layout.branches>=3,"layout")
 	local seen={}
 	for _,branch in layout.branches do for _,node in branch.nodes do seen[node.id]=node end end
 	assert(seen.Weights.status=="active" and seen.Weights.item=="Weights","the object node")

@@ -36,7 +36,8 @@ test("a new player: the three starters are taken, the five others are tried",fun
 		else
 			others+=1
 			assert(a.kind=="try" and t.locked and t.tag=="LOCKED",id)
-			assert(string.find(a.note,"NARUTO") and string.find(a.note,"SASUKE") and string.find(a.note,"LEE"),"the note does not name the starters: "..a.note)
+			-- (DEC-043) the starters by the CM's titles
+			assert(string.find(a.note,"THE LOUDMOUTH",1,true) and string.find(a.note,"THE AVENGER",1,true) and string.find(a.note,"THE HARD WORKER",1,true),"the note does not name the starters: "..a.note)
 		end
 	end
 	assert(starters==3 and others==5,starters.." "..others)
@@ -47,7 +48,7 @@ test("with Lee learned: his kit plays and says where it leads; Neji waits for ma
 	for id in Masters.Map do kits.masters[id]={ready=false,best=0} end
 	kits.masters.GentleFist={ready=false,best=120}
 	local lee=V.action(kits,"Leaf")
-	assert(lee.kind=="play" and string.find(lee.note,"MASTERY 120") and string.find(lee.note,"NEJI") and string.find(lee.note,"GAARA"),lee.note)
+	assert(lee.kind=="play" and string.find(lee.note,"MASTERY 120") and string.find(lee.note,"THE FATED GENIUS",1,true) and string.find(lee.note,"THE UNTOUCHABLE",1,true),lee.note)
 	local t=V.tablet(kits,"Leaf")
 	assert(not t.locked and math.abs(t.progress-120/Masters.Need)<1e-6,"Lee's mastery bar")
 	local neji=V.action(kits,"GentleFist")
@@ -69,9 +70,9 @@ test("the result screen: mastery earned, the masters who now teach, a kit learne
 	assert(line and string.find(line,"+110 MASTERY") and string.find(line,"230 / 300"),tostring(line))
 	assert(not string.find(line,"WANT TO MEET"),line)
 	line=V.result({gained=true,amount=110,mastery=340,need=300,fighter="Leaf"},{owned={Leaf=true,Sand=true}})
-	assert(string.find(line,"NEJI") and not string.find(line,"GAARA"),"a master already learned is still announced: "..line)
+	assert(string.find(line,"THE FATED GENIUS",1,true) and not string.find(line,"THE UNTOUCHABLE",1,true),"a master already learned is still announced: "..line)
 	line=V.result({gained=true,amount=80,mastery=300,need=300,fighter="Leaf",learned="GentleFist"})
-	assert(string.find(line,"NEJI'S KIT IS YOURS"),line)
+	assert(string.find(line,"THE FATED GENIUS'S KIT IS YOURS",1,true),line)
 	assert(V.result(nil)==nil and V.result({gained=false})==nil,"practice says nothing")
 end)
 
@@ -113,7 +114,7 @@ test("Konoha's goal: the three masters, then the first duel, then a master or th
 	assert(#g.items==1 and string.find(g.items[1],"BY THE GATE",1,true),"where they wait: "..tostring(g.items[1]))
 	local I=H.load("Shared/Inspirations")
 	for _,id in Masters.Starters do
-		assert(string.find(g.items[1],H.load("Shared/Text").upper(H.load("Shared/Fighters")[id].Name),1,true),id.." is not named")
+		assert(string.find(g.items[1],H.load("Shared/KitTexts").name(id),1,true),id.." is not named by his title")
 		local about=I.of(id)
 		assert(about and #about.title>3 and #about.line>40 and #about.with>15,id.." has no line")
 		assert(HubMap.Welcome[id] and HubMap.inside(HubMap.Welcome[id].at),id.." does not wait by the gate")
@@ -144,7 +145,7 @@ test("Konoha's goal: the three masters, then the first duel, then a master or th
 	local mine={state="ready",owned={Leaf=true},mastery={Leaf=0},starter="Leaf",selected="Leaf",masters={}}
 	assert(V.firstDuel(mine)=="Leaf","the first duel is pending")
 	g=V.goal(mine)
-	assert(g.head=="YOUR FIRST DUEL" and string.find(g.sub,"LEE") and string.find(g.sub,HubMap.Masters.Leaf.place,1,true),"after the first kit: "..g.head.." / "..g.sub)
+	assert(g.head=="YOUR FIRST DUEL" and string.find(g.sub,"THE HARD WORKER",1,true) and string.find(g.sub,HubMap.Masters.Leaf.place,1,true),"after the first kit: "..g.head.." / "..g.sub)
 	mine.mastery.Leaf=48
 	assert(V.firstDuel(mine)==nil,"the first duel fought")
 	assert(V.goal(mine).head=="DUELS AND THE TOURNAMENT","no master ready: the proctor")

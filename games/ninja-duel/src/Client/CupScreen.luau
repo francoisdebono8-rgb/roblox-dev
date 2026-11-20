@@ -6,6 +6,8 @@ local Shared=game:GetService("ReplicatedStorage").NinjaDuel
 -- (QA 12/11) capitals that keep the long vowels and accents.
 local Text=require(Shared.Text)
 local Fighters=require(Shared.Fighters)
+-- (DEC-043, CM) a prodigy is shown by the CM's title (Shared/KitTexts); Fighters[id].Name stays the key
+local KitTexts=require(Shared.KitTexts)
 local Cup={};Cup.__index=Cup
 Cup.CHAMPION_NOTE="Eight prodigies entered the arena. One walks out with the tournament."
 -- (19/11, vague 2 DEV 5) The champion card's line for the week's exam
@@ -135,7 +137,7 @@ function Cup.new(ui,send,kit)
 end
 local function nameOf(id)
 	local def=Fighters[id or ""]
-	return if def then Text.upper(def.Name) else "?"
+	return if def then KitTexts.name(id) else "?"
 end
 function Cup:press(which)
 	local cup=self.cup
@@ -246,7 +248,8 @@ function Cup:render(data)
 	-- (pad focus after the UI's own screen change has settled)
 	local function focus(target) task.delay(.25,function() pcall(function() game:GetService("GuiService").SelectedObject=target end) end) end
 	if phase=="Champion" and data.cup and data.cup.champion then
-		self.championName.Text=Text.upper((Fighters[data.cup.seats[data.cup.champion]] or {}).FullName or "")
+		local champion=data.cup.seats[data.cup.champion]
+		self.championName.Text=if Fighters[champion or ""] then KitTexts.fullName(champion) else ""
 		-- (DEC-040) what the cup gave his kit
 		local reward=data.cup.reward
 		if reward and ((reward.amount or 0)>0 or (reward.ryo or 0)>0) then

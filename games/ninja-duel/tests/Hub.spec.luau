@@ -447,7 +447,8 @@ test("players met in Konoha: a tag with the kit and mastery, CHALLENGE sends the
 	local t=hp.tags[bob]
 	assert(t and t.gui.Parent==holder and t.gui.Adornee==bob.Character.Head,"no tag over Bob")
 	assert(not hp.tags[me],"a tag over himself")
-	assert(t.line.Text==Text.upper(Fighters.Leaf.Name).."  •  MASTERY 120","the line: "..t.line.Text)
+	-- (DEC-043) his kit by the CM's title
+	assert(t.line.Text==H.load("Shared/KitTexts").name("Leaf").."  •  MASTERY 120" and t.line.Text=="THE HARD WORKER  •  MASTERY 120","the line: "..t.line.Text)
 	assert(t.prompt.Parent==bob.Character.HumanoidRootPart and t.prompt.Enabled and t.prompt.ActionText=="CHALLENGE","the prompt")
 	-- E held: the lobby's challenge with his own kit, once (a second press soon after is ignored)
 	assert(hp:triggered(t.prompt) and sent[1].op=="challenge" and sent[1].to==7 and sent[1].fighter=="Sand","the challenge sent")

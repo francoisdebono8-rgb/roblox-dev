@@ -5,6 +5,8 @@
 local Trees=require(script.Parent.SkillTrees)
 local Fighters=require(script.Parent.Fighters)
 local Text=require(script.Parent.Text)
+-- (DEC-043, CM) a prodigy is shown by the CM's title (Shared/KitTexts); Fighters[id].Name stays the key
+local KitTexts=require(script.Parent.KitTexts)
 local Masters=require(script.Parent.Masters)
 local TreeTiers=require(script.Parent.TreeTiers)
 local V={}
@@ -55,7 +57,7 @@ function V.layout(kit,state)
 	local tree=Trees[kit]
 	if not tree then return nil end
 	local def=Fighters[kit]
-	local out={kit=kit,title=Text.upper(def and def.Name or kit).."'S TREE",points=state and state.points or 0,free=state and state.free or 0,branches={}}
+	local out={kit=kit,title=(if def then KitTexts.name(kit) else Text.upper(kit)).."'S TREE",points=state and state.points or 0,free=state and state.free or 0,branches={}}
 	local byName={}
 	for _,node in tree.Nodes do
 		local branch=byName[node.Branch]
@@ -79,7 +81,7 @@ function V.layout(kit,state)
 	for _,row in out.tiers do if not row.open then nextTier=row break end end
 	out.nextTier=nextTier
 	out.progress=if nextTier then math.clamp(mastery/nextTier.need,0,1) else 1
-	out.subtitle=string.format("%d POINTS FREE  •  %d EARNED  •  1 POINT PER %d MASTERY WITH %s",out.free,out.points,Masters.PointEvery,Text.upper(def and def.Name or kit))
+	out.subtitle=string.format("%d POINTS FREE  •  %d EARNED  •  1 POINT PER %d MASTERY WITH %s",out.free,out.points,Masters.PointEvery,(if def then KitTexts.name(kit) else Text.upper(kit)))
 	return out
 end
 
@@ -105,7 +107,7 @@ function V.detail(kit,state,id)
 	local note=nil
 	if status=="tier" then
 		local def=Fighters[kit]
-		note=string.format("TIER %s OPENS AT %d MASTERY WITH %s (NOW %d)",TreeTiers.Names[TreeTiers.of(node)],TreeTiers.need(node),Text.upper(def and def.Name or kit),state and state.mastery or 0)
+		note=string.format("TIER %s OPENS AT %d MASTERY WITH %s (NOW %d)",TreeTiers.Names[TreeTiers.of(node)],TreeTiers.need(node),(if def then KitTexts.name(kit) else Text.upper(kit)),state and state.mastery or 0)
 		if #names>0 then note..="  •  THEN FIRST: "..table.concat(names,", ") end
 	elseif status=="locked" then note="FIRST: "..table.concat(names,", ")
 	elseif status=="short" then note=string.format("%d MORE POINTS: PLAY DUELS WITH THIS KIT",node.Cost-(state and state.free or 0)) end

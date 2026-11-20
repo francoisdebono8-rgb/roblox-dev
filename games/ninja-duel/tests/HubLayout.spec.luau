@@ -158,7 +158,7 @@ test("Konoha's HUD: placed by the layout, the goal follows the player, touch and
 		-- his first kit taken: the goal points at the first duel
 		local mine={state="ready",owned={Leaf=true},mastery={Leaf=0},starter="Leaf",selected="Leaf",masters={},trees={Leaf={points=0,free=0}},ryo=0,style={owned={},equipped={}}}
 		hub:render({phase="Selection",kits=mine})
-		assert(hub.goalHead.Text=="YOUR FIRST DUEL" and string.find(hub.goalSub.Text,"LEE"),"after the first kit: "..hub.goalHead.Text)
+		assert(hub.goalHead.Text=="YOUR FIRST DUEL" and string.find(hub.goalSub.Text,"THE HARD WORKER",1,true),"after the first kit: "..hub.goalHead.Text)
 		mine.selected="Lion";mine.owned.Lion=true
 		hub:train()
 		assert(sent[2][2].player=="Lion" and sent[2][2].bot~=nil,"he trains with his own kit: "..tostring(sent[2][2].player))

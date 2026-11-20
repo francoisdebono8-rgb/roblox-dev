@@ -8,6 +8,8 @@ local Roster=require(Shared.BetaRoster)
 local Controls=require(Shared.Controls)
 -- (QA 12/11) capitals that keep the long vowels and accents (Shared/Text).
 local Text=require(Shared.Text)
+-- (DEC-043, CM) a prodigy is shown by the CM's title (Shared/KitTexts); Fighters[id].Name stays the key
+local KitTexts=require(Shared.KitTexts)
 local Config=require(Shared.Config)
 -- (05/11) The face button of each jutsu slot on a pad (R1 is the row's).
 local PAD_FACE={"□","△","○","×","D↑"}
@@ -338,7 +340,7 @@ function UI.new(parent,send)
 		corner(tablet,5)
 		local edge=create("UIStroke",tablet,{Color=accent,Thickness=1.5,Transparency=.55,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
 		local glow=frame(tablet,UDim2.fromOffset(0,0),UDim2.new(0,6,1,0),accent,0)
-		local label=text(tablet,Text.upper(def.Name),UDim2.fromOffset(12,0),UDim2.fromOffset(W-16,H),22,palette.paper,TITLE_FONT,Enum.TextXAlignment.Center)
+		local label=text(tablet,KitTexts.name(id),UDim2.fromOffset(12,0),UDim2.fromOffset(W-16,H),22,palette.paper,TITLE_FONT,Enum.TextXAlignment.Center)
 		label.TextScaled=true;create("UITextSizeConstraint",label,{MaxTextSize=22})
 		-- The pick's tag sits on the plate's top edge (above it, it covered the
 		-- row above when a second-row plate was picked).
@@ -992,10 +994,11 @@ function UI:refreshSelection()
 		local st=self.stages and self.stages[side]
 		local def=Fighters[id]
 		if st and def then
-			st.name.Text=Text.upper(def.FullName or def.Name)
+			st.name.Text=KitTexts.fullName(id)
 			st.name.TextColor3=accentOf(def):Lerp(palette.paper,.3)
-			st.sub.Text=string.format("AGE %d  •  %s",def.Age or 13,Text.upper(def.Title or ""))
-			st.note.Text=def.Description or ""
+			st.sub.Text=KitTexts.sub(id)
+			-- (DEC-043) a prodigy's stage says why a player picks him (the CM's sheet)
+			st.note.Text=(KitTexts.of(id) or {}).why or def.Description or ""
 			-- (Beta loop) your stage says where this kit stands on your path.
 			if side=="player" and self.kits and not self.picking then
 				local act=MastersView.action(self.kits,id)
@@ -1014,7 +1017,7 @@ function UI:refreshSelection()
 			end
 		end
 	end
-	self.matchup.Text=Text.upper((p.Name).."  VS  "..(o.Name))
+	self.matchup.Text=KitTexts.name(self.player).."  VS  "..KitTexts.name(other)
 	-- (Beta loop) the stage button says what it will do with this kit.
 	if not self.picking and self.startButton then
 		local act=MastersView.action(self.kits,self.player)
@@ -1031,7 +1034,7 @@ function UI:refreshSelection()
 			if tree then self.treeButton.Text=if (tree.free or 0)>0 then "SKILL TREE  •  "..tree.free.." POINTS" else "SKILL TREE" end
 		end
 	end
-	self.routeNote.Text=if p.Routes then Text.upper(p.Name).." STRINGS  "..Controls.localize(p.Routes) else ""
+	self.routeNote.Text=if p.Routes then KitTexts.name(self.player).." STRINGS  "..Controls.localize(p.Routes) else ""
 end
 -- The controls sheet: opened over any screen, built for the device in hand
 -- and the fighter being played.
@@ -1069,7 +1072,7 @@ function UI:buildControls(pad)
 	local id=if self.selection.Visible or not own then self.player else h.fighterId
 	local def=Fighters[id or ""]
 	local y=410
-	local head=text(body,if def then Text.upper(def.FullName or def.Name) else "YOUR FIGHTER",UDim2.fromOffset(0,y),UDim2.fromOffset(1048,28),24,palette.gold,TITLE_FONT);head.ZIndex=43
+	local head=text(body,if def then KitTexts.fullName(id) else "YOUR FIGHTER",UDim2.fromOffset(0,y),UDim2.fromOffset(1048,28),24,palette.gold,TITLE_FONT);head.ZIndex=43
 	local combo=Controls.comboHelp(MoveGraphs[id or ""] or {},pad)
 	local strings=text(body,combo,UDim2.fromOffset(0,y+32),UDim2.fromOffset(1048,40),15,palette.text,BODY_FONT);strings.ZIndex=43
 	if def and def.Techniques then
@@ -1252,7 +1255,7 @@ function UI:lobby(data)
 		self.opponentLabel.Text=if self.simple then "YOUR RIVAL" else "OPPONENT (AI)"
 		self.startButton.Text=if self.simple then "PLAY" else "ENTER THE STAGE"
 		self.tutorialButton.Text=if self.simple then "ALL MODES" else "TRAINING"
-		self.notice.Text=data.notice or (if self.kits and self.kits.needStarter then "CHOOSE YOUR INSPIRATION  •  NARUTO, SASUKE OR LEE  •  EACH ONE LEADS YOU TO THE NEXT"
+		self.notice.Text=data.notice or (if self.kits and self.kits.needStarter then "CHOOSE YOUR INSPIRATION  •  "..KitTexts.name("Legion")..", "..KitTexts.name("Lion").." OR "..KitTexts.name("Leaf").."  •  EACH ONE LEADS YOU TO THE NEXT"
 			elseif self.simple then "PICK YOUR NINJA, THEN PLAY  •  30 SECONDS ON THE FIELD, THEN YOUR FIRST DUEL" else "")
 	end
 	self.lastLobby=data
@@ -1283,12 +1286,12 @@ function UI:lobby(data)
 end
 local function fullName(actor)
 	local def=Fighters[actor.fighterId]
-	return Text.upper(def and def.FullName or actor.fighter or "")
+	return if def then KitTexts.fullName(actor.fighterId) else Text.upper(actor.fighter or "")
 end
 local function subtitle(actor)
 	local def=Fighters[actor.fighterId]
 	if not def then return "" end
-	return string.format("AGE %d  •  %s",def.Age or 13,def.Title or "")
+	return KitTexts.sub(actor.fighterId)
 end
 -- Server cues name keyboard keys; a pad player reads the pad button instead
 -- (labels from Controls, so the copy cannot drift from the bindings).
@@ -1557,7 +1560,7 @@ function UI:render(data)
 			local accent=accentOf(def)
 			widget.faceFor=actor.fighterId
 			widget.glow.BackgroundColor3=accent
-			widget.initial.Text=string.sub(string.upper(def.Name or "?"),1,1)
+			widget.initial.Text=KitTexts.initial(actor.fighterId)
 		end
 		local ratio=math.clamp(actor.health/actor.maxHealth,0,1)
 		widget.fill.Size=UDim2.fromScale(ratio,1)
@@ -1839,7 +1842,7 @@ function UI:render(data)
 		self.rematchButton.Text=if data.cup.out and not data.spectate then "SEE WHO WINS IT  •  THE BRACKET" else "CONTINUE  •  THE BRACKET"
 		if data.spectate then
 			local def=Fighters[winner.fighterId or ""]
-			self.resultTitle.Text=Text.upper(def and def.Name or "")..(if (data.roundsToWin or 1)>1 and data.wins then string.format("  %d–%d",math.max(data.wins.human or 0,data.wins.bot or 0),math.min(data.wins.human or 0,data.wins.bot or 0)) else "")
+			self.resultTitle.Text=(if def then KitTexts.name(winner.fighterId) else "")..(if (data.roundsToWin or 1)>1 and data.wins then string.format("  %d–%d",math.max(data.wins.human or 0,data.wins.bot or 0),math.min(data.wins.human or 0,data.wins.bot or 0)) else "")
 			self.resultBand.BackgroundColor3=MANGA.red
 			self.resultSeal.Text="WIN"
 			self.resultNote.Text="One more name moves up the bracket."
@@ -1888,7 +1891,7 @@ function UI:resultEarned(progress)
 	end
 	local id=p.fighter or p.learned
 	local def=Fighters[id or ""]
-	local who=if def then Text.upper(def.Name or "") else "YOUR KIT"
+	local who=if def then KitTexts.name(id) else "YOUR KIT"
 	if p.learned then
 		self.resultKit.Text=who.."'S KIT IS YOURS"
 		self.resultGain.Text="";self.resultBar.Visible=false

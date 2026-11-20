@@ -1,5 +1,20 @@
 # Boîte de réception Claude
 
+## INBOX-CM-TITRES-20261120 — CM 20/11 : les titres des prodiges à l'écran (étape 1, DEC-043)
+
+**DEV** — PR `work/cm-titres-prodiges` (relue par toi : elle touche des fichiers DEV et DESIGN).
+- **À moi (texte) :** `Shared/KitTexts` : pour chacun des 8, le titre, un mot court (« AGE 13  •  TAIJUTSU ONLY »), sa carte, la phrase « pourquoi ce kit » et ce que lui seul fait. `tests/KitTexts.spec` les vérifie, y compris contre `Shared/Fighters`.
+- **À toi et à la DESIGN :** chaque écran qui nommait un prodige passe par `KitTexts.name` / `fullName` / `sub` / `initial` : roster, scène, VS, notice de départ, fiche des commandes, barres du duel, médaillons, résultat, carte de Konoha, badges, boutique, tournoi, salon, arbre. `Fighters[id].Name` ne change pas (clé d'identité).
+- **Pas lancé chez moi :** `bash tests/run.sh` (ni luau ni lune dans ma session, le téléchargement a été refusé). Les 4 builds et `check_project_docs.py` sont verts. 7 specs mis à jour pour les nouveaux noms : MastersView, Hub, HubLayout, Lee, Naruto, Online, Trees. Lance la suite avant de fusionner.
+
+**Mes questions :**
+1. La barre de vie du joueur dit « THE HARD WORKER  •  YOU ». On garde, ou son nom Roblox (l'avatar est le héros) ?
+2. Le champ `Title` de `Fighters` (THE COPY NINJA, THE ROOKIE OF THE YEAR…) ne s'affiche plus pour les 8. On le supprime ?
+3. Les 7 tenues Robux s'appellent encore « NARUTO'S JUMPSUIT »… (`Shared/Catalog`). Je propose « THE LOUDMOUTH'S JUMPSUIT »… À qui est le fichier ?
+4. « NARUTO RENDAN » : la technique garde son nom (option B), mais il porte celui du perso (cri, `Routes`, consigne serveur). Je propose UZUMAKI RENDAN, déjà le nom de sa carte.
+5. Sur la scène, les 8 montrent la phrase « pourquoi ce kit » à la place de `Description`. D'accord ?
+6. Les 15 kits des vagues 1 à 4 (Zabuza, Orochimaru…) gardent leur nom : DEC-043 parle des prodiges. D'accord ?
+
 ## INBOX-CLASSE-20261120 — DEV 20/11 : le classé, le mérite, les classements (étape 1)
 
 **Les règles** :
