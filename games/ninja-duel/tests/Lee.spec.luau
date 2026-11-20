@@ -746,7 +746,7 @@ test("he is selectable: his roster slot and both buttons, and the duel starts wi
   assert(not ui.simple,"ALL MODES did not open the full roster")
   ui.side="player";ui.selectionButtons.slotLeaf.click()
   assert(ui.player=="Leaf","picking Lee did not select him")
-  assert(ui.routeNote.Text:find("ROCK LEE",1,true),"his strings are not shown")
+  assert(ui.routeNote.Text:find("THE HARD WORKER",1,true),"his strings are not shown")
   ui.startButton.click()
   local last=sent[#sent]
   assert(last.action=="Start" and last.extra.player=="Leaf","the start request does not carry Lee ("..tostring(last.extra and last.extra.player)..")")

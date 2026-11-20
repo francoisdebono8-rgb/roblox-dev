@@ -4,13 +4,12 @@
 -- `kits` is the server's Progression.view (nil when the path is off: every
 -- kit is open, as before).
 local Masters=require(script.Parent.Masters)
-local Fighters=require(script.Parent.Fighters)
-local Text=require(script.Parent.Text)
+-- (DEC-043, CM) a prodigy is shown by the CM's title (Shared/KitTexts); Fighters[id].Name stays the key
+local KitTexts=require(script.Parent.KitTexts)
 local V={}
 
 local function name(id)
-	local def=Fighters[id]
-	return Text.upper(def and def.Name or tostring(id))
+	return KitTexts.name(id)
 end
 local function names(list)
 	local out={}

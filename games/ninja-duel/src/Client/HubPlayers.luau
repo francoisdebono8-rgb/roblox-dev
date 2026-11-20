@@ -11,6 +11,8 @@ local Players=game:GetService("Players")
 local Shared=game:GetService("ReplicatedStorage").NinjaDuel
 local Fighters=require(Shared.Fighters)
 local Text=require(Shared.Text)
+-- (DEC-043, CM) a prodigy is shown by the CM's title (Shared/KitTexts); Fighters[id].Name stays the key
+local KitTexts=require(Shared.KitTexts)
 
 local HubPlayers={}
 HubPlayers.__index=HubPlayers
@@ -21,7 +23,7 @@ HubPlayers.SEEN=80
 -- server has its own guards: Lobby Tune.Gap, MaxOut).
 HubPlayers.AGAIN=3
 
-local function nameOf(id) local def=Fighters[id] return Text.upper(def and def.Name or id) end
+local function nameOf(id) return KitTexts.name(id) end
 
 -- The line under a player's name: his kit and its mastery, or do not disturb.
 function HubPlayers.line(player)

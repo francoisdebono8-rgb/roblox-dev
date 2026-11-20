@@ -975,7 +975,7 @@ test("he is selectable: his roster slot and both buttons, and the duel starts wi
   assert(ui.selectionButtons.slotLegion,"Naruto is not in the roster")
   ui.side="player";ui.selectionButtons.slotLegion.click()
   assert(ui.player=="Legion","picking Naruto did not select him")
-  assert(ui.routeNote.Text:find("NARUTO",1,true),"his strings are not shown")
+  assert(ui.routeNote.Text:find("THE LOUDMOUTH",1,true),"his strings are not shown")
   ui.startButton.click()
   local last=sent[#sent]
   assert(last.action=="Start" and last.extra.player=="Legion","the start request does not carry Naruto")

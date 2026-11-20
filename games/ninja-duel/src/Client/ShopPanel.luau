@@ -18,6 +18,8 @@ local MastersView=require(Shared.MastersView)
 local Masters=require(Shared.Masters)
 local Fighters=require(Shared.Fighters)
 local Text=require(Shared.Text)
+-- (DEC-043, CM) a prodigy is shown by the CM's title (Shared/KitTexts); Fighters[id].Name stays the key
+local KitTexts=require(Shared.KitTexts)
 local Config=require(Shared.Config)
 local FirstMinute=require(Shared.FirstMinute)
 local HubMap=require(Shared.HubMap)
@@ -31,7 +33,7 @@ Panel.CLOSE={X=W-170,Y=26,W=140,H=56}
 
 local function rgb(c) return Color3.fromRGB(c[1],c[2],c[3]) end
 local function upper(s) return Text.upper(s or "") end
-local function nameOf(id) local def=Fighters[id] return upper(def and def.Name or id) end
+local function nameOf(id) return KitTexts.name(id) end
 -- 1250 -> "1,250"
 local function amount(n)
 	local s=tostring(math.floor(n or 0))

@@ -20,6 +20,8 @@ local MastersView=require(Shared.MastersView)
 local Masters=require(Shared.Masters)
 local Fighters=require(Shared.Fighters)
 local Text=require(Shared.Text)
+-- (DEC-043, CM) a prodigy is shown by the CM's title (Shared/KitTexts); Fighters[id].Name stays the key
+local KitTexts=require(Shared.KitTexts)
 local HubLayout=require(script.Parent.HubLayout)
 local HubMoods=require(script.Parent.HubMoods)
 local Inspirations=require(Shared.Inspirations)
@@ -32,7 +34,7 @@ Hub.__index=Hub
 Hub.REST,Hub.WALK,Hub.RUN,Hub.JUMP,Hub.LEAP=HubMove.REST,HubMove.WALK,HubMove.RUN,HubMove.JUMP,HubMove.LEAP
 
 local function upper(s) return Text.upper(s or "") end
-local function nameOf(id) local def=Fighters[id] return upper(def and def.Name or id) end
+local function nameOf(id) return KitTexts.name(id) end
 
 function Hub.enabled() return Config.Hub~=nil and Config.Hub.Enabled==true end
 
@@ -560,7 +562,7 @@ function Hub:fillCard()
 	-- the black tag: « NAME · INSPIRATION », the suffix in soft red
 	local function tag(suffix) self.cardName.Text=nameOf(id)..(if suffix~="" then ' <font color="#FF9C8A">· '..suffix..'</font>' else "") end
 	tag("MASTER")
-	self.cardPlace.Text=upper((def and def.Title or "")).."  •  "..(spot and spot.place or "")
+	self.cardPlace.Text=(if def then KitTexts.tag(id) else "").."  •  "..(spot and spot.place or "")
 	self.cardLine.Text="« "..(spot and spot.line or "").." »"
 	local a=self:cardActions(id)
 	self.actions=a
