@@ -66,6 +66,23 @@ class Planche(unittest.TestCase):
             middle = strip.getpixel((int(cols[0][0] * k), int((530 - P.CROP[0]) * k)))
             self.assertGreater(middle[0], 180, "the first avatar's column is under its name")
 
+    def test_before_and_after_side_by_side(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            for folder, colour in (("avant", (230, 120, 40)), ("apres", (40, 120, 230))):
+                os.makedirs(os.path.join(tmp, folder))
+                for look in ("SetNaruto", "SetLee"):
+                    Image.new("RGB", (1920, 1080), colour).save(os.path.join(tmp, folder, f"{look}_front.jpg"))
+            # a look captured only after is left out: nothing to compare it to
+            Image.new("RGB", (1920, 1080)).save(os.path.join(tmp, "apres", "SetNeji_front.jpg"))
+            out = P.compare(os.path.join(tmp, "avant"), os.path.join(tmp, "apres"), os.path.join(tmp, "aa.jpg"))
+            sheet = Image.open(out)
+            self.assertEqual(sheet.width, P.WIDTH)
+            y = sheet.height - 20
+            self.assertGreater(sheet.getpixel((P.WIDTH // 4, y))[0], 180, "before on the left")
+            self.assertGreater(sheet.getpixel((3 * P.WIDTH // 4, y))[2], 180, "after on the right")
+            self.assertIsNone(P.compare(os.path.join(tmp, "avant"), os.path.join(tmp, "apres"),
+                                        os.path.join(tmp, "dos.jpg"), view="back"))
+
 
 if __name__ == "__main__":
     result = unittest.main(exit=False, verbosity=1).result

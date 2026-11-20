@@ -48,8 +48,16 @@ Cabine.LOOKS={
 	BaseC={top="TopSleeveless",bottom="BottomShorts",feet="FeetSandals",headband="HeadbandRed"},
 	Accessoires={top="TopTunicNavy",bottom="BottomPantsDark",arms="ArmsWraps",feet="FeetSandals",headband="HeadbandBlue",
 		mask="MaskCloth",cape="CapeTravel",back="BackScroll"},
+	-- (20/11, after the ANIMATEUR's wardrobe) the six invented outfits, sold
+	-- SOON, and the new accessories (a neck headband: it needs its model)
+	SetEmberMonk={set="SetEmberMonk",headband="HeadbandBlue"},SetMistHunter={set="SetMistHunter",headband="HeadbandBlue"},
+	SetStormCourier={set="SetStormCourier",headband="HeadbandBlue"},SetShadowScout={set="SetShadowScout",headband="HeadbandBlue"},
+	SetLeafMedic={set="SetLeafMedic",headband="HeadbandBlue"},SetSandNomad={set="SetSandNomad",headband="HeadbandBlue"},
+	Accessoires2={top="TopTunicNavy",bottom="BottomPantsDark",arms="ArmsWraps",feet="FeetSandals",headband="HeadbandNeck",
+		mask="MaskFox",cape="CloakHooded",back="BackSword"},
 }
-Cabine.ORDER={"SetNaruto","SetSasuke","SetLee","SetNeji","SetGaara","SetKakashi","SetItachi","SetMinato","BaseA","BaseB","BaseC","Accessoires"}
+Cabine.ORDER={"SetNaruto","SetSasuke","SetLee","SetNeji","SetGaara","SetKakashi","SetItachi","SetMinato","BaseA","BaseB","BaseC","Accessoires",
+	"SetEmberMonk","SetMistHunter","SetStormCourier","SetShadowScout","SetLeafMedic","SetSandNomad","Accessoires2"}
 
 local function folder()
 	local f=workspace:FindFirstChild("NDCabine")

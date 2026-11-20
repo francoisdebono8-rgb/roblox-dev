@@ -9,7 +9,11 @@ Sortie : une planche par tenue (face au-dessus, dos dessous, chaque avatar
 nommé sous sa silhouette) et deux planches d'ensemble (toutes les faces,
 tous les dos).
 
-    python3 tools/tenues/planche.py <captures> <sortie>
+    python3 tools/tenues/planche.py <captures> <sortie> [<place>]
+    python3 tools/tenues/planche.py --avant-apres <captures avant> <captures après> <sortie>.jpg [<mot avant> <mot après>]
+
+La seconde forme met côte à côte, tenue par tenue, deux séries de captures
+de la même cabine (deux places) : ce qu'un changement a fait à chaque tenue.
 
 Les noms, l'ordre des avatars et l'ordre des tenues sont lus dans
 cabine.luau : la planche suit la cabine sans qu'on la recopie.
@@ -34,7 +38,12 @@ NAMES = {"Nu": "SANS TENUE (le corps de l'avatar)", "SetNaruto": "SET NARUTO", "
          "BaseA": "BASE A : tunique marine, pantalon sombre, bandes, sandales, bandeau bleu",
          "BaseB": "BASE B : col haut, pantalon sable, protège-bras, bottes noires, bandeau noir",
          "BaseC": "BASE C : sans manches, short, sandales, bandeau rouge",
-         "Accessoires": "ACCESSOIRES : base A + masque, cape de voyage, rouleau dans le dos"}
+         "Accessoires": "ACCESSOIRES : base A + masque, cape de voyage, rouleau dans le dos",
+         "SetEmberMonk": "EMBER MONK (tenue inventée, kit Lee)", "SetMistHunter": "MIST HUNTER (tenue inventée, kit Itachi)",
+         "SetStormCourier": "STORM COURIER (tenue inventée, kit Naruto)",
+         "SetShadowScout": "SHADOW SCOUT (tenue inventée, kit Kakashi)",
+         "SetLeafMedic": "LEAF MEDIC (tenue inventée, kit Neji)", "SetSandNomad": "SAND NOMAD (tenue inventée, kit Gaara)",
+         "Accessoires2": "ACCESSOIRES 2 : base A + masque de renard, cape à capuche, sabre dans le dos, bandeau au cou"}
 
 
 def font(size):
@@ -110,10 +119,12 @@ def titled(rows, title, subtitle=None):
     return sheet
 
 
-def main(src, dst):
+def main(src, dst, place=None):
     avatars, order, spacing, dist = room()
     os.makedirs(dst, exist_ok=True)
     note = "Studio, mode Édition, avatars posés à leur repos (C0/C1), habillés par Outfit + OutfitDress + Headband"
+    if place:
+        note += " ; place " + place
     made, fronts, backs = [], [], []
     for look in ["Nu"] + order:
         rows = []
@@ -148,8 +159,38 @@ def main(src, dst):
     return made
 
 
+def compare(before, after, out, view="front", labels=("AVANT", "APRÈS")):
+    """Before | after, side by side, for every look captured in both folders
+    (the same room, two places): what a change did to each outfit."""
+    avatars, order, spacing, dist = room()
+    rows = []
+    for look in ["Nu"] + order:
+        a, b = (os.path.join(d, f"{look}_{view}.jpg") for d in (before, after))
+        if os.path.exists(a) and os.path.exists(b):
+            ra, rb = (strip(p, view, avatars, spacing, dist) for p in (a, b))
+            pair = Image.new("RGB", (WIDTH, ra.height // 2), PAPER)
+            pair.paste(ra.resize((WIDTH // 2 - 4, ra.height // 2), Image.LANCZOS), (0, 0))
+            pair.paste(rb.resize((WIDTH // 2 - 4, rb.height // 2), Image.LANCZOS), (WIDTH // 2 + 4, 0))
+            rows.append((NAMES.get(look, look), pair))
+    if not rows:
+        return None
+    word = "DE FACE" if view == "front" else "DE DOS"
+    sheet = titled(rows, f"{labels[0]} | {labels[1]}, {word}",
+                   f"à gauche {labels[0].lower()}, à droite {labels[1].lower()} : la même cabine, la même caméra")
+    sheet.save(out, quality=82, optimize=True)
+    return out
+
+
 if __name__ == "__main__":
-    if len(sys.argv) != 3:
+    args = sys.argv[1:]
+    if args[:1] == ["--avant-apres"] and len(args) in (4, 6):
+        labels = tuple(args[4:6]) if len(args) == 6 else ("AVANT", "APRÈS")
+        for view, suffix in (("front", "face"), ("back", "dos")):
+            out = args[3].replace(".jpg", "") + f"-{suffix}.jpg"
+            if compare(args[1], args[2], out, view, labels):
+                print(out)
+    elif len(args) in (2, 3):
+        for path in main(*args):
+            print(path)
+    else:
         sys.exit(__doc__)
-    for path in main(sys.argv[1], sys.argv[2]):
-        print(path)

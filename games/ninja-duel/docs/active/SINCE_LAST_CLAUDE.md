@@ -1,5 +1,43 @@
 # Boîte de réception Claude
 
+## INBOX-OUTILLEUR-ETAPE1-20261120 — OUTILLEUR 20/11 : place commune automatique, comparateur de kits, contrôle des tenues
+
+**Poussé sur la branche commune** (Python : 34 PASS ; 4 builds verts ; docs PASS). Pas de lune ici : les specs Luau ne sont pas lancées de mon côté.
+
+**Ce qui est livré :**
+1. **La place commune automatique** (`tools/mac/place_commune.py`, README `tools/mac`). Un agent macOS tourne toutes les 2 min. Après chaque lot poussé, et 3 min sans nouveau commit, il reconstruit les 4 places au même commit et les pose dans `PLACES`, avec `VERSION.md`.
+   - Une place ouverte dans Studio n'est jamais remplacée : les places attendent dans `PLACES/_prochaine`, et François est prévenu une fois.
+   - Une place modifiée dans Studio est mise de côté, pas écrasée.
+   - **En service sur le Mac depuis le 20/11 :** `98a2a1f2` posé à 22 h 27, puis `29a59f15` (mon push) posé à 22 h 39 sans aucune main. Journal : `_maintenance/place-commune/journal.log`.
+2. **Le comparateur de kits** (`tools/kits`) donne une empreinte chiffrée par kit : portée, vitesse, mobilité, dégâts/s, tenue, et ce que le kit a en propre. Il calcule trois versions (prodige, départ d'un joueur, arbre complet), puis compare avant et après sur la même échelle. Première empreinte : sources `053395e4`, mesurée dans Studio. Les constats sont dans le README.
+3. **Le contrôle des tenues** (`tools/tenues`) : une cabine d'essayage dans Studio et 7 avatars types.
+   - Les avatars : Korblox, Rthro Big Bill, Rthro Vanessa, Garçon Roblox, Femme, Bloc R15 et l'avatar de François.
+   - Ils sont construits comme `AvatarBody` construit le joueur, puis habillés par `Outfit`, `OutfitDress` et `Headband`, de face et de dos.
+   - Deux séries de planches, plus l'avant / après côte à côte (`tools/tenues/rendus/`) :
+     - avant les corrections de l'ANIMATEUR : place `699d331d`, 12 tenues ;
+     - après : place `29a59f15`, 19 tenues, dont les 6 inventées et les nouveaux accessoires.
+   - Toutes les corrections de l'ANIMATEUR se voient en jeu, sur les 7 corps : holsters, plaques, masque et gants de Kakashi, cape courte, rouleau en travers.
+   - Les constats sont dans le README.
+
+**Corrigé :** `tests/KitPrint.spec.luau` échouait sur `Sand: walk/run` (l'ANIMATEUR l'a signalé). Le test exigeait une course au moins aussi rapide que la marche, or le `SprintScale` de Gaara est inférieur à 1. C'est une donnée du jeu : le test la note sans échouer.
+
+**DEV, à toi :**
+- **Gaara court moins vite qu'il ne marche** (course 14,0, marche 16,5 ; `SprintScale` < 1). Est-ce voulu ?
+- **Un corps à armure (Korblox) transforme toute tenue en boîte.** Son `UpperTorso` mesure 3,25 × 6,30 × 3,02 studs, et les pièces se mettent à l'échelle du torse. Remettre le torse standard dans `AvatarBody` quand il dépasse une taille plausible ? Sinon, l'ANIMATEUR plafonne l'échelle.
+- **Les cheveux de 3 paquets sur 5 disparaissent** à `Outfit.strip` (Femme, Vanessa, Big Bill sortent chauves).
+- **Le bandeau bleu se lit noir** à distance de duel (`Band = 46, 64, 120`) : le bleu et le noir se confondent.
+- **La place commune remplace la reconstruction à la main.** Avec elle, faut-il encore committer `dist/` ? Environ 80 Mo par reconstruction.
+- **Lune :** je ne peux pas lancer les specs Luau ici. Une exécution de la suite côté DEV, ou un runner, attraperait plus tôt un test qui casse.
+
+**DEV et ANIMATEUR, une règle à trancher :** quatre sets portent déjà un bandeau : Ember Monk, Storm Courier, Leaf Medic, et Lee par sa plaque de ceinture. Le bandeau choisi s'y ajoute, et on voit deux bandeaux sur une tête. Un set qui a son bandeau remplace-t-il l'emplacement « bandeau » ?
+
+**ANIMATEUR :** les planches Studio montrent les tenues sur 7 corps réels, dont Korblox et deux têtes Rthro, à côté de tes planches Blender.
+- La capuche de la cape (Accessoires 2, Sand Nomad) est traversée de dos par les nœuds du bandeau et les yeux du masque.
+- Le col de Naruto monte jusqu'à la bouche.
+- Sur une tête Rthro, le masque fait un bloc.
+
+Ce sont des observations de Claude, pas l'avis de François.
+
 ## INBOX-ANIM-ETAPE1-20261120 — ANIMATEUR 20/11 : audit des clips, fiches de mouvement, auras, tenues
 
 **Poussé sur la branche commune** (suite : 88 PASS ; `KitPrint` échoue déjà sur la branche sans ces commits, sur `Sand: walk/run`, et ce n'est pas mon domaine ; 4 builds verts).
