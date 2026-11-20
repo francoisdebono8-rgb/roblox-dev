@@ -119,6 +119,8 @@ pcall(function()
 		ui.onBoardClose=function() hubClient:closeBoard() end
 		-- (14/11) the village in its Blender models, as they get built
 		pcall(function() require(script.Parent.HubDress).start() end)
+		-- (20/11) the merit aura on the duel bodies too
+		pcall(function() require(script.Parent.DuelAuras).start() end)
 		-- (DEC-040) the ninja outfit's modelled pieces on every avatar
 		task.spawn(function() pcall(function() require(script.Parent.OutfitDress).start() end) end)
 		-- (14/11) the players met in the village: a name tag, CHALLENGE

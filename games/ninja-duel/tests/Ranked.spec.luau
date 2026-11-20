@@ -155,4 +155,19 @@ test("the boards: weekly keys, the store's top 10, nothing written by a test pla
 	assert(stores["NinjaDuelExam_"..Exam.latest(friday).key]==nil or next(stores["NinjaDuelExam_"..Exam.latest(friday).key].data)==nil,"the exam board written by the boards")
 end)
 
+test("the duel body wears its player's aura, quietly; no aura below the first tier",function()
+	local players={[901]={GetAttribute=function(_,k) if k=="NinjaAura" then return 2 end end},[902]={GetAttribute=function() return 0 end}}
+	H.envBase.game.GetService=function(g,name)
+		if name=="Players" then return {GetPlayerByUserId=function(_,id) return players[id] end} end
+		return getService(g,name)
+	end
+	local DuelAuras=H.load("Client/DuelAuras")
+	local worn=nil
+	local function body(id) return {Parent={},GetAttribute=function(_,k) if k=="Avatar" then return id end end} end
+	assert(DuelAuras.dress(body(901),function(_,tier,quiet) worn={tier,quiet} end) and worn[1]==2 and worn[2]==true,"the aura or its quiet")
+	worn=nil
+	assert(not DuelAuras.dress(body(902),function() worn=true end) and worn==nil,"an aura below the first tier")
+	H.envBase.game.GetService=getService
+end)
+
 print(string.format("NinjaDuel the ladder, merit and the boards (DEC-043): %d PASS",passed))
