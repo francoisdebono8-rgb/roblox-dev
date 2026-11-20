@@ -724,6 +724,24 @@ for _id, (_kind, _model, _name, _cols) in CATALOG.items():
 # (their cloth stand-in is replaced by the model: CapeTravel, BackScroll, MaskCloth)
 WARDROBE_ITEMS = {k: v[1] for k, v in CATALOG.items()}
 WARDROBE_ITEMS["CapeTravel"] = "CapeShort"
+WARDROBE_ITEMS.update({k: k for k in wardrobe_models.SETS})
+# (the icon tool, tools/icons, reads ITEMS: every look with a model is there)
+ITEMS.update(WARDROBE_ITEMS)
+
+
+def _set_builder(set_id):
+    """A set's pieces for the previews and the icons (never written: OutfitMeshes.Sets builds
+    it at load), their colour slots prefixed by their model, as the catalogue colours them."""
+    def build():
+        out = []
+        for m, _ in wardrobe_models.SETS[set_id][1]:
+            out += [(part, m + slot, pc) for part, slot, pc in MODELS[m]()]
+        return out
+    return build
+
+
+for _sid in wardrobe_models.SETS:
+    MODELS[_sid] = _set_builder(_sid)
 PRICE = {"top": 600, "bottom": 500, "arms": 350, "feet": 350, "headband": 800, "mask": 600, "cape": 900, "back": 700}
 # A set belongs to a kit (Shop.spec): the inspiration whose spirit it carries (my proposal, the DEV's call)
 SET_KIT = {"SetEmberMonk": "Leaf", "SetMistHunter": "Mirage", "SetStormCourier": "Legion", "SetShadowScout": "Copycat",
@@ -800,6 +818,8 @@ def write(dst, limit=110000):
     report = []
     slots_of = {}
     for name in MODELS:
+        if name in wardrobe_models.SETS:
+            continue
         pieces = built(name)
         slots_of[name] = {sl for _, sl, _ in pieces}
         tris = sum(len(p.tris()) for _, _, p in pieces)
@@ -827,9 +847,7 @@ def write(dst, limit=110000):
         with open(os.path.join(dst, "OutfitMeshData%d.luau" % i), "w") as fh:
             fh.write(head + "-- {model, body part, colour slot, piece}, in order.\nreturn {\n" + "\n".join(c) + "\n}\n")
     ref = ",".join("%s=Vector3.new(%g,%g,%g)" % (k, *v) for k, v in REF.items())
-    items_all = dict(ITEMS)
-    items_all.update(WARDROBE_ITEMS)
-    items_all.update({k: k for k in wardrobe_models.SETS})   # a set is its own model, built at load
+    items_all = dict(ITEMS)   # (a set is its own model, built at load: OutfitMeshes.Sets)
     items = ",".join("%s=%s" % (k, q(v)) for k, v in items_all.items())
     sets_lua = ",".join("%s={%s}" % (k, ",".join(q(m) for m, _ in parts)) for k, (nm, parts) in wardrobe_models.SETS.items())
     sets = ",\n\t".join("%s={kind=\"set\",name=%s,parts={%s}}" % (k, q(nm), ",".join("{model=%s,colors={%s}}" % (q(m), ",".join("%s={%d,%d,%d}" % (sl, *c) for sl, c in cols.items())) for m, cols in parts))
@@ -956,7 +974,7 @@ def render_bodies(dst, names=None):
     from nd_mesh import to_blender, render_set, clear
     os.makedirs(dst, exist_ok=True)
     SKIN = (0.93, 0.78, 0.62)
-    for name in list(MODELS) + list(wardrobe_models.SETS):
+    for name in MODELS:
         if names and name not in names:
             continue
         clear()
@@ -967,7 +985,7 @@ def render_bodies(dst, names=None):
                 for entry in built(m):
                     pieces.append(entry)
                     tints.append(cmap)
-        else:
+        if name not in wardrobe_models.SETS:
             pieces = built(name)
             cols = dict(NEW_SLOTS.get(name, {}))
             cols.update(catalog_colors(name))
