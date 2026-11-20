@@ -69,8 +69,11 @@ REST = {
     "RightLowerLeg": (.5, -2.0135, 0), "LeftLowerLeg": (-.5, -2.0135, 0),
     "RightFoot": (.5, -2.76, 0), "LeftFoot": (-.5, -2.76, 0),
 }
-K = .957   # the section (a superellipse, p=16) at 45 deg reaches 0.957 of its half axis
-FIT = .5   # cloth sits close: the pads below are halved (legs touch on a blocky body)
+K = .985   # (20/11: .957 before) the section's half axis over the part's: the cloth hugs the faces
+# (20/11, François: « trop larges, elles flottent ») FIT .5 -> .3: every pad and flare a third
+# tighter; FOLD: the cloth's folds 40 % shallower (they read as lumps on a blocky body)
+FIT = .3
+FOLD = .6
 SEG = 28
 
 
@@ -123,7 +126,7 @@ def shell(pc, part, y0, y1, pad=.07, flare0=0.0, flare1=0.0, folds=.02, rings=9,
     flare1 *= FIT
     a0 = (S.x / 2 + pad) / K * scale_x
     b0 = (S.z / 2 + pad) / K * scale_z
-    fold = cloth_fold(folds, 5, seed)
+    fold = cloth_fold(folds * FOLD, 5, seed)
     rows = []
     for k in range(rings):
         u = k / (rings - 1)
@@ -134,13 +137,13 @@ def shell(pc, part, y0, y1, pad=.07, flare0=0.0, flare1=0.0, folds=.02, rings=9,
     if hem:
         last = rows[-1]
         y = last[0].y
-        roll = [Vector((p.x * 1.035, y - .02, p.z * 1.035)) for p in last]
+        roll = [Vector((p.x * 1.02, y - .02, p.z * 1.02)) for p in last]
         under = [Vector((p.x * 1.0, y - .045, p.z * 1.0)) for p in last]
         rows += [roll, under]
         if hem == "both":
             first = rows[0]
             yt = first[0].y
-            rows = [[Vector((p.x, yt + .045, p.z)) for p in first], [Vector((p.x * 1.035, yt + .02, p.z * 1.035)) for p in first]] + rows
+            rows = [[Vector((p.x, yt + .045, p.z)) for p in first], [Vector((p.x * 1.02, yt + .02, p.z * 1.02)) for p in first]] + rows
     c = col or shade(seed=seed, ao_y=(rows[-1][0].y, .12))
     if "Leg" in part:
         # the inner side darker: two legs side by side on a blocky body read as two
@@ -353,7 +356,7 @@ def item_high_collar():
     shell(lo, "LowerTorso", -.1, .65, pad=.08, flare1=.05)
     o.both("UpperArm", "Cloth", lambda pc, part: shell(pc, part, -.04, .4, pad=.08, flare1=.05))
     col = o.add("UpperTorso", "Collar")
-    collar(col, "UpperTorso", h=.36, flare=.08)
+    collar(col, "UpperTorso", h=.26, flare=.06)
     return o.items
 
 
@@ -442,7 +445,8 @@ def item_naruto():
     shell(yoke, "UpperTorso", -.02, .34, pad=.17, folds=0.0, hem=False)
     zipper(o, "UpperTorso", "White", .0, 1.0, pad=.09)
     col = o.add("UpperTorso", "White", name="Collar")
-    collar(col, "UpperTorso", h=.42, flare=.16, thick=.06, neck=(.66, .62))
+    # (20/11, OUTILLEUR on 7 bodies: « le col monte jusqu'à la bouche ») lower, closer to the neck
+    collar(col, "UpperTorso", h=.24, flare=.08, thick=.05, neck=(.62, .58))
     lo = o.add("LowerTorso", "Orange")
     shell(lo, "LowerTorso", -.15, 1.05, pad=.1, hem=False, folds=.03)
     o.both("UpperArm", "Orange", lambda pc, part: shell(pc, part, -.05, 1.02, pad=.1, folds=.03, hem=False))
@@ -456,6 +460,15 @@ def item_naruto():
     pouch = o.add("LowerTorso", "Blue", name="Pouch")   # (Part I) the tool pouch at the back of the belt
     box(pouch, (.35, -.02, (size("LowerTorso").z / 2 + .1) / K + .08), (.22, .16, .09), shade(.9, .05))
     return o.items
+
+
+def thigh_tails(o, slot, length, y_top=-.08, pad=.1, flare=.16, folds=.03, seed=0, hem_cut=None, col=None, front=True, back=True):
+    """(20/11, François: « elles ne suivent pas les mouvements ») A coat's tails, a robe's skirt:
+    a panel in front and one behind EACH thigh, hanging `length` from its top, so they swing
+    with the legs (one long panel from the hips stood still while the legs went through it)."""
+    for zs in ((-1,) if front else ()) + ((1,) if back else ()):
+        o.both("UpperLeg", slot, lambda pc, part, zs=zs: flap(pc, part, -1, 1, y_top, length, zs, pad=pad, flare=flare, folds=folds,
+                                                             seed=seed + zs, hem_cut=hem_cut, col=col))
 
 
 def holster(o, tape="Tape", pouch="Holster", side="Right"):
@@ -487,7 +500,7 @@ def item_sasuke():
     up = o.add("UpperTorso", "Navy")
     shell(up, "UpperTorso", .0, 1.0, pad=.07, folds=.02, hem=False)
     col = o.add("UpperTorso", "Navy", name="Collar")
-    collar(col, "UpperTorso", h=.5, open_front=.9, flare=.14, thick=.05, neck=(.66, .62))
+    collar(col, "UpperTorso", h=.34, open_front=.9, flare=.09, thick=.05, neck=(.63, .59))
     lo = o.add("LowerTorso", "White")
     shell(lo, "LowerTorso", -.1, 1.05, pad=.08, hem=False)
     o.both("UpperArm", "Navy", lambda pc, part: shell(pc, part, -.05, .42, pad=.09, flare1=.05))
@@ -537,9 +550,7 @@ def item_neji():
     loft(trim, [pts, [p + Vector((.05, 0, -.03)) for p in pts], [p + Vector((.12, 0, 0)) for p in pts]], shade(.8, .04), cap0=False, cap1=False, closed=False)
     lo = o.add("LowerTorso", "Robe")
     shell(lo, "LowerTorso", -.15, 1.05, pad=.12, flare1=.06, hem=False, folds=.03)
-    for zs, name in ((-1, "TailFront"), (1, "TailBack")):
-        pc = o.add("LowerTorso", "Robe", name=name)
-        flap(pc, "LowerTorso", -1, 1, .9, 1.25, zs, pad=.13, flare=.22, folds=.04, seed=zs)
+    thigh_tails(o, "Robe", 1.3, pad=.1, flare=.16)
     # long loose sleeves to the wrist
     o.both("UpperArm", "Robe", lambda pc, part: shell(pc, part, -.06, 1.02, pad=.12, flare1=.06, folds=.045, hem=False))
     o.both("LowerArm", "Robe", lambda pc, part: shell(pc, part, -.02, .62, pad=.18, flare0=.06, flare1=.16, folds=.05))
@@ -578,9 +589,7 @@ def item_gaara():
     box(plt, (-.36, -.2, -b - .05), (.21, .09, .03), shade(.95, .03))
     lo = o.add("LowerTorso", "Coat")
     shell(lo, "LowerTorso", -.15, 1.05, pad=.12, flare1=.08, hem=False, folds=.03)
-    for zs, name in ((-1, "TailFront"), (1, "TailBack")):
-        pc = o.add("LowerTorso", "Coat", name=name)
-        flap(pc, "LowerTorso", -1, 1, .9, 1.55, zs, pad=.14, flare=.25, folds=.045, seed=zs * 2)
+    thigh_tails(o, "Coat", 1.6, pad=.11, flare=.18, seed=2)
     o.both("UpperArm", "Coat", lambda pc, part: shell(pc, part, -.06, 1.02, pad=.1, folds=.035, hem=False))
     o.both("LowerArm", "Coat", lambda pc, part: shell(pc, part, -.02, .84, pad=.11, flare1=.05, folds=.04))
     o.both("UpperLeg", "Dark", lambda pc, part: shell(pc, part, -.05, 1.02, pad=.1, folds=.03, hem=False))
@@ -599,7 +608,7 @@ def flak_vest(o, slot, collar_slot=None):
         box(pockets, (x, -.22, z - .05), (.16, .22, .06), shade(.84, .04))
         box(pockets, (x, .02, z - .07), (.17, .05, .07), shade(.95, .03))
     col = o.add("UpperTorso", collar_slot or slot, name="Collar")
-    collar(col, "UpperTorso", h=.3, flare=.12, thick=.07, neck=(.7, .64))
+    collar(col, "UpperTorso", h=.22, flare=.08, thick=.06, neck=(.66, .61))
     return vest
 
 
@@ -673,12 +682,9 @@ def item_minato():
     lo = o.add("LowerTorso", "Navy")
     shell(lo, "LowerTorso", -.15, 1.05, pad=.08, hem=False)
     # the coat hangs open in front: two front panels at the sides, one at the back
-    for zs, x0, x1, name in ((-1, -1.05, -.38, "CoatFrontL"), (-1, .38, 1.05, "CoatFrontR"), (1, -1.05, 1.05, "CoatBack")):
-        pc = o.add("LowerTorso", "Coat", name=name)
-        flap(pc, "LowerTorso", x0, x1, -.4, 1.0, zs, pad=.3, flare=.14, folds=.03, seed=zs * 3 + x0, hem_cut=FLAME)
-        fl = o.add("LowerTorso", "Flame", name="Flame" + name[4:])
-        flap(fl, "LowerTorso", x0, x1, 2.1, .32, zs, pad=.31, flare=.03, folds=.03, seed=zs * 3 + x0, hem_cut=lambda v: -FLAME(v) * 1.2,
-             col=shade(.95, .03))
+    # (20/11) the coat's skirt hangs from each thigh (it follows the legs), its flames at the hem
+    thigh_tails(o, "Coat", 1.0, y_top=-.15, pad=.2, flare=.12, seed=3, hem_cut=FLAME)
+    thigh_tails(o, "Flame", .32, y_top=.672, pad=.21, flare=.03, seed=3, hem_cut=lambda v: -FLAME(v) * 1.2, col=shade(.95, .03))
     o.both("UpperArm", "Coat", lambda pc, part: shell(pc, part, -.08, .55, pad=.16, flare1=.1, folds=.03))
     o.both("UpperArm", "Navy", lambda pc, part: shell(pc, part, .4, 1.02, pad=.06, folds=.02, hem=False))
     o.both("LowerArm", "Navy", lambda pc, part: shell(pc, part, -.02, .96, pad=.07, folds=.025))
