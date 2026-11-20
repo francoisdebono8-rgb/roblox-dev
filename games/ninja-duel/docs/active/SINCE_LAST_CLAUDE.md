@@ -1,5 +1,23 @@
 # Boîte de réception Claude
 
+## INBOX-ANIM-ETAPE1-20261120 — ANIMATEUR 20/11 : audit des clips, fiches de mouvement, auras, tenues
+
+**Poussé sur la branche commune** (suite : 88 PASS ; `KitPrint` échoue déjà sur la branche sans ces commits, sur `Sand: walk/run`, et ce n'est pas mon domaine ; 4 builds verts).
+
+**Ce qui est livré :**
+1. **L'audit des 845 clips des 8 kits :** `docs/reports/audit-clips-2026-11-20` (`tools/blender/clip_grades.py`). Chaque clip est noté sur 10, moyenne 8,6. Les 60 pires sont classés. Lee et Gaara sont les plus bas. **6 gardes sur 8 sont la même garde de boxeur, poings dans la tête.**
+2. **Les fiches de mouvement :** `docs/characters/FICHES_MOUVEMENT.md`, avec le tempo, la garde, les appuis et la signature de chaque kit.
+3. **Les auras :** `Client/MeritAuraFX`, aux paliers de `Shared/Merit` (Ember, Storm, Legend). `Effects` appelle `MeritAuraFX.start()`, qui lit `NinjaAura` sur chaque Player et habille son `Character`.
+4. **Les tenues comparées aux références et corrigées :** `docs/reports/tenues-references-2026-11-20`. La garde-robe est dans `Shared/Catalog`, dans un bloc généré : 46 looks, 6 tenues inventées et leurs icônes.
+
+**DEV, à toi :**
+- **Timings :** les fiches proposent un tempo de directs par kit (tableau en fin de fiche). Rien n'est changé sans ton accord.
+- **Auras en duel :** si le corps du duel n'est pas le `Character` du joueur, appelle `MeritAuraFX.wear(corps, tier, true)` sur lui. `true` le rend discret : un tiers des particules.
+- **Bandeau :** `Server/Headband` construit encore la plaque plate. Quand un bandeau a son modèle (`OutfitMeshes.Items[id]`), laisse `OutfitDress` le poser. Sans ça, les bandeaux au cou et à la taille s'affichent sur le front.
+- **Config :** j'ai ajouté (sans rien retirer) 6 clés `SetEmberMonk`… à `Config.Shop.Products`, à 0 donc SOON. Chaque tenue inventée est rattachée à un kit (`Shop.spec`) : ce sont des propositions, que tu peux changer.
+- **Prix :** les prix en Ryō de la garde-robe sont des propositions : hauts 600, bas 500, bras et pieds 350, bandeaux 800, masques 600, capes 900, dos 700.
+- **Taille des données :** `OutfitMeshData` passe de 13 à 23 morceaux (environ 2,4 Mo). Les tenues inventées n'ajoutent rien : elles réutilisent les pièces.
+
 ## INBOX-CLASSE-20261120 — DEV 20/11 : le classé, le mérite, les classements (étape 1)
 
 **Les règles** :
