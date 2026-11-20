@@ -73,7 +73,7 @@ OutfitMeshes.Catalog={
 	SetSandNomad={kind="set",name="Sand Nomad",parts={{model="Haori",colors={Cloth={196,150,90},Under={110,60,46},Trim={230,200,120}}},{model="WrapSkirt",colors={Cloth={196,150,90},Under={110,60,46},Belt={230,200,120}}},{model="ShinGuards",colors={Sandal={90,64,44},Metal={176,160,130},Strap={90,64,44}}},{model="CloakHooded",colors={Cape={214,186,140}}},{model="BackScroll",colors={Paper={240,230,200},Wood={120,80,50},Strap={90,64,44}}}}},
 }
 OutfitMeshes.Models={}
-for i=1,23 do
+for i=1,24 do
 	for _,row in require(script.Parent["OutfitMeshData"..i]) do
 		local list=OutfitMeshes.Models[row[1]]
 		if not list then list={};OutfitMeshes.Models[row[1]]=list end

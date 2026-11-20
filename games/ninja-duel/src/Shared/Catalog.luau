@@ -33,7 +33,7 @@ Catalog.Items={
 	{id="TantoShadow",slot="tanto",name="SHADOW EDGE",robux="TantoShadow",colors={Blade={58,52,72},Grip={18,16,22}}},
 	{id="GourdClay",slot="gourd",name="CLAY GOURD",base=true,colors={Body={176,120,78}}},
 	{id="GourdLacquer",slot="gourd",name="LACQUERED GOURD",ryo=2000,colors={Body={142,42,34}}},
-	{id="HeadbandBlue",slot="headband",name="KONOHA HEADBAND",base=true,colors={Band={46,64,120},Plate={200,204,210}}},
+	{id="HeadbandBlue",slot="headband",name="KONOHA HEADBAND",base=true,colors={Band={56,86,168},Plate={200,204,210}}},
 	{id="HeadbandBlack",slot="headband",name="BLACK HEADBAND",ryo=800,colors={Band={24,22,28},Plate={200,204,210}}},
 	{id="HeadbandRed",slot="headband",name="RED HEADBAND",ryo=800,colors={Band={170,40,34},Plate={200,204,210}}},
 	{id="HeadbandNone",slot="headband",name="NO HEADBAND",base=true,none=true},

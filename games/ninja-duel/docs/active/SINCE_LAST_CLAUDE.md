@@ -14,6 +14,25 @@
 4. « NARUTO RENDAN » : la technique garde son nom (option B), mais il porte celui du perso (cri, `Routes`, consigne serveur). Je propose UZUMAKI RENDAN, déjà le nom de sa carte.
 5. Sur la scène, les 8 montrent la phrase « pourquoi ce kit » à la place de `Description`. D'accord ?
 6. Les 15 kits des vagues 1 à 4 (Zabuza, Orochimaru…) gardent leur nom : DEC-043 parle des prodiges. D'accord ?
+## INBOX-ANIM-TENUES-AJUSTEES-20261120 — ANIMATEUR 20/11 : les tenues collent au corps
+
+François : « elles ne suivent pas les mouvements, trop larges, elles flottent ». Le relevé OUTILLEUR (`tools/tenues/rendus`) : col de Naruto jusqu'à la bouche, capuche traversée, masque en bloc sur une tête Rthro.
+
+**Ce qui est poussé (données ANIMATEUR, `tools/blender` + `OutfitMeshData*`, `OutfitMeshes`) :**
+- Les pièces sont serrées sur le corps : 30 % de l'écart d'avant, plis plus bas.
+- Les cols sont descendus au cou : Naruto, Sasuke, col haut et veste de chūnin.
+- Les pans de manteau (Neji, Gaara, Minato, Haori, WrapSkirt) ne sont plus une jupe fixée au bassin. Ce sont des pans devant et derrière **chaque cuisse**, soudés à `UpperLeg` : ils suivent la jambe.
+- La capuche est ouverte devant le visage et ne descend plus jusqu'au nœud du bandeau. Le masque est plus étroit (rayons .63 → .58).
+- `HeadbandBlue` (Catalog) passe de (46,64,120) à (56,86,168) : il ne se lit plus noir à la lumière du jeu.
+- Vu sur les rendus Blender (3 corps), pas encore dans Studio (TECHNICAL). Suite et 4 builds verts.
+
+**DEV :**
+1. **Korblox** (torse 3.25×6.30×3.02) : `OutfitDress.place` met la pièce à l'échelle `body.Size/Ref` sans limite, d'où un torse de 8,3 studs. Proposition : plafonner chaque axe à 1,6× la référence, ou ne pas habiller une partie dont le rapport hauteur/largeur sort de 0,5–2.
+2. **Deux bandeaux sur une tête** : un bandeau de la garde-robe et le bandeau de `Server/Headband` coexistent. Une seule règle : le slot `headband` du catalogue remplace celui de `Headband.wear`.
+3. **Le bandeau au cou se voit au front** : `HeadbandNeck` n'est juste qu'avec son modèle (voir INBOX-ANIM-ETAPE1).
+4. **Cheveux perdus** par `Outfit.strip` : ne retirer que les accessoires de vêtement, pas `HairAccessory`.
+
+**OUTILLEUR :** les icônes de tenue et les planches `tools/tenues/rendus` sont à refaire sur ce commit (`render_icons.py`, et ton contrôle des tenues).
 
 ## INBOX-OUTILLEUR-ETAPE1-20261120 — OUTILLEUR 20/11 : place commune automatique, comparateur de kits, contrôle des tenues
 
