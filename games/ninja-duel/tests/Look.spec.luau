@@ -13,17 +13,19 @@ end
 local src=fs.readFile("src/Shared/Look.luau")
 local function has(want) return string.find(src,want,1,true)~=nil end
 
-test("the look keeps the world's shadows on and the validated light",function()
- for _,want in {"Brightness=2.4,ExposureCompensation=-.35,GlobalShadows=true","EnvironmentDiffuseScale=.5,EnvironmentSpecularScale=.4,ShadowSoftness=.18",
-  "Ambient=rgb(60,56,72),OutdoorAmbient=rgb(96,92,112)"} do
+-- (20/11, DEC-044, François: « c'est trop sombre ») the daylight that
+-- replaces the 12/11 setting: neutral exposure, lifted ambients, shadows on.
+test("the look keeps the world's shadows on, in a frank daylight",function()
+ for _,want in {"Brightness=2.8,ExposureCompensation=0,GlobalShadows=true","EnvironmentDiffuseScale=.75,EnvironmentSpecularScale=.45,ShadowSoftness=.22",
+  "Ambient=rgb(104,102,114),OutdoorAmbient=rgb(142,142,156)"} do
   assert(has(want),"Look.LIGHT no longer sets "..want)
  end
  -- Applied as a whole table on Lighting (each key, written only if it differs).
  assert(has("for k,v in Look.values(studio) do set(lighting,k,v) end"),"Look no longer applies LIGHT")
 end)
 
-test("the bloom, grade, air and rays are the validated ones",function()
- for _,want in {"Intensity=.3,Size=22,Threshold=2.2","Saturation=.22,Contrast=.26,Brightness=-.02,TintColor=rgb(255,246,236)","Glare=.2,Haze=1.1","Intensity=.04,Spread=.75"} do
+test("the bloom, grade, air and rays of the daylight (the bloom only on what shines)",function()
+ for _,want in {"Intensity=.22,Size=20,Threshold=2.6","Saturation=.2,Contrast=.14,Brightness=.03,TintColor=rgb(255,250,242)","Glare=.12,Haze=.55","Intensity=.03,Spread=.7"} do
   assert(string.find(src,want,1,true),"Look no longer sets "..want)
  end
 end)

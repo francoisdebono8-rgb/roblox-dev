@@ -19,22 +19,29 @@ local function rgb(r,g,b) return Color3.fromRGB(r,g,b) end
 -- (14/11, seen in Studio, François: « l'ombre est bizarre ») At 16.9 h the
 -- stadium wall's shadow covered the whole field: the fight happened in the
 -- dark. At 15.2 h the field is in the sun; the validated light levels stay.
+-- (20/11, DEC-044, François 21 h 47: « c'est trop sombre ») A frank daylight
+-- Konoha: the sun higher (14 h), the exposure back to neutral, the shadows
+-- kept for the relief but filled (ambients lifted), a lighter, clearer air
+-- (less haze, a sky-blue decay), a grade that brightens instead of
+-- darkening. What burnt the image white on 12/11 stays out: the shadows stay
+-- on and the bloom only takes what really shines (a higher threshold).
 Look.LIGHT={
-	ClockTime=15.2,GeographicLatitude=36,Brightness=2.4,ExposureCompensation=-.35,GlobalShadows=true,
-	EnvironmentDiffuseScale=.5,EnvironmentSpecularScale=.4,ShadowSoftness=.18,
-	Ambient=rgb(60,56,72),OutdoorAmbient=rgb(96,92,112),
-	ColorShift_Top=rgb(255,212,164),ColorShift_Bottom=rgb(84,104,160),
+	ClockTime=14,GeographicLatitude=32,Brightness=2.8,ExposureCompensation=0,GlobalShadows=true,
+	EnvironmentDiffuseScale=.75,EnvironmentSpecularScale=.45,ShadowSoftness=.22,
+	Ambient=rgb(104,102,114),OutdoorAmbient=rgb(142,142,156),
+	ColorShift_Top=rgb(255,232,200),ColorShift_Bottom=rgb(118,138,182),
 }
-Look.ATMOSPHERE={Density=.3,Offset=.2,Color=rgb(236,214,190),Decay=rgb(112,100,128),Glare=.2,Haze=1.1}
--- The graded image: more contrast and colour, a warm tint, a soft bloom, rays
--- round the sun, the far stands softly out of focus.
+Look.ATMOSPHERE={Density=.24,Offset=.25,Color=rgb(222,230,240),Decay=rgb(150,172,206),Glare=.12,Haze=.55}
+-- The graded image: colour and a light contrast, a hint of warmth, a soft
+-- bloom on what shines, rays round the sun, the far stands softly out of
+-- focus.
 Look.EFFECTS={
-	{"ColorCorrectionEffect","NinjaLookGrade",{Saturation=.22,Contrast=.26,Brightness=-.02,TintColor=rgb(255,246,236)}},
-	{"BloomEffect","NinjaLookBloom",{Intensity=.3,Size=22,Threshold=2.2}},
-	{"SunRaysEffect","NinjaLookRays",{Intensity=.04,Spread=.75}},
-	{"DepthOfFieldEffect","NinjaLookDepth",{FarIntensity=.18,FocusDistance=40,InFocusRadius=75,NearIntensity=0}},
+	{"ColorCorrectionEffect","NinjaLookGrade",{Saturation=.2,Contrast=.14,Brightness=.03,TintColor=rgb(255,250,242)}},
+	{"BloomEffect","NinjaLookBloom",{Intensity=.22,Size=20,Threshold=2.6}},
+	{"SunRaysEffect","NinjaLookRays",{Intensity=.03,Spread=.7}},
+	{"DepthOfFieldEffect","NinjaLookDepth",{FarIntensity=.12,FocusDistance=40,InFocusRadius=80,NearIntensity=0}},
 }
-Look.CLOUDS={Cover=.52,Density=.62,Color=rgb(255,250,246)}
+Look.CLOUDS={Cover=.42,Density=.5,Color=rgb(255,255,255)}
 -- The menu's studio (Client/MenuStage films the roster's fighters in a dark
 -- box: low ambient, no sky light; key and coloured back lights model them).
 Look.STUDIO={Ambient=rgb(40,36,46),OutdoorAmbient=rgb(40,36,46),ExposureCompensation=0,Brightness=0,

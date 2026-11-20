@@ -7,6 +7,9 @@ cd "$(dirname "$0")/.."
 TOOLS=${NINJA_DUEL_TOOLS:-/private/tmp/ninja-duel-tools}
 LUAU=${LUAU:-$TOOLS/luau}
 LUNE=${LUNE:-$TOOLS/lune}
+# (20/11) where tests/install_tools.sh puts them
+command -v "$LUAU" >/dev/null 2>&1 || { [ -x "$HOME/.ninja-duel-tools/luau" ] && LUAU=$HOME/.ninja-duel-tools/luau; }
+command -v "$LUNE" >/dev/null 2>&1 || { [ -x "$HOME/.ninja-duel-tools/lune" ] && LUNE=$HOME/.ninja-duel-tools/lune; }
 command -v "$LUAU" >/dev/null 2>&1 || LUAU=$(command -v luau || true)
 command -v "$LUNE" >/dev/null 2>&1 || LUNE=$(command -v lune || true)
 if [ -z "${LUAU:-}" ] || [ -z "${LUNE:-}" ]; then

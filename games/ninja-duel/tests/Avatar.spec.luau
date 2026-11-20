@@ -258,4 +258,53 @@ test("the headband sits on the brow, above the eyes, as a ring round the head",f
 	assert(math.abs(Headband.brow(block)-.324)<1e-3,"a blocky head's brow moved")
 end)
 
+-- (20/11, DEC-044, the OUTILLEUR's fitting room) One forehead protector per
+-- ninja; hair filed as a hat stays; an armour torso is swapped.
+test("one protector: a set with its own takes the headband's place; a modelled headband goes with the outfit",function()
+	local Headband=H.load("Server/Headband")
+	local Outfit=H.load("Server/Outfit")
+	for _,id in {"SetLee","SetGaara","SetEmberMonk","SetStormCourier","SetLeafMedic"} do
+		assert(Headband.owned(id),id.." has its own protector")
+	end
+	for _,id in {"SetNaruto","SetSasuke","SetMistHunter","SetNone"} do
+		assert(not Headband.owned(id),id.." has no protector of its own")
+	end
+	assert(Headband.worn({set="SetLee",headband="HeadbandRed"})==nil,"two protectors on Lee")
+	assert(Headband.worn({set="SetNaruto",headband="HeadbandRed"})=="HeadbandRed","Naruto lost his headband")
+	assert(Headband.worn({headband="HeadbandNone"})==nil,"NO HEADBAND worn")
+	-- the modelled headband is an outfit item (the client puts the model on),
+	-- not the flat band; a headband without a model stays the flat band
+	assert(Headband.modelled("HeadbandBlue") and not Headband.modelled("HeadbandRed"),"the models")
+	local function has(list,id) for _,x in list do if x==id then return true end end return false end
+	assert(has(Outfit.items({set="SetNaruto",headband="HeadbandBlue"}),"HeadbandBlue"),"the modelled headband is not dressed")
+	assert(not has(Outfit.items({set="SetLee",headband="HeadbandBlue"}),"HeadbandBlue"),"a headband over Lee's own")
+	assert(not has(Outfit.items({headband="HeadbandRed"}),"HeadbandRed"),"the flat band in the outfit")
+end)
+
+test("stripping keeps the hair Roblox files as a hat; the hats go",function()
+	local Outfit=H.load("Server/Outfit")
+	assert(Outfit.isHair("Black Ponytail") and Outfit.isHair("Pal Hair") and not Outfit.isHair("Bucket Hat"),"the names")
+	local desc={HatAccessory="11,22,33",HairAccessory="44",FaceAccessory="55",Shirt=1,Pants=2,GraphicTShirt=3,
+		GetAccessories=function() return {} end,SetAccessories=function() end}
+	local names={["11"]="Bucket Hat",["22"]="Woman's Brown Hair",["33"]="Long Braid"}
+	Outfit.strip(desc,function(id) return names[tostring(id)] end)
+	assert(desc.HatAccessory=="" and desc.FaceAccessory=="" and desc.Shirt==0,"the clothes and hats stay on")
+	local kept={}
+	for _,id in string.split(desc.HairAccessory,",") do kept[id]=true end
+	assert(kept["44"] and kept["22"] and kept["33"] and not kept["11"],"the hair: "..desc.HairAccessory)
+end)
+
+test("an armour torso (Korblox) is swapped for the standard one; an Rthro torso stays",function()
+	local AvatarBody=H.load("Server/AvatarBody")
+	local function body(size)
+		return {FindFirstChild=function(_,name) if name=="UpperTorso" then return {Size=size,IsA=function() return true end} end end,Destroy=function() end}
+	end
+	assert(AvatarBody.oversized(body(V.new(3.25,6.3,3.02))),"Korblox kept")
+	assert(not AvatarBody.oversized(body(V.new(2,1.6,1))) and not AvatarBody.oversized(body(V.new(2.3,2.1,1.2))),"a normal torso swapped")
+	local desc={Torso=12345}
+	assert(AvatarBody.plainTorso(desc,function() return body(V.new(3.25,6.3,3.02)) end) and desc.Torso==0,"Korblox's torso stays")
+	local rthro={Torso=678}
+	assert(not AvatarBody.plainTorso(rthro,function() return body(V.new(2.3,2.1,1.2)) end) and rthro.Torso==678,"Rthro's torso swapped")
+end)
+
 print(string.format("NinjaDuel avatar body (DEC-036): %d PASS",passed))

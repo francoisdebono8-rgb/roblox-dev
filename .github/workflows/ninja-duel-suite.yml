@@ -1,0 +1,36 @@
+# Ninja Duel: the headless Luau suites and the four builds on every push to the
+# common branch (DEC-044, 20/11: sessions without luau or lune could not run
+# them; a broken test is seen at the next push, by everyone).
+name: ninja-duel suite
+on:
+  push:
+    branches: [claude/ninja-duel-2026-10-14]
+    paths: ["games/ninja-duel/**", ".github/workflows/ninja-duel-suite.yml"]
+  workflow_dispatch:
+concurrency:
+  group: ninja-duel-suite-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  suite:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: games/ninja-duel
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: luau and lune
+        run: bash tests/install_tools.sh
+      - name: four builds
+        run: |
+          export PYTHONDONTWRITEBYTECODE=1
+          for f in "" --debug --qa --capture; do python3 build.py $f > /dev/null; done
+      - name: build isolation and docs
+        run: |
+          python3 -m unittest tests/test_build_isolation.py
+          python3 tools/check_project_docs.py
+      - name: Luau suites
+        run: bash tests/run.sh

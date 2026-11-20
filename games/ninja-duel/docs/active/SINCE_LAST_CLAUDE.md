@@ -1,5 +1,24 @@
 # Boîte de réception Claude
 
+## INBOX-DEV-REPONSES-20261120 — DEV 20/11 : réponses aux questions de l'étape 1 (DEC-044)
+
+**Mes décisions**, toutes dans DEC-044 :
+- **Gaara** court à 38 studs/s, et en marche à 16,5. Le jeu calcule la course avec `Config.Movement.SprintSpeed` (45) × `SprintScale` ; le comparateur, lui, prend la marche × `SprintScale`.
+  - **OUTILLEUR** : corrige `tools/kits/KitPrint.luau`, ligne `run=` : `Config.Movement.SprintSpeed * SprintScale`.
+- **Korblox** : `AvatarBody.plainTorso` remplace par le torse standard tout torse plus grand que 3 × 3 × 2.
+- **Cheveux** : `Outfit.strip` garde les chapeaux dont le nom dit « hair », « ponytail »… (`Outfit.hairInHats`).
+  - **OUTILLEUR** : repasse Femme, Vanessa et Big Bill dans la cabine. Si l'un sort encore chauve, imprime son `desc:GetAccessories(true)` avant le déshabillage.
+- **Un seul bandeau par ninja.** Un set qui a le sien (`Headband.owned` : couleur `Plate` ou un modèle de bandeau parmi ses pièces) prend la place du bandeau choisi.
+  - Un bandeau qui a un modèle (`OutfitMeshes.Items`) entre dans la tenue (`Outfit.items`), et `OutfitDress` le pose. Le bandeau de tissu reste dessous, caché par le client : il sert de secours.
+  - **ANIMATEUR** : c'était ta demande (bandeaux au cou et à la taille). **DESIGN** : grise le choix du bandeau quand le set porte le sien.
+- **Bandeau bleu** : l'ANIMATEUR l'a éclairci en même temps (`56, 86, 168`). Je garde sa valeur.
+- **`dist/` n'est plus suivi par Git.** L'agent du Mac reconstruit les places, ce qui économise environ 80 Mo par lot.
+  - Si ton `git pull --rebase` bute sur `dist/` : `git rm -r --cached dist`, puis `git rebase --continue`.
+  - On construit toujours avant les tests de build.
+- **La suite sur GitHub** : `.github/workflows/ninja-duel-suite.yml` lance les 4 builds et la suite à chaque poussée.
+  - Résultat : `gh api repos/francoisdebono8-rgb/roblox-dev/actions/runs?per_page=3`.
+  - Si ta session a GitHub ouvert : `bash tests/install_tools.sh`, puis `bash tests/run.sh`.
+- **Lumière de jour** (`Shared/Look`) : fini le réglage sombre du 12/11.
 ## INBOX-CM-TITRES-20261120 — CM 20/11 : les titres des prodiges à l'écran (étape 1, DEC-043)
 
 **DEV**

@@ -18,12 +18,48 @@ local Outfit={}
 -- The rigid accessory lists of a description that come off (hair stays).
 Outfit.RIGID={"HatAccessory","FaceAccessory","NeckAccessory","ShouldersAccessory","FrontAccessory","BackAccessory","WaistAccessory"}
 
+-- (20/11, the OUTILLEUR's fitting room: Femme, Vanessa and Big Bill came out
+-- bald) Many bundles' hair is filed as a hat. A hat whose name says hair is
+-- kept with the hair. `info(id)` → its name (MarketplaceService by default).
+Outfit.HAIR={"hair","ponytail","pony tail","braid","bun","pigtail","bangs","curl","afro","mohawk","locks","cheveux","coiffure"}
+function Outfit.isHair(name)
+	name=string.lower(tostring(name or ""))
+	for _,word in Outfit.HAIR do if string.find(name,word,1,true) then return true end end
+	return false
+end
+function Outfit.hairInHats(desc,info)
+	info=info or function(id)
+		local name=nil
+		pcall(function() name=game:GetService("MarketplaceService"):GetProductInfo(id).Name end)
+		return name
+	end
+	local hair={}
+	local ok,list=pcall(function() return desc.HatAccessory end)
+	if not ok or type(list)~="string" or list=="" then return hair end
+	for _,part in string.split(list,",") do
+		local id=tonumber(part)
+		if id and id>0 then
+			if Outfit.isHair(info(id)) then table.insert(hair,tostring(id)) end
+		end
+	end
+	return hair
+end
+
 -- His avatar without its clothes: body, face and hair. Changes `desc` (a
--- HumanoidDescription) and returns it.
-function Outfit.strip(desc)
+-- HumanoidDescription) and returns it. `info`: see Outfit.hairInHats.
+function Outfit.strip(desc,info)
 	if not desc then return nil end
 	pcall(function() desc.Shirt=0;desc.Pants=0;desc.GraphicTShirt=0 end)
+	local hair=Outfit.hairInHats(desc,info)
 	for _,key in Outfit.RIGID do pcall(function() (desc::any)[key]="" end) end
+	if #hair>0 then
+		pcall(function()
+			local now=desc.HairAccessory
+			local all=if type(now)=="string" and now~="" then string.split(now,",") else {}
+			for _,id in hair do table.insert(all,id) end
+			desc.HairAccessory=table.concat(all,",")
+		end)
+	end
 	-- Layered clothing and shoes go; layered hair stays.
 	pcall(function()
 		local keep={}
@@ -138,6 +174,11 @@ function Outfit.items(looks)
 	-- (19/11, vague 2) the accessories go over either: a mask, a cape, what
 	-- he carries on his back
 	for _,slot in Shop.AccessorySlots or {} do if looks[slot] then table.insert(out,looks[slot]) end end
+	-- (20/11, DEC-044) a headband with the ANIMATEUR's model goes with the
+	-- outfit (the client puts the model on); not over a set with its own
+	local Headband=require(script.Parent.Headband)
+	local band=Headband.worn(looks)
+	if band and Headband.modelled(band) then table.insert(out,band) end
 	return out
 end
 
@@ -153,7 +194,11 @@ function Outfit.wear(model,looks)
 	-- once, with all its pieces)
 	for _,id in ids do
 		local item=Shop.item(id)
-		if item and item.pieces and not item.none then
+		if item and item.slot=="headband" then
+			-- its cloth band, hidden by the client once the model is on
+			require(script.Parent.Headband).build(holder,model,item)
+			for _,p in holder:GetChildren() do if p:GetAttribute("NinjaItem")==nil then p:SetAttribute("NinjaItem",id) end end
+		elseif item and item.pieces and not item.none then
 			for _,spec in item.pieces do
 				for _,body in Outfit.parts(model,spec.on) do Outfit.piece(holder,body,spec,item.colors,Outfit.legScale(model)) end
 			end

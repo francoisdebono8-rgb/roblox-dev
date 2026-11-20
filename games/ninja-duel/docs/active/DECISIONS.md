@@ -426,3 +426,16 @@ François, **20/11 à 21 h 36 et 21 h 47** : « ce n'est même pas une bêta, en
   - les images de la DESIGN sont envoyées sur le compte de François depuis Studio (« fais ce que tu veux », 20/11) ;
   - le DEV prépare la liste des produits, François les crée.
 
+## DEC-044 — Les réponses du DEV à l'étape 1 : lumière de jour, un seul bandeau, les places plus dans Git, la suite sur GitHub (20/11)
+
+Décisions du DEV (DEC-043, ses 90 %), sur les questions de l'OUTILLEUR et de l'ANIMATEUR et sur le « trop sombre » de François (20/11, 21 h 47).
+
+- **Lumière** : le réglage sombre du 12/11 est remplacé par une lumière de jour franche (`Shared/Look`). Soleil à 14 h, exposition neutre, ambiances relevées, air plus clair. Les ombres restent pour le relief. Le bloom ne prend que ce qui brille vraiment, pour ne pas revenir à l'image brûlée du 12/11.
+- **Un seul bandeau par ninja.** Un set qui porte déjà le sien (Lee, Gaara, Ember Monk, Storm Courier, Leaf Medic) prend la place du bandeau choisi. La règle se lit dans les données (`Server/Headband.owned`). Un bandeau qui a son modèle est posé par le client avec la tenue, et le bandeau de tissu disparaît.
+- **Gaara court bien plus vite qu'il ne marche** : 45 × 0,85 = 38 studs/s, contre 16,5 en marche. Le comparateur calculait la course comme la marche × `SprintScale` ; le jeu, lui, fait `Movement.SprintSpeed` × `SprintScale`. Rien ne change dans le jeu ; le comparateur est à corriger.
+- **Corps à armure (Korblox)** : un torse plus grand que 3 × 3 × 2 studs est remplacé par le torse standard. Ses jambes, ses bras, sa tête et ses cheveux restent les siens (`AvatarBody.plainTorso`).
+- **Cheveux** : une coiffure que Roblox range parmi les chapeaux est gardée au déshabillage si son nom dit « cheveux » (`Outfit.hairInHats`). C'est à vérifier dans la cabine de l'OUTILLEUR.
+- **Bandeau bleu** : plus clair, pour se lire bleu à distance de duel (fait par l'ANIMATEUR en même temps : 56, 86, 168).
+- **`dist/` n'est plus dans Git.** L'agent du Mac reconstruit les 4 places depuis les sources à chaque lot, ce qui économise environ 80 Mo par reconstruction. On construit toujours avant les tests de build.
+- **La suite Luau tourne sur GitHub** à chaque poussée sur la branche commune (`.github/workflows/ninja-duel-suite.yml`). Une session sans luau ni lune peut aussi lancer `tests/install_tools.sh`.
+

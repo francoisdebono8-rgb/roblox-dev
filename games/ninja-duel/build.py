@@ -113,7 +113,7 @@ starter=item(xml,'StarterPlayer','StarterPlayer', [('CameraMinZoomDistance','flo
 sources(item(item(starter,'StarterPlayerScripts','StarterPlayerScripts'),'Folder','NinjaDuelClient'),ROOT/'src/Client')
 # (12/11) GlobalShadows written out: left out of the file it came up false (no
 # shadow in the world); the client's look (Client/WorldLook) sets it too.
-item(xml,'Lighting','Lighting', [('Technology','token',4),('LightingStyle','token',0),('PrioritizeLightingQuality','bool','true'),('GlobalShadows','bool','true'),('ClockTime','float',15),('Brightness','float',2.5),('Ambient','Color3',{'R':0.42,'G':0.48,'B':0.55}),('OutdoorAmbient','Color3',{'R':0.55,'G':0.58,'B':0.6})])
+item(xml,'Lighting','Lighting', [('Technology','token',4),('LightingStyle','token',0),('PrioritizeLightingQuality','bool','true'),('GlobalShadows','bool','true'),('ClockTime','float',14),('Brightness','float',2.8),('Ambient','Color3',{'R':0.408,'G':0.4,'B':0.447}),('OutdoorAmbient','Color3',{'R':0.557,'G':0.557,'B':0.612})])
 item(xml,'SoundService','SoundService')
 if args.capture:
     folders={}
@@ -134,6 +134,8 @@ if STUDIO_ONLY:
             source.text = prefix+source.text
 name={'release':'NinjaDuel.rbxlx','debug':'NinjaDuel-Debug.rbxlx','qa':'NinjaDuel-QA.rbxlx','capture':'NinjaDuel-Capture.rbxlx'}[PROFILE]
 output=ROOT/'dist'/name
+# (20/11, DEC-044) dist/ is no longer in Git: a fresh checkout has none
+output.parent.mkdir(parents=True,exist_ok=True)
 ET.indent(xml)
 # Binary handle: identical LF bytes on macOS and Windows (text mode would emit CRLF).
 with open(output,'wb') as handle: ET.ElementTree(xml).write(handle,encoding='utf-8',xml_declaration=True)

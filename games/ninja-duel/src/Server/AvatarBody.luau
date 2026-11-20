@@ -28,11 +28,36 @@ local function world()
 	return World
 end
 
+-- (20/11, the OUTILLEUR's fitting room) An armour body (Korblox) has an
+-- UpperTorso of 3.25 x 6.30 x 3.02 studs: every piece sized on it became a
+-- box. A torso past these sizes (standard R15 2 x 1.6 x 1; Rthro about
+-- 2.3 x 2.1 x 1.2) is swapped for the standard torso; his legs, arms, head,
+-- face and hair stay his.
+AvatarBody.TORSO_MAX=Vector3.new(3,3,2)
+function AvatarBody.oversized(model)
+	local t=model and model:FindFirstChild("UpperTorso")
+	if not t or not t:IsA("BasePart") then return false end
+	local m=AvatarBody.TORSO_MAX
+	return t.Size.X>m.X or t.Size.Y>m.Y or t.Size.Z>m.Z
+end
+-- `desc` with the standard torso when his own is oversized (builds a test
+-- body once; yields). Returns whether it was swapped.
+function AvatarBody.plainTorso(desc,build)
+	build=build or function(d) return Players:CreateHumanoidModelFromDescription(d,Enum.HumanoidRigType.R15) end
+	local ok,model=pcall(build,desc)
+	if not ok or not model then return false end
+	local big=AvatarBody.oversized(model)
+	pcall(function() model:Destroy() end)
+	if big then pcall(function() desc.Torso=0 end) end
+	return big
+end
+
 -- The avatar's description at the standard scales (yields).
 function AvatarBody.description(userId)
 	local ok,desc=pcall(function() return Players:GetHumanoidDescriptionFromUserId(userId) end)
 	if not ok or not desc then return nil,tostring(desc) end
 	for key,value in AvatarBody.SCALES do pcall(function() (desc::any)[key]=value end) end
+	AvatarBody.plainTorso(desc)
 	return desc
 end
 

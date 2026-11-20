@@ -4,8 +4,45 @@
 -- on the avatar's own head, welded to it, never colliding nor hit. The
 -- prodigies keep their own costumes; this goes on avatar bodies only, in the
 -- duel (Server/AvatarBody) and in Konoha (Server/Hub).
-local Shop=require(game:GetService("ReplicatedStorage").NinjaDuel.Shop)
+local Shared=game:GetService("ReplicatedStorage").NinjaDuel
+local Shop=require(Shared.Shop)
+local okMeshes,OutfitMeshes=pcall(function() return require(Shared.OutfitMeshes) end)
+if not okMeshes then OutfitMeshes=nil end
 local Headband={}
+
+-- (20/11, DEC-044) One forehead protector per ninja. The ANIMATEUR's models
+-- that are one (worn on the brow, the neck, the waist...).
+Headband.MODELS={HeadbandClassic=true,HeadbandLong=true,HeadbandScratched=true,Hachimaki=true,
+	HeadbandBandana=true,HeadbandBow=true,HeadbandNeck=true,HeadbandWaist=true}
+-- A set that has its own protector (Lee's belt plate, Gaara's strap, Ember
+-- Monk's hachimaki, Storm Courier, Leaf Medic...): it takes the headband's
+-- place, and the headband he chose is not worn over it. Read from the data:
+-- a colour slot Plate (the prodigies' sets) or a protector among its models.
+function Headband.owned(setId)
+	local item=setId and Shop.item(setId)
+	if not item or item.slot~="set" then return false end
+	for key in item.colors or {} do
+		if key=="Plate" then return true end
+		for name in Headband.MODELS do if string.sub(key,1,#name)==name then return true end end
+	end
+	for _,model in (OutfitMeshes and OutfitMeshes.Sets and OutfitMeshes.Sets[setId]) or {} do
+		if Headband.MODELS[model] then return true end
+	end
+	return false
+end
+-- The headband has the ANIMATEUR's model: the client's OutfitDress puts it
+-- on (at the brow, the neck or the waist) and hides the cloth band.
+function Headband.modelled(itemId)
+	return itemId~=nil and OutfitMeshes~=nil and OutfitMeshes.Items~=nil and OutfitMeshes.Items[itemId]~=nil
+end
+-- The headband `looks` wears, or nil: the set's own protector wins.
+function Headband.worn(looks)
+	if not looks or not looks.headband then return nil end
+	if looks.set and Headband.owned(looks.set) then return nil end
+	local item=Shop.item(looks.headband)
+	if not item or item.slot~="headband" or item.none then return nil end
+	return looks.headband
+end
 
 local function rgb(c) return Color3.fromRGB(c[1],c[2],c[3]) end
 local function piece(model,head,name,size,offset,color,material)
@@ -45,9 +82,19 @@ function Headband.wear(model,itemId)
 	if not item or item.slot~="headband" or item.none or not item.colors then return nil end
 	local head=model:FindFirstChild("Head")
 	if not head or not head:IsA("BasePart") then return nil end
-	local s=head.Size
 	local holder=Instance.new("Model");holder.Name="NinjaHeadband";holder:SetAttribute("NinjaHeadband",item.id)
 	holder.Parent=model
+	Headband.build(holder,model,item)
+	return holder
+end
+
+-- The cloth band and its plate, sized on `model`'s head, into `holder` (the
+-- headband's own holder, or the outfit's when the headband has a model:
+-- Server/Outfit). Returns `holder`, or nil (no head).
+function Headband.build(holder,model,item)
+	local head=model and model:FindFirstChild("Head")
+	if not head or not head:IsA("BasePart") or not item or not item.colors then return nil end
+	local s=head.Size
 	-- (19/11, seen in Studio) The plate sat across the eyes of a dynamic head:
 	-- its height was a share of the head's box (16 % above the centre), and the
 	-- box of a dynamic head runs from the chin to the crown. The band now sits
@@ -83,8 +130,12 @@ function Headband.wear(model,itemId)
 end
 
 -- The headband in a look list (Progression.looks): the one worn, or none.
+-- (20/11) Not when the set has its own protector, nor when the headband has a
+-- model: Server/Outfit puts that one on with the outfit.
 function Headband.fromLooks(model,looks)
-	return Headband.wear(model,looks and looks.headband)
+	local id=Headband.worn(looks)
+	if id and Headband.modelled(id) then id=nil end
+	return Headband.wear(model,id)
 end
 
 return Headband
