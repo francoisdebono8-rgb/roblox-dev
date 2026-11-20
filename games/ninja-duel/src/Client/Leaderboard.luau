@@ -6,26 +6,41 @@
 -- top, it is added at the foot with his place). The top three get the red
 -- seal of their place. Presentation only: the rows come from the server.
 --
--- Contract with the DEV (step 1, DEV 2-3): `boards` =
---   { week = { rating = {rows}, wins = {rows}, exam = {rows}, streak = {rows} },
---     all  = { ...same... } }
---   a row = { place = 1, name = "ShadowLeaf", rank = "genin", value = 1240,
---             you = true|nil }
--- A board absent shows « No duel counted yet ».
+-- What it reads (DEV, Server/Leaderboards): ReplicatedStorage.NinjaDuelBoards,
+-- one StringValue per board, JSON {id, title, rows={{rank,id,name,value}}, at}.
+-- `boards` here = { [id] = that table }. One tab per board, in L.TABS order;
+-- the player's row is the one whose id is his UserId. The emblem: the rank of
+-- the row's rating on the RANKED board (Shared/Ranked), none elsewhere.
+-- A board absent or empty says « No duel counted yet ».
 local UIS=game:GetService("UserInputService")
 
 local L={}
 L.__index=L
 L.W,L.H=920,640
 L.ROWS=10
-L.TABS={{id="week",name="THIS WEEK"},{id="all",name="ALL TIME"}}
-L.COLUMNS={{id="rating",name="RATING"},{id="wins",name="WINS"},{id="exam",name="RANK EXAM"},{id="streak",name="STREAK"}}
+L.TABS={{id="Rating",name="RANKED"},{id="WeekWins",name="THIS WEEK"},{id="Merit",name="MERIT"},{id="Streak",name="STREAK"},{id="Exam",name="EXAM"}}
+
+-- The server's boards, decoded (nil-safe, outside Studio too)
+function L.read()
+	local out={}
+	pcall(function()
+		local folder=game:GetService("ReplicatedStorage"):FindFirstChild("NinjaDuelBoards")
+		if not folder then return end
+		local Http=game:GetService("HttpService")
+		for _,v in folder:GetChildren() do
+			local ok,data=pcall(Http.JSONDecode,Http,v.Value)
+			if ok and type(data)=="table" then out[data.id or v.Name]=data end
+		end
+	end)
+	return out
+end
 
 -- The rows to draw: the top L.ROWS, and the player's own row after them when
 -- he is lower (pure).
-function L.rows(list)
+function L.rows(list,me)
 	local out,mine={},nil
 	for i,row in list or {} do
+		row.you=row.you or (me~=nil and row.id==me)
 		if i<=L.ROWS then table.insert(out,row) elseif row.you then mine=row end
 	end
 	if mine then table.insert(out,mine) end
@@ -33,7 +48,7 @@ function L.rows(list)
 end
 
 function L.new(kit,gui)
-	local self=setmetatable({kit=kit,tab="week",column="rating",drawn={},tabs={},columns={}},L)
+	local self=setmetatable({kit=kit,tab="Rating",drawn={},tabs={}},L)
 	local M=kit.MANGA
 	self.M=M
 	self.root=kit.frame(gui,UDim2.fromScale(0,0),UDim2.fromScale(1,1),M.ink,.35)
@@ -54,16 +69,10 @@ function L.new(kit,gui)
 	self.close=z(kit.button(card,"X",UDim2.fromOffset(L.W-88,14),UDim2.fromOffset(68,68),function() self:hide() end,M.ink),2)
 	self.close.TextColor3=M.cream;self.close.TextSize=34
 	for i,t in L.TABS do
-		local b=z(kit.button(card,t.name,UDim2.fromOffset(28+(i-1)*200,92),UDim2.fromOffset(190,50),function() self.tab=t.id;self:draw() end,M.paper),1)
+		local b=z(kit.button(card,t.name,UDim2.fromOffset(28+(i-1)*174,92),UDim2.fromOffset(166,50),function() self.tab=t.id;self:draw() end,M.paper),1)
 		b.Font=kit.STRONG_FONT;b.TextSize=20
 		kit.create("UIStroke",b,{Color=M.ink,Thickness=4,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
 		self.tabs[t.id]=b
-	end
-	for i,c in L.COLUMNS do
-		local b=z(kit.button(card,c.name,UDim2.fromOffset(440+(i-1)*114,96),UDim2.fromOffset(106,44),function() self.column=c.id;self:draw() end,M.paper),1)
-		b.Font=kit.STRONG_FONT;b.TextSize=15
-		kit.create("UIStroke",b,{Color=M.ink,Thickness=4,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
-		self.columns[c.id]=b
 	end
 	self.body=z(kit.frame(card,UDim2.fromOffset(28,158),UDim2.fromOffset(L.W-56,L.H-182),M.paper,1))
 	self.empty=z(kit.text(self.body,"No duel counted yet. Every duel between two players counts.",UDim2.fromOffset(0,20),UDim2.new(1,0,0,40),20,M.mid or M.ink,kit.BODY_FONT,Enum.TextXAlignment.Center),2)
@@ -77,7 +86,7 @@ function L.new(kit,gui)
 end
 
 function L:shown() return self.root.Visible end
-function L:show(boards) if boards then self.boards=boards end;self.root.Visible=true;self:draw() end
+function L:show(boards) self.boards=boards or L.read();self.root.Visible=true;self:draw() end
 function L:hide() self.root.Visible=false end
 function L:refresh(boards) self.boards=boards;if self.root.Visible then self:draw() end end
 
@@ -86,9 +95,10 @@ function L:draw()
 	for _,d in self.drawn do d:Destroy() end
 	table.clear(self.drawn)
 	for id,b in self.tabs do b.BackgroundColor3=if id==self.tab then M.ink else M.paper;b.TextColor3=if id==self.tab then M.cream else M.ink end
-	for id,b in self.columns do b.BackgroundColor3=if id==self.column then M.red else M.paper;b.TextColor3=if id==self.column then M.cream else M.ink end
-	local board=self.boards and self.boards[self.tab] and self.boards[self.tab][self.column]
-	local rows=L.rows(board)
+	local board=self.boards and self.boards[self.tab]
+	local me=nil
+	pcall(function() me=game:GetService("Players").LocalPlayer.UserId end)
+	local rows=L.rows(board and board.rows,me)
 	self.empty.Visible=#rows==0
 	local H=40
 	for i,row in rows do
@@ -97,14 +107,16 @@ function L:draw()
 		local band=kit.frame(self.body,UDim2.fromOffset(0,y),UDim2.new(1,0,0,H),if you then M.ink else (if i%2==0 then (M.back or M.paper) else M.paper),0)
 		band.ZIndex=81;table.insert(self.drawn,band)
 		local ink=if you then M.cream else M.ink
-		local place=kit.text(band,tostring(row.place or i),UDim2.fromOffset(8,0),UDim2.fromOffset(52,H),24,ink,kit.TITLE_FONT,Enum.TextXAlignment.Center)
+		local place=kit.text(band,tostring(row.rank or i),UDim2.fromOffset(8,0),UDim2.fromOffset(52,H),24,ink,kit.TITLE_FONT,Enum.TextXAlignment.Center)
 		place.ZIndex=83
-		if (row.place or i)<=3 then
+		if (row.rank or i)<=3 then
 			-- the seal of the top three
 			place.BackgroundTransparency=0;place.BackgroundColor3=M.red;place.TextColor3=M.cream
 			kit.corner(place,18);place.Size=UDim2.fromOffset(36,36);place.Position=UDim2.fromOffset(16,2)
 		end
-		local badge=kit.rankBadge(band,row.rank,34,UDim2.fromOffset(66,3));badge.ZIndex=82
+		if self.tab=="Rating" and kit.Ranked and tonumber(row.value) then
+			local badge=kit.rankBadge(band,kit.Ranked.rank(tonumber(row.value)),34,UDim2.fromOffset(66,3));badge.ZIndex=82
+		end
 		kit.text(band,(row.name or "?")..(if you then "  (YOU)" else ""),UDim2.fromOffset(110,0),UDim2.new(1,-260,1,0),20,ink,kit.STRONG_FONT).ZIndex=83
 		kit.text(band,tostring(row.value or 0),UDim2.new(1,-150,0,0),UDim2.fromOffset(140,H),24,ink,kit.TITLE_FONT,Enum.TextXAlignment.Right).ZIndex=83
 	end

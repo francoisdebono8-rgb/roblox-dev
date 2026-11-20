@@ -444,8 +444,8 @@ test("ranks: the result's line, the emblems and the leaderboards",function()
 	assert(#A.Ranks==6 and A.rank("GENIN").id=="genin" and A.rank("kage").name=="KAGE","the six ranks")
 	local L=H.load("Client/Leaderboard")
 	local list={}
-	for i=1,14 do table.insert(list,{place=i,name="N"..i,rank="genin",value=2000-i,you=i==13}) end
-	local rows=L.rows(list)
+	for i=1,14 do table.insert(list,{rank=i,id=100+i,name="N"..i,value=2000-i*60}) end
+	local rows=L.rows(list,113)
 	assert(#rows==L.ROWS+1 and rows[#rows].you,"the top ten, then his own row")
 	H.workspace.GetAttribute=function() return nil end
 	local saved=H.envBase.Instance
@@ -457,15 +457,17 @@ test("ranks: the result's line, the emblems and the leaderboards",function()
 	end}
 	local ok,err=pcall(function()
 		local UI=H.load("Client/UI")
-		assert(UI.rankLine({rank="genin",rating=1240,delta=18,next=1400})=="GENIN  1240  (+18)  •  160 to CHUNIN","the rank line: "..UI.rankLine({rank="genin",rating=1240,delta=18,next=1400}))
+		local genin={before=1222,after=1240,delta=18,rank={id="Genin",name="GENIN",from=1100}}
+		assert(UI.rankLine(genin)=="GENIN  1240  (+18)  •  10 to CHUNIN","the rank line: "..UI.rankLine(genin))
+		assert(A.rank(genin.rank).id=="genin","the emblem of the server's rank")
 		local ui=UI.new(baseNew("PlayerGui"),function() end)
-		ui:resultRanked({rank="chunin",rating=1500,delta=-12,next=1800})
-		assert(ui.resultRankRow.Visible and ui.resultRank.Text:find("CHUNIN  1500  (-12)",1,true),"the rank on the result")
+		ui:resultRanked({after=1260,delta=22,rankUp=true,rank={id="Chunin",name="CHUNIN",from=1250}})
+		assert(ui.resultRankRow.Visible and ui.resultRank.Text:find("NEW RANK: CHUNIN  1260  (+22)",1,true),"the rank on the result: "..ui.resultRank.Text)
 		ui:resultRanked(nil);assert(not ui.resultRankRow.Visible,"no rank sent, no line")
 		assert(ui.leaderboard,"no leaderboard")
-		ui:showLeaderboard({week={rating=list}})
+		ui:showLeaderboard({Rating={id="Rating",title="RANKED",rows=list}})
 		assert(ui.leaderboard:shown() and #ui.leaderboard.drawn==L.ROWS+1 and not ui.leaderboard.empty.Visible,"the week's board")
-		ui.leaderboard.tab="all";ui.leaderboard:draw()
+		ui.leaderboard.tab="Exam";ui.leaderboard:draw()
 		assert(ui.leaderboard.empty.Visible,"an empty board says so")
 	end)
 	H.envBase.Instance=saved

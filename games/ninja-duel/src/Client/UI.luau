@@ -164,19 +164,21 @@ local function rankBadge(parent,key,size,position)
 	return holder
 end
 UI.rankBadge=rankBadge
--- (DESIGN 20/11) the rank line: « GENIN  1240 (+18)  •  160 to CHUNIN »
+-- (DESIGN 20/11) the rank line, from the server's ranked duel (Shared/Ranked:
+-- {before, after, delta, rank={id,name,from}, rankUp}):
+-- « GENIN  1240  (+18)  •  160 to CHUNIN », « NEW RANK: CHUNIN  1260  (+22) »
 function UI.rankLine(r)
-	if type(r)~="table" then return "" end
-	local rank=UIAssets.rank(r.rank)
-	local line=string.format("%s  %d",rank and rank.name or Text.upper(tostring(r.rank or "")),math.floor(r.rating or 0))
+	if type(r)~="table" or type(r.rank)~="table" then return "" end
+	local rating=math.floor(r.after or r.rating or 0)
+	local line=string.format("%s%s  %d",if r.rankUp then "NEW RANK: " else "",r.rank.name or "",rating)
 	if r.delta and r.delta~=0 then line..=string.format("  (%s%d)",if r.delta>0 then "+" else "",r.delta) end
-	local _,i=UIAssets.rank(r.rank)
-	local nextRank=i and UIAssets.Ranks[i+1]
-	if nextRank and r.next then line..=string.format("  •  %d to %s",math.max(0,math.ceil(r.next-(r.rating or 0))),nextRank.name) end
+	local nextRank
+	for i,k in Ranked.Ranks do if k.id==r.rank.id then nextRank=Ranked.Ranks[i+1] end end
+	if nextRank then line..=string.format("  •  %d to %s",math.max(0,nextRank.from-rating),nextRank.name) end
 	return line
 end
 UI.kit={palette=palette,create=create,frame=frame,text=text,corner=corner,inkCard=inkCard,inkTitle=inkTitle,button=button,
-	TITLE_FONT=TITLE_FONT,BODY_FONT=BODY_FONT,STRONG_FONT=STRONG_FONT,VOICE_FONT=VOICE_FONT,NOTE_FONT=NOTE_FONT,MANGA=MANGA,CARD=CARD,fitScale=fitScale,cornerClose=cornerClose,SMALL=SMALL,rankBadge=rankBadge}
+	TITLE_FONT=TITLE_FONT,BODY_FONT=BODY_FONT,STRONG_FONT=STRONG_FONT,VOICE_FONT=VOICE_FONT,NOTE_FONT=NOTE_FONT,MANGA=MANGA,CARD=CARD,fitScale=fitScale,cornerClose=cornerClose,SMALL=SMALL,rankBadge=rankBadge,Ranked=Ranked}
 local function accentOf(def) return Color3.fromRGB(table.unpack(def.Color)) end
 -- (15/11, audit: a duel at a master's home still said « PRODIGY TOURNAMENT »)
 -- What the duel's banner calls the place of the fight: the village's place
@@ -1817,7 +1819,7 @@ function UI:render(data)
 	-- (Beta loop) the masters' path: what this duel earned.
 	self.resultProgress.Text=MastersView.result(data.progress,self.kits) or ""
 	self:resultEarned(data.progress)
-	self:resultRanked(data.rank)
+	self:resultRanked(type(data.progress)=="table" and data.progress.ranked or nil)
 	if data.master then
 		self.resultName.Text="HIS DUEL"
 		self.resultNote.Text=if won then "He saw enough: his kit is yours." else "He is not convinced yet. Come back stronger."
@@ -1858,10 +1860,11 @@ function UI:showLeaderboard(boards)
 	if self.leaderboard then self.leaderboard:show(boards) end
 end
 function UI:resultRanked(r)
-	self.resultRankRow.Visible=type(r)=="table" and r.rank~=nil
+	self.resultRankRow.Visible=type(r)=="table" and type(r.rank)=="table"
 	if not self.resultRankRow.Visible then return end
 	if self.resultRankBadge then self.resultRankBadge:Destroy() end
-	self.resultRankBadge=rankBadge(self.resultRankRow,r.rank,44,UDim2.fromOffset(6,2))
+	self.resultRankBadge=rankBadge(self.resultRankRow,r.rank.id,44,UDim2.fromOffset(6,2))
+	self.resultRankRow.BackgroundColor3=if r.rankUp then MANGA.red else MANGA.ink
 	self.resultRank.Text=UI.rankLine(r)
 	self.resultRank.TextColor3=MANGA.cream
 end
@@ -1878,9 +1881,9 @@ function UI:resultEarned(progress)
 	local dailyText=Daily.line(p.daily)
 	-- (20/11, DEC-043) the ladder and merit: a rank won, an aura unlocked
 	-- (the DESIGN's own lines will replace these words)
-	local rankedText=Ranked.line(p.ranked)
+	-- (DESIGN 20/11) the ladder has its own row (UI:resultRanked); merit stays a line
 	local meritText=Merit.line(p.merit)
-	for _,extra in {meritText,rankedText} do
+	for _,extra in {meritText} do
 		if extra then dailyText=if dailyText then extra.."  "..dailyText else extra end
 	end
 	local id=p.fighter or p.learned

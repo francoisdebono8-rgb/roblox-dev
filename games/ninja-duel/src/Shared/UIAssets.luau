@@ -73,6 +73,7 @@ UIAssets.Ranks={
 -- A rank by its id or its name (any case), or nil.
 function UIAssets.rank(key:any):any
 	if type(key)=="number" then return UIAssets.Ranks[key] end
+	if type(key)=="table" then key=key.id end -- Shared/Ranked's {id="Genin",…}
 	if type(key)~="string" then return nil end
 	local k=string.lower(key)
 	for i,r in UIAssets.Ranks do if r.id==k then return r,i end end
