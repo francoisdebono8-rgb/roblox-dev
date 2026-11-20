@@ -2620,6 +2620,8 @@ require(script.Parent.IdentityFX).install(FX,{new=new,block=block,tween=tween,so
 require(script.Parent.AwakenFX).install(FX,{new=new,floorUnder=floorUnder})
 -- (OUTILLEUR, F7, 08/11) At most 8 effect lights lit at once, never shadowed.
 require(script.Parent.LightBudgetFX).start()
+-- (20/11, DEC-043) The merit auras (Shared/Merit) on every player's character, from NinjaAura.
+pcall(function() require(script.Parent.MeritAuraFX).start() end)
 -- (Feel audit 07/11) The path of a one-frame relocation (Lightning Strike, Lightning Cut), before FamilyFX's puffs.
 require(script.Parent.DashTrailFX).install(FX,{new=new,flash=flash,shockRing=shockRing,burst=burst,floorUnder=floorUnder,sound=sound,anchorPart=anchorPart,TEX=TEX,SOUND=SOUND})
 -- (12/11) Real bolts for the Chidori and the Raikiri (LightningBoltFX, from SamyBlue/Lightning-Beams, MIT).

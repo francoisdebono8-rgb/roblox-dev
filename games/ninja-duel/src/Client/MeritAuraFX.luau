@@ -8,15 +8,18 @@
 -- (a combat state: AwakenFX), so it stays at the feet and on the outline, thin, and it is
 -- quieter in a duel (quiet = a third of the particles).
 --
---   1 WISP     a blue chakra licks round the feet, a faint ring on the floor
---   2 MANTLE   + the chakra climbs the body's outline (shoulders, arms), paler, violet-blue
---   3 STORM    + white-gold: the mantle turns gold, leaves rise round the body, a soft light
+-- The tiers are Shared/Merit's (ids, names, points: the DEV's), drawn here:
+--   1 EMBER    warm embers lick round the feet, a faint ring breathes on the floor
+--   2 STORM    + blue-violet chakra climbs the body's outline (shoulders, arms)
+--   3 LEGEND   + white-gold: the mantle turns gold, leaves rise round the body, a soft light
 --
 -- API (client):
 --   MeritAuraFX.wear(model, tier [, quiet])  -> the instances it made (or nil: no body, tier 0)
 --   MeritAuraFX.remove(model)
 --   MeritAuraFX.setQuiet(model, quiet)       a duel starts / ends
---   MeritAuraFX.TIERS[t] = {id, name, color, suggestedWins}
+--   MeritAuraFX.start()                      dresses every player from his NinjaAura attribute
+--                                            (Server/Progression), now and at each respawn
+--   MeritAuraFX.TIERS[t] = {id, color}       (ids = Shared/Merit.Tiers)
 -- Presentation only: nothing here can change gameplay.
 local AwakenFX=require(script.Parent.AwakenFX)
 local emitter=AwakenFX.emitter
@@ -24,11 +27,10 @@ local emitter=AwakenFX.emitter
 local MeritAuraFX={}
 MeritAuraFX.QUIET=.35
 
--- suggestedWins: my proposal for the DEV (who owns the thresholds), wins against players
 MeritAuraFX.TIERS={
-	{id="Wisp",name="CHAKRA WISP",color=Color3.fromRGB(110,180,255),suggestedWins=25},
-	{id="Mantle",name="CHAKRA MANTLE",color=Color3.fromRGB(150,140,255),suggestedWins=100},
-	{id="Storm",name="LEAF STORM",color=Color3.fromRGB(255,214,120),suggestedWins=300},
+	{id="Ember",color=Color3.fromRGB(255,150,70)},
+	{id="Storm",color=Color3.fromRGB(130,150,255)},
+	{id="Legend",color=Color3.fromRGB(255,220,130)},
 }
 
 local function seq(points)
@@ -102,15 +104,15 @@ local function leaves(model,list)
 end
 
 local BUILD={
-	function(model,list) -- 1 WISP
+	function(model,list) -- 1 EMBER
 		local c=MeritAuraFX.TIERS[1].color
 		feet(model,c,list,1);ring(model,c,list)
 	end,
-	function(model,list) -- 2 MANTLE
+	function(model,list) -- 2 STORM
 		local c=MeritAuraFX.TIERS[2].color
 		feet(model,c,list,1.15);ring(model,c,list);outline(model,c,list,4)
 	end,
-	function(model,list) -- 3 STORM
+	function(model,list) -- 3 LEGEND
 		local c=MeritAuraFX.TIERS[3].color
 		feet(model,c,list,1.3);ring(model,c,list);outline(model,c,list,6);leaves(model,list)
 		local torso=part(model,"UpperTorso")
@@ -166,6 +168,32 @@ function MeritAuraFX.wear(model,tier,quiet)
 	model:SetAttribute("MeritAura",MeritAuraFX.TIERS[tier].id)
 	if quiet then MeritAuraFX.setQuiet(model,true) end
 	return list
+end
+
+-- Every player wears his tier: the attribute NinjaAura (Server/Progression) on his Player,
+-- put on his character now and at each respawn, changed when the attribute changes.
+function MeritAuraFX.start()
+	if MeritAuraFX.started then return end
+	MeritAuraFX.started=true
+	local Players=game:GetService("Players")
+	local function dress(player)
+		local character=player.Character
+		if character then
+			local tier=player:GetAttribute("NinjaAura") or 0
+			local st=MeritAuraFX.worn[character]
+			if not st or st.tier~=tier then MeritAuraFX.wear(character,tier,st and st.quiet) end
+		end
+	end
+	local function track(player)
+		player:GetAttributeChangedSignal("NinjaAura"):Connect(function() dress(player) end)
+		player.CharacterAdded:Connect(function(character)
+			character:WaitForChild("HumanoidRootPart",10)
+			dress(player)
+		end)
+		dress(player)
+	end
+	for _,player in Players:GetPlayers() do task.spawn(track,player) end
+	Players.PlayerAdded:Connect(track)
 end
 
 -- the images the auras use (fetched with AwakenFX.preload)

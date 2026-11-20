@@ -47,8 +47,10 @@ test("three tiers, each with more on the body than the last, never on the head",
 		assert(m:GetAttribute("MeritAura")==Aura.TIERS[t].id)
 		last=#list
 	end
-	assert(#Aura.TIERS==3)
-	assert(Aura.TIERS[1].suggestedWins<Aura.TIERS[2].suggestedWins and Aura.TIERS[2].suggestedWins<Aura.TIERS[3].suggestedWins)
+	-- the same tiers as the merit (Shared/Merit, the DEV's): one look per tier, same ids
+	local Merit=H.load("Shared/Merit")
+	assert(#Aura.TIERS==#Merit.Tiers,"one look per merit tier")
+	for i,t in Merit.Tiers do assert(Aura.TIERS[i].id==t.id,"tier "..i..": "..Aura.TIERS[i].id.." vs "..t.id) end
 end)
 
 test("quiet in a duel: a third of the particles, the full rate back after",function()
