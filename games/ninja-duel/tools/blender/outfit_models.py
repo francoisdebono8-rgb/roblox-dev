@@ -452,7 +452,26 @@ def item_naruto():
     o.both("LowerLeg", "Orange", lambda pc, part: shell(pc, part, -.02, .68, pad=.13, flare1=.08, folds=.045))
     o.both("LowerLeg", "White", lambda pc, part: ribbed(pc, part, .6, .78, pad=.06, ribs=3, depth=.025, spiral=1.0))
     _feet(o, "Blue")
+    holster(o, "White", "Blue")
+    pouch = o.add("LowerTorso", "Blue", name="Pouch")   # (Part I) the tool pouch at the back of the belt
+    box(pouch, (.35, -.02, (size("LowerTorso").z / 2 + .1) / K + .08), (.22, .16, .09), shade(.9, .05))
     return o.items
+
+
+def holster(o, tape="Tape", pouch="Holster", side="Right"):
+    """(20/11, references) The kunai holster on the thigh (Part I: Naruto, Sasuke, Neji wear it
+    on the right): a white bandage round the thigh and the pouch strapped over it, on the
+    outside. One side only: the slots Tape/Holster are the asymmetric ones (OutfitMeshes.spec)."""
+    part = side + "UpperLeg"
+    t = o.add(part, tape, name="HolsterTape")
+    ribbed(t, part, .3, .52, pad=.14, ribs=3, depth=.015, spiral=1.0)
+    h = o.add(part, pouch, name="Holster")
+    S = size(part)
+    sx = 1 if side == "Right" else -1
+    x = sx * ((S.x / 2 + .07) / K + .06)
+    box(h, (x, -.05, -.02), (.07, .24, .2), shade(.88, .05))
+    box(h, (x + sx * .015, .14, -.02), (.075, .06, .21), shade(.96, .03))   # the flap
+    box(h, (x + sx * .03, -.3, -.02), (.05, .06, .12), shade(.8, .04))     # the kunai's ring under it
 
 
 def _feet(o, slot):
@@ -474,8 +493,12 @@ def item_sasuke():
     o.both("UpperArm", "Navy", lambda pc, part: shell(pc, part, -.05, .42, pad=.09, flare1=.05))
     # the arm warmers: elbow to wrist, loose, a ridge at each end
     o.both("LowerArm", "Wrap", lambda pc, part: shell(pc, part, -.06, .96, pad=.1, flare0=.03, flare1=.02, folds=.04, hem="both"))
+    # (20/11, references) the arm warmers' blue rims at both ends
+    o.both("LowerArm", "Navy", lambda pc, part: (ribbed(pc, part, -.04, .06, pad=.13, ribs=1, depth=.01, rings_per=3),
+                                                ribbed(pc, part, .86, .96, pad=.13, ribs=1, depth=.01, rings_per=3)))
     o.both("UpperLeg", "White", lambda pc, part: shell(pc, part, -.05, .78, pad=.11, flare1=.07, folds=.035))
-    o.both("LowerLeg", "Wrap", lambda pc, part: ribbed(pc, part, .1, .8, pad=.035, ribs=8, depth=.022, spiral=1.0))
+    # (20/11, references) Part I: bare shins (the wrapped shins were not his); the holster on the right thigh
+    holster(o, "Wrap", "Navy")
     _feet(o, "Navy")
     return o.items
 
@@ -488,6 +511,11 @@ def item_lee():
     shell(lo, "LowerTorso", -.15, 1.05, pad=.05, hem=False, folds=.01)
     belt = o.add("LowerTorso", "Red")
     ribbed(belt, "LowerTorso", .0, .5, pad=.09, ribs=1, depth=.025, rings_per=6)
+    # (20/11, references) the red belt IS his forehead protector: its metal plate in front
+    plt = o.add("LowerTorso", "Plate", mat="Metal", name="Plate")
+    box(plt, (0, .0, -(size("LowerTorso").z / 2 + .09) / K - .05), (.27, .1, .03), shade(.95, .03))
+    for x in (-.22, .22):
+        box(plt, (x, .0, -(size("LowerTorso").z / 2 + .09) / K - .085), (.025, .025, .01), shade(.7, .03))
     o.both("UpperArm", "Green", lambda pc, part: shell(pc, part, -.05, 1.02, pad=.05, folds=.01, hem=False))
     o.both("LowerArm", "Green", lambda pc, part: shell(pc, part, -.02, .55, pad=.05, folds=.01, hem=False))
     o.both("LowerArm", "Wrap", lambda pc, part: ribbed(pc, part, .5, .99, pad=.01, ribs=6, depth=.01, spiral=1.0))
@@ -517,6 +545,7 @@ def item_neji():
     o.both("LowerArm", "Robe", lambda pc, part: shell(pc, part, -.02, .62, pad=.18, flare0=.06, flare1=.16, folds=.05))
     o.both("UpperLeg", "Dark", lambda pc, part: shell(pc, part, -.05, .75, pad=.1, flare1=.06, folds=.03))
     o.both("LowerLeg", "Wrap", lambda pc, part: ribbed(pc, part, .05, .6, pad=.035, ribs=6, depth=.022, spiral=1.0))
+    holster(o, "Wrap", "Dark")   # (20/11, references) the bandaged right thigh and its holster
     _feet(o, "Dark")
     return o.items
 
@@ -544,6 +573,9 @@ def item_gaara():
             ring.append(Vector((x, y, z)))
         rows.append(ring)
     loft(sash, rows, shade(.9, .06), cap0=False, cap1=False)
+    # (20/11, references) Part I: his forehead protector rides on the gourd's strap, over the chest
+    plt = o.add("UpperTorso", "Plate", mat="Metal", name="Plate")
+    box(plt, (-.36, -.2, -b - .05), (.21, .09, .03), shade(.95, .03))
     lo = o.add("LowerTorso", "Coat")
     shell(lo, "LowerTorso", -.15, 1.05, pad=.12, flare1=.08, hem=False, folds=.03)
     for zs, name in ((-1, "TailFront"), (1, "TailBack")):
@@ -584,6 +616,13 @@ def item_kakashi():
     o.both("LowerLeg", "Navy", lambda pc, part: shell(pc, part, -.02, .5, pad=.09, folds=.03, hem=False))
     o.both("LowerLeg", "Wrap", lambda pc, part: ribbed(pc, part, .45, .85, pad=.07, ribs=4, depth=.022, spiral=1.0))
     _feet(o, "Navy")
+    # (20/11, references) his fingerless gloves with a metal plate on the back of the hand,
+    # and the mask over the lower face
+    o.both("Hand", "Navy", lambda pc, part: shell(pc, part, -.08, .6, pad=.02, folds=.002, hem=True, rings=4))
+    o.both("Hand", "Guard", lambda pc, part: box(pc, (0, .02, -(size(part).z / 2 + .02) / K - .02), (.26, .07, .025), shade(.95, .02)), mat="Metal")
+    import wardrobe_models as W
+    for part, slot, pc in W.item_mask_cloth():
+        o.items.append((part, "Navy", pc))
     return o.items
 
 
@@ -681,6 +720,46 @@ for _id, (_kind, _model, _name, _cols) in CATALOG.items():
     NEW_SLOTS.setdefault(_model, dict(_cols))
 
 
+# (20/11) the wardrobe's catalogue ids -> models; ids the catalogue already had keep their id
+# (their cloth stand-in is replaced by the model: CapeTravel, BackScroll, MaskCloth)
+WARDROBE_ITEMS = {k: v[1] for k, v in CATALOG.items()}
+WARDROBE_ITEMS["CapeTravel"] = "CapeShort"
+PRICE = {"top": 600, "bottom": 500, "arms": 350, "feet": 350, "headband": 800, "mask": 600, "cape": 900, "back": 700}
+BEGIN, END = "\t-- BEGIN wardrobe (generated by tools/blender/outfit_models.py write: edit the generator)", "\t-- END wardrobe"
+
+
+def write_catalog(path):
+    """(20/11) The wardrobe's looks in Shared/Catalog: one generated block (between BEGIN and
+    END), the ids the catalogue already had are left where they are. Ryō prices are proposals
+    (the economy is the DEV's); a set is sold in Robux (SOON until its product exists)."""
+    import re
+    src = open(path).read()
+    have = set(re.findall(r'\{id="(\w+)"', src.split(BEGIN)[0] + (src.split(END)[1] if END in src else "")))
+    rows = []
+    c = lambda cols: ",".join("%s={%d,%d,%d}" % (k, *v) for k, v in cols.items())
+    for k, (kind, m, nm, cols) in CATALOG.items():
+        if k in have:
+            continue
+        extra = ',model="%s"' % m if kind == "headband" else ""
+        if kind == "headband" and "Plate" not in cols:
+            cols = dict(cols, Plate=(200, 204, 210))  # (Server/Headband paints a plate on every band)
+        rows.append('\t{id="%s",slot="%s",name="%s",ryo=%d,colors={%s}%s},' % (k, kind, nm.upper(), PRICE[kind], c(cols), extra))
+    for k, (nm, parts) in wardrobe_models.SETS.items():
+        cols = {}
+        for m, cm in parts:
+            for sl, v in cm.items():
+                cols[m + sl] = v
+        rows.append('\t{id="%s",slot="set",name="%s",robux="%s",colors={%s}},' % (k, nm.upper(), k, c(cols)))
+    block = BEGIN + "\n" + "\n".join(rows) + "\n" + END
+    if BEGIN in src:
+        src = src.split(BEGIN)[0] + block + src.split(END)[1]
+    else:
+        i = src.rindex("}\n\nreturn Catalog")
+        src = src[:i] + block + "\n" + src[i:]
+    open(path, "w").write(src)
+    print("catalogue:", len(rows), "wardrobe looks")
+
+
 def to_blender_frame(pc):
     """Roblox frame (x, y up, z back) -> nd_mesh's Blender frame (x, -z, y)."""
     out = Piece(pc.name, pc.mat, pc.flat, pc.alpha, pc.reflect)
@@ -709,7 +788,8 @@ def write(dst, limit=110000):
         tris = sum(len(p.tris()) for _, _, p in pieces)
         report.append((name, len(pieces), tris))
         for k, (part, slot, pc) in enumerate(pieces):
-            pc.name = "%s_%s_%d" % (part, slot, k)
+            # (a holster is worn on one side: its name says so, OutfitMeshes.spec lets it be)
+            pc.name = "%s_%s_%d%s" % (part, slot, k, "_Holster" if pc.name.startswith("Holster") else "")
             text = "\t{%s,%s,%s,%s}," % (q(name), q(part), q(slot), piece_luau(pc))
             if cur and sizeb + len(text) > limit:
                 chunks.append(cur); cur, sizeb = [], 0
@@ -730,7 +810,11 @@ def write(dst, limit=110000):
         with open(os.path.join(dst, "OutfitMeshData%d.luau" % i), "w") as fh:
             fh.write(head + "-- {model, body part, colour slot, piece}, in order.\nreturn {\n" + "\n".join(c) + "\n}\n")
     ref = ",".join("%s=Vector3.new(%g,%g,%g)" % (k, *v) for k, v in REF.items())
-    items = ",".join("%s=%s" % (k, q(v)) for k, v in ITEMS.items())
+    items_all = dict(ITEMS)
+    items_all.update(WARDROBE_ITEMS)
+    items_all.update({k: k for k in wardrobe_models.SETS})   # a set is its own model, built at load
+    items = ",".join("%s=%s" % (k, q(v)) for k, v in items_all.items())
+    sets_lua = ",".join("%s={%s}" % (k, ",".join(q(m) for m, _ in parts)) for k, (nm, parts) in wardrobe_models.SETS.items())
     sets = ",\n\t".join("%s={kind=\"set\",name=%s,parts={%s}}" % (k, q(nm), ",".join("{model=%s,colors={%s}}" % (q(m), ",".join("%s={%d,%d,%d}" % (sl, *c) for sl, c in cols.items())) for m, cols in parts))
                           for k, (nm, parts) in wardrobe_models.SETS.items())
     catalog = ",\n\t".join("%s={kind=%s,model=%s,name=%s,colors={%s}}" % (k, q(kind), q(m), q(nm), ",".join("%s={%d,%d,%d}" % (s, *c) for s, c in cols.items()))
@@ -767,12 +851,28 @@ for i=1,%d do
 		table.insert(list,piece)
 	end
 end
+-- (20/11) The invented outfits: bundles of the pieces above, no mesh of their own. Each
+-- piece is shared (a shallow copy), its colour slot prefixed by its model (Catalog colours
+-- them: GiCloth, HakamaCloth...).
+OutfitMeshes.Sets={%s}
+for set,models in OutfitMeshes.Sets do
+	local list={}
+	for _,model in models do
+		for _,piece in OutfitMeshes.Models[model] or {} do
+			local copy=table.clone(piece)
+			copy.slot=model..piece.slot
+			table.insert(list,copy)
+		end
+	end
+	OutfitMeshes.Models[set]=list
+end
 function OutfitMeshes.forItem(id)
 	local model=OutfitMeshes.Items[id]
 	return model and OutfitMeshes.Models[model] or nil
 end
 return OutfitMeshes
-""" % (ref, items, new_slots, catalog, sets, len(chunks)))
+""" % (ref, items, new_slots, catalog, sets, len(chunks), sets_lua))
+    write_catalog(os.path.join(dst, "Catalog.luau"))
     for name, n, t in report:
         print("%-12s %3d pieces %6d tris" % (name, n, t))
     print("chunks", len(chunks), "sizes", [sum(len(x) for x in c) for c in chunks])
