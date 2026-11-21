@@ -775,38 +775,38 @@ def _spikes_round(pc, count, length, tilt=0.0, back=0.0, seed=1, r=.13):
 
 
 def item_hair_spiky():
-    o = O()
+    o = O().Out()
     h = o.add("Head", "Hair")
     hair_cap(h, front=1.9)
     _spikes_round(h, 22, .55, seed=3)
     for x in (-.32, 0, .32):   # the fringe: short spikes over the brow, pointing down-forward
         spike(h, (x, .42, -.6), (x * .3, -.5, -.6), .38, .12)
-    return o.done()
+    return o.items
 
 
 def item_hair_swept():
-    o = O()
+    o = O().Out()
     h = o.add("Head", "Hair")
     hair_cap(h, front=1.9)
     _spikes_round(h, 16, .7, back=1.4, seed=5)
     for x in (-.45, .45):      # long bangs framing the face
         spike(h, (x, .38, -.55), (x * .2, -1, -.25), .62, .12)
-    return o.done()
+    return o.items
 
 
 def item_hair_bowl():
-    o = O()
+    o = O().Out()
     h = o.add("Head", "Hair")
     dome(h, .05, r=(.71, .73), top=.78, rings=7, n=28, z_off=.02)
     rows = []                  # the straight fringe, cut level over the brow
     for y in (.42, .16):
         rows.append([Vector((math.cos(t) * .72, y, math.sin(t) * .74 + .02)) for t in [i / 28 * math.tau for i in range(28)]])
     loft(h, rows, O().shade(.94, .03), cap0=False, cap1=False)
-    return o.done()
+    return o.items
 
 
 def item_hair_long():
-    o = O()
+    o = O().Out()
     h = o.add("Head", "Hair")
     hair_cap(h, front=1.8)
     rows = []                  # the long fall down the back, tied low
@@ -817,11 +817,11 @@ def item_hair_long():
     head_ring(tie, -1.5, .1, r=(.24, .2), z_off=.74)
     for x in (-.5, .5):
         spike(h, (x, .3, -.5), (0, -1, -.15), .7, .1)
-    return o.done()
+    return o.items
 
 
 def item_hair_high_tail():
-    o = O()
+    o = O().Out()
     h = o.add("Head", "Hair")
     dome(h, .1, r=(.67, .69), top=.72, rings=6, n=24, front_open=2.0, z_off=.04)
     tie = o.add("Head", "Tie")
@@ -829,11 +829,11 @@ def item_hair_high_tail():
     for k in range(7):         # the spiky tail bursting up and back from the tie
         a = k / 7 * math.tau
         spike(h, (math.cos(a) * .1, .7, .5 + math.sin(a) * .1), (math.cos(a) * .5, 1.0, .9 + math.sin(a) * .5), .7, .11)
-    return o.done()
+    return o.items
 
 
 def item_hair_buns():
-    o = O()
+    o = O().Out()
     h = o.add("Head", "Hair")
     dome(h, .05, r=(.67, .69), top=.73, rings=6, n=24, front_open=1.9, z_off=.02)
     from nd_mesh import ellipsoid
@@ -842,11 +842,11 @@ def item_hair_buns():
     tie = o.add("Head", "Tie")
     for x in (-.42, .42):
         head_ring(tie, .58, .08, r=(.22, .22), z_off=.1)
-    return o.done()
+    return o.items
 
 
 def item_hair_tilted():
-    o = O()
+    o = O().Out()
     h = o.add("Head", "Hair")
     hair_cap(h, front=1.9)
     import random
@@ -858,7 +858,7 @@ def item_hair_tilted():
         if base.z < -.3 and base.y < .5:
             continue
         spike(h, base, (-.9, 1.0, .2), rng.uniform(.6, .85), .14)
-    return o.done()
+    return o.items
 
 
 HAIR = {"HairSpiky": item_hair_spiky, "HairSwept": item_hair_swept, "HairBowl": item_hair_bowl, "HairLong": item_hair_long,
