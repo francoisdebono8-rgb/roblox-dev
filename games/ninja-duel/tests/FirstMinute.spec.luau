@@ -1,10 +1,10 @@
--- The first minute (B1 lot 2, DEC-034): PLAY on the roster runs four prompts
--- with the fighter's story rival as a waiting partner (move, three hits, a
--- dodge, the signature), then a real duel against the easy AI; holding the
--- skip goes straight to that duel; the next duel is an ordinary one. The
--- server measures the first input, jutsu and finished duel. Real Matches /
--- Tutorial / Combat on harness rigs and a scripted clock; the screen is
--- checked in Studio.
+-- The first combat (21/11, DEC-047, replacing the first minute of B1 lot 2):
+-- PLAY on the roster starts one real round against the fighter's story rival
+-- played by the novice AI, and the coach (Server/Coach) gives a prompt when
+-- its moment comes, once; holding the skip silences it; the next duel is an
+-- ordinary one. The server measures the first input, jutsu and finished duel.
+-- Real Matches / Coach / Combat on harness rigs and a scripted clock; the
+-- screen is checked in Studio.
 local H=require("./Harness")
 local clock=5000
 H.workspace.GetServerTimeNow=function() return clock end
@@ -53,17 +53,7 @@ end
 local function step(m,seconds)
 	for _=1,math.max(1,math.ceil(seconds/.02)) do clock+=.02;m:update(.02,clock);runTimers() end
 end
--- Do what the current prompt asks, as the engine would record it.
-local function perform(s)
-	local t=s.tutorial
-	local spec=t.steps[t.index]
-	s.human.events=s.human.events or {}
-	local ev=s.human.events
-	if spec.id=="move" then t.travel=20
-	elseif spec.id=="string" then ev.Hit=(ev.Hit or 0)+3
-	elseif spec.id=="dodge" then ev.Dodge=(ev.Dodge or 0)+1
-	elseif spec.id=="signature" then local k="Cast:"..spec.technique.Id;ev[k]=(ev[k] or 0)+1 end
-end
+local Coach=H.load("Server/Coach")
 
 test("every beta fighter has a rival in the beta and a signature in slot 2",function()
 	for _,f in BetaRoster do
@@ -76,54 +66,61 @@ test("every beta fighter has a rival in the beta and a signature in slot 2",func
 	assert(FirstMinute.signature(Fighters.Lion).Id=="Chidori","Sasuke's signature is not the Chidori")
 end)
 
-test("PLAY: four prompts against his rival, then a real duel against the easy AI",function()
+test("PLAY: one real round against his rival played by the novice, the coach's prompts when their moment comes",function()
 	local m,player=fresh()
 	local s=m.sessions[player]
 	send(m,player,"First",{player="Lion"})
-	assert(s.phase=="Duel" and s.tutorial and s.tutorial.first,"the first minute did not start")
+	assert(s.phase=="Duel" and s.tutorial==nil and s.coach and s.firstFight,"the first combat did not start")
 	assert(s.human.fighterId=="Lion" and s.bot.fighterId=="Sand","not Sasuke with Gaara")
-	local ids={}
-	for _,spec in s.tutorial.steps do table.insert(ids,spec.id);assert(spec.touch and spec.key and spec.pad,"a prompt without its keys: "..spec.id) end
-	assert(table.concat(ids,",")=="move,string,dodge,signature","the prompts: "..table.concat(ids,","))
-	step(m,.1)
-	assert(last(player).tutorial.first and last(player).tutorial.touch,"the panel does not know it is the first minute")
-	assert(last(player).first=="intro","the snapshot does not say intro")
-	local epoch=s.epoch
-	for k=1,4 do
-		assert(s.tutorial and s.tutorial.index==k,"not on prompt "..k)
-		perform(s)
-		if k==4 then
-			-- the signature counts when it lands on the partner
-			step(m,.1);assert(s.tutorial and s.tutorial.index==4,"the cast alone ended the signature prompt")
-			s.bot.health-=6;step(m,1.8)
-		else step(m,.4) end
-	end
-	assert(s.epoch>epoch and s.tutorial==nil and s.firstStage=="duel","no duel after the prompts")
-	assert(s.roundsToWin==2 and s.human.fighterId=="Lion" and s.bot.fighterId=="Sand","not the real duel")
-	assert(Matches.aiLevel(s)=="easy" and s.ai.tune.Opening,"the first duel is not easy")
-	step(m,.1)
+	assert(s.roundsToWin==1 and Matches.aiLevel(s)=="first" and s.ai.tune.UltimateBelow==0,"not one round against the novice")
+	assert(s.bot.outScale==Coach.BotDamage and s.human.healthFloor and s.human.healthFloor>0,"the novice's handicap")
+	-- the novice hits softer, and he keeps his floor whatever happens
+	local before=s.human.health
+	s.combat:damage(s.bot,s.human,10,false,false)
+	assert(math.abs((before-s.human.health)-10*Coach.BotDamage*(H.load("Shared/Config").DamageScale or 1))<.01,"the novice's blow was not softer")
+	s.human.health=s.human.healthFloor+1
+	s.combat:damage(s.bot,s.human,60,false,false)
+	assert(s.human.health>=s.human.healthFloor,"he went under his floor")
+	s.human.health=s.human.def.Health;s.human.state="Neutral";s.human.reaction=nil;s.human.untilTime=0
+	-- after the intro, far from him: the coach says to go to him
+	s.ai.update=function() end
+	s.combat:relocate(s.bot,s.human.root.Position+H.V.new(0,0,-20))
+	step(m,2.8)
+	assert(s.coach.current and s.coach.current.id=="move","no prompt to go to him: "..tostring(s.coach.current and s.coach.current.id))
+	local panel=last(player).tutorial
+	assert(panel and panel.first and panel.coach and panel.key and panel.pad and panel.touch,"the panel does not get the prompt")
 	assert(last(player).first=="duel","the snapshot does not say first duel")
-	-- the duel ends: the next one (REMATCH) is ordinary
+	-- he walks to him: done, gone for good
+	for _=1,5 do s.combat:relocate(s.human,s.human.root.Position+H.V.new(0,0,-3));step(m,.04) end
+	assert(s.coach.done.move,"the walk did not count")
+	step(m,Coach.DoneHold+.1)
+	-- he winds up a strike close by: GUARD; a blocked blow ends it
+	s.combat:relocate(s.human,s.bot.root.Position+H.V.new(0,0,4))
+	s.bot.attackName="Light1";s.bot.state="Startup";s.bot.untilTime=s.combat.now+5
+	step(m,.1)
+	assert(s.coach.current and s.coach.current.id=="guard","no guard prompt as he winds up: "..tostring(s.coach.current and s.coach.current.id))
+	s.human.events=s.human.events or {};s.human.events.GuardHit=(s.human.events.GuardHit or 0)+1
+	step(m,.1)
+	assert(s.coach.done.guard,"the blocked blow did not count")
+	s.bot.attackName=nil;s.bot.state="Neutral";s.bot.untilTime=0
+	-- the round ends: the first combat is over, the rematch is ordinary
 	s.finish(s.human,s.bot);step(m,3.2)
-	if s.phase=="Duel" then s.finish(s.human,s.bot);step(m,3.2) end
-	assert(s.phase=="Result","the first duel did not end")
-	assert(s.metrics.duelAt,"the finished first duel was not measured")
+	assert(s.phase=="Result","one round did not end the first combat")
+	assert(s.metrics.duelAt,"the finished first combat was not measured")
+	assert(s.firstFight==nil and s.coach==nil,"the first combat stays on")
 	send(m,player,"Rematch")
-	assert(s.phase=="Duel" and s.firstStage==nil,"the rematch is still the first duel")
+	assert(s.phase=="Duel" and s.coach==nil and s.roundsToWin==2,"the rematch is still the first combat")
 end)
 
-test("holding the skip goes straight to the duel; a prompt nobody finds moves on by itself",function()
+test("holding the skip silences the coach; the duel goes on",function()
 	local m,player=fresh()
 	local s=m.sessions[player]
 	send(m,player,"First",{player="Flashstep"})
-	assert(s.bot.fighterId=="Leaf","Minato's partner is not Lee")
+	assert(s.bot.fighterId=="Leaf","Minato's rival is not Lee")
 	step(m,.1)
-	-- nothing pressed: the first prompt gives way after its 25 s
-	step(m,26)
-	assert(s.tutorial and s.tutorial.index==2,"the move prompt held him")
 	send(m,player,"TutorialSkip")
 	step(m,.1)
-	assert(s.tutorial==nil and s.firstStage=="duel" and s.phase=="Duel","holding the skip did not start the duel")
+	assert(s.coach==nil and s.phase=="Duel" and s.firstFight,"the skip ended more than the prompts")
 end)
 
 test("measures: joined, the first input, the first jutsu, in order and once",function()
@@ -191,11 +188,8 @@ test("a first duel asked at Lee's home is fought on Training Ground Three; elsew
 		-- the bodies are held inside the ground's own circle
 		local far=s.combat:clamp(centre+H.V.new(200,3,0))
 		assert(math.abs((far-centre).Magnitude-spot.radius)<.5,"the circle is the stadium's: "..tostring(far))
-		-- (Studio 14/11: the first minute's real duel went to the stadium) the
-		-- prompts done, the real duel stays on the training ground
-		s.tutorial.done=true
-		step(m,.05)
-		assert(s.firstStage=="duel" and s.tutorial==nil and s.site and s.site.key=="Leaf" and (s.origin-centre).Magnitude<1e-3,"the first minute's real duel left Lee's")
+		-- (21/11, DEC-047) the first combat is the real duel, on the training ground
+		assert(s.firstStage=="duel" and s.tutorial==nil and s.coach and s.site and s.site.key=="Leaf" and (s.origin-centre).Magnitude<1e-3,"the first combat left Lee's")
 		-- back to Konoha: where it was fought
 		m:selection(player);walkAt(centre)
 		-- from the board (no `here`): the stadium

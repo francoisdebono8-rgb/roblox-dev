@@ -15,6 +15,8 @@ local HubMap=require(Shared.HubMap)
 local Combat=require(script.Parent.Combat)
 local AI=require(script.Parent.AI)
 local Tutorial=require(script.Parent.Tutorial)
+-- (21/11, DEC-047) the first combat's coach: prompts when their moment comes.
+local Coach=require(script.Parent.Coach)
 local AntiCheat=require(script.Parent.VelmoraAntiCheat)
 local Techniques=require(script.Parent.Techniques)
 local Ultimates=require(script.Parent.Ultimates)
@@ -226,7 +228,7 @@ function Matches:destroy(s)
 			if child~=s.stage then child:Destroy() end
 		end
 	end
-	s.tutorial=nil; s.combat=nil; s.ai=nil; s.human=nil; s.bot=nil
+	s.tutorial=nil; s.coach=nil; s.combat=nil; s.ai=nil; s.human=nil; s.bot=nil
 end
 -- The lane and its stadium (the player left).
 function Matches:dropStage(s)
@@ -378,11 +380,14 @@ function Matches:start(player,playerId,botId,training,options)
 	s.ai=AI.new(s.combat,s.bot,player.UserId%100000+ s.epoch,Matches.aiLevel(s))
 	s.finishing=false
 	-- Tournament rounds: first to two (one in training).
-	s.round=1;s.wins={PlayerFighter=0,AIFighter=0};s.roundsToWin=if training then 1 else Config.RoundsToWin
+	s.round=1;s.wins={PlayerFighter=0,AIFighter=0};s.roundsToWin=if training or s.firstFight then 1 else Config.RoundsToWin
 	s.finish=function(winner,_loser)
 		self:roundOver(s,winner,function() self:snapshot(player,s) end,function() self:nextRound(player,s) end)
 	end
 	s.tutorial=nil; if training then Tutorial.new(s,if s.firstStage=="intro" then "first" else nil) end
+	-- (21/11, DEC-047) the first combat: one real round against the novice,
+	-- the coach's prompts when their moment comes (Server/Coach).
+	s.coach=nil; if s.firstFight and not training then Coach.new(s,s.combat.now) end
 	-- Tournament framing: both fighters are shown before the round begins.
 	s.introUntil=if training then nil else s.combat.now+2.6
 	local epoch=s.epoch
@@ -401,6 +406,8 @@ function Matches:roundOver(s,winner,notify,advance)
 	s.wins[winner.id]=(s.wins[winner.id] or 0)+1
 	local decided=s.wins[winner.id]>=s.roundsToWin
 	s.matchPoint=decided
+	-- (21/11, DEC-047) the first combat is over: the next duel is an ordinary one.
+	if decided and s.firstFight then s.firstFight=nil;s.coach=nil end
 	if decided and not s.tutorial and not s.online and s.owner then
 		Matches.measure(s.owner,s,"duel")
 		if s.human and winner==s.human then Matches.measure(s.owner,s,"won") end
@@ -471,7 +478,7 @@ function Matches:roundOver(s,winner,notify,advance)
 end
 -- (B1) The bot's level: the roster's choice for a duel (easy by default:
 -- the first duel of a new player), stronger each round of the cup.
-Matches.LEVELS={easy=true,normal=true,hard=true}
+Matches.LEVELS={easy=true,normal=true,hard=true,first=true}
 function Matches.aiLevel(s)
 	-- (DEC-037) A master's duel: the prodigy at his level.
 	if s.masterTrial then return Masters.DuelLevel end
@@ -648,7 +655,7 @@ function Matches:view(s,cursor,mine,theirs)
 	for _,impact in s.combat.impacts do if impact.serial>sent then table.insert(feed,impact) end end
 	cursor.sentImpact=s.combat.impactSerial or 0;cursor.impactEpoch=s.epoch
 	local wins=s.wins or {}
-	return {phase=s.phase,epoch=s.epoch,first=s.firstStage,winner=s.winner and (if s.winner==mine.id then "PlayerFighter" else "AIFighter"),tutorial=Tutorial.snapshot(s),origin=s.origin,human=data(mine),bot=data(theirs),impacts=feed,impactSerial=s.combat.impactSerial or 0,
+	return {phase=s.phase,epoch=s.epoch,first=s.firstStage,winner=s.winner and (if s.winner==mine.id then "PlayerFighter" else "AIFighter"),tutorial=Tutorial.snapshot(s) or Coach.snapshot(s),origin=s.origin,human=data(mine),bot=data(theirs),impacts=feed,impactSerial=s.combat.impactSerial or 0,
 		-- Bodies that are not fighters (Naruto's shadow clones), drawn by Client/BodyViews.
 		bodies=Bodies.view(s.combat),
 		-- zones: wind lanes and updrafts (Zones.snapshot), drawn per kind by the client.
@@ -684,6 +691,7 @@ function Matches:request(player,payload)
 	if self.online and self.online:request(player,s,action,payload,clock) then return end
 	-- (B1) held on the first minute: straight to its duel, not the roster.
 	if action=="TutorialSkip" and s.tutorial and s.tutorial.first then s.tutorial.done=true;return end
+	if action=="TutorialSkip" and s.coach then s.coach=nil;return end
 	if action=="TutorialSkip" and s.tutorial then self:selection(player);s.tutorial=nil;return end
 	-- (Audit 04/11) one step skipped (the panel's "tap: skip the step").
 	if action=="TutorialStep" and s.tutorial then
@@ -697,9 +705,12 @@ function Matches:request(player,payload)
 		if clock-s.lastLifecycle<0.8 or s.phase~="Selection" or type(payload.player)~="string" then return end
 		local rival=FirstMinute.rival(payload.player)
 		if not rival then return end
-		s.lastLifecycle=clock;s.aiLevel="easy";s.firstStage="intro"
+		-- (21/11, DEC-047; François: « trop long et ne m'apprend pas à jouer »)
+		-- No drills on a waiting partner first: straight into one real round
+		-- against the novice, with the coach's prompts at the right moments.
+		s.lastLifecycle=clock;s.aiLevel="first";s.firstStage="duel";s.firstFight=true
 		s.nextSite=self:freeVillageSite(player,payload.here,s)
-		if not self:start(player,payload.player,rival,true) then s.firstStage=nil end
+		if not self:start(player,payload.player,rival,false) then s.firstStage=nil;s.firstFight=nil end
 		s.nextSite=nil
 		return
 	end
@@ -938,6 +949,7 @@ function Matches:update(dt,now)
 			if s.phase=="Duel" then
 				local intro=s.introUntil and now<s.introUntil
 				if s.tutorial then Tutorial.update(s,now,dt) elseif not s.botFrozen and not intro and not s.finishing then s.ai:update(now) end
+				if s.coach and not intro and not s.finishing then Coach.update(s,now,dt) end
 				-- (B1 lot 2) the first minute's last prompt done: its real duel.
 				if s.tutorial and s.tutorial.done and s.firstStage=="intro" then
 					s.firstStage="duel";s.aiLevel="easy";s.nextSite=s.site;self:start(player,s.playerId,s.botId,false);s.nextSite=nil

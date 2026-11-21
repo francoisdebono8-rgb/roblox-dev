@@ -76,6 +76,7 @@ run VillageDuel "$LUNE" run tests/VillageDuel.spec.luau
 run Ranked     "$LUNE" run tests/Ranked.spec.luau
 run NinjaTree  "$LUNE" run tests/NinjaTree.spec.luau
 run NinjaArts  "$LUNE" run tests/NinjaArts.spec.luau
+run FirstCombat "$LUNE" run tests/FirstCombat.spec.luau
 run KitTexts   "$LUNE" run tests/KitTexts.spec.luau
 run HubLayout "$LUNE" run tests/HubLayout.spec.luau
 run KonohaLayout "$LUNE" run tests/KonohaLayout.spec.luau

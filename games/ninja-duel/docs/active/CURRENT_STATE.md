@@ -1,3 +1,9 @@
+**Étape 3 du DEV, 21/11 (DEC-047) : le premier combat** — TECHNICAL, à jouer par François
+- PLAY lance directement une vraie manche contre le rival de l'histoire, joué par l'IA novice (`AI.LEVELS.first`), avec le coach (`Server/Coach`) : une consigne quand son moment arrive, une seule fois.
+- Les coups du novice valent ×0,5 ; le joueur garde 20 % de sa vie ; ses coups valent ×0,6.
+- Mesuré headless : un débutant qui frappe au hasard gagne contre les 8 rivaux en 24 à 73 s, et voit 4 ou 5 consignes (`tests/FirstCombat.spec`).
+- Pas encore vu dans Studio, ni dessiné par la DESIGN : la consigne réutilise le panneau de la première minute.
+
 **Étape 2 de l'OUTILLEUR, 21/11 (DEC-045 ; doc projet `claude/etape2-deux-arbres-taches-2026-11-21` § OUTILLEUR)**
 - **Comparateur des 3 kits** (`tools/kits`, empreinte v3) : la course suit le jeu (`Config.Movement.SprintSpeed` × `SprintScale`, DEC-044) ; une technique verrouillée est listée à part ; les cinq natures sont chiffrées depuis `NinjaTree.Infusion` ; le nœud `Transform` de chaque kit. `empreinte.py AVANT APRES --etape2`. Mesuré dans Studio, ND-JEU `632931f2` (avant) et `b1c21d57` (après DEV 2/4, 3/4, 4/4) (TECHNICAL) :
   - **départ** : Naruto, Sasuke et Lee passent de 4, 4 et 3 techniques à 2 ; l'arbre rend les autres (Rasengan et Multi-clonage ; Chidori et Fil piégé ; Lotus primaire et Retirer les poids). Notes départ → arbre : Naruto dégâts/s 48 → 63, Sasuke 82 → 92, Lee 71 → 76 ;

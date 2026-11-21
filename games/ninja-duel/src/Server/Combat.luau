@@ -275,7 +275,9 @@ function Combat:chip(attacker,victim,amount)
 	if (victim.rotationUntil or 0)>self.now or victim.invulnerableUntil>self.now then return false end
 	if (attacker.awakenUntil or 0)>self.now then amount*=Combat.awakeScale(attacker,"Damage",self.now) end
 	amount*=Config.DamageScale or 1
-	victim.health=math.max(0,victim.health-amount); victim.hum.Health=math.max(1,victim.health)
+	-- (21/11, DEC-047) the first combat's novice hits softer (Server/Coach).
+	amount*=attacker.outScale or 1
+	victim.health=math.max(victim.healthFloor or 0,victim.health-amount); victim.hum.Health=math.max(1,victim.health)
 	if self.damageLog then table.insert(self.damageLog,{t=self.now,by=attacker.fighterId,amount=amount,tag=self.damageTag or "chip",hits=victim.comboHits}) end
 	if victim.health<=0 then
 		Brawler.releaseGrab(victim); victim.reaction=nil
@@ -430,7 +432,10 @@ function Combat:damage(attacker,victim,amount,heavy,readEligible)
 	victim.lastHurt=self.now
 	-- Both bodies fill their ultimate bar (Server/Ultimates).
 	Ultimates.gain(self,attacker,victim,amount)
-	victim.health=math.max(0,victim.health-amount); victim.hum.Health=math.max(1,victim.health)
+	-- (21/11, DEC-047) the first combat: the novice hits softer, and the
+	-- player keeps a share of his health whatever happens (Server/Coach).
+	amount*=attacker.outScale or 1
+	victim.health=math.max(victim.healthFloor or 0,victim.health-amount); victim.hum.Health=math.max(1,victim.health)
 	-- The attacker's on-hit trait (def.OnHit: a drain, a slow).
 	Families.afterHit(self,attacker,victim,amount,guarded)
 	-- Studio tooling only: where damage comes from, to tune fight length.

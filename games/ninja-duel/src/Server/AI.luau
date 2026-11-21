@@ -70,6 +70,12 @@ AI.LEVELS={
 		ReadGuard=.12,ReadDodge=.05,ReadPoke=.1,GuardRead=.02,Feint=0,Recover=.25,Plan=.35,
 		BreakOff1=.7,BreakOff2=.92,RepositionTime=1.5,RepositionJitter=.9,Disengage=.72,Opening=2.5,UltimateBelow=.4},
 	normal={},
+	-- (21/11, DEC-047) The novice of the first combat (Server/Coach): slow to
+	-- think, his strikes seen coming, never a string past the first hit, a
+	-- rare guard, his jutsu late and seldom, no ultimate.
+	first={Tick=.5,Reaction=.95,Aggression=.3,Defense=.1,Technique=.06,TechniqueGap=14,TechniqueJitter=4,
+		ReadGuard=.03,ReadDodge=0,ReadPoke=.04,GuardRead=0,Feint=0,Recover=.1,Plan=.2,
+		BreakOff1=1,BreakOff2=1,RepositionTime=2,RepositionJitter=1,Disengage=.85,Opening=3,UltimateBelow=0},
 	hard={Tick=.15,Reaction=.3,Aggression=.8,Defense=.66,TechniqueGap=2,ReadGuard=.36,ReadDodge=.2},
 }
 function AI.new(combat,actor,seed,level)

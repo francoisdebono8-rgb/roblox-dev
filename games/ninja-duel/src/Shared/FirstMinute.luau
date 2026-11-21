@@ -24,6 +24,12 @@ FirstMinute.Touch={
 	string="Tap ATTACK three times",
 	dodge="Hold a direction, tap DODGE",
 	signature="Tap the second jutsu button",
+	-- (21/11, DEC-047) the first combat's coach (Server/Coach)
+	strike="Tap ATTACK three times",
+	guard="Hold GUARD",
+	escape="Tap DODGE as his blow lands",
+	grab="Tap GRAB",
+	tool="Tap TOOL",
 }
 function FirstMinute.signature(def)
 	return def and def.Techniques and def.Techniques[FirstMinute.SignatureSlot]

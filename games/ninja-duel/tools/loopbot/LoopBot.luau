@@ -263,62 +263,44 @@ function Bot.run(kit)
 		return "porte "..table.concat(worn,", ")
 	end)
 
-	-- The first minute: the prompts against the rival, the first hit landed.
+	-- The first combat (21/11, DEC-047, DEV): one real round against the
+	-- novice, the coach's prompts when their moment comes; the first hit landed.
 	local sim={}
 	stage("duel",function()
 		local started=clock
 		send("First",{player=kit})
-		assert(s.phase=="Duel" and s.tutorial and s.tutorial.first,"the first minute did not start: "..tostring(notice()))
+		assert(s.phase=="Duel" and s.coach and s.firstFight,"the first combat did not start: "..tostring(notice()))
+		assert(Matches.aiLevel(s)=="first" and s.roundsToWin==1,"not one round against the novice")
 		local rival=s.botId
 		local baseHits=(s.human.events and s.human.events.Hit) or 0
-		local index,entered,moving,nextPress=nil,clock,false,0
 		local hitAt=nil
-		local presses=0
+		local presses,nextPress=0,0
+		local seen={}
+		step(2.7) -- the intro
 		while clock-started<45 do
-			local t=s.tutorial
-			if not t then break end
-			if t.index~=index then index=t.index;entered=clock;moving=false end
-			local id=t.steps[t.index].id
-			if clock-entered>=Bot.UI.readPrompt then
-				if id=="move" then
-					if not moving then
-						moving=true
-						local dir=flat(s.bot.root.Position-s.human.root.Position)
-						move(if dir.Magnitude>.1 then dir.Unit else V.new(0,0,-1))
-					end
-				else
-					if moving then moving=false;move(V.zero) end
-					if clock>=nextPress then
-						-- a step closer when the strikes do not reach
-						if presses>0 and presses%3==0 then
-							local dir=flat(s.bot.root.Position-s.human.root.Position)
-							if dir.Magnitude>3 then move(dir.Unit);step(.15);move(V.zero) end
-						end
-						press("Attack");presses+=1;nextPress=clock+.3
-					end
-				end
-			end
+			if s.coach and s.coach.current then seen[s.coach.current.id]=true end
+			local dir=flat(s.bot.root.Position-s.human.root.Position)
+			if dir.Magnitude>3.5 then move(dir.Unit) else move(V.zero) end
+			if dir.Magnitude<5 and clock>=nextPress then press("Attack");presses+=1;nextPress=clock+.3 end
 			step(.02)
 			if ((s.human.events and s.human.events.Hit) or 0)>baseHits then hitAt=clock;break end
 		end
-		assert(hitAt,string.format("no hit landed in %.0f s (prompt %s, %d presses, gap %.1f studs, state %s)",clock-started,
-			tostring(s.tutorial and s.tutorial.steps[s.tutorial.index].id),presses,(s.bot.root.Position-s.human.root.Position).Magnitude,tostring(s.human.state)))
-		-- the move prompt must be done by moving, not given up after its 25 s
-		local moved=s.tutorial and s.tutorial.report and s.tutorial.report[1]
-		assert(moved and moved.id=="move" and moved.status=="PASS","the move prompt was not passed by moving ("..tostring(moved and moved.status)..")")
+		move(V.zero)
+		assert(hitAt,string.format("no hit landed in %.0f s (%d presses, gap %.1f studs, state %s)",clock-started,
+			presses,(s.bot.root.Position-s.human.root.Position).Magnitude,tostring(s.human.state)))
+		local ids={}
+		for id in seen do table.insert(ids,id) end
+		table.sort(ids)
 		sim.firstHit=hitAt-started
 		sim.presses=presses
 		sim.rival=rival
-		-- the rest of the prompts held to skip, as the screen offers; the real duel won
-		send("TutorialSkip")
-		step(.1)
-		assert(s.tutorial==nil and s.firstStage=="duel" and s.phase=="Duel","holding the skip did not start the real duel")
-		assert(Matches.aiLevel(s)=="easy","the first duel is not against the easy AI")
+		sim.prompts=ids
+		-- the round won: the first combat is over
 		s.finish(s.human,s.bot);step(3.2)
-		if s.phase=="Duel" then s.finish(s.human,s.bot);step(3.2) end
-		assert(s.phase=="Result","the first duel did not end (phase "..tostring(s.phase)..")")
+		assert(s.phase=="Result","the first combat did not end (phase "..tostring(s.phase)..")")
 		duels+=1
-		return string.format("premier coup %.1f s après l'entrée en duel (%d frappes), duel contre %s gagné",sim.firstHit,presses,tostring(rival))
+		return string.format("premier coup %.1f s après PLAY (%d frappes), consignes vues : %s, combat contre %s gagné",sim.firstHit,presses,
+			if #ids>0 then table.concat(ids,", ") else "aucune",tostring(rival))
 	end)
 
 	stage("gains",function()

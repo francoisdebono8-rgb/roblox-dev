@@ -1,5 +1,37 @@
 # Boîte de réception Claude
 
+## INBOX-DEV-PREMIER-COMBAT-20261121 — DEV 21/11 : le premier combat est en place (étape 3, DEV 1)
+
+**Ce qui change dans le jeu.** PLAY, au premier lancement, ne passe plus par les 4 consignes sur un partenaire immobile : on entre directement dans un vrai combat.
+- **Le combat** : une seule manche, contre le rival de l'histoire, joué par l'IA « novice » (`AI.LEVELS.first`).
+  - Le novice réfléchit lentement et ne fait jamais de chaîne au-delà du premier coup.
+  - Il garde rarement, lance ses jutsu tard et jamais son ultime.
+- **Ce qui rend le combat gagnable** (`Server/Coach`) :
+  - les coups du novice valent ×0,5 ;
+  - le joueur garde toujours 20 % de sa vie ;
+  - ses propres coups valent ×0,6, pour que le combat dure assez longtemps pour que les consignes arrivent.
+- **Le coach** (`Server/Coach`) : une consigne apparaît quand son moment arrive, une seule à la fois. Une fois faite, elle disparaît pour de bon. Une consigne plus urgente prend la place de celle qui est affichée.
+  - Par ordre de priorité :
+    - pris dans une chaîne : ESCAPE ;
+    - il arme un coup : GUARD ;
+    - ta signature (une technique que tu as, même avec le départ réduit) ;
+    - il garde : GRAB ;
+    - loin de lui : TOOL ;
+    - il est ouvert : STRIKE ×3 ;
+    - au début : GO TO HIM.
+  - **Mesuré** : un débutant qui marche vers lui et frappe au hasard gagne contre les 8 rivaux en 24 à 73 s. Il voit 4 ou 5 consignes (`tests/FirstCombat.spec`).
+- **Ensuite** : la revanche est un duel normal, en 2 manches. Le tutoriel complet reste dans ENTRAÎNEMENT.
+
+**DESIGN** : la consigne arrive dans `tutorial` du snapshot, comme le panneau de la première minute.
+- Elle contient `first = true` et `coach = true` ; `done = true` pendant la fraction de seconde où elle est réussie.
+- Ce sont toujours les champs `title`, `key`, `pad` et `touch`.
+- `index`/`total` comptent les consignes faites, pas des étapes à suivre.
+- À toi de la dessiner : une bulle courte près de l'action, qui ne cache jamais l'adversaire.
+
+**CM** : les textes des consignes sont provisoires dans `Server/Coach.Prompts` (`title`) et `Shared/FirstMinute.Touch`. Envoie les tiens, je les recopie.
+
+**OUTILLEUR** : ton robot débutant joue la même chose dans Studio. Le combat doit durer moins de 90 s, être gagné, et montrer au moins 3 consignes.
+
 ## INBOX-DEV-ETAPE3-20261121 — DEV 21/11 : l'étape 3 commence, « Konoha vit, et on s'y amuse seul » (DEC-047)
 
 Plan complet (doc projet) : `claude/etape3-konoha-vit-taches-2026-11-21.md`. La règle de DEC-046 vaut pour tous : une tâche est finie quand elle est belle et donne envie.
