@@ -766,6 +766,11 @@ function Brawler.disengage(c,a,kind)
 end
 function Brawler.request(c,a,action)
  local relevant=action=="Attack" or action=="Heavy" or action=="Grab" or action=="ThrowUp"
+ -- (21/11, DEC-045) the tool throws a held Rasengan (BodyState.throw)
+ if action=="Tool" and a.bodyState and a.bodyState.spec and a.bodyState.spec.Throw and Brawler.free(a,c.now) then
+  local thrown,why=BodyState.release(c,a,action)
+  if thrown~=nil then return thrown,why end
+ end
  if not relevant then return nil end
  -- Throw break: grab back right as you are seized and both are thrown apart.
  if action=="Grab" and a.reaction=="Grabbed" and a.grabbedBy and c.now-(a.grabbedAt or -10)<=Config.ThrowBreak then
@@ -1229,9 +1234,31 @@ function Brawler.airFinisher(c,a,f)
   if use.reaction then p.spec.reaction=use.reaction;p.spec.feedback=use.reaction end
   if use.stun then p.spec.stun=use.stun end
   a.attackVariant=use.name
+  -- (21/11, DEC-045) The top of Lee's tree (SkillTrees LotusEntry): the
+  -- Lotus drives the body in so it bounces, and he comes back feet first on
+  -- the bounce (the ground bounce below calls Brawler.lotusEntry).
+  if a.def.LotusEntry and use.name=="PrimaryLotus" then
+   p.spec.reaction="Spiked";p.spec.feedback="Spiked"
+   a.lotusEntry={target=b,serial=a.attackSerial,untilT=c.now+2.5}
+  end
  end
  if cost>0 then a.health=math.max(1,a.health-cost);a.hum.Health=math.max(1,a.health) end
  c:cue(a,use.cue or "AIR FINISHER",.9);Brawler.event(c,a,use.event or "AirFinisher")
+ return ok
+end
+-- The Lotus into the Dynamic Entry (Lee's transformation): the bounced body
+-- is met feet first, the flying kick under the ANIMATEUR's Leaf.LotusEntry.
+function Brawler.lotusEntry(c,a,b)
+ local entry=a.lotusEntry
+ a.lotusEntry=nil
+ if not entry or entry.target~=b or c.now>entry.untilT then return false end
+ if a.health<=0 or b.health<=0 or c.match.phase~="Duel" or a.reaction or a.state=="Stunned" or a.state=="Defeated" then return false end
+ Bangla.close(a.pending);a.pending=nil;a.attackName=nil;a.chainOpen=false;a.state="Neutral";a.untilTime=c.now;a.evade=nil
+ local look=b.root.Position-a.root.Position;look=Vector3.new(look.X,0,look.Z)
+ if look.Magnitude>.1 then a.root.CFrame=CFrame.lookAt(a.root.Position,a.root.Position+look.Unit) end
+ local ok=Brawler.start(c,a,"FlyingKick")
+ if a.pending then a.attackVariant="LotusEntry" end
+ c:cue(a,"LOTUS • DYNAMIC ENTRY",.8);Brawler.event(c,a,"LotusEntry")
  return ok
 end
 -- The weight of a contact (Combat.Hitstop). By name for the shared grammar,
@@ -1817,6 +1844,12 @@ function Brawler.step(c,a,dt)
       velocity=Vector3.new(velocity.X*.3,30,velocity.Z*.3)
       c:pushImpact(a.root.Position-Vector3.new(0,2.6,0),"groundbounce",true,{victim=a.id})
       Brawler.event(c,a,"GroundBounce")
+      -- (21/11, DEC-045) Lee's Lotus into the Dynamic Entry: he meets the bounce.
+      local by=a.reactionSource
+      if by and by.lotusEntry and by.lotusEntry.target==a then
+       local victim=a
+       c:schedule(c.now+.06,function() Brawler.lotusEntry(c,by,victim) end)
+      end
       -- The floor keeps the spike (EMB-004): a crater where the body went in.
       WorldReaction.landing(c,a,hit,-velocity.Y)
       a.reactionVelocity=velocity;return true

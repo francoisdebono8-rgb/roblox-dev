@@ -33,7 +33,7 @@ end
 function BodyState.enter(c,a,spec,held)
 	local st=held or spec.State
 	a.bodyState={id=spec.Id,spec=spec,state=st,at=c.now,untilTime=c.now+(st.Time or 2)}
-	c:cue(a,string.upper(st.Name or spec.Name or spec.Id).." • ATTACK TO RELEASE",.9)
+	c:cue(a,string.upper(st.Name or spec.Name or spec.Id).." • ATTACK TO RELEASE"..(if spec.Throw then " • TOOL TO THROW" else ""),.9)
 	if st.Teach then
 		local at=c.now
 		c:schedule(c.now+.95,function()
@@ -72,6 +72,7 @@ end
 -- answer this press.
 function BodyState.release(c,a,action)
 	local s=BodyState.active(a,c.now)
+	if s and action=="Tool" and s.spec.Throw and not a.wall then return BodyState.throw(c,a,s) end
 	if not s or (action~="Attack" and action~="Heavy") then return nil end
 	if a.state~="Neutral" and a.state~="Recovery" and a.state~="Dodging" and a.state~="TechniqueRecovery" and a.state~="TechniqueActive" then return nil end
 	local Brawler=brawler()
@@ -138,6 +139,31 @@ function BodyState.release(c,a,action)
 		Brawler.event(c,a,"StateMissed:"..s.id)
 	end)
 	return ok
+end
+
+-- (21/11, DEC-045) The top of Naruto's tree (SkillTrees RasenganThrow, the
+-- technique's Throw): the state held in the hand is thrown with the tool. It
+-- flies (projectile kind "rasengan", drawn by the ANIMATEUR's TransformFX;
+-- the arm plays <fighter>.RasenganThrow as a throw) and lands as the strike
+-- would: its damage, reaction, impulse and stun.
+BodyState.THROW={Speed=72,Range=44,Radius=1.3,Release=.22}
+function BodyState.throw(c,a,s)
+	if a.state~="Neutral" and a.state~="Recovery" and a.state~="Dodging" and a.state~="TechniqueRecovery" and a.state~="TechniqueActive" then return nil end
+	if a.throwing then return false,"Throwing" end
+	local st=s.state
+	local T=BodyState.THROW
+	a.state="Neutral";a.untilTime=c.now;a.evade=nil
+	BodyState.finish(c,a,"release")
+	a.neutralToolAt=c.now+.6
+	c:beginThrow(a,{kind="Rasengan",release=T.Release,count=1,aim=a.target and a.target.root.Position,fire=function(_,aim)
+		local p=c:projectile(a,aim,T.Speed,T.Range,st.Damage or 20,"rasengan",nil,{radius=T.Radius,reaction=st.Reaction or "Knockback",
+			impulse=st.Impulse or Vector3.new(0,22,74),stun=st.Stun or .6,style=st.Style})
+		p.state=s.id
+	end})
+	local Brawler=brawler()
+	Brawler.event(c,a,"Release:"..s.id);Brawler.event(c,a,"Release:throw")
+	c:cue(a,string.upper(st.Name or s.id).." • THROWN",.6)
+	return true
 end
 
 function BodyState.snapshot(a,now)

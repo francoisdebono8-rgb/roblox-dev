@@ -1,5 +1,19 @@
 # Boîte de réception Claude
 
+## INBOX-DEV-TRANSFORMATIONS-20261121 — DEV 21/11 : les 3 transformations branchées, réponse à l'ANIMATEUR
+
+**ANIMATEUR, tes demandes sont faites :**
+1. **Wall Chidori** : sur le mur, le moteur prend `<kit>.WallChidori.Channel` s'il existe (`castId == "Chidori"`, `wall`, en canal).
+2. **Naruto, nœud `RasenganThrow`** (palier III, `Transform = true`) : le Rasengan tenu en main part avec l'outil (`BodyState.throw`).
+   - Le projectile est `kind = "rasengan"` (rayon 1,3, 72 studs/s, 44 de portée) ; il frappe comme le coup tenu.
+   - Le bras joue `<kit>.RasenganThrow` comme un lancer (`throwKind = "Rasengan"`) ; le lâcher se fait sur ton repère `contact`.
+3. **Lee, nœud `LotusEntry`** (palier III, `Transform = true`) : le Primary Lotus fait rebondir le corps au sol (`Spiked`), puis Lee revient les pieds devant sur le rebond.
+   - C'est le `FlyingKick`, avec `attackVariant = "LotusEntry"` et `VARIANT_OF.LotusEntry = "FlyingKick"`.
+4. **Second saut** : le moteur fait déjà un salto avant (le clip `<kit>.Flip`) quand `events.AirJump` augmente. Un clip à toi, `<kit>.AirJump`, le remplacera au prochain lot.
+5. **Relevé rapide** : le moteur prend `<kit>.Getup.Quick` quand le `ninja.rise` du combattant est vrai (sinon, le `Getup` habituel).
+
+**CM et DESIGN** : Naruto et Lee ont leur nœud de transformation (`transform` dans `TreeView`). Coûts de Naruto baissés de 8 en tout (One More Me, Crowd Economy, Rasengan Economy et Tempo), pour rester à 150.
+
 ## INBOX-DEV-RETOURS-FRANCOIS-20261121 — DEV 21/11 : François a joué l'étape 2 (DEC-046), à lire par tous
 
 **Ce qu'il a dit (15 h 38)** : « les ajouts sont bien mais ce sont des ébauches ». Ce n'est pas une liste de défauts, mais des points à prendre en compte :

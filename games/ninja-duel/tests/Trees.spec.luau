@@ -252,4 +252,52 @@ test("the tree panel: statuses, the detail strip and its button",function()
 	assert(cells==#TreeView.tree("Leaf"),"a node is missing from the grid")
 end)
 
+test("the transformations at the top of Naruto's and Lee's trees: the thrown Rasengan, the Lotus into the Dynamic Entry",function()
+	local function ev(x,name) return x.events and x.events[name] or 0 end
+	local function rasengan(nodes)
+		local c,a,b=duel("Legion","Mirage",gated("Legion",learned("Legion",nodes)),20)
+		assert(c:request(a,H.slot(a,"CloneRasengan"),b.root.Position),"the Rasengan was refused")
+		for _=1,120 do H.step(c,.01);if a.bodyState then break end end
+		assert(a.bodyState and a.bodyState.id=="CloneRasengan","the Rasengan was not held")
+		return c,a,b
+	end
+	-- Held, the tool throws it: it flies 20 studs and lands as the strike.
+	local c,a,b=rasengan({"RasenganThrow"})
+	local health=b.health
+	local okT,whyT=c:request(a,"Tool",b.root.Position)
+	assert(okT,"the tool did not throw the Rasengan: "..tostring(whyT).." state "..tostring(a.state))
+	assert(a.bodyState==nil and a.throwKind=="Rasengan","the Rasengan stayed in his hand")
+	local thrown
+	for _=1,40 do H.step(c,.01);for _,p in c.projectiles do if p.kind=="rasengan" then thrown=p end end;if thrown then break end end
+	local held
+	for _,spec in a.def.Techniques do if spec.Id=="CloneRasengan" then held=spec.HoldState end end
+	assert(thrown and held and thrown.damage==held.Damage,"no Rasengan in flight, or not the strike's damage")
+	for _=1,80 do H.step(c,.01);if b.health<health then break end end
+	assert(b.health<health and (b.reaction=="Knockback" or b.reaction=="WallSplat"),"the thrown Rasengan did not land as the strike ("..tostring(b.reaction)..")")
+	-- Without the node the tool throws no Rasengan; the hand keeps it.
+	local c2,a2,b2=rasengan({})
+	c2:request(a2,"Tool",b2.root.Position)
+	H.step(c2,.3)
+	for _,p in c2.projectiles do assert(p.kind~="rasengan","a Rasengan thrown without the node") end
+	-- Lee: the Lotus bounces the body and he meets the bounce feet first.
+	local Brawler=H.load("Server/Brawler")
+	local function lotus(nodes)
+		local c3,x,y=duel("Leaf","Mirage",gated("Leaf",learned("Leaf",nodes)),3)
+		x.health=x.def.Health
+		Brawler.airFinisher(c3,x,Brawler.graph(x).airFinisher)
+		assert(x.attackVariant=="PrimaryLotus","not the Primary Lotus: "..tostring(x.attackVariant))
+		for _=1,250 do H.step(c3,.01);if ev(x,"LotusEntry")>0 then break end end
+		return c3,x,y
+	end
+	local c3,x,y=lotus({"LotusEntry"})
+	assert(ev(y,"GroundBounce")>0,"the Lotus did not bounce the body")
+	assert(ev(x,"LotusEntry")==1 and x.attackVariant=="LotusEntry" and x.attackName=="FlyingKick","no Dynamic Entry on the bounce ("..tostring(x.attackName).."/"..tostring(x.attackVariant)..")")
+	local before=y.health
+	for _=1,60 do H.step(c3,.01);if y.health<before then break end end
+	assert(y.health<before,"the Dynamic Entry missed the bounce")
+	local c4,x4,y4=lotus({})
+	assert(ev(x4,"LotusEntry")==0 and ev(y4,"GroundBounce")==0,"the Lotus bounced without the node")
+	local _=c4
+end)
+
 print(string.format("NinjaDuel skill trees of the eight kits (DEC-038): %d PASS",passed))

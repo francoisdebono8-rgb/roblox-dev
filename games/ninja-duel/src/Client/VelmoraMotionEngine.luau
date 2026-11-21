@@ -1365,6 +1365,9 @@ VARIANT_OF.NarutoRendan="Slam";VARIANT_OF.CloneKickStrike="CloneKick";VARIANT_OF
 -- (05/11, lot 3) Sasuke's Chidori out of a jump or off a wall rides on the
 -- wall dive's lunge (Lion.ChidoriDive, tools/blender/jutsu_sasuke.py).
 VARIANT_OF.ChidoriDive="WallDive"
+-- (21/11, DEC-045) Lee's transformation: the Lotus into the Dynamic Entry
+-- rides on the flying kick (Brawler.lotusEntry; the ANIMATEUR's Leaf.LotusEntry).
+VARIANT_OF.LotusEntry="FlyingKick"
 -- (05/11, lot 3) Minato's arrival strike out of a Flying Thunder God rides
 -- on the light (Flashstep.FlashStrike, tools/blender/clips_flash2.py).
 VARIANT_OF.FlashStrike="Light1"
@@ -2506,6 +2509,11 @@ local function trickStep(char,actor)
 		if s.trick then s.trickEndAt=elapsedTime end
 		s.trick=nil
 	end
+	-- (21/11, DEC-045) Cloud Step, the ninja's second jump (events.AirJump):
+	-- a front flip on the air kick (the kit's Flip clip, as a launched jump).
+	local jumps=actor.events and actor.events.AirJump or 0
+	if s.airJumps~=nil and jumps>s.airJumps and air then s.trick={axis="pitch",sign=1,dur=.42,at=elapsedTime,kind="cloud"} end
+	s.airJumps=jumps
 	s.inAir=air;s.onWall=onWall
 	local tr=s.trick
 	if tr then
@@ -3026,8 +3034,10 @@ local function groundTargets(actor)
 			-- (ANIM-005) Rolled onto the other side: its own get-up, which still
 			-- ends in his stance (a mirrored get-up stood him up on the wrong lead).
 			local name=if side<0 and Authored.has(F..".Getup.L") then F..".Getup.L" else F..".Getup"
+			-- (21/11, DEC-045) Quick Rise (the ninja's tree): the ANIMATEUR's kip-up when it exists.
+			if actor.ninja and actor.ninja.rise and Authored.has(F..".Getup.Quick") then name=F..".Getup.Quick" end
 			out=Authored.sample(name,(actor.reactionElapsed or 0)*Authored.length(name)/.24)
-			if side<0 and name==F..".Getup" then out=Authored.mirror(out) end
+			if side<0 and (name==F..".Getup" or name==F..".Getup.Quick") then out=Authored.mirror(out) end
 		else
 			out=Authored.sample(F..".Down",elapsedTime)
 			if side<0 then out=Authored.mirror(out) end
@@ -3774,6 +3784,9 @@ function Motion.present(char,actor,clock,dt)
 		-- held technique gathers, Release, Recover.
 		local fighterId,id=tostring(subject.fighterId),tostring(subject.castId)
 		local prefix=fighterId.."."..id
+		-- (21/11, DEC-045) the Wall Chidori charged on the wall has its own
+		-- channel (the ANIMATEUR's <F>.WallChidori.Channel), when it exists.
+		if id=="Chidori" and subject.wall and subject.state=="TechniqueChannel" and Authored.has(fighterId..".WallChidori.Channel") then prefix=fighterId..".WallChidori" end
 		local key=subject.state..":"..id
 		if memo.castKey~=key then memo.castKey=key;memo.castAt=elapsedTime end
 		if subject.state~="TechniqueChannel" or (subject.techCharge or 0)<=0 then memo.holdAt=nil end
@@ -4014,11 +4027,14 @@ function Motion.present(char,actor,clock,dt)
 	-- (Wind Cut keeps its own slash: the clip is looked up under its name.)
 	local throwName=if throw==THROWS.WindCut then "WindCut" else subject.throwKind
 	local throwClip=Authored and throwName and tostring(subject.fighterId)..".Throw."..tostring(throwName)
+	-- (21/11, DEC-045) the thrown Rasengan (BodyState.throw): the ANIMATEUR's
+	-- <F>.RasenganThrow, released on its contact.
+	if throwName=="Rasengan" and Authored and Authored.has(tostring(subject.fighterId)..".RasenganThrow") then throwClip=tostring(subject.fighterId)..".RasenganThrow" end
 	if throwClip and Authored.has(throwClip) and throwElapsed>=0 then
 		-- (ANIM-001) An authored throw: its release frame lands on the server's
 		-- release; the upper body throws, the legs keep their own motion.
 		local c=Authored.clip(throwClip)
-		local rel=c.markers.release or c.length*.4
+		local rel=c.markers.release or c.markers.contact or c.length*.4
 		local release=math.max(subject.throwRelease or .1,1/60)
 		local t=if throwElapsed<release then throwElapsed/release*rel else rel+(throwElapsed-release)
 		if t<c.length then

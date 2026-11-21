@@ -79,6 +79,9 @@ SkillBuilds.OPTIONAL={
 	["tech.WireTrap.WallPin"]={Fields={Range={Max=12},Bind={Max=1.5}},Hook="Techniques.wireBind"},
 	["tech.PhoenixFlower.WiredBlades"]={Max=1,Hook="Elements.phoenix"},
 	["tech.Chidori.WallCharge"]={Min=.25,Max=.62,Hook="Combat:request (Chidori from a wall run)"},
+	-- (21/11, DEC-045) the transformations at the top of Naruto's and Lee's trees
+	["tech.CloneRasengan.Throw"]={Value=true,Hook="BodyState.release / BodyState.throw (the held Rasengan thrown with the tool)"},
+	["def.LotusEntry"]={Value=true,Hook="Brawler.airFinisher / Brawler ground bounce (the Lotus into the Dynamic Entry)"},
 	-- (13/11, DEC-038) A kit object a player's ninja has earned (the Item
 	-- node's own flag; SkillBuilds.build gated=true locks what it lacks).
 	["def.Items.*"]={Key="item",Value=true,Hook="SkillBuilds.build (gated kits)"},

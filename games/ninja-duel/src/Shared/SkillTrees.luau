@@ -369,24 +369,33 @@ return {
 			Effects = { { "graph.stringCancels.ShadowClone", "set", true } },
 			Shows = "A clean string can cancel into Shadow Clone: a clone pops at his side mid-combo and the routes it carries go on.",
 			Counter = "The clone still falls to one blow; guard the string before the cancel.", Lore = "CANON_YOUNG" },
-		{ Id = "ThirdClone", Tier = 3, Name = "One More Me", Branch = "Clones", Kind = "jutsu", Cost = 12, Requires = { "CloneLife" },
+		{ Id = "ThirdClone", Tier = 3, Name = "One More Me", Branch = "Clones", Kind = "jutsu", Cost = 10, Requires = { "CloneLife" },
 			Effects = { { "def.Bodies.clone.Max", "add", 1 } },
 			Shows = "Three clones at his side instead of two.", Counter = "Each clone still falls to one blow and costs chakra.", Lore = "CANON_YOUNG" },
 		{ Id = "CloneTempo", Tier = 1, Name = "Quick Signs", Branch = "Clones", Kind = "jutsu", Cost = 4,
 			Effects = { { "tech.ShadowClone.Cooldown", "mul", 0.75 } },
 			Shows = "Shadow Clone is ready again after 0.9 s instead of 1.2 s.", Counter = "Same cost; the signs can still be hit.", Lore = "PLAUSIBLE_YOUNG" },
-		{ Id = "CrowdEconomy", Tier = 2, Name = "Crowd Economy", Branch = "Clones", Kind = "jutsu", Cost = 6,
+		{ Id = "CrowdEconomy", Tier = 2, Name = "Crowd Economy", Branch = "Clones", Kind = "jutsu", Cost = 4,
 			Effects = { { "tech.MassShadowClone.Cost", "add", -6 } },
 			Shows = "Multi Shadow Clone costs 34 chakra instead of 40.", Counter = "Same 18 s cooldown; the crowd still falls one blow at a time.", Lore = "PLAUSIBLE_YOUNG" },
 		{ Id = "RasenganFocus", Tier = 1, Name = "Rasengan Focus", Branch = "Rasengan", Kind = "jutsu", Cost = 5,
 			Effects = { { "tech.CloneRasengan.Channel", "mul", 0.85 } },
 			Shows = "With a clone, the Rasengan forms in 0.38 s instead of 0.45 s.", Counter = "Still interruptible while it forms.", Lore = "PLAUSIBLE_YOUNG" },
-		{ Id = "RasenganEconomy", Tier = 2, Name = "Rasengan Economy", Branch = "Rasengan", Kind = "jutsu", Cost = 5, Requires = { "RasenganFocus" },
+		{ Id = "RasenganEconomy", Tier = 2, Name = "Rasengan Economy", Branch = "Rasengan", Kind = "jutsu", Cost = 3, Requires = { "RasenganFocus" },
 			Effects = { { "tech.CloneRasengan.Cost", "add", -4 } },
 			Shows = "The Rasengan costs 18 chakra instead of 22.", Counter = "Same 6 s cooldown; a miss still leaves him open.", Lore = "PLAUSIBLE_YOUNG" },
-		{ Id = "RasenganTempo", Tier = 2, Name = "Rasengan Tempo", Branch = "Rasengan", Kind = "jutsu", Cost = 6, Requires = { "RasenganFocus" },
+		{ Id = "RasenganTempo", Tier = 2, Name = "Rasengan Tempo", Branch = "Rasengan", Kind = "jutsu", Cost = 4, Requires = { "RasenganFocus" },
 			Effects = { { "tech.CloneRasengan.Cooldown", "mul", 0.8 } },
 			Shows = "The Rasengan is ready again after 4.8 s instead of 6 s.", Counter = "Same cost and wind-up.", Lore = "PLAUSIBLE_YOUNG" },
+		-- (21/11, DEC-045) The transformation at the top of his tree (Transform):
+		-- held, the Rasengan is thrown with the tool (BodyState.throw; the
+		-- ANIMATEUR's Legion.RasenganThrow and projectile kind "rasengan").
+		-- (Costs of One More Me, Crowd Economy, Rasengan Economy and Tempo
+		-- lowered by 8 in all: the tree stays at 150.)
+		{ Id = "RasenganThrow", Tier = 3, Name = "Thrown Rasengan", Branch = "Rasengan", Kind = "jutsu", Major = true, Transform = true, Cost = 8, Requires = { "LearnCloneRasengan" },
+			Effects = { { "tech.CloneRasengan.Throw", "set", true } },
+			Shows = "Holding the Rasengan, press the tool: he throws it, and it hits like the strike from up to 44 studs away.",
+			Counter = "It flies straight and can be seen coming: side-step it or guard it; once thrown, his hand is empty.", Lore = "PLAUSIBLE_YOUNG" },
 		{ Id = "RendanTempo", Tier = 2, Name = "Rendan Tempo", Branch = "Uzumaki", Kind = "jutsu", Cost = 5,
 			Effects = { { "tech.NarutoRendan.Cooldown", "mul", 0.8 } },
 			Shows = "Naruto Uzumaki Rendan is ready again after 7.2 s instead of 9 s.", Counter = "Still opened by the launcher: guard it.", Lore = "CANON_YOUNG" },
@@ -579,6 +588,14 @@ return {
 		{ Id = "GateSpeed", Tier = 3, Name = "Fifth Gate Speed", Branch = "Lotus & Gates", Kind = "awakening", Cost = 5, Requires = { "GateControl" },
 			Effects = { { "def.Awakening.Speed", "mul", 1.03 } },
 			Shows = "With the Gates open his speed is ×1.22 instead of ×1.18.", Counter = "The Gates still burn his health.", Lore = "CANON_YOUNG" },
+		-- (21/11, DEC-045) The transformation at the top of his tree (Transform):
+		-- the Primary Lotus drives the body into the floor so it bounces, and
+		-- he comes back feet first (Brawler.airFinisher / the ground bounce;
+		-- the ANIMATEUR's Leaf.LotusEntry, attackVariant "LotusEntry").
+		{ Id = "LotusEntry", Tier = 3, Name = "Lotus into Dynamic Entry", Branch = "Lotus & Gates", Kind = "route", Major = true, Transform = true, Cost = 10, Requires = { "LearnPrimaryLotus" },
+			Effects = { { "def.LotusEntry", "set", true } },
+			Shows = "The Primary Lotus bounces the body off the floor, and Lee comes back feet first: a Dynamic Entry on the bounce.",
+			Counter = "The bounce is short and the kick is seen coming: an air recovery or a substitution gets out of it.", Lore = "PLAUSIBLE_YOUNG" },
 		{ Id = "Stamina", Tier = 1, Name = "Stamina", Branch = "Body", Kind = "stat", Cost = 4,
 			Effects = { { "def.Health", "add", 8 } },
 			Shows = "Health 148 instead of 140.", Counter = "Still a body without a shield.", Lore = "CANON_YOUNG" },
