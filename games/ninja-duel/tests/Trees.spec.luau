@@ -63,7 +63,33 @@ test("the kit objects: Gaara's gourd, Lee's weights and Kakashi's tanto are earn
 	assert(free("Sand").def.SandShield~=nil and free("Copycat").def.WeaponLocked==nil,"an ungated kit lost its object")
 	for _,spec in free("Leaf").def.Techniques do assert(not spec.Locked,"an ungated Lee lost a technique") end
 	-- A kit without an object is not touched by the gate.
-	assert(#gated("Legion").locks==0,"Naruto has no kit object")
+	assert(#gated("Mirage").locks==0,"Itachi has no kit object")
+end)
+
+-- (21/11, DEC-045) Naruto, Sasuke and Lee start with 2 techniques: the others
+-- and the awakening are earned on the tree; the prodigies keep everything.
+test("the reduced start: 2 techniques, the rest and the awakening learned on the tree",function()
+	local starts={Legion={"ShadowClone","NarutoRendan"},Lion={"PhoenixFlower","FireBloom"},Leaf={"LeafGreatWhirlwind","DynamicEntry"}}
+	local learn={Legion={"LearnCloneRasengan","LearnMassShadowClone","LearnNineTails"},Lion={"LearnWireTrap","LearnChidori","LearnCurseMark"},
+		Leaf={"LearnPrimaryLotus","Weights","LearnEightGates"}}
+	for kit,start in starts do
+		local open={}
+		for _,spec in gated(kit).def.Techniques do if not spec.Locked then table.insert(open,spec.Id) end end
+		table.sort(open);table.sort(start)
+		assert(table.concat(open,",")==table.concat(start,","),kit.." starts with "..table.concat(open,","))
+		assert(gated(kit).def.AwakeningLocked==true,kit.."'s awakening without the node")
+		local all=gated(kit,learn[kit])
+		for _,spec in all.def.Techniques do assert(not spec.Locked,kit..": "..spec.Id.." still locked with its node") end
+		assert(all.def.AwakeningLocked==nil,kit.."'s awakening still locked")
+		assert(free(kit).def.AwakeningLocked==nil,"the prodigy "..kit.." lost his awakening")
+	end
+	local c,a=duel("Legion","Lion",gated("Legion"))
+	a.health=1
+	local ok,why=c:awaken(a)
+	assert(not ok and why=="Locked","Naruto awakened without the node: "..tostring(why))
+	c,a=duel("Legion","Lion",gated("Legion",{"LearnNineTails"}))
+	a.health=1
+	assert(c:awaken(a),"the node did not give the awakening")
 end)
 
 test("in a duel: the locked weights are refused, the sheathed tanto stays, no gourd means no sand charge",function()
@@ -102,9 +128,17 @@ test("Lee · Falling Weights: the weights he drops crater the floor and knock do
 	assert(drop({"Weights"},4)==0,"the weights cratered without the node")
 end)
 
+-- (21/11, DEC-045) a test of a technique or an awakening a player earns on the
+-- tree learns it first
+local UNLOCKS={Legion={"LearnCloneRasengan","LearnMassShadowClone","LearnNineTails"},Lion={"LearnWireTrap","LearnChidori","LearnCurseMark"},Leaf={"LearnPrimaryLotus","LearnEightGates"}}
+local function learned(kit,nodes)
+	local out=table.clone(UNLOCKS[kit] or {})
+	for _,id in nodes or {} do if not table.find(out,id) then table.insert(out,id) end end
+	return out
+end
 test("Naruto · Fox Healing: the Nine-Tails' chakra closes his wounds while it burns",function()
 	local function heal(nodes)
-		local c,a=duel("Legion","Lion",gated("Legion",nodes),12)
+		local c,a=duel("Legion","Lion",gated("Legion",learned("Legion",nodes)),12)
 		a.health=30;a.hum.Health=30
 		c:awaken(a)
 		assert((a.awakenUntil or 0)>c.now,"no awakening")
@@ -118,7 +152,7 @@ end)
 
 test("Naruto · It Was a Clone!: right after a substitution E is a free dash back",function()
 	local function rush(nodes)
-		local c,a,b=duel("Legion","Lion",gated("Legion",nodes))
+		local c,a,b=duel("Legion","Lion",gated("Legion",learned("Legion",nodes)))
 		assert(c:damage(b,a,5,false,false))
 		assert(c:request(a,"Substitute"))
 		H.step(c,.16)

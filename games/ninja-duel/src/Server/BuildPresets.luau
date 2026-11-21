@@ -60,7 +60,9 @@ Presets.AI={
 		Boss={Why="Blood for chakra and the counter-rush: the cornered assault.",
 			Nodes={"DancingLeaf","FireMastery","PhoenixTempo","Stamina","ChakraFlow","ShurikenFan","WiredFlames","SharperEyes","SharinganCounter","ChidoriFocus","CurseControl","CurseBlood","CounterRush"}},
 		Legendary={Why="Everything, with the wired flames.",
-			Nodes={"DancingLeaf","SharperEyes","SharinganCounter","CounterRush","ShurikenFan","BlockedTool","WireCancel","WiredFlames","FireMastery","PhoenixTempo","ChidoriFocus","ChidoriEconomy","WallChidori","CurseControl","CurseBlood","Stamina","ChakraFlow","Reserves"}},
+			Nodes={"DancingLeaf","SharperEyes","SharinganCounter","CounterRush","ShurikenFan","BlockedTool","WireCancel","WiredFlames","FireMastery","PhoenixTempo","ChidoriFocus","ChidoriEconomy","WallChidori","CurseControl","CurseBlood","Stamina","ChakraFlow","Reserves",
+				-- (21/11, DEC-045) the tree's unlocks: nothing for the AI's whole kit, the budget near the maximum
+				"LearnWireTrap","LearnChidori","LearnCurseMark"}},
 	},
 }
 -- One example build per ranked bracket: what a fighter looks like at that budget.

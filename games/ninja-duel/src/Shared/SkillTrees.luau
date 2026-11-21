@@ -254,6 +254,23 @@ return {
 	-- Sasuke: aggressive hybrid. Kicks, wire, fire and the Chidori; one opening
 	-- becomes an assault, every big commitment can be punished.
 	Lion = { Fighter = "Lion", Nodes = {
+		-- (21/11, DEC-045) the start is 2 techniques: the others and the
+		-- awakening are earned on the tree (Item nodes, SkillBuilds.gate).
+		{ Id = "LearnWireTrap", Tier = 2, Name = "Learn the Wire Trap", Branch = "Unlocks", Kind = "tool", Major = true, Cost = 6, Item = "WireTrap",
+			Effects = { { "def.Items.WireTrap", "set", true } },
+			Without = { { "tech.WireTrap.Locked", "set", true } },
+			Shows = "The Wire Trap is his: steel wire that binds the rival where he stands.",
+			Counter = "The wire is visible; a substitution or a dodge cuts it.", Lore = "CANON_YOUNG" },
+		{ Id = "LearnChidori", Tier = 3, Name = "Learn the Chidori", Branch = "Unlocks", Kind = "tool", Major = true, Cost = 8, Item = "Chidori",
+			Effects = { { "def.Items.Chidori", "set", true } },
+			Without = { { "tech.Chidori.Locked", "set", true } },
+			Shows = "The Chidori is his: a lightning charge through the rival. Before, the slot says LEARN IT ON THE TREE.",
+			Counter = "The charge is a straight line, heard and seen before it lands.", Lore = "CANON_YOUNG" },
+		{ Id = "LearnCurseMark", Tier = 3, Name = "The Curse Mark", Branch = "Unlocks", Kind = "tool", Major = true, Cost = 10, Item = "Awakening",
+			Effects = { { "def.Items.Awakening", "set", true } },
+			Without = { { "def.AwakeningLocked", "set", true } },
+			Shows = "His awakening, CURSE MARK, is his to call when he is low. Before, he has none.",
+			Counter = "It eats his own health: make it last.", Lore = "CANON_YOUNG" },
 		{ Id = "DancingLeaf", Tier = 1, Name = "Dancing Leaf Launcher", Branch = "Lion", Kind = "route", Major = true, Cost = 10,
 			Effects = { { "def.LauncherMove", "set", "LionKick" } },
 			Shows = "The heavy after two clean hits is the rising kick too: it is followed into the air (Shadow of the Dancing Leaf) and a heavy up there is the Lion Combo.",
@@ -323,6 +340,23 @@ return {
 	-- Naruto (13/11, DEC-038): the clones carry the routes, the Rasengan needs
 	-- a hand, the Nine-Tails' chakra closes his wounds. The surprise is the kit.
 	Legion = { Fighter = "Legion", Nodes = {
+		-- (21/11, DEC-045) the start is 2 techniques: the others and the
+		-- awakening are earned on the tree (Item nodes, SkillBuilds.gate).
+		{ Id = "LearnCloneRasengan", Tier = 2, Name = "Learn the Rasengan", Branch = "Unlocks", Kind = "tool", Major = true, Cost = 6, Item = "CloneRasengan",
+			Effects = { { "def.Items.CloneRasengan", "set", true } },
+			Without = { { "tech.CloneRasengan.Locked", "set", true } },
+			Shows = "A clone holds the chakra, he shapes it: the Rasengan is his. Before, the slot says LEARN IT ON THE TREE.",
+			Counter = "Its wind-up still shows the spinning ball; a guard or a dodge answers it.", Lore = "CANON_YOUNG" },
+		{ Id = "LearnMassShadowClone", Tier = 3, Name = "Learn the Clone Army", Branch = "Unlocks", Kind = "tool", Major = true, Cost = 6, Item = "MassShadowClone",
+			Effects = { { "def.Items.MassShadowClone", "set", true } },
+			Without = { { "tech.MassShadowClone.Locked", "set", true } },
+			Shows = "The Mass Shadow Clone is his: a crowd of clones rushes the rival.",
+			Counter = "Each clone falls in one hit; the real one is the one that casts.", Lore = "CANON_YOUNG" },
+		{ Id = "LearnNineTails", Tier = 3, Name = "The Nine-Tails Chakra", Branch = "Unlocks", Kind = "tool", Major = true, Cost = 10, Item = "Awakening",
+			Effects = { { "def.Items.Awakening", "set", true } },
+			Without = { { "def.AwakeningLocked", "set", true } },
+			Shows = "His awakening, NINE-TAILS CHAKRA, is his to call when he is low. Before, he has none.",
+			Counter = "Survive the burst: it is strong but short.", Lore = "CANON_YOUNG" },
 		{ Id = "CloneCraft", Tier = 1, Name = "Clone Craft", Branch = "Clones", Kind = "property", Cost = 5,
 			Effects = { { "def.Bodies.clone.Cost", "add", -2 } },
 			Shows = "A shadow clone costs 10 chakra instead of 12.", Counter = "Still one blow dispels it.", Lore = "CANON_YOUNG" },
@@ -469,6 +503,18 @@ return {
 	-- Rock Lee (13/11, DEC-038): the weights are the object; Gai lets him take
 	-- them off once a player earns it. Then the kicks, the Lotus, the Gates.
 	Leaf = { Fighter = "Leaf", Nodes = {
+		-- (21/11, DEC-045) the start is 2 techniques: the others and the
+		-- awakening are earned on the tree (Item nodes, SkillBuilds.gate).
+		{ Id = "LearnPrimaryLotus", Tier = 2, Name = "Learn the Lotus", Branch = "Unlocks", Kind = "tool", Major = true, Cost = 6, Item = "PrimaryLotus",
+			Effects = { { "def.Items.PrimaryLotus", "set", true } },
+			Without = { { "tech.PrimaryLotus.Locked", "set", true } },
+			Shows = "The Primary Lotus is his: up, wrapped and driven head first into the floor.",
+			Counter = "It needs the rival in the air: stay grounded.", Lore = "CANON_YOUNG" },
+		{ Id = "LearnEightGates", Tier = 3, Name = "The Eight Gates", Branch = "Unlocks", Kind = "tool", Major = true, Cost = 10, Item = "Awakening",
+			Effects = { { "def.Items.Awakening", "set", true } },
+			Without = { { "def.AwakeningLocked", "set", true } },
+			Shows = "His awakening, EIGHT GATES, is his to call when he is low. Before, he has none.",
+			Counter = "The Gates burn his health: outlast them.", Lore = "CANON_YOUNG" },
 		{ Id = "Weights", Tier = 1, Name = "Gai's Permission", Branch = "Weights", Kind = "tool", Major = true, Cost = 10, Item = "Weights",
 			Effects = { { "def.Items.Weights", "set", true } },
 			Without = { { "tech.RemoveWeights.Locked", "set", true } },

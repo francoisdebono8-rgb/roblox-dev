@@ -95,6 +95,8 @@ SkillBuilds.WITHOUT={
 	["def.SandShield"]={op="clear",Hook="Combat (no shield charges without the gourd)"},
 	["def.WeaponLocked"]={op="set",value=true,Hook="Combat:arm (the tanto stays sheathed)"},
 	["tech.*.Locked"]={op="set",value=true,Hook="Combat:requestInner (the technique is refused)"},
+	-- (21/11, DEC-045) the awakening is earned on the tree too
+	["def.AwakeningLocked"]={op="set",value=true,Hook="Combat:awaken (refused until learned)"},
 }
 -- Ranked brackets (PROG-002): inside a bracket every fighter may ACTIVATE at
 -- most Budget skill points, whatever he has unlocked. Progression gives more

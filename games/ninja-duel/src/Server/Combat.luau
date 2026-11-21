@@ -1031,6 +1031,8 @@ end
 function Combat:awaken(a)
 	local tune=a.def.Awakening
 	if not tune or a.awakened then return false,"No awakening" end
+	-- (21/11, DEC-045) a player's kit earns its awakening on the tree
+	if a.def.AwakeningLocked then self:cue(a,string.upper(tune.Name or "AWAKENING").." • LEARN IT ON THE TREE",.8);return false,"Locked" end
 	if a.health>a.def.Health*Config.Awaken.Threshold then return false,"Not yet" end
 	if not Brawler.free(a,self.now) then return false,"Reacting" end
 	a.awakened=true;a.awakenUntil=self.now+(tune.Duration or Config.Awaken.Duration);a.awakenedAt=self.now;a.curseLanded=self.now;a.curseFedUntil=0
