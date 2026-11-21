@@ -424,14 +424,14 @@ def kunai_target():
     km.cyl(timber, T(cx, cy, 0) @ Rx(math.pi / 2), 1.8, .5, lambda q, k: km.wood(q, None, C["woodLight"]), sides=20)
     for r_, col in ((1.55, rgb(236, 226, 200)), (1.2, rgb(176, 40, 32)), (.85, rgb(236, 226, 200)), (.5, rgb(176, 40, 32)),
                     (.2, rgb(36, 34, 38))):
-        km.cyl(glass, T(cx, cy, .26 + (1.6 - r_) * .004) @ Rx(math.pi / 2), r_, .03, col, sides=20)
+        km.cyl(glass, T(cx, cy, .52 + (1.6 - r_) * .006) @ Rx(math.pi / 2), r_, .03, col, sides=20)  # on the front face (z .5)
     for a in (-30, 30, 180):
         rad = math.radians(a)
         km.box(timber, T(math.sin(rad) * 1.2, 1.7, -math.cos(rad) * .9 - .4) @ Matrix.Rotation(math.radians(-14 if a != 180 else 14), 4, "X"),
                (.3, 3.8, .3), C["woodDark"])
     for (x, y) in ((.4, 3.9), (-.7, 3.2)):
-        km.box(metal, T(x, y, .7) @ Rx(math.radians(8)), (.12, .12, .9), C["iron"])
-        km.cyl(metal, T(x, y, 1.2) @ Rx(math.pi / 2), .14, .1, C["iron"], sides=8)
+        km.box(metal, T(x, y, .85) @ Rx(math.radians(8)), (.12, .12, .8), C["iron"])
+        km.cyl(metal, T(x, y, 1.25) @ Rx(math.pi / 2), .14, .1, C["iron"], sides=8)
     return KH.done(walls, timber, glass, tiles, cloth, metal)
 
 
