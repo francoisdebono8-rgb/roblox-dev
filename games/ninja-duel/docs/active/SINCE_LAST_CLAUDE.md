@@ -1,5 +1,31 @@
 # Boîte de réception Claude
 
+## INBOX-DEV-ETAPE2-20261121 — DEV 21/11 : l'étape 2 commence, les tâches de chacun (DEC-045)
+
+Plan complet (projet) : `claude/etape2-deux-arbres-taches-2026-11-21.md`. En bref :
+- **DEV** :
+  - `Shared/NinjaTree` (natures, infusions, mobilité, outils) ;
+  - le départ réduit de Naruto, Sasuke et Lee (2 techniques, le reste par nœuds `Unlock`) ;
+  - les effets en combat, et l'attribut `NinjaNature` sur le joueur.
+- **DESIGN** :
+  - l'écran des deux arbres (onglets KIT et NINJA) ;
+  - la fiche du kit ;
+  - le choix de la nature ;
+  - les icônes de boutique (`UIAssets.item`).
+- **ANIMATEUR** :
+  - Naruto, Sasuke et Lee refaits avec SyphoDev ;
+  - `Infusion.<Nature>` pour les 5 natures, sur le kunai et sur la lame ;
+  - le parchemin explosif et la fumée ;
+  - les 3 transformations du haut de l'arbre.
+- **OUTILLEUR** :
+  - le comparateur des 3 kits avant et après, avec les natures ;
+  - le contrôle « chaque nœud Major change quelque chose » ;
+  - la cabine repassée (cheveux, Korblox).
+- **CM** :
+  - les textes anglais des nœuds de l'arbre du ninja ;
+  - les 3 fiches mises à jour ;
+  - le Short « lequel tu prends ? ».
+
 ## INBOX-DEV-IMAGES-20261121 — DEV 21/11 : les images de la designer sont sur Roblox
 
 - **Ce qui est importé** : les 35 images de `assets/ui` (version DESIGN du 19/11 à 21 h 34, plus les 6 rangs du 20/11) et les 33 icônes de boutique (`assets/ui/items`), sur le compte de François, depuis Studio (Asset Manager).

@@ -439,3 +439,21 @@ Décisions du DEV (DEC-043, ses 90 %), sur les questions de l'OUTILLEUR et de l'
 - **`dist/` n'est plus dans Git.** L'agent du Mac reconstruit les 4 places depuis les sources à chaque lot, ce qui économise environ 80 Mo par reconstruction. On construit toujours avant les tests de build.
 - **La suite Luau tourne sur GitHub** à chaque poussée sur la branche commune (`.github/workflows/ninja-duel-suite.yml`). Une session sans luau ni lune peut aussi lancer `tests/install_tools.sh`.
 
+## DEC-045 — Étape 2 : le départ réduit des kits et l'arbre du ninja (21/11)
+
+Décision du DEV (DEC-043). Plan et tâches : projet, `claude/etape2-deux-arbres-taches-2026-11-21.md`.
+
+- **Le départ réduit.** Un joueur commence un kit avec les coups de base et 2 techniques :
+  - Naruto : ShadowClone, NarutoRendan ;
+  - Sasuke : PhoenixFlower, FireBloom ;
+  - Lee : LeafGreatWhirlwind, DynamicEntry.
+
+  Les autres techniques, l'objet et l'éveil se débloquent par des nœuds `Unlock`, aux paliers II et III. On commence par ces 3 kits ; les 5 autres suivent à l'étape 4.
+- **Le kit complet reste** pour l'IA, les maîtres, les films, le classé et le tournoi (même budget pour tous, DEC-039).
+- **L'arbre du ninja** est commun aux 8 kits. Il rapporte 1 point pour 15 de maîtrise, tous kits confondus. Ses branches :
+  - la nature, une seule parmi Feu, Vent, Foudre, Terre et Eau ;
+  - l'infusion : le kunai, la lame, la maîtrise ;
+  - la mobilité : le mur, le second saut, le relevé ;
+  - les outils : le parchemin explosif, la fumée.
+- **Les infusions** ont de petits effets lisibles, auxquels l'adversaire peut toujours répondre, et au plus un toutes les 4 s. Rien de tout cela ne se vend.
+
