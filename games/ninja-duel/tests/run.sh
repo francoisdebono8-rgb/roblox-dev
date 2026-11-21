@@ -32,6 +32,6 @@ run() {
 echo "=== konoha dump ==="
 "$LUNE" run tools/syphodev/konoha_dump.luau /tmp/konoha.json || status=1
 echo "KONOHA-JSON-BEGIN"
-python3 -c "import json;d=json.load(open('/tmp/konoha.json'));print(json.dumps(d,separators=(',',':')))"
+python3 -c "import base64,gzip,json;d=json.load(open('/tmp/konoha.json'));b=base64.b64encode(gzip.compress(json.dumps(d,separators=(',',':')).encode())).decode();[print('KJ '+b[i:i+3000]) for i in range(0,len(b),3000)]"
 echo "KONOHA-JSON-END"
 exit $status
