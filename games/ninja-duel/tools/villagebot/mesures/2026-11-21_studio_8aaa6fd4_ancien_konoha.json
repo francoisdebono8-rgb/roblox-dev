@@ -1,0 +1,707 @@
+{
+ "place": "LAB/robots/ND-JEU-etape3-8aaa6fd4.rbxlx",
+ "build": "8aaa6fd4",
+ "village": "ancien Konoha (Config.Hub.Layout avant konoha2)",
+ "date": "2026-11-21",
+ "note": "run1: trajets + 12 toits, ancienne méthode d'escalade (défaut de méthode, 0/12, ne prouve rien sur les toits). run2: hauteur du saut + 8 toits bas, sortie de l'avant-toit mal mesurée sur les toits en pente. run3: méthode finale (sauter depuis 2,5 studs hors de l'avant-toit, second saut au sommet, entrer au-dessus) : 7/10 toits bas atteints.",
+ "routes": [
+  {
+   "arrived": true,
+   "to": "spawn:hall",
+   "t": 0.2,
+   "straightOnly": true,
+   "straight": 0,
+   "status": "NoPath",
+   "fell": false,
+   "from": "0,-10.4",
+   "stuck": [],
+   "length": 0,
+   "recompute": 0,
+   "walk": 0
+  },
+  {
+   "arrived": true,
+   "to": "proctor",
+   "t": 1.8,
+   "straight": 57.2,
+   "fell": false,
+   "from": "0,-10.4",
+   "stuck": [],
+   "length": 53.6,
+   "recompute": 0,
+   "walk": 3.4
+  },
+  {
+   "arrived": true,
+   "to": "master:Sand",
+   "t": 4.2,
+   "straight": 73.9,
+   "fell": false,
+   "from": "0,-64",
+   "stuck": [],
+   "length": 131.8,
+   "recompute": 0,
+   "walk": 8.2
+  },
+  {
+   "arrived": true,
+   "to": "master:GentleFist",
+   "t": 11.4,
+   "straight": 129.6,
+   "fell": false,
+   "from": "-63.6,-97.9",
+   "stuck": [],
+   "length": 355.3,
+   "recompute": 0,
+   "walk": 22.2
+  },
+  {
+   "arrived": true,
+   "to": "training",
+   "t": 7.4,
+   "straight": 148.4,
+   "fell": false,
+   "from": "-185.8,-127.3",
+   "stuck": [],
+   "length": 229,
+   "recompute": 0,
+   "walk": 14.3
+  },
+  {
+   "arrived": true,
+   "to": "master:Leaf",
+   "t": 1.5,
+   "straight": 48.4,
+   "fell": false,
+   "from": "-198,17.7",
+   "stuck": [],
+   "length": 46.1,
+   "recompute": 0,
+   "walk": 2.9
+  },
+  {
+   "arrived": true,
+   "to": "master:Copycat",
+   "t": 2.6,
+   "straight": 82.5,
+   "fell": false,
+   "from": "-156.6,34.8",
+   "stuck": [],
+   "length": 81.7,
+   "recompute": 0,
+   "walk": 5.1
+  },
+  {
+   "arrived": true,
+   "to": "master:Legion",
+   "t": 6.6,
+   "straight": 199.8,
+   "fell": false,
+   "from": "-212.3,90.7",
+   "stuck": [],
+   "length": 206.5,
+   "recompute": 0,
+   "walk": 12.9
+  },
+  {
+   "arrived": true,
+   "to": "spawn:gate",
+   "t": 3.5,
+   "straight": 112.1,
+   "fell": false,
+   "from": "-20.8,139.4",
+   "stuck": [],
+   "length": 108.6,
+   "recompute": 0,
+   "walk": 6.8
+  },
+  {
+   "arrived": true,
+   "to": "market",
+   "t": 9.9,
+   "straight": 264.3,
+   "fell": false,
+   "from": "-0.7,246.1",
+   "stuck": [],
+   "length": 306.5,
+   "recompute": 0,
+   "walk": 19.2
+  },
+  {
+   "arrived": true,
+   "to": "master:Lion",
+   "t": 9.3,
+   "straight": 160.9,
+   "fell": false,
+   "from": "201.8,80.7",
+   "stuck": [],
+   "length": 294.7,
+   "recompute": 0,
+   "walk": 18.4
+  },
+  {
+   "arrived": true,
+   "to": "master:Mirage",
+   "t": 4,
+   "straightOnly": true,
+   "straight": 63.1,
+   "status": "NoPath",
+   "fell": false,
+   "from": "225.3,-77.6",
+   "stuck": [],
+   "length": 61.6,
+   "recompute": 0,
+   "walk": 3.9
+  },
+  {
+   "arrived": true,
+   "to": "master:Flashstep",
+   "t": 13.4,
+   "straight": 271,
+   "fell": false,
+   "from": "231.1,-136.7",
+   "stuck": [],
+   "length": 412.9,
+   "recompute": 0,
+   "walk": 25.8
+  },
+  {
+   "arrived": true,
+   "to": "spawn:gate",
+   "t": 19.4,
+   "straight": 524.3,
+   "fell": false,
+   "from": "0.4,-274.7",
+   "stuck": [],
+   "length": 618.3,
+   "recompute": 0,
+   "walk": 38.6
+  }
+ ],
+ "places": [
+  {
+   "name": "spawn:hall",
+   "at": [
+    0,
+    -10.4
+   ]
+  },
+  {
+   "name": "spawn:gate",
+   "at": [
+    0,
+    249.6
+   ]
+  },
+  {
+   "name": "proctor",
+   "at": [
+    0,
+    -67.6
+   ]
+  },
+  {
+   "name": "master:Mirage",
+   "at": [
+    231.4,
+    -140.4
+   ]
+  },
+  {
+   "name": "master:Legion",
+   "at": [
+    -19.5,
+    143
+   ]
+  },
+  {
+   "name": "master:Flashstep",
+   "at": [
+    0,
+    -278.2
+   ]
+  },
+  {
+   "name": "master:Sand",
+   "at": [
+    -63.7,
+    -101.4
+   ]
+  },
+  {
+   "name": "master:GentleFist",
+   "at": [
+    -189.8,
+    -127.4
+   ]
+  },
+  {
+   "name": "master:Copycat",
+   "at": [
+    -214.5,
+    93.6
+   ]
+  },
+  {
+   "name": "master:Leaf",
+   "at": [
+    -153.4,
+    36.4
+   ]
+  },
+  {
+   "name": "master:Lion",
+   "at": [
+    228.8,
+    -78
+   ]
+  },
+  {
+   "name": "training",
+   "at": [
+    -195,
+    20.8
+   ]
+  },
+  {
+   "name": "market",
+   "at": [
+    205.4,
+    80.6
+   ]
+  }
+ ],
+ "jump": {
+  "single": 12.7,
+  "jumpPower": 56,
+  "apex": 18.1,
+  "early": 18.1,
+  "gravity": 140
+ },
+ "roofBands": {
+  "bands": [
+   12,
+   15,
+   18,
+   21,
+   25
+  ],
+  "count": [
+   17,
+   3,
+   0,
+   1,
+   102,
+   6
+  ]
+ },
+ "roofModels": {
+  "AlleyHouse": [
+   21,
+   21.3,
+   22.1
+  ],
+  "ExamHall": [
+   2,
+   39.5,
+   39.5
+  ],
+  "QuarterHouse": [
+   63,
+   10.9,
+   22.1
+  ],
+  "HyugaHouse": [
+   2,
+   11.0,
+   11.0
+  ],
+  "KonohaGate": [
+   1,
+   60.7,
+   60.7
+  ],
+  "House": [
+   20,
+   10.9,
+   21.3
+  ],
+  "HighRoof": [
+   3,
+   32.5,
+   32.5
+  ],
+  "Rooftop": [
+   6,
+   22.1,
+   22.1
+  ],
+  "Ichiraku": [
+   1,
+   10.8,
+   10.8
+  ],
+  "UchihaHouse": [
+   6,
+   21.3,
+   21.3
+  ],
+  "HyugaCompound": [
+   1,
+   18.1,
+   18.1
+  ],
+  "NakaShrine": [
+   2,
+   13.0,
+   13.0
+  ],
+  "GateBooth": [
+   1,
+   12.5,
+   12.5
+  ]
+ },
+ "roofs_run1_old_method": [
+  {
+   "top": 12.5,
+   "approach": 2.8,
+   "name": "GateBooth/BoothRoof",
+   "highest": 3.8,
+   "approachArrived": true,
+   "tries": 3,
+   "t": 32.3,
+   "reached": false
+  },
+  {
+   "top": 14.9,
+   "approach": 7.9,
+   "name": "QuarterHouse/Roof",
+   "highest": 3.8,
+   "approachArrived": false,
+   "tries": 3,
+   "t": 16.9,
+   "reached": false
+  },
+  {
+   "top": 22.1,
+   "approach": 6.2,
+   "name": "Rooftop/Roof",
+   "highest": 3.8,
+   "approachArrived": true,
+   "tries": 3,
+   "t": 14.4,
+   "reached": false
+  },
+  {
+   "top": 22.1,
+   "approach": 4.4,
+   "name": "Rooftop/Roof",
+   "highest": 3.8,
+   "approachArrived": false,
+   "tries": 3,
+   "t": 12.9,
+   "reached": false
+  },
+  {
+   "top": 23.9,
+   "approach": 11.6,
+   "name": "AlleyHouse/Roof",
+   "highest": 3.8,
+   "approachArrived": true,
+   "tries": 3,
+   "t": 20.4,
+   "reached": false
+  },
+  {
+   "top": 25,
+   "approach": 4.8,
+   "name": "QuarterHouse/Roof",
+   "highest": 3.8,
+   "approachArrived": true,
+   "tries": 3,
+   "t": 13,
+   "reached": false
+  },
+  {
+   "top": 25,
+   "approach": 13.6,
+   "name": "House/Roof",
+   "highest": 3.8,
+   "approachArrived": true,
+   "tries": 3,
+   "t": 22.4,
+   "reached": false
+  },
+  {
+   "top": 25.3,
+   "approach": 6.9,
+   "name": "QuarterHouse/Roof",
+   "highest": 3.8,
+   "approachArrived": true,
+   "tries": 3,
+   "t": 15.3,
+   "reached": false
+  },
+  {
+   "top": 25.3,
+   "approach": 19.3,
+   "name": "QuarterHouse/Roof",
+   "highest": 3.8,
+   "approachArrived": true,
+   "tries": 3,
+   "t": 27.4,
+   "reached": false
+  },
+  {
+   "top": 25.3,
+   "approach": 8.1,
+   "name": "House/Roof",
+   "highest": 3.8,
+   "approachArrived": false,
+   "tries": 3,
+   "t": 16.1,
+   "reached": false
+  },
+  {
+   "top": 25.3,
+   "approach": 8.5,
+   "name": "QuarterHouse/Roof",
+   "highest": 3.8,
+   "approachArrived": true,
+   "tries": 3,
+   "t": 17.1,
+   "reached": false
+  },
+  {
+   "top": 25.6,
+   "approach": 14.8,
+   "name": "UchihaHouse/Roof",
+   "highest": 3.8,
+   "approachArrived": true,
+   "tries": 3,
+   "t": 23,
+   "reached": false
+  }
+ ],
+ "roofs_run2": [
+  {
+   "highest": 7.5,
+   "tries": 3,
+   "eave": 10.8,
+   "approach": 11.7,
+   "ridge": 15.2,
+   "from": -0.1,
+   "approachArrived": true,
+   "name": "Ichiraku/StandRoof",
+   "t": 20.1,
+   "reached": false
+  },
+  {
+   "highest": 5,
+   "tries": 3,
+   "eave": 10.9,
+   "approach": 1.2,
+   "ridge": 18.8,
+   "from": 2,
+   "approachArrived": false,
+   "name": "House/Roof",
+   "t": 11.3,
+   "reached": false
+  },
+  {
+   "highest": 8,
+   "tries": 3,
+   "eave": 10.9,
+   "approach": 2.3,
+   "ridge": 18.8,
+   "from": 1.6,
+   "approachArrived": true,
+   "name": "QuarterHouse/Roof",
+   "t": 11.3,
+   "reached": false
+  },
+  {
+   "highest": 18.9,
+   "tries": 1,
+   "eave": 10.9,
+   "approach": 6.9,
+   "ridge": 18.8,
+   "from": 1.8,
+   "approachArrived": true,
+   "name": "QuarterHouse/Roof",
+   "t": 7.8,
+   "reached": true
+  },
+  {
+   "highest": 17.4,
+   "tries": 1,
+   "eave": 10.9,
+   "approach": 16.4,
+   "ridge": 18.8,
+   "from": 1.8,
+   "approachArrived": true,
+   "name": "QuarterHouse/Roof",
+   "t": 17.3,
+   "reached": true
+  },
+  {
+   "highest": 9.3,
+   "tries": 3,
+   "eave": 10.9,
+   "approach": 7.7,
+   "ridge": 18.8,
+   "from": -0.1,
+   "approachArrived": true,
+   "name": "QuarterHouse/Roof",
+   "t": 16,
+   "reached": false
+  },
+  {
+   "highest": 4.7,
+   "tries": 3,
+   "eave": 11,
+   "approach": 20.3,
+   "ridge": 19.8,
+   "from": 2,
+   "approachArrived": true,
+   "name": "HyugaHouse/Roof",
+   "t": 37.4,
+   "reached": false
+  },
+  {
+   "highest": 8.5,
+   "tries": 3,
+   "eave": 13,
+   "approach": 18.1,
+   "ridge": 19.7,
+   "from": 2,
+   "approachArrived": true,
+   "name": "NakaShrine/Roof",
+   "t": 29.8,
+   "reached": false
+  }
+ ],
+ "roofs_run3_final": [
+  {
+   "highest": 29.6,
+   "tries": 1,
+   "eave": 10.8,
+   "approach": 12.6,
+   "ridge": 15.2,
+   "from": 2,
+   "approachArrived": true,
+   "name": "Ichiraku/StandRoof",
+   "t": 13.6,
+   "reached": true
+  },
+  {
+   "highest": 41.6,
+   "tries": 1,
+   "eave": 10.9,
+   "approach": 6.6,
+   "ridge": 18.8,
+   "from": 2.2,
+   "approachArrived": false,
+   "name": "House/Roof",
+   "t": 8.6,
+   "reached": true
+  },
+  {
+   "highest": 14.7,
+   "tries": 1,
+   "eave": 10.9,
+   "approach": 8,
+   "ridge": 18.8,
+   "from": 1.7,
+   "approachArrived": true,
+   "name": "QuarterHouse/Roof",
+   "t": 8.7,
+   "reached": true
+  },
+  {
+   "highest": 40.7,
+   "tries": 1,
+   "eave": 10.9,
+   "approach": 2.2,
+   "ridge": 18.8,
+   "from": 2.2,
+   "approachArrived": false,
+   "name": "QuarterHouse/Roof",
+   "t": 3.6,
+   "reached": true
+  },
+  {
+   "highest": 4.4,
+   "tries": 3,
+   "eave": 10.9,
+   "approach": 3.4,
+   "ridge": 18.8,
+   "from": 2.3,
+   "approachArrived": true,
+   "name": "QuarterHouse/Roof",
+   "t": 13.2,
+   "reached": false
+  },
+  {
+   "highest": 4.5,
+   "tries": 3,
+   "eave": 10.9,
+   "approach": 0,
+   "ridge": 18.8,
+   "from": 11.9,
+   "approachArrived": true,
+   "name": "QuarterHouse/Roof",
+   "t": 9.6,
+   "reached": false
+  },
+  {
+   "highest": 13.6,
+   "tries": 3,
+   "eave": 10.9,
+   "approach": 7,
+   "ridge": 18.8,
+   "from": 2.5,
+   "approachArrived": true,
+   "name": "QuarterHouse/Roof",
+   "t": 14.5,
+   "reached": true
+  },
+  {
+   "highest": 14,
+   "tries": 1,
+   "eave": 10.9,
+   "approach": 22.2,
+   "ridge": 18.8,
+   "from": 1.8,
+   "approachArrived": true,
+   "name": "QuarterHouse/Roof",
+   "t": 22.9,
+   "reached": true
+  },
+  {
+   "highest": 24.2,
+   "tries": 2,
+   "eave": 11,
+   "approach": 18,
+   "ridge": 19.8,
+   "from": 2.5,
+   "approachArrived": true,
+   "name": "HyugaHouse/Roof",
+   "t": 22.6,
+   "reached": true
+  },
+  {
+   "highest": 8.7,
+   "tries": 3,
+   "eave": 13,
+   "approach": 18.6,
+   "ridge": 19.7,
+   "from": 2,
+   "approachArrived": true,
+   "name": "NakaShrine/Roof",
+   "t": 29.4,
+   "reached": false
+  }
+ ]
+}
