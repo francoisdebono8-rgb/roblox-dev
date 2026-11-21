@@ -103,6 +103,14 @@ function Hub.new(ui,camera,send,controls)
 	local ranks=K.button(self.shopBox,"RANKS",UDim2.fromOffset(284,68),UDim2.fromOffset(140,48),function() self:openRanks() end,M.paper)
 	ranks.TextSize=24;ranks.TextColor3=M.ink;ranks.Font=STRONG;inkRing(ranks,3)
 	self.ranksButton=ranks
+	-- (DESIGN 21/11, step 3) the minimap under the place box, M for the big map
+	do
+		local ok,MiniMap=pcall(function() return require(script.Parent.MiniMap) end)
+		if ok and MiniMap then
+			local made,map=pcall(MiniMap.new,ui.kit or K,ui.gui)
+			if made then self.map=map;map.onChange=function() self:apply() end end
+		end
+	end
 	do
 		local ok,QuestPanel=pcall(function() return require(script.Parent.QuestPanel) end)
 		if ok and QuestPanel then
@@ -227,6 +235,7 @@ function Hub:layout()
 	local function at(gui,r) gui.Position=UDim2.fromOffset(math.floor(r.x+.5),math.floor(r.y+.5)) end
 	at(self.hud,L.hud);self.hudScale.Scale=L.scale
 	at(self.shopBox,L.shop);self.shopScale.Scale=L.scale
+	if self.map then self.map:place(L.hud.x,L.hud.y+L.hud.h+10,L.scale) end
 	at(self.goal,L.goal);self.goalScale.Scale=L.scale
 	self.goal.Size=UDim2.fromOffset(L.goal.w/L.scale,L.goal.h/L.scale)
 	-- narrow: the places one a line under the head (Hub:refreshHud)
@@ -271,12 +280,17 @@ function Hub:render(data)
 	self:refreshMarkers()
 	self:refreshHud()
 end
+-- A page over the village (the walk waits behind it).
+function Hub:anyPanel()
+	local ui=self.ui
+	return (ui.treePanel and ui.treePanel:shown()) or (ui.shopPanel and ui.shopPanel:shown()) or (ui.outfitPanel and ui.outfitPanel:shown())
+		or (self.quests and self.quests:shown()) or (self.map and self.map:shown()) or (ui.leaderboard and ui.leaderboard:shown()) or false
+end
 -- Controls and lens: the village walk, or the board (the roster) over it.
 function Hub:apply()
 	local walking=self.active and not self.board
 	-- The tree panel or the shop over the village: the walk waits behind it.
-	local panel=(self.ui.treePanel and self.ui.treePanel:shown()) or (self.ui.shopPanel and self.ui.shopPanel:shown()) or (self.ui.outfitPanel and self.ui.outfitPanel:shown())
-		or (self.quests and self.quests:shown()) or (self.ui.leaderboard and self.ui.leaderboard:shown()) or false
+	local panel=self:anyPanel()
 	self.panelOpen=panel
 	self.ui.hubWalk=walking
 	self.camera.hubWalk=walking
@@ -310,6 +324,7 @@ function Hub:showHud()
 	self.goal.Visible=walking and self.goalHead.Text~="" and not self.card.Visible
 	self.runButton.Visible=walking and touch and not panel
 	self.shopBox.Visible=walking and not talking and self.kits~=nil and self.ui.shopPanel~=nil
+	if self.map then self.map:setVisible(walking and not talking and not panel) end
 	-- the quests button: how many are done today
 	local daily=self.kits and self.kits.daily
 	if daily and self.quests then
@@ -346,8 +361,14 @@ function Hub:jumpRequest()
 end
 function Hub:step(dt)
 	if not self.active then return end
-	if ((self.ui.treePanel and self.ui.treePanel:shown()) or (self.ui.shopPanel and self.ui.shopPanel:shown()) or (self.ui.outfitPanel and self.ui.outfitPanel:shown()) or false)~=self.panelOpen then self:apply() end
+	if self:anyPanel()~=self.panelOpen then self:apply() end
 	local character=Players.LocalPlayer.Character
+	-- (DESIGN 21/11) the minimap follows him
+	if self.map and self.map.mini.Visible then
+		local root=character and character:FindFirstChild("HumanoidRootPart")
+		local camera=workspace.CurrentCamera
+		if root then self.map:update(root.Position,camera and camera.CFrame.LookVector) end
+	end
 	local hum=character and character:FindFirstChildOfClass("Humanoid")
 	if not hum then return end
 	if not self.board then

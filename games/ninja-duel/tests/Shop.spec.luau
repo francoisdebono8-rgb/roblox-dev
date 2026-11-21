@@ -561,6 +561,66 @@ test("today's quests: three rows, DONE stamped, the days in a row",function()
 	assert(ok,tostring(err))
 end)
 
+-- (DESIGN 21/11, step 3) the first combat's coach: one prompt, its key,
+-- NICE! when done, the old panel hidden
+test("the coach: one prompt near the fight, its key, NICE! when done",function()
+	local UI=H.load("Client/UI")
+	local tut={id="guard",title="He strikes: guard",key="Hold F",pad="Hold L2",touch="Hold GUARD",coach=true,first=true,index=1,total=7}
+	assert(UI.coachKey(tut,true,false)=="Hold GUARD" and UI.coachKey(tut,false,true)=="Hold L2","touch and pad words")
+	H.workspace.GetAttribute=function() return nil end
+	local saved=H.envBase.Instance
+	local baseNew=harnessInstance.new
+	H.envBase.Instance={new=function(class)
+		local x=baseNew(class)
+		x.Activated={Connect=function(_,fn) x.click=fn end}
+		return x
+	end}
+	UI=H.load("Client/UI")
+	local ui=UI.new(baseNew("PlayerGui"),function() end)
+	H.envBase.Instance=saved
+	ui:coachPrompt(tut,{touch=false,gamepad=false})
+	assert(ui.coach.Visible and ui.coachTitle.Text=="HE STRIKES: GUARD" and ui.coachCap.Visible and not ui.coachDone.Visible,"the prompt")
+	tut.done=true;ui:coachPrompt(tut,{touch=false,gamepad=false})
+	assert(ui.coachDone.Visible,"NICE! when done")
+	ui:coachPrompt(tut,{touch=true})
+	assert(not ui.coachCap.Visible and ui.coachTitle.Text:find("Hold GUARD",1,true),"a phone: the sentence")
+	ui:coachPrompt(nil,{});assert(not ui.coach.Visible,"gone")
+end)
+
+-- (DESIGN 21/11, step 3) Konoha's minimap and big map, from KonohaLayout
+test("the minimap: the village under the arrow, the places, the things to do",function()
+	local Map=H.load("Client/MiniMap")
+	local Layout=H.load("Shared/KonohaLayout")
+	Layout.Origin=H.load("Shared/HubMap").Origin
+	local x,z=Map.toBase(Layout.Origin+H.roblox.Vector3.new(0,0,13*(Layout.Scale or 1)))
+	assert(math.abs(x)<1e-6 and math.abs(z-13)<1e-3,"world to base")
+	local w,h=Map.extent(1);assert(w==2*Layout.HalfX and h==Layout.MaxZ-Layout.MinZ,"extent")
+	assert(Map.nearest(0,12,60).id=="Plaza","the plaza is near the plaza")
+	local todo=Map.todoList();assert(#todo>=3,"things to do: "..#todo)
+	for _,t in todo do local found=false;for _,p in Layout.Pois do if p.id==t.id then found=true end end;assert(found,t.id) end
+	assert(Map.kind({id="Hyuga",master="GentleFist"})=="master" and Map.kind({id="Training"})=="todo","seals")
+	H.workspace.GetAttribute=function() return nil end
+	local saved=H.envBase.Instance
+	local baseNew=harnessInstance.new
+	H.envBase.Instance={new=function(class)
+		local x=baseNew(class)
+		x.Activated={Connect=function(_,fn) x.click=fn end}
+		return x
+	end}
+	local ok,err=pcall(function()
+		local UI=H.load("Client/UI")
+		Map=H.load("Client/MiniMap")
+		local map=Map.new(UI.kit,baseNew("ScreenGui"))
+		map:setVisible(true)
+		map:update(Layout.Origin,H.roblox.Vector3.new(0,0,-1))
+		assert(map.placeLabel.Text=="THE PLAZA","the place under him: "..map.placeLabel.Text)
+		map.mini.click();assert(map:shown(),"tap opens the big map")
+		map.closeBig.click();assert(not map:shown(),"X closes it")
+	end)
+	H.envBase.Instance=saved
+	assert(ok,tostring(err))
+end)
+
 -- (15/11, DA v3 Mix-Shop) the STYLE preview: a still copy of his own avatar,
 -- its scripts and its own outfit taken off, the character left as it was.
 test("the STYLE preview: a still copy of his avatar, without its scripts nor its outfit",function()

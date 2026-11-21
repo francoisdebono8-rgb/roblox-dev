@@ -166,6 +166,38 @@ local function rankBadge(parent,key,size,position)
 	return holder
 end
 UI.rankBadge=rankBadge
+-- (DESIGN 21/11) The coach's key for this player: the touch words on a
+-- phone, the pad's button, else the keyboard's key (pure).
+function UI.coachKey(tut,touch,pad)
+	if type(tut)~="table" then return "" end
+	if touch then return tut.touch or tut.pad or "" end
+	if pad then return tut.pad or "" end
+	return Controls.localize(tut.key or "")
+end
+function UI:coachPrompt(tut,data)
+	local coach=self.coach
+	if not coach then return end
+	if not tut then coach.Visible=false;self.coachId=nil;return end
+	local pad=if data.gamepad~=nil then data.gamepad else Controls.isGamepad(UIS:GetLastInputType())
+	local fresh=tut.id~=self.coachId
+	self.coachId=tut.id
+	coach.Visible=true
+	self.coachTitle.Text=Text.upper(tut.title or "")
+	local key=UI.coachKey(tut,data.touch,pad)
+	-- a phone's words are a sentence: no keycap, the sentence under the title
+	self.coachCap.Visible=not data.touch
+	self.coachKey.Text=Text.upper(key)
+	if data.touch then self.coachTitle.Text=Text.upper(tut.title or "").."\n"..key end
+	self.coachTitle.Position=UDim2.fromOffset(if data.touch then 18 else 178,8)
+	self.coachTitle.Size=UDim2.new(1,if data.touch then -36 else -192,1,-16)
+	self.coachDone.Visible=tut.done==true
+	coach.BackgroundColor3=if tut.done then MANGA.red else MANGA.ink
+	if fresh then
+		self.coachScale.Scale=.82
+		pcall(function() game:GetService("TweenService"):Create(self.coachScale,TweenInfo.new(.18,Enum.EasingStyle.Back,Enum.EasingDirection.Out),{Scale=1}):Play() end)
+	end
+end
+
 -- (DESIGN 20/11) the rank line, from the server's ranked duel (Shared/Ranked:
 -- {before, after, delta, rank={id,name,from}, rankUp}):
 -- « GENIN  1240  (+18)  •  160 to CHUNIN », « NEW RANK: CHUNIN  1260  (+22) »
@@ -934,6 +966,29 @@ function UI.new(parent,send)
 	self.tutorialPanel=inkCard(frame(self.hud,UDim2.new(0,24,0,170),UDim2.fromOffset(520,90),CARD,0),10)
 	self.tutorialTitle=text(self.tutorialPanel,"",UDim2.fromOffset(16,9),UDim2.fromOffset(490,30),24,palette.paper,TITLE_FONT)
 	self.tutorialPrompt=text(self.tutorialPanel,"",UDim2.fromOffset(16,40),UDim2.fromOffset(490,40),14,palette.muted)
+	-- (DESIGN 21/11, step 3: the first combat's coach, Server/Coach) one
+	-- prompt at a time, near the fight: under the two fighters, a manga
+	-- caption — the key on a paper keycap, what to do in the title font on an
+	-- ink band, a red brush stroke under it. Done: a red « NICE! » stamp, and
+	-- it goes. The line comes from the CM (Server/Coach, FirstMinute.Touch).
+	local coach=frame(self.hud,UDim2.new(.5,0,.66,0),UDim2.fromOffset(620,86),MANGA.ink,0)
+	coach.AnchorPoint=Vector2.new(.5,.5);coach.Rotation=-1.5;coach.Visible=false;coach.ZIndex=40;coach.Name="Coach"
+	self.coachScale=create("UIScale",coach,{Scale=1})
+	local brush=frame(coach,UDim2.new(.12,0,1,2),UDim2.new(.76,0,0,8),MANGA.red,0);brush.ZIndex=39;corner(brush,4)
+	local cap=frame(coach,UDim2.fromOffset(14,12),UDim2.fromOffset(150,62),MANGA.paper,0);cap.ZIndex=41
+	create("UIStroke",cap,{Color=MANGA.red,Thickness=3,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
+	corner(cap,6)
+	self.coachKey=text(cap,"",UDim2.fromOffset(6,4),UDim2.new(1,-12,1,-8),30,MANGA.ink,TITLE_FONT,Enum.TextXAlignment.Center)
+	self.coachKey.TextScaled=true;self.coachKey.ZIndex=42
+	create("UITextSizeConstraint",self.coachKey,{MaxTextSize=30,MinTextSize=12})
+	self.coachCap=cap
+	self.coachTitle=text(coach,"",UDim2.fromOffset(178,8),UDim2.new(1,-192,1,-16),40,MANGA.paper,TITLE_FONT)
+	self.coachTitle.TextScaled=true;self.coachTitle.ZIndex=41
+	create("UITextSizeConstraint",self.coachTitle,{MaxTextSize=40,MinTextSize=16})
+	self.coachDone=text(coach,"NICE!",UDim2.new(1,-150,0,-26),UDim2.fromOffset(150,56),40,MANGA.paper,TITLE_FONT,Enum.TextXAlignment.Center)
+	self.coachDone.BackgroundTransparency=0;self.coachDone.BackgroundColor3=MANGA.red;self.coachDone.Rotation=8;self.coachDone.ZIndex=44;self.coachDone.Visible=false
+	create("UIStroke",self.coachDone,{Color=MANGA.ink,Thickness=3,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
+	self.coach=coach
 	GuiService.AutoSelectGuiEnabled=true
 	-- HUD scale follows the viewport so plates and slots never leave the screen.
 	local function fitHud()
@@ -1454,7 +1509,9 @@ end
 function UI:render(data)
 	self.lastSpectate=data.spectate==true;self.lastPhaseSeen=data.phase
 	local pad=if data.gamepad~=nil then data.gamepad else Controls.isGamepad(UIS:GetLastInputType())
-	self.tutorialPanel.Visible=data.tutorial~=nil and data.phase=="Duel"
+	local coaching=data.tutorial~=nil and data.tutorial.coach==true and data.phase=="Duel"
+	self.tutorialPanel.Visible=data.tutorial~=nil and data.phase=="Duel" and not coaching
+	self:coachPrompt(if coaching then data.tutorial else nil,data)
 	-- (User 02/11, tutorial on screen) The cue band (124) and the hint (200)
 	-- sat on the tutorial panel (84-174): "SPACE REBOUND / C DETACH" was printed
 	-- across the step's own instruction. Under the panel while it shows.
