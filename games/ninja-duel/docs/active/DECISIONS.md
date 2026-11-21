@@ -507,3 +507,8 @@ Les consignes sur un partenaire immobile disparaissent du premier lancement. Le 
 
 **La règle de DEC-046 s'applique à toutes les discussions** : une tâche est finie quand elle est belle et donne envie.
 
+**Décisions du DEV en route (21/11, DEC-043)** :
+- **le village du plan partout, ND-JEU compris** (`Config.Hub.Layout = "konoha2"`) : la minicarte de la DESIGN et les choses à faire seul sont sur le plan. Les maisons de l'ancien village habillent les lots tant que les modèles du plan manquent. `"classic"` reste comme marche arrière ;
+- **un duel demandé en se promenant se joue près de soi** (`Matches.nearSite`), dans la place libre la plus proche ; le stade garde le tournoi et les duels demandés hors de Konoha ;
+- **l'IA presse par défaut** et coupe par de courts moments à distance ou en attente : les plans ne doivent pas rallonger les duels.
+

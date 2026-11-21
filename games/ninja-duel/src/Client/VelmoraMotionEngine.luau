@@ -3596,9 +3596,18 @@ function Motion.present(char,actor,clock,dt)
 	-- (Partie 2) Victory: the winner's authored pose once the finishing blow
 	-- is through, held on its last frame (Storm 4 / Tekken win poses).
 	local finishing=subject.attackName~=nil and (subject.state=="Startup" or subject.state=="Active")
-	if subject.victory and Authored and Authored.has(F..".Win") and not subject.reaction and not finishing then
+	-- (21/11, DEC-047) the victory pose he chose (Shared/CatalogStyle, slot
+	-- "victory": the ANIMATEUR's Victory.<id>), else his kit's own
+	local win=F..".Win"
+	local chosen=subject.looks and subject.looks.victory
+	if chosen and Authored then
+		ShopData=ShopData or require(game:GetService("ReplicatedStorage").NinjaDuel.Shop)
+		local item=ShopData.item(chosen)
+		if item and item.clip and Authored.has(item.clip) then win=item.clip end
+	end
+	if subject.victory and Authored and Authored.has(win) and not subject.reaction and not finishing then
 		memo.winAt=memo.winAt or elapsedTime
-		local targets=table.clone(Authored.sample(F..".Win",math.min(elapsedTime-memo.winAt,Authored.length(F..".Win"))))
+		local targets=table.clone(Authored.sample(win,math.min(elapsedTime-memo.winAt,Authored.length(win))))
 		targets.__feet=authoredFeet(char,targets,dt)
 		mark(char,"win",.18)
 		apply(char,targets,RATE.authored,dt)

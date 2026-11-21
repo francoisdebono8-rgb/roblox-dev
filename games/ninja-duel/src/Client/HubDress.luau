@@ -26,6 +26,14 @@ HubDress.NAMES={
 	PaperLantern=true,LampPost=true,StoneLantern=true,Bench=true,Crate=true,Stump=true,FenceSegment=true,
 	VillageWall=true,CompoundWall=true,Ladder=true,
 }
+-- (21/11, DEC-047) the new Konoha's plan (Shared/KonohaLayout): every
+-- building and backdrop of the plan is dressed by the model of its name (the
+-- ANIMATEUR's, tools/blender/konoha_houses.py and konoha_models.py).
+do
+	local Layout=require(game:GetService("ReplicatedStorage").NinjaDuel.KonohaLayout)
+	for _,b in Layout.Buildings do HubDress.NAMES[b[1]]=true end
+	for _,o in Layout.Outside do HubDress.NAMES[o[1]]=true end
+end
 -- A wall's segment is 10 studs long (along its z).
 HubDress.SEGMENT=10
 -- (15/11) a hidden part -> the mesh copies standing for it: the duel camera
@@ -57,9 +65,9 @@ end
 
 -- Where each copy of the mesh goes: a list of {at=CFrame, scale=Vector3}.
 -- A wall is cut into whole segments of about 10 that fill its length.
-function HubDress.spots(unit)
-	local at=unit:GetAttribute("DressAt")
-	local scale=unit:GetAttribute("DressScale") or Vector3.one
+function HubDress.spots(unit,fallback)
+	local at=unit:GetAttribute(if fallback then "DressFallbackAt" else "DressAt")
+	local scale=unit:GetAttribute(if fallback then "DressFallbackScale" else "DressScale") or Vector3.one
 	local length=unit:GetAttribute("DressLength")
 	if typeof(at)~="CFrame" then return {} end
 	if not length then return {{at=at,scale=scale}} end
@@ -75,9 +83,9 @@ end
 
 -- Puts the mesh `pieces` (MeshKit.pieces: {part, o}) at every spot of the
 -- unit, in `holder`; hides the unit's parts. Returns the copies.
-function HubDress.dress(unit,pieces,holder)
+function HubDress.dress(unit,pieces,holder,fallback)
 	local made={}
-	for _,spot in HubDress.spots(unit) do
+	for _,spot in HubDress.spots(unit,fallback) do
 		for _,entry in pieces do
 			local p=entry.part:Clone()
 			local s=spot.scale
@@ -137,8 +145,15 @@ function HubDress.sync(unit,kit,holder,done)
 	end
 	if done[unit] then return true end
 	local name=unit:GetAttribute("Dress")
-	if not kit.has(name) then return false end
-	done[unit]=HubDress.dress(unit,kit.pieces(name),holder)
+	-- (21/11, DEC-047) a house of the new Konoha's plan whose model does not
+	-- exist yet wears the old village's house of its kind (DressFallback)
+	local fallback=false
+	if not kit.has(name) then
+		name=unit:GetAttribute("DressFallback")
+		if not name or not kit.has(name) then return false end
+		fallback=true
+	end
+	done[unit]=HubDress.dress(unit,kit.pieces(name),holder,fallback)
 	return true
 end
 

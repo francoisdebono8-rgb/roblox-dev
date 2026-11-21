@@ -123,6 +123,9 @@ pcall(function()
 		pcall(function() require(script.Parent.DuelAuras).start() end)
 		-- (DEC-040) the ninja outfit's modelled pieces on every avatar
 		task.spawn(function() pcall(function() require(script.Parent.OutfitDress).start() end) end)
+		-- (21/11, DEC-047) the things to do alone in Konoha: the rooftop race,
+		-- the kunai targets, the inspiration's challenge (Client/SoloView)
+		pcall(function() require(script.Parent.SoloView).new(UI.kit,ui.gui,send,function() return hubClient.active and not hubClient.board end):start() end)
 		-- (14/11) the players met in the village: a name tag, CHALLENGE
 		if lobbyPanel then
 			pcall(function()

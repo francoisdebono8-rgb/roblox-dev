@@ -27,6 +27,9 @@ local Merit=require(game:GetService("ReplicatedStorage").NinjaDuel.Merit)
 -- (21/11, DEC-045) and `ninja`: the ninja's tree (Shared/NinjaTree), its
 -- points from all the mastery earned.
 local NinjaTree=require(game:GetService("ReplicatedStorage").NinjaDuel.NinjaTree)
+-- (21/11, DEC-047) and `solo`: the things done alone in Konoha (Shared/Solo):
+-- the rooftop race's and the targets' best times, the day's share paid.
+local Solo=require(game:GetService("ReplicatedStorage").NinjaDuel.Solo)
 -- Version 3 (13/11, the shop): the wallet (Ryō, earned by playing or bought
 -- in packs; the day of the last first win) and the looks (owned, and the one
 -- worn in each slot: Shared/Shop). A look never changes a number.
@@ -170,6 +173,10 @@ function S.validate(p)
 	if p.merit~=nil then
 		local ok,why=Merit.valid(p.merit)
 		if not ok then return false,"merit: "..why end
+	end
+	if p.solo~=nil then
+		local ok,why=Solo.valid(p.solo)
+		if not ok then return false,"solo: "..why end
 	end
 	if p.ninja~=nil then
 		local ok,why=NinjaTree.valid(p.ninja,NinjaTree.points(p.kits and p.kits.mastery))
@@ -507,6 +514,18 @@ function S.Commands.meritAdd(p,args)
 	assert(type(args.pvp)=="boolean","Invalid merit")
 	p.merit=p.merit or Merit.new()
 	return Merit.record(p.merit,args.pvp)
+end
+-- (21/11, DEC-047) A thing done alone in Konoha (Shared/Solo.record): kind
+-- "race" or "targets" with its time (hundredths, checked by Server/SoloPlay),
+-- "step" (the dummy), "challenge" (won). Returns what it pays (the mastery the
+-- server then gives his kit), the best time and whether it improved.
+function S.Commands.soloRecord(p,args)
+	assert(S.integer(args.day,1000000),"Invalid day")
+	assert(args.kind=="race" or args.kind=="targets" or args.kind=="step" or args.kind=="challenge","Invalid kind")
+	if args.kind=="race" or args.kind=="targets" then assert(S.integer(args.time,6000000) and args.time>0,"Invalid time") end
+	p.solo=p.solo or Solo.new()
+	assert(args.day>=p.solo.day,"A day already past")
+	return Solo.record(p.solo,args.day,args.kind,{time=args.time,won=args.won==true})
 end
 -- (21/11, DEC-047) A look earned, never sold (Shared/CatalogStyle: a title,
 -- a merit aura or frame): given when the profile meets its rule.

@@ -1,3 +1,17 @@
+**Étape 3 du DEV, 21/11 (DEC-047) : le nouveau Konoha, les choses à faire seul, le 1v1 ouvert, l'IA qui change de plan** — TECHNICAL, sans Studio ; à jouer par François
+- **Le nouveau Konoha** (`Server/Hub.buildLayout`, `Config.Hub.Layout = "konoha2"`, ND-JEU compris) : 173 bâtiments du plan, 234 murs à courir, rivière Naka ; maisons de l'ancien village en doublure tant que les modèles manquent. Course sur les murs du promeneur (`Client/HubMove`). `tests/Hub.spec` : 18 PASS.
+- **Seul** (`Shared/Solo`, `Server/SoloPlay`, `Client/SoloView`) :
+  - course des toits (10 anneaux, chrono, classement `Rooftops`) ;
+  - cibles au kunai ;
+  - étapes de l'entraînement payées ;
+  - défi d'un inspirateur dans la rue ;
+  - duel demandé n'importe où, joué près de soi.
+
+  Maîtrise au kit choisi, 300 par jour au plus (enregistrement `solo` du profil). `tests/Solo.spec` : 9 PASS.
+- **1v1 ouvert** : un anneau autour de chaque duel du village ; les promeneurs restent dehors (`Hub.duelRings`).
+- **IA** : plans `pressure` / `distance` / `trap` (`AI.Strategy`), seulement dans les duels du jeu ; presse par défaut ; `strategy` dans le snapshot. Manche moyenne des 4 paires filmées : 33,7 s avec, 33,1 s sans (`tests/AIVariety.spec`).
+- **Poses de victoire** : celle choisie est jouée par le gagnant (`looks.victory`) ; les émotes ne sont pas encore jouables dans Konoha.
+
 **Étape 3 du DEV, 21/11 (DEC-047) : le premier combat** — TECHNICAL, à jouer par François
 - PLAY lance directement une vraie manche contre le rival de l'histoire, joué par l'IA novice (`AI.LEVELS.first`), avec le coach (`Server/Coach`) : une consigne quand son moment arrive, une seule fois.
 - Les coups du novice valent ×0,5 ; le joueur garde 20 % de sa vie ; ses coups valent ×0,6.

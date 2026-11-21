@@ -660,6 +660,20 @@ test("the personalization (DEC-047): eight tabs, nothing empty, looks to earn gi
 	local state=Shop.state(p.style,Shop.item("TitleStreet"),0,{})
 	assert(state.kind=="earn" and state.how,"a look to earn does not say how")
 	assert(CatalogStyle.color(Shop.item("ChakraCrimson"),"Chakra"),"the chakra's colour")
+	-- (21/11) every pose and emote sold plays a clip the ANIMATEUR made
+	local fs=require("@lune/fs")
+	local clips=""
+	for _,name in fs.readDir("src/Client") do
+		if string.match(name,"^Authored.*%.luau$") then clips..=fs.readFile("src/Client/"..name) end
+	end
+	local poses,emotes=0,0
+	for _,item in Shop.Items do
+		if item.clip then
+			assert(string.find(clips,'["'..item.clip..'"]',1,true),item.id.." plays "..item.clip..", a clip nobody made")
+			if item.slot=="victory" then poses+=1 elseif item.slot=="emote" then emotes+=1 end
+		end
+	end
+	assert(poses>=8 and emotes>=6,"poses "..poses..", emotes "..emotes)
 end)
 
 print(string.format("NinjaDuel shop and Ryō (13/11): %d PASS",passed))

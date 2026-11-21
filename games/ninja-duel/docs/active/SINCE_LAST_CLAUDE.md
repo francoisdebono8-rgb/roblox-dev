@@ -30,6 +30,54 @@
 - le parcours ninja, quand le nouveau Konoha est sur le Mac ;
 - « lequel tu prends ? », dès que François me prête l'écran (les 3 sommets sont dans le jeu).
 
+## INBOX-DEV-KONOHA-SEUL-20261121 — DEV 21/11 : le nouveau Konoha, les choses à faire seul, le 1v1 ouvert, l'IA qui change de plan (étape 3, DEV 3 à 6)
+
+**Le nouveau Konoha** (`Server/Hub.buildLayout`, d'après `Shared/KonohaLayout`) est construit dans **toutes les places, ND-JEU compris** (`Config.Hub.Layout = "konoha2"` ; `"classic"` reste comme marche arrière).
+- 173 bâtiments, 234 murs à courir, toits plats où l'on marche, terrasses avec échelles, rivière Naka (on y nage).
+- **La course sur les murs dans le village** (`Client/HubMove`) : courir ou sauter dans un mur, on le monte (≈ 36 studs) ; en haut, un bond sur le toit ; sauter sur le mur, on s'en repousse (ruelle à ruelle). Le nœud Wall Runner l'allonge (`NinjaWallRun`).
+- Chaque bâtiment porte `Dress` = le nom de son modèle du plan. Les six maisons ont une doublure, la maison de l'ancien village (`DressFallback`). La liste des noms est dans `docs/systems/HUB_DRESS.md`.
+
+**Les choses à faire seul** (`Shared/Solo`, `Server/SoloPlay`, `Client/SoloView`). Tout rapporte de la maîtrise au kit choisi, 300 par jour au plus :
+- **course des toits** : poteau à THE ROOFTOPS (44, 122), décompte, 10 anneaux sur les toits du marché, chrono. Classement `Rooftops` (le plus rapide d'abord, chaque ligne a `text` = « 0:42.31 »), affiché aussi au-dessus du poteau. Le titre ROOFTOP RUNNER se gagne au premier temps ;
+- **cibles au kunai** : la marque à l'entrée de la ruelle du marché (30, 56), 8 cibles. R, R2, le clic ou THROW ; un raté coûte 1 s ;
+- **mannequin du terrain n° 3** : chaque étape réussie de l'entraînement paie ;
+- **défi d'un inspirateur** : toutes les 70 s environ, un inspirateur attend dans une place libre, près d'un promeneur, avec sa phrase. Celui qui accepte l'affronte sur place ;
+- **duel de partout** : un duel demandé en se promenant (DUELS du tableau) se joue dans la place libre la plus proche (`Matches.nearSite`).
+
+**Le 1v1 ouvert** : pendant un duel dans le village, un anneau l'entoure (`Hub.duelRings`). On voit une ligne rouge au sol, et un mur que seuls les promeneurs rencontrent ; un promeneur pris dedans est posé dehors, face au combat. Le défi d'un joueur reste celui du lobby : on s'approche et on appuie sur E.
+
+**L'IA change de plan** (`AI.Strategy`) :
+- elle presse par défaut ;
+- de courts moments à distance (outil, jutsu longs) ou en attente (garde, punition) ;
+- elle change aussitôt quand elle prend une raclée ;
+- le novice du premier combat n'en a pas.
+
+Le snapshot de l'adversaire porte `strategy` (`pressure`, `distance`, `trap`) et `strategyAge`. Mesuré headless sur les 4 paires filmées : une manche dure en moyenne 33,7 s avec les plans, contre 33,1 s sans.
+
+**La pose de victoire choisie est jouée** : le gagnant d'un duel joue le clip de sa pose (`looks.victory`, `Client/VelmoraMotionEngine`), sinon celle de son kit. Les émotes ne se jouent pas encore dans Konoha : le promeneur est un avatar Roblox, pas un corps du moteur.
+
+**Rien n'est vu dans Studio.**
+
+**DESIGN** :
+- `Client/SoloView` est une première version dans l'encre de la page (chrono, anneaux, tampon de fin, crosshair, THROW, tableau au poteau, bulle du défi) : à reprendre à ton niveau ;
+- l'onglet ROOFTOPS dans `Client/Leaderboard` (afficher `row.text`) ;
+- sur la minicarte, l'étoile des cibles va à la marque (30, 56) et non au POI Market ;
+- le plan de l'IA à l'écran, discret, sous la barre de l'adversaire (« HE PRESSES IN », etc.).
+
+**ANIMATEUR** :
+- les modèles du plan, aux noms de `HUB_DRESS.md` (maisons et repères) ;
+- les cibles (`Target<i>` dans `KunaiTargets`), le poteau de la course, les anneaux ;
+- les clips de parcours sur le promeneur du village : il monte les murs en `Freefall`.
+
+**OUTILLEUR** :
+- le robot sur le nouveau Konoha ;
+- le temps réel de la course des toits ;
+- vérifier que chaque anneau est atteignable et que personne ne reste coincé sous un toit ;
+- la durée des duels avec les plans de l'IA.
+
+**CM** :
+- les textes à remplacer : les phrases des inspirateurs (`Solo.Challenge.lines`), les fins de course (`SoloView.FAIL`) et les noms des choses à faire.
+
 ## INBOX-DEV-PERSONNALISATION-20261121 — DEV 21/11 : la personnalisation côté données (étape 3, DEV 2)
 
 **Les emplacements** (`Shared/Shop.Slots`, `personal = true`) : `hair`, `hairColor`, `chakra`, `victory`, `emote`, `aura`, `title`, `frame`. On les achète et on les porte comme les tenues (`buyItem`, `equipItem`, `EquipItem`). **`Shop.Tabs`** donne les 8 onglets de la boutique et leurs emplacements.

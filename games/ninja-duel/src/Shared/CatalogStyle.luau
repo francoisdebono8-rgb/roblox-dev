@@ -72,7 +72,8 @@ Style.Items={
 	{id="FrameGold",slot="frame",name="GOLD LEAF",robux="FrameGold",colors={Frame=rgb(230,184,86)}},
 	{id="FrameLegend",slot="frame",name="LEGEND'S FRAME",earned="merit3",how="300 merit: win duels",colors={Frame=rgb(255,120,40)}},
 	-- HAIR STYLE, VICTORY POSE, EMOTE: one entry each that everyone has; the
-	-- styles, poses and emotes themselves are the ANIMATEUR's (Catalog).
+	-- styles, poses and emotes themselves are the ANIMATEUR's (Catalog). The
+	-- winner of a duel plays the pose he chose (Client/VelmoraMotionEngine).
 	{id="HairOwn",slot="hair",name="YOUR OWN HAIR",base=true,none=true},
 	{id="VictoryBow",slot="victory",name="THE BOW",base=true,clip="Victory.Bow"},
 	{id="EmoteWave",slot="emote",name="WAVE",base=true,clip="Emote.Wave"},
@@ -104,7 +105,7 @@ function Style.met(p,rule)
 	local rank=string.match(rule,"^rank(%d)$")
 	if rank then return p.ranked~=nil and ranked().rank(p.ranked.rating or 0).index>=tonumber(rank) end
 	if rule=="days7" then return p.daily~=nil and (p.daily.streak or 0)>=7 end
-	if rule=="rooftops" then return p.rooftops~=nil and p.rooftops.best~=nil end
+	if rule=="rooftops" then return p.solo~=nil and (p.solo.rooftops.best or 0)>0 end
 	return false
 end
 -- The earned looks a profile qualifies for and does not own yet (ids).

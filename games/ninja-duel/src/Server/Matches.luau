@@ -70,6 +70,8 @@ function Matches.new(remote)
 	self.online=Online.new(self)
 	-- (04/11) The Prodigy Tournament against the AI (Server/Tournament).
 	self.tournament=require(script.Parent.Tournament).new(self)
+	-- (21/11, étape 3 DEV 4, DEC-047) the things to do alone in Konoha
+	self.solo=require(script.Parent.SoloPlay).new(self)
 	return self
 end
 -- Each duel owns a stage far from every other one.
@@ -114,6 +116,25 @@ function Matches:siteFree(key,except)
 		if d~=except and d.site and d.site.key==key and d.phase~="Pick" then return false end
 	end
 	return true
+end
+-- (21/11, étape 3 DEV 4, DEC-047: « un duel lancé de partout ») A duel asked
+-- while he walks in Konoha (the board's DUELS, anywhere) is fought in the free
+-- open place of the village nearest to him, within StreetReach; nil: the
+-- stadium (he is not walking, or nothing is free near).
+function Matches:nearSite(player,except)
+	if not Matches.hubOn() or not (Config.Hub and Config.Hub.VillageDuels==true) then return nil end
+	local body=Hub.bodies and Hub.bodies[player]
+	local root=body and body.character and body.character:FindFirstChild("HumanoidRootPart")
+	if not root then return nil end
+	local here=Vector3.new(root.Position.X,0,root.Position.Z)
+	local best,bestDistance=nil,Matches.StreetReach
+	for _,street in HubMap.Streets or {} do
+		local centre=HubMap.Origin+street.at
+		local distance=(Vector3.new(centre.X,0,centre.Z)-here).Magnitude
+		if distance<bestDistance and self:siteFree(street.key,except) then best,bestDistance=street,distance end
+	end
+	if not best then return nil end
+	return {key=best.key,origin=HubMap.Origin+best.at,radius=best.radius,place=best.place,street=true,axis=best.axis,start=best.start}
 end
 function Matches:freeVillageSite(player,key,except)
 	local site=Matches.villageSite(player,key)
@@ -339,6 +360,7 @@ function Matches:start(player,playerId,botId,training,options)
 	self:destroy(s); s.epoch+=1
 	-- (DEC-038) The walk in Konoha ends: the duel's body takes over.
 	if Matches.hubOn() then Hub.leave(player) end
+	if self.solo then self.solo:leave(player) end
 	s.playerId=playerId; s.botId=botId; s.winner=nil; s.phase="Duel"; s.origin=Matches.laneOrigin(s.lane)
 	s.options=options
 	-- (19/11, funnel) his first duel begins (a watched match is not his)
@@ -377,7 +399,7 @@ function Matches:start(player,playerId,botId,training,options)
 	if not s.spectate then s.human.looks=Progression.looks(player) end
 	-- (Beta loop) a learned kit he fights with is his roster's pick next time.
 	if not s.spectate then Progression.remember(player,playerId) end
-	s.ai=AI.new(s.combat,s.bot,player.UserId%100000+ s.epoch,Matches.aiLevel(s))
+	s.ai=AI.new(s.combat,s.bot,player.UserId%100000+ s.epoch,Matches.aiLevel(s)):withStrategy()
 	s.finishing=false
 	-- Tournament rounds: first to two (one in training).
 	s.round=1;s.wins={PlayerFighter=0,AIFighter=0};s.roundsToWin=if training or s.firstFight then 1 else Config.RoundsToWin
@@ -424,6 +446,12 @@ function Matches:roundOver(s,winner,notify,advance)
 		if s.masterTrial and won then
 			local ok=Progression.learnFromMaster(s.owner,s.masterTrial)
 			if ok then s.progress.learned=s.masterTrial end
+		end
+		-- (21/11, DEC-047) an inspiration's challenge in the street, decided
+		if s.challenge and self.solo then
+			local paid=self.solo:challengeEnded(s.owner,won,s.combat and s.combat.now or 0)
+			s.progress.challenge={kit=s.challenge,won=won,amount=paid and paid.amount}
+			s.challenge=nil
 		end
 		-- (19/11, DEV 6) what this duel brought closer: the next node, the
 		-- next tier, the inspirations that will want to meet him
@@ -491,7 +519,7 @@ function Matches.aiLevel(s)
 end
 function Matches:nextRound(player,s)
 	self:resetRound(s)
-	s.ai=AI.new(s.combat,s.bot,player.UserId%100000+s.epoch,Matches.aiLevel(s))
+	s.ai=AI.new(s.combat,s.bot,player.UserId%100000+s.epoch,Matches.aiLevel(s)):withStrategy()
 	self:snapshot(player,s)
 end
 -- Next round: same stage and bodies, fresh fighters, a short intro. A new
@@ -563,6 +591,9 @@ function Matches:view(s,cursor,mine,theirs)
 		return {id=a.id,fighterId=a.fighterId,fighter=a.def.Name,sealReady=sealReady,sealing=sealing,health=a.health,maxHealth=a.def.Health,chakra=a.chakra,maxChakra=a.def.Chakra or Config.Chakra,stamina=a.stamina or 100,state=a.state,
 			techniques=ready,position=a.root.Position,channel=if a.state=="TechniqueChannel" then math.max(0,a.untilTime-s.combat.now) else 0,
 			anchor=a.anchor and a.anchor.position,illusion=math.max(0,a.illusionUntil-s.combat.now),decoy=a.decoyPosition,
+			-- (21/11, DEC-047) the AI's plan of the fight (Server/AI.Strategy): "pressure",
+			-- "distance" or "trap", and how long ago it changed
+			strategy=a.strategy,strategyAge=if a.strategyAt then s.combat.now-a.strategyAt else nil,
 			cue=if a.cueUntil>s.combat.now then a.cue else "",quiet=if (a.quietUntil or 0)>s.combat.now and not (s.autopilot or s.spectate) then a.quiet else nil,dodge=math.max(0,a.dodgeUntil-s.combat.now),read=math.max(0,a.readUntil-s.combat.now),
 			speed=a.locomotion.Magnitude,airborne=a.airborne,sprinting=a.model:GetAttribute("MovementSprinting")==true,
 			landStrong=a.model:GetAttribute("MovementHardLanding")==true,pursuit=math.max(0,a.pursuitUntil-s.combat.now),combo=a.combo,
@@ -818,6 +849,34 @@ function Matches:request(player,payload)
 		end
 		return
 	end
+	-- (21/11, étape 3 DEV 4, DEC-047) the things to do alone in Konoha
+	-- (Server/SoloPlay): the rooftop race, the kunai targets (a throw
+	-- `toward` a direction), given up; the inspiration's challenge accepted.
+	if action=="SoloRace" or action=="SoloTargets" or action=="SoloQuit" or action=="SoloThrow" or action=="SoloChallenge" then
+		if s.phase~="Selection" or not Matches.hubOn() or not self.solo then return end
+		local now=workspace:GetServerTimeNow()
+		if action=="SoloThrow" then self.solo:throw(player,payload.toward,now);return end
+		if action=="SoloQuit" then self.solo:stop(player,"quit");return end
+		if clock-s.lastLifecycle<0.8 then return end
+		s.lastLifecycle=clock
+		if action=="SoloRace" or action=="SoloTargets" then
+			if self.solo.runs[player] then self.solo:stop(player,nil) end
+			self.solo:start(player,if action=="SoloRace" then "race" else "targets",now)
+			return
+		end
+		if type(payload.kit)~="string" then return end
+		local h=Progression.handles[player]
+		local kit=h and h.data.kits.selected
+		if not (kit and Progression.owns(player,kit)) then return end
+		local c=self.solo:accept(player,payload.kit,now)
+		if not c then return end
+		s.masterTrial=nil;s.firstStage=nil;s.challenge=c.kit
+		s.aiLevel=require(Shared.Solo).Challenge.level
+		s.nextSite={key=c.site.key,origin=HubMap.Origin+c.site.at,radius=c.site.radius,place=c.site.place,street=true,axis=c.site.axis,start=c.site.start}
+		if not self:start(player,kit,c.kit,false) then s.challenge=nil;self.solo:challengeEnded(player,false,now) end
+		s.nextSite=nil
+		return
+	end
 	if action=="Start" or action=="Tutorial" or action=="Rematch" or action=="Selection" then
 		if clock-s.lastLifecycle<0.8 then return end
 		if (action=="Start" or action=="Tutorial") and s.phase=="Selection" then
@@ -831,6 +890,8 @@ function Matches:request(player,payload)
 			s.lastLifecycle=clock;s.firstStage=nil
 			if type(payload.level)=="string" and Matches.LEVELS[payload.level] then s.aiLevel=payload.level end
 			s.nextSite=self:freeVillageSite(player,payload.here,s)
+			-- (21/11, DEC-047) asked anywhere in Konoha: fought near him
+			if not s.nextSite and payload.here==nil then s.nextSite=self:nearSite(player,s) end
 			self:start(player,payload.player,payload.bot,action=="Tutorial")
 			s.nextSite=nil
 		elseif action=="Rematch" and (s.phase=="Result" or s.finishing) then
@@ -948,7 +1009,12 @@ function Matches:update(dt,now)
 			s.combat:update(math.min(dt,0.1),now)
 			if s.phase=="Duel" then
 				local intro=s.introUntil and now<s.introUntil
-				if s.tutorial then Tutorial.update(s,now,dt) elseif not s.botFrozen and not intro and not s.finishing then s.ai:update(now) end
+				if s.tutorial then
+					local passed=s.tutorial.passed or 0
+					Tutorial.update(s,now,dt)
+					-- (21/11, DEC-047) a step of his kit done with the dummy pays
+					if s.tutorial and (s.tutorial.passed or 0)>passed and not s.tutorial.first and s.owner then Progression.solo(s.owner,"step") end
+				elseif not s.botFrozen and not intro and not s.finishing then s.ai:update(now) end
 				if s.coach and not intro and not s.finishing then Coach.update(s,now,dt) end
 				-- (B1 lot 2) the first minute's last prompt done: its real duel.
 				if s.tutorial and s.tutorial.done and s.firstStage=="intro" then
@@ -972,6 +1038,24 @@ function Matches:update(dt,now)
 		end
 	end
 	if self.online then self.online:update(dt,now) end
+	if self.solo then self.solo:update(now) end
+	-- (21/11, DEC-047) the open 1v1: a ring round every duel fought in the
+	-- village; the passers-by watch from outside it (Hub.duelRings)
+	if Matches.hubOn() and now>=(self.nextRings or 0) then
+		self.nextRings=now+.25
+		pcall(Hub.duelRings,self:activeSites())
+	end
+end
+-- The places of the village a duel is fought in now: {{key, origin, radius}}.
+function Matches:activeSites()
+	local out={}
+	for _,s in self.sessions do
+		if s.site and (s.phase=="Duel" or s.phase=="Result") then table.insert(out,{key=s.site.key,origin=s.site.origin,radius=s.site.radius}) end
+	end
+	for d in (self.online and self.online.duels) or {} do
+		if d.site and d.phase~="Pick" then table.insert(out,{key=d.site.key,origin=d.site.origin,radius=d.site.radius}) end
+	end
+	return out
 end
 function Matches:remove(player)
 	local s=self.sessions[player]
@@ -984,5 +1068,6 @@ function Matches:remove(player)
 		AvatarBody.forget(player)
 		Hub.forget(player)
 	end
+	if self.solo then self.solo:leave(player);self.solo.runs[player]=nil end
 end
 return Matches

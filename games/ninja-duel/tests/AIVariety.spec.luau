@@ -46,7 +46,7 @@ local function label(c,a,action)
 	elseif action=="Tool" then return "Tool" end
 	return nil
 end
-local function round(x,y,seed)
+local function round(x,y,seed,plans)
 	H.clearWalls()
 	local c,a,b,match=H.duel(x,y)
 	c:relocate(a,V.new(0,3,24));c:relocate(b,V.new(0,3,-24))
@@ -59,6 +59,8 @@ local function round(x,y,seed)
 		return ok,r
 	end
 	local one,two=AI.new(c,a,seed*7),AI.new(c,b,seed*13+1)
+	-- (21/11, DEC-047) the plans of the game's duels (AI.Strategy)
+	if plans then one:withStrategy();two:withStrategy() end
 	local t,far,samples=0,0,0
 	while match.phase=="Duel" and t<95 do
 		one:update(c.now);two:update(c.now);H.step(c,.02);t+=.02
@@ -79,6 +81,21 @@ test("every round of the four filmed pairs ends in a K.O. inside 95 s",function(
 	for _,entry in results do
 		assert(entry.r.ko,string.format("%s vs %s (seed %d): no K.O. in %.0f s",entry.pair[1],entry.pair[2],entry.seed,entry.r.time))
 	end
+end)
+
+-- (21/11, DEC-047; François: « des combats trop longs, pas assez dynamiques et
+-- variés ») With the plans the game's duels use (pressing, a short turn at
+-- range or in wait): every round still ends in a K.O., and no longer on the
+-- whole than without them.
+test("with the plans of the fight: still a K.O. in every round, and no longer",function()
+	local with,without=0,0
+	for _,entry in results do
+		local r=round(entry.pair[1],entry.pair[2],entry.seed,true)
+		assert(r.ko,string.format("%s vs %s (seed %d), with plans: no K.O. in %.0f s",entry.pair[1],entry.pair[2],entry.seed,r.time))
+		with+=r.time;without+=entry.r.time
+	end
+	print(string.format("  a round on average: %.1f s with the plans, %.1f s without",with/#results,without/#results))
+	assert(with<=without*1.1,"the plans make the rounds longer")
 end)
 
 test("no bot throws more than four blades in ten seconds, nor twelve in a round",function()

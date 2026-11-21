@@ -39,7 +39,13 @@ local Hub=H.load("Server/Hub")
 local folder
 test("the village is built: gate, street and Ichiraku, the rooftops, the hall, the districts, the faces",function()
 	local root=Instance.new("Folder")
+	-- the old village (Config.Hub.Layout "classic", the step back): its own
+	-- tests below; the plan's village has its own (DEC-042)
+	local HubConfig=H.load("Shared/Config").Hub
+	local mode=HubConfig.Layout
+	HubConfig.Layout="classic"
 	folder=Hub.build(root)
+	HubConfig.Layout=mode
 	assert(folder and folder.Parent==root and Hub.built,"not built")
 	local count,collide=0,0
 	for _,d in folder:GetDescendants() do
@@ -177,8 +183,90 @@ end)
 -- (14/11) The Blender dressing (docs/systems/HUB_DRESS.md): the ANIMATOR models,
 -- Client/HubDress swaps each unit's parts for its mesh on the client.
 local HubDress=H.load("Client/HubDress")
+-- (21/11, étape 3 DEV 3, DEC-047) the new Konoha, built from the plan
+local Layout=H.load("Shared/KonohaLayout")
+local Vector2=roblox.Vector2
+local Config=H.load("Shared/Config")
+local layoutFolder
+test("the new Konoha (DEC-042): every building of the plan, out of the open places, walls to run on, the masters on solid ground",function()
+	local classic,builtWas=Hub.folder,Hub.built
+	Hub.folder=nil;Hub.built=false
+	local mode=Config.Hub.Layout
+	Config.Hub.Layout="konoha2"
+	local root=Instance.new("Folder")
+	layoutFolder=Hub.build(root)
+	Config.Hub.Layout=mode
+	Hub.folder,Hub.built=classic,builtWas
+	-- the Naka river: its bed under the ground, the water filled into it
+	local bed=layoutFolder:FindFirstChild("LakeBed")
+	assert(bed and bed.CFrame.Position.Y+bed.Size.Y/2<HubMap.Origin.Y-4,"no river bed under the ground")
+	assert(layoutFolder:GetAttribute("Layout")=="konoha2","not the plan's village")
+	local buildings=layoutFolder:FindFirstChild("Buildings")
+	assert(buildings and #buildings:GetChildren()==#Layout.Buildings,"buildings: "..(buildings and #buildings:GetChildren() or 0).." of "..#Layout.Buildings)
+	-- nothing of the plan stands in a place kept open (duels, squares)
+	for _,b in Layout.Buildings do
+		-- (the hall's own walls frame its open floor)
+		if string.sub(b[1],1,9)=="exam_hall" then continue end
+		for _,o in Layout.Open do
+			local inside=if o.shape=="circle" then (Vector2.new(b[2],b[3])-o.at).Magnitude<o.radius else (b[2]>o.x0 and b[2]<o.x1 and b[3]>o.z0 and b[3]<o.z1)
+			assert(not inside,tostring(b[9] or b[1]).." at "..b[2]..","..b[3].." stands in "..o.why)
+		end
+	end
+	-- the houses' stand-ins: the old house of their kind, at the lot, scaled with the village
+	local houses,walls=0,0
+	for _,m in buildings:GetChildren() do
+		if Hub.LAYOUT_STANDIN[m:GetAttribute("LayoutModel")] then
+			houses+=1
+			assert(typeof(m:GetAttribute("DressFallbackAt"))=="CFrame" and typeof(m:GetAttribute("DressFallbackScale"))=="Vector3","a house without its stand-in")
+		end
+	end
+	for _,d in layoutFolder:GetDescendants() do if d:IsA("BasePart") and d:GetAttribute("NinjaWall") then walls+=1 end end
+	print(string.format("  %d buildings, %d houses, %d walls to run on",#buildings:GetChildren(),houses,walls))
+	assert(houses>=150 and walls>=houses,"houses "..houses..", walls "..walls)
+	assert(layoutFolder:FindFirstChild("HubSpawn",true),"no spawn at the gate")
+	-- every master and the proctor stand on solid ground, out of every wall
+	local spots={Proctor=HubMap.Proctor}
+	for id,spot in HubMap.Masters do spots[id]=spot end
+	for id,spot in spots do
+		local at=HubMap.Origin+spot.at
+		local floor=false
+		for _,p in layoutFolder:GetDescendants() do
+			if p:IsA("BasePart") and p.CanCollide and p.Transparency<1 and aligned(p) then
+				local top=p.CFrame.Position.Y+p.Size.Y/2
+				local d=at-p.CFrame.Position
+				if math.abs(d.X)<=p.Size.X/2 and math.abs(d.Z)<=p.Size.Z/2 and math.abs(top-at.Y)<=.35 then floor=true end
+				assert(not boxContains(p,at+Vector3.new(0,2.5,0),-.2),id.." stands inside "..p:GetFullName())
+			end
+		end
+		assert(floor,id.." stands on nothing at "..tostring(spot.at))
+	end
+	-- every place of a 1v1 in the street (a master's, the street's own): its
+	-- centre and both starts are open ground in the plan's village too
+	local solids={}
+	for _,d in layoutFolder:GetDescendants() do
+		if d:IsA("BasePart") and d.CanCollide and d.Size.Y>=2 and d.Transparency<1 then table.insert(solids,d) end
+	end
+	for _,street in HubMap.Streets do
+		local centre=HubMap.Origin+street.at+Vector3.new(0,3,0)
+		local axis=street.axis or Vector3.new(0,0,1)
+		local half=street.start or math.min(24,street.radius*.7)
+		for _,point in {centre,centre+axis*half,centre-axis*half} do
+			for _,p in solids do
+				local l=p.CFrame:PointToObjectSpace(point)
+				assert(not (math.abs(l.X)<=p.Size.X/2+1.5 and math.abs(l.Y)<=p.Size.Y/2 and math.abs(l.Z)<=p.Size.Z/2+1.5),
+					string.format("%s: a fighter starts inside %s",street.key,p:GetFullName()))
+			end
+		end
+	end
+end)
+
 test("the village is cut into units: every name in the contract, every contract name used, signs kept",function()
 	local used={}
+	for _,u in HubDress.units(layoutFolder) do
+		local name=u:GetAttribute("Dress")
+		assert(HubDress.NAMES[name],u:GetFullName().." is dressed as "..tostring(name).." (not in the contract)")
+		used[name]=(used[name] or 0)+1
+	end
 	for _,u in HubDress.units(folder) do
 		local name=u:GetAttribute("Dress")
 		assert(HubDress.NAMES[name],u:GetFullName().." is dressed as "..tostring(name).." (not in the contract)")
@@ -595,6 +683,40 @@ test("the dresser follows a carved place: its funny head goes, and comes back",f
 	assert(not HubDress.sync(u,kit,holder,done) and done[u]==nil and #holder:GetChildren()==0,"the funny head stayed over a carved face")
 	u:SetAttribute("DressOff",nil)
 	assert(HubDress.sync(u,kit,holder,done) and #holder:GetChildren()==1,"the funny head did not come back")
+end)
+
+-- (21/11, étape 3 DEV 3, DEC-047; François: « murs et toits courables
+-- partout ») The village walker runs up the walls (Client/HubMove).
+test("the run up a wall in the village: up it, over onto the roof, a kick off it, the tree's share",function()
+	local Move=H.load("Client/HubMove")
+	local m=Move.new()
+	local wall={normal=Vector3.new(-1,0,0),part={}}
+	assert(Move.climbStep(m,0,{wall=wall,into=1,air=false,run=false})==nil,"walking into a wall climbs it")
+	assert(Move.climbStep(m,0,{wall=wall,into=.2,air=true})==nil,"along a wall climbs it")
+	local v,what=Move.climbStep(m,0,{wall=wall,into=1,air=true})
+	assert(what=="start" and v.Y==Move.CLIMB and v.X>0,"in the air into a wall: not up it")
+	v,what=Move.climbStep(m,.5,{wall=wall,into=1,air=true})
+	assert(what=="climb","the run up stopped")
+	v,what=Move.climbStep(m,.6,{wall=nil,into=1,air=true})
+	assert(what=="top" and v.Y==Move.MANTLE.Y and v.X>0,"no hop onto the roof at the top")
+	assert(Move.climbStep(m,.7,{wall=wall,into=1,air=true})==nil,"twice up before the ground")
+	-- spent: he falls, his second jump given back
+	Move.landed(m);m.leapUsed=true
+	assert(select(2,Move.climbStep(m,1,{wall=wall,into=1,run=true}))=="start","running into a wall: not up it")
+	v,what=Move.climbStep(m,1+Move.CLIMB_TIME+.01,{wall=wall,into=1,air=true})
+	assert(what=="spent" and v==nil and m.leapUsed==false,"spent: no fall, or no second jump")
+	-- the tree's Wall Runner: longer
+	Move.landed(m)
+	Move.climbStep(m,2,{wall=wall,into=1,run=true,scale=1.4})
+	assert(select(2,Move.climbStep(m,2+Move.CLIMB_TIME+.01,{wall=wall,into=1,air=true}))=="climb","the tree's share does not lengthen it")
+	-- the kick: away and up; the other wall of the alley at once, the same not
+	local k=Move.kick(m,3)
+	assert(k and k.X<0 and k.Y==Move.KICK.Y and m.climb==nil and not m.climbUsed and not m.leapUsed,"the kick")
+	assert(Move.climbStep(m,3.1,{wall=wall,into=1,air=true})==nil,"the same wall again at once")
+	assert(select(2,Move.climbStep(m,3.1,{wall={normal=Vector3.new(1,0,0),part={}},into=1,air=true}))=="start","the alley's other wall")
+	-- high enough for a three-storey house of the plan; the hop clears the feet
+	assert(Move.CLIMB*Move.CLIMB_TIME>=21*(HubMap.Scale or 1)+2,"the run up is short of the tallest houses")
+	assert(Move.MANTLE.Y^2/(2*196.2)>=3.5,"the hop at the top does not clear the feet")
 end)
 
 print(string.format("NinjaDuel hub Konoha (DEC-038): %d PASS",passed))

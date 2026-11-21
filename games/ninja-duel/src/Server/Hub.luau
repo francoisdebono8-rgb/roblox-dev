@@ -21,6 +21,7 @@ local Players=game:GetService("Players")
 local ReplicatedStorage=game:GetService("ReplicatedStorage")
 local Shared=ReplicatedStorage.NinjaDuel
 local HubMap=require(Shared.HubMap)
+local Config=require(Shared.Config)
 local Hub={built=false,bodies=setmetatable({},{__mode="k"})}
 
 local O=HubMap.Origin
@@ -658,6 +659,11 @@ function Hub.scaleVillage(f,s)
 		elseif d:IsA("Model") and d:GetAttribute("Dress") then
 			local dressAt=d:GetAttribute("DressAt")
 			if typeof(dressAt)=="CFrame" then d:SetAttribute("DressAt",at(dressAt)) end
+			-- (21/11, DEC-047) the stand-in of a house of the plan (Client/HubDress)
+			local fallbackAt=d:GetAttribute("DressFallbackAt")
+			if typeof(fallbackAt)=="CFrame" then d:SetAttribute("DressFallbackAt",at(fallbackAt)) end
+			local fallbackScale=d:GetAttribute("DressFallbackScale")
+			if typeof(fallbackScale)=="Vector3" then d:SetAttribute("DressFallbackScale",fallbackScale*s) end
 			local scale=d:GetAttribute("DressScale")
 			if typeof(scale)~="Vector3" then scale=Vector3.one end
 			local length=d:GetAttribute("DressLength")
@@ -700,9 +706,200 @@ function Hub.water(f)
 	Hub.lake={cf=cf,size=size}
 	return cf,size
 end
+-- ------------------------------------------------- the new Konoha (DEC-042)
+-- (21/11, étape 3 DEV 3, DEC-047; François: « la map n'est pas finie, est
+-- restreinte ») The village built from the validated plan, Shared/KonohaLayout
+-- (tools/blender/konoha_layout.py): its districts, streets, every building of
+-- the plan (154 houses of six models, the landmarks), the walls, the rooftop
+-- decks and the props; the Hokage cliff and Training Ground Three's props are
+-- the old builder's. Every building is a solid block whose walls are run on
+-- (Hub.forFights) and whose roof is walked on, dressed by the client with the
+-- ANIMATEUR's model of the plan's name (Dress = the layout's model) and, until
+-- that model exists, with the old village's house of the nearest kind
+-- (DressFallback: Client/HubDress) scaled to the lot.
+local Layout=require(Shared.KonohaLayout)
+-- The six houses' stand-ins: {old mesh, its depth (x, the street face is +x),
+-- height, frontage (z)} (the old builder's house(): w along x, d along z).
+Hub.LAYOUT_STANDIN={
+	small_house={"HouseGable_24x20x2",24,16,20},machiya={"HouseBack_22x20x2",22,16,20},
+	tank_house={"HouseFlat_22x18x3",22,24,18},shop_house={"HouseShop_24x20x2",24,16,20},
+	apartment={"HouseFlat_24x20x2",24,16,20},clan_house={"HouseUchiha_26x20x2",26,16,20},
+}
+local function lighten(c,k) return c:Lerp(Color3.new(1,1,1),k) end
+-- One building of the plan: {model, x, z, w, d, h, yaw, district, landmark}.
+function Hub.layoutBuilding(parent,b)
+	local model,x,z,w,d,h,yaw,district,landmark=b[1],b[2],b[3],b[4],b[5],b[6],b[7] or 0,b[8],b[9]
+	local foot=rel(x,0,z)*CFrame.Angles(0,math.rad(yaw),0)
+	local m=Instance.new("Model");m.Name=landmark or model
+	m:SetAttribute("Dress",model);m:SetAttribute("DressAt",foot)
+	m:SetAttribute("LayoutModel",model)
+	local standin=Hub.LAYOUT_STANDIN[model]
+	if standin then
+		-- the old mesh's street face (+x) turned to the plan's door (+z)
+		m:SetAttribute("DressFallback",standin[1])
+		m:SetAttribute("DressFallbackAt",foot*CFrame.Angles(0,-math.pi/2,0))
+		m:SetAttribute("DressFallbackScale",Vector3.new(d/standin[2],h/standin[3],w/standin[4]))
+	end
+	m.Parent=parent
+	local tint=Color3.fromRGB(224,214,196)
+	for _,dd in Layout.Districts do if dd.id==district then tint=lighten(dd.color,.55) end end
+	part(m,"Walls",Vector3.new(w,h,d),foot*CFrame.new(0,h/2,0),tint,Enum.Material.Plaster)
+	-- a flat roof to walk on, flush with the walls (an eave would catch the
+	-- head at the top of a run up the wall, Client/HubMove; the model draws it)
+	part(m,"Roof",Vector3.new(w,1,d),foot*CFrame.new(0,h+.5,0),C.roofDark,Enum.Material.Slate)
+	deco(m,"Base",Vector3.new(w+.3,1,d+.3),foot*CFrame.new(0,.5,0),C.woodDark,Enum.Material.Wood)
+	return m
+end
+local PROP={
+	lamp=function(f,x,z,yaw,height)
+		local u=unit(f,"LampPost","LampPost",rel(x,0,z))
+		part(u,"LampPost",Vector3.new(.6,height or 7,.6),rel(x,(height or 7)/2,z),C.woodDark,Enum.Material.Wood)
+		lantern(f,rel(x,(height or 7)+.6,z),false)
+	end,
+	tree=function(f,x,z,yaw,height) tree(f,x,z,height or 14,(height or 14)*.42) end,
+	crate=function(f,x,z,yaw,height)
+		local size=Vector3.new(4,height or 4,4)
+		local u=unit(f,"Crate","Crate",rel(x,size.Y/2,z)*CFrame.Angles(0,math.rad(yaw or 0),0),size/4)
+		part(u,"Crate",size,rel(x,size.Y/2,z)*CFrame.Angles(0,math.rad(yaw or 0),0),C.woodLight,Enum.Material.WoodPlanks)
+	end,
+	stone_lantern=function(f,x,z)
+		local u=unit(f,"StoneLantern","StoneLantern",rel(x,0,z))
+		part(u,"StoneLantern",Vector3.new(2.4,5,2.4),rel(x,2.5,z),C.stone,Enum.Material.Slate)
+	end,
+	bench=function(f,x,z,yaw)
+		local cf=rel(x,0,z)*CFrame.Angles(0,math.rad(yaw or 0),0)
+		local u=unit(f,"Bench","Bench",cf)
+		part(u,"Bench",Vector3.new(8,1,2.4),cf*CFrame.new(0,1.6,0),C.wood,Enum.Material.Wood)
+	end,
+	fence=function(f,x,z,yaw)
+		local cf=rel(x,0,z)*CFrame.Angles(0,math.rad(yaw or 0),0)
+		local u=unit(f,"FenceSegment","FenceSegment",cf)
+		part(u,"Fence",Vector3.new(10,3,.6),cf*CFrame.new(0,1.5,0),C.wood,Enum.Material.Wood)
+	end,
+}
+local function prop(f,p)
+	local kind,x,z,yaw,height,y=p[1],p[2],p[3],p[4],p[5],p[6]
+	local make=PROP[kind]
+	if make then make(f,x,z,yaw,height);return end
+	-- a barrel, a stall, a post: a plain piece of its size
+	local size=if kind=="barrel" then Vector3.new(3,3.6,3) elseif kind=="stall" then Vector3.new(8,6,5) else Vector3.new(1,height or 4,1)
+	local piece=part(f,"Prop_"..tostring(kind),size,rel(x,(y or 0)+size.Y/2,z)*CFrame.Angles(0,math.rad(yaw or 0),0),C.wood,Enum.Material.Wood)
+	if kind=="barrel" then piece.Shape=Enum.PartType.Cylinder;piece.CFrame=piece.CFrame*CFrame.Angles(0,0,math.pi/2) end
+end
+local function layoutGround(f)
+	local x0,x1,z0,z1=-Layout.HalfX-20,Layout.HalfX+20,Layout.MinZ-20,Layout.MaxZ+24
+	-- the ground around the Naka river's bed (Layout.Open "the Naka river"):
+	-- the water is filled into it like the old lake (Hub.water, swimming)
+	local river
+	for _,o in Layout.Open do if o.shape=="rect" and string.find(o.why,"river") then river=o end end
+	local function ground(ax,az,bx,bz)
+		if bx-ax>.1 and bz-az>.1 then part(f,"Ground",Vector3.new(bx-ax,8,bz-az),rel((ax+bx)/2,-4,(az+bz)/2),C.grass,Enum.Material.Grass) end
+	end
+	if river then
+		ground(x0,z0,river.x0,z1);ground(river.x1,z0,x1,z1)
+		ground(river.x0,z0,river.x1,river.z0);ground(river.x0,river.z1,river.x1,z1)
+		part(f,"LakeBed",Vector3.new(river.x1-river.x0,3,river.z1-river.z0),rel((river.x0+river.x1)/2,-6.5,(river.z0+river.z1)/2),C.rockDark,Enum.Material.Mud)
+	else
+		ground(x0,z0,x1,z1)
+	end
+	for _,dd in Layout.Districts do
+		deco(f,"District_"..dd.id,Vector3.new(dd.x1-dd.x0,.06,dd.z1-dd.z0),rel((dd.x0+dd.x1)/2,.02,(dd.z0+dd.z1)/2),lighten(dd.color,.25),Enum.Material.Ground)
+	end
+	for _,st in Layout.Streets do
+		path(f,st.a.X,st.a.Y,st.b.X,st.b.Y,st.width,C.cobble,Enum.Material.Cobblestone)
+	end
+	-- the invisible edge of the village (the wall stands inside it)
+	for _,b in {{0,Layout.MinZ-4,640,1},{0,Layout.MaxZ+6,640,1},{-Layout.HalfX-6,-23,1,520},{Layout.HalfX+6,-23,1,520}} do
+		local edge=part(f,"Edge",Vector3.new(b[3],90,b[4]),rel(b[1],45,b[2]),C.stone);edge.Transparency=1;edge.CanQuery=false
+	end
+	local spawn=Instance.new("SpawnLocation")
+	spawn.Name="HubSpawn";spawn.Anchored=true;spawn.CanCollide=false;spawn.CanQuery=false;spawn.Transparency=1
+	spawn.Size=Vector3.new(6,1,6);spawn.CFrame=rel(0,.5,192);spawn.Neutral=true;spawn.Duration=0;spawn.Enabled=true
+	local decal=spawn:FindFirstChildOfClass("Decal");if decal then decal:Destroy() end
+	spawn.Parent=f
+end
+function Hub.buildLayout(f)
+	layoutGround(f)
+	local buildings=Instance.new("Folder");buildings.Name="Buildings";buildings.Parent=f
+	for _,b in Layout.Buildings do Hub.layoutBuilding(buildings,b) end
+	for _,w in Layout.Walls do
+		local id,x,z,ww,dd,height=w[1],w[2],w[3],w[4],w[5],w[6]
+		if ww>=dd then wall(f,x-ww/2,z,x+ww/2,z,height,C.plasterWarm) else wall(f,x,z-dd/2,x,z+dd/2,height,C.plasterWarm) end
+	end
+	for _,deck in Layout.RoofDecks do
+		local x,z,w,d,top=deck[1],deck[2],deck[3],deck[4],deck[5]
+		part(f,"RoofDeck",Vector3.new(w,1,d),rel(x,top-.5,z),C.woodLight,Enum.Material.WoodPlanks)
+		for _,sx in {-1,1} do for _,sz in {-1,1} do part(f,"DeckPost",Vector3.new(.8,top,.8),rel(x+sx*(w/2-.5),top/2,z+sz*(d/2-.5)),C.woodDark,Enum.Material.Wood) end end
+		local ladder=unit(f,"LadderUnit","Ladder",rel(x-w/2-1,top/2,z))
+		local truss=Instance.new("TrussPart");truss.Name="Ladder";truss.Anchored=true;truss.Size=Vector3.new(2,top,2);truss.CFrame=rel(x-w/2-1,top/2,z)
+		truss.Color=C.woodLight;truss.Material=Enum.Material.Wood;truss.Parent=ladder
+	end
+	-- The props, out of the line where the two fighters of a street duel
+	-- stand (HubMap.Streets: its centre and both starts, a body's width
+	-- around): a stall left there would start a fighter inside it.
+	local S=HubMap.Scale or 1
+	local lanes={}
+	for _,street in HubMap.Streets do
+		local axis=street.axis or Vector3.zAxis
+		local half=(street.start or math.min(24,street.radius*.7))/S
+		table.insert(lanes,{c=street.at/S,axis=axis,half=half})
+	end
+	local function onLane(x,z,reach)
+		for _,l in lanes do
+			local d=Vector3.new(x-l.c.X,0,z-l.c.Z)
+			local along=d:Dot(l.axis)
+			local across=(d-l.axis*along).Magnitude
+			if math.abs(along)<=l.half+reach and across<=reach then return true end
+		end
+		return false
+	end
+	for _,p in Layout.Props do
+		if not onLane(p[2],p[3],7) then prop(f,p) end
+	end
+	-- An inspiration who waits up high (Itachi on his perch, HubMap) has a
+	-- deck under his feet in the plan's village too.
+	local spots={HubMap.Proctor}
+	for _,spot in HubMap.Masters do table.insert(spots,spot) end
+	for _,spot in spots do
+		local b=spot.at/S
+		if b.Y>1 then
+			part(f,"PerchDeck",Vector3.new(10,1,10),rel(b.X,b.Y-.5,b.Z),C.woodLight,Enum.Material.WoodPlanks)
+			for _,sx in {-1,1} do for _,sz in {-1,1} do part(f,"PerchPost",Vector3.new(.8,b.Y-1,.8),rel(b.X+sx*4.4,(b.Y-1)/2,b.Z+sz*4.4),C.woodDark,Enum.Material.Wood) end end
+		end
+	end
+	for _,o in Layout.Outside do
+		local model,x,z,w,d,h=o[1],o[2],o[3],o[4],o[5],o[6]
+		local u=Instance.new("Model");u.Name=o[8] or model;u:SetAttribute("Dress",model);u:SetAttribute("DressAt",rel(x,0,z));u.Parent=f
+		part(u,"Backdrop",Vector3.new(w,h,d),rel(x,h/2,z),if model=="forest_of_death" then C.grass else C.stone,Enum.Material.Grass)
+	end
+	-- kept from the old builder: the Hokage cliff and its faces, Training
+	-- Ground Three's props
+	faces(f);training(f)
+	return f
+end
+-- Which village: "konoha2" (the plan, DEC-042) or "classic" (the old one).
+-- "auto": the plan in the work places (debug, qa, capture), the old one in
+-- the release build (kept for a step back if ND-JEU needs it).
+function Hub.layoutMode()
+	local mode=(Config.Hub and Config.Hub.Layout) or "classic"
+	if mode~="auto" then return mode end
+	local value="release"
+	pcall(function() local profile=Shared:FindFirstChild("BuildProfile");if profile then value=profile.Value end end)
+	return if value=="release" then "classic" else "konoha2"
+end
 function Hub.build(parent)
 	if Hub.folder and Hub.folder.Parent then return Hub.folder end
 	local f=Instance.new("Folder");f.Name="NinjaDuelHub"
+	if Hub.layoutMode()=="konoha2" then
+		Hub.buildLayout(f)
+		f:SetAttribute("Layout","konoha2")
+		Hub.scaleVillage(f,HubMap.Scale or 1)
+		Hub.water(f)
+		Hub.forFights(f)
+		f.Parent=parent or workspace
+		Hub.folder=f;Hub.built=true
+		return f
+	end
 	ground(f);gate(f);street(f);plaza(f);hall(f);training(f);hyuga(f);uchiha(f);faces(f);quarters(f);forest(f)
 	Hub.scaleVillage(f,HubMap.Scale or 1)
 	Hub.water(f)
@@ -710,6 +907,79 @@ function Hub.build(parent)
 	f.Parent=parent or workspace
 	Hub.folder=f;Hub.built=true
 	return f
+end
+
+-- ------------------------------------------------------------------ the open 1v1
+-- (21/11, étape 3 DEV 5, DEC-047; « le 1v1 ouvert : personne d'autre n'entre,
+-- les autres regardent depuis la rue ») While a duel is fought in a place of
+-- the village, a ring stands round it: a line on the ground everybody sees,
+-- and a wall only the passers-by meet (its collision group meets the walkers'
+-- alone: never the fighters, nor the fight's queries, nor a lens). A walker
+-- caught inside when it starts is set down outside, facing the fight.
+Hub.RING_GROUP="NinjaDuelRing"
+Hub.RING_WALLS=24
+Hub.RING_HEIGHT=14
+function Hub.ringSetup()
+	if Hub.ringReady~=nil then return Hub.ringReady end
+	local DuelQuery=require(script.Parent.DuelQuery)
+	local ok=DuelQuery.setup() and pcall(function()
+		local physics=game:GetService("PhysicsService")
+		if not physics:IsCollisionGroupRegistered(Hub.RING_GROUP) then physics:RegisterCollisionGroup(Hub.RING_GROUP) end
+		for _,group in physics:GetRegisteredCollisionGroups() do
+			physics:CollisionGroupSetCollidable(Hub.RING_GROUP,group.name,group.name==DuelQuery.WALKERS)
+		end
+	end)
+	Hub.ringReady=ok==true
+	return Hub.ringReady
+end
+-- The rings of the duels fought now: `active` = {{key, origin, radius}}.
+-- Raised for a new one, taken down for one over; the walkers inside set out.
+function Hub.duelRings(active)
+	local f=Hub.folder
+	if not f then return end
+	local want={}
+	for _,site in active do want["DuelRing_"..site.key]=site end
+	for _,child in f:GetChildren() do
+		if string.sub(child.Name,1,9)=="DuelRing_" and not want[child.Name] then child:Destroy() end
+	end
+	for name,site in want do
+		if not f:FindFirstChild(name) then
+			local ring=Instance.new("Folder");ring.Name=name;ring.Parent=f
+			local walls=Hub.ringSetup()
+			local r=site.radius
+			local centre=Vector3.new(site.origin.X,O.Y,site.origin.Z)
+			local n=Hub.RING_WALLS
+			local width=2*math.pi*r/n+.6
+			for k=1,n do
+				local a=(k-.5)/n*math.pi*2
+				local at=centre+Vector3.new(math.cos(a)*r,0,math.sin(a)*r)
+				local face=CFrame.lookAt(at,centre)
+				-- the line on the ground, red ink
+				local line=deco(ring,"Line",Vector3.new(width,.1,.7),face*CFrame.new(0,.06,0),C.red,Enum.Material.SmoothPlastic)
+				line.Transparency=.15
+				if walls then
+					local wall=part(ring,"Wall",Vector3.new(width,Hub.RING_HEIGHT,1),face*CFrame.new(0,Hub.RING_HEIGHT/2,0),C.red,Enum.Material.ForceField)
+					wall.Transparency=1;wall.CanQuery=false;wall.CanTouch=false;wall.CastShadow=false
+					pcall(function() wall.CollisionGroup=Hub.RING_GROUP end)
+				end
+			end
+		end
+	end
+	-- the passers-by inside: set down outside, facing the fight
+	for _,body in Hub.bodies do
+		local root=body.character and body.character:FindFirstChild("HumanoidRootPart")
+		if root then
+			for _,site in want do
+				local d=Vector3.new(root.Position.X-site.origin.X,0,root.Position.Z-site.origin.Z)
+				if d.Magnitude<site.radius+1 then
+					local out=if d.Magnitude>.1 then d.Unit else Vector3.xAxis
+					local at=Vector3.new(site.origin.X,root.Position.Y,site.origin.Z)+out*(site.radius+3)
+					pcall(function() body.character:PivotTo(CFrame.lookAt(at,Vector3.new(site.origin.X,at.Y,site.origin.Z))) end)
+					break
+				end
+			end
+		end
+	end
 end
 
 -- ------------------------------------------------------------------ the masters
@@ -758,6 +1028,50 @@ function Hub.placeMasters(source)
 	Hub.placeProctor(holder)
 	Hub.placeTraining(holder)
 	Hub.placeMarket(holder)
+	Hub.placeSolo(holder)
+end
+-- (21/11, étape 3 DEV 4, DEC-047) The things to do alone in the plan's
+-- village (Shared/Solo): the rooftop race's start post at THE ROOFTOPS, the
+-- kunai targets down the market lane. Each its prompt (Client/SoloView
+-- answers it: attribute NinjaSolo) and the pieces that say what it is, none in
+-- the way of a walker (the ANIMATEUR's models may dress them: KunaiTarget).
+function Hub.placeSolo(holder)
+	if not Hub.folder or Hub.folder:GetAttribute("Layout")~="konoha2" or holder:FindFirstChild("RooftopRace") then return end
+	local Solo=require(Shared.Solo)
+	local function prompted(model,at,id,text,place)
+		local anchor=Instance.new("Part");anchor.Name="Anchor"
+		anchor.Size=Vector3.new(1,1,1);anchor.Transparency=1;anchor.Anchored=true
+		anchor.CanCollide=false;anchor.CanQuery=false;anchor.CanTouch=false
+		anchor.CFrame=CFrame.new(at+Vector3.new(0,4,0));anchor.Parent=model
+		model.PrimaryPart=anchor
+		model.Parent=holder
+		local prompt=promptOn(model,id,text,place,false)
+		if prompt then prompt:SetAttribute("NinjaSolo",model:GetAttribute("NinjaSolo"));prompt.MaxActivationDistance=14 end
+		return prompt
+	end
+	-- the race: a tall post with its red banner, the start line on the ground
+	local post=Solo.startPost()
+	local race=Instance.new("Model");race.Name="RooftopRace";race:SetAttribute("NinjaSolo","race")
+	deco(race,"Post",Vector3.new(1.4,18,1.4),CFrame.new(post+Vector3.new(-3,9,0)),C.woodDark,Enum.Material.Wood)
+	deco(race,"Banner",Vector3.new(.3,7,4),CFrame.new(post+Vector3.new(-3,13.5,2.4)),C.red,Enum.Material.Fabric)
+	deco(race,"Line",Vector3.new(12,.12,1.2),CFrame.new(post+Vector3.new(4,.06,0))*CFrame.Angles(0,math.pi/2,0),C.cloth,Enum.Material.SmoothPlastic)
+	prompted(race,post,"RooftopRace","ROOFTOP RACE","THE ROOFTOPS")
+	-- the targets: the mark on the ground, each board on its post facing it
+	local mark=Solo.targetsMark()
+	local targets=Instance.new("Model");targets.Name="KunaiTargets";targets:SetAttribute("NinjaSolo","targets")
+	local ring=deco(targets,"Mark",Vector3.new(.12,7,7),CFrame.new(mark+Vector3.new(0,.06,0))*CFrame.Angles(0,0,math.pi/2),C.red,Enum.Material.SmoothPlastic)
+	ring.Shape=Enum.PartType.Cylinder
+	for i in Solo.Targets.boards do
+		local at=Solo.board(i)
+		local foot=Vector3.new(at.X,O.Y,at.Z)
+		local board=Instance.new("Model");board.Name="Target"..i;board:SetAttribute("NinjaTarget",i);board.Parent=targets
+		deco(board,"Post",Vector3.new(.4,at.Y-O.Y,.4),CFrame.new((foot+at)/2+Vector3.new(.3,0,0)),C.woodDark,Enum.Material.Wood)
+		for k,band in {{3.4,C.cloth},{2.4,C.red},{1.4,C.cloth},{.6,C.red}} do
+			local disc=deco(board,"Disc",Vector3.new(.16+k*.02,band[1],band[1]),CFrame.new(at-Vector3.new(k*.02,0,0)),band[2],Enum.Material.SmoothPlastic)
+			disc.Shape=Enum.PartType.Cylinder
+		end
+	end
+	prompted(targets,mark,"KunaiTargets","KUNAI TARGETS","THE MARKET LANE")
 end
 -- (14/11, audit: the training ground had three stumps and a dummy, and
 -- nothing to do there) The dummy of Training Ground Three: E trains with his

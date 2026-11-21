@@ -77,12 +77,14 @@ run Ranked     "$LUNE" run tests/Ranked.spec.luau
 run NinjaTree  "$LUNE" run tests/NinjaTree.spec.luau
 run NinjaArts  "$LUNE" run tests/NinjaArts.spec.luau
 run FirstCombat "$LUNE" run tests/FirstCombat.spec.luau
+run Solo     "$LUNE" run tests/Solo.spec.luau
 run KitTexts   "$LUNE" run tests/KitTexts.spec.luau
 run PlayTexts  "$LUNE" run tests/PlayTexts.spec.luau
 run HubLayout "$LUNE" run tests/HubLayout.spec.luau
 run KonohaLayout "$LUNE" run tests/KonohaLayout.spec.luau
 run MeritAura "$LUNE" run tests/MeritAuraFX.spec.luau
 run Infusions "$LUNE" run tests/InfusionFX.spec.luau
+run StyleFX "$LUNE" run tests/StyleFX.spec.luau
 run Loop       "$LUNE" run tests/Loop.spec.luau
 run Outfit "$LUNE" run tests/Outfit.spec.luau
 run Spacing "$LUNE" run tests/Spacing.spec.luau

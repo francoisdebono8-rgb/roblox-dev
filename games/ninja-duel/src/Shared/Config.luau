@@ -203,8 +203,15 @@ return {
 	-- (14/11, François: « que notre perso puisse combattre » dans la ville)
 	-- VillageDuels: a duel started at a master's home (his card, the training
 	-- dummy) is fought there, in the village (HubMap.Masters[id].duel), not
-	-- in the stadium. The board's duels and the tournament stay in the stadium.
-	Hub = { Enabled = true, DevUserId = nil, VillageDuels = true },
+	-- in the stadium. (21/11, DEC-047) A duel asked anywhere else while he
+	-- walks (the board's DUELS) is fought in the nearest free place of the
+	-- village (Matches.nearSite). The tournament stays in the stadium.
+	-- (21/11, DEC-047) Layout: "konoha2" the village of the plan (DEC-042,
+	-- Server/Hub.buildLayout), in every place, ND-JEU included: step 3 lives
+	-- in it (the DESIGN's minimap is drawn from the plan, the things to do
+	-- alone stand at its places). "classic" the old one (a step back), "auto"
+	-- the plan in the work places and the old one in the release build.
+	Hub = { Enabled = true, DevUserId = nil, VillageDuels = true, Layout = "konoha2" },
 	-- (19/11, vague 2 DEV 5) The exam of the week (Shared/Exam, Server/
 	-- WeeklyExam): the prodigies' tournament played from Friday 18:00 to
 	-- Sunday 21:00, Paris time, counts for the week (titles, the cliff).
@@ -222,7 +229,9 @@ return {
 			-- (20/11, ANIMATEUR) the six invented outfits (Shared/Catalog), SOON until François creates them
 			SetEmberMonk = 0, SetMistHunter = 0, SetStormCourier = 0, SetShadowScout = 0, SetLeafMedic = 0, SetSandNomad = 0,
 			-- (21/11, DEC-047) the personalization's Robux looks (Shared/CatalogStyle), SOON until created
-			HairSilver = 0, HairVoid = 0, ChakraBlackFlame = 0, ChakraGold = 0, FrameGold = 0 },
+			HairSilver = 0, HairVoid = 0, ChakraBlackFlame = 0, ChakraGold = 0, FrameGold = 0,
+			-- (21/11, étape 3 ANIMATEUR) two shop auras in Robux (Shared/Catalog), SOON until created
+			AuraThunder = 0, AuraShadow = 0 },
 		RyoPacks = { { amount = 1000, product = 0 }, { amount = 3000, product = 0 }, { amount = 8000, product = 0 } },
 		Passes = { VIP = 0, EarlyAccess = 0, BuildSlots = 0 },
 	},

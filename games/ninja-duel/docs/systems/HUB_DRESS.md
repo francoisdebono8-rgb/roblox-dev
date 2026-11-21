@@ -119,3 +119,17 @@ python3 tools/blender/konoha_village.py /tmp/layout.json /tmp/village [gate stre
 - aucune publication Roblox sans l'accord de François ;
 - si un nom ou une taille gêne, le dire dans la PR : le poseur s'adapte ;
 - `tests/Hub.spec.luau` refuse un modèle exporté que rien n'utilise, et un nom du contrat qui n'est plus utilisé.
+
+## Le nouveau Konoha du plan (21/11, DEC-047)
+
+`Server/Hub.buildLayout` construit le village du plan validé (`Shared/KonohaLayout`, DEC-042) quand `Config.Hub.Layout` le demande (« auto » : dans les places de travail ND-DEV, ND-QA et ND-FILM).
+
+Chaque bâtiment du plan est une unité qui porte :
+- `Dress` = le nom du modèle du plan ;
+- `DressAt` = son pied, la porte vers +Z.
+
+Les six maisons ont en plus une **doublure** : `DressFallback`, `DressFallbackAt` et `DressFallbackScale`, la maison de l'ancien village la plus proche, posée sur le lot et mise à sa taille. `Client/HubDress` la met tant que le modèle du plan n'existe pas.
+
+Les noms du plan, à modéliser par l'ANIMATEUR :
+`hokage_residence`, `hospital`, `academy_annex`, `exam_hall`, `exam_hall_wing`, `ichiraku`, `great_gate`, `hyuga_hall`, `hyuga_gate`, `uchiha_police`, `naka_shrine`, `torii`, `pier`, `water_tower`, `market_hall`, `memorial_stone`, `academy_tree`, `shop_house`, `clan_house`, `tank_house`, `small_house`, `apartment`, `machiya`, `forest_of_death`, `stadium`.
+

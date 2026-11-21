@@ -2642,6 +2642,13 @@ require(script.Parent.NinjaToolsFX).install(FX,{sound=sound,anchorPart=anchorPar
 -- (21/11, étape 2) The three transformations at the top of the kit trees (Wall Chidori, the
 -- thrown Rasengan, the Lotus into the Dynamic Entry).
 require(script.Parent.TransformFX).install(FX,{BUILD=BUILD})
+-- (21/11, étape 3) His chakra's colour (NinjaChakra) on his chakra, his infusions and his jutsu,
+-- in the duel and in Konoha; the shop's auras (NinjaShopAura) in Konoha.
+do
+	local tint=require(script.Parent.ChakraTintFX).install(FX)
+	pcall(tint.start)
+	pcall(function() require(script.Parent.ShopAuraFX).start() end)
+end
 -- Naruto (clone puffs, the Rasengan shaped with a clone, the barrage, the Nine-Tails cloak).
 require(script.Parent.NarutoFX).install(FX,{new=new,block=block,tween=tween,sound=sound,flash=flash,shockRing=shockRing,burst=burst,
 	smokePuff=smokePuff,floorUnder=floorUnder,anchorPart=anchorPart,weldAll=weldAll,num=num,seq=seq,TEX=TEX,SOUND=SOUND,BUILD=BUILD})

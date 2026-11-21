@@ -6,6 +6,9 @@
 --   Merit      merit points (Shared/Merit), all time
 --   Streak     days in a row (Shared/DailyQuests), now
 --   Exam       the week's exam (Server/WeeklyExam writes it), the latest one
+--   Rooftops   (21/11, DEC-047) the rooftop race's best time (Shared/Solo), in
+--              hundredths, the FASTEST first (`ascending`); each row also
+--              carries `text`, the time as the clock shows it ("0:42.31")
 -- What clients read: ReplicatedStorage.NinjaDuelBoards, one StringValue per
 -- board whose Value is JSON {id, title, rows={{rank,id,name,value}}, at}.
 -- The DESIGN draws them (the boards in Konoha, a page on screen).
@@ -26,6 +29,7 @@ L.Boards={
 	{id="Merit",title="MERIT",store="NinjaDuelMerit"},
 	{id="Streak",title="DAYS IN A ROW",store="NinjaDuelStreak"},
 	{id="Exam",title="THE WEEK'S EXAM",store="NinjaDuelExam",exam=true,readOnly=true},
+	{id="Rooftops",title="ROOFTOP RACE",store="NinjaDuelRooftops",ascending=true,time=true},
 }
 L.ById={}
 for _,b in L.Boards do L.ById[b.id]=b end
@@ -116,7 +120,7 @@ function L:top(id)
 	local store=self.svc.ordered(key)
 	local fromStore=false
 	if store then
-		local ok,page=pcall(function() return store:GetSortedAsync(false,L.TOP):GetCurrentPage() end)
+		local ok,page=pcall(function() return store:GetSortedAsync(b.ascending==true,L.TOP):GetCurrentPage() end)
 		if ok and page then
 			fromStore=true
 			for _,row in page do
@@ -131,10 +135,13 @@ function L:top(id)
 	end
 	if not fromStore then
 		for userId,row in self.here[key] or {} do table.insert(rows,{id=userId,name=row.name,value=row.value}) end
-		table.sort(rows,function(a,c) if a.value~=c.value then return a.value>c.value end return a.id<c.id end)
+		table.sort(rows,function(a,c) if a.value~=c.value then return if b.ascending then a.value<c.value else a.value>c.value end return a.id<c.id end)
 		while #rows>L.TOP do table.remove(rows) end
 	end
-	for i,row in rows do row.rank=i end
+	for i,row in rows do
+		row.rank=i
+		if b.time then row.text=require(Shared.Solo).clock(row.value) end
+	end
 	return {id=b.id,title=b.title,rows=rows,at=self.svc.now()}
 end
 function L:refresh()
