@@ -6,7 +6,8 @@
 --
 --   Sim.first(H,mods,kit,seed,profile)        the first combat (Coach, AI "first")
 --   Sim.round(H,mods,kit,rival,level,seed,profile)  one round of a duel
--- mods: {PlayerSim=,AI=,Coach=,FirstMinute=,Config=}; H: tests/Harness.
+-- mods: {PlayerSim=,AI=,Coach=,FirstMinute=,Config=,SkillBuilds=}; H: tests/Harness.
+-- (SkillBuilds: the first combat is played with a new player's kit, gated.)
 local Sim={}
 
 -- What the screen shows of a body, as the duel's snapshot (Matches.view).
@@ -41,14 +42,20 @@ local function drive(c,a,sim,view,dt,stats)
 	for _,press in out.presses do
 		local ok,reason=Sim.press(c,a,press)
 		stats.presses+=1
-		if not ok then stats.refused+=1;stats.reasons[reason or "?"]=(stats.reasons[reason or "?"] or 0)+1 end
+		if not ok then
+			stats.refused+=1
+			local key=press.action..":"..tostring(reason or "?")
+			stats.reasons[key]=(stats.reasons[key] or 0)+1
+		end
 	end
 end
 
 function Sim.first(H,mods,kit,seed,profile)
 	local V=H.V
 	local rival=mods.FirstMinute.rival(kit)
-	local c,a,b,match=H.duel(kit,rival)
+	-- a new player's kit: no node of its tree yet (DEC-045, the reduced start)
+	local build=mods.SkillBuilds and mods.SkillBuilds.build(kit,{},{gated=true})
+	local c,a,b,match=H.duel(kit,rival,build and {A=build} or nil)
 	local half=mods.Config.StartDistance or 24
 	c:relocate(a,V.new(0,3,half));c:relocate(b,V.new(0,3,-half))
 	a.playerInput=true

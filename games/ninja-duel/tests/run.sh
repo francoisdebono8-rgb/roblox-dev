@@ -34,5 +34,5 @@ echo "=== DuelBot ==="
 echo "=== FirstCombat ==="
 "$LUNE" run tests/FirstCombat.spec.luau || status=1
 echo "=== rounds ==="
-"$LUNE" run tools/duelbot/rounds.luau 2 1,1.25 || status=1
+"$LUNE" run tools/duelbot/rounds.luau 2 0.6,0.7,0.8,1 joueur,debutant easy,normal || status=1
 exit $status

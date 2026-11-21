@@ -87,7 +87,7 @@ function PlayerSim.new(profile,seed,V)
 	local p=PlayerSim.Profiles[profile] or error("PlayerSim: no profile "..tostring(profile))
 	local self=setmetatable({profile=profile,p=p,V=V,roll=lcg(seed),queue={},goal=nil,seen={},learned={},
 		nextStrike=0,burstLeft=0,pauseUntil=0,stop=nil,stopUntil=0,wander=0,wanderUntil=0,guardUntil=0,
-		nextJutsu=nil,lastHimState=nil,lastReaction=nil,runs=false,toolAt=-10,grabAt=-10,dodgeAt=-10,sigAt=-10,log={}},PlayerSim)
+		nextJutsu=nil,lastHimState=nil,lastReaction=nil,runs=false,onScreen=nil,toolAt=-10,grabAt=-10,dodgeAt=-10,sigAt=-10,log={}},PlayerSim)
 	return self
 end
 
@@ -125,14 +125,19 @@ function PlayerSim:tick(view,dt)
 	local toward=if dist>.01 then d.Unit else V.new(0,0,1)
 
 	-- The prompt: read after a while, then done (or not) for a few seconds.
+	-- A prompt that comes on screen (again: the coach shows it back when its
+	-- moment returns) is read, then done or not.
 	local prompt=view.prompt
-	if prompt and prompt.id and not prompt.done and not self.seen[prompt.id] then
-		self.seen[prompt.id]=true
+	local shown=prompt and prompt.id and not prompt.done and prompt.id or nil
+	if shown and shown~=self.onScreen and not (self.goal and self.goal.id==shown) then
+		self.seen[shown]=(self.seen[shown] or 0)+1
 		if self:chance(p.Follow) then
-			local from=now+self:range(p.Read)
-			self.goal={id=prompt.id,key=prompt.key,from=from,untilT=from+p.PromptFor,tries=0}
+			-- read faster the second time
+			local from=now+self:range(p.Read)*(if self.seen[shown]>1 then .6 else 1)
+			self.goal={id=shown,key=prompt.key,from=from,untilT=from+p.PromptFor,tries=0}
 		end
 	end
+	self.onScreen=shown
 	local goal=self.goal
 	if goal and now>goal.untilT then self.learned[goal.id]=true;self.goal=nil;goal=nil end
 	if goal and prompt and prompt.id==goal.id and prompt.done then self.learned[goal.id]=true;self.goal=nil;goal=nil end
@@ -166,11 +171,16 @@ function PlayerSim:tick(view,dt)
 			self.dodgeAt=now;self:later(now,"Dodge",nil,self:range({.25,.6}))
 		elseif id=="grab" and dist<5.5 and now-self.grabAt>1 then
 			self.grabAt=now;self:later(now,"Grab",nil,.05)
-		elseif id=="signature" and now-self.sigAt>1.6 and acting.tries<3 then
+		elseif id=="signature" and now-self.sigAt>1.2 and acting.tries<4 then
+			-- the key the prompt names, pressed again while it stays on screen;
+			-- he stops striking a moment to press it
 			acting.tries+=1;self.sigAt=now
 			local slot=tonumber(string.match(tostring(acting.key or ""),"%d"))
 			if not slot then slot=readyJutsu(view,false) end
-			if slot then self:later(now,"Technique"..slot,him.pos,.1) end
+			if slot then
+				self:later(now,"Technique"..slot,him.pos,.1)
+				self.pauseUntil=math.max(self.pauseUntil,now+.6)
+			end
 		elseif id=="tool" and now-self.toolAt>1.5 then
 			self.toolAt=now
 			local miss=V.new((self.roll()*2-1)*2,0,(self.roll()*2-1)*2)
