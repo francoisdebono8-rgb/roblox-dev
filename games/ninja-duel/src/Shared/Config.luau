@@ -220,7 +220,9 @@ return {
 	Shop = {
 		Products = { KunaiGold = 0, TantoShadow = 0, SetNaruto = 0, SetSasuke = 0, SetLee = 0, SetNeji = 0, SetGaara = 0, SetKakashi = 0, SetItachi = 0, SetMinato = 0,
 			-- (20/11, ANIMATEUR) the six invented outfits (Shared/Catalog), SOON until François creates them
-			SetEmberMonk = 0, SetMistHunter = 0, SetStormCourier = 0, SetShadowScout = 0, SetLeafMedic = 0, SetSandNomad = 0 },
+			SetEmberMonk = 0, SetMistHunter = 0, SetStormCourier = 0, SetShadowScout = 0, SetLeafMedic = 0, SetSandNomad = 0,
+			-- (21/11, DEC-047) the personalization's Robux looks (Shared/CatalogStyle), SOON until created
+			HairSilver = 0, HairVoid = 0, ChakraBlackFlame = 0, ChakraGold = 0, FrameGold = 0 },
 		RyoPacks = { { amount = 1000, product = 0 }, { amount = 3000, product = 0 }, { amount = 8000, product = 0 } },
 		Passes = { VIP = 0, EarlyAccess = 0, BuildSlots = 0 },
 	},

@@ -31,6 +31,8 @@ local Exam=require(Shared.Exam)
 local Codes=require(Shared.Codes)
 local Ranked=require(Shared.Ranked)
 local Merit=require(Shared.Merit)
+-- (21/11, DEC-047) the personalization looks: titles, auras, frames earned
+local Style=require(Shared.CatalogStyle)
 local NinjaTree=require(Shared.NinjaTree)
 -- (20/11) the leaderboards, when the server runs them (Server/Leaderboards)
 local function boards()
@@ -86,6 +88,7 @@ function P.load(player)
 		return nil
 	end
 	P.handles[player]=h;P.states[player]="ready"
+	P.earnLooks(player)
 	P.badges(player)
 	local pass=P.config().MasteryPass or 0
 	if pass>0 then
@@ -315,7 +318,24 @@ function P.daily(player,out,events)
 		local merit=P.merit(player,events.pvp==true)
 		if merit then out=out or {};out.merit=merit end
 	end
+	-- (21/11, DEC-047) a title, an aura or a frame earned on the way
+	local earned=P.earnLooks(player)
+	if #earned>0 then out=out or {};out.earned=earned end
 	return out
+end
+-- (21/11, DEC-047) The earned looks he now qualifies for (Shared/CatalogStyle:
+-- titles, merit auras and frames), given; their names for the result screen.
+function P.earnLooks(player)
+	local names={}
+	if not P.enabled() or not P.ready(player) then return names end
+	local h=P.handles[player]
+	for _,id in Style.earned(h.data,Shop.Items) do
+		local ok=P.run(player,"earnItem",{item=id})
+		local item=Shop.item(id)
+		if ok and item then table.insert(names,item.name) end
+	end
+	if #names>0 then P.badges(player) end
+	return names
 end
 -- (20/11, DEC-043) What everybody sees of him: NinjaRank (ACADEMY…KAGE),
 -- NinjaRating, NinjaAura (merit tier, 0 none), on his Player.
@@ -331,6 +351,25 @@ function P.badges(player)
 		-- (21/11, DEC-045) his chakra nature, for the infusions' effects
 		-- (the ANIMATEUR's Infusion.<Nature>); nil: none chosen
 		player:SetAttribute("NinjaNature",NinjaTree.nature(h.data.ninja or NinjaTree.new()))
+		-- (21/11, DEC-047) his personalization, read by every client: the
+		-- title under his name, his chakra's colour, his face-cam frame, the
+		-- aura he chose (a merit one he earned, or a shop one), his victory
+		-- pose and emote (the ANIMATEUR's clips).
+		local eq=(h.data.style and h.data.style.equipped) or {}
+		local function worn(slot) local id=eq[slot];return (id and Shop.item(id)) or Shop.default(slot) end
+		local title=worn("title")
+		player:SetAttribute("NinjaTitle",if title and not title.none then title.name else nil)
+		player:SetAttribute("NinjaChakra",Style.color(worn("chakra"),"Chakra"))
+		local frame=worn("frame")
+		player:SetAttribute("NinjaFrame",frame and frame.id)
+		local aura=eq.aura and Shop.item(eq.aura)
+		if aura and aura.tier then player:SetAttribute("NinjaAura",math.min(aura.tier,tier));player:SetAttribute("NinjaShopAura",nil)
+		elseif aura and aura.id=="AuraNone" then player:SetAttribute("NinjaAura",0);player:SetAttribute("NinjaShopAura",nil)
+		elseif aura then player:SetAttribute("NinjaAura",0);player:SetAttribute("NinjaShopAura",aura.id)
+		else player:SetAttribute("NinjaShopAura",nil) end
+		local victory,emote=worn("victory"),worn("emote")
+		player:SetAttribute("NinjaVictory",victory and victory.id)
+		player:SetAttribute("NinjaEmote",emote and emote.id)
 	end)
 end
 -- (21/11, DEC-045) The ninja's tree: a node learned with the ninja points (all
@@ -452,8 +491,17 @@ function P.cupEnded(player,kit,champion)
 	return reward(player,kit,amount,ryo,nil)
 end
 -- (13/11) The shop between duels: a look for Ryō, a look worn.
-function P.buyItem(player,item) return P.run(player,"buyItem",{item=item}) end
-function P.equipItem(player,item) return P.run(player,"equipItem",{item=item}) end
+-- (21/11, DEC-047) what he wears beyond the outfit shows at once (badges)
+function P.buyItem(player,item)
+	local ok,result=P.run(player,"buyItem",{item=item})
+	if ok then P.badges(player) end
+	return ok,result
+end
+function P.equipItem(player,item)
+	local ok,result=P.run(player,"equipItem",{item=item})
+	if ok then P.badges(player) end
+	return ok,result
+end
 -- The looks the player's own ninja wears in a duel (each slot: the one he
 -- chose, else the base one). nil when the path is off.
 function P.looks(player)

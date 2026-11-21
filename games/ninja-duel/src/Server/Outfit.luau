@@ -180,8 +180,38 @@ end
 
 -- Dresses `model` (an R15 body) in `looks`; an older outfit comes off first.
 -- Returns the outfit's holder (nil: nothing to wear).
+-- (21/11, DEC-047) His hair painted (looks.hairColor, Shared/CatalogStyle):
+-- the hair's texture set aside (kept on the part, put back with his own
+-- colour) and the part painted flat, the anime way.
+function Outfit.hairColor(model,looks)
+	if not model then return end
+	local item=looks and looks.hairColor and Shop.item(looks.hairColor)
+	local c=item and item.colors and item.colors.Hair
+	local color=c and Color3.fromRGB(c[1],c[2],c[3])
+	for _,accessory in model:GetChildren() do
+		if accessory:IsA("Accessory") and (accessory.AccessoryType==Enum.AccessoryType.Hair or Outfit.isHair(accessory.Name)) then
+			local handle=accessory:FindFirstChild("Handle")
+			if handle and handle:IsA("BasePart") then
+				local mesh=handle:FindFirstChildOfClass("SpecialMesh")
+				local textured=if mesh then mesh else (if handle:IsA("MeshPart") then handle else nil)
+				local key=if mesh then "TextureId" else "TextureID"
+				if color then
+					if textured and handle:GetAttribute("NinjaHairTexture")==nil then handle:SetAttribute("NinjaHairTexture",(textured::any)[key] or "");handle:SetAttribute("NinjaHairColor",handle.Color) end
+					if textured then pcall(function() (textured::any)[key]="" end) end
+					handle.Color=color
+				elseif handle:GetAttribute("NinjaHairTexture")~=nil then
+					if textured then pcall(function() (textured::any)[key]=handle:GetAttribute("NinjaHairTexture") end) end
+					local was=handle:GetAttribute("NinjaHairColor")
+					if typeof(was)=="Color3" then handle.Color=was end
+					handle:SetAttribute("NinjaHairTexture",nil);handle:SetAttribute("NinjaHairColor",nil)
+				end
+			end
+		end
+	end
+end
 function Outfit.wear(model,looks)
 	if not model then return nil end
+	pcall(Outfit.hairColor,model,looks)
 	for _,old in model:GetChildren() do if old:GetAttribute("NinjaOutfit") then old:Destroy() end end
 	local ids=Outfit.items(looks)
 	if #ids==0 then return nil end

@@ -38,9 +38,32 @@ Shop.Slots={
 	mask={name="MASK",kind="style",outfit=true,accessory=true},
 	cape={name="CAPE",kind="style",outfit=true,accessory=true},
 	back={name="ON THE BACK",kind="style",outfit=true,accessory=true},
+	-- (21/11, étape 3 DEV 2, DEC-047) the ninja's personalization beyond the
+	-- outfit (Shared/CatalogStyle; the ANIMATEUR's models and clips in Catalog)
+	hair={name="HAIR STYLE",kind="style",personal=true},
+	hairColor={name="HAIR COLOUR",kind="style",personal=true},
+	chakra={name="CHAKRA COLOUR",kind="style",personal=true},
+	victory={name="VICTORY POSE",kind="style",personal=true},
+	emote={name="EMOTE",kind="style",personal=true},
+	aura={name="AURA",kind="style",personal=true},
+	title={name="TITLE",kind="style",personal=true},
+	frame={name="FACE-CAM FRAME",kind="style",personal=true},
 }
 -- (Lee's weights get their look once their Blender model exists.)
-Shop.SlotOrder={"kunai","shuriken","tanto","gourd","headband","set","top","bottom","arms","feet","mask","cape","back"}
+Shop.SlotOrder={"kunai","shuriken","tanto","gourd","headband","set","top","bottom","arms","feet","mask","cape","back",
+	"hair","hairColor","chakra","victory","emote","aura","title","frame"}
+-- (21/11, DEC-047) The shop's tabs, one per kind of personalization (the
+-- DESIGN's screen): the slots each shows, in order.
+Shop.Tabs={
+	{id="Outfit",name="OUTFIT",slots={"set","top","bottom","arms","feet","mask","cape","back","headband"}},
+	{id="Hair",name="HAIR",slots={"hair","hairColor"}},
+	{id="Chakra",name="CHAKRA",slots={"chakra"}},
+	{id="Victory",name="POSES & EMOTES",slots={"victory","emote"}},
+	{id="Aura",name="AURAS",slots={"aura"}},
+	{id="Weapons",name="WEAPONS",slots={"kunai","shuriken","tanto","gourd"}},
+	{id="Titles",name="TITLES",slots={"title"}},
+	{id="Frames",name="FACE-CAM FRAMES",slots={"frame"}},
+}
 Shop.OutfitSlots={"top","bottom","arms","feet"}
 Shop.AccessorySlots={"mask","cape","back"}
 
@@ -56,15 +79,19 @@ Shop.AccessorySlots={"mask","cape","back"}
 -- the headband's Band and Plate, Server/Headband).
 -- (19/11, vague 2 DEV 2) The looks themselves are Shared/Catalog: data the
 -- ANIMATEUR fills; this module keeps the rules.
-Shop.Items=require(script.Parent.Catalog).Items
+-- (21/11, DEC-047) with the DEV's personalization looks (Shared/CatalogStyle).
+Shop.Items=table.clone(require(script.Parent.Catalog).Items)
+for _,item in require(script.Parent.CatalogStyle).Items do table.insert(Shop.Items,item) end
 local byId={}
-for _,item in Shop.Items do byId[item.id]=item end
+for _,item in Shop.Items do assert(not byId[item.id],"look listed twice: "..item.id);byId[item.id]=item end
 function Shop.item(id) return byId[id] end
--- Where a look is sold: "shop" (Robux), "market" (Ryō), nil (free).
+-- Where a look is sold: "shop" (Robux), "market" (Ryō), nil (free or earned).
 function Shop.counter(item)
 	if item.robux then return "shop" elseif item.ryo then return "market" end
 	return nil
 end
+-- (21/11, DEC-047) Whether a look is earned, never sold (Shared/CatalogStyle).
+function Shop.earnedOnly(item) return item~=nil and item.earned~=nil end
 -- What a counter shows of a slot: what it sells, the free looks, and what he
 -- owns from the other counter (so he can wear it from either).
 function Shop.atCounter(slot,counter,style)
@@ -130,6 +157,8 @@ function Shop.state(style,item,ryo,products)
 		if product and product>0 then return {kind="robux",label="BUY",product=product} end
 		return {kind="soon",label="SOON"}
 	end
+	-- (21/11, DEC-047) a look to earn says how
+	if item.earned then return {kind="earn",label="EARN",how=item.how} end
 	return {kind="soon",label="SOON"}
 end
 

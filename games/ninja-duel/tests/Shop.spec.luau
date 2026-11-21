@@ -22,10 +22,13 @@ test("the catalogue: every look has a slot, a price or is a base one, and every 
 	for _,item in Shop.Items do
 		assert(not seen[item.id],"twice: "..item.id);seen[item.id]=true
 		assert(Shop.Slots[item.slot],item.id.." has no slot")
-		assert(item.base or (item.ryo and item.ryo>0) or item.robux,item.id.." is neither base nor sold")
+		assert(item.base or (item.ryo and item.ryo>0) or item.robux or (item.earned and item.how),item.id.." is neither base, sold nor earned")
 		assert(not (item.ryo and item.robux),item.id.." has two prices")
 		if item.robux then assert((Config.Shop.Products or {})[item.robux]~=nil,item.id.."'s product is not in Config.Shop") end
-		assert(item.none or item.colors,item.id.." has no colours")
+		-- (21/11, DEC-047) a title, an aura, a pose or an emote is not painted
+		local personal=Shop.Slots[item.slot].personal and item.slot~="hairColor" and item.slot~="chakra" and item.slot~="frame"
+		assert(item.none or item.colors or personal,item.id.." has no colours")
+		if item.earned then assert(not item.ryo and not item.robux,item.id.." is earned and sold") end
 	end
 	-- (14/11) the masters' outfits are sold for Robux, at the SHOP
 	for _,item in Shop.inSlot("set") do
@@ -38,6 +41,11 @@ test("the catalogue: every look has a slot, a price or is a base one, and every 
 			local free=0
 			for _,item in Shop.inSlot(slot) do if item.base then free+=1 end end
 			assert(free>=1,slot.." has no free piece")
+		elseif Shop.Slots[slot].personal then
+			-- (21/11, DEC-047) his own hair, no title: a base look that may be « nothing »
+			local base=0
+			for _,item in Shop.inSlot(slot) do if item.base then base+=1 end end
+			assert(base>=1,slot.." has no base look")
 		else assert(Shop.default(slot),slot.." has no base look") end
 	end
 	-- (DEC-040) every outfit piece covers real body parts; a master's
@@ -568,6 +576,30 @@ test("the STYLE preview: a still copy of his avatar, without its scripts nor its
 	assert(not copy:FindFirstChildOfClass("LocalScript") and not copy:FindFirstChild("NinjaOutfit"),"the copy kept a script or his outfit")
 	assert(character.Archivable==false and character:FindFirstChild("NinjaOutfit"),"his own character was changed")
 	assert(Preview.copy(nil)==nil,"a copy of nobody")
+end)
+
+test("the personalization (DEC-047): eight tabs, nothing empty, looks to earn given by their rule",function()
+	local CatalogStyle=H.load("Shared/CatalogStyle")
+	for _,tab in Shop.Tabs do
+		local n=0
+		for _,slot in tab.slots do assert(Shop.Slots[slot],tab.id..": unknown slot "..slot);n+=#Shop.inSlot(slot) end
+		assert(n>=1,tab.id.." is empty")
+	end
+	for _,slot in {"hairColor","chakra","title","frame","aura"} do assert(#Shop.inSlot(slot)>=4,slot.." has too few looks") end
+	local p=S.new("dev_style")
+	assert(#CatalogStyle.earned(p,Shop.Items)==0,"a new profile has earned something")
+	assert(not pcall(S.apply,p,p.sequence+1,"earnItem",{item="TitleGraduate"}),"a title given before its rule")
+	p.merit={points=30,wins=1,pvpWins=0}
+	local due=CatalogStyle.earned(p,Shop.Items)
+	assert(table.find(due,"TitleGraduate") and table.find(due,"AuraEmber") and not table.find(due,"AuraStorm"),"the rules: "..table.concat(due,","))
+	local np=S.apply(p,p.sequence+1,"earnItem",{item="TitleGraduate"});p=np
+	assert(p.style.owned.TitleGraduate and S.validate(p),"the earned title")
+	assert(not pcall(S.apply,p,p.sequence+1,"buyItem",{item="TitleStreet"}),"a title bought")
+	p=S.apply(p,p.sequence+1,"equipItem",{item="TitleGraduate"})
+	assert(p.style.equipped.title=="TitleGraduate","the title worn")
+	local state=Shop.state(p.style,Shop.item("TitleStreet"),0,{})
+	assert(state.kind=="earn" and state.how,"a look to earn does not say how")
+	assert(CatalogStyle.color(Shop.item("ChakraCrimson"),"Chakra"),"the chakra's colour")
 end)
 
 print(string.format("NinjaDuel shop and Ryō (13/11): %d PASS",passed))

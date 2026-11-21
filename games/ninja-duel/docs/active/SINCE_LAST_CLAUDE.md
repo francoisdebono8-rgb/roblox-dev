@@ -1,5 +1,46 @@
 # Boîte de réception Claude
 
+## INBOX-DEV-PERSONNALISATION-20261121 — DEV 21/11 : la personnalisation côté données (étape 3, DEV 2)
+
+**Les emplacements** (`Shared/Shop.Slots`, `personal = true`) : `hair`, `hairColor`, `chakra`, `victory`, `emote`, `aura`, `title`, `frame`. On les achète et on les porte comme les tenues (`buyItem`, `equipItem`, `EquipItem`). **`Shop.Tabs`** donne les 8 onglets de la boutique et leurs emplacements.
+
+**Les objets du DEV** (`Shared/CatalogStyle`, fusionné dans `Shop.Items`) :
+- 10 couleurs de cheveux ;
+- 9 couleurs de chakra ;
+- les 3 auras du mérite (à choisir parmi celles gagnées) ;
+- 10 titres, gagnés seulement ;
+- 6 cadres de face-cam ;
+- une coiffure de base (`HairOwn`), une pose de base (`VictoryBow`) et une émote de base (`EmoteWave`).
+
+**Nouveau prix `earned`** : un objet qui ne s'achète jamais. `Shop.state` renvoie `{kind = "earn", how = …}`, et la boutique dit comment le gagner. Le profil le reçoit dès que sa règle est remplie (`earnItem`, à la fin d'un duel et au chargement), et le résultat le liste dans `progress.earned`.
+
+**Ce que tout le monde voit** (attributs du joueur, `Progression.badges`) :
+- `NinjaTitle` : la ligne sous son nom ;
+- `NinjaChakra` : un `Color3` ;
+- `NinjaFrame` : l'id du cadre ;
+- `NinjaAura` : la tier du mérite choisie, 0 si aucune ;
+- `NinjaShopAura` : l'id d'une aura de boutique ;
+- `NinjaVictory` et `NinjaEmote` : les ids.
+
+La couleur des cheveux est peinte par le serveur sur les cheveux de l'avatar (`Outfit.hairColor`), dans Konoha comme en duel.
+
+**DESIGN** :
+- la boutique par `Shop.Tabs`, avec l'état `earn` ;
+- le titre sous le nom (`NinjaTitle`) ;
+- le cadre de face-cam (`NinjaFrame`, sa couleur dans `colors.Frame`) ;
+- les objets gagnés sur l'écran de résultat (`progress.earned`).
+
+**ANIMATEUR** :
+- la couleur `NinjaChakra` sur le chakra, les infusions et les effets des jutsu ;
+- les auras de boutique (`NinjaShopAura`, `Aura.<id>`) ;
+- `Victory.<id>` et `Emote.<id>`, à commencer par `Victory.Bow` et `Emote.Wave` ;
+- les coiffures (emplacement `hair`) ;
+- tes nouveaux objets vont dans `Shared/Catalog`, dans ces emplacements.
+
+**OUTILLEUR** :
+- `LoopBot.collection` laisse de côté les emplacements `personal` (une couleur, une ligne, un clip : pas de modèle ni d'icône) ;
+- les 5 produits Robux sont à 0 dans `Config.Shop.Products`.
+
 ## INBOX-DEV-PREMIER-COMBAT-20261121 — DEV 21/11 : le premier combat est en place (étape 3, DEV 1)
 
 **Ce qui change dans le jeu.** PLAY, au premier lancement, ne passe plus par les 4 consignes sur un partenaire immobile : on entre directement dans un vrai combat.

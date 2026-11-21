@@ -508,6 +508,16 @@ function S.Commands.meritAdd(p,args)
 	p.merit=p.merit or Merit.new()
 	return Merit.record(p.merit,args.pvp)
 end
+-- (21/11, DEC-047) A look earned, never sold (Shared/CatalogStyle: a title,
+-- a merit aura or frame): given when the profile meets its rule.
+function S.Commands.earnItem(p,args)
+	local item=Shop.item(args.item)
+	assert(item and item.earned,"Not an earned look")
+	assert(not p.style.owned[item.id],"Already yours")
+	assert(require(game:GetService("ReplicatedStorage").NinjaDuel.CatalogStyle).met(p,item.earned),"Not earned yet")
+	p.style.owned[item.id]=true
+	return {item=item.id}
+end
 -- Wear a look the player owns (or a base one) in its slot.
 function S.Commands.equipItem(p,args)
 	local item=Shop.item(args.item)

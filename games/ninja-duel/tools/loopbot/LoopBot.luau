@@ -140,6 +140,10 @@ function Bot.collection()
 		if not Shop.Slots[item.slot] then table.insert(out.unknownSlot,item.id.." ("..item.slot..")") end
 		if item.none then out.none+=1;continue end
 		out.looks+=1
+		-- (21/11, DEC-047, DEV) the personalization beyond the outfit (hair
+		-- colour, chakra, title, frame, aura, pose, emote: Shared/CatalogStyle)
+		-- is a colour, a line or a clip, not a model with an icon
+		if Shop.Slots[item.slot] and Shop.Slots[item.slot].personal then continue end
 		-- (DEV, integration 19/11) a worn accessory (mask, cape, back) is new
 		-- and drawn in cloth by Server/Outfit until the ANIMATEUR models it:
 		-- waiting, the same list as tests/OutfitMeshes.spec (6 at most); its
