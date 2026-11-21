@@ -6,4 +6,9 @@ for name,clip in require(script.Parent.AuthoredJutsu2) do all[name]=clip end
 for name,clip in require(script.Parent.AuthoredJutsu3) do all[name]=clip end
 for name,clip in require(script.Parent.AuthoredJutsu4) do all[name]=clip end
 for name,clip in require(script.Parent.AuthoredJutsu5) do all[name]=clip end
+-- (21/11, étape 2) Naruto, Sasuke and Lee re-authored (tools/blender/e2_build.py --write):
+-- the last layer, so these win over the clips of the same name above.
+for name,clip in require(script.Parent.AuthoredJutsu6) do all[name]=clip end
+for name,clip in require(script.Parent.AuthoredJutsu7) do all[name]=clip end
+for name,clip in require(script.Parent.AuthoredJutsu8) do all[name]=clip end
 return all

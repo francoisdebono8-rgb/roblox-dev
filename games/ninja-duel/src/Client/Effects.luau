@@ -2635,6 +2635,10 @@ for _,name in {"Wave1FX","Wave2FX","Wave3FX","Wave4FX"} do
 	require(script.Parent[name]).install(FX,{new=new,block=block,tween=tween,sound=sound,flash=flash,shockRing=shockRing,burst=burst,
 		smokePuff=smokePuff,sparks=sparks,floorUnder=floorUnder,anchorPart=anchorPart,weldAll=weldAll,num=num,seq=seq,TEX=TEX,SOUND=SOUND,BUILD=BUILD})
 end
+-- (21/11, étape 2, DEC-045) The ninja's tree on screen: the five natures on the kunai and the
+-- 3rd hit (InfusionFX, Infusion.<Nature>), the explosive tag and the smoke bomb (NinjaToolsFX).
+require(script.Parent.InfusionFX).install(FX,{sound=sound,anchorPart=anchorPart,SOUND=SOUND})
+require(script.Parent.NinjaToolsFX).install(FX,{sound=sound,anchorPart=anchorPart,SOUND=SOUND,BUILD=BUILD})
 -- Naruto (clone puffs, the Rasengan shaped with a clone, the barrage, the Nine-Tails cloak).
 require(script.Parent.NarutoFX).install(FX,{new=new,block=block,tween=tween,sound=sound,flash=flash,shockRing=shockRing,burst=burst,
 	smokePuff=smokePuff,floorUnder=floorUnder,anchorPart=anchorPart,weldAll=weldAll,num=num,seq=seq,TEX=TEX,SOUND=SOUND,BUILD=BUILD})

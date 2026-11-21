@@ -190,6 +190,8 @@ TEST_RUNNERS.append(('lune','tests/NinjaTree.spec.luau'))
 TEST_RUNNERS.append(('lune','tests/NinjaArts.spec.luau'))
 # (20/11, DEC-043) The CM's words for the eight prodigies: titles on screen, « pourquoi ce kit », what only this kit does.
 TEST_RUNNERS.append(('lune','tests/KitTexts.spec.luau'))
+# (21/11, étape 2 ANIMATEUR) The natures on the kunai and the 3rd hit, the explosive tag, the smoke bomb.
+TEST_RUNNERS.append(('lune','tests/InfusionFX.spec.luau'))
 def run_automated():
     tool={}
     import os

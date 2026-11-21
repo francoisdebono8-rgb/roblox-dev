@@ -80,6 +80,7 @@ run KitTexts   "$LUNE" run tests/KitTexts.spec.luau
 run HubLayout "$LUNE" run tests/HubLayout.spec.luau
 run KonohaLayout "$LUNE" run tests/KonohaLayout.spec.luau
 run MeritAura "$LUNE" run tests/MeritAuraFX.spec.luau
+run Infusions "$LUNE" run tests/InfusionFX.spec.luau
 run Loop       "$LUNE" run tests/Loop.spec.luau
 run Outfit "$LUNE" run tests/Outfit.spec.luau
 run Spacing "$LUNE" run tests/Spacing.spec.luau
