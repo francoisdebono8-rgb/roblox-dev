@@ -78,6 +78,16 @@ Style.Items={
 	{id="EmoteWave",slot="emote",name="WAVE",base=true,clip="Emote.Wave"},
 }
 
+-- (21/11, the CM) the titles' words are the CM's (Shared/PlayTexts.Titles):
+-- the name and the line that says how to earn it.
+do
+	local PlayTexts=require(script.Parent.PlayTexts)
+	for _,item in Style.Items do
+		local words=item.slot=="title" and PlayTexts.ById[item.id]
+		if words then item.name=words.title;item.how=words.how end
+	end
+end
+
 -- The earned rules: whether a profile has met `rule` (pure, from the
 -- profile's merit, ranked and daily records).
 local Ranked,Merit
