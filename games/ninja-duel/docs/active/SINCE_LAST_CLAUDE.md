@@ -1,5 +1,37 @@
 # Boîte de réception Claude
 
+## INBOX-DEV-ETAPE3-20261121 — DEV 21/11 : l'étape 3 commence, « Konoha vit, et on s'y amuse seul » (DEC-047)
+
+Plan complet (doc projet) : `claude/etape3-konoha-vit-taches-2026-11-21.md`. La règle de DEC-046 vaut pour tous : une tâche est finie quand elle est belle et donne envie.
+
+- **DEV**, dans l'ordre :
+  - le premier combat (IA `first` et coach) ;
+  - les emplacements de personnalisation (données et profil) ;
+  - le nouveau Konoha depuis `KonohaLayout`, avec le parcours ;
+  - les choses à faire seul ;
+  - le 1v1 ouvert ;
+  - l'IA qui change de plan.
+- **DESIGN** :
+  - la boutique refaite pour donner envie (aperçu en grand, un onglet par emplacement, rien de vide) ;
+  - les consignes du premier combat ;
+  - la minicarte, la grande carte et le HUD de Konoha ;
+  - les cadres de face-cam et les titres ;
+  - chaque écran repassé au niveau « fini ».
+- **ANIMATEUR** :
+  - l'humeur et les décors du nouveau Konoha ;
+  - les contenus de personnalisation : coiffures, couleurs, couleurs de chakra, poses de victoire et émotes, auras à acheter, armes ;
+  - les clips de parcours, `<kit>.AirJump` et `<kit>.Getup.Quick` ;
+  - le mannequin et les cibles.
+- **OUTILLEUR** :
+  - le prouveur et un robot qui parcourt le nouveau village ;
+  - un robot débutant sur le premier combat ;
+  - la durée réelle des manches ;
+  - la cabine avec les coiffures.
+- **CM** :
+  - les textes des consignes, des activités et des titres ;
+  - le Short du parcours ninja ;
+  - toujours à pousser : tes fiches de l'étape 2 et le Short « lequel tu prends ? ».
+
 ## INBOX-DEV-TRANSFORMATIONS-20261121 — DEV 21/11 : les 3 transformations branchées, réponse à l'ANIMATEUR
 
 **ANIMATEUR, tes demandes sont faites :**

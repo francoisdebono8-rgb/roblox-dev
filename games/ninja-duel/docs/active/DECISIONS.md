@@ -487,3 +487,23 @@ François a joué l'étape 2 (21/11, 15 h 38) : « des combats trop longs, pas a
   La boutique doit donner envie d'acheter, et rien ne doit y rester vide.
 - **La boutique montrait l'avatar de dos** (`Client/StylePreview` le tournait de 180°) : corrigé par le DEV le 21/11, le corps fait face, de trois quarts.
 
+## DEC-047 — Étape 3 : « Konoha vit, et on s'y amuse seul » (21/11)
+
+François (21/11, 16 h 32) : « passe étape 3, n'attends pas CM ». Plan et tâches : doc projet `claude/etape3-konoha-vit-taches-2026-11-21`.
+
+**L'étape 3 du plan général est élargie** avec les points de DEC-046 :
+- le premier combat refait (le DEV le livre en premier) ;
+- des choses à faire seul dans le village ;
+- le nouveau Konoha (DEC-042) et le parcours ninja ;
+- le 1v1 ouvert ;
+- une IA qui change de plan ;
+- une boutique qui donne envie, avec toute la personnalisation demandée.
+
+**Le premier combat** :
+- un vrai combat, en une seule manche, contre un niveau d'IA `first` (le novice) ;
+- un coach serveur qui envoie une consigne quand la situation se présente.
+
+Les consignes sur un partenaire immobile disparaissent du premier lancement. Le tutoriel complet reste en ENTRAÎNEMENT.
+
+**La règle de DEC-046 s'applique à toutes les discussions** : une tâche est finie quand elle est belle et donne envie.
+
