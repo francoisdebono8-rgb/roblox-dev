@@ -474,6 +474,52 @@ test("ranks: the result's line, the emblems and the leaderboards",function()
 	assert(ok,tostring(err))
 end)
 
+-- (21/11, step 2 DESIGN) the two trees: the KIT tab with the kit's card, the
+-- NINJA tab with the five natures in their colours; its buttons send the
+-- ninja's commands.
+test("the two trees: the kit's card, the natures, the ninja's commands",function()
+	local Tree=H.load("Client/TreePanel")
+	local NT=H.load("Shared/NinjaTree")
+	local card=Tree.kitCard("Legion")
+	assert(card and #card.starts>0 and card.signature~="","the kit's card")
+	local view=NT.view(NT.new(),10)
+	local layout=Tree.ninjaLayout(view)
+	assert(#layout.natures==5 and #layout.branches==3,"five natures, three branches")
+	assert(layout.natures[1].status=="learn","a nature to learn at 10 points")
+	local d=Tree.ninjaDetail(view,"NatureFire")
+	assert(d.action and d.action.kind=="learn" and d.counter:find("guard",1,true),"the fire card's detail")
+	local r=NT.new();NT.learn(r,"NatureFire",10)
+	local chosen=Tree.ninjaDetail(NT.view(r,10),"NatureFire")
+	assert(chosen.status=="active" and chosen.action==nil,"the chosen nature")
+	local locked=Tree.ninjaDetail(NT.view(NT.new(),0),"InfusedBlade")
+	assert(locked.note and locked.note~="","a locked node says what opens it")
+	H.workspace.GetAttribute=function() return nil end
+	local saved=H.envBase.Instance
+	local baseNew=harnessInstance.new
+	H.envBase.Instance={new=function(class)
+		local x=baseNew(class)
+		x.Activated={Connect=function(_,fn) x.click=fn end}
+		return x
+	end}
+	local ok,err=pcall(function()
+		local UI=H.load("Client/UI")
+		local sent={}
+		local ui=UI.new(baseNew("PlayerGui"),function(action,payload) table.insert(sent,{action,payload}) end)
+		local kits={state="ready",owned={Legion=true},mastery={Legion=0},starter="Legion",selected="Legion",masters={},trees={},ryo=0,style={owned={},equipped={}},ninja=view}
+		local panel=ui.treePanel
+		panel:show("Legion",kits)
+		assert(panel:shown() and panel.tab=="kit","the KIT tab first")
+		panel.tabs.ninja.click()
+		assert(panel.tab=="ninja" and panel.tiles.NatureFire and panel.tiles.NatureWater,"the NINJA tab and its natures")
+		assert(panel.selected=="NatureFire","a nature picked first")
+		panel:press()
+		assert(sent[#sent][1]=="NinjaLearn" and sent[#sent][2].node=="NatureFire","LEARN sends NinjaLearn")
+		panel.tabs.kit.click();assert(panel.tab=="kit","back to the kit")
+	end)
+	H.envBase.Instance=saved
+	assert(ok,tostring(err))
+end)
+
 -- (15/11, DA v3 Mix-Shop) the STYLE preview: a still copy of his own avatar,
 -- its scripts and its own outfit taken off, the character left as it was.
 test("the STYLE preview: a still copy of his avatar, without its scripts nor its outfit",function()

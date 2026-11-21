@@ -11,6 +11,16 @@
 -- Opened from the roster (SKILL TREE), a master's card and the result.
 local Shared=game:GetService("ReplicatedStorage").NinjaDuel
 local TreeView=require(Shared.TreeView)
+-- (21/11, DEC-045, step 2 DESIGN) two tabs: the kit's tree and the ninja's
+-- tree (Shared/NinjaTree, the same for every kit). The KIT tab opens with the
+-- kit's card (what he starts with, what the tree adds, his signature: the
+-- CM's « why this kit »); a node that unlocks a technique shows it big. The
+-- NINJA tab opens with the five chakra natures, one card each in its colour.
+local Fighters=require(Shared.Fighters)
+local KitTexts=require(Shared.KitTexts)
+local NinjaTree=require(Shared.NinjaTree)
+local okA,UIAssets=pcall(function() return require(Shared.UIAssets) end)
+if not okA then UIAssets=nil end
 local Panel={}
 Panel.__index=Panel
 
@@ -20,6 +30,104 @@ local DETAIL_X=1084
 local GUTTER=92
 Panel.CLOSE={X=W-156,Y=22,W=132,H=58}
 local TILE_H,TILE_GAP=40,6
+local CARD_H=104 -- the kit's card, over the KIT tab's grid
+local NATURE_H=132 -- the natures, over the NINJA tab's grid
+Panel.TAB={W=170,H=48,Y=92,X=816}
+
+-- ------------------------------------------------------------------ pure
+local function techName(def,id)
+	for _,t in def and def.Techniques or {} do if t.Id==id then return string.upper(t.Name) end end
+	return string.upper(id)
+end
+Panel.techName=techName
+-- The kit's card: what he starts with, what his tree adds, the change at its
+-- top, his signature. Nodes with Unlock (a technique, or "Awakening") and
+-- objects (Item) are what the tree adds; a technique no node unlocks is his
+-- from the start.
+function Panel.kitCard(kitId)
+	local def=Fighters[kitId]
+	if not def then return nil end
+	local unlocked,adds,transform={},{},nil
+	for _,node in TreeView.tree(kitId) do
+		if node.Unlock then
+			unlocked[node.Unlock]=true
+			table.insert(adds,if node.Unlock=="Awakening" then string.upper(node.Name) else techName(def,node.Unlock))
+		elseif node.Item then table.insert(adds,string.upper(node.Name)) end
+		if node.Transform then transform=string.upper(node.Name) end
+	end
+	local starts={}
+	for _,t in def.Techniques or {} do if not unlocked[t.Id] then table.insert(starts,string.upper(t.Name)) end end
+	local lines=KitTexts.of(kitId)
+	return {name=KitTexts.name(kitId),starts=starts,adds=adds,transform=transform,signature=lines and lines.why or ""}
+end
+
+-- The natures' colours (the element seen on the blade and the kunai).
+Panel.NATURE_COLOR={Fire={226,84,36},Wind={118,196,150},Lightning={246,206,58},Earth={150,108,66},Water={54,128,206}}
+Panel.NATURE_DARK={Fire=true,Earth=true,Water=true} -- cream words on these
+-- The ninja tree's node state as a tile's (the KIT tab's words).
+function Panel.ninjaStatus(node)
+	if node.state=="active" then return "active" elseif node.state=="learned" then return "off" elseif node.state=="open" then return "learn" end
+	local why=node.why or ""
+	if why:find("^Tier") then return "tier" elseif why:find("^Not enough") then return "short" end
+	return "locked"
+end
+-- The NINJA tab: the five natures, then the other branches as the KIT tab's
+-- grid (tiers as rows: I from the start, II and III at NinjaTree.TierNeed).
+function Panel.ninjaLayout(view)
+	view=view or NinjaTree.view(nil,0)
+	local out={natures={},branches={},tiers={},points=view.points,free=view.free,nature=view.nature}
+	local byName={}
+	for _,node in view.nodes do
+		local def=NinjaTree.ById[node.id]
+		local item={id=node.id,name=node.name,cost=node.cost,kind=node.branch,kindLabel=string.upper(node.branch),tier=node.tier,
+			status=Panel.ninjaStatus(node),why=node.why,shows=node.shows,nature=node.nature,major=node.tier==3,requires=def and def.Requires}
+		if node.nature then table.insert(out.natures,item)
+		else
+			local branch=byName[node.branch]
+			if not branch then branch={name=string.upper(node.branch),nodes={}};byName[node.branch]=branch;table.insert(out.branches,branch) end
+			table.insert(branch.nodes,item)
+		end
+	end
+	for t,need in NinjaTree.TierNeed do
+		local row={index=t,name=NinjaTree.TierNames[t],need=need,open=(view.points or 0)>=need,cells={}}
+		for b,branch in out.branches do
+			row.cells[b]={}
+			for _,node in branch.nodes do if node.tier==t then table.insert(row.cells[b],node) end end
+		end
+		table.insert(out.tiers,row)
+	end
+	for _,row in out.tiers do if not row.open then out.nextTier=row break end end
+	out.progress=if out.nextTier then math.clamp((view.points or 0)/out.nextTier.need,0,1) else 1
+	return out
+end
+-- The detail strip of a ninja node.
+function Panel.ninjaDetail(view,id)
+	for _,node in (view or {nodes={}}).nodes do
+		if node.id==id then
+			local status=Panel.ninjaStatus(node)
+			local action=nil
+			if status=="learn" then action={kind="learn",label="LEARN  •  "..node.cost.." POINTS"}
+			elseif status=="off" then action={kind="on",label=if node.nature then "CHOOSE "..string.upper(node.nature) else "TURN ON"}
+			elseif status=="active" and not node.nature then action={kind="off",label="TURN OFF"} end
+			local answer=node.nature and NinjaTree.Infusion[node.nature] and NinjaTree.Infusion[node.nature].Answer
+			local note=if node.why then string.upper(node.why) else nil
+			if status=="active" and node.nature then note="YOUR NATURE: YOUR INFUSED KUNAI AND BLADE CARRY IT. CHANGE IT BETWEEN DUELS." end
+			return {id=id,head=node.name.."  •  "..node.cost.." POINTS  •  TIER "..NinjaTree.TierNames[node.tier].."  •  "..string.upper(node.branch),
+				shows=node.shows,counter=if answer then "ANSWER: "..answer elseif node.nature==nil and node.branch=="Infusion" then "NEEDS A NATURE" else "",
+				note=note,status=status,action=action}
+		end
+	end
+	return nil
+end
+-- A node's pictogram: the technique it unlocks, its object, its element.
+function Panel.icon(node)
+	if not UIAssets then return nil end
+	if node.Unlock and node.Unlock~="Awakening" then return UIAssets.id(UIAssets.iconName(node.Unlock)) end
+	if node.Item then return UIAssets.item(node.Item) or UIAssets.id("icon_weights") end
+	if node.id=="InfusedKunai" or node.id=="InfusedBlade" or node.id=="ExplosiveTag" then return UIAssets.id("icon_kunai") end
+	if node.id=="SmokeBomb" then return UIAssets.id("icon_clone") end
+	return nil
+end
 
 function Panel.new(kit,gui,send)
 	local self=setmetatable({kit=kit,send=send,tiles={},drawn={}},Panel)
@@ -66,6 +174,15 @@ function Panel.new(kit,gui,send)
 	local chip=frame(card,UDim2.fromOffset(W-290,20),UDim2.fromOffset(120,66),M.paper,0);chip.Rotation=2;ring(chip,3)
 	self.free=text(chip,"",UDim2.fromOffset(0,4),UDim2.fromOffset(120,36),36,M.ink,STRONG,Enum.TextXAlignment.Center)
 	self.earned=text(chip,"",UDim2.fromOffset(0,42),UDim2.fromOffset(120,18),12,M.brown,STRONG,Enum.TextXAlignment.Center)
+	-- (step 2) the two tabs
+	self.tab="kit";self.tabs={}
+	for i,t in {{id="kit",name="KIT TREE"},{id="ninja",name="NINJA TREE"}} do
+		local b=button(card,t.name,UDim2.fromOffset(Panel.TAB.X+(i-1)*(Panel.TAB.W+10),Panel.TAB.Y),UDim2.fromOffset(Panel.TAB.W,Panel.TAB.H),function()
+			if self.tab~=t.id then self.tab=t.id;self.selected=nil;self:draw() end
+		end,M.paper)
+		b.Font=STRONG;b.TextSize=20;ring(b,3)
+		self.tabs[t.id]=b
+	end
 	self.close=button(card,"CLOSE",UDim2.fromOffset(Panel.CLOSE.X,Panel.CLOSE.Y),UDim2.fromOffset(Panel.CLOSE.W,Panel.CLOSE.H),function() self:hide() end,M.paper)
 	self.close.TextColor3=M.ink;self.close.Font=STRONG;self.close.TextSize=24;ring(self.close,3)
 	-- The grid (scrolls when a tree is tall).
@@ -78,11 +195,18 @@ function Panel.new(kit,gui,send)
 	self.kicker=text(detail,"",UDim2.fromOffset(20,18),UDim2.fromOffset(DW-40,18),14,M.red,STRONG)
 	self.head=text(detail,"",UDim2.fromOffset(20,40),UDim2.fromOffset(DW-40,84),40,M.ink,kit.TITLE_FONT)
 	self.head.TextYAlignment=Enum.TextYAlignment.Top
-	self.shows=text(detail,"",UDim2.fromOffset(20,132),UDim2.fromOffset(DW-40,150),17,M.mid,kit.BODY_FONT)
+	self.shows=text(detail,"",UDim2.fromOffset(20,132),UDim2.fromOffset(DW-40,100),17,M.mid,kit.BODY_FONT)
 	self.shows.TextYAlignment=Enum.TextYAlignment.Top
-	self.counter=text(detail,"",UDim2.fromOffset(20,290),UDim2.fromOffset(DW-40,60),15,M.brown,kit.BODY_FONT)
+	-- (step 2) the technique a node unlocks, big: its pictogram and its name
+	self.unlock=frame(detail,UDim2.fromOffset(20,236),UDim2.fromOffset(DW-40,100),M.ink,0);corner(self.unlock,4)
+	self.unlock.Visible=false
+	self.unlockIcon=create("ImageLabel",self.unlock,{Position=UDim2.fromOffset(8,8),Size=UDim2.fromOffset(84,84),BackgroundTransparency=1,ScaleType=Enum.ScaleType.Fit})
+	text(self.unlock,"UNLOCKS",UDim2.fromOffset(102,10),UDim2.new(1,-110,0,18),14,M.red,STRONG)
+	self.unlockName=text(self.unlock,"",UDim2.fromOffset(102,30),UDim2.new(1,-110,0,62),34,M.cream,kit.TITLE_FONT)
+	self.unlockName.TextScaled=true
+	self.counter=text(detail,"",UDim2.fromOffset(20,344),UDim2.fromOffset(DW-40,56),15,M.brown,kit.BODY_FONT)
 	self.counter.TextYAlignment=Enum.TextYAlignment.Top
-	self.note=text(detail,"",UDim2.fromOffset(20,356),UDim2.fromOffset(DW-40,90),15,M.red,STRONG)
+	self.note=text(detail,"",UDim2.fromOffset(20,402),UDim2.fromOffset(DW-40,90),15,M.red,STRONG)
 	self.note.TextYAlignment=Enum.TextYAlignment.Top
 	self.action=button(detail,"",UDim2.new(0,20,1,-80),UDim2.new(1,-40,0,60),function() self:press() end,M.red)
 	self.action.TextSize=26;self.action.Font=STRONG;self.action.Visible=false
@@ -156,9 +280,14 @@ function Panel:state() return self.kits and self.kits.trees and self.kits.trees[
 
 function Panel:draw()
 	local K,P=self.kit,self.P
-	local layout=TreeView.layout(self.kitId,self:state())
+	for id,b in self.tabs do
+		b.BackgroundColor3=if id==self.tab then self.M.ink else self.M.paper
+		b.TextColor3=if id==self.tab then self.M.cream else self.M.ink
+	end
 	for _,item in self.drawn do item:Destroy() end
 	self.drawn={};self.tiles={}
+	if self.tab=="ninja" then return self:drawNinja() end
+	local layout=TreeView.layout(self.kitId,self:state())
 	if not layout then self.title.Text="NO TREE";return end
 	self.title.Text=layout.title
 	self.subtitle.Text=layout.subtitle
@@ -171,11 +300,20 @@ function Panel:draw()
 	local colW=math.floor((GRID_W-GUTTER-12-(n-1)*12)/n)
 	local function colX(b) return GUTTER+(b-1)*(colW+12) end
 	local function add(item) table.insert(self.drawn,item);return item end
+	-- (step 2) the kit's card
+	local top=self:drawCard(Panel.kitCard(self.kitId))
 	-- Branch headers.
 	for b,branch in layout.branches do
-		add(K.text(self.grid,branch.name,UDim2.fromOffset(colX(b),0),UDim2.fromOffset(colW,24),20,self.M.ink,K.TITLE_FONT,Enum.TextXAlignment.Center))
+		add(K.text(self.grid,branch.name,UDim2.fromOffset(colX(b),top),UDim2.fromOffset(colW,24),20,self.M.ink,K.TITLE_FONT,Enum.TextXAlignment.Center))
 	end
-	local y=34
+	local y=top+34
+	self:drawRows(layout,n,colX,y)
+end
+
+-- The tiers as rows, the branches as columns, and the lines between nodes.
+function Panel:drawRows(layout,n,colX,y)
+	local K=self.kit
+	local function add(item) table.insert(self.drawn,item);return item end
 	local at={}
 	for _,row in layout.tiers do
 		local tallest=0
@@ -184,7 +322,8 @@ function Panel:draw()
 		add(K.frame(self.grid,UDim2.fromOffset(0,y-6),UDim2.fromOffset(GRID_W-12,2),self.M.ink,0))
 		local label=add(K.text(self.grid,row.name,UDim2.fromOffset(0,y),UDim2.fromOffset(GUTTER-8,40),40,if row.open then self.M.red else self.M.off,K.TITLE_FONT))
 		label.TextYAlignment=Enum.TextYAlignment.Top
-		add(K.text(self.grid,if row.need==0 then "FROM THE START" elseif row.open then "MASTERY "..row.need.." • OPEN" else "MASTERY "..row.need,
+		local unit=if self.tab=="ninja" then "POINTS " else "MASTERY "
+		add(K.text(self.grid,if row.need==0 then "FROM THE START" elseif row.open then unit..row.need.." • OPEN" else unit..row.need,
 			UDim2.fromOffset(0,y+42),UDim2.fromOffset(GUTTER-8,30),12,if row.open then self.M.brown else self.M.off,K.STRONG_FONT or K.BODY_FONT))
 		for b=1,n do
 			for k,node in row.cells[b] do
@@ -218,6 +357,76 @@ function Panel:draw()
 	self:detail()
 end
 
+-- (step 2) The kit's card over the grid; returns where the grid starts.
+function Panel:drawCard(c)
+	if not c then return 0 end
+	local K,M=self.kit,self.M
+	local STRONG=K.STRONG_FONT or K.BODY_FONT
+	local card=K.frame(self.grid,UDim2.fromOffset(0,0),UDim2.fromOffset(GRID_W-12,CARD_H-10),M.paper,0)
+	table.insert(self.drawn,card);K.corner(card,4);self.ring(card,3)
+	card.Name="KitCard"
+	local cols={{"STARTS WITH",table.concat(c.starts,"  •  ")},{"THE TREE ADDS",table.concat(c.adds,"  •  ")..(if c.transform then "  •  TOP: "..c.transform else "")}}
+	local w=math.floor((GRID_W-12-24)/3)
+	for i,col in cols do
+		K.text(card,col[1],UDim2.fromOffset(12+(i-1)*w,8),UDim2.fromOffset(w-12,16),13,M.red,STRONG)
+		local body=K.text(card,if col[2]=="" then "—" else col[2],UDim2.fromOffset(12+(i-1)*w,26),UDim2.fromOffset(w-16,62),17,M.ink,STRONG)
+		body.TextYAlignment=Enum.TextYAlignment.Top;body.TextWrapped=true
+	end
+	K.text(card,"SIGNATURE",UDim2.fromOffset(12+2*w,8),UDim2.fromOffset(w,16),13,M.red,STRONG)
+	local sig=K.text(card,c.signature,UDim2.fromOffset(12+2*w,26),UDim2.fromOffset(w,64),15,M.mid,K.BODY_FONT)
+	sig.TextYAlignment=Enum.TextYAlignment.Top;sig.TextWrapped=true
+	return CARD_H
+end
+
+-- (step 2) The NINJA tab: the header, the five natures, the other branches.
+function Panel:ninjaView() return self.kits and self.kits.ninja end
+function Panel:drawNinja()
+	local K,M=self.kit,self.M
+	local STRONG=K.STRONG_FONT or K.BODY_FONT
+	local view=self:ninjaView()
+	local layout=Panel.ninjaLayout(view)
+	self.title.Text="YOUR NINJA'S TREE"
+	self.subtitle.Text=string.format("%d POINTS FREE  •  %d EARNED  •  1 POINT PER %d MASTERY, EVERY KIT TOGETHER",layout.free or 0,layout.points or 0,NinjaTree.PointEvery)
+	self.free.Text=tostring(layout.free or 0)
+	self.earned.Text="FREE / "..(layout.points or 0).." POINTS"
+	self.tierLabel.Text="NINJA POINTS "..(layout.points or 0)
+	self.tierNext.Text=if layout.nextTier then "TIER "..layout.nextTier.name.." AT "..layout.nextTier.need else "EVERY TIER OPEN"
+	self.tierFill.Size=UDim2.new(layout.progress,0,1,0)
+	local function add(item) table.insert(self.drawn,item);return item end
+	-- The natures: one card each, in the element's colour; the chosen one inked.
+	add(K.text(self.grid,"CHAKRA NATURE  •  ONE AT A TIME",UDim2.fromOffset(0,0),UDim2.fromOffset(GRID_W-12,24),20,M.ink,K.TITLE_FONT))
+	local cw=math.floor((GRID_W-12-4*12)/5)
+	for i,node in layout.natures do
+		local rgb=Panel.NATURE_COLOR[node.nature] or {200,200,200}
+		local color=Color3.fromRGB(rgb[1],rgb[2],rgb[3])
+		local ink=if Panel.NATURE_DARK[node.nature] then M.cream else M.ink
+		local chosen=node.status=="active"
+		local card=K.create("TextButton",self.grid,{Text="",Position=UDim2.fromOffset((i-1)*(cw+12),30),Size=UDim2.fromOffset(cw,NATURE_H-40),
+			BackgroundColor3=color,BackgroundTransparency=if node.status=="locked" or node.status=="tier" or node.status=="short" then .45 else 0,BorderSizePixel=0,AutoButtonColor=true,ZIndex=77})
+		add(card);K.corner(card,4)
+		K.create("UIStroke",card,{Color=M.ink,Thickness=if chosen then 5 else 2,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
+		card.Name="Nature"..node.nature
+		K.text(card,string.upper(node.nature),UDim2.fromOffset(10,6),UDim2.new(1,-20,0,34),30,ink,K.TITLE_FONT).ZIndex=78
+		local line=K.text(card,node.shows or "",UDim2.fromOffset(10,40),UDim2.new(1,-20,0,32),12,ink,K.BODY_FONT)
+		line.TextWrapped=true;line.TextYAlignment=Enum.TextYAlignment.Top;line.ZIndex=78
+		local tag=if chosen then "YOUR NATURE" elseif node.status=="off" then "LEARNED • CHOOSE" elseif node.status=="learn" then "LEARN • "..node.cost elseif node.status=="short" then node.cost.." POINTS" else "LOCKED"
+		local band=K.frame(card,UDim2.new(0,0,1,-22),UDim2.new(1,0,0,22),if chosen then M.ink else M.paper,0);band.ZIndex=78
+		K.text(band,tag,UDim2.fromOffset(0,0),UDim2.fromScale(1,1),13,if chosen then M.cream else M.ink,STRONG,Enum.TextXAlignment.Center).ZIndex=79
+		card.Activated:Connect(function() self.selected=node.id;self:detail() end)
+		self.tiles[node.id]=card
+	end
+	local n=#layout.branches
+	local colW=math.floor((GRID_W-GUTTER-12-(n-1)*12)/n)
+	local function colX(b) return GUTTER+(b-1)*(colW+12) end
+	for b,branch in layout.branches do
+		add(K.text(self.grid,branch.name,UDim2.fromOffset(colX(b),NATURE_H),UDim2.fromOffset(colW,24),20,M.ink,K.TITLE_FONT,Enum.TextXAlignment.Center))
+	end
+	if not self.selected and not layout.nature then
+		for _,node in layout.natures do if not self.selected and (node.status=="learn" or node.status=="off") then self.selected=node.id end end
+	end
+	self:drawRows(layout,n,colX,NATURE_H+34)
+end
+
 function Panel:tile(node,x,y,w)
 	local K,P=self.kit,self.P
 	local style=STYLE[node.status] or STYLE.locked
@@ -231,11 +440,20 @@ function Panel:tile(node,x,y,w)
 		K.create("UIStroke",tile,{Color=if node.item then M.red else (M[style.stroke] or M.ink),Thickness=if node.item then 3 else 2,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
 	end
 	local color=M[style.text] or M.ink
-	local name=K.text(tile,string.upper(node.name),UDim2.fromOffset(10,3),UDim2.new(1,-54,0,20),if node.major then 18 else 14,color,if node.major then K.TITLE_FONT else (K.STRONG_FONT or K.BODY_FONT))
+	-- (step 2) its pictogram: the technique it unlocks, its object, its element
+	local def=if self.tab=="ninja" then {id=node.id} else (TreeView.node(self.kitId,node.id) or {})
+	local icon=Panel.icon(def)
+	local left=10
+	if icon then
+		K.create("ImageLabel",tile,{Image=icon,Position=UDim2.fromOffset(4,4),Size=UDim2.fromOffset(TILE_H-8,TILE_H-8),BackgroundTransparency=1,ScaleType=Enum.ScaleType.Fit,ZIndex=78})
+		left=TILE_H
+	end
+	local name=K.text(tile,string.upper(node.name),UDim2.fromOffset(left,3),UDim2.new(1,-44-left,0,20),if node.major then 18 else 14,color,if node.major then K.TITLE_FONT else (K.STRONG_FONT or K.BODY_FONT))
 	name.TextTruncate=Enum.TextTruncate.AtEnd;name.TextWrapped=false;name.ZIndex=78
 	local sub=if node.item then "KIT OBJECT" elseif node.status=="tier" then "TIER "..(if node.tier==2 then "II" else "III").." CLOSED"
 		elseif node.status=="locked" then "WAITS FOR A NODE" elseif node.status=="learn" then "TO LEARN" else node.kindLabel
-	local tag=K.text(tile,sub,UDim2.fromOffset(10,22),UDim2.new(1,-54,0,14),11,color,K.BODY_FONT)
+	if self.tab=="ninja" and node.status=="locked" and node.why then sub=string.upper(node.why) end
+	local tag=K.text(tile,sub,UDim2.fromOffset(left,22),UDim2.new(1,-44-left,0,14),11,color,K.BODY_FONT)
 	tag.TextTransparency=.15;tag.ZIndex=78
 	local right=K.text(tile,style.tag or tostring(node.cost),UDim2.new(1,-46,0,0),UDim2.fromOffset(40,TILE_H),18,color,K.STRONG_FONT or K.TITLE_FONT,Enum.TextXAlignment.Center)
 	right.ZIndex=78
@@ -244,7 +462,15 @@ function Panel:tile(node,x,y,w)
 end
 
 function Panel:detail()
-	local d=self.selected and TreeView.detail(self.kitId,self:state(),self.selected)
+	local ninja=self.tab=="ninja"
+	local d=self.selected and (if ninja then Panel.ninjaDetail(self:ninjaView() or NinjaTree.view(nil,0),self.selected) else TreeView.detail(self.kitId,self:state(),self.selected))
+	-- (step 2) the technique it unlocks, big
+	local node=if not ninja and self.selected then TreeView.node(self.kitId,self.selected) else nil
+	self.unlock.Visible=node~=nil and node.Unlock~=nil
+	if self.unlock.Visible then
+		self.unlockName.Text=if node.Unlock=="Awakening" then string.upper(node.Name) else techName(Fighters[self.kitId],node.Unlock)
+		self.unlockIcon.Image=Panel.icon(node) or ""
+	end
 	for id,tile in self.tiles do
 		local mark=tile:FindFirstChild("Picked")
 		if id==self.selected and not mark then
@@ -262,7 +488,7 @@ function Panel:detail()
 	self.counter.Text=d.counter
 	-- What this node opens next in the tree.
 	local opens={}
-	for _,other in TreeView.tree(self.kitId) do
+	for _,other in (if ninja then NinjaTree.Nodes else TreeView.tree(self.kitId)) do
 		for _,need in other.Requires or {} do if need==self.selected then table.insert(opens,string.upper(other.Name)) end end
 	end
 	local note=d.note or ""
@@ -282,6 +508,11 @@ end
 function Panel:press()
 	local act=self.pending
 	if not act or not self.kitId or not self.selected then return end
+	if self.tab=="ninja" then
+		if act.kind=="learn" then self.send("NinjaLearn",{node=self.selected})
+		else self.send("NinjaSet",{node=self.selected,on=act.kind=="on"}) end
+		return
+	end
 	if act.kind=="learn" then self.send("LearnNode",{player=self.kitId,node=self.selected})
 	else self.send("SetNode",{player=self.kitId,node=self.selected,on=act.kind=="on"}) end
 end

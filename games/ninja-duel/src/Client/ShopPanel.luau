@@ -22,6 +22,9 @@ local Text=require(Shared.Text)
 local KitTexts=require(Shared.KitTexts)
 local Config=require(Shared.Config)
 local FirstMinute=require(Shared.FirstMinute)
+-- (21/11, step 2) the shop icons (Shared/UIAssets.item)
+local okA,UIAssets=pcall(function() return require(Shared.UIAssets) end)
+if not okA then UIAssets=nil end
 local HubMap=require(Shared.HubMap)
 local Panel={}
 Panel.__index=Panel
@@ -356,7 +359,7 @@ function Panel:drawLooks(slots,title,sub)
 		-- (DEC-040) a slot of many looks (the masters' outfits) wraps; an outfit
 		-- shows its figure in the set's colours (Mix-Shop)
 		local tall=info.outfit==true
-		local ch=if tall then 190 else 128
+		local ch=if tall then 190 else 148
 		local perRow=math.max(1,math.floor((W-SIDE-70+14)/(cw+14)))
 		for k,item in Shop.atCounter(slot,self.counter or "shop",style) do
 			local state=Shop.state(style,item,ryo,products)
@@ -373,8 +376,15 @@ function Panel:drawLooks(slots,title,sub)
 				figure(K,cell,item,UDim2.fromOffset(cw/2-34,8),UDim2.fromOffset(68,84))
 				top=96
 			else
+				-- (step 2) its icon when imported, the swatch beside it
+				local icon=UIAssets and UIAssets.item(item.id)
+				local sx=12
+				if icon then
+					K.create("ImageLabel",cell,{Name="Icon",Image=icon,Position=UDim2.fromOffset(10,6),Size=UDim2.fromOffset(60,60),BackgroundTransparency=1,ScaleType=Enum.ScaleType.Fit})
+					sx=78
+				end
 				-- the swatch: the look's colours side by side
-				local swatch=K.frame(cell,UDim2.fromOffset(12,12),UDim2.new(1,-24,0,34),M.ink,0);K.corner(swatch,3)
+				local swatch=K.frame(cell,UDim2.fromOffset(sx,if icon then 22 else 12),UDim2.new(1,-sx-12,0,if icon then 26 else 34),M.ink,0);K.corner(swatch,3)
 				local colors={}
 				for _,key in {"Blade","Body","Band","Grip","Ring","Plate"} do if item.colors and item.colors[key] then table.insert(colors,item.colors[key]) end end
 				if #colors==0 and item.colors then
@@ -388,7 +398,7 @@ function Panel:drawLooks(slots,title,sub)
 				for c,color in colors do
 					K.frame(swatch,UDim2.new((c-1)/#colors,2,0,2),UDim2.new(1/#colors,-4,1,-4),rgb(color),0)
 				end
-				top=50
+				top=if icon then 70 else 50
 			end
 			if item.kit then
 				K.text(cell,nameOf(item.kit).." · INSPIRATION",UDim2.fromOffset(12,top),UDim2.new(1,-24,0,16),13,if state.kind=="equipped" then (M.redSoft or M.cream) else (M.brown or M.ink),STRONG)
