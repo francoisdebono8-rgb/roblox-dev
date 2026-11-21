@@ -18,19 +18,17 @@ FirstMinute.Rival={
 	Lion="Sand",Sand="Lion",Legion="GentleFist",GentleFist="Legion",
 	Leaf="Flashstep",Flashstep="Leaf",Mirage="Copycat",Copycat="Mirage",
 }
--- What a touch player presses (the TouchControls buttons).
+-- What a touch player presses (the TouchControls buttons). The first
+-- combat's lines are the CM's (Shared/PlayTexts.Coach, 21/11).
+local PlayTexts=require(script.Parent.PlayTexts)
 FirstMinute.Touch={
 	move="Drag on the left of the screen",
 	string="Tap ATTACK three times",
 	dodge="Hold a direction, tap DODGE",
 	signature="Tap the second jutsu button",
-	-- (21/11, DEC-047) the first combat's coach (Server/Coach)
-	strike="Tap ATTACK three times",
-	guard="Hold GUARD",
-	escape="Tap DODGE as his blow lands",
-	grab="Tap GRAB",
-	tool="Tap TOOL",
 }
+-- (21/11, DEC-047) the first combat's coach (Server/Coach)
+for id,words in PlayTexts.Coach do FirstMinute.Touch[id]=words.touch end
 function FirstMinute.signature(def)
 	return def and def.Techniques and def.Techniques[FirstMinute.SignatureSlot]
 end

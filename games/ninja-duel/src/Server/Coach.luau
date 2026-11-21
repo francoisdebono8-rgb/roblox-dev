@@ -10,10 +10,12 @@
 -- him: your TOOL), one at a time, and is gone for good once done. Nothing is
 -- faked: the prompts read the real fight (combat events, accepted presses).
 -- The client draws the prompt as the first minute's panel (Matches snapshot
--- `tutorial`, first = true); the words are placeholders for the CM's.
+-- `tutorial`, first = true); the words are the CM's (Shared/PlayTexts.Coach,
+-- 21/11): the title, the tick of success, the touch line.
 local Shared=game:GetService("ReplicatedStorage").NinjaDuel
 local Controls=require(Shared.Controls)
 local FirstMinute=require(Shared.FirstMinute)
+local PlayTexts=require(Shared.PlayTexts)
 local Coach={}
 
 local K,P=Controls.KeyLabel,Controls.PadLabel
@@ -49,13 +51,13 @@ local function slotOf(a,id)
 	return FirstMinute.SignatureSlot
 end
 Coach.Prompts={
-	{id="escape",title="Caught! Escape",key=function() return K.Dodge.." as his blow lands" end,pad=function() return P.Dodge.." as his blow lands" end,
+	{id="escape",title=PlayTexts.coachTitle("escape"),key=function() return K.Dodge.." as his blow lands" end,pad=function() return P.Dodge.." as his blow lands" end,
 		when=function(c,a) return a.reaction=="HitStun" and (a.comboHits or 0)>=2 end,
 		done=function(c,a,b,k) return ev(a,"Substitute")>(k.base.Substitute or 0) or ev(a,"Recover")>(k.base.Recover or 0) end},
-	{id="guard",title="He strikes: guard",key=function() return "Hold "..K.Guard end,pad=function() return "Hold "..P.Guard end,
+	{id="guard",title=PlayTexts.coachTitle("guard"),key=function() return "Hold "..K.Guard end,pad=function() return "Hold "..P.Guard end,
 		when=function(c,a,b) return b.attackName~=nil and b.state=="Startup" and (b.root.Position-a.root.Position).Magnitude<8 end,
 		done=function(c,a,b,k) return ev(a,"GuardHit")>(k.base.GuardHit or 0) or ev(a,"Parry")>(k.base.Parry or 0) or ev(a,"Evaded")>(k.base.Evaded or 0) end},
-	{id="signature",title=function(a) local spec=signature(a);return "Your signature: "..tostring(spec and spec.Name or "jutsu") end,
+	{id="signature",title=function(a) local spec=signature(a);return PlayTexts.coachTitle("signature",{jutsu=spec and (spec.CardName or spec.Name) or "your jutsu"}) end,
 		key=function(a) local spec=signature(a);return TECH_KEY[slotOf(a,spec and spec.Id)] end,
 		pad=function(a) local spec=signature(a);local slot=slotOf(a,spec and spec.Id);return Controls.TechniquePad and Controls.TechniquePad[slot] or ("Jutsu "..slot) end,
 		when=function(c,a,b,k,now)
@@ -64,10 +66,10 @@ Coach.Prompts={
 			return a.state=="Neutral" and a.chakra>=(spec.Cost or 0) and (a.cooldowns[spec.Id] or 0)<=now and (b.root.Position-a.root.Position).Magnitude<=math.max(spec.Range or 12,6)+4
 		end,
 		done=function(c,a,b,k) local spec=signature(a);return spec~=nil and ev(a,"Cast:"..spec.Id)>(k.base["Cast:"..spec.Id] or 0) end},
-	{id="grab",title="He guards: grab him",key=function() return K.Grab end,pad=function() return P.Grab end,
+	{id="grab",title=PlayTexts.coachTitle("grab"),key=function() return K.Grab end,pad=function() return P.Grab end,
 		when=function(c,a,b) return b.state=="Guarding" and (b.root.Position-a.root.Position).Magnitude<6 end,
 		done=function(c,a,b,k) return ev(a,"GrabHit")>(k.base.GrabHit or 0) end},
-	{id="tool",title=function(a) return "Far away: throw your "..(if a.def.Tool=="Sand" then "sand" else "kunai") end,key=function() return K.Tool end,pad=function() return P.Tool end,
+	{id="tool",title=function(a) return PlayTexts.coachTitle("tool",{tool=if a.def.Tool=="Sand" then "sand" else "kunai"}) end,key=function() return K.Tool end,pad=function() return P.Tool end,
 		when=function(c,a,b,k,now)
 			if a.def.Tool=="Deflect" or a.def.Tool=="Gust" then return false end
 			if (b.root.Position-a.root.Position).Magnitude<16 then k.farSince=nil;return false end
@@ -82,10 +84,10 @@ Coach.Prompts={
 			end
 			return false
 		end},
-	{id="strike",title="He is open: three hits",key=function() return K.Light.." x3" end,pad=function() return P.Light.." x3" end,
+	{id="strike",title=PlayTexts.coachTitle("strike"),key=function() return K.Light.." x3" end,pad=function() return P.Light.." x3" end,
 		when=function(c,a,b) return b.attackName==nil and b.state~="Guarding" and (b.root.Position-a.root.Position).Magnitude<7 end,
 		done=function(c,a,b,k) return ev(a,"Hit")-(k.base.Hit or 0)>=3 end},
-	{id="move",title="Go to him",key=function() return "WASD" end,pad=function() return "L stick" end,
+	{id="move",title=PlayTexts.coachTitle("move"),key=function() return "WASD" end,pad=function() return "L stick" end,
 		when=function(c,a,b,k,now) return now-k.started<6 and (b.root.Position-a.root.Position).Magnitude>8 end,
 		done=function(c,a,b,k) return (k.travel or 0)>8 end},
 }
@@ -125,7 +127,7 @@ function Coach.update(s,now,dt)
 	if p then
 		if not k.doneAt and p.done(c,a,b,k,now) then
 			k.doneAt=now;k.done[p.id]=true;k.count+=1
-			c:cue(a,"NICE",.5)
+			c:cue(a,PlayTexts.coachDone(p.id),.5)
 		end
 		if k.doneAt then
 			if now-k.doneAt<Coach.DoneHold then return end
