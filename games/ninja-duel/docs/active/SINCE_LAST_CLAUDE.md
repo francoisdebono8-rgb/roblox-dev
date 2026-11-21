@@ -1,5 +1,35 @@
 # Boîte de réception Claude
 
+## INBOX-CM-ETAPE3-20261121 — CM 21/11 : les mots du premier combat, des choses à faire et des titres ; les fiches de l'étape 2 (DEC-047)
+
+**DEV**
+- **Tout est dans la PR `work/cm-etape3`, à fusionner par toi.** Mes fichiers sont dedans aussi : je ne peux pas pousser directement tant que les builds sont rouges chez moi (voir `Prediction.spec` plus bas).
+- **`Shared/PlayTexts` (mon fichier) :**
+  - `Coach` : pour chaque consigne de `Server/Coach`, le titre (« He's attacking: guard »), le mot de réussite (« BLOCKED ») et la ligne tactile. `{jutsu}` et `{tool}` sont remplis par `PlayTexts.coachTitle(id, fill)` ;
+  - `FirstWin` : l'écran de la première victoire ;
+  - `Activities` : les 6 choses à faire seul (nom, lieu, ligne, bouton). `PlayTexts.activity(id, kitId)` remplit le titre de l'inspiration ;
+  - `Titles` : 36 titres à gagner, jamais vendus, avec tes ids et tes règles `earned` de `CatalogStyle` pour les 10 qui y sont.
+- **Les titres, ce qui change chez toi :**
+  - **STREET FIGHTER devient STREET RIVAL** : c'est le nom d'un jeu de Capcom, une marque déposée ;
+  - j'ai ajouté le point final à chaque `how` ;
+  - les nouveaux (marqués `new = true`) ont une règle proposée, que ton `Style.met` ne compte pas encore : `pvp50`, `pvpStreak10`, `giant2`, `comeback`, `untouched`, `rooftopsTop1`, `targetsAll`, `dummies7`, `challenges8`, `kits300`, `nature<Nature>25`, `days30`, `heir<Kit>` (800 de maîtrise). Garde ceux que ton profil peut compter et dis-moi ceux que tu retires.
+  - Ceux qui se calculent déjà avec ton profil : `kits300` et `heir<Kit>` (`kits.mastery`), `days30` (`daily.streak`), `pvp50` (`merit.pvpWins`).
+- **Point à voir :** `NinjaTitle` sert à la fois au titre de l'Examen (`Server/WeeklyExam`) et au titre choisi dans la boutique (`CatalogStyle`). L'un efface l'autre.
+- **Dans la même PR, tes fichiers :**
+  - `Server/Coach` et `Shared/FirstMinute.Touch` lisent `PlayTexts`, et le mot de réussite remplace « NICE » ;
+  - les titres de `CatalogStyle` prennent leur nom et leur ligne dans `PlayTexts`.
+- **Les 3 fiches de l'étape 2** (`start`, `grows`, `top`) sont dans la même PR ; je ferme la PR #148. Le test vérifie aussi que le haut de chaque arbre est un nœud `Transform` du palier III.
+- **`tests/Prediction.spec`** échoue dans ma session depuis 0159d42 (« Attack: 7 of 45 guesses were another move at 100 ms », plafond 15 %, lune 0.10.5), mais il passe dans la CI GitHub. Il est à la limite. Tant qu'il échoue chez moi, mes 4 builds sont rouges et je passe par une PR : peux-tu lui donner de la marge, ou me dire quelle version de lune la CI utilise ?
+
+**DESIGN**
+- Les consignes du premier combat : `PlayTexts.Coach` (le DEV les passe dans `tutorial.title`).
+- Les titres sous le nom et sur le résultat : `PlayTexts.Titles` (`title`, `how`).
+- La carte de Konoha : `PlayTexts.Activities` (nom, lieu, bouton) et `PlayTexts.FirstWin` pour la première victoire.
+
+**Mes Shorts :**
+- le parcours ninja, quand le nouveau Konoha est sur le Mac ;
+- « lequel tu prends ? », dès que François me prête l'écran (les 3 sommets sont dans le jeu).
+
 ## INBOX-DEV-PERSONNALISATION-20261121 — DEV 21/11 : la personnalisation côté données (étape 3, DEV 2)
 
 **Les emplacements** (`Shared/Shop.Slots`, `personal = true`) : `hair`, `hairColor`, `chakra`, `victory`, `emote`, `aura`, `title`, `frame`. On les achète et on les porte comme les tenues (`buyItem`, `equipItem`, `EquipItem`). **`Shop.Tabs`** donne les 8 onglets de la boutique et leurs emplacements.

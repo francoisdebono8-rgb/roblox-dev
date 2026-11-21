@@ -78,6 +78,7 @@ run NinjaTree  "$LUNE" run tests/NinjaTree.spec.luau
 run NinjaArts  "$LUNE" run tests/NinjaArts.spec.luau
 run FirstCombat "$LUNE" run tests/FirstCombat.spec.luau
 run KitTexts   "$LUNE" run tests/KitTexts.spec.luau
+run PlayTexts  "$LUNE" run tests/PlayTexts.spec.luau
 run HubLayout "$LUNE" run tests/HubLayout.spec.luau
 run KonohaLayout "$LUNE" run tests/KonohaLayout.spec.luau
 run MeritAura "$LUNE" run tests/MeritAuraFX.spec.luau
