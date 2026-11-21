@@ -472,6 +472,31 @@ local function reward(player,kit,amount,ryo,day)
 	end
 	return out
 end
+-- (21/11, étape 3 DEV 4, DEC-047) A thing done alone in Konoha (Shared/Solo):
+-- recorded on the profile, its mastery (within the day's share) given to the
+-- kit he has chosen when he owns it; a race's best time on the board. Returns
+-- the table the client shows (Solo.record's, with `amount` and `kit`), or nil.
+function P.solo(player,kind,args)
+	if not P.enabled() or not P.ready(player) then return nil end
+	local Solo=require(Shared.Solo)
+	local ok,result=P.run(player,"soloRecord",{day=Daily.day(P.now()),kind=kind,time=args and args.time,won=args and args.won==true})
+	if not ok or type(result)~="table" then return nil end
+	local kits=P.handles[player].data.kits
+	local kit=kits.selected
+	if result.paid>0 and kit and kits.owned[kit] then
+		local amount=result.paid
+		if P.boosted(player) then amount=math.min(Solo.DayCap,amount*2) end
+		local gained,out=P.run(player,"gainMastery",{fighter=kit,amount=amount})
+		if gained and type(out)=="table" then result.amount=amount;result.kit=kit;result.mastery=out.mastery end
+	end
+	if kind=="race" and result.improved then
+		local L=boards()
+		if L then L:submit("Rooftops",player,result.best) end
+	end
+	local earned=P.earnLooks(player)
+	if #earned>0 then result.earned=earned end
+	return result
+end
 -- (DEC-040, user 14/11: « t'es censé la gagner en affrontant des gens ») A
 -- duel against another player, decided: mastery for the kit he fought with
 -- when he has learned it (twice a duel against the AI), and a duel's Ryō.

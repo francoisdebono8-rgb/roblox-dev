@@ -909,6 +909,79 @@ function Hub.build(parent)
 	return f
 end
 
+-- ------------------------------------------------------------------ the open 1v1
+-- (21/11, étape 3 DEV 5, DEC-047; « le 1v1 ouvert : personne d'autre n'entre,
+-- les autres regardent depuis la rue ») While a duel is fought in a place of
+-- the village, a ring stands round it: a line on the ground everybody sees,
+-- and a wall only the passers-by meet (its collision group meets the walkers'
+-- alone: never the fighters, nor the fight's queries, nor a lens). A walker
+-- caught inside when it starts is set down outside, facing the fight.
+Hub.RING_GROUP="NinjaDuelRing"
+Hub.RING_WALLS=24
+Hub.RING_HEIGHT=14
+function Hub.ringSetup()
+	if Hub.ringReady~=nil then return Hub.ringReady end
+	local DuelQuery=require(script.Parent.DuelQuery)
+	local ok=DuelQuery.setup() and pcall(function()
+		local physics=game:GetService("PhysicsService")
+		if not physics:IsCollisionGroupRegistered(Hub.RING_GROUP) then physics:RegisterCollisionGroup(Hub.RING_GROUP) end
+		for _,group in physics:GetRegisteredCollisionGroups() do
+			physics:CollisionGroupSetCollidable(Hub.RING_GROUP,group.name,group.name==DuelQuery.WALKERS)
+		end
+	end)
+	Hub.ringReady=ok==true
+	return Hub.ringReady
+end
+-- The rings of the duels fought now: `active` = {{key, origin, radius}}.
+-- Raised for a new one, taken down for one over; the walkers inside set out.
+function Hub.duelRings(active)
+	local f=Hub.folder
+	if not f then return end
+	local want={}
+	for _,site in active do want["DuelRing_"..site.key]=site end
+	for _,child in f:GetChildren() do
+		if string.sub(child.Name,1,9)=="DuelRing_" and not want[child.Name] then child:Destroy() end
+	end
+	for name,site in want do
+		if not f:FindFirstChild(name) then
+			local ring=Instance.new("Folder");ring.Name=name;ring.Parent=f
+			local walls=Hub.ringSetup()
+			local r=site.radius
+			local centre=Vector3.new(site.origin.X,O.Y,site.origin.Z)
+			local n=Hub.RING_WALLS
+			local width=2*math.pi*r/n+.6
+			for k=1,n do
+				local a=(k-.5)/n*math.pi*2
+				local at=centre+Vector3.new(math.cos(a)*r,0,math.sin(a)*r)
+				local face=CFrame.lookAt(at,centre)
+				-- the line on the ground, red ink
+				local line=deco(ring,"Line",Vector3.new(width,.1,.7),face*CFrame.new(0,.06,0),C.red,Enum.Material.SmoothPlastic)
+				line.Transparency=.15
+				if walls then
+					local wall=part(ring,"Wall",Vector3.new(width,Hub.RING_HEIGHT,1),face*CFrame.new(0,Hub.RING_HEIGHT/2,0),C.red,Enum.Material.ForceField)
+					wall.Transparency=1;wall.CanQuery=false;wall.CanTouch=false;wall.CastShadow=false
+					pcall(function() wall.CollisionGroup=Hub.RING_GROUP end)
+				end
+			end
+		end
+	end
+	-- the passers-by inside: set down outside, facing the fight
+	for _,body in Hub.bodies do
+		local root=body.character and body.character:FindFirstChild("HumanoidRootPart")
+		if root then
+			for _,site in want do
+				local d=Vector3.new(root.Position.X-site.origin.X,0,root.Position.Z-site.origin.Z)
+				if d.Magnitude<site.radius+1 then
+					local out=if d.Magnitude>.1 then d.Unit else Vector3.xAxis
+					local at=Vector3.new(site.origin.X,root.Position.Y,site.origin.Z)+out*(site.radius+3)
+					pcall(function() body.character:PivotTo(CFrame.lookAt(at,Vector3.new(site.origin.X,at.Y,site.origin.Z))) end)
+					break
+				end
+			end
+		end
+	end
+end
+
 -- ------------------------------------------------------------------ the masters
 local function promptOn(model,id,text,place,elevated)
 	local root=model.PrimaryPart or model:FindFirstChild("HumanoidRootPart") or model:FindFirstChildWhichIsA("BasePart",true)
@@ -955,6 +1028,50 @@ function Hub.placeMasters(source)
 	Hub.placeProctor(holder)
 	Hub.placeTraining(holder)
 	Hub.placeMarket(holder)
+	Hub.placeSolo(holder)
+end
+-- (21/11, étape 3 DEV 4, DEC-047) The things to do alone in the plan's
+-- village (Shared/Solo): the rooftop race's start post at THE ROOFTOPS, the
+-- kunai targets down the market lane. Each its prompt (Client/SoloView
+-- answers it: attribute NinjaSolo) and the pieces that say what it is, none in
+-- the way of a walker (the ANIMATEUR's models may dress them: KunaiTarget).
+function Hub.placeSolo(holder)
+	if not Hub.folder or Hub.folder:GetAttribute("Layout")~="konoha2" or holder:FindFirstChild("RooftopRace") then return end
+	local Solo=require(Shared.Solo)
+	local function prompted(model,at,id,text,place)
+		local anchor=Instance.new("Part");anchor.Name="Anchor"
+		anchor.Size=Vector3.new(1,1,1);anchor.Transparency=1;anchor.Anchored=true
+		anchor.CanCollide=false;anchor.CanQuery=false;anchor.CanTouch=false
+		anchor.CFrame=CFrame.new(at+Vector3.new(0,4,0));anchor.Parent=model
+		model.PrimaryPart=anchor
+		model.Parent=holder
+		local prompt=promptOn(model,id,text,place,false)
+		if prompt then prompt:SetAttribute("NinjaSolo",model:GetAttribute("NinjaSolo"));prompt.MaxActivationDistance=14 end
+		return prompt
+	end
+	-- the race: a tall post with its red banner, the start line on the ground
+	local post=Solo.startPost()
+	local race=Instance.new("Model");race.Name="RooftopRace";race:SetAttribute("NinjaSolo","race")
+	deco(race,"Post",Vector3.new(1.4,18,1.4),CFrame.new(post+Vector3.new(-3,9,0)),C.woodDark,Enum.Material.Wood)
+	deco(race,"Banner",Vector3.new(.3,7,4),CFrame.new(post+Vector3.new(-3,13.5,2.4)),C.red,Enum.Material.Fabric)
+	deco(race,"Line",Vector3.new(12,.12,1.2),CFrame.new(post+Vector3.new(4,.06,0))*CFrame.Angles(0,math.pi/2,0),C.cloth,Enum.Material.SmoothPlastic)
+	prompted(race,post,"RooftopRace","ROOFTOP RACE","THE ROOFTOPS")
+	-- the targets: the mark on the ground, each board on its post facing it
+	local mark=Solo.targetsMark()
+	local targets=Instance.new("Model");targets.Name="KunaiTargets";targets:SetAttribute("NinjaSolo","targets")
+	local ring=deco(targets,"Mark",Vector3.new(.12,7,7),CFrame.new(mark+Vector3.new(0,.06,0))*CFrame.Angles(0,0,math.pi/2),C.red,Enum.Material.SmoothPlastic)
+	ring.Shape=Enum.PartType.Cylinder
+	for i in Solo.Targets.boards do
+		local at=Solo.board(i)
+		local foot=Vector3.new(at.X,O.Y,at.Z)
+		local board=Instance.new("Model");board.Name="Target"..i;board:SetAttribute("NinjaTarget",i);board.Parent=targets
+		deco(board,"Post",Vector3.new(.4,at.Y-O.Y,.4),CFrame.new((foot+at)/2+Vector3.new(.3,0,0)),C.woodDark,Enum.Material.Wood)
+		for k,band in {{3.4,C.cloth},{2.4,C.red},{1.4,C.cloth},{.6,C.red}} do
+			local disc=deco(board,"Disc",Vector3.new(.16+k*.02,band[1],band[1]),CFrame.new(at-Vector3.new(k*.02,0,0)),band[2],Enum.Material.SmoothPlastic)
+			disc.Shape=Enum.PartType.Cylinder
+		end
+	end
+	prompted(targets,mark,"KunaiTargets","KUNAI TARGETS","THE MARKET LANE")
 end
 -- (14/11, audit: the training ground had three stumps and a dummy, and
 -- nothing to do there) The dummy of Training Ground Three: E trains with his

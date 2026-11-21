@@ -203,7 +203,9 @@ return {
 	-- (14/11, François: « que notre perso puisse combattre » dans la ville)
 	-- VillageDuels: a duel started at a master's home (his card, the training
 	-- dummy) is fought there, in the village (HubMap.Masters[id].duel), not
-	-- in the stadium. The board's duels and the tournament stay in the stadium.
+	-- in the stadium. (21/11, DEC-047) A duel asked anywhere else while he
+	-- walks (the board's DUELS) is fought in the nearest free place of the
+	-- village (Matches.nearSite). The tournament stays in the stadium.
 	-- (21/11, DEC-047) Layout: "konoha2" the village of the plan (DEC-042,
 	-- Server/Hub.buildLayout), in every place, ND-JEU included: step 3 lives
 	-- in it (the DESIGN's minimap is drawn from the plan, the things to do

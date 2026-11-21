@@ -326,6 +326,8 @@ local function close(s,t,now,status)
 	rec.watchdogs=counter(t,a,"WatchdogWakeup")+counter(t,a,"WatchdogReaction")+counter(t,a,"WatchdogGrab")
 	rec.line=summary(rec)
 	table.insert(t.report,rec)
+	-- (21/11, DEC-047) a step done with the dummy pays (Matches, Shared/Solo)
+	if status=="PASS" then t.passed=(t.passed or 0)+1 end
 	print(string.format("[NinjaDuelTutorial] %s %d/%d %s: %s",tostring(a.fighterId),t.index,#t.steps,rec.id,rec.line))
 end
 function Tutorial.report(s)

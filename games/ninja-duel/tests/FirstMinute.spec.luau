@@ -162,9 +162,9 @@ end)
 
 -- (14/11, François: « que notre perso puisse combattre » dans la ville) A
 -- duel asked at a master's home is fought there, in the village, when the
--- server finds the player's walker there; asked from the board, or from far
--- away, it is the stadium's.
-test("a first duel asked at Lee's home is fought on Training Ground Three; elsewhere, the stadium",function()
+-- server finds the player's walker there; asked from far away, the stadium's.
+-- (21/11, DEC-047) Asked from the board while he walks: the nearest place.
+test("a first duel asked at Lee's home is fought on Training Ground Three; the board's near him; far away, the stadium",function()
 	local Hub=H.load("Server/Hub")
 	local HubMap=H.load("Shared/HubMap")
 	local Config=H.load("Shared/Config")
@@ -192,9 +192,15 @@ test("a first duel asked at Lee's home is fought on Training Ground Three; elsew
 		assert(s.firstStage=="duel" and s.tutorial==nil and s.coach and s.site and s.site.key=="Leaf" and (s.origin-centre).Magnitude<1e-3,"the first combat left Lee's")
 		-- back to Konoha: where it was fought
 		m:selection(player);walkAt(centre)
-		-- from the board (no `here`): the stadium
+		-- (21/11, DEC-047: « un duel lancé de partout ») from the board (no
+		-- `here`) while he walks: the free place of the village nearest him
 		send(m,player,"Start",{player="Leaf",bot="Lion"})
-		assert(s.phase=="Duel" and s.site==nil and s.radius==nil and (s.origin-Matches.laneOrigin(s.lane)).Magnitude<1e-3,"a board duel left the stadium")
+		assert(s.phase=="Duel" and s.site and s.site.street and s.site.key=="Leaf" and (s.origin-centre).Magnitude<1e-3,"a duel asked in Konoha is not fought near him: "..tostring(s.site and s.site.key))
+		m:selection(player)
+		-- not walking in Konoha: the stadium
+		Hub.bodies={}
+		send(m,player,"Start",{player="Leaf",bot="Lion"})
+		assert(s.phase=="Duel" and s.site==nil and s.radius==nil and (s.origin-Matches.laneOrigin(s.lane)).Magnitude<1e-3,"a board duel away from Konoha left the stadium")
 		m:selection(player)
 		-- asked as if at Lee's while far away (a client's word only): the stadium
 		walkAt(HubMap.Origin+H.V.new(0,3,190))

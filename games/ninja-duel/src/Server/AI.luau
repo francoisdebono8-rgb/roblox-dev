@@ -66,7 +66,7 @@ local AI={}; AI.__index=AI
 -- slower, reads less, keeps its jutsu for openings and gives a beat at the
 -- start of each round; "normal" is the tuning so far; "hard" reads more.
 AI.LEVELS={
-	easy={Tick=.3,Reaction=.62,Aggression=.42,Defense=.32,Technique=.16,TechniqueGap=6.5,TechniqueJitter=3.5,
+	easy={Tick=.3,Reaction=.62,Aggression=.42,Defense=.32,Technique=.16,TechniqueGap=6.5,TechniqueJitter=3.5,StrategyHold=1.4,
 		ReadGuard=.12,ReadDodge=.05,ReadPoke=.1,GuardRead=.02,Feint=0,Recover=.25,Plan=.35,
 		BreakOff1=.7,BreakOff2=.92,RepositionTime=1.5,RepositionJitter=.9,Disengage=.72,Opening=2.5,UltimateBelow=.4},
 	normal={},
@@ -75,13 +75,86 @@ AI.LEVELS={
 	-- rare guard, his jutsu late and seldom, no ultimate.
 	first={Tick=.5,Reaction=.95,Aggression=.3,Defense=.1,Technique=.06,TechniqueGap=14,TechniqueJitter=4,
 		ReadGuard=.03,ReadDodge=0,ReadPoke=.04,GuardRead=0,Feint=0,Recover=.1,Plan=.2,
-		BreakOff1=1,BreakOff2=1,RepositionTime=2,RepositionJitter=1,Disengage=.85,Opening=3,UltimateBelow=0},
+		BreakOff1=1,BreakOff2=1,RepositionTime=2,RepositionJitter=1,Disengage=.85,Opening=3,UltimateBelow=0,Strategy=false},
 	hard={Tick=.15,Reaction=.3,Aggression=.8,Defense=.66,TechniqueGap=2,ReadGuard=.36,ReadDodge=.2},
 }
 function AI.new(combat,actor,seed,level)
 	local tune=table.clone(Config.AI)
 	for k,v in (if type(level)=="table" then level elseif type(level)=="string" then AI.LEVELS[level] or {} else {}) do tune[k]=v end
-	return setmetatable({combat=combat,actor=actor,nextTick=0,observed=nil,observedAt=0,guardUntil=0,rng=Random.new(seed or 23),tune=tune},AI)
+	return setmetatable({combat=combat,actor=actor,nextTick=0,observed=nil,observedAt=0,guardUntil=0,rng=Random.new(seed or 23),tune=tune,baseTune=tune},AI)
+end
+-- (21/11, étape 3 DEV 6, DEC-047; François: « des combats trop longs, pas
+-- assez dynamiques et variés ») The plan of a fight: the AI changes plan
+-- during a round, so a duel has turns to read and answer.
+--   pressure  it stays on him: no probing, keener dashes, quick jutsu
+--   distance  it keeps away for a few seconds: its tool and its long jutsu,
+--             backs off when he closes in
+--   trap      it waits at mid range for a few seconds, guard up, and
+--             punishes what he throws
+-- Pressure is the fight's ground (the duels must not get longer: François
+-- found them too long); a short turn of distance or trap breaks it, then it
+-- presses again. A plan holds its `hold` s; a beating (Shift of its health
+-- within Window s) changes it at once. Each plan moves
+-- the level's tuning: added to a chance (kept within 0..1), multiplied for a
+-- gap or a scale (`*`). The opponent's snapshot says it (`strategy`, the
+-- client shows it), so the turn is seen. The novice (level "first") keeps one
+-- quiet way (Strategy = false).
+AI.Strategy={
+	pressure={hold={8,12},Aggression=.2,Defense=-.08,Disengage=-.3,["*TechniqueGap"]=.75},
+	distance={hold={4,6},Aggression=-.15,Disengage=.25,["*TechniqueGap"]=.65,["*ProbeTool"]=1.35},
+	trap={hold={3.5,5},Aggression=-.3,Defense=.25,ReadGuard=.15,ReadDodge=.12,GuardRead=.08},
+	Shift=.2,Window=4,
+}
+-- The first plan of a kit: a long reach opens at range, the others press.
+function AI.firstStrategy(def)
+	if (def.PreferredRange or 7)>=12 or def.Zoner then return "distance" end
+	return "pressure"
+end
+-- The tuning under plan `name` (pure).
+function AI.strategyTune(base,name)
+	local out=table.clone(base)
+	for key,delta in AI.Strategy[name] or {} do
+		if key=="hold" then continue end
+		if string.sub(key,1,1)=="*" then
+			local k=string.sub(key,2)
+			if type(out[k])=="number" then out[k]*=delta end
+		elseif type(out[key])=="number" then
+			out[key]=math.clamp(out[key]+delta,0,1)
+		end
+	end
+	return out
+end
+function AI:setStrategy(name,now)
+	local a=self.actor
+	self.strategy=name;self.strategySince=now
+	local hold=AI.Strategy[name].hold
+	self.strategyUntil=now+(hold[1]+self.rng:NextNumber()*(hold[2]-hold[1]))*(self.baseTune.StrategyHold or 1)
+	self.tune=AI.strategyTune(self.baseTune,name)
+	a.strategy=name;a.strategyAt=now
+	self.healthMark={at=now,health=a.health}
+end
+-- The plans are on for the duels the game runs (Server/Matches); a bot made
+-- on its own (the suites' pairs, the tools) keeps the base behaviour.
+function AI:withStrategy()
+	self.strategyOn=true
+	return self
+end
+-- Once a decision: the plan held, changed when its time is up or when it is
+-- losing (a beating within the window).
+function AI:strategyStep(now)
+	if not self.strategyOn or self.baseTune.Strategy==false then return end
+	local a=self.actor
+	if not self.strategy then self:setStrategy(AI.firstStrategy(a.def),now);return end
+	local mark=self.healthMark
+	local beaten=mark and mark.health-a.health>=AI.Strategy.Shift*(a.def.Health or 100)
+	if mark and now-mark.at>AI.Strategy.Window then self.healthMark={at=now,health=a.health} end
+	if now<self.strategyUntil and not beaten then return end
+	-- a short turn after pressing (and when pressing costs it), pressing after a turn
+	if self.strategy=="pressure" then
+		self:setStrategy(if self.rng:NextNumber()<.5 then "distance" else "trap",now)
+	else
+		self:setStrategy("pressure",now)
+	end
 end
 local function slotOf(a,id)
 	for slot,spec in a.def.Techniques do if spec.Id==id then return "Technique"..slot,spec end end
@@ -432,6 +505,9 @@ function AI:update(now)
 	if now<self.nextTick then return end
 	self.nextTick=now+tune.Tick
 	self.roundStart=self.roundStart or now
+	-- (DEC-047) the plan of the fight
+	self:strategyStep(now);tune=self.tune
+	local plan=self.strategy
 	-- (QA 12/11: Sasuke-Gaara had no K.O. in 95 s) A round that drags on
 	-- (LateFrom s, full at +LateSpan) presses: no more probing or breathing,
 	-- keener dashes, jutsu sooner.
@@ -493,6 +569,9 @@ function AI:update(now)
 	-- step out of a wind lane that blows against the approach (below).
 	local zoner=(target.def.PreferredRange or 7)>=14 and (a.def.PreferredRange or 7)<12 and not a.def.Zoner
 	if zoner then self.probing=false end
+	-- (DEC-047) the plan: pressing never probes; keeping away always does, far
+	if plan=="pressure" then self.probing=false
+	elseif plan=="distance" and not zoner then self.probing=true;self.probeRange=math.max(self.probeRange or 0,14) end
 	local downed=target.reaction=="Knockdown" or target.reaction=="Wakeup" or (target.reaction=="Knockback" and target.airborne==false)
 	if downed and not self.wasDowned and a.pursuitUntil<=now then self.breathUntil=now+.35+self.rng:NextNumber()*.5 end
 	self.wasDowned=downed
@@ -505,6 +584,8 @@ function AI:update(now)
 	self.wasHurt=hurt
 	if late>=.5 then self.probing=false;self.breathUntil=nil end
 	local calm=self.probing or now<(self.breathUntil or 0)
+	-- (DEC-047) the trap: it waits at mid range, no dash in (calm), guard up
+	if plan=="trap" and late<1 then calm=true end
 	-- Probing happens at tool range: spacing, throws and reads before running in.
 	if self.probing then desired+=self.probeRange or 14 elseif calm then desired+=4 end
 	-- Genjutsu image (Itachi's Mirage): hold the line behind the image while it
