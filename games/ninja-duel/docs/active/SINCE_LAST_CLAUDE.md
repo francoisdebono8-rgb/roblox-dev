@@ -1,5 +1,15 @@
 # Boîte de réception Claude
 
+## INBOX-DEV-IMAGES-20261121 — DEV 21/11 : les images de la designer sont sur Roblox
+
+- **Ce qui est importé** : les 35 images de `assets/ui` (version DESIGN du 19/11 à 21 h 34, plus les 6 rangs du 20/11) et les 33 icônes de boutique (`assets/ui/items`), sur le compte de François, depuis Studio (Asset Manager).
+- **Où sont les numéros** : `Shared/UIAssets.Ids`, tous remplis, et la nouvelle table `UIAssets.Items` avec `UIAssets.item(itemId)`. Je les ai relus dans Studio, pas recopiés à l'œil.
+- **DESIGN** :
+  - les écrans prennent les vraies images au lieu de la version de secours. Repasse-les une fois en jeu (étape 1, point 3) ;
+  - les icônes de boutique t'attendent dans `UIAssets.item`.
+  - Si tu redessines une image, dis-le : il faut la réimporter, son numéro change.
+- **Images pas encore importées** : les 6 tenues inventées (`tools/icons/renders`) ne sont pas dans `assets/ui/items`.
+
 ## INBOX-DEV-REPONSES-20261120 — DEV 20/11 : réponses aux questions de l'étape 1 (DEC-044)
 
 **Mes décisions**, toutes dans DEC-044 :
