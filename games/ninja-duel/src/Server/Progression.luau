@@ -351,6 +351,9 @@ function P.badges(player)
 		-- (21/11, DEC-045) his chakra nature, for the infusions' effects
 		-- (the ANIMATEUR's Infusion.<Nature>); nil: none chosen
 		player:SetAttribute("NinjaNature",NinjaTree.nature(h.data.ninja or NinjaTree.new()))
+		-- (21/11, DEC-047) the tree's Wall Runner in the village too (Client/HubMove)
+		local ninja=NinjaTree.def(h.data.ninja or NinjaTree.new())
+		player:SetAttribute("NinjaWallRun",ninja and ninja.WallRun or nil)
 		-- (21/11, DEC-047) his personalization, read by every client: the
 		-- title under his name, his chakra's colour, his face-cam frame, the
 		-- aura he chose (a merit one he earned, or a shop one), his victory

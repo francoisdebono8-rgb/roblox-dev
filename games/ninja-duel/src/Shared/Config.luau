@@ -204,7 +204,12 @@ return {
 	-- VillageDuels: a duel started at a master's home (his card, the training
 	-- dummy) is fought there, in the village (HubMap.Masters[id].duel), not
 	-- in the stadium. The board's duels and the tournament stay in the stadium.
-	Hub = { Enabled = true, DevUserId = nil, VillageDuels = true },
+	-- (21/11, DEC-047) Layout: "konoha2" the village of the plan (DEC-042,
+	-- Server/Hub.buildLayout), in every place, ND-JEU included: step 3 lives
+	-- in it (the DESIGN's minimap is drawn from the plan, the things to do
+	-- alone stand at its places). "classic" the old one (a step back), "auto"
+	-- the plan in the work places and the old one in the release build.
+	Hub = { Enabled = true, DevUserId = nil, VillageDuels = true, Layout = "konoha2" },
 	-- (19/11, vague 2 DEV 5) The exam of the week (Shared/Exam, Server/
 	-- WeeklyExam): the prodigies' tournament played from Friday 18:00 to
 	-- Sunday 21:00, Paris time, counts for the week (titles, the cliff).
