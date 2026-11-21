@@ -198,7 +198,7 @@ VICTORY = {
         {"root": {"sink": .15}, "Waist": {"pitch": -10}, "Neck": {"pitch": -25},
          "RA": {"swing": 175, "spread": 5, "bend": 5}, "LA": {"chest": [-1.0, -0.2, -0.9], "hint": [40, 20, 0, 110]}},
         {"RA": {"swing": 60, "spread": 20, "bend": 120}, "root": {"sink": .5}})),
-    "Respect": ("RESPECT", lambda: _pose(
+    "Bow": ("THE BOW", lambda: _pose(
         {"root": {"pitch": 35}, "Waist": {"pitch": 15}, "Neck": {"pitch": 15},
          "LL": {"foot": [-0.35, 0.0], "yaw": 0}, "RL": {"foot": [0.35, 0.0], "yaw": 0},
          "RA": {"chest": [1.2, -1.3, -0.1], "hint": [5, 10, 0, 15]}, "LA": {"chest": [-1.2, -1.3, -0.1], "hint": [5, 10, 0, 15]}})),

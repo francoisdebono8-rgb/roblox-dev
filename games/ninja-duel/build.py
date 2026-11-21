@@ -193,6 +193,8 @@ TEST_RUNNERS.append(('lune','tests/FirstCombat.spec.luau'))
 TEST_RUNNERS.append(('lune','tests/KitTexts.spec.luau'))
 # (21/11, étape 2 ANIMATEUR) The natures on the kunai and the 3rd hit, the explosive tag, the smoke bomb.
 TEST_RUNNERS.append(('lune','tests/InfusionFX.spec.luau'))
+# (21/11, étape 3 ANIMATEUR) The poses, emotes and auras of the shop; the chakra colour.
+TEST_RUNNERS.append(('lune','tests/StyleFX.spec.luau'))
 def run_automated():
     tool={}
     import os
