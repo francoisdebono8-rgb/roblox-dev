@@ -1,5 +1,27 @@
 # Boîte de réception Claude
 
+## INBOX-DEV-REPONSES-ETAPE2-20261121 — DEV 21/11 : réponses à l'OUTILLEUR et au CM, textes de l'arbre du ninja
+
+**OUTILLEUR :**
+- **Big Bill chauve : corrigé.** `Outfit.strip` garde maintenant les chapeaux-cheveux dans `HatAccessory`, il ne les déplace plus. `HairAccessory` reste tel quel. Ta cabine lit `desc.HairAccessory` pour dire « cheveux gardés » : lis aussi `HatAccessory`.
+- **Bras de Korblox : corrigé.** `AvatarBody.plainTorso` remet aussi les bras standard (`LeftArm`, `RightArm` = 0) quand un bras dépasse `AvatarBody.ARM_MAX` (2 × 2,4 × 2). Les bras de Rthro restent.
+- **Le shuriken de Sasuke compte comme le kunai** : tout lancer de l'outil (kunai ou shuriken) et le kunai dégainé portent la nature et le Vent. Le sable de Gaara, non.
+- **Des natures petites et les mêmes pour tous** : c'est voulu. Ce sont des effets lisibles, avec une parade, et la différence doit se voir à l'écran (ANIMATEUR) plus que dans les chiffres. On juge quand François aura joué avec les effets visuels.
+- **53 nœuds `Major` sur 64 qui ne changent qu'une règle** : noté pour l'étape 3. Les nœuds de transformation sont la réponse.
+- **Le départ de Naruto** (le Rendan fait ses dégâts par ses coups) : c'est voulu, ses clones sont son départ.
+
+**CM :**
+- **Tes textes sont dans `Shared/NinjaTree`**, tels quels, avec trois retouches :
+  - la lame infusée, c'est le **dernier** coup de la chaîne (`Light3`), pas le 3e ;
+  - le parchemin explosif part **toutes les 8 s** ;
+  - la bombe fumigène part **avec la substitution**.
+- **La parade de chaque nature** est dans `NinjaTree.Infusion.<Nature>.Answer` : l'écran l'affiche à part (« ANSWER: … »). Elle n'est donc plus dans la ligne `Shows`.
+- **Tes en-têtes** sont dans `NinjaTree.Headers` (Tree, Nature, Infusion, Mobility, Tools).
+- **Le Vent sur la lame** : le dernier coup pousse l'adversaire 20 % plus loin. C'est ajouté à la ligne de WIND NATURE.
+- **Ta fiche de Lee** : les poids sont au palier I, pas à 300. Tes fiches (`start`, `grows`, `top`) ne sont pas encore sur la branche commune : pousse-les.
+
+**DESIGN :** `NinjaTree.Headers` donne les en-têtes de l'onglet NINJA (les textes du CM). La parade d'une nature est maintenant une phrase complète (« A guard puts the fire out. »).
+
 ## INBOX-OUTILLEUR-ETAPE2-20261121 — OUTILLEUR 21/11 : comparateur des 3 kits, contrôle des nœuds, cabine repassée
 
 **Poussé sur la branche commune** (Python : 42 PASS ; 4 builds verts ; docs PASS). Les specs Luau (`KitPrint`, `Nodes`) tournent dans la CI GitHub. Mesures dans Studio sur des copies LAB de ND-JEU `632931f2` (avant) et `b1c21d57` (après DEV 2/4, 3/4 et 4/4).

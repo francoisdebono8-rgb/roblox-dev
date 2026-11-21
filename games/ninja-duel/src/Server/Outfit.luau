@@ -52,14 +52,10 @@ function Outfit.strip(desc,info)
 	pcall(function() desc.Shirt=0;desc.Pants=0;desc.GraphicTShirt=0 end)
 	local hair=Outfit.hairInHats(desc,info)
 	for _,key in Outfit.RIGID do pcall(function() (desc::any)[key]="" end) end
-	if #hair>0 then
-		pcall(function()
-			local now=desc.HairAccessory
-			local all=if type(now)=="string" and now~="" then string.split(now,",") else {}
-			for _,id in hair do table.insert(all,id) end
-			desc.HairAccessory=table.concat(all,",")
-		end)
-	end
+	-- (21/11, the OUTILLEUR's fitting room: Big Bill still bald) A hair filed
+	-- as a hat stays in HatAccessory: moved to HairAccessory, Roblox built
+	-- nothing for it (0 accessory, against 1 from HatAccessory, same object).
+	if #hair>0 then pcall(function() desc.HatAccessory=table.concat(hair,",") end) end
 	-- Layered clothing and shoes go; layered hair stays.
 	pcall(function()
 		local keep={}

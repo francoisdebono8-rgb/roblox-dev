@@ -34,22 +34,31 @@ end
 -- 2.3 x 2.1 x 1.2) is swapped for the standard torso; his legs, arms, head,
 -- face and hair stay his.
 AvatarBody.TORSO_MAX=Vector3.new(3,3,2)
-function AvatarBody.oversized(model)
-	local t=model and model:FindFirstChild("UpperTorso")
-	if not t or not t:IsA("BasePart") then return false end
-	local m=AvatarBody.TORSO_MAX
-	return t.Size.X>m.X or t.Size.Y>m.Y or t.Size.Z>m.Z
+-- (21/11, the OUTILLEUR's fitting room) Korblox's armour arms too: an
+-- UpperArm of 1.53 x 3.28 x 1.58 (standard about 1 x 1.2 x 1, Rthro about
+-- 1.1 x 1.5 x 1.1) put every arm piece in two blocks over the shoulders.
+AvatarBody.ARM_MAX=Vector3.new(2,2.4,2)
+local function past(part,m)
+	return part~=nil and part:IsA("BasePart") and (part.Size.X>m.X or part.Size.Y>m.Y or part.Size.Z>m.Z)
 end
--- `desc` with the standard torso when his own is oversized (builds a test
--- body once; yields). Returns whether it was swapped.
+function AvatarBody.oversized(model)
+	return past(model and model:FindFirstChild("UpperTorso"),AvatarBody.TORSO_MAX)
+end
+function AvatarBody.oversizedArms(model)
+	return past(model and model:FindFirstChild("RightUpperArm"),AvatarBody.ARM_MAX) or past(model and model:FindFirstChild("LeftUpperArm"),AvatarBody.ARM_MAX)
+end
+-- `desc` with the standard torso and arms where his own are oversized
+-- (builds a test body once; yields). Returns whether anything was swapped.
 function AvatarBody.plainTorso(desc,build)
 	build=build or function(d) return Players:CreateHumanoidModelFromDescription(d,Enum.HumanoidRigType.R15) end
 	local ok,model=pcall(build,desc)
 	if not ok or not model then return false end
 	local big=AvatarBody.oversized(model)
+	local arms=AvatarBody.oversizedArms(model)
 	pcall(function() model:Destroy() end)
 	if big then pcall(function() desc.Torso=0 end) end
-	return big
+	if arms then pcall(function() desc.LeftArm=0;desc.RightArm=0 end) end
+	return big or arms
 end
 
 -- The avatar's description at the standard scales (yields).

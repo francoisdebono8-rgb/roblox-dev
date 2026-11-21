@@ -288,17 +288,29 @@ test("stripping keeps the hair Roblox files as a hat; the hats go",function()
 		GetAccessories=function() return {} end,SetAccessories=function() end}
 	local names={["11"]="Bucket Hat",["22"]="Woman's Brown Hair",["33"]="Long Braid"}
 	Outfit.strip(desc,function(id) return names[tostring(id)] end)
-	assert(desc.HatAccessory=="" and desc.FaceAccessory=="" and desc.Shirt==0,"the clothes and hats stay on")
+	assert(desc.FaceAccessory=="" and desc.Shirt==0,"the clothes stay on")
+	-- (21/11) a hair filed as a hat stays a hat: Roblox builds it only from there
 	local kept={}
-	for _,id in string.split(desc.HairAccessory,",") do kept[id]=true end
-	assert(kept["44"] and kept["22"] and kept["33"] and not kept["11"],"the hair: "..desc.HairAccessory)
+	for _,id in string.split(desc.HatAccessory,",") do kept[id]=true end
+	assert(desc.HairAccessory=="44" and kept["22"] and kept["33"] and not kept["11"],"the hair: "..desc.HatAccessory.." / "..desc.HairAccessory)
+	local bald={HatAccessory="11",HairAccessory="",Shirt=1,GetAccessories=function() return {} end,SetAccessories=function() end}
+	Outfit.strip(bald,function(id) return names[tostring(id)] end)
+	assert(bald.HatAccessory=="","a hat that is not hair stayed")
 end)
 
-test("an armour torso (Korblox) is swapped for the standard one; an Rthro torso stays",function()
+test("an armour torso and arms (Korblox) are swapped for the standard ones; an Rthro body stays",function()
 	local AvatarBody=H.load("Server/AvatarBody")
-	local function body(size)
-		return {FindFirstChild=function(_,name) if name=="UpperTorso" then return {Size=size,IsA=function() return true end} end end,Destroy=function() end}
+	local function body(size,arm)
+		arm=arm or V.new(1,1.2,1)
+		return {FindFirstChild=function(_,name)
+			if name=="UpperTorso" then return {Size=size,IsA=function() return true end} end
+			if name=="RightUpperArm" or name=="LeftUpperArm" then return {Size=arm,IsA=function() return true end} end
+		end,Destroy=function() end}
 	end
+	local arms={Torso=1,LeftArm=21,RightArm=22}
+	assert(AvatarBody.plainTorso(arms,function() return body(V.new(2,1.6,1),V.new(1.53,3.28,1.58)) end) and arms.LeftArm==0 and arms.RightArm==0 and arms.Torso==1,"Korblox's arms stay")
+	local rthroArms={LeftArm=31,RightArm=32}
+	assert(not AvatarBody.plainTorso(rthroArms,function() return body(V.new(2.3,2.1,1.2),V.new(1.1,1.5,1.1)) end) and rthroArms.LeftArm==31,"Rthro's arms swapped")
 	assert(AvatarBody.oversized(body(V.new(3.25,6.3,3.02))),"Korblox kept")
 	assert(not AvatarBody.oversized(body(V.new(2,1.6,1))) and not AvatarBody.oversized(body(V.new(2.3,2.1,1.2))),"a normal torso swapped")
 	local desc={Torso=12345}

@@ -10,7 +10,8 @@
 -- commands ninjaLearn and ninjaSet), the fighter's def.Ninja in a duel
 -- (Server/SkillBuilds.applyNinja, read by the combat), the player attribute
 -- NinjaNature (the ANIMATEUR's Infusion.<Nature>), the view for the DESIGN.
--- The node texts are placeholders: the CM writes them (step 2).
+-- The node texts are the CM's (21/11, claude/cm-etape2-noeuds-fiches-short):
+-- the DEV copies them here; the tree screen reads them as they are.
 local N={}
 
 N.PointEvery=15
@@ -22,15 +23,23 @@ N.Natures={"Fire","Wind","Lightning","Earth","Water"}
 -- always with an answer (the plan's table, 21/11). Mastery: Strong times.
 N.Infusion={
 	Gap=4,Strong=1.5,
-	Fire={Burn=3,BurnTime=2,Answer="a guard stops the burn"},
-	Wind={KunaiRange=1.2,KunaiSpeed=1.2,Answer="it is seen coming from further"},
-	Lightning={Stun=.25,Answer="once every 4 s"},
-	Earth={GuardDamage=10,Answer="a dodge avoids it whole"},
-	Water={Slow=.15,SlowTime=1.5,Answer="a substitution washes it off"},
+	Fire={Burn=3,BurnTime=2,Answer="A guard puts the fire out."},
+	Wind={KunaiRange=1.2,KunaiSpeed=1.2,Answer="It is seen from further too."},
+	Lightning={Stun=.25,Answer="Once every 4 s."},
+	Earth={GuardDamage=10,Answer="A dodge avoids it whole."},
+	Water={Slow=.15,SlowTime=1.5,Answer="A substitution washes it off."},
 }
 -- The ninja's tools (Server/NinjaArts): the tag rides on a thrown blade once
 -- every TagEvery s and blows TagDelay s after it lands (step out); the smoke
 -- of a substitution hides him SmokeTime s (the rival loses him).
+-- The tree screen's headers (the CM's, 21/11).
+N.Headers={
+	Tree="Every duel, with any kit, earns ninja points: 1 for every 15 mastery.",
+	Nature="Pick one chakra nature. You can change it between duels.",
+	Infusion="Put your nature into your kunai, then into your blade.",
+	Mobility="Walls, air, floor: move like a ninja.",
+	Tools="Ninja tools for the street fight.",
+}
 N.Tools={TagEvery=8,TagDelay=1,TagRadius=6,TagDamage=8,TagKnock=34,TagLift=24,SmokeTime=1.5,SmokeRadius=7}
 -- Mobility (Server/Motor, Brawler.react): the second jump's share of a
 -- jump's height, the share of the time down a quick rise keeps.
@@ -41,31 +50,31 @@ N.Mobility={AirJump=.85,QuickRise=.55}
 -- NeedsNature: an active nature first. Exclusive: one active per group.
 N.Nodes={
 	{Id="NatureFire",Branch="Nature",Tier=1,Cost=4,Exclusive="Nature",Set={Nature="Fire"},
-		Name="FIRE NATURE",Shows="Your infused kunai and blade burn: 3 damage over 2 s."},
+		Name="FIRE NATURE",Shows="Your infused hits burn for 3 damage over 2 s."},
 	{Id="NatureWind",Branch="Nature",Tier=1,Cost=4,Exclusive="Nature",Set={Nature="Wind"},
-		Name="WIND NATURE",Shows="Your infused kunai flies 20% further and faster."},
+		Name="WIND NATURE",Shows="Your infused kunai flies 20% further and faster; your infused blade pushes 20% further."},
 	{Id="NatureLightning",Branch="Nature",Tier=1,Cost=4,Exclusive="Nature",Set={Nature="Lightning"},
 		Name="LIGHTNING NATURE",Shows="Your infused hits freeze the rival for a quarter of a second."},
 	{Id="NatureEarth",Branch="Nature",Tier=1,Cost=4,Exclusive="Nature",Set={Nature="Earth"},
-		Name="EARTH NATURE",Shows="Your infused hits crack guards: 10 more guard damage."},
+		Name="EARTH NATURE",Shows="Your infused hits crush guards: 10 more guard damage."},
 	{Id="NatureWater",Branch="Nature",Tier=1,Cost=4,Exclusive="Nature",Set={Nature="Water"},
 		Name="WATER NATURE",Shows="Your infused hits slow the rival by 15% for 1.5 s."},
 	{Id="InfusedKunai",Branch="Infusion",Tier=1,Cost=6,NeedsNature=true,Set={KunaiInfused=true},
-		Name="INFUSED KUNAI",Shows="Your kunai carries your nature, in flight and on impact."},
+		Name="INFUSED KUNAI",Shows="Your kunai carries your nature, in flight and on impact, once every 4 s."},
 	{Id="InfusedBlade",Branch="Infusion",Tier=2,Cost=8,NeedsNature=true,Requires={"InfusedKunai"},Set={BladeInfused=true},
-		Name="INFUSED BLADE",Shows="The last hit of your basic string carries your nature."},
+		Name="INFUSED BLADE",Shows="The last hit of your basic string carries your nature too."},
 	{Id="ElementMastery",Branch="Infusion",Tier=3,Cost=12,NeedsNature=true,Requires={"InfusedBlade"},Set={Mastery=true},
-		Name="ELEMENT MASTERY",Shows="Your nature hits half again as hard, and everyone sees it."},
+		Name="ELEMENT MASTERY",Shows="Your nature's effects are 50% stronger and much easier to see."},
 	{Id="WallRunner",Branch="Mobility",Tier=1,Cost=5,Set={WallRun=1.4},
-		Name="WALL RUNNER",Shows="You run 40% longer on walls."},
+		Name="WALL RUNNER",Shows="Run 40% longer on walls before you drop."},
 	{Id="CloudStep",Branch="Mobility",Tier=2,Cost=8,Requires={"WallRunner"},Set={AirJump=true},
-		Name="CLOUD STEP",Shows="A second jump in the air."},
+		Name="CLOUD STEP",Shows="Kick off the air itself: a second jump before you land."},
 	{Id="QuickRise",Branch="Mobility",Tier=2,Cost=6,Set={QuickRise=true},
-		Name="QUICK RISE",Shows="Knocked down, you are back up in half the time."},
+		Name="QUICK RISE",Shows="Get back on your feet faster after a knockdown."},
 	{Id="ExplosiveTag",Branch="Tools",Tier=2,Cost=8,Set={ExplosiveTag=true},
-		Name="EXPLOSIVE TAG",Shows="Every 8 s a thrown blade carries a paper bomb: it blows 1 s after it lands."},
+		Name="EXPLOSIVE TAG",Shows="Every 8 s, a paper bomb rides on your kunai: it blows up 1 s after it lands."},
 	{Id="SmokeBomb",Branch="Tools",Tier=3,Cost=8,Set={SmokeBomb=true},
-		Name="SMOKE BOMB",Shows="Your substitution leaves smoke: the rival loses you for 1.5 s."},
+		Name="SMOKE BOMB",Shows="Your substitution leaves smoke: the rival loses his lock on you for 1.5 s."},
 }
 N.ById={}
 for _,node in N.Nodes do N.ById[node.Id]=node end
