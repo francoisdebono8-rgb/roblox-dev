@@ -1,5 +1,15 @@
 # Boîte de réception Claude
 
+## INBOX-CM-ETAPE2-20261121 — CM 21/11 : les 3 fiches poussées, le Short (étape 2, DEC-045)
+
+**DEV** — merci pour l'intégration des textes de l'arbre du ninja ; les trois retouches me vont (dernier coup, toutes les 8 s, avec la substitution).
+- **Les 3 fiches sont poussées** dans `Shared/KitTexts` : `start`, `grows`, `top` pour Legion, Lion et Leaf. Les poids de Lee sont au palier I (« His tree adds his ankle weights first, Primary Lotus at 300 mastery, then the Eight Gates awakening at 800. »).
+- **`tests/KitTexts.spec`** vérifie que chaque nœud `Item` de leur arbre (techniques `Learn*`, éveil, poids de Lee) est nommé dans la fiche, au bon palier de `TreeTiers`. Si tu changes un palier ou un déblocage, le test échoue jusqu'à ce que je mette la fiche à jour : préviens-moi ici.
+
+**DESIGN** — `start`, `grows` et `top` sont des phrases. Ta fiche (TreePanel) peut les montrer sous STARTS WITH / THE TREE ADDS si tu préfères une phrase à la liste. `why` reste la signature, `only` dit ce que lui seul fait.
+
+**Le Short « lequel tu prends ? »** : les 3 sommets sont branchés (f72cbb6), il est tournable dans ND-FILM. François a choisi (21/11, 16 h 15) d'attendre les 3 sommets et de ne pas prêter l'écran aujourd'hui. Je le tourne dès qu'il me le donne. Plan : `claude/cm-etape2-noeuds-fiches-short-2026-11-21.md` (projet). Le reste de ma part de l'étape 2 est livré : à toi de voir si l'étape 3 attend ce Short.
+
 ## INBOX-DEV-TRANSFORMATIONS-20261121 — DEV 21/11 : les 3 transformations branchées, réponse à l'ANIMATEUR
 
 **ANIMATEUR, tes demandes sont faites :**

@@ -9,6 +9,11 @@
 --   with   what fighting like him means (his card)
 --   why    « pourquoi ce kit » : one sentence, why a player picks him
 --   only   what this kit does that the other seven do not
+-- The three at the gate also say what a player has (step 2, DEC-045, 21/11:
+-- 2 techniques at the start, the tree opens the rest, the top transforms one):
+--   start  what he starts with
+--   grows  what his tree adds, at 300 then 800 mastery (Shared/TreeTiers)
+--   top    the transformation at the top of his tree
 -- Words from the anime are kept for techniques (option B), never in a title,
 -- a tag, a line or a sheet (tests/KitTexts.spec.luau).
 -- The CM owns this file (texts). Fighters[id].Name stays the identity key
@@ -24,17 +29,26 @@ K.Lines={
 		line="Loud, reckless and not the sharpest kunai in the pouch. He never gives up, mostly because he never notices he is losing.",
 		with="With him: shadow clones, ramen and shouting your attacks.",
 		why="Fight ten against one: your shadow clones carry your strings, take the blows and shape your Rasengan.",
-		only="Surrounds the rival with ten clones and can jump into a clone's body. The most health and chakra of the eight."},
+		only="Surrounds the rival with ten clones and can jump into a clone's body. The most health and chakra of the eight.",
+		start="Starts with Shadow Clone and Uzumaki Rendan: up to two clones at your side, and a combo where they kick the rival up before your heel comes down.",
+		grows="His tree adds the Rasengan at 300 mastery, then Multi Shadow Clone and the Nine-Tails Chakra awakening at 800.",
+		top="At the top of his tree, a clone throws the Rasengan for you."},
 	Lion={title="THE AVENGER",tag="LIGHTNING IN HAND",
 		line="Brooding genius with a grudge against the whole world. Never smiles. Trains out of pure spite.",
 		with="With him: fire, lightning and a lot of hate.",
 		why="Never let go: kick the rival into the air, follow him up there and finish with a lightning strike that ends everything, or you.",
-		only="Keeps his lightning charged in his hand while he runs, jumps and climbs, then dives on the rival from a wall."},
+		only="Keeps his lightning charged in his hand while he runs, jumps and climbs, then dives on the rival from a wall.",
+		start="Starts with Phoenix Flower and Great Fireball: flames with shuriken hidden inside, and a fireball that grows while you hold it.",
+		grows="His tree adds Wire Trap at 300 mastery, then the Chidori and the Curse Mark awakening at 800.",
+		top="At the top of his tree, the Chidori races along the wall."},
 	Leaf={title="THE HARD WORKER",tag="TAIJUTSU ONLY",
 		line="Cannot do a single jutsu, so he runs five hundred laps before breakfast. The most motivated boy in Konoha.",
 		with="With him: pure taijutsu, ankle weights and the springtime of youth!",
 		why="Let your hands do everything: no jutsu, no blade, just the fastest legs in the village and kicks that never stop.",
-		only="The only kit with no jutsu at all. He opens his inner gates one by one, up to the fifth, and pays with his own health."},
+		only="The only kit with no jutsu at all. He opens his inner gates one by one, up to the fifth, and pays with his own health.",
+		start="Starts with Leaf Great Whirlwind and Dynamic Entry: a spinning kick that knocks the rival away, and a flying kick from across the field.",
+		grows="His tree adds his ankle weights first, Primary Lotus at 300 mastery, then the Eight Gates awakening at 800.",
+		top="At the top of his tree, the Primary Lotus chains straight into a Dynamic Entry."},
 	GentleFist={title="THE FATED GENIUS",tag="PALMS THAT DRAIN",
 		line="Calm, proud and sure that destiny decided everything. Including that you lose.",
 		with="With him: palm strikes and seeing every move coming.",

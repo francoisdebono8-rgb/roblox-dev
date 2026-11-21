@@ -126,4 +126,58 @@ test("every « only » that a number can prove is true in Shared/Fighters",funct
 	alone("Sand",function(d) return d.SandShield~=nil end)
 end)
 
+test("the three at the gate say what they start with, what the tree adds and its top (step 2, DEC-045)",function()
+	local TreeTiers=H.load("Shared/TreeTiers")
+	local SkillTrees=H.load("Shared/SkillTrees")
+	-- the plan of 21/11 (claude/etape2-deux-arbres-taches): 2 techniques at the
+	-- start, the rest at 300 then 800 mastery, one transformed at the top
+	local plan={
+		Legion={start={"ShadowClone","NarutoRendan"},grows={"CloneRasengan","MassShadowClone"},top={"CloneRasengan"}},
+		Lion={start={"PhoenixFlower","FireBloom"},grows={"WireTrap","Chidori"},top={"Chidori"}},
+		Leaf={start={"LeafGreatWhirlwind","DynamicEntry"},grows={"PrimaryLotus"},top={"PrimaryLotus","DynamicEntry"}},
+	}
+	local function shown(id,tech)
+		for _,t in Fighters[id].Techniques do
+			if t.Id==tech then return Text.upper(t.CardName or t.Name) end
+		end
+		error(id.." has no technique "..tech)
+	end
+	for id,want in plan do
+		local t=K.of(id)
+		for _,field in {"start","grows","top"} do
+			assert(type(t[field])=="string" and #t[field]>=40 and #t[field]<=150,id.."'s "..field.." is missing or too long")
+			assert(not string.find(string.sub(t[field],1,-2),"[%.!%?] "),id.."'s "..field.." is more than one sentence")
+			local s=Text.upper(t[field])
+			for _,tech in want[field] do
+				assert(string.find(s,shown(id,tech),1,true),id.."'s "..field.." does not name "..shown(id,tech))
+			end
+		end
+		local grows=Text.upper(t.grows)
+		assert(string.find(grows,Text.upper(Fighters[id].Awakening.Name),1,true),id.."'s tree does not name his awakening")
+		assert(string.find(grows,tostring(TreeTiers.Need[2]),1,true) and string.find(grows,tostring(TreeTiers.Need[3]),1,true),id.."'s tree: the mastery of tiers II and III")
+		-- (DEV 21/11) the nodes that unlock a technique, the awakening or the kit
+		-- object (Item) are each named, before « , then » for tiers I-II, after
+		-- it for tier III
+		local split=string.find(grows,", THEN ",1,true)
+		assert(split,id.."'s tree: « ..., then ... at 800 »")
+		local named=0
+		for _,node in (SkillTrees[id] and SkillTrees[id].Nodes) or {} do
+			if type(node.Item)=="string" then
+				local name=if node.Item=="Awakening" then Text.upper(Fighters[id].Awakening.Name)
+					elseif node.Item=="Weights" then "WEIGHTS" else shown(id,node.Item)
+				local at=string.find(grows,name,1,true)
+				assert(at,id..": "..node.Id.." gives "..name..", the sheet does not say it")
+				local tier=TreeTiers.of(node)
+				assert((tier==3)==(at>split),id..": "..name.." is tier "..tier..", the sheet puts it "..(if at>split then "at 800" else "before 800"))
+				named+=1
+			end
+		end
+		assert(named>=3,id.." has "..named.." unlocking nodes in Shared/SkillTrees")
+	end
+	assert(string.find(Text.upper(K.of("Leaf").grows),"WEIGHTS",1,true),"Leaf's tree gives his weights")
+	for _,id in K.Order do
+		if not plan[id] then assert(K.of(id).start==nil,id.." has a start sheet before his tree is reduced") end
+	end
+end)
+
 print(string.format("NinjaDuel kit texts (the CM's titles and sheets): %d PASS",passed))
