@@ -27,7 +27,25 @@ end
 function Motor.jump(a,c,now)
  local movement,parkour=donor(a,c)
  if parkour.jump() then return true end
- return movement.jump(Motor.grounded(a,c))
+ local grounded=Motor.grounded(a,c)
+ if movement.jump(grounded) then return true end
+ return Motor.airJump(a,c,now,grounded)
+end
+-- (21/11, DEC-045) Cloud Step (the ninja's tree, def.Ninja.AirJump): one more
+-- jump in the air, until the feet touch a floor or a wall again. It rises a
+-- little less than a jump and turns the run toward the stick.
+function Motor.airJump(a,c,now,grounded)
+ local ninja=a.def.Ninja
+ if not ninja or not ninja.AirJump or grounded or not a.airborne or a.airJumpUsed or a.wall or a.reaction or a.state~="Neutral" then return false end
+ a.airJumpUsed=true;a.airJumpAt=now
+ local v=a.root.AssemblyLinearVelocity
+ local up=Config.Movement.JumpVelocity*(a.def.JumpScale or 1)*(ninja.AirJumpScale or .85)
+ local horizontal=flat(v)
+ local stick=flat(a.move)
+ if stick.Magnitude>.25 then horizontal=stick.Unit*math.max(horizontal.Magnitude,16) end
+ a.root.AssemblyLinearVelocity=Vector3.new(horizontal.X,math.max(v.Y,up),horizontal.Z)
+ a.locomotion=horizontal;a.takeoffUntil=now+.12
+ return true
 end
 function Motor.detach(a,now,rebound)
 	local wall=a.wall
@@ -80,10 +98,12 @@ function Motor.tryWall(a,c,now)
 	local entry=math.max(Vector3.new(v.X,0,v.Z).Magnitude,(a.locomotion or Vector3.zero).Magnitude)
 	local mode=if into<0.8 then "run" else "climb"
 	local along=heading-hit.Normal*heading:Dot(hit.Normal)
-	a.wall={part=hit.Instance,normal=hit.Normal,untilTime=now+Config.Wall.MaxTime,mode=mode,startAt=now,
+	-- (21/11, DEC-045) Wall Runner (the ninja's tree): the run lasts longer.
+	local long=(a.def.Ninja and a.def.Ninja.WallRun) or 1
+	a.wall={part=hit.Instance,normal=hit.Normal,untilTime=now+Config.Wall.MaxTime*long,mode=mode,startAt=now,long=long,
 		speed=math.max(entry,Config.Wall.SideSpeed),tangent=if along.Magnitude>.05 then along.Unit else nil,
 		rise=math.clamp(entry*.55,12,34)}
-	a.airborne=true;a.airDodgeUsed=false
+	a.airborne=true;a.airDodgeUsed=false;a.airJumpUsed=false
 	c:cue(a,"WALL RUN • SPACE REBOUND / C DETACH",0.8)
 	return true
 end
@@ -113,7 +133,7 @@ function Motor.stepWall(a,c,dt,now)
 		local tangent=wall.tangent-n*wall.tangent:Dot(n)
 		tangent=if tangent.Magnitude>.05 then tangent.Unit else wall.tangent
 		wall.tangent=tangent
-		local speed=wall.speed*math.exp(-.9*t)
+		local speed=wall.speed*math.exp(-.9*t/(wall.long or 1))
 		if speed<14 or (t>.35 and Motor.grounded(a,c)) then Motor.detach(a,now,false);return false end
 		-- Studio: from a ground entry the old +8 arc never left the floor (a lean
 		-- along the ground; the humanoid snaps back near the floor). A real arc up,
@@ -122,7 +142,7 @@ function Motor.stepWall(a,c,dt,now)
 	elseif wall.mode=="climb" then
 		-- Up the wall as high as the entry carried it, sideways a little;
 		-- out of speed, the body falls off.
-		local rise=(wall.rise or Config.Wall.RiseSpeed)-20*t
+		local rise=(wall.rise or Config.Wall.RiseSpeed)-20*t/(wall.long or 1)
 		if rise<-6 then Motor.detach(a,now,false);return false end
 		motion=side*Config.Wall.SideSpeed*.5+UP*rise
 	end
@@ -248,7 +268,7 @@ Motor.SURFACE=3.4
 -- The body is back on the floor: every air flag ends with it.
 function Motor.land(a,c,now)
 	local profile=Config.Movement
-	a.airborne=false; a.airDodgeUsed=false; a.airHold=0; a.airSwingUsed=false; a.airRecoverUsed=false; a.airStringHits=0
+	a.airborne=false; a.airDodgeUsed=false; a.airJumpUsed=false; a.airHold=0; a.airSwingUsed=false; a.airRecoverUsed=false; a.airStringHits=0
 	local falling=a.fallSpeed or 0;a.fallSpeed=0
 	-- Only a real drop costs speed. A standard or sprint jump lands below
 	-- HardLandVelocity and keeps its momentum straight into the next step.

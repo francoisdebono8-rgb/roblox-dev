@@ -1,3 +1,9 @@
+**Étape 2 du DEV, 21/11 (DEC-045 ; doc projet `claude/etape2-deux-arbres-taches-2026-11-21`)** — TECHNICAL, sans Studio ; à jouer par François
+- **Arbre du ninja** (`Shared/NinjaTree`) : 13 nœuds (5 natures exclusives, 3 infusions, 3 mobilités, 2 outils), 1 point par 15 de maîtrise tous kits, paliers à 0/15/40. Enregistrement `ninja` du profil, commandes `ninjaLearn` / `ninjaSet`, vue `Progression.view(...).ninja`, attribut `NinjaNature`. Il entre dans le kit du duel d'un joueur (`def.Ninja`), jamais pour l'IA, les maîtres, les films ni le classé ; il n'est pas encore appliqué en ligne.
+- **Départ réduit** : Naruto, Sasuke et Lee démarrent avec 2 techniques. Nœuds `Learn*` pour les autres et l'éveil (`def.AwakeningLocked`).
+- **En combat** (`Server/NinjaArts`) : infusions des 5 natures (kunai, dernier coup de la chaîne), une fois toutes les 4 s ; parchemin explosif ; bombe fumigène sur substitution ; course aux murs ×1,4 ; second saut ; relevé rapide. `tests/NinjaArts.spec` : 7 PASS.
+- **Rien ne se voit encore** : les effets des natures (`Infusion.<Nature>`) sont à l'ANIMATEUR. Le client sait déjà habiller un kunai de Feu, de Vent ou de Foudre (`FX:infuse`), mais pas de Terre ni d'Eau ; il reste à le brancher sur le champ `ninja` du projectile.
+
 **Étape 1 de l'OUTILLEUR, 20/11 (DEC-043 ; doc projet `claude/jeu-fini-vision-etapes-regles-2026-11-20` § 3)**
 - **Place commune automatique** (`tools/mac/place_commune.py`) : l'agent macOS `com.ninjaduel.placecommune` est en service depuis le 20/11, toutes les 2 min. Après un lot poussé et 3 min de calme, il reconstruit les 4 places au même commit et les pose dans `PLACES`.
   - Une place ouverte attend dans `PLACES/_prochaine` ; une place modifiée dans Studio est mise de côté.

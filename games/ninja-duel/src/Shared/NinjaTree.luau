@@ -2,8 +2,8 @@
 -- each kit's own (Shared/SkillTrees). Its points come from all the mastery a
 -- player has earned, whatever the kit (1 point every 15), and are never sold.
 --   NATURE    one chakra nature at a time: Fire, Wind, Lightning, Earth, Water
---   INFUSION  the nature on the kunai, then on the blade (the 3rd hit of the
---             basic string), then mastered (stronger, more visible)
+--   INFUSION  the nature on the kunai, then on the blade (the last hit of
+--             the basic string), then mastered (stronger, more visible)
 --   MOBILITY  longer wall runs, a second jump in the air, a quick get-up
 --   TOOLS     the explosive tag, the smoke bomb
 -- Pure and shared: the profile's record `ninja` (Server/ProfileSchema,
@@ -28,6 +28,13 @@ N.Infusion={
 	Earth={GuardDamage=10,Answer="a dodge avoids it whole"},
 	Water={Slow=.15,SlowTime=1.5,Answer="a substitution washes it off"},
 }
+-- The ninja's tools (Server/NinjaArts): the tag rides on a thrown blade once
+-- every TagEvery s and blows TagDelay s after it lands (step out); the smoke
+-- of a substitution hides him SmokeTime s (the rival loses him).
+N.Tools={TagEvery=8,TagDelay=1,TagRadius=6,TagDamage=8,TagKnock=34,TagLift=24,SmokeTime=1.5,SmokeRadius=7}
+-- Mobility (Server/Motor, Brawler.react): the second jump's share of a
+-- jump's height, the share of the time down a quick rise keeps.
+N.Mobility={AirJump=.85,QuickRise=.55}
 
 -- Nodes. Id: saved in profiles, never rename. Set: the fields it gives the
 -- fighter's def.Ninja while active. Requires: nodes learned and active first.
@@ -46,7 +53,7 @@ N.Nodes={
 	{Id="InfusedKunai",Branch="Infusion",Tier=1,Cost=6,NeedsNature=true,Set={KunaiInfused=true},
 		Name="INFUSED KUNAI",Shows="Your kunai carries your nature, in flight and on impact."},
 	{Id="InfusedBlade",Branch="Infusion",Tier=2,Cost=8,NeedsNature=true,Requires={"InfusedKunai"},Set={BladeInfused=true},
-		Name="INFUSED BLADE",Shows="The third hit of your basic string carries your nature."},
+		Name="INFUSED BLADE",Shows="The last hit of your basic string carries your nature."},
 	{Id="ElementMastery",Branch="Infusion",Tier=3,Cost=12,NeedsNature=true,Requires={"InfusedBlade"},Set={Mastery=true},
 		Name="ELEMENT MASTERY",Shows="Your nature hits half again as hard, and everyone sees it."},
 	{Id="WallRunner",Branch="Mobility",Tier=1,Cost=5,Set={WallRun=1.4},
@@ -54,11 +61,11 @@ N.Nodes={
 	{Id="CloudStep",Branch="Mobility",Tier=2,Cost=8,Requires={"WallRunner"},Set={AirJump=true},
 		Name="CLOUD STEP",Shows="A second jump in the air."},
 	{Id="QuickRise",Branch="Mobility",Tier=2,Cost=6,Set={QuickRise=true},
-		Name="QUICK RISE",Shows="You get up faster after a knockdown."},
+		Name="QUICK RISE",Shows="Knocked down, you are back up in half the time."},
 	{Id="ExplosiveTag",Branch="Tools",Tier=2,Cost=8,Set={ExplosiveTag=true},
-		Name="EXPLOSIVE TAG",Shows="A kunai carries a paper bomb that blows 1 s after it lands."},
+		Name="EXPLOSIVE TAG",Shows="Every 8 s a thrown blade carries a paper bomb: it blows 1 s after it lands."},
 	{Id="SmokeBomb",Branch="Tools",Tier=3,Cost=8,Set={SmokeBomb=true},
-		Name="SMOKE BOMB",Shows="A cloud that breaks the rival's lock on you for 1.5 s."},
+		Name="SMOKE BOMB",Shows="Your substitution leaves smoke: the rival loses you for 1.5 s."},
 }
 N.ById={}
 for _,node in N.Nodes do N.ById[node.Id]=node end

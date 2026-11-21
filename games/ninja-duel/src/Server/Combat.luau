@@ -29,6 +29,8 @@ local HitDetection = require(script.Parent.VelmoraHitDetection)
 local Defense = require(script.Parent.VelmoraDefense)
 -- Persistent typed zones (wind lanes, updrafts) beside the burning hazards.
 local Zones = require(script.Parent.Zones)
+-- (21/11, DEC-045) the ninja's tree in the fight (def.Ninja): infusions, tools.
+local NinjaArts = require(script.Parent.NinjaArts)
 local Combat = {}; Combat.__index = Combat
 function Combat.new(match)
 	return setmetatable({match=match,now=0,actors={},effects={},projectiles={},hazards={},historyAt=0,impacts={},impactSerial=0,projectileSerial=0},Combat)
@@ -625,6 +627,9 @@ function Combat:projectile(a,aim,speed,range,damage,kind,onSurface,opts)
 	-- A chakra plan (Chakra.plan / Chakra.innate) changes how this object flies
 	-- and what it does on contact; without one the throw is the plain one.
 	if opts.chakra then Chakra.arm(self,p,opts.chakra) end
+	-- A blade the player throws (the tool, a drawn kunai) carries his ninja's
+	-- nature and tag (NinjaArts; nothing without def.Ninja).
+	if opts.ninja then NinjaArts.armThrow(self,a,p) end
 	table.insert(self.projectiles,p)
 	self.urgent=true
 	return p
@@ -868,6 +873,8 @@ function Combat:substitute(a)
 		attacker.pursuitUntil=math.max(attacker.pursuitUntil,self.now+tune.Track)
 		self:cue(attacker,"SUBSTITUTION • E TO TRACK",tune.Track)
 	end
+	-- (21/11, DEC-045) the water's slow washes off; the smoke bomb hides him.
+	NinjaArts.substitute(self,a,attacker,departure)
 	if twist and twist.Mode=="burst" then return Techniques.rupture(self,a,attacker,twist) end
 	self:pushImpact(departure,"substitute",false,{owner=a.id,fighter=a.fighterId,to=a.root.Position,mode=mode})
 	self:effect("Afterimage",departure,a.color,Vector3.new(2,4,2),0.35)
@@ -1130,7 +1137,7 @@ function Combat:throwDrawn(a,aim)
 	a.armed=false;a.armAt=self.now+.3
 	a.neutralToolAt=self.now+(if cancel then .42 else .6)
 	self:beginThrow(a,{kind="Kunai",release=.08,count=1,interval=.08,aim=aim,fire=function(_,target)
-		self:projectile(a,target,100,if cancel then 24 else 62,5,"kunai")
+		self:projectile(a,target,100,if cancel then 24 else 62,5,"kunai",nil,{ninja=true})
 	end})
 	self:cue(a,if cancel then "KUNAI • FINISHER" else "KUNAI THROWN",.5)
 	return true
@@ -1405,6 +1412,8 @@ function Combat:requestInner(a,action,aim,clientTime,opts)
 		-- was refused "Airborne" with the body standing still.
 		if a.state=="Recovery" and not a.airborne then a.pending=nil;self:setState(a,"Neutral",0) end
 		local jumped=Motor.jump(a,self,self.now)
+		-- (21/11, DEC-045) Cloud Step: the second jump, in the air (Motor.jump).
+		if jumped and a.airJumpAt==self.now then Brawler.event(self,a,"AirJump");self:cue(a,"CLOUD STEP",.4) end
 		if jumped then ChakraFlow.leap(self,a) end
 		return jumped,"Airborne"
 	end
@@ -1509,7 +1518,7 @@ function Combat:requestInner(a,action,aim,clientTime,opts)
 				if count>1 then spread=a.root.CFrame.RightVector*((index-(count+1)/2)*(if count>2 then 1.6 else 1.8)) end
 				-- A mastery may throw its own object (ToolMastery.Projectile: a Looks
 				-- kind such as Haku's senbon) with family contact riders (Contact).
-				local p=self:projectile(a,target+spread,mastery.Speed,range,mastery.Damage,mastery.Projectile or (if blade then "kunai" else "shuriken"),nil,{chakra=infused,transform=if transform then mastery.Transform else nil})
+				local p=self:projectile(a,target+spread,mastery.Speed,range,mastery.Damage,mastery.Projectile or (if blade then "kunai" else "shuriken"),nil,{chakra=infused,transform=if transform then mastery.Transform else nil,ninja=true})
 				if p and mastery.Contact and not infused then p.family=mastery.Contact end
 			end})
 		self:cue(a,if infused then Chakra.label(infused) elseif transform then "KUNAI • TRANSFORMATION" elseif chainCancel then "CHAIN TOOL • KEEP PRESSURE" else (if blade then "KUNAI" else "SHURIKEN"))
@@ -2425,6 +2434,10 @@ function Combat:projectileHit(p,target,position,normal)
 	-- (Audit 04/11) this blow's guard (impactStyle is the last blow's: an
 	-- absorbed wave read a stale block and broke a guard that was never up).
 	local guarded=damaged and target.impactStyle=="block"
+	-- (21/11, DEC-045) the ninja's nature on the blade, his tag where it fell.
+	if p.ninja then NinjaArts.hit(self,p.a,target,"kunai",damaged,guarded) end
+	if p.tag then NinjaArts.tagEnd(self,p,target.root.Position) end
+	if self.match.phase~="Duel" then return end
 	-- A family object's contact fields (Families.contact): bind, drain, slow...
 	if p.family then
 		Families.projectileHit(self,p,target,damaged,guarded,position)
@@ -2478,6 +2491,7 @@ function Combat:projectileHit(p,target,position,normal)
 end
 function Combat:projectileSurface(p,hit)
 	Interactions.ended(self,p,hit.Position)
+	if p.tag and hit.Instance.CanCollide then NinjaArts.tagEnd(self,p,hit.Position+hit.Normal*.4) end
 	local style=if p.kind=="fireball" then "fire" elseif p.kind=="phoenix" then "ember" elseif p.kind=="wind" then "jutsu" elseif p.kind=="palm" then "palmburst" elseif Looks[p.kind] and not IMPACT_STYLE[p.kind] then "look" else "stick"
 	-- A family object that leaves a zone where it lands (an explosive tag).
 	if p.family and p.family.Charge and hit.Instance.CanCollide then Families.projectileEnd(self,p,hit.Position+hit.Normal*.4) end
@@ -2553,6 +2567,7 @@ function Combat:projectileExpire(p)
 	end
 	-- A family object that ends without a body may stay as a charge.
 	Families.projectileEnd(self,p,p.position)
+	NinjaArts.tagEnd(self,p,p.position)
 	if p.geometry and p.a.target and p.a.target.health>0 then
 		local b=p.a.target
 		self:pushImpact(p.position,"clash",false,{owner=p.a.id,fighter=p.a.fighterId,direction=p.direction,geometry=true,to=b.root.Position})

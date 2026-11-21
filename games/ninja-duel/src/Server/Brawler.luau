@@ -1,4 +1,6 @@
 local Shared=game:GetService("ReplicatedStorage").NinjaDuel
+-- (21/11, DEC-045) the ninja's tree in the fight (def.Ninja).
+local NinjaArts=require(script.Parent.NinjaArts)
 local Attacks=require(Shared.Attacks)
 local Motor=require(script.Parent.Motor)
 local DuelQuery=require(script.Parent.DuelQuery)
@@ -462,6 +464,8 @@ function Brawler.react(c,a,kind,velocity,duration,source,cause)
  a.locomotion=Vector3.zero
  if airReactions[kind] then a.airborne=true end
  if kind=="Knockdown" then
+  -- (21/11, DEC-045) Quick Rise (the ninja's tree): less time down.
+  duration=NinjaArts.downTime(a,duration);a.reactionUntil=c.now+duration
   a.invulnerableUntil=c.now+duration+.24
   a.groundPose="Knockdown"
   -- Which side the body rolls onto, taken from the incoming direction.
@@ -1573,6 +1577,10 @@ function Brawler.hit(c,a,p)
  if not success or b.health<=0 then return success end
  if protected then return true end
  if p.chakraFlow then require(script.Parent.ChakraFlow).hit(c,a,b,p,guarded) end
+ -- (21/11, DEC-045) the end of the basic string carries the ninja's nature
+ -- (NinjaArts: burn, paralysis, cracked guard, slow; Wind pushes further below).
+ local nature=if p.name=="Light3" then NinjaArts.hit(c,a,b,"blade",true,guarded,spec.stun or 0) else nil
+ if b.health<=0 or c.match.phase~="Duel" then return true end
  if a.def.GentleFist then Brawler.gentleFist(c,a,b,guarded,p.spec.zone,true) end
  -- Flying Thunder God: the arrival strike lands on a body still inside the
  -- combo that led to the teleport. The chain went on through the relocation.
@@ -1627,6 +1635,7 @@ function Brawler.hit(c,a,p)
  -- the side the stick asked for instead of straight away.
  if spec.lateral then forward=a.root.CFrame.RightVector*(if (a.angleSide or 0)~=0 then a.angleSide else 1) end
  local impulse=forward*spec.impulse.Z+Vector3.yAxis*spec.impulse.Y
+ if nature=="Wind" then impulse=NinjaArts.gust(a,impulse) end
  -- What the body took: the client answers a head snap, a fold, a swept base.
  b.hitZone=spec.zone;b.hitKind=spec.kind;b.hitTwist=(spec.side or 1)*(if (a.angleSide or 0)~=0 and spec.orbit then a.angleSide else 1)
  -- A strike that backs off as it lands (Attacks retreat, studs: Madara's heel

@@ -563,7 +563,7 @@ function Matches:view(s,cursor,mine,theirs)
 			hitFrom=a.hitFrom,hitAngle=a.hitAngle,hitStrength=a.hitStrength or 0,hitZone=a.hitZone,hitKind=a.hitKind,hitTwist=a.hitTwist,groundPose=a.groundPose,groundSide=a.groundSide,koStyle=a.koStyle,koAirborne=a.koAirborne,koFlying=a.koFlight~=nil,reactionElapsed=math.max(0,s.combat.now-(a.reactionStartedAt or s.combat.now)),
 			-- (Audit 29/10) Only the counters the client reads: every event count
 			-- (80+ names, never reset) went out 30 times a second.
-			events=if a.events then {Parry=a.events.Parry,ReadSlip=a.events.ReadSlip,Draw=a.events.Draw,Awaken=a.events.Awaken} else nil,velocity=if a.state=="Dodging" then (a.dodgeDirection or Vector3.zero)*35 else a.root.AssemblyLinearVelocity,
+			events=if a.events then {Parry=a.events.Parry,ReadSlip=a.events.ReadSlip,Draw=a.events.Draw,Awaken=a.events.Awaken,AirJump=a.events.AirJump} else nil,velocity=if a.state=="Dodging" then (a.dodgeDirection or Vector3.zero)*35 else a.root.AssemblyLinearVelocity,
 			-- Presentation timing for throws, casts, teleports and variants:
 			-- elapsed values are measured on the server clock the client shares.
 			attackSerial=a.attackSerial or 0,attackVariant=a.attackVariant,armed=a.armed==true,ultimate=a.ultimate or 0,ultimateReady=Ultimates.ready(a),
@@ -616,7 +616,10 @@ function Matches:view(s,cursor,mine,theirs)
 			-- (06/11) The jutsu Kakashi's Sharingan holds (his eye stays lit).
 			copy=Copy.view(s.combat,a),
 			-- (06/11) Soaked by the water (Interactions): lightning runs through him.
-			wet=require(script.Parent.Interactions).wet(s.combat,a)}
+			wet=require(script.Parent.Interactions).wet(s.combat,a),
+			-- (21/11, DEC-045) his ninja's tree in the duel (NinjaArts.view): nature,
+			-- infused kunai and blade, the tag ready, the smoke, the second jump.
+			ninja=require(script.Parent.NinjaArts).view(s.combat,a)}
 	end
 	-- Live projectiles: straight constant-speed flights the client reproduces
 	-- exactly on the shared server clock, so blades and fire never stutter.
@@ -628,7 +631,9 @@ function Matches:view(s,cursor,mine,theirs)
 		-- they mean (mark), their surface normal, their expiry and live charge
 		-- (server clock), and a held wire the body it holds and its stake.
 		table.insert(projectiles,{id=p.id,kind=p.kind,origin=p.origin,direction=p.direction,speed=p.speed,born=p.born,range=p.range,owner=p.a.id,caster=p.a.fighterId,radius=p.radius,growth=p.growth,infusion=p.infusion,planted=p.planted,
-			mark=p.mark,normal=p.normal,expires=p.expires,charged=p.charged,holds=p.holds and p.holds.id,anchored=p.anchored,hidden=p.hidden})
+			mark=p.mark,normal=p.normal,expires=p.expires,charged=p.charged,holds=p.holds and p.holds.id,anchored=p.anchored,hidden=p.hidden,
+			-- (21/11, DEC-045) the ninja's nature it carries, the explosive tag on it (NinjaArts).
+			ninja=p.ninja,tag=p.tag})
 	end
 	local hazards={}
 	for _,h in s.combat.hazards do

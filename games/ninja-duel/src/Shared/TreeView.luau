@@ -63,7 +63,7 @@ function V.layout(kit,state)
 		local branch=byName[node.Branch]
 		if not branch then branch={name=Text.upper(node.Branch),nodes={}};byName[node.Branch]=branch;table.insert(out.branches,branch) end
 		table.insert(branch.nodes,{id=node.Id,name=node.Name,cost=node.Cost,kind=node.Kind,kindLabel=KIND_LABEL[node.Kind] or "",
-			major=node.Major==true,item=node.Item,status=V.status(kit,state,node),tier=TreeTiers.of(node),requires=node.Requires})
+			major=node.Major==true,transform=node.Transform==true,item=node.Item,status=V.status(kit,state,node),tier=TreeTiers.of(node),requires=node.Requires})
 	end
 	-- The grid the panel draws: the tiers as rows, the branches as columns.
 	local mastery=state and state.mastery or 0

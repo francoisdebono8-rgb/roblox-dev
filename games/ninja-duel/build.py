@@ -187,6 +187,7 @@ TEST_RUNNERS.append(('lune','tests/VillageDuel.spec.luau'))
 # (20/11, DEC-043) The ladder, merit and the leaderboards.
 TEST_RUNNERS.append(('lune','tests/Ranked.spec.luau'))
 TEST_RUNNERS.append(('lune','tests/NinjaTree.spec.luau'))
+TEST_RUNNERS.append(('lune','tests/NinjaArts.spec.luau'))
 # (20/11, DEC-043) The CM's words for the eight prodigies: titles on screen, « pourquoi ce kit », what only this kit does.
 TEST_RUNNERS.append(('lune','tests/KitTexts.spec.luau'))
 def run_automated():

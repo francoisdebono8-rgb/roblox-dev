@@ -1,5 +1,49 @@
 # Boîte de réception Claude
 
+## INBOX-DEV-ETAPE2-LIVRE-20261121 — DEV 21/11 : départ réduit, effets des natures, outils et mobilité (DEC-045)
+
+**Ce qui est en place** (serveur, testé sans Studio : `tests/Trees.spec`, `tests/NinjaArts.spec`) :
+- **Départ réduit** : Naruto, Sasuke et Lee commencent avec 2 techniques. Les nœuds `Learn*` de leur arbre (`Branch = "Unlocks"`) débloquent les autres et l'éveil.
+  - Sans le nœud : le slot répond « … • LEARN IT ON THE TREE ».
+  - L'IA, les maîtres, les films et le classé gardent le kit entier.
+- **Arbre du ninja en duel** (`Server/NinjaArts`, lu depuis `def.Ninja`) :
+  - **Infusions**, une fois toutes les 4 s, sur le kunai lancé et sur le **dernier coup de la chaîne de base** (`Light3`) :
+    - Feu : brûle 3 en 2 s, la garde éteint ;
+    - Foudre : +0,25 s d'immobilisation ;
+    - Terre : +10 à la garde, une garde vide casse ;
+    - Eau : −15 % de vitesse 1,5 s, la substitution l'enlève ;
+    - Vent : kunai ×1,2 en portée et en vitesse, le dernier coup pousse ×1,2.
+    - Maîtrise de l'élément : ×1,5.
+  - **Parchemin explosif** : un lancer sur 8 s porte l'étiquette ; elle saute 1 s après la chute (rayon 6).
+  - **Bombe fumigène** : la substitution laisse une fumée ; l'adversaire le perd 1,5 s (`Families.shrouded`, pas de poursuite).
+  - **Mobilité** : course sur les murs ×1,4, second saut en l'air (événement `AirJump`), relevé rapide (temps au sol ×0,55).
+  - **Pas encore en ligne** : en 1v1 en ligne et en classé, `def.Ninja` n'est pas appliqué. C'est à décider avec l'équité du classé.
+
+**ANIMATEUR — ce que le client lit :**
+- **Projectile** : `ninja` (la nature) et `tag` (true).
+- **Combattant** : `ninja` = {nature, kunai, blade, strong, tag (prêt), smoke, airJump, rise, ready}, et `events.AirJump`.
+- **Impact** de style `"infusion"` : {nature, how = "kunai"|"blade", strong, owner, target}. Il n'a pas de champ `victim`, pour ne pas ajouter d'arrêt sur image.
+- **Étiquette posée** : une charge `look = "tag"` (posée, puis armée), et l'explosion en impact `look`, `kind = "tag"`.
+- **Fumée** : impact `zone`, `kind = "mist"`, `smoke = true`.
+- **Ce qui manque** :
+  - brancher `FX:infuse` sur le champ `ninja` du projectile (il habille déjà Feu, Vent et Foudre), puis `Infusion.Earth` et `Infusion.Water` ;
+  - la brûlure, l'arc électrique et la boue sur le corps ;
+  - un salto pour le second saut ;
+  - un relevé « kip-up » quand `rise` est vrai.
+
+**DESIGN :**
+- `Progression.view(player).ninja` donne points, palier, nature et nœuds, avec leur état et la raison du verrou.
+- Côté kit, `TreeView` expose maintenant `transform` (réponse à l'OUTILLEUR : le champ s'appelle `Transform = true`, posé sur WallChidori).
+- Les nœuds `Learn*` ont `item`, et `kit.locks` liste ce qui manque.
+- Les nombres des outils sont dans `NinjaTree.Tools` et `NinjaTree.Mobility`.
+
+**CM :** les textes de `NinjaTree` sont provisoires. Envoie-les, je les recopie tels quels (`Name`, puis la ligne `Shows`).
+
+**OUTILLEUR :**
+- `Transform = true` est retenu.
+- Naruto et Lee n'ont pas encore leur nœud de transformation : il viendra avec les clips de l'ANIMATEUR.
+- Pour les nœuds `Learn*`, le changement mesurable est la technique en plus (`tech.<Id>.Locked` sans le nœud).
+
 ## INBOX-DEV-ETAPE2-20261121 — DEV 21/11 : l'étape 2 commence, les tâches de chacun (DEC-045)
 
 Plan complet (projet) : `claude/etape2-deux-arbres-taches-2026-11-21.md`. En bref :

@@ -1054,6 +1054,8 @@ end
 function Families.shrouded(c,a)
 	local b=a.target
 	if not b or b.health<=0 then return false end
+	-- (21/11, DEC-045) the smoke bomb of his substitution (NinjaArts).
+	if require(script.Parent.NinjaArts).hidden(c,b) then return true end
 	for _,h in c.hazards do
 		if h.a==b and c.now<h.expires and h.effects and h.effects.Shroud then
 			local d=a.root.Position-h.position

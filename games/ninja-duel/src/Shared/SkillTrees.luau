@@ -316,7 +316,9 @@ return {
 		{ Id = "ChidoriEconomy", Tier = 2, Name = "Chidori Economy", Branch = "Katon & Chidori", Kind = "property", Cost = 5, Requires = { "ChidoriFocus" },
 			Effects = { { "tech.Chidori.Cost", "add", -4 } },
 			Shows = "Chidori costs 30 chakra instead of 34.", Counter = "Same 9 s cooldown and punishable recovery.", Lore = "CANON_YOUNG" },
-		{ Id = "WallChidori", Tier = 3, Name = "Wall Chidori", Branch = "Katon & Chidori", Kind = "jutsu", Major = true, Cost = 12, Requires = { "ChidoriFocus" },
+		-- (21/11, DEC-045) Transform: the node at the top of the tree that changes
+		-- a technique on sight (the fiche and the tree screen show it first).
+		{ Id = "WallChidori", Tier = 3, Name = "Wall Chidori", Branch = "Katon & Chidori", Kind = "jutsu", Major = true, Transform = true, Cost = 12, Requires = { "ChidoriFocus" },
 			Effects = { { "tech.Chidori.WallCharge", "set", 0.3 } },
 			Shows = "Cast from a wall run, the Chidori charges in 0.3 s while he hangs on the wall, then the thrust dives at the opponent.",
 			Counter = "The charge is visible and still interruptible by blades; side-step the dive line.", Lore = "CANON_YOUNG" },
