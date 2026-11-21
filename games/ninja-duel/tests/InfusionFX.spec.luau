@@ -83,25 +83,38 @@ test("the 3rd hit: the striking limb carries it, then it is cleared",function()
 	end
 end)
 
-test("in the duel: the snapshot's fields drive it (p.nature, impact.nature, actor.infused)",function()
+test("in the duel: the DEV's fields drive it (p.ninja, actor.ninja + Light3, impact \"infusion\")",function()
 	local fx={folder=Instance.new("Folder"),layers={},projectiles={}}
 	local layer=Infusion.install(fx,nil)
 	assert(fx.layers[1]==layer,"first in line")
 	local m,root=kunai()
-	fx.projectiles[1]={data={nature="Wind",strong=true},model=m,root=root}
-	fx.projectiles[2]={data={},model=kunai()}
-	layer.frame(fx);layer.frame(fx)
-	assert(fx.projectiles[1].infusion2 and fx.projectiles[1].infusion2.nature=="Wind","the kunai was not dressed")
+	local data={human={id="P1",ninja={nature="Wind",strong=true}},bot={id="AI"}}
+	fx.projectiles[1]={data={ninja="Wind",owner="P1"},model=m,root=root}
+	local m2,r2=kunai()
+	fx.projectiles[2]={data={ninja=true,owner="P1"},model=m2,root=r2}
+	layer.frame(fx,data);layer.frame(fx,data)
+	local d=fx.projectiles[1].infusion2
+	assert(d and d.nature=="Wind" and d.strong,"the kunai was not dressed (or not strong)")
 	assert(fx.projectiles[2].infusion2==nil,"a plain kunai was dressed")
-	assert(layer.impact(fx,{nature="Earth",position=Vector3.new(1,2,3)})==nil,"the blow's own contact must still play")
-	assert(named(fx.folder,"Infusion.Earth")>0)
+	local arena=Instance.new("Folder")
+	local target=body();target.Name="AI";target.Parent=arena
+	assert(layer.impact(fx,{style="infusion",nature="Fire",how="kunai",target="AI",position=Vector3.new(1,2,3)},arena)==true)
+	assert(named(fx.folder,"Infusion.Fire")>0,"no burst")
+	assert(target:GetAttribute("InfusionBody")=="Fire" and named(target,"Infusion.Fire.Body")>0,"the target does not burn")
+	assert(layer.impact(fx,{style="hit",position=Vector3.zero},arena)==nil,"another style taken")
+	for _,n in Infusion.NATURES do assert(Infusion.body(body(),n,true),n..": nothing on the body") end
 	local b=body()
-	layer.fighter(fx,b,{fighterId="Leaf",infused="Fire"})
+	local actor={fighterId="Leaf",attackName="Light3",state="Startup",ninja={nature="Fire",blade=true,ready=true}}
+	layer.fighter(fx,b,actor)
 	assert(b:GetAttribute("Infusion")=="Fire" and named(b.RightFoot,"Infusion.Fire")>0,"Lee's kick")
-	layer.fighter(fx,b,{fighterId="Leaf",infused="Fire"})
 	local count=named(b,"Infusion.Fire")
-	layer.fighter(fx,b,{fighterId="Leaf",infused="Fire"})
+	layer.fighter(fx,b,actor)
 	assert(named(b,"Infusion.Fire")==count,"rebuilt every frame")
+	local c=body()
+	layer.fighter(fx,c,{fighterId="Leaf",attackName="Light3",state="Active",ninja={nature="Fire",blade=true,ready=false}})
+	layer.fighter(fx,c,{fighterId="Leaf",attackName="Light2",state="Active",ninja={nature="Fire",blade=true,ready=true}})
+	layer.fighter(fx,c,{fighterId="Leaf",attackName="Light3",state="Active",infused="Fire"})
+	assert(named(c,"Infusion.Fire")==0,"drawn when the blade is not ready, on another hit, or from a chakra flow")
 end)
 
 test("the explosive tag and the smoke bomb build, and their layer answers",function()
@@ -126,11 +139,47 @@ test("the explosive tag and the smoke bomb build, and their layer answers",funct
 	fx.projectiles.a={data={tag=true},model=k2,root=r2}
 	layer.frame(fx)
 	assert(fx.projectiles.a.tagDecor,"the tagged kunai")
-	assert(layer.impact(fx,{style="stick",tag=true,position=Vector3.new(0,1,-5),direction=Vector3.new(0,0,-1),normal=Vector3.zAxis})==nil)
-	assert(named(fx.folder,"ExplosiveTag")==1,"no fuse on the planted kunai")
-	assert(layer.impact(fx,{style="tagBlast",position=Vector3.new(0,1,-5)})==true)
-	assert(layer.impact(fx,{style="smoke",position=Vector3.zero})==true)
+	assert(layer.impact(fx,{style="look",kind="tag",position=Vector3.new(0,1,-5),radius=6})==true,"the blast")
+	assert(named(fx.folder,"TagScrap")>0)
+	assert(layer.impact(fx,{style="zone",kind="mist",smoke=true,position=Vector3.zero,radius=7,time=1.5})==true,"the smoke")
 	assert(named(fx.folder,"SmokeCloud")==1)
+	assert(layer.impact(fx,{style="zone",kind="mist",position=Vector3.zero})==nil,"another mist taken")
+	assert(layer.impact(fx,{style="look",kind="crows",position=Vector3.zero})==nil,"another look taken")
+	-- the planted tag: a Families charge whose look is "tag"; the other looks stay FamilyFX's
+	local FX2={layers={},hazardBuild=function() return {family=true,other=true} end,hazardFinish=function(e) e.finished=true end}
+	FX2.buildKunai=function() local km=kunai();return km end
+	local t2=Tools.install(FX2,{})
+	assert(t2)
+	local fx2=setmetatable({folder=Instance.new("Folder")},{__index=FX2})
+	local entry=FX2.hazardBuild(fx2,{look="tag",position=Vector3.new(0,0,0)})
+	assert(entry and entry.ninjaTag and entry.family and named(fx2.folder,"ExplosiveTag")==1,"the planted tag")
+	FX2.hazardFinish(entry)
+	local other=FX2.hazardBuild(fx2,{look="ink",position=Vector3.zero})
+	assert(other.other,"another look drawn by the tag")
+	FX2.hazardFinish(other)
+	assert(other.finished,"another look not finished by FamilyFX")
+end)
+
+local Transform=H.load("Client/TransformFX")
+test("the three transformations: the wall burns, the thrown Rasengan, the Lotus into the Entry",function()
+	local folder=Instance.new("Folder")
+	local scar=Transform.scorch(folder,Vector3.new(0,2,0),Vector3.new(1,0,0),Vector3.new(0,1,0))
+	assert(scar.Parent==folder and named(folder,"WallChidoriBurn")==2,"the burn on the wall")
+	local m,decor=Transform.buildRasengan()
+	assert(m.PrimaryPart and named(m,"WindBand")==2 and named(m,"RasenganWake")==1)
+	for _=1,5 do decor.step(1/60) end
+	local BUILD={}
+	local fx={folder=Instance.new("Folder"),layers={},projectiles={}}
+	local layer=Transform.install(fx,{BUILD=BUILD})
+	local r=BUILD.rasengan()
+	assert(r:GetAttribute("TransformRasengan"),"BUILD.rasengan")
+	fx.projectiles[1]={data={kind="rasengan"},model=r,root=r.PrimaryPart}
+	layer.frame(fx)
+	-- the fighters' states that are not theirs draw nothing (and nothing breaks without a wall)
+	local b=body()
+	layer.fighter(fx,b,{fighterId="Lion",castId="FireBloom",state="TechniqueChannel"})
+	layer.fighter(fx,b,{fighterId="Leaf",attackVariant="PrimaryLotus",attackName="Slam",state="Active"})
+	assert(named(fx.folder,"LotusEntryRing")==0)
 end)
 
 print(("NinjaDuel infusions and tools: %d PASS"):format(passed))

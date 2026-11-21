@@ -2639,6 +2639,9 @@ end
 -- 3rd hit (InfusionFX, Infusion.<Nature>), the explosive tag and the smoke bomb (NinjaToolsFX).
 require(script.Parent.InfusionFX).install(FX,{sound=sound,anchorPart=anchorPart,SOUND=SOUND})
 require(script.Parent.NinjaToolsFX).install(FX,{sound=sound,anchorPart=anchorPart,SOUND=SOUND,BUILD=BUILD})
+-- (21/11, étape 2) The three transformations at the top of the kit trees (Wall Chidori, the
+-- thrown Rasengan, the Lotus into the Dynamic Entry).
+require(script.Parent.TransformFX).install(FX,{BUILD=BUILD})
 -- Naruto (clone puffs, the Rasengan shaped with a clone, the barrage, the Nine-Tails cloak).
 require(script.Parent.NarutoFX).install(FX,{new=new,block=block,tween=tween,sound=sound,flash=flash,shockRing=shockRing,burst=burst,
 	smokePuff=smokePuff,floorUnder=floorUnder,anchorPart=anchorPart,weldAll=weldAll,num=num,seq=seq,TEX=TEX,SOUND=SOUND,BUILD=BUILD})

@@ -11,11 +11,8 @@
 --                       breaks the lock (1.5 s), then thins out and drifts.
 --
 -- Naruto part I: the tags are paper with a red seal (Kakashi, Zabuza's bridge), the smoke
--- bombs are white (the chūnin exams). Presentation only; what the server sends:
---   a projectile p.tag = true (a kunai carrying a tag), p.kind = "smoke" (a smoke bomb);
---   an impact style "stick" with impact.tag (the tagged kunai planted: the fuse starts),
---     style "tagBlast" (it blows: position, normal, radius), style "smoke" (the cloud:
---     position, radius, time).
+-- bombs are white (the chūnin exams). Presentation only; the server's fields are listed at
+-- Tools.install.
 local AwakenFX=require(script.Parent.AwakenFX)
 local emit=AwakenFX.emitter
 local TweenService=game:GetService("TweenService")
@@ -211,15 +208,58 @@ function Tools.smoke(folder,position,radius,time)
 end
 
 -- ------------------------------------------------------------------ in the duel
+-- On the DEV's fields (Server/NinjaArts, 21/11):
+--   projectile  p.tag = true (the kunai carries the tag)
+--   hazard      look "tag" (Families charge, posed where the tagged blade ended, blown
+--               TagDelay = 1 s later): drawn here as the planted kunai and its burning tag
+--   impact      style "look", kind "tag": the blast (position, radius)
+--   impact      style "zone", kind "mist", smoke = true: the smoke bomb of a substitution
+--               (position, radius, time)
+-- A smoke-bomb projectile (p.kind "smoke") is drawn too, should one be thrown.
 function Tools.install(FX,kit)
 	if kit and kit.BUILD and not kit.BUILD.smoke then
 		kit.BUILD.smoke=function() return Tools.buildSmokeBomb() end
 	end
-	local layer={}
+	-- the planted tag is a Families charge: its look is ours (the other looks stay FamilyFX's)
+	local function wrapHazards()
+		if rawget(FX,"ninjaTagWrapped") or not FX.hazardBuild then return end
+		FX.ninjaTagWrapped=true
+		local build,finish=FX.hazardBuild,FX.hazardFinish
+		FX.hazardBuild=function(fx,h)
+			if h.look~="tag" then return build(fx,h) end
+			local into=Vector3.new(0,-1,0)
+			local at=h.position
+			local ok,hit=pcall(function()
+				local params=RaycastParams.new();params.FilterType=Enum.RaycastFilterType.Exclude
+				params.FilterDescendantsInstances={fx.folder,fx.fighters}
+				return workspace:Raycast(at+Vector3.new(0,1.5,0),Vector3.new(0,-6,0),params)
+			end)
+			if ok and hit then at=hit.Position end
+			local holder=Instance.new("Model");holder.Name="PlantedTag";holder.Parent=fx.folder
+			local kunai=fx.buildKunai and fx.buildKunai(false)
+			if kunai then
+				kunai.Parent=holder
+				pcall(function() kunai:PivotTo(CFrame.lookAt(at-into*.45,at-into*.45+into)) end)
+			end
+			local tag=Tools.fuse(holder,at,into,Vector3.yAxis,h.arm or Tools.FUSE)
+			local anchor=part(holder,Vector3.new(.2,.2,.2),CFrame.new(at),Color3.new());anchor.Transparency=1;anchor.Name="Holder"
+			return {holder=anchor,model=holder,tag=tag,family=true,ninjaTag=true}
+		end
+		FX.hazardFinish=function(entry)
+			if entry and entry.ninjaTag then
+				if entry.model then pcall(function() Debris:AddItem(entry.model,.05) end) end
+				return
+			end
+			return finish(entry)
+		end
+	end
+	wrapHazards()
+	local layer={name="NinjaTools"}
 	layer.frame=function(self)
+		wrapHazards()
 		for _,entry in self.projectiles or {} do
 			local p=entry.data
-			if p and p.tag and not entry.tagDecor and entry.model and entry.root then
+			if p and p.tag and entry.tagDecor==nil and entry.model and entry.root then
 				entry.tagDecor=Tools.tagKunai(entry.model,entry.root) or false
 			end
 			if entry.tagDecor then pcall(entry.tagDecor.step,1/60) end
@@ -228,21 +268,18 @@ function Tools.install(FX,kit)
 	layer.impact=function(self,impact)
 		local pos=impact.position
 		if not pos then return nil end
-		if impact.style=="stick" and impact.tag then
-			Tools.fuse(self.folder,pos,impact.direction,impact.normal,impact.fuse)
-			if kit and kit.sound then pcall(kit.sound,kit.anchorPart(self.folder,pos),"rbxasset://sounds/action_swim.mp3",.25,2.2) end
-			return nil
-		elseif impact.style=="tagBlast" then
+		if impact.style=="look" and impact.kind=="tag" then
 			Tools.blast(self,pos,impact.normal,impact.radius)
 			return true
-		elseif impact.style=="smoke" then
+		elseif impact.style=="zone" and impact.kind=="mist" and impact.smoke then
 			Tools.smoke(self.folder,pos,impact.radius,impact.time)
 			if kit and kit.sound and kit.SOUND then pcall(kit.sound,kit.anchorPart(self.folder,pos),kit.SOUND.whoosh,.5,.6) end
 			return true
 		end
 		return nil
 	end
-	table.insert(FX.layers,layer)
+	-- before the family looks (FamilyFX would draw the zone and the look its own way)
+	table.insert(FX.layers,1,layer)
 	return layer
 end
 

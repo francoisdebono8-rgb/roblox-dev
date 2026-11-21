@@ -18,13 +18,11 @@
 -- than a flat star; the infused hit has to read at the duel camera's distance in one look,
 -- and it must never be mistaken for a jutsu (it stays on the weapon and the limb, small).
 --
--- What the client reads (the DEV's, Server combat, étape 2):
---   a projectile in the snapshot: p.nature = "Fire".."Water" (an infused kunai), p.strong
---     (ELEMENT MASTERY);
---   an impact: impact.nature (+ impact.strong): the kunai's or the 3rd hit's contact;
---   a fighter: actor.infused = nature while his infused blow is out (the 3rd hit).
---   The player's chosen nature is the attribute NinjaNature (Server/Progression): the
---   preview (TreePanel, the DESIGN's) can call InfusionFX.limb / InfusionFX.kunai with it.
+-- What the client reads (the DEV's, Server/NinjaArts, 21/11): the projectile's `ninja` (its
+-- nature), the fighter's `ninja` view (nature, blade, strong, ready) with his attackName, and
+-- the impacts of style "infusion" (see InfusionFX.install). The player's chosen nature is the
+-- attribute NinjaNature (Server/Progression): a preview (TreePanel, the DESIGN's) can call
+-- InfusionFX.limb / InfusionFX.kunai with it.
 -- Presentation only.
 local AwakenFX=require(script.Parent.AwakenFX)
 local emit=AwakenFX.emitter
@@ -377,38 +375,142 @@ function InfusionFX.limb(model,limb,nature,strong,time)
 	return made,clear
 end
 
+-- ------------------------------------------------------------------ on the struck body
+-- What the nature did to the body it reached (the server only sends the impact when the
+-- effect went off): Fire burns for its 2 s (flames licking, a char tint), Lightning locks
+-- him in arcs for the stun, Water leaves him dripping and dark for the slow, Earth cracks
+-- the guard (stone chips off the arms).
+function InfusionFX.body(model,nature,strong,time)
+	local look=InfusionFX.LOOK[nature or ""]
+	if not look or not model then return nil end
+	local k=if strong then InfusionFX.STRONG else 1
+	local name=InfusionFX.id(nature)..".Body"
+	local made={}
+	local torso=model:FindFirstChild("UpperTorso") or model:FindFirstChild("Torso") or model:FindFirstChild("HumanoidRootPart")
+	if not torso then return nil end
+	local function on(partName,tex,spec)
+		local p=model:FindFirstChild(partName)
+		if not (p and p:IsA("BasePart")) then return end
+		local at=attach(p,name);table.insert(made,at)
+		local e=emit(at,tex,spec);e.Name=name;e.Enabled=true;table.insert(made,e)
+	end
+	if nature=="Fire" then
+		time=time or 2
+		for _,n in {"UpperTorso","LeftUpperArm","RightUpperLeg"} do
+			on(n,"flame",{Rate=14*k,Lifetime=range(.25,.45),Speed=range(1,2.5),SpreadAngle=Vector2.new(25,25),Acceleration=Vector3.new(0,4,0),
+				Shape=Enum.ParticleEmitterShape.Box,ShapeStyle=Enum.ParticleEmitterShapeStyle.Surface,
+				Color=cols(look.core,look.color,look.dark),LightEmission=.8,Size=seq({{0,.6*k},{1,.1}}),Transparency=seq({{0,.15},{1,1}}),ZOffset=.4})
+		end
+		on("Head","smoke",{Rate=5,Lifetime=range(.6,1),Speed=range(1,2),Acceleration=Vector3.new(0,3,0),Color=cols(C(70,62,58)),
+			Size=seq({{0,.6},{1,1.6}}),Transparency=seq({{0,.5},{1,1}})})
+	elseif nature=="Lightning" then
+		time=time or .3
+		for _,n in {"UpperTorso","LeftLowerArm","RightLowerArm","LeftLowerLeg","RightLowerLeg"} do
+			on(n,"spark",{Rate=50*k,Lifetime=range(.04,.09),Speed=range(3,8),SpreadAngle=Vector2.new(180,180),
+				Shape=Enum.ParticleEmitterShape.Box,ShapeStyle=Enum.ParticleEmitterShapeStyle.Surface,
+				Color=cols(look.core,look.color),LightEmission=1,Size=seq({{0,.35*k},{1,0}}),Rotation=range(0,360)})
+		end
+		local folder=model
+		local rng=newRng()
+		local ok,centre=pcall(function() return torso.Position end)
+		if not ok then centre=Vector3.zero end
+		for _=1,3 do
+			local list={}
+			local a0=centre+Vector3.new(rng:NextNumber(-1,1),rng:NextNumber(-1.5,1.2),rng:NextNumber(-.5,.5))
+			arc(folder,a0,a0+Vector3.new(rng:NextNumber(-1.2,1.2),rng:NextNumber(-1,1),rng:NextNumber(-.6,.6)),rng,.05,look.core,list)
+			for _,seg in list do seg.Name=name;table.insert(made,seg);fade(seg,math.min(time,.25),{Transparency=1}) end
+		end
+	elseif nature=="Water" then
+		time=time or 1.5
+		for _,n in {"Head","UpperTorso","LeftLowerArm","RightLowerArm"} do
+			local p=model:FindFirstChild(n)
+			if p and p:IsA("BasePart") then
+				local at=attach(p,name);table.insert(made,at)
+				local drops=Instance.new("ParticleEmitter")
+				drops.Name=name;drops.Texture=DROPLETS;drops.FlipbookLayout=Enum.ParticleFlipbookLayout.Grid4x4;drops.Rate=8*k
+				drops.Lifetime=range(.35,.55);drops.Speed=range(0,.5);drops.Acceleration=Vector3.new(0,-30,0);drops.Shape=Enum.ParticleEmitterShape.Box
+				drops.Color=cols(look.core,look.color);drops.LightInfluence=0;drops.Size=seq({{0,.3},{1,.15}});drops.Parent=at
+				table.insert(made,drops)
+			end
+		end
+	elseif nature=="Earth" then
+		time=time or .5
+		for _,n in {"LeftLowerArm","RightLowerArm"} do
+			on(n,"debris",{Rate=0,Lifetime=range(.4,.6),Speed=range(4,8),SpreadAngle=Vector2.new(70,70),Acceleration=Vector3.new(0,-40,0),
+				Color=cols(look.color,look.dark),Size=range(.25,.4),Rotation=range(0,360),RotSpeed=range(-200,200)})
+			local e=made[#made]
+			if e and e:IsA("ParticleEmitter") then e.Enabled=false;pcall(function() e:Emit(math.floor(6*k)) end) end
+		end
+	else
+		time=time or .5
+	end
+	model:SetAttribute("InfusionBody",nature)
+	local function clear()
+		for _,x in made do
+			if x.Parent then
+				if x:IsA("ParticleEmitter") then x.Enabled=false end
+				pcall(function() Debris:AddItem(x,.6) end)
+			end
+		end
+		if model:GetAttribute("InfusionBody")==nature then model:SetAttribute("InfusionBody",nil) end
+	end
+	later(time,clear)
+	return made,clear
+end
+
 -- ------------------------------------------------------------------ in the duel
--- A layer of Client/Effects (FX.layers): the snapshot's infused kunai, the infused impacts,
--- the fighter whose infused 3rd hit is out.
+-- A layer of Client/Effects (FX.layers), on the DEV's fields (Server/NinjaArts, 21/11):
+--   projectile  p.ninja = the nature (a string) when the kunai is infused, p.owner
+--   fighter     actor.ninja = {nature, kunai, blade, strong, tag, smoke, airJump, rise, ready},
+--               actor.attackName (the 3rd hit is "Light3")
+--   impact      style "infusion" {nature, how = "kunai" | "blade", strong, owner, target,
+--               position}: the nature's effect went off on the target
+local TIME={Fire=2,Lightning=.3,Water=1.5,Earth=.5,Wind=.3}
 function InfusionFX.install(FX,kit)
-	local layer={}
-	layer.frame=function(self)
+	local layer={name="Infusion"}
+	local function actorOf(data,id)
+		for _,key in {"human","bot"} do
+			local a=data and data[key]
+			if a and a.id==id then return a end
+		end
+		return nil
+	end
+	layer.frame=function(self,data)
 		for _,entry in self.projectiles or {} do
 			local p=entry.data
-			if p and p.nature and not entry.infusion2 and entry.model and entry.root then
-				entry.infusion2=InfusionFX.kunai(entry.model,entry.root,p.nature,p.strong) or false
+			local nature=p and (if type(p.ninja)=="string" then p.ninja else p.nature)
+			if nature and InfusionFX.valid(nature) and entry.infusion2==nil and entry.model and entry.root then
+				local owner=actorOf(data,p.owner)
+				local strong=p.strong or (owner and owner.ninja and owner.ninja.strong)
+				entry.infusion2=InfusionFX.kunai(entry.model,entry.root,nature,strong) or false
 			end
 			if entry.infusion2 then pcall(entry.infusion2.step,1/60) end
 		end
 	end
-	layer.impact=function(self,impact)
-		if impact.nature and impact.position and InfusionFX.valid(impact.nature) then
-			InfusionFX.impact(self.folder,impact.position,impact.nature,impact.strong,impact.direction,impact.normal)
-			if kit and kit.sound and kit.SOUND then
-				pcall(kit.sound,kit.anchorPart(self.folder,impact.position),
-					if impact.nature=="Lightning" then kit.SOUND.electric elseif impact.nature=="Fire" then kit.SOUND.boom else kit.SOUND.whoosh,.3,1.2)
-			end
+	layer.impact=function(self,impact,folder)
+		if impact.style~="infusion" or not InfusionFX.valid(impact.nature) then return nil end
+		local where=impact.position
+		local target=folder and folder:FindFirstChild(impact.target or "")
+		if where then InfusionFX.impact(self.folder,where,impact.nature,impact.strong,impact.direction,impact.normal) end
+		if target then InfusionFX.body(target,impact.nature,impact.strong,TIME[impact.nature]) end
+		if kit and kit.sound and kit.SOUND and where then
+			pcall(kit.sound,kit.anchorPart(self.folder,where),
+				if impact.nature=="Lightning" then kit.SOUND.electric elseif impact.nature=="Fire" then kit.SOUND.boom else kit.SOUND.whoosh,.3,1.2)
 		end
-		return nil   -- the blow's own contact effects still play
+		return true
 	end
+	-- the 3rd hit, while it is out, when the nature is ready (its 4 s gap is over)
 	layer.fighter=function(self,model,actor)
-		local nature=actor.infused
+		if not model then return end
 		self.infusedState=self.infusedState or setmetatable({},{__mode="k"})
+		local n=actor.ninja
+		local on=type(n)=="table" and n.blade and n.ready and InfusionFX.valid(n.nature) and actor.attackName=="Light3"
+			and (actor.state=="Startup" or actor.state=="Active") or false
 		local was=self.infusedState[model]
-		if nature and InfusionFX.valid(nature) and was~=nature then
-			InfusionFX.limb(model,InfusionFX.STRIKER[actor.fighterId] or "RightHand",nature,actor.infusedStrong,InfusionFX.BLADE_TIME)
+		if on and not was then
+			InfusionFX.limb(model,InfusionFX.STRIKER[actor.fighterId] or "RightHand",n.nature,n.strong,InfusionFX.BLADE_TIME)
 		end
-		self.infusedState[model]=nature or nil
+		self.infusedState[model]=on or nil
 	end
 	-- first in line: another layer that takes the blow's style must not hide its nature
 	table.insert(FX.layers,1,layer)

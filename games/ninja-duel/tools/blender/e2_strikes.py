@@ -483,3 +483,78 @@ def legion_airflip(old):   # Naruto's version of the flip kick: the same turn, a
         k["LA"] = {"swing": 100, "spread": 70, "bend": 30}
         k["RA"] = {"swing": -30, "spread": 80, "bend": 30}
     return s
+
+
+# ------------------------------------------------------------------ the three transformations
+# (DEC-045: the node at the top of each tree changes a technique on sight.) New clips, so
+# their length and markers are proposals the DEV can time-warp (AuthoredMotion markers).
+TRANSFORM_TIMING = {
+    "Legion.RasenganThrow": {"length": .55, "markers": {"contact": .22, "recover": .36}},
+    "Lion.WallChidori.Channel": {"length": .3, "markers": {}},
+    "Leaf.LotusEntry": {"length": .7, "markers": {"contact": .48, "recover": .6}},
+}
+
+
+def legion_rasengan_throw(old):
+    """Naruto's top node: the Rasengan thrown (by a clone, or by him): the sphere held up
+    by the shoulder, the whole body behind an overhand throw, then he overshoots."""
+    old = old or TRANSFORM_TIMING["Legion.RasenganThrow"]
+    return blow("Legion", old,
+                antic={"root": {"turn": -60, "z": 0.3, "pitch": -8}, "Waist": {"turn": -20, "pitch": -6}, "Neck": {"turn": 45, "pitch": -6},
+                       "RA": {"hand": [1.1, 2.2, 0.9], "hint": [-20, 70, 20, 100]},
+                       "LA": {"hand": [-0.5, 1.4, -1.9], "hint": [85, 20, 10, 30]}},
+                hit={"root": {"turn": 20, "z": -0.45, "pitch": 18}, "Waist": {"turn": 18, "pitch": 14}, "Neck": {"turn": -12},
+                     "RL": {"foot": [0.85, 0.55], "yaw": -5, "toe": -32},
+                     "RA": {"hand": [0.2, 1.6, -2.7], "hint": [100, 10, 0, 10]},
+                     "LA": {"chest": [-1.45, 0.0, 0.2], "hint": [0, 55, 0, 90]}},
+                through={"root": {"turn": 34, "z": -0.55, "pitch": 24}, "Waist": {"turn": 20, "pitch": 16}, "Neck": {"turn": -18},
+                         "RL": {"foot": [0.85, 0.55], "yaw": 10, "toe": -36},
+                         "RA": {"hand": [-0.4, 0.4, -2.4], "hint": [70, 10, -20, 15]},
+                         "LA": {"chest": [-1.5, -0.1, 0.4], "hint": [-10, 60, 0, 90]}},
+                back={"root": {"turn": 10, "z": -0.3, "pitch": 12}, "RL": {"foot": [0.6, -0.1], "yaw": -10}},
+                antic_at=.45, through_dt=.08)
+
+
+def lion_wall_chidori(old):
+    """Sasuke's top node: on the wall, crouched against it, the Chidori dragged low and back
+    in the right hand while the left hand keeps him on the wall; 0.3 s, then the dive."""
+    L = (old or TRANSFORM_TIMING["Lion.WallChidori.Channel"])["length"]
+    g = GUARD["Lion"]
+    a = {"air": True}
+    crouch = {"root": {"pitch": 26, "turn": -20}, "Waist": {"pitch": 10, "turn": -10}, "Neck": {"pitch": -24, "turn": 20},
+              "LL": {"swing": 95, "spread": 20, "bend": 130, "ankle": 10}, "RL": {"swing": 60, "spread": 25, "bend": 135, "ankle": 10},
+              "LA": {"swing": 40, "spread": 70, "twist": 0, "bend": 30},
+              "RA": {"swing": -55, "spread": 25, "twist": 30, "bend": 25, "wrist": {"swing": 30}}}
+    k0 = key(0, g, "out", **a, **crouch)
+    k1 = key(L * .5, g, "smooth", **a, **merge(crouch, {"RA": {"swing": -65, "spread": 30, "twist": 30, "bend": 20},
+                                                      "root": {"pitch": 30, "turn": -24}}))
+    k2 = key(L, g, "in", **a, **merge(crouch, {"RA": {"swing": -70, "spread": 30, "twist": 35, "bend": 15},
+                                                "root": {"pitch": 34, "turn": -26}, "LL": {"swing": 85, "spread": 20, "bend": 115, "ankle": 10}}))
+    return {"keys": [k0, k1, k2], "loop": False}
+
+
+def leaf_lotus_entry(old):
+    """Lee's top node: the Lotus lands, and instead of standing up he springs off the crater
+    and comes back in feet first - the Dynamic Entry. From the landing crouch, a back spring
+    (tucked), then the flying side kick, then down into his guard."""
+    old = old or TRANSFORM_TIMING["Leaf.LotusEntry"]
+    m, L = old["markers"], old["length"]
+    c = m["contact"]
+    g = GUARD["Leaf"]
+    a = {"air": True}
+    land = {"root": {"sink": 1.0, "pitch": 24}, "Waist": {"pitch": 14},
+            "LL": {"foot": [-0.6, -0.7], "yaw": 10}, "RL": {"foot": [0.7, 0.5], "yaw": -20, "toe": -20},
+            "LA": {"hand": [-1.1, -2.35, -1.0], "hint": [40, 35, 0, 20]}, "RA": {"chest": [0.3, -0.75, 0.98], "hint": [-45, 10, 0, 75]}}
+    tuck = {"root": {"pitch": -40}, "LL": {"swing": 110, "spread": 8, "bend": 135}, "RL": {"swing": 100, "spread": 8, "bend": 135},
+            "LA": {"swing": 30, "spread": 40, "bend": 90}, "RA": {"chest": [0.3, -0.75, 0.98], "hint": [-45, 10, 0, 75]}}
+    kick = {"root": {"pitch": -10, "turn": -70, "lean": -35}, "Waist": {"lean": -10, "turn": -10}, "Neck": {"turn": 70, "lean": 20},
+            "LL": {"swing": 15, "spread": 80, "twist": 0, "bend": 3, "ankle": 10}, "RL": {"swing": 30, "spread": 10, "bend": 120},
+            "LA": {"swing": 60, "spread": 30, "bend": 20}, "RA": {"chest": [0.3, -0.75, 0.98], "hint": [-45, 10, 0, 75]}}
+    keys = [key(0, g, "out", **land),
+            key(c * .35, g, "in2", **merge(land, {"root": {"sink": 1.25, "pitch": 30}})),
+            key(c * .65, g, "out", **a, **tuck),
+            key(c, g, "out", **a, **kick),
+            key(c + .07, g, "smooth", **a, **merge(kick, {"LL": {"swing": 18, "spread": 86, "bend": 0, "ankle": 10}})),
+            key(m["recover"] + .04, g, "out", root={"sink": .7, "pitch": 10}),
+            key(L, g, "smooth")]
+    return {"keys": keys}

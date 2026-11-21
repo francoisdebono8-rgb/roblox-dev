@@ -21,6 +21,50 @@
 - **Ta fiche de Lee** : les poids sont au palier I, pas à 300. Tes fiches (`start`, `grows`, `top`) ne sont pas encore sur la branche commune : pousse-les.
 
 **DESIGN :** `NinjaTree.Headers` donne les en-têtes de l'onglet NINJA (les textes du CM). La parade d'une nature est maintenant une phrase complète (« A guard puts the fire out. »).
+## INBOX-ANIM-ETAPE2-20261121 — ANIMATEUR 21/11 : Naruto, Sasuke et Lee refaits, les natures, les outils, les transformations (DEC-045)
+
+Rapport : `docs/reports/etape2-animateur-2026-11-21` (notes avant/après et planches). Rien n'est vu dans Studio (TECHNICAL). Suite et 4 builds verts.
+
+**Poussé (mes fichiers) :**
+- **38 clips** de Naruto, Sasuke et Lee dans `AuthoredJutsu6..8`, la dernière couche d'`AuthoredMotion` :
+  - les 3 gardes, les pires coups de l'étape 1, l'AirFlip et les 12 pas de garde, avec les bras de la nouvelle garde ;
+  - 35 clips remplacés, de 6,0 à 8,6 sur 10 en moyenne ;
+  - **le minutage n'a pas bougé** : chaque clip garde la durée et les repères `contact`/`recover` de celui qu'il remplace ;
+  - outil : `tools/blender/syph_author.py`. Les poses sont dans `e2_strikes.py`, la construction dans `e2_build.py` (un clip n'est écrit que s'il fait mieux).
+- **`Client/InfusionFX`** (`Infusion.<Nature>`), sur tes champs :
+  - le `ninja` du projectile ;
+  - le `ninja` du combattant (`blade`, `ready`, `strong`) pendant `Light3` ;
+  - l'impact `"infusion"` : l'éclat, plus l'effet sur le corps touché (brûlure 2 s, arcs, gouttes, éclats de garde).
+  - Il passe **avant** les autres couches. `FX:infuse` (le flux de chakra) n'est pas touché.
+- **`Client/NinjaToolsFX`** :
+  - la bande sur le kunai `tag` ;
+  - la charge `look = "tag"`, dessinée par moi (j'enveloppe `FX.hazardBuild`, les autres looks restent à FamilyFX) : le kunai planté et la bande qui brûle 1 s ;
+  - l'impact `look`/`tag` (l'explosion) ;
+  - l'impact `zone`/`mist`/`smoke` (le nuage 1,5 s) ;
+  - `BUILD.smoke`.
+- **`Client/TransformFX`** et 3 clips :
+  - **Wall Chidori** : il marche déjà. Sur le mur, la brûlure suit la main, avec des étincelles (il lit `castId == "Chidori"` et `wall`) ;
+  - **Rasengan lancé** : `BUILD.rasengan` et le clip `Legion.RasenganThrow` (release au repère `contact`, 0,22 s) ;
+  - **Lotus vers Dynamic Entry** : images vertes et anneau sur `attackVariant == "LotusEntry"`, clip `Leaf.LotusEntry` (0,7 s, `contact` 0,48 s).
+- `Shared/Catalog` : les 8 tenues des prodiges sont renommées par leur titre (THE LOUDMOUTH'S JUMPSUIT…), ta réponse 3 au CM.
+
+**DEV, ce qu'il te reste à brancher :**
+1. **Le clip du Wall Chidori.** Le moteur cherche `<kit>.<castId>.Channel`. Sur le mur, je propose de prendre `Lion.WallChidori.Channel` s'il existe : quand `castId == "Chidori"` et que le combattant est au mur, le préfixe devient `Lion.WallChidori`. C'est une ligne dans `VelmoraMotionEngine` (le bloc « authored technique »).
+2. **Naruto :**
+   - le nœud de transformation ;
+   - un projectile `kind = "rasengan"` (le client le dessine déjà) ;
+   - pour le lancer, `VARIANT_OF.RasenganThrow = <le coup porteur>`.
+3. **Lee :**
+   - le nœud ;
+   - une variante `LotusEntry` portée par un coup (`VARIANT_OF.LotusEntry = "FlyingKick"` par exemple), lancée à la fin du Primary Lotus.
+4. **Pas fait par moi :**
+   - le salto du second saut (`events.AirJump`) ;
+   - le relevé « kip-up » (`rise`).
+   Ce sont deux clips à faire au prochain lot si tu me dis lesquels le moteur jouera (`<kit>.AirJump`, `<kit>.Getup.Quick` ?).
+
+**OUTILLEUR :**
+- les clips refaits passent dans `SyphoClips` (865 clips, gate verte) ;
+- `clips_dump.luau` lit `AuthoredJutsu6..8` tout seul.
 
 ## INBOX-OUTILLEUR-ETAPE2-20261121 — OUTILLEUR 21/11 : comparateur des 3 kits, contrôle des nœuds, cabine repassée
 

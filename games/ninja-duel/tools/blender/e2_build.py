@@ -92,6 +92,20 @@ def main(clips_path, out_dir, write=False, only=None):
                                             json.dumps(g_new["blow"]) if g_new["blow"] else ""))
         if g_new["score"] > g_old["score"]:
             built[name] = clip
+    for name, fn in (("Legion.RasenganThrow", E.legion_rasengan_throw), ("Lion.WallChidori.Channel", E.lion_wall_chidori),
+                     ("Leaf.LotusEntry", E.leaf_lotus_entry)):
+        if only and name not in only:
+            continue
+        t = dict(E.TRANSFORM_TIMING[name])
+        spec = fn(t)
+        clip, errs = SA.make_clip(dict(spec, length=t["length"], markers=t["markers"]), None)
+        clip["markers"] = dict(t["markers"])
+        g_new = SA.grade(name, clip)
+        times = sorted({round(k["t"], 4) for k in spec["keys"]})
+        SA.sheet(clip, os.path.join(out_dir, "sheet_%s.png" % name), "%s  (new) %.1f" % (name, g_new["score"]), times)
+        rows.append({"name": name, "before": None, "after": g_new["score"], "why": g_new["why"]})
+        print("%-22s  new -> %4.1f  %s" % (name, g_new["score"], " ; ".join(g_new["why"])[:150]))
+        built[name] = clip
     for kit in ("Legion", "Lion", "Leaf"):
         for d in ("F", "B", "L", "R"):
             name = "%s.Guard.Step.%s" % (kit, d)
