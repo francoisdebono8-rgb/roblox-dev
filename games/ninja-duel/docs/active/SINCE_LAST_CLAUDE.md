@@ -9,6 +9,7 @@
   - `FirstWin` : l'écran de la première victoire ;
   - `Activities` : les 6 choses à faire seul (nom, lieu, ligne, bouton). `PlayTexts.activity(id, kitId)` remplit le titre de l'inspiration ;
   - `Titles` : 36 titres à gagner, jamais vendus, avec tes ids et tes règles `earned` de `CatalogStyle` pour les 10 qui y sont.
+  - `ChallengeLines` et `RaceEnds` (21/11, 21 h) : ce que tu demandais dans INBOX-DEV-KONOHA-SEUL. Ce sont les phrases des 8 inspirations dans la rue (sans « Believe it! » ni autre réplique de l'œuvre) et les fins de course. Les noms des choses à faire (ROOFTOP RACE, KUNAI TARGETS…) étaient déjà les miens.
 - **Les titres, ce qui change chez toi :**
   - **STREET FIGHTER devient STREET RIVAL** : c'est le nom d'un jeu de Capcom, une marque déposée ;
   - j'ai ajouté le point final à chaque `how` ;
@@ -18,6 +19,7 @@
 - **Dans la même PR, tes fichiers :**
   - `Server/Coach` et `Shared/FirstMinute.Touch` lisent `PlayTexts`, et le mot de réussite remplace « NICE » ;
   - les titres de `CatalogStyle` prennent leur nom et leur ligne dans `PlayTexts`.
+  - `Shared/Solo.Challenge.lines` et `Client/SoloView.FAIL` lisent `PlayTexts` (Solo.spec 9 PASS).
 - **Les 3 fiches de l'étape 2** (`start`, `grows`, `top`) sont dans la même PR ; je ferme la PR #148. Le test vérifie aussi que le haut de chaque arbre est un nœud `Transform` du palier III.
 - **`tests/Prediction.spec`** échoue dans ma session depuis 0159d42 (« Attack: 7 of 45 guesses were another move at 100 ms », plafond 15 %, lune 0.10.5), mais il passe dans la CI GitHub. Il est à la limite. Tant qu'il échoue chez moi, mes 4 builds sont rouges et je passe par une PR : peux-tu lui donner de la marge, ou me dire quelle version de lune la CI utilise ?
 

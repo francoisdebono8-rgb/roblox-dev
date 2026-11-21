@@ -19,6 +19,7 @@
 -- Places are in the plan's base studs (Shared/KonohaLayout, x z and the height
 -- y over the ground); Solo.world turns them into the world's.
 local HubMap=require(script.Parent.HubMap)
+local PlayTexts=require(script.Parent.PlayTexts)
 
 local Solo={}
 local S=HubMap.Scale or 1
@@ -184,16 +185,8 @@ end
 -- ------------------------------------------------------------------ the challenge
 -- An inspiration waits in a street of the village (HubMap.Streets) for a while;
 -- whoever walks up and accepts fights him there, at Level. Won: Gain.Challenge.
-Solo.Challenge={every=70,stay=150,level="normal",lines={
-	Leaf="My youth burns hot today. Show me yours!",
-	Lion="You are in my way. Prove you are not weak.",
-	Legion="Believe it! Fight me right here, right now!",
-	Copycat="Let us see what you have learned.",
-	Sand="Come. Your existence will prove mine.",
-	GentleFist="Fate brought you to me. Fight.",
-	Flashstep="A quick one? I will not hold back.",
-	Mirage="You lack hatred. Show me otherwise.",
-}}
+-- His dare is the CM's (Shared/PlayTexts.ChallengeLines, 21/11).
+Solo.Challenge={every=70,stay=150,level="normal",lines=PlayTexts.ChallengeLines}
 
 -- ------------------------------------------------------------------ what it pays
 -- Mastery to his chosen kit; Ryō for nothing here (the duels pay those).
