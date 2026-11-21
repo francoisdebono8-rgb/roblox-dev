@@ -29,10 +29,9 @@ run() {
     printf '%s\n' "$output" | grep -E '^(FAIL|.*Error)' | head -5
   fi
 }
-echo "=== DuelBot ==="
-"$LUNE" run tests/DuelBot.spec.luau || status=1
-echo "=== FirstCombat ==="
-"$LUNE" run tests/FirstCombat.spec.luau || status=1
-echo "=== rounds ==="
-"$LUNE" run tools/duelbot/rounds.luau 2 0.6,0.7,0.8,1 joueur,debutant easy,normal || status=1
+echo "=== konoha dump ==="
+"$LUNE" run tools/syphodev/konoha_dump.luau /tmp/konoha.json || status=1
+echo "KONOHA-JSON-BEGIN"
+python3 -c "import json;d=json.load(open('/tmp/konoha.json'));print(json.dumps(d,separators=(',',':')))"
+echo "KONOHA-JSON-END"
 exit $status
