@@ -31,6 +31,7 @@ local Exam=require(Shared.Exam)
 local Codes=require(Shared.Codes)
 local Ranked=require(Shared.Ranked)
 local Merit=require(Shared.Merit)
+local NinjaTree=require(Shared.NinjaTree)
 -- (20/11) the leaderboards, when the server runs them (Server/Leaderboards)
 local function boards()
 	local ok,L=pcall(function() return require(script.Parent.Leaderboards).current end)
@@ -144,6 +145,8 @@ function P.view(player)
 	-- (20/11, DEC-043) his rank and his merit (the DESIGN's emblems and auras)
 	out.ranked=Ranked.view(h.data.ranked)
 	out.merit=Merit.view(h.data.merit)
+	-- (21/11, DEC-045) the ninja's tree, for the DESIGN's NINJA tab
+	out.ninja=NinjaTree.view(h.data.ninja,NinjaTree.points(h.data.kits.mastery))
 	local okTitle,title=pcall(function() return player:GetAttribute("NinjaTitle") end)
 	out.title=if okTitle and type(title)=="string" then title else nil
 	return out
@@ -229,7 +232,7 @@ function P.kitSpec(player,kit)
 	local nodes,unlocked=S.selection(h.data,kit)
 	local set={}
 	for _,id in nodes or {} do set[id]=true end
-	return {nodes=nodes or {},unlocked=unlocked or set,gated=true}
+	return {nodes=nodes or {},unlocked=unlocked or set,gated=true,ninja=NinjaTree.def(h.data.ninja)}
 end
 
 -- Whether a player may fight a duel that counts with this kit.
@@ -325,7 +328,24 @@ function P.badges(player)
 		player:SetAttribute("NinjaRank",ranked.rank.name)
 		player:SetAttribute("NinjaRating",ranked.rating)
 		player:SetAttribute("NinjaAura",tier)
+		-- (21/11, DEC-045) his chakra nature, for the infusions' effects
+		-- (the ANIMATEUR's Infusion.<Nature>); nil: none chosen
+		player:SetAttribute("NinjaNature",NinjaTree.nature(h.data.ninja or NinjaTree.new()))
 	end)
+end
+-- (21/11, DEC-045) The ninja's tree: a node learned with the ninja points (all
+-- the mastery earned), a learned node turned on or off. Between duels.
+function P.ninjaLearn(player,node)
+	if not P.enabled() or not P.ready(player) then return false,"Profile not loaded" end
+	local ok,result=P.run(player,"ninjaLearn",{node=node})
+	if ok then P.badges(player) end
+	return ok,result
+end
+function P.ninjaSet(player,node,on)
+	if not P.enabled() or not P.ready(player) then return false,"Profile not loaded" end
+	local ok,result=P.run(player,"ninjaSet",{node=node,on=on==true})
+	if ok then P.badges(player) end
+	return ok,result
 end
 function P.rating(player)
 	local h=P.handles[player]

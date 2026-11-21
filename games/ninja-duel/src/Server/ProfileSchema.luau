@@ -24,6 +24,9 @@ local Codes=require(game:GetService("ReplicatedStorage").NinjaDuel.Codes)
 -- auras earned by winning, Shared/Merit).
 local Ranked=require(game:GetService("ReplicatedStorage").NinjaDuel.Ranked)
 local Merit=require(game:GetService("ReplicatedStorage").NinjaDuel.Merit)
+-- (21/11, DEC-045) and `ninja`: the ninja's tree (Shared/NinjaTree), its
+-- points from all the mastery earned.
+local NinjaTree=require(game:GetService("ReplicatedStorage").NinjaDuel.NinjaTree)
 -- Version 3 (13/11, the shop): the wallet (Ryō, earned by playing or bought
 -- in packs; the day of the last first win) and the looks (owned, and the one
 -- worn in each slot: Shared/Shop). A look never changes a number.
@@ -167,6 +170,10 @@ function S.validate(p)
 	if p.merit~=nil then
 		local ok,why=Merit.valid(p.merit)
 		if not ok then return false,"merit: "..why end
+	end
+	if p.ninja~=nil then
+		local ok,why=NinjaTree.valid(p.ninja,NinjaTree.points(p.kits and p.kits.mastery))
+		if not ok then return false,"ninja: "..why end
 	end
 	for fighterId,record in p.fighters do
 		if not SkillBuilds.tree(fighterId) then return false,"No skill tree for "..tostring(fighterId) end
@@ -537,4 +544,21 @@ function S.selection(p,fighterId)
 	local build=r.selected and r.builds[r.selected]
 	return build and S.copy(build.nodes),S.copy(r.unlocked)
 end
+-- (21/11, DEC-045) The ninja's tree: learn a node with the ninja points (all
+-- the mastery earned, 1 every 15), or turn a learned node on or off.
+function S.Commands.ninjaLearn(p,args)
+	assert(type(args.node)=="string" and NinjaTree.ById[args.node],"Unknown node")
+	p.ninja=p.ninja or NinjaTree.new()
+	local points=NinjaTree.points(p.kits.mastery)
+	NinjaTree.learn(p.ninja,args.node,points)
+	return {node=args.node,free=NinjaTree.free(p.ninja,points),nature=NinjaTree.nature(p.ninja)}
+end
+function S.Commands.ninjaSet(p,args)
+	assert(type(args.node)=="string" and NinjaTree.ById[args.node],"Unknown node")
+	assert(type(args.on)=="boolean","Invalid switch")
+	assert(p.ninja,"Node not learned")
+	NinjaTree.set(p.ninja,args.node,args.on)
+	return {node=args.node,on=args.on,nature=NinjaTree.nature(p.ninja)}
+end
+
 return S

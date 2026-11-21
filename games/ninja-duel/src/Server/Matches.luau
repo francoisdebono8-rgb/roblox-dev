@@ -56,6 +56,9 @@ function Matches.resolveKit(fighterId,spec,bracket)
 	if bracket~=nil then kit,reason=SkillBuilds.admit(bracket,fighterId,nodes,spec.unlocked,{gated=spec.gated==true})
 	else kit,reason=SkillBuilds.build(fighterId,nodes,{unlocked=spec.unlocked,gated=spec.gated==true}) end
 	if not kit then return false,reason end
+	-- (21/11, DEC-045) the ninja's tree: his nature, infusions, mobility and
+	-- tools ride on the kit's def (Shared/NinjaTree.def, read by the combat)
+	if type(spec.ninja)=="table" then kit.def.Ninja=SkillBuilds.copy(spec.ninja) end
 	return true,kit
 end
 function Matches.new(remote)
@@ -699,6 +702,18 @@ function Matches:request(player,payload)
 	-- next duels, a master's duel, a kit bought.
 	-- (DEC-038) The tree of a learned kit: a node bought with its points, an
 	-- unlocked node turned on or off. Between duels only.
+	-- (21/11, DEC-045) The ninja's tree: a node learned with the ninja points,
+	-- a learned node turned on or off (a nature: the other one goes off).
+	if action=="NinjaLearn" or action=="NinjaSet" then
+		if clock-s.lastLifecycle<0.25 or s.phase~="Selection" or not Progression.enabled() then return end
+		if type(payload.node)~="string" or #payload.node>32 then return end
+		s.lastLifecycle=clock
+		local ok,why
+		if action=="NinjaLearn" then ok,why=Progression.ninjaLearn(player,payload.node)
+		else ok,why=Progression.ninjaSet(player,payload.node,payload.on==true) end
+		self:send(player,{phase="Selection",epoch=s.epoch,kits=Progression.view(player),notice=if ok then nil else Matches.refusal(why)})
+		return
+	end
 	if action=="LearnNode" or action=="SetNode" then
 		if clock-s.lastLifecycle<0.25 or s.phase~="Selection" or not Progression.enabled() then return end
 		if type(payload.player)~="string" or type(payload.node)~="string" or #payload.node>32 then return end
