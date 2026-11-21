@@ -11,4 +11,11 @@ for name,clip in require(script.Parent.AuthoredJutsu5) do all[name]=clip end
 for name,clip in require(script.Parent.AuthoredJutsu6) do all[name]=clip end
 for name,clip in require(script.Parent.AuthoredJutsu7) do all[name]=clip end
 for name,clip in require(script.Parent.AuthoredJutsu8) do all[name]=clip end
+-- (21/11, étape 3) The parkour, the second jump, the quick rise, the victory poses and the
+-- emotes (tools/blender/e3_clips.py --write).
+for name,clip in require(script.Parent.AuthoredJutsu9) do all[name]=clip end
+for name,clip in require(script.Parent.AuthoredJutsu10) do all[name]=clip end
+for name,clip in require(script.Parent.AuthoredJutsu11) do all[name]=clip end
+for name,clip in require(script.Parent.AuthoredJutsu12) do all[name]=clip end
+for name,clip in require(script.Parent.AuthoredJutsu13) do all[name]=clip end
 return all

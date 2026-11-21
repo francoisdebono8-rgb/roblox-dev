@@ -36,7 +36,9 @@ Authored.UPPER=UPPER
 local ALIAS={}
 local DONOR="Lion"
 local SHARED={Hit=true,Guard=true,Down=true,Getup=true,Knockback=true,Knockdown=true,Launched=true,
-	Dash=true,Chase=true,Cartwheel=true,Handspring=true,Flip=true,AirFlip=true}
+	Dash=true,Chase=true,Cartwheel=true,Handspring=true,Flip=true,AirFlip=true,
+	-- (21/11, étape 3) the ninja parkour, authored once on Lion (Lion.Parkour.Leap/LandRoll/LandHard/Vault)
+	Parkour=true}
 Authored.ALIAS=ALIAS
 local function resolve(name)
 	if DATA[name] then return name end

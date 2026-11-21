@@ -212,12 +212,49 @@ def solve_limb(T, name, target, hint, yaw=None, toe=0.0, pole=None, orient=True)
     return sol.x, err
 
 
+def q_to_R(q):
+    x, y, z, w = q
+    return np.array([[1 - 2 * (y * y + z * z), 2 * (x * y - z * w), 2 * (x * z + y * w)],
+                     [2 * (x * y + z * w), 1 - 2 * (x * x + z * z), 2 * (y * z - x * w)],
+                     [2 * (x * z - y * w), 2 * (y * z + x * w), 1 - 2 * (x * x + y * y)]])
+
+
+def raw_T(rows):
+    """A key taken from a frame of an existing clip (rows: clip key -> its values), so a new
+    clip starts or ends exactly where another one is (the lying Down, the kit's guard)."""
+    inv = {v: k for k, v in KEYS.items()}
+    T = {}
+    for key, vals in rows.items():
+        j = inv.get(key)
+        if not j:
+            continue
+        if key == "Root":
+            T[j] = (np.array(vals[:3], float), q_to_R(vals[3:7]))
+        else:
+            T[j] = (np.zeros(3), q_to_R(vals[:4]))
+    T["_x"] = {}
+    return T
+
+
+def frame_of(clip, t):
+    """The rows of a dumped clip (clips_dump.luau: flat arrays) at time t (nearest sample)."""
+    n = clip["frames"]
+    i = max(0, min(n - 1, int(round(t * clip["fps"]))))
+    out = {}
+    for key, flat in clip["joints"].items():
+        w = 7 if key == "Root" else 4
+        out[key] = list(flat[i * w:(i + 1) * w])
+    return out
+
+
 def build_key(k, stance=None):
     """One key spec -> T (joint -> (pos, R)) and its solve errors.
     k = {"t", "ease", "root": {pitch, lean, turn, y, x, z}, "air": bool,
          "Waist": {...}, "Neck": {...},
          "RA"/"LA": {"hand": [x,y,z]} or {"swing","spread","twist","bend"} (+ "hint"),
          "RL"/"LL": {"foot": [x,z] (+ "lift", "yaw", "toe")} or semantic, "wrist": {...}}"""
+    if "raw" in k:
+        return raw_T(k["raw"]), {}
     T = {}
     r = k.get("root", {})
     rootR = sem_R("Root", r)
@@ -283,6 +320,9 @@ def resolve(keys):
     knees instead of the feet floating. A key without planted feet is grounded whole."""
     out = []
     for k in keys:
+        if "raw" in k:
+            out.append((k, raw_T(k["raw"]), {}))
+            continue
         planted = [n for n in ("RL", "LL") if len(k.get(n, {}).get("foot", [])) == 2]
         fixed_y = "y" in k.get("root", {})
         kk = json.loads(json.dumps(k))
