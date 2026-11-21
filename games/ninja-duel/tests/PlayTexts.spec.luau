@@ -70,6 +70,21 @@ test("the things to do alone: a name, where, a line and a button",function()
 	assert(string.format(T.MasteryLine,40)=="+40 MASTERY")
 end)
 
+test("the inspirations' dares in the street and the ends of a race",function()
+	for _,kitId in KitTexts.Order do
+		local line=T.ChallengeLines[kitId]
+		assert(type(line)=="string" and #line>=15 and #line<=60,kitId.."'s dare: "..tostring(line))
+		clean(line,kitId)
+		assert(not string.find(Text.upper(line),"BELIEVE IT",1,true),kitId.." uses a catchphrase from the anime")
+	end
+	local Solo=H.load("Shared/Solo")
+	for kitId in Solo.Challenge.lines do assert(T.ChallengeLines[kitId],"no dare for "..kitId) end
+	for _,why in {"teleport","time","floor","left","quit","far"} do
+		local s=T.RaceEnds[why]
+		assert(type(s)=="string" and s==string.upper(s) and #s<=36,"the end « "..why.." »: "..tostring(s))
+	end
+end)
+
 test("the titles: unique, short, how to earn each, never a name from the anime",function()
 	local seen,ids={},{}
 	for _,t in T.Titles do

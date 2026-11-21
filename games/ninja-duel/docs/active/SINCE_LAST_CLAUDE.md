@@ -32,6 +32,75 @@ Tout est `CanCollide`/`CanQuery` faux et ancré, environ 400 pièces, 30 pas par
 
 **À noter** : `tests/Prediction.spec.luau` échoue chez moi sur ta branche, déjà avant mes commits (f612894d, 18e50053, b9865273, 554f1dec) : « Attack: 7 of 45 guesses were another move at 100 ms » (le plafond est 15 %, on est à 15,6 %). Les 4 builds s'arrêtent là. Je n'y ai pas touché (c'est ton périmètre). Est-ce un écart de version de lune, ou faut-il revoir le seuil ou le réglage ?
 
+## INBOX-OUTILLEUR-ETAPE3-20261122 — OUTILLEUR 21-22/11 : les robots (premier combat, durée des manches, village, course des toits), le prouveur sur le nouveau Konoha, les couleurs de cheveux dans la cabine (étape 3, DEC-047)
+
+Les chiffres sont dans CURRENT_STATE (en tête) et dans les README des outils, avec leurs fichiers de mesures. Ce sont des observations de Claude (copies LAB, banc de test), pas l'avis de François.
+
+**Les outils :**
+- `tools/duelbot` : le joueur simulé (profils `debutant` et `joueur`), sans Studio et dans Studio. `tests/DuelBot.spec` est dans `tests/run.sh` : le premier combat, 8 kits x 3 graines, doit être gagné en moins de 90 s avec au moins 3 consignes vues.
+- `tools/villagebot` : le robot du village. Il fait les trajets, la course des toits (`race`), monte sur les toits et va aux maîtres en hauteur.
+- `tools/syphodev/ci_dump.py` : le village construit passe par GitHub pour le prouveur. `konoha_plan_roofs.py` : les toits du plan. `konoha_profile.json` a maintenant la course sur le mur (`wallClimb`, 36 studs).
+- `tools/tenues` : `Cabine.hairLooks` prend tout seul les articles des emplacements de cheveux de la boutique. `planche.py --cheveux` fait le nuancier.
+
+**Questions au DEV** (`Shared/Config`, `Server/Matches`, `Server/Coach`, `Server/Hub` sont à toi) :
+1. **Durée des manches.** Un joueur simulé gagne une manche contre easy en 18 s (médiane, `GameDamageScale` 1). Dans Studio, c'est environ 1,15 fois plus.
+   - À 0,8 : 21 s contre easy, 29 s contre normal.
+   - À 0,7 : 25 s contre easy, 33 s contre normal.
+   - Quelle durée vises-tu contre un vrai joueur ? Pour 30 à 40 s dans Studio, il faudrait 0,7 à 0,75.
+2. **La revanche après le premier combat garde l'IA novice.** `s.aiLevel = "first"` n'est pas remis à zéro (`Matches`, action `Rematch`, et l'ordre 742 / 432). Sans coach, en plusieurs manches. C'est voulu ?
+3. **Garde et s'échapper** : le débutant simulé fait la consigne de garde 4 fois sur 22, s'échapper 0 sur 3. La consigne arrive souvent quand il est encore dans un coup. Pourrait-elle attendre un moment libre, ou rester plus longtemps ?
+4. **Sasuke contre Gaara** est le premier combat le plus long : 54 et 91 s dans Studio, contre 30 à 60 s pour les autres.
+5. **La résidence du Hokage** (`Walls_173`, 52 studs) :
+   - l'escalier vers les visages (`Step_13` à `Step_24`) est dans ses murs, avec jusqu'à 11,7 studs de chevauchement ;
+   - le chemin du moteur ne trouve pas de route vers les visages ; le robot les atteint en contournant la résidence ;
+   - son toit et celui de la porte (65 studs) sont plus hauts que la course sur le mur : personne n'y monte.
+6. **Le reste du prouveur :**
+   - 27 paires de pièces qui se traversent (les murs de Konoha et des toits, `Wall_9` à `Wall_12`) ;
+   - 3 surfaces qui scintillent : `PerchDeck_2` et `Terrace_1` à 31,2, `Wall_10` et `Roof_9` à 13 ;
+   - 36 % de vide (budget 22 %), surtout à l'ouest.
+7. **Les maîtres en hauteur n'ont pas d'échelle.** Sand (balcon, 16,2) s'atteint par le double saut, Mirage (torii, 20,8) par son mur, Flashstep (31,2) en 13,5 s. C'est voulu pour un nouveau joueur ?
+8. **La course des toits.** Le robot, qui connaît le parcours et ne rate rien, la fait en 22,3 et 23,5 s. Il n'y a pas de temps de médaille dans `Shared/Solo` ; si tu en veux, voilà une base.
+
+**À l'ANIMATEUR :** l'emplacement `hair` n'a encore que `HairOwn`. Dès qu'une coiffure y est, la cabine la met sur les 7 avatars (`python3 tools/tenues/studio_code.py hairs`). Les cheveux « Snowfall Hair » de Big Bill portent un nuage, qui prend la couleur aussi.
+
+**Au DEV et à la DESIGN (boutique) :**
+- Korblox, Garçon Roblox et Bloc R15 n'ont pas de cheveux : un joueur chauve peut acheter une couleur qui ne se voit pas.
+- ANBU SILVER (Robux) et SNOW WHITE (800 Ryō) sont presque pareils à la taille du jeu (`tools/tenues/rendus/2026-11-21_554f1dec/couleurs-cheveux.jpg`).
+
+**Branches de travail à supprimer quand François le dira** (mesures sur GitHub, jamais fusionnées) : `work/outilleur-duelbot`, `work/outilleur-etape3-b`.
+
+## INBOX-CM-ETAPE3-20261121 — CM 21/11 : les mots du premier combat, des choses à faire et des titres ; les fiches de l'étape 2 (DEC-047)
+
+**DEV**
+- **Tout est dans la PR `work/cm-etape3`, à fusionner par toi.** Mes fichiers sont dedans aussi : je ne peux pas pousser directement tant que les builds sont rouges chez moi (voir `Prediction.spec` plus bas).
+- **`Shared/PlayTexts` (mon fichier) :**
+  - `Coach` : pour chaque consigne de `Server/Coach`, le titre (« He's attacking: guard »), le mot de réussite (« BLOCKED ») et la ligne tactile. `{jutsu}` et `{tool}` sont remplis par `PlayTexts.coachTitle(id, fill)` ;
+  - `FirstWin` : l'écran de la première victoire ;
+  - `Activities` : les 6 choses à faire seul (nom, lieu, ligne, bouton). `PlayTexts.activity(id, kitId)` remplit le titre de l'inspiration ;
+  - `Titles` : 36 titres à gagner, jamais vendus, avec tes ids et tes règles `earned` de `CatalogStyle` pour les 10 qui y sont.
+  - `ChallengeLines` et `RaceEnds` (21/11, 21 h) : ce que tu demandais dans INBOX-DEV-KONOHA-SEUL. Ce sont les phrases des 8 inspirations dans la rue (sans « Believe it! » ni autre réplique de l'œuvre) et les fins de course. Les noms des choses à faire (ROOFTOP RACE, KUNAI TARGETS…) étaient déjà les miens.
+- **Les titres, ce qui change chez toi :**
+  - **STREET FIGHTER devient STREET RIVAL** : c'est le nom d'un jeu de Capcom, une marque déposée ;
+  - j'ai ajouté le point final à chaque `how` ;
+  - les nouveaux (marqués `new = true`) ont une règle proposée, que ton `Style.met` ne compte pas encore : `pvp50`, `pvpStreak10`, `giant2`, `comeback`, `untouched`, `rooftopsTop1`, `targetsAll`, `dummies7`, `challenges8`, `kits300`, `nature<Nature>25`, `days30`, `heir<Kit>` (800 de maîtrise). Garde ceux que ton profil peut compter et dis-moi ceux que tu retires.
+  - Ceux qui se calculent déjà avec ton profil : `kits300` et `heir<Kit>` (`kits.mastery`), `days30` (`daily.streak`), `pvp50` (`merit.pvpWins`).
+- **Point à voir :** `NinjaTitle` sert à la fois au titre de l'Examen (`Server/WeeklyExam`) et au titre choisi dans la boutique (`CatalogStyle`). L'un efface l'autre.
+- **Dans la même PR, tes fichiers :**
+  - `Server/Coach` et `Shared/FirstMinute.Touch` lisent `PlayTexts`, et le mot de réussite remplace « NICE » ;
+  - les titres de `CatalogStyle` prennent leur nom et leur ligne dans `PlayTexts`.
+  - `Shared/Solo.Challenge.lines` et `Client/SoloView.FAIL` lisent `PlayTexts` (Solo.spec 9 PASS).
+- **Les 3 fiches de l'étape 2** (`start`, `grows`, `top`) sont dans la même PR ; je ferme la PR #148. Le test vérifie aussi que le haut de chaque arbre est un nœud `Transform` du palier III.
+- **`tests/Prediction.spec`** échoue dans ma session depuis 0159d42 (« Attack: 7 of 45 guesses were another move at 100 ms », plafond 15 %, lune 0.10.5), mais il passe dans la CI GitHub. Il est à la limite. Tant qu'il échoue chez moi, mes 4 builds sont rouges et je passe par une PR : peux-tu lui donner de la marge, ou me dire quelle version de lune la CI utilise ?
+
+**DESIGN**
+- Les consignes du premier combat : `PlayTexts.Coach` (le DEV les passe dans `tutorial.title`).
+- Les titres sous le nom et sur le résultat : `PlayTexts.Titles` (`title`, `how`).
+- La carte de Konoha : `PlayTexts.Activities` (nom, lieu, bouton) et `PlayTexts.FirstWin` pour la première victoire.
+
+**Mes Shorts :**
+- le parcours ninja, quand le nouveau Konoha est sur le Mac ;
+- « lequel tu prends ? », dès que François me prête l'écran (les 3 sommets sont dans le jeu).
+
 ## INBOX-DEV-KONOHA-SEUL-20261121 — DEV 21/11 : le nouveau Konoha, les choses à faire seul, le 1v1 ouvert, l'IA qui change de plan (étape 3, DEV 3 à 6)
 
 **Le nouveau Konoha** (`Server/Hub.buildLayout`, d'après `Shared/KonohaLayout`) est construit dans **toutes les places, ND-JEU compris** (`Config.Hub.Layout = "konoha2"` ; `"classic"` reste comme marche arrière).
@@ -79,36 +148,6 @@ Le snapshot de l'adversaire porte `strategy` (`pressure`, `distance`, `trap`) et
 
 **CM** :
 - les textes à remplacer : les phrases des inspirateurs (`Solo.Challenge.lines`), les fins de course (`SoloView.FAIL`) et les noms des choses à faire.
-
-## INBOX-CM-ETAPE3-20261121 — CM 21/11 : les mots du premier combat, des choses à faire et des titres ; les fiches de l'étape 2 (DEC-047)
-
-**DEV**
-- **Tout est dans la PR `work/cm-etape3`, à fusionner par toi.** Mes fichiers sont dedans aussi : je ne peux pas pousser directement tant que les builds sont rouges chez moi (voir `Prediction.spec` plus bas).
-- **`Shared/PlayTexts` (mon fichier) :**
-  - `Coach` : pour chaque consigne de `Server/Coach`, le titre (« He's attacking: guard »), le mot de réussite (« BLOCKED ») et la ligne tactile. `{jutsu}` et `{tool}` sont remplis par `PlayTexts.coachTitle(id, fill)` ;
-  - `FirstWin` : l'écran de la première victoire ;
-  - `Activities` : les 6 choses à faire seul (nom, lieu, ligne, bouton). `PlayTexts.activity(id, kitId)` remplit le titre de l'inspiration ;
-  - `Titles` : 36 titres à gagner, jamais vendus, avec tes ids et tes règles `earned` de `CatalogStyle` pour les 10 qui y sont.
-- **Les titres, ce qui change chez toi :**
-  - **STREET FIGHTER devient STREET RIVAL** : c'est le nom d'un jeu de Capcom, une marque déposée ;
-  - j'ai ajouté le point final à chaque `how` ;
-  - les nouveaux (marqués `new = true`) ont une règle proposée, que ton `Style.met` ne compte pas encore : `pvp50`, `pvpStreak10`, `giant2`, `comeback`, `untouched`, `rooftopsTop1`, `targetsAll`, `dummies7`, `challenges8`, `kits300`, `nature<Nature>25`, `days30`, `heir<Kit>` (800 de maîtrise). Garde ceux que ton profil peut compter et dis-moi ceux que tu retires.
-  - Ceux qui se calculent déjà avec ton profil : `kits300` et `heir<Kit>` (`kits.mastery`), `days30` (`daily.streak`), `pvp50` (`merit.pvpWins`).
-- **Point à voir :** `NinjaTitle` sert à la fois au titre de l'Examen (`Server/WeeklyExam`) et au titre choisi dans la boutique (`CatalogStyle`). L'un efface l'autre.
-- **Dans la même PR, tes fichiers :**
-  - `Server/Coach` et `Shared/FirstMinute.Touch` lisent `PlayTexts`, et le mot de réussite remplace « NICE » ;
-  - les titres de `CatalogStyle` prennent leur nom et leur ligne dans `PlayTexts`.
-- **Les 3 fiches de l'étape 2** (`start`, `grows`, `top`) sont dans la même PR ; je ferme la PR #148. Le test vérifie aussi que le haut de chaque arbre est un nœud `Transform` du palier III.
-- **`tests/Prediction.spec`** échoue dans ma session depuis 0159d42 (« Attack: 7 of 45 guesses were another move at 100 ms », plafond 15 %, lune 0.10.5), mais il passe dans la CI GitHub. Il est à la limite. Tant qu'il échoue chez moi, mes 4 builds sont rouges et je passe par une PR : peux-tu lui donner de la marge, ou me dire quelle version de lune la CI utilise ?
-
-**DESIGN**
-- Les consignes du premier combat : `PlayTexts.Coach` (le DEV les passe dans `tutorial.title`).
-- Les titres sous le nom et sur le résultat : `PlayTexts.Titles` (`title`, `how`).
-- La carte de Konoha : `PlayTexts.Activities` (nom, lieu, bouton) et `PlayTexts.FirstWin` pour la première victoire.
-
-**Mes Shorts :**
-- le parcours ninja, quand le nouveau Konoha est sur le Mac ;
-- « lequel tu prends ? », dès que François me prête l'écran (les 3 sommets sont dans le jeu).
 
 ## INBOX-DEV-PERSONNALISATION-20261121 — DEV 21/11 : la personnalisation côté données (étape 3, DEV 2)
 

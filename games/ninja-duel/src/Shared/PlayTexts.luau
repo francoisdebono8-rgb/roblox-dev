@@ -6,6 +6,8 @@
 --               Shared/FirstMinute.Touch (what a phone player presses).
 --               {jutsu} and {tool} are filled by T.coachTitle.
 --   FirstWin    the first combat's result (the DESIGN's screen).
+--   ChallengeLines / RaceEnds  Shared/Solo and Client/SoloView (the DEV's
+--               things to do alone, 21/11).
 --   Activities  the things to do alone (DEV task 4, the DESIGN's map and
 --               markers): name, a line, the button. {title} is an
 --               inspiration's title (Shared/KitTexts).
@@ -69,6 +71,29 @@ function T.activity(id,kitId)
 	return {name=fill(a.name),where=a.where,line=fill(a.line),cta=a.cta}
 end
 T.MasteryLine="+%d MASTERY"
+
+-- What an inspiration says when he waits in the street with his challenge
+-- (Shared/Solo.Challenge, the DEV 21/11): in his own voice, a dare, never a
+-- line from the anime.
+T.ChallengeLines={
+	Legion="Hey! You! Fight me, right here, right now!",
+	Lion="You're in my way. Prove you're worth my time.",
+	Leaf="I ran five hundred laps for this. Show me your best!",
+	GentleFist="Destiny says you lose. Want to argue with it?",
+	Sand="Touch me once. Just once. Then we'll talk.",
+	Copycat="Show me your best move. I'll do it better.",
+	Mirage="One duel. Please don't make it a short one.",
+	Flashstep="Quick duel? Blink and you'll miss it.",
+}
+-- Why a rooftop race or a target run gave no time (Client/SoloView.FAIL).
+T.RaceEnds={
+	teleport="OFF COURSE: THAT RUN DOESN'T COUNT",
+	time="TOO SLOW: TRY AGAIN",
+	floor="THAT RUN DIDN'T COUNT",
+	left="YOU LEFT THE RACE",
+	quit="GAVE UP? THE ROOFS WILL WAIT",
+	far="TOO FAR FROM THE MARK",
+}
 
 -- The titles to earn, in the order of the list a player browses. Ids and
 -- `earned` rules are those of the DEV's Shared/CatalogStyle (slot "title",

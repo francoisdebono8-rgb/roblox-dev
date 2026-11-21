@@ -22,6 +22,7 @@ local TweenService=game:GetService("TweenService")
 local Shared=game:GetService("ReplicatedStorage").NinjaDuel
 local Solo=require(Shared.Solo)
 local HubMap=require(Shared.HubMap)
+local PlayTexts=require(Shared.PlayTexts)
 
 local View={}
 View.__index=View
@@ -29,10 +30,8 @@ local S=HubMap.Scale or 1
 local GLOW=Color3.fromRGB(255,120,48)
 
 -- Why a run did not count, said to him.
-View.FAIL={
-	teleport="OFF COURSE: THE RUN DID NOT COUNT",time="TOO SLOW: TRY AGAIN",floor="THAT RUN WAS NOT POSSIBLE",
-	left="RACE LEFT",quit="GIVEN UP",far="TOO FAR FROM THE MARK",
-}
+-- Why a run gave no time: the CM's words (Shared/PlayTexts.RaceEnds, 21/11).
+View.FAIL=PlayTexts.RaceEnds
 -- The line of an end (pure): {title, line, sub}.
 function View.endLines(what,time,best,gain,new)
 	if what=="finish" or what=="done" then
