@@ -193,7 +193,10 @@ test("on: a duel that counts takes a learned kit, practice takes any; a master's
 	local ryo0=Progression.view(player).ryo or 0
 	local vs=Progression.versusEnded(player,"Leaf",true,2)
 	assert(vs and vs.amount==Masters.versusGain({won=true,techniques=2}) and Progression.view(player).mastery.Leaf==mastery0+vs.amount,"a won duel against a player")
-	assert((vs.ryo or 0)>0 and (Progression.view(player).ryo or 0)==ryo0+vs.ryo,"a duel against a player paid no Ryō")
+	-- (21/11) the day's quests can be met by this duel and pay their Ryō too
+	-- (DailyQuests turns them with the date): counted apart
+	local quests=(vs.daily and vs.daily.ryo) or 0
+	assert((vs.ryo or 0)>0 and (Progression.view(player).ryo or 0)==ryo0+vs.ryo+quests,"a duel against a player paid no Ryō")
 	assert(Progression.versusEnded(player,"Flashstep",true,2)==nil,"an unlearned kit earned mastery")
 	local cup=Progression.cupEnded(player,"Leaf",true)
 	assert(cup and cup.amount==Masters.Gain.Champion and cup.ryo==H.load("Shared/Shop").Ryo.Champion,"the champion's bonus")
