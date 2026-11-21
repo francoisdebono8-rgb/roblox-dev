@@ -54,13 +54,14 @@ def ribbon(pc, pts, width, side=Vector((1, 0, 0)), col=None, thick=.03):
     loft(pc, back, col or o.shade(.8, .04), cap0=False, cap1=False, closed=False)
 
 
-def dome(pc, y0, r=(.66, .68), top=.72, rings=6, n=24, front_open=0.0, col=None, z_off=0.0):
-    """A cap over the head from y0 up (a bandana, a hood): front_open (radians) leaves the face."""
+def dome(pc, y0, r=(.66, .68), top=.72, rings=6, n=24, front_open=0.0, col=None, z_off=0.0, fat=1.0):
+    """A cap over the head from y0 up (a bandana, a hood): front_open (radians) leaves the face.
+    fat < 1 keeps the sides full higher up (hair over the boxy R15 head: the skull never shows)."""
     o = O()
     rows = []
     for k in range(rings):
         u = k / (rings - 1)
-        a = math.cos(u * math.pi / 2 * .92)
+        a = math.cos(u * math.pi / 2 * .92) ** fat
         y = y0 + (top - y0) * math.sin(u * math.pi / 2)
         ring = []
         for i in range(n):
@@ -758,7 +759,7 @@ def spike(pc, base, direction, length, r, col=None, n=6):
 
 def hair_cap(pc, y0=.05, top=.74, r=(.66, .68), front=.0, z_off=0.02):
     """The mass of hair over the skull, open on the face below y0 at the front."""
-    dome(pc, y0, r=r, top=top, rings=6, n=24, front_open=front, z_off=z_off)
+    dome(pc, y0, r=r, top=top, rings=7, n=24, front_open=front, z_off=z_off, fat=.35)
 
 
 def _spikes_round(pc, count, length, tilt=0.0, back=0.0, seed=1, r=.13):
@@ -797,7 +798,7 @@ def item_hair_swept():
 def item_hair_bowl():
     o = O().Out()
     h = o.add("Head", "Hair")
-    dome(h, .05, r=(.71, .73), top=.78, rings=7, n=28, z_off=.02)
+    dome(h, .05, r=(.71, .73), top=.78, rings=7, n=28, z_off=.02, fat=.35)
     rows = []                  # the straight fringe, cut level over the brow
     for y in (.42, .16):
         rows.append([Vector((math.cos(t) * .72, y, math.sin(t) * .74 + .02)) for t in [i / 28 * math.tau for i in range(28)]])
@@ -823,7 +824,7 @@ def item_hair_long():
 def item_hair_high_tail():
     o = O().Out()
     h = o.add("Head", "Hair")
-    dome(h, .1, r=(.67, .69), top=.72, rings=6, n=24, front_open=2.0, z_off=.04)
+    dome(h, .1, r=(.67, .69), top=.72, rings=6, n=24, front_open=2.0, z_off=.04, fat=.35)
     tie = o.add("Head", "Tie")
     head_ring(tie, .62, .12, r=(.17, .17), z_off=.45)
     for k in range(7):         # the spiky tail bursting up and back from the tie
@@ -835,7 +836,7 @@ def item_hair_high_tail():
 def item_hair_buns():
     o = O().Out()
     h = o.add("Head", "Hair")
-    dome(h, .05, r=(.67, .69), top=.73, rings=6, n=24, front_open=1.9, z_off=.02)
+    dome(h, .05, r=(.67, .69), top=.73, rings=6, n=24, front_open=1.9, z_off=.02, fat=.35)
     from nd_mesh import ellipsoid
     for x in (-.42, .42):
         ellipsoid(h, Vector((x, .72, .1)), (.26, .24, .26), O().shade(.9, .05), seg=12, rings=8)
