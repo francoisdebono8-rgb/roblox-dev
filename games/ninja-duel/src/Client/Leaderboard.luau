@@ -87,7 +87,7 @@ end
 
 function L:shown() return self.root.Visible end
 function L:show(boards) self.boards=boards or L.read();self.root.Visible=true;self:draw() end
-function L:hide() self.root.Visible=false end
+function L:hide() self.root.Visible=false;if self.onHide then self.onHide() end end
 function L:refresh(boards) self.boards=boards;if self.root.Visible then self:draw() end end
 
 function L:draw()

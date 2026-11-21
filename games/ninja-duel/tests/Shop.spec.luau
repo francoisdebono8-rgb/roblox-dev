@@ -520,6 +520,39 @@ test("the two trees: the kit's card, the natures, the ninja's commands",function
 	assert(ok,tostring(err))
 end)
 
+-- (DESIGN 21/11, vague 2 3) today's quests and the days in a row
+test("today's quests: three rows, DONE stamped, the days in a row",function()
+	local Q=H.load("Client/QuestPanel")
+	local D=H.load("Shared/DailyQuests")
+	local r=D.new()
+	local view=D.view(r,D.DAY*100+3600)
+	local rows=Q.rows(view)
+	assert(#rows==3 and rows[1].fill==0 and rows[1].count:find("0 /",1,true),"three quests, none begun")
+	assert(Q.done(view)==0,"none done")
+	assert(Q.streakLine(view):find("FINISH A DUEL",1,true),"the streak says how to keep it")
+	assert(Q.clock(3*3600+5*60)=="3 H 05","the clock")
+	view.quests[1].done=true;view.quests[1].progress=view.quests[1].goal
+	assert(Q.done(view)==1 and Q.rows(view)[1].done and Q.rows(view)[1].fill==1,"one done")
+	H.workspace.GetAttribute=function() return nil end
+	local saved=H.envBase.Instance
+	local baseNew=harnessInstance.new
+	H.envBase.Instance={new=function(class)
+		local x=baseNew(class)
+		x.Activated={Connect=function(_,fn) x.click=fn end}
+		return x
+	end}
+	local ok,err=pcall(function()
+		local UI=H.load("Client/UI")
+		local panel=Q.new(UI.kit,baseNew("ScreenGui"))
+		panel:show(view)
+		assert(panel:shown() and #panel.drawn==3 and not panel.empty.Visible,"the page")
+		panel:show(nil);assert(panel.empty.Visible,"no profile: it says so")
+		panel.close.click();assert(not panel:shown(),"X closes")
+	end)
+	H.envBase.Instance=saved
+	assert(ok,tostring(err))
+end)
+
 -- (15/11, DA v3 Mix-Shop) the STYLE preview: a still copy of his own avatar,
 -- its scripts and its own outfit taken off, the character left as it was.
 test("the STYLE preview: a still copy of his avatar, without its scripts nor its outfit",function()

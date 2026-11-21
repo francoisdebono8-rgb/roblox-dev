@@ -94,6 +94,22 @@ function Hub.new(ui,camera,send,controls)
 	self.duelsKey=keycap(self.duelsButton,"B",UDim2.new(1,-24,0,-10))
 	local shop=K.button(self.shopBox,"SHOP",UDim2.fromOffset(284,0),UDim2.fromOffset(140,60),function() self:openShop() end,M.red)
 	shop.TextSize=34;shop.TextColor3=M.cream;shop.Rotation=-2
+	-- (DESIGN 21/11) the second row: today's quests (Client/QuestPanel) and
+	-- the leaderboards (Client/Leaderboard), from anywhere in the village
+	self.questsButton=K.button(self.shopBox,"QUESTS",UDim2.fromOffset(132,68),UDim2.fromOffset(140,48),function() self:openQuests() end,M.paper)
+	self.questsButton.TextSize=24;self.questsButton.TextColor3=M.ink;self.questsButton.Font=STRONG;inkRing(self.questsButton,3)
+	self.questsDot=K.text(self.questsButton,"",UDim2.new(1,-34,0,-12),UDim2.fromOffset(44,26),15,M.cream,STRONG,Enum.TextXAlignment.Center)
+	self.questsDot.BackgroundTransparency=0;self.questsDot.BackgroundColor3=M.red;self.questsDot.Visible=false
+	local ranks=K.button(self.shopBox,"RANKS",UDim2.fromOffset(284,68),UDim2.fromOffset(140,48),function() self:openRanks() end,M.paper)
+	ranks.TextSize=24;ranks.TextColor3=M.ink;ranks.Font=STRONG;inkRing(ranks,3)
+	self.ranksButton=ranks
+	do
+		local ok,QuestPanel=pcall(function() return require(script.Parent.QuestPanel) end)
+		if ok and QuestPanel then
+			local made,panel=pcall(QuestPanel.new,ui.kit or K,ui.gui)
+			if made then self.quests=panel;panel.onHide=function() self:apply() end end
+		end
+	end
 	self.keys=K.text(ui.gui,"",UDim2.new(.5,-360,1,-34),UDim2.fromOffset(720,22),16,M.cream,K.BODY_FONT,Enum.TextXAlignment.Center)
 	K.create("UIStroke",self.keys,{Color=M.ink,Thickness=2.5,ApplyStrokeMode=Enum.ApplyStrokeMode.Contextual})
 	self.keys.Visible=false
@@ -143,7 +159,7 @@ function Hub.new(ui,camera,send,controls)
 	self.third=K.button(card,"",UDim2.fromOffset(250,284),UDim2.fromOffset(216,46),function() self:press("third") end,M.paper)
 	for _,b in {self.second,self.third} do b.TextColor3=M.ink;b.Font=STRONG;b.TextSize=18;inkRing(b,3) end
 	-- (the mock-up's « Later »: B on a pad, or walk away)
-	self.closeCard=K.button(card,"LATER",UDim2.fromOffset(490-118,4),UDim2.fromOffset(112,38),function() self:hideCard() end,M.paper)
+	self.closeCard=K.button(card,"LATER",UDim2.fromOffset(490-118,0),UDim2.fromOffset(112,44),function() self:hideCard() end,M.paper)
 	self.closeCard.TextColor3=M.ink;self.closeCard.Font=STRONG;self.closeCard.TextSize=18;self.closeCard.ZIndex=34;inkRing(self.closeCard,3)
 	self.cardFoot=K.text(card,"",UDim2.fromOffset(24,338),UDim2.fromOffset(442,24),14,M.cream,K.BODY_FONT,Enum.TextXAlignment.Center)
 	K.create("UIStroke",self.cardFoot,{Color=M.ink,Thickness=2,ApplyStrokeMode=Enum.ApplyStrokeMode.Contextual})
@@ -259,7 +275,8 @@ end
 function Hub:apply()
 	local walking=self.active and not self.board
 	-- The tree panel or the shop over the village: the walk waits behind it.
-	local panel=(self.ui.treePanel and self.ui.treePanel:shown()) or (self.ui.shopPanel and self.ui.shopPanel:shown()) or (self.ui.outfitPanel and self.ui.outfitPanel:shown()) or false
+	local panel=(self.ui.treePanel and self.ui.treePanel:shown()) or (self.ui.shopPanel and self.ui.shopPanel:shown()) or (self.ui.outfitPanel and self.ui.outfitPanel:shown())
+		or (self.quests and self.quests:shown()) or (self.ui.leaderboard and self.ui.leaderboard:shown()) or false
 	self.panelOpen=panel
 	self.ui.hubWalk=walking
 	self.camera.hubWalk=walking
@@ -293,6 +310,25 @@ function Hub:showHud()
 	self.goal.Visible=walking and self.goalHead.Text~="" and not self.card.Visible
 	self.runButton.Visible=walking and touch and not panel
 	self.shopBox.Visible=walking and not talking and self.kits~=nil and self.ui.shopPanel~=nil
+	-- the quests button: how many are done today
+	local daily=self.kits and self.kits.daily
+	if daily and self.quests then
+		local n,all=require(script.Parent.QuestPanel).done(daily)
+		self.questsDot.Text=n.."/"..all;self.questsDot.Visible=all>0
+		if self.quests:shown() then self.quests:refresh(daily) end
+	end
+end
+function Hub:openQuests()
+	if not self.quests then return end
+	self:hideCard()
+	self.quests:show(self.kits and self.kits.daily)
+	self:apply()
+end
+function Hub:openRanks()
+	self:hideCard()
+	if self.ui.leaderboard then self.ui.leaderboard.onHide=function() self:apply() end end
+	if self.ui.showLeaderboard then self.ui:showLeaderboard() end
+	self:apply()
 end
 function Hub:openBoard()
 	self.board=true;self:hideCard();self:apply()

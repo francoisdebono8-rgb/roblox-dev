@@ -12,7 +12,7 @@ local L={}
 
 L.MARGIN=16
 L.HUD={w=430,h=74}      -- the place and the kit, top left
-L.SHOP={w=424,h=60}     -- the Ryō, DUELS and SHOP, top right
+L.SHOP={w=424,h=116}    -- the Ryō, DUELS and SHOP, top right; QUESTS and RANKS under them
 L.GOAL={w=840,h=58,stackH=96} -- what to do next: a head and the line under it
 L.STACK=700             -- narrower (in the goal's own units), one place a line
 L.CARD={w=490,h=380}    -- a master's card
