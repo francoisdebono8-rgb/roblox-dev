@@ -50,10 +50,11 @@ test("combo scaling: later hits are worth less and the scale resets after the co
  assert(before-b.health==10,"a fresh combo started scaled")
 end)
 
-test("the game's damage scale (longer rounds): health takes the scaled blow, the impact keeps its weight",function()
+test("the game's damage scale: health takes the scaled blow, the impact keeps its weight",function()
  local Config=H.load("Shared/Config")
  local scale=H.GameDamageScale
- assert(scale>0 and scale<1,"the game scales damage down (user 03/11: rounds too short), got "..tostring(scale))
+ -- (03/11 rounds too short: 0.6; 21/11, DEC-046, rounds of 30 to 40 s: 1)
+ assert(scale>=.5 and scale<=1.5,"the game's damage scale is out of its range, got "..tostring(scale))
  local saved=Config.DamageScale
  Config.DamageScale=scale
  local c,a,b=H.duel("Flashstep","Mirage")

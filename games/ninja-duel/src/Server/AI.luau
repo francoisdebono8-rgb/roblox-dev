@@ -398,7 +398,9 @@ end
 -- Palms or his Rotation.) What the bot did lately, by move: a move it has
 -- used `limit` times in the last `window` seconds waits; a technique it has
 -- not placed yet this round is owed one, and taken on a looser condition.
-AI.Variety={Tool={2,10},WallRun={1,16},Flashstep={1,6},Technique={2,30},OweAfter=14,OweChance=.35}
+-- (21/11, DEC-046: rounds of 30 to 40 s) owed after 12 s, not 14: a round
+-- shows the kit's signature before it ends.
+AI.Variety={Tool={2,10},WallRun={1,16},Flashstep={1,6},Technique={2,30},OweAfter=12,OweChance=.35}
 function AI:used(key,now)
 	local uses=self.uses or {}
 	self.uses=uses

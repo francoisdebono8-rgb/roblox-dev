@@ -35,7 +35,10 @@ function Preview.copy(character)
 	if root then
 		pcall(function()
 			copy.PrimaryPart=root
-			copy:PivotTo(CFrame.new(0,3,0)*CFrame.Angles(0,math.pi,0))
+			-- (21/11, François: « notre personnage est à l'envers », seen from
+			-- the back) The lens stands at -Z looking +Z: the body faces it
+			-- (its front is -Z), turned a little for a three-quarter view.
+			copy:PivotTo(CFrame.new(0,3,0)*CFrame.Angles(0,math.rad(-20),0))
 		end)
 	end
 	return copy

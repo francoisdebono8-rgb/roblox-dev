@@ -27,9 +27,11 @@ return {
 	ComboScaling = {Free = 2, Step = 0.12, Floor = 0.35, Reset = 0.45, MaxHits = 11},
 	-- (User 03/11: "les combats trop courts") Every blow's damage is scaled by
 	-- this as it lands (Combat:damage, Combat:chip): the HP of the story stay,
-	-- the rounds last longer (AI against AI: 42 s average at 1.0). The
-	-- impact's look still reads the blow's own weight (unscaled).
-	DamageScale = 0.6,
+	-- the round's length follows. The impact's look reads the blow's own
+	-- weight (unscaled). (21/11, DEC-046, François: "des combats trop longs",
+	-- 2 rounds won of 30 to 40 s) Back to 1: AI against AI, 37 s a round on
+	-- average (0.6 gave about 70 s; 1.25 gives 29 s, 1.5 24 s).
+	DamageScale = 1,
 	Clash = {Window = 0.07, Push = 4.5, JutsuWindow = 0.35},
 	-- Re-engage (CORE_COMBAT_CONVERGENCE_2 §3): one contextual action (E; on a pad
 	-- × inside a chase window, sprint + ○ toward outside one). Inside a window it

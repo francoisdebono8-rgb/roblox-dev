@@ -457,3 +457,33 @@ Décision du DEV (DEC-043). Plan et tâches : projet, `claude/etape2-deux-arbres
   - les outils : le parchemin explosif, la fumée.
 - **Les infusions** ont de petits effets lisibles, auxquels l'adversaire peut toujours répondre, et au plus un toutes les 4 s. Rien de tout cela ne se vend.
 
+## DEC-046 — Des duels courts : 2 manches gagnantes de 30 à 40 s (21/11)
+
+François a joué l'étape 2 (21/11, 15 h 38) : « des combats trop longs, pas assez dynamiques et variés ». À la question du DEV, il répond (15 h 43) : **2 manches gagnantes de 30 à 40 s chacune**.
+
+- `Config.DamageScale` passe de 0,6 à 1 : les coups font leurs dégâts d'origine. Cela défait le rallongement du 03/11, fait quand François trouvait les combats trop courts ; le combat a changé depuis (réduction des combos).
+- **Mesuré par simulation IA contre IA**, 56 duels, une graine :
+  - à 1 : 37 s par manche en moyenne (15 sous 30 s, 20 au-dessus de 40 s) ;
+  - à 0,6 : environ 70 s ;
+  - à 1,25 : 29 s ;
+  - à 1,5 : 24 s.
+- `RoundsToWin` reste à 2.
+- **Gaara** fait encore les manches les plus longues (50 à 66 s), à cause de son bouclier de sable : c'est à revoir à l'étape 4.
+- Contre un vrai joueur, la manche sera un peu plus longue que la simulation : on ajuste d'un cran quand François aura joué.
+- **Le rythme et la variété** (situations, environnement, IA qui change de plan) font partie de l'étape 3 refondue.
+- **L'IA place ses techniques plus tôt** : une technique pas encore jouée est « due » après 12 s au lieu de 14 (`AI.Variety.OweAfter`). Une manche courte montre quand même la signature du kit.
+
+**Les autres réponses de François (21/11, 15 h 47) :**
+- **Le premier combat** : un combat facile, avec les consignes au bon moment. Pas de leçon sur un mannequin avant.
+- **La personnalisation** : il veut tout ce que le DEV proposait :
+  - coiffures et couleurs ;
+  - couleur du chakra et des jutsu ;
+  - poses et émotes de victoire ;
+  - auras ;
+  - armes ;
+  - titres ;
+  - cadres de face-cam.
+
+  La boutique doit donner envie d'acheter, et rien ne doit y rester vide.
+- **La boutique montrait l'avatar de dos** (`Client/StylePreview` le tournait de 180°) : corrigé par le DEV le 21/11, le corps fait face, de trois quarts.
+
