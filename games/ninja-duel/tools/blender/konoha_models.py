@@ -1407,6 +1407,10 @@ MODELS = {
 # (tools/blender/konoha_houses.py, 800 to 2 000 triangles each)
 import konoha_houses  # noqa: E402
 MODELS.update(konoha_houses.MODELS)
+# (21/11, étape 3, DEC-047) the plan's landmarks and Training Ground Three's dummy and targets
+# (tools/blender/konoha_landmarks.py), under KonohaLayout's model names
+import konoha_landmarks  # noqa: E402
+MODELS.update(konoha_landmarks.MODELS)
 
 
 def write(src_dir, limit=110000):
@@ -1418,8 +1422,12 @@ def write(src_dir, limit=110000):
     # (19/11) the new houses join HubMeshData once Client/HubDress tags them (HubDress.NAMES,
     # DEV 6: Konoha built from KonohaLayout); until then they ship as FBX (hub_fbx.py) only
     dress = open(os.path.join(src_dir, "HubDress.luau")).read() if os.path.exists(os.path.join(src_dir, "HubDress.luau")) else ""
+    # (21/11) HubDress now names every model of the plan (KonohaLayout.Buildings) at run time
+    layout = os.path.join(src_dir, "..", "Shared", "KonohaLayout.luau")
+    if os.path.exists(layout):
+        dress += open(layout).read()
     for name, fn in MODELS.items():
-        if name in konoha_houses.MODELS and '"%s"' % name not in dress and "%s=" % name not in dress:
+        if (name in konoha_houses.MODELS or name in konoha_landmarks.MODELS) and '"%s"' % name not in dress and "%s=" % name not in dress:
             print("not in HubDress.NAMES yet:", name)
             continue
         pieces = blender(fn())
