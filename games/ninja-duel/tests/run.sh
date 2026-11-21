@@ -29,8 +29,10 @@ run() {
     printf '%s\n' "$output" | grep -E '^(FAIL|.*Error)' | head -5
   fi
 }
-run DuelBot    "$LUNE" run tests/DuelBot.spec.luau
-run FirstCombat "$LUNE" run tests/FirstCombat.spec.luau
+echo "=== DuelBot ==="
+"$LUNE" run tests/DuelBot.spec.luau || status=1
+echo "=== FirstCombat ==="
+"$LUNE" run tests/FirstCombat.spec.luau || status=1
 echo "=== rounds ==="
 "$LUNE" run tools/duelbot/rounds.luau 2 1,1.25 || status=1
 exit $status
