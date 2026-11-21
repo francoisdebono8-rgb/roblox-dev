@@ -8,5 +8,6 @@ end)()
 local RS=game:GetService("ReplicatedStorage").NinjaDuel
 local server=game:GetService("ServerScriptService"):FindFirstChild("NinjaDuelServer")
 local mods={Fighters=require(RS.Fighters),Attacks=require(RS.Attacks),Combo=require(RS.BanglaCombo),BetaRoster=require(RS.BetaRoster),
-	SkillBuilds=server and require(server.SkillBuilds)}
+	SkillBuilds=server and require(server.SkillBuilds),Config=require(RS.Config),
+	NinjaTree=RS:FindFirstChild("NinjaTree") and require(RS.NinjaTree)}
 return game:GetService("HttpService"):JSONEncode(KitPrint.compute(mods))

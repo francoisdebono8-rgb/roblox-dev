@@ -10,11 +10,15 @@
 --            the kit objects he has not earned are taken away)
 --   arbre    a player's kit with every wired node of its tree (the first of an
 --            exclusive choice), SkillBuilds.apply
+-- and (21/11, DEC-045, step 2) what each of the five chakra natures of the
+-- ninja's tree adds to a kit (Shared/NinjaTree.Infusion: the contract the
+-- combat follows), with the infused kunai, the infused blade and the mastery.
 -- Pure: no instance, no remote. The modules come from the caller:
---   KitPrint.compute({Fighters=, Attacks=, Combo=, BetaRoster=, SkillBuilds=})
+--   KitPrint.compute({Fighters=, Attacks=, Combo=, BetaRoster=, SkillBuilds=,
+--                     Config=, NinjaTree=})   (Config, NinjaTree: optional)
 -- tools/kits/empreinte.py compares the kits with each other, and a version
 -- with another (before / after a change).
-local KitPrint={Version=1}
+local KitPrint={Version=3}
 
 local function num(v) return if type(v)=="number" and v==v and math.abs(v)~=math.huge then v else nil end
 local function round(v,d) if not num(v) then return nil end local m=10^(d or 2);return math.floor(v*m+.5)/m end
@@ -58,8 +62,11 @@ local COMMON={Name=true,FullName=true,Age=true,Title=true,Color=true,Routes=true
 	ToolMastery=true,Awakening=true,AttackProfile=true,Skin=true,Hair=true,Outfit=true,Techniques=true,SealJutsu=true,
 	StrikeTurnScale=true,StringLength=true,Motion=true,Portrait=true,Look=true,Voice=true,Intro=true}
 
--- What a kit is made of, as numbers and names.
-function KitPrint.kit(def,Attacks)
+-- What a kit is made of, as numbers and names. Config (optional): the run is
+-- Config.Movement.SprintSpeed x SprintScale, as the game moves (DEC-044, 20/11:
+-- it was the walk x SprintScale here, and Gaara's run came out slower than
+-- his walk).
+function KitPrint.kit(def,Attacks,Config)
 	local out={}
 	-- the ground string
 	local hits,damage,time={},0,0
@@ -82,15 +89,20 @@ function KitPrint.kit(def,Attacks)
 	out.dash=dash and {damage=round(dash.damage,2),reach=round(dash.reach,2)}
 	-- moving
 	local awake=def.Awakening or {}
-	out.move={walk=num(def.Speed),run=num(def.Speed) and round(def.Speed*(def.SprintScale or 1),2),jump=num(def.JumpScale) or 1,
+	local sprint=Config and Config.Movement and num(Config.Movement.SprintSpeed)
+	local run=if sprint then sprint*(num(def.SprintScale) or 1) elseif num(def.Speed) then def.Speed*(num(def.SprintScale) or 1) else nil
+	out.move={walk=num(def.Speed),run=round(run,2),jump=num(def.JumpScale) or 1,
 		air=num(def.AirControlScale) or 1,accel=num(def.AccelerationScale) or 1,dash=num(def.DashScale) or 1,
 		awakenSpeed=num(awake.Speed) or 1}
 	-- lasting
 	out.body={health=num(def.Health),chakra=num(def.Chakra),regen=num(def.ChakraRegen),guard=num(def.GuardStrength) or 0,
 		preferredRange=num(def.PreferredRange)}
 	-- the jutsu
-	local techs,burst,sustained,farthest,teleports,mobile={},0,0,0,0,0
+	-- a technique a player has not earned yet (Locked: a kit object's or an
+	-- Unlock node's) is not in his kit: listed apart, never counted
+	local techs,burst,sustained,farthest,teleports,mobile,locked={},0,0,0,0,0,{}
 	for _,t in def.Techniques or {} do
+		if t.Locked==true then table.insert(locked,t.Id);continue end
 		local dmg=num(t.Damage) or 0
 		local cd=num(t.Cooldown)
 		table.insert(techs,{id=t.Id,name=t.Name,family=t.Family,element=t.Element,damage=dmg,range=num(t.Range),cooldown=cd,
@@ -102,7 +114,7 @@ function KitPrint.kit(def,Attacks)
 		if t.Mobile then mobile+=1 end
 	end
 	out.jutsu={list=techs,count=#techs,burst=round(burst,2),dps=round(sustained,2),farthest=farthest,teleports=teleports,mobile=mobile,
-		seals=if type(def.SealJutsu)=="table" then #def.SealJutsu else 0}
+		seals=if type(def.SealJutsu)=="table" then #def.SealJutsu else 0,locked=locked}
 	-- the tool button
 	local tm=def.ToolMastery or {}
 	out.tool={kind=tm.Kind or def.Tool,count=num(tm.Count),speed=num(tm.Speed),damage=num(tm.Damage),recover=num(tm.Recover)}
@@ -122,6 +134,49 @@ function KitPrint.kit(def,Attacks)
 	table.sort(own)
 	out.own=own
 	out.awakening=awake.Name
+	return out
+end
+
+-- What one chakra nature adds to a kit, from the contract of the ninja's tree
+-- (NinjaTree.Infusion): an infused hit fires its effect at most once every Gap
+-- seconds, so a kit that lands its third basic hit or its kunai more often
+-- than that gets the effect at that rate, whatever its speed. opts: kunai,
+-- blade, mastery (default: all three, the whole infusion branch). The mastery
+-- multiplies what the effect does (Strong). A kit with no thrown blade (Lee's
+-- tool deflects) carries nothing on a kunai. Per second of duel:
+--   burnDps    health the burn takes             (Fire)
+--   kunaiRange the thrown blade's flight, x      (Wind)
+--   frozen     share of the time he is frozen   (Lightning)
+--   guardDps   extra damage on his guard        (Earth)
+--   slowed     his average loss of speed        (Water)
+function KitPrint.nature(def,N,nature,opts)
+	opts=opts or {kunai=true,blade=true,mastery=true}
+	local inf=N and N.Infusion
+	local e=inf and inf[nature]
+	if not e then return nil end
+	local gap=num(inf.Gap) or 4
+	local strong=if opts.mastery then num(inf.Strong) or 1 else 1
+	local tool=def.ToolMastery or {}
+	local throw=tool.Kind=="kunai" or tool.Kind=="shuriken"
+	local carriers={}
+	if opts.blade then table.insert(carriers,"blade") end
+	if opts.kunai and throw then table.insert(carriers,tostring(tool.Kind)) end
+	local on=#carriers>0
+	local out={nature=nature,carriers=carriers,answer=e.Answer,gap=gap,strong=strong}
+	if num(e.Burn) then out.burnDps=if on then round(e.Burn*strong/gap,3) else 0 end
+	if num(e.Stun) then out.frozen=if on then round(e.Stun*strong/gap,4) else 0 end
+	if num(e.GuardDamage) then out.guardDps=if on then round(e.GuardDamage*strong/gap,3) else 0 end
+	if num(e.Slow) then out.slowed=if on then round(e.Slow*strong*(num(e.SlowTime) or 0)/gap,4) else 0 end
+	if num(e.KunaiRange) then
+		-- the thrown blade flies further and faster
+		local thrown=opts.kunai and throw
+		out.kunaiRange=if thrown then round(1+(e.KunaiRange-1)*strong,3) else 1
+		out.kunaiSpeedBase=num(tool.Speed)
+		out.kunaiSpeed=if thrown then round((num(tool.Speed) or 0)*(1+((num(e.KunaiSpeed) or 1)-1)*strong),2) else num(tool.Speed)
+		-- (21/11, Server/NinjaArts.gust) the blade's last hit throws the body
+		-- further, by the same factor: a kit without a throw gets this one
+		out.push=if opts.blade then round(1+(e.KunaiRange-1)*strong,3) else 1
+	end
 	return out
 end
 
@@ -155,19 +210,39 @@ function KitPrint.compute(mods)
 		if def then
 			table.insert(out.order,id)
 			local entry={id=id,name=def.Name,title=def.Title,versions={}}
-			entry.versions.prodige=KitPrint.kit(def,mods.Attacks)
+			entry.versions.prodige=KitPrint.kit(def,mods.Attacks,mods.Config)
 			local SB=mods.SkillBuilds
 			if SB and SB.tree(id) then
 				local ok,start=pcall(function() return SB.build(id,{},{gated=true}) end)
 				if ok and start then
-					entry.versions.depart=KitPrint.kit(start.def,mods.Attacks)
+					entry.versions.depart=KitPrint.kit(start.def,mods.Attacks,mods.Config)
 					entry.locks=start.locks
 				end
+				-- the whole tree, as a player's kit (gated: what no node of it
+				-- gives stays locked)
 				local nodes,total=KitPrint.fullTree(SB,id)
-				local ok2,full=pcall(function() return SB.apply(id,nodes) end)
+				local ok2,full=pcall(function()
+					local kit=SB.apply(id,nodes)
+					if SB.gate then SB.gate(kit) end
+					return kit
+				end)
 				if ok2 and full then
-					entry.versions.arbre=KitPrint.kit(full.def,mods.Attacks)
-					entry.tree={nodes=#nodes,total=total,spent=full.spent}
+					entry.versions.arbre=KitPrint.kit(full.def,mods.Attacks,mods.Config)
+					entry.tree={nodes=#nodes,total=total,spent=full.spent,locks=full.locks}
+					-- (21/11, DEC-045) the node at the top that changes a technique's
+					-- nature (`Transform = true`); a kit may have none yet
+					local transform={}
+					for _,node in SB.tree(id).Nodes do
+						if node.Transform==true then table.insert(transform,{id=node.Id,name=node.Name}) end
+					end
+					entry.tree.transform=transform
+					-- then each chakra nature, with the whole infusion branch
+					if mods.NinjaTree then
+						entry.natures={}
+						for _,nature in mods.NinjaTree.Natures or {} do
+							entry.natures[nature]=KitPrint.nature(full.def,mods.NinjaTree,nature)
+						end
+					end
 				end
 			end
 			out.kits[id]=entry

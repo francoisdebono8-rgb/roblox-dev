@@ -1,5 +1,34 @@
 # Boîte de réception Claude
 
+## INBOX-OUTILLEUR-ETAPE2-20261121 — OUTILLEUR 21/11 : comparateur des 3 kits, contrôle des nœuds, cabine repassée
+
+**Poussé sur la branche commune** (Python : 42 PASS ; 4 builds verts ; docs PASS). Les specs Luau (`KitPrint`, `Nodes`) tournent dans la CI GitHub. Mesures dans Studio sur des copies LAB de ND-JEU `632931f2` (avant) et `b1c21d57` (après DEV 2/4, 3/4 et 4/4).
+
+**Ce qui est livré :**
+1. **Le comparateur des 3 kits** (`tools/kits`, README § Étape 2). `empreinte.py AVANT.json APRES.json --etape2` :
+   - **Le départ réduit se voit.** Naruto, Sasuke et Lee passent de 4, 4 et 3 techniques à 2. L'arbre leur rend les autres. Notes départ → arbre : Naruto dégâts/s 48 → 63, Sasuke 82 → 92, Lee 71 → 76.
+   - **Transformation** : Sasuke a la sienne (Wall Chidori) ; Naruto et Lee « pas encore de nœud ». Le comparateur gère un kit sans `Transform`.
+   - **Les natures**, chiffrées par kit : les mêmes pour tous, un effet toutes les 4 s au plus. Le Vent donne aussi au dernier coup sa poussée (+30 %, `NinjaArts.gust`) : Lee et Gaara, sans lancer, gardent celle-là.
+   - La course suit le jeu (`Config.Movement.SprintSpeed` × `SprintScale`) ; une technique verrouillée est listée à part.
+2. **Le contrôle des nœuds**, en deux tests :
+   - `tests/Nodes.spec.luau` (`NodeCheck`) : le kit avec et sans chaque nœud. Un nœud `Major` qui ne change rien au kit fait échouer le test. Dans Studio (`b1c21d57`) : 0 échec sur 64. 53 changent une seule règle ; les 6 `Learn*` d'une technique la débloquent. Les 13 nœuds de l'arbre du ninja changent tous `def.Ninja`.
+   - `tools/kits/test_noeuds_lus.py` : le jeu doit lire ce que le nœud change. Tout est lu : 109 champs et clés des nœuds `Major`, et les dix champs de `def.Ninja` (`NinjaArts`, `Motor`). Un nœud qui change un champ que personne ne lit fait échouer le test.
+3. **La cabine repassée** (`tools/tenues/rendus/2026-11-21_632931f2`, avant / après avec `29a59f15`). Elle habille maintenant comme le duel : `Headband.fromLooks`, puis `Outfit.wear`. Observations de Claude, pas l'avis de François :
+   - le torse de Korblox est réglé ; Femme et Vanessa gardent leurs cheveux ; un seul bandeau par tête ;
+   - **Big Bill sort encore chauve**, et les bras de Korblox restent à régler (ci-dessous).
+
+**Correction de mon étape 1 :** les paquets Femme, Vanessa et Big Bill n'ont pas de cheveux du tout. Avant le déshabillage, `desc:GetAccessories(true)` est vide pour les trois. Leur « chauve » du 20/11 venait de la cabine, pas d'`Outfit.strip`. La cabine leur met maintenant des cheveux pour l'essai.
+
+**DEV, à toi :**
+- **Big Bill chauve : `Outfit.strip` perd un chapeau-cheveux.** Avant le déshabillage, `HatAccessory` vaut `15656347831`, et `GetAccessories(true)` est vide. `hairInHats` le reconnaît à son nom et le déplace vers `HairAccessory`. Mais depuis `HairAccessory`, Roblox ne construit rien : 0 accessoire, contre 1 depuis `HatAccessory` (essai dans Studio, même objet). Les cheveux de Vanessa (1772336109) passent ; cela dépend du type de l'objet. Proposition : garder les chapeaux-cheveux dans `HatAccessory` (`desc.HatAccessory = table.concat(hair, ",")`) au lieu de les déplacer.
+- **Korblox : les bras de l'armure.** `RightUpperArm` mesure 1,53 × 3,28 × 1,58 (un bras normal : environ 1 × 1,2 × 1). Sur 17 tenues sur 19, les pièces de bras font deux blocs au-dessus des épaules. Faire pour les bras ce que `plainTorso` fait pour le torse ? Sinon, l'ANIMATEUR plafonne l'échelle des pièces de bras.
+- **Le shuriken de Sasuke compte-t-il comme le « kunai »** de l'infusion et du Vent ? Le comparateur le compte (`ToolMastery.Kind` kunai ou shuriken).
+- **Les natures sont les mêmes pour tous les kits, et petites.** Le Feu ajoute 1,1 dégâts/s, soit +4 à 6 % ; la Foudre gèle l'adversaire 9,4 % du temps. Est-ce assez pour que François voie la différence ?
+- **Les nœuds `Major` changent presque tous une seule règle** (53 sur 64). Tout est lu par le jeu, mais c'est souvent une petite chose.
+- **Le départ de Naruto** : le Clone et le Rendan. Le Rendan fait ses dégâts par ses coups ; aucun de ses deux jutsu de départ n'a de dégâts propres.
+
+**ANIMATEUR :** l'attribut `NinjaNature` n'a pas encore de lecteur côté client (`Infusion.<Nature>`) ; c'est le seul champ de l'étape 2 que personne ne lit. Korblox : si le DEV ne remet pas les bras standard, il faut plafonner l'échelle des pièces de bras.
+
 ## INBOX-DEV-ETAPE2-LIVRE-20261121 — DEV 21/11 : départ réduit, effets des natures, outils et mobilité (DEC-045)
 
 **Ce qui est en place** (serveur, testé sans Studio : `tests/Trees.spec`, `tests/NinjaArts.spec`) :

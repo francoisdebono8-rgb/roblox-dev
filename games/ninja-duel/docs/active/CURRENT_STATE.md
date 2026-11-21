@@ -1,3 +1,16 @@
+**Étape 2 de l'OUTILLEUR, 21/11 (DEC-045 ; doc projet `claude/etape2-deux-arbres-taches-2026-11-21` § OUTILLEUR)**
+- **Comparateur des 3 kits** (`tools/kits`, empreinte v3) : la course suit le jeu (`Config.Movement.SprintSpeed` × `SprintScale`, DEC-044) ; une technique verrouillée est listée à part ; les cinq natures sont chiffrées depuis `NinjaTree.Infusion` ; le nœud `Transform` de chaque kit. `empreinte.py AVANT APRES --etape2`. Mesuré dans Studio, ND-JEU `632931f2` (avant) et `b1c21d57` (après DEV 2/4, 3/4, 4/4) (TECHNICAL) :
+  - **départ** : Naruto, Sasuke et Lee passent de 4, 4 et 3 techniques à 2 ; l'arbre rend les autres (Rasengan et Multi-clonage ; Chidori et Fil piégé ; Lotus primaire et Retirer les poids). Notes départ → arbre : Naruto dégâts/s 48 → 63, Sasuke 82 → 92, Lee 71 → 76 ;
+  - **transformation** : Sasuke (Wall Chidori) ; Naruto et Lee pas encore ;
+  - **natures** : les mêmes chiffres pour tous les kits, un effet toutes les 4 s au plus (Feu +1,1 dégâts/s, soit +4 à 6 %). Le Vent : lancer +30 % et dernier coup qui pousse +30 % ; Lee et Gaara n'ont que la poussée.
+- **Contrôle des nœuds** (`tools/kits/NodeCheck.luau`, `tests/Nodes.spec.luau`) : le kit avec et sans chaque nœud ; un nœud `Major` qui ne change rien fait échouer le test. Dans Studio (`b1c21d57`) : 0 échec sur 64 ; 53 changent une seule règle, les 6 `Learn*` d'une technique la débloquent ; les 13 nœuds de l'arbre du ninja changent tous `def.Ninja`.
+  - `tools/kits/noeuds_lus.py` : le jeu lit chaque champ que changent les nœuds `Major` (109 champs et clés) et les dix champs de `def.Ninja` (`Server/NinjaArts`, `Motor`) ; le test échoue sinon. Reste l'attribut `NinjaNature`, pas encore lu par le client (ANIMATEUR).
+- **Cabine repassée** (`tools/tenues/rendus/2026-11-21_632931f2`, et l'avant / après avec `29a59f15`). Observé par Claude (NATIVE_STUDIO, pas l'avis de François) :
+  - le torse de Korblox est réglé ; ses bras d'armure (3,28 studs) font encore monter deux blocs au-dessus des épaules sur 17 tenues sur 19 ;
+  - Femme et Vanessa gardent leurs cheveux ; un seul bandeau par tête ;
+  - **Big Bill sort encore chauve** : `Outfit.strip` déplace son chapeau-cheveux (15656347831) vers `HairAccessory`, où Roblox ne construit rien (1 accessoire depuis `HatAccessory`, 0 depuis `HairAccessory`) ;
+  - correction du 20/11 : les paquets Femme, Vanessa et Big Bill n'ont pas de cheveux du tout (`GetAccessories(true)` vide) ; leur « chauve » venait de la cabine.
+
 **Étape 2 du DEV, 21/11 (DEC-045 ; doc projet `claude/etape2-deux-arbres-taches-2026-11-21`)** — TECHNICAL, sans Studio ; à jouer par François
 - **Arbre du ninja** (`Shared/NinjaTree`) : 13 nœuds (5 natures exclusives, 3 infusions, 3 mobilités, 2 outils), 1 point par 15 de maîtrise tous kits, paliers à 0/15/40. Enregistrement `ninja` du profil, commandes `ninjaLearn` / `ninjaSet`, vue `Progression.view(...).ninja`, attribut `NinjaNature`. Il entre dans le kit du duel d'un joueur (`def.Ninja`), jamais pour l'IA, les maîtres, les films ni le classé ; il n'est pas encore appliqué en ligne.
 - **Départ réduit** : Naruto, Sasuke et Lee démarrent avec 2 techniques. Nœuds `Learn*` pour les autres et l'éveil (`def.AwakeningLocked`).

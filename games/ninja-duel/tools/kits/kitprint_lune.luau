@@ -6,5 +6,6 @@ local H=require("../../tests/Harness")
 local KitPrint=require("./KitPrint")
 local serde=require("@lune/serde")
 local mods={Fighters=H.load("Shared/Fighters"),Attacks=H.load("Shared/Attacks"),Combo=H.load("Shared/BanglaCombo"),
-	BetaRoster=H.load("Shared/BetaRoster"),SkillBuilds=H.load("Server/SkillBuilds")}
+	BetaRoster=H.load("Shared/BetaRoster"),SkillBuilds=H.load("Server/SkillBuilds"),Config=H.load("Shared/Config"),
+	NinjaTree=H.load("Shared/NinjaTree")}
 print(serde.encode("json",KitPrint.compute(mods),true))

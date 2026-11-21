@@ -13,6 +13,9 @@ et la rend lisible :
     python3 tools/kits/empreinte.py EMPREINTE.json --version depart   un joueur sans nœud
     python3 tools/kits/empreinte.py AVANT.json APRES.json             avant / après
     python3 tools/kits/empreinte.py EMPREINTE.json --arbre            départ → arbre complet
+    python3 tools/kits/empreinte.py EMPREINTE.json --natures          les 5 natures sur chaque kit
+    python3 tools/kits/empreinte.py AVANT.json [APRES.json] --etape2  Naruto, Sasuke, Lee : départ réduit,
+                                                                      arbre complet, les 5 natures
     ... --html page.html                                              la même chose en page
 
 Les notes sont une part du meilleur : 100 = le meilleur des huit sur ce point,
@@ -203,6 +206,111 @@ def diff(before: dict, after: dict, vb: str = "prodige", va: str = "prodige", la
     return "\n".join(lines)
 
 
+NATURES = ["Fire", "Wind", "Lightning", "Earth", "Water"]
+FR = {"Fire": "Feu", "Wind": "Vent", "Lightning": "Foudre", "Earth": "Terre", "Water": "Eau"}
+TRIO = ["Legion", "Lion", "Leaf"]  # Naruto, Sasuke, Lee : les trois kits de l'étape 2 (DEC-045)
+
+
+def effect(n: dict, dps: float) -> str:
+    """Ce qu'une nature fait à ce kit, en une ligne (d'après KitPrint.nature)."""
+    gap = n.get("gap") or 4
+    if "burnDps" in n:
+        b = n["burnDps"]
+        return f"+{b:.2f} dégâts/s de brûlure, soit +{100 * b / dps:.0f} % de ce qu'il fait par seconde" if b else "RIEN"
+    if "kunaiRange" in n:
+        r, push = n["kunaiRange"], n.get("push")
+        parts = []
+        if r > 1:
+            parts.append(f"le lancer vole {100 * (r - 1):.0f} % plus loin et plus vite "
+                         f"({n.get('kunaiSpeedBase') or 0:.0f} → {n.get('kunaiSpeed') or 0:.0f} studs/s)")
+        if push and push > 1:
+            parts.append(f"le dernier coup envoie le corps {100 * (push - 1):.0f} % plus loin")
+        if parts:
+            return " ; ".join(parts) + ("" if r > 1 else " (il ne lance aucune lame)")
+        if push is None:
+            # empreinte d'avant le 21/11 (v2) : la poussée du dernier coup n'y est pas
+            return "rien sur le lancer : il ne lance aucune lame (poussée du dernier coup non mesurée)"
+        return "RIEN"
+    if "frozen" in n:
+        f = n["frozen"]
+        return f"l'adversaire est gelé {100 * f:.1f} % du temps ({f * gap:.2f} s toutes les {gap:g} s)" if f else "RIEN"
+    if "guardDps" in n:
+        g = n["guardDps"]
+        return f"+{g * gap:.0f} dégâts sur sa garde toutes les {gap:g} s ({g:.2f}/s)" if g else "RIEN"
+    if "slowed" in n:
+        s = n["slowed"]
+        return f"l'adversaire est {100 * s:.1f} % plus lent en moyenne" if s else "RIEN"
+    return "?"
+
+
+def natures_report(data: dict, kits: list | None = None) -> str:
+    """Les cinq natures sur chaque kit (arbre complet, toute la branche INFUSION)."""
+    kits = [k for k in (kits or data.get("order") or []) if data["kits"].get(k, {}).get("natures")]
+    if not kits:
+        return "Pas de nature dans cette empreinte (KitPrint sans NinjaTree, ou avant le 21/11)."
+    lines = ["Les cinq natures de l'arbre du ninja, avec kunai infusé, lame infusée et maîtrise",
+             "(chiffres du contrat NinjaTree.Infusion, que le combat lit dans Server/NinjaArts depuis DEV 3/4)", ""]
+    for kid in kits:
+        e = data["kits"][kid]
+        arbre = e["versions"]["arbre"]
+        dps = (arbre["string"]["dps"] or 0) + (arbre["jutsu"]["dps"] or 0)
+        carriers = e["natures"]["Fire"].get("carriers") or []
+        porte = " et ".join({"blade": "le 3e coup", "kunai": "le kunai", "shuriken": "le shuriken"}.get(c, c) for c in carriers)
+        lines.append(f"  {name(data, kid)} — porté par {porte or 'rien'} ; {dps:.1f} dégâts/s avec son arbre")
+        for nat in NATURES:
+            n = e["natures"].get(nat)
+            if n:
+                lines.append(f"    {FR[nat]:<7} {effect(n, dps)}   [réponse : {n.get('answer')}]")
+    # ce qui change d'un kit à l'autre : les natures dont les chiffres diffèrent
+    same, differ = [], []
+    for nat in NATURES:
+        values = {json.dumps({k: v for k, v in data["kits"][kid]["natures"][nat].items() if k != "carriers"}, sort_keys=True)
+                  for kid in kits if nat in data["kits"][kid]["natures"]}
+        (same if len(values) <= 1 else differ).append(FR[nat])
+    lines.append("")
+    if same:
+        lines.append(f"Les mêmes chiffres sur tous ces kits : {', '.join(same)}. L'effet part au plus une fois toutes les "
+                     f"{data['kits'][kits[0]]['natures']['Fire'].get('gap', 4):g} s, et chaque kit touche plus souvent que ça : "
+                     "la nature ne dépend pas du kit, seulement de sa part dans ce qu'il fait.")
+    if differ:
+        lines.append(f"Ce qui change d'un kit à l'autre : {', '.join(differ)}.")
+    return "\n".join(lines)
+
+
+def techniques(k: dict) -> list:
+    return [t["id"] for t in k["jutsu"]["list"]]
+
+
+def etape2(before: dict, after: dict | None = None, kits: list | None = None) -> str:
+    """Les 3 kits de l'étape 2 : le départ d'un joueur avant / après le départ réduit,
+    ce que l'arbre lui rend, et l'écart départ → arbre complet."""
+    after = after or before
+    kits = [k for k in (kits or TRIO) if k in after["kits"] and k in before["kits"]]
+    lines = ["Étape 2 — Naruto, Sasuke, Lee : le départ d'un joueur, et ce que l'arbre lui donne", ""]
+    for kid in kits:
+        b, a = before["kits"][kid]["versions"], after["kits"][kid]["versions"]
+        d0, d1, t1 = techniques(b["depart"]), techniques(a["depart"]), techniques(a["arbre"])
+        locked = a["depart"]["jutsu"].get("locked") or []
+        lines.append(f"  {name(after, kid)}")
+        lines.append(f"    départ, avant : {len(d0)} techniques ({', '.join(d0)})")
+        if after is before or d0 == d1:
+            lines.append("    départ, après : pas encore changé (le départ réduit n'est pas dans cette empreinte)")
+        else:
+            lines.append(f"    départ, après : {len(d1)} techniques ({', '.join(d1)})")
+        gained = [t for t in t1 if t not in d1]
+        lines.append(f"    l'arbre complet : {len(t1)} techniques" + (f", dont {', '.join(gained)} gagnées dans l'arbre" if gained else ""))
+        if locked:
+            lines.append(f"    verrouillé au départ : {', '.join(locked)}")
+        tree = after["kits"][kid].get("tree") or {}
+        if "transform" in tree:  # KitPrint v3 (21/11)
+            tr = tree["transform"]
+            lines.append("    transformation : " + (", ".join(f"{t.get('name') or t['id']} ({t['id']})" for t in tr)
+                                                    if tr else "pas encore de nœud (Transform)"))
+    lines.append("")
+    lines.append(diff(after, after, "depart", "arbre", ("départ d'un joueur", "arbre complet")))
+    return "\n".join(lines)
+
+
 def page(data: dict, version: str, text: str) -> str:
     """Une page : un radar par kit, et le rapport en texte."""
     sc = scores(data, version)
@@ -245,7 +353,11 @@ def main(argv) -> int:
         print(__doc__)
         return 2
     data = [json.load(open(f, encoding="utf-8")) for f in files]
-    if len(data) == 2:
+    if "--etape2" in argv:
+        text = etape2(data[0], data[1] if len(data) == 2 else None) + "\n\n" + natures_report(data[-1], TRIO)
+    elif "--natures" in argv:
+        text = natures_report(data[-1])
+    elif len(data) == 2:
         text = diff(data[0], data[1], version, version, (files[0], files[1]))
     elif "--arbre" in argv:
         text = diff(data[0], data[0], "depart", "arbre", ("départ d'un joueur", "arbre complet"))

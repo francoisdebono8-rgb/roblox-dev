@@ -1,0 +1,4055 @@
+{
+ "kits": {
+  "Mirage": {
+   "locks": [],
+   "title": "THE SHARINGAN PRODIGY",
+   "natures": {
+    "Earth": {
+     "carriers": [
+      "blade",
+      "shuriken"
+     ],
+     "strong": 1.5,
+     "answer": "a dodge avoids it whole",
+     "guardDps": 3.75,
+     "gap": 4,
+     "nature": "Earth"
+    },
+    "Wind": {
+     "carriers": [
+      "blade",
+      "shuriken"
+     ],
+     "kunaiSpeed": 109.2,
+     "strong": 1.5,
+     "kunaiSpeedBase": 84,
+     "answer": "it is seen coming from further",
+     "kunaiRange": 1.3,
+     "gap": 4,
+     "nature": "Wind"
+    },
+    "Fire": {
+     "carriers": [
+      "blade",
+      "shuriken"
+     ],
+     "burnDps": 1.125,
+     "strong": 1.5,
+     "answer": "a guard stops the burn",
+     "gap": 4,
+     "nature": "Fire"
+    },
+    "Water": {
+     "carriers": [
+      "blade",
+      "shuriken"
+     ],
+     "strong": 1.5,
+     "answer": "a substitution washes it off",
+     "slowed": 0.0844,
+     "gap": 4,
+     "nature": "Water"
+    },
+    "Lightning": {
+     "carriers": [
+      "blade",
+      "shuriken"
+     ],
+     "strong": 1.5,
+     "answer": "once every 4 s",
+     "frozen": 0.0938,
+     "gap": 4,
+     "nature": "Lightning"
+    }
+   },
+   "id": "Mirage",
+   "versions": {
+    "arbre": {
+     "string": {
+      "count": 4,
+      "time": 1.875,
+      "dps": 23.31,
+      "damage": 43.7,
+      "hits": [
+       {
+        "name": "Light1",
+        "reach": 7.99,
+        "time": 0.458,
+        "startup": 0.086,
+        "damage": 5.75
+       },
+       {
+        "name": "Light2",
+        "reach": 8.19,
+        "time": 0.456,
+        "startup": 0.098,
+        "damage": 11.5
+       },
+       {
+        "name": "Light4",
+        "reach": 7.99,
+        "time": 0.458,
+        "startup": 0.086,
+        "damage": 5.75
+       },
+       {
+        "name": "Light3",
+        "reach": 8.84,
+        "time": 0.502,
+        "startup": 0.122,
+        "damage": 20.7
+       }
+      ]
+     },
+     "move": {
+      "air": 0.95,
+      "awakenSpeed": 1.06,
+      "jump": 0.98,
+      "dash": 0.8,
+      "accel": 0.98,
+      "run": 45,
+      "walk": 18.5
+     },
+     "reach": 7.99,
+     "body": {
+      "health": 130,
+      "preferredRange": 10,
+      "guard": 0.08,
+      "regen": 9.2,
+      "chakra": 133
+     },
+     "heavy": {
+      "reach": 9.96,
+      "startup": 0.294,
+      "damage": 16.1
+     },
+     "own": [
+      "Awakening.CostScale",
+      "Awakening.GuardRead",
+      "Awakening.Reflex",
+      "Awakening.Tsukuyomi",
+      "Awakening.WhiffRead",
+      "Awakening.Windows",
+      "Sharingan",
+      "Substitution",
+      "Tool.AirSpread",
+      "Tool.Chase",
+      "Tool.FireBlades",
+      "Tool.Geometry",
+      "Tool.Ricochet",
+      "WallSteer"
+     ],
+     "firstHit": 0.086,
+     "jutsu": {
+      "farthest": 76,
+      "burst": 18,
+      "dps": 4.02,
+      "mobile": 0,
+      "count": 4,
+      "list": [
+       {
+        "cost": 18,
+        "id": "NeedleFan",
+        "range": 56,
+        "mobile": false,
+        "name": "Shadow Shuriken",
+        "teleport": false,
+        "cooldown": 3.6,
+        "damage": 2
+       },
+       {
+        "cost": 23,
+        "id": "FireBloom",
+        "range": 76,
+        "element": "Fire",
+        "mobile": false,
+        "name": "Great Fireball",
+        "teleport": false,
+        "cooldown": 4.62,
+        "damage": 16
+       },
+       {
+        "cost": 26,
+        "id": "MirageCast",
+        "range": 23,
+        "mobile": false,
+        "name": "Genjutsu: Mirage",
+        "teleport": false,
+        "cooldown": 7,
+        "damage": 0
+       },
+       {
+        "cost": 12,
+        "id": "Read",
+        "range": 10,
+        "mobile": false,
+        "name": "Sharingan Read",
+        "teleport": false,
+        "cooldown": 3.024,
+        "damage": 0
+       }
+      ],
+      "locked": [],
+      "seals": 4,
+      "teleports": 0
+     },
+     "style": "Control",
+     "dash": {
+      "reach": 12.49,
+      "damage": 8.05
+     },
+     "awakening": "SHARINGAN FOCUS",
+     "tool": {
+      "count": 2,
+      "speed": 84,
+      "kind": "shuriken",
+      "recover": 0.65,
+      "damage": 2
+     },
+     "launcher": {
+      "reach": 7.8,
+      "startup": 0.17,
+      "name": "Launcher",
+      "damage": 9.2
+     }
+    },
+    "depart": {
+     "string": {
+      "count": 4,
+      "time": 1.875,
+      "dps": 23.31,
+      "damage": 43.7,
+      "hits": [
+       {
+        "name": "Light1",
+        "reach": 7.99,
+        "time": 0.458,
+        "startup": 0.086,
+        "damage": 5.75
+       },
+       {
+        "name": "Light2",
+        "reach": 8.19,
+        "time": 0.456,
+        "startup": 0.098,
+        "damage": 11.5
+       },
+       {
+        "name": "Light4",
+        "reach": 7.99,
+        "time": 0.458,
+        "startup": 0.086,
+        "damage": 5.75
+       },
+       {
+        "name": "Light3",
+        "reach": 8.84,
+        "time": 0.502,
+        "startup": 0.122,
+        "damage": 20.7
+       }
+      ]
+     },
+     "move": {
+      "air": 0.95,
+      "awakenSpeed": 1.06,
+      "jump": 0.98,
+      "dash": 0.8,
+      "accel": 0.98,
+      "run": 45,
+      "walk": 18.5
+     },
+     "reach": 7.99,
+     "body": {
+      "health": 130,
+      "preferredRange": 10,
+      "guard": 0.08,
+      "regen": 8.6,
+      "chakra": 125
+     },
+     "heavy": {
+      "reach": 9.96,
+      "startup": 0.294,
+      "damage": 16.1
+     },
+     "own": [
+      "Awakening.CostScale",
+      "Awakening.GuardRead",
+      "Awakening.Tsukuyomi",
+      "Awakening.WhiffRead",
+      "Awakening.Windows",
+      "Sharingan",
+      "Tool.AirSpread",
+      "Tool.Geometry",
+      "Tool.Ricochet"
+     ],
+     "firstHit": 0.086,
+     "jutsu": {
+      "farthest": 76,
+      "burst": 18,
+      "dps": 3.46,
+      "mobile": 0,
+      "count": 4,
+      "list": [
+       {
+        "cost": 18,
+        "id": "NeedleFan",
+        "range": 56,
+        "mobile": false,
+        "name": "Shadow Shuriken",
+        "teleport": false,
+        "cooldown": 3.6,
+        "damage": 2
+       },
+       {
+        "cost": 26,
+        "id": "FireBloom",
+        "range": 76,
+        "element": "Fire",
+        "mobile": false,
+        "name": "Great Fireball",
+        "teleport": false,
+        "cooldown": 5.5,
+        "damage": 16
+       },
+       {
+        "cost": 26,
+        "id": "MirageCast",
+        "range": 23,
+        "mobile": false,
+        "name": "Genjutsu: Mirage",
+        "teleport": false,
+        "cooldown": 7,
+        "damage": 0
+       },
+       {
+        "cost": 14,
+        "id": "Read",
+        "range": 10,
+        "mobile": false,
+        "name": "Sharingan Read",
+        "teleport": false,
+        "cooldown": 3.6,
+        "damage": 0
+       }
+      ],
+      "locked": [],
+      "seals": 4,
+      "teleports": 0
+     },
+     "style": "Control",
+     "dash": {
+      "reach": 12.49,
+      "damage": 8.05
+     },
+     "awakening": "SHARINGAN FOCUS",
+     "tool": {
+      "count": 2,
+      "speed": 84,
+      "kind": "shuriken",
+      "recover": 0.75,
+      "damage": 2
+     },
+     "launcher": {
+      "reach": 7.8,
+      "startup": 0.17,
+      "name": "Launcher",
+      "damage": 9.2
+     }
+    },
+    "prodige": {
+     "string": {
+      "count": 4,
+      "time": 1.875,
+      "dps": 23.31,
+      "damage": 43.7,
+      "hits": [
+       {
+        "name": "Light1",
+        "reach": 7.99,
+        "time": 0.458,
+        "startup": 0.086,
+        "damage": 5.75
+       },
+       {
+        "name": "Light2",
+        "reach": 8.19,
+        "time": 0.456,
+        "startup": 0.098,
+        "damage": 11.5
+       },
+       {
+        "name": "Light4",
+        "reach": 7.99,
+        "time": 0.458,
+        "startup": 0.086,
+        "damage": 5.75
+       },
+       {
+        "name": "Light3",
+        "reach": 8.84,
+        "time": 0.502,
+        "startup": 0.122,
+        "damage": 20.7
+       }
+      ]
+     },
+     "move": {
+      "air": 0.95,
+      "awakenSpeed": 1.06,
+      "jump": 0.98,
+      "dash": 0.8,
+      "accel": 0.98,
+      "run": 45,
+      "walk": 18.5
+     },
+     "reach": 7.99,
+     "body": {
+      "health": 130,
+      "preferredRange": 10,
+      "guard": 0.08,
+      "regen": 8.6,
+      "chakra": 125
+     },
+     "heavy": {
+      "reach": 9.96,
+      "startup": 0.294,
+      "damage": 16.1
+     },
+     "own": [
+      "Awakening.CostScale",
+      "Awakening.GuardRead",
+      "Awakening.Tsukuyomi",
+      "Awakening.WhiffRead",
+      "Awakening.Windows",
+      "Sharingan",
+      "Tool.AirSpread",
+      "Tool.Geometry",
+      "Tool.Ricochet"
+     ],
+     "firstHit": 0.086,
+     "jutsu": {
+      "farthest": 76,
+      "burst": 18,
+      "dps": 3.46,
+      "mobile": 0,
+      "count": 4,
+      "list": [
+       {
+        "cost": 18,
+        "id": "NeedleFan",
+        "range": 56,
+        "mobile": false,
+        "name": "Shadow Shuriken",
+        "teleport": false,
+        "cooldown": 3.6,
+        "damage": 2
+       },
+       {
+        "cost": 26,
+        "id": "FireBloom",
+        "range": 76,
+        "element": "Fire",
+        "mobile": false,
+        "name": "Great Fireball",
+        "teleport": false,
+        "cooldown": 5.5,
+        "damage": 16
+       },
+       {
+        "cost": 26,
+        "id": "MirageCast",
+        "range": 23,
+        "mobile": false,
+        "name": "Genjutsu: Mirage",
+        "teleport": false,
+        "cooldown": 7,
+        "damage": 0
+       },
+       {
+        "cost": 14,
+        "id": "Read",
+        "range": 10,
+        "mobile": false,
+        "name": "Sharingan Read",
+        "teleport": false,
+        "cooldown": 3.6,
+        "damage": 0
+       }
+      ],
+      "locked": [],
+      "seals": 4,
+      "teleports": 0
+     },
+     "style": "Control",
+     "dash": {
+      "reach": 12.49,
+      "damage": 8.05
+     },
+     "awakening": "SHARINGAN FOCUS",
+     "tool": {
+      "count": 2,
+      "speed": 84,
+      "kind": "shuriken",
+      "recover": 0.75,
+      "damage": 2
+     },
+     "launcher": {
+      "reach": 7.8,
+      "startup": 0.17,
+      "name": "Launcher",
+      "damage": 9.2
+     }
+    }
+   },
+   "tree": {
+    "nodes": 17,
+    "total": 18,
+    "locks": [],
+    "spent": 122
+   },
+   "name": "Itachi"
+  },
+  "Legion": {
+   "locks": [],
+   "title": "THE NUMBER ONE SURPRISE",
+   "natures": {
+    "Earth": {
+     "carriers": [
+      "blade",
+      "kunai"
+     ],
+     "strong": 1.5,
+     "answer": "a dodge avoids it whole",
+     "guardDps": 3.75,
+     "gap": 4,
+     "nature": "Earth"
+    },
+    "Wind": {
+     "carriers": [
+      "blade",
+      "kunai"
+     ],
+     "kunaiSpeed": 109.2,
+     "strong": 1.5,
+     "kunaiSpeedBase": 84,
+     "answer": "it is seen coming from further",
+     "kunaiRange": 1.3,
+     "gap": 4,
+     "nature": "Wind"
+    },
+    "Fire": {
+     "carriers": [
+      "blade",
+      "kunai"
+     ],
+     "burnDps": 1.125,
+     "strong": 1.5,
+     "answer": "a guard stops the burn",
+     "gap": 4,
+     "nature": "Fire"
+    },
+    "Water": {
+     "carriers": [
+      "blade",
+      "kunai"
+     ],
+     "strong": 1.5,
+     "answer": "a substitution washes it off",
+     "slowed": 0.0844,
+     "gap": 4,
+     "nature": "Water"
+    },
+    "Lightning": {
+     "carriers": [
+      "blade",
+      "kunai"
+     ],
+     "strong": 1.5,
+     "answer": "once every 4 s",
+     "frozen": 0.0938,
+     "gap": 4,
+     "nature": "Lightning"
+    }
+   },
+   "id": "Legion",
+   "versions": {
+    "arbre": {
+     "string": {
+      "count": 5,
+      "time": 2.389,
+      "dps": 14.76,
+      "damage": 35.26,
+      "hits": [
+       {
+        "name": "Light1",
+        "reach": 8.86,
+        "time": 0.473,
+        "startup": 0.085,
+        "damage": 4.1
+       },
+       {
+        "name": "Light2",
+        "reach": 9.07,
+        "time": 0.47,
+        "startup": 0.096,
+        "damage": 8.2
+       },
+       {
+        "name": "Light4",
+        "reach": 8.86,
+        "time": 0.473,
+        "startup": 0.085,
+        "damage": 4.1
+       },
+       {
+        "name": "Light5",
+        "reach": 8.96,
+        "time": 0.47,
+        "startup": 0.096,
+        "damage": 4.1
+       },
+       {
+        "name": "Light3",
+        "reach": 9.71,
+        "time": 0.502,
+        "startup": 0.122,
+        "damage": 14.76
+       }
+      ]
+     },
+     "move": {
+      "air": 1,
+      "awakenSpeed": 1.15,
+      "jump": 1.1,
+      "dash": 1.05,
+      "accel": 1.08,
+      "run": 50.4,
+      "walk": 18.5
+     },
+     "reach": 8.86,
+     "body": {
+      "health": 158,
+      "preferredRange": 6,
+      "guard": 0.08,
+      "regen": 7,
+      "chakra": 170
+     },
+     "heavy": {
+      "reach": 10.87,
+      "startup": 0.3,
+      "damage": 11.48
+     },
+     "own": [
+      "Awakening.Heal",
+      "Awakening.NoBodies",
+      "Awakening.Recovery",
+      "Bodies",
+      "LauncherMove",
+      "Substitution",
+      "Tool.AirSpread",
+      "Tool.Transform",
+      "WallSteer"
+     ],
+     "firstHit": 0.085,
+     "jutsu": {
+      "farthest": 10,
+      "burst": 22,
+      "dps": 4.58,
+      "mobile": 0,
+      "count": 4,
+      "list": [
+       {
+        "cost": 12,
+        "id": "ShadowClone",
+        "range": 30,
+        "mobile": false,
+        "name": "Shadow Clone",
+        "teleport": false,
+        "cooldown": 0.8999999999999999,
+        "damage": 0
+       },
+       {
+        "cost": 18,
+        "id": "CloneRasengan",
+        "range": 10,
+        "mobile": false,
+        "name": "Rasengan",
+        "teleport": false,
+        "cooldown": 4.800000000000001,
+        "damage": 22
+       },
+       {
+        "cost": 34,
+        "id": "MassShadowClone",
+        "range": 26,
+        "mobile": false,
+        "name": "Multi Shadow Clone",
+        "teleport": false,
+        "cooldown": 18,
+        "damage": 0
+       },
+       {
+        "cost": 22,
+        "id": "NarutoRendan",
+        "range": 13,
+        "mobile": false,
+        "name": "Naruto Uzumaki Rendan",
+        "family": "Sequence",
+        "teleport": false,
+        "cooldown": 7.2,
+        "damage": 0
+       }
+      ],
+      "locked": [],
+      "seals": 4,
+      "teleports": 0
+     },
+     "style": "Legion",
+     "dash": {
+      "reach": 14.57,
+      "damage": 5.74
+     },
+     "awakening": "NINE-TAILS CHAKRA",
+     "tool": {
+      "count": 1,
+      "speed": 84,
+      "kind": "kunai",
+      "recover": 0.7,
+      "damage": 3
+     },
+     "launcher": {
+      "reach": 3.4,
+      "startup": 0.16,
+      "name": "UzumakiKick",
+      "damage": 6.56
+     }
+    },
+    "depart": {
+     "string": {
+      "count": 5,
+      "time": 2.389,
+      "dps": 14.76,
+      "damage": 35.26,
+      "hits": [
+       {
+        "name": "Light1",
+        "reach": 8.86,
+        "time": 0.473,
+        "startup": 0.085,
+        "damage": 4.1
+       },
+       {
+        "name": "Light2",
+        "reach": 9.07,
+        "time": 0.47,
+        "startup": 0.096,
+        "damage": 8.2
+       },
+       {
+        "name": "Light4",
+        "reach": 8.86,
+        "time": 0.473,
+        "startup": 0.085,
+        "damage": 4.1
+       },
+       {
+        "name": "Light5",
+        "reach": 8.96,
+        "time": 0.47,
+        "startup": 0.096,
+        "damage": 4.1
+       },
+       {
+        "name": "Light3",
+        "reach": 9.71,
+        "time": 0.502,
+        "startup": 0.122,
+        "damage": 14.76
+       }
+      ]
+     },
+     "move": {
+      "air": 1,
+      "awakenSpeed": 1.15,
+      "jump": 1.1,
+      "dash": 1.05,
+      "accel": 1.08,
+      "run": 50.4,
+      "walk": 18.5
+     },
+     "reach": 8.86,
+     "body": {
+      "health": 150,
+      "preferredRange": 6,
+      "guard": 0.08,
+      "regen": 6.5,
+      "chakra": 160
+     },
+     "heavy": {
+      "reach": 10.87,
+      "startup": 0.3,
+      "damage": 11.48
+     },
+     "own": [
+      "Awakening.NoBodies",
+      "Awakening.Recovery",
+      "Bodies",
+      "LauncherMove",
+      "Substitution",
+      "Tool.Transform"
+     ],
+     "firstHit": 0.085,
+     "jutsu": {
+      "farthest": 10,
+      "burst": 22,
+      "dps": 3.67,
+      "mobile": 0,
+      "count": 4,
+      "list": [
+       {
+        "cost": 12,
+        "id": "ShadowClone",
+        "range": 30,
+        "mobile": false,
+        "name": "Shadow Clone",
+        "teleport": false,
+        "cooldown": 1.2,
+        "damage": 0
+       },
+       {
+        "cost": 22,
+        "id": "CloneRasengan",
+        "range": 10,
+        "mobile": false,
+        "name": "Rasengan",
+        "teleport": false,
+        "cooldown": 6,
+        "damage": 22
+       },
+       {
+        "cost": 40,
+        "id": "MassShadowClone",
+        "range": 26,
+        "mobile": false,
+        "name": "Multi Shadow Clone",
+        "teleport": false,
+        "cooldown": 18,
+        "damage": 0
+       },
+       {
+        "cost": 22,
+        "id": "NarutoRendan",
+        "range": 13,
+        "mobile": false,
+        "name": "Naruto Uzumaki Rendan",
+        "family": "Sequence",
+        "teleport": false,
+        "cooldown": 9,
+        "damage": 0
+       }
+      ],
+      "locked": [],
+      "seals": 4,
+      "teleports": 0
+     },
+     "style": "Legion",
+     "dash": {
+      "reach": 14.57,
+      "damage": 5.74
+     },
+     "awakening": "NINE-TAILS CHAKRA",
+     "tool": {
+      "count": 1,
+      "speed": 84,
+      "kind": "kunai",
+      "recover": 0.7,
+      "damage": 3
+     },
+     "launcher": {
+      "reach": 3.4,
+      "startup": 0.16,
+      "name": "UzumakiKick",
+      "damage": 6.56
+     }
+    },
+    "prodige": {
+     "string": {
+      "count": 5,
+      "time": 2.389,
+      "dps": 14.76,
+      "damage": 35.26,
+      "hits": [
+       {
+        "name": "Light1",
+        "reach": 8.86,
+        "time": 0.473,
+        "startup": 0.085,
+        "damage": 4.1
+       },
+       {
+        "name": "Light2",
+        "reach": 9.07,
+        "time": 0.47,
+        "startup": 0.096,
+        "damage": 8.2
+       },
+       {
+        "name": "Light4",
+        "reach": 8.86,
+        "time": 0.473,
+        "startup": 0.085,
+        "damage": 4.1
+       },
+       {
+        "name": "Light5",
+        "reach": 8.96,
+        "time": 0.47,
+        "startup": 0.096,
+        "damage": 4.1
+       },
+       {
+        "name": "Light3",
+        "reach": 9.71,
+        "time": 0.502,
+        "startup": 0.122,
+        "damage": 14.76
+       }
+      ]
+     },
+     "move": {
+      "air": 1,
+      "awakenSpeed": 1.15,
+      "jump": 1.1,
+      "dash": 1.05,
+      "accel": 1.08,
+      "run": 50.4,
+      "walk": 18.5
+     },
+     "reach": 8.86,
+     "body": {
+      "health": 150,
+      "preferredRange": 6,
+      "guard": 0.08,
+      "regen": 6.5,
+      "chakra": 160
+     },
+     "heavy": {
+      "reach": 10.87,
+      "startup": 0.3,
+      "damage": 11.48
+     },
+     "own": [
+      "Awakening.NoBodies",
+      "Awakening.Recovery",
+      "Bodies",
+      "LauncherMove",
+      "Substitution",
+      "Tool.Transform"
+     ],
+     "firstHit": 0.085,
+     "jutsu": {
+      "farthest": 10,
+      "burst": 22,
+      "dps": 3.67,
+      "mobile": 0,
+      "count": 4,
+      "list": [
+       {
+        "cost": 12,
+        "id": "ShadowClone",
+        "range": 30,
+        "mobile": false,
+        "name": "Shadow Clone",
+        "teleport": false,
+        "cooldown": 1.2,
+        "damage": 0
+       },
+       {
+        "cost": 22,
+        "id": "CloneRasengan",
+        "range": 10,
+        "mobile": false,
+        "name": "Rasengan",
+        "teleport": false,
+        "cooldown": 6,
+        "damage": 22
+       },
+       {
+        "cost": 40,
+        "id": "MassShadowClone",
+        "range": 26,
+        "mobile": false,
+        "name": "Multi Shadow Clone",
+        "teleport": false,
+        "cooldown": 18,
+        "damage": 0
+       },
+       {
+        "cost": 22,
+        "id": "NarutoRendan",
+        "range": 13,
+        "mobile": false,
+        "name": "Naruto Uzumaki Rendan",
+        "family": "Sequence",
+        "teleport": false,
+        "cooldown": 9,
+        "damage": 0
+       }
+      ],
+      "locked": [],
+      "seals": 4,
+      "teleports": 0
+     },
+     "style": "Legion",
+     "dash": {
+      "reach": 14.57,
+      "damage": 5.74
+     },
+     "awakening": "NINE-TAILS CHAKRA",
+     "tool": {
+      "count": 1,
+      "speed": 84,
+      "kind": "kunai",
+      "recover": 0.7,
+      "damage": 3
+     },
+     "launcher": {
+      "reach": 3.4,
+      "startup": 0.16,
+      "name": "UzumakiKick",
+      "damage": 6.56
+     }
+    }
+   },
+   "tree": {
+    "nodes": 20,
+    "total": 20,
+    "locks": [],
+    "spent": 128
+   },
+   "name": "Naruto"
+  },
+  "Flashstep": {
+   "locks": [],
+   "title": "THE FAST PRODIGY",
+   "natures": {
+    "Earth": {
+     "carriers": [
+      "blade",
+      "kunai"
+     ],
+     "strong": 1.5,
+     "answer": "a dodge avoids it whole",
+     "guardDps": 3.75,
+     "gap": 4,
+     "nature": "Earth"
+    },
+    "Wind": {
+     "carriers": [
+      "blade",
+      "kunai"
+     ],
+     "kunaiSpeed": 124.8,
+     "strong": 1.5,
+     "kunaiSpeedBase": 96,
+     "answer": "it is seen coming from further",
+     "kunaiRange": 1.3,
+     "gap": 4,
+     "nature": "Wind"
+    },
+    "Fire": {
+     "carriers": [
+      "blade",
+      "kunai"
+     ],
+     "burnDps": 1.125,
+     "strong": 1.5,
+     "answer": "a guard stops the burn",
+     "gap": 4,
+     "nature": "Fire"
+    },
+    "Water": {
+     "carriers": [
+      "blade",
+      "kunai"
+     ],
+     "strong": 1.5,
+     "answer": "a substitution washes it off",
+     "slowed": 0.0844,
+     "gap": 4,
+     "nature": "Water"
+    },
+    "Lightning": {
+     "carriers": [
+      "blade",
+      "kunai"
+     ],
+     "strong": 1.5,
+     "answer": "once every 4 s",
+     "frozen": 0.0938,
+     "gap": 4,
+     "nature": "Lightning"
+    }
+   },
+   "id": "Flashstep",
+   "versions": {
+    "arbre": {
+     "string": {
+      "count": 4,
+      "time": 1.788,
+      "dps": 21.25,
+      "damage": 38,
+      "hits": [
+       {
+        "name": "Light1",
+        "reach": 9.18,
+        "time": 0.446,
+        "startup": 0.074,
+        "damage": 5
+       },
+       {
+        "name": "Light2",
+        "reach": 9.73,
+        "time": 0.447,
+        "startup": 0.084,
+        "damage": 10
+       },
+       {
+        "name": "Light4",
+        "reach": 9.18,
+        "time": 0.446,
+        "startup": 0.074,
+        "damage": 5
+       },
+       {
+        "name": "Light3",
+        "reach": 11.25,
+        "time": 0.45,
+        "startup": 0.098,
+        "damage": 18
+       }
+      ]
+     },
+     "move": {
+      "air": 1.15,
+      "awakenSpeed": 1.18,
+      "jump": 1.1,
+      "dash": 1.15,
+      "accel": 1.15,
+      "run": 50.4,
+      "walk": 19.5
+     },
+     "reach": 9.18,
+     "body": {
+      "health": 130,
+      "preferredRange": 6,
+      "guard": 0.1,
+      "regen": 8,
+      "chakra": 116
+     },
+     "heavy": {
+      "reach": 11.57,
+      "startup": 0.3,
+      "damage": 14
+     },
+     "own": [
+      "ArrivalThrow",
+      "Awakening.Arrival",
+      "Awakening.FlashChain",
+      "Awakening.FlashPursuit",
+      "Awakening.FlashWake",
+      "Awakening.Unreadable",
+      "ParrySeal",
+      "SealRecall",
+      "Seals",
+      "Substitution"
+     ],
+     "firstHit": 0.074,
+     "jutsu": {
+      "farthest": 77.88,
+      "burst": 24,
+      "dps": 9.49,
+      "mobile": 2,
+      "count": 4,
+      "list": [
+       {
+        "cost": 10,
+        "id": "MarkedBlade",
+        "range": 77.88,
+        "mobile": true,
+        "name": "Marked Kunai",
+        "teleport": false,
+        "cooldown": 1.804,
+        "damage": 6
+       },
+       {
+        "cost": 13,
+        "id": "LightningStrike",
+        "range": 26,
+        "mobile": false,
+        "name": "Lightning Strike",
+        "family": "Teleport",
+        "teleport": true,
+        "cooldown": 2.8,
+        "damage": 12
+       },
+       {
+        "cost": 14,
+        "id": "Flashstep",
+        "range": 90,
+        "mobile": false,
+        "name": "Flying Thunder God",
+        "teleport": false,
+        "cooldown": 4.5,
+        "damage": 0
+       },
+       {
+        "cost": 14,
+        "id": "WindCut",
+        "range": 40,
+        "element": "Wind",
+        "mobile": true,
+        "name": "Wind Cut",
+        "teleport": false,
+        "cooldown": 3.2,
+        "damage": 6
+       }
+      ],
+      "locked": [],
+      "seals": 4,
+      "teleports": 1
+     },
+     "style": "Angles",
+     "dash": {
+      "reach": 16.32,
+      "damage": 7
+     },
+     "awakening": "YELLOW FLASH",
+     "tool": {
+      "count": 1,
+      "speed": 96,
+      "kind": "kunai",
+      "recover": 0.48000000000000004,
+      "damage": 3
+     },
+     "launcher": {
+      "reach": 9.48,
+      "startup": 0.122,
+      "name": "Launcher",
+      "damage": 8
+     }
+    },
+    "depart": {
+     "string": {
+      "count": 4,
+      "time": 1.788,
+      "dps": 21.25,
+      "damage": 38,
+      "hits": [
+       {
+        "name": "Light1",
+        "reach": 9.18,
+        "time": 0.446,
+        "startup": 0.074,
+        "damage": 5
+       },
+       {
+        "name": "Light2",
+        "reach": 9.73,
+        "time": 0.447,
+        "startup": 0.084,
+        "damage": 10
+       },
+       {
+        "name": "Light4",
+        "reach": 9.18,
+        "time": 0.446,
+        "startup": 0.074,
+        "damage": 5
+       },
+       {
+        "name": "Light3",
+        "reach": 11.25,
+        "time": 0.45,
+        "startup": 0.098,
+        "damage": 18
+       }
+      ]
+     },
+     "move": {
+      "air": 1.15,
+      "awakenSpeed": 1.18,
+      "jump": 1.1,
+      "dash": 1.15,
+      "accel": 1.15,
+      "run": 50.4,
+      "walk": 19.5
+     },
+     "reach": 9.18,
+     "body": {
+      "health": 125,
+      "preferredRange": 6,
+      "guard": 0.1,
+      "regen": 8,
+      "chakra": 110
+     },
+     "heavy": {
+      "reach": 11.57,
+      "startup": 0.3,
+      "damage": 14
+     },
+     "own": [
+      "Awakening.Arrival",
+      "Awakening.FlashPursuit",
+      "Awakening.FlashWake",
+      "Awakening.Unreadable"
+     ],
+     "firstHit": 0.074,
+     "jutsu": {
+      "farthest": 66,
+      "burst": 24,
+      "dps": 8.13,
+      "mobile": 2,
+      "count": 4,
+      "list": [
+       {
+        "cost": 10,
+        "id": "MarkedBlade",
+        "range": 66,
+        "mobile": true,
+        "name": "Marked Kunai",
+        "teleport": false,
+        "cooldown": 2.2,
+        "damage": 6
+       },
+       {
+        "cost": 16,
+        "id": "LightningStrike",
+        "range": 26,
+        "mobile": false,
+        "name": "Lightning Strike",
+        "family": "Teleport",
+        "teleport": true,
+        "cooldown": 3.4,
+        "damage": 12
+       },
+       {
+        "cost": 16,
+        "id": "Flashstep",
+        "range": 90,
+        "mobile": false,
+        "name": "Flying Thunder God",
+        "teleport": false,
+        "cooldown": 6,
+        "damage": 0
+       },
+       {
+        "cost": 14,
+        "id": "WindCut",
+        "range": 40,
+        "element": "Wind",
+        "mobile": true,
+        "name": "Wind Cut",
+        "teleport": false,
+        "cooldown": 3.2,
+        "damage": 6
+       }
+      ],
+      "locked": [],
+      "seals": 4,
+      "teleports": 1
+     },
+     "style": "Angles",
+     "dash": {
+      "reach": 16.32,
+      "damage": 7
+     },
+     "awakening": "YELLOW FLASH",
+     "tool": {
+      "count": 1,
+      "speed": 96,
+      "kind": "kunai",
+      "recover": 0.55,
+      "damage": 3
+     },
+     "launcher": {
+      "reach": 9.48,
+      "startup": 0.122,
+      "name": "Launcher",
+      "damage": 8
+     }
+    },
+    "prodige": {
+     "string": {
+      "count": 4,
+      "time": 1.788,
+      "dps": 21.25,
+      "damage": 38,
+      "hits": [
+       {
+        "name": "Light1",
+        "reach": 9.18,
+        "time": 0.446,
+        "startup": 0.074,
+        "damage": 5
+       },
+       {
+        "name": "Light2",
+        "reach": 9.73,
+        "time": 0.447,
+        "startup": 0.084,
+        "damage": 10
+       },
+       {
+        "name": "Light4",
+        "reach": 9.18,
+        "time": 0.446,
+        "startup": 0.074,
+        "damage": 5
+       },
+       {
+        "name": "Light3",
+        "reach": 11.25,
+        "time": 0.45,
+        "startup": 0.098,
+        "damage": 18
+       }
+      ]
+     },
+     "move": {
+      "air": 1.15,
+      "awakenSpeed": 1.18,
+      "jump": 1.1,
+      "dash": 1.15,
+      "accel": 1.15,
+      "run": 50.4,
+      "walk": 19.5
+     },
+     "reach": 9.18,
+     "body": {
+      "health": 125,
+      "preferredRange": 6,
+      "guard": 0.1,
+      "regen": 8,
+      "chakra": 110
+     },
+     "heavy": {
+      "reach": 11.57,
+      "startup": 0.3,
+      "damage": 14
+     },
+     "own": [
+      "Awakening.Arrival",
+      "Awakening.FlashPursuit",
+      "Awakening.FlashWake",
+      "Awakening.Unreadable"
+     ],
+     "firstHit": 0.074,
+     "jutsu": {
+      "farthest": 66,
+      "burst": 24,
+      "dps": 8.13,
+      "mobile": 2,
+      "count": 4,
+      "list": [
+       {
+        "cost": 10,
+        "id": "MarkedBlade",
+        "range": 66,
+        "mobile": true,
+        "name": "Marked Kunai",
+        "teleport": false,
+        "cooldown": 2.2,
+        "damage": 6
+       },
+       {
+        "cost": 16,
+        "id": "LightningStrike",
+        "range": 26,
+        "mobile": false,
+        "name": "Lightning Strike",
+        "family": "Teleport",
+        "teleport": true,
+        "cooldown": 3.4,
+        "damage": 12
+       },
+       {
+        "cost": 16,
+        "id": "Flashstep",
+        "range": 90,
+        "mobile": false,
+        "name": "Flying Thunder God",
+        "teleport": false,
+        "cooldown": 6,
+        "damage": 0
+       },
+       {
+        "cost": 14,
+        "id": "WindCut",
+        "range": 40,
+        "element": "Wind",
+        "mobile": true,
+        "name": "Wind Cut",
+        "teleport": false,
+        "cooldown": 3.2,
+        "damage": 6
+       }
+      ],
+      "locked": [],
+      "seals": 4,
+      "teleports": 1
+     },
+     "style": "Angles",
+     "dash": {
+      "reach": 16.32,
+      "damage": 7
+     },
+     "awakening": "YELLOW FLASH",
+     "tool": {
+      "count": 1,
+      "speed": 96,
+      "kind": "kunai",
+      "recover": 0.55,
+      "damage": 3
+     },
+     "launcher": {
+      "reach": 9.48,
+      "startup": 0.122,
+      "name": "Launcher",
+      "damage": 8
+     }
+    }
+   },
+   "tree": {
+    "nodes": 18,
+    "total": 19,
+    "locks": [],
+    "spent": 132
+   },
+   "name": "Minato"
+  },
+  "Sand": {
+   "locks": [
+    "Gourd"
+   ],
+   "title": "THE SAND PRODIGY",
+   "natures": {
+    "Earth": {
+     "carriers": [
+      "blade"
+     ],
+     "strong": 1.5,
+     "answer": "a dodge avoids it whole",
+     "guardDps": 3.75,
+     "gap": 4,
+     "nature": "Earth"
+    },
+    "Wind": {
+     "carriers": [
+      "blade"
+     ],
+     "strong": 1.5,
+     "answer": "it is seen coming from further",
+     "kunaiRange": 1,
+     "gap": 4,
+     "nature": "Wind"
+    },
+    "Fire": {
+     "carriers": [
+      "blade"
+     ],
+     "burnDps": 1.125,
+     "strong": 1.5,
+     "answer": "a guard stops the burn",
+     "gap": 4,
+     "nature": "Fire"
+    },
+    "Water": {
+     "carriers": [
+      "blade"
+     ],
+     "strong": 1.5,
+     "answer": "a substitution washes it off",
+     "slowed": 0.0844,
+     "gap": 4,
+     "nature": "Water"
+    },
+    "Lightning": {
+     "carriers": [
+      "blade"
+     ],
+     "strong": 1.5,
+     "answer": "once every 4 s",
+     "frozen": 0.0938,
+     "gap": 4,
+     "nature": "Lightning"
+    }
+   },
+   "id": "Sand",
+   "versions": {
+    "arbre": {
+     "string": {
+      "count": 4,
+      "time": 2.796,
+      "dps": 6.93,
+      "damage": 19.36,
+      "hits": [
+       {
+        "name": "Light1",
+        "reach": 5.26,
+        "time": 0.688,
+        "startup": 0.162,
+        "damage": 3.52
+       },
+       {
+        "name": "Light2",
+        "reach": 5.28,
+        "time": 0.692,
+        "startup": 0.18,
+        "damage": 4.4
+       },
+       {
+        "name": "Light4",
+        "reach": 5.26,
+        "time": 0.688,
+        "startup": 0.162,
+        "damage": 3.52
+       },
+       {
+        "name": "Light3",
+        "reach": 5.51,
+        "time": 0.728,
+        "startup": 0.228,
+        "damage": 7.92
+       }
+      ]
+     },
+     "move": {
+      "air": 0.85,
+      "awakenSpeed": 1.12,
+      "jump": 0.9,
+      "dash": 1,
+      "accel": 0.85,
+      "run": 38.25,
+      "walk": 16.5
+     },
+     "reach": 5.26,
+     "body": {
+      "health": 146,
+      "preferredRange": 11,
+      "guard": 0.1,
+      "regen": 7.6,
+      "chakra": 142
+     },
+     "heavy": {
+      "reach": 6.28,
+      "startup": 0.3,
+      "damage": 12.32
+     },
+     "own": [
+      "AirHeavy",
+      "Awakening.ShieldRegen",
+      "HeavyMove",
+      "Items",
+      "LauncherMove",
+      "SandFlicker",
+      "SandShield",
+      "Substitution",
+      "WallSteer"
+     ],
+     "firstHit": 0.162,
+     "jutsu": {
+      "farthest": 38,
+      "burst": 28,
+      "dps": 5.05,
+      "mobile": 0,
+      "count": 4,
+      "list": [
+       {
+        "cost": 13,
+        "id": "SandShuriken",
+        "range": 38,
+        "mobile": false,
+        "name": "Sand Shuriken",
+        "teleport": false,
+        "cooldown": 2.8000000000000003,
+        "damage": 3
+       },
+       {
+        "cost": 22,
+        "id": "SandCoffin",
+        "range": 30,
+        "mobile": false,
+        "name": "Sand Coffin",
+        "teleport": false,
+        "cooldown": 6.4,
+        "damage": 18
+       },
+       {
+        "cost": 18,
+        "id": "DesertWave",
+        "range": 12,
+        "element": "Earth",
+        "mobile": false,
+        "name": "Desert Wave",
+        "teleport": false,
+        "cooldown": 6,
+        "damage": 7
+       },
+       {
+        "cost": 16,
+        "id": "SandArmor",
+        "mobile": false,
+        "name": "Sand Armor",
+        "family": "Buff",
+        "teleport": false,
+        "cooldown": 9,
+        "damage": 0
+       }
+      ],
+      "locked": [],
+      "seals": 5,
+      "teleports": 0
+     },
+     "style": "Sand",
+     "dash": {
+      "reach": 6.41,
+      "damage": 6.16
+     },
+     "awakening": "SHUKAKU'S SAND",
+     "tool": {
+      "kind": "Sand"
+     },
+     "launcher": {
+      "reach": 5.1,
+      "startup": 0.342,
+      "name": "SandFist",
+      "damage": 4.84
+     }
+    },
+    "depart": {
+     "string": {
+      "count": 4,
+      "time": 2.796,
+      "dps": 6.93,
+      "damage": 19.36,
+      "hits": [
+       {
+        "name": "Light1",
+        "reach": 5.26,
+        "time": 0.688,
+        "startup": 0.162,
+        "damage": 3.52
+       },
+       {
+        "name": "Light2",
+        "reach": 5.28,
+        "time": 0.692,
+        "startup": 0.18,
+        "damage": 4.4
+       },
+       {
+        "name": "Light4",
+        "reach": 5.26,
+        "time": 0.688,
+        "startup": 0.162,
+        "damage": 3.52
+       },
+       {
+        "name": "Light3",
+        "reach": 5.51,
+        "time": 0.728,
+        "startup": 0.228,
+        "damage": 7.92
+       }
+      ]
+     },
+     "move": {
+      "air": 0.85,
+      "awakenSpeed": 1.12,
+      "jump": 0.9,
+      "dash": 1,
+      "accel": 0.85,
+      "run": 38.25,
+      "walk": 16.5
+     },
+     "reach": 5.26,
+     "body": {
+      "health": 138,
+      "preferredRange": 11,
+      "guard": 0.1,
+      "regen": 7,
+      "chakra": 130
+     },
+     "heavy": {
+      "reach": 6.28,
+      "startup": 0.3,
+      "damage": 12.32
+     },
+     "own": [
+      "AirHeavy",
+      "Awakening.ShieldRegen",
+      "HeavyMove",
+      "LauncherMove",
+      "SandFlicker"
+     ],
+     "firstHit": 0.162,
+     "jutsu": {
+      "farthest": 38,
+      "burst": 28,
+      "dps": 4.27,
+      "mobile": 0,
+      "count": 4,
+      "list": [
+       {
+        "cost": 16,
+        "id": "SandShuriken",
+        "range": 38,
+        "mobile": false,
+        "name": "Sand Shuriken",
+        "teleport": false,
+        "cooldown": 3.5,
+        "damage": 3
+       },
+       {
+        "cost": 26,
+        "id": "SandCoffin",
+        "range": 30,
+        "mobile": false,
+        "name": "Sand Coffin",
+        "teleport": false,
+        "cooldown": 8,
+        "damage": 18
+       },
+       {
+        "cost": 22,
+        "id": "DesertWave",
+        "range": 12,
+        "element": "Earth",
+        "mobile": false,
+        "name": "Desert Wave",
+        "teleport": false,
+        "cooldown": 6,
+        "damage": 7
+       },
+       {
+        "cost": 20,
+        "id": "SandArmor",
+        "mobile": false,
+        "name": "Sand Armor",
+        "family": "Buff",
+        "teleport": false,
+        "cooldown": 12,
+        "damage": 0
+       }
+      ],
+      "locked": [],
+      "seals": 5,
+      "teleports": 0
+     },
+     "style": "Sand",
+     "dash": {
+      "reach": 6.41,
+      "damage": 6.16
+     },
+     "awakening": "SHUKAKU'S SAND",
+     "tool": {
+      "kind": "Sand"
+     },
+     "launcher": {
+      "reach": 5.1,
+      "startup": 0.342,
+      "name": "SandFist",
+      "damage": 4.84
+     }
+    },
+    "prodige": {
+     "string": {
+      "count": 4,
+      "time": 2.796,
+      "dps": 6.93,
+      "damage": 19.36,
+      "hits": [
+       {
+        "name": "Light1",
+        "reach": 5.26,
+        "time": 0.688,
+        "startup": 0.162,
+        "damage": 3.52
+       },
+       {
+        "name": "Light2",
+        "reach": 5.28,
+        "time": 0.692,
+        "startup": 0.18,
+        "damage": 4.4
+       },
+       {
+        "name": "Light4",
+        "reach": 5.26,
+        "time": 0.688,
+        "startup": 0.162,
+        "damage": 3.52
+       },
+       {
+        "name": "Light3",
+        "reach": 5.51,
+        "time": 0.728,
+        "startup": 0.228,
+        "damage": 7.92
+       }
+      ]
+     },
+     "move": {
+      "air": 0.85,
+      "awakenSpeed": 1.12,
+      "jump": 0.9,
+      "dash": 1,
+      "accel": 0.85,
+      "run": 38.25,
+      "walk": 16.5
+     },
+     "reach": 5.26,
+     "body": {
+      "health": 138,
+      "preferredRange": 11,
+      "guard": 0.1,
+      "regen": 7,
+      "chakra": 130
+     },
+     "heavy": {
+      "reach": 6.28,
+      "startup": 0.3,
+      "damage": 12.32
+     },
+     "own": [
+      "AirHeavy",
+      "Awakening.ShieldRegen",
+      "HeavyMove",
+      "LauncherMove",
+      "SandFlicker",
+      "SandShield"
+     ],
+     "firstHit": 0.162,
+     "jutsu": {
+      "farthest": 38,
+      "burst": 28,
+      "dps": 4.27,
+      "mobile": 0,
+      "count": 4,
+      "list": [
+       {
+        "cost": 16,
+        "id": "SandShuriken",
+        "range": 38,
+        "mobile": false,
+        "name": "Sand Shuriken",
+        "teleport": false,
+        "cooldown": 3.5,
+        "damage": 3
+       },
+       {
+        "cost": 26,
+        "id": "SandCoffin",
+        "range": 30,
+        "mobile": false,
+        "name": "Sand Coffin",
+        "teleport": false,
+        "cooldown": 8,
+        "damage": 18
+       },
+       {
+        "cost": 22,
+        "id": "DesertWave",
+        "range": 12,
+        "element": "Earth",
+        "mobile": false,
+        "name": "Desert Wave",
+        "teleport": false,
+        "cooldown": 6,
+        "damage": 7
+       },
+       {
+        "cost": 20,
+        "id": "SandArmor",
+        "mobile": false,
+        "name": "Sand Armor",
+        "family": "Buff",
+        "teleport": false,
+        "cooldown": 12,
+        "damage": 0
+       }
+      ],
+      "locked": [],
+      "seals": 5,
+      "teleports": 0
+     },
+     "style": "Sand",
+     "dash": {
+      "reach": 6.41,
+      "damage": 6.16
+     },
+     "awakening": "SHUKAKU'S SAND",
+     "tool": {
+      "kind": "Sand"
+     },
+     "launcher": {
+      "reach": 5.1,
+      "startup": 0.342,
+      "name": "SandFist",
+      "damage": 4.84
+     }
+    }
+   },
+   "tree": {
+    "nodes": 21,
+    "total": 22,
+    "locks": [],
+    "spent": 125
+   },
+   "name": "Gaara"
+  },
+  "GentleFist": {
+   "locks": [],
+   "title": "THE HYUGA GENIUS",
+   "natures": {
+    "Earth": {
+     "carriers": [
+      "blade",
+      "kunai"
+     ],
+     "strong": 1.5,
+     "answer": "a dodge avoids it whole",
+     "guardDps": 3.75,
+     "gap": 4,
+     "nature": "Earth"
+    },
+    "Wind": {
+     "carriers": [
+      "blade",
+      "kunai"
+     ],
+     "kunaiSpeed": 111.8,
+     "strong": 1.5,
+     "kunaiSpeedBase": 86,
+     "answer": "it is seen coming from further",
+     "kunaiRange": 1.3,
+     "gap": 4,
+     "nature": "Wind"
+    },
+    "Fire": {
+     "carriers": [
+      "blade",
+      "kunai"
+     ],
+     "burnDps": 1.125,
+     "strong": 1.5,
+     "answer": "a guard stops the burn",
+     "gap": 4,
+     "nature": "Fire"
+    },
+    "Water": {
+     "carriers": [
+      "blade",
+      "kunai"
+     ],
+     "strong": 1.5,
+     "answer": "a substitution washes it off",
+     "slowed": 0.0844,
+     "gap": 4,
+     "nature": "Water"
+    },
+    "Lightning": {
+     "carriers": [
+      "blade",
+      "kunai"
+     ],
+     "strong": 1.5,
+     "answer": "once every 4 s",
+     "frozen": 0.0938,
+     "gap": 4,
+     "nature": "Lightning"
+    }
+   },
+   "id": "GentleFist",
+   "versions": {
+    "arbre": {
+     "string": {
+      "count": 4,
+      "time": 1.857,
+      "dps": 22.92,
+      "damage": 42.56,
+      "hits": [
+       {
+        "name": "Light1",
+        "reach": 8.3,
+        "time": 0.455,
+        "startup": 0.083,
+        "damage": 5.6
+       },
+       {
+        "name": "Light2",
+        "reach": 8.6,
+        "time": 0.457,
+        "startup": 0.094,
+        "damage": 11.2
+       },
+       {
+        "name": "Light4",
+        "reach": 8.3,
+        "time": 0.455,
+        "startup": 0.083,
+        "damage": 5.6
+       },
+       {
+        "name": "Light3",
+        "reach": 9.71,
+        "time": 0.49,
+        "startup": 0.12,
+        "damage": 20.16
+       }
+      ]
+     },
+     "move": {
+      "air": 0.95,
+      "awakenSpeed": 1.08,
+      "jump": 0.98,
+      "dash": 1,
+      "accel": 1.02,
+      "run": 45,
+      "walk": 18.5
+     },
+     "reach": 8.3,
+     "body": {
+      "health": 136,
+      "preferredRange": 5,
+      "guard": 0.1,
+      "regen": 8.2,
+      "chakra": 121
+     },
+     "heavy": {
+      "reach": 10.6,
+      "startup": 0.306,
+      "damage": 15.68
+     },
+     "own": [
+      "Awakening.ChannelCut",
+      "Awakening.Drain",
+      "Awakening.GuardPoints",
+      "Awakening.NoBlindSpot",
+      "Awakening.Points",
+      "Byakugan",
+      "GentleFist",
+      "ParryRedirect",
+      "Substitution"
+     ],
+     "firstHit": 0.083,
+     "jutsu": {
+      "farthest": 32,
+      "burst": 16,
+      "dps": 4.5,
+      "mobile": 0,
+      "count": 4,
+      "list": [
+       {
+        "cost": 14,
+        "id": "VacuumPalm",
+        "range": 32,
+        "mobile": false,
+        "name": "Vacuum Palm",
+        "teleport": false,
+        "cooldown": 2.296,
+        "damage": 7
+       },
+       {
+        "cost": 30,
+        "id": "SixtyFourPalms",
+        "range": 5,
+        "mobile": false,
+        "name": "64 Palms",
+        "teleport": false,
+        "cooldown": 10,
+        "damage": 3
+       },
+       {
+        "cost": 24,
+        "id": "Rotation",
+        "range": 7,
+        "mobile": false,
+        "name": "Rotation",
+        "teleport": false,
+        "cooldown": 5.22,
+        "damage": 6
+       },
+       {
+        "cost": 14,
+        "id": "ByakuganSight",
+        "mobile": false,
+        "name": "Byakugan: Perception",
+        "family": "Buff",
+        "teleport": false,
+        "cooldown": 10,
+        "damage": 0
+       }
+      ],
+      "locked": [],
+      "seals": 4,
+      "teleports": 0
+     },
+     "style": "GentleFist",
+     "dash": {
+      "reach": 13.46,
+      "damage": 7.84
+     },
+     "awakening": "BYAKUGAN FULL FIELD",
+     "tool": {
+      "count": 1,
+      "speed": 86,
+      "kind": "kunai",
+      "recover": 0.85,
+      "damage": 3
+     },
+     "launcher": {
+      "reach": 8.14,
+      "startup": 0.167,
+      "name": "Launcher",
+      "damage": 8.96
+     }
+    },
+    "depart": {
+     "string": {
+      "count": 4,
+      "time": 1.857,
+      "dps": 22.92,
+      "damage": 42.56,
+      "hits": [
+       {
+        "name": "Light1",
+        "reach": 8.3,
+        "time": 0.455,
+        "startup": 0.083,
+        "damage": 5.6
+       },
+       {
+        "name": "Light2",
+        "reach": 8.6,
+        "time": 0.457,
+        "startup": 0.094,
+        "damage": 11.2
+       },
+       {
+        "name": "Light4",
+        "reach": 8.3,
+        "time": 0.455,
+        "startup": 0.083,
+        "damage": 5.6
+       },
+       {
+        "name": "Light3",
+        "reach": 9.71,
+        "time": 0.49,
+        "startup": 0.12,
+        "damage": 20.16
+       }
+      ]
+     },
+     "move": {
+      "air": 0.95,
+      "awakenSpeed": 1.08,
+      "jump": 0.98,
+      "dash": 1,
+      "accel": 1.02,
+      "run": 45,
+      "walk": 18.5
+     },
+     "reach": 8.3,
+     "body": {
+      "health": 130,
+      "preferredRange": 5,
+      "guard": 0.1,
+      "regen": 7.6,
+      "chakra": 115
+     },
+     "heavy": {
+      "reach": 10.6,
+      "startup": 0.306,
+      "damage": 15.68
+     },
+     "own": [
+      "Awakening.ChannelCut",
+      "Awakening.Drain",
+      "Awakening.NoBlindSpot",
+      "Awakening.Points",
+      "Byakugan",
+      "GentleFist"
+     ],
+     "firstHit": 0.083,
+     "jutsu": {
+      "farthest": 32,
+      "burst": 16,
+      "dps": 3.8,
+      "mobile": 0,
+      "count": 4,
+      "list": [
+       {
+        "cost": 14,
+        "id": "VacuumPalm",
+        "range": 32,
+        "mobile": false,
+        "name": "Vacuum Palm",
+        "teleport": false,
+        "cooldown": 2.8,
+        "damage": 7
+       },
+       {
+        "cost": 30,
+        "id": "SixtyFourPalms",
+        "range": 5,
+        "mobile": false,
+        "name": "64 Palms",
+        "teleport": false,
+        "cooldown": 10,
+        "damage": 3
+       },
+       {
+        "cost": 24,
+        "id": "Rotation",
+        "range": 7,
+        "mobile": false,
+        "name": "Rotation",
+        "teleport": false,
+        "cooldown": 6,
+        "damage": 6
+       },
+       {
+        "cost": 14,
+        "id": "ByakuganSight",
+        "mobile": false,
+        "name": "Byakugan: Perception",
+        "family": "Buff",
+        "teleport": false,
+        "cooldown": 10,
+        "damage": 0
+       }
+      ],
+      "locked": [],
+      "seals": 4,
+      "teleports": 0
+     },
+     "style": "GentleFist",
+     "dash": {
+      "reach": 13.46,
+      "damage": 7.84
+     },
+     "awakening": "BYAKUGAN FULL FIELD",
+     "tool": {
+      "count": 1,
+      "speed": 86,
+      "kind": "kunai",
+      "recover": 0.85,
+      "damage": 3
+     },
+     "launcher": {
+      "reach": 8.14,
+      "startup": 0.167,
+      "name": "Launcher",
+      "damage": 8.96
+     }
+    },
+    "prodige": {
+     "string": {
+      "count": 4,
+      "time": 1.857,
+      "dps": 22.92,
+      "damage": 42.56,
+      "hits": [
+       {
+        "name": "Light1",
+        "reach": 8.3,
+        "time": 0.455,
+        "startup": 0.083,
+        "damage": 5.6
+       },
+       {
+        "name": "Light2",
+        "reach": 8.6,
+        "time": 0.457,
+        "startup": 0.094,
+        "damage": 11.2
+       },
+       {
+        "name": "Light4",
+        "reach": 8.3,
+        "time": 0.455,
+        "startup": 0.083,
+        "damage": 5.6
+       },
+       {
+        "name": "Light3",
+        "reach": 9.71,
+        "time": 0.49,
+        "startup": 0.12,
+        "damage": 20.16
+       }
+      ]
+     },
+     "move": {
+      "air": 0.95,
+      "awakenSpeed": 1.08,
+      "jump": 0.98,
+      "dash": 1,
+      "accel": 1.02,
+      "run": 45,
+      "walk": 18.5
+     },
+     "reach": 8.3,
+     "body": {
+      "health": 130,
+      "preferredRange": 5,
+      "guard": 0.1,
+      "regen": 7.6,
+      "chakra": 115
+     },
+     "heavy": {
+      "reach": 10.6,
+      "startup": 0.306,
+      "damage": 15.68
+     },
+     "own": [
+      "Awakening.ChannelCut",
+      "Awakening.Drain",
+      "Awakening.NoBlindSpot",
+      "Awakening.Points",
+      "Byakugan",
+      "GentleFist"
+     ],
+     "firstHit": 0.083,
+     "jutsu": {
+      "farthest": 32,
+      "burst": 16,
+      "dps": 3.8,
+      "mobile": 0,
+      "count": 4,
+      "list": [
+       {
+        "cost": 14,
+        "id": "VacuumPalm",
+        "range": 32,
+        "mobile": false,
+        "name": "Vacuum Palm",
+        "teleport": false,
+        "cooldown": 2.8,
+        "damage": 7
+       },
+       {
+        "cost": 30,
+        "id": "SixtyFourPalms",
+        "range": 5,
+        "mobile": false,
+        "name": "64 Palms",
+        "teleport": false,
+        "cooldown": 10,
+        "damage": 3
+       },
+       {
+        "cost": 24,
+        "id": "Rotation",
+        "range": 7,
+        "mobile": false,
+        "name": "Rotation",
+        "teleport": false,
+        "cooldown": 6,
+        "damage": 6
+       },
+       {
+        "cost": 14,
+        "id": "ByakuganSight",
+        "mobile": false,
+        "name": "Byakugan: Perception",
+        "family": "Buff",
+        "teleport": false,
+        "cooldown": 10,
+        "damage": 0
+       }
+      ],
+      "locked": [],
+      "seals": 4,
+      "teleports": 0
+     },
+     "style": "GentleFist",
+     "dash": {
+      "reach": 13.46,
+      "damage": 7.84
+     },
+     "awakening": "BYAKUGAN FULL FIELD",
+     "tool": {
+      "count": 1,
+      "speed": 86,
+      "kind": "kunai",
+      "recover": 0.85,
+      "damage": 3
+     },
+     "launcher": {
+      "reach": 8.14,
+      "startup": 0.167,
+      "name": "Launcher",
+      "damage": 8.96
+     }
+    }
+   },
+   "tree": {
+    "nodes": 18,
+    "total": 19,
+    "locks": [],
+    "spent": 122
+   },
+   "name": "Neji"
+  },
+  "Copycat": {
+   "locks": [
+    "Tanto"
+   ],
+   "title": "THE COPY NINJA",
+   "natures": {
+    "Earth": {
+     "carriers": [
+      "blade",
+      "kunai"
+     ],
+     "strong": 1.5,
+     "answer": "a dodge avoids it whole",
+     "guardDps": 3.75,
+     "gap": 4,
+     "nature": "Earth"
+    },
+    "Wind": {
+     "carriers": [
+      "blade",
+      "kunai"
+     ],
+     "kunaiSpeed": 119.6,
+     "strong": 1.5,
+     "kunaiSpeedBase": 92,
+     "answer": "it is seen coming from further",
+     "kunaiRange": 1.3,
+     "gap": 4,
+     "nature": "Wind"
+    },
+    "Fire": {
+     "carriers": [
+      "blade",
+      "kunai"
+     ],
+     "burnDps": 1.125,
+     "strong": 1.5,
+     "answer": "a guard stops the burn",
+     "gap": 4,
+     "nature": "Fire"
+    },
+    "Water": {
+     "carriers": [
+      "blade",
+      "kunai"
+     ],
+     "strong": 1.5,
+     "answer": "a substitution washes it off",
+     "slowed": 0.0844,
+     "gap": 4,
+     "nature": "Water"
+    },
+    "Lightning": {
+     "carriers": [
+      "blade",
+      "kunai"
+     ],
+     "strong": 1.5,
+     "answer": "once every 4 s",
+     "frozen": 0.0938,
+     "gap": 4,
+     "nature": "Lightning"
+    }
+   },
+   "id": "Copycat",
+   "versions": {
+    "arbre": {
+     "string": {
+      "count": 4,
+      "time": 1.868,
+      "dps": 21.36,
+      "damage": 39.9,
+      "hits": [
+       {
+        "name": "Light1",
+        "reach": 8.63,
+        "time": 0.46,
+        "startup": 0.083,
+        "damage": 5.25
+       },
+       {
+        "name": "Light2",
+        "reach": 8.96,
+        "time": 0.457,
+        "startup": 0.094,
+        "damage": 10.5
+       },
+       {
+        "name": "Light4",
+        "reach": 8.63,
+        "time": 0.46,
+        "startup": 0.083,
+        "damage": 5.25
+       },
+       {
+        "name": "Light3",
+        "reach": 9.75,
+        "time": 0.49,
+        "startup": 0.12,
+        "damage": 18.9
+       }
+      ]
+     },
+     "move": {
+      "air": 1.05,
+      "awakenSpeed": 1.08,
+      "jump": 1.05,
+      "dash": 1.05,
+      "accel": 1.06,
+      "run": 48.6,
+      "walk": 19
+     },
+     "reach": 8.63,
+     "body": {
+      "health": 138,
+      "preferredRange": 7,
+      "guard": 0.1,
+      "regen": 8.2,
+      "chakra": 130
+     },
+     "heavy": {
+      "reach": 10.92,
+      "startup": 0.294,
+      "damage": 14.7
+     },
+     "own": [
+      "Awakening.BindScale",
+      "Awakening.CostScale",
+      "Awakening.Windows",
+      "Bodies",
+      "Copy",
+      "Items",
+      "Sharingan",
+      "SharinganAwake",
+      "Substitution",
+      "Tool.AirSpread",
+      "WallSteer",
+      "Weapon"
+     ],
+     "firstHit": 0.083,
+     "jutsu": {
+      "farthest": 52,
+      "burst": 54,
+      "dps": 7.9,
+      "mobile": 0,
+      "count": 4,
+      "list": [
+       {
+        "cost": 28,
+        "id": "WaterDragon",
+        "range": 52,
+        "element": "Water",
+        "mobile": false,
+        "name": "Water Dragon",
+        "family": "Projectile",
+        "teleport": false,
+        "cooldown": 5.6000000000000005,
+        "damage": 14
+       },
+       {
+        "cost": 28,
+        "id": "LightningBlade",
+        "range": 20,
+        "element": "Lightning",
+        "mobile": false,
+        "name": "Lightning Blade",
+        "family": "Strike",
+        "teleport": false,
+        "cooldown": 9,
+        "damage": 22
+       },
+       {
+        "cost": 18,
+        "id": "TrackingFang",
+        "range": 30,
+        "mobile": false,
+        "name": "Summoning: Tracking Fang",
+        "family": "Projectile",
+        "teleport": false,
+        "cooldown": 6.4,
+        "damage": 4
+       },
+       {
+        "cost": 18,
+        "id": "LightningCut",
+        "range": 22,
+        "element": "Lightning",
+        "mobile": false,
+        "name": "Lightning Cut",
+        "family": "Teleport",
+        "teleport": true,
+        "cooldown": 6,
+        "damage": 14
+       }
+      ],
+      "locked": [],
+      "seals": 4,
+      "teleports": 1
+     },
+     "style": "Control",
+     "dash": {
+      "reach": 14.49,
+      "damage": 7.35
+     },
+     "awakening": "SHARINGAN UNCOVERED",
+     "tool": {
+      "count": 1,
+      "speed": 92,
+      "kind": "kunai",
+      "recover": 0.62,
+      "damage": 3
+     },
+     "launcher": {
+      "reach": 8.49,
+      "startup": 0.163,
+      "name": "Launcher",
+      "damage": 8.4
+     }
+    },
+    "depart": {
+     "string": {
+      "count": 4,
+      "time": 1.868,
+      "dps": 21.36,
+      "damage": 39.9,
+      "hits": [
+       {
+        "name": "Light1",
+        "reach": 8.63,
+        "time": 0.46,
+        "startup": 0.083,
+        "damage": 5.25
+       },
+       {
+        "name": "Light2",
+        "reach": 8.96,
+        "time": 0.457,
+        "startup": 0.094,
+        "damage": 10.5
+       },
+       {
+        "name": "Light4",
+        "reach": 8.63,
+        "time": 0.46,
+        "startup": 0.083,
+        "damage": 5.25
+       },
+       {
+        "name": "Light3",
+        "reach": 9.75,
+        "time": 0.49,
+        "startup": 0.12,
+        "damage": 18.9
+       }
+      ]
+     },
+     "move": {
+      "air": 1.05,
+      "awakenSpeed": 1.08,
+      "jump": 1.05,
+      "dash": 1.05,
+      "accel": 1.06,
+      "run": 48.6,
+      "walk": 19
+     },
+     "reach": 8.63,
+     "body": {
+      "health": 130,
+      "preferredRange": 7,
+      "guard": 0.1,
+      "regen": 7.6,
+      "chakra": 120
+     },
+     "heavy": {
+      "reach": 10.92,
+      "startup": 0.294,
+      "damage": 14.7
+     },
+     "own": [
+      "Awakening.BindScale",
+      "Awakening.CostScale",
+      "Awakening.Windows",
+      "Bodies",
+      "Copy",
+      "Sharingan",
+      "SharinganAwake",
+      "Weapon",
+      "WeaponLocked"
+     ],
+     "firstHit": 0.083,
+     "jutsu": {
+      "farthest": 52,
+      "burst": 54,
+      "dps": 7.28,
+      "mobile": 0,
+      "count": 4,
+      "list": [
+       {
+        "cost": 28,
+        "id": "WaterDragon",
+        "range": 52,
+        "element": "Water",
+        "mobile": false,
+        "name": "Water Dragon",
+        "family": "Projectile",
+        "teleport": false,
+        "cooldown": 7,
+        "damage": 14
+       },
+       {
+        "cost": 32,
+        "id": "LightningBlade",
+        "range": 20,
+        "element": "Lightning",
+        "mobile": false,
+        "name": "Lightning Blade",
+        "family": "Strike",
+        "teleport": false,
+        "cooldown": 9,
+        "damage": 22
+       },
+       {
+        "cost": 22,
+        "id": "TrackingFang",
+        "range": 30,
+        "mobile": false,
+        "name": "Summoning: Tracking Fang",
+        "family": "Projectile",
+        "teleport": false,
+        "cooldown": 8,
+        "damage": 4
+       },
+       {
+        "cost": 18,
+        "id": "LightningCut",
+        "range": 22,
+        "element": "Lightning",
+        "mobile": false,
+        "name": "Lightning Cut",
+        "family": "Teleport",
+        "teleport": true,
+        "cooldown": 6,
+        "damage": 14
+       }
+      ],
+      "locked": [],
+      "seals": 4,
+      "teleports": 1
+     },
+     "style": "Control",
+     "dash": {
+      "reach": 14.49,
+      "damage": 7.35
+     },
+     "awakening": "SHARINGAN UNCOVERED",
+     "tool": {
+      "count": 1,
+      "speed": 92,
+      "kind": "kunai",
+      "recover": 0.62,
+      "damage": 3
+     },
+     "launcher": {
+      "reach": 8.49,
+      "startup": 0.163,
+      "name": "Launcher",
+      "damage": 8.4
+     }
+    },
+    "prodige": {
+     "string": {
+      "count": 4,
+      "time": 1.868,
+      "dps": 21.36,
+      "damage": 39.9,
+      "hits": [
+       {
+        "name": "Light1",
+        "reach": 8.63,
+        "time": 0.46,
+        "startup": 0.083,
+        "damage": 5.25
+       },
+       {
+        "name": "Light2",
+        "reach": 8.96,
+        "time": 0.457,
+        "startup": 0.094,
+        "damage": 10.5
+       },
+       {
+        "name": "Light4",
+        "reach": 8.63,
+        "time": 0.46,
+        "startup": 0.083,
+        "damage": 5.25
+       },
+       {
+        "name": "Light3",
+        "reach": 9.75,
+        "time": 0.49,
+        "startup": 0.12,
+        "damage": 18.9
+       }
+      ]
+     },
+     "move": {
+      "air": 1.05,
+      "awakenSpeed": 1.08,
+      "jump": 1.05,
+      "dash": 1.05,
+      "accel": 1.06,
+      "run": 48.6,
+      "walk": 19
+     },
+     "reach": 8.63,
+     "body": {
+      "health": 130,
+      "preferredRange": 7,
+      "guard": 0.1,
+      "regen": 7.6,
+      "chakra": 120
+     },
+     "heavy": {
+      "reach": 10.92,
+      "startup": 0.294,
+      "damage": 14.7
+     },
+     "own": [
+      "Awakening.BindScale",
+      "Awakening.CostScale",
+      "Awakening.Windows",
+      "Bodies",
+      "Copy",
+      "Sharingan",
+      "SharinganAwake",
+      "Weapon"
+     ],
+     "firstHit": 0.083,
+     "jutsu": {
+      "farthest": 52,
+      "burst": 54,
+      "dps": 7.28,
+      "mobile": 0,
+      "count": 4,
+      "list": [
+       {
+        "cost": 28,
+        "id": "WaterDragon",
+        "range": 52,
+        "element": "Water",
+        "mobile": false,
+        "name": "Water Dragon",
+        "family": "Projectile",
+        "teleport": false,
+        "cooldown": 7,
+        "damage": 14
+       },
+       {
+        "cost": 32,
+        "id": "LightningBlade",
+        "range": 20,
+        "element": "Lightning",
+        "mobile": false,
+        "name": "Lightning Blade",
+        "family": "Strike",
+        "teleport": false,
+        "cooldown": 9,
+        "damage": 22
+       },
+       {
+        "cost": 22,
+        "id": "TrackingFang",
+        "range": 30,
+        "mobile": false,
+        "name": "Summoning: Tracking Fang",
+        "family": "Projectile",
+        "teleport": false,
+        "cooldown": 8,
+        "damage": 4
+       },
+       {
+        "cost": 18,
+        "id": "LightningCut",
+        "range": 22,
+        "element": "Lightning",
+        "mobile": false,
+        "name": "Lightning Cut",
+        "family": "Teleport",
+        "teleport": true,
+        "cooldown": 6,
+        "damage": 14
+       }
+      ],
+      "locked": [],
+      "seals": 4,
+      "teleports": 1
+     },
+     "style": "Control",
+     "dash": {
+      "reach": 14.49,
+      "damage": 7.35
+     },
+     "awakening": "SHARINGAN UNCOVERED",
+     "tool": {
+      "count": 1,
+      "speed": 92,
+      "kind": "kunai",
+      "recover": 0.62,
+      "damage": 3
+     },
+     "launcher": {
+      "reach": 8.49,
+      "startup": 0.163,
+      "name": "Launcher",
+      "damage": 8.4
+     }
+    }
+   },
+   "tree": {
+    "nodes": 21,
+    "total": 22,
+    "locks": [],
+    "spent": 128
+   },
+   "name": "Kakashi"
+  },
+  "Leaf": {
+   "locks": [
+    "Weights"
+   ],
+   "title": "THE TAIJUTSU PRODIGY",
+   "natures": {
+    "Earth": {
+     "carriers": [
+      "blade"
+     ],
+     "strong": 1.5,
+     "answer": "a dodge avoids it whole",
+     "guardDps": 3.75,
+     "gap": 4,
+     "nature": "Earth"
+    },
+    "Wind": {
+     "carriers": [
+      "blade"
+     ],
+     "strong": 1.5,
+     "answer": "it is seen coming from further",
+     "kunaiRange": 1,
+     "gap": 4,
+     "nature": "Wind"
+    },
+    "Fire": {
+     "carriers": [
+      "blade"
+     ],
+     "burnDps": 1.125,
+     "strong": 1.5,
+     "answer": "a guard stops the burn",
+     "gap": 4,
+     "nature": "Fire"
+    },
+    "Water": {
+     "carriers": [
+      "blade"
+     ],
+     "strong": 1.5,
+     "answer": "a substitution washes it off",
+     "slowed": 0.0844,
+     "gap": 4,
+     "nature": "Water"
+    },
+    "Lightning": {
+     "carriers": [
+      "blade"
+     ],
+     "strong": 1.5,
+     "answer": "once every 4 s",
+     "frozen": 0.0938,
+     "gap": 4,
+     "nature": "Lightning"
+    }
+   },
+   "id": "Leaf",
+   "versions": {
+    "arbre": {
+     "string": {
+      "count": 5,
+      "time": 2.271,
+      "dps": 15.63,
+      "damage": 35.5,
+      "hits": [
+       {
+        "name": "Light1",
+        "reach": 9.15,
+        "time": 0.449,
+        "startup": 0.077,
+        "damage": 5
+       },
+       {
+        "name": "Light2",
+        "reach": 9.13,
+        "time": 0.449,
+        "startup": 0.086,
+        "damage": 8
+       },
+       {
+        "name": "Light4",
+        "reach": 9.15,
+        "time": 0.449,
+        "startup": 0.077,
+        "damage": 5
+       },
+       {
+        "name": "Light5",
+        "reach": 9.01,
+        "time": 0.449,
+        "startup": 0.086,
+        "damage": 4
+       },
+       {
+        "name": "Light3",
+        "reach": 10.13,
+        "time": 0.476,
+        "startup": 0.108,
+        "damage": 13.5
+       }
+      ]
+     },
+     "move": {
+      "air": 1.12,
+      "awakenSpeed": 1.2154,
+      "jump": 1.15,
+      "dash": 1.12,
+      "accel": 1.22,
+      "run": 54,
+      "walk": 20
+     },
+     "reach": 9.15,
+     "body": {
+      "health": 148,
+      "preferredRange": 4.5,
+      "guard": 0.08,
+      "regen": 10.3,
+      "chakra": 110
+     },
+     "heavy": {
+      "reach": 11.41,
+      "startup": 0.27,
+      "damage": 14
+     },
+     "own": [
+      "Awakening.Gates",
+      "Awakening.HealthDrain",
+      "Awakening.Unreadable",
+      "Deflect",
+      "Items",
+      "LauncherMove",
+      "Substitution",
+      "WallSteer"
+     ],
+     "firstHit": 0.077,
+     "jutsu": {
+      "farthest": 26,
+      "burst": 22,
+      "dps": 7.58,
+      "mobile": 0,
+      "count": 4,
+      "list": [
+       {
+        "cost": 8,
+        "id": "LeafGreatWhirlwind",
+        "range": 15,
+        "mobile": false,
+        "name": "Leaf Great Whirlwind",
+        "teleport": false,
+        "cooldown": 2.08,
+        "damage": 9
+       },
+       {
+        "cost": 15,
+        "id": "PrimaryLotus",
+        "range": 13,
+        "mobile": false,
+        "name": "Primary Lotus",
+        "family": "Sequence",
+        "teleport": false,
+        "cooldown": 7.2,
+        "damage": 0
+       },
+       {
+        "cost": 10,
+        "id": "RemoveWeights",
+        "mobile": false,
+        "name": "Remove the Weights",
+        "family": "Buff",
+        "teleport": false,
+        "cooldown": 12,
+        "damage": 0
+       },
+       {
+        "cost": 11,
+        "id": "DynamicEntry",
+        "range": 26,
+        "mobile": false,
+        "name": "Dynamic Entry",
+        "family": "Teleport",
+        "teleport": true,
+        "cooldown": 4,
+        "damage": 13
+       }
+      ],
+      "locked": [],
+      "seals": 4,
+      "teleports": 1
+     },
+     "style": "Taijutsu",
+     "dash": {
+      "reach": 15.94,
+      "damage": 7
+     },
+     "awakening": "EIGHT GATES",
+     "tool": {
+      "kind": "Deflect"
+     },
+     "launcher": {
+      "reach": 8.08,
+      "startup": 0.13,
+      "name": "LeafRising",
+      "damage": 8
+     }
+    },
+    "depart": {
+     "string": {
+      "count": 5,
+      "time": 2.271,
+      "dps": 15.63,
+      "damage": 35.5,
+      "hits": [
+       {
+        "name": "Light1",
+        "reach": 9.15,
+        "time": 0.449,
+        "startup": 0.077,
+        "damage": 5
+       },
+       {
+        "name": "Light2",
+        "reach": 9.13,
+        "time": 0.449,
+        "startup": 0.086,
+        "damage": 8
+       },
+       {
+        "name": "Light4",
+        "reach": 9.15,
+        "time": 0.449,
+        "startup": 0.077,
+        "damage": 5
+       },
+       {
+        "name": "Light5",
+        "reach": 9.01,
+        "time": 0.449,
+        "startup": 0.086,
+        "damage": 4
+       },
+       {
+        "name": "Light3",
+        "reach": 10.13,
+        "time": 0.476,
+        "startup": 0.108,
+        "damage": 13.5
+       }
+      ]
+     },
+     "move": {
+      "air": 1.12,
+      "awakenSpeed": 1.18,
+      "jump": 1.15,
+      "dash": 1.12,
+      "accel": 1.22,
+      "run": 54,
+      "walk": 20
+     },
+     "reach": 9.15,
+     "body": {
+      "health": 140,
+      "preferredRange": 4.5,
+      "guard": 0.08,
+      "regen": 9.5,
+      "chakra": 100
+     },
+     "heavy": {
+      "reach": 11.41,
+      "startup": 0.27,
+      "damage": 14
+     },
+     "own": [
+      "Awakening.Gates",
+      "Awakening.HealthDrain",
+      "Awakening.Unreadable",
+      "Deflect",
+      "LauncherMove",
+      "Substitution"
+     ],
+     "firstHit": 0.077,
+     "jutsu": {
+      "farthest": 26,
+      "burst": 22,
+      "dps": 6.06,
+      "mobile": 0,
+      "count": 3,
+      "list": [
+       {
+        "cost": 10,
+        "id": "LeafGreatWhirlwind",
+        "range": 15,
+        "mobile": false,
+        "name": "Leaf Great Whirlwind",
+        "teleport": false,
+        "cooldown": 2.6,
+        "damage": 9
+       },
+       {
+        "cost": 18,
+        "id": "PrimaryLotus",
+        "range": 13,
+        "mobile": false,
+        "name": "Primary Lotus",
+        "family": "Sequence",
+        "teleport": false,
+        "cooldown": 9,
+        "damage": 0
+       },
+       {
+        "cost": 14,
+        "id": "DynamicEntry",
+        "range": 26,
+        "mobile": false,
+        "name": "Dynamic Entry",
+        "family": "Teleport",
+        "teleport": true,
+        "cooldown": 5,
+        "damage": 13
+       }
+      ],
+      "locked": [
+       "RemoveWeights"
+      ],
+      "seals": 4,
+      "teleports": 1
+     },
+     "style": "Taijutsu",
+     "dash": {
+      "reach": 15.94,
+      "damage": 7
+     },
+     "awakening": "EIGHT GATES",
+     "tool": {
+      "kind": "Deflect"
+     },
+     "launcher": {
+      "reach": 8.08,
+      "startup": 0.13,
+      "name": "LeafRising",
+      "damage": 8
+     }
+    },
+    "prodige": {
+     "string": {
+      "count": 5,
+      "time": 2.271,
+      "dps": 15.63,
+      "damage": 35.5,
+      "hits": [
+       {
+        "name": "Light1",
+        "reach": 9.15,
+        "time": 0.449,
+        "startup": 0.077,
+        "damage": 5
+       },
+       {
+        "name": "Light2",
+        "reach": 9.13,
+        "time": 0.449,
+        "startup": 0.086,
+        "damage": 8
+       },
+       {
+        "name": "Light4",
+        "reach": 9.15,
+        "time": 0.449,
+        "startup": 0.077,
+        "damage": 5
+       },
+       {
+        "name": "Light5",
+        "reach": 9.01,
+        "time": 0.449,
+        "startup": 0.086,
+        "damage": 4
+       },
+       {
+        "name": "Light3",
+        "reach": 10.13,
+        "time": 0.476,
+        "startup": 0.108,
+        "damage": 13.5
+       }
+      ]
+     },
+     "move": {
+      "air": 1.12,
+      "awakenSpeed": 1.18,
+      "jump": 1.15,
+      "dash": 1.12,
+      "accel": 1.22,
+      "run": 54,
+      "walk": 20
+     },
+     "reach": 9.15,
+     "body": {
+      "health": 140,
+      "preferredRange": 4.5,
+      "guard": 0.08,
+      "regen": 9.5,
+      "chakra": 100
+     },
+     "heavy": {
+      "reach": 11.41,
+      "startup": 0.27,
+      "damage": 14
+     },
+     "own": [
+      "Awakening.Gates",
+      "Awakening.HealthDrain",
+      "Awakening.Unreadable",
+      "Deflect",
+      "LauncherMove",
+      "Substitution"
+     ],
+     "firstHit": 0.077,
+     "jutsu": {
+      "farthest": 26,
+      "burst": 22,
+      "dps": 6.06,
+      "mobile": 0,
+      "count": 4,
+      "list": [
+       {
+        "cost": 10,
+        "id": "LeafGreatWhirlwind",
+        "range": 15,
+        "mobile": false,
+        "name": "Leaf Great Whirlwind",
+        "teleport": false,
+        "cooldown": 2.6,
+        "damage": 9
+       },
+       {
+        "cost": 18,
+        "id": "PrimaryLotus",
+        "range": 13,
+        "mobile": false,
+        "name": "Primary Lotus",
+        "family": "Sequence",
+        "teleport": false,
+        "cooldown": 9,
+        "damage": 0
+       },
+       {
+        "cost": 10,
+        "id": "RemoveWeights",
+        "mobile": false,
+        "name": "Remove the Weights",
+        "family": "Buff",
+        "teleport": false,
+        "cooldown": 16,
+        "damage": 0
+       },
+       {
+        "cost": 14,
+        "id": "DynamicEntry",
+        "range": 26,
+        "mobile": false,
+        "name": "Dynamic Entry",
+        "family": "Teleport",
+        "teleport": true,
+        "cooldown": 5,
+        "damage": 13
+       }
+      ],
+      "locked": [],
+      "seals": 4,
+      "teleports": 1
+     },
+     "style": "Taijutsu",
+     "dash": {
+      "reach": 15.94,
+      "damage": 7
+     },
+     "awakening": "EIGHT GATES",
+     "tool": {
+      "kind": "Deflect"
+     },
+     "launcher": {
+      "reach": 8.08,
+      "startup": 0.13,
+      "name": "LeafRising",
+      "damage": 8
+     }
+    }
+   },
+   "tree": {
+    "nodes": 21,
+    "total": 21,
+    "locks": [],
+    "spent": 124
+   },
+   "name": "Rock Lee"
+  },
+  "Lion": {
+   "locks": [],
+   "title": "THE ROOKIE OF THE YEAR",
+   "natures": {
+    "Earth": {
+     "carriers": [
+      "blade",
+      "shuriken"
+     ],
+     "strong": 1.5,
+     "answer": "a dodge avoids it whole",
+     "guardDps": 3.75,
+     "gap": 4,
+     "nature": "Earth"
+    },
+    "Wind": {
+     "carriers": [
+      "blade",
+      "shuriken"
+     ],
+     "kunaiSpeed": 119.6,
+     "strong": 1.5,
+     "kunaiSpeedBase": 92,
+     "answer": "it is seen coming from further",
+     "kunaiRange": 1.3,
+     "gap": 4,
+     "nature": "Wind"
+    },
+    "Fire": {
+     "carriers": [
+      "blade",
+      "shuriken"
+     ],
+     "burnDps": 1.125,
+     "strong": 1.5,
+     "answer": "a guard stops the burn",
+     "gap": 4,
+     "nature": "Fire"
+    },
+    "Water": {
+     "carriers": [
+      "blade",
+      "shuriken"
+     ],
+     "strong": 1.5,
+     "answer": "a substitution washes it off",
+     "slowed": 0.0844,
+     "gap": 4,
+     "nature": "Water"
+    },
+    "Lightning": {
+     "carriers": [
+      "blade",
+      "shuriken"
+     ],
+     "strong": 1.5,
+     "answer": "once every 4 s",
+     "frozen": 0.0938,
+     "gap": 4,
+     "nature": "Lightning"
+    }
+   },
+   "id": "Lion",
+   "versions": {
+    "arbre": {
+     "string": {
+      "count": 4,
+      "time": 1.925,
+      "dps": 21.71,
+      "damage": 41.8,
+      "hits": [
+       {
+        "name": "Light1",
+        "reach": 8.68,
+        "time": 0.467,
+        "startup": 0.081,
+        "damage": 5.5
+       },
+       {
+        "name": "Light2",
+        "reach": 9.02,
+        "time": 0.485,
+        "startup": 0.095,
+        "damage": 11
+       },
+       {
+        "name": "Light4",
+        "reach": 8.68,
+        "time": 0.467,
+        "startup": 0.081,
+        "damage": 5.5
+       },
+       {
+        "name": "Light3",
+        "reach": 10,
+        "time": 0.506,
+        "startup": 0.126,
+        "damage": 19.8
+       }
+      ]
+     },
+     "move": {
+      "air": 1.15,
+      "awakenSpeed": 1.15,
+      "jump": 1.15,
+      "dash": 1.08,
+      "accel": 1.12,
+      "run": 49.5,
+      "walk": 19
+     },
+     "reach": 8.68,
+     "body": {
+      "health": 136,
+      "preferredRange": 6,
+      "guard": 0.08,
+      "regen": 8.1,
+      "chakra": 111
+     },
+     "heavy": {
+      "reach": 11.25,
+      "startup": 0.3,
+      "damage": 15.4
+     },
+     "own": [
+      "Awakening.BloodChakra",
+      "Awakening.CursedLeaf",
+      "Awakening.Extension",
+      "Awakening.Feed",
+      "Awakening.HealthDrain",
+      "Awakening.Hunger",
+      "Awakening.Vulnerability",
+      "LauncherMove",
+      "Sharingan",
+      "Substitution",
+      "Tool.AirSpread"
+     ],
+     "firstHit": 0.081,
+     "jutsu": {
+      "farthest": 70,
+      "burst": 44,
+      "dps": 6.62,
+      "mobile": 0,
+      "count": 4,
+      "list": [
+       {
+        "cost": 20,
+        "id": "PhoenixFlower",
+        "range": 56,
+        "element": "Fire",
+        "mobile": false,
+        "name": "Phoenix Flower",
+        "teleport": false,
+        "cooldown": 4.2,
+        "damage": 4
+       },
+       {
+        "cost": 30,
+        "id": "Chidori",
+        "range": 20,
+        "element": "Lightning",
+        "mobile": false,
+        "name": "Chidori",
+        "teleport": false,
+        "cooldown": 9,
+        "damage": 22
+       },
+       {
+        "cost": 18,
+        "id": "WireTrap",
+        "range": 34,
+        "mobile": false,
+        "name": "Wire Trap",
+        "teleport": false,
+        "cooldown": 6,
+        "damage": 3
+       },
+       {
+        "cost": 21,
+        "id": "FireBloom",
+        "range": 70,
+        "element": "Fire",
+        "mobile": false,
+        "name": "Great Fireball",
+        "teleport": false,
+        "cooldown": 5.5,
+        "damage": 15
+       }
+      ],
+      "locked": [],
+      "seals": 4,
+      "teleports": 0
+     },
+     "style": "Lion",
+     "dash": {
+      "reach": 15.2,
+      "damage": 7.7
+     },
+     "awakening": "CURSE MARK",
+     "tool": {
+      "count": 2,
+      "speed": 92,
+      "kind": "shuriken",
+      "recover": 0.6,
+      "damage": 2
+     },
+     "launcher": {
+      "reach": 8.46,
+      "startup": 0.15,
+      "name": "LionKick",
+      "damage": 8.8
+     }
+    },
+    "depart": {
+     "string": {
+      "count": 4,
+      "time": 1.925,
+      "dps": 21.71,
+      "damage": 41.8,
+      "hits": [
+       {
+        "name": "Light1",
+        "reach": 8.68,
+        "time": 0.467,
+        "startup": 0.081,
+        "damage": 5.5
+       },
+       {
+        "name": "Light2",
+        "reach": 9.02,
+        "time": 0.485,
+        "startup": 0.095,
+        "damage": 11
+       },
+       {
+        "name": "Light4",
+        "reach": 8.68,
+        "time": 0.467,
+        "startup": 0.081,
+        "damage": 5.5
+       },
+       {
+        "name": "Light3",
+        "reach": 10,
+        "time": 0.506,
+        "startup": 0.126,
+        "damage": 19.8
+       }
+      ]
+     },
+     "move": {
+      "air": 1.15,
+      "awakenSpeed": 1.15,
+      "jump": 1.15,
+      "dash": 1.08,
+      "accel": 1.12,
+      "run": 49.5,
+      "walk": 19
+     },
+     "reach": 8.68,
+     "body": {
+      "health": 130,
+      "preferredRange": 6,
+      "guard": 0.08,
+      "regen": 7.5,
+      "chakra": 105
+     },
+     "heavy": {
+      "reach": 11.25,
+      "startup": 0.3,
+      "damage": 15.4
+     },
+     "own": [
+      "Awakening.CursedLeaf",
+      "Awakening.Extension",
+      "Awakening.Feed",
+      "Awakening.HealthDrain",
+      "Awakening.Hunger",
+      "Awakening.Vulnerability",
+      "Sharingan"
+     ],
+     "firstHit": 0.081,
+     "jutsu": {
+      "farthest": 70,
+      "burst": 44,
+      "dps": 6.47,
+      "mobile": 0,
+      "count": 4,
+      "list": [
+       {
+        "cost": 20,
+        "id": "PhoenixFlower",
+        "range": 56,
+        "element": "Fire",
+        "mobile": false,
+        "name": "Phoenix Flower",
+        "teleport": false,
+        "cooldown": 5,
+        "damage": 4
+       },
+       {
+        "cost": 34,
+        "id": "Chidori",
+        "range": 20,
+        "element": "Lightning",
+        "mobile": false,
+        "name": "Chidori",
+        "teleport": false,
+        "cooldown": 9,
+        "damage": 22
+       },
+       {
+        "cost": 18,
+        "id": "WireTrap",
+        "range": 34,
+        "mobile": false,
+        "name": "Wire Trap",
+        "teleport": false,
+        "cooldown": 6,
+        "damage": 3
+       },
+       {
+        "cost": 24,
+        "id": "FireBloom",
+        "range": 70,
+        "element": "Fire",
+        "mobile": false,
+        "name": "Great Fireball",
+        "teleport": false,
+        "cooldown": 5.5,
+        "damage": 15
+       }
+      ],
+      "locked": [],
+      "seals": 4,
+      "teleports": 0
+     },
+     "style": "Lion",
+     "dash": {
+      "reach": 15.2,
+      "damage": 7.7
+     },
+     "awakening": "CURSE MARK",
+     "tool": {
+      "count": 2,
+      "speed": 92,
+      "kind": "shuriken",
+      "recover": 0.6,
+      "damage": 2
+     },
+     "launcher": {
+      "reach": 8.68,
+      "startup": 0.17,
+      "name": "Launcher",
+      "damage": 8.8
+     }
+    },
+    "prodige": {
+     "string": {
+      "count": 4,
+      "time": 1.925,
+      "dps": 21.71,
+      "damage": 41.8,
+      "hits": [
+       {
+        "name": "Light1",
+        "reach": 8.68,
+        "time": 0.467,
+        "startup": 0.081,
+        "damage": 5.5
+       },
+       {
+        "name": "Light2",
+        "reach": 9.02,
+        "time": 0.485,
+        "startup": 0.095,
+        "damage": 11
+       },
+       {
+        "name": "Light4",
+        "reach": 8.68,
+        "time": 0.467,
+        "startup": 0.081,
+        "damage": 5.5
+       },
+       {
+        "name": "Light3",
+        "reach": 10,
+        "time": 0.506,
+        "startup": 0.126,
+        "damage": 19.8
+       }
+      ]
+     },
+     "move": {
+      "air": 1.15,
+      "awakenSpeed": 1.15,
+      "jump": 1.15,
+      "dash": 1.08,
+      "accel": 1.12,
+      "run": 49.5,
+      "walk": 19
+     },
+     "reach": 8.68,
+     "body": {
+      "health": 130,
+      "preferredRange": 6,
+      "guard": 0.08,
+      "regen": 7.5,
+      "chakra": 105
+     },
+     "heavy": {
+      "reach": 11.25,
+      "startup": 0.3,
+      "damage": 15.4
+     },
+     "own": [
+      "Awakening.CursedLeaf",
+      "Awakening.Extension",
+      "Awakening.Feed",
+      "Awakening.HealthDrain",
+      "Awakening.Hunger",
+      "Awakening.Vulnerability",
+      "Sharingan"
+     ],
+     "firstHit": 0.081,
+     "jutsu": {
+      "farthest": 70,
+      "burst": 44,
+      "dps": 6.47,
+      "mobile": 0,
+      "count": 4,
+      "list": [
+       {
+        "cost": 20,
+        "id": "PhoenixFlower",
+        "range": 56,
+        "element": "Fire",
+        "mobile": false,
+        "name": "Phoenix Flower",
+        "teleport": false,
+        "cooldown": 5,
+        "damage": 4
+       },
+       {
+        "cost": 34,
+        "id": "Chidori",
+        "range": 20,
+        "element": "Lightning",
+        "mobile": false,
+        "name": "Chidori",
+        "teleport": false,
+        "cooldown": 9,
+        "damage": 22
+       },
+       {
+        "cost": 18,
+        "id": "WireTrap",
+        "range": 34,
+        "mobile": false,
+        "name": "Wire Trap",
+        "teleport": false,
+        "cooldown": 6,
+        "damage": 3
+       },
+       {
+        "cost": 24,
+        "id": "FireBloom",
+        "range": 70,
+        "element": "Fire",
+        "mobile": false,
+        "name": "Great Fireball",
+        "teleport": false,
+        "cooldown": 5.5,
+        "damage": 15
+       }
+      ],
+      "locked": [],
+      "seals": 4,
+      "teleports": 0
+     },
+     "style": "Lion",
+     "dash": {
+      "reach": 15.2,
+      "damage": 7.7
+     },
+     "awakening": "CURSE MARK",
+     "tool": {
+      "count": 2,
+      "speed": 92,
+      "kind": "shuriken",
+      "recover": 0.6,
+      "damage": 2
+     },
+     "launcher": {
+      "reach": 8.68,
+      "startup": 0.17,
+      "name": "Launcher",
+      "damage": 8.8
+     }
+    }
+   },
+   "tree": {
+    "nodes": 18,
+    "total": 19,
+    "locks": [],
+    "spent": 124
+   },
+   "name": "Sasuke"
+  }
+ },
+ "source": "ND-JEU 632931f2 (Studio, LAB), 21/11",
+ "version": 2,
+ "order": [
+  "Lion",
+  "Legion",
+  "Sand",
+  "Leaf",
+  "GentleFist",
+  "Mirage",
+  "Copycat",
+  "Flashstep"
+ ]
+}

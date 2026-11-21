@@ -17,6 +17,10 @@ sys.path.insert(0, HERE)
 import empreinte as E  # noqa: E402
 
 BASE = os.path.join(HERE, "empreintes", "2026-11-20_053395e4.json")
+# 21/11 (Studio, ND-JEU 632931f2): the run as the game moves it, the natures
+STEP2 = os.path.join(HERE, "empreintes", "2026-11-21_632931f2.json")
+# 21/11 (Studio, ND-JEU b1c21d57): after DEV 2/4 (the reduced start), 3/4 and 4/4
+AFTER2 = os.path.join(HERE, "empreintes", "2026-11-21_b1c21d57.json")
 
 
 class Comparateur(unittest.TestCase):
@@ -67,6 +71,55 @@ class Comparateur(unittest.TestCase):
         text = E.diff(self.data, self.data, "depart", "arbre")
         self.assertIn("PV 150→158", text)  # Naruto's tree adds health
         self.assertNotIn("rien ne bouge", text.split("Naruto")[1].splitlines()[0])
+
+    def test_the_natures_on_the_three_kits_of_step_2(self):
+        with open(STEP2, encoding="utf-8") as f:
+            data = json.load(f)
+        text = E.natures_report(data, E.TRIO)
+        for who in ("Naruto", "Sasuke", "Rock Lee"):
+            self.assertIn(who, text)
+        lee = text.split("Rock Lee")[1]
+        self.assertIn("Vent    rien sur le lancer", lee, "Lee throws no blade; a v2 print does not measure the push")
+        self.assertIn("Ce qui change d'un kit à l'autre : Vent", text)
+        # (v3, 21/11) the last hit's push: a kit without a throw keeps that
+        v3 = copy.deepcopy(data)
+        v3["kits"]["Leaf"]["natures"]["Wind"]["push"] = 1.3
+        lee = E.natures_report(v3, E.TRIO).split("Rock Lee")[1]
+        self.assertIn("le dernier coup envoie le corps 30 % plus loin (il ne lance aucune lame)", lee)
+        self.assertEqual(E.natures_report(self.data), "Pas de nature dans cette empreinte (KitPrint sans NinjaTree, ou avant le 21/11).")
+
+    def test_step_2_says_when_the_reduced_start_is_not_there_yet(self):
+        with open(STEP2, encoding="utf-8") as f:
+            data = json.load(f)
+        text = E.etape2(data)
+        self.assertEqual(text.count("pas encore changé"), 3)
+        after = copy.deepcopy(data)
+        naruto = after["kits"]["Legion"]["versions"]["depart"]["jutsu"]
+        naruto["list"] = [t for t in naruto["list"] if t["id"] in ("ShadowClone", "NarutoRendan")]
+        naruto["locked"] = ["CloneRasengan", "MassShadowClone"]
+        text = E.etape2(data, after)
+        self.assertIn("départ, après : 2 techniques (ShadowClone, NarutoRendan)", text)
+        self.assertIn("dont CloneRasengan, MassShadowClone gagnées dans l'arbre", text)
+        self.assertIn("verrouillé au départ : CloneRasengan, MassShadowClone", text)
+        self.assertNotIn("transformation", text, "a v2 print has no transform list")
+        after["kits"]["Lion"]["tree"]["transform"] = [{"id": "WallChidori", "name": "Wall Chidori"}]
+        after["kits"]["Legion"]["tree"]["transform"] = []
+        text = E.etape2(data, after)
+        self.assertIn("transformation : Wall Chidori (WallChidori)", text)
+        self.assertIn("transformation : pas encore de nœud (Transform)", text, "Naruto has none yet")
+
+    def test_step_2_measured_the_reduced_start_of_the_three_kits(self):
+        with open(STEP2, encoding="utf-8") as f:
+            before = json.load(f)
+        with open(AFTER2, encoding="utf-8") as f:
+            after = json.load(f)
+        text = E.etape2(before, after)
+        self.assertNotIn("pas encore changé", text)
+        self.assertEqual(text.count("départ, après : 2 techniques"), 3)
+        self.assertIn("transformation : Wall Chidori (WallChidori)", text)
+        self.assertEqual(text.count("pas encore de nœud (Transform)"), 2, "Naruto and Lee have none yet")
+        lee = E.natures_report(after, E.TRIO).split("Rock Lee")[1]
+        self.assertIn("le dernier coup envoie le corps 30 % plus loin (il ne lance aucune lame)", lee)
 
     def test_the_command_and_the_page(self):
         out = io.StringIO()
