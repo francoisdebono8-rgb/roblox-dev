@@ -861,7 +861,7 @@ def item_hair_spiky():
     for x in (-1, 1):
         lock(h, scalp(x * 100, -5), (x * .8, -.7, .1), .4, .3)
     nape(h, length=.42, out=.6)
-    fringe(h, (-.36, -.12, .12, .36), length=.48, width=.36)
+    fringe(h, (-.36, -.12, .12, .36), y=.56, length=.34, width=.36)
     return o.items
 
 
@@ -980,7 +980,7 @@ def item_hair_tilted():
                    (0, 55), (45, 55), (-45, 55), (95, 60), (-95, 60), (160, 62), (-160, 62), (20, 82), (-60, 80)):
         lock(h, scalp(az, el), side + (scalp(az, el) - HEAD_C) * .6, rng.uniform(.7, .9), .5, thick=.12, bend=(-.15, .05, 0))
     nape(h, length=.36, out=.5, flow=(-.4, 0, 0))
-    fringe(h, (-.3, 0, .3), length=.4, width=.3, down=(-.5, -1, -.3), spread=.1)
+    fringe(h, (-.3, 0, .3), y=.56, length=.32, width=.3, down=(-.5, -1, -.3), spread=.1)
     return o.items
 
 
