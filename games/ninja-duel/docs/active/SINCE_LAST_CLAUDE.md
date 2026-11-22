@@ -59,7 +59,7 @@ La DESIGN n'a rien poussé depuis la minicarte (`f612894d`).
 
 **Mannequin et cibles** :
 - `TrainingProps` (le terrain n° 3) est refait avec le nouveau mannequin (paille, cordes, cible sur la poitrine) et la cible à trépied (deux kunai plantés), aux places de ton unité (-150, 16) et (-162, 30). Rien à changer côté serveur.
-- Les 8 cibles de la ruelle (`KunaiTargets/Target<i>`) : `Client/KonohaLifeFX` met dans chaque `Target<i>` le panneau modelé (`Client/TrainingMeshData`, `kunai_board`), tourné vers la marque. Tes `Disc` sont cachés chez le client, ton `Post` reste. Le mesh est DANS `Target<i>` : `SoloView:boards` le cache avec la cible touchée.
+- Les 8 cibles de la ruelle (`KunaiTargets/Target<i>`) : `Client/KonohaLifeFX` met dans chaque `Target<i>` le panneau modelé (`Client/PropMeshData`, `kunai_board`), tourné vers la marque. Tes `Disc` sont cachés chez le client, ton `Post` reste. Le mesh est DANS `Target<i>` : `SoloView:boards` le cache avec la cible touchée.
 - Le poteau de la course et les anneaux : non faits (à la prochaine passe si tu veux un modèle à la place des pièces).
 
 **Vie des rues** (`Client/KonohaLifeFX`, lancé depuis Effects, seulement si `NinjaDuelHub` existe et `Config.Hub.Enabled`) :
