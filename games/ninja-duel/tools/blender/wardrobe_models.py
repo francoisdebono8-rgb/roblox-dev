@@ -19,7 +19,7 @@ head's centre, the brow 0.27 above it, the face at -Z) and scale with each part 
 """
 import math
 
-from mathutils import Vector
+from mathutils import Vector, noise
 
 from nd_mesh import loft, tube
 
@@ -737,128 +737,215 @@ SETS = {
 }
 
 
-# ------------------------------------------------------------------ hair styles (21/11, étape 3, DEC-047)
+# ------------------------------------------------------------------ hair styles (22/11, redone, DEC-047)
 # Worn on the Head (slot "hair"), over a bald head: Server/Style takes the avatar's own hair off
-# when a style is worn and paints its slot "Hair" with the chosen hair colour. Part I silhouettes
-# read at the duel camera's distance (none is a character's exact cut): spikes all round, spikes
-# swept back, a bowl cut, long hair tied low, a high spiky tail, twin buns, spikes tilted to a side.
-def spike(pc, base, direction, length, r, col=None, n=6):
-    """A tapered lock: a ring at `base`, closed on a tip `length` along `direction`."""
-    o = O()
+# when a style is worn and paints its slot "Hair" with the chosen hair colour.
+# (22/11, François: « les 7 coiffures sont mauvaises ») The first set was needles on a cap: thin
+# round spikes, no volume, nothing that reads as anime hair. Redone as Part I hair is drawn:
+# broad FLAT locks (a lens section, wide across the scalp, thin through it), bigger than the
+# skull, layered, each lock darker at the root and light at its tip, a fringe that frames the
+# face. Silhouettes after the Part I cuts (none is a character's exact cut, no face, no logo):
+#   HairSpiky     big spikes every way, a three-lock fringe          (Naruto)
+#   HairSwept     spikes thrown back and up, long bangs to the jaw   (Sasuke)
+#   HairBowl      a glossy round bowl, the fringe cut straight        (Lee)
+#   HairLong      long and straight, parted, tied at the very end    (Neji)
+#   HairHighTail  pulled back tight, a spiky tail high on the crown  (Shikamaru)
+#   HairBuns      two round buns on top, a short fringe              (Tenten)
+#   HairTilted    every lock swept up to one side                    (Kakashi)
+HEAD_C = Vector((0, .1, 0))     # the skull's centre (Head part space; the face looks -Z)
+
+
+def scalp(az, el, r=.56):
+    """A point on the skull: az in degrees round Y (0 = the back, +Z; 180 = the face, -Z;
+    90 = his left, +X... the model's +X), el in degrees above the ears' plane."""
+    a, e = math.radians(az), math.radians(el)
+    return HEAD_C + Vector((math.sin(a) * math.cos(e) * r * 1.02, math.sin(e) * r, math.cos(a) * math.cos(e) * r))
+
+
+def lock(pc, root, direction, length, width, thick=.09, bend=(0, 0, 0), sections=5, sides=8, dark=.72, curl=0.0):
+    """One flat lock of hair: a lens section `width` across and `thick` through, tapering to a
+    point `length` along `direction`, bending by `bend` (x length, quadratic). Darker at the root.
+    The width lies across the scalp (perpendicular to both the lock and the skull's normal)."""
     d = Vector(direction).normalized()
-    side = d.cross(Vector((0, 0, 1)))
-    if side.length < .1:
-        side = d.cross(Vector((1, 0, 0)))
-    side.normalize()
-    up = side.cross(d).normalized()
-    b = Vector(base)
-    ring = [b + (side * math.cos(t) + up * math.sin(t)) * r for t in [i / n * math.tau for i in range(n)]]
-    mid = [b + d * length * .45 + (p - b) * .6 for p in ring]
-    loft(pc, [ring, mid], col or o.shade(.9, .08), cap0=True, cap1=False, tip1=b + d * length)
+    b = Vector(bend)
+    root = Vector(root)
+    n0 = (root - HEAD_C).normalized()
+    pts = [root + d * length * s + b * length * s * s for s in [k / sections for k in range(sections + 1)]]
+    rings = []
+    for k in range(sections):
+        t = (pts[k + 1] - pts[k]).normalized()
+        wa = t.cross(n0)
+        if wa.length < .05:
+            wa = t.cross(Vector((1, 0, 0)))
+        wa.normalize()
+        ta = wa.cross(t).normalized()
+        s = k / sections
+        taper = (1 - s) ** .75
+        w, th = width * taper * (1 + .25 * math.sin(s * math.pi)), thick * (1 - s * .6)
+        ring = []
+        for i in range(sides):
+            a = i / sides * math.tau
+            # a lens: wide across, thin through, a ridge down the middle
+            x, y = math.cos(a), math.sin(a)
+            ring.append(pts[k] + wa * (x * w / 2) + ta * (y * th / 2) + wa * (curl * y * th))
+        rings.append(ring)
+
+    def col(p, ri):
+        g = dark + (1 - dark) * ri / sections
+        g += .05 * noise.noise(Vector((p.x * 5, p.y * 5, p.z * 5)))
+        g = max(.5, min(1, g))
+        return (g, g, g)
+    loft(pc, rings, col, cap0=True, cap1=False, tip1=pts[-1])
 
 
-def hair_cap(pc, y0=.05, top=.74, r=(.66, .68), front=.0, z_off=0.02):
-    """The mass of hair over the skull, open on the face below y0 at the front."""
-    dome(pc, y0, r=r, top=top, rings=7, n=24, front_open=front, z_off=z_off, fat=.35)
+def skull(pc, front=1.9, r=(.67, .69), top=.76, y0=.02, z_off=.03):
+    """The hair's mass over the skull (under the locks), open on the face."""
+    dome(pc, y0, r=r, top=top, rings=8, n=28, front_open=front, z_off=z_off, fat=.3, col=O().shade(.78, .05))
 
 
-def _spikes_round(pc, count, length, tilt=0.0, back=0.0, seed=1, r=.13):
-    import random
-    rng = random.Random(seed)
-    for k in range(count):
-        a = k / count * math.tau + rng.uniform(-.15, .15)
-        el = rng.uniform(.25, .95)                                  # elevation on the dome
-        base = Vector((math.cos(a) * .58 * math.cos(el), .2 + .5 * math.sin(el), math.sin(a) * .6 * math.cos(el)))
-        out = Vector((base.x + tilt, base.y * .6 + .25, base.z + back)).normalized()
-        if base.z < -.35 and base.y < .45:                         # never over the eyes
-            continue
-        spike(pc, base, out, length * rng.uniform(.8, 1.2), r)
+def fringe(pc, xs, y=.5, length=.42, width=.3, down=(0, -1, -.35), spread=.25):
+    """Locks over the brow, from the hairline down toward the eyes (never over them)."""
+    for x in xs:
+        lock(pc, (x, y, -.56), (down[0] + x * spread, down[1], down[2]), length, width, thick=.08, bend=(0, 0, -.12))
 
 
 def item_hair_spiky():
     o = O().Out()
     h = o.add("Head", "Hair")
-    hair_cap(h, front=1.9)
-    _spikes_round(h, 22, .55, seed=3)
-    for x in (-.32, 0, .32):   # the fringe: short spikes over the brow, pointing down-forward
-        spike(h, (x, .42, -.6), (x * .3, -.5, -.6), .38, .12)
+    skull(h)
+    import random
+    rng = random.Random(3)
+    # big spikes all round the crown and the back, out and up; the top ones longest
+    for az, el, ln in ((0, 20, .75), (35, 15, .7), (-35, 15, .7), (70, 18, .62), (-70, 18, .62), (110, 25, .55), (-110, 25, .55),
+                       (0, 50, .8), (50, 48, .78), (-50, 48, .78), (100, 50, .7), (-100, 50, .7), (150, 55, .62), (-150, 55, .62),
+                       (20, 78, .7), (-20, 78, .7), (180, 70, .6), (90, 75, .62), (-90, 75, .62)):
+        root = scalp(az, el)
+        n = (root - HEAD_C).normalized()
+        lock(h, root, n + Vector((0, .35, 0)), ln * rng.uniform(.92, 1.08), .36, bend=(0, .12, 0))
+    # over the ears: short locks down and out
+    for x in (-1, 1):
+        lock(h, scalp(x * 100, -5), (x * .8, -.7, .1), .4, .3)
+    fringe(h, (-.34, -.04, .28), length=.46, width=.34)
     return o.items
 
 
 def item_hair_swept():
     o = O().Out()
     h = o.add("Head", "Hair")
-    hair_cap(h, front=1.9)
-    _spikes_round(h, 16, .7, back=1.4, seed=5)
-    for x in (-.45, .45):      # long bangs framing the face
-        spike(h, (x, .38, -.55), (x * .2, -1, -.25), .62, .12)
+    skull(h)
+    # the back thrown back and up: long locks in fans, rising toward the crown
+    for az, el, ln in ((0, 10, .7), (30, 12, .66), (-30, 12, .66), (60, 18, .55), (-60, 18, .55),
+                       (0, 40, .9), (25, 42, .85), (-25, 42, .85), (55, 45, .7), (-55, 45, .7),
+                       (0, 68, .85), (35, 70, .75), (-35, 70, .75), (120, 72, .55), (-120, 72, .55)):
+        root = scalp(az, el)
+        lock(h, root, (math.sin(math.radians(az)) * .35, .55, 1), ln, .38, bend=(0, .25, 0))
+    # long bangs either side of the face, down to the jaw; a short lock between the eyes
+    for x in (-1, 1):
+        lock(h, (x * .44, .5, -.5), (x * .12, -1, -.18), .85, .3, thick=.08, bend=(x * .05, 0, -.05))
+    lock(h, (.05, .52, -.56), (.15, -1, -.35), .45, .26, thick=.08)
     return o.items
 
 
 def item_hair_bowl():
     o = O().Out()
     h = o.add("Head", "Hair")
-    dome(h, .05, r=(.71, .73), top=.78, rings=7, n=28, z_off=.02, fat=.35)
-    rows = []                  # the straight fringe, cut level over the brow
-    for y in (.42, .16):
-        rows.append([Vector((math.cos(t) * .72, y, math.sin(t) * .74 + .02)) for t in [i / 28 * math.tau for i in range(28)]])
-    loft(h, rows, O().shade(.94, .03), cap0=False, cap1=False)
+    # a round helmet of hair, bigger than the skull, its edge cut straight: over the brows in
+    # front, the jaw at the sides, the nape behind; a thick rim so it reads as a mass
+    n = 36
+    rows = []
+    for k in range(9):
+        u = k / 8
+        ring = []
+        for i in range(n):
+            t = i / n * math.tau                     # 0 = his left (+X), -pi/2 = the face (-Z)
+            fz = -math.sin(t)                        # 1 = the face
+            edge = .3 * max(0, fz) ** 2 + (-.25) * (1 - max(0, fz) ** 2)
+            edge = .32 if fz > .55 else edge         # the fringe cut level
+            y = edge + (.86 - edge) * math.sin(u * math.pi / 2)
+            a = math.cos(u * math.pi / 2 * .96) ** .45
+            ring.append(Vector((math.cos(t) * .74 * a, y, math.sin(t) * .76 * a + .03)))
+        rows.append(ring)
+    def gloss(p, ri):
+        g = .78 + .2 * ri / 8 + (.2 if abs(p.y - .62) < .08 and p.z < .2 else 0)   # the shine band
+        return (min(1, g),) * 3
+    loft(h, rows, gloss, cap0=False, cap1=True)
+    inner = [[(p - HEAD_C) * .93 + HEAD_C for p in rows[0]], rows[0]]
+    loft(h, inner, O().shade(.7, .02), cap0=False, cap1=False)   # the rim's thickness
     return o.items
 
 
 def item_hair_long():
     o = O().Out()
     h = o.add("Head", "Hair")
-    hair_cap(h, front=1.8)
-    rows = []                  # the long fall down the back, tied low
-    for k, (y, w, z) in enumerate(((.3, .62, .45), (-.2, .58, .62), (-.9, .4, .72), (-1.5, .2, .74), (-2.1, .14, .76))):
-        rows.append([Vector((math.cos(t) * w, y, z + math.sin(t) * .14)) for t in [i / 12 * math.tau for i in range(12)]])
-    loft(h, rows, O().shade(.88, .06))
+    skull(h, front=1.7)
+    # parted in the middle: two curtains framing the face, down past the jaw
+    for x in (-1, 1):
+        lock(h, (x * .2, .62, -.5), (x * .5, -1, -.1), .95, .4, thick=.09, bend=(0, 0, .1))
+        lock(h, (x * .55, .3, -.2), (x * .1, -1, .05), 1.0, .4, thick=.1)
+    # the fall down the back: a broad flat sheet, tied near its end
+    rows = []
+    for (y, w, z) in ((.55, 1.2, .5), (.0, 1.1, .7), (-.7, .85, .78), (-1.4, .5, .8), (-1.75, .3, .8), (-2.2, .42, .8), (-2.45, .08, .78)):
+        rows.append([Vector((math.cos(t) * w / 2, y, z + math.sin(t) * .1)) for t in [i / 14 * math.tau for i in range(14)]])
+    def col(p, ri):
+        g = .74 + .26 * ri / 6
+        return (g, g, g)
+    loft(h, rows, col)
     tie = o.add("Head", "Tie")
-    head_ring(tie, -1.5, .1, r=(.24, .2), z_off=.74)
-    for x in (-.5, .5):
-        spike(h, (x, .3, -.5), (0, -1, -.15), .7, .1)
+    head_ring(tie, -1.75, .14, r=(.18, .07), z_off=.8)
     return o.items
 
 
 def item_hair_high_tail():
     o = O().Out()
     h = o.add("Head", "Hair")
-    dome(h, .1, r=(.67, .69), top=.72, rings=6, n=24, front_open=2.0, z_off=.04, fat=.35)
+    skull(h, r=(.65, .67), top=.72)   # pulled tight
+    for az in (-150, -120, 120, 150):  # the hairline's swept-back strokes
+        lock(h, scalp(az, 30), (0, .3, 1), .55, .3, thick=.06, bend=(0, .1, 0))
     tie = o.add("Head", "Tie")
-    head_ring(tie, .62, .12, r=(.17, .17), z_off=.45)
-    for k in range(7):         # the spiky tail bursting up and back from the tie
-        a = k / 7 * math.tau
-        spike(h, (math.cos(a) * .1, .7, .5 + math.sin(a) * .1), (math.cos(a) * .5, 1.0, .9 + math.sin(a) * .5), .7, .11)
+    head_ring(tie, .7, .12, r=(.15, .15), z_off=.42)
+    # the tail: a pineapple of spikes bursting up and back from the tie
+    import random
+    rng = random.Random(4)
+    for k in range(9):
+        a = k / 9 * math.tau
+        root = Vector((math.cos(a) * .08, .78, .42 + math.sin(a) * .08))
+        d = Vector((math.cos(a) * .55, 1.0, .55 + math.sin(a) * .55))
+        lock(h, root, d, rng.uniform(.6, .8), .26, thick=.08, bend=(0, -.1, .15))
     return o.items
 
 
 def item_hair_buns():
     o = O().Out()
     h = o.add("Head", "Hair")
-    dome(h, .05, r=(.67, .69), top=.73, rings=6, n=24, front_open=1.9, z_off=.02, fat=.35)
+    skull(h)
     from nd_mesh import ellipsoid
-    for x in (-.42, .42):
-        ellipsoid(h, Vector((x, .72, .1)), (.26, .24, .26), O().shade(.9, .05), seg=12, rings=8)
+    for x in (-.4, .4):
+        ellipsoid(h, Vector((x, .78, .12)), (.3, .28, .3), O().shade(.86, .06), seg=14, rings=9)
+        for k in range(4):              # the bun's wound strands
+            a = k / 4 * math.tau
+            lock(h, (x + math.cos(a) * .2, .86, .12 + math.sin(a) * .2), (-math.sin(a), .1, math.cos(a)), .35, .14, thick=.05, bend=(0, -.15, 0))
     tie = o.add("Head", "Tie")
-    for x in (-.42, .42):
-        head_ring(tie, .58, .08, r=(.22, .22), z_off=.1)
+    for x in (-.4, .4):             # a band round each bun's foot
+        rows = [[Vector((x + math.cos(t) * r_, y, .12 + math.sin(t) * r_)) for t in [i / 16 * math.tau for i in range(16)]]
+                for (y, r_) in ((.56, .27), (.62, .29), (.68, .27))]
+        loft(tie, rows, O().shade(.9, .03), cap0=False, cap1=False)
+    fringe(h, (-.3, -.08, .16, .36), length=.36, width=.26)
+    for x in (-1, 1):
+        lock(h, (x * .52, .4, -.38), (x * .05, -1, -.1), .6, .22, thick=.07)
     return o.items
 
 
 def item_hair_tilted():
     o = O().Out()
     h = o.add("Head", "Hair")
-    hair_cap(h, front=1.9)
+    skull(h)
     import random
     rng = random.Random(9)
-    for k in range(14):        # every spike leans the same way, up and to his left
-        a = rng.uniform(0, math.tau)
-        el = rng.uniform(.4, 1.0)
-        base = Vector((math.cos(a) * .5 * math.cos(el), .3 + .45 * math.sin(el), math.sin(a) * .5 * math.cos(el) + .05))
-        if base.z < -.3 and base.y < .5:
-            continue
-        spike(h, base, (-.9, 1.0, .2), rng.uniform(.6, .85), .14)
+    side = Vector((-.85, 1.0, .15))       # everything leans up and to his right (-X)
+    for az, el in ((0, 25), (40, 20), (-40, 22), (80, 30), (-80, 30), (130, 40), (-130, 40),
+                   (0, 55), (45, 55), (-45, 55), (95, 60), (-95, 60), (160, 62), (-160, 62), (20, 82), (-60, 80)):
+        lock(h, scalp(az, el), side + (scalp(az, el) - HEAD_C) * .6, rng.uniform(.7, .9), .36, bend=(-.15, .05, 0))
+    fringe(h, (-.3, 0, .3), length=.4, width=.3, down=(-.5, -1, -.3), spread=.1)
     return o.items
 
 
