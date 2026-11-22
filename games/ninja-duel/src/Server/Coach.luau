@@ -34,6 +34,11 @@ Coach.PlayerDamage=.6
 -- it is done (the tick of success).
 Coach.MinShow=1.2
 Coach.DoneHold=.6
+-- (22/11, the OUTILLEUR's beginner robot: guard done 4 times in 22, escape 0
+-- in 3; the prompt came while he was still in a blow and was gone before the
+-- next chance) A prompt whose moment passed stays this long before it goes:
+-- the reactive ones (guard, escape: `stay`) until his next chance.
+Coach.Stay=3.5
 
 -- The prompts, in priority order. when(c,a,b,coach,now): its situation is
 -- here; done(c,a,b,coach,now): the player did it (since the prompt came).
@@ -51,11 +56,12 @@ local function slotOf(a,id)
 	return FirstMinute.SignatureSlot
 end
 Coach.Prompts={
-	{id="escape",title=PlayTexts.coachTitle("escape"),key=function() return K.Dodge.." as his blow lands" end,pad=function() return P.Dodge.." as his blow lands" end,
+	{id="escape",stay=10,title=PlayTexts.coachTitle("escape"),key=function() return K.Dodge.." as his blow lands" end,pad=function() return P.Dodge.." as his blow lands" end,
 		when=function(c,a) return a.reaction=="HitStun" and (a.comboHits or 0)>=2 end,
 		done=function(c,a,b,k) return ev(a,"Substitute")>(k.base.Substitute or 0) or ev(a,"Recover")>(k.base.Recover or 0) end},
-	{id="guard",title=PlayTexts.coachTitle("guard"),key=function() return "Hold "..K.Guard end,pad=function() return "Hold "..P.Guard end,
-		when=function(c,a,b) return b.attackName~=nil and b.state=="Startup" and (b.root.Position-a.root.Position).Magnitude<8 end,
+	{id="guard",stay=10,title=PlayTexts.coachTitle("guard"),key=function() return "Hold "..K.Guard end,pad=function() return "Hold "..P.Guard end,
+		-- he winds up near you, and you are free to guard (not in a blow of yours)
+		when=function(c,a,b) return b.attackName~=nil and b.state=="Startup" and a.attackName==nil and a.reaction==nil and (b.root.Position-a.root.Position).Magnitude<8 end,
 		done=function(c,a,b,k) return ev(a,"GuardHit")>(k.base.GuardHit or 0) or ev(a,"Parry")>(k.base.Parry or 0) or ev(a,"Evaded")>(k.base.Evaded or 0) end},
 	{id="signature",title=function(a) local spec=signature(a);return PlayTexts.coachTitle("signature",{jutsu=spec and (spec.CardName or spec.Name) or "your jutsu"}) end,
 		key=function(a) local spec=signature(a);return TECH_KEY[slotOf(a,spec and spec.Id)] end,
@@ -102,6 +108,9 @@ function Coach.new(s,now)
 	-- The novice's handicap, on this duel's bodies only.
 	if s.bot then s.bot.outScale=Coach.BotDamage end
 	if s.human then s.human.healthFloor=s.human.def.Health*Coach.HealthFloor;s.human.outScale=Coach.PlayerDamage end
+	-- (22/11) Gaara's sand stops blows on its own: the novice has none (the
+	-- first fight against him ran 54 to 91 s in Studio, 30 to 60 s the others)
+	if s.bot and s.bot.def.SandShield then s.bot.noSandShield=true;s.bot.shieldCharges=0 end
 	return k
 end
 local function show(k,a,prompt,now)
@@ -133,7 +142,7 @@ function Coach.update(s,now,dt)
 			if now-k.doneAt<Coach.DoneHold then return end
 			k.current=nil
 		elseif now-k.shownAt<Coach.MinShow then return
-		elseif not p.when(c,a,b,k,now) and now-k.shownAt>3.5 then
+		elseif not p.when(c,a,b,k,now) and now-k.shownAt>(p.stay or Coach.Stay) then
 			-- its moment passed: it comes back when its situation does
 			k.current=nil
 		else return end

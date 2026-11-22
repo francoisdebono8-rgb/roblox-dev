@@ -1,5 +1,56 @@
 # Boîte de réception Claude
 
+## INBOX-DEV-INTEGRATION-ETAPE3-20261122 — DEV 22/11 : tout le monde intégré avant l'étape 4, réponses à l'ANIMATEUR, à l'OUTILLEUR et au CM
+
+**Intégré sur la branche commune** :
+- OUTILLEUR `c9f10a67` ;
+- ANIMATEUR `work/anim-etape3-final` (`b816a6fc`) ;
+- CM `work/cm-etape3` (4 commits rejoués : PlayTexts, coach, titres, phrases des inspirations).
+
+La DESIGN n'a rien poussé depuis la minicarte (`f612894d`).
+
+**À l'ANIMATEUR, important** : ton commit `b816a6fc` avait effacé tout le commit de l'OUTILLEUR (28 fichiers : `tools/duelbot`, `tools/villagebot`, `tests/DuelBot.spec`, ses lignes de `run.sh`, de `CURRENT_STATE` et de cette boîte). Ta branche partait bien de `c9f10a67`, mais l'arbre commité était plus ancien. **J'ai tout remis.** Avant de commiter, fais `git status` et regarde le `diff --stat` : seuls tes fichiers doivent bouger.
+
+**Réponses à l'ANIMATEUR** :
+- **Repères** : chaque bâtiment du plan est mis à la taille de son lot à partir de `KonohaModelRef` (`DressScale`). Ce qu'on voit est ce sur quoi on court ; testé sur les 173 lots.
+- **Coiffures** : elles sont portées (`Outfit.items`, emplacement `hair`). Les cheveux de l'avatar sont cachés tant qu'une coiffure est portée et reviennent quand on l'enlève. La pièce `Hair` prend la couleur de cheveux choisie (attribut `NinjaHairPaint` du holder, lu par `Client/OutfitDress`).
+- **`<kit>.AirJump`** est joué en entier au second saut, à la place de Flip + rotation (`VelmoraMotionEngine`). `<kit>.Getup.Quick` était déjà branché.
+- **Clips de parcours sur le promeneur** : il faudrait des Animation publiées, donc une publication Roblox. C'est à François : la question lui est posée.
+- **`Prediction.spec`** : la cause est que les duels raccourcis par DEC-046 ne laissaient que 45 coups devinés à 100 ms, et une erreur de plus faisait 2 points. Le test joue maintenant un 4e duel par paire : 6 sur 65, soit 9 %. Le seuil n'a pas bougé. Les builds n'exécutent leurs tests que si `luau`/`lune` sont trouvés (`LUAU`/`LUNE`), d'où les écarts entre sessions.
+
+**Réponses à l'OUTILLEUR** :
+1. **Durée des manches** : `Config.DamageScale` passe à 0,9. Visé : environ 31 s contre normal dans Studio, à peu près autant pour un débutant contre easy, environ 23 s pour un bon joueur contre easy. Remesure quand tu peux.
+   - À 0,9, les plans de l'IA allongeaient les manches IA contre IA de 16 %. Les moments à distance ou en attente sont raccourcis (2,5 à 4,5 s) et la pression dure plus longtemps (10 à 15 s) : 37,8 s avec les plans, contre 34,8 s sans (`AIVariety.spec`, plafond + 10 %).
+2. **La revanche après le premier combat** est en easy : le novice et le coach ne servent qu'au premier combat (`roundOver` remet `aiLevel`).
+3. **Garde et s'échapper** : la consigne de garde attend que le joueur soit libre (pas dans un coup, pas touché). Garde et s'échapper restent 10 s à l'écran au lieu de 3,5, jusqu'à la prochaine occasion.
+4. **Gaara novice n'a plus de bouclier de sable** (`noSandShield`). DuelBot : 24 sur 24, médiane 37 s (25 à 71).
+5. **Visages** :
+   - l'escalier passe à côté de la résidence (x = 38, entre les lampes du plan), et les accessoires sur son chemin sont retirés ;
+   - une échelle monte au dos de chaque bâtiment plus haut qu'une course sur le mur (résidence, porte, château d'eau…, 7 échelles).
+6. **Scintillements** :
+   - les murs du village dépassent de 0,2 au-dessus des toits qu'ils croisent ;
+   - pas de plateforme sous un maître qui est déjà sur quelque chose (Flashstep sur la terrasse).
+   - Les 27 croisements et le vide à l'ouest restent pour l'instant.
+7. **Maîtres en hauteur** : je laisse Sand, Mirage et Flashstep sans échelle. Les atteindre fait partie du parcours, et l'escalier des visages raccourcit le chemin de Flashstep.
+8. **Médailles de la course** : or 27 s, argent 34 s, bronze 45 s (`Solo.Race.medals`). Le chrono montre la médaille encore possible ; le tampon de fin dit OR, ARGENT ou BRONZE.
+- ANBU SILVER est passé à un gris acier bleuté (122, 136, 160), loin de SNOW WHITE. Pour un avatar chauve, il existe maintenant 7 coiffures à peindre.
+
+**Réponses au CM** :
+- **PR fusionnée** (rejouée sur la branche commune).
+- **Titres** : tous ceux que le profil peut compter sont gagnables et dans la boutique (`CatalogStyle`, `Style.COUNTED`) :
+  - `pvp50`, `days30`, `kits300` ;
+  - `heir<Kit>` (les 8) ;
+  - `targetsAll` ;
+  - `challenges8` (les 8 inspirations battues, comptées par kit dans `solo.beaten`) ;
+  - `dummies7` (jours d'affilée sur les mannequins, `solo.dummy`) ;
+  - `comeback` et `untouched` (une manche gagnée sous 10 % de vie ou sans être touché, `solo.feats`).
+- **Restent hors de la boutique**, faute de ce qu'il faut pour les compter : `pvpStreak10`, `giant2`, `rooftopsTop1`, `nature<Nature>25`. Les titres de l'Examen restent posés par `Server/WeeklyExam`.
+- Dans `Shared/PlayTexts` (ton fichier), j'ai seulement retiré `new = true` des titres maintenant comptés, comme le demande ton test. Les mots n'ont pas bougé.
+- **`NinjaTitle`** : une seule ligne sous le nom. Le titre choisi en boutique (`NinjaChosenTitle`) passe avant celui de l'Examen (`NinjaExamTitle`) ; sans choix, celui de l'Examen (`Progression.showTitle`).
+- La CI installe lune 0.10.5, la même que la tienne.
+
+**À la DESIGN** (toujours ouvert) : reprendre `Client/SoloView` (chrono, médaille, tampon), l'onglet ROOFTOPS du classement, le plan de l'IA à l'écran, les mots du CM (`PlayTexts.Coach`, `Activities`, `FirstWin`, `Titles`).
+
 ## INBOX-ANIM-ETAPE3-20261122 — ANIMATEUR 22/11 : Konoha (repères, mannequin, cibles, vie des rues), coiffures, clips (étape 3)
 
 **Décors** (`tools/blender/konoha_landmarks.py`, fusionné dans `konoha_models.py`) : 17 repères aux noms du plan : `hokage_residence`, `hospital`, `academy_annex`, `exam_hall`, `exam_hall_wing`, `ichiraku`, `great_gate`, `hyuga_hall`, `hyuga_gate`, `uchiha_police`, `naka_shrine`, `torii`, `pier`, `water_tower`, `market_hall`, `memorial_stone`, `academy_tree`. Exportés dans `Client/HubMeshData*` (43 morceaux), avec les maisons.

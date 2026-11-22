@@ -116,7 +116,9 @@ function W:retitle(player)
 	local P=self.svc.progression()
 	local record=P.examRecord and P.examRecord(player) or nil
 	local title=Exam.title(record,self.top,player.UserId,self.svc.now())
-	if player:GetAttribute("NinjaTitle")~=title then player:SetAttribute("NinjaTitle",title) end
+	-- (22/11) the exam's title under his name unless he chose one (Progression.showTitle)
+	if player:GetAttribute("NinjaExamTitle")~=title then player:SetAttribute("NinjaExamTitle",title) end
+	if not (P.showTitle and P.showTitle(player)) and player:GetAttribute("NinjaTitle")~=title then player:SetAttribute("NinjaTitle",title) end
 	return title
 end
 function W:retitleAll()

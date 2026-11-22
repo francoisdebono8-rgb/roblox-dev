@@ -45,8 +45,10 @@ local function run(lag)
  local rng=H.envBase.Random.new(5)
  for index,pair in {{"Lion","Mirage"},{"Legion","Leaf"},{"Sand","GentleFist"},{"Copycat","Flashstep"}} do
   -- (a third duel per pair: the bot's guard and ultimate rules of 03/11 end
-  -- duels sooner, and two left too few dodge presses to judge)
-  for seed=1,3 do
+  -- duels sooner, and two left too few dodge presses to judge; a fourth
+  -- since DEC-046's short duels, 21/11: three left 45 strikes guessed at
+  -- 100 ms, where one wrong guess moved the rate by 2 points)
+  for seed=1,4 do
    H.clearWalls()
    -- (one duel in two by a wall: the string's drive into it is read too)
    if seed==2 then H.addWall(14) end

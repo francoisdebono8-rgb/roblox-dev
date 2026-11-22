@@ -34,7 +34,8 @@ Style.Items={
 	{id="HairLeaf",slot="hairColor",name="LEAF GREEN",ryo=600,colors={Hair=rgb(70,150,80)}},
 	{id="HairSnow",slot="hairColor",name="SNOW WHITE",ryo=800,colors={Hair=rgb(236,236,240)}},
 	{id="HairEmber",slot="hairColor",name="EMBER ORANGE",ryo=800,colors={Hair=rgb(232,118,40)}},
-	{id="HairSilver",slot="hairColor",name="ANBU SILVER",robux="HairSilver",colors={Hair=rgb(176,182,196)}},
+	-- (22/11, the OUTILLEUR's fitting room: next to SNOW WHITE it read the same)
+	{id="HairSilver",slot="hairColor",name="ANBU SILVER",robux="HairSilver",colors={Hair=rgb(122,136,160)}},
 	{id="HairVoid",slot="hairColor",name="VOID PURPLE",robux="HairVoid",colors={Hair=rgb(92,52,150)}},
 	-- CHAKRA COLOUR: his chakra, his infusions and his jutsu.
 	{id="ChakraBlue",slot="chakra",name="LEAF BLUE",base=true,colors={Chakra=rgb(110,180,255)}},
@@ -81,11 +82,28 @@ Style.Items={
 
 -- (21/11, the CM) the titles' words are the CM's (Shared/PlayTexts.Titles):
 -- the name and the line that says how to earn it.
+-- (22/11) And every title of the CM's whose rule the profile can count is
+-- earned here (Style.COUNTED); the others wait for what they need (a streak
+-- of wins against players, the ranks of who you beat, the week's best race,
+-- the duels won per nature), and the exam's are set by Server/WeeklyExam.
+Style.COUNTED={wins1=true,wins100=true,pvp10=true,pvp50=true,days7=true,days30=true,rooftops=true,targetsAll=true,
+	challenges8=true,dummies7=true,kits300=true,comeback=true,untouched=true}
+function Style.counted(rule)
+	if Style.COUNTED[rule] then return true end
+	return string.match(rule,"^merit%d$")~=nil or string.match(rule,"^rank%d$")~=nil or string.match(rule,"^heir%a+$")~=nil
+end
 do
 	local PlayTexts=require(script.Parent.PlayTexts)
+	local have={}
 	for _,item in Style.Items do
+		have[item.id]=true
 		local words=item.slot=="title" and PlayTexts.ById[item.id]
 		if words then item.name=words.title;item.how=words.how end
+	end
+	for _,words in PlayTexts.Titles do
+		if not have[words.id] and words.earned and Style.counted(words.earned) then
+			table.insert(Style.Items,{id=words.id,slot="title",name=words.title,earned=words.earned,how=words.how})
+		end
 	end
 end
 
@@ -106,6 +124,25 @@ function Style.met(p,rule)
 	if rank then return p.ranked~=nil and ranked().rank(p.ranked.rating or 0).index>=tonumber(rank) end
 	if rule=="days7" then return p.daily~=nil and (p.daily.streak or 0)>=7 end
 	if rule=="rooftops" then return p.solo~=nil and (p.solo.rooftops.best or 0)>0 end
+	-- (22/11, the CM's titles)
+	if rule=="pvp50" then return pvp>=50 end
+	if rule=="days30" then return p.daily~=nil and (p.daily.streak or 0)>=30 end
+	local solo=p.solo
+	if rule=="targetsAll" then return solo~=nil and (solo.targets.best or 0)>0 end
+	if rule=="dummies7" then return solo~=nil and solo.dummy~=nil and solo.dummy.streak>=7 end
+	if rule=="comeback" or rule=="untouched" then return solo~=nil and solo.feats~=nil and solo.feats[rule]==true end
+	if rule=="challenges8" then
+		local n=0
+		for _ in (solo and solo.beaten) or {} do n+=1 end
+		return n>=8
+	end
+	local mastery=(p.kits and p.kits.mastery) or {}
+	if rule=="kits300" then
+		for _,kit in require(script.Parent.KitTexts).Order do if (mastery[kit] or 0)<300 then return false end end
+		return true
+	end
+	local heir=string.match(rule,"^heir(%a+)$")
+	if heir then return (mastery[heir] or 0)>=800 end
 	return false
 end
 -- The earned looks a profile qualifies for and does not own yet (ids).

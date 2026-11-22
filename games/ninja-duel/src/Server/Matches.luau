@@ -428,8 +428,17 @@ function Matches:roundOver(s,winner,notify,advance)
 	s.wins[winner.id]=(s.wins[winner.id] or 0)+1
 	local decided=s.wins[winner.id]>=s.roundsToWin
 	s.matchPoint=decided
+	-- (22/11, the CM's titles COMEBACK KID and UNTOUCHED) a round of note won
+	-- in a real duel (not practice, not the first fight)
+	if s.human and winner==s.human and s.owner and not s.tutorial and not s.firstFight and not s.online then
+		local max=s.human.def.Health or 100
+		if s.human.health<=max*.1 then pcall(Progression.solo,s.owner,"feat",{feat="comeback"})
+		elseif s.human.health>=max-.01 then pcall(Progression.solo,s.owner,"feat",{feat="untouched"}) end
+	end
 	-- (21/11, DEC-047) the first combat is over: the next duel is an ordinary one.
-	if decided and s.firstFight then s.firstFight=nil;s.coach=nil end
+	-- (22/11, the OUTILLEUR's robot) the novice and his coach are for the
+	-- first fight only: its rematch, and any duel after it, is at easy
+	if decided and s.firstFight then s.firstFight=nil;s.coach=nil;if s.aiLevel=="first" then s.aiLevel="easy" end end
 	if decided and not s.tutorial and not s.online and s.owner then
 		Matches.measure(s.owner,s,"duel")
 		if s.human and winner==s.human then Matches.measure(s.owner,s,"won") end

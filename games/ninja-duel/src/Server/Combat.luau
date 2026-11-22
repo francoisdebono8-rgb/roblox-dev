@@ -1820,7 +1820,8 @@ function Combat:updateActor(a,dt)
 		a.chakra=math.min(a.def.Chakra or Config.Chakra,a.chakra+regen*dt)
 	end
 	if (a.rotationUntil or 0)>now then self:stepRotation(a) end
-	if a.def.SandShield and a.shieldCharges<a.def.SandShield.Charges and now>=(a.shieldRegenAt or 0) then
+	-- (22/11) the novice of the first fight has no sand shield (Server/Coach)
+	if a.def.SandShield and not a.noSandShield and a.shieldCharges<a.def.SandShield.Charges and now>=(a.shieldRegenAt or 0) then
 		a.shieldCharges+=1
 		local rate=if (a.awakenUntil or 0)>now then (a.def.Awakening.ShieldRegen or 1) else 1
 		a.shieldRegenAt=now+Combat.shieldRegen(a.def.SandShield)/rate

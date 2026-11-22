@@ -36,6 +36,9 @@ View.FAIL=PlayTexts.RaceEnds
 function View.endLines(what,time,best,gain,new)
 	if what=="finish" or what=="done" then
 		local title=if what=="finish" then "FINISH" else "ALL HIT"
+		-- (22/11) the race's medal (Shared/Solo.Race.medals)
+		local medal=if what=="finish" and time then Solo.medal(time/100) else nil
+		if medal then title=medal.name.."!" end
 		local line=Solo.clock(time or 0)
 		local sub=if new then "NEW BEST!" elseif best then "BEST "..Solo.clock(best) else ""
 		if gain and gain>0 then sub..=(if sub~="" then "   •   " else "").."+"..gain.." MASTERY" end
@@ -215,7 +218,10 @@ function View:frame(dt)
 		if kind=="race" then
 			local next=me:GetAttribute("NinjaSoloNext") or 1
 			self.what.Text="ROOFTOP RACE"
+			-- the medal still in reach, under the clock
+			local inReach=Solo.medal(math.max(0,serverNow-at))
 			self.count.Text=string.format("RING %d / %d",math.min(next,#Solo.Race.rings),#Solo.Race.rings)
+				..(if inReach then string.format("   •   %s %s",inReach.name,Solo.clock(inReach.time*100)) else "")
 			self:showRings(next)
 		else
 			local up=me:GetAttribute("NinjaSoloUp") or ""

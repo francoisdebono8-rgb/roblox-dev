@@ -2511,8 +2511,14 @@ local function trickStep(char,actor)
 	end
 	-- (21/11, DEC-045) Cloud Step, the ninja's second jump (events.AirJump):
 	-- a front flip on the air kick (the kit's Flip clip, as a launched jump).
+	-- (22/11) The ANIMATEUR's <kit>.AirJump, when the kit has it: played whole,
+	-- the turn is in the clip (no added rotation).
 	local jumps=actor.events and actor.events.AirJump or 0
-	if s.airJumps~=nil and jumps>s.airJumps and air then s.trick={axis="pitch",sign=1,dur=.42,at=elapsedTime,kind="cloud"} end
+	if s.airJumps~=nil and jumps>s.airJumps and air then
+		local clip=tostring(actor.fighterId)..".AirJump"
+		if Authored and Authored.has(clip) then s.trick={clip=clip,dur=math.max(.2,Authored.length(clip)),at=elapsedTime,kind="cloud"}
+		else s.trick={axis="pitch",sign=1,dur=.42,at=elapsedTime,kind="cloud"} end
+	end
 	s.airJumps=jumps
 	s.inAir=air;s.onWall=onWall
 	local tr=s.trick
@@ -2579,6 +2585,9 @@ local function authoredAir(char,actor,fighterId)
 		targets.Root=(targets.Root or IDENTITY)*ANG(rad(12*backward),0,rad(-14*sideways))
 	end
 	local tr=stateOf(char).trick
+	if tr and tr.clip and Authored.has(tr.clip) then
+		return Authored.sample(tr.clip,math.clamp(elapsedTime-tr.at,0,Authored.length(tr.clip))),RATE.attack
+	end
 	if tr and Authored.has(F..".Flip") then
 		local p=math.clamp((elapsedTime-tr.at)/tr.dur,0,1)
 		local tuck=table.clone(Authored.sample(F..".Flip",p*Authored.length(F..".Flip")))

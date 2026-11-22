@@ -31,7 +31,11 @@ return {
 	-- weight (unscaled). (21/11, DEC-046, François: "des combats trop longs",
 	-- 2 rounds won of 30 to 40 s) Back to 1: AI against AI, 37 s a round on
 	-- average (0.6 gave about 70 s; 1.25 gives 29 s, 1.5 24 s).
-	DamageScale = 1,
+	-- (22/11, the OUTILLEUR's simulated player, tools/duelbot: against normal
+	-- 24 s a round at 1, 29 s at 0.8, and Studio about 1.15 times that) 0.9:
+	-- about 31 s against normal in Studio, a beginner against easy about the
+	-- same, a good player against easy about 23 s.
+	DamageScale = 0.9,
 	Clash = {Window = 0.07, Push = 4.5, JutsuWindow = 0.35},
 	-- Re-engage (CORE_COMBAT_CONVERGENCE_2 §3): one contextual action (E; on a pad
 	-- × inside a chase window, sprint + ○ toward outside one). Inside a window it

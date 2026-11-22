@@ -478,7 +478,10 @@ local function uchiha(f)
 	part(torii,"ToriiTie",Vector3.new(16,1,1.4),rel(178,11.6,-108),C.red,Enum.Material.Wood)
 	tree(f,108,-70,13,5.5);tree(f,206,-150,14,6);tree(f,140,-42,12,5)
 end
-local function faces(f)
+-- `stairX`, `stairW`: where the stairs climb to the terrace (the plan's
+-- village: beside the Hokage's residence, which stands in front of the cliff).
+local function faces(f,stairX,stairW)
+	stairX=stairX or 0;stairW=stairW or 20
 	-- The cliff; the four places each a unit of their own (14/11): an empty
 	-- place waiting for its champion (the ANIMATOR's HeadSlot1..4: the block
 	-- roughed out, scaffolding, a blank plaque) until Server/ChampionCliff
@@ -498,15 +501,18 @@ local function faces(f)
 	local terrace=unit(f,"FacesTerrace","FacesTerrace",CFrame.new(O))
 	part(terrace,"Terrace",Vector3.new(84,24,26),rel(0,12,-219),C.stone,Enum.Material.Slate)
 	for _,x in {-41,41} do part(terrace,"TerraceRail",Vector3.new(1,3,26),rel(x,25.5,-219),C.woodDark,Enum.Material.Wood) end
-	-- The front rail leaves the stairs' mouth open in the middle.
-	for _,x in {-26,26} do part(terrace,"TerraceRail",Vector3.new(30,3,1),rel(x,25.5,-206.5),C.woodDark,Enum.Material.Wood) end
+	-- The front rail leaves the stairs' mouth open.
+	local a,b=math.max(-41,stairX-stairW/2-1),math.min(41,stairX+stairW/2+1)
+	if a>-41 then part(terrace,"TerraceRail",Vector3.new(a+41,3,1),rel((-41+a)/2,25.5,-206.5),C.woodDark,Enum.Material.Wood) end
+	if b<41 then part(terrace,"TerraceRail",Vector3.new(41-b,3,1),rel((b+41)/2,25.5,-206.5),C.woodDark,Enum.Material.Wood) end
 	for step=1,24 do
-		part(terrace,"Step",Vector3.new(20,step,2.8),rel(0,step/2,-140-(step-1)*2.8),C.stone,Enum.Material.Slate)
+		part(terrace,"Step",Vector3.new(stairW,step,2.8),rel(stairX,step/2,-140-(step-1)*2.8),C.stone,Enum.Material.Slate)
 	end
-	for _,x in {-11,11} do
+	for _,x in {stairX-stairW/2-1,stairX+stairW/2+1} do
 		for step=4,24,4 do lantern(f,rel(x,step+3,-140-(step-1)*2.8),step%8==0) end
 	end
 end
+Hub.FACES_STAIRS={x=38,w=8} -- the plan's: its lamps and lanterns line them (KonohaLayout)
 local function forest(f)
 	for z=-200,190,24 do
 		for _,x in {-276,-256,256,276} do
@@ -727,12 +733,21 @@ Hub.LAYOUT_STANDIN={
 }
 local function lighten(c,k) return c:Lerp(Color3.new(1,1,1),k) end
 -- One building of the plan: {model, x, z, w, d, h, yaw, district, landmark}.
+Hub.MODEL_REF=(function() local ok,ref=pcall(function() return require(Shared.KonohaModelRef) end);return if ok then ref else {} end)()
+-- (22/11, the OUTILLEUR's prover: the residence (52 studs) and the gate (65)
+-- were the two roofs nobody reached) A building taller than a run up its wall
+-- (Client/HubMove: about 36 studs) has a ladder up its back.
+Hub.LADDER_ABOVE=26
 function Hub.layoutBuilding(parent,b)
 	local model,x,z,w,d,h,yaw,district,landmark=b[1],b[2],b[3],b[4],b[5],b[6],b[7] or 0,b[8],b[9]
 	local foot=rel(x,0,z)*CFrame.Angles(0,math.rad(yaw),0)
 	local m=Instance.new("Model");m.Name=landmark or model
 	m:SetAttribute("Dress",model);m:SetAttribute("DressAt",foot)
 	m:SetAttribute("LayoutModel",model)
+	-- (22/11) the ANIMATEUR's model fitted to its lot (Shared/KonohaModelRef:
+	-- the size it is built at): what is seen is what is run on
+	local ref=Hub.MODEL_REF[model]
+	if ref then m:SetAttribute("DressScale",Vector3.new(w/ref.w,h/ref.h,d/ref.d)) end
 	local standin=Hub.LAYOUT_STANDIN[model]
 	if standin then
 		-- the old mesh's street face (+x) turned to the plan's door (+z)
@@ -748,6 +763,12 @@ function Hub.layoutBuilding(parent,b)
 	-- head at the top of a run up the wall, Client/HubMove; the model draws it)
 	part(m,"Roof",Vector3.new(w,1,d),foot*CFrame.new(0,h+.5,0),C.roofDark,Enum.Material.Slate)
 	deco(m,"Base",Vector3.new(w+.3,1,d+.3),foot*CFrame.new(0,.5,0),C.woodDark,Enum.Material.Wood)
+	if h>Hub.LADDER_ABOVE and d>4 then
+		local ladder=Instance.new("TrussPart");ladder.Name="Ladder"
+		ladder.Size=Vector3.new(2,h+1,2);ladder.CFrame=foot*CFrame.new(0,(h+1)/2,-d/2-1)
+		ladder.Anchored=true;ladder.Color=C.woodDark;ladder.Material=Enum.Material.Wood;ladder.Parent=m
+		keep(ladder)
+	end
 	return m
 end
 local PROP={
@@ -824,6 +845,8 @@ function Hub.buildLayout(f)
 	for _,b in Layout.Buildings do Hub.layoutBuilding(buildings,b) end
 	for _,w in Layout.Walls do
 		local id,x,z,ww,dd,height=w[1],w[2],w[3],w[4],w[5],w[6]
+		-- (a hair over the roofs it meets: two tops at one height flicker, the prover)
+		height+=.2
 		if ww>=dd then wall(f,x-ww/2,z,x+ww/2,z,height,C.plasterWarm) else wall(f,x,z-dd/2,x,z+dd/2,height,C.plasterWarm) end
 	end
 	for _,deck in Layout.RoofDecks do
@@ -853,16 +876,32 @@ function Hub.buildLayout(f)
 		end
 		return false
 	end
+	local st=Hub.FACES_STAIRS
+	local function onStairs(x,z) return math.abs(x-st.x)<=st.w/2+1 and z<=-138 and z>=-206 end
 	for _,p in Layout.Props do
-		if not onLane(p[2],p[3],7) then prop(f,p) end
+		if not onLane(p[2],p[3],7) and not onStairs(p[2],p[3]) then prop(f,p) end
 	end
+	-- kept from the old builder: the Hokage cliff and its faces (their stairs
+	-- beside the residence), Training Ground Three's props
+	faces(f,st.x,st.w);training(f)
 	-- An inspiration who waits up high (Itachi on his perch, HubMap) has a
-	-- deck under his feet in the plan's village too.
+	-- deck under his feet in the plan's village too, unless he stands on
+	-- something already (Flashstep on the faces' terrace: two tops flickered)
+	local tops={}
+	for _,d in f:GetDescendants() do if d:IsA("BasePart") and d.CanCollide then table.insert(tops,d) end end
+	local function standsOn(at)
+		for _,p in tops do
+			local l=p.CFrame:PointToObjectSpace(at)
+			local top=p.CFrame.Position.Y+p.Size.Y/2
+			if math.abs(l.X)<=p.Size.X/2 and math.abs(l.Z)<=p.Size.Z/2 and top<=at.Y+.05 and at.Y-top<.6 then return true end
+		end
+		return false
+	end
 	local spots={HubMap.Proctor}
 	for _,spot in HubMap.Masters do table.insert(spots,spot) end
 	for _,spot in spots do
 		local b=spot.at/S
-		if b.Y>1 then
+		if b.Y>1 and not standsOn(O+b) then
 			part(f,"PerchDeck",Vector3.new(10,1,10),rel(b.X,b.Y-.5,b.Z),C.woodLight,Enum.Material.WoodPlanks)
 			for _,sx in {-1,1} do for _,sz in {-1,1} do part(f,"PerchPost",Vector3.new(.8,b.Y-1,.8),rel(b.X+sx*4.4,(b.Y-1)/2,b.Z+sz*4.4),C.woodDark,Enum.Material.Wood) end end
 		end
@@ -872,9 +911,6 @@ function Hub.buildLayout(f)
 		local u=Instance.new("Model");u.Name=o[8] or model;u:SetAttribute("Dress",model);u:SetAttribute("DressAt",rel(x,0,z));u.Parent=f
 		part(u,"Backdrop",Vector3.new(w,h,d),rel(x,h/2,z),if model=="forest_of_death" then C.grass else C.stone,Enum.Material.Grass)
 	end
-	-- kept from the old builder: the Hokage cliff and its faces, Training
-	-- Ground Three's props
-	faces(f);training(f)
 	return f
 end
 -- Which village: "konoha2" (the plan, DEC-042) or "classic" (the old one).

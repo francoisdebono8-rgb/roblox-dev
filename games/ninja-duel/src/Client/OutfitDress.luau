@@ -114,6 +114,9 @@ function Dress.wear(holder)
 						p.Size=size;p.CFrame=cf
 						p.Anchored=false;p.Massless=true;p.CanCollide=false;p.CanQuery=false;p.CanTouch=false
 						p.Color=Dress.color(item,model,entry.slot)
+						-- (22/11) a hair style in his chosen hair colour (Server/Outfit)
+						local paint=entry.slot=="Hair" and holder:GetAttribute("NinjaHairPaint")
+						if typeof(paint)=="Color3" then p.Color=paint end
 						p.Material=Dress.material(p.Material)
 						local w=Instance.new("WeldConstraint");w.Part0=part;w.Part1=p;w.Parent=p
 						p.Parent=folder

@@ -1,0 +1,624 @@
+{
+ "source": "Studio, ND-JEU 8aaa6fd4 (LAB robots/ND-JEU-etape3-8aaa6fd4), 21/11, tools/duelbot/studio_bot.luau",
+ "runs": [
+  {
+   "finished": true,
+   "wins": {
+    "human": 1,
+    "bot": 0
+   },
+   "presses": 54,
+   "winner": "PlayerFighter",
+   "profile": "debutant",
+   "rounds": [
+    {
+     "me": 0.9005226666666666,
+     "index": 1,
+     "t": 41.1,
+     "him": 0,
+     "winner": "PlayerFighter"
+    }
+   ],
+   "wall": 45.94828720833175,
+   "seed": 2,
+   "kit": "Legion",
+   "mode": "first",
+   "prompts": [
+    {
+     "shown": 0,
+     "done": 0.6998968124389648,
+     "id": "move"
+    },
+    {
+     "shown": 1.5506649017333984,
+     "done": 3.2337520122528076,
+     "id": "strike"
+    },
+    {
+     "id": "guard",
+     "shown": 5.583395004272461
+    },
+    {
+     "shown": 9.63246202468872,
+     "done": 11.184029817581177,
+     "id": "signature"
+    },
+    {
+     "id": "guard",
+     "shown": 40.38098382949829
+    }
+   ]
+  },
+  {
+   "finished": true,
+   "wins": {
+    "human": 1,
+    "bot": 0
+   },
+   "presses": 53,
+   "winner": "PlayerFighter",
+   "profile": "debutant",
+   "rounds": [
+    {
+     "me": 0.8323571428571429,
+     "index": 1,
+     "t": 29.9,
+     "him": 0,
+     "winner": "PlayerFighter"
+    }
+   ],
+   "wall": 34.68627529166406,
+   "seed": 2,
+   "kit": "Leaf",
+   "mode": "first",
+   "prompts": [
+    {
+     "shown": 0,
+     "done": 0.6168439388275146,
+     "id": "move"
+    },
+    {
+     "shown": 1.4507160186767578,
+     "done": 2.516402006149292,
+     "id": "strike"
+    },
+    {
+     "shown": 6.666618824005127,
+     "done": 7.7822349071502686,
+     "id": "signature"
+    },
+    {
+     "shown": 10.199124813079834,
+     "done": 21.28267002105713,
+     "id": "guard"
+    }
+   ]
+  },
+  {
+   "finished": true,
+   "wins": {
+    "human": 1,
+    "bot": 0
+   },
+   "presses": 67,
+   "winner": "PlayerFighter",
+   "profile": "debutant",
+   "rounds": [
+    {
+     "me": 0.83688,
+     "index": 1,
+     "t": 48.5,
+     "him": 0,
+     "winner": "PlayerFighter"
+    }
+   ],
+   "wall": 53.252367999986745,
+   "seed": 2,
+   "kit": "Flashstep",
+   "mode": "first",
+   "prompts": [
+    {
+     "shown": 0,
+     "done": 0.5838589668273926,
+     "id": "move"
+    },
+    {
+     "shown": 1.516855001449585,
+     "done": 2.8316290378570557,
+     "id": "strike"
+    },
+    {
+     "shown": 5.416131973266602,
+     "done": 8.365134954452515,
+     "id": "signature"
+    },
+    {
+     "shown": 10.8159019947052,
+     "done": 22.09743595123291,
+     "id": "guard"
+    },
+    {
+     "shown": 41.28098797798157,
+     "done": 43.14771103858948,
+     "id": "tool"
+    }
+   ]
+  },
+  {
+   "finished": true,
+   "wins": {
+    "human": 1,
+    "bot": 0
+   },
+   "presses": 49,
+   "winner": "PlayerFighter",
+   "profile": "debutant",
+   "rounds": [
+    {
+     "me": 0.8273125000000001,
+     "index": 1,
+     "t": 38.2,
+     "him": 0,
+     "winner": "PlayerFighter"
+    }
+   ],
+   "wall": 42.949039999977686,
+   "seed": 2,
+   "kit": "Mirage",
+   "mode": "first",
+   "prompts": [
+    {
+     "shown": 0,
+     "done": 0.5994031429290771,
+     "id": "move"
+    },
+    {
+     "shown": 1.2338230609893799,
+     "done": 3.0332751274108887,
+     "id": "tool"
+    },
+    {
+     "id": "strike",
+     "shown": 3.6489901542663574
+    },
+    {
+     "shown": 5.415959119796753,
+     "done": 7.148571968078613,
+     "id": "signature"
+    },
+    {
+     "id": "guard",
+     "shown": 10.233877182006836
+    },
+    {
+     "shown": 14.39903998374939,
+     "done": 15.966402053833008,
+     "id": "strike"
+    },
+    {
+     "id": "guard",
+     "shown": 22.54820203781128
+    }
+   ]
+  },
+  {
+   "finished": true,
+   "wins": {
+    "human": 1,
+    "bot": 0
+   },
+   "presses": 68,
+   "winner": "PlayerFighter",
+   "profile": "debutant",
+   "rounds": [
+    {
+     "me": 0.7978230769230766,
+     "index": 1,
+     "t": 60.6,
+     "him": 0,
+     "winner": "PlayerFighter"
+    }
+   ],
+   "wall": 65.3986274166964,
+   "seed": 2,
+   "kit": "GentleFist",
+   "mode": "first",
+   "prompts": [
+    {
+     "shown": 0,
+     "done": 0.6670610904693604,
+     "id": "move"
+    },
+    {
+     "id": "strike",
+     "shown": 1.550978183746338
+    },
+    {
+     "id": "guard",
+     "shown": 3.2673890590667725
+    },
+    {
+     "shown": 7.616840124130249,
+     "done": 8.800199031829834,
+     "id": "signature"
+    },
+    {
+     "id": "strike",
+     "shown": 12.699212074279785
+    },
+    {
+     "id": "guard",
+     "shown": 13.283583164215088
+    },
+    {
+     "shown": 18.332747220993042,
+     "done": 20.366066217422485,
+     "id": "strike"
+    },
+    {
+     "shown": 23.46599817276001,
+     "done": 25.515385150909424,
+     "id": "guard"
+    },
+    {
+     "shown": 27.34906005859375,
+     "done": 28.49885106086731,
+     "id": "tool"
+    }
+   ]
+  },
+  {
+   "finished": true,
+   "wins": {
+    "human": 1,
+    "bot": 0
+   },
+   "presses": 57,
+   "winner": "PlayerFighter",
+   "profile": "debutant",
+   "rounds": [
+    {
+     "me": 0.6475865384615384,
+     "index": 1,
+     "t": 52,
+     "him": 0,
+     "winner": "PlayerFighter"
+    }
+   ],
+   "wall": 56.79809341666987,
+   "seed": 2,
+   "kit": "Copycat",
+   "mode": "first",
+   "prompts": [
+    {
+     "shown": 0,
+     "done": 0.5662388801574707,
+     "id": "move"
+    },
+    {
+     "shown": 1.5500988960266113,
+     "done": 2.6995108127593994,
+     "id": "strike"
+    },
+    {
+     "shown": 5.54941987991333,
+     "done": 7.4168829917907715,
+     "id": "signature"
+    },
+    {
+     "shown": 11.765390872955322,
+     "done": 14.982427835464478,
+     "id": "guard"
+    },
+    {
+     "id": "escape",
+     "shown": 20.099310874938965
+    },
+    {
+     "id": "tool",
+     "shown": 31.215184926986694
+    },
+    {
+     "id": "escape",
+     "shown": 31.782028913497925
+    },
+    {
+     "id": "grab",
+     "shown": 42.881213903427124
+    }
+   ]
+  },
+  {
+   "finished": true,
+   "wins": {
+    "human": 1,
+    "bot": 0
+   },
+   "presses": 71,
+   "winner": "PlayerFighter",
+   "profile": "debutant",
+   "rounds": [
+    {
+     "me": 0.8302478260869566,
+     "index": 1,
+     "t": 58.2,
+     "him": 0,
+     "winner": "PlayerFighter"
+    }
+   ],
+   "wall": 62.999505000014324,
+   "seed": 2,
+   "kit": "Sand",
+   "mode": "first",
+   "prompts": [
+    {
+     "shown": 0,
+     "done": 0.6663329601287842,
+     "id": "move"
+    },
+    {
+     "shown": 1.266826868057251,
+     "done": 4.566849946975708,
+     "id": "tool"
+    },
+    {
+     "shown": 5.382622957229614,
+     "done": 7.100026845932007,
+     "id": "signature"
+    },
+    {
+     "id": "strike",
+     "shown": 8.44926404953003
+    },
+    {
+     "id": "guard",
+     "shown": 9.699594020843506
+    },
+    {
+     "shown": 13.599385976791382,
+     "done": 15.199137926101685,
+     "id": "strike"
+    },
+    {
+     "id": "guard",
+     "shown": 44.33109498023987
+    }
+   ]
+  },
+  {
+   "finished": true,
+   "wins": {
+    "human": 1,
+    "bot": 0
+   },
+   "presses": 101,
+   "winner": "PlayerFighter",
+   "profile": "debutant",
+   "rounds": [
+    {
+     "me": 0.5330246153846154,
+     "index": 1,
+     "t": 90.6,
+     "him": 0,
+     "winner": "PlayerFighter"
+    }
+   ],
+   "wall": 95.41686120833037,
+   "seed": 2,
+   "kit": "Lion",
+   "mode": "first",
+   "prompts": [
+    {
+     "shown": 0,
+     "done": 0.6833162307739258,
+     "id": "move"
+    },
+    {
+     "shown": 1.2998690605163574,
+     "done": 3.9820921421051025,
+     "id": "tool"
+    },
+    {
+     "id": "signature",
+     "shown": 5.366263151168823
+    },
+    {
+     "id": "guard",
+     "shown": 6.549837112426758
+    },
+    {
+     "shown": 10.065958023071289,
+     "done": 11.749211072921753,
+     "id": "strike"
+    },
+    {
+     "shown": 17.69877314567566,
+     "done": 18.48264217376709,
+     "id": "signature"
+    },
+    {
+     "shown": 26.415086030960083,
+     "done": 27.815491199493408,
+     "id": "guard"
+    },
+    {
+     "shown": 58.09695315361023,
+     "done": 60.44686508178711,
+     "id": "grab"
+    }
+   ]
+  },
+  {
+   "rival": "Sand",
+   "finished": true,
+   "wins": {
+    "human": 2,
+    "bot": 0
+   },
+   "presses": 140,
+   "winner": "PlayerFighter",
+   "profile": "joueur",
+   "rounds": [
+    {
+     "me": 0.34276923076923055,
+     "index": 1,
+     "t": 30.8,
+     "him": 0,
+     "winner": "PlayerFighter"
+    },
+    {
+     "me": 0.668,
+     "index": 2,
+     "t": 20.5,
+     "him": 0,
+     "winner": "PlayerFighter"
+    }
+   ],
+   "wall": 60.53458383330144,
+   "seed": 1,
+   "kit": "Lion",
+   "mode": "duel",
+   "prompts": [],
+   "level": "easy"
+  },
+  {
+   "rival": "Leaf",
+   "finished": true,
+   "wins": {
+    "human": 2,
+    "bot": 0
+   },
+   "presses": 105,
+   "winner": "PlayerFighter",
+   "profile": "joueur",
+   "rounds": [
+    {
+     "me": 0.5753846153846154,
+     "index": 1,
+     "t": 27,
+     "him": 0,
+     "winner": "PlayerFighter"
+    },
+    {
+     "me": 1,
+     "index": 2,
+     "t": 19,
+     "him": 0,
+     "winner": "PlayerFighter"
+    }
+   ],
+   "wall": 55.251473333337344,
+   "seed": 2,
+   "kit": "Lion",
+   "mode": "duel",
+   "prompts": [],
+   "level": "easy"
+  },
+  {
+   "rival": "Legion",
+   "finished": true,
+   "wins": {
+    "human": 2,
+    "bot": 0
+   },
+   "presses": 87,
+   "winner": "PlayerFighter",
+   "profile": "joueur",
+   "rounds": [
+    {
+     "me": 0.9621538461538462,
+     "index": 1,
+     "t": 16,
+     "him": 0,
+     "winner": "PlayerFighter"
+    },
+    {
+     "me": 0.9580000000000001,
+     "index": 2,
+     "t": 13.3,
+     "him": 0,
+     "winner": "PlayerFighter"
+    }
+   ],
+   "wall": 38.617115124943666,
+   "seed": 3,
+   "kit": "Lion",
+   "mode": "duel",
+   "prompts": [],
+   "level": "easy"
+  },
+  {
+   "rival": "Mirage",
+   "finished": true,
+   "wins": {
+    "human": 1,
+    "bot": 2
+   },
+   "presses": 155,
+   "winner": "AIFighter",
+   "profile": "joueur",
+   "rounds": [
+    {
+     "me": 0.399923076923077,
+     "index": 1,
+     "t": 21.3,
+     "him": 0,
+     "winner": "PlayerFighter"
+    },
+    {
+     "me": 0,
+     "index": 2,
+     "t": 21.5,
+     "him": 0.7304153846153847,
+     "winner": "AIFighter"
+    },
+    {
+     "me": 0,
+     "index": 3,
+     "t": 27.2,
+     "him": 0.6927076923076922,
+     "winner": "AIFighter"
+    }
+   ],
+   "wall": 83.76699633337557,
+   "seed": 4,
+   "kit": "Lion",
+   "mode": "duel",
+   "prompts": [],
+   "level": "normal"
+  },
+  {
+   "rival": "Leaf",
+   "finished": true,
+   "wins": {
+    "human": 2,
+    "bot": 0
+   },
+   "presses": 54,
+   "winner": "PlayerFighter",
+   "profile": "debutant",
+   "rounds": [
+    {
+     "me": 0.5835384615384616,
+     "index": 1,
+     "t": 23.5,
+     "him": 0,
+     "winner": "PlayerFighter"
+    },
+    {
+     "me": 0.8,
+     "index": 2,
+     "t": 14.5,
+     "him": 0,
+     "winner": "PlayerFighter"
+    }
+   ],
+   "wall": 47.2979420000338,
+   "seed": 5,
+   "kit": "Lion",
+   "mode": "duel",
+   "prompts": [],
+   "level": "easy"
+  }
+ ]
+}

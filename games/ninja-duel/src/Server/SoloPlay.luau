@@ -245,7 +245,7 @@ function SoloPlay:challengeEnded(player,won,now)
 	local c=self.challenge
 	if not c or c.taken~=player then return nil end
 	self:challengeGone(now)
-	local result=self:payFor(player,"challenge",{won=won==true})
+	local result=self:payFor(player,"challenge",{won=won==true,kit=c.kit})
 	self:ended(player,if won then "won" else "lost",nil,result)
 	return result
 end

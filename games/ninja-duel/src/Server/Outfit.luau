@@ -175,7 +175,17 @@ function Outfit.items(looks)
 	local Headband=require(script.Parent.Headband)
 	local band=Headband.worn(looks)
 	if band and Headband.modelled(band) then table.insert(out,band) end
+	-- (22/11, the ANIMATEUR's seven hair styles, slot "hair") a style on his head
+	local style=Outfit.hairStyle(looks)
+	if style then table.insert(out,style.id) end
 	return out
+end
+-- The hair style he wears (an item of the slot "hair" with its pieces), or nil:
+-- his own hair.
+function Outfit.hairStyle(looks)
+	local item=looks and looks.hair and Shop.item(looks.hair)
+	if item and item.slot=="hair" and item.pieces and not item.none then return item end
+	return nil
 end
 
 -- Dresses `model` (an R15 body) in `looks`; an older outfit comes off first.
@@ -183,15 +193,24 @@ end
 -- (21/11, DEC-047) His hair painted (looks.hairColor, Shared/CatalogStyle):
 -- the hair's texture set aside (kept on the part, put back with his own
 -- colour) and the part painted flat, the anime way.
+-- (22/11) A hair style worn hides his own hair (the ANIMATEUR: « quand une
+-- coiffure est portée, il faut cacher les cheveux de l'avatar »); taken off,
+-- his hair comes back as it was.
 function Outfit.hairColor(model,looks)
 	if not model then return end
 	local item=looks and looks.hairColor and Shop.item(looks.hairColor)
 	local c=item and item.colors and item.colors.Hair
 	local color=c and Color3.fromRGB(c[1],c[2],c[3])
+	local styled=Outfit.hairStyle(looks)~=nil
 	for _,accessory in model:GetChildren() do
 		if accessory:IsA("Accessory") and (accessory.AccessoryType==Enum.AccessoryType.Hair or Outfit.isHair(accessory.Name)) then
 			local handle=accessory:FindFirstChild("Handle")
 			if handle and handle:IsA("BasePart") then
+				if styled and handle:GetAttribute("NinjaHairHidden")==nil then
+					handle:SetAttribute("NinjaHairHidden",handle.Transparency);handle.Transparency=1
+				elseif not styled and handle:GetAttribute("NinjaHairHidden")~=nil then
+					handle.Transparency=handle:GetAttribute("NinjaHairHidden");handle:SetAttribute("NinjaHairHidden",nil)
+				end
 				local mesh=handle:FindFirstChildOfClass("SpecialMesh")
 				local textured=if mesh then mesh else (if handle:IsA("MeshPart") then handle else nil)
 				local key=if mesh then "TextureId" else "TextureID"
@@ -216,6 +235,11 @@ function Outfit.wear(model,looks)
 	local ids=Outfit.items(looks)
 	if #ids==0 then return nil end
 	local holder=Instance.new("Model");holder.Name="NinjaOutfit";holder:SetAttribute("NinjaOutfit",table.concat(ids,","))
+	-- (22/11) the hair style painted his chosen hair colour (Client/OutfitDress
+	-- paints the modelled style's Hair with it)
+	local paint=looks.hairColor and Shop.item(looks.hairColor)
+	local hairPaint=paint and paint.colors and paint.colors.Hair
+	if hairPaint and Outfit.hairStyle(looks) then holder:SetAttribute("NinjaHairPaint",Color3.fromRGB(hairPaint[1],hairPaint[2],hairPaint[3])) end
 	-- (built whole before it is parented: the client's OutfitDress sees it
 	-- once, with all its pieces)
 	for _,id in ids do
@@ -225,8 +249,10 @@ function Outfit.wear(model,looks)
 			require(script.Parent.Headband).build(holder,model,item)
 			for _,p in holder:GetChildren() do if p:GetAttribute("NinjaItem")==nil then p:SetAttribute("NinjaItem",id) end end
 		elseif item and item.pieces and not item.none then
+			local colors=item.colors
+			if item.slot=="hair" and hairPaint then colors=table.clone(colors or {});colors.Hair=hairPaint end
 			for _,spec in item.pieces do
-				for _,body in Outfit.parts(model,spec.on) do Outfit.piece(holder,body,spec,item.colors,Outfit.legScale(model)) end
+				for _,body in Outfit.parts(model,spec.on) do Outfit.piece(holder,body,spec,colors,Outfit.legScale(model)) end
 			end
 			-- (19/11) each cloth piece knows its look: the client hides only the
 			-- pieces of the looks it has a model for (a cape stays over a

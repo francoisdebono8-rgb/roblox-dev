@@ -100,9 +100,11 @@ end
 -- client shows it), so the turn is seen. The novice (level "first") keeps one
 -- quiet way (Strategy = false).
 AI.Strategy={
-	pressure={hold={8,12},Aggression=.2,Defense=-.08,Disengage=-.3,["*TechniqueGap"]=.75},
-	distance={hold={4,6},Aggression=-.15,Disengage=.25,["*TechniqueGap"]=.65,["*ProbeTool"]=1.35},
-	trap={hold={3.5,5},Aggression=-.3,Defense=.25,ReadGuard=.15,ReadDodge=.12,GuardRead=.08},
+	-- (22/11, with DamageScale 0.9: turns of 4 to 6 s made the rounds 16 %
+	-- longer; shorter turns, longer pressing)
+	pressure={hold={10,15},Aggression=.2,Defense=-.08,Disengage=-.3,["*TechniqueGap"]=.75},
+	distance={hold={3,4.5},Aggression=-.1,Disengage=.15,["*TechniqueGap"]=.65,["*ProbeTool"]=1.35},
+	trap={hold={2.5,4},Aggression=-.2,Defense=.2,ReadGuard=.15,ReadDodge=.12,GuardRead=.08},
 	Shift=.2,Window=4,
 }
 -- The first plan of a kit: a long reach opens at range, the others press.

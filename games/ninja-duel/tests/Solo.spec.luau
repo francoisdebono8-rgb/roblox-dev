@@ -301,11 +301,11 @@ test("the AI's plan: pressing first, a short turn at range or in wait, a beating
 	assert(bot.strategy=="pressure" and actor.strategy=="pressure","not pressing first")
 	assert(bot.tune.Aggression>bot.baseTune.Aggression and bot.tune.TechniqueGap<bot.baseTune.TechniqueGap,"pressing moves nothing")
 	local turnAt=bot.strategyUntil
-	assert(turnAt>=8 and turnAt<=12,"pressing held "..turnAt)
+	assert(turnAt>=10 and turnAt<=15,"pressing held "..turnAt)
 	bot:strategyStep(turnAt+.1)
 	assert(bot.strategy=="distance" or bot.strategy=="trap","no turn after pressing: "..tostring(bot.strategy))
 	local turn=bot.strategy
-	assert(bot.strategyUntil-(turnAt+.1)<=6,"a turn held too long")
+	assert(bot.strategyUntil-(turnAt+.1)<=4.5,"a turn held too long")
 	if turn=="trap" then assert(bot.tune.Defense>bot.baseTune.Defense and bot.tune.Aggression<bot.baseTune.Aggression,"the trap") end
 	-- a beating within the window: pressing again at once
 	actor.health-=25

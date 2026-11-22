@@ -521,11 +521,13 @@ end
 -- server then gives his kit), the best time and whether it improved.
 function S.Commands.soloRecord(p,args)
 	assert(S.integer(args.day,1000000),"Invalid day")
-	assert(args.kind=="race" or args.kind=="targets" or args.kind=="step" or args.kind=="challenge","Invalid kind")
+	assert(args.kind=="race" or args.kind=="targets" or args.kind=="step" or args.kind=="challenge" or args.kind=="feat","Invalid kind")
+	if args.kind=="feat" then assert(Solo.FEATS[args.feat],"Invalid feat") end
+	if args.kit~=nil then assert(type(args.kit)=="string" and #args.kit<=24,"Invalid kit") end
 	if args.kind=="race" or args.kind=="targets" then assert(S.integer(args.time,6000000) and args.time>0,"Invalid time") end
 	p.solo=p.solo or Solo.new()
 	assert(args.day>=p.solo.day,"A day already past")
-	return Solo.record(p.solo,args.day,args.kind,{time=args.time,won=args.won==true})
+	return Solo.record(p.solo,args.day,args.kind,{time=args.time,won=args.won==true,kit=args.kit,feat=args.feat})
 end
 -- (21/11, DEC-047) A look earned, never sold (Shared/CatalogStyle: a title,
 -- a merit aura or frame): given when the profile meets its rule.

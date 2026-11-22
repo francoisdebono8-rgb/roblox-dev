@@ -1,3 +1,46 @@
+**Intégration de l'étape 3, 22/11 (DEV)** — TECHNICAL, sans Studio ; à jouer par François
+- **Sur la branche commune** :
+  - OUTILLEUR (robots, prouveur ; ses 28 fichiers effacés par erreur dans le commit de l'ANIMATEUR sont remis) ;
+  - ANIMATEUR (17 repères, vie des rues, mannequin, cibles, 7 coiffures) ;
+  - CM (mots du premier combat, phrases des inspirations, titres).
+- **Suites aux robots** :
+  - `DamageScale` 0,9 ;
+  - revanche du premier combat en easy ;
+  - consignes de garde et d'esquive plus patientes ;
+  - Gaara novice sans bouclier (DuelBot 24/24, médiane 37 s) ;
+  - escalier des visages à côté de la résidence ;
+  - échelles sur les toits trop hauts (7) ;
+  - plus de surfaces qui scintillent ;
+  - médailles de la course (27, 34, 45 s).
+- **Modèles du plan** à la taille de leurs lots (173) ; coiffures portées (cheveux de l'avatar cachés, couleur choisie) ; second saut joué avec le clip `<kit>.AirJump`.
+- **Titres** : tous ceux que le profil compte sont gagnables. Une seule ligne de titre : celui choisi, sinon celui de l'Examen.
+- `tests/Prediction.spec` : un 4e duel par paire (9 % de mauvaises lectures à 100 ms, plafond 15 %).
+
+**Étape 3 de l'OUTILLEUR, 21-22/11 (DEC-047 ; doc projet `claude/outilleur-etape3-2026-11-22`)** — TECHNICAL et NATIVE_STUDIO (copies LAB `8aaa6fd4` et `554f1dec`). Ce sont les observations de Claude, pas l'avis de François.
+- **Robot débutant sur le premier combat** (`tools/duelbot`, `tests/DuelBot.spec`, dans `tests/run.sh`). Le même joueur simulé joue sans Studio (banc de test) et dans Studio, comme client.
+  - Sans Studio (554f1dec, plans de l'IA activés) : 24 combats gagnés sur 24, médiane 37 s (27 à 66). Consignes faites : bouger, frapper et signature à chaque fois ; garde 4 fois sur 22, s'échapper 0 sur 3.
+  - Dans Studio (8aaa6fd4) : 9 combats gagnés sur 9, médiane 52 s (30 à 91). Sasuke contre Gaara : 54 et 91 s.
+- **Durée des manches** (`tools/duelbot/rounds.luau`, 554f1dec, 24 manches par case, médianes) :
+  - un joueur contre easy : 18 s à `GameDamageScale` 1 ; 21 s à 0,8 ; 25 s à 0,7 ;
+  - un joueur contre normal : 24 s ; 29 s ; 33 s ;
+  - un débutant contre easy : 24 s ; 30 s ; 36 s.
+
+  Dans Studio, une manche dure environ 1,15 fois plus.
+- **Robot du village** (`tools/villagebot`, nouveau Konoha 554f1dec) :
+  - course des toits : 10 anneaux sur 10, 22,3 s et 23,5 s (temps du serveur, un joueur qui connaît le parcours) ;
+  - 10 toits de 10,4 à 28,6 studs atteints par la course sur le mur, en 1 à 1,5 s ;
+  - les maîtres en hauteur (Sand 16,2, Mirage 20,8, Flashstep 31,2) atteints ;
+  - aucune chute. Une fois coincé contre la résidence du Hokage (52 studs : la course sur le mur s'arrête à 34-37).
+- **Prouveur sur le nouveau Konoha construit** (`ci_dump.py`, profil avec `wallClimb` 36 studs) :
+  - 2 toits jamais atteignables : la porte (65 studs) et la résidence du Hokage (52 studs) ;
+  - 34 toits seulement par la course sur le mur ;
+  - l'escalier vers les visages (`Step_13` à `Step_24`) est dans les murs de la résidence ;
+  - 27 pièces qui se traversent, 36 % de vide.
+- **Cabine, cheveux** : les 10 couleurs de cheveux sur les 7 avatars types (`tools/tenues/rendus/2026-11-21_554f1dec/couleurs-cheveux.jpg`).
+  - Elles prennent sur les 4 avatars qui ont des cheveux, chapeaux-cheveux compris ; revenir à « la sienne » rend l'original.
+  - Pas encore de coiffure : l'emplacement `hair` n'a que `HairOwn`.
+  - Korblox, Garçon et Bloc n'ont pas de cheveux : la couleur ne se voit pas sur eux.
+
 **Étape 3 du DEV, 21/11 (DEC-047) : le nouveau Konoha, les choses à faire seul, le 1v1 ouvert, l'IA qui change de plan** — TECHNICAL, sans Studio ; à jouer par François
 - **Le nouveau Konoha** (`Server/Hub.buildLayout`, `Config.Hub.Layout = "konoha2"`, ND-JEU compris) : 173 bâtiments du plan, 234 murs à courir, rivière Naka ; maisons de l'ancien village en doublure tant que les modèles manquent. Course sur les murs du promeneur (`Client/HubMove`). `tests/Hub.spec` : 18 PASS.
 - **Seul** (`Shared/Solo`, `Server/SoloPlay`, `Client/SoloView`) :

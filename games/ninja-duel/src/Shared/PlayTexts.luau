@@ -103,7 +103,7 @@ T.RaceEnds={
 T.Titles={
 	{id="TitleGraduate",title="ACADEMY GRADUATE",earned="wins1",how="Win your first duel."},
 	{id="TitleStreet",title="STREET RIVAL",earned="pvp10",how="Win 10 duels against players."},
-	{id="TitleStreetLegend",title="STREET LEGEND",earned="pvp50",new=true,how="Win 50 duels against players."},
+	{id="TitleStreetLegend",title="STREET LEGEND",earned="pvp50",how="Win 50 duels against players."},
 	{id="TitleHundred",title="HUNDRED VICTORIES",earned="wins100",how="Win 100 duels."},
 	{id="TitleGenin",title="THE GENIN",earned="rank2",how="Reach GENIN in ranked."},
 	{id="TitleChunin",title="THE CHUNIN",earned="rank3",how="Reach CHUNIN in ranked."},
@@ -112,27 +112,27 @@ T.Titles={
 	{id="TitleKage",title="THE KAGE",earned="rank6",how="Reach KAGE in ranked."},
 	{id="TitleUnbeaten",title="UNBEATEN",earned="pvpStreak10",new=true,how="Win 10 duels against players in a row."},
 	{id="TitleGiantSlayer",title="GIANT SLAYER",earned="giant2",new=true,how="Beat a player two ranks above yours."},
-	{id="TitleComeback",title="COMEBACK KID",earned="comeback",new=true,how="Win a round with less than a tenth of your health."},
-	{id="TitleUntouched",title="UNTOUCHED",earned="untouched",new=true,how="Win a round without taking a single hit."},
+	{id="TitleComeback",title="COMEBACK KID",earned="comeback",how="Win a round with less than a tenth of your health."},
+	{id="TitleUntouched",title="UNTOUCHED",earned="untouched",how="Win a round without taking a single hit."},
 	{id="ExamPassed",title="EXAM PASSED",earned="exam",how="Win the final of the week's Rank Exam. Yours until the next one opens."},
 	{id="ExamTop3",title="TOP 3 OF THE WEEK",earned="exam",how="Finish in the Rank Exam's best three. Yours for a week."},
 	{id="TitleRooftops",title="ROOFTOP RUNNER",earned="rooftops",how="Finish the rooftop race."},
 	{id="TitleFastest",title="FASTEST IN KONOHA",earned="rooftopsTop1",new=true,how="Hold the best rooftop race time of the week."},
-	{id="TitleDeadEye",title="DEAD EYE",earned="targetsAll",new=true,how="Hit every kunai target in one run."},
-	{id="TitleNeverSkips",title="NEVER SKIPS TRAINING",earned="dummies7",new=true,how="Train on the dummies 7 days in a row."},
-	{id="TitleStudentOfEight",title="STUDENT OF THE EIGHT",earned="challenges8",new=true,how="Win the challenge of all eight inspirations."},
-	{id="TitleEightWays",title="EIGHT WAYS",earned="kits300",new=true,how="Reach 300 mastery with all eight kits."},
+	{id="TitleDeadEye",title="DEAD EYE",earned="targetsAll",how="Hit every kunai target in one run."},
+	{id="TitleNeverSkips",title="NEVER SKIPS TRAINING",earned="dummies7",how="Train on the dummies 7 days in a row."},
+	{id="TitleStudentOfEight",title="STUDENT OF THE EIGHT",earned="challenges8",how="Win the challenge of all eight inspirations."},
+	{id="TitleEightWays",title="EIGHT WAYS",earned="kits300",how="Reach 300 mastery with all eight kits."},
 	{id="TitleFireBorn",title="FIRE BORN",earned="natureFire25",nature="Fire",new=true,how="Win 25 duels with Element Mastery and the fire nature."},
 	{id="TitleWindRider",title="WIND RIDER",earned="natureWind25",nature="Wind",new=true,how="Win 25 duels with Element Mastery and the wind nature."},
 	{id="TitleStormCaller",title="STORM CALLER",earned="natureLightning25",nature="Lightning",new=true,how="Win 25 duels with Element Mastery and the lightning nature."},
 	{id="TitleStoneWall",title="STONE WALL",earned="natureEarth25",nature="Earth",new=true,how="Win 25 duels with Element Mastery and the earth nature."},
 	{id="TitleTideBreaker",title="TIDE BREAKER",earned="natureWater25",nature="Water",new=true,how="Win 25 duels with Element Mastery and the water nature."},
 	{id="TitleSevenDays",title="SEVEN DAYS STRONG",earned="days7",how="Play 7 days in a row."},
-	{id="TitleEveryDay",title="NEVER MISSES A DAY",earned="days30",new=true,how="Play 30 days in a row."},
+	{id="TitleEveryDay",title="NEVER MISSES A DAY",earned="days30",how="Play 30 days in a row."},
 }
 -- One heir title per prodigy: 800 mastery with his kit, the top tier of his tree.
 for _,kitId in KitTexts.Order do
-	table.insert(T.Titles,{id="TitleHeir"..kitId,title=KitTexts.name(kitId).."'S HEIR",earned="heir"..kitId,kit=kitId,new=true,
+	table.insert(T.Titles,{id="TitleHeir"..kitId,title=KitTexts.name(kitId).."'S HEIR",earned="heir"..kitId,kit=kitId,
 		how="Reach 800 mastery with "..KitTexts.name(kitId).."."})
 end
 T.ById={}

@@ -361,7 +361,8 @@ function P.badges(player)
 		local eq=(h.data.style and h.data.style.equipped) or {}
 		local function worn(slot) local id=eq[slot];return (id and Shop.item(id)) or Shop.default(slot) end
 		local title=worn("title")
-		player:SetAttribute("NinjaTitle",if title and not title.none then title.name else nil)
+		player:SetAttribute("NinjaChosenTitle",if title and not title.none then title.name else nil)
+		P.showTitle(player)
 		player:SetAttribute("NinjaChakra",Style.color(worn("chakra"),"Chakra"))
 		local frame=worn("frame")
 		player:SetAttribute("NinjaFrame",frame and frame.id)
@@ -472,6 +473,17 @@ local function reward(player,kit,amount,ryo,day)
 	end
 	return out
 end
+-- (22/11, the CM: « NinjaTitle sert à la fois au titre de l'Examen et au titre
+-- choisi ; l'un efface l'autre ») One line under his name: the title he chose
+-- in the shop (NinjaChosenTitle), else the week's exam's (NinjaExamTitle,
+-- Server/WeeklyExam).
+function P.showTitle(player)
+	local ok=pcall(function()
+		local title=player:GetAttribute("NinjaChosenTitle") or player:GetAttribute("NinjaExamTitle")
+		if player:GetAttribute("NinjaTitle")~=title then player:SetAttribute("NinjaTitle",title) end
+	end)
+	return ok
+end
 -- (21/11, étape 3 DEV 4, DEC-047) A thing done alone in Konoha (Shared/Solo):
 -- recorded on the profile, its mastery (within the day's share) given to the
 -- kit he has chosen when he owns it; a race's best time on the board. Returns
@@ -479,7 +491,7 @@ end
 function P.solo(player,kind,args)
 	if not P.enabled() or not P.ready(player) then return nil end
 	local Solo=require(Shared.Solo)
-	local ok,result=P.run(player,"soloRecord",{day=Daily.day(P.now()),kind=kind,time=args and args.time,won=args and args.won==true})
+	local ok,result=P.run(player,"soloRecord",{day=Daily.day(P.now()),kind=kind,time=args and args.time,won=args and args.won==true,kit=args and args.kit,feat=args and args.feat})
 	if not ok or type(result)~="table" then return nil end
 	local kits=P.handles[player].data.kits
 	local kit=kits.selected

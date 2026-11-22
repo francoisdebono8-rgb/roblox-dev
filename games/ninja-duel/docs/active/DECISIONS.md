@@ -511,4 +511,7 @@ Les consignes sur un partenaire immobile disparaissent du premier lancement. Le 
 - **le village du plan partout, ND-JEU compris** (`Config.Hub.Layout = "konoha2"`) : la minicarte de la DESIGN et les choses à faire seul sont sur le plan. Les maisons de l'ancien village habillent les lots tant que les modèles du plan manquent. `"classic"` reste comme marche arrière ;
 - **un duel demandé en se promenant se joue près de soi** (`Matches.nearSite`), dans la place libre la plus proche ; le stade garde le tournoi et les duels demandés hors de Konoha ;
 - **l'IA presse par défaut** et coupe par de courts moments à distance ou en attente : les plans ne doivent pas rallonger les duels.
+- (22/11) **`DamageScale` 0,9** : d'après le joueur simulé de l'OUTILLEUR, environ 31 s par manche contre normal dans Studio ;
+- (22/11) **titres** : la boutique ne montre que les titres que le profil sait compter ; une seule ligne de titre (le choisi, sinon celui de l'Examen) ;
+- (22/11) **médailles de la course des toits** : or 27 s, argent 34 s, bronze 45 s.
 

@@ -35,6 +35,9 @@ Solo.Race={
 	radius=7,                  -- a ring is passed within (across, base studs)
 	above=8,                   -- and up to this over its roof
 	countdown=3,               -- 3, 2, 1, GO (s)
+	-- (22/11) the medals, from the OUTILLEUR's robot (22.3 and 23.5 s, a run
+	-- that knows the route and misses nothing): gold asks for nearly that
+	medals={{id="gold",name="GOLD",time=27},{id="silver",name="SILVER",time=34},{id="bronze",name="BRONZE",time=45}},
 	limit=240,                 -- given up after (s)
 	maxAcross=90,              -- world studs a second across, at most (more: a teleport)
 	rings={
@@ -68,6 +71,11 @@ function Solo.raceLength()
 end
 -- The fastest a run can honestly be (s): the route at a speed no walker has.
 function Solo.raceFloor() return Solo.raceLength()/60 end
+-- The medal of a race time (seconds), or nil: {id, name, time}.
+function Solo.medal(seconds)
+	for _,m in Solo.Race.medals do if seconds<=m.time then return m end end
+	return nil
+end
 -- Whether `pos` (a world position: the body's root) passes ring i.
 function Solo.inRing(i,pos)
 	local r=Solo.Race.rings[i]
@@ -204,11 +212,25 @@ Solo.MAX=100000000
 -- The profile's record. Times in hundredths (0: never finished).
 function Solo.new() return {day=0,earned=0,rooftops={best=0,runs=0},targets={best=0,runs=0},challenges=0} end
 local function whole(n,max) return type(n)=="number" and n==math.floor(n) and n>=0 and n<=(max or Solo.MAX) end
+-- (22/11, the CM's titles) and, when there: `beaten` the inspirations whose
+-- challenge he won (kit id → true), `dummy` the days in a row he trained on
+-- the dummies ({day, streak}), `feats` the rounds of note (comeback,
+-- untouched → true).
+Solo.FEATS={comeback=true,untouched=true}
 function Solo.valid(r)
 	if type(r)~="table" or not whole(r.day) or not whole(r.earned,Solo.DayCap) or not whole(r.challenges) then return false,"solo record" end
 	for _,key in {"rooftops","targets"} do
 		local t=r[key]
 		if type(t)~="table" or not whole(t.best) or not whole(t.runs) then return false,"solo "..key end
+	end
+	if r.beaten~=nil then
+		if type(r.beaten)~="table" then return false,"solo beaten" end
+		for k,v in r.beaten do if type(k)~="string" or #k>24 or v~=true then return false,"solo beaten" end end
+	end
+	if r.dummy~=nil and (type(r.dummy)~="table" or not whole(r.dummy.day) or not whole(r.dummy.streak)) then return false,"solo dummy" end
+	if r.feats~=nil then
+		if type(r.feats)~="table" then return false,"solo feats" end
+		for k,v in r.feats do if not Solo.FEATS[k] or v~=true then return false,"solo feats" end end
 	end
 	return true
 end
@@ -242,10 +264,21 @@ function Solo.record(r,day,kind,args)
 			else (if first then G.TargetsFirst elseif improved then G.TargetsBest else G.TargetsDone)
 		return {paid=Solo.pay(r,day,amount),best=t.best,improved=improved,first=first,runs=t.runs}
 	elseif kind=="step" then
-		return {paid=Solo.pay(r,day,G.Step)}
+		-- the days in a row on the dummies (NEVER SKIPS TRAINING)
+		local d=r.dummy or {day=0,streak=0}
+		if d.day~=day then d.streak=if d.day==day-1 then d.streak+1 else 1;d.day=day end
+		r.dummy=d
+		return {paid=Solo.pay(r,day,G.Step),streak=d.streak}
 	elseif kind=="challenge" then
-		if args.won then r.challenges=math.min(Solo.MAX,r.challenges+1) end
+		if args.won then
+			r.challenges=math.min(Solo.MAX,r.challenges+1)
+			if type(args.kit)=="string" then r.beaten=r.beaten or {};r.beaten[args.kit]=true end
+		end
 		return {paid=Solo.pay(r,day,if args.won then G.ChallengeWon else G.ChallengeLost),challenges=r.challenges}
+	elseif kind=="feat" then
+		-- a round of note: nothing paid, it counts for a title
+		if Solo.FEATS[args.feat] then r.feats=r.feats or {};r.feats[args.feat]=true end
+		return {paid=0}
 	end
 	error("Unknown solo kind")
 end

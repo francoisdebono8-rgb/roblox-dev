@@ -685,6 +685,62 @@ test("the dresser follows a carved place: its funny head goes, and comes back",f
 	assert(HubDress.sync(u,kit,holder,done) and #holder:GetChildren()==1,"the funny head did not come back")
 end)
 
+-- (22/11) What the OUTILLEUR's prover and robot found on the plan's village,
+-- and the ANIMATEUR's models on their lots.
+test("the plan's village after the robots: the faces' stairs clear, a ladder up every roof too high to run to, no two tops at one height, the models fitted to their lots",function()
+	local S=HubMap.Scale or 1
+	local O=HubMap.Origin
+	local steps,walls,ladders={}, {}, {}
+	for _,d in layoutFolder:GetDescendants() do
+		if d:IsA("BasePart") then
+			if d.Name=="Step" then table.insert(steps,d) elseif d.Name=="Walls" then table.insert(walls,d) elseif d.Name=="Ladder" then table.insert(ladders,d) end
+		end
+	end
+	assert(#steps==24,"the faces' stairs: "..#steps)
+	-- no step inside a building
+	for _,step in steps do
+		for _,w in walls do
+			local l=w.CFrame:PointToObjectSpace(step.CFrame.Position)
+			assert(not (math.abs(l.X)<w.Size.X/2-.5 and math.abs(l.Z)<w.Size.Z/2-.5 and math.abs(l.Y)<w.Size.Y/2),"a step of the faces inside "..w.Parent.Name)
+		end
+	end
+	-- every building taller than a run up its wall has its ladder
+	local climb=36
+	for _,unit in layoutFolder.Buildings:GetChildren() do
+		local w=unit:FindFirstChild("Walls")
+		if w and w.Size.Y>climb then assert(unit:FindFirstChild("Ladder"),unit.Name.." is too high to run up and has no ladder") end
+	end
+	-- no perch deck on a top that is already there
+	for _,d in layoutFolder:GetDescendants() do
+		if d:IsA("BasePart") and d.Name=="PerchDeck" then
+			local top=d.CFrame.Position.Y+d.Size.Y/2
+			for _,other in layoutFolder:GetDescendants() do
+				if other~=d and other:IsA("BasePart") and other.CanCollide and other.Name~="PerchPost" then
+					local l=other.CFrame:PointToObjectSpace(d.CFrame.Position)
+					local otherTop=other.CFrame.Position.Y+other.Size.Y/2
+					assert(not (math.abs(l.X)<other.Size.X/2 and math.abs(l.Z)<other.Size.Z/2 and math.abs(otherTop-top)<.05),"a perch deck flickers with "..other.Name)
+				end
+			end
+		end
+	end
+	-- the ANIMATEUR's models on their lots: the mesh's size is the lot's
+	local Ref=H.load("Shared/KonohaModelRef")
+	local fitted=0
+	for _,unit in layoutFolder.Buildings:GetChildren() do
+		local model=unit:GetAttribute("LayoutModel")
+		local ref=model and Ref[model]
+		local w=unit:FindFirstChild("Walls")
+		if ref and w then
+			local scale=unit:GetAttribute("DressScale")
+			assert(typeof(scale)=="Vector3","no fit for "..unit.Name)
+			assert(math.abs(ref.w*scale.X-w.Size.X)<.05 and math.abs(ref.h*scale.Y-w.Size.Y)<.05 and math.abs(ref.d*scale.Z-w.Size.Z)<.05,unit.Name.." and its model differ")
+			fitted+=1
+		end
+	end
+	assert(fitted>=170,"models fitted: "..fitted)
+	print(string.format("  %d models fitted to their lots, %d ladders",fitted,#ladders))
+end)
+
 -- (21/11, étape 3 DEV 3, DEC-047; François: « murs et toits courables
 -- partout ») The village walker runs up the walls (Client/HubMove).
 test("the run up a wall in the village: up it, over onto the roof, a kick off it, the tree's share",function()

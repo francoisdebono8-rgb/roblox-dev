@@ -17,5 +17,7 @@
   "charRadius":     { "value": 2.0,  "src": "assumed" },
   "eyeHeight":      { "value": 4.5,  "src": "assumed" },
   "ragdollRecovery": { "value": 0.0, "src": "config", "note": "no ragdoll while walking in Konoha" },
-  "abilities": {}
+  "abilities": {
+    "wallClimb": { "shipped": true, "maxRise": 36.1, "src": "config", "note": "21/11 (DEV 3, DEC-047): run or jump into a NinjaWall and Client/HubMove runs him up it, Move.CLIMB 38 studs/s for Move.CLIMB_TIME .95 s (about 36 studs), then hops him on top. The prover uses it in its generous pass." }
+  }
 }
