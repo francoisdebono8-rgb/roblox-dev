@@ -61,7 +61,9 @@ function Sim.first(H,mods,kit,seed,profile)
 	a.playerInput=true
 	local s={human=a,bot=b,combat=c}
 	mods.Coach.new(s,c.now)
+	-- the plans are on for the duels the game runs (Server/Matches, 21/11 DEV 6)
 	local ai=mods.AI.new(c,b,seed*7+1,"first")
+	if ai.withStrategy then ai:withStrategy() end
 	local sim=mods.PlayerSim.new(profile or "debutant",seed,V)
 	local stats={kit=kit,rival=rival,seed=seed,presses=0,refused=0,reasons={},prompts={}}
 	local current,started=nil,c.now
@@ -102,6 +104,7 @@ function Sim.round(H,mods,kit,rival,level,seed,profile)
 	c:relocate(a,V.new(0,3,half));c:relocate(b,V.new(0,3,-half))
 	a.playerInput=true
 	local ai=mods.AI.new(c,b,seed*13+5,level)
+	if ai.withStrategy then ai:withStrategy() end
 	local sim=mods.PlayerSim.new(profile or "joueur",seed,V)
 	local stats={kit=kit,rival=rival,level=level,seed=seed,presses=0,refused=0,reasons={}}
 	local t=0
