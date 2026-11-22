@@ -8,7 +8,7 @@ Tout ce qui suit a été vérifié en rendu Blender, en planche et en test headl
 | Humeur | vapeur d'Ichiraku et des boutiques, fumées de toits, guirlandes au marché, oiseaux, feuilles | `Client/KonohaLifeFX` |
 | Personnalisation | 7 coiffures (slot `hair`) ; couleur du chakra sur les effets ; 7 poses de victoire et 5 émotes au Catalog ; 6 auras (dont 2 en Robux) | `wardrobe_models.py`, `ChakraTintFX`, `ShopAuraFX`, Catalog ; `coiffures.png` |
 | Clips | `<kit>.AirJump` et `<kit>.Getup.Quick` (8 kits chacun), `Lion.Parkour.{Leap,LandRoll,LandHard,Vault}` | `AuthoredJutsu9-13` ; `clip_*.png` |
-| Mannequin et cibles | mannequin et cible à trépied au terrain n° 3 (`TrainingProps`) ; panneau modelé sur les 8 cibles de la ruelle | `konoha_models.training_props`, `TrainingMeshData`, `KonohaLifeFX.dressBoards` ; `mannequin_cibles.png` |
+| Mannequin et cibles | mannequin et cible à trépied au terrain n° 3 (`TrainingProps`) ; panneau modelé sur les 8 cibles de la ruelle | `konoha_models.training_props`, `PropMeshData`, `KonohaLifeFX.dressBoards` ; `mannequin_cibles.png` |
 
 ## Notes des clips (`clip_grades`)
 

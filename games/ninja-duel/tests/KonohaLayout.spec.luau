@@ -81,7 +81,8 @@ test("six house models, each 800 to 2 000 triangles, and every house one of them
 		assert(m.tris>=800 and m.tris<=2000,name..": "..m.tris.." triangles")
 		assert(m.width>0 and m.depth>0 and m.height>0,name..": the model's own size")
 	end
-	assert(count==6,"six models, got "..count)
+	-- (22/11) the six, and the tower once Server/Hub has its stand-in (konoha_layout.variety_pass)
+	assert(count==6 or (count==7 and K.Houses.tower_house),"six models (seven with the tower), got "..count)
 	for i,b in K.Buildings do
 		assert(b[9]~=nil or K.Houses[b[1]],("building %d: unknown model %s"):format(i,b[1]))
 	end

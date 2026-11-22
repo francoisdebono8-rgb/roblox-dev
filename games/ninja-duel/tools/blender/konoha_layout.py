@@ -430,13 +430,21 @@ class Plan:
         pocket gardens (a tree, a stone lantern), so the blocks are not wall after wall."""
         rng = random.Random(2211)
         keep = self.keep_points()
+        # the towers wait for Server/Hub to know their stand-in (Hub.LAYOUT_STANDIN: every house of
+        # the plan has the old village's house of its kind under it, tests/Hub.spec); the DEV adds
+        # it, this pass is re-run, the towers appear
+        hub = os.path.normpath(os.path.join(HERE, os.pardir, os.pardir, "src", "Server", "Hub.luau"))
+        try:
+            towers_on = "tower_house=" in open(hub).read()
+        except OSError:
+            towers_on = False
         cands = [b for b in self.buildings if not b["landmark"] and b["model"] in ("tank_house", "apartment", "machiya", "shop_house")
                  and b["district"] in ("Market", "Centre", "Alleys", "Residences", "Civic", "TeaStreet")]
         cands.sort(key=lambda b: (b["x"], b["z"]))
         rng.shuffle(cands)
         towers = []
         for b in cands:
-            if len(towers) >= 14:
+            if not towers_on or len(towers) >= 14:
                 break
             if max(b["w"], b["d"]) > 20:
                 continue
@@ -510,7 +518,10 @@ def to_luau(plan):
     L.append("}")
     L.append("-- The house models: triangle budget (800 to 2 000), base height, what each is.")
     L.append("M.Houses={")
+    used = {b["model"] for b in plan.buildings}
     for k, v in HOUSES.items():
+        if k == "tower_house" and k not in used:   # (22/11) listed once the plan has towers
+            continue
         L.append(f'\t{k}={{tris={v[0]},height={v[1]},width={v[5][0]},depth={v[5][1]},what="{v[4]}"}},')
     L.append("}")
     L.append("-- Buildings: {model, x, z, w, d, h, yaw, district, landmark id or nil}. yaw 0: the door")

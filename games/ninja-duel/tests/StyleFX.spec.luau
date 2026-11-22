@@ -10,7 +10,7 @@ local Catalog=H.load("Shared/Catalog")
 local Style=H.load("Shared/CatalogStyle")
 local Aura=H.load("Client/ShopAuraFX")
 local Tint=H.load("Client/ChakraTintFX")
-local Instance,Vector3,Color3=roblox.Instance,roblox.Vector3,roblox.Color3
+local Instance,Vector3,Color3,CFrame=roblox.Instance,roblox.Vector3,roblox.Color3,roblox.CFrame
 local passed=0
 local function test(name,fn)
 	local ok,err=pcall(fn)
@@ -108,7 +108,13 @@ test("the street life comes from the plan and stays out of the fight",function()
 	for _,b in Layout.Buildings do if b[1]=="ichiraku" then ichi=b end end
 	assert(ichi,"Ichiraku is in the plan")
 	assert((plan.steam[1].pos-Life.world(O,1.3,ichi[2],ichi[6]+1,ichi[3])).Magnitude<1e-3 or #plan.steam>1)
-	for _,b in plan.bunting do assert(b.a.Y-O.Y>=16*1.3-1e-3,"bunting under head height") end
+	local laundry=0
+	for _,b in plan.bunting do
+		assert(b.a.Y-O.Y>=(if b.laundry then 11 else 16)*1.3-1e-3,"a line under head height")
+		if b.laundry then laundry+=1 end
+	end
+	assert(laundry>=8,"laundry lines: "..laundry)
+	assert(#plan.nobori>=10,"shop banners: "..#plan.nobori)
 	local folder=Instance.new("Folder")
 	local made=Life.build(folder,plan)
 	Life.step(made,1.5)
@@ -116,14 +122,14 @@ test("the street life comes from the plan and stays out of the fight",function()
 	for _,x in folder:GetDescendants() do
 		if x:IsA("BasePart") then n+=1;assert(not x.CanCollide and not x.CanQuery and x.Anchored,x.Name.." collides") end
 	end
-	assert(n<900,"too many parts: "..n);print("street life parts",n)
+	assert(n<900,"too many parts: "..n)
 	assert(#made.birds==18)
 end)
 
 test("the kunai boards wear the modelled board, facing the mark, inside their Target",function()
 	local Life=H.load("Client/KonohaLifeFX")
 	local Solo=H.load("Shared/Solo")
-	local data=H.load("Client/TrainingMeshData")
+	local data=H.load("Client/PropMeshData")
 	assert(data.kunai_board and #data.kunai_board>0)
 	local targets=Instance.new("Model")
 	for i in Solo.Targets.boards do
@@ -138,6 +144,95 @@ test("the kunai boards wear the modelled board, facing the mark, inside their Ta
 	local toMark=(Solo.targetsMark()-Solo.board(1))
 	assert(cf.LookVector:Dot(Vector3.new(toMark.X,0,toMark.Z).Unit)<-.99,"the face turns to the mark")
 	assert(Life.dressBoards(targets,Solo,function() return Instance.new("Part") end,data)==0,"dressed once")
+end)
+
+test("the villagers: walk a street of the plan and back, wait at its ends, the duel's rig, never solid",function()
+	local Folk=H.load("Client/KonohaFolkFX")
+	local Layout=H.load("Shared/KonohaLayout")
+	local O=Vector3.new(0,0,-2400)
+	local routes=Folk.routes(Layout,O,1.3,26)
+	assert(#routes==26)
+	local streets={}
+	for _,r in routes do streets[r.street]=true;assert((r.b-r.a).Magnitude>30) end
+	local n=0;for _ in streets do n+=1 end
+	assert(n>=12,"spread over the streets: "..n)
+	local r=routes[1]
+	local speed=5.2*1.3
+	local walk=(r.b-r.a).Magnitude/speed
+	local seen={walk=false,wait=false}
+	for k=0,400 do
+		local at,dir,moving=Folk.at(r,k*.25,speed)
+		seen[if moving then "walk" else "wait"]=true
+		-- always on his segment
+		local ab=r.b-r.a
+		local u=(at-r.a):Dot(ab)/ab:Dot(ab)
+		assert(u>-1e-3 and u<1+1e-3)
+		assert(math.abs(dir.Magnitude-1)<1e-3)
+	end
+	assert(seen.walk and seen.wait)
+	local model=Folk.rig(Color3.new(1,.8,.7),Color3.new(.3,.3,.4),Color3.new(.2,.2,.2))
+	local motors=0
+	for _,d in model:GetDescendants() do
+		if d:IsA("Motor6D") then motors+=1 end
+		if d:IsA("BasePart") then assert(not d.CanCollide and not d.CanQuery,d.Name) end
+	end
+	assert(motors>=16 and model:FindFirstChild("RightUpperArm") and model.PrimaryPart.Anchored)
+	-- the wardrobe on it: a fake Dress, each piece on its body part in the slot's colour
+	local fake={template=function(name) local p=Instance.new("Part");p.Size=Vector3.one;return {{part=p,on="UpperTorso",slot="Cloth",o=Vector3.zero}} end,
+		place=function(body) return Vector3.one,body.CFrame end,material=function(m) return m end}
+	assert(Folk.dress(model,fake,{"Tunic","HairBowl"},{Cloth=Color3.new(1,0,0)})==2)
+end)
+
+test("every house its colours: its quarter's palette, picked by its place, landmarks untouched",function()
+	local Life=H.load("Client/KonohaLifeFX")
+	local Layout=H.load("Shared/KonohaLayout")
+	local O=Vector3.new(0,0,-2400)
+	local root=Instance.new("Folder")
+	local copiesOf={}
+	local made=0
+	for _,b in Layout.Buildings do
+		local u=Instance.new("Model");u.Parent=root
+		u:SetAttribute("LayoutModel",b[1])
+		u:SetAttribute("DressAt",CFrame.new(O+Vector3.new(b[2],0,b[3])*1.3))
+		local w=Instance.new("Part");w.Name="Walls";w.Parent=u
+		local list={}
+		for _,name in {"Walls","Tiles","Timber","Openings"} do local p=Instance.new("Part");p.Name=name;p.Color=Color3.new(1,1,1);table.insert(list,p) end
+		copiesOf[w]=list
+		made+=1
+	end
+	local n=Life.tintHouses(root,copiesOf,Layout,O,1.3)
+	assert(n>100 and n<made,"houses tinted: "..n.." of "..made)
+	assert(Life.tintHouses(root,copiesOf,Layout,O,1.3)==0,"once")
+	-- the market's houses do not all wear one colour, the Uchiha roofs are dark
+	local market,uchiha={}, nil
+	for w,list in copiesOf do
+		local u=w.Parent
+		local at=(u:GetAttribute("DressAt").Position-O)/1.3
+		local d=Life.district(Layout,at.X,at.Z)
+		if Life.HOUSES[u:GetAttribute("LayoutModel")] then
+			if d=="Market" then market[tostring(list[1].Color)]=true end
+			if d=="Uchiha" then uchiha=list[2].Color end
+		else
+			assert(list[1].Color==Color3.new(1,1,1),"a landmark keeps its own colours")
+		end
+	end
+	local kinds=0;for _ in market do kinds+=1 end
+	assert(kinds>=4,"market colours: "..kinds)
+	assert(uchiha and uchiha.R<.45,"the Uchiha roofs are dark")
+end)
+
+test("the market's stalls and barrels wear their models, on the block's foot; the block stays solid",function()
+	local Life=H.load("Client/KonohaLifeFX")
+	local data=H.load("Client/PropMeshData")
+	assert(data.market_stall and data.barrel)
+	local root=Instance.new("Folder")
+	local stall=Instance.new("Part");stall.Name="Prop_stall";stall.Size=Vector3.new(8,6,5);stall.CFrame=CFrame.new(10,3,20);stall.Parent=root
+	local barrel=Instance.new("Part");barrel.Name="Prop_barrel";barrel.Size=Vector3.new(3,3.6,3)
+	barrel.CFrame=CFrame.new(0,1.8,0)*CFrame.Angles(0,0,math.pi/2);barrel.Parent=root
+	local n=Life.dressProps(root,function() return Instance.new("Part") end,data)
+	assert(n==2 and stall.Transparency==1 and stall.CanCollide)
+	assert(math.abs(Life.propFoot(stall).Position.Y)<1e-3 and math.abs(Life.propFoot(barrel).Position.Y)<1e-3,"on the ground")
+	assert(Life.dressProps(root,function() return Instance.new("Part") end,data)==0,"once")
 end)
 
 print(("NinjaDuel style FX: %d PASS"):format(passed))
