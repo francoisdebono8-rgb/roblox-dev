@@ -10,6 +10,17 @@ Tout ce qui suit a été vérifié en rendu Blender, en planche et en test headl
 | Clips | `<kit>.AirJump` et `<kit>.Getup.Quick` (8 kits chacun), `Lion.Parkour.{Leap,LandRoll,LandHard,Vault}` | `AuthoredJutsu9-13` ; `clip_*.png` |
 | Mannequin et cibles | mannequin et cible à trépied au terrain n° 3 (`TrainingProps`) ; panneau modelé sur les 8 cibles de la ruelle | `konoha_models.training_props`, `PropMeshData`, `KonohaLifeFX.dressBoards` ; `mannequin_cibles.png` |
 
+## Deuxième passe, après le retour de François (22/11, 23 h 42)
+
+> « les 7 coiffures sont mauvaises, les rues ne sont pas animées, l'arrangement de l'espace et la différence entre les bâtiments n'est pas assez forte, le village est trop lisse »
+
+| Point | Fait |
+|---|---|
+| Coiffures | Refaites en mèches plates et larges, avec du volume, foncées à la racine. Le crâne est fermé au-dessus de la ligne des cheveux, les mèches de nuque cassent le bord et la frange encadre le visage. Planche : `coiffures_v2.png`. |
+| Rues animées | 26 villageois qui marchent et s'arrêtent (`KonohaFolkFX`) ; linge sur des cordes dans les ruelles ; nobori devant les boutiques ; étals modelés à la place des blocs (`market_stall`, `barrel`). |
+| Bâtiments différents | Chaque maison a son plâtre, choisi dans la palette de son quartier, et les toits changent de couleur par quartier (`KonohaLifeFX.tintHouses`). Le modèle de tour (`tower_house`, 28 de haut) est prêt et attend une ligne du DEV dans `Hub.LAYOUT_STANDIN`. |
+| Arrangement | 70 jardinets (un arbre, parfois une lanterne de pierre) dans les vides entre les maisons. Le plan validé ne bouge pas. |
+
 ## Notes des clips (`clip_grades`)
 
 - AirJump : 9,4 à 9,7.
