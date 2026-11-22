@@ -11,6 +11,11 @@ tous les dos).
 
     python3 tools/tenues/planche.py <captures> <sortie> [<place>]
     python3 tools/tenues/planche.py --avant-apres <captures avant> <captures après> <sortie>.jpg [<mot avant> <mot après>]
+    python3 tools/tenues/planche.py --cheveux <captures> <sortie>.jpg [<place>]
+
+La troisième forme fait le nuancier des couleurs de cheveux de la boutique
+(Shared/CatalogStyle) : une ligne par couleur, les têtes des avatars
+recadrées dans les captures Hair_<id>_front.jpg (Cabine.hairLooks).
 
 La seconde forme met côte à côte, tenue par tenue, deux séries de captures
 de la même cabine (deux places) : ce qu'un changement a fait à chaque tenue.
@@ -181,9 +186,84 @@ def compare(before, after, out, view="front", labels=("AVANT", "APRÈS")):
     return out
 
 
+CATALOG_STYLE = os.path.join(HERE, "..", "..", "src", "Shared", "CatalogStyle.luau")
+HEADS = (195, 340)  # the rows of a 725 capture that hold the heads (and Big Bill's cloud)
+
+
+def hair_colours(path=CATALOG_STYLE):
+    """The shop's hair colours, in its order: (id, name, price, rgb or None),
+    read from Shared/CatalogStyle (the DEV's data)."""
+    out = []
+    for line in open(path, encoding="utf-8"):
+        if 'slot="hairColor"' not in line:
+            continue
+        item = re.search(r'id="(\w+)"', line).group(1)
+        name = re.search(r'name="([^"]+)"', line).group(1)
+        ryo = re.search(r"ryo=(\d+)", line)
+        price = (f"{int(ryo.group(1))} Ryō" if ryo else "Robux" if "robux=" in line
+                 else "de base" if "base=true" in line else "gagnée" if "earned" in line else "?")
+        rgb = re.search(r"Hair=rgb\((\d+),(\d+),(\d+)\)", line)
+        out.append((item, name, price, tuple(int(v) for v in rgb.groups()) if rgb else None))
+    return out
+
+
+def hair_sheet(src, out, place=None):
+    """The hair colours on the room's avatars, one row a colour: the heads
+    cropped from the front captures Hair_<id>_front.jpg, the colour's swatch,
+    name and price beside each row, each avatar named above its column."""
+    avatars, _, spacing, dist = room()
+    label_w, gap = 300, 8
+    rows = []
+    for item, name, price, rgb in hair_colours():
+        path = os.path.join(src, f"Hair_{item}_front.jpg")
+        if not os.path.exists(path):
+            continue
+        im = Image.open(path).convert("RGB")
+        w, h = im.size
+        cols = columns("front", avatars, spacing, dist, w, h)
+        xs = [x for x, _ in cols]
+        half = (spacing * ((h / 2) / math.tan(math.radians(FOV / 2))) / dist) * .62
+        x0, x1 = int(min(xs) - half), int(max(xs) + half)
+        crop = im.crop((x0, int(HEADS[0] * h / 725), x1, int(HEADS[1] * h / 725)))
+        rows.append((item, name, price, rgb, crop, [(x - x0, label) for x, label in cols]))
+    if not rows:
+        return None
+    cw = max(r[4].width for r in rows)
+    ch = max(r[4].height for r in rows)
+    head, names = 64, 34
+    sheet = Image.new("RGB", (label_w + cw + 16, head + names + len(rows) * (ch + gap) + 40), PAPER)
+    d = ImageDraw.Draw(sheet)
+    d.text((18, 10), "COULEURS DE CHEVEUX SUR LES 7 AVATARS TYPES", fill=INK, font=font(24))
+    note = "Studio, mode Édition, Outfit.hairColor sur la tenue de base A"
+    if place:
+        note += " ; place " + place
+    d.text((18, 40), note, fill=SOFT, font=font(14))
+    f = font(14)
+    for x, label in rows[0][5]:
+        tw = d.textlength(label, font=f)
+        d.text((label_w + x - tw / 2, head + 8), label, fill=INK, font=f)
+    y = head + names
+    for item, name, price, rgb, crop, _ in rows:
+        sheet.paste(crop, (label_w, y))
+        sw = 34
+        if rgb:
+            d.rectangle((18, y + ch / 2 - sw / 2, 18 + sw, y + ch / 2 + sw / 2), fill=rgb, outline=INK)
+        else:
+            d.rectangle((18, y + ch / 2 - sw / 2, 18 + sw, y + ch / 2 + sw / 2), outline=SOFT)
+        d.text((64, y + ch / 2 - 22), name, fill=INK, font=font(17))
+        d.text((64, y + ch / 2 + 2), price, fill=SOFT, font=font(14))
+        y += ch + gap
+    d.text((18, y + 8), "Korblox, Garçon Roblox et Bloc R15 n'ont pas de cheveux : la couleur ne se voit pas sur eux.",
+           fill=SOFT, font=font(14))
+    sheet.save(out, quality=86, optimize=True)
+    return out
+
+
 if __name__ == "__main__":
     args = sys.argv[1:]
-    if args[:1] == ["--avant-apres"] and len(args) in (4, 6):
+    if args[:1] == ["--cheveux"] and len(args) in (3, 4):
+        print(hair_sheet(*args[1:]))
+    elif args[:1] == ["--avant-apres"] and len(args) in (4, 6):
         labels = tuple(args[4:6]) if len(args) == 6 else ("AVANT", "APRÈS")
         for view, suffix in (("front", "face"), ("back", "dos")):
             out = args[3].replace(".jpg", "") + f"-{suffix}.jpg"
