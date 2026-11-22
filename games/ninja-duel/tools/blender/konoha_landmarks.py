@@ -532,7 +532,7 @@ def barrel():
 
 # (training_dummy and kunai_target go into konoha_models' TrainingProps)
 # Placed by the client (Client/KonohaLifeFX), not tagged by Server/Hub: written apart
-# (Client/TrainingMeshData) so HubMeshData keeps only what HubDress names.
+# (Client/PropMeshData) so HubMeshData keeps only what HubDress names.
 PROPS_OUT = ["kunai_board", "market_stall", "barrel"]
 
 MODELS = {

@@ -71,14 +71,30 @@ def build(layout):
             continue
         # konoha_models builds in the Roblox frame; blender() is its export turn
         protos[name] = [nd_mesh.to_blender(p, link=False) for p in K.blender(K.MODELS[name]())]
+        for proto in protos[name]:   # (22/11) the client's tint (a part colour multiplies the vertex colours)
+            for mat in proto.data.materials:
+                nt = mat.node_tree
+                bsdf = nt.nodes["Principled BSDF"]
+                vc = [n for n in nt.nodes if n.type == "VERTEX_COLOR"][0]
+                oi = nt.nodes.new("ShaderNodeObjectInfo")
+                mix = nt.nodes.new("ShaderNodeMix")
+                mix.data_type = "RGBA"
+                mix.blend_type = "MULTIPLY"
+                mix.inputs[0].default_value = 1
+                nt.links.new(vc.outputs["Color"], mix.inputs[6])
+                nt.links.new(oi.outputs["Color"], mix.inputs[7])
+                nt.links.new(mix.outputs[2], bsdf.inputs["Base Color"])
     for c in layout["copies"]:
         if c["name"] not in protos:
             continue
         s = c["scale"]
         m = TO_BL @ shift @ cframe(c["cf"]) @ Matrix.Diagonal((s[0], s[1], s[2], 1)) @ TO_RBX
+        tint = c.get("tint") or {}
         for proto in protos[c["name"]]:
             ob = bpy.data.objects.new(c["name"], proto.data)
             ob.matrix_world = m
+            t = tint.get(proto.data.name.split(".")[0])
+            ob.color = tuple(x ** 2.2 for x in t) + (1,) if t else (1, 1, 1, 1)
             col.objects.link(ob)
     # the parts that stay seen: boxes, discs, balls (unit primitives placed
     # as Roblox does: CFrame * size; a Roblox cylinder lies along its x)
