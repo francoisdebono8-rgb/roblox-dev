@@ -825,6 +825,19 @@ def skull(pc, front=1.9, r=(.67, .69), top=.78, y0=.02, z_off=.03, hairline=.42)
     loft(pc, rows_cap, o.shade(.8, .05), cap0=False, cap1=True)
 
 
+
+def nape(pc, length=.38, width=.36, out=.35, spread=150, count=9, el=8, flow=(0, 0, 0)):
+    """Locks hanging round the back and the sides under the crown: the cap's lower edge
+    becomes a ragged line of tips, not a hat's brim."""
+    for k in range(count):
+        az = -spread + 2 * spread * k / (count - 1)
+        root = scalp(az, el, r=.6)
+        n = (root - HEAD_C)
+        n.y = 0
+        n.normalize()
+        lock(pc, root, n * out + Vector((0, -1, 0)) + Vector(flow), length, width, thick=.09, bend=(0, 0, 0))
+
+
 def fringe(pc, xs, y=.5, length=.42, width=.3, down=(0, -1, -.35), spread=.25):
     """Locks over the brow, from the hairline down toward the eyes (never over them)."""
     for x in xs:
@@ -847,6 +860,7 @@ def item_hair_spiky():
     # over the ears: short locks down and out
     for x in (-1, 1):
         lock(h, scalp(x * 100, -5), (x * .8, -.7, .1), .4, .3)
+    nape(h, length=.42, out=.6)
     fringe(h, (-.36, -.12, .12, .36), length=.48, width=.36)
     return o.items
 
@@ -865,6 +879,7 @@ def item_hair_swept():
     for x in (-1, 1):
         lock(h, (x * .44, .5, -.5), (x * .12, -1, -.18), .85, .3, thick=.08, bend=(x * .05, 0, -.05))
     lock(h, (.05, .52, -.56), (.15, -1, -.35), .45, .26, thick=.08)
+    nape(h, length=.36, out=.9, spread=120, count=7, flow=(0, .3, .4))
     return o.items
 
 
@@ -964,6 +979,7 @@ def item_hair_tilted():
     for az, el in ((0, 25), (40, 20), (-40, 22), (80, 30), (-80, 30), (130, 40), (-130, 40),
                    (0, 55), (45, 55), (-45, 55), (95, 60), (-95, 60), (160, 62), (-160, 62), (20, 82), (-60, 80)):
         lock(h, scalp(az, el), side + (scalp(az, el) - HEAD_C) * .6, rng.uniform(.7, .9), .5, thick=.12, bend=(-.15, .05, 0))
+    nape(h, length=.36, out=.5, flow=(-.4, 0, 0))
     fringe(h, (-.3, 0, .3), length=.4, width=.3, down=(-.5, -1, -.3), spread=.1)
     return o.items
 
