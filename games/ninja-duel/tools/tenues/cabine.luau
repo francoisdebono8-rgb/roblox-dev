@@ -60,26 +60,6 @@ Cabine.LOOKS={
 	Accessoires2={top="TopTunicNavy",bottom="BottomPantsDark",arms="ArmsWraps",feet="FeetSandals",headband="HeadbandNeck",
 		mask="MaskFox",cape="CloakHooded",back="BackSword"},
 }
--- (21/11, step 3, OUTILLEUR 4) The hairstyles and their colours, as soon as
--- the shop sells them (DEV 2: the slots, ANIMATEUR: the content): one look
--- per item of a hair slot, on the simple outfit (BaseA), so the sheet shows
--- each one on the seven avatars. Empty until the slots exist.
-Cabine.HAIR_SLOTS={"hair","hairstyle","hairColor","haircolor"}
-function Cabine.hairLooks()
-	local looks,order={}, {}
-	local ok,Shop=pcall(function() return require(RS:WaitForChild("NinjaDuel"):WaitForChild("Shop")) end)
-	if not ok or type(Shop)~="table" or not Shop.Slots then return looks,order end
-	for _,slot in Cabine.HAIR_SLOTS do
-		if Shop.Slots[slot] then
-			for _,item in Shop.inSlot(slot) do
-				local look=table.clone(BASE_A);look[slot]=item.id
-				local name="Hair_"..tostring(item.id)
-				looks[name]=look;table.insert(order,name)
-			end
-		end
-	end
-	return looks,order
-end
 Cabine.ORDER={"SetNaruto","SetSasuke","SetLee","SetNeji","SetGaara","SetKakashi","SetItachi","SetMinato","BaseA","BaseB","BaseC","Accessoires",
 	"SetEmberMonk","SetMistHunter","SetStormCourier","SetShadowScout","SetLeafMedic","SetSandNomad","Accessoires2"}
 
@@ -223,7 +203,7 @@ end
 -- Dresses every avatar of the room in a look (Cabine.LOOKS[name], or a table
 -- of slot -> item id). Returns, per avatar, the pieces put on.
 function Cabine.dress(name)
-	local looks=if type(name)=="table" then name else Cabine.LOOKS[name] or (Cabine.hairLooks())[name]
+	local looks=if type(name)=="table" then name else Cabine.LOOKS[name]
 	assert(looks,"no look "..tostring(name))
 	local Outfit=require(Server.Outfit)
 	local Headband=require(Server.Headband)

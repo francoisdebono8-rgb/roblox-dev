@@ -5,7 +5,6 @@ then one call.
     python3 tools/tenues/studio_code.py setup             builds the avatars
     python3 tools/tenues/studio_code.py dress SetNaruto    dresses them in a look
     python3 tools/tenues/studio_code.py camera front|back  where to capture from
-    python3 tools/tenues/studio_code.py hairs              the hair looks to dress (one per article of the shop's hair slots)
 """
 import json
 import os
@@ -19,8 +18,6 @@ if args[0] == "setup":
     call = "Cabine.setup()"
 elif args[0] == "dress":
     call = f"Cabine.dress({json.dumps(args[1])})"
-elif args[0] == "hairs":
-    call = "select(2,Cabine.hairLooks())"
 elif args[0] == "camera":
     call = f"Cabine.camera({json.dumps(args[1] if len(args) > 1 else 'front')})"
 else:

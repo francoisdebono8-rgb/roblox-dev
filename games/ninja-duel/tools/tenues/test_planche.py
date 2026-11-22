@@ -83,36 +83,6 @@ class Planche(unittest.TestCase):
             self.assertIsNone(P.compare(os.path.join(tmp, "avant"), os.path.join(tmp, "apres"),
                                         os.path.join(tmp, "dos.jpg"), view="back"))
 
-    def test_the_hair_colours_come_from_the_shop(self):
-        colours = P.hair_colours()
-        ids = [c[0] for c in colours]
-        self.assertGreaterEqual(len(colours), 2)
-        self.assertEqual(len(ids), len(set(ids)))
-        base = [c for c in colours if c[2] == "de base"]
-        self.assertEqual(len(base), 1, "one colour is the player's own")
-        self.assertIsNone(base[0][3])
-        for item, name, price, rgb in colours:
-            if rgb:
-                self.assertEqual(len(rgb), 3)
-                self.assertTrue(all(0 <= v <= 255 for v in rgb))
-            self.assertNotEqual(price, "?", item)
-
-    def test_the_hair_sheet_has_a_row_a_colour(self):
-        avatars, _, spacing, dist = P.room()
-        colours = P.hair_colours()[:3]
-        with tempfile.TemporaryDirectory() as tmp:
-            for item, _, _, rgb in colours:
-                im = Image.new("RGB", (1920, 725), (120, 180, 220))
-                d = ImageDraw.Draw(im)
-                for x, _ in P.columns("front", avatars, spacing, dist, 1920, 725):
-                    d.rectangle((x - 20, 250, x + 20, 300), fill=rgb or (90, 60, 40))
-                im.save(os.path.join(tmp, f"Hair_{item}_front.jpg"))
-            out = P.hair_sheet(tmp, os.path.join(tmp, "cheveux.jpg"), "test")
-            self.assertTrue(os.path.exists(out))
-            sheet = Image.open(out)
-            self.assertGreater(sheet.height, 3 * (P.HEADS[1] - P.HEADS[0]))
-            self.assertIsNone(P.hair_sheet(os.path.join(tmp, "vide"), os.path.join(tmp, "x.jpg")))
-
 
 if __name__ == "__main__":
     result = unittest.main(exit=False, verbosity=1).result

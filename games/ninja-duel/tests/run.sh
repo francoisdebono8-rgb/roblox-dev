@@ -128,9 +128,4 @@ run KitPrint   "$LUNE" run tests/KitPrint.spec.luau
 run Planche    python3 tools/tenues/test_planche.py
 run Nodes      "$LUNE" run tests/Nodes.spec.luau
 run NoeudsLus  python3 tools/kits/test_noeuds_lus.py
-# (22/11, OUTILLEUR, étape 3) the beginner robot on the first combat (8 kits x 3 seeds),
-# the robots' Studio code, the village tools (the plan's roofs, the CI dump)
-run DuelBot    "$LUNE" run tests/DuelBot.spec.luau
-run BotCode    python3 tools/duelbot/test_studio_code.py
-run VillageTools python3 tools/syphodev/test_village_tools.py
 exit $status

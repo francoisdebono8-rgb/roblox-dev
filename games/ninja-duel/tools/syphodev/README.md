@@ -67,30 +67,7 @@ python3 tools/syphodev/konoha_prove.py work/map/konoha_spec.json work/map/konoha
 `konoha_prove.py` lance le prouveur du skill sans le modifier. Il ajoute seulement un index
 spatial à deux de ses boucles : le prouveur seul n'avait pas fini après 14 minutes sur 711 pièces.
 Le profil de marche est `konoha_profile.json` : gravité 140, marche 16, course 36, saut 56 et
-second saut 54 (`HubClient`). Depuis le 22/11, il contient aussi la course sur les murs
-(`abilities.wallClimb`, 36 studs : `Client/HubMove`, CLIMB 38 pendant 0,95 s). Le prouveur s'en
-sert dans sa passe large : un toit marqué « only via the generous envelope » est donc un toit où
-il faut courir sur le mur (ou sauter en courant).
-
-### Sans lune dans la session (OUTILLEUR, 21-22/11)
-
-```bash
-# le plan seul, maisons comprises comme toits à atteindre : à pied / avec élan / jamais, et les maisons dans les murs
-python3 tools/syphodev/konoha_plan_roofs.py work/map/plan
-# le village construit : le dump se fait sur GitHub, sur une branche de travail (jamais la branche commune)
-python3 tools/syphodev/ci_dump.py --fetch <run id> work/map/konoha.json      # le mode d'emploi est en tête du fichier
-```
-
-Le 22/11, sur le nouveau Konoha construit (554f1dec : 2 080 pièces, 981 solides, 179 surfaces à atteindre) :
-- 2 toits ne sont jamais atteignables :
-  - la porte (65 studs) ;
-  - la résidence du Hokage (52 studs), plus haute que la course sur le mur (36).
-- 34 toits ont besoin de la course sur le mur, surtout les maisons-réservoirs et les immeubles (28,6). Le robot du village (`tools/villagebot`) y monte en 1,3 s.
-- L'escalier vers les visages (`Step_13` à `Step_24`) est dans les murs de la résidence : jusqu'à 11,7 studs de chevauchement, et 9 marches sans endroit où poser le pied.
-- Autres résultats :
-  - 27 paires de pièces qui se traversent ;
-  - 3 surfaces qui scintillent : le perchoir de Flashstep et la terrasse des visages, à 31,2 ;
-  - 36 % de vide, au-delà du budget de 22 %, surtout à l'ouest, vers x -370.
+second saut 54 (`HubClient`).
 
 **Interface :** `ui_probe.luau` s'exécute côté client pendant un Play, par le MCP Studio
 (`execute_luau`, datamodel Client). Choisir d'abord l'appareil avec `set_device_simulator`
