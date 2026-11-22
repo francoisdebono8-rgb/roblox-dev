@@ -882,31 +882,22 @@ def exam_hall():
 
 
 def training_props():
-    wdp = Piece("Wood", "Wood", flat=True)
-    rope = Piece("Rope", "Fabric")
-    tgt = Piece("Target", "Wood", flat=True)
-    metal = Piece("Kunai", "Metal", flat=True)
-    box(wdp, T(-150, 3.5, 16), (1.4, 7, 1.4), lambda p, f: wood(p, f, C["wood"]))
-    box(wdp, T(-150, 5.4, 16), (6, 1, 1), lambda p, f: wood(p, f, C["wood"]))
-    ellipsoid(wdp, (-150, 7.6, 16), (.9, 1, .9), C["woodLight"], seg=8, rings=5)
-    for y in (2.5, 4.0, 6.2):
-        cyl(rope, T(-150, y, 16), .78, .35, C["rope"], sides=10)
-    for k in range(5):
-        box(wdp, T(-150, 1.5 + k * 1.1, 16) @ Ry(k * 1.1) @ T(.72, 0, 0), (.08, .12, .7), rgb(196, 160, 112))
-    box(wdp, T(-162, 3, 30), (.8, 6, .8), lambda p, f: wood(p, f, C["woodDark"]))
-    rings = []
-    for r in (2.5, 1.8, 1.1, .5):
-        rings.append([Vector((-161.6, 5.6 + math.sin(a) * r, 30 + math.cos(a) * r)) for a in [i / 20 * math.tau for i in range(20)]])
-    for ci, r in enumerate((2.5, 1.8, 1.1, .5)):
-        col = (C["cloth"], C["red"], C["cloth"], C["red"])[ci]
-        rr = [[Vector((-161.6 + .2 + .01 * ci, 5.6 + math.sin(a) * rad, 30 + math.cos(a) * rad)) for a in [i / 20 * math.tau for i in range(20)]] for rad in (r, r - .7 if r > .5 else .01)]
-        loft(tgt, rr, col, closed=True, cap0=False, cap1=False)
-    cyl(tgt, T(-161.6, 5.6, 30) @ Rz(math.pi / 2) @ T(0, -.2, 0), 2.6, .4, C["woodLight"], sides=20)
-    for k, (dy, dz) in enumerate(((.4, -.6), (-.8, .9), (1.3, .5))):
-        b = Vector((-161.4 + .2, 5.6 + dy, 30 + dz))
-        tube(metal, [b, b + Vector((.9, .1, 0))], .05, C["iron"], sides=5)
-        torus(metal, (b.x + 1.05, b.y + .1, b.z), Matrix.Rotation(math.pi / 2, 3, "Z"), .1, .025, C["iron"], seg=10, sides=4)
-    return [wdp, rope, tgt, metal]
+    """Training Ground Three's dummy and kunai target (21/11, étape 3: the new models of
+    konoha_landmarks, where Server/Hub's TrainingProps unit stands them: the dummy at
+    (-150, 16), the target at (-162, 30), both facing the ground's duel ring, +x)."""
+    import konoha_landmarks as KL
+    out = {}
+    for fn, at in ((KL.training_dummy, (-150, 0, 16)), (KL.kunai_target, (-162, 0, 30))):
+        for pc in fn():
+            pc.transform(T(*at) @ Ry(math.pi / 2))
+            if pc.name in out:
+                base, o = out[pc.name], len(out[pc.name].v)
+                base.v += pc.v
+                base.c += pc.c
+                base.f += [tuple(k + o for k in f) for f in pc.f]
+            else:
+                out[pc.name] = pc
+    return list(out.values())
 
 
 def memorial_stone():

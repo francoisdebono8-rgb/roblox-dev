@@ -465,9 +465,10 @@ def kunai_board():
     return KH.done(walls, timber, glass, tiles, cloth, metal)
 
 
+# (training_dummy and kunai_target go into konoha_models' TrainingProps)
 # Placed by the client (Client/KonohaLifeFX), not tagged by Server/Hub: written apart
 # (Client/TrainingMeshData) so HubMeshData keeps only what HubDress names.
-PROPS_OUT = ["training_dummy", "kunai_target", "stump_target", "kunai_board"]
+PROPS_OUT = ["kunai_board"]
 
 MODELS = {
     "hokage_residence": hokage_residence, "hospital": hospital, "academy_annex": academy_annex,
