@@ -28,6 +28,7 @@ Bot.WALK,Bot.RUN,Bot.JUMP,Bot.LEAP,Bot.LEAP_AFTER=16,36,56,54,.18
 Bot.ARRIVE=4            -- studs from a place: arrived
 Bot.STUCK_TIME=1.5      -- seconds without half a stud of progress: stuck
 Bot.LEG_LIMIT=90        -- a leg that takes longer is given up
+Bot.POI_NEAR=14         -- a point of interest of the plan (often a building): at its door
 
 local results={routes={},roofs={},places={}}
 local function note(state) pcall(function() player:SetAttribute("NDVillageState",state) end) end
@@ -99,10 +100,13 @@ function Bot.places()
 	if HubMap.Training then add("training",HubMap.Training.at) end
 	if HubMap.Market then add("market",HubMap.Market.at) end
 	-- the new village's points of interest, when it is built from its plan
+	-- (Config.Hub.Layout "konoha2", 21/11: the village of the plan in every place)
 	local ok,Layout=pcall(function() return require(Shared:FindFirstChild("KonohaLayout")) end)
-	if ok and Layout and Layout.Pois and (Bot.pois or Layout.Built) then
+	local built=Layout and Layout.Built
+	pcall(function() built=built or require(Shared.Config).Hub.Layout=="konoha2" end)
+	if ok and Layout and Layout.Pois and (Bot.pois or built) then
 		for _,poi in Layout.Pois do
-			if not poi.far then add("poi:"..poi.id,Vector3.new(poi.at.X,0,poi.at.Y)*(HubMap.Scale or 1)) end
+			if not poi.far then table.insert(list,{name="poi:"..poi.id,pos=HubMap.world(Vector3.new(poi.at.X,0,poi.at.Y)*(HubMap.Scale or 1)),near=Bot.POI_NEAR}) end
 		end
 	end
 	return list
@@ -111,7 +115,7 @@ end
 -- Walk (at a run) to a place, along a path the engine computes, the way a
 -- player would steer: at the next point, a jump where the path says so or
 -- where he stopped moving. Returns what the leg met.
-function Bot.walkTo(goal,label)
+function Bot.walkTo(goal,label,near)
 	local _,hum,root=body()
 	local leg={to=label,from=nil,arrived=false,t=0,length=0,stuck={},recompute=0,fell=false}
 	if not root then leg.error="no body";return leg end
@@ -135,7 +139,7 @@ function Bot.walkTo(goal,label)
 			if wp.Action==Enum.PathWaypointAction.Jump then drive.jump=true end
 			local since,best=os.clock(),flat(target-root.Position).Magnitude
 			local tries=0
-			while flat(target-root.Position).Magnitude>(if i==#points then Bot.ARRIVE else 2.5) do
+			while flat(target-root.Position).Magnitude>(if i==#points then (near or Bot.ARRIVE) else 2.5) do
 				if os.clock()-t0>Bot.LEG_LIMIT then break end
 				local d=flat(target-root.Position)
 				drive.dir=if d.Magnitude>.01 then d.Unit else Vector3.zero
@@ -162,8 +166,8 @@ function Bot.walkTo(goal,label)
 		end
 		-- arrived: next to it, and at its height (a balcony, a shrine, the faces)
 		local high=math.abs((root.Position.Y-3)-goal.Y)
-		if flat(goal-root.Position).Magnitude<=Bot.ARRIVE+1 and high<=6 then leg.arrived=true;break end
-		if flat(goal-root.Position).Magnitude<=Bot.ARRIVE+1 then leg.below=r1(goal.Y-(root.Position.Y-3)) end
+		if flat(goal-root.Position).Magnitude<=(near or Bot.ARRIVE)+1 and high<=6 then leg.arrived=true;break end
+		if flat(goal-root.Position).Magnitude<=(near or Bot.ARRIVE)+1 then leg.below=r1(goal.Y-(root.Position.Y-3)) end
 		leg.recompute+=1
 		if leg.straightOnly and not blocked then break end
 	end
@@ -244,12 +248,22 @@ function Bot.jumpHeight()
 	return out
 end
 
--- Get up on a roof as a player does: stand just outside its eave (under it,
--- the head hits the roof), jump straight up, the second jump at the top of
--- the first, and step in over the roof once the feet are above the eave.
+-- Get up on a roof as a player does. Two ways, the first the building allows:
+--   wall  (the new Konoha: a building whose walls are NinjaWall) run at the
+--         wall, jump into it: Client/HubMove runs him up it and hops him onto
+--         the roof at its top;
+--   eave  stand just outside its eave (under it, the head hits the roof), jump
+--         straight up, the second jump at the top of the first, and step in
+--         over the roof once the feet are above the eave.
 -- Three tries from the side the path arrives at.
 Bot.FEET=3.8
 Bot.OUTSIDE=2.5
+local rayParams
+local function ray(from,along)
+	if not rayParams then rayParams=RaycastParams.new();rayParams.FilterType=Enum.RaycastFilterType.Exclude end
+	rayParams.FilterDescendantsInstances={player.Character}
+	return workspace:Raycast(from,along,rayParams)
+end
 function Bot.climb(roof)
 	local part=roof.part
 	local res={name=(part.Parent and part.Parent.Name or "?").."/"..part.Name,eave=r1(roof.eave),ridge=r1(roof.ridge),reached=false,tries=0,t=0}
@@ -257,6 +271,8 @@ function Bot.climb(roof)
 	local centre=part.Position
 	local ground=Vector3.new(centre.X,HubMap.Origin.Y,centre.Z)
 	local edge=math.max(part.Size.X,part.Size.Z)/2+6
+	local walls=part.Parent and part.Parent:FindFirstChild("Walls")
+	res.way=if walls and walls:GetAttribute("NinjaWall") then "wall" else "eave"
 	-- how far outside the roof's footprint a point is (0 or less: under it),
 	-- taken at the eave's height so that a sloped roof is measured level
 	local function outside(pos,level)
@@ -272,58 +288,206 @@ function Bot.climb(roof)
 	local foot=ground+side*edge
 	local leg=Bot.walkTo(foot,res.name)
 	res.approach=leg.t;res.approachArrived=leg.arrived
+	local top,landed=0,false
+	-- the top of the feet, and whether he stood on the roof at any moment
+	local function watch()
+		local feet=root.Position.Y-HubMap.Origin.Y-Bot.FEET
+		top=math.max(top,feet)
+		local _,hum=body()
+		if outside(root.Position)<=1 and feet>=roof.eave-1 and hum and hum.FloorMaterial~=Enum.Material.Air then landed=true end
+	end
 	for try=1,3 do
 		res.tries=try
 		local _,_,now=body()
 		if not now then break end
 		root=now
-		local top=0
-		local landed=false
-		-- the top of the feet, and whether he stood on the roof at any moment
-		local function watch()
-			local feet=root.Position.Y-HubMap.Origin.Y-Bot.FEET
-			top=math.max(top,feet)
-			local _,hum=body()
-			if outside(root.Position)<=1 and feet>=roof.eave-1 and hum and hum.FloorMaterial~=Enum.Material.Air then landed=true end
-		end
-		-- walk in to just outside the eave, or until something stops him
-		local since,best=os.clock(),outside(root.Position,true)
-		while os.clock()-since<.4 and outside(root.Position,true)>Bot.OUTSIDE do
-			local d=flat(centre-root.Position)
-			drive.dir=if d.Magnitude>1 then d.Unit else Vector3.zero
-			task.wait();watch()
-			local o=outside(root.Position,true)
-			if o<best-.3 then best=o;since=os.clock() end
-		end
-		-- under the eave already: step back out from under it
-		local back=os.clock()
-		while os.clock()-back<1.5 and outside(root.Position,true)<Bot.OUTSIDE-.8 do
-			local d=flat(root.Position-centre)
-			drive.dir=if d.Magnitude>.1 then d.Unit else side
-			task.wait();watch()
-		end
-		res.from=r1(outside(root.Position,true))
-		-- straight up, the second jump at the top, in over the roof once above it
-		drive.dir=Vector3.zero
-		drive.jump=true
-		local up=os.clock()
-		local leapt=false
-		while os.clock()-up<2.4 do
-			task.wait();watch()
-			local feet=root.Position.Y-HubMap.Origin.Y-Bot.FEET
-			local d=flat(centre-root.Position)
-			drive.dir=if feet>roof.eave+.3 and d.Magnitude>1.5 then d.Unit else Vector3.zero
-			if not leapt and os.clock()-up>.25 and root.AssemblyLinearVelocity.Y<3 then drive.jump=true;leapt=true end
-			if landed then break end
+		top,landed=0,false
+		if res.way=="wall" then
+			-- straight at the wall; at it, the jump into it
+			local t1=os.clock()
+			local jumped=false
+			while os.clock()-t1<4.5 and not landed do
+				local d=flat(centre-root.Position)
+				drive.dir=if d.Magnitude>1 then d.Unit else Vector3.zero
+				task.wait();watch()
+				if not jumped then
+					local hit=ray(root.Position,drive.dir*3.5)
+					if hit and hit.Instance==walls then drive.jump=true;jumped=true;res.climbAt=r1(os.clock()-t1) end
+				end
+			end
+		else
+			-- walk in to just outside the eave, or until something stops him
+			local since,best=os.clock(),outside(root.Position,true)
+			while os.clock()-since<.4 and outside(root.Position,true)>Bot.OUTSIDE do
+				local d=flat(centre-root.Position)
+				drive.dir=if d.Magnitude>1 then d.Unit else Vector3.zero
+				task.wait();watch()
+				local o=outside(root.Position,true)
+				if o<best-.3 then best=o;since=os.clock() end
+			end
+			-- under the eave already: step back out from under it
+			local back=os.clock()
+			while os.clock()-back<1.5 and outside(root.Position,true)<Bot.OUTSIDE-.8 do
+				local d=flat(root.Position-centre)
+				drive.dir=if d.Magnitude>.1 then d.Unit else side
+				task.wait();watch()
+			end
+			res.from=r1(outside(root.Position,true))
+			-- straight up, the second jump at the top, in over the roof once above it
+			drive.dir=Vector3.zero
+			drive.jump=true
+			local up=os.clock()
+			local leapt=false
+			while os.clock()-up<2.4 do
+				task.wait();watch()
+				local feet=root.Position.Y-HubMap.Origin.Y-Bot.FEET
+				local d=flat(centre-root.Position)
+				drive.dir=if feet>roof.eave+.3 and d.Magnitude>1.5 then d.Unit else Vector3.zero
+				if not leapt and os.clock()-up>.25 and root.AssemblyLinearVelocity.Y<3 then drive.jump=true;leapt=true end
+				if landed then break end
+			end
 		end
 		drive.dir=Vector3.zero
 		task.wait(.3);watch()
 		res.highest=r1(math.max(res.highest or 0,top))
-		if landed then res.reached=true;break end
+		if landed then res.reached=true;res.upIn=r1(os.clock()-t0-(res.approach or 0));break end
 		if try<3 then Bot.walkTo(foot,res.name) end
 	end
 	res.t=r1(os.clock()-t0)
 	return res
+end
+
+-- ------------------------------------------------------------------ the race
+-- The rooftop race (Shared/Solo, Server/SoloPlay), run as a player who knows
+-- the route: from the post, ring after ring, straight at each one. A wall in
+-- the way with the ring above: run at it and jump into it (Client/HubMove runs
+-- him up it); an edge with the ring not far below: jump, and the second jump
+-- at the top of the jump; something over his head with the ring above: out
+-- from under it first. The server says when a ring is passed
+-- (NinjaSoloNext) and gives the time (NinjaSoloEnd, NinjaSoloTime).
+Bot.RING_LIMIT=40
+local function solo() return require(Shared:WaitForChild("Solo")) end
+-- The server's epoch for this player (an action of another epoch is
+-- dropped): "Ready" in the village makes it send it again.
+local epoch,listening=nil,nil
+local function learnEpoch()
+	local remote=Shared:WaitForChild("Action")
+	if not listening then
+		listening=remote.OnClientEvent:Connect(function(d) if type(d)=="table" and type(d.epoch)=="number" then epoch=d.epoch end end)
+	end
+	if epoch==nil then
+		remote:FireServer({action="Ready"})
+		local t=os.clock()
+		while epoch==nil and os.clock()-t<3 do task.wait() end
+	end
+	return epoch
+end
+local function action(name,payload)
+	payload=payload or {}
+	payload.action=name
+	payload.epoch=learnEpoch()
+	Shared:WaitForChild("Action"):FireServer(payload)
+end
+-- Steer at `goal` (a world position: the root over a roof) until `done()`.
+-- Returns true, or false and why.
+function Bot.toward(goal,limit,done)
+	local t0=os.clock()
+	local since,best=os.clock(),math.huge
+	local stalls,jumpedAt,leapPending=0,0,false
+	local wallDir,wallUntil=nil,0
+	local outFrom=nil
+	while os.clock()-t0<limit do
+		if done() then return true end
+		local _,hum,root=body()
+		if not root then return false,"no body" end
+		local feet=root.Position.Y-Bot.FEET
+		local d=flat(goal-root.Position)
+		local want=if d.Magnitude>.5 then d.Unit else Vector3.zero
+		local grounded=hum.FloorMaterial~=Enum.Material.Air
+		local above=goal.Y-Bot.FEET>feet+2   -- the ring's roof is above his feet
+		if os.clock()<wallUntil and wallDir then
+			drive.dir=wallDir                  -- straight into the wall he runs up
+		elseif outFrom then
+			-- out from under what covers him, then up
+			drive.dir=outFrom
+			if not ray(root.Position,Vector3.new(0,9,0)) then outFrom=nil;drive.dir=Vector3.zero;drive.jump=true;jumpedAt=os.clock();leapPending=true end
+		else
+			drive.dir=want
+			if grounded and os.clock()-jumpedAt>.45 then
+				local hit=ray(root.Position,want*3.2)
+				local over=ray(root.Position,Vector3.new(0,9,0))
+				if above and over and d.Magnitude<40 then
+					outFrom=-want                  -- under a deck or a roof: out first
+				elseif hit and above then
+					wallDir=-Vector3.new(hit.Normal.X,0,hit.Normal.Z).Unit
+					wallUntil=os.clock()+1.6
+					drive.dir=wallDir;drive.jump=true;jumpedAt=os.clock()
+				elseif above and ray(root.Position+want*3,Vector3.new(0,9,0)) then
+					-- the edge of a deck just ahead, over his head: straight up, then in
+					drive.dir=Vector3.zero;drive.jump=true;jumpedAt=os.clock();leapPending=true
+				elseif d.Magnitude>6 and goal.Y-Bot.FEET>feet-8 and not ray(root.Position+want*3,Vector3.new(0,-(Bot.FEET+5),0)) then
+					-- the edge of a roof, the ring not far below: across
+					drive.jump=true;jumpedAt=os.clock();leapPending=true
+				end
+			end
+		end
+		if leapPending and not grounded and os.clock()-jumpedAt>.25 and root.AssemblyLinearVelocity.Y<3 then
+			drive.jump=true;leapPending=false
+		end
+		-- in the air over the goal's height: in toward it
+		if not grounded and feet>goal.Y-Bot.FEET+.3 and os.clock()>=wallUntil then drive.dir=want end
+		task.wait()
+		local dist=(goal-root.Position).Magnitude
+		if dist<best-.5 then best=dist;since=os.clock()
+		elseif os.clock()-since>1.4 then
+			stalls+=1;since=os.clock();outFrom=nil
+			drive.jump=true;jumpedAt=os.clock();leapPending=true
+			if stalls>8 then return false,"stalled" end
+		end
+	end
+	return false,"time"
+end
+function Bot.race()
+	local S=solo()
+	local out={rings={},started=false}
+	local post=S.startPost()
+	-- to the post, by the streets
+	local leg=Bot.walkTo(post,"race post",S.Race.startReach*(HubMap.Scale or 1)*.6)
+	out.toPost=leg.t
+	player:SetAttribute("NinjaSoloEnd",nil)
+	local serial=player:GetAttribute("NinjaSoloSerial") or 0
+	action("SoloRace",{})
+	local t=os.clock()
+	while os.clock()-t<3 and player:GetAttribute("NinjaSolo")~="race" do task.wait() end
+	if player:GetAttribute("NinjaSolo")~="race" then out.error="the race did not start";return out end
+	out.started=true
+	-- the countdown: he waits at the post
+	local at=player:GetAttribute("NinjaSoloAt") or 0
+	while workspace:GetServerTimeNow()<at do task.wait() end
+	local go=os.clock()
+	for i in S.Race.rings do
+		local r=S.Race.rings[i]
+		local goal=S.world(r[1],r[2],r[3])+Vector3.new(0,Bot.FEET,0)
+		note(string.format("race ring %d",i))
+		local t1=os.clock()
+		local ok,why=Bot.toward(goal,Bot.RING_LIMIT,function()
+			return (player:GetAttribute("NinjaSoloNext") or 1)>i or (player:GetAttribute("NinjaSoloSerial") or 0)>serial
+		end)
+		local _,_,root=body()
+		local rel=root and root.Position-HubMap.Origin
+		table.insert(out.rings,{ring=i,ok=ok,why=why,split=r1(os.clock()-t1),at=r1(os.clock()-go),
+			where=rel and {r1(rel.X),r1(rel.Y),r1(rel.Z)} or nil,top=r1(r[2]*(HubMap.Scale or 1))})
+		save()
+		if not ok then action("SoloQuit");break end
+	end
+	drive.dir=Vector3.zero
+	local t2=os.clock()
+	while os.clock()-t2<3 and (player:GetAttribute("NinjaSoloSerial") or 0)<=serial do task.wait() end
+	out.clock=r1(os.clock()-go)
+	out.serverEnd=player:GetAttribute("NinjaSoloEnd")
+	out.serverTime=player:GetAttribute("NinjaSoloTime")
+	out.best=player:GetAttribute("NinjaSoloBest")
+	return out
 end
 
 -- A tour: from where he stands, the nearest place not yet visited, then the
@@ -356,7 +520,14 @@ function Bot.start(plan)
 		if plan.routes~=false then
 			for i,p in Bot.tour(places) do
 				note(string.format("route %d %s",i,p.name))
-				table.insert(results.routes,Bot.walkTo(p.pos,p.name));save()
+				table.insert(results.routes,Bot.walkTo(p.pos,p.name,p.near));save()
+			end
+		end
+		if plan.race then
+			for n=1,plan.race do
+				note("race "..n)
+				results.races=results.races or {}
+				table.insert(results.races,Bot.race());save()
 			end
 		end
 		if plan.jump then

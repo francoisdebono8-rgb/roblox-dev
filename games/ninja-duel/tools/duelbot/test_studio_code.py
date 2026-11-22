@@ -52,7 +52,9 @@ class StudioCode(unittest.TestCase):
     def test_the_village_robot_module(self):
         code = V.install()
         self.assertIn('m.Name="NDVillageBot"', code)
-        self.assertIn("function Bot.walkTo(goal,label)", code)
+        self.assertIn("function Bot.walkTo(goal,label,near)", code)
+        self.assertIn("function Bot.race()", code)
+        self.assertIn("function Bot.toward(goal,limit,done)", code)
         self.assertIn("function Bot.climb(roof)", code)
         self.assertIn("NDVillageLog", code)
 
