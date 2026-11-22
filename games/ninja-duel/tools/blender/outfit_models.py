@@ -1045,7 +1045,7 @@ def render_heads(dst, names=None):
         pieces = built(name)
         cols = dict(NEW_SLOTS.get(name, {}))
         cols.update(catalog_colors(name))
-        for k, turn in enumerate((0, 40, 90, 180)):
+        for k, turn in enumerate((180, 220, 270, 0)):   # front, three-quarter, side, back
             R = Matrix.Rotation(math.radians(turn), 3, "Z")
             off = Vector(((k - 1.5) * 2.6, 0, 0))
             head = Piece("Head", "SmoothPlastic")
@@ -1070,7 +1070,7 @@ def render_heads(dst, names=None):
                 tint = [x / 255 for x in cols.get(slot, (150, 150, 150))]
                 q.c = [tuple(g * t for g, t in zip(cc, tint)) for cc in pc.c]
                 objs.append(to_blender(q))
-        render_set(objs, os.path.join(dst, "%s.png" % name), size=(1600, 460), view=(.05, 1.0, .18), fill=.92, world=(.7, .72, .76))
+        render_set(objs, os.path.join(dst, "%s.png" % name), size=(1600, 460), view=(.05, 1.0, .18), fill=.34, world=(.7, .72, .76))
         print("HEADS", name, flush=True)
 
 
