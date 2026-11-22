@@ -774,9 +774,14 @@ def lock(pc, root, direction, length, width, thick=.09, bend=(0, 0, 0), sections
     rings = []
     for k in range(sections):
         t = (pts[k + 1] - pts[k]).normalized()
-        wa = t.cross(n0)
+        # the width lies round the head (the horizontal tangent at the root), so a spike is a
+        # broad blade seen from the front or the back, never a needle
+        az = Vector((0, 1, 0)).cross(n0)
+        if az.length < .05:
+            az = Vector((1, 0, 0))
+        wa = az - t * az.dot(t)
         if wa.length < .05:
-            wa = t.cross(Vector((1, 0, 0)))
+            wa = t.cross(n0)
         wa.normalize()
         ta = wa.cross(t).normalized()
         s = k / sections
@@ -798,9 +803,26 @@ def lock(pc, root, direction, length, width, thick=.09, bend=(0, 0, 0), sections
     loft(pc, rings, col, cap0=True, cap1=False, tip1=pts[-1])
 
 
-def skull(pc, front=1.9, r=(.67, .69), top=.76, y0=.02, z_off=.03):
-    """The hair's mass over the skull (under the locks), open on the face."""
-    dome(pc, y0, r=r, top=top, rings=8, n=28, front_open=front, z_off=z_off, fat=.3, col=O().shade(.78, .05))
+def skull(pc, front=1.9, r=(.67, .69), top=.78, y0=.02, z_off=.03, hairline=.42):
+    """The hair's mass over the skull (under the locks): closed over the forehead and the crown
+    from the hairline up, open on the face below it (the first set left the forehead bald)."""
+    o = O()
+    n = 28
+    rows_band, rows_cap = [], []
+    for k in range(4):                       # the sides and the back, open on the face
+        y = y0 + (hairline - y0) * k / 3
+        ring = []
+        for i in range(n):
+            t = -math.pi / 2 + front / 2 + (2 * math.pi - front) * i / (n - 1)
+            ring.append(Vector((math.cos(t) * r[0], y, math.sin(t) * r[1] + z_off)))
+        rows_band.append(ring)
+    loft(pc, rows_band, o.shade(.76, .04), cap0=False, cap1=False, closed=False)
+    for k in range(7):                       # the crown, closed
+        u = k / 6
+        a = math.cos(u * math.pi / 2 * .94) ** .3
+        y = hairline + (top - hairline) * math.sin(u * math.pi / 2)
+        rows_cap.append([Vector((math.cos(t) * r[0] * a, y, math.sin(t) * r[1] * a + z_off)) for t in [i / n * math.tau for i in range(n)]])
+    loft(pc, rows_cap, o.shade(.8, .05), cap0=False, cap1=True)
 
 
 def fringe(pc, xs, y=.5, length=.42, width=.3, down=(0, -1, -.35), spread=.25):
@@ -821,11 +843,11 @@ def item_hair_spiky():
                        (20, 78, .7), (-20, 78, .7), (180, 70, .6), (90, 75, .62), (-90, 75, .62)):
         root = scalp(az, el)
         n = (root - HEAD_C).normalized()
-        lock(h, root, n + Vector((0, .35, 0)), ln * rng.uniform(.92, 1.08), .36, bend=(0, .12, 0))
+        lock(h, root, n + Vector((0, .45, 0)), ln * rng.uniform(.92, 1.08), .5, thick=.12, bend=(0, .15, 0))
     # over the ears: short locks down and out
     for x in (-1, 1):
         lock(h, scalp(x * 100, -5), (x * .8, -.7, .1), .4, .3)
-    fringe(h, (-.34, -.04, .28), length=.46, width=.34)
+    fringe(h, (-.36, -.12, .12, .36), length=.48, width=.36)
     return o.items
 
 
@@ -885,7 +907,7 @@ def item_hair_long():
     # the fall down the back: a broad flat sheet, tied near its end
     rows = []
     for (y, w, z) in ((.55, 1.2, .5), (.0, 1.1, .7), (-.7, .85, .78), (-1.4, .5, .8), (-1.75, .3, .8), (-2.2, .42, .8), (-2.45, .08, .78)):
-        rows.append([Vector((math.cos(t) * w / 2, y, z + math.sin(t) * .1)) for t in [i / 14 * math.tau for i in range(14)]])
+        rows.append([Vector((math.cos(t) * w / 2, y, z + math.sin(t) * max(.08, w * .22))) for t in [i / 16 * math.tau for i in range(16)]])
     def col(p, ri):
         g = .74 + .26 * ri / 6
         return (g, g, g)
@@ -920,14 +942,11 @@ def item_hair_buns():
     skull(h)
     from nd_mesh import ellipsoid
     for x in (-.4, .4):
-        ellipsoid(h, Vector((x, .78, .12)), (.3, .28, .3), O().shade(.86, .06), seg=14, rings=9)
-        for k in range(4):              # the bun's wound strands
-            a = k / 4 * math.tau
-            lock(h, (x + math.cos(a) * .2, .86, .12 + math.sin(a) * .2), (-math.sin(a), .1, math.cos(a)), .35, .14, thick=.05, bend=(0, -.15, 0))
+        ellipsoid(h, Vector((x, .84, .12)), (.33, .31, .33), O().shade(.86, .1), seg=16, rings=10)
     tie = o.add("Head", "Tie")
     for x in (-.4, .4):             # a band round each bun's foot
         rows = [[Vector((x + math.cos(t) * r_, y, .12 + math.sin(t) * r_)) for t in [i / 16 * math.tau for i in range(16)]]
-                for (y, r_) in ((.56, .27), (.62, .29), (.68, .27))]
+                for (y, r_) in ((.6, .29), (.66, .31), (.72, .29))]
         loft(tie, rows, O().shade(.9, .03), cap0=False, cap1=False)
     fringe(h, (-.3, -.08, .16, .36), length=.36, width=.26)
     for x in (-1, 1):
@@ -944,7 +963,7 @@ def item_hair_tilted():
     side = Vector((-.85, 1.0, .15))       # everything leans up and to his right (-X)
     for az, el in ((0, 25), (40, 20), (-40, 22), (80, 30), (-80, 30), (130, 40), (-130, 40),
                    (0, 55), (45, 55), (-45, 55), (95, 60), (-95, 60), (160, 62), (-160, 62), (20, 82), (-60, 80)):
-        lock(h, scalp(az, el), side + (scalp(az, el) - HEAD_C) * .6, rng.uniform(.7, .9), .36, bend=(-.15, .05, 0))
+        lock(h, scalp(az, el), side + (scalp(az, el) - HEAD_C) * .6, rng.uniform(.7, .9), .5, thick=.12, bend=(-.15, .05, 0))
     fringe(h, (-.3, 0, .3), length=.4, width=.3, down=(-.5, -1, -.3), spread=.1)
     return o.items
 
