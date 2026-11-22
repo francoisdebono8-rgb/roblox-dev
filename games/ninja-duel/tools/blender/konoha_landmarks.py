@@ -46,7 +46,7 @@ REF = {
     "uchiha_police": (24, 18, 16), "naka_shrine": (26, 22, 16), "torii": (4, 18, 15),
     "pier": (18, 12, 2), "water_tower": (16, 16, 34), "market_hall": (26, 14, 12),
     "memorial_stone": (4, 2, 6), "academy_tree": (6, 6, 18),
-    "training_dummy": (3, 3, 7), "kunai_target": (4, 2, 6), "stump_target": (3, 3, 3), "kunai_board": (4, 1, 4),
+    "training_dummy": (3, 3, 7), "kunai_target": (4, 2, 6), "stump_target": (3, 3, 3), "kunai_board": (4, 1, 4), "market_stall": (8, 5, 6), "barrel": (3, 3, 3.6),
 }
 
 
@@ -465,10 +465,75 @@ def kunai_board():
     return KH.done(walls, timber, glass, tiles, cloth, metal)
 
 
+# ------------------------------------------------------------------ the market's props (22/11)
+# Server/Hub draws a market stall and a barrel of the plan (Layout.Props "stall", "barrel") as a
+# plain block (Prop_stall 8 x 6 x 5, Prop_barrel 3 x 3.6): in the street they read as brown
+# crates the size of a car. Client/KonohaLifeFX puts these over them.
+def market_stall():
+    """A Part I street stall, 8 wide and 5 deep, open on both long sides: four posts, a striped
+    cloth awning with a short valance, a counter of planks down the middle with goods on it
+    (crates, round fruit, bowls, rolled cloth), two paper lanterns under the eave."""
+    km = K(); C = km.C
+    walls, timber, glass, tiles, cloth, metal = P()
+    from nd_mesh import ellipsoid
+    for x in (-3.7, 3.7):
+        for z in (-2.2, 2.2):
+            km.box(timber, T(x, 2.75, z), (.32, 5.5, .32), C["woodDark"])
+    # the counter: planks on trestles
+    km.box(timber, T(0, 2.6, 0), (7.4, .25, 2.2), lambda q, k=None: km.jitter(C["woodLight"], q, .1, 2))
+    for x in (-3, 0, 3):
+        km.box(timber, T(x, 1.25, 0), (.25, 2.5, 1.8), C["wood"])
+    km.box(timber, T(0, .9, 0), (7.2, .2, 1.6), C["wood"])
+    # the awning: a low-pitched cloth roof in stripes, a valance on both long sides
+    stripes = (rgb(196, 58, 42), rgb(236, 226, 200))
+    for i in range(8):
+        x0 = -4.2 + i * 1.05
+        col = stripes[i % 2]
+        for side in (-1, 1):
+            a = Vector((x0, 5.4, 0)); b = Vector((x0 + 1.05, 5.4, 0))
+            c = Vector((x0 + 1.05, 4.9, side * 2.9)); d = Vector((x0, 4.9, side * 2.9))
+            v = [Vector((x0, 4.9, side * 2.9)), Vector((x0 + 1.05, 4.9, side * 2.9))]
+            low = [q - Vector((0, .55, 0)) for q in v]
+            # both faces (Roblox draws one side of a triangle): seen from the street and from under
+            for rows in ([[a, b], [d, c]], [[d, c], [a, b]], [v, low], [low, v]):
+                loft(cloth, rows, col, cap0=False, cap1=False, closed=False)
+    km.box(timber, T(0, 5.45, 0), (8.6, .2, .2), C["woodDark"])          # the ridge pole
+    # the goods
+    rng = random.Random(22)
+    for x in (-2.8, -1.4, 1.2, 2.7):
+        km.box(timber, T(x, 3.05, rng.uniform(-.5, .5)), (1.1, .7, .9), C["woodLight"])
+        for k in range(5):
+            col = rng.choice((rgb(210, 70, 50), rgb(230, 170, 60), rgb(120, 160, 70), rgb(236, 200, 120)))
+            ellipsoid(cloth, Vector((x + rng.uniform(-.35, .35), 3.55, rng.uniform(-.3, .3))), (.22, .2, .22), col, seg=8, rings=5)
+    for x in (-.1, .35):
+        km.cyl(glass, T(x, 2.75, .6), .35, .22, rgb(236, 232, 222), sides=10)
+    km.cyl(cloth, T(.2, 2.95, -.6) @ Rx(math.pi / 2) @ Ry(0), .25, 1.4, rgb(70, 100, 160), sides=8)
+    for x in (-3.4, 3.4):
+        KH.lantern(cloth, timber, T(x, 4.1, 2.4), w=.9, h=1.2)
+    return KH.done(walls, timber, glass, tiles, cloth, metal)
+
+
+def barrel():
+    """A wooden barrel, 3 across and 3.6 tall, three iron hoops, its lid."""
+    km = K(); C = km.C
+    walls, timber, glass, tiles, cloth, metal = P()
+    rows = []
+    for k in range(7):
+        y = k / 6 * 3.6
+        r = 1.3 + .22 * math.sin(k / 6 * math.pi)
+        rows.append(ring(T(0, 0, 0), y, r, 14))
+    loft(timber, rows, lambda q, k: km.jitter(C["woodLight"], q, .14, 3.0))
+    for y in (.45, 1.8, 3.1):
+        r = 1.3 + .22 * math.sin(y / 3.6 * math.pi) + .05
+        loft(metal, [ring(T(0, 0, 0), y, r, 14), ring(T(0, 0, 0), y + .18, r, 14)], C["iron"], cap0=False, cap1=False)
+    km.cyl(timber, T(0, 3.6, 0), 1.25, .08, C["wood"], sides=14)
+    return KH.done(walls, timber, glass, tiles, cloth, metal)
+
+
 # (training_dummy and kunai_target go into konoha_models' TrainingProps)
 # Placed by the client (Client/KonohaLifeFX), not tagged by Server/Hub: written apart
-# (Client/TrainingMeshData) so HubMeshData keeps only what HubDress names.
-PROPS_OUT = ["kunai_board"]
+# (Client/PropMeshData) so HubMeshData keeps only what HubDress names.
+PROPS_OUT = ["kunai_board", "market_stall", "barrel"]
 
 MODELS = {
     "hokage_residence": hokage_residence, "hospital": hospital, "academy_annex": academy_annex,
@@ -476,5 +541,5 @@ MODELS = {
     "hyuga_hall": hyuga_hall, "hyuga_gate": hyuga_gate, "uchiha_police": uchiha_police, "naka_shrine": naka_shrine,
     "torii": torii, "pier": pier, "water_tower": water_tower, "market_hall": market_hall,
     "memorial_stone": memorial_stone, "academy_tree": academy_tree,
-    "training_dummy": training_dummy, "kunai_target": kunai_target, "stump_target": stump_target, "kunai_board": kunai_board,
+    "training_dummy": training_dummy, "kunai_target": kunai_target, "stump_target": stump_target, "kunai_board": kunai_board, "market_stall": market_stall, "barrel": barrel,
 }

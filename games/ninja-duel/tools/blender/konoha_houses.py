@@ -34,6 +34,7 @@ REF = {
     "tank_house": (17, 16, 21, 1800),
     "shop_house": (20, 16, 14, 1500),
     "apartment": (24, 16, 21, 2000),
+    "tower_house": (13, 13, 28, 2000),
     "clan_house": (22, 17, 9, 1600),
 }
 MIN_TRIS = 800
@@ -442,7 +443,55 @@ def clan_house():
     return done(walls, timber, glass, tiles, cloth, metal)
 
 
+def tower_house():
+    """(22/11, François: « l'arrangement de l'espace et la différence entre les bâtiments n'est
+    pas assez forte ») The tall narrow blocks that break Konoha's skyline in Part I's wide
+    shots: four floors on a small lot, a floor band at each storey, a balcony on the third,
+    a tall vertical sign, a stepped roof with its water tank high over the street."""
+    km = K()
+    C = km.C
+    w, d, h, _ = REF["tower_house"]
+    walls, timber, glass, tiles, cloth, metal = pieces("tower")
+    body = rgb(214, 186, 170)  # a pale rose plaster (each house's own tint is added on the client)
+    trim = lerp(body, rgb(255, 250, 244), .4)
+    wall(walls, T(0, h / 2, 0), (w, h, d), body)
+    km.box(timber, T(0, .5, 0), (w + .3, 1, d + .3), lambda q, f: km.grime(C["stoneDark"], q, 0, 1, .3))
+    for f in (1, 2, 3):
+        km.box(walls, T(0, f * FLOOR, 0), (w + .6, .5, d + .6), trim)
+    door(timber, T(-2.6, 0, d / 2 + .05), 3.0, 5.2, C["redDark"])
+    km.box(tiles, T(-2.6, 6.2, d / 2 + .9), (4.2, .25, 1.8), C["roofTerra"])
+    for f in range(4):
+        y = f * FLOOR + 4.0
+        for x in ((2.6,) if f == 0 else (-2.8, 2.8)):
+            window(timber, glass, T(x, y, d / 2 + .05), 2.4, 2.2, shutter=C["roofGreen"] if f % 2 else None)
+        for sx in (-1, 1):
+            window(timber, glass, T(sx * (w / 2 + .05), y, 0) @ Ry(sx * math.pi / 2), 2.4, 2.2)
+        window(timber, glass, T(0, y, -d / 2 - .05) @ Ry(math.pi), 2.6, 2.2)
+    # the third floor's balcony: a slab, a rail, a pot of plants, laundry on the rail
+    y = 2 * FLOOR
+    km.box(walls, T(0, y + .2, d / 2 + 1.0), (w - 2, .4, 2.0), trim)
+    km.box(timber, T(0, y + 1.5, d / 2 + 1.95), (w - 2, .2, .2), C["iron"])
+    for x in (-w / 2 + 1.2, 0, w / 2 - 1.2):
+        km.box(metal, T(x, y + .85, d / 2 + 1.95), (.14, 1.3, .14), C["iron"])
+    km.box(cloth, T(-2.0, y + 1.0, d / 2 + 2.0), (1.6, 1.1, .05), C["cloth"])
+    km.box(cloth, T(.2, y + 1.05, d / 2 + 2.0), (1.2, 1.0, .05), C["roofBlue"])
+    km.box(timber, T(3.4, y + .75, d / 2 + 1.2), (1.0, .7, 1.0), C["redDark"])
+    km.box(cloth, T(3.4, y + 1.4, d / 2 + 1.2), (1.2, .8, 1.2), C["leaf"])
+    # the tall sign down the corner, pipes
+    sign(timber, cloth, T(w / 2 + .5, 15, d / 2 - 1.6) @ Ry(math.pi / 2), 1.5, 7.5, C["red"], 4, 11)
+    pipe(metal, T(-w / 2 - .3, 0, d / 2 - 1), h + 1)
+    # a stepped roof: the parapet, a smaller block (the stair's head), the tank on it
+    km.box(tiles, T(0, h + .25, 0), (w + .4, .5, d + .4), C["roofDark"])
+    for sx, sz, lx, lz in ((0, 1, w + .8, .4), (0, -1, w + .8, .4), (1, 0, .4, d + .8), (-1, 0, .4, d + .8)):
+        km.box(walls, T(sx * (w + .3) / 2, h + .85, sz * (d + .3) / 2), (lx, 1.2, lz), trim)
+    km.box(walls, T(-2.2, h + 1.8, -2.2), (5.5, 3.6, 5.5), trim)
+    km.box(tiles, T(-2.2, h + 3.75, -2.2), (6.1, .3, 6.1), C["roofTerra"])
+    tank(timber, metal, T(-2.2, h + 3.9, -2.2), 1.8, 2.6)
+    return done(walls, timber, glass, tiles, cloth, metal)
+
+
 MODELS = {
+    "tower_house": tower_house,
     "small_house": small_house,
     "machiya": machiya,
     "tank_house": tank_house,

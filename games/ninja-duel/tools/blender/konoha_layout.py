@@ -147,6 +147,8 @@ HOUSES = {
     "shop_house": (1500, 14, (16, 24), (14, 18), "shop below (counter, noren, awning, sign board), living above", (20, 16)),
     "apartment": (2000, 21, (20, 28), (14, 18), "three-floor walkway block, outside stair, two tanks", (24, 16)),
     "clan_house": (1600, 9, (18, 26), (14, 20), "hall on a stone base, engawa, shoji, hip roof", (22, 17)),
+    # (22/11) never drawn by the MIX: the variety pass turns some lots into towers
+    "tower_house": (2000, 28, (12, 20), (12, 18), "four-floor narrow block, balcony, tall sign, tank up high", (13, 13)),
 }
 MIX = {
     "Residences": [("machiya", 4), ("small_house", 3), ("tank_house", 3), ("apartment", 1)],
@@ -400,6 +402,70 @@ class Plan:
             x, z = r[2] + 2.5, (r[1] + r[3]) / 2
             if self.free_prop(x, z):
                 self.prop(rng.choice(("crate", "barrel")), x, z, 0, 3)
+
+    def keep_points(self):
+        """(22/11) Places the game already uses on or by a roof (Shared/Solo's race rings and start,
+        HubMap's spots): the variety pass leaves the buildings there as they are."""
+        import re
+        root = os.path.normpath(os.path.join(HERE, os.pardir, os.pardir, "src", "Shared"))
+        pts = []
+        try:
+            solo = open(os.path.join(root, "Solo.luau")).read()
+            race = solo[solo.index("Solo.Race="):solo.index("Solo.Race=") + 2000]
+            pts += [(float(a), float(c)) for a, b, c in re.findall(r"\{(-?[\d.]+),(-?[\d.]+),(-?[\d.]+)\}", race)]
+        except (OSError, ValueError):
+            pass
+        try:
+            hm = open(os.path.join(root, "HubMap.luau")).read()
+            pts += [(float(a), float(c)) for a, b, c in re.findall(r"at=Vector3\.new\((-?[\d.]+),(-?[\d.]+),(-?[\d.]+)\)", hm)]
+        except OSError:
+            pass
+        return pts
+
+    def variety_pass(self):
+        """(22/11, François: « l'arrangement de l'espace et la différence entre les bâtiments n'est
+        pas assez forte, le village est trop lisse ») After the validated plan is drawn (its draw
+        order untouched): a few lots become tall towers that break the skyline, one per stretch
+        of village, never where the game already uses a roof; the gaps between houses get
+        pocket gardens (a tree, a stone lantern), so the blocks are not wall after wall."""
+        rng = random.Random(2211)
+        keep = self.keep_points()
+        cands = [b for b in self.buildings if not b["landmark"] and b["model"] in ("tank_house", "apartment", "machiya", "shop_house")
+                 and b["district"] in ("Market", "Centre", "Alleys", "Residences", "Civic", "TeaStreet")]
+        cands.sort(key=lambda b: (b["x"], b["z"]))
+        rng.shuffle(cands)
+        towers = []
+        for b in cands:
+            if len(towers) >= 14:
+                break
+            if max(b["w"], b["d"]) > 20:
+                continue
+            if any((b["x"] - px) ** 2 + (b["z"] - pz) ** 2 < 34 ** 2 for px, pz in keep):
+                continue
+            if any((b["x"] - t["x"]) ** 2 + (b["z"] - t["z"]) ** 2 < 55 ** 2 for t in towers):
+                continue
+            b["model"] = "tower_house"
+            b["h"] = HOUSES["tower_house"][1]
+            towers.append(b)
+        gardens = 0
+        pts = [(x, z) for x in range(-280, 281, 6) for z in range(-190, 210, 6)]
+        rng.shuffle(pts)
+        for x, z in pts:
+            if gardens >= 70:
+                break
+            d = district_at(x, z)
+            if d not in ("Residences", "Alleys", "Market", "Centre", "TeaStreet", "Uchiha", "Civic"):
+                continue
+            r = (x - 5, z - 5, x + 5, z + 5)
+            if not self.free(r, gap=1.5) or self.near_prop(x, z, 8):
+                continue
+            if any((x - px) ** 2 + (z - pz) ** 2 < 14 ** 2 for px, pz in keep):
+                continue
+            self.prop("tree", x, z, rng.uniform(0, 360), round(rng.uniform(12, 17), 1))
+            if rng.random() < .45 and self.free_prop(x + 4, z + 3):
+                self.prop("stone_lantern", x + 4, z + 3, 0, 3)
+            gardens += 1
+        self.variety = (len(towers), gardens)
 
     def near_prop(self, x, z, d):
         return any((p["x"] - x) ** 2 + (p["z"] - z) ** 2 < d * d for p in self.props)
@@ -721,6 +787,7 @@ if __name__ == "__main__":
     plan.frontage()
     plan.backfill()
     plan.props_pass()
+    plan.variety_pass()
     # (DEV, integration 19/11) the game's folder as two parent steps, not a
     # relative path string: tools/check_architecture.py reads such a string as
     # a reference to the whole folder, Motion Lab included, and failed.
@@ -738,4 +805,5 @@ if __name__ == "__main__":
         by[b["model"]] = by.get(b["model"], 0) + 1
     built = sum((b["rect"][2] - b["rect"][0]) * (b["rect"][3] - b["rect"][1]) for b in plan.buildings)
     print(f"{len(houses)} houses {by}, {len(plan.buildings) - len(houses)} landmarks, {len(plan.props)} props; "
-          f"built footprint {built / (2 * HALF_X * (MAX_Z + 196)):.0%} of the village below the rock")
+          f"built footprint {built / (2 * HALF_X * (MAX_Z + 196)):.0%} of the village below the rock; "
+          f"variety: {plan.variety[0]} towers, {plan.variety[1]} pocket gardens")
