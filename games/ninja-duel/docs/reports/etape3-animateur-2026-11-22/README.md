@@ -21,6 +21,8 @@ Tout ce qui suit a été vérifié en rendu Blender, en planche et en test headl
 | Bâtiments différents | Chaque maison a son plâtre, choisi dans la palette de son quartier, et les toits changent de couleur par quartier (`KonohaLifeFX.tintHouses`). Le modèle de tour (`tower_house`, 28 de haut) est prêt et attend une ligne du DEV dans `Hub.LAYOUT_STANDIN`. |
 | Arrangement | 70 jardinets (un arbre, parfois une lanterne de pierre) dans les vides entre les maisons. Le plan validé ne bouge pas. |
 
+Avant et après, en rendu Blender du village tel que le client le dresse (`tools/hub_layout.luau`, plus l'émulation des teintes, des étals, du linge et des passants ; les passants y sont des blocs, alors qu'en jeu ils portent la garde-robe) : `village_marche_avant_apres.jpg`, `village_residences_avant_apres.jpg`.
+
 ## Notes des clips (`clip_grades`)
 
 - AirJump : 9,4 à 9,7.
