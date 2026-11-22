@@ -46,7 +46,7 @@ REF = {
     "uchiha_police": (24, 18, 16), "naka_shrine": (26, 22, 16), "torii": (4, 18, 15),
     "pier": (18, 12, 2), "water_tower": (16, 16, 34), "market_hall": (26, 14, 12),
     "memorial_stone": (4, 2, 6), "academy_tree": (6, 6, 18),
-    "training_dummy": (3, 3, 7), "kunai_target": (4, 2, 6), "stump_target": (3, 3, 3),
+    "training_dummy": (3, 3, 7), "kunai_target": (4, 2, 6), "stump_target": (3, 3, 3), "kunai_board": (4, 1, 4),
 }
 
 
@@ -447,11 +447,33 @@ def stump_target():
     return KH.done(walls, timber, glass, tiles, cloth, metal)
 
 
+
+def kunai_board():
+    """The board alone, for the kunai targets of the market lane (Server/Hub's Target<i>: their
+    own post stays): a round wooden board, its rings, a rim, two kunai in it. Centre at the
+    origin, the face toward +z (the throw mark)."""
+    km = K(); C = km.C
+    walls, timber, glass, tiles, cloth, metal = P()
+    km.cyl(timber, T(0, 0, -.25) @ Rx(math.pi / 2), 1.8, .5, lambda q, k: km.wood(q, None, C["woodLight"]), sides=20)
+    loft(timber, [ring(T(0, 0, 0) @ Rx(math.pi / 2), -.3, 1.86, 20), ring(T(0, 0, 0) @ Rx(math.pi / 2), .3, 1.86, 20)], C["woodDark"], cap0=False, cap1=False)
+    for r_, col in ((1.55, rgb(236, 226, 200)), (1.2, rgb(176, 40, 32)), (.85, rgb(236, 226, 200)), (.5, rgb(176, 40, 32)),
+                    (.2, rgb(36, 34, 38))):
+        km.cyl(glass, T(0, 0, .27 + (1.6 - r_) * .006) @ Rx(math.pi / 2), r_, .03, col, sides=20)
+    for (x, y) in ((.4, .3), (-.7, -.4)):
+        km.box(metal, T(x, y, .6) @ Rx(math.radians(8)), (.12, .12, .8), C["iron"])
+        km.cyl(metal, T(x, y, 1.0) @ Rx(math.pi / 2), .14, .1, C["iron"], sides=8)
+    return KH.done(walls, timber, glass, tiles, cloth, metal)
+
+
+# Placed by the client (Client/KonohaLifeFX), not tagged by Server/Hub: written apart
+# (Client/TrainingMeshData) so HubMeshData keeps only what HubDress names.
+PROPS_OUT = ["training_dummy", "kunai_target", "stump_target", "kunai_board"]
+
 MODELS = {
     "hokage_residence": hokage_residence, "hospital": hospital, "academy_annex": academy_annex,
     "exam_hall": exam_hall, "exam_hall_wing": exam_hall_wing, "ichiraku": ichiraku, "great_gate": great_gate,
     "hyuga_hall": hyuga_hall, "hyuga_gate": hyuga_gate, "uchiha_police": uchiha_police, "naka_shrine": naka_shrine,
     "torii": torii, "pier": pier, "water_tower": water_tower, "market_hall": market_hall,
     "memorial_stone": memorial_stone, "academy_tree": academy_tree,
-    "training_dummy": training_dummy, "kunai_target": kunai_target, "stump_target": stump_target,
+    "training_dummy": training_dummy, "kunai_target": kunai_target, "stump_target": stump_target, "kunai_board": kunai_board,
 }
