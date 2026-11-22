@@ -32,6 +32,14 @@ VIEWS = {
     "air": ((240, 210, 300), (0, 0, -30)),
     "market": ((76, 7, 56), (240, 9, 56)),
     "residences": ((-92, 7, 150), (-246, 9, 150)),
+    # (22/11) the plan's village (KonohaLayout x HubMap.Scale 1.3), eye height of a walker
+    "k2_market": ((30, 7, 73), (300, 12, 73)),
+    "k2_main": ((0, 7, 270), (0, 14, 60)),
+    "k2_res": ((-20, 7, 195), (-330, 12, 195)),
+    "k2_alleys": ((60, 7, -4), (330, 12, -4)),
+    "k2_plaza": ((-60, 10, 60), (40, 12, -30)),
+    "k2_air": ((300, 260, 380), (0, 0, -40)),
+    "k2_roofs": ((60, 40, 120), (220, 20, 200)),
 }
 
 
@@ -59,14 +67,34 @@ def build(layout):
     col = bpy.context.scene.collection
     protos = {}
     for name in sorted({c["name"] for c in layout["copies"]}):
+        if name not in K.MODELS:     # (22/11) a backdrop without a model (forest_of_death...)
+            continue
         # konoha_models builds in the Roblox frame; blender() is its export turn
         protos[name] = [nd_mesh.to_blender(p, link=False) for p in K.blender(K.MODELS[name]())]
+        for proto in protos[name]:   # (22/11) the client's tint (a part colour multiplies the vertex colours)
+            for mat in proto.data.materials:
+                nt = mat.node_tree
+                bsdf = nt.nodes["Principled BSDF"]
+                vc = [n for n in nt.nodes if n.type == "VERTEX_COLOR"][0]
+                oi = nt.nodes.new("ShaderNodeObjectInfo")
+                mix = nt.nodes.new("ShaderNodeMix")
+                mix.data_type = "RGBA"
+                mix.blend_type = "MULTIPLY"
+                mix.inputs[0].default_value = 1
+                nt.links.new(vc.outputs["Color"], mix.inputs[6])
+                nt.links.new(oi.outputs["Color"], mix.inputs[7])
+                nt.links.new(mix.outputs[2], bsdf.inputs["Base Color"])
     for c in layout["copies"]:
+        if c["name"] not in protos:
+            continue
         s = c["scale"]
         m = TO_BL @ shift @ cframe(c["cf"]) @ Matrix.Diagonal((s[0], s[1], s[2], 1)) @ TO_RBX
+        tint = c.get("tint") or {}
         for proto in protos[c["name"]]:
             ob = bpy.data.objects.new(c["name"], proto.data)
             ob.matrix_world = m
+            t = tint.get(proto.data.name.split(".")[0])
+            ob.color = tuple(x ** 2.2 for x in t) + (1,) if t else (1, 1, 1, 1)
             col.objects.link(ob)
     # the parts that stay seen: boxes, discs, balls (unit primitives placed
     # as Roblox does: CFrame * size; a Roblox cylinder lies along its x)

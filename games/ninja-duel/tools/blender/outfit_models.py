@@ -1030,8 +1030,54 @@ def render_bodies(dst, names=None):
         print("BODIES", name, sum(len(p.tris()) for _, _, p in pieces), flush=True)
 
 
+def render_heads(dst, names=None):
+    """(22/11) A head style seen close: front, three-quarter, side and back, on the classic
+    head, in its first catalogue colourway."""
+    from nd_mesh import to_blender, render_set, clear
+    from mathutils import Matrix
+    os.makedirs(dst, exist_ok=True)
+    SKIN = (0.93, 0.78, 0.62)
+    for name in MODELS:
+        if names and name not in names:
+            continue
+        clear()
+        objs = []
+        pieces = built(name)
+        cols = dict(NEW_SLOTS.get(name, {}))
+        cols.update(catalog_colors(name))
+        for k, turn in enumerate((180, 220, 270, 0)):   # front, three-quarter, side, back
+            R = Matrix.Rotation(math.radians(turn), 3, "Z")
+            off = Vector(((k - 1.5) * 2.6, 0, 0))
+            head = Piece("Head", "SmoothPlastic")
+            rings = [[Vector((math.cos(t) * r, y, math.sin(t) * r)) for t in [i / 20 * math.tau for i in range(20)]]
+                     for y, r in ((-.6, .5), (-.5, .6), (.5, .6), (.6, .5))]
+            loft(head, rings, lambda p, kk: SKIN)
+            eyes = Piece("Eyes", "SmoothPlastic")
+            for x in (-.2, .2):
+                box(eyes, (x, .08, -.6), (.06, .1, .02), lambda p, kk: (.1, .1, .12))
+            torso = Piece("Neck", "SmoothPlastic")
+            box(torso, (0, -.95, 0), (.9, .35, .45), lambda p, kk: (.3, .32, .4))
+            for pc0 in (head, eyes, torso):
+                b = to_blender_frame(pc0)
+                b.v = [R @ v + off for v in b.v]
+                objs.append(to_blender(b))
+            for (part, slot, pc) in pieces:      # (built() is already in Blender's frame)
+                if part != "Head":
+                    continue
+                q = Piece(pc.name, pc.mat, pc.flat)
+                q.v = [R @ v + off for v in pc.v]
+                q.f = list(pc.f)
+                tint = [x / 255 for x in cols.get(slot, (150, 150, 150))]
+                q.c = [tuple(g * t for g, t in zip(cc, tint)) for cc in pc.c]
+                objs.append(to_blender(q))
+        render_set(objs, os.path.join(dst, "%s.png" % name), size=(1600, 460), view=(.05, 1.0, .18), fill=.34, world=(.7, .72, .76))
+        print("HEADS", name, flush=True)
+
+
 if __name__ == "__main__":
-    if sys.argv[1] == "bodies":
+    if sys.argv[1] == "heads":
+        render_heads(sys.argv[2], sys.argv[3:] or None)
+    elif sys.argv[1] == "bodies":
         render_bodies(sys.argv[2], sys.argv[3:] or None)
     elif sys.argv[1] == "write":
         write(sys.argv[2])
