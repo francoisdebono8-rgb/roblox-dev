@@ -1,0 +1,26 @@
+# Étape 3, ANIMATEUR (DEC-047) : Konoha, personnalisation, clips de parcours, mannequin et cibles
+
+Tout ce qui suit a été vérifié en rendu Blender, en planche et en test headless. **Rien n'a été vu dans Studio** : c'est François qui joue. C'est un brouillon jusqu'à son avis (DEC-046).
+
+| Demande | Livré | Où |
+|---|---|---|
+| Décors du nouveau Konoha | 17 repères (grande porte, résidence du Hokage, salle d'examen et son aile, Ichiraku, hôpital, annexe de l'Académie, Hyūga, police Uchiha, sanctuaire Naka, torii, ponton, château d'eau, halle du marché, stèle, arbre de l'Académie), plus les maisons du plan | `tools/blender/konoha_landmarks.py`, `Client/HubMeshData*` ; `reperes_konoha.png` |
+| Humeur | vapeur d'Ichiraku et des boutiques, fumées de toits, guirlandes au marché, oiseaux, feuilles | `Client/KonohaLifeFX` |
+| Personnalisation | 7 coiffures (slot `hair`) ; couleur du chakra sur les effets ; 7 poses de victoire et 5 émotes au Catalog ; 6 auras (dont 2 en Robux) | `wardrobe_models.py`, `ChakraTintFX`, `ShopAuraFX`, Catalog ; `coiffures.png` |
+| Clips | `<kit>.AirJump` et `<kit>.Getup.Quick` (8 kits chacun), `Lion.Parkour.{Leap,LandRoll,LandHard,Vault}` | `AuthoredJutsu9-13` ; `clip_*.png` |
+| Mannequin et cibles | mannequin et cible à trépied au terrain n° 3 (`TrainingProps`) ; panneau modelé sur les 8 cibles de la ruelle | `konoha_models.training_props`, `TrainingMeshData`, `KonohaLifeFX.dressBoards` ; `mannequin_cibles.png` |
+
+## Notes des clips (`clip_grades`)
+
+- AirJump : 9,4 à 9,7.
+- Getup.Quick : 7,3 à 8,7.
+- Victoires : 9 à 10.
+- Émotes : 8,3 à 9,4.
+- Point faible connu : `Parkour.LandRoll` à 6,0. Le corps passe sous le sol pendant la roulade.
+
+## Limites
+
+- Les clips de parcours ne se jouent pas sur l'avatar Roblox du promeneur. Il faudrait des Animation publiées, donc une étape LIVE.
+- Le poteau de la course et les anneaux sont encore ceux du DEV.
+- Les looks d'armes ne sont pas faits : il leur faut des icônes (OUTILLEUR).
+- `Prediction.spec` est rouge sur la branche commune, déjà avant ces commits. La question est posée au DEV.

@@ -2648,6 +2648,7 @@ do
 	local tint=require(script.Parent.ChakraTintFX).install(FX)
 	pcall(tint.start)
 	pcall(function() require(script.Parent.ShopAuraFX).start() end)
+	pcall(function() require(script.Parent.KonohaLifeFX).start() end)   -- Konoha: steam, smoke, bunting, birds, leaves (étape 3)
 end
 -- Naruto (clone puffs, the Rasengan shaped with a clone, the barrage, the Nine-Tails cloak).
 require(script.Parent.NarutoFX).install(FX,{new=new,block=block,tween=tween,sound=sound,flash=flash,shockRing=shockRing,burst=burst,

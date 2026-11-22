@@ -36,6 +36,37 @@ Les chiffres sont dans CURRENT_STATE (en tête) et dans les README des outils, a
 - ANBU SILVER (Robux) et SNOW WHITE (800 Ryō) sont presque pareils à la taille du jeu (`tools/tenues/rendus/2026-11-21_554f1dec/couleurs-cheveux.jpg`).
 
 **Branches de travail à supprimer quand François le dira** (mesures sur GitHub, jamais fusionnées) : `work/outilleur-duelbot`, `work/outilleur-etape3-b`.
+## INBOX-ANIM-ETAPE3-20261122 — ANIMATEUR 22/11 : Konoha (repères, mannequin, cibles, vie des rues), coiffures, clips (étape 3)
+
+**Décors** (`tools/blender/konoha_landmarks.py`, fusionné dans `konoha_models.py`) : 17 repères aux noms du plan : `hokage_residence`, `hospital`, `academy_annex`, `exam_hall`, `exam_hall_wing`, `ichiraku`, `great_gate`, `hyuga_hall`, `hyuga_gate`, `uchiha_police`, `naka_shrine`, `torii`, `pier`, `water_tower`, `market_hall`, `memorial_stone`, `academy_tree`. Exportés dans `Client/HubMeshData*` (43 morceaux), avec les maisons.
+- `konoha_models write` n'exporte un modèle des maisons ou des repères que si son nom est dans `KonohaLayout` ou `HubDress.NAMES` : le test du Hub reste vrai.
+- `Shared/KonohaModelRef.luau` (généré) : `w`/`d`/`h` de chaque modèle, pour mettre l'unité du plan à la taille du modèle si tu veux.
+
+**Mannequin et cibles** :
+- `TrainingProps` (le terrain n° 3) est refait avec le nouveau mannequin (paille, cordes, cible sur la poitrine) et la cible à trépied (deux kunai plantés), aux places de ton unité (-150, 16) et (-162, 30). Rien à changer côté serveur.
+- Les 8 cibles de la ruelle (`KunaiTargets/Target<i>`) : `Client/KonohaLifeFX` met dans chaque `Target<i>` le panneau modelé (`Client/TrainingMeshData`, `kunai_board`), tourné vers la marque. Tes `Disc` sont cachés chez le client, ton `Post` reste. Le mesh est DANS `Target<i>` : `SoloView:boards` le cache avec la cible touchée.
+- Le poteau de la course et les anneaux : non faits (à la prochaine passe si tu veux un modèle à la place des pièces).
+
+**Vie des rues** (`Client/KonohaLifeFX`, lancé depuis Effects, seulement si `NinjaDuelHub` existe et `Config.Hub.Enabled`) :
+- vapeur sur Ichiraku et une boutique sur deux ;
+- fumée sur quelques toits ;
+- guirlandes de papier en travers des rues du marché et de la grand-rue (à 16 × 1,3 studs) ;
+- 3 vols d'oiseaux ;
+- feuilles au terrain n° 3, aux résidences et au centre.
+
+Tout est `CanCollide`/`CanQuery` faux et ancré, environ 400 pièces, 30 pas par seconde.
+
+**Coiffures** (`wardrobe_models.py`, slot `hair`, 700 Ryō) : `HairSpiky`, `HairSwept`, `HairBowl`, `HairLong`, `HairHighTail`, `HairBuns`, `HairTilted`. Elles sont dans `OutfitMeshData*`, `OutfitMeshes` et le Catalog, et leurs pièces sont posées sur la `Head`.
+- La pièce `Hair` se peint avec `hairColor` ;
+- quand une coiffure est portée, il faut cacher les cheveux (accessoires `Hair`) de l'avatar.
+
+**Clips** (déjà poussés en 18e50053) :
+- `<kit>.AirJump` : à jouer en entier à la place de `Flip` plus rotation quand il existe ;
+- `<kit>.Getup.Quick` ;
+- `Lion.Parkour.Leap`, `.LandRoll`, `.LandHard` et `.Vault` (héritage `Parkour`) : à brancher dans `HubMove` quand le promeneur sera un corps du moteur.
+- Sur l'avatar Roblox (`Freefall`), mes clips ne se jouent pas : il faudrait des Animation publiées. C'est LIVE, donc à voir avec François.
+
+**À noter** : `tests/Prediction.spec.luau` échoue chez moi sur ta branche, déjà avant mes commits (f612894d, 18e50053, b9865273, 554f1dec) : « Attack: 7 of 45 guesses were another move at 100 ms » (le plafond est 15 %, on est à 15,6 %). Les 4 builds s'arrêtent là. Je n'y ai pas touché (c'est ton périmètre). Est-ce un écart de version de lune, ou faut-il revoir le seuil ou le réglage ?
 
 ## INBOX-DEV-KONOHA-SEUL-20261121 — DEV 21/11 : le nouveau Konoha, les choses à faire seul, le 1v1 ouvert, l'IA qui change de plan (étape 3, DEV 3 à 6)
 

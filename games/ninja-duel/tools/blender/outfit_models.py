@@ -748,7 +748,7 @@ def _set_builder(set_id):
 
 for _sid in wardrobe_models.SETS:
     MODELS[_sid] = _set_builder(_sid)
-PRICE = {"top": 600, "bottom": 500, "arms": 350, "feet": 350, "headband": 800, "mask": 600, "cape": 900, "back": 700}
+PRICE = {"top": 600, "bottom": 500, "arms": 350, "feet": 350, "headband": 800, "mask": 600, "cape": 900, "back": 700, "hair": 700}
 # A set belongs to a kit (Shop.spec): the inspiration whose spirit it carries (my proposal, the DEV's call)
 SET_KIT = {"SetEmberMonk": "Leaf", "SetMistHunter": "Mirage", "SetStormCourier": "Legion", "SetShadowScout": "Copycat",
            "SetLeafMedic": "GentleFist", "SetSandNomad": "Sand"}
@@ -759,6 +759,7 @@ FALLBACK = {
     "arms": lambda c: ['{on="LowerArm",kind="band",c="%s",y0=.15,h=.8}' % c],
     "feet": lambda c: ['{on="Foot",c="%s",pad=.05}' % c, '{on="LowerLeg",kind="band",c="%s",y0=.82,h=.18}' % c],
     "mask": lambda c: ['{on="Head",kind="shell",c="%s",y0=.5,h=.5,pad=.04}' % c],
+    "hair": lambda c: ['{on="Head",kind="shell",c="%s",y0=.62,h=.4,pad=.06}' % c],
     "cape": lambda c: ['{on="UpperTorso",kind="cape",c="%s"}' % c],
     "back": lambda c: ['{on="UpperTorso",kind="scroll",c="%s"}' % c],
 }

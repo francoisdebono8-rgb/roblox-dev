@@ -54,13 +54,14 @@ def ribbon(pc, pts, width, side=Vector((1, 0, 0)), col=None, thick=.03):
     loft(pc, back, col or o.shade(.8, .04), cap0=False, cap1=False, closed=False)
 
 
-def dome(pc, y0, r=(.66, .68), top=.72, rings=6, n=24, front_open=0.0, col=None, z_off=0.0):
-    """A cap over the head from y0 up (a bandana, a hood): front_open (radians) leaves the face."""
+def dome(pc, y0, r=(.66, .68), top=.72, rings=6, n=24, front_open=0.0, col=None, z_off=0.0, fat=1.0):
+    """A cap over the head from y0 up (a bandana, a hood): front_open (radians) leaves the face.
+    fat < 1 keeps the sides full higher up (hair over the boxy R15 head: the skull never shows)."""
     o = O()
     rows = []
     for k in range(rings):
         u = k / (rings - 1)
-        a = math.cos(u * math.pi / 2 * .92)
+        a = math.cos(u * math.pi / 2 * .92) ** fat
         y = y0 + (top - y0) * math.sin(u * math.pi / 2)
         ring = []
         for i in range(n):
@@ -736,12 +737,143 @@ SETS = {
 }
 
 
+# ------------------------------------------------------------------ hair styles (21/11, étape 3, DEC-047)
+# Worn on the Head (slot "hair"), over a bald head: Server/Style takes the avatar's own hair off
+# when a style is worn and paints its slot "Hair" with the chosen hair colour. Part I silhouettes
+# read at the duel camera's distance (none is a character's exact cut): spikes all round, spikes
+# swept back, a bowl cut, long hair tied low, a high spiky tail, twin buns, spikes tilted to a side.
+def spike(pc, base, direction, length, r, col=None, n=6):
+    """A tapered lock: a ring at `base`, closed on a tip `length` along `direction`."""
+    o = O()
+    d = Vector(direction).normalized()
+    side = d.cross(Vector((0, 0, 1)))
+    if side.length < .1:
+        side = d.cross(Vector((1, 0, 0)))
+    side.normalize()
+    up = side.cross(d).normalized()
+    b = Vector(base)
+    ring = [b + (side * math.cos(t) + up * math.sin(t)) * r for t in [i / n * math.tau for i in range(n)]]
+    mid = [b + d * length * .45 + (p - b) * .6 for p in ring]
+    loft(pc, [ring, mid], col or o.shade(.9, .08), cap0=True, cap1=False, tip1=b + d * length)
+
+
+def hair_cap(pc, y0=.05, top=.74, r=(.66, .68), front=.0, z_off=0.02):
+    """The mass of hair over the skull, open on the face below y0 at the front."""
+    dome(pc, y0, r=r, top=top, rings=7, n=24, front_open=front, z_off=z_off, fat=.35)
+
+
+def _spikes_round(pc, count, length, tilt=0.0, back=0.0, seed=1, r=.13):
+    import random
+    rng = random.Random(seed)
+    for k in range(count):
+        a = k / count * math.tau + rng.uniform(-.15, .15)
+        el = rng.uniform(.25, .95)                                  # elevation on the dome
+        base = Vector((math.cos(a) * .58 * math.cos(el), .2 + .5 * math.sin(el), math.sin(a) * .6 * math.cos(el)))
+        out = Vector((base.x + tilt, base.y * .6 + .25, base.z + back)).normalized()
+        if base.z < -.35 and base.y < .45:                         # never over the eyes
+            continue
+        spike(pc, base, out, length * rng.uniform(.8, 1.2), r)
+
+
+def item_hair_spiky():
+    o = O().Out()
+    h = o.add("Head", "Hair")
+    hair_cap(h, front=1.9)
+    _spikes_round(h, 22, .55, seed=3)
+    for x in (-.32, 0, .32):   # the fringe: short spikes over the brow, pointing down-forward
+        spike(h, (x, .42, -.6), (x * .3, -.5, -.6), .38, .12)
+    return o.items
+
+
+def item_hair_swept():
+    o = O().Out()
+    h = o.add("Head", "Hair")
+    hair_cap(h, front=1.9)
+    _spikes_round(h, 16, .7, back=1.4, seed=5)
+    for x in (-.45, .45):      # long bangs framing the face
+        spike(h, (x, .38, -.55), (x * .2, -1, -.25), .62, .12)
+    return o.items
+
+
+def item_hair_bowl():
+    o = O().Out()
+    h = o.add("Head", "Hair")
+    dome(h, .05, r=(.71, .73), top=.78, rings=7, n=28, z_off=.02, fat=.35)
+    rows = []                  # the straight fringe, cut level over the brow
+    for y in (.42, .16):
+        rows.append([Vector((math.cos(t) * .72, y, math.sin(t) * .74 + .02)) for t in [i / 28 * math.tau for i in range(28)]])
+    loft(h, rows, O().shade(.94, .03), cap0=False, cap1=False)
+    return o.items
+
+
+def item_hair_long():
+    o = O().Out()
+    h = o.add("Head", "Hair")
+    hair_cap(h, front=1.8)
+    rows = []                  # the long fall down the back, tied low
+    for k, (y, w, z) in enumerate(((.3, .62, .45), (-.2, .58, .62), (-.9, .4, .72), (-1.5, .2, .74), (-2.1, .14, .76))):
+        rows.append([Vector((math.cos(t) * w, y, z + math.sin(t) * .14)) for t in [i / 12 * math.tau for i in range(12)]])
+    loft(h, rows, O().shade(.88, .06))
+    tie = o.add("Head", "Tie")
+    head_ring(tie, -1.5, .1, r=(.24, .2), z_off=.74)
+    for x in (-.5, .5):
+        spike(h, (x, .3, -.5), (0, -1, -.15), .7, .1)
+    return o.items
+
+
+def item_hair_high_tail():
+    o = O().Out()
+    h = o.add("Head", "Hair")
+    dome(h, .1, r=(.67, .69), top=.72, rings=6, n=24, front_open=2.0, z_off=.04, fat=.35)
+    tie = o.add("Head", "Tie")
+    head_ring(tie, .62, .12, r=(.17, .17), z_off=.45)
+    for k in range(7):         # the spiky tail bursting up and back from the tie
+        a = k / 7 * math.tau
+        spike(h, (math.cos(a) * .1, .7, .5 + math.sin(a) * .1), (math.cos(a) * .5, 1.0, .9 + math.sin(a) * .5), .7, .11)
+    return o.items
+
+
+def item_hair_buns():
+    o = O().Out()
+    h = o.add("Head", "Hair")
+    dome(h, .05, r=(.67, .69), top=.73, rings=6, n=24, front_open=1.9, z_off=.02, fat=.35)
+    from nd_mesh import ellipsoid
+    for x in (-.42, .42):
+        ellipsoid(h, Vector((x, .72, .1)), (.26, .24, .26), O().shade(.9, .05), seg=12, rings=8)
+    tie = o.add("Head", "Tie")
+    for x in (-.42, .42):
+        head_ring(tie, .58, .08, r=(.22, .22), z_off=.1)
+    return o.items
+
+
+def item_hair_tilted():
+    o = O().Out()
+    h = o.add("Head", "Hair")
+    hair_cap(h, front=1.9)
+    import random
+    rng = random.Random(9)
+    for k in range(14):        # every spike leans the same way, up and to his left
+        a = rng.uniform(0, math.tau)
+        el = rng.uniform(.4, 1.0)
+        base = Vector((math.cos(a) * .5 * math.cos(el), .3 + .45 * math.sin(el), math.sin(a) * .5 * math.cos(el) + .05))
+        if base.z < -.3 and base.y < .5:
+            continue
+        spike(h, base, (-.9, 1.0, .2), rng.uniform(.6, .85), .14)
+    return o.items
+
+
+HAIR = {"HairSpiky": item_hair_spiky, "HairSwept": item_hair_swept, "HairBowl": item_hair_bowl, "HairLong": item_hair_long,
+        "HairHighTail": item_hair_high_tail, "HairBuns": item_hair_buns, "HairTilted": item_hair_tilted}
+
+
 # model -> builder
 MODELS = {
     # headbands
     "HeadbandClassic": item_headband_classic, "HeadbandLong": item_headband_long, "HeadbandScratched": item_headband_scratched,
     "Hachimaki": item_headband_hachimaki, "HeadbandBandana": item_headband_bandana, "HeadbandBow": item_headband_bow,
     "HeadbandNeck": item_headband_neck, "HeadbandWaist": item_headband_waist,
+    # hair styles (étape 3)
+    **HAIR,
     # masks
     "MaskFox": item_mask_fox, "MaskCat": item_mask_cat, "MaskCloth": item_mask_cloth, "MaskRespirator": item_mask_respirator,
     # capes
@@ -814,6 +946,14 @@ CATALOG = {
     "MaskCat": ("mask", "MaskCat", "Cat Mask", {"Mask": C(240, 240, 236), "Paint": C(60, 100, 200), "Strap": C(36, 36, 40)}),
     "MaskCloth": ("mask", "MaskCloth", "Face Mask", {"Cloth": C(46, 54, 86)}),
     "MaskRespirator": ("mask", "MaskRespirator", "Respirator", {"Metal": C(150, 156, 166), "Strap": C(36, 36, 40)}),
+    # hair styles (étape 3): slot "Hair" takes the chosen hair colour (Server/Style)
+    "HairSpiky": ("hair", "HairSpiky", "Wild Spikes", {"Hair": C(236, 196, 70)}),
+    "HairSwept": ("hair", "HairSwept", "Swept Spikes", {"Hair": C(30, 30, 44)}),
+    "HairBowl": ("hair", "HairBowl", "Bowl Cut", {"Hair": C(24, 22, 28)}),
+    "HairLong": ("hair", "HairLong", "Long Tied", {"Hair": C(60, 44, 40), "Tie": C(236, 232, 222)}),
+    "HairHighTail": ("hair", "HairHighTail", "High Tail", {"Hair": C(36, 34, 40), "Tie": C(150, 40, 40)}),
+    "HairBuns": ("hair", "HairBuns", "Twin Buns", {"Hair": C(80, 52, 36), "Tie": C(200, 60, 60)}),
+    "HairTilted": ("hair", "HairTilted", "Tilted Spikes", {"Hair": C(200, 204, 210)}),
     # capes
     "CapeShortRed": ("cape", "CapeShort", "Short Cape", {"Cape": C(196, 44, 44), "Trim": C(236, 200, 80)}),
     "CapeLongWhite": ("cape", "CapeLong", "Long Cape", {"Cape": C(236, 232, 222), "Trim": C(196, 60, 40)}),

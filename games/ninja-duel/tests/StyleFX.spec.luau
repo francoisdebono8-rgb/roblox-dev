@@ -95,4 +95,49 @@ test("the chakra colour: the chakra blue takes his hue, the rest keeps its colou
 	assert(Tint.applyAll(m,crimson)==0,"tinted twice")
 end)
 
+-- Konoha's street life (Client/KonohaLifeFX): drawn from the plan, above the street, cheap.
+test("the street life comes from the plan and stays out of the fight",function()
+	local Life=H.load("Client/KonohaLifeFX")
+	local Layout=H.load("Shared/KonohaLayout")
+	local O=Vector3.new(0,0,-2400)
+	local plan=Life.plan(Layout,O,1.3)
+	assert(#plan.steam>=2,"steam over Ichiraku and shops")
+	assert(#plan.bunting>=3,"bunting across the market streets")
+	assert(#plan.birds==3 and #plan.leaves==9)
+	local ichi
+	for _,b in Layout.Buildings do if b[1]=="ichiraku" then ichi=b end end
+	assert(ichi,"Ichiraku is in the plan")
+	assert((plan.steam[1].pos-Life.world(O,1.3,ichi[2],ichi[6]+1,ichi[3])).Magnitude<1e-3 or #plan.steam>1)
+	for _,b in plan.bunting do assert(b.a.Y-O.Y>=16*1.3-1e-3,"bunting under head height") end
+	local folder=Instance.new("Folder")
+	local made=Life.build(folder,plan)
+	Life.step(made,1.5)
+	local n=0
+	for _,x in folder:GetDescendants() do
+		if x:IsA("BasePart") then n+=1;assert(not x.CanCollide and not x.CanQuery and x.Anchored,x.Name.." collides") end
+	end
+	assert(n<900,"too many parts: "..n);print("street life parts",n)
+	assert(#made.birds==18)
+end)
+
+test("the kunai boards wear the modelled board, facing the mark, inside their Target",function()
+	local Life=H.load("Client/KonohaLifeFX")
+	local Solo=H.load("Shared/Solo")
+	local data=H.load("Client/TrainingMeshData")
+	assert(data.kunai_board and #data.kunai_board>0)
+	local targets=Instance.new("Model")
+	for i in Solo.Targets.boards do
+		local b=Instance.new("Model");b.Name="Target"..i;b.Parent=targets
+		local d=Instance.new("Part");d.Name="Disc";d.Parent=b
+	end
+	local n=Life.dressBoards(targets,Solo,function() return Instance.new("Part") end,data)
+	assert(n==#Solo.Targets.boards,"dressed "..n)
+	local b1=targets:FindFirstChild("Target1")
+	assert(b1:FindFirstChild("BoardMesh") and b1:FindFirstChild("Disc").Transparency==1)
+	local cf=Life.boardFrame(Solo.board(1),Solo.targetsMark())
+	local toMark=(Solo.targetsMark()-Solo.board(1))
+	assert(cf.LookVector:Dot(Vector3.new(toMark.X,0,toMark.Z).Unit)<-.99,"the face turns to the mark")
+	assert(Life.dressBoards(targets,Solo,function() return Instance.new("Part") end,data)==0,"dressed once")
+end)
+
 print(("NinjaDuel style FX: %d PASS"):format(passed))
