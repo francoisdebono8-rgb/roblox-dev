@@ -103,6 +103,17 @@ function Hub.new(ui,camera,send,controls)
 	local ranks=K.button(self.shopBox,"RANKS",UDim2.fromOffset(284,68),UDim2.fromOffset(140,48),function() self:openRanks() end,M.paper)
 	ranks.TextSize=24;ranks.TextColor3=M.ink;ranks.Font=STRONG;inkRing(ranks,3)
 	self.ranksButton=ranks
+	-- (DESIGN 23/11, step 5) SETTINGS, left of QUESTS
+	local gear=K.button(self.shopBox,"SETTINGS",UDim2.fromOffset(0,68),UDim2.fromOffset(120,48),function()
+		self:hideCard()
+		if self.ui.settings then
+			self.ui.settings.onHide=function() self:apply() end
+			self.ui.settings:show("KONOHA")
+		end
+		self:apply()
+	end,M.paper)
+	gear.TextSize=18;gear.TextColor3=M.ink;gear.Font=STRONG;inkRing(gear,3)
+	self.settingsButton=gear
 	-- (DESIGN 21/11, step 3) the minimap under the place box, M for the big map
 	do
 		local ok,MiniMap=pcall(function() return require(script.Parent.MiniMap) end)
@@ -284,7 +295,8 @@ end
 function Hub:anyPanel()
 	local ui=self.ui
 	return (ui.treePanel and ui.treePanel:shown()) or (ui.shopPanel and ui.shopPanel:shown()) or (ui.outfitPanel and ui.outfitPanel:shown())
-		or (self.quests and self.quests:shown()) or (self.map and self.map:shown()) or (ui.leaderboard and ui.leaderboard:shown()) or false
+		or (self.quests and self.quests:shown()) or (self.map and self.map:shown()) or (ui.leaderboard and ui.leaderboard:shown())
+		or (ui.settings and ui.settings:shown()) or false
 end
 -- Controls and lens: the village walk, or the board (the roster) over it.
 function Hub:apply()

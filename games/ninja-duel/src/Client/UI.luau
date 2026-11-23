@@ -462,6 +462,12 @@ function UI.new(parent,send)
 			local made,panel=pcall(Leaderboard.new,UI.kit,self.gui)
 			if made then self.leaderboard=panel end
 		end
+		-- (DESIGN 23/11, step 5) SETTINGS: sound, camera, controls, REPORT
+		local okS,SettingsPanel=pcall(function() return require(script.Parent.SettingsPanel) end)
+		if okS and SettingsPanel then
+			local made,panel=pcall(SettingsPanel.new,UI.kit,self.gui,send)
+			if made then self.settings=panel end
+		end
 		-- (DESIGN 23/11, step 4) the tournament's entry: his build of 100 points
 		local okE,CupEntry=pcall(function() return require(script.Parent.CupEntry) end)
 		if okE and CupEntry then

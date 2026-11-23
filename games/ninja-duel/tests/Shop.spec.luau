@@ -717,6 +717,38 @@ test("the open shop: no empty tab, BUY confirmed, VIP first",function()
 	assert(ok,tostring(err))
 end)
 
+-- (DESIGN 23/11, step 5) SETTINGS and REPORT A PROBLEM
+test("settings: sound and camera steps, the report sent with its place",function()
+	local S=H.load("Client/SettingsPanel")
+	assert(S.step(1,"volume",1)==1 and S.step(1,"volume",-1)==.9 and S.step(0,"volume",-1)==0,"the sound's steps")
+	assert(S.step(.4,"sensitivity",-1)==.4 and S.step(1,"sensitivity",1)==1.2,"the camera's steps")
+	assert(S.report("   ","x")==nil,"an empty report is not sent")
+	assert(#S.report(string.rep("a",900),"x").text==S.MAX_REPORT,"capped")
+	H.workspace.GetAttribute=function() return nil end
+	local saved=H.envBase.Instance
+	local baseNew=harnessInstance.new
+	H.envBase.Instance={new=function(class)
+		local x=baseNew(class)
+		x.Activated={Connect=function(_,fn) x.click=fn end}
+		return x
+	end}
+	local ok,err=pcall(function()
+		local UI=H.load("Client/UI")
+		S=H.load("Client/SettingsPanel")
+		local sent={}
+		local page=S.new(UI.kit,baseNew("ScreenGui"),function(a,p) table.insert(sent,{a,p}) end)
+		page:show("KONOHA • THE PLAZA")
+		assert(page:shown() and not page.reportButton.Visible,"no REPORT outside the test place")
+		page.volumeMinus.click();assert(page.volumeText.Text=="90%","SOUND −")
+		page.forceReport=true;page:draw();assert(page.reportButton.Visible,"REPORT on the test place")
+		page.reportButton.click();page.field.Text="Stuck on a roof";page.sendButton.click()
+		assert(sent[1][1]=="Report" and sent[1][2].text=="Stuck on a roof" and sent[1][2].where=="KONOHA • THE PLAZA","the report")
+		page.close.click();assert(not page:shown(),"X")
+	end)
+	H.envBase.Instance=saved
+	assert(ok,tostring(err))
+end)
+
 -- (15/11, DA v3 Mix-Shop) the STYLE preview: a still copy of his own avatar,
 -- its scripts and its own outfit taken off, the character left as it was.
 test("the STYLE preview: a still copy of his avatar, without its scripts nor its outfit",function()
