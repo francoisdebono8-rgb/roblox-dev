@@ -169,6 +169,57 @@ def parkour_vault():
         "length": L, "markers": {}}
 
 
+# (23/11, étape 4, DEV: « un vrai clip Parkour.WallRun serait mieux ; ajoute Parkour.Ledge ») The
+# DEV's walker (Client/HubBody) leans the whole body 70 degrees off the wall, the feet on it: in the
+# body's own frame this is a run, in the air (no floor under the feet), a long fast stride, knees
+# high, the arms pumping hard, the head turned up the wall's length. Symmetric: either wall side.
+def parkour_wall_run():
+    L, a = .46, {"air": True}
+    def stride(side):
+        f = 1 if side == "L" else -1
+        return {"root": {"pitch": 16, "lean": 0}, "Waist": {"pitch": 6, "turn": 6 * f}, "Neck": {"pitch": -12, "turn": -4 * f},
+                "LL": {"swing": 80 if f > 0 else -40, "spread": 6, "bend": 100 if f > 0 else 35, "ankle": 10 if f > 0 else -30},
+                "RL": {"swing": -40 if f > 0 else 80, "spread": 6, "bend": 35 if f > 0 else 100, "ankle": -30 if f > 0 else 10},
+                "LA": {"swing": -50 if f > 0 else 75, "spread": 14, "bend": 85},
+                "RA": {"swing": 75 if f > 0 else -50, "spread": 14, "bend": 85}}
+    pass_ = {"root": {"pitch": 18}, "Waist": {"pitch": 6}, "Neck": {"pitch": -12},
+             "LL": {"swing": 25, "spread": 6, "bend": 110}, "RL": {"swing": 25, "spread": 6, "bend": 110},
+             "LA": {"swing": 10, "spread": 14, "bend": 90}, "RA": {"swing": 10, "spread": 14, "bend": 90}}
+    return {"keys": [key(0, stride("L"), "smooth", **a), key(L * .25, pass_, "smooth", **a), key(L * .5, stride("R"), "smooth", **a),
+                     key(L * .75, pass_, "smooth", **a), key(L, stride("L"), "smooth", **a)], "length": L, "markers": {}, "loop": True}
+
+
+def parkour_ledge():
+    """Hanging from a roof's edge by both hands, the body under them, the legs loose, a slow
+    sway (a loop)."""
+    L, a = 1.6, {"air": True}
+    hang = {"root": {"pitch": -4}, "Waist": {"pitch": -2}, "Neck": {"pitch": -18},
+            "LA": {"swing": 168, "spread": 18, "bend": 12}, "RA": {"swing": 168, "spread": 18, "bend": 12},
+            "LL": {"swing": 12, "spread": 6, "bend": 25, "ankle": -20}, "RL": {"swing": -6, "spread": 6, "bend": 12, "ankle": -20}}
+    sway = merge(hang, {"root": {"pitch": 4}, "LL": {"swing": -4, "bend": 15}, "RL": {"swing": 14, "bend": 30}})
+    return {"keys": [key(0, hang, "smooth", **a), key(L * .5, sway, "smooth", **a), key(L, hang, "smooth", **a)],
+            "length": L, "markers": {}, "loop": True}
+
+
+def parkour_ledge_up():
+    """Up from the hang: the pull, a knee over the edge, standing on the roof."""
+    L, a = .55, {"air": True}
+    return {"keys": [
+        key(0, {}, "out", **a, root={"pitch": -4}, Neck={"pitch": -18},
+            LA={"swing": 168, "spread": 18, "bend": 12}, RA={"swing": 168, "spread": 18, "bend": 12},
+            LL={"swing": 12, "spread": 6, "bend": 25}, RL={"swing": -6, "spread": 6, "bend": 12}),
+        key(L * .4, {}, "out", **a, root={"pitch": 25, "y": 1.4}, Waist={"pitch": 20}, Neck={"pitch": -10},
+            LA={"hand": [-0.55, 0.9, -0.9], "hint": [60, 20, 0, 20]}, RA={"hand": [0.55, 0.9, -0.9], "hint": [60, 20, 0, 20]},
+            LL={"swing": 95, "spread": 8, "bend": 120}, RL={"swing": 10, "spread": 6, "bend": 40}),
+        key(L * .75, {}, "smooth", **a, root={"pitch": 20, "y": 2.4, "z": -0.6}, Waist={"pitch": 12},
+            LA={"swing": 30, "spread": 20, "bend": 40}, RA={"swing": 20, "spread": 20, "bend": 40},
+            LL={"swing": 50, "spread": 8, "bend": 70}, RL={"swing": 30, "spread": 8, "bend": 90}),
+        key(L, {}, "smooth", **a, root={"pitch": 6, "y": 2.9, "z": -1.0}, Waist={"pitch": 4},
+            LA={"swing": 15, "spread": 12, "bend": 25}, RA={"swing": 10, "spread": 12, "bend": 25},
+            LL={"swing": 10, "spread": 6, "bend": 15}, RL={"swing": -5, "spread": 6, "bend": 10})],
+        "length": L, "markers": {}}
+
+
 # ------------------------------------------------------------------ the victory poses (shop)
 def _pose(final, mid=None, L=2.5):
     """A victory: from a plain stance into the pose (with a beat on the way), held, breathing."""
@@ -264,6 +315,9 @@ def all_specs(clips):
     out["Lion.Parkour.LandRoll"] = parkour_land_roll()
     out["Lion.Parkour.LandHard"] = parkour_land_hard()
     out["Lion.Parkour.Vault"] = parkour_vault()
+    out["Lion.Parkour.WallRun"] = parkour_wall_run()
+    out["Lion.Parkour.Ledge"] = parkour_ledge()
+    out["Lion.Parkour.LedgeUp"] = parkour_ledge_up()
     for vid, (_, fn) in VICTORY.items():
         out["Victory." + vid] = fn()
     for eid, (_, fn) in EMOTES.items():
