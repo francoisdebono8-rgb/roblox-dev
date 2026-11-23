@@ -3,6 +3,7 @@ checked on the avatar from the front and from the back.
 
     blender -b --python-expr "import sys; sys.argv=['offer_renders.py','offers',DST]+IDS; exec(open('offer_renders.py').read())"
     ... 'review', DST [ids]
+    python3 offer_bundle.py DST     (the 8 prodigies' bundle, from their offers)
 
 offers  one 512 x 512 PNG per Catalog id, transparent background, three-quarter front:
         outfits, sets, capes and back pieces on the whole avatar; hair, headbands and masks
@@ -344,28 +345,8 @@ def run(mode, dst, ids=None):
     print("DONE %d SKIPPED %s" % (len(done), skipped), flush=True)
 
 
-PRODIGIES = ("SetNaruto", "SetSasuke", "SetLee", "SetNeji", "SetGaara", "SetKakashi", "SetItachi", "SetMinato")
+# (the bundle of the 8 prodigies' outfits is composed from their offers: offer_bundle.py)
 
 
-def bundle(dst):
-    """The 8 prodigies' outfits together (the bundle offer): two rows of four, front three-quarter."""
-    os.makedirs(dst, exist_ok=True)
-    ROWS.update({i: rest for i, _, rest in catalog(every=True)})
-    clear()
-    objs = []
-    for k, sid in enumerate(PRODIGIES):
-        row, col = divmod(k, 4)
-        part = avatar(dressed(sid, "set"), (col - 1.5) * -.18)
-        for o in part:   # the camera is on +y: row 1 is in front, row 0 behind and raised
-            o.location.x += (col - 1.5) * 4.4 + (0 if row else 2.2) - 1.1
-            o.location.y += 5.0 * row
-            o.location.z += 0 if row else 2.4
-        objs += part
-    shoot(objs, os.path.join(dst, "SetBundle8.png"), view=(0, 1.0, .18), fill=.98)
-    print("BUNDLE done", flush=True)
-
-
-if __name__ == "__main__" and len(sys.argv) > 2 and sys.argv[1] == "bundle":
-    bundle(sys.argv[2])
 if __name__ == "__main__" and len(sys.argv) > 2 and sys.argv[1] in ("offers", "review"):
     run(sys.argv[1], sys.argv[2], set(sys.argv[3:]) or None)

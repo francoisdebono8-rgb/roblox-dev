@@ -325,7 +325,7 @@ def _flap_band(pc, part, x0, x1, y_top, length, z_side, pad, flare, folds, seed,
             row.append(Vector((x, y, z + z_side * lift)))
         grid.append(row)
     loft(pc, grid, O().shade(.95, .05, seed), cap0=False, cap1=False, closed=False)
-    back = [[Vector((p.x, p.y, p.z - z_side * (.035 + 2 * lift))) for p in reversed(r)] for r in grid]
+    back = [[Vector((p.x, p.y, p.z - z_side * (.07 + 2 * lift))) for p in reversed(r)] for r in grid]
     loft(pc, back, O().shade(.85, .05, seed), cap0=False, cap1=False, closed=False)
 
 
