@@ -283,7 +283,7 @@ def sandal(pcs, part):
     sole = pcs("Sandal")
     y = -S.y / 2
     rows = []
-    for dy, grow in ((-.07, 0.0), (-.02, .02), (0.0, .0)):
+    for dy, grow in ((-.13, 0.0), (-.05, .03), (0.0, .0)):
         rows.append(section(S.x / 2 / K + .04 + grow, S.z / 2 / K + .12 + grow, n=SEG, y=y + dy))
     for r in rows:
         for p in r:
@@ -323,22 +323,60 @@ class Out:
         return pc
 
 
-def tunic_body(o, slot="Cloth", lower_h=.6, collar_v=True, sleeve=.55, seed=0.0):
+# ---- (23/11, passe commune 1: « les habits du début sont moches et ne rendent pas bien sur le
+# perso ») The starting pieces rebuilt with a shape: a wrapped jacket crossed by a dark lapel,
+# a wide obi knotted at the side, kimono sleeves with a cuff, short skirts that swing with the
+# thighs; baggy trousers bloused into wrapped shins; sandals with a thick sole.
+def lapel(o, slot, width=.2, raise_=.035):
+    """The crossed front of a wrapped jacket: a band from the right of the neck down to the
+    left of the waist (left over right), and its continuation round the back of the neck."""
+    S = size("UpperTorso")
+    zf = -(S.z / 2 + .07) / K - raise_
+    pts = [Vector((lerp(-.32, .62, k / 11), S.y / 2 + .02 - k / 11 * S.y * .9, zf)) for k in range(12)]
+    pc = o.add("UpperTorso", slot, name="Lapel")
+    rows = [[p + Vector((-width / 2, 0, .02)) for p in pts], [p + Vector((-width / 2 + .02, 0, -.015)) for p in pts],
+            [p + Vector((width / 2 - .02, 0, -.015)) for p in pts], [p + Vector((width / 2, 0, .02)) for p in pts]]
+    loft(pc, rows, shade(.95, .04), cap0=True, cap1=True, closed=False)
+    neck = o.add("UpperTorso", slot, name="NeckBand")
+    collar(neck, "UpperTorso", h=.1, open_front=1.5, flare=.03, thick=.04, neck=(.66, .6))
+    return pc
+
+
+def obi(o, slot, knot_side=1):
+    """A wide sash: a band over the waist (the torso's bottom and the hips' top), a flat knot
+    on one side and its two short tails."""
+    up = o.add("UpperTorso", slot, name="Obi")
+    ribbed(up, "UpperTorso", .8, 1.03, pad=.13, ribs=1, depth=.012, rings_per=4)
+    lo = o.add("LowerTorso", slot, name="ObiLow")
+    ribbed(lo, "LowerTorso", -.1, .5, pad=.15, ribs=1, depth=.012, rings_per=4)
+    S = size("LowerTorso")
+    knot = o.add("LowerTorso", slot, name="Knot")
+    box(knot, (knot_side * .62, .12, -(S.z / 2 + .2)), (.16, .13, .05), shade(.9, .04))
+    for dx, ln in ((-.06, .55), (.08, .42)):
+        tail = o.add("LowerTorso", slot, name="ObiTail")
+        box(tail, (knot_side * .62 + dx, .1 - ln / 2, -(S.z / 2 + .19)), (.07, ln / 2, .02), shade(.85, .05))
+
+
+def kimono_sleeve(o, slot, trim, length=.62):
+    o.both("UpperArm", slot, lambda pc, part: shell(pc, part, -.05, length, pad=.11, flare1=.1, folds=.03, seed=2))
+    if trim:
+        o.both("UpperArm", trim, lambda pc, part: ribbed(pc, part, length - .1, length + .02, pad=.22, ribs=1, depth=.012, rings_per=3))
+
+
+def tunic_body(o, slot="Cloth", lower_h=.6, collar_v=True, sleeve=.55, seed=0.0, trim="Trim", belt="Belt", skirt=True):
     pc = o.add("UpperTorso", slot)
     shell(pc, "UpperTorso", .0, 1.0, pad=.07, flare1=.03, folds=.025, seed=seed, hem=False)
-    # the wrapped front: the left panel crosses over (a ridge from the neck down)
-    trim = o.add("UpperTorso", slot, name="Overlap")
-    S = size("UpperTorso")
-    pts = []
-    for k in range(10):
-        u = k / 9
-        pts.append(Vector((lerp(-.2, .55, u), S.y / 2 - u * S.y * .95, -(S.z / 2 + .07) / K - .012)))
-    rows = [[p + Vector((0, 0, 0)) for p in pts], [p + Vector((.05, 0, -.03)) for p in pts], [p + Vector((.12, 0, 0)) for p in pts]]
-    loft(trim, rows, shade(.82, .04), cap0=False, cap1=False, closed=False)
+    if collar_v and trim:
+        lapel(o, trim)
     lo = o.add("LowerTorso", slot)
-    shell(lo, "LowerTorso", -.1, lower_h * 1.0 + .05, pad=.08, flare1=.06, folds=.02, seed=seed + 1)
+    shell(lo, "LowerTorso", -.1, max(lower_h, 1.0) if skirt else lower_h + .05, pad=.09, flare1=.06, folds=.02, seed=seed + 1,
+          hem=not skirt)
+    if skirt:   # the jacket's skirt: a short panel before and behind each thigh, swinging with it
+        thigh_tails(o, slot, .62, y_top=-.06, pad=.12, flare=.22, folds=.025, seed=seed + 3)
+    if belt:
+        obi(o, belt)
     if sleeve:
-        o.both("UpperArm", slot, lambda pc, part: shell(pc, part, -.04, sleeve, pad=.08, flare1=.06, folds=.025, seed=seed + 2))
+        kimono_sleeve(o, slot, trim, length=sleeve + .07)
     return pc
 
 
@@ -353,10 +391,12 @@ def item_high_collar():
     pc = o.add("UpperTorso", "Cloth")
     shell(pc, "UpperTorso", 0, 1, pad=.07, folds=.02, hem=False)
     lo = o.add("LowerTorso", "Cloth")
-    shell(lo, "LowerTorso", -.1, .65, pad=.08, flare1=.05)
-    o.both("UpperArm", "Cloth", lambda pc, part: shell(pc, part, -.04, .4, pad=.08, flare1=.05))
+    shell(lo, "LowerTorso", -.1, 1.0, pad=.09, flare1=.05, hem=False)
+    thigh_tails(o, "Cloth", .5, y_top=-.06, pad=.12, flare=.2, folds=.02, seed=5)
+    o.both("UpperArm", "Cloth", lambda pc, part: shell(pc, part, -.04, .5, pad=.09, flare1=.05))
     col = o.add("UpperTorso", "Collar")
-    collar(col, "UpperTorso", h=.26, flare=.06)
+    collar(col, "UpperTorso", h=.34, flare=.08)
+    obi(o, "Belt", knot_side=-1)
     return o.items
 
 
@@ -364,12 +404,10 @@ def item_sleeveless():
     o = Out()
     pc = o.add("UpperTorso", "Cloth")
     shell(pc, "UpperTorso", .02, 1, pad=.06, folds=.02, hem=False, scale_x=.99)
+    lapel(o, "Cloth", width=.16)
     lo = o.add("LowerTorso", "Cloth")
-    shell(lo, "LowerTorso", -.1, .45, pad=.07, hem=False)
-    belt = o.add("LowerTorso", "Belt")
-    ribbed(belt, "LowerTorso", .35, .75, pad=.1, ribs=1, depth=.03, rings_per=5)
-    knot = o.add("LowerTorso", "Belt", name="Knot")
-    box(knot, (.45, -.02, -(size("LowerTorso").z / 2 + .14)), (.09, .07, .04), shade(.85, .05))
+    shell(lo, "LowerTorso", -.1, .9, pad=.08, hem=False)
+    obi(o, "Belt")
     return o.items
 
 
@@ -377,9 +415,10 @@ def item_pants():
     o = Out()
     lo = o.add("LowerTorso", "Cloth")
     shell(lo, "LowerTorso", .2, 1.05, pad=.08, hem=False)
-    o.both("UpperLeg", "Cloth", lambda pc, part: shell(pc, part, -.05, 1.02, pad=.1, flare1=.03, folds=.03, hem=False))
-    o.both("LowerLeg", "Cloth", lambda pc, part: shell(pc, part, -.02, .72, pad=.11, flare0=.03, flare1=.06, folds=.035, hem=False))
-    o.both("LowerLeg", "Tie", lambda pc, part: ribbed(pc, part, .68, .9, pad=.07, ribs=3, depth=.03, spiral=1.0))
+    # baggy thighs, bloused over the knee, then the shin wrapped tight down to the ankle
+    o.both("UpperLeg", "Cloth", lambda pc, part: shell(pc, part, -.05, 1.04, pad=.13, flare1=.06, folds=.04, hem=False))
+    o.both("LowerLeg", "Cloth", lambda pc, part: shell(pc, part, -.04, .38, pad=.16, flare0=.02, flare1=-.05, folds=.04, hem=False))
+    o.both("LowerLeg", "Tie", lambda pc, part: ribbed(pc, part, .32, .93, pad=.05, ribs=8, depth=.022, spiral=1.0))
     return o.items
 
 
@@ -387,8 +426,8 @@ def item_shorts():
     o = Out()
     lo = o.add("LowerTorso", "Cloth")
     shell(lo, "LowerTorso", .2, 1.05, pad=.08, hem=False)
-    o.both("UpperLeg", "Cloth", lambda pc, part: shell(pc, part, -.05, .72, pad=.1, flare1=.06, folds=.03))
-    o.both("LowerLeg", "Wrap", lambda pc, part: ribbed(pc, part, .1, .85, pad=.035, ribs=9, depth=.025, spiral=1.0))
+    o.both("UpperLeg", "Cloth", lambda pc, part: shell(pc, part, -.05, .7, pad=.13, flare1=.08, folds=.035))
+    o.both("LowerLeg", "Wrap", lambda pc, part: ribbed(pc, part, .08, .93, pad=.04, ribs=10, depth=.022, spiral=1.0))
     return o.items
 
 
@@ -414,7 +453,7 @@ def item_sandals():
         def pcs(slot, side=side):
             return o.add(side + "Foot", slot)
         sandal(pcs, side + "Foot")
-    o.both("LowerLeg", "Sandal", lambda pc, part: ribbed(pc, part, .84, 1.0, pad=.04, ribs=1, depth=.015, rings_per=4))
+    o.both("LowerLeg", "Sandal", lambda pc, part: ribbed(pc, part, .86, 1.0, pad=.06, ribs=1, depth=.015, rings_per=4))
     return o.items
 
 
