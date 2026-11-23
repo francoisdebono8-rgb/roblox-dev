@@ -53,6 +53,27 @@ Solo.Race={
 		{36,13,136},           -- home: the rooftops' last deck
 	},
 }
+-- (23/11, tools/village/konoha_village.py) the village is generated for the
+-- run over its roofs and draws its own race: a loop from THE ROOFTOPS' decks
+-- over the market roofs and back another way, a ring every tenth of it. Its
+-- rings and medals replace the hand-placed ones above (kept for a plan that
+-- has no race).
+do
+	local ok,Layout=pcall(require,script.Parent.KonohaLayout)
+	local race=ok and type(Layout)=="table" and Layout.Race
+	if race and race.rings and #race.rings==10 then
+		local rings={}
+		for i,r in race.rings do rings[i]={r[1],r[2],r[3]} end
+		Solo.Race.rings=rings
+		if race.medals then
+			Solo.Race.medals={
+				{id="gold",name="GOLD",time=race.medals.gold},
+				{id="silver",name="SILVER",time=race.medals.silver},
+				{id="bronze",name="BRONZE",time=race.medals.bronze},
+			}
+		end
+	end
+end
 -- The world position of ring i (its centre, a little over the roof).
 function Solo.ring(i)
 	local r=Solo.Race.rings[i]

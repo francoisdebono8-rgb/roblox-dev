@@ -730,6 +730,8 @@ Hub.LAYOUT_STANDIN={
 	small_house={"HouseGable_24x20x2",24,16,20},machiya={"HouseBack_22x20x2",22,16,20},
 	tank_house={"HouseFlat_22x18x3",22,24,18},shop_house={"HouseShop_24x20x2",24,16,20},
 	apartment={"HouseFlat_24x20x2",24,16,20},clan_house={"HouseUchiha_26x20x2",26,16,20},
+	-- (23/11, the ANIMATEUR's variety pass) the tower, until its own model is exported
+	tower_house={"HouseFlat_22x18x3",22,24,18},
 }
 local function lighten(c,k) return c:Lerp(Color3.new(1,1,1),k) end
 -- One building of the plan: {model, x, z, w, d, h, yaw, district, landmark}.
@@ -856,6 +858,21 @@ function Hub.buildLayout(f)
 		local ladder=unit(f,"LadderUnit","Ladder",rel(x-w/2-1,top/2,z))
 		local truss=Instance.new("TrussPart");truss.Name="Ladder";truss.Anchored=true;truss.Size=Vector3.new(2,top,2);truss.CFrame=rel(x-w/2-1,top/2,z)
 		truss.Color=C.woodLight;truss.Material=Enum.Material.Wood;truss.Parent=ladder
+	end
+	-- (23/11, tools/village) the walkways over the lanes, roof to roof: a ninja
+	-- crosses at a run, the street keeps its sky above the walkers (their rope
+	-- rails are drawn, not stood on)
+	for _,br in Layout.Bridges or {} do
+		local x0,z0,t0,x1,z1,t1,width=br[1],br[2],br[3],br[4],br[5],br[6],br[7]
+		local a,b=rel(x0,t0-.5,z0).Position,rel(x1,t1-.5,z1).Position
+		local cf=CFrame.lookAt((a+b)/2,b)
+		local span=(b-a).Magnitude
+		-- (a plain model until the ANIMATEUR draws one: not in the dressing's contract)
+		local u=Instance.new("Model");u.Name="Bridge";u.Parent=f
+		part(u,"Bridge",Vector3.new(width,1,span),cf,C.woodLight,Enum.Material.WoodPlanks)
+		for _,side in {-1,1} do
+			deco(u,"BridgeRope",Vector3.new(.25,.25,span),cf*CFrame.new(side*(width/2-.1),2.2,0),C.woodDark,Enum.Material.Fabric)
+		end
 	end
 	-- The props, out of the line where the two fighters of a street duel
 	-- stand (HubMap.Streets: its centre and both starts, a body's width

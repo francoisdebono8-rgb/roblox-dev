@@ -118,14 +118,14 @@ OUTSIDE = [  # backdrops beyond the wall: seen, never walked
 ]
 
 # --- the walls: id, x, z, w (along X), d (along Z), height ------------------------------------
-# The village wall is 42 tall: a walker on the tallest roof (an apartment, 24) jumps and leaps 21.6
+# (DEV 23/11: 46, for the ANIMATEUR's towers, 28) The village wall was 42 tall: a walker on the tallest roof (an apartment, 24) jumps and leaps 21.6
 # studs at the game's scale (16.6 here): 24 + 16.6 < 42, so nobody leaves over it. The clan walls
 # (10) are meant to be run on, as in the anime.
 WALLS = [
-    ("WallW", -HALF_X - 1, (-232 + MAX_Z) / 2, 2, MAX_Z + 232, 42),
-    ("WallE", HALF_X + 1, (-232 + MAX_Z) / 2, 2, MAX_Z + 232, 42),
-    ("WallS1", (-HALF_X - 24) / 2, MAX_Z + 1, HALF_X - 24, 2, 42),
-    ("WallS2", (HALF_X + 24) / 2, MAX_Z + 1, HALF_X - 24, 2, 42),
+    ("WallW", -HALF_X - 1, (-232 + MAX_Z) / 2, 2, MAX_Z + 232, 46),
+    ("WallE", HALF_X + 1, (-232 + MAX_Z) / 2, 2, MAX_Z + 232, 46),
+    ("WallS1", (-HALF_X - 24) / 2, MAX_Z + 1, HALF_X - 24, 2, 46),
+    ("WallS2", (HALF_X + 24) / 2, MAX_Z + 1, HALF_X - 24, 2, 46),
     ("UchihaWallW1", 101, (-196 - 76) / 2, 2, 196 - 76, 10),
     ("UchihaWallW2", 101, (-64 - 32) / 2, 2, 32, 10),
     ("UchihaWallS1", (102 + 134) / 2, -31, 32, 2, 10),
@@ -536,7 +536,7 @@ def to_luau(plan):
     for o in OUTSIDE:
         L.append(f'\t{{"{o[1]}",{o[2]},{o[3]},{o[4]},{o[5]},{o[6]},{o[7]},"{o[0]}"}},')
     L.append("}")
-    L.append("-- Walls: {id, x, z, w, d, height} (the village wall, 42: higher than any roof plus a leap).")
+    L.append("-- Walls: {id, x, z, w, d, height} (the village wall, 46: higher than any roof, towers included, plus a leap).")
     L.append("M.Walls={")
     for wl in WALLS:
         L.append(f'\t{{"{wl[0]}",{f(float(wl[1]))},{f(float(wl[2]))},{wl[3]},{wl[4]},{wl[5]}}},')
@@ -794,17 +794,19 @@ OUT = "."
 if __name__ == "__main__":
     OUT = sys.argv[1] if len(sys.argv) > 1 else "."
     os.makedirs(OUT, exist_ok=True)
-    plan = Plan()
-    plan.frontage()
-    plan.backfill()
-    plan.props_pass()
-    plan.variety_pass()
+    # (DEV 23/11) the houses between the landmarks are generated for the run over the roofs
+    # (tools/village/konoha_village.py, its chosen seed in tools/village/SEED): this command
+    # writes that same village, so the two tools never undo each other. This file stays the
+    # fixed Konoha (districts, streets, open places, landmarks, places of interest).
+    sys.path.insert(0, os.path.normpath(os.path.join(HERE, os.pardir, "village")))
+    import konoha_village
+    plan = konoha_village.chosen()
     # (DEV, integration 19/11) the game's folder as two parent steps, not a
     # relative path string: tools/check_architecture.py reads such a string as
     # a reference to the whole folder, Motion Lab included, and failed.
     root = os.path.normpath(os.path.join(HERE, os.pardir, os.pardir))
     with open(os.path.join(root, "src/Shared/KonohaLayout.luau"), "w") as fh:
-        fh.write(to_luau(plan))
+        fh.write(konoha_village.to_luau(plan))
     with open(os.path.join(OUT, "konoha_plan_spec.json"), "w") as fh:
         json.dump(to_spec(plan), fh, indent=0)
     minimap_png(plan, os.path.join(OUT, "minimap.png"))

@@ -514,4 +514,5 @@ Les consignes sur un partenaire immobile disparaissent du premier lancement. Le 
 - (22/11) **`DamageScale` 0,9** : d'après le joueur simulé de l'OUTILLEUR, environ 31 s par manche contre normal dans Studio ;
 - (22/11) **titres** : la boutique ne montre que les titres que le profil sait compter ; une seule ligne de titre (le choisi, sinon celui de l'Examen) ;
 - (22/11) **médailles de la course des toits** : or 27 s, argent 34 s, bronze 45 s.
+- (23/11) **le tissu de Konoha est généré pour la course sur les toits** (`tools/village`, méthode de l'ANIMATEUR) : les repères, les rues et les places restent ceux de `konoha_layout.py` ; les maisons, les passerelles et la course des toits sont générés, et un candidat n'entre dans le jeu que s'il bat le plan d'avant. La course des toits suit le plan (`KonohaLayout.Race`).
 

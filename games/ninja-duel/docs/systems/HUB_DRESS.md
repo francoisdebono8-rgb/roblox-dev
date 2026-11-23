@@ -128,8 +128,8 @@ Chaque bâtiment du plan est une unité qui porte :
 - `Dress` = le nom du modèle du plan ;
 - `DressAt` = son pied, la porte vers +Z.
 
-Les six maisons ont en plus une **doublure** : `DressFallback`, `DressFallbackAt` et `DressFallbackScale`, la maison de l'ancien village la plus proche, posée sur le lot et mise à sa taille. `Client/HubDress` la met tant que le modèle du plan n'existe pas.
+Les maisons (six, et la tour `tower_house` depuis le 23/11) ont en plus une **doublure** : `DressFallback`, `DressFallbackAt` et `DressFallbackScale`, la maison de l'ancien village la plus proche, posée sur le lot et mise à sa taille. `Client/HubDress` la met tant que le modèle du plan n'existe pas.
 
 Les noms du plan, à modéliser par l'ANIMATEUR :
-`hokage_residence`, `hospital`, `academy_annex`, `exam_hall`, `exam_hall_wing`, `ichiraku`, `great_gate`, `hyuga_hall`, `hyuga_gate`, `uchiha_police`, `naka_shrine`, `torii`, `pier`, `water_tower`, `market_hall`, `memorial_stone`, `academy_tree`, `shop_house`, `clan_house`, `tank_house`, `small_house`, `apartment`, `machiya`, `forest_of_death`, `stadium`.
+`hokage_residence`, `hospital`, `academy_annex`, `exam_hall`, `exam_hall_wing`, `ichiraku`, `great_gate`, `hyuga_hall`, `hyuga_gate`, `uchiha_police`, `naka_shrine`, `torii`, `pier`, `water_tower`, `market_hall`, `memorial_stone`, `academy_tree`, `shop_house`, `clan_house`, `tank_house`, `small_house`, `apartment`, `machiya`, `tower_house` (la tour de la passe de variété, 23/11 : doublée par `HouseFlat_22x18x3` tant que son modèle n'est pas exporté), `forest_of_death`, `stadium`.
 

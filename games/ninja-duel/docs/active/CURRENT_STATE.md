@@ -1,3 +1,26 @@
+**Le village généré pour courir en ninja, 23/11 (DEV)** — TECHNICAL, sans Studio (François : « pas ce soir ») ; à jouer par François
+- **Pourquoi** : François, après l'étape 3 : « la carte n'est vraiment pas complète et peu cohérente », « la carte prend tout l'écran », « la course ninja, le double saut, le mur, ce n'est pas du tout ninja feel », « tout doit être dans cet esprit ». Il a demandé d'appliquer la méthode de l'ANIMATEUR (SyphoDev) à la génération du village, en gardant des éléments reconnaissables.
+- **`tools/village/konoha_village.py`** (son README) :
+  - des règles tirées du corps du jeu (`konoha_profile.json`) : le saut fluide (un saut, 13,3 à plat) et le bond (second saut, 22,3) ;
+  - des rangées face aux rues, des ruelles franchissables d'un saut, des îlots fermés, une ligne de toits qui monte et descend d'1 à 4 studs ;
+  - des passerelles au-dessus des ruelles et la course des toits redessinée sur les nouveaux toits ;
+  - une note sur 10 faite de mesures et une planche ; un candidat n'est écrit que s'il bat le plan d'avant.
+- **Le plan retenu (graine 9)**, contre le plan d'avant :
+  - note 9,4 contre 6,1 (9,6 avant la passe de variété de l'ANIMATEUR, qui casse volontairement la ligne des toits) ;
+  - 225 maisons contre 154 ; sol constructible bâti 55 % contre 39 % ;
+  - tous les toits dans un seul réseau (sauts et bonds) contre 44 % ;
+  - 80 % des maisons dans un îlot qu'on fait en entier sans le second saut, contre 14 % ;
+  - plus longue course sans toucher le sol, en sauts fluides : 782 studs de plan contre 221 ;
+  - 20 passerelles ;
+  - la passe de variété de l'ANIMATEUR (`variety_pass`) appliquée au tissu généré : 14 tours `tower_house` (28 de haut, avec échelle, doublées par `HouseFlat_22x18x3` jusqu'à l'export de leur modèle) et 15 jardinets, jamais devant une porte. Le mur du village passe de 42 à 46 (une tour plus un bond).
+- **Ce qui ne bouge pas** : repères, rues, places ouvertes et points d'intérêt (`tools/blender/konoha_layout.py`). `python3 tools/blender/konoha_layout.py` écrit maintenant le même village (graine de `tools/village/SEED`).
+- **Jeu** :
+  - `Shared/KonohaLayout` gagne `Bridges` (planches entre deux toits, posées par `Server/Hub`, hors du contrat d'habillage) et `Race` ;
+  - `Shared/Solo` prend les anneaux et les médailles de `Race` : une boucle depuis les terrasses de THE ROOFTOPS, 10 anneaux, 354 studs de plan, 86 % de sauts sans le second ; médailles 27, 34 et 45 s, à l'échelle de la première course, **à remesurer avec `tools/villagebot`**.
+- **Cartes** (`Client/MiniMap`, fichier de la DESIGN, retouche minimale) : les toits du plan et les passerelles sont dessinés sur la minicarte et la grande carte. La grande carte prend au plus 86 % de l'écran, sous un voile plus léger.
+- **À surveiller** : les maisons font environ 348 000 triangles, contre 231 000 avant. Il faut vérifier la fluidité sur téléphone dans Studio.
+- Suite verte (103), 4 builds, docs et architecture.
+
 **Intégration de l'étape 3, 22/11 (DEV)** — TECHNICAL, sans Studio ; à jouer par François
 - **Sur la branche commune** :
   - OUTILLEUR (robots, prouveur ; ses 28 fichiers effacés par erreur dans le commit de l'ANIMATEUR sont remis) ;

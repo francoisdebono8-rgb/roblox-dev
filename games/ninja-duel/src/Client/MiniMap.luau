@@ -92,6 +92,24 @@ local function drawVillage(kit,parent,zoom,tier,labels)
 		street.AnchorPoint=Vector2.new(.5,.5)
 		street.Rotation=math.deg(math.atan2(by-ay,bx-ax))
 	end
+	-- (23/11, DEV, François: « la carte n'est vraiment pas complète ») the
+	-- roofs of the plan, as the village is built (tools/village): the rows of
+	-- houses in their quarter's colour, the landmarks in ink, the walkways
+	for _,b in Layout.Buildings do
+		local bw,bd=b[4],b[5]
+		if (b[7] or 0)%180==90 then bw,bd=bd,bw end
+		local x,y=Map.toPixels(b[2]-bw/2,b[3]-bd/2,zoom)
+		local quarter=Layout.districtAt(b[2],b[3])
+		local tint=if b[9] then M.ink elseif quarter then quarter.color:Lerp(M.ink,.45) else M.ink
+		local roof=kit.frame(village,UDim2.fromOffset(x,y),UDim2.fromOffset(math.max(2,bw*zoom),math.max(2,bd*zoom)),tint,if b[9] then .1 else .2)
+		roof.BorderSizePixel=0
+	end
+	for _,br in Layout.Bridges or {} do
+		local ax,ay=Map.toPixels(br[1],br[2],zoom)
+		local bx,by=Map.toPixels(br[4],br[5],zoom)
+		local plank=kit.frame(village,UDim2.fromOffset(math.min(ax,bx)-1,math.min(ay,by)-1),UDim2.fromOffset(math.abs(bx-ax)+2,math.abs(by-ay)+2),M.ink,.3)
+		plank.BorderSizePixel=0
+	end
 	local seals={}
 	for _,p in Layout.poisFor(tier) do
 		if not p.far then
@@ -155,7 +173,9 @@ function Map.new(kit,gui)
 	key.BackgroundTransparency=0;key.BackgroundColor3=M.ink
 	self.mKey=key
 	-- the big map
-	local root=kit.frame(gui,UDim2.fromScale(0,0),UDim2.fromScale(1,1),M.ink,.35)
+	-- (23/11, François: « la carte prend tout l'écran ») the game stays seen
+	-- around it: a lighter veil, the card at most 86 % of the screen
+	local root=kit.frame(gui,UDim2.fromScale(0,0),UDim2.fromScale(1,1),M.ink,.55)
 	root.Visible=false;root.ZIndex=70;root.Active=true;root.Name="BigMap"
 	self.root=root
 	local w,h=Map.extent(Map.BIG)
@@ -189,7 +209,7 @@ function Map.new(kit,gui)
 	pcall(function()
 		local function fit()
 			local v=workspace.CurrentCamera.ViewportSize
-			self.bigScale.Scale=kit.fitScale(Vector2.new(v.X,v.Y-58),W+24,H+24,1.1)
+			self.bigScale.Scale=kit.fitScale(Vector2.new(v.X*.86,(v.Y-58)*.86),W+24,H+24,1)
 		end
 		workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(fit);fit()
 	end)

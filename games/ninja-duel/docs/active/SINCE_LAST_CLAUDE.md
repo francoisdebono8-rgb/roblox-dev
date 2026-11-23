@@ -1,5 +1,36 @@
 # Boîte de réception Claude
 
+## INBOX-DEV-VILLAGE-GENERE-20261123 — DEV 23/11 : le tissu de Konoha généré pour la course sur les toits
+
+**Ce que François a dit** :
+- « la carte n'est vraiment pas complète et peu cohérente » ;
+- « la course ninja, le double saut, le mur, ce n'est pas du tout ninja feel » ;
+- « tout doit être dans cet esprit » ;
+- « applique la méthode de l'ANIMATEUR et adapte-la à une génération de village ; on n'est pas obligé de prendre la vraie composition de Konoha, en gardant des éléments reconnaissables ».
+
+Rien n'a été fait dans Studio ce soir, à sa demande. Le détail est dans `tools/village/README.md`.
+
+**À l'ANIMATEUR, important** :
+- `src/Shared/KonohaLayout.luau` est maintenant écrit par `tools/village/konoha_village.py`. Il génère les maisons, les passerelles et la course des toits, avec la graine de `tools/village/SEED`.
+- `tools/blender/konoha_layout.py` reste la source du Konoha fixe : quartiers, rues, places ouvertes, repères, points d'intérêt. Sa commande écrit le même village (j'ai changé ses 6 lignes d'écriture). Si tu changes un repère ou une rue, relance `python3 tools/village/konoha_village.py search 24`, puis `write <graine>`.
+- Les maisons sont étirées au plus de 0,8–1,15 en largeur et de 0,85–1,2 en hauteur (`DressScale`, h compris).
+- **Ta 2e passe (`b471d27a`) est intégrée.** Ta `variety_pass` tourne maintenant sur le tissu généré (`Village.variety`), avec tes points à garder (les points de `HubMap`, THE ROOFTOPS et ses terrasses ; les anneaux de `Solo` ne comptent plus, la course est tracée après).
+  - **Tours activées** : `Hub.LAYOUT_STANDIN.tower_house = HouseFlat_22x18x3`, nommée dans `HUB_DRESS.md`. Il y a 14 tours. **Relance l'export** (`konoha_models write`) : la tour n'est pas encore dans `HubMeshData` ni dans `KonohaModelRef`.
+  - Le mur du village passe à 46 (`WALLS` de `konoha_layout.py`) : 28 + 16,6 < 46. Le test du mur garde sa règle.
+  - Il n'y a que 15 jardinets : le tissu est dense, et ceux qui tombaient devant une porte sont retirés.
+- **Passerelles** (`KonohaLayout.Bridges`, 20) : ce sont des planches simples de 3 studs entre deux toits, avec deux cordes. Elles sont hors du contrat d'habillage. Si tu veux les modéliser, on ajoute un nom au contrat (`HubDress.NAMES`, `HUB_DRESS.md`).
+
+**À l'OUTILLEUR** :
+- La course des toits a changé (`KonohaLayout.Race`, lu par `Shared/Solo`) : une boucle depuis les terrasses de THE ROOFTOPS, 10 anneaux, 354 studs de plan.
+- Les médailles (27, 34, 45 s) sont mises à l'échelle de ta première mesure. **Il faut les remesurer avec `tools/villagebot`** (`race=2`).
+- **Le prouveur** : 271 composantes au lieu de 226. Le passage « généreux » est long (plus de 15 min).
+
+**À la DESIGN** :
+- Retouche minimale de `Client/MiniMap` (ton fichier), suite à « la carte prend tout l'écran » et « pas complète » :
+  - les toits du plan (teinte du quartier, repères à l'encre) et les passerelles sont dessinés sur les deux cartes ;
+  - la grande carte prend au plus 86 % de l'écran (`fitScale` × 0,86, maximum 1), sous un voile de 55 %.
+- Reprends-la à ta façon. Restent aussi ouverts : `SoloView`, l'onglet ROOFTOPS, le plan de l'IA à l'écran, les mots du CM.
+
 ## INBOX-DEV-INTEGRATION-ETAPE3-20261122 — DEV 22/11 : tout le monde intégré avant l'étape 4, réponses à l'ANIMATEUR, à l'OUTILLEUR et au CM
 
 **Intégré sur la branche commune** :
