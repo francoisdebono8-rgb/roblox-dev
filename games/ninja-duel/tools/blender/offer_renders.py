@@ -152,7 +152,8 @@ def weapon(item_id, slot, cols, yaw=0.0, at=(0, 0, 0)):
         pieces = FX.kunai(marked=(item_id == "KunaiGold"))
         key = {"Blade": "Blade", "Grip": "Grip", "Fittings": "Ring"}
     elif slot == "shuriken":
-        pieces = [FX.shuriken()]
+        pieces = FX.shuriken()
+        pieces = pieces if isinstance(pieces, list) else [pieces]
         key = {"Shuriken": "Blade"}
     else:
         pieces = FX.tanto()
