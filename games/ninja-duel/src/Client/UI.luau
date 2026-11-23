@@ -822,9 +822,15 @@ function UI.new(parent,send)
 	for _,band in {self.introLeft,self.introRight} do frame(band,UDim2.fromOffset(0,0),UDim2.new(1,0,0,5),palette.red,0) end
 	self.introLeftName=text(self.introLeft,"",UDim2.new(0,40,0,6),UDim2.new(1,-80,0,64),64,palette.paper,TITLE_FONT)
 	inkTitle(self.introLeftName)
+	-- (23/11, A06: the name cut at a round's start) one line, shrunk to fit
+	self.introLeftName.TextWrapped=false;self.introLeftName.TextScaled=true
+	create("UITextSizeConstraint",self.introLeftName,{MaxTextSize=64,MinTextSize=18})
 	self.introLeftTitle=text(self.introLeft,"",UDim2.new(0,42,0,70),UDim2.new(1,-80,0,26),18,palette.muted)
 	self.introRightName=text(self.introRight,"",UDim2.new(0,40,0,6),UDim2.new(1,-80,0,64),64,palette.paper,TITLE_FONT,Enum.TextXAlignment.Right)
 	inkTitle(self.introRightName)
+	-- (23/11, A06: the name cut at a round's start) one line, shrunk to fit
+	self.introRightName.TextWrapped=false;self.introRightName.TextScaled=true
+	create("UITextSizeConstraint",self.introRightName,{MaxTextSize=64,MinTextSize=18})
 	self.introRightTitle=text(self.introRight,"",UDim2.new(0,40,0,70),UDim2.new(1,-82,0,26),18,palette.muted,BODY_FONT,Enum.TextXAlignment.Right)
 	-- The menu's VS: paper capitals in an ink outline, tilted like the stroke.
 	self.introVs=text(self.intro,"VS",UDim2.new(.5,-80,1,-118),UDim2.fromOffset(160,104),96,palette.paper,TITLE_FONT,Enum.TextXAlignment.Center)
@@ -1595,7 +1601,7 @@ function UI:render(data)
 		self.introRightName.Text=fullName(b);self.introRightTitle.Text=subtitle(b)
 		self.introLeftName.TextColor3=accentOf(Fighters[h.fighterId]);self.introRightName.TextColor3=accentOf(Fighters[b.fighterId])
 		self.introRound.Text=UI.stageName(data).."  —  ROUND "..(data.round or 1)..(if (data.round or 1)>1 and (data.wins and (data.wins.human==1 and data.wins.bot==1)) then "  •  FINAL ROUND" else "")
-		self.introBegin.Text=if data.intro<(Config.IntroBegin or .75) then "始め!  BEGIN" else ""
+		self.introBegin.Text=if data.intro<(Config.IntroBegin or .75) then "BEGIN!" else ""
 		if self.introShown~=data.epoch then
 			self.introShown=data.epoch
 			self.introLeft.Position=UDim2.new(-.5,0,1,-118);self.introRight.Position=UDim2.new(1,0,1,-118)

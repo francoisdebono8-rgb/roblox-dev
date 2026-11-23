@@ -157,7 +157,9 @@ function Map.new(kit,gui)
 	local STRONG=kit.STRONG_FONT or kit.BODY_FONT
 	-- the minimap
 	local mini=kit.button(gui,"",UDim2.fromOffset(18,110),UDim2.fromOffset(Map.SIZE,Map.SIZE+30),function() self:openBig() end,M.paper)
-	mini.Name="MiniMap";mini.Visible=false;mini.ZIndex=20;mini.ClipsDescendants=false;mini.Rotation=1
+	mini.Name="MiniMap";mini.Visible=false;mini.ZIndex=20;mini.ClipsDescendants=false
+	-- (23/11, A06) never turned: Roblox does not clip a turned frame's
+	-- children, and the whole village then spills over the phone's left side
 	kit.create("UIStroke",mini,{Color=M.ink,Thickness=3,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
 	self.mini=mini
 	self.miniScale=kit.create("UIScale",mini,{Scale=1})
