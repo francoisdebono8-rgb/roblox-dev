@@ -93,16 +93,28 @@ MODELS = {k: dict(w=v[5][0], d=v[5][1], h=v[1]) for k, v in K.HOUSES.items()}
 
 # Each district's character: its models and the band of its roofs (a quarter reads as one).
 CHARACTER = {
-    "Market": dict(mix=[("shop_house", 5), ("tank_house", 3), ("apartment", 2), ("machiya", 2)], band=(12, 22)),
-    "Main": dict(mix=[("shop_house", 3), ("machiya", 1)], band=(12, 17)),
-    "TeaStreet": dict(mix=[("shop_house", 3), ("machiya", 3)], band=(12, 17)),
-    "Centre": dict(mix=[("tank_house", 3), ("shop_house", 3), ("apartment", 2), ("machiya", 1)], band=(12, 23)),
-    "Alleys": dict(mix=[("tank_house", 3), ("machiya", 3), ("apartment", 2), ("small_house", 1)], band=(8, 22)),
-    "Residences": dict(mix=[("machiya", 4), ("tank_house", 2), ("small_house", 2), ("apartment", 1)], band=(7, 20)),
-    "Civic": dict(mix=[("tank_house", 2), ("apartment", 2), ("machiya", 1)], band=(14, 23)),
-    "Uchiha": dict(mix=[("clan_house", 3), ("machiya", 2), ("small_house", 1)], band=(8, 15)),
+    # (23/11, François: « la ville est aléatoire, rien n'est cohérent » ; « un mix entre le vrai et
+    # le généré », « tu peux te baser sur plusieurs villages existants ») An Edo town's streets:
+    # Tsumago and Kyoto's rows of two-storey timber houses with deep eaves along the main streets,
+    # Ouchi-juku's houses set back in their gardens in the residences, and Konoha's tall plaster
+    # blocks with their round tanks only round the civic heart (the Hokage's quarter).
+    "Market": dict(mix=[("shop_house", 3), ("machiya", 2)], band=(12, 16)),
+    "Main": dict(mix=[("shop_house", 3), ("machiya", 1)], band=(12, 16)),
+    "TeaStreet": dict(mix=[("machiya", 3), ("shop_house", 2)], band=(12, 15)),
+    "Centre": dict(mix=[("machiya", 3), ("shop_house", 2), ("tank_house", 1)], band=(12, 18)),
+    "Alleys": dict(mix=[("machiya", 3), ("small_house", 2)], band=(8, 15)),
+    "Residences": dict(mix=[("small_house", 3), ("machiya", 2), ("clan_house", 1)], band=(7, 14)),
+    "Civic": dict(mix=[("tank_house", 3), ("apartment", 2)], band=(16, 23)),
+    "Uchiha": dict(mix=[("clan_house", 3), ("machiya", 1)], band=(8, 13)),
     "Hyuga": dict(mix=[("clan_house", 1)], band=(8, 11)),
 }
+# (23/11) How dense a district is: back rows behind its street rows (the rest of the block is
+# its gardens and trees), and whether the holes the rows leave get a house or a garden.
+DENSE = {"Market": 3, "Main": 3, "TeaStreet": 2, "Centre": 3, "Alleys": 2, "Civic": 2, "Residences": 1, "Uchiha": 1, "Hyuga": 0}
+# A row keeps its model and walks its skyline gently (Tsumago's eaves run on): a step of
+# ROW_STEP between neighbours, the bigger FLOW steps only where an alley cuts the row.
+ROW_STEP = (0.3, 1.6)
+TOWERS_MAX = 4           # the ANIMATEUR's towers: a few watchtowers, not one per block
 NO_FABRIC = {"Rock", "Training", None}
 
 
@@ -167,7 +179,7 @@ class Village(K.Plan):
         if prev_h is None:
             h = rng.uniform(lo, hi)
         else:
-            h = min(max(prev_h + (trend or rng.choice((-1, 1))) * rng.uniform(1.0, FLOW_RISE - 1), lo), hi)
+            h = min(max(prev_h + (trend or rng.choice((-1, 1))) * rng.uniform(*ROW_STEP), lo), hi)
         return w, d, round(h, 1)
 
     @staticmethod
@@ -192,8 +204,15 @@ class Village(K.Plan):
     def place(self, model, x, z, w, d, h, yaw, gap):
         """A house on its lot, if the lot is free and its door keeps a way out: the strip
         before its door (an alley's width) stays clear, and it stands in no other's."""
+        x, z = round(x, 1), round(z, 1)   # the rect of what is written (the game reads tenths)
         r = rect_of(x, z, w, d, yaw)
         if not self.free(r, gap):
+            return None
+        # (23/11) never over a spot the game uses (a master, a spawn, the proctor, a street duel)
+        if not hasattr(self, "_spots"):
+            pts = self.keep_points()
+            self._spots = pts + [(px / K.SCALE, pz / K.SCALE) for px, pz in pts]
+        if any(r[0] - 2.5 < px < r[2] + 2.5 and r[1] - 2.5 < pz < r[3] + 2.5 for px, pz in self._spots):
             return None
         if any(K.overlap(r, st) for st in self.doors):
             return None
@@ -218,6 +237,9 @@ class Village(K.Plan):
         # from the streets inward, so a hole is filled from its open side
         pts.sort(key=lambda p: street_distance(p[0], p[1]) + rng.uniform(0, 2))
         for x, z, dist in pts:
+            # (23/11) the dense quarters only; elsewhere the holes are gardens (greenery)
+            if DENSE.get(dist, 1) < 3:
+                continue
             pr = (x - .5, z - .5, x + .5, z + .5)
             if any(K.overlap(pr, b["rect"], 2) for b in self.buildings):
                 continue
@@ -266,6 +288,7 @@ class Village(K.Plan):
             length = abs(x1 - x0) if along_x else abs(z1 - z0)
             for side in (-1, 1):
                 t, prev_h, trend = 2.0, None, rng.choice((-1, 1))
+                run_model, run_district = None, None
                 while t < length - 2:
                     px = min(x0, x1) + t if along_x else x0
                     pz = z0 if along_x else min(z0, z1) + t
@@ -277,9 +300,12 @@ class Village(K.Plan):
                         continue
                     band = CHARACTER.get(district, dict(band=(7, 21)))["band"]
                     b = None
-                    # the model the row wants; a narrower lot of it, then another model, before a gap
+                    # the model the row wants (the row's own, while it lasts); a narrower lot of
+                    # it, then another model, before a gap
+                    if run_model is not None and run_district != district:
+                        run_model = None
                     for attempt in range(4):
-                        model = self.pick_model(district, prev_h if attempt < 3 else None)
+                        model = run_model if (run_model and attempt < 2) else self.pick_model(district, prev_h if attempt < 3 else None)
                         if not model:
                             continue
                         w, d, h = self.lot(model, prev_h if attempt < 3 else None, band, trend)
@@ -306,11 +332,15 @@ class Village(K.Plan):
                         elif h <= lo + .5:
                             trend = 1
                         prev_h = h
+                        run_model, run_district = b["model"], district
                         gap = rng.uniform(*ALLEY) if rng.random() < self.alley_chance else rng.uniform(*ROW_GAP)
+                        if gap >= ALLEY[0] and rng.random() < .5:
+                            run_model = None      # across an alley the next row may change
                         t += w + gap
                     else:
                         t += 2.0
                         prev_h = None
+                        run_model = None
 
     def back(self, rows=5):
         """Behind each house of a street, across a back alley, a house facing that alley; the
@@ -324,10 +354,10 @@ class Village(K.Plan):
             if district in NO_FABRIC:
                 continue
             band = CHARACTER.get(district, dict(band=(7, 21)))["band"]
-            for _row in range(rows):
+            for _row in range(min(rows, DENSE.get(district, 1))):
                 b = None
                 for attempt in range(3):
-                    model = self.pick_model(district, f["h"])
+                    model = f["model"] if attempt == 0 and f["model"] in dict(CHARACTER.get(district, dict(mix=[]))["mix"]) else self.pick_model(district, f["h"])
                     if not model:
                         break
                     w, d, h = self.lot(model, f["h"], band)
@@ -438,6 +468,11 @@ class Village(K.Plan):
                     if any(K.overlap(r, o, ROW_GAP[0] - .05) for o in others if not any(o is mm["rect"] for mm in marks)):
                         continue
                     if any(K.overlap(r, mm["rect"]) for mm in marks):
+                        continue
+                    # never stretched onto a street or an open place
+                    if any(K.overlap(r, bl) for bl in self.blocked):
+                        continue
+                    if any((o[0] == "circle" and K.rect_circle(r, o[1], o[2], o[3])) or (o[0] == "rect" and K.overlap(r, o[1:5])) for o in K.OPEN):
                         continue
                     cost = sum(abs(r[i] - r0[i]) for i in range(4))
                     if best is None or cost < best[0]:
@@ -581,10 +616,40 @@ class Village(K.Plan):
         towers that break the skyline (vantage points: a leap up from the roofs beside them),
         pocket gardens fill the gaps. A garden never stands before a door (its way out)."""
         before = len(self.props)
+        was = {id(b): (b["model"], b["h"]) for b in self.buildings}
         self.variety_pass()
+        # (23/11) a few watchtowers only, in the busy quarters; the other lots keep their house
+        towers = [b for b in self.buildings if b["model"] == "tower_house" and was.get(id(b), ("tower_house",))[0] != "tower_house"]
+        towers.sort(key=lambda b: (b.get("district") not in ("Market", "Centre", "Civic"), b["x"], b["z"]))
+        for b in towers[TOWERS_MAX:]:
+            b["model"], b["h"] = was[id(b)]
         added = self.props[before:]
         kept = [p for p in added if not any(K.overlap((p["x"] - 2, p["z"] - 2, p["x"] + 2, p["z"] + 2), st) for st in self.doors)]
         self.props = self.props[:before] + kept
+
+    def greenery(self, every=7.0, most=160):
+        """(23/11, « un village ninja », the Leaf) Trees in the quiet quarters' gardens, in the
+        holes the rows leave: never on a street, a doorstep or against a wall."""
+        rng = self.rng
+        pts = [(x, z) for x in range(-282, 283, int(every)) for z in range(-192, 210, int(every))]
+        rng.shuffle(pts)
+        n = 0
+        for x, z in pts:
+            if n >= most:
+                break
+            if K.district_at(x, z) not in ("Residences", "Alleys", "Uchiha", "TeaStreet", "Centre", "Hyuga"):
+                continue
+            if blocked_cell(x, z) or not self.free_prop(x, z):
+                continue
+            r = (x - 1, z - 1, x + 1, z + 1)
+            if any(gap_between(r, b["rect"]) < 3.5 for b in self.buildings):
+                continue
+            if any(K.overlap(r, st, 1) for st in self.doors) or self.near_prop(x, z, 6):
+                continue
+            self.prop("tree", x + rng.uniform(-1.5, 1.5), z + rng.uniform(-1.5, 1.5), rng.uniform(0, 360), round(rng.uniform(12, 18), 1))
+            n += 1
+        self.trees = n
+        return n
 
     def generate(self):
         self.frontage()
@@ -595,6 +660,7 @@ class Village(K.Plan):
         self.smooth()
         self.props_pass()
         self.variety()
+        self.greenery()
         self.lamps_clear()
         self.bridge_pass()
         self.race = race_route(self)

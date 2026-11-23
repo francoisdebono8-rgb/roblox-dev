@@ -101,6 +101,17 @@ Le générateur ne touche qu'au tissu entre ces repères : les maisons, les pass
 - Aucune maison sur un mur d'enceinte (Uchiha, Hyūga) : les murs sont tenus libres comme les rues. Le prouveur de l'OUTILLEUR en trouvait 12 qui traversaient une maison.
 - **Le village du jeu est passé de la graine 9 à la graine 5** (23/11 soir). Avec cette règle, la graine 9 tombait à 8,9/10. La graine 5 a 9,33/10 : un seul réseau de toits (100 %), tous les toits accessibles. Sa course fait 325 studs d'anneaux ; les médailles calculées sont 25/31/42, à mesurer de nouveau avec le robot.
 
+**Passe commune 1 (23/11, François : « la ville est aléatoire, rien n'est cohérent » ; « un mix entre le vrai et le généré »)** :
+- **Les quartiers d'une ville d'Edo.**
+  - Les rues principales : des rangées de maisons de bois à deux étages et grands avant-toits (Tsumago, Kyoto).
+  - Les résidences : des maisons en retrait dans leurs jardins (Ōuchi-juku).
+  - Les grands blocs de Konoha à réservoir rond : seulement autour du quartier du Hokage (Civic).
+- **Une rangée garde son modèle** et sa ligne de toits monte ou descend doucement (0,3 à 1,6 d'une maison à l'autre). Elle ne change de modèle qu'après une ruelle.
+- **La densité par quartier** (`DENSE`) : le nombre de rangées derrière la rue. Le reste de l'îlot est en jardins et en arbres (jusqu'à 160). Seuls les quartiers denses comblent leurs trous par des maisons.
+- **4 tours au plus** (des tours de guet), dans le marché, le centre et le quartier du Hokage.
+- **Aucune maison sur un point du jeu** (maître, arrivée, surveillant, duel de rue), et aucune n'est étirée sur une rue ou une place.
+- **Graine 13**, 8,67/10. Les toits forment deux réseaux, et non plus un seul : les rangées s'arrêtent devant les points du jeu.
+
 ### 5. On ne garde que ce qui bat l'existant
 
 `write` refuse d'écrire un candidat dont la note ne dépasse pas celle du plan du jeu.
@@ -111,7 +122,7 @@ Depuis `games/ninja-duel` :
 
 ```sh
 python3 tools/village/konoha_village.py search 24    # 24 candidats, la planche du meilleur
-python3 tools/village/konoha_village.py write 5      # écrit src/Shared/KonohaLayout.luau (graine 5)
+python3 tools/village/konoha_village.py write 13     # écrit src/Shared/KonohaLayout.luau (graine 13)
 python3 tools/village/konoha_village.py score        # la note du plan du jeu
 
 # puis, comme pour tout plan : le village que Hub.build construit, prouvé et rendu en gris
