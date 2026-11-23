@@ -232,7 +232,7 @@ def aura_pieces(key, col):
 
 
 # ---- rendering -----------------------------------------------------------------------------
-def shoot(objs, path, size=(512, 512), view=(.55, 1.0, .16), fill=.92, lens=60):
+def shoot(objs, path, size=(512, 512), view=(.55, 1.0, .16), fill=.92, lens=60, frame=None):
     S = bpy.context.scene
     S.render.engine = "CYCLES"
     S.cycles.device = "CPU"
@@ -255,7 +255,7 @@ def shoot(objs, path, size=(512, 512), view=(.55, 1.0, .16), fill=.92, lens=60):
         sun.data.energy = energy
         sun.rotation_euler = rot
         S.collection.objects.link(sun)
-    pts = [o.matrix_world @ Vector(c) for o in objs for c in o.bound_box]
+    pts = [o.matrix_world @ Vector(c) for o in (frame or objs) for c in o.bound_box]
     lo = Vector((min(p.x for p in pts), min(p.y for p in pts), min(p.z for p in pts)))
     hi = Vector((max(p.x for p in pts), max(p.y for p in pts), max(p.z for p in pts)))
     ctr = (lo + hi) / 2
@@ -272,6 +272,12 @@ def shoot(objs, path, size=(512, 512), view=(.55, 1.0, .16), fill=.92, lens=60):
     cam.data.clip_end = dist * 4
     S.render.filepath = path
     bpy.ops.render.render(write_still=True)
+
+
+def head_frame(objs):
+    """The objects a bust is framed on: whatever sits above the shoulders (head, hair, mask)."""
+    out = [o for o in objs if min((o.matrix_world @ Vector(c)).z for c in o.bound_box) > 1.6]
+    return out or objs
 
 
 def build(item_id, slot, rest, yaw):
@@ -304,8 +310,9 @@ def run(mode, dst, ids=None):
             if not objs:
                 skipped.append((item_id, slot))
                 continue
-            fill = {"weapon": .78, "bust": .74, "body": .9, "aura": .95}[kind]
-            shoot(objs, os.path.join(dst, "%s.png" % item_id), fill=fill, view=(.55, 1.0, .3 if kind == "bust" else .16))
+            fill = {"weapon": .78, "bust": 1.0, "body": .9, "aura": .95}[kind]
+            shoot(objs, os.path.join(dst, "%s.png" % item_id), fill=fill, view=(.55, 1.0, .3 if kind == "bust" else .16),
+                  frame=head_frame(objs) if kind == "bust" else None)
         else:   # review: front and back side by side
             if slot in WEAPON or slot not in WEAR | {"aura"}:
                 skipped.append((item_id, slot))
@@ -316,16 +323,40 @@ def run(mode, dst, ids=None):
                 skipped.append((item_id, slot))
                 continue
             back, _ = build(item_id, slot, rest, math.pi)
-            for o in front:   # front on the left, back on the right
-                o.location.x -= 2.4 if kind != "bust" else 1.6
-            for o in back:
+            # the camera looks down -y, so +x is on the left of the picture: front left, back right
+            for o in front:
                 o.location.x += 2.4 if kind != "bust" else 1.6
+            for o in back:
+                o.location.x -= 2.4 if kind != "bust" else 1.6
             shoot(front + back, os.path.join(dst, "%s.png" % item_id), size=(1024, 512), view=(.0, 1.0, .1),
-                  fill={"bust": .95}.get(kind, 1.08))
+                  fill={"bust": 1.0}.get(kind, .92), frame=head_frame(front + back) if kind == "bust" else None)
         done.append(item_id)
         print("OFFER" if mode == "offers" else "REVIEW", item_id, flush=True)
     print("DONE %d SKIPPED %s" % (len(done), skipped), flush=True)
 
 
+PRODIGIES = ("SetNaruto", "SetSasuke", "SetLee", "SetNeji", "SetGaara", "SetKakashi", "SetItachi", "SetMinato")
+
+
+def bundle(dst):
+    """The 8 prodigies' outfits together (the bundle offer): two rows of four, front three-quarter."""
+    os.makedirs(dst, exist_ok=True)
+    ROWS.update({i: rest for i, _, rest in catalog(every=True)})
+    clear()
+    objs = []
+    for k, sid in enumerate(PRODIGIES):
+        row, col = divmod(k, 4)
+        part = avatar(dressed(sid, "set"), .35)
+        for o in part:
+            o.location.x += (col - 1.5) * 3.4 + (1.0 if row else 0)
+            o.location.y += 3.0 * row
+            o.location.z += 0 if row else -.4
+        objs += part
+    shoot(objs, os.path.join(dst, "SetBundle8.png"), view=(.15, 1.0, .22), fill=.8)
+    print("BUNDLE done", flush=True)
+
+
+if __name__ == "__main__" and len(sys.argv) > 2 and sys.argv[1] == "bundle":
+    bundle(sys.argv[2])
 if __name__ == "__main__" and len(sys.argv) > 2 and sys.argv[1] in ("offers", "review"):
     run(sys.argv[1], sys.argv[2], set(sys.argv[3:]) or None)
