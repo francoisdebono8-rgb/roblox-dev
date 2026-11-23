@@ -1,0 +1,1025 @@
+{
+ "meta": {
+  "date": "2026-11-23",
+  "place": "LAB copie de ND-JEU acfb00d6 (village généré, 225 maisons)",
+  "studio": "Play Client, Mac, Studio LAB",
+  "note": "routes + toits (ancienne montée, avant le correctif du 23/11) + saut ; courses des toits prises du robot nouveau joueur (même Play du 23/11) ; toits_apres_correctif : la montée corrigée, second Play"
+ },
+ "village": {
+  "plan": {
+   "routes": true,
+   "roofs": 10,
+   "jump": true
+  },
+  "roofBands": {
+   "bands": [
+    12,
+    15,
+    18,
+    21,
+    25
+   ],
+   "count": [
+    13,
+    27,
+    45,
+    32,
+    67,
+    61
+   ]
+  },
+  "jump": {
+   "single": 0,
+   "jumpPower": 56,
+   "apex": 26.3,
+   "early": 22.7,
+   "gravity": 140
+  },
+  "roofs": [
+   {
+    "highest": 13.6,
+    "climbAt": 0.1,
+    "tries": 1,
+    "eave": 10.4,
+    "upIn": 0.7,
+    "approach": 16.7,
+    "ridge": 10.4,
+    "approachArrived": true,
+    "way": "wall",
+    "name": "small_house/Roof",
+    "t": 17.4,
+    "reached": true
+   },
+   {
+    "highest": 1.1,
+    "climbAt": 0,
+    "tries": 3,
+    "eave": 12.2,
+    "approach": 3.4,
+    "ridge": 12.2,
+    "approachArrived": true,
+    "way": "wall",
+    "name": "small_house/Roof",
+    "t": 19.9,
+    "reached": false
+   },
+   {
+    "highest": 12,
+    "climbAt": 0.1,
+    "tries": 3,
+    "eave": 15.3,
+    "approach": 12.3,
+    "ridge": 15.3,
+    "approachArrived": true,
+    "way": "wall",
+    "name": "clan_house/Roof",
+    "t": 27.1,
+    "reached": false
+   },
+   {
+    "highest": 0,
+    "tries": 3,
+    "eave": 16.9,
+    "approach": 27,
+    "ridge": 16.9,
+    "approachArrived": false,
+    "way": "wall",
+    "name": "machiya/Roof",
+    "t": 82.2,
+    "reached": false
+   },
+   {
+    "highest": 0,
+    "tries": 3,
+    "eave": 19.4,
+    "approach": 22.2,
+    "ridge": 19.4,
+    "approachArrived": false,
+    "way": "wall",
+    "name": "machiya/Roof",
+    "t": 75,
+    "reached": false
+   },
+   {
+    "highest": 21.9,
+    "climbAt": 0,
+    "tries": 2,
+    "eave": 21.4,
+    "upIn": 7.3,
+    "approach": 17.6,
+    "ridge": 21.4,
+    "approachArrived": true,
+    "way": "wall",
+    "name": "machiya/Roof",
+    "t": 24.9,
+    "reached": true
+   },
+   {
+    "highest": 0,
+    "climbAt": 0,
+    "tries": 3,
+    "eave": 23.1,
+    "approach": 18.1,
+    "ridge": 23.1,
+    "approachArrived": true,
+    "way": "wall",
+    "name": "shop_house/Roof",
+    "t": 33.3,
+    "reached": false
+   },
+   {
+    "highest": 16.1,
+    "climbAt": 0.1,
+    "tries": 3,
+    "eave": 24.4,
+    "approach": 4.3,
+    "ridge": 24.4,
+    "approachArrived": true,
+    "way": "wall",
+    "name": "tank_house/Roof",
+    "t": 19.2,
+    "reached": false
+   },
+   {
+    "highest": 9.4,
+    "climbAt": 0.2,
+    "tries": 3,
+    "eave": 28.1,
+    "approach": 8.6,
+    "ridge": 28.1,
+    "approachArrived": true,
+    "way": "wall",
+    "name": "apartment/Roof",
+    "t": 23.7,
+    "reached": false
+   },
+   {
+    "highest": 15.3,
+    "climbAt": 0.1,
+    "tries": 3,
+    "eave": 32.5,
+    "approach": 5.6,
+    "ridge": 32.5,
+    "approachArrived": true,
+    "way": "wall",
+    "name": "Hospital/Roof",
+    "t": 20.3,
+    "reached": false
+   }
+  ],
+  "routes": [
+   {
+    "arrived": true,
+    "to": "poi:Rooftops",
+    "t": 2.1,
+    "straight": 31.8,
+    "below": -21.4,
+    "fell": false,
+    "from": "78.6,135",
+    "stuck": [],
+    "length": 50.7,
+    "recompute": 1,
+    "walk": 3.2
+   },
+   {
+    "arrived": true,
+    "to": "poi:Street",
+    "t": 1.9,
+    "straight": 54.9,
+    "fell": false,
+    "from": "54.9,158.1",
+    "stuck": [],
+    "length": 51.6,
+    "recompute": 0,
+    "walk": 3.2
+   },
+   {
+    "arrived": true,
+    "to": "master:Legion",
+    "t": 0.8,
+    "straight": 26.4,
+    "fell": false,
+    "from": "3.4,156.1",
+    "stuck": [],
+    "length": 22.7,
+    "recompute": 0,
+    "walk": 1.4
+   },
+   {
+    "arrived": true,
+    "to": "poi:Ichiraku",
+    "t": 0.2,
+    "straight": 17.7,
+    "fell": false,
+    "from": "-16.2,144.9",
+    "stuck": [],
+    "length": 4,
+    "recompute": 0,
+    "walk": 0.3
+   },
+   {
+    "arrived": true,
+    "to": "spawn:gate",
+    "t": 3.4,
+    "straight": 106.6,
+    "fell": false,
+    "from": "-20,144.9",
+    "stuck": [],
+    "length": 105.1,
+    "recompute": 0,
+    "walk": 6.6
+   },
+   {
+    "arrived": true,
+    "to": "poi:Gate",
+    "t": 0.4,
+    "straight": 14.4,
+    "fell": false,
+    "from": "0.4,245.6",
+    "stuck": [],
+    "length": 9.8,
+    "recompute": 0,
+    "walk": 0.6
+   },
+   {
+    "arrived": true,
+    "to": "poi:Residences",
+    "t": 7.7,
+    "straight": 229.2,
+    "fell": false,
+    "from": "0.1,255.4",
+    "stuck": [],
+    "length": 238.3,
+    "recompute": 0,
+    "walk": 14.9
+   },
+   {
+    "arrived": true,
+    "to": "poi:Memorial",
+    "t": 4.4,
+    "straight": 95.5,
+    "fell": false,
+    "from": "-213.4,194",
+    "stuck": [],
+    "length": 137.9,
+    "recompute": 0,
+    "walk": 8.6
+   },
+   {
+    "arrived": true,
+    "to": "master:Copycat",
+    "t": 0.4,
+    "straight": 12.1,
+    "fell": false,
+    "from": "-226.3,95.9",
+    "stuck": [],
+    "length": 10,
+    "recompute": 0,
+    "walk": 0.6
+   },
+   {
+    "arrived": true,
+    "to": "poi:Training",
+    "t": 2,
+    "straight": 65.2,
+    "fell": false,
+    "from": "-216.6,94",
+    "stuck": [],
+    "length": 60.4,
+    "recompute": 0,
+    "walk": 3.8
+   },
+   {
+    "arrived": true,
+    "to": "master:Leaf",
+    "t": 0.7,
+    "straight": 26.6,
+    "fell": false,
+    "from": "-176.4,49.9",
+    "stuck": [],
+    "length": 23,
+    "recompute": 0,
+    "walk": 1.4
+   },
+   {
+    "arrived": true,
+    "to": "training",
+    "t": 1.4,
+    "straight": 42.3,
+    "fell": false,
+    "from": "-156.5,38.2",
+    "stuck": [],
+    "length": 43.4,
+    "recompute": 0,
+    "walk": 2.7
+   },
+   {
+    "arrived": true,
+    "to": "master:GentleFist",
+    "t": 12.4,
+    "straight": 151.7,
+    "fell": false,
+    "from": "-195.8,24.2",
+    "stuck": [],
+    "length": 310.1,
+    "recompute": 0,
+    "walk": 19.4
+   },
+   {
+    "arrived": true,
+    "to": "poi:Hyuga",
+    "t": 0.4,
+    "straight": 13.2,
+    "fell": false,
+    "from": "-186.2,-128.4",
+    "stuck": [],
+    "length": 10.2,
+    "recompute": 0,
+    "walk": 0.6
+   },
+   {
+    "arrived": false,
+    "to": "poi:Hospital",
+    "t": 29.5,
+    "straight": 132,
+    "fell": false,
+    "from": "-194.6,-133.3",
+    "stuck": [
+     {
+      "at": [
+       -109.7,
+       3.6,
+       -228.7
+      ],
+      "against": "tower_house/Walls",
+      "toward": "poi:Hospital"
+     },
+     {
+      "at": [
+       -109.7,
+       3.8,
+       -228.7
+      ],
+      "against": "tower_house/Walls",
+      "toward": "poi:Hospital"
+     },
+     {
+      "at": [
+       -109.7,
+       3.6,
+       -228.7
+      ],
+      "against": "tower_house/Walls",
+      "toward": "poi:Hospital"
+     },
+     {
+      "at": [
+       -109.7,
+       3.6,
+       -228.7
+      ],
+      "against": "tower_house/Walls",
+      "toward": "poi:Hospital"
+     }
+    ],
+    "length": 196.9,
+    "recompute": 4,
+    "walk": 12.3
+   },
+   {
+    "arrived": false,
+    "to": "poi:Residence",
+    "t": 7.3,
+    "straight": 114.7,
+    "fell": false,
+    "from": "-109.7,-228.7",
+    "stuck": [],
+    "length": 208.5,
+    "recompute": 4,
+    "walk": 13
+   },
+   {
+    "arrived": true,
+    "to": "master:Flashstep",
+    "t": 5.9,
+    "straight": 113.2,
+    "fell": false,
+    "from": "4.7,-165.1",
+    "stuck": [],
+    "length": 184,
+    "recompute": 0,
+    "walk": 11.5
+   },
+   {
+    "arrived": false,
+    "to": "poi:Faces",
+    "t": 3.3,
+    "straight": 3.9,
+    "below": -46.2,
+    "fell": false,
+    "from": "3.9,-277.7",
+    "stuck": [],
+    "length": 47.2,
+    "recompute": 4,
+    "walk": 3
+   },
+   {
+    "arrived": false,
+    "to": "poi:Archive",
+    "t": 4.7,
+    "straight": 107.5,
+    "fell": false,
+    "from": "-4.6,-266.1",
+    "stuck": [],
+    "length": 121.2,
+    "recompute": 4,
+    "walk": 7.6
+   },
+   {
+    "arrived": true,
+    "to": "poi:Uchiha",
+    "t": 10.6,
+    "straight": 156.2,
+    "fell": false,
+    "from": "85.6,-228.5",
+    "stuck": [],
+    "length": 257.3,
+    "recompute": 0,
+    "walk": 16.1
+   },
+   {
+    "arrived": false,
+    "to": "master:Mirage",
+    "t": 8.4,
+    "straightOnly": true,
+    "straight": 46.4,
+    "below": 18.6,
+    "status": "NoPath",
+    "fell": false,
+    "from": "188.5,-122.8",
+    "stuck": [],
+    "length": 55.2,
+    "recompute": 1,
+    "walk": 3.5
+   },
+   {
+    "arrived": true,
+    "to": "master:Lion",
+    "t": 7.9,
+    "straight": 58.8,
+    "fell": false,
+    "from": "230.1,-136.8",
+    "stuck": [],
+    "length": 83.6,
+    "recompute": 0,
+    "walk": 5.2
+   },
+   {
+    "arrived": true,
+    "to": "poi:Pier",
+    "t": 0,
+    "straight": 3.2,
+    "fell": false,
+    "from": "231.5,-79.7",
+    "stuck": [],
+    "length": 0,
+    "recompute": 0,
+    "walk": 0
+   },
+   {
+    "arrived": true,
+    "to": "poi:Alleys",
+    "t": 4.9,
+    "straight": 75.4,
+    "fell": false,
+    "from": "230.6,-79.2",
+    "stuck": [],
+    "length": 144.4,
+    "recompute": 0,
+    "walk": 9
+   },
+   {
+    "arrived": true,
+    "to": "market",
+    "t": 4.6,
+    "straight": 91.1,
+    "fell": false,
+    "from": "229.4,-7.3",
+    "stuck": [],
+    "length": 142.4,
+    "recompute": 0,
+    "walk": 8.9
+   },
+   {
+    "arrived": true,
+    "to": "poi:MarketStall",
+    "t": 0.1,
+    "straight": 3.9,
+    "fell": false,
+    "from": "202,78.5",
+    "stuck": [],
+    "length": 0,
+    "recompute": 0,
+    "walk": 0
+   },
+   {
+    "arrived": true,
+    "to": "poi:Market",
+    "t": 2.3,
+    "straight": 54.9,
+    "fell": false,
+    "from": "203.2,79.2",
+    "stuck": [],
+    "length": 67,
+    "recompute": 0,
+    "walk": 4.2
+   },
+   {
+    "arrived": true,
+    "to": "poi:WaterTower",
+    "t": 8,
+    "straight": 121.6,
+    "fell": false,
+    "from": "204.1,129.5",
+    "stuck": [],
+    "length": 189.4,
+    "recompute": 0,
+    "walk": 11.8
+   },
+   {
+    "arrived": true,
+    "to": "poi:Shrine",
+    "t": 19.5,
+    "straight": 282,
+    "fell": false,
+    "from": "311.4,141.4",
+    "stuck": [],
+    "length": 470.3,
+    "recompute": 0,
+    "walk": 29.4
+   },
+   {
+    "arrived": true,
+    "to": "poi:Hall",
+    "t": 13.7,
+    "straight": 298.2,
+    "fell": false,
+    "from": "294.3,-138.8",
+    "stuck": [],
+    "length": 340.3,
+    "recompute": 0,
+    "walk": 21.3
+   },
+   {
+    "arrived": true,
+    "to": "proctor",
+    "t": 0.7,
+    "straight": 19.8,
+    "fell": false,
+    "from": "5.6,-86.6",
+    "stuck": [],
+    "length": 20.1,
+    "recompute": 0,
+    "walk": 1.3
+   },
+   {
+    "arrived": true,
+    "to": "spawn:hall",
+    "t": 1.9,
+    "straight": 61,
+    "fell": false,
+    "from": "-1.3,-71.3",
+    "stuck": [],
+    "length": 57.4,
+    "recompute": 0,
+    "walk": 3.6
+   },
+   {
+    "arrived": true,
+    "to": "poi:Plaza",
+    "t": 0.8,
+    "straight": 29.9,
+    "fell": false,
+    "from": "0.4,-14.3",
+    "stuck": [],
+    "length": 21.7,
+    "recompute": 0,
+    "walk": 1.4
+   },
+   {
+    "arrived": false,
+    "to": "master:Sand",
+    "t": 10.2,
+    "straightOnly": true,
+    "straight": 126.2,
+    "below": -6.8,
+    "status": "NoPath",
+    "fell": false,
+    "from": "0.1,7.4",
+    "stuck": [],
+    "length": 137.4,
+    "recompute": 1,
+    "walk": 8.6
+   },
+   {
+    "arrived": true,
+    "to": "spawn:gate",
+    "t": 19.2,
+    "straight": 355.6,
+    "fell": false,
+    "from": "-59.8,-101",
+    "stuck": [],
+    "length": 374.1,
+    "recompute": 0,
+    "walk": 23.4
+   }
+  ],
+  "places": [
+   {
+    "name": "spawn:hall",
+    "at": [
+     0,
+     -10.4
+    ]
+   },
+   {
+    "name": "spawn:gate",
+    "at": [
+     0,
+     249.6
+    ]
+   },
+   {
+    "name": "proctor",
+    "at": [
+     0,
+     -67.6
+    ]
+   },
+   {
+    "name": "master:Mirage",
+    "at": [
+     231.4,
+     -140.4
+    ]
+   },
+   {
+    "name": "master:Legion",
+    "at": [
+     -19.5,
+     143
+    ]
+   },
+   {
+    "name": "master:Flashstep",
+    "at": [
+     0,
+     -278.2
+    ]
+   },
+   {
+    "name": "master:Sand",
+    "at": [
+     -63.7,
+     -101.4
+    ]
+   },
+   {
+    "name": "master:GentleFist",
+    "at": [
+     -189.8,
+     -127.4
+    ]
+   },
+   {
+    "name": "master:Copycat",
+    "at": [
+     -214.5,
+     93.6
+    ]
+   },
+   {
+    "name": "master:Leaf",
+    "at": [
+     -153.4,
+     36.4
+    ]
+   },
+   {
+    "name": "master:Lion",
+    "at": [
+     228.8,
+     -78
+    ]
+   },
+   {
+    "name": "training",
+    "at": [
+     -195,
+     20.8
+    ]
+   },
+   {
+    "name": "market",
+    "at": [
+     205.4,
+     80.6
+    ]
+   },
+   {
+    "name": "poi:Gate",
+    "at": [
+     0,
+     260
+    ]
+   },
+   {
+    "name": "poi:Street",
+    "at": [
+     0,
+     156
+    ]
+   },
+   {
+    "name": "poi:Ichiraku",
+    "at": [
+     -33.8,
+     145.6
+    ]
+   },
+   {
+    "name": "poi:Plaza",
+    "at": [
+     0,
+     15.6
+    ]
+   },
+   {
+    "name": "poi:Hall",
+    "at": [
+     0,
+     -91
+    ]
+   },
+   {
+    "name": "poi:Residence",
+    "at": [
+     0,
+     -195
+    ]
+   },
+   {
+    "name": "poi:Faces",
+    "at": [
+     0,
+     -278.2
+    ]
+   },
+   {
+    "name": "poi:Hospital",
+    "at": [
+     -85.8,
+     -208
+    ]
+   },
+   {
+    "name": "poi:Archive",
+    "at": [
+     85.8,
+     -208
+    ]
+   },
+   {
+    "name": "poi:Training",
+    "at": [
+     -171.6,
+     46.8
+    ]
+   },
+   {
+    "name": "poi:Memorial",
+    "at": [
+     -221,
+     98.8
+    ]
+   },
+   {
+    "name": "poi:Hyuga",
+    "at": [
+     -197.6,
+     -135.2
+    ]
+   },
+   {
+    "name": "poi:Uchiha",
+    "at": [
+     195,
+     -117
+    ]
+   },
+   {
+    "name": "poi:Pier",
+    "at": [
+     228.8,
+     -78
+    ]
+   },
+   {
+    "name": "poi:Shrine",
+    "at": [
+     299,
+     -140.4
+    ]
+   },
+   {
+    "name": "poi:Rooftops",
+    "at": [
+     57.2,
+     158.6
+    ]
+   },
+   {
+    "name": "poi:Market",
+    "at": [
+     208,
+     133.9
+    ]
+   },
+   {
+    "name": "poi:MarketStall",
+    "at": [
+     205.4,
+     80.6
+    ]
+   },
+   {
+    "name": "poi:WaterTower",
+    "at": [
+     325,
+     143
+    ]
+   },
+   {
+    "name": "poi:Residences",
+    "at": [
+     -221,
+     195
+    ]
+   },
+   {
+    "name": "poi:Alleys",
+    "at": [
+     234,
+     -3.9
+    ]
+   }
+  ],
+  "roofCount": 245
+ },
+ "rooftopRace": {
+  "source": "tools/newplayer/mesures/2026-11-23_studio_acfb00d6.json",
+  "times": [
+   21.53,
+   23.2,
+   22.95,
+   22.43,
+   26.7,
+   23.62,
+   24.42,
+   21.68,
+   28.65,
+   24.35,
+   19.72,
+   19.63,
+   19.51,
+   21.22
+  ],
+  "rings": "10/10 à chaque course",
+  "median": 22.69,
+  "best": 19.51,
+  "medals_DEV": {
+   "gold": 27,
+   "silver": 34,
+   "bronze": 45
+  }
+ },
+ "toits_apres_correctif": {
+  "note": "second Play du 23/11 (même place), montée corrigée : saut contre tout mur courable (NinjaWall) ou après 0,5 s sans avancer, 2 sauts au plus",
+  "plan": {
+   "routes": false,
+   "roofs": 10
+  },
+  "roofs": [
+   {
+    "name": "small_house/Roof",
+    "eave": 10.4,
+    "reached": true,
+    "tries": 1,
+    "upIn": 1.3,
+    "climbAt": 0.8,
+    "highest": 34.4,
+    "approachArrived": false,
+    "blockedBy": "nothing",
+    "t": 13.8
+   },
+   {
+    "name": "small_house/Roof",
+    "eave": 12.2,
+    "reached": true,
+    "tries": 1,
+    "upIn": 0.8,
+    "climbAt": 0.2,
+    "highest": 12.2,
+    "approachArrived": true,
+    "t": 3.8
+   },
+   {
+    "name": "clan_house/Roof",
+    "eave": 15.3,
+    "reached": true,
+    "tries": 1,
+    "upIn": 0.8,
+    "climbAt": 0.4,
+    "highest": 18.2,
+    "approachArrived": true,
+    "t": 13.6
+   },
+   {
+    "name": "machiya/Roof",
+    "eave": 16.9,
+    "reached": false,
+    "tries": 3,
+    "climbAt": 0.1,
+    "highest": 10.3,
+    "approachArrived": true,
+    "t": 34.5
+   },
+   {
+    "name": "machiya/Roof",
+    "eave": 19.4,
+    "reached": true,
+    "tries": 1,
+    "upIn": 2.2,
+    "climbAt": 0,
+    "highest": 20,
+    "approachArrived": true,
+    "t": 14.9
+   },
+   {
+    "name": "machiya/Roof",
+    "eave": 21.4,
+    "reached": true,
+    "tries": 1,
+    "upIn": 2.1,
+    "climbAt": 0,
+    "highest": 24,
+    "approachArrived": true,
+    "t": 6.9
+   },
+   {
+    "name": "shop_house/Roof",
+    "eave": 23.1,
+    "reached": true,
+    "tries": 1,
+    "upIn": 1,
+    "climbAt": 0,
+    "highest": 24,
+    "approachArrived": true,
+    "t": 13
+   },
+   {
+    "name": "tank_house/Roof",
+    "eave": 24.4,
+    "reached": true,
+    "tries": 1,
+    "upIn": 0.9,
+    "highest": 34,
+    "approachArrived": false,
+    "t": 27.2
+   },
+   {
+    "name": "apartment/Roof",
+    "eave": 28.1,
+    "reached": true,
+    "tries": 1,
+    "upIn": 1.4,
+    "climbAt": 0.3,
+    "highest": 29.5,
+    "approachArrived": true,
+    "t": 13
+   },
+   {
+    "name": "apartment/Roof",
+    "eave": 32.5,
+    "reached": true,
+    "tries": 1,
+    "upIn": 2.5,
+    "climbAt": 0.1,
+    "highest": 33,
+    "approachArrived": true,
+    "t": 9
+   }
+  ],
+  "reached": 9
+ }
+}

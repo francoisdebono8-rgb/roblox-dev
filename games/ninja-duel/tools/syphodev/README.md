@@ -81,6 +81,22 @@ python3 tools/syphodev/konoha_plan_roofs.py work/map/plan
 python3 tools/syphodev/ci_dump.py --fetch <run id> work/map/konoha.json      # le mode d'emploi est en tête du fichier
 ```
 
+**Plus rapide (23/11, étape 4).** Depuis que le profil a la course sur le mur, le passage large cherchait un
+mur à côté de chaque saut trop court, pour chaque paire de points : plus de 15 minutes sur le village
+généré. `konoha_prove.py` cherche maintenant ce mur une fois par point et ne teste que les pièces sous le
+rayon (la grille `geom.BoxIndex`). Les réponses sont les mêmes : sur le village du 22/11, le rapport est
+identique octet pour octet, en 6 s au lieu de 527 s (résolution 8).
+
+Le 23/11, sur le village généré (`acfb00d6` : 1 159 pièces solides, 289 composantes, 250 surfaces à
+atteindre ; 44 s à la résolution 4, 8 s à la résolution 8) :
+- aucun toit n'est jamais atteignable : les échelles de la porte et de la résidence suffisent ;
+- 19 toits ne s'atteignent que par la course sur le mur ;
+- les murs du village (`Wall_5` à `Wall_12`, 46 studs) sont atteignables, et le plan ne le dit pas. Peut-on
+  passer par-dessus et sortir du village ? C'est au DEV ;
+- 12 pièces se traversent : les murs du village dans des maisons (`Walls_55`, `Walls_21`, `Walls_44`,
+  `Walls_72`, `Walls_28`, `Walls_69`) et les bords de la carte ;
+- 1 surface scintille (`Crate_21` et `Crate_73`) ; 37 % de vide, à l'ouest (x -360).
+
 Le 22/11, sur le nouveau Konoha construit (554f1dec : 2 080 pièces, 981 solides, 179 surfaces à atteindre) :
 - 2 toits ne sont jamais atteignables :
   - la porte (65 studs) ;

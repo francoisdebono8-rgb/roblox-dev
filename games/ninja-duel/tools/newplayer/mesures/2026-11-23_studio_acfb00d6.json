@@ -1,0 +1,297 @@
+{
+ "place": "LAB/robots/ND-JEU-robots-acfb00d6.rbxlx",
+ "build": "acfb00d6",
+ "date": "2026-11-23",
+ "note": "Robot nouveau joueur, 10 minutes, kit Legion (Naruto). Les temps 'steps' sont ceux du robot depuis son lancement (il a attendu 20 s le premier message du serveur) ; ceux de l'entonnoir sont ceux du serveur depuis l'arrivée. Le pas 'walk to the market' avait son temps écrasé par la marche (10,2 s) : corrigé dans le robot, t≈96 s reconstitué.",
+ "log": {
+  "refusals": [
+   {
+    "notice": "STARTER ALREADY CHOSEN",
+    "t": 96.6
+   }
+  ],
+  "steps": [
+   {
+    "ok": true,
+    "t": 20.1,
+    "step": "joined",
+    "phase": "Selection"
+   },
+   {
+    "prompts": 3,
+    "rounds": [
+     42.7
+    ],
+    "winner": "PlayerFighter",
+    "wall": 47.45,
+    "t": 75,
+    "step": "first combat",
+    "ok": true
+   },
+   {
+    "ok": true,
+    "t": 80.2,
+    "step": "inspiration",
+    "starter": "Legion"
+   },
+   {
+    "ok": true,
+    "t": 85.3,
+    "step": "outfit",
+    "item": "TopTunicNavy"
+   },
+   {
+    "ok": true,
+    "t": 96.0,
+    "step": "walk to the market",
+    "walk": 10.2,
+    "length": 260.2
+   },
+   {
+    "ok": true,
+    "rounds": [
+     27.2,
+     29.1
+    ],
+    "wins": {
+     "bot": 0,
+     "human": 2
+    },
+    "wall": 65.5,
+    "t": 165.6,
+    "step": "duel",
+    "winner": "PlayerFighter"
+   },
+   {
+    "ok": false,
+    "ryo": 215,
+    "why": "nothing he can pay",
+    "t": 170.8,
+    "step": "bought"
+   },
+   {
+    "ok": true,
+    "free": 5,
+    "node": "ChakraFlow",
+    "t": 171.9,
+    "step": "node",
+    "cheapest": 4
+   },
+   {
+    "ok": true,
+    "rings": 10,
+    "time": 2153,
+    "t": 205.2,
+    "step": "rooftop race"
+   },
+   {
+    "ok": true,
+    "rings": 10,
+    "time": 2320,
+    "t": 233.1,
+    "step": "rooftop race"
+   },
+   {
+    "ok": true,
+    "rings": 10,
+    "time": 2295,
+    "t": 260.8,
+    "step": "rooftop race"
+   },
+   {
+    "ok": true,
+    "rings": 10,
+    "time": 2243,
+    "t": 288.4,
+    "step": "rooftop race"
+   },
+   {
+    "ok": true,
+    "rings": 10,
+    "time": 2670,
+    "t": 320.2,
+    "step": "rooftop race"
+   },
+   {
+    "ok": true,
+    "rings": 10,
+    "time": 2362,
+    "t": 348.6,
+    "step": "rooftop race"
+   },
+   {
+    "ok": true,
+    "rings": 10,
+    "time": 2442,
+    "t": 377.6,
+    "step": "rooftop race"
+   },
+   {
+    "ok": true,
+    "rings": 10,
+    "time": 2168,
+    "t": 404.5,
+    "step": "rooftop race"
+   },
+   {
+    "ok": true,
+    "rings": 10,
+    "time": 2865,
+    "t": 440.3,
+    "step": "rooftop race"
+   },
+   {
+    "ok": true,
+    "rings": 10,
+    "time": 2435,
+    "t": 470,
+    "step": "rooftop race"
+   },
+   {
+    "ok": true,
+    "rings": 10,
+    "time": 1972,
+    "t": 495.1,
+    "step": "rooftop race"
+   },
+   {
+    "ok": true,
+    "rings": 10,
+    "time": 1963,
+    "t": 519.9,
+    "step": "rooftop race"
+   },
+   {
+    "ok": true,
+    "rings": 10,
+    "time": 1951,
+    "t": 544.7,
+    "step": "rooftop race"
+   },
+   {
+    "ok": true,
+    "rings": 10,
+    "time": 2122,
+    "t": 571.2,
+    "step": "rooftop race"
+   },
+   {
+    "ok": false,
+    "t": 600,
+    "step": "rooftop race",
+    "rings": 0,
+    "note": "coupée à 10 minutes"
+   }
+  ],
+  "minutes": 10,
+  "total": 600.1,
+  "kit": "Legion",
+  "screens": [
+   {
+    "at": "first screen",
+    "t": 20.1,
+    "phase": "Selection",
+    "words": [
+     "KONOHA  •  THE GREAT GATE",
+     "0",
+     "[DUELS]",
+     "[SHOP]",
+     "[QUESTS]",
+     "[RANKS]",
+     "THE PERFECT BROTHER",
+     "THE LOUDMOUTH",
+     "THE YELLOW FLASH",
+     "THE UNTOUCHABLE",
+     "THE FATED GENIUS",
+     "THE COPYCAT",
+     "THE HARD WORKER",
+     "THE AVENGER",
+     "THE PROCTOR",
+     "TRAINING",
+     "THE MARKET"
+    ]
+   },
+   {
+    "at": "after the first combat",
+    "t": 75,
+    "phase": "Result",
+    "words": [
+     "VICTORY",
+     "WIN",
+     "THE LOUDMOUTH  WINS",
+     "[REMATCH]",
+     "[BACK TO KONOHA]"
+    ]
+   },
+   {
+    "at": "back in Konoha",
+    "t": 80.1,
+    "phase": "Selection",
+    "words": [
+     "YOUR NINJA",
+     "[PICK A TOP]",
+     "KONOHA  •  THE PLAZA",
+     "0",
+     "[DUELS]",
+     "[SHOP]",
+     "[QUESTS]",
+     "[RANKS]"
+    ]
+   },
+   {
+    "at": "dressed",
+    "t": 85.3,
+    "phase": "Selection",
+    "words": [
+     "YOUR NINJA",
+     "[DONE]",
+     "KONOHA  •  THE PLAZA",
+     "0",
+     "[DUELS]",
+     "[SHOP]",
+     "[QUESTS]",
+     "[RANKS]"
+    ]
+   },
+   {
+    "at": "after the duel",
+    "t": 165.6,
+    "phase": "Result",
+    "words": [
+     "VICTORY  2–0",
+     "WIN",
+     "THE LOUDMOUTH  WINS",
+     "+215 RYŌ",
+     "+54",
+     "[REMATCH]",
+     "[BACK TO KONOHA]"
+    ]
+   },
+   {
+    "at": "shop and tree",
+    "t": 171.9,
+    "phase": "Selection",
+    "words": [
+     "KONOHA  •  THE PLAZA",
+     "215",
+     "[DUELS]",
+     "[SHOP]",
+     "[QUESTS]",
+     "[RANKS]"
+    ]
+   }
+  ]
+ },
+ "funnelLines": [
+  "[NinjaDuelFirst] 10699076432 joined 0.0s",
+  "[NinjaDuelFirst] 10699076432 input 29.0s",
+  "[NinjaDuelFirst] 10699076432 started 29.0s",
+  "[NinjaDuelFirst] 10699076432 hit 34.1s",
+  "[NinjaDuelFirst] 10699076432 jutsu 38.4s",
+  "[NinjaDuelFirst] 10699076432 duel 74.3s",
+  "[NinjaDuelFirst] 10699076432 won 74.3s",
+  "[NinjaDuelFirst] 10699076432 inspiration 83.8s",
+  "[NinjaDuelFirst] 10699076432 dressed 88.0s",
+  "[NinjaDuelFirst] 10699076432 node 174.6s"
+ ]
+}

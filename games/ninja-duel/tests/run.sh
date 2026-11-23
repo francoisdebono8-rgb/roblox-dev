@@ -134,4 +134,11 @@ run NoeudsLus  python3 tools/kits/test_noeuds_lus.py
 run DuelBot    "$LUNE" run tests/DuelBot.spec.luau
 run BotCode    python3 tools/duelbot/test_studio_code.py
 run VillageTools python3 tools/syphodev/test_village_tools.py
+# (23/11, OUTILLEUR, étapes 4-5) the publication pre-flight, the LAB copy with the robots,
+# the test reading page, the fluidity snippets, the new player's Studio code
+run Preflight  python3 tools/preflight/test_preflight.py
+run LabPlace   python3 tools/lab/test_lab_place.py
+run TestRead   python3 tools/testread/test_testread.py
+run Perf       python3 tools/perf/test_perf.py
+run NewPlayer  python3 tools/newplayer/test_studio_code.py
 exit $status

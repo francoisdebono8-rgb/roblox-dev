@@ -18,6 +18,18 @@ written for (the plain run had not finished the reach pass after 14 minutes):
     finds is thrown away; the look-up is skipped when the profile ships neither.
   * reach._flood scans the whole edge list for every component it pops; it is replaced by
     the same flood over an adjacency list (same result, linear time).
+
+(23/11, step 4) Since the wall climb is in the profile (22/11), the generous pass looks
+for a wall beside every jump that falls short, and Konoha's generated village (271
+components, about 1,000 solid parts) took more than 15 minutes. Three more changes, none
+of which changes an answer:
+
+  * the wall beside a node is looked for once per node, not once per node pair
+    (reach._wall_beside depends only on the node; its answers are cached for the pass);
+  * the rays and segments of the edge passes (reach.raycast, reach.segment_blocked) test
+    only the solid parts whose footprint the ray or segment crosses, from an XZ grid
+    (geom.BoxIndex), instead of every part of the map: a part elsewhere cannot be hit;
+  * these two are on only inside the edge passes, over the map's solid parts.
 """
 import json
 import math
@@ -109,13 +121,44 @@ def _flood(edges, start_ids):
 
 
 _wall_beside = reach._wall_beside
+_raycast = reach.raycast
+_segment_blocked = reach.segment_blocked
 _NO_WALLS = [False]
+# Inside an edge pass: the grid of the map's solid parts, and the walls already found.
+_PASS = {"index": None, "walls": None}
 
 
 def _wall_beside_if_used(node, boxes, profile, ignore):
     if _NO_WALLS[0]:
         return None, None
-    return _wall_beside(node, boxes, profile, ignore)
+    walls = _PASS["walls"]
+    if walls is None:
+        return _wall_beside(node, boxes, profile, ignore)
+    key = (id(node), tuple(ignore))
+    if key not in walls:
+        walls[key] = _wall_beside(node, boxes, profile, ignore)
+    return walls[key]
+
+
+def _ray_boxes(index, a, b):
+    """The solid parts whose footprint the segment a->b passes over (a superset of what
+    it can hit: geom.BoxIndex.segment looks one cell around every cell it crosses)."""
+    return index.segment(a, b)
+
+
+def _raycast_local(origin, direction, boxes, tmax=math.inf, ignore=(), solid_only=True):
+    index = _PASS["index"]
+    if index is None or not math.isfinite(tmax) or not solid_only:
+        return _raycast(origin, direction, boxes, tmax=tmax, ignore=ignore, solid_only=solid_only)
+    end = (origin[0] + direction[0] * tmax, origin[1] + direction[1] * tmax, origin[2] + direction[2] * tmax)
+    return _raycast(origin, direction, _ray_boxes(index, origin, end), tmax=tmax, ignore=ignore, solid_only=True)
+
+
+def _segment_blocked_local(a, b, boxes, ignore=(), pad=0.0):
+    index = _PASS["index"]
+    if index is None:
+        return _segment_blocked(a, b, boxes, ignore=ignore, pad=pad)
+    return _segment_blocked(a, b, _ray_boxes(index, a, b), ignore=ignore, pad=pad)
 
 
 _edge_map_plain = _edge_map
@@ -123,12 +166,19 @@ _edge_map_plain = _edge_map
 
 def _edge_map_walls(comps, profile, boxes, generous):
     _NO_WALLS[0] = not (profile.shipped("wallClimb") or profile.shipped("wallJump"))
-    return _edge_map_plain(comps, profile, boxes, generous)
+    _PASS["index"] = reach.BoxIndex([b for b in boxes if b.solid])
+    _PASS["walls"] = {}
+    try:
+        return _edge_map_plain(comps, profile, boxes, generous)
+    finally:
+        _PASS["index"], _PASS["walls"] = None, None
 
 
 reach._edge_map = _edge_map_walls
 reach._wall_beside = _wall_beside_if_used
 reach._flood = _flood
+reach.raycast = _raycast_local
+reach.segment_blocked = _segment_blocked_local
 
 if __name__ == "__main__":
     spec, out = sys.argv[1], (sys.argv[2] if len(sys.argv) > 2 else None)

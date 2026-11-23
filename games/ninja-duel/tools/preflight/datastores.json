@@ -1,0 +1,25 @@
+{
+ "date": "2026-11-23",
+ "commit": "acfb00d6",
+ "live": [
+  "NinjaDuelChampions",
+  "NinjaDuelExam_<examen>",
+  "NinjaDuelKit_Copycat",
+  "NinjaDuelKit_Flashstep",
+  "NinjaDuelKit_GentleFist",
+  "NinjaDuelKit_Leaf",
+  "NinjaDuelKit_Legion",
+  "NinjaDuelKit_Lion",
+  "NinjaDuelKit_Mirage",
+  "NinjaDuelKit_Sand",
+  "NinjaDuelMerit",
+  "NinjaDuelRating",
+  "NinjaDuelRooftops",
+  "NinjaDuelStreak",
+  "NinjaDuelWeekWins_<semaine>",
+  "NinjaDuel_Progression"
+ ],
+ "studio": [
+  "NinjaDuel_Progression_DEV"
+ ]
+}
