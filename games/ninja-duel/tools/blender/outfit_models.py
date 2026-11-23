@@ -327,7 +327,7 @@ class Out:
 # perso ») The starting pieces rebuilt with a shape: a wrapped jacket crossed by a dark lapel,
 # a wide obi knotted at the side, kimono sleeves with a cuff, short skirts that swing with the
 # thighs; baggy trousers bloused into wrapped shins; sandals with a thick sole.
-def lapel(o, slot, width=.2, raise_=.035):
+def lapel(o, slot, width=.34, raise_=.035):
     """The crossed front of a wrapped jacket: a band from the right of the neck down to the
     left of the waist (left over right), and its continuation round the back of the neck."""
     S = size("UpperTorso")
@@ -404,7 +404,7 @@ def item_sleeveless():
     o = Out()
     pc = o.add("UpperTorso", "Cloth")
     shell(pc, "UpperTorso", .02, 1, pad=.06, folds=.02, hem=False, scale_x=.99)
-    lapel(o, "Cloth", width=.16)
+    lapel(o, "Cloth", width=.24)
     lo = o.add("LowerTorso", "Cloth")
     shell(lo, "LowerTorso", -.1, .9, pad=.08, hem=False)
     obi(o, "Belt")
@@ -417,8 +417,8 @@ def item_pants():
     shell(lo, "LowerTorso", .2, 1.05, pad=.08, hem=False)
     # baggy thighs, bloused over the knee, then the shin wrapped tight down to the ankle
     o.both("UpperLeg", "Cloth", lambda pc, part: shell(pc, part, -.05, 1.04, pad=.13, flare1=.06, folds=.04, hem=False))
-    o.both("LowerLeg", "Cloth", lambda pc, part: shell(pc, part, -.04, .38, pad=.16, flare0=.02, flare1=-.05, folds=.04, hem=False))
-    o.both("LowerLeg", "Tie", lambda pc, part: ribbed(pc, part, .32, .93, pad=.05, ribs=8, depth=.022, spiral=1.0))
+    o.both("LowerLeg", "Cloth", lambda pc, part: shell(pc, part, -.04, .52, pad=.2, flare0=.0, flare1=-.08, folds=.05, hem=False))
+    o.both("LowerLeg", "Tie", lambda pc, part: ribbed(pc, part, .48, .93, pad=.05, ribs=6, depth=.022, spiral=1.0))
     return o.items
 
 

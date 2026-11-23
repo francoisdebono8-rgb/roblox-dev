@@ -41,11 +41,11 @@ Catalog.Items={
 	-- of the avatar's body, `on` a part (UpperArm = both sides), `h` the share
 	-- of its height from the top (`y0` where it starts), `pad` how far out.
 	-- Free pieces to start (`base`), one colour each.
-	{id="TopTunicNavy",slot="top",name="GENIN TUNIC • NAVY",base=true,colors={Cloth={40,48,78},Trim={22,26,44},Belt={160,44,38}},
+	{id="TopTunicNavy",slot="top",name="GENIN TUNIC • NAVY",base=true,colors={Cloth={40,48,78},Trim={84,98,146},Belt={160,44,38}},
 		pieces={{on="UpperTorso",c="Cloth"},{on="LowerTorso",c="Cloth",h=.6},{on="UpperArm",c="Cloth",h=.55}}},
-	{id="TopTunicBlack",slot="top",name="GENIN TUNIC • BLACK",base=true,colors={Cloth={30,30,36},Trim={92,92,104},Belt={176,146,92}},
+	{id="TopTunicBlack",slot="top",name="GENIN TUNIC • BLACK",base=true,colors={Cloth={30,30,36},Trim={120,120,132},Belt={176,146,92}},
 		pieces={{on="UpperTorso",c="Cloth"},{on="LowerTorso",c="Cloth",h=.6},{on="UpperArm",c="Cloth",h=.55}}},
-	{id="TopTunicGreen",slot="top",name="GENIN TUNIC • FOREST",base=true,colors={Cloth={52,74,52},Trim={30,44,32},Belt={204,188,146}},
+	{id="TopTunicGreen",slot="top",name="GENIN TUNIC • FOREST",base=true,colors={Cloth={52,74,52},Trim={96,124,88},Belt={204,188,146}},
 		pieces={{on="UpperTorso",c="Cloth"},{on="LowerTorso",c="Cloth",h=.6},{on="UpperArm",c="Cloth",h=.55}}},
 	{id="TopHighCollar",slot="top",name="HIGH COLLAR",base=true,colors={Cloth={34,44,92},Collar={34,44,92},Belt={28,28,34}},
 		pieces={{on="UpperTorso",c="Cloth"},{on="LowerTorso",c="Cloth",h=.6},{on="UpperArm",c="Cloth",h=.4},{on="UpperTorso",kind="collar",c="Collar"}}},
