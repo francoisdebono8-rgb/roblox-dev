@@ -996,17 +996,18 @@ def item_hair_tilted():
 
 # (23/11, François: « elles sont belles mais pas assez variées ») six more Part I silhouettes
 def item_hair_bob():
-    """Short and round to the jaw, parted, the forehead free (Sakura's short cut)."""
+    """Short and round to the jaw, the fringe swept to one side, the forehead free (Sakura's short cut)."""
     o = O().Out()
     h = o.add("Head", "Hair")
     skull(h, front=1.6, r=(.7, .72), top=.8)
+    # the round fall all round the sides and the back, down to the jaw
+    for az in (-125, -100, -75, -50, -25, 0, 25, 50, 75, 100, 125):
+        root = scalp(az, 18, r=.64)
+        out = Vector((math.sin(math.radians(az)) * .25, -1, math.cos(math.radians(az)) * .25))
+        lock(h, root, out, .72, .46, thick=.12, bend=(-math.sin(math.radians(az)) * .1, 0, -math.cos(math.radians(az)) * .1))
     for x in (-1, 1):
-        # the side masses down to the jaw, curving in at the tips
-        for k, (y, z) in enumerate(((.45, -.3), (.42, 0), (.45, .3))):
-            lock(h, (x * .6, y, z), (x * .15, -1, 0), .75 - .08 * k, .42, thick=.12, bend=(-x * .12, 0, 0))
-        lock(h, (x * .25, .64, -.48), (x * 1.0, -.4, -.1), .45, .36, thick=.08, bend=(0, -.3, 0))   # the parted fringe, swept aside
-    for az in (-150, 150, 180, -120, 120):
-        lock(h, scalp(az, 5, r=.62), (math.sin(math.radians(az)) * .2, -1, math.cos(math.radians(az)) * .3), .5, .4, thick=.1)
+        lock(h, (x * .62, .4, -.34), (x * .05, -1, -.02), .62, .34, thick=.1)    # beside the cheeks
+    fringe(h, (-.3, -.08, .14), y=.62, length=.4, width=.34, down=(1, -.45, -.25), spread=0)   # swept aside, over the brow
     return o.items
 
 
@@ -1017,11 +1018,12 @@ def item_hair_hime():
     skull(h, front=1.7, r=(.69, .71), top=.79)
     fringe(h, (-.33, -.11, .11, .33), y=.58, length=.2, width=.26, down=(0, -1, -.25), spread=0)
     for x in (-1, 1):
-        lock(h, (x * .58, .42, -.36), (0, -1, -.02), .75, .3, thick=.08)          # the side locks, cut level at the jaw
-    rows = []
-    for (y, w, z) in ((.6, 1.3, .35), (.1, 1.32, .62), (-.6, 1.2, .7), (-1.2, 1.05, .72), (-1.4, .95, .72)):
-        rows.append([Vector((math.cos(t) * w / 2, y, z + math.sin(t) * .14)) for t in [i / 16 * math.tau for i in range(16)]])
-    loft(h, rows, lambda p, ri: (min(1, .74 + .26 * ri / 4),) * 3)
+        lock(h, (x * .6, .42, -.34), (0, -1, -.02), .75, .3, thick=.08)          # the side locks, cut level at the jaw
+    # the long fall: straight locks side by side down the back
+    for az in (-110, -85, -60, -35, -12, 12, 35, 60, 85, 110):
+        root = scalp(az, 25, r=.64)
+        out = Vector((math.sin(math.radians(az)) * .12, -1, math.cos(math.radians(az)) * .18))
+        lock(h, root, out, 1.55 - abs(az) / 300, .4, thick=.12, bend=(0, 0, .08))
     return o.items
 
 
