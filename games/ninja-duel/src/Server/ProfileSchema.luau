@@ -432,6 +432,22 @@ function S.Commands.grantItem(p,args)
 	p.style.equipped[item.slot]=item.id
 	return {item=item.id}
 end
+-- (23/11, step 5, DEC-049) a bundle bought with Robux: its looks, one receipt
+-- (the eight prodigies' outfits). A look already owned stays owned; the
+-- first of the bundle is worn.
+function S.Commands.grantItems(p,args)
+	assert(type(args.items)=="table" and #args.items>0 and #args.items<=16,"Invalid bundle")
+	local items={}
+	for _,id in args.items do
+		local item=Shop.item(id)
+		assert(item and item.robux,"Not sold for Robux")
+		table.insert(items,item)
+	end
+	receipt(p,args.receipt)
+	for _,item in items do p.style.owned[item.id]=true end
+	p.style.equipped[items[1].slot]=items[1].id
+	return {items=#items}
+end
 function S.Commands.grantRyo(p,args)
 	assert(S.integer(args.amount,1000000) and args.amount>0,"Invalid amount")
 	receipt(p,args.receipt)

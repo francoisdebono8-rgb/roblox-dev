@@ -237,7 +237,13 @@ return {
 			-- (21/11, étape 3 ANIMATEUR) two shop auras in Robux (Shared/Catalog), SOON until created
 			AuraThunder = 0, AuraShadow = 0 },
 		RyoPacks = { { amount = 1000, product = 0 }, { amount = 3000, product = 0 }, { amount = 8000, product = 0 } },
+		-- (23/11, step 5, DEC-049) VIP: looks only (Server/Progression.checkVip,
+		-- attribute NinjaVIP). EarlyAccess and BuildSlots are not sold: no 9th
+		-- prodigy yet, and 8 builds a kit are free already (kept at 0).
 		Passes = { VIP = 0, EarlyAccess = 0, BuildSlots = 0 },
+		-- (23/11, step 5, DEC-049) the eight prodigies' outfits in one purchase
+		-- (Server/Progression.productFor "bundle", ProfileSchema grantItems)
+		Bundles = { { id = "SetPrologue8", product = 0, items = { "SetNaruto", "SetSasuke", "SetLee", "SetNeji", "SetGaara", "SetKakashi", "SetItachi", "SetMinato" } } },
 	},
 	AI = { Tick = 0.18, Reaction = 0.38, Aggression = 0.72, Defense = 0.58, Technique = 0.34,
 		TechniqueGap = 2.6, TechniqueJitter = 2.6, ReadGuard = 0.3, ReadDodge = 0.16, ReadPoke = 0.22, GuardRead = 0.07,

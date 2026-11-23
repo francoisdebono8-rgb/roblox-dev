@@ -94,6 +94,8 @@ function P.load(player)
 	if pass>0 then
 		pcall(function() P.boost[player]=game:GetService("MarketplaceService"):UserOwnsGamePassAsync(player.UserId,pass) end)
 	end
+	-- (23/11, step 5) VIP
+	if P.checkVip then task.spawn(P.checkVip,player) end
 	return h
 end
 function P.ready(player) return P.states[player]=="ready" and P.handles[player]~=nil end
@@ -569,6 +571,8 @@ function P.productFor(productId)
 	for kit,product in P.config().Products or {} do if product==productId then return "kit",kit end end
 	for item,product in P.shopConfig().Products or {} do if product==productId then return "item",item end end
 	for _,pack in P.shopConfig().RyoPacks or {} do if pack.product==productId then return "ryo",pack.amount end end
+	-- (23/11, step 5, DEC-049) a bundle of looks: its list
+	for _,bundle in P.shopConfig().Bundles or {} do if bundle.product==productId and bundle.product~=0 then return "bundle",bundle.items end end
 	return nil
 end
 
@@ -585,7 +589,10 @@ function P.processReceipt(info)
 		if not h then return Decision.NotProcessedYet end
 		local receipt=string.gsub(tostring(info.PurchaseId),"[^%w_.:%-]","")
 		if not table.find(h.data.kits.receipts,receipt) then
-			local ok=if what=="item" then P.run(player,"grantItem",{item=value,receipt=receipt}) else P.run(player,"grantRyo",{amount=value,receipt=receipt})
+			local ok
+			if what=="item" then ok=P.run(player,"grantItem",{item=value,receipt=receipt})
+			elseif what=="bundle" then ok=P.run(player,"grantItems",{items=value,receipt=receipt})
+			else ok=P.run(player,"grantRyo",{amount=value,receipt=receipt}) end
 			if not ok then return Decision.NotProcessedYet end
 		end
 		local saved=P.repo:save(h)
@@ -645,6 +652,29 @@ function P.start(onLoaded)
 	game:BindToClose(function() if P.repo then P.repo:closeAll() end end)
 	-- (13/11) Kits, looks and Ryō packs: one receipt handler for them all.
 	game:GetService("MarketplaceService").ProcessReceipt=P.processReceipt
+	-- (23/11, step 5, DEC-049) the passes bought in the game count at once
+	pcall(function()
+		game:GetService("MarketplaceService").PromptGamePassPurchaseFinished:Connect(function(player,pass,bought)
+			if bought then P.passBought(player,pass) end
+		end)
+	end)
+end
+
+-- (23/11, step 5, DEC-049) VIP (Config.Shop.Passes.VIP): looks only, never
+-- power. The player's attribute NinjaVIP: the gold name and the VIP tag
+-- (Client/HubPlayers, DESIGN), the cape in Konoha (ANIMATEUR). Checked on
+-- join (P.load) and when bought in the game.
+function P.vipPass() return (P.shopConfig().Passes or {}).VIP or 0 end
+function P.passBought(player,pass)
+	if pass==0 then return end
+	if pass==P.vipPass() then player:SetAttribute("NinjaVIP",true) end
+	if pass==(P.config().MasteryPass or 0) then P.boost[player]=true end
+end
+function P.checkVip(player)
+	local pass=P.vipPass()
+	if pass==0 then return end
+	local ok,owns=pcall(function() return game:GetService("MarketplaceService"):UserOwnsGamePassAsync(player.UserId,pass) end)
+	if ok and owns then player:SetAttribute("NinjaVIP",true) end
 end
 
 return P

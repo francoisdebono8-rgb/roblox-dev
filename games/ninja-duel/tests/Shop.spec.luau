@@ -104,6 +104,14 @@ test("the profile v3: Ryō earned, a look bought and worn, refused when poor or 
 	assert(fails("grantItem",{item="KunaiGold",receipt="r-gold"}),"a receipt granted twice")
 	run("grantRyo",{amount=3000,receipt="r-pack"})
 	assert(p.wallet.ryo==3100 and fails("grantRyo",{amount=3000,receipt="r-pack"}),"a pack granted twice")
+	-- (23/11, step 5, DEC-049) the eight prodigies' outfits in one purchase:
+	-- one receipt, eight looks, the first worn; once only
+	local bundle=Config.Shop.Bundles[1]
+	run("grantItems",{items=bundle.items,receipt="r-bundle"})
+	for _,id in bundle.items do assert(p.style.owned[id],"the bundle lacks "..id) end
+	assert(p.style.equipped.set=="SetNaruto","the bundle's first outfit is worn")
+	assert(fails("grantItems",{items=bundle.items,receipt="r-bundle"}),"a bundle granted twice")
+	assert(fails("grantItems",{items={"KunaiBlack"},receipt="r-bad"}),"a Ryō look in a Robux bundle")
 	assert(S.validate(p))
 	local bad=S.copy(p);bad.style.equipped.kunai="HeadbandRed"
 	assert(not S.validate(bad),"a headband worn as a kunai")
@@ -802,6 +810,28 @@ test("the personalization (DEC-047): eight tabs, nothing empty, looks to earn gi
 		end
 	end
 	assert(poses>=8 and emotes>=6,"poses "..poses..", emotes "..emotes)
+end)
+
+-- (23/11, step 5, DEC-049) the bundle's product id and the VIP pass
+test("the eight outfits' bundle sells by its id once created, VIP marks the player",function()
+	local bundle=Config.Shop.Bundles[1]
+	assert(Progression.productFor(0)==nil or select(1,Progression.productFor(0))~="bundle","a bundle sold with no id")
+	local saved=bundle.product
+	bundle.product=987654
+	local what,items=Progression.productFor(987654)
+	bundle.product=saved
+	assert(what=="bundle" and #items==8,"the bundle by its id")
+	local attrs={}
+	local player={UserId=1,SetAttribute=function(_,k,v) attrs[k]=v end,GetAttribute=function(_,k) return attrs[k] end}
+	local passes=Config.Shop.Passes
+	local was=passes.VIP
+	passes.VIP=1234
+	Progression.passBought(player,1234)
+	passes.VIP=was
+	assert(attrs.NinjaVIP==true,"VIP bought in the game")
+	attrs={}
+	Progression.passBought(player,0)
+	assert(attrs.NinjaVIP==nil,"no pass, no VIP")
 end)
 
 print(string.format("NinjaDuel shop and Ryō (13/11): %d PASS",passed))
