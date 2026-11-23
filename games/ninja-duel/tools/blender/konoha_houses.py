@@ -625,7 +625,7 @@ def kura():
     # namako: dark tiles with a light diamond grid on the lower walls
     km.box(tiles, T(0, 1.6, 0), (w + .2, 3.2, d + .2), rgb(48, 50, 54))
     for sz, rot in ((d / 2 + .12, 0), (-d / 2 - .12, math.pi)):
-        for k in range(-5, 6):
+        for k in range(-4, 5):
             km.box(walls, T(k * 1.1, 1.6, sz) @ Ry(rot) @ Rz_(math.radians(45)), (.12, 4.2, .05), rgb(214, 214, 208))
             km.box(walls, T(k * 1.1, 1.6, sz) @ Ry(rot) @ Rz_(math.radians(-45)), (.12, 4.2, .05), rgb(214, 214, 208))
     km.box(timber, T(0, h - .3, 0), (w + .4, .6, d + .4), white)
@@ -674,6 +674,11 @@ def tea_shop():
     loft(cloth, [ring(5.4, 3.2), ring(6.4, .2)], C["lantern"], cap0=True, cap1=True)
     gable(tiles, timber, T(0, h, -1.0), w, d - 2.0, 24, 1.4, C["roofTile"], courses=2, ribs=8)
     lantern(cloth, metal, T(w / 2 - 1.0, 4.4, d / 2 + .4), 1.1, 1.5, C["lantern"])
+    sign(timber, cloth, T(0, h - .8, d / 2 - 1.6), 5.0, 1.0, C["paper"], 2, 41)
+    for sz in (-2.5, 2.5):
+        window(timber, glass, T(w / 2 + .05, 3.8, sz - 1.0) @ Ry(math.pi / 2), 2.2, 1.8)
+    for k in range(3):   # crates of tea by the side
+        km.box(timber, T(-w / 2 - .8, .5 + k * .9, 1.0 - k * .3), (1.4, .85, 1.4), C["woodLight"])
     return done(walls, timber, glass, tiles, cloth, metal)
 
 
@@ -704,6 +709,17 @@ def farmhouse():
     km.box(tiles, T(0, h + rise + .9, 0), (1.6, 1.0, L + .4), rgb(96, 80, 58))
     for k in range(5):   # the ridge's crossed binding logs
         km.box(timber, T(0, h + rise + 1.4, -L / 2 + 1 + k * (L - 2) / 4) @ Rz_(math.radians(35)), (2.6, .3, .3), WOOD_EDO)
+    # the thatch's courses and its thick cut edge along the eaves, a stone base, a lean-to shed
+    for s in (1, -1):
+        for t in (.25, .5, .75):
+            x = s * half * t
+            km.box(tiles, T(x, h + rise * (1 - t) + 1.25, 0) @ Rz_(-s * p), (.5, .35, L + .1), rgb(122, 100, 66))
+        km.box(tiles, T(s * (half - .3), h + .55, 0), (1.0, 1.2, L + .2), rgb(110, 90, 60))
+    km.box(walls, T(0, .2, 0), (w + 1.2, .4, d + 1.2), lambda q, f: km.jitter(C["stone"], q, .08, .8), cell=3.0)
+    km.box(walls, T(w / 2 + 2.2, 1.8, -3), (3.6, 3.6, 6), rgb(110, 86, 60))
+    km.box(tiles, T(w / 2 + 2.4, 3.9, -3) @ Rz_(math.radians(-18)), (4.6, .4, 7), rgb(140, 116, 78))
+    for k in range(4):
+        km.box(timber, T(w / 2 + 4.1, .6 + k * .5, -1.5 - k * .2), (.8, .45, 2.4), C["woodLight"])  # stacked firewood
     # the gable ends: a timber triangle with two floors of small windows
     for sz in (d / 2 + .1, -d / 2 - .1):
         km.prism(timber, [(-half + 1.2, 0), (half - 1.2, 0), (0, rise - .6)], T(0, h, sz), .3, rgb(104, 80, 56))
@@ -751,6 +767,18 @@ def _gable_s(y0, w, d, pitch, over, thick=.7, z0=0.0):
             ("W", 0, y0 + hy / 2, z0 - half / 2, L, hy, half, 0)]
 
 
+def _hip_s(y0, w, d, pitch, over, z0=0.0, thick=.5):
+    """A hip roof: the two long slopes between the ridge's ends, and one wedge at each hip end."""
+    hw, hd = w / 2 + over, d / 2 + over
+    rise = math.tan(math.radians(pitch)) * hd
+    rl = max(.5, hw - hd)
+    hy = rise + thick
+    return [("W", 0, y0 + hy / 2, z0 + hd / 2, rl * 2, hy, hd, 180),
+            ("W", 0, y0 + hy / 2, z0 - hd / 2, rl * 2, hy, hd, 0),
+            ("W", (rl + hw) / 2, y0 + hy / 2, z0, hd * 2, hy, hw - rl, -90),
+            ("W", -(rl + hw) / 2, y0 + hy / 2, z0, hd * 2, hy, hw - rl, 90)]
+
+
 def _eave_s(y0, w, depth, pitch, z_wall):
     drop = math.tan(math.radians(pitch)) * depth
     return [("W", 0, y0 - drop / 2, z_wall + depth / 2, w, drop + .4, depth, 180)]
@@ -796,7 +824,7 @@ def solids(name):
                _B(0, base + .2, d / 2 - 1.6, w - 1, .35, 3.4), _B(0, .45, d / 2 + 1.0, 6, .9, 1.4)]
         for x in (-w / 2 + 1, -w / 6, w / 6, w / 2 - 1):
             out.append(_B(x, base + (h - base) / 2, d / 2 - .2, .5, h - base, .5))
-        return out + [_B(0, h + .1, 0, w + .6, .3, d + .6)] + _gable_s(h + .25, w, d, 28, 1.6, .6)
+        return out + [_B(0, h + .1, 0, w + .6, .3, d + .6)] + _hip_s(h + .25, w, d, 28, 1.6)
     if name == "tower_house":
         y = 2 * F
         return (body + [_B(-2.6, 6.2, d / 2 + .9, 4.2, .4, 1.8), _B(0, y + .2, d / 2 + 1.0, w - 2, .4, 2.0),
@@ -808,7 +836,7 @@ def solids(name):
     if name == "edo_inn":
         return ([_B(0, F / 2, 0, w + .3, F, d + .3), _B(0, F + (h - F) / 2, -1.2, w, h - F, d - 2.4),
                  _B(0, F + .45, d / 2 - 1.2, w + .2, .3, 2.4), _B(0, F + 1.1, d / 2 - .1, w + .2, 1.5, .25)]
-                + _eave_s(F - .3, w + 1.2, 2.4, 20, d / 2) + _gable_s(h + .2, w, d - .8, 26, 2.0, .6, z0=-.4))
+                + _eave_s(F - .3, w + 1.2, 2.4, 20, d / 2) + _hip_s(h + .2, w, d - .8, 26, 2.0, z0=-.4))
     if name == "kura":
         top = h + math.tan(math.radians(30)) * (d / 2 + 1.2) + 1.5
         return body + _eave_s(6.2, 4.4, 1.4, 22, d / 2) + _gable_s(h, w, d, 30, 1.2, .9) + [_B(0, top, 0, w + 3.0, .9, 1.4)]
@@ -822,7 +850,8 @@ def solids(name):
         rise = math.tan(math.radians(58)) * half
         hy = rise + 1.3
         L = d + 3.0
-        return body + [("W", half / 2, h + hy / 2, 0, L, hy, half, -90), ("W", -half / 2, h + hy / 2, 0, L, hy, half, 90)]
+        return body + [("W", half / 2, h + hy / 2, 0, L, hy, half, -90), ("W", -half / 2, h + hy / 2, 0, L, hy, half, 90),
+                       _B(w / 2 + 2.2, 2.0, -3, 3.6, 4.0, 6)]
     raise KeyError(name)
 
 
