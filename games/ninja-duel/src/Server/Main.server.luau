@@ -13,6 +13,8 @@ require(script.Parent.ArenaMeshes).preload()
 -- The select screen's fighters, built once with the duel's rig (Server/Portraits).
 require(script.Parent.Portraits).start()
 local matches=Matches.new(remote)
+-- (23/11, passe 1) the rogue ninjas start their fights through the matches
+require(script.Parent.Hub).matches=matches
 -- (DEC-038) Konoha: the village the player walks between duels, the masters
 -- at home, the proctor's board of duels (Server/Hub). Built before the first
 -- player's selection puts him at the gate.

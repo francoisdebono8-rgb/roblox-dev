@@ -219,7 +219,7 @@ return {
 	-- in it (the DESIGN's minimap is drawn from the plan, the things to do
 	-- alone stand at its places). "classic" the old one (a step back), "auto"
 	-- the plan in the work places and the old one in the release build.
-	Hub = { Enabled = true, DevUserId = nil, VillageDuels = true, Layout = "konoha2" },
+	Hub = { Enabled = true, DevUserId = nil, VillageDuels = true, Layout = "konoha2", Thugs = true },
 	-- (19/11, vague 2 DEV 5) The exam of the week (Shared/Exam, Server/
 	-- WeeklyExam): the prodigies' tournament played from Friday 18:00 to
 	-- Sunday 21:00, Paris time, counts for the week (titles, the cliff).

@@ -884,4 +884,21 @@ test("the eight outfits' bundle sells by its id once created, VIP marks the play
 	assert(p.style.owned.CapeVIP and S.validate(p),"the VIP cape not his, or the profile broken")
 end)
 
+-- (23/11, passe commune 1; François: « des PNJ peuvent vouloir se battre pour
+-- me racketter ») the rogue ninjas of Konoha: a toll, a fight's purse, a walker
+-- left alone a while after, their places the street duels'
+test("the rogue ninjas: the toll or all he has, the fight's purse, never below nothing",function()
+	local Thugs=H.load("Server/Thugs")
+	assert(Thugs.toll(500)==Thugs.TOLL and Thugs.toll(12)==12 and Thugs.toll(0)==0,"the toll")
+	assert(Thugs.purse(true,0)==Thugs.REWARD and Thugs.purse(false,500)==-Thugs.LOSS and Thugs.purse(false,5)==-5 and Thugs.purse(false,0)==0,"the purse")
+	assert(Thugs.ready(nil,0) and not Thugs.ready(10,10+Thugs.COOLDOWN-1) and Thugs.ready(10,10+Thugs.COOLDOWN),"the cooldown")
+	local spots=Thugs.spots({{key="b"},{key="a"},{key="c"}},2,{a=true})
+	assert(#spots==2 and spots[1].key=="b" and spots[2].key=="c","their places")
+	local p=S.new("dev_thug")
+	p.wallet.ryo=25
+	local r=S.Commands.payRyo(p,{amount=30})
+	assert(p.wallet.ryo==0 and r.paid==25 and S.validate(p),"paid more than he had")
+	assert(not pcall(S.Commands.payRyo,p,{amount=0}),"a toll of nothing")
+end)
+
 print(string.format("NinjaDuel shop and Ryō (13/11): %d PASS",passed))

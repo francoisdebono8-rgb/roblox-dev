@@ -404,6 +404,15 @@ function S.Commands.earnRyo(p,args)
 	if args.day~=nil then assert(type(args.day)=="string" and #args.day<=10,"Invalid day");w.winDay=args.day end
 	return {ryo=w.ryo,amount=args.amount}
 end
+-- (23/11, passe 1, Server/Thugs) Ryō handed over: a rogue's toll, a fight
+-- lost to one. Never below nothing.
+function S.Commands.payRyo(p,args)
+	assert(S.integer(args.amount,10000) and args.amount>0,"Invalid amount")
+	local w=p.wallet
+	local paid=math.min(w.ryo,args.amount)
+	w.ryo-=paid
+	return {ryo=w.ryo,paid=paid}
+end
 -- A look bought with Ryō: paid once, worn at once.
 function S.Commands.buyItem(p,args)
 	local item=Shop.item(args.item)

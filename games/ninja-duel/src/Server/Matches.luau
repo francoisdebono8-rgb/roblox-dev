@@ -136,6 +136,24 @@ function Matches:nearSite(player,except)
 	if not best then return nil end
 	return {key=best.key,origin=HubMap.Origin+best.at,radius=best.radius,place=best.place,street=true,axis=best.axis,start=best.start}
 end
+-- (23/11, passe 1, Server/Thugs) A rogue ninja's racket answered FIGHT: a
+-- street duel against the AI at his place (or the nearest free one), with
+-- the walker's own kit (a practice with Lee's while he has none). The purse
+-- is paid when it is decided. Returns whether it started.
+function Matches:thugFight(player,kit,key,level)
+	local s=self.sessions[player]
+	if not s or s.phase~="Selection" or s.finishing then return false end
+	local view=Progression.view(player)
+	local own=view and view.selected and Progression.owns(player,view.selected) and view.selected or nil
+	s.masterTrial=nil;s.firstStage=nil;s.challenge=nil
+	s.thug={kit=kit,key=key}
+	if type(level)=="string" and Matches.LEVELS[level] then s.aiLevel=level end
+	s.nextSite=self:freeVillageSite(player,key,s) or self:nearSite(player,s)
+	local ok=self:start(player,own or "Leaf",kit,own==nil)
+	s.nextSite=nil
+	if ok==false then s.thug=nil;return false end
+	return true
+end
 function Matches:freeVillageSite(player,key,except)
 	local site=Matches.villageSite(player,key)
 	if site and not self:siteFree(site.key,except) then return nil end
@@ -462,6 +480,12 @@ function Matches:roundOver(s,winner,notify,advance)
 		if s.masterTrial and won then
 			local ok=Progression.learnFromMaster(s.owner,s.masterTrial)
 			if ok then s.progress.learned=s.masterTrial end
+		end
+		-- (23/11, passe 1) a rogue's racket fought: his purse, or some of ours
+		if s.thug then
+			local okT,purse=pcall(require(script.Parent.Thugs).ended,s.owner,won)
+			s.progress.thug={kit=s.thug.kit,won=won,ryo=okT and purse or 0}
+			s.thug=nil
 		end
 		-- (21/11, DEC-047) an inspiration's challenge in the street, decided
 		if s.challenge and self.solo then

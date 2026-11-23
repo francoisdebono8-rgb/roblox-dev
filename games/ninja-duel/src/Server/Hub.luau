@@ -1365,6 +1365,8 @@ function Hub.start()
 			local t=os.clock()
 			while #source:GetChildren()<8 and os.clock()-t<30 do task.wait(.5) end
 			Hub.placeMasters(source)
+			-- (23/11, passe 1) the rogue ninjas who rack the walkers
+			if Hub.matches then pcall(require(script.Parent.Thugs).start,Hub.folder,source,Hub.matches) end
 		end
 	end)
 end
