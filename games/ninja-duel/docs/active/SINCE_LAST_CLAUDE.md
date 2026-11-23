@@ -1,5 +1,34 @@
 # Boîte de réception Claude
 
+## INBOX-ANIM-PASSE1-20261123 — ANIMATEUR 23/11 : passe commune 1, les habits du départ et les maisons en morceaux
+
+**Les habits du départ refaits** (`tools/blender/outfit_models.py`, `OutfitMeshData*` réexportés, Catalog). Vérifiés de face et de dos sur 3 corps : `docs/reports/passe1-animateur-2026-11-23/`.
+- La tunique : un revers croisé large, une ceinture obi nouée sur le côté, des manches kimono avec un revers, et des pans courts devant et derrière chaque cuisse, qui suivent la jambe.
+- Le col haut et le haut sans manches ont aussi leur obi.
+- Le pantalon : bouffant aux cuisses, resserré sous le genou, mollet bandé jusqu'à la cheville.
+- Les sandales ont une semelle épaisse.
+- Deux couleurs nouvelles dans `Shared/Catalog` : `Trim` (le revers) et `Belt` (l'obi), sur les 3 tuniques et le col haut. Le reste du contrat ne bouge pas (mêmes ids, mêmes pièces).
+
+**Les maisons : la collision suit ce qu'on voit.** Pour « murs et toits intangibles », je ne passe pas par une coque par morceau : chaque `EditableMesh` de plus pèse sur le budget mémoire que tu vois déjà dépasser. À la place, chaque maison a ses solides, quelques parts simples qui épousent ce qui est dessiné :
+- le bloc des murs ;
+- chaque pente du toit (WedgePart), les bouts des toits en croupe ;
+- les auvents, les avant-toits, les balcons et leur garde-corps, les escaliers, les réservoirs, les comptoirs.
+
+Ils sont dans **`Shared/HubSolids.luau`** (généré par `tools/blender/konoha_houses.py solids`) : `nom du modèle -> {genre, cx, cy, cz, sx, sy, sz, yaw}`, dans le repère du modèle, avant l'échelle du lot. `"B"` est un bloc ; `"W"` est un WedgePart qui monte vers son +Z local ; `yaw` en degrés autour de Y. Tout est aligné aux axes (sauf le yaw par quarts de tour), donc la mise à l'échelle X/Z du lot reste exacte. **À toi** : `Server/Hub` construit ces parts invisibles à la place de la boîte du lot. Vérifié en rendu, solides en rouge sur le modèle : `maisons_solides.jpg`.
+
+**Cinq maisons d'Edo pour la nouvelle ville**, sans réservoir (Tsumago-juku, Ōuchi-juku, Kyoto, Shirakawa-go) :
+- `edo_townhouse` (18×16, 12 de haut) : treillis, noren, avant-toit profond, étage bas.
+- `edo_inn` (24×18, 13) : façade de shoji, balcon avec garde-corps, toit en croupe.
+- `kura` (12×10, 10) : la remise blanche, soubassement namako.
+- `tea_shop` (16×14, 7) : comptoir, auvent de toile sur poteaux, banc, ombrelle.
+- `farmhouse` (20×16, 5) : le gasshō au chaume raide.
+
+Elles sont dans `konoha_layout.HOUSES` (hors du MIX : c'est ton plan qui les place) et exportées dans `HubMeshData`. Désormais toutes les maisons du kit sont exportées, même absentes du plan. **Moins de réservoirs** : il n'y en a que sur `tank_house`, `apartment` et `tower_house` ; dans ton plan, ces trois-là peuvent devenir rares.
+
+**Ta question sur `LedgeUp`** : à t = 0, la racine est à 0 (accroché, bras tendus). Elle monte jusqu'à +2,9 en Y et −1,0 en Z (vers l'avant) à 0,55 s : le corps est dessiné au-dessus du personnage. À la fin du clip, déplace le personnage de (0, +2,9, −1,0) dans son repère, et remets le décalage à zéro dans la même image.
+
+**Ensuite chez moi** : `Copycat.Raikiri` et `raikiri_trail` (tu as pris RAIKIRI: TRACKED), et les clips de racket et de bagarre des voyous.
+
 ## INBOX-DEV-PASSE1-20261123 — DEV 23/11, 22 h 40 : passe commune 1, remettre le jeu d'aplomb (DEC-051)
 
 Plus d'étapes : François repasse chef opérationnel et juge après chaque passe commune. Chacun lit sa section du doc projet `claude/passe-commune-1-remise-a-plat-2026-11-23` :
