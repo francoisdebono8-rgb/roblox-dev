@@ -31,6 +31,44 @@ Tournament.RoundNames={"QUARTER-FINAL","SEMI-FINAL","FINAL"}
 -- The AI in the player's matches, by round (a tier the fighter's skill tree
 -- offers; none: his base kit).
 Tournament.Tiers={"Medium","Hard","Boss"}
+-- (23/11, step 4, DEC-048: « le tournoi où l'on s'inscrit avec des points de
+-- kit ») He enters with his kit and a build of the cup's budget, the same for
+-- everyone (DEC-039): every node of the tree is open to him, his points are
+-- the budget, not his mastery. The techniques and the awakening are nodes too
+-- (Learn*, gated): what he brings is his choice. Without a choice, his own
+-- build if it fits, else the kit's objects and learnings first, then the
+-- ranked preset of the bracket, the AI's Boss build and the tree's order, as
+-- far as the budget goes.
+Tournament.Bracket="Advanced"
+local function SkillBuilds() return require(script.Parent.SkillBuilds) end
+function Tournament.everything(fighter)
+	local set={}
+	local tree=SkillBuilds().tree(fighter)
+	for _,node in (tree and tree.Nodes) or {} do set[node.Id]=true end
+	return set
+end
+function Tournament.admit(fighter,nodes)
+	if type(nodes)~="table" or #nodes>64 then return nil,"Invalid build" end
+	for _,id in nodes do if type(id)~="string" then return nil,"Invalid build" end end
+	return SkillBuilds().admit(Tournament.Bracket,fighter,nodes,Tournament.everything(fighter),{gated=true,allowClosed=true})
+end
+function Tournament.defaultBuild(fighter,own)
+	if type(own)=="table" and Tournament.admit(fighter,own) then return table.clone(own) end
+	local tree=SkillBuilds().tree(fighter)
+	local nodes={}
+	local function try(id)
+		if table.find(nodes,id) then return end
+		table.insert(nodes,id)
+		if not Tournament.admit(fighter,nodes) then table.remove(nodes) end
+	end
+	local Presets=require(script.Parent.BuildPresets)
+	for _,node in (tree and tree.Nodes) or {} do if node.Item then try(node.Id) end end
+	for _,id in Presets.ranked(fighter,Tournament.Bracket) or {} do try(id) end
+	-- (a kit without a ranked preset: the AI's strongest choices, then the tree's order)
+	for _,id in Presets.ai(fighter,"Boss") or {} do try(id) end
+	for _,node in (tree and tree.Nodes) or {} do try(node.Id) end
+	return nodes
+end
 -- A word before the match (original lines, by fighter, then for the story's
 -- own pairs).
 Tournament.Lines={
@@ -107,7 +145,9 @@ function Tournament:view(cup)
 		reward=cup.reward and {amount=cup.reward.amount,ryo=cup.reward.ryo} or nil,
 		-- (19/11, DEV 5) the week's exam: `examName` while this tournament
 		-- counts for it, `exam` its result once over {name,score,best,improved,passed}
-		examName=cup.exam and cup.exam.name or nil,exam=cup.examResult}
+		examName=cup.exam and cup.exam.name or nil,exam=cup.examResult,
+		-- (23/11, DEC-048) the build he entered with: {nodes, spent, budget}
+		build=cup.build and {nodes=table.clone(cup.build.nodes),spent=cup.build.spent,budget=cup.build.budget} or nil}
 end
 function Tournament:send(player,s,phase)
 	s.phase=phase or "Bracket"
@@ -115,16 +155,23 @@ function Tournament:send(player,s,phase)
 end
 
 -- ------------------------------------------------------------ flow
-function Tournament:start(player,fighter)
+function Tournament:start(player,fighter,nodes)
 	local m=self.matches
 	if type(fighter)~="string" or not table.find(BetaRoster,fighter) or not Fighters[fighter] then return false end
 	-- (DEC-037) the player's fighter in the cup: a learned kit.
-	if not require(script.Parent.Progression).owns(player,fighter) then return false end
+	local Progression=require(script.Parent.Progression)
+	if not Progression.owns(player,fighter) then return false end
+	-- (23/11, DEC-048) his build for the cup, within its budget
+	local spec=Progression.kitSpec(player,fighter)
+	if nodes==nil then nodes=Tournament.defaultBuild(fighter,spec and spec.nodes) end
+	local kit=Tournament.admit(fighter,nodes)
+	if not kit then return false end
 	local s=m:session(player)
 	if s.online then return false end
 	m:destroy(s)
 	local seats=table.clone(Tournament.Seats)
-	local cup={seats=seats,me=table.find(seats,fighter),winners={},skipped={},match=1,over=false}
+	local cup={seats=seats,me=table.find(seats,fighter),winners={},skipped={},match=1,over=false,
+		build={nodes=table.clone(nodes),spent=kit.spent,budget=kit.budget,bracket=Tournament.Bracket,ninja=spec and spec.ninja}}
 	local ok,attempt=pcall(function() return weekly():attempt() end)
 	cup.exam=if ok then attempt else nil
 	s.cup=cup
@@ -146,7 +193,9 @@ function Tournament:fight(player)
 	if mine then
 		first=cup.seats[cup.me];second=cup.seats[if a==cup.me then b else a]
 		local tier=Tournament.Tiers[Tournament.roundOf(cup.match)]
-		if tier and require(script.Parent.BuildPresets).ai(second,tier) then options={bot={preset=tier}} end
+		options={bracket=cup.build and cup.build.bracket}
+		if cup.build then options.player={nodes=table.clone(cup.build.nodes),unlocked=Tournament.everything(first),gated=true,ninja=cup.build.ninja} end
+		if tier and require(script.Parent.BuildPresets).ai(second,tier) then options.bot={preset=tier} end
 	else
 		first=cup.seats[a];second=cup.seats[b]
 	end
@@ -270,7 +319,7 @@ function Tournament:request(player,s,action,payload)
 	end
 	if action=="CupStart" then
 		-- (Audit 04/11) and NEW TOURNAMENT once one is over (champion or out).
-		if (s.phase=="Selection" and not s.cup) or (s.cup and s.cup.over) then self:start(player,payload.player) end
+		if (s.phase=="Selection" and not s.cup) or (s.cup and s.cup.over) then self:start(player,payload.player,payload.nodes) end
 		return true
 	end
 	if not s.cup then return false end

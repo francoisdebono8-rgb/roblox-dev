@@ -81,6 +81,40 @@ test("start: the eight in the story's bracket, each once, the player on his figh
 	assert(m2.sessions[p2].phase=="Selection","a cup started with Haku")
 end)
 
+-- (23/11, step 4, DEC-048) « le tournoi où l'on s'inscrit avec des points de kit »
+test("he enters with his kit and a build of the cup's budget: his choice, or his learnings and the preset; over budget, refused",function()
+	local m,player=fresh()
+	send(m,player,"CupStart",{player="Sand"})
+	local p=last(player)
+	local build=p.cup and p.cup.build
+	assert(build and build.budget==100 and build.spent<=100 and build.spent>=60,"the default build: "..tostring(build and build.spent))
+	for _,id in {"Gourd","LearnDesertWave","LearnSandCoffin","LearnShukaku"} do assert(table.find(build.nodes,id),"the default build lacks "..id) end
+	-- his own duel is fought with it: the techniques he brought, the gourd's shield
+	local s=m.sessions[player]
+	local me=s.cup.me
+	-- the first match of his seat: play the bracket up to it
+	local guard=0
+	while s.phase=="Bracket" and not (last(player).cup.next and last(player).cup.next.mine) and guard<8 do send(m,player,"CupSkip");step(m,.1);guard+=1 end
+	send(m,player,"CupFight");step(m,.2)
+	assert(s.phase=="Duel","his match did not start")
+	assert(s.human.def.SandShield~=nil,"the gourd he brought is not on")
+	for _,spec in s.human.def.Techniques do assert(not spec.Locked,"Gaara entered without "..spec.Id) end
+	-- a build of his own choice, inside the budget: only what he brought
+	local m2,p2=fresh()
+	send(m2,p2,"CupStart",{player="Sand",nodes={"Gourd"}})
+	assert(last(p2).cup.build.spent==10 and #last(p2).cup.build.nodes==1,"his own choice")
+	-- over the budget, or not a list of nodes: no cup
+	local every={}
+	for id_ in Tournament.everything("Sand") do table.insert(every,id_) end
+	local m3,p3=fresh()
+	send(m3,p3,"CupStart",{player="Sand",nodes=every})
+	assert(m3.sessions[p3].phase=="Selection","a cup entered over the budget")
+	local m4,p4=fresh()
+	send(m4,p4,"CupStart",{player="Sand",nodes={1,2}})
+	assert(m4.sessions[p4].phase=="Selection","a cup entered with a build that is not one")
+	assert(me~=nil)
+end)
+
 test("an AI-vs-AI match is played for real by an autopilot, the player's inputs drive nothing",function()
 	local m,player=fresh()
 	send(m,player,"CupStart",{player="Lion"})
