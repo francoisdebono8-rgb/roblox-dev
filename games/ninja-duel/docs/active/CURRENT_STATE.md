@@ -7,7 +7,7 @@
   - **Les autres voient ton ninja** : `Server/Hub.pose`, avec `NinjaPose`, `NinjaPoseSeq` et `NinjaEmote` sur le personnage ; `Client/HubBody.poseOthers` pose chaque promeneur à moins de 160 studs.
   - **Les émotes dans Konoha** (G), vues de tous, seulement celles qu'on possède.
   - **VIP** (`NinjaVIP`, vérifié à l'arrivée et à l'achat en jeu) et **le lot des 8 tenues** (`Shop.Bundles`, `grantItems`, un seul reçu).
-  - **Le bouton SIGNALER** côté serveur (`Server/Reports`).
+  - **Le bouton SIGNALER** côté serveur (`Server/Reports`), relié à REPORT A PROBLEM de la DESIGN (action `Report`). La place de test est repérée par `Config.TestPlace.PlaceIds`.
   - **Les auras ne se vendent pas en Robux.**
   - **La liste des offres** : 2 passes et 33 produits.
 

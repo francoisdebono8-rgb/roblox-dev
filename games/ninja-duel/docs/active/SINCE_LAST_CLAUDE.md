@@ -17,7 +17,7 @@
 - **Les autres voient ton ninja.** Le remote `NinjaDuel.HubPose` envoie `climb`, `leap`, `kick`, `vault`, `none` ou `emote:<id>`. Les attributs du personnage sont `NinjaPose`, `NinjaPoseSeq` et `NinjaEmote`. `HubBody.poseOthers` pose chaque promeneur à moins de 160 studs.
 - **Les émotes dans Konoha** : touche G (l'émote portée). La roue d'émotes de la DESIGN appelle `HubMove:emote(<id>)`.
 - **VIP** : attribut `NinjaVIP` sur le joueur. **Le lot des 8 tenues** : `Config.Shop.Bundles[1]`, avec la commande `grantItems`.
-- **Le bouton SIGNALER** : `NinjaDuel.Report:FireServer(texte)`, de 3 à 300 caractères, 3 par minute. Côté serveur, DataStore `NinjaDuelReports` et une ligne `[NinjaDuelReport]`.
+- **Le bouton SIGNALER** : c'est l'action `Report` {text, where} de la DESIGN (`SettingsPanel`), reçue par `Server/Matches`, quel que soit l'écran. Elle est gardée par `Server/Reports` : de 3 à 300 caractères, 3 par minute, DataStore `NinjaDuelReports` et une ligne `[NinjaDuelReport]`. `workspace.NinjaTestPlace` vaut vrai sur les places de `Config.TestPlace.PlaceIds`, vide tant que François n'a pas créé la place.
 
 **À la DESIGN** :
 1. Ta section de l'étape 4.

@@ -115,6 +115,17 @@ test("he enters with his kit and a build of the cup's budget: his choice, or his
 	assert(me~=nil)
 end)
 
+-- (23/11, step 5, DEC-049) the DESIGN's REPORT A PROBLEM reaches the server's reports
+test("a tester's REPORT A PROBLEM is kept by the server, whatever the screen",function()
+	local m,player=fresh()
+	local Reports=H.load("Server/Reports")
+	Reports.store=false
+	send(m,player,"Report",{text="Stuck on a roof",where="KONOHA • THE PLAZA"})
+	assert(Reports.buckets[player] and Reports.buckets[player].n==1,"the report did not arrive")
+	send(m,player,"Report",{text=""})
+	assert(Reports.buckets[player].n==1,"an empty report kept")
+end)
+
 test("an AI-vs-AI match is played for real by an autopilot, the player's inputs drive nothing",function()
 	local m,player=fresh()
 	send(m,player,"CupStart",{player="Lion"})

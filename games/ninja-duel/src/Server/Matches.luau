@@ -725,6 +725,12 @@ function Matches:request(player,payload)
 		elseif s.combat then self:snapshot(player,s) end
 		return
 	end
+	-- (23/11, step 5, DEC-049) REPORT A PROBLEM (the test place), any phase
+	if action=="Report" then
+		local ok,why=pcall(function() require(script.Parent.Reports).record(player,payload.text,payload.where,s) end)
+		if not ok then warn("[NinjaDuel] report: "..tostring(why)) end
+		return
+	end
 	if payload.epoch~=s.epoch then return end
 	if s.metrics and not s.metrics.inputAt and (action~="Move" or (typeof(payload.direction)=="Vector3" and payload.direction.Magnitude>.5)) then Matches.measure(player,s,"input") end
 	-- The online flow owns every request of a player who is in it.

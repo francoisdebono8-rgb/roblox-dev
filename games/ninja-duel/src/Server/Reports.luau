@@ -3,8 +3,8 @@
 -- with where he was and what he was doing, for the DEV and the OUTILLEUR's
 -- reading of the test (tools/): DataStore "NinjaDuelReports", one key per
 -- report, and one log line `[NinjaDuelReport] <UserId> <phase> <text>`.
--- The client sends only its text (the DESIGN's button: remote
--- NinjaDuel.Report:FireServer(text)); the rest is the server's. At most
+-- The client sends only its text and where it says it is (the DESIGN's
+-- button: the action "Report" {text, where}); the rest is the server's. At most
 -- RATE reports a minute per player, 3 to MAX characters, never shown to other
 -- players (kept for the developers only).
 local Reports={}
@@ -27,29 +27,44 @@ function Reports.make(player,text,now,context,buckets)
 		where=context.where,version=context.version}
 end
 
-function Reports.start(matches)
-	local Shared=game:GetService("ReplicatedStorage"):FindFirstChild("NinjaDuel")
-	if not Shared or Shared:FindFirstChild("Report") then return end
-	local remote=Instance.new("RemoteEvent");remote.Name="Report";remote.Parent=Shared
-	local buckets={}
-	local store
-	pcall(function() store=game:GetService("DataStoreService"):GetDataStore(Reports.STORE) end)
-	remote.OnServerEvent:Connect(function(player,text)
-		local s=matches and matches.sessions and matches.sessions[player]
-		local character=player.Character
-		local root=character and character:FindFirstChild("HumanoidRootPart")
-		local where=root and string.format("%.0f,%.0f,%.0f",root.Position.X,root.Position.Y,root.Position.Z) or nil
-		-- the build's commit (build.py: NinjaDuel.SourceCommit)
-		local commit=Shared:FindFirstChild("SourceCommit")
-		local report=Reports.make(player,text,os.time(),{phase=s and s.phase,kit=player:GetAttribute("NinjaKit"),where=where,
-			version=commit and commit.Value or nil},buckets)
-		if not report then return end
-		print(string.format("[NinjaDuelReport] %d %s %s",report.user,tostring(report.phase),report.text))
-		if store then
-			task.spawn(pcall,function() store:SetAsync(string.format("r_%d_%d_%d",report.at,report.user,buckets[player].n),report) end)
-		end
-	end)
-	game:GetService("Players").PlayerRemoving:Connect(function(player) buckets[player]=nil end)
+-- The live side: the DESIGN's REPORT A PROBLEM (Client/SettingsPanel) sends
+-- the action "Report" {text, where} on the game's one remote; Server/Matches
+-- hands it here. Kept in the DataStore and a log line.
+Reports.buckets={}
+function Reports.record(player,text,where,session)
+	local character=player.Character
+	local root=typeof(character)=="Instance" and character:FindFirstChild("HumanoidRootPart") or nil
+	local at=if type(where)=="string" and #where>0 then string.sub(where,1,80) else nil
+	if root then
+		at=(at and at.." @ " or "")..string.format("%.0f,%.0f,%.0f",root.Position.X,root.Position.Y,root.Position.Z)
+	end
+	-- the build's commit (build.py: NinjaDuel.SourceCommit)
+	local okC,commit=pcall(function() return game:GetService("ReplicatedStorage"):FindFirstChild("NinjaDuel"):FindFirstChild("SourceCommit") end)
+	if not okC then commit=nil end
+	local okK,kit=pcall(function() return player:GetAttribute("NinjaKit") end)
+	local report=Reports.make(player,text,os.time(),{phase=session and session.phase,kit=okK and kit or nil,where=at,
+		version=commit and commit.Value or nil},Reports.buckets)
+	if not report then return false end
+	print(string.format("[NinjaDuelReport] %d %s %s",report.user,tostring(report.phase),report.text))
+	if Reports.store==nil then
+		Reports.store=false
+		pcall(function() Reports.store=game:GetService("DataStoreService"):GetDataStore(Reports.STORE) end)
+	end
+	local store=Reports.store
+	if store then
+		local key=string.format("r_%d_%d_%d",report.at,report.user,Reports.buckets[player].n)
+		task.spawn(pcall,function() store:SetAsync(key,report) end)
+	end
+	return true
+end
+
+-- (23/11, step 5, DEC-049) The test place: its PlaceId in Config.TestPlace
+-- (François creates it); there, workspace's NinjaTestPlace shows the button.
+function Reports.start()
+	local ok,Config=pcall(function() return require(game:GetService("ReplicatedStorage").NinjaDuel.Config) end)
+	local ids=ok and Config.TestPlace and Config.TestPlace.PlaceIds or {}
+	if table.find(ids,game.PlaceId) then workspace:SetAttribute("NinjaTestPlace",true) end
+	game:GetService("Players").PlayerRemoving:Connect(function(player) Reports.buckets[player]=nil end)
 end
 
 return Reports

@@ -26,7 +26,7 @@ if require(game:GetService("ReplicatedStorage").NinjaDuel.Config).Exam.Enabled==
 require(script.Parent.Leaderboards).begin()
 -- (04/11) Players online and challenges between them, across the servers.
 -- (23/11, step 5, DEC-049) the REPORT button of the test place
-pcall(function() require(script.Parent.Reports).start(matches) end)
+pcall(function() require(script.Parent.Reports).start() end)
 local lobby=require(script.Parent.Lobby).new(matches)
 matches.lobby=lobby
 remote.OnServerEvent:Connect(function(player,payload) matches:request(player,payload) end)

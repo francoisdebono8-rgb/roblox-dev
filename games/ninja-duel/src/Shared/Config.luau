@@ -195,6 +195,10 @@ return {
 	-- their masters. Live = the published game's own store (progress kept
 	-- between visits); Studio always uses the DEV store.
 	Progression = { Enabled = true, Live = true, Products = {}, MasteryPass = 0 },
+	-- (23/11, step 5, DEC-049) the private test place's PlaceId(s): there the
+	-- REPORT A PROBLEM button shows (Server/Reports sets workspace's
+	-- NinjaTestPlace). Empty until François creates the place.
+	TestPlace = { PlaceIds = {} },
 	-- (DEC-036) The player's fighter is his own Roblox avatar wearing the kit
 	-- (Server/AvatarBody); the AI's and the watched fighters stay the prodigies.
 	AvatarBody = { Enabled = true },
