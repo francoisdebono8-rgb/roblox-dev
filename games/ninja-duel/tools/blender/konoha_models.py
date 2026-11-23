@@ -1418,6 +1418,8 @@ def write(src_dir, limit=110000):
     if os.path.exists(layout):
         dress += open(layout).read()
     for name, fn in MODELS.items():
+        if name in konoha_landmarks.PROPS_OUT:      # (23/11) the client's props live in PropMeshData
+            continue
         if (name in konoha_houses.MODELS or name in konoha_landmarks.MODELS) and '"%s"' % name not in dress and "%s=" % name not in dress:
             print("not in HubDress.NAMES yet:", name)
             continue

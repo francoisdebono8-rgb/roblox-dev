@@ -18,4 +18,5 @@ for name,clip in require(script.Parent.AuthoredJutsu10) do all[name]=clip end
 for name,clip in require(script.Parent.AuthoredJutsu11) do all[name]=clip end
 for name,clip in require(script.Parent.AuthoredJutsu12) do all[name]=clip end
 for name,clip in require(script.Parent.AuthoredJutsu13) do all[name]=clip end
+for name,clip in require(script.Parent.AuthoredJutsu14) do all[name]=clip end
 return all
