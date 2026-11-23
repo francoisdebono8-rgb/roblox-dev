@@ -188,9 +188,21 @@ function Move:step(dt)
 	end
 	if what=="top" then self.mantleAt=os.clock() end
 	self.climbing=self.climb~=nil
-	-- the body, posed by the kit's clips (Client/HubBody)
+	-- (23/11, step 5) what the others need to pose him: his move, sent on change
+	local pose=if self.climb then "climb" else "none"
+	if self.leapAt and self.leapAt>(self.sentLeap or 0) then pose="leap";self.sentLeap=self.leapAt
+	elseif self.kickedAt and self.kickedAt>0 and self.kickedAt>(self.sentKick or 0) then pose="kick";self.sentKick=self.kickedAt
+	elseif what=="top" then pose="vault" end
+	if pose~=self.sentPose or pose=="leap" or pose=="kick" or pose=="vault" then
+		self.sentPose=pose
+		local remote=self.poseRemote or game:GetService("ReplicatedStorage"):FindFirstChild("NinjaDuel") and game:GetService("ReplicatedStorage").NinjaDuel:FindFirstChild("HubPose")
+		self.poseRemote=remote
+		if remote then remote:FireServer(pose) end
+	end
+	-- the body, posed by the kit's clips (Client/HubBody); the other walkers too
 	local poser=self:body()
 	if poser then
+		pcall(require(script.Parent.HubBody).poseOthers,poser.Authored,dt,root.Position)
 		local v=root.AssemblyLinearVelocity
 		pcall(poser.step,poser,character,hum,{now=os.clock(),dt=dt,speed=Vector3.new(v.X,0,v.Z).Magnitude,vy=v.Y,
 			grounded=grounded and not self.climb,climbing=self.climb~=nil,climbSpeed=Move.CLIMB,

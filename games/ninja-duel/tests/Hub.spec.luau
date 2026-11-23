@@ -820,4 +820,31 @@ test("the ninja walker: the kit's gait by the ground covered, up the wall off it
 	assert(lean>55,"the body is not off the wall: "..lean)
 end)
 
+-- (23/11, step 5, DEC-049) what a client writes on joints stays on it: each
+-- screen poses every walker, his moves sent by their owner through the server.
+test("the others see your ninja: the moves travel by the server, each screen poses every walker",function()
+	local Hub=H.load("Server/Hub")
+	local attrs={}
+	local character={SetAttribute=function(_,k,v) attrs[k]=v end,GetAttribute=function(_,k) return attrs[k] end}
+	local player={Character=character}
+	local buckets={}
+	assert(Hub.pose(player,"climb",0,buckets) and attrs.NinjaPose=="climb" and attrs.NinjaPoseSeq==1,"up the wall")
+	assert(Hub.pose(player,"leap",.1,buckets) and attrs.NinjaPose=="leap" and attrs.NinjaPoseSeq==2,"the bound")
+	assert(not Hub.pose(player,"fly",.2,buckets) and not Hub.pose(player,42,.2,buckets),"only the walker's moves")
+	assert(attrs.NinjaPose=="leap","a refused word changes nothing")
+	local n=0
+	for i=1,30 do if Hub.pose(player,"none",.3+i*.001,buckets) then n+=1 end end
+	assert(n==Hub.POSE_RATE-2,"at most "..Hub.POSE_RATE.." a second: "..n)
+	assert(Hub.pose(player,"none",1.5,buckets),"the next second")
+	-- the screen that sees him: the move from the sequence, once
+	local Body=H.load("Client/HubBody")
+	local w={}
+	local f=Body.crowdFacts(w,10,1/60,Vector3.new(30,0,0),true,"climb",5,"Sand")
+	assert(f.climbing and not f.grounded and f.speed==30 and f.kit=="Sand","up the wall, seen")
+	f=Body.crowdFacts(w,11,1/60,Vector3.new(30,40,0),false,"leap",6,"Sand")
+	assert(f.leapAt==11 and not f.climbing,"the bound, seen")
+	f=Body.crowdFacts(w,11.2,1/60,Vector3.new(30,20,0),false,"leap",6,"Sand")
+	assert(f.leapAt==11,"the same bound is seen once")
+end)
+
 print(string.format("NinjaDuel hub Konoha (DEC-038): %d PASS",passed))

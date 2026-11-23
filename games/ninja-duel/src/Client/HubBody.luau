@@ -150,7 +150,7 @@ function Body:step(character,hum,f)
 	if not character or not hum then self.pending=nil;return end
 	if hum.RigType~=Enum.HumanoidRigType.R15 then self.pending=nil;return end
 	if self.character~=character then self.character=character;self.j=joints(character);self.strides=nil end
-	local kit=Players.LocalPlayer and Players.LocalPlayer:GetAttribute("NinjaKit")
+	local kit=f.kit or (Players.LocalPlayer and Players.LocalPlayer:GetAttribute("NinjaKit"))
 	if not (type(kit)=="string" and Body.clipName(self.Authored,kit,"Sprint")) then kit="Lion" end
 	if kit~=self.kit then self.kit=kit;self.strides=nil end
 	f.kit=kit
@@ -175,6 +175,48 @@ end
 function Body:stop()
 	self.pending=nil
 	if self.connection then self.connection:Disconnect();self.connection=nil end
+end
+
+-- ------------------------------------------------------------ the other walkers
+-- (23/11, step 5, DEC-049) What this client writes on joints stays on this
+-- client: so each screen poses every walker near it, his own way. Speed and
+-- height come with his body's physics; the ground by a ray under him; the
+-- wall, the bound, the kick and the hop by his character's NinjaPose /
+-- NinjaPoseSeq (Server/Hub.pose, sent by his own HubMove).
+Body.CROWD_RANGE=160
+Body.crowd=setmetatable({},{__mode="k"})
+-- (pure) a walker's frame from what this screen sees of him; `w` keeps what
+-- the previous frames saw (the pose's sequence and when each move began).
+function Body.crowdFacts(w,now,dt,velocity,grounded,pose,seq,kit)
+	if seq~=w.seq then
+		w.seq=seq
+		if pose=="leap" then w.leapAt=now elseif pose=="kick" then w.kickAt=now elseif pose=="vault" then w.mantleAt=now end
+	end
+	return {now=now,dt=dt,speed=Vector3.new(velocity.X,0,velocity.Z).Magnitude,vy=velocity.Y,grounded=grounded and pose~="climb",
+		climbing=pose=="climb",climbSpeed=38,leapAt=w.leapAt,kickAt=w.kickAt,mantleAt=w.mantleAt,kit=kit}
+end
+function Body.poseOthers(Authored,dt,here)
+	local me=Players.LocalPlayer
+	local now=os.clock()
+	local seen={}
+	for _,player in Players:GetPlayers() do
+		if player==me then continue end
+		local character=player.Character
+		local hum=character and character:FindFirstChildOfClass("Humanoid")
+		local root=character and character:FindFirstChild("HumanoidRootPart")
+		if not (hum and root and hum.Health>0) or (here and (root.Position-here).Magnitude>Body.CROWD_RANGE) then continue end
+		seen[character]=true
+		local w=Body.crowd[character]
+		if not w then w={body=Body.new(Authored)};Body.crowd[character]=w end
+		local params=RaycastParams.new();params.FilterType=Enum.RaycastFilterType.Exclude;params.FilterDescendantsInstances={character}
+		local grounded=workspace:Raycast(root.Position,Vector3.new(0,-(hum.HipHeight+root.Size.Y/2+.6),0),params)~=nil
+		local kit=player:GetAttribute("NinjaKit")
+		local f=Body.crowdFacts(w,now,dt,root.AssemblyLinearVelocity,grounded,character:GetAttribute("NinjaPose"),character:GetAttribute("NinjaPoseSeq"),if type(kit)=="string" then kit else nil)
+		pcall(w.body.step,w.body,character,hum,f)
+	end
+	for character,w in Body.crowd do
+		if not seen[character] then w.body:stop();Body.crowd[character]=nil end
+	end
 end
 
 return Body

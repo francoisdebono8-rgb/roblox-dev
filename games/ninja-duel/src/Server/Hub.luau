@@ -1282,8 +1282,40 @@ function Hub.forget(player)
 end
 
 -- Server start (Main): build, then the masters once the portraits exist.
+-- (23/11, step 5, DEC-049) The walker's ninja body seen by everyone: each
+-- screen poses every walker with his kit's clips (Client/HubBody), but what a
+-- client writes on joints stays on that client. Speed and height travel with
+-- the body's physics; the rest (up a wall, the bound, the kick off a wall,
+-- the hop over an edge) is sent here by its owner and set on his character,
+-- which every client reads: NinjaPose (the state) and NinjaPoseSeq (+1 at
+-- each, so the same move twice is seen twice). Only those words, at most
+-- POSE_RATE a second.
+Hub.POSES={climb=true,leap=true,kick=true,vault=true,none=true}
+Hub.POSE_RATE=12
+function Hub.pose(player,state,now,buckets)
+	if type(state)~="string" or not Hub.POSES[state] then return false end
+	local b=buckets[player]
+	if not b or now-b.at>=1 then b={at=now,n=0};buckets[player]=b end
+	if b.n>=Hub.POSE_RATE then return false end
+	b.n+=1
+	local character=player.Character
+	if not character then return false end
+	character:SetAttribute("NinjaPose",state)
+	character:SetAttribute("NinjaPoseSeq",(character:GetAttribute("NinjaPoseSeq") or 0)+1)
+	return true
+end
+function Hub.startPoses()
+	local Shared=ReplicatedStorage:FindFirstChild("NinjaDuel")
+	if not Shared or Shared:FindFirstChild("HubPose") then return end
+	local remote=Instance.new("RemoteEvent");remote.Name="HubPose";remote.Parent=Shared
+	local buckets={}
+	remote.OnServerEvent:Connect(function(player,state) Hub.pose(player,state,os.clock(),buckets) end)
+	game:GetService("Players").PlayerRemoving:Connect(function(player) buckets[player]=nil end)
+end
+
 function Hub.start()
 	Hub.build(workspace)
+	Hub.startPoses()
 	-- (14/11) the creator and the champions carved on the cliff. Its own
 	-- thread: (14/11, seen in Studio) MessagingService:SubscribeAsync never
 	-- returned in a local file and held the whole server start (no roster,
