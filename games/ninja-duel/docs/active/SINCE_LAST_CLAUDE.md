@@ -1,5 +1,24 @@
 # Boîte de réception Claude
 
+## INBOX-ANIM-ETAPE5-20261123 — ANIMATEUR 23/11 : fin de l'étape 4, ouverture (DEC-049)
+
+**Étape 4, la suite de INBOX-ANIM-ETAPE4 :**
+- **Les 5 kits refaits** (Neji, Gaara, Kakashi, Itachi, Minato) : gardes, pas de garde, légers, lourds, balayages, saltos aériens, et les coups de lame de Kakashi. Source `tools/blender/e4_strikes.py`, construction `tools/blender/e4_build.py`. Les clips sont dans `AuthoredJutsu15..19` (dernière couche de `AuthoredJutsu.luau` : retirer les 5 lignes rend les anciens). Un clip n'est écrit que s'il bat l'ancien à `clip_grades` ; 58 écrits. Moyennes avant → après : Neji 8,2 → 8,5 ; Gaara 6,7 → 8,0 ; Kakashi 6,9 → 8,6 ; Itachi 6,6 → 8,0 ; Minato 6,2 → 8,5. Gardés tels quels (le nouveau ne battait pas l'ancien) : `GentleFist.Light1/Light2/Heavy/Sweep`, `Copycat.Sweep`, `Mirage.Light1/Heavy`. Les timings de coup et le moteur de pose ne bougent pas. Audit des 902 clips : PASS.
+- **Kakashi, proposition de transformation** (à toi de trancher, puis le serveur) :
+  1. **RAIKIRI: TRACKED** (ma recommandation). Quand les chiens de `TrackingFang` tiennent une cible, le prochain `ChidoriThrust` dans les 3 s part en ligne droite sur elle et traverse une esquive ; réplique « RAIKIRI ». Lisible en un regard (les chiens marquent, l'éclair suit la marque) et tout existe déjà : les clips `TrackingFang.*` et `ChidoriThrust`, les `ninken`. Si tu la prends, je fais un `Copycat.Raikiri` (élan plus bas, bras tendu, traînée) et un effet `raikiri_trail`.
+  2. **COPY TWICE** : la dernière technique copiée part deux fois, la seconde par une image rémanente à mi-force. Plus « copieur », mais plus difficile à lire en duel et plus de travail serveur.
+- `sandfuneral` et la passerelle ne sont pas faits ; ils restent optionnels.
+
+**Étape 5 :**
+- **Cape VIP** : `CapeVIP` (cape blanche longue, ourlet, col et fermoir dorés). Elle est au Catalog avec `earned="vip"`, `how="the VIP pass"` : jamais vendue, **c'est le serveur qui la donne avec le pass** (à toi). Le modèle est dans `OutfitMeshData*` et `OutfitMeshes` (réexport `outfit_models write`).
+- **THUNDER HALO et SHADOW VEIL** passent à `ryo=6000` (plus de `robux=` : le pré-vol ne les voit plus en vente). Elles restent à 0 dans ta `Config`, comme tu l'as écrit. Shop.spec passe.
+- **Cape VIP, côté serveur** : `CapeVIP` porte `earned="vip"` ; il faut qu'un joueur qui a `NinjaVIP` la possède (ou la reçoive à l'arrivée et à l'achat), comme tes autres récompenses.
+- **Au comparateur des 5 kits (OUTILLEUR)** : mes clips de l'étape 4 sont poussés (`AuthoredJutsu15..19`).
+- **Rendus des offres, à la DESIGN** (ton README `assets/offers` les attend) : `assets/renders/offers/`, 95 PNG 512 × 512 à fond transparent, nommés par `id` du Catalog (les 14 sets, dont les 8 kits ; tenues ; 18 coupes ; bandeaux ; masques ; capes dont `CapeVIP`, vue de dos ; dos ; armes dont `KunaiGold` et `TantoShadow` ; 6 auras), plus `SetBundle8.png` pour le lot des 8 tenues. Ils remplacent le dessin de la cape de `pass_vip`. Outils : `tools/blender/offer_renders.py`, `offer_bundle.py`.
+- **Revue de face et de dos** de tout ce qui se vend sur l'avatar : planches dans `docs/reports/etape5-animateur-2026-11-23/` ; rien ne traverse le corps ; l'ourlet de la cape VIP est corrigé ; la doublure des capes et des pans ne perce plus le tissu (tous les `OutfitMeshData` réexportés).
+- **À l'OUTILLEUR** : `Loop.spec` demande une icône par look ; j'ai rendu celle de `CapeVIP` avec ton `tools/icons/render_icons.py` et ajouté le seul PNG `tools/icons/renders/CapeVIP.png` (ton `icons.json` n'est pas touché : à toi de l'y ajouter).
+- **Émotes debout dans la rue** (headless) : aucune ne déplace la racine, donc pas de glissement ; MEDITATE et PUSH-UPS descendent la racine de 1,7 (au sol). À voir en jeu par François.
+
 ## INBOX-OUTILLEUR-ETAPE45-20261123 — OUTILLEUR 23/11 soir : étape 4 (comparateur, village généré, prouveur) puis étape 5 (pré-vol, fluidité, nouveau joueur, page du test)
 
 Les faits sont dans `CURRENT_STATE`. Le détail est dans les README de `tools/kits`, `tools/syphodev`, `tools/villagebot`, `tools/preflight`, `tools/perf`, `tools/newplayer`, `tools/testread` et `tools/lab`. Ce sont des observations de Claude dans une copie LAB : pas l'avis de François.
@@ -92,6 +111,33 @@ Les faits sont dans `CURRENT_STATE`. Le détail est dans les README de `tools/ki
 3. Les codes d'ouverture.
 4. Le message pour trouver les testeurs et le questionnaire, que François envoie lui-même.
 5. Les notes de l'ouverture, l'annonce du premier Examen, le plan des Shorts.
+
+## INBOX-ANIM-ETAPE4-20261123 — ANIMATEUR 23/11 : réponse à INBOX-DEV-ETAPE4, premiers points
+
+Fait et poussé :
+- **Export de la tour** : `tower_house` est dans `HubMeshData*` et dans `KonohaModelRef` (13 × 13 × 28). `konoha_models write` ne met plus les props du client (`market_stall`, `barrel`) dans `HubMeshData` : ils sont dans `PropMeshData`.
+- **`Lion.Parkour.WallRun`** (boucle de 0,46 s, héritage `Parkour`, donc `<kit>.Parkour.WallRun` pour les 8) : une course dans le repère du corps, en l'air, foulée longue, genoux hauts, bras qui pompent. Elle va avec ton inclinaison `WALL_TILT` : tu peux la jouer à la place de `Sprint` sur le mur.
+- **`Lion.Parkour.Ledge`** (boucle de 1,6 s : pendu aux deux mains, bras tendus au-dessus de la tête, jambes libres, léger balancement) et **`Lion.Parkour.LedgeUp`** (0,55 s : traction, un genou sur le rebord, debout ; la racine monte de 2,9 et avance de 1,0). Pour `Ledge`, place le corps de sorte que les mains soient au rebord : elles sont à environ 2,6 au-dessus de la racine.
+- Ces clips sont dans `AuthoredJutsu14` (nouveau, ajouté à `AuthoredJutsu.luau`). Notes `clip_grades` : WallRun 9,0, Ledge 9,0, LedgeUp 8,6.
+- **Coiffures** (François, 23/11 18 h : « toujours des imprécisions au niveau des yeux » ; « plus de coupes et plus de couleurs ») :
+  - la garde contre les yeux teste maintenant toute la forme de chaque mèche, pas seulement sa ligne médiane, avec une marge pour les têtes des avatars (|x| < 0,5, y < 0,43 devant le visage) ;
+  - les bandeaux sont à `BROW` 0,46 ;
+  - 5 coupes de plus, soit 18 : `HairTwinTails`, `HairTopknot`, `HairBraid`, `HairUndercut`, `HairCurtain`.
+- **Couleurs de cheveux (c'est à toi, `Shared/CatalogStyle`, slot `hairColor`)** : François veut plus de couleurs. Voici une proposition prête à coller, dans le même format que les tiennes :
+  - `HairChestnut` « CHESTNUT » (120,72,44), 400 ;
+  - `HairAsh` « ASH BROWN » (96,84,76), 400 ;
+  - `HairHoney` « HONEY » (214,160,80), 500 ;
+  - `HairCrimson` « CRIMSON » (150,24,40), 600 ;
+  - `HairOcean` « OCEAN TEAL » (40,120,130), 600 ;
+  - `HairLilac` « LILAC » (180,150,210), 600 ;
+  - `HairMint` « MINT » (150,210,180), 700 ;
+  - `HairCoral` « CORAL » (240,120,100), 700 ;
+  - `HairInk` « INK BLUE-BLACK » (18,24,44), 500 ;
+  - `HairPlatinum` « PLATINUM » (230,222,200), 800.
+
+  Mes coupes prennent n'importe quelle couleur (elles peignent `Hair`). Rien d'autre à brancher.
+
+À suivre de mon côté, dans cet ordre : les 5 kits refaits (Neji, Gaara, Kakashi, Itachi, Minato), puis `sandfuneral` et une proposition pour Kakashi, puis la passerelle (un nom à ajouter au contrat). Je te ferai une proposition pour Kakashi avant que tu fasses le serveur.
 
 ## INBOX-DEV-ETAPE4-20261123 — DEV 23/11 : l'étape 4 « Les 8 complets » est lancée (DEC-048)
 
