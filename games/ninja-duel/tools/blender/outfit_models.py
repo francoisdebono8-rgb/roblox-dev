@@ -790,7 +790,9 @@ for _sid in wardrobe_models.SETS:
 PRICE = {"top": 600, "bottom": 500, "arms": 350, "feet": 350, "headband": 800, "mask": 600, "cape": 900, "back": 700, "hair": 700}
 # A set belongs to a kit (Shop.spec): the inspiration whose spirit it carries (my proposal, the DEV's call)
 SET_KIT = {"SetEmberMonk": "Leaf", "SetMistHunter": "Mirage", "SetStormCourier": "Legion", "SetShadowScout": "Copycat",
-           "SetLeafMedic": "GentleFist", "SetSandNomad": "Sand"}
+           "SetLeafMedic": "GentleFist", "SetSandNomad": "Sand", "SetRogue": "Lion"}
+# (24/11) sets never sold: (earned, how) in place of the Robux product
+SET_EARNED = {"SetRogue": ("rogues", "beat 10 rogue ninjas in Konoha")}
 # Server/Outfit's cloth stand-ins (Shared/Catalog `pieces`), until the client has drawn the model
 FALLBACK = {
     "top": lambda c: ['{on="UpperTorso",c="%s"}' % c, '{on="LowerTorso",c="%s",h=.6}' % c, '{on="UpperArm",c="%s",h=.55}' % c],
@@ -830,7 +832,8 @@ def write_catalog(path):
                 cols[m + sl] = v
         top, low = parts[0][0] + next(iter(parts[0][1])), parts[1][0] + next(iter(parts[1][1]))
         pcs = FALLBACK["top"](top) + FALLBACK["bottom"](low)[1:]
-        rows.append('\t{id="%s",slot="set",kit="%s",name="%s",robux="%s",colors={%s},\n\t\tpieces={%s}},' % (k, SET_KIT[k], nm.upper(), k, c(cols), ",".join(pcs)))
+        sale = ('earned="%s",how="%s"' % SET_EARNED[k]) if k in SET_EARNED else 'robux="%s"' % k
+        rows.append('\t{id="%s",slot="set",kit="%s",name="%s",%s,colors={%s},\n\t\tpieces={%s}},' % (k, SET_KIT[k], nm.upper(), sale, c(cols), ",".join(pcs)))
     block = BEGIN + "\n" + "\n".join(rows) + "\n" + END
     if BEGIN in src:
         src = src.split(BEGIN)[0] + block + src.split(END)[1]

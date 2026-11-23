@@ -1,0 +1,160 @@
+-- The rogue ninjas of Konoha, as this screen sees them (24/11, passe commune 1, DEC-051;
+-- the DEV's Server/Thugs: a few rogues stand by the street-duel places and rack the walkers).
+-- The server's rogue is a statue (a kit's portrait, darkened, tagged NinjaThug); here it is
+-- hidden and drawn as the duel's rig (KonohaFolkFX.rig) in the rogue's own look (Shared/Catalog
+-- SetRogue: a dark coat on a blood-red robe, the cloth mask, the struck-through headband),
+-- playing the ANIMATEUR's clips (tools/blender/p1_clips.py, AuthoredJutsu20):
+--   Rogue.Idle     by the duel place, arms crossed, looking about
+--   Rogue.Racket   while he racks THIS walker (the remote NinjaDuel.Racket names him): he turns
+--                  to him, leans in, one hand out for the Ryō
+--   Rogue.Taunt    the racket panel closes and he is still there: a fight is coming
+--   Rogue.Leave    the server takes him away (paid or beaten): a leap back, then he fades
+-- Presentation only, on this client; never solid, never queried. Nothing reaches the server.
+local RunService=game:GetService("RunService")
+local Players=game:GetService("Players")
+
+local Rogue={}
+Rogue.NEAR=300          -- studs from the camera within which they move
+Rogue.LOOK="SetRogue"   -- the Catalog's look they wear
+Rogue.SKIN=Color3.fromRGB(214,170,134)
+Rogue.live={}           -- server model -> entry
+
+local function hide(model)
+	for _,d in model:GetDescendants() do
+		if d:IsA("BasePart") then d.LocalTransparencyModifier=1 end
+		if d:IsA("Decal") then d.Transparency=1 end
+	end
+end
+
+-- (pure) Which clip he plays and from when: the state, the time it began, now.
+function Rogue.clipAt(state,since,now)
+	if state=="racket" then return "Rogue.Racket",now-since end
+	if state=="taunt" then return "Rogue.Taunt",now-since end
+	if state=="leave" then return "Rogue.Leave",now-since end
+	return "Rogue.Idle",now+since
+end
+-- (pure) The street key a server rogue stands for ("Thug_<key>").
+function Rogue.keyOf(name)
+	return string.match(tostring(name or ""),"^Thug_(.+)$")
+end
+
+function Rogue.start()
+	if Rogue.started then return end
+	Rogue.started=true
+	task.spawn(function()
+		local RS=game:GetService("ReplicatedStorage")
+		local shared=RS:WaitForChild("NinjaDuel",30)
+		if not shared then return end
+		local okC,Config=pcall(require,shared:WaitForChild("Config",10))
+		if okC and Config and Config.Hub and Config.Hub.Enabled~=true then return end
+		local okD,Dress=pcall(require,script.Parent.OutfitDress)
+		local okA,Authored=pcall(require,script.Parent.AuthoredMotion)
+		local okF,Folk=pcall(require,script.Parent.KonohaFolkFX)
+		local okS,Shop=pcall(require,shared:WaitForChild("Shop",10))
+		if not (okD and okA and okF and Authored.has("Rogue.Idle")) then return end
+		local item=okS and Shop and Shop.item and Shop.item(Rogue.LOOK)
+		local colors={}
+		for slot,c in (item and item.colors or {}) do colors[slot]=Color3.fromRGB(c[1],c[2],c[3]) end
+		local folder=Instance.new("Folder");folder.Name="KonohaRogues";folder.Parent=workspace
+
+		local function joints(model)
+			local j={}
+			for _,d in model:GetDescendants() do if d:IsA("Motor6D") then j[d.Name]=d end end
+			return j
+		end
+		local MOTOR={Right="RightShoulder",Left="LeftShoulder"}
+		local function pose(j,p)
+			if not p then return end
+			for name,cf in p do
+				local m=j[MOTOR[name] or name]
+				if m then m.Transform=cf end
+			end
+		end
+		local function fade(entry,alpha)
+			for _,d in entry.rig:GetDescendants() do
+				if d:IsA("BasePart") and d.Name~="HumanoidRootPart" then d.LocalTransparencyModifier=alpha end
+			end
+		end
+
+		local function add(model)
+			if Rogue.live[model] or not model:IsA("Model") or not model:GetAttribute("NinjaThug") then return end
+			local root=model.PrimaryPart or model:FindFirstChild("HumanoidRootPart")
+			if not root then return end
+			local dark=Color3.fromRGB(34,34,40)
+			local rig=Folk.rig(Rogue.SKIN,dark,dark)
+			rig.Name="Rogue_"..model.Name
+			rig.Parent=folder
+			task.spawn(function() pcall(Folk.dress,rig,Dress,{Rogue.LOOK},colors) end)
+			local entry={server=model,rig=rig,root=rig.PrimaryPart,j=joints(rig),key=Rogue.keyOf(model.Name),
+				at=root.CFrame,state="idle",since=math.random()*3}
+			Rogue.live[model]=entry
+			hide(model)
+			model.DescendantAdded:Connect(function(d) if d:IsA("BasePart") then d.LocalTransparencyModifier=1 end end)
+			model.AncestryChanged:Connect(function(_,parent)
+				if parent then return end
+				-- the server took him away: a leap back, then gone
+				entry.state,entry.since="leave",os.clock()
+				task.delay((Authored.length("Rogue.Leave") or .9)+.35,function()
+					Rogue.live[model]=nil
+					rig:Destroy()
+				end)
+			end)
+		end
+		local function scan(node) for _,d in node:GetDescendants() do if d:IsA("Model") and d:GetAttribute("NinjaThug") then add(d) end end end
+		scan(workspace)
+		workspace.DescendantAdded:Connect(function(d)
+			if d:IsA("Model") then task.defer(function() if d.Parent and d:GetAttribute("NinjaThug") then add(d) end end) end
+		end)
+
+		-- the racket: the server names the rogue who stops this walker
+		local remote=shared:WaitForChild("Racket",30)
+		if remote then
+			remote.OnClientEvent:Connect(function(offer)
+				local now=os.clock()
+				for _,e in Rogue.live do
+					if type(offer)=="table" and offer.id==e.key and e.state~="leave" then
+						if e.state~="racket" then e.state,e.since="racket",now end
+					elseif e.state=="racket" then
+						e.state,e.since="taunt",now
+					end
+				end
+			end)
+		end
+
+		local acc=0
+		RunService.Heartbeat:Connect(function(dt)
+			acc+=dt
+			if acc<1/30 then return end
+			acc=0
+			local now=os.clock()
+			local cam=workspace.CurrentCamera
+			local eye=cam and cam.CFrame.Position or Vector3.zero
+			local me=Players.LocalPlayer and Players.LocalPlayer.Character
+			local mine=me and me:FindFirstChild("HumanoidRootPart")
+			for model,e in Rogue.live do
+				if e.state~="leave" and model.Parent then
+					local r=model.PrimaryPart or model:FindFirstChild("HumanoidRootPart")
+					if r then e.at=r.CFrame end
+				end
+				if (e.at.Position-eye).Magnitude<Rogue.NEAR or not e.placed then
+					e.placed=true
+					local cf=e.at
+					if (e.state=="racket" or e.state=="taunt") and mine then   -- he faces his mark
+						local to=Vector3.new(mine.Position.X,cf.Position.Y,mine.Position.Z)
+						if (to-cf.Position).Magnitude>.5 then cf=CFrame.lookAt(cf.Position,to) end
+					end
+					e.root.CFrame=cf
+					if e.state=="taunt" and now-e.since>(Authored.length("Rogue.Taunt") or 1.1)+1.5 then e.state,e.since="idle",math.random()*3 end
+					local clip,t=Rogue.clipAt(e.state,e.since,now)
+					pcall(function() pose(e.j,Authored.sample(clip,t)) end)
+					if e.state=="leave" then
+						local puff=.6
+						fade(e,math.clamp((now-e.since-puff)/.3,0,1))
+					end
+				end
+			end
+		end)
+	end)
+end
+
+return Rogue

@@ -235,4 +235,36 @@ test("the market's stalls and barrels wear their models, on the block's foot; th
 	assert(Life.dressProps(root,function() return Instance.new("Part") end,data)==0,"once")
 end)
 
+-- (24/11, passe commune 1) « le personnage apparaît debout sur un tonneau »: no clutter where one
+-- arrives, by a master or on a street-duel place; elsewhere the props stay.
+test("the arrival, the masters and the duel places are kept clear of the village's clutter",function()
+	local Life=H.load("Client/KonohaLifeFX")
+	local HubMap=H.load("Shared/HubMap")
+	local zones=Life.zones(HubMap)
+	assert(#zones>=4,"zones")
+	local gate=HubMap.Spawns.gate.at
+	assert(Life.inClear(zones,gate+Vector3.new(3,0,2)),"the arrival")
+	for _,m in HubMap.Masters do assert(Life.inClear(zones,m.at),"by a master") end
+	local origin=Vector3.new(0,0,0)
+	local root=Instance.new("Folder")
+	local onSpawn=Instance.new("Part");onSpawn.Name="Prop_barrel";onSpawn.CFrame=CFrame.new(gate.X+1,1.8,gate.Z);onSpawn.Parent=root
+	local far=Instance.new("Part");far.Name="Prop_barrel";far.CFrame=CFrame.new(5000,1.8,5000);far.Parent=root
+	assert(Life.clearProps(root,zones,origin,nil)==1)
+	assert(onSpawn.LocalTransparencyModifier==1 and not onSpawn.CanCollide and not onSpawn.CanQuery,"gone from this screen")
+	assert(far.LocalTransparencyModifier==0 and far.CanCollide,"kept elsewhere")
+	assert(Life.dressProps(root,function() return Instance.new("Part") end,H.load("Client/PropMeshData"))==1,"only the far one dressed")
+end)
+
+-- (24/11, passe commune 1) the rogue ninjas (Server/Thugs) as this screen draws them
+test("the rogue ninjas: their look in the Catalog, their four clips, their state picks the clip",function()
+	local Rogue=H.load("Client/KonohaRogueFX")
+	local look=nil
+	for _,item in Catalog.Items do if item.id==Rogue.LOOK then look=item end end
+	assert(look and look.slot=="set" and look.earned and not look.robux,"SetRogue: earned, never sold")
+	for _,n in {"Rogue.Idle","Rogue.Racket","Rogue.Taunt","Rogue.Leave"} do assert(clips[n],"clip "..n) end
+	assert(Rogue.keyOf("Thug_plaza")=="plaza" and Rogue.keyOf("Villager")==nil)
+	assert(Rogue.clipAt("racket",10,11)=="Rogue.Racket" and select(2,Rogue.clipAt("racket",10,11))==1)
+	assert(Rogue.clipAt("idle",1,5)=="Rogue.Idle" and Rogue.clipAt("leave",0,.2)=="Rogue.Leave")
+end)
+
 print(("NinjaDuel style FX: %d PASS"):format(passed))

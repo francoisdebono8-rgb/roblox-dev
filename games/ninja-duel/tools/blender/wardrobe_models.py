@@ -776,6 +776,15 @@ SETS = {
         ("ShinGuards", {"Sandal": (90, 64, 44), "Metal": (176, 160, 130), "Strap": (90, 64, 44)}),
         ("CloakHooded", {"Cape": (214, 186, 140)}),
         ("BackScroll", {"Paper": (240, 230, 200), "Wood": (120, 80, 50), "Strap": (90, 64, 44)})]),
+    # (24/11, passe commune 1) the rogue ninjas of Konoha (Server/Thugs): a dark coat open on a
+    # blood-red under-robe, the cloth mask, the struck-through headband of a missing-nin. Never
+    # sold: won by beating rogues (earned, the DEV's rule).
+    "SetRogue": ("Rogue Ninja", [
+        ("Haori", {"Cloth": (34, 34, 40), "Under": (110, 30, 32), "Trim": (150, 146, 140)}),
+        ("WrapPants", {"Cloth": (40, 40, 48), "Wrap": (128, 122, 112)}),
+        ("ArmWarmers", {"Cloth": (52, 50, 56)}), ("WrappedFeet", {"Wrap": (128, 122, 112)}),
+        ("MaskCloth", {"Cloth": (26, 26, 30)}),
+        ("HeadbandScratched", {"Band": (26, 26, 30), "Plate": (170, 172, 178)})]),
 }
 
 

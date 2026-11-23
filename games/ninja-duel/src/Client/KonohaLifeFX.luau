@@ -34,7 +34,8 @@ function Life.world(origin,scale,x,y,z) return origin+Vector3.new(x,y,z)*scale e
 
 -- What goes where, from the plan alone (pure: the headless test reads it).
 -- Returns {steam={{pos,size}}, smoke={...}, bunting={{a,b}}, birds={{centre,radius,height}}, leaves={pos...}}
-function Life.plan(Layout,origin,scale)
+function Life.plan(Layout,origin,scale,zones)
+	zones=zones or {}
 	local out={steam={},smoke={},bunting={},birds={},leaves={},nobori={}}
 	local n=0
 	for _,b in Layout.Buildings do
@@ -54,7 +55,8 @@ function Life.plan(Layout,origin,scale)
 			local lx,lz=side*(w/2-1),d/2+1.4                 -- yaw 0: the door looks at +Z
 			local wx,wz=lx*math.cos(yaw)+lz*math.sin(yaw),-lx*math.sin(yaw)+lz*math.cos(yaw)
 			local fx,fz=math.sin(yaw),math.cos(yaw)
-			table.insert(out.nobori,{pos=Life.world(origin,scale,x+wx,0,z+wz),face=Vector3.new(fx,0,fz),n=n})
+			local spot=Life.world(origin,scale,x+wx,0,z+wz)
+			if not Life.inClear(zones,spot-origin) then table.insert(out.nobori,{pos=spot,face=Vector3.new(fx,0,fz),n=n}) end
 		end
 	end
 	for _,s in Layout.Streets do
@@ -262,7 +264,7 @@ function Life.dressProps(root,build,data)
 	for _,p in root:GetDescendants() do
 		local model=p:IsA("BasePart") and Life.PROPS[p.Name]
 		local specs=model and data[model]
-		if specs and not p:GetAttribute("LifeDressed") then
+		if specs and not p:GetAttribute("LifeDressed") and not p:GetAttribute("LifeCleared") then
 			local foot=Life.propFoot(p)
 			local holder=Instance.new("Model");holder.Name="LifeProp"
 			local ok=pcall(function()
@@ -280,6 +282,63 @@ function Life.dressProps(root,build,data)
 				n+=1
 			else
 				holder:Destroy()
+			end
+		end
+	end
+	return n
+end
+
+-- ------------------------------------------------------------------ the places kept clear
+-- (24/11, passe commune 1: « le personnage apparaît debout sur un tonneau ») Nothing of the
+-- village's clutter where one arrives, where a master stands and fights, at the street-duel
+-- places: the arrival points, the masters and their duel rings, the welcome trio, Training
+-- Ground Three's ring, the street-duel places (HubMap, already scaled, relative to its Origin).
+-- Returns {{at=Vector3 (relative), r=studs}}.
+function Life.zones(HubMap)
+	local s=HubMap.Scale or 1
+	local out={}
+	local function add(at,r) if at then table.insert(out,{at=Vector3.new(at.X,0,at.Z),r=r}) end end
+	for _,spot in HubMap.Spawns or {} do add(spot.at,18*s) end
+	for _,m in HubMap.Masters or {} do
+		add(m.at,12*s)
+		if m.duel then add(m.duel.at,m.duel.radius) end
+	end
+	for _,w in HubMap.Welcome or {} do add(w.at,8*s) end
+	if HubMap.Training and HubMap.Training.duel then add(HubMap.Training.duel.at,HubMap.Training.duel.radius) end
+	for _,street in HubMap.Streets or {} do add(street.at,street.radius or 14*s) end
+	return out
+end
+-- (pure) Whether a point (relative to HubMap.Origin) stands in a kept-clear place.
+function Life.inClear(zones,rel)
+	for _,z in zones do
+		local d=Vector3.new(rel.X,0,rel.Z)-z.at
+		if d.Magnitude<z.r then return true end
+	end
+	return false
+end
+-- The clutter the village's plan puts down (Server/Hub: Prop_barrel, Prop_stall, Prop_post, and
+-- the Crate, Bench, FenceSegment and Stump units): in a kept-clear place, gone from this screen
+-- (hidden, not solid, not queried, their dressed meshes too). Returns how many.
+Life.CLUTTER={Prop_barrel=true,Prop_stall=true,Prop_post=true,Crate=true,Bench=true,FenceSegment=true,Stump=true}
+function Life.clearProps(root,zones,origin,copiesOf)
+	local n=0
+	local function gone(p)
+		p.LocalTransparencyModifier=1;p.CanCollide=false;p.CanQuery=false;p.CanTouch=false
+		for _,c in (copiesOf and copiesOf[p]) or {} do if c:IsA("BasePart") then c.LocalTransparencyModifier=1 end end
+	end
+	for _,d in root:GetDescendants() do
+		if Life.CLUTTER[d.Name] then
+			local at=if d:IsA("BasePart") then d.Position elseif d:IsA("Model") then d:GetPivot().Position else nil
+			if at and Life.inClear(zones,at-origin) then
+				-- again at every pass: the village's dresser may draw its meshes after us
+				if not d:GetAttribute("LifeCleared") then n+=1 end
+				d:SetAttribute("LifeCleared",true)
+				if d:IsA("BasePart") then gone(d) end
+				for _,q in d:GetDescendants() do if q:IsA("BasePart") then gone(q) end end
+				-- a prop dressed here (Life.dressProps) is a "LifeProp" beside its block
+				for _,q in (d.Parent and d.Parent:GetChildren() or {}) do
+					if q.Name=="LifeProp" and q:IsA("Model") and (q:GetPivot().Position-at).Magnitude<6 then q:Destroy() end
+				end
 			end
 		end
 	end
@@ -368,6 +427,9 @@ function Life.start()
 		-- only where the village stands (the hub server builds NinjaDuelHub; not in a duel place)
 		local hub=workspace:WaitForChild("NinjaDuelHub",60)
 		if not hub then return end
+		local zones=Life.zones(HubMap)
+		local okHD,HD=pcall(require,script.Parent.HubDress)
+		local copiesOf=okHD and HD and HD.copiesOf or nil
 		task.spawn(function()
 			local okS,Solo=pcall(require,shared:WaitForChild("Solo",10))
 			local okM,MeshKit=pcall(require,script.Parent.MeshKit)
@@ -384,6 +446,7 @@ function Life.start()
 			for _=1,30 do   -- the hub's units may stream in a little after
 				local targets=hub:FindFirstChild("KunaiTargets",true)
 				if not boards and targets and Life.dressBoards(targets,Solo,build,data)>0 then boards=true end
+				pcall(Life.clearProps,hub,zones,HubMap.Origin,copiesOf)
 				pcall(Life.dressProps,hub,build,data)
 				task.wait(2)
 			end
@@ -398,7 +461,7 @@ function Life.start()
 			end
 		end)
 		local folder=Instance.new("Folder");folder.Name="KonohaLife";folder.Parent=workspace
-		local made=Life.build(folder,Life.plan(Layout,HubMap.Origin,HubMap.Scale or 1))
+		local made=Life.build(folder,Life.plan(Layout,HubMap.Origin,HubMap.Scale or 1,zones))
 		local acc=0
 		RunService.Heartbeat:Connect(function(dt)
 			acc+=dt
