@@ -15,6 +15,8 @@
   - les retours en jeu vers Discord (remplacés par `Server/Reports`) ;
   - `codex/weapon-forge-tycoon-v0` (un autre jeu) ;
   - les branches sans histoire commune (`archive/mac-local-2026-11-07`, `media-clips`, `codex/issue-19-presetforge`), qu'on ne fusionne jamais.
+- **Les codes d'ouverture du CM** (`cm/codes-ouverture`, une PR qui attendait parce qu'elle touchait `tests/Codes.spec`) sont fusionnés. Il reste 3 codes, sans date tant que François ne donne pas le jour d'ouverture (`Codes.Opening`). Les fiches des 5 kits du CM (étape 4) sont arrivées en même temps.
+- **Pour que ça ne se reproduise pas** (DEC-050) : `tools/branches/unmerged.py` liste tout travail resté sur une branche à côté. Le DEV le lance à chaque passe. Il rend 0 ce soir.
 - **`main` avance jusqu'à la branche commune**, en avance rapide, sans publication Roblox.
 
 **DEV, 23/11 soir : les retours de l'OUTILLEUR et de l'ANIMATEUR (étapes 4-5)** — TECHNICAL (tests verts, sans Studio) ; rien n'est joué par François

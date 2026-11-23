@@ -564,3 +564,17 @@ François (23/11, 18 h 21) : « maintenant étape 5, avec les messages à envoye
 - **La priorité n° 1 du DEV** : que les autres joueurs voient le corps ninja du promeneur. Aujourd'hui, seul son propre écran le pose ; ce que le client écrit sur les articulations ne se transmet pas.
 - **Les auras ne se vendent pas en Robux** (la règle du 20/11 : les auras se gagnent au mérite). THUNDER HALO et SHADOW VEIL, ajoutées en Robux à l'étape 3, restent à 0 dans `Config.Shop.Products`. L'ANIMATEUR en fait des récompenses ou des achats en Ryō.
 - **Les offres que le jeu sait donner** : 2 passes et 33 produits. La liste pour François est dans les docs projet `claude/produits-passes-a-creer-2026-11-20` et `claude/produits-passes-maj-etape5-2026-11-23`.
+
+## DEC-050 — Rien ne reste à côté du jeu (23/11)
+
+François (23/11, 21 h) : « tout ce qui a été fait doit être ajouté » ; « comment se fait-il que tu n'aies pas tous les ajouts alors que la méthode de travail est censée éviter ces problèmes ? »
+
+Ce qui manquait venait de deux trous de la méthode :
+- **le travail d'avant DEC-043** (03–14/11), resté sur des branches à côté. Il était noté « non intégré » le 07/11, et personne ne l'a repris ;
+- **une PR qui attend** : le CM a mis ses codes dans une PR parce qu'elle touchait un test du DEV, et le DEV ne regardait pas les branches.
+
+Les règles :
+- **Chaque discussion pousse sur la branche commune**, même quand elle touche un fichier d'une autre discussion, si la suite et les builds sont verts. Elle le dit dans `SINCE_LAST_CLAUDE`. Pas de PR ni de branche qui attend.
+- **Le DEV lance `python3 tools/branches/unmerged.py` à chaque passe**, avant d'annoncer quoi que ce soit. Le script liste toute branche qui a du travail absent de la branche commune (code 1 s'il en reste). Ce qu'il liste est intégré dans la passe, ou jugé avec sa raison dans la liste `ALREADY_JUDGED` du script.
+- **Les branches `work/*`** restent des brouillons (« wip », « scratch ») ; le script les ignore. Une livraison n'existe que sur la branche commune.
+- **`main` suit la branche commune** (avance rapide), à chaque poussée du DEV. Ça ne publie rien sur Roblox.
