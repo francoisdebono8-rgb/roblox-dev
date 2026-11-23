@@ -283,19 +283,31 @@ function View:extras(dt)
 			self.boardMine.Text=if best and Players.LocalPlayer:GetAttribute("NinjaSoloEnd")=="finish" then "YOUR BEST  "..Solo.clock(best) else "E AT THE POST: GO!"
 		end
 	end)
-	-- the challenger's line over his head
+	-- the challenger's line over his head: (DESIGN 23/11, passe 1: « la bulle
+	-- sous le HUD ») a speech bubble sized in studs, so it stays over his head
+	-- at any distance instead of a 320 px card that filled a phone's top;
+	-- gone when his dare is.
 	pcall(function()
 		local masters=hub:FindFirstChild("Masters")
 		for _,model in (masters and masters:GetChildren()) or {} do
 			local line=model:GetAttribute("NinjaChallengeLine")
-			if line and not self.bubbles[model] then
+			local bill=self.bubbles[model]
+			if bill and (not line or bill:GetAttribute("Line")~=line) then bill:Destroy();self.bubbles[model]=nil;bill=nil end
+			if line and not bill then
 				local head=model:FindFirstChild("Head") or model.PrimaryPart
 				if head then
-					local bill=Instance.new("BillboardGui");bill.Size=UDim2.fromOffset(320,96);bill.StudsOffset=Vector3.new(0,4.5,0);bill.LightInfluence=0;bill.MaxDistance=120
+					bill=Instance.new("BillboardGui");bill.Name="Dare";bill.Size=UDim2.fromScale(7,2.1);bill.StudsOffset=Vector3.new(0,3.4,0)
+					bill.LightInfluence=0;bill.MaxDistance=70;bill:SetAttribute("Line",line)
 					bill.Parent=head
-					local page=self.kit.frame(bill,UDim2.fromScale(0,0),UDim2.new(1,0,1,-14),self.M.paper,0)
-					self.kit.create("UIStroke",page,{Color=self.M.ink,Thickness=3,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
-					self.kit.text(page,"« "..line.." »",UDim2.fromOffset(10,6),UDim2.new(1,-20,1,-12),20,self.M.ink,self.kit.VOICE_FONT or self.kit.BODY_FONT,Enum.TextXAlignment.Center)
+					local page=self.kit.frame(bill,UDim2.fromScale(0,0),UDim2.fromScale(1,.8),self.M.paper,0)
+					self.kit.corner(page,12)
+					self.kit.create("UIStroke",page,{Color=self.M.ink,Thickness=2,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
+					local tail=self.kit.frame(bill,UDim2.fromScale(.5,.8),UDim2.fromScale(.07,.22),self.M.paper,0)
+					tail.AnchorPoint=Vector2.new(.5,.5);tail.Rotation=45
+					self.kit.create("UIStroke",tail,{Color=self.M.ink,Thickness=2,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
+					local words=self.kit.text(page,line,UDim2.fromScale(.05,.08),UDim2.fromScale(.9,.84),20,self.M.ink,self.kit.VOICE_FONT or self.kit.BODY_FONT,Enum.TextXAlignment.Center)
+					words.TextScaled=true;words.ZIndex=3;page.ZIndex=2;tail.ZIndex=1
+					self.kit.create("UITextSizeConstraint",words,{MaxTextSize=22,MinTextSize=8})
 					self.bubbles[model]=bill
 				end
 			end

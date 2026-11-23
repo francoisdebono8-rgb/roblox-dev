@@ -191,6 +191,11 @@ function UI:coachPrompt(tut,data)
 	self.coachTitle.Position=UDim2.fromOffset(if data.touch then 18 else 178,8)
 	self.coachTitle.Size=UDim2.new(1,if data.touch then -36 else -192,1,-16)
 	self.coachDone.Visible=tut.done==true
+	-- a kit's training: « TRAINING • THE HARD WORKER • 2 / 7 » over it, how to skip under it
+	local training=tut.coach~=true and tut.total~=nil
+	local who=data.human and data.human.fighterId and KitTexts.name(data.human.fighterId) or ""
+	self.coachStep.Text=if training then Text.upper("TRAINING  •  "..who.."  •  "..(tut.index or 1).." / "..tut.total) else ""
+	self.coachSkip.Text=if not training then "" elseif data.touch then "SKIP STEP: TOP LEFT" elseif pad then "TOUCHPAD: NEXT STEP  •  HOLD: LEAVE" else "BACKSPACE: NEXT STEP  •  HOLD: LEAVE"
 	coach.BackgroundColor3=if tut.done then MANGA.red else MANGA.ink
 	if fresh then
 		self.coachScale.Scale=.82
@@ -1013,6 +1018,10 @@ function UI.new(parent,send)
 	self.coachDone.BackgroundTransparency=0;self.coachDone.BackgroundColor3=MANGA.red;self.coachDone.Rotation=8;self.coachDone.ZIndex=44;self.coachDone.Visible=false
 	create("UIStroke",self.coachDone,{Color=MANGA.ink,Thickness=3,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
 	self.coach=coach
+	self.coachStep=text(coach,"",UDim2.fromOffset(14,-30),UDim2.fromOffset(420,24),18,MANGA.paper,TITLE_FONT)
+	create("UIStroke",self.coachStep,{Color=MANGA.ink,Thickness=2,ApplyStrokeMode=Enum.ApplyStrokeMode.Contextual})
+	self.coachSkip=text(coach,"",UDim2.new(0,14,1,10),UDim2.new(1,-28,0,20),15,MANGA.paper,STRONG_FONT or BODY_FONT,Enum.TextXAlignment.Center)
+	create("UIStroke",self.coachSkip,{Color=MANGA.ink,Thickness=2,ApplyStrokeMode=Enum.ApplyStrokeMode.Contextual})
 	GuiService.AutoSelectGuiEnabled=true
 	-- HUD scale follows the viewport so plates and slots never leave the screen.
 	local function fitHud()
@@ -1533,7 +1542,10 @@ end
 function UI:render(data)
 	self.lastSpectate=data.spectate==true;self.lastPhaseSeen=data.phase
 	local pad=if data.gamepad~=nil then data.gamepad else Controls.isGamepad(UIS:GetLastInputType())
-	local coaching=data.tutorial~=nil and data.tutorial.coach==true and data.phase=="Duel"
+	-- (DESIGN 23/11, passe 1: TRY THIS KIT « buggés et mal faits ») a kit's
+	-- training steps take the coach's caption too: one at a time near the
+	-- fight, the step's number on it, how to skip under it
+	local coaching=data.tutorial~=nil and data.phase=="Duel"
 	self.tutorialPanel.Visible=data.tutorial~=nil and data.phase=="Duel" and not coaching
 	self:coachPrompt(if coaching then data.tutorial else nil,data)
 	-- (User 02/11, tutorial on screen) The cue band (124) and the hint (200)

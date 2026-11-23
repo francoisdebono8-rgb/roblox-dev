@@ -70,12 +70,12 @@ function Hub.new(ui,camera,send,controls)
 	-- The goal: « NEXT » and where to go, cream on a band of ink, a red brush
 	-- stroke under it; never under the shop or Roblox's buttons.
 	self.goal=K.frame(ui.gui,UDim2.fromOffset(0,18),UDim2.fromOffset(HubLayout.GOAL.w,HubLayout.GOAL.h),M.ink,0)
-	self.goal.Visible=false;self.goal.ZIndex=20;self.goal.Rotation=-.8
+	self.goal.Visible=false;self.goal.ZIndex=20
 	self.goalScale=K.create("UIScale",self.goal,{Scale=1})
-	local brush=K.frame(self.goal,UDim2.new(.18,0,1,4),UDim2.new(.64,0,0,7),M.red,0)
+	local brush=K.frame(self.goal,UDim2.new(0,0,0,0),UDim2.new(0,6,1,0),M.red,0)
 	brush.ZIndex=19;K.corner(brush,4)
-	self.goalHead=K.text(self.goal,"",UDim2.fromOffset(0,2),UDim2.new(1,0,0,26),18,M.redSoft,STRONG,Enum.TextXAlignment.Center)
-	self.goalSub=K.text(self.goal,"",UDim2.fromOffset(0,30),UDim2.new(1,0,0,24),20,M.cream,STRONG,Enum.TextXAlignment.Center)
+	self.goalHead=K.text(self.goal,"",UDim2.fromOffset(14,4),UDim2.new(1,-28,0,24),18,M.redSoft,STRONG)
+	self.goalSub=K.text(self.goal,"",UDim2.fromOffset(14,30),UDim2.new(1,-28,0,24),18,M.cream,STRONG)
 	self.goalSub.TextWrapped=false;self.goalSub.TextScaled=true
 	K.create("UITextSizeConstraint",self.goalSub,{MaxTextSize=20,MinTextSize=10})
 	-- The Ryō on paper, DUELS in ink, SHOP in red, top right.
@@ -114,6 +114,14 @@ function Hub.new(ui,camera,send,controls)
 	end,M.paper)
 	gear.TextSize=18;gear.TextColor3=M.ink;gear.Font=STRONG;inkRing(gear,3)
 	self.settingsButton=gear
+	-- (DESIGN 23/11, passe 1) the racket: PAY, RUN or FIGHT (Hub:racket(r))
+	do
+		local ok,RacketPanel=pcall(function() return require(script.Parent.RacketPanel) end)
+		if ok and RacketPanel then
+			local made,panel=pcall(RacketPanel.new,ui.kit or K,ui.gui,send)
+			if made then self.racketPanel=panel end
+		end
+	end
 	-- (DESIGN 21/11, step 3) the minimap under the place box, M for the big map
 	do
 		local ok,MiniMap=pcall(function() return require(script.Parent.MiniMap) end)
@@ -246,7 +254,7 @@ function Hub:layout()
 	local function at(gui,r) gui.Position=UDim2.fromOffset(math.floor(r.x+.5),math.floor(r.y+.5)) end
 	at(self.hud,L.hud);self.hudScale.Scale=L.scale
 	at(self.shopBox,L.shop);self.shopScale.Scale=L.scale
-	if self.map then self.map:place(L.hud.x,L.hud.y+L.hud.h+10,L.scale) end
+	if self.map then self.map:place(L.map.x,L.map.y,L.map.scale or L.scale) end
 	at(self.goal,L.goal);self.goalScale.Scale=L.scale
 	self.goal.Size=UDim2.fromOffset(L.goal.w/L.scale,L.goal.h/L.scale)
 	-- narrow: the places one a line under the head (Hub:refreshHud)
@@ -344,6 +352,12 @@ function Hub:showHud()
 		self.questsDot.Text=n.."/"..all;self.questsDot.Visible=all>0
 		if self.quests:shown() then self.quests:refresh(daily) end
 	end
+end
+-- (DESIGN 23/11) A thug's racket on screen (the DEV calls it with his r,
+-- see Client/RacketPanel's contract); nil closes it.
+function Hub:racket(r)
+	if not self.racketPanel then return end
+	if r then self:hideCard();self.racketPanel:show(r) else self.racketPanel:hide() end
 end
 function Hub:openQuests()
 	if not self.quests then return end

@@ -766,6 +766,35 @@ test("settings: sound and camera steps, the report sent with its place",function
 	assert(ok,tostring(err))
 end)
 
+-- (DESIGN 23/11, passe 1) the racket: PAY, RUN, FIGHT; the fuse ends in a fight
+test("the racket: three choices, PAY only with the Ryō, the fuse swings",function()
+	local R=H.load("Client/RacketPanel")
+	local l=R.lines({ask=120,win=200,lose=60,ryo=50})
+	assert(not l.pay.ok and l.pay.sub:find("DON'T",1,true) and l.fight.sub:find("+200",1,true),"the lines")
+	H.workspace.GetAttribute=function() return nil end
+	local saved=H.envBase.Instance
+	local baseNew=harnessInstance.new
+	H.envBase.Instance={new=function(class)
+		local x=baseNew(class)
+		x.Activated={Connect=function(_,fn) x.click=fn end}
+		return x
+	end}
+	local ok,err=pcall(function()
+		local UI=H.load("Client/UI")
+		R=H.load("Client/RacketPanel")
+		local sent={}
+		local p=R.new(UI.kit,baseNew("ScreenGui"),function(a,b) table.insert(sent,{a,b}) end)
+		p:show({id=7,name="Ryoji",line="Your Ryō or we fight.",ask=120,win=200,lose=60,ryo=50},0)
+		assert(p:shown() and p.name.Text=="RYOJI","shown")
+		p.buttons.pay.click();assert(#sent==0 and p:shown(),"no PAY without the Ryō")
+		p.buttons.run.click();assert(sent[1][2].choice=="run" and not p:shown(),"RUN")
+		p:show({id=8,ask=10,ryo=50,seconds=5},0);p:tick(6)
+		assert(sent[2][2].choice=="fight" and sent[2][2].id==8,"the fuse ends in a FIGHT")
+	end)
+	H.envBase.Instance=saved
+	assert(ok,tostring(err))
+end)
+
 -- (15/11, DA v3 Mix-Shop) the STYLE preview: a still copy of his own avatar,
 -- its scripts and its own outfit taken off, the character left as it was.
 test("the STYLE preview: a still copy of his avatar, without its scripts nor its outfit",function()

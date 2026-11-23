@@ -13,7 +13,8 @@ local L={}
 L.MARGIN=16
 L.HUD={w=430,h=74}      -- the place and the kit, top left
 L.SHOP={w=424,h=116}    -- the Ryō, DUELS and SHOP, top right; QUESTS and RANKS under them
-L.GOAL={w=840,h=58,stackH=96} -- what to do next: a head and the line under it
+L.GOAL={w=430,h=58,stackH=96} -- what to do next: under the place box, a head and its places one a line
+L.MAP=238               -- the minimap's box (MiniMap.SIZE + its name line)
 L.STACK=700             -- narrower (in the goal's own units), one place a line
 L.CARD={w=490,h=380}    -- a master's card
 L.RUN=14                -- the gap between the touch RUN and jump buttons
@@ -46,21 +47,21 @@ function L.compute(viewport,insetY,touch)
 	-- under the place box, on the right.
 	if out.hud.x+out.hud.w+m>out.shop.x then out.shop.y=top+out.hud.h+8 end
 	local below=math.max(out.hud.y+out.hud.h,out.shop.y+out.shop.h)+8
-	-- The goal: in the top row between the two boxes when there is room for
-	-- it, else on its own row under them.
-	local row=X-2*(m+math.max(out.hud.w,out.shop.w)+m)
-	local gw,gh=L.GOAL.w*s,L.GOAL.h*s
-	if row>=L.ROW*s and out.shop.y==top then
-		local w=math.min(gw,row)
-		out.goal={x=X/2-w/2,y=top,w=w,h=gh}
+	-- (DESIGN 23/11, passe 1: « le bandeau CHOOSE YOUR INSPIRATION reste en
+	-- haut au milieu et cache la vue ») The goal: under the place box, its
+	-- width, the head then the places one a line; the middle of the screen is
+	-- the village's.
+	-- (a portrait phone: under the shop box, which sits under the place box)
+	out.goal={x=m,y=if out.shop.y==top then out.hud.y+out.hud.h+8 else below,w=math.min(L.GOAL.w*s,X-2*m),h=L.GOAL.stackH*s,stack=true}
+	-- The minimap: under the goal on a laptop; with touch, under the shop box
+	-- on the right (the thumbstick owns the bottom left).
+	if touch then
+		local y=(if out.shop.y==top then out.shop.y+out.shop.h else out.goal.y+out.goal.h)+10
+		local floor=L.jump(viewport).y-10
+		local ms=math.max(.45,math.min(s,(floor-y)/L.MAP))
+		out.map={x=X-m-(L.MAP-30)*ms,y=y,w=(L.MAP-30)*ms,h=L.MAP*ms,scale=ms}
 	else
-		local w=math.min(gw,X-2*m)
-		out.goal={x=X/2-w/2,y=below,w=w,h=gh}
-	end
-	-- Narrow (a portrait phone): the places under the head go one per line.
-	if out.goal.w/s<L.STACK then
-		out.goal.stack=true
-		out.goal.h=L.GOAL.stackH*s
+		out.map={x=m,y=out.goal.y+out.goal.h+10,w=(L.MAP-30)*s,h=L.MAP*s,scale=s}
 	end
 	-- The master's card: on the right of a wide window (the village stays in
 	-- view), centred on a narrow one or with touch controls (clear of the

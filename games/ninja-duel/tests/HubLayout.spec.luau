@@ -38,15 +38,15 @@ test("the top row: under Roblox's bar, inside the window, nothing over anything"
 	end end
 end)
 
-test("a laptop window (1280 to 1366): the goal no longer runs under SHOP",function()
-	for _,w in {1280,1366} do
-		local o=L.compute(v(w,w==1280 and 720 or 768),58,false)
-		apart(o.shop,o.goal,"shop and goal",{w,0})
-		assert(o.goal.w>=800,"the goal is cramped at "..w..": "..o.goal.w)
+test("the goal under the place box, out of the view's middle; the minimap clear of the thumbstick",function()
+	for _,size in SIZES do
+		local o=L.compute(v(size[1],size[2]),58,size[3])
+		assert(o.goal.x==o.hud.x and o.goal.y>o.hud.y,"the goal under the place box at "..size[1])
+		inside(o.map,size[1],size[2],"minimap",size)
+		apart(o.map,o.goal,"minimap and goal",size)
+		apart(o.map,o.shop,"minimap and shop",size)
+		if o.run then apart(o.map,o.run,"minimap and RUN",size) end
 	end
-	-- a wide one keeps it in the top row
-	local o=L.compute(v(1920,1080),58,false)
-	assert(o.goal.y==o.top and o.goal.w==840,"the 1920 goal moved: "..fmt(o.goal))
 end)
 
 test("the master's card: inside the window, under the top row, clear of the keys",function()
@@ -87,8 +87,6 @@ test("narrow: the goal's places one a line",function()
 	local o=L.compute(v(390,844),58,true)
 	assert(o.goal.stack,"a portrait phone keeps the places on one line")
 	assert(o.shop.y>o.hud.y,"the shop box stays beside the place box on a portrait phone")
-	local wide=L.compute(v(1920,1080),58,false)
-	assert(not wide.goal.stack,"a wide window stacks the places")
 end)
 
 -- The Konoha client itself (Client/HubClient) over the real UI: the layout
@@ -150,7 +148,7 @@ test("Konoha's HUD: placed by the layout, the goal follows the player, touch and
 		-- a laptop: the place box under Roblox's bar, the goal under the top row
 		assert(hub.hud.Visible and hub.hud.Position.Y.Offset==66 and hub.hud.Position.X.Offset==16,"the place box: "..tostring(hub.hud.Position))
 		assert(hub.goal.Visible and hub.goalHead.Text=="CHOOSE YOUR INSPIRATION","a new player's goal: "..hub.goalHead.Text)
-		assert(string.find(hub.goalSub.Text,"BY THE GATE",1,true) and hub.goal.Position.Y.Offset>=140,"the goal's places or row: "..hub.goalSub.Text)
+		assert(hub.goalSub.Text~="" and hub.goal.Position.X.Offset<40,"the goal's places, under the place box: "..hub.goalSub.Text)
 		assert(not hub.runButton.Visible and hub.keys.Visible,"keys: no RUN button, the key line")
 		-- (14/11) the training dummy: no kit yet, Lee's (his ground)
 		hub:train()
