@@ -40,14 +40,28 @@ WEAR = {"set", "top", "bottom", "arms", "feet", "cape", "back", "hair", "headban
 WEAPON = {"kunai", "shuriken", "tanto"}
 
 
-def catalog():
-    """[(id, slot, row text)] for every sold or given look, in Catalog order."""
+def catalog(every=False):
+    """[(id, slot, row text)] for every sold or given look (every=True: all rows), in Catalog order."""
     out = []
     for m in re.finditer(r'\{id="(\w+)",slot="(\w+)"([^\n]*)', open(CATALOG).read()):
         i, s, rest = m.groups()
-        if "robux=" in rest or re.search(r"ryo=[1-9]", rest) or 'earned="vip"' in rest:
+        if every or "robux=" in rest or re.search(r"ryo=[1-9]", rest) or 'earned="vip"' in rest:
             out.append((i, s, rest))
     return out
+
+
+# What the avatar wears under a single piece, so a cape or a haircut is not shown on bare skin:
+# the starting outfit (base items), the offered piece taking its slot.
+UNDER = {"top": "TopTunicBlack", "bottom": "BottomPantsDark", "feet": "FeetBlack"}
+
+
+def dressed(item_id, slot):
+    if slot == "set":
+        return [(item_id, colors(ROWS[item_id]))]
+    looks = [(i, colors(ROWS[i])) for s, i in UNDER.items() if s != slot and i in ROWS]
+    if item_id:
+        looks.append((item_id, colors(ROWS[item_id])))
+    return looks
 
 
 def colors(rest):
@@ -105,25 +119,26 @@ def tinted(pc, rgb255):
     return [tuple(g * k for g, k in zip(cc, t)) for cc in pc.c]
 
 
-def avatar(item_id, cols, yaw, bust=False, extra=()):
-    """Blender objects: the avatar wearing the look, turned `yaw` (0: facing the camera's +y)."""
+def avatar(looks, yaw, bust=False, extra=()):
+    """Blender objects: the avatar wearing the looks [(id, colours)], turned `yaw` (0: facing +y)."""
     objs = []
-    keep = ("Head", "UpperTorso", "LowerTorso", "RightUpperArm", "LeftUpperArm") if bust else None
+    keep = ("Head", "UpperTorso") if bust else None
     for part, pc in body_pieces():
         if keep and part not in keep:
             continue
         b = OM.to_blender_frame(pc)
         b.v = [place(v, part, yaw) for v in b.v]
         objs.append(to_blender(b))
-    pieces, tints = look_pieces(item_id, cols) if item_id else ([], {})
-    for part, slot, pc in pieces or []:
-        if keep and part not in keep:
-            continue
-        q = Piece(pc.name, pc.mat, pc.flat)
-        q.v = [place(v, part, yaw) for v in pc.v]
-        q.f = list(pc.f)
-        q.c = tinted(pc, tints.get(slot, (150, 150, 150)))
-        objs.append(to_blender(q))
+    for item_id, cols in looks:
+        pieces, tints = look_pieces(item_id, cols)
+        for part, slot, pc in pieces or []:
+            if keep and part not in keep:
+                continue
+            q = Piece(pc.name, pc.mat, pc.flat)
+            q.v = [place(v, part, yaw) for v in pc.v]
+            q.f = list(pc.f)
+            q.c = tinted(pc, tints.get(slot, (150, 150, 150)))
+            objs.append(to_blender(q))
     for pc in extra:
         q = Piece(pc.name, pc.mat, pc.flat, pc.alpha)
         q.v = [Matrix.Rotation(yaw, 3, "Z") @ v for v in pc.v]
@@ -168,8 +183,8 @@ def aura_pieces(key, col):
     if key == "Sakura":        # petals drifting down round him
         pc = Piece("Petals", "SmoothPlastic", flat=True)
         for _ in range(46):
-            a, r, z = rnd.uniform(0, math.tau), rnd.uniform(1.6, 2.8), rnd.uniform(-2.6, 4.2)
-            ellipsoid(pc, (math.cos(a) * r, math.sin(a) * r, z), (.13, .07, .02), c, seg=8, rings=3)
+            a, r, z = rnd.uniform(0, math.tau), rnd.uniform(1.4, 2.1), rnd.uniform(-2.8, 3.6)
+            ellipsoid(pc, (math.cos(a) * r, math.sin(a) * r, z), (.2, .11, .03), c, seg=8, rings=3)
         out.append(pc)
     elif key == "Ink":         # black wisps rising off the shoulders
         for side in (-1, 1):
@@ -205,10 +220,13 @@ def aura_pieces(key, col):
             tube(pc, pts, lambda kk: .045, lambda p, kk: c, sides=5)
             out.append(pc)
     elif key == "Shadow":      # a low violet smoke clinging to his legs
-        for k in range(9):
-            a = k / 9 * math.tau
-            pc = Piece("Smoke%d" % k, "SmoothPlastic", alpha=.45)
-            ellipsoid(pc, (math.cos(a) * 1.0, math.sin(a) * .8, -2.3 + rnd.uniform(0, 1.4)), (.75, .75, .55), c, seg=12, rings=6)
+        for k in range(26):   # low wisps round the shins, thinning as they rise
+            a = rnd.uniform(0, math.tau)
+            z = -2.9 + rnd.uniform(0, 1.8) ** 1.5
+            r = rnd.uniform(.9, 1.5)
+            pc = Piece("Smoke%d" % k, "SmoothPlastic", alpha=.62)
+            s = .5 * (1 - (z + 2.9) / 3)
+            ellipsoid(pc, (math.cos(a) * r, math.sin(a) * r * .8, z), (s * 1.3, s, s * .55), c, seg=12, rings=6)
             out.append(pc)
     return out
 
@@ -262,27 +280,32 @@ def build(item_id, slot, rest, yaw):
         return weapon(item_id, slot, cols, yaw * .3), "weapon"
     if slot == "aura":
         key = re.search(r'fx="Aura\.(\w+)"', rest).group(1)
-        return avatar("SetNone", {}, yaw, extra=aura_pieces(key, cols.get("Aura", (200, 200, 200)))), "aura"
+        return avatar(dressed(None, slot), yaw, extra=aura_pieces(key, cols.get("Aura", (200, 200, 200)))), "aura"
     if slot in WEAR:
-        objs = avatar(item_id, cols, yaw, bust=slot in BUST)
+        objs = avatar(dressed(item_id, slot), yaw, bust=slot in BUST)
         return objs, ("bust" if slot in BUST else "body")
     return None, None
 
 
+ROWS = {}
+
+
 def run(mode, dst, ids=None):
     os.makedirs(dst, exist_ok=True)
+    ROWS.update({i: rest for i, _, rest in catalog(every=True)})
     done, skipped = [], []
     for item_id, slot, rest in catalog():
         if ids and item_id not in ids:
             continue
         if mode == "offers":
             clear()
-            objs, kind = build(item_id, slot, rest, 0.0)
+            # a cape or a back piece is shown from behind, three-quarter; the rest from the front
+            objs, kind = build(item_id, slot, rest, math.pi if slot in ("cape", "back") else 0.0)
             if not objs:
                 skipped.append((item_id, slot))
                 continue
-            fill = {"weapon": .78, "bust": .78, "body": .9, "aura": .95}[kind]
-            shoot(objs, os.path.join(dst, "%s.png" % item_id), fill=fill)
+            fill = {"weapon": .78, "bust": .74, "body": .9, "aura": .95}[kind]
+            shoot(objs, os.path.join(dst, "%s.png" % item_id), fill=fill, view=(.55, 1.0, .3 if kind == "bust" else .16))
         else:   # review: front and back side by side
             if slot in WEAPON or slot not in WEAR | {"aura"}:
                 skipped.append((item_id, slot))
@@ -293,10 +316,12 @@ def run(mode, dst, ids=None):
                 skipped.append((item_id, slot))
                 continue
             back, _ = build(item_id, slot, rest, math.pi)
+            for o in front:   # front on the left, back on the right
+                o.location.x -= 2.4 if kind != "bust" else 1.6
             for o in back:
-                o.location.x += 4.2 if kind != "bust" else 3.0
-            shoot(front + back, os.path.join(dst, "%s.png" % item_id), size=(1024, 512), view=(.08, 1.0, .12),
-                  fill={"bust": .62}.get(kind, .78))
+                o.location.x += 2.4 if kind != "bust" else 1.6
+            shoot(front + back, os.path.join(dst, "%s.png" % item_id), size=(1024, 512), view=(.0, 1.0, .1),
+                  fill={"bust": .95}.get(kind, 1.08))
         done.append(item_id)
         print("OFFER" if mode == "offers" else "REVIEW", item_id, flush=True)
     print("DONE %d SKIPPED %s" % (len(done), skipped), flush=True)

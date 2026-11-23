@@ -305,6 +305,29 @@ def item_cloak_hooded():
     return o.items
 
 
+def _flap_band(pc, part, x0, x1, y_top, length, z_side, pad, flare, folds, seed, u0, lift=.03):
+    """The lower band (u0..1) of the panel outfit_models.flap draws with the same arguments,
+    lifted `lift` off its face: a trim that follows the cloth instead of floating below it."""
+    S = O().size(part)
+    y0 = S.y / 2 - y_top * S.y
+    a = S.x / 2 + pad
+    zb = z_side * (S.z / 2 + pad)
+    grid = []
+    for k in range(4):
+        u = u0 + (1 - u0) * k / 3
+        y = y0 - u * length
+        row = []
+        for i in range(14):
+            v = i / 13
+            x = (x0 + (x1 - x0) * v) * a * (1 + flare * u) * 1.01
+            z = zb + z_side * (flare * .5 * u) + z_side * folds * noise.noise(Vector((x / 1.01 * 2 + seed, y * 2, 0))) * (1 + 3 * u)
+            row.append(Vector((x, y - (.01 if k == 3 else 0), z + z_side * lift)))
+        grid.append(row)
+    loft(pc, grid, O().shade(.95, .05, seed), cap0=False, cap1=False, closed=False)
+    back = [[Vector((p.x, p.y, p.z - z_side * (.035 + 2 * lift))) for p in reversed(r)] for r in grid]
+    loft(pc, back, O().shade(.85, .05, seed), cap0=False, cap1=False, closed=False)
+
+
 def item_cape_vip():
     """(23/11, étape 5, DEC-049) The VIP pass's cape, worn in Konoha: a long white cloak off the
     shoulders like a Kage's, a broad gold hem, a gold collar and a gold clasp on a short chain.
@@ -314,7 +337,7 @@ def item_cape_vip():
     pc = o.add("UpperTorso", "Cape", name="Back")
     O().flap(pc, "UpperTorso", -1.15, 1.15, .1, 2.8, 1, pad=.26, flare=.55, folds=.06, seed=11)
     hem = o.add("UpperTorso", "Trim", name="Hem")
-    O().flap(hem, "UpperTorso", -1.15, 1.15, 2.42, .42, 1, pad=.26 + .55 * .5 * .87, flare=.06, folds=.06, seed=11)
+    _flap_band(hem, "UpperTorso", -1.15, 1.15, .1, 2.8, 1, pad=.26, flare=.55, folds=.06, seed=11, u0=.84)
     collar = o.add("UpperTorso", "Trim", name="Collar")
     O().shell(collar, "UpperTorso", -.06, .1, pad=.3, flare1=.06, folds=0, rings=2)
     for x in (-.32, .32):
