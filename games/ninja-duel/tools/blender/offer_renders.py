@@ -102,6 +102,11 @@ def place(v, part, yaw):
 def look_pieces(item_id, cols):
     """The look's pieces [(part, slot, piece in Blender frame)] and the colour of each slot."""
     model = OM.ITEMS.get(item_id) or OM.WARDROBE_ITEMS.get(item_id)
+    m = re.search(r'model="(\w+)"', ROWS.get(item_id, ""))
+    if m:
+        model = m.group(1)
+    if not model and re.search(r'slot="headband"', ROWS.get(item_id, "")) or (not model and item_id.startswith("Headband")):
+        model = "HeadbandClassic"   # the classic forehead protector's colour variants
     if not model or model not in OM.MODELS:
         return None, None
     pieces = OM.built(model)
@@ -256,6 +261,7 @@ def shoot(objs, path, size=(512, 512), view=(.55, 1.0, .16), fill=.92, lens=60, 
         sun.data.energy = energy
         sun.rotation_euler = rot
         S.collection.objects.link(sun)
+    bpy.context.view_layer.update()   # objects moved by .location: refresh matrix_world first
     pts = [o.matrix_world @ Vector(c) for o in (frame or objs) for c in o.bound_box]
     lo = Vector((min(p.x for p in pts), min(p.y for p in pts), min(p.z for p in pts)))
     hi = Vector((max(p.x for p in pts), max(p.y for p in pts), max(p.z for p in pts)))
@@ -277,6 +283,7 @@ def shoot(objs, path, size=(512, 512), view=(.55, 1.0, .16), fill=.92, lens=60, 
 
 def head_frame(objs):
     """The objects a bust is framed on: whatever sits above the shoulders (head, hair, mask)."""
+    bpy.context.view_layer.update()
     out = [o for o in objs if min((o.matrix_world @ Vector(c)).z for c in o.bound_box) > 1.6]
     return out or objs
 
@@ -289,8 +296,9 @@ def build(item_id, slot, rest, yaw):
         key = re.search(r'fx="Aura\.(\w+)"', rest).group(1)
         return avatar(dressed(None, slot), yaw, extra=aura_pieces(key, cols.get("Aura", (200, 200, 200)))), "aura"
     if slot in WEAR:
-        objs = avatar(dressed(item_id, slot), yaw, bust=slot in BUST)
-        return objs, ("bust" if slot in BUST else "body")
+        bust = slot in BUST and item_id != "HeadbandWaist"
+        objs = avatar(dressed(item_id, slot), yaw, bust=bust)
+        return objs, ("bust" if bust else "body")
     return None, None
 
 
