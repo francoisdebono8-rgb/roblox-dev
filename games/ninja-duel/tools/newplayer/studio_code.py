@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """The Studio code of the new-player robot (OUTILLEUR, 23/11; étape 5).
 
-The robot is in the LAB copy already (tools/lab/lab_place.py). In a Play of it:
+In a Play of the game's place (DEC-052), after python3 tools/robots/inject.py newplayer:
 
     python3 tools/newplayer/studio_code.py --start [minutes] [kit]   Client: the ten minutes start
     python3 tools/newplayer/studio_code.py --read                    Client: progress and the log (JSON)
@@ -12,7 +12,7 @@ import json
 import re
 import sys
 
-START = 'return require(game:GetService("ReplicatedStorage"):WaitForChild("NDNewPlayerBot")).start({{minutes={minutes},kit="{kit}"}})'
+START = 'return (_G.NDNewPlayerBot or error("NDNewPlayerBot absent : python3 tools/robots/inject.py newplayer (pendant le Play)")).start({{minutes={minutes},kit="{kit}"}})'
 READ = ('local p=game:GetService("Players").LocalPlayer '
         'return tostring(p:GetAttribute("NDNewPlayerState"))..\" | \"..tostring(p:GetAttribute("NDNewPlayerLog"))')
 FUNNEL = ('local out={} for _,m in game:GetService("LogService"):GetLogHistory() do '

@@ -10,7 +10,7 @@ Le prouveur de carte (`tools/syphodev`) le dit sur le papier : ce qu'on peut att
 
 ## Ce qu'il fait
 
-Il joue comme client, dans un Play d'une copie de ND-JEU dans `LAB/robots`, jamais dans la place d'une autre discussion. Il bouge l'avatar comme un joueur :
+Il joue comme client, dans un Play de la place du jeu (DEC-052, `PLACES/NinjaDuel.rbxlx`), jamais pendant qu'un autre y joue. Il bouge l'avatar comme un joueur :
 - `Humanoid:Move` à chaque image, après les commandes par défaut ;
 - la vitesse de course de `Client/HubMove` (36) ;
 - le saut et le second saut.
@@ -31,7 +31,7 @@ Les lieux viennent de `HubMap` : les apparitions, l'examinateur, les maisons des
 ## Les commandes
 
 ```sh
-python3 tools/villagebot/studio_code.py --module                          # Edit ou Client : installe ReplicatedStorage.NDVillageBot
+python3 tools/robots/inject.py village                                    # Client, pendant le Play : le robot dans _G (DEC-052)
 python3 tools/villagebot/studio_code.py --start '{"routes":true,"race":2,"roofs":10,"jump":true}'   # Client, pendant un Play, dans le village
 python3 tools/villagebot/studio_code.py --read                            # Client : l'état et les résultats (JSON)
 ```

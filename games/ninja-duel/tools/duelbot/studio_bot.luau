@@ -1,12 +1,11 @@
 -- The simulated player in Studio (OUTILLEUR, 21/11; DEC-047): PlayerSim plays
 -- duels through the game's own remote, as the client does (the stick at 15 Hz,
--- each press with its stick, its aim and its clock), on a copy of ND-JEU in
--- LAB, never in another discussion's place. It reads only the duel snapshot
+-- each press with its stick, its aim and its clock), in a Play of the game's
+-- place (DEC-052), never while someone else plays in it. It reads only the duel snapshot
 -- the client gets (the two bodies, the coach's prompt). Run during a Play,
--- from the Client datamodel. Installed once in the LAB place (Edit) as the
--- ModuleScript ReplicatedStorage.NDDuelBot, from
---   python3 tools/duelbot/studio_code.py --module
--- then, in a Play (Client): require(game.ReplicatedStorage.NDDuelBot).start(PLAN)
+-- from the Client datamodel. Injected in the Play as _G.NDDuelBot, from
+--   python3 tools/robots/inject.py duel
+-- then, in the same Play (Client): _G.NDDuelBot.start(PLAN)
 -- (python3 tools/duelbot/studio_code.py --first ... prints that call), PLAN
 -- being the list of runs, e.g.
 --   [{"mode":"first","kit":"Lion","seed":1,"profile":"debutant"},

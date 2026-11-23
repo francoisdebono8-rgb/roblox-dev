@@ -2,8 +2,8 @@
 
 La tâche du DEV : « la matrice d'appareils de Studio sur le village (225 maisons, ~348 000 triangles) et sur un duel, en images/s et en mémoire, avant et après ».
 
-Le travail se fait dans un Play d'une copie LAB de ND-JEU (`tools/lab/lab_place.py`), avec :
-- la sonde `NDPerfProbe` (`perf_probe.luau`) ;
+Le travail se fait dans un Play de la place du jeu (DEC-052, `PLACES/NinjaDuel.rbxlx`), avec :
+- la sonde `NDPerfProbe` (`perf_probe.luau`), envoyée dans le client : `python3 tools/robots/inject.py perf` ;
 - le simulateur d'appareils de Studio ;
 - les outils de `robloxstudio-mcp` : MicroProfiler, composition des triangles, mémoire, captures par appareil.
 

@@ -23,13 +23,12 @@ _spec.loader.exec_module(V)
 
 class StudioCode(unittest.TestCase):
     def test_the_module_carries_the_player_and_the_driver(self):
-        code = S.install()
-        self.assertIn('m.Name="NDDuelBot"', code)
+        code = S.module_source()
         self.assertIn("local PlayerSim=(function()", code)
         self.assertIn("debutant={", code)
         self.assertIn("function Bot.start(PLAN)", code)
         self.assertNotIn("--@", code)
-        body = code.split("m.Source=[==[", 1)[1].rsplit("]==]", 1)[0]
+        body = code
         self.assertFalse(any(line.strip().startswith("--") for line in body.splitlines()), "comments stripped")
         self.assertEqual(body.count("local PlayerSim=(function()"), 1)
         self.assertIn("return PlayerSim\nend)()", body, "the inline module is closed")
@@ -42,16 +41,16 @@ class StudioCode(unittest.TestCase):
         self.assertEqual(duel, [{"mode": "duel", "kit": "Lion", "rival": "Sand", "level": "easy", "seed": 3, "profile": "joueur"}])
         self.assertEqual(S.plan_from_args([json.dumps(plan)]), plan)
         call = S.start(plan[:1])
-        self.assertEqual(call, 'return require(game:GetService("ReplicatedStorage"):WaitForChild("NDDuelBot"))'
+        self.assertEqual(call, 'return (_G.NDDuelBot or error("NDDuelBot absent : python3 tools/robots/inject.py duel (pendant le Play)"))'
                                '.start({{mode="first",kit="Lion",seed=1,profile="debutant"}})')
+        self.assertEqual(S.main(["--module"]), 2, "DEC-052: nothing installed in Edit any more")
 
     def test_strip_keeps_code_and_strings(self):
         src = 'local a=1 -- a note\n-- a line\nlocal s="--not a comment"\n\nreturn a'
         self.assertEqual(S.strip(src), 'local a=1\nlocal s="--not a comment"\nreturn a')
 
     def test_the_village_robot_module(self):
-        code = V.install()
-        self.assertIn('m.Name="NDVillageBot"', code)
+        code = V.module_source()
         self.assertIn("function Bot.walkTo(goal,label,near)", code)
         self.assertIn("function Bot.race()", code)
         self.assertIn("function Bot.toward(goal,limit,done)", code)

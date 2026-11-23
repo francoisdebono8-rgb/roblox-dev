@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """The Studio code of the fluidity measures (OUTILLEUR, 23/11; étape 5, DEC-049).
 
-The probe (NDPerfProbe) is in the LAB copy already (tools/lab/lab_place.py). In a Play of
-it, with the device simulator on BEFORE the Play (the game builds its touch controls when
+In a Play of the game's place (DEC-052), the probe (NDPerfProbe) is injected in the Client
+first (python3 tools/robots/inject.py perf). With the device simulator on BEFORE the Play (the game builds its touch controls when
 the client starts: Client/TouchControls):
 
     python3 tools/perf/studio_code.py --measure LABEL [seconds]   Client: a camera turn, measured
@@ -19,7 +19,7 @@ capture_device_matrix (the screens of the phones).
 import json
 import sys
 
-MEASURE = ('local P=require(game:GetService("ReplicatedStorage"):WaitForChild("NDPerfProbe")) '
+MEASURE = ('local P=(_G.NDPerfProbe or error("NDPerfProbe absent : python3 tools/robots/inject.py perf (pendant le Play)")) '
            'P.lookAround({seconds}) '
            'return game:GetService("HttpService"):JSONEncode(P.measure({{seconds={seconds},label="{label}"}}))')
 GO = ('local HM=require(game:GetService("ReplicatedStorage").NinjaDuel.HubMap) '

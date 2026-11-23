@@ -23,6 +23,19 @@ Il lit la place qui serait publiée (`dist/NinjaDuel.rbxlx`, la build release) e
 
 Ce que le pré-vol ne prouve pas est listé en bas du rapport, avec l'endroit où se trouve la preuve : données à la fermeture, fluidité (`tools/perf`), premières minutes (`tools/newplayer`), contenu (`tools/kits`), page, test à plusieurs (`tools/testread`).
 
+## Le 24/11, minuit (sources `e9d9bc64`, passe commune 1) : PAS PRÊT, 1 rouge
+
+- **En rouge** : les 26 offres affichées n'ont pas d'ID. Elles attendent que François crée les produits sur Roblox (DEC-049).
+- **Plus en rouge** :
+  - EARLY ACCESS et MORE BUILDS sont retirés (DEV) ;
+  - les deux auras se vendent en Ryō (ANIMATEUR) ;
+  - il reste 3 codes actifs au plus (CM).
+- **En orange** :
+  - les 8 kits sans ID, qui ne sont pas vendus ;
+  - le lot des 8 tenues, pas encore affiché.
+- **La référence des DataStore** porte maintenant `NinjaDuelReports`, gardé dans le jeu publié : le DEV n'y écrit que sur la place de test.
+- **Le pré-vol refuse aussi** les robots de la passe 1 (`NDCollisionBot`, `NDScreenTour`) et la sonde `NDPerfProbe`, s'ils étaient un jour dans la place.
+
 ## Le 23/11 au soir (sources `9750dbbc`, après le DEV et la DESIGN de l'étape 5) : PAS PRÊT, 4 rouges
 
 - **Offres** :

@@ -2,7 +2,7 @@
 -- DEC-049: « un robot nouveau joueur qui joue les 10 premières minutes et
 -- chronomètre l'entonnoir »).
 --
--- A client module, run in a Play of a LAB copy of ND-JEU (a fresh profile:
+-- A client module, injected in a Play of the game's place (DEC-052; a fresh profile:
 -- Studio starts every Play as a new player). It does what a new player is
 -- led to do, in the order the game leads him, and notes when each thing
 -- happened and what was on the screen then:
@@ -18,8 +18,8 @@
 -- run ([NinjaDuelFirst] lines, tools/newplayer/studio_code.py --funnel).
 --
 -- Results: Players.LocalPlayer attribute NDNewPlayerLog (JSON), progress in
--- NDNewPlayerState. Needs ReplicatedStorage.NDDuelBot and NDVillageBot
--- (tools/lab/lab_place.py puts all three in a LAB copy).
+-- NDNewPlayerState. Needs _G.NDDuelBot and _G.NDVillageBot
+-- (python3 tools/robots/inject.py newplayer injects all three).
 local Players=game:GetService("Players")
 local RS=game:GetService("ReplicatedStorage")
 local HttpService=game:GetService("HttpService")
@@ -105,7 +105,7 @@ local function toSelection()
 end
 -- A fight played by the beginner robot (tools/duelbot); returns its record.
 local function fight(run)
-	local Duel=require(RS:WaitForChild("NDDuelBot"))
+	local Duel=_G.NDDuelBot or error("NDDuelBot absent : python3 tools/robots/inject.py newplayer")
 	player:SetAttribute("NDBotState",nil)
 	Duel.start({run})
 	waitFor(function() return player:GetAttribute("NDBotState")=="done" end,300)
@@ -156,7 +156,7 @@ local function run()
 	screen("dressed")
 
 	-- 4. a walk to the market and back
-	local okV,Village=pcall(function() return require(RS:WaitForChild("NDVillageBot",5)) end)
+	local okV,Village=pcall(function() return _G.NDVillageBot or error("NDVillageBot absent") end)
 	local HubMap=require(Shared:WaitForChild("HubMap"))
 	if okV and Village and HubMap.Market then
 		local leg=nil

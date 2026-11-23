@@ -1,6 +1,6 @@
 # Le robot « nouveau joueur » : les 10 premières minutes (OUTILLEUR, étape 5, DEC-049)
 
-Il joue les dix premières minutes d'un nouveau joueur, dans un Play d'une copie LAB de ND-JEU. Studio commence chaque Play avec un profil neuf. Il fait ce que le jeu amène un nouveau joueur à faire, dans l'ordre :
+Il joue les dix premières minutes d'un nouveau joueur, dans un Play de la place du jeu (DEC-052, `PLACES/NinjaDuel.rbxlx`). Studio commence chaque Play avec un profil neuf. Il fait ce que le jeu amène un nouveau joueur à faire, dans l'ordre :
 1. il regarde le premier écran, puis lance le premier combat ;
 2. il joue le premier combat comme un débutant (le joueur simulé de `tools/duelbot`) ;
 3. il revient à Konoha, prend son inspiration (le départ) et met une tenue ;
@@ -12,7 +12,7 @@ Il joue les dix premières minutes d'un nouveau joueur, dans un Play d'une copie
 À chaque étape, il note l'heure et ce qu'il voit à l'écran : les boutons visibles et les grands textes. L'entonnoir du serveur (`Matches.measure`, lignes `[NinjaDuelFirst]`) donne l'heure de chaque étape depuis l'arrivée.
 
 ```sh
-python3 tools/lab/lab_place.py PLACES/ND-JEU.rbxlx LAB/robots/ND-JEU-robots-<commit>.rbxlx   # la copie, robots dedans
+python3 tools/robots/inject.py newplayer                     # Client, au début du Play : les robots (DEC-052, sans copie)
 python3 tools/newplayer/studio_code.py --start 10 Legion     # Client, au début du Play
 python3 tools/newplayer/studio_code.py --read                # Client : où il en est, le journal
 python3 tools/newplayer/studio_code.py --funnel              # Server : les lignes de l'entonnoir
