@@ -845,6 +845,23 @@ test("the others see your ninja: the moves travel by the server, each screen pos
 	assert(f.leapAt==11 and not f.climbing,"the bound, seen")
 	f=Body.crowdFacts(w,11.2,1/60,Vector3.new(30,20,0),false,"leap",6,"Sand")
 	assert(f.leapAt==11,"the same bound is seen once")
+	-- an emote: the look he owns only, its clip on the character, played standing
+	local owned={EmoteWave="Emote.Wave",EmotePushUps="Emote.PushUps"}
+	local function grant(_,id) return owned[id] end
+	assert(Hub.pose(player,"emote:EmotePushUps",5,buckets,grant) and attrs.NinjaPose=="emote" and attrs.NinjaEmote=="Emote.PushUps","his emote")
+	assert(not Hub.pose(player,"emote:EmoteMeditate",5.1,buckets,grant),"an emote he does not own")
+	assert(Hub.emoteClip(player,"EmoteWave")=="Emote.Wave" and Hub.emoteClip(player,"KunaiGold")==nil,"the base wave; a kunai is no emote")
+	local Authored=H.load("Client/AuthoredMotion")
+	local b=Body.new(Authored);b.kit="Sand"
+	local e=Body.choose(b,{now=20,dt=1/60,speed=0,vy=0,grounded=true,kit="Sand",emote="Emote.PushUps",emoteAt=19.5})
+	assert(e.move=="Emote.PushUps" and math.abs(e.t-.5)<1e-6,"the emote played")
+	e=Body.choose(b,{now=20,dt=1/60,speed=20,vy=0,grounded=true,kit="Sand",emote="Emote.PushUps",emoteAt=19.5})
+	assert(e.move~="Emote.PushUps","he walks: the emote stops")
+	local Shop=H.load("Shared/Shop")
+	for _,id in {"EmoteWave","EmoteMeditate","EmotePushUps","EmoteLaugh","EmoteStretch","EmoteHandSeals"} do
+		local item=Shop.item(id)
+		assert(item and item.slot=="emote" and Body.clipName(Authored,"Sand",item.clip),id.." has no clip")
+	end
 end)
 
 print(string.format("NinjaDuel hub Konoha (DEC-038): %d PASS",passed))

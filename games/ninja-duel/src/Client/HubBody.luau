@@ -41,6 +41,8 @@ function Body.clipName(Authored,kit,move)
 	if Authored.has(own) then return own end
 	local donor="Lion."..move
 	if Authored.has(donor) then return donor end
+	-- (the emotes are everyone's: "Emote.Wave")
+	if Authored.has(move) then return move end
 	return nil
 end
 
@@ -81,6 +83,11 @@ function Body.choose(b,f)
 		return {move="Sprint",t=(b.phase%1)*len("Sprint"),tilt=1}
 	end
 	if f.mantleAt and f.now-f.mantleAt<Body.VAULT then return {move="Parkour.Vault",t=f.now-f.mantleAt,tilt=0} end
+	-- (23/11, step 5) an emote in the street: played while he stands, once
+	if f.emote and f.emoteAt and f.grounded and f.speed<Body.STILL then
+		local length=len(f.emote)
+		if length>0 and f.now-f.emoteAt<length then return {move=f.emote,t=f.now-f.emoteAt,tilt=0} end
+	end
 	if not f.grounded then
 		if f.kickAt and f.now-f.kickAt<Body.KICK then return {move="Parkour.Leap",t=f.now-f.kickAt,tilt=0} end
 		local air=len("AirJump")
@@ -187,13 +194,15 @@ Body.CROWD_RANGE=160
 Body.crowd=setmetatable({},{__mode="k"})
 -- (pure) a walker's frame from what this screen sees of him; `w` keeps what
 -- the previous frames saw (the pose's sequence and when each move began).
-function Body.crowdFacts(w,now,dt,velocity,grounded,pose,seq,kit)
+function Body.crowdFacts(w,now,dt,velocity,grounded,pose,seq,kit,emote)
 	if seq~=w.seq then
 		w.seq=seq
-		if pose=="leap" then w.leapAt=now elseif pose=="kick" then w.kickAt=now elseif pose=="vault" then w.mantleAt=now end
+		if pose=="leap" then w.leapAt=now elseif pose=="kick" then w.kickAt=now elseif pose=="vault" then w.mantleAt=now
+		elseif pose=="emote" then w.emoteAt=now end
 	end
 	return {now=now,dt=dt,speed=Vector3.new(velocity.X,0,velocity.Z).Magnitude,vy=velocity.Y,grounded=grounded and pose~="climb",
-		climbing=pose=="climb",climbSpeed=38,leapAt=w.leapAt,kickAt=w.kickAt,mantleAt=w.mantleAt,kit=kit}
+		climbing=pose=="climb",climbSpeed=38,leapAt=w.leapAt,kickAt=w.kickAt,mantleAt=w.mantleAt,kit=kit,
+		emote=if pose=="emote" then emote else nil,emoteAt=w.emoteAt}
 end
 function Body.poseOthers(Authored,dt,here)
 	local me=Players.LocalPlayer
@@ -211,7 +220,7 @@ function Body.poseOthers(Authored,dt,here)
 		local params=RaycastParams.new();params.FilterType=Enum.RaycastFilterType.Exclude;params.FilterDescendantsInstances={character}
 		local grounded=workspace:Raycast(root.Position,Vector3.new(0,-(hum.HipHeight+root.Size.Y/2+.6),0),params)~=nil
 		local kit=player:GetAttribute("NinjaKit")
-		local f=Body.crowdFacts(w,now,dt,root.AssemblyLinearVelocity,grounded,character:GetAttribute("NinjaPose"),character:GetAttribute("NinjaPoseSeq"),if type(kit)=="string" then kit else nil)
+		local f=Body.crowdFacts(w,now,dt,root.AssemblyLinearVelocity,grounded,character:GetAttribute("NinjaPose"),character:GetAttribute("NinjaPoseSeq"),if type(kit)=="string" then kit else nil,character:GetAttribute("NinjaEmote"))
 		pcall(w.body.step,w.body,character,hum,f)
 	end
 	for character,w in Body.crowd do

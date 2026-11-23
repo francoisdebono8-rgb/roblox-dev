@@ -41,6 +41,17 @@ Move.REGRAB=.3             -- after a kick, the same wall again not before
 function Move.new()
 	return setmetatable({runLatch=false,runMoved=false,restFor=0,leapUsed=false,jumpedAt=nil,climb=nil,climbUsed=false,kickedAt=-1,kickedFrom=nil,leapAt=nil,mantleAt=nil},Move)
 end
+-- (23/11, step 5, DEC-049) an emote in the street: the look of the emote slot
+-- (Shared/Shop id), played by his body for all to see (Server/Hub.pose). G on
+-- a keyboard; the DESIGN's emote wheel calls Move:emote(id) too.
+Move.EMOTE_KEY=Enum.KeyCode.G
+function Move:emote(id)
+	if type(id)~="string" then return end
+	local remote=self.poseRemote or game:GetService("ReplicatedStorage"):FindFirstChild("NinjaDuel") and game:GetService("ReplicatedStorage").NinjaDuel:FindFirstChild("HubPose")
+	self.poseRemote=remote
+	if remote then remote:FireServer("emote:"..id) end
+end
+
 -- (23/11, step 4, DEC-048) his body posed like a ninja by the kit's clips
 -- (Client/HubBody), in the village only; nil where the clips cannot load.
 function Move:body()
@@ -187,6 +198,21 @@ function Move:step(dt)
 		end
 	end
 	if what=="top" then self.mantleAt=os.clock() end
+	-- (23/11, step 5) the emote key, and the emote the server granted (his own
+	-- character's NinjaPose / NinjaEmote, as everyone sees it)
+	if not self.emoteBound then
+		self.emoteBound=true
+		UIS.InputBegan:Connect(function(input,processed)
+			-- (only while he walks the village: the walk was stepped just now)
+			if not processed and input.KeyCode==Move.EMOTE_KEY and os.clock()-(self.steppedAt or -10)<.5 then self:emote("equipped") end
+		end)
+	end
+	self.steppedAt=os.clock()
+	local seq=character:GetAttribute("NinjaPoseSeq")
+	if seq~=self.seenSeq then
+		self.seenSeq=seq
+		if character:GetAttribute("NinjaPose")=="emote" then self.emoteClip,self.emoteAt=character:GetAttribute("NinjaEmote"),os.clock() end
+	end
 	self.climbing=self.climb~=nil
 	-- (23/11, step 5) what the others need to pose him: his move, sent on change
 	local pose=if self.climb then "climb" else "none"
@@ -206,7 +232,8 @@ function Move:step(dt)
 		local v=root.AssemblyLinearVelocity
 		pcall(poser.step,poser,character,hum,{now=os.clock(),dt=dt,speed=Vector3.new(v.X,0,v.Z).Magnitude,vy=v.Y,
 			grounded=grounded and not self.climb,climbing=self.climb~=nil,climbSpeed=Move.CLIMB,
-			leapAt=self.leapAt,kickAt=if self.kickedAt and self.kickedAt>0 then self.kickedAt else nil,mantleAt=self.mantleAt})
+			leapAt=self.leapAt,kickAt=if self.kickedAt and self.kickedAt>0 then self.kickedAt else nil,mantleAt=self.mantleAt,
+			emote=self.emoteClip,emoteAt=self.emoteAt})
 	end
 	-- Fell out of the village (into the lake's floor, off the cliff): the gate.
 	if root.Position.Y<HubMap.Origin.Y-40 then

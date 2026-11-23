@@ -1292,14 +1292,39 @@ end
 -- POSE_RATE a second.
 Hub.POSES={climb=true,leap=true,kick=true,vault=true,none=true}
 Hub.POSE_RATE=12
-function Hub.pose(player,state,now,buckets)
-	if type(state)~="string" or not Hub.POSES[state] then return false end
+-- (23/11, step 5) an emote in the street: "emote:<look id>", a look of the
+-- emote slot he owns (or a base one); its clip goes on NinjaEmote.
+function Hub.emoteClip(player,id)
+	-- "equipped": the one he wears (the wave by default)
+	if id=="equipped" then
+		local ok,Progression=pcall(require,script.Parent.Progression)
+		local h=ok and Progression.handles and Progression.handles[player]
+		id=(h and h.data.style and h.data.style.equipped and h.data.style.equipped.emote) or "EmoteWave"
+	end
+	local item=require(ReplicatedStorage.NinjaDuel.Shop).item(id)
+	if not item or item.slot~="emote" or type(item.clip)~="string" then return nil end
+	if not item.base then
+		local ok,Progression=pcall(require,script.Parent.Progression)
+		local h=ok and Progression.handles and Progression.handles[player]
+		if not (h and h.data.style and h.data.style.owned[id]) then return nil end
+	end
+	return item.clip
+end
+function Hub.pose(player,state,now,buckets,emoteClip)
+	if type(state)~="string" or #state>40 then return false end
+	local clip
+	if string.sub(state,1,6)=="emote:" then
+		clip=(emoteClip or Hub.emoteClip)(player,string.sub(state,7))
+		if not clip then return false end
+		state="emote"
+	elseif not Hub.POSES[state] then return false end
 	local b=buckets[player]
 	if not b or now-b.at>=1 then b={at=now,n=0};buckets[player]=b end
 	if b.n>=Hub.POSE_RATE then return false end
 	b.n+=1
 	local character=player.Character
 	if not character then return false end
+	if clip then character:SetAttribute("NinjaEmote",clip) end
 	character:SetAttribute("NinjaPose",state)
 	character:SetAttribute("NinjaPoseSeq",(character:GetAttribute("NinjaPoseSeq") or 0)+1)
 	return true
