@@ -1420,7 +1420,8 @@ def write(src_dir, limit=110000):
     for name, fn in MODELS.items():
         if name in konoha_landmarks.PROPS_OUT:      # (23/11) the client's props live in PropMeshData
             continue
-        if (name in konoha_houses.MODELS or name in konoha_landmarks.MODELS) and '"%s"' % name not in dress and "%s=" % name not in dress:
+        # (23/11, passe commune 1) every house of the kit ships: the DEV's new town picks among them
+        if name in konoha_landmarks.MODELS and '"%s"' % name not in dress and "%s=" % name not in dress:
             print("not in HubDress.NAMES yet:", name)
             continue
         pieces = blender(fn())
