@@ -201,6 +201,11 @@ local function wall(parent,ax,az,bx,bz,height,color,cap)
 	local cf=CFrame.lookAt(O+(a+b)/2+Vector3.new(0,height/2,0),O+b+Vector3.new(0,height/2,0))
 	local w=part(parent,"Wall",Vector3.new(2,height,d.Magnitude),cf,color,Enum.Material.Plaster)
 	deco(parent,"WallCap",Vector3.new(3,.8,d.Magnitude+1),cf*CFrame.new(0,height/2+.4,0),cap or C.roofTile)
+	-- (23/11, the OUTILLEUR's bot: the 46-stud village wall run up and over,
+	-- out of the village) The village's wall is a wall the fighters still run
+	-- on in a street duel, but the walker does not climb it (Client/HubMove
+	-- climbable): it is the village's edge, not a way out.
+	if high then w:SetAttribute("NinjaNoClimb",true) end
 	return w
 end
 local function crest(parent,cf)
@@ -851,6 +856,13 @@ function Hub.buildLayout(f)
 		height+=.2
 		if ww>=dd then wall(f,x-ww/2,z,x+ww/2,z,height,C.plasterWarm) else wall(f,x,z-dd/2,x,z+dd/2,height,C.plasterWarm) end
 	end
+	-- (23/11, the OUTILLEUR's bot stuck in a crack between the hospital and a
+	-- tower) a crack beside a landmark too narrow to walk, walled up
+	-- (tools/village: its rule; most are closed by fitting the house instead)
+	for _,fl in Layout.Fills or {} do
+		local x0,z0,x1,z1,top=fl[1],fl[2],fl[3],fl[4],fl[5]
+		part(f,"Fill",Vector3.new(math.max(x1-x0,.4),top,math.max(z1-z0,.4)),rel((x0+x1)/2,top/2,(z0+z1)/2),C.plasterWarm,Enum.Material.Plaster)
+	end
 	for _,deck in Layout.RoofDecks do
 		local x,z,w,d,top=deck[1],deck[2],deck[3],deck[4],deck[5]
 		part(f,"RoofDeck",Vector3.new(w,1,d),rel(x,top-.5,z),C.woodLight,Enum.Material.WoodPlanks)
@@ -1282,8 +1294,65 @@ function Hub.forget(player)
 end
 
 -- Server start (Main): build, then the masters once the portraits exist.
+-- (23/11, step 5, DEC-049) The walker's ninja body seen by everyone: each
+-- screen poses every walker with his kit's clips (Client/HubBody), but what a
+-- client writes on joints stays on that client. Speed and height travel with
+-- the body's physics; the rest (up a wall, the bound, the kick off a wall,
+-- the hop over an edge) is sent here by its owner and set on his character,
+-- which every client reads: NinjaPose (the state) and NinjaPoseSeq (+1 at
+-- each, so the same move twice is seen twice). Only those words, at most
+-- POSE_RATE a second.
+Hub.POSES={climb=true,leap=true,kick=true,vault=true,none=true}
+Hub.POSE_RATE=12
+-- (23/11, step 5) an emote in the street: "emote:<look id>", a look of the
+-- emote slot he owns (or a base one); its clip goes on NinjaEmote.
+function Hub.emoteClip(player,id)
+	-- "equipped": the one he wears (the wave by default)
+	if id=="equipped" then
+		local ok,Progression=pcall(require,script.Parent.Progression)
+		local h=ok and Progression.handles and Progression.handles[player]
+		id=(h and h.data.style and h.data.style.equipped and h.data.style.equipped.emote) or "EmoteWave"
+	end
+	local item=require(ReplicatedStorage.NinjaDuel.Shop).item(id)
+	if not item or item.slot~="emote" or type(item.clip)~="string" then return nil end
+	if not item.base then
+		local ok,Progression=pcall(require,script.Parent.Progression)
+		local h=ok and Progression.handles and Progression.handles[player]
+		if not (h and h.data.style and h.data.style.owned[id]) then return nil end
+	end
+	return item.clip
+end
+function Hub.pose(player,state,now,buckets,emoteClip)
+	if type(state)~="string" or #state>40 then return false end
+	local clip
+	if string.sub(state,1,6)=="emote:" then
+		clip=(emoteClip or Hub.emoteClip)(player,string.sub(state,7))
+		if not clip then return false end
+		state="emote"
+	elseif not Hub.POSES[state] then return false end
+	local b=buckets[player]
+	if not b or now-b.at>=1 then b={at=now,n=0};buckets[player]=b end
+	if b.n>=Hub.POSE_RATE then return false end
+	b.n+=1
+	local character=player.Character
+	if not character then return false end
+	if clip then character:SetAttribute("NinjaEmote",clip) end
+	character:SetAttribute("NinjaPose",state)
+	character:SetAttribute("NinjaPoseSeq",(character:GetAttribute("NinjaPoseSeq") or 0)+1)
+	return true
+end
+function Hub.startPoses()
+	local Shared=ReplicatedStorage:FindFirstChild("NinjaDuel")
+	if not Shared or Shared:FindFirstChild("HubPose") then return end
+	local remote=Instance.new("RemoteEvent");remote.Name="HubPose";remote.Parent=Shared
+	local buckets={}
+	remote.OnServerEvent:Connect(function(player,state) Hub.pose(player,state,os.clock(),buckets) end)
+	game:GetService("Players").PlayerRemoving:Connect(function(player) buckets[player]=nil end)
+end
+
 function Hub.start()
 	Hub.build(workspace)
+	Hub.startPoses()
 	-- (14/11) the creator and the champions carved on the cliff. Its own
 	-- thread: (14/11, seen in Studio) MessagingService:SubscribeAsync never
 	-- returned in a local file and held the whole server start (no roster,

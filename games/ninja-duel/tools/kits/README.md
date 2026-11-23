@@ -88,6 +88,37 @@ Ce qui est mesuré :
 - **Chaque nœud `Major` des huit arbres change le kit** (0 échec sur 64, ND-JEU `b1c21d57`). 53 changent une seule règle (un champ qui passe à vrai). Les 6 nœuds `Learn*` d'une technique la débloquent ; ceux de l'éveil, et Poids, la Gourde et le Tanto, ouvrent un objet. Les 13 nœuds de l'arbre du ninja changent tous `def.Ninja`.
 - **Le jeu lit tout ce que les nœuds changent** (`noeuds_lus.py`) : 64 nœuds `Major` des kits, 109 champs et clés ; les dix champs de `def.Ninja` (`Server/NinjaArts`, `Server/Motor`). Il reste l'attribut `NinjaNature`, que le client ne lit pas encore (ANIMATEUR, `Infusion.<Nature>`). Un nœud qui changerait un champ que personne ne lit fait échouer `test_noeuds_lus.py`.
 
+## Étape 4 (23/11, sans Studio : `kitprint_lune.luau` sur GitHub, sources `acfb00d6`)
+
+| Empreinte | Source |
+|---|---|
+| `empreintes/2026-11-23_acfb00d6.json` (v3) | sources `acfb00d6` (étape 4 du DEV, départ réduit des 5), sur GitHub avec lune |
+
+```sh
+python3 tools/kits/empreinte.py tools/kits/empreintes/2026-11-21_b1c21d57.json tools/kits/empreintes/2026-11-23_acfb00d6.json --etape4
+```
+
+Ce qui est mesuré :
+- **Les cinq autres démarrent avec 2 techniques** (avant : 4). L'arbre complet leur rend les deux autres :
+
+  | Kit | Départ | Rendues par l'arbre | Dégâts/s de jutsu : départ → arbre | Transformation |
+  |---|---|---|---|---|
+  | Neji | Vacuum Palm, Rotation | 64 Palms, Byakugan | 3,5 → 4,5 | Palm Barrage |
+  | Gaara | Sand Shuriken, Sand Armor | Desert Wave, Sand Coffin | 0,86 → 5,05 | Desert Funeral |
+  | Kakashi | Tracking Fang, Lightning Cut | Water Dragon, Lightning Blade | 2,83 → 7,9 | pas encore de nœud |
+  | Itachi | Shadow Shuriken, Sharingan Read | Great Fireball, Mirage | 0,56 → 4,02 | Fire Geometry |
+  | Minato | Marked Kunai, Flying Thunder God | Lightning Strike, Wind Cut | 2,73 → 9,49 | Cut and Flash |
+
+- **Notes départ → arbre** :
+  - Minato : portée 92 → 100, mobilité 83 → 95, dégâts/s 78 → 100 ;
+  - Kakashi : portée 66 → 80, dégâts/s 79 → 95 ;
+  - Itachi : portée 80 → 92, dégâts/s 78 → 89 ;
+  - Gaara : dégâts/s 25 → 39 ;
+  - Neji : dégâts/s 86 → 89, seulement.
+- **Neji est celui dont l'arbre change le moins les chiffres** : ses deux techniques rendues ajoutent 1 dégât/s de jutsu. Le Byakugan et les 64 paumes valent par ce qu'ils font, pas par les chiffres. C'est à voir en jouant.
+- **Au départ, Minato et Sasuke sont les deux kits les plus proches** (écart 5 sur 100) ; l'écart moyen entre les huit est de 19.
+- **Avant / après les clips de l'ANIMATEUR** : pas encore. L'ANIMATEUR n'a rien poussé pour l'étape 4. La commande sera la même, avec l'empreinte d'après.
+
 ## Limites
 
 - Ce sont les chiffres de la donnée, avec les règles du combat. Ils ne disent pas le ressenti, ni qui gagne : l'IA, l'adresse et les contres n'y sont pas.

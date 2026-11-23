@@ -1,3 +1,104 @@
+**DEV, 23/11, 22 h 15 : pourquoi François ne voyait pas le déplacement ninja** — NATIVE_STUDIO (lu dans sa session ND-DEV en cours, sans la toucher) puis TECHNICAL
+- **La cause** : Roblox joint maintenant les avatars par des `AnimationConstraint`, plus par des `Motor6D`. Son avatar dans Konoha en a 15 et aucun `Motor6D`.
+  - Le corps ninja du promeneur (`Client/HubBody`) ne cherchait que des `Motor6D` : il ne trouvait rien à poser, et c'est la marche de Roblox qui s'affichait.
+  - La physique, elle, tournait : course à 36, saut à 56, second saut, montée des murs. Mais avec les poses de Roblox, rien n'avait l'air ninja.
+  - **Corrigé** : `HubBody.joints` prend les deux sortes d'articulation (test dans `Hub.spec`). Ça vaut aussi pour les autres promeneurs (`poseOthers`).
+- **Les coups « animé moderne »** (fusionnés ce soir) : dans sa session, une de leurs images n'est pas servie par Roblox (l'anneau au sol, `103142974880636`). Les autres, et les 4 formes essayées, le sont.
+  - `VfxHit.check` les vérifie au démarrage : le coup « animé moderne » ne s'allume que si elles arrivent ; sinon l'ancien rendu reste.
+  - L'anneau au sol est simplement sauté s'il manque.
+- **Vu aussi dans sa sortie Studio** : une trentaine de « Failed to create empty EditableMesh … memory budget » au démarrage (MeshKit, tenues ou vie de Konoha). À mesurer par l'OUTILLEUR sur téléphone.
+
+**DEV, 23/11, 21 h : tout ce qui a été fait est fusionné** (François : « tout ce qui a été fait doit être ajouté ») — TECHNICAL ; rien n'est joué
+- **Les coups au corps « animé moderne » du 06/11** (`claude/vfx-redesign`, le choix de François ce jour-là, jamais intégré) sont dans le jeu : `Client/VfxHit`, `VfxMesh`, `VfxDesign`, textures déjà envoyées sur Roblox.
+  - Ils dessinent les coups légers, aériens, de rythme, les lanceurs, les finisseurs et les slams : flash blanc sur la cible, éclair rond, sphère et cône de traits de vent dans le sens du coup ; au sol, anneau et poussière, et cratère pour le slam.
+  - Les couches venues depuis (infusions et natures, outils, familles) passent toujours. La garde garde son rendu.
+  - Interrupteur : `VfxHit.enabled`.
+  - **Ça se verra au prochain duel.**
+- **Rapports de QA du 14/11** (`claude/qa-combats-2026-11-14`) : `docs/reports/qa-combats-2026-11-14`.
+- **Marque, page Roblox, outils marketing et fabrique FILM01** (`claude/ninja-duel-tutorial-v2`) : `assets/brand`, `assets/page`, `tools/marketing`. Ses documents sont dans `docs/archive/2026-11-05-tutorial-v2`.
+- **Branches Codex d'octobre** : rapports et sondes de fight-continuity ; les documents des prototypes sont dans `docs/archive/codex-2026-10`.
+- **Pas repris, avec la raison** :
+  - les branches `work/*` : brouillons « wip », « scratch, not for merge », dont la version finale est déjà sur la branche commune ;
+  - le kunai à trois branches de Minato (rejeté : kunai de Minato adulte) ;
+  - `FadePool` (essai de performance mis en pause) ;
+  - le code d'octobre (remplacé par Online, Progression, ChakraFlow) ;
+  - les retours en jeu vers Discord (remplacés par `Server/Reports`) ;
+  - `codex/weapon-forge-tycoon-v0` (un autre jeu) ;
+  - les branches sans histoire commune (`archive/mac-local-2026-11-07`, `media-clips`, `codex/issue-19-presetforge`), qu'on ne fusionne jamais.
+- **Les codes d'ouverture du CM** (`cm/codes-ouverture`, une PR qui attendait parce qu'elle touchait `tests/Codes.spec`) sont fusionnés. Il reste 3 codes, sans date tant que François ne donne pas le jour d'ouverture (`Codes.Opening`). Les fiches des 5 kits du CM (étape 4) sont arrivées en même temps.
+- **Pour que ça ne se reproduise pas** (DEC-050) : `tools/branches/unmerged.py` liste tout travail resté sur une branche à côté. Le DEV le lance à chaque passe. Il rend 0 ce soir.
+- **`main` avance jusqu'à la branche commune**, en avance rapide, sans publication Roblox.
+
+**DEV, 23/11 soir : les retours de l'OUTILLEUR et de l'ANIMATEUR (étapes 4-5)** — TECHNICAL (tests verts, sans Studio) ; rien n'est joué par François
+- **Pré-vol** :
+  - EARLY ACCESS et MORE BUILDS sont retirés de `Shared/Shop` ;
+  - les auras sont à 6 000 Ryō (ANIMATEUR) ;
+  - restent les ID des offres (François) et les codes (CM).
+- **Relevé par joueur pour la page du test** (`Server/TestLog`) : clé `s_<UserId>_<arrivée>` dans `NinjaDuelReports`, sur la place de test seulement (`Config.TestPlace.PlaceIds`). Elle contient le temps par écran, l'entonnoir, les duels, ce qu'il a quitté et la course des toits.
+- **Premier achat** : la première victoire du jour paie ×3 (`Shop.Ryo.FirstWinOfDay`). Deux duels gagnés et la quête facile dépassent 250 Ryō.
+- **Minicarte** : droite (DESIGN `e180ec75`). Elle découpe de nouveau le village.
+- **Village** :
+  - le mur du village ne s'escalade plus (`NinjaNoClimb`), mais on court toujours dessus en duel ;
+  - aucune fente à côté d'un monument : la maison est collée ou à une ruelle (`tools/village` `CRACK`) ;
+  - aucun lampadaire devant le milieu d'un mur ;
+  - aucun mur d'enceinte dans une maison (il y en avait 12).
+- **Le village passe à la graine 5**, 9,33/10 : un seul réseau de toits, une course de 325 studs, des médailles calculées 25/31/42. Elles sont à mesurer de nouveau.
+- **ANIMATEUR branché** :
+  - le promeneur joue `Parkour.WallRun` sur le mur ;
+  - la cape VIP est donnée avec le pass (`Progression.grantVip`) ;
+  - 10 couleurs de cheveux (400 à 800 Ryō).
+- **Kakashi** : la transformation sera **RAIKIRI: TRACKED** (DEC-048). Le serveur suivra les clips de l'ANIMATEUR.
+- **Pas encore** :
+  - l'accroche au rebord (`Ledge`, `LedgeUp`) ;
+  - l'arbre de Neji qui bouge peu ;
+  - la distance d'affichage, qui attend la mesure des images/s pendant le test ;
+  - l'action `Screen` des écrans de la DESIGN.
+
+**OUTILLEUR, étapes 4 et 5, 23/11 soir** — TECHNICAL + NATIVE_STUDIO (copie LAB de ND-JEU `acfb00d6`, Galaxy A06 simulé) ; observations de Claude, pas l'avis de François
+- **Le comparateur sur les 5 kits** (`tools/kits`, `--etape4`). L'arbre complet, comparé au départ :
+  - Minato monte le plus : portée 92→100, mobilité 83→95, dégâts 78→100 ;
+  - Kakashi : portée 66→80, dégâts 79→95, sans transformation ;
+  - Neji bouge peu : 86→89.
+  - La paire la plus proche est Minato–Sasuke (5/100). L'avant/après des clips de l'ANIMATEUR reste à faire : il n'a rien poussé pour l'étape 4.
+- **Le prouveur sur le village généré** (`tools/syphodev`) : 6 s au lieu de 527, même rapport.
+  - Aucun toit inatteignable ; 19 seulement par la course sur le mur.
+  - Le mur du village (Wall_5-12, 46 studs) est atteignable sans être déclaré.
+  - 12 chevauchements, dont le mur du village dans 6 maisons et les bords de la carte.
+- **Le village dans le jeu** (`tools/villagebot`) :
+  - **Course des toits** : 14 courses, 19,5 à 28,7 s, médiane 22,7, les 10 anneaux à chaque fois. **Les médailles 27/34/45 tiennent.**
+  - **Toits** : avec la montée corrigée, 9 sur 10 (10,4 à 32,5 studs), chacun au premier essai.
+  - **Tour** : 35 lieux, aucune chute. L'hôpital n'est pas atteint : le robot reste coincé 4 fois contre une `tower_house` (−109,7 ; −228,7 du plan).
+- **Le pré-vol de publication** (`tools/preflight`, nouveau), sur `9750dbbc` : **PAS PRÊT, 4 rouges** :
+  - les 30 offres affichées n'ont pas d'ID ;
+  - EARLY ACCESS, MORE BUILDS et les auras THUNDER HALO et SHADOW VEIL sont encore en vente ;
+  - les passes EARLY ACCESS et MORE BUILDS sont sans effet côté serveur ;
+  - 4 codes sont actifs du 27/11 au 06/12.
+
+  En vert : outils de debug, code de test, version, sauvegarde. En orange : les kits sans ID, le lot des tenues pas encore affiché, `NinjaDuelReports` nouveau.
+- **La fluidité sur téléphone** (`tools/perf`, nouveau) :
+  - **Images/s** : impossible à mesurer ici. Studio en arrière-plan dessine 15 images/s, même vers le ciel ; la simulation tient 60/s.
+  - **Le poids de la scène** : la place du village fait 174 000 triangles et 190 appels de dessin en moyenne (266 000 et 283 au pic) ; le duel, 77 000 et 94. Le client tient 10 622 pièces (`StreamingEnabled` éteint).
+  - **Essai dans le LAB** : cacher le décor, la vie et les passants à plus de 160 studs retire 23 à 62 % des triangles et 11 à 22 % des appels.
+  - **La minicarte déborde sur tout le côté gauche** sur les 4 téléphones essayés. Son cadre est tourné de 1° (`Client/MiniMap`, `mini.Rotation=1`), et Roblox ne découpe pas dans un cadre tourné. À 0°, elle reste dans son cadre. C'est probablement « la carte prend tout l'écran » de François.
+- **Le robot nouveau joueur** (`tools/newplayer`, nouveau), d'après l'entonnoir du serveur :
+  - premier combat lancé à 29 s, gagné à 1 min 14 ; habillé à 1 min 28 ; un nœud à 2 min 55 ;
+  - **aucun achat en 10 minutes** : le duel rapporte 215 Ryō et l'apparence la moins chère coûte 250.
+- **La page de lecture du test** (`tools/testread`, nouveau) : elle lit les signalements de `NinjaDuelReports` (le format du DEV). Il lui manque le relevé par joueur pour l'entonnoir (`CONTRAT.md`).
+- **La copie LAB avec les robots** : `tools/lab/lab_place.py`.
+
+**Étape 5 lancée, 23/11 18 h (DEV, DEC-049)** — plan et messages, rien de joué
+- **Le plan** : place de test privée pour 3 à 5 joueurs, corrections, puis publication décidée par François sur la liste « prêt à publier ». Doc projet `claude/etape5-ouverture-taches-2026-11-23`, avec un message à coller pour chaque discussion.
+- **Les offres** : VIP, le lot des 8 tenues et SERVEUR PRIVÉ+ ajoutés ; MORE BUILDS et EARLY ACCESS retirés.
+- **Limite connue** : le corps ninja du promeneur (`HubBody`) n'est posé que sur l'écran du joueur lui-même ; les autres le voient marcher comme sur Roblox. C'est la tâche n° 1 du DEV.
+- L'ANIMATEUR, la DESIGN, l'OUTILLEUR et le CM n'ont pas encore poussé leur section de l'étape 4.
+- **Fait par le DEV le soir même** (tests verts, sans Studio) :
+  - **Les autres voient ton ninja** : `Server/Hub.pose`, avec `NinjaPose`, `NinjaPoseSeq` et `NinjaEmote` sur le personnage ; `Client/HubBody.poseOthers` pose chaque promeneur à moins de 160 studs.
+  - **Les émotes dans Konoha** (G), vues de tous, seulement celles qu'on possède.
+  - **VIP** (`NinjaVIP`, vérifié à l'arrivée et à l'achat en jeu) et **le lot des 8 tenues** (`Shop.Bundles`, `grantItems`, un seul reçu).
+  - **Le bouton SIGNALER** côté serveur (`Server/Reports`), relié à REPORT A PROBLEM de la DESIGN (action `Report`). La place de test est repérée par `Config.TestPlace.PlaceIds`.
+  - **Les auras ne se vendent pas en Robux.**
+  - **La liste des offres** : 2 passes et 33 produits.
+
 **Étape 4 lancée, 23/11 (DEV, DEC-048)** — TECHNICAL, sans Studio ; à jouer par François
 - **Départ réduit des 5 autres kits** (`SkillTrees`, nœuds `Learn*`) :
   - Minato : Marked Kunai et Flying Thunder God ;

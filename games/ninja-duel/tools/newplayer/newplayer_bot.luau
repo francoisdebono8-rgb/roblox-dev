@@ -171,7 +171,7 @@ local function run()
 		task.wait(.5)
 		Village.race=orig
 		waitFor(function() return done end,100)
-		step("walk to the market",leg~=nil and leg.arrived,{t=leg and leg.t,length=leg and leg.length})
+		step("walk to the market",leg~=nil and leg.arrived,{walk=leg and leg.t,length=leg and leg.length})
 	end
 	if over() then return end
 

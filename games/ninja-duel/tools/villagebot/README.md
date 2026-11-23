@@ -40,6 +40,36 @@ Dans un Play, un nouveau profil commence par le premier combat. Il faut le finir
 
 ## Les mesures
 
+### Le village généré, acfb00d6 (23/11, étape 4)
+
+Fichier : `mesures/2026-11-23_studio_acfb00d6_village_genere.json`. C'est le village de 225 maisons, avec 245 toits de plus de 8 studs.
+
+- **La course des toits**, prise du robot nouveau joueur (`tools/newplayer`) dans le même Play :
+  - 14 courses, les 10 anneaux à chaque fois ;
+  - de 19,5 à 28,7 s, médiane 22,7 s, meilleur temps 19,5 s.
+
+  **Les médailles du DEV (or 27 s, argent 34 s, bronze 45 s) tiennent.** Le robot fait le meilleur temps d'un joueur qui connaît le parcours et ne rate rien. L'or demande de le connaître ; le bronze laisse le temps de chercher.
+- **Les toits** :
+  - Avec l'ancienne montée, 2 toits sur 10. Dans le village généré, une clôture, une caisse ou un jardin est souvent entre la rue et le mur : le robot ne touchait pas le mur et ne sautait pas.
+  - **La montée corrigée** : il saute contre tout mur courable (`NinjaWall`), ou après une demi-seconde sans avancer ; deux sauts au plus. Il monte alors sur **9 toits sur 10**, de 10,4 à 32,5 studs, chaque fois au premier essai, en 0,8 à 2,5 s.
+  - Le seul échec est une machiya à 16,9 : les pieds restent à 10,3 en trois essais.
+  - Les toits, par hauteur d'avant-toit :
+
+    | Avant-toit | ≤ 12 | 12–15 | 15–18 | 18–21 | 21–25 | > 25 |
+    |---|---|---|---|---|---|---|
+    | Toits | 13 | 27 | 45 | 32 | 67 | 61 |
+- **Le tour** : 35 lieux, aucune chute ; 29 atteints.
+  - Les trajets les plus longs :
+    - du château d'eau au sanctuaire, 19,5 s (470 studs) ;
+    - du maître Sand à la porte, 19,2 s (374 studs) ;
+    - du sanctuaire à la salle d'examen, 13,7 s.
+  - **L'hôpital** : il reste coincé 4 fois contre les murs d'une `tower_house`, au même endroit (−109,7 ; −228,7 du plan). Le chemin du moteur passe par là.
+  - La résidence et les archives sont des bâtiments : il n'arrive pas à 14 studs de leur centre.
+  - Les visages : il arrive au-dessus (46 studs plus haut). Le point est au pied de la falaise.
+  - Les maîtres Mirage (sur le torii, 18,6 plus haut) et Sand (sur son balcon) : pas de chemin pour le moteur, il y va tout droit sans arriver. Le mode qui y saute (`high`, par `Bot.toward`) n'a pas été relancé sur le village généré ; le 22/11, il les atteignait.
+- **Le saut** : le second saut en haut du premier monte les pieds de 26,3 studs ; le plus tôt possible, de 22,7.
+- **Le promeneur ninja** du DEV (`HubBody`) n'est qu'une apparence. Il bouge avec la même physique (`HubMove`) : les temps du robot valent pour lui.
+
 ### Le nouveau Konoha, 554f1dec (22/11)
 
 Fichier : `mesures/2026-11-22_studio_554f1dec_nouveau_konoha.json`.

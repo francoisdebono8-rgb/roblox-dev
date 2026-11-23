@@ -1,0 +1,324 @@
+{
+ "meta": {
+  "date": "2026-11-23",
+  "place": "LAB copie de ND-JEU acfb00d6 (village généré, 225 maisons)",
+  "studio": "Mac, Studio LAB en Play (edit + serveur + client-1 dans un seul processus) ; ND-FILM en Play dans un autre Studio",
+  "simulateur": "samsung_galaxy_a06 800×360 (fenêtre de jeu 705×338), sauf indication",
+  "attention": "Studio en arrière-plan dessine 15 images/s (MicroProfiler : render_throttled) : les i/s ne sont pas ceux d'un téléphone ; la simulation tourne à 60/s."
+ },
+ "probe": [
+  {
+   "label": "a06 village porte (tour de caméra)",
+   "seconds": 10,
+   "fps": 15,
+   "triangles": 41326,
+   "trianglesMax": 59074,
+   "drawcalls": 98,
+   "drawcallsMax": 161,
+   "scene": {
+    "parts": 10622,
+    "meshes": 4574
+   }
+  },
+  {
+   "label": "a06 village, caméra vers le ciel (plafond du Mac)",
+   "seconds": 6,
+   "fps": 15,
+   "triangles": 13421,
+   "drawcalls": 21,
+   "scene": {
+    "parts": 10622
+   }
+  },
+  {
+   "label": "a06 village place (tour de caméra)",
+   "seconds": 10,
+   "fps": 15,
+   "triangles": 174407,
+   "trianglesMax": 266252,
+   "drawcalls": 190,
+   "drawcallsMax": 283,
+   "scene": {
+    "parts": 10622
+   }
+  },
+  {
+   "label": "a06 duel contre Sasuke facile (caméra du jeu)",
+   "seconds": 12,
+   "fps": 15,
+   "triangles": 76509,
+   "trianglesMax": 102954,
+   "drawcalls": 94,
+   "drawcallsMax": 193,
+   "scene": {
+    "parts": 10732
+   }
+  },
+  {
+   "label": "a06 premier combat (Naruto, 8 clones)",
+   "seconds": 10,
+   "fps": 15,
+   "triangles": 137357,
+   "trianglesMax": 243196,
+   "drawcalls": 121,
+   "drawcallsMax": 148,
+   "scene": {
+    "parts": 10877
+   }
+  }
+ ],
+ "place_groupes": {
+  "note": "la place, caméra fixe à hauteur d'yeux, 4 directions ; [triangles, appels de dessin] ; un groupe rendu invisible à la fois",
+  "directions": [
+   {
+    "dir": 0,
+    "all": [
+     90765,
+     227
+    ],
+    "NinjaDuelHub": [
+     58613,
+     213
+    ],
+    "NinjaDuelHubDress": [
+     219194,
+     208
+    ],
+    "NinjaDuels": [
+     90769,
+     228
+    ],
+    "NinjaDuelArenaDress": [
+     90764,
+     227
+    ],
+    "KonohaLife": [
+     90765,
+     227
+    ],
+    "KonohaFolk": [
+     90768,
+     228
+    ]
+   },
+   {
+    "dir": 1,
+    "all": [
+     131535,
+     184
+    ],
+    "NinjaDuelHub": [
+     84416,
+     172
+    ],
+    "NinjaDuelHubDress": [
+     160984,
+     160
+    ],
+    "NinjaDuels": [
+     132900,
+     186
+    ],
+    "NinjaDuelArenaDress": [
+     129563,
+     179
+    ],
+    "KonohaLife": [
+     133296,
+     186
+    ],
+    "KonohaFolk": [
+     127377,
+     174
+    ]
+   },
+   {
+    "dir": 2,
+    "all": [
+     122767,
+     108
+    ],
+    "NinjaDuelHub": [
+     62934,
+     96
+    ],
+    "NinjaDuelHubDress": [
+     116266,
+     91
+    ],
+    "NinjaDuels": [
+     122449,
+     107
+    ],
+    "NinjaDuelArenaDress": [
+     122445,
+     108
+    ],
+    "KonohaLife": [
+     122598,
+     107
+    ],
+    "KonohaFolk": [
+     112262,
+     85
+    ]
+   },
+   {
+    "dir": 3,
+    "all": [
+     118844,
+     135
+    ],
+    "NinjaDuelHub": [
+     112984,
+     127
+    ],
+    "NinjaDuelHubDress": [
+     141200,
+     110
+    ],
+    "NinjaDuels": [
+     118102,
+     133
+    ],
+    "NinjaDuelArenaDress": [
+     122842,
+     141
+    ],
+    "KonohaLife": [
+     124310,
+     143
+    ],
+    "KonohaFolk": [
+     124118,
+     136
+    ]
+   }
+  ]
+ },
+ "apres_cull160": {
+  "note": "avant / après : décor (NinjaDuelHubDress), vie (KonohaLife) et passants (KonohaFolk) cachés au-delà de 160 studs du joueur (3 750 pièces) ; même caméra",
+  "directions": [
+   {
+    "dir": 0,
+    "avant": [
+     90759,
+     225
+    ],
+    "apres": [
+     69928,
+     201
+    ]
+   },
+   {
+    "dir": 1,
+    "avant": [
+     136464,
+     190
+    ],
+    "apres": [
+     94703,
+     151
+    ]
+   },
+   {
+    "dir": 2,
+    "avant": [
+     120510,
+     102
+    ],
+    "apres": [
+     90936,
+     80
+    ]
+   },
+   {
+    "dir": 3,
+    "avant": [
+     122922,
+     141
+    ],
+    "apres": [
+     46279,
+     125
+    ]
+   }
+  ]
+ },
+ "scene_client": {
+  "parts": 10622,
+  "meshparts": 4574,
+  "streaming": false,
+  "groupes": {
+   "NinjaDuelHub": [
+    3287,
+    551
+   ],
+   "NinjaDuelHubDress": [
+    2969,
+    2969
+   ],
+   "NinjaDuels": [
+    1626,
+    707
+   ],
+   "NinjaDuelArenaDress": [
+    1042,
+    0
+   ],
+   "KonohaLife": [
+    826,
+    0
+   ],
+   "KonohaFolk": [
+    692,
+    250
+   ],
+   "NinjaDuelMenuStage": [
+    138,
+    72
+   ]
+  }
+ },
+ "memoire_mo": {
+  "note": "get_memory_breakdown client-1 : le processus entier (edit + serveur + client) ; seules les lignes Graphics* sont au client seul",
+  "total_processus": 5061.2,
+  "GraphicsTexture": 49.7,
+  "GraphicsMeshParts": 40.1,
+  "GraphicsTerrain": 37.2,
+  "GraphicsParticles": 15.7,
+  "GraphicsParts": 11.3,
+  "GraphicsTextureCharacter": 6.0,
+  "Instances": 99.6,
+  "BaseParts": 46.6,
+  "Gui": 88.5,
+  "Script": 264.2,
+  "LuaHeap": 1055.6
+ },
+ "microprofiler_village_a06": {
+  "frames": 182,
+  "sim_hz": 60,
+  "frame_p50_ms": 16.7,
+  "frame_p99_ms": 18.4,
+  "frames_over_33ms": 0,
+  "presented_fps": 15.16,
+  "render_throttled": true,
+  "render_par_image_dessinee_ms": {
+   "PrepareBound": 2.37,
+   "Perform": 1.7
+  },
+  "fichier_mac": "~/Library/Caches/nd-outilleur/perf_a06_village_avant.json"
+ },
+ "ecrans": {
+  "minicarte": "MiniMap.Rotation=1 : la carte du village entière (507×417) déborde de la minicarte et couvre la moitié gauche de l'écran (a06, a16, iPhone 13, iPhone 7). À 0°, elle reste dans son cadre.",
+  "images": [
+   "2026-11-23_a06_village_minicarte_avant.jpg",
+   "2026-11-23_a06_village_minicarte_0deg.jpg",
+   "2026-11-23_iphone7_village_avant.jpg",
+   "2026-11-23_a06_duel_debut.jpg",
+   "2026-11-23_iphone7_duel.jpg",
+   "2026-11-23_a06_premier_combat_tactile.jpg",
+   "2026-11-23_iphone7_premier_combat_tactile.jpg"
+  ]
+ }
+}

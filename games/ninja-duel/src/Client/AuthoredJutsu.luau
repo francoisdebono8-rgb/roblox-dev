@@ -18,4 +18,11 @@ for name,clip in require(script.Parent.AuthoredJutsu10) do all[name]=clip end
 for name,clip in require(script.Parent.AuthoredJutsu11) do all[name]=clip end
 for name,clip in require(script.Parent.AuthoredJutsu12) do all[name]=clip end
 for name,clip in require(script.Parent.AuthoredJutsu13) do all[name]=clip end
+for name,clip in require(script.Parent.AuthoredJutsu14) do all[name]=clip end
+-- étape 4: Neji, Gaara, Kakashi, Itachi, Minato re-authored (tools/blender/e4_build.py --write).
+for name,clip in require(script.Parent.AuthoredJutsu15) do all[name]=clip end
+for name,clip in require(script.Parent.AuthoredJutsu16) do all[name]=clip end
+for name,clip in require(script.Parent.AuthoredJutsu17) do all[name]=clip end
+for name,clip in require(script.Parent.AuthoredJutsu18) do all[name]=clip end
+for name,clip in require(script.Parent.AuthoredJutsu19) do all[name]=clip end
 return all

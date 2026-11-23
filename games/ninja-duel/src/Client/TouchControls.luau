@@ -16,6 +16,10 @@ local Players=game:GetService("Players")
 local Fighters=require(game:GetService("ReplicatedStorage").NinjaDuel.Fighters)
 -- (QA 12/11) capitals that keep the long vowels and accents.
 local Text=require(game:GetService("ReplicatedStorage").NinjaDuel.Text)
+-- (DESIGN 23/11, the A06: « le bouton RASENGAN illisible ») the jutsu buttons
+-- show the technique's pictogram, its word on an ink strip under it
+local okA,UIAssets=pcall(function() return require(game:GetService("ReplicatedStorage").NinjaDuel.UIAssets) end)
+if not okA then UIAssets=nil end
 
 local Touch={};Touch.__index=Touch
 Touch.REFERENCE=390 -- the design height (a phone held sideways)
@@ -89,17 +93,24 @@ function Touch.new(input,send,getState,toggleLock,camera)
 	button(cluster,"Tool","TOOL",Vector2.new(236,26),46,nil,act("Tool"))
 
 	-- The jutsu row (the quick slots; SEALS: the second page).
-	local row=new("Frame",{Name="Jutsu",Size=UDim2.fromOffset(250,50),AnchorPoint=Vector2.new(1,1),Position=UDim2.new(1,-12,1,-258),
+	local row=new("Frame",{Name="Jutsu",Size=UDim2.fromOffset(300,62),AnchorPoint=Vector2.new(1,1),Position=UDim2.new(1,-12,1,-258),
 		BackgroundTransparency=1},gui)
+	self.jutsuIcon,self.jutsuWord={},{}
 	for i=1,5 do
-		local b=button(row,"Jutsu"..i,tostring(i),Vector2.new(23+(i-1)*51,25),46,nil,function()
+		local b=button(row,"Jutsu"..i,"",Vector2.new(31+(i-1)*60,31),58,nil,function()
 			if self.page then self.send("Seal"..i) else self:press("Technique"..i) end
 			self:used()
 		end,function() self.send("SealRelease") end)
-		b.TextScaled=true
+		local pad=b:FindFirstChildOfClass("UIPadding");if pad then pad:Destroy() end
+		self.jutsuIcon[i]=new("ImageLabel",{Name="Icon",Size=UDim2.new(.62,0,.62,0),Position=UDim2.fromScale(.19,.04),BackgroundTransparency=1,ScaleType=Enum.ScaleType.Fit,Image=""},b)
+		local word=new("TextLabel",{Name="Word",Size=UDim2.new(1,4,.36,0),Position=UDim2.new(0,-2,.66,0),BackgroundColor3=INK,BackgroundTransparency=0,
+			TextColor3=PAPER,Font=Enum.Font.BuilderSansExtraBold,TextScaled=true,Text=tostring(i)},b)
+		new("UICorner",{CornerRadius=UDim.new(0,4)},word)
+		new("UITextSizeConstraint",{MinTextSize=10,MaxTextSize=14},word)
+		self.jutsuWord[i]=word
 		self.jutsu[i]=b
 	end
-	local seals=button(row,"Seals","SEALS",Vector2.new(-32,25),52,nil,function()
+	local seals=button(row,"Seals","SEALS",Vector2.new(-32,31),56,nil,function()
 		self.page=not self.page;self:refreshPage()
 	end)
 	self.sealsButton=seals
@@ -227,9 +238,22 @@ function Touch:labels(h)
 		local spec=list[i]
 		b.Visible=spec~=nil
 		if spec then
-			b.Text=short(spec.name or spec.Name)
+			local word=short(spec.name or spec.Name)
+			local icon=UIAssets and UIAssets.id(UIAssets.iconName(spec.id or spec.Id or "")) or ""
+			local img=self.jutsuIcon and self.jutsuIcon[i]
+			if img then
+				img.Image=icon or ""
+				img.Visible=(icon or "")~=""
+				self.jutsuWord[i].Text=word
+				-- no picture yet: the word fills the button
+				self.jutsuWord[i].Size=if img.Visible then UDim2.new(1,4,.36,0) else UDim2.new(1,4,.6,0)
+				self.jutsuWord[i].Position=if img.Visible then UDim2.new(0,-2,.66,0) else UDim2.new(0,-2,.2,0)
+				b.Text=""
+			else b.Text=word end
 			local ready=if self.page then true else (spec.remaining or 0)==0 and (h.chakra or 0)>=(spec.cost or 0)
 			b.BackgroundColor3=if self.page then Color3.fromRGB(70,52,20) else INK
+			b.BackgroundTransparency=if ready then .15 else .45
+			if img then img.ImageTransparency=if ready then 0 else .55;self.jutsuWord[i].TextColor3=if ready then PAPER else MUTED end
 			b.TextColor3=if ready then PAPER else MUTED
 		end
 	end

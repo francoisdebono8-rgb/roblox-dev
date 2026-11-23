@@ -462,6 +462,18 @@ function UI.new(parent,send)
 			local made,panel=pcall(Leaderboard.new,UI.kit,self.gui)
 			if made then self.leaderboard=panel end
 		end
+		-- (DESIGN 23/11, step 5) SETTINGS: sound, camera, controls, REPORT
+		local okS,SettingsPanel=pcall(function() return require(script.Parent.SettingsPanel) end)
+		if okS and SettingsPanel then
+			local made,panel=pcall(SettingsPanel.new,UI.kit,self.gui,send)
+			if made then self.settings=panel end
+		end
+		-- (DESIGN 23/11, step 4) the tournament's entry: his build of 100 points
+		local okE,CupEntry=pcall(function() return require(script.Parent.CupEntry) end)
+		if okE and CupEntry then
+			local made,panel=pcall(CupEntry.new,UI.kit,self.gui,send)
+			if made then self.cupEntry=panel end
+		end
 		-- (DESIGN 19/11) MY NINJA: the wardrobe, every slot and every piece
 		local okW,Wardrobe=pcall(function() return require(script.Parent.Wardrobe) end)
 		if okW and Wardrobe then
@@ -481,7 +493,10 @@ function UI.new(parent,send)
 	self.startStroke=create("UIStroke",self.startButton,{Color=palette.paper,Thickness=2.5,Transparency=.2,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
 	-- (04/11) The Prodigy Tournament against the AI (Server/Tournament).
 	self.cupButton=button(shell,"TOURNAMENT  •  VS AI",UDim2.fromOffset(60,712),UDim2.fromOffset(400,52),function()
-		if not self.picking then send("CupStart",{player=self.player}) end
+		if self.picking then return end
+		if self.cupEntry then
+			self.cupEntry:show(self.player,self.kits and self.kits.trees and self.kits.trees[self.player])
+		else send("CupStart",{player=self.player}) end
 	end,palette.red)
 	self.cupButton.TextSize=26
 	self.tutorialButton=button(shell,"TRAINING",UDim2.fromOffset(60,below),UDim2.fromOffset(230,58),function()
@@ -807,9 +822,15 @@ function UI.new(parent,send)
 	for _,band in {self.introLeft,self.introRight} do frame(band,UDim2.fromOffset(0,0),UDim2.new(1,0,0,5),palette.red,0) end
 	self.introLeftName=text(self.introLeft,"",UDim2.new(0,40,0,6),UDim2.new(1,-80,0,64),64,palette.paper,TITLE_FONT)
 	inkTitle(self.introLeftName)
+	-- (23/11, A06: the name cut at a round's start) one line, shrunk to fit
+	self.introLeftName.TextWrapped=false;self.introLeftName.TextScaled=true
+	create("UITextSizeConstraint",self.introLeftName,{MaxTextSize=64,MinTextSize=18})
 	self.introLeftTitle=text(self.introLeft,"",UDim2.new(0,42,0,70),UDim2.new(1,-80,0,26),18,palette.muted)
 	self.introRightName=text(self.introRight,"",UDim2.new(0,40,0,6),UDim2.new(1,-80,0,64),64,palette.paper,TITLE_FONT,Enum.TextXAlignment.Right)
 	inkTitle(self.introRightName)
+	-- (23/11, A06: the name cut at a round's start) one line, shrunk to fit
+	self.introRightName.TextWrapped=false;self.introRightName.TextScaled=true
+	create("UITextSizeConstraint",self.introRightName,{MaxTextSize=64,MinTextSize=18})
 	self.introRightTitle=text(self.introRight,"",UDim2.new(0,40,0,70),UDim2.new(1,-82,0,26),18,palette.muted,BODY_FONT,Enum.TextXAlignment.Right)
 	-- The menu's VS: paper capitals in an ink outline, tilted like the stroke.
 	self.introVs=text(self.intro,"VS",UDim2.new(.5,-80,1,-118),UDim2.fromOffset(160,104),96,palette.paper,TITLE_FONT,Enum.TextXAlignment.Center)
@@ -858,7 +879,10 @@ function UI.new(parent,send)
 	self.resultGains=gains
 	text(gains,"WHAT YOU EARNED",UDim2.fromOffset(18,10),UDim2.fromOffset(400,22),18,MANGA.red,STRONG_FONT)
 	self.resultRyo=text(gains,"",UDim2.fromOffset(18,34),UDim2.fromOffset(300,50),46,MANGA.ink,TITLE_FONT)
-	self.resultFirstWin=text(gains,"FIRST WIN OF THE DAY  ×2",UDim2.new(1,-300,0,44),UDim2.fromOffset(282,32),18,MANGA.cream,STRONG_FONT,Enum.TextXAlignment.Center)
+	-- (23/11, DEV) the multiplier as the rule says it (Shared/Shop: ×3 since step 5)
+	local okS,ShopRules=pcall(require,Shared.Shop)
+	local firstWinX=okS and ShopRules.Ryo and ShopRules.Ryo.FirstWinOfDay or 3
+	self.resultFirstWin=text(gains,"FIRST WIN OF THE DAY  ×"..tostring(firstWinX),UDim2.new(1,-300,0,44),UDim2.fromOffset(282,32),18,MANGA.cream,STRONG_FONT,Enum.TextXAlignment.Center)
 	self.resultFirstWin.BackgroundColor3=MANGA.red;self.resultFirstWin.BackgroundTransparency=0;self.resultFirstWin.Rotation=2
 	self.resultKit=text(gains,"",UDim2.fromOffset(18,92),UDim2.new(1,-120,0,24),20,MANGA.ink,STRONG_FONT)
 	self.resultGain=text(gains,"",UDim2.new(1,-118,0,92),UDim2.fromOffset(100,24),24,MANGA.red,TITLE_FONT,Enum.TextXAlignment.Right)
@@ -1580,7 +1604,7 @@ function UI:render(data)
 		self.introRightName.Text=fullName(b);self.introRightTitle.Text=subtitle(b)
 		self.introLeftName.TextColor3=accentOf(Fighters[h.fighterId]);self.introRightName.TextColor3=accentOf(Fighters[b.fighterId])
 		self.introRound.Text=UI.stageName(data).."  —  ROUND "..(data.round or 1)..(if (data.round or 1)>1 and (data.wins and (data.wins.human==1 and data.wins.bot==1)) then "  •  FINAL ROUND" else "")
-		self.introBegin.Text=if data.intro<(Config.IntroBegin or .75) then "始め!  BEGIN" else ""
+		self.introBegin.Text=if data.intro<(Config.IntroBegin or .75) then "BEGIN!" else ""
 		if self.introShown~=data.epoch then
 			self.introShown=data.epoch
 			self.introLeft.Position=UDim2.new(-.5,0,1,-118);self.introRight.Position=UDim2.new(1,0,1,-118)

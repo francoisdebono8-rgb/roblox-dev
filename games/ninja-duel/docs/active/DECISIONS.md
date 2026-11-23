@@ -540,9 +540,49 @@ François (23/11, 1 h 02) : « ajoute animateur push et passe à l'étape 4 rée
   - Gaara : Desert Funeral. Le Cercueil de sable part en trois vagues en éventail, et chaque corps touché est lié puis enseveli une seule fois.
 
   Celle de Kakashi viendra avec son comportement en combat et les clips de l'ANIMATEUR : un nœud qui ne fait que changer un nombre n'en est pas une.
+  - **Kakashi (DEV, 23/11 soir, sur la proposition de l'ANIMATEUR) : RAIKIRI: TRACKED.** Quand ses chiens (`TrackingFang`) tiennent un corps, sa Lame de foudre lâchée dans les 3 s part en ligne droite sur ce corps et traverse une esquive ; la garde la tient toujours. Réplique « RAIKIRI ». Choisie plutôt que COPY TWICE : elle se lit d'un regard (les chiens marquent, l'éclair suit la marque) et tout existe déjà. Le serveur vient avec le clip `Copycat.Raikiri` et l'effet `raikiri_trail` de l'ANIMATEUR.
 - **Tournoi** : une construction de 100 points (bracket Advanced), la même pour tous, avec tout l'arbre ouvert. Les techniques et l'éveil (`Learn*`) sont des nœuds comme les autres. Sans choix, le jeu prend sa construction si elle tient dans le budget, sinon il la complète jusqu'au budget.
 - **Classements par kit** : un tableau par kit, celui de sa maîtrise, mis à jour à chaque gain.
 - **Le promeneur** est posé par les clips du kit (`Client/HubBody`), sans publication d'Animation :
   - la course sur le mur à la manière de l'anime ;
   - le second saut est un bond ;
   - la roulade à la réception.
+
+## DEC-049 — Étape 5 : « Ouverture » (23/11)
+
+François (23/11, 18 h 21) : « maintenant étape 5, avec les messages à envoyer à toutes les autres parties ». Plan, tâches et messages : doc projet `claude/etape5-ouverture-taches-2026-11-23`.
+
+**Décisions du DEV (DEC-043)** :
+- **L'ouverture se fait en trois temps** :
+  1. une place de test privée « Ninja Duel – TEST », séparée du vrai jeu, pour 3 à 5 joueurs invités par François (sa permission pour publier cette place) ;
+  2. on corrige ;
+  3. François publie le vrai jeu quand la liste « prêt à publier » est verte.
+- **Les offres** :
+  - **ajoutées** : VIP (nom doré, cape, étiquette, rien qui fasse gagner), le lot des 8 tenues des prodiges, SERVEUR PRIVÉ+ (le propriétaire lance un tournoi entre amis) ;
+  - **retirées** : MORE BUILDS (8 constructions par kit sont déjà gratuites) et EARLY ACCESS (pas de 9e prodige à vendre avant qu'il existe).
+- **La section de l'étape 4 de chaque discussion passe avant son étape 5** : on n'ouvre pas avec 5 kits pas finis.
+- **La priorité n° 1 du DEV** : que les autres joueurs voient le corps ninja du promeneur. Aujourd'hui, seul son propre écran le pose ; ce que le client écrit sur les articulations ne se transmet pas.
+- **Les auras ne se vendent pas en Robux** (la règle du 20/11 : les auras se gagnent au mérite). THUNDER HALO et SHADOW VEIL, ajoutées en Robux à l'étape 3, restent à 0 dans `Config.Shop.Products`. L'ANIMATEUR en fait des récompenses ou des achats en Ryō.
+- **Les offres que le jeu sait donner** : 2 passes et 33 produits. La liste pour François est dans les docs projet `claude/produits-passes-a-creer-2026-11-20` et `claude/produits-passes-maj-etape5-2026-11-23`.
+
+## DEC-050 — Rien ne reste à côté du jeu (23/11)
+
+François (23/11, 21 h) : « tout ce qui a été fait doit être ajouté » ; « comment se fait-il que tu n'aies pas tous les ajouts alors que la méthode de travail est censée éviter ces problèmes ? »
+
+Ce qui manquait venait de deux trous de la méthode :
+- **le travail d'avant DEC-043** (03–14/11), resté sur des branches à côté. Il était noté « non intégré » le 07/11, et personne ne l'a repris ;
+- **une PR qui attend** : le CM a mis ses codes dans une PR parce qu'elle touchait un test du DEV, et le DEV ne regardait pas les branches.
+
+Les règles :
+- **Chaque discussion pousse sur la branche commune**, même quand elle touche un fichier d'une autre discussion, si la suite et les builds sont verts. Elle le dit dans `SINCE_LAST_CLAUDE`. Pas de PR ni de branche qui attend.
+- **Le DEV lance `python3 tools/branches/unmerged.py` à chaque passe**, avant d'annoncer quoi que ce soit. Le script liste toute branche qui a du travail absent de la branche commune (code 1 s'il en reste). Ce qu'il liste est intégré dans la passe, ou jugé avec sa raison dans la liste `ALREADY_JUDGED` du script.
+- **Les branches `work/*`** restent des brouillons (« wip », « scratch ») ; le script les ignore. Une livraison n'existe que sur la branche commune.
+- **`main` suit la branche commune** (avance rapide), à chaque poussée du DEV. Ça ne publie rien sur Roblox.
+
+## DEC-051 — Plus d'étapes : des passes communes, François chef opérationnel (23/11)
+
+François (23/11, 22 h 22–22 h 30) : « rien ne va » (la ville, les murs et les toits qu'on traverse, TRY THIS KIT, les habits du départ, son kit à tout moment, des PNJ à combattre, les bugs, les écrans), puis : « tu oublies ces étapes, je vais repasser en chef opérationnel et te dire ce qui va pas après chaque grosse passe commune de travail ».
+
+- **Les étapes du plan du 20/11 s'arrêtent là.** Le travail se fait en passes communes : le DEV et les autres discussions, une liste de tâches chacun. À la fin de chaque passe, François joue et dit ce qui ne va pas.
+- **La passe 1** est dans le doc projet `claude/passe-commune-1-remise-a-plat-2026-11-23` : collisions qui suivent les modèles, une nouvelle ville (du vrai et du généré, d'après des villages japonais réels, la falaise, la porte, la rue principale et Ichiraku gardées), les jutsus à tout moment dans Konoha, des PNJ qui rackettent, TRY THIS KIT, les habits du départ, les écrans.
+- **Claude reprend Studio quand François le lui laisse.** Il joue comme un joueur avant de dire qu'une passe est finie. Les tests seuls ne voient ni ce qu'on traverse, ni ce qui est laid.

@@ -34,6 +34,18 @@ Style.Items={
 	{id="HairLeaf",slot="hairColor",name="LEAF GREEN",ryo=600,colors={Hair=rgb(70,150,80)}},
 	{id="HairSnow",slot="hairColor",name="SNOW WHITE",ryo=800,colors={Hair=rgb(236,236,240)}},
 	{id="HairEmber",slot="hairColor",name="EMBER ORANGE",ryo=800,colors={Hair=rgb(232,118,40)}},
+	-- (23/11, François: « plus de couleurs » ; the ANIMATEUR's ten, his cuts
+	-- take any colour)
+	{id="HairChestnut",slot="hairColor",name="CHESTNUT",ryo=400,colors={Hair=rgb(120,72,44)}},
+	{id="HairAsh",slot="hairColor",name="ASH BROWN",ryo=400,colors={Hair=rgb(96,84,76)}},
+	{id="HairInk",slot="hairColor",name="INK BLUE-BLACK",ryo=500,colors={Hair=rgb(18,24,44)}},
+	{id="HairHoney",slot="hairColor",name="HONEY",ryo=500,colors={Hair=rgb(214,160,80)}},
+	{id="HairCrimson",slot="hairColor",name="CRIMSON",ryo=600,colors={Hair=rgb(150,24,40)}},
+	{id="HairOcean",slot="hairColor",name="OCEAN TEAL",ryo=600,colors={Hair=rgb(40,120,130)}},
+	{id="HairLilac",slot="hairColor",name="LILAC",ryo=600,colors={Hair=rgb(180,150,210)}},
+	{id="HairMint",slot="hairColor",name="MINT",ryo=700,colors={Hair=rgb(150,210,180)}},
+	{id="HairCoral",slot="hairColor",name="CORAL",ryo=700,colors={Hair=rgb(240,120,100)}},
+	{id="HairPlatinum",slot="hairColor",name="PLATINUM",ryo=800,colors={Hair=rgb(230,222,200)}},
 	-- (22/11, the OUTILLEUR's fitting room: next to SNOW WHITE it read the same)
 	{id="HairSilver",slot="hairColor",name="ANBU SILVER",robux="HairSilver",colors={Hair=rgb(122,136,160)}},
 	{id="HairVoid",slot="hairColor",name="VOID PURPLE",robux="HairVoid",colors={Hair=rgb(92,52,150)}},
@@ -122,6 +134,9 @@ function Style.met(p,rule)
 	if tier then return merit().tier(points)>=tonumber(tier) end
 	local rank=string.match(rule,"^rank(%d)$")
 	if rank then return p.ranked~=nil and ranked().rank(p.ranked.rating or 0).index>=tonumber(rank) end
+	-- (23/11, step 5, DEC-049) the VIP pass (the ANIMATEUR's CapeVIP): the
+	-- server marks the profile when the pass is his (Server/Progression.grantVip)
+	if rule=="vip" then return p.vip==true end
 	if rule=="days7" then return p.daily~=nil and (p.daily.streak or 0)>=7 end
 	if rule=="rooftops" then return p.solo~=nil and (p.solo.rooftops.best or 0)>0 end
 	-- (22/11, the CM's titles)

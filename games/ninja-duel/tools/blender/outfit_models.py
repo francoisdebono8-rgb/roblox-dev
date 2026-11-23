@@ -236,7 +236,7 @@ def flap(pc, part, x0, x1, y_top, length, z_side, pad=.08, flare=.25, folds=.03,
         grid.append(row)
     # a little thickness: the same grid pushed in
     loft(pc, grid, col or shade(.9, .1, seed, ao_y=(y0, .15)), cap0=False, cap1=False, closed=False)
-    back = [[Vector((p.x, p.y, p.z - z_side * .035)) for p in reversed(r)] for r in grid]
+    back = [[Vector((p.x, p.y, p.z - z_side * .07)) for p in reversed(r)] for r in grid]
     loft(pc, back, col or shade(.8, .05, seed), cap0=False, cap1=False, closed=False)
 
 

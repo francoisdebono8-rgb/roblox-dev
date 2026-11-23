@@ -30,7 +30,7 @@ local DETAIL_X=1084
 local GUTTER=92
 Panel.CLOSE={X=W-156,Y=22,W=132,H=58}
 local TILE_H,TILE_GAP=40,6
-local CARD_H=104 -- the kit's card, over the KIT tab's grid
+local CARD_H=124 -- the kit's card, over the KIT tab's grid
 local NATURE_H=132 -- the natures, over the NINJA tab's grid
 Panel.TAB={W=170,H=48,Y=92,X=816}
 
@@ -58,7 +58,9 @@ function Panel.kitCard(kitId)
 	local starts={}
 	for _,t in def.Techniques or {} do if not unlocked[t.Id] then table.insert(starts,string.upper(t.Name)) end end
 	local lines=KitTexts.of(kitId)
-	return {name=KitTexts.name(kitId),starts=starts,adds=adds,transform=transform,signature=lines and lines.why or ""}
+	-- (23/11, step 4) the CM's sheet when written (start, grows, top), for all 8
+	return {name=KitTexts.name(kitId),starts=starts,adds=adds,transform=transform,signature=lines and lines.why or "",
+		topLine=lines and lines.top or nil,startLine=lines and lines.start or nil}
 end
 
 -- The natures' colours (the element seen on the blade and the kunai).
@@ -365,16 +367,29 @@ function Panel:drawCard(c)
 	local card=K.frame(self.grid,UDim2.fromOffset(0,0),UDim2.fromOffset(GRID_W-12,CARD_H-10),M.paper,0)
 	table.insert(self.drawn,card);K.corner(card,4);self.ring(card,3)
 	card.Name="KitCard"
-	local cols={{"STARTS WITH",table.concat(c.starts,"  •  ")},{"THE TREE ADDS",table.concat(c.adds,"  •  ")..(if c.transform then "  •  TOP: "..c.transform else "")}}
-	local w=math.floor((GRID_W-12-24)/3)
+	-- four columns: what he starts with, what the tree adds, its top (the
+	-- transformation), his signature (the CM's « why this kit »)
+	local cols={
+		{"STARTS WITH",table.concat(c.starts,"  •  "),nil},
+		{"THE TREE ADDS",table.concat(c.adds,"  •  "),nil},
+		{"AT THE TOP",c.transform or "",c.topLine},
+		{"SIGNATURE",nil,c.signature},
+	}
+	local w=math.floor((GRID_W-12-24)/4)
 	for i,col in cols do
-		K.text(card,col[1],UDim2.fromOffset(12+(i-1)*w,8),UDim2.fromOffset(w-12,16),13,M.red,STRONG)
-		local body=K.text(card,if col[2]=="" then "—" else col[2],UDim2.fromOffset(12+(i-1)*w,26),UDim2.fromOffset(w-16,62),17,M.ink,STRONG)
-		body.TextYAlignment=Enum.TextYAlignment.Top;body.TextWrapped=true
+		local x=12+(i-1)*w
+		K.text(card,col[1],UDim2.fromOffset(x,8),UDim2.fromOffset(w-12,16),13,M.red,STRONG)
+		local y=26
+		if col[2] then
+			local body=K.text(card,if col[2]=="" then "—" else col[2],UDim2.fromOffset(x,y),UDim2.fromOffset(w-14,if col[3] then 22 else 80),16,M.ink,STRONG)
+			body.TextYAlignment=Enum.TextYAlignment.Top;body.TextWrapped=true
+			y+=24
+		end
+		if col[3] then
+			local line=K.text(card,col[3],UDim2.fromOffset(x,y),UDim2.fromOffset(w-14,CARD_H-10-y-6),13,M.mid,K.BODY_FONT)
+			line.TextYAlignment=Enum.TextYAlignment.Top;line.TextWrapped=true
+		end
 	end
-	K.text(card,"SIGNATURE",UDim2.fromOffset(12+2*w,8),UDim2.fromOffset(w,16),13,M.red,STRONG)
-	local sig=K.text(card,c.signature,UDim2.fromOffset(12+2*w,26),UDim2.fromOffset(w,64),15,M.mid,K.BODY_FONT)
-	sig.TextYAlignment=Enum.TextYAlignment.Top;sig.TextWrapped=true
 	return CARD_H
 end
 

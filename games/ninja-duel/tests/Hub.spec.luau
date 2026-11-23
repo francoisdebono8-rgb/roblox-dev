@@ -381,6 +381,28 @@ test("a street duel and the village: walls to run on, props that break, all put 
 		if d:IsA("Model") and d:GetAttribute("Dress")=="HouseShop_24x20x2" and not house then house=d end
 	end
 	assert(house and house:FindFirstChild("Walls"):GetAttribute("NinjaWall"),"a house's walls are not a wall to run on")
+	-- (23/11, the OUTILLEUR's bot) the village's wall: run on in a duel, never
+	-- climbed out of the village by the walker
+	local Move=H.load("Client/HubMove")
+	for _,v in {{folder,2},{layoutFolder,4}} do
+		local edge=0
+		for _,u in v[1]:GetDescendants() do
+			if u:IsA("Model") and u:GetAttribute("Dress")=="VillageWall" then
+				local w=u:FindFirstChild("Wall")
+				assert(w and w:GetAttribute("NinjaWall") and w:GetAttribute("NinjaNoClimb"),"the village wall is climbable, or not a duel's wall")
+				assert(not Move.climbable(w,Vector3.new(1,0,0)),"the walker climbs out over the village wall")
+				edge+=1
+			end
+		end
+		assert(edge>=v[2],"few village wall pieces: "..edge)
+	end
+	assert(Move.climbable(house:FindFirstChild("Walls"),Vector3.new(1,0,0)),"a house's walls are not run up")
+	assert(not Move.climbable(house:FindFirstChild("Walls"),Vector3.new(0,1,0)),"a flat top is run up")
+	for _,u in layoutFolder:GetDescendants() do
+		if u:IsA("Model") and u:GetAttribute("Dress")=="CompoundWall" and u:FindFirstChild("Wall") then
+			assert(not u:FindFirstChild("Wall"):GetAttribute("NinjaNoClimb"),"a compound's low wall is barred")
+		end
+	end
 	assert(walls>=60,"few walls to run on: "..walls)
 	assert(#props>=10,"few props break: "..#props)
 	for _,d in folder:GetDescendants() do
@@ -792,9 +814,9 @@ test("the ninja walker: the kit's gait by the ground covered, up the wall off it
 	-- the cycle advances by the ground covered: twice the speed, twice the phase
 	b.phase=0;frame({speed=66,dt=.1});local one=b.phase
 	b.phase=0;frame({speed=33,dt=.1});assert(math.abs(one-2*b.phase)<1e-6 and one>0,"the gait is not tied to the ground")
-	-- up the wall: the sprint, tilted
+	-- up the wall: the ANIMATEUR's wall run, tilted off the wall
 	local up=frame({speed=0,climbing=true,grounded=false,climbSpeed=38})
-	assert(up.move=="Sprint" and up.tilt==1,"the run up the wall")
+	assert(up.move=="Parkour.WallRun" and up.tilt==1,"the run up the wall: "..up.move)
 	-- the second jump, then the arc
 	local leap=frame({speed=36,grounded=false,vy=40,leapAt=1,now=1.05})
 	assert(leap.move=="AirJump","the bound: "..leap.move)
@@ -805,9 +827,18 @@ test("the ninja walker: the kit's gait by the ground covered, up the wall off it
 	assert(frame({speed=30,vy=0,now=3.02}).move=="Parkour.LandRoll","no roll")
 	frame({speed=0,grounded=false,vy=-80,now=5})
 	assert(frame({speed=0,vy=0,now=5.02}).move=="Parkour.LandHard","no hard landing")
+	-- (23/11, François's own avatar in Studio) Roblox joins avatars with
+	-- AnimationConstraints now, not Motor6Ds: the walker finds both
+	local avatar=Instance.new("Model")
+	local leg=Instance.new("Part");leg.Name="RightUpperLeg";leg.Parent=avatar
+	local hip=Instance.new("AnimationConstraint");hip.Name="RightHip";hip.Parent=leg
+	local torso=Instance.new("Part");torso.Name="UpperTorso";torso.Parent=avatar
+	local neck=Instance.new("Motor6D");neck.Name="Neck";neck.Parent=torso
+	local found=Body.joints(avatar)
+	assert(found.RightHip==hip and found.Neck==neck,"the walker misses the avatar's joints (AnimationConstraint or Motor6D)")
 	-- every clip it plays exists for every kit of the eight (the kit's own, or Sasuke's)
 	for _,kit in H.load("Shared/BetaRoster") do
-		for _,move in {"Idle","Walk.F","Run.F","Sprint","Jump.Air","AirJump","Land","Parkour.Leap","Parkour.Vault","Parkour.LandRoll","Parkour.LandHard"} do
+		for _,move in {"Idle","Walk.F","Run.F","Sprint","Jump.Air","AirJump","Land","Parkour.Leap","Parkour.Vault","Parkour.LandRoll","Parkour.LandHard","Parkour.WallRun"} do
 			assert(Body.clipName(Authored,kit,move),kit.." has no "..move)
 		end
 	end
@@ -818,6 +849,63 @@ test("the ninja walker: the kit's gait by the ground covered, up the wall off it
 	assert(pose and pose.Root and pose.RightHip and pose.LeftKnee,"a pose")
 	local lean=math.deg(math.acos(math.clamp(pose.Root.UpVector:Dot(flat.Root.UpVector),-1,1)))
 	assert(lean>55,"the body is not off the wall: "..lean)
+end)
+
+-- (23/11, step 5, DEC-049) what a client writes on joints stays on it: each
+-- screen poses every walker, his moves sent by their owner through the server.
+test("the others see your ninja: the moves travel by the server, each screen poses every walker",function()
+	local Hub=H.load("Server/Hub")
+	local attrs={}
+	local character={SetAttribute=function(_,k,v) attrs[k]=v end,GetAttribute=function(_,k) return attrs[k] end}
+	local player={Character=character}
+	local buckets={}
+	assert(Hub.pose(player,"climb",0,buckets) and attrs.NinjaPose=="climb" and attrs.NinjaPoseSeq==1,"up the wall")
+	assert(Hub.pose(player,"leap",.1,buckets) and attrs.NinjaPose=="leap" and attrs.NinjaPoseSeq==2,"the bound")
+	assert(not Hub.pose(player,"fly",.2,buckets) and not Hub.pose(player,42,.2,buckets),"only the walker's moves")
+	assert(attrs.NinjaPose=="leap","a refused word changes nothing")
+	local n=0
+	for i=1,30 do if Hub.pose(player,"none",.3+i*.001,buckets) then n+=1 end end
+	assert(n==Hub.POSE_RATE-2,"at most "..Hub.POSE_RATE.." a second: "..n)
+	assert(Hub.pose(player,"none",1.5,buckets),"the next second")
+	-- the screen that sees him: the move from the sequence, once
+	local Body=H.load("Client/HubBody")
+	local w={}
+	local f=Body.crowdFacts(w,10,1/60,Vector3.new(30,0,0),true,"climb",5,"Sand")
+	assert(f.climbing and not f.grounded and f.speed==30 and f.kit=="Sand","up the wall, seen")
+	f=Body.crowdFacts(w,11,1/60,Vector3.new(30,40,0),false,"leap",6,"Sand")
+	assert(f.leapAt==11 and not f.climbing,"the bound, seen")
+	f=Body.crowdFacts(w,11.2,1/60,Vector3.new(30,20,0),false,"leap",6,"Sand")
+	assert(f.leapAt==11,"the same bound is seen once")
+	-- an emote: the look he owns only, its clip on the character, played standing
+	local owned={EmoteWave="Emote.Wave",EmotePushUps="Emote.PushUps"}
+	local function grant(_,id) return owned[id] end
+	assert(Hub.pose(player,"emote:EmotePushUps",5,buckets,grant) and attrs.NinjaPose=="emote" and attrs.NinjaEmote=="Emote.PushUps","his emote")
+	assert(not Hub.pose(player,"emote:EmoteMeditate",5.1,buckets,grant),"an emote he does not own")
+	assert(Hub.emoteClip(player,"EmoteWave")=="Emote.Wave" and Hub.emoteClip(player,"KunaiGold")==nil,"the base wave; a kunai is no emote")
+	local Authored=H.load("Client/AuthoredMotion")
+	local b=Body.new(Authored);b.kit="Sand"
+	local e=Body.choose(b,{now=20,dt=1/60,speed=0,vy=0,grounded=true,kit="Sand",emote="Emote.PushUps",emoteAt=19.5})
+	assert(e.move=="Emote.PushUps" and math.abs(e.t-.5)<1e-6,"the emote played")
+	e=Body.choose(b,{now=20,dt=1/60,speed=20,vy=0,grounded=true,kit="Sand",emote="Emote.PushUps",emoteAt=19.5})
+	assert(e.move~="Emote.PushUps","he walks: the emote stops")
+	local Shop=H.load("Shared/Shop")
+	for _,id in {"EmoteWave","EmoteMeditate","EmotePushUps","EmoteLaugh","EmoteStretch","EmoteHandSeals"} do
+		local item=Shop.item(id)
+		assert(item and item.slot=="emote" and Body.clipName(Authored,"Sand",item.clip),id.." has no clip")
+	end
+end)
+
+-- (23/11, step 5, DEC-049) the REPORT button of the test place
+test("a tester's report: one sentence and its context, a few a minute",function()
+	local Reports=H.load("Server/Reports")
+	local player={UserId=42}
+	local buckets={}
+	local r=Reports.make(player,"  the wall run\nthrows me off  ",100,{phase="Hub",kit="Sand",where="1,2,3",version="abc"},buckets)
+	assert(r and r.text=="the wall run throws me off" and r.user==42 and r.phase=="Hub" and r.kit=="Sand" and r.where=="1,2,3","the report")
+	assert(Reports.make(player,"ok",101,nil,buckets)==nil and Reports.make(player,{},101,nil,buckets)==nil,"too short, not a text")
+	assert(#Reports.make(player,string.rep("a",900),102,nil,buckets).text==Reports.MAX,"cut at "..Reports.MAX)
+	assert(Reports.make(player,"third one",103,nil,buckets) and Reports.make(player,"fourth one",104,nil,buckets)==nil,"at most 3 a minute")
+	assert(Reports.make(player,"next minute",161,nil,buckets),"the next minute")
 end)
 
 print(string.format("NinjaDuel hub Konoha (DEC-038): %d PASS",passed))

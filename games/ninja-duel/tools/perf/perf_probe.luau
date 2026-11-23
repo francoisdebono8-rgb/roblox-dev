@@ -52,9 +52,11 @@ local function memory()
 	return out
 end
 local function quality()
-	local q=prop(UserSettings():GetService("UserGameSettings"),"SavedQualityLevel")
-	local level=prop(settings().Rendering,"QualityLevel")
-	return {saved=q and q.Name or nil,rendering=level and level.Name or nil}
+	-- settings() needs the Plugin capability: a game script cannot call it, so
+	-- only the player's saved level (UserGameSettings) is read.
+	local q=nil
+	pcall(function() q=UserSettings():GetService("UserGameSettings").SavedQualityLevel end)
+	return {saved=q and q.Name or nil}
 end
 
 function Probe.measure(options)

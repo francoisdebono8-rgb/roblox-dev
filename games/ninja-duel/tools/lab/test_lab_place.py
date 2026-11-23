@@ -29,9 +29,9 @@ def modules_in(text):
 
 
 class LabPlace(unittest.TestCase):
-    def test_the_four_robots_go_in_replicated_storage(self):
+    def test_the_robots_go_in_replicated_storage(self):
         mods = L.modules()
-        self.assertEqual(set(mods), {"NDDuelBot", "NDVillageBot", "NDNewPlayerBot", "NDPerfProbe"})
+        self.assertEqual(set(mods), {"NDDuelBot", "NDVillageBot", "NDNewPlayerBot", "NDPerfProbe", "NDCollisionBot", "NDScreenTour"})
         text = L.inject(PLACE, mods, "tools test")
         found = modules_in(text)
         for name, src in mods.items():
@@ -39,7 +39,7 @@ class LabPlace(unittest.TestCase):
         self.assertIn("NinjaDuel", found)
         self.assertEqual(found["NDLabTools"], "tools test")
         for src in mods.values():
-            self.assertTrue(src.rstrip().endswith("return Bot") or src.rstrip().endswith("return Probe"))
+            self.assertRegex(src.rstrip(), r"return (Bot|Probe|Tour)$")
 
     def test_a_copy_of_a_copy_keeps_one_of_each(self):
         mods = L.modules()

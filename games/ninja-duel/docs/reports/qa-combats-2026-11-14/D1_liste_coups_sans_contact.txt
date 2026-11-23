@@ -1,0 +1,36 @@
+Coups au corps qui touchent avec un écart > 1 stud (QA combats IA du 14/11, place FILM pr85, d6b748a)
+Écart = distance entre le membre qui frappe (main, avant-bras, pied, bas de jambe) et le corps de la cible, au plus près sur les 0,3 s avant la touche.
+Seuls les coups au corps (pas de jutsu lancé dans les 2 s) sont mesurés. Les secondes sont celles du match.
+
+Combat                    t (s)  Qui frappeMembre             Écart   PV  Remarque
+F01 Sasuke vs Itachi       6.54  Sasuke    RightLowerLeg     3.99 st   -5  
+F01 Sasuke vs Itachi       9.25  Itachi    LeftHand          2.54 st   -7  
+F01 Sasuke vs Itachi      18.10  Sasuke    LeftLowerArm      2.42 st   -5  
+F01 Sasuke vs Itachi      20.55  Sasuke    LeftFoot          2.50 st   -5  
+F01 Sasuke vs Itachi      28.47  Sasuke    RightFoot         1.58 st   -5  
+F02 Gaara vs Minato       11.18  Gaara     RightHand         1.37 st   -2  
+F02 Gaara vs Minato       19.40  Gaara     RightHand         3.09 st   -2  filmé : planche D1
+F02 Gaara vs Minato       20.01  Gaara     RightHand        14.91 st   -2  probablement le sable (à vérifier)
+F02 Gaara vs Minato       27.25  Minato    RightLowerLeg     1.51 st   -4  
+F02 Gaara vs Minato       33.46  Gaara     LeftHand          4.63 st   -5  
+F03 Naruto vs Kakashi     10.28  Naruto    LeftLowerArm     11.19 st   -1  probablement un clone (à vérifier)
+F03 Naruto vs Kakashi     11.48  Naruto    LeftHand          1.48 st   -3  
+F03 Naruto vs Kakashi     13.08  Naruto    RightLowerArm    20.66 st   -1  probablement un clone (à vérifier)
+F03 Naruto vs Kakashi     23.30  Naruto    RightHand         2.49 st   -2  
+F03 Naruto vs Kakashi     32.42  Naruto    LeftHand          2.67 st   -3  
+F03 Naruto vs Kakashi     37.51  Naruto    LeftHand          4.48 st   -1  
+F03 Naruto vs Kakashi     37.73  Naruto    LeftHand         19.82 st   -1  probablement un clone (à vérifier)
+F03 Naruto vs Kakashi     37.89  Naruto    LeftHand          1.71 st   -3  
+F04 Lee vs Itachi          3.58  Lee       RightLowerArm     2.00 st   -4  
+F04 Lee vs Itachi         11.84  Lee       LeftLowerLeg      2.11 st   -4  
+F04 Lee vs Itachi         32.49  Lee       LeftFoot          1.17 st   -2  
+F05 Neji vs Minato         7.26  Neji      RightLowerArm     3.34 st   -5  
+F05 Neji vs Minato        38.63  Neji      RightLowerArm     2.09 st   -5  
+F05 Neji vs Minato        42.68  Minato    LeftLowerArm      3.36 st   -8  
+F06 Sasuke vs Kakashi      3.79  Kakashi   LeftHand          2.25 st   -3  
+F06 Sasuke vs Kakashi     20.75  Sasuke    LeftLowerArm      1.60 st   -1  
+F06 Sasuke vs Kakashi     21.74  Sasuke    LeftHand          1.05 st   -2  
+F06 Sasuke vs Kakashi     36.86  Kakashi   LeftLowerArm      3.67 st   -1  
+F06 Sasuke vs Kakashi     42.84  Kakashi   LeftLowerLeg      2.38 st   -4  
+
+Total : 29 coups sur 115 coups au corps mesurés (dont 4 à plus de 10 studs, sans doute des clones de Naruto ou le sable de Gaara).

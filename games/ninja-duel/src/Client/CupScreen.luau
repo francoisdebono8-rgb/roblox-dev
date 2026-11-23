@@ -219,6 +219,8 @@ function Cup:draw(cup)
 	elseif n then
 		local a,b=nameOf(cup.seats[n.a]),nameOf(cup.seats[n.b])
 		self.subtitle.Text=string.format("%s  •  MATCH %d OF 7  •  FIRST TO TWO ROUNDS",n.roundName or "",n.match or 0)
+		-- (DESIGN 23/11, step 4) the build he entered with
+		if cup.build then self.subtitle.Text..=string.format("  •  YOUR BUILD %d / %d",cup.build.spent or 0,cup.build.budget or 100) end
 		self.nextTitle.Text=string.format("%s  •  %s  VS  %s",n.roundName or "",a,b)
 		self.lineA.Text=a..":  “"..tostring(n.lineA or "").."”"
 		self.lineB.Text=b..":  “"..tostring(n.lineB or "").."”"

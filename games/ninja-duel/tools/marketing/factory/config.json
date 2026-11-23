@@ -1,0 +1,25 @@
+{
+ "crop": "836:1487:977:279",
+ "crop_note": "9:16 window of a 2940x1912 macOS recording of Roblox Studio in full screen with the ribbon collapsed (viewport x 21-2769, y 279-1766).",
+ "names": {
+  "Legion": "NARUTO",
+  "GentleFist": "NEJI",
+  "Leaf": "ROCK LEE",
+  "Sand": "GAARA",
+  "Lion": "SASUKE",
+  "Copycat": "KAKASHI",
+  "Mirage": "ITACHI",
+  "Flashstep": "MINATO"
+ },
+ "heavy_from": 12,
+ "sfx_vol": {
+  "hit": 0.85,
+  "heavy": 0.95,
+  "whoosh": 0.5
+ },
+ "required_features": [
+  "SealJutsu",
+  "BetaRoster"
+ ],
+ "builds_dir": "../Roblox"
+}

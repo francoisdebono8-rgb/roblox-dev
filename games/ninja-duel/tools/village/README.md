@@ -90,6 +90,17 @@ Le générateur ne touche qu'au tissu entre ces repères : les maisons, les pass
 - la plus longue course en rouge ;
 - la course des toits en orange.
 
+**Ni fente ni lampadaire devant un mur** (23/11, le robot de l'OUTILLEUR) :
+- À côté d'un monument, une maison est collée (à moins de 1) ou à une ruelle (plus de 3, soit 3,9 studs dans le jeu). Jamais entre les deux : un corps s'y coince. C'est ce qui bloquait le robot entre l'hôpital et une tour, à 1,9 l'un de l'autre.
+  - La maison est étirée jusqu'au monument, ou rétrécie jusqu'à la ruelle, dans les tailles de son modèle (0,8 à 1,15).
+  - Si aucune des deux n'est possible, la fente est murée : la liste `Fills`, que `Server/Hub` construit en plâtre à la hauteur du plus bas des deux.
+  - Sur la graine 5 : 19 maisons ajustées, aucune fente murée.
+- Un lampadaire ne se tient jamais devant le milieu d'un mur qu'on court : il est à 3,5 au moins de chaque mur, ou à la jointure de deux maisons (à 1,5 du bout d'un mur). Le robot butait sur un lampadaire à 2,7 devant une machiya et ne touchait pas le mur.
+  - Le lampadaire glisse le long de sa rue, jusqu'à 14, à 8 au moins d'un autre. S'il ne trouve pas de place, il est retiré.
+  - Sur la graine 5 : 54 lampadaires glissés, aucun retiré.
+- Aucune maison sur un mur d'enceinte (Uchiha, Hyūga) : les murs sont tenus libres comme les rues. Le prouveur de l'OUTILLEUR en trouvait 12 qui traversaient une maison.
+- **Le village du jeu est passé de la graine 9 à la graine 5** (23/11 soir). Avec cette règle, la graine 9 tombait à 8,9/10. La graine 5 a 9,33/10 : un seul réseau de toits (100 %), tous les toits accessibles. Sa course fait 325 studs d'anneaux ; les médailles calculées sont 25/31/42, à mesurer de nouveau avec le robot.
+
 ### 5. On ne garde que ce qui bat l'existant
 
 `write` refuse d'écrire un candidat dont la note ne dépasse pas celle du plan du jeu.
@@ -100,7 +111,7 @@ Depuis `games/ninja-duel` :
 
 ```sh
 python3 tools/village/konoha_village.py search 24    # 24 candidats, la planche du meilleur
-python3 tools/village/konoha_village.py write 9      # écrit src/Shared/KonohaLayout.luau (graine 9)
+python3 tools/village/konoha_village.py write 5      # écrit src/Shared/KonohaLayout.luau (graine 5)
 python3 tools/village/konoha_village.py score        # la note du plan du jeu
 
 # puis, comme pour tout plan : le village que Hub.build construit, prouvé et rendu en gris
@@ -112,8 +123,9 @@ python3 tools/village/render_village.py work/map/konoha.json work/village --ring
 
 ## Ce que le jeu en lit
 
-`src/Shared/KonohaLayout.luau` garde son format. Il gagne deux listes :
+`src/Shared/KonohaLayout.luau` garde son format. Il gagne trois listes :
 - `Bridges` : les passerelles. `Server/Hub` les pose en planches entre les deux toits.
+- `Fills` : les fentes murées à côté d'un monument (vide sur la graine 5).
 - `Race` : la course des toits. C'est une boucle qui part des terrasses de THE ROOFTOPS, avec 10 anneaux sur des toits.
   - Les médailles sont calculées à partir de sa longueur, au rythme où le robot de l'OUTILLEUR a couru la première course. Il faut les mesurer à nouveau avec `tools/villagebot`.
   - `Shared/Solo` prend ces anneaux et ces médailles à la place des siens.

@@ -3,13 +3,15 @@
 
     python3 tools/lab/lab_place.py PLACES/ND-JEU.rbxlx LAB/robots/ND-JEU-robots-<commit>.rbxlx
 
-It writes a copy of the place with four ModuleScripts in ReplicatedStorage, so that a
+It writes a copy of the place with the robots' ModuleScripts in ReplicatedStorage, so that a
 Play of the copy has them without pasting anything in Studio:
 
   NDDuelBot       the simulated player (tools/duelbot: PlayerSim + the client driver)
   NDVillageBot    the village robot (tools/villagebot)
   NDNewPlayerBot  the new player's ten minutes (tools/newplayer)
   NDPerfProbe     the fluidity probe (tools/perf)
+  NDCollisionBot  what the player goes through in Konoha (tools/collision, passe 1)
+  NDScreenTour    the screens of the path and their red lines (tools/screens, passe 1)
 
 and a StringValue NDLabTools with the commit of the tools. The game itself is not
 touched: only the copy gets them, never a place of PLACES/ (the source refuses to be the
@@ -40,6 +42,8 @@ def modules() -> dict:
         "NDVillageBot": duel.strip(read("villagebot/village_bot.luau")),
         "NDNewPlayerBot": duel.strip(read("newplayer/newplayer_bot.luau")),
         "NDPerfProbe": duel.strip(read("perf/perf_probe.luau")),
+        "NDCollisionBot": duel.strip(read("collision/collision_bot.luau")),
+        "NDScreenTour": duel.strip(read("screens/screen_tour.luau")),
     }
 
 

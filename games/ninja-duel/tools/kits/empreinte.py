@@ -14,6 +14,7 @@ et la rend lisible :
     python3 tools/kits/empreinte.py AVANT.json APRES.json             avant / après
     python3 tools/kits/empreinte.py EMPREINTE.json --arbre            départ → arbre complet
     python3 tools/kits/empreinte.py EMPREINTE.json --natures          les 5 natures sur chaque kit
+    python3 tools/kits/empreinte.py AVANT.json APRES.json --etape4   Neji, Gaara, Kakashi, Itachi, Minato (23/11)
     python3 tools/kits/empreinte.py AVANT.json [APRES.json] --etape2  Naruto, Sasuke, Lee : départ réduit,
                                                                       arbre complet, les 5 natures
     ... --html page.html                                              la même chose en page
@@ -209,6 +210,8 @@ def diff(before: dict, after: dict, vb: str = "prodige", va: str = "prodige", la
 NATURES = ["Fire", "Wind", "Lightning", "Earth", "Water"]
 FR = {"Fire": "Feu", "Wind": "Vent", "Lightning": "Foudre", "Earth": "Terre", "Water": "Eau"}
 TRIO = ["Legion", "Lion", "Leaf"]  # Naruto, Sasuke, Lee : les trois kits de l'étape 2 (DEC-045)
+# (23/11, DEC-048) Neji, Gaara, Kakashi, Itachi, Minato : le départ réduit des cinq autres (étape 4)
+FIVE = ["GentleFist", "Sand", "Copycat", "Mirage", "Flashstep"]
 
 
 def effect(n: dict, dps: float) -> str:
@@ -281,12 +284,13 @@ def techniques(k: dict) -> list:
     return [t["id"] for t in k["jutsu"]["list"]]
 
 
-def etape2(before: dict, after: dict | None = None, kits: list | None = None) -> str:
-    """Les 3 kits de l'étape 2 : le départ d'un joueur avant / après le départ réduit,
-    ce que l'arbre lui rend, et l'écart départ → arbre complet."""
+def etape2(before: dict, after: dict | None = None, kits: list | None = None,
+           title: str = "Étape 2 — Naruto, Sasuke, Lee : le départ d'un joueur, et ce que l'arbre lui donne") -> str:
+    """Les kits d'une étape (les 3 de l'étape 2, les 5 de l'étape 4) : le départ d'un joueur avant /
+    après le départ réduit, ce que l'arbre lui rend, et l'écart départ → arbre complet des huit."""
     after = after or before
     kits = [k for k in (kits or TRIO) if k in after["kits"] and k in before["kits"]]
-    lines = ["Étape 2 — Naruto, Sasuke, Lee : le départ d'un joueur, et ce que l'arbre lui donne", ""]
+    lines = [title, ""]
     for kid in kits:
         b, a = before["kits"][kid]["versions"], after["kits"][kid]["versions"]
         d0, d1, t1 = techniques(b["depart"]), techniques(a["depart"]), techniques(a["arbre"])
@@ -355,6 +359,9 @@ def main(argv) -> int:
     data = [json.load(open(f, encoding="utf-8")) for f in files]
     if "--etape2" in argv:
         text = etape2(data[0], data[1] if len(data) == 2 else None) + "\n\n" + natures_report(data[-1], TRIO)
+    elif "--etape4" in argv:
+        text = etape2(data[0], data[1] if len(data) == 2 else None, FIVE,
+                      "Étape 4 — Neji, Gaara, Kakashi, Itachi, Minato : le départ d'un joueur, et ce que l'arbre lui donne")
     elif "--natures" in argv:
         text = natures_report(data[-1])
     elif len(data) == 2:

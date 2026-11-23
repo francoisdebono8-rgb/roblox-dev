@@ -41,6 +41,17 @@ Move.REGRAB=.3             -- after a kick, the same wall again not before
 function Move.new()
 	return setmetatable({runLatch=false,runMoved=false,restFor=0,leapUsed=false,jumpedAt=nil,climb=nil,climbUsed=false,kickedAt=-1,kickedFrom=nil,leapAt=nil,mantleAt=nil},Move)
 end
+-- (23/11, step 5, DEC-049) an emote in the street: the look of the emote slot
+-- (Shared/Shop id), played by his body for all to see (Server/Hub.pose). G on
+-- a keyboard; the DESIGN's emote wheel calls Move:emote(id) too.
+Move.EMOTE_KEY=Enum.KeyCode.G
+function Move:emote(id)
+	if type(id)~="string" then return end
+	local remote=self.poseRemote or game:GetService("ReplicatedStorage"):FindFirstChild("NinjaDuel") and game:GetService("ReplicatedStorage").NinjaDuel:FindFirstChild("HubPose")
+	self.poseRemote=remote
+	if remote then remote:FireServer("emote:"..id) end
+end
+
 -- (23/11, step 4, DEC-048) his body posed like a ninja by the kit's clips
 -- (Client/HubBody), in the village only; nil where the clips cannot load.
 function Move:body()
@@ -95,6 +106,12 @@ function Move.landed(m)
 	m.climb=nil;m.climbUsed=false;m.leapUsed=false
 end
 
+-- (pure) A surface the walker runs up: a NinjaWall, upright, and not the
+-- village's own wall (NinjaNoClimb, Server/Hub: the edge of the village).
+function Move.climbable(part,normal)
+	if not part or part:GetAttribute("NinjaWall")~=true or part:GetAttribute("NinjaNoClimb")==true then return false end
+	return math.abs(normal.Y)<.3
+end
 -- The ray of a frame: the wall ahead at the chest (only parts tagged
 -- NinjaWall, in the village).
 local params
@@ -105,7 +122,7 @@ local function look(character,root,direction)
 	if flat.Magnitude<.1 then return nil end
 	flat=flat.Unit
 	local hit=workspace:Raycast(root.Position,flat*Move.CLIMB_REACH,params)
-	if not (hit and hit.Instance:GetAttribute("NinjaWall") and math.abs(hit.Normal.Y)<.3) then return nil end
+	if not (hit and Move.climbable(hit.Instance,hit.Normal)) then return nil end
 	return {normal=Vector3.new(hit.Normal.X,0,hit.Normal.Z).Unit,part=hit.Instance}
 end
 
@@ -187,14 +204,42 @@ function Move:step(dt)
 		end
 	end
 	if what=="top" then self.mantleAt=os.clock() end
+	-- (23/11, step 5) the emote key, and the emote the server granted (his own
+	-- character's NinjaPose / NinjaEmote, as everyone sees it)
+	if not self.emoteBound then
+		self.emoteBound=true
+		UIS.InputBegan:Connect(function(input,processed)
+			-- (only while he walks the village: the walk was stepped just now)
+			if not processed and input.KeyCode==Move.EMOTE_KEY and os.clock()-(self.steppedAt or -10)<.5 then self:emote("equipped") end
+		end)
+	end
+	self.steppedAt=os.clock()
+	local seq=character:GetAttribute("NinjaPoseSeq")
+	if seq~=self.seenSeq then
+		self.seenSeq=seq
+		if character:GetAttribute("NinjaPose")=="emote" then self.emoteClip,self.emoteAt=character:GetAttribute("NinjaEmote"),os.clock() end
+	end
 	self.climbing=self.climb~=nil
-	-- the body, posed by the kit's clips (Client/HubBody)
+	-- (23/11, step 5) what the others need to pose him: his move, sent on change
+	local pose=if self.climb then "climb" else "none"
+	if self.leapAt and self.leapAt>(self.sentLeap or 0) then pose="leap";self.sentLeap=self.leapAt
+	elseif self.kickedAt and self.kickedAt>0 and self.kickedAt>(self.sentKick or 0) then pose="kick";self.sentKick=self.kickedAt
+	elseif what=="top" then pose="vault" end
+	if pose~=self.sentPose or pose=="leap" or pose=="kick" or pose=="vault" then
+		self.sentPose=pose
+		local remote=self.poseRemote or game:GetService("ReplicatedStorage"):FindFirstChild("NinjaDuel") and game:GetService("ReplicatedStorage").NinjaDuel:FindFirstChild("HubPose")
+		self.poseRemote=remote
+		if remote then remote:FireServer(pose) end
+	end
+	-- the body, posed by the kit's clips (Client/HubBody); the other walkers too
 	local poser=self:body()
 	if poser then
+		pcall(require(script.Parent.HubBody).poseOthers,poser.Authored,dt,root.Position)
 		local v=root.AssemblyLinearVelocity
 		pcall(poser.step,poser,character,hum,{now=os.clock(),dt=dt,speed=Vector3.new(v.X,0,v.Z).Magnitude,vy=v.Y,
 			grounded=grounded and not self.climb,climbing=self.climb~=nil,climbSpeed=Move.CLIMB,
-			leapAt=self.leapAt,kickAt=if self.kickedAt and self.kickedAt>0 then self.kickedAt else nil,mantleAt=self.mantleAt})
+			leapAt=self.leapAt,kickAt=if self.kickedAt and self.kickedAt>0 then self.kickedAt else nil,mantleAt=self.mantleAt,
+			emote=self.emoteClip,emoteAt=self.emoteAt})
 	end
 	-- Fell out of the village (into the lake's floor, off the cliff): the gate.
 	if root.Position.Y<HubMap.Origin.Y-40 then

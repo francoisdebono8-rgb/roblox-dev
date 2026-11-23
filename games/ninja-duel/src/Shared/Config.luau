@@ -195,6 +195,10 @@ return {
 	-- their masters. Live = the published game's own store (progress kept
 	-- between visits); Studio always uses the DEV store.
 	Progression = { Enabled = true, Live = true, Products = {}, MasteryPass = 0 },
+	-- (23/11, step 5, DEC-049) the private test place's PlaceId(s): there the
+	-- REPORT A PROBLEM button shows (Server/Reports sets workspace's
+	-- NinjaTestPlace). Empty until François creates the place.
+	TestPlace = { PlaceIds = {} },
 	-- (DEC-036) The player's fighter is his own Roblox avatar wearing the kit
 	-- (Server/AvatarBody); the AI's and the watched fighters stay the prodigies.
 	AvatarBody = { Enabled = true },
@@ -235,9 +239,18 @@ return {
 			-- (21/11, DEC-047) the personalization's Robux looks (Shared/CatalogStyle), SOON until created
 			HairSilver = 0, HairVoid = 0, ChakraBlackFlame = 0, ChakraGold = 0, FrameGold = 0,
 			-- (21/11, étape 3 ANIMATEUR) two shop auras in Robux (Shared/Catalog), SOON until created
+			-- (23/11, DEC-049) never sold for Robux: auras are earned (the rule of
+			-- 20/11); they stay 0 until the ANIMATEUR makes them rewards or Ryō
 			AuraThunder = 0, AuraShadow = 0 },
 		RyoPacks = { { amount = 1000, product = 0 }, { amount = 3000, product = 0 }, { amount = 8000, product = 0 } },
-		Passes = { VIP = 0, EarlyAccess = 0, BuildSlots = 0 },
+		-- (23/11, step 5, DEC-049) VIP: looks only (Server/Progression.checkVip,
+		-- attribute NinjaVIP). EARLY ACCESS and MORE BUILDS are not sold (no 9th
+		-- prodigy yet; 8 builds a kit are free). PRIVATE SERVER+ will be
+		-- PrivateServerPlus here, once the friends' tournament exists.
+		Passes = { VIP = 0 },
+		-- (23/11, step 5, DEC-049) the eight prodigies' outfits in one purchase
+		-- (Server/Progression.productFor "bundle", ProfileSchema grantItems)
+		Bundles = { { id = "SetPrologue8", product = 0, items = { "SetNaruto", "SetSasuke", "SetLee", "SetNeji", "SetGaara", "SetKakashi", "SetItachi", "SetMinato" } } },
 	},
 	AI = { Tick = 0.18, Reaction = 0.38, Aggression = 0.72, Defense = 0.58, Technique = 0.34,
 		TechniqueGap = 2.6, TechniqueJitter = 2.6, ReadGuard = 0.3, ReadDodge = 0.16, ReadPoke = 0.22, GuardRead = 0.07,

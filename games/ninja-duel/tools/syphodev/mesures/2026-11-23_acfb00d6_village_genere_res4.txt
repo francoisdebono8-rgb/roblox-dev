@@ -1,0 +1,456 @@
+  edges conservative: 0/289 components, 273 pairs tried, 154 edges, 6s
+  edges conservative: 50/289 components, 958 pairs tried, 420 edges, 8s
+  edges conservative: 100/289 components, 1172 pairs tried, 628 edges, 8s
+  edges conservative: 150/289 components, 1412 pairs tried, 860 edges, 8s
+  edges conservative: 200/289 components, 1655 pairs tried, 1092 edges, 9s
+  edges conservative: 250/289 components, 1855 pairs tried, 1272 edges, 9s
+  edges generous: 0/289 components, 283 pairs tried, 252 edges, 15s
+  edges generous: 50/289 components, 1325 pairs tried, 817 edges, 23s
+  edges generous: 100/289 components, 1810 pairs tried, 1233 edges, 25s
+  edges generous: 150/289 components, 2300 pairs tried, 1677 edges, 26s
+  edges generous: 200/289 components, 2769 pairs tried, 2103 edges, 27s
+  edges generous: 250/289 components, 3232 pairs tried, 2452 edges, 28s
+MAP  Konoha    profile konoha    1159 parts (587 structural / 572 decorative), 44208 standable nodes
+     profile values NOT measured: autoStep, charHeight, charRadius, eyeHeight
+
+[PASS         ] P1  Grounding
+                every part with a declared grounding sits as declared
+
+[FAIL         ] P10  Coplanar surfaces
+                1 pair(s) will z-fight
+                  - Crate_21 and Crate_73 share a top face at y=3.90 and overlap (7 vs 5 wide) - this flickers
+
+[FAIL         ] P11  Empty space
+                37% of 472 sampled cells have nothing within 26 studs (budget 22%)
+                  - bare around (-369, -357)
+                  - bare around (-365, -289)
+                  - bare around (-361, -269)
+                  - bare around (-361, -237)
+                  - bare around (-385, -202)
+                  - bare around (-361, -177)
+                  - bare around (-361, -141)
+                  - bare around (-385, 142)
+
+[INFO         ] P12  Entrances
+                no part declares a facing
+
+[INFO         ] P13  Feature dressing
+                no water or landmark declared
+
+[INFO         ] P14  Props in water
+                no water declared
+
+[INFO         ] P15  Clear routes
+                no routes declared
+
+[INFO         ] P16  Enclosure
+                open edges by declaration: the village ends on the forest and the cliff; HubClient returns a fallen walker to the gate
+
+[WARN         ] P2  Standable surface
+                44208 nodes across 289 walk-connected components
+                  - Step_7: has a top surface but no standable patch on it
+                  - Step_8: has a top surface but no standable patch on it
+                  - Walls_1: has a top surface but no standable patch on it
+                  - Walls_10: has a top surface but no standable patch on it
+                  - Walls_100: has a top surface but no standable patch on it
+                  - Walls_101: has a top surface but no standable patch on it
+                  - Walls_102: has a top surface but no standable patch on it
+                  - Walls_103: has a top surface but no standable patch on it
+                  - Walls_104: has a top surface but no standable patch on it
+                  - Walls_105: has a top surface but no standable patch on it
+                  - Walls_106: has a top surface but no standable patch on it
+                  - Walls_107: has a top surface but no standable patch on it
+                  - Walls_108: has a top surface but no standable patch on it
+                  - Walls_109: has a top surface but no standable patch on it
+                  - Walls_11: has a top surface but no standable patch on it
+                  - Walls_110: has a top surface but no standable patch on it
+                  - Walls_111: has a top surface but no standable patch on it
+                  - Walls_112: has a top surface but no standable patch on it
+                  - Walls_113: has a top surface but no standable patch on it
+                  - Walls_114: has a top surface but no standable patch on it
+                  - Walls_115: has a top surface but no standable patch on it
+                  - Walls_116: has a top surface but no standable patch on it
+                  - Walls_117: has a top surface but no standable patch on it
+                  - Walls_118: has a top surface but no standable patch on it
+                  - Walls_119: has a top surface but no standable patch on it
+                  - Walls_12: has a top surface but no standable patch on it
+                  - Walls_120: has a top surface but no standable patch on it
+                  - Walls_121: has a top surface but no standable patch on it
+                  - Walls_122: has a top surface but no standable patch on it
+                  - Walls_123: has a top surface but no standable patch on it
+                  - Walls_124: has a top surface but no standable patch on it
+                  - Walls_125: has a top surface but no standable patch on it
+                  - Walls_126: has a top surface but no standable patch on it
+                  - Walls_127: has a top surface but no standable patch on it
+                  - Walls_128: has a top surface but no standable patch on it
+                  - Walls_129: has a top surface but no standable patch on it
+                  - Walls_13: has a top surface but no standable patch on it
+                  - Walls_130: has a top surface but no standable patch on it
+                  - Walls_131: has a top surface but no standable patch on it
+                  - Walls_132: has a top surface but no standable patch on it
+                  - Walls_133: has a top surface but no standable patch on it
+                  - Walls_134: has a top surface but no standable patch on it
+                  - Walls_135: has a top surface but no standable patch on it
+                  - Walls_136: has a top surface but no standable patch on it
+                  - Walls_137: has a top surface but no standable patch on it
+                  - Walls_138: has a top surface but no standable patch on it
+                  - Walls_139: has a top surface but no standable patch on it
+                  - Walls_14: has a top surface but no standable patch on it
+                  - Walls_140: has a top surface but no standable patch on it
+                  - Walls_141: has a top surface but no standable patch on it
+                  - Walls_142: has a top surface but no standable patch on it
+                  - Walls_143: has a top surface but no standable patch on it
+                  - Walls_144: has a top surface but no standable patch on it
+                  - Walls_145: has a top surface but no standable patch on it
+                  - Walls_146: has a top surface but no standable patch on it
+                  - Walls_147: has a top surface but no standable patch on it
+                  - Walls_148: has a top surface but no standable patch on it
+                  - Walls_149: has a top surface but no standable patch on it
+                  - Walls_15: has a top surface but no standable patch on it
+                  - Walls_150: has a top surface but no standable patch on it
+                  - Walls_151: has a top surface but no standable patch on it
+                  - Walls_152: has a top surface but no standable patch on it
+                  - Walls_153: has a top surface but no standable patch on it
+                  - Walls_154: has a top surface but no standable patch on it
+                  - Walls_155: has a top surface but no standable patch on it
+                  - Walls_156: has a top surface but no standable patch on it
+                  - Walls_157: has a top surface but no standable patch on it
+                  - Walls_158: has a top surface but no standable patch on it
+                  - Walls_159: has a top surface but no standable patch on it
+                  - Walls_16: has a top surface but no standable patch on it
+                  - Walls_160: has a top surface but no standable patch on it
+                  - Walls_161: has a top surface but no standable patch on it
+                  - Walls_162: has a top surface but no standable patch on it
+                  - Walls_163: has a top surface but no standable patch on it
+                  - Walls_164: has a top surface but no standable patch on it
+                  - Walls_165: has a top surface but no standable patch on it
+                  - Walls_166: has a top surface but no standable patch on it
+                  - Walls_167: has a top surface but no standable patch on it
+                  - Walls_168: has a top surface but no standable patch on it
+                  - Walls_169: has a top surface but no standable patch on it
+                  - Walls_17: has a top surface but no standable patch on it
+                  - Walls_170: has a top surface but no standable patch on it
+                  - Walls_171: has a top surface but no standable patch on it
+                  - Walls_172: has a top surface but no standable patch on it
+                  - Walls_173: has a top surface but no standable patch on it
+                  - Walls_174: has a top surface but no standable patch on it
+                  - Walls_175: has a top surface but no standable patch on it
+                  - Walls_176: has a top surface but no standable patch on it
+                  - Walls_177: has a top surface but no standable patch on it
+                  - Walls_178: has a top surface but no standable patch on it
+                  - Walls_179: has a top surface but no standable patch on it
+                  - Walls_18: has a top surface but no standable patch on it
+                  - Walls_180: has a top surface but no standable patch on it
+                  - Walls_181: has a top surface but no standable patch on it
+                  - Walls_182: has a top surface but no standable patch on it
+                  - Walls_183: has a top surface but no standable patch on it
+                  - Walls_184: has a top surface but no standable patch on it
+                  - Walls_185: has a top surface but no standable patch on it
+                  - Walls_186: has a top surface but no standable patch on it
+                  - Walls_187: has a top surface but no standable patch on it
+                  - Walls_188: has a top surface but no standable patch on it
+                  - Walls_189: has a top surface but no standable patch on it
+                  - Walls_19: has a top surface but no standable patch on it
+                  - Walls_190: has a top surface but no standable patch on it
+                  - Walls_191: has a top surface but no standable patch on it
+                  - Walls_192: has a top surface but no standable patch on it
+                  - Walls_193: has a top surface but no standable patch on it
+                  - Walls_194: has a top surface but no standable patch on it
+                  - Walls_195: has a top surface but no standable patch on it
+                  - Walls_196: has a top surface but no standable patch on it
+                  - Walls_197: has a top surface but no standable patch on it
+                  - Walls_198: has a top surface but no standable patch on it
+                  - Walls_199: has a top surface but no standable patch on it
+                  - Walls_2: has a top surface but no standable patch on it
+                  - Walls_20: has a top surface but no standable patch on it
+                  - Walls_200: has a top surface but no standable patch on it
+                  - Walls_201: has a top surface but no standable patch on it
+                  - Walls_202: has a top surface but no standable patch on it
+                  - Walls_203: has a top surface but no standable patch on it
+                  - Walls_204: has a top surface but no standable patch on it
+                  - Walls_205: has a top surface but no standable patch on it
+                  - Walls_206: has a top surface but no standable patch on it
+                  - Walls_207: has a top surface but no standable patch on it
+                  - Walls_208: has a top surface but no standable patch on it
+                  - Walls_209: has a top surface but no standable patch on it
+                  - Walls_21: has a top surface but no standable patch on it
+                  - Walls_210: has a top surface but no standable patch on it
+                  - Walls_211: has a top surface but no standable patch on it
+                  - Walls_212: has a top surface but no standable patch on it
+                  - Walls_213: has a top surface but no standable patch on it
+                  - Walls_214: has a top surface but no standable patch on it
+                  - Walls_215: has a top surface but no standable patch on it
+                  - Walls_216: has a top surface but no standable patch on it
+                  - Walls_217: has a top surface but no standable patch on it
+                  - Walls_218: has a top surface but no standable patch on it
+                  - Walls_219: has a top surface but no standable patch on it
+                  - Walls_22: has a top surface but no standable patch on it
+                  - Walls_220: has a top surface but no standable patch on it
+                  - Walls_221: has a top surface but no standable patch on it
+                  - Walls_222: has a top surface but no standable patch on it
+                  - Walls_223: has a top surface but no standable patch on it
+                  - Walls_224: has a top surface but no standable patch on it
+                  - Walls_225: has a top surface but no standable patch on it
+                  - Walls_226: has a top surface but no standable patch on it
+                  - Walls_227: has a top surface but no standable patch on it
+                  - Walls_228: has a top surface but no standable patch on it
+                  - Walls_229: has a top surface but no standable patch on it
+                  - Walls_23: has a top surface but no standable patch on it
+                  - Walls_230: has a top surface but no standable patch on it
+                  - Walls_231: has a top surface but no standable patch on it
+                  - Walls_232: has a top surface but no standable patch on it
+                  - Walls_233: has a top surface but no standable patch on it
+                  - Walls_234: has a top surface but no standable patch on it
+                  - Walls_235: has a top surface but no standable patch on it
+                  - Walls_236: has a top surface but no standable patch on it
+                  - Walls_237: has a top surface but no standable patch on it
+                  - Walls_238: has a top surface but no standable patch on it
+                  - Walls_239: has a top surface but no standable patch on it
+                  - Walls_24: has a top surface but no standable patch on it
+                  - Walls_240: has a top surface but no standable patch on it
+                  - Walls_241: has a top surface but no standable patch on it
+                  - Walls_242: has a top surface but no standable patch on it
+                  - Walls_243: has a top surface but no standable patch on it
+                  - Walls_244: has a top surface but no standable patch on it
+                  - Walls_25: has a top surface but no standable patch on it
+                  - Walls_26: has a top surface but no standable patch on it
+                  - Walls_27: has a top surface but no standable patch on it
+                  - Walls_28: has a top surface but no standable patch on it
+                  - Walls_29: has a top surface but no standable patch on it
+                  - Walls_3: has a top surface but no standable patch on it
+                  - Walls_30: has a top surface but no standable patch on it
+                  - Walls_31: has a top surface but no standable patch on it
+                  - Walls_32: has a top surface but no standable patch on it
+                  - Walls_33: has a top surface but no standable patch on it
+                  - Walls_34: has a top surface but no standable patch on it
+                  - Walls_35: has a top surface but no standable patch on it
+                  - Walls_36: has a top surface but no standable patch on it
+                  - Walls_37: has a top surface but no standable patch on it
+                  - Walls_38: has a top surface but no standable patch on it
+                  - Walls_39: has a top surface but no standable patch on it
+                  - Walls_4: has a top surface but no standable patch on it
+                  - Walls_40: has a top surface but no standable patch on it
+                  - Walls_41: has a top surface but no standable patch on it
+                  - Walls_42: has a top surface but no standable patch on it
+                  - Walls_43: has a top surface but no standable patch on it
+                  - Walls_44: has a top surface but no standable patch on it
+                  - Walls_45: has a top surface but no standable patch on it
+                  - Walls_46: has a top surface but no standable patch on it
+                  - Walls_47: has a top surface but no standable patch on it
+                  - Walls_48: has a top surface but no standable patch on it
+                  - Walls_49: has a top surface but no standable patch on it
+                  - Walls_5: has a top surface but no standable patch on it
+                  - Walls_50: has a top surface but no standable patch on it
+                  - Walls_51: has a top surface but no standable patch on it
+                  - Walls_52: has a top surface but no standable patch on it
+                  - Walls_53: has a top surface but no standable patch on it
+                  - Walls_54: has a top surface but no standable patch on it
+                  - Walls_55: has a top surface but no standable patch on it
+                  - Walls_56: has a top surface but no standable patch on it
+                  - Walls_57: has a top surface but no standable patch on it
+                  - Walls_58: has a top surface but no standable patch on it
+                  - Walls_59: has a top surface but no standable patch on it
+                  - Walls_6: has a top surface but no standable patch on it
+                  - Walls_60: has a top surface but no standable patch on it
+                  - Walls_61: has a top surface but no standable patch on it
+                  - Walls_62: has a top surface but no standable patch on it
+                  - Walls_63: has a top surface but no standable patch on it
+                  - Walls_64: has a top surface but no standable patch on it
+                  - Walls_65: has a top surface but no standable patch on it
+                  - Walls_66: has a top surface but no standable patch on it
+                  - Walls_67: has a top surface but no standable patch on it
+                  - Walls_68: has a top surface but no standable patch on it
+                  - Walls_69: has a top surface but no standable patch on it
+                  - Walls_7: has a top surface but no standable patch on it
+                  - Walls_70: has a top surface but no standable patch on it
+                  - Walls_71: has a top surface but no standable patch on it
+                  - Walls_72: has a top surface but no standable patch on it
+                  - Walls_73: has a top surface but no standable patch on it
+                  - Walls_74: has a top surface but no standable patch on it
+                  - Walls_75: has a top surface but no standable patch on it
+                  - Walls_76: has a top surface but no standable patch on it
+                  - Walls_77: has a top surface but no standable patch on it
+                  - Walls_78: has a top surface but no standable patch on it
+                  - Walls_79: has a top surface but no standable patch on it
+                  - Walls_8: has a top surface but no standable patch on it
+                  - Walls_80: has a top surface but no standable patch on it
+                  - Walls_81: has a top surface but no standable patch on it
+                  - Walls_82: has a top surface but no standable patch on it
+                  - Walls_83: has a top surface but no standable patch on it
+                  - Walls_84: has a top surface but no standable patch on it
+                  - Walls_85: has a top surface but no standable patch on it
+                  - Walls_86: has a top surface but no standable patch on it
+                  - Walls_87: has a top surface but no standable patch on it
+                  - Walls_88: has a top surface but no standable patch on it
+                  - Walls_89: has a top surface but no standable patch on it
+                  - Walls_9: has a top surface but no standable patch on it
+                  - Walls_90: has a top surface but no standable patch on it
+                  - Walls_91: has a top surface but no standable patch on it
+                  - Walls_92: has a top surface but no standable patch on it
+                  - Walls_93: has a top surface but no standable patch on it
+                  - Walls_94: has a top surface but no standable patch on it
+                  - Walls_95: has a top surface but no standable patch on it
+                  - Walls_96: has a top surface but no standable patch on it
+                  - Walls_97: has a top surface but no standable patch on it
+                  - Walls_98: has a top surface but no standable patch on it
+                  - Walls_99: has a top surface but no standable patch on it
+                  - note: 166 component(s) made only of decoration were not analysed: decoration is never a declared destination
+
+[INFO         ] P21  Performance budget
+                no meshes placed; 1159 instances
+
+[PASS         ] P2b  Recovery margin
+                no return route runs the climb budget to zero
+
+[FAIL         ] P3  Intent match
+                declared reachability vs computed
+                  - LakeBed_1: reachable but the spec never says it should be
+                  - Wall_1: possibly reachable and not declared
+                  - Wall_2: possibly reachable and not declared
+                  - Wall_3: possibly reachable and not declared
+                  - Wall_4: possibly reachable and not declared
+                  - Wall_5: reachable but the spec never says it should be
+                  - Wall_6: reachable but the spec never says it should be
+                  - Wall_7: reachable but the spec never says it should be
+                  - Wall_8: reachable but the spec never says it should be
+                  - Wall_9: reachable but the spec never says it should be
+                  - Wall_10: reachable but the spec never says it should be
+                  - Wall_11: reachable but the spec never says it should be
+                  - Wall_12: reachable but the spec never says it should be
+                  - Ladder_1: reachable but the spec never says it should be
+                  - Ladder_2: reachable but the spec never says it should be
+                  - Ladder_3: reachable but the spec never says it should be
+                  - Ladder_4: reachable but the spec never says it should be
+                  - Fence_1: reachable but the spec never says it should be
+                  - Fence_2: reachable but the spec never says it should be
+                  - Fence_3: reachable but the spec never says it should be
+                  - Fence_4: reachable but the spec never says it should be
+                  - Fence_5: reachable but the spec never says it should be
+                  - Fence_6: reachable but the spec never says it should be
+                  - Step_1: reachable but the spec never says it should be
+                  - Step_2: reachable but the spec never says it should be
+                  - Step_3: reachable but the spec never says it should be
+                  - Step_4: reachable but the spec never says it should be
+                  - Step_5: reachable but the spec never says it should be
+                  - Step_6: reachable but the spec never says it should be
+                  - Step_9: reachable but the spec never says it should be
+                  - Step_10: reachable but the spec never says it should be
+                  - Step_11: reachable but the spec never says it should be
+                  - Step_12: reachable but the spec never says it should be
+                  - Step_13: reachable but the spec never says it should be
+                  - Step_14: reachable but the spec never says it should be
+                  - Step_15: reachable but the spec never says it should be
+                  - Step_16: reachable but the spec never says it should be
+                  - Step_17: reachable but the spec never says it should be
+                  - Step_18: reachable but the spec never says it should be
+                  - Step_19: reachable but the spec never says it should be
+                  - Step_20: reachable but the spec never says it should be
+                  - Step_21: reachable but the spec never says it should be
+                  - Step_22: reachable but the spec never says it should be
+                  - Step_23: reachable but the spec never says it should be
+                  - Step_24: reachable but the spec never says it should be
+                  - TerraceRail_1: reachable but the spec never says it should be
+                  - TerraceRail_2: reachable but the spec never says it should be
+                  - TerraceRail_3: reachable but the spec never says it should be
+                  - Fence_7: reachable but the spec never says it should be
+                  - Fence_8: reachable but the spec never says it should be
+                  - Fence_9: reachable but the spec never says it should be
+                  - Fence_10: reachable but the spec never says it should be
+                  - Fence_11: reachable but the spec never says it should be
+                  - Fence_12: reachable but the spec never says it should be
+                  - Fence_13: reachable but the spec never says it should be
+                  - Fence_14: reachable but the spec never says it should be
+                  - Fence_15: reachable but the spec never says it should be
+                  - Fence_16: reachable but the spec never says it should be
+                  - Fence_17: reachable but the spec never says it should be
+                  - Fence_18: reachable but the spec never says it should be
+                  - Fence_19: reachable but the spec never says it should be
+                  - Fence_20: reachable but the spec never says it should be
+                  - Fence_21: reachable but the spec never says it should be
+                  - Ladder_5: reachable but the spec never says it should be
+                  - Roof_35: intended reachable, but only via the generous envelope
+                  - Ladder_6: reachable but the spec never says it should be
+                  - Ladder_7: reachable but the spec never says it should be
+                  - Roof_45: intended reachable, but only via the generous envelope
+                  - Roof_48: intended reachable, but only via the generous envelope
+                  - Roof_49: intended reachable, but only via the generous envelope
+                  - Ladder_8: reachable but the spec never says it should be
+                  - Roof_63: intended reachable, but only via the generous envelope
+                  - Ladder_9: possibly reachable and not declared
+                  - Roof_83: intended reachable, but only via the generous envelope
+                  - Ladder_10: reachable but the spec never says it should be
+                  - Ladder_11: reachable but the spec never says it should be
+                  - Roof_103: intended reachable, but only via the generous envelope
+                  - Ladder_12: reachable but the spec never says it should be
+                  - Roof_125: intended reachable, but only via the generous envelope
+                  - Roof_126: intended reachable, but only via the generous envelope
+                  - Roof_148: intended reachable, but only via the generous envelope
+                  - Roof_149: intended reachable, but only via the generous envelope
+                  - Ladder_13: reachable but the spec never says it should be
+                  - Roof_161: intended reachable, but only via the generous envelope
+                  - Ladder_14: reachable but the spec never says it should be
+                  - Roof_184: intended reachable, but only via the generous envelope
+                  - Roof_185: intended reachable, but only via the generous envelope
+                  - Ladder_15: reachable but the spec never says it should be
+                  - Ladder_16: reachable but the spec never says it should be
+                  - Ladder_17: reachable but the spec never says it should be
+                  - Ladder_18: reachable but the spec never says it should be
+                  - Roof_221: intended reachable, but only via the generous envelope
+                  - Roof_226: intended reachable, but only via the generous envelope
+                  - Ladder_19: reachable but the spec never says it should be
+                  - Roof_229: intended reachable, but only via the generous envelope
+                  - Ladder_20: possibly reachable and not declared
+                  - Roof_237: intended reachable, but only via the generous envelope
+                  - Ladder_21: reachable but the spec never says it should be
+                  - Roof_244: intended reachable, but only via the generous envelope
+                  - ['TerraceRail_2']: reachable, but nothing leads back to a spawn
+
+[PASS         ] P4  Anchor legitimacy
+                every declared anchor is solid, visible and in range
+
+[INFO         ] P5  Sightlines
+                no sightline band declared
+
+[FAIL         ] P6  Overlap
+                12 interpenetrating pair(s)
+                  - Edge_1 and Edge_3 overlap by 22.75 studs
+                  - Edge_1 and Edge_4 overlap by 22.75 studs
+                  - Edge_2 and Edge_3 overlap by 20.15 studs
+                  - Edge_2 and Edge_4 overlap by 20.15 studs
+                  - Wall_5 and Roof_55 overlap by 1.30 studs
+                  - Wall_5 and Walls_55 overlap by 2.34 studs
+                  - Wall_10 and Walls_21 overlap by 1.95 studs
+                  - Wall_10 and Walls_44 overlap by 1.95 studs
+                  - Wall_11 and Walls_72 overlap by 1.17 studs
+                  - Wall_12 and Walls_28 overlap by 1.24 studs
+                  - Wall_12 and Walls_69 overlap by 1.30 studs
+                  - Face_2 and TerraceRail_3 overlap by 1.04 studs
+                  - Wall_5 and Walls_24 overlap by 0.06 studs
+                  - Wall_8 and Walls_41 overlap by 0.06 studs
+                  - Wall_8 and Roof_50 overlap by 0.45 studs
+                  - Wall_8 and Walls_50 overlap by 0.45 studs
+                  - Wall_12 and Walls_68 overlap by 0.91 studs
+                  - Wall_12 and Walls_70 overlap by 0.58 studs
+                  - Wall_12 and Walls_71 overlap by 0.91 studs
+                  - Wall_12 and Walls_72 overlap by 0.65 studs
+                  - TerraceRail_1 and TerraceRail_3 overlap by 0.65 studs
+                  - Ladder_5 and Roof_79 overlap by 0.42 studs
+                  - Ladder_5 and Walls_79 overlap by 0.42 studs
+                  - Roof_35 and Ladder_9 overlap by 0.74 studs
+                  - Walls_35 and Ladder_9 overlap by 0.74 studs
+                  - Roof_127 and Ladder_17 overlap by 0.81 studs
+                  - Walls_127 and Ladder_17 overlap by 0.81 studs
+
+[WARN         ] P7  Role coverage
+                a shipped tech has no home in this map
+                  - wallClimb is shipped but no part serves it (wanted a part with role wallride)
+                  - roles: arena_floorx5, core_accessx45, high_groundx249, wallx288
+
+[INFO         ] P8  Symmetry
+                no congruent ring of 3 or more parts to check
+
+[INFO         ] P9  Ring-out counterplay
+                no ring-out declared
+
+RESULT: FAIL
+(konoha_prove: 44s at res 4.0)

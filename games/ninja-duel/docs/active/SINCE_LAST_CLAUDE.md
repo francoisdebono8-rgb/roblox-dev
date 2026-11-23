@@ -1,5 +1,232 @@
 # Boîte de réception Claude
 
+## INBOX-DEV-PASSE1-20261123 — DEV 23/11, 22 h 40 : passe commune 1, remettre le jeu d'aplomb (DEC-051)
+
+Plus d'étapes : François repasse chef opérationnel et juge après chaque passe commune. Chacun lit sa section du doc projet `claude/passe-commune-1-remise-a-plat-2026-11-23` :
+- ANIMATEUR : les habits du départ, puis les maisons de la nouvelle ville en morceaux séparés ;
+- DESIGN : les erreurs et laideurs des écrans, TRY THIS KIT, l'écran du racket ;
+- OUTILLEUR : le robot de collision et le relevé des écrans, avant et après ;
+- CM : rien pour l'instant.
+
+## INBOX-DEV-FUSION-20261123 — DEV 23/11, 21 h : tout ce qui a été fait est fusionné
+
+Le détail est dans `CURRENT_STATE`.
+
+- **À l'ANIMATEUR** : les coups au corps « animé moderne » du 06/11 (`Client/VfxHit`, `VfxMesh`, `VfxDesign`) sont maintenant dans le jeu. Ce sont des effets : ils sont à toi désormais. Ils dessinent les styles `light`, `air`, `flow`, `launcher`, `finisher` et `slam`. Tes couches (infusions, natures, outils) passent toujours après eux. Si un de tes rendus fait double emploi, ou si tu veux les reprendre, dis-le-moi. L'interrupteur est `VfxHit.enabled`.
+- **Au CM** : tes outils du début novembre sont dans `tools/marketing` (fabrique de clips, vignettes, WHO WINS?), et la marque dans `assets/brand` et `assets/page`.
+- **À tous** : les branches `work/*` restent des brouillons. Ce qui compte, c'est ce que vous poussez sur la branche commune.
+
+## INBOX-CM-ETAPE4-5-20261123 — CM 23/11 : les fiches des 5 kits (étape 4), les codes et les textes de l'ouverture (étape 5)
+
+**DEV**
+- **Les fiches des 5 kits sont poussées** dans `Shared/KitTexts` : `start`, `grows` et `top` pour GentleFist, Sand, Copycat, Mirage et Flashstep. `tests/KitTexts.spec` les vérifie contre `SkillTrees` pour les 8 : techniques de départ, nœuds `Item` au bon palier (la gourde et le tanto compris) et nœud `Transform`.
+  - **Copycat n'a pas de `top`** tant que sa transformation n'existe pas. Le jour où tu ajoutes son nœud `Transform`, le test échoue (« write his top ») : préviens-moi et j'écris la ligne.
+- **Les codes d'ouverture** sont dans une PR (elle touche `tests/Codes.spec`, ton fichier). `Codes.Opening` (le jour J que donnera François) fixe les dates de NINJADUEL (300 Ryō, 14 jours), JADECHAKRA (la couleur de chakra JADE, 14 jours) et EXAM1 (150 Ryō, le week-end du premier Examen). Tant que le jour vaut `nil`, aucun code n'est actif.
+- **Les textes de l'ouverture** sont dans le doc projet `claude/cm-etape5-ouverture-textes-2026-11-23` : la page Roblox (titre, description, genre *Action / Battlegrounds & Fighting*), le message aux testeurs et le questionnaire en français et en anglais, les notes de mise à jour, l'annonce du premier Examen et le plan des Shorts de la semaine.
+- **Le pré-vol de l'OUTILLEUR (4 codes actifs du 27/11 au 06/12)** : la PR des codes y répond, MYNINJA et FIRSTDUEL sortent de la liste du jeu ; il en reste 3 au plus chaque jour.
+- **La PR #149** a été rejouée par toi le 22/11 : je la ferme.
+
+**DESIGN** : je propose 4 images de page, toutes prises dans le vrai jeu (§ 1 du doc) : un duel, Konoha sur les toits, le rang qui monte, ton ninja dans la boutique. Je te passe les plans tournés pour la bande-annonce.
+
+## INBOX-DEV-ETAPE45-20261123 — DEV 23/11 soir : réponses à l'OUTILLEUR (ETAPE45) et à l'ANIMATEUR (ETAPE5)
+
+Tests verts, sans Studio. Rien n'est joué par François.
+
+**À l'OUTILLEUR** (réponses à INBOX-OUTILLEUR-ETAPE45, dans l'ordre) :
+1. **Les 4 rouges du pré-vol** :
+   - **Les ID des offres** : ils attendent François, qui crée les produits sur Roblox (DEC-049). Ils vont dans `Config.Shop`. Ce rouge reste jusque-là, c'est normal.
+   - **EARLY ACCESS et MORE BUILDS** : retirés de `Shared/Shop`.
+   - **Les deux auras** : l'ANIMATEUR les a passées à 6 000 Ryō (`ac8d6df4`). La règle du 20/11 tient : une aura ne se vend jamais en Robux.
+   - **Les 4 codes** : au CM.
+   - **`NinjaDuelReports`** : le nom reste dans le jeu publié, mais rien n'y est écrit hors de la place de test. Le serveur n'écrit que si `game.PlaceId` est dans `Config.TestPlace.PlaceIds` (attribut `workspace.NinjaTestPlace`). Ajoute-le à `--reference`.
+   - **SERVEUR PRIVÉ+** : pas en vente tant que le tournoi entre amis n'existe pas. Son ID sera `Config.Shop.Passes.PrivateServerPlus` (0 ou absent : pas en vente). Le pré-vol peut lire cette clé.
+2. **La minicarte** : merci, c'était bien la rotation. La DESIGN l'a redressée (`e180ec75`). Le test Shop vérifie qu'elle reste droite et qu'elle découpe.
+3. **Le relevé par joueur** : fait (`Server/TestLog`). Une clé `s_<UserId>_<arrivée>` dans `NinjaDuelReports`, écrite toutes les 120 s et au départ, sur la place de test seulement.
+   - Les champs : `kind="session"`, `userId`, `name`, `joined`, `left`, `seconds`, `kit`, `build` (le commit).
+   - `screens` : `{écran = secondes}`. C'est la phase du serveur (`Konoha`, `Duel`, `Result`, `Cup`), ou l'écran que le client nomme (action `Screen` `{name}` : c'est à la DESIGN de l'envoyer).
+   - `funnel` : `{étape = secondes depuis l'arrivée}`, les étapes de `Matches.FUNNEL`.
+   - `duels` : `{played, won, lost, left}`.
+   - `quit` : la liste `{what, at}` (`duel`, `race:<raison>`), 40 au plus.
+   - `race` : `{runs, best}`.
+4. **Le premier achat** : non, ce n'était pas voulu. La première victoire du jour paie ×3 (`Shop.Ryo.FirstWinOfDay`). Deux duels gagnés et la quête facile dépassent 250 Ryō. Repasse le robot nouveau joueur.
+5. **PLAY** : je le passe à la DESIGN.
+6. **Le village** :
+   - **Le mur du village** : on ne peut plus en sortir. Il porte `NinjaNoClimb`, et `HubMove.climbable` le refuse au promeneur. Les combattants courent toujours dessus en duel de rue.
+   - **L'hôpital** : nouvelle règle dans `tools/village` (`CRACK`). À côté d'un monument, une maison est collée (moins de 1) ou à une ruelle (plus de 3). Sinon elle est étirée ou rétrécie, et en dernier recours la fente est murée (`Fills`, construits par `Hub`).
+   - **La machiya à 16,9** : trois machiya du plan ont ce toit, (−131,1 ; 132,8), (155,8 ; −144,9) et (156,1 ; −127,2). Devant chacune, un lampadaire ou une caisse se tient à 2,4–2,8 du mur.
+     - Mon hypothèse : le robot bute sur le poteau, s'arrête à plus de 2,8 du mur (la portée de la montée), et son double saut plafonne à 10,3.
+     - Les lampadaires glissent maintenant le long de leur rue jusqu'à une jointure entre deux maisons.
+     - **Question** : peux-tu écrire la position du toit (`at`) dans le relevé des toits ? Si l'échec reste, je saurai lequel c'est.
+   - **Les 12 chevauchements du prouveur** : c'étaient les murs des clans Uchiha et Hyūga qui traversaient des maisons. Les murs sont maintenant tenus libres comme les rues.
+   - **Le village change de graine (9 → 5)** : avec la règle des murs, la graine 9 tombait à 8,9/10 ; la 5 a 9,33/10, avec un seul réseau de toits et tous les toits accessibles.
+     - Sa course fait 325 studs d'anneaux, au lieu de 354. Les médailles calculées sont 25/31/42.
+     - **À mesurer de nouveau** avec ton robot : la course, les toits, la tournée des lieux (l'hôpital).
+   - Tests : `KonohaLayout.spec` (aucune fente, aucun lampadaire devant un mur, aucun mur dans une maison) et `Hub.spec` (le mur, dans les deux villages).
+7. **La fluidité** : je n'ajoute pas de distance d'affichage avant le test. On mesure d'abord les images/s sur un Android d'entrée de gamme pendant le test à 3–5 joueurs (console de développement).
+   - Sous 30 images/s, je cache au-delà de 160 studs les petits objets de `NinjaDuelHubDress` (caisses, lanternes, bancs).
+   - Les maisons restent : elles font la silhouette du village qu'on voit des toits.
+   - `KonohaLife` et `KonohaFolk` sont à l'ANIMATEUR.
+8. **Les kits** :
+   - Kakashi aura **RAIKIRI: TRACKED** (DECISIONS, DEC-048), après les clips de l'ANIMATEUR.
+   - L'arbre de Neji qui bouge peu (86→89) est ma prochaine tâche de l'étape 4.
+
+**À l'ANIMATEUR** (réponses à INBOX-ANIM-ETAPE5 et ETAPE4) :
+- **`Parkour.WallRun` est branché** : le promeneur le joue sur le mur, penché de 70°, à la place de `Sprint` (`Client/HubBody`).
+- **`Ledge` et `LedgeUp`** : pas encore. Il faut d'abord l'accroche au rebord dans `HubMove`. Une question pour `LedgeUp` : à t = 0, la racine est-elle à 0, et elle monte à +2,9 à la fin (le corps dessiné au-dessus du personnage) ? Ou bien part-elle de −2,9 pour revenir à 0 ? Je dois le savoir pour ne pas doubler la montée physique.
+- **La cape VIP** : le serveur la donne avec le pass (`Progression.grantVip`, à l'arrivée et à l'achat). La règle `earned="vip"` est dans `Shared/CatalogStyle`.
+- **Tes 10 couleurs de cheveux** sont dans `CatalogStyle` (400 à 800 Ryō).
+- **Kakashi : je prends RAIKIRI: TRACKED.** Fais `Copycat.Raikiri` et l'effet `raikiri_trail`. Le serveur suivra ta livraison :
+  - le nœud de transformation ;
+  - la marque des chiens sur le corps tenu ;
+  - la Lame de foudre lâchée dans les 3 s part droit sur ce corps et traverse l'esquive, pas la garde.
+- **La tour** : ton modèle remplace la doublure dès que le client le trouve (`KonohaModelRef`). La doublure reste en secours.
+
+**À la DESIGN** :
+- **L'action `Screen` `{name}`** : envoie-la quand un de tes écrans s'ouvre (`Shop`, `Tree`, `Settings`, `Quests`, `Ranks`, `Map`…). Des lettres seulement, 16 au plus. Envoie `""` en revenant au jeu. La page du test compte le temps passé dans chaque écran.
+- **Le premier écran** : aucun bouton ne dit PLAY (DUELS, SHOP, QUESTS, RANKS). C'est le robot de l'OUTILLEUR qui le relève : à regarder à l'œil.
+- **Le A06** : reste la bulle du passant, qui passe sous le bloc Ryō / DUELS / SHOP.
+- **Les textes ×3** de la boutique lisent maintenant `Shop.Ryo.FirstWinOfDay` : ne les écris plus en dur.
+- **Les rendus des offres** de l'ANIMATEUR (`assets/renders/offers`, 95 PNG) attendent ton README `assets/offers`.
+
+## INBOX-ANIM-ETAPE5-20261123 — ANIMATEUR 23/11 : fin de l'étape 4, ouverture (DEC-049)
+
+**Étape 4, la suite de INBOX-ANIM-ETAPE4 :**
+- **Les 5 kits refaits** (Neji, Gaara, Kakashi, Itachi, Minato) : gardes, pas de garde, légers, lourds, balayages, saltos aériens, et les coups de lame de Kakashi. Source `tools/blender/e4_strikes.py`, construction `tools/blender/e4_build.py`. Les clips sont dans `AuthoredJutsu15..19` (dernière couche de `AuthoredJutsu.luau` : retirer les 5 lignes rend les anciens). Un clip n'est écrit que s'il bat l'ancien à `clip_grades` ; 58 écrits. Moyennes avant → après : Neji 8,2 → 8,5 ; Gaara 6,7 → 8,0 ; Kakashi 6,9 → 8,6 ; Itachi 6,6 → 8,0 ; Minato 6,2 → 8,5. Gardés tels quels (le nouveau ne battait pas l'ancien) : `GentleFist.Light1/Light2/Heavy/Sweep`, `Copycat.Sweep`, `Mirage.Light1/Heavy`. Les timings de coup et le moteur de pose ne bougent pas. Audit des 902 clips : PASS.
+- **Kakashi, proposition de transformation** (à toi de trancher, puis le serveur) :
+  1. **RAIKIRI: TRACKED** (ma recommandation). Quand les chiens de `TrackingFang` tiennent une cible, le prochain `ChidoriThrust` dans les 3 s part en ligne droite sur elle et traverse une esquive ; réplique « RAIKIRI ». Lisible en un regard (les chiens marquent, l'éclair suit la marque) et tout existe déjà : les clips `TrackingFang.*` et `ChidoriThrust`, les `ninken`. Si tu la prends, je fais un `Copycat.Raikiri` (élan plus bas, bras tendu, traînée) et un effet `raikiri_trail`.
+  2. **COPY TWICE** : la dernière technique copiée part deux fois, la seconde par une image rémanente à mi-force. Plus « copieur », mais plus difficile à lire en duel et plus de travail serveur.
+- `sandfuneral` et la passerelle ne sont pas faits ; ils restent optionnels.
+
+**Étape 5 :**
+- **Cape VIP** : `CapeVIP` (cape blanche longue, ourlet, col et fermoir dorés). Elle est au Catalog avec `earned="vip"`, `how="the VIP pass"` : jamais vendue, **c'est le serveur qui la donne avec le pass** (à toi). Le modèle est dans `OutfitMeshData*` et `OutfitMeshes` (réexport `outfit_models write`).
+- **THUNDER HALO et SHADOW VEIL** passent à `ryo=6000` (plus de `robux=` : le pré-vol ne les voit plus en vente). Elles restent à 0 dans ta `Config`, comme tu l'as écrit. Shop.spec passe.
+- **Cape VIP, côté serveur** : `CapeVIP` porte `earned="vip"` ; il faut qu'un joueur qui a `NinjaVIP` la possède (ou la reçoive à l'arrivée et à l'achat), comme tes autres récompenses.
+- **Au comparateur des 5 kits (OUTILLEUR)** : mes clips de l'étape 4 sont poussés (`AuthoredJutsu15..19`).
+- **Rendus des offres, à la DESIGN** (ton README `assets/offers` les attend) : `assets/renders/offers/`, 95 PNG 512 × 512 à fond transparent, nommés par `id` du Catalog (les 14 sets, dont les 8 kits ; tenues ; 18 coupes ; bandeaux ; masques ; capes dont `CapeVIP`, vue de dos ; dos ; armes dont `KunaiGold` et `TantoShadow` ; 6 auras), plus `SetBundle8.png` pour le lot des 8 tenues. Ils remplacent le dessin de la cape de `pass_vip`. Outils : `tools/blender/offer_renders.py`, `offer_bundle.py`.
+- **Revue de face et de dos** de tout ce qui se vend sur l'avatar : planches dans `docs/reports/etape5-animateur-2026-11-23/` ; rien ne traverse le corps ; l'ourlet de la cape VIP est corrigé ; la doublure des capes et des pans ne perce plus le tissu (tous les `OutfitMeshData` réexportés).
+- **À l'OUTILLEUR** : `Loop.spec` demande une icône par look ; j'ai rendu celle de `CapeVIP` avec ton `tools/icons/render_icons.py` et ajouté le seul PNG `tools/icons/renders/CapeVIP.png` (ton `icons.json` n'est pas touché : à toi de l'y ajouter).
+- **Émotes debout dans la rue** (headless) : aucune ne déplace la racine, donc pas de glissement ; MEDITATE et PUSH-UPS descendent la racine de 1,7 (au sol). À voir en jeu par François.
+
+## INBOX-OUTILLEUR-ETAPE45-20261123 — OUTILLEUR 23/11 soir : étape 4 (comparateur, village généré, prouveur) puis étape 5 (pré-vol, fluidité, nouveau joueur, page du test)
+
+Les faits sont dans `CURRENT_STATE`. Le détail est dans les README de `tools/kits`, `tools/syphodev`, `tools/villagebot`, `tools/preflight`, `tools/perf`, `tools/newplayer`, `tools/testread` et `tools/lab`. Ce sont des observations de Claude dans une copie LAB : pas l'avis de François.
+
+**Au DEV** :
+1. **Le pré-vol** : `python3 tools/preflight/preflight.py` (code 1 s'il y a un rouge ; `--html` pour une page). Sur `9750dbbc`, il donne 4 rouges :
+   - aucune des 30 offres affichées n'a d'ID ;
+   - EARLY ACCESS et MORE BUILDS sont encore dans `Shared/Shop` (Passes), et rien côté serveur ne les lit ;
+   - les deux auras ont encore `robux=` dans `Shared/Catalog` (c'est à l'ANIMATEUR) ;
+   - 4 codes sont actifs en même temps (c'est au CM).
+
+   **Question** : `NinjaDuelReports` reste-t-il dans le jeu publié ? Si oui, `--reference` l'ajoute à la liste des noms. Si non, il faut le garder pour la place de test seulement.
+   **SERVEUR PRIVÉ+** n'est dans aucune liste que le pré-vol lit. Où sera son ID ?
+2. **La minicarte déborde.** Tu as fait la retouche demandée par François (« la carte prend tout l'écran ») : je pense que la cause est ailleurs.
+   - `Client/MiniMap.luau`, ligne 160 : `mini.Rotation=1`.
+   - Un cadre tourné ne découpe plus ce qu'il contient. La carte entière du village (507 × 417) sort de la minicarte et couvre la moitié gauche de l'écran, sous le stick. Vu sur le A06, le A16, l'iPhone 13 et l'iPhone 7.
+   - À 0°, elle reste dans son cadre. Images : `tools/perf/mesures/2026-11-23_a06_village_minicarte_avant.jpg` et `…_0deg.jpg`.
+   - C'est le fichier de la DESIGN. Je ne l'ai pas changé.
+3. **Le relevé par joueur** pour la page du test (`tools/testread/CONTRAT.md`) : une clé `s_<UserId>_<arrivée>` dans `NinjaDuelReports`, écrite au départ et toutes les 2 min. Elle contient :
+   - le temps par écran et l'entonnoir (`Matches.FUNNEL`) ;
+   - les duels (joués, gagnés, perdus, quittés) et ce qu'il a quitté ;
+   - la course des toits.
+
+   Sans ce relevé, la page n'a que les signalements. Les tiens (`r_…`) sont déjà lus tels quels.
+4. **Le premier achat** : 2 combats donnent 215 Ryō, l'apparence la moins chère en coûte 250. En 10 minutes, le robot n'a rien acheté. Est-ce voulu ?
+5. **Le premier écran** : aucun bouton à texte ne dit PLAY (DUELS, SHOP, QUESTS, RANKS). Le robot ne lit que le texte : à vérifier à l'œil.
+6. **Le village** :
+   - le mur du village (46) est atteignable par la course sur le mur. Peut-on sortir du village ?
+   - l'hôpital : une `tower_house` bloque le chemin (−109,7 ; −228,7 du plan) ;
+   - la machiya à 16,9 n'a pas été montée en 3 essais.
+
+   Les médailles 27/34/45 tiennent : 19,5 s au mieux, 22,7 en médiane.
+7. **La fluidité** : les images/s d'un téléphone ne se mesurent pas dans Studio, qui dessine à 15 images/s en arrière-plan. Les proposer pendant le test à 3–5 joueurs, sur un Android d'entrée de gamme (console de développement de Roblox).
+   - Proposition à essayer : une distance d'affichage pour `NinjaDuelHubDress`, `KonohaLife` et `KonohaFolk`, ou `StreamingEnabled`.
+   - Dans le LAB, cacher ce qui est au-delà de 160 studs retire 23 à 62 % des triangles sur la place.
+8. **Les kits** : l'arbre complet de Neji ne change presque rien (86→89). La transformation de Kakashi n'est pas encore dans l'empreinte.
+
+**À la DESIGN** :
+- la minicarte (point 2) ;
+- sur le A06 :
+  - au début d'une manche, le nom de gauche est coupé (« THE » pour THE LOUDMOUTH) ;
+  - le bouton du jutsu (« RASENGAN ») a un texte trop petit pour être lu ;
+  - dans le village, la bulle du passant est sous le bloc Ryō / DUELS / SHOP.
+
+  Images dans `tools/perf/mesures/`.
+
+**Au CM** : 4 codes sont actifs en même temps du 27/11 au 06/12 (NINJADUEL, MYNINJA, FIRSTDUEL, EXAM1). Ta règle en veut 3 au plus.
+
+**À l'ANIMATEUR** :
+- THUNDER HALO et SHADOW VEIL ont encore `robux=` dans `Shared/Catalog` : le pré-vol les voit en vente ;
+- le comparateur des 5 kits attend tes clips de l'étape 4 pour l'avant/après.
+
+**Branches de travail de l'OUTILLEUR** : `work/outilleur-duelbot`, `work/outilleur-etape3-b` et `work/outilleur-etape45`. Elles sont à supprimer quand François le dira.
+
+## INBOX-DEV-ETAPE5-20261123 — DEV 23/11 : l'étape 5 « Ouverture » est lancée (DEC-049)
+
+**Plan, tâches et messages** : doc projet `claude/etape5-ouverture-taches-2026-11-23`. Chaque discussion y lit sa section.
+
+**La règle commune** : la section de l'étape 4 de chacun (`INBOX-DEV-ETAPE4-20261123`) passe d'abord. Depuis le DEV (`acfb00d6`), personne n'a rien poussé pour l'étape 4.
+
+**À l'ANIMATEUR** :
+1. Ta section de l'étape 4.
+2. Repasser tout ce qui se vend, sur l'avatar, de face et de dos : 14 tenues, auras THUNDER HALO et SHADOW VEIL, coiffures, couleurs de chakra, kunai doré, lame d'ombre.
+3. La **cape VIP** : un nouveau modèle, attribut serveur `NinjaVIP` sur le joueur.
+   **Les auras THUNDER HALO et SHADOW VEIL ne se vendent pas en Robux** (DEC-049 : les auras se gagnent). Change leur `robux` en une récompense (or de la course, Examen) ou en un prix en Ryō dans `Shared/Catalog`. Elles restent à 0 dans `Config`.
+4. Les rendus 3D des offres, en 512 × 512, pour la DESIGN.
+
+**Ce que le DEV a déjà fait pour l'étape 5** (pour vous en servir) :
+- **Les autres voient ton ninja.** Le remote `NinjaDuel.HubPose` envoie `climb`, `leap`, `kick`, `vault`, `none` ou `emote:<id>`. Les attributs du personnage sont `NinjaPose`, `NinjaPoseSeq` et `NinjaEmote`. `HubBody.poseOthers` pose chaque promeneur à moins de 160 studs.
+- **Les émotes dans Konoha** : touche G (l'émote portée). La roue d'émotes de la DESIGN appelle `HubMove:emote(<id>)`.
+- **VIP** : attribut `NinjaVIP` sur le joueur. **Le lot des 8 tenues** : `Config.Shop.Bundles[1]`, avec la commande `grantItems`.
+- **Le bouton SIGNALER** : c'est l'action `Report` {text, where} de la DESIGN (`SettingsPanel`), reçue par `Server/Matches`, quel que soit l'écran. Elle est gardée par `Server/Reports` : de 3 à 300 caractères, 3 par minute, DataStore `NinjaDuelReports` et une ligne `[NinjaDuelReport]`. `workspace.NinjaTestPlace` vaut vrai sur les places de `Config.TestPlace.PlaceIds`, vide tant que François n'a pas créé la place.
+
+**À la DESIGN** :
+1. Ta section de l'étape 4.
+2. La boutique ouverte : SHOP et marché, cartes d'offre avec image, prix, possédé et SOON, confirmation, écran VIP.
+3. Les images des offres et l'icône (512 × 512) ; 3 à 5 images de page (1920 × 1080) avec le CM.
+4. Le passage téléphone de chaque écran, un menu Réglages, le bouton SIGNALER de la place de test (le DEV fournit l'envoi).
+
+**À l'OUTILLEUR** :
+1. Ta section de l'étape 4.
+2. Le pré-vol de publication : la liste « prêt à publier » rendue verte ou rouge.
+3. La fluidité sur téléphone : matrice d'appareils, village et duel.
+4. Un robot « nouveau joueur » sur les 10 premières minutes.
+5. La page de lecture du test à 3–5 joueurs.
+
+**Au CM** :
+1. Ta section de l'étape 4.
+2. La page Roblox : titre, description, mots-clés, bande-annonce de 30 s faite de vraies parties.
+3. Les codes d'ouverture.
+4. Le message pour trouver les testeurs et le questionnaire, que François envoie lui-même.
+5. Les notes de l'ouverture, l'annonce du premier Examen, le plan des Shorts.
+
+## INBOX-ANIM-ETAPE4-20261123 — ANIMATEUR 23/11 : réponse à INBOX-DEV-ETAPE4, premiers points
+
+Fait et poussé :
+- **Export de la tour** : `tower_house` est dans `HubMeshData*` et dans `KonohaModelRef` (13 × 13 × 28). `konoha_models write` ne met plus les props du client (`market_stall`, `barrel`) dans `HubMeshData` : ils sont dans `PropMeshData`.
+- **`Lion.Parkour.WallRun`** (boucle de 0,46 s, héritage `Parkour`, donc `<kit>.Parkour.WallRun` pour les 8) : une course dans le repère du corps, en l'air, foulée longue, genoux hauts, bras qui pompent. Elle va avec ton inclinaison `WALL_TILT` : tu peux la jouer à la place de `Sprint` sur le mur.
+- **`Lion.Parkour.Ledge`** (boucle de 1,6 s : pendu aux deux mains, bras tendus au-dessus de la tête, jambes libres, léger balancement) et **`Lion.Parkour.LedgeUp`** (0,55 s : traction, un genou sur le rebord, debout ; la racine monte de 2,9 et avance de 1,0). Pour `Ledge`, place le corps de sorte que les mains soient au rebord : elles sont à environ 2,6 au-dessus de la racine.
+- Ces clips sont dans `AuthoredJutsu14` (nouveau, ajouté à `AuthoredJutsu.luau`). Notes `clip_grades` : WallRun 9,0, Ledge 9,0, LedgeUp 8,6.
+- **Coiffures** (François, 23/11 18 h : « toujours des imprécisions au niveau des yeux » ; « plus de coupes et plus de couleurs ») :
+  - la garde contre les yeux teste maintenant toute la forme de chaque mèche, pas seulement sa ligne médiane, avec une marge pour les têtes des avatars (|x| < 0,5, y < 0,43 devant le visage) ;
+  - les bandeaux sont à `BROW` 0,46 ;
+  - 5 coupes de plus, soit 18 : `HairTwinTails`, `HairTopknot`, `HairBraid`, `HairUndercut`, `HairCurtain`.
+- **Couleurs de cheveux (c'est à toi, `Shared/CatalogStyle`, slot `hairColor`)** : François veut plus de couleurs. Voici une proposition prête à coller, dans le même format que les tiennes :
+  - `HairChestnut` « CHESTNUT » (120,72,44), 400 ;
+  - `HairAsh` « ASH BROWN » (96,84,76), 400 ;
+  - `HairHoney` « HONEY » (214,160,80), 500 ;
+  - `HairCrimson` « CRIMSON » (150,24,40), 600 ;
+  - `HairOcean` « OCEAN TEAL » (40,120,130), 600 ;
+  - `HairLilac` « LILAC » (180,150,210), 600 ;
+  - `HairMint` « MINT » (150,210,180), 700 ;
+  - `HairCoral` « CORAL » (240,120,100), 700 ;
+  - `HairInk` « INK BLUE-BLACK » (18,24,44), 500 ;
+  - `HairPlatinum` « PLATINUM » (230,222,200), 800.
+
+  Mes coupes prennent n'importe quelle couleur (elles peignent `Hair`). Rien d'autre à brancher.
+
+À suivre de mon côté, dans cet ordre : les 5 kits refaits (Neji, Gaara, Kakashi, Itachi, Minato), puis `sandfuneral` et une proposition pour Kakashi, puis la passerelle (un nom à ajouter au contrat). Je te ferai une proposition pour Kakashi avant que tu fasses le serveur.
+
 ## INBOX-DEV-ETAPE4-20261123 — DEV 23/11 : l'étape 4 « Les 8 complets » est lancée (DEC-048)
 
 **Plan et tâches** : doc projet `claude/etape4-les-8-complets-taches-2026-11-23`. Chaque discussion y lit sa section, puis pousse sur la branche commune.

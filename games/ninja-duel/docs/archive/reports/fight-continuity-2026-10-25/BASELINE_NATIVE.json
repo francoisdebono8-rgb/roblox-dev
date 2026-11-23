@@ -1,0 +1,20 @@
+{
+  "scenarioA": {
+    "content": [
+      {
+        "type": "text",
+        "text": "{\"minGap\":1.0914736986160279,\"overlaps\":11,\"fingerprint\":\"4c5023cab2f351b9ce059bc44524e4a61a6d2e4b4fea0771be876163cb0f1708\",\"samples\":180,\"botEvents\":{\"Flow\":1,\"WallSplat\":1,\"RunningStrike\":5,\"Clash\":6,\"Light3\":1,\"Light2\":1,\"DashAttack\":5,\"Evaded\":2,\"Hit\":2,\"ChainTool\":1,\"Light1\":3,\"Parried\":1,\"Damage\":4},\"events\":{\"Flow\":21,\"Clash\":6,\"Light3\":9,\"Riposte\":2,\"Chase\":10,\"AirDrive\":1,\"RouteUp\":1,\"Guard\":1,\"Damage\":38,\"GuardHit\":2,\"Air1\":4,\"Route\":2,\"Light1\":9,\"Reengage\":10,\"WallConvert\":1,\"AirHit\":1,\"Parry\":1,\"DashAttack\":9,\"Dodge\":1,\"Launcher\":1,\"Hit\":34,\"LaunchHit\":1,\"ComboLimit\":3,\"Light2\":13,\"WallPin\":1},\"done\":true,\"rejected\":{\"Guard\":1,\"Pursuit\":4,\"Tool\":2,\"Attack\":16},\"accepted\":{\"Attack\":59,\"Jump\":1,\"Dodge\":1,\"Pursuit\":10,\"Guard\":1,\"GuardOff\":3},\"scenario\":\"A\"}"
+      }
+    ],
+    "isError": false
+  },
+  "overlaps": {
+    "content": [
+      {
+        "type": "text",
+        "text": "{\"1\":{\"h\":\"Pursuit\",\"b\":\"Neutral\",\"br\":\"Knockback\",\"t\":1.1002809583442286,\"gap\":1.9080537557601929,\"ha\":\"Light3\"},\"3\":{\"h\":\"Active\",\"b\":\"Neutral\",\"br\":\"HitStun\",\"t\":3.8162152916775087,\"gap\":1.1486694812774659,\"ha\":\"DashAttack\"},\"2\":{\"h\":\"Pursuit\",\"b\":\"Neutral\",\"br\":\"Knockback\",\"t\":3.6993988333269955,\"gap\":1.8908841609954835,\"ha\":\"Light3\"},\"5\":{\"h\":\"Neutral\",\"b\":\"Neutral\",\"t\":7.8159390416694809,\"gap\":1.935793399810791,\"br\":\"Knockback\"},\"4\":{\"h\":\"Active\",\"b\":\"Neutral\",\"br\":\"HitStun\",\"t\":4.95018300000811,\"gap\":1.8147252798080445,\"ha\":\"DashAttack\"},\"7\":{\"h\":\"Active\",\"b\":\"Neutral\",\"br\":\"HitStun\",\"t\":9.049498708336614,\"gap\":1.520190715789795,\"ha\":\"DashAttack\"},\"6\":{\"h\":\"Active\",\"b\":\"Neutral\",\"br\":\"HitStun\",\"t\":7.916536458360497,\"gap\":1.1808199882507325,\"ha\":\"DashAttack\"},\"9\":{\"h\":\"Pursuit\",\"b\":\"Neutral\",\"br\":\"Knockback\",\"t\":16.982205833366608,\"gap\":1.8838022947311402,\"ha\":\"Light3\"},\"8\":{\"t\":16.115774416655769,\"h\":\"Neutral\",\"gap\":1.0914736986160279,\"b\":\"Neutral\"},\"11\":{\"h\":\"Active\",\"b\":\"Stunned\",\"br\":\"WallSplat\",\"t\":19.282827208342498,\"gap\":1.1171187162399293,\"ha\":\"DashAttack\"},\"10\":{\"h\":\"Active\",\"b\":\"Neutral\",\"br\":\"HitStun\",\"t\":18.282973291701638,\"gap\":1.4159646034240723,\"ha\":\"DashAttack\"}}"
+      }
+    ],
+    "isError": false
+  }
+}

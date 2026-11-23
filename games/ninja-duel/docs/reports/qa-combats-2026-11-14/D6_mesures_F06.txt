@@ -1,0 +1,56 @@
+Mesures « corps et physique » sur tout le combat F06 (Sasuke vs Kakashi), replay NDReplay, 1 432 images (1/30 s).
+Les secondes sont celles du match. A = Sasuke, B = Kakashi.
+
+== Articulations impossibles ==
+Repère : coude = l'avant-bras vu dans le repère du bras ; genou = le tibia vu dans le repère de la cuisse.
+Seuils : coude plié vers l'arrière > 17° ; genou plié vers l'avant > 17° ; cheville > 120° ; nuque > 95°.
+  1,10 s   Sasuke   genou droit à l'envers 44°       (attaque en course, touche à 1,07)
+  6,03 s   Sasuke   coude gauche vers l'arrière 25°
+  7,60 s   Sasuke   cheville gauche 165°             (esquive de Kakashi, WireTrap)
+ 12,23 s   Kakashi  cheville gauche 141°             (Chidori de Sasuke)
+ 16,47 s   Sasuke   cheville gauche 159°
+ 17,13 s   Kakashi  cheville droite 153°
+ 18,10 s   Kakashi  tête tournée 119°                (planche A8)
+ 18,50 s   Sasuke   tête tournée 97°                 (Light1)
+ 20,00 s   Kakashi  cheville droite 145°
+ 22,33 s   Sasuke   coude droit vers l'arrière 40°   (Knee Strike paré ; planche A8)
+ 26,23 s   Kakashi  genou droit à l'envers 35°
+ 29,67 s   Sasuke   cheville droite 176°
+ 39,87 s   Sasuke   cheville gauche 167°
+ 40,20 s   Kakashi  cheville droite 123°             (éveil)
+ 41,17 s   Sasuke   cheville gauche 125°
+ 41,97 s   Sasuke   genou gauche à l'envers 69°      (pendant 0,13 s)
+ 42,10 s   Kakashi  cheville gauche 148°
+ 42,90 s   Kakashi  cheville gauche 146°
+ 42,93 s   Kakashi  tête tournée 105°                (attaque en course)
+ 47,23 s   Kakashi  coude droit vers l'arrière 35°
+
+À vérifier (ce sont peut-être des défauts du replay, car ils tombent sur un saut de position) :
+ 17,87 s   Sasuke   bras décroché de l'épaule de 2,9 studs
+ 33,87 s   Sasuke   jambe décrochée au genou de 1,8 stud (Lightning Blade reçu)
+
+== Pieds qui glissent ==
+Un pied posé au sol qui se déplace à plus de 6 studs/s :
+  Sasuke   8,8 s au total sur 48 s, en 109 moments
+  Kakashi  8,2 s au total sur 48 s, en 94 moments
+On en voit surtout en garde, à la parade, à l'esquive, juste après un coup reçu et au départ des courses
+(planche A9 : 19,88–20,08 s).
+
+== Réaction aux coups (38 touches) ==
+recul = vitesse ajoutée à la victime dans le sens attaquant → victime (studs/s ; négatif = attirée vers l'attaquant)
+délai = temps avant que la pose de la victime change
+  8,39 s   Lightning Cut (−10 PV)          recul −3,3   : Sasuke attiré vers Kakashi
+ 36,86 s   attaque en course (−1)           recul −17,7  : touché de dos à 6,4 studs, puis attiré vers Kakashi (planche D7)
+ 21,74 s   Light1 (−2 PV)                   recul +52    : plus fort qu'un Chidori (−15 PV, +24)
+ 46,73 s   (−3 PV)                          recul +64
+ 42,84 s   attaque en course (−4)           les deux persos repoussés de 7 studs en 0,09 s (planche D6)
+  9,21 s   (−3 PV)                          aucune réaction de la victime dans les 0,4 s
+ 20,75 s / 27,85 s / 29,85 s                 délai de réaction de 0,23 s (7 images)
+
+Coups qui touchent à l'image même où l'attaque commence (début d'attaque → touche) :
+  F06 38,94 → 38,94 (0,00 s)   attaque en course
+  F06 42,82 → 42,84 (0,02 s)   attaque en course
+  F06 33,69 → 33,70 (0,01 s)   Lightning Blade, à 4,3 studs, sans que Kakashi avance
+  F04  3,54 →  3,58 (0,04 s)   attaque en course de Lee
+  F05 23,88 → 23,92 (0,04 s)   attaque en course de Neji
+  F03 43,87 → 43,91 (0,04 s)   attaque en course de Naruto

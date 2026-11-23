@@ -17,6 +17,17 @@ local Config=H.load("Shared/Config")
 local Exam=H.load("Shared/Exam")
 local function at(y,m,d,h) return Exam.daysFrom(y,m,d)*86400+(h or 12)*3600 end
 
+-- (23/11, step 5) Before François gives the opening day, no code is live.
+assert(#Codes.List==0 and Codes.Opening==nil or Codes.Opening~=nil,"codes live with no opening day")
+-- The suite opens on a test Friday, and adds two codes of its own to try a
+-- Ryō code and a mastery ×2 code (MYNINJA, FIRSTDUEL: test fixtures now).
+local OPENING_LIST=Codes.openingCodes("2026-11-27")
+Codes.open("2026-11-27")
+for _,def in {{code="MYNINJA",ryo=150,starts="2026-11-27",ends="2026-12-20",note="test"},
+	{code="FIRSTDUEL",boostMinutes=15,starts="2026-11-27",ends="2026-12-20",note="test"}} do
+	table.insert(Codes.List,def);Codes.ById[def.code]=def
+end
+
 test("the CM's list: every code is well formed, gives one thing, never power or a Robux look",function()
 	local seen={}
 	for _,def in Codes.List do
@@ -45,10 +56,24 @@ test("what a player types: capitals, no spaces; between its dates",function()
 	assert(Codes.normalize("")==nil and Codes.normalize("NINJA-DUEL")==nil and Codes.normalize(string.rep("A",17))==nil and Codes.normalize(42)==nil)
 	local exam=Codes.get("EXAM1")
 	assert(not Codes.active(exam,at(2026,11,26)),"open before it starts")
-	assert(Codes.active(exam,at(2026,11,27,0)) and Codes.active(exam,at(2026,12,6,23)),"closed on its days")
-	local ok,why=Codes.active(exam,at(2026,12,7,0))
+	assert(Codes.active(exam,at(2026,11,27,0)) and Codes.active(exam,at(2026,11,29,23)),"closed on its days")
+	local ok,why=Codes.active(exam,at(2026,11,30,0))
 	assert(not ok and why=="Code expired")
-	assert(#Codes.live(at(2026,11,20))>=1,"no code live now")
+	-- the opening's own list: three at once at most, on every day of it
+	local saved,savedBy=Codes.List,Codes.ById
+	Codes.List=OPENING_LIST
+	for k=-2,30 do
+		local n=#Codes.live(at(2026,11,27)+k*86400)
+		assert(n<=3,n.." codes live on day "..k)
+		if k>=0 and k<=13 then assert(n>=2,"the opening's codes are not live on day "..k) end
+	end
+	Codes.List,Codes.ById=saved,savedBy
+	-- the first exam's code: the first Friday on or after the opening, to Sunday
+	local monday=Codes.openingCodes("2026-11-23")
+	assert(monday[3].code=="EXAM1" and monday[3].starts=="2026-11-27" and monday[3].ends=="2026-11-29","EXAM1 after a Monday opening: "..monday[3].starts)
+	assert(monday[1].starts=="2026-11-23" and monday[1].ends=="2026-12-06","NINJADUEL: 14 days")
+	-- the day reader and its inverse
+	for _,d in {"1970-01-01","2026-02-28","2026-03-01","2028-02-29","2026-12-31"} do assert(Codes.date(Codes.day(d))==d,d) end
 end)
 
 test("the profile: a code once, its reward, its dates, a mastery ×2 that stacks",function()

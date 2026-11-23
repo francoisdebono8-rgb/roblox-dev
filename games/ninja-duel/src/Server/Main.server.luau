@@ -25,6 +25,10 @@ if require(game:GetService("ReplicatedStorage").NinjaDuel.Config).Exam.Enabled==
 -- (20/11, DEC-043) the leaderboards: every board's top 10, every minute
 require(script.Parent.Leaderboards).begin()
 -- (04/11) Players online and challenges between them, across the servers.
+-- (23/11, step 5, DEC-049) the REPORT button of the test place
+pcall(function() require(script.Parent.Reports).start() end)
+-- (23/11, step 5) the test place's record of each visit (tools/testread)
+pcall(function() require(script.Parent.TestLog).start(matches) end)
 local lobby=require(script.Parent.Lobby).new(matches)
 matches.lobby=lobby
 remote.OnServerEvent:Connect(function(player,payload) matches:request(player,payload) end)

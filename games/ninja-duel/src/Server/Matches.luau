@@ -229,6 +229,8 @@ function Matches:session(player)
 		metrics={joined=os.clock()},owner=player}
 	self.sessions[player]=s
 	Matches.measure(player,s,"joined")
+	-- (23/11, step 5) the test place's record of his visit (Server/TestLog)
+	require(script.Parent.TestLog).open(s,os.time(),os.clock())
 	-- (DEC-036, beta loop 13/11) The player fights in his own Roblox avatar,
 	-- built once in the background; until it is ready, the prodigy's body.
 	if Config.AvatarBody and Config.AvatarBody.Enabled==true and type(player)=="userdata" then
@@ -313,6 +315,8 @@ function Matches:kitsLoaded(player)
 end
 function Matches:selection(player,notice)
 	local s=self:session(player)
+	-- (23/11, step 5) back to the roster in the middle of a duel: left (TestLog)
+	if s.phase=="Duel" and not s.logDecided and not s.tutorial then require(script.Parent.TestLog).duel(s,"left",os.clock()) end
 	if s.online and self.online then self.online:leave(player,s) end
 	self:destroy(s)
 	player.Character=nil; s.phase="Selection"; s.epoch+=1
@@ -362,6 +366,7 @@ function Matches:start(player,playerId,botId,training,options)
 	if Matches.hubOn() then Hub.leave(player) end
 	if self.solo then self.solo:leave(player) end
 	s.playerId=playerId; s.botId=botId; s.winner=nil; s.phase="Duel"; s.origin=Matches.laneOrigin(s.lane)
+	s.logDecided=nil
 	s.options=options
 	-- (19/11, funnel) his first duel begins (a watched match is not his)
 	if not s.spectate then Matches.measure(player,s,"started") end
@@ -442,7 +447,9 @@ function Matches:roundOver(s,winner,notify,advance)
 	if decided and not s.tutorial and not s.online and s.owner then
 		Matches.measure(s.owner,s,"duel")
 		if s.human and winner==s.human then Matches.measure(s.owner,s,"won") end
+		require(script.Parent.TestLog).duel(s,if s.human and winner==s.human then "won" else "lost")
 	end
+	if decided then s.logDecided=true end
 	-- (DEC-037) The masters' path: mastery for the kit fought with; a master's
 	-- duel won teaches his kit. Shown on the result screen (snapshot `progress`).
 	if decided and not s.online and s.owner and s.human then
@@ -484,6 +491,8 @@ function Matches:roundOver(s,winner,notify,advance)
 			if seat.present and seat.player and seat.session then
 				Matches.measure(seat.player,seat.session,"duel")
 				if winner==seat.actor then Matches.measure(seat.player,seat.session,"won") end
+				require(script.Parent.TestLog).duel(seat.session,if winner==seat.actor then "won" else "lost")
+				seat.session.logDecided=true
 			end
 			if seat.present and seat.actor and seat.player then
 				local used=0
@@ -723,6 +732,14 @@ function Matches:request(player,payload)
 		elseif s.phase=="Selection" then self:send(player,{phase="Selection",epoch=s.epoch})
 		elseif (s.phase=="Bracket" or s.phase=="Champion") and s.cup then self.tournament:send(player,s,s.phase)
 		elseif s.combat then self:snapshot(player,s) end
+		return
+	end
+	-- (23/11, step 5) the screen the client is on (the test place's record)
+	if action=="Screen" then require(script.Parent.TestLog).clientScreen(s,payload.name);return end
+	-- (23/11, step 5, DEC-049) REPORT A PROBLEM (the test place), any phase
+	if action=="Report" then
+		local ok,why=pcall(function() require(script.Parent.Reports).record(player,payload.text,payload.where,s) end)
+		if not ok then warn("[NinjaDuel] report: "..tostring(why)) end
 		return
 	end
 	if payload.epoch~=s.epoch then return end
@@ -1073,6 +1090,10 @@ function Matches:remove(player)
 		if s.online and self.online then self.online:leave(player,s) end
 		-- (B1 lot 2) left before finishing a first duel: an abandon, measured.
 		if s.metrics and not s.metrics.duelAt then print(string.format("[NinjaDuelFirst] %s left %.1fs (stage %s)",tostring(player.UserId),os.clock()-(s.metrics.joined or os.clock()),tostring(s.firstStage or s.phase))) end
+		-- (23/11, step 5) the test place's record, written as he leaves
+		local TestLog=require(script.Parent.TestLog)
+		if s.phase=="Duel" and not s.logDecided and not s.tutorial then TestLog.duel(s,"left",os.clock()) end
+		pcall(TestLog.write,player,s)
 		self:destroy(s); self:dropStage(s); self.sessions[player]=nil
 		AvatarBody.forget(player)
 		Hub.forget(player)

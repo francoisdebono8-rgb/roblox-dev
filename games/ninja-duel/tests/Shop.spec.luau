@@ -63,7 +63,14 @@ test("the catalogue: every look has a slot, a price or is a base one, and every 
 	end
 	-- Never on sale: a kit by chance, a tree point (no such item can exist).
 	for _,item in Shop.Items do assert(item.slot~="points" and item.slot~="kit") end
-	assert(Shop.duelRyo({won=true,firstWinToday=true})==(Shop.Ryo.Finished+Shop.Ryo.Won)*2,"the first win of the day")
+	assert(Shop.duelRyo({won=true,firstWinToday=true})==(Shop.Ryo.Finished+Shop.Ryo.Won)*Shop.Ryo.FirstWinOfDay,"the first win of the day")
+	-- (23/11, the OUTILLEUR's new-player robot) the first look within a newcomer's
+	-- first two duels: the first fight and its rematch won (the novice, then easy),
+	-- with the day's easy quest
+	local cheapest=math.huge
+	for _,item in Shop.Items do if item.ryo and not item.base and item.ryo<cheapest then cheapest=item.ryo end end
+	local easy=H.load("Shared/DailyQuests").Tiers[1].ryo
+	assert(Shop.duelRyo({won=true,firstWinToday=true})+Shop.duelRyo({won=true})+easy>=cheapest,"two duels do not pay the cheapest look ("..cheapest..")")
 	assert(Shop.duelRyo({won=false})==Shop.Ryo.Finished,"a lost duel")
 	assert(Shop.duelRyo({won=true,master=true})==Shop.Ryo.Finished+Shop.Ryo.Won+Shop.Ryo.MasterWon,"a master's duel won")
 end)
@@ -104,6 +111,14 @@ test("the profile v3: Ryō earned, a look bought and worn, refused when poor or 
 	assert(fails("grantItem",{item="KunaiGold",receipt="r-gold"}),"a receipt granted twice")
 	run("grantRyo",{amount=3000,receipt="r-pack"})
 	assert(p.wallet.ryo==3100 and fails("grantRyo",{amount=3000,receipt="r-pack"}),"a pack granted twice")
+	-- (23/11, step 5, DEC-049) the eight prodigies' outfits in one purchase:
+	-- one receipt, eight looks, the first worn; once only
+	local bundle=Config.Shop.Bundles[1]
+	run("grantItems",{items=bundle.items,receipt="r-bundle"})
+	for _,id in bundle.items do assert(p.style.owned[id],"the bundle lacks "..id) end
+	assert(p.style.equipped.set=="SetNaruto","the bundle's first outfit is worn")
+	assert(fails("grantItems",{items=bundle.items,receipt="r-bundle"}),"a bundle granted twice")
+	assert(fails("grantItems",{items={"KunaiBlack"},receipt="r-bad"}),"a Ryō look in a Robux bundle")
 	assert(S.validate(p))
 	local bad=S.copy(p);bad.style.equipped.kunai="HeadbandRed"
 	assert(not S.validate(bad),"a headband worn as a kunai")
@@ -164,7 +179,7 @@ test("a duel pays Ryō (the day's first win twice), the shop sells and dresses, 
 		return progress
 	end
 	local first=duel(true)
-	assert(first.ryo==(Shop.Ryo.Finished+Shop.Ryo.Won)*2 and first.firstWin,"the day's first win: "..tostring(first.ryo))
+	assert(first.ryo==(Shop.Ryo.Finished+Shop.Ryo.Won)*Shop.Ryo.FirstWinOfDay and first.firstWin,"the day's first win: "..tostring(first.ryo))
 	assert(string.find(MastersView.result(first),"FIRST WIN"),"the result does not say it")
 	local second=duel(true)
 	assert(second.ryo==Shop.Ryo.Finished+Shop.Ryo.Won and not second.firstWin,"a second win: "..tostring(second.ryo))
@@ -226,7 +241,7 @@ test("the screens build and draw: the shop's five tabs, the tree by tiers, the K
 		local kits={state="ready",owned={Leaf=true},mastery={Leaf=320},starter="Leaf",selected="Leaf",masters={GentleFist={ready=true,via="Leaf"}},
 			trees={Leaf={points=32,free=12,unlocked={"Weights"},active={"Weights"},mastery=320}},ryo=2450,
 			style={owned={KunaiBlack=true},equipped={kunai="KunaiBlack"}}}
-		for _,tab in {"KITS","WEAPONS","STYLE","PASSES","RYŌ"} do
+		for _,tab in ui.shopPanel.tabsFor("shop",kits.style) do
 			ui.shopPanel:show(kits,tab)
 			assert(ui.shopPanel:shown() and #ui.shopPanel.drawn>0,tab.." drew nothing")
 		end
@@ -248,7 +263,9 @@ test("the screens build and draw: the shop's five tabs, the tree by tiers, the K
 		ui.shopPanel:show(kits,"WEAPONS")
 		local drawnShop=#ui.shopPanel.drawn
 		ui.shopPanel:show(kits,"KITS","market")
-		assert(ui.shopPanel.tab=="WEAPONS" and not ui.shopPanel.tabs.KITS.Visible and not ui.shopPanel.tabs.PASSES.Visible and ui.shopPanel.title.Text=="MARKET","the market's tabs")
+		local marketTab=ui.shopPanel.tab
+		ui.shopPanel:show(kits,"WEAPONS","market")
+		assert(marketTab==ui.shopPanel.tabsFor("market",kits.style)[1] and ui.shopPanel.tab=="WEAPONS" and not ui.shopPanel.tabs.KITS.Visible and not ui.shopPanel.tabs.PASSES.Visible and ui.shopPanel.title.Text=="MARKET","the market's tabs")
 		assert(ui.shopPanel.currency.Text=="PAID WITH RYŌ","the market's money")
 		assert(drawnShop-#ui.shopPanel.drawn==nShop-nMarket,"the panel does not draw each counter's looks")
 		ui.shopPanel:show(kits,"WEAPONS")
@@ -473,8 +490,15 @@ test("ranks: the result's line, the emblems and the leaderboards",function()
 		assert(ui.resultRankRow.Visible and ui.resultRank.Text:find("NEW RANK: CHUNIN  1260  (+22)",1,true),"the rank on the result: "..ui.resultRank.Text)
 		ui:resultRanked(nil);assert(not ui.resultRankRow.Visible,"no rank sent, no line")
 		assert(ui.leaderboard,"no leaderboard")
-		ui:showLeaderboard({Rating={id="Rating",title="RANKED",rows=list}})
+		ui:showLeaderboard({Rating={id="Rating",title="RANKED",rows=list},
+			Rooftops={id="Rooftops",title="ROOFTOP RACE",rows={{rank=1,id=7,name="A",value=42.3,text="0:42.30"}}},
+			Kit_Lion={id="Kit_Lion",title="X • MASTERY",kit="Lion",rows={}},Kit_Legion={id="Kit_Legion",title="Y • MASTERY",kit="Legion",rows={}}})
+		local tabs=L.kitTabs(ui.leaderboard.boards)
+		assert(#tabs==2 and tabs[1].kit=="Lion","the kits' tabs in the roster's order: "..#tabs.." "..tostring(tabs[1] and tabs[1].kit))
+		assert(ui.leaderboard.kitTabs.Kit_Lion,"a chip per kit")
 		assert(ui.leaderboard:shown() and #ui.leaderboard.drawn==L.ROWS+1 and not ui.leaderboard.empty.Visible,"the week's board")
+		ui.leaderboard.tab="Rooftops";local rr=ui.leaderboard:draw()
+		assert(#rr==1 and L.value(rr[1])=="0:42.30","the race's clock")
 		ui.leaderboard.tab="Exam";ui.leaderboard:draw()
 		assert(ui.leaderboard.empty.Visible,"an empty board says so")
 	end)
@@ -614,8 +638,129 @@ test("the minimap: the village under the arrow, the places, the things to do",fu
 		map:setVisible(true)
 		map:update(Layout.Origin,H.roblox.Vector3.new(0,0,-1))
 		assert(map.placeLabel.Text=="THE PLAZA","the place under him: "..map.placeLabel.Text)
+		-- (23/11, the OUTILLEUR's phones) upright, or the window no longer clips the village
+		assert((map.mini.Rotation or 0)==0 and map.window.ClipsDescendants==true,"the minimap must stay upright and clip")
 		map.mini.click();assert(map:shown(),"tap opens the big map")
 		map.closeBig.click();assert(not map:shown(),"X closes it")
+	end)
+	H.envBase.Instance=saved
+	assert(ok,tostring(err))
+end)
+
+-- (DESIGN 23/11, step 4) the tournament's entry: a build of 100 points
+test("the tournament's entry: the budget, what a node needs, ENTER sends the nodes",function()
+	local E=H.load("Client/CupEntry")
+	local TV=H.load("Shared/TreeView")
+	local kit="Legion"
+	local tree=TV.tree(kit)
+	local free,needy=nil,nil
+	for _,n in tree do
+		if not free and #(n.Requires or {})==0 then free=n end
+		if not needy and #(n.Requires or {})>0 then needy=n end
+	end
+	local nodes={}
+	assert(E.toggle(kit,nodes,free.Id) and E.spent(kit,nodes)==free.Cost,"a free node taken")
+	if needy then
+		local ok=E.toggle(kit,{},needy.Id)
+		assert(not ok and E.why(kit,{},needy.Id):find("^NEEDS"),"a node that needs another says so")
+	end
+	local all={}
+	for _,n in tree do E.toggle(kit,all,n.Id) end
+	assert(E.spent(kit,all)<=E.BUDGET,"never over the budget")
+	H.workspace.GetAttribute=function() return nil end
+	local saved=H.envBase.Instance
+	local baseNew=harnessInstance.new
+	H.envBase.Instance={new=function(class)
+		local x=baseNew(class)
+		x.Activated={Connect=function(_,fn) x.click=fn end}
+		return x
+	end}
+	local ok,err=pcall(function()
+		local UI=H.load("Client/UI")
+		E=H.load("Client/CupEntry")
+		local sent={}
+		local page=E.new(UI.kit,baseNew("ScreenGui"),function(a,p) table.insert(sent,{a,p}) end)
+		page:show(kit,{active={free.Id}})
+		assert(page:shown() and #page.nodes==1 and page.chips[free.Id],"his own build first")
+		page.go.click()
+		assert(sent[1][1]=="CupStart" and sent[1][2].nodes[1]==free.Id and sent[1][2].player==kit,"ENTER sends the nodes")
+		page:show(kit,nil);page.best.click()
+		assert(sent[2][2].nodes==nil,"BEST BUILD lets the server choose")
+	end)
+	H.envBase.Instance=saved
+	assert(ok,tostring(err))
+end)
+
+-- (DESIGN 23/11, step 5) the open shop: tabs with something in them, Ryō
+-- confirmed, VIP first with its perks, retired passes gone
+test("the open shop: no empty tab, BUY confirmed, VIP first",function()
+	local Panel=H.load("Client/ShopPanel")
+	local tabs=Panel.tabsFor("shop",{owned={},equipped={}})
+	assert(tabs[1]=="KITS" and tabs[#tabs]=="RYŌ","the SHOP's ends")
+	for _,name in tabs do
+		local cat=Panel.CATEGORY[name]
+		if cat then
+			local n=0
+			for _,slot in cat.slots do n+=#Shop.atCounter(slot,"shop",{owned={},equipped={}}) end
+			assert(n>0,name.." is empty")
+		end
+	end
+	local title,line=Panel.confirmLines("Vermilion kunai",1200,2000)
+	assert(title=="BUY VERMILION KUNAI?" and line:find("800",1,true),"the confirmation: "..line)
+	H.workspace.GetAttribute=function() return nil end
+	local saved=H.envBase.Instance
+	local baseNew=harnessInstance.new
+	H.envBase.Instance={new=function(class)
+		local x=baseNew(class)
+		x.Activated={Connect=function(_,fn) x.click=fn end}
+		return x
+	end}
+	local ok,err=pcall(function()
+		local UI=H.load("Client/UI")
+		local sent={}
+		local ui=UI.new(baseNew("PlayerGui"),function(a,p) table.insert(sent,{a,p}) end)
+		local kits={state="ready",owned={Leaf=true},mastery={Leaf=0},starter="Leaf",selected="Leaf",masters={},trees={},ryo=999999,style={owned={},equipped={}},vip=true}
+		local shop=ui.shopPanel
+		shop:show(kits,"PASSES")
+		assert(shop.heading.Text=="VIP & PASSES","the passes")
+		local bought=false
+		shop:confirm("X",100,500,function() bought=true end)
+		assert(shop.confirmRoot and not bought,"asked first")
+		shop.confirmNo.click();assert(shop.confirmRoot==nil and not bought,"CANCEL")
+		shop:confirm("X",100,500,function() bought=true end);shop.confirmYes.click()
+		assert(bought and shop.confirmRoot==nil,"BUY")
+	end)
+	H.envBase.Instance=saved
+	assert(ok,tostring(err))
+end)
+
+-- (DESIGN 23/11, step 5) SETTINGS and REPORT A PROBLEM
+test("settings: sound and camera steps, the report sent with its place",function()
+	local S=H.load("Client/SettingsPanel")
+	assert(S.step(1,"volume",1)==1 and S.step(1,"volume",-1)==.9 and S.step(0,"volume",-1)==0,"the sound's steps")
+	assert(S.step(.4,"sensitivity",-1)==.4 and S.step(1,"sensitivity",1)==1.2,"the camera's steps")
+	assert(S.report("   ","x")==nil,"an empty report is not sent")
+	assert(#S.report(string.rep("a",900),"x").text==S.MAX_REPORT,"capped")
+	H.workspace.GetAttribute=function() return nil end
+	local saved=H.envBase.Instance
+	local baseNew=harnessInstance.new
+	H.envBase.Instance={new=function(class)
+		local x=baseNew(class)
+		x.Activated={Connect=function(_,fn) x.click=fn end}
+		return x
+	end}
+	local ok,err=pcall(function()
+		local UI=H.load("Client/UI")
+		S=H.load("Client/SettingsPanel")
+		local sent={}
+		local page=S.new(UI.kit,baseNew("ScreenGui"),function(a,p) table.insert(sent,{a,p}) end)
+		page:show("KONOHA • THE PLAZA")
+		assert(page:shown() and not page.reportButton.Visible,"no REPORT outside the test place")
+		page.volumeMinus.click();assert(page.volumeText.Text=="90%","SOUND −")
+		page.forceReport=true;page:draw();assert(page.reportButton.Visible,"REPORT on the test place")
+		page.reportButton.click();page.field.Text="Stuck on a roof";page.sendButton.click()
+		assert(sent[1][1]=="Report" and sent[1][2].text=="Stuck on a roof" and sent[1][2].where=="KONOHA • THE PLAZA","the report")
+		page.close.click();assert(not page:shown(),"X")
 	end)
 	H.envBase.Instance=saved
 	assert(ok,tostring(err))
@@ -674,6 +819,40 @@ test("the personalization (DEC-047): eight tabs, nothing empty, looks to earn gi
 		end
 	end
 	assert(poses>=8 and emotes>=6,"poses "..poses..", emotes "..emotes)
+end)
+
+-- (23/11, step 5, DEC-049) the bundle's product id and the VIP pass
+test("the eight outfits' bundle sells by its id once created, VIP marks the player",function()
+	local bundle=Config.Shop.Bundles[1]
+	assert(Progression.productFor(0)==nil or select(1,Progression.productFor(0))~="bundle","a bundle sold with no id")
+	local saved=bundle.product
+	bundle.product=987654
+	local what,items=Progression.productFor(987654)
+	bundle.product=saved
+	assert(what=="bundle" and #items==8,"the bundle by its id")
+	local attrs={}
+	local player={UserId=1,SetAttribute=function(_,k,v) attrs[k]=v end,GetAttribute=function(_,k) return attrs[k] end}
+	local passes=Config.Shop.Passes
+	local was=passes.VIP
+	passes.VIP=1234
+	Progression.passBought(player,1234)
+	passes.VIP=was
+	assert(attrs.NinjaVIP==true,"VIP bought in the game")
+	attrs={}
+	Progression.passBought(player,0)
+	assert(attrs.NinjaVIP==nil,"no pass, no VIP")
+	-- (23/11, the ANIMATEUR's CapeVIP, earned="vip") the cape comes with the
+	-- pass, never sold: the profile marked once, the look then earned
+	local Style=H.load("Shared/CatalogStyle")
+	local cape=Shop.item("CapeVIP")
+	assert(cape and cape.earned=="vip" and not cape.robux and not cape.ryo,"the VIP cape is sold, or missing")
+	local p=S.new("dev_vip")
+	assert(not table.find(Style.earned(p,Shop.Items),"CapeVIP"),"the VIP cape without the pass")
+	S.Commands.setVip(p,{})
+	assert(not pcall(S.Commands.setVip,p,{}),"VIP marked twice")
+	assert(table.find(Style.earned(p,Shop.Items),"CapeVIP"),"no VIP cape with the pass")
+	S.Commands.earnItem(p,{item="CapeVIP"})
+	assert(p.style.owned.CapeVIP and S.validate(p),"the VIP cape not his, or the profile broken")
 end)
 
 print(string.format("NinjaDuel shop and Ryō (13/11): %d PASS",passed))

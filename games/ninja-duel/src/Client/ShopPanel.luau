@@ -31,7 +31,17 @@ Panel.__index=Panel
 
 local W,H=1500,800
 local SIDE=260
-local TABS={"KITS","WEAPONS","STYLE","PASSES","RYŌ"}
+-- (DESIGN 23/11, step 3-5: « un onglet par catégorie, rien de vide ») every
+-- tab there could be: the kits, one per kind of personalization (Shop.Tabs),
+-- the passes, the Ryō. Each counter shows those it has something in.
+local TABS={"KITS"}
+for _,t in Shop.Tabs do table.insert(TABS,t.name) end
+table.insert(TABS,"PASSES");table.insert(TABS,"RYŌ")
+local CATEGORY={}
+for _,t in Shop.Tabs do CATEGORY[t.name]=t end
+Panel.CATEGORY=CATEGORY
+-- The big avatar's column, right of the looks (front, turning)
+Panel.PREVIEW={W=360}
 Panel.CLOSE={X=W-170,Y=26,W=140,H=56}
 
 local function rgb(c) return Color3.fromRGB(c[1],c[2],c[3]) end
@@ -198,14 +208,29 @@ function Panel:hide() self.root.Visible=false;Panel.dropFocus(self.root) end
 -- on va créer une boutique propre au jeu avec des Ryō ») `counter`: "shop"
 -- (the SHOP: kits, looks, passes and Ryō for Robux) or "market" (Konoha's
 -- market: looks for Ryō, Server/Hub.placeMarket).
-Panel.TABS={shop=TABS,market={"WEAPONS","STYLE"}}
+-- The tabs of a counter, in order: only those with something in them.
+function Panel.tabsFor(counter,style)
+	local out={}
+	if counter~="market" then table.insert(out,"KITS") end
+	for _,t in Shop.Tabs do
+		local any=false
+		for _,slot in t.slots do
+			if Shop.Slots[slot] and #Shop.atCounter(slot,counter,style)>0 then any=true break end
+		end
+		if any then table.insert(out,t.name) end
+	end
+	if counter~="market" then table.insert(out,"PASSES");table.insert(out,"RYŌ") end
+	return out
+end
+Panel.TABS={shop=TABS,market={}}
 -- (DESIGN 19/11) what a tab says: the passes page is VIP & PASSES
 Panel.TAB_LABEL={PASSES="VIP & PASSES",["RYŌ"]="BUY RYŌ"}
 function Panel:show(kits,tab,counter)
 	self.kits=kits
 	self.counter=counter or "shop"
 	if tab then self.tab=tab end
-	if not table.find(Panel.TABS[self.counter],self.tab) then self.tab=Panel.TABS[self.counter][1] end
+	self.visibleTabs=Panel.tabsFor(self.counter,kits and kits.style)
+	if not table.find(self.visibleTabs,self.tab) then self.tab=self.visibleTabs[1] end
 	self:draw()
 	self.root.Visible=true
 	Panel.padFocus(self.tabs[self.tab])
@@ -226,24 +251,26 @@ function Panel:draw()
 	self.currency.BackgroundColor3=if counter=="market" then self.M.ink else self.M.red
 	self.side.BackgroundColor3=if counter=="market" then (self.M.back or self.M.paper) else self.M.paper
 	local slot=0
+	local visible=self.visibleTabs or Panel.tabsFor(counter,self.kits and self.kits.style)
+	-- as many as there are, between the currency band and the wallet
+	local step=math.min(60,math.floor((H-120-146)/math.max(1,#visible)))
 	for _,name in TABS do
 		local b=self.tabs[name]
 		local on=name==self.tab
-		b.Visible=table.find(Panel.TABS[counter],name)~=nil
-		if b.Visible then b.Position=UDim2.fromOffset(20,146+slot*64);slot+=1 end
+		b.Visible=table.find(visible,name)~=nil
+		if b.Visible then b.Position=UDim2.fromOffset(16,146+slot*step);b.Size=UDim2.fromOffset(SIDE-32,math.max(44,step-6));slot+=1 end
 		b.BackgroundColor3=if on then self.M.ink else self.M.paper
 		b.TextColor3=if on then self.M.cream else self.M.ink
 		self.tabMarks[name].Visible=on
 	end
 	self.ryo.Text=amount(self.kits and self.kits.ryo or 0)
 	self.footer.TextColor3=self.M.mid or self.M.ink
+	local category=CATEGORY[self.tab]
+	self.bodyW=if category then W-SIDE-70-Panel.PREVIEW.W-20 else W-SIDE-70
 	if self.tab=="KITS" then self:drawKits()
-	elseif self.tab=="WEAPONS" then self:drawLooks({"kunai","shuriken","tanto","gourd"},"WEAPONS","A look, never a number. Each kit keeps its own; the kit's objects (gourd, weights, tanto) are earned on its tree.")
-	elseif self.tab=="STYLE" then
-		-- (DEC-040) the masters' outfits on his own avatar, then the pieces;
-		-- MY NINJA opens the outfit card (Client/OutfitPanel)
-		self:drawLooks({"set","headband","mask","cape","back"},"STYLE","Your inspirations' outfits and ninja pieces over your own avatar, in Konoha and in every duel.")
-		-- (Mix-Shop) his avatar in the side, wearing the outfit pointed at
+	elseif category then
+		self:drawLooks(category.slots,category.name,Panel.SUB[category.id] or "A look, never a win. Worn in Konoha and in every duel.")
+		-- (DESIGN 23/11) his avatar, big, front, turning, wearing what is pointed at
 		self:preview(nil)
 		if self.onOutfit then
 			local b=self:add(press(self.kit,self.card,"MY NINJA",UDim2.fromOffset(Panel.CLOSE.X-230,Panel.CLOSE.Y),UDim2.fromOffset(210,Panel.CLOSE.H),function() self:hide();self.onOutfit() end,"ink"))
@@ -251,7 +278,7 @@ function Panel:draw()
 		end
 	elseif self.tab=="PASSES" then self:drawPasses()
 	else self:drawRyo() end
-	if self.stylePreview and self.tab~="STYLE" then self.stylePreview.view.Visible=false end
+	if self.stylePreview and not category then self.stylePreview.view.Visible=false;if self.stage then self.stage.Visible=false end end
 end
 
 -- ------------------------------------------------------------------ kits
@@ -337,12 +364,26 @@ function Panel.lookButton(state,ryo)
 	if state.kind=="robux" then return "BUY · ROBUX","red" end
 	return "SOON","off"
 end
+-- (23/11, DEC-049) passes not sold: what is already given (MORE BUILDS),
+-- what does not exist yet (EARLY ACCESS)
+Panel.RETIRED={EarlyAccess=true,BuildSlots=true}
+Panel.VIP_PERKS={"A GOLDEN NAME, IN KONOHA AND IN DUELS","THE VIP CAPE, WORN IN KONOHA","THE VIP TAG OVER YOUR HEAD"}
+Panel.SUB={
+	Outfit="Your inspirations' outfits and ninja pieces over your own avatar, in Konoha and in every duel.",
+	Hair="A haircut and its colour, over your own avatar.",
+	Chakra="The colour of your chakra: your jutsu glow with it.",
+	Victory="What you do when you win, and in Konoha's streets.",
+	Aura="Worn around you in Konoha. Merit auras are earned, never bought.",
+	Weapons="A look, never a number. Each kit keeps its own; the kit's objects (gourd, weights, tanto) are earned on its tree.",
+	Titles="Shown over your head and on your results.",
+	Frames="Around your face-cam in every duel.",
+}
 function Panel:drawLooks(slots,title,sub)
 	local K,M=self.kit,self.M
 	local STRONG=K.STRONG_FONT or K.BODY_FONT
 	self.heading.Text=title
 	self.subheading.Text=sub
-	self.footer.Text=if self.counter=="market" then "Ryō is earned in duels, against other players and in tournaments (the day's first win counts double)."
+	self.footer.Text=if self.counter=="market" then "Ryō is earned in duels, against other players and in tournaments (the day's first win counts ×"..tostring(Shop.Ryo.FirstWinOfDay)..")."
 		else "Looks for Ryō are sold at Konoha's market. Robux looks show SOON until they are on sale."
 	local kits=self.kits
 	local ryo=kits and kits.ryo or 0
@@ -360,7 +401,7 @@ function Panel:drawLooks(slots,title,sub)
 		-- shows its figure in the set's colours (Mix-Shop)
 		local tall=info.outfit==true
 		local ch=if tall then 190 else 148
-		local perRow=math.max(1,math.floor((W-SIDE-70+14)/(cw+14)))
+		local perRow=math.max(1,math.floor(((self.bodyW or (W-SIDE-70))+14)/(cw+14)))
 		for k,item in Shop.atCounter(slot,self.counter or "shop",style) do
 			local state=Shop.state(style,item,ryo,products)
 			local x=((k-1)%perRow)*(cw+14)
@@ -411,13 +452,15 @@ function Panel:drawLooks(slots,title,sub)
 			if short and (shortest==nil or short<shortest) then shortest=short end
 			local b=press(K,cell,text,UDim2.new(0,12,1,-46),UDim2.new(1,-24,0,36),function()
 				if state.kind=="owned" then self.send("EquipItem",{item=item.id})
-				elseif state.kind=="ryo" and state.afford then self.send("BuyItem",{item=item.id})
+				elseif state.kind=="ryo" and state.afford then
+					-- (DESIGN 23/11, step 5) a Ryō spend is confirmed first (a Robux one by Roblox's own prompt)
+					self:confirm(item.name,state.price,ryo,function() self.send("BuyItem",{item=item.id}) end)
 				elseif state.kind=="robux" then self.send("BuyRobux",{product=state.product}) end
 			end,kind)
 			b.TextSize=17
-			-- (Mix-Shop) an outfit pointed at (the mouse, a pad's selection) is
-			-- worn by the avatar in the side
-			if info.outfit then
+			-- (Mix-Shop) a look pointed at (the mouse, a pad's selection) is
+			-- worn by the big avatar
+			if info.outfit or info.kind=="style" then
 				pcall(function()
 					cell.MouseEnter:Connect(function() self:preview(item.id) end)
 					b.SelectionGained:Connect(function() self:preview(item.id) end)
@@ -443,17 +486,52 @@ end
 -- (DA v3, Mix-Shop) the avatar in the side column of STYLE: `itemId` worn
 -- (nil: his own outfit). Built the first time; no character, nothing shown.
 function Panel:preview(itemId)
+	local K0=self.kit
 	local ok,err=pcall(function()
 		local player=game:GetService("Players").LocalPlayer
 		local character=player and player.Character
 		if not self.stylePreview then
 			local Preview=require(script.Parent.StylePreview)
-			self.stylePreview=Preview.new(self.side,UDim2.fromOffset(16,440),UDim2.fromOffset(SIDE-32,230))
+			-- (DESIGN 23/11) big, right of the looks, on a paper stage
+			local stage=K0.frame(self.card,UDim2.fromOffset(W-30-Panel.PREVIEW.W,122),UDim2.fromOffset(Panel.PREVIEW.W,H-170),self.M.back or self.M.paper,0)
+			ring(K0,stage,3);K0.corner(stage,6);stage.Name="Stage"
+			self.stage=stage
+			self.stylePreview=Preview.new(stage,UDim2.fromOffset(0,0),UDim2.fromScale(1,1))
+			self.stylePreview:turn(true)
 		end
 		self.stylePreview.view.Visible=character~=nil
+		if self.stage then self.stage.Visible=true end
 		if character then self.stylePreview:show(itemId,character) end
 	end)
 	return ok,err
+end
+
+-- ------------------------------------------------------------------ confirm
+-- (DESIGN 23/11, step 5) « BUY X? » over the shop: what it costs, what is
+-- left after, CANCEL and BUY. Robux purchases get Roblox's own prompt.
+function Panel.confirmLines(name,price,ryo)
+	return "BUY "..Text.upper(name).."?",string.format("%s RYŌ  •  %s LEFT AFTER",amount(price),amount(math.max(0,(ryo or 0)-price)))
+end
+function Panel:confirm(name,price,ryo,yes)
+	local K,M=self.kit,self.M
+	if self.confirmRoot then self.confirmRoot:Destroy() end
+	local veil=K.frame(self.card,UDim2.fromScale(0,0),UDim2.fromScale(1,1),M.ink,.4)
+	veil.ZIndex=90;veil.Active=true;veil.Name="Confirm"
+	self.confirmRoot=veil
+	local box=K.frame(veil,UDim2.fromScale(.5,.5),UDim2.fromOffset(600,280),M.paper,0)
+	box.AnchorPoint=Vector2.new(.5,.5);box.ZIndex=91;box.Rotation=-1
+	K.create("UIStroke",box,{Color=M.ink,Thickness=4,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
+	local title,line=Panel.confirmLines(name,price,ryo)
+	local t=K.text(box,title,UDim2.fromOffset(28,20),UDim2.new(1,-56,0,64),48,M.ink,K.TITLE_FONT);t.ZIndex=92;t.TextScaled=true
+	K.create("UITextSizeConstraint",t,{MaxTextSize=48,MinTextSize=20})
+	K.frame(box,UDim2.fromOffset(30,86),UDim2.fromOffset(160,6),M.red,0).ZIndex=92
+	local l=K.text(box,line,UDim2.fromOffset(28,104),UDim2.new(1,-56,0,30),22,M.ink,K.STRONG_FONT or K.BODY_FONT);l.ZIndex=92
+	local function close() if self.confirmRoot then self.confirmRoot:Destroy();self.confirmRoot=nil end end
+	local no=press(K,box,"CANCEL",UDim2.fromOffset(28,180),UDim2.fromOffset(240,64),close,"paper");no.ZIndex=93;no.TextSize=26
+	local go=press(K,box,"BUY",UDim2.new(1,-268,0,180),UDim2.fromOffset(240,64),function() close();yes() end,"red");go.ZIndex=93;go.TextSize=30
+	self.confirmYes,self.confirmNo=go,no
+	Panel.padFocus(go)
+	return veil
 end
 
 -- ------------------------------------------------------------------ passes
@@ -465,17 +543,30 @@ function Panel:drawPasses()
 	local ids=Config.Shop and Config.Shop.Passes or {}
 	-- (DESIGN 19/11) VIP first and largest, the others under it
 	local order={}
-	for _,pass in Shop.Passes do if pass.id=="VIP" then table.insert(order,1,pass) else table.insert(order,pass) end end
+	for _,pass in Shop.Passes do
+		if Panel.RETIRED[pass.id] then continue end
+		if pass.id=="VIP" then table.insert(order,1,pass) else table.insert(order,pass) end
+	end
 	for i,pass in order do
 		local id=if pass.id=="MasteryPass" then (Config.Progression and Config.Progression.MasteryPass or 0) else (ids[pass.id] or 0)
-		local owned=pass.id=="MasteryPass" and self.kits and self.kits.boost
-		local top=if i==1 then 0 else 150+(i-2)*108
-		local cell=self:add(K.frame(self.body,UDim2.fromOffset(0,top),UDim2.new(1,-8,0,if i==1 then 136 else 96),if i==1 then M.ink else M.paper,0))
+		local owned=(pass.id=="MasteryPass" and self.kits and self.kits.boost) or (pass.id=="VIP" and self.kits and self.kits.vip) or false
+		local vip=i==1 and pass.id=="VIP"
+		local top=if i==1 then 0 else (if vip or order[1].id=="VIP" then 236 else 150)+(i-2)*108
+		local cell=self:add(K.frame(self.body,UDim2.fromOffset(0,top),UDim2.new(1,-8,0,if vip then 220 elseif i==1 then 136 else 96),if i==1 then M.ink else M.paper,0))
+		if vip then
+			-- (DESIGN 23/11, step 5) the VIP page: what you get, in three lines, gold on ink
+			local gold=M.gold or Color3.fromRGB(232,178,48)
+			for k,perk in Panel.VIP_PERKS do
+				local y=100+(k-1)*36
+				local mark=K.frame(cell,UDim2.fromOffset(22,y+8),UDim2.fromOffset(14,14),gold,0);mark.Rotation=45
+				K.text(cell,perk,UDim2.fromOffset(48,y),UDim2.new(1,-300,0,30),22,M.cream,K.STRONG_FONT or K.BODY_FONT)
+			end
+		end
 		K.corner(cell,4)
 		local edge=ring(K,cell,if i==1 then 4 else 3)
 		if i==1 then edge.Color=M.red end
 		K.text(cell,pass.name,UDim2.fromOffset(18,10),UDim2.fromOffset(600,if i==1 then 56 else 38),if i==1 then 52 else 34,if i==1 then M.cream else M.ink,K.TITLE_FONT)
-		local note=K.text(cell,pass.note,UDim2.fromOffset(18,if i==1 then 70 else 50),UDim2.new(1,-260,0,if i==1 then 56 else 42),if i==1 then 19 else 17,if i==1 then M.cream else (M.mid or M.ink),K.BODY_FONT)
+		local note=K.text(cell,if vip then "TIME AND STATUS, NEVER A WIN." else pass.note,UDim2.fromOffset(18,if i==1 then 70 else 50),UDim2.new(1,-260,0,if i==1 then 56 else 42),if i==1 then 19 else 17,if i==1 then M.cream else (M.mid or M.ink),K.BODY_FONT)
 		note.TextYAlignment=Enum.TextYAlignment.Top
 		if owned then tagOn(K,cell,"OWNED",M.ink) end
 		local label=if owned then "YOURS" elseif id>0 then "BUY" else "SOON"

@@ -1,0 +1,11 @@
+{
+  "ok": true,
+  "report": {
+    "backend": "Memory UpdateAsync simulator, not Roblox throughput",
+    "elapsedSeconds": 1.4222863749600947,
+    "profiles": 1000,
+    "rosterSize": 20,
+    "storeCalls": 2000,
+    "verified": 1000
+  }
+}

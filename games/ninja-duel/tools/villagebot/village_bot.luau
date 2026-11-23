@@ -304,15 +304,26 @@ function Bot.climb(roof)
 		top,landed=0,false
 		if res.way=="wall" then
 			-- straight at the wall; at it, the jump into it
+			-- (23/11) the generated village has fences, crates and gardens before the
+			-- walls: a runnable wall of any building, or no headway for half a
+			-- second, and he jumps (once more if the first did not take him up)
 			local t1=os.clock()
-			local jumped=false
-			while os.clock()-t1<4.5 and not landed do
+			local jumps=0
+			local since,best=os.clock(),flat(centre-root.Position).Magnitude
+			while os.clock()-t1<5 and not landed do
 				local d=flat(centre-root.Position)
 				drive.dir=if d.Magnitude>1 then d.Unit else Vector3.zero
 				task.wait();watch()
-				if not jumped then
+				local dist=d.Magnitude
+				if dist<best-.3 then best=dist;since=os.clock() end
+				if jumps<2 and os.clock()-t1>(if jumps==0 then 0 else 1.2) then
 					local hit=ray(root.Position,drive.dir*3.5)
-					if hit and hit.Instance==walls then drive.jump=true;jumped=true;res.climbAt=r1(os.clock()-t1) end
+					local wall=hit and (hit.Instance==walls or hit.Instance:GetAttribute("NinjaWall"))
+					if wall or os.clock()-since>.5 then
+						drive.jump=true;jumps+=1;since=os.clock()
+						res.climbAt=res.climbAt or r1(os.clock()-t1)
+						if not wall then res.blockedBy=hit and (hit.Instance.Parent.Name.."/"..hit.Instance.Name) or "nothing" end
+					end
 				end
 			end
 		else
