@@ -1,0 +1,73 @@
+{
+  "baseline": "33028b26041570940cfcaf9c1f66cd3f93d8e5aa",
+  "status": "PASS_OFFLINE",
+  "luauTests": 187,
+  "pythonToolingTests": 7,
+  "existingSourceFiles": 53,
+  "existingSourceChanges": [
+    "games/ninja-duel/src/Server/DevHooks.luau"
+  ],
+  "coreGameplayFilesUnchanged": 16,
+  "artifacts": [
+    {
+      "artifact": "NinjaDuel.rbxlx",
+      "sha256": "400d8c8bbf69e8a0e2426cbdbb3c3e692a4c2352250d6b06b5e003086780edad",
+      "buildFingerprint": "83b0530dc8f44338273ce45020079f9f68a4b59042e60cfffe8cd4e0784e3d56",
+      "sourceEquality": "PASS",
+      "automatedQA": "PASS",
+      "tests": 187,
+      "nativeQA": "NOT_RUN_FOR_THIS_CHANGE"
+    },
+    {
+      "artifact": "NinjaDuel-QA.rbxlx",
+      "sha256": "c7aa11ae3ef9e14db4a63c097e8e4b988f6ba5b4171429d0839b26d1c9e39448",
+      "buildFingerprint": "7a877f606378240102a765d8e87383ec00ca161d75c5fcaa3d6c000fffe0ab5e",
+      "sourceEquality": "PASS",
+      "automatedQA": "PASS",
+      "tests": 187,
+      "nativeQA": "NOT_RUN_FOR_THIS_CHANGE"
+    },
+    {
+      "artifact": "NinjaDuel-DevQA.rbxlx",
+      "sha256": "427a6123f0b3999210aec79d5a49ad82d54d543944955c66b453790703a22267",
+      "buildFingerprint": "09164492b450138881a889ce9349c4297bf2b53cb933f3529d72cbf0f90612cb",
+      "sourceEquality": "PASS",
+      "automatedQA": "PASS",
+      "tests": 187,
+      "nativeQA": "NOT_RUN_FOR_THIS_CHANGE"
+    }
+  ],
+  "dataStoreBackendTested": "fault-injected memory UpdateAsync simulator",
+  "actualRobloxDataStoreRequests": 0,
+  "liveProfileSupportEnabled": false,
+  "gameplayProgressionEffectsEnabled": false,
+  "monetizationEnabled": false,
+  "newStudioBindableNativeValidation": "NOT_RUN",
+  "simulations": [
+    {
+      "path": "packs-10000.json",
+      "openings": 10000,
+      "profiles": 100,
+      "roster": 5
+    },
+    {
+      "path": "packs-100000-roster20.json",
+      "openings": 100000,
+      "profiles": 1000,
+      "roster": 20,
+      "syntheticRoster": true
+    },
+    {
+      "path": "profiles-1000.json",
+      "verified": 1000,
+      "backend": "memory"
+    }
+  ],
+  "remaining": [
+    "cloud integration and staging tests",
+    "live lifecycle and DataStore budgets",
+    "two-client online integration",
+    "approved progression/economy design",
+    "optional market implementation (technical note only)"
+  ]
+}

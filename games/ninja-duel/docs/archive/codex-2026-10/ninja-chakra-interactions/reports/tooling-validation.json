@@ -1,0 +1,31 @@
+{
+  "automatedLuau": {
+    "status": "PASS",
+    "tests": 160,
+    "suites": 16
+  },
+  "automatedPython": {
+    "status": "PASS",
+    "tests": 3
+  },
+  "syntaxCompilation": "PASS",
+  "corePreservation": "reports/core-preservation.json",
+  "nativeTooling": {
+    "status": "PASS",
+    "tests": 12,
+    "buildFingerprint": "bd189a8ad3c2d17986987d550dd710a44e0fb24a48b1928c2977daaecd9c6cb9",
+    "artifactSHA256": "c19fd03addef4769bcf3e8634dda75e9a6997f14e0a372a3ef7ae7ca18beff5e",
+    "report": "reports/native-devtools.json"
+  },
+  "visualSmoke": [
+    "F6 panel opens on exact native build",
+    "reset RPC OK / duel restored"
+  ],
+  "notValidated": [
+    "PS5 dev menu hardware navigation",
+    "volumes visual view",
+    "general native gameplay suite on this new artifact",
+    "commercial release",
+    "two-client online session"
+  ]
+}

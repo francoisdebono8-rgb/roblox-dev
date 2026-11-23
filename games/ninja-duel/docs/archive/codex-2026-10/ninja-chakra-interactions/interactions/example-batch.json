@@ -1,0 +1,9 @@
+[
+  {"op":"toggle","args":{"rule":"wind-kunai","enabled":true}},
+  {"op":"spawn","args":{"id":"kunai1","tool":"Kunai","mastery":"WeaponExpert"}},
+  {"op":"nature","args":{"id":"kunai1","nature":"Wind"}},
+  {"op":"property","args":{"id":"kunai1","property":"Marked","enabled":true}},
+  {"op":"launch","args":{"id":"kunai1","direction":{"x":1,"y":0,"z":0}}},
+  {"op":"step","args":{"seconds":0.5}},
+  {"op":"inspect","args":{"id":"kunai1"}}
+]

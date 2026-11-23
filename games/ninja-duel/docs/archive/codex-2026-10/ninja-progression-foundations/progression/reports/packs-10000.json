@@ -1,0 +1,99 @@
+{
+  "ok": true,
+  "report": {
+    "averageCost": 10000,
+    "averageFinalCurrencies": {
+      "Coins": 0,
+      "MasteryTokens": 0,
+      "Premium": 0
+    },
+    "averageOwned": 5,
+    "averagePacksToCompleteAmongSuccesses": 36.07,
+    "averagePacksToFirstUnlockAmongSuccesses": 11.79,
+    "averageStrandedOwnedFragments": 800,
+    "censoredCompletionProfiles": 0,
+    "collectionTrajectory": {
+      "1": 1,
+      "10": 1.33,
+      "100": 5,
+      "25": 3.73,
+      "5": 1,
+      "50": 4.93
+    },
+    "completedProfiles": 100,
+    "completionRate": 1,
+    "distribution": {
+      "Flashstep": {
+        "averagePacksToUnlockAmongSuccesses": 0,
+        "baselineProbability": 0.05,
+        "censoredProfiles": 0,
+        "draws": 526,
+        "frequency": 0.0526,
+        "starter": true,
+        "unlockPacksTotal": 0,
+        "unlockRate": 1,
+        "unlockedProfiles": 100
+      },
+      "GentleFist": {
+        "averagePacksToUnlockAmongSuccesses": 19.79,
+        "baselineProbability": 0.25,
+        "censoredProfiles": 0,
+        "draws": 2517,
+        "frequency": 0.2517,
+        "starter": false,
+        "unlockPacksTotal": 1979,
+        "unlockRate": 1,
+        "unlockedProfiles": 100
+      },
+      "Lion": {
+        "averagePacksToUnlockAmongSuccesses": 20.25,
+        "baselineProbability": 0.25,
+        "censoredProfiles": 0,
+        "draws": 2507,
+        "frequency": 0.2507,
+        "starter": false,
+        "unlockPacksTotal": 2025,
+        "unlockRate": 1,
+        "unlockedProfiles": 100
+      },
+      "Mirage": {
+        "averagePacksToUnlockAmongSuccesses": 33.03,
+        "baselineProbability": 0.15,
+        "censoredProfiles": 0,
+        "draws": 1512,
+        "frequency": 0.1512,
+        "starter": false,
+        "unlockPacksTotal": 3303,
+        "unlockRate": 1,
+        "unlockedProfiles": 100
+      },
+      "Sand": {
+        "averagePacksToUnlockAmongSuccesses": 17.03,
+        "baselineProbability": 0.3,
+        "censoredProfiles": 0,
+        "draws": 2938,
+        "frequency": 0.2938,
+        "starter": false,
+        "unlockPacksTotal": 1703,
+        "unlockRate": 1,
+        "unlockedProfiles": 100
+      }
+    },
+    "drops": 10000,
+    "duplicateRate": 0.8,
+    "firstUnlockCensoredProfiles": 0,
+    "fixtureOnly": true,
+    "openings": 10000,
+    "pack": "Training",
+    "packsPerProfile": 100,
+    "profiles": 100,
+    "rosterSize": 5,
+    "seed": 42,
+    "warnings": [
+      "Fixture balance only; no approved commercial economy.",
+      "Unlock-time averages exclude censored profiles; use unlockRate/censoredProfiles as well.",
+      "Owned-character fragments accumulate: a sink/crafting policy is not defined.",
+      "Guarantees/pity alter raw-weight probabilities; baselineProbability is not an effective rate."
+    ]
+  }
+}

@@ -1,0 +1,1313 @@
+{
+  "log": "0.742.0.7421053_20261011T005656Z_Studio_440db_last.log",
+  "buildFingerprint": "bd189a8ad3c2d17986987d550dd710a44e0fb24a48b1928c2977daaecd9c6cb9",
+  "report": {
+    "build": "bd189a8ad3c2d17986987d550dd710a44e0fb24a48b1928c2977daaecd9c6cb9",
+    "server": {
+      "stats": {
+        "server.root.sampleDelta.studs": {
+          "p50": 0.7676830291748047,
+          "count": 342,
+          "max": 20.208751678466797,
+          "window": 240,
+          "p95": 5.66670036315918,
+          "mean": 1.3849468642290224
+        },
+        "server.projectiles": {
+          "p50": 0,
+          "count": 1168,
+          "max": 2,
+          "window": 240,
+          "p95": 0,
+          "mean": 0.04708904109589041
+        },
+        "server.impacts.retained": {
+          "p50": 12,
+          "count": 1168,
+          "max": 12,
+          "window": 240,
+          "p95": 12,
+          "mean": 7.250856164383562
+        },
+        "server.pushImpact.ms": {
+          "p50": 0.004375004209578037,
+          "count": 67,
+          "max": 0.010499963536858559,
+          "window": 67,
+          "p95": 0.007166643626987934,
+          "mean": 0.004271759456996598
+        },
+        "server.relocate.ms": {
+          "p50": 0.06504170596599579,
+          "count": 1,
+          "max": 0.06504170596599579,
+          "window": 1,
+          "p95": 0.06504170596599579,
+          "mean": 0.06504170596599579
+        },
+        "server.updateActor.ms": {
+          "p50": 0.054583302699029446,
+          "count": 2336,
+          "max": 0.8479999378323555,
+          "window": 240,
+          "p95": 0.12245832476764917,
+          "mean": 0.06444452810683288
+        },
+        "server.updateHazards.ms": {
+          "p50": 0.0014166580513119698,
+          "count": 1168,
+          "max": 0.008458388037979603,
+          "window": 240,
+          "p95": 0.002166605554521084,
+          "mean": 0.0013730728724486616
+        },
+        "server.snapshot.estimatedBytes": {
+          "p50": 3803,
+          "count": 343,
+          "max": 4252,
+          "window": 240,
+          "p95": 4028,
+          "mean": 3493.7201166180757
+        },
+        "server.snapshot.ms": {
+          "p50": 0.07916660979390144,
+          "count": 343,
+          "max": 0.1795833231881261,
+          "window": 240,
+          "p95": 0.136749935336411,
+          "mean": 0.07467516820128388
+        },
+        "server.separation.studs": {
+          "p50": 0,
+          "count": 1168,
+          "max": 0.3500019311904907,
+          "window": 240,
+          "p95": 0.34999725222587585,
+          "mean": 0.049194892158884736
+        },
+        "server.request.ms": {
+          "p50": 0.011333264410495758,
+          "count": 253,
+          "max": 0.36399997770786285,
+          "window": 240,
+          "p95": 0.03758328966796398,
+          "mean": 0.01910951664016063
+        },
+        "server.dt.ms": {
+          "p50": 16.657499596476555,
+          "count": 1168,
+          "max": 100,
+          "window": 240,
+          "p95": 17.38370768725872,
+          "mean": 17.129273675637293
+        },
+        "server.destroy.ms": {
+          "p50": 15.652541653253138,
+          "count": 12,
+          "max": 21.942041697911918,
+          "window": 12,
+          "p95": 21.942041697911918,
+          "mean": 15.140951407374814
+        },
+        "server.scheduled": {
+          "p50": 0,
+          "count": 1168,
+          "max": 1,
+          "window": 240,
+          "p95": 0,
+          "mean": 0.021404109589041095
+        },
+        "server.separate.ms": {
+          "p50": 0.00241666566580534,
+          "count": 1168,
+          "max": 0.09450002107769251,
+          "window": 240,
+          "p95": 0.054166652262210846,
+          "mean": 0.011056793968461147
+        },
+        "server.snapshot.gap.ms": {
+          "p50": 66.67866674251854,
+          "count": 342,
+          "max": 125.95608329866081,
+          "window": 240,
+          "p95": 82.62508327607065,
+          "mean": 58.821704922167704
+        },
+        "server.heartbeat.ms": {
+          "p50": 16.657499596476555,
+          "count": 1174,
+          "max": 140.21308720111847,
+          "window": 240,
+          "p95": 17.38370768725872,
+          "mean": 17.234124603214813
+        },
+        "server.matches.ms": {
+          "p50": 0.2274166326969862,
+          "count": 1174,
+          "max": 1.2753333430737257,
+          "window": 240,
+          "p95": 0.537874992005527,
+          "mean": 0.22357602072625818
+        },
+        "server.combat.ms": {
+          "p50": 0.17720821779221296,
+          "count": 1168,
+          "max": 0.9527499787509441,
+          "window": 240,
+          "p95": 0.31258328817784786,
+          "mean": 0.16615846146883648
+        },
+        "server.updateProjectiles.ms": {
+          "p50": 0.0017499551177024841,
+          "count": 1168,
+          "max": 0.15400000847876072,
+          "window": 240,
+          "p95": 0.005875015631318092,
+          "mean": 0.002516518516006739
+        },
+        "server.runScheduled.ms": {
+          "p50": 0.00200001522898674,
+          "count": 1168,
+          "max": 0.010708346962928772,
+          "window": 240,
+          "p95": 0.003166613169014454,
+          "mean": 0.001933899200170569
+        }
+      },
+      "counters": {
+        "event.TechniqueResolved": 3,
+        "server.runScheduled.calls": 1168,
+        "event.Light2": 4,
+        "event.Flow": 3,
+        "server.snapshot.calls": 343,
+        "event.GrabHit": 1,
+        "event.Throw": 1,
+        "server.combat.calls": 1168,
+        "event.WallPin": 2,
+        "server.updateActor.calls": 2336,
+        "event.LaunchHit": 3,
+        "server.relocate.calls": 1,
+        "event.ChainTool": 2,
+        "event.Heavy": 1,
+        "server.matches.calls": 1174,
+        "event.Grab": 1,
+        "server.separate.calls": 1168,
+        "event.Damage": 33,
+        "server.request.calls": 253,
+        "server.updateHazards.calls": 1168,
+        "event.Air1": 7,
+        "event.Interrupt": 1,
+        "event.Substitute": 3,
+        "server.updateProjectiles.calls": 1168,
+        "event.Technique": 4,
+        "server.separation.corrections": 276,
+        "event.Dodge": 1,
+        "input.Attack": 17,
+        "event.CounterPalm": 1,
+        "event.Evaded": 1,
+        "event.Air2": 5,
+        "event.RouteUp": 1,
+        "event.Route": 1,
+        "event.LandedSlam": 2,
+        "event.SlamHit": 2,
+        "event.Hit": 26,
+        "event.ThrowHit": 1,
+        "input.GuardOff": 1,
+        "server.destroy.calls": 12,
+        "event.Chase": 4,
+        "event.AirHit": 8,
+        "event.Slam": 2,
+        "server.pushImpact.calls": 67,
+        "event.Launcher": 3,
+        "event.Light1": 8,
+        "input.Move": 235
+      },
+      "events": [
+        {
+          "at": 10.856179625028744,
+          "kind": "state",
+          "context": {
+            "state": "Active",
+            "actor": "PlayerFighter",
+            "from": "Startup",
+            "attack": "Slam"
+          }
+        },
+        {
+          "at": 10.856187500059605,
+          "kind": "state",
+          "context": {
+            "state": "Neutral",
+            "actor": "AIFighter",
+            "reaction": "Knockdown",
+            "from": "Neutral"
+          }
+        },
+        {
+          "at": 11.084645875031129,
+          "kind": "state",
+          "context": {
+            "state": "Recovery",
+            "actor": "PlayerFighter",
+            "from": "Active",
+            "attack": "Slam"
+          }
+        },
+        {
+          "at": 11.417321874992922,
+          "kind": "state",
+          "context": {
+            "state": "Neutral",
+            "actor": "PlayerFighter",
+            "from": "Recovery"
+          }
+        },
+        {
+          "at": 11.63413404172752,
+          "kind": "state",
+          "context": {
+            "state": "Neutral",
+            "actor": "AIFighter",
+            "reaction": "Wakeup",
+            "from": "Neutral"
+          }
+        },
+        {
+          "at": 11.965435541700572,
+          "kind": "state",
+          "context": {
+            "state": "Neutral",
+            "actor": "AIFighter",
+            "from": "Neutral"
+          }
+        },
+        {
+          "at": 12.068027375033125,
+          "kind": "state",
+          "context": {
+            "state": "Startup",
+            "actor": "PlayerFighter",
+            "from": "Neutral",
+            "attack": "Light1"
+          }
+        },
+        {
+          "at": 12.18239954172168,
+          "kind": "state",
+          "context": {
+            "state": "Active",
+            "actor": "PlayerFighter",
+            "from": "Startup",
+            "attack": "Light1"
+          }
+        },
+        {
+          "at": 12.182407999993302,
+          "kind": "state",
+          "context": {
+            "state": "Neutral",
+            "actor": "AIFighter",
+            "reaction": "HitStun",
+            "from": "Neutral"
+          }
+        },
+        {
+          "at": 12.298456708318554,
+          "kind": "state",
+          "context": {
+            "state": "Recovery",
+            "actor": "PlayerFighter",
+            "from": "Active",
+            "attack": "Light1"
+          }
+        },
+        {
+          "at": 12.399001416750252,
+          "kind": "state",
+          "context": {
+            "state": "Startup",
+            "actor": "PlayerFighter",
+            "from": "Recovery",
+            "attack": "Light2"
+          }
+        },
+        {
+          "at": 12.399011250003241,
+          "kind": "state",
+          "context": {
+            "state": "Neutral",
+            "actor": "AIFighter",
+            "from": "Neutral"
+          }
+        },
+        {
+          "at": 12.515228416654281,
+          "kind": "state",
+          "context": {
+            "state": "Active",
+            "actor": "PlayerFighter",
+            "from": "Startup",
+            "attack": "Light2"
+          }
+        },
+        {
+          "at": 12.515241958317347,
+          "kind": "state",
+          "context": {
+            "state": "Neutral",
+            "actor": "AIFighter",
+            "reaction": "HitStun",
+            "from": "Neutral"
+          }
+        },
+        {
+          "at": 12.616243333322927,
+          "kind": "state",
+          "context": {
+            "state": "Recovery",
+            "actor": "PlayerFighter",
+            "from": "Active",
+            "attack": "Light2"
+          }
+        },
+        {
+          "at": 12.85054862499237,
+          "kind": "state",
+          "context": {
+            "state": "Startup",
+            "actor": "PlayerFighter",
+            "from": "Recovery",
+            "attack": "Launcher"
+          }
+        },
+        {
+          "at": 12.850561666651629,
+          "kind": "state",
+          "context": {
+            "state": "Neutral",
+            "actor": "AIFighter",
+            "from": "Neutral"
+          }
+        },
+        {
+          "at": 12.965308250044473,
+          "kind": "state",
+          "context": {
+            "state": "Active",
+            "actor": "PlayerFighter",
+            "from": "Startup",
+            "attack": "Launcher"
+          }
+        },
+        {
+          "at": 12.965320124989375,
+          "kind": "state",
+          "context": {
+            "state": "Neutral",
+            "actor": "AIFighter",
+            "reaction": "Launched",
+            "from": "Neutral"
+          }
+        },
+        {
+          "at": 13.065440125064924,
+          "kind": "state",
+          "context": {
+            "state": "Recovery",
+            "actor": "PlayerFighter",
+            "from": "Active",
+            "attack": "Launcher"
+          }
+        },
+        {
+          "at": 13.384390083374456,
+          "kind": "state",
+          "context": {
+            "state": "Neutral",
+            "actor": "PlayerFighter",
+            "from": "Recovery"
+          }
+        },
+        {
+          "at": 13.49834666668903,
+          "kind": "state",
+          "context": {
+            "state": "Pursuit",
+            "actor": "PlayerFighter",
+            "from": "Neutral"
+          }
+        },
+        {
+          "at": 13.600130541715771,
+          "kind": "server-position-jump",
+          "context": {
+            "state": "Pursuit",
+            "actor": "PlayerFighter",
+            "studs": 20.208751678466797,
+            "command": "dummy",
+            "warp": 1,
+            "previousWarp": 1
+          }
+        },
+        {
+          "at": 13.716614041710272,
+          "kind": "state",
+          "context": {
+            "state": "Neutral",
+            "actor": "PlayerFighter",
+            "from": "Pursuit"
+          }
+        },
+        {
+          "at": 13.932087291730568,
+          "kind": "state",
+          "context": {
+            "state": "Active",
+            "actor": "PlayerFighter",
+            "from": "Neutral",
+            "attack": "Air1"
+          }
+        },
+        {
+          "at": 13.932101458311081,
+          "kind": "state",
+          "context": {
+            "state": "Neutral",
+            "actor": "AIFighter",
+            "reaction": "Juggled",
+            "from": "Neutral"
+          }
+        },
+        {
+          "at": 14.165033541736193,
+          "kind": "state",
+          "context": {
+            "state": "Recovery",
+            "actor": "PlayerFighter",
+            "from": "Active",
+            "attack": "Air1"
+          }
+        },
+        {
+          "at": 14.282403625082225,
+          "kind": "state",
+          "context": {
+            "state": "Startup",
+            "actor": "PlayerFighter",
+            "from": "Recovery",
+            "attack": "Air2"
+          }
+        },
+        {
+          "at": 14.3986990833655,
+          "kind": "state",
+          "context": {
+            "state": "Active",
+            "actor": "PlayerFighter",
+            "from": "Startup",
+            "attack": "Air2"
+          }
+        },
+        {
+          "at": 14.52046708331909,
+          "kind": "state",
+          "context": {
+            "state": "Recovery",
+            "actor": "PlayerFighter",
+            "from": "Active",
+            "attack": "Air2"
+          }
+        },
+        {
+          "at": 14.631729416665621,
+          "kind": "state",
+          "context": {
+            "state": "Startup",
+            "actor": "PlayerFighter",
+            "from": "Recovery",
+            "attack": "Air1"
+          }
+        },
+        {
+          "at": 14.73202175006736,
+          "kind": "state",
+          "context": {
+            "state": "Active",
+            "actor": "PlayerFighter",
+            "from": "Startup",
+            "attack": "Air1"
+          }
+        },
+        {
+          "at": 14.848491874989122,
+          "kind": "state",
+          "context": {
+            "state": "Recovery",
+            "actor": "PlayerFighter",
+            "from": "Active",
+            "attack": "Air1"
+          }
+        },
+        {
+          "at": 15.065962958382443,
+          "kind": "state",
+          "context": {
+            "state": "Active",
+            "actor": "PlayerFighter",
+            "from": "Recovery",
+            "attack": "Air2"
+          }
+        },
+        {
+          "at": 15.298742708400823,
+          "kind": "state",
+          "context": {
+            "state": "Recovery",
+            "actor": "PlayerFighter",
+            "from": "Active",
+            "attack": "Air2"
+          }
+        },
+        {
+          "at": 15.398739041644149,
+          "kind": "state",
+          "context": {
+            "state": "Startup",
+            "actor": "PlayerFighter",
+            "from": "Recovery",
+            "attack": "Slam"
+          }
+        },
+        {
+          "at": 15.499351166654378,
+          "kind": "state",
+          "context": {
+            "state": "Active",
+            "actor": "PlayerFighter",
+            "from": "Startup",
+            "attack": "Slam"
+          }
+        },
+        {
+          "at": 15.499364375020377,
+          "kind": "state",
+          "context": {
+            "state": "Neutral",
+            "actor": "AIFighter",
+            "reaction": "Knockdown",
+            "from": "Neutral"
+          }
+        },
+        {
+          "at": 15.831930916756392,
+          "kind": "state",
+          "context": {
+            "state": "Recovery",
+            "actor": "PlayerFighter",
+            "from": "Active",
+            "attack": "Slam"
+          }
+        },
+        {
+          "at": 16.148758833413012,
+          "kind": "state",
+          "context": {
+            "state": "Neutral",
+            "actor": "PlayerFighter",
+            "from": "Recovery"
+          }
+        },
+        {
+          "at": 16.3821812083479,
+          "kind": "state",
+          "context": {
+            "state": "Active",
+            "actor": "PlayerFighter",
+            "from": "Neutral",
+            "attack": "Light1"
+          }
+        },
+        {
+          "at": 16.382192291668616,
+          "kind": "state",
+          "context": {
+            "state": "Neutral",
+            "actor": "AIFighter",
+            "reaction": "Wakeup",
+            "from": "Neutral"
+          }
+        },
+        {
+          "at": 16.599284583353437,
+          "kind": "state",
+          "context": {
+            "state": "Recovery",
+            "actor": "PlayerFighter",
+            "from": "Active",
+            "attack": "Light1"
+          }
+        },
+        {
+          "at": 16.59929483337328,
+          "kind": "state",
+          "context": {
+            "state": "Neutral",
+            "actor": "AIFighter",
+            "from": "Neutral"
+          }
+        },
+        {
+          "at": 16.716049166745506,
+          "kind": "state",
+          "context": {
+            "state": "Startup",
+            "actor": "AIFighter",
+            "from": "Neutral",
+            "attack": "Light1"
+          }
+        },
+        {
+          "at": 16.831843374995515,
+          "kind": "state",
+          "context": {
+            "state": "Neutral",
+            "actor": "PlayerFighter",
+            "reaction": "HitStun",
+            "from": "Recovery"
+          }
+        },
+        {
+          "at": 16.83185345842503,
+          "kind": "state",
+          "context": {
+            "state": "Active",
+            "actor": "AIFighter",
+            "from": "Startup",
+            "attack": "Light1"
+          }
+        },
+        {
+          "at": 16.932028500013985,
+          "kind": "state",
+          "context": {
+            "state": "Recovery",
+            "actor": "AIFighter",
+            "from": "Active",
+            "attack": "Light1"
+          }
+        },
+        {
+          "at": 17.032874958356842,
+          "kind": "state",
+          "context": {
+            "state": "Startup",
+            "actor": "AIFighter",
+            "from": "Recovery",
+            "attack": "CounterPalm"
+          }
+        },
+        {
+          "at": 17.1492657084018,
+          "kind": "state",
+          "context": {
+            "state": "Neutral",
+            "actor": "PlayerFighter",
+            "reaction": "Knockback",
+            "from": "Neutral"
+          }
+        },
+        {
+          "at": 17.149278500000946,
+          "kind": "state",
+          "context": {
+            "state": "Active",
+            "actor": "AIFighter",
+            "from": "Startup",
+            "attack": "CounterPalm"
+          }
+        },
+        {
+          "at": 17.265412750071846,
+          "kind": "state",
+          "context": {
+            "state": "Recovery",
+            "actor": "AIFighter",
+            "from": "Active",
+            "attack": "CounterPalm"
+          }
+        },
+        {
+          "at": 17.615586208412424,
+          "kind": "state",
+          "context": {
+            "state": "Neutral",
+            "actor": "PlayerFighter",
+            "from": "Neutral"
+          }
+        },
+        {
+          "at": 17.615598291740753,
+          "kind": "state",
+          "context": {
+            "state": "Pursuit",
+            "actor": "AIFighter",
+            "from": "Recovery"
+          }
+        },
+        {
+          "at": 17.848909791675396,
+          "kind": "state",
+          "context": {
+            "state": "Dodging",
+            "actor": "PlayerFighter",
+            "from": "Neutral"
+          }
+        },
+        {
+          "at": 17.848927583312616,
+          "kind": "state",
+          "context": {
+            "state": "Neutral",
+            "actor": "AIFighter",
+            "from": "Pursuit"
+          }
+        },
+        {
+          "at": 18.181876125046983,
+          "kind": "state",
+          "context": {
+            "state": "Neutral",
+            "actor": "PlayerFighter",
+            "from": "Dodging"
+          }
+        },
+        {
+          "at": 18.51507604168728,
+          "kind": "state",
+          "context": {
+            "state": "TechniqueChannel",
+            "actor": "PlayerFighter",
+            "from": "Neutral"
+          }
+        },
+        {
+          "at": 18.548926958348602,
+          "kind": "intentional-relocation",
+          "context": {
+            "state": "TechniqueActive",
+            "actor": "PlayerFighter",
+            "command": "dummy"
+          }
+        },
+        {
+          "at": 18.61514070839621,
+          "kind": "state",
+          "context": {
+            "state": "TechniqueRecovery",
+            "actor": "PlayerFighter",
+            "from": "TechniqueChannel"
+          }
+        },
+        {
+          "at": 18.731939458404668,
+          "kind": "state",
+          "context": {
+            "state": "Startup",
+            "actor": "AIFighter",
+            "from": "Neutral",
+            "attack": "Light1"
+          }
+        },
+        {
+          "at": 18.84849770832807,
+          "kind": "state",
+          "context": {
+            "state": "Neutral",
+            "actor": "PlayerFighter",
+            "reaction": "HitStun",
+            "from": "TechniqueRecovery"
+          }
+        },
+        {
+          "at": 18.848509833333082,
+          "kind": "state",
+          "context": {
+            "state": "Active",
+            "actor": "AIFighter",
+            "from": "Startup",
+            "attack": "Light1"
+          }
+        },
+        {
+          "at": 18.9488138750894,
+          "kind": "state",
+          "context": {
+            "state": "Recovery",
+            "actor": "AIFighter",
+            "from": "Active",
+            "attack": "Light1"
+          }
+        },
+        {
+          "at": 19.049288333393633,
+          "kind": "state",
+          "context": {
+            "state": "Startup",
+            "actor": "AIFighter",
+            "from": "Recovery",
+            "attack": "Light2"
+          }
+        },
+        {
+          "at": 19.16578179167118,
+          "kind": "state",
+          "context": {
+            "state": "Stunned",
+            "actor": "PlayerFighter",
+            "reaction": "HitStun",
+            "from": "Neutral"
+          }
+        },
+        {
+          "at": 19.165790208382532,
+          "kind": "state",
+          "context": {
+            "state": "Active",
+            "actor": "AIFighter",
+            "from": "Startup",
+            "attack": "Light2"
+          }
+        },
+        {
+          "at": 19.382263874984346,
+          "kind": "state",
+          "context": {
+            "state": "Recovery",
+            "actor": "AIFighter",
+            "from": "Active",
+            "attack": "Light2"
+          }
+        },
+        {
+          "at": 19.49801445833873,
+          "kind": "state",
+          "context": {
+            "state": "Neutral",
+            "actor": "PlayerFighter",
+            "from": "Stunned"
+          }
+        },
+        {
+          "at": 19.49802120833192,
+          "kind": "state",
+          "context": {
+            "state": "Startup",
+            "actor": "AIFighter",
+            "from": "Recovery",
+            "attack": "Launcher"
+          }
+        },
+        {
+          "at": 19.598538583377376,
+          "kind": "state",
+          "context": {
+            "state": "Neutral",
+            "actor": "PlayerFighter",
+            "reaction": "Launched",
+            "from": "Neutral"
+          }
+        },
+        {
+          "at": 19.59854529169388,
+          "kind": "state",
+          "context": {
+            "state": "Active",
+            "actor": "AIFighter",
+            "from": "Startup",
+            "attack": "Launcher"
+          }
+        },
+        {
+          "at": 19.715353708365,
+          "kind": "state",
+          "context": {
+            "state": "Recovery",
+            "actor": "PlayerFighter",
+            "from": "Neutral"
+          }
+        },
+        {
+          "at": 19.831830249982886,
+          "kind": "state",
+          "context": {
+            "state": "TechniqueChannel",
+            "actor": "PlayerFighter",
+            "from": "Recovery"
+          }
+        },
+        {
+          "at": 19.83183787507005,
+          "kind": "state",
+          "context": {
+            "state": "Pursuit",
+            "actor": "AIFighter",
+            "from": "Active",
+            "attack": "Launcher"
+          }
+        },
+        {
+          "at": 19.915197750087827,
+          "kind": "qa-command",
+          "context": {
+            "op": "report"
+          }
+        },
+        {
+          "at": 19.948810500092804,
+          "kind": "state",
+          "context": {
+            "state": "Stunned",
+            "actor": "PlayerFighter",
+            "from": "TechniqueChannel"
+          }
+        },
+        {
+          "at": 20.065612666658126,
+          "kind": "state",
+          "context": {
+            "state": "Neutral",
+            "actor": "AIFighter",
+            "from": "Pursuit"
+          }
+        },
+        {
+          "at": 20.165753583423793,
+          "kind": "state",
+          "context": {
+            "state": "Startup",
+            "actor": "AIFighter",
+            "from": "Neutral",
+            "attack": "Light1"
+          }
+        },
+        {
+          "at": 20.23160658334382,
+          "kind": "qa-command",
+          "context": {
+            "op": "report"
+          }
+        }
+      ],
+      "seconds": 20.23161112505477,
+      "enabled": true
+    },
+    "client": {
+      "stats": {
+        "client.presentation.impacts.ms": {
+          "p50": 0.006333226338028908,
+          "count": 338,
+          "max": 2.3000416113063693,
+          "window": 240,
+          "mean": 0.12618145828284102,
+          "p95": 0.8391666924580932
+        },
+        "client.snapshot.age.ms": {
+          "p50": 39.05200958251953,
+          "count": 293,
+          "max": 171.0948944091797,
+          "window": 240,
+          "mean": 41.80392063518433,
+          "p95": 53.896188735961914
+        },
+        "client.snapshot.gap.ms": {
+          "p50": 66.5747916791588,
+          "count": 292,
+          "max": 228.6694166250527,
+          "window": 240,
+          "mean": 67.86117408694125,
+          "p95": 87.18787494581193
+        },
+        "client.camera.ms": {
+          "p50": 0.06479164585471153,
+          "count": 1156,
+          "max": 0.18979166634380817,
+          "window": 240,
+          "mean": 0.05633347675004478,
+          "p95": 0.09179161861538887
+        },
+        "client.hud.ms": {
+          "p50": 0.17604161985218525,
+          "count": 338,
+          "max": 0.6001250585541129,
+          "window": 240,
+          "mean": 0.17165027031145946,
+          "p95": 0.3702084068208933
+        },
+        "client.bot.frameTravel.studs": {
+          "p50": 0.10969537496566772,
+          "count": 1146,
+          "max": 5.879444599151611,
+          "window": 240,
+          "mean": 0.214866996832344,
+          "p95": 1.864007592201233
+        },
+        "client.frame.ms": {
+          "p50": 16.647040843963623,
+          "count": 1156,
+          "max": 141.3678675889969,
+          "window": 240,
+          "mean": 17.242406178700858,
+          "p95": 19.72370781004429
+        },
+        "client.fx.ms": {
+          "p50": 0.029958435334265232,
+          "count": 1156,
+          "max": 3.933541593141854,
+          "window": 240,
+          "mean": 0.759855502085264,
+          "p95": 2.561958390288055
+        },
+        "client.bot.presentationGap.studs": {
+          "p50": 0.12160448729991913,
+          "count": 1146,
+          "max": 10.345855712890625,
+          "window": 240,
+          "mean": 0.4726587475931472,
+          "p95": 4.011497497558594
+        },
+        "client.presentation.update.ms": {
+          "p50": 0.22004172205924988,
+          "count": 1156,
+          "max": 6.944041699171066,
+          "window": 240,
+          "mean": 0.9085921636922768,
+          "p95": 2.6891250163316727
+        },
+        "client.human.presentationGap.studs": {
+          "p50": 0.05020006000995636,
+          "count": 1146,
+          "max": 9.85392951965332,
+          "window": 240,
+          "mean": 0.5047111855873534,
+          "p95": 2.353827476501465
+        },
+        "client.human.frameTravel.studs": {
+          "p50": 0.03211931511759758,
+          "count": 1146,
+          "max": 13.368141174316406,
+          "window": 240,
+          "mean": 0.23973464985829832,
+          "p95": 1.072721004486084
+        },
+        "client.presentation.smoothStep.ms": {
+          "p50": 0.1335416454821825,
+          "count": 1156,
+          "max": 0.5438333610072732,
+          "window": 240,
+          "mean": 0.1220099121826833,
+          "p95": 0.22258330136537552
+        }
+      },
+      "counters": {
+        "client.hud.calls": 338,
+        "client.fx.calls": 1156,
+        "client.presentation.smoothStep.calls": 1156,
+        "client.presentation.update.calls": 1156,
+        "client.presentation.impacts.calls": 338,
+        "client.camera.calls": 1156
+      },
+      "events": [
+        {
+          "at": 0.04078874993138015,
+          "kind": "frame-spike",
+          "context": {
+            "ms": 99.07645732164383,
+            "state": "Neutral"
+          }
+        },
+        {
+          "at": 0.04078933328855783,
+          "kind": "epoch",
+          "context": {
+            "epoch": 3
+          }
+        },
+        {
+          "at": 0.8818592083407566,
+          "kind": "frame-spike",
+          "context": {
+            "ms": 78.17675173282623,
+            "state": "Neutral"
+          }
+        },
+        {
+          "at": 0.9938062916044146,
+          "kind": "epoch",
+          "context": {
+            "epoch": 4
+          }
+        },
+        {
+          "at": 1.7481154999695718,
+          "kind": "frame-spike",
+          "context": {
+            "ms": 76.23637467622757,
+            "state": "Neutral"
+          }
+        },
+        {
+          "at": 1.861341750016436,
+          "kind": "epoch",
+          "context": {
+            "epoch": 5
+          }
+        },
+        {
+          "at": 2.6395771666429937,
+          "kind": "frame-spike",
+          "context": {
+            "ms": 98.42649847269058,
+            "state": "Neutral"
+          }
+        },
+        {
+          "at": 2.6395776249701157,
+          "kind": "epoch",
+          "context": {
+            "epoch": 6
+          }
+        },
+        {
+          "at": 3.478477833326906,
+          "kind": "frame-spike",
+          "context": {
+            "ms": 75.12841373682022,
+            "state": "Active"
+          }
+        },
+        {
+          "at": 3.6210332916816697,
+          "kind": "frame-spike",
+          "context": {
+            "ms": 58.66421014070511,
+            "state": "Recovery"
+          }
+        },
+        {
+          "at": 3.621033791685477,
+          "kind": "epoch",
+          "context": {
+            "epoch": 7
+          }
+        },
+        {
+          "at": 4.326541708316654,
+          "kind": "frame-spike",
+          "context": {
+            "ms": 54.28725108504295,
+            "state": "Recovery"
+          }
+        },
+        {
+          "at": 4.380348958307877,
+          "kind": "epoch",
+          "context": {
+            "epoch": 8
+          }
+        },
+        {
+          "at": 5.183060958283022,
+          "kind": "frame-spike",
+          "context": {
+            "ms": 62.61212378740311,
+            "state": "Active"
+          }
+        },
+        {
+          "at": 5.316794041660614,
+          "kind": "epoch",
+          "context": {
+            "epoch": 9
+          }
+        },
+        {
+          "at": 6.093765833298676,
+          "kind": "frame-spike",
+          "context": {
+            "ms": 102.6245430111885,
+            "state": "Neutral"
+          }
+        },
+        {
+          "at": 6.0937662499491125,
+          "kind": "epoch",
+          "context": {
+            "epoch": 10
+          }
+        },
+        {
+          "at": 6.9214686249615625,
+          "kind": "frame-spike",
+          "context": {
+            "ms": 67.58933514356613,
+            "state": "Neutral"
+          }
+        },
+        {
+          "at": 7.0555529166013,
+          "kind": "epoch",
+          "context": {
+            "epoch": 11
+          }
+        },
+        {
+          "at": 7.87588554166723,
+          "kind": "frame-spike",
+          "context": {
+            "ms": 141.3678675889969,
+            "state": "Neutral"
+          }
+        },
+        {
+          "at": 8.038819249952212,
+          "kind": "frame-spike",
+          "context": {
+            "ms": 77.37775146961212,
+            "state": "Active"
+          }
+        },
+        {
+          "at": 8.038819791632704,
+          "kind": "epoch",
+          "context": {
+            "epoch": 14
+          }
+        },
+        {
+          "at": 18.52601229166612,
+          "kind": "visual-position-jump",
+          "context": {
+            "state": "TechniqueActive",
+            "warp": 2,
+            "studs": 13.368141174316406,
+            "ms": 19.65341717004776,
+            "previousWarp": 1,
+            "actor": "human"
+          }
+        }
+      ],
+      "seconds": 19.885865750024095,
+      "enabled": true
+    },
+    "rows": 191,
+    "complete": true,
+    "clientPresent": true
+  },
+  "devQA": {
+    "failures": [],
+    "pass": 12,
+    "build": "bd189a8ad3c2d17986987d550dd710a44e0fb24a48b1928c2977daaecd9c6cb9"
+  },
+  "malformedRows": 0,
+  "artifactSHA256": "c19fd03addef4769bcf3e8634dda75e9a6997f14e0a372a3ef7ae7ca18beff5e"
+}

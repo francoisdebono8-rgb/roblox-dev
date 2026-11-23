@@ -1,0 +1,2305 @@
+{
+  "source": "active shared tables (read-only)",
+  "comparison": [
+    {
+      "id": "Flashstep",
+      "name": "Minato",
+      "routes": {
+        "airDown": "AirSpike",
+        "airSide": "AirSwitch",
+        "airUp": "AirDrive",
+        "down": "Sweep",
+        "side": "AngleStep",
+        "up": "Launcher"
+      },
+      "heavyAfterOne": "KneeStrike",
+      "disengage": "Kunai",
+      "tool": {
+        "Count": 1,
+        "Damage": 3,
+        "Kind": "kunai",
+        "Recover": 0.55,
+        "Speed": 96
+      },
+      "awakening": {
+        "Color": [
+          255,
+          214,
+          92
+        ],
+        "Cooldown": 0.4,
+        "Damage": 1.05,
+        "Name": "YELLOW FLASH",
+        "Regen": 1.5,
+        "Speed": 1.18
+      },
+      "techniques": [
+        "MarkedBlade",
+        "Flashstep",
+        "BurstStrike",
+        "Quickstep",
+        "WindCut"
+      ],
+      "attackOverrides": {
+        "Air1": {
+          "angle": 0.24,
+          "startup": 0.8
+        },
+        "Air2": {
+          "angle": -0.3,
+          "startup": 0.82
+        },
+        "DashAttack": {
+          "angle": -0.18,
+          "startup": 0.78,
+          "travel": 1.16
+        },
+        "Launcher": {
+          "impulseY": 62,
+          "startup": 0.72,
+          "travel": 1.16
+        },
+        "Light1": {
+          "angle": 0.24,
+          "recovery": 0.9,
+          "startup": 0.82,
+          "travel": 1.08
+        },
+        "Light2": {
+          "angle": -0.3,
+          "recovery": 0.9,
+          "startup": 0.84,
+          "travel": 1.12
+        },
+        "Light3": {
+          "angle": 0.36,
+          "impulseZ": 52,
+          "recovery": 0.88,
+          "startup": 0.82,
+          "travel": 1.2
+        },
+        "Slam": {
+          "recovery": 0.86,
+          "startup": 0.78
+        }
+      }
+    },
+    {
+      "id": "GentleFist",
+      "name": "Neji",
+      "routes": {
+        "airDown": "AirSpike",
+        "airSide": "AirSwitch",
+        "airUp": "AirDrive",
+        "down": "Sweep",
+        "side": "CircleStep",
+        "up": "Launcher"
+      },
+      "heavyAfterOne": "PalmThrust",
+      "disengage": "Kunai",
+      "tool": {
+        "Count": 1,
+        "Damage": 3,
+        "Kind": "kunai",
+        "Recover": 0.85,
+        "Speed": 86
+      },
+      "awakening": {
+        "Color": [
+          200,
+          214,
+          255
+        ],
+        "Cooldown": 0.6,
+        "Damage": 1.06,
+        "Drain": 1.8,
+        "Name": "BYAKUGAN FULL FIELD",
+        "NoBlindSpot": true,
+        "Regen": 1.5,
+        "Speed": 1.08
+      },
+      "techniques": [
+        "Rotation",
+        "VacuumPalm",
+        "SixtyFourPalms"
+      ],
+      "attackOverrides": {
+        "Air1": {
+          "startup": 0.96
+        },
+        "Air2": {
+          "startup": 0.98
+        },
+        "DashAttack": {
+          "startup": 0.94,
+          "travel": 1.02
+        },
+        "Heavy": {
+          "recovery": 1,
+          "startup": 1.02
+        },
+        "Launcher": {
+          "impulseY": 56,
+          "startup": 0.98,
+          "travel": 0.95
+        },
+        "Light1": {
+          "range": 6.4,
+          "recovery": 0.9,
+          "startup": 0.92,
+          "travel": 1
+        },
+        "Light2": {
+          "range": 6.6,
+          "recovery": 0.9,
+          "startup": 0.94,
+          "travel": 1
+        },
+        "Light3": {
+          "impulseZ": 54,
+          "recovery": 0.96,
+          "startup": 1,
+          "travel": 1.05
+        },
+        "Slam": {
+          "startup": 1
+        }
+      }
+    },
+    {
+      "id": "Lion",
+      "name": "Sasuke",
+      "routes": {
+        "airDown": "AirSpike",
+        "airSide": "AirSwitch",
+        "airUp": "AirDrive",
+        "down": "Sweep",
+        "side": "VaultKick",
+        "up": "LionKick"
+      },
+      "heavyAfterOne": "KneeStrike",
+      "disengage": "Shuriken",
+      "tool": {
+        "Count": 2,
+        "Damage": 2,
+        "Kind": "shuriken",
+        "Recover": 0.6,
+        "Speed": 92
+      },
+      "awakening": {
+        "Color": [
+          120,
+          60,
+          200
+        ],
+        "Cooldown": 0.6,
+        "Damage": 1.18,
+        "HealthDrain": 1.4,
+        "Name": "CURSE MARK",
+        "Regen": 1.3,
+        "Speed": 1.15
+      },
+      "techniques": [
+        "FireBloom",
+        "PhoenixFlower",
+        "WireTrap",
+        "Chidori"
+      ],
+      "attackOverrides": {
+        "Air1": {
+          "startup": 0.92
+        },
+        "Air2": {
+          "startup": 0.92
+        },
+        "DashAttack": {
+          "travel": 1.1
+        },
+        "Light1": {
+          "recovery": 0.95,
+          "startup": 0.9
+        },
+        "Light2": {
+          "range": 6.6,
+          "startup": 0.95
+        },
+        "Light3": {
+          "impulseZ": 56,
+          "range": 6.8,
+          "startup": 1.05
+        }
+      }
+    },
+    {
+      "id": "Mirage",
+      "name": "Itachi",
+      "routes": {
+        "airDown": "AirSpike",
+        "airSide": "AirSwitch",
+        "airUp": "AirDrive",
+        "down": "Sweep",
+        "side": "FeintStep",
+        "up": "Launcher"
+      },
+      "heavyAfterOne": "CounterPalm",
+      "disengage": "Shuriken",
+      "tool": {
+        "AirSpread": 3,
+        "Count": 2,
+        "Damage": 2,
+        "Geometry": true,
+        "Kind": "shuriken",
+        "Recover": 0.75,
+        "Ricochet": true,
+        "Speed": 84
+      },
+      "awakening": {
+        "Color": [
+          230,
+          40,
+          50
+        ],
+        "Cooldown": 0.6,
+        "CostScale": 0.6,
+        "Damage": 1.12,
+        "Name": "SHARINGAN FOCUS",
+        "Regen": 1.4,
+        "Speed": 1.06,
+        "Windows": 1.5
+      },
+      "techniques": [
+        "Read",
+        "NeedleFan",
+        "MirageCast",
+        "FireBloom",
+        "PhoenixFlower"
+      ],
+      "attackOverrides": {
+        "Air1": {
+          "startup": 0.98,
+          "travel": 0.9
+        },
+        "Air2": {
+          "startup": 1,
+          "travel": 0.88
+        },
+        "DashAttack": {
+          "startup": 0.95,
+          "travel": 0.92
+        },
+        "Heavy": {
+          "recovery": 1.02,
+          "startup": 0.98,
+          "travel": 0.9
+        },
+        "Launcher": {
+          "impulseY": 53,
+          "impulseZ": 20,
+          "startup": 1,
+          "travel": 0.86
+        },
+        "Light1": {
+          "range": 6.6,
+          "recovery": 0.9,
+          "startup": 0.96,
+          "travel": 0.92
+        },
+        "Light2": {
+          "chainTool": true,
+          "range": 7,
+          "recovery": 0.88,
+          "startup": 0.98,
+          "travel": 0.9
+        },
+        "Light3": {
+          "impulseZ": 60,
+          "recovery": 1,
+          "startup": 1.02,
+          "travel": 0.86
+        },
+        "Slam": {
+          "recovery": 1,
+          "startup": 1
+        }
+      }
+    },
+    {
+      "id": "Sand",
+      "name": "Gaara",
+      "routes": {
+        "down": "Sweep",
+        "up": "SandPillar"
+      },
+      "heavyAfterOne": "SandPillar",
+      "disengage": null,
+      "tool": null,
+      "awakening": {
+        "Color": [
+          222,
+          176,
+          112
+        ],
+        "Cooldown": 0.5,
+        "Damage": 1.12,
+        "Name": "SHUKAKU'S SAND",
+        "Regen": 1.6,
+        "ShieldRegen": 2,
+        "Speed": 1.12
+      },
+      "techniques": [
+        "SandCoffin",
+        "SandShuriken",
+        "DesertWave"
+      ],
+      "attackOverrides": {
+        "Air1": {
+          "range": 8,
+          "startup": 1.1
+        },
+        "Air2": {
+          "range": 8,
+          "startup": 1.1
+        },
+        "DashAttack": {
+          "range": 8.5,
+          "startup": 1.1,
+          "travel": 0.8
+        },
+        "Light1": {
+          "damage": 0.8,
+          "depth": 7.5,
+          "offset": 4.3,
+          "range": 8.5,
+          "recovery": 1.3,
+          "startup": 1.45,
+          "travel": 0.25,
+          "width": 3.4
+        },
+        "Light2": {
+          "damage": 0.5,
+          "depth": 7.5,
+          "offset": 4.3,
+          "range": 8.5,
+          "recovery": 1.3,
+          "startup": 1.45,
+          "travel": 0.25,
+          "width": 3.4
+        },
+        "Light3": {
+          "damage": 0.5,
+          "depth": 8,
+          "impulseZ": 56,
+          "offset": 4.5,
+          "range": 9,
+          "recovery": 1.35,
+          "startup": 1.5,
+          "travel": 0.25,
+          "width": 4.2
+        },
+        "Slam": {
+          "startup": 1.1
+        }
+      }
+    }
+  ],
+  "definitions": {
+    "attacks": {
+      "Air1": {
+        "active": 0.13,
+        "air": true,
+        "animation": "Air1",
+        "arm": 98,
+        "blockable": true,
+        "chain": true,
+        "damage": 6,
+        "depth": 6.24,
+        "feedback": "Juggled",
+        "height": 6,
+        "impulse": {
+          "x": 0,
+          "y": 15,
+          "z": 8
+        },
+        "kind": "strike",
+        "lean": 12,
+        "offset": 3.12,
+        "range": 7.8,
+        "reaction": "Juggled",
+        "recovery": 0.18,
+        "side": 1,
+        "startup": 0.08,
+        "step": 1.1,
+        "stun": 0.62,
+        "travel": 2.8,
+        "travelTime": 0.21000000000000002,
+        "twist": 38,
+        "width": 5.5,
+        "zone": "body"
+      },
+      "Air2": {
+        "active": 0.14,
+        "air": true,
+        "animation": "Air2",
+        "arm": 104,
+        "blockable": true,
+        "chain": true,
+        "damage": 7,
+        "depth": 6.24,
+        "feedback": "Juggled",
+        "height": 6,
+        "impulse": {
+          "x": 0,
+          "y": 10,
+          "z": 12
+        },
+        "kind": "kick",
+        "lean": 18,
+        "offset": 3.12,
+        "range": 7.8,
+        "reaction": "Juggled",
+        "recovery": 0.19,
+        "side": -1,
+        "startup": 0.09,
+        "step": 1.15,
+        "stun": 0.64,
+        "travel": 3.1,
+        "travelTime": 0.23,
+        "twist": 44,
+        "width": 5.5,
+        "zone": "head"
+      },
+      "AirDrive": {
+        "active": 0.13,
+        "air": true,
+        "animation": "AirDrive",
+        "arm": 60,
+        "blockable": true,
+        "chain": false,
+        "damage": 7,
+        "depth": 6.24,
+        "feedback": "Knockback",
+        "height": 7,
+        "impulse": {
+          "x": 0,
+          "y": 8,
+          "z": 48
+        },
+        "kind": "kick",
+        "lean": -10,
+        "offset": 3.12,
+        "range": 7.8,
+        "reaction": "Knockback",
+        "recovery": 0.22,
+        "side": 1,
+        "startup": 0.08,
+        "step": 1,
+        "stun": 0.5,
+        "travel": 3,
+        "travelTime": 0.21000000000000002,
+        "twist": 20,
+        "width": 5.5,
+        "zone": "body"
+      },
+      "AirSpike": {
+        "active": 0.12,
+        "air": true,
+        "animation": "AirSpike",
+        "arm": 120,
+        "blockable": true,
+        "chain": false,
+        "damage": 7,
+        "depth": 6.24,
+        "feedback": "Spiked",
+        "height": 7,
+        "impulse": {
+          "x": 0,
+          "y": -72,
+          "z": 6
+        },
+        "kind": "spike",
+        "lean": 40,
+        "offset": 3.12,
+        "range": 7.8,
+        "reaction": "Spiked",
+        "recovery": 0.24,
+        "side": 1,
+        "startup": 0.09,
+        "step": 1,
+        "stun": 0.9,
+        "travel": 2,
+        "travelTime": 0.21,
+        "twist": 10,
+        "width": 5.5,
+        "zone": "head"
+      },
+      "AirSwitch": {
+        "active": 0.14,
+        "air": true,
+        "animation": "AirSwitch",
+        "arm": 80,
+        "blockable": true,
+        "chain": true,
+        "damage": 6,
+        "depth": 6.24,
+        "feedback": "Juggled",
+        "height": 7,
+        "impulse": {
+          "x": 0,
+          "y": 13,
+          "z": 9
+        },
+        "kind": "kick",
+        "lean": 10,
+        "offset": 3.12,
+        "orbit": 40,
+        "range": 7.8,
+        "reaction": "Juggled",
+        "recovery": 0.2,
+        "side": -1,
+        "startup": 0.1,
+        "step": 1,
+        "stun": 0.6,
+        "travel": 0,
+        "travelTime": 0.24000000000000002,
+        "twist": 60,
+        "width": 6,
+        "zone": "head"
+      },
+      "AngleStep": {
+        "active": 0.1,
+        "air": false,
+        "animation": "AngleStep",
+        "arm": 90,
+        "blockable": true,
+        "chain": true,
+        "damage": 6,
+        "depth": 6.24,
+        "feedback": "HitStun",
+        "height": 6,
+        "impulse": {
+          "x": 0,
+          "y": 0,
+          "z": 9
+        },
+        "kind": "strike",
+        "lean": 10,
+        "offset": 3.12,
+        "orbit": 17,
+        "range": 6.5,
+        "reaction": "HitStun",
+        "recovery": 0.2,
+        "side": 1,
+        "startup": 0.08,
+        "step": 1.1,
+        "stun": 0.3,
+        "travel": 1.2,
+        "travelTime": 0.18,
+        "twist": 40,
+        "width": 5,
+        "zone": "body"
+      },
+      "ChidoriThrust": {
+        "active": 0.26,
+        "air": false,
+        "animation": "ChidoriThrust",
+        "arm": 110,
+        "blockable": true,
+        "chain": false,
+        "damage": 22,
+        "depth": 6.24,
+        "feedback": "Knockback",
+        "height": 6,
+        "impulse": {
+          "x": 0,
+          "y": 12,
+          "z": 70
+        },
+        "kind": "heavy",
+        "lean": 30,
+        "offset": 3.12,
+        "range": 7,
+        "reaction": "Knockback",
+        "recovery": 0.62,
+        "side": 1,
+        "startup": 0.04,
+        "step": 1.4,
+        "stun": 0.7,
+        "travel": 15,
+        "travelTime": 0.3,
+        "twist": 20,
+        "width": 4.5,
+        "zone": "body"
+      },
+      "CircleStep": {
+        "active": 0.12,
+        "air": false,
+        "animation": "CircleStep",
+        "arm": 90,
+        "blockable": true,
+        "chain": true,
+        "damage": 6,
+        "depth": 6.24,
+        "feedback": "HitStun",
+        "height": 6,
+        "impulse": {
+          "x": 0,
+          "y": 3,
+          "z": 8
+        },
+        "kind": "strike",
+        "lean": 8,
+        "offset": 3.12,
+        "orbit": 28,
+        "range": 6,
+        "reaction": "HitStun",
+        "recovery": 0.22,
+        "side": 1,
+        "startup": 0.09,
+        "step": 1.05,
+        "stun": 0.34,
+        "travel": 0,
+        "travelTime": 0.21,
+        "twist": 40,
+        "width": 5,
+        "zone": "body"
+      },
+      "CounterPalm": {
+        "active": 0.12,
+        "air": false,
+        "animation": "CounterPalm",
+        "arm": 100,
+        "blockable": true,
+        "chain": false,
+        "damage": 10,
+        "depth": 6.24,
+        "feedback": "Knockback",
+        "height": 6,
+        "impulse": {
+          "x": 0,
+          "y": 14,
+          "z": 46
+        },
+        "kind": "palm",
+        "lean": 16,
+        "offset": 3.12,
+        "range": 7.8,
+        "reaction": "Knockback",
+        "recovery": 0.3,
+        "side": 1,
+        "startup": 0.05,
+        "step": 1.2,
+        "stun": 0.5,
+        "travel": 2.6,
+        "travelTime": 0.16999999999999998,
+        "twist": 30,
+        "width": 5.5,
+        "zone": "body"
+      },
+      "DashAttack": {
+        "active": 0.15,
+        "air": false,
+        "animation": "DashAttack",
+        "arm": 96,
+        "blockable": true,
+        "chain": true,
+        "damage": 7,
+        "depth": 6.24,
+        "feedback": "HitStun",
+        "height": 6,
+        "impulse": {
+          "x": 0,
+          "y": 3,
+          "z": 13
+        },
+        "kind": "strike",
+        "lean": 28,
+        "offset": 3.12,
+        "range": 7.8,
+        "reaction": "HitStun",
+        "recovery": 0.27,
+        "side": 1,
+        "startup": 0.07,
+        "step": 1.35,
+        "stun": 0.31,
+        "travel": 8.2,
+        "travelTime": 0.22,
+        "twist": 36,
+        "width": 5.5,
+        "zone": "body"
+      },
+      "FeintStep": {
+        "active": 0.12,
+        "air": false,
+        "animation": "FeintStep",
+        "arm": 90,
+        "blockable": true,
+        "chain": true,
+        "damage": 6,
+        "depth": 6.24,
+        "feedback": "HitStun",
+        "height": 6,
+        "impulse": {
+          "x": 0,
+          "y": 4,
+          "z": 9
+        },
+        "kind": "strike",
+        "lean": 10,
+        "offset": 3.12,
+        "orbit": 34,
+        "range": 6.5,
+        "reaction": "HitStun",
+        "recovery": 0.22,
+        "side": -1,
+        "startup": 0.1,
+        "step": 1.1,
+        "stun": 0.34,
+        "travel": 0,
+        "travelTime": 0.22,
+        "twist": 30,
+        "width": 5,
+        "zone": "body"
+      },
+      "FlyingKick": {
+        "active": 0.16,
+        "air": false,
+        "animation": "FlyingKick",
+        "arm": 60,
+        "blockable": true,
+        "chain": false,
+        "damage": 9,
+        "depth": 6.24,
+        "feedback": "Knockback",
+        "height": 6,
+        "impulse": {
+          "x": 0,
+          "y": 14,
+          "z": 48
+        },
+        "kind": "kick",
+        "lean": -12,
+        "offset": 3.12,
+        "range": 7.5,
+        "reaction": "Knockback",
+        "recovery": 0.32,
+        "side": 1,
+        "startup": 0.1,
+        "step": 1.3,
+        "stun": 0.5,
+        "travel": 10,
+        "travelTime": 0.26,
+        "twist": 10,
+        "width": 5.5,
+        "zone": "head"
+      },
+      "Grab": {
+        "active": 0.14,
+        "air": false,
+        "animation": "Grab",
+        "arm": 72,
+        "blockable": false,
+        "chain": false,
+        "damage": 0,
+        "depth": 6.24,
+        "feedback": "Grabbed",
+        "height": 6,
+        "impulse": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "kind": "strike",
+        "lean": 18,
+        "offset": 3.12,
+        "range": 4.6,
+        "reaction": "Grabbed",
+        "recovery": 0.5,
+        "side": 1,
+        "startup": 0.18,
+        "step": 1.05,
+        "stun": 0.8,
+        "travel": 2,
+        "travelTime": 0.32,
+        "twist": 10,
+        "width": 5.5,
+        "zone": "body"
+      },
+      "Heavy": {
+        "active": 0.17,
+        "air": false,
+        "animation": "Heavy",
+        "arm": 116,
+        "blockable": true,
+        "chain": false,
+        "damage": 14,
+        "depth": 6.24,
+        "feedback": "Knockdown",
+        "height": 6,
+        "impulse": {
+          "x": 0,
+          "y": 12,
+          "z": 34
+        },
+        "kind": "heavy",
+        "lean": 25,
+        "offset": 3.12,
+        "range": 7.8,
+        "reaction": "Knockdown",
+        "recovery": 0.52,
+        "side": -1,
+        "startup": 0.3,
+        "step": 1.3,
+        "stun": 0.68,
+        "travel": 5.4,
+        "travelTime": 0.47,
+        "twist": 48,
+        "width": 5.5,
+        "zone": "body"
+      },
+      "KneeStrike": {
+        "active": 0.12,
+        "air": false,
+        "animation": "KneeStrike",
+        "arm": 70,
+        "blockable": true,
+        "chain": false,
+        "damage": 7,
+        "depth": 6.24,
+        "feedback": "Juggled",
+        "height": 6,
+        "impulse": {
+          "x": 0,
+          "y": 26,
+          "z": 4
+        },
+        "kind": "knee",
+        "lean": 14,
+        "offset": 3.12,
+        "range": 7.8,
+        "reaction": "Juggled",
+        "recovery": 0.3,
+        "side": 1,
+        "startup": 0.08,
+        "step": 1.15,
+        "stun": 0.62,
+        "travel": 2.6,
+        "travelTime": 0.2,
+        "twist": 16,
+        "width": 5.5,
+        "zone": "body"
+      },
+      "Launcher": {
+        "active": 0.14,
+        "air": false,
+        "animation": "Launcher",
+        "arm": 112,
+        "blockable": true,
+        "chain": false,
+        "damage": 8,
+        "depth": 6.24,
+        "feedback": "Launched",
+        "height": 6,
+        "impulse": {
+          "x": 0,
+          "y": 58,
+          "z": 13
+        },
+        "kind": "launch",
+        "lean": -24,
+        "offset": 3.12,
+        "range": 7.8,
+        "reaction": "Launched",
+        "recovery": 0.28,
+        "side": 1,
+        "startup": 0.17,
+        "step": 1.15,
+        "stun": 1.18,
+        "travel": 3.2,
+        "travelTime": 0.31000000000000005,
+        "twist": 20,
+        "width": 5.5,
+        "zone": "chin"
+      },
+      "Light1": {
+        "active": 0.12,
+        "air": false,
+        "animation": "Light1",
+        "arm": 82,
+        "blockable": true,
+        "chain": true,
+        "damage": 5,
+        "feedback": "HitStun",
+        "height": 5,
+        "impulse": {
+          "x": 0,
+          "y": 0,
+          "z": 7
+        },
+        "kind": "strike",
+        "lean": 8,
+        "range": 6,
+        "reaction": "HitStun",
+        "recovery": 0.28,
+        "side": 1,
+        "startup": 0.09,
+        "step": 1.05,
+        "stun": 0.27,
+        "travel": 3.2,
+        "travelTime": 0.21,
+        "twist": 30,
+        "width": 5,
+        "zone": "head"
+      },
+      "Light2": {
+        "active": 0.12,
+        "air": false,
+        "animation": "Light2",
+        "arm": 88,
+        "blockable": true,
+        "chain": true,
+        "damage": 10,
+        "feedback": "HitStun",
+        "height": 5,
+        "impulse": {
+          "x": 0,
+          "y": 0,
+          "z": 7
+        },
+        "kind": "strike",
+        "lean": 10,
+        "range": 6,
+        "reaction": "HitStun",
+        "recovery": 0.27,
+        "side": -1,
+        "startup": 0.1,
+        "step": 1.08,
+        "stun": 0.27,
+        "travel": 3.5,
+        "travelTime": 0.22,
+        "twist": 34,
+        "width": 5,
+        "zone": "body"
+      },
+      "Light3": {
+        "active": 0.14,
+        "air": false,
+        "animation": "Light3",
+        "arm": 102,
+        "blockable": true,
+        "chain": false,
+        "damage": 18,
+        "feedback": "Knockback",
+        "height": 5,
+        "impulse": {
+          "x": 0,
+          "y": 14,
+          "z": 50
+        },
+        "kind": "kick",
+        "lean": 12,
+        "range": 6,
+        "reaction": "Knockback",
+        "recovery": 0.24,
+        "side": 1,
+        "startup": 0.12,
+        "step": 1.2,
+        "stun": 0.48,
+        "travel": 4.2,
+        "travelTime": 0.26,
+        "twist": 72,
+        "width": 5,
+        "zone": "body"
+      },
+      "LionKick": {
+        "active": 0.14,
+        "air": false,
+        "animation": "LionKick",
+        "arm": 100,
+        "blockable": true,
+        "chain": false,
+        "damage": 8,
+        "depth": 6.24,
+        "feedback": "Launched",
+        "height": 6,
+        "impulse": {
+          "x": 0,
+          "y": 50,
+          "z": 5
+        },
+        "kind": "launch",
+        "lean": -30,
+        "offset": 3.12,
+        "range": 7.8,
+        "reaction": "Launched",
+        "recovery": 0.28,
+        "side": 1,
+        "startup": 0.15,
+        "step": 1.15,
+        "stun": 1.25,
+        "travel": 3,
+        "travelTime": 0.29000000000000004,
+        "twist": 10,
+        "width": 5.5,
+        "zone": "chin"
+      },
+      "PalmThrust": {
+        "active": 0.14,
+        "air": false,
+        "animation": "PalmThrust",
+        "arm": 100,
+        "blockable": true,
+        "chain": false,
+        "damage": 10,
+        "depth": 6.24,
+        "feedback": "Knockback",
+        "height": 6,
+        "impulse": {
+          "x": 0,
+          "y": 12,
+          "z": 62
+        },
+        "kind": "palm",
+        "lean": 18,
+        "offset": 3.12,
+        "range": 7.8,
+        "reaction": "Knockback",
+        "recovery": 0.34,
+        "side": 1,
+        "startup": 0.11,
+        "step": 1.25,
+        "stun": 0.52,
+        "travel": 3.4,
+        "travelTime": 0.25,
+        "twist": 20,
+        "width": 5.5,
+        "zone": "body"
+      },
+      "Riposte": {
+        "active": 0.12,
+        "air": false,
+        "animation": "Riposte",
+        "arm": 92,
+        "blockable": true,
+        "chain": true,
+        "damage": 8,
+        "depth": 6.24,
+        "feedback": "HitStun",
+        "height": 6,
+        "impulse": {
+          "x": 0,
+          "y": 5,
+          "z": 12
+        },
+        "kind": "strike",
+        "lean": 12,
+        "offset": 3.12,
+        "range": 7.8,
+        "reaction": "HitStun",
+        "recovery": 0.26,
+        "side": 1,
+        "startup": 0.05,
+        "step": 1.2,
+        "stun": 0.36,
+        "travel": 2.6,
+        "travelTime": 0.16999999999999998,
+        "twist": 24,
+        "width": 5.5,
+        "zone": "head"
+      },
+      "SandPillar": {
+        "active": 0.14,
+        "air": false,
+        "animation": "SandPillar",
+        "arm": 120,
+        "blockable": true,
+        "chain": false,
+        "damage": 9,
+        "depth": 11,
+        "facing": 0.25,
+        "feedback": "Launched",
+        "height": 8,
+        "impulse": {
+          "x": 0,
+          "y": 54,
+          "z": 4
+        },
+        "kind": "launch",
+        "lean": -6,
+        "offset": 6,
+        "range": 12.5,
+        "reaction": "Launched",
+        "recovery": 0.5,
+        "side": 1,
+        "startup": 0.27,
+        "step": 1,
+        "stun": 1.1,
+        "travel": 0,
+        "travelTime": 0.41000000000000003,
+        "twist": 10,
+        "width": 6,
+        "zone": "legs"
+      },
+      "Slam": {
+        "active": 0.2,
+        "air": false,
+        "animation": "Slam",
+        "arm": 128,
+        "blockable": true,
+        "chain": false,
+        "damage": 11,
+        "depth": 6.24,
+        "feedback": "Knockdown",
+        "height": 6,
+        "impulse": {
+          "x": 0,
+          "y": -78,
+          "z": 10
+        },
+        "kind": "slam",
+        "lean": 46,
+        "offset": 3.12,
+        "range": 7.8,
+        "reaction": "Knockdown",
+        "recovery": 0.38,
+        "side": 1,
+        "startup": 0.15,
+        "step": 1.2,
+        "stun": 0.86,
+        "travel": 2.8,
+        "travelTime": 0.35,
+        "twist": 12,
+        "width": 5.5,
+        "zone": "body"
+      },
+      "SlideSweep": {
+        "active": 0.18,
+        "air": false,
+        "animation": "SlideSweep",
+        "arm": 40,
+        "blockable": true,
+        "chain": false,
+        "damage": 8,
+        "depth": 6.24,
+        "feedback": "Knockdown",
+        "height": 3.5,
+        "impulse": {
+          "x": 0,
+          "y": 8,
+          "z": 18
+        },
+        "kind": "sweep",
+        "lean": -20,
+        "offset": 3.12,
+        "range": 7.5,
+        "reaction": "Knockdown",
+        "recovery": 0.38,
+        "side": 1,
+        "startup": 0.12,
+        "step": 1.3,
+        "stun": 0.62,
+        "travel": 11,
+        "travelTime": 0.3,
+        "twist": 14,
+        "width": 6.5,
+        "zone": "legs"
+      },
+      "Sweep": {
+        "active": 0.14,
+        "air": false,
+        "animation": "Sweep",
+        "arm": 60,
+        "blockable": true,
+        "chain": false,
+        "damage": 7,
+        "depth": 6.24,
+        "feedback": "Knockdown",
+        "height": 3.5,
+        "impulse": {
+          "x": 0,
+          "y": 6,
+          "z": 12
+        },
+        "kind": "sweep",
+        "lean": 20,
+        "offset": 3.12,
+        "range": 6.5,
+        "reaction": "Knockdown",
+        "recovery": 0.34,
+        "side": -1,
+        "startup": 0.12,
+        "step": 1,
+        "stun": 0.62,
+        "travel": 1.6,
+        "travelTime": 0.26,
+        "twist": 60,
+        "width": 6.5,
+        "zone": "legs"
+      },
+      "Throw": {
+        "active": 0.1,
+        "air": false,
+        "animation": "Throw",
+        "arm": 92,
+        "blockable": false,
+        "chain": false,
+        "damage": 10,
+        "depth": 6.24,
+        "feedback": "Knockdown",
+        "height": 6,
+        "impulse": {
+          "x": 0,
+          "y": 18,
+          "z": 48
+        },
+        "kind": "strike",
+        "lean": 22,
+        "offset": 3.12,
+        "range": 7.8,
+        "reaction": "Knockdown",
+        "recovery": 0.34,
+        "side": 1,
+        "startup": 0.12,
+        "step": 1.1,
+        "stun": 0.7,
+        "travel": 0,
+        "travelTime": 0.22,
+        "twist": 70,
+        "width": 5.5,
+        "zone": "body"
+      },
+      "ThrowUp": {
+        "active": 0.1,
+        "air": false,
+        "animation": "ThrowUp",
+        "arm": 110,
+        "blockable": false,
+        "chain": false,
+        "damage": 7,
+        "depth": 6.24,
+        "feedback": "Launched",
+        "height": 6,
+        "impulse": {
+          "x": 0,
+          "y": 50,
+          "z": 10
+        },
+        "kind": "strike",
+        "lean": -30,
+        "offset": 3.12,
+        "range": 7.8,
+        "reaction": "Launched",
+        "recovery": 0.3,
+        "side": -1,
+        "startup": 0.12,
+        "step": 1.1,
+        "stun": 1.1,
+        "travel": 0,
+        "travelTime": 0.22,
+        "twist": 28,
+        "width": 5.5,
+        "zone": "body"
+      },
+      "VaultKick": {
+        "active": 0.12,
+        "air": false,
+        "animation": "VaultKick",
+        "arm": 60,
+        "blockable": true,
+        "chain": true,
+        "damage": 7,
+        "depth": 6.24,
+        "feedback": "HitStun",
+        "height": 6,
+        "impulse": {
+          "x": 0,
+          "y": 6,
+          "z": 12
+        },
+        "kind": "kick",
+        "lean": 10,
+        "offset": 3.12,
+        "orbit": 50,
+        "range": 6.5,
+        "reaction": "HitStun",
+        "recovery": 0.24,
+        "side": -1,
+        "startup": 0.12,
+        "step": 1.1,
+        "stun": 0.36,
+        "travel": 0,
+        "travelTime": 0.24,
+        "twist": 70,
+        "width": 5.5,
+        "zone": "head"
+      },
+      "WallDive": {
+        "active": 0.3,
+        "air": false,
+        "animation": "WallDive",
+        "arm": 80,
+        "blockable": true,
+        "chain": false,
+        "damage": 9,
+        "depth": 6.24,
+        "facing": -0.45,
+        "feedback": "Knockdown",
+        "height": 8,
+        "impulse": {
+          "x": 0,
+          "y": 10,
+          "z": 30
+        },
+        "kind": "kick",
+        "lean": 42,
+        "offset": 3.12,
+        "range": 7.5,
+        "reaction": "Knockdown",
+        "recovery": 0.32,
+        "side": 1,
+        "startup": 0.1,
+        "step": 1.2,
+        "stun": 0.62,
+        "travel": 0,
+        "travelTime": 0.4,
+        "twist": 24,
+        "width": 6,
+        "zone": "body"
+      }
+    },
+    "fighters": {
+      "Flashstep": {
+        "AccelerationScale": 1.15,
+        "Age": 13,
+        "AirControlScale": 1.15,
+        "AttackProfile": {
+          "Air1": {
+            "angle": 0.24,
+            "startup": 0.8
+          },
+          "Air2": {
+            "angle": -0.3,
+            "startup": 0.82
+          },
+          "DashAttack": {
+            "angle": -0.18,
+            "startup": 0.78,
+            "travel": 1.16
+          },
+          "Launcher": {
+            "impulseY": 62,
+            "startup": 0.72,
+            "travel": 1.16
+          },
+          "Light1": {
+            "angle": 0.24,
+            "recovery": 0.9,
+            "startup": 0.82,
+            "travel": 1.08
+          },
+          "Light2": {
+            "angle": -0.3,
+            "recovery": 0.9,
+            "startup": 0.84,
+            "travel": 1.12
+          },
+          "Light3": {
+            "angle": 0.36,
+            "impulseZ": 52,
+            "recovery": 0.88,
+            "startup": 0.82,
+            "travel": 1.2
+          },
+          "Slam": {
+            "recovery": 0.86,
+            "startup": 0.78
+          }
+        },
+        "Awakening": {
+          "Color": [
+            255,
+            214,
+            92
+          ],
+          "Cooldown": 0.4,
+          "Damage": 1.05,
+          "Name": "YELLOW FLASH",
+          "Regen": 1.5,
+          "Speed": 1.18
+        },
+        "Chakra": 110,
+        "ChakraRegen": 8,
+        "Color": [
+          82,
+          177,
+          244
+        ],
+        "CombatDamage": 1,
+        "CombatStyle": "Angles",
+        "CombatTravel": 1.18,
+        "ComboToolCancel": true,
+        "DashScale": 1.15,
+        "Description": "Decision speed. Kunai placement, angle changes and an unfinished teleport seal.",
+        "FullName": "Minato Namikaze",
+        "GuardStrength": 0.1,
+        "Hair": [
+          225,
+          228,
+          212
+        ],
+        "Health": 125,
+        "JumpScale": 1.1,
+        "Name": "Minato",
+        "Outfit": [
+          45,
+          104,
+          156
+        ],
+        "PreferredRange": 6,
+        "Routes": "↑ rising kick (seals the body: 2 follows it up)  ·  ↓ spinning leg sweep (plants a marked kunai)  ·  ←→ angle step  ·  air: push kick / axe kick / flash switch",
+        "Skin": [
+          225,
+          196,
+          166
+        ],
+        "Speed": 19.5,
+        "SprintScale": 1.12,
+        "Techniques": [
+          {
+            "Active": 0.02,
+            "Channel": 0.12,
+            "Cooldown": 2.2,
+            "Cost": 10,
+            "Damage": 6,
+            "Hint": "Two seals planted at once • a hit seals the body",
+            "Id": "MarkedBlade",
+            "Interruptible": true,
+            "Mobile": true,
+            "Name": "Marked Kunai",
+            "Range": 66,
+            "Recovery": 0,
+            "Throw": "MarkedKunai"
+          },
+          {
+            "Active": 0.04,
+            "Channel": 0.06,
+            "Cooldown": 1.5,
+            "Cost": 16,
+            "Hint": "Stick picks the seal and the side • strike or 3 on arrival",
+            "Id": "Flashstep",
+            "Interruptible": true,
+            "Name": "Flying Thunder God",
+            "Range": 90,
+            "Recovery": 0.2,
+            "Requires": "Anchor"
+          },
+          {
+            "Active": 0.08,
+            "Channel": 0.3,
+            "Cooldown": 5.5,
+            "Cost": 24,
+            "Damage": 20,
+            "Hint": "Instant after a teleport • plunges when airborne • ends a clean string",
+            "Id": "BurstStrike",
+            "Interruptible": true,
+            "Name": "Rasengan",
+            "Range": 8,
+            "Recovery": 0.5
+          },
+          {
+            "Active": 0.08,
+            "Channel": 0.11,
+            "Cooldown": 2.3,
+            "Cost": 12,
+            "Hint": "Create an angle • no guaranteed hit",
+            "Id": "Quickstep",
+            "Interruptible": true,
+            "Name": "Quickstep",
+            "Range": 12,
+            "Recovery": 0.21
+          },
+          {
+            "Active": 0.1,
+            "Channel": 0.32,
+            "Cooldown": 3.7,
+            "Cost": 18,
+            "Damage": 7,
+            "Element": "Wind",
+            "Hint": "Displace with a cutting gust",
+            "Id": "WindCut",
+            "Interruptible": true,
+            "Name": "Wind Cut",
+            "Range": 36,
+            "Recovery": 0.34
+          }
+        ],
+        "Title": "THE FAST PRODIGY",
+        "Tool": "Kunai",
+        "ToolMastery": {
+          "Count": 1,
+          "Damage": 3,
+          "Kind": "kunai",
+          "Recover": 0.55,
+          "Speed": 96
+        }
+      },
+      "GentleFist": {
+        "AccelerationScale": 1.02,
+        "Age": 13,
+        "AirControlScale": 0.95,
+        "AttackProfile": {
+          "Air1": {
+            "startup": 0.96
+          },
+          "Air2": {
+            "startup": 0.98
+          },
+          "DashAttack": {
+            "startup": 0.94,
+            "travel": 1.02
+          },
+          "Heavy": {
+            "recovery": 1,
+            "startup": 1.02
+          },
+          "Launcher": {
+            "impulseY": 56,
+            "startup": 0.98,
+            "travel": 0.95
+          },
+          "Light1": {
+            "range": 6.4,
+            "recovery": 0.9,
+            "startup": 0.92,
+            "travel": 1
+          },
+          "Light2": {
+            "range": 6.6,
+            "recovery": 0.9,
+            "startup": 0.94,
+            "travel": 1
+          },
+          "Light3": {
+            "impulseZ": 54,
+            "recovery": 0.96,
+            "startup": 1,
+            "travel": 1.05
+          },
+          "Slam": {
+            "startup": 1
+          }
+        },
+        "Awakening": {
+          "Color": [
+            200,
+            214,
+            255
+          ],
+          "Cooldown": 0.6,
+          "Damage": 1.06,
+          "Drain": 1.8,
+          "Name": "BYAKUGAN FULL FIELD",
+          "NoBlindSpot": true,
+          "Regen": 1.5,
+          "Speed": 1.08
+        },
+        "Byakugan": {
+          "BlindSpot": 0.9
+        },
+        "Chakra": 115,
+        "ChakraRegen": 7.6,
+        "Color": [
+          176,
+          196,
+          255
+        ],
+        "CombatDamage": 0.95,
+        "CombatStyle": "GentleFist",
+        "CombatTravel": 1,
+        "ComboToolCancel": true,
+        "DashScale": 1,
+        "Description": "Byakugan and the Gentle Fist. Palms that close chakra points, a perfect rotation defence.",
+        "FullName": "Neji Hyuga",
+        "GentleFist": {
+          "Drain": 6,
+          "Duration": 5,
+          "GuardDrain": 3,
+          "MaxPoints": 4,
+          "RegenCut": 0.15
+        },
+        "GuardStrength": 0.1,
+        "Hair": [
+          52,
+          36,
+          30
+        ],
+        "Health": 135,
+        "JumpScale": 0.98,
+        "Name": "Neji",
+        "Outfit": [
+          226,
+          220,
+          206
+        ],
+        "PreferredRange": 5,
+        "Routes": "↑ palm heel under the chin  ·  ↓ low rotation sweep (closes two points)  ·  ←→ circular step onto a chakra point  ·  air: twin palms / descending palm / spinning palm",
+        "Skin": [
+          228,
+          202,
+          178
+        ],
+        "Speed": 18.5,
+        "SprintScale": 1,
+        "Techniques": [
+          {
+            "Active": 0.55,
+            "Channel": 0.04,
+            "Cooldown": 6,
+            "Cost": 24,
+            "Damage": 6,
+            "Hint": "Spinning dome • repels strikes and blades • counter after",
+            "Id": "Rotation",
+            "Interruptible": false,
+            "Name": "Rotation",
+            "Range": 7,
+            "Recovery": 0.24
+          },
+          {
+            "Active": 0.06,
+            "Channel": 0.18,
+            "Cooldown": 2.8,
+            "Cost": 14,
+            "Damage": 7,
+            "Hint": "Air-pressure palm • pushes into walls • ends a clean string",
+            "Id": "VacuumPalm",
+            "Interruptible": true,
+            "Name": "Vacuum Palm",
+            "Range": 32,
+            "Recovery": 0.26,
+            "Speed": 96
+          },
+          {
+            "Active": 0.12,
+            "Channel": 0.22,
+            "Cooldown": 10,
+            "Cost": 30,
+            "Damage": 3,
+            "Hint": "Point blank • seals the chakra points (no jutsu)",
+            "Id": "SixtyFourPalms",
+            "Interruptible": true,
+            "Name": "64 Palms",
+            "Range": 5,
+            "Recovery": 0.4
+          }
+        ],
+        "Title": "THE HYUGA GENIUS",
+        "Tool": "Kunai",
+        "ToolMastery": {
+          "Count": 1,
+          "Damage": 3,
+          "Kind": "kunai",
+          "Recover": 0.85,
+          "Speed": 86
+        }
+      },
+      "Lion": {
+        "AccelerationScale": 1.12,
+        "Age": 12,
+        "AirControlScale": 1.15,
+        "AttackProfile": {
+          "Air1": {
+            "startup": 0.92
+          },
+          "Air2": {
+            "startup": 0.92
+          },
+          "DashAttack": {
+            "travel": 1.1
+          },
+          "Light1": {
+            "recovery": 0.95,
+            "startup": 0.9
+          },
+          "Light2": {
+            "range": 6.6,
+            "startup": 0.95
+          },
+          "Light3": {
+            "impulseZ": 56,
+            "range": 6.8,
+            "startup": 1.05
+          }
+        },
+        "Awakening": {
+          "Color": [
+            120,
+            60,
+            200
+          ],
+          "Cooldown": 0.6,
+          "Damage": 1.18,
+          "HealthDrain": 1.4,
+          "Name": "CURSE MARK",
+          "Regen": 1.3,
+          "Speed": 1.15
+        },
+        "Chakra": 105,
+        "ChakraRegen": 7.5,
+        "Color": [
+          92,
+          132,
+          255
+        ],
+        "CombatDamage": 1.05,
+        "CombatStyle": "Lion",
+        "CombatTravel": 1.12,
+        "ComboToolCancel": true,
+        "DashScale": 1.08,
+        "Description": "Pressure. Kicks, wire and fire. A launcher he follows into the air and a Chidori that ends everything — or him.",
+        "FullName": "Sasuke Uchiha",
+        "GuardStrength": 0.08,
+        "Hair": [
+          24,
+          26,
+          40
+        ],
+        "Health": 120,
+        "JumpScale": 1.15,
+        "Name": "Sasuke",
+        "Outfit": [
+          34,
+          40,
+          72
+        ],
+        "PreferredRange": 6,
+        "Routes": "↑ rising kick into Shadow of the Dancing Leaf (heavy in the air: LION COMBO)  ·  ↓ low kick sweep  ·  ←→ vault over into a back kick  ·  air: drive / axe kick / switch",
+        "Sharingan": {
+          "Counter": 0.7,
+          "ParryWindow": 0.24,
+          "PerfectDodge": 0.18
+        },
+        "Skin": [
+          236,
+          210,
+          190
+        ],
+        "Speed": 19,
+        "SprintScale": 1.1,
+        "Techniques": [
+          {
+            "Active": 0.4,
+            "Channel": 0.5,
+            "Cooldown": 5.5,
+            "Cost": 24,
+            "Damage": 15,
+            "Element": "Fire",
+            "Feintable": true,
+            "Hint": "On a wired opponent: Dragon Flame runs along the wire",
+            "Id": "FireBloom",
+            "Interruptible": true,
+            "Name": "Great Fireball",
+            "Range": 70,
+            "Recovery": 0.36,
+            "Speed": 58
+          },
+          {
+            "Active": 0.32,
+            "Channel": 0.28,
+            "Cooldown": 5,
+            "Cost": 20,
+            "Damage": 4,
+            "Element": "Fire",
+            "HiddenBlades": true,
+            "Hint": "Flames with two shuriken hidden inside",
+            "Id": "PhoenixFlower",
+            "Interruptible": true,
+            "Name": "Phoenix Flower",
+            "Range": 56,
+            "Recovery": 0.3,
+            "Speed": 72
+          },
+          {
+            "Active": 0.08,
+            "Channel": 0.18,
+            "Cooldown": 6,
+            "Cost": 18,
+            "Damage": 3,
+            "Hint": "A wired shuriken binds • then 1 for Dragon Flame",
+            "Id": "WireTrap",
+            "Interruptible": true,
+            "Name": "Wire Trap",
+            "Range": 34,
+            "Recovery": 0.3
+          },
+          {
+            "Active": 0.05,
+            "Channel": 0.62,
+            "Cooldown": 9,
+            "Cost": 34,
+            "Damage": 22,
+            "Element": "Lightning",
+            "Hint": "Charge, then a lightning thrust • a miss leaves him open",
+            "Id": "Chidori",
+            "Interruptible": true,
+            "Name": "Chidori",
+            "Range": 20,
+            "Recovery": 0.1
+          }
+        ],
+        "Title": "THE ROOKIE OF THE YEAR",
+        "Tool": "Shuriken",
+        "ToolMastery": {
+          "Count": 2,
+          "Damage": 2,
+          "Kind": "shuriken",
+          "Recover": 0.6,
+          "Speed": 92
+        }
+      },
+      "Mirage": {
+        "AccelerationScale": 0.98,
+        "Age": 13,
+        "AirControlScale": 0.95,
+        "AttackProfile": {
+          "Air1": {
+            "startup": 0.98,
+            "travel": 0.9
+          },
+          "Air2": {
+            "startup": 1,
+            "travel": 0.88
+          },
+          "DashAttack": {
+            "startup": 0.95,
+            "travel": 0.92
+          },
+          "Heavy": {
+            "recovery": 1.02,
+            "startup": 0.98,
+            "travel": 0.9
+          },
+          "Launcher": {
+            "impulseY": 53,
+            "impulseZ": 20,
+            "startup": 1,
+            "travel": 0.86
+          },
+          "Light1": {
+            "range": 6.6,
+            "recovery": 0.9,
+            "startup": 0.96,
+            "travel": 0.92
+          },
+          "Light2": {
+            "chainTool": true,
+            "range": 7,
+            "recovery": 0.88,
+            "startup": 0.98,
+            "travel": 0.9
+          },
+          "Light3": {
+            "impulseZ": 60,
+            "recovery": 1,
+            "startup": 1.02,
+            "travel": 0.86
+          },
+          "Slam": {
+            "recovery": 1,
+            "startup": 1
+          }
+        },
+        "Awakening": {
+          "Color": [
+            230,
+            40,
+            50
+          ],
+          "Cooldown": 0.6,
+          "CostScale": 0.6,
+          "Damage": 1.12,
+          "Name": "SHARINGAN FOCUS",
+          "Regen": 1.4,
+          "Speed": 1.06,
+          "Windows": 1.5
+        },
+        "Chakra": 125,
+        "ChakraRegen": 7.2,
+        "Color": [
+          222,
+          70,
+          80
+        ],
+        "CombatDamage": 1.1,
+        "CombatStyle": "Control",
+        "CombatTravel": 0.98,
+        "ComboToolCancel": true,
+        "DashScale": 0.98,
+        "Description": "Sharingan already awakened. Reads, precise shuriken, deception and Katon fire.",
+        "FullName": "Itachi Uchiha",
+        "GuardStrength": 0.08,
+        "Hair": [
+          30,
+          31,
+          43
+        ],
+        "Health": 145,
+        "JumpScale": 0.98,
+        "Name": "Itachi",
+        "Outfit": [
+          69,
+          49,
+          66
+        ],
+        "PreferredRange": 10,
+        "Routes": "↑ rising palm (shuriken cover the climb)  ·  ↓ reaping sweep  ·  ←→ feint step (an afterimage stays)  ·  air: side kick / hammer drop / hook switch",
+        "Sharingan": {
+          "Counter": 0.9,
+          "ParryWindow": 0.3,
+          "PerfectDodge": 0.22
+        },
+        "Skin": [
+          197,
+          164,
+          143
+        ],
+        "Speed": 18,
+        "SprintScale": 1,
+        "Techniques": [
+          {
+            "Active": 1,
+            "Channel": 0.1,
+            "Cooldown": 3.6,
+            "Cost": 14,
+            "Hint": "Read one frontal strike or Rasengan • counter",
+            "Id": "Read",
+            "Interruptible": false,
+            "Name": "Sharingan Read",
+            "Range": 10,
+            "Recovery": 0.2
+          },
+          {
+            "Active": 0.08,
+            "Channel": 0.26,
+            "Cooldown": 3.6,
+            "Cost": 18,
+            "Damage": 2,
+            "Hint": "Five blades, then two hidden ones aimed at the dodge",
+            "Id": "NeedleFan",
+            "Interruptible": true,
+            "Name": "Shadow Shuriken",
+            "Range": 56,
+            "Recovery": 0.26
+          },
+          {
+            "Active": 0.08,
+            "Channel": 0.9,
+            "Cooldown": 8,
+            "Cost": 32,
+            "Hint": "3s decoy • a swing at it opens a punish",
+            "Id": "MirageCast",
+            "Interruptible": true,
+            "Name": "Genjutsu: Mirage",
+            "Range": 23,
+            "Recovery": 0.45,
+            "Requires": "Target"
+          },
+          {
+            "Active": 0.42,
+            "Channel": 0.55,
+            "Cooldown": 5.5,
+            "Cost": 26,
+            "Damage": 16,
+            "Element": "Fire",
+            "Feintable": true,
+            "Hint": "A miss leaves the lane burning",
+            "Id": "FireBloom",
+            "Interruptible": true,
+            "Name": "Great Fireball",
+            "Range": 76,
+            "Recovery": 0.36,
+            "Speed": 58
+          },
+          {
+            "Active": 0.32,
+            "Channel": 0.3,
+            "Cooldown": 5,
+            "Cost": 20,
+            "Damage": 4,
+            "Element": "Fire",
+            "Hint": "Five small flames fanned at the opponent • pressure",
+            "Id": "PhoenixFlower",
+            "Interruptible": true,
+            "Name": "Phoenix Flower",
+            "Range": 60,
+            "Recovery": 0.3,
+            "Speed": 72
+          }
+        ],
+        "Title": "THE SHARINGAN PRODIGY",
+        "Tool": "Shuriken",
+        "ToolMastery": {
+          "AirSpread": 3,
+          "Count": 2,
+          "Damage": 2,
+          "Geometry": true,
+          "Kind": "shuriken",
+          "Recover": 0.75,
+          "Ricochet": true,
+          "Speed": 84
+        }
+      },
+      "Sand": {
+        "AccelerationScale": 0.85,
+        "Age": 12,
+        "AirControlScale": 0.85,
+        "AttackProfile": {
+          "Air1": {
+            "range": 8,
+            "startup": 1.1
+          },
+          "Air2": {
+            "range": 8,
+            "startup": 1.1
+          },
+          "DashAttack": {
+            "range": 8.5,
+            "startup": 1.1,
+            "travel": 0.8
+          },
+          "Light1": {
+            "damage": 0.8,
+            "depth": 7.5,
+            "offset": 4.3,
+            "range": 8.5,
+            "recovery": 1.3,
+            "startup": 1.45,
+            "travel": 0.25,
+            "width": 3.4
+          },
+          "Light2": {
+            "damage": 0.5,
+            "depth": 7.5,
+            "offset": 4.3,
+            "range": 8.5,
+            "recovery": 1.3,
+            "startup": 1.45,
+            "travel": 0.25,
+            "width": 3.4
+          },
+          "Light3": {
+            "damage": 0.5,
+            "depth": 8,
+            "impulseZ": 56,
+            "offset": 4.5,
+            "range": 9,
+            "recovery": 1.35,
+            "startup": 1.5,
+            "travel": 0.25,
+            "width": 4.2
+          },
+          "Slam": {
+            "startup": 1.1
+          }
+        },
+        "Awakening": {
+          "Color": [
+            222,
+            176,
+            112
+          ],
+          "Cooldown": 0.5,
+          "Damage": 1.12,
+          "Name": "SHUKAKU'S SAND",
+          "Regen": 1.6,
+          "ShieldRegen": 2,
+          "Speed": 1.12
+        },
+        "Chakra": 130,
+        "ChakraRegen": 7,
+        "Color": [
+          222,
+          176,
+          112
+        ],
+        "CombatDamage": 1,
+        "CombatStyle": "Sand",
+        "CombatTravel": 0.2,
+        "ComboToolCancel": true,
+        "DashScale": 1,
+        "Description": "The sand fights for him: an automatic shield, long sand lashes and a coffin that binds. Slow, patient, crushing.",
+        "FullName": "Gaara of the Sand",
+        "GuardStrength": 0.1,
+        "Hair": [
+          164,
+          42,
+          34
+        ],
+        "Health": 140,
+        "HeavyMove": "SandPillar",
+        "JumpScale": 0.9,
+        "LauncherMove": "SandPillar",
+        "Name": "Gaara",
+        "Outfit": [
+          52,
+          46,
+          52
+        ],
+        "PreferredRange": 11,
+        "SandFlicker": {
+          "Distance": 12
+        },
+        "SandShield": {
+          "Break": 17,
+          "Charges": 3,
+          "Regen": 3.5
+        },
+        "Skin": [
+          236,
+          214,
+          196
+        ],
+        "Speed": 16.5,
+        "SprintScale": 0.85,
+        "Techniques": [
+          {
+            "Active": 0.1,
+            "Channel": 0.35,
+            "Cooldown": 8,
+            "Cost": 26,
+            "Damage": 18,
+            "Hint": "A wave of sand binds, then crushes • substitution escapes",
+            "Id": "SandCoffin",
+            "Interruptible": true,
+            "Name": "Sand Coffin",
+            "Range": 30,
+            "Recovery": 0.35,
+            "Speed": 46
+          },
+          {
+            "Active": 0.08,
+            "Channel": 0.25,
+            "Cooldown": 3.5,
+            "Cost": 16,
+            "Damage": 3,
+            "Hint": "Six hardened sand blades",
+            "Id": "SandShuriken",
+            "Interruptible": true,
+            "Name": "Sand Shuriken",
+            "Range": 38,
+            "Recovery": 0.25
+          },
+          {
+            "Active": 0.2,
+            "Channel": 0.26,
+            "Cooldown": 6,
+            "Cost": 22,
+            "Damage": 7,
+            "Element": "Earth",
+            "Hint": "A wall of sand throws close attackers away",
+            "Id": "DesertWave",
+            "Interruptible": true,
+            "Name": "Desert Wave",
+            "Range": 12,
+            "Recovery": 0.3
+          }
+        ],
+        "Title": "THE SAND PRODIGY",
+        "Tool": "Sand"
+      }
+    },
+    "graphs": {
+      "Flashstep": {
+        "blockCancels": {},
+        "disengage": "Kunai",
+        "heavyAfterOne": "KneeStrike",
+        "onRoute": {
+          "Launcher": "bodySeal",
+          "Sweep": "floorSeal"
+        },
+        "routes": {
+          "airDown": "AirSpike",
+          "airSide": "AirSwitch",
+          "airUp": "AirDrive",
+          "down": "Sweep",
+          "side": "AngleStep",
+          "up": "Launcher"
+        },
+        "stringCancels": {
+          "BurstStrike": true
+        }
+      },
+      "GentleFist": {
+        "blockCancels": {},
+        "disengage": "Kunai",
+        "heavyAfterOne": "PalmThrust",
+        "onRoute": {
+          "Sweep": "tenketsu"
+        },
+        "readCounter": "PalmThrust",
+        "routes": {
+          "airDown": "AirSpike",
+          "airSide": "AirSwitch",
+          "airUp": "AirDrive",
+          "down": "Sweep",
+          "side": "CircleStep",
+          "up": "Launcher"
+        },
+        "stringCancels": {
+          "VacuumPalm": true
+        }
+      },
+      "Lion": {
+        "blockCancels": {},
+        "disengage": "Shuriken",
+        "heavyAfterOne": "KneeStrike",
+        "onRoute": {
+          "LionKick": "shadowLeaf"
+        },
+        "routes": {
+          "airDown": "AirSpike",
+          "airSide": "AirSwitch",
+          "airUp": "AirDrive",
+          "down": "Sweep",
+          "side": "VaultKick",
+          "up": "LionKick"
+        },
+        "stringCancels": {
+          "Chidori": true
+        }
+      },
+      "Mirage": {
+        "blockCancels": {
+          "Tool": true
+        },
+        "disengage": "Shuriken",
+        "heavyAfterOne": "CounterPalm",
+        "onRoute": {
+          "AirDrive": "coverBlades",
+          "Launcher": "coverBlades"
+        },
+        "readCounter": "CounterPalm",
+        "routes": {
+          "airDown": "AirSpike",
+          "airSide": "AirSwitch",
+          "airUp": "AirDrive",
+          "down": "Sweep",
+          "side": "FeintStep",
+          "up": "Launcher"
+        },
+        "stringCancels": {}
+      },
+      "Sand": {
+        "blockCancels": {
+          "Tool": true
+        },
+        "heavyAfterOne": "SandPillar",
+        "routes": {
+          "down": "Sweep",
+          "up": "SandPillar"
+        },
+        "stringCancels": {
+          "SandCoffin": true
+        }
+      }
+    }
+  }
+}
