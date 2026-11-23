@@ -775,4 +775,49 @@ test("the run up a wall in the village: up it, over onto the roof, a kick off it
 	assert(Move.MANTLE.Y^2/(2*196.2)>=3.5,"the hop at the top does not clear the feet")
 end)
 
+-- (23/11, step 4, DEC-048; François: « pas du tout ninja feel ») the walker's
+-- body posed by the kit's own clips (Client/HubBody): the gait by the ground
+-- covered, the wall run leaning off the wall, the bound, the roll.
+test("the ninja walker: the kit's gait by the ground covered, up the wall off it, the bound, the roll",function()
+	local Authored=H.load("Client/AuthoredMotion")
+	local Body=H.load("Client/HubBody")
+	local b=Body.new(Authored);b.kit="Sand"
+	local function frame(f)
+		f.now=f.now or 1;f.dt=f.dt or 1/60;f.kit="Sand";f.vy=f.vy or 0
+		if f.grounded==nil then f.grounded=true end
+		return Body.choose(b,f)
+	end
+	assert(frame({speed=0}).move=="Idle","standing")
+	assert(frame({speed=12}).move=="Walk.F" and frame({speed=24}).move=="Run.F" and frame({speed=36}).move=="Sprint","the gaits")
+	-- the cycle advances by the ground covered: twice the speed, twice the phase
+	b.phase=0;frame({speed=66,dt=.1});local one=b.phase
+	b.phase=0;frame({speed=33,dt=.1});assert(math.abs(one-2*b.phase)<1e-6 and one>0,"the gait is not tied to the ground")
+	-- up the wall: the sprint, tilted
+	local up=frame({speed=0,climbing=true,grounded=false,climbSpeed=38})
+	assert(up.move=="Sprint" and up.tilt==1,"the run up the wall")
+	-- the second jump, then the arc
+	local leap=frame({speed=36,grounded=false,vy=40,leapAt=1,now=1.05})
+	assert(leap.move=="AirJump","the bound: "..leap.move)
+	local arc=frame({speed=36,grounded=false,vy=-30,now=2})
+	assert(arc.move=="Jump.Air","the arc")
+	-- a fall from high: the roll while running, the hard landing still
+	frame({speed=36,grounded=false,vy=-80,now=3})
+	assert(frame({speed=30,vy=0,now=3.02}).move=="Parkour.LandRoll","no roll")
+	frame({speed=0,grounded=false,vy=-80,now=5})
+	assert(frame({speed=0,vy=0,now=5.02}).move=="Parkour.LandHard","no hard landing")
+	-- every clip it plays exists for every kit of the eight (the kit's own, or Sasuke's)
+	for _,kit in H.load("Shared/BetaRoster") do
+		for _,move in {"Idle","Walk.F","Run.F","Sprint","Jump.Air","AirJump","Land","Parkour.Leap","Parkour.Vault","Parkour.LandRoll","Parkour.LandHard"} do
+			assert(Body.clipName(Authored,kit,move),kit.." has no "..move)
+		end
+	end
+	-- the pose: every joint, the root tilted off the wall once eased in
+	b.blendAt=-10;b.current=Body.clipName(Authored,"Sand","Sprint");b.tilt=1
+	local pose=b:pose({move="Sprint",t=.1,tilt=1},10)
+	local flat=Authored.sample(Body.clipName(Authored,"Sand","Sprint"),.1)
+	assert(pose and pose.Root and pose.RightHip and pose.LeftKnee,"a pose")
+	local lean=math.deg(math.acos(math.clamp(pose.Root.UpVector:Dot(flat.Root.UpVector),-1,1)))
+	assert(lean>55,"the body is not off the wall: "..lean)
+end)
+
 print(string.format("NinjaDuel hub Konoha (DEC-038): %d PASS",passed))

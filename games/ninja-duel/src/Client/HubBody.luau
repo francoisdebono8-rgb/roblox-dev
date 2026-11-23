@@ -1,0 +1,180 @@
+-- The walker's body in Konoha, moving like a ninja (23/11, step 4, DEC-048;
+-- François after step 3: « la course ninja, le double saut, le mur, ce n'est
+-- pas du tout ninja feel », « tout doit être dans cet esprit »).
+--
+-- In the village only, Roblox's default walk is replaced by the kit's own
+-- authored clips (Client/AuthoredMotion, the duel's: <kit>.Idle, Walk.F,
+-- Run.F, Sprint, Jump.Air, AirJump, Land, and the ninja parkour authored once
+-- on Lion, Parkour.Leap / Vault / LandRoll / LandHard), written on his own
+-- avatar's R15 joints every frame after the Animator: nothing to publish.
+--   * the gait follows the ground covered (the planted foot's share of the
+--     clip's stride, as Client/KonohaFolkFX and the engine do): no glide;
+--   * the run up a wall is the anime's: the body leans back off the wall, the
+--     feet on it, the sprint's legs running up;
+--   * the second jump plays the kit's AirJump, a kick off a wall the parkour
+--     leap, the hop over a roof's edge the vault;
+--   * a landing from high plays the roll (moving) or the hard landing (still).
+-- An avatar that is not R15, or a kit without its clips, keeps Roblox's walk.
+-- Client/HubMove (the body's movement) steps it with the frame's facts.
+local Players=game:GetService("Players")
+local RunService=game:GetService("RunService")
+
+local Body={}
+Body.__index=Body
+Body.STRIDE=.7                 -- the planted foot's share of a clip's stride
+Body.WALK_BELOW=20             -- world studs/s: under it the walk, then the run
+Body.SPRINT_ABOVE=30           -- over it the sprint (HubMove.RUN is 36)
+Body.STILL=1.5                 -- under it he stands
+Body.ROLL_FALL=62              -- landing faster than this down: the roll or the hard landing
+Body.ROLL_MOVING=14            -- the roll when he still moves this fast, else the hard landing
+Body.WALL_TILT=math.rad(70)    -- the body off the wall, the feet on it
+Body.WALL_BACK=1.4             -- studs the tilted body is moved off the wall
+Body.BLEND=.12                 -- seconds to ease from one clip into the next
+Body.VAULT=.35                 -- the hop over a roof's edge
+Body.KICK=.45                  -- the leap after a kick off a wall
+local MOTOR={Right="RightShoulder",Left="LeftShoulder"}
+
+-- The clip a kit plays for a gait or a move ("Sprint", "AirJump", "Parkour.Leap"...):
+-- the kit's own, else Sasuke's (AuthoredMotion's donor for the shared ones).
+function Body.clipName(Authored,kit,move)
+	local own=tostring(kit).."."..move
+	if Authored.has(own) then return own end
+	local donor="Lion."..move
+	if Authored.has(donor) then return donor end
+	return nil
+end
+
+function Body.new(Authored)
+	return setmetatable({Authored=Authored,phase=0,airborne=false,lastVy=0,landing=nil,current=nil,from=nil,blendAt=-10,tilt=0},Body)
+end
+
+-- (pure) The frame's choice: {move = the clip's move, t = its time, tilt = 0..1}.
+-- `f`: {now, dt, speed (horizontal, world studs/s), vy, grounded, climbing,
+-- climbSpeed, leapAt, kickAt, mantleAt, kit}.
+function Body.choose(b,f)
+	local A=b.Authored
+	local function len(move)
+		local name=Body.clipName(A,f.kit,move)
+		return name and A.length(name) or 0
+	end
+	-- the landing: a fall from high is a roll (still running) or a hard landing
+	if f.grounded and b.airborne then
+		local fall=-(b.lastVy or 0)
+		if fall>=Body.ROLL_FALL then
+			b.landing={move=if f.speed>=Body.ROLL_MOVING then "Parkour.LandRoll" else "Parkour.LandHard",at=f.now}
+		elseif fall>20 then
+			b.landing={move="Land",at=f.now,short=.22}
+		end
+	end
+	b.airborne=not f.grounded and not f.climbing
+	b.lastVy=f.vy
+	if b.landing then
+		local l=b.landing
+		local length=l.short or len(l.move)
+		if f.grounded and f.now-l.at<length then return {move=l.move,t=f.now-l.at,tilt=0} end
+		b.landing=nil
+	end
+	-- up the wall: the sprint's legs, the body off the wall
+	if f.climbing then
+		local stride=b.strideOf and b:strideOf("Sprint") or 7
+		b.phase+=(f.dt or 0)*(f.climbSpeed or 38)/math.max(stride*Body.STRIDE,1)
+		return {move="Sprint",t=(b.phase%1)*len("Sprint"),tilt=1}
+	end
+	if f.mantleAt and f.now-f.mantleAt<Body.VAULT then return {move="Parkour.Vault",t=f.now-f.mantleAt,tilt=0} end
+	if not f.grounded then
+		if f.kickAt and f.now-f.kickAt<Body.KICK then return {move="Parkour.Leap",t=f.now-f.kickAt,tilt=0} end
+		local air=len("AirJump")
+		if f.leapAt and f.now-f.leapAt<math.max(air,.3) then return {move="AirJump",t=f.now-f.leapAt,tilt=0} end
+		-- the jump's own clip, held at the height of the arc: rising early, falling late
+		local u=math.clamp((56-(f.vy or 0))/140,0,1)
+		return {move="Jump.Air",t=u*len("Jump.Air"),tilt=0}
+	end
+	if f.speed<Body.STILL then return {move="Idle",t=f.now,tilt=0} end
+	local move=if f.speed<Body.WALK_BELOW then "Walk.F" elseif f.speed<Body.SPRINT_ABOVE then "Run.F" else "Sprint"
+	local stride=b.strideOf and b:strideOf(move) or 7
+	b.phase+=(f.dt or 0)*f.speed/math.max(stride*Body.STRIDE,1)
+	return {move=move,t=(b.phase%1)*len(move),tilt=0}
+end
+
+-- A gait clip's stride (world studs: its meta, else 7).
+function Body:strideOf(move)
+	self.strides=self.strides or {}
+	local key=tostring(self.kit)..move
+	if self.strides[key] then return self.strides[key] end
+	local name=Body.clipName(self.Authored,self.kit,move)
+	local clip=name and self.Authored.clip(name)
+	local stride=(clip and clip.meta and clip.meta.stride) or 7
+	self.strides[key]=stride
+	return stride
+end
+
+-- The pose of a choice, eased from the last one when the clip changed, the
+-- wall's tilt on the root. Returns {joint=CFrame}.
+function Body:pose(choice,now)
+	local name=Body.clipName(self.Authored,self.kit,choice.move)
+	if not name then return nil end
+	local pose=self.Authored.sample(name,choice.t)
+	if not pose then return nil end
+	if name~=self.current then
+		self.from=self.last;self.blendAt=now;self.current=name
+	end
+	-- the tilt eases in and out with the clip
+	local target=choice.tilt or 0
+	local k=math.clamp((now-self.blendAt)/Body.BLEND,0,1)
+	self.tilt=if target>0 then math.max(self.tilt*(1-k),target*k) else self.tilt*(1-k)
+	if self.tilt>1e-3 and pose.Root then
+		pose.Root=CFrame.new(0,0,Body.WALL_BACK*self.tilt)*CFrame.Angles(Body.WALL_TILT*self.tilt,0,0)*pose.Root
+	end
+	if self.from and k<1 then
+		local out={}
+		for joint,cf in pose do
+			local a=self.from[joint]
+			out[joint]=if a then a:Lerp(cf,k) else cf
+		end
+		pose=out
+	end
+	self.last=pose
+	return pose
+end
+
+-- ------------------------------------------------------------------ in the game
+local function joints(character)
+	local j={}
+	for _,d in character:GetDescendants() do if d:IsA("Motor6D") then j[d.Name]=d end end
+	return j
+end
+
+-- One frame: HubMove's facts. Remembers the pose; it is written on the joints
+-- after the Animator (PreSimulation), so Roblox's walk never shows.
+function Body:step(character,hum,f)
+	if not character or not hum then self.pending=nil;return end
+	if hum.RigType~=Enum.HumanoidRigType.R15 then self.pending=nil;return end
+	if self.character~=character then self.character=character;self.j=joints(character);self.strides=nil end
+	local kit=Players.LocalPlayer and Players.LocalPlayer:GetAttribute("NinjaKit")
+	if not (type(kit)=="string" and Body.clipName(self.Authored,kit,"Sprint")) then kit="Lion" end
+	if kit~=self.kit then self.kit=kit;self.strides=nil end
+	f.kit=kit
+	local choice=Body.choose(self,f)
+	self.pending=self:pose(choice,f.now)
+	self.pendingAt=f.now
+	if not self.connection then
+		local event=RunService.PreSimulation or RunService.Stepped
+		self.connection=event:Connect(function() self:write() end)
+	end
+end
+function Body:write()
+	local pose=self.pending
+	-- a pose a quarter of a second old: the walk is not stepped (a duel, a
+	-- menu): the Animator has the body again
+	if not pose or os.clock()-(self.pendingAt or 0)>.25 then return end
+	for joint,cf in pose do
+		local m=self.j and self.j[MOTOR[joint] or joint]
+		if m and m.Parent then m.Transform=cf end
+	end
+end
+function Body:stop()
+	self.pending=nil
+	if self.connection then self.connection:Disconnect();self.connection=nil end
+end
+
+return Body

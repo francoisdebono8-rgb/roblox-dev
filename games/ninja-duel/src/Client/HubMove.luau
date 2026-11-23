@@ -18,6 +18,9 @@ Move.REST=.35
 Move.WALK,Move.RUN,Move.JUMP,Move.LEAP=16,36,56,54
 -- The second jump: not before this long after leaving the ground.
 Move.LEAP_AFTER=.18
+-- (23/11, step 4, DEC-048) the second jump is a bound: for this long after it
+-- the run carries this much more speed through the air (a roof to the next)
+Move.BOUND,Move.BOUND_TIME=1.15,.6
 
 -- (21/11, étape 3 DEV 3, DEC-047; François: « murs et toits courables
 -- partout ») The run up a wall. Moving into a wall to run on (Server/Hub tags
@@ -36,7 +39,18 @@ Move.KICK=Vector2.new(34,50)   -- the kick off the wall: away, up
 Move.REGRAB=.3             -- after a kick, the same wall again not before
 
 function Move.new()
-	return setmetatable({runLatch=false,runMoved=false,restFor=0,leapUsed=false,jumpedAt=nil,climb=nil,climbUsed=false,kickedAt=-1,kickedFrom=nil},Move)
+	return setmetatable({runLatch=false,runMoved=false,restFor=0,leapUsed=false,jumpedAt=nil,climb=nil,climbUsed=false,kickedAt=-1,kickedFrom=nil,leapAt=nil,mantleAt=nil},Move)
+end
+-- (23/11, step 4, DEC-048) his body posed like a ninja by the kit's clips
+-- (Client/HubBody), in the village only; nil where the clips cannot load.
+function Move:body()
+	if self.bodyTried then return self.poser end
+	self.bodyTried=true
+	pcall(function()
+		local Authored=require(script.Parent.AuthoredMotion)
+		self.poser=require(script.Parent.HubBody).new(Authored)
+	end)
+	return self.poser
 end
 
 -- The run up a wall, one frame (pure). `m` the walker's state, `now` the
@@ -124,6 +138,7 @@ function Move:jump()
 	local state=hum:GetState()
 	if (state==Enum.HumanoidStateType.Freefall or state==Enum.HumanoidStateType.Jumping) and not self.leapUsed and os.clock()-(self.jumpedAt or 0)>Move.LEAP_AFTER then
 		self.leapUsed=true
+		self.leapAt=os.clock()
 		local v=root.AssemblyLinearVelocity
 		root.AssemblyLinearVelocity=Vector3.new(v.X,Move.LEAP,v.Z)
 		hum:ChangeState(Enum.HumanoidStateType.Jumping)
@@ -150,6 +165,8 @@ function Move:step(dt)
 	end
 	local run=self.runLatch or UIS:IsKeyDown(Enum.KeyCode.LeftShift) or UIS:IsKeyDown(Enum.KeyCode.RightShift)
 	hum.WalkSpeed=if run then Move.RUN else Move.WALK
+	-- the bound of the second jump carries him further
+	if self.leapAt and os.clock()-self.leapAt<Move.BOUND_TIME and hum.MoveDirection.Magnitude>.1 then hum.WalkSpeed=Move.RUN*Move.BOUND end
 	hum.UseJumpPower=true;hum.JumpPower=Move.JUMP
 	local state=hum:GetState()
 	local grounded=state==Enum.HumanoidStateType.Running or state==Enum.HumanoidStateType.Landed or state==Enum.HumanoidStateType.RunningNoPhysics
@@ -169,7 +186,16 @@ function Move:step(dt)
 			hum:ChangeState(Enum.HumanoidStateType.Freefall)
 		end
 	end
+	if what=="top" then self.mantleAt=os.clock() end
 	self.climbing=self.climb~=nil
+	-- the body, posed by the kit's clips (Client/HubBody)
+	local poser=self:body()
+	if poser then
+		local v=root.AssemblyLinearVelocity
+		pcall(poser.step,poser,character,hum,{now=os.clock(),dt=dt,speed=Vector3.new(v.X,0,v.Z).Magnitude,vy=v.Y,
+			grounded=grounded and not self.climb,climbing=self.climb~=nil,climbSpeed=Move.CLIMB,
+			leapAt=self.leapAt,kickAt=if self.kickedAt and self.kickedAt>0 then self.kickedAt else nil,mantleAt=self.mantleAt})
+	end
 	-- Fell out of the village (into the lake's floor, off the cliff): the gate.
 	if root.Position.Y<HubMap.Origin.Y-40 then
 		local spot=HubMap.Spawns.gate
