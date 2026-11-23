@@ -763,7 +763,7 @@ def scalp(az, el, r=.56):
     return HEAD_C + Vector((math.sin(a) * math.cos(e) * r * 1.02, math.sin(e) * r, math.cos(a) * math.cos(e) * r))
 
 
-def lock(pc, root, direction, length, width, thick=.09, bend=(0, 0, 0), sections=5, sides=8, dark=.72, curl=0.0):
+def lock(pc, root, direction, length, width, thick=.09, bend=(0, 0, 0), sections=5, sides=8, dark=.72, curl=0.0, blunt=0.0):
     """One flat lock of hair: a lens section `width` across and `thick` through, tapering to a
     point `length` along `direction`, bending by `bend` (x length, quadratic). Darker at the root.
     The width lies across the scalp (perpendicular to both the lock and the skull's normal)."""
@@ -794,7 +794,7 @@ def lock(pc, root, direction, length, width, thick=.09, bend=(0, 0, 0), sections
         wa.normalize()
         ta = wa.cross(t).normalized()
         s = k / sections
-        taper = (1 - s) ** .75
+        taper = (1 - s) ** .75 * (1 - blunt) + blunt      # blunt: straight hair keeps its width to the end
         w, th = width * taper * (1 + .25 * math.sin(s * math.pi)), thick * (1 - s * .6)
         ring = []
         for i in range(sides):
@@ -1018,12 +1018,12 @@ def item_hair_hime():
     skull(h, front=1.7, r=(.69, .71), top=.79)
     fringe(h, (-.33, -.11, .11, .33), y=.58, length=.2, width=.26, down=(0, -1, -.25), spread=0)
     for x in (-1, 1):
-        lock(h, (x * .6, .42, -.34), (0, -1, -.02), .75, .3, thick=.08)          # the side locks, cut level at the jaw
+        lock(h, (x * .6, .42, -.34), (0, -1, -.02), .75, .3, thick=.08, blunt=.6)          # the side locks, cut level at the jaw
     # the long fall: straight locks side by side down the back
     for az in (-110, -85, -60, -35, -12, 12, 35, 60, 85, 110):
         root = scalp(az, 25, r=.64)
         out = Vector((math.sin(math.radians(az)) * .12, -1, math.cos(math.radians(az)) * .18))
-        lock(h, root, out, 1.55 - abs(az) / 300, .4, thick=.12, bend=(0, 0, .08))
+        lock(h, root, out, 1.95 - abs(az) / 250, .5, thick=.12, bend=(0, 0, .08), blunt=.65)
     return o.items
 
 
