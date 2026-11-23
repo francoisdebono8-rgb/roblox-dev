@@ -377,7 +377,7 @@ def starters(dst, names=None):
                 BODY[0] = f
                 part = avatar(looks, yaw)
                 for o in part:
-                    o.location.x += (1 - k) * 4.4   # +x is on the left of the picture
+                    o.location.x += (1 - k) * 5.6   # +x is on the left of the picture
                     o.location.z += (1 - row) * 7.6
                 objs += part
         BODY[0] = (1.0, 1.0, 1.0)
