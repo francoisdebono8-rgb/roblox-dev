@@ -46,7 +46,7 @@ def catalog(every=False):
     out = []
     for m in re.finditer(r'\{id="(\w+)",slot="(\w+)"([^\n]*)', open(CATALOG).read()):
         i, s, rest = m.groups()
-        if every or "robux=" in rest or re.search(r"ryo=[1-9]", rest) or 'earned="vip"' in rest:
+        if every or "robux=" in rest or re.search(r"ryo=[1-9]", rest) or 'earned="' in rest:
             out.append((i, s, rest))
     return out
 

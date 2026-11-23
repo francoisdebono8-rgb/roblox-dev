@@ -9,6 +9,10 @@ client by Client/KonohaRogueFX on their own dressed rig), on the duel's skeleton
   Rogue.Racket   loop: he blocks the way, leans in, one hand out for the Ryō, the other a fist
   Rogue.Taunt    once: he cracks his knuckles and beckons (the racket turns into a fight)
   Rogue.Leave    once: paid or beaten, a crouch and a leap back and away (the client puffs him out)
+
+  Copycat.Raikiri  (DEC-048, RAIKIRI: TRACKED) the Lightning Blade sent at the dogs' mark: a body
+                   almost flat over a long low stride, the blade arm driven straight through,
+                   the other arm thrown back (its effect: Client/LightningFX, raikiri_trail)
 """
 import json
 import os
@@ -76,8 +80,32 @@ def rogue_leave():
                      key(L, STAND, "smooth", **away)], "length": L, "markers": {"puff": .6}, "loop": False}
 
 
+def copycat_raikiri():
+    """On Kakashi's guard (e4_strikes.GUARD4), the e2 contract: guard -> wind -> contact -> through -> guard."""
+    import e4_strikes  # noqa: F401  (merges Kakashi's guard into GUARD)
+    from e2_strikes import blow
+    old = {"markers": {"contact": .12, "recover": .36}, "length": .62}
+    spec = blow("Copycat", old,
+                antic={"root": {"turn": 35, "sink": .55, "z": 0.25}, "Waist": {"turn": 8}, "Neck": {"turn": -30},
+                       "RA": {"chest": [0.9, -0.45, 0.25], "hint": [20, 40, 0, 110], "wrist": {"swing": -30}},
+                       "LA": {"chest": [-0.55, 0.1, -1.0], "hint": [50, 20, 10, 100]}},
+                hit={"root": {"turn": -15, "z": -0.6, "sink": .6, "pitch": 14}, "Waist": {"turn": -8, "pitch": 8}, "Neck": {"pitch": -12, "turn": 12},
+                     "RA": {"hand": [0.35, 0.6, -2.7], "hint": [92, 8, 0, 6]},
+                     "LA": {"swing": -50, "spread": 25, "bend": 25}},
+                through={"root": {"turn": -12, "z": -0.75, "sink": .62, "pitch": 15}, "Waist": {"turn": -8, "pitch": 8}, "Neck": {"pitch": -12, "turn": 12},
+                         "RA": {"hand": [0.33, 0.62, -2.85], "hint": [92, 8, 0, 3]},
+                         "LA": {"swing": -55, "spread": 25, "bend": 25}},
+                back={"root": {"turn": 0, "z": -0.3, "sink": .45}},
+                antic_at=.5, through_dt=.1)
+    spec["markers"] = dict(old["markers"])
+    spec["length"] = old["length"]
+    spec["loop"] = False
+    return spec
+
+
 def all_specs():
-    return {"Rogue.Idle": rogue_idle(), "Rogue.Racket": rogue_racket(), "Rogue.Taunt": rogue_taunt(), "Rogue.Leave": rogue_leave()}
+    return {"Rogue.Idle": rogue_idle(), "Rogue.Racket": rogue_racket(), "Rogue.Taunt": rogue_taunt(), "Rogue.Leave": rogue_leave(),
+            "Copycat.Raikiri": copycat_raikiri()}
 
 
 def main(out_dir, write=False):

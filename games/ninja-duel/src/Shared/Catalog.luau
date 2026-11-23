@@ -258,6 +258,8 @@ Catalog.Items={
 		pieces={{on="UpperTorso",c="ChuninVestCloth"},{on="LowerTorso",c="ChuninVestCloth",h=.6},{on="UpperArm",c="ChuninVestCloth",h=.55},{on="UpperLeg",c="LeggingsCloth"},{on="LowerLeg",c="LeggingsCloth"}}},
 	{id="SetSandNomad",slot="set",kit="Sand",name="SAND NOMAD",robux="SetSandNomad",colors={HaoriCloth={196,150,90},HaoriUnder={110,60,46},HaoriTrim={230,200,120},WrapSkirtCloth={196,150,90},WrapSkirtUnder={110,60,46},WrapSkirtBelt={230,200,120},ShinGuardsSandal={90,64,44},ShinGuardsMetal={176,160,130},ShinGuardsStrap={90,64,44},CloakHoodedCape={214,186,140},BackScrollPaper={240,230,200},BackScrollWood={120,80,50},BackScrollStrap={90,64,44}},
 		pieces={{on="UpperTorso",c="HaoriCloth"},{on="LowerTorso",c="HaoriCloth",h=.6},{on="UpperArm",c="HaoriCloth",h=.55},{on="UpperLeg",c="WrapSkirtCloth"},{on="LowerLeg",c="WrapSkirtCloth"}}},
+	{id="SetRogue",slot="set",kit="Lion",name="ROGUE NINJA",earned="rogues",how="beat 10 rogue ninjas in Konoha",colors={HaoriCloth={34,34,40},HaoriUnder={110,30,32},HaoriTrim={150,146,140},WrapPantsCloth={40,40,48},WrapPantsWrap={128,122,112},ArmWarmersCloth={52,50,56},WrappedFeetWrap={128,122,112},MaskClothCloth={26,26,30},HeadbandScratchedBand={26,26,30},HeadbandScratchedPlate={170,172,178}},
+		pieces={{on="UpperTorso",c="HaoriCloth"},{on="LowerTorso",c="HaoriCloth",h=.6},{on="UpperArm",c="HaoriCloth",h=.55},{on="UpperLeg",c="WrapPantsCloth"},{on="LowerLeg",c="WrapPantsCloth"}}},
 	-- END wardrobe
 }
 
