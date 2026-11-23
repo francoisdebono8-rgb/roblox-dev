@@ -1,3 +1,22 @@
+**DEV, 23/11, 21 h : tout ce qui a été fait est fusionné** (François : « tout ce qui a été fait doit être ajouté ») — TECHNICAL ; rien n'est joué
+- **Les coups au corps « animé moderne » du 06/11** (`claude/vfx-redesign`, le choix de François ce jour-là, jamais intégré) sont dans le jeu : `Client/VfxHit`, `VfxMesh`, `VfxDesign`, textures déjà envoyées sur Roblox.
+  - Ils dessinent les coups légers, aériens, de rythme, les lanceurs, les finisseurs et les slams : flash blanc sur la cible, éclair rond, sphère et cône de traits de vent dans le sens du coup ; au sol, anneau et poussière, et cratère pour le slam.
+  - Les couches venues depuis (infusions et natures, outils, familles) passent toujours. La garde garde son rendu.
+  - Interrupteur : `VfxHit.enabled`.
+  - **Ça se verra au prochain duel.**
+- **Rapports de QA du 14/11** (`claude/qa-combats-2026-11-14`) : `docs/reports/qa-combats-2026-11-14`.
+- **Marque, page Roblox, outils marketing et fabrique FILM01** (`claude/ninja-duel-tutorial-v2`) : `assets/brand`, `assets/page`, `tools/marketing`. Ses documents sont dans `docs/archive/2026-11-05-tutorial-v2`.
+- **Branches Codex d'octobre** : rapports et sondes de fight-continuity ; les documents des prototypes sont dans `docs/archive/codex-2026-10`.
+- **Pas repris, avec la raison** :
+  - les branches `work/*` : brouillons « wip », « scratch, not for merge », dont la version finale est déjà sur la branche commune ;
+  - le kunai à trois branches de Minato (rejeté : kunai de Minato adulte) ;
+  - `FadePool` (essai de performance mis en pause) ;
+  - le code d'octobre (remplacé par Online, Progression, ChakraFlow) ;
+  - les retours en jeu vers Discord (remplacés par `Server/Reports`) ;
+  - `codex/weapon-forge-tycoon-v0` (un autre jeu) ;
+  - les branches sans histoire commune (`archive/mac-local-2026-11-07`, `media-clips`, `codex/issue-19-presetforge`), qu'on ne fusionne jamais.
+- **`main` avance jusqu'à la branche commune**, en avance rapide, sans publication Roblox.
+
 **DEV, 23/11 soir : les retours de l'OUTILLEUR et de l'ANIMATEUR (étapes 4-5)** — TECHNICAL (tests verts, sans Studio) ; rien n'est joué par François
 - **Pré-vol** :
   - EARLY ACCESS et MORE BUILDS sont retirés de `Shared/Shop` ;
