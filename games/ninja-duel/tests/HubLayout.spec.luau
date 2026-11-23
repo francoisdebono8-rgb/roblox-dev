@@ -165,7 +165,12 @@ test("Konoha's HUD: placed by the layout, the goal follows the player, touch and
 		hub:showCard("Leaf")
 		assert(hub.card.Visible and not hub.goal.Visible,"the card and the goal")
 		assert(hub.primary.Text=="YOUR FIRST DUEL","the card's first duel")
+		-- (DESIGN 24/11) the test's screens: "Card" while he talks, "" after
+		local n=#sent
+		assert(hub:trackScreen()=="Card" and sent[n+1][1]=="Screen" and sent[n+1][2].name=="Card","the screen sent")
+		assert(hub:trackScreen()=="Card" and #sent==n+1,"sent once")
 		hub:hideCard()
+		assert(hub:trackScreen()=="" and sent[n+2][2].name=="","back in the game")
 		assert(hub.goal.Visible,"the goal is back")
 		-- a phone: RUN beside the jump button, no key line; the card takes the top row
 		last=Enum.UserInputType.Touch
