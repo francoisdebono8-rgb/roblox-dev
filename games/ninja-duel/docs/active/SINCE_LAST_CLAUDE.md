@@ -1,5 +1,32 @@
 # Boîte de réception Claude
 
+## INBOX-ANIM-ETAPE4-20261123 — ANIMATEUR 23/11 : réponse à INBOX-DEV-ETAPE4, premiers points
+
+Fait et poussé :
+- **Export de la tour** : `tower_house` est dans `HubMeshData*` et dans `KonohaModelRef` (13 × 13 × 28). `konoha_models write` ne met plus les props du client (`market_stall`, `barrel`) dans `HubMeshData` : ils sont dans `PropMeshData`.
+- **`Lion.Parkour.WallRun`** (boucle de 0,46 s, héritage `Parkour`, donc `<kit>.Parkour.WallRun` pour les 8) : une course dans le repère du corps, en l'air, foulée longue, genoux hauts, bras qui pompent. Elle va avec ton inclinaison `WALL_TILT` : tu peux la jouer à la place de `Sprint` sur le mur.
+- **`Lion.Parkour.Ledge`** (boucle de 1,6 s : pendu aux deux mains, bras tendus au-dessus de la tête, jambes libres, léger balancement) et **`Lion.Parkour.LedgeUp`** (0,55 s : traction, un genou sur le rebord, debout ; la racine monte de 2,9 et avance de 1,0). Pour `Ledge`, place le corps de sorte que les mains soient au rebord : elles sont à environ 2,6 au-dessus de la racine.
+- Ces clips sont dans `AuthoredJutsu14` (nouveau, ajouté à `AuthoredJutsu.luau`). Notes `clip_grades` : WallRun 9,0, Ledge 9,0, LedgeUp 8,6.
+- **Coiffures** (François, 23/11 18 h : « toujours des imprécisions au niveau des yeux » ; « plus de coupes et plus de couleurs ») :
+  - la garde contre les yeux teste maintenant toute la forme de chaque mèche, pas seulement sa ligne médiane, avec une marge pour les têtes des avatars (|x| < 0,5, y < 0,43 devant le visage) ;
+  - les bandeaux sont à `BROW` 0,46 ;
+  - 5 coupes de plus, soit 18 : `HairTwinTails`, `HairTopknot`, `HairBraid`, `HairUndercut`, `HairCurtain`.
+- **Couleurs de cheveux (c'est à toi, `Shared/CatalogStyle`, slot `hairColor`)** : François veut plus de couleurs. Voici une proposition prête à coller, dans le même format que les tiennes :
+  - `HairChestnut` « CHESTNUT » (120,72,44), 400 ;
+  - `HairAsh` « ASH BROWN » (96,84,76), 400 ;
+  - `HairHoney` « HONEY » (214,160,80), 500 ;
+  - `HairCrimson` « CRIMSON » (150,24,40), 600 ;
+  - `HairOcean` « OCEAN TEAL » (40,120,130), 600 ;
+  - `HairLilac` « LILAC » (180,150,210), 600 ;
+  - `HairMint` « MINT » (150,210,180), 700 ;
+  - `HairCoral` « CORAL » (240,120,100), 700 ;
+  - `HairInk` « INK BLUE-BLACK » (18,24,44), 500 ;
+  - `HairPlatinum` « PLATINUM » (230,222,200), 800.
+
+  Mes coupes prennent n'importe quelle couleur (elles peignent `Hair`). Rien d'autre à brancher.
+
+À suivre de mon côté, dans cet ordre : les 5 kits refaits (Neji, Gaara, Kakashi, Itachi, Minato), puis `sandfuneral` et une proposition pour Kakashi, puis la passerelle (un nom à ajouter au contrat). Je te ferai une proposition pour Kakashi avant que tu fasses le serveur.
+
 ## INBOX-DEV-ETAPE4-20261123 — DEV 23/11 : l'étape 4 « Les 8 complets » est lancée (DEC-048)
 
 **Plan et tâches** : doc projet `claude/etape4-les-8-complets-taches-2026-11-23`. Chaque discussion y lit sa section, puis pousse sur la branche commune.
