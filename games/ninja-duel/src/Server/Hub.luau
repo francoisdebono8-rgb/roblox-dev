@@ -741,6 +741,28 @@ Hub.LAYOUT_STANDIN={
 local function lighten(c,k) return c:Lerp(Color3.new(1,1,1),k) end
 -- One building of the plan: {model, x, z, w, d, h, yaw, district, landmark}.
 Hub.MODEL_REF=(function() local ok,ref=pcall(function() return require(Shared.KonohaModelRef) end);return if ok then ref else {} end)()
+-- (23/11, passe 1, the ANIMATEUR's Shared/HubSolids; François: « les murs
+-- sont intangibles comme les toits ») What stops a body in each house,
+-- following what is drawn: blocks, roof slopes (WedgePart), hip ends
+-- (CornerWedgePart), in the model's frame before the lot's scale.
+Hub.SOLIDS=(function() local ok,s=pcall(function() return require(Shared.HubSolids) end);return if ok then s else {} end)()
+-- (pure) A CornerWedgePart's apex is at its local (+X, -Z) (measured in
+-- Studio, 23/11): the turn about Y that puts it over the corner (ax, az).
+function Hub.cornerYaw(ax,az)
+	if ax>0 and az<0 then return 0 elseif ax<0 and az<0 then return 90 elseif ax<0 and az>0 then return 180 else return 270 end
+end
+-- (pure) One solid of a house at its lot: {class, size, cframe} in the
+-- house's foot frame (multiply by the foot), scaled by `scale` (the lot's
+-- DressScale).
+function Hub.solidPart(solid,scale)
+	local kind,cx,cy,cz,sx,sy,sz=solid[1],solid[2],solid[3],solid[4],solid[5],solid[6],solid[7]
+	local yaw=if kind=="K" then Hub.cornerYaw(solid[8] or 1,solid[9] or 1) else (solid[8] or 0)
+	local quarter=math.floor((yaw%360)/90+.5)%2==1
+	local size=Vector3.new(sx*(if quarter then scale.Z else scale.X),sy*scale.Y,sz*(if quarter then scale.X else scale.Z))
+	if kind=="K" and quarter then size=Vector3.new(sz*scale.Z,sy*scale.Y,sx*scale.X) end
+	local class=if kind=="W" then "WedgePart" elseif kind=="K" then "CornerWedgePart" else "Part"
+	return {class=class,size=size,cframe=CFrame.new(cx*scale.X,cy*scale.Y,cz*scale.Z)*CFrame.Angles(0,math.rad(yaw),0)}
+end
 -- (22/11, the OUTILLEUR's prover: the residence (52 studs) and the gate (65)
 -- were the two roofs nobody reached) A building taller than a run up its wall
 -- (Client/HubMove: about 36 studs) has a ladder up its back.
@@ -765,10 +787,29 @@ function Hub.layoutBuilding(parent,b)
 	m.Parent=parent
 	local tint=Color3.fromRGB(224,214,196)
 	for _,dd in Layout.Districts do if dd.id==district then tint=lighten(dd.color,.55) end end
+	local solids=ref and Hub.SOLIDS[model]
+	if solids and #solids>0 then
+		-- the house's own solids (invisible: the model is what is seen); the
+		-- lot's box stays as the dresser's anchor, without collision
+		local scale=Vector3.new(w/ref.w,h/ref.h,d/ref.d)
+		for i,solid in solids do
+			local spec=Hub.solidPart(solid,scale)
+			local p=Instance.new(spec.class)
+			p.Name="Solid"..i;p.Size=spec.size;p.CFrame=foot*spec.cframe
+			p.Anchored=true;p.CanTouch=false;p.Transparency=1;p.CastShadow=false
+			p.Color=tint;p.Material=Enum.Material.Plaster
+			p:SetAttribute("Keep",true)
+			p.Parent=m
+		end
+		m:SetAttribute("Solids",#solids)
+		deco(m,"Walls",Vector3.new(w,h,d),foot*CFrame.new(0,h/2,0),tint,Enum.Material.Plaster)
+		deco(m,"Roof",Vector3.new(w,1,d),foot*CFrame.new(0,h+.5,0),C.roofDark,Enum.Material.Slate)
+	else
 	part(m,"Walls",Vector3.new(w,h,d),foot*CFrame.new(0,h/2,0),tint,Enum.Material.Plaster)
 	-- a flat roof to walk on, flush with the walls (an eave would catch the
 	-- head at the top of a run up the wall, Client/HubMove; the model draws it)
 	part(m,"Roof",Vector3.new(w,1,d),foot*CFrame.new(0,h+.5,0),C.roofDark,Enum.Material.Slate)
+	end
 	deco(m,"Base",Vector3.new(w+.3,1,d+.3),foot*CFrame.new(0,.5,0),C.woodDark,Enum.Material.Wood)
 	if h>Hub.LADDER_ABOVE and d>4 then
 		local ladder=Instance.new("TrussPart");ladder.Name="Ladder"

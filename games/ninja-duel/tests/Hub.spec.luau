@@ -188,6 +188,28 @@ local Layout=H.load("Shared/KonohaLayout")
 local Vector2=roblox.Vector2
 local Config=H.load("Shared/Config")
 local layoutFolder
+-- (23/11, passe 1; François: « les murs sont intangibles comme les toits »)
+-- each house of the plan is stopped by its own solids (the ANIMATEUR's
+-- Shared/HubSolids), the lot's box only an anchor; a hip end's apex where
+-- the ANIMATEUR put it (a CornerWedgePart's apex is at its local +X, -Z)
+test("the houses' solids: what is drawn stops the body, the lot's box no longer",function()
+	for _,c in {{1,-1},{-1,-1},{-1,1},{1,1}} do
+		local yaw=Hub.cornerYaw(c[1],c[2])
+		local apex=CFrame.Angles(0,math.rad(yaw),0)*Vector3.new(1,0,-1)
+		assert(math.abs(apex.X-c[1])<1e-6 and math.abs(apex.Z-c[2])<1e-6,"a hip end's apex not over its corner "..c[1]..","..c[2])
+	end
+	local spec=Hub.solidPart({"W",1,2,3,10,4,6,90},Vector3.new(2,1,3))
+	assert(spec.class=="WedgePart" and spec.size==Vector3.new(30,4,12) and spec.cframe.Position==Vector3.new(2,2,9),"a slope turned a quarter: its size not along the lot's axes")
+	local f=Instance.new("Folder")
+	local ref=Hub.MODEL_REF.machiya
+	assert(ref and Hub.SOLIDS.machiya,"no machiya solids")
+	local m=Hub.layoutBuilding(f,{"machiya",0,0,ref.w*1.1,ref.d,ref.h,0,"Residences",nil})
+	local solids,box=0,m:FindFirstChild("Walls")
+	for _,d in m:GetChildren() do if d:IsA("BasePart") and string.sub(d.Name,1,5)=="Solid" then solids+=1;assert(d.CanCollide and d.Transparency==1 and d:GetAttribute("Keep"),"a solid not solid, or seen") end end
+	assert(solids==#Hub.SOLIDS.machiya and m:GetAttribute("Solids")==solids,"the machiya's solids: "..solids)
+	assert(box and not box.CanCollide and not m:FindFirstChild("Roof").CanCollide,"the lot's box still stops him where nothing is drawn")
+end)
+
 test("the new Konoha (DEC-042): every building of the plan, out of the open places, walls to run on, the masters on solid ground",function()
 	local classic,builtWas=Hub.folder,Hub.built
 	Hub.folder=nil;Hub.built=false

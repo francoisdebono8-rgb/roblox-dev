@@ -130,6 +130,9 @@ function HubDress.solid(unit)
 	return nil
 end
 function HubDress.solidify(unit,made)
+	-- (23/11) a house with its own solids from the server (Server/Hub, the
+	-- ANIMATEUR's Shared/HubSolids): they stop the body; the copies stay light
+	if unit:GetAttribute("Solids") then return false end
 	local wall=HubDress.solid(unit)
 	if not wall then return false end
 	local noClimb=wall:GetAttribute("NinjaNoClimb")
