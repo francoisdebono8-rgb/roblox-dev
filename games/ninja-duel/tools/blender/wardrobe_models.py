@@ -305,6 +305,24 @@ def item_cloak_hooded():
     return o.items
 
 
+def item_cape_vip():
+    """(23/11, étape 5, DEC-049) The VIP pass's cape, worn in Konoha: a long white cloak off the
+    shoulders like a Kage's, a broad gold hem, a gold collar and a gold clasp on a short chain.
+    Nothing a fighter gains: it is only seen."""
+    o = O().Out()
+    _mantle(o, "Cape", pad=.26)
+    pc = o.add("UpperTorso", "Cape", name="Back")
+    O().flap(pc, "UpperTorso", -1.15, 1.15, .1, 2.8, 1, pad=.26, flare=.55, folds=.06, seed=11)
+    hem = o.add("UpperTorso", "Trim", name="Hem")
+    O().flap(hem, "UpperTorso", -1.15, 1.15, 2.42, .42, 1, pad=.26 + .55 * .5 * .87, flare=.06, folds=.06, seed=11)
+    collar = o.add("UpperTorso", "Trim", name="Collar")
+    O().shell(collar, "UpperTorso", -.06, .1, pad=.3, flare1=.06, folds=0, rings=2)
+    for x in (-.32, .32):
+        O().box(collar, (x, .62, -.7), (.08, .08, .03), O().shade(1, .02))
+    O().box(collar, (0, .6, -.71), (.25, .02, .015), O().shade(.9, .02))
+    return o.items
+
+
 def item_scarf():
     o = O().Out()
     S = O().size("UpperTorso")
@@ -1203,7 +1221,7 @@ MODELS = {
     # masks
     "MaskFox": item_mask_fox, "MaskCat": item_mask_cat, "MaskCloth": item_mask_cloth, "MaskRespirator": item_mask_respirator,
     # capes
-    "CapeShort": item_cape_short, "CapeLong": item_cape_long, "CloakHooded": item_cloak_hooded, "Scarf": item_scarf,
+    "CapeShort": item_cape_short, "CapeLong": item_cape_long, "CapeVIP": item_cape_vip, "CloakHooded": item_cloak_hooded, "Scarf": item_scarf,
     # back
     "BackScroll": item_back_scroll, "BackPouch": item_back_pouch, "BackSword": item_back_sword, "BackFuma": item_back_fuma,
     # tops
@@ -1295,6 +1313,8 @@ CATALOG = {
     "CapeShortRed": ("cape", "CapeShort", "Short Cape", {"Cape": C(196, 44, 44), "Trim": C(236, 200, 80)}),
     "CapeLongWhite": ("cape", "CapeLong", "Long Cape", {"Cape": C(236, 232, 222), "Trim": C(196, 60, 40)}),
     "CloakHooded": ("cape", "CloakHooded", "Hooded Cloak", {"Cape": C(110, 90, 70)}),
+    # (23/11, étape 5) the VIP pass's: its Catalog row is hand-written (pass="VIP", not sold)
+    "CapeVIP": ("cape", "CapeVIP", "VIP Cape", {"Cape": C(240, 238, 230), "Trim": C(226, 178, 60)}),
     "ScarfRed": ("cape", "Scarf", "Long Scarf", {"Scarf": C(196, 44, 44)}),
     # back
     "BackScroll": ("back", "BackScroll", "Great Scroll", {"Paper": C(240, 230, 200), "Wood": C(120, 80, 50), "Strap": C(196, 44, 44)}),
