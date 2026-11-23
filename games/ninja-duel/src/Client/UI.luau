@@ -462,6 +462,12 @@ function UI.new(parent,send)
 			local made,panel=pcall(Leaderboard.new,UI.kit,self.gui)
 			if made then self.leaderboard=panel end
 		end
+		-- (DESIGN 23/11, step 4) the tournament's entry: his build of 100 points
+		local okE,CupEntry=pcall(function() return require(script.Parent.CupEntry) end)
+		if okE and CupEntry then
+			local made,panel=pcall(CupEntry.new,UI.kit,self.gui,send)
+			if made then self.cupEntry=panel end
+		end
 		-- (DESIGN 19/11) MY NINJA: the wardrobe, every slot and every piece
 		local okW,Wardrobe=pcall(function() return require(script.Parent.Wardrobe) end)
 		if okW and Wardrobe then
@@ -481,7 +487,10 @@ function UI.new(parent,send)
 	self.startStroke=create("UIStroke",self.startButton,{Color=palette.paper,Thickness=2.5,Transparency=.2,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
 	-- (04/11) The Prodigy Tournament against the AI (Server/Tournament).
 	self.cupButton=button(shell,"TOURNAMENT  •  VS AI",UDim2.fromOffset(60,712),UDim2.fromOffset(400,52),function()
-		if not self.picking then send("CupStart",{player=self.player}) end
+		if self.picking then return end
+		if self.cupEntry then
+			self.cupEntry:show(self.player,self.kits and self.kits.trees and self.kits.trees[self.player])
+		else send("CupStart",{player=self.player}) end
 	end,palette.red)
 	self.cupButton.TextSize=26
 	self.tutorialButton=button(shell,"TRAINING",UDim2.fromOffset(60,below),UDim2.fromOffset(230,58),function()

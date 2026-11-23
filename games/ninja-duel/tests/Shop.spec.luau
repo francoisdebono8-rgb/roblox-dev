@@ -473,8 +473,15 @@ test("ranks: the result's line, the emblems and the leaderboards",function()
 		assert(ui.resultRankRow.Visible and ui.resultRank.Text:find("NEW RANK: CHUNIN  1260  (+22)",1,true),"the rank on the result: "..ui.resultRank.Text)
 		ui:resultRanked(nil);assert(not ui.resultRankRow.Visible,"no rank sent, no line")
 		assert(ui.leaderboard,"no leaderboard")
-		ui:showLeaderboard({Rating={id="Rating",title="RANKED",rows=list}})
+		ui:showLeaderboard({Rating={id="Rating",title="RANKED",rows=list},
+			Rooftops={id="Rooftops",title="ROOFTOP RACE",rows={{rank=1,id=7,name="A",value=42.3,text="0:42.30"}}},
+			Kit_Lion={id="Kit_Lion",title="X • MASTERY",kit="Lion",rows={}},Kit_Legion={id="Kit_Legion",title="Y • MASTERY",kit="Legion",rows={}}})
+		local tabs=L.kitTabs(ui.leaderboard.boards)
+		assert(#tabs==2 and tabs[1].kit=="Lion","the kits' tabs in the roster's order: "..#tabs.." "..tostring(tabs[1] and tabs[1].kit))
+		assert(ui.leaderboard.kitTabs.Kit_Lion,"a chip per kit")
 		assert(ui.leaderboard:shown() and #ui.leaderboard.drawn==L.ROWS+1 and not ui.leaderboard.empty.Visible,"the week's board")
+		ui.leaderboard.tab="Rooftops";local rr=ui.leaderboard:draw()
+		assert(#rr==1 and L.value(rr[1])=="0:42.30","the race's clock")
 		ui.leaderboard.tab="Exam";ui.leaderboard:draw()
 		assert(ui.leaderboard.empty.Visible,"an empty board says so")
 	end)
@@ -616,6 +623,50 @@ test("the minimap: the village under the arrow, the places, the things to do",fu
 		assert(map.placeLabel.Text=="THE PLAZA","the place under him: "..map.placeLabel.Text)
 		map.mini.click();assert(map:shown(),"tap opens the big map")
 		map.closeBig.click();assert(not map:shown(),"X closes it")
+	end)
+	H.envBase.Instance=saved
+	assert(ok,tostring(err))
+end)
+
+-- (DESIGN 23/11, step 4) the tournament's entry: a build of 100 points
+test("the tournament's entry: the budget, what a node needs, ENTER sends the nodes",function()
+	local E=H.load("Client/CupEntry")
+	local TV=H.load("Shared/TreeView")
+	local kit="Legion"
+	local tree=TV.tree(kit)
+	local free,needy=nil,nil
+	for _,n in tree do
+		if not free and #(n.Requires or {})==0 then free=n end
+		if not needy and #(n.Requires or {})>0 then needy=n end
+	end
+	local nodes={}
+	assert(E.toggle(kit,nodes,free.Id) and E.spent(kit,nodes)==free.Cost,"a free node taken")
+	if needy then
+		local ok=E.toggle(kit,{},needy.Id)
+		assert(not ok and E.why(kit,{},needy.Id):find("^NEEDS"),"a node that needs another says so")
+	end
+	local all={}
+	for _,n in tree do E.toggle(kit,all,n.Id) end
+	assert(E.spent(kit,all)<=E.BUDGET,"never over the budget")
+	H.workspace.GetAttribute=function() return nil end
+	local saved=H.envBase.Instance
+	local baseNew=harnessInstance.new
+	H.envBase.Instance={new=function(class)
+		local x=baseNew(class)
+		x.Activated={Connect=function(_,fn) x.click=fn end}
+		return x
+	end}
+	local ok,err=pcall(function()
+		local UI=H.load("Client/UI")
+		E=H.load("Client/CupEntry")
+		local sent={}
+		local page=E.new(UI.kit,baseNew("ScreenGui"),function(a,p) table.insert(sent,{a,p}) end)
+		page:show(kit,{active={free.Id}})
+		assert(page:shown() and #page.nodes==1 and page.chips[free.Id],"his own build first")
+		page.go.click()
+		assert(sent[1][1]=="CupStart" and sent[1][2].nodes[1]==free.Id and sent[1][2].player==kit,"ENTER sends the nodes")
+		page:show(kit,nil);page.best.click()
+		assert(sent[2][2].nodes==nil,"BEST BUILD lets the server choose")
 	end)
 	H.envBase.Instance=saved
 	assert(ok,tostring(err))
