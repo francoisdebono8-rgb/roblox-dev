@@ -864,4 +864,17 @@ test("the others see your ninja: the moves travel by the server, each screen pos
 	end
 end)
 
+-- (23/11, step 5, DEC-049) the REPORT button of the test place
+test("a tester's report: one sentence and its context, a few a minute",function()
+	local Reports=H.load("Server/Reports")
+	local player={UserId=42}
+	local buckets={}
+	local r=Reports.make(player,"  the wall run\nthrows me off  ",100,{phase="Hub",kit="Sand",where="1,2,3",version="abc"},buckets)
+	assert(r and r.text=="the wall run throws me off" and r.user==42 and r.phase=="Hub" and r.kit=="Sand" and r.where=="1,2,3","the report")
+	assert(Reports.make(player,"ok",101,nil,buckets)==nil and Reports.make(player,{},101,nil,buckets)==nil,"too short, not a text")
+	assert(#Reports.make(player,string.rep("a",900),102,nil,buckets).text==Reports.MAX,"cut at "..Reports.MAX)
+	assert(Reports.make(player,"third one",103,nil,buckets) and Reports.make(player,"fourth one",104,nil,buckets)==nil,"at most 3 a minute")
+	assert(Reports.make(player,"next minute",161,nil,buckets),"the next minute")
+end)
+
 print(string.format("NinjaDuel hub Konoha (DEC-038): %d PASS",passed))
