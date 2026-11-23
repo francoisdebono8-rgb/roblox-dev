@@ -1,20 +1,26 @@
 #!/usr/bin/env python3
 """La place commune automatique (OUTILLEUR, 20/11 ; DEC-043, étape 1, OUTILLEUR 1).
 
-Après chaque lot poussé sur `claude/ninja-duel-2026-10-14`, les 4 places
-(ND-JEU, ND-DEV, ND-QA, ND-FILM) sont reconstruites au même commit et posées
-dans ~/Documents/NinjaDuel/PLACES, sans que personne ait à le lancer.
+Après chaque lot poussé sur `claude/ninja-duel-2026-10-14`, LA place du jeu
+(PLACES/NinjaDuel.rbxlx) est reconstruite et posée dans ~/Documents/NinjaDuel/PLACES,
+sans que personne ait à le lancer.
+
+(23/11, DEC-052, François : « tout doit être pensé comme un seul jeu et pouvoir
+tester dans le jeu, c'est beaucoup plus logique » ; « 10-12 places grand max, on perd
+de l'info sinon ») Une seule place : le jeu, avec ses outils de dev (F6, F7), de
+tournage et les robots qu'on y lance. Le profil release ne se construit que pour
+publier (pré-vol), pas pour l'ouvrir.
 
 Un agent macOS (launchd) lance `place_commune.py --une-fois` toutes les 2 min :
   1. il lit le dernier commit de la branche sur GitHub (`git ls-remote`) ;
   2. il attend que la branche n'ait pas bougé depuis 3 min : un lot de plusieurs
      poussées n'est construit qu'une fois, à la fin ;
-  3. il construit les 4 profils de ce commit (`build.py`, `--debug`, `--qa`,
-     `--capture`) dans son propre clone, vérifie qu'ils ont le même runtime, et
-     les range dans PLACES/_prochaine/ : elles sont prêtes ;
-  4. si aucune des 4 places n'est ouverte dans Studio (pas de `.lock`), il les
-     pose dans PLACES et récrit VERSION.md ; sinon elles attendent dans
-     _prochaine, et il les pose au premier passage où plus rien n'est ouvert.
+  3. il construit la place de ce commit (`build.py --capture` : le jeu, les outils
+     de dev et de tournage) dans son propre clone, et la range dans
+     PLACES/_prochaine/ : elle est prête ;
+  4. si elle n'est pas ouverte dans Studio (pas de `.lock`), il la pose dans
+     PLACES et récrit VERSION.md ; sinon elle attend dans _prochaine, et il la
+     pose au premier passage où plus rien n'est ouvert.
      Une place modifiée dans Studio n'est jamais écrasée : elle est mise de
      côté, comme le fait actualiser_places.sh ;
   5. une notification macOS dit ce qui s'est passé.
@@ -45,10 +51,9 @@ BRANCH = "claude/ninja-duel-2026-10-14"
 LABEL = "com.ninjaduel.placecommune"
 STABLE = 180          # s sans nouvelle poussée avant de construire
 INTERVAL = 120        # s entre deux passages de l'agent
-NAMES = {"NinjaDuel": "ND-JEU", "NinjaDuel-Debug": "ND-DEV", "NinjaDuel-QA": "ND-QA", "NinjaDuel-Capture": "ND-FILM"}
-PROFILES = {"NinjaDuel": [], "NinjaDuel-Debug": ["--debug"], "NinjaDuel-QA": ["--qa"], "NinjaDuel-Capture": ["--capture"]}
-ROLE = {"ND-JEU": "tester le jeu comme un joueur", "ND-DEV": "développer (outils de dev, devcall, F6)",
-        "ND-QA": "tests natifs automatiques (agents)", "ND-FILM": "filmer (DEV + outils de tournage)"}
+NAMES = {"NinjaDuel-Capture": "NinjaDuel"}
+PROFILES = {"NinjaDuel-Capture": ["--capture"]}
+ROLE = {"NinjaDuel": "le jeu : y jouer et y tester (outils de dev F6 / F7, tournage, robots)"}
 PYTHONS = ["/Library/Frameworks/Python.framework/Versions/Current/bin/python3", "/usr/local/bin/python3",
            "/opt/homebrew/bin/python3", "/usr/bin/python3"]
 
@@ -111,7 +116,7 @@ class Place:
         return [n for n in NAMES.values() if os.path.exists(os.path.join(self.places, n + ".rbxlx.lock"))]
 
     def build(self, sha: str) -> dict:
-        """Construit les 4 profils de `sha` et les range dans _prochaine. Renvoie l'info du commit."""
+        """Construit la place de `sha` et la range dans _prochaine. Renvoie l'info du commit."""
         if not os.path.isdir(os.path.join(self.clone, ".git")):
             os.makedirs(self.work, exist_ok=True)
             self.git("clone", "-q", "--filter=blob:none", "--no-checkout", self.repo, self.clone, timeout=900)
@@ -132,7 +137,7 @@ class Place:
                 manifests[key] = json.load(f)
         runtimes = {m.get("runtimeFingerprint") for m in manifests.values()}
         if len(runtimes) != 1:
-            raise RuntimeError("les 4 profils n'ont pas le même runtime : " + ", ".join(sorted(map(str, runtimes))))
+            raise RuntimeError("les profils n'ont pas le même runtime : " + ", ".join(sorted(map(str, runtimes))))
         os.makedirs(self.staging, exist_ok=True)
         for key, name in NAMES.items():
             shutil.copyfile(os.path.join(dist, key + ".rbxlx"), os.path.join(self.staging, name + ".rbxlx"))
@@ -142,9 +147,9 @@ class Place:
         with open(os.path.join(self.staging, "commit.json"), "w", encoding="utf-8") as f:
             json.dump(info, f, ensure_ascii=False, indent=1)
         with open(os.path.join(self.staging, "LISEZ-MOI.md"), "w", encoding="utf-8") as f:
-            f.write(f"# Places prêtes, pas encore posées\n\nCommit `{sha[:12]}` ({when}) : {subject}\n\n"
-                    "Elles seront posées dans PLACES dès qu'aucune place n'est ouverte dans Studio. "
-                    "Pour les poser tout de suite : fermer ND-JEU, ND-DEV, ND-QA et ND-FILM dans Studio, puis\n"
+            f.write(f"# Place prête, pas encore posée\n\nCommit `{sha[:12]}` ({when}) : {subject}\n\n"
+                    "Elle sera posée dans PLACES dès qu'elle n'est plus ouverte dans Studio. "
+                    "Pour la poser tout de suite : fermer NinjaDuel dans Studio, puis\n"
                     "`python3 ~/Documents/NinjaDuel/_outils/place_commune.py --une-fois`.\n")
         return info
 
@@ -159,7 +164,7 @@ class Place:
         return None
 
     def install(self, info: dict) -> list[str]:
-        """Pose les 4 places de _prochaine dans PLACES (toutes ou aucune). Renvoie les mises de côté."""
+        """Pose les places de _prochaine dans PLACES (toutes ou aucune). Renvoie les mises de côté."""
         aside = []
         stamp = time.strftime("%Y-%m-%d_%H%M", time.localtime(self.clock()))
         for name in NAMES.values():
@@ -187,10 +192,10 @@ class Place:
                 man[name] = json.load(f)
         source = {m.get("sourceCommit", "") for m in man.values()}.pop()
         with open(os.path.join(self.places, "VERSION.md"), "w", encoding="utf-8") as f:
-            f.write("# Places de travail Ninja Duel\n\n")
+            f.write("# La place du jeu Ninja Duel\n\n")
             f.write(f"Posées automatiquement le {info['built']} (place commune, `_outils/place_commune.py`) "
                     f"depuis GitHub `{self.branch}`, commit `{info['commit'][:12]}` ({info['when']}) : {info['subject']}\n")
-            f.write(f"Sources du commit `{source[:12]}`. Runtime commun (le même jeu dans les 4) : `{str(info['runtime'])[:12]}`.\n\n")
+            f.write(f"Sources du commit `{source[:12]}`. Runtime : `{str(info['runtime'])[:12]}`.\n\n")
             f.write("| Fichier | Pour | Profil | buildFingerprint | sha256 |\n|---|---|---|---|---|\n")
             for name in NAMES.values():
                 m = man[name]
@@ -383,7 +388,7 @@ def uninstall_agent() -> str:
 
 
 def main(argv=None) -> int:
-    ap = argparse.ArgumentParser(description="La place commune : les 4 places reconstruites après chaque lot.")
+    ap = argparse.ArgumentParser(description="La place commune : la place du jeu reconstruite après chaque lot.")
     ap.add_argument("--une-fois", action="store_true", help="un passage (l'agent)")
     ap.add_argument("--etat", action="store_true", help="où en est la place commune")
     ap.add_argument("--installer", action="store_true", help="installe l'agent macOS")

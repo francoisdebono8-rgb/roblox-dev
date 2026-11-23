@@ -80,7 +80,7 @@ class PlaceCommune(unittest.TestCase):
         sh("git", "-c", "user.email=t@t", "-c", "user.name=t", "add", "-A", cwd=self.src)
         sh("git", "-c", "user.email=t@t", "-c", "user.name=t", "commit", "-qm", msg, cwd=self.src)
 
-    def placed(self, name="ND-JEU"):
+    def placed(self, name="NinjaDuel"):
         with open(os.path.join(self.nd, "PLACES", name + ".rbxlx")) as f:
             return f.read()
 
@@ -90,13 +90,13 @@ class PlaceCommune(unittest.TestCase):
 
     def test_a_lot_is_built_once_it_has_stopped_moving_then_placed(self):
         self.assertIn("attend la fin du lot", self.place.tick())
-        self.assertFalse(os.path.exists(os.path.join(self.nd, "PLACES", "ND-JEU.rbxlx")))
+        self.assertFalse(os.path.exists(os.path.join(self.nd, "PLACES", "NinjaDuel.rbxlx")))
         self.clock.t += 200
         line = self.place.tick()
         self.assertIn("posées dans PLACES", line)
-        for name in ("ND-JEU", "ND-DEV", "ND-QA", "ND-FILM"):
-            self.assertTrue(os.path.exists(os.path.join(self.nd, "PLACES", name + ".rbxlx")), name)
-        self.assertEqual(self.placed("ND-DEV"), "v1|NinjaDuel-Debug")
+        # (DEC-052) one game, one place: the game with its tools
+        self.assertEqual(sorted(f for f in os.listdir(os.path.join(self.nd, "PLACES")) if f.endswith(".rbxlx")), ["NinjaDuel.rbxlx"])
+        self.assertEqual(self.placed(), "v1|NinjaDuel-Capture")
         self.assertIn("premier lot", self.version())
         self.assertEqual(self.notes[-1][0], "Places Ninja Duel à jour")
         # nothing new: nothing happens
@@ -112,18 +112,18 @@ class PlaceCommune(unittest.TestCase):
         self.assertIn("attend", self.place.tick())
         self.clock.t += 100
         self.assertIn("posées", self.place.tick())
-        self.assertEqual(self.placed(), "v2|NinjaDuel")
+        self.assertEqual(self.placed(), "v2|NinjaDuel-Capture")
 
     def test_an_open_place_keeps_them_ready_until_studio_lets_go(self):
         self.place.tick(); self.clock.t += 200; self.place.tick()
         self.commit("lot 2", **{"game.txt": "v2"})
         self.place.tick(); self.clock.t += 200
-        lock = os.path.join(self.nd, "PLACES", "ND-JEU.rbxlx.lock")
+        lock = os.path.join(self.nd, "PLACES", "NinjaDuel.rbxlx.lock")
         open(lock, "w").close()
         line = self.place.tick()
         self.assertIn("prêtes dans PLACES/_prochaine", line)
-        self.assertEqual(self.placed(), "v1|NinjaDuel", "an open place is never replaced")
-        self.assertTrue(os.path.exists(os.path.join(self.nd, "PLACES", "_prochaine", "ND-JEU.rbxlx")))
+        self.assertEqual(self.placed(), "v1|NinjaDuel-Capture", "an open place is never replaced")
+        self.assertTrue(os.path.exists(os.path.join(self.nd, "PLACES", "_prochaine", "NinjaDuel.rbxlx")))
         waiting = [n for n in self.notes if n[0] == "Place commune prête"]
         self.assertEqual(len(waiting), 1)
         self.clock.t += 120
@@ -132,28 +132,28 @@ class PlaceCommune(unittest.TestCase):
         os.rename(lock, lock + ".parti")
         self.clock.t += 120
         self.assertIn("posées", self.place.tick())
-        self.assertEqual(self.placed(), "v2|NinjaDuel")
+        self.assertEqual(self.placed(), "v2|NinjaDuel-Capture")
         self.assertIsNone(self.place.staged())
 
     def test_a_place_changed_in_studio_is_put_aside_not_overwritten(self):
         self.place.tick(); self.clock.t += 200; self.place.tick()
-        with open(os.path.join(self.nd, "PLACES", "ND-FILM.rbxlx"), "w") as f:
+        with open(os.path.join(self.nd, "PLACES", "NinjaDuel.rbxlx"), "w") as f:
             f.write("modifiée à la main")
         self.commit("lot 2", **{"game.txt": "v2"})
         self.place.tick(); self.clock.t += 200
         line = self.place.tick()
-        self.assertIn("ND-FILM", line)
+        self.assertIn("NinjaDuel", line)
         aside = os.listdir(os.path.join(self.nd, "_maintenance", "places-modifiees-dans-studio"))
         self.assertEqual(len(aside), 1)
-        self.assertTrue(aside[0].endswith("_ND-FILM.rbxlx"))
+        self.assertTrue(aside[0].endswith("_NinjaDuel.rbxlx"))
 
     def test_a_commit_that_does_not_change_the_game_only_moves_version(self):
         self.place.tick(); self.clock.t += 200; self.place.tick()
-        before = os.stat(os.path.join(self.nd, "PLACES", "ND-JEU.rbxlx")).st_ino
+        before = os.stat(os.path.join(self.nd, "PLACES", "NinjaDuel.rbxlx")).st_ino
         self.commit("docs seulement", **{"NOTES.md": "rien pour le jeu"})
         self.place.tick(); self.clock.t += 200
         self.assertIn("identiques", self.place.tick())
-        self.assertEqual(os.stat(os.path.join(self.nd, "PLACES", "ND-JEU.rbxlx")).st_ino, before)
+        self.assertEqual(os.stat(os.path.join(self.nd, "PLACES", "NinjaDuel.rbxlx")).st_ino, before)
         self.assertIn("docs seulement", self.version())
         self.assertIsNone(self.place.staged())
 
@@ -166,7 +166,7 @@ class PlaceCommune(unittest.TestCase):
         self.place.tick()
         broken = [n for n in self.notes if "impossible" in n[0]]
         self.assertEqual(len(broken), 1)
-        self.assertEqual(self.placed(), "v1|NinjaDuel")
+        self.assertEqual(self.placed(), "v1|NinjaDuel-Capture")
 
     def test_the_agent_runs_the_script_it_installed(self):
         text = P.plist("/x/_outils/place_commune.py", "/usr/bin/python3", "/x")

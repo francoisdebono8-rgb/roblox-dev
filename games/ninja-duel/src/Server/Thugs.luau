@@ -185,12 +185,12 @@ function Thugs.stop(player,entry,now)
 	panel(player,Thugs.offer(entry.street.key,ryoOf(player)))
 end
 -- His answer (the action "Racket" {id, choice}).
-function Thugs.answer(player,id,choice)
+function Thugs.answer(player,id,choice,now)
 	local pending=Thugs.pending[player]
 	if not pending or pending.entry.street.key~=id or Thugs.live[id]~=pending.entry then return false end
 	if choice=="pay" then Thugs.pay(player,pending.entry)
 	elseif choice=="fight" then Thugs.fight(player,pending.entry)
-	elseif choice=="run" and not pending.run then pending.run=os.clock();panel(player,false)
+	elseif choice=="run" and not pending.run then pending.run=now or os.clock();panel(player,false)
 	else return false end
 	return true
 end

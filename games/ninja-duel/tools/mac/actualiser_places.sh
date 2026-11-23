@@ -1,6 +1,7 @@
 #!/bin/bash
-# Ninja Duel — reconstruit les 4 places de travail depuis GitHub, toutes du MÊME commit,
-# et les range dans ~/Documents/NinjaDuel/PLACES (ND-JEU, ND-DEV, ND-QA, ND-FILM).
+# Ninja Duel — reconstruit LA place du jeu depuis GitHub et la range dans
+# ~/Documents/NinjaDuel/PLACES/NinjaDuel.rbxlx (DEC-052 : un seul jeu, une seule place,
+# avec ses outils de dev, de tournage et les robots qu'on y lance).
 #
 #   bash ~/Documents/NinjaDuel/_outils/actualiser_places.sh                  # branche canonique
 #   bash ~/Documents/NinjaDuel/_outils/actualiser_places.sh <branche|commit> # autre référence
@@ -20,14 +21,14 @@ git clone -q --filter=blob:none --no-checkout "$REPO" "$SRC"
 git -C "$SRC" checkout -q "$REF"
 COMMIT="$(git -C "$SRC" rev-parse HEAD)"
 cd "$SRC/games/ninja-duel"
-for profile in "" --debug --qa --capture; do python3 build.py $profile > /dev/null; done
+python3 build.py --capture > /dev/null
 python3 - "$SRC/games/ninja-duel/dist" "$PLACES" "$ND" "$COMMIT" "$REF" <<'PY'
 import hashlib, json, os, shutil, sys, time
 dist, places, nd, commit, ref = sys.argv[1:]
-names = {'NinjaDuel': 'ND-JEU', 'NinjaDuel-Debug': 'ND-DEV', 'NinjaDuel-QA': 'ND-QA', 'NinjaDuel-Capture': 'ND-FILM'}
+names = {'NinjaDuel-Capture': 'NinjaDuel'}
 man = {k: json.load(open(os.path.join(dist, k + '.json'))) for k in names}
 runtime = {m['runtimeFingerprint'] for m in man.values()}
-assert len(runtime) == 1, 'les 4 profils n\'ont pas le même runtime'
+assert len(runtime) == 1, 'les profils n\'ont pas le même runtime'
 os.makedirs(places, exist_ok=True)
 stamp = time.strftime('%Y-%m-%d_%H%M')
 def sha(p):
@@ -35,8 +36,7 @@ def sha(p):
     with open(p, 'rb') as f:
         for c in iter(lambda: f.read(1 << 22), b''): h.update(c)
     return h.hexdigest()
-# Toutes les places ou aucune : une seule ouverte dans Studio arrête tout AVANT
-# la première copie (sinon ND-JEU passait au nouveau commit et les autres non).
+# Ouverte dans Studio : rien n'est touché.
 opened = [n for n in names.values() if os.path.exists(os.path.join(places, n + '.rbxlx.lock'))]
 if opened:
     sys.exit('Ouverte(s) dans Studio : ' + ', '.join(opened) + ' — aucune place modifiée. Fermer puis relancer.')
@@ -51,12 +51,11 @@ for k, n in names.items():
             print(f'  ! {n} avait été modifiée dans Studio : mise de côté dans _maintenance/places-modifiees-dans-studio/')
     shutil.copyfile(os.path.join(dist, k + '.rbxlx'), target)
     shutil.copyfile(os.path.join(dist, k + '.json'), old_manifest)
-role = {'ND-DEV': 'développer (outils de dev, devcall, F6)', 'ND-JEU': 'tester le jeu comme un joueur',
-        'ND-FILM': 'filmer (DEV + outils de tournage)', 'ND-QA': 'tests natifs automatiques (agents)'}
+role = {'NinjaDuel': 'le jeu : y jouer et y tester (outils de dev F6 / F7, tournage, robots)'}
 with open(os.path.join(places, 'VERSION.md'), 'w', encoding='utf-8') as f:
     source = {m['sourceCommit'] for m in man.values()}.pop()
-    f.write(f'# Places de travail Ninja Duel\n\nConstruites le {time.strftime("%d/%m/%Y à %H:%M")} depuis GitHub `{ref}`, commit `{commit[:12]}` (sources du commit `{source[:12]}`).\n')
-    f.write(f'Runtime commun (le même jeu dans les 4) : `{runtime.pop()[:12]}`.\n\n')
+    f.write(f'# La place du jeu Ninja Duel\n\nConstruites le {time.strftime("%d/%m/%Y à %H:%M")} depuis GitHub `{ref}`, commit `{commit[:12]}` (sources du commit `{source[:12]}`).\n')
+    f.write(f'Runtime : `{runtime.pop()[:12]}`.\n\n')
     f.write('| Fichier | Pour | Profil | buildFingerprint | sha256 |\n|---|---|---|---|---|\n')
     for k, n in names.items():
         m = man[k]

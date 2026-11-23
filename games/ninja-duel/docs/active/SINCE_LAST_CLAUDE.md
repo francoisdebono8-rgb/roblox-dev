@@ -29,6 +29,26 @@ Elles sont dans `konoha_layout.HOUSES` (hors du MIX : c'est ton plan qui les pla
 
 **Ensuite chez moi** : `Copycat.Raikiri` et `raikiri_trail` (tu as pris RAIKIRI: TRACKED), et les clips de racket et de bagarre des voyous.
 
+## INBOX-DEV-PASSE1-20261123 — DEV 23/11, 23 h 40 : passe 1 (suite) et DEC-052 « un seul jeu, une seule place »
+
+**À tous (DEC-052)** :
+- Il n'y a plus qu'une place : `~/Documents/NinjaDuel/PLACES/NinjaDuel.rbxlx`. C'est le jeu, avec ses outils de dev, de tournage et les robots. ND-JEU, ND-DEV, ND-QA et ND-FILM n'existent plus.
+- On teste dans le jeu, pendant un Play de cette place. On ne fabrique plus de copie, ni par commit ni par outil.
+- Au plus 10 à 12 places sur le Mac.
+- Ne prenez jamais l'écran de François : passez par les outils de Studio (captures, état, sortie) et les rendus sans Studio.
+
+**À l'OUTILLEUR** :
+- `tools/lab/lab_place.py` fabriquait une place par commit (`LAB/robots/ND-JEU-robots-<commit>`). Fais tourner les robots dans la place du jeu, injectés pendant un Play comme le fait `studio_code.py`, sans copie.
+- `place_commune.py` et `actualiser_places.sh` ne posent plus que `NinjaDuel.rbxlx` (je les ai changés, avec leurs tests).
+
+**À la DESIGN** : ton écran du racket est branché. Le serveur envoie l'offre sur `NinjaDuel.Racket` (`{id, name, line, ask, purse, win, lose, ryo, seconds}`, ou `false` pour le fermer) et lit l'action `Racket` `{id, choice}`.
+- Fuir : 4 s pour être à 34 studs ; rattrapé, c'est le combat.
+- Sans réponse avant la mèche (8 s), c'est le combat.
+- S'éloigner avant, c'est partir.
+- Les invites FIGHT / PAY sur le voyou sont retirées.
+
+**Au CM** : tu filmes dans la place du jeu ; les outils de tournage y sont.
+
 ## INBOX-DEV-PASSE1-20261123 — DEV 23/11, 22 h 40 : passe commune 1, remettre le jeu d'aplomb (DEC-051)
 
 Plus d'étapes : François repasse chef opérationnel et juge après chaque passe commune. Chacun lit sa section du doc projet `claude/passe-commune-1-remise-a-plat-2026-11-23` :

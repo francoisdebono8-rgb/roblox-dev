@@ -586,3 +586,14 @@ François (23/11, 22 h 22–22 h 30) : « rien ne va » (la ville, les murs et l
 - **Les étapes du plan du 20/11 s'arrêtent là.** Le travail se fait en passes communes : le DEV et les autres discussions, une liste de tâches chacun. À la fin de chaque passe, François joue et dit ce qui ne va pas.
 - **La passe 1** est dans le doc projet `claude/passe-commune-1-remise-a-plat-2026-11-23` : collisions qui suivent les modèles, une nouvelle ville (du vrai et du généré, d'après des villages japonais réels, la falaise, la porte, la rue principale et Ichiraku gardées), les jutsus à tout moment dans Konoha, des PNJ qui rackettent, TRY THIS KIT, les habits du départ, les écrans.
 - **Claude reprend Studio quand François le lui laisse.** Il joue comme un joueur avant de dire qu'une passe est finie. Les tests seuls ne voient ni ce qu'on traverse, ni ce qui est laid.
+
+## DEC-052 — Un seul jeu, une seule place, et on teste dans le jeu (23/11, 23 h 30)
+
+François (23/11) : « je veux qu'on arrête de faire 10 000 places, on doit avoir 10-12 grand max, on perd de l'info sinon » ; « ne prends pas l'écran, utilise des skills pour utiliser ton œil sans l'ordi » ; « tout doit être pensé comme un seul jeu et pouvoir tester dans le jeu, c'est beaucoup plus logique ».
+
+- **Une seule place de travail : `~/Documents/NinjaDuel/PLACES/NinjaDuel.rbxlx`.** C'est le jeu, avec ses outils de dev (F6, F7), de tournage et les robots qu'on y lance. La place commune (`tools/mac/place_commune.py`) la reconstruit après chaque lot (profil `--capture`). ND-JEU, ND-DEV, ND-QA et ND-FILM n'existent plus.
+- **On teste dans le jeu**, pas dans des copies. Les robots de l'OUTILLEUR, le tournage du CM, les vérifications de chaque discussion tournent dans cette place, pendant un Play. On ne fabrique plus de place par commit ni par outil.
+- **Le profil release** ne se construit que pour publier (`dist/`, le pré-vol). On ne l'ouvre pas pour travailler.
+- **Au plus 10 à 12 places** sur le Mac, toutes discussions confondues. Les 13 copies du LAB et l'essai de tournage du 19/11 sont rangés dans `NinjaDuel/_a_supprimer/places-2026-11-23`, à supprimer avec l'accord de François.
+- **L'œil de Claude, sans prendre l'écran** : les outils de Roblox Studio (captures, lecture de l'état et de la sortie, robots), et les rendus et preuves sans Studio (`tools/syphodev`, `tools/village`). Jamais la souris ni le clavier de François.
+- **À la fin de chaque passe commune**, le DEV joue 10 à 15 minutes dans la place, de cette façon, et relève ce qui ne va pas avant de livrer la passe.

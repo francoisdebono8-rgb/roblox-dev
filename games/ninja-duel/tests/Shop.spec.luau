@@ -916,7 +916,7 @@ test("the rogue ninjas: the toll or all he has, the fight's purse, never below n
 	Thugs.racked={}
 	Thugs.tick(100,{a},walking)
 	assert(Thugs.pending[a] and Thugs.pending[a].entry.street.key=="market","close by: not stopped")
-	assert(Thugs.answer(a,"market","run") and Thugs.pending[a].run,"the run")
+	assert(Thugs.answer(a,"market","run",100) and Thugs.pending[a].run,"the run")
 	a.root.Position=V.new(Thugs.ESCAPE+1,0,0)
 	Thugs.tick(101,{a},walking)
 	assert(Thugs.pending[a]==nil and Thugs.racked[a]==101 and #fights==0,"far away: still held")
@@ -924,7 +924,7 @@ test("the rogue ninjas: the toll or all he has, the fight's purse, never below n
 	Thugs.tick(102+Thugs.FUSE,{b},walking)
 	assert(fights[1]==b and Thugs.pending[b]==nil,"no answer: no fight at the fuse")
 	rogue("market");Thugs.tick(200,{c},walking)
-	Thugs.answer(c,"market","run");Thugs.tick(200+Thugs.RUN_TIME,{c},walking)
+	Thugs.answer(c,"market","run",200);Thugs.tick(200+Thugs.RUN_TIME,{c},walking)
 	assert(fights[2]==c,"caught running: no fight")
 	assert(not Thugs.answer(c,"market","pay"),"an answer with nothing asked")
 	Thugs.matches=saved;Thugs.live={}
