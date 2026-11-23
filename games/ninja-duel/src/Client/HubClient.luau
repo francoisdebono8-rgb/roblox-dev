@@ -114,6 +114,15 @@ function Hub.new(ui,camera,send,controls)
 	end,M.paper)
 	gear.TextSize=18;gear.TextColor3=M.ink;gear.Font=STRONG;inkRing(gear,3)
 	self.settingsButton=gear
+	-- (DESIGN 24/11) the test's screens
+	self.send=self.send or send
+	self.screen=""
+	task.spawn(function()
+		while true do
+			task.wait(.25)
+			pcall(self.trackScreen,self)
+		end
+	end)
 	-- (DESIGN 23/11, passe 1) the racket: PAY, RUN or FIGHT (Hub:racket(r))
 	do
 		local ok,RacketPanel=pcall(function() return require(script.Parent.RacketPanel) end)
@@ -298,6 +307,32 @@ function Hub:render(data)
 	if self.cardId then self:fillCard() end
 	self:refreshMarkers()
 	self:refreshHud()
+end
+-- (DESIGN 24/11, DEC-052: the test's « screens ») The screen open over the
+-- game, for the test's log: letters only, "" when back in the game.
+function Hub:screenName()
+	local ui=self.ui
+	local function on(p) return p~=nil and p:shown() end
+	if self.racketPanel and on(self.racketPanel) then return "Racket" end
+	if on(ui.settings) then return "Settings" end
+	if on(ui.cupEntry) then return "CupEntry" end
+	if on(ui.shopPanel) then return if ui.shopPanel.counter=="market" then "Market" else "Shop" end
+	if on(ui.treePanel) then return "Tree" end
+	if on(ui.outfitPanel) then return "Outfit" end
+	if on(ui.leaderboard) then return "Ranks" end
+	if on(self.quests) then return "Quests" end
+	if on(self.map) then return "Map" end
+	if self.card and self.card.Visible then return "Card" end
+	return ""
+end
+-- Sends "Screen" {name} when it changes (checked 4 times a second).
+function Hub:trackScreen()
+	local name=self:screenName()
+	if name~=self.screen then
+		self.screen=name
+		self.send("Screen",{name=name})
+	end
+	return name
 end
 -- A page over the village (the walk waits behind it).
 function Hub:anyPanel()
