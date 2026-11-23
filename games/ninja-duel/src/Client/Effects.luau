@@ -10,6 +10,8 @@ local Kit=require(script.Parent.VfxKit)
 -- they are ready (or headless) the part-built ones below are used.
 local MeshKit=require(script.Parent.MeshKit)
 pcall(function() task.spawn(MeshKit.prepare) end)
+-- (06/11, refonte VFX) Coups au corps en style animé moderne (Client/VfxHit).
+local vfxHitOk,VfxHit=pcall(require,script.Parent.VfxHit)
 local Face=require(game:GetService("ReplicatedStorage").NinjaDuel.Face)
 local FX={};FX.__index=FX
 -- Cel flame streams of the fireballs in flight (VfxKit), by model.
@@ -1037,16 +1039,34 @@ function FX:impact(impact,folder)
 		end
 	end
 	if CHEER[style] then self:cheer(CHEER[style]) end
+	-- (06/11, refonte VFX, choix de François : « animé moderne ») Les coups au
+	-- corps : la cible flashe, éclair rond, sphère et cône de traits de vent dans
+	-- le sens du coup, étincelles, et au sol anneau, poussière et cratère (slam).
+	-- Remplace l'ancien rendu de ces styles ; la garde garde le sien.
+	-- (23/11, DEV, intégré : François, « tout ce qui a été fait doit être
+	-- ajouté ») les couches d'identité venues depuis (infusions et natures,
+	-- outils, familles) passent toujours ; seul l'ancien rendu générique saute.
+	local animeHit=false
+	if vfxHitOk and not impact.projectile and not impact.guarded and VfxHit.handles(style) then
+		local victim=modelFor(folder,impact.victim)
+		local dir=impact.direction
+		if not dir or dir.Magnitude<.05 then dir=Vector3.xAxis end
+		animeHit=pcall(VfxHit.hit,VfxHit.STYLE[style],position,{dir=dir,victim=victim,ignore={folder,self.folder}})
+	end
 	-- (Reference quality) the struck body flashes: red on a blow, gold on a
 	-- guard, longer and stronger the harder it was.
 	-- (FEEL 05/11) brighter and a beat longer: a light blow read as nothing.
 	-- Not twice for a blow the client already flashed when it guessed it.
-	if impact.victim and impact.amount and not impact.tinted then
+	if impact.victim and impact.amount and not impact.tinted and not animeHit then
 		local weight=math.clamp(impact.amount/20,.25,1)
 		pcall(Kit.tint,modelFor(folder,impact.victim),if impact.guarded then Color3.fromRGB(255,214,120) else Color3.fromRGB(255,86,52),
 			.09+.08*weight,if impact.guarded then .35 else .5+.35*weight)
 	end
 	for _,layer in FX.layers do if layer.impact and layer.impact(self,impact,folder) then return end end
+	if animeHit then
+		if impact.chakra then pcall(self.chakraImpact,self,impact,folder) end
+		return
+	end
 	if style=="fire" then
 		self:explosion(position,impact.normal,1+.7*(impact.charge or 0))
 	elseif style=="teleport" then
