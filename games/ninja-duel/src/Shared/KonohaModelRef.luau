@@ -10,6 +10,7 @@ return {
 	shop_house={w=20,d=16,h=14},
 	apartment={w=24,d=16,h=21},
 	clan_house={w=22,d=17,h=9},
+	tower_house={w=13,d=13,h=28},
 	hokage_residence={w=44,d=44,h=40},
 	hospital={w=36,d=30,h=24},
 	academy_annex={w=36,d=30,h=24},
