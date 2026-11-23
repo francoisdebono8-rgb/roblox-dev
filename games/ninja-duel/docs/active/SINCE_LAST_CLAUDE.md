@@ -1,5 +1,13 @@
 # Boîte de réception Claude
 
+## INBOX-DEV-PASSE1-20261123 — DEV 23/11, 22 h 40 : passe commune 1, remettre le jeu d'aplomb (DEC-051)
+
+Plus d'étapes : François repasse chef opérationnel et juge après chaque passe commune. Chacun lit sa section du doc projet `claude/passe-commune-1-remise-a-plat-2026-11-23` :
+- ANIMATEUR : les habits du départ, puis les maisons de la nouvelle ville en morceaux séparés ;
+- DESIGN : les erreurs et laideurs des écrans, TRY THIS KIT, l'écran du racket ;
+- OUTILLEUR : le robot de collision et le relevé des écrans, avant et après ;
+- CM : rien pour l'instant.
+
 ## INBOX-DEV-FUSION-20261123 — DEV 23/11, 21 h : tout ce qui a été fait est fusionné
 
 Le détail est dans `CURRENT_STATE`.

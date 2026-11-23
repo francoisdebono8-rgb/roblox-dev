@@ -578,3 +578,11 @@ Les règles :
 - **Le DEV lance `python3 tools/branches/unmerged.py` à chaque passe**, avant d'annoncer quoi que ce soit. Le script liste toute branche qui a du travail absent de la branche commune (code 1 s'il en reste). Ce qu'il liste est intégré dans la passe, ou jugé avec sa raison dans la liste `ALREADY_JUDGED` du script.
 - **Les branches `work/*`** restent des brouillons (« wip », « scratch ») ; le script les ignore. Une livraison n'existe que sur la branche commune.
 - **`main` suit la branche commune** (avance rapide), à chaque poussée du DEV. Ça ne publie rien sur Roblox.
+
+## DEC-051 — Plus d'étapes : des passes communes, François chef opérationnel (23/11)
+
+François (23/11, 22 h 22–22 h 30) : « rien ne va » (la ville, les murs et les toits qu'on traverse, TRY THIS KIT, les habits du départ, son kit à tout moment, des PNJ à combattre, les bugs, les écrans), puis : « tu oublies ces étapes, je vais repasser en chef opérationnel et te dire ce qui va pas après chaque grosse passe commune de travail ».
+
+- **Les étapes du plan du 20/11 s'arrêtent là.** Le travail se fait en passes communes : le DEV et les autres discussions, une liste de tâches chacun. À la fin de chaque passe, François joue et dit ce qui ne va pas.
+- **La passe 1** est dans le doc projet `claude/passe-commune-1-remise-a-plat-2026-11-23` : collisions qui suivent les modèles, une nouvelle ville (du vrai et du généré, d'après des villages japonais réels, la falaise, la porte, la rue principale et Ichiraku gardées), les jutsus à tout moment dans Konoha, des PNJ qui rackettent, TRY THIS KIT, les habits du départ, les écrans.
+- **Claude reprend Studio quand François le lui laisse.** Il joue comme un joueur avant de dire qu'une passe est finie. Les tests seuls ne voient ni ce qu'on traverse, ni ce qui est laid.
