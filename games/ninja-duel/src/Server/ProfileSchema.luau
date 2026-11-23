@@ -555,6 +555,13 @@ function S.Commands.earnItem(p,args)
 	p.style.owned[item.id]=true
 	return {item=item.id}
 end
+-- (23/11, step 5, DEC-049) The VIP pass is his (a game pass, for good): the
+-- profile remembers it, and its looks (CapeVIP, earned="vip") follow.
+function S.Commands.setVip(p,args)
+	assert(p.vip~=true,"Already VIP")
+	p.vip=true
+	return {vip=true}
+end
 -- Wear a look the player owns (or a base one) in its slot.
 function S.Commands.equipItem(p,args)
 	local item=Shop.item(args.item)

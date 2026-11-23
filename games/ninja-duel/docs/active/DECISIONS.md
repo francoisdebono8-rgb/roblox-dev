@@ -540,6 +540,7 @@ François (23/11, 1 h 02) : « ajoute animateur push et passe à l'étape 4 rée
   - Gaara : Desert Funeral. Le Cercueil de sable part en trois vagues en éventail, et chaque corps touché est lié puis enseveli une seule fois.
 
   Celle de Kakashi viendra avec son comportement en combat et les clips de l'ANIMATEUR : un nœud qui ne fait que changer un nombre n'en est pas une.
+  - **Kakashi (DEV, 23/11 soir, sur la proposition de l'ANIMATEUR) : RAIKIRI: TRACKED.** Quand ses chiens (`TrackingFang`) tiennent un corps, sa Lame de foudre lâchée dans les 3 s part en ligne droite sur ce corps et traverse une esquive ; la garde la tient toujours. Réplique « RAIKIRI ». Choisie plutôt que COPY TWICE : elle se lit d'un regard (les chiens marquent, l'éclair suit la marque) et tout existe déjà. Le serveur vient avec le clip `Copycat.Raikiri` et l'effet `raikiri_trail` de l'ANIMATEUR.
 - **Tournoi** : une construction de 100 points (bracket Advanced), la même pour tous, avec tout l'arbre ouvert. Les techniques et l'éveil (`Learn*`) sont des nœuds comme les autres. Sans choix, le jeu prend sa construction si elle tient dans le budget, sinon il la complète jusqu'au budget.
 - **Classements par kit** : un tableau par kit, celui de sa maîtrise, mis à jour à chaque gain.
 - **Le promeneur** est posé par les clips du kit (`Client/HubBody`), sans publication d'Animation :

@@ -91,6 +91,19 @@ test("the lamps: at the seams between houses, never before the middle of a wall"
 	assert(lamps>=60,"few street lamps: "..lamps)
 end)
 
+-- (23/11, the OUTILLEUR's prover: the Uchiha and Hyuga compound walls ran through 12 houses)
+test("no wall runs through a house",function()
+	for _,w in K.Walls do
+		local x0,z0,x1,z1=w[2]-w[4]/2,w[3]-w[5]/2,w[2]+w[4]/2,w[3]+w[5]/2
+		for i,b in K.Buildings do
+			if b[9]==nil then
+				local a0,b0,a1,b1=rect(b)
+				assert(not(x0<a1 and a0<x1 and z0<b1 and b0<z1),("%s runs through house %d (%s at %s,%s)"):format(w[1],i,b[1],b[2],b[3]))
+			end
+		end
+	end
+end)
+
 test("houses: off the streets and the open places, apart from each other",function()
 	local n=0
 	for i,b in K.Buildings do

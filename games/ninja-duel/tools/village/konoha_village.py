@@ -149,6 +149,10 @@ class Village(K.Plan):
         self.fills = []        # dict(x0, z0, x1, z1, top): a crack beside a landmark walled up
         self.doors = []        # the strip before each door: kept clear (a way out)
         self.decks = [dict(x=x, z=z, w=w, d=d, top=t) for x, z, w, d, t in K.ROOF_DECKS]
+        # (23/11, the OUTILLEUR's prover: the Uchiha and Hyuga compound walls ran through 12
+        # houses) a wall is kept clear like a street: no house stands on it
+        for _, wx, wz, ww, wd, _h in K.WALLS:
+            self.blocked.append((wx - ww / 2 - ROW_GAP[0], wz - wd / 2 - ROW_GAP[0], wx + ww / 2 + ROW_GAP[0], wz + wd / 2 + ROW_GAP[0]))
 
     # -- one house: the model, its lot near the model's own size, its height fitted to the row
     def lot(self, model, prev_h, band, trend=0):
@@ -472,13 +476,14 @@ class Village(K.Plan):
 
     def lamps_clear(self):
         """A lamp right before the middle of a house's wall (the wall a ninja runs at): slid along
-        its street, up to 10, to stand LAMP_CLEAR from every wall or at the seam between two
-        houses (1.5 from a wall's end); none on its stretch, it stays."""
+        its street, up to 14 (half the widest house), to stand LAMP_CLEAR from every wall or at the
+        seam between two houses (1.5 from a wall's end), 8 from any other lamp; none on its
+        stretch, it goes."""
         def exact(b):   # the rect as the game builds it (rect_of rounds to a tenth)
             ex, ez = (b["w"], b["d"]) if int(b["yaw"]) % 180 == 0 else (b["d"], b["w"])
             return (b["x"] - ex / 2, b["z"] - ez / 2, b["x"] + ex / 2, b["z"] + ez / 2)
         houses = [exact(b) for b in self.buildings if not b["landmark"]]
-        moved = 0
+        moved, stuck = 0, []
 
         def clear(x, z, along_x=None):
             for r in houses:
@@ -502,13 +507,25 @@ class Village(K.Plan):
             along_x = street[2][1] == street[3][1]
             if clear(p["x"], p["z"], along_x):
                 continue
-            for step in (1, -1, 2, -2, 3, -3, 4, -4, 5, -5, 6, -6, 7, -7, 8, -8, 9, -9, 10, -10):
-                x, z = (p["x"] + step, p["z"]) if along_x else (p["x"], p["z"] + step)
-                if r[0] + 1 <= x <= r[2] - 1 and r[1] + 1 <= z <= r[3] - 1 and clear(x, z, along_x):
+            others = [(o["x"], o["z"]) for o in self.props if o["kind"] == "lamp" and o is not p]
+            for k in range(1, 15):
+                for step in (k, -k):
+                    x, z = (p["x"] + step, p["z"]) if along_x else (p["x"], p["z"] + step)
+                    if not (r[0] + 1 <= x <= r[2] - 1 and r[1] + 1 <= z <= r[3] - 1 and clear(x, z, along_x)):
+                        continue
+                    if any((x - ox) ** 2 + (z - oz) ** 2 < 8 ** 2 for ox, oz in others):
+                        continue
                     p["x"], p["z"] = round(x, 1), round(z, 1)
                     moved += 1
                     break
-        self.lamps_moved = moved
+                else:
+                    continue
+                break
+            else:
+                stuck.append(p)
+        # one that finds no seam on its stretch goes: a lamp less, not a wall barred
+        self.props = [p for p in self.props if not any(p is q for q in stuck)]
+        self.lamps_moved, self.lamps_dropped = moved, len(stuck)
         return moved
 
     def props_pass(self):

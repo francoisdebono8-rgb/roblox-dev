@@ -1,3 +1,28 @@
+**DEV, 23/11 soir : les retours de l'OUTILLEUR et de l'ANIMATEUR (étapes 4-5)** — TECHNICAL (tests verts, sans Studio) ; rien n'est joué par François
+- **Pré-vol** :
+  - EARLY ACCESS et MORE BUILDS sont retirés de `Shared/Shop` ;
+  - les auras sont à 6 000 Ryō (ANIMATEUR) ;
+  - restent les ID des offres (François) et les codes (CM).
+- **Relevé par joueur pour la page du test** (`Server/TestLog`) : clé `s_<UserId>_<arrivée>` dans `NinjaDuelReports`, sur la place de test seulement (`Config.TestPlace.PlaceIds`). Elle contient le temps par écran, l'entonnoir, les duels, ce qu'il a quitté et la course des toits.
+- **Premier achat** : la première victoire du jour paie ×3 (`Shop.Ryo.FirstWinOfDay`). Deux duels gagnés et la quête facile dépassent 250 Ryō.
+- **Minicarte** : droite (DESIGN `e180ec75`). Elle découpe de nouveau le village.
+- **Village** :
+  - le mur du village ne s'escalade plus (`NinjaNoClimb`), mais on court toujours dessus en duel ;
+  - aucune fente à côté d'un monument : la maison est collée ou à une ruelle (`tools/village` `CRACK`) ;
+  - aucun lampadaire devant le milieu d'un mur ;
+  - aucun mur d'enceinte dans une maison (il y en avait 12).
+- **Le village passe à la graine 5**, 9,33/10 : un seul réseau de toits, une course de 325 studs, des médailles calculées 25/31/42. Elles sont à mesurer de nouveau.
+- **ANIMATEUR branché** :
+  - le promeneur joue `Parkour.WallRun` sur le mur ;
+  - la cape VIP est donnée avec le pass (`Progression.grantVip`) ;
+  - 10 couleurs de cheveux (400 à 800 Ryō).
+- **Kakashi** : la transformation sera **RAIKIRI: TRACKED** (DEC-048). Le serveur suivra les clips de l'ANIMATEUR.
+- **Pas encore** :
+  - l'accroche au rebord (`Ledge`, `LedgeUp`) ;
+  - l'arbre de Neji qui bouge peu ;
+  - la distance d'affichage, qui attend la mesure des images/s pendant le test ;
+  - l'action `Screen` des écrans de la DESIGN.
+
 **OUTILLEUR, étapes 4 et 5, 23/11 soir** — TECHNICAL + NATIVE_STUDIO (copie LAB de ND-JEU `acfb00d6`, Galaxy A06 simulé) ; observations de Claude, pas l'avis de François
 - **Le comparateur sur les 5 kits** (`tools/kits`, `--etape4`). L'arbre complet, comparé au départ :
   - Minato monte le plus : portée 92→100, mobilité 83→95, dégâts 78→100 ;

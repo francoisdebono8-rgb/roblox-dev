@@ -814,9 +814,9 @@ test("the ninja walker: the kit's gait by the ground covered, up the wall off it
 	-- the cycle advances by the ground covered: twice the speed, twice the phase
 	b.phase=0;frame({speed=66,dt=.1});local one=b.phase
 	b.phase=0;frame({speed=33,dt=.1});assert(math.abs(one-2*b.phase)<1e-6 and one>0,"the gait is not tied to the ground")
-	-- up the wall: the sprint, tilted
+	-- up the wall: the ANIMATEUR's wall run, tilted off the wall
 	local up=frame({speed=0,climbing=true,grounded=false,climbSpeed=38})
-	assert(up.move=="Sprint" and up.tilt==1,"the run up the wall")
+	assert(up.move=="Parkour.WallRun" and up.tilt==1,"the run up the wall: "..up.move)
 	-- the second jump, then the arc
 	local leap=frame({speed=36,grounded=false,vy=40,leapAt=1,now=1.05})
 	assert(leap.move=="AirJump","the bound: "..leap.move)
@@ -829,7 +829,7 @@ test("the ninja walker: the kit's gait by the ground covered, up the wall off it
 	assert(frame({speed=0,vy=0,now=5.02}).move=="Parkour.LandHard","no hard landing")
 	-- every clip it plays exists for every kit of the eight (the kit's own, or Sasuke's)
 	for _,kit in H.load("Shared/BetaRoster") do
-		for _,move in {"Idle","Walk.F","Run.F","Sprint","Jump.Air","AirJump","Land","Parkour.Leap","Parkour.Vault","Parkour.LandRoll","Parkour.LandHard"} do
+		for _,move in {"Idle","Walk.F","Run.F","Sprint","Jump.Air","AirJump","Land","Parkour.Leap","Parkour.Vault","Parkour.LandRoll","Parkour.LandHard","Parkour.WallRun"} do
 			assert(Body.clipName(Authored,kit,move),kit.." has no "..move)
 		end
 	end

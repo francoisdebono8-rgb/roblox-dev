@@ -639,7 +639,7 @@ test("the minimap: the village under the arrow, the places, the things to do",fu
 		map:update(Layout.Origin,H.roblox.Vector3.new(0,0,-1))
 		assert(map.placeLabel.Text=="THE PLAZA","the place under him: "..map.placeLabel.Text)
 		-- (23/11, the OUTILLEUR's phones) upright, or the window no longer clips the village
-		assert(map.mini.Rotation==0 and map.window.ClipsDescendants==true,"the minimap must stay upright and clip")
+		assert((map.mini.Rotation or 0)==0 and map.window.ClipsDescendants==true,"the minimap must stay upright and clip")
 		map.mini.click();assert(map:shown(),"tap opens the big map")
 		map.closeBig.click();assert(not map:shown(),"X closes it")
 	end)
@@ -841,6 +841,18 @@ test("the eight outfits' bundle sells by its id once created, VIP marks the play
 	attrs={}
 	Progression.passBought(player,0)
 	assert(attrs.NinjaVIP==nil,"no pass, no VIP")
+	-- (23/11, the ANIMATEUR's CapeVIP, earned="vip") the cape comes with the
+	-- pass, never sold: the profile marked once, the look then earned
+	local Style=H.load("Shared/CatalogStyle")
+	local cape=Shop.item("CapeVIP")
+	assert(cape and cape.earned=="vip" and not cape.robux and not cape.ryo,"the VIP cape is sold, or missing")
+	local p=S.new("dev_vip")
+	assert(not table.find(Style.earned(p,Shop.Items),"CapeVIP"),"the VIP cape without the pass")
+	S.Commands.setVip(p,{})
+	assert(not pcall(S.Commands.setVip,p,{}),"VIP marked twice")
+	assert(table.find(Style.earned(p,Shop.Items),"CapeVIP"),"no VIP cape with the pass")
+	S.Commands.earnItem(p,{item="CapeVIP"})
+	assert(p.style.owned.CapeVIP and S.validate(p),"the VIP cape not his, or the profile broken")
 end)
 
 print(string.format("NinjaDuel shop and Ryō (13/11): %d PASS",passed))

@@ -76,11 +76,14 @@ function Body.choose(b,f)
 		if f.grounded and f.now-l.at<length then return {move=l.move,t=f.now-l.at,tilt=0} end
 		b.landing=nil
 	end
-	-- up the wall: the sprint's legs, the body off the wall
+	-- up the wall: the ANIMATEUR's wall run (23/11, Parkour.WallRun: long
+	-- strides in the air, knees high, arms pumping), the body off the wall;
+	-- the sprint's legs for a kit without it
 	if f.climbing then
 		local stride=b.strideOf and b:strideOf("Sprint") or 7
 		b.phase+=(f.dt or 0)*(f.climbSpeed or 38)/math.max(stride*Body.STRIDE,1)
-		return {move="Sprint",t=(b.phase%1)*len("Sprint"),tilt=1}
+		local move=if len("Parkour.WallRun")>0 then "Parkour.WallRun" else "Sprint"
+		return {move=move,t=(b.phase%1)*len(move),tilt=1}
 	end
 	if f.mantleAt and f.now-f.mantleAt<Body.VAULT then return {move="Parkour.Vault",t=f.now-f.mantleAt,tilt=0} end
 	-- (23/11, step 5) an emote in the street: played while he stands, once

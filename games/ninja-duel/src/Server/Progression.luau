@@ -668,16 +668,25 @@ end
 -- (Client/HubPlayers, DESIGN), the cape in Konoha (ANIMATEUR). Checked on
 -- join (P.load) and when bought in the game.
 function P.vipPass() return (P.shopConfig().Passes or {}).VIP or 0 end
+-- (23/11, the ANIMATEUR's CapeVIP) VIP: the mark everybody sees, the profile
+-- told once, and the looks it gives (earned="vip") given now.
+function P.grantVip(player)
+	player:SetAttribute("NinjaVIP",true)
+	local h=P.handles[player]
+	if not h then return end
+	if h.data.vip~=true then P.run(player,"setVip",{}) end
+	P.earnLooks(player)
+end
 function P.passBought(player,pass)
 	if pass==0 then return end
-	if pass==P.vipPass() then player:SetAttribute("NinjaVIP",true) end
+	if pass==P.vipPass() then P.grantVip(player) end
 	if pass==(P.config().MasteryPass or 0) then P.boost[player]=true end
 end
 function P.checkVip(player)
 	local pass=P.vipPass()
 	if pass==0 then return end
 	local ok,owns=pcall(function() return game:GetService("MarketplaceService"):UserOwnsGamePassAsync(player.UserId,pass) end)
-	if ok and owns then player:SetAttribute("NinjaVIP",true) end
+	if ok and owns then P.grantVip(player) end
 end
 
 return P
