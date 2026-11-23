@@ -12,6 +12,8 @@ local MeshKit=require(script.Parent.MeshKit)
 pcall(function() task.spawn(MeshKit.prepare) end)
 -- (06/11, refonte VFX) Coups au corps en style animé moderne (Client/VfxHit).
 local vfxHitOk,VfxHit=pcall(require,script.Parent.VfxHit)
+-- (23/11, DEV) on once its images and shapes are served (VfxHit.check)
+if vfxHitOk and type(VfxHit)=="table" and VfxHit.check then task.spawn(function() pcall(VfxHit.check) end) end
 local Face=require(game:GetService("ReplicatedStorage").NinjaDuel.Face)
 local FX={};FX.__index=FX
 -- Cel flame streams of the fireballs in flight (VfxKit), by model.

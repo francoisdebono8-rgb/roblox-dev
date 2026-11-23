@@ -148,11 +148,22 @@ function Body:pose(choice,now)
 end
 
 -- ------------------------------------------------------------------ in the game
-local function joints(character)
+-- (23/11, François: « je ne vois pas la course ninja, le double saut, la
+-- course sur les murs ») Roblox now joins a player's avatar with
+-- AnimationConstraints, not Motor6Ds (seen on his own avatar in Studio: 15
+-- AnimationConstraints, no Motor6D). Both carry the same Transform, written
+-- the same way: a body with only the old joints found nothing to pose, and
+-- Roblox's own walk showed.
+function Body.joints(character)
 	local j={}
-	for _,d in character:GetDescendants() do if d:IsA("Motor6D") then j[d.Name]=d end end
+	for _,d in character:GetDescendants() do
+		if d:IsA("Motor6D") or d:IsA("AnimationConstraint") then
+			if not j[d.Name] or d:IsA("Motor6D") then j[d.Name]=d end
+		end
+	end
 	return j
 end
+local joints=Body.joints
 
 -- One frame: HubMove's facts. Remembers the pose; it is written on the joints
 -- after the Animator (PreSimulation), so Roblox's walk never shows.

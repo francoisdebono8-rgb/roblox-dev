@@ -46,6 +46,7 @@ local MESH: { [string]: number } = {
 }
 VfxMesh.MESH = MESH
 local built: { [string]: MeshPart } = {}
+VfxMesh.built = built
 for name, id in MESH do
 	task.spawn(function()
 		local ok, part = pcall(function()

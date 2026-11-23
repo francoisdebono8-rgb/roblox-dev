@@ -827,6 +827,15 @@ test("the ninja walker: the kit's gait by the ground covered, up the wall off it
 	assert(frame({speed=30,vy=0,now=3.02}).move=="Parkour.LandRoll","no roll")
 	frame({speed=0,grounded=false,vy=-80,now=5})
 	assert(frame({speed=0,vy=0,now=5.02}).move=="Parkour.LandHard","no hard landing")
+	-- (23/11, François's own avatar in Studio) Roblox joins avatars with
+	-- AnimationConstraints now, not Motor6Ds: the walker finds both
+	local avatar=Instance.new("Model")
+	local leg=Instance.new("Part");leg.Name="RightUpperLeg";leg.Parent=avatar
+	local hip=Instance.new("AnimationConstraint");hip.Name="RightHip";hip.Parent=leg
+	local torso=Instance.new("Part");torso.Name="UpperTorso";torso.Parent=avatar
+	local neck=Instance.new("Motor6D");neck.Name="Neck";neck.Parent=torso
+	local found=Body.joints(avatar)
+	assert(found.RightHip==hip and found.Neck==neck,"the walker misses the avatar's joints (AnimationConstraint or Motor6D)")
 	-- every clip it plays exists for every kit of the eight (the kit's own, or Sasuke's)
 	for _,kit in H.load("Shared/BetaRoster") do
 		for _,move in {"Idle","Walk.F","Run.F","Sprint","Jump.Air","AirJump","Land","Parkour.Leap","Parkour.Vault","Parkour.LandRoll","Parkour.LandHard","Parkour.WallRun"} do

@@ -1,3 +1,13 @@
+**DEV, 23/11, 22 h 15 : pourquoi François ne voyait pas le déplacement ninja** — NATIVE_STUDIO (lu dans sa session ND-DEV en cours, sans la toucher) puis TECHNICAL
+- **La cause** : Roblox joint maintenant les avatars par des `AnimationConstraint`, plus par des `Motor6D`. Son avatar dans Konoha en a 15 et aucun `Motor6D`.
+  - Le corps ninja du promeneur (`Client/HubBody`) ne cherchait que des `Motor6D` : il ne trouvait rien à poser, et c'est la marche de Roblox qui s'affichait.
+  - La physique, elle, tournait : course à 36, saut à 56, second saut, montée des murs. Mais avec les poses de Roblox, rien n'avait l'air ninja.
+  - **Corrigé** : `HubBody.joints` prend les deux sortes d'articulation (test dans `Hub.spec`). Ça vaut aussi pour les autres promeneurs (`poseOthers`).
+- **Les coups « animé moderne »** (fusionnés ce soir) : dans sa session, une de leurs images n'est pas servie par Roblox (l'anneau au sol, `103142974880636`). Les autres, et les 4 formes essayées, le sont.
+  - `VfxHit.check` les vérifie au démarrage : le coup « animé moderne » ne s'allume que si elles arrivent ; sinon l'ancien rendu reste.
+  - L'anneau au sol est simplement sauté s'il manque.
+- **Vu aussi dans sa sortie Studio** : une trentaine de « Failed to create empty EditableMesh … memory budget » au démarrage (MeshKit, tenues ou vie de Konoha). À mesurer par l'OUTILLEUR sur téléphone.
+
 **DEV, 23/11, 21 h : tout ce qui a été fait est fusionné** (François : « tout ce qui a été fait doit être ajouté ») — TECHNICAL ; rien n'est joué
 - **Les coups au corps « animé moderne » du 06/11** (`claude/vfx-redesign`, le choix de François ce jour-là, jamais intégré) sont dans le jeu : `Client/VfxHit`, `VfxMesh`, `VfxDesign`, textures déjà envoyées sur Roblox.
   - Ils dessinent les coups légers, aériens, de rythme, les lanceurs, les finisseurs et les slams : flash blanc sur la cible, éclair rond, sphère et cône de traits de vent dans le sens du coup ; au sol, anneau et poussière, et cratère pour le slam.

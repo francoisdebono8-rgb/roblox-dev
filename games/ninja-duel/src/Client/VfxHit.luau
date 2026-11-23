@@ -158,6 +158,10 @@ local function windCone(at: Vector3, dir: Vector3, tint: Color3, s: number, life
 end
 
 local function groundRing(ground: Vector3, groundColor: Color3, s: number, life: number)
+	-- (23/11) sans sa texture l'anneau serait une bague unie : la poussière suffit
+	if VfxHit.missing and VfxHit.missing[TEX.ringband] then
+		return
+	end
 	local p = K.spawn("ND_RingFlat")
 	if not p then
 		return
@@ -224,7 +228,78 @@ local WEIGHT: { [string]: { s: number, sparks: number, cone: boolean, ground: bo
 }
 
 -- Interrupteur général (repli sur les anciens effets si false).
-VfxHit.enabled = true
+-- (23/11, DEV, à l'intégration) Éteint jusqu'à ce que Roblox serve ses
+-- images et ses formes (VfxHit.check) : dans Studio le 23/11, des images du
+-- 06/11 n'étaient pas servies (AwakenFX) ; un coup sans elles serait une
+-- boule unie, l'ancien rendu reste alors.
+VfxHit.enabled = false
+VfxHit.TEX = TEX
+VfxHit.checked = nil :: string?
+VfxHit.missing = nil :: { [string]: boolean }?
+function VfxHit.check(provider: ContentProvider?)
+	local cp = provider or game:GetService("ContentProvider")
+	local list = {}
+	for _, id in TEX do
+		table.insert(list, id)
+	end
+	table.sort(list)
+	local failed: { string } = {}
+	local ok = pcall(function()
+		cp:PreloadAsync(list, function(id, status)
+			if status ~= Enum.AssetFetchStatus.Success then
+				table.insert(failed, id)
+			end
+		end)
+	end)
+	if ok and #failed > 0 then
+		-- une seconde fois pour celles que Roblox est encore en train de générer
+		task.wait(3)
+		local still: { string } = {}
+		pcall(function()
+			cp:PreloadAsync(failed, function(id, status)
+				if status ~= Enum.AssetFetchStatus.Success then
+					table.insert(still, id)
+				end
+			end)
+		end)
+		failed = still
+	end
+	-- les formes (VfxMesh) : chargées au démarrage, attendues 8 s au plus
+	local want = 0
+	for _ in VfxMesh.MESH do
+		want += 1
+	end
+	local t0 = os.clock()
+	local have = 0
+	repeat
+		have = 0
+		for _ in VfxMesh.built do
+			have += 1
+		end
+		if have >= want then
+			break
+		end
+		task.wait(0.25)
+	until os.clock() - t0 > 8
+	-- l'anneau au sol (ringband) peut manquer : il est sauté ; les autres sont
+	-- le coup lui-même (la sphère, le cône, l'éclair, les étincelles, la fumée)
+	VfxHit.missing = {}
+	local core = 0
+	for _, id in failed do
+		VfxHit.missing[id] = true
+		if id ~= TEX.ringband then
+			core += 1
+		end
+	end
+	VfxHit.enabled = ok and core == 0 and have >= want
+	VfxHit.checked = if VfxHit.enabled
+		then "ok"
+		else string.format("off: %d images not served (%s), %d/%d shapes", #failed, table.concat(failed, " "), have, want)
+	if not VfxHit.enabled then
+		warn("[VfxHit] coups « animé moderne » éteints, l'ancien rendu reste : " .. VfxHit.checked)
+	end
+	return VfxHit.enabled
+end
 -- Styles de contact du serveur (Combat:pushImpact) repris par ce module, et leur poids.
 -- La garde (block / parry) garde son propre rendu.
 VfxHit.STYLE = { light = "light", air = "light", flow = "light", launcher = "medium", finisher = "heavy", slam = "slam" } :: { [string]: string }
