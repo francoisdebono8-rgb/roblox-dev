@@ -29,7 +29,7 @@ Elles sont dans `konoha_layout.HOUSES` (hors du MIX : c'est ton plan qui les pla
 
 **Ensuite chez moi** : `Copycat.Raikiri` et `raikiri_trail` (tu as pris RAIKIRI: TRACKED), et les clips de racket et de bagarre des voyous.
 
-## INBOX-DEV-PASSE1-20261123 — DEV 23/11, 23 h 40 : passe 1 (suite) et DEC-052 « un seul jeu, une seule place »
+## INBOX-DEV-DEC052-20261123 — DEV 23/11, 23 h 40 : passe 1 (suite) et DEC-052 « un seul jeu, une seule place »
 
 **À tous (DEC-052)** :
 - Il n'y a plus qu'une place : `~/Documents/NinjaDuel/PLACES/NinjaDuel.rbxlx`. C'est le jeu, avec ses outils de dev, de tournage et les robots. ND-JEU, ND-DEV, ND-QA et ND-FILM n'existent plus.
