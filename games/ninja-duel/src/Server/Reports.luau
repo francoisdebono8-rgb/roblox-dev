@@ -46,16 +46,25 @@ function Reports.record(player,text,where,session)
 		version=commit and commit.Value or nil},Reports.buckets)
 	if not report then return false end
 	print(string.format("[NinjaDuelReport] %d %s %s",report.user,tostring(report.phase),report.text))
-	if Reports.store==nil then
-		Reports.store=false
-		pcall(function() Reports.store=game:GetService("DataStoreService"):GetDataStore(Reports.STORE) end)
-	end
-	local store=Reports.store
+	-- (the DataStore on the test place only: the published game keeps nothing)
+	local store=Reports.testPlace() and Reports.dataStore()
 	if store then
 		local key=string.format("r_%d_%d_%d",report.at,report.user,Reports.buckets[player].n)
 		task.spawn(pcall,function() store:SetAsync(key,report) end)
 	end
 	return true
+end
+
+function Reports.testPlace()
+	local ok,on=pcall(function() return workspace:GetAttribute("NinjaTestPlace") end)
+	return ok and on==true
+end
+function Reports.dataStore()
+	if Reports.store==nil then
+		Reports.store=false
+		pcall(function() Reports.store=game:GetService("DataStoreService"):GetDataStore(Reports.STORE) end)
+	end
+	return Reports.store
 end
 
 -- (23/11, step 5, DEC-049) The test place: its PlaceId in Config.TestPlace

@@ -63,7 +63,14 @@ test("the catalogue: every look has a slot, a price or is a base one, and every 
 	end
 	-- Never on sale: a kit by chance, a tree point (no such item can exist).
 	for _,item in Shop.Items do assert(item.slot~="points" and item.slot~="kit") end
-	assert(Shop.duelRyo({won=true,firstWinToday=true})==(Shop.Ryo.Finished+Shop.Ryo.Won)*2,"the first win of the day")
+	assert(Shop.duelRyo({won=true,firstWinToday=true})==(Shop.Ryo.Finished+Shop.Ryo.Won)*Shop.Ryo.FirstWinOfDay,"the first win of the day")
+	-- (23/11, the OUTILLEUR's new-player robot) the first look within a newcomer's
+	-- first two duels: the first fight and its rematch won (the novice, then easy),
+	-- with the day's easy quest
+	local cheapest=math.huge
+	for _,item in Shop.Items do if item.ryo and not item.base and item.ryo<cheapest then cheapest=item.ryo end end
+	local easy=H.load("Shared/DailyQuests").Tiers[1].ryo
+	assert(Shop.duelRyo({won=true,firstWinToday=true})+Shop.duelRyo({won=true})+easy>=cheapest,"two duels do not pay the cheapest look ("..cheapest..")")
 	assert(Shop.duelRyo({won=false})==Shop.Ryo.Finished,"a lost duel")
 	assert(Shop.duelRyo({won=true,master=true})==Shop.Ryo.Finished+Shop.Ryo.Won+Shop.Ryo.MasterWon,"a master's duel won")
 end)
@@ -172,7 +179,7 @@ test("a duel pays Ryō (the day's first win twice), the shop sells and dresses, 
 		return progress
 	end
 	local first=duel(true)
-	assert(first.ryo==(Shop.Ryo.Finished+Shop.Ryo.Won)*2 and first.firstWin,"the day's first win: "..tostring(first.ryo))
+	assert(first.ryo==(Shop.Ryo.Finished+Shop.Ryo.Won)*Shop.Ryo.FirstWinOfDay and first.firstWin,"the day's first win: "..tostring(first.ryo))
 	assert(string.find(MastersView.result(first),"FIRST WIN"),"the result does not say it")
 	local second=duel(true)
 	assert(second.ryo==Shop.Ryo.Finished+Shop.Ryo.Won and not second.firstWin,"a second win: "..tostring(second.ryo))
@@ -631,6 +638,8 @@ test("the minimap: the village under the arrow, the places, the things to do",fu
 		map:setVisible(true)
 		map:update(Layout.Origin,H.roblox.Vector3.new(0,0,-1))
 		assert(map.placeLabel.Text=="THE PLAZA","the place under him: "..map.placeLabel.Text)
+		-- (23/11, the OUTILLEUR's phones) upright, or the window no longer clips the village
+		assert(map.mini.Rotation==0 and map.window.ClipsDescendants==true,"the minimap must stay upright and clip")
 		map.mini.click();assert(map:shown(),"tap opens the big map")
 		map.closeBig.click();assert(not map:shown(),"X closes it")
 	end)

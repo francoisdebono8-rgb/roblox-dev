@@ -14,7 +14,11 @@
 local Shop={}
 
 -- Ryō earned by a decided duel (not practice, not a watched match).
-Shop.Ryo={Finished=20,Won=30,FirstWinOfDay=2,MasterWon=150,Champion=300,Finalist=150}
+-- (23/11, step 5, DEC-049; the OUTILLEUR's new-player robot: « 2 combats
+-- donnent 215 Ryō, l'apparence la moins chère en coûte 250 ») the day's first
+-- win ×3 (it was ×2): a newcomer buys his first look after his first two
+-- duels, and coming back each day pays.
+Shop.Ryo={Finished=20,Won=30,FirstWinOfDay=3,MasterWon=150,Champion=300,Finalist=150}
 Shop.MaxRyo=100000000
 
 -- Slots: what a look dresses. Weapon looks follow the kit (a gourd look shows
@@ -128,8 +132,8 @@ end
 Shop.Passes={
 	{id="MasteryPass",name="2X MASTERY",note="Every duel counts double for mastery: masters and tree points come twice as fast."},
 	{id="VIP",name="VIP",note="A golden name and a cape in Konoha, the VIP tag over your head."},
-	{id="EarlyAccess",name="EARLY ACCESS",note="The next prodigy before everyone, in training and against the AI."},
-	{id="BuildSlots",name="MORE BUILDS",note="Three saved builds per kit, switched in one click between duels."},
+	-- (23/11, DEC-049) EARLY ACCESS (no 9th prodigy yet) and MORE BUILDS (8
+	-- builds a kit are free) are not sold: out of the list, out of the shop.
 }
 
 -- Ryō for a decided duel. r = {won, firstWinToday, master}.

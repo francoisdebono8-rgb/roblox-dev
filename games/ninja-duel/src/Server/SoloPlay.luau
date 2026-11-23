@@ -54,6 +54,13 @@ local function upString(round)
 end
 -- What a thing done paid, told to the client (`result`: Progression.solo's).
 function SoloPlay:ended(player,what,time,result)
+	-- (23/11, step 5) the test place's record: a race finished, or left
+	local s=self.matches and self.matches.sessions and self.matches.sessions[player]
+	if s then
+		local TestLog=require(script.Parent.TestLog)
+		if what=="finish" then TestLog.race(s,time)
+		elseif type(what)=="string" and string.sub(what,1,5)=="fail:" then TestLog.quit(s,"race:"..string.sub(what,6)) end
+	end
 	set(player,"NinjaSoloEnd",what)
 	set(player,"NinjaSoloTime",time)
 	set(player,"NinjaSoloBest",result and result.best or nil)

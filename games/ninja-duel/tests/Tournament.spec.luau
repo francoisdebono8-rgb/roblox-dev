@@ -126,6 +126,40 @@ test("a tester's REPORT A PROBLEM is kept by the server, whatever the screen",fu
 	assert(Reports.buckets[player].n==1,"an empty report kept")
 end)
 
+-- (23/11, step 5) the test place's record of a visit (tools/testread/CONTRAT.md)
+test("the test record: screens, funnel, duels won, lost and left, the race",function()
+	local TestLog=H.load("Server/TestLog")
+	local s={phase="Selection",metrics={joined=100,joinedAt=100,startedAt=141,duelAt=196}}
+	TestLog.open(s,5000,100)
+	TestLog.tick(s,10)
+	assert(TestLog.clientScreen(s,"Shop") and not TestLog.clientScreen(s,"Sh0p!") and not TestLog.clientScreen(s,string.rep("a",20)),"the client's screen")
+	TestLog.tick(s,4)
+	TestLog.clientScreen(s,"")
+	s.phase="Duel";TestLog.tick(s,30)
+	TestLog.duel(s,"won");TestLog.duel(s,"lost");TestLog.duel(s,"left",160)
+	TestLog.race(s,31.234);TestLog.race(s,29.5);TestLog.race(s,40)
+	local player={UserId=7,Name="Tester",GetAttribute=function() return "Sand" end}
+	local r=TestLog.record(player,s,6800,{joined=1,started=4,duel=6,won=7},"abc123")
+	assert(r.kind=="session" and r.userId==7 and r.name=="Tester" and r.seconds==1800 and r.kit=="Sand" and r.build=="abc123","the record")
+	assert(r.screens.Konoha==10 and r.screens.Shop==4 and r.screens.Duel==30,"the screens")
+	assert(r.funnel.joined==0 and r.funnel.started==41 and r.funnel.duel==96 and r.funnel.won==nil,"the funnel")
+	assert(r.duels.played==2 and r.duels.won==1 and r.duels.lost==1 and r.duels.left==1,"the duels")
+	assert(#r.quit==1 and r.quit[1].what=="duel" and r.quit[1].at==60,"what he left")
+	assert(r.race.runs==3 and r.race.best==29.5,"the race")
+	assert(TestLog.key(player,s)=="s_7_5000","the key")
+	-- in the game: a duel left halfway counts as left, the client's screen
+	local m,p=fresh()
+	send(m,p,"Screen",{name="Tree"})
+	assert(m.sessions[p].clientScreen=="Tree","the client's screen, in the game")
+	send(m,p,"CupStart",{player="Lion"})
+	local guard=0
+	while m.sessions[p].phase=="Bracket" and not (last(p).cup.next and last(p).cup.next.mine) and guard<8 do send(m,p,"CupSkip");step(m,.1);guard+=1 end
+	send(m,p,"CupFight");step(m,.2)
+	assert(m.sessions[p].phase=="Duel","no duel")
+	m:selection(p)
+	assert(m.sessions[p].log.duels.left==1,"a duel left halfway")
+end)
+
 test("an AI-vs-AI match is played for real by an autopilot, the player's inputs drive nothing",function()
 	local m,player=fresh()
 	send(m,player,"CupStart",{player="Lion"})

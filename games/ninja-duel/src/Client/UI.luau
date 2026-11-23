@@ -879,7 +879,10 @@ function UI.new(parent,send)
 	self.resultGains=gains
 	text(gains,"WHAT YOU EARNED",UDim2.fromOffset(18,10),UDim2.fromOffset(400,22),18,MANGA.red,STRONG_FONT)
 	self.resultRyo=text(gains,"",UDim2.fromOffset(18,34),UDim2.fromOffset(300,50),46,MANGA.ink,TITLE_FONT)
-	self.resultFirstWin=text(gains,"FIRST WIN OF THE DAY  ×2",UDim2.new(1,-300,0,44),UDim2.fromOffset(282,32),18,MANGA.cream,STRONG_FONT,Enum.TextXAlignment.Center)
+	-- (23/11, DEV) the multiplier as the rule says it (Shared/Shop: ×3 since step 5)
+	local okS,ShopRules=pcall(require,Shared.Shop)
+	local firstWinX=okS and ShopRules.Ryo and ShopRules.Ryo.FirstWinOfDay or 3
+	self.resultFirstWin=text(gains,"FIRST WIN OF THE DAY  ×"..tostring(firstWinX),UDim2.new(1,-300,0,44),UDim2.fromOffset(282,32),18,MANGA.cream,STRONG_FONT,Enum.TextXAlignment.Center)
 	self.resultFirstWin.BackgroundColor3=MANGA.red;self.resultFirstWin.BackgroundTransparency=0;self.resultFirstWin.Rotation=2
 	self.resultKit=text(gains,"",UDim2.fromOffset(18,92),UDim2.new(1,-120,0,24),20,MANGA.ink,STRONG_FONT)
 	self.resultGain=text(gains,"",UDim2.new(1,-118,0,92),UDim2.fromOffset(100,24),24,MANGA.red,TITLE_FONT,Enum.TextXAlignment.Right)

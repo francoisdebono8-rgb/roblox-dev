@@ -244,9 +244,10 @@ return {
 			AuraThunder = 0, AuraShadow = 0 },
 		RyoPacks = { { amount = 1000, product = 0 }, { amount = 3000, product = 0 }, { amount = 8000, product = 0 } },
 		-- (23/11, step 5, DEC-049) VIP: looks only (Server/Progression.checkVip,
-		-- attribute NinjaVIP). EarlyAccess and BuildSlots are not sold: no 9th
-		-- prodigy yet, and 8 builds a kit are free already (kept at 0).
-		Passes = { VIP = 0, EarlyAccess = 0, BuildSlots = 0 },
+		-- attribute NinjaVIP). EARLY ACCESS and MORE BUILDS are not sold (no 9th
+		-- prodigy yet; 8 builds a kit are free). PRIVATE SERVER+ will be
+		-- PrivateServerPlus here, once the friends' tournament exists.
+		Passes = { VIP = 0 },
 		-- (23/11, step 5, DEC-049) the eight prodigies' outfits in one purchase
 		-- (Server/Progression.productFor "bundle", ProfileSchema grantItems)
 		Bundles = { { id = "SetPrologue8", product = 0, items = { "SetNaruto", "SetSasuke", "SetLee", "SetNeji", "SetGaara", "SetKakashi", "SetItachi", "SetMinato" } } },

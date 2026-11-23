@@ -383,7 +383,7 @@ function Panel:drawLooks(slots,title,sub)
 	local STRONG=K.STRONG_FONT or K.BODY_FONT
 	self.heading.Text=title
 	self.subheading.Text=sub
-	self.footer.Text=if self.counter=="market" then "Ryō is earned in duels, against other players and in tournaments (the day's first win counts double)."
+	self.footer.Text=if self.counter=="market" then "Ryō is earned in duels, against other players and in tournaments (the day's first win counts ×"..tostring(Shop.Ryo.FirstWinOfDay)..")."
 		else "Looks for Ryō are sold at Konoha's market. Robux looks show SOON until they are on sale."
 	local kits=self.kits
 	local ryo=kits and kits.ryo or 0
