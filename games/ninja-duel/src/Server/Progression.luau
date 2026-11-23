@@ -140,6 +140,9 @@ function P.view(player)
 	out.ryo=h.data.wallet and h.data.wallet.ryo or 0
 	out.style={owned=S.copy(h.data.style and h.data.style.owned or {}),equipped=S.copy(h.data.style and h.data.style.equipped or {})}
 	out.boost=P.boost[player]==true
+	-- (23/11, step 5, DEC-049) VIP owned (the shop's VIP card, Client/ShopPanel)
+	local okV,vip=pcall(function() return player:GetAttribute("NinjaVIP") end)
+	out.vip=okV and vip==true
 	-- (19/11) a code's mastery ×2: the seconds it still runs (0: none)
 	local codes=h.data.codes
 	out.codeBoost=if codes then math.max(0,codes.boostUntil-P.now()) else 0
