@@ -98,6 +98,7 @@ function HubDress.dress(unit,pieces,holder,fallback)
 		end
 	end
 	if #made>0 then
+		HubDress.solidify(unit,made)
 		for _,part in HubDress.parts(unit) do
 			part.Transparency=1;HubDress.copiesOf[part]=made
 			-- (15/11) a prop broken in a street duel: its model goes, the
@@ -111,6 +112,37 @@ function HubDress.dress(unit,pieces,holder,fallback)
 		end
 	end
 	return made
+end
+
+-- (23/11, François: « les murs sont intangibles, comme les toits »; seen in
+-- Studio: a shop's front 3 to 6 studs out of its box, roofs, tanks and eaves
+-- drawn over it) A building is solid where it is drawn: its model's pieces
+-- collide and are seen by the rays (the run up a wall finds the front he
+-- stands against), and the plain box under them no longer stops him where
+-- nothing is drawn. Only for a building or a wall (a unit with a part to run
+-- on, NinjaWall): the props keep their pieces (they break in a duel).
+-- On this client only: the server's boxes stay for the duels it runs.
+HubDress.WALL_HEIGHT,HubDress.WALL_WIDTH=7,4
+function HubDress.solid(unit)
+	for _,part in HubDress.parts(unit) do
+		if part:GetAttribute("NinjaWall") and not part:GetAttribute("WorldBreakable") then return part end
+	end
+	return nil
+end
+function HubDress.solidify(unit,made)
+	local wall=HubDress.solid(unit)
+	if not wall then return false end
+	local noClimb=wall:GetAttribute("NinjaNoClimb")
+	for _,p in made do
+		p.CanCollide=true;p.CanQuery=true
+		local size=p.Size
+		if size.Y>=HubDress.WALL_HEIGHT and math.max(size.X,size.Z)>=HubDress.WALL_WIDTH then
+			p:SetAttribute("NinjaWall",true)
+			if noClimb then p:SetAttribute("NinjaNoClimb",true) end
+		end
+	end
+	for _,part in HubDress.parts(unit) do part.CanCollide=false end
+	return true
 end
 
 -- A dressed prop's piece broken (or put back): its model hides (or shows).

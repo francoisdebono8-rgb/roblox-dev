@@ -325,7 +325,16 @@ test("the dresser: a unit's parts hidden (not the kept ones, not a nested unit),
 	for _,u in HubDress.units(folder) do if u:GetAttribute("Dress")=="HouseShop_24x20x2" then shop=u;break end end
 	assert(shop and done[shop],"the shop was not dressed")
 	assert(shop:FindFirstChild("Walls").Transparency==1,"the shop's walls still show")
-	assert(shop:FindFirstChild("Walls").CanCollide,"the shop's walls lost their collision")
+	-- (23/11, François: « les murs sont intangibles, comme les toits ») solid
+	-- where drawn: the model's pieces collide and are run on, the plain box
+	-- under them no longer stops him where nothing is drawn
+	assert(not shop:FindFirstChild("Walls").CanCollide,"the shop's box still stops him where nothing is drawn")
+	local tall=nil
+	for _,copy in done[shop] do
+		assert(copy.CanCollide and copy.CanQuery,"a piece of the shop he walks through")
+		if copy.Size.Y>=7 then tall=copy end
+	end
+	assert(tall and tall:GetAttribute("NinjaWall"),"the shop's front is not a wall to run on")
 	assert(shop:FindFirstChild("Sign").Transparency==0,"the shop's sign was hidden")
 	local lanternUnit=shop:FindFirstChild("PaperLantern")
 	assert(lanternUnit and done[lanternUnit],"the shop's lantern was not dressed on its own")
@@ -334,7 +343,13 @@ test("the dresser: a unit's parts hidden (not the kept ones, not a nested unit),
 	local first=done[shop][1]
 	-- (15/11) at the village's scale (DressScale)
 	local scale=shop:GetAttribute("DressScale") or Vector3.one
-	assert((first.CFrame.Position-(at*CFrame.new(Vector3.new(0,8,0)*scale)).Position).Magnitude<1e-3 and first.Anchored and not first.CanCollide,"misplaced")
+	assert((first.CFrame.Position-(at*CFrame.new(Vector3.new(0,8,0)*scale)).Position).Magnitude<1e-3 and first.Anchored,"misplaced")
+	-- a prop's pieces stay as they were (it breaks in a duel): its box stops him
+	for _,u in HubDress.units(folder) do
+		if u:GetAttribute("Dress")=="PaperLantern" and done[u] then
+			for _,copy in done[u] do assert(not copy.CanCollide,"a lantern's model collides") end
+		end
+	end
 	-- a house facing -x turns round (the rooftops) — undressed here, its parts still show
 	for _,u in HubDress.units(folder) do
 		if u:GetAttribute("Dress")=="HouseFlat_24x20x2" and u.Name=="Rooftop" then
