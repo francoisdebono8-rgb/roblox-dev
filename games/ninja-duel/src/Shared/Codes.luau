@@ -21,12 +21,49 @@ local C={}
 C.MaxLength=16
 C.MaxRyo=1000
 C.MaxMinutes=120
-C.List={
-	{code="NINJADUEL",ryo=300,ends="2026-12-20",note="The opening of codes, with the next update"},
-	{code="MYNINJA",ryo=150,ends="2026-12-20",note="The MY NINJA wardrobe update"},
-	{code="FIRSTDUEL",boostMinutes=15,ends="2026-12-20",note="The MY NINJA wardrobe update"},
-	{code="EXAM1",ryo=150,starts="2026-11-27",ends="2026-12-06",note="The first exam of the week"},
-}
+-- (23/11, step 5, DEC-049) The opening's codes. François gives the opening
+-- day ("YYYY-MM-DD", UTC): until he does, C.Opening is nil and no code is
+-- live. Three at once at most (the CM's rule), each with its dates:
+--   NINJADUEL   300 Ryō, the 14 days of the opening (an update: 14 days)
+--   JADECHAKRA  the JADE chakra colour, a market look (never a Robux one),
+--               the same 14 days
+--   EXAM1       150 Ryō, the weekend of the first Rank Exam (the first
+--               Friday on or after the opening, to Sunday: 18:00 Friday -
+--               21:00 Sunday in Paris falls inside those UTC days)
+-- MYNINJA and FIRSTDUEL (19/11) were never published: the wardrobe update
+-- opens with the game, and a code gives Ryō or a look, not time.
+C.Opening=nil
+
+-- The UTC day number (days since 1970-01-01) as "YYYY-MM-DD": the inverse
+-- of Exam.daysFrom (civil calendar, proleptic Gregorian).
+function C.date(n)
+	local z=n+719468
+	local era=(if z>=0 then z else z-146096)//146097
+	local doe=z-era*146097
+	local yoe=(doe-doe//1460+doe//36524-doe//146096)//365
+	local y=yoe+era*400
+	local doy=doe-(365*yoe+yoe//4-yoe//100)
+	local mp=(5*doy+2)//153
+	local d=doy-(153*mp+2)//5+1
+	local m=if mp<10 then mp+3 else mp-9
+	if m<=2 then y+=1 end
+	return string.format("%04d-%02d-%02d",y,m,d)
+end
+
+-- The opening's list for an opening day.
+function C.openingCodes(opening)
+	local d0=C.day(opening)
+	assert(d0,"opening day "..tostring(opening))
+	local function at(k) return C.date(d0+k) end
+	local weekday=(d0+4)%7 -- 1970-01-01 was a Thursday; 0 = Sunday
+	local friday=(5-weekday)%7
+	return {
+		{code="NINJADUEL",ryo=300,starts=at(0),ends=at(13),note="The opening: 14 days"},
+		{code="JADECHAKRA",item="ChakraJade",starts=at(0),ends=at(13),note="The opening: the jade chakra, a look of the market"},
+		{code="EXAM1",ryo=150,starts=at(friday),ends=at(friday+2),note="The first Rank Exam: Friday 18:00 - Sunday 21:00, Paris"},
+	}
+end
+C.List={} -- filled by C.open(C.Opening) below, once the day reader is there
 
 -- What a player typed, as a code: capitals, no spaces; nil when it cannot be one.
 function C.normalize(text)
@@ -47,6 +84,15 @@ C.day=day
 
 C.ById={}
 for _,def in C.List do C.ById[def.code]=def end
+-- Set the opening day (the CM, when François gives it; the suite with a test day).
+function C.open(opening)
+	C.Opening=opening
+	C.List=if opening then C.openingCodes(opening) else {}
+	C.ById={}
+	for _,def in C.List do C.ById[def.code]=def end
+	return C.List
+end
+C.open(C.Opening)
 function C.get(code) return C.ById[code] end
 
 -- Is it live at UTC time t?
