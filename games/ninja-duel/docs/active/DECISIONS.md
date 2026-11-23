@@ -516,3 +516,31 @@ Les consignes sur un partenaire immobile disparaissent du premier lancement. Le 
 - (22/11) **médailles de la course des toits** : or 27 s, argent 34 s, bronze 45 s.
 - (23/11) **le tissu de Konoha est généré pour la course sur les toits** (`tools/village`, méthode de l'ANIMATEUR) : les repères, les rues et les places restent ceux de `konoha_layout.py` ; les maisons, les passerelles et la course des toits sont générés, et un candidat n'entre dans le jeu que s'il bat le plan d'avant. La course des toits suit le plan (`KonohaLayout.Race`).
 
+
+## DEC-048 — Étape 4 : « Les 8 complets », et se déplacer en ninja (23/11)
+
+François (23/11, 1 h 02) : « ajoute animateur push et passe à l'étape 4 réellement ». Plan et tâches : doc projet `claude/etape4-les-8-complets-taches-2026-11-23`.
+
+**L'étape 4 du plan général** (§ 3) amène Neji, Gaara, Kakashi, Itachi et Minato au niveau des trois premiers : départ réduit, arbre, transformation, animations refaites. Elle ajoute le tournoi où l'on entre avec son kit et ses points, et des classements par kit. **Elle est élargie** au déplacement ninja dans Konoha, après la remarque de François sur l'étape 3 : « pas du tout ninja feel », « tout doit être dans cet esprit ».
+
+**Décisions du DEV (DEC-043)** :
+- **Départ réduit des 5** (comme DEC-045) :
+  - Minato : Marked Kunai et Flying Thunder God ;
+  - Itachi : Shadow Shuriken et Sharingan Read ;
+  - Neji : Vacuum Palm et Rotation ;
+  - Gaara : Sand Shuriken et Sand Armor ;
+  - Kakashi : Tracking Fang et Lightning Cut.
+
+  Le reste s'apprend au palier II (300) et au palier III (800) avec l'éveil. Chaque arbre reste dans ses 150 points.
+- **Transformations** :
+  - Minato : Cut and Flash ;
+  - Itachi : Fire Geometry ;
+  - Neji : Palm Barrage.
+
+  Celles de Gaara (Sand Burial) et de Kakashi viendront avec leur comportement en combat et les clips de l'ANIMATEUR : un nœud qui ne fait que changer un nombre n'en est pas une.
+- **Tournoi** : une construction de 100 points (bracket Advanced), la même pour tous, avec tout l'arbre ouvert. Les techniques et l'éveil (`Learn*`) sont des nœuds comme les autres. Sans choix, le jeu prend sa construction si elle tient dans le budget, sinon il la complète jusqu'au budget.
+- **Classements par kit** : un tableau par kit, celui de sa maîtrise, mis à jour à chaque gain.
+- **Le promeneur** est posé par les clips du kit (`Client/HubBody`), sans publication d'Animation :
+  - la course sur le mur à la manière de l'anime ;
+  - le second saut est un bond ;
+  - la roulade à la réception.

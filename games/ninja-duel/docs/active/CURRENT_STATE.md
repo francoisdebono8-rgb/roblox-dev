@@ -1,3 +1,21 @@
+**Étape 4 lancée, 23/11 (DEV, DEC-048)** — TECHNICAL, sans Studio ; à jouer par François
+- **Départ réduit des 5 autres kits** (`SkillTrees`, nœuds `Learn*`) :
+  - Minato : Marked Kunai et Flying Thunder God ;
+  - Itachi : Shadow Shuriken et Sharingan Read ;
+  - Neji : Vacuum Palm et Rotation ;
+  - Gaara : Sand Shuriken et Sand Armor ;
+  - Kakashi : Tracking Fang et Lightning Cut.
+
+  Le reste s'apprend aux paliers II et III. Transformations : Cut and Flash, Fire Geometry, Palm Barrage. Sand Burial et la transformation de Kakashi sont à faire. Les constructions légendaires de l'IA comptent les nœuds `Learn*`.
+- **Tournoi** (`Server/Tournament`) : on entre avec une construction de 100 points, la même pour tous, tout l'arbre ouvert (`CupStart` accepte `nodes`). Sans choix, la sienne si elle tient, sinon objets, apprentissages et préréglages jusqu'au budget. La vue montre `build`.
+- **Classements par kit** (`Server/Leaderboards`, `Kit_<id>`) : la maîtrise du kit, mise à jour à chaque gain (`Progression.run`).
+- **Promeneur ninja** (`Client/HubBody`, appelé par `HubMove`) : le corps est posé par les clips du kit dans le village (R15).
+  - L'allure suit le sol parcouru.
+  - Sur le mur, le corps est penché à 70° hors du mur.
+  - Le second saut joue l'AirJump et devient un bond (×1,15 pendant 0,6 s). Le passage du rebord joue le Vault, le coup de pied au mur le Leap.
+  - Réception : roulade (en courant) ou réception dure.
+  - L'angle et la réception sont **à vérifier dans Studio**.
+
 **Le village généré pour courir en ninja, 23/11 (DEV)** — TECHNICAL, sans Studio (François : « pas ce soir ») ; à jouer par François
 - **Pourquoi** : François, après l'étape 3 : « la carte n'est vraiment pas complète et peu cohérente », « la carte prend tout l'écran », « la course ninja, le double saut, le mur, ce n'est pas du tout ninja feel », « tout doit être dans cet esprit ». Il a demandé d'appliquer la méthode de l'ANIMATEUR (SyphoDev) à la génération du village, en gardant des éléments reconnaissables.
 - **`tools/village/konoha_village.py`** (son README) :

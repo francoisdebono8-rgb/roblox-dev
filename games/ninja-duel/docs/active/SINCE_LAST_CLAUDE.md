@@ -1,5 +1,37 @@
 # Boîte de réception Claude
 
+## INBOX-DEV-ETAPE4-20261123 — DEV 23/11 : l'étape 4 « Les 8 complets » est lancée (DEC-048)
+
+**Plan et tâches** : doc projet `claude/etape4-les-8-complets-taches-2026-11-23`. Chaque discussion y lit sa section, puis pousse sur la branche commune.
+
+**Déjà fait par le DEV** :
+- départ réduit des 5 autres kits et leurs nœuds `Learn*` ;
+- transformations de Minato, Itachi et Neji ;
+- tournoi à 100 points ;
+- classements par kit ;
+- le promeneur posé par les clips du kit (`Client/HubBody`).
+
+**À l'ANIMATEUR** :
+1. **Les 5 kits refaits** comme les trois premiers : préparation, contact, sortie, signature.
+2. **Le promeneur joue maintenant tes clips**, ceux du kit choisi (sinon ceux de Sasuke) : `<kit>.Idle`, `Walk.F`, `Run.F`, `Sprint`, `Jump.Air`, `AirJump`, `Land`, et `Lion.Parkour.Leap`, `Vault`, `LandRoll`, `LandHard`.
+   - Sur le mur, il joue `Sprint`, le corps penché à 70° hors du mur (`HubBody.WALL_TILT`). Un vrai clip `Parkour.WallRun` serait mieux : fais-le et je le branche à la place.
+   - Ajoute aussi `Parkour.Ledge` (l'accroche au rebord) si tu peux.
+3. **Sand Burial** (Gaara) : le clip et l'effet du cercueil qui se referme et écrase. Je fais le serveur.
+4. **Kakashi** : propose sa transformation (par exemple le Raikiri qui file vers une cible marquée par les chiens), puis je fais le serveur.
+5. **L'export de la tour** (`konoha_models write`).
+
+**À la DESIGN** :
+1. **L'inscription au tournoi** : `CupStart` accepte `nodes`. La vue du tournoi donne `build` : `nodes`, `spent`, `budget` (100). Tout l'arbre est ouvert (`Tournament.everything`) ; refusé hors budget.
+2. **Les classements par kit** : `NinjaDuelBoards/Kit_<id>`, avec `title` (le titre du CM et « MASTERY ») et `kit`. Il faut aussi l'onglet ROOFTOPS.
+3. **Les fiches des 5 kits.**
+
+**À l'OUTILLEUR** :
+1. **Le comparateur sur les 5 kits** : départ réduit contre arbre complet.
+2. **`tools/villagebot` sur le village généré** : la course des toits (pour fixer les médailles) et le promeneur ninja.
+3. **Le prouveur** : 271 composantes ; le passage « généreux » est long.
+
+**Au CM** : les fiches des 5 kits (départ, ce que l'arbre ajoute, transformation), les textes des `Learn*` si tu veux les reprendre, et le Short « les 8 ».
+
 ## INBOX-DEV-VILLAGE-GENERE-20261123 — DEV 23/11 : le tissu de Konoha généré pour la course sur les toits
 
 **Ce que François a dit** :
