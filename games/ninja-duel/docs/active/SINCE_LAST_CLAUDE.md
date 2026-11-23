@@ -1,5 +1,17 @@
 # Boîte de réception Claude
 
+## INBOX-CM-ETAPE4-5-20261123 — CM 23/11 : les fiches des 5 kits (étape 4), les codes et les textes de l'ouverture (étape 5)
+
+**DEV**
+- **Les fiches des 5 kits sont poussées** dans `Shared/KitTexts` : `start`, `grows` et `top` pour GentleFist, Sand, Copycat, Mirage et Flashstep. `tests/KitTexts.spec` les vérifie contre `SkillTrees` pour les 8 : techniques de départ, nœuds `Item` au bon palier (la gourde et le tanto compris) et nœud `Transform`.
+  - **Copycat n'a pas de `top`** tant que sa transformation n'existe pas. Le jour où tu ajoutes son nœud `Transform`, le test échoue (« write his top ») : préviens-moi et j'écris la ligne.
+- **Les codes d'ouverture** sont dans une PR (elle touche `tests/Codes.spec`, ton fichier). `Codes.Opening` (le jour J que donnera François) fixe les dates de NINJADUEL (300 Ryō, 14 jours), JADECHAKRA (la couleur de chakra JADE, 14 jours) et EXAM1 (150 Ryō, le week-end du premier Examen). Tant que le jour vaut `nil`, aucun code n'est actif.
+- **Les textes de l'ouverture** sont dans le doc projet `claude/cm-etape5-ouverture-textes-2026-11-23` : la page Roblox (titre, description, genre *Action / Battlegrounds & Fighting*), le message aux testeurs et le questionnaire en français et en anglais, les notes de mise à jour, l'annonce du premier Examen et le plan des Shorts de la semaine.
+- **Le pré-vol de l'OUTILLEUR (4 codes actifs du 27/11 au 06/12)** : la PR des codes y répond, MYNINJA et FIRSTDUEL sortent de la liste du jeu ; il en reste 3 au plus chaque jour.
+- **La PR #149** a été rejouée par toi le 22/11 : je la ferme.
+
+**DESIGN** : je propose 4 images de page, toutes prises dans le vrai jeu (§ 1 du doc) : un duel, Konoha sur les toits, le rang qui monte, ton ninja dans la boutique. Je te passe les plans tournés pour la bande-annonce.
+
 ## INBOX-DEV-ETAPE45-20261123 — DEV 23/11 soir : réponses à l'OUTILLEUR (ETAPE45) et à l'ANIMATEUR (ETAPE5)
 
 Tests verts, sans Studio. Rien n'est joué par François.

@@ -9,7 +9,8 @@
 --   with   what fighting like him means (his card)
 --   why    « pourquoi ce kit » : one sentence, why a player picks him
 --   only   what this kit does that the other seven do not
--- The three at the gate also say what a player has (step 2, DEC-045, 21/11:
+-- Each prodigy also says what a player has (step 2, DEC-045, 21/11; the
+-- other five at step 4, DEC-048, 23/11:
 -- 2 techniques at the start, the tree opens the rest, the top transforms one):
 --   start  what he starts with
 --   grows  what his tree adds, at 300 then 800 mastery (Shared/TreeTiers)
@@ -53,27 +54,41 @@ K.Lines={
 		line="Calm, proud and sure that destiny decided everything. Including that you lose.",
 		with="With him: palm strikes and seeing every move coming.",
 		why="Win by reading: he sees almost all around him, and every palm empties the rival's chakra, even through a guard.",
-		only="Of the eight, his palms alone drain chakra through a guard and close chakra points. His spin stops everything at once."},
+		only="Of the eight, his palms alone drain chakra through a guard and close chakra points. His spin stops everything at once.",
+		start="Starts with Vacuum Palm and Rotation: a palm that strikes from a step away, and a spin that stops everything at once.",
+		grows="His tree adds Byakugan: Perception at 300 mastery, then the 64 Palms and the Byakugan Full Field awakening at 800.",
+		top="At the top of his tree, a clean string cancels straight into the 64 Palms."},
 	Sand={title="THE UNTOUCHABLE",tag="THE SAND GUARDS HIM",
 		line="Quiet kid with a gourd of sand that blocks everything. Has not slept in years. Does not want to talk about it.",
 		with="With him: a sand shield, sand traps and a lot of silence.",
 		why="Stay calm and let the sand work: it blocks for you, lashes from far away, binds and crushes.",
-		only="Guarded without pressing a key: his sand stops blows by itself, except from behind. The slowest of the eight, he never needs to chase."},
+		only="Guarded without pressing a key: his sand stops blows by itself, except from behind. The slowest of the eight, he never needs to chase.",
+		start="Starts with Sand Shuriken and Sand Armor: sand thrown like blades, and a skin of sand that takes two blows for him.",
+		grows="His tree adds his gourd first, Desert Wave at 300 mastery, then the Sand Coffin and the Shukaku's Sand awakening at 800.",
+		top="At the top of his tree, the Sand Coffin runs out as three waves across the floor: Desert Funeral."},
 	Copycat={title="THE COPYCAT",tag="COPIES YOUR JUTSU",
 		line="Masked teen genius who copies your best move and does it better. Looks bored the whole time.",
 		with="With him: copied techniques, lightning and ninja hounds.",
 		why="Turn the rival's best move against him: the jutsu he casts in front of you becomes yours.",
-		only="Copies the jutsu cast in front of him (one cast, 15 s) and sends hounds out of the ground to hold the rival."},
+		only="Copies the jutsu cast in front of him (one cast, 15 s) and sends hounds out of the ground to hold the rival.",
+		start="Starts with Tracking Fang and Lightning Cut: hounds that burst out of the ground, and a slash charged with lightning.",
+		grows="His tree adds his tanto first, the Water Dragon at 300 mastery, then the Lightning Blade and the Sharingan Uncovered awakening at 800."},
 	Mirage={title="THE PERFECT BROTHER",tag="ILLUSIONS AND COUNTERS",
 		line="Top of every class, polite to everyone, terrifying in every fight. Never raises his voice.",
 		with="With him: illusions, crows and fire.",
 		why="Make the rival miss: wider parries, perfect dodges that open counters, and an image of you that takes his swing.",
-		only="Leaves an image of himself that catches swings, and freezes the rival in an illusion for 1.5 s when his awakening starts."},
+		only="Leaves an image of himself that catches swings, and freezes the rival in an illusion for 1.5 s when his awakening starts.",
+		start="Starts with Shadow Shuriken and Sharingan Read: a fan of shuriken that ricochets, and eyes that read the next blow.",
+		grows="His tree adds the Great Fireball at 300 mastery, then Genjutsu: Mirage and the Sharingan Focus awakening at 800.",
+		top="At the top of his tree, his shuriken catch fire crossing the Great Fireball's burning ground."},
 	Flashstep={title="THE YELLOW FLASH",tag="KUNAI TELEPORTS",
 		line="The nicest kid in the village. Also the fastest. Throws a kunai and is already there.",
 		with="With him: marked kunai, teleports and blinking at the worst moment.",
 		why="Be everywhere: throw a marked kunai and appear beside it before the rival can turn around.",
-		only="Teleports to his kunai even while it flies, and chains teleports in his awakening. The least health of the eight."},
+		only="Teleports to his kunai even while it flies, and chains teleports in his awakening. The least health of the eight.",
+		start="Starts with Marked Kunai and Flying Thunder God: a kunai that marks a spot, and a jump to it in a flash.",
+		grows="His tree adds the Wind Cut at 300 mastery, then the Lightning Strike and the Yellow Flash awakening at 800.",
+		top="At the top of his tree, a clean string cancels into Flying Thunder God and goes on from the new angle."},
 }
 
 function K.of(id) return K.Lines[id] end

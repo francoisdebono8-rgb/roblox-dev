@@ -126,7 +126,7 @@ test("every « only » that a number can prove is true in Shared/Fighters",funct
 	alone("Sand",function(d) return d.SandShield~=nil end)
 end)
 
-test("the three at the gate say what they start with, what the tree adds and its top (step 2, DEC-045)",function()
+test("each prodigy says what he starts with, what the tree adds and its top (steps 2 and 4, DEC-045, DEC-048)",function()
 	local TreeTiers=H.load("Shared/TreeTiers")
 	local SkillTrees=H.load("Shared/SkillTrees")
 	-- the plan of 21/11 (claude/etape2-deux-arbres-taches): 2 techniques at the
@@ -135,7 +135,14 @@ test("the three at the gate say what they start with, what the tree adds and its
 		Legion={start={"ShadowClone","NarutoRendan"},grows={"CloneRasengan","MassShadowClone"},top={"CloneRasengan"}},
 		Lion={start={"PhoenixFlower","FireBloom"},grows={"WireTrap","Chidori"},top={"Chidori"}},
 		Leaf={start={"LeafGreatWhirlwind","DynamicEntry"},grows={"PrimaryLotus"},top={"PrimaryLotus","DynamicEntry"}},
+		-- (step 4, DEC-048, 23/11) the other five; Copycat has no transformation yet
+		GentleFist={start={"VacuumPalm","Rotation"},grows={"ByakuganSight","SixtyFourPalms"},top={"SixtyFourPalms"}},
+		Sand={start={"SandShuriken","SandArmor"},grows={"DesertWave","SandCoffin"},top={"SandCoffin"}},
+		Copycat={start={"TrackingFang","LightningCut"},grows={"WaterDragon","LightningBlade"}},
+		Mirage={start={"NeedleFan","Read"},grows={"FireBloom","MirageCast"},top={"FireBloom"}},
+		Flashstep={start={"MarkedBlade","Flashstep"},grows={"WindCut","LightningStrike"},top={"Flashstep"}},
 	}
+	local OBJECTS={Weights="WEIGHTS",Gourd="GOURD",Tanto="TANTO"}
 	local function shown(id,tech)
 		for _,t in Fighters[id].Techniques do
 			if t.Id==tech then return Text.upper(t.CardName or t.Name) end
@@ -145,10 +152,14 @@ test("the three at the gate say what they start with, what the tree adds and its
 	for id,want in plan do
 		local t=K.of(id)
 		for _,field in {"start","grows","top"} do
+			if field=="top" and not want.top then
+				assert(t.top==nil,id.." has no transformation yet: no « top »")
+				continue
+			end
 			assert(type(t[field])=="string" and #t[field]>=40 and #t[field]<=150,id.."'s "..field.." is missing or too long")
 			assert(not string.find(string.sub(t[field],1,-2),"[%.!%?] "),id.."'s "..field.." is more than one sentence")
 			local s=Text.upper(t[field])
-			for _,tech in want[field] do
+			for _,tech in want[field] or {} do
 				assert(string.find(s,shown(id,tech),1,true),id.."'s "..field.." does not name "..shown(id,tech))
 			end
 		end
@@ -164,7 +175,7 @@ test("the three at the gate say what they start with, what the tree adds and its
 		for _,node in (SkillTrees[id] and SkillTrees[id].Nodes) or {} do
 			if type(node.Item)=="string" then
 				local name=if node.Item=="Awakening" then Text.upper(Fighters[id].Awakening.Name)
-					elseif node.Item=="Weights" then "WEIGHTS" else shown(id,node.Item)
+					elseif OBJECTS[node.Item] then OBJECTS[node.Item] else shown(id,node.Item)
 				local at=string.find(grows,name,1,true)
 				assert(at,id..": "..node.Id.." gives "..name..", the sheet does not say it")
 				local tier=TreeTiers.of(node)
@@ -176,12 +187,14 @@ test("the three at the gate say what they start with, what the tree adds and its
 		-- (DEV 21/11, f72cbb6) the top of the sheet is a Transform node of tier III
 		local transform
 		for _,node in SkillTrees[id].Nodes do if node.Transform then transform=node end end
-		assert(transform and TreeTiers.of(transform)==3,id.." has no transformation at the top of his tree")
+		if want.top then
+			assert(transform and TreeTiers.of(transform)==3,id.." has no transformation at the top of his tree")
+		else
+			assert(transform==nil,id.." has a transformation now: write his « top »")
+		end
 	end
 	assert(string.find(Text.upper(K.of("Leaf").grows),"WEIGHTS",1,true),"Leaf's tree gives his weights")
-	for _,id in K.Order do
-		if not plan[id] then assert(K.of(id).start==nil,id.." has a start sheet before his tree is reduced") end
-	end
+	for _,id in K.Order do assert(plan[id],id.." has no sheet in the plan") end
 end)
 
 print(string.format("NinjaDuel kit texts (the CM's titles and sheets): %d PASS",passed))
