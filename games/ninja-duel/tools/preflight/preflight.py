@@ -115,7 +115,10 @@ def config_offers():
     kit_products = number_map(block("P = {" + prog + "}", r"\bProducts\s*=\s*\{")) if prog else {}
     mastery = re.search(r"MasteryPass\s*=\s*(\d+)", prog or "")
     live = re.search(r"\bLive\s*=\s*(true|false)", prog or "")
-    return {"products": products, "passes": passes, "packs": packs, "kits": kit_products,
+    # (23/11) the bundles (Config.Shop.Bundles: the 8 outfits), each a product
+    bundles_body = block("Shop = {" + shop + "}", r"\bBundles\s*=\s*\{") if shop else ""
+    bundles = [{"id": i, "product": int(n)} for i, n in re.findall(r'id\s*=\s*"(\w+)"\s*,\s*product\s*=\s*(\d+)', bundles_body or "")]
+    return {"products": products, "passes": passes, "packs": packs, "kits": kit_products, "bundles": bundles,
             "mastery": int(mastery.group(1)) if mastery else 0, "live": (live.group(1) == "true") if live else None}
 
 
@@ -206,6 +209,17 @@ def check_offers(r):
         shown.append(("apparence", look["id"], look["name"], cfg["products"].get(look["key"], 0)))
     for i, pack in enumerate(cfg["packs"]):
         shown.append(("Ryō", f"RyoPack{i + 1}", f"{pack['amount']} RYŌ", pack["product"]))
+    # a bundle counts once a client screen shows it (Client/*: "Bundles")
+    clients = "\n".join(p.read_text(encoding="utf-8") for p in (SRC / "Client").rglob("*.luau"))
+    bundle_shown = "Bundles" in clients
+    for b in cfg["bundles"]:
+        if bundle_shown:
+            shown.append(("lot", b["id"], b["id"], b["product"]))
+    if cfg["bundles"] and not bundle_shown:
+        r.add("Offres", "Les lots", ORANGE,
+              f"{len(cfg['bundles'])} lot(s) dans Config.Shop.Bundles ({', '.join(b['id'] for b in cfg['bundles'])}), "
+              "pas encore affiché(s) dans la boutique.",
+              "Quand la boutique les montre, ils comptent dans « chaque offre affichée a un ID ».")
 
     missing = [s for s in shown if not s[3]]
     if missing:
@@ -365,6 +379,16 @@ def datastore_names():
     if kit_store:
         for kit in roster():
             out[f"{kit_store.group(1)}_{kit}"] = {"where": "Server/Leaderboards (classement par kit)", "live": True}
+    # (23/11) every other server file that opens a DataStore: a name written in the call,
+    # or a constant *STORE*="…" of the file (Server/Reports: Reports.STORE="NinjaDuelReports")
+    known = ("ProfileRepository.luau", "WeeklyExam.luau", "ChampionCliff.luau", "Leaderboards.luau")
+    for file, text in server.items():
+        if file in known or not re.search(r"Get(Ordered)?DataStore\(", text):
+            continue
+        found = set(re.findall(r'Get(?:Ordered)?DataStore\("([^"]+)"', text))
+        found |= {name for _, name in re.findall(r'\b\w+\.(\w*STORE\w*)\s*=\s*"([^"]+)"', text)}
+        for name in found:
+            out.setdefault(name, {"where": f"Server/{file[:-5]}", "live": True})
     return out
 
 

@@ -1,3 +1,35 @@
+**OUTILLEUR, étapes 4 et 5, 23/11 soir** — TECHNICAL + NATIVE_STUDIO (copie LAB de ND-JEU `acfb00d6`, Galaxy A06 simulé) ; observations de Claude, pas l'avis de François
+- **Le comparateur sur les 5 kits** (`tools/kits`, `--etape4`). L'arbre complet, comparé au départ :
+  - Minato monte le plus : portée 92→100, mobilité 83→95, dégâts 78→100 ;
+  - Kakashi : portée 66→80, dégâts 79→95, sans transformation ;
+  - Neji bouge peu : 86→89.
+  - La paire la plus proche est Minato–Sasuke (5/100). L'avant/après des clips de l'ANIMATEUR reste à faire : il n'a rien poussé pour l'étape 4.
+- **Le prouveur sur le village généré** (`tools/syphodev`) : 6 s au lieu de 527, même rapport.
+  - Aucun toit inatteignable ; 19 seulement par la course sur le mur.
+  - Le mur du village (Wall_5-12, 46 studs) est atteignable sans être déclaré.
+  - 12 chevauchements, dont le mur du village dans 6 maisons et les bords de la carte.
+- **Le village dans le jeu** (`tools/villagebot`) :
+  - **Course des toits** : 14 courses, 19,5 à 28,7 s, médiane 22,7, les 10 anneaux à chaque fois. **Les médailles 27/34/45 tiennent.**
+  - **Toits** : avec la montée corrigée, 9 sur 10 (10,4 à 32,5 studs), chacun au premier essai.
+  - **Tour** : 35 lieux, aucune chute. L'hôpital n'est pas atteint : le robot reste coincé 4 fois contre une `tower_house` (−109,7 ; −228,7 du plan).
+- **Le pré-vol de publication** (`tools/preflight`, nouveau), sur `9750dbbc` : **PAS PRÊT, 4 rouges** :
+  - les 30 offres affichées n'ont pas d'ID ;
+  - EARLY ACCESS, MORE BUILDS et les auras THUNDER HALO et SHADOW VEIL sont encore en vente ;
+  - les passes EARLY ACCESS et MORE BUILDS sont sans effet côté serveur ;
+  - 4 codes sont actifs du 27/11 au 06/12.
+
+  En vert : outils de debug, code de test, version, sauvegarde. En orange : les kits sans ID, le lot des tenues pas encore affiché, `NinjaDuelReports` nouveau.
+- **La fluidité sur téléphone** (`tools/perf`, nouveau) :
+  - **Images/s** : impossible à mesurer ici. Studio en arrière-plan dessine 15 images/s, même vers le ciel ; la simulation tient 60/s.
+  - **Le poids de la scène** : la place du village fait 174 000 triangles et 190 appels de dessin en moyenne (266 000 et 283 au pic) ; le duel, 77 000 et 94. Le client tient 10 622 pièces (`StreamingEnabled` éteint).
+  - **Essai dans le LAB** : cacher le décor, la vie et les passants à plus de 160 studs retire 23 à 62 % des triangles et 11 à 22 % des appels.
+  - **La minicarte déborde sur tout le côté gauche** sur les 4 téléphones essayés. Son cadre est tourné de 1° (`Client/MiniMap`, `mini.Rotation=1`), et Roblox ne découpe pas dans un cadre tourné. À 0°, elle reste dans son cadre. C'est probablement « la carte prend tout l'écran » de François.
+- **Le robot nouveau joueur** (`tools/newplayer`, nouveau), d'après l'entonnoir du serveur :
+  - premier combat lancé à 29 s, gagné à 1 min 14 ; habillé à 1 min 28 ; un nœud à 2 min 55 ;
+  - **aucun achat en 10 minutes** : le duel rapporte 215 Ryō et l'apparence la moins chère coûte 250.
+- **La page de lecture du test** (`tools/testread`, nouveau) : elle lit les signalements de `NinjaDuelReports` (le format du DEV). Il lui manque le relevé par joueur pour l'entonnoir (`CONTRAT.md`).
+- **La copie LAB avec les robots** : `tools/lab/lab_place.py`.
+
 **Étape 5 lancée, 23/11 18 h (DEV, DEC-049)** — plan et messages, rien de joué
 - **Le plan** : place de test privée pour 3 à 5 joueurs, corrections, puis publication décidée par François sur la liste « prêt à publier ». Doc projet `claude/etape5-ouverture-taches-2026-11-23`, avec un message à coller pour chaque discussion.
 - **Les offres** : VIP, le lot des 8 tenues et SERVEUR PRIVÉ+ ajoutés ; MORE BUILDS et EARLY ACCESS retirés.

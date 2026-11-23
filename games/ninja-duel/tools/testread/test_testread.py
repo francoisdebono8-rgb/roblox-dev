@@ -61,9 +61,25 @@ class TestRead(unittest.TestCase):
         self.assertFalse(r["example"])
         self.assertNotIn("EXEMPLE", T.page(r, example=r["example"]))
 
-    def test_the_studio_code_reads_the_test_store(self):
-        self.assertIn('GetDataStore("NinjaDuelTest")', T.DUMP)
+    def test_the_studio_code_reads_the_stores_and_the_names(self):
+        self.assertIn('"NinjaDuelReports","NinjaDuelTest"', T.DUMP)
         self.assertIn("ListKeysAsync", T.DUMP)
+        self.assertIn("GetNameFromUserIdAsync", T.DUMP)
+
+    def test_the_devs_live_reports_are_read(self):
+        # Server/Reports (23/11): {user, text, at, phase, kit, where = "<écran> @ x,y,z", version}
+        data = [{"key": "r_1795400000_123_1", "store": "NinjaDuelReports", "user": 123, "text": "la carte cache tout",
+                 "at": 1795400000, "phase": "Selection", "kit": "Legion", "where": "Konoha @ 12,3,-40", "version": "abc123"},
+                {"key": "r_1795400100_456_1", "user": 456, "text": "bloqué", "at": 1795400100, "where": "-5,2,7"},
+                {"kind": "name", "userId": 123, "name": "Bob"}]
+        with open(self.dump, "w", encoding="utf-8") as f:
+            json.dump(data, f)
+        r = T.read(self.dump)
+        a, b = r["reports"]
+        self.assertEqual((a["userId"], a["name"], a["where"], a["position"], a["build"]), (123, "Bob", "Konoha", [12.0, 3.0, -40.0], "abc123"))
+        self.assertEqual((b["name"], b["where"], b["position"]), ("joueur 456", "?", [-5.0, 2.0, 7.0]))
+        self.assertIn("la carte cache tout", T.page(r, example=r["example"]))
+        self.assertEqual(r["sessions"], [])
 
 
 if __name__ == "__main__":

@@ -20,14 +20,11 @@ python3 tools/testread/testread.py --exemple DUMP.json          # un dump d'exem
 
 Elle ne décide pas ce qui est bloquant. C'est au DEV de le dire, avec François. Un dump d'exemple porte un bandeau **EXEMPLE** sur la page : on ne le prend pas pour un vrai test.
 
-## Avec le bouton de la place de test (DESIGN, 993254c9)
+## Avec le bouton de la place de test
 
-Le bouton envoie l'action `Report` avec `{text, where}`. Le serveur ajoute le reste avant d'écrire dans `NinjaDuelTest` :
-- qui : `userId` et `name` ;
-- quand : `at` et `session` ;
-- où en est le joueur : `phase`, `position`, `kit` ;
-- la version : `build`.
-
-C'est la forme de `CONTRAT.md`. Le relevé par joueur (`session_…`) est écrit par le serveur seul.
+- **Le bouton** : REPORT A PROBLEM de la DESIGN (993254c9). Il envoie l'action `Report` avec `{text, where}`.
+- **L'écriture** : le DEV la fait depuis le 23/11 (`Server/Reports`, 5960cbee). Une clé `r_…` par signalement dans le DataStore `NinjaDuelReports`, avec le joueur, la phase, le kit, le lieu et sa position, la version. Une ligne `[NinjaDuelReport]` part aussi dans la console du serveur.
+- **La lecture** : la page lit ce format tel quel.
+- **Ce qui manque encore** : le relevé par joueur (`s_…`, voir `CONTRAT.md`). Sans lui, la page montre les signalements, mais ni l'entonnoir ni le temps par écran.
 
 Les tests : `python3 tools/testread/test_testread.py`.

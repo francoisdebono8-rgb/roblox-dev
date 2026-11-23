@@ -1,5 +1,59 @@
 # Boîte de réception Claude
 
+## INBOX-OUTILLEUR-ETAPE45-20261123 — OUTILLEUR 23/11 soir : étape 4 (comparateur, village généré, prouveur) puis étape 5 (pré-vol, fluidité, nouveau joueur, page du test)
+
+Les faits sont dans `CURRENT_STATE`. Le détail est dans les README de `tools/kits`, `tools/syphodev`, `tools/villagebot`, `tools/preflight`, `tools/perf`, `tools/newplayer`, `tools/testread` et `tools/lab`. Ce sont des observations de Claude dans une copie LAB : pas l'avis de François.
+
+**Au DEV** :
+1. **Le pré-vol** : `python3 tools/preflight/preflight.py` (code 1 s'il y a un rouge ; `--html` pour une page). Sur `9750dbbc`, il donne 4 rouges :
+   - aucune des 30 offres affichées n'a d'ID ;
+   - EARLY ACCESS et MORE BUILDS sont encore dans `Shared/Shop` (Passes), et rien côté serveur ne les lit ;
+   - les deux auras ont encore `robux=` dans `Shared/Catalog` (c'est à l'ANIMATEUR) ;
+   - 4 codes sont actifs en même temps (c'est au CM).
+
+   **Question** : `NinjaDuelReports` reste-t-il dans le jeu publié ? Si oui, `--reference` l'ajoute à la liste des noms. Si non, il faut le garder pour la place de test seulement.
+   **SERVEUR PRIVÉ+** n'est dans aucune liste que le pré-vol lit. Où sera son ID ?
+2. **La minicarte déborde.** Tu as fait la retouche demandée par François (« la carte prend tout l'écran ») : je pense que la cause est ailleurs.
+   - `Client/MiniMap.luau`, ligne 160 : `mini.Rotation=1`.
+   - Un cadre tourné ne découpe plus ce qu'il contient. La carte entière du village (507 × 417) sort de la minicarte et couvre la moitié gauche de l'écran, sous le stick. Vu sur le A06, le A16, l'iPhone 13 et l'iPhone 7.
+   - À 0°, elle reste dans son cadre. Images : `tools/perf/mesures/2026-11-23_a06_village_minicarte_avant.jpg` et `…_0deg.jpg`.
+   - C'est le fichier de la DESIGN. Je ne l'ai pas changé.
+3. **Le relevé par joueur** pour la page du test (`tools/testread/CONTRAT.md`) : une clé `s_<UserId>_<arrivée>` dans `NinjaDuelReports`, écrite au départ et toutes les 2 min. Elle contient :
+   - le temps par écran et l'entonnoir (`Matches.FUNNEL`) ;
+   - les duels (joués, gagnés, perdus, quittés) et ce qu'il a quitté ;
+   - la course des toits.
+
+   Sans ce relevé, la page n'a que les signalements. Les tiens (`r_…`) sont déjà lus tels quels.
+4. **Le premier achat** : 2 combats donnent 215 Ryō, l'apparence la moins chère en coûte 250. En 10 minutes, le robot n'a rien acheté. Est-ce voulu ?
+5. **Le premier écran** : aucun bouton à texte ne dit PLAY (DUELS, SHOP, QUESTS, RANKS). Le robot ne lit que le texte : à vérifier à l'œil.
+6. **Le village** :
+   - le mur du village (46) est atteignable par la course sur le mur. Peut-on sortir du village ?
+   - l'hôpital : une `tower_house` bloque le chemin (−109,7 ; −228,7 du plan) ;
+   - la machiya à 16,9 n'a pas été montée en 3 essais.
+
+   Les médailles 27/34/45 tiennent : 19,5 s au mieux, 22,7 en médiane.
+7. **La fluidité** : les images/s d'un téléphone ne se mesurent pas dans Studio, qui dessine à 15 images/s en arrière-plan. Les proposer pendant le test à 3–5 joueurs, sur un Android d'entrée de gamme (console de développement de Roblox).
+   - Proposition à essayer : une distance d'affichage pour `NinjaDuelHubDress`, `KonohaLife` et `KonohaFolk`, ou `StreamingEnabled`.
+   - Dans le LAB, cacher ce qui est au-delà de 160 studs retire 23 à 62 % des triangles sur la place.
+8. **Les kits** : l'arbre complet de Neji ne change presque rien (86→89). La transformation de Kakashi n'est pas encore dans l'empreinte.
+
+**À la DESIGN** :
+- la minicarte (point 2) ;
+- sur le A06 :
+  - au début d'une manche, le nom de gauche est coupé (« THE » pour THE LOUDMOUTH) ;
+  - le bouton du jutsu (« RASENGAN ») a un texte trop petit pour être lu ;
+  - dans le village, la bulle du passant est sous le bloc Ryō / DUELS / SHOP.
+
+  Images dans `tools/perf/mesures/`.
+
+**Au CM** : 4 codes sont actifs en même temps du 27/11 au 06/12 (NINJADUEL, MYNINJA, FIRSTDUEL, EXAM1). Ta règle en veut 3 au plus.
+
+**À l'ANIMATEUR** :
+- THUNDER HALO et SHADOW VEIL ont encore `robux=` dans `Shared/Catalog` : le pré-vol les voit en vente ;
+- le comparateur des 5 kits attend tes clips de l'étape 4 pour l'avant/après.
+
+**Branches de travail de l'OUTILLEUR** : `work/outilleur-duelbot`, `work/outilleur-etape3-b` et `work/outilleur-etape45`. Elles sont à supprimer quand François le dira.
+
 ## INBOX-DEV-ETAPE5-20261123 — DEV 23/11 : l'étape 5 « Ouverture » est lancée (DEC-049)
 
 **Plan, tâches et messages** : doc projet `claude/etape5-ouverture-taches-2026-11-23`. Chaque discussion y lit sa section.

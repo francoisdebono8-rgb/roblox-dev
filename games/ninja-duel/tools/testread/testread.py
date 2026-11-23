@@ -22,7 +22,6 @@ import json
 import statistics
 import sys
 
-STORE = "NinjaDuelTest"
 FUNNEL = ["joined", "inspiration", "dressed", "started", "hit", "duel", "won", "bought", "node"]
 FUNNEL_FR = {"joined": "arrivé", "inspiration": "inspiration choisie", "dressed": "habillé", "started": "1er combat lancé",
              "hit": "1er coup qui touche", "duel": "1er duel fini", "won": "1er duel gagné", "bought": "1er achat (Ryō)",
@@ -30,23 +29,41 @@ FUNNEL_FR = {"joined": "arrivé", "inspiration": "inspiration choisie", "dressed
 QUESTIONS = [("pensait", "Qu'est-ce que tu pensais pouvoir faire ?"), ("perdu", "Pourquoi as-tu perdu ?"),
              ("retenter", "Qu'as-tu envie de retenter ?")]
 
+# The DEV's live store (Server/Reports, 23/11: one key per report, "r_<at>_<UserId>_<n>"),
+# and the store of the per-player records asked in CONTRAT.md (keys "s_" or "session_").
+STORES = ["NinjaDuelReports", "NinjaDuelTest"]
+STORE = STORES[0]
+
 DUMP = """-- (OUTILLEUR, tools/testread) Édition de la place de test, accès aux API activé :
--- tous les signalements et relevés du DataStore %s, en JSON.
-local ds=game:GetService("DataStoreService"):GetDataStore("%s")
+-- les signalements et les relevés des DataStore %s, avec les pseudos, en JSON.
 local H=game:GetService("HttpService")
 local out={}
-local pages=ds:ListKeysAsync()
-while true do
-	for _,k in pages:GetCurrentPage() do
-		local ok,v=pcall(function() return ds:GetAsync(k.KeyName) end)
-		if ok and type(v)=="table" then v.key=k.KeyName;table.insert(out,v)
-		elseif ok and type(v)=="string" then local ok2,t=pcall(H.JSONDecode,H,v) if ok2 and type(t)=="table" then t.key=k.KeyName;table.insert(out,t) end end
+local users={}
+for _,name in {%s} do
+	local okS,ds=pcall(function() return game:GetService("DataStoreService"):GetDataStore(name) end)
+	if okS then
+		local okP,pages=pcall(function() return ds:ListKeysAsync() end)
+		while okP and pages do
+			for _,k in pages:GetCurrentPage() do
+				local ok,v=pcall(function() return ds:GetAsync(k.KeyName) end)
+				if ok and type(v)=="string" then local ok2,t=pcall(H.JSONDecode,H,v) v=ok2 and t or nil end
+				if ok and type(v)=="table" then
+					v.key=k.KeyName;v.store=name;table.insert(out,v)
+					local id=v.user or v.userId
+					if type(id)=="number" then users[id]=true end
+				end
+			end
+			if pages.IsFinished then break end
+			pages:AdvanceToNextPageAsync()
+		end
 	end
-	if pages.IsFinished then break end
-	pages:AdvanceToNextPageAsync()
+end
+for id in users do
+	local ok,n=pcall(function() return game:GetService("Players"):GetNameFromUserIdAsync(id) end)
+	if ok then table.insert(out,{kind="name",userId=id,name=n}) end
 end
 return H:JSONEncode(out)
-""" % (STORE, STORE)
+""" % (" et ".join(STORES), ",".join('"%s"' % n for n in STORES))
 
 
 def mmss(s):
@@ -56,19 +73,54 @@ def mmss(s):
     return f"{s // 60}:{s % 60:02d}"
 
 
+def _report(d):
+    """A report in the page's form. The DEV's live one (Server/Reports) is {user, text, at,
+    phase, kit, where = "<écran> @ x,y,z", version}; the contract's own fields are kept."""
+    r = dict(d)
+    r["kind"] = "report"
+    if r.get("userId") is None and r.get("user") is not None:
+        r["userId"] = r["user"]
+    if r.get("build") is None and r.get("version"):
+        r["build"] = r["version"]
+    where = r.get("where")
+    if isinstance(where, str) and r.get("position") is None:
+        place, _, at = where.partition(" @ ")
+        if not at and place.count(",") == 2:
+            place, at = "", place
+        try:
+            r["position"] = [float(x) for x in at.split(",")] if at else None
+        except ValueError:
+            r["position"] = None
+        r["where"] = place or ("?" if at else where)
+    return r
+
+
+def _is(d, kind, prefixes):
+    key = str(d.get("key", ""))
+    return d.get("kind") == kind or any(key.startswith(p) for p in prefixes)
+
+
 def load(path):
     with open(path, encoding="utf-8") as f:
         data = json.load(f)
     if isinstance(data, dict):
         data = data.get("items") or data.get("records") or []
-    reports = [d for d in data if d.get("kind") == "report" or str(d.get("key", "")).startswith("report_")]
-    sessions = [d for d in data if d.get("kind") == "session" or str(d.get("key", "")).startswith("session_")]
+    names = {d.get("userId"): d.get("name") for d in data if d.get("kind") == "name"}
+    sessions = [d for d in data if _is(d, "session", ("session_", "s_"))]
+    reports = [_report(d) for d in data if _is(d, "report", ("report_", "r_")) and not _is(d, "session", ("session_", "s_"))]
     # a player's last record is the one kept (records are written every 2 minutes)
     last = {}
     for s in sessions:
         uid = s.get("userId")
         if uid not in last or (s.get("seconds") or 0) >= (last[uid].get("seconds") or 0):
             last[uid] = s
+    for r in reports:
+        if not r.get("name"):
+            r["name"] = names.get(r.get("userId")) or (last.get(r.get("userId")) or {}).get("name") or f"joueur {r.get('userId')}"
+        # the seconds since he arrived, from his record when the report has none
+        joined = (last.get(r.get("userId")) or {}).get("joined")
+        if r.get("session") is None and joined and r.get("at"):
+            r["session"] = r["at"] - joined
     return sorted(reports, key=lambda r: r.get("at") or 0), sorted(last.values(), key=lambda s: s.get("joined") or 0)
 
 
