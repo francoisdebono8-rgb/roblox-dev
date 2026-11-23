@@ -226,7 +226,7 @@ test("the screens build and draw: the shop's five tabs, the tree by tiers, the K
 		local kits={state="ready",owned={Leaf=true},mastery={Leaf=320},starter="Leaf",selected="Leaf",masters={GentleFist={ready=true,via="Leaf"}},
 			trees={Leaf={points=32,free=12,unlocked={"Weights"},active={"Weights"},mastery=320}},ryo=2450,
 			style={owned={KunaiBlack=true},equipped={kunai="KunaiBlack"}}}
-		for _,tab in {"KITS","WEAPONS","STYLE","PASSES","RYŌ"} do
+		for _,tab in ui.shopPanel.tabsFor("shop",kits.style) do
 			ui.shopPanel:show(kits,tab)
 			assert(ui.shopPanel:shown() and #ui.shopPanel.drawn>0,tab.." drew nothing")
 		end
@@ -248,7 +248,9 @@ test("the screens build and draw: the shop's five tabs, the tree by tiers, the K
 		ui.shopPanel:show(kits,"WEAPONS")
 		local drawnShop=#ui.shopPanel.drawn
 		ui.shopPanel:show(kits,"KITS","market")
-		assert(ui.shopPanel.tab=="WEAPONS" and not ui.shopPanel.tabs.KITS.Visible and not ui.shopPanel.tabs.PASSES.Visible and ui.shopPanel.title.Text=="MARKET","the market's tabs")
+		local marketTab=ui.shopPanel.tab
+		ui.shopPanel:show(kits,"WEAPONS","market")
+		assert(marketTab==ui.shopPanel.tabsFor("market",kits.style)[1] and ui.shopPanel.tab=="WEAPONS" and not ui.shopPanel.tabs.KITS.Visible and not ui.shopPanel.tabs.PASSES.Visible and ui.shopPanel.title.Text=="MARKET","the market's tabs")
 		assert(ui.shopPanel.currency.Text=="PAID WITH RYŌ","the market's money")
 		assert(drawnShop-#ui.shopPanel.drawn==nShop-nMarket,"the panel does not draw each counter's looks")
 		ui.shopPanel:show(kits,"WEAPONS")
@@ -667,6 +669,49 @@ test("the tournament's entry: the budget, what a node needs, ENTER sends the nod
 		assert(sent[1][1]=="CupStart" and sent[1][2].nodes[1]==free.Id and sent[1][2].player==kit,"ENTER sends the nodes")
 		page:show(kit,nil);page.best.click()
 		assert(sent[2][2].nodes==nil,"BEST BUILD lets the server choose")
+	end)
+	H.envBase.Instance=saved
+	assert(ok,tostring(err))
+end)
+
+-- (DESIGN 23/11, step 5) the open shop: tabs with something in them, Ryō
+-- confirmed, VIP first with its perks, retired passes gone
+test("the open shop: no empty tab, BUY confirmed, VIP first",function()
+	local Panel=H.load("Client/ShopPanel")
+	local tabs=Panel.tabsFor("shop",{owned={},equipped={}})
+	assert(tabs[1]=="KITS" and tabs[#tabs]=="RYŌ","the SHOP's ends")
+	for _,name in tabs do
+		local cat=Panel.CATEGORY[name]
+		if cat then
+			local n=0
+			for _,slot in cat.slots do n+=#Shop.atCounter(slot,"shop",{owned={},equipped={}}) end
+			assert(n>0,name.." is empty")
+		end
+	end
+	local title,line=Panel.confirmLines("Vermilion kunai",1200,2000)
+	assert(title=="BUY VERMILION KUNAI?" and line:find("800",1,true),"the confirmation: "..line)
+	H.workspace.GetAttribute=function() return nil end
+	local saved=H.envBase.Instance
+	local baseNew=harnessInstance.new
+	H.envBase.Instance={new=function(class)
+		local x=baseNew(class)
+		x.Activated={Connect=function(_,fn) x.click=fn end}
+		return x
+	end}
+	local ok,err=pcall(function()
+		local UI=H.load("Client/UI")
+		local sent={}
+		local ui=UI.new(baseNew("PlayerGui"),function(a,p) table.insert(sent,{a,p}) end)
+		local kits={state="ready",owned={Leaf=true},mastery={Leaf=0},starter="Leaf",selected="Leaf",masters={},trees={},ryo=999999,style={owned={},equipped={}},vip=true}
+		local shop=ui.shopPanel
+		shop:show(kits,"PASSES")
+		assert(shop.heading.Text=="VIP & PASSES","the passes")
+		local bought=false
+		shop:confirm("X",100,500,function() bought=true end)
+		assert(shop.confirmRoot and not bought,"asked first")
+		shop.confirmNo.click();assert(shop.confirmRoot==nil and not bought,"CANCEL")
+		shop:confirm("X",100,500,function() bought=true end);shop.confirmYes.click()
+		assert(bought and shop.confirmRoot==nil,"BUY")
 	end)
 	H.envBase.Instance=saved
 	assert(ok,tostring(err))

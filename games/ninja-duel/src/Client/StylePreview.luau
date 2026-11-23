@@ -59,6 +59,23 @@ function Preview.new(parent,position,size)
 	return self
 end
 
+-- (DESIGN 23/11) the shop's big avatar: front on, turning slowly.
+Preview.SPIN=28 -- degrees per second
+function Preview:turn(on)
+	self.turning=on
+	if on and not self.spinning then
+		self.spinning=true
+		pcall(function()
+			self.angle=0
+			game:GetService("RunService").RenderStepped:Connect(function(dt)
+				if not self.turning or not self.model or not self.view.Visible then return end
+				self.angle=(self.angle+Preview.SPIN*dt)%360
+				self.model:PivotTo(CFrame.new(0,3,0)*CFrame.Angles(0,math.rad(180+self.angle),0))
+			end)
+		end)
+	end
+end
+
 -- The avatar shown again (his own outfit), from his character now.
 function Preview:refresh(character)
 	if self.model then self.model:Destroy();self.model=nil end
