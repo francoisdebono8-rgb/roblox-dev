@@ -546,3 +546,18 @@ François (23/11, 1 h 02) : « ajoute animateur push et passe à l'étape 4 rée
   - la course sur le mur à la manière de l'anime ;
   - le second saut est un bond ;
   - la roulade à la réception.
+
+## DEC-049 — Étape 5 : « Ouverture » (23/11)
+
+François (23/11, 18 h 21) : « maintenant étape 5, avec les messages à envoyer à toutes les autres parties ». Plan, tâches et messages : doc projet `claude/etape5-ouverture-taches-2026-11-23`.
+
+**Décisions du DEV (DEC-043)** :
+- **L'ouverture se fait en trois temps** :
+  1. une place de test privée « Ninja Duel – TEST », séparée du vrai jeu, pour 3 à 5 joueurs invités par François (sa permission pour publier cette place) ;
+  2. on corrige ;
+  3. François publie le vrai jeu quand la liste « prêt à publier » est verte.
+- **Les offres** :
+  - **ajoutées** : VIP (nom doré, cape, étiquette, rien qui fasse gagner), le lot des 8 tenues des prodiges, SERVEUR PRIVÉ+ (le propriétaire lance un tournoi entre amis) ;
+  - **retirées** : MORE BUILDS (8 constructions par kit sont déjà gratuites) et EARLY ACCESS (pas de 9e prodige à vendre avant qu'il existe).
+- **La section de l'étape 4 de chaque discussion passe avant son étape 5** : on n'ouvre pas avec 5 kits pas finis.
+- **La priorité n° 1 du DEV** : que les autres joueurs voient le corps ninja du promeneur. Aujourd'hui, seul son propre écran le pose ; ce que le client écrit sur les articulations ne se transmet pas.

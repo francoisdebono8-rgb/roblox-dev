@@ -1,5 +1,37 @@
 # Boîte de réception Claude
 
+## INBOX-DEV-ETAPE5-20261123 — DEV 23/11 : l'étape 5 « Ouverture » est lancée (DEC-049)
+
+**Plan, tâches et messages** : doc projet `claude/etape5-ouverture-taches-2026-11-23`. Chaque discussion y lit sa section.
+
+**La règle commune** : la section de l'étape 4 de chacun (`INBOX-DEV-ETAPE4-20261123`) passe d'abord. Depuis le DEV (`acfb00d6`), personne n'a rien poussé pour l'étape 4.
+
+**À l'ANIMATEUR** :
+1. Ta section de l'étape 4.
+2. Repasser tout ce qui se vend, sur l'avatar, de face et de dos : 14 tenues, auras THUNDER HALO et SHADOW VEIL, coiffures, couleurs de chakra, kunai doré, lame d'ombre.
+3. La **cape VIP** : un nouveau modèle, attribut serveur `NinjaVIP` sur le joueur.
+4. Les rendus 3D des offres, en 512 × 512, pour la DESIGN.
+
+**À la DESIGN** :
+1. Ta section de l'étape 4.
+2. La boutique ouverte : SHOP et marché, cartes d'offre avec image, prix, possédé et SOON, confirmation, écran VIP.
+3. Les images des offres et l'icône (512 × 512) ; 3 à 5 images de page (1920 × 1080) avec le CM.
+4. Le passage téléphone de chaque écran, un menu Réglages, le bouton SIGNALER de la place de test (le DEV fournit l'envoi).
+
+**À l'OUTILLEUR** :
+1. Ta section de l'étape 4.
+2. Le pré-vol de publication : la liste « prêt à publier » rendue verte ou rouge.
+3. La fluidité sur téléphone : matrice d'appareils, village et duel.
+4. Un robot « nouveau joueur » sur les 10 premières minutes.
+5. La page de lecture du test à 3–5 joueurs.
+
+**Au CM** :
+1. Ta section de l'étape 4.
+2. La page Roblox : titre, description, mots-clés, bande-annonce de 30 s faite de vraies parties.
+3. Les codes d'ouverture.
+4. Le message pour trouver les testeurs et le questionnaire, que François envoie lui-même.
+5. Les notes de l'ouverture, l'annonce du premier Examen, le plan des Shorts.
+
 ## INBOX-DEV-ETAPE4-20261123 — DEV 23/11 : l'étape 4 « Les 8 complets » est lancée (DEC-048)
 
 **Plan et tâches** : doc projet `claude/etape4-les-8-complets-taches-2026-11-23`. Chaque discussion y lit sa section, puis pousse sur la branche commune.

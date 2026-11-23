@@ -1,3 +1,9 @@
+**Étape 5 lancée, 23/11 18 h (DEV, DEC-049)** — plan et messages, rien de joué
+- **Le plan** : place de test privée pour 3 à 5 joueurs, corrections, puis publication décidée par François sur la liste « prêt à publier ». Doc projet `claude/etape5-ouverture-taches-2026-11-23`, avec un message à coller pour chaque discussion.
+- **Les offres** : VIP, le lot des 8 tenues et SERVEUR PRIVÉ+ ajoutés ; MORE BUILDS et EARLY ACCESS retirés.
+- **Limite connue** : le corps ninja du promeneur (`HubBody`) n'est posé que sur l'écran du joueur lui-même ; les autres le voient marcher comme sur Roblox. C'est la tâche n° 1 du DEV.
+- L'ANIMATEUR, la DESIGN, l'OUTILLEUR et le CM n'ont pas encore poussé leur section de l'étape 4.
+
 **Étape 4 lancée, 23/11 (DEV, DEC-048)** — TECHNICAL, sans Studio ; à jouer par François
 - **Départ réduit des 5 autres kits** (`SkillTrees`, nœuds `Learn*`) :
   - Minato : Marked Kunai et Flying Thunder God ;
