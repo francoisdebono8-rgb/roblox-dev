@@ -62,16 +62,26 @@ test("the kit objects: Gaara's gourd, Lee's weights and Kakashi's tanto are earn
 	-- The prodigies themselves (AI, masters, films) are never gated.
 	assert(free("Sand").def.SandShield~=nil and free("Copycat").def.WeaponLocked==nil,"an ungated kit lost its object")
 	for _,spec in free("Leaf").def.Techniques do assert(not spec.Locked,"an ungated Lee lost a technique") end
-	-- A kit without an object is not touched by the gate.
-	assert(#gated("Mirage").locks==0,"Itachi has no kit object")
+	-- (23/11, DEC-048) every kit is gated now: Itachi's locks are his techniques
+	-- and his awakening, learned on the tree (no object)
+	local locks=gated("Mirage").locks
+	table.sort(locks)
+	assert(table.concat(locks,",")=="Awakening,FireBloom,MirageCast","Itachi's locks: "..table.concat(locks,","))
 end)
 
 -- (21/11, DEC-045) Naruto, Sasuke and Lee start with 2 techniques: the others
 -- and the awakening are earned on the tree; the prodigies keep everything.
-test("the reduced start: 2 techniques, the rest and the awakening learned on the tree",function()
-	local starts={Legion={"ShadowClone","NarutoRendan"},Lion={"PhoenixFlower","FireBloom"},Leaf={"LeafGreatWhirlwind","DynamicEntry"}}
+-- (23/11, DEC-048) the five others too: every kit of the eight.
+test("the reduced start of the eight: 2 techniques, the rest and the awakening learned on the tree",function()
+	local starts={Legion={"ShadowClone","NarutoRendan"},Lion={"PhoenixFlower","FireBloom"},Leaf={"LeafGreatWhirlwind","DynamicEntry"},
+		-- (23/11, step 4, DEC-048) the five others
+		Flashstep={"MarkedBlade","Flashstep"},Mirage={"NeedleFan","Read"},GentleFist={"VacuumPalm","Rotation"},
+		Sand={"SandShuriken","SandArmor"},Copycat={"TrackingFang","LightningCut"}}
 	local learn={Legion={"LearnCloneRasengan","LearnMassShadowClone","LearnNineTails"},Lion={"LearnWireTrap","LearnChidori","LearnCurseMark"},
-		Leaf={"LearnPrimaryLotus","Weights","LearnEightGates"}}
+		Leaf={"LearnPrimaryLotus","Weights","LearnEightGates"},
+		Flashstep={"LearnWindCut","LearnLightningStrike","LearnYellowFlash"},Mirage={"LearnFireBloom","LearnMirageCast","LearnSharinganFocus"},
+		GentleFist={"LearnByakuganSight","LearnSixtyFourPalms","LearnFullField"},Sand={"Gourd","LearnDesertWave","LearnSandCoffin","LearnShukaku"},
+		Copycat={"Tanto","LearnWaterDragon","LearnLightningBlade","LearnUncovered"}}
 	for kit,start in starts do
 		local open={}
 		for _,spec in gated(kit).def.Techniques do if not spec.Locked then table.insert(open,spec.Id) end end
@@ -90,6 +100,20 @@ test("the reduced start: 2 techniques, the rest and the awakening learned on the
 	c,a=duel("Legion","Lion",gated("Legion",{"LearnNineTails"}))
 	a.health=1
 	assert(c:awaken(a),"the node did not give the awakening")
+end)
+
+test("every kit has one transformation at the top of its tree (DEC-045, DEC-048)",function()
+	for _,id in BetaRoster do
+		local n=0
+		for _,node in SkillTrees[id].Nodes do
+			if node.Transform then
+				n+=1
+				assert(node.Major and node.Tier==3,id.."."..node.Id..": a transformation is a major node of tier III")
+			end
+		end
+		-- (Gaara's Sand Burial and Kakashi's come with their combat behaviour and the ANIMATEUR's clips)
+		assert(n==1 or ((id=="Sand" or id=="Copycat") and n==0),id.." has "..n.." transformations")
+	end
 end)
 
 test("in a duel: the locked weights are refused, the sheathed tanto stays, no gourd means no sand charge",function()

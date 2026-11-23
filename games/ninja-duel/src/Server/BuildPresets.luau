@@ -24,7 +24,8 @@ Presets.AI={
 		Boss={Why="The full relocation fighter: string teleports and air exits.",
 			Nodes={"FlashEconomy","SealCraft","ReturnSeal","DeepReserves","Endurance","SpikeAnchor","RasenganFocus","QuickHands","RasenganDrive","SealInk","ParrySeal","StringFlash","AirExit","LongSeal"}},
 		Legendary={Why="Everything, with the floor-seal air spike.",
-			Nodes={"SealInk","LongSeal","SealCraft","KunaiRecall","ReturnSeal","FlashEconomy","StringFlash","SpikeAnchor","AirExit","ParrySeal","YellowFlow","QuickstepCut","GaleChase","RasenganFocus","RasenganDrive","DeepReserves","Endurance","QuickHands"}},
+			Nodes={"SealInk","LongSeal","SealCraft","KunaiRecall","ReturnSeal","FlashEconomy","StringFlash","SpikeAnchor","AirExit","ParrySeal","YellowFlow","QuickstepCut","GaleChase","RasenganFocus","RasenganDrive","DeepReserves","Endurance","QuickHands",
+				"LearnWindCut","LearnLightningStrike","LearnYellowFlash"}},
 	},
 	Mirage={
 		Beginner={Why="Crow counter and blades: calm defence first.",
@@ -36,7 +37,8 @@ Presets.AI={
 		Boss={Why="Flank blades and burning geometry: every angle is covered.",
 			Nodes={"EconomicRead","CrowCounter","Precision","WideFan","SteadyBreath","QuickRead","PatientRead","RicochetChase","FeintEcho","WallPalm","Composure","FlankBlades","FireTempo","FireGeometry"}},
 		Legendary={Why="Everything, with the patient Read and the awakened reflex.",
-			Nodes={"QuickRead","EconomicRead","PatientRead","MirageReflex","CrowCounter","Precision","WideFan","RicochetChase","FlankBlades","FeintEcho","WallPalm","ShortSigns","PhoenixVolley","FireTempo","FireGeometry","SteadyBreath","Composure"}},
+			Nodes={"QuickRead","EconomicRead","PatientRead","MirageReflex","CrowCounter","Precision","WideFan","RicochetChase","FlankBlades","FeintEcho","WallPalm","ShortSigns","PhoenixVolley","FireTempo","FireGeometry","SteadyBreath","Composure",
+				"LearnFireBloom","LearnMirageCast","LearnSharinganFocus"}},
 	},
 	GentleFist={
 		Beginner={Why="The Rotation defence and a second point on the circular step.",
@@ -48,7 +50,8 @@ Presets.AI={
 		Boss={Why="Redirecting parries, wall rebounds and a lasting seal.",
 			Nodes={"SwiftRotation","WideDome","PrecisePalms","PointStep","Conditioning","ReturningRotation","VacuumEconomy","SealingPalm","NarrowBlindSpot","OutsideStep","DeepPoints","RedirectParry","TrigramRebound","LingeringSeal"}},
 		Legendary={Why="Everything, with the 64 Palms string ender.",
-			Nodes={"PrecisePalms","DeepPoints","PointStep","PalmBarrage","FullFieldPoints","SwiftRotation","WideDome","ReturningRotation","NarrowBlindSpot","RedirectParry","OutsideStep","VacuumEconomy","SealingPalm","LingeringSeal","TrigramRebound","Conditioning","ChakraControl","ChakraReserve"}},
+			Nodes={"PrecisePalms","DeepPoints","PointStep","PalmBarrage","FullFieldPoints","SwiftRotation","WideDome","ReturningRotation","NarrowBlindSpot","RedirectParry","OutsideStep","VacuumEconomy","SealingPalm","LingeringSeal","TrigramRebound","Conditioning","ChakraControl","ChakraReserve",
+				"LearnByakuganSight","LearnSixtyFourPalms","LearnFullField"}},
 	},
 	Lion={
 		Beginner={Why="The Dancing Leaf from the heavy and cheaper fire.",

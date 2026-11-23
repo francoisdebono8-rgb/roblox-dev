@@ -34,6 +34,24 @@ return {
 	-- Minato: a network of prepared destinations, not teleport spam. Seals,
 	-- relocation that converts, angles and a Rasengan that finishes.
 	Flashstep = { Fighter = "Flashstep", Nodes = {
+		-- (23/11, step 4, DEC-048) the start is 2 techniques, as for the first three
+		-- (DEC-045): the others and the awakening are earned on the tree (the costs
+		-- keep the tree within its 150 points).
+		{ Id = "LearnWindCut", Tier = 2, Name = "Learn the Wind Cut", Branch = "Unlocks", Kind = "tool", Major = true, Cost = 4, Item = "WindCut",
+			Effects = { { "def.Items.WindCut", "set", true } },
+			Without = { { "tech.WindCut.Locked", "set", true } },
+			Shows = "The Wind Cut is his: a blade of wind that cuts at range. Before, the slot says LEARN IT ON THE TREE.",
+			Counter = "The cut flies straight; a step aside lets it pass.", Lore = "CANON_YOUNG" },
+		{ Id = "LearnLightningStrike", Tier = 3, Name = "Learn the Lightning Strike", Branch = "Unlocks", Kind = "tool", Major = true, Cost = 6, Item = "LightningStrike",
+			Effects = { { "def.Items.LightningStrike", "set", true } },
+			Without = { { "tech.LightningStrike.Locked", "set", true } },
+			Shows = "The Lightning Strike is his: the finishing blow that falls from the flash.",
+			Counter = "It needs him close: keep the distance, keep the seals in sight.", Lore = "CANON_YOUNG" },
+		{ Id = "LearnYellowFlash", Tier = 3, Name = "The Yellow Flash", Branch = "Unlocks", Kind = "tool", Major = true, Cost = 8, Item = "Awakening",
+			Effects = { { "def.Items.Awakening", "set", true } },
+			Without = { { "def.AwakeningLocked", "set", true } },
+			Shows = "His awakening, YELLOW FLASH, is his to call when he is low. Before, he has none.",
+			Counter = "It is fast but short: guard, and wait for it to burn out.", Lore = "CANON_YOUNG" },
 		{ Id = "SealInk", Tier = 1, Name = "Seal Ink", Branch = "Seals", Kind = "property", Cost = 4,
 			Effects = { { "def.Seals.PlantedLife", "set", 15 } },
 			Shows = "Planted seals hold 15 s instead of 12: a prepared destination outlives one exchange.",
@@ -58,7 +76,8 @@ return {
 			Effects = { { "tech.Flashstep.Cost", "add", -2 } },
 			Shows = "Flying Thunder God costs 14 chakra instead of 16.",
 			Counter = "A seal is still required and spent; the Sharingan guard still tracks the arrival.", Lore = "GAMEPLAY_LIBERTY" },
-		{ Id = "StringFlash", Tier = 3, Name = "Cut and Flash", Branch = "Flash", Kind = "route", Major = true, Cost = 12, Requires = { "FlashEconomy" },
+		-- (23/11, DEC-048) Transform: the top of his tree, Minato's string into the Flying Thunder God.
+		{ Id = "StringFlash", Tier = 3, Name = "Cut and Flash", Branch = "Flash", Kind = "route", Major = true, Transform = true, Cost = 12, Requires = { "FlashEconomy" },
 			Effects = { { "graph.stringCancels.Flashstep", "set", true } },
 			Shows = "A clean string can cancel into Flying Thunder God: the combo jumps to a seal and resumes from the new angle.",
 			Counter = "Costs 16 chakra and a seal; no seal, no cancel; the Sharingan guard follows the arrival.", Lore = "GAMEPLAY_LIBERTY" },
@@ -114,6 +133,24 @@ return {
 	-- Itachi: calm control. Reads, deception, shuriken geometry and fire that
 	-- turn the opponent's own action into his opening.
 	Mirage = { Fighter = "Mirage", Nodes = {
+		-- (23/11, step 4, DEC-048) the start is 2 techniques, as for the first three
+		-- (DEC-045): the others and the awakening are earned on the tree (the costs
+		-- keep the tree within its 150 points).
+		{ Id = "LearnFireBloom", Tier = 2, Name = "Learn the Great Fireball", Branch = "Unlocks", Kind = "tool", Major = true, Cost = 6, Item = "FireBloom",
+			Effects = { { "def.Items.FireBloom", "set", true } },
+			Without = { { "tech.FireBloom.Locked", "set", true } },
+			Shows = "The Great Fireball is his: a wall of fire breathed across the lane. Before, the slot says LEARN IT ON THE TREE.",
+			Counter = "The breath is long and seen; go round it or wait it out.", Lore = "CANON_YOUNG" },
+		{ Id = "LearnMirageCast", Tier = 3, Name = "Learn the Mirage", Branch = "Unlocks", Kind = "tool", Major = true, Cost = 8, Item = "MirageCast",
+			Effects = { { "def.Items.MirageCast", "set", true } },
+			Without = { { "tech.MirageCast.Locked", "set", true } },
+			Shows = "Genjutsu: Mirage is his: the rival fights a copy while Itachi steps aside.",
+			Counter = "The real one still casts a shadow: hit what moves.", Lore = "CANON_YOUNG" },
+		{ Id = "LearnSharinganFocus", Tier = 3, Name = "The Sharingan's Focus", Branch = "Unlocks", Kind = "tool", Major = true, Cost = 10, Item = "Awakening",
+			Effects = { { "def.Items.Awakening", "set", true } },
+			Without = { { "def.AwakeningLocked", "set", true } },
+			Shows = "His awakening, SHARINGAN FOCUS, is his to call when he is low. Before, he has none.",
+			Counter = "His eyes read, they do not hit harder: change rhythm.", Lore = "CANON_YOUNG" },
 		{ Id = "QuickRead", Tier = 1, Name = "Quick Read", Branch = "Sharingan", Kind = "property", Cost = 5,
 			Effects = { { "tech.Read.Cooldown", "mul", 0.84 } },
 			Shows = "Sharingan Read is ready again after 3 s instead of 3.6 s.",
@@ -171,7 +208,8 @@ return {
 		{ Id = "FireTempo", Tier = 2, Name = "Fire Tempo", Branch = "Genjutsu & Katon", Kind = "property", Cost = 4,
 			Effects = { { "tech.FireBloom.Cooldown", "mul", 0.84 } },
 			Shows = "Great Fireball is ready again after 4.6 s instead of 5.5 s.", Counter = "Same wind-up: side-step and punish.", Lore = "PLAUSIBLE_YOUNG" },
-		{ Id = "FireGeometry", Tier = 3, Name = "Fire Geometry", Branch = "Genjutsu & Katon", Kind = "jutsu", Major = true, Cost = 12, Requires = { "FireTempo" },
+		-- (23/11, DEC-048) Transform: the top of his tree, Itachi's shuriken lit by his own fire.
+		{ Id = "FireGeometry", Tier = 3, Name = "Fire Geometry", Branch = "Genjutsu & Katon", Kind = "jutsu", Major = true, Transform = true, Cost = 12, Requires = { "FireTempo" },
 			Effects = { { "def.ToolMastery.FireBlades", "set", { Damage = 1, Patch = 1.5 } } },
 			Shows = "His shuriken that cross his own burning ground ignite: +1 damage and a small fire patch where they land. Lane, then blades.",
 			Counter = "Stay out of the lit lane's line; a guard absorbs the burning blade and its patch.", Lore = "GAMEPLAY_LIBERTY" },
@@ -185,6 +223,24 @@ return {
 	-- Neji: close-space dominance. Chakra points, the Rotation defence and
 	-- precise counters; his threat spikes inside his preferred range.
 	GentleFist = { Fighter = "GentleFist", Nodes = {
+		-- (23/11, step 4, DEC-048) the start is 2 techniques, as for the first three
+		-- (DEC-045): the others and the awakening are earned on the tree (the costs
+		-- keep the tree within its 150 points).
+		{ Id = "LearnByakuganSight", Tier = 2, Name = "Learn the Byakugan", Branch = "Unlocks", Kind = "tool", Major = true, Cost = 6, Item = "ByakuganSight",
+			Effects = { { "def.Items.ByakuganSight", "set", true } },
+			Without = { { "tech.ByakuganSight.Locked", "set", true } },
+			Shows = "Byakugan: Perception is his: the veins stand out, the blind spot is gone. Before, the slot says LEARN IT ON THE TREE.",
+			Counter = "He sees, he does not hit harder: keep moving.", Lore = "CANON_YOUNG" },
+		{ Id = "LearnSixtyFourPalms", Tier = 3, Name = "Learn the 64 Palms", Branch = "Unlocks", Kind = "tool", Major = true, Cost = 8, Item = "SixtyFourPalms",
+			Effects = { { "def.Items.SixtyFourPalms", "set", true } },
+			Without = { { "tech.SixtyFourPalms.Locked", "set", true } },
+			Shows = "Eight Trigrams Sixty-Four Palms is his: the flurry that closes the chakra points.",
+			Counter = "The stance is planted and seen: step out of its circle.", Lore = "CANON_YOUNG" },
+		{ Id = "LearnFullField", Tier = 3, Name = "The Full Field", Branch = "Unlocks", Kind = "tool", Major = true, Cost = 10, Item = "Awakening",
+			Effects = { { "def.Items.Awakening", "set", true } },
+			Without = { { "def.AwakeningLocked", "set", true } },
+			Shows = "His awakening, BYAKUGAN FULL FIELD, is his to call when he is low. Before, he has none.",
+			Counter = "It drains him: make it last.", Lore = "CANON_YOUNG" },
 		{ Id = "PrecisePalms", Tier = 1, Name = "Precise Palms", Branch = "Gentle Fist", Kind = "property", Cost = 4,
 			Effects = { { "def.GentleFist.Drain", "add", 1 } },
 			Shows = "A clean palm drains 7 chakra instead of 6.", Counter = "Through a guard it still drains 3.", Lore = "CANON_YOUNG" },
@@ -198,7 +254,8 @@ return {
 			Effects = { { "graph.stringCancels.Rotation", "set", true } },
 			Shows = "A clean string can end in Rotation: the dome throws the opponent out of point blank and resets the space.",
 			Counter = "24 chakra and the 6 s cooldown; the recovery after the dome is open.", Lore = "CANON_YOUNG" },
-		{ Id = "PalmBarrage", Tier = 3, Name = "Palm Barrage", Branch = "Gentle Fist", Kind = "route", Major = true, Cost = 12, Requires = { "DeepPoints" }, Exclusive = "StringEnder",
+		-- (23/11, DEC-048) Transform: the top of his tree, Neji's string into the Sixty-Four Palms.
+		{ Id = "PalmBarrage", Tier = 3, Name = "Palm Barrage", Branch = "Gentle Fist", Kind = "route", Major = true, Transform = true, Cost = 12, Requires = { "DeepPoints" }, Exclusive = "StringEnder",
 			Effects = { { "graph.stringCancels.SixtyFourPalms", "set", true } },
 			Shows = "A clean string can cancel into the Sixty-Four Palms with a short wind-up: the confirmed hit becomes the full flurry.",
 			Counter = "The opening palm can still be guarded; a substitution escapes the flurry; 30 chakra, 10 s cooldown.", Lore = "CANON_YOUNG" },
@@ -437,6 +494,24 @@ return {
 	-- Gaara (13/11, DEC-038): the gourd is the object; its sand guards him
 	-- once a player earns it. Then the coffin, the desert, Shukaku's sand.
 	Sand = { Fighter = "Sand", Nodes = {
+		-- (23/11, step 4, DEC-048) the start is 2 techniques, as for the first three
+		-- (DEC-045): the others and the awakening are earned on the tree (the costs
+		-- keep the tree within its 150 points).
+		{ Id = "LearnDesertWave", Tier = 2, Name = "Learn the Desert Wave", Branch = "Unlocks", Kind = "tool", Major = true, Cost = 6, Item = "DesertWave",
+			Effects = { { "def.Items.DesertWave", "set", true } },
+			Without = { { "tech.DesertWave.Locked", "set", true } },
+			Shows = "The Desert Wave is his: the sand rolls over the floor toward the rival. Before, the slot says LEARN IT ON THE TREE.",
+			Counter = "The wave is slow and wide: jump it.", Lore = "CANON_YOUNG" },
+		{ Id = "LearnSandCoffin", Tier = 3, Name = "Learn the Sand Coffin", Branch = "Unlocks", Kind = "tool", Major = true, Cost = 8, Item = "SandCoffin",
+			Effects = { { "def.Items.SandCoffin", "set", true } },
+			Without = { { "tech.SandCoffin.Locked", "set", true } },
+			Shows = "The Sand Coffin is his: the sand closes round the rival and holds him.",
+			Counter = "The grip forms before it closes: dodge out of the sand.", Lore = "CANON_YOUNG" },
+		{ Id = "LearnShukaku", Tier = 3, Name = "Shukaku's Sand", Branch = "Unlocks", Kind = "tool", Major = true, Cost = 10, Item = "Awakening",
+			Effects = { { "def.Items.Awakening", "set", true } },
+			Without = { { "def.AwakeningLocked", "set", true } },
+			Shows = "His awakening, SHUKAKU'S SAND, is his to call when he is low. Before, he has none.",
+			Counter = "Survive the burst: the sand is strong but slow.", Lore = "CANON_YOUNG" },
 		{ Id = "Gourd", Tier = 1, Name = "The Gourd's Sand", Branch = "Gourd", Kind = "tool", Major = true, Cost = 10, Item = "Gourd",
 			Effects = { { "def.Items.Gourd", "set", true } },
 			Without = { { "def.SandShield", "clear" } },
@@ -609,6 +684,24 @@ return {
 	-- Kakashi (13/11, DEC-038): his father's tanto is the object; then the
 	-- copy, the hounds, the Lightning Blade and the Sharingan's counters.
 	Copycat = { Fighter = "Copycat", Nodes = {
+		-- (23/11, step 4, DEC-048) the start is 2 techniques, as for the first three
+		-- (DEC-045): the others and the awakening are earned on the tree (the costs
+		-- keep the tree within its 150 points).
+		{ Id = "LearnWaterDragon", Tier = 2, Name = "Learn the Water Dragon", Branch = "Unlocks", Kind = "tool", Major = true, Cost = 6, Item = "WaterDragon",
+			Effects = { { "def.Items.WaterDragon", "set", true } },
+			Without = { { "tech.WaterDragon.Locked", "set", true } },
+			Shows = "The Water Dragon is his: a dragon of water that coils toward the rival. Before, the slot says LEARN IT ON THE TREE.",
+			Counter = "The seals take time: hit him while he weaves them.", Lore = "CANON_YOUNG" },
+		{ Id = "LearnLightningBlade", Tier = 3, Name = "Learn the Lightning Blade", Branch = "Unlocks", Kind = "tool", Major = true, Cost = 8, Item = "LightningBlade",
+			Effects = { { "def.Items.LightningBlade", "set", true } },
+			Without = { { "tech.LightningBlade.Locked", "set", true } },
+			Shows = "The Lightning Blade is his: his own charge of lightning through the rival.",
+			Counter = "The charge is a straight line, heard before it lands.", Lore = "CANON_YOUNG" },
+		{ Id = "LearnUncovered", Tier = 3, Name = "The Uncovered Sharingan", Branch = "Unlocks", Kind = "tool", Major = true, Cost = 8, Item = "Awakening",
+			Effects = { { "def.Items.Awakening", "set", true } },
+			Without = { { "def.AwakeningLocked", "set", true } },
+			Shows = "His awakening, SHARINGAN UNCOVERED, is his to call when he is low. Before, he has none.",
+			Counter = "It costs him: make him spend it.", Lore = "CANON_YOUNG" },
 		{ Id = "Tanto", Tier = 1, Name = "White Light Tanto", Branch = "Tanto", Kind = "tool", Major = true, Cost = 10, Item = "Tanto",
 			Effects = { { "def.Items.Tanto", "set", true } },
 			Without = { { "def.WeaponLocked", "set", true } },
