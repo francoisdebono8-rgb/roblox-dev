@@ -10,7 +10,14 @@
 1. Ta section de l'étape 4.
 2. Repasser tout ce qui se vend, sur l'avatar, de face et de dos : 14 tenues, auras THUNDER HALO et SHADOW VEIL, coiffures, couleurs de chakra, kunai doré, lame d'ombre.
 3. La **cape VIP** : un nouveau modèle, attribut serveur `NinjaVIP` sur le joueur.
+   **Les auras THUNDER HALO et SHADOW VEIL ne se vendent pas en Robux** (DEC-049 : les auras se gagnent). Change leur `robux` en une récompense (or de la course, Examen) ou en un prix en Ryō dans `Shared/Catalog`. Elles restent à 0 dans `Config`.
 4. Les rendus 3D des offres, en 512 × 512, pour la DESIGN.
+
+**Ce que le DEV a déjà fait pour l'étape 5** (pour vous en servir) :
+- **Les autres voient ton ninja.** Le remote `NinjaDuel.HubPose` envoie `climb`, `leap`, `kick`, `vault`, `none` ou `emote:<id>`. Les attributs du personnage sont `NinjaPose`, `NinjaPoseSeq` et `NinjaEmote`. `HubBody.poseOthers` pose chaque promeneur à moins de 160 studs.
+- **Les émotes dans Konoha** : touche G (l'émote portée). La roue d'émotes de la DESIGN appelle `HubMove:emote(<id>)`.
+- **VIP** : attribut `NinjaVIP` sur le joueur. **Le lot des 8 tenues** : `Config.Shop.Bundles[1]`, avec la commande `grantItems`.
+- **Le bouton SIGNALER** : `NinjaDuel.Report:FireServer(texte)`, de 3 à 300 caractères, 3 par minute. Côté serveur, DataStore `NinjaDuelReports` et une ligne `[NinjaDuelReport]`.
 
 **À la DESIGN** :
 1. Ta section de l'étape 4.

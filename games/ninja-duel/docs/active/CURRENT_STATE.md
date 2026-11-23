@@ -3,6 +3,13 @@
 - **Les offres** : VIP, le lot des 8 tenues et SERVEUR PRIVÉ+ ajoutés ; MORE BUILDS et EARLY ACCESS retirés.
 - **Limite connue** : le corps ninja du promeneur (`HubBody`) n'est posé que sur l'écran du joueur lui-même ; les autres le voient marcher comme sur Roblox. C'est la tâche n° 1 du DEV.
 - L'ANIMATEUR, la DESIGN, l'OUTILLEUR et le CM n'ont pas encore poussé leur section de l'étape 4.
+- **Fait par le DEV le soir même** (tests verts, sans Studio) :
+  - **Les autres voient ton ninja** : `Server/Hub.pose`, avec `NinjaPose`, `NinjaPoseSeq` et `NinjaEmote` sur le personnage ; `Client/HubBody.poseOthers` pose chaque promeneur à moins de 160 studs.
+  - **Les émotes dans Konoha** (G), vues de tous, seulement celles qu'on possède.
+  - **VIP** (`NinjaVIP`, vérifié à l'arrivée et à l'achat en jeu) et **le lot des 8 tenues** (`Shop.Bundles`, `grantItems`, un seul reçu).
+  - **Le bouton SIGNALER** côté serveur (`Server/Reports`).
+  - **Les auras ne se vendent pas en Robux.**
+  - **La liste des offres** : 2 passes et 33 produits.
 
 **Étape 4 lancée, 23/11 (DEV, DEC-048)** — TECHNICAL, sans Studio ; à jouer par François
 - **Départ réduit des 5 autres kits** (`SkillTrees`, nœuds `Learn*`) :

@@ -235,6 +235,8 @@ return {
 			-- (21/11, DEC-047) the personalization's Robux looks (Shared/CatalogStyle), SOON until created
 			HairSilver = 0, HairVoid = 0, ChakraBlackFlame = 0, ChakraGold = 0, FrameGold = 0,
 			-- (21/11, étape 3 ANIMATEUR) two shop auras in Robux (Shared/Catalog), SOON until created
+			-- (23/11, DEC-049) never sold for Robux: auras are earned (the rule of
+			-- 20/11); they stay 0 until the ANIMATEUR makes them rewards or Ryō
 			AuraThunder = 0, AuraShadow = 0 },
 		RyoPacks = { { amount = 1000, product = 0 }, { amount = 3000, product = 0 }, { amount = 8000, product = 0 } },
 		-- (23/11, step 5, DEC-049) VIP: looks only (Server/Progression.checkVip,

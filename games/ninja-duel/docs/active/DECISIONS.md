@@ -561,3 +561,5 @@ François (23/11, 18 h 21) : « maintenant étape 5, avec les messages à envoye
   - **retirées** : MORE BUILDS (8 constructions par kit sont déjà gratuites) et EARLY ACCESS (pas de 9e prodige à vendre avant qu'il existe).
 - **La section de l'étape 4 de chaque discussion passe avant son étape 5** : on n'ouvre pas avec 5 kits pas finis.
 - **La priorité n° 1 du DEV** : que les autres joueurs voient le corps ninja du promeneur. Aujourd'hui, seul son propre écran le pose ; ce que le client écrit sur les articulations ne se transmet pas.
+- **Les auras ne se vendent pas en Robux** (la règle du 20/11 : les auras se gagnent au mérite). THUNDER HALO et SHADOW VEIL, ajoutées en Robux à l'étape 3, restent à 0 dans `Config.Shop.Products`. L'ANIMATEUR en fait des récompenses ou des achats en Ryō.
+- **Les offres que le jeu sait donner** : 2 passes et 33 produits. La liste pour François est dans les docs projet `claude/produits-passes-a-creer-2026-11-20` et `claude/produits-passes-maj-etape5-2026-11-23`.
