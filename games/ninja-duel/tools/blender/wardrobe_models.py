@@ -30,7 +30,7 @@ def O():
 
 
 HEAD = (1.2, 1.2, 1.2)
-BROW = .27
+BROW = .4   # (23/11, François: « les bandanas tombent sur les yeux ») on the forehead: the eyes are at y .07 to .25
 
 
 def head_ring(pc, y, h, r=(.64, .66), bulge=.02, col=None, n=24, z_off=0.0):
@@ -753,6 +753,7 @@ SETS = {
 #   HairBuns      two round buns on top, a short fringe              (Tenten)
 #   HairTilted    every lock swept up to one side                    (Kakashi)
 HEAD_C = Vector((0, .1, 0))     # the skull's centre (Head part space; the face looks -Z)
+EYE_X, EYE_TOP = .42, .36       # the eyes (and the brows) keep clear: |x| under this, y under that
 
 
 def scalp(az, el, r=.56):
@@ -762,7 +763,7 @@ def scalp(az, el, r=.56):
     return HEAD_C + Vector((math.sin(a) * math.cos(e) * r * 1.02, math.sin(e) * r, math.cos(a) * math.cos(e) * r))
 
 
-def lock(pc, root, direction, length, width, thick=.09, bend=(0, 0, 0), sections=5, sides=8, dark=.72, curl=0.0):
+def lock(pc, root, direction, length, width, thick=.09, bend=(0, 0, 0), sections=5, sides=8, dark=.72, curl=0.0, blunt=0.0):
     """One flat lock of hair: a lens section `width` across and `thick` through, tapering to a
     point `length` along `direction`, bending by `bend` (x length, quadratic). Darker at the root.
     The width lies across the scalp (perpendicular to both the lock and the skull's normal)."""
@@ -771,6 +772,14 @@ def lock(pc, root, direction, length, width, thick=.09, bend=(0, 0, 0), sections
     root = Vector(root)
     n0 = (root - HEAD_C).normalized()
     pts = [root + d * length * s + b * length * s * s for s in [k / sections for k in range(sections + 1)]]
+    # (23/11, François: « des cheveux sur les yeux ») nothing in front of the eyes: a lock over
+    # the face (z < -.2) and between the temples (|x| < EYE_X) is cut short above EYE_TOP
+    for _ in range(12):
+        over = [p for p in pts[1:] if p.z < -.2 and abs(p.x) < EYE_X + width * .3 and p.y < EYE_TOP]
+        if not over:
+            break
+        length *= .85
+        pts = [root + d * length * s + b * length * s * s for s in [k / sections for k in range(sections + 1)]]
     rings = []
     for k in range(sections):
         t = (pts[k + 1] - pts[k]).normalized()
@@ -785,7 +794,7 @@ def lock(pc, root, direction, length, width, thick=.09, bend=(0, 0, 0), sections
         wa.normalize()
         ta = wa.cross(t).normalized()
         s = k / sections
-        taper = (1 - s) ** .75
+        taper = (1 - s) ** .75 * (1 - blunt) + blunt      # blunt: straight hair keeps its width to the end
         w, th = width * taper * (1 + .25 * math.sin(s * math.pi)), thick * (1 - s * .6)
         ring = []
         for i in range(sides):
@@ -877,7 +886,7 @@ def item_hair_swept():
         lock(h, root, (math.sin(math.radians(az)) * .35, .55, 1), ln, .38, bend=(0, .25, 0))
     # long bangs either side of the face, down to the jaw; a short lock between the eyes
     for x in (-1, 1):
-        lock(h, (x * .44, .5, -.5), (x * .12, -1, -.18), .85, .3, thick=.08, bend=(x * .05, 0, -.05))
+        lock(h, (x * .54, .5, -.44), (x * .12, -1, -.1), .85, .28, thick=.08, bend=(x * .05, 0, -.05))
     lock(h, (.05, .52, -.56), (.15, -1, -.35), .45, .26, thick=.08)
     nape(h, length=.36, out=.9, spread=120, count=7, flow=(0, .3, .4))
     return o.items
@@ -897,7 +906,7 @@ def item_hair_bowl():
             t = i / n * math.tau                     # 0 = his left (+X), -pi/2 = the face (-Z)
             fz = -math.sin(t)                        # 1 = the face
             edge = .3 * max(0, fz) ** 2 + (-.25) * (1 - max(0, fz) ** 2)
-            edge = .32 if fz > .55 else edge         # the fringe cut level
+            edge = .38 if fz > .55 else edge         # the fringe cut level, over the brows
             y = edge + (.86 - edge) * math.sin(u * math.pi / 2)
             a = math.cos(u * math.pi / 2 * .96) ** .45
             ring.append(Vector((math.cos(t) * .74 * a, y, math.sin(t) * .76 * a + .03)))
@@ -917,7 +926,8 @@ def item_hair_long():
     skull(h, front=1.7)
     # parted in the middle: two curtains framing the face, down past the jaw
     for x in (-1, 1):
-        lock(h, (x * .2, .62, -.5), (x * .5, -1, -.1), .95, .4, thick=.09, bend=(0, 0, .1))
+        lock(h, (x * .3, .62, -.5), (x * 1.3, -.35, -.05), .5, .34, thick=.09, bend=(0, -.4, 0))
+        lock(h, (x * .58, .4, -.36), (x * .08, -1, .02), .95, .32, thick=.09)
         lock(h, (x * .55, .3, -.2), (x * .1, -1, .05), 1.0, .4, thick=.1)
     # the fall down the back: a broad flat sheet, tied near its end
     rows = []
@@ -965,7 +975,7 @@ def item_hair_buns():
         loft(tie, rows, O().shade(.9, .03), cap0=False, cap1=False)
     fringe(h, (-.3, -.08, .16, .36), length=.36, width=.26)
     for x in (-1, 1):
-        lock(h, (x * .52, .4, -.38), (x * .05, -1, -.1), .6, .22, thick=.07)
+        lock(h, (x * .58, .4, -.34), (x * .05, -1, -.05), .6, .22, thick=.07)
     return o.items
 
 
@@ -984,8 +994,109 @@ def item_hair_tilted():
     return o.items
 
 
+# (23/11, François: « elles sont belles mais pas assez variées ») six more Part I silhouettes
+def item_hair_bob():
+    """Short and round to the jaw, the fringe swept to one side, the forehead free (Sakura's short cut)."""
+    o = O().Out()
+    h = o.add("Head", "Hair")
+    skull(h, front=1.6, r=(.7, .72), top=.8)
+    # the round fall all round the sides and the back, down to the jaw
+    for az in (-125, -100, -75, -50, -25, 0, 25, 50, 75, 100, 125):
+        root = scalp(az, 18, r=.64)
+        out = Vector((math.sin(math.radians(az)) * .25, -1, math.cos(math.radians(az)) * .25))
+        lock(h, root, out, .72, .46, thick=.12, bend=(-math.sin(math.radians(az)) * .1, 0, -math.cos(math.radians(az)) * .1))
+    for x in (-1, 1):
+        lock(h, (x * .62, .4, -.34), (x * .05, -1, -.02), .62, .34, thick=.1)    # beside the cheeks
+    fringe(h, (-.3, -.08, .14), y=.62, length=.4, width=.34, down=(1, -.45, -.25), spread=0)   # swept aside, over the brow
+    return o.items
+
+
+def item_hair_hime():
+    """Long and straight down the back, a level fringe over the brows, side locks to the jaw (a hime cut)."""
+    o = O().Out()
+    h = o.add("Head", "Hair")
+    skull(h, front=1.7, r=(.69, .71), top=.79)
+    fringe(h, (-.33, -.11, .11, .33), y=.58, length=.2, width=.26, down=(0, -1, -.25), spread=0)
+    for x in (-1, 1):
+        lock(h, (x * .6, .42, -.34), (0, -1, -.02), .75, .3, thick=.08, blunt=.6)          # the side locks, cut level at the jaw
+    # the long fall: straight locks side by side down the back
+    for az in (-110, -85, -60, -35, -12, 12, 35, 60, 85, 110):
+        root = scalp(az, 25, r=.64)
+        out = Vector((math.sin(math.radians(az)) * .12, -1, math.cos(math.radians(az)) * .18))
+        lock(h, root, out, 1.95 - abs(az) / 250, .5, thick=.12, bend=(0, 0, .08), blunt=.65)
+    return o.items
+
+
+def item_hair_pony():
+    """A long ponytail from the crown down the back, the bang swept to one side of the face (Ino)."""
+    o = O().Out()
+    h = o.add("Head", "Hair")
+    skull(h, r=(.66, .68), top=.75)
+    tie = o.add("Head", "Tie")
+    head_ring(tie, .6, .1, r=(.15, .15), z_off=.55)
+    rows = []
+    for (y, w, z) in ((.62, .36, .62), (.4, .46, .82), (-.2, .42, .92), (-.9, .32, .92), (-1.5, .2, .88), (-1.85, .04, .85)):
+        rows.append([Vector((math.cos(t) * w / 2, y, z + math.sin(t) * w * .3)) for t in [i / 12 * math.tau for i in range(12)]])
+    loft(h, rows, lambda p, ri: (min(1, .76 + .24 * ri / 5),) * 3)
+    lock(h, (-.15, .64, -.5), (-1, -.55, -.05), .7, .38, thick=.08, bend=(0, -.35, 0))    # the long bang, beside the eye
+    lock(h, (-.6, .42, -.34), (-.05, -1, 0), .8, .26, thick=.08)
+    return o.items
+
+
+def item_hair_mane():
+    """A wild long mane of spikes down the back (the hermit's)."""
+    o = O().Out()
+    h = o.add("Head", "Hair")
+    skull(h, r=(.7, .72), top=.8)
+    import random
+    rng = random.Random(12)
+    for k in range(16):
+        az = -100 + 200 * k / 15
+        el = rng.uniform(5, 55)
+        root = scalp(az, el)
+        out = Vector((math.sin(math.radians(az)) * .5, -.35 + el / 100, math.cos(math.radians(az)) * .9 + .3))
+        lock(h, root, out, rng.uniform(.9, 1.4), .42, thick=.12, bend=(0, -.5, .2))
+    for az in (60, 100, 140, -60, -100, -140):
+        lock(h, scalp(az, 70), (math.sin(math.radians(az)) * .4, .7, .5), .55, .38, thick=.1)
+    for x in (-1, 1):
+        lock(h, (x * .6, .4, -.32), (x * .2, -1, 0), 1.0, .3, thick=.09)
+    fringe(h, (-.25, .05, .3), y=.6, length=.24, width=.3, down=(.2, -1, -.3), spread=.1)
+    return o.items
+
+
+def item_hair_short():
+    """Short and messy all over, the tips pointing every way (Kiba)."""
+    o = O().Out()
+    h = o.add("Head", "Hair")
+    skull(h, r=(.67, .69), top=.77)
+    import random
+    rng = random.Random(21)
+    for k in range(26):
+        az, el = rng.uniform(-180, 180), rng.uniform(5, 85)
+        root = scalp(az, el, r=.6)
+        n = (root - HEAD_C).normalized()
+        lock(h, root, n + Vector((rng.uniform(-.4, .4), rng.uniform(-.2, .3), rng.uniform(-.2, .4))), rng.uniform(.28, .42), .3, thick=.08)
+    fringe(h, (-.3, -.1, .12, .32), y=.6, length=.24, width=.24, down=(0, -1, -.4), spread=.5)
+    return o.items
+
+
+def item_hair_blaze():
+    """Short spikes all thrown up and back like a flame, the temples bare (Gaara)."""
+    o = O().Out()
+    h = o.add("Head", "Hair")
+    skull(h, r=(.66, .68), top=.76, front=1.8)
+    for az, el, ln in ((0, 30, .6), (30, 35, .55), (-30, 35, .55), (60, 45, .5), (-60, 45, .5), (0, 60, .65), (40, 65, .6),
+                       (-40, 65, .6), (100, 55, .45), (-100, 55, .45), (150, 70, .55), (-150, 70, .55), (180, 50, .5)):
+        root = scalp(az, el)
+        lock(h, root, (math.sin(math.radians(az)) * .25, 1, .55), ln, .4, thick=.1, bend=(0, 0, .25))
+    fringe(h, (-.2, .05, .28), y=.62, length=.22, width=.28, down=(0, -1, -.3), spread=.3)
+    return o.items
+
+
 HAIR = {"HairSpiky": item_hair_spiky, "HairSwept": item_hair_swept, "HairBowl": item_hair_bowl, "HairLong": item_hair_long,
-        "HairHighTail": item_hair_high_tail, "HairBuns": item_hair_buns, "HairTilted": item_hair_tilted}
+        "HairHighTail": item_hair_high_tail, "HairBuns": item_hair_buns, "HairTilted": item_hair_tilted,
+        "HairBob": item_hair_bob, "HairHime": item_hair_hime, "HairPony": item_hair_pony, "HairMane": item_hair_mane,
+        "HairShort": item_hair_short, "HairBlaze": item_hair_blaze}
 
 
 # model -> builder
@@ -1076,6 +1187,12 @@ CATALOG = {
     "HairHighTail": ("hair", "HairHighTail", "High Tail", {"Hair": C(36, 34, 40), "Tie": C(150, 40, 40)}),
     "HairBuns": ("hair", "HairBuns", "Twin Buns", {"Hair": C(80, 52, 36), "Tie": C(200, 60, 60)}),
     "HairTilted": ("hair", "HairTilted", "Tilted Spikes", {"Hair": C(200, 204, 210)}),
+    "HairBob": ("hair", "HairBob", "Short Bob", {"Hair": C(236, 150, 170)}),
+    "HairHime": ("hair", "HairHime", "Hime Cut", {"Hair": C(40, 40, 70)}),
+    "HairPony": ("hair", "HairPony", "Long Ponytail", {"Hair": C(240, 214, 120), "Tie": C(110, 60, 140)}),
+    "HairMane": ("hair", "HairMane", "Wild Mane", {"Hair": C(230, 230, 226)}),
+    "HairShort": ("hair", "HairShort", "Messy Short", {"Hair": C(66, 46, 36)}),
+    "HairBlaze": ("hair", "HairBlaze", "Flame Spikes", {"Hair": C(176, 52, 40)}),
     # capes
     "CapeShortRed": ("cape", "CapeShort", "Short Cape", {"Cape": C(196, 44, 44), "Trim": C(236, 200, 80)}),
     "CapeLongWhite": ("cape", "CapeLong", "Long Cape", {"Cape": C(236, 232, 222), "Trim": C(196, 60, 40)}),

@@ -21,7 +21,7 @@ Folk.SKIN={C(240,204,170),C(226,184,146),C(204,156,118),C(176,128,96),C(246,214,
 Folk.HAIR={C(30,28,32),C(60,44,36),C(96,70,48),C(40,36,44),C(140,120,96),C(176,176,180)}
 Folk.TOPS={"Tunic","Haori","Gi","Turtleneck","SashTop","Tunic","ChuninVest"}
 Folk.BOTTOMS={"Pants","Hakama","WrapSkirt","Pants","LongShorts"}
-Folk.HAIRS={"HairBowl","HairLong","HairBuns","HairHighTail","HairSwept",false}
+Folk.HAIRS={"HairBowl","HairLong","HairBuns","HairHighTail","HairSwept","HairBob","HairHime","HairShort","HairPony",false}
 Folk.KITS={"Leaf","Legion","Lion","Copycat","GentleFist","Sand"}
 
 -- A tiny deterministic rng (the same village for everyone, every time).

@@ -63,6 +63,10 @@ La DESIGN n'a rien poussé depuis la minicarte (`f612894d`).
 - **Jardinets** (`konoha_layout.variety_pass`) : 70 arbres, parfois avec une lanterne de pierre, dans les vides entre les maisons. Ce sont des props `tree` et `stone_lantern` de ton builder. Le tirage du plan validé n'est pas touché et aucune maison ne bouge.
 - **Tours (à toi)** : le modèle `tower_house` est fait (13 × 13, 28 de haut : 4 étages, balcon, enseigne haute, réservoir au sommet, dans `konoha_houses`). La passe peut transformer 14 lots en tours, une par morceau de village, jamais à moins de 34 studs d'un anneau de la course ou d'un point de `HubMap`. Elle attend que `Hub.LAYOUT_STANDIN` connaisse la tour (`tests/Hub.spec` veut une doublure pour chaque maison). Une ligne suffit, par exemple `tower_house={"HouseFlat_22x18x3",22,24,18},`. Ensuite je relance `konoha_layout.py` et l'export, et les tours apparaissent.
 - **Coiffures refaites** : des mèches plates et larges, plus volumineuses que le crâne, foncées à la racine, et le crâne fermé au-dessus de la ligne des cheveux. Mêmes ids, même slot. `OutfitMeshData*` et `OutfitMeshes` ont été régénérés.
+- **23/11, 1 h, François : « cheveux et bandanas sur les yeux ; belles mais pas assez variées »** :
+  - plus rien devant les yeux (une garde dans `lock()`) ;
+  - bandeaux et bandanas remontés sur le front (`BROW` 0,40) ;
+  - 6 coupes de plus au Catalog, slot `hair`, 700 Ryō : `HairBob`, `HairHime`, `HairPony`, `HairMane`, `HairShort`, `HairBlaze`. Elles sont à peindre avec `hairColor` comme les autres, rien d'autre à faire de ton côté.
 
 **Décors** (`tools/blender/konoha_landmarks.py`, fusionné dans `konoha_models.py`) : 17 repères aux noms du plan : `hokage_residence`, `hospital`, `academy_annex`, `exam_hall`, `exam_hall_wing`, `ichiraku`, `great_gate`, `hyuga_hall`, `hyuga_gate`, `uchiha_police`, `naka_shrine`, `torii`, `pier`, `water_tower`, `market_hall`, `memorial_stone`, `academy_tree`. Exportés dans `Client/HubMeshData*` (43 morceaux), avec les maisons.
 - `konoha_models write` n'exporte un modèle des maisons ou des repères que si son nom est dans `KonohaLayout` ou `HubDress.NAMES` : le test du Hub reste vrai.
