@@ -705,7 +705,8 @@ def farmhouse():
     slope = half / math.cos(p)
     L = d + 3.0
     for s in (1, -1):
-        km.box(tiles, T(s * half / 2, h + rise / 2 + .6, 0) @ Rz_(-s * p), (slope + .2, 1.4, L), lambda q, f: km.jitter(thatch, q, .14, 1.2))
+        km.box(tiles, T(s * half / 2, h + rise / 2 + .6, 0) @ Rz_(-s * p), (slope + .2, 1.4, L), lambda q, f: km.jitter(thatch, q, .14, 1.2),
+               cell=3.0)
     km.box(tiles, T(0, h + rise + .9, 0), (1.6, 1.0, L + .4), rgb(96, 80, 58))
     for k in range(5):   # the ridge's crossed binding logs
         km.box(timber, T(0, h + rise + 1.4, -L / 2 + 1 + k * (L - 2) / 4) @ Rz_(math.radians(35)), (2.6, .3, .3), WOOD_EDO)
