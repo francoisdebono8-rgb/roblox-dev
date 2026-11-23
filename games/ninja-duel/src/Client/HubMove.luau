@@ -106,6 +106,12 @@ function Move.landed(m)
 	m.climb=nil;m.climbUsed=false;m.leapUsed=false
 end
 
+-- (pure) A surface the walker runs up: a NinjaWall, upright, and not the
+-- village's own wall (NinjaNoClimb, Server/Hub: the edge of the village).
+function Move.climbable(part,normal)
+	if not part or part:GetAttribute("NinjaWall")~=true or part:GetAttribute("NinjaNoClimb")==true then return false end
+	return math.abs(normal.Y)<.3
+end
 -- The ray of a frame: the wall ahead at the chest (only parts tagged
 -- NinjaWall, in the village).
 local params
@@ -116,7 +122,7 @@ local function look(character,root,direction)
 	if flat.Magnitude<.1 then return nil end
 	flat=flat.Unit
 	local hit=workspace:Raycast(root.Position,flat*Move.CLIMB_REACH,params)
-	if not (hit and hit.Instance:GetAttribute("NinjaWall") and math.abs(hit.Normal.Y)<.3) then return nil end
+	if not (hit and Move.climbable(hit.Instance,hit.Normal)) then return nil end
 	return {normal=Vector3.new(hit.Normal.X,0,hit.Normal.Z).Unit,part=hit.Instance}
 end
 

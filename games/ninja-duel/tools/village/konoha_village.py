@@ -77,6 +77,13 @@ DROP_OK = 16.0           # a drop he lands without a stop
 ALLEY = (6.5, 9.5)       # a back alley: a ninja crosses it in one bound, a walker walks it
 ROW_GAP = (0.8, 2.6)     # houses of one row: side by side, their roofs one surface to run on
 STEP_MAX = 7.0           # the skyline: two neighbours of a row differ by a step at most
+CRACK = (1.0, 3.0)       # (23/11, the OUTILLEUR's bot stuck between the hospital and a tower, 1.9
+                         # apart) beside a landmark a house is flush (under CRACK[0]: nobody falls
+                         # in) or a lane away (over CRACK[1], 3.9 studs in the game: walked
+                         # through): never a crack between, a body wedges in it
+LAMP_CLEAR = 3.5         # (23/11, the bot's one roof missed: a machiya behind a street lamp 2.7
+                         # from its wall) a lamp before a wall to run up stands this far from it,
+                         # or before the gap between two houses
 
 # The models (tools/blender/konoha_houses.py), their own size, and how far a lot may stretch
 # one (Server/Hub fits the model to its lot: DressScale): a little, or it shows.
@@ -139,6 +146,7 @@ class Village(K.Plan):
         self.with_bridges = bridges
         self.with_infill = infill
         self.bridges = []      # dict(x0, z0, x1, z1, top, width)
+        self.fills = []        # dict(x0, z0, x1, z1, top): a crack beside a landmark walled up
         self.doors = []        # the strip before each door: kept clear (a way out)
         self.decks = [dict(x=x, z=z, w=w, d=d, top=t) for x, z, w, d, t in K.ROOF_DECKS]
 
@@ -379,6 +387,130 @@ class Village(K.Plan):
                 return False
         return True
 
+    def landmark_clear(self):
+        """Beside a landmark a house is flush or a lane away (CRACK). One in between is stretched up to
+        the landmark, or narrowed away from it to a lane, whichever moves its wall least within
+        the model's size (the infill's 0.8 to STRETCH) and touches no other lot; neither
+        possible, the crack is walled up (`fills`, Server/Hub's Fill) and the house stays."""
+        marks = [m for m in self.buildings if m["landmark"]]
+
+        def bad(r):
+            return any(CRACK[0] < gap_between(r, m["rect"]) < CRACK[1] for m in marks)
+
+        def fits(b, r):
+            ex, ez = r[2] - r[0], r[3] - r[1]
+            w, d = (ex, ez) if int(b["yaw"]) % 180 == 0 else (ez, ex)
+            mw, md = MODELS[b["model"]]["w"], MODELS[b["model"]]["d"]
+            return .8 * mw <= w <= STRETCH[1] * mw and .8 * md <= d <= STRETCH[1] * md
+
+        def options(r, m):
+            out = []
+            lo = m["rect"]
+            # toward the landmark (flush) or away from it (a lane), on each axis
+            if r[2] <= lo[0]:
+                out += [(r[0], r[1], lo[0] - CRACK[0] + .2, r[3]), (r[0], r[1], lo[0] - CRACK[1] - .1, r[3])]
+            if r[0] >= lo[2]:
+                out += [(lo[2] + CRACK[0] - .2, r[1], r[2], r[3]), (lo[2] + CRACK[1] + .1, r[1], r[2], r[3])]
+            if r[3] <= lo[1]:
+                out += [(r[0], r[1], r[2], lo[1] - CRACK[0] + .2), (r[0], r[1], r[2], lo[1] - CRACK[1] - .1)]
+            if r[1] >= lo[3]:
+                out += [(r[0], lo[3] + CRACK[0] - .2, r[2], r[3]), (r[0], lo[3] + CRACK[1] + .1, r[2], r[3])]
+            return out
+
+        keep, fixed, gone, filled = [], 0, 0, 0
+        for b in self.buildings:
+            if b["landmark"] or not bad(b["rect"]):
+                keep.append(b)
+                continue
+            r0 = b["rect"]
+            others = [o["rect"] for o in self.buildings if o is not b]
+            best = None
+            for m in marks:
+                if not (CRACK[0] < gap_between(r0, m["rect"]) < CRACK[1]):
+                    continue
+                for r in options(r0, m):
+                    if r[2] - r[0] < 4 or r[3] - r[1] < 4 or bad(r) or not fits(b, r):
+                        continue
+                    if any(K.overlap(r, o, ROW_GAP[0] - .05) for o in others if not any(o is mm["rect"] for mm in marks)):
+                        continue
+                    if any(K.overlap(r, mm["rect"]) for mm in marks):
+                        continue
+                    cost = sum(abs(r[i] - r0[i]) for i in range(4))
+                    if best is None or cost < best[0]:
+                        best = (cost, r)
+            if best is None:
+                # held by its neighbours: the crack is walled up (a plaster infill between the
+                # two, the lower's height: Server/Hub's Fill), the house stays
+                for m in marks:
+                    if CRACK[0] < gap_between(r0, m["rect"]) < CRACK[1]:
+                        self.fills.append(self.fill_between(r0, b["h"], m))
+                keep.append(b)
+                filled += 1
+                continue
+            r = best[1]
+            ex, ez = r[2] - r[0], r[3] - r[1]
+            b["x"], b["z"] = round((r[0] + r[2]) / 2, 1), round((r[1] + r[3]) / 2, 1)
+            b["w"], b["d"] = (round(ex, 1), round(ez, 1)) if int(b["yaw"]) % 180 == 0 else (round(ez, 1), round(ex, 1))
+            b["rect"] = rect_of(b["x"], b["z"], b["w"], b["d"], b["yaw"])
+            fixed += 1
+            if bad(b["rect"]):
+                gone += 1
+                continue
+            keep.append(b)
+        self.buildings = keep
+        self.cracks = dict(fixed=fixed, filled=filled, removed=gone)
+        return self.cracks
+
+    @staticmethod
+    def fill_between(r, h, m):
+        """The block that walls up the crack between a house's rect `r` (height h) and a
+        landmark: the space between them on the axes they face across, as high as the lower."""
+        lo = m["rect"]
+        x0, x1 = (r[2], lo[0]) if r[2] <= lo[0] else (lo[2], r[0]) if r[0] >= lo[2] else (max(r[0], lo[0]), min(r[2], lo[2]))
+        z0, z1 = (r[3], lo[1]) if r[3] <= lo[1] else (lo[3], r[1]) if r[1] >= lo[3] else (max(r[1], lo[1]), min(r[3], lo[3]))
+        return dict(x0=round(x0, 1), z0=round(z0, 1), x1=round(x1, 1), z1=round(z1, 1), top=round(min(h, m["h"]), 1))
+
+    def lamps_clear(self):
+        """A lamp right before the middle of a house's wall (the wall a ninja runs at): slid along
+        its street, up to 10, to stand LAMP_CLEAR from every wall or at the seam between two
+        houses (1.5 from a wall's end); none on its stretch, it stays."""
+        def exact(b):   # the rect as the game builds it (rect_of rounds to a tenth)
+            ex, ez = (b["w"], b["d"]) if int(b["yaw"]) % 180 == 0 else (b["d"], b["w"])
+            return (b["x"] - ex / 2, b["z"] - ez / 2, b["x"] + ex / 2, b["z"] + ez / 2)
+        houses = [exact(b) for b in self.buildings if not b["landmark"]]
+        moved = 0
+
+        def clear(x, z, along_x=None):
+            for r in houses:
+                if gap_between((x - .3, z - .3, x + .3, z + .3), r) >= LAMP_CLEAR:
+                    continue
+                # the wall it stands before: the face it is out from (x when it is beyond an end
+                # in z, the X-long front), its place along that face
+                dx = max(0.0, max(x - .3, r[0]) - min(x + .3, r[2]))
+                dz = max(0.0, max(z - .3, r[1]) - min(z + .3, r[3]))
+                a, lo, hi = (x, r[0], r[2]) if dz >= dx else (z, r[1], r[3])
+                if lo + 1.4 < a < hi - 1.4:     # (1.5 in the game plan's test: a margin)
+                    return False
+            return True
+        for p in self.props:
+            if p["kind"] != "lamp":
+                continue
+            street = next((st for st in K.STREETS if K.overlap((p["x"], p["z"], p["x"], p["z"]), K.street_rect(st))), None)
+            if street is None:
+                continue
+            r = K.street_rect(street)
+            along_x = street[2][1] == street[3][1]
+            if clear(p["x"], p["z"], along_x):
+                continue
+            for step in (1, -1, 2, -2, 3, -3, 4, -4, 5, -5, 6, -6, 7, -7, 8, -8, 9, -9, 10, -10):
+                x, z = (p["x"] + step, p["z"]) if along_x else (p["x"], p["z"] + step)
+                if r[0] + 1 <= x <= r[2] - 1 and r[1] + 1 <= z <= r[3] - 1 and clear(x, z, along_x):
+                    p["x"], p["z"] = round(x, 1), round(z, 1)
+                    moved += 1
+                    break
+        self.lamps_moved = moved
+        return moved
+
     def props_pass(self):
         super().props_pass()
         # (the old pass's backyards: a crate in every gap a scattered house left) the rows
@@ -442,9 +574,11 @@ class Village(K.Plan):
         self.back()
         if self.with_infill:
             self.infill()
+        self.landmark_clear()
         self.smooth()
         self.props_pass()
         self.variety()
+        self.lamps_clear()
         self.bridge_pass()
         self.race = race_route(self)
         return self
@@ -864,6 +998,12 @@ def to_luau(plan):
              "M.Bridges={"]
     for br in plan.bridges:
         extra.append("\t{%s}," % ",".join(f(br[k]) for k in ("x0", "z0", "top0", "x1", "z1", "top1", "width")))
+    extra.append("}")
+    extra.append("-- (23/11, the OUTILLEUR's bot stuck between the hospital and a tower) A crack beside a")
+    extra.append("-- landmark too narrow to walk, walled up: {x0, z0, x1, z1, top} (Server/Hub's Fill).")
+    extra.append("M.Fills={")
+    for fl in getattr(plan, "fills", []):
+        extra.append("\t{%s}," % ",".join(f(fl[k]) for k in ("x0", "z0", "x1", "z1", "top")))
     extra.append("}")
     if plan.race:
         r = plan.race

@@ -201,6 +201,11 @@ local function wall(parent,ax,az,bx,bz,height,color,cap)
 	local cf=CFrame.lookAt(O+(a+b)/2+Vector3.new(0,height/2,0),O+b+Vector3.new(0,height/2,0))
 	local w=part(parent,"Wall",Vector3.new(2,height,d.Magnitude),cf,color,Enum.Material.Plaster)
 	deco(parent,"WallCap",Vector3.new(3,.8,d.Magnitude+1),cf*CFrame.new(0,height/2+.4,0),cap or C.roofTile)
+	-- (23/11, the OUTILLEUR's bot: the 46-stud village wall run up and over,
+	-- out of the village) The village's wall is a wall the fighters still run
+	-- on in a street duel, but the walker does not climb it (Client/HubMove
+	-- climbable): it is the village's edge, not a way out.
+	if high then w:SetAttribute("NinjaNoClimb",true) end
 	return w
 end
 local function crest(parent,cf)
@@ -850,6 +855,13 @@ function Hub.buildLayout(f)
 		-- (a hair over the roofs it meets: two tops at one height flicker, the prover)
 		height+=.2
 		if ww>=dd then wall(f,x-ww/2,z,x+ww/2,z,height,C.plasterWarm) else wall(f,x,z-dd/2,x,z+dd/2,height,C.plasterWarm) end
+	end
+	-- (23/11, the OUTILLEUR's bot stuck in a crack between the hospital and a
+	-- tower) a crack beside a landmark too narrow to walk, walled up
+	-- (tools/village: its rule; most are closed by fitting the house instead)
+	for _,fl in Layout.Fills or {} do
+		local x0,z0,x1,z1,top=fl[1],fl[2],fl[3],fl[4],fl[5]
+		part(f,"Fill",Vector3.new(math.max(x1-x0,.4),top,math.max(z1-z0,.4)),rel((x0+x1)/2,top/2,(z0+z1)/2),C.plasterWarm,Enum.Material.Plaster)
 	end
 	for _,deck in Layout.RoofDecks do
 		local x,z,w,d,top=deck[1],deck[2],deck[3],deck[4],deck[5]

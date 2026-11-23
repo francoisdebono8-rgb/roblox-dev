@@ -27,6 +27,70 @@ end
 -- landmarks a master stands on or in by design
 local STOOD_ON={pier=true,torii=true,exam_hall=true,exam_hall_wing=true}
 
+-- (23/11, the OUTILLEUR's bot stuck 1.9 studs from the hospital, against a tower) beside a
+-- landmark a house is flush or a lane away (tools/village CRACK), or the crack is walled up
+-- (K.Fills): never a crack a body wedges in
+test("no crack beside a landmark: a house flush, a lane away, or the crack walled up",function()
+	local function gap(ax0,az0,ax1,az1,bx0,bz0,bx1,bz1)
+		local dx=math.max(0,math.max(ax0,bx0)-math.min(ax1,bx1))
+		local dz=math.max(0,math.max(az0,bz0)-math.min(az1,bz1))
+		return math.sqrt(dx*dx+dz*dz)
+	end
+	local checked=0
+	for i,h in K.Buildings do
+		if h[9]==nil then
+			local hx0,hz0,hx1,hz1=rect(h)
+			for _,l in K.Buildings do
+				if l[9]~=nil then
+					local lx0,lz0,lx1,lz1=rect(l)
+					local g=gap(hx0,hz0,hx1,hz1,lx0,lz0,lx1,lz1)
+					if g<6 then checked+=1 end
+					if g>1 and g<3 then
+						local walled=false
+						for _,f in K.Fills or {} do
+							if gap(f[1],f[2],f[3],f[4],hx0,hz0,hx1,hz1)<.05 and gap(f[1],f[2],f[3],f[4],lx0,lz0,lx1,lz1)<.05 then walled=true end
+						end
+						assert(walled,("house %d (%s at %s,%s) %.1f from %s: a crack"):format(i,h[1],h[2],h[3],g,l[9]))
+					end
+				end
+			end
+		end
+	end
+	assert(checked>=10,"few houses beside a landmark: "..checked)
+end)
+
+-- (23/11, the bot's one roof missed: a machiya behind a street lamp 2.7 from its wall) a lamp
+-- stands 3.5 from a house's wall, or at the seam between two houses: never before the middle of
+-- a wall a ninja runs at (tools/village LAMP_CLEAR)
+test("the lamps: at the seams between houses, never before the middle of a wall",function()
+	local lamps=0
+	for _,p in K.Props do
+		if p[1]=="lamp" then
+			for _,s in K.Streets do
+				local a0,b0,a1,b1=streetRect(s)
+				if inRect(p[2],p[3],a0,b0,a1,b1) then
+					lamps+=1
+					for i,b in K.Buildings do
+						if b[9]==nil then
+							local x0,z0,x1,z1=rect(b)
+							local dx=math.max(0,math.max(p[2]-.3,x0)-math.min(p[2]+.3,x1))
+							local dz=math.max(0,math.max(p[3]-.3,z0)-math.min(p[3]+.3,z1))
+							if math.sqrt(dx*dx+dz*dz)<3.5 then
+								-- the wall it stands before: the face it is out from
+								local front=dz>=dx
+								local a,lo,hi=if front then p[2] else p[3],if front then x0 else z0,if front then x1 else z1
+								assert(not(a>lo+1.5 and a<hi-1.5),("the lamp at %s,%s stands before house %d (%s)"):format(p[2],p[3],i,b[1]))
+							end
+						end
+					end
+					break
+				end
+			end
+		end
+	end
+	assert(lamps>=60,"few street lamps: "..lamps)
+end)
+
 test("houses: off the streets and the open places, apart from each other",function()
 	local n=0
 	for i,b in K.Buildings do

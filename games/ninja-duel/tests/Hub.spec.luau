@@ -381,6 +381,28 @@ test("a street duel and the village: walls to run on, props that break, all put 
 		if d:IsA("Model") and d:GetAttribute("Dress")=="HouseShop_24x20x2" and not house then house=d end
 	end
 	assert(house and house:FindFirstChild("Walls"):GetAttribute("NinjaWall"),"a house's walls are not a wall to run on")
+	-- (23/11, the OUTILLEUR's bot) the village's wall: run on in a duel, never
+	-- climbed out of the village by the walker
+	local Move=H.load("Client/HubMove")
+	for _,v in {{folder,2},{layoutFolder,4}} do
+		local edge=0
+		for _,u in v[1]:GetDescendants() do
+			if u:IsA("Model") and u:GetAttribute("Dress")=="VillageWall" then
+				local w=u:FindFirstChild("Wall")
+				assert(w and w:GetAttribute("NinjaWall") and w:GetAttribute("NinjaNoClimb"),"the village wall is climbable, or not a duel's wall")
+				assert(not Move.climbable(w,Vector3.new(1,0,0)),"the walker climbs out over the village wall")
+				edge+=1
+			end
+		end
+		assert(edge>=v[2],"few village wall pieces: "..edge)
+	end
+	assert(Move.climbable(house:FindFirstChild("Walls"),Vector3.new(1,0,0)),"a house's walls are not run up")
+	assert(not Move.climbable(house:FindFirstChild("Walls"),Vector3.new(0,1,0)),"a flat top is run up")
+	for _,u in layoutFolder:GetDescendants() do
+		if u:IsA("Model") and u:GetAttribute("Dress")=="CompoundWall" and u:FindFirstChild("Wall") then
+			assert(not u:FindFirstChild("Wall"):GetAttribute("NinjaNoClimb"),"a compound's low wall is barred")
+		end
+	end
 	assert(walls>=60,"few walls to run on: "..walls)
 	assert(#props>=10,"few props break: "..#props)
 	for _,d in folder:GetDescendants() do
