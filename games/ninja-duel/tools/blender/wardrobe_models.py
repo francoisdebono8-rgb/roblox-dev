@@ -498,7 +498,7 @@ def item_chunin_vest():
 
 def item_gi():
     o = O().Out()
-    O().tunic_body(o, "Cloth", lower_h=.9, sleeve=.9, seed=3)
+    O().tunic_body(o, "Cloth", lower_h=.9, sleeve=.9, seed=3, trim="Cloth", belt=None, skirt=False)
     belt = o.add("LowerTorso", "Belt")
     O().ribbed(belt, "LowerTorso", .05, .65, pad=.14, ribs=1, depth=.02, rings_per=4)
     for sx in (-1, 1):

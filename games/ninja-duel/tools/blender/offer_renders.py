@@ -93,10 +93,14 @@ def body_pieces():
     return out
 
 
+BODY = [(1.0, 1.0, 1.0)]   # the body's scale (width, height, depth), as OutfitDress scales by body.Size/REF
+
+
 def place(v, part, yaw):
     """A vertex of `part` (Blender frame) moved to the part's rest place, the body turned `yaw`."""
     c = OM.REST[part]
-    p = Vector((v.x + c[0], v.y - c[2], v.z + c[1]))
+    f = BODY[0]
+    p = Vector(((v.x + c[0]) * f[0], (v.y - c[2]) * f[2], (v.z + c[1]) * f[1]))
     return Matrix.Rotation(yaw, 3, "Z") @ p
 
 
@@ -348,5 +352,40 @@ def run(mode, dst, ids=None):
 # (the bundle of the 8 prodigies' outfits is composed from their offers: offer_bundle.py)
 
 
+# (23/11, passe commune 1) The starting outfits a new player composes (base pieces only), each
+# on the three bodies OutfitDress fits (thin, wide, tall), front row then back row.
+STARTERS = {
+    "Navy": ["TopTunicNavy", "BottomPantsDark", "ArmsWraps", "FeetSandals", "HeadbandBlue"],
+    "Black": ["TopTunicBlack", "BottomPantsSand", "ArmsGuards", "FeetBlack", "HeadbandBlue"],
+    "Forest": ["TopTunicGreen", "BottomShorts", "ArmsWraps", "FeetSandals", "HeadbandBlue"],
+    "Collar": ["TopHighCollar", "BottomPantsDark", "ArmsGuards", "FeetBlack", "HeadbandBlue"],
+    "Sleeveless": ["TopSleeveless", "BottomShorts", "ArmsWraps", "FeetSandals", "HeadbandBlue"],
+}
+
+
+def starters(dst, names=None):
+    os.makedirs(dst, exist_ok=True)
+    ROWS.update({i: rest for i, _, rest in catalog(every=True)})
+    for name, ids in STARTERS.items():
+        if names and name not in names:
+            continue
+        clear()
+        objs = []
+        looks = [(i, colors(ROWS[i])) for i in ids]
+        for row, yaw in enumerate((0.0, math.pi)):
+            for k, (tag, f) in enumerate(OM.BODIES):
+                BODY[0] = f
+                part = avatar(looks, yaw)
+                for o in part:
+                    o.location.x += (1 - k) * 5.6   # +x is on the left of the picture
+                    o.location.z += (1 - row) * 7.6
+                objs += part
+        BODY[0] = (1.0, 1.0, 1.0)
+        shoot(objs, os.path.join(dst, "starter_%s.png" % name), size=(1024, 1024), view=(0, 1.0, .08), fill=.98)
+        print("STARTER", name, flush=True)
+
+
+if __name__ == "__main__" and len(sys.argv) > 2 and sys.argv[1] == "starters":
+    starters(sys.argv[2], set(sys.argv[3:]) or None)
 if __name__ == "__main__" and len(sys.argv) > 2 and sys.argv[1] in ("offers", "review"):
     run(sys.argv[1], sys.argv[2], set(sys.argv[3:]) or None)

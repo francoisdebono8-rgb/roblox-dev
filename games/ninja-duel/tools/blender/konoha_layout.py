@@ -149,6 +149,13 @@ HOUSES = {
     "clan_house": (1600, 9, (18, 26), (14, 20), "hall on a stone base, engawa, shoji, hip roof", (22, 17)),
     # (22/11) never drawn by the MIX: the variety pass turns some lots into towers
     "tower_house": (2000, 28, (12, 20), (12, 18), "four-floor narrow block, balcony, tall sign, tank up high", (13, 13)),
+    # (23/11, passe commune 1) the Edo houses of the new town (not in the MIX: the DEV's new plan
+    # places them; Tsumago-juku, Ouchi-juku, Kyoto machiya, Shirakawa-go)
+    "edo_townhouse": (2000, 12, (14, 22), (14, 20), "Edo townhouse: lattice front, noren, deep eave, low upper floor", (18, 16)),
+    "edo_inn": (2000, 13, (20, 30), (14, 22), "post-town inn: shoji front, balcony with railing, hip roof", (24, 18)),
+    "kura": (1400, 10, (10, 14), (8, 12), "white storehouse, namako base, heavy tiled gable", (12, 10)),
+    "tea_shop": (1600, 7, (12, 20), (12, 16), "tea stand: counter, awning on poles, bench, parasol", (16, 14)),
+    "farmhouse": (1800, 5, (16, 24), (12, 20), "gassho farmhouse: steep thatch nearly to the ground", (20, 16)),
 }
 MIX = {
     "Residences": [("machiya", 4), ("small_house", 3), ("tank_house", 3), ("apartment", 1)],

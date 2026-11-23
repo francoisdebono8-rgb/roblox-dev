@@ -1420,6 +1420,8 @@ def write(src_dir, limit=110000):
     for name, fn in MODELS.items():
         if name in konoha_landmarks.PROPS_OUT:      # (23/11) the client's props live in PropMeshData
             continue
+        # (23/11, passe commune 1) a house ships once the plan names it (Hub.spec: every mesh has a place);
+        # the Edo houses wait for the DEV's new town
         if (name in konoha_houses.MODELS or name in konoha_landmarks.MODELS) and '"%s"' % name not in dress and "%s=" % name not in dress:
             print("not in HubDress.NAMES yet:", name)
             continue
