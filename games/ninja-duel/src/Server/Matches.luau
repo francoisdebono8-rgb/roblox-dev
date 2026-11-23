@@ -758,6 +758,11 @@ function Matches:request(player,payload)
 		elseif s.combat then self:snapshot(player,s) end
 		return
 	end
+	-- (23/11, passe 1) a rogue's racket answered: pay, run or fight (Server/Thugs)
+	if action=="Racket" then
+		if type(payload.id)=="string" and type(payload.choice)=="string" then pcall(require(script.Parent.Thugs).answer,player,payload.id,payload.choice) end
+		return
+	end
 	-- (23/11, step 5) the screen the client is on (the test place's record)
 	if action=="Screen" then require(script.Parent.TestLog).clientScreen(s,payload.name);return end
 	-- (23/11, step 5, DEC-049) REPORT A PROBLEM (the test place), any phase

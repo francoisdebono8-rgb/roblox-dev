@@ -899,6 +899,35 @@ test("the rogue ninjas: the toll or all he has, the fight's purse, never below n
 	local r=S.Commands.payRyo(p,{amount=30})
 	assert(p.wallet.ryo==0 and r.paid==25 and S.validate(p),"paid more than he had")
 	assert(not pcall(S.Commands.payRyo,p,{amount=0}),"a toll of nothing")
+	-- (23/11, passe 1) the DESIGN's racket panel: close, he is stopped; run
+	-- far enough, he is let go; no answer, the fuse; caught running, a fight
+	local offer=Thugs.offer("market",12)
+	assert(offer.id=="market" and offer.ask==Thugs.TOLL and offer.win==Thugs.REWARD and offer.lose==12 and offer.seconds==Thugs.FUSE,"the panel's offer")
+	local V=H.roblox.Vector3
+	local function walker(x) local root={Position=V.new(x,0,0)};return {Parent=true,Character={FindFirstChild=function(_,n) return if n=="HumanoidRootPart" then root else nil end},root=root} end
+	local fights={}
+	local saved=Thugs.matches
+	Thugs.matches={thugFight=function(_,player) table.insert(fights,player);return true end}
+	Thugs.live={}
+	local function rogue(key) local e={root={Position=V.zero},street={key=key},kit="Leaf"};Thugs.live[key]=e;return e end
+	local function walking() return true end
+	local a,b,c=walker(10),walker(12),walker(13)
+	rogue("market")
+	Thugs.racked={}
+	Thugs.tick(100,{a},walking)
+	assert(Thugs.pending[a] and Thugs.pending[a].entry.street.key=="market","close by: not stopped")
+	assert(Thugs.answer(a,"market","run") and Thugs.pending[a].run,"the run")
+	a.root.Position=V.new(Thugs.ESCAPE+1,0,0)
+	Thugs.tick(101,{a},walking)
+	assert(Thugs.pending[a]==nil and Thugs.racked[a]==101 and #fights==0,"far away: still held")
+	rogue("market");Thugs.tick(102,{b},walking)
+	Thugs.tick(102+Thugs.FUSE,{b},walking)
+	assert(fights[1]==b and Thugs.pending[b]==nil,"no answer: no fight at the fuse")
+	rogue("market");Thugs.tick(200,{c},walking)
+	Thugs.answer(c,"market","run");Thugs.tick(200+Thugs.RUN_TIME,{c},walking)
+	assert(fights[2]==c,"caught running: no fight")
+	assert(not Thugs.answer(c,"market","pay"),"an answer with nothing asked")
+	Thugs.matches=saved;Thugs.live={}
 end)
 
 print(string.format("NinjaDuel shop and Ryō (13/11): %d PASS",passed))

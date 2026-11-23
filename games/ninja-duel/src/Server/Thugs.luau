@@ -3,13 +3,16 @@
 -- racketter ») Rogue ninjas who rack the walkers of Konoha.
 --
 -- A few of them stand near the village's street-duel places. A walker who
--- comes close is stopped: "YOUR RYŌ OR A FIGHT". Two prompts:
---   FIGHT    a street duel against the AI, right there (Matches:thugFight);
+-- comes close (STOP) is stopped: "YOUR RYŌ OR A FIGHT", the DESIGN's racket
+-- panel (Client/RacketPanel, sent on the remote NinjaDuel.Racket; his answer
+-- comes back as the action "Racket" {id, choice}):
+--   pay      he pays the toll (TOLL, or all he has); the rogue lets him go
+--   run      he has RUN_TIME seconds to be ESCAPE studs away; caught, a fight
+--   fight    a street duel against the AI, right there (Matches:thugFight);
 --            won, he takes their purse (REWARD); lost, he leaves some (LOSS)
---   PAY      he pays the toll (TOLL, or all he has); the rogue lets him go
--- Walking away is the third answer. A rogue paid or beaten leaves, and
--- another comes back elsewhere a little later. Once racked, a walker is left
--- alone for a while (COOLDOWN).
+-- No answer before the fuse (FUSE): the rogue swings, a fight. A rogue paid or
+-- beaten leaves, and another comes back elsewhere a little later. Once
+-- racked, a walker is left alone for a while (COOLDOWN).
 -- The rogue's model is a duel rig in a dark coat until the ANIMATEUR's own
 -- (Passe 1, ANIMATEUR: les voyous) replaces it.
 local Thugs={}
@@ -23,6 +26,10 @@ Thugs.KITS={"Lion","Leaf","Mirage","Sand"}
 Thugs.LEVEL="easy"
 Thugs.NAME="ROGUE NINJA"
 Thugs.LINE="YOUR RYŌ OR A FIGHT"
+Thugs.STOP=14          -- studs: he is stopped this close
+Thugs.FUSE=8           -- seconds to answer before the rogue swings
+Thugs.RUN_TIME=4       -- a run: this long to get away
+Thugs.ESCAPE=34        -- studs from the rogue: away
 
 -- (pure) What a racket costs him: the toll, or all he has.
 function Thugs.toll(ryo)
@@ -33,6 +40,13 @@ function Thugs.purse(won,ryo)
 	if won then return Thugs.REWARD end
 	return -math.clamp(math.floor(ryo or 0),0,Thugs.LOSS)
 end
+-- (pure) What the racket panel shows (Client/RacketPanel's contract).
+function Thugs.offer(id,ryo)
+	return {id=id,name=Thugs.NAME,line=Thugs.LINE,ask=Thugs.TOLL,purse=Thugs.REWARD,win=Thugs.REWARD,
+		lose=math.clamp(math.floor(ryo or 0),0,Thugs.LOSS),ryo=math.floor(ryo or 0),seconds=Thugs.FUSE}
+end
+-- (pure) A run decided: escaped when he is far enough from the rogue.
+function Thugs.escaped(distance) return distance>=Thugs.ESCAPE end
 -- (pure) Whether a rogue racks this walker now.
 function Thugs.ready(last,now)
 	return last==nil or now-last>=Thugs.COOLDOWN
@@ -85,15 +99,6 @@ local function label(root)
 	gui.Parent=root
 	return gui
 end
-local function prompt(root,name,text,key,pad,order)
-	local p=Instance.new("ProximityPrompt")
-	p.Name=name;p.ActionText=text;p.ObjectText=Thugs.NAME
-	p.HoldDuration=0;p.MaxActivationDistance=12;p.RequiresLineOfSight=false
-	p.KeyboardKeyCode=key;p.GamepadKeyCode=pad;p.UIOffset=Vector2.new(0,order*72)
-	p:SetAttribute("NinjaThug",true)
-	p.Parent=root
-	return p
-end
 
 -- One rogue at a street place: a copy of a kit's portrait, darkened.
 function Thugs.spawn(holder,street,kit,portraits,matches)
@@ -119,17 +124,16 @@ function Thugs.spawn(holder,street,kit,portraits,matches)
 	end
 	model.Parent=holder
 	label(root)
-	local fight=prompt(root,"Fight","FIGHT",Enum.KeyCode.E,Enum.KeyCode.ButtonX,0)
-	local pay=prompt(root,"Pay",string.format("PAY %d RYŌ",Thugs.TOLL),Enum.KeyCode.F,Enum.KeyCode.ButtonY,1)
-	local entry={model=model,street=street,kit=kit}
+	local entry={model=model,root=root,street=street,kit=kit}
 	Thugs.live[street.key]=entry
-	fight.Triggered:Connect(function(player) Thugs.fight(player,entry,matches) end)
-	pay.Triggered:Connect(function(player) Thugs.pay(player,entry) end)
 	return entry
 end
 function Thugs.leave(entry)
 	if Thugs.live[entry.street.key]~=entry then return end
 	Thugs.live[entry.street.key]=nil
+	for player,pending in Thugs.pending do
+		if pending.entry==entry then Thugs.close(player) end
+	end
 	if entry.model then entry.model:Destroy() end
 	-- another comes back elsewhere a little later
 	task.delay(Thugs.RETURN,function() pcall(Thugs.fill) end)
@@ -147,14 +151,80 @@ function Thugs.pay(player,entry)
 		if Thugs.matches then pcall(Thugs.matches.kitsLoaded,Thugs.matches,player) end
 	end
 	Thugs.racked[player]=os.clock()
+	Thugs.close(player)
 	Thugs.leave(entry)
 end
 -- He fights: a street duel against the AI, right there.
 function Thugs.fight(player,entry,matches)
+	matches=matches or Thugs.matches
+	Thugs.close(player)
 	if not matches or not matches.thugFight then return end
 	if matches:thugFight(player,entry.kit,entry.street.key,Thugs.LEVEL) then
 		Thugs.racked[player]=os.clock()
 		Thugs.leave(entry)
+	end
+end
+
+-- ------------------------------------------------------------ the racket
+Thugs.pending=setmetatable({},{__mode="k"}) -- player -> {entry, at, run}
+local remote
+local function panel(player,r)
+	if remote and player.Parent then remote:FireClient(player,r or false) end
+end
+function Thugs.close(player)
+	if Thugs.pending[player] then Thugs.pending[player]=nil;panel(player,false) end
+end
+local function ryoOf(player)
+	local P=require(script.Parent.Progression)
+	local h=P.handles and P.handles[player]
+	return h and h.data and h.data.wallet and h.data.wallet.ryo or 0
+end
+-- He is stopped: the panel, the fuse running.
+function Thugs.stop(player,entry,now)
+	Thugs.pending[player]={entry=entry,at=now}
+	panel(player,Thugs.offer(entry.street.key,ryoOf(player)))
+end
+-- His answer (the action "Racket" {id, choice}).
+function Thugs.answer(player,id,choice)
+	local pending=Thugs.pending[player]
+	if not pending or pending.entry.street.key~=id or Thugs.live[id]~=pending.entry then return false end
+	if choice=="pay" then Thugs.pay(player,pending.entry)
+	elseif choice=="fight" then Thugs.fight(player,pending.entry)
+	elseif choice=="run" and not pending.run then pending.run=os.clock();panel(player,false)
+	else return false end
+	return true
+end
+-- Every few frames: who comes close is stopped; the fuse; the runs.
+local function rootOf(player)
+	local c=player.Character
+	return c and c:FindFirstChild("HumanoidRootPart")
+end
+function Thugs.tick(now,players,walking)
+	for player,pending in Thugs.pending do
+		local root,entry=rootOf(player),pending.entry
+		local far=if root and entry.root then (root.Position-entry.root.Position).Magnitude else math.huge
+		if Thugs.live[entry.street.key]~=entry or not walking(player) then
+			Thugs.pending[player]=nil
+		elseif pending.run then
+			if Thugs.escaped(far) then Thugs.racked[player]=now;Thugs.close(player)
+			elseif now-pending.run>=Thugs.RUN_TIME then Thugs.fight(player,entry) end
+		elseif Thugs.escaped(far) then
+			-- walked off before the fuse: let go
+			Thugs.racked[player]=now;Thugs.close(player)
+		elseif now-pending.at>=Thugs.FUSE then
+			Thugs.fight(player,entry)
+		end
+	end
+	for _,player in players do
+		if Thugs.pending[player] or not Thugs.ready(Thugs.racked[player],now) or not walking(player) then continue end
+		local root=rootOf(player)
+		if not root then continue end
+		for _,entry in Thugs.live do
+			if entry.root and (root.Position-entry.root.Position).Magnitude<=Thugs.STOP then
+				Thugs.stop(player,entry,now)
+				break
+			end
+		end
 	end
 end
 -- The duel decided (Matches): the purse.
@@ -190,7 +260,21 @@ function Thugs.start(hubFolder,portraits,matches)
 	if not Thugs.on() or not hubFolder then return end
 	local holder=Instance.new("Folder");holder.Name="Thugs";holder.Parent=hubFolder
 	Thugs.holder,Thugs.portraits,Thugs.matches=holder,portraits,matches
+	local S=game:GetService("ReplicatedStorage"):WaitForChild("NinjaDuel")
+	remote=S:FindFirstChild("Racket") or Instance.new("RemoteEvent")
+	remote.Name="Racket";remote.Parent=S
 	Thugs.fill()
+	local Players=game:GetService("Players")
+	local function walking(player)
+		local s=matches and matches.sessions and matches.sessions[player]
+		return s~=nil and s.phase=="Selection" and not s.finishing
+	end
+	task.spawn(function()
+		while holder.Parent do
+			task.wait(.25)
+			pcall(Thugs.tick,os.clock(),Players:GetPlayers(),walking)
+		end
+	end)
 end
 
 return Thugs

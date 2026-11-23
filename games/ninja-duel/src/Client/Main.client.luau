@@ -116,6 +116,12 @@ pcall(function()
 	local HubClient=require(script.Parent.HubClient)
 	if HubClient.enabled() then
 		hubClient=HubClient.new(ui,camera,send,controlModule)
+		-- (23/11, passe 1) a rogue stops him: the DESIGN's racket panel
+		-- (Server/Thugs on NinjaDuel.Racket: the offer, or false to close it)
+		task.spawn(function()
+			local remote=game:GetService("ReplicatedStorage"):WaitForChild("NinjaDuel"):WaitForChild("Racket",30)
+			if remote then remote.OnClientEvent:Connect(function(r) pcall(hubClient.racket,hubClient,if type(r)=="table" then r else nil) end) end
+		end)
 		ui.onBoardClose=function() hubClient:closeBoard() end
 		-- (14/11) the village in its Blender models, as they get built
 		pcall(function() require(script.Parent.HubDress).start() end)
