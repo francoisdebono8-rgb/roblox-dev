@@ -355,13 +355,13 @@ def bundle(dst):
     objs = []
     for k, sid in enumerate(PRODIGIES):
         row, col = divmod(k, 4)
-        part = avatar(dressed(sid, "set"), .35)
-        for o in part:
-            o.location.x += (col - 1.5) * 3.4 + (1.0 if row else 0)
-            o.location.y += 3.0 * row
-            o.location.z += 0 if row else -.4
+        part = avatar(dressed(sid, "set"), (col - 1.5) * -.18)
+        for o in part:   # the camera is on +y: row 1 is in front, row 0 behind and raised
+            o.location.x += (col - 1.5) * 4.4 + (0 if row else 2.2) - 1.1
+            o.location.y += 5.0 * row
+            o.location.z += 0 if row else 2.4
         objs += part
-    shoot(objs, os.path.join(dst, "SetBundle8.png"), view=(.15, 1.0, .22), fill=.8)
+    shoot(objs, os.path.join(dst, "SetBundle8.png"), view=(0, 1.0, .18), fill=.98)
     print("BUNDLE done", flush=True)
 
 
