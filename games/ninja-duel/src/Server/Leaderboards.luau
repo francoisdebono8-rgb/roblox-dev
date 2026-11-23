@@ -9,6 +9,7 @@
 --   Rooftops   (21/11, DEC-047) the rooftop race's best time (Shared/Solo), in
 --              hundredths, the FASTEST first (`ascending`); each row also
 --              carries `text`, the time as the clock shows it ("0:42.31")
+--   Kit_<id>   (23/11, DEC-048) a kit's mastery, one board per kit of the beta
 -- What clients read: ReplicatedStorage.NinjaDuelBoards, one StringValue per
 -- board whose Value is JSON {id, title, rows={{rank,id,name,value}}, at}.
 -- The DESIGN draws them (the boards in Konoha, a page on screen).
@@ -31,6 +32,18 @@ L.Boards={
 	{id="Exam",title="THE WEEK'S EXAM",store="NinjaDuelExam",exam=true,readOnly=true},
 	{id="Rooftops",title="ROOFTOP RACE",store="NinjaDuelRooftops",ascending=true,time=true},
 }
+-- (23/11, step 4, DEC-048: « des classements par kit ») one board per kit of
+-- the eight: its mastery, all time (Server/Progression submits it at every
+-- gain). Titled with the CM's title (Shared/KitTexts), `kit` for the screens.
+do
+	local okR,Beta=pcall(function() return require(Shared.BetaRoster) end)
+	local okT,KitTexts=pcall(function() return require(Shared.KitTexts) end)
+	for _,kit in (okR and Beta or {}) do
+		local sheet=okT and KitTexts and KitTexts.Lines and KitTexts.Lines[kit]
+		local title=(type(sheet)=="table" and sheet.title) or string.upper(kit)
+		table.insert(L.Boards,{id="Kit_"..kit,title=title.." • MASTERY",store="NinjaDuelKit_"..kit,kit=kit})
+	end
+end
 L.ById={}
 for _,b in L.Boards do L.ById[b.id]=b end
 

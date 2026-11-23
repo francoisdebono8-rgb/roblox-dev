@@ -155,6 +155,21 @@ test("the boards: weekly keys, the store's top 10, nothing written by a test pla
 	assert(stores["NinjaDuelExam_"..Exam.latest(friday).key]==nil or next(stores["NinjaDuelExam_"..Exam.latest(friday).key].data)==nil,"the exam board written by the boards")
 end)
 
+-- (23/11, step 4, DEC-048) « des classements par kit »: one mastery board per kit
+test("a board per kit of the eight: its mastery, titled with the CM's title",function()
+	local L=H.load("Server/Leaderboards")
+	local Beta=H.load("Shared/BetaRoster")
+	for _,kit in Beta do
+		local b=L.ById["Kit_"..kit]
+		assert(b and b.kit==kit and b.store=="NinjaDuelKit_"..kit and string.find(b.title,"MASTERY",1,true),"no board for "..kit)
+	end
+	assert(string.find(L.ById.Kit_Flashstep.title,"THE YELLOW FLASH",1,true),"Minato's board: "..L.ById.Kit_Flashstep.title)
+	local l=L.new({ordered=function() return nil end,now=function() return 0 end,name=function(id) return "N"..id end,publish=function() end,encode=function(t) return t end,spawn=function(fn,...) fn(...) end})
+	l:submit("Kit_Sand",fakePlayer(201),420);l:submit("Kit_Sand",fakePlayer(202),900);l:submit("Kit_Lion",fakePlayer(203),50)
+	local top=l:top("Kit_Sand")
+	assert(#top.rows==2 and top.rows[1].id==202 and top.rows[1].value==900,"Gaara's board")
+end)
+
 test("the duel body wears its player's aura, quietly; no aura below the first tier",function()
 	local players={[901]={GetAttribute=function(_,k) if k=="NinjaAura" then return 2 end end},[902]={GetAttribute=function() return 0 end}}
 	H.envBase.game.GetService=function(g,name)

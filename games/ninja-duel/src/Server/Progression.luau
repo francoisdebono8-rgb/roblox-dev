@@ -252,7 +252,15 @@ end
 function P.run(player,kind,args)
 	local h=P.handles[player]
 	if not h then return false,"Profile not loaded" end
-	return P.repo:apply(h,h.data.sequence+1,kind,args)
+	local ok,result=P.repo:apply(h,h.data.sequence+1,kind,args)
+	-- (23/11, step 4, DEC-048) every gain of a kit's mastery goes on that
+	-- kit's board (Server/Leaderboards "Kit_<id>")
+	if ok and kind=="gainMastery" and type(args)=="table" and type(args.fighter)=="string" then
+		local L=boards()
+		local m=h.data.kits and h.data.kits.mastery and h.data.kits.mastery[args.fighter]
+		if L and type(m)=="number" then L:submit("Kit_"..args.fighter,player,m) end
+	end
+	return ok,result
 end
 function P.chooseStarter(player,id) return P.run(player,"chooseStarter",{fighter=id}) end
 function P.select(player,id) return P.run(player,"selectKit",{fighter=id}) end
