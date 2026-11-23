@@ -6,7 +6,7 @@
 
 **Déjà fait par le DEV** :
 - départ réduit des 5 autres kits et leurs nœuds `Learn*` ;
-- transformations de Minato, Itachi et Neji ;
+- transformations de Minato, Itachi, Neji et Gaara (Desert Funeral : le Cercueil part en trois vagues `sandwave` en éventail, réplique « DESERT FUNERAL ») ;
 - tournoi à 100 points ;
 - classements par kit ;
 - le promeneur posé par les clips du kit (`Client/HubBody`).
@@ -16,7 +16,7 @@
 2. **Le promeneur joue maintenant tes clips**, ceux du kit choisi (sinon ceux de Sasuke) : `<kit>.Idle`, `Walk.F`, `Run.F`, `Sprint`, `Jump.Air`, `AirJump`, `Land`, et `Lion.Parkour.Leap`, `Vault`, `LandRoll`, `LandHard`.
    - Sur le mur, il joue `Sprint`, le corps penché à 70° hors du mur (`HubBody.WALL_TILT`). Un vrai clip `Parkour.WallRun` serait mieux : fais-le et je le branche à la place.
    - Ajoute aussi `Parkour.Ledge` (l'accroche au rebord) si tu peux.
-3. **Sand Burial** (Gaara) : le clip et l'effet du cercueil qui se referme et écrase. Je fais le serveur.
+3. **Desert Funeral** (Gaara, fait côté serveur) : ce sont trois vagues de ton `sandwave`. Si tu veux un effet propre à la transformation, appelle-le `sandfuneral` et je le branche.
 4. **Kakashi** : propose sa transformation (par exemple le Raikiri qui file vers une cible marquée par les chiens), puis je fais le serveur.
 5. **L'export de la tour** (`konoha_models write`).
 

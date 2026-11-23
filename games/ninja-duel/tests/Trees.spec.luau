@@ -111,9 +111,26 @@ test("every kit has one transformation at the top of its tree (DEC-045, DEC-048)
 				assert(node.Major and node.Tier==3,id.."."..node.Id..": a transformation is a major node of tier III")
 			end
 		end
-		-- (Gaara's Sand Burial and Kakashi's come with their combat behaviour and the ANIMATEUR's clips)
-		assert(n==1 or ((id=="Sand" or id=="Copycat") and n==0),id.." has "..n.." transformations")
+		-- (Kakashi's comes with its combat behaviour and the ANIMATEUR's clips)
+		assert(n==1 or (id=="Copycat" and n==0),id.." has "..n.." transformations")
 	end
+end)
+
+test("Gaara · Desert Funeral: the Sand Coffin runs out as three waves, one burial per body",function()
+	local function waves(nodes)
+		local c,a,b=duel("Sand","Lion",gated("Sand",nodes),14)
+		a.chakra=100
+		local before=#c.projectiles
+		local Techniques=H.load("Server/Techniques")
+		local spec
+		for _,t in a.def.Techniques do if t.Id=="SandCoffin" then spec=t end end
+		Techniques.SandCoffin.execute(c,a,{spec=spec,aim=b.root.Position})
+		local n=0
+		for i=before+1,#c.projectiles do if c.projectiles[i].kind=="sandwave" then n+=1 end end
+		return n
+	end
+	assert(waves({"Gourd","LearnSandCoffin"})==1,"the coffin is one wave")
+	assert(waves({"Gourd","LearnSandCoffin","DesertFuneral"})==3,"the funeral is three waves")
 end)
 
 test("in a duel: the locked weights are refused, the sheathed tanto stays, no gourd means no sand charge",function()

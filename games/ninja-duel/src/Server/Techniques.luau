@@ -621,6 +621,8 @@ Techniques.Chidori={
 -- (held where it stands) and buried a beat later unless it substitutes out.
 function Techniques.bindInSand(c,owner,victim,wet)
 	if victim.health<=0 or victim.invulnerableUntil>c.now then return end
+	-- (23/11) bound already by his sand (a second wave of the Desert Funeral): one burial
+	if victim.boundBy==owner and victim.reaction=="Bound" then return end
 	local Brawler=require(script.Parent.Brawler)
 	Brawler.react(c,victim,"Bound",Vector3.zero,1.25,owner)
 	victim.boundBy=owner
@@ -651,6 +653,17 @@ Techniques.SandCoffin={
 		local wet=a.target and require(script.Parent.Interactions).wetSand(c,a,a.target)
 		local p=c:projectile(a,origin+flat.Unit*pending.spec.Range+Vector3.new(0,2,0),(pending.spec.Speed or 46)*(if wet then wet.Speed else 1),pending.spec.Range,4,"sandwave",nil,{origin=origin+Vector3.new(0,1,0),radius=1.8,growth=.6})
 		if p and wet then p.wet=wet end
+		-- (23/11, DEC-048) the Desert Funeral (Gaara's transformation): two more
+		-- waves, fanned out from the first
+		if pending.spec.Funeral then
+			for _,angle in {-.3,.3} do
+				local d=CFrame.fromAxisAngle(Vector3.yAxis,angle):VectorToWorldSpace(flat.Unit)
+				local q=c:projectile(a,origin+d*pending.spec.Range+Vector3.new(0,2,0),(pending.spec.Speed or 46)*(if wet then wet.Speed else 1),pending.spec.Range,4,"sandwave",nil,{origin=origin+Vector3.new(0,1,0),radius=1.8,growth=.6})
+				if q and wet then q.wet=wet end
+			end
+			c:cue(a,"DESERT FUNERAL",.7)
+			return
+		end
 		if not wet then c:cue(a,"SAND COFFIN",.6) end
 	end,
 }

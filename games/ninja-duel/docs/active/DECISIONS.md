@@ -535,9 +535,11 @@ François (23/11, 1 h 02) : « ajoute animateur push et passe à l'étape 4 rée
 - **Transformations** :
   - Minato : Cut and Flash ;
   - Itachi : Fire Geometry ;
-  - Neji : Palm Barrage.
+  - Neji : Palm Barrage ;
 
-  Celles de Gaara (Sand Burial) et de Kakashi viendront avec leur comportement en combat et les clips de l'ANIMATEUR : un nœud qui ne fait que changer un nombre n'en est pas une.
+  - Gaara : Desert Funeral. Le Cercueil de sable part en trois vagues en éventail, et chaque corps touché est lié puis enseveli une seule fois.
+
+  Celle de Kakashi viendra avec son comportement en combat et les clips de l'ANIMATEUR : un nœud qui ne fait que changer un nombre n'en est pas une.
 - **Tournoi** : une construction de 100 points (bracket Advanced), la même pour tous, avec tout l'arbre ouvert. Les techniques et l'éveil (`Learn*`) sont des nœuds comme les autres. Sans choix, le jeu prend sa construction si elle tient dans le budget, sinon il la complète jusqu'au budget.
 - **Classements par kit** : un tableau par kit, celui de sa maîtrise, mis à jour à chaque gain.
 - **Le promeneur** est posé par les clips du kit (`Client/HubBody`), sans publication d'Animation :

@@ -6,7 +6,7 @@
   - Gaara : Sand Shuriken et Sand Armor ;
   - Kakashi : Tracking Fang et Lightning Cut.
 
-  Le reste s'apprend aux paliers II et III. Transformations : Cut and Flash, Fire Geometry, Palm Barrage. Sand Burial et la transformation de Kakashi sont à faire. Les constructions légendaires de l'IA comptent les nœuds `Learn*`.
+  Le reste s'apprend aux paliers II et III. Transformations : Cut and Flash, Fire Geometry, Palm Barrage et Desert Funeral (Gaara : trois vagues de Cercueil en éventail). Celle de Kakashi est à faire. Les constructions légendaires de l'IA comptent les nœuds `Learn*`.
 - **Tournoi** (`Server/Tournament`) : on entre avec une construction de 100 points, la même pour tous, tout l'arbre ouvert (`CupStart` accepte `nodes`). Sans choix, la sienne si elle tient, sinon objets, apprentissages et préréglages jusqu'au budget. La vue montre `build`.
 - **Classements par kit** (`Server/Leaderboards`, `Kit_<id>`) : la maîtrise du kit, mise à jour à chaque gain (`Progression.run`).
 - **Promeneur ninja** (`Client/HubBody`, appelé par `HubMove`) : le corps est posé par les clips du kit dans le village (R15).

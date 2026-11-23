@@ -497,17 +497,17 @@ return {
 		-- (23/11, step 4, DEC-048) the start is 2 techniques, as for the first three
 		-- (DEC-045): the others and the awakening are earned on the tree (the costs
 		-- keep the tree within its 150 points).
-		{ Id = "LearnDesertWave", Tier = 2, Name = "Learn the Desert Wave", Branch = "Unlocks", Kind = "tool", Major = true, Cost = 6, Item = "DesertWave",
+		{ Id = "LearnDesertWave", Tier = 2, Name = "Learn the Desert Wave", Branch = "Unlocks", Kind = "tool", Major = true, Cost = 4, Item = "DesertWave",
 			Effects = { { "def.Items.DesertWave", "set", true } },
 			Without = { { "tech.DesertWave.Locked", "set", true } },
 			Shows = "The Desert Wave is his: the sand rolls over the floor toward the rival. Before, the slot says LEARN IT ON THE TREE.",
 			Counter = "The wave is slow and wide: jump it.", Lore = "CANON_YOUNG" },
-		{ Id = "LearnSandCoffin", Tier = 3, Name = "Learn the Sand Coffin", Branch = "Unlocks", Kind = "tool", Major = true, Cost = 8, Item = "SandCoffin",
+		{ Id = "LearnSandCoffin", Tier = 3, Name = "Learn the Sand Coffin", Branch = "Unlocks", Kind = "tool", Major = true, Cost = 6, Item = "SandCoffin",
 			Effects = { { "def.Items.SandCoffin", "set", true } },
 			Without = { { "tech.SandCoffin.Locked", "set", true } },
 			Shows = "The Sand Coffin is his: the sand closes round the rival and holds him.",
 			Counter = "The grip forms before it closes: dodge out of the sand.", Lore = "CANON_YOUNG" },
-		{ Id = "LearnShukaku", Tier = 3, Name = "Shukaku's Sand", Branch = "Unlocks", Kind = "tool", Major = true, Cost = 10, Item = "Awakening",
+		{ Id = "LearnShukaku", Tier = 3, Name = "Shukaku's Sand", Branch = "Unlocks", Kind = "tool", Major = true, Cost = 8, Item = "Awakening",
 			Effects = { { "def.Items.Awakening", "set", true } },
 			Without = { { "def.AwakeningLocked", "set", true } },
 			Shows = "His awakening, SHUKAKU'S SAND, is his to call when he is low. Before, he has none.",
@@ -549,6 +549,13 @@ return {
 			Effects = { { "def.WallSteer", "set", { Moves = { SandFist = true, Light3 = true }, Range = 14, Cone = 0.6 } } },
 			Shows = "The Sand Fist and the third lash aim the body at a wall in reach: it splats, the wall phase follows.",
 			Counter = "Away from walls nothing changes; fight in the open.", Lore = "GAMEPLAY_LIBERTY" },
+		-- (23/11, DEC-048) Transform: the top of his tree, the Sand Coffin turned
+		-- into the Desert Funeral: three waves fanned out, every body they reach
+		-- bound and buried (Techniques.SandCoffin; the waves are the coffin's own).
+		{ Id = "DesertFuneral", Tier = 3, Name = "Desert Funeral", Branch = "Coffin", Kind = "jutsu", Major = true, Transform = true, Cost = 7, Requires = { "LearnSandCoffin" },
+			Effects = { { "tech.SandCoffin.Funeral", "set", true } },
+			Shows = "The Sand Coffin runs out as three waves fanned across the floor: there is no stepping aside from it any more.",
+			Counter = "The waves leave gaps between them: dash through one, or substitute out of the bind.", Lore = "CANON_YOUNG" },
 		{ Id = "CoffinFocus", Tier = 1, Name = "Coffin Focus", Branch = "Coffin", Kind = "jutsu", Cost = 5,
 			Effects = { { "tech.SandCoffin.Channel", "mul", 0.8 } },
 			Shows = "Sand Coffin leaves his hands after 0.28 s instead of 0.35 s.", Counter = "Still interruptible; substitution escapes the bind.", Lore = "CANON_YOUNG" },

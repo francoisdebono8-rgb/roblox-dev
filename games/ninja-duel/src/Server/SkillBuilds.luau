@@ -82,6 +82,8 @@ SkillBuilds.OPTIONAL={
 	-- (21/11, DEC-045) the transformations at the top of Naruto's and Lee's trees
 	["tech.CloneRasengan.Throw"]={Value=true,Hook="BodyState.release / BodyState.throw (the held Rasengan thrown with the tool)"},
 	["def.LotusEntry"]={Value=true,Hook="Brawler.airFinisher / Brawler ground bounce (the Lotus into the Dynamic Entry)"},
+	-- (23/11, DEC-048) Gaara's transformation: the coffin as three waves
+	["tech.SandCoffin.Funeral"]={Value=true,Hook="Techniques.SandCoffin (three waves fanned)"},
 	-- (13/11, DEC-038) A kit object a player's ninja has earned (the Item
 	-- node's own flag; SkillBuilds.build gated=true locks what it lacks).
 	["def.Items.*"]={Key="item",Value=true,Hook="SkillBuilds.build (gated kits)"},
