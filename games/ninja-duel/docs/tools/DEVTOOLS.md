@@ -67,6 +67,29 @@ Arguments refusés hors liste blanche (`DevCommands`) : clés `first`, `second`,
 
 Situations : `neutral` (face à face), `launcher` (bot `Launched`, fenêtre de poursuite ouverte), `air` (les deux en l’air, bot `Juggled`), `wall` (vrai panneau `NinjaWall` sondé à `World.WALL_RADIUS` sur +X, puis `Brawler.splat` du moteur : épinglage, impact, dégâts de splat et fenêtre de poursuite ; le joueur au sol en face), `substitution` (vraie requête après un hit), `grab`, `whiff` (Heavy à 22 studs), `projectile` (outil vers le bot à 24 studs), `ko`. Une requête refusée par le moteur fait échouer la situation avec sa raison.
 
+### `challengeFilm` : le défi de rue filmé (24/11, série du CM « MY AVATAR VS THE 8 »)
+
+Le défi d'une inspiration, joué comme un joueur le rencontre : l'inspiration bloque une rue avec sa réplique au-dessus de la tête, l'avatar arrive en face, le défi est accepté sur place, l'intro du duel donne la réplique puis la carte VS, et une IA tient le stick de l'avatar comme celle de l'inspiration. Le duel décidé paie comme un vrai défi (le prodige compte comme battu dans le profil). Module `Server/DevChallengeFilm` (Studio seulement), test `tests/ChallengeFilm.spec.luau`.
+
+```lua
+-- depuis l'outil Studio (execute_luau) : par l'attribut NDDev, réponse JSON dans NDDevResult
+workspace:SetAttribute("NDDev",'{"args":["challengeFilm",{"kit":"Legion","street":"MarketLane","rounds":2,"dare":3,"avatar":"normal"}]}')
+-- plus tard : qui a gagné chaque manche, et quand (heure serveur, secondes dans le duel)
+workspace:SetAttribute("NDDev",'{"args":["challengeFilmResult"]}')
+```
+
+| Champ | Défaut | Sens |
+|---|---|---|
+| `kit` | (obligatoire) | l'inspiration : `Legion`, `Lion`, `Leaf`, `GentleFist`, `Sand`, `Copycat`, `Mirage`, `Flashstep` |
+| `street` | `MarketLane` | une place de `HubMap.Streets` (`Plaza`, `MarketLane`, `Courtyard`, `BackAlley`, `Residences`, et les places des maîtres `GentleFist`, `Leaf`, `Legion`) |
+| `rounds` | 2 | manches gagnantes, 1 à 3 |
+| `dare` | 3 | secondes où il bloque la rue avant le duel (0 : tout de suite) |
+| `with` | son kit choisi | le kit de l'avatar (un kit appris) |
+| `avatar`, `prodigy` | `normal`, `normal` | le niveau de chaque IA : `easy`, `normal`, `hard` |
+| `seed` | un autre à chaque fois | la graine de l'IA de l'avatar |
+
+`challengeFilmResult` rend `state` (`dare`, `duel`, `done`, `stopped`, `failed` avec `error`), `rounds` (`{round, winner = "avatar" | "prodigy", at, since, decisive}`), `winner` et `finalBlow` (`at` en heure serveur, `since` en secondes depuis le début du duel). Un nouveau `challengeFilm` peut partir de l'écran de résultat : il ramène l'avatar dans Konoha (s'il ne marche pas encore, réessayer quelques secondes plus tard).
+
 Les ops historiques restent identiques : `start`, `startBuild`, `skills`, `selection`, `lag`, `online`, `act`, `scripted`, `move`, `health`, `sprint`, `refill` (avec PV), `place`, `freezeBot`, `autopilot`, `clientlog`, `probe`, `clientinfo`, `ko`, `rematch`, `damagelog`, `inspect`, `trace`, `state`, `contracts`, ainsi que les remotes `NinjaDuelDevLog` / `NinjaDuelCombatDebug` et les sondes de [tools/studio](../../tools/studio/README.md). Reproduction scriptée sans paquet Move concurrent :
 
 ```lua

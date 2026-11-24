@@ -173,10 +173,13 @@ function SoloPlay:siteNear(pos)
 	end
 	return best
 end
--- The kits that may challenge him: the inspirations, not his own.
+-- The kits that may challenge him: the eight inspirations, his own kit's too
+-- (24/11, the CM's series MY AVATAR VS THE 8: STUDENT OF THE EIGHT asks for
+-- all eight beaten, and his own kit's inspiration never came to him, so he
+-- had to change kits to earn it). `own` stays for the callers.
 function SoloPlay.challengers(own)
 	local out={}
-	for id in HubMap.Masters do if id~=own and Solo.Challenge.lines[id] then table.insert(out,id) end end
+	for id in HubMap.Masters do if Solo.Challenge.lines[id] then table.insert(out,id) end end
 	table.sort(out)
 	return out
 end
@@ -227,6 +230,15 @@ function SoloPlay:showChallenger(c,toward)
 		prompt.Parent=root
 		c.model=model
 	end)
+end
+-- (24/11, the CM's series) A chosen inspiration in a chosen street, facing
+-- `toward`: whoever stood there before leaves. Returns the challenge.
+function SoloPlay:summon(kit,site,toward,now)
+	if not (Solo.Challenge.lines[kit] and site) then return nil end
+	if self.challenge then self:challengeGone(now) end
+	self.challenge={kit=kit,site=site,at=now,leaveAt=now+Solo.Challenge.stay,line=Solo.Challenge.lines[kit]}
+	self:showChallenger(self.challenge,toward)
+	return self.challenge
 end
 function SoloPlay:challengeGone(now)
 	local c=self.challenge

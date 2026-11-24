@@ -1,5 +1,38 @@
 # Boîte de réception Claude
 
+## INBOX-DEV-SERIE8-20261124 — DEV 24/11, 14 h : la série du CM « MY AVATAR VS THE 8 »
+
+Le doc projet est `claude/cm-serie-my-avatar-vs-the-8-2026-11-24`. François a validé la série et ses 4 ajouts (DEC-053). Tests verts, rien n'est vu dans Studio.
+
+**Au CM : tes 3 questions (§ 5)**
+1. **Ce que donne aujourd'hui un défi gagné :**
+   - +60 de maîtrise au kit qu'il a choisi (+10 s'il perd), dans la part du jour des activités seules (300 au plus). Aucun Ryō.
+   - Le prodige compte comme battu dans son profil (`solo.beaten`).
+   - Avec les 8 battus, il gagne le titre STUDENT OF THE EIGHT (un titre gagné, jamais vendu).
+   - **Rien d'autre** : ni jutsu, ni kit débloqué. Le « respect » n'est qu'une phrase de l'activité. La série peut dire « 1/8 » et « STUDENT OF THE EIGHT », pas « il apprend son jutsu ».
+   - **Corrigé aujourd'hui :** le prodige de son propre kit ne venait jamais le défier. Pour avoir les 8, il fallait changer de kit. Maintenant, les 8 peuvent le défier (`SoloPlay.challengers`).
+2. **Le défi de rue dans la nouvelle ville, avec le corps de l'avatar :**
+   - **Les places :** les 8 places de duel de rue (`HubMap.Streets` : `Plaza`, `MarketLane`, `Courtyard`, `BackAlley`, `Residences` et les places des maîtres `GentleFist`, `Leaf`, `Legion`) restent libres dans la nouvelle ville. `Hub.spec` et `KonohaLayout.spec` vérifient que le centre et les deux départs sont du sol libre, sans maison ni accessoire.
+   - **Le corps :** c'est son propre corps Roblox (`Config.AvatarBody`). Ses articulations `AnimationConstraint` sont changées en `Motor6D` depuis le 14/11.
+   - **Pas encore vu en jeu depuis la passe 1 :** la place qu'il reste à la caméra et les maisons proches. Choisis la rue à l'œil : `MarketLane` par défaut (une rue marchande, rayon 26), `Plaza` (28) si c'est trop serré.
+3. **`challengeFilm` est prêt pour ce soir.** C'est le vrai défi, pas `startBuild` + `autopilot`, qui n'avait ni rue, ni réplique, ni paiement.
+   - Il est dans `DevHooks` (module `Server/DevChallengeFilm`). Le mode d'emploi est dans `docs/tools/DEVTOOLS.md`, le test dans `tests/ChallengeFilm.spec.luau`.
+   - **Lancement** par `NDDev` : `{"args":["challengeFilm",{"kit":"Legion"}]}`. Champs facultatifs : `street`, `rounds` (2), `dare` (3 s où il bloque la rue), `with` (le kit de l'avatar), `avatar` et `prodigy` (easy, normal, hard), `seed`.
+   - **Déroulé :** l'inspiration se poste au milieu de la rue, sa réplique au-dessus de la tête, et l'avatar est posé à un bout, face à lui. Après `dare` secondes, le défi est accepté comme par un joueur. Ensuite, deux IA avec leurs plans. Le duel paie comme un vrai défi.
+   - **`challengeFilmResult`** rend chaque fin de manche (`winner` = `avatar` ou `prodigy`, `at` en heure serveur, `since` en secondes depuis le début du duel), le vainqueur et le coup final.
+   - **Simulation (sans Studio), les deux IA en `normal` :** THE LOUDMOUTH (`Legion`) a gagné 5 fois sur 5 contre un avatar Sasuke, Gaara ou Lee, en 2 manches de 25 à 55 s. Avec `"prodigy":"easy"`, l'avatar a gagné 4 fois sur 4. Entre d'autres kits, c'est plus serré (1-1, puis la belle). Une défaite le jour 1 (« LOST, revanche demain ») est vraie, et c'est une histoire.
+   - **Chaque prise compte dans le profil Studio de François :** le défi est réel. Le tableau des 8 suivra la série.
+
+**Les 4 ajouts du § 3**
+| # | DEV | DESIGN | ANIMATEUR |
+|---|---|---|---|
+| 1. Le défi en bulle, puis la carte VS | **Fait.** Un défi accepté passe par `Matches:challengeStart`. L'intro de la 1re manche dure 1,6 s de réplique, 1,5 s de carte VS, puis BEGIN (0,75 s). Le snapshot porte `dare` `{kit, line, lineFor, vsFor, at}` (`at` en heure serveur). La caméra montre d'abord celui qui défie, puis l'avatar. | La bulle de manga avec la réplique, puis la carte VS avec les deux têtes, lues dans `dare`. | — |
+| 2. Le coup final au ralenti | **Ce soir, après le créneau du CM, vérifié dans Studio.** Le corps lancé est déjà ralenti 0,45 s (`Config.FinalBlow`). J'ajoute, pour la manche décisive seulement : le snapshot `finalBlow` `{at, by, pos}`, le ralenti tenu 0,5 s, puis la caméra serrée sur l'impact avant la dérive du K.O. | — | L'impact du coup final à la même échelle de temps (je te donne le nom de l'attribut avec le lot). |
+| 3. Les têtes de la face-cam qui réagissent | Rien de neuf : chaque coup pris est déjà dans `impacts` (la victime, le genre de coup). | Le cadre face-cam qui réagit. | Les grimaces et le regard caméra. |
+| 4. Le tableau des 8 dans Konoha | **Fait.** `Progression.view` porte `challenges8` `{beaten = {kit = true}, count, need = 8, order}`, dans l'ordre de `KitTexts.Order`. | Le tableau des 8 têtes, avec le tampon BEATEN. | — |
+
+**À tous :** pendant le créneau du CM (environ 30 min vers 17 h), la place du jeu est à lui. Il annonce quand il la prend et quand il la rend.
+
 ## INBOX-DEV-PASSE1-B-20261124 — DEV 24/11, 1 h 30 : réponses à l'OUTILLEUR et à l'ANIMATEUR (passe 1)
 
 **À l'OUTILLEUR** (INBOX-OUTILLEUR-PASSE1) :

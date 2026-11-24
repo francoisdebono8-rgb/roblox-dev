@@ -380,6 +380,7 @@ function Matches:start(player,playerId,botId,training,options)
 		botKit=result
 	end
 	self:destroy(s); s.epoch+=1
+	s.dare=nil
 	-- (DEC-038) The walk in Konoha ends: the duel's body takes over.
 	if Matches.hubOn() then Hub.leave(player) end
 	if self.solo then self.solo:leave(player) end
@@ -438,6 +439,29 @@ function Matches:start(player,playerId,botId,training,options)
 	local epoch=s.epoch
 	s.human.hum.Died:Connect(function() if s.epoch==epoch and s.phase=="Duel" then s.human.health=0; s.human.state="Defeated"; s.finish(s.bot,s.human) end end)
 	s.bot.hum.Died:Connect(function() if s.epoch==epoch and s.phase=="Duel" then s.bot.health=0; s.bot.state="Defeated"; s.finish(s.human,s.bot) end end)
+	self:snapshot(player,s)
+	return true
+end
+-- (24/11, the CM's series MY AVATAR VS THE 8, § 3.1) An inspiration's
+-- challenge in the street becomes a moment: the duel's intro first gives his
+-- dare (the DESIGN's manga bubble, `line` s), then the VS card with both heads
+-- (`vs` s), then BEGIN (Config.IntroBegin). The snapshot's `dare` says it.
+Matches.Dare={line=1.6,vs=1.5}
+-- The challenge `c` accepted (Server/SoloPlay): his duel against the
+-- inspiration, where the inspiration stood. `kit`: the learned kit he fights
+-- with. `level`: the inspiration's AI (Solo.Challenge.level unless a film
+-- asks). Returns whether it started.
+function Matches:challengeStart(player,kit,c,now,level)
+	local s=self:session(player)
+	s.masterTrial=nil;s.firstStage=nil;s.firstFight=nil;s.coach=nil;s.challenge=c.kit
+	s.aiLevel=if Matches.LEVELS[level or ""] then level else require(Shared.Solo).Challenge.level
+	s.nextSite={key=c.site.key,origin=HubMap.Origin+c.site.at,radius=c.site.radius,place=c.site.place,street=true,axis=c.site.axis,start=c.site.start}
+	local ok=self:start(player,kit,c.kit,false)
+	s.nextSite=nil
+	if not ok then s.challenge=nil;self.solo:challengeEnded(player,false,now);return false end
+	local D=Matches.Dare
+	s.dare={kit=c.kit,line=c.line,lineFor=D.line,vsFor=D.vs,at=s.combat.now}
+	s.introUntil=s.combat.now+D.line+D.vs+(Config.IntroBegin or .75)
 	self:snapshot(player,s)
 	return true
 end
@@ -739,7 +763,10 @@ function Matches:view(s,cursor,mine,theirs)
 		-- (DEC-037) the masters' path: mastery gained, a kit learned, the master being fought.
 		progress=s.progress,master=s.masterTrial,
 		-- (15/11) a duel in the village: where it is fought (the banner says it)
-		site=if s.site then {key=s.site.key,place=s.site.place,radius=s.site.radius,street=s.site.street} else nil}
+		site=if s.site then {key=s.site.key,place=s.site.place,radius=s.site.radius,street=s.site.street} else nil,
+		-- (24/11) an inspiration's challenge: his dare, then the VS card, during
+		-- the first round's intro (Matches.challengeStart); `at` server time
+		dare=if s.dare and (s.round or 1)==1 and (s.introUntil or 0)>now then s.dare else nil}
 end
 function Matches:request(player,payload)
 	local s=self:session(player); local clock=os.clock()
@@ -925,11 +952,7 @@ function Matches:request(player,payload)
 		if not (kit and Progression.owns(player,kit)) then return end
 		local c=self.solo:accept(player,payload.kit,now)
 		if not c then return end
-		s.masterTrial=nil;s.firstStage=nil;s.challenge=c.kit
-		s.aiLevel=require(Shared.Solo).Challenge.level
-		s.nextSite={key=c.site.key,origin=HubMap.Origin+c.site.at,radius=c.site.radius,place=c.site.place,street=true,axis=c.site.axis,start=c.site.start}
-		if not self:start(player,kit,c.kit,false) then s.challenge=nil;self.solo:challengeEnded(player,false,now) end
-		s.nextSite=nil
+		self:challengeStart(player,kit,c,now)
 		return
 	end
 	if action=="Start" or action=="Tutorial" or action=="Rematch" or action=="Selection" then

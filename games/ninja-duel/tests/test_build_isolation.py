@@ -16,7 +16,7 @@ ROOT = Path(__file__).resolve().parents[1]
 # chakra lab (docs/tools/DEVTOOLS.md). build.py's DEBUG_SOURCES must list them.
 INSPECTOR = {'DevHooks', 'CombatInspector', 'CombatDebug'}
 DEV_TOOLS = {'DevTools', 'DevCommands', 'DevScenarios', 'DevProfiler', 'DevReport', 'DevQA', 'DevMetrics',
-             'DevClient', 'DevVolumes', 'DevVisual', 'ChakraLab', 'ChakraDev', 'ChakraStudioView', 'ChakraStudioQA', 'DevRosterCheck', 'DevGateCheck', 'TutorialBot', 'TutorialProbe', 'Repro'}
+             'DevClient', 'DevVolumes', 'DevVisual', 'ChakraLab', 'ChakraDev', 'ChakraStudioView', 'ChakraStudioQA', 'DevRosterCheck', 'DevGateCheck', 'TutorialBot', 'TutorialProbe', 'Repro', 'DevChallengeFilm'}
 DEBUG_ONLY = INSPECTOR | DEV_TOOLS
 # The filming place's tools (tools/capture/studio), in the capture place only.
 CAPTURE_TOOLS = {'ClipKit', 'HiraishinKunai', 'ShotRunner', 'Sets', 'SetSnapshot', 'NDFactoryBoot', 'ClipAssist', 'ClipSight', 'NDReplay', 'NDDirector', 'ClipJudge'}

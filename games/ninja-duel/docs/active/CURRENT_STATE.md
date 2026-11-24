@@ -1,3 +1,11 @@
+**DEV, 24/11, 14 h : la série du CM « MY AVATAR VS THE 8 » (DEC-053)** — TECHNICAL : tests verts, rien n'est vu dans Studio
+- **`challengeFilm`** (`Server/DevChallengeFilm`, Studio seulement) lance le défi de rue d'une inspiration contre l'avatar, comme un joueur le rencontre, avec une IA aux commandes des deux côtés. Il rend chaque fin de manche et le coup final. Le mode d'emploi est dans `docs/tools/DEVTOOLS.md`.
+- **Un défi accepté passe par `Matches:challengeStart`.** L'intro de la 1re manche donne d'abord la réplique (1,6 s), puis la carte VS (1,5 s), puis BEGIN. Le snapshot porte `dare`. La caméra montre d'abord celui qui défie. La bulle et la carte VS sont à la DESIGN.
+- **`Progression.view` porte `challenges8`** : les prodiges battus, pour le tableau des 8 (DESIGN).
+- **Les 8 inspirations peuvent défier le joueur,** celle de son kit comprise.
+- **Simulation des défis filmés (IA `normal` des deux côtés) :** THE LOUDMOUTH bat l'avatar 5 fois sur 5 (Sasuke, Gaara, Lee). Avec le prodige en `easy`, l'avatar gagne 4 fois sur 4. Les manches durent 25 à 55 s.
+- **Reste à faire :** le ralenti du coup final pour la manche décisive (snapshot `finalBlow`, caméra sur l'impact), ce soir après le créneau du CM, vérifié dans Studio.
+
 **OUTILLEUR, 24/11, nuit : passe commune 1, le robot de collision et le relevé des écrans, avant puis après** — NATIVE_STUDIO (Play de `PLACES/NinjaDuel.rbxlx`, place commune `c40cc16d`, sources `db13098f`, profil capture ; l'avant dans la copie LAB du 23/11, `d0678d90`) ; observations de Claude, pas l'avis de François
 - **Les toits tiennent** (DEV `bba7af8c`, ANIMATEUR) :
   - à la chute au milieu du toit, 0 bâtiment sur 190 où les pieds finissent sous le toit dessiné (avant : 140 sur 229, médiane 4,6 studs) ;

@@ -173,6 +173,13 @@ function DevHooks.install(matches)
 		return chakraDev:run(op,arg)
 	end
 	RunService.Heartbeat:Connect(function() tools.profiler:watch() end)
+	-- (24/11) the CM's filmed challenge (challengeFilm below)
+	local Progression=require(script.Parent.Progression)
+	local film=require(script.Parent.DevChallengeFilm).new({matches=matches,AI=AI,
+		selected=function(player) local h=Progression.handles[player];return h and h.data.kits.selected end,
+		learned=function(player,kit) return Progression.handles[player]==nil or Progression.owns(player,kit) end,
+		seed=function() return math.floor(os.clock()*1000)%100000 end})
+	RunService.Heartbeat:Connect(function() film:step(workspace:GetServerTimeNow()) end)
 	local function onInvoke(op,arg1,arg2,arg3,arg4)
 		local player,s=session()
 		if op=="tool" then return run(player,arg1,arg2) end
@@ -249,6 +256,13 @@ function DevHooks.install(matches)
 			return {latency=workspace:GetAttribute("NinjaDuelSimLatency"),jitter=workspace:GetAttribute("NinjaDuelSimJitter")}
 		elseif op=="online" then
 			return matches.online and matches.online:summary()
+		elseif op=="challengeFilm" then
+			-- (24/11, the CM's series MY AVATAR VS THE 8) arg1 = {kit, street?,
+			-- rounds?, dare?, with?, avatar?, prodigy?, seed?}: an inspiration's
+			-- challenge in the street, the avatar's AI at his stick (DevChallengeFilm)
+			return film:start(player,arg1,workspace:GetServerTimeNow())
+		elseif op=="challengeFilmResult" then
+			return film:result()
 		end
 		if not s or not s.combat then return "no duel" end
 		local c=s.combat

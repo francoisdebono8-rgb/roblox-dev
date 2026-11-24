@@ -597,3 +597,20 @@ François (23/11) : « je veux qu'on arrête de faire 10 000 places, on doit avo
 - **Au plus 10 à 12 places** sur le Mac, toutes discussions confondues. Les 13 copies du LAB et l'essai de tournage du 19/11 sont rangés dans `NinjaDuel/_a_supprimer/places-2026-11-23`, à supprimer avec l'accord de François.
 - **L'œil de Claude, sans prendre l'écran** : les outils de Roblox Studio (captures, lecture de l'état et de la sortie, robots), et les rendus et preuves sans Studio (`tools/syphodev`, `tools/village`). Jamais la souris ni le clavier de François.
 - **À la fin de chaque passe commune**, le DEV joue 10 à 15 minutes dans la place, de cette façon, et relève ce qui ne va pas avant de livrer la passe.
+
+## DEC-053 — Le CM ne fait plus qu'une série : « MY AVATAR VS THE 8 » (24/11, 13 h 28)
+
+François (24/11) : « À partir de ce soir, le CM ne fait plus qu'une série de Shorts, MY AVATAR VS THE 8 : l'avatar du joueur bat les 8 prodiges un par un, dans des défis de rue, en combats IA contre IA cadrés mais pas scriptés. Le CM filme dans la seule place du jeu, sans prendre l'écran, sur un créneau d'environ 30 min par jour vers 17 h. » Le détail est dans le doc projet `claude/cm-serie-my-avatar-vs-the-8-2026-11-24`.
+
+- **Une série, un épisode par jour.** C'est l'objectif réel du jeu : battre le défi de rue de chaque inspiration, jusqu'à STUDENT OF THE EIGHT. Les vidéos isolées s'arrêtent.
+- **On ne montre que ce que le jeu fait.** Aujourd'hui, un défi gagné donne de la maîtrise, compte le prodige comme battu, et les 8 donnent le titre. Il ne donne ni jutsu ni kit.
+- **Le tournage se fait dans la place du jeu (DEC-052), pendant un Play, sans l'écran de François.** Le défi est lancé par l'op `challengeFilm` (`Server/DevChallengeFilm`). Le CM annonce quand il prend la place et quand il la rend. Pendant son créneau, les autres discussions ne lancent rien dedans.
+- **Les quatre ajouts servent aussi le joueur :**
+  1. le défi en bulle, puis la carte VS ;
+  2. le coup final au ralenti ;
+  3. les têtes de la face-cam qui réagissent ;
+  4. le tableau des 8 dans Konoha.
+
+  Ils sont répartis entre DEV, DESIGN et ANIMATEUR (SINCE_LAST_CLAUDE, INBOX-DEV-SERIE8).
+- **Les 8 inspirations peuvent défier le joueur,** celle de son propre kit comprise. Avant, il devait changer de kit pour avoir STUDENT OF THE EIGHT.
+

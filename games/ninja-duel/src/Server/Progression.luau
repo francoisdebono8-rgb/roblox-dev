@@ -102,6 +102,16 @@ function P.ready(player) return P.states[player]=="ready" and P.handles[player]~
 
 -- What the roster shows: learned kits, mastery, and for every master whether
 -- he teaches now and what is missing.
+-- The eight inspirations' challenges: {beaten={kit=true}, count, need=8,
+-- order} (the order of the board: Shared/KitTexts.Order).
+function P.challenges8(solo)
+	local beaten,count={},0
+	local order=require(Shared.KitTexts).Order
+	for _,kit in order do
+		if solo and solo.beaten and solo.beaten[kit] then beaten[kit]=true;count+=1 end
+	end
+	return {beaten=beaten,count=count,need=#order,order=table.clone(order)}
+end
 function P.view(player)
 	if not P.enabled() then return nil end
 	local state=P.states[player] or "none"
@@ -157,6 +167,9 @@ function P.view(player)
 	out.ninja=NinjaTree.view(h.data.ninja,NinjaTree.points(h.data.kits.mastery))
 	local okTitle,title=pcall(function() return player:GetAttribute("NinjaTitle") end)
 	out.title=if okTitle and type(title)=="string" then title else nil
+	-- (24/11, the CM's series § 3.4) the board of the eight in Konoha: the
+	-- inspirations whose challenge he won, toward STUDENT OF THE EIGHT
+	out.challenges8=P.challenges8(h.data.solo)
 	return out
 end
 -- (19/11, plan § 2 « la séance » and DEV 6; OUTILLEUR in Studio: the result

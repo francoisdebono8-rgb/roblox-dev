@@ -594,8 +594,13 @@ function Camera:update(data,dt)
 		local shown=total-left
 		local split=total*.5
 		local first=shown<split
-		local subject=if first then a else target
-		local other=if first then target else a
+		-- (24/11, an inspiration's challenge, Matches.challengeStart) he who
+		-- dares is shown first, for his line; then the player, under the VS card
+		local dare=data.dare
+		if dare and dare.lineFor then split=math.min(dare.lineFor,total-.2);first=shown<split end
+		local mine=(first and not dare) or (not first and dare~=nil)
+		local subject=if mine then a else target
+		local other=if mine then target else a
 		local toward=Vector3.new(other.X-subject.X,0,other.Z-subject.Z)
 		toward=if toward.Magnitude>.1 then toward.Unit else Vector3.zAxis
 		local across=toward:Cross(Vector3.yAxis)
