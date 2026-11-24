@@ -90,6 +90,7 @@ OutfitMeshes.Catalog={
 	SetShadowScout={kind="set",name="Shadow Scout",parts={{model="MeshShirt",colors={Cloth={90,90,100}}},{model="SashTop",colors={Cloth={46,48,60},Sash={150,40,60}}},{model="WrapPants",colors={Cloth={46,48,60},Wrap={200,196,186}}},{model="ArmWarmers",colors={Cloth={200,196,186}}},{model="WrappedFeet",colors={Wrap={200,196,186}}},{model="MaskCloth",colors={Cloth={46,48,60}}},{model="BackSword",colors={Sheath={30,30,36},Metal={190,190,196},Grip={150,40,60},Strap={30,30,36}}}}},
 	SetLeafMedic={kind="set",name="Leaf Medic",parts={{model="ChuninVest",colors={Cloth={64,70,92},Vest={110,150,92}}},{model="Leggings",colors={Cloth={64,70,92},Weights={236,232,222}}},{model="ElbowPads",colors={Pad={236,232,222},Strap={40,42,50}}},{model="OpenBoots",colors={Leather={64,70,92}}},{model="HeadbandNeck",colors={Band={64,70,92},Plate={200,204,210}}}}},
 	SetSandNomad={kind="set",name="Sand Nomad",parts={{model="Haori",colors={Cloth={196,150,90},Under={110,60,46},Trim={230,200,120}}},{model="WrapSkirt",colors={Cloth={196,150,90},Under={110,60,46},Belt={230,200,120}}},{model="ShinGuards",colors={Sandal={90,64,44},Metal={176,160,130},Strap={90,64,44}}},{model="CloakHooded",colors={Cape={214,186,140}}},{model="BackScroll",colors={Paper={240,230,200},Wood={120,80,50},Strap={90,64,44}}}}},
+	SetRogue={kind="set",name="Rogue Ninja",parts={{model="Haori",colors={Cloth={34,34,40},Under={110,30,32},Trim={150,146,140}}},{model="WrapPants",colors={Cloth={40,40,48},Wrap={128,122,112}}},{model="ArmWarmers",colors={Cloth={52,50,56}}},{model="WrappedFeet",colors={Wrap={128,122,112}}},{model="MaskCloth",colors={Cloth={26,26,30}}},{model="HeadbandScratched",colors={Band={26,26,30},Plate={170,172,178}}}}},
 }
 OutfitMeshes.Models={}
 for i=1,29 do
@@ -104,7 +105,7 @@ end
 -- (20/11) The invented outfits: bundles of the pieces above, no mesh of their own. Each
 -- piece is shared (a shallow copy), its colour slot prefixed by its model (Catalog colours
 -- them: GiCloth, HakamaCloth...).
-OutfitMeshes.Sets={SetEmberMonk={"Gi","Hakama","Bracers","Geta","Hachimaki"},SetMistHunter={"Turtleneck","CargoPants","Gauntlets","Boots","MaskCat","Scarf"},SetStormCourier={"TrackJacket","LongShorts","Fingerless","Tabi","BackPouch","HeadbandClassic"},SetShadowScout={"MeshShirt","SashTop","WrapPants","ArmWarmers","WrappedFeet","MaskCloth","BackSword"},SetLeafMedic={"ChuninVest","Leggings","ElbowPads","OpenBoots","HeadbandNeck"},SetSandNomad={"Haori","WrapSkirt","ShinGuards","CloakHooded","BackScroll"}}
+OutfitMeshes.Sets={SetEmberMonk={"Gi","Hakama","Bracers","Geta","Hachimaki"},SetMistHunter={"Turtleneck","CargoPants","Gauntlets","Boots","MaskCat","Scarf"},SetStormCourier={"TrackJacket","LongShorts","Fingerless","Tabi","BackPouch","HeadbandClassic"},SetShadowScout={"MeshShirt","SashTop","WrapPants","ArmWarmers","WrappedFeet","MaskCloth","BackSword"},SetLeafMedic={"ChuninVest","Leggings","ElbowPads","OpenBoots","HeadbandNeck"},SetSandNomad={"Haori","WrapSkirt","ShinGuards","CloakHooded","BackScroll"},SetRogue={"Haori","WrapPants","ArmWarmers","WrappedFeet","MaskCloth","HeadbandScratched"}}
 for set,models in OutfitMeshes.Sets do
 	local list={}
 	for _,model in models do

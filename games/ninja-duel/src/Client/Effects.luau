@@ -2672,6 +2672,7 @@ do
 	pcall(function() require(script.Parent.ShopAuraFX).start() end)
 	pcall(function() require(script.Parent.KonohaLifeFX).start() end)   -- Konoha: steam, smoke, bunting, birds, leaves (étape 3)
 	pcall(function() require(script.Parent.KonohaFolkFX).start() end)   -- Konoha: villagers walking the streets (étape 3)
+	pcall(function() require(script.Parent.KonohaRogueFX).start() end)  -- Konoha: the rogue ninjas' look and clips (passe 1)
 end
 -- Naruto (clone puffs, the Rasengan shaped with a clone, the barrage, the Nine-Tails cloak).
 require(script.Parent.NarutoFX).install(FX,{new=new,block=block,tween=tween,sound=sound,flash=flash,shockRing=shockRing,burst=burst,
