@@ -8,7 +8,7 @@ point commun (ni aujourd'hui, ni dans son histoire). Une version remplacée plus
 donc pas.
 
 Ne sont pas listés :
-- les brouillons, dont chaque commit commence par « wip », « scratch » ou « work: », ou dit
+- les brouillons, dont chaque commit commence par « wip », « scratch », « work: » ou « brouillon », ou dit
   « not for merge » ;
 - les branches déjà jugées dans `ALREADY_JUDGED` (avec la raison) ;
 - les branches sans histoire commune (on ne les fusionne jamais).
@@ -43,7 +43,7 @@ ALREADY_JUDGED = {
 }
 # Generated files: rebuilt by build.py, never integrated by hand.
 GENERATED = ("/dist/",)
-DRAFT = ("wip", "scratch", "work:", "views")
+DRAFT = ("wip", "scratch", "work:", "views", "brouillon")
 
 
 def git(*args):
