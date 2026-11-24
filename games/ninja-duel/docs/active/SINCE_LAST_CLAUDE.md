@@ -1,5 +1,46 @@
 # Boîte de réception Claude
 
+## INBOX-OUTILLEUR-PASSE1-20261124 — OUTILLEUR 24/11, nuit : passe commune 1, collisions et écrans, avant puis après
+
+Les faits sont dans `CURRENT_STATE`. Le détail est dans `tools/collision/README.md` et `tools/screens/README.md`. Les pages : `tools/collision/mesures/2026-11-24_avant_apres_rapport.html` et `tools/screens/mesures/2026-11-24_apres_c40cc16d/releve.html`. Ce sont des observations de Claude, pas l'avis de François.
+
+**À tous (DEC-052)** : `tools/lab/lab_place.py` est retiré, il n'y a plus de copie LAB avec les robots.
+- Pendant un Play de `PLACES/NinjaDuel.rbxlx`, `python3 tools/robots/inject.py collision screens` (ou `all`) donne le code à lancer dans le Client. Les robots vivent dans `_G` jusqu'à la fin du Play.
+- `--module` de `tools/duelbot` et `tools/villagebot` ne pose plus rien dans l'Édition.
+- **Studio en arrière-plan n'avance presque pas.** Un robot qui marche ou se bat ne progresse que pendant les appels du pont. Il faut le suivre par appels courts, l'un après l'autre.
+
+**Au DEV** (`HubDress.solidify`, `MeshKit`) :
+- **Les toits et les façades tiennent** : 0 toit où l'on s'enfonce sur 190, 0 % de façade traversée aux rayons.
+- **Les murs invisibles viennent de la collision des morceaux.** `MeshKit.fromAsset` crée en `CollisionFidelity.Box` ; les morceaux cuits ont la fidélité par défaut (une enveloppe convexe par morceau).
+  - Exemple : `clan_house` (203.4, -235.9), à 3 studs du sol, le corps bute sur l'enveloppe de `Walls` à 4,3 studs ; le mur dessiné est à 11,5.
+  - Les boîtes de l'escalier des Hokage (`Stone` 110 × 32 × 122, `Rails`, `Lanterns`, `Caps`, en (0, -241)) couvrent les `tank_house` (-32.9, -240.6), (-1.6, -240.6), (32.3, -239.5) : on se tient 7,5 à 12 studs au-dessus de leur toit. Les échafaudages des visages et `Cliff` sont aussi en `Box`.
+  - Deux pistes, à toi de choisir :
+    - une fidélité plus fine (`PreciseConvexDecomposition`) pour les morceaux qui collisionnent, donnée à la création (`CreateMeshPartAsync`) ;
+    - les solides simples de l'ANIMATEUR (`Shared/HubSolids`) pour les maisons, et les grands monuments laissés à leurs parts.
+  - Après ton changement, je relance `collision.py --rays` (5 s) et la marche.
+- **23 façades où le corps entre** (18 de 13 à 32 studs) : la liste est dans le rapport, avec les coordonnées. Le robot ne distingue pas une porte ou une boutique ouverte d'un mur qui ne tient pas.
+- **Le racket** : perdu contre le voyou, l'écran de fin dit « WHAT YOU EARNED +20 RYŌ » ; la bourse reste à 45 (le voyou a pris 20). L'écran ne dit pas le racket. `s.progress.thug` n'y apparaît pas.
+- **Toujours** : la victoire du premier duel ne donne ni n'affiche rien (0 Ryō), alors que les quêtes promettent « finish a duel: +25 Ryō ».
+
+**À la DESIGN** (écrans, `tools/screens/mesures/2026-11-24_apres_c40cc16d/releve.html`, avant et après côte à côte) :
+- **Corrigé et vu** : le but sous la boîte du lieu, la bulle du passant au-dessus de sa tête, la légende du coach de TRY THIS KIT, un seul onglet choisi, le classement vide qui s'explique.
+- **Le panneau du racket** couvre la moitié basse : le voyou et la ligne des touches disparaissent, et « YOUR RYŌ OR A FIGHT » est écrit deux fois.
+- **TRY THIS KIT** dit HOLD CTRL + MOVE pour courir ; Konoha dit SHIFT RUN.
+- **Toujours** : PAID WITH ROBUX au-dessus des kits gratuits ; THE PERFECT BROTHER coupé ; « 12 / 22 / 40 CHAKRA » qui dépassent des cartes ; la bannière verticale sur BACK TO KONOHA ; les combattants presque noirs dans DUELS ; la carte (noms qui se chevauchent, légende minuscule) ; la phrase du bas de OUTFIT sur les cartes ; SETTINGS et RANKS qui restent grisés après leur fermeture ; « 1 POINTS TO SPEND ».
+
+**À l'ANIMATEUR** :
+- La tunique du départ a son revers et son obi. Vue de loin, sur le corps crème sans pantalon, elle reste une boîte bleue.
+- Dans TRY THIS KIT, l'adversaire a des cheveux jaunes en pointe et une tenue blanche, alors que l'écran annonce THE FATED GENIUS.
+- Les morceaux venus d'un asset (escalier des Hokage, falaise, échafaudages) collisionnent en boîte : voir le DEV ci-dessus. Tes `HubSolids` sont une des deux pistes.
+
+**Au CM** : rien de neuf pour toi dans cette passe. Le racket est un nouveau moment à filmer, une fois son écran repris.
+
+**Questions à François** :
+- Les deux fenêtres Studio qui restent ouvertes : la copie LAB `ND-JEU-robots-d0678d90` (rouverte pour l'avant) et une fenêtre vide. Je ne peux pas les fermer d'ici : peux-tu les fermer ? `PLACES/NinjaDuel.rbxlx` reste ouverte, en Édition.
+- Les copies rangées dans `_a_supprimer/places-2026-11-23` par le DEV, et la copie `LAB/robots/ND-JEU-robots-d0678d90.rbxlx` : je les supprime, oui ou non ?
+- Les branches de brouillon `work/outilleur-duelbot`, `work/outilleur-etape3-b` et `work/outilleur-etape45` : je les supprime, oui ou non ?
+- Les façades où le corps entre (liste du rapport) : quand tu joues, est-ce que ce sont des portes et des boutiques ouvertes, ou des murs qui ne tiennent pas ?
+
 ## INBOX-ANIM-PASSE1-20261123 — ANIMATEUR 23/11 : passe commune 1, les habits du départ et les maisons en morceaux
 
 **Les habits du départ refaits** (`tools/blender/outfit_models.py`, `OutfitMeshData*` réexportés, Catalog). Vérifiés de face et de dos sur 3 corps : `docs/reports/passe1-animateur-2026-11-23/`.

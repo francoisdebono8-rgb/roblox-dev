@@ -1,6 +1,6 @@
 -- The robot that walks Konoha (OUTILLEUR, 21/11; DEC-047, step 3, OUTILLEUR 1).
--- Runs as the player's client in a Play of a LAB copy of ND-JEU (Roblox_Studio
--- execute_luau, Client datamodel), never in another discussion's place. It
+-- Runs as the player's client in a Play of the game's place (DEC-052; eval in
+-- the Client), never while someone else plays in it. It
 -- moves the avatar as the player does (Humanoid:Move each frame after the
 -- default controls, the run's speed, the jump and the ninja's second jump of
 -- Client/HubMove) and measures what the static prover cannot:
@@ -10,9 +10,9 @@
 --           second jump at the top of the jump), and how long it took.
 -- The places: HubMap (spawns, the proctor, the masters' homes, the welcome
 -- trio, the training ground, the market) and, when the village is built from
--- it, KonohaLayout.Pois. Installed once as ReplicatedStorage.NDVillageBot
--- (tools/villagebot/studio_code.py --module), then started with a plan:
---   require(game.ReplicatedStorage.NDVillageBot).start({routes="tour",roofs=16})
+-- it, KonohaLayout.Pois. Injected in the Play as _G.NDVillageBot
+-- (python3 tools/robots/inject.py village), then started with a plan:
+--   _G.NDVillageBot.start({routes="tour",roofs=16})
 -- Results: the local player's attribute NDVillageLog (JSON), NDVillageState.
 local Players=game:GetService("Players")
 local RunService=game:GetService("RunService")
@@ -269,6 +269,8 @@ function Bot.climb(roof)
 	local res={name=(part.Parent and part.Parent.Name or "?").."/"..part.Name,eave=r1(roof.eave),ridge=r1(roof.ridge),reached=false,tries=0,t=0}
 	local t0=os.clock()
 	local centre=part.Position
+	-- (23/11, DEV: « peux-tu écrire la position du toit ? ») where it is, on the plan
+	res.at={r1(centre.X-HubMap.Origin.X),r1(centre.Z-HubMap.Origin.Z)}
 	local ground=Vector3.new(centre.X,HubMap.Origin.Y,centre.Z)
 	local edge=math.max(part.Size.X,part.Size.Z)/2+6
 	local walls=part.Parent and part.Parent:FindFirstChild("Walls")

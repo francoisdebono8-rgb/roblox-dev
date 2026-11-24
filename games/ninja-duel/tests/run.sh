@@ -137,8 +137,11 @@ run VillageTools python3 tools/syphodev/test_village_tools.py
 # (23/11, OUTILLEUR, étapes 4-5) the publication pre-flight, the LAB copy with the robots,
 # the test reading page, the fluidity snippets, the new player's Studio code
 run Preflight  python3 tools/preflight/test_preflight.py
-run LabPlace   python3 tools/lab/test_lab_place.py
+run Robots     python3 tools/robots/test_inject.py
 run TestRead   python3 tools/testread/test_testread.py
 run Perf       python3 tools/perf/test_perf.py
 run NewPlayer  python3 tools/newplayer/test_studio_code.py
+# (23/11, OUTILLEUR, passe commune 1) the collision robot and the survey of the screens
+run Collision  python3 tools/collision/test_collision.py
+run Releve     python3 tools/screens/test_releve.py
 exit $status

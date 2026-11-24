@@ -1,0 +1,363 @@
+{
+ "title": "après la passe commune 1",
+ "place": "PLACES/NinjaDuel.rbxlx (DEC-052), sources db13098f, place commune c40cc16d, profil capture",
+ "screen": "fenêtre Studio 1334 × 590, clavier et souris du Play (robloxstudio-mcp), nouveau joueur",
+ "date": "2026-11-24",
+ "who": "Claude (OUTILLEUR), parcours joué par clics et touches dans le Play ; observations, pas l'avis de François",
+ "caveat": "Profil capture (DEC-052) : la pastille « F4 » en haut à gauche et les deux traits rouges verticaux sont l'outil de tournage, pas le jeu. Ils ne se cachent pas depuis le client.",
+ "steps": [
+  {
+   "key": "chargement",
+   "name": "Chargement",
+   "how": "début du Play",
+   "image": "00_chargement.jpg",
+   "notes": [
+    "Inchangé : NINJA DUEL sur fond noir."
+   ],
+   "red": {
+    "client": [],
+    "server": []
+   },
+   "orange": {
+    "client": [
+     "Failed to create empty EditableImage that was requested due to reaching memory budget limits. (9 fois)",
+     "Failed to create empty EditableMesh that was requested due to reaching memory budget limits. (20 fois ; 30 avant)",
+     "Player:Move called, but player currently has no character.",
+     "[VfxHit] coups « animé moderne » éteints, l'ancien rendu reste : off: 4 images not served",
+     "[AwakenFX] images Roblox does not serve, built-in stand-ins used (9 images)",
+     "ContentId: rbxassetid://18341956985, 18342045122, 18341905406, 18342131933 failed due to: User is not authorized to access Asset. (répété)"
+    ],
+    "server": [
+     "ContentId: rbxassetid://18341956985, 18342045122, 18341905406, 18342131933 failed due to: User is not authorized to access Asset. (3 fois)"
+    ]
+   }
+  },
+  {
+   "key": "arrivee",
+   "name": "Arrivée à Konoha",
+   "how": "après le chargement",
+   "image": "01_arrivee.jpg",
+   "notes": [
+    "Corrigé : le but CHOOSE YOUR INSPIRATION ne barre plus le haut de l'écran ; il est sous la boîte du lieu, à gauche, et le milieu montre le village (DESIGN).",
+    "Toujours : aucun bouton PLAY ; NO KIT YET ; le corps est crème uni.",
+    "La minicarte est sous le but, à gauche."
+   ],
+   "red": {
+    "client": [],
+    "server": []
+   }
+  },
+  {
+   "key": "duels",
+   "name": "DUELS (premier choix)",
+   "how": "touche B",
+   "image": "02_duels_choix.jpg",
+   "notes": [
+    "Changé : le premier DUELS montre tout le tournoi (8 kits, ALL MODES, PLAY) au lieu d'un seul choix.",
+    "Les deux combattants restent presque noirs.",
+    "La bannière verticale 天才忍者大会 recouvre le bout droit de BACK TO KONOHA.",
+    "THE LOUDMOUTH est coupé sous l'étiquette YOU (« THE LOUDMOUT »)."
+   ],
+   "red": {
+    "client": [],
+    "server": []
+   }
+  },
+  {
+   "key": "premier_duel",
+   "name": "Premier duel",
+   "how": "PLAY",
+   "image": "03_premier_duel.jpg",
+   "notes": [
+    "Le portrait du joueur a une image (un buste crème), plus le cadre blanc vide.",
+    "« 22 CHAKRA » dépasse toujours du bord de la carte 2.",
+    "La consigne HOLD F HE'S ATTACKING: GUARD se lit bien."
+   ],
+   "red": {
+    "client": [],
+    "server": []
+   }
+  },
+  {
+   "key": "victoire",
+   "name": "Victoire du premier duel",
+   "how": "le duel joué jusqu'au K.O.",
+   "image": "04_victoire.jpg",
+   "notes": [
+    "Inchangé : le milieu est vide, rien sur ce qu'on a gagné ; « spend what you earned » ; les Ryō restent à 0."
+   ],
+   "red": {
+    "client": [],
+    "server": []
+   }
+  },
+  {
+   "key": "ton_ninja",
+   "name": "YOUR NINJA (tenue)",
+   "how": "BACK TO KONOHA : l'écran s'ouvre seul",
+   "image": "05_ton_ninja.jpg",
+   "notes": [
+    "Corrigé : le bandeau d'inspiration ne passe plus par-dessus.",
+    "Les flèches › des lignes se voient (blanches sur noir).",
+    "TOP 0/5 (5 hauts au lieu de 3) ; le bandeau KONOHA HEADBAND est déjà mis."
+   ],
+   "red": {
+    "client": [],
+    "server": []
+   }
+  },
+  {
+   "key": "premier_haut",
+   "name": "Le premier haut",
+   "how": "› sur TOP",
+   "image": "06_premier_haut.jpg",
+   "notes": [
+    "Changé (ANIMATEUR, e9d9bc64) : la GENIN TUNIC a un revers croisé et une ceinture obi rouge nouée.",
+    "Vue de loin, elle reste une boîte bleue posée sur le torse, bras nus, sans le pantalon (BOTTOM : NOTHING)."
+   ],
+   "red": {
+    "client": [],
+    "server": []
+   }
+  },
+  {
+   "key": "konoha",
+   "name": "Konoha après la tenue",
+   "how": "DONE",
+   "image": "07_konoha_place.jpg",
+   "notes": [
+    "Toujours NO KIT YET et 0 Ryō après le premier duel.",
+    "Le but dit « RIGHT BY THE GATE » alors qu'on est sur la place.",
+    "Le but cache à moitié une enseigne de la place (« …NTOUCHABLE »)."
+   ],
+   "red": {
+    "client": [],
+    "server": []
+   }
+  },
+  {
+   "key": "boutique",
+   "name": "SHOP, les kits",
+   "how": "SHOP",
+   "image": "08_boutique_kits.jpg",
+   "notes": [
+    "Inchangé : PAID WITH ROBUX au-dessus des kits gratuits ; THE PERFECT BROTHER coupé en « THE PERFECT » ; pas de portrait ; le trait de l'onglet choisi cache la première lettre (« |ITS »)."
+   ],
+   "red": {
+    "client": [],
+    "server": []
+   }
+  },
+  {
+   "key": "try",
+   "name": "TRY THIS KIT",
+   "how": "TRY sur THE LOUDMOUTH",
+   "image": "09_try_this_kit.jpg",
+   "notes": [
+    "Corrigé (DESIGN) : les étapes sont dans la légende du coach, une à la fois (TRAINING • THE LOUDMOUTH • 2 / 30, la touche, BACKSPACE: NEXT STEP • HOLD: LEAVE).",
+    "Corrigé : la bulle du passant est au-dessus de sa tête, plus sur ROUND 1.",
+    "L'adversaire a des cheveux jaunes en pointe et une tenue blanche, alors que le haut de l'écran et son portrait disent THE FATED GENIUS.",
+    "Le sprint de l'essai dit HOLD CTRL + MOVE ; Konoha dit SHIFT RUN.",
+    "« 12 CHAKRA » et « 40 CHAKRA » dépassent toujours des cartes."
+   ],
+   "red": {
+    "client": [],
+    "server": []
+   }
+  },
+  {
+   "key": "quetes",
+   "name": "QUESTS",
+   "how": "QUESTS (après avoir quitté l'essai : Retour arrière tenu)",
+   "image": "10_quetes.jpg",
+   "notes": [
+    "Inchangé : « Day 1 in a row • finish a duel: +25 Ryō », mais le premier duel n'a rien donné ; WIN A DUEL WITHOUT LOSING A ROUND reste à 0/1 après la victoire 2-0 du premier duel."
+   ],
+   "red": {
+    "client": [],
+    "server": []
+   }
+  },
+  {
+   "key": "rangs",
+   "name": "RANKS",
+   "how": "RANKS",
+   "image": "11_classements.jpg",
+   "notes": [
+    "Nouveau : un état vide qui s'explique (« No duel counted yet. Every duel between two players counts. »)."
+   ],
+   "red": {
+    "client": [],
+    "server": []
+   }
+  },
+  {
+   "key": "reglages",
+   "name": "SETTINGS",
+   "how": "SETTINGS",
+   "image": "12_reglages.jpg",
+   "notes": [
+    "Inchangé : WASD, Q esquive, Z chakra (en AZERTY, Q et Z sont aussi des touches de marche)."
+   ],
+   "red": {
+    "client": [],
+    "server": []
+   }
+  },
+  {
+   "key": "carte",
+   "name": "La carte (M)",
+   "how": "touche M",
+   "image": "13_carte.jpg",
+   "notes": [
+    "La nouvelle ville (7c6c9c57) est sur la carte.",
+    "Toujours : des noms se chevauchent ou sont coupés (MAIN ST sous ROOFTOP RACE, THE TEA, le nom au-dessus de THE HOSPITAL), textes et légende minuscules."
+   ],
+   "red": {
+    "client": [],
+    "server": []
+   }
+  },
+  {
+   "key": "emote",
+   "name": "Touche G (émote)",
+   "how": "touche G",
+   "image": "14_touche_G.jpg",
+   "notes": [
+    "Inchangé : rien ne s'ouvre, et rien ne le dit.",
+    "Corrigé : la bulle du passant est lisible, au-dessus de sa tête.",
+    "SETTINGS et RANKS restent grisés après leur fermeture, QUESTS non."
+   ],
+   "red": {
+    "client": [],
+    "server": []
+   }
+  },
+  {
+   "key": "tenues",
+   "name": "SHOP, OUTFIT",
+   "how": "SHOP › OUTFIT",
+   "image": "15_boutique_tenues.jpg",
+   "notes": [
+    "Nouveau : la carte MY OWN PIECES (OWNED, WEAR IT), avec une image vide.",
+    "Inchangé : les tenues d'inspiration disent SOON, en pictogrammes ; le grand cadre d'aperçu est vide ; la phrase du bas passe sur la rangée suivante."
+   ],
+   "red": {
+    "client": [],
+    "server": []
+   }
+  },
+  {
+   "key": "vip",
+   "name": "SHOP, VIP & PASSES",
+   "how": "SHOP › VIP & PASSES",
+   "image": "16_boutique_vip.jpg",
+   "notes": [
+    "Corrigé : un seul onglet a l'air choisi.",
+    "Le VIP dit ce qu'il donne (nom doré, la cape VIP, le badge) ; EARLY ACCESS et MORE BUILDS ne sont plus là (DEC-049).",
+    "Toujours pas d'image pour le VIP ni pour 2X MASTERY."
+   ],
+   "red": {
+    "client": [],
+    "server": []
+   }
+  },
+  {
+   "key": "duels2",
+   "name": "DUELS, après le premier duel",
+   "how": "touche B",
+   "image": "17_duels_apres_premier.jpg",
+   "notes": [
+    "Inchangé : les combattants presque noirs, trois rangées de boutons, THE PERFECT BROTHER caché sous LOCKED, TAKE THIS KIT puis ENTER THE STAGE."
+   ],
+   "red": {
+    "client": [],
+    "server": []
+   }
+  },
+  {
+   "key": "kit_pris",
+   "name": "Le kit pris",
+   "how": "TAKE THIS KIT",
+   "image": "18_kit_pris.jpg",
+   "notes": [
+    "Inchangé : les deux autres kits de départ passent à LOCKED sans prévenir avant."
+   ],
+   "red": {
+    "client": [],
+    "server": []
+   }
+  },
+  {
+   "key": "duel_rue",
+   "name": "Duel contre l'IA (sur la place)",
+   "how": "ENTER THE STAGE",
+   "image": "19_duel_rue.jpg",
+   "notes": [
+    "Le corps du joueur est toujours effacé en fantôme quand il est entre la caméra et l'adversaire.",
+    "Le joueur se bat dans sa tenue (la tunique et l'obi) : le look du kit est en Robux, SOON.",
+    "Le portrait du joueur est un visage blanc presque vide."
+   ],
+   "red": {
+    "client": [],
+    "server": []
+   }
+  },
+  {
+   "key": "defaite",
+   "name": "Défaite 0-2",
+   "how": "le duel joué jusqu'au bout",
+   "image": "20_defaite.jpg",
+   "notes": [
+    "Inchangé : celui-ci dit ce qu'on a gagné (+45 Ryō, maîtrise +18)."
+   ],
+   "red": {
+    "client": [],
+    "server": []
+   }
+  },
+  {
+   "key": "racket",
+   "name": "Le racket (nouveau)",
+   "how": "le corps posé à 10 studs d'un voyou",
+   "image": "21_racket.jpg",
+   "notes": [
+    "Nouveau (DEV 9e18d83e, 2e97394d ; DESIGN 30a77ca7) : ROGUE NINJA, PAY 30 / RUN / FIGHT, ce que coûte chaque choix, la mèche (HE SWINGS IN 7 s).",
+    "Le panneau couvre toute la moitié basse : on ne voit plus le voyou, et il cache la ligne des touches (SHIFT RUN…).",
+    "« YOUR RYŌ OR A FIGHT » est écrit deux fois : sur le voyou et dans le panneau.",
+    "En haut à gauche : « 1 POINTS TO SPEND »."
+   ],
+   "red": {
+    "client": [],
+    "server": []
+   }
+  },
+  {
+   "key": "racket_combat",
+   "name": "La mèche finie : le combat",
+   "how": "sans réponse en 8 s",
+   "image": "22_racket_combat.jpg",
+   "notes": [
+    "Le combat de rue part contre THE PERFECT BROTHER ; au premier instant, l'adversaire n'est pas dans l'image.",
+    "Les touches 1, 2, 3 du panneau n'ont pas pu être essayées : le clavier simulé de Studio les refuse (« bound to a CoreGUI core action »). C'est une limite de l'outil ; au vrai clavier, à vérifier."
+   ],
+   "red": {
+    "client": [],
+    "server": []
+   }
+  },
+  {
+   "key": "racket_defaite",
+   "name": "Défaite contre le voyou",
+   "how": "le combat joué jusqu'au bout",
+   "image": "23_racket_defaite.jpg",
+   "notes": [
+    "L'écran dit « WHAT YOU EARNED +20 RYŌ », mais la bourse reste à 45 : le voyou a pris 20 Ryō (la règle du racket), et l'écran ne le dit pas."
+   ],
+   "red": {
+    "client": [],
+    "server": []
+   }
+  }
+ ]
+}

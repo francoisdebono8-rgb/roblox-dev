@@ -2,7 +2,7 @@
 -- téléphone : la matrice d'appareils de Studio sur le village et sur un duel,
 -- en images/s et en mémoire, avant et après »).
 --
--- A client module, run in a Play of a LAB copy, while the device simulator
+-- A client module, injected in a Play of the game (DEC-052), while the device simulator
 -- shows a phone (robloxstudio-mcp set_device_simulator). It measures, over a
 -- few seconds, from where the camera is:
 --   frames      the frame times (RenderStepped): images/s on average, the
@@ -16,7 +16,7 @@
 -- (triangles, draw calls, parts, memory), compared with the budgets in
 -- tools/perf/README.md.
 --
---   require(ReplicatedStorage.NDPerfProbe).measure({seconds=8, label="village"})
+--   _G.NDPerfProbe.measure({seconds=8, label="village"})  (python3 tools/robots/inject.py perf first)
 --   -> stored in Players.LocalPlayer attribute NDPerfLog (JSON list)
 local Players=game:GetService("Players")
 local RunService=game:GetService("RunService")

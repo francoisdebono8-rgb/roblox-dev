@@ -25,13 +25,13 @@ Une graine donne la même partie des deux côtés.
 lune run tests/DuelBot.spec.luau                       # le premier combat, 8 kits x 3 graines (dans tests/run.sh)
 lune run tools/duelbot/rounds.luau 2 0.6,0.7,0.8,1 joueur,debutant easy,normal   # la durée des manches
 
-python3 tools/duelbot/studio_code.py --module          # Studio, Edit (ou Client) : installe ReplicatedStorage.NDDuelBot
+python3 tools/robots/inject.py duel                    # Client, pendant le Play : le robot dans _G (DEC-052)
 python3 tools/duelbot/studio_code.py --first debutant 2 Lion,Legion,Leaf        # Client, pendant un Play : le plan
 python3 tools/duelbot/studio_code.py --duel joueur easy 1 Lion:Sand,Lion:Leaf
 python3 tools/duelbot/studio_code.py --read            # Client : l'état et les résultats (JSON)
 ```
 
-Sans lune dans la session, la suite tourne sur GitHub à chaque envoi. Une mesure à part (`rounds.luau`) se lance sur une branche de travail, jamais la branche commune, avec `gh workflow run ninja-duel-suite.yml --ref <branche>`. Dans Studio, on travaille dans une copie de ND-JEU dans `LAB/robots`.
+Sans lune dans la session, la suite tourne sur GitHub à chaque envoi. Une mesure à part (`rounds.luau`) se lance sur une branche de travail, jamais la branche commune, avec `gh workflow run ninja-duel-suite.yml --ref <branche>`. Dans Studio, on travaille dans un Play de la place du jeu, `PLACES/NinjaDuel.rbxlx` (DEC-052), sans copie.
 
 ## Ce que le robot ne prouve pas
 

@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """The Studio code of the simulated player (OUTILLEUR, 21/11).
 
-    python3 tools/duelbot/studio_code.py --module
-        Edit datamodel: installs ReplicatedStorage.NDDuelBot (PlayerSim pasted into
-        studio_bot.luau, comments stripped) in the LAB place.
+    python3 tools/robots/inject.py duel
+        Client datamodel, during a Play of the game (DEC-052): the robot (PlayerSim pasted
+        into studio_bot.luau, comments stripped) as _G.NDDuelBot. Nothing goes into Edit.
     python3 tools/duelbot/studio_code.py --first debutant 1,2 Lion,Legion,Leaf
     python3 tools/duelbot/studio_code.py --duel joueur easy 1 Lion:Mirage,Lion:Sand
     python3 tools/duelbot/studio_code.py '[{"mode":"first","kit":"Lion","seed":1}]'
@@ -59,17 +59,12 @@ def module_source() -> str:
     return strip(bot)
 
 
-def install() -> str:
-    src = module_source()
-    assert "]==]" not in src
-    return ('local old=game:GetService("ReplicatedStorage"):FindFirstChild("NDDuelBot") if old then old:Destroy() end\n'
-            'local m=Instance.new("ModuleScript") m.Name="NDDuelBot"\n'
-            "m.Source=[==[\n" + src + "\n]==]\n"
-            'm.Parent=game:GetService("ReplicatedStorage") return "NDDuelBot "..#m.Source')
+MOVED = "DEC-052 : plus de module dans l'Édition. Pendant le Play : python3 tools/robots/inject.py {}"
+ROBOT = '(_G.NDDuelBot or error("NDDuelBot absent : python3 tools/robots/inject.py duel (pendant le Play)"))'
 
 
 def start(plan: list) -> str:
-    return 'return require(game:GetService("ReplicatedStorage"):WaitForChild("NDDuelBot")).start(' + lua_value(plan) + ")"
+    return "return " + ROBOT + ".start(" + lua_value(plan) + ")"
 
 
 READ = ('local p=game:GetService("Players").LocalPlayer '
@@ -93,7 +88,8 @@ def main(argv=None):
         print(__doc__)
         return 2
     if args[0] == "--module":
-        print(install())
+        print(MOVED.format("duel"), file=sys.stderr)
+        return 2
     elif args[0] == "--read":
         print(READ)
     else:

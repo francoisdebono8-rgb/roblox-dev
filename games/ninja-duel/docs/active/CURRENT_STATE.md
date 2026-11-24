@@ -1,3 +1,19 @@
+**OUTILLEUR, 24/11, nuit : passe commune 1, le robot de collision et le relevé des écrans, avant puis après** — NATIVE_STUDIO (Play de `PLACES/NinjaDuel.rbxlx`, place commune `c40cc16d`, sources `db13098f`, profil capture ; l'avant dans la copie LAB du 23/11, `d0678d90`) ; observations de Claude, pas l'avis de François
+- **Les toits tiennent** (DEV `bba7af8c`, ANIMATEUR) :
+  - à la chute au milieu du toit, 0 bâtiment sur 190 où les pieds finissent sous le toit dessiné (avant : 140 sur 229, médiane 4,6 studs) ;
+  - aux rayons d'en haut, 1 % des points (avant : 56 %).
+- **Les façades ne se traversent plus aux rayons** : 0 % des rayons à hauteur du corps (avant : 3 %, 18 % pour `shop_house`). À la marche, aucune façade sans solide (avant : 21).
+- **Il reste des façades où le corps entre** : 23 sur 175 (avant : 41 sur 212), dont 18 de 13 à 32 studs. Le robot ne distingue pas un passage ouvert d'un mur qui ne tient pas : liste à regarder en jeu dans `tools/collision/mesures/2026-11-24_avant_apres_rapport.md`.
+- **Les murs invisibles augmentent** : 16 % des rayons de façade (avant : 10 %).
+  - `MeshKit.fromAsset` crée les morceaux venus d'un asset en `CollisionFidelity.Box`, les autres en fidélité par défaut. Solides depuis `bba7af8c`, ils collisionnent comme leur boîte ou leur enveloppe.
+  - Les boîtes de l'escalier des Hokage (`Stone` 110 × 32 × 122, `Rails`, `Lanterns`, `Caps`, en (0, -241)) couvrent trois `tank_house` de la rangée sud : on s'y tient 7,5 à 12 studs au-dessus du toit dessiné.
+- **Les écrans** (`tools/screens/mesures/2026-11-24_apres_c40cc16d/releve.html`, à côté de ceux d'avant) :
+  - 24 écrans, 0 ligne rouge ; les orange sont celles du démarrage (20 EditableMesh au lieu de 30) ;
+  - corrigés : le but qui barrait le haut, la bulle du passant, TRY THIS KIT (une étape à la fois), les deux onglets choisis, le classement vide, le portrait du premier duel ;
+  - toujours là : la victoire du premier duel sans gain et 0 Ryō, PAID WITH ROBUX au-dessus des kits gratuits, les textes qui débordent, la carte, G, les tenues SOON, les kits de départ verrouillés sans prévenir, le corps effacé en duel ;
+  - nouveau : l'adversaire de TRY THIS KIT aux cheveux jaunes pour THE FATED GENIUS, CTRL contre SHIFT pour courir, le panneau du racket qui cache le voyou, « +20 RYŌ » affiché après une défaite contre le voyou alors que la bourse ne bouge pas.
+- **DEC-052 côté outils** : `tools/lab/lab_place.py` est retiré. Les robots sont envoyés dans le client pendant un Play, sans copie : `tools/robots/inject.py`. Tous les outils les cherchent dans `_G`. Les rayons (`collision.py --rays`, `--compare`) mesurent la même chose avant et après, quoi qui rende la place solide.
+
 **DEV, 23/11, 22 h 15 : pourquoi François ne voyait pas le déplacement ninja** — NATIVE_STUDIO (lu dans sa session ND-DEV en cours, sans la toucher) puis TECHNICAL
 - **La cause** : Roblox joint maintenant les avatars par des `AnimationConstraint`, plus par des `Motor6D`. Son avatar dans Konoha en a 15 et aucun `Motor6D`.
   - Le corps ninja du promeneur (`Client/HubBody`) ne cherchait que des `Motor6D` : il ne trouvait rien à poser, et c'est la marche de Roblox qui s'affichait.
