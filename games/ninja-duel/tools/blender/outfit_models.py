@@ -769,7 +769,8 @@ for _id, (_kind, _model, _name, _cols) in CATALOG.items():
 # (their cloth stand-in is replaced by the model: CapeTravel, BackScroll, MaskCloth)
 WARDROBE_ITEMS = {k: v[1] for k, v in CATALOG.items()}
 WARDROBE_ITEMS["CapeTravel"] = "CapeShort"
-WARDROBE_ITEMS.update({k: k for k in wardrobe_models.SETS})
+# (24/11) the village people's looks are models only, never Shop items (NPC_SETS below)
+WARDROBE_ITEMS.update({k: k for k in wardrobe_models.SETS if k not in ("SetRogue",)})
 # (the icon tool, tools/icons, reads ITEMS: every look with a model is there)
 ITEMS.update(WARDROBE_ITEMS)
 
@@ -790,7 +791,10 @@ for _sid in wardrobe_models.SETS:
 PRICE = {"top": 600, "bottom": 500, "arms": 350, "feet": 350, "headband": 800, "mask": 600, "cape": 900, "back": 700, "hair": 700}
 # A set belongs to a kit (Shop.spec): the inspiration whose spirit it carries (my proposal, the DEV's call)
 SET_KIT = {"SetEmberMonk": "Leaf", "SetMistHunter": "Mirage", "SetStormCourier": "Legion", "SetShadowScout": "Copycat",
-           "SetLeafMedic": "GentleFist", "SetSandNomad": "Sand"}
+           "SetLeafMedic": "GentleFist", "SetSandNomad": "Sand", "SetRogue": "Lion"}
+# (24/11) the looks of the village's people, never in the shop (Shop.spec: every set is sold in
+# Robux): modelled and exported (OutfitMeshes), left out of the Catalog
+NPC_SETS = {"SetRogue"}
 # Server/Outfit's cloth stand-ins (Shared/Catalog `pieces`), until the client has drawn the model
 FALLBACK = {
     "top": lambda c: ['{on="UpperTorso",c="%s"}' % c, '{on="LowerTorso",c="%s",h=.6}' % c, '{on="UpperArm",c="%s",h=.55}' % c],
@@ -830,7 +834,10 @@ def write_catalog(path):
                 cols[m + sl] = v
         top, low = parts[0][0] + next(iter(parts[0][1])), parts[1][0] + next(iter(parts[1][1]))
         pcs = FALLBACK["top"](top) + FALLBACK["bottom"](low)[1:]
-        rows.append('\t{id="%s",slot="set",kit="%s",name="%s",robux="%s",colors={%s},\n\t\tpieces={%s}},' % (k, SET_KIT[k], nm.upper(), k, c(cols), ",".join(pcs)))
+        if k in NPC_SETS:
+            continue
+        sale = 'robux="%s"' % k
+        rows.append('\t{id="%s",slot="set",kit="%s",name="%s",%s,colors={%s},\n\t\tpieces={%s}},' % (k, SET_KIT[k], nm.upper(), sale, c(cols), ",".join(pcs)))
     block = BEGIN + "\n" + "\n".join(rows) + "\n" + END
     if BEGIN in src:
         src = src.split(BEGIN)[0] + block + src.split(END)[1]

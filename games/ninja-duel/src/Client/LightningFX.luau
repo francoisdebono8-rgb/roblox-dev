@@ -31,6 +31,9 @@ function LightningFX.holding(actor)
 	if body=="Chidori" then return if actor.fighterId=="Copycat" then "Raikiri" else "Chidori" end
 	if actor.castId=="Chidori" and (st=="TechniqueChannel" or st=="TechniqueActive") then return if actor.fighterId=="Copycat" then "Raikiri" else "Chidori" end
 	if actor.castId=="LightningBlade" and (st=="TechniqueChannel" or st=="TechniqueActive") then return "Raikiri" end
+	-- (24/11, DEC-048 RAIKIRI: TRACKED) the Lightning Blade sent at the dogs' mark: the strike's
+	-- variant "Raikiri" (the DEV's server sets it; the clip Copycat.Raikiri)
+	if actor.attackVariant=="Raikiri" and (st=="Startup" or st=="Active" or st=="Recovery") then return "Raikiri" end
 	if actor.attackName=="ChidoriThrust" and (st=="Startup" or st=="Active") then return "Chidori" end
 	if (actor.attackVariant=="Chidori" or actor.attackVariant=="ChidoriDive") and (st=="Startup" or st=="Active") then return "Chidori" end
 	return nil
@@ -98,9 +101,29 @@ local function fighter(fx,model,actor,dt)
 			arc(LightningFX.onPart(hand,Vector3.new(0,-.35,0)),floor.Position+back,look,.12,.12,.55)
 		end
 	end
+	-- (24/11) raikiri_trail: the tracked Raikiri tears a line of lightning along its whole run,
+	-- from where it set off to the mark; each stretch stays a moment, so the path reads behind it
+	if actor.attackVariant=="Raikiri" then
+		local tr=LightningFX.trail(st,palm,now)
+		if tr then
+			arc(tr.from,tr.to,LightningFX.LOOKS.Raikiri,.2,.45,.5)
+			arc(tr.from-Vector3.new(0,.6,0),tr.to-Vector3.new(0,.6,0),LightningFX.LOOKS.Raikiri,.1,.3,.8)
+		end
+	else
+		st.trailAt=nil
+	end
+end
+-- (pure) The next stretch of the Raikiri's trail: from where the last one ended to the palm,
+-- once it has run far enough (1.5 studs) or every 0.05 s; nil in between.
+function LightningFX.trail(st,palm,now)
+	if not st.trailAt then st.trailAt,st.trailT=palm,now return nil end
+	if (palm-st.trailAt).Magnitude<1.5 and now-st.trailT<.05 then return nil end
+	local out={from=st.trailAt,to=palm}
+	st.trailAt,st.trailT=palm,now
+	return out
 end
 local function impact(fx,data,folder)
-	if data.style~="chidori" then return false end
+	if data.style~="chidori" and data.style~="raikiri" then return false end
 	pcall(function()
 		Bolt.folder=fx.folder
 		local at=data.position
@@ -113,10 +136,14 @@ local function impact(fx,data,folder)
 		dir=dir.Unit
 		local owner=folder and folder:FindFirstChild(data.owner or "")
 		local fid=data.fighter or (owner and owner:GetAttribute("FighterId"))
-		local look=LightningFX.LOOKS[if fid=="Copycat" then "Raikiri" else "Chidori"]
-		for i=1,4 do
+		local look=LightningFX.LOOKS[if fid=="Copycat" or data.style=="raikiri" then "Raikiri" else "Chidori"]
+		-- the tracked Raikiri (impact "raikiri"): longer bolts, six of them, through and beyond
+		local tracked=data.style=="raikiri"
+		local n=if tracked then 6 else 4
+		local reach=if tracked then 7 else 4
+		for i=1,n do
 			local spread=(random(rng)*.45+dir).Unit
-			arc(at-dir*.4,at+spread*(4+i),look,.22-i*.03,.16+i*.03,.6)
+			arc(at-dir*.4,at+spread*(reach+i),look,math.max(.06,.22-i*.03),.16+i*.03,.6)
 		end
 	end)
 	return false -- Effects' flash and sparks still mark the contact

@@ -1,5 +1,35 @@
 # Boîte de réception Claude
 
+## INBOX-ANIM-PASSE1B-20261124 — ANIMATEUR 24/11 : les voyous, la vie de Konoha hors des points d'arrivée, Raikiri
+
+**Les voyous** (`Client/KonohaRogueFX`, démarré dans `Effects` à côté des villageois) :
+- Sur chaque écran, ta statue `NinjaThug` est cachée et remplacée par le rig du duel (celui des villageois). Il porte la tenue du voyou, `SetRogue` : manteau sombre ouvert sur une robe rouge sang, masque de tissu, bandeau rayé du déserteur, mains et pieds bandés.
+- Cette tenue est modélisée (`OutfitMeshes.Sets.SetRogue`) mais **pas au Catalog** : `Shop.spec` veut qu'un set soit vendu en Robux, et c'est une tenue de PNJ. Si tu veux la donner en récompense un jour, dis-le, on change la règle ensemble.
+- **Ses clips** (`tools/blender/p1_clips.py`, couche `AuthoredJutsu20`) :
+  - `Rogue.Idle` : il traîne bras croisés et regarde autour ;
+  - `Rogue.Racket` : quand le serveur ouvre le racket **sur ce joueur** (`NinjaDuel.Racket`, l'`id` de l'offre = la clé de `Thug_<clé>`), il se tourne vers lui, se penche et tend la main ;
+  - `Rogue.Taunt` : le panneau se ferme et il est encore là ; il fait craquer ses doigts et appelle du geste ;
+  - `Rogue.Leave` : quand ta statue disparaît (payé ou battu), il bondit en arrière et s'efface.
+- **À toi** :
+  1. Le corps du voyou **dans le duel de rue** (`Matches:thugFight`) n'est pas le mien. Habille-le avec les looks `{set="SetRogue"}` par `Server/Outfit.wear`, si tu veux qu'il garde sa tenue en combat.
+  2. Un attribut d'état sur la statue (`ThugState` = `idle`, `racket`, `leaving`) rendrait les clips justes pour **tous** les joueurs présents ; aujourd'hui, seul le joueur racketté voit le racket.
+
+**La vie de Konoha hors des points d'arrivée** (`Client/KonohaLifeFX`, `Life.zones` et `Life.clearProps`) :
+- Les places gardées libres :
+  - les points d'arrivée (`HubMap.Spawns`) ;
+  - chaque maître et son anneau de duel ;
+  - le trio d'accueil ;
+  - l'anneau du terrain n° 3 ;
+  - les places de duel de rue (`HubMap.Streets`).
+- Les tonneaux, étals, poteaux, caisses, bancs, clôtures et souches de ton plan qui y tombent disparaissent de l'écran : cachés, sans collision et sans requête pour le joueur local, leurs maillages aussi. Les nobori n'y sont plus posés. Testé dans `StyleFX.spec`.
+- **À toi** : le mieux est que le générateur de la ville (`tools/village`) ne les pose pas du tout à ces endroits. Le client ne fait que rattraper.
+
+**Raikiri** (DEC-048, RAIKIRI: TRACKED) :
+- `Copycat.Raikiri` (`AuthoredJutsu20`), sur la garde de Kakashi : armé de côté, le bras de la lame poussé droit devant, l'autre bras rejeté en arrière. Marqueurs `contact` 0,12 et `recover` 0,36, durée 0,62. Note `clip_grades` 7,6 : brouillon, le bras n'est pas encore tendu à fond.
+- **`raikiri_trail`** (`Client/LightningFX`) : quand l'attaque porte la variante **`attackVariant="Raikiri"`**, la main garde sa foudre et une ligne d'éclairs se dessine tout le long de la course. Chaque tronçon reste un moment derrière elle.
+- Le coup avec le style d'impact **`"raikiri"`** fait 6 éclairs longs qui traversent la cible.
+- **À toi** : pose `attackVariant="Raikiri"` (et le style `"raikiri"`) sur la Lame de foudre lâchée vers la marque des chiens, et joue `Copycat.Raikiri` comme clip de ce coup.
+
 ## INBOX-OUTILLEUR-PASSE1-20261124 — OUTILLEUR 24/11, nuit : passe commune 1, collisions et écrans, avant puis après
 
 Les faits sont dans `CURRENT_STATE`. Le détail est dans `tools/collision/README.md` et `tools/screens/README.md`. Les pages : `tools/collision/mesures/2026-11-24_avant_apres_rapport.html` et `tools/screens/mesures/2026-11-24_apres_c40cc16d/releve.html`. Ce sont des observations de Claude, pas l'avis de François.
