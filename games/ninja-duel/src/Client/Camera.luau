@@ -624,6 +624,28 @@ function Camera:update(data,dt)
 	else
 		self.introTotal=nil;self.introShot=nil
 	end
+	-- (24/11, DEC-053 § 3.2, the CM's series) The blow that decides the duel:
+	-- while the thrown body is held in slow motion (Config.FinalBlow.Decisive),
+	-- a close shot from the side of the blow on the impact, then a cut back to
+	-- the K.O.'s drift. Every duel's last blow, not only the films'.
+	local blow=data.ko and data.finalBlow
+	local blowShot=nil
+	if blow and blow.decisive and blow.pos then
+		local t=workspace:GetServerTimeNow()-blow.at
+		local hold=.22+(blow.slowFor or .6)+.3
+		if t>=0 and t<hold then
+			local hitter=if blow.by=="PlayerFighter" then a else target
+			local line=(blow.pos-hitter)*Vector3.new(1,0,1)
+			line=if line.Magnitude>.1 then line.Unit else Vector3.zAxis
+			local side=line:Cross(Vector3.yAxis)
+			local u=t/hold
+			focus=blow.pos+Vector3.new(0,1.2,0)
+			desired=focus+side*(7.5-u*1.5)-line*2+Vector3.new(0,1.4+u*.6,0)
+			blowShot=blow.at
+		end
+	end
+	if blowShot~=self.blowShot then self.cutNow=true end
+	self.blowShot=blowShot
 	self.fovKick*=math.exp(-dt*9)
 	local speed=data.human.speed or 0
 	local targetFov=frame.fov+math.clamp(separation*.08,0,5)+math.clamp(speed*.05,0,2)+sprint*5+self.fovKick+(self.keepWiden or 0)

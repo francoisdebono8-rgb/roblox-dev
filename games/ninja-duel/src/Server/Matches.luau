@@ -380,7 +380,7 @@ function Matches:start(player,playerId,botId,training,options)
 		botKit=result
 	end
 	self:destroy(s); s.epoch+=1
-	s.dare=nil
+	s.dare=nil;s.finalBlow=nil
 	-- (DEC-038) The walk in Konoha ends: the duel's body takes over.
 	if Matches.hubOn() then Hub.leave(player) end
 	if self.solo then self.solo:leave(player) end
@@ -475,6 +475,16 @@ function Matches:roundOver(s,winner,notify,advance)
 	s.wins[winner.id]=(s.wins[winner.id] or 0)+1
 	local decided=s.wins[winner.id]>=s.roundsToWin
 	s.matchPoint=decided
+	-- (24/11, DEC-053 § 3.2) the final blow: where and when, and the one that
+	-- decides the duel held longer in slow motion (Config.FinalBlow.Decisive)
+	local loser=nil
+	for _,a in (s.combat and s.combat.actors) or {} do if a~=winner then loser=a;break end end
+	if decided and loser and loser.koFlight then
+		local D=Config.FinalBlow.Decisive
+		loser.koFlight.slowFor=D.SlowFor;loser.koFlight.slowScale=D.SlowScale
+	end
+	s.finalBlow={at=s.combat and s.combat.now or 0,by=winner.id,pos=loser and loser.root and loser.root.Position,decisive=decided,
+		slowFor=if decided then Config.FinalBlow.Decisive.SlowFor else Config.FinalBlow.SlowFor}
 	-- (22/11, the CM's titles COMEBACK KID and UNTOUCHED) a round of note won
 	-- in a real duel (not practice, not the first fight)
 	if s.human and winner==s.human and s.owner and not s.tutorial and not s.firstFight and not s.online then
@@ -594,7 +604,7 @@ end
 function Matches:resetRound(s)
 	local c=s.combat
 	local first,second=c.actors[1],c.actors[2]
-	s.epoch+=1;s.round+=1;s.winner=nil;s.matchPoint=false
+	s.epoch+=1;s.round+=1;s.winner=nil;s.matchPoint=false;s.finalBlow=nil
 	c:clear(true)
 	for _,a in c.actors do
 		a.health=a.def.Health;a.hum.Health=a.health;a.chakra=a.def.Chakra or Config.Chakra;a.cooldowns={}
@@ -766,7 +776,11 @@ function Matches:view(s,cursor,mine,theirs)
 		site=if s.site then {key=s.site.key,place=s.site.place,radius=s.site.radius,street=s.site.street} else nil,
 		-- (24/11) an inspiration's challenge: his dare, then the VS card, during
 		-- the first round's intro (Matches.challengeStart); `at` server time
-		dare=if s.dare and (s.round or 1)==1 and (s.introUntil or 0)>now then s.dare else nil}
+		dare=if s.dare and (s.round or 1)==1 and (s.introUntil or 0)>now then s.dare else nil,
+		-- (24/11, DEC-053 § 3.2) the round's last blow while K.O. is called:
+		-- `by` read from this viewer's side, like `winner`
+		finalBlow=if s.finishing and s.finalBlow then {at=s.finalBlow.at,pos=s.finalBlow.pos,decisive=s.finalBlow.decisive,slowFor=s.finalBlow.slowFor,
+			by=if s.finalBlow.by==mine.id then "PlayerFighter" else "AIFighter"} else nil}
 end
 function Matches:request(player,payload)
 	local s=self:session(player); local clock=os.clock()
