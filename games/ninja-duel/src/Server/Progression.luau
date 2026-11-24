@@ -284,10 +284,14 @@ function P.duelEnded(player,s,won)
 	if not P.enabled() or not P.ready(player) then return nil end
 	if s.tutorial or s.spectate or s.autopilot or s.scripted or s.online or s.cupPilot then return nil end
 	local id=s.playerId
-	if not P.owns(player,id) then return nil end
+	-- (24/11, the OUTILLEUR's new-player robot: « la victoire du premier duel
+	-- ne donne ni n'affiche rien », the quests promising « finish a duel: +25
+	-- Ryō ») a kit he does not own yet (his first duels, with Lee's) earns no
+	-- mastery, but the duel's Ryō and the day's quests count all the same
+	local owned=P.owns(player,id)
 	local used=0
 	for _ in (s.human and s.human.usedJutsu) or {} do used+=1 end
-	local amount=Masters.duelGain({won=won,techniques=used,level=s.aiLevel or "easy"})
+	local amount=if owned then Masters.duelGain({won=won,techniques=used,level=s.aiLevel or "easy"}) else 0
 	if P.boosted(player) then amount=math.min(Masters.Gain.Max,amount*2) end
 	local out=nil
 	if amount>0 then
@@ -300,6 +304,9 @@ function P.duelEnded(player,s,won)
 	local today=os.date("!%Y-%m-%d")
 	local first=won and h.data.wallet and h.data.wallet.winDay~=today
 	local ryo=Shop.duelRyo({won=won,firstWinToday=first,master=s.masterTrial~=nil})
+	-- (24/11, the OUTILLEUR: a racket lost paid +20 like any duel, the rogue's
+	-- toll gone) a rogue's fight pays its purse only (Server/Thugs.ended)
+	if s.thug then ryo=0;first=false end
 	if ryo>0 then
 		local ok,result=P.run(player,"earnRyo",{amount=ryo,day=if first then today else nil})
 		if ok and type(result)=="table" then

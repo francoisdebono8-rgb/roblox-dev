@@ -100,7 +100,10 @@ end
 
 local function fromAsset(spec)
 	local AssetService=game:GetService("AssetService")
-	local part=AssetService:CreateMeshPartAsync(Content.fromUri(spec.asset),{CollisionFidelity=Enum.CollisionFidelity.Box})
+	-- (24/11, the OUTILLEUR's collision robot: the Hokage stairs' box stood
+	-- 7.5 to 12 studs over three roofs, an invisible wall) a piece that may
+	-- stop a body (Client/HubDress.solidify) follows its shape
+	local part=AssetService:CreateMeshPartAsync(Content.fromUri(spec.asset),{CollisionFidelity=Enum.CollisionFidelity.PreciseConvexDecomposition})
 	return part
 end
 local function build(spec)

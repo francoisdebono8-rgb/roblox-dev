@@ -289,4 +289,24 @@ test("a purchase is granted once, and only once the profile is saved",function()
 	Config.Progression.Enabled=false;Config.Progression.Products={}
 end)
 
+-- (24/11, the OUTILLEUR's new-player robot) the first duels, with a kit he
+-- does not own yet, pay their Ryō and count for the day's quests (no
+-- mastery); a rogue's fight pays only its purse (Server/Thugs)
+test("a duel with a kit not his yet pays its Ryō; a rogue's fight only its purse",function()
+	Config.Progression.Enabled=true
+	Progression.repo=nil
+	Progression.init(Repo.memoryStore())
+	local player={UserId=504,Name="P504",DisplayName="P504",Parent=H.Players}
+	assert(Progression.load(player))
+	assert(not Progression.owns(player,"Leaf"),"a new player owns Lee")
+	local Shop=H.load("Shared/Shop")
+	local out=Progression.duelEnded(player,{playerId="Leaf",aiLevel="easy"},true)
+	local want=Shop.duelRyo({won=true,firstWinToday=true})
+	assert(out and out.ryo==want and out.firstWin and out.amount==nil,"his first win paid "..tostring(out and out.ryo).." instead of "..want)
+	assert(out.daily~=nil,"the day's quests did not count the duel")
+	local racket=Progression.duelEnded(player,{playerId="Leaf",aiLevel="easy",thug={kit="Lion"}},false)
+	assert(not (racket and racket.ryo),"a lost racket paid the duel's Ryō")
+	Config.Progression.Enabled=false
+end)
+
 print(string.format("NinjaDuel masters' path (DEC-037): %d PASS",passed))
