@@ -106,9 +106,23 @@ function Cabine.description(spec)
 	if spec.user then
 		desc=Players:GetHumanoidDescriptionFromUserId(spec.user)
 	elseif spec.bundle then
+		-- (26/11, passe 2) the body's outfit is the first that is not a face or a
+		-- head (the last one was the head's: Woman, Vanessa and Big Bill came out
+		-- in the block body), then the bundle's own body parts by their names
+		-- (tools/outfitcheck/outfit_bodies.luau)
 		local d=AssetService:GetBundleDetailsAsync(spec.bundle)
 		for _,it in d.Items do
-			if it.Type=="UserOutfit" then desc=Players:GetHumanoidDescriptionFromOutfitId(it.Id) end
+			if it.Type=="UserOutfit" and not desc and not string.find(it.Name,"Face",1,true) and not string.find(it.Name,"Head",1,true) then
+				desc=Players:GetHumanoidDescriptionFromOutfitId(it.Id)
+			end
+		end
+		desc=desc or Instance.new("HumanoidDescription")
+		for _,it in d.Items do
+			if it.Type=="Asset" then
+				for _,pair in {{"Left Arm","LeftArm"},{"Right Arm","RightArm"},{"Left Leg","LeftLeg"},{"Right Leg","RightLeg"},{"Torso","Torso"}} do
+					if string.sub(it.Name,-#pair[1])==pair[1] then (desc::any)[pair[2]]=it.Id end
+				end
+			end
 		end
 	end
 	return desc or Instance.new("HumanoidDescription")

@@ -1,0 +1,4133 @@
+{
+ "meta": {
+  "place": "PLACES/NinjaDuel.rbxlx, place commune f28b8ba1 (sources 9e8db7dc), profil capture",
+  "note": "26/11, Studio à soi (Play), profil neuf : les 8 kits appris pour ce Play, aucun nœud d'arbre"
+ },
+ "robot": {
+  "state": "done",
+  "results": [
+   {
+    "rival": "Legion",
+    "seconds": 150.3,
+    "started": 1999.6705280416645,
+    "steps": [
+     {
+      "total": 30,
+      "index": 1,
+      "id": "move",
+      "tries": 1,
+      "pad": "L stick",
+      "shownAt": 1.3,
+      "title": "Move",
+      "outcome": "fini",
+      "seconds": 1.2,
+      "cues": [],
+      "key": "WASD"
+     },
+     {
+      "total": 30,
+      "index": 2,
+      "id": "sprint",
+      "tries": 1,
+      "pad": "L3, then move",
+      "shownAt": 2.6,
+      "title": "Sprint",
+      "outcome": "fini",
+      "seconds": 0.6,
+      "cues": [],
+      "key": "Hold CTRL + move"
+     },
+     {
+      "total": 30,
+      "index": 3,
+      "id": "jump",
+      "tries": 1,
+      "pad": "×",
+      "shownAt": 3.3,
+      "title": "Jump and land",
+      "outcome": "fini",
+      "seconds": 1.5,
+      "cues": [],
+      "key": "SPACE"
+     },
+     {
+      "total": 30,
+      "index": 4,
+      "id": "lock",
+      "tries": 1,
+      "pad": "R3 twice",
+      "shownAt": 4.8,
+      "title": "Unlock, then lock the target",
+      "outcome": "fini",
+      "seconds": 1.1,
+      "cues": [],
+      "key": "SHIFT twice"
+     },
+     {
+      "total": 30,
+      "index": 5,
+      "id": "dodge",
+      "tries": 1,
+      "pad": "L stick + ○",
+      "shownAt": 5.9,
+      "title": "Directional dash",
+      "outcome": "fini",
+      "seconds": 0.9,
+      "cues": [],
+      "key": "Direction + Q"
+     },
+     {
+      "total": 30,
+      "index": 6,
+      "id": "wall",
+      "tries": 1,
+      "pad": "Push into the wall, then ×",
+      "shownAt": 6.9,
+      "title": "Run up the wall, then rebound",
+      "outcome": "fini",
+      "seconds": 1.7,
+      "cues": [],
+      "key": "Move into the wall, then SPACE"
+     },
+     {
+      "total": 30,
+      "index": 7,
+      "id": "string",
+      "tries": 1,
+      "pad": "□ x4",
+      "shownAt": 8.7,
+      "title": "Land your 4-hit string",
+      "outcome": "fini",
+      "seconds": 2.1,
+      "cues": [],
+      "key": "LMB x4"
+     },
+     {
+      "total": 30,
+      "index": 8,
+      "id": "heavy",
+      "tries": 1,
+      "pad": "△",
+      "shownAt": 10.8,
+      "title": "Heavy strike",
+      "outcome": "fini",
+      "seconds": 1.3,
+      "cues": [],
+      "key": "RMB"
+     },
+     {
+      "total": 30,
+      "index": 9,
+      "id": "routeSide",
+      "tries": 1,
+      "pad": "2 hits, then ○",
+      "shownAt": 12.2,
+      "title": "Turn the angle: Vault Kick",
+      "outcome": "fini",
+      "seconds": 1.4,
+      "cues": [],
+      "key": "2 hits, then Q"
+     },
+     {
+      "total": 30,
+      "index": 10,
+      "id": "routeDown",
+      "tries": 1,
+      "pad": "3 hits, then △",
+      "shownAt": 13.7,
+      "title": "Go low: Sweep",
+      "outcome": "fini",
+      "seconds": 1.4,
+      "cues": [],
+      "key": "3 hits, then RMB"
+     },
+     {
+      "total": 30,
+      "index": 11,
+      "id": "launch",
+      "tries": 1,
+      "pad": "2 hits, then △",
+      "shownAt": 15.2,
+      "title": "Launch: Launcher",
+      "outcome": "fini",
+      "seconds": 1.5,
+      "cues": [],
+      "key": "2 hits, then RMB"
+     },
+     {
+      "total": 30,
+      "index": 12,
+      "id": "chase",
+      "tries": 1,
+      "pad": "× after the launch",
+      "shownAt": 16.7,
+      "title": "Chase the launched body",
+      "outcome": "fini",
+      "seconds": 1.2,
+      "cues": [],
+      "key": "E after the launch"
+     },
+     {
+      "total": 30,
+      "index": 13,
+      "id": "air",
+      "tries": 6,
+      "pad": "□ twice in the air",
+      "shownAt": 18,
+      "title": "Land two aerial strikes",
+      "outcome": "fini",
+      "seconds": 6.8,
+      "cues": [
+       "FLOW"
+      ],
+      "key": "LMB twice in the air"
+     },
+     {
+      "total": 30,
+      "index": 14,
+      "id": "airFinish",
+      "tries": 1,
+      "pad": "△ in the air",
+      "shownAt": 24.8,
+      "title": "Finish downward",
+      "outcome": "fini",
+      "seconds": 1.1,
+      "cues": [],
+      "key": "RMB in the air"
+     },
+     {
+      "total": 30,
+      "index": 15,
+      "id": "runStrike",
+      "tries": 1,
+      "pad": "Sprint at him, then □ or △",
+      "shownAt": 26,
+      "title": "Strike on the run: Flying Kick",
+      "outcome": "fini",
+      "seconds": 1.5,
+      "cues": [],
+      "key": "Sprint at him, then LMB or RMB"
+     },
+     {
+      "total": 30,
+      "index": 16,
+      "id": "grab",
+      "tries": 1,
+      "pad": "L1 + □, then □",
+      "shownAt": 27.5,
+      "title": "Grab, then throw",
+      "outcome": "fini",
+      "seconds": 3.4,
+      "cues": [],
+      "key": "V, then LMB (RMB throws upward)"
+     },
+     {
+      "total": 30,
+      "index": 17,
+      "id": "tool",
+      "tries": 1,
+      "pad": "R2",
+      "shownAt": 31,
+      "title": "Your tool: shuriken",
+      "outcome": "fini",
+      "seconds": 1.2,
+      "cues": [],
+      "key": "R"
+     },
+     {
+      "total": 30,
+      "index": 18,
+      "id": "jutsu1",
+      "tries": 1,
+      "pad": "R1 + □",
+      "shownAt": 32.2,
+      "title": "Jutsu 1: Phoenix Flower",
+      "outcome": "fini",
+      "seconds": 1.7,
+      "cues": [],
+      "key": "1"
+     },
+     {
+      "total": 30,
+      "index": 19,
+      "id": "jutsu2",
+      "tries": 14,
+      "pad": "R1 + △",
+      "shownAt": 34,
+      "title": "Jutsu 2: Chidori",
+      "outcome": "abandonné",
+      "seconds": 23.6,
+      "cues": [],
+      "key": "2"
+     },
+     {
+      "total": 30,
+      "index": 20,
+      "id": "jutsu3",
+      "tries": 14,
+      "pad": "R1 + ○",
+      "shownAt": 57.7,
+      "title": "Jutsu 3: Wire Trap",
+      "outcome": "abandonné",
+      "seconds": 23.6,
+      "cues": [],
+      "key": "3"
+     },
+     {
+      "total": 30,
+      "index": 21,
+      "id": "jutsu4",
+      "tries": 1,
+      "pad": "R1 + ×",
+      "shownAt": 81.4,
+      "title": "Jutsu 4: Great Fireball",
+      "outcome": "fini",
+      "seconds": 1.7,
+      "cues": [],
+      "key": "4"
+     },
+     {
+      "total": 30,
+      "index": 22,
+      "id": "sealPage",
+      "tries": 1,
+      "pad": "Hold L2 + R1 + □",
+      "shownAt": 83.2,
+      "title": "Hand seals: Sōshūha: Wired Shuriken",
+      "outcome": "fini",
+      "seconds": 1.7,
+      "cues": [],
+      "key": "Hold C + 1"
+     },
+     {
+      "total": 30,
+      "index": 23,
+      "id": "guard",
+      "tries": 1,
+      "pad": "Hold L1",
+      "shownAt": 84.9,
+      "title": "Guard the incoming strike",
+      "outcome": "fini",
+      "seconds": 2,
+      "cues": [],
+      "key": "Hold F"
+     },
+     {
+      "total": 30,
+      "index": 24,
+      "id": "evade",
+      "tries": 1,
+      "pad": "○ during his wind-up",
+      "shownAt": 87.1,
+      "title": "Dodge the incoming strike",
+      "outcome": "fini",
+      "seconds": 1.7,
+      "cues": [],
+      "key": "Q during his wind-up"
+     },
+     {
+      "total": 30,
+      "index": 25,
+      "id": "substitute",
+      "tries": 1,
+      "pad": "○ as soon as his blow lands",
+      "shownAt": 88.8,
+      "title": "Escape after being hit",
+      "outcome": "fini",
+      "seconds": 1.6,
+      "cues": [],
+      "key": "Q as soon as his blow lands"
+     },
+     {
+      "total": 30,
+      "index": 26,
+      "id": "interrupt",
+      "tries": 1,
+      "pad": "□ during the signs",
+      "shownAt": 90.5,
+      "title": "Interrupt his hand signs",
+      "outcome": "fini",
+      "seconds": 1.6,
+      "cues": [],
+      "key": "LMB during the signs"
+     },
+     {
+      "total": 30,
+      "index": 27,
+      "id": "throwBreak",
+      "tries": 1,
+      "pad": "L1 + □ as he seizes you",
+      "shownAt": 92.2,
+      "title": "Break his grab",
+      "outcome": "fini",
+      "seconds": 1.4,
+      "cues": [],
+      "key": "V as he seizes you"
+     },
+     {
+      "total": 30,
+      "index": 28,
+      "id": "awaken",
+      "tries": 18,
+      "pad": "D-pad ↓ (low health)",
+      "shownAt": 93.7,
+      "title": "Awaken: CURSE MARK",
+      "outcome": "abandonné",
+      "seconds": 22.9,
+      "cues": [
+       "LOCKED"
+      ],
+      "key": "T (low health)"
+     },
+     {
+      "total": 30,
+      "index": 29,
+      "id": "ultimate",
+      "tries": 1,
+      "pad": "R1 + L1 (bar full)",
+      "shownAt": 116.7,
+      "title": "Ultimate: CHIDORI: LION'S STRIKE",
+      "outcome": "fini",
+      "seconds": 1.8,
+      "cues": [],
+      "key": "Y (bar full)"
+     },
+     {
+      "total": 30,
+      "index": 30,
+      "id": "win",
+      "tries": 0,
+      "pad": "Use your complete kit",
+      "shownAt": 118.6,
+      "title": "Win the practice duel",
+      "outcome": "gagné",
+      "seconds": 31.7,
+      "win": "PlayerFighter",
+      "cues": [],
+      "key": "Use your complete kit"
+     }
+    ],
+    "phase": "Result",
+    "kit": "Lion"
+   },
+   {
+    "rival": "Sand",
+    "seconds": 190.9,
+    "started": 2151.513918041659,
+    "steps": [
+     {
+      "total": 30,
+      "index": 1,
+      "id": "move",
+      "tries": 1,
+      "pad": "L stick",
+      "shownAt": 1.2,
+      "title": "Move",
+      "outcome": "fini",
+      "seconds": 1.1,
+      "cues": [],
+      "key": "WASD"
+     },
+     {
+      "total": 30,
+      "index": 2,
+      "id": "sprint",
+      "tries": 1,
+      "pad": "L3, then move",
+      "shownAt": 2.4,
+      "title": "Sprint",
+      "outcome": "fini",
+      "seconds": 0.6,
+      "cues": [],
+      "key": "Hold CTRL + move"
+     },
+     {
+      "total": 30,
+      "index": 3,
+      "id": "jump",
+      "tries": 1,
+      "pad": "×",
+      "shownAt": 3,
+      "title": "Jump and land",
+      "outcome": "fini",
+      "seconds": 1.5,
+      "cues": [],
+      "key": "SPACE"
+     },
+     {
+      "total": 30,
+      "index": 4,
+      "id": "lock",
+      "tries": 1,
+      "pad": "R3 twice",
+      "shownAt": 4.5,
+      "title": "Unlock, then lock the target",
+      "outcome": "fini",
+      "seconds": 1.1,
+      "cues": [],
+      "key": "SHIFT twice"
+     },
+     {
+      "total": 30,
+      "index": 5,
+      "id": "dodge",
+      "tries": 1,
+      "pad": "L stick + ○",
+      "shownAt": 5.7,
+      "title": "Directional dash",
+      "outcome": "fini",
+      "seconds": 0.9,
+      "cues": [],
+      "key": "Direction + Q"
+     },
+     {
+      "total": 30,
+      "index": 6,
+      "id": "wall",
+      "tries": 1,
+      "pad": "Push into the wall, then ×",
+      "shownAt": 6.6,
+      "title": "Run up the wall, then rebound",
+      "outcome": "fini",
+      "seconds": 1.4,
+      "cues": [],
+      "key": "Move into the wall, then SPACE"
+     },
+     {
+      "total": 30,
+      "index": 7,
+      "id": "string",
+      "tries": 1,
+      "pad": "□ x5",
+      "shownAt": 8.1,
+      "title": "Land your 5-hit string",
+      "outcome": "fini",
+      "seconds": 2.4,
+      "cues": [],
+      "key": "LMB x5"
+     },
+     {
+      "total": 30,
+      "index": 8,
+      "id": "heavy",
+      "tries": 1,
+      "pad": "△",
+      "shownAt": 10.5,
+      "title": "Heavy strike",
+      "outcome": "fini",
+      "seconds": 1.3,
+      "cues": [],
+      "key": "RMB"
+     },
+     {
+      "total": 30,
+      "index": 9,
+      "id": "routeSide",
+      "tries": 1,
+      "pad": "2 hits, then ○",
+      "shownAt": 11.9,
+      "title": "Turn the angle: Mirror Clone",
+      "outcome": "fini",
+      "seconds": 1.4,
+      "cues": [],
+      "key": "2 hits, then Q"
+     },
+     {
+      "total": 30,
+      "index": 10,
+      "id": "routeDown",
+      "tries": 1,
+      "pad": "3 hits, then △",
+      "shownAt": 13.3,
+      "title": "Go low: Tackle",
+      "outcome": "fini",
+      "seconds": 1.4,
+      "cues": [],
+      "key": "3 hits, then RMB"
+     },
+     {
+      "total": 30,
+      "index": 11,
+      "id": "launch",
+      "tries": 1,
+      "pad": "2 hits, then △",
+      "shownAt": 14.8,
+      "title": "Launch: Uzumaki Kick",
+      "outcome": "fini",
+      "seconds": 1.4,
+      "cues": [],
+      "key": "2 hits, then RMB"
+     },
+     {
+      "total": 30,
+      "index": 12,
+      "id": "chase",
+      "tries": 1,
+      "pad": "× after the launch",
+      "shownAt": 16.3,
+      "title": "Chase the launched body",
+      "outcome": "fini",
+      "seconds": 1.2,
+      "cues": [],
+      "key": "E after the launch"
+     },
+     {
+      "total": 30,
+      "index": 13,
+      "id": "air",
+      "tries": 6,
+      "pad": "□ twice in the air",
+      "shownAt": 17.6,
+      "title": "Land two aerial strikes",
+      "outcome": "fini",
+      "seconds": 6.8,
+      "cues": [
+       "FLOW"
+      ],
+      "key": "LMB twice in the air"
+     },
+     {
+      "total": 30,
+      "index": 14,
+      "id": "airFinish",
+      "tries": 1,
+      "pad": "△ in the air",
+      "shownAt": 24.5,
+      "title": "Finish in the air: Naruto Rendan",
+      "outcome": "fini",
+      "seconds": 1.1,
+      "cues": [],
+      "key": "RMB in the air"
+     },
+     {
+      "total": 30,
+      "index": 15,
+      "id": "runStrike",
+      "tries": 1,
+      "pad": "Sprint at him, then □ or △",
+      "shownAt": 25.6,
+      "title": "Strike on the run: Head Dive",
+      "outcome": "fini",
+      "seconds": 1.8,
+      "cues": [],
+      "key": "Sprint at him, then LMB or RMB"
+     },
+     {
+      "total": 30,
+      "index": 16,
+      "id": "grab",
+      "tries": 1,
+      "pad": "L1 + □, then □",
+      "shownAt": 27.5,
+      "title": "Grab, then throw",
+      "outcome": "fini",
+      "seconds": 3.4,
+      "cues": [],
+      "key": "V, then LMB (RMB throws upward)"
+     },
+     {
+      "total": 30,
+      "index": 17,
+      "id": "tool",
+      "tries": 1,
+      "pad": "R2",
+      "shownAt": 30.9,
+      "title": "Your tool: kunai",
+      "outcome": "fini",
+      "seconds": 1.2,
+      "cues": [],
+      "key": "R"
+     },
+     {
+      "total": 30,
+      "index": 18,
+      "id": "jutsu1",
+      "tries": 1,
+      "pad": "R1 + □",
+      "shownAt": 32.2,
+      "title": "Jutsu 1: Shadow Clone",
+      "outcome": "fini",
+      "seconds": 1.7,
+      "cues": [],
+      "key": "1"
+     },
+     {
+      "total": 30,
+      "index": 19,
+      "id": "jutsu2",
+      "tries": 14,
+      "pad": "R1 + △",
+      "shownAt": 33.9,
+      "title": "Jutsu 2: Rasengan",
+      "outcome": "abandonné",
+      "seconds": 23.5,
+      "cues": [],
+      "key": "2"
+     },
+     {
+      "total": 30,
+      "index": 20,
+      "id": "jutsu3",
+      "tries": 14,
+      "pad": "R1 + ○",
+      "shownAt": 57.6,
+      "title": "Jutsu 3: Multi Shadow Clone",
+      "outcome": "abandonné",
+      "seconds": 23.5,
+      "cues": [],
+      "key": "3"
+     },
+     {
+      "total": 30,
+      "index": 21,
+      "id": "jutsu4",
+      "tries": 1,
+      "pad": "R1 + ×",
+      "shownAt": 81.2,
+      "title": "Jutsu 4: Naruto Uzumaki Rendan",
+      "outcome": "fini",
+      "seconds": 1.7,
+      "cues": [],
+      "key": "4"
+     },
+     {
+      "total": 30,
+      "index": 22,
+      "id": "sealPage",
+      "tries": 1,
+      "pad": "Hold L2 + R1 + □",
+      "shownAt": 83,
+      "title": "Hand seals: Shadow Clone: Ambush",
+      "outcome": "fini",
+      "seconds": 1.7,
+      "cues": [],
+      "key": "Hold C + 1"
+     },
+     {
+      "total": 30,
+      "index": 23,
+      "id": "guard",
+      "tries": 1,
+      "pad": "Hold L1",
+      "shownAt": 84.7,
+      "title": "Guard the incoming strike",
+      "outcome": "fini",
+      "seconds": 2,
+      "cues": [],
+      "key": "Hold F"
+     },
+     {
+      "total": 30,
+      "index": 24,
+      "id": "evade",
+      "tries": 6,
+      "pad": "○ during his wind-up",
+      "shownAt": 86.8,
+      "title": "Dodge the incoming strike",
+      "outcome": "abandonné",
+      "seconds": 25.7,
+      "cues": [],
+      "key": "Q during his wind-up"
+     },
+     {
+      "total": 30,
+      "index": 25,
+      "id": "substitute",
+      "tries": 1,
+      "pad": "○ as soon as his blow lands",
+      "shownAt": 112.6,
+      "title": "Escape after being hit",
+      "outcome": "fini",
+      "seconds": 2,
+      "cues": [],
+      "key": "Q as soon as his blow lands"
+     },
+     {
+      "total": 30,
+      "index": 26,
+      "id": "interrupt",
+      "tries": 1,
+      "pad": "□ during the signs",
+      "shownAt": 114.7,
+      "title": "Interrupt his hand signs",
+      "outcome": "fini",
+      "seconds": 1.7,
+      "cues": [],
+      "key": "LMB during the signs"
+     },
+     {
+      "total": 30,
+      "index": 27,
+      "id": "throwBreak",
+      "tries": 1,
+      "pad": "L1 + □ as he seizes you",
+      "shownAt": 116.4,
+      "title": "Break his grab",
+      "outcome": "fini",
+      "seconds": 1.4,
+      "cues": [],
+      "key": "V as he seizes you"
+     },
+     {
+      "total": 30,
+      "index": 28,
+      "id": "awaken",
+      "tries": 18,
+      "pad": "D-pad ↓ (low health)",
+      "shownAt": 117.8,
+      "title": "Awaken: NINE-TAILS CHAKRA",
+      "outcome": "abandonné",
+      "seconds": 22.9,
+      "cues": [
+       "LOCKED"
+      ],
+      "key": "T (low health)"
+     },
+     {
+      "total": 30,
+      "index": 29,
+      "id": "ultimate",
+      "tries": 1,
+      "pad": "R1 + L1 (bar full)",
+      "shownAt": 140.9,
+      "title": "Ultimate: THOUSAND CLONES",
+      "outcome": "fini",
+      "seconds": 1.8,
+      "cues": [],
+      "key": "Y (bar full)"
+     },
+     {
+      "total": 30,
+      "index": 30,
+      "id": "win",
+      "tries": 0,
+      "pad": "Use your complete kit",
+      "shownAt": 142.7,
+      "title": "Win the practice duel",
+      "outcome": "fini sans victoire",
+      "seconds": 48.1,
+      "win": "AIFighter",
+      "cues": [],
+      "key": "Use your complete kit"
+     }
+    ],
+    "phase": "Result",
+    "kit": "Legion"
+   },
+   {
+    "rival": "Leaf",
+    "seconds": 144.5,
+    "started": 2343.907757583307,
+    "steps": [
+     {
+      "total": 30,
+      "index": 1,
+      "id": "move",
+      "tries": 1,
+      "pad": "L stick",
+      "shownAt": 1.7,
+      "title": "Move",
+      "outcome": "fini",
+      "seconds": 1.3,
+      "cues": [],
+      "key": "WASD"
+     },
+     {
+      "total": 30,
+      "index": 2,
+      "id": "sprint",
+      "tries": 1,
+      "pad": "L3, then move",
+      "shownAt": 3,
+      "title": "Sprint",
+      "outcome": "fini",
+      "seconds": 0.6,
+      "cues": [],
+      "key": "Hold CTRL + move"
+     },
+     {
+      "total": 30,
+      "index": 3,
+      "id": "jump",
+      "tries": 1,
+      "pad": "×",
+      "shownAt": 3.7,
+      "title": "Jump and land",
+      "outcome": "fini",
+      "seconds": 1.5,
+      "cues": [],
+      "key": "SPACE"
+     },
+     {
+      "total": 30,
+      "index": 5,
+      "id": "dodge",
+      "tries": 1,
+      "pad": "L stick + ○",
+      "shownAt": 5.2,
+      "title": "Sand body-flicker",
+      "outcome": "fini",
+      "seconds": 0.9,
+      "cues": [],
+      "key": "Direction + Q"
+     },
+     {
+      "total": 30,
+      "index": 6,
+      "id": "wall",
+      "tries": 1,
+      "pad": "Push into the wall, then ×",
+      "shownAt": 6.1,
+      "title": "Run up the wall, then rebound",
+      "outcome": "fini",
+      "seconds": 1.7,
+      "cues": [],
+      "key": "Move into the wall, then SPACE"
+     },
+     {
+      "total": 30,
+      "index": 7,
+      "id": "string",
+      "tries": 1,
+      "pad": "□ x4",
+      "shownAt": 7.9,
+      "title": "Land your 4-hit string",
+      "outcome": "fini",
+      "seconds": 2.1,
+      "cues": [],
+      "key": "LMB x4"
+     },
+     {
+      "total": 30,
+      "index": 8,
+      "id": "heavy",
+      "tries": 1,
+      "pad": "△",
+      "shownAt": 10.1,
+      "title": "Heavy strike",
+      "outcome": "fini",
+      "seconds": 1.3,
+      "cues": [],
+      "key": "RMB"
+     },
+     {
+      "total": 30,
+      "index": 9,
+      "id": "routeSide",
+      "tries": 1,
+      "pad": "2 hits, then ○",
+      "shownAt": 11.4,
+      "title": "Turn the angle: Sand Glide",
+      "outcome": "fini",
+      "seconds": 1.4,
+      "cues": [],
+      "key": "2 hits, then Q"
+     },
+     {
+      "total": 30,
+      "index": 10,
+      "id": "routeDown",
+      "tries": 1,
+      "pad": "3 hits, then △",
+      "shownAt": 12.9,
+      "title": "Go low: Sand Low Wave",
+      "outcome": "fini",
+      "seconds": 1.4,
+      "cues": [],
+      "key": "3 hits, then RMB"
+     },
+     {
+      "total": 30,
+      "index": 11,
+      "id": "launch",
+      "tries": 1,
+      "pad": "2 hits, then △",
+      "shownAt": 14.4,
+      "title": "Launch: Sand Fist",
+      "outcome": "fini",
+      "seconds": 1.4,
+      "cues": [],
+      "key": "2 hits, then RMB"
+     },
+     {
+      "total": 30,
+      "index": 12,
+      "id": "chase",
+      "tries": 1,
+      "pad": "× after the launch",
+      "shownAt": 15.9,
+      "title": "Chase the launched body",
+      "outcome": "fini",
+      "seconds": 1.2,
+      "cues": [],
+      "key": "E after the launch"
+     },
+     {
+      "total": 30,
+      "index": 13,
+      "id": "air",
+      "tries": 6,
+      "pad": "□ twice in the air",
+      "shownAt": 17.2,
+      "title": "Land two aerial strikes",
+      "outcome": "fini",
+      "seconds": 6.8,
+      "cues": [],
+      "key": "LMB twice in the air"
+     },
+     {
+      "total": 30,
+      "index": 14,
+      "id": "airFinish",
+      "tries": 1,
+      "pad": "△ in the air",
+      "shownAt": 24.1,
+      "title": "Finish downward",
+      "outcome": "fini",
+      "seconds": 1.1,
+      "cues": [],
+      "key": "RMB in the air"
+     },
+     {
+      "total": 30,
+      "index": 15,
+      "id": "runStrike",
+      "tries": 1,
+      "pad": "Sprint at him, then □ or △",
+      "shownAt": 25.2,
+      "title": "Strike on the run",
+      "outcome": "fini",
+      "seconds": 1.6,
+      "cues": [],
+      "key": "Sprint at him, then LMB or RMB"
+     },
+     {
+      "total": 30,
+      "index": 16,
+      "id": "grab",
+      "tries": 1,
+      "pad": "L1 + □, then □",
+      "shownAt": 26.9,
+      "title": "Grab, then throw",
+      "outcome": "fini",
+      "seconds": 3.4,
+      "cues": [],
+      "key": "V, then LMB (RMB throws upward)"
+     },
+     {
+      "total": 30,
+      "index": 17,
+      "id": "tool",
+      "tries": 1,
+      "pad": "R2",
+      "shownAt": 30.3,
+      "title": "Your tool: sand bullet",
+      "outcome": "fini",
+      "seconds": 1.2,
+      "cues": [],
+      "key": "R"
+     },
+     {
+      "total": 30,
+      "index": 18,
+      "id": "jutsu1",
+      "tries": 1,
+      "pad": "R1 + □",
+      "shownAt": 31.6,
+      "title": "Jutsu 1: Sand Shuriken",
+      "outcome": "fini",
+      "seconds": 1.7,
+      "cues": [],
+      "key": "1"
+     },
+     {
+      "total": 30,
+      "index": 19,
+      "id": "jutsu2",
+      "tries": 14,
+      "pad": "R1 + △",
+      "shownAt": 33.3,
+      "title": "Jutsu 2: Sand Coffin",
+      "outcome": "abandonné",
+      "seconds": 23.5,
+      "cues": [],
+      "key": "2"
+     },
+     {
+      "total": 30,
+      "index": 20,
+      "id": "jutsu3",
+      "tries": 14,
+      "pad": "R1 + ○",
+      "shownAt": 57,
+      "title": "Jutsu 3: Desert Wave",
+      "outcome": "abandonné",
+      "seconds": 23.6,
+      "cues": [],
+      "key": "3"
+     },
+     {
+      "total": 30,
+      "index": 21,
+      "id": "jutsu4",
+      "tries": 1,
+      "pad": "R1 + ×",
+      "shownAt": 80.7,
+      "title": "Jutsu 4: Sand Armor",
+      "outcome": "fini",
+      "seconds": 1.7,
+      "cues": [],
+      "key": "4"
+     },
+     {
+      "total": 30,
+      "index": 22,
+      "id": "sealPage",
+      "tries": 1,
+      "pad": "Hold L2 + R1 + □",
+      "shownAt": 82.5,
+      "title": "Hand seals: Shukaku's Arm",
+      "outcome": "fini",
+      "seconds": 1.7,
+      "cues": [],
+      "key": "Hold C + 1"
+     },
+     {
+      "total": 30,
+      "index": 23,
+      "id": "guard",
+      "tries": 1,
+      "pad": "Hold L1",
+      "shownAt": 84.2,
+      "title": "Guard the incoming strike",
+      "outcome": "fini",
+      "seconds": 2.1,
+      "cues": [],
+      "key": "Hold F"
+     },
+     {
+      "total": 30,
+      "index": 24,
+      "id": "evade",
+      "tries": 1,
+      "pad": "○ during his wind-up",
+      "shownAt": 86.4,
+      "title": "Dodge the incoming strike",
+      "outcome": "fini",
+      "seconds": 1.7,
+      "cues": [],
+      "key": "Q during his wind-up"
+     },
+     {
+      "total": 30,
+      "index": 25,
+      "id": "substitute",
+      "tries": 1,
+      "pad": "○ as soon as his blow lands",
+      "shownAt": 88.1,
+      "title": "Escape after being hit",
+      "outcome": "fini",
+      "seconds": 1.6,
+      "cues": [],
+      "key": "Q as soon as his blow lands"
+     },
+     {
+      "total": 30,
+      "index": 26,
+      "id": "interrupt",
+      "tries": 1,
+      "pad": "□ during the signs",
+      "shownAt": 89.8,
+      "title": "Interrupt his hand signs",
+      "outcome": "fini",
+      "seconds": 1.7,
+      "cues": [],
+      "key": "LMB during the signs"
+     },
+     {
+      "total": 30,
+      "index": 27,
+      "id": "throwBreak",
+      "tries": 1,
+      "pad": "L1 + □ as he seizes you",
+      "shownAt": 91.6,
+      "title": "Break his grab",
+      "outcome": "fini",
+      "seconds": 1.4,
+      "cues": [],
+      "key": "V as he seizes you"
+     },
+     {
+      "total": 30,
+      "index": 28,
+      "id": "awaken",
+      "tries": 18,
+      "pad": "D-pad ↓ (low health)",
+      "shownAt": 93.1,
+      "title": "Awaken: SHUKAKU'S SAND",
+      "outcome": "abandonné",
+      "seconds": 22.9,
+      "cues": [
+       "LOCKED"
+      ],
+      "key": "T (low health)"
+     },
+     {
+      "total": 30,
+      "index": 29,
+      "id": "ultimate",
+      "tries": 1,
+      "pad": "R1 + L1 (bar full)",
+      "shownAt": 116.1,
+      "title": "Ultimate: IMPERIAL DESERT FUNERAL",
+      "outcome": "fini",
+      "seconds": 1.8,
+      "cues": [],
+      "key": "Y (bar full)"
+     },
+     {
+      "total": 30,
+      "index": 30,
+      "id": "win",
+      "tries": 0,
+      "pad": "Use your complete kit",
+      "shownAt": 117.9,
+      "title": "Win the practice duel",
+      "outcome": "fini sans victoire",
+      "seconds": 26.6,
+      "win": "AIFighter",
+      "cues": [],
+      "key": "Use your complete kit"
+     }
+    ],
+    "phase": "Result",
+    "kit": "Sand"
+   },
+   {
+    "rival": "GentleFist",
+    "seconds": 137.3,
+    "started": 2489.9505514583434,
+    "steps": [
+     {
+      "total": 30,
+      "index": 1,
+      "id": "move",
+      "tries": 1,
+      "pad": "L stick",
+      "shownAt": 1.2,
+      "title": "Move",
+      "outcome": "fini",
+      "seconds": 1.1,
+      "cues": [],
+      "key": "WASD"
+     },
+     {
+      "total": 30,
+      "index": 2,
+      "id": "sprint",
+      "tries": 1,
+      "pad": "L3, then move",
+      "shownAt": 2.3,
+      "title": "Sprint",
+      "outcome": "fini",
+      "seconds": 0.6,
+      "cues": [],
+      "key": "Hold CTRL + move"
+     },
+     {
+      "total": 30,
+      "index": 3,
+      "id": "jump",
+      "tries": 1,
+      "pad": "×",
+      "shownAt": 3,
+      "title": "Jump and land",
+      "outcome": "fini",
+      "seconds": 1.5,
+      "cues": [],
+      "key": "SPACE"
+     },
+     {
+      "total": 30,
+      "index": 4,
+      "id": "lock",
+      "tries": 1,
+      "pad": "R3 twice",
+      "shownAt": 4.6,
+      "title": "Unlock, then lock the target",
+      "outcome": "fini",
+      "seconds": 1.1,
+      "cues": [],
+      "key": "SHIFT twice"
+     },
+     {
+      "total": 30,
+      "index": 5,
+      "id": "dodge",
+      "tries": 1,
+      "pad": "L stick + ○",
+      "shownAt": 5.8,
+      "title": "Directional dash",
+      "outcome": "fini",
+      "seconds": 0.9,
+      "cues": [],
+      "key": "Direction + Q"
+     },
+     {
+      "total": 30,
+      "index": 6,
+      "id": "wall",
+      "tries": 1,
+      "pad": "Push into the wall, then ×",
+      "shownAt": 6.7,
+      "title": "Run up the wall, then rebound",
+      "outcome": "fini",
+      "seconds": 1.5,
+      "cues": [],
+      "key": "Move into the wall, then SPACE"
+     },
+     {
+      "total": 30,
+      "index": 7,
+      "id": "string",
+      "tries": 1,
+      "pad": "□ x5",
+      "shownAt": 8.2,
+      "title": "Land your 5-hit string",
+      "outcome": "fini",
+      "seconds": 2.4,
+      "cues": [],
+      "key": "LMB x5"
+     },
+     {
+      "total": 30,
+      "index": 8,
+      "id": "heavy",
+      "tries": 1,
+      "pad": "△",
+      "shownAt": 10.6,
+      "title": "Heavy strike",
+      "outcome": "fini",
+      "seconds": 1.3,
+      "cues": [],
+      "key": "RMB"
+     },
+     {
+      "total": 30,
+      "index": 9,
+      "id": "routeSide",
+      "tries": 1,
+      "pad": "2 hits, then ○",
+      "shownAt": 12,
+      "title": "Turn the angle: Leaf Whirlwind",
+      "outcome": "fini",
+      "seconds": 1.4,
+      "cues": [],
+      "key": "2 hits, then Q"
+     },
+     {
+      "total": 30,
+      "index": 10,
+      "id": "routeDown",
+      "tries": 1,
+      "pad": "3 hits, then △",
+      "shownAt": 13.5,
+      "title": "Go low: Leaf Hurricane",
+      "outcome": "fini",
+      "seconds": 1.4,
+      "cues": [],
+      "key": "3 hits, then RMB"
+     },
+     {
+      "total": 30,
+      "index": 11,
+      "id": "launch",
+      "tries": 1,
+      "pad": "2 hits, then △",
+      "shownAt": 15,
+      "title": "Launch: Leaf Rising",
+      "outcome": "fini",
+      "seconds": 1.4,
+      "cues": [],
+      "key": "2 hits, then RMB"
+     },
+     {
+      "total": 30,
+      "index": 12,
+      "id": "chase",
+      "tries": 1,
+      "pad": "× after the launch",
+      "shownAt": 16.5,
+      "title": "Chase the launched body",
+      "outcome": "fini",
+      "seconds": 1.2,
+      "cues": [],
+      "key": "E after the launch"
+     },
+     {
+      "total": 30,
+      "index": 13,
+      "id": "air",
+      "tries": 1,
+      "pad": "□ twice in the air",
+      "shownAt": 17.7,
+      "title": "Land two aerial strikes",
+      "outcome": "fini",
+      "seconds": 1.1,
+      "cues": [],
+      "key": "LMB twice in the air"
+     },
+     {
+      "total": 30,
+      "index": 14,
+      "id": "airFinish",
+      "tries": 1,
+      "pad": "△ in the air",
+      "shownAt": 18.9,
+      "title": "Finish in the air: Primary Lotus",
+      "outcome": "fini",
+      "seconds": 1.1,
+      "cues": [],
+      "key": "RMB in the air"
+     },
+     {
+      "total": 30,
+      "index": 15,
+      "id": "runStrike",
+      "tries": 2,
+      "pad": "Sprint at him, then □ or △",
+      "shownAt": 20.1,
+      "title": "Strike on the run: Flying Kick",
+      "outcome": "fini",
+      "seconds": 5.2,
+      "cues": [],
+      "key": "Sprint at him, then LMB or RMB"
+     },
+     {
+      "total": 30,
+      "index": 16,
+      "id": "grab",
+      "tries": 1,
+      "pad": "L1 + □, then □",
+      "shownAt": 25.4,
+      "title": "Grab, then throw",
+      "outcome": "fini",
+      "seconds": 3.4,
+      "cues": [],
+      "key": "V, then LMB (RMB throws upward)"
+     },
+     {
+      "total": 30,
+      "index": 17,
+      "id": "tool",
+      "tries": 1,
+      "pad": "R2 as his kunai flies",
+      "shownAt": 28.8,
+      "title": "Your tool: deflecting kick",
+      "outcome": "fini",
+      "seconds": 1.2,
+      "cues": [],
+      "key": "R as his kunai flies"
+     },
+     {
+      "total": 30,
+      "index": 18,
+      "id": "jutsu1",
+      "tries": 1,
+      "pad": "R1 + □",
+      "shownAt": 30.1,
+      "title": "Jutsu 1: Leaf Great Whirlwind",
+      "outcome": "fini",
+      "seconds": 1.7,
+      "cues": [],
+      "key": "1"
+     },
+     {
+      "total": 30,
+      "index": 19,
+      "id": "jutsu2",
+      "tries": 14,
+      "pad": "R1 + △",
+      "shownAt": 31.8,
+      "title": "Jutsu 2: Primary Lotus",
+      "outcome": "abandonné",
+      "seconds": 23.5,
+      "cues": [],
+      "key": "2"
+     },
+     {
+      "total": 30,
+      "index": 20,
+      "id": "jutsu3",
+      "tries": 14,
+      "pad": "R1 + ○",
+      "shownAt": 55.4,
+      "title": "Jutsu 3: Remove the Weights",
+      "outcome": "abandonné",
+      "seconds": 23.7,
+      "cues": [],
+      "key": "3"
+     },
+     {
+      "total": 30,
+      "index": 21,
+      "id": "jutsu4",
+      "tries": 1,
+      "pad": "R1 + ×",
+      "shownAt": 79.4,
+      "title": "Jutsu 4: Dynamic Entry",
+      "outcome": "fini",
+      "seconds": 1.7,
+      "cues": [],
+      "key": "4"
+     },
+     {
+      "total": 30,
+      "index": 22,
+      "id": "sealPage",
+      "tries": 1,
+      "pad": "Hold L2 + R1 + □",
+      "shownAt": 81.2,
+      "title": "Hand seals: Sōshūga: Nunchaku",
+      "outcome": "fini",
+      "seconds": 1.7,
+      "cues": [],
+      "key": "Hold C + 1"
+     },
+     {
+      "total": 30,
+      "index": 23,
+      "id": "guard",
+      "tries": 1,
+      "pad": "Hold L1",
+      "shownAt": 82.9,
+      "title": "Guard the incoming strike",
+      "outcome": "fini",
+      "seconds": 2.1,
+      "cues": [],
+      "key": "Hold F"
+     },
+     {
+      "total": 30,
+      "index": 24,
+      "id": "evade",
+      "tries": 1,
+      "pad": "○ during his wind-up",
+      "shownAt": 85.1,
+      "title": "Dodge the incoming strike",
+      "outcome": "fini",
+      "seconds": 1.7,
+      "cues": [],
+      "key": "Q during his wind-up"
+     },
+     {
+      "total": 30,
+      "index": 25,
+      "id": "substitute",
+      "tries": 1,
+      "pad": "○ as soon as his blow lands",
+      "shownAt": 86.9,
+      "title": "Escape after being hit",
+      "outcome": "fini",
+      "seconds": 1.7,
+      "cues": [],
+      "key": "Q as soon as his blow lands"
+     },
+     {
+      "total": 30,
+      "index": 26,
+      "id": "interrupt",
+      "tries": 1,
+      "pad": "□ during the signs",
+      "shownAt": 88.7,
+      "title": "Interrupt his hand signs",
+      "outcome": "fini",
+      "seconds": 1.6,
+      "cues": [],
+      "key": "LMB during the signs"
+     },
+     {
+      "total": 30,
+      "index": 27,
+      "id": "throwBreak",
+      "tries": 1,
+      "pad": "L1 + □ as he seizes you",
+      "shownAt": 90.3,
+      "title": "Break his grab",
+      "outcome": "fini",
+      "seconds": 1.4,
+      "cues": [],
+      "key": "V as he seizes you"
+     },
+     {
+      "total": 30,
+      "index": 28,
+      "id": "awaken",
+      "tries": 18,
+      "pad": "D-pad ↓ (low health)",
+      "shownAt": 91.8,
+      "title": "Awaken: EIGHT GATES",
+      "outcome": "abandonné",
+      "seconds": 23,
+      "cues": [
+       "LOCKED"
+      ],
+      "key": "T (low health)"
+     },
+     {
+      "total": 30,
+      "index": 29,
+      "id": "ultimate",
+      "tries": 1,
+      "pad": "R1 + L1 (bar full)",
+      "shownAt": 114.9,
+      "title": "Ultimate: HIDDEN LOTUS",
+      "outcome": "fini",
+      "seconds": 1.8,
+      "cues": [],
+      "key": "Y (bar full)"
+     },
+     {
+      "total": 30,
+      "index": 30,
+      "id": "win",
+      "tries": 0,
+      "pad": "Use your complete kit",
+      "shownAt": 116.8,
+      "title": "Win the practice duel",
+      "outcome": "gagné",
+      "seconds": 20.5,
+      "win": "PlayerFighter",
+      "cues": [],
+      "key": "Use your complete kit"
+     }
+    ],
+    "phase": "Result",
+    "kit": "Leaf"
+   },
+   {
+    "rival": "Mirage",
+    "seconds": 153.6,
+    "started": 2628.728849791689,
+    "steps": [
+     {
+      "total": 30,
+      "index": 1,
+      "id": "move",
+      "tries": 1,
+      "pad": "L stick",
+      "shownAt": 1.3,
+      "title": "Move",
+      "outcome": "fini",
+      "seconds": 1.1,
+      "cues": [],
+      "key": "WASD"
+     },
+     {
+      "total": 30,
+      "index": 2,
+      "id": "sprint",
+      "tries": 1,
+      "pad": "L3, then move",
+      "shownAt": 2.5,
+      "title": "Sprint",
+      "outcome": "fini",
+      "seconds": 0.6,
+      "cues": [],
+      "key": "Hold CTRL + move"
+     },
+     {
+      "total": 30,
+      "index": 3,
+      "id": "jump",
+      "tries": 1,
+      "pad": "×",
+      "shownAt": 3.2,
+      "title": "Jump and land",
+      "outcome": "fini",
+      "seconds": 1.5,
+      "cues": [],
+      "key": "SPACE"
+     },
+     {
+      "total": 30,
+      "index": 5,
+      "id": "dodge",
+      "tries": 1,
+      "pad": "L stick + ○",
+      "shownAt": 4.7,
+      "title": "Directional dash",
+      "outcome": "fini",
+      "seconds": 0.9,
+      "cues": [],
+      "key": "Direction + Q"
+     },
+     {
+      "total": 30,
+      "index": 6,
+      "id": "wall",
+      "tries": 1,
+      "pad": "Push into the wall, then ×",
+      "shownAt": 5.6,
+      "title": "Run up the wall, then rebound",
+      "outcome": "fini",
+      "seconds": 1.5,
+      "cues": [],
+      "key": "Move into the wall, then SPACE"
+     },
+     {
+      "total": 30,
+      "index": 7,
+      "id": "string",
+      "tries": 1,
+      "pad": "□ x4",
+      "shownAt": 7.2,
+      "title": "Land your 4-hit string",
+      "outcome": "fini",
+      "seconds": 2.1,
+      "cues": [],
+      "key": "LMB x4"
+     },
+     {
+      "total": 30,
+      "index": 8,
+      "id": "heavy",
+      "tries": 1,
+      "pad": "△",
+      "shownAt": 9.4,
+      "title": "Heavy strike",
+      "outcome": "fini",
+      "seconds": 1.3,
+      "cues": [],
+      "key": "RMB"
+     },
+     {
+      "total": 30,
+      "index": 9,
+      "id": "routeSide",
+      "tries": 1,
+      "pad": "2 hits, then ○",
+      "shownAt": 10.7,
+      "title": "Turn the angle: Circle Step",
+      "outcome": "fini",
+      "seconds": 1.4,
+      "cues": [],
+      "key": "2 hits, then Q"
+     },
+     {
+      "total": 30,
+      "index": 10,
+      "id": "routeDown",
+      "tries": 1,
+      "pad": "3 hits, then △",
+      "shownAt": 12.2,
+      "title": "Go low: Sweep",
+      "outcome": "fini",
+      "seconds": 1.5,
+      "cues": [],
+      "key": "3 hits, then RMB"
+     },
+     {
+      "total": 30,
+      "index": 11,
+      "id": "launch",
+      "tries": 1,
+      "pad": "2 hits, then △",
+      "shownAt": 13.8,
+      "title": "Launch: Launcher",
+      "outcome": "fini",
+      "seconds": 1.4,
+      "cues": [],
+      "key": "2 hits, then RMB"
+     },
+     {
+      "total": 30,
+      "index": 12,
+      "id": "chase",
+      "tries": 1,
+      "pad": "× after the launch",
+      "shownAt": 15.3,
+      "title": "Chase the launched body",
+      "outcome": "fini",
+      "seconds": 1.2,
+      "cues": [],
+      "key": "E after the launch"
+     },
+     {
+      "total": 30,
+      "index": 13,
+      "id": "air",
+      "tries": 11,
+      "pad": "□ twice in the air",
+      "shownAt": 16.6,
+      "title": "Land two aerial strikes",
+      "outcome": "fini",
+      "seconds": 12.7,
+      "cues": [
+       "FLOW"
+      ],
+      "key": "LMB twice in the air"
+     },
+     {
+      "total": 30,
+      "index": 14,
+      "id": "airFinish",
+      "tries": 1,
+      "pad": "△ in the air",
+      "shownAt": 29.3,
+      "title": "Finish downward",
+      "outcome": "fini",
+      "seconds": 1.1,
+      "cues": [],
+      "key": "RMB in the air"
+     },
+     {
+      "total": 30,
+      "index": 15,
+      "id": "runStrike",
+      "tries": 1,
+      "pad": "Sprint at him, then □ or △",
+      "shownAt": 30.5,
+      "title": "Strike on the run",
+      "outcome": "fini",
+      "seconds": 1.5,
+      "cues": [],
+      "key": "Sprint at him, then LMB or RMB"
+     },
+     {
+      "total": 30,
+      "index": 16,
+      "id": "grab",
+      "tries": 1,
+      "pad": "L1 + □, then □",
+      "shownAt": 32.1,
+      "title": "Grab, then throw",
+      "outcome": "fini",
+      "seconds": 3.4,
+      "cues": [],
+      "key": "V, then LMB (RMB throws upward)"
+     },
+     {
+      "total": 30,
+      "index": 17,
+      "id": "tool",
+      "tries": 1,
+      "pad": "R2",
+      "shownAt": 35.6,
+      "title": "Your tool: kunai",
+      "outcome": "fini",
+      "seconds": 1.2,
+      "cues": [],
+      "key": "R"
+     },
+     {
+      "total": 30,
+      "index": 18,
+      "id": "jutsu1",
+      "tries": 1,
+      "pad": "R1 + □",
+      "shownAt": 36.8,
+      "title": "Jutsu 1: Vacuum Palm",
+      "outcome": "fini",
+      "seconds": 1.7,
+      "cues": [],
+      "key": "1"
+     },
+     {
+      "total": 30,
+      "index": 19,
+      "id": "jutsu2",
+      "tries": 14,
+      "pad": "R1 + △",
+      "shownAt": 38.5,
+      "title": "Jutsu 2: 64 Palms",
+      "outcome": "abandonné",
+      "seconds": 23.6,
+      "cues": [],
+      "key": "2"
+     },
+     {
+      "total": 30,
+      "index": 20,
+      "id": "jutsu3",
+      "tries": 1,
+      "pad": "R1 + ○",
+      "shownAt": 62.3,
+      "title": "Jutsu 3: Rotation",
+      "outcome": "fini",
+      "seconds": 1.7,
+      "cues": [],
+      "key": "3"
+     },
+     {
+      "total": 30,
+      "index": 21,
+      "id": "jutsu4",
+      "tries": 14,
+      "pad": "R1 + ×",
+      "shownAt": 64,
+      "title": "Jutsu 4: Byakugan: Perception",
+      "outcome": "abandonné",
+      "seconds": 23.6,
+      "cues": [
+       "LOCKED"
+      ],
+      "key": "4"
+     },
+     {
+      "total": 30,
+      "index": 22,
+      "id": "sealPage",
+      "tries": 1,
+      "pad": "Hold L2 + R1 + □",
+      "shownAt": 87.7,
+      "title": "Hand seals: Hakke Hasangeki",
+      "outcome": "fini",
+      "seconds": 1.7,
+      "cues": [],
+      "key": "Hold C + 1"
+     },
+     {
+      "total": 30,
+      "index": 23,
+      "id": "guard",
+      "tries": 1,
+      "pad": "Hold L1",
+      "shownAt": 89.5,
+      "title": "Guard the incoming strike",
+      "outcome": "fini",
+      "seconds": 2.3,
+      "cues": [],
+      "key": "Hold F"
+     },
+     {
+      "total": 30,
+      "index": 24,
+      "id": "evade",
+      "tries": 1,
+      "pad": "○ during his wind-up",
+      "shownAt": 91.9,
+      "title": "Dodge the incoming strike",
+      "outcome": "fini",
+      "seconds": 1.7,
+      "cues": [],
+      "key": "Q during his wind-up"
+     },
+     {
+      "total": 30,
+      "index": 25,
+      "id": "substitute",
+      "tries": 1,
+      "pad": "○ as soon as his blow lands",
+      "shownAt": 93.6,
+      "title": "Escape after being hit",
+      "outcome": "fini",
+      "seconds": 1.6,
+      "cues": [],
+      "key": "Q as soon as his blow lands"
+     },
+     {
+      "total": 30,
+      "index": 26,
+      "id": "interrupt",
+      "tries": 1,
+      "pad": "□ during the signs",
+      "shownAt": 95.3,
+      "title": "Interrupt his hand signs",
+      "outcome": "fini",
+      "seconds": 1.6,
+      "cues": [],
+      "key": "LMB during the signs"
+     },
+     {
+      "total": 30,
+      "index": 27,
+      "id": "throwBreak",
+      "tries": 1,
+      "pad": "L1 + □ as he seizes you",
+      "shownAt": 97,
+      "title": "Break his grab",
+      "outcome": "fini",
+      "seconds": 1.4,
+      "cues": [],
+      "key": "V as he seizes you"
+     },
+     {
+      "total": 30,
+      "index": 28,
+      "id": "awaken",
+      "tries": 18,
+      "pad": "D-pad ↓ (low health)",
+      "shownAt": 98.4,
+      "title": "Awaken: BYAKUGAN FULL FIELD",
+      "outcome": "abandonné",
+      "seconds": 23.1,
+      "cues": [
+       "LOCKED"
+      ],
+      "key": "T (low health)"
+     },
+     {
+      "total": 30,
+      "index": 29,
+      "id": "ultimate",
+      "tries": 1,
+      "pad": "R1 + L1 (bar full)",
+      "shownAt": 121.6,
+      "title": "Ultimate: 128 PALMS",
+      "outcome": "fini",
+      "seconds": 1.8,
+      "cues": [],
+      "key": "Y (bar full)"
+     },
+     {
+      "total": 30,
+      "index": 30,
+      "id": "win",
+      "tries": 0,
+      "pad": "Use your complete kit",
+      "shownAt": 123.4,
+      "title": "Win the practice duel",
+      "outcome": "fini sans victoire",
+      "seconds": 30.1,
+      "win": "AIFighter",
+      "cues": [],
+      "key": "Use your complete kit"
+     }
+    ],
+    "phase": "Result",
+    "kit": "GentleFist"
+   },
+   {
+    "rival": "Copycat",
+    "seconds": 147.8,
+    "started": 2783.8062758750166,
+    "steps": [
+     {
+      "total": 30,
+      "index": 1,
+      "id": "move",
+      "tries": 1,
+      "pad": "L stick",
+      "shownAt": 1.3,
+      "title": "Move",
+      "outcome": "fini",
+      "seconds": 1.1,
+      "cues": [],
+      "key": "WASD"
+     },
+     {
+      "total": 30,
+      "index": 2,
+      "id": "sprint",
+      "tries": 1,
+      "pad": "L3, then move",
+      "shownAt": 2.5,
+      "title": "Sprint",
+      "outcome": "fini",
+      "seconds": 0.6,
+      "cues": [],
+      "key": "Hold CTRL + move"
+     },
+     {
+      "total": 30,
+      "index": 3,
+      "id": "jump",
+      "tries": 1,
+      "pad": "×",
+      "shownAt": 3.1,
+      "title": "Jump and land",
+      "outcome": "fini",
+      "seconds": 1.5,
+      "cues": [],
+      "key": "SPACE"
+     },
+     {
+      "total": 30,
+      "index": 5,
+      "id": "dodge",
+      "tries": 1,
+      "pad": "L stick + ○",
+      "shownAt": 4.7,
+      "title": "Directional dash",
+      "outcome": "fini",
+      "seconds": 0.9,
+      "cues": [],
+      "key": "Direction + Q"
+     },
+     {
+      "total": 30,
+      "index": 6,
+      "id": "wall",
+      "tries": 1,
+      "pad": "Push into the wall, then ×",
+      "shownAt": 5.6,
+      "title": "Run up the wall, then rebound",
+      "outcome": "fini",
+      "seconds": 1.5,
+      "cues": [],
+      "key": "Move into the wall, then SPACE"
+     },
+     {
+      "total": 30,
+      "index": 7,
+      "id": "string",
+      "tries": 1,
+      "pad": "□ x4",
+      "shownAt": 7.1,
+      "title": "Land your 4-hit string",
+      "outcome": "fini",
+      "seconds": 2.1,
+      "cues": [],
+      "key": "LMB x4"
+     },
+     {
+      "total": 30,
+      "index": 8,
+      "id": "heavy",
+      "tries": 1,
+      "pad": "△",
+      "shownAt": 9.3,
+      "title": "Heavy strike",
+      "outcome": "fini",
+      "seconds": 1.3,
+      "cues": [],
+      "key": "RMB"
+     },
+     {
+      "total": 30,
+      "index": 9,
+      "id": "routeSide",
+      "tries": 1,
+      "pad": "2 hits, then ○",
+      "shownAt": 10.6,
+      "title": "Turn the angle: Feint Step",
+      "outcome": "fini",
+      "seconds": 1.4,
+      "cues": [],
+      "key": "2 hits, then Q"
+     },
+     {
+      "total": 30,
+      "index": 10,
+      "id": "routeDown",
+      "tries": 1,
+      "pad": "3 hits, then △",
+      "shownAt": 12.1,
+      "title": "Go low: Sweep",
+      "outcome": "fini",
+      "seconds": 1.4,
+      "cues": [],
+      "key": "3 hits, then RMB"
+     },
+     {
+      "total": 30,
+      "index": 11,
+      "id": "launch",
+      "tries": 1,
+      "pad": "2 hits, then △",
+      "shownAt": 13.6,
+      "title": "Launch: Launcher",
+      "outcome": "fini",
+      "seconds": 1.4,
+      "cues": [],
+      "key": "2 hits, then RMB"
+     },
+     {
+      "total": 30,
+      "index": 12,
+      "id": "chase",
+      "tries": 1,
+      "pad": "× after the launch",
+      "shownAt": 15.1,
+      "title": "Chase the launched body",
+      "outcome": "fini",
+      "seconds": 1.2,
+      "cues": [],
+      "key": "E after the launch"
+     },
+     {
+      "total": 30,
+      "index": 13,
+      "id": "air",
+      "tries": 3,
+      "pad": "□ twice in the air",
+      "shownAt": 16.4,
+      "title": "Land two aerial strikes",
+      "outcome": "fini",
+      "seconds": 3.4,
+      "cues": [
+       "FLOW"
+      ],
+      "key": "LMB twice in the air"
+     },
+     {
+      "total": 30,
+      "index": 14,
+      "id": "airFinish",
+      "tries": 1,
+      "pad": "△ in the air",
+      "shownAt": 19.9,
+      "title": "Finish downward",
+      "outcome": "fini",
+      "seconds": 1.1,
+      "cues": [],
+      "key": "RMB in the air"
+     },
+     {
+      "total": 30,
+      "index": 15,
+      "id": "runStrike",
+      "tries": 1,
+      "pad": "Sprint at him, then □ or △",
+      "shownAt": 21.1,
+      "title": "Strike on the run",
+      "outcome": "fini",
+      "seconds": 1.5,
+      "cues": [],
+      "key": "Sprint at him, then LMB or RMB"
+     },
+     {
+      "total": 30,
+      "index": 16,
+      "id": "grab",
+      "tries": 1,
+      "pad": "L1 + □, then □",
+      "shownAt": 22.6,
+      "title": "Grab, then throw",
+      "outcome": "fini",
+      "seconds": 3.4,
+      "cues": [],
+      "key": "V, then LMB (RMB throws upward)"
+     },
+     {
+      "total": 30,
+      "index": 17,
+      "id": "tool",
+      "tries": 1,
+      "pad": "R2",
+      "shownAt": 26.1,
+      "title": "Your tool: shuriken",
+      "outcome": "fini",
+      "seconds": 1.2,
+      "cues": [],
+      "key": "R"
+     },
+     {
+      "total": 30,
+      "index": 18,
+      "id": "jutsu1",
+      "tries": 1,
+      "pad": "R1 + □",
+      "shownAt": 27.3,
+      "title": "Jutsu 1: Shadow Shuriken",
+      "outcome": "fini",
+      "seconds": 1.7,
+      "cues": [],
+      "key": "1"
+     },
+     {
+      "total": 30,
+      "index": 19,
+      "id": "jutsu2",
+      "tries": 14,
+      "pad": "R1 + △",
+      "shownAt": 29.1,
+      "title": "Jutsu 2: Great Fireball",
+      "outcome": "abandonné",
+      "seconds": 23.6,
+      "cues": [],
+      "key": "2"
+     },
+     {
+      "total": 30,
+      "index": 20,
+      "id": "jutsu3",
+      "tries": 14,
+      "pad": "R1 + ○",
+      "shownAt": 52.8,
+      "title": "Jutsu 3: Genjutsu: Mirage",
+      "outcome": "abandonné",
+      "seconds": 23.5,
+      "cues": [],
+      "key": "3"
+     },
+     {
+      "total": 30,
+      "index": 21,
+      "id": "jutsu4",
+      "tries": 1,
+      "pad": "R1 + ×",
+      "shownAt": 76.6,
+      "title": "Jutsu 4: Sharingan Read",
+      "outcome": "fini",
+      "seconds": 1.7,
+      "cues": [],
+      "key": "4"
+     },
+     {
+      "total": 30,
+      "index": 22,
+      "id": "sealPage",
+      "tries": 1,
+      "pad": "Hold L2 + R1 + □",
+      "shownAt": 78.3,
+      "title": "Hand seals: Genjutsu: Crows",
+      "outcome": "fini",
+      "seconds": 1.7,
+      "cues": [],
+      "key": "Hold C + 1"
+     },
+     {
+      "total": 30,
+      "index": 23,
+      "id": "guard",
+      "tries": 1,
+      "pad": "Hold L1",
+      "shownAt": 80.1,
+      "title": "Guard the incoming strike",
+      "outcome": "fini",
+      "seconds": 2,
+      "cues": [],
+      "key": "Hold F"
+     },
+     {
+      "total": 30,
+      "index": 24,
+      "id": "evade",
+      "tries": 1,
+      "pad": "○ during his wind-up",
+      "shownAt": 82.1,
+      "title": "Dodge the incoming strike",
+      "outcome": "fini",
+      "seconds": 1.7,
+      "cues": [],
+      "key": "Q during his wind-up"
+     },
+     {
+      "total": 30,
+      "index": 25,
+      "id": "substitute",
+      "tries": 1,
+      "pad": "○ as soon as his blow lands",
+      "shownAt": 83.9,
+      "title": "Escape after being hit",
+      "outcome": "fini",
+      "seconds": 1.6,
+      "cues": [],
+      "key": "Q as soon as his blow lands"
+     },
+     {
+      "total": 30,
+      "index": 26,
+      "id": "interrupt",
+      "tries": 1,
+      "pad": "□ during the signs",
+      "shownAt": 85.6,
+      "title": "Interrupt his hand signs",
+      "outcome": "fini",
+      "seconds": 1.6,
+      "cues": [],
+      "key": "LMB during the signs"
+     },
+     {
+      "total": 30,
+      "index": 27,
+      "id": "throwBreak",
+      "tries": 1,
+      "pad": "L1 + □ as he seizes you",
+      "shownAt": 87.3,
+      "title": "Break his grab",
+      "outcome": "fini",
+      "seconds": 1.4,
+      "cues": [],
+      "key": "V as he seizes you"
+     },
+     {
+      "total": 30,
+      "index": 28,
+      "id": "awaken",
+      "tries": 18,
+      "pad": "D-pad ↓ (low health)",
+      "shownAt": 88.8,
+      "title": "Awaken: SHARINGAN FOCUS",
+      "outcome": "abandonné",
+      "seconds": 22.8,
+      "cues": [
+       "LOCKED"
+      ],
+      "key": "T (low health)"
+     },
+     {
+      "total": 30,
+      "index": 29,
+      "id": "ultimate",
+      "tries": 1,
+      "pad": "R1 + L1 (bar full)",
+      "shownAt": 111.8,
+      "title": "Ultimate: TSUKUYOMI",
+      "outcome": "fini",
+      "seconds": 1.8,
+      "cues": [],
+      "key": "Y (bar full)"
+     },
+     {
+      "total": 30,
+      "index": 30,
+      "id": "win",
+      "tries": 0,
+      "pad": "Use your complete kit",
+      "shownAt": 113.6,
+      "title": "Win the practice duel",
+      "outcome": "gagné",
+      "seconds": 34.2,
+      "win": "PlayerFighter",
+      "cues": [],
+      "key": "Use your complete kit"
+     }
+    ],
+    "phase": "Result",
+    "kit": "Mirage"
+   },
+   {
+    "rival": "Flashstep",
+    "seconds": 142.5,
+    "started": 2933.1352865833323,
+    "steps": [
+     {
+      "total": 30,
+      "index": 1,
+      "id": "move",
+      "tries": 1,
+      "pad": "L stick",
+      "shownAt": 1.2,
+      "title": "Move",
+      "outcome": "fini",
+      "seconds": 1.2,
+      "cues": [],
+      "key": "WASD"
+     },
+     {
+      "total": 30,
+      "index": 2,
+      "id": "sprint",
+      "tries": 1,
+      "pad": "L3, then move",
+      "shownAt": 2.4,
+      "title": "Sprint",
+      "outcome": "fini",
+      "seconds": 0.7,
+      "cues": [],
+      "key": "Hold CTRL + move"
+     },
+     {
+      "total": 30,
+      "index": 3,
+      "id": "jump",
+      "tries": 1,
+      "pad": "×",
+      "shownAt": 3.1,
+      "title": "Jump and land",
+      "outcome": "fini",
+      "seconds": 1.5,
+      "cues": [],
+      "key": "SPACE"
+     },
+     {
+      "total": 30,
+      "index": 5,
+      "id": "dodge",
+      "tries": 1,
+      "pad": "L stick + ○",
+      "shownAt": 4.7,
+      "title": "Directional dash",
+      "outcome": "fini",
+      "seconds": 0.9,
+      "cues": [],
+      "key": "Direction + Q"
+     },
+     {
+      "total": 30,
+      "index": 6,
+      "id": "wall",
+      "tries": 1,
+      "pad": "Push into the wall, then ×",
+      "shownAt": 5.6,
+      "title": "Run up the wall, then rebound",
+      "outcome": "fini",
+      "seconds": 1.6,
+      "cues": [],
+      "key": "Move into the wall, then SPACE"
+     },
+     {
+      "total": 30,
+      "index": 7,
+      "id": "string",
+      "tries": 1,
+      "pad": "□ x4",
+      "shownAt": 7.2,
+      "title": "Land your 4-hit string",
+      "outcome": "fini",
+      "seconds": 2.1,
+      "cues": [],
+      "key": "LMB x4"
+     },
+     {
+      "total": 30,
+      "index": 8,
+      "id": "heavy",
+      "tries": 1,
+      "pad": "△",
+      "shownAt": 9.4,
+      "title": "Heavy strike",
+      "outcome": "fini",
+      "seconds": 1.3,
+      "cues": [],
+      "key": "RMB"
+     },
+     {
+      "total": 30,
+      "index": 9,
+      "id": "routeSide",
+      "tries": 1,
+      "pad": "2 hits, then ○",
+      "shownAt": 10.8,
+      "title": "Turn the angle: Feint Step",
+      "outcome": "fini",
+      "seconds": 1.4,
+      "cues": [],
+      "key": "2 hits, then Q"
+     },
+     {
+      "total": 30,
+      "index": 10,
+      "id": "routeDown",
+      "tries": 1,
+      "pad": "3 hits, then △",
+      "shownAt": 12.3,
+      "title": "Go low: Sweep",
+      "outcome": "fini",
+      "seconds": 1.4,
+      "cues": [],
+      "key": "3 hits, then RMB"
+     },
+     {
+      "total": 30,
+      "index": 11,
+      "id": "launch",
+      "tries": 1,
+      "pad": "2 hits, then △",
+      "shownAt": 13.7,
+      "title": "Launch: Launcher",
+      "outcome": "fini",
+      "seconds": 1.4,
+      "cues": [],
+      "key": "2 hits, then RMB"
+     },
+     {
+      "total": 30,
+      "index": 12,
+      "id": "chase",
+      "tries": 1,
+      "pad": "× after the launch",
+      "shownAt": 15.3,
+      "title": "Chase the launched body",
+      "outcome": "fini",
+      "seconds": 1.2,
+      "cues": [],
+      "key": "E after the launch"
+     },
+     {
+      "total": 30,
+      "index": 13,
+      "id": "air",
+      "tries": 6,
+      "pad": "□ twice in the air",
+      "shownAt": 16.5,
+      "title": "Land two aerial strikes",
+      "outcome": "fini",
+      "seconds": 6.8,
+      "cues": [
+       "FLOW"
+      ],
+      "key": "LMB twice in the air"
+     },
+     {
+      "total": 30,
+      "index": 14,
+      "id": "airFinish",
+      "tries": 1,
+      "pad": "△ in the air",
+      "shownAt": 23.4,
+      "title": "Finish downward",
+      "outcome": "fini",
+      "seconds": 1.1,
+      "cues": [],
+      "key": "RMB in the air"
+     },
+     {
+      "total": 30,
+      "index": 15,
+      "id": "runStrike",
+      "tries": 1,
+      "pad": "Sprint at him, then □ or △",
+      "shownAt": 24.5,
+      "title": "Strike on the run",
+      "outcome": "fini",
+      "seconds": 1.4,
+      "cues": [],
+      "key": "Sprint at him, then LMB or RMB"
+     },
+     {
+      "total": 30,
+      "index": 16,
+      "id": "grab",
+      "tries": 1,
+      "pad": "L1 + □, then □",
+      "shownAt": 26,
+      "title": "Grab, then throw",
+      "outcome": "fini",
+      "seconds": 3.4,
+      "cues": [],
+      "key": "V, then LMB (RMB throws upward)"
+     },
+     {
+      "total": 30,
+      "index": 17,
+      "id": "tool",
+      "tries": 1,
+      "pad": "R2",
+      "shownAt": 29.5,
+      "title": "Your tool: kunai",
+      "outcome": "fini",
+      "seconds": 1.2,
+      "cues": [],
+      "key": "R"
+     },
+     {
+      "total": 30,
+      "index": 18,
+      "id": "jutsu1",
+      "tries": 14,
+      "pad": "R1 + □",
+      "shownAt": 30.7,
+      "title": "Jutsu 1: Water Dragon",
+      "outcome": "abandonné",
+      "seconds": 23.5,
+      "cues": [],
+      "key": "1"
+     },
+     {
+      "total": 30,
+      "index": 19,
+      "id": "jutsu2",
+      "tries": 14,
+      "pad": "R1 + △",
+      "shownAt": 54.4,
+      "title": "Jutsu 2: Lightning Blade",
+      "outcome": "abandonné",
+      "seconds": 23.5,
+      "cues": [],
+      "key": "2"
+     },
+     {
+      "total": 30,
+      "index": 20,
+      "id": "jutsu3",
+      "tries": 1,
+      "pad": "R1 + ○",
+      "shownAt": 78,
+      "title": "Jutsu 3: Summoning: Tracking Fang",
+      "outcome": "fini",
+      "seconds": 1.7,
+      "cues": [],
+      "key": "3"
+     },
+     {
+      "total": 30,
+      "index": 21,
+      "id": "jutsu4",
+      "tries": 1,
+      "pad": "R1 + ×",
+      "shownAt": 79.8,
+      "title": "Jutsu 4: Lightning Cut",
+      "outcome": "fini",
+      "seconds": 1.7,
+      "cues": [],
+      "key": "4"
+     },
+     {
+      "total": 30,
+      "index": 22,
+      "id": "sealPage",
+      "tries": 1,
+      "pad": "Hold L2 + R1 + □",
+      "shownAt": 81.6,
+      "title": "Hand seals: Doton: Earth Wall",
+      "outcome": "fini",
+      "seconds": 1.7,
+      "cues": [],
+      "key": "Hold C + 1"
+     },
+     {
+      "total": 30,
+      "index": 23,
+      "id": "guard",
+      "tries": 1,
+      "pad": "Hold L1",
+      "shownAt": 83.3,
+      "title": "Guard the incoming strike",
+      "outcome": "fini",
+      "seconds": 2.1,
+      "cues": [],
+      "key": "Hold F"
+     },
+     {
+      "total": 30,
+      "index": 24,
+      "id": "evade",
+      "tries": 1,
+      "pad": "○ during his wind-up",
+      "shownAt": 85.5,
+      "title": "Dodge the incoming strike",
+      "outcome": "fini",
+      "seconds": 1.7,
+      "cues": [],
+      "key": "Q during his wind-up"
+     },
+     {
+      "total": 30,
+      "index": 25,
+      "id": "substitute",
+      "tries": 1,
+      "pad": "○ as soon as his blow lands",
+      "shownAt": 87.2,
+      "title": "Escape after being hit",
+      "outcome": "fini",
+      "seconds": 1.6,
+      "cues": [],
+      "key": "Q as soon as his blow lands"
+     },
+     {
+      "total": 30,
+      "index": 26,
+      "id": "interrupt",
+      "tries": 1,
+      "pad": "□ during the signs",
+      "shownAt": 88.9,
+      "title": "Interrupt his hand signs",
+      "outcome": "fini",
+      "seconds": 1.7,
+      "cues": [],
+      "key": "LMB during the signs"
+     },
+     {
+      "total": 30,
+      "index": 27,
+      "id": "throwBreak",
+      "tries": 1,
+      "pad": "L1 + □ as he seizes you",
+      "shownAt": 90.6,
+      "title": "Break his grab",
+      "outcome": "fini",
+      "seconds": 1.4,
+      "cues": [],
+      "key": "V as he seizes you"
+     },
+     {
+      "total": 30,
+      "index": 28,
+      "id": "awaken",
+      "tries": 18,
+      "pad": "D-pad ↓ (low health)",
+      "shownAt": 92.1,
+      "title": "Awaken: SHARINGAN UNCOVERED",
+      "outcome": "abandonné",
+      "seconds": 22.9,
+      "cues": [
+       "LOCKED",
+       "NO FEINT WINDOW",
+       "SUMMONING • TRACKING FANG"
+      ],
+      "key": "T (low health)"
+     },
+     {
+      "total": 30,
+      "index": 29,
+      "id": "ultimate",
+      "tries": 1,
+      "pad": "R1 + L1 (bar full)",
+      "shownAt": 115.1,
+      "title": "Ultimate: CHIDORI: RAIKIRI",
+      "outcome": "fini",
+      "seconds": 1.8,
+      "cues": [
+       "LOCKED"
+      ],
+      "key": "Y (bar full)"
+     },
+     {
+      "total": 30,
+      "index": 30,
+      "id": "win",
+      "tries": 0,
+      "pad": "Use your complete kit",
+      "shownAt": 116.9,
+      "title": "Win the practice duel",
+      "outcome": "fini sans victoire",
+      "seconds": 25.7,
+      "win": "AIFighter",
+      "cues": [],
+      "key": "Use your complete kit"
+     }
+    ],
+    "phase": "Result",
+    "kit": "Copycat"
+   },
+   {
+    "rival": "Lion",
+    "seconds": 152.5,
+    "started": 3077.178337500023,
+    "steps": [
+     {
+      "total": 30,
+      "index": 1,
+      "id": "move",
+      "tries": 1,
+      "pad": "L stick",
+      "shownAt": 1.2,
+      "title": "Move",
+      "outcome": "fini",
+      "seconds": 1.1,
+      "cues": [],
+      "key": "WASD"
+     },
+     {
+      "total": 30,
+      "index": 2,
+      "id": "sprint",
+      "tries": 1,
+      "pad": "L3, then move",
+      "shownAt": 2.3,
+      "title": "Sprint",
+      "outcome": "fini",
+      "seconds": 0.6,
+      "cues": [],
+      "key": "Hold CTRL + move"
+     },
+     {
+      "total": 30,
+      "index": 3,
+      "id": "jump",
+      "tries": 1,
+      "pad": "×",
+      "shownAt": 3,
+      "title": "Jump and land",
+      "outcome": "fini",
+      "seconds": 1.5,
+      "cues": [],
+      "key": "SPACE"
+     },
+     {
+      "total": 30,
+      "index": 4,
+      "id": "lock",
+      "tries": 1,
+      "pad": "R3 twice",
+      "shownAt": 4.6,
+      "title": "Unlock, then lock the target",
+      "outcome": "fini",
+      "seconds": 1.1,
+      "cues": [],
+      "key": "SHIFT twice"
+     },
+     {
+      "total": 30,
+      "index": 5,
+      "id": "dodge",
+      "tries": 1,
+      "pad": "L stick + ○",
+      "shownAt": 5.7,
+      "title": "Directional dash",
+      "outcome": "fini",
+      "seconds": 0.9,
+      "cues": [],
+      "key": "Direction + Q"
+     },
+     {
+      "total": 30,
+      "index": 6,
+      "id": "wall",
+      "tries": 4,
+      "pad": "Push into the wall, then ×",
+      "shownAt": 6.7,
+      "title": "Run up the wall, then rebound",
+      "outcome": "fini",
+      "seconds": 14.4,
+      "cues": [],
+      "key": "Move into the wall, then SPACE"
+     },
+     {
+      "total": 30,
+      "index": 7,
+      "id": "string",
+      "tries": 1,
+      "pad": "□ x4",
+      "shownAt": 21.1,
+      "title": "Land your 4-hit string",
+      "outcome": "fini",
+      "seconds": 2.1,
+      "cues": [],
+      "key": "LMB x4"
+     },
+     {
+      "total": 30,
+      "index": 8,
+      "id": "heavy",
+      "tries": 1,
+      "pad": "△",
+      "shownAt": 23.3,
+      "title": "Heavy strike",
+      "outcome": "fini",
+      "seconds": 1.3,
+      "cues": [],
+      "key": "RMB"
+     },
+     {
+      "total": 30,
+      "index": 9,
+      "id": "routeSide",
+      "tries": 1,
+      "pad": "2 hits, then ○",
+      "shownAt": 24.6,
+      "title": "Turn the angle: Angle Step",
+      "outcome": "fini",
+      "seconds": 1.4,
+      "cues": [],
+      "key": "2 hits, then Q"
+     },
+     {
+      "total": 30,
+      "index": 10,
+      "id": "routeDown",
+      "tries": 1,
+      "pad": "3 hits, then △",
+      "shownAt": 26.1,
+      "title": "Go low: Sweep",
+      "outcome": "fini",
+      "seconds": 1.4,
+      "cues": [],
+      "key": "3 hits, then RMB"
+     },
+     {
+      "total": 30,
+      "index": 11,
+      "id": "launch",
+      "tries": 1,
+      "pad": "2 hits, then △",
+      "shownAt": 27.6,
+      "title": "Launch: Launcher",
+      "outcome": "fini",
+      "seconds": 1.4,
+      "cues": [],
+      "key": "2 hits, then RMB"
+     },
+     {
+      "total": 30,
+      "index": 12,
+      "id": "chase",
+      "tries": 1,
+      "pad": "× after the launch",
+      "shownAt": 29.1,
+      "title": "Chase the launched body",
+      "outcome": "fini",
+      "seconds": 1.3,
+      "cues": [],
+      "key": "E after the launch"
+     },
+     {
+      "total": 30,
+      "index": 13,
+      "id": "air",
+      "tries": 3,
+      "pad": "□ twice in the air",
+      "shownAt": 30.4,
+      "title": "Land two aerial strikes",
+      "outcome": "fini",
+      "seconds": 3.4,
+      "cues": [
+       "FLOW"
+      ],
+      "key": "LMB twice in the air"
+     },
+     {
+      "total": 30,
+      "index": 14,
+      "id": "airFinish",
+      "tries": 1,
+      "pad": "△ in the air",
+      "shownAt": 33.9,
+      "title": "Finish downward",
+      "outcome": "fini",
+      "seconds": 1.1,
+      "cues": [],
+      "key": "RMB in the air"
+     },
+     {
+      "total": 30,
+      "index": 15,
+      "id": "runStrike",
+      "tries": 2,
+      "pad": "Sprint at him, then □ or △",
+      "shownAt": 35,
+      "title": "Strike on the run",
+      "outcome": "fini",
+      "seconds": 3.7,
+      "cues": [],
+      "key": "Sprint at him, then LMB or RMB"
+     },
+     {
+      "total": 30,
+      "index": 16,
+      "id": "grab",
+      "tries": 1,
+      "pad": "L1 + □, then □",
+      "shownAt": 38.7,
+      "title": "Grab, then throw",
+      "outcome": "fini",
+      "seconds": 3.4,
+      "cues": [],
+      "key": "V, then LMB (RMB throws upward)"
+     },
+     {
+      "total": 30,
+      "index": 17,
+      "id": "tool",
+      "tries": 1,
+      "pad": "R2",
+      "shownAt": 42.2,
+      "title": "Your tool: kunai",
+      "outcome": "fini",
+      "seconds": 1.2,
+      "cues": [],
+      "key": "R"
+     },
+     {
+      "total": 30,
+      "index": 18,
+      "id": "jutsu1",
+      "tries": 1,
+      "pad": "R1 + □",
+      "shownAt": 43.4,
+      "title": "Jutsu 1: Marked Kunai",
+      "outcome": "fini",
+      "seconds": 1.7,
+      "cues": [],
+      "key": "1"
+     },
+     {
+      "total": 30,
+      "index": 19,
+      "id": "jutsu2",
+      "tries": 14,
+      "pad": "R1 + △",
+      "shownAt": 45.2,
+      "title": "Jutsu 2: Lightning Strike",
+      "outcome": "abandonné",
+      "seconds": 23.5,
+      "cues": [],
+      "key": "2"
+     },
+     {
+      "total": 30,
+      "index": 20,
+      "id": "jutsu3",
+      "tries": 1,
+      "pad": "R1 + ○",
+      "shownAt": 68.8,
+      "title": "Jutsu 3: Flying Thunder God",
+      "outcome": "fini",
+      "seconds": 1.7,
+      "cues": [],
+      "key": "3"
+     },
+     {
+      "total": 30,
+      "index": 21,
+      "id": "jutsu4",
+      "tries": 14,
+      "pad": "R1 + ×",
+      "shownAt": 70.5,
+      "title": "Jutsu 4: Wind Cut",
+      "outcome": "abandonné",
+      "seconds": 23.6,
+      "cues": [],
+      "key": "4"
+     },
+     {
+      "total": 30,
+      "index": 22,
+      "id": "sealPage",
+      "tries": 1,
+      "pad": "Hold L2 + R1 + □",
+      "shownAt": 94.3,
+      "title": "Hand seals: Rasengan",
+      "outcome": "fini",
+      "seconds": 1.7,
+      "cues": [],
+      "key": "Hold C + 1"
+     },
+     {
+      "total": 30,
+      "index": 23,
+      "id": "guard",
+      "tries": 1,
+      "pad": "Hold L1",
+      "shownAt": 96,
+      "title": "Guard the incoming strike",
+      "outcome": "fini",
+      "seconds": 2.1,
+      "cues": [],
+      "key": "Hold F"
+     },
+     {
+      "total": 30,
+      "index": 24,
+      "id": "evade",
+      "tries": 1,
+      "pad": "○ during his wind-up",
+      "shownAt": 98.2,
+      "title": "Dodge the incoming strike",
+      "outcome": "fini",
+      "seconds": 1.6,
+      "cues": [],
+      "key": "Q during his wind-up"
+     },
+     {
+      "total": 30,
+      "index": 25,
+      "id": "substitute",
+      "tries": 1,
+      "pad": "○ as soon as his blow lands",
+      "shownAt": 99.9,
+      "title": "Escape after being hit",
+      "outcome": "fini",
+      "seconds": 1.7,
+      "cues": [],
+      "key": "Q as soon as his blow lands"
+     },
+     {
+      "total": 30,
+      "index": 26,
+      "id": "interrupt",
+      "tries": 1,
+      "pad": "□ during the signs",
+      "shownAt": 101.7,
+      "title": "Interrupt his hand signs",
+      "outcome": "fini",
+      "seconds": 1.6,
+      "cues": [],
+      "key": "LMB during the signs"
+     },
+     {
+      "total": 30,
+      "index": 27,
+      "id": "throwBreak",
+      "tries": 1,
+      "pad": "L1 + □ as he seizes you",
+      "shownAt": 103.3,
+      "title": "Break his grab",
+      "outcome": "fini",
+      "seconds": 1.4,
+      "cues": [],
+      "key": "V as he seizes you"
+     },
+     {
+      "total": 30,
+      "index": 28,
+      "id": "awaken",
+      "tries": 18,
+      "pad": "D-pad ↓ (low health)",
+      "shownAt": 104.8,
+      "title": "Awaken: YELLOW FLASH",
+      "outcome": "abandonné",
+      "seconds": 22.9,
+      "cues": [
+       "LOCKED"
+      ],
+      "key": "T (low health)"
+     },
+     {
+      "total": 30,
+      "index": 29,
+      "id": "ultimate",
+      "tries": 1,
+      "pad": "R1 + L1 (bar full)",
+      "shownAt": 127.9,
+      "title": "Ultimate: YELLOW FLASH",
+      "outcome": "fini",
+      "seconds": 1.8,
+      "cues": [],
+      "key": "Y (bar full)"
+     },
+     {
+      "total": 30,
+      "index": 30,
+      "id": "win",
+      "tries": 0,
+      "pad": "Use your complete kit",
+      "shownAt": 129.7,
+      "title": "Win the practice duel",
+      "outcome": "fini sans victoire",
+      "seconds": 22.9,
+      "win": "AIFighter",
+      "cues": [],
+      "key": "Use your complete kit"
+     }
+    ],
+    "phase": "Result",
+    "kit": "Flashstep"
+   }
+  ]
+ },
+ "server": {
+  "tutorial": [
+   {
+    "line": "[NinjaDuelTutorial] Lion 1/30 move: PASS 1.0s",
+    "t": 2.9
+   },
+   {
+    "line": "[NinjaDuelTutorial] Lion 2/30 sprint: PASS 0.7s",
+    "t": 3.6
+   },
+   {
+    "line": "[NinjaDuelTutorial] Lion 3/30 jump: PASS 1.7s",
+    "t": 5.2
+   },
+   {
+    "line": "[NinjaDuelTutorial] Lion 4/30 lock: PASS 0.4s",
+    "t": 5.6
+   },
+   {
+    "line": "[NinjaDuelTutorial] Lion 5/30 dodge: PASS 1.3s",
+    "t": 6.9
+   },
+   {
+    "line": "[NinjaDuelTutorial] Lion 6/30 wall: PASS 1.8s",
+    "t": 8.7
+   },
+   {
+    "line": "[NinjaDuelTutorial] Lion 7/30 string: PASS 1.8s",
+    "t": 10.5
+   },
+   {
+    "line": "[NinjaDuelTutorial] Lion 8/30 heavy: PASS 1.6s",
+    "t": 12.1
+   },
+   {
+    "line": "[NinjaDuelTutorial] Lion 9/30 routeSide: PASS 1.6s",
+    "t": 13.7
+   },
+   {
+    "line": "[NinjaDuelTutorial] Lion 10/30 routeDown: PASS 1.5s",
+    "t": 15.2
+   },
+   {
+    "line": "[NinjaDuelTutorial] Lion 11/30 launch: PASS 1.6s",
+    "t": 16.9
+   },
+   {
+    "line": "[NinjaDuelTutorial] Lion 12/30 chase: PASS 1.1s",
+    "t": 18
+   },
+   {
+    "line": "[NinjaDuelTutorial] Lion 13/30 air: PASS 7.0s  setups: 3",
+    "t": 25
+   },
+   {
+    "line": "[NinjaDuelTutorial] Lion 14/30 airFinish: PASS 1.1s",
+    "t": 26.1
+   },
+   {
+    "line": "[NinjaDuelTutorial] Lion 15/30 runStrike: PASS 1.5s",
+    "t": 27.6
+   },
+   {
+    "line": "[NinjaDuelTutorial] Lion 16/30 grab: PASS 3.0s",
+    "t": 30.6
+   },
+   {
+    "line": "[NinjaDuelTutorial] Lion 17/30 tool: PASS 1.4s",
+    "t": 32
+   },
+   {
+    "line": "[NinjaDuelTutorial] Lion 18/30 jutsu1: PASS 1.2s",
+    "t": 33.2
+   },
+   {
+    "line": "[NinjaDuelTutorial] Lion 19/30 jutsu2: SKIP 25.1s  refused: Lockedx14",
+    "t": 58.3
+   },
+   {
+    "line": "[NinjaDuelTutorial] Lion 20/30 jutsu3: SKIP 23.8s  refused: Lockedx14",
+    "t": 82.1
+   },
+   {
+    "line": "[NinjaDuelTutorial] Lion 21/30 jutsu4: PASS 0.3s",
+    "t": 82.4
+   },
+   {
+    "line": "[NinjaDuelTutorial] Lion 22/30 sealPage: PASS 1.7s",
+    "t": 84.2
+   },
+   {
+    "line": "[NinjaDuelTutorial] Lion 23/30 guard: PASS 3.3s  refused: Reactingx1",
+    "t": 87.4
+   },
+   {
+    "line": "[NinjaDuelTutorial] Lion 24/30 evade: PASS 1.7s",
+    "t": 89.1
+   },
+   {
+    "line": "[NinjaDuelTutorial] Lion 25/30 substitute: PASS 1.5s",
+    "t": 90.6
+   },
+   {
+    "line": "[NinjaDuelTutorial] Lion 26/30 interrupt: PASS 1.7s",
+    "t": 92.3
+   },
+   {
+    "line": "[NinjaDuelTutorial] Lion 27/30 throwBreak: PASS 1.5s",
+    "t": 93.8
+   },
+   {
+    "line": "[NinjaDuelTutorial] Lion 28/30 awaken: SKIP 23.5s  refused: Lockedx18",
+    "t": 117.3
+   },
+   {
+    "line": "[NinjaDuelTutorial] Lion 29/30 ultimate: PASS 0.4s",
+    "t": 117.7
+   },
+   {
+    "line": "[NinjaDuelTutorial] Legion 1/30 move: PASS 0.8s",
+    "t": 154.5
+   },
+   {
+    "line": "[NinjaDuelTutorial] Legion 2/30 sprint: PASS 0.7s",
+    "t": 155.2
+   },
+   {
+    "line": "[NinjaDuelTutorial] Legion 3/30 jump: PASS 1.6s",
+    "t": 156.8
+   },
+   {
+    "line": "[NinjaDuelTutorial] Legion 4/30 lock: PASS 0.4s",
+    "t": 157.1
+   },
+   {
+    "line": "[NinjaDuelTutorial] Legion 5/30 dodge: PASS 1.4s",
+    "t": 158.5
+   },
+   {
+    "line": "[NinjaDuelTutorial] Legion 6/30 wall: PASS 1.5s",
+    "t": 160
+   },
+   {
+    "line": "[NinjaDuelTutorial] Legion 7/30 string: PASS 2.1s",
+    "t": 162.1
+   },
+   {
+    "line": "[NinjaDuelTutorial] Legion 8/30 heavy: PASS 1.5s",
+    "t": 163.6
+   },
+   {
+    "line": "[NinjaDuelTutorial] Legion 9/30 routeSide: PASS 1.6s",
+    "t": 165.2
+   },
+   {
+    "line": "[NinjaDuelTutorial] Legion 10/30 routeDown: PASS 1.5s",
+    "t": 166.7
+   },
+   {
+    "line": "[NinjaDuelTutorial] Legion 11/30 launch: PASS 1.6s",
+    "t": 168.4
+   },
+   {
+    "line": "[NinjaDuelTutorial] Legion 12/30 chase: PASS 1.1s",
+    "t": 169.5
+   },
+   {
+    "line": "[NinjaDuelTutorial] Legion 13/30 air: PASS 7.0s  setups: 3",
+    "t": 176.5
+   },
+   {
+    "line": "[NinjaDuelTutorial] Legion 14/30 airFinish: PASS 1.1s",
+    "t": 177.6
+   },
+   {
+    "line": "[NinjaDuelTutorial] Legion 15/30 runStrike: PASS 1.8s",
+    "t": 179.4
+   },
+   {
+    "line": "[NinjaDuelTutorial] Legion 16/30 grab: PASS 3.0s",
+    "t": 182.3
+   },
+   {
+    "line": "[NinjaDuelTutorial] Legion 17/30 tool: PASS 1.4s",
+    "t": 183.7
+   },
+   {
+    "line": "[NinjaDuelTutorial] Legion 18/30 jutsu1: PASS 1.2s",
+    "t": 185
+   },
+   {
+    "line": "[NinjaDuelTutorial] Legion 19/30 jutsu2: SKIP 25.0s  refused: Lockedx14",
+    "t": 210
+   },
+   {
+    "line": "[NinjaDuelTutorial] Legion 20/30 jutsu3: SKIP 23.6s  refused: Lockedx14",
+    "t": 233.7
+   },
+   {
+    "line": "[NinjaDuelTutorial] Legion 21/30 jutsu4: PASS 0.4s",
+    "t": 234
+   },
+   {
+    "line": "[NinjaDuelTutorial] Legion 22/30 sealPage: PASS 1.7s",
+    "t": 235.8
+   },
+   {
+    "line": "[NinjaDuelTutorial] Legion 23/30 guard: PASS 3.2s",
+    "t": 239
+   },
+   {
+    "line": "[NinjaDuelTutorial] Legion 24/30 evade: SKIP 26.1s",
+    "t": 265
+   },
+   {
+    "line": "[NinjaDuelTutorial] Legion 25/30 substitute: PASS 1.5s",
+    "t": 266.6
+   },
+   {
+    "line": "[NinjaDuelTutorial] Legion 26/30 interrupt: PASS 1.8s",
+    "t": 268.3
+   },
+   {
+    "line": "[NinjaDuelTutorial] Legion 27/30 throwBreak: PASS 1.5s",
+    "t": 269.8
+   },
+   {
+    "line": "[NinjaDuelTutorial] Legion 28/30 awaken: SKIP 23.5s  refused: Lockedx18",
+    "t": 293.3
+   },
+   {
+    "line": "[NinjaDuelTutorial] Legion 29/30 ultimate: PASS 0.4s",
+    "t": 293.7
+   },
+   {
+    "line": "[NinjaDuelTutorial] Sand 1/30 move: PASS 1.0s",
+    "t": 347.5
+   },
+   {
+    "line": "[NinjaDuelTutorial] Sand 2/30 sprint: PASS 0.7s",
+    "t": 348.3
+   },
+   {
+    "line": "[NinjaDuelTutorial] Sand 3/30 jump: PASS 1.4s",
+    "t": 349.7
+   },
+   {
+    "line": "[NinjaDuelTutorial] Sand 4/30 lock: PASS 0.3s",
+    "t": 350
+   },
+   {
+    "line": "[NinjaDuelTutorial] Sand 5/30 dodge: PASS 0.5s",
+    "t": 350.4
+   },
+   {
+    "line": "[NinjaDuelTutorial] Sand 6/30 wall: PASS 1.7s",
+    "t": 352.2
+   },
+   {
+    "line": "[NinjaDuelTutorial] Sand 7/30 string: PASS 2.0s",
+    "t": 354.2
+   },
+   {
+    "line": "[NinjaDuelTutorial] Sand 8/30 heavy: PASS 1.3s",
+    "t": 355.5
+   },
+   {
+    "line": "[NinjaDuelTutorial] Sand 9/30 routeSide: PASS 1.7s",
+    "t": 357.2
+   },
+   {
+    "line": "[NinjaDuelTutorial] Sand 10/30 routeDown: PASS 1.5s",
+    "t": 358.7
+   },
+   {
+    "line": "[NinjaDuelTutorial] Sand 11/30 launch: PASS 1.8s",
+    "t": 360.5
+   },
+   {
+    "line": "[NinjaDuelTutorial] Sand 12/30 chase: PASS 1.0s",
+    "t": 361.5
+   },
+   {
+    "line": "[NinjaDuelTutorial] Sand 13/30 air: PASS 7.0s  setups: 3",
+    "t": 368.4
+   },
+   {
+    "line": "[NinjaDuelTutorial] Sand 14/30 airFinish: PASS 1.1s",
+    "t": 369.6
+   },
+   {
+    "line": "[NinjaDuelTutorial] Sand 15/30 runStrike: PASS 1.6s",
+    "t": 371.1
+   },
+   {
+    "line": "[NinjaDuelTutorial] Sand 16/30 grab: PASS 3.0s",
+    "t": 374.1
+   },
+   {
+    "line": "[NinjaDuelTutorial] Sand 17/30 tool: PASS 1.4s",
+    "t": 375.5
+   },
+   {
+    "line": "[NinjaDuelTutorial] Sand 18/30 jutsu1: PASS 1.2s",
+    "t": 376.8
+   },
+   {
+    "line": "[NinjaDuelTutorial] Sand 19/30 jutsu2: SKIP 25.0s  refused: Lockedx14",
+    "t": 401.8
+   },
+   {
+    "line": "[NinjaDuelTutorial] Sand 20/30 jutsu3: SKIP 23.8s  refused: Lockedx14",
+    "t": 425.6
+   },
+   {
+    "line": "[NinjaDuelTutorial] Sand 21/30 jutsu4: PASS 0.4s",
+    "t": 426
+   },
+   {
+    "line": "[NinjaDuelTutorial] Sand 22/30 sealPage: PASS 1.8s",
+    "t": 427.7
+   },
+   {
+    "line": "[NinjaDuelTutorial] Sand 23/30 guard: PASS 3.2s  refused: Reactingx1",
+    "t": 430.9
+   },
+   {
+    "line": "[NinjaDuelTutorial] Sand 24/30 evade: PASS 1.7s",
+    "t": 432.6
+   },
+   {
+    "line": "[NinjaDuelTutorial] Sand 25/30 substitute: PASS 1.5s",
+    "t": 434.1
+   },
+   {
+    "line": "[NinjaDuelTutorial] Sand 26/30 interrupt: PASS 1.8s",
+    "t": 435.9
+   },
+   {
+    "line": "[NinjaDuelTutorial] Sand 27/30 throwBreak: PASS 1.5s",
+    "t": 437.4
+   },
+   {
+    "line": "[NinjaDuelTutorial] Sand 28/30 awaken: SKIP 23.5s  refused: Lockedx21",
+    "t": 460.9
+   },
+   {
+    "line": "[NinjaDuelTutorial] Sand 29/30 ultimate: PASS 0.4s",
+    "t": 461.3
+   },
+   {
+    "line": "[NinjaDuelTutorial] Leaf 1/30 move: PASS 0.8s",
+    "t": 493
+   },
+   {
+    "line": "[NinjaDuelTutorial] Leaf 2/30 sprint: PASS 0.7s",
+    "t": 493.7
+   },
+   {
+    "line": "[NinjaDuelTutorial] Leaf 3/30 jump: PASS 1.6s",
+    "t": 495.3
+   },
+   {
+    "line": "[NinjaDuelTutorial] Leaf 4/30 lock: PASS 0.4s",
+    "t": 495.6
+   },
+   {
+    "line": "[NinjaDuelTutorial] Leaf 5/30 dodge: PASS 1.4s",
+    "t": 497
+   },
+   {
+    "line": "[NinjaDuelTutorial] Leaf 6/30 wall: PASS 1.3s",
+    "t": 498.3
+   },
+   {
+    "line": "[NinjaDuelTutorial] Leaf 7/30 string: PASS 2.4s",
+    "t": 500.6
+   },
+   {
+    "line": "[NinjaDuelTutorial] Leaf 8/30 heavy: PASS 1.5s",
+    "t": 502.2
+   },
+   {
+    "line": "[NinjaDuelTutorial] Leaf 9/30 routeSide: PASS 1.6s",
+    "t": 503.8
+   },
+   {
+    "line": "[NinjaDuelTutorial] Leaf 10/30 routeDown: PASS 1.5s",
+    "t": 505.3
+   },
+   {
+    "line": "[NinjaDuelTutorial] Leaf 11/30 launch: PASS 1.6s",
+    "t": 506.9
+   },
+   {
+    "line": "[NinjaDuelTutorial] Leaf 12/30 chase: PASS 1.5s",
+    "t": 508.4
+   },
+   {
+    "line": "[NinjaDuelTutorial] Leaf 13/30 air: PASS 1.2s",
+    "t": 509.6
+   },
+   {
+    "line": "[NinjaDuelTutorial] Leaf 14/30 airFinish: PASS 1.2s",
+    "t": 510.8
+   },
+   {
+    "line": "[NinjaDuelTutorial] Leaf 15/30 runStrike: PASS 4.9s",
+    "t": 515.7
+   },
+   {
+    "line": "[NinjaDuelTutorial] Leaf 16/30 grab: PASS 3.0s",
+    "t": 518.7
+   },
+   {
+    "line": "[NinjaDuelTutorial] Leaf 17/30 tool: PASS 1.4s",
+    "t": 520.1
+   },
+   {
+    "line": "[NinjaDuelTutorial] Leaf 18/30 jutsu1: PASS 1.2s",
+    "t": 521.3
+   },
+   {
+    "line": "[NinjaDuelTutorial] Leaf 19/30 jutsu2: SKIP 25.0s  refused: Lockedx14",
+    "t": 546.3
+   },
+   {
+    "line": "[NinjaDuelTutorial] Leaf 20/30 jutsu3: SKIP 23.8s  refused: Lockedx14",
+    "t": 570.1
+   },
+   {
+    "line": "[NinjaDuelTutorial] Leaf 21/30 jutsu4: PASS 0.5s",
+    "t": 570.6
+   },
+   {
+    "line": "[NinjaDuelTutorial] Leaf 22/30 sealPage: PASS 1.8s",
+    "t": 572.5
+   },
+   {
+    "line": "[NinjaDuelTutorial] Leaf 23/30 guard: PASS 3.3s  refused: Reactingx1",
+    "t": 575.7
+   },
+   {
+    "line": "[NinjaDuelTutorial] Leaf 24/30 evade: PASS 1.7s",
+    "t": 577.4
+   },
+   {
+    "line": "[NinjaDuelTutorial] Leaf 25/30 substitute: PASS 1.5s",
+    "t": 579
+   },
+   {
+    "line": "[NinjaDuelTutorial] Leaf 26/30 interrupt: PASS 1.7s",
+    "t": 580.7
+   },
+   {
+    "line": "[NinjaDuelTutorial] Leaf 27/30 throwBreak: PASS 1.5s",
+    "t": 582.2
+   },
+   {
+    "line": "[NinjaDuelTutorial] Leaf 28/30 awaken: SKIP 23.6s  refused: Lockedx18",
+    "t": 605.8
+   },
+   {
+    "line": "[NinjaDuelTutorial] Leaf 29/30 ultimate: PASS 0.4s",
+    "t": 606.1
+   },
+   {
+    "line": "[NinjaDuelTutorial] GentleFist 1/30 move: PASS 1.0s",
+    "t": 631.9
+   },
+   {
+    "line": "[NinjaDuelTutorial] GentleFist 2/30 sprint: PASS 0.7s",
+    "t": 632.6
+   },
+   {
+    "line": "[NinjaDuelTutorial] GentleFist 3/30 jump: PASS 1.5s",
+    "t": 634.1
+   },
+   {
+    "line": "[NinjaDuelTutorial] GentleFist 4/30 lock: PASS 0.3s",
+    "t": 634.4
+   },
+   {
+    "line": "[NinjaDuelTutorial] GentleFist 5/30 dodge: PASS 0.4s",
+    "t": 634.7
+   },
+   {
+    "line": "[NinjaDuelTutorial] GentleFist 6/30 wall: PASS 1.6s",
+    "t": 636.3
+   },
+   {
+    "line": "[NinjaDuelTutorial] GentleFist 7/30 string: PASS 1.8s",
+    "t": 638.1
+   },
+   {
+    "line": "[NinjaDuelTutorial] GentleFist 8/30 heavy: PASS 1.6s",
+    "t": 639.7
+   },
+   {
+    "line": "[NinjaDuelTutorial] GentleFist 9/30 routeSide: PASS 1.6s",
+    "t": 641.3
+   },
+   {
+    "line": "[NinjaDuelTutorial] GentleFist 10/30 routeDown: PASS 1.5s",
+    "t": 642.9
+   },
+   {
+    "line": "[NinjaDuelTutorial] GentleFist 11/30 launch: PASS 1.6s",
+    "t": 644.5
+   },
+   {
+    "line": "[NinjaDuelTutorial] GentleFist 12/30 chase: PASS 1.1s",
+    "t": 645.6
+   },
+   {
+    "line": "[NinjaDuelTutorial] GentleFist 13/30 air: PASS 12.9s  setups: 5",
+    "t": 658.5
+   },
+   {
+    "line": "[NinjaDuelTutorial] GentleFist 14/30 airFinish: PASS 1.1s",
+    "t": 659.6
+   },
+   {
+    "line": "[NinjaDuelTutorial] GentleFist 15/30 runStrike: PASS 1.5s",
+    "t": 661.1
+   },
+   {
+    "line": "[NinjaDuelTutorial] GentleFist 16/30 grab: PASS 3.1s",
+    "t": 664.2
+   },
+   {
+    "line": "[NinjaDuelTutorial] GentleFist 17/30 tool: PASS 1.4s",
+    "t": 665.6
+   },
+   {
+    "line": "[NinjaDuelTutorial] GentleFist 18/30 jutsu1: PASS 1.2s",
+    "t": 666.8
+   },
+   {
+    "line": "[NinjaDuelTutorial] GentleFist 19/30 jutsu2: SKIP 25.1s  refused: Lockedx14",
+    "t": 691.9
+   },
+   {
+    "line": "[NinjaDuelTutorial] GentleFist 20/30 jutsu3: PASS 0.4s",
+    "t": 692.3
+   },
+   {
+    "line": "[NinjaDuelTutorial] GentleFist 21/30 jutsu4: SKIP 25.1s  refused: Lockedx14",
+    "t": 717.4
+   },
+   {
+    "line": "[NinjaDuelTutorial] GentleFist 22/30 sealPage: PASS 0.4s",
+    "t": 717.7
+   },
+   {
+    "line": "[NinjaDuelTutorial] GentleFist 23/30 guard: PASS 3.5s  refused: Reactingx1",
+    "t": 721.2
+   },
+   {
+    "line": "[NinjaDuelTutorial] GentleFist 24/30 evade: PASS 1.7s",
+    "t": 722.9
+   },
+   {
+    "line": "[NinjaDuelTutorial] GentleFist 25/30 substitute: PASS 1.5s",
+    "t": 724.4
+   },
+   {
+    "line": "[NinjaDuelTutorial] GentleFist 26/30 interrupt: PASS 1.8s",
+    "t": 726.2
+   },
+   {
+    "line": "[NinjaDuelTutorial] GentleFist 27/30 throwBreak: PASS 1.5s",
+    "t": 727.7
+   },
+   {
+    "line": "[NinjaDuelTutorial] GentleFist 28/30 awaken: SKIP 23.6s  refused: Lockedx18",
+    "t": 751.3
+   },
+   {
+    "line": "[NinjaDuelTutorial] GentleFist 29/30 ultimate: PASS 0.4s",
+    "t": 751.7
+   },
+   {
+    "line": "[NinjaDuelTutorial] Mirage 1/30 move: PASS 0.9s",
+    "t": 786.9
+   },
+   {
+    "line": "[NinjaDuelTutorial] Mirage 2/30 sprint: PASS 0.7s",
+    "t": 787.6
+   },
+   {
+    "line": "[NinjaDuelTutorial] Mirage 3/30 jump: PASS 1.5s",
+    "t": 789.1
+   },
+   {
+    "line": "[NinjaDuelTutorial] Mirage 4/30 lock: PASS 0.3s",
+    "t": 789.3
+   },
+   {
+    "line": "[NinjaDuelTutorial] Mirage 5/30 dodge: PASS 0.4s",
+    "t": 789.8
+   },
+   {
+    "line": "[NinjaDuelTutorial] Mirage 6/30 wall: PASS 1.5s",
+    "t": 791.3
+   },
+   {
+    "line": "[NinjaDuelTutorial] Mirage 7/30 string: PASS 1.8s",
+    "t": 793.1
+   },
+   {
+    "line": "[NinjaDuelTutorial] Mirage 8/30 heavy: PASS 1.6s",
+    "t": 794.7
+   },
+   {
+    "line": "[NinjaDuelTutorial] Mirage 9/30 routeSide: PASS 1.6s",
+    "t": 796.3
+   },
+   {
+    "line": "[NinjaDuelTutorial] Mirage 10/30 routeDown: PASS 1.5s",
+    "t": 797.8
+   },
+   {
+    "line": "[NinjaDuelTutorial] Mirage 11/30 launch: PASS 1.7s",
+    "t": 799.5
+   },
+   {
+    "line": "[NinjaDuelTutorial] Mirage 12/30 chase: PASS 1.1s",
+    "t": 800.6
+   },
+   {
+    "line": "[NinjaDuelTutorial] Mirage 13/30 air: PASS 3.6s  setups: 2",
+    "t": 804.2
+   },
+   {
+    "line": "[NinjaDuelTutorial] Mirage 14/30 airFinish: PASS 1.1s",
+    "t": 805.3
+   },
+   {
+    "line": "[NinjaDuelTutorial] Mirage 15/30 runStrike: PASS 1.5s",
+    "t": 806.8
+   },
+   {
+    "line": "[NinjaDuelTutorial] Mirage 16/30 grab: PASS 3.0s",
+    "t": 809.8
+   },
+   {
+    "line": "[NinjaDuelTutorial] Mirage 17/30 tool: PASS 1.4s",
+    "t": 811.2
+   },
+   {
+    "line": "[NinjaDuelTutorial] Mirage 18/30 jutsu1: PASS 1.2s",
+    "t": 812.4
+   },
+   {
+    "line": "[NinjaDuelTutorial] Mirage 19/30 jutsu2: SKIP 25.1s  refused: Lockedx14",
+    "t": 837.6
+   },
+   {
+    "line": "[NinjaDuelTutorial] Mirage 20/30 jutsu3: SKIP 23.7s  refused: Lockedx14",
+    "t": 861.3
+   },
+   {
+    "line": "[NinjaDuelTutorial] Mirage 21/30 jutsu4: PASS 0.4s",
+    "t": 861.7
+   },
+   {
+    "line": "[NinjaDuelTutorial] Mirage 22/30 sealPage: PASS 1.7s",
+    "t": 863.4
+   },
+   {
+    "line": "[NinjaDuelTutorial] Mirage 23/30 guard: PASS 3.2s",
+    "t": 866.7
+   },
+   {
+    "line": "[NinjaDuelTutorial] Mirage 24/30 evade: PASS 1.7s",
+    "t": 868.4
+   },
+   {
+    "line": "[NinjaDuelTutorial] Mirage 25/30 substitute: PASS 1.4s",
+    "t": 869.8
+   },
+   {
+    "line": "[NinjaDuelTutorial] Mirage 26/30 interrupt: PASS 1.8s",
+    "t": 871.6
+   },
+   {
+    "line": "[NinjaDuelTutorial] Mirage 27/30 throwBreak: PASS 1.5s",
+    "t": 873.1
+   },
+   {
+    "line": "[NinjaDuelTutorial] Mirage 28/30 awaken: SKIP 23.4s  refused: Lockedx18",
+    "t": 896.6
+   },
+   {
+    "line": "[NinjaDuelTutorial] Mirage 29/30 ultimate: PASS 0.4s",
+    "t": 896.9
+   },
+   {
+    "line": "[NinjaDuelTutorial] Copycat 1/30 move: PASS 0.8s",
+    "t": 936.2
+   },
+   {
+    "line": "[NinjaDuelTutorial] Copycat 2/30 sprint: PASS 0.8s",
+    "t": 937
+   },
+   {
+    "line": "[NinjaDuelTutorial] Copycat 3/30 jump: PASS 1.5s",
+    "t": 938.4
+   },
+   {
+    "line": "[NinjaDuelTutorial] Copycat 4/30 lock: PASS 0.3s",
+    "t": 938.8
+   },
+   {
+    "line": "[NinjaDuelTutorial] Copycat 5/30 dodge: PASS 0.3s",
+    "t": 939.1
+   },
+   {
+    "line": "[NinjaDuelTutorial] Copycat 6/30 wall: PASS 1.6s",
+    "t": 940.7
+   },
+   {
+    "line": "[NinjaDuelTutorial] Copycat 7/30 string: PASS 1.8s",
+    "t": 942.6
+   },
+   {
+    "line": "[NinjaDuelTutorial] Copycat 8/30 heavy: PASS 1.5s",
+    "t": 944.1
+   },
+   {
+    "line": "[NinjaDuelTutorial] Copycat 9/30 routeSide: PASS 1.6s",
+    "t": 945.8
+   },
+   {
+    "line": "[NinjaDuelTutorial] Copycat 10/30 routeDown: PASS 1.5s",
+    "t": 947.3
+   },
+   {
+    "line": "[NinjaDuelTutorial] Copycat 11/30 launch: PASS 1.6s",
+    "t": 948.9
+   },
+   {
+    "line": "[NinjaDuelTutorial] Copycat 12/30 chase: PASS 1.1s",
+    "t": 950
+   },
+   {
+    "line": "[NinjaDuelTutorial] Copycat 13/30 air: PASS 7.0s  setups: 3",
+    "t": 957
+   },
+   {
+    "line": "[NinjaDuelTutorial] Copycat 14/30 airFinish: PASS 1.1s",
+    "t": 958.1
+   },
+   {
+    "line": "[NinjaDuelTutorial] Copycat 15/30 runStrike: PASS 1.4s",
+    "t": 959.5
+   },
+   {
+    "line": "[NinjaDuelTutorial] Copycat 16/30 grab: PASS 3.0s",
+    "t": 962.5
+   },
+   {
+    "line": "[NinjaDuelTutorial] Copycat 17/30 tool: PASS 1.4s",
+    "t": 963.9
+   },
+   {
+    "line": "[NinjaDuelTutorial] Copycat 18/30 jutsu1: SKIP 24.5s  refused: Lockedx14",
+    "t": 988.4
+   },
+   {
+    "line": "[NinjaDuelTutorial] Copycat 19/30 jutsu2: SKIP 23.6s  refused: Lockedx14",
+    "t": 1012
+   },
+   {
+    "line": "[NinjaDuelTutorial] Copycat 20/30 jutsu3: PASS 0.4s",
+    "t": 1012.5
+   },
+   {
+    "line": "[NinjaDuelTutorial] Copycat 21/30 jutsu4: PASS 1.8s",
+    "t": 1014.2
+   },
+   {
+    "line": "[NinjaDuelTutorial] Copycat 22/30 sealPage: PASS 1.8s",
+    "t": 1016
+   },
+   {
+    "line": "[NinjaDuelTutorial] Copycat 23/30 guard: PASS 3.3s  refused: Reactingx1",
+    "t": 1019.3
+   },
+   {
+    "line": "[NinjaDuelTutorial] Copycat 24/30 evade: PASS 1.7s",
+    "t": 1021
+   },
+   {
+    "line": "[NinjaDuelTutorial] Copycat 25/30 substitute: PASS 1.4s",
+    "t": 1022.4
+   },
+   {
+    "line": "[NinjaDuelTutorial] Copycat 26/30 interrupt: PASS 1.8s",
+    "t": 1024.2
+   },
+   {
+    "line": "[NinjaDuelTutorial] Copycat 27/30 throwBreak: PASS 1.5s",
+    "t": 1025.7
+   },
+   {
+    "line": "[NinjaDuelTutorial] Copycat 28/30 awaken: SKIP 23.4s  refused: Cooldownx1, Empty slotx1, Lockedx18, No feint windowx1",
+    "t": 1049.1
+   },
+   {
+    "line": "[NinjaDuelTutorial] Copycat 29/30 ultimate: PASS 0.4s",
+    "t": 1049.5
+   },
+   {
+    "line": "[NinjaDuelTutorial] Flashstep 1/30 move: PASS 0.8s",
+    "t": 1080.2
+   },
+   {
+    "line": "[NinjaDuelTutorial] Flashstep 2/30 sprint: PASS 0.7s",
+    "t": 1080.9
+   },
+   {
+    "line": "[NinjaDuelTutorial] Flashstep 3/30 jump: PASS 1.6s",
+    "t": 1082.4
+   },
+   {
+    "line": "[NinjaDuelTutorial] Flashstep 4/30 lock: PASS 0.9s",
+    "t": 1083.3
+   },
+   {
+    "line": "[NinjaDuelTutorial] Flashstep 5/30 dodge: PASS 0.9s",
+    "t": 1084.2
+   },
+   {
+    "line": "[NinjaDuelTutorial] Flashstep 6/30 wall: PASS 14.5s  FREEZES 1 (state=Neutral air=false hum=Running walk=14 anchored=false traversal=nil held=false)",
+    "t": 1098.7
+   },
+   {
+    "line": "[NinjaDuelTutorial] Flashstep 7/30 string: PASS 1.8s",
+    "t": 1100.5
+   },
+   {
+    "line": "[NinjaDuelTutorial] Flashstep 8/30 heavy: PASS 1.6s",
+    "t": 1102.1
+   },
+   {
+    "line": "[NinjaDuelTutorial] Flashstep 9/30 routeSide: PASS 1.6s",
+    "t": 1103.7
+   },
+   {
+    "line": "[NinjaDuelTutorial] Flashstep 10/30 routeDown: PASS 1.5s",
+    "t": 1105.2
+   },
+   {
+    "line": "[NinjaDuelTutorial] Flashstep 11/30 launch: PASS 1.6s",
+    "t": 1106.8
+   },
+   {
+    "line": "[NinjaDuelTutorial] Flashstep 12/30 chase: PASS 1.1s",
+    "t": 1107.9
+   },
+   {
+    "line": "[NinjaDuelTutorial] Flashstep 13/30 air: PASS 3.6s  setups: 2",
+    "t": 1111.6
+   },
+   {
+    "line": "[NinjaDuelTutorial] Flashstep 14/30 airFinish: PASS 1.1s",
+    "t": 1112.6
+   },
+   {
+    "line": "[NinjaDuelTutorial] Flashstep 15/30 runStrike: PASS 3.7s",
+    "t": 1116.3
+   },
+   {
+    "line": "[NinjaDuelTutorial] Flashstep 16/30 grab: PASS 2.9s",
+    "t": 1119.3
+   },
+   {
+    "line": "[NinjaDuelTutorial] Flashstep 17/30 tool: PASS 1.4s",
+    "t": 1120.7
+   },
+   {
+    "line": "[NinjaDuelTutorial] Flashstep 18/30 jutsu1: PASS 1.2s",
+    "t": 1121.9
+   },
+   {
+    "line": "[NinjaDuelTutorial] Flashstep 19/30 jutsu2: SKIP 25.0s  refused: Lockedx14",
+    "t": 1146.9
+   },
+   {
+    "line": "[NinjaDuelTutorial] Flashstep 20/30 jutsu3: PASS 0.4s",
+    "t": 1147.2
+   },
+   {
+    "line": "[NinjaDuelTutorial] Flashstep 21/30 jutsu4: SKIP 25.2s  refused: Lockedx14",
+    "t": 1172.4
+   },
+   {
+    "line": "[NinjaDuelTutorial] Flashstep 22/30 sealPage: PASS 0.4s",
+    "t": 1172.8
+   },
+   {
+    "line": "[NinjaDuelTutorial] Flashstep 23/30 guard: PASS 3.3s  refused: Reactingx1",
+    "t": 1176
+   },
+   {
+    "line": "[NinjaDuelTutorial] Flashstep 24/30 evade: PASS 1.7s",
+    "t": 1177.8
+   },
+   {
+    "line": "[NinjaDuelTutorial] Flashstep 25/30 substitute: PASS 1.5s",
+    "t": 1179.2
+   },
+   {
+    "line": "[NinjaDuelTutorial] Flashstep 26/30 interrupt: PASS 1.7s",
+    "t": 1181
+   },
+   {
+    "line": "[NinjaDuelTutorial] Flashstep 27/30 throwBreak: PASS 1.5s",
+    "t": 1182.5
+   },
+   {
+    "line": "[NinjaDuelTutorial] Flashstep 28/30 awaken: SKIP 23.5s  refused: Lockedx18",
+    "t": 1206
+   },
+   {
+    "line": "[NinjaDuelTutorial] Flashstep 29/30 ultimate: PASS 0.4s",
+    "t": 1206.3
+   }
+  ],
+  "errors": [],
+  "warnings": [
+   {
+    "msg": "Asset 2833789230 is not allowed to be forked. Please contact the owner to share the asset.",
+    "first": 448.9,
+    "n": 1
+   }
+  ]
+ }
+}

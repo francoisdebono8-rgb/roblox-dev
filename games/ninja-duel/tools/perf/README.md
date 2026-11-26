@@ -84,6 +84,44 @@ C'est une proposition au DEV : une distance d'affichage pour le décor de Konoha
 - **Les commandes tactiles du combat** (□ △ ○ × GUARD) sont en bas à droite. Le bouton du jutsu (« RASENGAN ») a un texte trop petit pour être lu sur le A06.
 - **Dans le village**, la bulle du passant est sous le bloc Ryō / DUELS / SHOP. Le bandeau de quête traverse l'écran à hauteur du personnage.
 
+## Le 26/11, avant la passe commune 2 (place commune `f28b8ba1`, fenêtre du Mac)
+
+La demande (DEC-054) : « la fluidité (images par seconde et à-coups) dans la ville et en duel, avant et après la passe ».
+
+Fichier : `mesures/2026-11-26_avant_passe2_f28b8ba1.json`.
+
+### La mesure qui ne bloque pas
+
+`_G.NDPerfProbe.start({label=…})` puis `.stop()`. Entre les deux, les robots jouent : un duel, une marche. L'appel ne gèle donc pas le client, comme le faisait `measure`. La sonde garde :
+- **les images dessinées** (`RenderStepped`) ;
+- **les pas de la simulation** (`Heartbeat`) ;
+- **les à-coups** : les images de plus de 50 et 100 ms, la pire image ;
+- **les saccades des corps**, image par image. Une saccade est une image où un corps qui bouge s'arrête net ou saute : son pas fait moins du quart ou plus du triple de celui des images voisines.
+
+Côté serveur, `_G.NDServerLog.perfStart(label)` et `.perfStop()` donnent les pas du serveur et ses à-coups.
+
+### Résultats
+
+| Mesure | Images dessinées /s | Pas de simulation /s (pire image) | Images > 50 ms (client / serveur) | Triangles (moy. / pic) | Appels de dessin (moy. / pic) | Saccades (lui / l'adversaire) |
+|---|---|---|---|---|---|---|
+| Ville, la porte, tour de caméra 12 s | 40 | 58,9 (236 ms) | 1 / 2 | 212 000 / 311 000 | 226 / 503 | 0 % / — |
+| Ville, la place, tour de caméra 12 s | 15 (Studio en arrière-plan) | 60,0 (20 ms) | 0 / — | 198 000 / 351 000 | 191 / 309 | — |
+| Duel, Sasuke (l'avatar) contre Naruto, 40 s | 15 (Studio en arrière-plan) | 59,9 (39 ms) | 0 / 0 | 177 000 / 375 000 | 210 / 481 | 19 % / 12 % |
+
+- **La simulation tient ses 60 pas.** Il y a un seul à-coup, de 236 ms à la porte, sur le client comme sur le serveur au même instant. Le serveur en a vu un de 433 ms pendant une capture d'écran : c'est la capture qui fige Studio. Il ne faut pas capturer pendant une mesure.
+- **Les images dessinées ne se comparent qu'à fenêtre égale.** Studio au premier plan : 30 à 40 images/s. En arrière-plan : 15, quoi qu'il dessine. La mesure « après » doit se faire dans le même état de fenêtre, sinon seules la simulation, les triangles et les saccades se comparent.
+- **Les saccades d'un duel ne sont pas toutes des défauts.** Un arrêt de coup (hitstop) ou une esquive est voulu. Le chiffre sert à comparer avant et après, sur le même duel : mêmes kits, même graine.
+
+### Refaire « après »
+
+Dans le même état de fenêtre, avec la même place commune reposée après la passe :
+
+```sh
+python3 tools/perf/studio_code.py --go 0 190      # la porte ; puis start, lookAround(12), stop
+python3 tools/perf/studio_code.py --go 0 15.6     # la place
+# duel : NDDuelBot.start({{mode="duel",kit="Lion",rival="Legion",level="normal",seed=1,profile="joueur"}}), start, 40 s, stop
+```
+
 ## Ce qu'il ne prouve pas
 
 - Les images/s d'un téléphone. Il faut un vrai téléphone, de préférence un Android d'entrée de gamme, pendant le test à 3–5 joueurs.

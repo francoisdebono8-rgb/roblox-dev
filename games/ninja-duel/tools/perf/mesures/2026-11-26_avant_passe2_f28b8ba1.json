@@ -1,0 +1,223 @@
+{
+ "meta": {
+  "place": "PLACES/NinjaDuel.rbxlx, place commune f28b8ba1 (sources 9e8db7dc), profil capture",
+  "date": "2026-11-26",
+  "studio": "une Studio à soi, fenêtre du Mac (pas de simulateur de téléphone), qualité graphique Automatique ; Studio en arrière-plan dessine 15 images/s, au premier plan 30 à 40",
+  "note": "avant la passe commune 2 ; la mesure « après » se refait avec les mêmes commandes quand la place commune sera reposée"
+ },
+ "client": [
+  {
+   "render": {
+    "over100": 1,
+    "low1": 9.6,
+    "low5": 13.1,
+    "over50": 82,
+    "perSecond": 40.3,
+    "worstMs": 238,
+    "frames": 524,
+    "over33": 82
+   },
+   "seconds": 13,
+   "scene": {
+    "meshes": 4910,
+    "unions": 0,
+    "parts": 13228
+   },
+   "jerksMe": {
+    "moving": 44,
+    "jerks": 0,
+    "share": 0
+   },
+   "at": [
+    -17,
+    3,
+    -2225
+   ],
+   "label": "ville : la porte, tour de caméra 12 s (sans capture)",
+   "simulation": {
+    "over100": 1,
+    "low1": 19.4,
+    "low5": 41.4,
+    "over50": 1,
+    "perSecond": 58.9,
+    "worstMs": 235.7,
+    "frames": 767,
+    "over33": 1
+   },
+   "fps": 40.3,
+   "trianglesMax": 310715,
+   "memory": {
+    "LuaHeap": 1082.9,
+    "total": 5261.8,
+    "Script": 264.5,
+    "BaseParts": 57.2,
+    "Internal": 2106,
+    "Instances": 100.8,
+    "GraphicsMeshParts": 38.8,
+    "GraphicsTexture": 54.9,
+    "Gui": 88.7
+   },
+   "quality": {
+    "saved": "Automatic"
+   },
+   "jerksRival": {
+    "moving": 0,
+    "jerks": 0
+   },
+   "drawcallsMax": 503,
+   "kind": "live",
+   "drawcalls": 226,
+   "triangles": 212139
+  },
+  {
+   "render": {
+    "over100": 0,
+    "low1": 14,
+    "low5": 14.1,
+    "over50": 195,
+    "perSecond": 15,
+    "worstMs": 71.5,
+    "frames": 195,
+    "over33": 195
+   },
+   "seconds": 13,
+   "scene": {
+    "meshes": 4910,
+    "unions": 0,
+    "parts": 13228
+   },
+   "jerksMe": {
+    "moving": 0,
+    "jerks": 0
+   },
+   "at": [
+    -1,
+    3,
+    -2385
+   ],
+   "label": "ville : la place, tour de caméra 12 s",
+   "simulation": {
+    "over100": 0,
+    "low1": 52.8,
+    "low5": 54.3,
+    "over50": 0,
+    "perSecond": 60,
+    "worstMs": 19.5,
+    "frames": 781,
+    "over33": 0
+   },
+   "fps": 15,
+   "trianglesMax": 350858,
+   "memory": {
+    "LuaHeap": 1051.2,
+    "total": 5251.5,
+    "Script": 264.5,
+    "BaseParts": 57.2,
+    "Internal": 2108.1,
+    "Instances": 100.8,
+    "GraphicsMeshParts": 38.7,
+    "GraphicsTexture": 55.2,
+    "Gui": 88.7
+   },
+   "quality": {
+    "saved": "Automatic"
+   },
+   "jerksRival": {
+    "moving": 0,
+    "jerks": 0
+   },
+   "drawcallsMax": 309,
+   "kind": "live",
+   "drawcalls": 191,
+   "triangles": 198478
+  },
+  {
+   "render": {
+    "over50": 599,
+    "low1": 12.8,
+    "low5": 14.2,
+    "perSecond": 15,
+    "over100": 0,
+    "worstMs": 84,
+    "frames": 599,
+    "over33": 599
+   },
+   "seconds": 40,
+   "scene": {
+    "meshes": 5250,
+    "unions": 0,
+    "parts": 13927
+   },
+   "jerksMe": {
+    "moving": 391,
+    "jerks": 75,
+    "share": 19.2
+   },
+   "triangles": 176553,
+   "drawcalls": 210,
+   "simulation": {
+    "over50": 0,
+    "low1": 31.7,
+    "low5": 39.6,
+    "perSecond": 59.9,
+    "over100": 0,
+    "worstMs": 38.9,
+    "frames": 2398,
+    "over33": 3
+   },
+   "fps": 15,
+   "at": [
+    -11,
+    3,
+    -6
+   ],
+   "memory": {
+    "LuaHeap": 1094.2,
+    "total": 5321.1,
+    "Script": 264.5,
+    "BaseParts": 60.5,
+    "Internal": 2113.9,
+    "Instances": 101.8,
+    "Gui": 91.8,
+    "GraphicsMeshParts": 39.3,
+    "GraphicsTexture": 61.1
+   },
+   "label": "duel : Sasuke (avatar) contre Naruto, normal, 40 s",
+   "jerksRival": {
+    "moving": 449,
+    "jerks": 52,
+    "share": 11.6
+   },
+   "drawcallsMax": 481,
+   "kind": "live",
+   "trianglesMax": 375376,
+   "quality": {
+    "saved": "Automatic"
+   }
+  }
+ ],
+ "server": [
+  {
+   "seconds": 21.6,
+   "over50": 2,
+   "label": "ville : la porte",
+   "steps": 58.3,
+   "frames": 1263,
+   "over100": 2,
+   "worstMs": 433.2,
+   "p1Ms": 18.1,
+   "over33": 3
+  },
+  {
+   "seconds": 49.1,
+   "over50": 0,
+   "label": "duel : Sasuke (avatar) contre Naruto, normal",
+   "steps": 59.9,
+   "frames": 2944,
+   "over100": 0,
+   "worstMs": 36.6,
+   "p1Ms": 29.5,
+   "over33": 2
+  }
+ ]
+}

@@ -55,6 +55,17 @@ Fichiers : `mesures/2026-11-24_apres_c40cc16d_rayons.txt`, `…_marche.txt`, et 
     - Exemple, `clan_house` (203.4, -235.9) : un rayon à 3 studs bute sur l'enveloppe du morceau `Walls` à 4,3 studs ; le mur dessiné est à 11,5.
   - **Les grandes boîtes de la falaise et de l'escalier des Hokage.** `Stone` (110 × 32 × 122), `Rails` (108 × 30 × 109), `Lanterns` et `Caps`, centrés en (0, -241), sont en `Box`. Ils couvrent les trois `tank_house` de la rangée sud (-32.9, -240.6), (-1.6, -240.6), (32.3, -239.5) : on s'y tient debout 7,5 à 12 studs au-dessus du toit dessiné. Les échafaudages des visages (`Block`, `Scaffold`, `Rope`, en `Box`) et la falaise (`Cliff`, 429 × 121 × 90) aussi.
 
+## Le 26/11 (place commune `f28b8ba1`, sources `9e8db7dc`, une Studio à soi)
+
+Demande du DEV (INBOX-DEV-PASSE1-B) : relancer les rayons et la marche sur `6ae41cb3`. Cette place commune en descend ; elle porte les solides de chaque maison (`a1713839`, `Shared/HubSolids` de l'ANIMATEUR) et les monuments selon leur forme (`81986fbb`). Fichiers : `mesures/2026-11-26_f28b8ba1_rayons.txt`, `…_marche.txt`, la comparaison avec le 24/11 `mesures/2026-11-26_f28b8ba1_comparaison.md` (et `.html`), l'image `mesures/2026-11-26_f28b8ba1_images/`.
+
+- **Les maisons collisionnent par des boîtes à elles** (4 à 15 parts `Solid1…`, plus de maillages) : les murs invisibles tombent de 16 % à 4 % des rayons de façade ; les toits invisibles de 5 % à 1 %.
+- **Les rayons trouvent un peu de façade traversée** : 1 % (24/11 : 0 %), surtout `shop_house` (4 %, jusqu'à 7,5 studs). Ce sont des rayons, pas le corps : la marche n'y entre pas.
+- **À la marche, 16 façades sur 160 où le corps entre de plus de 0,5 stud** (24/11 : 23 sur 175), et aucune sans solide à hauteur du corps. Six `clan_house` de 6,2 à 6,7 studs : c'est la véranda sous l'avant-toit, le corps s'arrête aux shōji (image `clan_house_veranda_333_-173.jpg`). Restent à regarder en jeu : `MemorialStone` (-223.6, 101.4), 25,4 studs, et `NakaShrine`, 8,6.
+- **Les toits des `small_house` sont 1 stud trop bas** : 34 chutes sur 190 finissent 1,0 à 1,3 stud sous le toit dessiné, toutes sur des `small_house` (24/11 : aucune). Le toit solide (`Solid3`, `Solid4`) est environ 1 stud sous le dessin.
+- **Le robot corrigé.** Entre deux maisons proches, le rayon qui cherchait la rue depuis 25 studs plus haut tombait sur le toit ou l'avant-toit du voisin. Le corps partait de là et marchait sur les toits : 18 « entrées » de 17 à 33 studs étaient fausses. La rue est maintenant cherchée depuis le pied du bâtiment, et la colonne `startY` dit où étaient les pieds au départ. Les 34 façades ont été remarchées ainsi. Celles qui partent à -3,5 studs avec un corps immobile n'ont pas de rue (le départ est dans la maison voisine) : elles comptent comme mesures ratées.
+- `Bot.walk({at={{x,z},…}})` ne marche que les bâtiments à ces places du plan.
+
 ## À savoir pour le lancer
 
 - **Studio en arrière-plan avance à peine.** Le 24/11, avec la fenêtre de Studio derrière les autres, la marche n'avançait que pendant les appels du pont (d'un bâtiment par appel court à 4 par minute sans appel). Il a fallu la suivre par appels courts, l'un après l'autre (`--state`). On ne met pas Studio au premier plan à la place de François (DEC-052).

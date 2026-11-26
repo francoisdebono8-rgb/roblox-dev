@@ -76,6 +76,20 @@ class Inject(unittest.TestCase):
                         found.append(f"{os.path.relpath(path, TOOLS)}:{n}")
         self.assertEqual(found, [])
 
+    def test_the_server_robots(self):
+        # (26/11, passe 2) the server's robots go through eval_server_runtime
+        code = I.snippet(["serverlog", "outfitbodies"], stamp="abc12345", server=True)
+        self.assertIn('put("NDServerLog",function()', code)
+        self.assertIn('put("NDOutfitBodies",function()', code)
+        self.assertIn('_G.NDServerRobots={commit="abc12345"', code)
+        self.assertNotIn("_G.NDRobots=", code)
+        self.assertIn("--server serverlog", I.lookup("NDServerLog"))
+        with self.assertRaises(KeyError):
+            I.order(["serverlog"])  # not a client robot
+        self.assertEqual(I.order(["training"]), ["duel", "training"])
+        self.assertEqual(I.main(["--server", "serverlog"]), 0)
+        self.assertEqual(I.main(["--check-server"]), 0)
+
     def test_the_command_line(self):
         self.assertEqual(I.main(["--list"]), 0)
         self.assertEqual(I.main(["--check"]), 0)
