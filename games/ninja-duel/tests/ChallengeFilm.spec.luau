@@ -139,9 +139,16 @@ test("challengeFilm: the dare in the street, the challenge accepted there, both 
 	-- to the end
 	local t=0
 	local hurt=false
+	local blows,slowFor={},{}
 	while film:result().state=="duel" and t<Film.MAX_DUEL do
 		step(.2);t+=.2
 		if s.bot.health<s.bot.def.Health then hurt=true end
+		-- (§ 3.2) the round's last blow in the snapshot while K.O. is called
+		local f=last(player).finalBlow
+		if f and not blows[f.at] then
+			blows[f.at]=f
+			for _,x in s.combat.actors do if x.koFlight then slowFor[f.at]=x.koFlight.slowFor or "base" end end
+		end
 	end
 	local res=film:result()
 	assert(res.state=="done" and (res.winner=="avatar" or res.winner=="prodigy"),"no winner: "..tostring(res.state).." "..tostring(res.error))
@@ -155,6 +162,13 @@ test("challengeFilm: the dare in the street, the challenge accepted there, both 
 	end
 	assert(wins[res.winner]==2,"the winner did not win two rounds")
 	assert(res.finalBlow and res.finalBlow.by==res.winner and res.finalBlow.at==res.rounds[#res.rounds].at,"the final blow")
+	-- every round's last blow was sent; the decisive one held longer, from its winner's side
+	for _,round in res.rounds do
+		local f=blows[round.at]
+		assert(f and f.pos and f.decisive==round.decisive,"round "..round.round.."'s last blow not sent")
+		assert(f.by==(if round.winner=="avatar" then "PlayerFighter" else "AIFighter"),"the blow's side")
+		if round.decisive then assert((slowFor[round.at]==nil or slowFor[round.at]==Config.FinalBlow.Decisive.SlowFor) and f.slowFor==Config.FinalBlow.Decisive.SlowFor,"the decisive blow is not held longer: "..tostring(slowFor[round.at])) end
+	end
 	assert(s.phase=="Result" and not s.autopilot and not s.scripted,"his stick is not back")
 	assert(m.solo.challenge==nil,"the inspiration stays in the street")
 	print(string.format("     Lion avatar vs Legion: %s in %d rounds, final blow %.1f s into the duel",res.winner,#res.rounds,res.finalBlow.since))

@@ -88,6 +88,41 @@ local function run(cam,a,b,frames,extra,each)
 	return worstJolt,worstFov
 end
 
+-- (24/11, DEC-053, the CM's series) An inspiration's challenge: during his
+-- line the lens is on him, then on the player under the VS card.
+test("a challenge's intro: he who dares first, for his line; then the player",function()
+	local _,a,b,cam=setup(20)
+	local total=3.85
+	local function near(x) return (camera.CFrame.Position-x.root.Position).Magnitude end
+	for f=1,40 do clock+=1/60;cam:update(data(a,b,{intro=total-f/60,dare={kit="Legion",line="Hey!",lineFor=1.6,vsFor=1.5}}),1/60) end
+	assert(near(b)<near(a),("during his line the lens is %.1f from him, %.1f from the player"):format(near(b),near(a)))
+	for f=1,80 do clock+=1/60;cam:update(data(a,b,{intro=total-(40+f)/60,dare={kit="Legion",line="Hey!",lineFor=1.6,vsFor=1.5}}),1/60) end
+	assert(near(a)<near(b),("under the VS card the lens is %.1f from the player, %.1f from him"):format(near(a),near(b)))
+end)
+
+-- (24/11, DEC-053 § 3.2) The blow that decides the duel: a close shot on the
+-- impact while it is held in slow motion, then back to the K.O.'s drift.
+test("the decisive blow: the lens close on the impact while it is held, then the K.O.'s drift",function()
+	local _,a,b,cam=setup(9)
+	H.workspace.GetServerTimeNow=function() return clock end
+	run(cam,a,b,30,{})
+	local blow={at=clock,by="PlayerFighter",pos=b.root.Position,decisive=true,slowFor=.6}
+	run(cam,a,b,20,{ko=true,finalBlow=blow})
+	local d=(camera.CFrame.Position-blow.pos).Magnitude
+	local look=(blow.pos-camera.CFrame.Position).Unit:Dot(camera.CFrame.LookVector)
+	assert(d<11 and look>.9,("not on the impact: %.1f studs, facing %.2f"):format(d,look))
+	-- from the side of the blow: the hitter and the hit both across the frame
+	local across=math.abs(((b.root.Position-a.root.Position)*V.new(1,0,1)).Unit:Dot(camera.CFrame.LookVector*V.new(1,0,1)))
+	assert(across<.6,("filmed along the blow, not from its side: %.2f"):format(across))
+	run(cam,a,b,70,{ko=true,finalBlow=blow})
+	assert((camera.CFrame.Position-blow.pos).Magnitude>12,"still on the impact after the hold")
+	-- a round's last blow that does not decide: the K.O.'s drift only
+	local _,a2,b2,cam2=setup(9)
+	run(cam2,a2,b2,30,{})
+	run(cam2,a2,b2,20,{ko=true,finalBlow={at=clock,by="AIFighter",pos=a2.root.Position,decisive=false,slowFor=.45}})
+	assert(cam2.blowShot==nil,"a round that decides nothing got the shot")
+end)
+
 test("pad, free: an opponent off to the side comes back into view by itself, running or not",function()
 	local _,a,b,cam=setup(10)
 	run(cam,a,b,30,{gamepad=true})

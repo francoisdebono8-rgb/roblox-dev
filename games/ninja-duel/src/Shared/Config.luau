@@ -155,7 +155,10 @@ return {
 	-- (Final blow) The round's last hit throws the body: Speed / Lift (studs/s)
 	-- for a heavy finish (a light one at Light of it), the first SlowFor
 	-- seconds at SlowScale speed, back to full over Ease; Settle caps the flight.
-	FinalBlow = {Speed = 38, Lift = 24, Light = 0.8, SlowFor = 0.45, SlowScale = 0.3, Ease = 0.35, Settle = 3},
+	FinalBlow = {Speed = 38, Lift = 24, Light = 0.8, SlowFor = 0.45, SlowScale = 0.3, Ease = 0.35, Settle = 3,
+		-- (24/11, DEC-053 § 3.2) the blow that decides the duel: held longer and
+		-- slower, the camera on the impact (snapshot finalBlow, Client/Camera)
+		Decisive = {SlowFor = 0.6, SlowScale = 0.25}},
 	-- Where each fighter starts (studs from the centre): far enough apart that
 	-- the round opens on an approach, not on a punch.
 	StartDistance = 24,

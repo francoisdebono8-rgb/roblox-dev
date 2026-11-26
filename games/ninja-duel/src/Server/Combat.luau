@@ -1772,13 +1772,15 @@ function Combat:updateActor(a,dt)
 			-- SlowFor seconds, then eases back to full speed (Ease).
 			local F=Config.FinalBlow
 			local t=now-flight.at
-			local scale=if t<F.SlowFor then F.SlowScale else math.min(1,F.SlowScale+(t-F.SlowFor)/F.Ease*(1-F.SlowScale))
+			-- (24/11) the decisive blow's own hold (Matches.roundOver)
+			local slowFor,slowScale=flight.slowFor or F.SlowFor,flight.slowScale or F.SlowScale
+			local scale=if t<slowFor then slowScale else math.min(1,slowScale+(t-slowFor)/F.Ease*(1-slowScale))
 			Brawler.step(self,a,dt*scale)
 			if a.reaction=="Knockback" and not a.airborne then
 				a.reaction="Knockdown";a.groundPose="Knockdown";a.reactionStartedAt=now;a.reactionUntil=now+F.Settle
 			end
 			local v=a.reactionVelocity or Vector3.zero
-			if a.reaction=="Wakeup" or not a.reaction or (not a.airborne and Vector3.new(v.X,0,v.Z).Magnitude<1.5 and t>F.SlowFor) then
+			if a.reaction=="Wakeup" or not a.reaction or (not a.airborne and Vector3.new(v.X,0,v.Z).Magnitude<1.5 and t>slowFor) then
 				-- Down for good: the KO pose takes the body where it came to rest.
 				a.reaction=nil;a.reactionVelocity=nil;a.koFlight=nil;a.groundPose=nil
 				a.root.AssemblyLinearVelocity=Vector3.zero
