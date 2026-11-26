@@ -27,6 +27,10 @@ local function hide(model)
 	for _,d in model:GetDescendants() do
 		if d:IsA("BasePart") then d.LocalTransparencyModifier=1 end
 		if d:IsA("Decal") then d.Transparency=1 end
+		-- (26/11, passe 3, seen on the forest's path: two eyes floating where
+		-- the bandit stood) the face is drawn on SurfaceGuis (Shared/Face),
+		-- which a hidden part still shows
+		if d:IsA("SurfaceGui") then d.Enabled=false end
 	end
 end
 
@@ -75,6 +79,9 @@ function Rogue.start()
 		local function fade(entry,alpha)
 			for _,d in entry.rig:GetDescendants() do
 				if d:IsA("BasePart") and d.Name~="HumanoidRootPart" then d.LocalTransparencyModifier=alpha end
+				-- (26/11, passe 3, seen on the forest's path: the beaten bandit
+				-- gone, his two eyes still floating there) the face goes with him
+				if d:IsA("Decal") then d.LocalTransparencyModifier=alpha end
 			end
 		end
 
@@ -91,7 +98,10 @@ function Rogue.start()
 				at=root.CFrame,state="idle",since=math.random()*3}
 			Rogue.live[model]=entry
 			hide(model)
-			model.DescendantAdded:Connect(function(d) if d:IsA("BasePart") then d.LocalTransparencyModifier=1 end end)
+			model.DescendantAdded:Connect(function(d)
+				if d:IsA("BasePart") then d.LocalTransparencyModifier=1 end
+				if d:IsA("SurfaceGui") then d.Enabled=false end
+			end)
 			model.AncestryChanged:Connect(function(_,parent)
 				if parent then return end
 				-- the server took him away: a leap back, then gone
