@@ -102,6 +102,38 @@ function Rogue.start()
 				end)
 			end)
 		end
+		-- (26/11, passe 2, seen in Studio: the forest's bandit and the rackets'
+		-- rogues fought as the prodigy whose moves they use, green jumpsuit and
+		-- all) A duel's body the server marks NinjaRogueLook (Matches.forestFight,
+		-- thugFight) wears the rogue's look here: the prodigy's costume pieces
+		-- hidden, the body in the rogue's colours, the rogue's modelled pieces on.
+		local BODY={Head=true,UpperTorso=true,LowerTorso=true,LeftUpperArm=true,RightUpperArm=true,LeftLowerArm=true,RightLowerArm=true,
+			LeftHand=true,RightHand=true,LeftUpperLeg=true,RightUpperLeg=true,LeftLowerLeg=true,RightLowerLeg=true,LeftFoot=true,RightFoot=true,HumanoidRootPart=true}
+		local dressedDuel=setmetatable({},{__mode="k"})
+		local function dressDuel(model)
+			if dressedDuel[model] then return end
+			dressedDuel[model]=true
+			local dark=Color3.fromRGB(34,34,40)
+			for _,d in model:GetDescendants() do
+				if d:IsA("BasePart") then
+					if not BODY[d.Name] then d.LocalTransparencyModifier=1
+					elseif d.Name=="Head" or d.Name=="LeftHand" or d.Name=="RightHand" then d.Color=Rogue.SKIN
+					elseif d.Name~="HumanoidRootPart" then d.Color=dark end
+				end
+			end
+			task.spawn(function() pcall(Folk.dress,model,Dress,{Rogue.LOOK},colors) end)
+		end
+		task.spawn(function()
+			while true do
+				task.wait(.4)
+				local duels=workspace:FindFirstChild("NinjaDuels")
+				if duels then
+					for _,d in duels:GetDescendants() do
+						if d:IsA("Model") and d:GetAttribute("NinjaRogueLook") and not dressedDuel[d] then pcall(dressDuel,d) end
+					end
+				end
+			end
+		end)
 		local function scan(node) for _,d in node:GetDescendants() do if d:IsA("Model") and d:GetAttribute("NinjaThug") then add(d) end end end
 		scan(workspace)
 		workspace.DescendantAdded:Connect(function(d)
@@ -133,7 +165,21 @@ function Rogue.start()
 			local eye=cam and cam.CFrame.Position or Vector3.zero
 			local me=Players.LocalPlayer and Players.LocalPlayer.Character
 			local mine=me and me:FindFirstChild("HumanoidRootPart")
+			-- (26/11, DEC-054) the forest's bandit waits only for a player still
+			-- walking to him (Server/Forest): in his duel the duel's body is him,
+			-- after it he is beaten, before (in the village) nobody meets him
+			local stage=Players.LocalPlayer and Players.LocalPlayer:GetAttribute("NinjaIntro")
 			for model,e in Rogue.live do
+				if model:GetAttribute("NinjaForestBandit") then
+					local gone=stage~="forest"
+					if gone~=e.gone then
+						e.gone=gone
+						fade(e,if gone then 1 else 0)
+						local r=model.PrimaryPart or model:FindFirstChild("HumanoidRootPart")
+						local tag=r and r:FindFirstChild("ThugTag")
+						if tag then tag.Enabled=not gone end
+					end
+				end
 				if e.state~="leave" and model.Parent then
 					local r=model.PrimaryPart or model:FindFirstChild("HumanoidRootPart")
 					if r then e.at=r.CFrame end

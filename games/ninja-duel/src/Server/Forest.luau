@@ -175,6 +175,14 @@ function Forest.spawnBandit(holder,portraits)
 	end
 	entry.model.Name="ForestBandit"
 	entry.model:SetAttribute("NinjaForestBandit",true)
+	-- his own tag: no racket here (Thugs' label says « YOUR RYŌ OR A FIGHT »)
+	local tag=root:FindFirstChild("ThugTag")
+	if tag then
+		local labels={}
+		for _,l in tag:GetChildren() do if l:IsA("TextLabel") then table.insert(labels,l) end end
+		if labels[1] then labels[1].Text=Forest.NAME end
+		if labels[2] then labels[2].Text=Forest.LINE end
+	end
 	Forest.bandit=entry
 	return entry
 end

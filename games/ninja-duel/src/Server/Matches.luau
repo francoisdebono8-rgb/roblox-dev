@@ -28,6 +28,8 @@ local SkillBuilds=require(script.Parent.SkillBuilds)
 local BuildPresets=require(script.Parent.BuildPresets)
 local Zones=require(script.Parent.Zones)
 local FirstMinute=require(Shared.FirstMinute)
+local KitTexts=require(Shared.KitTexts)
+local Text=require(Shared.Text)
 local Matches={}; Matches.__index=Matches
 -- (DEC-038) Konoha between duels (Server/Hub), when the village is built.
 local Hub=require(script.Parent.Hub)
@@ -152,6 +154,11 @@ function Matches:thugFight(player,kit,key,level)
 	local ok=self:start(player,own or "Leaf",kit,own==nil)
 	s.nextSite=nil
 	if ok==false then s.thug=nil;return false end
+	-- (26/11, passe 2) a rogue, not the prodigy whose moves he stole
+	if s.bot then
+		s.bot.displayName="ROGUE NINJA";s.bot.displaySub=Text.upper(KitTexts.name(kit)).."'S MOVES";s.bot.rogue=true
+		pcall(function() s.bot.model:SetAttribute("NinjaRogueLook",true) end)
+	end
 	return true
 end
 -- (26/11, DEC-054) The forest's bandit (Server/Forest): a new player's first
@@ -173,6 +180,10 @@ function Matches:forestFight(player)
 	s.roundsToWin=1
 	-- « très court »: his blows fell the bandit fast (the coach set .6)
 	if s.human then s.human.outScale=Forest.PLAYER_DAMAGE end
+	if s.bot then
+		s.bot.displayName=Forest.NAME;s.bot.displaySub="TAIJUTSU ONLY";s.bot.rogue=true
+		pcall(function() s.bot.model:SetAttribute("NinjaRogueLook",true) end)
+	end
 	self:snapshot(player,s)
 	return true
 end
@@ -808,7 +819,21 @@ function Matches:view(s,cursor,mine,theirs)
 	for _,impact in s.combat.impacts do if impact.serial>sent then table.insert(feed,impact) end end
 	cursor.sentImpact=s.combat.impactSerial or 0;cursor.impactEpoch=s.epoch
 	local wins=s.wins or {}
-	return {phase=s.phase,epoch=s.epoch,first=s.firstStage,winner=s.winner and (if s.winner==mine.id then "PlayerFighter" else "AIFighter"),tutorial=Tutorial.snapshot(s) or Coach.snapshot(s),origin=s.origin,human=data(mine),bot=data(theirs),impacts=feed,impactSerial=s.combat.impactSerial or 0,
+	-- (26/11, passe 2: « le nom du kit est toujours celui utilisé en duel ») the
+	-- names on the bars: the player's own (his kit under it), the rogue's or the
+	-- bandit's for them; a prodigy keeps his title
+	local function named(d,a)
+		local who=a.displayName
+		if not who and a==s.human and s.owner and not s.spectate and not s.online and s.avatarBody then
+			local ok,name=pcall(function() return s.owner.DisplayName end)
+			if ok and type(name)=="string" and name~="" then who=Text.upper(name);d.whoSub=Text.upper(KitTexts.name(a.fighterId)) end
+		end
+		d.who=who;d.whoSub=d.whoSub or a.displaySub
+		-- (26/11, DEC-054) the forest's fight: no technique, no awakening to show
+		if s.bare then d.techniques={};d.awakenReady=false;d.ultimateReady=false;d.sealReady=nil end
+		return d
+	end
+	return {phase=s.phase,epoch=s.epoch,first=s.firstStage,winner=s.winner and (if s.winner==mine.id then "PlayerFighter" else "AIFighter"),tutorial=Tutorial.snapshot(s) or Coach.snapshot(s),origin=s.origin,human=named(data(mine),mine),bot=named(data(theirs),theirs),impacts=feed,impactSerial=s.combat.impactSerial or 0,bare=s.bare or nil,
 		-- Bodies that are not fighters (Naruto's shadow clones), drawn by Client/BodyViews.
 		bodies=Bodies.view(s.combat),
 		-- zones: wind lanes and updrafts (Zones.snapshot), drawn per kind by the client.

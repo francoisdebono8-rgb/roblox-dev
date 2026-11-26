@@ -18,7 +18,15 @@ Intro.HINT={
 }
 
 function Intro.new(hub)
-	return setmetatable({hub=hub,opened=false,sent=false,label=nil},Intro)
+	local self=setmetatable({hub=hub,opened=false,sent=false,label=nil},Intro)
+	-- (26/11, seen in Studio: « FOLLOW THE PATH » stayed over the bandit's duel)
+	-- the line only while he walks (the village client steps only then)
+	pcall(function()
+		game:GetService("RunService").Heartbeat:Connect(function()
+			if self.label and self.label.Visible and not self.hub.active then self.label.Visible=false end
+		end)
+	end)
+	return self
 end
 function Intro.stage()
 	local ok,stage=pcall(function() return Players.LocalPlayer:GetAttribute("NinjaIntro") end)

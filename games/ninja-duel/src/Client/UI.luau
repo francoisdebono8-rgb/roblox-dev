@@ -1372,11 +1372,16 @@ function UI:lobby(data)
 	end
 	self:refreshSelection()
 end
+-- (26/11, passe 2: « le nom du kit est toujours celui utilisé en duel ») the
+-- server names a fighter who is not a prodigy (Matches.view `who`): the
+-- player's own name, his kit under it; a rogue, the forest's bandit
 local function fullName(actor)
+	if actor.who then return actor.who end
 	local def=Fighters[actor.fighterId]
 	return if def then KitTexts.fullName(actor.fighterId) else Text.upper(actor.fighter or "")
 end
 local function subtitle(actor)
+	if actor.whoSub then return actor.whoSub end
 	local def=Fighters[actor.fighterId]
 	if not def then return "" end
 	return KitTexts.sub(actor.fighterId)
