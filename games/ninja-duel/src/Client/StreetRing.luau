@@ -9,11 +9,14 @@ local Ring={}
 Ring.__index=Ring
 Ring.SEGMENTS=60
 -- The line at rest, and where a fighter is close (Transparency).
-Ring.FAINT=.7
-Ring.LIT=.15
+-- (Studio 27/11: in Neon at rest it was a hard orange line round the whole
+-- place) chalk-like at rest, glowing only where a fighter presses on it.
+Ring.FAINT=.55
+Ring.LIT=.1
 -- A fighter this near the edge (studs) lights the segments next to him.
 Ring.NEAR=6
-Ring.COLOR=Color3.fromRGB(255,206,150)
+Ring.COLOR=Color3.fromRGB(236,222,196)
+Ring.GLOW=Color3.fromRGB(255,196,120)
 
 function Ring.new()
 	return setmetatable({key=nil,parts={},folder=nil},Ring)
@@ -74,7 +77,7 @@ function Ring:build(want)
 		local y=if hit then hit.Position.Y else want.origin.Y-3
 		local p=Instance.new("Part")
 		p.Name="Edge";p.Anchored=true;p.CanCollide=false;p.CanQuery=false;p.CanTouch=false;p.CastShadow=false
-		p.Material=Enum.Material.Neon;p.Color=Ring.COLOR;p.Transparency=Ring.FAINT
+		p.Material=Enum.Material.SmoothPlastic;p.Color=Ring.COLOR;p.Transparency=Ring.FAINT
 		p.Size=Vector3.new(.32,.06,seg.length)
 		-- along the circle: its length tangent to it
 		p.CFrame=CFrame.new(Vector3.new(seg.at.X,y+.05,seg.at.Z))*CFrame.Angles(0,-seg.angle,0)
@@ -95,7 +98,12 @@ function Ring:render(data)
 	end
 	for _,s in self.parts do
 		local t=Ring.shade(s.at,positions,want.origin,want.radius)
-		if s.part.Transparency~=t then s.part.Transparency=t end
+		if s.part.Transparency~=t then
+			s.part.Transparency=t
+			local lit=t<Ring.FAINT
+			s.part.Material=if lit then Enum.Material.Neon else Enum.Material.SmoothPlastic
+			s.part.Color=if lit then Ring.GLOW else Ring.COLOR
+		end
 	end
 end
 

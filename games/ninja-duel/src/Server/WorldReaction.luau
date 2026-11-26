@@ -550,9 +550,11 @@ local function rubble(c,at,size,color,material,direction,planks)
 		p.Color=color;p.Material=material
 		if planks then
 			-- a board of the broken box, lying or leaning where it fell
+			-- out past the caved-in bottom (Studio 27/11: under it, they hid)
 			local long=size*(1.1+h*.6)
+			local out=size*(1.15+h*.55)
 			p.Size=Vector3.new(size*.28,.22,long)
-			p.CFrame=CFrame.new(Vector3.new(at.X+math.cos(a)*r*.8+push.X,at.Y+.15+h*.5,at.Z+math.sin(a)*r*.8+push.Z))*CFrame.Angles(0,a+h,0)*CFrame.Angles((h-.5)*.9,0,(h-.3)*.5)
+			p.CFrame=CFrame.new(Vector3.new(at.X+math.cos(a)*out+push.X*.5,at.Y+.15+h*.4,at.Z+math.sin(a)*out+push.Z*.5))*CFrame.Angles(0,a+math.pi/2+(h-.5),0)*CFrame.Angles((h-.5)*.5,0,(h-.3)*.35)
 		else
 			p.Size=Vector3.new(s,s*.7,s*.9)
 			p.CFrame=CFrame.new(Vector3.new(at.X+math.cos(a)*r+push.X,at.Y+s*.3,at.Z+math.sin(a)*r+push.Z))*CFrame.Angles(h*3,a,h*2)
@@ -607,7 +609,8 @@ function WorldReaction.breakPart(c,part,rec,at,direction)
 		-- stone one keeps its mound
 		local wood=rec.class=="wood"
 		local keep=if wood then TUNE.MoundShare*.4 else TUNE.MoundShare
-		part.Size=Vector3.new(size.X*.9,size.Y*keep,size.Z*.9)
+		local spread=if wood then .78 else .9
+		part.Size=Vector3.new(size.X*spread,size.Y*keep,size.Z*spread)
 		local askew=if wood then CFrame.Angles(math.rad(7)*flat.Z,0,-math.rad(7)*flat.X) else CFrame.identity
 		part.CFrame=CFrame.new(Vector3.new(cf.Position.X,bottom+size.Y*keep/2,cf.Position.Z))*askew*cf.Rotation
 		for _,child in part:GetChildren() do

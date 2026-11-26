@@ -240,4 +240,15 @@ test("a street duel's edge is drawn on the ground and lights where a fighter pre
 	assert(not Camera.segmentBox(Vector3.new(0,5,0),Vector3.new(7,5,0),box,Vector3.new(4,10,4)),"a line short of the trunk crosses it")
 end)
 
+-- (27/11, Studio) whoever waits in a place where a duel is fought steps out
+test("a challenger or a thug waiting in a place where a duel is fought steps out of its ring",function()
+	local ok,Matches=pcall(H.load,"Server/Matches")
+	assert(ok,"Matches: "..tostring(Matches))
+	local sites={{key="Plaza",origin=Vector3.new(0,0,-2387),radius=36.4}}
+	assert(Matches.waitsIn(Vector3.new(0,3,-2387),sites),"the challenger in the middle stays")
+	assert(Matches.waitsIn(Vector3.new(36.4,3,-2387),sites),"the thug on the edge stays")
+	assert(not Matches.waitsIn(Vector3.new(60,3,-2387),sites),"one far off steps out")
+	assert(not Matches.waitsIn(Vector3.new(0,3,-2387),{}),"one steps out with no duel")
+end)
+
 print(string.format("NinjaDuel his kit in the street (26/11): %d PASS",passed))

@@ -1285,7 +1285,45 @@ function Matches:act(s,actor,payload,clock)
 		s.combat:quiet(actor,string.upper(reason))
 	elseif not ok and reason=="Committed" and not actor.latePress then s.combat:quiet(actor,"BUSY") end
 end
+-- (27/11, seen in Studio: a duel on the Plaza with the waiting challenger in
+-- its middle and the Plaza's thug on its edge) Whoever waits in the village
+-- (an inspiration's challenge, a thug) steps out of a place where a duel is
+-- fought, and comes back when it is over. (The Ōtsutsuki: Server/StoryPlay.)
+Matches.RING_CLEAR_EVERY=.5
+function Matches.waitsIn(pos,sites)
+	for _,s in sites do
+		if s.origin and s.radius and (Vector3.new(pos.X,0,pos.Z)-Vector3.new(s.origin.X,0,s.origin.Z)).Magnitude<=s.radius+3 then return true end
+	end
+	return false
+end
+function Matches:clearRings(now)
+	if now<(self.nextRingClear or 0) then return end
+	self.nextRingClear=now+Matches.RING_CLEAR_EVERY
+	local folder=Hub.folder
+	if not folder then return end
+	local sites=self:activeSites()
+	self.ringOut=self.ringOut or {}
+	for _,name in {"Masters","Thugs"} do
+		local holder=folder:FindFirstChild(name)
+		if holder and #sites>0 then
+			for _,m in holder:GetChildren() do
+				if m:IsA("Model") and (m.Name=="Challenger" or m:GetAttribute("NinjaThug")) and Matches.waitsIn(m:GetPivot().Position,sites) then
+					self.ringOut[m]=holder;m.Parent=nil
+				end
+			end
+		end
+	end
+	for m,holder in self.ringOut do
+		if m.Parent~=nil then self.ringOut[m]=nil
+		elseif not Matches.waitsIn(m:GetPivot().Position,sites) then
+			-- (a model destroyed meanwhile cannot come back)
+			if holder.Parent then pcall(function() m.Parent=holder end) end
+			self.ringOut[m]=nil
+		end
+	end
+end
 function Matches:update(dt,now)
+	pcall(self.clearRings,self,now)
 	for player,s in self.sessions do
 		-- Online players' duels are stepped once each by Online:update below.
 		if s.phase=="Duel" and not s.online then
