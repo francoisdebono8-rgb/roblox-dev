@@ -582,7 +582,7 @@ function Panel:drawRyo()
 	local K,M=self.kit,self.M
 	self.heading.Text="RYŌ"
 	self.subheading.Text="For looks. Nothing else."
-	self.footer.Text="Ryō packs show SOON until they are on sale."
+	self.footer.Text="Coming soon."
 	local packs=Config.Shop and Config.Shop.RyoPacks or {}
 	for i,pack in packs do
 		local cell=self:add(K.frame(self.body,UDim2.fromOffset(0,(i-1)*98),UDim2.fromOffset(560,84),M.paper,0))

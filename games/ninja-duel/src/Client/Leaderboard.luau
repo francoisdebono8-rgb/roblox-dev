@@ -105,7 +105,7 @@ function L.new(kit,gui)
 	self.kitTabs={}
 	self.boardTitle=z(kit.text(card,"",UDim2.fromOffset(28,206),UDim2.fromOffset(L.W-56,26),18,M.brown or M.ink,kit.STRONG_FONT))
 	self.body=z(kit.frame(card,UDim2.fromOffset(28,238),UDim2.fromOffset(L.W-56,L.H-262),M.paper,1))
-	self.empty=z(kit.text(self.body,"No duel counted yet. Every duel between two players counts.",UDim2.fromOffset(0,20),UDim2.new(1,0,0,40),20,M.mid or M.ink,kit.BODY_FONT,Enum.TextXAlignment.Center),2)
+	self.empty=z(kit.text(self.body,"No duels yet. Be the first.",UDim2.fromOffset(0,20),UDim2.new(1,0,0,40),20,M.mid or M.ink,kit.BODY_FONT,Enum.TextXAlignment.Center),2)
 	pcall(function()
 		UIS.InputBegan:Connect(function(input,processed)
 			if not self.root.Visible then return end
@@ -140,7 +140,7 @@ function L:draw()
 	for id,b in self.kitTabs do b.BackgroundColor3=if id==self.tab then M.red else M.paper;b.TextColor3=if id==self.tab then M.cream else M.ink end
 	local board=self.boards and self.boards[self.tab]
 	self.boardTitle.Text=if board and board.title then board.title..(if self.tab=="Rooftops" then "  •  BEST TIME, FASTEST FIRST" else "") else ""
-	self.empty.Text=if self.tab=="Rooftops" then "No race run yet. The rooftop race starts at the gate." elseif self.tab:sub(1,4)=="Kit_" then "No mastery counted yet. Play this kit to be the first." else "No duel counted yet. Every duel between two players counts."
+	self.empty.Text=if self.tab=="Rooftops" then "No times yet. The race starts at the gate." elseif self.tab:sub(1,4)=="Kit_" then "Nobody yet. Play this kit." else "No duels yet. Be the first."
 	local me=nil
 	pcall(function() me=game:GetService("Players").LocalPlayer.UserId end)
 	local rows=L.rows(board and board.rows,me)

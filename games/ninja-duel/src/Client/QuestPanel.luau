@@ -80,7 +80,7 @@ function Q.new(kit,gui)
 		z(kit.text(box,"+"..ryo,UDim2.fromOffset(0,20),UDim2.new(1,0,0,26),22,M.ink,kit.TITLE_FONT,Enum.TextXAlignment.Center),2)
 		self.days[i]=box
 	end
-	self.empty=z(kit.text(self.body,"The day's quests arrive with your profile.",UDim2.fromOffset(0,20),UDim2.new(1,0,0,40),20,M.mid or M.ink,kit.BODY_FONT,Enum.TextXAlignment.Center),2)
+	self.empty=z(kit.text(self.body,"Loading today's quests…",UDim2.fromOffset(0,20),UDim2.new(1,0,0,40),20,M.mid or M.ink,kit.BODY_FONT,Enum.TextXAlignment.Center),2)
 	pcall(function()
 		UIS.InputBegan:Connect(function(input,processed)
 			if not self.root.Visible then return end

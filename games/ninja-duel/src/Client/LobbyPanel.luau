@@ -71,7 +71,7 @@ function Panel.new(ui,remote,kit)
 	local list=K.create("ScrollingFrame",card,{Position=UDim2.fromOffset(24,96),Size=UDim2.fromOffset(712,420),BackgroundTransparency=1,BorderSizePixel=0,
 		ScrollBarThickness=6,CanvasSize=UDim2.fromOffset(0,0),ZIndex=72})
 	self.list=list
-	self.empty=K.text(list,"Nobody else is online right now. Train against the AI — the list refreshes by itself.",UDim2.fromOffset(20,30),UDim2.fromOffset(660,60),18,P.muted,K.BODY_FONT,Enum.TextXAlignment.Center)
+	self.empty=K.text(list,"Nobody online. Duel the AI while you wait.",UDim2.fromOffset(20,30),UDim2.fromOffset(660,60),18,P.muted,K.BODY_FONT,Enum.TextXAlignment.Center)
 	self.empty.ZIndex=73
 	self.dndButton=K.button(card,"DO NOT DISTURB: OFF",UDim2.fromOffset(24,540),UDim2.fromOffset(340,56),function()
 		self:send({op="dnd",on=not self.dnd})

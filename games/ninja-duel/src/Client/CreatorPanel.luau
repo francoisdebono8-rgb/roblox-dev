@@ -12,6 +12,9 @@
 local Shared=game:GetService("ReplicatedStorage").NinjaDuel
 local Shop=require(Shared.Shop)
 local Text=require(Shared.Text)
+-- (CM 26/11) the words: Shared/Banter.Creation
+local okB,Banter=pcall(function() return require(Shared.Banter) end)
+local W=(okB and Banter.Creation) or {title="WHO ARE YOU?",sub="",random="RANDOM",confirm="THAT'S ME",quips={}}
 
 local C={}
 C.__index=C
@@ -43,6 +46,18 @@ function C.defaults()
 		for _,slot in step.slots do
 			local o=C.options(slot)
 			out[slot]=o[1] and o[1].id or ""
+		end
+	end
+	return out
+end
+-- RANDOM: one of each (pure; rng a Random).
+function C.random(rng)
+	local out={}
+	for _,step in C.STEPS do
+		for _,slot in step.slots do
+			local o=C.options(slot)
+			local n=if #o>0 then (if rng and rng.NextInteger then rng:NextInteger(1,#o) else math.random(1,#o)) else 0
+			out[slot]=if n>0 then o[n].id else ""
 		end
 	end
 	return out
@@ -82,8 +97,9 @@ function C.new(kit,gui,send)
 	pcall(function() workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(fit) end);fit()
 	self.card=card
 	local function z(o,d) o.ZIndex=80+(d or 0);return o end
-	z(kit.text(card,"YOUR NINJA",UDim2.fromOffset(28,8),UDim2.fromOffset(520,72),68,M.ink,kit.TITLE_FONT))
+	z(kit.text(card,W.title,UDim2.fromOffset(28,8),UDim2.fromOffset(560,72),68,M.ink,kit.TITLE_FONT))
 	z(kit.frame(card,UDim2.fromOffset(28,76),UDim2.fromOffset(220,7),M.red,0))
+	z(kit.text(card,W.sub or "",UDim2.fromOffset(600,34),UDim2.fromOffset(C.W-640,30),20,M.mid or M.ink,kit.VOICE_FONT or kit.BODY_FONT))
 	-- the steps
 	self.tabs={}
 	for i,step in C.STEPS do
@@ -104,7 +120,12 @@ function C.new(kit,gui,send)
 	end)
 	-- the choices
 	self.body=z(kit.frame(card,UDim2.fromOffset(724,96),UDim2.fromOffset(C.W-752,500),M.paper,1))
-	self.enter=z(kit.button(card,"ENTER KONOHA",UDim2.fromOffset(C.W-28-460,C.H-86),UDim2.fromOffset(460,66),function() self:finish() end,M.red),1)
+	-- RANDOM, and its quip under the avatar
+	self.randomButton=z(kit.button(card,W.random,UDim2.fromOffset(28,C.H-86),UDim2.fromOffset(250,66),function() self:randomize() end,M.paper),1)
+	self.randomButton.Font=kit.TITLE_FONT;self.randomButton.TextSize=34;self.randomButton.TextColor3=M.ink
+	kit.create("UIStroke",self.randomButton,{Color=M.ink,Thickness=3,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
+	self.quip=z(kit.text(stage,"",UDim2.new(0,10,1,-44),UDim2.new(1,-20,0,36),22,M.ink,kit.VOICE_FONT or kit.BODY_FONT,Enum.TextXAlignment.Center),3)
+	self.enter=z(kit.button(card,W.confirm,UDim2.fromOffset(C.W-28-460,C.H-86),UDim2.fromOffset(460,66),function() self:finish() end,M.red),1)
 	self.enter.Font=kit.TITLE_FONT;self.enter.TextSize=40;self.enter.TextColor3=M.cream
 	self.next=z(kit.button(card,"NEXT",UDim2.fromOffset(724,C.H-86),UDim2.fromOffset(200,66),function() self.step=math.min(#C.STEPS,self.step+1);self:draw() end,M.ink),1)
 	self.next.Font=kit.TITLE_FONT;self.next.TextSize=34;self.next.TextColor3=M.cream
@@ -114,7 +135,17 @@ end
 function C:shown() return self.root.Visible end
 function C:show() self.root.Visible=true;self:draw() end
 function C:hide() self.root.Visible=false end
-function C:pick(slot,id) self.picks[slot]=id;self:draw() end
+function C:pick(slot,id) self.picks[slot]=id;self.quip.Text="";self:draw() end
+function C:randomize(rng)
+	if not rng then pcall(function() rng=Random.new() end) end
+	if rng and not rng.NextInteger then rng=nil end
+	self.picks=C.random(rng)
+	local q=W.quips or {}
+	local line=if rng and okB and Banter.pick then Banter.pick(q,self.lastQuip,rng) else q[math.random(1,math.max(1,#q))]
+	self.lastQuip=line
+	self.quip.Text=line or ""
+	self:draw()
+end
 function C:finish()
 	self.send("Create",{top=self.picks.top,bottom=self.picks.bottom,feet=self.picks.feet,headband=self.picks.headband,hair=self.picks.hair or "",hairColor=self.picks.hairColor})
 	self:hide()

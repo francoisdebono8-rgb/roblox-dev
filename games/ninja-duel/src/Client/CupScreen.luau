@@ -9,7 +9,7 @@ local Fighters=require(Shared.Fighters)
 -- (DEC-043, CM) a prodigy is shown by the CM's title (Shared/KitTexts); Fighters[id].Name stays the key
 local KitTexts=require(Shared.KitTexts)
 local Cup={};Cup.__index=Cup
-Cup.CHAMPION_NOTE="Eight prodigies entered the arena. One walks out with the tournament."
+Cup.CHAMPION_NOTE="Eight came in. You walk out."
 -- (19/11, vague 2 DEV 5) The champion card's line for the week's exam
 -- (cup.exam, Server/WeeklyExam): nil when the tournament did not count.
 function Cup.examLine(exam)
@@ -211,7 +211,7 @@ function Cup:draw(cup)
 		local champion=cup.champion and nameOf(cup.seats[cup.champion]) or "?"
 		self.subtitle.Text=if cup.out then "ELIMINATED IN THE "..tostring(cup.eliminatedIn or "").."  •  THE REST OF THE BRACKET WAS PLAYED OUT" else "THE TOURNAMENT IS OVER"
 		self.nextTitle.Text="CHAMPION  •  "..champion
-		self.lineA.Text=if cup.out then "Even prodigies lose. Learn the opening you missed, then come back to the arena." else ""
+		self.lineA.Text=if cup.out then "Out this time. Come back sharper." else ""
 		self.lineB.Text=""
 		self.primary.Text="NEW TOURNAMENT"
 		self.secondary.Text="BACK TO THE ROSTER";self.secondary.Visible=true

@@ -62,7 +62,7 @@ function V.action(kits,id)
 	local status=V.status(kits,id)
 	local who=name(id)
 	if status=="open" then return {kind="play"} end
-	if status=="loading" then return {kind="wait",label="LOADING YOUR KITS…",note="Your ninja's kits are on their way."} end
+	if status=="loading" then return {kind="wait",label="LOADING YOUR KITS…",note="Loading…"} end
 	if status=="starter" then
 		return {kind="choose",label="TAKE THIS KIT",
 			note="YOUR FIRST KIT: "..names(Masters.Starters)..". Every other kit is taught by its master."}
