@@ -29,8 +29,9 @@ end
 -- his body had when it was taken, a stride, knees bent, leaning across the
 -- stage) The copy stands at rest: from the root, each part put back where its
 -- joint holds it without the animation's turn (a Motor6D, an accessory's
--- weld: part1 = part0 * C0 * C1⁻¹; a weld constraint keeps the offset it had).
--- Returns how many parts were placed.
+-- weld: part1 = part0 * C0 * C1⁻¹; the avatars' new joints, an
+-- AnimationConstraint or a RigidConstraint, the same by their attachments; a
+-- weld constraint keeps the offset it had). Returns how many parts were placed.
 function Preview.rest(model)
 	local root=model and model:FindFirstChild("HumanoidRootPart")
 	if not (root and root:IsA("BasePart")) then return 0 end
@@ -39,11 +40,17 @@ function Preview.rest(model)
 		links[a]=links[a] or {}
 		table.insert(links[a],{b,place})
 	end
+	local function joint(p0,p1,c0,c1)
+		link(p0,p1,function(cf) return cf*c0*c1:Inverse() end)
+		link(p1,p0,function(cf) return cf*c1*c0:Inverse() end)
+	end
 	for _,j in model:GetDescendants() do
 		if j:IsA("JointInstance") and j.Part0 and j.Part1 then
-			local c0,c1=j.C0,j.C1
-			link(j.Part0,j.Part1,function(cf) return cf*c0*c1:Inverse() end)
-			link(j.Part1,j.Part0,function(cf) return cf*c1*c0:Inverse() end)
+			joint(j.Part0,j.Part1,j.C0,j.C1)
+		elseif (j:IsA("AnimationConstraint") or j:IsA("RigidConstraint")) and j.Attachment0 and j.Attachment1 then
+			local a0,a1=j.Attachment0,j.Attachment1
+			local p0,p1=a0.Parent,a1.Parent
+			if p0 and p1 and p0:IsA("BasePart") and p1:IsA("BasePart") then joint(p0,p1,a0.CFrame,a1.CFrame) end
 		elseif j:IsA("WeldConstraint") and j.Part0 and j.Part1 then
 			local offset=j.Part0.CFrame:ToObjectSpace(j.Part1.CFrame)
 			link(j.Part0,j.Part1,function(cf) return cf*offset end)

@@ -1050,6 +1050,7 @@ test("the style preview: his own outfit on, the look pointed at in its slot, sta
 	assert(Shop.BASE.top and Shop.item(Shop.BASE.top) and Shop.item(Shop.BASE.bottom) and Shop.item(Shop.BASE.feet),"the base outfit's pieces exist")
 	-- standing at rest: a limb turned by the animation is put back where its joint holds it
 	local Instance,CF=roblox.Instance,roblox.CFrame
+	local Vector3new=roblox.Vector3.new
 	local model=Instance.new("Model")
 	local root=Instance.new("Part");root.Name="HumanoidRootPart";root.CFrame=CF.new(10,3,0);root.Parent=model
 	local torso=Instance.new("Part");torso.Name="LowerTorso";torso.Parent=model
@@ -1063,6 +1064,16 @@ test("the style preview: his own outfit on, the look pointed at in its slot, sta
 	assert((leg.CFrame.Position-want.Position).Magnitude<1e-4 and (torso.CFrame.Position-CF.new(10,2,0).Position).Magnitude<1e-4,"the leg does not stand at rest")
 	local look=leg.CFrame.LookVector
 	assert(math.abs(look.Y)<1e-4,"the leg kept its turn")
+	-- the avatars' new joints (seen in the game: AnimationConstraints, no Motor6D)
+	local body=Instance.new("Model")
+	local root2=Instance.new("Part");root2.Name="HumanoidRootPart";root2.CFrame=CF.new(0,3,0);root2.Parent=body
+	local arm=Instance.new("Part");arm.Name="RightUpperArm";arm.Parent=body
+	local a0=Instance.new("Attachment");a0.CFrame=CF.new(1.5,.5,0);a0.Parent=root2
+	local a1=Instance.new("Attachment");a1.CFrame=CF.new(0,.4,0);a1.Parent=arm
+	local shoulder=Instance.new("AnimationConstraint");shoulder.Attachment0=a0;shoulder.Attachment1=a1;shoulder.Parent=arm
+	arm.CFrame=CF.new(3,5,2)*CF.Angles(0,0,1.2)
+	assert(Preview.rest(body)==1,"an AnimationConstraint's limb was not put back")
+	assert((arm.CFrame.Position-Vector3new(1.5,3.1,0)).Magnitude<1e-4 and math.abs(arm.CFrame.RightVector.Y)<1e-4,"the arm does not hang at rest: "..tostring(arm.CFrame.Position))
 end)
 
 print(string.format("NinjaDuel shop and Ryō (13/11): %d PASS",passed))
