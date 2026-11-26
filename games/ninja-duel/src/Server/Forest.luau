@@ -32,8 +32,13 @@ Forest.BANDIT_KIT="Leaf"
 Forest.LEVEL="first"
 -- He comes when the walker is this near (studs, at the village's scale), or
 -- after this long in the forest.
+-- (26/11, seen in the game: the fight had begun under the loading screen, the
+-- player never saw the forest) The wait counts from his first steps (MOVED
+-- studs from where he appeared); a player who never moves meets him after IDLE.
 Forest.TRIGGER=22
 Forest.WAIT=7
+Forest.MOVED=6
+Forest.IDLE=45
 -- « très court »: the bandit falls in a handful of blows (his blows are the
 -- novice's, the player's health has the coach's floor).
 Forest.PLAYER_DAMAGE=3.2
@@ -156,7 +161,12 @@ function Forest.tick(now)
 		local root=Forest.root(player)
 		if st.stage=="forest" and s.phase=="Selection" and not s.finishing then
 			local near=root and (Vector3.new(root.Position.X,0,root.Position.Z)-Vector3.new(bandit.X,0,bandit.Z)).Magnitude<Forest.TRIGGER
-			if near or now-st.at>Forest.WAIT then Forest.fight(player) end
+			if root and not st.movedAt then
+				st.from=st.from or root.Position
+				if (Vector3.new(root.Position.X,0,root.Position.Z)-Vector3.new(st.from.X,0,st.from.Z)).Magnitude>Forest.MOVED then st.movedAt=now end
+			end
+			local waited=(st.movedAt~=nil and now-st.movedAt>Forest.WAIT) or now-st.at>Forest.IDLE
+			if near or waited then Forest.fight(player) end
 		elseif st.stage=="fight" then
 			if s.phase=="Result" then
 				st.resultAt=st.resultAt or now
@@ -164,7 +174,7 @@ function Forest.tick(now)
 					local won=s.forestWon==true
 					st.resultAt=nil
 					-- lost (the coach's floor makes it rare): he comes again
-					stage(player,if won then "path" else "forest");st.at=now
+					stage(player,if won then "path" else "forest");st.at=now;st.movedAt=nil;st.from=nil
 					m:selection(player)
 				end
 			elseif s.phase=="Selection" and not s.finishing then

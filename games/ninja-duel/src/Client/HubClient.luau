@@ -400,11 +400,17 @@ function Hub:showHud()
 	local touch=self.lay~=nil and self.lay.touch
 	-- (a phone's card takes the top row: the place box and the shop step aside)
 	local talking=self.card.Visible and self.lay~=nil and self.lay.card.overTop==true
-	self.hud.Visible=walking and not talking;self.keys.Visible=walking and not touch
-	self.goal.Visible=walking and self.goalHead.Text~="" and not self.card.Visible
+	-- (26/11, seen in the game: the shop, the duels, the quests, the map and
+	-- « CHOOSE YOUR INSPIRATION » over the forest, before he even has a ninja)
+	-- the way in (NinjaIntro, Client/ForestIntro) shows the way and the keys only
+	local intro=false
+	pcall(function() intro=Players.LocalPlayer:GetAttribute("NinjaIntro")~=nil end)
+	local village=walking and not intro
+	self.hud.Visible=village and not talking;self.keys.Visible=walking and not touch
+	self.goal.Visible=village and self.goalHead.Text~="" and not self.card.Visible
 	self.runButton.Visible=walking and touch and not panel
-	self.shopBox.Visible=walking and not talking and self.kits~=nil and self.ui.shopPanel~=nil
-	if self.map then self.map:setVisible(walking and not talking and not panel and self.mapRoom~=false) end
+	self.shopBox.Visible=village and not talking and self.kits~=nil and self.ui.shopPanel~=nil
+	if self.map then self.map:setVisible(village and not talking and not panel and self.mapRoom~=false) end
 	local c8=self.kits and self.kits.challenges8
 	self.eightButton.Text=if c8 then string.format("THE 8   %d / %d BEATEN",c8.count or 0,c8.need or 8) else "THE 8"
 	-- the quests button: how many are done today

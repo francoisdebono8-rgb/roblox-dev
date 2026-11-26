@@ -134,6 +134,9 @@ test("the way in: the walk, the bandit there and then, a very short fight, the p
 	-- far from him, not yet
 	Forest.tick(1)
 	assert(Forest.of(player)=="forest" and s.phase=="Selection","the bandit came at once")
+	-- (26/11, seen in the game) still where he appeared (the loading screen): he waits
+	Forest.tick(Forest.WAIT+5)
+	assert(Forest.of(player)=="forest" and s.phase=="Selection","the bandit came under the loading screen")
 	-- he walks up the path: the bandit is on him
 	root.Position=HubMap.Origin+HubMap.Forest.bandit+V.new(0,3,Forest.TRIGGER-4)
 	Forest.tick(2)
@@ -195,6 +198,35 @@ test("a lost fight (the coach's floor makes it rare): the bandit waits again on 
 	s.phase="Result";s.forestWon=false
 	Forest.tick(5);Forest.tick(5+Forest.RESULT+.1)
 	assert(Forest.of(player)=="forest","lost, yet on to the gate")
+end)
+
+test("the bandit's wait counts from his first steps; a player who never moves meets him later",function()
+	for _,case in {{moves=true},{moves=false}} do
+		local m=Matches.new(remote)
+		local player=fakePlayer(if case.moves then 46 else 47)
+		m:selection(player)
+		Forest.matches=m
+		local body,root=walker(HubMap.Origin+HubMap.Spawns.forest.at+V.new(0,3,0))
+		Hub.bodies[player]=body
+		Forest.state[player]={stage="forest",at=100}
+		local s=m.sessions[player]
+		Forest.tick(101)
+		if case.moves then
+			root.Position+=V.new(0,0,-(Forest.MOVED+2))
+			Forest.tick(102)
+			Forest.tick(102+Forest.WAIT-1)
+			assert(s.phase=="Selection","he came before the wait")
+			Forest.tick(102+Forest.WAIT+.5)
+			assert(s.phase=="Duel","the bandit never came to the wanderer")
+		else
+			Forest.tick(100+Forest.IDLE-1)
+			assert(s.phase=="Selection","he came to a player who has not moved")
+			Forest.tick(100+Forest.IDLE+1)
+			assert(s.phase=="Duel","the bandit never came to the idle player")
+		end
+		Forest.state[player]=nil;Hub.bodies[player]=nil
+		pcall(function() m:selection(player) end)
+	end
 end)
 
 test("the profile: a new player needs the way in, once; a player from before (a kit chosen) never",function()

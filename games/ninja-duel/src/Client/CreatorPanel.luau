@@ -34,7 +34,10 @@ function C.options(slot)
 	if slot=="hair" then table.insert(out,{id="",name="MY OWN HAIR"}) end
 	for _,item in Shop.Items do
 		if item.slot==slot and (item.base or slot=="hair" or slot=="hairColor") and not item.hidden then
-			table.insert(out,{id=item.id,name=Text.upper(item.name),color=item.colors and (item.colors.Hair or item.colors.Cloth or item.colors.Band)})
+			-- (DEV 26/11, seen in the game: the card's font has no « • », drawn
+			-- « ¤� »: GENIN TUNIC • NAVY) the variant on its own line
+			local name=string.gsub(Text.upper(item.name),"%s*\u{2022}%s*","\n")
+			table.insert(out,{id=item.id,name=name,color=item.colors and (item.colors.Hair or item.colors.Cloth or item.colors.Band)})
 		end
 	end
 	return out
@@ -125,7 +128,9 @@ function C.new(kit,gui,send)
 	self.randomButton.Font=kit.TITLE_FONT;self.randomButton.TextSize=34;self.randomButton.TextColor3=M.ink
 	kit.create("UIStroke",self.randomButton,{Color=M.ink,Thickness=3,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
 	self.quip=z(kit.text(stage,"",UDim2.new(0,10,1,-44),UDim2.new(1,-20,0,36),22,M.ink,kit.VOICE_FONT or kit.BODY_FONT,Enum.TextXAlignment.Center),3)
-	self.enter=z(kit.button(card,W.confirm,UDim2.fromOffset(C.W-28-460,C.H-86),UDim2.fromOffset(460,66),function() self:finish() end,M.red),1)
+	-- (DEV 26/11, seen in the game: NEXT, at 724 and 200 wide, covered the
+	-- start of THAT'S ME) side by side, 12 apart
+	self.enter=z(kit.button(card,W.confirm,UDim2.fromOffset(724+200+12,C.H-86),UDim2.fromOffset(C.W-28-(724+200+12),66),function() self:finish() end,M.red),1)
 	self.enter.Font=kit.TITLE_FONT;self.enter.TextSize=40;self.enter.TextColor3=M.cream
 	self.next=z(kit.button(card,"NEXT",UDim2.fromOffset(724,C.H-86),UDim2.fromOffset(200,66),function() self.step=math.min(#C.STEPS,self.step+1);self:draw() end,M.ink),1)
 	self.next.Font=kit.TITLE_FONT;self.next.TextSize=34;self.next.TextColor3=M.cream
