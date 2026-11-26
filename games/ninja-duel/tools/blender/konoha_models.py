@@ -419,21 +419,70 @@ def fence():
 
 
 def village_wall(height):
-    """A segment of wall along z (10 long, 2 thick), plaster on a stone
-    footing, a tiled coping 3 wide x .8 on top."""
+    """A segment of wall along z (10 long, 2 thick).
+    (26/11, passe 3, DEV: « le mur extérieur vu de la forêt est un aplat beige ») It was one block of
+    plaster with one band: from the forest, a beige sheet. Now a rampart: a footing of dressed stone
+    courses, the plaster in panels between timber posts and two beams, aged (rain streaks under the
+    coping, grime at the foot), rafter ends under a tiled two-slope coping. Both faces alike; one post
+    per segment so the segments tile."""
     pl = Piece("Plaster", "Concrete", flat=True)
+    st = Piece("Stone", "Slate", flat=True)
+    tm = Piece("Timber", "Wood", flat=True)
     tiles = Piece("Coping", "Slate", flat=True)
-    box(pl, T(0, height / 2, 0), (2, height, 10), wall_col(C["plasterWarm"] if height > 20 else C["plaster"]), cell=2.0)
-    box(pl, T(0, .8, 0), (2.3, 1.6, 10), lambda p, f: jitter(C["stoneDark"], p, .12, 1.2), cell=2.0)
-    for y in (height * .55,):
-        box(pl, T(0, y, 0), (2.15, .4, 10), C["woodDark"])
-    box(tiles, T(0, height + .2, 0), (3, .4, 10.02), C["roofTile"])
+    foot = 7.0
+
+    def aged(p, face):
+        c = jitter(C["plasterWarm"], p, .07, .3)
+        # rain streaks: darker lines running down from the coping, stronger near the top
+        streak = .5 + .5 * math.sin(p.z * 2.3 + 1.7 * math.sin(p.z * .7))
+        t = smooth((p.y - foot) / max(1.0, height - foot))
+        c = lerp(c, (c[0] * .6, c[1] * .58, c[2] * .55), (streak ** 3) * t * .8)
+        return grime(c, p, mid, 2.4, .3)
+    mid = foot + (height - foot) * .45
+    box(pl, T(0, (mid + height) / 2, 0), (2, height - mid, 10), aged, cell=2.0)
+    # below the plaster, dark weathered planks standing on the footing (seams every .8)
+    box(tm, T(0, (foot + mid) / 2, 0), (2.05, mid - foot, 10), rgb(30, 24, 20))
+    for k in range(12):
+        c = lerp(rgb(58, 44, 34), rgb(86, 66, 48), ((k * 37) % 5) / 4)
+        box(tm, T(0, (foot + mid) / 2, -5 + (k + .5) * 10 / 12), (2.2, mid - foot, 10 / 12 - .06), c)
+    # the footing: four courses of stones, staggered, each stone its own tint, standing proud
+    rnd = 0
+    for row in range(4):
+        y0 = row * (foot / 4)
+        hgt = foot / 4
+        z = -5.0 - (1.1 if row % 2 else 0.0)
+        while z < 5.0:
+            rnd += 1
+            ln = 2.0 + .9 * ((rnd * 37) % 7) / 6
+            z0, z1 = max(-5.0, z), min(5.0, z + ln)
+            if z1 - z0 > .2:
+                k = ((rnd * 53) % 11) / 10
+                col = lerp(C["stone"], C["stoneDark"], .25 + .5 * k)
+                box(st, T(0, y0 + hgt / 2, (z0 + z1) / 2), (2.6 - .06 * (row % 2), hgt - .1, z1 - z0 - .1),
+                    lambda p, f, col=col: grime(jitter(col, p, .08, 1.1), p, 0, 1.6, .4))
+            z += ln
+    # mortar behind the stones
+    box(st, T(0, foot / 2, 0), (2.45, foot, 10), lerp(C["stoneDark"], (.2, .2, .2), .4))
+    # a sill on the footing
+    box(tm, T(0, foot + .2, 0), (2.5, .4, 10), C["woodDark"])
+    # timber: one post per segment (at its start) and two beams
+    for zp in (-4.75, .25):
+        box(tm, T(0, (mid + height) / 2, zp), (2.3, height - mid, .45), lambda p, f: jitter(C["woodDark"], p, .1, 1.2))
+    for y in (mid, height - 1.6):
+        box(tm, T(0, y, 0), (2.25, .45, 10), lambda p, f: jitter(C["woodDark"], p, .1, 1.2))
+    # rafter ends under the coping
+    for k in range(10):
+        z = -4.5 + k
+        for sx in (-1, 1):
+            box(tm, T(sx * 1.35, height - .25, z), (.7, .3, .3), C["wood"])
+    # the coping: a tiled two-slope roof with a ridge, overhanging both faces
+    box(tiles, T(0, height + .15, 0), (3.2, .3, 10.02), C["woodDark"])
     for k in range(13):
         z = -5 + k * .8 + .4
-        for s in (-1, 1):
-            box(tiles, T(s * .75, height + .55, z) @ Rz(s * -.35), (1.6, .25, .7), jitter(C["roofTile"], (k, s, 0), .15, 1))
-    box(tiles, T(0, height + .75, 0), (.6, .35, 10.02), rgb(40, 44, 46))
-    return [pl, tiles]
+        for sx in (-1, 1):
+            box(tiles, T(sx * .9, height + .6, z) @ Rz(sx * -.38), (2.0, .26, .72), jitter(C["roofTile"], (k, sx, 0), .18, 1))
+    box(tiles, T(0, height + 1.0, 0), (.7, .4, 10.02), rgb(40, 44, 46))
+    return [pl, st, tm, tiles]
 
 
 def ladder():

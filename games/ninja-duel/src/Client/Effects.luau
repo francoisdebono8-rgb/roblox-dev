@@ -2655,6 +2655,9 @@ require(script.Parent.ChakraFX).install(FX,{new=new,block=block,tween=tween,soun
 -- chains, Itachi's reads and geometry, Sasuke's curse and Chidori).
 require(script.Parent.IdentityFX).install(FX,{new=new,block=block,tween=tween,sound=sound,flash=flash,shockRing=shockRing,burst=burst,
 	smokePuff=smokePuff,sparks=sparks,floorUnder=floorUnder,anchorPart=anchorPart,weldAll=weldAll,num=num,seq=seq,TEX=TEX,SOUND=SOUND,BUILD=BUILD})
+-- (26/11, passe 3) The whoosh of each blow on its clip's contact frame, and every
+-- combat sound over the music (Client/StrikeSoundFX).
+pcall(function() require(script.Parent.StrikeSoundFX).install(FX,{}) end)
 -- (Lot 3 animation, 08/11) Each awakening's own look for the whole state.
 require(script.Parent.AwakenFX).install(FX,{new=new,floorUnder=floorUnder})
 -- (OUTILLEUR, F7, 08/11) At most 8 effect lights lit at once, never shadowed.
@@ -2690,6 +2693,8 @@ do
 	pcall(function() require(script.Parent.KonohaLifeFX).start() end)   -- Konoha: steam, smoke, bunting, birds, leaves (étape 3)
 	pcall(function() require(script.Parent.KonohaFolkFX).start() end)   -- Konoha: villagers walking the streets (étape 3)
 	pcall(function() require(script.Parent.KonohaRogueFX).start() end)  -- Konoha: the rogue ninjas' look and clips (passe 1)
+	pcall(function() require(script.Parent.BossFX).start() end)         -- the Ōtsutsuki in his reference look (passe 3)
+	pcall(function() require(script.Parent.ArenaDuskFX).start() end)    -- his arena at dusk, its moon (passe 3)
 end
 -- Naruto (clone puffs, the Rasengan shaped with a clone, the barrage, the Nine-Tails cloak).
 require(script.Parent.NarutoFX).install(FX,{new=new,block=block,tween=tween,sound=sound,flash=flash,shockRing=shockRing,burst=burst,

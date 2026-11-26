@@ -16,8 +16,30 @@ Détail et preuves : `CURRENT_STATE` (DEV, 27/11 nuit). Code validé sur `19cfdd
 
 **À l'ANIMATEUR (banc des kits de l'OUTILLEUR, `tools/kitbench`)** : la différence des clips. Critères vus sur le banc : l'esquive (`Dash.F`) a la même silhouette pour les huit ; la garde ressemble au repos ; le premier léger de Sasuke, Neji, Kakashi et Minato tend à peine le bras ; aux chutes, le corps passe 1,5 à 1,8 stud sous le sol. Le DEV a corrigé le choix du clip (chaque kit joue ses propres coups en rue).
 
+**À l'ANIMATEUR (INBOX-ANIM-PASSE3-20261127)** : l'Ōtsutsuki, le mur, le son des coups et l'arène sont intégrés dans la branche commune et dans la place de ce soir. L'arène de finale n'est pas encore posée dans le plan : la finale se joue dans la cour de la salle de l'Examen (choix de François). Lui trouver un terrain de 70 × 70 est la prochaine tâche du DEV.
+
 **Au CM** : une place figée de la version de ce soir pour filmer : `MEDIA/CE_SOIR_2026-11-27/` (voir son LISEZ-MOI).
 
+## INBOX-ANIM-PASSE3-20261127 — ANIMATEUR 27/11 nuit : l'Ōtsutsuki en vrai perso, le mur, l'arène, le son des coups
+
+Demandes : la section ANIMATEUR de `claude/dev-passe3-avance-2026-11-26`, puis François : « fais entièrement Otsutsuki comme un vrai perso », avec ses 4 images de référence. Skills : ninja-animation-direction, ninja-player-experience. Vu dans une Studio à moi (build Debug de la branche, jamais enregistrée), pas l'avis de François.
+
+**1. L'Ōtsutsuki** (`NinjaBoss="Otsutsuki"`)
+- Corps entier modélisé comme les 8 : `tools/blender/look_otsutsuki.py` (nd_look/nd_kit, la pose de repos du rig de duel). Il a des cornes et leurs anneaux, la gemme, le troisième œil, un masque bordé d'or, de longs cheveux blancs, un plastron blanc à 4 tomoe, des épaulières avec magatama, des pans à tomoe et des manchettes d'or.
+- Pas d'import Studio ni d'envoi de mesh : `tools/blender/look_to_client.py` écrit `Client/BossMeshData*` (format MeshKit, EditableMesh). `Client/BossFX` les pose sur ses parties, au décalage de repos, cache tout le reste du corps de remplacement et dessine ses deux yeux en Rinnegan.
+- Vu en jeu sur celui qui attend dans la cour : 46 pièces, environ 30 000 triangles.
+- Pas encore vus : son corps de duel (même code, il porte l'attribut) et ses coups. Son kit reste celui de Mirage ; un kit propre reste à faire avec le DEV.
+
+**2. L'arène de finale** : modèle `final_arena` dans `konoha_landmarks.py` : estrade ronde de 64, cercle de duel de 18 de rayon, marches devant (+Z), torii au fond (-Z), braseros, 4 tours à bannières.
+- Le crépuscule et la lune à trois tomoe : `Client/ArenaDuskFX`, qui démarre seul dès qu'une unité porte `Dress="final_arena"`.
+- **Au DEV** : je n'ai pas posé l'arène dans le plan, la place est à toi (`Story.BOSS`). Il faut un terrain libre d'environ 70 × 70 hors des rues, puis une ligne dans `KonohaLayout.Buildings` ou `Outside` avec le modèle `final_arena`. `HubSolids` pour l'estrade : à faire.
+
+**3. Le mur extérieur** (`VillageWall`) : soubassement en pierre, planches sombres, enduit vieilli, poteaux et poutres, toit de tuiles (990 triangles par segment). Remplacé dans `HubMeshData32` seulement. Vu en jeu par le code (le nouveau mur est posé, l'ancien caché) ; pas encore d'image de la forêt.
+
+**4. Le son des coups** : `Client/StrikeSoundFX` (couche d'Effects).
+- Un souffle par coup, lancé 0,07 s avant l'instant de contact du clip (le startup du coup, profil du kit compris) ; plus grave pour un coup lourd ou un coup de pied ; un sifflement d'acier en plus si une arme est en main.
+- Tous les sons de combat passent dans le groupe `NinjaHits`, entendu à plat sur la distance d'un duel, et un compresseur baisse `NinjaMusic` et `NinjaAmbience` sous lui.
+- Mesuré contre le bandit : le souffle part environ 0,1 s avant l'impact. Pas encore écouté par François.
 ## INBOX-DESIGN-PASSE3-20261127 — DESIGN 27/11 nuit : actualiser la place pour les têtes du duel
 
 **Pour le DEV, demandé par François (27/11, 0 h 31) : relance l'actualisation de la place `PLACES/NinjaDuel.rbxlx` (`_outils/actualiser_places.sh`).**
