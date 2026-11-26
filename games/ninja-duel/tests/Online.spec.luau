@@ -738,11 +738,14 @@ test("a 1v1 between two walkers is fought in Konoha's street, one fight per plac
 		assert(UI.resultLine({cup={}},"NARUTO")=="NARUTO  ADVANCES","the bracket's winner advances")
 		local back=m.sessions[a].returnTo
 		assert(back and (back.at-(centre-HubMap.Origin+V.new(0,0,site.radius*.5))).Magnitude<1e-3,"he does not walk on from the street")
-		-- the place holds one fight: a duel asked at Lee's meanwhile is the stadium's
+		-- the place holds one fight: a duel asked at Lee's meanwhile is fought
+		-- elsewhere (26/11, passe 3, DEC-055: the village's next free place,
+		-- never the stadium while one is free)
 		assert(not m:siteFree("Leaf") and m:siteFree("Leaf",d),"the street is not taken")
 		walkAt(c,centre)
 		send(m,c,"First",{player="Leaf",here="Leaf"})
-		assert(m.sessions[c].phase=="Duel" and m.sessions[c].site==nil,"two fights in one place")
+		local other=m.sessions[c].site
+		assert(m.sessions[c].phase=="Duel" and (other==nil or other.key~="Leaf"),"two fights in one place")
 		m:selection(c)
 		-- (15/11) a lane of the market: the two start along the lane, not into its houses
 		local p,q=join(m,"Papa","Quebec")
