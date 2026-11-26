@@ -13,7 +13,7 @@ La demande : « le banc des kits : un robot joue chaque coup et chaque technique
 ```sh
 python3 tools/robots/inject.py bench               # Client
 python3 tools/kitbench/report.py --clips           # Client : le tableau des clips
-python3 tools/kitbench/report.py --sheet Lion 1    # Client : la planche, puis capture_screenshot (attendre 3 s le rendu)
+python3 tools/kitbench/report.py --sheet Lion 1    # Client : la planche (30 images, 10 par ligne, comme celles du 26/11), puis capture_screenshot (attendre 3 s le rendu)
 python3 tools/kitbench/report.py CLIPS.json --md RAPPORT.md
 ```
 
