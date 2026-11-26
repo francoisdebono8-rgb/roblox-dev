@@ -630,7 +630,9 @@ function UI.new(parent,send)
 		local medallion=frame(box,UDim2.fromOffset(X(0,112),0),UDim2.fromOffset(112,96),MANGA.paper,0)
 		medallion.ClipsDescendants=true
 		create("UICorner",medallion,{CornerRadius=UDim.new(0,3)})
-		medallion.Rotation=if right then 2 else -2
+		-- (DESIGN 26/11, seen in the game) never turned: Roblox stops clipping a
+		-- turned frame, and the face's eyes ran out of the case
+		medallion.Rotation=0
 		local ring=create("UIStroke",medallion,{Color=MANGA.ink,Thickness=4,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
 		picture(medallion,"halftone_tile",{ScaleType=Enum.ScaleType.Tile,TileSize=UDim2.fromOffset(32,32),ImageTransparency=.78})
 		local inkFrame=picture(medallion,"ink_frame_9s",{ZIndex=(medallion.ZIndex or 1)+6,Size=UDim2.new(1,8,1,8),Position=UDim2.fromOffset(-4,-4)})

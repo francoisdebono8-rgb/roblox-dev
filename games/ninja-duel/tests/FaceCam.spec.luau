@@ -70,7 +70,7 @@ test("the lens: in front of the chest, looking at the face; a plate seen where i
 	local xr=FaceCam.project(lens,FaceCam.FOV,size,head.CFrame.Position+Vector3.new(-.3,0,0))
 	-- his left (-x when he faces -z) is on the picture's right
 	assert(xr>x,"left and right swapped")
-	assert(perStud>50 and perStud<75,"(v2, close-up) a stud is "..perStud.." px")
+	assert(perStud>36 and perStud<55,"(26/11, head and neck) a stud is "..perStud.." px")
 	local _,_,_,behind=FaceCam.project(lens,FaceCam.FOV,size,lens.Position+lens.LookVector*-2)
 	assert(not behind,"a point behind the lens is drawn")
 	-- an eye plate on his face, facing out (-z): seen, upright
@@ -111,9 +111,16 @@ test("v2: the expression the duel calls for",function()
 	assert(E({health=50,maxHealth=100,techCharge=.4})=="focus","a technique held")
 	assert(E({health=20,maxHealth=100})=="rage" and E({health=80,maxHealth=100,awaken=3})=="rage","rage: low or awakened")
 	assert(E({health=20,maxHealth=100,reaction="Knockback"})=="hit","a blow wins over rage")
-	assert(FaceCam.DISTANCE<3,"the lens closer: the head in close-up")
+	assert(FaceCam.DISTANCE>=3.2 and FaceCam.DISTANCE<=4.2,"(26/11) head and neck in the case")
 	local F=H.load("Shared/Face")
 	for _,name in FaceCam.EXPRESSIONS do assert(F.Moods[FaceCam.MOOD[name]],"a mood of the face for "..name) end
 end)
 
 print(string.format("NinjaDuel face-cam (HUD v3): %d PASS",passed))
+
+-- (DESIGN 26/11) the manga face over a head Roblox won't draw
+test("the cartoon face: its shapes for the six expressions",function()
+	local FaceCam=H.load("Client/FaceCam")
+	for _,name in FaceCam.EXPRESSIONS do assert(FaceCam.CARTOON[name],"a cartoon for "..name) end
+	assert(FaceCam.CARTOON.none and FaceCam.needsCartoon(nil)==false,"none, and no head")
+end)
