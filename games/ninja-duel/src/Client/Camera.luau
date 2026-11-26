@@ -85,6 +85,18 @@ local function fadeHit(part,faded)
 	if copies then for _,copy in copies do if copy.Parent then faded[copy]=true end end end
 end
 Camera.fadeHit=fadeHit
+-- (26/11, passe 3, seen in the forest: the bandit's statue, hidden by its
+-- client drawing (KonohaRogueFX), lay in the clearing during his duel) A part
+-- someone else hid (LocalTransparencyModifier 1) is left alone by a lens: not
+-- faded (.72 showed it), so never "restored" to 0 either. `faded`: the parts
+-- in the way; `mine`: the ones this lens faded last time. (pure)
+function Camera.keepHidden(faded,mine)
+	local out={}
+	for part in faded do
+		if (mine and mine[part]) or part.LocalTransparencyModifier<.99 then out[part]=true end
+	end
+	return out
+end
 function Camera.new()
 	-- (DEC-031, user 03/11: "on est sur du Storm total") Free by default:
 	-- the mouse turns the lens, SHIFT locks on.
@@ -699,6 +711,7 @@ function Camera:update(data,dt)
 		ray.FilterDescendantsInstances=exclude
 		hit=cast()
 	end
+	faded=Camera.keepHidden(faded,self.faded)
 	for part in self.faded or {} do if not faded[part] and part.Parent then part.LocalTransparencyModifier=if self.decorFaded and self.decorFaded[part] then DECOR_FADE else 0 end end
 	for part in faded do part.LocalTransparencyModifier=.72 end
 	self.faded=faded

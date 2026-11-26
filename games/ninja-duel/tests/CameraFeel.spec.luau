@@ -330,4 +330,16 @@ test("the lens's ray stopped by a tree's invisible box fades the tree it carries
 	assert(only[crate] and not only[lid],"a visible prop faded what it carries")
 end)
 
+-- (26/11, passe 3, seen in the forest) a part another layer hid stays hidden
+test("a lens never shows a part another layer hid (the rogues' statues)",function()
+	local Camera=H.load("Client/Camera")
+	local hidden={LocalTransparencyModifier=1}
+	local prop={LocalTransparencyModifier=0}
+	local out=Camera.keepHidden({[hidden]=true,[prop]=true},nil)
+	assert(out[prop] and not out[hidden],"a hidden statue faded to .72")
+	-- what this lens faded itself (at .72) stays its own
+	prop.LocalTransparencyModifier=.72
+	assert(Camera.keepHidden({[prop]=true},{[prop]=true})[prop],"its own fade dropped")
+end)
+
 print(("CameraFeel: %d passed"):format(passed))

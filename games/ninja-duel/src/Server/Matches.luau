@@ -1008,6 +1008,11 @@ function Matches:request(player,payload)
 		-- against the novice, with the coach's prompts at the right moments.
 		s.lastLifecycle=clock;s.aiLevel="first";s.firstStage="duel";s.firstFight=true
 		s.nextSite=self:freeVillageSite(player,payload.here,s)
+		-- (26/11, passe 3, seen in the game: YOUR FIRST DUEL, chosen by the
+		-- three at the gate, sent him to the stadium; DEC-055 « sans menu qui
+		-- téléporte ») away from his master's place: the village's free place
+		-- nearest him, as a duel asked from the board
+		if not s.nextSite then s.nextSite=self:nearSite(player,s) end
 		if not self:start(player,payload.player,rival,false) then s.firstStage=nil;s.firstFight=nil end
 		s.nextSite=nil
 		return

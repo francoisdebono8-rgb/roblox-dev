@@ -202,10 +202,13 @@ test("a first duel asked at Lee's home is fought on Training Ground Three; the b
 		send(m,player,"Start",{player="Leaf",bot="Lion"})
 		assert(s.phase=="Duel" and s.site==nil and s.radius==nil and (s.origin-Matches.laneOrigin(s.lane)).Magnitude<1e-3,"a board duel away from Konoha left the stadium")
 		m:selection(player)
-		-- asked as if at Lee's while far away (a client's word only): the stadium
+		-- asked as if at Lee's while far away (a client's word only): not at
+		-- Lee's; (26/11, passe 3, DEC-055) in the village's free place nearest
+		-- him, never the stadium
 		walkAt(HubMap.Origin+H.V.new(0,3,190))
 		send(m,player,"First",{player="Leaf",here="Leaf"})
-		assert(s.site==nil,"a duel came to the village from the gate")
+		assert(s.site~=nil and s.site.key~="Leaf" and s.site.street,"the first duel from the gate: "..tostring(s.site and s.site.key))
+		assert(s.firstFight and s.coach,"the first duel's coach")
 		m:selection(player)
 		-- the flag off: the stadium
 		walkAt(centre)

@@ -66,6 +66,7 @@ function Sight:step(dt,character,head)
 	for _,part in workspace:GetPartBoundsInRadius(lens,Sight.INSIDE,overlap) do
 		if Sight.fades(part,character) then Camera.fadeHit(part,faded) end
 	end
+	faded=Camera.keepHidden(faded,self.faded)
 	for part in self.faded do if not faded[part] and part.Parent then part.LocalTransparencyModifier=0 end end
 	for part in faded do if part.Transparency<.95 then part.LocalTransparencyModifier=Sight.FADE end end
 	self.faded=faded
