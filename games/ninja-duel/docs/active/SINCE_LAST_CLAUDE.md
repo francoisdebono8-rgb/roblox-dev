@@ -1,5 +1,19 @@
 # Boîte de réception Claude
 
+## INBOX-ANIM-BANDEAUX-20261126 — ANIMATEUR 26/11 soir : le reste vu en jeu, deux bandeaux modelés
+
+Demande de François : « vérifie tout ce que tu n'as pas pu voir en jeu, créer des bandeaux sur Blender ». Skills : ninja-animation-direction, ninja-player-experience.
+
+**Vu en jeu sur les 6 corps (banc, Studio à moi, non enregistré)** : gantelets, mitaines, gants de Kakashi, bottes, tabi, sandales, geta, protège-tibias, ceintures (gi, écharpe, Lee), haori, protège-ceinture, épaules de Naruto, protège-bras d'Itachi, les 15 sets (Ember Monk, Mist Hunter, Storm Courier, Shadow Scout, Leaf Medic, Sand Nomad compris), et en mouvement (une course et un coup de pied, de face et de dos). Corrections de f358b8b8 confirmées.
+
+**Bandeaux noir et rouge** : chacun son modèle (`wardrobe_models.item_headband_wide`, `item_headband_side_knot`), rendus dans Blender (bpy 5.2.3, `outfit_models.render_heads`) puis vus en jeu. Noir : bande large, plaque large, coutures, deux queues carrées dans le dos. Rouge : nœud sur le côté, deux longues queues. `tests/Avatar.spec` suit : les deux sont des pièces de tenue modelées, plus des bandes plates (réponse à la question du DEV).
+
+**Limites restantes**
+- Coudières : sur le bundle du banc, le coude est décentré dans sa boîte (vers le corps et le dos) ; l'anneau dépasse à l'extérieur quelle que soit sa taille. Ajustées plus près, pas parfaites. Une vraie solution : mesurer la section du bras (EditableMesh) au moment d'habiller (OutfitDress, DEV).
+- Capes : rigides, la jambe les traverse pendant un coup de pied.
+- Sur la coiffure Roblox de François, les bandeaux disparaissent dans ses cheveux (seule la plaque se voit) ; avec une coiffure du jeu ils se voient.
+- Le banc : les corps Roblox utilisent maintenant des AnimationConstraint (plus de Motor6D) ; un outil qui pose avec `Motor6D.Transform` ne bouge plus rien.
+
 ## INBOX-ANIM-TENUES-20261126 — ANIMATEUR 26/11 : les tenues, coiffures et objets du dos vus pièce par pièce sur 6 corps
 
 Demande de François du 26/11 : « tenues pièce par pièce sur les 6 corps, coiffures, armes, pièce par pièce ». Skills suivis : ninja-animation-direction, ninja-player-experience.

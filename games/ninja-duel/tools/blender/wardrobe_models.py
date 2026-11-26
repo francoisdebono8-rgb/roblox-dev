@@ -127,6 +127,36 @@ def item_headband_classic():
     return o.items
 
 
+# (26/11, François : « créer des bandeaux ») The black and the red headbands were the classic
+# band recoloured: each has its own model now.
+def item_headband_wide():
+    """BLACK HEADBAND: a wide band, a broad plate, square-cut tails hanging straight down the back."""
+    o = O().Out()
+    band = _protector(o, tails=0, band_h=.23, plate_w=.74)
+    # two stitched seams along the band, above and below the plate
+    seam = o.add("Head", "Band", name="Seam")
+    for dy in (-.095, .095):
+        head_ring(seam, BROW + dy, .018, r=(.665, .685), bulge=0.0, col=O().shade(.6, .02))
+    for sx in (-1, 1):
+        pts = [Vector((sx * (.06 + .03 * u), BROW - .04 - .72 * u, .72 + .14 * u)) for u in [k / 7 for k in range(8)]]  # clear of the back
+        ribbon(band, pts, .17)
+    return o.items
+
+
+def item_headband_side_knot():
+    """RED HEADBAND: the band tied over the right ear, a big knot and two long tails that fly back."""
+    o = O().Out()
+    band = _protector(o, tails=0, band_h=.17, plate_w=.6)
+    knot = o.add("Head", "Band", name="SideKnot")
+    # the knot sits on the band at the right side of the head (+X on a head facing -Z)
+    O().box(knot, (.7, BROW, .18), (.06, .1, .1), O().shade(.82, .04))
+    for k, (dz, drop, w) in enumerate(((.05, .75, .13), (.22, .55, .11))):
+        pts = [Vector((.72 + .05 * u, BROW - .03 - drop * u, .2 + dz * u + .22 * u * u + .03 * math.sin(u * 4 + k)))
+               for u in [i / 6 for i in range(7)]]
+        ribbon(knot, pts, w, side=Vector((0, 0, 1)))
+    return o.items
+
+
 def item_headband_long():
     o = O().Out()
     _protector(o, tails=1.5)
@@ -664,9 +694,12 @@ def item_elbow_pads():
     o = O().Out()
     def pad(pc, part):
         S = O().size(part)
-        O().ribbed(pc, part, .02, .26, pad=.065, ribs=2, depth=.02, rings_per=3)  # (26/11) stood off the elbow as a ring
+        # (26/11, seen on six bodies) a modern arm narrows at the elbow (its mesh fills .6 to .7 of
+        # the box there, against .88 at mid-forearm): the pad and its strap stood off it as rings.
+        # They sit a little lower and come in to the arm (on the blocky arm they still clear it).
+        O().ribbed(pc, part, .08, .32, pad=-.05, ribs=2, depth=.02, rings_per=3)
     o.both("LowerArm", "Pad", pad)
-    o.both("UpperArm", "Strap", lambda pc, part: O().ribbed(pc, part, .78, .88, pad=.05, ribs=1, depth=.01, rings_per=3))
+    o.both("UpperArm", "Strap", lambda pc, part: O().ribbed(pc, part, .7, .8, pad=-.03, ribs=1, depth=.01, rings_per=3))
     return o.items
 
 
@@ -1274,6 +1307,7 @@ MODELS = {
     "HeadbandClassic": item_headband_classic, "HeadbandLong": item_headband_long, "HeadbandScratched": item_headband_scratched,
     "Hachimaki": item_headband_hachimaki, "HeadbandBandana": item_headband_bandana, "HeadbandBow": item_headband_bow,
     "HeadbandNeck": item_headband_neck, "HeadbandWaist": item_headband_waist,
+    "HeadbandWide": item_headband_wide, "HeadbandSideKnot": item_headband_side_knot,
     # hair styles (étape 3)
     **HAIR,
     # masks

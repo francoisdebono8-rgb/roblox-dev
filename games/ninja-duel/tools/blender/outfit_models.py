@@ -809,6 +809,10 @@ ITEMS = {
     "BottomPantsDark": "Pants", "BottomPantsSand": "Pants", "BottomShorts": "Shorts",
     "ArmsWraps": "ArmWraps", "ArmsGuards": "ArmGuards",
     "FeetSandals": "Sandals", "FeetBlack": "Sandals",
+    # (26/11, François : « créer des bandeaux ») the black and the red headbands were the flat cloth
+    # band, and nothing on a body dressed by the outfit alone: each has its own model
+    # (wardrobe_models.item_headband_wide, item_headband_side_knot)
+    "HeadbandBlack": "HeadbandWide", "HeadbandRed": "HeadbandSideKnot",
     "SetNaruto": "Naruto", "SetSasuke": "Sasuke", "SetLee": "Lee", "SetNeji": "Neji", "SetGaara": "Gaara",
     "SetKakashi": "Kakashi", "SetItachi": "Itachi", "SetMinato": "Minato",
 }

@@ -274,11 +274,13 @@ test("one protector: a set with its own takes the headband's place; a modelled h
 	assert(Headband.worn({headband="HeadbandNone"})==nil,"NO HEADBAND worn")
 	-- the modelled headband is an outfit item (the client puts the model on),
 	-- not the flat band; a headband without a model stays the flat band
-	assert(Headband.modelled("HeadbandBlue") and not Headband.modelled("HeadbandRed"),"the models")
+	-- (26/11, François) the black and the red bands have the classic model now; a band with no
+	-- model (none left in the Shop) would stay the flat band
+	assert(Headband.modelled("HeadbandBlue") and Headband.modelled("HeadbandRed") and Headband.modelled("HeadbandBlack"),"the models")
 	local function has(list,id) for _,x in list do if x==id then return true end end return false end
 	assert(has(Outfit.items({set="SetNaruto",headband="HeadbandBlue"}),"HeadbandBlue"),"the modelled headband is not dressed")
 	assert(not has(Outfit.items({set="SetLee",headband="HeadbandBlue"}),"HeadbandBlue"),"a headband over Lee's own")
-	assert(not has(Outfit.items({headband="HeadbandRed"}),"HeadbandRed"),"the flat band in the outfit")
+	assert(has(Outfit.items({set="SetNaruto",headband="HeadbandRed"}),"HeadbandRed"),"the red headband is not dressed")
 end)
 
 test("stripping keeps the hair Roblox files as a hat; the hats go",function()
