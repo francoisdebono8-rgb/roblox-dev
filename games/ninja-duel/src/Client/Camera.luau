@@ -49,6 +49,11 @@ end
 -- and swings along them (Camera:steerAroundWall) instead of sitting behind a
 -- house. Smaller things (a crate, a lamp, a bench) fade, with their mesh.
 Camera.BUILDING=18
+-- (26/11, passe 3) The dare's shot (an inspiration's line, the Ōtsutsuki's,
+-- the bandit's): the lens this far in front of him, looking this high over
+-- his root, so his bubble (the top of the screen) leaves his head clear.
+Camera.DARE_REACH=9.2
+Camera.DARE_LOOK=2.6
 local hubFolder=nil
 local function village(part)
 	if not (hubFolder and hubFolder.Parent) then hubFolder=workspace:FindFirstChild("NinjaDuelHub") end
@@ -606,8 +611,13 @@ function Camera:update(data,dt)
 		local across=toward:Cross(Vector3.yAxis)
 		local u=if first then shown/split else (shown-split)/math.max(total-split,1e-3)
 		local sign=if first then 1 else -1
-		local closeFocus=subject+Vector3.new(0,1.3-u*.3,0)
-		local close=closeFocus+toward*(6.2+u*1.2)+across*sign*(2.6-u*1.6)+Vector3.new(0,.4+u*.3,0)
+		-- (26/11, passe 3, seen in the street: his bubble covered his head)
+		-- during his line the lens stands back and looks over his head: he
+		-- stands whole under his bubble, in the lower half of the frame
+		local dareShot=first and dare~=nil
+		local closeFocus=subject+Vector3.new(0,(if dareShot then Camera.DARE_LOOK else 1.3)-u*.3,0)
+		local reach=if dareShot then Camera.DARE_REACH+u*1 else 6.2+u*1.2
+		local close=closeFocus+toward*reach+across*sign*(2.6-u*1.6)+Vector3.new(0,(if dareShot then .1 else .4)+u*.3,0)
 		-- (QA 12/11: at BEGIN only the opponent was in the frame, far, the
 		-- player behind the lens) BEGIN cuts to the duel frame, as a fighting
 		-- game cuts to play: the old ease crossed the whole gap between the two

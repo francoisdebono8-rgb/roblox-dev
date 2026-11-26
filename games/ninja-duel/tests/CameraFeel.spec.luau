@@ -96,6 +96,14 @@ test("a challenge's intro: he who dares first, for his line; then the player",fu
 	local function near(x) return (camera.CFrame.Position-x.root.Position).Magnitude end
 	for f=1,40 do clock+=1/60;cam:update(data(a,b,{intro=total-f/60,dare={kit="Legion",line="Hey!",lineFor=1.6,vsFor=1.5}}),1/60) end
 	assert(near(b)<near(a),("during his line the lens is %.1f from him, %.1f from the player"):format(near(b),near(a)))
+	-- (26/11, passe 3, seen in the street) his head under the screen's middle
+	-- (his bubble is above it), his feet still in the frame
+	local cf=camera.CFrame
+	local function below(at) local d=at-cf.Position;return math.deg(math.atan2(-d:Dot(cf.UpVector),d:Dot(cf.LookVector))) end
+	local head=below(b.root.Position+V.new(0,1.8,0))
+	local feet=below(b.root.Position-V.new(0,3,0))
+	assert(head>1,("his head is %.1f degrees above the middle, under his bubble"):format(-head))
+	assert(feet<camera.FieldOfView*.5,("his feet out of the frame: %.1f degrees"):format(feet))
 	for f=1,80 do clock+=1/60;cam:update(data(a,b,{intro=total-(40+f)/60,dare={kit="Legion",line="Hey!",lineFor=1.6,vsFor=1.5}}),1/60) end
 	assert(near(a)<near(b),("under the VS card the lens is %.1f from the player, %.1f from him"):format(near(a),near(b)))
 end)
