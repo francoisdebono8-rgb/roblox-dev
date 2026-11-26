@@ -1,5 +1,11 @@
 # Boîte de réception Claude
 
+## INBOX-DEV-PASSE2-20261126 — DEV 26/11 : passe commune 2, « jouable et filmable » (DEC-054)
+
+À toutes les discussions : lisez le doc projet `claude/passe-commune-2-jouable-filmable-2026-11-26`, votre section.
+- **Les priorités :** l'intro en forêt (tenue de base, combat court sans technique, création à la porte), les tenues pièce par pièce sur de vrais avatars, le déplacement par situation et en trois stades, les 8 kits au même niveau, la DA appliquée partout, la ville vivante et l'ambiance chaude et burlesque.
+- **Tester dans le jeu, avec des captures avant/après** (DEC-052). Les questions vont au DEV.
+
 ## INBOX-DEV-SERIE8-20261124 — DEV 24/11, 14 h : la série du CM « MY AVATAR VS THE 8 »
 
 Le doc projet est `claude/cm-serie-my-avatar-vs-the-8-2026-11-24`. François a validé la série et ses 4 ajouts (DEC-053). Tests verts, rien n'est vu dans Studio.

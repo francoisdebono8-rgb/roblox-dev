@@ -890,7 +890,9 @@ function Combat:substitute(a)
 end
 -- Whether a substitution would come out now (Combat:substitute's own checks,
 -- without the escape blocked by a wall that only the attempt finds).
+Combat.BARE_REFUSED={Ultimate=true,Awaken=true,Arm=true,ChakraLoad=true,Tool=true,Substitute=true,Seals=true,Pursuit=true}
 function Combat.canSubstitute(c,a)
+	if c.match and c.match.bare then return false end
 	local tune=Config.Substitution
 	if a.subCharges<=0 or c.now<a.subCooldown or a.chakra<tune.Cost or a.ultimateHeld then return false end
 	return (a.reaction~=nil and a.reaction~="Wakeup" and a.reaction~="WallSplat" and not (a.reaction=="Knockdown" and not a.airborne))
@@ -1271,6 +1273,12 @@ function Combat:requestInner(a,action,aim,clientTime,opts)
 		end
 		return true
 	end
+	-- (26/11, DEC-054) the forest's first fight, « sans compétence »: strikes,
+	-- guard, dodge, jump and grab; no technique, seal, tool, awakening,
+	-- ultimate, chakra load or substitution (Matches.forestFight)
+	if self.match.bare and (Combat.BARE_REFUSED[action] or string.match(action,"^Technique") or string.match(action,"^Seal") or (opts~=nil and opts.chakra==true)) then
+		return false,"Not yet"
+	end
 	-- (DEC-032 §3) Hand seals: the seal key opens the weave (keyboard C off a
 	-- wall, pad R1 + L3), then two jutsu keys are seals instead of slots; the
 	-- seal jutsu goes on the second one, through the same cast as a slot.
@@ -1349,7 +1357,10 @@ function Combat:requestInner(a,action,aim,clientTime,opts)
 	-- body to be up (Config.Late) and comes out as the dodge it was.
 	if action=="Dodge" and not Brawler.free(a,self.now) and (a.reaction=="Wakeup" or (a.reaction=="Knockdown" and not a.airborne)) then return false,"Reacting" end
 	if action=="Dodge" and not Brawler.free(a,self.now) then action="Substitute" end
-	if action=="Substitute" then return self:substitute(a) end
+	if action=="Substitute" then
+		if self.match.bare then return false,"Not yet" end
+		return self:substitute(a)
+	end
 	if action=="Awaken" then return self:awaken(a) end
 	if action=="Arm" then return self:arm(a) end
 	-- The chakra modifier held alone: the next action is infused (ChakraFlow).

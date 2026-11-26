@@ -1034,6 +1034,8 @@ M.Pois={
 	{id="Residences",name="THE WEST RESIDENCES",at=Vector2.new(-170,150),icon="district",tier=2,place="Residences"},
 	{id="Alleys",name="THE BACK ALLEYS",at=Vector2.new(180,-3),icon="district",tier=2,place="Alleys"},
 	{id="ForestOfDeath",name="THE FOREST OF DEATH",at=Vector2.new(-300,-60),icon="far",tier=3,far=true},
+	-- (26/11, DEC-054) the way in, beyond the great gate (HubMap.Forest)
+	{id="Forest",name="THE FOREST",at=Vector2.new(0,300),icon="far",tier=3,place="Forest",far=true},
 	{id="Stadium",name="THE CHŪNIN STADIUM",at=Vector2.new(290,40),icon="far",tier=3,far=true},
 }
 

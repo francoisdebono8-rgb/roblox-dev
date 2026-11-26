@@ -154,6 +154,28 @@ function Matches:thugFight(player,kit,key,level)
 	if ok==false then s.thug=nil;return false end
 	return true
 end
+-- (26/11, DEC-054) The forest's bandit (Server/Forest): a new player's first
+-- fight, at the clearing, there and then. One short round, no technique for
+-- either (Combat's `bare`: strikes, guard, dodge, jump, grab), the novice's
+-- AI and the coach's prompts (Server/Coach, without the jutsu and the tool).
+function Matches:forestFight(player)
+	local s=self.sessions[player]
+	if not s or s.phase~="Selection" or s.finishing then return false end
+	local Forest=require(script.Parent.Forest)
+	s.masterTrial=nil;s.firstStage=nil;s.challenge=nil;s.thug=nil
+	s.forest=true;s.bare=true;s.techniquesDisabled=true;s.firstFight=true;s.forestWon=nil
+	s.aiLevel=Forest.LEVEL
+	local c=HubMap.Forest.clearing
+	s.nextSite={key=c.key,origin=HubMap.Origin+c.at,radius=c.radius,place=c.place,street=true,axis=c.axis,start=c.start}
+	local ok=self:start(player,Forest.KIT,Forest.BANDIT_KIT,false,{})
+	s.nextSite=nil
+	if ok~=true then s.forest=nil;s.bare=nil;s.techniquesDisabled=nil;s.firstFight=nil;return false end
+	s.roundsToWin=1
+	-- « très court »: his blows fell the bandit fast (the coach set .6)
+	if s.human then s.human.outScale=Forest.PLAYER_DAMAGE end
+	self:snapshot(player,s)
+	return true
+end
 function Matches:freeVillageSite(player,key,except)
 	local site=Matches.villageSite(player,key)
 	if site and not self:siteFree(site.key,except) then return nil end
@@ -330,6 +352,15 @@ end
 function Matches:kitsLoaded(player)
 	local s=self.sessions[player]
 	if s and s.phase=="Selection" then self:send(player,{phase="Selection",epoch=s.epoch,kits=Progression.view(player)}) end
+	-- (26/11, DEC-054) his profile came after his first steps in the village:
+	-- a new player goes back to the forest
+	if s and s.phase=="Selection" and not s.finishing and Matches.hubOn() then
+		local Forest=require(script.Parent.Forest)
+		if not Forest.state[player] and Forest.needs(player) then
+			Forest.arrive(player)
+			Hub.enter(player,"forest",Progression.looks(player))
+		end
+	end
 end
 function Matches:selection(player,notice)
 	local s=self:session(player)
@@ -347,7 +378,16 @@ function Matches:selection(player,notice)
 	-- through the gate the first time, out of the exam hall after a duel.
 	if Matches.hubOn() then
 		Hub.badge(player,view)
-		Hub.enter(player,s.returnTo or (if s.hubVisited then "hall" else "gate"),Progression.looks(player))
+		local where=s.returnTo or (if s.hubVisited then "hall" else "gate")
+		-- (26/11, DEC-054) a new player's first steps: the forest outside the
+		-- gate (the clearing after the bandit: the duel's returnTo)
+		s.forest=nil;s.bare=nil;s.techniquesDisabled=nil
+		local Forest=require(script.Parent.Forest)
+		if Forest.state[player] or (not s.hubVisited and Forest.needs(player)) then
+			local spot=Forest.arrive(player)
+			if not s.returnTo then where=spot end
+		end
+		Hub.enter(player,where,Progression.looks(player))
 		s.returnTo=nil
 		s.hubVisited=true
 	end
@@ -494,7 +534,13 @@ function Matches:roundOver(s,winner,notify,advance)
 	if decided then s.logDecided=true end
 	-- (DEC-037) The masters' path: mastery for the kit fought with; a master's
 	-- duel won teaches his kit. Shown on the result screen (snapshot `progress`).
-	if decided and not s.online and s.owner and s.human then
+	-- (26/11, DEC-054) the forest's bandit down (or not): no kit, no mastery;
+	-- Server/Forest takes him back to the path
+	if decided and s.forest then
+		s.forestWon=s.human~=nil and winner==s.human
+		s.progress={forest={won=s.forestWon}}
+		s.forest=nil;s.bare=nil;s.techniquesDisabled=nil
+	elseif decided and not s.online and s.owner and s.human then
 		local won=winner==s.human
 		local gained=Progression.duelEnded(s.owner,s,won)
 		s.progress={mastery=gained and gained.mastery,gained=gained~=nil and gained.amount~=nil,amount=gained and gained.amount,fighter=s.playerId,need=Masters.Need,
@@ -814,6 +860,11 @@ function Matches:request(player,payload)
 	if self.tournament and self.tournament:request(player,s,action,payload) then return end
 	-- (B1 lot 2) PLAY on a first roster: the first minute with his fighter,
 	-- his story's rival as the partner and then the opponent (easy AI).
+	-- (26/11, DEC-054) his ninja made at the gate: into Konoha
+	if action=="IntroDone" then
+		if s.phase=="Selection" then require(script.Parent.Forest).created(player) end
+		return
+	end
 	if action=="First" then
 		if clock-s.lastLifecycle<0.8 or s.phase~="Selection" or type(payload.player)~="string" then return end
 		local rival=FirstMinute.rival(payload.player)

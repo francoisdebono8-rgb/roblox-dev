@@ -614,3 +614,13 @@ François (24/11) : « À partir de ce soir, le CM ne fait plus qu'une série de
   Ils sont répartis entre DEV, DESIGN et ANIMATEUR (SINCE_LAST_CLAUDE, INBOX-DEV-SERIE8).
 - **Les 8 inspirations peuvent défier le joueur,** celle de son propre kit comprise. Avant, il devait changer de kit pour avoir STUDENT OF THE EIGHT.
 
+## DEC-054 — Passe commune 2 : un jeu jouable et filmable (26/11, 13 h 24)
+
+François (26/11) : « je veux que tu travailles en autonomie sur le jeu comme un humain, en testant ce que tu crées en jeu ». Le détail est dans le doc projet `claude/passe-commune-2-jouable-filmable-2026-11-26`. But de la passe : que le CM puisse faire des clips superbes, donc pas de bug en combat, pas d'incohérence, des vêtements bien posés, un HUD propre.
+
+- **L'intro.** Le joueur apparaît dans une clairière de la forêt, hors du mur, avec une tenue de base. « Je veux plus qu'il apparaisse nu » : la règle du 14/11 (arriver sans vêtements) est remplacée. Un PNJ lui barre la route, pour un combat d'une manche très court, sans technique. Un chemin mène à la grande porte, où il crée son perso (tenue, cheveux, bandeau). Ensuite seulement vient Konoha.
+- **Le déplacement dans le village.** Chaque situation a sa vraie animation : marche, course, sprint, saut, double saut, mur, réception, arrêt. Chaque situation a trois stades, qui suivent la progression du joueur : débutant maladroit, entraîné, ninja.
+- **Les tenues et les armes se font pièce par pièce,** vérifiées dans le jeu sur de vrais avatars Roblox de plusieurs corps. Ce qui ne va pas sur l'avatar n'est pas vendu.
+- **L'ambiance de Konoha** est chaude et vivante, avec un humour burlesque : lumière de fin d'après-midi, couleurs chaudes, passants drôles, sons de rue.
+- **Le suivi.** Chaque discussion teste dans le jeu par les outils de Studio, sans l'écran de François (DEC-052), et lui envoie des captures et de courtes vidéos au fil de l'eau.
+

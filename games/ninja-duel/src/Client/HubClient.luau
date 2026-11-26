@@ -40,6 +40,8 @@ function Hub.enabled() return Config.Hub~=nil and Config.Hub.Enabled==true end
 
 function Hub.new(ui,camera,send,controls)
 	local self=setmetatable({ui=ui,camera=camera,send=send,controls=controls,active=false,board=false,markers={},kits=nil,move=HubMove.new()},Hub)
+	-- (26/11, DEC-054) a new player's first steps in the forest, the creation at the gate
+	self.intro=require(script.Parent.ForestIntro).new(self)
 	local K=ui.kit or require(script.Parent.UI).kit
 	self.K=K
 	local P=K.palette
@@ -436,6 +438,7 @@ function Hub:step(dt)
 		local camera=workspace.CurrentCamera
 		if camera.CameraSubject~=hum then camera.CameraType=Enum.CameraType.Custom;camera.CameraSubject=hum end
 	end
+	pcall(self.intro.step,self.intro,dt)
 	-- The walk (Client/HubMove): the run, the second jump, the fall to the gate.
 	local root,ended=self.move:step(dt)
 	if ended then self:paintRun() end

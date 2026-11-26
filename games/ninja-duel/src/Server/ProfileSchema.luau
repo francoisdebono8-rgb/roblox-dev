@@ -174,6 +174,7 @@ function S.validate(p)
 		local ok,why=Merit.valid(p.merit)
 		if not ok then return false,"merit: "..why end
 	end
+	if p.intro~=nil and p.intro~=true then return false,"intro" end
 	if p.solo~=nil then
 		local ok,why=Solo.valid(p.solo)
 		if not ok then return false,"solo: "..why end
@@ -570,6 +571,13 @@ function S.Commands.setVip(p,args)
 	assert(p.vip~=true,"Already VIP")
 	p.vip=true
 	return {vip=true}
+end
+-- (26/11, DEC-054) His first steps are behind him: the forest, its bandit and
+-- the creation at the gate (Server/Forest). Never again.
+function S.Commands.introDone(p,args)
+	assert(p.intro~=true,"Already in")
+	p.intro=true
+	return {intro=true}
 end
 -- Wear a look the player owns (or a base one) in its slot.
 function S.Commands.equipItem(p,args)

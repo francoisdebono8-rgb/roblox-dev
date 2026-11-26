@@ -26,7 +26,10 @@ test("the map: every kit of the beta has its master at home, inside the village;
 		assert(HubMap.inside(spot.at),id.." stands outside the village")
 		assert(spot.face.Magnitude>.5,id.." faces nowhere")
 	end
-	for name,spot in HubMap.Spawns do assert(HubMap.inside(spot.at),"spawn "..name) end
+	for name,spot in HubMap.Spawns do
+		-- (26/11, DEC-054) a new player's first steps: the forest outside the gate
+		if name=="forest" then assert(HubMap.inForest(spot.at) and not HubMap.inside(spot.at),"spawn forest") else assert(HubMap.inside(spot.at),"spawn "..name) end
+	end
 	assert(HubMap.inside(HubMap.Proctor.at),"the proctor")
 	local gate=HubMap.placeAt(HubMap.Origin+HubMap.Spawns.gate.at)
 	assert(gate and gate.id=="Gate","the gate is not where the player arrives: "..tostring(gate and gate.id))

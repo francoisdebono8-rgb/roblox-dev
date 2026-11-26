@@ -887,8 +887,80 @@ local function layoutGround(f)
 	local decal=spawn:FindFirstChildOfClass("Decal");if decal then decal:Destroy() end
 	spawn.Parent=f
 end
+-- (26/11, DEC-054, François: « en dehors du village […] on arrive par une
+-- forêt ») The forest outside the great gate (HubMap.Forest), where a new
+-- player takes his first steps (Server/Forest). Built in the village's base
+-- units like the rest (Hub.scaleVillage scales it), walled off from the
+-- village: he enters Konoha through the creation at the gate, not on foot.
+Hub.FOREST_SPACING=15
+Hub.FOREST_DENSITY=7 -- of 10 spots
+-- Where its trees stand (base units, x z height spread): thick on both sides
+-- of the path, never on it, in the clearing nor at the gate's foot; a band
+-- beyond its walls too, so the woods go on.
+function Hub.forestTrees()
+	local F=HubMap.Forest
+	local S=HubMap.Scale or 1
+	local x0,x1,z0,z1=F.x0/S,F.x1/S,F.z0/S,F.z1/S
+	local a,b=F.path.a/S,F.path.b/S
+	local width=F.path.width/S
+	local cl,cr=F.clearing.at/S,F.clearing.radius/S
+	local gate=F.gate/S
+	local dir=(Vector3.new(b.X,0,b.Z)-Vector3.new(a.X,0,a.Z)).Unit
+	local function free(x,z)
+		local along=Vector3.new(x,0,z)-Vector3.new(a.X,0,a.Z)
+		local off=(along-dir*along:Dot(dir)).Magnitude
+		if off<width/2+5 and along:Dot(dir)>-6 then return false end
+		if (Vector3.new(x,0,z)-Vector3.new(cl.X,0,cl.Z)).Magnitude<cr+5 then return false end
+		if (Vector3.new(x,0,z)-Vector3.new(gate.X,0,gate.Z)).Magnitude<20 then return false end
+		return true
+	end
+	local out={}
+	local step=Hub.FOREST_SPACING
+	for z=z0+6,z1+30,step do
+		for x=x0-18,x1+18,step do
+			local jx,jz=((x*7+z*3)%9)-4,((x*3+z*11)%9)-4
+			local X,Z=x+jx,z+jz
+			if free(X,Z) and ((x*13+z*7)%10)<Hub.FOREST_DENSITY then
+				table.insert(out,{X,Z,14+((x+z)%7),5+((x*3+z)%3)})
+			end
+		end
+	end
+	return out
+end
+function Hub.forestOutside(f)
+	local F=HubMap.Forest
+	local S=HubMap.Scale or 1
+	local x0,x1,z0,z1=F.x0/S,F.x1/S,F.z0/S,F.z1/S
+	local g=Instance.new("Folder");g.Name="Forest";g.Parent=f
+	-- its ground (a shade darker than the village's lawns), the far woods' too
+	part(g,"Ground",Vector3.new(x1-x0+80,8,z1-z0+60),rel((x0+x1)/2,-4,(z0+z1)/2+20),C.grassDark,Enum.Material.Grass)
+	local a,b=F.path.a/S,F.path.b/S
+	path(g,a.X,a.Z,b.X,b.Z,F.path.width/S,C.earth,Enum.Material.Ground)
+	local cl,cr=F.clearing.at/S,F.clearing.radius/S
+	local earth=deco(g,"Clearing",Vector3.new(.12,cr*2,cr*2),rel(cl.X,.05,cl.Z)*CFrame.Angles(0,0,math.pi/2),C.earth,Enum.Material.Ground)
+	earth.Shape=Enum.PartType.Cylinder
+	local trees=Hub.forestTrees()
+	for _,t in trees do tree(g,t[1],t[2],t[3],t[4]) end
+	-- a few rocks and fallen logs by the path: something to look at, to hide behind
+	for i,spot in {{-9,368},{10,352},{-12,300},{13,284},{-8,262},{9,250}} do
+		local x,z=spot[1],spot[2]
+		if i%2==0 then
+			local log=part(g,"Log",Vector3.new(9,1.8,1.8),rel(x,.9,z)*CFrame.Angles(0,math.rad(20+i*17),0),C.bark,Enum.Material.Wood)
+			log.Shape=Enum.PartType.Cylinder
+		else
+			part(g,"Rock",Vector3.new(4+i%3,2.6+i%2,3.4),rel(x,1.1,z)*CFrame.Angles(0,math.rad(i*31),math.rad(6)),C.rock,Enum.Material.Slate)
+		end
+	end
+	-- its invisible edges (the village's own closes it on the gate's side)
+	for _,e in {{x0-3,(z0+z1)/2,1,z1-z0+12},{x1+3,(z0+z1)/2,1,z1-z0+12},{(x0+x1)/2,z1+3,x1-x0+8,1}} do
+		local edge=part(g,"Edge",Vector3.new(e[3],90,e[4]),rel(e[1],45,e[2]),C.stone);edge.Transparency=1;edge.CanQuery=false
+	end
+	g:SetAttribute("Trees",#trees)
+	return g
+end
 function Hub.buildLayout(f)
 	layoutGround(f)
+	Hub.forestOutside(f)
 	local buildings=Instance.new("Folder");buildings.Name="Buildings";buildings.Parent=f
 	for _,b in Layout.Buildings do Hub.layoutBuilding(buildings,b) end
 	for _,w in Layout.Walls do
@@ -1408,6 +1480,8 @@ function Hub.start()
 			Hub.placeMasters(source)
 			-- (23/11, passe 1) the rogue ninjas who rack the walkers
 			if Hub.matches then pcall(require(script.Parent.Thugs).start,Hub.folder,source,Hub.matches) end
+			-- (26/11, DEC-054) the forest's bandit, and the way in
+			if Hub.matches then pcall(require(script.Parent.Forest).start,Hub.folder,source,Hub.matches) end
 		end
 	end)
 end

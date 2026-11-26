@@ -243,7 +243,9 @@ function Move:step(dt)
 	end
 	-- Fell out of the village (into the lake's floor, off the cliff): the gate.
 	if root.Position.Y<HubMap.Origin.Y-40 then
-		local spot=HubMap.Spawns.gate
+		-- (26/11, DEC-054) out of the forest's ground: its far end, not the village
+		local rel=root.Position-HubMap.Origin
+		local spot=if HubMap.inForest and HubMap.inForest(rel) then HubMap.Spawns.forest else HubMap.Spawns.gate
 		local at=HubMap.Origin+spot.at+Vector3.new(0,4,0)
 		character:PivotTo(CFrame.lookAt(at,at+spot.face))
 	end

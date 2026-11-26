@@ -105,6 +105,8 @@ local function text(value,a) if type(value)=="function" then return value(a) end
 function Coach.new(s,now)
 	local k={started=now,done={},current=nil,shownAt=0,doneAt=nil,base={},travel=0,last=nil,count=0}
 	s.coach=k
+	-- (26/11, DEC-054) the forest's fight has no jutsu nor tool to teach
+	if s.bare then k.done.signature=true;k.done.tool=true;k.skip=2 end
 	-- The novice's handicap, on this duel's bodies only.
 	if s.bot then s.bot.outScale=Coach.BotDamage end
 	if s.human then s.human.healthFloor=s.human.def.Health*Coach.HealthFloor;s.human.outScale=Coach.PlayerDamage end
@@ -156,7 +158,7 @@ function Coach.snapshot(s)
 	local p=k and k.current
 	if not p or not s.human then return nil end
 	local a=s.human
-	return {index=k.count+(if k.doneAt then 0 else 1),total=#Coach.Prompts,title=text(p.title,a),key=text(p.key,a),pad=text(p.pad,a),
+	return {index=k.count+(if k.doneAt then 0 else 1),total=#Coach.Prompts-(k.skip or 0),title=text(p.title,a),key=text(p.key,a),pad=text(p.pad,a),
 		touch=FirstMinute.Touch[p.id],id=p.id,first=true,coach=true,done=k.doneAt~=nil or nil}
 end
 return Coach

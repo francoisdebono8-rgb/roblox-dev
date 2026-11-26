@@ -690,6 +690,23 @@ end
 function P.vipPass() return (P.shopConfig().Passes or {}).VIP or 0 end
 -- (23/11, the ANIMATEUR's CapeVIP) VIP: the mark everybody sees, the profile
 -- told once, and the looks it gives (earned="vip") given now.
+-- (26/11, DEC-054) Whether he still has his first steps to take (the forest,
+-- Server/Forest): a profile that never did them, and never chose a kit
+-- either (the players from before the forest keep their village). No
+-- profile (Progression off, a failed load): no forest.
+function P.needsIntro(player)
+	local h=P.handles[player]
+	if not h then return false end
+	local d=h.data
+	return d.intro~=true and not (d.kits and d.kits.selected~=nil)
+end
+function P.introDone(player)
+	local h=P.handles[player]
+	if not h or h.data.intro==true then return false end
+	local ok=P.run(player,"introDone",{})
+	if ok and P.repo then pcall(P.repo.save,P.repo,h) end
+	return ok==true
+end
 function P.grantVip(player)
 	player:SetAttribute("NinjaVIP",true)
 	local h=P.handles[player]

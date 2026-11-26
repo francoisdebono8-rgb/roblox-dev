@@ -31,11 +31,31 @@ M.MaxZ=216
 M.Spawns={
 	gate={at=Vector3.new(0,0,192),face=Vector3.new(0,0,-1)},
 	hall={at=Vector3.new(0,0,-8),face=Vector3.new(0,0,1)},
+	-- (26/11, DEC-054) a new player's first steps: the forest outside the great
+	-- gate, the village ahead of him (M.Forest)
+	forest={at=Vector3.new(0,0,384),face=Vector3.new(0,0,-1)},
+}
+-- (26/11, DEC-054, François: « en dehors du village […] on arrive par une
+-- forêt ») The way in: a forest beyond the great gate (z 210), built only for
+-- the plan's village (Server/Hub.forestOutside), walled off from it. A new
+-- player appears at its far end (Spawns.forest), a bandit blocks the path at
+-- the clearing (a very short fight without techniques, Server/Forest), the
+-- path leads to the gate, where he makes his character before entering.
+M.Forest={
+	-- the forest's walkable rectangle, outside the village's own (MaxZ 216)
+	x0=-96,x1=96,z0=226,z1=410,
+	-- the path from the spawn to the gate, and its clearing
+	path={a=Vector3.new(0,0,400),b=Vector3.new(0,0,226),width=7},
+	clearing={key="Forest",at=Vector3.new(0,0,330),radius=24,place="THE FOREST",axis=Vector3.zAxis,start=11},
+	bandit=Vector3.new(0,0,318),
+	-- where the creation opens: the foot of the great gate, outside
+	gate=Vector3.new(0,0,236),gateRadius=14,
 }
 
 -- The places (the HUD names the nearest one; markers point at some).
 M.Places={
 	{id="Gate",name="THE GREAT GATE",at=Vector3.new(0,0,200),radius=40},
+	{id="Forest",name="THE FOREST",at=Vector3.new(0,0,330),radius=95},
 	{id="Street",name="MAIN STREET",at=Vector3.new(0,0,120),radius=60},
 	{id="Ichiraku",name="ICHIRAKU RAMEN",at=Vector3.new(-26,0,112),radius=18},
 	{id="Plaza",name="THE PLAZA",at=Vector3.new(0,0,12),radius=40},
@@ -189,6 +209,16 @@ function M.applyScale(s)
 	for k,at in M.Heads do M.Heads[k]=at*s end
 	M.HeadScale*=s
 	for _,street in M.Streets do street.at*=s;street.radius*=s;if street.start then street.start*=s end end
+	local F=M.Forest
+	F.x0*=s;F.x1*=s;F.z0*=s;F.z1*=s
+	F.path={a=F.path.a*s,b=F.path.b*s,width=F.path.width*s}
+	F.clearing.at*=s;F.clearing.radius*=s;F.clearing.start*=s
+	F.bandit*=s;F.gate*=s;F.gateRadius*=s
+end
+-- (26/11, DEC-054) Whether a position (relative to Origin) is in the forest.
+function M.inForest(rel)
+	local F=M.Forest
+	return rel.X>=F.x0 and rel.X<=F.x1 and rel.Z>=F.z0 and rel.Z<=F.z1
 end
 function M.inside(rel)
 	return math.abs(rel.X)<=M.HalfX and rel.Z>=M.MinZ and rel.Z<=M.MaxZ

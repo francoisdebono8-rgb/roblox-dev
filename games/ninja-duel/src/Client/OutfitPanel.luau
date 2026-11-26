@@ -276,7 +276,9 @@ function Panel:frame(dt)
 	local kits=self.kits
 	local ui=self.ui
 	local busy=ui and ((ui.shopPanel and ui.shopPanel:shown()) or (ui.treePanel and ui.treePanel:shown()))
-	if not self.root.Visible and not self.seen and ui and ui.hubWalk and root and kits and kits.state=="ready" and kits.style and not self:dressed() and not busy then
+	-- (26/11, DEC-054) in the forest the creation waits for the gate (Client/ForestIntro)
+	local intro=Players.LocalPlayer:GetAttribute("NinjaIntro")
+	if not self.root.Visible and not self.seen and intro==nil and ui and ui.hubWalk and root and kits and kits.state=="ready" and kits.style and not self:dressed() and not busy then
 		self:show()
 	end
 	-- (a duel, the board: the card goes)
