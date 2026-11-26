@@ -100,6 +100,26 @@ test("(DEC-038) the master's card in Konoha: take his kit, the first duel, spar,
 	assert(V.card(nil,"Leaf").primary.send[1]=="Start","the path off: every master spars")
 end)
 
+-- (26/11, passe 3, STORY-001) the goal follows the Ōtsutsuki's tournament
+test("Konoha's goal follows the tournament: the seals, the exam, the final, his weekly return",function()
+	local base={state="ready",owned={Leaf=true},mastery={Leaf=40},masters={},starter="Leaf",selected="Leaf"}
+	local function with(story) local k=table.clone(base);k.story=story;return V.goal(k) end
+	local g=with({n=2,seals=3,need=8,next={kind="challenge",kit="GentleFist"}})
+	assert(g.head=="THE EIGHT SEALS  •  3 / 8","the seals: "..g.head)
+	assert(with({n=3,seals=8,need=8,next={kind="exam"}}).head=="THE EXAM  •  WIN THE BRACKET","the exam")
+	assert(string.find(with({n=4,next={kind="final"}}).head,"FINAL",1,true),"the final")
+	assert(string.find(with({n=5,next={kind="weekly"}}).head,"BACK",1,true),"he is back")
+	assert(with({n=5,next={kind="free"}}).head=="DUELS AND THE TOURNAMENT","after: the proctor")
+	-- an inspiration waiting for him comes before the seals, not before the final
+	local k=table.clone(base);k.masters={Lion={ready=true}};k.story={n=2,seals=3,need=8,next={kind="challenge"}}
+	assert(string.find(V.goal(k).head,"WANTS TO MEET YOU",1,true),"an inspiration waits")
+	k.story={n=4,next={kind="final"}}
+	assert(string.find(V.goal(k).head,"FINAL",1,true),"the final first")
+	-- his first duel first, whatever the chapter
+	local new=table.clone(base);new.mastery={Leaf=0};new.story={n=2,seals=0,need=8,next={kind="challenge"}}
+	assert(V.goal(new).head=="YOUR FIRST DUEL","the first duel first")
+end)
+
 -- (14/11, the new player's walk) Konoha's goal: a short head, then where to
 -- go; after the first kit it points at his first duel, not the proctor.
 test("Konoha's goal: the three masters, then the first duel, then a master or the proctor",function()

@@ -117,11 +117,23 @@ function V.goal(kits)
 	end
 	local first=V.firstDuel(kits)
 	if first then return goal("YOUR FIRST DUEL",{"TALK TO "..name(first).."  •  "..place(first)}) end
+	-- (26/11, passe 3, STORY-001) the Ōtsutsuki's tournament (Shared/Story,
+	-- Progression.view's `story`): the exam and the final before anything
+	-- else; the seals when no inspiration waits for him (the DESIGN's journal
+	-- will show the chapter itself)
+	local story=type(kits.story)=="table" and kits.story or nil
+	local kind=story and story.next and story.next.kind
+	if kind=="exam" then return goal("THE EXAM  •  WIN THE BRACKET",{"THE PROCTOR  •  "..HubMap.Proctor.place}) end
+	if kind=="final" then return goal("THE FINAL  •  THE ŌTSUTSUKI",{"HE WAITS  •  THE EXAM HALL"}) end
+	if kind=="weekly" then return goal("THE ŌTSUTSUKI IS BACK",{"HE WAITS  •  THE EXAM HALL"}) end
 	for _,id in Masters.Kits do
 		local m=kits.masters and kits.masters[id]
 		if m and m.ready and not (kits.owned and kits.owned[id]) then
 			return goal(name(id).." WANTS TO MEET YOU",{place(id)})
 		end
+	end
+	if kind=="challenge" then
+		return goal(string.format("THE EIGHT SEALS  •  %d / %d",story.seals or 0,story.need or 8),{"THE EIGHT DARE YOU IN THE STREETS"})
 	end
 	return proctor
 end
