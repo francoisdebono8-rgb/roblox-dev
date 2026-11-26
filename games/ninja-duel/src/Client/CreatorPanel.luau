@@ -135,7 +135,17 @@ function C.new(kit,gui,send)
 end
 
 function C:shown() return self.root.Visible end
-function C:show() self.root.Visible=true;self:draw() end
+-- (DEV 26/11, seen at the gate: the card opens while he still runs, and the
+-- copy kept his stride, leaning across the stage) taken again once he stands
+C.SETTLE=.7
+function C:show()
+	self.root.Visible=true;self:draw()
+	pcall(function()
+		task.delay(C.SETTLE,function()
+			if self.root.Visible and self.preview then self.preview.key=nil;self:draw() end
+		end)
+	end)
+end
 function C:hide() self.root.Visible=false end
 function C:pick(slot,id) self.picks[slot]=id;self.quip.Text="";self:draw() end
 function C:randomize(rng)
