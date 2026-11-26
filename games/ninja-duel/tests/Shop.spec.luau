@@ -1000,4 +1000,25 @@ test("the rogue ninjas: the toll or all he has, the fight's purse, never below n
 	Thugs.matches=saved;Thugs.live={}
 end)
 
+-- (26/11, François at the gate: « on ne voit pas l'avatar en entier ») the
+-- preview's lens takes in the whole body, in a tall card and a wide one
+test("the style preview shows the whole avatar, head to feet, in any frame",function()
+	local Preview=H.load("Client/StylePreview")
+	local V3=H.V
+	local half=math.rad(Preview.FOV/2)
+	for _,case in {{size=V3.new(2,5.2,1),aspect=.69},{size=V3.new(4,7.5,2),aspect=.69},{size=V3.new(2,6,1),aspect=1.6},{size=V3.new(6,6,2),aspect=.5}} do
+		local center=V3.new(0,3,0)
+		local eye=Preview.fit(center,case.size,case.aspect)
+		for _,y in {case.size.Y/2,-case.size.Y/2} do
+			for _,x in {case.size.X/2,-case.size.X/2} do
+				local p=eye:PointToObjectSpace(center+V3.new(x,y,-case.size.Z/2))
+				assert(p.Z<0,"a corner behind the lens")
+				local depth=-p.Z
+				assert(math.abs(p.Y)/depth<=math.tan(half)+1e-6,"the head or the feet cut: "..tostring(case.size))
+				assert(math.abs(p.X)/depth<=math.tan(half)*case.aspect+1e-6,"a side cut: "..tostring(case.size))
+			end
+		end
+	end
+end)
+
 print(string.format("NinjaDuel shop and Ryō (13/11): %d PASS",passed))

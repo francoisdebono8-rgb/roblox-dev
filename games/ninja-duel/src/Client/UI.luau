@@ -2056,6 +2056,10 @@ function UI:render(data)
 	-- bandit, a rogue, an inspiration who dared him
 	local last=UI.lastWord(data.progress)
 	if last then self.resultNote.Text=last end
+	-- (DEV 26/11, seen in the game) the forest's bandit: no rematch, no roster,
+	-- the path comes back by itself (Server/Forest.RESULT)
+	local forest=type(data.progress)=="table" and data.progress.forest~=nil
+	self.rematchButton.Visible=not forest;self.rosterButton.Visible=not forest
 	-- Online: a rematch needs both players; a forfeit says so.
 	local online=data.online
 	self.rematchButton.Text=if not online then "REMATCH" elseif online.opponentLeft then "OPPONENT LEFT" elseif online.rematch then "WAITING FOR OPPONENT…"

@@ -76,12 +76,37 @@ function Preview:turn(on)
 	end
 end
 
+-- (26/11, François at the gate's creation: « on ne voit pas l'avatar en
+-- entier ») The lens takes in the whole body, head to feet, whatever his
+-- height (an avatar grown to the prodigies', a tall hair style, a hat), with a
+-- margin; the frame's shape (a tall card, a wide one) counts.
+Preview.MARGIN=1.14
+-- (pure) Where the lens stands and looks for a body's box (its centre and
+-- size, the body facing -Z) in a frame `aspect` wide for 1 high.
+function Preview.fit(center,size,aspect,fov)
+	local tanV=math.tan(math.rad((fov or Preview.FOV)/2))
+	local half=size.Y/2*Preview.MARGIN
+	local wide=math.max(size.X,size.Z)/2*Preview.MARGIN
+	local dist=math.max(half/tanV,wide/(tanV*math.max(aspect or 1,.2)))+math.max(size.X,size.Z)/2
+	local eye=center+Vector3.new(0,size.Y*.04,-dist)
+	return CFrame.lookAt(eye,center)
+end
+function Preview:frame()
+	local model=self.model
+	if not model then return end
+	local ok,cf,size=pcall(function() return model:GetBoundingBox() end)
+	if not ok or not cf then return end
+	local abs=self.view.AbsoluteSize
+	local aspect=if abs.Y>1 then abs.X/abs.Y else 1
+	self.lens.CFrame=Preview.fit(cf.Position,size,aspect)
+end
+
 -- The avatar shown again (his own outfit), from his character now.
 function Preview:refresh(character)
 	if self.model then self.model:Destroy();self.model=nil end
 	self.item=nil;self.key=nil
 	local copy=Preview.copy(character)
-	if copy then copy.Parent=self.view;self.model=copy end
+	if copy then copy.Parent=self.view;self.model=copy;self:frame() end
 	return copy~=nil
 end
 
@@ -100,8 +125,9 @@ function Preview:show(itemId,character,paint)
 	holder.Parent=self.model
 	task.spawn(function()
 		pcall(function() require(script.Parent.OutfitDress).wear(holder) end)
-		-- the copy is still: its new pieces too
+		-- the copy is still: its new pieces too; the lens takes them in
 		if self.model then for _,d in self.model:GetDescendants() do if d:IsA("BasePart") then d.Anchored=true end end end
+		self:frame()
 	end)
 end
 
