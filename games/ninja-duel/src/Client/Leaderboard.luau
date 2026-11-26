@@ -12,6 +12,8 @@
 -- the player's row is the one whose id is his UserId. The emblem: the rank of
 -- the row's rating on the RANKED board (Shared/Ranked), none elsewhere.
 -- A board absent or empty says « No duel counted yet ».
+-- (26/11) capitals by Text.upper: string.upper follows the player's locale
+local Text=require(game:GetService("ReplicatedStorage").NinjaDuel.Text)
 local UIS=game:GetService("UserInputService")
 
 local L={}
@@ -24,7 +26,7 @@ L.TABS={{id="Rating",name="RANKED"},{id="WeekWins",name="THIS WEEK"},{id="Roofto
 function L.kitTabs(boards)
 	local out={}
 	for id,b in boards or {} do
-		if type(b)=="table" and b.kit then table.insert(out,{id=id,kit=b.kit,name=string.upper(b.kit),title=b.title}) end
+		if type(b)=="table" and b.kit then table.insert(out,{id=id,kit=b.kit,name=Text.upper(b.kit),title=b.title}) end
 	end
 	local order,names={},{}
 	pcall(function()
@@ -33,7 +35,7 @@ function L.kitTabs(boards)
 		local KitTexts=require(Shared.KitTexts)
 		for _,t in out do names[t.kit]=KitTexts.name(t.kit) end
 	end)
-	for _,t in out do if names[t.kit] then t.name=string.upper(names[t.kit]) end end
+	for _,t in out do if names[t.kit] then t.name=Text.upper(names[t.kit]) end end
 	table.sort(out,function(a,c)
 		local x,y=order[a.kit] or 99,order[c.kit] or 99
 		if x~=y then return x<y end

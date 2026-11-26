@@ -45,7 +45,11 @@ test("no name on the beta's screen keeps a small long vowel once in capitals",fu
 end)
 
 test("the screen's capitals go through Text.upper",function()
-	for _,path in {"src/Client/UI.luau","src/Client/CupScreen.luau","src/Client/LobbyPanel.luau","src/Client/TouchControls.luau"} do
+	-- (26/11, passe 2) every screen of the client, not four of them
+	local paths={}
+	for _,name in fs.readDir("src/Client") do if string.sub(name,-5)==".luau" then table.insert(paths,"src/Client/"..name) end end
+	assert(#paths>40,"the client's files were not read")
+	for _,path in paths do
 		local src=fs.readFile(path)
 		local n=0
 		for line in string.gmatch(src,"[^\n]+") do

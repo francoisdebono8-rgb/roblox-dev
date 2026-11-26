@@ -5,6 +5,8 @@
 -- days in a row on an ink band, the seven days of the ramp as boxes, today's
 -- one red. Opened from Konoha's HUD (QUESTS). Presentation only.
 local Shared=game:GetService("ReplicatedStorage").NinjaDuel
+-- (26/11) capitals by Text.upper: string.upper follows the player's locale and broke « • » and « — »
+local Text=require(Shared.Text)
 local Daily=require(Shared.DailyQuests)
 local UIS=game:GetService("UserInputService")
 
@@ -23,7 +25,7 @@ function Q.rows(view)
 	for _,q in (view and view.quests) or {} do
 		local goal=math.max(1,q.goal or 1)
 		local progress=math.min(q.progress or 0,goal)
-		table.insert(out,{tier=q.tier or "",text=string.upper(q.text or ""),progress=progress,goal=goal,fill=progress/goal,
+		table.insert(out,{tier=q.tier or "",text=Text.upper(q.text or ""),progress=progress,goal=goal,fill=progress/goal,
 			ryo=q.ryo or 0,done=q.done==true,count=string.format("%d / %d",progress,goal)})
 	end
 	return out
