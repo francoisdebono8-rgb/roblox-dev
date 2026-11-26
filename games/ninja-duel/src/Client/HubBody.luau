@@ -34,9 +34,30 @@ Body.VAULT=.35                 -- the hop over a roof's edge
 Body.KICK=.45                  -- the leap after a kick off a wall
 local MOTOR={Right="RightShoulder",Left="LeftShoulder"}
 
+-- (26/11, passe 2, DEC-054: François, « des animations faites pour le
+-- déplacement dans le village à plusieurs étapes de notre avatar »; the
+-- ANIMATEUR's three stages, tools/blender/p2_loco.py) How he moves grows with
+-- his kit's mastery (the player attribute NinjaMastery, Server/Hub.badge): the
+-- novice (arms everywhere, stiff, eyes on his feet) until his tree's second
+-- tier (300, Masters.Need), trained until its third (800, DEC-039), then his
+-- kit's own way. No kit yet (the forest, the gate): the novice.
+Body.TRAINED=300
+Body.OWN=800
+function Body.stage(kit,mastery)
+	if type(kit)~="string" then return "Novice" end
+	local m=tonumber(mastery) or 0
+	if m<Body.TRAINED then return "Novice" end
+	if m<Body.OWN then return "Trained" end
+	return nil
+end
 -- The clip a kit plays for a gait or a move ("Sprint", "AirJump", "Parkour.Leap"...):
--- the kit's own, else Sasuke's (AuthoredMotion's donor for the shared ones).
-function Body.clipName(Authored,kit,move)
+-- his stage's (Novice.Walk.F, Trained.Sprint) when there is one; standing in
+-- Konoha, his kit's way of standing (<kit>.Rest: Kakashi's book, Sasuke's
+-- pockets) before its guard (`rest`: he has a kit); else the kit's own, else
+-- Sasuke's (AuthoredMotion's donor for the shared ones).
+function Body.clipName(Authored,kit,move,stage,rest)
+	if stage and Authored.has(stage.."."..move) then return stage.."."..move end
+	if rest and move=="Idle" and Authored.has(tostring(kit)..".Rest") then return tostring(kit)..".Rest" end
 	local own=tostring(kit).."."..move
 	if Authored.has(own) then return own end
 	local donor="Lion."..move
@@ -56,7 +77,7 @@ end
 function Body.choose(b,f)
 	local A=b.Authored
 	local function len(move)
-		local name=Body.clipName(A,f.kit,move)
+		local name=Body.clipName(A,f.kit,move,f.stage,f.rest)
 		return name and A.length(name) or 0
 	end
 	-- the landing: a fall from high is a roll (still running) or a hard landing
@@ -109,9 +130,9 @@ end
 -- A gait clip's stride (world studs: its meta, else 7).
 function Body:strideOf(move)
 	self.strides=self.strides or {}
-	local key=tostring(self.kit)..move
+	local key=tostring(self.kit)..tostring(self.walkStage)..move
 	if self.strides[key] then return self.strides[key] end
-	local name=Body.clipName(self.Authored,self.kit,move)
+	local name=Body.clipName(self.Authored,self.kit,move,self.walkStage,self.rest)
 	local clip=name and self.Authored.clip(name)
 	local stride=(clip and clip.meta and clip.meta.stride) or 7
 	self.strides[key]=stride
@@ -121,7 +142,7 @@ end
 -- The pose of a choice, eased from the last one when the clip changed, the
 -- wall's tilt on the root. Returns {joint=CFrame}.
 function Body:pose(choice,now)
-	local name=Body.clipName(self.Authored,self.kit,choice.move)
+	local name=Body.clipName(self.Authored,self.kit,choice.move,self.walkStage,self.rest)
 	if not name then return nil end
 	local pose=self.Authored.sample(name,choice.t)
 	if not pose then return nil end
@@ -172,9 +193,15 @@ function Body:step(character,hum,f)
 	if hum.RigType~=Enum.HumanoidRigType.R15 then self.pending=nil;return end
 	if self.character~=character then self.character=character;self.j=joints(character);self.strides=nil end
 	local kit=f.kit or (Players.LocalPlayer and Players.LocalPlayer:GetAttribute("NinjaKit"))
+	-- his stage, from his real kit and its mastery (the others': crowdFacts)
+	local mastery=f.mastery
+	if mastery==nil and f.kit==nil and Players.LocalPlayer then mastery=Players.LocalPlayer:GetAttribute("NinjaMastery") end
+	local stage=Body.stage(kit,mastery)
+	local rest=type(kit)=="string"
 	if not (type(kit)=="string" and Body.clipName(self.Authored,kit,"Sprint")) then kit="Lion" end
-	if kit~=self.kit then self.kit=kit;self.strides=nil end
-	f.kit=kit
+	if kit~=self.kit or stage~=self.walkStage then self.kit=kit;self.walkStage=stage;self.strides=nil end
+	self.rest=rest
+	f.kit=kit;f.stage=stage;f.rest=rest
 	local choice=Body.choose(self,f)
 	self.pending=self:pose(choice,f.now)
 	self.pendingAt=f.now
@@ -208,14 +235,14 @@ Body.CROWD_RANGE=160
 Body.crowd=setmetatable({},{__mode="k"})
 -- (pure) a walker's frame from what this screen sees of him; `w` keeps what
 -- the previous frames saw (the pose's sequence and when each move began).
-function Body.crowdFacts(w,now,dt,velocity,grounded,pose,seq,kit,emote)
+function Body.crowdFacts(w,now,dt,velocity,grounded,pose,seq,kit,emote,mastery)
 	if seq~=w.seq then
 		w.seq=seq
 		if pose=="leap" then w.leapAt=now elseif pose=="kick" then w.kickAt=now elseif pose=="vault" then w.mantleAt=now
 		elseif pose=="emote" then w.emoteAt=now end
 	end
 	return {now=now,dt=dt,speed=Vector3.new(velocity.X,0,velocity.Z).Magnitude,vy=velocity.Y,grounded=grounded and pose~="climb",
-		climbing=pose=="climb",climbSpeed=38,leapAt=w.leapAt,kickAt=w.kickAt,mantleAt=w.mantleAt,kit=kit,
+		climbing=pose=="climb",climbSpeed=38,leapAt=w.leapAt,kickAt=w.kickAt,mantleAt=w.mantleAt,kit=kit,mastery=mastery or 0,
 		emote=if pose=="emote" then emote else nil,emoteAt=w.emoteAt}
 end
 function Body.poseOthers(Authored,dt,here)
@@ -234,7 +261,7 @@ function Body.poseOthers(Authored,dt,here)
 		local params=RaycastParams.new();params.FilterType=Enum.RaycastFilterType.Exclude;params.FilterDescendantsInstances={character}
 		local grounded=workspace:Raycast(root.Position,Vector3.new(0,-(hum.HipHeight+root.Size.Y/2+.6),0),params)~=nil
 		local kit=player:GetAttribute("NinjaKit")
-		local f=Body.crowdFacts(w,now,dt,root.AssemblyLinearVelocity,grounded,character:GetAttribute("NinjaPose"),character:GetAttribute("NinjaPoseSeq"),if type(kit)=="string" then kit else nil,character:GetAttribute("NinjaEmote"))
+		local f=Body.crowdFacts(w,now,dt,root.AssemblyLinearVelocity,grounded,character:GetAttribute("NinjaPose"),character:GetAttribute("NinjaPoseSeq"),if type(kit)=="string" then kit else nil,character:GetAttribute("NinjaEmote"),player:GetAttribute("NinjaMastery"))
 		pcall(w.body.step,w.body,character,hum,f)
 	end
 	for character,w in Body.crowd do

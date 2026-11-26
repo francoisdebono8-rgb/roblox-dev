@@ -948,4 +948,26 @@ test("a tester's report: one sentence and its context, a few a minute",function(
 	assert(Reports.make(player,"next minute",161,nil,buckets),"the next minute")
 end)
 
+-- (26/11, passe 2, DEC-054) the walker's three stages (the ANIMATEUR's
+-- Novice / Trained clips, then the kit's own) and his kit's way of standing
+test("the walker grows: novice, trained, then his kit's own way; standing, his kit's rest",function()
+	local Authored=H.load("Client/AuthoredMotion")
+	local Body=H.load("Client/HubBody")
+	assert(Body.stage(nil,0)=="Novice" and Body.stage("Leaf",0)=="Novice","a newcomer walks like one")
+	assert(Body.stage("Leaf",Body.TRAINED)=="Trained" and Body.stage("Leaf",Body.OWN-1)=="Trained","trained")
+	assert(Body.stage("Leaf",Body.OWN)==nil,"his kit's own at the third tier")
+	assert(Body.clipName(Authored,"Leaf","Walk.F","Novice")=="Novice.Walk.F","the novice's walk")
+	assert(Body.clipName(Authored,"Leaf","Sprint","Trained")=="Trained.Sprint","the trained sprint")
+	assert(Body.clipName(Authored,"Leaf","Walk.F",nil)=="Leaf.Walk.F","his kit's walk")
+	assert(Body.clipName(Authored,"Leaf","AirJump","Novice")=="Leaf.AirJump","a move the stage has not: his kit's")
+	assert(Body.clipName(Authored,"Copycat","Idle",nil,true)=="Copycat.Rest","Kakashi stands with his book")
+	assert(Body.clipName(Authored,"Copycat","Idle",nil,false)=="Copycat.Idle","no kit: the guard")
+	-- the choice follows the stage: a novice's run cycle is the novice's clip
+	local b=Body.new(Authored)
+	b.kit="Leaf";b.walkStage="Novice";b.rest=true
+	local f={now=1,dt=1/60,kit="Leaf",stage="Novice",rest=true,vy=0,grounded=true,speed=24}
+	local c=Body.choose(b,f)
+	assert(c.move=="Run.F" and c.t<=Authored.length("Novice.Run.F")+1e-6,"the novice's run")
+end)
+
 print(string.format("NinjaDuel hub Konoha (DEC-038): %d PASS",passed))
