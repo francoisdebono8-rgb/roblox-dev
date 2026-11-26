@@ -82,6 +82,7 @@ run ChallFilm "$LUNE" run tests/ChallengeFilm.spec.luau
 run Forest   "$LUNE" run tests/Forest.spec.luau
 run KitTexts   "$LUNE" run tests/KitTexts.spec.luau
 run PlayTexts  "$LUNE" run tests/PlayTexts.spec.luau
+run Banter     "$LUNE" run tests/Banter.spec.luau
 run HubLayout "$LUNE" run tests/HubLayout.spec.luau
 run KonohaLayout "$LUNE" run tests/KonohaLayout.spec.luau
 run MeritAura "$LUNE" run tests/MeritAuraFX.spec.luau
