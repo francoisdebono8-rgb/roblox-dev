@@ -42,6 +42,8 @@ function Hub.new(ui,camera,send,controls)
 	local self=setmetatable({ui=ui,camera=camera,send=send,controls=controls,active=false,board=false,markers={},kits=nil,move=HubMove.new()},Hub)
 	-- (26/11, DEC-054) a new player's first steps in the forest, the creation at the gate
 	self.intro=require(script.Parent.ForestIntro).new(self)
+	-- (26/11, the CM) an inspiration's dare: the avatar walks up, filmed from the front
+	self.encounter=require(script.Parent.Encounter).new(self)
 	local K=ui.kit or require(script.Parent.UI).kit
 	self.K=K
 	local P=K.palette
@@ -443,6 +445,7 @@ function Hub:step(dt)
 	local root,ended=self.move:step(dt)
 	if ended then self:paintRun() end
 	if not root then return end
+	pcall(self.encounter.step,self.encounter,dt,hum,root)
 	-- The card closes when he walks away from the master.
 	if self.cardId and self.cardAt and (root.Position-self.cardAt).Magnitude>26 then self:hideCard() end
 	-- (DEC-041) the first three inspirations in their moods, when he is near

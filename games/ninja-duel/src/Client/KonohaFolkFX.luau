@@ -134,6 +134,22 @@ function Folk.routes(Layout,origin,scale,count,seed)
 	end
 	return out
 end
+-- (26/11, the CM: « des passants traversent le duel de rue ») A walker whose
+-- way crosses a street duel's ring (Server/Hub.duelRings: its Centre, its
+-- Radius) stops at its edge and watches the fight: the place on the edge, the
+-- way to the centre. `rings` = {{centre, radius}}; nil when he is clear.
+Folk.MARGIN=2.5
+function Folk.watch(at,rings)
+	for _,ring in rings do
+		local off=Vector3.new(at.X-ring.centre.X,0,at.Z-ring.centre.Z)
+		if off.Magnitude<ring.radius+Folk.MARGIN then
+			local out=if off.Magnitude>.1 then off.Unit else Vector3.new(1,0,0)
+			local edge=Vector3.new(ring.centre.X,at.Y,ring.centre.Z)+out*(ring.radius+Folk.MARGIN)
+			return edge,-out
+		end
+	end
+	return nil
+end
 -- Where a walker is at time t on his route: position, the way he faces, walking or not.
 -- He walks a->b, waits 2.5 s, walks b->a, waits 3 s.
 function Folk.at(route,t,speed)
@@ -209,6 +225,7 @@ function Folk.start()
 				walk=if Authored.has(walk) then walk else nil,idle=if Authored.has(idle) then idle else nil,phase=r()*3})
 		end
 		local acc=0
+		local rings,ringsAt={},0
 		RunService.Heartbeat:Connect(function(dt)
 			acc+=dt
 			if acc<1/30 then return end
@@ -216,8 +233,19 @@ function Folk.start()
 			local t=os.clock()
 			local cam=workspace.CurrentCamera
 			local eye=cam and cam.CFrame.Position or O
+			if t-ringsAt>.5 then
+				ringsAt=t;rings={}
+				for _,child in hub:GetChildren() do
+					local centre,radius=child:GetAttribute("Centre"),child:GetAttribute("Radius")
+					if string.sub(child.Name,1,9)=="DuelRing_" and typeof(centre)=="Vector3" and type(radius)=="number" then table.insert(rings,{centre=centre,radius=radius}) end
+				end
+			end
 			for _,w in walkers do
 				local at,dir,moving=Folk.at(w.route,t,Folk.SPEED*S)
+				if #rings>0 then
+					local edge,face=Folk.watch(at,rings)
+					if edge then at,dir,moving=edge,face,false end
+				end
 				if (at-eye).Magnitude<Folk.NEAR or not w.placed then
 					w.placed=true
 					w.root.CFrame=CFrame.lookAt(at+Vector3.new(0,3,0),at+Vector3.new(0,3,0)+Vector3.new(dir.X,0,dir.Z))

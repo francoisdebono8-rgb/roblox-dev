@@ -35,6 +35,8 @@ Film.DEFAULT={street="MarketLane",rounds=2,dare=3,avatar="normal"}
 Film.LEVELS={easy=true,normal=true,hard=true}
 -- A duel that never ends is given up after this (s).
 Film.MAX_DUEL=300
+-- During his dare the avatar walks up this far (studs) from further down the street.
+Film.WALK=12
 
 local function streetKeys()
 	local keys={}
@@ -103,9 +105,15 @@ function Film:start(player,spec,now)
 	local root=m.solo:root(player)
 	if not root then return {ok=false,error="he is not walking in Konoha (the duel's end brings him back: try again in a few seconds)"} end
 	local stand,centre=Film.marks(plan.site)
-	-- the avatar at one end of the street, the inspiration in the middle, face to face
+	-- the avatar further down the street, the inspiration in its middle, face
+	-- to face; during the dare he walks up to him, filmed from the front
+	-- (26/11, the CM: « la caméra du défi montre l'avatar de dos »; the
+	-- player attribute NinjaEncounter, Client/Encounter)
+	local axis=(plan.site.axis or Vector3.new(0,0,1))
+	local from=if plan.dare>0 then stand+axis*Film.WALK else stand
 	local body=root.Parent
-	if body and body.PivotTo then body:PivotTo(CFrame.lookAt(stand,Vector3.new(centre.X,stand.Y,centre.Z))) end
+	if body and body.PivotTo then body:PivotTo(CFrame.lookAt(from,Vector3.new(centre.X,from.Y,centre.Z))) end
+	if plan.dare>0 then pcall(function() player:SetAttribute("NinjaEncounter",centre) end) end
 	local c=m.solo:summon(plan.kit,plan.site,stand,now)
 	if not c then return {ok=false,error="the inspiration could not come"} end
 	self.plan=plan;self.player=player;self.rounds={};self.winner=nil;self.error=nil
@@ -118,6 +126,7 @@ end
 -- The duel begins: the challenge accepted like a player's, his AI at the stick.
 function Film:begin(now)
 	local m,player,plan=self.deps.matches,self.player,self.plan
+	pcall(function() player:SetAttribute("NinjaEncounter",nil) end)
 	local c=m.solo:accept(player,plan.kit,now)
 	if not c then self:fail("the challenge could not be accepted (the avatar left the street?)");return end
 	if not m:challengeStart(player,plan.with,c,now,plan.prodigy) then self:fail("the duel did not start");return end
@@ -141,6 +150,7 @@ end
 
 function Film:fail(why)
 	self.state="failed";self.error=why
+	pcall(function() self.player:SetAttribute("NinjaEncounter",nil) end)
 	self:stop(self.player)
 end
 

@@ -1122,10 +1122,14 @@ function Hub.duelRings(active)
 	end
 	for name,site in want do
 		if not f:FindFirstChild(name) then
-			local ring=Instance.new("Folder");ring.Name=name;ring.Parent=f
+			local ring=Instance.new("Folder");ring.Name=name
 			local walls=Hub.ringSetup()
 			local r=site.radius
 			local centre=Vector3.new(site.origin.X,O.Y,site.origin.Z)
+			-- (26/11, the CM: « des passants traversent le duel de rue ») where it
+			-- is, for the screens' passers-by (Client/KonohaFolkFX stops them at its edge)
+			ring:SetAttribute("Centre",centre);ring:SetAttribute("Radius",r)
+			ring.Parent=f
 			local n=Hub.RING_WALLS
 			local width=2*math.pi*r/n+.6
 			for k=1,n do

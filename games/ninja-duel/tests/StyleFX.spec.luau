@@ -268,4 +268,17 @@ test("the rogue ninjas: their own look (never in the shop), their four clips, th
 	assert(Rogue.clipAt("idle",1,5)=="Rogue.Idle" and Rogue.clipAt("leave",0,.2)=="Rogue.Leave")
 end)
 
+-- (26/11, the CM: « des passants traversent le duel de rue »)
+test("a villager whose way crosses a street duel stops at its edge and watches the fight",function()
+	local Folk=H.load("Client/KonohaFolkFX")
+	local V=H.V
+	local rings={{centre=V.new(100,0,50),radius=20}}
+	assert(Folk.watch(V.new(150,0,50),rings)==nil,"far from the ring, stopped")
+	local edge,face=Folk.watch(V.new(110,0,50),rings)
+	assert(edge and math.abs((edge*V.new(1,0,1)-V.new(100,0,50)).Magnitude-(20+Folk.MARGIN))<.01,"not at the edge")
+	assert(face:Dot(V.new(-1,0,0))>.99,"not facing the fight")
+	edge=Folk.watch(V.new(100,0,50),rings)
+	assert(edge,"at the very centre, still in the fight")
+end)
+
 print(("NinjaDuel style FX: %d PASS"):format(passed))

@@ -109,7 +109,10 @@ test("challengeFilm: the dare in the street, the challenge accepted there, both 
 	assert(r.ok and r.kit=="Legion" and r.street=="Courtyard" and r.line==PlayTexts.ChallengeLines.Legion,"not started: "..tostring(r.error))
 	-- the avatar at one end of the street, facing the inspiration in its middle
 	local stand,centre=Film.marks(site)
-	assert(#moved==1 and (root.Position-stand).Magnitude<.01,"the avatar was not put in the street")
+	-- (26/11, the CM) further down the street: during the dare he walks up, filmed from the front
+	local from=stand+(site.axis or V.new(0,0,1))*Film.WALK
+	assert(#moved==1 and (root.Position-from).Magnitude<.01,"the avatar was not put in the street")
+	assert(player:GetAttribute("NinjaEncounter")==centre,"the encounter is not told to his screen")
 	local look=moved[1].LookVector
 	assert(look:Dot((centre-stand)*V.new(1,0,1)/((centre-stand)*V.new(1,0,1)).Magnitude)>.99,"the avatar does not face him")
 	assert(m.solo.challenge and m.solo.challenge.kit=="Legion" and m.solo.challenge.site==site and #shown==1,"the inspiration is not in the street")
@@ -122,6 +125,7 @@ test("challengeFilm: the dare in the street, the challenge accepted there, both 
 	assert(s.phase=="Selection" and film:result().state=="dare","the duel began before his dare")
 	step(.6)
 	assert(s.phase=="Duel" and s.challenge=="Legion" and s.site and s.site.key=="Courtyard" and s.site.street,"not fought where he stood")
+	assert(player:GetAttribute("NinjaEncounter")==nil,"the encounter outlives the dare")
 	assert(s.human.fighterId=="Lion" and s.bot.fighterId=="Legion","not the avatar's kit against the inspiration")
 	assert(s.roundsToWin==2 and s.autopilot and s.scripted and Matches.aiLevel(s)=="normal","the duel's frame")
 	-- the intro: his line, the VS card, BEGIN
@@ -189,6 +193,21 @@ test("challengeFilm refuses what it cannot film, and says why",function()
 	assert(not r.ok and string.find(r.error,"learned",1,true),"a kit he has not learned: "..tostring(r.error))
 	r=film:start(player,{kit="Legion",street="Moon"},clock)
 	assert(not r.ok and string.find(r.error,"street",1,true),"a street that is not one")
+end)
+
+test("the encounter's lens: in front of him, to his side, never behind; his face and the inspiration in view",function()
+	local Encounter=H.load("Client/Encounter")
+	for _,dir in {V.new(0,0,-1),V.new(1,0,0),V.new(-.6,0,.8)} do
+		local at=V.new(10,3,20)
+		local target=at+dir*20
+		local cf=Encounter.shot(at,target)
+		local toEye=cf.Position-at
+		assert(toEye:Dot(dir)>3,"the lens is behind him")
+		assert((cf.Position-at).Magnitude<14,"too far to see his face")
+		local look=cf.LookVector
+		assert(look:Dot(((at+V.new(0,1.6,0))-cf.Position).Unit)>.76,"he is not in the frame")
+		assert(look:Dot((target+V.new(0,1.5,0)-cf.Position).Unit)>.6,"the inspiration is not in view")
+	end
 end)
 
 print(string.format("NinjaDuel challengeFilm (the CM's series): %d PASS",passed))
