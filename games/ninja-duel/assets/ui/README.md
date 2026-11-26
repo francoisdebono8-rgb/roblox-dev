@@ -37,3 +37,9 @@ Tint: the stamps and brush strokes are already red; for another colour, export b
 | rank_academy / genin / chunin / jonin / anbu / kage.png | 256×256 | The six ranks' emblems (result, leaderboards, HUD, over the head) |
 
 Import them like the others and put each id in `UIAssets.Ids` under its file name.
+
+## La carte dessinée de Konoha (26/11, passe 2)
+`map_konoha.png` (1160 × 956, 2 px par stud de base), refaite par `python3 generate_map.py` à partir de `Shared/KonohaLayout` :
+falaise des Hokage, rivière, rues, chaque bâtiment vu du dessus, les arbres, les lieux écrits à la main.
+À mettre sur Roblox puis dans `UIAssets.Ids.map_konoha` : la minicarte et la grande carte la prennent à la place du plan de blocs.
+Si le plan de la ville change, refaire l'image (et la remonter).

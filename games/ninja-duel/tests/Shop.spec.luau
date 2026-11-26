@@ -795,6 +795,74 @@ test("the racket: three choices, PAY only with the Ryō, the fuse swings",functi
 	assert(ok,tostring(err))
 end)
 
+-- (DESIGN 26/11, DEC-053) the dare: bubble, then VS; THE 8; a thug's result line
+test("the dare's bubble then VS, THE 8 board, the thug's result line",function()
+	local UI=H.load("Client/UI")
+	local dare={kit="Leaf",line="Let's go!",lineFor=1.6,vsFor=1.5,at=100}
+	assert(UI.darePhase(dare,100.5)=="line" and UI.darePhase(dare,102)=="vs" and UI.darePhase(dare,103.5)==nil and UI.darePhase(dare,99)==nil,"its phases")
+	assert(UI.thugLine({won=true,ryo=40})=="YOU TOOK HIS PURSE: +40 RYŌ" and UI.thugLine({won=false,ryo=-25})=="HE TOOK 25 RYŌ OFF YOU","the thug's line")
+	local B=H.load("Client/EightBoard")
+	local cards=B.cards({beaten={Leaf=true},count=1,need=8,order={"Legion","Leaf"}})
+	assert(#cards==2 and not cards[1].beaten and cards[2].beaten,"the board's cards")
+	assert(#B.cards(nil)==8,"the 8 without a profile")
+	H.workspace.GetAttribute=function() return nil end
+	local saved=H.envBase.Instance
+	local baseNew=harnessInstance.new
+	H.envBase.Instance={new=function(class)
+		local x=baseNew(class)
+		x.Activated={Connect=function(_,fn) x.click=fn end}
+		return x
+	end}
+	local ok,err=pcall(function()
+		UI=H.load("Client/UI")
+		B=H.load("Client/EightBoard")
+		local b=B.new(UI.kit,baseNew("ScreenGui"))
+		b:show({beaten={Leaf=true},count=1,need=8})
+		assert(b:shown() and b.score.Text=="1 / 8 BEATEN" and #b.drawn==8,"the board")
+		b.close.click();assert(not b:shown(),"X")
+		local ui=UI.new(baseNew("PlayerGui"),function() end)
+		ui:buildDare()
+		assert(ui.dareBubble and ui.dareVS and #ui.dareHeads==2,"the dare's pieces")
+	end)
+	H.envBase.Instance=saved
+	assert(ok,tostring(err))
+end)
+
+-- (DESIGN 26/11, passe 2) the gate's creation
+test("the gate's creation: starter pieces, his own hair, ENTER sends Create",function()
+	local C=H.load("Client/CreatorPanel")
+	local hair=C.options("hair")
+	assert(hair[1].id=="" and #hair>1,"his own hair first, then the styles")
+	for _,slot in {"top","bottom","feet","headband"} do
+		for _,o in C.options(slot) do assert(Shop.item(o.id).base,"only starter pieces: "..o.id) end
+		assert(#C.options(slot)>0,slot)
+	end
+	local picks=C.defaults()
+	local ids=C.wearing(picks)
+	assert(ids~="" and not ids:find(",,",1,true),"what the preview wears: "..ids)
+	H.workspace.GetAttribute=function() return nil end
+	local saved=H.envBase.Instance
+	local baseNew=harnessInstance.new
+	H.envBase.Instance={new=function(class)
+		local x=baseNew(class)
+		x.Activated={Connect=function(_,fn) x.click=fn end}
+		return x
+	end}
+	local ok,err=pcall(function()
+		local UI=H.load("Client/UI")
+		C=H.load("Client/CreatorPanel")
+		local sent={}
+		local c=C.new(UI.kit,baseNew("ScreenGui"),function(a,p) table.insert(sent,{a,p}) end)
+		c:show();assert(c:shown() and c.step==1,"OUTFIT first")
+		c.next.click();assert(c.step==2,"NEXT: HAIR")
+		c:pick("hair",C.options("hair")[2].id)
+		c.enter.click()
+		assert(sent[1][1]=="Create" and sent[1][2].hair==C.options("hair")[2].id and sent[1][2].top~=nil and not c:shown(),"ENTER KONOHA")
+	end)
+	H.envBase.Instance=saved
+	assert(ok,tostring(err))
+end)
+
 -- (15/11, DA v3 Mix-Shop) the STYLE preview: a still copy of his own avatar,
 -- its scripts and its own outfit taken off, the character left as it was.
 test("the STYLE preview: a still copy of his avatar, without its scripts nor its outfit",function()

@@ -12,7 +12,7 @@ local L={}
 
 L.MARGIN=16
 L.HUD={w=430,h=74}      -- the place and the kit, top left
-L.SHOP={w=424,h=116}    -- the Ryō, DUELS and SHOP, top right; QUESTS and RANKS under them
+L.SHOP={w=424,h=172}    -- the Ryō, DUELS and SHOP, top right; QUESTS and RANKS under them
 L.GOAL={w=430,h=58,stackH=96} -- what to do next: under the place box, a head and its places one a line
 L.MAP=238               -- the minimap's box (MiniMap.SIZE + its name line)
 L.STACK=700             -- narrower (in the goal's own units), one place a line
@@ -56,10 +56,22 @@ function L.compute(viewport,insetY,touch)
 	-- The minimap: under the goal on a laptop; with touch, under the shop box
 	-- on the right (the thumbstick owns the bottom left).
 	if touch then
-		local y=(if out.shop.y==top then out.shop.y+out.shop.h else out.goal.y+out.goal.h)+10
-		local floor=L.jump(viewport).y-10
-		local ms=math.max(.45,math.min(s,(floor-y)/L.MAP))
-		out.map={x=X-m-(L.MAP-30)*ms,y=y,w=(L.MAP-30)*ms,h=L.MAP*ms,scale=ms}
+		-- landscape: in the top row, left of the shop box; portrait: under the goal, right
+		local ms=s
+		local left=math.max(out.goal.x+out.goal.w,out.hud.x+out.hud.w)+10
+		local room=out.shop.x-10-left
+		local ts=math.min(s,room/(L.MAP-30))
+		if ts>=.45 then ms=ts end
+		local mx=out.shop.x-10-(L.MAP-30)*ms
+		if out.shop.y==top and mx>=left-.5 then
+			out.map={x=mx,y=top,w=(L.MAP-30)*ms,h=L.MAP*ms,scale=ms}
+		else
+			local y=(if out.shop.y==top then math.max(out.goal.y+out.goal.h,out.shop.y+out.shop.h) else out.goal.y+out.goal.h)+10
+			local jump=L.jump(viewport)
+			ms=math.min(s,(jump.y-10-y)/L.MAP)
+			-- no room on a small phone: no minimap, the goal's MAP button opens the big one
+			out.map=if ms>=.45 then {x=X-m-(L.MAP-30)*ms,y=y,w=(L.MAP-30)*ms,h=L.MAP*ms,scale=ms} else nil
+		end
 	else
 		out.map={x=m,y=out.goal.y+out.goal.h+10,w=(L.MAP-30)*s,h=L.MAP*s,scale=s}
 	end

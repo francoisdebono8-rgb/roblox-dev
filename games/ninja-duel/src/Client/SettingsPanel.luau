@@ -94,7 +94,7 @@ function S.new(kit,gui,send)
 	box.AnchorPoint=Vector2.new(.5,.5);box.Visible=false;ring(box,4)
 	self.reportBox=box
 	z(kit.text(box,"WHAT HAPPENED?",UDim2.fromOffset(24,14),UDim2.fromOffset(600,48),42,M.ink,kit.TITLE_FONT),5)
-	z(kit.text(box,"One sentence. Where you are is sent with it.",UDim2.fromOffset(24,62),UDim2.fromOffset(640,22),16,M.mid or M.ink,kit.BODY_FONT),5)
+	z(kit.text(box,"One line. We'll know where you were.",UDim2.fromOffset(24,62),UDim2.fromOffset(640,22),16,M.mid or M.ink,kit.BODY_FONT),5)
 	local field=kit.create("TextBox",box,{Position=UDim2.fromOffset(24,94),Size=UDim2.fromOffset(652,110),BackgroundColor3=M.cream,
 		Text="",PlaceholderText="E.G. I FELL THROUGH THE ROOF NEAR ICHIRAKU",PlaceholderColor3=M.brown or M.ink,TextColor3=M.ink,TextSize=20,
 		Font=STRONG,ClearTextOnFocus=false,TextWrapped=true,MultiLine=true,TextXAlignment=Enum.TextXAlignment.Left,TextYAlignment=Enum.TextYAlignment.Top,ZIndex=86})
@@ -145,7 +145,7 @@ function S:sendReport()
 	if not r then return false end
 	self.send("Report",r)
 	self.reportBox.Visible=false
-	self.thanks.Text="THANKS! THE DEV WILL READ IT."
+	self.thanks.Text="GOT IT. THANKS!"
 	return true
 end
 

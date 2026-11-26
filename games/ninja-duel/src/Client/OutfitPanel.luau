@@ -80,7 +80,7 @@ function Panel.new(kit,gui,send,ui)
 	self.stamp=kit.text(card,"APPROVED",UDim2.new(.5,-150,.5,-50),UDim2.fromOffset(300,100),64,M.red,kit.TITLE_FONT,Enum.TextXAlignment.Center)
 	self.stamp.Rotation=-12;self.stamp.Visible=false;self.stamp.ZIndex=90
 	kit.create("UIStroke",self.stamp,{Color=M.red,Thickness=4,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
-	self.foot=kit.text(card,"Inspirations' outfits and weapons: SHOP › STYLE. More pieces at the market.",UDim2.fromOffset(20,Panel.H-16),UDim2.fromOffset(400,14),12,M.ink,kit.BODY_FONT,Enum.TextXAlignment.Center)
+	self.foot=kit.text(card,"More at the market.",UDim2.fromOffset(20,Panel.H-16),UDim2.fromOffset(400,14),12,M.ink,kit.BODY_FONT,Enum.TextXAlignment.Center)
 	self.sel="top"
 	-- (DESIGN 19/11, OUTILLEUR's measure on an iPhone 13: arrows 31 px, DONE
 	-- 32, the card over half of the inspiration's) A short window (a phone in
@@ -252,7 +252,7 @@ function Panel:draw()
 		row.label.TextColor3=if on then M.redSoft else M.ink
 	end
 	local dressed=self:dressed()
-	self.sub.Text=if dressed then "Your own avatar in your ninja gear, in Konoha and in every duel." else "You arrive with your own avatar. Pick what your ninja wears: a top first."
+	self.sub.Text=if dressed then "Looking sharp." else "Start with a top."
 	self.done.Text=if dressed then "DONE" else "PICK A TOP"
 	self.done.AutoButtonColor=dressed
 	self.done.BackgroundColor3=if dressed then self.M.red else Color3.fromRGB(120,112,108)

@@ -19,6 +19,8 @@ UIAssets.Ids={
 	icon_fist="rbxassetid://85528747736674",icon_weights="rbxassetid://98116083608228",icon_hound="rbxassetid://114057950243756",icon_wire="rbxassetid://107945352265218",icon_scroll="rbxassetid://126004677920473",
 	-- (DESIGN 20/11, step 1) the six ranks' emblems
 	rank_academy="rbxassetid://96672557663526",rank_genin="rbxassetid://76763443822026",rank_chunin="rbxassetid://118229760694098",rank_jonin="rbxassetid://93794886301905",rank_anbu="rbxassetid://118433227657883",rank_kage="rbxassetid://88298397406708",
+	-- (DESIGN 26/11, passe 2) Konoha, the drawn map (assets/ui/map_konoha.png, 1160 x 956): to upload
+	map_konoha="",
 }
 
 -- (DEV 21/11) the shop icons (assets/ui/items, rendered by tools/icons),
