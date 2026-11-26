@@ -189,12 +189,14 @@ def item_headband_neck():
 def item_headband_waist():
     o = O().Out()
     band = o.add("LowerTorso", "Band")
-    O().ribbed(band, "LowerTorso", .05, .75, pad=.13, ribs=1, depth=.02, rings_per=4)
+    # (26/11, seen on six bodies) worn over a tunic it was under the obi (pad .15) and showed nothing
+    # on the blocky body: it goes over the obi
+    O().ribbed(band, "LowerTorso", -.05, .6, pad=.2, ribs=1, depth=.02, rings_per=4)
     pl = o.add("LowerTorso", "Plate", mat="Metal")
-    plate_front(pl, -.02, .5, .22, z=-.6, curve=.08)
-    engrave(o.add("LowerTorso", "Plate", mat="Metal", name="Engraving"), -.02, .5, z=-.66)
+    plate_front(pl, .02, .5, .22, z=-.74, curve=.08)
+    engrave(o.add("LowerTorso", "Plate", mat="Metal", name="Engraving"), .02, .5, z=-.8)
     for sx in (-1, 1):  # tails at the side
-        pts = [Vector((.95 + .05 * u, -.1 - .7 * u, sx * .08 + .05 * u)) for u in [k / 5 for k in range(6)]]
+        pts = [Vector((1.02 + .05 * u, -.05 - .7 * u, sx * .08 + .05 * u)) for u in [k / 5 for k in range(6)]]
         ribbon(band, pts, .12, side=Vector((0, 0, 1)))
     return o.items
 
@@ -474,7 +476,9 @@ def item_haori():
         rows.append([Vector(((a) * math.copysign(abs(math.cos(t)) ** .125, math.cos(t)), y, (b) * math.copysign(abs(math.sin(t)) ** .125, math.sin(t))))
                      for t in [-math.pi / 2 + .45 + (2 * math.pi - .9) * i / (O().SEG - 7) for i in range(O().SEG - 6)]])
     loft(coat, rows, O().shade(.93, .06), cap0=False, cap1=False, closed=False)
-    O().thigh_tails(o, "Cloth", .95, y_top=-.15, pad=.18, flare=.1)
+    # (26/11, seen on six bodies) on the hips that are deeper than the thighs the inner robe came
+    # through the tails in jagged patches: the tails hang further out
+    O().thigh_tails(o, "Cloth", .95, y_top=-.15, pad=.27, flare=.1)
     tie = o.add("UpperTorso", "Trim", name="Tie")
     for sx in (-1, 1):
         tube(tie, [Vector((sx * .32, .05, -.68)), Vector((sx * .05, -.05, -.7)), Vector((sx * .1, -.4, -.72))], .035, O().shade(.95, .03), sides=6)
@@ -499,8 +503,12 @@ def item_chunin_vest():
 def item_gi():
     o = O().Out()
     O().tunic_body(o, "Cloth", lower_h=.9, sleeve=.9, seed=3, trim="Cloth", belt=None, skirt=False)
+    # (26/11, seen on six bodies) a modern torso comes down over the hips: the belt on the hips alone
+    # was under the gi's top. Like the obi it now goes round the torso's bottom too.
+    up = o.add("UpperTorso", "Belt", name="BeltUp")
+    O().ribbed(up, "UpperTorso", .88, 1.03, pad=.115, ribs=1, depth=.01, rings_per=3)
     belt = o.add("LowerTorso", "Belt")
-    O().ribbed(belt, "LowerTorso", .05, .65, pad=.14, ribs=1, depth=.02, rings_per=4)
+    O().ribbed(belt, "LowerTorso", -.1, .5, pad=.15, ribs=1, depth=.02, rings_per=4)
     for sx in (-1, 1):
         ribbon(belt, [Vector((sx * .3 + .5, -.05 - .45 * u, -.7 - .04 * u)) for u in [k / 4 for k in range(5)]], .14)
     o.both("LowerArm", "Cloth", lambda pc, part: O().shell(pc, part, -.04, .35, pad=.16, flare0=.12, flare1=.14, folds=.04))
@@ -535,7 +543,10 @@ def item_sash_top():
     lo = o.add("LowerTorso", "Cloth")
     O().shell(lo, "LowerTorso", -.1, .5, pad=.07, hem=False)
     belt = o.add("LowerTorso", "Sash", name="Obi")
-    O().ribbed(belt, "LowerTorso", .3, .8, pad=.11, ribs=1, depth=.02, rings_per=4)
+    O().ribbed(belt, "LowerTorso", -.1, .5, pad=.12, ribs=1, depth=.02, rings_per=4)
+    # (26/11, seen on six bodies) on a modern torso (it comes down over the hips) the band was hidden
+    up2 = o.add("UpperTorso", "Sash", name="ObiUp")
+    O().ribbed(up2, "UpperTorso", .88, 1.03, pad=.1, ribs=1, depth=.01, rings_per=3)
     return o.items
 
 
@@ -620,9 +631,10 @@ def item_arm_warmers():
 
 def item_gauntlets():
     o = O().Out()
-    o.both("LowerArm", "Leather", lambda pc, part: O().shell(pc, part, .45, .98, pad=.04, flare0=.06, folds=.01, hem=True))
-    o.both("Hand", "Leather", lambda pc, part: O().shell(pc, part, -.05, .48, pad=.02, folds=.004, hem=False, rings=4))
-    o.both("LowerArm", "Metal", lambda pc, part: O().plate(pc, part, .5, .9, .055, arc=(-.6, .6), thick=.03), mat="Metal")
+    # (26/11, seen on six bodies) the hand's leather cap came out as a flat slab across the wrist
+    # (a hand piece keeps the box's width but not its height): the cuff ends at the wrist instead.
+    o.both("LowerArm", "Leather", lambda pc, part: O().shell(pc, part, .45, 1.0, pad=.04, flare0=.06, folds=.01, hem=True))
+    o.both("LowerArm", "Metal", lambda pc, part: O().plate(pc, part, .52, .9, .05, arc=(-.55, .55), thick=.025), mat="Metal")
     return o.items
 
 
@@ -640,12 +652,11 @@ def item_bracers():
 
 def item_fingerless():
     o = O().Out()
-    o.both("Hand", "Leather", lambda pc, part: O().shell(pc, part, -.08, .55, pad=.02, folds=.002, hem=True, rings=4))
-    o.both("LowerArm", "Leather", lambda pc, part: O().ribbed(pc, part, .82, 1.0, pad=.04, ribs=1, depth=.01, rings_per=3))
-    def plate(pc, part):
-        S = O().size(part)
-        O().box(pc, (0, .02, -(S.z / 2 + .02) / O().K - .02), (.26, .07, .025), O().shade(.95, .02))
-    o.both("Hand", "Metal", plate, mat="Metal")
+    # (26/11, seen on six bodies) the glove's hand shell and its plate came out as a flat black slab
+    # standing off the wrist (a hand piece keeps the box's width, not its height): the glove is now
+    # its wrist cuff with the plate on the cuff, on the forearm that the arm's mesh fills.
+    o.both("LowerArm", "Leather", lambda pc, part: O().ribbed(pc, part, .74, 1.0, pad=.04, ribs=1, depth=.01, rings_per=3))
+    o.both("LowerArm", "Metal", lambda pc, part: O().plate(pc, part, .8, .95, .05, arc=(-.3, .3), thick=.02), mat="Metal")
     return o.items
 
 
@@ -653,7 +664,7 @@ def item_elbow_pads():
     o = O().Out()
     def pad(pc, part):
         S = O().size(part)
-        O().ribbed(pc, part, .02, .26, pad=.1, ribs=2, depth=.03, rings_per=3)
+        O().ribbed(pc, part, .02, .26, pad=.065, ribs=2, depth=.02, rings_per=3)  # (26/11) stood off the elbow as a ring
     o.both("LowerArm", "Pad", pad)
     o.both("UpperArm", "Strap", lambda pc, part: O().ribbed(pc, part, .78, .88, pad=.05, ribs=1, depth=.01, rings_per=3))
     return o.items
@@ -663,7 +674,7 @@ def item_long_sleeves():
     o = O().Out()
     o.both("UpperArm", "Cloth", lambda pc, part: O().shell(pc, part, .1, 1.02, pad=.07, folds=.03, hem=False))
     o.both("LowerArm", "Cloth", lambda pc, part: O().shell(pc, part, -.02, .8, pad=.1, flare1=.16, folds=.04))
-    o.both("UpperArm", "Trim", lambda pc, part: O().ribbed(pc, part, .08, .18, pad=.09, ribs=1, depth=.01, rings_per=3))
+    o.both("UpperArm", "Trim", lambda pc, part: O().ribbed(pc, part, .12, .2, pad=.08, ribs=1, depth=.008, rings_per=3))  # (26/11) on the sleeve's top, not above the shoulder
     return o.items
 
 
@@ -674,11 +685,14 @@ def item_boots():
         pc = o.add(side + "Foot", "Leather")
         S = O().size("RightFoot")
         y = -S.y / 2
-        rows = [O().section(S.x / 2 / O().K + .06, S.z / 2 / O().K + .14, y=y + dy) for dy in (-.07, -.02, .2, S.y / 2 + .05)]
+        # (26/11, seen on six bodies) a modern foot is a dome that stood out of the shoe's low walls:
+        # the boot rises over the instep and closes there (OutfitDress places it from the sole)
+        rows = [O().section(S.x / 2 / O().K + .06 - nx, S.z / 2 / O().K + .14 - nz, y=y + dy)
+                for dy, nx, nz in ((-.07, 0, 0), (-.02, 0, 0), (.2, 0, 0), (S.y / 2 + .2, .02, .04), (S.y / 2 + .4, .08, .16))]
         for r in rows:
             for p in r:
                 p.z -= .06
-        loft(pc, rows, O().shade(.85, .05), cap0=True, cap1=False)
+        loft(pc, rows, O().shade(.85, .05), cap0=True, cap1=True)
     o.both("LowerLeg", "Leather", lambda pc, part: O().shell(pc, part, .35, 1.0, pad=.1, flare0=.06, folds=.015, hem="both"))
     o.both("LowerLeg", "Strap", lambda pc, part: (O().ribbed(pc, part, .5, .58, pad=.12, ribs=1, depth=.01, rings_per=3),
                                                  O().ribbed(pc, part, .75, .83, pad=.12, ribs=1, depth=.01, rings_per=3)))
@@ -688,14 +702,23 @@ def item_boots():
 def item_tabi():
     o = O().Out()
     for side in ("Right", "Left"):
+        # (26/11, seen on six bodies) the sock was the foot box's sleeve: a modern foot's toes stood
+        # out of it, and the toe split floated beside the shin. The sock now closes over the foot like
+        # the boot (from the sole, OutfitDress.SOLE).
         pc = o.add(side + "Foot", "Cloth")
-        O().shell(pc, side + "Foot", -.1, 1.0, pad=.06, folds=.004, hem=False, rings=4)
-        sole = o.add(side + "Foot", "Sole")
         S = O().size("RightFoot")
-        rows = [O().section(S.x / 2 / O().K + .05, S.z / 2 / O().K + .08, y=-S.y / 2 + dy) for dy in (-.06, -.01)]
+        rows = [O().section(S.x / 2 / O().K + .045 - nx, S.z / 2 / O().K + .1 - nz, y=-S.y / 2 + dy)
+                for dy, nx, nz in ((-.01, 0, 0), (.2, 0, 0), (S.y / 2 + .18, .02, .04), (S.y / 2 + .36, .07, .15))]
+        for r in rows:
+            for p in r:
+                p.z -= .05
+        loft(pc, rows, O().shade(.92, .04), cap0=True, cap1=True)
+        sole = o.add(side + "Foot", "Sole")
+        rows = [O().section(S.x / 2 / O().K + .05, S.z / 2 / O().K + .11, y=-S.y / 2 + dy) for dy in (-.01, .05)]
+        for r in rows:
+            for p in r:
+                p.z -= .05
         loft(sole, rows, O().shade(.7, .04), cap0=True, cap1=True)
-        split = o.add(side + "Foot", "Sole", name="Split")
-        O().box(split, (.18 if side == "Right" else -.18, 0, -S.z / 2 - .06), (.015, S.y / 2 + .02, .1), lambda p, k: (.4, .4, .4))
     o.both("LowerLeg", "Cloth", lambda pc, part: O().shell(pc, part, .7, 1.0, pad=.06, folds=.01, hem=True, rings=4))
     return o.items
 
@@ -705,11 +728,13 @@ def item_geta():
     for side in ("Right", "Left"):
         S = O().size("RightFoot")
         wood = o.add(side + "Foot", "Wood", mat="Wood")
-        O().box(wood, (0, -S.y / 2 - .08, -.05), (S.x / 2 + .06, .05, S.z / 2 + .14), O().shade(.85, .05))
-        for zz in (-.28, .25):
-            O().box(wood, (0, -S.y / 2 - .25, zz), (S.x / 2 + .02, .12, .06), O().shade(.75, .04))
+        # (26/11, seen on six bodies) the plank and its teeth stood under the foot's box, so under the
+        # ground: the plank now rises round the sole of the foot, the teeth show at its ends
+        O().box(wood, (0, -S.y / 2 + .05, -.05), (S.x / 2 + .07, .07, S.z / 2 + .16), O().shade(.85, .05))
+        for zz in (-.38, .3):
+            O().box(wood, (0, -S.y / 2 + .02, zz), (S.x / 2 + .08, .04, .05), O().shade(.72, .04))
         thong = o.add(side + "Foot", "Strap")
-        tube(thong, [Vector((-.38, -S.y / 2 - .02, -.05)), Vector((-.2, .12, -.32)), Vector((0, .08, -.45)), Vector((.2, .12, -.32)), Vector((.38, -S.y / 2 - .02, -.05))], .04, O().shade(.9, .04), sides=6)
+        tube(thong, [Vector((-.38, -S.y / 2 + .1, -.05)), Vector((-.2, .12, -.32)), Vector((0, .08, -.45)), Vector((.2, .12, -.32)), Vector((.38, -S.y / 2 + .1, -.05))], .04, O().shade(.9, .04), sides=6)
     return o.items
 
 
@@ -719,7 +744,7 @@ def item_shin_guards():
         def pcs(slot, side=side):
             return o.add(side + "Foot", "Sandal")
         O().sandal(pcs, side + "Foot")
-    o.both("LowerLeg", "Metal", lambda pc, part: O().plate(pc, part, .15, .8, .1, arc=(-.7, .7), thick=.05), mat="Metal")
+    o.both("LowerLeg", "Metal", lambda pc, part: O().plate(pc, part, .15, .8, .05, arc=(-.5, .5), thick=.04), mat="Metal")  # (26/11) on a thin body the two plates met in one block
     o.both("LowerLeg", "Strap", lambda pc, part: (O().ribbed(pc, part, .25, .32, pad=.06, ribs=1, depth=.01, rings_per=3),
                                                  O().ribbed(pc, part, .66, .73, pad=.06, ribs=1, depth=.01, rings_per=3)))
     return o.items
