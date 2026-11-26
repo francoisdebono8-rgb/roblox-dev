@@ -169,9 +169,11 @@ def ribbed(pc, part, y0, y1, pad=.09, ribs=6, depth=.05, rings_per=3, col=None, 
     a0 = (S.x / 2 + pad) / K
     b0 = (S.z / 2 + pad) / K
     bandage = spiral > 0
-    if bandage:
-        depth = min(depth, .006)
-        rings_per = max(rings_per, 6)
+    if bandage:   # (26/11, seen in the game: still a stack of plates) fewer, steeper strips
+        depth = 0.0
+        ribs = max(3, int(round(ribs * .55)))
+        spiral = 2.2
+        rings_per = max(rings_per, 8)
     n = ribs * rings_per + 1
     rows = []
     for k in range(n):
@@ -185,7 +187,7 @@ def ribbed(pc, part, y0, y1, pad=.09, ribs=6, depth=.05, rings_per=3, col=None, 
             ph = u * ribs + spiral * t / (2 * math.pi)
             if bandage:   # flat strips, a slight lip where a turn lies over the one before
                 f = ph % 1.0
-                bulge = depth * (f ** 3) * draw + .003 * noise.noise(Vector((t, y * 3, seed)))
+                bulge = .004 * (f ** 2) * draw + .002 * noise.noise(Vector((t, y * 3, seed)))
                 bulge -= pad * (1 - draw) * .9 / K
             else:
                 bulge = depth * (.5 - .5 * math.cos(2 * math.pi * ph)) + .008 * noise.noise(Vector((t, y * 3, seed)))
@@ -200,7 +202,7 @@ def ribbed(pc, part, y0, y1, pad=.09, ribs=6, depth=.05, rings_per=3, col=None, 
         t = math.atan2(p.z, p.x)
         ph = (u * ribs + spiral * t / (2 * math.pi)) % 1.0
         if bandage:   # the strip pale and even, a thin shadow at the seam
-            g = .97 - .06 * ph - (.16 if ph < .08 else 0.0)
+            g = .96 - .05 * ph - (.09 if ph < .05 else 0.0)
             return (g, g, g)
         g = .74 + .26 * math.sin(math.pi * ph)
         return (g, g, g)
