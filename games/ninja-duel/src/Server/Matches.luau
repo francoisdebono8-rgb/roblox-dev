@@ -197,7 +197,7 @@ function Matches:forestFight(player)
 	s.forest=true;s.bare=true;s.techniquesDisabled=true;s.firstFight=true;s.forestWon=nil
 	s.aiLevel=Forest.LEVEL
 	local c=HubMap.Forest.clearing
-	s.nextSite={key=c.key,origin=HubMap.Origin+c.at,radius=c.radius,place=c.place,street=true,axis=c.axis,start=c.start}
+	s.nextSite={key=c.key,origin=HubMap.Origin+c.at,radius=c.radius,place=c.place,street=true,forest=true,axis=c.axis,start=c.start}
 	local ok=self:start(player,Forest.KIT,Forest.BANDIT_KIT,false,{})
 	s.nextSite=nil
 	if ok~=true then s.forest=nil;s.bare=nil;s.techniquesDisabled=nil;s.firstFight=nil;return false end
@@ -871,7 +871,7 @@ function Matches:view(s,cursor,mine,theirs)
 		-- (DEC-037) the masters' path: mastery gained, a kit learned, the master being fought.
 		progress=s.progress,master=s.masterTrial,
 		-- (15/11) a duel in the village: where it is fought (the banner says it)
-		site=if s.site then {key=s.site.key,place=s.site.place,radius=s.site.radius,street=s.site.street} else nil,
+		site=if s.site then {key=s.site.key,place=s.site.place,radius=s.site.radius,street=s.site.street,forest=s.site.forest} else nil,
 		-- (24/11) an inspiration's challenge: his dare, then the VS card, during
 		-- the first round's intro (Matches.challengeStart); `at` server time
 		dare=if s.dare and (s.round or 1)==1 and (s.introUntil or 0)>now then s.dare else nil,

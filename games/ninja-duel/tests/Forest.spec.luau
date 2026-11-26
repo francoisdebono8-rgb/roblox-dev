@@ -108,6 +108,16 @@ test("bare: strikes, guard, dodge, jump and grab answer; no technique, tool, awa
 	assert(s.dare.lineFor<(s.introUntil-s.combat.now),"the bubble outlasts the intro")
 	assert(s.coach and s.coach.done.signature and s.coach.done.tool,"the coach still teaches the jutsu and the tool")
 	assert(Coach.snapshot(s)==nil or Coach.snapshot(s).total==#Coach.Prompts-2,"the coach's count")
+	-- (26/11, seen in the game) the banner says the forest, not a street duel; the
+	-- snapshot says bare (the screen shows no jutsu, no ultimate's scroll)
+	local snap=m:view(s,s,s.human,s.bot)
+	assert(snap.bare==true and snap.site and snap.site.forest==true and #snap.human.techniques==0 and not snap.human.ultimateReady,"the forest's snapshot")
+	assert(s.site.forest==true,"the forest's site")
+	local okUI,UI=pcall(H.load,"Client/UI")
+	if okUI and UI and UI.stageName then
+		local name=UI.stageName({site={place="THE FOREST",street=true,forest=true}})
+		assert(name=="OUTSIDE KONOHA  •  THE FOREST","the banner: "..name)
+	end
 	local c=s.combat
 	c.now=s.introUntil+.1
 	s.human.chakra=100

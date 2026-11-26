@@ -232,6 +232,9 @@ local function accentOf(def) return Color3.fromRGB(table.unpack(def.Color)) end
 function UI.stageName(data)
 	local site=data and data.site
 	if site and type(site.place)=="string" and site.place~="" then
+		-- (26/11, seen in the forest: « STREET DUEL • THE FOREST ») outside the
+		-- gate, the way in
+		if site.forest then return "OUTSIDE KONOHA  •  "..Text.upper(site.place) end
 		return (if site.street then "STREET DUEL  •  " else "KONOHA  •  ")..Text.upper(site.place)
 	end
 	if data and data.cup then return "PRODIGY TOURNAMENT" end
@@ -1990,6 +1993,13 @@ function UI:render(data)
 	-- no seal page; the rest shows from the next duel on.
 	if data.first then
 		for i,b in self.techniqueButtons do if i~=FirstMinute.SignatureSlot then b.box.Visible=false end end
+		self.sealPanel.Visible=false;self.sealWeave.Text="";self.jutsuRope.Visible=false;self.ultimateScroll.box.Visible=false
+	end
+	-- (26/11, passe 2, seen in the forest: the ultimate's scroll « Y » stood
+	-- alone in a fight without any technique) the bandit's fight: nothing of
+	-- the ninja arts on the screen
+	if data.bare then
+		for _,b in self.techniqueButtons do b.box.Visible=false end
 		self.sealPanel.Visible=false;self.sealWeave.Text="";self.jutsuRope.Visible=false;self.ultimateScroll.box.Visible=false
 	end
 	-- (Tournament) watching a match: none of these are the player's.
