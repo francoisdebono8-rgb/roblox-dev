@@ -43,6 +43,20 @@ test("the parts filmed: the head, its hair and what holds to it, the torso; not 
 	assert(got.Head and got.Hair and got.HairBand and got.UpperTorso,"missing a part of the head")
 	assert(not got.LeftUpperArm and not got.HumanoidRootPart and not got.FaceEye and not got.Sword,"filmed what is not the head")
 	assert(#FaceCam.collect(Instance.new("Model"))==0,"a model without a head")
+	-- (26/11, seen in the game) the avatars' new joints: AnimationConstraints, the hair on a RigidConstraint
+	local body=Instance.new("Model")
+	local head2=part("Head",Vector3.new(0,4.5,0),body)
+	local torso2=part("UpperTorso",Vector3.new(0,3,0),body)
+	local hair2=part("Handle",Vector3.new(0,5.1,0),body)
+	local function joined(a,b,class)
+		local a0=Instance.new("Attachment");a0.Parent=a
+		local a1=Instance.new("Attachment");a1.Parent=b
+		local c=Instance.new(class);c.Attachment0=a0;c.Attachment1=a1;c.Parent=b
+	end
+	joined(torso2,head2,"AnimationConstraint");joined(head2,hair2,"RigidConstraint")
+	local got2={}
+	for _,p in FaceCam.collect(body) do got2[p.Name]=true end
+	assert(got2.Head and got2.UpperTorso and got2.Handle,"the new joints: the torso or the hair not filmed")
 end)
 
 test("the lens: in front of the chest, looking at the face; a plate seen where it is, its size, facing, upright",function()

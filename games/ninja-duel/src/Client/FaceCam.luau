@@ -67,7 +67,12 @@ function FaceCam.collect(model)
 		links[b]=links[b] or {};table.insert(links[b],a)
 	end
 	for _,d in model:GetDescendants() do
-		if d:IsA("JointInstance") or d:IsA("WeldConstraint") then link(d.Part0,d.Part1) end
+		if d:IsA("JointInstance") or d:IsA("WeldConstraint") then link(d.Part0,d.Part1)
+		-- (26/11, passe 2, seen in the game: the player's body has no Motor6D but
+		-- AnimationConstraints, its hair a RigidConstraint) joined by attachments
+		elseif (d:IsA("AnimationConstraint") or d:IsA("RigidConstraint")) and d.Attachment0 and d.Attachment1 then
+			link(d.Attachment0.Parent,d.Attachment1.Parent)
+		end
 	end
 	local torso=model:FindFirstChild("UpperTorso") or model:FindFirstChild("Torso")
 	local seen={[head]=true}
