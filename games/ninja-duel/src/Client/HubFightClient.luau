@@ -181,9 +181,13 @@ function Fight.impact(payload)
 	if kind=="challenge" then
 		local me=Players.LocalPlayer
 		local by=payload.by and Players:GetPlayerByUserId(payload.by)
-		if me and payload.to==me.UserId and by then
-			pcall(function() game:GetService("StarterGui"):SetCore("SendNotification",{Title="CHALLENGE!",Text=Text.upper(by.DisplayName).." STRUCK YOU. HIT BACK TO FIGHT.",Duration=5}) end)
-		end
+		-- (DESIGN 26/11, passe 3) CHALLENGE! stamped over the other, the prompt to hit back
+		local to=payload.to and Players:GetPlayerByUserId(payload.to)
+		pcall(function()
+			local Mark=require(script.Parent.ChallengeMark)
+			if me and payload.to==me.UserId and by then Mark.show(true,by)
+			elseif me and payload.by==me.UserId and to then Mark.show(false,to) end
+		end)
 	end
 end
 

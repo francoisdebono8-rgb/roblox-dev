@@ -13,7 +13,7 @@ local L={}
 L.MARGIN=16
 L.HUD={w=430,h=74}      -- the place and the kit, top left
 L.SHOP={w=424,h=172}    -- the Ryō, DUELS and SHOP, top right; QUESTS and RANKS under them
-L.GOAL={w=430,h=58,stackH=96} -- what to do next: under the place box, a head and its places one a line
+L.GOAL={w=430,h=58,stackH=124} -- what to do next: under the place box, a head and its places one a line
 L.MAP=238               -- the minimap's box (MiniMap.SIZE + its name line)
 L.STACK=700             -- narrower (in the goal's own units), one place a line
 L.CARD={w=490,h=380}    -- a master's card

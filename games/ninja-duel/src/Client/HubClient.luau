@@ -83,8 +83,20 @@ function Hub.new(ui,camera,send,controls)
 	self.mapButton=K.button(self.goal,"MAP",UDim2.new(1,-62,0,6),UDim2.fromOffset(56,44),function() if self.map then self.map:openBig() end end,M.red)
 	self.mapButton.TextColor3=M.cream;self.mapButton.TextSize=20;self.mapButton.Visible=false
 	brush.ZIndex=19;K.corner(brush,4)
-	self.goalHead=K.text(self.goal,"",UDim2.fromOffset(14,4),UDim2.new(1,-28,0,24),18,M.redSoft,STRONG)
-	self.goalSub=K.text(self.goal,"",UDim2.fromOffset(14,30),UDim2.new(1,-28,0,24),18,M.cream,STRONG)
+	-- (DESIGN 26/11, passe 3) the tournament's journal: the chapter on a red
+	-- tab, the goal under it, the eight seals as ink circles (red when won)
+	self.chapter=K.text(self.goal,"",UDim2.fromOffset(14,-14),UDim2.fromOffset(300,24),17,M.cream,Enum.Font.Bangers)
+	self.chapter.BackgroundTransparency=0;self.chapter.BackgroundColor3=M.red;self.chapter.Rotation=-2;self.chapter.Visible=false
+	K.create("UIPadding",self.chapter,{PaddingLeft=UDim.new(0,8),PaddingRight=UDim.new(0,8)})
+	self.chapter.AutomaticSize=Enum.AutomaticSize.X;self.chapter.Size=UDim2.fromOffset(0,24)
+	self.seals={}
+	for i=1,8 do
+		local pip=K.frame(self.goal,UDim2.new(0,14+(i-1)*30,1,-30),UDim2.fromOffset(22,22),M.ink,0)
+		K.corner(pip,11);K.create("UIStroke",pip,{Color=M.cream,Thickness=2,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
+		pip.Visible=false;self.seals[i]=pip
+	end
+	self.goalHead=K.text(self.goal,"",UDim2.fromOffset(14,12),UDim2.new(1,-28,0,24),18,M.redSoft,STRONG)
+	self.goalSub=K.text(self.goal,"",UDim2.fromOffset(14,38),UDim2.new(1,-28,0,24),18,M.cream,STRONG)
 	self.goalSub.TextWrapped=false;self.goalSub.TextScaled=true
 	K.create("UITextSizeConstraint",self.goalSub,{MaxTextSize=20,MinTextSize=10})
 	-- The Ryō on paper, DUELS in ink, SHOP in red, top right.
@@ -146,6 +158,14 @@ function Hub.new(ui,camera,send,controls)
 			pcall(self.trackScreen,self)
 		end
 	end)
+	-- (DESIGN 26/11, passe 3) the tournament's scenes in bubbles
+	do
+		local ok,StoryScene=pcall(function() return require(script.Parent.StoryScene) end)
+		if ok and StoryScene then
+			local made,sc=pcall(StoryScene.new,ui.kit or K,ui.gui,send)
+			if made then self.story=sc end
+		end
+	end
 	-- (DESIGN 23/11, passe 1) the racket: PAY, RUN or FIGHT (Hub:racket(r))
 	do
 		local ok,RacketPanel=pcall(function() return require(script.Parent.RacketPanel) end)
@@ -341,6 +361,7 @@ function Hub:screenName()
 	local ui=self.ui
 	local function on(p) return p~=nil and p:shown() end
 	if self.racketPanel and on(self.racketPanel) then return "Racket" end
+	if on(self.story) then return "Story" end
 	if on(ui.settings) then return "Settings" end
 	if on(ui.creator) then return "Creator" end
 	if on(ui.cupEntry) then return "CupEntry" end
@@ -363,12 +384,38 @@ function Hub:trackScreen()
 	end
 	return name
 end
+-- (DESIGN 26/11, passe 3) The journal's words (pure): the chapter's tab and
+-- how many seals to light, from the player's attributes.
+function Hub.journalOf(chapter,seals,story)
+	local c=chapter and story.Chapters[chapter]
+	if not c then return nil end
+	return {tab=string.format("CHAPTER %d  •  %s",chapter,c.name),seals=if chapter>=2 then math.clamp(seals or 0,0,story.SEALS) else nil}
+end
+function Hub:journal()
+	local player=Players.LocalPlayer
+	local ok,Story=pcall(function() return require(game:GetService("ReplicatedStorage").NinjaDuel.Story) end)
+	if not ok or not player or not player.GetAttribute then return end
+	local j=Hub.journalOf(player:GetAttribute("NinjaChapter"),player:GetAttribute("NinjaSeals"),Story)
+	self.chapter.Visible=j~=nil
+	if j then self.chapter.Text=j.tab end
+	for i,pip in self.seals do
+		pip.Visible=j~=nil and j.seals~=nil
+		pip.BackgroundColor3=if j and j.seals and i<=j.seals then self.ui.kit.MANGA.red else self.ui.kit.MANGA.ink
+	end
+	-- a scene not yet seen, never in a fight: only while he walks, nothing open
+	local scene=player:GetAttribute("NinjaStoryScene")
+	if scene and scene~="" and self.story and not self.story:shown() and self.story.done~=scene
+		and self.goal.Visible and not self:anyPanel() then
+		self.story.onHide=function() self:apply() end
+		self.story:play(scene,j and j.tab)
+	end
+end
 -- A page over the village (the walk waits behind it).
 function Hub:anyPanel()
 	local ui=self.ui
 	return (ui.treePanel and ui.treePanel:shown()) or (ui.shopPanel and ui.shopPanel:shown()) or (ui.outfitPanel and ui.outfitPanel:shown())
 		or (self.quests and self.quests:shown()) or (self.map and self.map:shown()) or (ui.leaderboard and ui.leaderboard:shown())
-		or (ui.settings and ui.settings:shown()) or (ui.creator and ui.creator:shown()) or (self.eight and self.eight:shown()) or false
+		or (self.story and self.story:shown()) or (ui.settings and ui.settings:shown()) or (ui.creator and ui.creator:shown()) or (self.eight and self.eight:shown()) or false
 end
 -- Controls and lens: the village walk, or the board (the roster) over it.
 function Hub:apply()
@@ -536,6 +583,7 @@ function Hub:refreshHud(position)
 	self.goalSubText=goal.sub
 	self.goalHead.Text=goal.head
 	self.goalSub.Text=if self.lay and self.lay.goal.stack then table.concat(goal.items,"\n") else goal.sub
+	self:journal()
 	self:showHud()
 	local input=self:input()
 	self.keys.Text=if input=="pad" then "L3 RUN  •  A TWICE: LEAP  •  X TALK  •  Y SHOP  •  R1 DUELS" else "SHIFT RUN  •  SPACE TWICE: LEAP  •  E TALK  •  B DUELS"

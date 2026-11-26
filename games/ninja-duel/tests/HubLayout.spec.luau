@@ -145,6 +145,12 @@ test("Konoha's HUD: placed by the layout, the goal follows the player, touch and
 		local sent={}
 		local ui=UI.new(H.envBase.Instance.new("PlayerGui"),function(action,payload) table.insert(sent,{action,payload}) end)
 		local Hub=H.load("Client/HubClient")
+		-- (DESIGN 26/11) the journal: the chapter's tab and the seals
+		local Story=H.load("Shared/Story")
+		assert(Hub.journalOf(nil,0,Story)==nil,"no chapter, no journal")
+		local j=Hub.journalOf(2,3,Story)
+		assert(j.tab=="CHAPTER 2  •  THE EIGHT SEALS" and j.seals==3,"the seals' chapter")
+		assert(Hub.journalOf(1,0,Story).seals==nil,"no seals before chapter 2")
 		local hub=Hub.new(ui,{},function(action,payload) table.insert(sent,{action,payload}) end,{Enable=function() end,Disable=function() end})
 		local new={state="ready",owned={},mastery={},masters={},needStarter=true,trees={},ryo=0,style={owned={},equipped={}}}
 		hub:render({phase="Selection",kits=new})
