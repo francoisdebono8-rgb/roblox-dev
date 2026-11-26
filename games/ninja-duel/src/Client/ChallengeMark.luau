@@ -17,7 +17,8 @@ function C.words(struck,name,left)
 end
 
 local function stamp(character)
-	local head=character and character:FindFirstChild("Head")
+	-- (the ninja body may hide the avatar's head: fall back on the root)
+	local head=character and (character:FindFirstChild("Head") or character:FindFirstChild("HumanoidRootPart"))
 	if not head then return nil end
 	local old=head:FindFirstChild("NinjaChallenge")
 	if old then old:Destroy() end

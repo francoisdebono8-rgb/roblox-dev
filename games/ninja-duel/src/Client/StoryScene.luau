@@ -27,22 +27,23 @@ function S.new(kit,gui,send)
 	-- the black bars of a cut scene, top and bottom
 	kit.frame(root,UDim2.fromScale(0,0),UDim2.new(1,0,.09,0),M.ink,0).ZIndex=74
 	kit.frame(root,UDim2.new(0,0,.91,0),UDim2.new(1,0,.09,0),M.ink,0).ZIndex=74
-	local bubble=kit.frame(root,UDim2.new(.5,0,.62,0),UDim2.fromOffset(720,150),M.paper,0)
+	-- (seen in the game 26/11: too wide over his ninja) low, narrower, the words bigger
+	local bubble=kit.frame(root,UDim2.new(.5,0,.76,0),UDim2.fromOffset(600,124),M.paper,0)
 	bubble.AnchorPoint=Vector2.new(.5,.5);bubble.ZIndex=75;kit.corner(bubble,54)
 	kit.create("UIStroke",bubble,{Color=M.ink,Thickness=5,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
 	self.pop=kit.create("UIScale",bubble,{Scale=1})
 	local scale=kit.create("UIScale",root,{Scale=1})
 	pcall(function()
-		local function fit() local v=workspace.CurrentCamera.ViewportSize;self.pop.Scale=math.min(1,(v.X-24)/740) end
+		local function fit() local v=workspace.CurrentCamera.ViewportSize;self.pop.Scale=math.min(1,(v.X-24)/620) end
 		workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(fit);fit()
 	end)
 	local tail=kit.frame(bubble,UDim2.new(.18,0,1,-8),UDim2.fromOffset(40,40),M.paper,0);tail.Rotation=40;tail.ZIndex=74
 	kit.create("UIStroke",tail,{Color=M.ink,Thickness=5,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
 	local tab=kit.frame(bubble,UDim2.fromOffset(40,-22),UDim2.fromOffset(280,40),M.ink,0);tab.ZIndex=76;tab.Rotation=-2
 	self.who=kit.text(tab,"",UDim2.fromOffset(12,2),UDim2.new(1,-24,1,-4),26,M.cream,kit.TITLE_FONT);self.who.ZIndex=77
-	self.line=kit.text(bubble,"",UDim2.fromOffset(40,28),UDim2.new(1,-120,1,-44),34,M.ink,kit.VOICE_FONT or kit.BODY_FONT,Enum.TextXAlignment.Center)
+	self.line=kit.text(bubble,"",UDim2.fromOffset(30,24),UDim2.new(1,-110,1,-34),40,M.ink,kit.VOICE_FONT or kit.BODY_FONT,Enum.TextXAlignment.Center)
 	self.line.TextScaled=true;self.line.ZIndex=76
-	kit.create("UITextSizeConstraint",self.line,{MaxTextSize=36,MinTextSize=14})
+	kit.create("UITextSizeConstraint",self.line,{MaxTextSize=42,MinTextSize=16})
 	self.nextButton=kit.button(bubble,"▶",UDim2.new(1,-74,1,-74),UDim2.fromOffset(60,60),function() self:advance() end,M.red)
 	self.nextButton.TextColor3=M.cream;self.nextButton.TextSize=30;self.nextButton.ZIndex=77
 	self.skip=kit.button(root,"SKIP",UDim2.new(1,-150,.09,10),UDim2.fromOffset(130,48),function() self:finish() end,M.paper)
@@ -81,7 +82,7 @@ function S:draw()
 	self.pop.Scale=self.pop.Scale*.85
 	pcall(function()
 		local v=workspace.CurrentCamera.ViewportSize
-		game:GetService("TweenService"):Create(self.pop,TweenInfo.new(.16,Enum.EasingStyle.Back,Enum.EasingDirection.Out),{Scale=math.min(1,(v.X-24)/740)}):Play()
+		game:GetService("TweenService"):Create(self.pop,TweenInfo.new(.16,Enum.EasingStyle.Back,Enum.EasingDirection.Out),{Scale=math.min(1,(v.X-24)/620)}):Play()
 	end)
 end
 function S:advance()
