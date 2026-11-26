@@ -44,6 +44,18 @@ test("weapons keep the part-built frames: grip at the origin, point to the front
  lo,hi=extent("Tanto")
  assert(lo<-1.85 and hi>.5,("tanto %.2f..%.2f"):format(lo,hi))
 end)
+-- (26/11, read in a Play: 3 hair styles never built, « EditableMesh … memory
+-- budget limits ») a refusal passes: the mesh is asked again, then given up
+test("a mesh the memory budget refuses is asked again after a pause, then given up",function()
+ local calls,paused=0,{}
+ local em=MeshKit.editable(function() calls+=1;if calls<3 then return nil end;return "mesh" end,function(t) table.insert(paused,t) end)
+ assert(em=="mesh" and calls==3 and #paused==2,"not asked again: "..calls)
+ calls,paused=0,{}
+ local none=MeshKit.editable(function() calls+=1;error("budget") end,function(t) table.insert(paused,t) end)
+ assert(none==nil and calls==#MeshKit.RETRY+1 and #paused==#MeshKit.RETRY,"never given up: "..calls)
+ local total=0;for _,t in MeshKit.RETRY do total+=t end
+ assert(total<8 and MeshKit.SLOTS>=1 and MeshKit.SLOTS<=MeshKit.WORKERS,"too long a wait, or no slot")
+end)
 test("headless: nothing is built, model() is nil (primitives kept)",function()
  MeshKit.prepare()
  assert(MeshKit.model("Kunai")==nil)

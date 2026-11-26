@@ -83,21 +83,38 @@ function Kit.decode(entry)
 	end
 	return out,w,h
 end
+-- (26/11, read in a Play of the shared place: the 9 textures all refused, «
+-- Failed to create empty EditableImage … memory budget limits », the
+-- built-in stand-ins drawn the whole session) A refusal passes (Client/MeshKit
+-- SLOTS and RETRY): a texture the budget refused is asked again later, a few
+-- times (never waiting: an effect asks for it mid-fight).
+Kit.RETRY_AFTER=4
+Kit.RETRIES=4
+local refused={}
 local function editable(name)
-	if tried[name] then return runtime[name] end
+	local r=refused[name]
+	if tried[name] and not (r and r.n<Kit.RETRIES and os.clock()-r.at>=Kit.RETRY_AFTER) then return runtime[name] end
 	tried[name]=true
+	local budget=false
 	local ok,result=pcall(function()
 		local atlas=require(script.Parent.VfxAtlas)
 		local entry=atlas[name]
 		if not entry then return nil end
 		local pixels,w,h=Kit.decode(entry)
 		local image=game:GetService("AssetService"):CreateEditableImage({Size=Vector2.new(w,h)})
-		if not image then return nil end
+		if not image then budget=true;return nil end
 		image:WritePixelsBuffer(Vector2.zero,Vector2.new(w,h),pixels)
 		dims[name]=Vector2.new(w,h)
 		return Content.fromObject(image)
 	end)
 	runtime[name]=if ok then result else nil
+	if not ok and string.find(string.lower(tostring(result)),"budget",1,true) then budget=true end
+	if budget then
+		refused[name]={n=(r and r.n or 0)+1,at=os.clock()}
+		Kit.refused=(Kit.refused or 0)+1
+	else
+		refused[name]=nil
+	end
 	return runtime[name]
 end
 function Kit.has(name)

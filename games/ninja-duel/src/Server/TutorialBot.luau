@@ -97,7 +97,9 @@ local function scripts(s,wait,alive)
 		local t0=os.clock()
 		while alive() and os.clock()-t0<4 do
 			local b=B()
-			if b.attackName=="Heavy" and b.state=="Startup" and c.now-(b.attackStarted or c.now)>.12 then
+			-- (26/11, the robot: Lion STUCK here; his partner Sand's heavy is
+			-- SandHand, 0.24 s of wind-up) whatever heavy the partner throws
+			if b.attackName~=nil and b.state=="Startup" and c.now-(b.attackStarted or c.now)>.1 then
 				stick(toward():Cross(Vector3.yAxis));press("Dodge");wait(.6);stick(Vector3.zero);return
 			end
 			wait(.02)
@@ -131,6 +133,14 @@ local function scripts(s,wait,alive)
 	end
 	S.awaken=function() press("Awaken");wait(1) end
 	S.ultimate=function() press("Ultimate");wait(1.5) end
+	-- (26/11, the tutorial robot: sealPage STUCK for every kit, no script here)
+	-- The second page: the first seal jutsu, one press aimed at him (one that
+	-- follows a launch: the launcher first).
+	S.sealPage=function()
+		local spec=A().def.SealJutsu and A().def.SealJutsu[1]
+		if spec and spec.FollowsLaunch then chain(2,.28);stick(toward());press("Attack");wait(.35);stick(Vector3.zero) end
+		press("Seal1",B().root.Position);wait(1.6)
+	end
 	return S
 end
 

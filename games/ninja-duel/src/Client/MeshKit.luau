@@ -106,23 +106,48 @@ local function fromAsset(spec)
 	local part=AssetService:CreateMeshPartAsync(Content.fromUri(spec.asset),{CollisionFidelity=Enum.CollisionFidelity.PreciseConvexDecomposition})
 	return part
 end
-local function build(spec)
-	local AssetService=game:GetService("AssetService")
-	if spec.asset then
-		local ok,part=pcall(fromAsset,spec)
-		if ok and part then
-			part.Name=spec.name
-			part.Anchored=true;part.CanCollide=false;part.CanQuery=false;part.CanTouch=false;part.CastShadow=false
-			part.Color=Color3.new(1,1,1)
-			part.Material=MATERIAL[spec.mat] or Enum.Material.SmoothPlastic
-			part.Transparency=spec.alpha or 0
-			part.Reflectance=spec.reflect or 0
-			part.Size=Vector3.new(spec.h[1]*2,spec.h[2]*2,spec.h[3]*2)
-			MeshKit.fromAssets=(MeshKit.fromAssets or 0)+1
-			return part
-		end
+-- (26/11, read in a Play of the shared place: MeshKit itself all baked, 339
+-- pieces, but 3 hair styles of the outfit never built and the 9 VfxKit
+-- textures neither; « Failed to create empty EditableMesh/EditableImage …
+-- memory budget limits » about 30 times a Play) The budget is shared by every
+-- live EditableMesh and EditableImage of the machine (other Studio windows
+-- included) and a refusal passes: the village's 4 builders, the outfits and
+-- Konoha's props asked at the same moment. A few meshes are made at a time
+-- (MeshKit.SLOTS, across every caller), and a refused one is asked again after
+-- a pause (MeshKit.RETRY) before the piece is given up.
+MeshKit.SLOTS=3
+MeshKit.RETRY={.3,.8,1.6,3}
+MeshKit.busy=0
+function MeshKit.editable(create,pause)
+	pause=pause or task.wait
+	for i=0,#MeshKit.RETRY do
+		local ok,em=pcall(create)
+		if ok and em then return em end
+		MeshKit.refused=(MeshKit.refused or 0)+1
+		local wait=MeshKit.RETRY[i+1]
+		if wait then pause(wait) end
 	end
-	local em=AssetService:CreateEditableMesh({})
+	return nil
+end
+local function slot(pause)
+	pause=pause or task.wait
+	while MeshKit.busy>=MeshKit.SLOTS do pause() end
+	MeshKit.busy+=1
+end
+-- A MeshPart template as every caller wants it (the authored size kept: the
+-- mesh's bounds are the packed half extents).
+local function finish(part,spec)
+	part.Name=spec.name
+	part.Anchored=true;part.CanCollide=false;part.CanQuery=false;part.CanTouch=false;part.CastShadow=false
+	part.Color=Color3.new(1,1,1)
+	part.Material=MATERIAL[spec.mat] or Enum.Material.SmoothPlastic
+	part.Transparency=spec.alpha or 0
+	part.Reflectance=spec.reflect or 0
+	part.Size=Vector3.new(spec.h[1]*2,spec.h[2]*2,spec.h[3]*2)
+	return part
+end
+-- The packed vertices, colours and normals into an EditableMesh.
+local function fill(em,spec)
 	local pos,col,tri=MeshKit.unpack(spec)
 	local ids,cols=table.create(#pos),table.create(#pos)
 	for i,p in pos do
@@ -159,31 +184,43 @@ local function build(spec)
 			em:SetFaceNormals(f,list)
 		end
 	end
+end
+local function fromEditable(spec)
+	local AssetService=game:GetService("AssetService")
+	local em=MeshKit.editable(function() return AssetService:CreateEditableMesh({}) end)
+	if not em then error("EditableMesh refused (memory budget): "..tostring(spec.name),0) end
 	-- (14/11, CM QA: « Failed to create empty EditableMesh … memory budget » at
 	-- every Play) A client holds only a handful of live EditableMeshes, and a
 	-- MeshPart made straight from one keeps it alive: the budget ran out after
 	-- a few pieces. Each piece is baked into static content
 	-- (AssetService:CreateDataModelContentAsync) and its EditableMesh freed;
 	-- only where baking is unavailable is the live mesh kept (as before).
-	local part
-	local okBake,result,content=pcall(function() return AssetService:CreateDataModelContentAsync(Content.fromObject(em)) end)
-	if okBake and result==Enum.CreateContentResult.Success and content then
-		part=AssetService:CreateMeshPartAsync(content)
-		em:Destroy()
-		MeshKit.baked=(MeshKit.baked or 0)+1
-	else
-		part=AssetService:CreateMeshPartAsync(Content.fromObject(em))
+	-- (26/11) a mesh that fails on the way is freed too (it held the budget)
+	local ok,part=pcall(function()
+		fill(em,spec)
+		local okBake,result,content=pcall(function() return AssetService:CreateDataModelContentAsync(Content.fromObject(em)) end)
+		if okBake and result==Enum.CreateContentResult.Success and content then
+			local baked=AssetService:CreateMeshPartAsync(content)
+			em:Destroy()
+			MeshKit.baked=(MeshKit.baked or 0)+1
+			return baked
+		end
 		MeshKit.live=(MeshKit.live or 0)+1
-	end
-	part.Name=spec.name
-	part.Anchored=true;part.CanCollide=false;part.CanQuery=false;part.CanTouch=false;part.CastShadow=false
-	part.Color=Color3.new(1,1,1)
-	part.Material=MATERIAL[spec.mat] or Enum.Material.SmoothPlastic
-	part.Transparency=spec.alpha or 0
-	part.Reflectance=spec.reflect or 0
-	-- the mesh's bounds are the packed half extents: keep the authored size
-	part.Size=Vector3.new(spec.h[1]*2,spec.h[2]*2,spec.h[3]*2)
+		return AssetService:CreateMeshPartAsync(Content.fromObject(em))
+	end)
+	if not ok then pcall(function() em:Destroy() end);error(part,0) end
 	return part
+end
+local function build(spec)
+	if spec.asset then
+		local ok,part=pcall(fromAsset,spec)
+		if ok and part then MeshKit.fromAssets=(MeshKit.fromAssets or 0)+1;return finish(part,spec) end
+	end
+	slot()
+	local ok,part=pcall(fromEditable,spec)
+	MeshKit.busy-=1
+	if not ok then error(part,0) end
+	return finish(part,spec)
 end
 
 -- (DEC-040) One packed piece built on its own (the ninja outfit's pieces,
