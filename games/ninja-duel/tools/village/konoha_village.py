@@ -664,7 +664,62 @@ class Village(K.Plan):
         self.lamps_clear()
         self.bridge_pass()
         self.race = race_route(self)
+        # after the race: its rings and its route stay the seed's
+        self.landmark_links()
         return self
+
+    # -- (26/11, passe 3, DEC-055: « des routes sur les toits de bout en bout, porte -> salle de
+    #    l'Examen sans toucher le sol ») The tournament's landmarks are reached over the roofs:
+    #    the exam hall's wings, from the nearest row's roof across the street before it (a
+    #    longer walkway than a lane's: measured in Studio, the hall stood 25.5 base studs from
+    #    the roofs, past the second jump's 22.3).
+    LINKS = ("ExamHallWest", "ExamHallEast")
+    LINK_REACH = 28.0      # base studs, roof edge to roof edge
+    LINK_RISE = 6.0        # at most this much higher at the landmark's end
+    LINK_OVERLAP = 3.5     # facing each other at least this wide
+
+    def landmark_links(self):
+        """Each landmark of LINKS gets one walkway from the nearest roof it cannot be jumped to
+        from (farther than the second jump, LEAP_GAP), within LINK_REACH, facing it at least
+        LINK_OVERLAP wide, never over an open place."""
+        if not self.with_bridges:
+            return
+        for lid in self.LINKS:
+            mark = next((b for b in self.buildings if b.get("id") == lid), None)
+            if not mark:
+                continue
+            rm = mark["rect"]
+            options = []
+            for b in self.buildings:
+                if b.get("landmark") or b["h"] < 10 or abs(mark["h"] - b["h"]) > self.LINK_RISE:
+                    continue
+                rb = b["rect"]
+                tb, tm = b["h"] + 1, mark["h"] + 1
+                for along_z in (True, False):
+                    lo, hi = (max(rb[0], rm[0]), min(rb[2], rm[2])) if along_z else (max(rb[1], rm[1]), min(rb[3], rm[3]))
+                    if hi - lo < self.LINK_OVERLAP:
+                        continue
+                    c, width = (lo + hi) / 2, min(3.0, hi - lo - .5)
+                    lo_b, hi_b, lo_m, hi_m = (rb[1], rb[3], rm[1], rm[3]) if along_z else (rb[0], rb[2], rm[0], rm[2])
+                    if hi_b <= lo_m:
+                        gap, pb, pm = lo_m - hi_b, hi_b - 1, lo_m + 1
+                    elif hi_m <= lo_b:
+                        gap, pb, pm = lo_b - hi_m, lo_b + 1, hi_m - 1
+                    else:
+                        continue
+                    if not (LEAP_GAP < gap <= self.LINK_REACH):
+                        continue
+                    if along_z:
+                        br = dict(x0=c, z0=pb, top0=tb, x1=c, z1=pm, top1=tm, width=width)
+                    else:
+                        br = dict(x0=pb, z0=c, top0=tb, x1=pm, z1=c, top1=tm, width=width)
+                    options.append((gap, br))
+            options.sort(key=lambda t: t[0])
+            for gap, br in options:
+                if self.bridge_clear(br):
+                    br["link"] = lid
+                    self.bridges.append(br)
+                    break
 
 
 def current_plan():

@@ -1061,6 +1061,10 @@ M.Bridges={
 	{231.5,-183.7,11.3,248.4,-183.7,11.7,3},
 	{-48.5,-186.3,19.2,-31.5,-186.3,20.7,3},
 	{31.5,-186.3,21.7,48.5,-186.3,22.3,3},
+	-- (26/11, passe 3, DEC-055: the exam hall reached over the roofs) the landmarks' walkways
+	-- (konoha_village.py landmark_links), written in without regenerating the rest of the file
+	{-42.9,-19.5,14.7,-42.9,-47,19,3},
+	{73,-54.4,19.2,44,-54.4,19,3},
 }
 -- (23/11, the OUTILLEUR's bot stuck between the hospital and a tower) A crack beside a
 -- landmark too narrow to walk, walled up: {x0, z0, x1, z1, top} (Server/Hub's Fill).

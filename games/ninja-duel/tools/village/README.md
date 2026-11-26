@@ -116,6 +116,11 @@ Le générateur ne touche qu'au tissu entre ces repères : les maisons, les pass
 
 `write` refuse d'écrire un candidat dont la note ne dépasse pas celle du plan du jeu.
 
+**Passe 3 (26/11, DEC-055 : « porte → salle de l'Examen sans toucher le sol »)** : une passe `landmark_links`, après la course des toits, qui ne la change donc pas.
+- Chaque aile de la salle de l'Examen reçoit une passerelle venue du toit le plus proche, quand ce toit est plus loin que le second saut (22,3), à 28 au plus, et jamais au-dessus d'une place ouverte.
+- Mesuré dans Studio : la salle était à 25,5 studs de base des toits de la ville, il n'y avait pas de route. Sur la graine 13, deux passerelles sont ajoutées : l'aile ouest par-dessus l'Avenue, l'aile est depuis le quartier du Hokage. La note passe de 8,67 à 8,68.
+- Les deux lignes sont écrites à la main à la fin de `M.Bridges`, sans réécrire le fichier. Une réécriture complète (`write`) ajouterait 5 modèles du catalogue (edo_townhouse…) et perdrait la ligne `Forest` des lieux (DEC-054), écrite à la main elle aussi : il faut la remettre après un `write`.
+
 ## Les commandes
 
 Depuis `games/ninja-duel` :

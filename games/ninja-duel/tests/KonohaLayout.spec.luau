@@ -192,4 +192,23 @@ test("the village wall: higher than the tallest roof plus a jump and its leap",f
 	end
 end)
 
+-- (26/11, passe 3, DEC-055: « porte -> salle de l'Examen sans toucher le sol ») measured in
+-- Studio, the hall's roofs stood 25.5 base studs from the town's, past the second jump: a
+-- walkway joins each wing to a roof
+test("the exam hall's wings are reached over the roofs: a walkway lands on each",function()
+	for _,id in {"ExamHallWest","ExamHallEast"} do
+		local wing
+		for _,b in K.Buildings do if b[9]==id then wing=b end end
+		assert(wing,id.." is not in the plan")
+		local x0,z0,x1,z1=rect(wing)
+		local found=false
+		for _,br in K.Bridges do
+			for _,e in {{br[1],br[2],br[3]},{br[4],br[5],br[6]}} do
+				if inRect(e[1],e[2],x0,z0,x1,z1) and math.abs(e[3]-(wing[6]+1))<.6 then found=true end
+			end
+		end
+		assert(found,"no walkway lands on "..id)
+	end
+end)
+
 print(("%d tests passed"):format(passed))
