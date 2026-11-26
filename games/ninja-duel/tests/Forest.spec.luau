@@ -131,6 +131,22 @@ test("bare: strikes, guard, dodge, jump and grab answer; no technique, tool, awa
 	assert(ok~=false,"the strike: "..tostring(why))
 end)
 
+-- (26/11, passe 3, seen in the game) a walker without a kit who strikes a
+-- rogue fights him bare-handed, not through the 30 steps of a training
+test("a rogue's fight without a kit: bare hands, no lesson, no technique",function()
+	local m=Matches.new(remote)
+	local player=fakePlayer(43)
+	m:selection(player)
+	assert(m:thugFight(player,"Sand","Residences","novice"),"no rogue fight")
+	local s=m.sessions[player]
+	assert(s.phase=="Duel" and s.bare==true and s.tutorial==nil,"a training in the rogue's fight")
+	assert(s.bot.rogue==true,"the rogue")
+	local snap=m:view(s,s,s.human,s.bot)
+	assert(snap.bare==true and #snap.human.techniques==0,"techniques shown in the bare fight")
+	m:selection(player)
+	assert(s.bare==nil,"bare hands kept after the fight")
+end)
+
 test("the way in: the walk, the bandit there and then, a very short fight, the path, the gate's foot, Konoha",function()
 	local m=Matches.new(remote)
 	local player=fakePlayer(42)

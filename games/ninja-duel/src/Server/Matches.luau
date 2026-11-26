@@ -151,9 +151,14 @@ function Matches:thugFight(player,kit,key,level)
 	s.thug={kit=kit,key=key}
 	if type(level)=="string" and Matches.LEVELS[level] then s.aiLevel=level end
 	s.nextSite=self:freeVillageSite(player,key,s) or self:nearSite(player,s)
-	local ok=self:start(player,own or "Leaf",kit,own==nil)
+	-- (26/11, passe 3, seen in the game: a walker without a kit struck a rogue
+	-- and got the 30 steps of THE HARD WORKER's training in the racket's
+	-- fight) without a kit, a fight with bare hands, as against the forest's
+	-- bandit: the kit's blows, no technique, no lesson
+	if own==nil then s.bare=true;s.techniquesDisabled=true end
+	local ok=self:start(player,own or "Leaf",kit,false,if own==nil then {} else nil)
 	s.nextSite=nil
-	if ok==false then s.thug=nil;return false end
+	if ok==false then s.thug=nil;s.bare=nil;s.techniquesDisabled=nil;return false end
 	-- (26/11, passe 2) a rogue, not the prodigy whose moves he stole
 	if s.bot then
 		s.bot.displayName="ROGUE NINJA";s.bot.displaySub=Text.upper(KitTexts.name(kit)).."'S MOVES";s.bot.rogue=true
@@ -410,6 +415,8 @@ function Matches:selection(player,notice)
 	-- Back on the roster: a tournament in progress ends here.
 	s.cup=nil;s.cupMatch=nil;s.spectate=nil;s.autopilot=nil;s.cupPilot=nil
 	s.masterTrial=nil
+	-- (26/11, passe 3) a bare-handed fight (the bandit, a rogue without a kit) ends here
+	s.bare=nil;s.techniquesDisabled=nil
 	local view=Progression.view(player)
 	self:send(player,{phase="Selection",epoch=s.epoch,notice=notice,kits=view})
 	-- (DEC-038) Between duels the player walks Konoha as his own avatar:
