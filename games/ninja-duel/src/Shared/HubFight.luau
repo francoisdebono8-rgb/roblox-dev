@@ -38,7 +38,7 @@ HubFight.SLOW_SPEED=5
 HubFight.GUARD_SPEED=7
 -- A player struck: his answer within this long starts the duel; the same two
 -- not again before the cooldown.
-HubFight.CHALLENGE_WINDOW=6
+HubFight.CHALLENGE_WINDOW=5
 HubFight.CHALLENGE_COOLDOWN=10
 -- A broken prop is put back after this long without a new blow nearby.
 HubFight.RESTORE=25

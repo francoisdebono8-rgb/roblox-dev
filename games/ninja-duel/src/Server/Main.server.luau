@@ -36,6 +36,8 @@ matches.lobby=lobby
 -- (26/11, passe 3, DEC-055) his kit in the street: the moves of the walkers,
 -- the blows that land, the challenge by a blow (Server/HubFight)
 pcall(function() require(script.Parent.HubFight).start(matches) end)
+-- (26/11, passe 3, STORY-001) the Ōtsutsuki waiting in the exam hall
+pcall(function() require(script.Parent.StoryPlay).start(matches) end)
 remote.OnServerEvent:Connect(function(player,payload) matches:request(player,payload) end)
 Players.PlayerAdded:Connect(function(player) matches:selection(player);lobby:track(player) end)
 Players.PlayerRemoving:Connect(function(player) lobby:untrack(player);matches:remove(player) end)

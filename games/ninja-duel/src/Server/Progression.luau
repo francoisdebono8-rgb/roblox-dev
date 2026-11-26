@@ -34,6 +34,8 @@ local Merit=require(Shared.Merit)
 -- (21/11, DEC-047) the personalization looks: titles, auras, frames earned
 local Style=require(Shared.CatalogStyle)
 local NinjaTree=require(Shared.NinjaTree)
+-- (26/11, passe 3, STORY-001) the Ōtsutsuki's tournament
+local Story=require(Shared.Story)
 -- (20/11) the leaderboards, when the server runs them (Server/Leaderboards)
 local function boards()
 	local ok,L=pcall(function() return require(script.Parent.Leaderboards).current end)
@@ -88,6 +90,7 @@ function P.load(player)
 		return nil
 	end
 	P.handles[player]=h;P.states[player]="ready"
+	pcall(P.storyMark,player)
 	P.earnLooks(player)
 	P.badges(player)
 	local pass=P.config().MasteryPass or 0
@@ -170,6 +173,8 @@ function P.view(player)
 	-- (24/11, the CM's series § 3.4) the board of the eight in Konoha: the
 	-- inspirations whose challenge he won, toward STUDENT OF THE EIGHT
 	out.challenges8=P.challenges8(h.data.solo)
+	-- (26/11, passe 3, STORY-001) his chapter of the Ōtsutsuki's tournament
+	out.story=P.storyOf(h.data,P.now())
 	return out
 end
 -- (19/11, plan § 2 « la séance » and DEV 6; OUTILLEUR in Studio: the result
@@ -278,6 +283,8 @@ function P.run(player,kind,args)
 		local m=h.data.kits and h.data.kits.mastery and h.data.kits.mastery[args.fighter]
 		if L and type(m)=="number" then L:submit("Kit_"..args.fighter,player,m) end
 	end
+	-- (STORY-001) the chapter follows what the profile says, whatever changed it
+	if ok and kind~="gainMastery" and kind~="earnRyo" and P.storyMark then pcall(P.storyMark,player) end
 	return ok,result
 end
 function P.chooseStarter(player,id) return P.run(player,"chooseStarter",{fighter=id}) end
@@ -487,6 +494,64 @@ end
 function P.examRecord(player)
 	local h=P.handles[player]
 	return h and h.data.exam
+end
+-- (26/11, passe 3, STORY-001, DEC-055) The Ōtsutsuki's tournament
+-- (Shared/Story): his chapter, worked out from the profile `data` at `now`.
+function P.storyOf(data,now)
+	if type(data)~="table" then return nil end
+	local kits=data.kits or {}
+	local exam=Exam.view(data.exam,now)
+	return Story.of({
+		intro=data.intro==true or kits.selected~=nil,
+		starter=kits.starter or kits.selected,
+		beaten=data.solo and data.solo.beaten,
+		order=require(Shared.KitTexts).Order,
+		record=data.story,
+		examWon=exam and exam.passed==true,
+		week=Exam.current(now).key,
+	})
+end
+function P.story(player)
+	local h=P.handles[player]
+	return h and P.storyOf(h.data,P.now()) or nil
+end
+-- His chapter on the player, for the journal in Konoha's HUD (the DESIGN):
+-- NinjaChapter (0 to 5), NinjaSeals (the eight's challenges won),
+-- NinjaStoryNext (Story.nextString: "challenge:Lion", "exam", "final"…),
+-- NinjaFinalOpen (the Ōtsutsuki fights him now), NinjaStoryScene (a scene of
+-- bubbles not seen yet, or nil).
+function P.storyMark(player)
+	local v=P.story(player)
+	if not v then return nil end
+	local function set(name,value) if player:GetAttribute(name)~=value then player:SetAttribute(name,value) end end
+	set("NinjaChapter",v.n)
+	set("NinjaSeals",v.seals)
+	set("NinjaStoryNext",Story.nextString(v))
+	set("NinjaFinalOpen",v.final.open==true)
+	set("NinjaStoryScene",v.scene)
+	return v
+end
+-- The Exam's bracket won (Server/Tournament): the final is open.
+function P.storyExam(player)
+	if not P.enabled() or not P.ready(player) then return nil end
+	local ok,result=P.run(player,"storyExam",{})
+	if ok and P.repo then pcall(P.repo.save,P.repo,P.handles[player]) end
+	return if ok then result else nil
+end
+-- A final against the Ōtsutsuki decided (Server/Matches).
+function P.storyFinal(player,won)
+	if not P.enabled() or not P.ready(player) then return nil end
+	local ok,result=P.run(player,"storyFinal",{week=Exam.current(P.now()).key,won=won==true})
+	if ok and won and P.repo then pcall(P.repo.save,P.repo,P.handles[player]) end
+	return if ok then result else nil
+end
+-- A scene of bubbles seen or skipped (the client, Matches' StorySeen).
+function P.storySeen(player,scene)
+	if not P.enabled() or not P.ready(player) then return nil end
+	local v=P.story(player)
+	if not v or v.scene~=scene then return nil end
+	local ok,result=P.run(player,"storySeen",{scene=scene,week=Exam.current(P.now()).key})
+	return if ok then result else nil
 end
 -- (DEC-040) Mastery and Ryō for the kit `kit`: `amount` of mastery (the
 -- boost doubles it) and `ryo`. The result screen's table, or nil.

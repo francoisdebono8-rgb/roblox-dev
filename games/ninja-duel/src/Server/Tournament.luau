@@ -289,6 +289,9 @@ function Tournament:advance(player,s)
 			if not Exam.config().Enabled then pcall(function() require(script.Parent.ChampionCliff).champion(player) end) end
 			-- (DEC-040) the champion's bonus to his kit, and his Ryō
 			if not cup.reward then cup.reward=require(script.Parent.Progression).cupEnded(player,cup.seats[cup.me],true) end
+			-- (26/11, passe 3, STORY-001) the Exam's bracket won: the
+			-- Ōtsutsuki's final is open (Shared/Story, chapter 4)
+			if not cup.story then cup.story=true;pcall(function() require(script.Parent.Progression).storyExam(player) end) end
 			s.epoch+=1
 			s.autopilot=nil;s.spectate=nil;s.cupPilot=nil
 			self.matches:destroy(s)

@@ -261,7 +261,7 @@ end
 -- lastWord: progress.challenge/thug/forest.say {who, line}), or nil.
 function UI.lastWord(progress)
 	if type(progress)~="table" then return nil end
-	for _,k in {"challenge","thug","forest"} do
+	for _,k in {"final","challenge","thug","forest"} do
 		local p=progress[k]
 		local say=type(p)=="table" and p.say or nil
 		if type(say)=="table" and type(say.line)=="string" and say.line~="" then

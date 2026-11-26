@@ -32,7 +32,7 @@ function SoloPlay.new(matches,deps)
 	deps=deps or {}
 	local self=setmetatable({matches=matches,runs={},challenge=nil,nextChallenge=nil,nextSample=0,
 		-- injected for the suite
-		bodies=deps.bodies,pay=deps.pay,rig=deps.rig,random=deps.random or math.random},SoloPlay)
+		bodies=deps.bodies,pay=deps.pay,rig=deps.rig,random=deps.random or math.random,beaten=deps.beaten},SoloPlay)
 	return self
 end
 
@@ -183,6 +183,23 @@ function SoloPlay.challengers(own)
 	table.sort(out)
 	return out
 end
+-- (26/11, passe 3, STORY-001: the eight seals) The inspirations whose
+-- challenge he already won (kit -> true).
+function SoloPlay:beatenOf(player)
+	if self.beaten then return self.beaten(player) or {} end
+	local ok,out=pcall(function()
+		local h=require(script.Parent.Progression).handles[player]
+		return h and h.data.solo and h.data.solo.beaten
+	end)
+	return ok and out or {}
+end
+-- (pure) The kits that may come for him now: the ones he has not beaten yet
+-- (his next seals), all of them once he has the eight.
+function SoloPlay.forSeals(kits,beaten)
+	local out={}
+	for _,kit in kits do if not (beaten and beaten[kit]) then table.insert(out,kit) end end
+	return if #out>0 then out else kits
+end
 -- One inspiration in the street at a time: he comes when the last one is gone
 -- for `every` s, near a walker, and leaves after `stay` s if nobody accepts.
 function SoloPlay:challengeStep(now)
@@ -202,7 +219,7 @@ function SoloPlay:challengeStep(now)
 	local site=root and self:siteNear(root.Position)
 	if not site then self.nextChallenge=now+10;return end
 	local own=who:GetAttribute("NinjaKit")
-	local kits=SoloPlay.challengers(own)
+	local kits=SoloPlay.forSeals(SoloPlay.challengers(own),self:beatenOf(who))
 	local kit=kits[self.random(1,#kits)]
 	self.challenge={kit=kit,site=site,at=now,leaveAt=now+Solo.Challenge.stay,line=Solo.Challenge.lines[kit]}
 	self:showChallenger(self.challenge,root.Position)

@@ -8,6 +8,7 @@
 --   a rogue          his street fight (Server/Thugs)
 --   a challenger     the inspiration's challenge (Server/SoloPlay)
 --   the bandit       the forest's fight (Server/Forest)
+--   the Ōtsutsuki    the final, when it is his (Server/StoryPlay)
 --   the dummy        it takes the blow
 --   the world        a crate or a stump cracks, then breaks (WorldReaction),
 --                    put back a little later
@@ -39,6 +40,11 @@ local function tell(at,kind,heavy,extra)
 	end
 end
 HubFight.tell=tell
+-- A word to one player alone (Server/StoryPlay: the Ōtsutsuki not open yet).
+function HubFight.say(player,at,title,text)
+	if not impactRemote or typeof(at)~="Vector3" then return end
+	impactRemote:FireClient(player,{at=at,kind="say",title=title,text=text})
+end
 
 -- The village's own world memory (WorldReaction's combat context, without a
 -- duel): what a blow breaks, its marks, put back after Rules.RESTORE.
@@ -127,7 +133,7 @@ function HubFight.land(player,character,move,now)
 	for _,part in parts do
 		local d=(part.Position-root.Position).Magnitude
 		local model=modelOf(part)
-		local person=model and model~=character and (Players:GetPlayerFromCharacter(model)~=nil or model:GetAttribute("NinjaChallenge")~=nil
+		local person=model and model~=character and (Players:GetPlayerFromCharacter(model)~=nil or model:GetAttribute("NinjaChallenge")~=nil or model:GetAttribute("NinjaBoss")~=nil
 			or model:GetAttribute("NinjaForestBandit")~=nil or model:GetAttribute("NinjaThug")~=nil or model:FindFirstChildOfClass("Humanoid")~=nil)
 		if person then
 			if d<bestD then best,bestD,bestModel=part,d,model end
@@ -158,6 +164,12 @@ function HubFight.land(player,character,move,now)
 			tell(at,"hit",heavy)
 			if Forest.of(player)=="forest" then pcall(Forest.fight,player) end
 			return "bandit"
+		end
+		-- (STORY-001) the Ōtsutsuki waiting in the hall: struck, he answers
+		if bestModel:GetAttribute("NinjaBoss") then
+			tell(at,"hit",heavy)
+			pcall(function() require(script.Parent.StoryPlay).face(player) end)
+			return "boss"
 		end
 		local kit=bestModel:GetAttribute("NinjaChallenge")
 		if type(kit)=="string" then

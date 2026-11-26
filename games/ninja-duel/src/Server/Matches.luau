@@ -30,6 +30,8 @@ local Zones=require(script.Parent.Zones)
 local FirstMinute=require(Shared.FirstMinute)
 local KitTexts=require(Shared.KitTexts)
 local Text=require(Shared.Text)
+-- (26/11, passe 3, STORY-001) the Ōtsutsuki's tournament
+local Story=require(Shared.Story)
 local Matches={}; Matches.__index=Matches
 -- (DEC-038) Konoha between duels (Server/Hub), when the village is built.
 local Hub=require(script.Parent.Hub)
@@ -166,6 +168,43 @@ function Matches:thugFight(player,kit,key,level)
 	end
 	return true
 end
+-- (26/11, passe 3, STORY-001, DEC-055) The final of the Ōtsutsuki's
+-- tournament: him, on the exam hall's floor, with the walker's own kit; two
+-- rounds won take it; his blows harder each final he lost (Story.strength).
+-- Open in chapter 4 and each week after (Progression.story: final.open).
+-- Returns whether it started, and why not.
+function Matches:finalFight(player)
+	local s=self.sessions[player]
+	if not s or s.phase~="Selection" or s.finishing then return false,"busy" end
+	local story=Progression.story(player)
+	if not story or not story.final.open then return false,"not yet" end
+	local view=Progression.view(player)
+	local own=view and view.selected and Progression.owns(player,view.selected) and view.selected or nil
+	if not own then return false,"no kit" end
+	local B=Story.BOSS
+	local d=Story.site(HubMap.Scale)
+	if not self:siteFree(d.key,s) then return false,"taken" end
+	s.masterTrial=nil;s.firstStage=nil;s.challenge=nil;s.thug=nil;s.firstFight=nil;s.coach=nil
+	s.final={level=story.final.level,won=story.final.won}
+	s.aiLevel=B.level
+	s.nextSite={key=d.key,origin=HubMap.Origin+d.at,radius=d.radius,place=d.place,street=true,axis=d.axis,start=d.start,final=true}
+	local ok=self:start(player,own,B.kit,false)
+	s.nextSite=nil
+	if ok~=true then s.final=nil;return false,"start" end
+	s.roundsToWin=2
+	if s.bot then
+		s.bot.displayName=B.name;s.bot.displaySub=B.sub
+		s.bot.outScale=(s.bot.outScale or 1)*story.final.level
+		-- (the ANIMATEUR's model dresses the body this marks, as the rogues')
+		pcall(function() s.bot.model:SetAttribute("NinjaBoss","Otsutsuki") end)
+	end
+	local D=Matches.Dare
+	local before=Matches.lastWord("finalBefore",nil,false)
+	s.dare={kit=B.kit,who=B.name,line=before and before.line or B.before,lineFor=D.line,vsFor=D.vs,at=s.combat.now}
+	s.introUntil=s.combat.now+D.line+D.vs+(Config.IntroBegin or .75)
+	self:snapshot(player,s)
+	return true
+end
 -- (26/11, the CM's Shared/Banter) The other's last word on the result screen
 -- (Client/UI.lastWord): the forest's bandit, a rogue, an inspiration who dared
 -- him; `won`: the player won. {who, line} or nil.
@@ -180,6 +219,12 @@ function Matches.lastWord(kind,kit,won)
 		elseif kind=="thug" then
 			local T=Banter.Thugs
 			return {who=require(script.Parent.Thugs).NAME,line=if won then one(T.lost) else one(T.won)}
+		elseif kind=="final" or kind=="finalBefore" then
+			-- (STORY-001) the Ōtsutsuki: before the final, beaten, winning
+			local O=Banter.Otsutsuki
+			if type(O)~="table" then return nil end
+			local line=if kind=="finalBefore" then one(O.before) elseif won then one(O.lose) else one(O.win)
+			return {who=Story.BOSS.name,line=line}
 		elseif kind=="challenge" then
 			local I=Banter.Inspirations[kit]
 			if not I then return nil end
@@ -417,6 +462,8 @@ function Matches:selection(player,notice)
 	s.masterTrial=nil
 	-- (26/11, passe 3) a bare-handed fight (the bandit, a rogue without a kit) ends here
 	s.bare=nil;s.techniquesDisabled=nil
+	-- (STORY-001) and the Ōtsutsuki's final
+	s.final=nil
 	local view=Progression.view(player)
 	self:send(player,{phase="Selection",epoch=s.epoch,notice=notice,kits=view})
 	-- (DEC-038) Between duels the player walks Konoha as his own avatar:
@@ -611,6 +658,13 @@ function Matches:roundOver(s,winner,notify,advance)
 			local okT,purse=pcall(require(script.Parent.Thugs).ended,s.owner,won)
 			s.progress.thug={kit=s.thug.kit,won=won,ryo=okT and purse or 0,say=Matches.lastWord("thug",s.thug.kit,won)}
 			s.thug=nil
+		end
+		-- (26/11, STORY-001) the Ōtsutsuki's final, decided
+		if s.final then
+			local r=Progression.storyFinal(s.owner,won)
+			local say=Matches.lastWord("final",nil,won) or {who=Story.BOSS.name,line=if won then Story.BOSS.lose else Story.BOSS.win}
+			s.progress.final={won=won,count=r and r.final or nil,say=say}
+			s.final=nil
 		end
 		-- (21/11, DEC-047) an inspiration's challenge in the street, decided
 		if s.challenge and self.solo then
@@ -878,7 +932,7 @@ function Matches:view(s,cursor,mine,theirs)
 		-- (DEC-037) the masters' path: mastery gained, a kit learned, the master being fought.
 		progress=s.progress,master=s.masterTrial,
 		-- (15/11) a duel in the village: where it is fought (the banner says it)
-		site=if s.site then {key=s.site.key,place=s.site.place,radius=s.site.radius,street=s.site.street,forest=s.site.forest} else nil,
+		site=if s.site then {key=s.site.key,place=s.site.place,radius=s.site.radius,street=s.site.street,forest=s.site.forest,final=s.site.final} else nil,
 		-- (24/11) an inspiration's challenge: his dare, then the VS card, during
 		-- the first round's intro (Matches.challengeStart); `at` server time
 		dare=if s.dare and (s.round or 1)==1 and (s.introUntil or 0)>now then s.dare else nil,
@@ -1058,6 +1112,19 @@ function Matches:request(player,payload)
 				pcall(function() game:GetService("MarketplaceService"):PromptProductPurchase(player,product) end)
 			end
 		end
+		return
+	end
+	-- (26/11, passe 3, STORY-001) the story's scene of bubbles seen or skipped
+	-- (the DESIGN's screen); the Ōtsutsuki faced (his prompt in the hall)
+	if action=="StorySeen" then
+		if type(payload.scene)=="string" then pcall(Progression.storySeen,player,payload.scene) end
+		return
+	end
+	if action=="StoryFinal" then
+		if s.phase~="Selection" or not Matches.hubOn() then return end
+		if clock-s.lastLifecycle<0.8 then return end
+		s.lastLifecycle=clock
+		pcall(function() require(script.Parent.StoryPlay).face(player) end)
 		return
 	end
 	-- (21/11, étape 3 DEV 4, DEC-047) the things to do alone in Konoha

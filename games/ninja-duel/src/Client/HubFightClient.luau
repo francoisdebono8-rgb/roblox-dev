@@ -12,6 +12,7 @@ local Players=game:GetService("Players")
 local UIS=game:GetService("UserInputService")
 local Shared=game:GetService("ReplicatedStorage").NinjaDuel
 local Rules=require(Shared.HubFight)
+local Text=require(Shared.Text)
 
 local Fight={}
 Fight.__index=Fight
@@ -129,6 +130,14 @@ function Fight.impact(payload)
 	if type(payload)~="table" or typeof(payload.at)~="Vector3" then return end
 	local at=payload.at
 	local kind=payload.kind
+	-- (STORY-001) a word to him alone (the Ōtsutsuki not open yet, his place
+	-- taken): no flash, no sound
+	if kind=="say" then
+		if type(payload.text)=="string" then
+			pcall(function() game:GetService("StarterGui"):SetCore("SendNotification",{Title=tostring(payload.title or ""),Text=payload.text,Duration=5}) end)
+		end
+		return
+	end
 	local heavy=payload.heavy==true
 	pcall(function()
 		local VfxHit=require(script.Parent.VfxHit)
@@ -151,7 +160,7 @@ function Fight.impact(payload)
 		local me=Players.LocalPlayer
 		local by=payload.by and Players:GetPlayerByUserId(payload.by)
 		if me and payload.to==me.UserId and by then
-			pcall(function() game:GetService("StarterGui"):SetCore("SendNotification",{Title="CHALLENGE!",Text=string.upper(by.DisplayName).." STRUCK YOU. HIT BACK TO FIGHT.",Duration=5}) end)
+			pcall(function() game:GetService("StarterGui"):SetCore("SendNotification",{Title="CHALLENGE!",Text=Text.upper(by.DisplayName).." STRUCK YOU. HIT BACK TO FIGHT.",Duration=5}) end)
 		end
 	end
 end

@@ -30,6 +30,8 @@ local NinjaTree=require(game:GetService("ReplicatedStorage").NinjaDuel.NinjaTree
 -- (21/11, DEC-047) and `solo`: the things done alone in Konoha (Shared/Solo):
 -- the rooftop race's and the targets' best times, the day's share paid.
 local Solo=require(game:GetService("ReplicatedStorage").NinjaDuel.Solo)
+-- (26/11, passe 3, STORY-001) the Ōtsutsuki's tournament: its own record
+local Story=require(game:GetService("ReplicatedStorage").NinjaDuel.Story)
 -- Version 3 (13/11, the shop): the wallet (Ryō, earned by playing or bought
 -- in packs; the day of the last first win) and the looks (owned, and the one
 -- worn in each slot: Shared/Shop). A look never changes a number.
@@ -178,6 +180,10 @@ function S.validate(p)
 	if p.solo~=nil then
 		local ok,why=Solo.valid(p.solo)
 		if not ok then return false,"solo: "..why end
+	end
+	if p.story~=nil then
+		local ok,why=Story.valid(p.story)
+		if not ok then return false,"story: "..why end
 	end
 	if p.ninja~=nil then
 		local ok,why=NinjaTree.valid(p.ninja,NinjaTree.points(p.kits and p.kits.mastery))
@@ -554,6 +560,37 @@ function S.Commands.soloRecord(p,args)
 	p.solo=p.solo or Solo.new()
 	assert(args.day>=p.solo.day,"A day already past")
 	return Solo.record(p.solo,args.day,args.kind,{time=args.time,won=args.won==true,kit=args.kit,feat=args.feat})
+end
+-- (26/11, passe 3, STORY-001) The Ōtsutsuki's tournament (Shared/Story):
+-- the Exam's bracket won (once is enough: the final is open), a final against
+-- him decided (`won`; `week` the exam week's key: he comes back the next
+-- week), a scene of bubbles seen or skipped.
+function S.Commands.storyExam(p,_args)
+	p.story=p.story or Story.new()
+	local first=p.story.exam~=true
+	p.story.exam=true
+	return {exam=true,first=first}
+end
+function S.Commands.storyFinal(p,args)
+	assert(type(args.week)=="string" and #args.week==10,"Invalid week")
+	p.story=p.story or Story.new()
+	local r=p.story
+	if args.won==true then
+		r.final=math.min(1000000,r.final+1)
+		r.finalWeek=args.week
+	end
+	return {won=args.won==true,final=r.final,finalWeek=r.finalWeek}
+end
+function S.Commands.storySeen(p,args)
+	assert(type(args.scene)=="string" and Story.Scenes[args.scene]~=nil,"Invalid scene")
+	p.story=p.story or Story.new()
+	if args.scene=="weekly" then
+		assert(type(args.week)=="string" and #args.week==10,"Invalid week")
+		p.story.weeklySeen=args.week
+	else
+		p.story.seen[args.scene]=true
+	end
+	return {scene=args.scene}
 end
 -- (21/11, DEC-047) A look earned, never sold (Shared/CatalogStyle: a title,
 -- a merit aura or frame): given when the profile meets its rule.
