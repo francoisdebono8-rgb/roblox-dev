@@ -462,10 +462,13 @@ def item_arm_wraps():
 
 
 def item_arm_guards():
+    # (26/11, François in the game: « les protège-bras flottent aux poignets ») the plate on the
+    # skin (it stood .09 off it, with straps sticking out behind), wrapping further round, its
+    # straps under its edges
     o = Out()
-    o.both("LowerArm", "Guard", lambda pc, part: plate(pc, part, .18, .82, .09, arc=(-.75, .75), thick=.05), mat="Metal")
-    o.both("LowerArm", "Strap", lambda pc, part: (ribbed(pc, part, .26, .36, pad=.05, ribs=1, depth=.01, rings_per=3),
-                                                  ribbed(pc, part, .66, .76, pad=.05, ribs=1, depth=.01, rings_per=3)))
+    o.both("LowerArm", "Guard", lambda pc, part: plate(pc, part, .2, .86, .03, arc=(-.85, .85), thick=.035), mat="Metal")
+    o.both("LowerArm", "Strap", lambda pc, part: (ribbed(pc, part, .28, .37, pad=.018, ribs=1, depth=.004, rings_per=3),
+                                                  ribbed(pc, part, .7, .79, pad=.018, ribs=1, depth=.004, rings_per=3)))
     return o.items
 
 
