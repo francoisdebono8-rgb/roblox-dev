@@ -32,7 +32,7 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from mathutils import Matrix, Vector
-from nd_mesh import Piece, rgb, lerp, loft
+from nd_mesh import Piece, rgb, lerp, loft, tube
 
 import konoha_houses as KH
 
@@ -45,7 +45,7 @@ REF = {
     "great_gate": (48, 8, 50), "hyuga_hall": (60, 22, 14), "hyuga_gate": (8, 20, 10),
     "uchiha_police": (24, 18, 16), "naka_shrine": (26, 22, 16), "torii": (4, 18, 15),
     "pier": (18, 12, 2), "water_tower": (16, 16, 34), "market_hall": (26, 14, 12),
-    "memorial_stone": (4, 2, 6), "academy_tree": (6, 6, 18),
+    "memorial_stone": (4, 2, 6), "academy_tree": (6, 6, 18), "final_arena": (64, 64, 3),
     "training_dummy": (3, 3, 7), "kunai_target": (4, 2, 6), "stump_target": (3, 3, 3), "kunai_board": (4, 1, 4), "market_stall": (8, 5, 6), "barrel": (3, 3, 3.6),
 }
 
@@ -393,6 +393,73 @@ def academy_tree():
     return out + KH.done(walls, timber, glass, tiles, cloth, metal)
 
 
+# ------------------------------------------------------------------ the Ōtsutsuki's arena (passe 3)
+def final_arena():
+    """(26/11, passe 3, DEV: « son arène de finale au crépuscule ») Where the host of the
+    tournament waits and the final is fought: a raised round stage of dressed stone (the duel's
+    ring, 18 across its middle, inlaid darker), steps on its front (+Z), a ring of stone posts
+    each with a lit brazier, and at its back a tall crimson torii framing the low sun. The dusk
+    itself is the client's (Client/ArenaDuskFX): the braziers are the light that stays."""
+    km = K(); C = km.C
+    walls, timber, glass, tiles, cloth, metal = P()
+    fire = Piece("Fire", "Neon", flat=True)
+    w, d, h = REF["final_arena"]
+    R = w / 2 - 2
+    stone = lambda q, f: km.grime(km.jitter(rgb(150, 144, 136), q, .1, .9), q, 0, 1.6, .35)
+    km.cyl(walls, T(0, 0, 0), R + 1.5, .8, rgb(96, 92, 88), sides=24)
+    km.cyl(walls, T(0, 0, 0), R, h, stone, sides=24)
+    # the duel's ring and a band round it
+    km.cyl(walls, T(0, h - .02, 0), 19, .08, rgb(104, 98, 94), sides=40)
+    km.cyl(walls, T(0, h - .01, 0), 17.6, .1, rgb(132, 126, 120), sides=40)
+    # the steps up, on the front
+    for k in range(3):
+        km.box(walls, T(0, h * (k + 1) / 4 - h / 8, R + 3.2 - k * 1.2), (14, h * (k + 1) / 4, 1.4), stone)
+    # the posts and their braziers (none in front of the steps)
+    for i in range(10):
+        a = (i + .5) / 10 * math.tau
+        x, z = math.sin(a) * (R - 1.6), math.cos(a) * (R - 1.6)
+        if z > R * .8:
+            continue
+        km.box(walls, T(x, h + 4, z), (1.8, 8, 1.8), stone)
+        km.box(walls, T(x, h + .3, z), (2.6, .6, 2.6), rgb(96, 92, 88))
+        km.cyl(metal, T(x, h + 8, z), 1.1, .9, C["iron"], sides=10, r2=1.6)
+        rings = [[Vector((x + math.cos(t) * r, h + 8.8 + y, z + math.sin(t) * r)) for t in [j / 8 * math.tau for j in range(8)]]
+                 for y, r in ((0, 1.2), (.9, .8), (1.9, .25))]
+        loft(fire, rings, lambda q, kk: (1.0, .55 + .25 * ((q.y - h - 8.8) / 1.9), .2), cap0=True, cap1=True)
+    # the crimson torii at the back, over the stage's edge
+    red, black = rgb(170, 40, 34), rgb(34, 30, 30)
+    for sx in (-1, 1):
+        km.cyl(timber, T(sx * 9, h, -R + 1.5), .9, 22, red, sides=12)
+        km.cyl(timber, T(sx * 9, h, -R + 1.5), 1.2, 1.2, black, sides=12)
+    km.box(timber, T(0, h + 17, -R + 1.5), (24, 1.2, 1.4), red)
+    km.box(timber, T(0, h + 21.2, -R + 1.5), (30, 1.4, 2), black)
+    km.box(timber, T(0, h + 20.4, -R + 1.5), (28, .9, 1.7), red)
+    km.box(timber, T(0, h + 19, -R + 1.5), (1.4, 3, .9), red)
+    # (François's reference, 26/11 23:38) behind the ring, stone towers hung with white banners,
+    # three black tomoe on each, a brazier on each tower
+    ink = Piece("Ink", "SmoothPlastic", flat=True)
+    for x, z in ((-22, -20), (22, -20), (-30, 4), (30, 4)):
+        m = T(x, 0, z) @ Ry(math.atan2(x, z))   # the banner (-Z) faces the ring
+        km.box(walls, m @ T(0, 9, 0), (7, 18, 7), lambda q, f: km.grime(km.jitter(rgb(84, 80, 82), q, .1, .8), q, 0, 3, .4))
+        km.box(walls, m @ T(0, 18.4, 0), (8, .8, 8), rgb(60, 56, 58))
+        km.box(cloth, m @ T(0, 10.5, -3.62), (4.2, 9, .12), rgb(232, 228, 220))
+        km.box(timber, m @ T(0, 15.1, -3.75), (5, .35, .35), rgb(40, 34, 30))
+        for k, (bx, by) in enumerate(((-1, 12.4), (1, 12.4), (0, 9.4))):
+            c = m @ Vector((bx * .95, by, -3.72))
+            out = (m.to_3x3() @ Vector((0, 0, -1))).normalized()
+            right = (m.to_3x3() @ Vector((1, 0, 0))).normalized()
+            tube(ink, [c, c + out * .05], .5, rgb(24, 22, 26), sides=14)
+            pts = [c + right * (.35 * math.cos(a)) + Vector((0, .35 * math.sin(a) - .2 * j, 0)) + out * .03
+                   for j, a in enumerate([math.radians(-10 - 40 * j) for j in range(6)])]
+            tube(ink, pts, lambda kk: .28 * (1 - kk) + .03, rgb(24, 22, 26), sides=8, tip1=True)
+        km.cyl(metal, m @ T(0, 18.8, 0), 1.3, 1, C["iron"], sides=10, r2=1.8)
+        top = m @ Vector((0, 19.8, 0))
+        rings = [[Vector((top.x + math.cos(t) * r, top.y + y, top.z + math.sin(t) * r)) for t in [j / 8 * math.tau for j in range(8)]]
+                 for y, r in ((0, 1.4), (1.1, .9), (2.3, .25))]
+        loft(fire, rings, lambda q, kk: (1.0, .6, .2), cap0=True, cap1=True)
+    return KH.done(walls, timber, glass, tiles, cloth, metal) + [p for p in (fire, ink) if p.v]
+
+
 # ------------------------------------------------------------------ Training Ground Three
 def training_dummy():
     """The training dummy: a post on a stone foot, a straw-wrapped body bound with rope, two
@@ -540,6 +607,6 @@ MODELS = {
     "exam_hall": exam_hall, "exam_hall_wing": exam_hall_wing, "ichiraku": ichiraku, "great_gate": great_gate,
     "hyuga_hall": hyuga_hall, "hyuga_gate": hyuga_gate, "uchiha_police": uchiha_police, "naka_shrine": naka_shrine,
     "torii": torii, "pier": pier, "water_tower": water_tower, "market_hall": market_hall,
-    "memorial_stone": memorial_stone, "academy_tree": academy_tree,
+    "memorial_stone": memorial_stone, "academy_tree": academy_tree, "final_arena": final_arena,
     "training_dummy": training_dummy, "kunai_target": kunai_target, "stump_target": stump_target, "kunai_board": kunai_board, "market_stall": market_stall, "barrel": barrel,
 }

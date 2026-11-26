@@ -19,9 +19,9 @@ head's centre, the brow 0.27 above it, the face at -Z) and scale with each part 
 """
 import math
 
-from mathutils import Vector, noise
+from mathutils import Matrix, Vector, noise
 
-from nd_mesh import loft, tube
+from nd_mesh import loft, tube, torus
 
 
 def O():
@@ -872,7 +872,7 @@ def scalp(az, el, r=.56):
     return HEAD_C + Vector((math.sin(a) * math.cos(e) * r * 1.02, math.sin(e) * r, math.cos(a) * math.cos(e) * r))
 
 
-def lock(pc, root, direction, length, width, thick=.09, bend=(0, 0, 0), sections=5, sides=8, dark=.72, curl=0.0, blunt=0.0):
+def lock(pc, root, direction, length, width, thick=.09, bend=(0, 0, 0), sections=5, sides=8, dark=.72, curl=0.0, blunt=0.0, free=False):
     """One flat lock of hair: a lens section `width` across and `thick` through, tapering to a
     point `length` along `direction`, bending by `bend` (x length, quadratic). Darker at the root.
     The width lies across the scalp (perpendicular to both the lock and the skull's normal)."""
@@ -916,12 +916,13 @@ def lock(pc, root, direction, length, width, thick=.09, bend=(0, 0, 0), sections
     # middle line) that would be over the face between the temples below the brows cuts it short;
     # a lock that cannot clear them is not drawn
     pts, rings = build(length)
-    for _ in range(16):
+    # (26/11) a lock placed by hand round the eyes (the Ōtsutsuki's fringe) is drawn as it is
+    for _ in range(0 if free else 16):
         if not over_eyes(pts, rings):
             break
         length *= .85
         pts, rings = build(length)
-    if over_eyes(pts, rings):
+    if not free and over_eyes(pts, rings):
         return
 
     def col(p, ri):
