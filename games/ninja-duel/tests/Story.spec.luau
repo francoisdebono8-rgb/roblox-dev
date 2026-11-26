@@ -191,6 +191,19 @@ test("the final: him, in the hall, his final's music, two rounds won, his blows 
 	assert(s.phase=="Result","not decided after two rounds")
 	assert(recorded==true,"the final not recorded")
 	assert(s.progress and s.progress.final and s.progress.final.won==true and s.progress.final.say,"the result does not say it")
+	-- REMATCH once he won it: not a plain duel against the stand-in kit, Konoha
+	story={n=5,next={kind="free"},seals=8,final={open=false,won=3,level=Story.strength(3)}}
+	s.lastLifecycle=-10
+	m:request(player,{action="Rematch",epoch=s.epoch})
+	assert(s.phase=="Selection","a rematch of a final already won: "..s.phase)
+	-- lost, REMATCH is the final again
+	story={n=4,next={kind="final"},seals=8,final={open=true,won=0,level=1}}
+	assert(m:finalFight(player)==true,"the final again")
+	for _=1,2 do s.finish(s.bot,s.human);clock+=3;runTimers() end
+	assert(s.phase=="Result" and recorded==false,"the final lost")
+	clock+=2;s.lastLifecycle=-10
+	m:request(player,{action="Rematch",epoch=s.epoch})
+	assert(s.phase=="Duel" and s.site and s.site.final and s.roundsToWin==2 and s.bot.displayName==Story.BOSS.name,"the rematch is the final")
 	m:selection(player)
 	assert(s.final==nil,"the final kept after it")
 	for k,f in saved do Progression[k]=f end

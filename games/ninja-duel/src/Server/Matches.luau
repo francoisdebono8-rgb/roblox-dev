@@ -172,10 +172,12 @@ end
 -- tournament: him, on the exam hall's floor, with the walker's own kit; two
 -- rounds won take it; his blows harder each final he lost (Story.strength).
 -- Open in chapter 4 and each week after (Progression.story: final.open).
--- Returns whether it started, and why not.
-function Matches:finalFight(player)
+-- Returns whether it started, and why not. `rematch`: asked from his
+-- result screen (REMATCH after a final).
+function Matches:finalFight(player,rematch)
 	local s=self.sessions[player]
-	if not s or s.phase~="Selection" or s.finishing then return false,"busy" end
+	if not s or s.finishing then return false,"busy" end
+	if not (s.phase=="Selection" or (rematch and s.phase=="Result")) then return false,"busy" end
 	local story=Progression.story(player)
 	if not story or not story.final.open then return false,"not yet" end
 	local view=Progression.view(player)
@@ -1168,6 +1170,10 @@ function Matches:request(player,payload)
 			if not s.nextSite and payload.here==nil then s.nextSite=self:nearSite(player,s) end
 			self:start(player,payload.player,payload.bot,action=="Tutorial")
 			s.nextSite=nil
+		elseif action=="Rematch" and s.phase=="Result" and s.site and s.site.final then
+			-- (STORY-001) the final again while it is still his, else Konoha
+			s.lastLifecycle=clock;s.firstStage=nil;s.returnTo=nil
+			if not self:finalFight(player,true) then self:selection(player) end
 		elseif action=="Rematch" and (s.phase=="Result" or s.finishing) then
 			s.lastLifecycle=clock;s.firstStage=nil
 			-- (14/11) a rematch at a master's home stays there

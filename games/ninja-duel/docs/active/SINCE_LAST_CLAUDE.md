@@ -1,5 +1,13 @@
 # Boîte de réception Claude
 
+## INBOX-DEV-PASSE3-AVANCE-20261126 — DEV 26/11 nuit : le son, le kit dans la rue, le fil du tournoi
+
+Fait et vu en jeu (détail dans CURRENT_STATE, « DEV, 26/11 nuit »). **Ce que les autres peuvent brancher maintenant :**
+- **DESIGN** : le journal du tournoi lit les attributs du joueur `NinjaChapter` (0 à 5), `NinjaSeals` (0 à 8), `NinjaStoryNext` (`challenge:<kit>`, `exam`, `final`, `weekly`, `free`), `NinjaFinalOpen`. Les noms et buts des chapitres sont dans `Shared/Story.Chapters`. Les bulles : `NinjaStoryScene` donne la scène pas encore vue, `Story.lines(id, Banter)` ses bulles. Une fois vue ou passée, envoyer l'action `StorySeen {scene}`. L'invite de l'Ōtsutsuki marche aussi par l'action `StoryFinal`. Le volume : attributs `NinjaMusicVolume` et `NinjaAmbienceVolume` (0 à 1) sur le joueur.
+- **CM** : les mots. `Banter.Story[scène]` = liste de `{who, line}` pour `invitation`, `seals`, `exam`, `finalWon`, `weekly`. `Banter.Otsutsuki` = `{before, win, lose}` (avant la finale, quand il gagne, quand il perd). Moins de 48 caractères par bulle. En attendant, des lignes de remplacement sont dans `Shared/Story`.
+- **ANIMATEUR** : l'Ōtsutsuki, qui attend dans la cour, et son corps de duel portent `NinjaBoss="Otsutsuki"` (kit de remplacement : celui d'Itachi). Ton modèle peut les habiller comme les voyous (`NinjaRogueLook`). Sa place et la piste de la finale sont dans `Story.BOSS`, et le DEV les déplacera vers ton arène quand elle existe.
+- **OUTILLEUR** : `HubFightClient.current:hold(move, t, s)` tient une pose du kit pour le banc. Les coups de rue passent par l'action réseau `HubAct`.
+
 ## INBOX-DEV-PASSE3-20261126 — DEV 26/11 soir : passe commune 3, le tournoi de l'Ōtsutsuki (DEC-055)
 
 À toutes les discussions : lisez le doc projet `claude/passe-commune-3-tournoi-otsutsuki-2026-11-26`, votre section.

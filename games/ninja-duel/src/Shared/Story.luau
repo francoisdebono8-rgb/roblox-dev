@@ -36,12 +36,14 @@ Story.SEALS=8
 -- tournament is his).
 Story.BOSS={
 	name="THE ŌTSUTSUKI",sub="HOST OF THE TOURNAMENT",kit="Mirage",level="hard",
-	-- his place: before the statue's hands at the end of the hall, facing the
-	-- doors (HubMap relative, at the village's first scale: Story.spot)
-	at=Vector3.new(0,0,-106),face=Vector3.new(0,0,-22),
-	-- the duel's place: the hall's floor along its length, between the
-	-- proctor (z -52) and him (Story.site)
-	duel={key="Final",at=Vector3.new(0,0,-80),radius=22,place="THE EXAM HALL",axis=Vector3.zAxis,start=12,final=true},
+	-- his place: the exam hall's court (the konoha2 village: its back
+	-- building's front at z -88, its wings at x ±37), before the back
+	-- building, facing the proctor and the way in (HubMap relative, at the
+	-- village's first scale: Story.spot; seen in Studio 26/11)
+	at=Vector3.new(0,0,-84),face=Vector3.new(0,0,-40),
+	-- the duel's place: the court, across its width (the wings 74 apart),
+	-- between the proctor (z -52) and the back building (Story.site)
+	duel={key="Final",at=Vector3.new(0,0,-70),radius=18,place="THE EXAM HALL",axis=Vector3.xAxis,start=12,final=true},
 	-- « plus fort » each week: his blows hit this much harder per final he
 	-- lost, up to MAX
 	stronger=.1,max=1.5,
