@@ -55,11 +55,34 @@ end
 -- Konoha, his kit's way of standing (<kit>.Rest: Kakashi's book, Sasuke's
 -- pockets) before its guard (`rest`: he has a kit); else the kit's own, else
 -- Sasuke's (AuthoredMotion's donor for the shared ones).
+-- (27/11, the OUTILLEUR's kit bench: Gaara's heavy in the street was
+-- Sasuke's spinning kick) A kit without a clip of its own for a strike plays
+-- its own nearest strike first; then its motion family's (Fighters[kit].Motion:
+-- its clips, then its body, as the duel's engine draws it); Lion last.
+Body.STRIKE_NEAR={Heavy={"Light3","Light2","Light1"},Light3={"Light2","Light1"},Light2={"Light1"},Air1={"Light1"}}
+local okFighters,Fighters=pcall(function() return require(game:GetService("ReplicatedStorage").NinjaDuel.Fighters) end)
+function Body.family(kit)
+	local def=okFighters and Fighters and Fighters[tostring(kit)]
+	local m=def and def.Motion
+	local out={}
+	for _,id in {m and m.clips,m and m.body} do
+		if type(id)=="string" and id~=tostring(kit) and not table.find(out,id) then table.insert(out,id) end
+	end
+	return out
+end
 function Body.clipName(Authored,kit,move,stage,rest)
 	if stage and Authored.has(stage.."."..move) then return stage.."."..move end
 	if rest and move=="Idle" and Authored.has(tostring(kit)..".Rest") then return tostring(kit)..".Rest" end
 	local own=tostring(kit).."."..move
 	if Authored.has(own) then return own end
+	for _,near in Body.STRIKE_NEAR[move] or {} do
+		local name=tostring(kit).."."..near
+		if Authored.has(name) then return name end
+	end
+	for _,id in Body.family(kit) do
+		local name=id.."."..move
+		if Authored.has(name) then return name end
+	end
 	local donor="Lion."..move
 	if Authored.has(donor) then return donor end
 	-- (the emotes are everyone's: "Emote.Wave")

@@ -59,6 +59,8 @@ function Sight:step(dt,character,head)
 			params.FilterDescendantsInstances=exclude
 		end
 	end
+	-- (27/11) a tree drawn wider than its box (Client/Camera.fadeWide)
+	Camera.fadeWide(from,lens,faded)
 	-- the lens inside a prop
 	local overlap=OverlapParams.new()
 	overlap.FilterType=Enum.RaycastFilterType.Exclude

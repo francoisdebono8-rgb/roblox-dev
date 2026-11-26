@@ -202,4 +202,13 @@ test("DataStore adapter: disabled by default, never opened outside an explicit f
  assert(Repo.validKey("p_u_123") and Repo.validKey("p_dev_qa") and not Repo.validKey("p_123") and not Repo.validKey("u_123"))
 end)
 
+-- (27/11, OUTILLEUR passe 3) Studio's test players at two clients (ids -1,
+-- -2) each get a test profile; a real id keeps its own.
+test("Studio's test players get a test profile; a real player keeps his",function()
+	local P=H.load("Server/Progression")
+	local a,b,real=P.profileId({UserId=-1}),P.profileId({UserId=-2}),P.profileId({UserId=12345})
+	assert(S.profileId(a) and S.profileId(b) and a~=b,"a Studio test player has no valid profile id: "..a)
+	assert(real=="u_12345","a real player's profile id changed: "..real)
+end)
+
 print("NinjaDuel progression profiles: "..passed.." PASS (in-memory store; real DataStore adapter not exercised)")

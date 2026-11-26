@@ -533,7 +533,9 @@ function WorldReaction.step(c)
 end
 
 -- ------------------------------------------------------------------ breaks
-local function rubble(c,at,size,color,material,direction)
+-- (27/11) Wood leaves planks, not cubes: a crate broken in the street read as
+-- a crate still standing (the OUTILLEUR's image, 26/11).
+local function rubble(c,at,size,color,material,direction,planks)
 	local w=state(c)
 	local folder=folderOf(c)
 	if not folder then return end
@@ -545,8 +547,16 @@ local function rubble(c,at,size,color,material,direction)
 		local s=size*(.22+h*.18)
 		local p=Instance.new("Part")
 		p.Name="Rubble";p.Anchored=true;p.CanCollide=false;p.CanQuery=false;p.CanTouch=false
-		p.Size=Vector3.new(s,s*.7,s*.9);p.Color=color;p.Material=material
-		p.CFrame=CFrame.new(Vector3.new(at.X+math.cos(a)*r+push.X,at.Y+s*.3,at.Z+math.sin(a)*r+push.Z))*CFrame.Angles(h*3,a,h*2)
+		p.Color=color;p.Material=material
+		if planks then
+			-- a board of the broken box, lying or leaning where it fell
+			local long=size*(1.1+h*.6)
+			p.Size=Vector3.new(size*.28,.22,long)
+			p.CFrame=CFrame.new(Vector3.new(at.X+math.cos(a)*r*.8+push.X,at.Y+.15+h*.5,at.Z+math.sin(a)*r*.8+push.Z))*CFrame.Angles(0,a+h,0)*CFrame.Angles((h-.5)*.9,0,(h-.3)*.5)
+		else
+			p.Size=Vector3.new(s,s*.7,s*.9)
+			p.CFrame=CFrame.new(Vector3.new(at.X+math.cos(a)*r+push.X,at.Y+s*.3,at.Z+math.sin(a)*r+push.Z))*CFrame.Angles(h*3,a,h*2)
+		end
 		p.Parent=folder
 		table.insert(w.rubble,{part=p})
 	end
@@ -592,9 +602,14 @@ function WorldReaction.breakPart(c,part,rec,at,direction)
 		end
 		WorldReaction.scar(c,"crater",nil,base+flat*(size.Y*.55),Vector3.yAxis,40,flat,"earth")
 	else
-		local keep=TUNE.MoundShare
+		-- (27/11) a wooden box (a crate, a barrel, a bench) caves in: its
+		-- bottom boards stay, low and askew, the rest is planks around it; a
+		-- stone one keeps its mound
+		local wood=rec.class=="wood"
+		local keep=if wood then TUNE.MoundShare*.4 else TUNE.MoundShare
 		part.Size=Vector3.new(size.X*.9,size.Y*keep,size.Z*.9)
-		part.CFrame=CFrame.new(Vector3.new(cf.Position.X,bottom+size.Y*keep/2,cf.Position.Z))*cf.Rotation
+		local askew=if wood then CFrame.Angles(math.rad(7)*flat.Z,0,-math.rad(7)*flat.X) else CFrame.identity
+		part.CFrame=CFrame.new(Vector3.new(cf.Position.X,bottom+size.Y*keep/2,cf.Position.Z))*askew*cf.Rotation
 		for _,child in part:GetChildren() do
 			if child:IsA("BasePart") then
 				child.Size*=.55;child.CanCollide=false
@@ -603,7 +618,8 @@ function WorldReaction.breakPart(c,part,rec,at,direction)
 		end
 	end
 	part.Color=WorldReaction.Classes[rec.class].dark:Lerp(rec.color,.5)
-	rubble(c,Vector3.new(at.X,bottom,at.Z),math.max(1,math.min(size.X,size.Z)*.5),part.Color,part.Material,flat)
+	local squatWood=rec.class=="wood" and not (size.Y>math.max(size.X,size.Z)*2)
+	rubble(c,Vector3.new(at.X,bottom,at.Z),math.max(1,math.min(size.X,size.Z)*.5),part.Color,part.Material,flat,squatWood)
 	c:pushImpact(at,"worldbreak",true,{normal=-flat,material=rec.class,direction=flat})
 end
 

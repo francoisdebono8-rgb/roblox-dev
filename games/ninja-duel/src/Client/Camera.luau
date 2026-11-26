@@ -85,6 +85,48 @@ local function fadeHit(part,faded)
 	if copies then for _,copy in copies do if copy.Parent then faded[copy]=true end end end
 end
 Camera.fadeHit=fadeHit
+-- (pure) Whether the segment a→b crosses the box `size` at `cf`.
+function Camera.segmentBox(a,b,cf,size)
+	local la,lb=cf:PointToObjectSpace(a),cf:PointToObjectSpace(b)
+	local d=lb-la
+	local half=size/2
+	local t0,t1=0,1
+	for _,axis in {"X","Y","Z"} do
+		local s,e,h=la[axis],d[axis],half[axis]
+		if math.abs(e)<1e-6 then
+			if s<-h or s>h then return false end
+		else
+			local u,v=(-h-s)/e,(h-s)/e
+			if u>v then u,v=v,u end
+			t0=math.max(t0,u);t1=math.min(t1,v)
+			if t0>t1 then return false end
+		end
+	end
+	return true
+end
+-- (27/11, OUTILLEUR passe 3: the lens inside a Plaza tree's trunk) A tree
+-- drawn wider than its box (Client/HubDress.wide) fades when the lens's line
+-- from `from` to `to` crosses what is drawn (its trunk a little slimmer than
+-- its mesh's bounds: the roots and the first branches spread them).
+Camera.WIDE_SHARE=Vector3.new(.7,1,.7)
+function Camera.fadeWide(from,to,faded)
+	local ok,HubDress=pcall(function() return require(script.Parent.HubDress) end)
+	local list=ok and HubDress and HubDress.wide
+	if not list or #list==0 then return 0 end
+	local mid=(from+to)/2
+	local reach=(to-from).Magnitude/2
+	local n=0
+	for _,w in list do
+		local copy=w.copy
+		if copy.Parent and not faded[copy] then
+			local size=copy.Size
+			if (copy.Position-mid).Magnitude<=reach+size.Magnitude/2 and Camera.segmentBox(from,to,copy.CFrame,size*Camera.WIDE_SHARE) then
+				fadeHit(w.box,faded);n+=1
+			end
+		end
+	end
+	return n
+end
 -- (26/11, passe 3, seen in the forest: the bandit's statue, hidden by its
 -- client drawing (KonohaRogueFX), lay in the clearing during his duel) A part
 -- someone else hid (LocalTransparencyModifier 1) is left alone by a lens: not
@@ -711,6 +753,10 @@ function Camera:update(data,dt)
 		ray.FilterDescendantsInstances=exclude
 		hit=cast()
 	end
+	Camera.fadeWide(focus,desired,faded)
+	-- (and a tree between the lens and either fighter)
+	if typeof(a)=="Vector3" then Camera.fadeWide(a+Vector3.new(0,1.5,0),desired,faded) end
+	if typeof(target)=="Vector3" then Camera.fadeWide(target+Vector3.new(0,1.5,0),desired,faded) end
 	faded=Camera.keepHidden(faded,self.faded)
 	for part in self.faded or {} do if not faded[part] and part.Parent then part.LocalTransparencyModifier=if self.decorFaded and self.decorFaded[part] then DECOR_FADE else 0 end end
 	for part in faded do part.LocalTransparencyModifier=.72 end
@@ -873,6 +919,7 @@ function Camera:update(data,dt)
 			end
 		end
 		if hit then eye=hit.Position+hit.Normal*1.2+Vector3.new(0,math.max(0,(eye-look).Magnitude-hit.Distance)*.4,0) end
+		Camera.fadeWide(look,eye,faded)
 		for part in self.faded or {} do if not faded[part] and part.Parent then part.LocalTransparencyModifier=if self.decorFaded and self.decorFaded[part] then DECOR_FADE else 0 end end
 		for part in faded do part.LocalTransparencyModifier=.72 end
 		self.faded=faded

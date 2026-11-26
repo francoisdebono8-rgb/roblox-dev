@@ -52,7 +52,14 @@ function P.config() return Config.Progression or {} end
 -- On once Config says so AND the profiles' store is up (Server/Main starts it):
 -- a server or a headless suite that never starts it keeps every kit open.
 function P.enabled() return P.config().Enabled==true and P.repo~=nil end
-function P.profileId(player) return "u_"..tostring(player.UserId) end
+-- (27/11, OUTILLEUR passe 3: « Profile id required » for Studio's test
+-- players at two clients) Studio's local test players are Player1, Player2
+-- with ids -1, -2 (never a live id): each has its own test profile.
+function P.profileId(player)
+	local id=tonumber(player.UserId) or 0
+	if id<0 then return "dev_studio_"..tostring(-id) end
+	return "u_"..tostring(player.UserId)
+end
 
 -- The store: the DataStore when Roblox gives it, else memory for this session.
 function P.init(store)

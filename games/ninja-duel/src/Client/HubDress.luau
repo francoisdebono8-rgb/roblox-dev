@@ -39,6 +39,10 @@ HubDress.SEGMENT=10
 -- (15/11) a hidden part -> the mesh copies standing for it: the duel camera
 -- fades what it really sees (Client/Camera.fadeHit).
 HubDress.copiesOf=setmetatable({},{__mode="k"})
+-- The drawn pieces much wider than their box (a tree's trunk and crown):
+-- {copy, box}, for the lenses (Camera.fadeWide).
+HubDress.WIDE={Trunk=true,Leaves=true}
+HubDress.wide={}
 
 -- The units under `root` (a unit inside a unit too).
 function HubDress.units(root)
@@ -99,6 +103,18 @@ function HubDress.dress(unit,pieces,holder,fallback)
 	end
 	if #made>0 then
 		HubDress.solidify(unit,made)
+		-- (27/11, OUTILLEUR passe 3: the duel's lens inside a Plaza tree's
+		-- trunk 5 times, the fighters behind it 4 times) a tree's trunk and
+		-- crown are drawn two or three times wider than the box under them:
+		-- the lenses' rays miss the box and nothing fades. They are listed
+		-- with their box (Camera.fadeWide fades the tree when a lens's line
+		-- crosses what is drawn).
+		local box=HubDress.parts(unit)[1]
+		if box and not HubDress.solid(unit) then
+			for _,p in made do
+				if HubDress.WIDE[p.Name] then table.insert(HubDress.wide,{copy=p,box=box}) end
+			end
+		end
 		for _,part in HubDress.parts(unit) do
 			part.Transparency=1;HubDress.copiesOf[part]=made
 			-- (15/11) a prop broken in a street duel: its model goes, the

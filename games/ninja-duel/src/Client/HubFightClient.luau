@@ -147,7 +147,59 @@ function Fight:step(dt,hum,root)
 end
 
 -- The blows that land, for everyone near: the flash and the sound.
-local SOUNDS={hit="rbxassetid://9117971636",heavy="rbxassetid://9117969717",wood="rbxassetid://9114221862",stone="rbxassetid://9118588165",challenge="rbxassetid://9126284094"}
+-- (27/11, OUTILLEUR passe 3, tools/sounds: the light blow lost under
+-- Konoha's music, the challenge a half-second whoosh that was never played,
+-- a crate's break a 5 s rock slide; measured again in Studio 27/11 at volume
+-- 1: the duel's own hit 296 peak, Wood Break 379, the Kyoso taiko 319, the
+-- old punch 132.) The light blow is the duel's own hit; the challenge is a
+-- taiko stinger (APM, Roblox's library); a crate snaps like wood, a lantern
+-- like stone. Volumes: what plays under the street's music (crest ~69).
+Fight.SOUNDS={
+	hit={id="rbxassetid://8595980577",volume=.4},
+	heavy={id="rbxassetid://9117969717",volume=.5},
+	wood={id="rbxassetid://9120801590",volume=.5},
+	stone={id="rbxassetid://9118588165",volume=.5},
+	challenge={id="rbxassetid://9046419161",volume=.45},
+}
+local SOUNDS=Fight.SOUNDS
+-- (pure) Which sound a landed blow plays: its kind (Server/HubFight's tell),
+-- whether heavy, and the material the server named.
+function Fight.soundOf(kind,heavy,material)
+	if kind=="challenge" then return "challenge" end
+	local what=if kind=="worldbreak" or kind=="world" then material else kind
+	if what=="wood" then return "wood" end
+	if what=="stone" or what=="earth" or what=="brittle" or what=="metal" then return "stone" end
+	return if heavy then "heavy" else "hit"
+end
+-- (pure) The flash's weight. A prop's break is its splinters, not a crater
+-- in the ground under it (seen by the OUTILLEUR 26/11: green slabs of the
+-- plaza's grass around a broken crate).
+function Fight.weightOf(kind,heavy)
+	if kind=="worldbreak" or heavy then return "heavy" end
+	if kind=="challenge" then return "medium" end
+	return "light"
+end
+-- A prop's break: its pieces fly off it (wood: planks; stone: chips).
+local function splinters(at,material)
+	local wood=material=="wood"
+	local tone=if wood then Color3.fromRGB(150,112,72) else Color3.fromRGB(150,144,132)
+	local Debris=game:GetService("Debris")
+	local Tween=game:GetService("TweenService")
+	for k=1,9 do
+		local p=Instance.new("Part")
+		p.Anchored=true;p.CanCollide=false;p.CanQuery=false;p.CanTouch=false;p.CastShadow=false
+		p.Size=if wood then Vector3.new(.22,.3,.9+math.random()*1.1) else Vector3.new(.5,.4,.45)
+		p.Material=if wood then Enum.Material.Wood else Enum.Material.Slate
+		p.Color=tone:Lerp(Color3.new(0,0,0),math.random()*.25)
+		local a=(k/9)*math.pi*2+math.random()*.5
+		local fly=Vector3.new(math.cos(a),.7+math.random()*.8,math.sin(a)).Unit
+		p.CFrame=CFrame.new(at+Vector3.new(0,1,0))*CFrame.Angles(math.random()*6,math.random()*6,0)
+		p.Parent=workspace
+		Tween:Create(p,TweenInfo.new(.55,Enum.EasingStyle.Quad,Enum.EasingDirection.Out),
+			{CFrame=p.CFrame*CFrame.Angles(math.random()*4,math.random()*4,0)+fly*(4+math.random()*4)+Vector3.new(0,-1.5,0),Transparency=1}):Play()
+		Debris:AddItem(p,.6)
+	end
+end
 function Fight.impact(payload)
 	if type(payload)~="table" or typeof(payload.at)~="Vector3" then return end
 	local at=payload.at
@@ -163,19 +215,19 @@ function Fight.impact(payload)
 	local heavy=payload.heavy==true
 	pcall(function()
 		local VfxHit=require(script.Parent.VfxHit)
-		local weight=if kind=="worldbreak" then "slam" elseif heavy then "heavy" elseif kind=="challenge" then "medium" else "light"
 		local me=Players.LocalPlayer.Character
-		VfxHit.hit(weight,at,{dir=Vector3.xAxis,ignore={me}})
+		VfxHit.hit(Fight.weightOf(kind,heavy),at,{dir=Vector3.xAxis,ignore={me}})
 	end)
+	if kind=="worldbreak" then pcall(splinters,at,payload.material) end
 	pcall(function()
-		local id=if kind=="worldbreak" or kind=="wood" then SOUNDS.wood elseif kind=="stone" or kind=="earth" then SOUNDS.stone
-			elseif heavy then SOUNDS.heavy else SOUNDS.hit
+		local snd=SOUNDS[Fight.soundOf(kind,heavy,payload.material)]
 		local anchor=Instance.new("Part")
 		anchor.Anchored=true;anchor.CanCollide=false;anchor.CanQuery=false;anchor.CanTouch=false;anchor.Transparency=1
 		anchor.Size=Vector3.new(.2,.2,.2);anchor.CFrame=CFrame.new(at);anchor.Parent=workspace
-		local s=Instance.new("Sound");s.SoundId=id;s.Volume=if heavy then .5 else .35;s.RollOffMaxDistance=140;s.RollOffMinDistance=10
-		s.PlaybackSpeed=.95+math.random()*.1;s.Parent=anchor;s:Play()
-		game:GetService("Debris"):AddItem(anchor,3)
+		local s=Instance.new("Sound");s.SoundId=snd.id;s.Volume=snd.volume;s.RollOffMaxDistance=140;s.RollOffMinDistance=10
+		s.PlaybackSpeed=if kind=="challenge" then 1 else .95+math.random()*.1
+		s.Parent=anchor;s:Play()
+		game:GetService("Debris"):AddItem(anchor,4)
 	end)
 	-- a challenge: the two players are told (who struck whom)
 	if kind=="challenge" then

@@ -115,6 +115,9 @@ local hubClient=nil
 -- (26/11, passe 3, AMB-001) the music and the street's ambience
 local soundscape=nil
 pcall(function() soundscape=require(script.Parent.Soundscape).new():start() end)
+-- (27/11, passe 3) the street duel's edge, drawn on the ground (Client/StreetRing)
+local streetRing=nil
+pcall(function() streetRing=require(script.Parent.StreetRing).new() end)
 pcall(function()
 	local HubClient=require(script.Parent.HubClient)
 	if HubClient.enabled() then
@@ -160,6 +163,7 @@ remote.OnClientEvent:Connect(function(data)
 	current=data; presentation.receivedAt=os.clock(); presentation:impacts(data,camera)
 	if hubClient then pcall(hubClient.render,hubClient,data) end
 	if soundscape then pcall(soundscape.render,soundscape,data) end
+	if streetRing then pcall(streetRing.render,streetRing,data) end
 	-- (13/11, the shop) a thrown blade wears its thrower's look.
 	pcall(function() require(script.Parent.Effects).setLooks(data) end)
 	ui:render(data)

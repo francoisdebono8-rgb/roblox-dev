@@ -8,6 +8,8 @@ local H=require("./Harness")
 local fs=require("@lune/fs")
 local roblox=require("@lune/roblox")
 local CFrame,Vector3=roblox.CFrame,roblox.Vector3
+local Instance,Enum=roblox.Instance,roblox.Enum
+H.envBase.Instance=H.envBase.Instance or roblox.Instance
 local passed=0
 local function test(name,fn)
 	local ok,err=pcall(fn);assert(ok,name..": "..tostring(err));passed+=1;print("PASS "..name)
@@ -147,6 +149,95 @@ test("the walk's lens: a prop in its way fades; his body, the ground, a walker n
 	local walker={FindFirstChildOfClass=function(_,c) return if c=="Humanoid" then {} else nil end}
 	assert(not Sight.fades(part("UpperTorso",{model=walker}),character),"another walker")
 	assert(Sight.FADE>.5 and Sight.FADE<1,"the fade")
+end)
+
+-- (27/11, the OUTILLEUR at two clients) a player's body is found under Workspace
+test("a blow finds the player's body right under Workspace (a Model itself), and a rig in a model",function()
+	local Server=H.load("Server/HubFight")
+	local function node(classes,parent) return {Parent=parent,IsA=function(_,c) return classes[c]==true end} end
+	local ws=node({Model=true,WorldRoot=true},nil)
+	local character=node({Model=true},ws)
+	local part={FindFirstAncestorOfClass=function(_,c) return if c=="Model" then character else nil end}
+	assert(Server.modelOf(part)==character,"the character climbed to Workspace")
+	-- a piece of a rig inside a larger model: the outer model
+	local outer=node({Model=true},ws)
+	local inner=node({Model=true},outer)
+	local piece={FindFirstAncestorOfClass=function() return inner end}
+	assert(Server.modelOf(piece)==outer,"not the outer model")
+end)
+
+-- (27/11, the OUTILLEUR's kit bench) a kit's strike is its own before anyone else's
+test("no kit borrows another's strike in the street while it has one of its own",function()
+	for _,kit in BetaRoster do
+		for name,spec in Rules.Moves do
+			local clip=Body.clipName(Authored,kit,spec.clip)
+			if spec.kind=="Light" or spec.kind=="Heavy" then
+				local owner=string.match(clip,"^([^.]+)%.")
+				local family=Body.family(kit)
+				assert(owner==kit or table.find(family,owner),kit.." "..name.." plays "..clip.." (another kit's)")
+			end
+		end
+	end
+	assert(Body.clipName(Authored,"Sand","Heavy")~="Lion.Heavy","Gaara's heavy is still Sasuke's kick")
+end)
+
+-- (27/11, the OUTILLEUR's sounds and the crate's image) what a landed blow
+-- sounds and looks like in the street
+test("a street blow's sound and flash: the challenge is heard, a crate snaps like wood, no crater for a prop",function()
+	local Fight=H.load("Client/HubFightClient")
+	assert(Fight.soundOf("challenge",false)=="challenge","the challenge plays no sound of its own")
+	assert(Fight.soundOf("worldbreak",true,"wood")=="wood","a crate does not snap like wood")
+	assert(Fight.soundOf("worldbreak",true,"stone")=="stone","a stone lantern snaps like wood")
+	assert(Fight.soundOf("wood",false,"wood")=="wood" and Fight.soundOf("hit",false)=="hit" and Fight.soundOf("hit",true)=="heavy","a blow's sound")
+	for name,s in Fight.SOUNDS do
+		assert(type(s.id)=="string" and s.id:match("^rbxassetid://%d+$") and s.volume>0 and s.volume<=1,"the sound "..name)
+	end
+	assert(Fight.SOUNDS.wood.id~="rbxassetid://9114221862","the crate's break is still a rock slide")
+	assert(Fight.SOUNDS.challenge.id~="rbxassetid://9126284094","the challenge is still a whoosh")
+	assert(Fight.weightOf("worldbreak",true)~="slam","a broken prop digs a crater in the ground under it")
+	-- the server: a broken crate caves in low, its boards around it
+	local WorldReaction=H.load("Server/WorldReaction")
+	local stage=Instance.new("Folder")
+	local c={match={folder=stage},now=0,pushImpact=function() end}
+	local crate=Instance.new("Part");crate.Name="Crate";crate.Material=Enum.Material.WoodPlanks
+	crate.Size=Vector3.new(5.2,5.2,5.2);crate.CFrame=CFrame.new(0,2.6,0);crate:SetAttribute("WorldBreakable",true);crate.Parent=stage
+	local broken=false
+	for _=1,8 do
+		local r=WorldReaction.impact(c,{part=crate,position=crate.CFrame.Position,normal=Vector3.new(1,0,0),energy=60,contact="blunt",direction=Vector3.new(-1,0,0)})
+		if r and r.broken then broken=true;break end
+	end
+	assert(broken,"the crate did not break")
+	assert(crate.Size.Y<=1.2,"a broken crate still stands "..crate.Size.Y.." high")
+	local boards=0
+	for _,r in WorldReaction.state(c).rubble do
+		local d=r.part
+		if d.Name=="Rubble" and d.Size.Z>=d.Size.X*2.5 then boards+=1 end
+	end
+	assert(boards>=3,"few boards around the broken crate: "..boards)
+end)
+
+-- (27/11, OUTILLEUR passe 3: bodies stopped at the Plaza duel's edge with no
+-- wall seen; the lens inside a tree's trunk) the street duel's edge is drawn,
+-- and a tree drawn wider than its box fades for a lens crossing it
+test("a street duel's edge is drawn on the ground and lights where a fighter presses; a wide tree fades for the lens",function()
+	local Ring=H.load("Client/StreetRing")
+	local o=Vector3.new(0,0,-2400)
+	assert(Ring.wanted({phase="Duel",origin=o,site={key="Plaza",radius=36,street=true}}),"no ring for a street duel")
+	assert(not Ring.wanted({phase="Duel",origin=o,site={key="Lane",radius=36}}),"a ring for a duel that is not in the street")
+	assert(not Ring.wanted({phase="Result",origin=o,site={key="Plaza",radius=36,street=true}}),"a ring after the duel")
+	local pts=Ring.points(o,36)
+	assert(#pts==Ring.SEGMENTS,"segments")
+	for _,p in pts do assert(math.abs((p.at-o).Magnitude-36)<1e-3,"a segment off the circle") end
+	local edge=Vector3.new(35,0,-2400)
+	assert(Ring.shade(Vector3.new(36,0,-2400),{edge},o,36)==Ring.LIT,"the edge does not light under a fighter pressing on it")
+	assert(Ring.shade(Vector3.new(-36,0,-2400),{edge},o,36)==Ring.FAINT,"the far side lit")
+	assert(Ring.shade(Vector3.new(36,0,-2400),{o},o,36)==Ring.FAINT,"lit with nobody near")
+	local Camera=H.load("Client/Camera")
+	local box=CFrame.new(10,5,0)
+	assert(Camera.segmentBox(Vector3.new(0,5,0),Vector3.new(20,5,0),box,Vector3.new(4,10,4)),"a line through the trunk misses it")
+	assert(Camera.segmentBox(Vector3.new(0,5,0),Vector3.new(10,5,0),box,Vector3.new(4,10,4)),"a lens inside the trunk misses it")
+	assert(not Camera.segmentBox(Vector3.new(0,5,6),Vector3.new(20,5,6),box,Vector3.new(4,10,4)),"a line beside the trunk crosses it")
+	assert(not Camera.segmentBox(Vector3.new(0,5,0),Vector3.new(7,5,0),box,Vector3.new(4,10,4)),"a line short of the trunk crosses it")
 end)
 
 print(string.format("NinjaDuel his kit in the street (26/11): %d PASS",passed))

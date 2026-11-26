@@ -81,11 +81,15 @@ end
 HubFight.walking=walking
 
 -- The model a part belongs to (the first Model under workspace's folders).
+-- (27/11, the OUTILLEUR at two clients: A struck B, the server answered
+-- "world") Workspace is a Model too (a WorldRoot): a character right under it
+-- climbed to Workspace and was never found. The climb stops below a WorldRoot.
 local function modelOf(part)
 	local m=part:FindFirstAncestorOfClass("Model")
-	while m and m.Parent and m.Parent:IsA("Model") do m=m.Parent end
+	while m and m.Parent and m.Parent:IsA("Model") and not m.Parent:IsA("WorldRoot") do m=m.Parent end
 	return m
 end
+HubFight.modelOf=modelOf
 
 -- A player struck by another walker: a challenge, or the riposte.
 function HubFight.strikePlayer(player,other,now)
