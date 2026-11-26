@@ -579,6 +579,37 @@ function S.Commands.introDone(p,args)
 	p.intro=true
 	return {intro=true}
 end
+-- (26/11, DESIGN passe 2) His ninja made at the gate (Client/CreatorPanel's
+-- ENTER KONOHA, Server/Forest): the starter pieces worn, one hair style and
+-- one colour given (here only, once), and his first steps behind him, all in
+-- one command. hair "" = his own Roblox hair. A slot not given stays as it is.
+S.CreateSlots={"top","bottom","feet","headband"}
+function S.Commands.create(p,args)
+	assert(p.intro~=true,"Already in")
+	local st=p.style
+	for _,slot in S.CreateSlots do
+		local id=args[slot]
+		if id~=nil then
+			local item=Shop.item(id)
+			assert(item and item.slot==slot and item.base and not item.hidden,"Not a starter piece")
+			st.equipped[slot]=item.id
+		end
+	end
+	if args.hair=="" then st.equipped.hair=nil
+	elseif args.hair~=nil then
+		local item=Shop.item(args.hair)
+		assert(item and item.slot=="hair" and item.ryo and not item.hidden,"Not a hair style")
+		st.owned[item.id]=true;st.equipped.hair=item.id
+	end
+	if args.hairColor~=nil then
+		local item=Shop.item(args.hairColor)
+		assert(item and item.slot=="hairColor" and (item.base or item.ryo) and not item.hidden,"Not a hair colour")
+		if not item.base then st.owned[item.id]=true end
+		st.equipped.hairColor=item.id
+	end
+	p.intro=true
+	return {intro=true,hair=st.equipped.hair,hairColor=st.equipped.hairColor}
+end
 -- Wear a look the player owns (or a base one) in its slot.
 function S.Commands.equipItem(p,args)
 	local item=Shop.item(args.item)

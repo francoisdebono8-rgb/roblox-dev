@@ -3,7 +3,8 @@
 --   forest  his first steps, toward the clearing where the bandit waits
 --   fight   the bandit (the duel's own screen)
 --   path    the bandit down: the path to the great gate
---   create  at the gate's foot: his ninja (the wardrobe, else the outfit card)
+--   create  at the gate's foot: his ninja (the DESIGN's card, Client/
+--           CreatorPanel; else the wardrobe or the outfit card)
 -- At "create" the card opens by itself; closed, the server lets him into
 -- Konoha (action IntroDone). A short line says where to go meanwhile (the
 -- CM's words replace these, the DESIGN's look the label's).
@@ -46,7 +47,16 @@ function Intro:hint(text)
 		self.label=label
 	end
 	self.label.Text=text or ""
-	self.label.Visible=text~=nil and self.hub.active==true
+	-- (not over the gate's card, which says it itself)
+	local card=ui.creator
+	self.label.Visible=text~=nil and self.hub.active==true and not (card and card:shown())
+end
+-- (26/11, DESIGN passe 2) At the gate's foot: the DESIGN's card (Client/
+-- CreatorPanel; ENTER KONOHA sends "Create", the server dresses him and lets
+-- him in), else the wardrobe or the outfit card (closed: "IntroDone").
+Intro.RETRY=4
+function Intro.panel(ui)
+	return ui and (ui.creator or ui.wardrobe or ui.outfitPanel)
 end
 -- Every frame of the walk (Client/HubClient:step).
 function Intro:step(dt)
@@ -60,14 +70,25 @@ function Intro:step(dt)
 		return
 	end
 	if self.sent then return end
-	local panel=ui and (ui.wardrobe or ui.outfitPanel)
+	local panel=Intro.panel(ui)
 	if not panel then self.sent=true;hub.send("IntroDone",{});return end
+	local card=panel==ui.creator
 	if not self.opened then
-		if not panel:shown() then panel:show(hub.kits or ui.kits) end
-		self.opened=panel:shown()
+		if not panel:shown() then
+			if card then panel:show() else panel:show(hub.kits or ui.kits) end
+		end
+		self.opened=panel:shown();self.closedAt=nil
 	elseif not panel:shown() then
-		self.sent=true
-		hub.send("IntroDone",{})
+		if not card then
+			self.sent=true
+			hub.send("IntroDone",{})
+			return
+		end
+		-- ENTER KONOHA sent "Create": the server lets him in (the stage goes).
+		-- Still at the gate a while after (the message lost): the card again.
+		local now=os.clock()
+		self.closedAt=self.closedAt or now
+		if now-self.closedAt>Intro.RETRY then self.opened=false;self.closedAt=nil end
 	end
 end
 

@@ -904,6 +904,11 @@ function Matches:request(player,payload)
 		if s.phase=="Selection" then require(script.Parent.Forest).created(player) end
 		return
 	end
+	-- (26/11, DESIGN passe 2) the gate's card: what he made, worn, then Konoha
+	if action=="Create" then
+		if s.phase=="Selection" and type(payload)=="table" then require(script.Parent.Forest).create(player,payload) end
+		return
+	end
 	if action=="First" then
 		if clock-s.lastLifecycle<0.8 or s.phase~="Selection" or type(payload.player)~="string" then return end
 		local rival=FirstMinute.rival(payload.player)

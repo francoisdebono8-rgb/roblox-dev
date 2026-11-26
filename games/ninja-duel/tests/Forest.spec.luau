@@ -198,4 +198,40 @@ test("the profile: a new player needs the way in, once; a player from before (a 
 	assert(not P.needsIntro(player),"no profile: no forest")
 end)
 
+-- (26/11, DESIGN passe 2) the gate's card (Client/CreatorPanel) sends "Create"
+test("the gate's creation: the starter pieces worn, one hair and one colour given, his way in, once",function()
+	local S=H.load("Server/ProfileSchema")
+	local p=S.new("dev_gate")
+	local picks={top="TopTunicGreen",bottom="BottomShorts",feet="FeetBlack",headband="HeadbandBlue",hair="HairBowl",hairColor="HairSun"}
+	local np,result=S.apply(p,1,"create",Progression.createPicks(picks));p=np
+	local e=p.style.equipped
+	assert(e.top=="TopTunicGreen" and e.bottom=="BottomShorts" and e.feet=="FeetBlack" and e.headband=="HeadbandBlue","the pieces")
+	assert(e.hair=="HairBowl" and p.style.owned.HairBowl and e.hairColor=="HairSun" and p.style.owned.HairSun,"the hair given")
+	assert(p.intro==true and result.intro==true,"his way in")
+	assert(not pcall(S.apply,p,2,"create",{}),"created twice")
+	-- his own Roblox hair: nothing in the hair slot
+	local q=S.new("dev_gate2")
+	q.style.equipped.hair="HairBowl";q.style.owned.HairBowl=true
+	q=S.apply(q,1,"create",Progression.createPicks({hair="",hairColor="HairNatural"}))
+	assert(q.style.equipped.hair==nil and q.style.equipped.hairColor=="HairNatural","his own hair")
+	-- a forged card: only what the gate gives is kept; the rest stays as it is
+	local forged=Progression.createPicks({top="TopTrackJacketOrange",bottom="HairBowl",feet=string.rep("x",60),hair="TopTunicNavy",hairColor=7,headband="HeadbandNone"})
+	assert(forged.top==nil and forged.bottom==nil and forged.feet==nil and forged.hair==nil and forged.hairColor==nil,"a forged pick kept")
+	assert(forged.headband=="HeadbandNone","a real pick dropped")
+	assert(not pcall(S.apply,S.new("dev_gate3"),1,"create",{top="TopTrackJacketOrange"}),"a market top given at the gate")
+	-- only at the gate's foot, then Konoha
+	local player=fakePlayer(45)
+	local sent=nil
+	local create=Progression.create
+	Progression.create=function(_,args) sent=args;return true end
+	Forest.state[player]={stage="path",at=0}
+	assert(not Forest.create(player,picks) and sent==nil,"made before the gate")
+	Forest.state[player]={stage="create",at=0}
+	local ok=Forest.create(player,picks)
+	Progression.create=create
+	assert(ok and sent==picks,"the card not taken")
+	assert(Forest.state[player]==nil and player:GetAttribute("NinjaIntro")==nil,"still at the gate")
+	assert(not Forest.create(player,picks),"created twice")
+end)
+
 print(string.format("NinjaDuel the way in (DEC-054): %d PASS",passed))

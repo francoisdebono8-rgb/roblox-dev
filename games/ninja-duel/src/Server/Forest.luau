@@ -109,6 +109,21 @@ end
 function Forest.atGate(player)
 	stage(player,"create")
 end
+-- (26/11, DESIGN passe 2) The gate's card (Client/CreatorPanel) sent "Create"
+-- {top, bottom, feet, headband, hair, hairColor}: at the gate's foot only, he
+-- wears them (Progression.create: his way in with them), then Konoha.
+function Forest.create(player,picks)
+	local st=Forest.state[player]
+	if not st or st.stage~="create" then return false end
+	local Progression=require(script.Parent.Progression)
+	pcall(Progression.create,player,picks)
+	pcall(function()
+		local Hub=require(script.Parent.Hub)
+		local looks=Progression.looks(player)
+		if Hub.restyle and looks then Hub.restyle(player,looks) end
+	end)
+	return Forest.created(player)
+end
 -- His ninja made: into Konoha, for good.
 function Forest.created(player)
 	local st=Forest.state[player]

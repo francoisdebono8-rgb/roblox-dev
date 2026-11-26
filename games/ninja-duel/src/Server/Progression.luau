@@ -707,6 +707,37 @@ function P.introDone(player)
 	if ok and P.repo then pcall(P.repo.save,P.repo,h) end
 	return ok==true
 end
+-- (26/11, DESIGN passe 2) The gate's creation (Server/Forest, "Create"): what
+-- the card sent, kept to what the gate gives (anything else is left as it
+-- is, so a stale or forged pick never keeps him outside), in one command with
+-- his way in (ProfileSchema create), saved at once.
+function P.createPicks(picks)
+	local out={}
+	if type(picks)~="table" then return out end
+	local function item(id) return if type(id)=="string" and #id<=40 then Shop.item(id) else nil end
+	for _,slot in {"top","bottom","feet","headband"} do
+		local it=item(picks[slot])
+		if it and it.slot==slot and it.base and not it.hidden then out[slot]=it.id end
+	end
+	if picks.hair=="" then out.hair=""
+	else
+		local it=item(picks.hair)
+		if it and it.slot=="hair" and it.ryo and not it.hidden then out.hair=it.id end
+	end
+	local c=item(picks.hairColor)
+	if c and c.slot=="hairColor" and (c.base or c.ryo) and not c.hidden then out.hairColor=c.id end
+	return out
+end
+function P.create(player,picks)
+	local h=P.handles[player]
+	if not h or h.data.intro==true then return false end
+	local ok=P.run(player,"create",P.createPicks(picks))
+	if ok then
+		pcall(P.badges,player)
+		if P.repo then pcall(P.repo.save,P.repo,h) end
+	end
+	return ok==true
+end
 function P.grantVip(player)
 	player:SetAttribute("NinjaVIP",true)
 	local h=P.handles[player]

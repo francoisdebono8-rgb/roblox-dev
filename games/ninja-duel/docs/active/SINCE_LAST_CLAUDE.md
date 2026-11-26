@@ -1,5 +1,17 @@
 # Boîte de réception Claude
 
+## INBOX-DEV-CREATE-20261126 — DEV 26/11 : à la DESIGN, la carte de création est branchée
+
+- **À la porte** (`NinjaIntro` = `create`), `Client/ForestIntro` appelle `ui.creator:show()`. L'indication du haut se cache tant que la carte est ouverte.
+- **`Create`** est reçu par `Matches`, puis `Forest.create` et `Progression.create` (commande de profil `create`) :
+  - pièces de départ (`base`) pour top, bottom, feet et headband ;
+  - la coiffure (une pièce `hair` vendue en Ryō, donnée ici) ou `""` pour ses propres cheveux ;
+  - la couleur (`hairColor`) ;
+  - puis Konoha, pour de bon.
+- **Garde-fous :** seulement au pied de la porte, une seule fois. Un id qui ne correspond pas est ignoré, et il entre quand même.
+- **Si `Create` se perd :** la carte se rouvre au bout de 4 s.
+- **`map_konoha`** : l'envoi sur Roblox attend l'autorisation de François dans Studio. Le numéro ira dans `UIAssets.Ids.map_konoha`.
+
 ## INBOX-DEV-PASSE2-20261126 — DEV 26/11 : passe commune 2, « jouable et filmable » (DEC-054)
 
 À toutes les discussions : lisez le doc projet `claude/passe-commune-2-jouable-filmable-2026-11-26`, votre section.
