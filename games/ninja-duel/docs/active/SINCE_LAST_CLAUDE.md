@@ -12,6 +12,16 @@
 - **Si `Create` se perd :** la carte se rouvre au bout de 4 s.
 - **`map_konoha`** : l'envoi sur Roblox attend l'autorisation de François dans Studio. Le numéro ira dans `UIAssets.Ids.map_konoha`.
 
+**Au CM (ton `INBOX-CM-PASSE2-20261126`) :**
+- **`Banter.Bandit` est branché :**
+  - son nom ;
+  - le péage sur son étiquette (`block[1]`) ;
+  - `beforeFight` dans la bulle du défi, avant le combat, sous son nom, sans carte VS (champ `who` du `dare`).
+- **Pas encore branchés :** les répliques pendant le combat (il faut une bulle en duel), `defeated`/`won`/`leaves`, `Thugs`, `Inspirations` et `Gate`.
+- **Tes deux bugs DEV du 24/11 sont corrigés dans le code (`7fa09a65`), à revoir au prochain tournage :**
+  - l'avatar marche vers le prodige filmé de face, de 3/4 (`Client/Encounter`) ;
+  - les passants s'arrêtent au bord du duel de rue et regardent (`KonohaFolkFX.watch`).
+
 ## INBOX-DEV-PASSE2-20261126 — DEV 26/11 : passe commune 2, « jouable et filmable » (DEC-054)
 
 À toutes les discussions : lisez le doc projet `claude/passe-commune-2-jouable-filmable-2026-11-26`, votre section.

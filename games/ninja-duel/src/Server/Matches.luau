@@ -184,6 +184,9 @@ function Matches:forestFight(player)
 		s.bot.displayName=Forest.NAME;s.bot.displaySub="TAIJUTSU ONLY";s.bot.rogue=true
 		pcall(function() s.bot.model:SetAttribute("NinjaRogueLook",true) end)
 	end
+	-- (26/11, the CM's Banter.Bandit) his line in the dare's bubble, under his
+	-- name, no VS card (vsFor 0), within the usual intro
+	s.dare={kit=Forest.BANDIT_KIT,who=Forest.NAME,line=Forest.BEFORE,lineFor=Matches.Dare.line,vsFor=0,at=s.combat.now}
 	self:snapshot(player,s)
 	return true
 end

@@ -101,6 +101,11 @@ test("bare: strikes, guard, dodge, jump and grab answer; no technique, tool, awa
 	local s=m.sessions[player]
 	assert(s.phase=="Duel" and s.bare and s.techniquesDisabled and s.roundsToWin==1 and s.site and s.site.key=="Forest","the fight's frame")
 	assert(s.human.fighterId==Forest.KIT and s.bot.fighterId==Forest.BANDIT_KIT and Matches.aiLevel(s)=="first","the bodies, the novice")
+	-- (26/11) the CM's words: his name, his line in the dare's bubble, no VS card
+	local Banter=H.load("Shared/Banter")
+	assert(Forest.NAME==Banter.Bandit.name and s.bot.displayName==Forest.NAME,"his name")
+	assert(s.dare and s.dare.who==Forest.NAME and s.dare.line==Banter.Bandit.beforeFight and s.dare.vsFor==0,"his line before the fight")
+	assert(s.dare.lineFor<(s.introUntil-s.combat.now),"the bubble outlasts the intro")
 	assert(s.coach and s.coach.done.signature and s.coach.done.tool,"the coach still teaches the jutsu and the tool")
 	assert(Coach.snapshot(s)==nil or Coach.snapshot(s).total==#Coach.Prompts-2,"the coach's count")
 	local c=s.combat

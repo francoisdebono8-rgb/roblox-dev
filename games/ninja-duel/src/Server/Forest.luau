@@ -39,9 +39,13 @@ Forest.WAIT=7
 Forest.PLAYER_DAMAGE=3.2
 -- On the K.O., the duel's result shows this long, then back on the path.
 Forest.RESULT=2.6
--- (the CM's words replace these: the passe 2 section CM 1)
-Forest.NAME="FOREST BANDIT"
-Forest.LINE="Nice clothes, kid. Hand them over!"
+-- (26/11) The CM's words (Shared/Banter.Bandit): his name, the toll on his tag,
+-- his line in a bubble before the fight (Matches:forestFight, the duel's dare).
+local okBanter,Banter=pcall(require,Shared.Banter)
+local Words=if okBanter and Banter and Banter.Bandit then Banter.Bandit else {}
+Forest.NAME=Words.name or "FOREST BANDIT"
+Forest.LINE=(Words.block and Words.block[1]) or "Halt! This forest has a toll."
+Forest.BEFORE=Words.beforeFight or "Hand it over, or I hand you this!"
 -- The base outfit (DEC-054: never naked), equipped on his profile on arrival.
 Forest.BASE={top="TopTunicNavy",bottom="BottomPantsDark",feet="FeetSandals"}
 

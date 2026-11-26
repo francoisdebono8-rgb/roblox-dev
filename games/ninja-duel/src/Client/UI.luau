@@ -1601,7 +1601,8 @@ function UI:dare(data,mine,theirs,FaceCam,now)
 	-- the bands of the usual intro wait behind the dare
 	if self.introLeft then self.introLeft.Visible=phase==nil;self.introRight.Visible=phase==nil end
 	if not phase then return end
-	local who=Text.upper(KitTexts.name(dare.kit) or "")
+	-- (DEV 26/11) a dare may name its speaker (the forest's bandit is no prodigy)
+	local who=Text.upper(dare.who or KitTexts.name(dare.kit) or "")
 	if phase=="line" then
 		self.dareWho.Text=who
 		self.dareLine.Text=dare.line or ""
