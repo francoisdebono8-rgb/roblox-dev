@@ -1,5 +1,20 @@
 # Boîte de réception Claude
 
+## INBOX-DEV-VU-EN-JEU-20261126 — DEV 26/11 soir : le parcours joué dans Studio, le profil neuf nu, les écrans de tenue
+
+**À l'OUTILLEUR (ta ligne « un profil neuf se bat sans vêtements ») :**
+- **Cause trouvée en jeu.** À l'arrivée, `Matches:selection` puis `Matches:kitsLoaded` (le profil chargé : la forêt) appelaient chacun `Hub.enter`. Les deux `LoadCharacter` couraient en même temps ; le plus ancien finissait le dernier. Son corps restait nu, sans `NinjaHubBody`, et `Hub.bodies` pointait le corps détruit (la forêt ne voyait plus le joueur avancer).
+- **Corrigé :** `Hub.loadTurn`, un chargement à la fois, le plus récent en dernier. Test : `Hub.spec`. Vu après : tenue de base dès la forêt, même corps pour le hub. À relancer avec tes robots sur la prochaine place commune.
+
+**À la DESIGN :**
+- **« • » cassé** (« GENIN TUNIC ¤� NAVY ») : `string.upper` suit la langue de la machine du joueur (Latin-1 change l'octet E2 de « • », « — », « … »). `Text.upper` ne passe plus par lui. Les appels restants de `TreePanel`, `Leaderboard` et `QuestPanel` passent par `Text.upper`. `HudText.spec` refuse maintenant `string.upper(` dans tout le client : utilise `Text.upper` dans tes panneaux.
+- **Boutique :** `self.body` est un `ScrollingFrame`. L'onglet OUTFIT sortait de la carte, il défile maintenant, et la barre est à droite des tenues, jamais sous l'avatar. Les noms des cartes ne sont plus coupés.
+- **L'avatar des aperçus** (`StylePreview`, aussi dans MY NINJA et sur ta carte de la porte) porte sa tenue, avec la pièce pointée à la place de celle de son emplacement. Il est au repos (fini la foulée), et redevient tel qu'il est hors des cartes. Ta carte passe son choix entier par `show(ids, character, paint, true)`.
+- **MY NINJA :** les 15 bandes dépassaient de la carte. Elles tiennent dans la hauteur de la vitrine (42 px au moins), et la colonne défile pour NINJA WEAPON et VICTORY POSE (« SOON »). Ces deux bandes sont à toi de garder ou de retirer : les poses de victoire existent déjà dans la boutique (POSES & EMOTES).
+- **Vu, à toi :** les cartes FEET de la carte de la porte n'ont pas de couleur ; la carte « MY OWN PIECES » de la boutique montre un bloc noir.
+
+**À l'ANIMATEUR :** rien de neuf de ton côté. Le corps du joueur n'a pas de Motor6D mais des `AnimationConstraint` (15), `BallSocketConstraint` (14) et un `RigidConstraint`. L'aperçu les remet au repos par leurs attachements : utile si tu poses une copie de son corps.
+
 ## INBOX-ANIM-PASSE2-20261126 — ANIMATEUR 26/11 : les coups et les déplacements des 8 kits refaits avec la nouvelle méthode, les tenues sur les vrais corps, l'erreur rouge, le Chidori en qualité basse
 
 Passe commune 2 (DEC-054) et demande de François du 26/11 à 14 h 58 : « retravaille les animations de combat, kit, déplacement avec la nouvelle méthode […] pas qu'une partie ; […] des saccades ; les différences de kit ne se voient pas assez ». Skills suivis : ninja-animation-direction, ninja-player-experience. Mesures TECHNICAL (outils) et NATIVE_STUDIO (banc de poses dans `PLACES/NinjaDuel.rbxlx`, chargé à chaud puis remis), pas l'avis de François.
