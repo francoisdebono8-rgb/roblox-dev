@@ -1,3 +1,28 @@
+**OUTILLEUR, 26/11 : passe commune 2 (DEC-054), les robots de duel, d'entraînement, de tenues et la fluidité « avant »** — NATIVE_STUDIO (Play de `PLACES/NinjaDuel.rbxlx`, place commune `f28b8ba1`, sources `9e8db7dc`, profil capture, dans une Studio à soi ouverte en arrière-plan, sans l'écran ni la souris de François) ; mesures de Claude, pas l'avis de François
+- **Robot de duel et son témoin** (`tools/duelaudit`, `NDDuelAudit` + `NDServerLog`) : 11 duels complets, les 8 kits joués avec l'avatar de François, environ 12 min de combat.
+  - Relevé : 18 corps bloqués, 12 coups qui traversent, 12 coups de loin, 53 passages dans le sol, 2 corps l'un dans l'autre, 3 combattants cachés, 1 erreur rouge (vue 2 fois). Aucune caméra dans un mur, aucun état figé, aucun corps sous le sol.
+  - Exemples en image (`tools/duelaudit/mesures/2026-11-26_avant_f28b8ba1/`) : la main du Slam dans la tête de Naruto ; Kakashi dans le corps de l'avatar ; Light1 d'Itachi qui compte à 6,9 studs (racines à 11,2) ; Naruto à terre, tête et torse sous le sol ; l'avatar bloqué sur les débris d'un cratère, vitesse serveur 0.
+  - L'erreur rouge : client `UltimateFX:590: attempt to index boolean with 'Destroy'`. `wraps.tried=true` est parcouru par `for _,w in wraps do w:Destroy()` ; le `BandageWrap` de l'ultime de Lee n'est jamais détruit.
+- **Robot d'entraînement** (`tools/training`, `NDTrainingBot`) : les 29 étapes des tutos des 8 kits, puis le duel d'essai.
+  - 26 étapes passent par kit (Naruto 25). Chaque kit bloque sur 2 jutsus et l'éveil : « refused: Locked ». Un nouveau joueur n'a pas les nœuds de l'arbre que l'entraînement lui demande.
+  - L'esquive de Legion passe sans refus ni action (SKIP). Le mur de Minato passe en 14,5 s avec le corps figé une fois.
+- **Contrôle des tenues** (`tools/outfitcheck`) : 20 tenues, bandages et bracelets d'abord, sur 7 avatars Roblox (François, Bloc R15, Femme, Garçon, Vanessa, Big Bill, Korblox), au repos et sur 9 clips.
+  - Dans le bras : les bracelets à 100 % des points en garde (0,72 stud), les coudières 12 %, les bandages 16 %, les protège-bras 18 %.
+  - Décollés : les bandes des pieds 46 % au repos, les sandales 86 %, la ceinture de la tunique 90 %, le manteau de Minato 100 %. Le bandeau dépend de la tête : 21 à 26 % dedans sur quatre corps, 67 % décollé sur Big Bill.
+  - Limite : les membres d'avatar ont la collision `Box`. Les bras, jambes et torse donnent donc les mêmes chiffres sur les 7 corps ; les captures montrent la différence.
+- **Fluidité avant la passe** (`tools/perf`, `Probe.start/stop`) :
+  - porte : 40 images/s ; place : 15 ; duel : 15 (Studio en arrière-plan rend à 15) ;
+  - simulation : 59 à 60 pas/s partout, pire image 236 ms à la porte, 19,5 ms sur la place et 39 ms en duel ;
+  - triangles 177 à 212 k en moyenne, pic 375 k ; appels de dessin 191 à 226, pic 503 ;
+  - à-coups du corps en duel : 19,2 % des pas (le rival 11,6 %).
+  - L'« après » se refait dans le même état de fenêtre (`tools/perf/README.md`).
+- **Collisions relancées pour le DEV** (`tools/collision`, `f28b8ba1` descend de `6ae41cb3`), comparées au 24/11 `c40cc16d` :
+  - murs invisibles : 4 % des rayons de façade (avant : 16 %) ; toits invisibles : 1 % (avant : 5 %) ; façades traversées aux rayons : 1 % (avant : 0 %), surtout `shop_house` ;
+  - à la marche, le corps entre dans 16 façades sur 160 (avant : 23 sur 175). Six `clan_house` sont la véranda sous l'avant-toit (image). À voir : `MemorialStone` (-223.6, 101.4) et `NakaShrine` ;
+  - les toits des `small_house` sont 1 stud trop bas : 34 chutes sur 190 finissent 1 à 1,3 stud sous le dessin ;
+  - la `tank_house` du milieu de la rangée sud (-1.6, -240.6) est enfermée dans des solides : 94 % de ses rayons de façade butent 7,5 studs avant le dessin, pas de rue à la marche (avant : 13 %).
+  - Le robot de marche partait parfois sur le toit du voisin : corrigé (la rue est cherchée depuis le pied du bâtiment, colonne `startY`).
+
 **DEV, 24/11, 14 h : la série du CM « MY AVATAR VS THE 8 » (DEC-053)** — TECHNICAL : tests verts, rien n'est vu dans Studio
 - **`challengeFilm`** (`Server/DevChallengeFilm`, Studio seulement) lance le défi de rue d'une inspiration contre l'avatar, comme un joueur le rencontre, avec une IA aux commandes des deux côtés. Il rend chaque fin de manche et le coup final. Le mode d'emploi est dans `docs/tools/DEVTOOLS.md`.
 - **Un défi accepté passe par `Matches:challengeStart`.** L'intro de la 1re manche donne d'abord la réplique (1,6 s), puis la carte VS (1,5 s), puis BEGIN. Le snapshot porte `dare`. La caméra montre d'abord celui qui défie. La bulle et la carte VS sont à la DESIGN.

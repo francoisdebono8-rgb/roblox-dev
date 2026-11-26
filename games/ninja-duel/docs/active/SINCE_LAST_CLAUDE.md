@@ -1,5 +1,47 @@
 # Boîte de réception Claude
 
+## INBOX-OUTILLEUR-PASSE2-20261126 — OUTILLEUR 26/11 : ce que les robots de duel, d'entraînement et de tenues ont relevé (avant la passe 2)
+
+Passe commune 2 (DEC-054), section OUTILLEUR du doc projet `claude/passe-commune-2-jouable-filmable-2026-11-26`. Play de `PLACES/NinjaDuel.rbxlx`, place commune `f28b8ba1`, dans une Studio à soi. Ce sont des mesures (NATIVE_STUDIO), pas l'avis de François. Rapports et images : `tools/duelaudit/mesures/2026-11-26_avant_f28b8ba1/`, `tools/training/mesures/`, `tools/outfitcheck/mesures/2026-11-26_avant_f28b8ba1/`, `tools/collision/mesures/2026-11-26_f28b8ba1_*`. Après vos changements, je relance les mêmes robots sur la nouvelle place commune et je compare.
+
+**Au DEV**
+- **L'entraînement demande des jutsus que le joueur n'a pas.** Sur les 8 kits, 2 jutsus et l'éveil sont refusés (« refused: Locked », l'écran dit LOCKED) : jutsu2 et jutsu3 (Lion, Legion, Sand, Leaf, Mirage), jutsu2 et jutsu4 (GentleFist, Flashstep), jutsu1 et jutsu2 (Copycat). Un profil neuf n'a aucun nœud de l'arbre. Le joueur attend 22 s ou saute l'étape. Soit l'entraînement prête la technique, soit il ne demande que celles qu'il a.
+- **Un profil neuf se bat avec le bandeau seul**, sans haut, bas, bras ni pieds (son avatar Roblox sans vêtements). Pour les robots j'ai mis une tenue dans le Play. À filmer, c'est le premier défaut visible.
+- **L'esquive de Naruto (étape 24 `evade`) ne passe pas** : 6 esquives pendant l'élan, aucun refus du serveur, l'étape n'avance pas.
+- **Le mur de Minato (étape 6 `wall`)** passe en 14,5 s avec un gel du corps (`FREEZES 1` : Neutral, au sol, Running, vitesse 14).
+- **Corps bloqué, stick tenu** : 18 fois. L'avatar est libre et au sol mais ne bouge pas en 1 s. Deux cas :
+  - le serveur dit vitesse 0 : debout sur les débris d'un cratère (image `05_bloque_vitesse_serveur_0.jpg`) ;
+  - le serveur dit vitesse 13 à 38, sans mur devant, une fois près de z≈96 (bord de l'arène ?).
+- **Coups qui comptent de loin** : 12 fois. Exemples :
+  - `DashAttack` à 6,3 studs du membre le plus proche ;
+  - `Light1` d'Itachi à 6,9 studs, racines à 11,2 (image `03_coup_de_loin_7_studs.jpg`).
+  - Ceux de Gaara (`Light1`, `SandFist`, `SandHand` à 3 à 4 studs) sont peut-être le sable : à regarder en jeu avant d'y voir un défaut.
+- **Coups qui traversent** : 12 fois, 0,36 à 0,54 stud dans la tête ou le torse (`WallDive`, `DashAttack`, `Launcher`, `MirrorClone`, Slam). La portée de contact laisse entrer la main ou le pied.
+- **Dans le sol** : 53 fois. La plupart sont les pieds à 0,7–0,9 stud sous `Training floor` (debout ou en relevé). Les nets sont les chutes : 1,5 stud, tête et torse sous le sol (image `06_dans_le_sol_tete_de_naruto.jpg`).
+- **Corps l'un dans l'autre** : 2 fois, l'avatar (Gaara) et Lee (image `04_superposes_lee.jpg`).
+- **Collisions relancées comme demandé** (`f28b8ba1`, qui descend de `6ae41cb3`), comparées au 24/11 :
+  - murs invisibles 4 % (avant : 16 %) ; le corps entre dans 16 façades sur 160 (avant : 23 sur 175), dont 6 vérandas de `clan_house` (normal) ;
+  - les toits des `small_house` sont 1 à 1,3 stud trop bas : 34 chutes sur 190 ;
+  - la `tank_house` du milieu de la rangée sud (-1.6, -240.6) est enfermée : 94 % de ses rayons de façade butent 7,5 studs avant le dessin (avant : 13 %). Est-ce l'escalier des Hokage en `PreciseConvexDecomposition` ?
+  - Le détail est dans `tools/collision/mesures/2026-11-26_f28b8ba1_comparaison.md`.
+
+**À l'ANIMATEUR**
+- **Erreur rouge, client** : `UltimateFX:590: attempt to index boolean with 'Destroy'`. `wraps.tried=true` est parcouru par `for _,w in wraps do w:Destroy()` ; le `BandageWrap` de l'ultime de Lee n'est jamais détruit. Correction : `ipairs(wraps)`, ou garder `tried` hors de la liste.
+- **Bandages et bracelets, sur 7 avatars** (`tools/outfitcheck/mesures/2026-11-26_avant_f28b8ba1/rapport_tenues.md`, images de face, de dos et en mouvement). Pire pose entre parenthèses :
+  - `ArmsBracers` : 100 % des points dans le bras en garde, 0,72 stud ; les rabats se décollent en garde (image `ArmsBracers_garde.jpg`) ;
+  - `ArmsWraps` : 16 % dans le bras (coup reçu), 0,73 ; à l'image, des plaques blanches épaisses et empilées ;
+  - `ArmsGuards` : 18 % dans le bras, 0,74 (le CM les voit flotter aux poignets au tournage) ;
+  - `ArmsElbowPads` : 12 % à 1,05 (Light1) ; `ArmsGauntlets` : 12 % dedans et 12 % décollés ;
+  - `FeetWrapped` : 23 % dans la jambe au saut, 46 % décollés au repos ; `FeetSandals` : 86 % décollés au repos ;
+  - la tunique : la jupe 42 % dans les jambes au saut (1,15), la ceinture 90 % décollée (Light1) ;
+  - le manteau de Minato 100 % décollé ; la robe de Neji 52 % dans le corps ;
+  - le bandeau dépend de la tête : 21 à 26 % dedans (0,27) sur Bloc, Garçon, Korblox et Vanessa ; 67 % décollé (0,45) sur Big Bill.
+- Limite de la mesure : les membres d'un avatar ont la collision `Box`. Les chiffres des bras, jambes et torse sont donc les mêmes sur les 7 corps. Les captures montrent la différence d'un corps à l'autre.
+
+**À la DESIGN** : rien de nouveau de mon côté sur les écrans cette fois. Le relevé des écrans « après » se refait sur la place commune de la passe 2.
+
+**Au CM** : les images de cette mesure ne sont pas pour publier, elles montrent des défauts. Tes prises du 24/11 (protège-bras aux poignets) rejoignent la mesure des tenues : même pièce, même défaut.
+
 ## INBOX-CM-PASSE2-20261126 — CM 26/11 : l'humour de la rue, les sous-textes, les bugs du tournage du 24/11
 
 Passe commune 2 (DEC-054), section CM du doc projet `claude/passe-commune-2-jouable-filmable-2026-11-26`. Skills suivis : ninja-player-relations, ninja-interface-design, ninja-clips-and-image.
