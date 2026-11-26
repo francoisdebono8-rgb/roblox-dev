@@ -69,6 +69,10 @@ Shop.Tabs={
 	{id="Frames",name="FACE-CAM FRAMES",slots={"frame"}},
 }
 Shop.OutfitSlots={"top","bottom","arms","feet"}
+-- (26/11, DEC-054: never naked) The base outfit: what anyone wears in what he
+-- left empty when he has no top and no master's outfit (Server/Outfit), and
+-- what the shop's avatar (Client/StylePreview) wears in its place.
+Shop.BASE={top="TopTunicNavy",bottom="BottomPantsDark",feet="FeetSandals"}
 Shop.AccessorySlots={"mask","cape","back"}
 
 -- (14/11, François: « tout ce qu'il y a dans la boutique, c'est des Robux. Et

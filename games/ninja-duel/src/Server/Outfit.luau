@@ -164,7 +164,7 @@ end
 -- apparaisse nu ») No top and no master's outfit (a new profile, a profile not
 -- loaded, a player who never dressed): the base outfit, in Konoha and in every
 -- duel, in what he left empty.
-Outfit.BASE={top="TopTunicNavy",bottom="BottomPantsDark",feet="FeetSandals"}
+Outfit.BASE=Shop.BASE
 function Outfit.items(looks)
 	looks=looks or {}
 	local out={}

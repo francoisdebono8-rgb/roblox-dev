@@ -42,6 +42,7 @@ for _,t in Shop.Tabs do CATEGORY[t.name]=t end
 Panel.CATEGORY=CATEGORY
 -- The big avatar's column, right of the looks (front, turning)
 Panel.PREVIEW={W=360}
+Panel.SCROLL_BAR=8
 Panel.CLOSE={X=W-170,Y=26,W=140,H=56}
 
 local function rgb(c) return Color3.fromRGB(c[1],c[2],c[3]) end
@@ -174,7 +175,13 @@ function Panel.new(kit,gui,send,onTree)
 	self.headLine=frame(card,UDim2.fromOffset(SIDE+42,78),UDim2.fromOffset(180,7),M.red,0);corner(self.headLine,4);self.headLine.Rotation=-1
 	self.subheading=text(card,"",UDim2.fromOffset(SIDE+42,88),UDim2.fromOffset(900,22),17,M.brown or M.ink,STRONG)
 	press(kit,card,"CLOSE",UDim2.fromOffset(Panel.CLOSE.X,Panel.CLOSE.Y),UDim2.fromOffset(Panel.CLOSE.W,Panel.CLOSE.H),function() self:hide() end,"paper").TextSize=24
-	self.body=frame(card,UDim2.fromOffset(SIDE+40,122),UDim2.fromOffset(W-SIDE-70,H-170),M.paper,1)
+	-- (26/11, passe 2, seen in the shop: OUTFIT has nine slots of looks, the
+	-- grid ran out under the card and off the screen, the tops, the bottoms and
+	-- the feet out of reach) The page scrolls (the wheel, a finger, a pad's
+	-- selection), its bar beside the looks, never under the avatar.
+	self.body=create("ScrollingFrame",card,{Position=UDim2.fromOffset(SIDE+40,122),Size=UDim2.fromOffset(W-SIDE-70,H-170),
+		BackgroundTransparency=1,BorderSizePixel=0,ScrollBarThickness=Panel.SCROLL_BAR,ScrollBarImageColor3=M.ink,
+		ScrollingDirection=Enum.ScrollingDirection.Y,CanvasSize=UDim2.new(),AutomaticCanvasSize=Enum.AutomaticSize.Y})
 	self.footer=text(card,"",UDim2.fromOffset(SIDE+40,H-42),UDim2.fromOffset(W-SIDE-70,24),16,M.mid or M.ink,kit.BODY_FONT)
 	return self
 end
@@ -238,7 +245,15 @@ end
 function Panel:refresh(kits)
 	self.kits=kits
 	if self.root.Visible then self:draw() end
+	-- (26/11) a look worn: the server dresses his body just after; the big
+	-- avatar is taken again then (StylePreview: what he wears is in its key)
+	pcall(function()
+		task.delay(Panel.REDRESS,function()
+			if self.root.Visible and self.stylePreview and self.stylePreview.item==nil and CATEGORY[self.tab] then self:preview(nil) end
+		end)
+	end)
 end
+Panel.REDRESS=.6
 
 function Panel:add(item) table.insert(self.drawn,item);return item end
 function Panel:draw()
@@ -267,6 +282,10 @@ function Panel:draw()
 	self.footer.TextColor3=self.M.mid or self.M.ink
 	local category=CATEGORY[self.tab]
 	self.bodyW=if category then W-SIDE-70-Panel.PREVIEW.W-20 else W-SIDE-70
+	-- a new page starts at its top; the bar right of the looks (the avatar's column after)
+	if self.drawnTab~=self.tab then pcall(function() self.body.CanvasPosition=Vector2.new(0,0) end) end
+	self.drawnTab=self.tab
+	self.body.Size=UDim2.fromOffset(if category then self.bodyW+Panel.SCROLL_BAR+4 else W-SIDE-70,H-170)
 	if self.tab=="KITS" then self:drawKits()
 	elseif category then
 		self:drawLooks(category.slots,category.name,Panel.SUB[category.id] or "")
@@ -442,13 +461,18 @@ function Panel:drawLooks(slots,title,sub)
 				end
 				top=if icon then 70 else 50
 			end
+			-- (26/11, seen in the shop: « THE PERFECT BROTHER · » and « THE
+			-- PERFECT BROTHER'S » cut) one line for whose it is, made smaller to
+			-- fit; the name on up to two lines down to the button
 			if item.kit then
-				K.text(cell,nameOf(item.kit).." · INSPIRATION",UDim2.fromOffset(12,top),UDim2.new(1,-24,0,16),13,if state.kind=="equipped" then (M.redSoft or M.cream) else (M.brown or M.ink),STRONG)
+				local whose=K.text(cell,nameOf(item.kit).." · INSPIRATION",UDim2.fromOffset(12,top),UDim2.new(1,-24,0,16),13,if state.kind=="equipped" then (M.redSoft or M.cream) else (M.brown or M.ink),STRONG)
+				whose.TextWrapped=false;whose.TextScaled=true
+				K.create("UITextSizeConstraint",whose,{MaxTextSize=13,MinTextSize=8})
 				top+=16
 			end
-			local name=K.text(cell,item.name,UDim2.fromOffset(12,top),UDim2.new(1,-24,0,24),17,ink,STRONG)
-			name.TextScaled=true
-			K.create("UITextSizeConstraint",name,{MaxTextSize=17,MinTextSize=11})
+			local name=K.text(cell,item.name,UDim2.fromOffset(12,top),UDim2.new(1,-24,0,math.max(24,ch-50-top)),17,ink,STRONG)
+			name.TextScaled=true;name.TextYAlignment=Enum.TextYAlignment.Top
+			K.create("UITextSizeConstraint",name,{MaxTextSize=17,MinTextSize=10})
 			local text,kind,short=Panel.lookButton(state,ryo)
 			if short and (shortest==nil or short<shortest) then shortest=short end
 			local b=press(K,cell,text,UDim2.new(0,12,1,-46),UDim2.new(1,-24,0,36),function()

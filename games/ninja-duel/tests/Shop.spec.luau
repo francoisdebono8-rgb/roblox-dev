@@ -1021,4 +1021,48 @@ test("the style preview shows the whole avatar, head to feet, in any frame",func
 	end
 end)
 
+-- (26/11, passe 2, seen in the shop: the big avatar in his skin, a stride
+-- frozen) the copy wears his outfit with the look pointed at in its slot, and
+-- stands at rest
+test("the style preview: his own outfit on, the look pointed at in its slot, standing at rest",function()
+	local Preview=H.load("Client/StylePreview")
+	local worn={"TopTunicBlack","BottomPantsSand","FeetSandals","HairCurtain"}
+	local function has(list,id) return table.find(list,id)~=nil end
+	local ids=Preview.ids(worn,nil)
+	assert(#ids==4 and has(ids,"TopTunicBlack"),"his own outfit is not on the copy")
+	ids=Preview.ids(worn,"TopTunicNavy")
+	assert(has(ids,"TopTunicNavy") and not has(ids,"TopTunicBlack") and has(ids,"BottomPantsSand") and has(ids,"HairCurtain"),"a top pointed at: "..table.concat(ids,","))
+	ids=Preview.ids(worn,"SetNaruto")
+	assert(ids[1]=="SetNaruto" and not has(ids,"TopTunicBlack") and not has(ids,"BottomPantsSand") and has(ids,"HairCurtain"),"a master's outfit over his pieces: "..table.concat(ids,","))
+	-- a piece over a master's outfit: never bare legs (the base outfit where nothing is)
+	ids=Preview.ids({"SetNaruto","HairCurtain"},"TopTunicBlack")
+	assert(has(ids,"TopTunicBlack") and not has(ids,"SetNaruto") and has(ids,Shop.BASE.bottom) and has(ids,Shop.BASE.feet) and not has(ids,Shop.BASE.top),"a top over a set: "..table.concat(ids,","))
+	ids=Preview.ids({"SetNaruto"},"SetNone")
+	assert(not has(ids,"SetNaruto") and has(ids,Shop.BASE.top) and has(ids,Shop.BASE.bottom),"his own pieces instead of a set: "..table.concat(ids,","))
+	ids=Preview.ids(worn,"FeetNone")
+	assert(not has(ids,"FeetSandals") and has(ids,"TopTunicBlack"),"bare feet pointed at")
+	local same,paint=Preview.ids(worn,"HairFlame")
+	assert(#same==4 and typeof(paint)=="Color3","a hair colour paints, the outfit stays")
+	local _,own=Preview.ids(worn,"HairNatural")
+	assert(own==false,"his own colour takes the paint off")
+	local kept=Preview.ids(worn,"ChakraBlue")
+	assert(#kept==4,"a look that is not worn on the body changes nothing")
+	assert(Shop.BASE.top and Shop.item(Shop.BASE.top) and Shop.item(Shop.BASE.bottom) and Shop.item(Shop.BASE.feet),"the base outfit's pieces exist")
+	-- standing at rest: a limb turned by the animation is put back where its joint holds it
+	local Instance,CF=roblox.Instance,roblox.CFrame
+	local model=Instance.new("Model")
+	local root=Instance.new("Part");root.Name="HumanoidRootPart";root.CFrame=CF.new(10,3,0);root.Parent=model
+	local torso=Instance.new("Part");torso.Name="LowerTorso";torso.Parent=model
+	local leg=Instance.new("Part");leg.Name="RightUpperLeg";leg.Parent=model
+	local hip=Instance.new("Motor6D");hip.Part0=torso;hip.Part1=leg;hip.C0=CF.new(.5,-.2,0);hip.C1=CF.new(0,.4,0);hip.Parent=leg
+	local rootJoint=Instance.new("Motor6D");rootJoint.Part0=root;rootJoint.Part1=torso;rootJoint.C0=CF.new(0,-1,0);rootJoint.C1=CF.new(0,0,0);rootJoint.Parent=torso
+	torso.CFrame=CF.new(10,2,0)*CF.Angles(.4,0,0)
+	leg.CFrame=CF.new(12,1,1)*CF.Angles(1.1,0,0)
+	assert(Preview.rest(model)==2,"the copy's limbs were not put back")
+	local want=CF.new(10,2,0)*CF.new(.5,-.2,0)*CF.new(0,.4,0):Inverse()
+	assert((leg.CFrame.Position-want.Position).Magnitude<1e-4 and (torso.CFrame.Position-CF.new(10,2,0).Position).Magnitude<1e-4,"the leg does not stand at rest")
+	local look=leg.CFrame.LookVector
+	assert(math.abs(look.Y)<1e-4,"the leg kept its turn")
+end)
+
 print(string.format("NinjaDuel shop and Ryō (13/11): %d PASS",passed))
