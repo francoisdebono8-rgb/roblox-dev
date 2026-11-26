@@ -456,6 +456,14 @@ test("MY NINJA: the wardrobe lists every slot's pieces, his first, and opens fro
 		assert(ui.wardrobe.tabs.weapon and ui.wardrobe.tabs.weapon.future and ui.wardrobe.tabs.weapon.count.Text=="SOON","the slots to come")
 		ui.wardrobe:open("cape")
 		assert(#ui.wardrobe.cards==#Shop.inSlot("cape"),"one card per cape")
+		-- (26/11, seen in the game: the bands ran under the card) every band in its
+		-- column, the column in the card, a finger's size kept
+		local column=ui.wardrobe.column
+		assert(column and column.Position.Y.Offset+column.Size.Y.Offset<=W.H-20,"the bands' column leaves the card")
+		for id,t in ui.wardrobe.tabs do
+			assert(t.button.Parent==column and t.button.Size.Y.Offset>=W.PITCH.min-4,id..": a band out of its column or too small")
+		end
+		assert(W.pitch(8)==W.PITCH.max and W.pitch(15)==W.PITCH.min and W.pitch(12)*12<=W.LIST_H,"the bands' pitch")
 		assert(ui.wardrobe.close.Size.X.Offset>=64,"a big close")
 		ui.wardrobe:hide();assert(not ui.wardrobe:shown())
 	end)

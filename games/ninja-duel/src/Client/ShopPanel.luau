@@ -182,6 +182,12 @@ function Panel.new(kit,gui,send,onTree)
 	self.body=create("ScrollingFrame",card,{Position=UDim2.fromOffset(SIDE+40,122),Size=UDim2.fromOffset(W-SIDE-70,H-170),
 		BackgroundTransparency=1,BorderSizePixel=0,ScrollBarThickness=Panel.SCROLL_BAR,ScrollBarImageColor3=M.ink,
 		ScrollingDirection=Enum.ScrollingDirection.Y,CanvasSize=UDim2.new(),AutomaticCanvasSize=Enum.AutomaticSize.Y})
+	-- out of the looks, the big avatar is him as he is again
+	pcall(function()
+		self.body.MouseLeave:Connect(function()
+			if self.root.Visible and self.stylePreview and self.stylePreview.item~=nil and CATEGORY[self.tab] then self:preview(nil) end
+		end)
+	end)
 	self.footer=text(card,"",UDim2.fromOffset(SIDE+40,H-42),UDim2.fromOffset(W-SIDE-70,24),16,M.mid or M.ink,kit.BODY_FONT)
 	return self
 end

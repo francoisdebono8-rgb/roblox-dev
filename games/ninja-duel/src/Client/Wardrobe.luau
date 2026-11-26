@@ -26,6 +26,10 @@ W.SLOTS={"set","top","bottom","arms","feet","mask","cape","back","headband","kun
 W.FUTURE={{id="mask",name="MASK"},{id="cape",name="CAPE"},{id="back",name="ON THE BACK"},{id="weapon",name="NINJA WEAPON"},{id="pose",name="VICTORY POSE"}}
 W.CARD=152
 W.COLS=4
+-- The slot bands' column: its height (the avatar's case's), a band's pitch.
+W.LIST_H=536
+W.PITCH={max=50,min=42}
+function W.pitch(n) return math.clamp(math.floor((W.LIST_H-8)/math.max(1,n)),W.PITCH.min,W.PITCH.max) end
 
 -- Where an item is had: "worn", "owned" (free or bought), "market" (Ryō),
 -- "shop" (Robux), or "earned" (a kit's tree, a master).
@@ -99,25 +103,42 @@ function W.new(kit,gui,send,ui)
 		if made then self.preview=preview end
 	end
 	-- the slot bands
-	local y=96
+	-- (26/11, passe 2, seen in the game: fifteen bands of 50 from the top ran
+	-- 190 studs under the card, TANTO cut, GOURD and the slots to come off the
+	-- window) As many as fit in the case's height, smaller down to a size a
+	-- finger still takes, the rest by scrolling the column.
+	local bands={}
+	for _,slot in W.SLOTS do if Shop.Slots[slot] then table.insert(bands,{slot,Shop.Slots[slot].name}) end end
+	for _,f in W.FUTURE do if not Shop.Slots[f.id] then table.insert(bands,{f.id,f.name,true}) end end
+	local pitch=W.pitch(#bands)
+	local column=kit.create("ScrollingFrame",card,{Position=UDim2.fromOffset(372,96),Size=UDim2.fromOffset(244,W.LIST_H),BackgroundTransparency=1,BorderSizePixel=0,
+		ScrollBarThickness=6,ScrollBarImageColor3=M.ink,ScrollingDirection=Enum.ScrollingDirection.Y,CanvasSize=UDim2.new(),AutomaticCanvasSize=Enum.AutomaticSize.Y,ZIndex=76})
+	self.column=column
+	local y=4
 	local function tab(id,name,future)
-		local b=z(kit.button(card,"",UDim2.fromOffset(378,y),UDim2.fromOffset(220,46),function() if not future then self:open(id) end end,M.paper),1)
+		local b=z(kit.button(column,"",UDim2.fromOffset(6,y),UDim2.fromOffset(220,pitch-4),function() if not future then self:open(id) end end,M.paper),1)
 		b.AutoButtonColor=not future
 		kit.create("UIStroke",b,{Color=M.ink,Thickness=4,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
 		local label=z(kit.text(b,name,UDim2.fromOffset(12,0),UDim2.new(1,-80,1,0),18,M.ink,kit.STRONG_FONT),2)
 		local count=z(kit.text(b,"",UDim2.new(1,-74,0,0),UDim2.new(0,64,1,0),16,M.mid or M.ink,kit.BODY_FONT,Enum.TextXAlignment.Right),2)
 		if future then b.BackgroundColor3=M.back or M.paper;label.TextColor3=M.off or M.ink;count.Text="SOON" end
 		self.tabs[id]={button=b,label=label,count=count,future=future}
-		y+=50
+		y+=pitch
 	end
-	for _,slot in W.SLOTS do if Shop.Slots[slot] then tab(slot,Shop.Slots[slot].name) end end
-	for _,f in W.FUTURE do if not Shop.Slots[f.id] then tab(f.id,f.name,true) end end
+	for _,band in bands do tab(band[1],band[2],band[3]) end
 	-- the pieces: a scrolling grid
 	local grid=kit.create("ScrollingFrame",card,{Position=UDim2.fromOffset(618,96),Size=UDim2.fromOffset(W.W-646,536),BackgroundTransparency=1,BorderSizePixel=0,
 		ScrollBarThickness=8,ScrollBarImageColor3=M.ink,CanvasSize=UDim2.new(),AutomaticCanvasSize=Enum.AutomaticSize.Y,ZIndex=76})
 	kit.create("UIGridLayout",grid,{CellSize=UDim2.fromOffset(W.CARD-24,W.CARD+18),CellPadding=UDim2.fromOffset(10,10),SortOrder=Enum.SortOrder.LayoutOrder})
 	kit.create("UIPadding",grid,{PaddingTop=UDim.new(0,4),PaddingLeft=UDim.new(0,4)})
 	self.grid=grid
+	-- (26/11, passe 2) the look pointed at is worn by the turning copy; out of
+	-- the looks, he is shown as he is
+	pcall(function()
+		grid.MouseLeave:Connect(function()
+			if self.root.Visible and self.preview then pcall(function() self.preview:show(nil,Players.LocalPlayer.Character) end) end
+		end)
+	end)
 	pcall(function()
 		UIS.InputBegan:Connect(function(input,processed)
 			if not self.root.Visible then return end
@@ -188,6 +209,16 @@ function W:makeCard(item)
 		if item.slot=="set" and self.preview then pcall(function() self.preview:show(item.id,Players.LocalPlayer.Character) end) end
 	end,if s=="worn" then M.ink else M.paper)
 	b.ZIndex=77;b.AutoButtonColor=mine
+	-- (26/11, passe 2: the same as the shop) a look on the body pointed at (the
+	-- mouse, a pad's selection) is worn by the turning copy over his outfit
+	local info=Shop.Slots[item.slot]
+	if self.preview and info and (info.outfit or item.slot=="headband") then
+		pcall(function()
+			local function point() pcall(function() self.preview:show(item.id,Players.LocalPlayer.Character) end) end
+			b.MouseEnter:Connect(point)
+			b.SelectionGained:Connect(point)
+		end)
+	end
 	kit.create("UIStroke",b,{Color=if s=="worn" then M.red else M.ink,Thickness=4,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
 	-- the swatch: its colours as two blocks (the item's icon once rendered)
 	local sw=kit.frame(b,UDim2.fromOffset(10,10),UDim2.new(1,-20,0,74),M.cream,0)
