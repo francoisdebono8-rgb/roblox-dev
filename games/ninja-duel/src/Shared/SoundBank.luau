@@ -10,6 +10,9 @@
 -- SoundGroup at volume 0, `Sound.PlaybackLoudness` sampled at five places of
 -- the track). `volume` brings each one to its layer's level from that
 -- measure (`SoundBank.level`), so a track swapped keeps the mix.
+-- (27/11) Samurai Sword Echoes, Moeru Kodou, the chimes and the cheers carry
+-- the OUTILLEUR's measure (tools/sounds, 26/11: they sat at 41/55, 56/70,
+-- 2.4/3 and 38/30 of their levels with the first one).
 local SoundBank={}
 
 -- The level of each layer: measured loudness × volume (the combat's hits peak
@@ -45,11 +48,11 @@ SoundBank.Music={
 	duel={
 		track(74553068502659,"Taiko Battle March","DistroKid",89.1,107.3,"duel"),
 		track(116766988040383,"Skyfall Duel","DistroKid",164.6,144.5,"duel"),
-		track(140311746751125,"Samurai Sword Echoes","DistroKid",217.4,159,"duel"),
+		track(140311746751125,"Samurai Sword Echoes","DistroKid",217.4,119.8,"duel"),
 	},
 	-- the final against the Ōtsutsuki (STORY-001)
 	final={
-		track(138614247392811,"Moeru Kodou (Blazing Heartbeat)","DistroKid",187.5,260.1,"final"),
+		track(138614247392811,"Moeru Kodou (Blazing Heartbeat)","DistroKid",187.5,207.6,"final"),
 		track(82510161326753,"Echoes Of Kabuki","DistroKid",169.6,156.8,"final"),
 	},
 }
@@ -59,13 +62,15 @@ SoundBank.Ambience={
 	birds=track(9112749254,"Birds Park 1","Pro Sound Effects",36,1.5,"bed"),
 	woods=track(9112806424,"Jungle Dawn 1 (woods, birds, insects)","Pro Sound Effects",36,1.8,"bed"),
 	walla=track(9112885014,"Theater Crowd 1 (Japanese walla)","Pro Sound Effects",36,21.5,"walla"),
-	chimes=track(9120750072,"Wind Chimes 2","Pro Sound Effects",31.1,2.7,"chimes"),
-	hall=track(9112779173,"Festival Of Fools 1 (crowd)","Pro Sound Effects",35.2,55.9,"hall"),
+	chimes=track(9120750072,"Wind Chimes 2","Pro Sound Effects",31.1,2.2,"chimes"),
+	-- (27/11, OUTILLEUR passe 3: « Festival Of Fools » had parade horns) a
+	-- large audience talking before the show, measured in Studio 27/11
+	hall=track(9112885867,"Theater Walla 2 (audience before the show)","Pro Sound Effects",36,7.2,"hall"),
 }
 
 -- One-shots: the street cheers when a duel ends in front of it.
 SoundBank.Shots={
-	cheer=track(9120973900,"Wrestling Crowd 2 (short cheers)","Pro Sound Effects",20.8,69.7,"cheer"),
+	cheer=track(9120973900,"Wrestling Crowd 2 (short cheers)","Pro Sound Effects",20.8,89,"cheer"),
 }
 
 -- Every sound of the bank (the tests and the OUTILLEUR's sound check).
