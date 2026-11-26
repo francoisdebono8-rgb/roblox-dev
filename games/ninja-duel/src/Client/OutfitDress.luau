@@ -52,10 +52,48 @@ function Dress.legScale(character)
 	end
 	return have/want
 end
+-- (26/11, passe 2, ANIMATEUR, measured in the game on François's avatar and 5 others: the
+-- hands' boxes are 3 to 3.7 times as tall as the standard's, the feet's 2.7 to 3.3, for a
+-- width under 1) A piece on a hand or a foot is not stretched as tall as the box: its height
+-- follows the box's width and depth (at most 1.2 times them), and it keeps its place from the
+-- end it was modelled at (the wrist for a hand's wrap, the sole for a sandal).
+Dress.ENDS={LeftHand=true,RightHand=true,LeftFoot=true,RightFoot=true}
+-- (26/11, passe 2: « les protège-bras flottent aux poignets ») A modern avatar's arm is a round
+-- mesh inside its box: measured on François's body (its EditableMesh, mid-height), the forearm
+-- fills .84 of its box across and the upper arm .83; the legs and the hands fill theirs. A piece
+-- sized to the box stood off the arm all round. On those arms the pieces come in to the mesh;
+-- the blocky body (the R15 block meshes, 7430070991-7430071119) fills its box and keeps them.
+Dress.FILL={LeftUpperArm=.86,RightUpperArm=.86,LeftLowerArm=.88,RightLowerArm=.88}
+Dress.BLOCKY={["7430071044"]=true,["7430071041"]=true,["7430071005"]=true,["7430071013"]=true}
+function Dress.fill(body,on)
+	local f=Dress.FILL[on]
+	if not f or not body:IsA("MeshPart") then return 1 end
+	local okId,mesh=pcall(function() return body.MeshId end)
+	local id=okId and string.match(tostring(mesh),"(%d+)%s*$")
+	if id and Dress.BLOCKY[id] then return 1 end
+	return f
+end
 function Dress.place(body,on,size,o,character)
 	local ref=okMeshes and OutfitMeshes.Ref[on]
 	if not ref then return nil end
 	local k=Vector3.new(body.Size.X/ref.X,body.Size.Y/ref.Y,body.Size.Z/ref.Z)
+	local fill=Dress.fill(body,on)
+	if fill<1 then k=Vector3.new(k.X*fill,k.Y,k.Z*fill) end
+	if Dress.ENDS[on] then
+		local ky=math.min(k.Y,math.max(k.X,k.Z)*1.2)
+		if ky<k.Y-1e-6 then
+			local h=size.Y*ky
+			local y
+			if o.Y>=0 then   -- from the top: the wrist, the ankle
+				local fromTop=ref.Y/2-(o.Y+size.Y/2)
+				y=body.Size.Y/2-fromTop*ky-h/2
+			else             -- from the bottom: the sole
+				local fromBottom=(o.Y-size.Y/2)+ref.Y/2
+				y=-body.Size.Y/2+fromBottom*ky+h/2
+			end
+			return Vector3.new(size.X*k.X,h,size.Z*k.Z),body.CFrame*CFrame.new(o.X*k.X,y,o.Z*k.Z)
+		end
+	end
 	local bottom=o.Y-size.Y/2+ref.Y/2
 	local legs=if bottom<-.05 and on=="LowerTorso" then Dress.legScale(character) else nil
 	if not legs then return size*k,body.CFrame*CFrame.new(o*k) end

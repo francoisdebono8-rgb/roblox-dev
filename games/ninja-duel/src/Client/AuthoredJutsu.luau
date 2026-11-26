@@ -27,4 +27,21 @@ for name,clip in require(script.Parent.AuthoredJutsu18) do all[name]=clip end
 for name,clip in require(script.Parent.AuthoredJutsu19) do all[name]=clip end
 -- (24/11, passe commune 1) the rogue ninjas of Konoha (tools/blender/p1_clips.py)
 for name,clip in require(script.Parent.AuthoredJutsu20) do all[name]=clip end
+-- BEGIN passe 2 (tools/blender/p2_build.py)
+for name,clip in require(script.Parent.AuthoredJutsu21) do all[name]=clip end
+for name,clip in require(script.Parent.AuthoredJutsu22) do all[name]=clip end
+for name,clip in require(script.Parent.AuthoredJutsu23) do all[name]=clip end
+for name,clip in require(script.Parent.AuthoredJutsu24) do all[name]=clip end
+for name,clip in require(script.Parent.AuthoredJutsu25) do all[name]=clip end
+for name,clip in require(script.Parent.AuthoredJutsu26) do all[name]=clip end
+for name,clip in require(script.Parent.AuthoredJutsu27) do all[name]=clip end
+for name,clip in require(script.Parent.AuthoredJutsu28) do all[name]=clip end
+for name,clip in require(script.Parent.AuthoredJutsu29) do all[name]=clip end
+for name,clip in require(script.Parent.AuthoredJutsu30) do all[name]=clip end
+for name,clip in require(script.Parent.AuthoredJutsu31) do all[name]=clip end
+for name,clip in require(script.Parent.AuthoredJutsu32) do all[name]=clip end
+for name,clip in require(script.Parent.AuthoredJutsu33) do all[name]=clip end
+for name,clip in require(script.Parent.AuthoredJutsu34) do all[name]=clip end
+for name,clip in require(script.Parent.AuthoredJutsu35) do all[name]=clip end
+-- END passe 2
 return all

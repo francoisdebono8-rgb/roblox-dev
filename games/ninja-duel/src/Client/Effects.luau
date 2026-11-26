@@ -16,6 +16,15 @@ local vfxHitOk,VfxHit=pcall(require,script.Parent.VfxHit)
 if vfxHitOk and type(VfxHit)=="table" and VfxHit.check then task.spawn(function() pcall(VfxHit.check) end) end
 local Face=require(game:GetService("ReplicatedStorage").NinjaDuel.Face)
 local FX={};FX.__index=FX
+-- (26/11, passe 2) The graphics a player's device draws at: a phone, or a player who set the
+-- quality low (1..4 of 10), loses the ForceField shells and most of the particles. Automatic
+-- counts as low: it is what a phone runs, and Roblox does not say which level it chose.
+function FX.lowGraphics()
+	local ok,level=pcall(function() return UserSettings():GetService("UserGameSettings").SavedQualityLevel end)
+	if not ok or level==nil then return false end
+	if level==Enum.SavedQualitySetting.Automatic then return true end
+	return level.Value<=4
+end
 -- Cel flame streams of the fireballs in flight (VfxKit), by model.
 FX.fireStreams=setmetatable({},{__mode="k"})
 -- Identity layers: a fighter whose look lives in its own module (SandFX)
@@ -2305,8 +2314,16 @@ function FX:fighter(model,actor,dt)
 				Transparency=num({{0,0},{1,.2}}),Rotation=NumberRange.new(0,360),LockedToPart=true})
 			-- A hard white-blue core in the palm, pulsing.
 			-- (12/11, VFX bible: never plain Neon) a crackling shell; the bolts are LightningFX's.
-			local ball=block(self.folder,Vector3.one*1.2,hand.CFrame,Color3.fromRGB(214,234,255),Enum.Material.ForceField)
-			ball.Shape=Enum.PartType.Ball;ball.Transparency=.2;ball.Name="ChidoriCore"
+			-- (26/11, passe 2: « en qualité basse, celle d'un téléphone, le Chidori devient une
+			-- simple boule blanche ») ForceField falls back to a flat white ball when the graphics
+			-- go down, and the sparks with it: there the core is a small blue ball that lets the
+			-- bolts (Beams, LightningFX) show through.
+			local lowGfx=FX.lowGraphics()
+			local ball=block(self.folder,Vector3.one*(if lowGfx then .75 else 1.2),hand.CFrame,
+				if lowGfx then Color3.fromRGB(120,175,255) else Color3.fromRGB(214,234,255),
+				if lowGfx then Enum.Material.Neon else Enum.Material.ForceField)
+			ball.Shape=Enum.PartType.Ball;ball.Transparency=if lowGfx then .45 else .2;ball.Name="ChidoriCore"
+			aura.chidori.low=lowGfx
 			aura.chidori.ball=ball;aura.chidori.hand=hand
 			aura.chidori.light.Range=16
 		end
@@ -2330,7 +2347,7 @@ function FX:fighter(model,actor,dt)
 			sound(aura.chidori.hand,SOUND.electric,.32,.9+math.random()*.3)
 		end
 		if aura.chidori.ball and aura.chidori.hand then
-			local size=1+math.random()*.5
+			local size=(if aura.chidori.low then .6 else 1)+math.random()*(if aura.chidori.low then .25 else .5)
 			aura.chidori.ball.Size=Vector3.one*size
 			aura.chidori.ball.CFrame=aura.chidori.hand.CFrame*CFrame.new(0,-.7,0)
 		end

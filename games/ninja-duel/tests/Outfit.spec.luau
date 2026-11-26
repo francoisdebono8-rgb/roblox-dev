@@ -249,4 +249,43 @@ test("the accessories: a mask, a cape and a scroll over Lee's suit; each piece k
 	assert(string.find(fs.readFile("src/Client/OutfitDress.luau"),"of==nil or modelled[of]",1,true),"the client hides every cloth piece, modelled or not")
 end)
 
+-- (26/11, passe 2) a modern avatar's hand is three times as tall as the standard's: a wrap at
+-- the wrist stays a band at the wrist, a sole stays under the foot
+test("a piece on a long hand or foot keeps its height and its end",function()
+	local Dress=H.load("Client/OutfitDress")
+	local Meshes=H.load("Shared/OutfitMeshes")
+	local ref=Meshes.Ref.LeftHand
+	local hand=Instance.new("Part");hand.Size=Vector3.new(ref.X*.75,ref.Y*3,ref.Z*.77);hand.CFrame=CFrame.new()
+	local band=Vector3.new(ref.X,ref.Y*.4,ref.Z)
+	local atWrist=Vector3.new(0,ref.Y/2-band.Y/2,0)
+	local size,cf=Dress.place(hand,"LeftHand",band,atWrist)
+	assert(size.Y<band.Y*1.0,"not stretched: "..size.Y)
+	assert(math.abs((cf.Position.Y+size.Y/2)-hand.Size.Y/2)<1e-3,"at the wrist")
+	local foot=Instance.new("Part");local fr=Meshes.Ref.LeftFoot
+	foot.Size=Vector3.new(fr.X*.72,fr.Y*2.7,fr.Z*1.24);foot.CFrame=CFrame.new()
+	local sole=Vector3.new(fr.X,fr.Y*.2,fr.Z)
+	local s2,c2=Dress.place(foot,"LeftFoot",sole,Vector3.new(0,-fr.Y/2+sole.Y/2,0))
+	assert(math.abs((c2.Position.Y-s2.Y/2)+foot.Size.Y/2)<1e-3,"the sole under the foot")
+	local block=Instance.new("Part");block.Size=ref;block.CFrame=CFrame.new()
+	local s3=Dress.place(block,"LeftHand",band,atWrist)
+	assert((s3-band).Magnitude<1e-3,"a standard hand: as before "..tostring(s3).." "..tostring(band))
+end)
+
+-- (26/11, passe 2: « les protège-bras flottent ») a modern arm is a round mesh inside its box:
+-- the pieces come in to it; the blocky arm fills its box and keeps them
+test("an arm piece comes in to a round arm, not to a blocky one",function()
+	local Dress=H.load("Client/OutfitDress")
+	local Meshes=H.load("Shared/OutfitMeshes")
+	local ref=Meshes.Ref.RightLowerArm
+	local round=Instance.new("MeshPart");round.Size=Vector3.new(ref.X*.81,ref.Y*1.1,ref.Z*.9);round.CFrame=CFrame.new()
+	local guard=Vector3.new(ref.X*1.1,ref.Y*.6,ref.Z*1.1)
+	local s1=Dress.place(round,"RightLowerArm",guard,Vector3.zero)
+	assert(math.abs(s1.X-guard.X*.81*Dress.FILL.RightLowerArm)<1e-3,"in to the round arm "..tostring(s1))
+	assert(math.abs(s1.Y-guard.Y*1.1)<1e-3,"its length kept")
+	local part=Instance.new("Part");part.Size=round.Size;part.CFrame=CFrame.new()
+	local s2=Dress.place(part,"RightLowerArm",guard,Vector3.zero)
+	assert(math.abs(s2.X-guard.X*.81)<1e-3,"a plain part fills its box")
+	assert(Dress.fill(round,"RightLowerLeg")==1 and Dress.fill(round,"UpperTorso")==1,"legs and torso fill theirs")
+end)
+
 print(string.format("NinjaDuel outfit (DEC-040): %d PASS",passed))

@@ -614,26 +614,26 @@ def item_long_shorts():
 # ------------------------------------------------------------------ arms
 def item_arm_warmers():
     o = O().Out()
-    o.both("LowerArm", "Cloth", lambda pc, part: O().shell(pc, part, -.06, .96, pad=.1, flare0=.03, flare1=.02, folds=.04, hem="both"))
+    o.both("LowerArm", "Cloth", lambda pc, part: O().shell(pc, part, -.06, .96, pad=.055, flare0=.03, flare1=.01, folds=.025, hem="both"))
     return o.items
 
 
 def item_gauntlets():
     o = O().Out()
-    o.both("LowerArm", "Leather", lambda pc, part: O().shell(pc, part, .45, .98, pad=.08, flare0=.08, folds=.01, hem=True))
-    o.both("Hand", "Leather", lambda pc, part: O().shell(pc, part, -.05, .85, pad=.03, folds=.004, hem=False, rings=4))
-    o.both("LowerArm", "Metal", lambda pc, part: O().plate(pc, part, .5, .9, .1, arc=(-.6, .6), thick=.04), mat="Metal")
+    o.both("LowerArm", "Leather", lambda pc, part: O().shell(pc, part, .45, .98, pad=.04, flare0=.06, folds=.01, hem=True))
+    o.both("Hand", "Leather", lambda pc, part: O().shell(pc, part, -.05, .48, pad=.02, folds=.004, hem=False, rings=4))
+    o.both("LowerArm", "Metal", lambda pc, part: O().plate(pc, part, .5, .9, .055, arc=(-.6, .6), thick=.03), mat="Metal")
     return o.items
 
 
 def item_bracers():
     o = O().Out()
-    o.both("LowerArm", "Leather", lambda pc, part: O().shell(pc, part, .2, .9, pad=.06, folds=.006, hem="both", rings=6))
+    o.both("LowerArm", "Leather", lambda pc, part: O().shell(pc, part, .2, .9, pad=.035, folds=.006, hem="both", rings=6))
     def studs(pc, part):
         S = O().size(part)
         for y in (.2, .0, -.2):
             for x in (-.18, .18):
-                O().box(pc, (x, y, -(S.z / 2 + .06) / O().K - .02), (.04, .04, .03), O().shade(.95, .02))
+                O().box(pc, (x, y, -(S.z / 2 + .035) / O().K - .015), (.04, .04, .025), O().shade(.95, .02))
     o.both("LowerArm", "Metal", studs, mat="Metal")
     return o.items
 

@@ -1,5 +1,28 @@
 # Boîte de réception Claude
 
+## INBOX-ANIM-PASSE2-20261126 — ANIMATEUR 26/11 : les coups et les déplacements des 8 kits refaits avec la nouvelle méthode, les tenues sur les vrais corps, l'erreur rouge, le Chidori en qualité basse
+
+Passe commune 2 (DEC-054) et demande de François du 26/11 à 14 h 58 : « retravaille les animations de combat, kit, déplacement avec la nouvelle méthode […] pas qu'une partie ; […] des saccades ; les différences de kit ne se voient pas assez ». Skills suivis : ninja-animation-direction, ninja-player-experience. Mesures TECHNICAL (outils) et NATIVE_STUDIO (banc de poses dans `PLACES/NinjaDuel.rbxlx`, chargé à chaud puis remis), pas l'avis de François.
+
+**Ce qui est fait (ANIMATEUR)**
+- **Tous les coups encore « anciens » des 8 kits** sont refaits avec `syph_author` (`tools/blender/p2_strikes.py`, construits et notés par `p2_build.py`) : DashAttack, Air1, Air2, Slam, Launcher, Grab des 8 kits, et les Light/Heavy restés en arrière (Neji, Kakashi, Itachi, Minato, Naruto, Sasuke). Le minutage du DEV n'a pas bougé (longueur, contact, reprise copiés).
+- **Mesure de ressemblance** (`tools/blender/kit_distinct.py`, angle moyen entre deux kits sur le même coup ; sous ~15° c'est le même geste) :
+  - avant : Air1 6 kits sur 8 identiques (3,6°), Air2 7 sur 8, Launcher 5 sur 6, DashAttack Kakashi/Itachi 4°, Grab 8 sur 8 (3,2°) ;
+  - après : aucun coup sous 17,5° entre deux kits ; kit le plus proche en moyenne : Kakashi 13,4 → 23,8°, Itachi 14,7 → 24,4°, Naruto 14,8 → 27,5°.
+- **Le déplacement en trois stades** (`tools/blender/p2_loco.py`) : les jambes et la foulée restent celles du jeu (le moteur y accroche les pieds) ; le buste, la tête et les bras sont refaits par kit et par stade.
+  - `<kit>.Walk.F/B/L/R`, `Run.F/B/L/R`, `Sprint`, `Jump.Air`, `Land`, `Start`, `Brake` : le stade ninja, propre à chaque kit (course de Naruto bras en arrière, Sasuke mains dans les poches en marchant, Lee qui pompe des bras, Gaara bras croisés, Kakashi qui lit en marchant, Itachi la main dans la robe, Minato le plus bas, kunai devant).
+  - `Trained.<Move>` et `Novice.<Move>` : les deux premiers stades, communs à tous (le débutant : bras partout, raide, la tête vers les pieds). Pas de `Novice.Brake` (note trop basse) : prendre `Trained.Brake`.
+  - `<kit>.Rest` : la façon de se tenir de chaque kit dans Konoha (le livre de Kakashi, les poches de Sasuke…). Le duel garde `<kit>.Idle` : avec ces poses au repos, le départ de la marche claquait (tests/Animation, 49° en une image) et les pieds glissaient au demi-tour.
+- **Erreur rouge `UltimateFX:590`** : déjà corrigée par le DEV (INBOX-DEV-ROBOTS-20261126) ; ma correction identique est retirée au rebase.
+- **Chidori en qualité basse** : `FX.lowGraphics()` (Effects) ; en qualité basse ou Automatique, le cœur est une petite boule bleue (Neon, transparente) au lieu du ForceField qui devient une boule blanche, et les éclairs (Beams) passent devant. À voir sur un téléphone.
+- **Tenues sur les vrais corps** : `Client/OutfitDress` ne grandit plus une pièce de main ou de pied avec la boîte (×3 en hauteur sur un avatar moderne) et resserre les pièces des bras sur les bras ronds (mesure du maillage d'un vrai avatar : l'avant-bras remplit 84 % de sa boîte). Bandages plus lisses, protège-bras, gantelets, bracelets et manchettes collés à la peau. À refaire mesurer par l'OUTILLEUR.
+
+**Au DEV**
+- **Brancher les stades** dans `Client/HubBody.clipName` : essayer `stage.."."..move` (stage = "Novice" ou "Trained" selon la maîtrise) avant `<kit>.<move>` ; au repos dans Konoha, `<kit>.Rest` avant `<kit>.Idle`.
+- **Saccades vues par François pendant les tests des autres** : les tests de transition passent (Animation, BodyRange, Film10Feet, SyphoClips) ; si elles viennent de Studio partagé (plusieurs Play sur le même Mac), la mesure de l'OUTILLEUR « fluidité » le dira.
+
+**À l'OUTILLEUR** : relancer le comparateur de kits et le contrôle des tenues sur la nouvelle place commune.
+
 ## INBOX-DEV-ROBOTS-20261126 — DEV 26/11 : réponse à l'OUTILLEUR (INBOX-OUTILLEUR-PASSE2-20261126), et à l'ANIMATEUR
 
 **À l'OUTILLEUR — corrigé dans le code, à relancer sur la prochaine place commune :**
