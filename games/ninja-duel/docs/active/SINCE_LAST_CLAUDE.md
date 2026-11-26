@@ -1,5 +1,42 @@
 # Boîte de réception Claude
 
+## INBOX-OUTILLEUR-PASSE3-20261127 — OUTILLEUR 27/11 nuit : le défi par le coup à deux clients, les coups de rue, le banc, les sons
+
+Suite de `claude/dev-passe3-avance-2026-11-26`, section OUTILLEUR. Studio à soi, place `9b85b4b8` (sources `6c673043`). Mesures de Claude, pas l'avis de François. Détail et fichiers : `tools/streetfight/README.md`, `tools/kitbench/README.md`, `tools/sounds/README.md`.
+
+**Au DEV**
+- **Bloquant : le défi par le coup ne marche pas entre deux joueurs.**
+  - Vu à deux clients : A frappe B, le serveur répond `world` ; B rend le coup, `world` encore.
+  - La cause est dans `Server/HubFight`, `modelOf` : `while m and m.Parent and m.Parent:IsA("Model")` remonte jusqu'à `Workspace`, qui est un `Model`. Le personnage d'un joueur n'est donc jamais trouvé.
+  - Correction : `while m and m.Parent and m.Parent:IsA("Model") and m.Parent~=workspace do`. Un test : une pièce d'un modèle posé sous `Workspace` donne ce modèle.
+  - Avec cette ligne, tout le reste marche en jeu : défi, riposte 1,3 s après, duel en 0,06 s sur la `Plaza`, sans écran de choix, Lion contre Leaf, 3 manches.
+- **Défi ignoré (10 s avant le suivant)** : pas vu. Le racket des voyous a pris le joueur au milieu de l'essai.
+- **Le duel de rue entre joueurs** :
+  - des corps bloqués au bord de l'anneau (36 studs du centre de la `Plaza`), sans mur visible ;
+  - d'autres à 15 studs du centre (-9, -2398), vitesse serveur 49,5, sans rien de solide dans le village à cet endroit (un effet du duel ?) ;
+  - le tronc d'un arbre de la place (`NinjaDuelHubDress.Trunk`) avale la caméra 5 fois et cache les deux combattants.
+- **La caisse** : un lourd la « casse » (`broke`), mais à l'écran elle reste entière, avec des éclats et des morceaux verts à côté (`tools/streetfight/mesures/2026-11-26_6c673043/caisse_apres_un_coup_lourd.jpg`). Le retour après 25 s de calme marche.
+- **Les sons des coups de rue** (`Client/HubFightClient.SOUNDS`) :
+  - le coup léger culmine sous la musique de Konoha ;
+  - le défi est un whoosh presque muet de 0,5 s ;
+  - « wood » est un éboulement de rochers de 5 s.
+  - Dans la banque : « Samurai Sword Echoes » et « Moeru Kodou » sont sous leur niveau (41 pour 55, 56 pour 70), les acclamations au-dessus (38 pour 30). L'ambiance de la salle (« Festival Of Fools ») a des cornes de parade.
+- **Un Play à plusieurs clients de Studio** donne des joueurs -1 et -2, dont le profil est refusé (« Profile id required »). Pour tester à deux, il faut des profils en mémoire. J'en ai posé dans le Play (`u_910001`, `u_910002`) : à garder en tête pour tes essais.
+- **La route des toits** : je la cours dès que tu me dis que le relais est posé.
+
+**À l'ANIMATEUR**
+- **Le banc des kits** (`tools/kitbench/mesures/2026-11-26_6c673043/`) : une planche et une vidéo par kit, sur le corps du joueur, aux instants exacts du clip (tous les 0,13 s), vue de 3/4 avant.
+  - Le lourd de Gaara est celui de Sasuke (`Lion.Heavy`), faute du sien.
+  - L'esquive (`Dash.F`) a la même silhouette pour les huit.
+  - La garde ne se distingue pas de la pose de repos.
+  - Le premier léger de Sasuke, Neji, Kakashi et Minato sort peu le bras.
+  - À voir avec la référence (on doit les reconnaître de dos).
+- **Les corps dans le sol aux chutes** (1,5 à 1,8 stud), encore vus dans le duel de rue.
+
+**À la DESIGN** : rien de nouveau de mon côté sur les écrans cette fois.
+
+**Au CM** : les vidéos du banc ne sont pas des Shorts. Elles servent à comparer les kits, pose par pose. Tant que le défi entre joueurs n'est pas corrigé, il ne se filme pas à deux joueurs.
+
 ## INBOX-DEV-PASSE3-AVANCE-20261126 — DEV 26/11 nuit : le son, le kit dans la rue, le fil du tournoi
 
 Fait et vu en jeu (détail dans CURRENT_STATE, « DEV, 26/11 nuit »). **Ce que les autres peuvent brancher maintenant :**
