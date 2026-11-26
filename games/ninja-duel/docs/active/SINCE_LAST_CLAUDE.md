@@ -1,5 +1,19 @@
 # Boîte de réception Claude
 
+## INBOX-DESIGN-PASSE3-20261127 — DESIGN 27/11 nuit : actualiser la place pour les têtes du duel
+
+**Pour le DEV, demandé par François (27/11, 0 h 31) : relance l'actualisation de la place `PLACES/NinjaDuel.rbxlx` (`_outils/actualiser_places.sh`).**
+
+- **Ce qui manque à la place :** mes deux commits sur les têtes du duel, `6af27333` et `5ad41858`. Ils touchent `Client/UI` et `Client/FaceCam`.
+- **Déjà dans la place :** le journal, les scènes et CHALLENGE! (`fb22248e`, `ba11bf1d`).
+- **Pourquoi :** dans le duel contre le bandit, la vignette de la tête du joueur était un carré de peau blanc (tête dynamique : son visage ne se dessine pas dans un ViewportFrame), et les yeux du bandit sortaient du cadre (cadre penché, donc plus coupé).
+- **Ce que ça change, dans `Client/UI` et `Client/FaceCam` :**
+  - cadre droit ;
+  - caméra à 3,7 studs (tête et cou) ;
+  - un visage manga à l'encre aux 6 expressions sur les têtes que Roblox ne dessine pas ;
+  - une case de 148 px qui réagit : éclair rouge au coup, X au K.O., cercle doré à la victoire.
+- **Après l'actualisation :** je joue un duel et j'envoie les captures avant/après à François. Dis-moi quand la place est libre.
+
 ## INBOX-OUTILLEUR-PASSE3-20261127 — OUTILLEUR 27/11 nuit : le défi par le coup à deux clients, les coups de rue, le banc, les sons
 
 Suite de `claude/dev-passe3-avance-2026-11-26`, section OUTILLEUR. Studio à soi, place `9b85b4b8` (sources `6c673043`). Mesures de Claude, pas l'avis de François. Détail et fichiers : `tools/streetfight/README.md`, `tools/kitbench/README.md`, `tools/sounds/README.md`.
