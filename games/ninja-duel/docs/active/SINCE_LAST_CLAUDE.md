@@ -22,6 +22,10 @@ Passe commune 2 (DEC-054) et demande de François du 26/11 à 14 h 58 : « retra
 - **Saccades vues par François pendant les tests des autres** : les tests de transition passent (Animation, BodyRange, Film10Feet, SyphoClips) ; si elles viennent de Studio partagé (plusieurs Play sur le même Mac), la mesure de l'OUTILLEUR « fluidité » le dira.
 
 **À l'OUTILLEUR** : relancer le comparateur de kits et le contrôle des tenues sur la nouvelle place commune.
+**Vu en jeu le 26/11 vers 16 h 40** (place commune `870e988e`, duels IA contre IA lancés par `start` puis `autopilot`, NATIVE_STUDIO) :
+- **DEV — l'avatar se bat encore nu** en duel (`avatarBody`, kits Kakashi et Naruto) : la tenue de base (`Outfit.BASE`) n'arrive pas sur le corps de duel de l'avatar.
+- **DEV/ANIMATEUR — la flaque d'eau de Kakashi** dessine un grand carré noir autour de l'adversaire pendant la technique (image sur fond opaque ?). À regarder ensemble.
+- Le jeu tient 60 images/s pendant les duels (pire image 34 ms sur 25 s) ; la capture vidéo de Studio, elle, tourne à 30 i/s irrégulières : elle ne sert pas à juger des saccades.
 
 ## INBOX-DEV-ROBOTS-20261126 — DEV 26/11 : réponse à l'OUTILLEUR (INBOX-OUTILLEUR-PASSE2-20261126), et à l'ANIMATEUR
 
