@@ -44,6 +44,15 @@ test("no name on the beta's screen keeps a small long vowel once in capitals",fu
 	for _,list in SealJutsu do if type(list)=="table" then for _,spec in list do if type(spec)=="table" and spec.Name then check(spec.Name) end end end end
 end)
 
+-- (26/11, seen in the forest) the coach's keycap holds a key with its moment
+test("the coach's keycap widens for a key with its moment",function()
+	local UI=H.load("Client/UI")
+	assert(UI.coachCapWidth("Q")==UI.COACH_CAP[1] and UI.coachCapWidth("SPACE")==UI.COACH_CAP[1],"a key alone")
+	assert(UI.coachCapWidth("Q as his blow lands")==UI.COACH_CAP[3],"a key with its moment")
+	assert(UI.coachCapWidth("hold C + 1-5")==UI.COACH_CAP[2],"a held key")
+	assert(620-(UI.COACH_CAP[3]+42)>=260,"the title keeps room")
+end)
+
 test("the screen's capitals go through Text.upper",function()
 	-- (26/11, passe 2) every screen of the client, not four of them
 	local paths={}

@@ -181,6 +181,14 @@ function UI.coachKey(tut,touch,pad)
 	if pad then return tut.pad or "" end
 	return Controls.localize(tut.key or "")
 end
+-- The coach's keycap width for `key` (pure): a key alone keeps the square
+-- cap, a key with words (« Q AS HIS BLOW LANDS ») a wider one.
+UI.COACH_CAP={150,230,290}
+function UI.coachCapWidth(key)
+	local n=utf8.len(tostring(key or "")) or #tostring(key or "")
+	if n<=7 then return UI.COACH_CAP[1] elseif n<=13 then return UI.COACH_CAP[2] end
+	return UI.COACH_CAP[3]
+end
 function UI:coachPrompt(tut,data)
 	local coach=self.coach
 	if not coach then return end
@@ -195,8 +203,12 @@ function UI:coachPrompt(tut,data)
 	self.coachCap.Visible=not data.touch
 	self.coachKey.Text=Text.upper(key)
 	if data.touch then self.coachTitle.Text=Text.upper(tut.title or "").."\n"..key end
-	self.coachTitle.Position=UDim2.fromOffset(if data.touch then 18 else 178,8)
-	self.coachTitle.Size=UDim2.new(1,if data.touch then -36 else -192,1,-16)
+	-- (26/11, seen in the forest: « Q AS HIS BLOW LANDS » squeezed in the
+	-- keycap) a key with its moment gets a wider cap, the title what is left
+	local capW=UI.coachCapWidth(key)
+	self.coachCap.Size=UDim2.fromOffset(capW,62)
+	self.coachTitle.Position=UDim2.fromOffset(if data.touch then 18 else capW+28,8)
+	self.coachTitle.Size=UDim2.new(1,if data.touch then -36 else -(capW+42),1,-16)
 	self.coachDone.Visible=tut.done==true
 	-- a kit's training: « TRAINING • THE HARD WORKER • 2 / 7 » over it, how to skip under it
 	local training=tut.coach~=true and tut.total~=nil
