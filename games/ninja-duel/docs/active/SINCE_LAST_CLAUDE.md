@@ -1,5 +1,34 @@
 # Boîte de réception Claude
 
+## INBOX-CM-PASSE2-20261126 — CM 26/11 : l'humour de la rue, les sous-textes, les bugs du tournage du 24/11
+
+Passe commune 2 (DEC-054), section CM du doc projet `claude/passe-commune-2-jouable-filmable-2026-11-26`. Skills suivis : ninja-player-relations, ninja-interface-design, ninja-clips-and-image.
+
+**1. Les répliques burlesques : `Shared/Banter` (nouveau, au CM), test `tests/Banter.spec.luau` (7 tests verts).** Chaque discussion branche sa part, en tirant une réplique par `Banter.pick(liste, dernière)` (jamais deux fois la même de suite). Une bulle fait 48 caractères au plus, sans nom ni mot de l'anime.
+- **ANIMATEUR** (`Client/KonohaFolkFX`, la vie de Konoha) : `Banter.Passersby` — `idle` (de temps en temps), `runPast` (le joueur sprinte à côté), `wallRun` (il court sur un mur proche), `jutsuNear` (une technique à moins de 15 studs), `watchDuel` (pendant un duel de rue), `afterWin` / `afterLoss` (juste après), `clumsy` (un débutant trébuche, le stade « maladroit » de DEC-054). Et `Banter.Merchants` crié par les étals.
+- **DEV** :
+  - le bandit de la nouvelle intro : `Banter.Bandit` (`name`, `block` à l'arrêt, `beforeFight`, `hurt` / `hits` / `guarded` / `dodged` pendant la manche, `defeated`, `won`, `leaves` quand il s'écarte du chemin) ;
+  - le racket (`Server/Thugs`) : `Banter.Thugs` (`stop`, `threat`, `paid`, `fight`, `lost`, `won`) ; `Thugs.LINE` reste l'enseigne ;
+  - les 8 dans la rue (`Shared/Solo`, `Client/SoloView`, HubMoods) : `Banter.Inspirations[kit]` (`greet` à la rencontre, `idle`, `win` quand il gagne son défi, `lose` quand il le perd) ; `PlayTexts.ChallengeLines` reste sa réplique de défi ;
+  - la porte : `Banter.Gate` (`sign` sur la porte, `guards` les deux gardes).
+- **DESIGN** (l'écran de création à la porte, DEC-054) : `Banter.Creation` (`title`, `sub`, `sections`, `random`, `confirm`, `enter`, et `quips`, une sous le perso après chaque RANDOM).
+
+**2. Les sous-textes des interfaces (à la DESIGN) : `Banter.Ui`.** J'en avais relevé 39. Ton `d875b0b` en a déjà réécrit 21 en mots de joueur (boutique, MON NINJA, résultat, carte, réglages) : je les ai relus, ils vont bien, je les garde tels quels. Restent **18 lignes encore à l'écran à `d875b0b`**, dans `CupScreen`, `Leaderboard`, `LobbyPanel`, `QuestPanel`, `TreePanel`, `UI` (file d'attente, adversaire parti, tournoi, défi d'un maître) et `MastersView`. Chaque entrée porte `at` (fichier:ligne), `was` (la ligne d'aujourd'hui) et `say` (la nouvelle), plus courte (le test le vérifie). Exemples :
+- « Nobody else is online right now. Train against the AI — the list refreshes by itself. » → « Nobody online. Duel the AI while you wait. »
+- « Your opponent left the duel. The win is yours. » → « They ran. You win. »
+- « Eight prodigies entered the arena. One walks out with the tournament. » → « Eight came in. You walk out. »
+
+Remplace le texte par `Banter.Ui.<id>.say` en refaisant ces écrans ; si une ligne ne te va pas, change-la dans `Banter` (un seul endroit). Pour ton écran de création (`CreatorPanel`), `Banter.Creation` donne le titre, la ligne du dessous, RANDOM / THAT'S ME et les petites phrases après chaque tirage ; tes OUTFIT, HAIR, COLOUR, HEADBAND et ENTER KONOHA y sont déjà les mêmes.
+
+**3. Les bugs vus au tournage du 24/11 (série « MY AVATAR VS THE 8 », `challengeFilm`, place `PLACES/NinjaDuel.rbxlx` à `f28b8ba`).** Les prises sont sur le Mac dans `~/Documents/NinjaDuel/MEDIA/SERIE/rushes/` (gardées comme preuves).
+- **DEV — la caméra du défi montre l'avatar de dos.** Pendant `dare`, l'avatar marche vers l'inspiration, filmé de dos par la caméra du jeu, avant l'intro. Prises : `ep1_k1.mp4` de 0 à 3,5 s, `ep1_m1.mp4` de 0 à 3,6 s.
+- **DEV — des passants traversent le duel de rue.** Un villageois en kimono rouge passe entre la caméra et les combattants. Prises : `ep1_t6c.mp4` vers 10–11 s, `ep1_t6a.mp4` vers 3 s. La vision dit « les autres regardent depuis la rue » : priorité basse (François, 24/11 : « à la limite, on s'en fout » pour les clips).
+- **ANIMATEUR — les protège-bras (`ArmsGuards`) flottent aux poignets** sur l'avatar de François et ressemblent à des plaques dans ses mains pendant le Chidori. Prise : `ep1_k2.mp4` de 13,6 à 16 s. C'est ta tâche 1 de la passe 2.
+- **ANIMATEUR — des plaques grises restent près des mains** pendant les impacts, même avec les bandages : débris du sol ou pièce accrochée, à vérifier. Prise : `ep1_m2.mp4` de 21 à 22 s.
+- **ANIMATEUR — en qualité graphique basse, le Chidori devient une boule blanche** : les éclairs et Lee qui vire au violet disparaissent. Mesuré dans Studio en qualité « Automatique » (`ep1_k2.mp4`, 14 s) contre le niveau 21 (`ep1_m2.mp4`, 21 s). Un téléphone joue en qualité basse : la technique doit se lire aussi là.
+
+La série reprend quand le jeu est filmable : le CM tourne alors en qualité graphique fixée au maximum, Studio au premier plan, et envoie ici chaque nouveau bug avec l'instant et la prise.
+
 ## INBOX-DEV-SERIE8-20261124 — DEV 24/11, 14 h : la série du CM « MY AVATAR VS THE 8 »
 
 Le doc projet est `claude/cm-serie-my-avatar-vs-the-8-2026-11-24`. François a validé la série et ses 4 ajouts (DEC-053). Tests verts, rien n'est vu dans Studio.
