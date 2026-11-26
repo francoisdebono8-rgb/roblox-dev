@@ -18,6 +18,7 @@
 --   Bot.walk({max=n})  the body: for each house, it walks into the façade on
 --                   the street side and stops where the solid stops it; then
 --                   it falls on the roof. How deep in the drawing it went.
+--                   Bot.walk({at={{x,z},…}}): only the houses at those places.
 --   Bot.rays({})  (24/11) the same buildings by rays, against whatever
 --                   collides there (see Bot.raysOne): through and ghost.
 --   Bot.read(from,count)  the results, a slice at a time (JSON).
@@ -381,7 +382,7 @@ local function settle(root,hum,limit)
 	return false
 end
 
-function Bot.walkOne(unit,MeshKit,HubDress,HubMap)
+function Bot.walkOne(unit,MeshKit,HubDress,HubMap,only)
 	local root,hum=body()
 	if not root or not hum then return {u=unit.Name,error="no body"} end
 	local tris,model=Bot.drawing(unit,MeshKit,HubDress)
@@ -392,6 +393,12 @@ function Bot.walkOne(unit,MeshKit,HubDress,HubMap)
 	local cf=if typeof(base)=="CFrame" then base else CFrame.new((lo+hi)/2)
 	local centre=Vector3.new((lo.X+hi.X)/2,lo.Y,(lo.Z+hi.Z)/2)
 	local row={u=unit.Name,model=model,at=plan(HubMap,centre),height=r1(hi.Y-lo.Y)}
+	-- (26/11) walk({at={{x,z},…}}): only the buildings at those places of the plan
+	if only then
+		local keep=false
+		for _,a in only do if math.abs(a[1]-row.at[1])<1 and math.abs(a[2]-row.at[2])<1 then keep=true end end
+		if not keep then return nil end
+	end
 	-- the street side: the side with the most room before a solid
 	local best,dir=-1,nil
 	for _,d in {cf.LookVector,-cf.LookVector,cf.RightVector,-cf.RightVector} do
@@ -406,6 +413,13 @@ function Bot.walkOne(unit,MeshKit,HubDress,HubMap)
 		local half=math.abs((hi-lo).X*dir.X)/2+math.abs((hi-lo).Z*dir.Z)/2
 		local start=centre+dir*(half+6)
 		local ground=solidRay(start+Vector3.new(0,25,0),Vector3.new(0,-60,0))
+		-- (26/11) between two houses, the ray from above lands on the
+		-- neighbour's roof or eave: the body then walked over the roofs and
+		-- counted as 30 studs "in" the façade. The street is looked for again
+		-- from the building's foot; with no street there, no walk.
+		if ground and ground.Position.Y>lo.Y+4 then
+			ground=solidRay(Vector3.new(start.X,lo.Y+4,start.Z),Vector3.new(0,-40,0))
+		end
 		local gy=if ground then ground.Position.Y else lo.Y
 		local hip=hum.HipHeight+root.Size.Y/2
 		local o=Vector3.new(start.X,gy+hip,start.Z)
@@ -438,6 +452,8 @@ function Bot.walkOne(unit,MeshKit,HubDress,HubMap)
 			row.facade.went=r1(went)
 			-- how far the body's front is inside the drawn façade
 			row.facade.into=r1(went+front-seen)
+			-- (26/11) the feet at the start, over the building's foot: high, the walk was on a roof
+			row.facade.startY=r1(from.Y-hip-lo.Y)
 		end
 	end
 	-- the roof: dropped on the drawing's highest point near the middle
@@ -492,9 +508,9 @@ function Bot.walk(opts)
 		local t0=os.clock()
 		for i,unit in units do
 			note("walk "..i.."/"..#units)
-			local ok,row=pcall(Bot.walkOne,unit,MeshKit,HubDress,HubMap)
+			local ok,row=pcall(Bot.walkOne,unit,MeshKit,HubDress,HubMap,opts.at)
 			if not ok then row={u=unit.Name,error=tostring(row)} end
-			table.insert(Bot.result.walk,row)
+			if row then table.insert(Bot.result.walk,row) end
 			unpacked={}
 		end
 		Bot.result.walkSeconds=r1(os.clock()-t0)
@@ -677,11 +693,11 @@ function Bot.walkLines(from,count)
 	for i=from,math.min(#w,from+(count or 400)-1) do
 		local r=w[i]
 		local f,o=r.facade or {},r.roof or {}
-		table.insert(out,string.format("%s|%s|%s,%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s",r.u,tostring(r.model),tostring(r.at and r.at[1]),tostring(r.at and r.at[2]),
+		table.insert(out,string.format("%s|%s|%s,%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s",r.u,tostring(r.model),tostring(r.at and r.at[1]),tostring(r.at and r.at[2]),
 			tostring(f.drawn),tostring(f.solid),tostring(f.went),tostring(f.into),tostring(f.skip or r.skip or r.error or ""),
-			tostring(o.drawn),tostring(o.solid),tostring(o.feet),tostring(o.sink),tostring(o.skip or "")))
+			tostring(o.drawn),tostring(o.solid),tostring(o.feet),tostring(o.sink),tostring(o.skip or ""),tostring(f.startY)))
 	end
-	return "u|model|x,z|facadeDrawn|facadeSolid|went|into|facadeSkip|roofDrawn|roofSolid|feet|sink|roofSkip\n"..table.concat(out,"\n")
+	return "u|model|x,z|facadeDrawn|facadeSolid|went|into|facadeSkip|roofDrawn|roofSolid|feet|sink|roofSkip|startY\n"..table.concat(out,"\n")
 end
 
 -- A slice of the results, as JSON (the attribute keeps only the state).

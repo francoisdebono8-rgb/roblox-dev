@@ -67,8 +67,10 @@ except Exception:  # the test file moved: the build's own list still holds
 # Les robots et outils de l'OUTILLEUR et des autres (insérés à la main dans une copie LAB, jamais dans
 # les sources) et le banc de test.
 TEST_NAMES = {"NDDuelBot", "NDVillageBot", "NDCabineTool", "NDNewPlayerBot", "NDCollisionBot", "NDScreenTour", "NDPerfProbe", "Harness", "TestEZ", "JestGlobals",
-              "Jest", "NDFactory"}
-TEST_MARKERS = ("@lune/", "require(\"../../tests", "tests/Harness", "NDBotLog", "NDVillageLog", "NDNewPlayerLog")
+              "Jest", "NDFactory",
+              # (26/11, passe commune 2) the duel watcher, the training robot, the outfit check, the server's robots
+              "NDDuelAudit", "NDTrainingBot", "NDOutfitCheck", "NDServerLog", "NDOutfitBodies", "NDAuditShow"}
+TEST_MARKERS = ("@lune/", "require(\"../../tests", "tests/Harness", "NDBotLog", "NDVillageLog", "NDNewPlayerLog", "NDTrainingLog")
 
 
 # ------------------------------------------------------------------ reading the sources

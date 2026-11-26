@@ -10,6 +10,8 @@ into the place, and Edit is never touched.
     python3 tools/robots/inject.py all                 every robot
     python3 tools/robots/inject.py --check             Client: which robots are there, and from which commit
     python3 tools/robots/inject.py --list              the robots and their names
+    python3 tools/robots/inject.py --server serverlog  the code to run in the Server (eval_server_runtime)
+    python3 tools/robots/inject.py --check-server      Server: which robots are there
 
   duel       NDDuelBot       the simulated player (tools/duelbot: PlayerSim + the client driver)
   village    NDVillageBot    the village robot (tools/villagebot)
@@ -17,6 +19,12 @@ into the place, and Edit is never touched.
   perf       NDPerfProbe     the fluidity probe (tools/perf)
   collision  NDCollisionBot  what the player goes through in Konoha (tools/collision)
   screens    NDScreenTour    the screens of the path and their red lines (tools/screens)
+  audit      NDDuelAudit     the duel watcher: what does not hold in a duel (tools/duelaudit)
+  training   NDTrainingBot   the training robot: every step of the practice, played (tools/training; brings duel)
+  outfit     NDOutfitCheck   the outfit check: which piece goes through or stands off, on which body (tools/outfitcheck)
+On the server (--server):
+  serverlog     NDServerLog      the server's red lines, the tutorial's verdicts, its frames (tools/duelaudit)
+  outfitbodies  NDOutfitBodies   the row of Roblox avatars in their duel bodies (tools/outfitcheck)
 
 The commands of each tool (collision.py, releve.py, studio_code.py…) look the robot up in
 _G and say which line to run when it is not there. A Play that stops takes them away:
@@ -40,13 +48,21 @@ ROBOTS = {
     "perf": ("NDPerfProbe", "perf/perf_probe.luau", []),
     "collision": ("NDCollisionBot", "collision/collision_bot.luau", []),
     "screens": ("NDScreenTour", "screens/screen_tour.luau", []),
+    "audit": ("NDDuelAudit", "duelaudit/duel_audit.luau", []),
+    "training": ("NDTrainingBot", "training/training_bot.luau", ["duel"]),
+    "outfit": ("NDOutfitCheck", "outfitcheck/outfit_check.luau", []),
 }
-SHORT = {mod: short for short, (mod, _, _) in ROBOTS.items()}
+# (26/11, passe 2) the robots of the server: injected with eval_server_runtime
+SERVER = {
+    "serverlog": ("NDServerLog", "duelaudit/server_log.luau", []),
+    "outfitbodies": ("NDOutfitBodies", "outfitcheck/outfit_bodies.luau", []),
+}
+SHORT = {mod: short for short, (mod, _, _) in list(ROBOTS.items()) + list(SERVER.items())}
 
 
 def source(short: str) -> str:
     """The robot's module, comments and indentation stripped (what the client runs)."""
-    mod, rel, _ = ROBOTS[short]
+    mod, rel, _ = ROBOTS[short] if short in ROBOTS else SERVER[short]
     if rel is None:
         src = duel.module_source()
     else:
@@ -59,7 +75,8 @@ def source(short: str) -> str:
 
 def lookup(mod: str) -> str:
     """A Luau expression: the injected robot, or an error that says how to inject it."""
-    return f'(_G.{mod} or error("{mod} absent : python3 tools/robots/inject.py {SHORT[mod]} (pendant le Play)"))'
+    side = "--server " if SHORT[mod] in SERVER else ""
+    return f'(_G.{mod} or error("{mod} absent : python3 tools/robots/inject.py {side}{SHORT[mod]} (pendant le Play)"))'
 
 
 def commit() -> str:
@@ -70,41 +87,49 @@ def commit() -> str:
         return "?"
 
 
-def order(names: list) -> list:
+def order(names: list, table: dict = None) -> list:
     """The robots asked for, with what they need first, each once."""
+    table = ROBOTS if table is None else table
     out = []
 
     def add(n):
-        if n not in ROBOTS:
+        if n not in table:
             raise KeyError(f"unknown robot {n!r} (try --list)")
-        for dep in ROBOTS[n][2]:
+        for dep in table[n][2]:
             add(dep)
         if n not in out:
             out.append(n)
 
-    for n in (list(ROBOTS) if names == ["all"] else names):
+    for n in (list(table) if names == ["all"] else names):
         add(n)
     return out
 
 
-def snippet(names: list, stamp: str = "") -> str:
-    """The code for eval_client_runtime: each robot built in a pcall, put in _G, reported."""
-    names = order(names)
+def snippet(names: list, stamp: str = "", server: bool = False) -> str:
+    """The code for eval_client_runtime (eval_server_runtime with server): each robot
+    built in a pcall, put in _G, reported."""
+    table = SERVER if server else ROBOTS
+    names = order(names, table)
     stamp = stamp or commit()
     parts = ['local out={}',
              'local function put(name,f) local ok,m=pcall(f) if ok and m then _G[name]=m '
              'table.insert(out,name) else table.insert(out,name.." ERREUR "..tostring(m)) end end']
     for n in names:
-        mod = ROBOTS[n][0]
+        mod = table[n][0]
         parts.append(f'put("{mod}",function()\n{source(n)}\nend)')
-    parts.append('_G.NDRobots={commit="' + stamp + '",names=out}')
-    parts.append('return "robots ' + stamp + ' : "..table.concat(out,", ")')
+    if server:
+        parts.append('_G.NDServerRobots={commit="' + stamp + '",names=out}')
+        parts.append('return "serveur, robots ' + stamp + ' : "..table.concat(out,", ")')
+    else:
+        parts.append('_G.NDRobots={commit="' + stamp + '",names=out}')
+        parts.append('return "robots ' + stamp + ' : "..table.concat(out,", ")')
     return "\n".join(parts)
 
 
 CHECK = ('local r=_G.NDRobots if not r then return "aucun robot : python3 tools/robots/inject.py …" end '
          'local have={} for _,n in r.names do table.insert(have,n..(_G[n] and "" or " (parti)")) end '
          'return "robots "..r.commit.." : "..table.concat(have,", ")')
+CHECK_SERVER = CHECK.replace("NDRobots", "NDServerRobots").replace("inject.py …", "inject.py --server …")
 
 
 def main(argv=None):
@@ -114,14 +139,22 @@ def main(argv=None):
         return 2
     if args[0] == "--list":
         for short, (mod, rel, deps) in ROBOTS.items():
-            print(f"{short:10} {mod:15} {rel or 'duelbot/PlayerSim.luau + studio_bot.luau'}"
+            print(f"{short:12} {mod:15} {rel or 'duelbot/PlayerSim.luau + studio_bot.luau'}"
                   + (f"  (avec {', '.join(deps)})" if deps else ""))
+        for short, (mod, rel, deps) in SERVER.items():
+            print(f"{short:12} {mod:15} {rel}  (serveur : --server)")
         return 0
     if args[0] == "--check":
         print(CHECK)
         return 0
+    if args[0] == "--check-server":
+        print(CHECK_SERVER)
+        return 0
+    server = args[0] == "--server"
+    if server:
+        args = args[1:]
     try:
-        print(snippet(args))
+        print(snippet(args, server=server))
     except KeyError as e:
         print(e.args[0], file=sys.stderr)
         return 2

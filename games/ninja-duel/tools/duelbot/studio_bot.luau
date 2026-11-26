@@ -35,6 +35,8 @@ local function send(action,extra)
 	if current.phase=="Duel" and action~="Move" then payload.clientTime=workspace:GetServerTimeNow() end
 	for k,v in extra or {} do payload[k]=v end
 	remote:FireServer(payload)
+	-- (26/11, passe 2) a watcher of the duel (tools/duelaudit: NDDuelAudit) sees each press
+	if Bot.observer then pcall(Bot.observer,action,payload) end
 end
 local function root()
 	local character=player.Character
@@ -127,6 +129,13 @@ local function play(run)
 	rec.rounds=kept
 	return rec
 end
+
+-- (26/11, passe 2) for the other robots: the simulated player, the last
+-- snapshot, the remote as this robot sends it.
+Bot.PlayerSim=PlayerSim
+function Bot.current() return current end
+Bot.send=send
+Bot.toSelection=function() listen();return toSelection() end
 
 function Bot.start(PLAN)
 	listen();results={};save()
