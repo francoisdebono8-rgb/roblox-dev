@@ -25,7 +25,25 @@ end
 
 function Fight.new(move)
 	local self=setmetatable({move=move,act=nil,actAt=nil,lastLight=nil,lastLightAt=nil,guard=false,dashUntil=0,dashVelocity=nil,slowUntil=0,rmbAt=nil,rmbFrom=nil},Fight)
+	-- (the robots and the filming: the walker's fight of this screen)
+	Fight.current=self
 	return self
+end
+
+-- (robots, filming) Holds the move `move`'s clip at time `t` on his body for
+-- `seconds` (its blow is not asked of the server): a pose to look at.
+function Fight:hold(move,t,seconds)
+	local spec=Rules.Moves[move]
+	if not spec then return false end
+	local untilAt=os.clock()+(seconds or 2)
+	task.spawn(function()
+		while os.clock()<untilAt do
+			self.act,self.actAt=spec.clip,os.clock()-(t or 0)
+			task.wait()
+		end
+		self.act=nil
+	end)
+	return true
 end
 
 -- Whether his keys are the street's now: he walks the village (the walk was
