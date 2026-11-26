@@ -244,7 +244,60 @@ local function mark(char,key,half)
 end
 Motion._mark=mark
 local KUNAI_ARM={Right=true,RightElbow=true,RightWrist=true}
-local function apply(char,targets,rate,dt,upperRate,legRate)
+-- (26/11, the OUTILLEUR's duel robot on the shared place f28b8ba1: 53 times
+-- « dans le sol », the body drawn lying after a knockdown 1.1 to 1.7 stud under
+-- the floor, torso and head in the sand, its image 06) A body drawn lying on
+-- the floor never sinks into it: its lowest limb, as drawn the frame before,
+-- lifts the hips by what went under (at once) and gives it back as the pose
+-- rises (gently). Lying, down, getting up and K.O. only (Motion.defense, ko).
+Motion.FLOOR={min=.08,max=2.4,down=3}
+local LIMBS={"Head","UpperTorso","LowerTorso","LeftUpperArm","LeftLowerArm","LeftHand","RightUpperArm","RightLowerArm","RightHand",
+	"LeftUpperLeg","LeftLowerLeg","LeftFoot","RightUpperLeg","RightLowerLeg","RightFoot"}
+-- (pure) The new lift of the hips: `lift` now, the floor's height, the lowest
+-- limb's (drawn with `lift`).
+function Motion.liftStep(lift,floorY,lowY,dt)
+	local F=Motion.FLOOR
+	local under=floorY-lowY
+	local want=lift
+	if under>F.min then want=lift+under elseif under<-F.min then want=lift+under+F.min end
+	want=math.clamp(want,0,F.max)
+	if want<lift then want=math.max(want,lift-F.down*(dt or 0)) end
+	return want
+end
+-- (pure) The lowest point of a box (its CFrame, its size).
+function Motion.boxLow(cf,size)
+	return cf.Position.Y-.5*(math.abs(cf.RightVector.Y)*size.X+math.abs(cf.UpVector.Y)*size.Y+math.abs(cf.LookVector.Y)*size.Z)
+end
+local floorParams=nil
+-- The floor under the body (no body: the other fighter lying there is not it).
+local function floorUnder(char,root)
+	if not floorParams then
+		floorParams=RaycastParams.new();floorParams.FilterType=Enum.RaycastFilterType.Exclude;floorParams.IgnoreWater=true
+	end
+	local skip={char}
+	for _=1,3 do
+		floorParams.FilterDescendantsInstances=skip
+		local hit=workspace:Raycast(root.Position+Vector3.new(0,1,0),Vector3.new(0,-12,0),floorParams)
+		if not hit then return nil end
+		local model=hit.Instance:FindFirstAncestorOfClass("Model")
+		if model and model:FindFirstChildOfClass("Humanoid") then table.insert(skip,model) else return hit.Position.Y end
+	end
+	return nil
+end
+local function floorLift(char,s,dt)
+	local root=char:FindFirstChild("HumanoidRootPart")
+	local okF,floorY=pcall(floorUnder,char,root)
+	if not root or not okF or not floorY then return s.lift or 0 end
+	local low=math.huge
+	for _,name in LIMBS do
+		local p=char:FindFirstChild(name)
+		if p and p:IsA("BasePart") then low=math.min(low,Motion.boxLow(p.CFrame,p.Size)) end
+	end
+	if low==math.huge then return s.lift or 0 end
+	s.lift=Motion.liftStep(s.lift or 0,floorY,low,dt)
+	return s.lift
+end
+local function apply(char,targets,rate,dt,upperRate,legRate,floor)
 	local s=stateOf(char)
 	local key=s.markKey or ("proc:"..tostring(rate))
 	if key~=s.lastMarkKey then
@@ -253,6 +306,15 @@ local function apply(char,targets,rate,dt,upperRate,legRate)
 	end
 	s.markKey=nil
 	local feet=targets.__feet
+	-- the floor's lift (lying), or what is left of it once up
+	local lift=0
+	if floor and dt then
+		lift=floorLift(char,s,dt)
+	elseif s.lift then
+		s.lift=math.max(0,s.lift-Motion.FLOOR.down*(dt or 1))
+		lift=s.lift
+		if lift<=0 then s.lift=nil end
+	end
 	-- Global kunai (DEC-030): the drawn blade's arm, laid over any body pose.
 	local held=s.armOverlay
 	for key in JOINTS do
@@ -261,6 +323,7 @@ local function apply(char,targets,rate,dt,upperRate,legRate)
 			local r=if upperRate and UPPER[key] then upperRate elseif legRate and side then legRate else rate
 			local target=targets[key] or IDENTITY
 			if held and KUNAI_ARM[key] and held.pose[key] then target=target:Lerp(held.pose[key],held.w) end
+			if key=="Root" and lift>0 then target=CF(0,lift,0)*target end
 			write(char,key,target,r,dt)
 		end
 	end
@@ -3396,6 +3459,7 @@ function Motion.locomotion(char,speed,airborne,velocity,fighterId,dt,actor,now)
 end
 function Motion.defense(char,actor,dt)
 	local targets,rate
+	local floor=false
 	if actor.state=="Dodging" then
 		local s=stateOf(char)
 		if s.lastDefenseState~="Dodging" then s.dashAt=elapsedTime end
@@ -3403,6 +3467,8 @@ function Motion.defense(char,actor,dt)
 	elseif actor.groundPose or actor.reaction=="Knockdown" or actor.reaction=="Wakeup" then
 		local clip
 		targets,rate,clip=groundTargets(actor)
+		-- (26/11) lying on the floor: never under it (Motion.FLOOR)
+		floor=not actor.airborne
 		-- Fall, down, get-up: each its own (inertialized) transition.
 		mark(char,"ground:"..tostring(clip or actor.groundPose or actor.reaction),if clip=="Knockdown" then .07 else .1)
 	elseif actor.reaction then
@@ -3433,7 +3499,7 @@ function Motion.defense(char,actor,dt)
 		return
 	end
 	stateOf(char).lastDefenseState=actor.state
-	apply(char,targets,rate,dt)
+	apply(char,targets,rate,dt,nil,nil,floor)
 end
 function Motion.recoil(char,elapsed,reaction,heavy,dt)
 	local targets,rate=reactionTargets({reaction=reaction,reactionElapsed=elapsed,hitStrength=if heavy then .9 else .45})
@@ -3448,7 +3514,7 @@ function Motion.land(char,actor,fighterId,strength,dt)
 	apply(char,targets,rate,dt)
 end
 function Motion.ko(char,style,dt)
-	apply(char,koTargets(style),RATE.ground,dt)
+	apply(char,koTargets(style),RATE.ground,dt,nil,nil,true)
 end
 -- One entry point deciding which body this frame shows. Priority is the whole
 -- presentation contract: a defeated body settles, a grounded body stays down, an
@@ -3500,7 +3566,7 @@ function Motion.present(char,actor,clock,dt)
 	-- (Final blow) A body still thrown by the last hit flies like any thrown
 	-- body; the KO pose waits for it to come to rest.
 	if (subject.health or 1)<=0 and not (subject.koFlying and subject.reaction) then
-		apply(char,koTargets(subject.koStyle),RATE.ground,dt)
+		apply(char,koTargets(subject.koStyle),RATE.ground,dt,nil,nil,true)
 		return "ko"
 	end
 	local memo=stateOf(char)

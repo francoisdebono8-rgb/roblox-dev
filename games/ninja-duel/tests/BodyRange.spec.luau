@@ -138,4 +138,19 @@ test("after a teleport the feet start on the new spot (no step across the arena 
   assert(worst<12,string.format("%s: a foot crossed %.0f studs/s after the warp",fid,worst))
  end
 end)
+-- (26/11, the OUTILLEUR's duel robot: the body drawn lying 1.1 to 1.7 stud
+-- under the floor after a knockdown) lying, never under the floor
+test("a body lying on the floor is lifted out of it at once, and given back gently as it rises",function()
+ local dt=1/60
+ local F=Motion.FLOOR
+ assert(math.abs(Motion.liftStep(0,0,-1.5,dt)-1.5)<1e-6,"not lifted out at once")
+ assert(Motion.liftStep(1.5,0,0,dt)==1.5,"a body on the floor moves")
+ local back=Motion.liftStep(1.5,0,.5,dt)
+ assert(back<1.5 and back>=1.5-F.down*dt-1e-6,"given back too fast or not at all: "..back)
+ assert(Motion.liftStep(0,0,.3,dt)==0,"a standing body pushed down")
+ assert(Motion.liftStep(0,0,-9,dt)==F.max,"no cap on the lift")
+ local CF=require("@lune/roblox").CFrame
+ assert(math.abs(Motion.boxLow(CF.new(0,1,0),V.new(2,2,1))-0)<1e-6,"an upright box")
+ assert(math.abs(Motion.boxLow(CF.new(0,1,0)*CF.Angles(math.rad(90),0,0),V.new(2,2,1))-.5)<1e-4,"a box on its back")
+end)
 print("NinjaDuel body range and footwork: "..passed.." PASS")
