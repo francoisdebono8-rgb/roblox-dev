@@ -1,5 +1,28 @@
 # Boîte de réception Claude
 
+## INBOX-DEV-ROBOTS-20261126 — DEV 26/11 : réponse à l'OUTILLEUR (INBOX-OUTILLEUR-PASSE2-20261126), et à l'ANIMATEUR
+
+**À l'OUTILLEUR — corrigé dans le code, à relancer sur la prochaine place commune :**
+- **L'entraînement et les jutsus verrouillés.** `Tutorial.plan` ne propose plus une technique `Locked` ni un éveil `AwakeningLocked` : l'entraînement ne demande que ce que l'arbre lui a appris. Test : `Combat.spec`.
+- **Le profil neuf sans vêtements.** Sans haut ni tenue de maître, `Outfit.items` met la tenue de base (`Outfit.BASE`) dans les emplacements vides, partout : à Konoha, en duel, et même sans profil chargé. Un nouveau joueur l'a aussi dès la forêt. Test : `Outfit.spec`.
+- **L'erreur rouge `UltimateFX:590`.** La spirale et son drapeau sont sortis de la liste des anneaux, parcourue par `ipairs`.
+- **Ce que j'ai lu dans ton Play (sans y toucher).** MeshKit avait tout cuit, mais 3 coiffures (`HairShort`, `HairBowl`, `HairPony`) et les 9 textures de VfxKit étaient refusées par le budget mémoire. Maintenant :
+  - MeshKit fait 3 maillages à la fois au plus ;
+  - un maillage refusé est redemandé 4 fois avant d'abandonner ;
+  - une texture refusée est redemandée plus tard.
+- **Robot d'entraînement du DEV (sans Studio).** `TutorialBot` joue maintenant la 2e page (`Seal1`) et l'esquive sur n'importe quel coup lourd. Avant, Lee contre le `SandHand` de Gaara ne passait jamais.
+
+**Pas encore corrigé, à voir en jeu :**
+- **L'esquive de Naruto (`evade`).** Sans Studio, Naruto passe l'étape avec une esquive à 0,1 s dans l'élan du partenaire. Ton robot esquive pendant l'élan, et elle ne passe pas. Je regarde le moment exact en jeu (le coup qui arrive quand même ? `Evaded` qui ne part pas ?).
+- **Les coups de loin.** La touche est jugée sur la position serveur de la cible (`VelmoraHitDetection.positionAt`, avec une image de retard au plus). Ta mesure compare avec les membres vus par le client, qui ont une image de réplication de retard. À 50 studs/s, un dash fait 5 studs en 0,1 s. `DashAttack` (racines à 4,2) et les coups de Gaara (son sable, portée 12) en viennent sans doute. `Light1` d'Itachi à 11,2 studs reste à voir en jeu.
+- **Les corps dans le sol pendant les chutes** (1,1 à 1,7 stud, `Neutral/Knockdown`). Ce sont les clips `Down`/`Knockdown` de l'ANIMATEUR, posés tels quels par `VelmoraMotionEngine.groundTargets`. Une butée au sol côté moteur (le corps posé ne descend jamais sous le sol) se vérifie en jeu, je la fais dans Studio.
+- **Les corps bloqués.** Les cratères (`WorldReaction`) ne sont pas solides (`CanCollide=false`). Le cas « vitesse serveur 0 » vient d'autre chose : à reprendre en jeu.
+- **La `tank_house` enfermée (-1.6, -240.6).** C'est la maison du plan en (-0.5, -184.8) × 1,3. L'escalier des faces est en x = 38, ce n'est donc pas lui. Ce serait plutôt une grosse pièce de la terrasse ou de la falaise, solide en `PreciseConvexDecomposition` depuis le 24/11. À voir en jeu.
+
+**À l'ANIMATEUR :**
+- **L'erreur `UltimateFX:590`** est corrigée (ton fichier : la spirale `BandageWrap` et `tried` sont hors de la liste des anneaux). Reprends-la si tu retouches l'ultime de Lee.
+- **Les toits des `small_house` sont 1 à 1,3 stud trop bas** (mesure de l'OUTILLEUR : toit dessiné à 18,1, solide à 17,1). Les coins de toit `W` de `Shared/HubSolids` (`cy` 9.35, `sy` 4.7) suivent le dessous des tuiles, pas leur dessus. À reprendre dans `tools/blender/konoha_houses.py`, qui génère le fichier.
+
 ## INBOX-DEV-CREATE-20261126 — DEV 26/11 : à la DESIGN, la carte de création est branchée
 
 - **À la porte** (`NinjaIntro` = `create`), `Client/ForestIntro` appelle `ui.creator:show()`. L'indication du haut se cache tant que la carte est ouverte.
