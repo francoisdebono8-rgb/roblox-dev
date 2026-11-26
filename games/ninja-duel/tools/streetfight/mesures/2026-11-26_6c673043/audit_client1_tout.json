@@ -1,0 +1,850 @@
+{
+ "runs": [
+  {
+   "index": 1,
+   "contacts": 74,
+   "frames": 9917,
+   "rounds": 3,
+   "counts": {
+    "dans_le_sol": 11,
+    "camera_objet": 5,
+    "cache": 4,
+    "traverse": 3,
+    "bloque": 10
+   },
+   "rival": "Leaf",
+   "seconds": 196.61,
+   "scenery": 2226,
+   "wins": {
+    "human": 2,
+    "bot": 1
+   },
+   "presses": 261,
+   "kit": "Lion",
+   "winner": "PlayerFighter",
+   "incidents": [
+    {
+     "under": "Workspace.NinjaDuelHub.Ground",
+     "depth": 1.82,
+     "index": 1,
+     "who": "joueur",
+     "round": 1,
+     "kind": "dans_le_sol",
+     "t": 76.33,
+     "detail": "le point le plus bas 1.82 stud sous Ground (Neutral/Knockdown)"
+    },
+    {
+     "index": 2,
+     "t": 76.67,
+     "attack": "WallDive",
+     "depth": 0.46,
+     "who": "adversaire",
+     "kit": "Leaf",
+     "kind": "traverse",
+     "round": 1,
+     "detail": "WallDive : LeftFoot dans UpperTorso, 0.46 stud dedans"
+    },
+    {
+     "under": "Workspace.NinjaDuelHub.Ground",
+     "depth": 1.81,
+     "index": 3,
+     "who": "joueur",
+     "round": 1,
+     "kind": "dans_le_sol",
+     "t": 89.51,
+     "detail": "le point le plus bas 1.81 stud sous Ground (Neutral/Knockdown)"
+    },
+    {
+     "under": "Workspace.NinjaDuelHub.Ground",
+     "depth": 0.96,
+     "index": 4,
+     "who": "joueur",
+     "round": 1,
+     "kind": "dans_le_sol",
+     "t": 90.49,
+     "detail": "le point le plus bas 0.96 stud sous Ground (Neutral/Knockdown)"
+    },
+    {
+     "round": 2,
+     "index": 5,
+     "who": "caméra",
+     "part": "Workspace.NinjaDuelHubDress.Trunk",
+     "kind": "camera_objet",
+     "t": 98.53,
+     "detail": "dans Workspace.NinjaDuelHubDress.Trunk (MeshPart)"
+    },
+    {
+     "round": 2,
+     "index": 6,
+     "who": "joueur",
+     "part": "Workspace.NinjaDuelHubDress.Trunk",
+     "kind": "cache",
+     "t": 98.95,
+     "detail": "caché par Workspace.NinjaDuelHubDress.Trunk"
+    },
+    {
+     "round": 2,
+     "index": 7,
+     "who": "adversaire",
+     "part": "Workspace.NinjaDuelHubDress.Trunk",
+     "kind": "cache",
+     "t": 98.95,
+     "detail": "caché par Workspace.NinjaDuelHubDress.Trunk"
+    },
+    {
+     "round": 2,
+     "index": 8,
+     "who": "caméra",
+     "part": "Workspace.NinjaDuelHubDress.Trunk",
+     "kind": "camera_objet",
+     "t": 103.2,
+     "detail": "dans Workspace.NinjaDuelHubDress.Trunk (MeshPart)"
+    },
+    {
+     "round": 2,
+     "index": 9,
+     "who": "adversaire",
+     "part": "Workspace.NinjaDuelHubDress.Trunk",
+     "kind": "cache",
+     "t": 103.65,
+     "detail": "caché par Workspace.NinjaDuelHubDress.Trunk"
+    },
+    {
+     "index": 10,
+     "t": 104.9,
+     "attack": "Heavy",
+     "depth": 0.36,
+     "who": "adversaire",
+     "kit": "Leaf",
+     "kind": "traverse",
+     "round": 2,
+     "detail": "Heavy : LeftHand dans Head, 0.36 stud dedans"
+    },
+    {
+     "at": [
+      14.78,
+      3,
+      -2353.87
+     ],
+     "state": "Neutral",
+     "index": 11,
+     "who": "joueur",
+     "round": 2,
+     "kind": "bloque",
+     "t": 106.19,
+     "detail": "stick tenu 1.0 s, corps libre, déplacé de 0.22 stud (vitesse serveur 17.6)"
+    },
+    {
+     "round": 2,
+     "index": 12,
+     "who": "caméra",
+     "part": "Workspace.NinjaDuelHubDress.Leaves",
+     "kind": "camera_objet",
+     "t": 111.28,
+     "detail": "dans Workspace.NinjaDuelHubDress.Leaves (MeshPart)"
+    },
+    {
+     "under": "Workspace.NinjaDuelHub.Ground",
+     "depth": 1.51,
+     "index": 13,
+     "who": "adversaire",
+     "round": 2,
+     "kind": "dans_le_sol",
+     "t": 111.7,
+     "detail": "le point le plus bas 1.51 stud sous Ground (Active)"
+    },
+    {
+     "under": "Workspace.NinjaDuelHub.Ground",
+     "depth": 1.55,
+     "index": 14,
+     "who": "joueur",
+     "round": 2,
+     "kind": "dans_le_sol",
+     "t": 111.91,
+     "detail": "le point le plus bas 1.55 stud sous Ground (Neutral/Knockdown)"
+    },
+    {
+     "under": "Workspace.NinjaDuelHub.Ground",
+     "depth": 1.58,
+     "index": 15,
+     "who": "joueur",
+     "round": 2,
+     "kind": "dans_le_sol",
+     "t": 112.96,
+     "detail": "le point le plus bas 1.58 stud sous Ground (Neutral/Knockdown)"
+    },
+    {
+     "round": 2,
+     "index": 16,
+     "who": "caméra",
+     "part": "Workspace.NinjaDuelHubDress.Trunk",
+     "kind": "camera_objet",
+     "t": 112.96,
+     "detail": "dans Workspace.NinjaDuelHubDress.Trunk (MeshPart)"
+    },
+    {
+     "round": 2,
+     "index": 17,
+     "who": "joueur",
+     "part": "Workspace.NinjaDuelHubDress.Trunk",
+     "kind": "cache",
+     "t": 113.38,
+     "detail": "caché par Workspace.NinjaDuelHubDress.Trunk"
+    },
+    {
+     "round": 2,
+     "index": 18,
+     "who": "caméra",
+     "part": "Workspace.NinjaDuelHubDress.Trunk",
+     "kind": "camera_objet",
+     "t": 122.66,
+     "detail": "dans Workspace.NinjaDuelHubDress.Trunk (MeshPart)"
+    },
+    {
+     "at": [
+      -9.15,
+      3,
+      -2398.79
+     ],
+     "state": "Neutral",
+     "index": 19,
+     "who": "joueur",
+     "round": 3,
+     "kind": "bloque",
+     "t": 140.92,
+     "detail": "stick tenu 1.0 s, corps libre, déplacé de 0.21 stud (vitesse serveur 49.5)"
+    },
+    {
+     "at": [
+      -8.91,
+      3,
+      -2398.58
+     ],
+     "state": "Neutral",
+     "index": 20,
+     "who": "joueur",
+     "round": 3,
+     "kind": "bloque",
+     "t": 148.12,
+     "detail": "stick tenu 1.0 s, corps libre, déplacé de 0.41 stud (vitesse serveur 49.5)"
+    },
+    {
+     "at": [
+      -9.4,
+      3,
+      -2398.39
+     ],
+     "state": "Neutral",
+     "index": 21,
+     "who": "joueur",
+     "round": 3,
+     "kind": "bloque",
+     "t": 153.39,
+     "detail": "stick tenu 1.0 s, corps libre, déplacé de 0.14 stud (vitesse serveur 49.5)"
+    },
+    {
+     "at": [
+      -9.33,
+      3,
+      -2399.25
+     ],
+     "state": "Neutral",
+     "index": 22,
+     "who": "joueur",
+     "round": 3,
+     "kind": "bloque",
+     "t": 157.47,
+     "detail": "stick tenu 1.0 s, corps libre, déplacé de 0.42 stud (vitesse serveur 49.5)"
+    },
+    {
+     "at": [
+      -4.68,
+      3,
+      -2379.32
+     ],
+     "state": "Neutral",
+     "index": 23,
+     "who": "joueur",
+     "round": 3,
+     "kind": "bloque",
+     "t": 161.55,
+     "detail": "stick tenu 1.0 s, corps libre, déplacé de 0.16 stud (vitesse serveur 49.5)"
+    },
+    {
+     "index": 24,
+     "t": 195.77,
+     "attack": "Slam",
+     "depth": 0.45,
+     "who": "adversaire",
+     "kit": "Leaf",
+     "kind": "traverse",
+     "round": 3,
+     "detail": "Slam : LeftFoot dans UpperTorso, 0.45 stud dedans"
+    }
+   ],
+   "what": "duel de rue entre deux joueurs (Lion contre Leaf), vu du client 1",
+   "fps": 50.4
+  },
+  {
+   "index": 2,
+   "contacts": 27,
+   "frames": 3816,
+   "rounds": 2,
+   "counts": {
+    "de_loin": 3,
+    "dans_le_sol": 4,
+    "bloque": 2,
+    "cache": 1
+   },
+   "rival": "Mirage",
+   "seconds": 71.6,
+   "scenery": 2358,
+   "wins": {
+    "human": 0,
+    "bot": 2
+   },
+   "presses": 17,
+   "kit": "Lion",
+   "winner": "AIFighter",
+   "incidents": [
+    {
+     "index": 1,
+     "t": 10.5,
+     "gap": 3.05,
+     "attack": "StepBackStrike",
+     "style": "light",
+     "who": "adversaire",
+     "kit": "Mirage",
+     "kind": "de_loin",
+     "round": 1,
+     "detail": "StepBackStrike touche à 3.1 studs de tout membre (RightHand→LeftHand), racines à 8.8"
+    },
+    {
+     "round": 2,
+     "index": 2,
+     "who": "adversaire",
+     "part": "Workspace.Player2.Head",
+     "kind": "cache",
+     "t": 36.56,
+     "detail": "caché par Workspace.Player2.Head"
+    },
+    {
+     "index": 3,
+     "t": 40.44,
+     "gap": 7.51,
+     "attack": "Launcher",
+     "style": "light",
+     "who": "adversaire",
+     "kit": "Mirage",
+     "kind": "de_loin",
+     "round": 2,
+     "detail": "Launcher touche à 7.5 studs de tout membre (LeftHand→LeftFoot), racines à 9.1"
+    },
+    {
+     "under": "Workspace.NinjaDuelHub.Ground",
+     "depth": 0.78,
+     "index": 4,
+     "who": "adversaire",
+     "round": 2,
+     "kind": "dans_le_sol",
+     "t": 41.44,
+     "detail": "le point le plus bas 0.78 stud sous Ground (Neutral)"
+    },
+    {
+     "index": 5,
+     "t": 46.92,
+     "gap": 6.24,
+     "attack": "BackStrike",
+     "style": "light",
+     "who": "adversaire",
+     "kit": "Mirage",
+     "kind": "de_loin",
+     "round": 2,
+     "detail": "BackStrike touche à 6.2 studs de tout membre (LeftHand→Head__Bangs), racines à 8.7"
+    },
+    {
+     "under": "Workspace.NinjaDuelHub.Ground",
+     "depth": 1.09,
+     "index": 6,
+     "who": "joueur",
+     "round": 2,
+     "kind": "dans_le_sol",
+     "t": 52.46,
+     "detail": "le point le plus bas 1.09 stud sous Ground (Neutral/Wakeup)"
+    },
+    {
+     "under": "Workspace.NinjaDuelHub.Ground",
+     "depth": 0.77,
+     "index": 7,
+     "who": "joueur",
+     "round": 2,
+     "kind": "dans_le_sol",
+     "t": 54.23,
+     "detail": "le point le plus bas 0.77 stud sous Ground (Neutral/Knockdown)"
+    },
+    {
+     "at": [
+      -7.92,
+      3,
+      -2405.57
+     ],
+     "state": "Neutral",
+     "index": 8,
+     "who": "joueur",
+     "round": 2,
+     "kind": "bloque",
+     "t": 66.65,
+     "detail": "stick tenu 1.0 s, corps libre, déplacé de 0.55 stud (vitesse serveur 14.2)"
+    },
+    {
+     "at": [
+      -7.59,
+      3,
+      -2405.42
+     ],
+     "state": "Neutral",
+     "index": 9,
+     "who": "joueur",
+     "round": 2,
+     "kind": "bloque",
+     "t": 67.67,
+     "detail": "stick tenu 1.0 s, corps libre, déplacé de 0.14 stud (vitesse serveur 19.0)"
+    },
+    {
+     "under": "Workspace.NinjaDuelHub.Ground",
+     "depth": 0.8,
+     "index": 10,
+     "who": "adversaire",
+     "round": 2,
+     "kind": "dans_le_sol",
+     "t": 69.15,
+     "detail": "le point le plus bas 0.80 stud sous Ground (Dodging)"
+    }
+   ],
+   "what": "racket : un voyou (Mirage)",
+   "fps": 53.3
+  },
+  {
+   "index": 3,
+   "contacts": 27,
+   "frames": 425,
+   "rounds": 2,
+   "counts": {
+    "dans_le_sol": 2,
+    "bloque": 2,
+    "de_loin": 5
+   },
+   "rival": "Mirage",
+   "seconds": 78.49,
+   "scenery": 2211,
+   "wins": {
+    "human": 0,
+    "bot": 2
+   },
+   "presses": 100,
+   "kit": "Lion",
+   "winner": "AIFighter",
+   "incidents": [
+    {
+     "index": 1,
+     "t": 9.24,
+     "gap": 5.95,
+     "attack": "DashAttack",
+     "style": "light",
+     "who": "joueur",
+     "kit": "Lion",
+     "kind": "de_loin",
+     "round": 1,
+     "detail": "DashAttack touche à 6.0 studs de tout membre (RightHand→RightLowerLeg__Shin), racines à 8.6"
+    },
+    {
+     "index": 2,
+     "t": 11.16,
+     "gap": 2.58,
+     "attack": "DashAttack",
+     "style": "light",
+     "who": "joueur",
+     "kit": "Lion",
+     "kind": "de_loin",
+     "round": 1,
+     "detail": "DashAttack touche à 2.6 studs de tout membre (RightLowerLeg→RightLowerLeg__Shin), racines à 4.4"
+    },
+    {
+     "index": 3,
+     "t": 25.76,
+     "gap": 3.6,
+     "attack": "VaultKick",
+     "style": "light",
+     "who": "joueur",
+     "kit": "Lion",
+     "kind": "de_loin",
+     "round": 1,
+     "detail": "VaultKick touche à 3.6 studs de tout membre (RightHand→RightUpperLeg_Cloth_2), racines à 6.5"
+    },
+    {
+     "index": 4,
+     "t": 29.32,
+     "gap": 36.86,
+     "attack": "Launcher",
+     "style": "light",
+     "who": "adversaire",
+     "kit": "Mirage",
+     "kind": "de_loin",
+     "round": 2,
+     "detail": "Launcher touche à 36.9 studs de tout membre (LeftHand→LeftHand), racines à 5.3"
+    },
+    {
+     "under": "Workspace.NinjaDuelHub.Ground",
+     "depth": 1.88,
+     "index": 5,
+     "who": "joueur",
+     "round": 2,
+     "kind": "dans_le_sol",
+     "t": 29.32,
+     "detail": "le point le plus bas 1.88 stud sous Ground (Neutral)"
+    },
+    {
+     "under": "Workspace.NinjaDuelHub.Ground",
+     "depth": 1.23,
+     "index": 6,
+     "who": "joueur",
+     "round": 2,
+     "kind": "dans_le_sol",
+     "t": 47.8,
+     "detail": "le point le plus bas 1.23 stud sous Ground (Neutral)"
+    },
+    {
+     "index": 7,
+     "t": 58.56,
+     "gap": 4.92,
+     "attack": "StepBackStrike",
+     "style": "light",
+     "who": "adversaire",
+     "kit": "Mirage",
+     "kind": "de_loin",
+     "round": 2,
+     "detail": "StepBackStrike touche à 4.9 studs de tout membre (LeftHand→LeftHand__Fist), racines à 9.1"
+    },
+    {
+     "at": [
+      18,
+      3,
+      -2360.76
+     ],
+     "state": "Neutral",
+     "index": 8,
+     "who": "joueur",
+     "round": 2,
+     "kind": "bloque",
+     "t": 68.79,
+     "detail": "stick tenu 2.6 s, corps libre, déplacé de 0.00 stud (vitesse serveur 0.0)"
+    },
+    {
+     "at": [
+      -3.74,
+      3,
+      -2351.03
+     ],
+     "state": "Neutral",
+     "index": 9,
+     "who": "joueur",
+     "round": 2,
+     "kind": "bloque",
+     "t": 74.93,
+     "detail": "stick tenu 3.3 s, corps libre, déplacé de 0.14 stud (vitesse serveur 0.0)"
+    }
+   ],
+   "what": "coup sur un voyou : son combat (Mirage)",
+   "fps": 5.4
+  },
+  {
+   "index": 4,
+   "contacts": 8,
+   "frames": 112,
+   "rounds": 1,
+   "counts": {
+    "de_loin": 6,
+    "bloque": 3,
+    "dans_le_sol": 1
+   },
+   "rival": "Sand",
+   "seconds": 125.35,
+   "scenery": 2491,
+   "wins": {
+    "human": 0,
+    "bot": 2
+   },
+   "presses": 75,
+   "kit": "Lion",
+   "winner": "AIFighter",
+   "incidents": [
+    {
+     "index": 1,
+     "t": 7.12,
+     "gap": 5.44,
+     "attack": "Light2",
+     "style": "light",
+     "who": "adversaire",
+     "kit": "Sand",
+     "kind": "de_loin",
+     "round": 1,
+     "detail": "Light2 touche à 5.4 studs de tout membre (RightLowerLeg→LeftHand), racines à 9.2"
+    },
+    {
+     "index": 2,
+     "t": 57.56,
+     "gap": 4.99,
+     "attack": "StepBackStrike",
+     "style": "light",
+     "who": "adversaire",
+     "kit": "Sand",
+     "kind": "de_loin",
+     "round": 1,
+     "detail": "StepBackStrike touche à 5.0 studs de tout membre (LeftHand→RightUpperArm__Sleeve), racines à 7.8"
+    },
+    {
+     "at": [
+      183.04,
+      3,
+      -2323.3
+     ],
+     "state": "Neutral",
+     "index": 3,
+     "who": "joueur",
+     "round": 1,
+     "kind": "bloque",
+     "t": 60.88,
+     "detail": "stick tenu 2.6 s, corps libre, déplacé de 0.05 stud (vitesse serveur 0.0)"
+    },
+    {
+     "index": 4,
+     "t": 62,
+     "gap": 7.09,
+     "attack": "Light1",
+     "style": "light",
+     "who": "adversaire",
+     "kit": "Sand",
+     "kind": "de_loin",
+     "round": 1,
+     "detail": "Light1 touche à 7.1 studs de tout membre (LeftLowerLeg→LeftFoot), racines à 10.0"
+    },
+    {
+     "index": 5,
+     "t": 67.95,
+     "gap": 3.91,
+     "attack": "SandFist",
+     "style": "light",
+     "who": "adversaire",
+     "kit": "Sand",
+     "kind": "de_loin",
+     "round": 2,
+     "detail": "SandFist touche à 3.9 studs de tout membre (RightLowerLeg→LeftHand), racines à 7.5"
+    },
+    {
+     "under": "Workspace.NinjaDuelHub.Crate.Crate",
+     "depth": 0.86,
+     "index": 6,
+     "who": "joueur",
+     "round": 2,
+     "kind": "dans_le_sol",
+     "t": 73.2,
+     "detail": "le point le plus bas 0.86 stud sous Crate (Neutral)"
+    },
+    {
+     "at": [
+      174.28,
+      3.89,
+      -2305.08
+     ],
+     "state": "Neutral",
+     "index": 7,
+     "who": "joueur",
+     "round": 2,
+     "kind": "bloque",
+     "t": 73.54,
+     "detail": "stick tenu 2.0 s, corps libre, déplacé de 0.14 stud (vitesse serveur 19.0)"
+    },
+    {
+     "index": 8,
+     "t": 98.25,
+     "gap": 2.67,
+     "attack": "Light1",
+     "style": "light",
+     "who": "adversaire",
+     "kit": "Sand",
+     "kind": "de_loin",
+     "round": 2,
+     "detail": "Light1 touche à 2.7 studs de tout membre (RightHand→LeftHand), racines à 7.0"
+    },
+    {
+     "at": [
+      152.44,
+      3,
+      -2297.62
+     ],
+     "state": "Neutral",
+     "index": 9,
+     "who": "joueur",
+     "round": 2,
+     "kind": "bloque",
+     "t": 101.14,
+     "detail": "stick tenu 3.2 s, corps libre, déplacé de 0.00 stud (vitesse serveur 0.0)"
+    },
+    {
+     "index": 10,
+     "t": 116.11,
+     "gap": 5.98,
+     "attack": "Light1",
+     "style": "light",
+     "who": "adversaire",
+     "kit": "Sand",
+     "kind": "de_loin",
+     "round": 2,
+     "detail": "Light1 touche à 6.0 studs de tout membre (LeftLowerArm→RightHand), racines à 12.0"
+    }
+   ],
+   "what": "coup sur le prodige qui attend : son défi (Gaara)",
+   "fps": 0.9
+  },
+  {
+   "index": 5,
+   "contacts": 9,
+   "frames": 67,
+   "rounds": 2,
+   "counts": {
+    "de_loin": 4,
+    "traverse": 1,
+    "dans_le_sol": 2
+   },
+   "rival": "Mirage",
+   "seconds": 57.65,
+   "scenery": 1924,
+   "wins": {
+    "human": 0,
+    "bot": 2
+   },
+   "presses": 26,
+   "kit": "Lion",
+   "winner": "AIFighter",
+   "incidents": [
+    {
+     "index": 1,
+     "t": 6.6,
+     "gap": 5.39,
+     "attack": "StepBackStrike",
+     "style": "light",
+     "who": "adversaire",
+     "kit": "Mirage",
+     "kind": "de_loin",
+     "round": 1,
+     "detail": "StepBackStrike touche à 5.4 studs de tout membre (LeftHand→Head__Bangs), racines à 10.4"
+    },
+    {
+     "index": 2,
+     "t": 8.64,
+     "gap": 9.31,
+     "attack": "WallDive",
+     "style": "light",
+     "who": "adversaire",
+     "kit": "Mirage",
+     "kind": "de_loin",
+     "round": 1,
+     "detail": "WallDive touche à 9.3 studs de tout membre (LeftFoot→Head__Bangs), racines à 14.5"
+    },
+    {
+     "index": 3,
+     "t": 19.96,
+     "gap": 3.7,
+     "attack": "StepBackStrike",
+     "style": "light",
+     "who": "adversaire",
+     "kit": "Mirage",
+     "kind": "de_loin",
+     "round": 1,
+     "detail": "StepBackStrike touche à 3.7 studs de tout membre (RightHand→Head__Bangs), racines à 6.6"
+    },
+    {
+     "index": 4,
+     "t": 25.43,
+     "attack": "Air1",
+     "depth": 0.37,
+     "who": "adversaire",
+     "kit": "Mirage",
+     "kind": "traverse",
+     "round": 1,
+     "detail": "Air1 : LeftLowerLeg dans Head, 0.37 stud dedans"
+    },
+    {
+     "index": 5,
+     "t": 32.37,
+     "gap": 6.04,
+     "attack": "Light2",
+     "style": "light",
+     "who": "joueur",
+     "kit": "Lion",
+     "kind": "de_loin",
+     "round": 1,
+     "detail": "Light2 touche à 6.0 studs de tout membre (RightFoot→LeftHand__Fist), racines à 5.9"
+    },
+    {
+     "under": "Workspace.NinjaDuelHub.Ground",
+     "depth": 1.58,
+     "index": 6,
+     "who": "joueur",
+     "round": 1,
+     "kind": "dans_le_sol",
+     "t": 36.65,
+     "detail": "le point le plus bas 1.58 stud sous Ground (Recovery)"
+    },
+    {
+     "under": "Workspace.NinjaDuelHub.Ground",
+     "depth": 1.58,
+     "index": 7,
+     "who": "joueur",
+     "round": 2,
+     "kind": "dans_le_sol",
+     "t": 46.34,
+     "detail": "le point le plus bas 1.58 stud sous Ground (Neutral)"
+    }
+   ],
+   "what": "coup sur l'Ōtsutsuki : la finale (corps d'Itachi)",
+   "fps": 1.2
+  }
+ ],
+ "errors": [],
+ "warnings": [],
+ "finale_bot": [
+  {
+   "rival": "Otsutsuki",
+   "finished": true,
+   "wins": {
+    "human": 0,
+    "bot": 2
+   },
+   "presses": 26,
+   "winner": "AIFighter",
+   "profile": "joueur",
+   "rounds": [
+    {
+     "me": 0,
+     "index": 1,
+     "t": 26.3,
+     "him": 0.8314230769230768,
+     "winner": "AIFighter"
+    },
+    {
+     "me": 0,
+     "index": 2,
+     "t": 20.8,
+     "him": 0.9619230769230769,
+     "winner": "AIFighter"
+    }
+   ],
+   "wall": 55.693018166697584,
+   "seed": 13,
+   "kit": "Lion",
+   "mode": "finale",
+   "prompts": []
+  }
+ ]
+}

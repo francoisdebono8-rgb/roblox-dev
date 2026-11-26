@@ -1,0 +1,14 @@
+# Défi par le coup entre deux clients (Play à 2 clients, place 6c673043, 26/11 23 h 40). Journal du serveur (NDStreetLog), heures serveur modulo 1000.
+# Essai 1, code du jeu tel quel : les deux coups touchent « world » (le corps de l'autre joueur pris pour le décor).
+540.37 land Player1 Light1 → world   (Player1 à (0,4,-2407), Player2 à 3 studs devant)
+546.21 land Player2 Light1 → world
+# Cause : Server/HubFight modelOf remonte jusqu'à Workspace (Workspace est un Model) : le corps d'un joueur n'est jamais reconnu.
+# Essai 2, modelOf corrigé à chaud dans ce Play (s'arrêter sous Workspace) :
+625.62 strike Player1 → Player2 : challenge
+625.62 land Player1 Light1 → player:challenge (0,4,-2407)
+626.91 strike Player2 → Player1 : accept   (riposte 1,3 s après)
+626.91 land Player2 Light1 → player:accept (1,4,-2410)
+626.97 state Player1 Duel|duel|Duelist1|Online_3 (21,3,-2387)
+626.97 state Player2 Duel|duel|Duelist2|Online_3 (-21,3,-2387)
+# Le duel : mode challenge, quick=true, site Plaza (origine 0,0,-2387, rayon 36,4), sièges Lion (Player1) / Leaf (Player2), 2 manches gagnantes.
+# Côté client : snapshot human=Lion bot=Leaf, aucun écran de choix (seul NinjaDuelHUD visible).

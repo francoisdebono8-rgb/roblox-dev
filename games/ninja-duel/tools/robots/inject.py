@@ -51,11 +51,16 @@ ROBOTS = {
     "audit": ("NDDuelAudit", "duelaudit/duel_audit.luau", []),
     "training": ("NDTrainingBot", "training/training_bot.luau", ["duel"]),
     "outfit": ("NDOutfitCheck", "outfitcheck/outfit_check.luau", []),
+    # (26/11, passe commune 3) the street's blows, the sound check, the kits' bench
+    "street": ("NDStreetBot", "streetfight/street_bot.luau", []),
+    "sound": ("NDSoundCheck", "sounds/sound_check.luau", []),
+    "bench": ("NDKitBench", "kitbench/kit_bench.luau", []),
 }
 # (26/11, passe 2) the robots of the server: injected with eval_server_runtime
 SERVER = {
     "serverlog": ("NDServerLog", "duelaudit/server_log.luau", []),
     "outfitbodies": ("NDOutfitBodies", "outfitcheck/outfit_bodies.luau", []),
+    "streetlog": ("NDStreetLog", "streetfight/street_log.luau", []),
 }
 SHORT = {mod: short for short, (mod, _, _) in list(ROBOTS.items()) + list(SERVER.items())}
 

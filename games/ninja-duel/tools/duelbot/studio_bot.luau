@@ -136,6 +136,19 @@ Bot.PlayerSim=PlayerSim
 function Bot.current() return current end
 Bot.send=send
 Bot.toSelection=function() listen();return toSelection() end
+-- (26/11, passe 3) The duel already running, played to its result: a street
+-- challenge by a blow between two clients (tools/streetfight), each client
+-- playing its own side. Its record goes to NDBotLog like a planned run.
+function Bot.playHere(run)
+	listen();results={};save()
+	note("here")
+	task.spawn(function()
+		local ok,rec=pcall(play,run or {mode="here",profile="joueur",seed=1})
+		table.insert(results,if ok then rec else {error=tostring(rec)})
+		save();note("done")
+	end)
+	return true
+end
 
 function Bot.start(PLAN)
 	listen();results={};save()
