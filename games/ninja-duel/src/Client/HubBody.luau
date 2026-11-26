@@ -201,6 +201,12 @@ function Body:step(character,hum,f)
 	if not character or not hum then self.pending=nil;return end
 	if hum.RigType~=Enum.HumanoidRigType.R15 then self.pending=nil;return end
 	if self.character~=character then self.character=character;self.j=joints(character);self.strides=nil end
+	-- (26/11, passe 3, seen in the game: after the gate's card, his body walked
+	-- Roblox's own walk again and his kit's blows did not show) A character
+	-- taken while Roblox still built it had no joint yet: looked for again
+	-- until there are some (and when one went with a rebuilt part).
+	local any=next(self.j or {})
+	if not any or not self.j[any].Parent then self.j=joints(character) end
 	local kit=f.kit or (Players.LocalPlayer and Players.LocalPlayer:GetAttribute("NinjaKit"))
 	-- his stage, from his real kit and its mastery (the others': crowdFacts)
 	local mastery=f.mastery

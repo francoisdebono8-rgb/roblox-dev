@@ -99,4 +99,11 @@ test("the server takes the moves on its own remote, and starts with the game",fu
 	assert(string.find(move,"HubFightClient",1,true),"the walk does not step the street's fight")
 end)
 
+-- (26/11, seen in the game: after the gate's card the walker had no joint to
+-- pose, Roblox's walk showed and the blows did not) the joints looked for again
+test("a rebuilt or half-built character gets its joints back",function()
+	local body=fs.readFile("src/Client/HubBody.luau")
+	assert(string.find(body,"if not any or not self.j[any].Parent then self.j=joints(character) end",1,true),"the joints are not looked for again")
+end)
+
 print(string.format("NinjaDuel his kit in the street (26/11): %d PASS",passed))
