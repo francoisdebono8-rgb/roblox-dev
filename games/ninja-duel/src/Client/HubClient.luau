@@ -334,6 +334,7 @@ function Hub:screenName()
 	local function on(p) return p~=nil and p:shown() end
 	if self.racketPanel and on(self.racketPanel) then return "Racket" end
 	if on(ui.settings) then return "Settings" end
+	if on(ui.creator) then return "Creator" end
 	if on(ui.cupEntry) then return "CupEntry" end
 	if on(ui.shopPanel) then return if ui.shopPanel.counter=="market" then "Market" else "Shop" end
 	if on(ui.treePanel) then return "Tree" end
@@ -359,7 +360,7 @@ function Hub:anyPanel()
 	local ui=self.ui
 	return (ui.treePanel and ui.treePanel:shown()) or (ui.shopPanel and ui.shopPanel:shown()) or (ui.outfitPanel and ui.outfitPanel:shown())
 		or (self.quests and self.quests:shown()) or (self.map and self.map:shown()) or (ui.leaderboard and ui.leaderboard:shown())
-		or (ui.settings and ui.settings:shown()) or (self.eight and self.eight:shown()) or false
+		or (ui.settings and ui.settings:shown()) or (ui.creator and ui.creator:shown()) or (self.eight and self.eight:shown()) or false
 end
 -- Controls and lens: the village walk, or the board (the roster) over it.
 function Hub:apply()

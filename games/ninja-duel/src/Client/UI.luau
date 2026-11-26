@@ -474,6 +474,12 @@ function UI.new(parent,send)
 			local made,panel=pcall(Leaderboard.new,UI.kit,self.gui)
 			if made then self.leaderboard=panel end
 		end
+		-- (DESIGN 26/11, passe 2) the gate's creation (ui.creator:show(), the DEV at the gate)
+		local okC,CreatorPanel=pcall(function() return require(script.Parent.CreatorPanel) end)
+		if okC and CreatorPanel then
+			local made,panel=pcall(CreatorPanel.new,UI.kit,self.gui,send)
+			if made then self.creator=panel end
+		end
 		-- (DESIGN 23/11, step 5) SETTINGS: sound, camera, controls, REPORT
 		local okS,SettingsPanel=pcall(function() return require(script.Parent.SettingsPanel) end)
 		if okS and SettingsPanel then
@@ -1367,7 +1373,7 @@ function UI:lobby(data)
 		local private=online~=nil and online.mode=="private"
 		self.queueTitle.Text=if private then "PRIVATE DUEL" else "SEARCHING FOR AN OPPONENT"
 		self.queueCode.Text=if private then (online.code or "") else ""
-		self.queueNote.Text=if private then "Share this code: your friend types it next to JOIN on the roster screen."
+		self.queueNote.Text=if private then "Send this code to your friend. They type it next to JOIN."
 			else "Casual 1v1  •  you meet the next player who searches."
 		-- (Lobby, 04/11) a challenge: on the way to the duel server, then waiting there.
 		local mode=online and online.mode
@@ -2018,7 +2024,7 @@ function UI:render(data)
 	self.resultBand.BackgroundColor3=if won then MANGA.red else MANGA.ink
 	self.resultSeal.Text=if won then "WIN" else "LOSS"
 	self.resultName.Text=UI.resultLine(data,fullName(winner))
-	self.resultNote.Text=if won then (if data.cup then "The judges saw it too. The bracket waits for no one." else "Clean. Go again, or spend what you earned.") else "Read the commitment. Find a better opening — prodigies learn fastest from defeat."
+	self.resultNote.Text=if won then (if data.cup then "Next round. Don't cool off." else "Clean. Again?") else "Watch what he does before he swings. Again?"
 	-- (Beta loop) the masters' path: what this duel earned.
 	self.resultProgress.Text=MastersView.result(data.progress,self.kits) or ""
 	self:resultEarned(data.progress)
@@ -2100,7 +2106,7 @@ function UI:resultEarned(progress)
 	if p.learned then
 		self.resultKit.Text=who.."'S KIT IS YOURS"
 		self.resultGain.Text="";self.resultBar.Visible=false
-		self.resultNext.Text="Pick it at the roster or wear it in Konoha. Its tree starts now."..(if dailyText then "  "..dailyText else "")
+		self.resultNext.Text="It's yours."..(if dailyText then "  "..dailyText else "")
 		return
 	end
 	self.resultBar.Visible=true

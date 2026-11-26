@@ -269,7 +269,7 @@ function Panel:draw()
 	self.bodyW=if category then W-SIDE-70-Panel.PREVIEW.W-20 else W-SIDE-70
 	if self.tab=="KITS" then self:drawKits()
 	elseif category then
-		self:drawLooks(category.slots,category.name,Panel.SUB[category.id] or "A look, never a win. Worn in Konoha and in every duel.")
+		self:drawLooks(category.slots,category.name,Panel.SUB[category.id] or "")
 		-- (DESIGN 23/11) his avatar, big, front, turning, wearing what is pointed at
 		self:preview(nil)
 		if self.onOutfit then
@@ -286,7 +286,7 @@ function Panel:drawKits()
 	local K,M=self.kit,self.M
 	local STRONG=K.STRONG_FONT or K.BODY_FONT
 	self.heading.Text="THE KITS"
-	self.subheading.Text="Every kit is free in Konoha, from the ninja who inspires it. Here you save time."
+	self.subheading.Text="Free in Konoha. Here you skip the wait."
 	self.footer.Text="A kit bought comes with no tree points: its tree grows as you play it. Never a random draw."
 	local kits=self.kits
 	local products=Config.Progression and Config.Progression.Products or {}
@@ -368,23 +368,24 @@ end
 -- what does not exist yet (EARLY ACCESS)
 Panel.RETIRED={EarlyAccess=true,BuildSlots=true}
 Panel.VIP_PERKS={"A GOLDEN NAME, IN KONOHA AND IN DUELS","THE VIP CAPE, WORN IN KONOHA","THE VIP TAG OVER YOUR HEAD"}
+-- (passe 2: « les sous-textes ne doivent pas faire IA ») a player's words, or nothing
 Panel.SUB={
-	Outfit="Your inspirations' outfits and ninja pieces over your own avatar, in Konoha and in every duel.",
-	Hair="A haircut and its colour, over your own avatar.",
-	Chakra="The colour of your chakra: your jutsu glow with it.",
-	Victory="What you do when you win, and in Konoha's streets.",
-	Aura="Worn around you in Konoha. Merit auras are earned, never bought.",
-	Weapons="A look, never a number. Each kit keeps its own; the kit's objects (gourd, weights, tanto) are earned on its tree.",
-	Titles="Shown over your head and on your results.",
-	Frames="Around your face-cam in every duel.",
+	Outfit="On you, in Konoha and in every duel.",
+	Hair="",
+	Chakra="Your jutsu, your colour.",
+	Victory="For when you win.",
+	Aura="Earned ones aren't for sale.",
+	Weapons="Looks only. Never stats.",
+	Titles="Over your head.",
+	Frames="Round your face-cam.",
 }
 function Panel:drawLooks(slots,title,sub)
 	local K,M=self.kit,self.M
 	local STRONG=K.STRONG_FONT or K.BODY_FONT
 	self.heading.Text=title
 	self.subheading.Text=sub
-	self.footer.Text=if self.counter=="market" then "Ryō is earned in duels, against other players and in tournaments (the day's first win counts ×"..tostring(Shop.Ryo.FirstWinOfDay)..")."
-		else "Looks for Ryō are sold at Konoha's market. Robux looks show SOON until they are on sale."
+	self.footer.Text=if self.counter=="market" then "Win duels to earn Ryō. First win of the day: ×"..tostring(Shop.Ryo.FirstWinOfDay).."."
+		else "Ryō looks are at the market."
 	local kits=self.kits
 	local ryo=kits and kits.ryo or 0
 	local style=kits and kits.style
@@ -538,8 +539,8 @@ end
 function Panel:drawPasses()
 	local K,M=self.kit,self.M
 	self.heading.Text="VIP & PASSES"
-	self.subheading.Text="Bought once, kept forever. Time and status, never a win. SOON: not on sale yet."
-	self.footer.Text="Ranked and tournament duels give everyone the prodigy's whole kit, on an equal budget."
+	self.subheading.Text="Yours for good. Never a win."
+	self.footer.Text="In ranked and tournaments, everyone gets the full kit."
 	local ids=Config.Shop and Config.Shop.Passes or {}
 	-- (DESIGN 19/11) VIP first and largest, the others under it
 	local order={}
@@ -580,7 +581,7 @@ end
 function Panel:drawRyo()
 	local K,M=self.kit,self.M
 	self.heading.Text="RYŌ"
-	self.subheading.Text="For looks only: never a kit, never a tree point."
+	self.subheading.Text="For looks. Nothing else."
 	self.footer.Text="Ryō packs show SOON until they are on sale."
 	local packs=Config.Shop and Config.Shop.RyoPacks or {}
 	for i,pack in packs do

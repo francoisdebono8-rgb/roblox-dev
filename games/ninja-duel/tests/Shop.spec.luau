@@ -828,6 +828,41 @@ test("the dare's bubble then VS, THE 8 board, the thug's result line",function()
 	assert(ok,tostring(err))
 end)
 
+-- (DESIGN 26/11, passe 2) the gate's creation
+test("the gate's creation: starter pieces, his own hair, ENTER sends Create",function()
+	local C=H.load("Client/CreatorPanel")
+	local hair=C.options("hair")
+	assert(hair[1].id=="" and #hair>1,"his own hair first, then the styles")
+	for _,slot in {"top","bottom","feet","headband"} do
+		for _,o in C.options(slot) do assert(Shop.item(o.id).base,"only starter pieces: "..o.id) end
+		assert(#C.options(slot)>0,slot)
+	end
+	local picks=C.defaults()
+	local ids=C.wearing(picks)
+	assert(ids~="" and not ids:find(",,",1,true),"what the preview wears: "..ids)
+	H.workspace.GetAttribute=function() return nil end
+	local saved=H.envBase.Instance
+	local baseNew=harnessInstance.new
+	H.envBase.Instance={new=function(class)
+		local x=baseNew(class)
+		x.Activated={Connect=function(_,fn) x.click=fn end}
+		return x
+	end}
+	local ok,err=pcall(function()
+		local UI=H.load("Client/UI")
+		C=H.load("Client/CreatorPanel")
+		local sent={}
+		local c=C.new(UI.kit,baseNew("ScreenGui"),function(a,p) table.insert(sent,{a,p}) end)
+		c:show();assert(c:shown() and c.step==1,"OUTFIT first")
+		c.next.click();assert(c.step==2,"NEXT: HAIR")
+		c:pick("hair",C.options("hair")[2].id)
+		c.enter.click()
+		assert(sent[1][1]=="Create" and sent[1][2].hair==C.options("hair")[2].id and sent[1][2].top~=nil and not c:shown(),"ENTER KONOHA")
+	end)
+	H.envBase.Instance=saved
+	assert(ok,tostring(err))
+end)
+
 -- (15/11, DA v3 Mix-Shop) the STYLE preview: a still copy of his own avatar,
 -- its scripts and its own outfit taken off, the character left as it was.
 test("the STYLE preview: a still copy of his avatar, without its scripts nor its outfit",function()

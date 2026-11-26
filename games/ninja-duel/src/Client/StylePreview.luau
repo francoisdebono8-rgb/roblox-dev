@@ -79,20 +79,24 @@ end
 -- The avatar shown again (his own outfit), from his character now.
 function Preview:refresh(character)
 	if self.model then self.model:Destroy();self.model=nil end
-	self.item=nil
+	self.item=nil;self.key=nil
 	local copy=Preview.copy(character)
 	if copy then copy.Parent=self.view;self.model=copy end
 	return copy~=nil
 end
 
 -- The outfit `itemId` on the copy (nil: his own, as he is).
-function Preview:show(itemId,character)
-	if itemId==self.item then return end
+function Preview:show(itemId,character,paint)
+	local key=tostring(itemId)..tostring(paint)
+	if key==self.key then return end
 	self:refresh(character)
+	self.key=key
 	self.item=itemId
 	if not itemId or not self.model then return end
 	local holder=Instance.new("Model")
 	holder.Name="NinjaOutfit";holder:SetAttribute("NinjaOutfit",itemId);holder:SetAttribute("NinjaPreview",true)
+	-- (DESIGN 26/11) the gate's creation: several pieces (a comma list) and the hair's paint
+	if paint then holder:SetAttribute("NinjaHairPaint",paint) end
 	holder.Parent=self.model
 	task.spawn(function()
 		pcall(function() require(script.Parent.OutfitDress).wear(holder) end)

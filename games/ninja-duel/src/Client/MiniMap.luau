@@ -11,8 +11,15 @@
 local Shared=game:GetService("ReplicatedStorage").NinjaDuel
 local Layout=require(Shared.KonohaLayout)
 local HubMap=require(Shared.HubMap) -- its Origin: KonohaLayout's base frame
+-- (DESIGN 26/11, passe 2: « la carte dessinée de Konoha, pas un plan de blocs »)
+-- the drawn map (assets/ui/map_konoha.png, generate_map.py) under the seals
+-- once uploaded; until then, the plan of blocks
+local okA,UIAssets=pcall(function() return require(Shared.UIAssets) end)
+local DRAWN=okA and UIAssets.id and UIAssets.id("map_konoha") or nil
+if DRAWN=="" then DRAWN=nil end
 
 local Map={}
+Map.DRAWN=DRAWN
 Map.__index=Map
 
 Map.SIZE=208        -- the minimap's window (px)
@@ -20,10 +27,10 @@ Map.ZOOM=1.25       -- px per base stud in the minimap
 Map.BIG=1.55        -- px per base stud on the big map
 -- The things to do alone (step 3), by place: what the gold star says.
 Map.TODO={
-	Training={"TRAINING DUMMIES","Try your kit and your nature"},
-	Rooftops={"ROOFTOP RACE","Against the clock, on the boards"},
-	Market={"KUNAI TARGETS","Hit them all, fast"},
-	Hall={"DUEL THE AI","Or press DUELS anywhere"},
+	Training={"TRAINING DUMMIES","Hit stuff."},
+	Rooftops={"ROOFTOP RACE","Beat the clock."},
+	Market={"KUNAI TARGETS","Don't miss."},
+	Hall={"DUEL THE AI","Or hit DUELS anywhere."},
 }
 
 -- ------------------------------------------------------------------ pure
@@ -73,7 +80,10 @@ local function drawVillage(kit,parent,zoom,tier,labels)
 	local w,h=Map.extent(zoom)
 	local village=kit.frame(parent,UDim2.fromOffset(0,0),UDim2.fromOffset(w,h),M.back or M.paper,0)
 	village.Name="Village"
-	for _,d in Layout.Districts do
+	if Map.DRAWN then
+		kit.create("ImageLabel",village,{Name="Drawn",Image=Map.DRAWN,Size=UDim2.fromScale(1,1),BackgroundTransparency=1,ScaleType=Enum.ScaleType.Stretch})
+	end
+	for _,d in (if Map.DRAWN then {} else Layout.Districts) do
 		local x,y=Map.toPixels(d.x0,d.z0,zoom)
 		local f=kit.frame(village,UDim2.fromOffset(x,y),UDim2.fromOffset((d.x1-d.x0)*zoom,(d.z1-d.z0)*zoom),d.color,.35)
 		f.BorderSizePixel=0
@@ -84,7 +94,7 @@ local function drawVillage(kit,parent,zoom,tier,labels)
 			t.TextTransparency=.35
 		end
 	end
-	for _,s in Layout.Streets do
+	for _,s in (if Map.DRAWN then {} else Layout.Streets) do
 		local ax,ay=Map.toPixels(s.a.X,s.a.Y,zoom)
 		local bx,by=Map.toPixels(s.b.X,s.b.Y,zoom)
 		local len=math.sqrt((bx-ax)^2+(by-ay)^2)
@@ -125,7 +135,7 @@ local function drawVillage(kit,parent,zoom,tier,labels)
 			end
 			seal.Name=p.id
 			seals[p.id]=seal
-			if labels then
+			if labels and (not Map.DRAWN or kind=="todo") then
 				-- near the east edge the name reads leftwards of its seal
 				local east=x>w-230
 				local t=kit.text(village,(if kind=="todo" then Map.TODO[p.id][1].."  •  " else "")..p.name,UDim2.fromOffset(if east then x-252 else x+12,y-9),UDim2.fromOffset(240,18),13,M.ink,kit.STRONG_FONT or kit.BODY_FONT,
