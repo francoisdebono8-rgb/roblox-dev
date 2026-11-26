@@ -191,6 +191,25 @@ test("every semantic action has controller mapping; tutorial cannot skip success
  for _=1,4 do a.root.CFrame+=V.new(4,0,0);Tutorial.update(s,100.02,.02) end
  Tutorial.update(s,100.4,.02);assert(s.tutorial.index==2)
 end)
+-- (26/11, Studio: jutsu 2 and 3 and the awakening « Locked » for every kit in
+-- the training, 25 s stuck then skipped) what his tree has not taught him yet
+test("the training never asks for a technique or an awakening his tree has not taught him",function()
+ local c,a=pair()
+ local def=table.clone(a.def)
+ def.Techniques=table.clone(a.def.Techniques)
+ assert(#def.Techniques>=2,"Minato has techniques")
+ def.Techniques[2]=table.clone(def.Techniques[2]);def.Techniques[2].Locked=true
+ def.AwakeningLocked=true
+ local plan=Tutorial.plan({def=def,fighterId=a.fighterId,id=a.id,root=a.root,model=a.model})
+ local ids={}
+ for _,spec in plan do ids[spec.id]=true end
+ assert(ids.jutsu1 and not ids.jutsu2,"a locked jutsu taught")
+ assert(def.Awakening==nil or not ids.awaken,"a locked awakening taught")
+ local open=Tutorial.plan(a)
+ local all={}
+ for _,spec in open do all[spec.id]=true end
+ assert(all.jutsu2 and (a.def.Awakening==nil or all.awaken),"an unlocked one left out")
+end)
 test("tutorial launcher-to-slam objectives observe completed real actions",function()
  local c,a,b=pair();local s=c.match;s.combat=c;s.human=a;s.bot=b;s.ai={update=function() end}
  Tutorial.new(s);s.tutorial.index=Tutorial.indexOf(s,"launch");Tutorial.enter(s,c.now)

@@ -557,7 +557,11 @@ CUE.bandage=function(ctx)
 	local fx=ctx.fx
 	local strip=K.block(fx.folder,Vector3.new(.2,.06,1),CFrame.new(ctx.cpos()),rgb(240,236,226),Enum.Material.Fabric)
 	strip.Name="Bandage"
+	-- (26/11, Studio: « UltimateFX:590: attempt to index boolean with 'Destroy' »)
+	-- the rings in `wraps`, the spiral and its one try apart: a loop over the
+	-- rings met the flag `tried` (and the spiral) in the same table
 	local wraps={}
+	local spiral,tried=nil,false
 	ctx.loop(3.12,function(t)
 		local hand=ctx.hand()
 		local from=if hand then hand.Position else ctx.cpos()
@@ -566,20 +570,20 @@ CUE.bandage=function(ctx)
 		if d.Magnitude>.1 then strip.Size=Vector3.new(.22,.06,d.Magnitude);strip.CFrame=CFrame.lookAt(from:Lerp(to,.5),to) end
 		-- (13/11) the bandage wound round him: a modelled spiral ribbon
 		-- (MeshKit "BandageWrap") that turns, or the old rings
-		if not wraps.model and wraps.tried==nil and t>2.36 then
-			wraps.tried=true
-			wraps.model=prop("BandageWrap",fx.folder,CFrame.new(to))
+		if not spiral and not tried and t>2.36 then
+			tried=true
+			spiral=prop("BandageWrap",fx.folder,CFrame.new(to))
 		end
-		if wraps.model then
+		if spiral then
 			local k=math.clamp((t-2.36)/.2,.2,1)
-			wraps.model.PrimaryPart.CFrame=CFrame.new(to+Vector3.new(0,-.4*(1-k),0))*CFrame.Angles(0,t*9,0)
+			spiral.PrimaryPart.CFrame=CFrame.new(to+Vector3.new(0,-.4*(1-k),0))*CFrame.Angles(0,t*9,0)
 		else
 			if #wraps<5 and t>2.36+#wraps*.05 then
 				local w=K.block(fx.folder,Vector3.new(.25,2.3,2.3),CFrame.new(to),rgb(240,236,226),Enum.Material.Fabric)
 				w.Shape=Enum.PartType.Cylinder;w.Transparency=.15
 				table.insert(wraps,w)
 			end
-			for i,w in wraps do
+			for i,w in ipairs(wraps) do
 				w.CFrame=CFrame.new(to+Vector3.new(0,-1.6+i*.65,0))*CFrame.Angles(0,t*9+i,math.rad(90))
 				w.Size=Vector3.new(.25,1.9,1.9)
 			end
@@ -587,8 +591,8 @@ CUE.bandage=function(ctx)
 	end)
 	task.delay(math.max(0,3.15-ctx.t()),function()
 		strip:Destroy()
-		for _,w in wraps do w:Destroy() end
-		if wraps.model then wraps.model:Destroy() end
+		for _,w in ipairs(wraps) do w:Destroy() end
+		if spiral then spiral:Destroy() end
 	end)
 end
 CUE.spin=function(ctx)

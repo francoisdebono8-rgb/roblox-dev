@@ -100,6 +100,11 @@ function Tutorial.plan(a)
 		check=function(s,t) return t.ok("Tool") end})
 	for i,spec in def.Techniques or {} do
 		if i>5 then break end
+		-- (26/11, Studio, the training robot in a Play of the shared place: jutsu 2
+		-- and 3 and the awakening refused « Locked » for every kit, 25 s stuck,
+		-- then skipped; François: « les tutos entraînement sont buggés à des
+		-- étapes ») What his tree has not taught him yet is not asked here.
+		if spec.Locked then continue end
 		add({id="jutsu"..i,title="Jutsu "..i..": "..tostring(spec.Name),key=TECH_KEY[i],pad=Controls.TechniquePad[i] or ("Jutsu "..i),
 			place=if (spec.Range or 20)<10 then "near" else "far",technique=spec,
 			setup=function(s)
@@ -141,7 +146,7 @@ function Tutorial.plan(a)
 		check=function(s,t) return t.ev("Interrupt") end})
 	add({id="throwBreak",title="Break his grab",key=K.Grab.." as he seizes you",pad=P.Grab.." as he seizes you",place="near",bot="grab",
 		check=function(s,t) return t.ev("ThrowBreak") end})
-	if def.Awakening then
+	if def.Awakening and not def.AwakeningLocked then
 		add({id="awaken",title="Awaken: "..tostring(def.Awakening.Name or "awakening"),key=K.Awaken.." (low health)",pad="D-pad ↓ (low health)",
 			setup=function(s) local a=s.human;a.awakened=false;a.health=a.def.Health*.3;a.hum.Health=a.health end,
 			check=function(s,t) return t.ev("Awaken") end})
