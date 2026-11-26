@@ -22,6 +22,12 @@ test("capitals keep the long vowels and the accents",function()
 	assert(Text.upper("Chûnin à l'école")=="CHÛNIN À L'ÉCOLE",Text.upper("Chûnin à l'école"))
 	assert(Text.upper("12 ÷ 3")=="12 ÷ 3","the division sign changed")
 	assert(Text.upper(nil)=="")
+	-- (26/11, seen in the game: « GENIN TUNIC ¤� NAVY ») a player's locale
+	-- turned the first byte of « • » into another: the punctuation stays whole,
+	-- and string.upper (locale-dependent on a player's machine) is not used
+	assert(Text.upper("Genin tunic • navy — wait…")=="GENIN TUNIC • NAVY — WAIT…",Text.upper("Genin tunic • navy — wait…"))
+	local fs=require("@lune/fs")
+	assert(not string.find(fs.readFile("src/Shared/Text.luau"),"string.upper(",1,true),"Text.upper calls string.upper again")
 end)
 
 test("no name on the beta's screen keeps a small long vowel once in capitals",function()

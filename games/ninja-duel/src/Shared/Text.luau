@@ -6,8 +6,13 @@
 -- accents (é, è, à, ô, û, ç...).
 local Text={}
 Text.LONG={["ā"]="Ā",["ē"]="Ē",["ī"]="Ī",["ō"]="Ō",["ū"]="Ū"}
+-- (26/11, seen in the game: « GENIN TUNIC ¤� NAVY » on the gate's card) On a
+-- player's machine string.upper follows its locale: a Latin-1 one turns the
+-- byte 0xE2 (« â ») into 0xC2, the first byte of « • », « — », « … » (E2 80 ..),
+-- and the text is no longer UTF-8. Only the ASCII letters are raised here; the
+-- others below, by their own tables.
 function Text.upper(value)
-	local s=string.upper(tostring(value or ""))
+	local s=string.gsub(tostring(value or ""),"[a-z]",function(c) return string.char(string.byte(c)-32) end)
 	for lower,upper in Text.LONG do s=string.gsub(s,lower,upper) end
 	-- Latin-1 small letters (U+00E0..U+00FE, not ÷) are their capitals + 0x20.
 	s=string.gsub(s,"\xC3([\xA0-\xBE])",function(c)
