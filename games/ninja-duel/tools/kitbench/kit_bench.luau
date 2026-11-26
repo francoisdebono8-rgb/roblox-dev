@@ -151,16 +151,23 @@ function Bench.running() return state.running end
 -- joints HubBody.joints writes). One screenshot is the whole sheet: the
 -- instants are exact, whatever the Studio's frame rate (a capture of the live
 -- walker every 0,45 s came every 1,8 s on a loaded Mac).
---   _G.NDKitBench.sheet(kit, from, n, view)   view: "side" (3/4 front, the
---        default), "front", "back"; then capture_screenshot (one frame)
+--   _G.NDKitBench.sheet(kit, from, n, view, cols)   view: "side" (3/4 front,
+--        the default), "front", "back"; cols: images per row (8; the plates of
+--        the 26/11 are n=30, cols=10); then wait 3 s (a viewport captured
+--        sooner can still be empty) and capture_screenshot (one frame)
 --   _G.NDKitBench.clearSheet()
-Bench.VIEWS={side=Vector3.new(7,4.4,-7),front=Vector3.new(0,4.2,-10),back=Vector3.new(0,4.2,10)}
-function Bench.sheet(kit,from,n,view)
+-- The eye stands far enough for a leap or a kick to stay in its cell, and the
+-- sheet sits above the ClipAssistPanel (DisplayOrder 1100).
+Bench.VIEWS={side=Vector3.new(11.5,5.4,-11.5),front=Vector3.new(0,4.8,-15),back=Vector3.new(0,4.8,15)}
+Bench.SHEET_ORDER=5000
+function Bench.sheet(kit,from,n,view,cols)
 	local Authored,HubBody=client()
 	Bench.clearSheet()
 	local frames=Bench.timeline(kit)
 	from=from or 1
 	local last=math.min(#frames,from+(n or 16)-1)
+	cols=cols or 8
+	local rows=math.max(1,math.ceil((last-from+1)/cols))
 	local c=player.Character
 	if not c then return "pas de corps" end
 	local was=c.Archivable
@@ -176,9 +183,9 @@ function Bench.sheet(kit,from,n,view)
 	for _,g in player.PlayerGui:GetChildren() do
 		if g:IsA("ScreenGui") and g.Enabled and g.Name~="NDKitSheet" then g.Enabled=false;table.insert(state.hidden,g) end
 	end
-	local gui=Instance.new("ScreenGui");gui.Name="NDKitSheet";gui.IgnoreGuiInset=true;gui.DisplayOrder=1001
+	local gui=Instance.new("ScreenGui");gui.Name="NDKitSheet";gui.IgnoreGuiInset=true;gui.DisplayOrder=Bench.SHEET_ORDER
 	local bg=Instance.new("Frame");bg.Size=UDim2.fromScale(1,1);bg.BackgroundColor3=Color3.fromRGB(28,30,36);bg.BorderSizePixel=0;bg.Parent=gui
-	local grid=Instance.new("UIGridLayout");grid.CellSize=UDim2.new(.125,-4,.5,-4);grid.CellPadding=UDim2.fromOffset(4,4);grid.Parent=bg
+	local grid=Instance.new("UIGridLayout");grid.CellSize=UDim2.new(1/cols,-4,1/rows,-4);grid.CellPadding=UDim2.fromOffset(4,4);grid.Parent=bg
 	local eye=Bench.VIEWS[view or "side"] or Bench.VIEWS.side
 	for i=from,last do
 		local fr=frames[i]
@@ -194,7 +201,7 @@ function Bench.sheet(kit,from,n,view)
 			local jj=j[MOTOR[joint] or joint]
 			if jj then jj.Transform=cf end
 		end
-		local cam=Instance.new("Camera");cam.FieldOfView=42;cam.CFrame=CFrame.lookAt(eye,Vector3.new(0,2.6,0));cam.Parent=vf;vf.CurrentCamera=cam
+		local cam=Instance.new("Camera");cam.FieldOfView=42;cam.CFrame=CFrame.lookAt(eye,Vector3.new(0,3,0));cam.Parent=vf;vf.CurrentCamera=cam
 		local t=Instance.new("TextLabel");t.BackgroundTransparency=.4;t.BackgroundColor3=Color3.new(0,0,0);t.Size=UDim2.new(1,0,0,40)
 		t.TextColor3=Color3.new(1,1,1);t.Font=Enum.Font.GothamBold;t.TextSize=15;t.TextWrapped=true
 		t.Text=string.format("%s · %s · %.2f s%s",Bench.NAMES[kit] or kit,fr.move,fr.t,if fr.own then "" else "\n(clip de "..tostring(fr.clip)..")")

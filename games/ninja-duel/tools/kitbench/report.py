@@ -59,7 +59,7 @@ def main(argv=None):
     if args[0] == "--sheet":
         kit = args[1]
         start = int(args[2]) if len(args) > 2 else 1
-        print(f'return {BENCH_LUA}.sheet("{kit}",{start},16,"side")')
+        print(f'return {BENCH_LUA}.sheet("{kit}",{start},30,"side",10)')
         return 0
     if args[0] == "--clips":
         print(f"return {BENCH_LUA}.clips()")
