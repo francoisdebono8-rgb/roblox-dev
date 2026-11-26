@@ -130,4 +130,23 @@ test("the facing sent with a blow: a flat unit vector or nothing",function()
 	assert(string.find(fs.readFile("src/Client/HubFightClient.luau"),"FireServer(move,root.CFrame.LookVector)",1,true),"the client does not send its turn")
 end)
 
+-- (26/11, passe 3, seen in the game: the walk's lens inside a green wooden
+-- prop) what may fade between his head and the lens
+test("the walk's lens: a prop in its way fades; his body, the ground, a walker never",function()
+	local Sight=H.load("Client/HubSight")
+	local character={}
+	local function part(name,opts)
+		opts=opts or {}
+		return {Name=name,IsA=function(_,c) return c=="BasePart" end,
+			IsDescendantOf=function(_,x) return opts.mine and x==character end,
+			FindFirstAncestorOfClass=function() return opts.model end}
+	end
+	assert(Sight.fades(part("StallRoof"),character),"a stall's roof stays opaque in the lens")
+	assert(not Sight.fades(part("Head",{mine=true}),character),"his own head")
+	assert(not Sight.fades(part("Ground"),character),"the ground")
+	local walker={FindFirstChildOfClass=function(_,c) return if c=="Humanoid" then {} else nil end}
+	assert(not Sight.fades(part("UpperTorso",{model=walker}),character),"another walker")
+	assert(Sight.FADE>.5 and Sight.FADE<1,"the fade")
+end)
+
 print(string.format("NinjaDuel his kit in the street (26/11): %d PASS",passed))

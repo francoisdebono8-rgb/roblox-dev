@@ -44,6 +44,8 @@ function Hub.new(ui,camera,send,controls)
 	self.intro=require(script.Parent.ForestIntro).new(self)
 	-- (26/11, the CM) an inspiration's dare: the avatar walks up, filmed from the front
 	self.encounter=require(script.Parent.Encounter).new(self)
+	-- (26/11, passe 3) the walk's lens: what stands in its way fades
+	self.sight=require(script.Parent.HubSight).new()
 	local K=ui.kit or require(script.Parent.UI).kit
 	self.K=K
 	local P=K.palette
@@ -324,6 +326,8 @@ function Hub:render(data)
 	local walk=Hub.enabled() and (data.phase=="Selection" or data.phase=="Queue")
 	if walk~=self.active then
 		self.active=walk
+		-- (the walk ends: what its lens faded comes back)
+		if not walk and self.sight then pcall(self.sight.clear,self.sight) end
 		if not walk then self.board=false;self:hideCard() end
 	end
 	self:apply()
@@ -475,6 +479,7 @@ function Hub:step(dt)
 	if ended then self:paintRun() end
 	if not root then return end
 	pcall(self.encounter.step,self.encounter,dt,hum,root)
+	pcall(self.sight.step,self.sight,dt,character,character:FindFirstChild("Head"))
 	-- The card closes when he walks away from the master.
 	if self.cardId and self.cardAt and (root.Position-self.cardAt).Magnitude>26 then self:hideCard() end
 	-- (DEC-041) the first three inspirations in their moods, when he is near
