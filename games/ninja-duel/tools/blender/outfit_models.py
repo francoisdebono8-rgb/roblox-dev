@@ -158,21 +158,37 @@ def shell(pc, part, y0, y1, pad=.07, flare0=0.0, flare1=0.0, folds=.02, rings=9,
 
 def ribbed(pc, part, y0, y1, pad=.09, ribs=6, depth=.05, rings_per=3, col=None, spiral=0.0, seed=0.0):
     """Wraps, leg warmers, rolled bands: bulging rings (spiral>0: a bandage
-    wound round, its turns shifting with the angle)."""
+    wound round, its turns shifting with the angle).
+    (26/11, passe 2: « les bandages rendent mal » — in the game, on François's avatar, the
+    wraps read as a stack of white plates and the hand as a mitten) A bandage (spiral>0) is now
+    a smooth sleeve close to the skin: fine rows, a bulge of a few thousandths, the strips told
+    by a soft shading and a thin seam where each turn overlaps the last, the ends drawn in so
+    no rim stands proud."""
     S = size(part)
     pad *= FIT
     a0 = (S.x / 2 + pad) / K
     b0 = (S.z / 2 + pad) / K
+    bandage = spiral > 0
+    if bandage:
+        depth = min(depth, .006)
+        rings_per = max(rings_per, 6)
     n = ribs * rings_per + 1
     rows = []
     for k in range(n):
         u = k / (n - 1)
         y = S.y / 2 - lerp(y0, y1, u) * S.y
+        end = min(u, 1 - u) * (n - 1) / max(1, rings_per)   # in turns from the nearer end
+        draw = (.35 + .65 * min(1.0, end)) if bandage else 1.0
         ring = []
         for i in range(SEG):
             t = 2 * math.pi * i / SEG
             ph = u * ribs + spiral * t / (2 * math.pi)
-            bulge = depth * (.5 - .5 * math.cos(2 * math.pi * ph)) + .008 * noise.noise(Vector((t, y * 3, seed)))
+            if bandage:   # flat strips, a slight lip where a turn lies over the one before
+                f = ph % 1.0
+                bulge = depth * (f ** 3) * draw + .003 * noise.noise(Vector((t, y * 3, seed)))
+                bulge -= pad * (1 - draw) * .9 / K
+            else:
+                bulge = depth * (.5 - .5 * math.cos(2 * math.pi * ph)) + .008 * noise.noise(Vector((t, y * 3, seed)))
             c, s = math.cos(t), math.sin(t)
             x = (a0 + bulge) * math.copysign(abs(c) ** .125, c)
             z = (b0 + bulge) * math.copysign(abs(s) ** .125, s)
@@ -183,6 +199,9 @@ def ribbed(pc, part, y0, y1, pad=.09, ribs=6, depth=.05, rings_per=3, col=None, 
         u = ri / (n - 1)
         t = math.atan2(p.z, p.x)
         ph = (u * ribs + spiral * t / (2 * math.pi)) % 1.0
+        if bandage:   # the strip pale and even, a thin shadow at the seam
+            g = .97 - .06 * ph - (.16 if ph < .08 else 0.0)
+            return (g, g, g)
         g = .74 + .26 * math.sin(math.pi * ph)
         return (g, g, g)
     loft(pc, rows, col or c, cap0=False, cap1=False)
@@ -435,7 +454,8 @@ def item_arm_wraps():
     o = Out()
     # (19/11, vague 2: « trop épaisses ») close to the skin: a third of the old pad and depth
     o.both("LowerArm", "Wrap", lambda pc, part: ribbed(pc, part, .12, .98, pad=.01, ribs=10, depth=.01, spiral=1.0))
-    o.both("Hand", "Wrap", lambda pc, part: ribbed(pc, part, -.05, .75, pad=.006, ribs=2, depth=.008, spiral=1.0))
+    # (26/11) round the palm only, the fingers free (a long hand made it a mitten)
+    o.both("Hand", "Wrap", lambda pc, part: ribbed(pc, part, -.04, .42, pad=.008, ribs=2, depth=.006, spiral=1.0))
     return o.items
 
 
