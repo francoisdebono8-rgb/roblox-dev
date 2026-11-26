@@ -168,6 +168,30 @@ test("the masters face the player who walks up to them",function()
 	end
 end)
 
+-- (26/11, passe 2, seen in the game: a new profile walked the forest bare) two
+-- arrivals close together load his character one after the other, the newest last
+test("two arrivals at once: one load at a time, the newest last, the older gives way",function()
+	local fake={UserId=9,Name="P9"}
+	local order={}
+	-- nothing loading: the load runs at once
+	Hub.bodies[fake]={serial=1}
+	assert(Hub.loadTurn(fake,1,function() table.insert(order,1) end,function() error("no wait") end)==true and order[1]==1,"a lone load waited")
+	assert(Hub.loading[fake]==nil,"the turn kept its lock")
+	-- the roster's load (serial 1) still runs when the forest's (serial 2) is asked: 2 waits for it
+	Hub.bodies[fake]={serial=2}
+	Hub.loading[fake]=true
+	local waits=0
+	local ran=Hub.loadTurn(fake,2,function() table.insert(order,2) end,function(dt) waits+=1;if waits==3 then Hub.loading[fake]=nil end return dt end)
+	assert(ran and order[2]==2 and waits==3,"the newer load did not wait for the older one")
+	-- an older load asked to go after a newer one gives way
+	Hub.loading[fake]=true
+	local gaveWay=Hub.loadTurn(fake,1,function() table.insert(order,"old") end,function(dt) Hub.loading[fake]=nil return dt end)
+	assert(gaveWay==false and #order==2,"the older load ran after the newer one")
+	-- a failed load releases the turn
+	assert(Hub.loadTurn(fake,2,function() error("Roblox refused") end)==false and Hub.loading[fake]==nil,"a failed load kept the lock")
+	Hub.bodies[fake]=nil
+end)
+
 test("a duel takes the walker away; a table player (the suites) is never spawned",function()
 	local fake={UserId=7,Name="P7"}
 	Hub.enter(fake,"gate")

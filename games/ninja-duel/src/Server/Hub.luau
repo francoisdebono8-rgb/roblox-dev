@@ -1333,6 +1333,29 @@ function Hub.description(player)
 	Hub.descs[player]=desc or false
 	return desc
 end
+-- (26/11, passe 2, seen in the game: a new profile walked the forest in his
+-- skin, the outfit nowhere, and the forest never saw him reach the bandit nor
+-- the gate; the OUTILLEUR's robot: « un profil neuf se bat sans vêtements »)
+-- Two arrivals close together (the roster, then his profile loaded: the
+-- forest, Matches.kitsLoaded) loaded his character twice at once; the older
+-- load finished last, its body replaced the newer one and was left as it came,
+-- bare and unknown to the hub (Hub.bodies kept the body it had replaced). One
+-- load at a time, the newest last: a load asked while another runs waits for
+-- it, then gives way if a newer one was asked meanwhile. Returns whether this
+-- load ran (and did not fail).
+Hub.loading=setmetatable({},{__mode="k"})
+Hub.LOAD_WAIT=10
+function Hub.loadTurn(player,serial,load,wait)
+	wait=wait or task.wait
+	local waited=0
+	while Hub.loading[player] and waited<Hub.LOAD_WAIT do waited+=(wait(.05) or .05) end
+	local entry=Hub.bodies[player]
+	if not entry or entry.serial~=serial then return false end
+	Hub.loading[player]=true
+	local ok=pcall(load)
+	Hub.loading[player]=nil
+	return ok
+end
 -- The player's own avatar in the village (the default character and controls).
 -- `where`: "gate" (arrival) or "hall" (back from a duel). Asynchronous; a duel
 -- that starts meanwhile wins (Hub.leave bumps the serial).
@@ -1345,12 +1368,14 @@ function Hub.enter(player,where,looks)
 		-- (DEC-040) his avatar without its clothes (body, face, hair) at the
 		-- game's standard scales, then the outfit he chose (Server/Outfit)
 		local desc=Hub.description(player)
-		local ok=pcall(function()
+		local ok=Hub.loadTurn(player,serial,function()
 			if desc then player:LoadCharacterWithHumanoidDescription(desc:Clone()) else player:LoadCharacter() end
 		end)
+		-- (given way to a newer arrival, or failed: the body there is not this one's)
+		if not ok then return end
 		local entry=Hub.bodies[player]
 		local character=player.Character
-		if not ok or not entry or entry.serial~=serial or not character then
+		if not entry or entry.serial~=serial or not character then
 			if character and (not entry or entry.serial~=serial) and character:GetAttribute("NinjaHubBody") then character:Destroy() end
 			return
 		end
