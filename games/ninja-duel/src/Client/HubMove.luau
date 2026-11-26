@@ -231,6 +231,17 @@ function Move:step(dt)
 		self.poseRemote=remote
 		if remote then remote:FireServer(pose) end
 	end
+	-- (26/11, passe 3, DEC-055) his kit in the street: the keys, the slow of a
+	-- blow, the dash (Client/HubFightClient)
+	if not self.fight then
+		local ok,Fight=pcall(require,script.Parent.HubFightClient)
+		if ok then self.fight=Fight.new(self);self.fight:bind() end
+	end
+	local act,actAt=nil,nil
+	if self.fight then
+		local ok,a,at=pcall(self.fight.step,self.fight,dt,hum,root)
+		if ok then act,actAt=a,at end
+	end
 	-- the body, posed by the kit's clips (Client/HubBody); the other walkers too
 	local poser=self:body()
 	if poser then
@@ -239,7 +250,7 @@ function Move:step(dt)
 		pcall(poser.step,poser,character,hum,{now=os.clock(),dt=dt,speed=Vector3.new(v.X,0,v.Z).Magnitude,vy=v.Y,
 			grounded=grounded and not self.climb,climbing=self.climb~=nil,climbSpeed=Move.CLIMB,
 			leapAt=self.leapAt,kickAt=if self.kickedAt and self.kickedAt>0 then self.kickedAt else nil,mantleAt=self.mantleAt,
-			emote=self.emoteClip,emoteAt=self.emoteAt})
+			emote=self.emoteClip,emoteAt=self.emoteAt,act=act,actAt=actAt})
 	end
 	-- Fell out of the village (into the lake's floor, off the cliff): the gate.
 	if root.Position.Y<HubMap.Origin.Y-40 then

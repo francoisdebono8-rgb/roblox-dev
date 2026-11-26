@@ -58,6 +58,7 @@ run Stage "$LUNE" run tests/Stage.spec.luau
 run AIVariety "$LUNE" run tests/AIVariety.spec.luau
 run HudText "$LUNE" run tests/HudText.spec.luau
 run Soundscape "$LUNE" run tests/Soundscape.spec.luau
+run HubFight "$LUNE" run tests/HubFight.spec.luau
 run Leftovers "$LUNE" run tests/Leftovers.spec.luau
 run Appearance "$LUNE" run tests/Appearance.spec.luau
 run Avatar "$LUNE" run tests/Avatar.spec.luau
