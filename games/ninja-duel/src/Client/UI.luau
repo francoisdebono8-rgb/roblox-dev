@@ -1374,13 +1374,13 @@ function UI:lobby(data)
 		self.queueTitle.Text=if private then "PRIVATE DUEL" else "SEARCHING FOR AN OPPONENT"
 		self.queueCode.Text=if private then (online.code or "") else ""
 		self.queueNote.Text=if private then "Send this code to your friend. They type it next to JOIN."
-			else "Casual 1v1  •  you meet the next player who searches."
+			else "Casual 1v1"
 		-- (Lobby, 04/11) a challenge: on the way to the duel server, then waiting there.
 		local mode=online and online.mode
 		if mode=="travel" or mode=="challenge" then
 			self.queueTitle.Text=if mode=="travel" then "LEAVING FOR THE DUEL" else "CHALLENGE"
 			self.queueCode.Text=""
-			self.queueNote.Text=if mode=="travel" then "Both of you are on the way to the same arena…" else "Waiting for your opponent to arrive…"
+			self.queueNote.Text=if mode=="travel" then "Heading to the arena…" else "Waiting for your opponent…"
 		end
 	end
 	self:refreshSelection()
@@ -2031,7 +2031,7 @@ function UI:render(data)
 	self:resultRanked(type(data.progress)=="table" and data.progress.ranked or nil)
 	if data.master then
 		self.resultName.Text="HIS DUEL"
-		self.resultNote.Text=if won then "He saw enough: his kit is yours." else "He is not convinced yet. Come back stronger."
+		self.resultNote.Text=if won then "His kit is yours!" else "Not yet. Come back stronger."
 	end
 	-- Online: a rematch needs both players; a forfeit says so.
 	local online=data.online
@@ -2039,7 +2039,7 @@ function UI:render(data)
 		elseif online.theirRematch then "REMATCH  •  OPPONENT IS READY" else "REMATCH"
 	if online and online.forfeit then
 		self.resultTitle.Text=(if won then "VICTORY" else "DEFEAT").."  •  FORFEIT"
-		self.resultNote.Text="Your opponent left the duel. The win is yours."
+		self.resultNote.Text="They ran. You win."
 	end
 	-- (Tournament) continue the bracket; a match watched names its winner.
 	self.inCup=data.cup~=nil
@@ -2053,9 +2053,9 @@ function UI:render(data)
 			self.resultSeal.Text="WIN"
 			self.resultNote.Text="One more name moves up the bracket."
 		elseif won then
-			self.resultNote.Text="Your name moves up the bracket."
+			self.resultNote.Text="You're through!"
 		else
-			self.resultNote.Text="Your tournament ends here. The bracket plays out without you."
+			self.resultNote.Text="Out of the tournament."
 		end
 	end
 end

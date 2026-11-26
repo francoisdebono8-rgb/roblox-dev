@@ -676,7 +676,7 @@ test("the client UI renders the real roster, queue, pick, duel and result packet
 	local c,e=join(m,"Charlie","Echo")
 	d=fight(m,c,e)
 	m:remove(e);ui:render(last(c))
-	assert(ui.result.Visible and ui.resultTitle.Text=="VICTORY  •  FORFEIT" and ui.resultNote.Text:find("left the duel",1,true))
+	assert(ui.result.Visible and ui.resultTitle.Text=="VICTORY  •  FORFEIT" and ui.resultNote.Text:find("They ran",1,true))
 	lifecycle(m,c,"Selection")
 	local f=join(m,"Foxtrot")
 	lifecycle(m,c,"Host",{player="Lion"});ui:render(last(c))

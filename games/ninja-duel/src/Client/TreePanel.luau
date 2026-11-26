@@ -216,7 +216,7 @@ function Panel.new(kit,gui,send)
 	-- The legend under the grid.
 	self.legend=text(card,"ON  •  LEARNED, OFF  •  TO LEARN  •  NOT ENOUGH POINTS  •  TIER CLOSED  •  WAITS FOR A NODE",
 		UDim2.fromOffset(GRID_X,H-56),UDim2.fromOffset(GRID_W,20),14,M.mid,STRONG)
-	self.footer=text(card,"A learned node stays learned: turn nodes on and off between duels. Ranked and tournament duels give everyone the prodigy's whole kit, on an equal budget.",
+	self.footer=text(card,"Switch nodes between duels. In ranked, everyone has the full kit.",
 		UDim2.fromOffset(GRID_X,H-34),UDim2.fromOffset(W-48,20),13,M.brown,kit.BODY_FONT)
 	return self
 end
