@@ -10,9 +10,9 @@ local Controls=require(Shared.Controls)
 
 local S={}
 S.__index=S
-S.W,S.H=860,620
-S.STEPS={volume=.1,sensitivity=.2}
-S.LIMITS={volume={0,1},sensitivity={.4,2}}
+S.W,S.H=860,760
+S.STEPS={volume=.1,sensitivity=.2,music=.1,ambience=.1}
+S.LIMITS={volume={0,1},sensitivity={.4,2},music={0,1},ambience={0,1}}
 S.MAX_REPORT=300
 -- What the CONTROLS block lists: the action, its key, its pad button.
 S.ROWS={
@@ -42,7 +42,7 @@ end
 
 -- ------------------------------------------------------------------ page
 function S.new(kit,gui,send)
-	local self=setmetatable({kit=kit,send=send,volume=1,sensitivity=1},S)
+	local self=setmetatable({kit=kit,send=send,volume=1,sensitivity=1,music=1,ambience=1},S)
 	local M=kit.MANGA
 	self.M=M
 	local STRONG=kit.STRONG_FONT or kit.BODY_FONT
@@ -73,14 +73,17 @@ function S.new(kit,gui,send)
 		plus.TextSize=36;plus.TextColor3=M.ink;ring(plus)
 		return value,minus,plus
 	end
-	self.volumeText,self.volumeMinus,self.volumePlus=stepper(96,"SOUND","volume")
-	self.sensText,self.sensMinus,self.sensPlus=stepper(164,"CAMERA","sensitivity")
+	-- (passe 3) the music and the street, apart (NinjaMusicVolume, NinjaAmbienceVolume)
+	self.volumeText,self.volumeMinus,self.volumePlus=stepper(92,"SOUND","volume")
+	self.musicText,self.musicMinus,self.musicPlus=stepper(152,"MUSIC","music")
+	self.ambText,self.ambMinus,self.ambPlus=stepper(212,"STREET","ambience")
+	self.sensText,self.sensMinus,self.sensPlus=stepper(272,"CAMERA","sensitivity")
 	-- the controls
-	z(kit.text(card,"CONTROLS",UDim2.fromOffset(28,236),UDim2.fromOffset(300,34),28,M.ink,kit.TITLE_FONT))
-	z(kit.text(card,"KEYBOARD",UDim2.fromOffset(330,242),UDim2.fromOffset(200,24),15,M.red,STRONG))
-	z(kit.text(card,"PAD",UDim2.fromOffset(560,242),UDim2.fromOffset(200,24),15,M.red,STRONG))
+	z(kit.text(card,"CONTROLS",UDim2.fromOffset(28,344),UDim2.fromOffset(300,34),28,M.ink,kit.TITLE_FONT))
+	z(kit.text(card,"KEYBOARD",UDim2.fromOffset(330,350),UDim2.fromOffset(200,24),15,M.red,STRONG))
+	z(kit.text(card,"PAD",UDim2.fromOffset(560,350),UDim2.fromOffset(200,24),15,M.red,STRONG))
 	for i,row in S.ROWS do
-		local y=274+(i-1)*24
+		local y=382+(i-1)*28
 		z(kit.text(card,row[1],UDim2.fromOffset(28,y),UDim2.fromOffset(290,22),16,M.ink,STRONG))
 		z(kit.text(card,row[2],UDim2.fromOffset(330,y),UDim2.fromOffset(220,22),16,M.mid or M.ink,STRONG))
 		z(kit.text(card,row[3],UDim2.fromOffset(560,y),UDim2.fromOffset(260,22),16,M.mid or M.ink,STRONG))
@@ -120,6 +123,8 @@ function S:show(where) self.where=where;self.root.Visible=true;self.reportBox.Vi
 function S:hide() self.root.Visible=false;if self.onHide then self.onHide() end end
 function S:draw()
 	self.volumeText.Text=S.percent(self.volume)
+	self.musicText.Text=S.percent(self.music)
+	self.ambText.Text=S.percent(self.ambience)
 	self.sensText.Text=string.format("×%.1f",self.sensitivity)
 	self.reportButton.Visible=S.testPlace() or self.forceReport==true
 end
@@ -127,7 +132,9 @@ function S:set(kind,dir)
 	self[kind]=S.step(self[kind],kind,dir)
 	pcall(function()
 		local player=game:GetService("Players").LocalPlayer
-		if kind=="volume" then
+		if kind=="music" then player:SetAttribute("NinjaMusicVolume",self.music)
+		elseif kind=="ambience" then player:SetAttribute("NinjaAmbienceVolume",self.ambience)
+		elseif kind=="volume" then
 			player:SetAttribute("NinjaVolume",self.volume)
 			for _,g in game:GetService("SoundService"):GetDescendants() do
 				if g:IsA("SoundGroup") then g.Volume=self.volume end

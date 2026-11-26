@@ -873,6 +873,37 @@ test("the gate's creation: starter pieces, his own hair, ENTER sends Create",fun
 	assert(ok,tostring(err))
 end)
 
+-- (DESIGN 26/11, passe 3) the story's scenes, the challenge's words
+test("a scene in bubbles: one at a time, then StorySeen; the challenge's prompt",function()
+	local Mark=H.load("Client/ChallengeMark")
+	local h,l=Mark.words(true,"Bob",3.2)
+	assert(h=="CHALLENGE!" and l:find("HIT BACK",1,true) and l:find("4",1,true),"the struck one's prompt: "..l)
+	H.workspace.GetAttribute=function() return nil end
+	local saved=H.envBase.Instance
+	local baseNew=harnessInstance.new
+	H.envBase.Instance={new=function(class)
+		local x=baseNew(class)
+		x.Activated={Connect=function(_,fn) x.click=fn end}
+		return x
+	end}
+	local ok,err=pcall(function()
+		local UI=H.load("Client/UI")
+		local S=H.load("Client/StoryScene")
+		local sent={}
+		local sc=S.new(UI.kit,baseNew("ScreenGui"),function(a,p) table.insert(sent,{a,p}) end)
+		local lines=S.lines("seals")
+		assert(#lines>0,"the seals' scene has lines")
+		sc:play("seals","CHAPTER 2")
+		assert(sc:shown() and sc.line.Text==lines[1].line,"the first bubble")
+		for _=1,#lines do sc:advance() end
+		assert(not sc:shown() and sent[1][1]=="StorySeen" and sent[1][2].scene=="seals","seen at the end")
+		sc:play("seals");sc.skip.click()
+		assert(sent[2][1]=="StorySeen" and not sc:shown(),"SKIP")
+	end)
+	H.envBase.Instance=saved
+	assert(ok,tostring(err))
+end)
+
 -- (15/11, DA v3 Mix-Shop) the STYLE preview: a still copy of his own avatar,
 -- its scripts and its own outfit taken off, the character left as it was.
 test("the STYLE preview: a still copy of his avatar, without its scripts nor its outfit",function()
