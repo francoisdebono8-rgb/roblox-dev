@@ -95,4 +95,13 @@ test("no quiet reason for a fighter the player does not drive (autopilot, a watc
 	assert(m:view(s,s,s.human,s.bot).human.quiet==nil,"a watched match: BUSY on screen")
 end)
 
+-- (26/11, the CM's Banter) the result's last word from the other side
+test("the result gives the other side's last word: the bandit, a rogue, the inspiration who dared him",function()
+	local UI=H.load("Client/UI")
+	assert(UI.lastWord(nil)==nil and UI.lastWord({mastery=5})==nil,"a word from nobody")
+	assert(UI.lastWord({forest={won=true,say={who="FOREST BANDIT",line="Fine! Take the road!"}}})=="FOREST BANDIT: “Fine! Take the road!”","the bandit's word")
+	assert(UI.lastWord({challenge={say={who="",line="Predictable."}}})=="“Predictable.”","a word without a name")
+	assert(UI.lastWord({thug={say={line=""}}})==nil,"an empty word")
+end)
+
 print(string.format("NinjaDuel fight screen words (QA 12/11): %d PASS",passed))

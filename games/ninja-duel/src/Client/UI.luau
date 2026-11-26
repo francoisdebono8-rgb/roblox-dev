@@ -242,6 +242,19 @@ function UI.stageName(data)
 	if data and data.master then return "AN INSPIRATION'S DUEL" end
 	return "KONOHA  •  THE EXAM HALL"
 end
+-- (DEV 26/11) The result's last word from the other side (Server/Matches
+-- lastWord: progress.challenge/thug/forest.say {who, line}), or nil.
+function UI.lastWord(progress)
+	if type(progress)~="table" then return nil end
+	for _,k in {"challenge","thug","forest"} do
+		local p=progress[k]
+		local say=type(p)=="table" and p.say or nil
+		if type(say)=="table" and type(say.line)=="string" and say.line~="" then
+			return (if type(say.who)=="string" and say.who~="" then say.who..": " else "").."“"..say.line.."”"
+		end
+	end
+	return nil
+end
 -- Who the result names: « ADVANCES » only in the tournament's bracket.
 function UI.resultLine(data,name)
 	if data and data.cup then return name.."  ADVANCES" end
@@ -2039,6 +2052,10 @@ function UI:render(data)
 		self.resultName.Text="HIS DUEL"
 		self.resultNote.Text=if won then "His kit is yours!" else "Not yet. Come back stronger."
 	end
+	-- (DEV 26/11, the CM's Shared/Banter) the other's last word: the forest's
+	-- bandit, a rogue, an inspiration who dared him
+	local last=UI.lastWord(data.progress)
+	if last then self.resultNote.Text=last end
 	-- Online: a rematch needs both players; a forfeit says so.
 	local online=data.online
 	self.rematchButton.Text=if not online then "REMATCH" elseif online.opponentLeft then "OPPONENT LEFT" elseif online.rematch then "WAITING FOR OPPONENT…"

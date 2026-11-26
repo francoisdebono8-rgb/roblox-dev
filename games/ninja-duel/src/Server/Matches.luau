@@ -161,6 +161,30 @@ function Matches:thugFight(player,kit,key,level)
 	end
 	return true
 end
+-- (26/11, the CM's Shared/Banter) The other's last word on the result screen
+-- (Client/UI.lastWord): the forest's bandit, a rogue, an inspiration who dared
+-- him; `won`: the player won. {who, line} or nil.
+local okBanter,Banter=pcall(function() return require(Shared.Banter) end)
+function Matches.lastWord(kind,kit,won)
+	if not okBanter or type(Banter)~="table" then return nil end
+	local ok,say=pcall(function()
+		local function one(list) return if type(list)=="table" then list[math.random(1,#list)] else list end
+		if kind=="forest" then
+			local B=Banter.Bandit
+			return {who=B.name,line=if won then one(B.defeated) else one(B.won)}
+		elseif kind=="thug" then
+			local T=Banter.Thugs
+			return {who=require(script.Parent.Thugs).NAME,line=if won then one(T.lost) else one(T.won)}
+		elseif kind=="challenge" then
+			local I=Banter.Inspirations[kit]
+			if not I then return nil end
+			-- his own voice: beaten, his excuse; winning, his boast
+			return {who=Text.upper(KitTexts.name(kit) or tostring(kit)),line=if won then one(I.lose) else one(I.win)}
+		end
+		return nil
+	end)
+	return if ok and type(say)=="table" and type(say.line)=="string" then say else nil
+end
 -- (26/11, DEC-054) The forest's bandit (Server/Forest): a new player's first
 -- fight, at the clearing, there and then. One short round, no technique for
 -- either (Combat's `bare`: strikes, guard, dodge, jump, grab), the novice's
@@ -562,7 +586,7 @@ function Matches:roundOver(s,winner,notify,advance)
 	-- Server/Forest takes him back to the path
 	if decided and s.forest then
 		s.forestWon=s.human~=nil and winner==s.human
-		s.progress={forest={won=s.forestWon}}
+		s.progress={forest={won=s.forestWon,say=Matches.lastWord("forest",nil,s.forestWon)}}
 		s.forest=nil;s.bare=nil;s.techniquesDisabled=nil
 	elseif decided and not s.online and s.owner and s.human then
 		local won=winner==s.human
@@ -578,13 +602,13 @@ function Matches:roundOver(s,winner,notify,advance)
 		-- (23/11, passe 1) a rogue's racket fought: his purse, or some of ours
 		if s.thug then
 			local okT,purse=pcall(require(script.Parent.Thugs).ended,s.owner,won)
-			s.progress.thug={kit=s.thug.kit,won=won,ryo=okT and purse or 0}
+			s.progress.thug={kit=s.thug.kit,won=won,ryo=okT and purse or 0,say=Matches.lastWord("thug",s.thug.kit,won)}
 			s.thug=nil
 		end
 		-- (21/11, DEC-047) an inspiration's challenge in the street, decided
 		if s.challenge and self.solo then
 			local paid=self.solo:challengeEnded(s.owner,won,s.combat and s.combat.now or 0)
-			s.progress.challenge={kit=s.challenge,won=won,amount=paid and paid.amount}
+			s.progress.challenge={kit=s.challenge,won=won,amount=paid and paid.amount,say=Matches.lastWord("challenge",s.challenge,won)}
 			s.challenge=nil
 		end
 		-- (19/11, DEV 6) what this duel brought closer: the next node, the

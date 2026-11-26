@@ -156,6 +156,15 @@ test("the way in: the walk, the bandit there and then, a very short fight, the p
 	assert(s.forestWon==true,"the novice beat him")
 	assert(length<34,("« très court »: %.1f s"):format(length))
 	assert(last(player).progress and last(player).progress.forest and last(player).progress.forest.won,"the result does not say it")
+	-- (26/11, the CM's Banter) his last word, beaten
+	local say=last(player).progress.forest.say
+	local Banter=H.load("Shared/Banter")
+	assert(say and say.who==Banter.Bandit.name and table.find(Banter.Bandit.defeated,say.line),"the bandit's last word: "..tostring(say and say.line))
+	local beaten=Matches.lastWord("forest",nil,false)
+	assert(beaten and beaten.line==Banter.Bandit.won,"his word when he wins")
+	local dare=Matches.lastWord("challenge","Legion",true)
+	assert(dare and dare.line==Banter.Inspirations.Legion.lose and dare.who~="","the inspiration's excuse")
+	assert(Matches.lastWord("challenge","Nobody",true)==nil,"a kit without words")
 	assert(not s.bare and not s.techniquesDisabled and not s.forest,"the forest's rules outlive its fight")
 	print(("     the bandit down in %.1f s"):format(length))
 	-- the result a beat, then the path from the clearing
