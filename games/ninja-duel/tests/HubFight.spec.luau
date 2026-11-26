@@ -106,4 +106,28 @@ test("a rebuilt or half-built character gets its joints back",function()
 	assert(string.find(body,"if not any or not self.j[any].Parent then self.j=joints(character) end",1,true),"the joints are not looked for again")
 end)
 
+test("a blow turns to the body or dummy right there, not past it",function()
+	local from=Vector3.new(0,3,0)
+	local look=Vector3.new(-.87,0,-.49)
+	local dummy=Vector3.new(0,4,-4.2)
+	local dir=Rules.aim(from,look,{dummy})
+	assert(dir and dir.Z<-.99,"the dummy 60 degrees off his look: "..tostring(dir))
+	-- behind him or too far: where he looks
+	local away=Rules.aim(from,look,{Vector3.new(0,3,6),Vector3.new(-20,3,-11)})
+	assert(away and math.abs(away.X-look.Unit.X)<1e-3,"turned to something out of reach")
+	-- the nearest of two
+	local near=Rules.aim(from,Vector3.new(0,0,-1),{Vector3.new(1,3,-6),Vector3.new(-1,3,-3)})
+	assert(near.X<0,"not the nearest")
+	assert(Rules.aim(from,Vector3.new(0,-1,0),{})==nil,"looking straight down")
+end)
+
+test("the facing sent with a blow: a flat unit vector or nothing",function()
+	local Server=H.load("Server/HubFight")
+	local f=Server.facing(Vector3.new(0,.3,-1))
+	assert(f and math.abs(f.Magnitude-1)<1e-6 and f.Y==0,"a facing not flattened")
+	assert(Server.facing(Vector3.new(0,0,0))==nil and Server.facing(Vector3.new(50,0,0))==nil and Server.facing("north")==nil,"a forged facing")
+	assert(Server.facing(Vector3.new(0/0,0,1))==nil,"NaN")
+	assert(string.find(fs.readFile("src/Client/HubFightClient.luau"),"FireServer(move,root.CFrame.LookVector)",1,true),"the client does not send its turn")
+end)
+
 print(string.format("NinjaDuel his kit in the street (26/11): %d PASS",passed))

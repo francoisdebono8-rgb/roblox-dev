@@ -59,6 +59,25 @@ function Fight:live()
 	return true
 end
 
+-- What a blow can turn to around `at`: other bodies (players, rogues, the
+-- eight, the bandit, the Ōtsutsuki) and the training dummy.
+function Fight.targets(character,at)
+	local params=OverlapParams.new()
+	params.FilterType=Enum.RaycastFilterType.Exclude
+	params.FilterDescendantsInstances={character}
+	local out,seen={},{}
+	for _,part in workspace:GetPartBoundsInRadius(at,Rules.AIM_REACH+1,params) do
+		if part.Name=="Dummy" then table.insert(out,part.Position)
+		else
+			local model=part:FindFirstAncestorOfClass("Model")
+			local hum=model and model:FindFirstChildOfClass("Humanoid")
+			local root=hum and model:FindFirstChild("HumanoidRootPart")
+			if root and not seen[model] then seen[model]=true;table.insert(out,root.Position) end
+		end
+	end
+	return out
+end
+
 -- A move pressed: played now on his body, asked of the server.
 function Fight:press(name)
 	if not self:live() then return end
@@ -82,11 +101,12 @@ function Fight:press(name)
 	-- (the client keeps the server's gap: a press too soon is not shown either)
 	self.grants=self.grants or {}
 	if not Rules.grant(self.grants,move,now) then return end
-	-- the blow goes where he looks (the camera), not where he walked
+	-- the blow goes where he looks (the camera), not where he walked; to the
+	-- body or dummy right there when one is near that way (Rules.aim)
 	if spec.contact then
 		local look=workspace.CurrentCamera.CFrame.LookVector
-		local flat=Vector3.new(look.X,0,look.Z)
-		if flat.Magnitude>.05 then root.CFrame=CFrame.lookAt(root.Position,root.Position+flat.Unit) end
+		local dir=Rules.aim(root.Position,look,Fight.targets(character,root.Position))
+		if dir then root.CFrame=CFrame.lookAt(root.Position,root.Position+dir) end
 		self.slowUntil=now+(spec.slow or 0)
 	end
 	if spec.dash then
@@ -102,7 +122,9 @@ function Fight:press(name)
 	end
 	self.act,self.actAt=spec.clip,now
 	local r=remote("HubAct")
-	if r then r:FireServer(move) end
+	-- the way he turned goes with it (the server's contact may come before
+	-- his turn reaches it)
+	if r then r:FireServer(move,root.CFrame.LookVector) end
 end
 
 -- One frame (Client/HubMove, after the walk set his speed): the slow of a

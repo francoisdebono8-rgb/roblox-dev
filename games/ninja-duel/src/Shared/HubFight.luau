@@ -76,6 +76,28 @@ function HubFight.box(rootCFrame,spec)
 	return cf,Vector3.new(spec.width or 3.6,5,reach)
 end
 
+-- (26/11, seen in Studio: three blows beside the training dummy went where
+-- the camera looked, past it) The blow turns to the nearest body or dummy
+-- within AIM_REACH studs and AIM_ANGLE degrees of where he looks.
+HubFight.AIM_REACH=7
+HubFight.AIM_ANGLE=65
+-- (pure) The flat direction a blow from `from` looking `look` takes, given
+-- the positions `targets` around him: toward the nearest one in reach and in
+-- the cone, else `look` itself (flattened). nil when there is nowhere to look.
+function HubFight.aim(from,look,targets)
+	local flat=Vector3.new(look.X,0,look.Z)
+	if flat.Magnitude<.05 then return nil end
+	flat=flat.Unit
+	local best,bestD=nil,math.huge
+	local cos=math.cos(math.rad(HubFight.AIM_ANGLE))
+	for _,at in targets or {} do
+		local d=Vector3.new(at.X-from.X,0,at.Z-from.Z)
+		local m=d.Magnitude
+		if m>.05 and m<=HubFight.AIM_REACH and d.Unit:Dot(flat)>=cos and m<bestD then best,bestD=d.Unit,m end
+	end
+	return best or flat
+end
+
 -- (pure) The walker's state for a challenge between `from` and `to` at
 -- `now` in the record `challenges` ({[to]={from, at}}) and `cooldowns`
 -- ({[pairKey]=time}): "accept" (to had challenged from: the riposte),

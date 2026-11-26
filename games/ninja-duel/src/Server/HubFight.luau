@@ -117,12 +117,23 @@ function HubFight.strikePlayer(player,other,now)
 	return "challenge"
 end
 
+-- (pure) The facing a client sent with his move (a flat unit vector), or nil.
+function HubFight.facing(dir)
+	if typeof(dir)~="Vector3" then return nil end
+	local flat=Vector3.new(dir.X,0,dir.Z)
+	local m=flat.Magnitude
+	if m~=m or m<.5 or m>1.5 then return nil end
+	return flat.Unit
+end
 -- A blow's contact: what is in front of him takes it. Returns what it met.
-function HubFight.land(player,character,move,now)
+-- `dir`: the way he turned for it (his client turned his body at the press:
+-- the turn may not have reached the server by the contact).
+function HubFight.land(player,character,move,now,dir)
 	local spec=Rules.Moves[move]
 	local root=character and character:FindFirstChild("HumanoidRootPart")
 	if not spec or not root or not character.Parent then return nil end
-	local cf,size=Rules.box(root.CFrame,spec)
+	local frame=if dir then CFrame.lookAt(root.Position,root.Position+dir) else root.CFrame
+	local cf,size=Rules.box(frame,spec)
 	local params=OverlapParams.new();params.FilterType=Enum.RaycastFilterType.Exclude
 	params.FilterDescendantsInstances={character,context().match.folder}
 	local parts=workspace:GetPartBoundsInBox(cf,size,params)
@@ -194,7 +205,7 @@ function HubFight.land(player,character,move,now)
 	if worldPart then
 		local c=context()
 		c.now=now
-		local look=Vector3.new(root.CFrame.LookVector.X,0,root.CFrame.LookVector.Z)
+		local look=Vector3.new(frame.LookVector.X,0,frame.LookVector.Z)
 		look=if look.Magnitude>.05 then look.Unit else Vector3.zAxis
 		local WorldReaction=require(script.Parent.WorldReaction)
 		local at=worldPart:GetClosestPointOnSurface(root.Position+Vector3.new(0,.3,0))
@@ -211,8 +222,8 @@ function HubFight.land(player,character,move,now)
 	return nil
 end
 
--- A walker asks for `move` (the remote HubAct).
-function HubFight.act(player,move,now)
+-- A walker asks for `move` (the remote HubAct), turned `dir`.
+function HubFight.act(player,move,now,dir)
 	if type(move)~="string" or not Rules.Moves[move] then return false end
 	if not walking(player) then return false end
 	local intro=player:GetAttribute("NinjaIntro")
@@ -225,9 +236,10 @@ function HubFight.act(player,move,now)
 	character:SetAttribute("NinjaAct",move)
 	character:SetAttribute("NinjaActSeq",(character:GetAttribute("NinjaActSeq") or 0)+1)
 	if spec.contact then
+		local facing=HubFight.facing(dir)
 		task.delay(spec.contact,function()
 			if player.Parent and player.Character==character and walking(player) then
-				pcall(HubFight.land,player,character,move,workspace:GetServerTimeNow())
+				pcall(HubFight.land,player,character,move,workspace:GetServerTimeNow(),facing)
 			end
 		end)
 	end
@@ -239,8 +251,8 @@ function HubFight.start(matches)
 	if Shared:FindFirstChild("HubAct") then return end
 	local remote=Instance.new("RemoteEvent");remote.Name="HubAct";remote.Parent=Shared
 	impactRemote=Instance.new("RemoteEvent");impactRemote.Name="HubImpact";impactRemote.Parent=Shared
-	remote.OnServerEvent:Connect(function(player,move)
-		pcall(HubFight.act,player,move,workspace:GetServerTimeNow())
+	remote.OnServerEvent:Connect(function(player,move,dir)
+		pcall(HubFight.act,player,move,workspace:GetServerTimeNow(),dir)
 	end)
 	Players.PlayerRemoving:Connect(function(player)
 		HubFight.last[player]=nil
