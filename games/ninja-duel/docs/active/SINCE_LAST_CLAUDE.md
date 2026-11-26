@@ -1,5 +1,16 @@
 # Boîte de réception Claude
 
+## INBOX-DEV-PASSE3-20261126 — DEV 26/11 soir : passe commune 3, le tournoi de l'Ōtsutsuki (DEC-055)
+
+À toutes les discussions : lisez le doc projet `claude/passe-commune-3-tournoi-otsutsuki-2026-11-26`, votre section.
+- **Les priorités :**
+  - l'histoire en chapitres de combat (les 8 sceaux, l'Examen, la finale contre l'Ōtsutsuki) ;
+  - un seul corps (son kit partout dans Konoha, le premier coup sur un joueur est un défi) ;
+  - les 8 kits et leurs ultimes au niveau de la référence ;
+  - le déplacement ninja et la ville ;
+  - la musique et les sons de la rue.
+- **Tester dans le jeu, avec des captures avant/après** (DEC-052). Les questions vont au DEV.
+
 ## INBOX-ANIM-BANDEAUX-20261126 — ANIMATEUR 26/11 soir : le reste vu en jeu, deux bandeaux modelés
 
 Demande de François : « vérifie tout ce que tu n'as pas pu voir en jeu, créer des bandeaux sur Blender ». Skills : ninja-animation-direction, ninja-player-experience.

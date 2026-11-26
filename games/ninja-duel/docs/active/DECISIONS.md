@@ -624,3 +624,12 @@ François (26/11) : « je veux que tu travailles en autonomie sur le jeu comme u
 - **L'ambiance de Konoha** est chaude et vivante, avec un humour burlesque : lumière de fin d'après-midi, couleurs chaudes, passants drôles, sons de rue.
 - **Le suivi.** Chaque discussion teste dans le jeu par les outils de Studio, sans l'écran de François (DEC-052), et lui envoie des captures et de courtes vidéos au fil de l'eau.
 
+## DEC-055 — Passe commune 3 : le tournoi de l'Ōtsutsuki, un seul corps, un village qui sonne (26/11, 21 h 33)
+
+François (26/11) : passer à la suite et « se rapprocher de la fin » du jeu ; « une espèce de petite histoire quand même, sans en faire un jeu d'histoire, c'est clairement un jeu de baston » ; que les animations, les ultimes et les kits paraissent bien ; le déplacement ninja et la ville ne sont pas au point ; « qu'on puisse utiliser nos attaques et tout quand on se balade, ça y est pas » ; le son et l'ambiance non plus. Le détail est dans le doc projet `claude/passe-commune-3-tournoi-otsutsuki-2026-11-26`.
+
+- **L'histoire, en chapitres de combat** (choix de François) : son Ōtsutsuki organise un tournoi mystérieux. Inconnu sorti de la forêt, le joueur bat les 8 prodiges (un sceau chacun), puis l'Examen, puis l'Ōtsutsuki en finale, qui revient ensuite chaque week-end. Chaque chapitre est un combat ; l'histoire tient en 2 à 4 bulles de manga qu'on peut passer, jamais un film.
+- **Un seul corps** : le corps qui se promène dans Konoha est celui qui se bat. Coups, techniques et outils marchent partout. L'ultime reste réservé aux combats. Mannequins, objets, voyous et prodiges se frappent. **Le premier coup sur un joueur est un défi** (choix de François) : s'il riposte ou accepte, le 1v1 démarre sur place, sans écran, et les autres regardent.
+- **Le son** (choix de François) : une musique douce, japonisante, prise dans la bibliothèque de Roblox, qui change en duel et en finale, plus les sons de la rue par quartier. Chaque coup, chaque technique et chaque ultime a son son.
+- **Les 8 kits et leurs ultimes** se montrent au niveau de la référence (la vidéo TikTok d'Itachi). Chaque ultime est une cinématique courte, de 2 à 3 s.
+- **La méthode reste DEC-052** : un seul jeu, on teste dans le jeu, avec des captures avant/après, sans l'écran de François.
