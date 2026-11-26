@@ -627,10 +627,15 @@ function UI.new(parent,send)
 		-- the white between two panels around it, a little tilt.
 		-- (DESIGN 15/11, Mix-Duel) the face-cam's case: paper, a dot screentone,
 		-- an ink frame; FaceCam films the head inside it.
-		local medallion=frame(box,UDim2.fromOffset(X(0,112),0),UDim2.fromOffset(112,96),MANGA.paper,0)
+		-- (DESIGN 27/11: « faut que ça soit visuel ») the head big: a 148 px case,
+		-- a little lower than the bars so it reads as the plate's face
+		local MW=UI.PORTRAIT
+		local medallion=frame(box,UDim2.fromOffset(X(0,MW),-4),UDim2.fromOffset(MW,MW),MANGA.paper,0)
 		medallion.ClipsDescendants=true
 		create("UICorner",medallion,{CornerRadius=UDim.new(0,3)})
-		medallion.Rotation=if right then 2 else -2
+		-- (DESIGN 26/11, seen in the game) never turned: Roblox stops clipping a
+		-- turned frame, and the face's eyes ran out of the case
+		medallion.Rotation=0
 		local ring=create("UIStroke",medallion,{Color=MANGA.ink,Thickness=4,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
 		picture(medallion,"halftone_tile",{ScaleType=Enum.ScaleType.Tile,TileSize=UDim2.fromOffset(32,32),ImageTransparency=.78})
 		local inkFrame=picture(medallion,"ink_frame_9s",{ZIndex=(medallion.ZIndex or 1)+6,Size=UDim2.new(1,8,1,8),Position=UDim2.fromOffset(-4,-4)})
@@ -641,7 +646,7 @@ function UI.new(parent,send)
 		-- the faces: they are SurfaceGuis).
 		local initial=text(medallion,"",UDim2.fromScale(0,.04),UDim2.fromScale(1,1),58,MANGA.ink,TITLE_FONT,Enum.TextXAlignment.Center)
 		-- Name, title, substitution diamonds.
-		local name=text(box,"",UDim2.fromOffset(X(124,330),4),UDim2.fromOffset(330,32),28,MANGA.cream,STRONG_FONT,align)
+		local name=text(box,"",UDim2.fromOffset(X(MW+14,330),4),UDim2.fromOffset(330,32),28,MANGA.cream,STRONG_FONT,align)
 		create("UIStroke",name,{Color=palette.ink,Thickness=2.5,ApplyStrokeMode=Enum.ApplyStrokeMode.Contextual})
 		local title=text(box,"",UDim2.fromOffset(X(102,400),32),UDim2.fromOffset(400,16),13,palette.paper,STRONG_FONT,align)
 		create("UIStroke",title,{Color=palette.ink,Thickness=1,Transparency=.3,ApplyStrokeMode=Enum.ApplyStrokeMode.Contextual})
@@ -653,7 +658,7 @@ function UI.new(parent,send)
 		-- (HUD v3) no dark plate behind: the ink of each piece carries it.
 		-- Health is one brush stroke, cream for you and red for the opponent,
 		-- the pink trail the blows just taken.
-		local track=frame(box,UDim2.fromOffset(X(122,438),42),UDim2.fromOffset(438,24),MANGA.ink,0)
+		local track=frame(box,UDim2.fromOffset(X(MW+12,548-MW-12),42),UDim2.fromOffset(548-MW-12,24),MANGA.ink,0)
 		corner(track,11)
 		track.Rotation=if right then .8 else -.8
 		create("UIStroke",track,{Color=MANGA.ink,Thickness=3,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
@@ -663,7 +668,7 @@ function UI.new(parent,send)
 		local fill=frame(track,UDim2.fromScale(0,0),UDim2.fromScale(1,1),base)
 		corner(fill,11)
 		if right then lag.AnchorPoint=Vector2.new(1,0);lag.Position=UDim2.fromScale(1,0);fill.AnchorPoint=Vector2.new(1,0);fill.Position=UDim2.fromScale(1,0) end
-		local chakraTrack=frame(box,UDim2.fromOffset(X(124,300),76),UDim2.fromOffset(300,6),MANGA.ink)
+		local chakraTrack=frame(box,UDim2.fromOffset(X(MW+14,280),76),UDim2.fromOffset(280,6),MANGA.ink)
 		corner(chakraTrack,3)
 		local chakra=frame(chakraTrack,UDim2.fromScale(0,0),UDim2.fromScale(1,1),palette.blue)
 		if right then chakra.AnchorPoint=Vector2.new(1,0);chakra.Position=UDim2.fromScale(1,0) end
@@ -675,7 +680,7 @@ function UI.new(parent,send)
 		local ultimate=frame(ultimateTrack,UDim2.fromScale(0,0),UDim2.fromScale(0,1),MANGA.red)
 		if right then ultimate.AnchorPoint=Vector2.new(1,0);ultimate.Position=UDim2.fromScale(1,0) end
 		-- (HUD v3: « les crans d'ultime en double » retirés)
-		local status=text(box,"",UDim2.fromOffset(X(124,436),88),UDim2.fromOffset(436,18),16,MANGA.cream,STRONG_FONT,align)
+		local status=text(box,"",UDim2.fromOffset(X(MW+14,400),88),UDim2.fromOffset(400,18),16,MANGA.cream,STRONG_FONT,align)
 		create("UIStroke",status,{Color=palette.ink,Thickness=1,Transparency=.3,ApplyStrokeMode=Enum.ApplyStrokeMode.Contextual})
 		-- Neji's chakra points closed on this fighter: four pips at the far end of
 		-- the chakra bar (both players read them), each lit as it closes.
@@ -701,7 +706,7 @@ function UI.new(parent,send)
 		local medals={}
 		for k=1,2 do
 			-- (DESIGN 15/11) round wins: red ink dots under the case
-			local m=frame(box,UDim2.fromOffset(X(38+(k-1)*22,14),104),UDim2.fromOffset(14,14),MANGA.ink)
+			local m=frame(box,UDim2.fromOffset(X(MW+14+(k-1)*22,14),104),UDim2.fromOffset(14,14),MANGA.ink)
 			corner(m,7);create("UIStroke",m,{Color=MANGA.red,Thickness=2.5,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
 			table.insert(medals,m)
 		end
@@ -709,7 +714,14 @@ function UI.new(parent,send)
 		-- changes in the fight (UI.awakening), under the plate.
 		local awake=text(box,"",UDim2.fromOffset(X(96,460),112),UDim2.fromOffset(460,26),15,palette.gold,TITLE_FONT,align)
 		create("UIStroke",awake,{Color=palette.ink,Thickness=1.5,ApplyStrokeMode=Enum.ApplyStrokeMode.Contextual})
-		return {box=box,name=name,title=title,fill=fill,lag=lag,chakra=chakra,ultimate=ultimate,status=status,pips=pips,subLabel=subLabel,medals=medals,points=points,pointsShown=0,awake=awake,initial=initial,ring=ring,glow=glow,right=right,base=base,medallion=medallion}
+		-- (27/11) the case reacts: a red flash and a shake on a blow, grey and a
+		-- red X at K.O., a gold ring when he wins
+		local flash=frame(medallion,UDim2.fromScale(0,0),UDim2.fromScale(1,1),MANGA.red,1);flash.ZIndex=(medallion.ZIndex or 1)+5
+		local koMark=text(medallion,"X",UDim2.fromScale(0,0),UDim2.fromScale(1,1),120,MANGA.red,TITLE_FONT,Enum.TextXAlignment.Center)
+		koMark.ZIndex=(medallion.ZIndex or 1)+7;koMark.Visible=false;koMark.TextTransparency=.15
+		create("UIStroke",koMark,{Color=MANGA.ink,Thickness=4,ApplyStrokeMode=Enum.ApplyStrokeMode.Contextual})
+		local caseStroke=create("UIStroke",medallion,{Color=MANGA.ink,Thickness=0,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
+		return {flash=flash,koMark=koMark,caseStroke=caseStroke,home=medallion.Position,box=box,name=name,title=title,fill=fill,lag=lag,chakra=chakra,ultimate=ultimate,status=status,pips=pips,subLabel=subLabel,medals=medals,points=points,pointsShown=0,awake=awake,initial=initial,ring=ring,glow=glow,right=right,base=base,medallion=medallion}
 	end
 	self.hp=plate("left")
 	self.enemy=plate("right")
@@ -1660,6 +1672,20 @@ function UI:dare(data,mine,theirs,FaceCam,now)
 	end
 end
 
+UI.PORTRAIT=148
+-- (DESIGN 27/11) How the case shows an expression (pure): its ring colour and
+-- thickness, a flash (0..1), a shake (px), the K.O. mark.
+function UI.portraitLook(expression,age)
+	age=age or 0
+	if expression=="hit" or expression=="guardbreak" then
+		local k=math.max(0,1-age/.25)
+		return {ring="red",thick=5,flash=.55*k,shake=6*k,ko=false}
+	elseif expression=="ko" then return {ring="ink",thick=5,flash=0,shake=0,ko=true,grey=true}
+	elseif expression=="victory" then return {ring="gold",thick=6,flash=0,shake=0,ko=false}
+	elseif expression=="rage" then return {ring="red",thick=4,flash=0,shake=1.5,ko=false}
+	end
+	return {ring="ink",thick=0,flash=0,shake=0,ko=false}
+end
 function UI:faceCams(data,mine,theirs)
 	if not data or (data.phase~="Duel" and data.phase~="Result") then
 		if self.dareBubble then self.dareBubble.Visible=false;self.dareVS.Visible=false end
@@ -1680,9 +1706,23 @@ function UI:faceCams(data,mine,theirs)
 			-- (DESIGN 20/11, face-cam v2) the expression the duel calls for
 			local actor=widget.actor
 			local outcome=if data.phase=="Result" and actor and data.winner then (if data.winner==actor.id then "won" else "lost") else nil
-			pcall(widget.faceCam.express,widget.faceCam,FaceCam.expression(actor,outcome),now)
+			local expression=FaceCam.expression(actor,outcome)
+			pcall(widget.faceCam.express,widget.faceCam,expression,now)
 			local live=widget.faceCam:step(now)
 			widget.initial.Visible=not live
+			-- the case reacts with him
+			if expression~=widget.lastExpression then widget.lastExpression=expression;widget.expressionAt=now end
+			local look=UI.portraitLook(expression,now-(widget.expressionAt or now))
+			if widget.flash then
+				widget.flash.BackgroundTransparency=1-look.flash
+				widget.koMark.Visible=look.ko
+				widget.caseStroke.Thickness=look.thick
+				widget.caseStroke.Color=if look.ring=="red" then MANGA.red elseif look.ring=="gold" then palette.gold else MANGA.ink
+				local dx=if look.shake>0 then (math.random()*2-1)*look.shake else 0
+				local dy=if look.shake>0 then (math.random()*2-1)*look.shake else 0
+				widget.medallion.Position=widget.home+UDim2.fromOffset(dx,dy)
+				widget.faceCam.view.ImageColor3=if look.grey then Color3.fromRGB(150,150,150) else Color3.new(1,1,1)
+			end
 		end
 	end
 end

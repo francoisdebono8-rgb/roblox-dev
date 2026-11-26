@@ -29,8 +29,10 @@ FaceCam.__index=FaceCam
 FaceCam.FOV=30
 -- The lens: in front of the chest, a little above the eyes.
 -- (v2) closer: the head fills the case
-FaceCam.DISTANCE=2.7
-FaceCam.LIFT=.12
+-- (DESIGN 26/11, seen in the game: a skin-coloured square) head and neck,
+-- the hair's outline readable
+FaceCam.DISTANCE=3.7
+FaceCam.LIFT=.14
 -- How often the eyes and the mouth are copied from the real face.
 FaceCam.MIRROR=1/24
 -- Parts further than this from the head are not filmed (a long weapon, a
@@ -169,7 +171,7 @@ function FaceCam.new(parent)
 	local self=setmetatable({},FaceCam)
 	local view=Instance.new("ViewportFrame")
 	view.Name="FaceCam";view.Size=UDim2.fromScale(1,1);view.BackgroundTransparency=1;view.BorderSizePixel=0
-	view.Ambient=Color3.fromRGB(150,140,135);view.LightColor=Color3.fromRGB(255,244,228);view.LightDirection=Vector3.new(-.35,-1,-.55)
+	view.Ambient=Color3.fromRGB(205,195,185);view.LightColor=Color3.fromRGB(255,244,228);view.LightDirection=Vector3.new(-.35,-1,-.55)
 	view.ZIndex=(parent.ZIndex or 1)+1
 	view.Parent=parent
 	local lens=Instance.new("Camera");lens.FieldOfView=FaceCam.FOV;lens.Parent=view
@@ -184,9 +186,84 @@ function FaceCam.new(parent)
 	return self
 end
 
+-- (DESIGN 26/11, seen in the game) A Roblox head whose face the ViewportFrame
+-- does not draw (a dynamic head: its face is in its SurfaceAppearance, a
+-- smooth skin in the case) gets a manga face in ink over it — eyes, brows,
+-- mouth — that takes the six expressions. A classic face (a Decal) is drawn
+-- by Roblox and left alone, and so are the prodigies' plates.
+function FaceCam.needsCartoon(head)
+	if not head then return false end
+	for _,d in head:GetChildren() do
+		if d:IsA("Decal") and d.Transparency<1 and d.Texture~="" then return false end
+	end
+	return head:IsA("MeshPart") or head:FindFirstChildOfClass("FaceControls")~=nil
+end
+-- The cartoon's shapes for an expression (pure): eye ("dot", "closed", "x",
+-- "wide", "happy", "narrow"), brow tilt (degrees, + = angry), mouth ("line",
+-- "smile", "open", "o", "wave", "grit").
+FaceCam.CARTOON={
+	none={eye="dot",brow=0,mouth="line"},
+	hit={eye="closed",brow=-12,mouth="wave"},
+	guardbreak={eye="wide",brow=-18,mouth="o"},
+	ko={eye="x",brow=0,mouth="wave"},
+	victory={eye="happy",brow=-6,mouth="smile"},
+	focus={eye="narrow",brow=16,mouth="line"},
+	rage={eye="narrow",brow=26,mouth="grit"},
+}
+local INK=Color3.fromRGB(20,16,17)
+local function bar(parent,name,size,pos,rot,color)
+	local f=Instance.new("Frame");f.Name=name;f.BorderSizePixel=0;f.BackgroundColor3=color or INK;f.AnchorPoint=Vector2.new(.5,.5)
+	f.Size=size;f.Position=pos;f.Rotation=rot or 0;f.Parent=parent
+	return f
+end
+local function round(f) local c=Instance.new("UICorner");c.CornerRadius=UDim.new(.5,0);c.Parent=f;return f end
+-- Draws the face (in a holder sized to the head's front) for a shape set.
+function FaceCam.drawCartoon(holder,shape)
+	holder:ClearAllChildren()
+	for side=-1,1,2 do
+		local cx=.5+side*.2
+		local eye=shape.eye
+		if eye=="dot" or eye=="wide" then
+			local w=if eye=="wide" then .2 else .14
+			local white=round(bar(holder,"Eye",UDim2.fromScale(w,w*1.5),UDim2.fromScale(cx,.46),0,Color3.new(1,1,1)))
+			local st=Instance.new("UIStroke");st.Thickness=3;st.Color=INK;st.Parent=white
+			round(bar(white,"Pupil",UDim2.fromScale(.5,.5),UDim2.fromScale(.5,.55)))
+		elseif eye=="closed" then
+			bar(holder,"Eye",UDim2.fromScale(.13,.035),UDim2.fromScale(cx,.47),side*-18)
+			bar(holder,"Eye",UDim2.fromScale(.13,.035),UDim2.fromScale(cx,.51),side*18)
+		elseif eye=="x" then
+			bar(holder,"Eye",UDim2.fromScale(.14,.035),UDim2.fromScale(cx,.48),45)
+			bar(holder,"Eye",UDim2.fromScale(.14,.035),UDim2.fromScale(cx,.48),-45)
+		elseif eye=="happy" then
+			bar(holder,"Eye",UDim2.fromScale(.08,.035),UDim2.fromScale(cx-.03,.48),-35)
+			bar(holder,"Eye",UDim2.fromScale(.08,.035),UDim2.fromScale(cx+.03,.48),35)
+		else -- narrow
+			bar(holder,"Eye",UDim2.fromScale(.17,.07),UDim2.fromScale(cx,.49),0)
+		end
+		bar(holder,"Brow",UDim2.fromScale(.21,.065),UDim2.fromScale(cx,.33),side*shape.brow)
+	end
+	local m=shape.mouth
+	if m=="line" then bar(holder,"Mouth",UDim2.fromScale(.24,.05),UDim2.fromScale(.5,.72))
+	elseif m=="smile" then
+		local o=round(bar(holder,"Mouth",UDim2.fromScale(.26,.12),UDim2.fromScale(.5,.72),0,Color3.fromRGB(120,20,24)))
+		round(bar(o,"Tongue",UDim2.fromScale(.5,.4),UDim2.fromScale(.5,.75),0,Color3.fromRGB(230,90,90)))
+	elseif m=="open" or m=="grit" then
+		local o=bar(holder,"Mouth",UDim2.fromScale(.3,.14),UDim2.fromScale(.5,.72),0,if m=="grit" then Color3.new(1,1,1) else Color3.fromRGB(120,20,24))
+		local st=Instance.new("UIStroke");st.Thickness=2;st.Color=INK;st.Parent=o
+		if m=="grit" then bar(o,"Teeth",UDim2.new(1,0,0,2),UDim2.fromScale(.5,.5)) end
+	elseif m=="o" then
+		local o=round(bar(holder,"Mouth",UDim2.fromScale(.1,.12),UDim2.fromScale(.5,.73),0,Color3.fromRGB(120,20,24)))
+		local st=Instance.new("UIStroke");st.Thickness=2;st.Color=INK;st.Parent=o
+	else -- wave
+		bar(holder,"Mouth",UDim2.fromScale(.09,.03),UDim2.fromScale(.45,.72),20)
+		bar(holder,"Mouth",UDim2.fromScale(.09,.03),UDim2.fromScale(.55,.72),-20)
+	end
+end
+
 function FaceCam:clear()
 	for _,c in self.copies do if c.copy then c.copy:Destroy() end end
 	for _,p in self.plates do if p.holder then p.holder:Destroy() end end
+	if self.cartoon then self.cartoon:Destroy();self.cartoon=nil end
 	self.copies={};self.plates={};self.model=nil
 end
 
@@ -218,6 +295,14 @@ function FaceCam:watch(model)
 		end
 	end
 	for _,plate in self.plates do self:draw(plate) end
+	-- (26/11) no plates and a face Roblox won't draw: the manga face
+	local head=model:FindFirstChild("Head")
+	if #self.plates==0 and FaceCam.needsCartoon(head) then
+		local holder=Instance.new("Frame")
+		holder.Name="Cartoon";holder.BackgroundTransparency=1;holder.AnchorPoint=Vector2.new(.5,.5)
+		holder.ZIndex=self.overlay.ZIndex+1;holder.Parent=self.overlay
+		self.cartoon=holder;self.cartoonShape=nil
+	end
 end
 
 -- One plate's drawing, copied into a frame of the overlay.
@@ -285,6 +370,24 @@ function FaceCam:step(now)
 	local lens=FaceCam.lens(head,torso)
 	self.lens.CFrame=lens
 	local size=self.view.AbsoluteSize
+	-- the manga face on the head's front, turned with it
+	if self.cartoon then
+		local front=head.CFrame*CFrame.new(0,0,-head.Size.Z*.5)
+		local x,y,perStud,seen=FaceCam.project(lens,FaceCam.FOV,size,front.Position)
+		local toLens=(lens.Position-head.Position)
+		seen=seen and head.CFrame.LookVector:Dot(toLens.Unit)>.15
+		self.cartoon.Visible=seen
+		if seen then
+			self.cartoon.Position=UDim2.fromOffset(x,y)
+			self.cartoon.Size=UDim2.fromOffset(head.Size.X*perStud,head.Size.Y*perStud)
+			self.cartoon.Rotation=FaceCam.roll(head,lens)
+			local shape=self.expression or "none"
+			if shape~=self.cartoonShape then
+				self.cartoonShape=shape
+				FaceCam.drawCartoon(self.cartoon,FaceCam.CARTOON[shape] or FaceCam.CARTOON.none)
+			end
+		end
+	end
 	local mirror=now>=self.mirrorAt
 	if mirror then self.mirrorAt=now+FaceCam.MIRROR end
 	for _,plate in self.plates do

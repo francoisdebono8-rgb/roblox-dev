@@ -24,6 +24,9 @@ python3 tools/robots/inject.py --check-server
 | `audit` | `NDDuelAudit` | (passe 2) le témoin des duels : corps bloqué, coup qui traverse, coup de loin, corps dans le sol, caméra dans un mur, erreurs rouges | `tools/duelaudit` |
 | `training` | `NDTrainingBot` | (passe 2) le robot d'entraînement : chaque étape de l'entraînement de chaque kit, jouée par la télécommande (amène `duel`) | `tools/training` |
 | `outfit` | `NDOutfitCheck` | (passe 2) le contrôle des tenues : quelle pièce traverse ou flotte, sur quel corps | `tools/outfitcheck` |
+| `street` | `NDStreetBot` | (passe 3) les coups de rue pressés comme un joueur : mannequin, caisse, voyou, prodige, Ōtsutsuki, et le défi par le coup entre deux clients (riposte armée) | `tools/streetfight` |
+| `sound` | `NDSoundCheck` | (passe 3) le contrôle des sons : chargé, durée, sonie, ce qui joue | `tools/sounds` |
+| `bench` | `NDKitBench` | (passe 3) le banc des kits : une planche par kit, chaque coup à chaque instant, sur le corps du joueur | `tools/kitbench` |
 
 Côté serveur (`--server`, avec `eval_server_runtime`) :
 
@@ -31,6 +34,7 @@ Côté serveur (`--server`, avec `eval_server_runtime`) :
 |---|---|---|---|
 | `serverlog` | `NDServerLog` | les lignes rouges du serveur, le verdict de chaque étape d'entraînement (`[NinjaDuelTutorial]`), les images du serveur (à-coups) | `tools/duelaudit` |
 | `outfitbodies` | `NDOutfitBodies` | la rangée des avatars Roblox types, dans leur corps de duel (`AvatarBody.rig`), habillés d'une tenue | `tools/outfitcheck` |
+| `streetlog` | `NDStreetLog` | (passe 3) ce que chaque coup de rue touche, chaque défi, les sessions des joueurs, les objets cassés et remis | `tools/streetfight` |
 
 - **Rien n'est écrit dans la place.** Ni dans l'Édition, ni dans le fichier. Un Play arrêté emporte les robots : on les renvoie au Play suivant. `--module` de `tools/duelbot` et `tools/villagebot` ne pose plus rien dans l'Édition ; il renvoie ici.
 - **Chaque commande des outils les cherche dans `_G`.** C'est le cas de `collision.py`, `releve.py` et des `studio_code.py`. Quand un robot n'est pas là, l'erreur donne la ligne à lancer.

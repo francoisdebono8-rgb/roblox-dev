@@ -120,8 +120,17 @@ local function body(model)
 end
 local function models()
 	local me=player.Character
-	if not me or me.Name~="PlayerFighter" or not me.Parent then return nil end
-	local him=me.Parent:FindFirstChild("AIFighter")
+	if not me or not me.Parent then return nil end
+	local him=nil
+	if me.Name=="PlayerFighter" then
+		him=me.Parent:FindFirstChild("AIFighter")
+	elseif string.sub(me.Parent.Name,1,7)=="Online_" then
+		-- (26/11, passe 3) a duel between two players (a street challenge by a
+		-- blow): Duelist1 and Duelist2 in NinjaDuels.Online_<lane>
+		for _,m in me.Parent:GetChildren() do
+			if m~=me and m:IsA("Model") and m:FindFirstChildOfClass("Humanoid") then him=m;break end
+		end
+	end
 	if not him then return nil end
 	return body(me),body(him)
 end

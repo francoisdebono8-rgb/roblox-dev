@@ -1,3 +1,23 @@
+**OUTILLEUR, 27/11 nuit : passe commune 3 (DEC-055), le défi par le coup à deux clients, les coups de rue, le banc des kits, le contrôle des sons** — NATIVE_STUDIO (une Studio à soi en arrière-plan, place `PLACES/_prochaine/NinjaDuel.rbxlx` à `9b85b4b8`, sources `6c673043`, profil capture ; Play à 2 clients puis Play solo, sans l'écran de François) ; mesures de Claude, pas l'avis de François
+- **Le défi par le coup ne marche pas entre deux joueurs** (TECHNICAL, vu en jeu). Les coups touchent « le décor ». `Server/HubFight` (`modelOf`) remonte d'une pièce tant que le parent est un `Model`, et `Workspace` en est un : un corps de joueur, posé sous `Workspace`, n'est jamais reconnu. Les voyous, les prodiges et l'Ōtsutsuki sont dans des dossiers : pour eux, ça marche. La correction est d'une ligne (s'arrêter sous `Workspace`), au DEV.
+- **Avec cette ligne corrigée à chaud dans le Play** :
+  - le défi, puis la riposte 1,3 s après, lancent le duel en 0,06 s, sans écran de choix, chacun avec son kit (Lion, Leaf) ;
+  - le duel a lieu sur la place la plus proche (`Plaza`, à 21 studs) et se joue en 3 manches ;
+  - le témoin relève 10 et 16 corps bloqués : au bord de l'anneau, et à un endroit sans rien de solide dans le village ;
+  - il relève aussi la caméra dans le tronc d'un arbre de la place (5 fois), qui cache les combattants (4 fois).
+  - Aucune erreur rouge.
+- **Les coups de rue** :
+  - le mannequin est touché, et le corps se tourne vers lui depuis 120° ; à 9 studs, rien ne se tourne ;
+  - la caisse « casse » mais reste entière à l'écran (éclats et morceaux verts à côté), et tout revient 25,2 s après le dernier coup ;
+  - le voyou et le prodige qui attend lancent leur combat aussitôt ;
+  - l'Ōtsutsuki dit « 0 seals of eight. Go get the rest. ». Avec la finale ouverte pour l'essai, le coup lance la finale sur place, dans la cour, avec sa musique.
+- **Le banc des kits** (`tools/kitbench`) : une planche et une vidéo par kit, sur le corps du joueur, aux instants exacts du clip. Chaque coup de rue a son clip, sauf le lourd de Gaara (celui de Sasuke). L'esquive a la même silhouette pour les huit, et la garde ressemble au repos.
+- **Les sons** (`tools/sounds`) : les 21 sons se chargent, à la bonne durée. Chacun est gratuit, d'un créateur vérifié (DistrokidOfficial, ProSoundEffects). Par rapport à leur niveau :
+  - le duel « Samurai Sword Echoes » et la finale « Moeru Kodou » sont un peu bas ; les acclamations un peu fortes ;
+  - le coup léger et le son du défi (un whoosh d'une demi-seconde) risquent d'être couverts par la musique de Konoha ;
+  - la casse d'une caisse en bois sonne comme un éboulement de rochers.
+- **Limites** : dans un Play à plusieurs clients, les joueurs (-1, -2) n'ont pas de profil : un profil en mémoire leur a été donné pour l'essai. Les captures des clients ne marchent pas. Avec 7 fenêtres Studio ouvertes sur le Mac, le client est tombé à 1 à 5 images par seconde pendant 3 combats : leurs incidents ne comptent pas. La route des toits attend le relais du DEV.
+
 **Passe commune 3 ouverte (26/11, 21 h 33, DEC-055)** : le tournoi de l'Ōtsutsuki. L'histoire avance par chapitres de combat : les 8 sceaux, l'Examen, la finale. Un seul corps : son kit partout dans Konoha, et le premier coup sur un joueur est un défi. Les 8 kits et leurs ultimes au niveau de la référence, le déplacement ninja et la ville, la musique et les sons de rue. Tâches par discussion : doc projet `claude/passe-commune-3-tournoi-otsutsuki-2026-11-26` et `INBOX-DEV-PASSE3-20261126`.
 
 **DEV, 26/11, 23 h 30 : passe 3, la route des toits et le parcours rejoué avec les vraies touches** — NATIVE_STUDIO (Studio du DEV, chargé à chaud depuis `claude/dev-passe2`, profil neuf) ; observations de Claude, pas l'avis de François

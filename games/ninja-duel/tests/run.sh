@@ -152,4 +152,6 @@ run Collision  python3 tools/collision/test_collision.py
 run Releve     python3 tools/screens/test_releve.py
 # (26/11, OUTILLEUR, passe commune 2) the duel witness, the training robot, the outfit check
 run DuelAudit  python3 tools/duelaudit/test_report.py
+# (26/11, OUTILLEUR, passe commune 3) the street's blows, the sound check, the kits' bench
+run StreetBench python3 tools/streetfight/test_report.py
 exit $status

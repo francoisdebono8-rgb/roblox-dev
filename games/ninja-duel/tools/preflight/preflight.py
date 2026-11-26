@@ -69,7 +69,9 @@ except Exception:  # the test file moved: the build's own list still holds
 TEST_NAMES = {"NDDuelBot", "NDVillageBot", "NDCabineTool", "NDNewPlayerBot", "NDCollisionBot", "NDScreenTour", "NDPerfProbe", "Harness", "TestEZ", "JestGlobals",
               "Jest", "NDFactory",
               # (26/11, passe commune 2) the duel watcher, the training robot, the outfit check, the server's robots
-              "NDDuelAudit", "NDTrainingBot", "NDOutfitCheck", "NDServerLog", "NDOutfitBodies", "NDAuditShow"}
+              "NDDuelAudit", "NDTrainingBot", "NDOutfitCheck", "NDServerLog", "NDOutfitBodies", "NDAuditShow",
+              # (26/11, passe commune 3) the street's blows, the sound check, the kits' bench
+              "NDStreetBot", "NDStreetLog", "NDSoundCheck", "NDKitBench", "NDKitSheet", "NDSilent"}
 TEST_MARKERS = ("@lune/", "require(\"../../tests", "tests/Harness", "NDBotLog", "NDVillageLog", "NDNewPlayerLog", "NDTrainingLog")
 
 
