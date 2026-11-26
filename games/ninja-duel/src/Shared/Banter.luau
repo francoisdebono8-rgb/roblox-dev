@@ -18,6 +18,11 @@
 --   Gate        the two guards of the great gate and its sign (DEV, ANIMATEUR).
 --   Creation    the creation screen at the gate (DESIGN, DEC-054): title,
 --               sections, buttons, the random button's quips.
+--   Story       the Ōtsutsuki's tournament (STORY-001): each scene's bubbles
+--               {who, line} (Shared/Story.lines, DEV; shown by the DESIGN).
+--   Otsutsuki   his lines in the final: before, win, lose (Server/Matches).
+--   Goal        Konoha's goal, top left (Shared/MastersView.goal, DEV).
+--   Tournament  the tournament's name and the winner's title.
 --   Ui          the interface's under-lines, rewritten in a player's words
 --               (« les sous-textes font IA », 26/11), for the DESIGN to wire:
 --               `was` is the line on screen at f28b8ba, `say` the new one.
@@ -203,6 +208,72 @@ B.Creation={
 		"The guards are pretending not to laugh.",
 	},
 }
+
+-- (26/11, passe 3, DEC-055, STORY-001) The Ōtsutsuki's tournament: the
+-- scenes' bubbles {who, line}, read by Shared/Story.lines(id, Banter) (DEV),
+-- shown by the DESIGN. The Ōtsutsuki is François's own, the host of the
+-- devlogs: a bored god, a little strange, a villain's calm, plain words. The
+-- Eight answer him in their own voice (their titles: Shared/KitTexts).
+local O="THE ŌTSUTSUKI"
+B.Story={
+	invitation={ -- at the gate, the forest just behind him
+		{who=O,line="Hm. The forest let one through."},
+		{who=O,line="I am the Ōtsutsuki. This tournament is mine."},
+		{who=O,line="Beat the Eight. Bring me their seals."},
+		{who="THE LOUDMOUTH",line="HIM? He can't even tie his headband!"},
+		{who=O,line="Pick a teacher. Try not to embarrass them."},
+	},
+	seals={ -- the eighth seal won: the exam opens
+		{who=O,line="Eight seals. I felt every single one."},
+		{who=O,line="Now my exam. Win the whole bracket."},
+		{who="THE HARD WORKER",line="Go! I'll cheer! VERY loudly!"},
+	},
+	exam={ -- the exam's bracket won: the final opens
+		{who=O,line="The whole bracket. Not bad, little one."},
+		{who=O,line="Come to the hall. I'll be gentle."},
+		{who=O,line="...No, I won't."},
+	},
+	finalWon={ -- the Ōtsutsuki beaten, the first time
+		{who=O,line="...You hit a god. In the face."},
+		{who="THE LOUDMOUTH",line="I SAW THAT! I'm telling EVERYONE!"},
+		{who=O,line="Enjoy it. Next week, I come back stronger."},
+	},
+	weekly={ -- each week he comes back
+		{who=O,line="A week is long for a god. I got bored."},
+		{who=O,line="I'm stronger now. The hall. Come."},
+	},
+}
+-- His lines in the final (Server/Matches: one of each list, at random).
+B.Otsutsuki={
+	before={
+		"Two rounds. Entertain me.",
+		"Show me what the Eight taught you.",
+		"Bow first. Then lose.",
+	},
+	win={ -- he wins
+		"As expected. Come back next week.",
+		"That was it? Train. Then come back.",
+		"Cute. Truly cute.",
+	},
+	lose={ -- he loses
+		"...So that's what the Eight saw in you.",
+		"Impossible. Again. Right now.",
+		"Fine. You win today. Only today.",
+	},
+}
+-- Konoha's goal, top left (Shared/MastersView.goal, DEV): the head says what
+-- to do, the line under it where. `seals` takes the seals won and needed
+-- (%d / %d), `exam` the proctor's place (%s).
+B.Goal={
+	seals={head="BEAT THE EIGHT  •  %d / %d",sub="THEY DARE YOU IN THE STREETS"},
+	exam={head="WIN THE EXAM",sub="SEE THE PROCTOR  •  %s"},
+	final={head="FIGHT THE ŌTSUTSUKI",sub="HE WAITS IN THE EXAM HALL"},
+	weekly={head="HE'S BACK. STRONGER.",sub="HE WAITS IN THE EXAM HALL"},
+}
+-- The tournament's name and the title of whoever beats him (passe commune 3:
+-- the journal, the VS card, the series' season 1). Not read yet: the DEV or
+-- the DESIGN picks them up where the name shows.
+B.Tournament={name="THE ŌTSUTSUKI TOURNAMENT",winner="GOD PUNCHER"}
 
 -- The interface's under-lines, for the DESIGN (file:line at f28b8ba). The
 -- DESIGN's d875b0b (26/11) already rewrote the shop, MY NINJA, the result,

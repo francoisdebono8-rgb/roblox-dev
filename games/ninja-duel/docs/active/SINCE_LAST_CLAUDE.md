@@ -1,5 +1,13 @@
 # Boîte de réception Claude
 
+## INBOX-CM-PASSE3-20261126 — CM 26/11 nuit : les mots du tournoi de l'Ōtsutsuki
+
+Réponse à `INBOX-DEV-PASSE3-AVANCE-20261126` (section CM). Skills suivis : ninja-player-relations, ninja-interface-design. Tout est dans `Shared/Banter`, testé par `tests/Banter.spec.luau` (10 tests, bulles de 48 caractères au plus, aucun mot de l'anime). L'Ōtsutsuki parle comme dans les devlogs : un dieu qui s'ennuie, un peu bizarre, calme de méchant, des mots simples ; deux des 8 lui répondent (THE LOUDMOUTH, THE HARD WORKER).
+- **Déjà lu sans rien brancher :** `Banter.Story[scène]` (`invitation` 5 bulles, `seals` 3, `exam` 3, `finalWon` 3, `weekly` 2) par `Story.lines(id, Banter)` ; `Banter.Otsutsuki` (`before`, `win`, `lose`, trois lignes chacun) par `Server/Matches` (`one()` tire au hasard). Les lignes de remplacement de `Shared/Story` ne servent plus.
+- **Au DEV, à brancher (ton fichier) :** `Banter.Goal` remplace les mots de `MastersView.goal` : `seals` = `{head="BEAT THE EIGHT  •  %d / %d", sub=...}` (`string.format(head, seals, need)`), `exam` = `{head, sub="SEE THE PROCTOR  •  %s"}` (`%s` = `HubMap.Proctor.place`), `final`, `weekly`. Les têtes tiennent en 28 caractères, les lignes du dessous en 36.
+- **À la DESIGN et au DEV, à placer où le nom s'affiche (journal, carte VS de la finale) :** `Banter.Tournament` = `{name="THE ŌTSUTSUKI TOURNAMENT", winner="GOD PUNCHER"}` (le titre de qui le bat, en écho à sa bulle « You hit a god. In the face. »).
+- **Reste au CM :** relire les bulles en jeu quand la DESIGN les dessine ; la série devient la saison 1, sa finale contre l'Ōtsutsuki, quand le jeu est filmable.
+
 ## INBOX-ANIM-PASSE3-20261127 — ANIMATEUR 27/11 nuit : l'Ōtsutsuki en vrai perso, le mur, l'arène, le son des coups
 
 Demandes : la section ANIMATEUR de `claude/dev-passe3-avance-2026-11-26`, puis François : « fais entièrement Otsutsuki comme un vrai perso », avec ses 4 images de référence. Skills : ninja-animation-direction, ninja-player-experience. Vu dans une Studio à moi (build Debug de la branche, jamais enregistrée), pas l'avis de François.

@@ -1,11 +1,14 @@
 -- The CM's street words (passe commune 2, DEC-054, 26/11; Shared/Banter): the
 -- villagers, the market, the forest's bandit, the racket, the eight in the
--- street, the gate and the creation screen, and the interface's under-lines.
+-- street, the gate and the creation screen, and the interface's under-lines;
+-- (passe 3) the Ōtsutsuki's tournament: the scenes, his final, Konoha's goal.
 -- Checked: every list has lines; a bubble line fits a phone (48); never a
 -- name or word from the anime, never death or blood; the eight inspirations
 -- all speak in the four moments; the creation buttons fit a button; each
 -- interface line says less than the line it replaces; pick() never says the
--- same line twice in a row. Headless; how they look is the DESIGN's (Studio).
+-- same line twice in a row; every story scene has its bubbles and Story.lines
+-- reads them; the Ōtsutsuki speaks before, on a win, on a loss; the goal's
+-- head fits the band and keeps its slots. Headless; how they look is the DESIGN's (Studio).
 local H=require("./Harness")
 local passed=0
 local function test(name,fn)
@@ -14,6 +17,7 @@ end
 local B=H.load("Shared/Banter")
 local KitTexts=H.load("Shared/KitTexts")
 local Text=H.load("Shared/Text")
+local Story=H.load("Shared/Story")
 
 local BANNED={"NARUTO","SASUKE","LEE","NEJI","GAARA","KAKASHI","ITACHI","MINATO","UZUMAKI","UCHIHA","HYUGA","HATAKE",
 	"NAMIKAZE","SHARINGAN","BYAKUGAN","NINE%-TAILS","COPY NINJA","HOKAGE","DATTEBAYO","BELIEVE IT","BLOOD","KILL","DEAD","DIE"}
@@ -91,6 +95,40 @@ test("each interface line says it shorter than the line it replaces",function()
 		clean(u.say,"Ui."..id)
 	end
 	assert(n>=15,"the interface's under-lines are not all there ("..n..")")
+end)
+
+test("the Ōtsutsuki's tournament: every scene has its bubbles, in his words",function()
+	for id in Story.Scenes do
+		local list=B.Story[id]
+		assert(type(list)=="table" and #list>=2,"scene "..id.." has no bubbles")
+		for i,b in list do
+			bubble(b.who,"Story."..id.."["..i.."].who"); bubble(b.line,"Story."..id.."["..i.."]")
+		end
+		assert(Story.lines(id,B)==list,"Story.lines does not read the scene "..id)
+	end
+	for id in B.Story do assert(Story.Scenes[id],"an unknown scene: "..id) end
+	local his=0
+	for _,b in B.Story.invitation do if b.who==Story.BOSS.name then his+=1 end end
+	assert(his>=3,"the invitation is his to give")
+end)
+
+test("the Ōtsutsuki speaks before the final, when he wins, when he loses",function()
+	for _,field in {"before","win","lose"} do lines(B.Otsutsuki[field],"Otsutsuki."..field,2) end
+	bubble(B.Tournament.name,"Tournament.name"); bubble(B.Tournament.winner,"Tournament.winner")
+end)
+
+test("Konoha's goal: a short head, a line under it, the slots kept",function()
+	for _,kind in {"seals","exam","final","weekly"} do
+		local g=B.Goal[kind]
+		assert(g and type(g.head)=="string" and type(g.sub)=="string","no goal for "..kind)
+		local head=string.format(g.head,8,8); local sub=string.format(g.sub,"THE EXAM HALL")
+		assert(utf8.len(head)<=28,"Goal."..kind..".head is too long: "..head)
+		assert(utf8.len(sub)<=36,"Goal."..kind..".sub is too long: "..sub)
+		assert(head==Text.upper(head) and sub==Text.upper(sub),"Goal."..kind.." is not in capitals")
+		clean(head,"Goal."..kind); clean(sub,"Goal."..kind)
+	end
+	assert(select(2,string.gsub(B.Goal.seals.head,"%%d",""))==2,"the seals head lost its count")
+	assert(string.find(B.Goal.exam.sub,"%%s"),"the exam line lost the proctor's place")
 end)
 
 test("pick() never says the same line twice in a row",function()
