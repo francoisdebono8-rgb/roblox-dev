@@ -17,15 +17,24 @@ local function has(want) return string.find(src,want,1,true)~=nil end
 -- replaces the 12/11 setting: neutral exposure, lifted ambients, shadows on.
 test("the look keeps the world's shadows on, in a frank daylight",function()
  for _,want in {"Brightness=2.8,ExposureCompensation=0,GlobalShadows=true","EnvironmentDiffuseScale=.75,EnvironmentSpecularScale=.45,ShadowSoftness=.22",
-  "Ambient=rgb(104,102,114),OutdoorAmbient=rgb(142,142,156)"} do
+  "Ambient=rgb(112,104,104),OutdoorAmbient=rgb(156,146,144)"} do
   assert(has(want),"Look.LIGHT no longer sets "..want)
  end
  -- Applied as a whole table on Lighting (each key, written only if it differs).
  assert(has("for k,v in Look.values(studio) do set(lighting,k,v) end"),"Look no longer applies LIGHT")
 end)
 
+-- (26/11, passe 3, AMB-001) late afternoon, warm, never darker than 20/11
+test("the late afternoon: a lower, golden sun, warm air, the ambients never darker",function()
+ assert(has("ClockTime=15.6,"),"the sun of the late afternoon")
+ assert(has("ColorShift_Top=rgb(255,210,164)"),"a golden sun")
+ assert(has("Decay=rgb(214,170,136)"),"an amber horizon")
+ -- the fill is not lower than the 20/11 daylight (142,142,156 outdoor; 104,102,114 ambient), summed
+ assert(156+146+144>=142+142+156 and 112+104+104>=104+102+114,"the ambients are darker than the daylight of DEC-044")
+end)
+
 test("the bloom, grade, air and rays of the daylight (the bloom only on what shines)",function()
- for _,want in {"Intensity=.22,Size=20,Threshold=2.6","Saturation=.2,Contrast=.14,Brightness=.03,TintColor=rgb(255,250,242)","Glare=.12,Haze=.55","Intensity=.03,Spread=.7"} do
+ for _,want in {"Intensity=.22,Size=20,Threshold=2.6","Saturation=.24,Contrast=.14,Brightness=.03,TintColor=rgb(255,243,228)","Glare=.22,Haze=.6","Intensity=.05,Spread=.7"} do
   assert(string.find(src,want,1,true),"Look no longer sets "..want)
  end
 end)

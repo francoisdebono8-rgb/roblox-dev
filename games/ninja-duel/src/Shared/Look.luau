@@ -25,20 +25,26 @@ local function rgb(r,g,b) return Color3.fromRGB(r,g,b) end
 -- (less haze, a sky-blue decay), a grade that brightens instead of
 -- darkening. What burnt the image white on 12/11 stays out: the shadows stay
 -- on and the bloom only takes what really shines (a higher threshold).
+-- (26/11, passe 3, DEC-054/DEC-055, AMB-001: « chaude et vivante […] lumière
+-- de fin d'après-midi, couleurs chaudes ») The same frank light, later in the
+-- day: the sun lower in the west (15.6 h), its light golden, the haze warm
+-- with an amber decay toward the horizon, the grade a touch warmer. Never
+-- darker (DEC-044): the ambients are lifted and warmed to fill the longer
+-- shadows of the streets.
 Look.LIGHT={
-	ClockTime=14,GeographicLatitude=32,Brightness=2.8,ExposureCompensation=0,GlobalShadows=true,
+	ClockTime=15.6,GeographicLatitude=32,Brightness=2.8,ExposureCompensation=0,GlobalShadows=true,
 	EnvironmentDiffuseScale=.75,EnvironmentSpecularScale=.45,ShadowSoftness=.22,
-	Ambient=rgb(104,102,114),OutdoorAmbient=rgb(142,142,156),
-	ColorShift_Top=rgb(255,232,200),ColorShift_Bottom=rgb(118,138,182),
+	Ambient=rgb(112,104,104),OutdoorAmbient=rgb(156,146,144),
+	ColorShift_Top=rgb(255,210,164),ColorShift_Bottom=rgb(128,138,176),
 }
-Look.ATMOSPHERE={Density=.24,Offset=.25,Color=rgb(222,230,240),Decay=rgb(150,172,206),Glare=.12,Haze=.55}
+Look.ATMOSPHERE={Density=.24,Offset=.25,Color=rgb(240,226,208),Decay=rgb(214,170,136),Glare=.22,Haze=.6}
 -- The graded image: colour and a light contrast, a hint of warmth, a soft
 -- bloom on what shines, rays round the sun, the far stands softly out of
 -- focus.
 Look.EFFECTS={
-	{"ColorCorrectionEffect","NinjaLookGrade",{Saturation=.2,Contrast=.14,Brightness=.03,TintColor=rgb(255,250,242)}},
+	{"ColorCorrectionEffect","NinjaLookGrade",{Saturation=.24,Contrast=.14,Brightness=.03,TintColor=rgb(255,243,228)}},
 	{"BloomEffect","NinjaLookBloom",{Intensity=.22,Size=20,Threshold=2.6}},
-	{"SunRaysEffect","NinjaLookRays",{Intensity=.03,Spread=.7}},
+	{"SunRaysEffect","NinjaLookRays",{Intensity=.05,Spread=.7}},
 	{"DepthOfFieldEffect","NinjaLookDepth",{FarIntensity=.12,FocusDistance=40,InFocusRadius=80,NearIntensity=0}},
 }
 Look.CLOUDS={Cover=.42,Density=.5,Color=rgb(255,255,255)}
