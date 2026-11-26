@@ -16,7 +16,7 @@ local Text=require(Shared.Text)
 
 local R={}
 R.__index=R
-R.W,R.H=900,300
+R.W,R.H=860,196
 R.CHOICES={"pay","run","fight"}
 R.FUSE=8
 
@@ -43,7 +43,7 @@ function R.new(kit,gui,send)
 	local scale=kit.create("UIScale",root,{Scale=1})
 	local function fit()
 		local v=workspace.CurrentCamera.ViewportSize
-		scale.Scale=math.min(1,(v.X-24)/R.W,(v.Y*.5)/R.H)
+		scale.Scale=math.min(1,(v.X-24)/R.W,(v.Y*.34)/R.H)
 	end
 	pcall(function() workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(fit) end);fit()
 	local function z(o,d) o.ZIndex=61+(d or 0);return o end
@@ -52,25 +52,22 @@ function R.new(kit,gui,send)
 	self.name=z(kit.text(band,"",UDim2.fromOffset(20,4),UDim2.new(1,-260,1,-8),36,M.cream,kit.TITLE_FONT),1)
 	local seal=z(kit.text(band,"STREET FIGHT",UDim2.new(1,-220,0,8),UDim2.fromOffset(200,36),24,M.cream,kit.TITLE_FONT,Enum.TextXAlignment.Center),1)
 	seal.BackgroundTransparency=0;seal.BackgroundColor3=M.red;seal.Rotation=-4
-	-- his line, in a bubble
-	local bubble=z(kit.frame(root,UDim2.fromOffset(20,64),UDim2.new(1,-40,0,70),M.cream,0))
-	kit.corner(bubble,30)
-	kit.create("UIStroke",bubble,{Color=M.ink,Thickness=3,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
-	self.line=z(kit.text(bubble,"",UDim2.fromOffset(24,6),UDim2.new(1,-48,1,-12),26,M.ink,kit.VOICE_FONT or kit.BODY_FONT,Enum.TextXAlignment.Center),1)
-	self.line.TextScaled=true
-	kit.create("UITextSizeConstraint",self.line,{MaxTextSize=26,MinTextSize=12})
+	-- (OUTILLEUR 24/11: « sa ligne écrite deux fois », half the screen) his
+	-- line is his own bubble over his head; here only his name and the choice
+	self.line=z(kit.text(band,"",UDim2.fromOffset(0,0),UDim2.fromOffset(0,0),1,M.cream,kit.BODY_FONT),1)
+	self.line.Visible=false
 	-- the three choices
 	local bw=math.floor((R.W-40-2*16)/3)
 	self.subs={}
 	for i,choice in R.CHOICES do
 		local x=20+(i-1)*(bw+16)
-		local b=z(kit.button(root,"",UDim2.fromOffset(x,150),UDim2.fromOffset(bw,64),function() self:choose(choice) end,if choice=="fight" then M.red elseif choice=="pay" then M.paper else M.ink),1)
+		local b=z(kit.button(root,"",UDim2.fromOffset(x,64),UDim2.fromOffset(bw,64),function() self:choose(choice) end,if choice=="fight" then M.red elseif choice=="pay" then M.paper else M.ink),1)
 		b.TextSize=34;b.Font=kit.TITLE_FONT;b.TextColor3=if choice=="pay" then M.ink else M.cream
 		kit.create("UIStroke",b,{Color=M.ink,Thickness=3,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
 		local key=z(kit.text(b,tostring(i),UDim2.fromOffset(6,4),UDim2.fromOffset(22,22),16,if choice=="pay" then M.ink else M.cream,STRONG,Enum.TextXAlignment.Center),2)
 		key.BackgroundTransparency=.6;key.BackgroundColor3=M.ink
 		self.buttons[choice]=b
-		self.subs[choice]=z(kit.text(root,"",UDim2.fromOffset(x,220),UDim2.fromOffset(bw,22),15,M.ink,STRONG,Enum.TextXAlignment.Center),1)
+		self.subs[choice]=z(kit.text(root,"",UDim2.fromOffset(x,132),UDim2.fromOffset(bw,22),15,M.ink,STRONG,Enum.TextXAlignment.Center),1)
 	end
 	-- the fuse: it burns down; at its end, he swings (a FIGHT)
 	local track=z(kit.frame(root,UDim2.fromOffset(20,R.H-36),UDim2.new(1,-40,0,12),M.back or M.paper,0))

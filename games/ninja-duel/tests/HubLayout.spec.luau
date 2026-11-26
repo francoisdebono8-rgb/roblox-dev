@@ -42,10 +42,13 @@ test("the goal under the place box, out of the view's middle; the minimap clear 
 	for _,size in SIZES do
 		local o=L.compute(v(size[1],size[2]),58,size[3])
 		assert(o.goal.x==o.hud.x and o.goal.y>o.hud.y,"the goal under the place box at "..size[1])
-		inside(o.map,size[1],size[2],"minimap",size)
-		apart(o.map,o.goal,"minimap and goal",size)
-		apart(o.map,o.shop,"minimap and shop",size)
-		if o.run then apart(o.map,o.run,"minimap and RUN",size) end
+		if o.map then
+			inside(o.map,size[1],size[2],"minimap",size)
+			apart(o.map,o.goal,"minimap and goal",size)
+			apart(o.map,o.shop,"minimap and shop",size)
+			apart(o.map,o.hud,"minimap and place",size)
+			if o.run then apart(o.map,o.run,"minimap and RUN",size) end
+		else assert(size[3],"a laptop always has its minimap: "..size[1]) end
 	end
 end)
 

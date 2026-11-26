@@ -166,6 +166,13 @@ local function rankBadge(parent,key,size,position)
 	return holder
 end
 UI.rankBadge=rankBadge
+-- (DESIGN 26/11) The street fight's line on the result (pure).
+function UI.thugLine(thug)
+	local r=thug.ryo or 0
+	if thug.won then return string.format("YOU TOOK HIS PURSE: +%d RYŌ",math.max(0,r)) end
+	return string.format("HE TOOK %d RYŌ OFF YOU",math.abs(math.min(0,r)))
+end
+
 -- (DESIGN 21/11) The coach's key for this player: the touch words on a
 -- phone, the pad's button, else the keyboard's key (pure).
 function UI.coachKey(tut,touch,pad)
@@ -1517,11 +1524,111 @@ end
 -- rendered frame (Main's camera step): `mine` and `theirs` are the two
 -- fighters' models. Without a head (none yet, a body being rebuilt) the case
 -- shows the fighter's initial as before.
+-- (DESIGN 26/11, DEC-053: the CM's series) An inspiration's dare: first his
+-- line in a manga bubble (the camera is on him), then the VS card — the two
+-- heads live, big, in ink circles split by a red slash — then BEGIN. Read in
+-- the snapshot's `dare` {kit, line, lineFor, vsFor, at} (at: server time).
+function UI.darePhase(dare,now)
+	if type(dare)~="table" or not dare.at then return nil end
+	local t=now-dare.at
+	if t<0 then return nil end
+	if t<(dare.lineFor or 1.6) then return "line",t end
+	if t<(dare.lineFor or 1.6)+(dare.vsFor or 1.5) then return "vs",t-(dare.lineFor or 1.6) end
+	return nil
+end
+function UI:buildDare()
+	if self.dareBubble then return end
+	local gui=self.gui
+	-- the bubble: upper left of the middle, its tail down to the challenger
+	local bubble=frame(gui,UDim2.new(.5,-40,.2,0),UDim2.fromOffset(560,150),MANGA.paper,0)
+	bubble.AnchorPoint=Vector2.new(.5,0);bubble.ZIndex=70;bubble.Visible=false;bubble.Name="DareBubble";corner(bubble,60)
+	create("UIStroke",bubble,{Color=MANGA.ink,Thickness=5,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
+	create("UIScale",bubble,{Scale=1}).Name="Pop"
+	local tail=frame(bubble,UDim2.new(.62,0,1,-6),UDim2.fromOffset(46,46),MANGA.paper,0);tail.Rotation=35;tail.ZIndex=69
+	create("UIStroke",tail,{Color=MANGA.ink,Thickness=5,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
+	self.dareWho=text(bubble,"",UDim2.fromOffset(40,14),UDim2.new(1,-80,0,26),22,MANGA.red,TITLE_FONT)
+	self.dareWho.ZIndex=72
+	self.dareLine=text(bubble,"",UDim2.fromOffset(40,42),UDim2.new(1,-80,1,-58),34,MANGA.ink,VOICE_FONT or TITLE_FONT,Enum.TextXAlignment.Center)
+	self.dareLine.TextScaled=true;self.dareLine.ZIndex=72
+	create("UITextSizeConstraint",self.dareLine,{MaxTextSize=36,MinTextSize=14})
+	self.dareBubble=bubble
+	-- the VS card
+	local vs=frame(gui,UDim2.fromScale(0,0),UDim2.fromScale(1,1),MANGA.ink,0)
+	vs.ZIndex=70;vs.Visible=false;vs.Name="DareVS"
+	local slash=frame(vs,UDim2.fromScale(.5,.5),UDim2.new(0,46,1.6,0),MANGA.red,0);slash.AnchorPoint=Vector2.new(.5,.5);slash.Rotation=18;slash.ZIndex=71
+	self.dareHeads={}
+	for i,side in {{x=.27},{x=.73}} do
+		local ring=frame(vs,UDim2.fromScale(side.x,.44),UDim2.fromOffset(300,300),MANGA.paper,0)
+		ring.AnchorPoint=Vector2.new(.5,.5);ring.ZIndex=72;corner(ring,150)
+		create("UIStroke",ring,{Color=if i==1 then MANGA.red else MANGA.paper,Thickness=8,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
+		create("UIAspectRatioConstraint",ring,{AspectRatio=1})
+		create("UISizeConstraint",ring,{MaxSize=Vector2.new(300,300),MinSize=Vector2.new(120,120)})
+		ring.Size=UDim2.new(.3,0,.3,0)
+		local name=text(vs,"",UDim2.new(side.x,-260,.72,0),UDim2.fromOffset(520,64),58,MANGA.paper,TITLE_FONT,Enum.TextXAlignment.Center)
+		name.ZIndex=73;name.TextScaled=true
+		create("UITextSizeConstraint",name,{MaxTextSize=58,MinTextSize=20})
+		local sub=text(vs,"",UDim2.new(side.x,-260,.72,64),UDim2.fromOffset(520,26),20,if i==1 then MANGA.redSoft or MANGA.red else MANGA.paper,STRONG_FONT,Enum.TextXAlignment.Center)
+		sub.ZIndex=73
+		self.dareHeads[i]={ring=ring,name=name,sub=sub}
+	end
+	local word=text(vs,"VS",UDim2.fromScale(.5,.44),UDim2.fromOffset(220,160),150,MANGA.paper,TITLE_FONT,Enum.TextXAlignment.Center)
+	word.AnchorPoint=Vector2.new(.5,.5);word.ZIndex=74;word.Rotation=-8
+	create("UIStroke",word,{Color=MANGA.red,Thickness=6,ApplyStrokeMode=Enum.ApplyStrokeMode.Contextual})
+	self.dareVS=vs
+end
+function UI:dare(data,mine,theirs,FaceCam,now)
+	local dare=data.phase=="Duel" and data.dare or nil
+	local phase=nil
+	if dare then
+		local ok,serverNow=pcall(function() return workspace:GetServerTimeNow() end)
+		phase=UI.darePhase(dare,if ok then serverNow else 0)
+	end
+	if not phase and not self.dareBubble then return end
+	self:buildDare()
+	self.dareBubble.Visible=phase=="line"
+	self.dareVS.Visible=phase=="vs"
+	-- the bands of the usual intro wait behind the dare
+	if self.introLeft then self.introLeft.Visible=phase==nil;self.introRight.Visible=phase==nil end
+	if not phase then return end
+	local who=Text.upper(KitTexts.name(dare.kit) or "")
+	if phase=="line" then
+		self.dareWho.Text=who
+		self.dareLine.Text=dare.line or ""
+		if self.dareShown~=dare.at then
+			self.dareShown=dare.at
+			local pop=self.dareBubble:FindFirstChild("Pop")
+			if pop then pop.Scale=.6;pcall(function() Tween:Create(pop,TweenInfo.new(.22,Enum.EasingStyle.Back,Enum.EasingDirection.Out),{Scale=1}):Play() end) end
+		end
+		return
+	end
+	-- the VS card: the challenger left (red ring), the avatar right
+	local h,b=data.human,data.bot
+	local sides={{model=theirs,actor=b,title=who},{model=mine,actor=h}}
+	for i,side in sides do
+		local head=self.dareHeads[i]
+		head.name.Text=if i==1 then who else (if side.actor then fullName(side.actor) else "")
+		head.sub.Text=if i==1 then "DARES YOU" else (if side.actor then subtitle(side.actor) else "")
+		if head.cam==nil and FaceCam then
+			local built,cam=pcall(FaceCam.new,head.ring)
+			head.cam=if built then cam else false
+		end
+		if head.cam and side.model then
+			head.cam:watch(side.model)
+			pcall(head.cam.express,head.cam,if i==1 then "focus" else "rage",now)
+			head.cam:step(now)
+		end
+	end
+end
+
 function UI:faceCams(data,mine,theirs)
-	if not data or (data.phase~="Duel" and data.phase~="Result") then return end
+	if not data or (data.phase~="Duel" and data.phase~="Result") then
+		if self.dareBubble then self.dareBubble.Visible=false;self.dareVS.Visible=false end
+		return
+	end
 	local ok,FaceCam=pcall(function() return require(script.Parent.FaceCam) end)
 	if not ok then return end
 	local now=os.clock()
+	pcall(self.dare,self,data,mine,theirs,FaceCam,now)
 	for _,pair in {{self.hp,mine},{self.enemy,theirs}} do
 		local widget,model=pair[1],pair[2]
 		if widget.faceCam==nil and widget.medallion then
@@ -1967,10 +2074,15 @@ end
 function UI:resultEarned(progress)
 	local p=if type(progress)=="table" then progress else nil
 	local daily=p and type(p.daily)=="table" and (p.daily.ryo or 0) or 0
-	self.resultGains.Visible=p~=nil and (p.gained or p.learned or (p.ryo or 0)>0 or daily>0)
+	local thug=p and type(p.thug)=="table" and p.thug or nil
+	self.resultGains.Visible=p~=nil and (p.gained or p.learned or (p.ryo or 0)>0 or daily>0 or thug~=nil)
 	if not self.resultGains.Visible then return end
 	local ryo=(p.ryo or 0)+daily
 	self.resultRyo.Text=if ryo>0 then string.format("+%d RYŌ",ryo) else "NO RYŌ THIS TIME"
+	-- (DESIGN 26/11, passe 1) a thug's fight: his purse taken, or Ryō left behind
+	if thug then
+		self.resultRyo.Text=UI.thugLine(thug)
+	end
 	self.resultFirstWin.Visible=p.firstWin==true
 	-- (19/11, vague 2 DEV 5) what the day's quests and the days in a row paid
 	-- (the DESIGN's own line will replace it: vague 2, DESIGN 3)

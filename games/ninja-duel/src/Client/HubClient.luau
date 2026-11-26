@@ -73,6 +73,9 @@ function Hub.new(ui,camera,send,controls)
 	self.goal.Visible=false;self.goal.ZIndex=20
 	self.goalScale=K.create("UIScale",self.goal,{Scale=1})
 	local brush=K.frame(self.goal,UDim2.new(0,0,0,0),UDim2.new(0,6,1,0),M.red,0)
+	-- (small phones: no room for the minimap) MAP in the goal's corner
+	self.mapButton=K.button(self.goal,"MAP",UDim2.new(1,-62,0,6),UDim2.fromOffset(56,44),function() if self.map then self.map:openBig() end end,M.red)
+	self.mapButton.TextColor3=M.cream;self.mapButton.TextSize=20;self.mapButton.Visible=false
 	brush.ZIndex=19;K.corner(brush,4)
 	self.goalHead=K.text(self.goal,"",UDim2.fromOffset(14,4),UDim2.new(1,-28,0,24),18,M.redSoft,STRONG)
 	self.goalSub=K.text(self.goal,"",UDim2.fromOffset(14,30),UDim2.new(1,-28,0,24),18,M.cream,STRONG)
@@ -114,6 +117,20 @@ function Hub.new(ui,camera,send,controls)
 	end,M.paper)
 	gear.TextSize=18;gear.TextColor3=M.ink;gear.Font=STRONG;inkRing(gear,3)
 	self.settingsButton=gear
+	-- (DESIGN 26/11, DEC-053) THE 8: the prodigies beaten in the street
+	self.eightButton=K.button(self.shopBox,"THE 8",UDim2.fromOffset(0,124),UDim2.fromOffset(424,48),function()
+		self:hideCard()
+		if self.eight then self.eight.onHide=function() self:apply() end;self.eight:show(self.kits and self.kits.challenges8) end
+		self:apply()
+	end,M.ink)
+	self.eightButton.TextSize=26;self.eightButton.TextColor3=M.cream;self.eightButton.Font=Enum.Font.Bangers;inkRing(self.eightButton,3)
+	do
+		local ok,EightBoard=pcall(function() return require(script.Parent.EightBoard) end)
+		if ok and EightBoard then
+			local made,b=pcall(EightBoard.new,ui.kit or K,ui.gui)
+			if made then self.eight=b end
+		end
+	end
 	-- (DESIGN 24/11) the test's screens
 	self.send=self.send or send
 	self.screen=""
@@ -263,7 +280,9 @@ function Hub:layout()
 	local function at(gui,r) gui.Position=UDim2.fromOffset(math.floor(r.x+.5),math.floor(r.y+.5)) end
 	at(self.hud,L.hud);self.hudScale.Scale=L.scale
 	at(self.shopBox,L.shop);self.shopScale.Scale=L.scale
-	if self.map then self.map:place(L.map.x,L.map.y,L.map.scale or L.scale) end
+	self.mapRoom=L.map~=nil
+	if self.map and L.map then self.map:place(L.map.x,L.map.y,L.map.scale or L.scale) end
+	if self.mapButton then self.mapButton.Visible=not self.mapRoom end
 	at(self.goal,L.goal);self.goalScale.Scale=L.scale
 	self.goal.Size=UDim2.fromOffset(L.goal.w/L.scale,L.goal.h/L.scale)
 	-- narrow: the places one a line under the head (Hub:refreshHud)
@@ -322,6 +341,7 @@ function Hub:screenName()
 	if on(ui.leaderboard) then return "Ranks" end
 	if on(self.quests) then return "Quests" end
 	if on(self.map) then return "Map" end
+	if on(self.eight) then return "TheEight" end
 	if self.card and self.card.Visible then return "Card" end
 	return ""
 end
@@ -339,7 +359,7 @@ function Hub:anyPanel()
 	local ui=self.ui
 	return (ui.treePanel and ui.treePanel:shown()) or (ui.shopPanel and ui.shopPanel:shown()) or (ui.outfitPanel and ui.outfitPanel:shown())
 		or (self.quests and self.quests:shown()) or (self.map and self.map:shown()) or (ui.leaderboard and ui.leaderboard:shown())
-		or (ui.settings and ui.settings:shown()) or false
+		or (ui.settings and ui.settings:shown()) or (self.eight and self.eight:shown()) or false
 end
 -- Controls and lens: the village walk, or the board (the roster) over it.
 function Hub:apply()
@@ -379,7 +399,9 @@ function Hub:showHud()
 	self.goal.Visible=walking and self.goalHead.Text~="" and not self.card.Visible
 	self.runButton.Visible=walking and touch and not panel
 	self.shopBox.Visible=walking and not talking and self.kits~=nil and self.ui.shopPanel~=nil
-	if self.map then self.map:setVisible(walking and not talking and not panel) end
+	if self.map then self.map:setVisible(walking and not talking and not panel and self.mapRoom~=false) end
+	local c8=self.kits and self.kits.challenges8
+	self.eightButton.Text=if c8 then string.format("THE 8   %d / %d BEATEN",c8.count or 0,c8.need or 8) else "THE 8"
 	-- the quests button: how many are done today
 	local daily=self.kits and self.kits.daily
 	if daily and self.quests then
