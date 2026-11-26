@@ -1,5 +1,23 @@
 # Boîte de réception Claude
 
+## INBOX-ANIM-TENUES-20261126 — ANIMATEUR 26/11 : les tenues, coiffures et objets du dos vus pièce par pièce sur 6 corps
+
+Demande de François du 26/11 : « tenues pièce par pièce sur les 6 corps, coiffures, armes, pièce par pièce ». Skills suivis : ninja-animation-direction, ninja-player-experience.
+
+**Comment** : un banc dans un Studio à moi (jamais enregistré), 6 vrais corps Roblox (celui de François, mince, large, grand, petit, en blocs), deux rangées, habillés par `Server/Outfit.wear` et `Client/OutfitDress`. Les 99 looks vus de face ; capes, objets du dos et coiffures longues aussi de dos. NATIVE_STUDIO, pas l'avis de François.
+
+**Corrigé (ANIMATEUR)**
+- **Pièces de main aplaties en planche** (gantelets, mitaines, gants de Kakashi) : une pièce de main garde la largeur de la boîte mais pas sa hauteur ; elle sortait du poignet comme une plaque. Le gant est maintenant un poignet de cuir + sa plaque, sur l'avant-bras.
+- **Pieds** (`OutfitDress.SOLE`) : sur un avatar moderne la boîte du pied fait 3 fois le pied. Les pièces de pied se posent maintenant depuis la semelle ; la lanière des sandales pendait au tibia en bande plate. Bottes et tabi ferment sur le pied (les orteils ressortaient). Semelles et geta remontées : sous la boîte, elles étaient sous le sol.
+- **Ceintures cachées** (gi, haut à écharpe, Lee) : le torse moderne descend sur les hanches et couvrait la ceinture ; elle fait aussi le tour du bas du torse, comme l'obi.
+- **Haori** : la robe intérieure traversait les pans en dents de scie sur les corps aux hanches épaisses ; pans plus écartés.
+- **Protège-tibias** qui se touchaient en un bloc sur le corps mince, **coudières** en anneau, **protège-bras d'Itachi** décollés, **épaules de Naruto** (les plis orange traversaient le bleu), **galon des manches longues** au-dessus de l'épaule, **protège-ceinture** caché sous l'obi.
+
+**Bon sur les 6 corps** : bandages, protège-bras, jambières, bracelets, tous les hauts sauf ceux cités, tous les bas, les masques, les capes, rouleau, sabre, sacoche, fuma, les 18 coiffures, les sets Sasuke, Neji, Gaara, Kakashi, Minato.
+
+**Pas vu** : les sets Ember Monk à Sand Nomad, les poses en mouvement et la dernière version des corrections en jeu (le Mac s'est déconnecté pendant la vérification) ; les armes en main (kunai, shuriken, tantō, gourde) que dessine le moteur de combat.
+
+**Au DEV** : les bandeaux noir et rouge n'ont pas de modèle ; ils restent la bande de tissu (`Headband.wear`, test Avatar) : sur le banc, qui ne passe que par `Outfit.wear`, rien ne s'affiche. Leur donner le modèle classique dans leurs couleurs ? (une ligne dans `outfit_models.ITEMS`, mais le test Avatar dit le contraire : à toi de décider.) La gourde (`gourd`) n'est pas une pièce de tenue (rien sur le banc, c'est le moteur qui la dessine pour le kit du Sable). Rien à changer si c'est voulu.
 ## INBOX-DEV-VU-EN-JEU-20261126 — DEV 26/11 soir : le parcours joué dans Studio, le profil neuf nu, les écrans de tenue
 
 **À l'OUTILLEUR (ta ligne « un profil neuf se bat sans vêtements ») :**

@@ -81,6 +81,19 @@ def size(part):
     return Vector(REF[part])
 
 
+# (26/11, passe 2, seen in the game on six real avatars) A modern avatar's arm is round: a rounded
+# box (p=8) round it read as a block standing off the arm, its corners far out. The arms and the
+# hands take a rounder section (p ~ 3); the torso, the legs and the feet keep theirs (their meshes
+# fill their boxes). On the blocky body (square arms) Client/OutfitDress opens the round pieces up
+# so the arm's corners stay inside.
+ROUND = {"RightUpperArm", "LeftUpperArm", "RightLowerArm", "LeftLowerArm", "RightHand", "LeftHand"}
+EXP = [.125]
+
+
+def exp_of(part):
+    return .42 if part in ROUND else .125
+
+
 def section(a, b, n=SEG, fold=None, y=0.0, front_cut=None):
     """A rounded-box ring (superellipse p=8) of half axes a (x), b (z) at height y.
     fold(theta, y) adds an outward offset (cloth folds)."""
@@ -88,8 +101,8 @@ def section(a, b, n=SEG, fold=None, y=0.0, front_cut=None):
     for i in range(n):
         t = 2 * math.pi * i / n
         c, s = math.cos(t), math.sin(t)
-        x = a * math.copysign(abs(c) ** .125, c)
-        z = b * math.copysign(abs(s) ** .125, s)
+        x = a * math.copysign(abs(c) ** EXP[0], c)
+        z = b * math.copysign(abs(s) ** EXP[0], s)
         if fold:
             d = fold(t, y)
             r = math.hypot(x, z) or 1
@@ -117,7 +130,16 @@ def shade(base=.92, var=.08, seed=0.0, ao_y=None):
     return c
 
 
-def shell(pc, part, y0, y1, pad=.07, flare0=0.0, flare1=0.0, folds=.02, rings=9, hem=True, seed=0.0, col=None, scale_x=1.0, scale_z=1.0):
+def shell(pc, part, *args, **kw):
+    """_shell with the part's section (round arms, rounded boxes elsewhere)."""
+    EXP[0] = exp_of(part)
+    try:
+        return _shell(pc, part, *args, **kw)
+    finally:
+        EXP[0] = .125
+
+
+def _shell(pc, part, y0, y1, pad=.07, flare0=0.0, flare1=0.0, folds=.02, rings=9, hem=True, seed=0.0, col=None, scale_x=1.0, scale_z=1.0):
     """Cloth round a body part from y0 (fraction from its top) to y1, with a
     rolled hem at the bottom (and top when hem='both')."""
     S = size(part)
@@ -171,7 +193,7 @@ def ribbed(pc, part, y0, y1, pad=.09, ribs=6, depth=.05, rings_per=3, col=None, 
     bandage = spiral > 0
     if bandage:   # (26/11, seen in the game: still a stack of plates) fewer, steeper strips
         depth = 0.0
-        ribs = max(3, int(round(ribs * .55)))
+        ribs = max(2, int(round(ribs * .3)))
         spiral = 2.2
         rings_per = max(rings_per, 8)
     n = ribs * rings_per + 1
@@ -192,8 +214,8 @@ def ribbed(pc, part, y0, y1, pad=.09, ribs=6, depth=.05, rings_per=3, col=None, 
             else:
                 bulge = depth * (.5 - .5 * math.cos(2 * math.pi * ph)) + .008 * noise.noise(Vector((t, y * 3, seed)))
             c, s = math.cos(t), math.sin(t)
-            x = (a0 + bulge) * math.copysign(abs(c) ** .125, c)
-            z = (b0 + bulge) * math.copysign(abs(s) ** .125, s)
+            x = (a0 + bulge) * math.copysign(abs(c) ** exp_of(part), c)
+            z = (b0 + bulge) * math.copysign(abs(s) ** exp_of(part), s)
             ring.append(Vector((x, y, z)))
         rows.append(ring)
 
@@ -202,7 +224,7 @@ def ribbed(pc, part, y0, y1, pad=.09, ribs=6, depth=.05, rings_per=3, col=None, 
         t = math.atan2(p.z, p.x)
         ph = (u * ribs + spiral * t / (2 * math.pi)) % 1.0
         if bandage:   # the strip pale and even, a thin shadow at the seam
-            g = .96 - .05 * ph - (.09 if ph < .05 else 0.0)
+            g = .95 - .03 * ph - (.06 if ph < .04 else 0.0)
             return (g, g, g)
         g = .74 + .26 * math.sin(math.pi * ph)
         return (g, g, g)
@@ -284,7 +306,8 @@ def plate(pc, part, y0, y1, pad, arc=(-.65, .65), thick=.06, col=None, front=Tru
             for i in range(n):
                 t = (-math.pi / 2 if front else math.pi / 2) + lerp(arc[0], arc[1], i / (n - 1)) * math.pi / 2
                 c, s = math.cos(t), math.sin(t)
-                ring.append(Vector((a * r * math.copysign(abs(c) ** .125, c), y, b * r * math.copysign(abs(s) ** .125, s))))
+                e = exp_of(part)
+                ring.append(Vector((a * r * math.copysign(abs(c) ** e, c), y, b * r * math.copysign(abs(s) ** e, s))))
             rows.append(ring)
     outer = [rows[1], rows[3]]
     inner = [rows[0], rows[2]]
@@ -304,14 +327,19 @@ def sandal(pcs, part):
     sole = pcs("Sandal")
     y = -S.y / 2
     rows = []
-    for dy, grow in ((-.13, 0.0), (-.05, .03), (0.0, .0)):
+    # (26/11, seen on six bodies) under the foot's box the sole was under the ground (the game stands
+    # the box's bottom on it): it rises round the sole of the foot instead
+    for dy, grow in ((-.02, 0.0), (.04, .03), (.09, .0)):
         rows.append(section(S.x / 2 / K + .04 + grow, S.z / 2 / K + .12 + grow, n=SEG, y=y + dy))
     for r in rows:
         for p in r:
             p.z -= .06          # the toe end a little longer
     loft(sole, rows, shade(.7, .06), cap0=True, cap1=True)
     strap = pcs("Sandal")
-    shell(strap, part, .1, .55, pad=.035, folds=.004, rings=3, hem=False, col=shade(.9, .04), scale_z=1.0)
+    # (26/11, seen on six bodies) from the top of the foot's box it hung at the shin, off the foot, as a
+    # flat band: a modern avatar's foot box is three times as tall as its foot. In its lower half it
+    # is placed from the sole (OutfitDress.ENDS) and sits over the instep.
+    shell(strap, part, .45, .85, pad=.035, folds=.004, rings=3, hem=False, col=shade(.9, .04), scale_z=1.0)
 
 
 def mirror(pc):
@@ -455,9 +483,9 @@ def item_shorts():
 def item_arm_wraps():
     o = Out()
     # (19/11, vague 2: « trop épaisses ») close to the skin: a third of the old pad and depth
-    o.both("LowerArm", "Wrap", lambda pc, part: ribbed(pc, part, .12, .98, pad=.01, ribs=10, depth=.01, spiral=1.0))
-    # (26/11) round the palm only, the fingers free (a long hand made it a mitten)
-    o.both("Hand", "Wrap", lambda pc, part: ribbed(pc, part, -.04, .42, pad=.008, ribs=2, depth=.006, spiral=1.0))
+    o.both("LowerArm", "Wrap", lambda pc, part: ribbed(pc, part, .06, 1.0, pad=.01, ribs=10, depth=.01, spiral=1.0))
+    # (26/11, seen on six bodies: the band round the palm read as a flat plate beside the hand,
+    # the hand's top is half its box) the wrap stops at the wrist
     return o.items
 
 
@@ -467,8 +495,9 @@ def item_arm_guards():
     # straps under its edges
     o = Out()
     o.both("LowerArm", "Guard", lambda pc, part: plate(pc, part, .2, .86, .03, arc=(-.85, .85), thick=.035), mat="Metal")
-    o.both("LowerArm", "Strap", lambda pc, part: (ribbed(pc, part, .28, .37, pad=.018, ribs=1, depth=.004, rings_per=3),
-                                                  ribbed(pc, part, .7, .79, pad=.018, ribs=1, depth=.004, rings_per=3)))
+    # (26/11, seen again: the strap rings read as rods behind the arm) two flat bands, on the skin
+    o.both("LowerArm", "Strap", lambda pc, part: (shell(pc, part, .3, .37, pad=.012, folds=0, rings=2, hem=False),
+                                                  shell(pc, part, .7, .77, pad=.012, folds=0, rings=2, hem=False)))
     return o.items
 
 
@@ -514,7 +543,8 @@ def item_naruto():
     lo = o.add("LowerTorso", "Orange")
     shell(lo, "LowerTorso", -.15, 1.05, pad=.1, hem=False, folds=.03)
     o.both("UpperArm", "Orange", lambda pc, part: shell(pc, part, -.05, 1.02, pad=.1, folds=.03, hem=False))
-    o.both("UpperArm", "Blue", lambda pc, part: shell(pc, part, -.06, .26, pad=.12, folds=.01, hem=False))
+    # (26/11, seen on six bodies) the orange sleeve's folds (.1 + .03) came through the blue shoulder
+    o.both("UpperArm", "Blue", lambda pc, part: shell(pc, part, -.06, .26, pad=.15, folds=.01, hem=False))
     o.both("LowerArm", "Orange", lambda pc, part: shell(pc, part, -.02, .88, pad=.11, flare1=.05, folds=.035))
     o.both("UpperLeg", "Orange", lambda pc, part: shell(pc, part, -.05, 1.02, pad=.12, folds=.04, hem=False))
     o.both("LowerLeg", "Orange", lambda pc, part: shell(pc, part, -.02, .68, pad=.13, flare1=.08, folds=.045))
@@ -588,6 +618,10 @@ def item_lee():
     shell(lo, "LowerTorso", -.15, 1.05, pad=.05, hem=False, folds=.01)
     belt = o.add("LowerTorso", "Red")
     ribbed(belt, "LowerTorso", .0, .5, pad=.09, ribs=1, depth=.025, rings_per=6)
+    # (26/11, seen on six bodies) a modern torso comes down over the hips and hid the belt: it goes
+    # round the torso's bottom too
+    belt_up = o.add("UpperTorso", "Red", name="BeltUp")
+    ribbed(belt_up, "UpperTorso", .9, 1.03, pad=.07, ribs=1, depth=.012, rings_per=3)
     # (20/11, references) the red belt IS his forehead protector: its metal plate in front
     plt = o.add("LowerTorso", "Plate", mat="Metal", name="Plate")
     box(plt, (0, .0, -(size("LowerTorso").z / 2 + .09) / K - .05), (.27, .1, .03), shade(.95, .03))
@@ -691,8 +725,10 @@ def item_kakashi():
     _feet(o, "Navy")
     # (20/11, references) his fingerless gloves with a metal plate on the back of the hand,
     # and the mask over the lower face
-    o.both("Hand", "Navy", lambda pc, part: shell(pc, part, -.08, .6, pad=.02, folds=.002, hem=True, rings=4))
-    o.both("Hand", "Guard", lambda pc, part: box(pc, (0, .02, -(size(part).z / 2 + .02) / K - .02), (.26, .07, .025), shade(.95, .02)), mat="Metal")
+    # (26/11, seen on six bodies) on the hand they flattened into a slab off the wrist: the glove's
+    # cuff and its plate sit at the end of the sleeve instead
+    o.both("LowerArm", "Navy", lambda pc, part: ribbed(pc, part, .86, 1.0, pad=.085, ribs=1, depth=.01, rings_per=3))
+    o.both("LowerArm", "Guard", lambda pc, part: plate(pc, part, .88, .98, .1, arc=(-.3, .3), thick=.02), mat="Metal")
     import wardrobe_models as W
     for part, slot, pc in W.item_mask_cloth():
         o.items.append((part, "Navy", pc))
@@ -711,7 +747,7 @@ def item_itachi():
     ribbed(straps, "UpperTorso", .74, .84, pad=.14, ribs=1, depth=.01, rings_per=3)
     lo = o.add("LowerTorso", "Black")
     shell(lo, "LowerTorso", -.15, 1.05, pad=.07, hem=False)
-    o.both("LowerArm", "Guard", lambda pc, part: plate(pc, part, .15, .85, .09, arc=(-.8, .8), thick=.05), mat="Metal")
+    o.both("LowerArm", "Guard", lambda pc, part: plate(pc, part, .15, .85, .065, arc=(-.75, .75), thick=.035), mat="Metal")  # (26/11) stood off the forearm
     o.both("LowerArm", "Black", lambda pc, part: shell(pc, part, .1, .92, pad=.05, folds=.01, hem=False))
     o.both("UpperLeg", "Black", lambda pc, part: shell(pc, part, -.05, 1.02, pad=.08, folds=.03, hem=False))
     o.both("LowerLeg", "Black", lambda pc, part: shell(pc, part, -.02, .85, pad=.09, folds=.03))

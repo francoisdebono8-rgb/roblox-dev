@@ -58,33 +58,44 @@ end
 -- follows the box's width and depth (at most 1.2 times them), and it keeps its place from the
 -- end it was modelled at (the wrist for a hand's wrap, the sole for a sandal).
 Dress.ENDS={LeftHand=true,RightHand=true,LeftFoot=true,RightFoot=true}
+Dress.SOLE={LeftFoot=true,RightFoot=true}
 -- (26/11, passe 2: « les protège-bras flottent aux poignets ») A modern avatar's arm is a round
 -- mesh inside its box: measured on François's body (its EditableMesh, mid-height), the forearm
 -- fills .84 of its box across and the upper arm .83; the legs and the hands fill theirs. A piece
 -- sized to the box stood off the arm all round. On those arms the pieces come in to the mesh;
 -- the blocky body (the R15 block meshes, 7430070991-7430071119) fills its box and keeps them.
-Dress.FILL={LeftUpperArm=.86,RightUpperArm=.86,LeftLowerArm=.88,RightLowerArm=.88}
-Dress.BLOCKY={["7430071044"]=true,["7430071041"]=true,["7430071005"]=true,["7430071013"]=true}
+-- (26/11, seen on six bodies) The hand is round too, narrower at the wrist than its box (.55 of
+-- it at the top): a band at the wrist stood out as a flat plate beside the hand.
+Dress.FILL={LeftUpperArm=.86,RightUpperArm=.86,LeftLowerArm=.88,RightLowerArm=.88,LeftHand=.8,RightHand=.8}
+-- The arm and hand pieces are round now (tools/blender/outfit_models.ROUND): on the blocky body's
+-- square arm they open up this much so the arm's corners stay inside.
+Dress.BLOCKY_OPEN=1.15
+Dress.BLOCKY={["7430071044"]=true,["7430071041"]=true,["7430071005"]=true,["7430071013"]=true,
+	["7430070991"]=true,["7430070997"]=true}
 function Dress.fill(body,on)
 	local f=Dress.FILL[on]
-	if not f or not body:IsA("MeshPart") then return 1 end
+	if not f then return 1 end
+	if not body:IsA("MeshPart") then return Dress.BLOCKY_OPEN end   -- a plain block arm
 	local okId,mesh=pcall(function() return body.MeshId end)
 	local id=okId and string.match(tostring(mesh),"(%d+)%s*$")
-	if id and Dress.BLOCKY[id] then return 1 end
+	if id and Dress.BLOCKY[id] then return Dress.BLOCKY_OPEN end
 	return f
 end
 function Dress.place(body,on,size,o,character)
 	local ref=okMeshes and OutfitMeshes.Ref[on]
 	if not ref then return nil end
 	local k=Vector3.new(body.Size.X/ref.X,body.Size.Y/ref.Y,body.Size.Z/ref.Z)
+	local k0=k
 	local fill=Dress.fill(body,on)
-	if fill<1 then k=Vector3.new(k.X*fill,k.Y,k.Z*fill) end
+	if fill~=1 then k=Vector3.new(k.X*fill,k.Y,k.Z*fill) end
 	if Dress.ENDS[on] then
-		local ky=math.min(k.Y,math.max(k.X,k.Z)*1.2)
+		local ky=math.min(k.Y,math.max(k0.X,k0.Z)*1.2)
 		if ky<k.Y-1e-6 then
 			local h=size.Y*ky
 			local y
-			if o.Y>=0 then   -- from the top: the wrist, the ankle
+			-- (26/11, seen on six bodies) a foot's pieces all stand on the sole: a boot or a strap placed
+			-- from the box's top (the ankle) hung off the foot on a modern avatar
+			if o.Y>=0 and not Dress.SOLE[on] then   -- from the top: the wrist
 				local fromTop=ref.Y/2-(o.Y+size.Y/2)
 				y=body.Size.Y/2-fromTop*ky-h/2
 			else             -- from the bottom: the sole

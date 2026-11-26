@@ -268,7 +268,8 @@ test("a piece on a long hand or foot keeps its height and its end",function()
 	assert(math.abs((c2.Position.Y-s2.Y/2)+foot.Size.Y/2)<1e-3,"the sole under the foot")
 	local block=Instance.new("Part");block.Size=ref;block.CFrame=CFrame.new()
 	local s3=Dress.place(block,"LeftHand",band,atWrist)
-	assert((s3-band).Magnitude<1e-3,"a standard hand: as before "..tostring(s3).." "..tostring(band))
+	local open=Dress.BLOCKY_OPEN
+	assert((s3-Vector3.new(band.X*open,band.Y,band.Z*open)).Magnitude<1e-3,"a standard (block) hand: its height as before, the round wrap opened over its corners "..tostring(s3))
 end)
 
 -- (26/11, passe 2: « les protège-bras flottent ») a modern arm is a round mesh inside its box:
@@ -284,7 +285,7 @@ test("an arm piece comes in to a round arm, not to a blocky one",function()
 	assert(math.abs(s1.Y-guard.Y*1.1)<1e-3,"its length kept")
 	local part=Instance.new("Part");part.Size=round.Size;part.CFrame=CFrame.new()
 	local s2=Dress.place(part,"RightLowerArm",guard,Vector3.zero)
-	assert(math.abs(s2.X-guard.X*.81)<1e-3,"a plain part fills its box")
+	assert(math.abs(s2.X-guard.X*.81*Dress.BLOCKY_OPEN)<1e-3,"a plain block arm: the round piece opens over its corners")
 	assert(Dress.fill(round,"RightLowerLeg")==1 and Dress.fill(round,"UpperTorso")==1,"legs and torso fill theirs")
 end)
 
