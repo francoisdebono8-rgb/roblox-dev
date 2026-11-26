@@ -57,7 +57,20 @@ end
 
 test("wear: the chosen pieces welded on his parts, never colliding nor hit; a master's outfit covers the rest",function()
 	local model=body()
-	assert(Outfit.wear(model,{})==nil and model:FindFirstChild("NinjaOutfit")==nil,"he wears something he did not choose")
+	-- (26/11, DEC-054: « je veux plus qu'il apparaisse nu ») nothing on top, no
+	-- profile: the base outfit, never his bare avatar; a top chosen: only what
+	-- he chose
+	for _,looks in {{},{headband="HeadbandBlue"},{bottom="BottomShorts"}} do
+		Outfit.wear(model,looks)
+		local worn=model:FindFirstChild("NinjaOutfit")
+		local ids=worn and worn:GetAttribute("NinjaOutfit") or ""
+		assert(string.find(ids,Outfit.BASE.top,1,true) and string.find(ids,Outfit.BASE.feet,1,true),"bare in "..ids)
+		assert(string.find(ids,looks.bottom or Outfit.BASE.bottom,1,true),"his own bottom replaced: "..ids)
+	end
+	local nilIds=Outfit.items(nil)
+	assert(table.find(nilIds,Outfit.BASE.top) and table.find(nilIds,Outfit.BASE.bottom),"no profile: bare")
+	local chosen=Outfit.items({top="TopTunicGreen"})
+	assert(table.find(chosen,"TopTunicGreen") and not table.find(chosen,Outfit.BASE.bottom),"a base piece over what he chose")
 	Outfit.wear(model,{top="TopTunicNavy",bottom="BottomPantsDark",arms="ArmsWraps",feet="FeetSandals"})
 	local list,holder=pieces(model)
 	assert(holder and #list>=12,"too few pieces: "..#list)
@@ -96,9 +109,11 @@ test("wear: the chosen pieces welded on his parts, never colliding nor hit; a ma
 	end
 	local fs=require("@lune/fs")
 	assert(string.find(fs.readFile("src/Client/OutfitDress.luau"),"p.Material=Dress.material(p.Material)",1,true),"the modelled pieces keep Fabric")
-	-- taken off
+	-- taken off: back to the base outfit (DEC-054), the old one gone
+	local before=model:FindFirstChild("NinjaOutfit")
 	Outfit.wear(model,{})
-	assert(model:FindFirstChild("NinjaOutfit")==nil,"the outfit did not come off")
+	local after=model:FindFirstChild("NinjaOutfit")
+	assert(before and before.Parent==nil and after and after:GetAttribute("NinjaOutfit")==table.concat({Outfit.BASE.top,Outfit.BASE.bottom,Outfit.BASE.feet},","),"the outfit did not come off to the base one")
 end)
 
 test("the card: what he may wear (free, owned), cycled both ways; dressed once he has a top or a master's outfit",function()

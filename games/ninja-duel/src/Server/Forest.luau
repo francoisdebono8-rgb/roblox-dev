@@ -46,8 +46,9 @@ local Words=if okBanter and Banter and Banter.Bandit then Banter.Bandit else {}
 Forest.NAME=Words.name or "FOREST BANDIT"
 Forest.LINE=(Words.block and Words.block[1]) or "Halt! This forest has a toll."
 Forest.BEFORE=Words.beforeFight or "Hand it over, or I hand you this!"
--- The base outfit (DEC-054: never naked), equipped on his profile on arrival.
-Forest.BASE={top="TopTunicNavy",bottom="BottomPantsDark",feet="FeetSandals"}
+-- The base outfit (DEC-054: never naked), equipped on his profile on arrival
+-- (the same one Server/Outfit puts on anyone with nothing on top).
+Forest.BASE=require(script.Parent.Outfit).BASE
 
 Forest.state={}         -- player -> {stage, at, resultAt}
 Forest.matches=nil

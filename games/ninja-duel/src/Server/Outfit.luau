@@ -159,13 +159,23 @@ end
 -- What he wears, from his looks (Progression.looks): a master's outfit
 -- covers the four slots; else each slot's piece; then the accessories (mask,
 -- cape, back). Item ids, in order.
+-- (26/11, the OUTILLEUR's duel robot: « un profil neuf se bat avec le bandeau
+-- seul », his avatar without clothes; DEC-054, François: « je veux plus qu'il
+-- apparaisse nu ») No top and no master's outfit (a new profile, a profile not
+-- loaded, a player who never dressed): the base outfit, in Konoha and in every
+-- duel, in what he left empty.
+Outfit.BASE={top="TopTunicNavy",bottom="BottomPantsDark",feet="FeetSandals"}
 function Outfit.items(looks)
-	if not looks then return {} end
+	looks=looks or {}
 	local out={}
 	if looks.set then
 		table.insert(out,looks.set)
 	else
-		for _,slot in Shop.OutfitSlots do if looks[slot] then table.insert(out,looks[slot]) end end
+		local bare=looks.top==nil
+		for _,slot in Shop.OutfitSlots do
+			local id=looks[slot] or (if bare then Outfit.BASE[slot] else nil)
+			if id then table.insert(out,id) end
+		end
 	end
 	-- (19/11, vague 2) the accessories go over either: a mask, a cape, what
 	-- he carries on his back
@@ -230,6 +240,7 @@ function Outfit.hairColor(model,looks)
 end
 function Outfit.wear(model,looks)
 	if not model then return nil end
+	looks=looks or {}
 	pcall(Outfit.hairColor,model,looks)
 	for _,old in model:GetChildren() do if old:GetAttribute("NinjaOutfit") then old:Destroy() end end
 	local ids=Outfit.items(looks)
