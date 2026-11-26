@@ -283,7 +283,9 @@ function Lobby:outgoingOf(id)
 	for _,rec in self.outgoing do if rec.from==id then n+=1 end end
 	return n
 end
-function Lobby:challenge(p,to,fighter,now)
+-- `quick` (26/11, passe 3, DEC-055: a challenge by a blow in the street):
+-- accepted, the duel starts there and then, without the pick.
+function Lobby:challenge(p,to,fighter,now,quick)
 	if self.duel then return self:status(p,"BACK TO THE LOBBY FIRST","bad") end
 	if to==p.id then return end
 	if now-p.lastChallenge<Protocol.Tune.Gap then return self:status(p,"WAIT A MOMENT BEFORE THE NEXT CHALLENGE","bad") end
@@ -298,7 +300,7 @@ function Lobby:challenge(p,to,fighter,now)
 	if fighter then p.fighter=fighter end
 	self:ownKit(p)
 	local rec={id=string.sub(self.svc.guid(),1,18),from=p.id,name=p.name,fighter=p.fighter,to=to,toName=target.name,
-		fromJob=self.svc.jobId,toJob=target.job,expires=now+Protocol.Tune.ChallengeLife}
+		fromJob=self.svc.jobId,toJob=target.job,expires=now+Protocol.Tune.ChallengeLife,quick=quick==true}
 	self.outgoing[rec.id]=rec
 	self:send(p.player,{kind="sent",id=rec.id,to=target.name,remaining=Protocol.Tune.ChallengeLife})
 	self:deliver({k="ask",id=rec.id,to=to,toJob=target.job,from=p.id,name=p.name,fighter=p.fighter,fromJob=self.svc.jobId,expires=rec.expires})
@@ -363,7 +365,7 @@ function Lobby:accepted(p,msg)
 		return self:deliver({k="no",id=msg.id,to=msg.from,toJob=msg.fromJob,reason="busy",name=p.name})
 	end
 	-- Same server: the online 1v1 at once, no teleport.
-	if other then return self:pairHere(p,other,rec.fighter or p.fighter,fighter) end
+	if other then return self:pairHere(p,other,rec.fighter or p.fighter,fighter,rec.quick) end
 	self:status(p,string.upper(rec.toName or "YOUR OPPONENT").." ACCEPTED  •  LEAVING FOR THE DUEL…")
 	self.svc.spawn(function()
 		local ok,code,serverId=pcall(function() return self.svc.teleport:ReserveServer(self.svc.placeId) end)
@@ -379,7 +381,8 @@ function Lobby:accepted(p,msg)
 	end)
 end
 -- Both players here: straight into the online pick (Server/Online).
-function Lobby:pairHere(a,b,fa,fb)
+-- `quick`: the street's challenge by a blow, no pick (each his own kit).
+function Lobby:pairHere(a,b,fa,fb,quick)
 	local m=self.matches
 	-- (15/11, François: « des 1v1 vraiment comme ça sur la map ») both walking
 	-- in Konoha: the fight is in the street nearest to them (Matches:streetSite)
@@ -392,6 +395,8 @@ function Lobby:pairHere(a,b,fa,fb)
 	local sa,sb=m:session(a.player),m:session(b.player)
 	local d=m.online:pair({player=a.player,session=sa,fighter=fa},{player=b.player,session=sb,fighter=fb},"challenge")
 	if d then d.site=site end
+	if d and quick then d.quick=true;m.online:fight(d) end
+	return d
 end
 function Lobby:depart(p,code,opponent)
 	if type(code)~="string" or #code>200 then return end

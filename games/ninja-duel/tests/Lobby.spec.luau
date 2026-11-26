@@ -216,6 +216,23 @@ test("same server: an accepted challenge goes straight to the online pick, no te
 	assert(a.m.sessions[carol].phase=="Pick","Carol's AI duel did not end")
 end)
 
+-- (26/11, passe 3, DEC-055) a blow in the street is a challenge; hit back
+-- (or accepted), the duel starts there, no pick
+test("a challenge by a blow, accepted: the duel at once, no pick",function()
+	local world=cloud()
+	local a=server(world,"A")
+	local alice=join(a,"Alice");local carol=join(a,"Carol")
+	tick(world,{a})
+	local pa=a.lobby.players[alice.UserId]
+	a.lobby:challenge(pa,carol.UserId,"Copycat",a.lobby.svc.now(),true)
+	local invite=lastOf(carol,"invite")
+	assert(invite,"no invitation")
+	op(a,carol,{op="answer",id=invite.id,accept=true,fighter="GentleFist"})
+	local o=a.m.sessions[alice].online
+	assert(o and o.kind=="duel" and o.duel.phase=="Duel" and o.duel.quick==true,"the pick was shown: "..tostring(o and o.duel and o.duel.phase))
+	assert(o.duel.seats[1].fighter=="Copycat" and o.duel.seats[2].fighter=="GentleFist","fighters")
+end)
+
 test("guards: decline, no answer, do not disturb, in a duel, one challenge every 10 s, cancel",function()
 	local world=cloud()
 	local a=server(world,"A");local b=server(world,"B")

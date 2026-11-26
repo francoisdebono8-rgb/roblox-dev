@@ -109,11 +109,12 @@ function HubFight.strikePlayer(player,other,now)
 				break
 			end
 		end
-		if not done then pcall(lobby.pairHere,lobby,pb,pa,pb.fighter,pa.fighter) end
+		if not done then pcall(lobby.pairHere,lobby,pb,pa,pb.fighter,pa.fighter,true) end
 		return "accept"
 	end
 	HubFight.challenges[other.UserId]={from=player.UserId,at=now}
-	pcall(lobby.challenge,lobby,pa,other.UserId,nil,lobby.svc.now())
+	-- (quick: accepted, the duel starts there, without the pick)
+	pcall(lobby.challenge,lobby,pa,other.UserId,nil,lobby.svc.now(),true)
 	return "challenge"
 end
 
