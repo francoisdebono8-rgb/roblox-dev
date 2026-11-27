@@ -316,7 +316,7 @@ end
 -- and rises through that branch's seals, tier after tier (a closed tier lies
 -- under a veil that says what opens it); the leaves gather round what he
 -- owns; and at the crown, in the canopy, the red seal of the transformation.
-Panel.TREE={GUT=96,ROOTS=176,CROWN=190,STEP=112,PAD=46,SEAL=60,BIG=76,CROWN_SEAL=104,TRUNK=40}
+Panel.TREE={GUT=96,ROOTS=176,CROWN=190,STEP=112,PAD=46,SEAL=60,BIG=76,CROWN_SEAL=104,TRUNK=40,TWIG=24}
 local BARK=Color3.fromRGB(96,66,42)
 local BARK_DARK=Color3.fromRGB(52,34,22)
 local LEAF=Color3.fromRGB(92,132,70)
@@ -371,7 +371,11 @@ function Panel.treeLayout(layout,width,top,rootsH)
 				if node.transform then table.insert(crowns,node)
 				else
 					k+=1
-					at[node.id]={x=cols[b],y=y-T.PAD*.5-(k-.5)*T.STEP,b=b,t=t,node=node}
+					local ny=y-T.PAD*.5-(k-.5)*T.STEP
+					-- the node hangs on a twig, off its bough's spine: left, right, left...
+					local side=if k%2==1 then -1 else 1
+					at[node.id]={x=Panel.spine(cols[b],b,ground,ny,trunkX,total)+side*T.TWIG,y=ny,b=b,t=t,node=node,
+						from={x=Panel.spine(cols[b],b,ground,ny+38,trunkX,total),y=ny+38}}
 				end
 			end
 		end
@@ -381,7 +385,44 @@ function Panel.treeLayout(layout,width,top,rootsH)
 	for i,node in crowns do
 		at[node.id]={x=trunkX+(i-(#crowns+1)/2)*150,y=crownY,b=0,t=#bands,node=node,crown=true}
 	end
-	return {height=height,ground=ground,trunkX=trunkX,cols=cols,step=step,bands=bands,at=at,top=top,crownY=crownY,crowns=crowns}
+	-- each bough as a line of points, from the trunk's foot to its last node
+	local boughs={}
+	for b=1,n do
+		local high=nil
+		for _,p in at do if p.b==b and (not high or p.y<high) then high=p.y end end
+		if high then
+			-- it leaves the trunk under its lowest node, the outer ones lower
+			local low=-math.huge
+			for _,p in at do if p.b==b then low=math.max(low,p.y) end end
+			local off=math.abs(cols[b]-trunkX)/math.max(1,width/2)
+			local leave=math.min(ground-6,low+60+off*30)
+			local pts={{x=trunkX,y=leave+24},{x=(trunkX+Panel.spine(cols[b],b,ground,low+20,trunkX,total))/2,y=leave}}
+			local yy=low+20
+			while yy>high do
+				table.insert(pts,{x=Panel.spine(cols[b],b,ground,yy,trunkX,total),y=yy})
+				yy-=28
+			end
+			table.insert(pts,{x=Panel.spine(cols[b],b,ground,high-24,trunkX,total),y=high-24})
+			boughs[b]=pts
+		end
+	end
+	return {height=height,ground=ground,trunkX=trunkX,cols=cols,step=step,bands=bands,at=at,top=top,crownY=crownY,crowns=crowns,boughs=boughs}
+end
+-- The painted tree of a kit (or "Ninja"): its two halves' images, or nil
+-- while they are not uploaded.
+function Panel.treeArt(key)
+	if not UIAssets or not key then return nil end
+	local a,b=UIAssets.id("tree_"..key.."_top"),UIAssets.id("tree_"..key.."_bottom")
+	if a and b then return {top=a,bottom=b} end
+	return nil
+end
+-- A bough's spine sways a little as it climbs, as a branch does.
+-- (and leans out from the trunk as it rises: a crown that opens, not poles)
+function Panel.spine(colX,b,ground,y,trunkX,span)
+	local s=math.clamp((ground-y)/math.max(1,span or 1),0,1)
+	s=s*s*(3-2*s)
+	local x=(trunkX or colX)+(colX-(trunkX or colX))*(.74+.26*s)
+	return x+math.sin((ground-y)/210+b*1.9)*12
 end
 local function line(self,x1,y1,x2,y2,thick,color,z)
 	local len=math.sqrt((x2-x1)^2+(y2-y1)^2)
@@ -425,18 +466,46 @@ function Panel:drawTree(layout,top,card)
 	local L=Panel.treeLayout(layout,width,top,rootsH)
 	local STRONG=K.STRONG_FONT or K.BODY_FONT
 	local function add(item) table.insert(self.drawn,item);return item end
-	-- the canopy: soft leaves round the crown
-	local cw=width-T.GUT-40
-	for k=1,11 do
-		local fx=L.trunkX+math.cos(k*2.4)*cw*.4*(.35+(k%4)/5)
-		local fy=L.crownY+14+math.sin(k*1.9)*28
-		blob(self,fx,fy,56+(k%3)*16,if k%2==0 then LEAF else LEAF_LIGHT,.5,72)
+	-- (DESIGN 27/11, « super moche ») the painting: the ink-wash tree drawn by
+	-- assets/ui/generate_tree.py on this very layout, in two halves. Without
+	-- its images (not uploaded yet) the tree is drawn with frames as before.
+	local art=Panel.treeArt(if self.tab=="ninja" then "Ninja" else self.kitId)
+	if art then
+		local full=math.ceil(L.height+10);local half=full//2
+		local a=K.create("ImageLabel",self.grid,{Image=art.top,Position=UDim2.fromOffset(0,top),Size=UDim2.fromOffset(width,half),BackgroundTransparency=1,ZIndex=72})
+		local b=K.create("ImageLabel",self.grid,{Image=art.bottom,Position=UDim2.fromOffset(0,top+half),Size=UDim2.fromOffset(width,full-half),BackgroundTransparency=1,ZIndex=72})
+		add(a);add(b)
+	else
+		-- the canopy: soft leaves round the crown
+		local cw=width-T.GUT-40
+		for k=1,11 do
+			local fx=L.trunkX+math.cos(k*2.4)*cw*.4*(.35+(k%4)/5)
+			local fy=L.crownY+14+math.sin(k*1.9)*28
+			blob(self,fx,fy,56+(k%3)*16,if k%2==0 then LEAF else LEAF_LIGHT,.5,72)
+		end
+		-- the earth
+		add(K.frame(self.grid,UDim2.fromOffset(0,L.ground+44),UDim2.new(1,-12,0,rootsH-44),EARTH,0)).ZIndex=73
+		-- the trunk, from the earth to the crown
+		limb(self,L.trunkX,L.ground+44,L.trunkX-14,(L.ground+L.crownY)/2,L.trunkX,L.crownY+30,T.TRUNK,T.TRUNK*.45,74)
+		-- the boughs, along the layout's lines
+		for _,pts in L.boughs do
+			for k=2,#pts do
+				line(self,pts[k-1].x,pts[k-1].y,pts[k].x,pts[k].y,14,BARK_DARK,74)
+				line(self,pts[k-1].x,pts[k-1].y,pts[k].x,pts[k].y,9,BARK,75)
+			end
+		end
+		for _,p in L.at do
+			if p.from then line(self,p.from.x,p.from.y,p.x,p.y,6,BARK,75) end
+		end
+		for _,node in L.crowns do
+			local p=L.at[node.id]
+			limb(self,L.trunkX,L.crownY+40,(L.trunkX+p.x)/2,L.crownY+30,p.x,p.y,12,8,75)
+		end
 	end
-	-- the earth and the roots: what he starts with
-	add(K.frame(self.grid,UDim2.fromOffset(0,L.ground+44),UDim2.new(1,-12,0,rootsH-44),EARTH,0)).ZIndex=73
+	-- the roots: what he starts with
 	for i,name in starts do
 		local rx=T.GUT+(width-T.GUT-16)*(i-.5)/math.max(1,#starts)
-		limb(self,L.trunkX,L.ground+30,(L.trunkX+rx)/2,L.ground+96,rx,L.ground+108,14,6,74)
+		if not art then limb(self,L.trunkX,L.ground+30,(L.trunkX+rx)/2,L.ground+96,rx,L.ground+108,14,6,74) end
 		local seal=blob(self,rx,L.ground+110,24,M.ink,0,78)
 		K.create("UIStroke",seal,{Color=M.cream,Thickness=3,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
 		local icon=Panel.sealIcon({name=name,kind="jutsu"},nil)
@@ -450,12 +519,12 @@ function Panel:drawTree(layout,top,card)
 		local rootsTag=K.text(self.grid,"ROOTS  •  YOUR START",UDim2.fromOffset(L.trunkX-130,L.ground+50),UDim2.fromOffset(260,20),16,M.red,K.TITLE_FONT,Enum.TextXAlignment.Center)
 		rootsTag.ZIndex=80;rootsTag.TextStrokeColor3=EARTH;rootsTag.TextStrokeTransparency=0;add(rootsTag)
 	end
-	-- the trunk, from the earth to the crown
-	limb(self,L.trunkX,L.ground+44,L.trunkX-14,(L.ground+L.crownY)/2,L.trunkX,L.crownY+30,T.TRUNK,T.TRUNK*.45,74)
 	-- the tiers: a band each, its numeral in the margin, a closed one veiled
 	for t,band in L.bands do
 		local row=band.row
-		local rule=K.frame(self.grid,UDim2.fromOffset(T.GUT-10,band.bottom),UDim2.new(1,-T.GUT-6,0,2),M.ink,.82);rule.ZIndex=73;add(rule)
+		if not art then
+			local rule=K.frame(self.grid,UDim2.fromOffset(T.GUT-10,band.bottom),UDim2.new(1,-T.GUT-6,0,2),M.ink,.82);rule.ZIndex=73;add(rule)
+		end
 		local label=K.text(self.grid,row.name,UDim2.fromOffset(8,band.top+12),UDim2.fromOffset(80,44),44,if row.open then M.red else M.off,K.TITLE_FONT)
 		label.ZIndex=79;add(label)
 		local unit=if self.tab=="ninja" then "POINTS " else "MASTERY "
@@ -467,23 +536,13 @@ function Panel:drawTree(layout,top,card)
 			lock.ZIndex=85
 		end
 	end
-	-- the boughs: out of the trunk, then up through the branch's seals
+	-- the branches' names, at the top of each bough, in its foliage
 	for b,branch in layout.branches do
-		local bx=L.cols[b]
-		local low,high=-math.huge,math.huge
-		for _,node in branch.nodes do
-			local p=L.at[node.id]
-			if p and not p.crown then low=math.max(low,p.y);high=math.min(high,p.y) end
-		end
-		if low>-math.huge then
-			local d=math.abs(bx-L.trunkX)/(width*.5)
-			local leave=L.ground+30-d*20
-			local foot=L.ground+12
-			limb(self,L.trunkX,leave,bx,leave-10,bx,foot,18-d*4,12,74)
-			line(self,bx,foot,bx,high,10,BARK_DARK,75)
-			line(self,bx,foot,bx,high,6,BARK,76)
-			local tag=K.text(self.grid,branch.name,UDim2.fromOffset(bx-L.step*.48,foot-10),UDim2.fromOffset(L.step*.96,22),16,M.cream,K.TITLE_FONT,Enum.TextXAlignment.Center)
-			tag.BackgroundTransparency=0;tag.BackgroundColor3=BARK_DARK;tag.ZIndex=79;tag.TextScaled=true;K.corner(tag,6);add(tag)
+		local pts=L.boughs[b]
+		if pts then
+			local tip=pts[#pts]
+			local tag=K.text(self.grid,branch.name,UDim2.fromOffset(tip.x-L.step*.46,tip.y-30),UDim2.fromOffset(L.step*.92,22),16,M.cream,K.TITLE_FONT,Enum.TextXAlignment.Center)
+			tag.BackgroundTransparency=0;tag.BackgroundColor3=BARK_DARK;tag.ZIndex=83;tag.TextScaled=true;K.corner(tag,6);add(tag)
 			K.create("UITextSizeConstraint",tag,{MaxTextSize=16,MinTextSize=9})
 		end
 	end
@@ -495,11 +554,6 @@ function Panel:drawTree(layout,top,card)
 				line(self,q.x,q.y,p.x,p.y,if p.crown then 3 else 5,if p.node.status=="active" or p.node.status=="off" then BARK_DARK else M.off,75)
 			end
 		end
-	end
-	-- the crown reaches down to the trunk
-	for _,node in L.crowns do
-		local p=L.at[node.id]
-		limb(self,L.trunkX,L.crownY+40,(L.trunkX+p.x)/2,L.crownY+30,p.x,p.y,12,8,75)
 	end
 	-- the seals
 	for id,p in L.at do

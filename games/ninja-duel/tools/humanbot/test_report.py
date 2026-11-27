@@ -95,6 +95,36 @@ def test_false_positives_are_dropped():
     assert kept == {("hors écran", "TOPKNOT"), ("tenue fausse", "top")}
 
 
+def test_a_dialog_over_its_screen_and_a_fighters_body_are_not_bugs():
+    bugs = [
+        {"kind": "menus ensemble", "key": "CupEntry + « VS »"},
+        {"kind": "menus ensemble", "key": "« CONTROLS » + « VICTORY  2–0 »"},
+        {"kind": "menus ensemble", "key": "« PLAYERS ONLINE » + « VS »"},
+        {"kind": "menus ensemble", "key": "« LEADERBOARDS » + « SHOP » + « VS »"},
+        {"kind": "corps nu", "key": "sans tenue", "place": "-"},
+        {"kind": "corps bloqué", "key": "32,16", "place": "Duel_1"},
+        {"kind": "corps bloqué", "key": "8,8", "place": "Workspace"},
+        {"kind": "corps bloqué", "key": "0,0"},
+    ]
+    kept = {(k, b["key"]) for k, group in report.grouped(bugs) for b in group}
+    assert kept == {("menus ensemble", "« LEADERBOARDS » + « SHOP » + « VS »"), ("corps bloqué", "8,8"), ("corps bloqué", "0,0")}
+
+
+def test_a_silent_refusal_comes_first_after_the_money():
+    kinds = [k for k, _ in report.grouped([{"kind": "clic mort", "key": "x"}, {"kind": "refus muet", "key": "Tournament.start:Sand"}])]
+    assert kinds == ["refus muet", "clic mort"]
+
+
+def test_the_report_of_the_27th_afternoon():
+    path = os.path.join(HERE, "mesures", "2026-11-27c_ac418a18", "journal.json")
+    with open(path, encoding="utf-8") as f:
+        mesure = json.load(f)
+    text = report.report(mesure)
+    assert "refus muet" in text and "Tournament.start:Sand" in text
+    assert "## Deux joueurs" in text and "## Les duels" in text
+    assert "CupEntry" not in text and "corps nu" not in text and "corps bloqué" not in text
+
+
 def test_the_report_orders_what_matters():
     bugs = [{"kind": "à-coup", "key": "1.2", "steps": []},
             {"kind": "menus ensemble", "key": "A + B", "steps": []},

@@ -21,6 +21,8 @@ UIAssets.Ids={
 	rank_academy="rbxassetid://96672557663526",rank_genin="rbxassetid://76763443822026",rank_chunin="rbxassetid://118229760694098",rank_jonin="rbxassetid://93794886301905",rank_anbu="rbxassetid://118433227657883",rank_kage="rbxassetid://88298397406708",
 	-- (DESIGN 26/11, passe 2) Konoha, the drawn map (assets/ui/map_konoha.png, 1160 x 956): to upload
 	map_konoha="",
+	-- (DESIGN 27/11) the painted skill trees (assets/ui/trees, generate_tree.py), two halves each: to upload
+	tree_Copycat_top="",tree_Copycat_bottom="",tree_Flashstep_top="",tree_Flashstep_bottom="",tree_GentleFist_top="",tree_GentleFist_bottom="",tree_Leaf_top="",tree_Leaf_bottom="",tree_Legion_top="",tree_Legion_bottom="",tree_Lion_top="",tree_Lion_bottom="",tree_Mirage_top="",tree_Mirage_bottom="",tree_Sand_top="",tree_Sand_bottom="",tree_Ninja_top="",tree_Ninja_bottom="",
 }
 
 -- (DEV 21/11) the shop icons (assets/ui/items, rendered by tools/icons),

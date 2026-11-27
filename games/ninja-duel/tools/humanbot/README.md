@@ -41,12 +41,14 @@ Sur le client :
 - **corps bloqué** : le corps demande à bouger mais ne bouge pas.
 - **chute**, **projeté**, **à-coup** (une image de plus de 0,5 s ; toutes celles de plus de 0,25 s sont notées).
 - **tenue** : une tenue en double, un corps nu, une pièce équipée mais pas portée.
+- (27/11 après-midi) Une fenêtre faite pour s'ouvrir sur une autre (l'entrée du tournoi et PLAYERS ONLINE sur l'écran VS, CONTROLS sur tout) ne compte pas comme « menus ensemble » (`W.OVERLAYS`). « corps bloqué » et « corps nu » ne se regardent qu'au village (`W.VILLAGE`) : en duel, sur le tableau ou en spectateur, le corps est un combattant que le serveur déplace.
 
 Sur le serveur :
 - chaque commande du profil (achat, équipement, choix, apprentissage), avec les Ryō avant et après ;
 - un paiement pris deux fois ;
 - des Ryō faux ;
-- les lignes rouges.
+- les lignes rouges ;
+- (27/11 après-midi) **refus muet** : une demande envoyée par un bouton qui a répondu, refusée par le serveur sans un mot au joueur (`H.SILENT` : pour l'instant `Tournament.start`).
 
 Les coups de rue (`_G.NDHumanWatch.fists(secondes, graine)`) passent par le code du client du jeu (`HubFightClient:press`, ce que son clic appelle), au rythme d'un joueur : rafales de légers, un lourd de temps en temps, une esquive, des pauses. Les mains de Studio ne les déclenchent pas (voir plus bas).
 
@@ -146,3 +148,16 @@ Préparation par le serveur, notée dans le journal :
    - Une seule tenue et un seul jeu de pièces sur le corps, ceux équipés (image `14`).
    - Le second clic de BUY tombe sur la case derrière (« NEED 595 MORE »), qui répond sans rien acheter.
    - Avec la nouvelle tenue, une dernière course avec des coups ne fait rien tomber.
+
+## Le 27/11 après-midi : prodige, deux joueurs, tournoi complet
+
+François : « Prodige, deux joueurs, tournoi complet ». Place `_prochaine` `ac418a18` (avant les correctifs DESIGN `f68e504e`), clavier AZERTY du Mac. Mesures : `mesures/2026-11-27c_ac418a18/` (journal transcrit à la main depuis l'export compact, rapport, 18 captures).
+
+- **Tournoi complet** (Play solo, 24 min) : entrée avec un kit verrouillé (refusée sans un mot), puis THE AVENGER avec 35 points ; quart 2-0 et demi 2-0 joués par le robot de duel (`NDDuelBot.playHere`, profil joueur), finale perdue 1-2 ; entre les matchs, les mains doublent ENTER, SKIP ×5, WATCH puis touches au hasard en spectateur, Tab, NEW TOURNAMENT, LEAVE.
+- **Prodige de rue** : courir vers THE UNTOUCHABLE, E deux fois (un seul défi), un duel aux mains au hasard puis deux revanches au robot de duel ; REMATCH puis BACK TO KONOHA 160 ms après.
+- **Deux joueurs** (`multiplayer_playtest`, 2 clients) : les mains de Studio jouent dans chaque client (`list_roblox_studios` montre une Studio par client ; un `K` envoyé à l'une et lu par le témoin de l'autre dit laquelle est laquelle). Défi par PLAYERS ONLINE pendant que l'autre est dans la boutique : spam de CHALLENGE, défi ignoré, refus par Backspace, redéfi trop tôt, acceptation par deux Entrée, duel en ligne aux mains des deux côtés, REMATCH contre BACK TO KONOHA.
+
+Ce qu'il faut savoir pour le refaire :
+- `eval_client_runtime` coupe à 25 s : attendre la fin d'un duel avec `wait_until` (`NDBotState=="done"`) et `get_request_status`.
+- Le robot de duel lit `current.human/bot` : il joue les duels contre l'IA ; en ligne, ce sont les mains (clics gauches + `chaos.py mash`).
+- `mash` n'a que des touches : le coup léger est le clic gauche, à envoyer en même temps par `user_mouse_input` (humeur `mashclicks`).

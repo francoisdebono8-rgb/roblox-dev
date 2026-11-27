@@ -60,6 +60,14 @@ W.STEPS=10
 W.KNOWN={"ContentId: ","failed to load","Animation Spoofer","AnalyticsService"}
 -- The menus: a visible frame of the HUD that covers the screen and has buttons.
 W.MENU_SIZE=.85
+-- (27/11 après-midi) Menus made to sit over another one: the tournament's entry
+-- and PLAYERS ONLINE are dialogs of the VS screen, CONTROLS (Tab) opens over anything. Not
+-- « menus ensemble » (a menu left open under a new one still is).
+W.OVERLAYS={CupEntry=true,["« CONTROLS »"]=true,["« PLAYERS ONLINE »"]=true}
+-- Where the body is the player's own avatar walked by his keys: the village
+-- (the character's parent). In a duel, on the bracket or watching, the body is a
+-- fighter the server moves: « corps bloqué » and « corps nu » are not checked.
+W.VILLAGE="Workspace"
 
 -- The journal outlives a new version of the witness sent into the same Play
 -- (start(true) begins a fresh one).
@@ -134,7 +142,12 @@ local function state()
 	local c=player.Character
 	local r=c and c:FindFirstChild("HumanoidRootPart")
 	return {stage=player:GetAttribute("NinjaIntro"),kit=player:GetAttribute("NinjaKit"),menus=menuNames(),
-		mouse=UIS.MouseBehavior.Name,at=r and {r1(r.Position.X),r1(r.Position.Y),r1(r.Position.Z)} or nil}
+		mouse=UIS.MouseBehavior.Name,at=r and {r1(r.Position.X),r1(r.Position.Y),r1(r.Position.Z)} or nil,
+		place=c and c.Parent and c.Parent.Name or "-"}
+end
+local function inVillage()
+	local c=player.Character
+	return c~=nil and c.Parent~=nil and c.Parent.Name==W.VILLAGE
 end
 local function steps()
 	local out={}
@@ -228,7 +241,8 @@ local function cloth(equipped)
 	local ids=holders[1] and holders[1]:GetAttribute("NinjaOutfit") or ""
 	local stage=player:GetAttribute("NinjaIntro")
 	-- the arrival is in his own clothes; after the gate he always wears a top and a bottom
-	if stage==nil or stage=="done" then
+	-- (in the village: elsewhere the body is a fighter, see W.VILLAGE)
+	if (stage==nil or stage=="done") and inVillage() then
 		if #holders==0 then bug("corps nu","sans tenue",{})
 		elseif #folders==0 and ids~="" then bug("corps nu","tenue sans pièces",{ids=ids}) end
 	end
@@ -248,11 +262,11 @@ end
 
 local function sweepMenus()
 	local list=W.menus()
-	if #list>=2 then
-		local n={}
-		for _,m in list do table.insert(n,m.name) end
-		table.sort(n)
-		bug("menus ensemble",table.concat(n," + "),{})
+	local stacked={}
+	for _,m in list do if not W.OVERLAYS[m.name] then table.insert(stacked,m.name) end end
+	if #stacked>=2 then
+		table.sort(stacked)
+		bug("menus ensemble",table.concat(stacked," + "),{})
 	end
 	local vp=workspace.CurrentCamera.ViewportSize
 	-- AbsolutePosition starts under Roblox's top bar (a HUD that ignores the
@@ -327,7 +341,7 @@ function W.start(fresh)
 			local flat=Vector3.new(v.X,0,v.Z).Magnitude
 			-- the body asked to move (W and S held together ask nothing): the Humanoid's own direction
 			local walking=hum.MoveDirection.Magnitude>.5
-			if walking and open==0 and not r.Anchored and hum.WalkSpeed>0 and flat<.5 then
+			if walking and open==0 and not r.Anchored and hum.WalkSpeed>0 and flat<.5 and inVillage() then
 				still+=dt
 				if still>W.STUCK then
 					bug("corps bloqué",string.format("%d,%d",math.floor(r.Position.X/8)*8,math.floor(r.Position.Z/8)*8),{at={r1(r.Position.X),r1(r.Position.Y),r1(r.Position.Z)},speed=hum.WalkSpeed,state=hum:GetState().Name})

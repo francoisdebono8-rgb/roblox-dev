@@ -22,7 +22,7 @@ local function short(s) return (tostring(s or ""):gsub(" @%%-?%%d+,%%-?%%d+","")
 local bugs={}
 for _,x in j.bugs do
  local st={} for _,s in x.steps do table.insert(st,{t=s.t,k=s.kind=="in" and s.key or s.kind,on=s.on and short(s.on) or nil}) end
- table.insert(bugs,{kind=x.kind,key=x.key,count=x.count,t=x.t,stage=x.state and x.state.stage,menus=x.state and x.state.menus,mouse=x.state and x.state.mouse,detail=x.detail,steps=st})
+ table.insert(bugs,{kind=x.kind,key=x.key,count=x.count,t=x.t,stage=x.state and x.state.stage,menus=x.state and x.state.menus,mouse=x.state and x.state.mouse,place=x.state and x.state.place,detail=x.detail,steps=st})
 end
 local hitches,ev,clicks,keys,acts={}, {},0,0,0
 for _,r in j.rows do
@@ -51,8 +51,9 @@ MEANING = {
     "tenue fausse": "une pièce équipée qui n'est pas portée",
     "payé deux fois": "un paiement pris deux fois pour la même chose",
     "Ryō faux": "des Ryō négatifs ou impossibles",
+    "refus muet": "un bouton qui répond, une demande que le serveur refuse sans rien dire au joueur",
 }
-ORDER = ["erreur rouge", "erreur rouge (serveur)", "payé deux fois", "Ryō faux", "tenue en double", "corps nu",
+ORDER = ["erreur rouge", "erreur rouge (serveur)", "payé deux fois", "Ryō faux", "refus muet", "tenue en double", "corps nu",
          "tenue fausse", "clic mort", "souris bloquée", "menus ensemble", "hors écran", "texte coupé",
          "corps bloqué", "chute", "projeté", "à-coup"]
 # What a street blow met (Server/HubFight.land), for a human.
@@ -62,14 +63,31 @@ STREET = {"nil": "rien (dans le vide)", "world": "le décor", "broke": "une cais
 FELT = 0.4
 
 
+# Menus made to sit over another (NDHumanWatch W.OVERLAYS): the tournament's
+# entry and PLAYERS ONLINE over the VS screen, CONTROLS (Tab) over anything.
+OVERLAYS = {"CupEntry", "« CONTROLS »", "« PLAYERS ONLINE »"}
+# Where the body is his own avatar walked by his keys (NDHumanWatch W.VILLAGE).
+VILLAGE = "Workspace"
+
+
 def false_positive(bug):
     """The witness's own mistakes of the first versions of 27/11, fixed since: a button
     of a list that scrolls is not out of the screen; an id "…None" or the hair colour
-    wears no piece."""
+    wears no piece; a dialog over its screen is not two menus; in a duel, on the
+    bracket or watching, the body is a fighter the server moves, not his avatar."""
     detail = bug.get("detail") or {}
-    if bug.get("kind") == "hors écran" and "ScrollingFrame" in (detail.get("path") or ""):
+    if not isinstance(detail, dict):
+        detail = {}
+    kind = bug.get("kind")
+    if kind == "hors écran" and "ScrollingFrame" in (detail.get("path") or ""):
         return True
-    if bug.get("kind") == "tenue fausse" and (str(detail.get("equipped", "")).endswith("None") or bug.get("key") == "hairColor"):
+    if kind == "tenue fausse" and (str(detail.get("equipped", "")).endswith("None") or bug.get("key") == "hairColor"):
+        return True
+    if kind == "menus ensemble":
+        names = [n.strip() for n in str(bug.get("key", "")).split(" + ")]
+        if len([n for n in names if n not in OVERLAYS]) < 2:
+            return True
+    if kind in ("corps nu", "corps bloqué") and bug.get("place") not in (None, VILLAGE):
         return True
     return False
 
@@ -138,6 +156,28 @@ def report(mesure):
     lines.append(f"Images longues : {h['felt']} de {FELT} s ou plus (la plus longue {h['max']} s)"
                  + (f", une toutes les {h['every']} s en moyenne." if h["every"] else "."))
     lines.append("")
+    duels = mesure.get("duels") or []
+    if duels:
+        lines.append("## Les duels")
+        lines.append("")
+        lines.append("| quoi | contre | qui tenait la manette | résultat |")
+        lines.append("|---|---|---|---|")
+        for d in duels:
+            lines.append(f"| {d.get('what')} | {d.get('vs')} | {d.get('pilot')} | {d.get('wins')} |")
+        lines.append("")
+    two = mesure.get("deux_joueurs")
+    if two:
+        lines.append("## Deux joueurs")
+        lines.append("")
+        for step in two.get("steps", []):
+            lines.append(f"- {step}")
+        lines.append("")
+        for who, c2 in (two.get("clients") or {}).items():
+            kept = grouped(c2.get("bugs", []))
+            felt = hitches(c2.get("hitches", []))["felt"]
+            found = "; ".join(f"{kind} : " + ", ".join(f"{b.get('key')} ×{b.get('count', 1)}" for b in bugs) for kind, bugs in kept) or "aucun bug"
+            lines.append(f"- {who} : {c2.get('clicks', 0)} clics, {c2.get('keys', 0)} touches, {felt} images de {FELT} s ou plus ; {found}.")
+        lines.append("")
     if cmds:
         lines.append("Le serveur : " + ", ".join(f"{r['cmd']} {'ok' if r.get('ok') else 'refusé (' + str(r.get('result')) + ')'}" for r in cmds) + ".")
     return "\n".join(lines)

@@ -7,6 +7,9 @@
 --   Ryō below zero or above the purse        -> « Ryō faux »
 --   a command refused, then the same one at once accepted (or the reverse):
 --   kept as rows; the report counts the refusals by reason.
+--   (27/11 après-midi) a request the screen sent and the server refused
+--   without a word to the player (a method of H.SILENT returning false: the
+--   tournament entered with a kit he does not own)  -> « refus muet »
 --
 -- A server module, injected in a Play of the game's place (DEC-052):
 --   python3 tools/robots/inject.py --server humanserver   (eval_server_runtime)
@@ -29,6 +32,10 @@ local function now() return math.floor((os.clock()-t0)*100)/100 end
 H.KNOWN={"ContentId: ","failed to load","AnalyticsService","Animation Spoofer"}
 -- Commands that cost something: the same paid twice in this time (s) is a double payment.
 H.TWICE=3
+-- Server methods that answer a click and return false when they refuse it,
+-- with nothing sent to the player: {module, method}. Wrapped on the module's
+-- table (the instances find them through __index).
+H.SILENT={{"Tournament","start"}}
 
 local function P() return require(Server.Progression) end
 local function wallet(player)
@@ -72,6 +79,23 @@ function H.start()
 		end
 		return ok,result
 	end
+	for _,pair in H.SILENT do
+		local okModule,mod=pcall(require,Server:FindFirstChild(pair[1]))
+		local name=pair[2]
+		if okModule and type(mod)=="table" and type(mod[name])=="function" and not mod["_nd"..name] then
+			local orig=mod[name]
+			mod["_nd"..name]=orig
+			mod[name]=function(self,player,...)
+				local res=table.pack(orig(self,player,...))
+				if res[1]==false then
+					local first=select(1,...)
+					table.insert(H.rows,{t=now(),kind="refus",who=player and player.Name,cmd=pair[1].."."..name,args=short(first),ok=false,result=short(res[2] or "sans raison")})
+					bug("refus muet",pair[1].."."..name..":"..short(first),{why=short(res[2] or "sans raison")})
+				end
+				return table.unpack(res,1,res.n)
+			end
+		end
+	end
 	table.insert(conns,LogService.MessageOut:Connect(function(msg,kind)
 		if kind~=Enum.MessageType.MessageError then return end
 		for _,k in H.KNOWN do if msg:find(k,1,true) then return end end
@@ -100,6 +124,11 @@ function H.read() return HttpService:JSONEncode({rows=H.rows,bugs=H.bugs}) end
 function H.stop()
 	local Prog=P()
 	if Prog._ndRun then Prog.run=Prog._ndRun;Prog._ndRun=nil end
+	for _,pair in H.SILENT do
+		local okModule,mod=pcall(require,Server:FindFirstChild(pair[1]))
+		local name=pair[2]
+		if okModule and type(mod)=="table" and mod["_nd"..name] then mod[name]=mod["_nd"..name];mod["_nd"..name]=nil end
+	end
 	for _,c in conns do c:Disconnect() end
 	conns={}
 	return "ok"

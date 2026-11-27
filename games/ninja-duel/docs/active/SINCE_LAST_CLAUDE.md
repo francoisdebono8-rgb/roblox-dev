@@ -75,6 +75,34 @@ François, après avoir joué : « regarde les têtes ça ne va pas, la tenue es
 - Avant que le joueur maîtrise un kit (maîtrise 800), sa course et son sprint sont maintenant ta course ninja serrée (`Lion.Run.F`, `Lion.Sprint`), dans Konoha comme en duel. C'est le choix de François : « course ninja nette ». Les courses `Novice.*` et `Trained.*` ne sont plus jouées ; leur marche, leurs sauts et leurs réceptions le restent. Si tu veux une course ninja propre à l'avatar, nomme-la `Avatar.Run.F` / `Avatar.Sprint` : le DEV la branchera à la place.
 - Les vêtements en mouvement : la superposition des deux tenues est corrigée. S'il reste des trous aux articulations (épaule, coude, genou) sur les pièces rigides par membre, c'est le prochain point à regarder.
 
+## INBOX-OUTILLEUR-HUMAIN3-20261127 — OUTILLEUR 27/11 après-midi : prodige, deux joueurs, tournoi complet
+
+Mesures : `tools/humanbot/mesures/2026-11-27c_ac418a18/` (journal, rapport avec 14 constats, 18 captures). Place `ac418a18` (avant `f68e504e`), clavier AZERTY. Aucune ligne rouge, aucun double paiement.
+
+- **DEV** :
+  1. Tournoi avec un kit verrouillé : `Tournament.start` refuse (owns faux) sans rien envoyer ; la page d'entrée s'est fermée, rien ne se passe (captures 18-20). Dire pourquoi, ou ne pas ouvrir l'entrée pour un kit verrouillé.
+  2. `Tournament.defaultBuild(fighter, own)` garde une liste vide (admise à 0 point) : NEW TOURNAMENT a donné « YOUR BUILD 0 / 100 » ; BEST BUILD passe par le même chemin (defaultBuild("Lion", ses nœuds) → 0 nœud sur le serveur).
+  3. Finaliste : `cupEnded` verse +150 Ryō et +60 maîtrise, mais `CupScreen` ne montre la prime qu'au champion (capture 30).
+  4. Défi entre deux joueurs du même serveur : `Lobby:accepted` → `pairHere` n'envoie aucun statut au défieur ; son bandeau « CHALLENGE SENT TO PLAYER1 • WAITING… » et CANCEL (inerte) restent pendant le duel et sur la victoire.
+  5. Le prodige de rue (THE UNTOUCHABLE, IA normal, kit sans nœud appris) a battu le robot de duel joueur 0-2 et 1-2, et les mains au hasard 0-2 ; le même robot l'a battu 2-0 en quart avec 35 points. Petit échantillon : à regarder avec l'équilibrage.
+  6. 19 images de 0,4 s ou plus en 24 min de Play solo (2,1 s au plus), 1 en 10 min sur les clients à deux.
+- **DESIGN** :
+  1. Le VS laisse choisir un kit verrouillé comme YOU ; l'étiquette YOU cache LOCKED (capture 17).
+  2. Finale perdue : « THE HARD WORKER ADVANCES » et « SEE WHO WINS IT • THE BRACKET » (capture 29).
+  3. LEAVE collé à SKIP sur le tableau, sans confirmation.
+  4. CONTROLS sur un clavier AZERTY : Move « WASD » en dur à côté de Dodge « A » (capture 33).
+  5. Un défi s'affiche par-dessus la boutique avec « ENTER ACCEPTS • BACKSPACE DECLINES » : Backspace y a refusé, deux Entrée ont accepté et validé READY sans choix du ninja. « WAIT A MOMENT BEFORE THE NEXT CHALLENGE » sans durée.
+  6. Re-vérifier en jeu tes correctifs `f68e504e` (non testés : la place jouée est `ac418a18`).
+  7. Les écrans de gain disent « … more: Naruto, Itachi, Kakashi will want to meet you » (captures 25, 29, 34) : `UI.luau` (ligne des maîtres à venir) prend `Fighters[master].Name` au lieu de `KitTexts.name`. Seul endroit vu avec les vrais noms.
+- **CM** : pour info, aucun clip de ce passage ne doit montrer ces écrans de gain tant que le 7 n'est pas corrigé.
+
+## INBOX-DESIGN-ARBRE-PEINT-20261127 — DESIGN 27/11 : les arbres peints, 18 images à envoyer
+
+François (10 h 35) : « y'a de l'idée mais c'est super moche, on ne voit pas que ça vient de vrais jeux ». Les arbres sont maintenant **peints** (lavis d'encre façon Ghost of Tsushima : parchemin, soleil rouge derrière la cime, tronc et branches au pinceau sec, nuages de pin) par `assets/ui/generate_tree.py`, sur les points exacts de `TreePanel.treeLayout` (`lune run tools/tree_layouts.luau` → `assets/ui/tree_layouts.json`). Les sceaux restent de l'UI posée dessus. Test Shop.spec « the painted trees match the seals' layout » : si la disposition change, il faut repeindre.
+
+- **DEV** : envoyer les 18 images `assets/ui/trees/<kit>_top.jpg` et `<kit>_bottom.jpg` (8 kits + `Ninja`, 1024 de large, moins de 1024 de haut) comme les icônes, et mettre leurs numéros dans `UIAssets.Ids.tree_<kit>_top/_bottom`. Tant qu'ils sont vides, le panneau garde l'arbre en cadres (fallback). Puis actualiser la place.
+- La branche Unlocks (et toute branche qui commence haut) part du tronc par une longue branche presque horizontale : à revoir à la prochaine passe si François la trouve raide.
+
 ## INBOX-DESIGN-ARBRE-20261127 — DESIGN 27/11 : l'arbre du kit dessiné comme un vrai arbre
 
 François : « Arbre du kit pas visuel… pas une vision d'un vrai arbre, inspire-toi d'arbres existants. » `src/Client/TreePanel.luau` : `Panel:drawTree` remplace la grille (drawRows/tile retirés). Racines = techniques de départ (carte du kit) dans la terre, un tronc en écorce, une branche par colonne qui monte palier après palier (I en bas, palier fermé sous un voile « OPENS AT MASTERY n »), sceaux ronds avec pictogramme (UIAssets), feuilles autour de ce qui est appris, la transformation en sceau rouge à la cime dans le feuillage. L'onglet NINJA utilise le même arbre sous les natures. Le panneau s'ouvre sur les racines. Contrats inchangés (`TreeView.layout`, `detail`, LearnNode/SetNode). Test pur : Shop.spec « the real tree » (toutes les clés placées, aucun chevauchement, paliers qui montent, cime en haut, 8 kits).
