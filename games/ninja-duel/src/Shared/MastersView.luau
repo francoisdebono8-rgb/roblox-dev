@@ -6,6 +6,7 @@
 local Masters=require(script.Parent.Masters)
 -- (DEC-043, CM) a prodigy is shown by the CM's title (Shared/KitTexts); Fighters[id].Name stays the key
 local KitTexts=require(script.Parent.KitTexts)
+local Banter=require(script.Parent.Banter)
 local V={}
 
 local function name(id)
@@ -121,11 +122,26 @@ function V.goal(kits)
 	-- Progression.view's `story`): the exam and the final before anything
 	-- else; the seals when no inspiration waits for him (the DESIGN's journal
 	-- will show the chapter itself)
+	-- (27/11) the CM's words (Banter.Goal, INBOX-CM-PASSE3-20261126)
 	local story=type(kits.story)=="table" and kits.story or nil
 	local kind=story and story.next and story.next.kind
-	if kind=="exam" then return goal("THE EXAM  •  WIN THE BRACKET",{"THE PROCTOR  •  "..HubMap.Proctor.place}) end
-	if kind=="final" then return goal("THE FINAL  •  THE ŌTSUTSUKI",{"HE WAITS  •  THE EXAM HALL"}) end
-	if kind=="weekly" then return goal("THE ŌTSUTSUKI IS BACK",{"HE WAITS  •  THE EXAM HALL"}) end
+	local words=type(Banter.Goal)=="table" and Banter.Goal or {}
+	local function said(key,head,sub,...)
+		local w=type(words[key])=="table" and words[key] or {}
+		local h=type(w.head)=="string" and w.head or head
+		local u=type(w.sub)=="string" and w.sub or sub
+		local ok,text=pcall(string.format,h,...)
+		local ok2,under=pcall(string.format,u,...)
+		return goal(if ok then text else head,{if ok2 then under else sub})
+	end
+	if kind=="exam" then
+		local w=type(words.exam)=="table" and words.exam or {}
+		local under=type(w.sub)=="string" and w.sub or "THE PROCTOR  •  %s"
+		local ok,sub=pcall(string.format,under,HubMap.Proctor.place)
+		return goal(type(w.head)=="string" and w.head or "THE EXAM  •  WIN THE BRACKET",{if ok then sub else "THE PROCTOR  •  "..HubMap.Proctor.place})
+	end
+	if kind=="final" then return said("final","THE FINAL  •  THE ŌTSUTSUKI","HE WAITS  •  THE EXAM HALL") end
+	if kind=="weekly" then return said("weekly","THE ŌTSUTSUKI IS BACK","HE WAITS  •  THE EXAM HALL") end
 	for _,id in Masters.Kits do
 		local m=kits.masters and kits.masters[id]
 		if m and m.ready and not (kits.owned and kits.owned[id]) then
@@ -133,7 +149,7 @@ function V.goal(kits)
 		end
 	end
 	if kind=="challenge" then
-		return goal(string.format("THE EIGHT SEALS  •  %d / %d",story.seals or 0,story.need or 8),{"THE EIGHT DARE YOU IN THE STREETS"})
+		return said("seals","THE EIGHT SEALS  •  %d / %d","THE EIGHT DARE YOU IN THE STREETS",story.seals or 0,story.need or 8)
 	end
 	return proctor
 end
