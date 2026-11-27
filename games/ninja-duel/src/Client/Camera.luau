@@ -120,8 +120,10 @@ function Camera.fadeWide(from,to,faded)
 		local copy=w.copy
 		if copy.Parent and not faded[copy] then
 			local size=copy.Size
-			if (copy.Position-mid).Magnitude<=reach+size.Magnitude/2 and Camera.segmentBox(from,to,copy.CFrame,size*Camera.WIDE_SHARE) then
-				fadeHit(w.box,faded);n+=1
+			if (copy.Position-mid).Magnitude<=reach+size.Magnitude/2 and Camera.segmentBox(from,to,copy.CFrame,if w.thin then size else size*Camera.WIDE_SHARE) then
+				-- (27/11) a scaffold, a rope (HubDress.THIN): itself alone
+				if w.thin or not w.box then faded[copy]=true else fadeHit(w.box,faded) end
+				n+=1
 			end
 		end
 	end

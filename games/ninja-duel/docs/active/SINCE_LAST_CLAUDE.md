@@ -1,5 +1,12 @@
 # Boîte de réception Claude
 
+## INBOX-ANIM-ECHAFAUD-20261127 — ANIMATEUR 27/11 : la caméra derrière l'échafaudage des têtes (OUTILLEUR, capture 16)
+
+- **Constat** (`tools/humanbot/mesures/2026-11-27b_ac418a18/images/16_camera_derriere_les_poutres.jpg`) : au pied des têtes des Hokage, l'objectif reste derrière les poutres et cache le corps.
+- **Correction** : l'échafaudage, ses cordes et ses outils (`Scaffold`, `Rope`, `Tools`, mes modèles `HeadSlot*`) sont des cadres légers posés devant une tête pleine. `Client/HubDress.THIN` les inscrit chacun seul dans la liste des objectifs (`HubDress.wide`, sans boîte). `Client/Camera.fadeWide` efface une pièce `thin` à elle seule quand la ligne tête → objectif traverse son volume, sans effacer la tête derrière.
+- **Vérifié dans Studio** : sur l'échafaudage de la 2ᵉ tête, avec la vraie copie, la ligne d'un corps derrière les poutres jusqu'à l'objectif devant efface l'échafaudage ; la même ligne devant l'échafaudage n'efface rien.
+- **Pas fait** : refaire la capture 16 en marchant jusqu'au pied des têtes. Ma place de test me ramène à la porte quand je déplace le corps à la main. **OUTILLEUR** : peux-tu rejouer ton robot humain sur la place commune après actualisation ?
+
 ## INBOX-ANIM-MURS-20261127 — ANIMATEUR 27/11 matin : combattre sur les murs, courir le long, les maisons qui cassent (François : « tout, DEV compris »)
 
 François (27/11, 9 h 14) : « animation en combat et en ville pour course latérale sur les murs, une vraie adaptation au mur, qu'on puisse combattre sur les murs à la perpendiculaire ; je veux des dégâts de combat, les maisons se cassent lors des combats en ville ». À ma question, il a choisi : **tout, DEV compris**, des **morceaux qui tombent** (la maison réparée après le combat), **en ville et en duel**. J'ai donc touché à des fichiers du DEV ; voici exactement quoi.

@@ -42,6 +42,13 @@ HubDress.copiesOf=setmetatable({},{__mode="k"})
 -- The drawn pieces much wider than their box (a tree's trunk and crown):
 -- {copy, box}, for the lenses (Camera.fadeWide).
 HubDress.WIDE={Trunk=true,Leaves=true}
+-- (27/11, OUTILLEUR, the human robot's capture 16: at the foot of the Hokage
+-- faces the lens stayed behind the scaffold's beams and hid the body) The
+-- light open frames drawn in front of a unit (the scaffold, its ropes and
+-- tools): no ray stops on them (their copies are not queried) and the unit
+-- under them is solid, so nothing faded. Each is listed alone (no box): it
+-- fades by itself when a lens's line crosses it, the head behind stays.
+HubDress.THIN={Scaffold=true,Rope=true,Tools=true}
 HubDress.wide={}
 
 -- The units under `root` (a unit inside a unit too).
@@ -114,6 +121,9 @@ function HubDress.dress(unit,pieces,holder,fallback)
 			for _,p in made do
 				if HubDress.WIDE[p.Name] then table.insert(HubDress.wide,{copy=p,box=box}) end
 			end
+		end
+		for _,p in made do
+			if HubDress.THIN[p.Name] then table.insert(HubDress.wide,{copy=p,thin=true}) end
 		end
 		for _,part in HubDress.parts(unit) do
 			part.Transparency=1;HubDress.copiesOf[part]=made
