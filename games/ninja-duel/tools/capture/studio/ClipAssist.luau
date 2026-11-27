@@ -1284,10 +1284,13 @@ function Assist.install(ctx,dev)
 	-- Nothing of F4 on screen during a take (request 11), from the very frame REC starts.
 	applyVisibility=function()
 		local rec=take~=nil
-		lineL.Visible=not rec or self.linesDuringRec;lineR.Visible=lineL.Visible
+		-- (DESIGN 27/11, passe commune 4) outside the tool, nothing of it: the
+		-- band's lines and the F4 badge show only while the tool is open
+		-- (F4 opens it), never in the common place's play
+		lineL.Visible=self.shown and (not rec or self.linesDuringRec);lineR.Visible=lineL.Visible
 		guides.Visible=self.guides and self.shown and not rec
 		panel.Visible=self.shown and (not rec or (self.panelDuringRec and not self.narrow))
-		chip.Visible=not self.shown and not rec
+		chip.Visible=false
 		counter.Visible=self.counterOn and (rec or self.shown)
 		syncMark.Visible=syncLeft>0
 	end

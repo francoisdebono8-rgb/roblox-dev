@@ -1173,4 +1173,35 @@ test("a branch as a tree: every seal placed, none overlapping, tiers climbing, n
 	assert(mine==2 and all==4 and can==1,"a branch's count")
 end)
 
+test("each node's move (passe commune 4): the technique it names, its clips in order, the still at the blow",function()
+	local Preview=H.load("Client/MovePreview")
+	local SkillTrees=H.load("Shared/SkillTrees")
+	local Authored=H.load("Client/AuthoredMotion")
+	assert(#Preview.techs({Item="WindCut"})==1 and Preview.techs({Effects={{"tech.MarkedBlade.Range","mul",1.2}}})[1]=="MarkedBlade","the node's technique")
+	assert(Preview.techs({Effects={{"def.Bodies.clone","set",true}}})[1]=="ShadowClone","the clone body")
+	local has=function(n) return n=="Leaf.RemoveWeights.Channel" or n=="Leaf.RemoveWeights.Release" or n=="Leaf.Heavy" end
+	local c=Preview.clips("Leaf",{Item="RemoveWeights"},has)
+	assert(#c==2 and c[1]=="Leaf.RemoveWeights.Channel" and c[2]=="Leaf.RemoveWeights.Release","the parts in order: "..table.concat(c,","))
+	assert(Preview.clips("Leaf",{Kind="stat"},has)[1]=="Leaf.Heavy","a number's node shows the kit's blow")
+	assert(#Preview.clips("Leaf",{Kind="stat"},function() return false end)==0,"nothing authored: the icon stays")
+	local len=function() return 1 end
+	local still,at=Preview.still(c,len)
+	assert(still=="Leaf.RemoveWeights.Release" and at==.5,"the still: the release's middle")
+	local clip,t=Preview.at(c,len,1.25)
+	assert(clip=="Leaf.RemoveWeights.Release" and math.abs(t-.25)<1e-6,"the loop's second clip")
+	assert(Preview.at(c,len,2.25)=="Leaf.RemoveWeights.Release","the breath holds the last frame")
+	assert(Preview.at(c,len,2.6)=="Leaf.RemoveWeights.Channel","the loop starts again")
+	-- the real trees: most nodes of every kit show a real move of that kit
+	local total,shown=0,0
+	for kitId,tree in SkillTrees do
+		if type(tree)=="table" and type(tree.Nodes)=="table" then
+			for _,node in tree.Nodes do
+				total+=1
+				if #Preview.clips(kitId,node,Authored.has)>0 then shown+=1 end
+			end
+		end
+	end
+	assert(total>0 and shown/total>=.9,string.format("only %d of %d nodes show a move",shown,total))
+end)
+
 print(string.format("NinjaDuel shop and Ryō (13/11): %d PASS",passed))

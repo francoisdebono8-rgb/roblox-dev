@@ -20,6 +20,9 @@ local TreeView=require(Shared.TreeView)
 local Fighters=require(Shared.Fighters)
 local KitTexts=require(Shared.KitTexts)
 local NinjaTree=require(Shared.NinjaTree)
+-- (passe commune 4) the move of each node, played by his avatar
+local okP,MovePreview=pcall(function() return require(script.Parent.MovePreview) end)
+if not okP then MovePreview=nil end
 local okA,UIAssets=pcall(function() return require(Shared.UIAssets) end)
 if not okA then UIAssets=nil end
 local Panel={}
@@ -134,7 +137,7 @@ function Panel.icon(node)
 end
 
 function Panel.new(kit,gui,send)
-	local self=setmetatable({kit=kit,send=send,tiles={},drawn={},scales={}},Panel)
+	local self=setmetatable({kit=kit,send=send,tiles={},drawn={},scales={},thumbs={}},Panel)
 	local P,create,frame,text,button,corner=kit.palette,kit.create,kit.frame,kit.text,kit.button,kit.corner
 	self.P=P
 	-- (DA v3, DESIGN validated 14/11; François 15/11: « c'était toujours les
@@ -199,21 +202,40 @@ function Panel.new(kit,gui,send)
 	corner(detail,4);ring(detail,3)
 	local DW=W-DETAIL_X-24
 	self.kicker=text(detail,"",UDim2.fromOffset(20,18),UDim2.fromOffset(DW-40,18),14,M.red,STRONG)
-	self.head=text(detail,"",UDim2.fromOffset(20,40),UDim2.fromOffset(DW-40,84),40,M.ink,kit.TITLE_FONT)
-	self.head.TextYAlignment=Enum.TextYAlignment.Top
-	self.shows=text(detail,"",UDim2.fromOffset(20,132),UDim2.fromOffset(DW-40,100),17,M.mid,kit.BODY_FONT)
-	self.shows.TextYAlignment=Enum.TextYAlignment.Top
-	-- (step 2) the technique a node unlocks, big: its pictogram and its name
-	self.unlock=frame(detail,UDim2.fromOffset(20,236),UDim2.fromOffset(DW-40,100),M.ink,0);corner(self.unlock,4)
-	self.unlock.Visible=false
-	self.unlockIcon=create("ImageLabel",self.unlock,{Position=UDim2.fromOffset(8,8),Size=UDim2.fromOffset(84,84),BackgroundTransparency=1,ScaleType=Enum.ScaleType.Fit})
-	text(self.unlock,"UNLOCKS",UDim2.fromOffset(102,10),UDim2.new(1,-110,0,18),14,M.red,STRONG)
-	self.unlockName=text(self.unlock,"",UDim2.fromOffset(102,30),UDim2.new(1,-110,0,62),34,M.cream,kit.TITLE_FONT)
-	self.unlockName.TextScaled=true
-	self.counter=text(detail,"",UDim2.fromOffset(20,344),UDim2.fromOffset(DW-40,56),15,M.brown,kit.BODY_FONT)
-	self.counter.TextYAlignment=Enum.TextYAlignment.Top
-	self.note=text(detail,"",UDim2.fromOffset(20,402),UDim2.fromOffset(DW-40,90),15,M.red,STRONG)
-	self.note.TextYAlignment=Enum.TextYAlignment.Top
+	self.head=text(detail,"",UDim2.fromOffset(20,40),UDim2.fromOffset(DW-40,64),40,M.ink,kit.TITLE_FONT)
+	self.head.TextYAlignment=Enum.TextYAlignment.Top;self.head.TextScaled=true
+	create("UITextSizeConstraint",self.head,{MaxTextSize=40,MinTextSize=18})
+	-- (DESIGN 27/11, passe commune 4) the move, played by his avatar in a
+	-- loop on a band of ink (Client/MovePreview); the technique's name on it
+	self.stage=frame(detail,UDim2.fromOffset(20,110),UDim2.fromOffset(DW-40,190),M.ink,0);corner(self.stage,4)
+	self.stage.ClipsDescendants=true
+	self.stageNone=text(self.stage,"",UDim2.fromOffset(0,70),UDim2.new(1,0,0,40),16,M.off,STRONG,Enum.TextXAlignment.Center)
+	-- (step 2) the technique a node unlocks: its name over the stage's foot
+	self.unlock=frame(self.stage,UDim2.new(0,0,1,-46),UDim2.new(1,0,0,46),M.ink,.15)
+	self.unlock.Visible=false;self.unlock.ZIndex=84
+	self.unlockIcon=create("ImageLabel",self.unlock,{Position=UDim2.fromOffset(8,5),Size=UDim2.fromOffset(36,36),BackgroundTransparency=1,ScaleType=Enum.ScaleType.Fit,ZIndex=85})
+	local unlockWord=text(self.unlock,"UNLOCKS",UDim2.fromOffset(52,4),UDim2.new(1,-60,0,14),12,M.red,STRONG);unlockWord.ZIndex=85
+	self.unlockName=text(self.unlock,"",UDim2.fromOffset(52,17),UDim2.new(1,-60,0,26),24,M.cream,kit.TITLE_FONT)
+	self.unlockName.TextScaled=true;self.unlockName.ZIndex=85
+	self.shows=text(detail,"",UDim2.fromOffset(20,310),UDim2.fromOffset(DW-40,84),17,M.mid,kit.BODY_FONT)
+	self.shows.TextYAlignment=Enum.TextYAlignment.Top;self.shows.TextScaled=true
+	create("UITextSizeConstraint",self.shows,{MaxTextSize=17,MinTextSize=11})
+	self.counter=text(detail,"",UDim2.fromOffset(20,398),UDim2.fromOffset(DW-40,44),15,M.brown,kit.BODY_FONT)
+	self.counter.TextYAlignment=Enum.TextYAlignment.Top;self.counter.TextScaled=true
+	create("UITextSizeConstraint",self.counter,{MaxTextSize=15,MinTextSize=10})
+	self.note=text(detail,"",UDim2.fromOffset(20,446),UDim2.fromOffset(DW-40,60),15,M.red,STRONG)
+	self.note.TextYAlignment=Enum.TextYAlignment.Top;self.note.TextScaled=true
+	create("UITextSizeConstraint",self.note,{MaxTextSize=15,MinTextSize=10})
+	-- the loop runs only while the page is open and a move is shown
+	pcall(function()
+		game:GetService("RunService").RenderStepped:Connect(function(dt)
+			local L=self.loop
+			if not L or not self.root.Visible or not MovePreview then return end
+			L.t+=dt
+			local clip,t=MovePreview.at(L.clips,MovePreview.Authored.length,L.t)
+			MovePreview.pose(L.frame,clip,t)
+		end)
+	end)
 	self.action=button(detail,"",UDim2.new(0,20,1,-80),UDim2.new(1,-40,0,60),function() self:press() end,M.red)
 	self.action.TextSize=26;self.action.Font=STRONG;self.action.Visible=false
 	self.actionRing=ring(self.action,3);self.actionRing.Enabled=false
@@ -302,6 +324,8 @@ function Panel:draw()
 		b.BackgroundColor3=if id==self.tab then self.M.ink else self.M.paper
 		b.TextColor3=if id==self.tab then self.M.cream else self.M.ink
 	end
+	-- (passe commune 4) the seals' stills are kept: taken out before the redraw
+	for _,f in self.thumbs do pcall(function() f.vp.Parent=nil end) end
 	for _,item in self.drawn do item:Destroy() end
 	self.drawn={};self.tiles={};self.scales={}
 	-- (fourth pass) the tree beside the branches' list
@@ -555,7 +579,18 @@ function Panel:seal(p,def)
 		Thickness=if st=="active" then 4 else 3,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
 	local icon=Panel.sealIcon(node,def)
 	local light=mine or (p.crown and not mine)
-	if icon and icon~="" then
+	-- (DESIGN 27/11, passe commune 4) the seal shows the move: his avatar at
+	-- its key frame (Client/MovePreview); the pictogram moves to a small badge
+	local thumb=self:thumb(b,node.id,r)
+	if thumb then
+		thumb.ImageTransparency=if faded then .5 else 0
+		if icon and icon~="" then
+			local badge=K.frame(b,UDim2.new(1,-14,1,-14),UDim2.fromOffset(20,20),if light then M.ink else M.paper,0);badge.ZIndex=83;K.corner(badge,10)
+			K.create("UIStroke",badge,{Color=M.ink,Thickness=1.5,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
+			K.create("ImageLabel",badge,{Image=icon,Size=UDim2.fromScale(.7,.7),Position=UDim2.fromScale(.15,.15),BackgroundTransparency=1,ScaleType=Enum.ScaleType.Fit,
+				ImageColor3=if light then M.cream else M.ink,ZIndex=84})
+		end
+	elseif icon and icon~="" then
 		K.create("ImageLabel",b,{Image=icon,Size=UDim2.fromScale(.56,.56),Position=UDim2.fromScale(.22,.22),BackgroundTransparency=1,ScaleType=Enum.ScaleType.Fit,
 			ImageColor3=if light then M.cream else M.ink,ImageTransparency=if faded then .55 else 0,ZIndex=81})
 	end
@@ -709,6 +744,54 @@ function Panel:drawNinja()
 	self:detail()
 end
 
+-- The still of a seal (kept across redraws), or nil: the icon stays.
+function Panel:thumb(b,id,r)
+	if not MovePreview then return nil end
+	local kitId=self:moveKit()
+	local key=self.tab..":"..tostring(kitId)..":"..tostring(id)
+	local f=self.thumbs[key]
+	if f==nil then
+		local node=self:moveNode(id)
+		f=node and MovePreview.thumb(nil,kitId,node) or false
+		self.thumbs[key]=f
+	end
+	if not f then return nil end
+	local vp=f.vp
+	vp.Size=UDim2.fromScale(1,1);vp.Position=UDim2.fromScale(0,0);vp.ZIndex=81
+	if not vp:FindFirstChildOfClass("UICorner") then local c=Instance.new("UICorner");c.CornerRadius=UDim.new(.5,0);c.Parent=vp end
+	vp.Parent=b
+	return vp
+end
+-- The kit whose body plays: the page's kit; on the NINJA tab, his kit.
+function Panel:moveKit()
+	if self.tab=="ninja" then return self.kits and self.kits.selected or self.kitId end
+	return self.kitId
+end
+function Panel:moveNode(id)
+	if self.tab=="ninja" then
+		for _,n in NinjaTree.Nodes do if n.Id==id then return n end end
+		return nil
+	end
+	return TreeView.node(self.kitId,id)
+end
+-- The stage: the picked (or pointed) node's move in a loop.
+function Panel:stageFor(id)
+	if not MovePreview or not MovePreview.Authored then self.stageNone.Text="";return end
+	local kitId=self:moveKit()
+	local node=id and self:moveNode(id)
+	local clips=node and MovePreview.clips(kitId,node,MovePreview.Authored.has) or {}
+	local key=tostring(kitId)..":"..table.concat(clips,",")
+	if self.loop and self.loop.key==key then return end
+	if self.loop and self.loop.frame then self.loop.frame.vp:Destroy() end
+	self.loop=nil
+	self.stageNone.Text=if not node then "" elseif #clips==0 then "NO MOVE TO SEE: A NUMBER CHANGES" else ""
+	if #clips==0 then return end
+	local f=MovePreview.frame(self.stage,true)
+	if not f then self.stageNone.Text="";return end
+	f.vp.Size=UDim2.fromScale(1,1);f.vp.ZIndex=83
+	self.loop={key=key,clips=clips,frame=f,t=0}
+	MovePreview.pose(f,clips[1],0)
+end
 -- `shown`: a seal under the pointer (told, not picked); else the picked one.
 function Panel:detail(shown)
 	local ninja=self.tab=="ninja"
@@ -716,11 +799,13 @@ function Panel:detail(shown)
 	local d=id and (if ninja then Panel.ninjaDetail(self:ninjaView() or NinjaTree.view(nil,0),id) else TreeView.detail(self.kitId,self:state(),id))
 	-- (step 2) the technique it unlocks, big
 	local node=if not ninja and id then TreeView.node(self.kitId,id) else nil
+	self:stageFor(id)
 	self.unlock.Visible=node~=nil and node.Unlock~=nil
 	if self.unlock.Visible then
 		self.unlockName.Text=if node.Unlock=="Awakening" then Text.upper(node.Name) else techName(Fighters[self.kitId],node.Unlock)
 		self.unlockIcon.Image=Panel.icon(node) or ""
 	end
+	self.stage.Visible=id~=nil
 	if not d then self.kicker.Text="";self.head.Text="";self.shows.Text="";self.counter.Text="";self.note.Text="";self.action.Visible=false;return end
 	local pieces={}
 	for piece in string.gmatch(d.head,"[^•]+") do table.insert(pieces,(string.gsub(piece,"^%s*(.-)%s*$","%1"))) end

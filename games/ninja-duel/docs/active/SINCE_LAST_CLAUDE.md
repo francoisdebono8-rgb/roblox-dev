@@ -139,6 +139,19 @@ Mesures : `tools/humanbot/mesures/2026-11-27d_0cd43300/` (rapport, 11 captures).
   2. **Aucune capture Claude** (capture_screenshot) pendant la prise : chacune fige l'image ~0,5 s.
   3. Qualité graphique fixe (le F4 dit 12 ; la place lit « Automatique »), « Préparer l'image » du F4, une seule Studio en Play.
   4. Les plus belles images vues : la course sur les toits au-dessus des ruelles (42), le joueur debout sur le mur de côté (38), la maison ouverte avec la fissure au sol (44). À éviter : le duel au fond d'une ruelle étroite (la caméra se colle aux murs).
+## INBOX-DESIGN-PASSE4-20261127 — DESIGN 27/11 soir : l'arbre qui montre le coup, le HUD qui laisse l'image, F4 caché
+
+Passe commune 4, section DESIGN. Fichiers DESIGN seulement (Client/HubClient, HubLayout, UI, TreePanel, nouveau Client/MovePreview ; tools/capture/studio/ClipAssist pour F4).
+
+- **L'arbre** : chaque sceau montre l'avatar du joueur figé au moment clé du coup du nœud ; le panneau de droite le joue en boucle (Channel → Release → Recover). Pas d'image uploadée : un ViewportFrame avec la copie du personnage, posée pièce par pièce depuis AuthoredMotion (l'avatar est joint par des AnimationConstraint, qu'un ViewportFrame ne résout pas). Nœud → technique : Unlock, Item, Effects `tech.X` / `def.Items.X`, `def.Bodies.clone`, sinon un coup du kit selon le Kind. Test : ≥ 90 % des nœuds des 8 kits ont un coup authored.
+- **Konoha en marche** : une fine barre en haut à gauche (Ryō • chapitre • NEXT) et une petite minimap en haut à droite. Le reste revient par **N** (pad : croix bas, tactile : bouton MENU dans la barre). Un nouvel objectif s'affiche en grand 5 s sous la barre puis seulement dans la barre. Les scènes de l'histoire se déclenchent toujours en marche (elles attendaient l'objectif visible).
+- **Duel** : le coach descend en bas au centre (UI.COACH_BOTTOM=56, la rangée de jutsu est à droite), le tissage des signes sous les pieds ; rien au centre ni sur les corps.
+- **H : écran propre, pour tout le monde** (UI:toggleClean) : cache tous les ScreenGui/BillboardGui du joueur sauf F4/F6, H les rend.
+- **F4** : les deux traits rouges et le badge n'apparaissent plus que quand l'outil est ouvert.
+
+Vérifié dans un Play de la copie LAB `NinjaDuel-P4-robots` (sources poussées puis remises à `0cd43300` après) : barre, menu N, H, coach en duel d'entraînement, arbre de Lee (miniatures + boucle Primary Lotus / Remove the Weights), F4. Observations de Claude, pas l'avis de François.
+
+**Au DEV** : rien à intégrer côté serveur. Pour le tournage du CM, la place commune doit être reconstruite après ce commit. `test_build_isolation.py` échoue (4 tests) avant comme après ce commit sur cette machine (profils debug/qa vs normal) : à regarder de ton côté.
 
 ## INBOX-ANIM-VOLPLANE-20261127 — ANIMATEUR 27/11 : le vol plané, premier des « vrais coups subis selon la situation » (François : « DEV compris »)
 

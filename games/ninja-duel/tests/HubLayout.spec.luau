@@ -174,6 +174,19 @@ test("Konoha's HUD: placed by the layout, the goal follows the player, touch and
 		for _,a in {"ChooseStarter","Start","Tutorial","First","SelectKit"} do assert(Matches.INTRO_REFUSED[a],"the way in lets "..a.." through") end
 		local new={state="ready",owned={},mastery={},masters={},needStarter=true,trees={},ryo=0,style={owned={},equipped={}}}
 		hub:render({phase="Selection",kits=new})
+		-- (passe commune 4) the walk: the thin bar only, the new goal's flash
+		-- under it; N brings back the boxes, N again clears them
+		assert(hub.bar.Visible and not hub.hud.Visible and not hub.shopBox.Visible,"the walk shows more than the thin bar")
+		assert(hub.goal.Visible and hub.goal.Position.Y.Offset<hub.bar.Position.Y.Offset+80,"the new goal's flash under the bar")
+		assert(string.find(hub.barText.Text,"NEXT: CHOOSE YOUR INSPIRATION",1,true),"the bar's target: "..hub.barText.Text)
+		hub.goalUntil=0;hub:showHud()
+		assert(not hub.goal.Visible,"the goal's flash stays")
+		for _,fn in began do fn({KeyCode=Enum.KeyCode.N},false) end
+		assert(hub.menuOpen and hub.hud.Visible and hub.shopBox.Visible and not hub.bar.Visible,"N opens the menu")
+		for _,fn in began do fn({KeyCode=Enum.KeyCode.N},false) end
+		assert(not hub.menuOpen and not hub.hud.Visible and hub.bar.Visible,"N closes the menu")
+		hub.menuButton.click()
+		assert(hub.menuOpen,"the MENU button opens the menu")
 		-- a laptop: the place box under Roblox's bar, the goal under the top row
 		assert(hub.hud.Visible and hub.hud.Position.Y.Offset==66 and hub.hud.Position.X.Offset==16,"the place box: "..tostring(hub.hud.Position))
 		assert(hub.goal.Visible and hub.goalHead.Text=="CHOOSE YOUR INSPIRATION","a new player's goal: "..hub.goalHead.Text)
@@ -281,6 +294,46 @@ test("the village's screen and the walk are two files: HubClient draws, HubMove 
 		assert(string.find(walk,word,1,true),"HubMove does not do "..word)
 	end
 	assert(not string.find(walk,"Instance.new",1,true),"HubMove draws something")
+end)
+
+test("the walk's screen (passe commune 4): a thin bar, a small minimap, the goal's flash, nothing in the middle",function()
+	for _,size in SIZES do for _,inset in INSETS do
+		local X,Y=size[1],size[2]
+		local o=L.compute(v(X,Y),inset,size[3])
+		inside(o.bar,X,Y,"bar",size);inside(o.flash,X,Y,"goal's flash",size)
+		assert(o.bar.y>=inset,"the bar under Roblox's top bar at "..X)
+		assert(o.bar.h<=L.BAR.h+.5,"the bar is not thin at "..X)
+		apart(o.bar,o.flash,"bar and goal's flash",size)
+		if o.mapSmall then
+			inside(o.mapSmall,X,Y,"small minimap",size)
+			apart(o.mapSmall,o.bar,"small minimap and bar",size)
+			apart(o.mapSmall,o.flash,"small minimap and goal's flash",size)
+			if o.run then apart(o.mapSmall,o.run,"small minimap and RUN",size) end
+			assert(o.mapSmall.w<(L.MAP-30)*o.scale,"the minimap is not smaller at "..X)
+		end
+		-- the view's middle third is the village's: no bar, no map, no flash in it
+		local mid={x=X/3+4,y=Y/3+4,w=X/3-8,h=Y/3-8}
+		for name,r in {bar=o.bar,flash=o.flash,map=o.mapSmall} do
+			if r then apart(r,mid,name.." and the view's middle",size) end
+		end
+	end end
+end)
+
+test("the bar's line and the clean screen (passe commune 4)",function()
+	local Hub=H.load("Client/HubClient")
+	local line=Hub.barText(240,"Chapter 2 • The tournament","Find Rock Lee","keys")
+	assert(string.find(line,"240",1,true) and string.find(line,"CHAPTER 2",1,true) and string.find(line,"NEXT: FIND ROCK LEE",1,true),line)
+	assert(string.find(line,"H HIDE",1,true),"the keys' bar says how to clear the screen")
+	assert(not string.find(Hub.barText(0,nil,"","touch"),"NEXT",1,true),"no target, no NEXT")
+	local UI=H.load("Client/UI")
+	local kids={{ClassName="ScreenGui",Name="NinjaDuelUI",Enabled=true},{ClassName="BillboardGui",Name="NinjaHubMarker",Enabled=true},
+		{ClassName="ScreenGui",Name="ClipAssistPanel",Enabled=true},{ClassName="ScreenGui",Name="Off",Enabled=false},{ClassName="Folder",Name="X"}}
+	local hidden=UI.cleanTargets(kids)
+	assert(#hidden==2 and hidden[1].Name=="NinjaDuelUI" and hidden[2].Name=="NinjaHubMarker","the clean screen hides the game's screens, not F4's: "..#hidden)
+	-- the duel: the coach and the seals at the bottom, never at the bodies' height
+	local src=require("@lune/fs").readFile("src/Client/UI.luau")
+	assert(not string.find(src,"UDim2.new(.5,0,.66,0)",1,true),"the coach still sits on the fighters")
+	assert(UI.COACH_BOTTOM and UI.COACH_BOTTOM<=200,"the coach's caption sits at the bottom")
 end)
 
 print(string.format("NinjaDuel Konoha HUD layout: %d PASS",passed))

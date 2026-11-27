@@ -33,6 +33,7 @@ local GuiService=game:GetService("GuiService")
 local UIS=game:GetService("UserInputService")
 local Tween=game:GetService("TweenService")
 local UI={}; UI.__index=UI
+UI.COACH_BOTTOM=56    -- (passe commune 4) the coach's caption: low in the middle, the jutsu row is on the right
 local palette={
 	ink=Color3.fromRGB(16,15,20),panel=Color3.fromRGB(28,26,32),paper=Color3.fromRGB(240,232,212),
 	text=Color3.fromRGB(240,236,226),muted=Color3.fromRGB(170,164,150),red=Color3.fromRGB(190,40,36),
@@ -220,6 +221,46 @@ function UI:coachPrompt(tut,data)
 		self.coachScale.Scale=.82
 		pcall(function() game:GetService("TweenService"):Create(self.coachScale,TweenInfo.new(.18,Enum.EasingStyle.Back,Enum.EasingDirection.Out),{Scale=1}):Play() end)
 	end
+end
+
+-- (DESIGN 27/11, passe commune 4) H: the clean screen. Every screen of the
+-- game under PlayerGui hides (the HUD, Konoha's bar, the names over the
+-- masters), the filming tool's own (F4) stays; H again brings back what was
+-- shown. A short « H: SCREEN BACK » shows for two seconds on its own layer.
+UI.CLEAN_KEEP={NinjaCleanToast=true,ClipAssistPanel=true,NinjaDuelDevPanel=true}
+function UI.cleanTargets(children,keep)
+	keep=keep or UI.CLEAN_KEEP
+	local out={}
+	for _,g in children do
+		if (g.ClassName=="ScreenGui" or g.ClassName=="BillboardGui") and g.Enabled and not keep[g.Name] then table.insert(out,g) end
+	end
+	return out
+end
+function UI:toggleClean()
+	local Players=game:GetService("Players")
+	local pg=Players.LocalPlayer and Players.LocalPlayer:FindFirstChildOfClass("PlayerGui")
+	if not pg then return end
+	if self.cleanHidden then
+		for _,g in self.cleanHidden do pcall(function() g.Enabled=true end) end
+		self.cleanHidden=nil
+	else
+		self.cleanHidden=UI.cleanTargets(pg:GetChildren())
+		for _,g in self.cleanHidden do g.Enabled=false end
+	end
+	-- the toast, its own layer (outside the hidden screens)
+	local toast=pg:FindFirstChild("NinjaCleanToast")
+	if not toast then
+		toast=Instance.new("ScreenGui");toast.Name="NinjaCleanToast";toast.ResetOnSpawn=false;toast.DisplayOrder=120;toast.IgnoreGuiInset=true
+		local t=Instance.new("TextLabel");t.Name="Line";t.AnchorPoint=Vector2.new(.5,1);t.Position=UDim2.new(.5,0,1,-18);t.Size=UDim2.fromOffset(260,30)
+		t.BackgroundColor3=MANGA.ink;t.BackgroundTransparency=.25;t.TextColor3=MANGA.paper;t.Font=Enum.Font.GothamBold;t.TextSize=15;t.Parent=toast
+		local c=Instance.new("UICorner");c.CornerRadius=UDim.new(0,6);c.Parent=t
+		toast.Parent=pg
+	end
+	local line=toast:FindFirstChild("Line")
+	if line then line.Text=if self.cleanHidden then "CLEAN SCREEN  •  H: SCREEN BACK" else "SCREEN BACK" end
+	toast.Enabled=true
+	local stamp=os.clock();self.cleanStamp=stamp
+	task.delay(2,function() if self.cleanStamp==stamp and toast.Parent then toast.Enabled=false end end)
 end
 
 -- (DESIGN 20/11) the rank line, from the server's ranked duel (Shared/Ranked:
@@ -866,7 +907,8 @@ function UI.new(parent,send)
 		row.TextScaled=true;create("UITextSizeConstraint",row,{MaxTextSize=15})
 		self.sealRows[i]=row
 	end
-	self.sealWeave=text(self.hud,"",UDim2.new(.5,-260,.6,0),UDim2.fromOffset(520,64),44,palette.paper,BODY_FONT,Enum.TextXAlignment.Center)
+	-- (passe commune 4) under the fighters' feet, not across their bodies
+	self.sealWeave=text(self.hud,"",UDim2.new(.5,-260,1,-UI.COACH_BOTTOM-150),UDim2.fromOffset(520,64),44,palette.paper,BODY_FONT,Enum.TextXAlignment.Center)
 	create("UIStroke",self.sealWeave,{Color=palette.ink,Thickness=3,ApplyStrokeMode=Enum.ApplyStrokeMode.Contextual})
 	-- The control sheet (first seconds of a duel, and the tutorial): bottom
 	-- left over the status line, clear of the jutsu cards.
@@ -1035,6 +1077,8 @@ function UI.new(parent,send)
 		UIS.InputBegan:Connect(function(input,processed)
 			if processed then return end
 			if input.KeyCode==Enum.KeyCode.Tab or input.KeyCode==Enum.KeyCode.ButtonStart then self:toggleControls() end
+			-- (DESIGN 27/11, passe commune 4) H: a clean screen, for everyone
+			if input.KeyCode==Enum.KeyCode.H then self:toggleClean() end
 		end)
 	end)
 	-- ---------------------------------------------------------------- wipe
@@ -1064,8 +1108,10 @@ function UI.new(parent,send)
 	-- caption — the key on a paper keycap, what to do in the title font on an
 	-- ink band, a red brush stroke under it. Done: a red « NICE! » stamp, and
 	-- it goes. The line comes from the CM (Server/Coach, FirstMinute.Touch).
-	local coach=frame(self.hud,UDim2.new(.5,0,.66,0),UDim2.fromOffset(620,86),MANGA.ink,0)
-	coach.AnchorPoint=Vector2.new(.5,.5);coach.Rotation=-1.5;coach.Visible=false;coach.ZIndex=40;coach.Name="Coach"
+	-- (DESIGN 27/11, passe commune 4: « en duel, rien au centre ni sur les
+	-- corps ») at the bottom centre (the jutsu row is on the right), under the fighters
+	local coach=frame(self.hud,UDim2.new(.5,0,1,-UI.COACH_BOTTOM),UDim2.fromOffset(560,78),MANGA.ink,0)
+	coach.AnchorPoint=Vector2.new(.5,1);coach.Rotation=0;coach.Visible=false;coach.ZIndex=40;coach.Name="Coach"
 	self.coachScale=create("UIScale",coach,{Scale=1})
 	local brush=frame(coach,UDim2.new(.12,0,1,2),UDim2.new(.76,0,0,8),MANGA.red,0);brush.ZIndex=39;corner(brush,4)
 	local cap=frame(coach,UDim2.fromOffset(14,12),UDim2.fromOffset(150,62),MANGA.paper,0);cap.ZIndex=41

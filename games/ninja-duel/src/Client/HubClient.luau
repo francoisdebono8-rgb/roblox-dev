@@ -99,6 +99,20 @@ function Hub.new(ui,camera,send,controls)
 	self.goalSub=K.text(self.goal,"",UDim2.fromOffset(14,38),UDim2.new(1,-28,0,24),18,M.cream,STRONG)
 	self.goalSub.TextWrapped=false;self.goalSub.TextScaled=true
 	K.create("UITextSizeConstraint",self.goalSub,{MaxTextSize=20,MinTextSize=10})
+	-- (DESIGN 27/11, passe commune 4: « l'interface ne gêne plus l'image ») In a
+	-- walk, one thin ink bar top left (Ryō, chapter, next target) and the MENU
+	-- button that brings back the boxes (N, the pad's down). The new goal shows
+	-- big for a few seconds under it, then only in the bar.
+	self.menuOpen=false;self.goalUntil=0
+	self.bar=K.frame(ui.gui,UDim2.fromOffset(16,44),UDim2.fromOffset(HubLayout.BAR.w,HubLayout.BAR.h),M.ink,.12)
+	self.bar.Visible=false;self.bar.ZIndex=20;K.corner(self.bar,6)
+	self.barScale=K.create("UIScale",self.bar,{Scale=1})
+	local barBrush=K.frame(self.bar,UDim2.fromOffset(0,0),UDim2.new(0,5,1,0),M.red,0);barBrush.ZIndex=21
+	self.barText=K.text(self.bar,"",UDim2.fromOffset(14,0),UDim2.new(1,-132,1,0),17,M.cream,STRONG)
+	self.barText.ZIndex=21;self.barText.TextScaled=true;self.barText.TextWrapped=false;self.barText.RichText=true
+	K.create("UITextSizeConstraint",self.barText,{MaxTextSize=17,MinTextSize=9})
+	self.menuButton=K.button(self.bar,"MENU  N",UDim2.new(1,-112,0,3),UDim2.new(0,108,1,-6),function() self:toggleMenu() end,M.red)
+	self.menuButton.TextColor3=M.cream;self.menuButton.TextSize=16;self.menuButton.Font=STRONG;self.menuButton.ZIndex=22
 	-- The Ryō on paper, DUELS in ink, SHOP in red, top right.
 	self.shopBox=K.frame(ui.gui,UDim2.new(1,-300,0,18),UDim2.fromOffset(HubLayout.SHOP.w,HubLayout.SHOP.h),M.paper,1)
 	self.shopBox.Visible=false;self.shopBox.ZIndex=20
@@ -265,6 +279,8 @@ function Hub.new(ui,camera,send,controls)
 		local key=input.KeyCode
 		if (key==Enum.KeyCode.ButtonR1 or (key==Enum.KeyCode.B and not processed)) and not self.panelOpen and not self.card.Visible then
 			self:openBoard()
+		elseif (key==Enum.KeyCode.N and not processed or key==Enum.KeyCode.DPadDown) and not self.panelOpen and not self.card.Visible then
+			self:toggleMenu()
 		elseif key==Enum.KeyCode.ButtonL3 and not self.panelOpen then
 			self.move:toggleRun();self:paintRun()
 		elseif key==Enum.KeyCode.ButtonY and not self.panelOpen and not self.card.Visible and not Hub.inIntro() then
@@ -308,15 +324,16 @@ function Hub:layout()
 	local function at(gui,r) gui.Position=UDim2.fromOffset(math.floor(r.x+.5),math.floor(r.y+.5)) end
 	at(self.hud,L.hud);self.hudScale.Scale=L.scale
 	at(self.shopBox,L.shop);self.shopScale.Scale=L.scale
-	self.mapRoom=L.map~=nil
-	if self.map and L.map then self.map:place(L.map.x,L.map.y,L.map.scale or L.scale) end
-	if self.mapButton then self.mapButton.Visible=not self.mapRoom end
-	at(self.goal,L.goal);self.goalScale.Scale=L.scale
-	self.goal.Size=UDim2.fromOffset(L.goal.w/L.scale,L.goal.h/L.scale)
+	self.goalScale.Scale=L.scale
 	-- narrow: the places one a line under the head (Hub:refreshHud)
 	self.goalSub.Size=UDim2.new(1,0,0,if L.goal.stack then HubLayout.GOAL.stackH-34 else 22)
 	self.goalSub.TextWrapped=L.goal.stack==true
 	if self.goalSubText then self:refreshHud() end
+	if L.bar then
+		at(self.bar,L.bar);self.barScale.Scale=L.scale
+		self.bar.Size=UDim2.fromOffset(L.bar.w/L.scale,L.bar.h/L.scale)
+	end
+	self:placeTop()
 	at(self.card,L.card);self.cardScale.Scale=L.card.scale
 	if L.keys then
 		at(self.keys,L.keys);self.keys.Size=UDim2.fromOffset(L.keys.w,L.keys.h);self.keys.TextSize=math.max(11,math.floor(14*L.scale+.5))
@@ -406,9 +423,10 @@ function Hub:journal()
 		pip.BackgroundColor3=if j and j.seals and i<=j.seals then self.ui.kit.MANGA.red else self.ui.kit.MANGA.ink
 	end
 	-- a scene not yet seen, never in a fight: only while he walks, nothing open
+	-- (passe commune 4: the walk shows the thin bar, the goal only for a moment)
 	local scene=player:GetAttribute("NinjaStoryScene")
 	if scene and scene~="" and self.story and not self.story:shown() and self.story.done~=scene
-		and self.goal.Visible and not self:anyPanel() then
+		and (self.goal.Visible or self.bar.Visible) and not self:anyPanel() then
 		self.story.onHide=function() self:apply() end
 		self.story:play(scene,j and j.tab)
 	end
@@ -446,6 +464,27 @@ function Hub:apply()
 		camera.FieldOfView=70
 	end
 end
+-- (DESIGN 27/11, passe commune 4) Where the goal and the minimap sit: the
+-- menu open, the full stack (Client/HubLayout); closed, the goal's flash under
+-- the thin bar and the small minimap top right.
+function Hub:placeTop()
+	local L=self.lay
+	if not L then return end
+	local open=self.menuOpen==true
+	local g=if open or not L.flash then L.goal else L.flash
+	self.goal.Position=UDim2.fromOffset(math.floor(g.x+.5),math.floor(g.y+.5))
+	self.goal.Size=UDim2.fromOffset(g.w/L.scale,g.h/L.scale)
+	local m=if open or not L.mapSmall then L.map else L.mapSmall
+	self.mapRoom=m~=nil
+	if self.map and m then self.map:place(m.x,m.y,m.scale or L.scale) end
+	if self.mapButton then self.mapButton.Visible=open and L.map==nil end
+end
+function Hub:toggleMenu(on)
+	if on==nil then on=not self.menuOpen end
+	self.menuOpen=on==true
+	self:placeTop()
+	self:showHud()
+end
 -- What of the HUD shows (no controls, no camera: Hub:refreshHud calls it
 -- four times a second).
 function Hub:showHud()
@@ -460,10 +499,14 @@ function Hub:showHud()
 	local intro=false
 	pcall(function() intro=Players.LocalPlayer:GetAttribute("NinjaIntro")~=nil end)
 	local village=walking and not intro
-	self.hud.Visible=village and not talking;self.keys.Visible=walking and not touch
-	self.goal.Visible=village and self.goalHead.Text~="" and not self.card.Visible
+	-- (DESIGN 27/11, passe commune 4) the boxes behind the menu; the thin bar
+	-- otherwise; the goal while the menu is open or for a few seconds when new
+	local menu=self.menuOpen==true
+	self.hud.Visible=village and not talking and menu;self.keys.Visible=walking and not touch and (menu or intro)
+	self.bar.Visible=village and not talking and not panel and not menu
+	self.goal.Visible=village and self.goalHead.Text~="" and not self.card.Visible and (menu or intro or os.clock()<(self.goalUntil or 0))
 	self.runButton.Visible=walking and touch and not panel
-	self.shopBox.Visible=village and not talking and self.kits~=nil and self.ui.shopPanel~=nil
+	self.shopBox.Visible=village and not talking and menu and self.kits~=nil and self.ui.shopPanel~=nil
 	if self.map then self.map:setVisible(village and not talking and not panel and self.mapRoom~=false) end
 	local c8=self.kits and self.kits.challenges8
 	self.eightButton.Text=if c8 then string.format("THE 8   %d / %d BEATEN",c8.count or 0,c8.need or 8) else "THE 8"
@@ -638,21 +681,34 @@ function Hub:refreshHud(position)
 	self.kitLabel.Text=kitLine
 	self.ryoLabel.Text=tostring(kits and kits.ryo or 0)
 	self.goalSubText=goal.sub
+	-- (passe commune 4) a new goal: big for five seconds, then in the bar
+	if goal.head~=self.goalHead.Text and goal.head~="" then self.goalUntil=os.clock()+5 end
 	self.goalHead.Text=goal.head
 	self.goalSub.Text=if self.lay and self.lay.goal.stack then table.concat(goal.items,"\n") else goal.sub
 	self:journal()
-	self:showHud()
 	local input=self:input()
+	self.barText.Text=Hub.barText(kits and kits.ryo or 0,self.chapter.Visible and self.chapter.Text or nil,goal.head,input)
+	self.menuButton.Text=if input=="pad" then "MENU  ↓" elseif input=="touch" then "MENU" else "MENU  N"
+	self:showHud()
 	self.keys.Text=Hub.keysText(input,Hub.inIntro())
 	self.cardFoot.Text=if input=="pad" then "B: CLOSE" elseif input=="touch" then "✕ OR WALK AWAY TO CLOSE" else "E: TALK  •  WALK AWAY TO CLOSE"
 end
 
+-- (pure, passe commune 4) The thin bar's line: the Ryō, the chapter, the next
+-- target; with keys, how to clear the screen.
+function Hub.barText(ryo,chapter,head,input)
+	local parts={string.format("RYŌ <font color=\"#F0786E\">%d</font>",tonumber(ryo) or 0)}
+	if chapter and chapter~="" then table.insert(parts,Text.upper(chapter)) end
+	if head and head~="" then table.insert(parts,"NEXT: "..Text.upper(head)) end
+	if input=="keys" then table.insert(parts,"H HIDE") end
+	return table.concat(parts,"   •   ")
+end
 -- (pure) The keys' banner: in the way in (the forest), no shop, no duels.
 function Hub.keysText(input,intro)
 	if input=="pad" then
-		return if intro then "L3 RUN  •  A TWICE: LEAP  •  X TALK" else "L3 RUN  •  A TWICE: LEAP  •  X TALK  •  Y SHOP  •  R1 DUELS"
+		return if intro then "L3 RUN  •  A TWICE: LEAP  •  X TALK" else "L3 RUN  •  A TWICE: LEAP  •  X TALK  •  Y SHOP  •  R1 DUELS  •  ↓ MENU"
 	end
-	return if intro then "SHIFT RUN  •  SPACE TWICE: LEAP  •  E TALK" else "SHIFT RUN  •  SPACE TWICE: LEAP  •  E TALK  •  B DUELS"
+	return if intro then "SHIFT RUN  •  SPACE TWICE: LEAP  •  E TALK" else "SHIFT RUN  •  SPACE TWICE: LEAP  •  E TALK  •  B DUELS  •  N MENU  •  H HIDE"
 end
 local TAG={open={"",nil},loading={"…",nil},starter={"START HERE","gold"},starterLocked={"LATER","muted"},
 	owned={"YOUR KIT","paper"},master={"READY FOR YOU","gold"},locked={"LOCKED","muted"}}
@@ -744,7 +800,7 @@ function Hub:refreshMarkers()
 	end
 	for key,marker in self.markers do
 		if marker then
-			marker.gui.Enabled=self.active and not self.board
+			marker.gui.Enabled=self.active and not self.board and not self.ui.cleanHidden
 			if marker.id then
 				local status=self:status(marker.id)
 				local tag=TAG[status] or TAG.locked

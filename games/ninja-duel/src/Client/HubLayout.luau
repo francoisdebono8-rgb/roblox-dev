@@ -20,6 +20,11 @@ L.CARD={w=490,h=380}    -- a master's card
 L.RUN=14                -- the gap between the touch RUN and jump buttons
 L.ROW=600               -- the goal shares the top row when it gets this much
 L.WIDE=1100             -- a narrower window centres the master's card
+-- (DESIGN 27/11, passe commune 4: « l'interface ne gêne plus l'image ») In a
+-- walk, one thin bar (Ryō, chapter, next target) and a small minimap; the
+-- boxes above come back behind the MENU key or button.
+L.BAR={w=860,h=34}      -- the thin bar, top left
+L.SMALL=.62             -- the minimap's scale while the menu is closed
 
 -- Roblox's touch jump button (PlayerModule, TouchJump): 70 px on a small
 -- screen (its short side 500 or less), 120 otherwise, anchored bottom right.
@@ -74,6 +79,30 @@ function L.compute(viewport,insetY,touch)
 		end
 	else
 		out.map={x=m,y=out.goal.y+out.goal.h+10,w=(L.MAP-30)*s,h=L.MAP*s,scale=s}
+	end
+	-- (DESIGN 27/11, passe commune 4) the menu closed: the thin bar top left,
+	-- the minimap small top right (under the bar where they would meet), the
+	-- new goal for a few seconds under the bar, left of the minimap.
+	do
+		local ss=s*L.SMALL
+		local mw,mh=(L.MAP-30)*ss,L.MAP*ss
+		local bw=math.min(L.BAR.w*s,X-2*m)
+		out.bar={x=m,y=top,w=bw,h=L.BAR.h*s}
+		out.mapSmall={x=X-m-mw,y=top,w=mw,h=mh,scale=ss}
+		if L.overlap(out.bar,out.mapSmall) or out.bar.x+out.bar.w+10>out.mapSmall.x then
+			out.mapSmall.y=top+out.bar.h+8
+		end
+		local fy=top+out.bar.h+8
+		local fw=math.min(out.goal.w,out.mapSmall.x-10-m)
+		if fw<200 then fy=out.mapSmall.y+out.mapSmall.h+8;fw=math.min(out.goal.w,X-2*m) end
+		-- (never into the view's middle third: narrower where it would reach it)
+		if fy+out.goal.h>Y/3 and m+fw>X/3 and X/3-m-8>=170 then fw=X/3-m-8 end
+		out.flash={x=m,y=fy,w=fw,h=out.goal.h,stack=true}
+		if touch then
+			-- (the touch MENU button lives in the bar; the jump button stays clear)
+			local jump=L.jump(viewport)
+			if out.mapSmall.y+out.mapSmall.h>jump.y-8 then out.mapSmall=nil end
+		end
 	end
 	-- The master's card: on the right of a wide window (the village stays in
 	-- view), centred on a narrow one or with touch controls (clear of the
