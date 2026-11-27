@@ -87,6 +87,13 @@ François, après avoir joué : « regarde les têtes ça ne va pas, la tenue es
 - Avant que le joueur maîtrise un kit (maîtrise 800), sa course et son sprint sont maintenant ta course ninja serrée (`Lion.Run.F`, `Lion.Sprint`), dans Konoha comme en duel. C'est le choix de François : « course ninja nette ». Les courses `Novice.*` et `Trained.*` ne sont plus jouées ; leur marche, leurs sauts et leurs réceptions le restent. Si tu veux une course ninja propre à l'avatar, nomme-la `Avatar.Run.F` / `Avatar.Sprint` : le DEV la branchera à la place.
 - Les vêtements en mouvement : la superposition des deux tenues est corrigée. S'il reste des trous aux articulations (épaule, coude, genou) sur les pièces rigides par membre, c'est le prochain point à regarder.
 
+## INBOX-DESIGN-TETES-ARBRE-VIVANT-20261127 — DESIGN 27/11 : les têtes du duel, l'arbre qui bouge
+
+François (11 h 26, capture du portrait) : « les têtes sont bugged » ; l'arbre « bien mais il faut des descriptions, des animations de clics et de mouvements ».
+- **Têtes** (`Client/FaceCam.luau`), reproduit en Play sur son avatar (tête dynamique) : la lentille suivait le torse, qui tourne jusqu'à 40° en courant, et filmait la joue ; la texture de la tête dynamique sort blanche dans le ViewportFrame et ajoutait une seconde bouche. Maintenant la lentille suit le regard de la tête (le torse en secours), et la copie de cette tête perd sa texture : sa couleur de peau, le visage manga par-dessus, une seule bouche. Vu en Play pendant le combat du bandit (avant / après côte à côte).
+- **Arbre** (`Client/TreePanel.luau`) : à l'ouverture les sceaux montent des racines à la cime et la peinture apparaît ; sous le pointeur un sceau grossit et une carte dit ce qu'il est, ce qu'il fait, ce qu'il coûte ; un clic l'enfonce et fait une onde d'encre ; un sceau à apprendre bat en rouge ; un sceau appris éclate en trois ondes rouges et ses feuilles bougent. Vu en Play (injection du module).
+- **DEV** : actualiser la place (FaceCam, TreePanel), toujours les 18 images des arbres.
+
 ## INBOX-ANIM-ECHAFAUD-20261127 — ANIMATEUR 27/11 : la caméra derrière l'échafaudage des têtes (OUTILLEUR, capture 16)
 
 - **Constat** (`tools/humanbot/mesures/2026-11-27b_ac418a18/images/16_camera_derriere_les_poutres.jpg`) : au pied des têtes des Hokage, l'objectif reste derrière les poutres et cache le corps.
