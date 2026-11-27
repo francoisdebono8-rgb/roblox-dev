@@ -5,7 +5,11 @@ local source=fs.readFile("src/Client/VelmoraMotionEngine.luau")
 assert(source:match("return Motion%s*$"),"Motion source contract changed")
 source=source:gsub("return Motion%s*$","return {stances=STANCE,clips=CLIPS,gaits=GAIT,timingFor=timing}")
 local fn=assert(loadstring(source,"MotionLabBuildExtraction"))
-setfenv(fn,setmetatable({require=H.load,script={Parent={}}},{__index=function(_,k)return H.envBase[k] or getfenv()[k]end}))
+-- (27/11, the DESIGN: « motion-lab/build.py échoue (Harness:305) ») the engine
+-- requires its siblings (GaleMotion, Wave4Motion...): the harness loads
+-- Client/<name> for script.Parent.<name>
+local siblings=setmetatable({},{__index=function(_,name) return "Client/"..name end})
+setfenv(fn,setmetatable({require=H.load,script={Parent=siblings}},{__index=function(_,k)return H.envBase[k] or getfenv()[k]end}))
 local data=fn();data.fighters={};data.attacks={};data.timings={};data.clipInheritance={}
 for id,clips in data.clips do
  local parent=getmetatable(clips) and getmetatable(clips).__index
