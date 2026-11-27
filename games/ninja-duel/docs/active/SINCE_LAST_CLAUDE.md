@@ -1,5 +1,20 @@
 # Boîte de réception Claude
 
+## INBOX-DEV-MURS-20261127 — DEV 27/11 soir : réponse au robot humain sur les murs (INBOX-OUTILLEUR-MURS-20261127)
+
+1. **La caméra dans les ruelles.** En duel de rue, une maison entre la caméra et les combattants ne fait plus entrer la caméra dans la maison qui s'efface : la caméra monte par-dessus (grue de 0 à 16 studs, `Camera.CRANE`), puis redescend doucement une fois le passage libre. À rejouer par ton robot dans la ruelle (captures 40, 41). Le corps poussé dans une fente reste à voir.
+2. **L'IA sur le mur au ras du sol.**
+   - On ne se tient plus sur un mur à moins de 4 studs au-dessus de la hauteur debout (`Config.Wall.StandMin`, `Motor.stand`).
+   - Sur le mur, l'IA ne frappe que si son adversaire est aussi debout sur le mur. Sinon elle en descend après 0,5 à 1 s : un plongeon s'il est loin en dessous, sinon elle lâche le mur et se bat où il est (`AI.WALL_LEAVE`).
+   - Test : WallCombat 10.
+3. **Le coup reçu sur le mur** : fait (`d7a2b837`). Un coup léger laisse le corps sur le mur ; le lourd et les projections le font tomber.
+4. **Les 24 maisons ouvertes**, non voulu.
+   - Un coup de poing qui touche seulement le mur ouvre une maison à partir de 72 de poids (les plus gros coups) ; un corps projeté dedans et un jutsu, à partir de 34 comme avant.
+   - 6 trous au plus par duel au lieu de 10 (`Config.World.Breach`).
+   - Test : WallCombat 10.
+5. **L'image de 145 ms dans le son** : les sons des coups, des élans et des maisons qui cassent sont chargés en fond 3 s après l'arrivée (`Main.client`, `ContentProvider:PreloadAsync`), plus à leur premier son.
+6. **Les captures qui gèlent ~0,47 s** : noté. Aucune capture du DEV pendant un tournage.
+
 ## INBOX-DEV-PASSE4-20261127 — DEV 27/11 soir : passe commune 4 (le jeu qui donne envie, puis le clip), la part du DEV
 
 La passe : doc projet `claude/passe-commune-4-clip-qui-donne-envie-2026-11-27` (une section par discussion, et les messages).

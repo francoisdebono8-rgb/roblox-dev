@@ -744,6 +744,10 @@ function WorldReaction.impact(c,hit)
 	w.stats.impacts+=1
 	if energy<TUNE.MinEnergy then return nil end
 	if profile.breach then
+		-- (27/11, the OUTILLEUR's robot: 24 houses opened in two duels, 16 by
+		-- the bot's blows that only met a wall) a house opens to a body thrown
+		-- into it and to a jutsu; a blow of the fist only when it is huge
+		if hit.strike and energy<Config.World.Breach.StrikeEnergy then return nil end
 		local hole=WorldReaction.breach(c,part,hit.position,hit.normal or Vector3.zAxis,energy,hit.direction)
 		return {class=rec.class,scar=if hole then "breach" else nil,wear=0,state=rec.state,broken=false,breach=hole}
 	end
@@ -902,7 +906,7 @@ function WorldReaction.strike(c,a,pending)
 	local heavy=Config.World.HeavyKinds[spec.kind or ""] or spec.reaction=="Knockdown" or spec.reaction=="Launched"
 	local energy=(spec.damage or 4)*TUNE.StrikeEnergy*(if heavy then 1.6 else 1)
 	return WorldReaction.impact(c,{part=hit.Instance,position=hit.Position,normal=hit.Normal,energy=energy,contact=contact,
-		element=(declared and declared.element) or spec.element,direction=look,source=a.id})
+		element=(declared and declared.element) or spec.element,direction=look,source=a.id,strike=true})
 end
 -- A burning (or otherwise elemental) zone marks the ground under it.
 function WorldReaction.zone(c,position,radius,element)

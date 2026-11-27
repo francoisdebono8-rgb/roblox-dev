@@ -106,7 +106,10 @@ return {
 		-- blow of Energy or more (a body thrown into it, a heavy, a jutsu): a
 		-- hole Min..Max studs across (Grow per energy past it), at most Count
 		-- holes in a duel (the oldest goes).
-		Breach = {Energy = 34, Min = 3.2, Max = 7, Grow = 1/22, Count = 10}},
+		-- StrikeEnergy (27/11): a blow of the fist that only meets a house opens
+		-- it from this weight on (a body thrown in, a jutsu: from Energy); at
+		-- most Count holes a duel
+		Breach = {Energy = 34, StrikeEnergy = 72, Min = 3.2, Max = 7, Grow = 1/22, Count = 6}},
 	-- Ninja Embodiment (Server/Perception): the space a body reads around a
 	-- fight. Behind: how far past the target (or behind itself) a surface
 	-- counts; Scan: how far around the target the nearest surface is looked
@@ -205,7 +208,9 @@ return {
 		-- (the ninja tree's Wall Runner lengthens it); the guard, the strings
 		-- and the heavy are fought there. StandEnter: how straight into the
 		-- wall the stick must be to stick.
-		StandSpeed = 17, StandTime = 8, StandEnter = 0.3, StandFace = 40},
+		-- StandMin (27/11): studs above standing height a body must be to
+		-- stand on a wall (below it, at the foot, it does not)
+		StandSpeed = 17, StandTime = 8, StandEnter = 0.3, StandFace = 40, StandMin = 4},
 	RequestRate = 40, RequestBurst = 48, SnapshotInterval = 0.033,
 	-- (27/11, François: « la course est trop rapide », slower everywhere) the
 	-- duel's sprint 42, no longer 45 (Lee's, the fastest: 50.4, no longer 54).

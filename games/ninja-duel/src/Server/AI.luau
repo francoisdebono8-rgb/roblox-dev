@@ -501,6 +501,8 @@ end
 -- Chidori) keeps the others' variety: not a third time in Technique[2] s, and
 -- never more than half of the jutsu he has thrown (three allowed). Sasuke's
 -- Chidori came out 4 times of 7 once the fights ran a little longer.
+-- (27/11) how long the bot stays standing on a wall while its opponent is not
+AI.WALL_LEAVE=.5
 function AI:hogs(id)
 	local n=(self.techCounts and self.techCounts[id]) or 0
 	return n>=3 and n+1>((self.techTotal or 0)+1)*.5
@@ -701,15 +703,25 @@ function AI:update(now)
 		a.move=Vector3.zero
 		local gap=(target.root.Position-a.root.Position).Magnitude
 		local swinging=target.state=="Startup" or target.state=="Active"
-		if a.state=="Neutral" and gap<=5.5 then
+		-- (27/11, the OUTILLEUR's robot on the walls: the bot stood on a wall
+		-- at the ground's height up to 8 s, striking the air at a body below
+		-- or on an awning) the string up there only at an opponent who stands
+		-- on the wall too; him elsewhere, it comes down soon: a dive at him
+		-- far below, else it drops off the wall and fights where he is
+		if a.state=="Neutral" and target.wall and gap<=5.5 then
 			if swinging and self.rng:NextNumber()<.35 then
 				c:request(a,"Guard");self.guardUntil=now+.35
 			elseif self.rng:NextNumber()<.5 then
 				c:request(a,if self.rng:NextNumber()<.2 then "Heavy" else "Attack")
 			end
-		elseif a.state=="Neutral" and not target.wall and now-self.wallSince>1.4 and self.rng:NextNumber()<.04 then
-			c:request(a,if self.rng:NextNumber()<.6 then "Attack" else "Jump")
+		elseif a.state=="Neutral" and not target.wall then
+			self.wallLeaveAt=self.wallLeaveAt or (now+AI.WALL_LEAVE+self.rng:NextNumber()*.5)
+			if now>=self.wallLeaveAt then
+				local below=a.root.Position.Y-target.root.Position.Y
+				if below>9 and gap<=Config.Wall.DiveRange then c:request(a,"Attack") else c:request(a,"WallDetach") end
+			end
 		end
+		if target.wall then self.wallLeaveAt=nil end
 		if now>=self.guardUntil and a.state=="Guarding" then c:request(a,"GuardOff") end
 		return
 	end
@@ -729,7 +741,7 @@ function AI:update(now)
 		end
 		return
 	end
-	self.wallSince=nil
+	self.wallSince=nil;self.wallLeaveAt=nil
 	if self.wallRun and now<self.wallRun and a.state=="Neutral" and not a.reaction then
 		a.move=(outward+tangent*.25).Unit;a.sprinting=true
 		return

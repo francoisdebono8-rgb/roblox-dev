@@ -141,6 +141,9 @@ function Camera.keepHidden(faded,mine)
 	end
 	return out
 end
+-- (27/11, passe 4) the heights a street duel's lens may rise to over a house
+-- in its way (Camera:update)
+Camera.CRANE={0,4,8,12,16}
 function Camera.new()
 	-- (DEC-031, user 03/11: "on est sur du Storm total") Free by default:
 	-- the mouse turns the lens, SHIFT locks on.
@@ -722,6 +725,24 @@ function Camera:update(data,dt)
 	local effects=folder and folder:FindFirstChild("Effects");if effects then table.insert(exclude,effects) end
 	local fx=workspace:FindFirstChild("NinjaDuelFX");if fx then table.insert(exclude,fx) end
 	ray.FilterDescendantsInstances=exclude
+	-- (27/11, passe 4, the OUTILLEUR's robot: a street duel down an alley, the
+	-- lens stuck to the facades, went into the house that faded and lost both
+	-- bodies) In a street, a lens a house stands in the way of rises over it
+	-- (a crane, Camera.CRANE) before it comes in or fades the house; it comes
+	-- down again slowly once the way is clear.
+	if data.site and data.site.street and not data.spectate then
+		local up=Camera.CRANE[#Camera.CRANE]
+		for _,k in Camera.CRANE do
+			local spot=desired+Vector3.new(0,k,0)
+			local blocked=workspace:Raycast(focus,spot-focus,ray)
+			if not blocked or blocked.Distance>(spot-focus).Magnitude*.9 then up=k;break end
+		end
+		local was=self.crane or 0
+		self.crane=was+(up-was)*(1-math.exp(-dt*(if up>was then 7 else 1.5)))
+		desired+=Vector3.new(0,self.crane,0)
+	else
+		self.crane=nil
+	end
 	-- Fighting-space props (slabs, cover, posts, platforms) never shove the lens
 	-- into the player's back: the camera looks through them and they fade.
 	-- Only the floor and the bowl's boundary still stop the lens.

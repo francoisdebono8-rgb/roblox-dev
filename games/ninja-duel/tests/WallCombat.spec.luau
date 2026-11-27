@@ -131,6 +131,16 @@ test("a house's wall breaks through under a heavy blow, the hole grows, a light 
 	end
 	assert(#WorldReaction.state(c).breaches<=Config.World.Breach.Count,"too many holes")
 	assert(wall.Parent==stage,"an old hole took the wall with it")
+	-- (27/11, the OUTILLEUR's robot: 16 houses opened by the bot's blows that
+	-- only met a wall) a fist's blow opens a house only when it is huge; a
+	-- body thrown in (the same weight) does
+	local c2={match={folder=stage},now=0,pushImpact=function() end}
+	local fist=WorldReaction.impact(c2,{part=wall,position=Vector3.new(1,9,6),normal=Vector3.new(1,0,0),energy=51,contact="blunt",strike=true})
+	assert(not (fist and fist.breach),"a heavy fist that only met the wall opened the house")
+	local body=WorldReaction.impact(c2,{part=wall,position=Vector3.new(1,9,6),normal=Vector3.new(1,0,0),energy=51,contact="blunt"})
+	assert(body and body.breach,"a body thrown into the house did not open it")
+	local huge=WorldReaction.impact(c2,{part=wall,position=Vector3.new(1,4,-7),normal=Vector3.new(1,0,0),energy=Config.World.Breach.StrikeEnergy,contact="blunt",strike=true})
+	assert(huge and huge.breach,"the biggest blow did not open the house")
 end)
 
 test("what flies out of the hole: plaster, boards, tiles from high up, more for a bigger hole",function()
@@ -183,6 +193,32 @@ test("a body thrown in a street goes past the ring to the houses; the arena's ed
 	assert(math.abs(q.X-39)<1e-3,"a body past the ring was pulled back onto it")
 	c.match.radius=nil;c.match.site=nil
 	assert(c:reach()==arena,"the arena's edge moved")
+end)
+
+-- (27/11, the OUTILLEUR's robot on the walls: the bot stood on a wall at the
+-- ground's height up to 8 s, striking the air) standing on a wall is up it;
+-- and the bot comes down soon when its opponent is not up there with it
+test("no stand at the foot of a wall; the bot comes down when its opponent is not on the wall",function()
+	local c,a,b=onWall()
+	assert(a.wall and a.wall.mode=="stand","no stand")
+	assert(a.root.Position.Y>=c.match.origin.Y+3+Config.Wall.StandMin,"it stood lower than StandMin")
+	-- at the foot: refused
+	local wall=a.wall
+	local saved=a.root.CFrame
+	a.root.CFrame=CFrame.new(a.root.Position.X,c.match.origin.Y+3.5,a.root.Position.Z)
+	wall.mode="climb"
+	assert(Motor.stand(a,c,c.now,{Instance=wall.part,Normal=wall.normal})==false,"it stood at the foot of the wall")
+	a.root.CFrame=saved;wall.mode="stand"
+	-- the bot on the wall, its opponent on the ground beside it: it comes down
+	local AI=H.load("Server/AI")
+	a.playerInput=false
+	local brain=AI.new(c,a,3)
+	brain.openedAt=-math.huge -- (past an easy bot's opening beat)
+	b.wall=nil;c:relocate(b,V.new(4,3,3))
+	local t=0
+	while a.wall and t<3 do brain:update(c.now);H.step(c,.05);t+=.05 end
+	assert(not a.wall,"the bot stayed on the wall "..t.." s while its opponent was on the ground")
+	assert(t<2.5,"the bot stayed "..t.." s on the wall")
 end)
 
 print(("WallCombat: %d passed"):format(passed))

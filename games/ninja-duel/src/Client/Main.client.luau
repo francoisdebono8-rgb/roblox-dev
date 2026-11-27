@@ -115,6 +115,21 @@ local hubClient=nil
 -- (26/11, passe 3, AMB-001) the music and the street's ambience
 local soundscape=nil
 pcall(function() soundscape=require(script.Parent.Soundscape).new():start() end)
+-- (27/11, passe 4, the OUTILLEUR's robot: a 145 ms frame in a street duel,
+-- all of it in the sound engine, the first time a house broke) The sounds of
+-- the blows, the swings and the houses breaking are loaded once, early, in
+-- the background, not on their first play.
+task.delay(3,function()
+	local ids={}
+	local function add(id) if type(id)=="string" and string.find(id,"^rbxassetid://") and not table.find(ids,id) then table.insert(ids,id) end end
+	pcall(function() for _,id in require(script.Parent.HouseBreakFX).SOUND do add(id) end end)
+	pcall(function() local S=require(script.Parent.StrikeSoundFX);add(S.Whoosh.id);add(S.Swish.id) end)
+	pcall(function() for _,spec in require(script.Parent.HubFightClient).SOUNDS do add(if type(spec.id)=="number" then "rbxassetid://"..spec.id else spec.id) end end)
+	local list={}
+	for _,id in ids do local s=Instance.new("Sound");s.SoundId=id;table.insert(list,s) end
+	pcall(function() game:GetService("ContentProvider"):PreloadAsync(list) end)
+	for _,s in list do s:Destroy() end
+end)
 -- (27/11, passe 3) the street duel's edge, drawn on the ground (Client/StreetRing)
 local streetRing=nil
 pcall(function() streetRing=require(script.Parent.StreetRing).new() end)

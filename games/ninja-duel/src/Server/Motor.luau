@@ -100,6 +100,9 @@ end
 function Motor.stand(a,c,now,hit)
 	local wall=a.wall
 	if not wall then return false end
+	-- (27/11, the OUTILLEUR's robot: a body stood on a wall at the ground's
+	-- height, y ≈ 3.5, for 8 s) standing on a wall is up it: not at the foot
+	if a.root.Position.Y<c.match.origin.Y+3+Config.Wall.StandMin then return false end
 	wall.mode="stand";wall.startAt=now
 	wall.untilTime=now+Config.Wall.StandTime*(wall.long or 1)
 	wall.part=hit.Instance;wall.normal=hit.Normal;wall.tangent=nil;wall.side=nil

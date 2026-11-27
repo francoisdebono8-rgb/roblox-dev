@@ -11,6 +11,13 @@
   - Konoha et la forêt : 30 au sol au lieu de 36, mesuré 28,8 en course. En l'air, le saut porte toujours à 36 (`HubMove.AIR_RUN`) : les toits que relie le plan du village restent atteints.
   - Le duel : le sprint passe à 42 au lieu de 45 (Lee : 50,4 au lieu de 54). Descendre plus bas casse le réglage des bots : à 40, ils ne feintent plus en entrant (Regression) et Lee n'utilise plus ses routes (Lee) ; à 38, Neji n'atteint plus Naruto pour ses 64 Paumes (AIVariety). Pour aller plus lent, il faut d'abord régler l'IA. Le Chidori formé à distance suit maintenant les règles de variété des autres jutsu (`AI:hogs`), car il sortait 4 fois sur 7 à 38.
   - Avant que son kit ait sa propre course (maîtrise 800), son avatar court la course ninja nette de l'ANIMATEUR (`Lion.Run.F`, `Lion.Sprint`), dans Konoha (`HubBody.NINJA_RUN`) comme en duel (`NinjaRun` sur son corps, `Matches.runOf` → `VelmoraMotionEngine`). Vu en duel : penché, bras en arrière.
+- **Passe 4, les murs après le robot de l'OUTILLEUR** (INBOX-DEV-MURS-20261127) :
+  - en duel de rue, la caméra monte au-dessus d'une maison au lieu d'y entrer ;
+  - plus de tenue au mur au ras du sol ;
+  - l'IA quitte le mur quand l'adversaire n'y est pas ;
+  - un coup de poing n'ouvre une maison qu'à partir de 72 de poids, 6 trous au plus ;
+  - les sons de combat sont chargés en fond.
+  Test : WallCombat 10.
 - **Passe commune 4, part du DEV** (27/11 soir, INBOX-DEV-PASSE4-20261127) :
   - le combat continue sur le mur (un coup léger y laisse le corps, le lourd et les projections le font tomber) ;
   - en rue, un projeté va jusqu'aux maisons (14 studs au-delà de l'anneau) ;
