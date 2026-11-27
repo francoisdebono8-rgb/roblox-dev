@@ -27,6 +27,7 @@ python3 tools/robots/inject.py --check-server
 | `street` | `NDStreetBot` | (passe 3) les coups de rue pressés comme un joueur : mannequin, caisse, voyou, prodige, Ōtsutsuki, et le défi par le coup entre deux clients (riposte armée) | `tools/streetfight` |
 | `sound` | `NDSoundCheck` | (passe 3) le contrôle des sons : chargé, durée, sonie, ce qui joue | `tools/sounds` |
 | `bench` | `NDKitBench` | (passe 3) le banc des kits : une planche par kit, chaque coup à chaque instant, sur le corps du joueur | `tools/kitbench` |
+| `human` | `NDHumanWatch` | (27/11) le témoin du robot humain : clics morts, menus empilés, souris bloquée, boutons hors écran, corps bloqué, tenue en double, lignes rouges, avec les gestes avant chaque bug ; serveur : `humanserver` (`NDHumanServer`) | `tools/humanbot` |
 
 Côté serveur (`--server`, avec `eval_server_runtime`) :
 

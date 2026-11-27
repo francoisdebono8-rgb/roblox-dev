@@ -154,4 +154,5 @@ run Releve     python3 tools/screens/test_releve.py
 run DuelAudit  python3 tools/duelaudit/test_report.py
 # (26/11, OUTILLEUR, passe commune 3) the street's blows, the sound check, the kits' bench
 run StreetBench python3 tools/streetfight/test_report.py
+run HumanBot python3 tools/humanbot/test_report.py
 exit $status

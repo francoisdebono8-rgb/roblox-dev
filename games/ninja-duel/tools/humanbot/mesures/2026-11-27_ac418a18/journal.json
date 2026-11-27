@@ -1,0 +1,1217 @@
+{
+ "client": {
+  "note": "NDHumanWatch, Play solo de PLACES/_prochaine (ac418a18), Studio à soi ; journal compact du témoin v3/v4 recopié (les gestes des bugs abrégés aux derniers utiles). La forêt d'avant (témoin v1 : 55 entrées, combat du bandit, B et Tab dans la forêt) est dans le README.",
+  "seconds": 938.34,
+  "clicks": 243,
+  "keys": 152,
+  "answers": 140,
+  "hitches": [
+   {
+    "t": 56.01,
+    "dt": 0.4507
+   },
+   {
+    "t": 95.62,
+    "dt": 0.432
+   },
+   {
+    "t": 120.19,
+    "dt": 0.4563
+   },
+   {
+    "t": 154.9,
+    "dt": 0.4423
+   },
+   {
+    "t": 183.15,
+    "dt": 0.4442
+   },
+   {
+    "t": 240.66,
+    "dt": 0.4473
+   },
+   {
+    "t": 271.65,
+    "dt": 0.4301
+   },
+   {
+    "t": 291.43,
+    "dt": 0.4334
+   },
+   {
+    "t": 320.9,
+    "dt": 0.4555
+   },
+   {
+    "t": 386.16,
+    "dt": 0.4626
+   },
+   {
+    "t": 478.31,
+    "dt": 0.4474
+   },
+   {
+    "t": 570.32,
+    "dt": 0.4527
+   },
+   {
+    "t": 687.26,
+    "dt": 0.4635
+   },
+   {
+    "t": 799.16,
+    "dt": 0.4654
+   },
+   {
+    "t": 880.51,
+    "dt": 1.2495
+   },
+   {
+    "t": 919.09,
+    "dt": 1.2205
+   }
+  ],
+  "events": [
+   {
+    "t": 0,
+    "kind": "note",
+    "v": "forêt (path) : l'écran PRODIGY TOURNAMENT ouvert par B pendant l'intro"
+   },
+   {
+    "t": 0,
+    "kind": "menus",
+    "v": "« VS »"
+   },
+   {
+    "t": 115.75,
+    "kind": "scene",
+    "v": "Lion"
+   },
+   {
+    "t": 143.77,
+    "kind": "menus",
+    "v": ""
+   },
+   {
+    "t": 172.87,
+    "kind": "scene",
+    "v": "create"
+   },
+   {
+    "t": 173.3,
+    "kind": "menus",
+    "v": "Creator"
+   },
+   {
+    "t": 289.08,
+    "kind": "menus",
+    "v": "Creator + « CONTROLS »"
+   },
+   {
+    "t": 308.38,
+    "kind": "scene",
+    "v": "nil"
+   },
+   {
+    "t": 308.8,
+    "kind": "menus",
+    "v": "« CONTROLS »"
+   },
+   {
+    "t": 341.38,
+    "kind": "menus",
+    "v": ""
+   },
+   {
+    "t": 362.36,
+    "kind": "menus",
+    "v": "« LEADERBOARDS »"
+   },
+   {
+    "t": 365.41,
+    "kind": "menus",
+    "v": "« SHOP » + « LEADERBOARDS »"
+   },
+   {
+    "t": 368.98,
+    "kind": "menus",
+    "v": "« SHOP » + « LEADERBOARDS » + TheEight"
+   },
+   {
+    "t": 371.53,
+    "kind": "menus",
+    "v": "« VS » + « SHOP » + « LEADERBOARDS »"
+   },
+   {
+    "t": 409.24,
+    "kind": "menus",
+    "v": "« VS » + « SHOP »"
+   },
+   {
+    "t": 449.26,
+    "kind": "menus",
+    "v": "« VS » + « MY NINJA »"
+   },
+   {
+    "t": 582.57,
+    "kind": "menus",
+    "v": "« VS »"
+   },
+   {
+    "t": 583.59,
+    "kind": "menus",
+    "v": ""
+   },
+   {
+    "t": 642.46,
+    "kind": "note",
+    "v": "Konoha : marche sans logique (wander seed 12)"
+   },
+   {
+    "t": 706.17,
+    "kind": "menus",
+    "v": "« VS »"
+   },
+   {
+    "t": 748.13,
+    "kind": "menus",
+    "v": ""
+   },
+   {
+    "t": 834.98,
+    "kind": "menus",
+    "v": "« CONTROLS »"
+   },
+   {
+    "t": 844.23,
+    "kind": "menus",
+    "v": "« LOSS »"
+   },
+   {
+    "t": 844.74,
+    "kind": "menus",
+    "v": "« DEFEAT  1–2 »"
+   },
+   {
+    "t": 905.66,
+    "kind": "menus",
+    "v": ""
+   }
+  ],
+  "bugs": [
+   {
+    "kind": "hors écran",
+    "key": "TOPKNOT",
+    "count": 89,
+    "t": 211.79,
+    "stage": "create",
+    "menus": [
+     "Creator"
+    ],
+    "mouse": "Default",
+    "detail": {
+     "menu": "Creator",
+     "path": "LocalPlayer.PlayerGui.NinjaDuelHUD.Creator.Frame.Frame.TextButton",
+     "y": 572
+    },
+    "steps": [
+     {
+      "t": 172.8,
+      "k": "A"
+     },
+     {
+      "t": 210.82,
+      "k": "MouseButton1",
+      "on": "HIGH COLLAR"
+     },
+     {
+      "t": 211.43,
+      "k": "MouseButton1",
+      "on": "2 HAIR"
+     },
+     {
+      "t": 211.53,
+      "k": "act",
+      "on": "2 HAIR"
+     }
+    ]
+   },
+   {
+    "kind": "hors écran",
+    "key": "LONG BRAID",
+    "count": 89,
+    "t": 211.79,
+    "stage": "create",
+    "menus": [
+     "Creator"
+    ],
+    "mouse": "Default",
+    "detail": {
+     "menu": "Creator",
+     "path": "LocalPlayer.PlayerGui.NinjaDuelHUD.Creator.Frame.Frame.TextButton",
+     "y": 572
+    },
+    "steps": [
+     {
+      "t": 172.8,
+      "k": "A"
+     },
+     {
+      "t": 210.82,
+      "k": "MouseButton1",
+      "on": "HIGH COLLAR"
+     },
+     {
+      "t": 211.43,
+      "k": "MouseButton1",
+      "on": "2 HAIR"
+     },
+     {
+      "t": 211.53,
+      "k": "act",
+      "on": "2 HAIR"
+     }
+    ]
+   },
+   {
+    "kind": "hors écran",
+    "key": "UNDERCUT CREST",
+    "count": 89,
+    "t": 211.79,
+    "stage": "create",
+    "menus": [
+     "Creator"
+    ],
+    "mouse": "Default",
+    "detail": {
+     "menu": "Creator",
+     "path": "LocalPlayer.PlayerGui.NinjaDuelHUD.Creator.Frame.Frame.TextButton",
+     "y": 572
+    },
+    "steps": [
+     {
+      "t": 172.8,
+      "k": "A"
+     },
+     {
+      "t": 210.82,
+      "k": "MouseButton1",
+      "on": "HIGH COLLAR"
+     },
+     {
+      "t": 211.43,
+      "k": "MouseButton1",
+      "on": "2 HAIR"
+     },
+     {
+      "t": 211.53,
+      "k": "act",
+      "on": "2 HAIR"
+     }
+    ]
+   },
+   {
+    "kind": "hors écran",
+    "key": "CURTAINS",
+    "count": 89,
+    "t": 211.79,
+    "stage": "create",
+    "menus": [
+     "Creator"
+    ],
+    "mouse": "Default",
+    "detail": {
+     "menu": "Creator",
+     "path": "LocalPlayer.PlayerGui.NinjaDuelHUD.Creator.Frame.Frame.TextButton",
+     "y": 667
+    },
+    "steps": [
+     {
+      "t": 172.8,
+      "k": "A"
+     },
+     {
+      "t": 210.82,
+      "k": "MouseButton1",
+      "on": "HIGH COLLAR"
+     },
+     {
+      "t": 211.43,
+      "k": "MouseButton1",
+      "on": "2 HAIR"
+     },
+     {
+      "t": 211.53,
+      "k": "act",
+      "on": "2 HAIR"
+     }
+    ]
+   },
+   {
+    "kind": "hors écran",
+    "key": "YOUR OWN HAIR",
+    "count": 89,
+    "t": 211.79,
+    "stage": "create",
+    "menus": [
+     "Creator"
+    ],
+    "mouse": "Default",
+    "detail": {
+     "menu": "Creator",
+     "path": "LocalPlayer.PlayerGui.NinjaDuelHUD.Creator.Frame.Frame.TextButton",
+     "y": 667
+    },
+    "steps": [
+     {
+      "t": 172.8,
+      "k": "A"
+     },
+     {
+      "t": 210.82,
+      "k": "MouseButton1",
+      "on": "HIGH COLLAR"
+     },
+     {
+      "t": 211.43,
+      "k": "MouseButton1",
+      "on": "2 HAIR"
+     },
+     {
+      "t": 211.53,
+      "k": "act",
+      "on": "2 HAIR"
+     }
+    ]
+   },
+   {
+    "kind": "hors écran",
+    "key": "LILAC",
+    "count": 15,
+    "t": 217.94,
+    "stage": "create",
+    "menus": [
+     "Creator"
+    ],
+    "mouse": "Default",
+    "detail": {
+     "menu": "Creator",
+     "path": "LocalPlayer.PlayerGui.NinjaDuelHUD.Creator.Frame.Frame.TextButton",
+     "y": 572
+    },
+    "steps": [
+     {
+      "t": 215.75,
+      "k": "MouseButton1",
+      "on": "LONG TIED"
+     },
+     {
+      "t": 216.68,
+      "k": "MouseButton1",
+      "on": "HIME CUT"
+     },
+     {
+      "t": 217.33,
+      "k": "MouseButton1",
+      "on": "3 COLOUR"
+     },
+     {
+      "t": 217.45,
+      "k": "act",
+      "on": "3 COLOUR"
+     }
+    ]
+   },
+   {
+    "kind": "hors écran",
+    "key": "MINT",
+    "count": 15,
+    "t": 217.94,
+    "stage": "create",
+    "menus": [
+     "Creator"
+    ],
+    "mouse": "Default",
+    "detail": {
+     "menu": "Creator",
+     "path": "LocalPlayer.PlayerGui.NinjaDuelHUD.Creator.Frame.Frame.TextButton",
+     "y": 572
+    },
+    "steps": [
+     {
+      "t": 215.75,
+      "k": "MouseButton1",
+      "on": "LONG TIED"
+     },
+     {
+      "t": 216.68,
+      "k": "MouseButton1",
+      "on": "HIME CUT"
+     },
+     {
+      "t": 217.33,
+      "k": "MouseButton1",
+      "on": "3 COLOUR"
+     },
+     {
+      "t": 217.45,
+      "k": "act",
+      "on": "3 COLOUR"
+     }
+    ]
+   },
+   {
+    "kind": "hors écran",
+    "key": "CORAL",
+    "count": 15,
+    "t": 217.94,
+    "stage": "create",
+    "menus": [
+     "Creator"
+    ],
+    "mouse": "Default",
+    "detail": {
+     "menu": "Creator",
+     "path": "LocalPlayer.PlayerGui.NinjaDuelHUD.Creator.Frame.Frame.TextButton",
+     "y": 572
+    },
+    "steps": [
+     {
+      "t": 215.75,
+      "k": "MouseButton1",
+      "on": "LONG TIED"
+     },
+     {
+      "t": 216.68,
+      "k": "MouseButton1",
+      "on": "HIME CUT"
+     },
+     {
+      "t": 217.33,
+      "k": "MouseButton1",
+      "on": "3 COLOUR"
+     },
+     {
+      "t": 217.45,
+      "k": "act",
+      "on": "3 COLOUR"
+     }
+    ]
+   },
+   {
+    "kind": "hors écran",
+    "key": "PLATINUM",
+    "count": 15,
+    "t": 217.94,
+    "stage": "create",
+    "menus": [
+     "Creator"
+    ],
+    "mouse": "Default",
+    "detail": {
+     "menu": "Creator",
+     "path": "LocalPlayer.PlayerGui.NinjaDuelHUD.Creator.Frame.Frame.TextButton",
+     "y": 667
+    },
+    "steps": [
+     {
+      "t": 215.75,
+      "k": "MouseButton1",
+      "on": "LONG TIED"
+     },
+     {
+      "t": 216.68,
+      "k": "MouseButton1",
+      "on": "HIME CUT"
+     },
+     {
+      "t": 217.33,
+      "k": "MouseButton1",
+      "on": "3 COLOUR"
+     },
+     {
+      "t": 217.45,
+      "k": "act",
+      "on": "3 COLOUR"
+     }
+    ]
+   },
+   {
+    "kind": "hors écran",
+    "key": "ANBU SILVER",
+    "count": 15,
+    "t": 217.94,
+    "stage": "create",
+    "menus": [
+     "Creator"
+    ],
+    "mouse": "Default",
+    "detail": {
+     "menu": "Creator",
+     "path": "LocalPlayer.PlayerGui.NinjaDuelHUD.Creator.Frame.Frame.TextButton",
+     "y": 667
+    },
+    "steps": [
+     {
+      "t": 215.75,
+      "k": "MouseButton1",
+      "on": "LONG TIED"
+     },
+     {
+      "t": 216.68,
+      "k": "MouseButton1",
+      "on": "HIME CUT"
+     },
+     {
+      "t": 217.33,
+      "k": "MouseButton1",
+      "on": "3 COLOUR"
+     },
+     {
+      "t": 217.45,
+      "k": "act",
+      "on": "3 COLOUR"
+     }
+    ]
+   },
+   {
+    "kind": "hors écran",
+    "key": "VOID PURPLE",
+    "count": 15,
+    "t": 217.94,
+    "stage": "create",
+    "menus": [
+     "Creator"
+    ],
+    "mouse": "Default",
+    "detail": {
+     "menu": "Creator",
+     "path": "LocalPlayer.PlayerGui.NinjaDuelHUD.Creator.Frame.Frame.TextButton",
+     "y": 667
+    },
+    "steps": [
+     {
+      "t": 215.75,
+      "k": "MouseButton1",
+      "on": "LONG TIED"
+     },
+     {
+      "t": 216.68,
+      "k": "MouseButton1",
+      "on": "HIME CUT"
+     },
+     {
+      "t": 217.33,
+      "k": "MouseButton1",
+      "on": "3 COLOUR"
+     },
+     {
+      "t": 217.45,
+      "k": "act",
+      "on": "3 COLOUR"
+     }
+    ]
+   },
+   {
+    "kind": "menus ensemble",
+    "key": "Creator + « CONTROLS »",
+    "count": 38,
+    "t": 289.08,
+    "stage": "create",
+    "menus": [
+     "Creator",
+     "« CONTROLS »"
+    ],
+    "mouse": "Default",
+    "detail": {},
+    "steps": [
+     {
+      "t": 268.27,
+      "k": "MouseButton1",
+      "on": "2 HAIR"
+     },
+     {
+      "t": 268.37,
+      "k": "act",
+      "on": "2 HAIR"
+     },
+     {
+      "t": 288.23,
+      "k": "B"
+     },
+     {
+      "t": 288.77,
+      "k": "Tab"
+     }
+    ]
+   },
+   {
+    "kind": "tenue fausse",
+    "key": "feet",
+    "count": 1,
+    "t": 319.25,
+    "menus": [
+     "« CONTROLS »"
+    ],
+    "mouse": "Default",
+    "detail": {
+     "equipped": "FeetNone",
+     "worn": "TopHighCollar,BottomPantsDark,HairPony"
+    },
+    "steps": [
+     {
+      "t": 308.2,
+      "k": "MouseButton1",
+      "on": "THAT'S ME"
+     },
+     {
+      "t": 308.3,
+      "k": "act",
+      "on": "THAT'S ME"
+     }
+    ]
+   },
+   {
+    "kind": "tenue fausse",
+    "key": "headband",
+    "count": 1,
+    "t": 319.25,
+    "menus": [
+     "« CONTROLS »"
+    ],
+    "mouse": "Default",
+    "detail": {
+     "equipped": "HeadbandNone",
+     "worn": "TopHighCollar,BottomPantsDark,HairPony"
+    },
+    "steps": [
+     {
+      "t": 308.2,
+      "k": "MouseButton1",
+      "on": "THAT'S ME"
+     },
+     {
+      "t": 308.3,
+      "k": "act",
+      "on": "THAT'S ME"
+     }
+    ]
+   },
+   {
+    "kind": "tenue fausse",
+    "key": "hairColor",
+    "count": 1,
+    "t": 319.25,
+    "menus": [
+     "« CONTROLS »"
+    ],
+    "mouse": "Default",
+    "detail": {
+     "equipped": "HairNight",
+     "worn": "TopHighCollar,BottomPantsDark,HairPony"
+    },
+    "steps": [
+     {
+      "t": 308.2,
+      "k": "MouseButton1",
+      "on": "THAT'S ME"
+     },
+     {
+      "t": 308.3,
+      "k": "act",
+      "on": "THAT'S ME"
+     }
+    ]
+   },
+   {
+    "kind": "menus ensemble",
+    "key": "« LEADERBOARDS » + « SHOP »",
+    "count": 11,
+    "t": 365.41,
+    "menus": [
+     "« SHOP »",
+     "« LEADERBOARDS »"
+    ],
+    "mouse": "Default",
+    "detail": {},
+    "steps": [
+     {
+      "t": 363.21,
+      "k": "MouseButton1",
+      "on": "RANKS"
+     },
+     {
+      "t": 363.31,
+      "k": "act",
+      "on": "RANKS"
+     },
+     {
+      "t": 363.64,
+      "k": "MouseButton1",
+      "on": "RANKS"
+     },
+     {
+      "t": 363.76,
+      "k": "act",
+      "on": "RANKS"
+     },
+     {
+      "t": 365.16,
+      "k": "MouseButton1",
+      "on": "SHOP"
+     },
+     {
+      "t": 365.26,
+      "k": "act",
+      "on": "SHOP"
+     }
+    ]
+   },
+   {
+    "kind": "menus ensemble",
+    "key": "TheEight + « LEADERBOARDS » + « SHOP »",
+    "count": 1,
+    "t": 368.98,
+    "menus": [
+     "« SHOP »",
+     "« LEADERBOARDS »",
+     "TheEight"
+    ],
+    "mouse": "Default",
+    "detail": {},
+    "steps": [
+     {
+      "t": 365.48,
+      "k": "MouseButton1",
+      "on": "SHOP"
+     },
+     {
+      "t": 365.6,
+      "k": "act",
+      "on": "SHOP"
+     },
+     {
+      "t": 368.41,
+      "k": "MouseButton1",
+      "on": "THE 8 0 / 8 BEATEN"
+     },
+     {
+      "t": 368.53,
+      "k": "act",
+      "on": "THE 8 0 / 8 BEATEN"
+     }
+    ]
+   },
+   {
+    "kind": "menus ensemble",
+    "key": "« LEADERBOARDS » + « SHOP » + « VS »",
+    "count": 73,
+    "t": 371.53,
+    "menus": [
+     "« VS »",
+     "« SHOP »",
+     "« LEADERBOARDS »"
+    ],
+    "mouse": "Default",
+    "detail": {},
+    "steps": [
+     {
+      "t": 369.85,
+      "k": "MouseButton1",
+      "on": "RANKS"
+     },
+     {
+      "t": 369.96,
+      "k": "act",
+      "on": "RANKS"
+     },
+     {
+      "t": 370.45,
+      "k": "MouseButton1",
+      "on": "RANKS"
+     },
+     {
+      "t": 370.55,
+      "k": "act",
+      "on": "RANKS"
+     },
+     {
+      "t": 371.1,
+      "k": "MouseButton1",
+      "on": "DUELS"
+     },
+     {
+      "t": 371.21,
+      "k": "act",
+      "on": "DUELS"
+     }
+    ]
+   },
+   {
+    "kind": "menus ensemble",
+    "key": "« SHOP » + « VS »",
+    "count": 78,
+    "t": 409.24,
+    "menus": [
+     "« VS »",
+     "« SHOP »"
+    ],
+    "mouse": "Default",
+    "detail": {},
+    "steps": [
+     {
+      "t": 408.63,
+      "k": "MouseButton1",
+      "on": "X"
+     },
+     {
+      "t": 408.73,
+      "k": "act",
+      "on": "X"
+     }
+    ]
+   },
+   {
+    "kind": "hors écran",
+    "key": "SOON (la liste de la boutique)",
+    "count": 61,
+    "t": 417.94,
+    "menus": [
+     "« VS »",
+     "« SHOP »"
+    ],
+    "mouse": "Default",
+    "detail": {
+     "menu": "« SHOP »",
+     "path": "LocalPlayer.PlayerGui.NinjaDuelHUD.Frame.Frame.ScrollingFrame.Frame.TextButton"
+    },
+    "steps": [
+     {
+      "t": 408.63,
+      "k": "MouseButton1",
+      "on": "X"
+     },
+     {
+      "t": 408.73,
+      "k": "act",
+      "on": "X"
+     },
+     {
+      "t": 417.43,
+      "k": "MouseButton1",
+      "on": "OUTFIT"
+     },
+     {
+      "t": 417.54,
+      "k": "act",
+      "on": "OUTFIT"
+     }
+    ]
+   },
+   {
+    "kind": "menus ensemble",
+    "key": "« MY NINJA » + « VS »",
+    "count": 261,
+    "t": 449.26,
+    "menus": [
+     "« VS »",
+     "« MY NINJA »"
+    ],
+    "mouse": "Default",
+    "detail": {},
+    "steps": [
+     {
+      "t": 417.43,
+      "k": "MouseButton1",
+      "on": "OUTFIT"
+     },
+     {
+      "t": 417.54,
+      "k": "act",
+      "on": "OUTFIT"
+     },
+     {
+      "t": 448.79,
+      "k": "MouseButton1",
+      "on": "MY NINJA"
+     },
+     {
+      "t": 448.93,
+      "k": "act",
+      "on": "MY NINJA"
+     }
+    ]
+   },
+   {
+    "kind": "hors écran",
+    "key": "CHUNIN VEST… (la liste de MY NINJA)",
+    "count": 136,
+    "t": 449.26,
+    "menus": [
+     "« VS »",
+     "« MY NINJA »"
+    ],
+    "mouse": "Default",
+    "detail": {
+     "menu": "« MY NINJA »",
+     "path": "LocalPlayer.PlayerGui.NinjaDuelHUD.Frame.Frame.ScrollingFrame.TextButton"
+    },
+    "steps": [
+     {
+      "t": 448.79,
+      "k": "MouseButton1",
+      "on": "MY NINJA"
+     },
+     {
+      "t": 448.93,
+      "k": "act",
+      "on": "MY NINJA"
+     }
+    ]
+   },
+   {
+    "kind": "corps bloqué",
+    "key": "-72,-2144",
+    "count": 1,
+    "t": 671.35,
+    "menus": [],
+    "mouse": "Default",
+    "detail": {
+     "at": [
+      -69.3,
+      3.8,
+      -2142.4
+     ],
+     "speed": 36,
+     "state": "Running",
+     "note": "contre la façade des résidences de l'ouest (capture)"
+    },
+    "steps": [
+     {
+      "t": 669.33,
+      "k": "W"
+     },
+     {
+      "t": 669.73,
+      "k": "LeftShift"
+     }
+    ]
+   },
+   {
+    "kind": "corps bloqué",
+    "key": "-96,-2128",
+    "count": 1,
+    "t": 676.67,
+    "menus": [],
+    "mouse": "Default",
+    "detail": {
+     "at": [
+      -94.7,
+      3.8,
+      -2120.3
+     ],
+     "speed": 36,
+     "state": "Running",
+     "note": "contre un mur"
+    },
+    "steps": [
+     {
+      "t": 672.33,
+      "k": "Space"
+     },
+     {
+      "t": 672.53,
+      "k": "Space"
+     },
+     {
+      "t": 674.07,
+      "k": "D"
+     }
+    ]
+   },
+   {
+    "kind": "corps bloqué",
+    "key": "-240,-2208",
+    "count": 1,
+    "t": 780.99,
+    "menus": [],
+    "mouse": "LockCenter",
+    "detail": {
+     "at": [
+      -239.2,
+      8.3,
+      -2204.8
+     ],
+     "speed": 10.8,
+     "state": "Running",
+     "note": "en duel, au bord de l'anneau"
+    },
+    "steps": [
+     {
+      "t": 779.13,
+      "k": "S"
+     },
+     {
+      "t": 779.6,
+      "k": "F"
+     },
+     {
+      "t": 780.33,
+      "k": "D"
+     },
+     {
+      "t": 780.66,
+      "k": "A"
+     },
+     {
+      "t": 780.86,
+      "k": "C"
+     }
+    ]
+   },
+   {
+    "kind": "souris bloquée",
+    "key": "« CONTROLS »",
+    "count": 195,
+    "t": 835.23,
+    "menus": [
+     "« CONTROLS »"
+    ],
+    "mouse": "LockCenter",
+    "detail": {},
+    "steps": [
+     {
+      "t": 791.54,
+      "k": "F"
+     },
+     {
+      "t": 791.74,
+      "k": "Two"
+     },
+     {
+      "t": 834.6,
+      "k": "Tab"
+     }
+    ]
+   },
+   {
+    "kind": "à-coup",
+    "key": "1.2",
+    "count": 2,
+    "t": 880.51,
+    "menus": [
+     "« DEFEAT  1–2 »"
+    ],
+    "mouse": "Default",
+    "detail": {
+     "ms": 1249
+    },
+    "steps": [
+     {
+      "t": 872.23,
+      "k": "MouseButton1"
+     },
+     {
+      "t": 872.29,
+      "k": "MouseButton1"
+     }
+    ]
+   }
+  ]
+ },
+ "server": {
+  "bugs": [],
+  "rows": [
+   {
+    "cmd": "chooseStarter",
+    "args": "{\"fighter\":\"Lion\"}",
+    "ryo": [
+     0,
+     0
+    ],
+    "ok": true,
+    "t": 419.84
+   },
+   {
+    "cmd": "create",
+    "args": "{\"top\":\"TopHighCollar\",\"bottom\":\"BottomPantsDark\",\"hairColor\":\"HairNight\",\"headband\":\"HeadbandNone\",\"hair\":\"HairPony\",\"feet\":\"FeetNone\"}",
+    "ryo": [
+     0,
+     0
+    ],
+    "ok": true,
+    "t": 612.47
+   },
+   {
+    "cmd": "equipItem",
+    "args": "{\"item\":\"BottomShorts\"}",
+    "ryo": [
+     0,
+     0
+    ],
+    "ok": true,
+    "t": 837.99
+   },
+   {
+    "cmd": "equipItem",
+    "args": "{\"item\":\"CapeNone\"}",
+    "ryo": [
+     0,
+     0
+    ],
+    "ok": true,
+    "t": 846.32
+   },
+   {
+    "cmd": "equipItem",
+    "args": "{\"item\":\"BottomPantsDark\"}",
+    "ryo": [
+     0,
+     0
+    ],
+    "ok": true,
+    "t": 857.66
+   },
+   {
+    "cmd": "equipItem",
+    "args": "{\"item\":\"BottomShorts\"}",
+    "ryo": [
+     0,
+     0
+    ],
+    "ok": true,
+    "t": 859.66
+   },
+   {
+    "cmd": "gainMastery",
+    "args": "{\"fighter\":\"Lion\",\"amount\":30}",
+    "ryo": [
+     0,
+     0
+    ],
+    "ok": true,
+    "t": 1145.73
+   },
+   {
+    "cmd": "earnRyo",
+    "args": "{\"amount\":20}",
+    "ryo": [
+     0,
+     20
+    ],
+    "ok": true,
+    "t": 1145.73
+   },
+   {
+    "cmd": "dailyRecord",
+    "args": "{\"day\":20784,\"events\":{\"jutsu\":2,\"duel\":1}}",
+    "ryo": [
+     20,
+     45
+    ],
+    "ok": true,
+    "t": 1145.73
+   }
+  ]
+ }
+}

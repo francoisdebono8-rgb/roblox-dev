@@ -71,7 +71,8 @@ TEST_NAMES = {"NDDuelBot", "NDVillageBot", "NDCabineTool", "NDNewPlayerBot", "ND
               # (26/11, passe commune 2) the duel watcher, the training robot, the outfit check, the server's robots
               "NDDuelAudit", "NDTrainingBot", "NDOutfitCheck", "NDServerLog", "NDOutfitBodies", "NDAuditShow",
               # (26/11, passe commune 3) the street's blows, the sound check, the kits' bench
-              "NDStreetBot", "NDStreetLog", "NDSoundCheck", "NDKitBench", "NDKitSheet", "NDSilent"}
+              "NDStreetBot", "NDStreetLog", "NDSoundCheck", "NDKitBench", "NDKitSheet", "NDSilent",
+              "NDHumanWatch", "NDHumanServer"}
 TEST_MARKERS = ("@lune/", "require(\"../../tests", "tests/Harness", "NDBotLog", "NDVillageLog", "NDNewPlayerLog", "NDTrainingLog")
 
 
