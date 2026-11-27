@@ -937,7 +937,7 @@ function UI.new(parent,send)
 	local gains=frame(resultBox,UDim2.fromOffset(30,226),UDim2.new(1,-60,0,206),MANGA.cream,0)
 	create("UIStroke",gains,{Color=MANGA.ink,Thickness=4,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
 	self.resultGains=gains
-	text(gains,"WHAT YOU EARNED",UDim2.fromOffset(18,10),UDim2.fromOffset(400,22),18,MANGA.red,STRONG_FONT)
+	self.resultGainsHead=text(gains,"WHAT YOU EARNED",UDim2.fromOffset(18,10),UDim2.fromOffset(400,22),18,MANGA.red,STRONG_FONT)
 	self.resultRyo=text(gains,"",UDim2.fromOffset(18,34),UDim2.fromOffset(300,50),46,MANGA.ink,TITLE_FONT)
 	-- (23/11, DEV) the multiplier as the rule says it (Shared/Shop: ×3 since step 5)
 	local okS,ShopRules=pcall(require,Shared.Shop)
@@ -2193,6 +2193,10 @@ function UI:resultEarned(progress)
 	local ryo=(p.ryo or 0)+daily
 	self.resultRyo.Text=if ryo>0 then string.format("+%d RYŌ",ryo) else "NO RYŌ THIS TIME"
 	-- (DESIGN 26/11, passe 1) a thug's fight: his purse taken, or Ryō left behind
+	-- (OUTILLEUR 27/11: « WHAT YOU EARNED » over « HE TOOK 20 RYŌ OFF ») a lost
+	-- street fight says what it cost, the loss in red
+	self.resultGainsHead.Text=if thug and not thug.won then "WHAT IT COST YOU" else "WHAT YOU EARNED"
+	self.resultRyo.TextColor3=if thug and not thug.won then MANGA.red else MANGA.ink
 	if thug then
 		self.resultRyo.Text=UI.thugLine(thug)
 	end

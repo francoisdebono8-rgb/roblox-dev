@@ -1115,4 +1115,40 @@ test("the style preview: his own outfit on, the look pointed at in its slot, sta
 	assert((arm.CFrame.Position-Vector3new(1.5,3.1,0)).Magnitude<1e-4 and math.abs(arm.CFrame.RightVector.Y)<1e-4,"the arm does not hang at rest: "..tostring(arm.CFrame.Position))
 end)
 
+-- (DESIGN 27/11, « pas une vision d'un vrai arbre ») the kit's tree is drawn
+-- as a tree: every node of every kit has a place, none sits on another, the
+-- tiers climb (tier I lowest), the roots under it and the crown on top.
+test("the real tree: every seal placed, none overlapping, tiers climbing, the crown on top",function()
+	local Tree=H.load("Client/TreePanel")
+	local TV=H.load("Shared/TreeView")
+	local Trees=H.load("Shared/SkillTrees")
+	local T=Tree.TREE
+	local kits=0
+	for kit in Trees do
+		local layout=TV.layout(kit,{unlocked={},active={},points=0,free=0,mastery=0})
+		if layout then
+			kits+=1
+			local L=Tree.treeLayout(layout,1024,100)
+			local seen=0
+			for _,branch in layout.branches do for _,node in branch.nodes do
+				local p=L.at[node.id]
+				assert(p,kit.." "..node.id.." has no place on the tree")
+				seen+=1
+				assert(p.x>T.GUT-10 and p.x<1024,kit.." "..node.id.." is off the page")
+				assert(p.y>100 and p.y<L.ground,kit.." "..node.id.." is not above the roots")
+				if node.transform then assert(p.crown and p.y<L.bands[#L.bands].top,kit.."'s transformation is not at the crown") end
+			end end
+			local list={}
+			for _,p in L.at do table.insert(list,p) end
+			for i=1,#list do for j=i+1,#list do
+				local a,b=list[i],list[j]
+				local d=math.sqrt((a.x-b.x)^2+(a.y-b.y)^2)
+				assert(d>=T.BIG,string.format("%s: %s and %s overlap (%.0f)",kit,a.node.id,b.node.id,d))
+			end end
+			for t=2,#L.bands do assert(L.bands[t].bottom<=L.bands[t-1].top,kit..": tier "..t.." is not above tier "..(t-1)) end
+		end
+	end
+	assert(kits>=8,"the eight kits' trees")
+end)
+
 print(string.format("NinjaDuel shop and Ryō (13/11): %d PASS",passed))

@@ -548,10 +548,13 @@ end
 function Panel:confirm(name,price,ryo,yes)
 	local K,M=self.kit,self.M
 	if self.confirmRoot then self.confirmRoot:Destroy() end
-	local veil=K.frame(self.card,UDim2.fromScale(0,0),UDim2.fromScale(1,1),M.ink,.4)
+	-- (OUTILLEUR 27/11: the second click of BUY fell on the case behind) over
+	-- the whole page, on the root, above the card: a click never reaches it
+	local veil=K.frame(self.root,UDim2.fromScale(0,0),UDim2.fromScale(1,1),M.ink,.4)
 	veil.ZIndex=90;veil.Active=true;veil.Name="Confirm"
 	self.confirmRoot=veil
 	local box=K.frame(veil,UDim2.fromScale(.5,.5),UDim2.fromOffset(600,280),M.paper,0)
+	pcall(function() K.create("UIScale",box,{Scale=self.card:FindFirstChildOfClass("UIScale") and self.card:FindFirstChildOfClass("UIScale").Scale or 1}) end)
 	box.AnchorPoint=Vector2.new(.5,.5);box.ZIndex=91;box.Rotation=-1
 	K.create("UIStroke",box,{Color=M.ink,Thickness=4,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
 	local title,line=Panel.confirmLines(name,price,ryo)
