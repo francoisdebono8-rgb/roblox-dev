@@ -125,6 +125,33 @@ def test_the_report_of_the_27th_afternoon():
     assert "CupEntry" not in text and "corps nu" not in text and "corps bloqué" not in text
 
 
+def test_a_capture_is_not_the_games_long_frame():
+    rows = [{"t": 10.3, "dt": .47}, {"t": 30.0, "dt": .6}]
+    events = [{"t": 10.0, "kind": "note", "v": "capture"}]
+    assert report.hitches(rows, events)["felt"] == 1 and report.hitches(rows)["felt"] == 2
+
+
+def test_the_walls_tell_how_a_stand_ended():
+    duel = [{"t": 1, "who": "AIFighter", "mode": "stand", "hp": 140, "y": 8},
+            {"t": 3.5, "who": "AIFighter", "mode": "-", "hp": 130, "y": 6},
+            {"t": 4, "who": "PlayerFighter", "mode": "stand", "hp": 90, "y": 5},
+            {"t": 12, "who": "PlayerFighter", "mode": "-", "hp": 90, "y": 16}]
+    st = report.stands(duel)
+    assert [(s["who"], s["seconds"], s["hit"]) for s in st] == [("AIFighter", 2.5, True), ("PlayerFighter", 8, False)]
+    text = "\n".join(report.walls_text({"pose": [{"pose": "wallstand"}, {"pose": "climb"}, {"pose": "none"}], "duel": duel,
+                                         "breach": [{"energy": 20}, {"energy": 89.6}]}))
+    assert "debout sur le mur 1" in text and "1 fin(s) sur un coup reçu" in text and "Maisons ouvertes : 2" in text
+
+
+def test_the_report_of_the_27th_evening():
+    path = os.path.join(HERE, "mesures", "2026-11-27d_0cd43300", "journal.json")
+    with open(path, encoding="utf-8") as f:
+        mesure = json.load(f)
+    text = report.report(mesure)
+    assert "## Les murs" in text and "Maisons ouvertes : 24" in text
+    assert report.hitches(mesure["client"]["hitches"], mesure["client"]["events"])["felt"] == 14
+
+
 def test_the_report_orders_what_matters():
     bugs = [{"kind": "à-coup", "key": "1.2", "steps": []},
             {"kind": "menus ensemble", "key": "A + B", "steps": []},

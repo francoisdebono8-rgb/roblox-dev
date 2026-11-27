@@ -52,5 +52,6 @@ for name,clip in require(script.Parent.AuthoredJutsu39) do all[name]=clip end
 for name,clip in require(script.Parent.AuthoredJutsu40) do all[name]=clip end
 for name,clip in require(script.Parent.AuthoredJutsu41) do all[name]=clip end
 for name,clip in require(script.Parent.AuthoredJutsu42) do all[name]=clip end
+for name,clip in require(script.Parent.AuthoredJutsu43) do all[name]=clip end
 -- END passe 3
 return all

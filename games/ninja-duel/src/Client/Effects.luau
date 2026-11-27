@@ -6,6 +6,7 @@
 local Debris=game:GetService("Debris")
 local TweenService=game:GetService("TweenService")
 local Kit=require(script.Parent.VfxKit)
+local WallRunFX=require(script.Parent.WallRunFX)
 -- (13/11) The modelled props (weapons...): built once in the background; until
 -- they are ready (or headless) the part-built ones below are used.
 local MeshKit=require(script.Parent.MeshKit)
@@ -1185,7 +1186,9 @@ function FX:impact(impact,folder)
 		if surface and surface:IsA("BasePart") and surface.Transparency<.9 then
 			local dims={surface.Size.X,surface.Size.Y,surface.Size.Z};table.sort(dims)
 			local size=math.min(if big then 9 else 6,dims[2]*.85)
-			if size>=2 then Kit.ground(self.folder,hit.Position,hit.Normal,"crack",size,2.2,1.2,Color3.new(1,1,1),.1) end
+			-- (27/11, passe commune 4: « les dégâts se voient ») the crack stays
+			-- the duel through (FX.SCAR_HOLD), the oldest going when there are too many
+			if size>=2 then self:scar(Kit.ground(self.folder,hit.Position,hit.Normal,"crack",size,FX.SCAR_HOLD,1.2,Color3.new(1,1,1),.1)) end
 		end
 	elseif style=="housebreak" then
 		-- (27/11) a house wall broken through in a street duel: what flies out
@@ -2128,11 +2131,52 @@ end
 -- Per-fighter identity layer: Minato's speed trail and Rasengan, Itachi's
 -- Sharingan glow and fire breath. Restrained: it switches on only for the
 -- moments it describes.
+-- (27/11, passe commune 4, François: « les dégâts se voient ») The cracks a
+-- duel leaves on the walls and the floor stay (SCAR_HOLD seconds, about a
+-- duel); past SCAR_MAX the oldest goes.
+FX.SCAR_HOLD=75
+FX.SCAR_MAX=26
+function FX:scar(mark)
+	if not mark then return end
+	self.scars=self.scars or {}
+	table.insert(self.scars,mark)
+	while #self.scars>FX.SCAR_MAX do
+		local old=table.remove(self.scars,1)
+		if typeof(old)=="Instance" and old.Parent then old:Destroy() end
+	end
+end
+-- A body come down hard on the floor (the vol plané's landing): the floor
+-- cracks under it, dust bursts out, the slide scores the ground behind.
+function FX:floorScar(root,size)
+	local params=RaycastParams.new();params.FilterType=Enum.RaycastFilterType.Exclude
+	params.FilterDescendantsInstances={self.folder,workspace:FindFirstChild("NinjaDuels")}
+	local hit=workspace:Raycast(root.Position,Vector3.new(0,-8,0),params)
+	if not hit or hit.Normal.Y<.6 then return end
+	self:scar(Kit.ground(self.folder,hit.Position,hit.Normal,"crack",size,FX.SCAR_HOLD,1.2,Color3.new(1,1,1),.1))
+	Kit.dust(self.folder,hit.Position,8,1.6,Color3.fromRGB(200,190,168),12)
+	for k=1,5 do
+		local chip=block(self.folder,Vector3.new(.35,.25,.3),CFrame.new(hit.Position+Vector3.new(0,.3,0))*CFrame.Angles(math.random()*6,math.random()*6,0),Color3.fromRGB(150,140,124),Enum.Material.Slate)
+		local out=Vector3.new(math.random()-.5,1.2,math.random()-.5).Unit
+		tween(chip,.5,{CFrame=chip.CFrame+out*(2+math.random()*2.5),Transparency=1},Enum.EasingStyle.Quad,Enum.EasingDirection.Out)
+		Debris:AddItem(chip,.55)
+	end
+end
 function FX:fighter(model,actor,dt)
 	if not model or not actor then return end
 	local aura=self.auras[model]
 	local root=model:FindFirstChild("HumanoidRootPart")
 	if not root then return end
+	-- (27/11, passe commune 4) on a wall: the chakra rings and the dust of his steps
+	do
+		local mode=if not actor.wall then nil elseif actor.wallMode=="stand" then "stand" elseif actor.wallMode=="climb" then "climb" else "run"
+		pcall(WallRunFX.step,model,mode,os.clock())
+	end
+	-- (27/11) the vol plané comes down on its back: the floor takes the mark
+	do
+		local down=actor.flung and actor.reaction=="Knockdown"
+		local st=self.flungSeen or setmetatable({},{__mode="k"});self.flungSeen=st
+		if down and not st[model] then st[model]=true;pcall(self.floorScar,self,root,7) elseif not down then st[model]=nil end
+	end
 	if not aura then
 		aura={}
 		self.auras[model]=aura

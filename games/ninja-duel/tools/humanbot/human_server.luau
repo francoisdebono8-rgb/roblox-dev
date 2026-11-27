@@ -121,6 +121,65 @@ function H.ryo()
 	return p and wallet(p)
 end
 function H.read() return HttpService:JSONEncode({rows=H.rows,bugs=H.bugs}) end
+
+-- (27/11 soir, passe 4, François : « le robot humain sur les murs ») The walls,
+-- read only: in the village each pose his client sends (HubPose: climb,
+-- wallstand, siderunR/L, leap, kick, vault), in a duel each fighter's wall mode,
+-- state and health when one changes, and every house opened
+-- (WorldReaction.breach: a body thrown into it, or a blow that hit it).
+H.WALLS={pose={},duel={},breach={},t0=os.clock()}
+local wallsOn=false
+function H.walls()
+	if wallsOn then return "déjà en route" end
+	wallsOn=true
+	local W=H.WALLS
+	W.pose,W.duel,W.breach,W.t0={},{},{},os.clock()
+	local function at() return math.floor((os.clock()-W.t0)*100)/100 end
+	local function v3(p) return string.format("%.0f,%.0f,%.0f",p.X,p.Y,p.Z) end
+	local remote=game:GetService("ReplicatedStorage"):FindFirstChild("NinjaDuel")
+	remote=remote and remote:FindFirstChild("HubPose")
+	if remote then
+		table.insert(conns,remote.OnServerEvent:Connect(function(player,pose)
+			local root=player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+			table.insert(W.pose,{t=at(),who=player.Name,pose=tostring(pose),at=root and v3(root.Position) or ""})
+		end))
+	end
+	local okWR,WR=pcall(require,Server:FindFirstChild("WorldReaction"))
+	if okWR and type(WR)=="table" and WR.breach and not WR._ndbreach then
+		WR._ndbreach=WR.breach
+		WR.breach=function(c,part,position,normal,energy,direction)
+			table.insert(W.breach,{t=at(),part=part and part:GetFullName():sub(-48) or "?",at=typeof(position)=="Vector3" and v3(position) or "",energy=math.floor((tonumber(energy) or 0)*10)/10})
+			return WR._ndbreach(c,part,position,normal,energy,direction)
+		end
+	end
+	task.spawn(function()
+		local okF,F=pcall(require,Server:FindFirstChild("Forest"))
+		local last={}
+		while wallsOn do
+			for _,player in Players:GetPlayers() do
+				local s=okF and F.matches and F.matches:session(player)
+				local c=s and s.combat
+				for _,a in (c and c.actors or {}) do
+					local mode=a.wall and a.wall.mode or "-"
+					local hp=math.floor(a.health or -1)
+					local key=player.Name.."/"..tostring(a.id)
+					local sig=mode.."|"..tostring(a.state).."|"..hp
+					if last[key]~=sig then
+						last[key]=sig
+						table.insert(W.duel,{t=at(),who=tostring(a.id),mode=mode,state=tostring(a.state),hp=hp,
+							y=a.root and math.floor(a.root.Position.Y*10)/10 or -1})
+					end
+				end
+			end
+			task.wait(.1)
+		end
+	end)
+	return "murs suivis"
+end
+-- What the walls did: the stands and how they ended, the houses opened.
+function H.wallsRead()
+	return HttpService:JSONEncode(H.WALLS)
+end
 function H.stop()
 	local Prog=P()
 	if Prog._ndRun then Prog.run=Prog._ndRun;Prog._ndRun=nil end
@@ -129,6 +188,9 @@ function H.stop()
 		local name=pair[2]
 		if okModule and type(mod)=="table" and mod["_nd"..name] then mod[name]=mod["_nd"..name];mod["_nd"..name]=nil end
 	end
+	wallsOn=false
+	local okWR,WR=pcall(require,Server:FindFirstChild("WorldReaction"))
+	if okWR and type(WR)=="table" and WR._ndbreach then WR.breach=WR._ndbreach;WR._ndbreach=nil end
 	for _,c in conns do c:Disconnect() end
 	conns={}
 	return "ok"

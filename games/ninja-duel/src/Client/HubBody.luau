@@ -105,6 +105,13 @@ function Body.new(Authored)
 	return setmetatable({Authored=Authored,phase=0,airborne=false,lastVy=0,landing=nil,current=nil,from=nil,blendAt=-10,tilt=0},Body)
 end
 
+local WallRunFX=nil -- Client/WallRunFX, required on first use
+-- (27/11, passe commune 4: « le saut d'un mur à l'autre avec une vrille, une
+-- réception en roulade ») the kick off a wall twists the body round in the
+-- air (Parkour.WallSpin); a landing that soon after a kick is a roll
+Body.SPIN_ROLL=1.6 -- seconds after a kick a landing still rolls
+Body.SPIN_FALL=8   -- and from this fall speed up
+
 -- (pure) The frame's choice: {move = the clip's move, t = its time, tilt = 0..1}.
 -- `f`: {now, dt, speed (horizontal, world studs/s), vy, grounded, climbing,
 -- climbSpeed, leapAt, kickAt, mantleAt, kit}.
@@ -117,7 +124,9 @@ function Body.choose(b,f)
 	-- the landing: a fall from high is a roll (still running) or a hard landing
 	if f.grounded and b.airborne then
 		local fall=-(b.lastVy or 0)
-		if fall>=Body.ROLL_FALL then
+		if f.kickAt and f.now-f.kickAt<Body.SPIN_ROLL and fall>=Body.SPIN_FALL then
+			b.landing={move="Parkour.LandRoll",at=f.now}
+		elseif fall>=Body.ROLL_FALL then
 			b.landing={move=if f.speed>=Body.ROLL_MOVING then "Parkour.LandRoll" else "Parkour.LandHard",at=f.now}
 		elseif fall>20 then
 			b.landing={move="Land",at=f.now,short=.22}
@@ -165,7 +174,11 @@ function Body.choose(b,f)
 		if length>0 and f.now-f.emoteAt<length then return {move=f.emote,t=f.now-f.emoteAt,tilt=0} end
 	end
 	if not f.grounded then
-		if f.kickAt and f.now-f.kickAt<Body.KICK then return {move="Parkour.Leap",t=f.now-f.kickAt,tilt=0} end
+		if f.kickAt then
+			local spin=len("Parkour.WallSpin")
+			if spin>0 and f.now-f.kickAt<spin then return {move="Parkour.WallSpin",t=f.now-f.kickAt,tilt=0} end
+			if spin==0 and f.now-f.kickAt<Body.KICK then return {move="Parkour.Leap",t=f.now-f.kickAt,tilt=0} end
+		end
 		local air=len("AirJump")
 		if f.leapAt and f.now-f.leapAt<math.max(air,.3) then return {move="AirJump",t=f.now-f.leapAt,tilt=0} end
 		-- the jump's own clip, held at the height of the arc: rising early, falling late
@@ -268,6 +281,10 @@ function Body:step(character,hum,f)
 	self.rest=rest
 	f.kit=kit;f.stage=stage;f.rest=rest
 	local choice=Body.choose(self,f)
+	-- (27/11, passe commune 4) the chakra rings and the dust of his steps on the wall
+	local mode=if f.climbing then "climb" elseif f.sideRun then "side" elseif f.onWall then "stand" else nil
+	if WallRunFX==nil then local ok,m=pcall(require,script.Parent.WallRunFX);WallRunFX=if ok then m else false end
+	if WallRunFX then pcall(WallRunFX.step,character,mode,f.now) end
 	self.pending=self:pose(choice,f.now)
 	self.pendingAt=f.now
 	if not self.connection then

@@ -457,3 +457,54 @@ def flung_land(kit):
 for _k in KITS:
     CLIPS[_k + ".Knockback.Flung"] = flung(_k)
     CLIPS[_k + ".Knockdown.Flung"] = flung_land(_k)
+
+
+# ================================================================== passe commune 4: the wall
+# (27/11, François: « la course au mur stylée … le saut d'un mur à l'autre avec une vrille, une
+# réception en roulade » ; « le combat sur le mur : coup reçu sans tomber »)
+def wall_spin(old):
+    """Lion.Parkour.WallSpin (everyone's, by the donor): the kick off a wall, the body twisting a
+    full turn in the air, tucked, then opening to land (Client/HubBody: after a kick)."""
+    a = {"air": True}
+    tuck = {"Waist": {"pitch": 18}, "Neck": {"pitch": 14},
+            "RA": {"swing": 40, "spread": 10, "bend": 110}, "LA": {"swing": 40, "spread": 10, "bend": 110},
+            "RL": {"swing": 85, "bend": 110, "ankle": -20}, "LL": {"swing": 80, "bend": 105, "ankle": -20}}
+    push = {"root": {"pitch": -10}, "Waist": {"pitch": -8}, "Neck": {"pitch": -6},
+            "RA": {"swing": 120, "spread": 40, "bend": 20}, "LA": {"swing": 110, "spread": 44, "bend": 24},
+            "RL": {"swing": -20, "bend": 20, "ankle": 30}, "LL": {"swing": 10, "bend": 40, "ankle": 10}}
+    open_ = {"root": {"pitch": 8}, "Waist": {"pitch": 6}, "Neck": {"pitch": 4},
+             "RA": {"swing": 30, "spread": 70, "bend": 30}, "LA": {"swing": 26, "spread": 72, "bend": 34},
+             "RL": {"swing": 40, "bend": 50, "ankle": -10}, "LL": {"swing": 25, "bend": 40, "ankle": -10}}
+    keys = [key(0, push, "out", **a)]
+    for k, (t, turn) in enumerate(((.1, 90), (.2, 180), (.3, 270), (.4, 359))):
+        keys.append(key(t, merge(tuck, {"root": {"turn": turn, "pitch": 12, "lean": 14 if k % 2 else -14}}), "smooth", **a))
+    keys.append(key(.55, open_, "in2", **a))
+    return {"keys": keys, "length": .55}
+wall_spin.base = "Lion.Parkour.Leap"
+CLIPS["Lion.Parkour.WallSpin"] = wall_spin
+
+
+def wall_hit(kit):
+    """<kit>.Wall.Hit: struck standing on a wall (the stand's frame: the wall is his floor). He
+    reels back, sags down onto bent legs (the slide down the wall) and catches himself, crouched,
+    a hand reaching for the wall, then stands up on it again (Client/VelmoraMotionEngine, HitStun
+    on a wall). The feet stay on the wall: that is the point, he does not fall."""
+    s = SIG[kit]
+    fl = s["flail"]
+
+    def fn(old):
+        reel = {"root": {"pitch": -12, "lean": 5 * fl}, "Waist": {"pitch": -14, "turn": 8 * fl}, "Neck": {"pitch": -18},
+                "RA": {"swing": 25, "spread": 40 + 20 * fl, "bend": 30}, "LA": {"swing": 15, "spread": 46 + 20 * fl, "bend": 34}}
+        slide = {"root": {"pitch": 4, "sink": .35}, "Waist": {"pitch": 10}, "Neck": {"pitch": 6},
+                 "RA": {"swing": 30, "spread": 50, "bend": 20}, "LA": {"swing": 20, "spread": 60, "bend": 26}}
+        catch = {"root": {"pitch": 18, "sink": .55}, "Waist": {"pitch": 16}, "Neck": {"pitch": -10},
+                 "RA": {"swing": 62, "spread": 12, "bend": 8}, "LA": {"swing": 10, "spread": 64, "bend": 30}}
+        keys = [key(0, {}, "out"), key(.07, reel, "out"), key(.2, slide, "smooth"),
+                key(.34, catch, "in2"), key(.56, {}, "smooth")]
+        return {"keys": keys, "length": .56}
+    fn.base = kit + ".Hit.Body"
+    return fn
+
+
+for _k in KITS:
+    CLIPS[_k + ".Wall.Hit"] = wall_hit(_k)

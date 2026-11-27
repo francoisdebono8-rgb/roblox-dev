@@ -36,6 +36,58 @@ La passe : doc projet `claude/passe-commune-4-clip-qui-donne-envie-2026-11-27` (
 
 **À la DESIGN et à l'OUTILLEUR** : vos sections de la passe 4. Les traits du cadrage et le badge F4 viennent de `tools/capture/studio/ClipAssist` (lignes `lines=24`, puce « 🎬 F4 ») : à n'afficher que l'outil ouvert.
 
+## INBOX-ANIM-PASSE4-20261127 — ANIMATEUR, passe commune 4 (27/11 soir) : le mur, les dégâts, la falaise
+
+Ce que j'ai fait, ce que j'ai vu dans Studio (place `LAB/bt/NinjaDuel-P4c`, la branche commune) et ce qui manque.
+
+- **La falaise** (`tools/blender/konoha_models.py` `hokage_cliff`, épissée seule dans `HubMeshData17/18` : les autres modèles ne sont pas touchés, car une régénération complète changeait aussi des maisons) :
+  - C'est maintenant un massif :
+    - la face descend sous le sol (y −14) ;
+    - un plateau de collines part loin derrière (z −560) et redescend sur les côtés et à l'arrière ;
+    - 46 groupes d'arbres sont posés dessus.
+  - Vu d'en haut, ce n'est plus une plaque : le relief est là. Vu du village, la falaise se voit (elle se voyait aussi avant dans ma place, avec le maillage chargé).
+  - **Pas réglé** :
+    - de l'extérieur, côté ouest, le bout de la face se voit encore comme un panneau ;
+    - les têtes (`HubMap.Base.Heads`, DEV) sont à environ 36 studs devant la face : leurs échafaudages et leurs plaques flottent quand on ne voit pas la roche derrière. **DEV** : reculer les têtes contre la face (z ≈ face + 6) ;
+    - le sol vert du village s'arrête avant le pied de la falaise (la couronne de forêt et de collines du DEV).
+- **La course au mur** (`Client/WallRunFX`, branché dans `HubBody` pour la ville et dans `Effects:fighter` pour le duel) :
+  - à chaque pas, un disque de chakra bleu à plat sur le mur, sous le pied qui le touche, et une bouffée de poussière ;
+  - debout sur le mur, les deux semelles brillent doucement.
+  - Vu dans Studio sur le mur d'enceinte (le corps placé par script contre le mur ; ce n'est pas une course au clavier).
+- **La vrille et la roulade** :
+  - `Lion.Parkour.WallSpin` (le donneur de tous) : le saut depuis un mur tourne d'un tour complet, groupé.
+  - `HubBody` : une réception dans les 1,6 s qui suivent un saut de mur est une roulade (`Parkour.LandRoll`).
+  - **Pas vu en jeu** (il faut le clavier).
+- **Le coup reçu sur le mur** :
+  - `<kit>.Wall.Hit`, pour les 8 kits, est joué par `authoredReaction` quand `HitStun` arrive en `wallMode` `stand` : il vacille, s'affaisse sur le mur, se rattrape accroupi, une main vers le mur, puis se relève dessus. Les pieds restent au mur.
+  - **Dépend du DEV**, point 1 de la passe : un coup léger ne doit plus faire tomber du mur.
+  - L'appel sur le mur pour frapper, c'est le plongeon (`WallDive`) déjà là depuis `stand`. Je n'y ai pas touché.
+- **Les dégâts** (`Client/Effects`) :
+  - les fissures laissées par un corps contre un mur tiennent maintenant 75 s (`FX.SCAR_HOLD`), au plus 26 à la fois (`FX.SCAR_MAX`, la plus vieille s'en va). Avant, elles disparaissaient en 2,2 s.
+  - Un vol plané qui retombe fissure le sol sous le corps, avec de la poussière et des éclats.
+  - **Pas vu en jeu ce soir.**
+- **Les armes et les PNJ** : **pas faits**. Le dossier `~/Documents/NinjaDuel/REFERENCES/` n'existe pas sur le Mac (seuls `PLACES`, `LAB`, `ARCHIVES`, `_outils`, `BLENDER`, `_maintenance` et `MEDIA` sont là). Je les fais dès que les planches y sont.
+## INBOX-OUTILLEUR-MURS-20261127 — OUTILLEUR 27/11 soir (passe commune 4) : le robot humain sur les murs, la fluidité pour filmer
+
+Mesures : `tools/humanbot/mesures/2026-11-27d_0cd43300/` (rapport, 11 captures). Place : copie de la place commune `0cd43300`. Aucune ligne rouge.
+
+- **DEV** :
+  1. Duel de rue dans les ruelles : la caméra se colle aux façades, entre dans la maison qui s'efface, et perd les deux corps (captures 40, 41). Le corps du joueur a aussi été poussé dans une fente de 2 studs entre deux maisons.
+  2. L'IA se tient sur le mur au ras du sol (y ≈ 3,5) jusqu'à 8 s de suite, 7 fois, et frappe dans le vide. Perchée sous le joueur posé sur un auvent, elle a frappé 8 s sans qu'aucun coup ne touche dans un sens ou l'autre.
+  3. Le seul coup reçu debout sur le mur a fait quitter le mur aussitôt (0cd43300) : à revoir avec ton point 1 de la passe.
+  4. 24 maisons ouvertes en deux duels, dont 16 par des coups de l'IA qui touchaient le mur (`WorldReaction.impact` ouvre à chaque coup assez fort). Voulu ?
+  5. Une image de 145 ms en duel, toute dans le son (updateFmod 134 ms, update3dListenerAttributes 72 ms). Les sons de HouseBreakFX et StrikeSoundFX sont créés à la volée sans préchargement : piste.
+  6. Pour info : chaque capture de Studio (MCP) gèle le Play ~0,47 s. Une capture pendant un tournage ou une mesure fausse le résultat.
+- **ANIMATEUR** :
+  1. En ville, se tenir sur le mur ne marche que dans un cas précis (sauter à côté d'un long mur, tourner le stick dedans juste à la fin de la course le long) : 2 fois sur 6. Garder le stick dedans fait passer le haut en 0,3 s. Sur une maison de 15-18 studs, la montée pose toujours sur le toit.
+  2. Debout sur le mur, le corps horizontal en garde rend bien de côté (capture 38) ; la course le long part même au sol, à côté d'une maison.
+- **DESIGN** : rien n'apprend le mur à l'écran (la barre du bas ne parle que de SHIFT, SPACE ×2, E, B). Les traits rouges et le badge F4 restent visibles hors tournage.
+- **CM** (pour le tournage de ce soir) :
+  1. Studio **au premier plan** pendant la prise : au second plan, elle ne dessine que 15 images par seconde.
+  2. **Aucune capture Claude** (capture_screenshot) pendant la prise : chacune fige l'image ~0,5 s.
+  3. Qualité graphique fixe (le F4 dit 12 ; la place lit « Automatique »), « Préparer l'image » du F4, une seule Studio en Play.
+  4. Les plus belles images vues : la course sur les toits au-dessus des ruelles (42), le joueur debout sur le mur de côté (38), la maison ouverte avec la fissure au sol (44). À éviter : le duel au fond d'une ruelle étroite (la caméra se colle aux murs).
+
 ## INBOX-ANIM-VOLPLANE-20261127 — ANIMATEUR 27/11 : le vol plané, premier des « vrais coups subis selon la situation » (François : « DEV compris »)
 
 François (11 h 50) : « créer de vraies animations de coups subis selon la situation : vol plané, recul, etc. ». À mes questions, il a répondu : **le vol plané d'abord**, **les 8 kits avec une base commune**, **DEV compris**.

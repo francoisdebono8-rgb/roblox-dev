@@ -161,3 +161,12 @@ Ce qu'il faut savoir pour le refaire :
 - `eval_client_runtime` coupe à 25 s : attendre la fin d'un duel avec `wait_until` (`NDBotState=="done"`) et `get_request_status`.
 - Le robot de duel lit `current.human/bot` : il joue les duels contre l'IA ; en ligne, ce sont les mains (clics gauches + `chaos.py mash`).
 - `mash` n'a que des touches : le coup léger est le clic gauche, à envoyer en même temps par `user_mouse_input` (humeur `mashclicks`).
+
+## Le 27/11 soir : passe commune 4, sur les murs
+
+François : « le robot humain sur les murs au clavier (courir, se tenir, se battre là-haut, projeter dans une maison), la fluidité pour filmer (micro-profileur) ». Place : copie de la place commune `0cd43300` dans `LAB/robots/NinjaDuel-P4-robots.rbxlx` (la place commune reste libre pour la place_commune et le CM). Mesures : `mesures/2026-11-27d_0cd43300/`.
+
+- **Les murs** : `NDHumanServer.walls()` suit, sans rien changer, les poses de la ville (HubPose : climb, wallstand, siderunR/L, leap, kick, vault), en duel le mode de mur, l'état et la vie de chaque combattant, et chaque maison ouverte (`WorldReaction.breach`) ; `NDHumanServer.wallsRead()` les rend. Le rapport en fait la section « Les murs » : combien de fois debout sur un mur, combien de fins sur un coup reçu, combien de maisons ouvertes.
+- **Le mur au clavier** : la caméra donne le sens de W ; la poser (`workspace.CurrentCamera.CFrame`) dans un appel, puis envoyer les touches dans l'appel suivant (envoyés ensemble, les appels se croisent). Se tenir en ville : sauter à côté d'un long mur, courir le long, tourner le stick dedans à la fin, puis le lâcher.
+- **Les captures gèlent le jeu** : chaque `capture_screenshot` fige le Play environ 0,47 s (mesuré). Appeler `NDHumanWatch.shot()` juste avant chaque capture : le rapport retire l'image longue qui suit. Pour mesurer la fluidité, ne rien capturer.
+- **Le micro-profileur** (`capture_micro_profiler start/stop`, cible `client-1`) : sa note dit si Studio était au second plan (alors il ne dessine que 15 images par seconde).

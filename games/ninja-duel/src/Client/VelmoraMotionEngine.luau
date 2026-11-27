@@ -2861,6 +2861,10 @@ local function authoredReaction(actor)
 		end
 	elseif kind=="GuardStun" then
 		local p=play("Guard.Impact",elapsed,false);if p then return p,RATE.authored,"Guard.Impact" end
+	elseif kind=="HitStun" and actor.wallMode=="stand" and Authored.has(F..".Wall.Hit") then
+		-- (27/11, passe commune 4) hit standing on a wall: he reels, a foot
+		-- comes off it, he slides down a little and catches himself, on it
+		local p=play("Wall.Hit",elapsed,side<0);if p then return p,RATE.authored,"Wall.Hit" end
 	elseif kind=="HitStun" then
 		local zone=actor.hitZone or "body"
 		local hitKind=actor.hitKind or "strike"
