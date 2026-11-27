@@ -441,8 +441,12 @@ function Brawler.releaseGrab(a)
 end
 -- `cause` (optional): what threw the body (a move or technique name); a wall
 -- the flight ends on reports it, so the client can say which blow did it.
+-- (27/11, passe 4) The reactions that throw a body: off a wall it stood on
+-- (a light blow's HitStun keeps it there, Combat.staysOnWall).
+Brawler.THROWS={Knockback=true,Launched=true,Knockdown=true,Juggled=true,Bound=true,WallSplat=true,Spiked=true}
 function Brawler.react(c,a,kind,velocity,duration,source,cause)
  local was=a.reaction
+ if a.wall and Brawler.THROWS[kind] then Motor.detach(a,c.now,false) end
  Brawler.releaseGrab(a)
  -- (Audit 29/10) A hit ends the run: its hand-back threw the body on at the
  -- run's speed on the first free frame after the stun.

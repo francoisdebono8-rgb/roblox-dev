@@ -61,4 +61,25 @@ test("headless: nothing is built, model() is nil (primitives kept)",function()
  assert(MeshKit.model("Kunai")==nil)
  assert(not MeshKit.has("Kunai"))
 end)
+-- (27/11, passe 4: the Hokage cliff unseen from the village) A piece of the
+-- village faces where it is seen from: the cliff's front faces the village
+-- (+z, the gate's side), as built (MeshKit.FLIP turns a piece exported inside out)
+test("the Hokage cliff faces the village",function()
+ local spec
+ for _,s in MeshKit.Data.HokageCliff or {} do if s.name=="Cliff" then spec=s end end
+ assert(spec,"no cliff")
+ assert(spec.flip==true and spec.asset==nil,"the cliff is not built turned (its published mesh is inside out)")
+ local pos,_,tri=MeshKit.unpack(spec)
+ local toward,away=0,0
+ for k=1,#tri,3 do
+  local a,b,c=tri[k],tri[k+1],tri[k+2]
+  if spec.flip then b,c=c,b end
+  local n=(pos[b]-pos[a]):Cross(pos[c]-pos[a])
+  if n.Magnitude>1e-9 then
+   local z=n.Unit.Z
+   if z>.5 then toward+=n.Magnitude elseif z<-.5 then away+=n.Magnitude end
+  end
+ end
+ assert(toward>away*4,string.format("the cliff's face looks away from the village: %.0f toward, %.0f away",toward,away))
+end)
 print(passed.." passed")

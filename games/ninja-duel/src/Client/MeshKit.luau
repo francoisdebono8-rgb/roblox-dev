@@ -25,6 +25,8 @@ do
 		for name,pieces in HubData do MeshKit.Data[name]=pieces;MeshKit.Late[name]=true end
 	end
 end
+-- model/piece -> built with its triangles turned (below)
+MeshKit.FLIP={["HokageCliff/Cliff"]=true}
 -- (14/11, DEV: 7-12 s building the village on the player's computer, the
 -- village changing shape meanwhile) Pieces published as meshes
 -- (tools/blender/hub_fbx.py -> Studio import -> hub_to_luau.py) are loaded by
@@ -39,6 +41,17 @@ do
 			for _,spec in MeshKit.Data[name] or {} do
 				if ids[spec.name] then spec.asset=ids[spec.name] end
 			end
+		end
+	end
+	-- (27/11, passe 4: the Hokage cliff unseen from the village, the heads'
+	-- scaffold floating before an empty sky) Pieces exported wound inside out:
+	-- their faces look away from where they are seen. Built here with their
+	-- triangles turned (their published mesh has the same fault) until the
+	-- ANIMATEUR's exporter (tools/blender/konoha_models.py) turns them itself.
+	for key in MeshKit.FLIP do
+		local name,piece=string.match(key,"^([^/]+)/(.+)$")
+		for _,spec in MeshKit.Data[name] or {} do
+			if spec.name==piece then spec.flip=true;spec.asset=nil end
 		end
 	end
 end
@@ -159,6 +172,7 @@ local function fill(em,spec)
 		acc=table.create(#pos,Vector3.zero)
 		for k=1,#tri,3 do
 			local a,b,c=tri[k],tri[k+1],tri[k+2]
+			if spec.flip then b,c=c,b end
 			local nrm=(pos[b]-pos[a]):Cross(pos[c]-pos[a])
 			acc[a]+=nrm;acc[b]+=nrm;acc[c]+=nrm
 		end
@@ -166,6 +180,7 @@ local function fill(em,spec)
 	local nid={}
 	for k=1,#tri,3 do
 		local a,b,c=tri[k],tri[k+1],tri[k+2]
+		if spec.flip then b,c=c,b end
 		local f=em:AddTriangle(ids[a],ids[b],ids[c])
 		em:SetFaceColors(f,{cols[a],cols[b],cols[c]})
 		if spec.flat then

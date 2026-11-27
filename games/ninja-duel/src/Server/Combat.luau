@@ -74,9 +74,20 @@ function Combat:add(id,model,hum,root,joints,definition,kit)
 end
 -- The tournament stage is round: positions are held inside a circle so no
 -- corner of the old square limit reaches into the stands.
+-- (27/11, passe 4: « les dégâts, ça doit être visuel »; the OUTILLEUR's
+-- bodies held in mid-air at the edge of a street's ring) How far a body goes
+-- from the duel's centre: in a street, a little past the ring, so a body
+-- thrown out reaches the houses round it and breaks in (WorldReaction.breach)
+-- instead of stopping on an unseen wall; the ring stays the fight's ground.
+function Combat:reach()
+	local r=self.match.radius or Config.ArenaRadius
+	local site=self.match.site
+	if self.match.radius and site and site.street then r+=Config.World.StreetOverflow end
+	return r
+end
 function Combat:clamp(p)
 	-- (14/11, a duel in Konoha) a master's ground has its own radius.
-	local o=self.match.origin; local r=self.match.radius or Config.ArenaRadius
+	local o=self.match.origin; local r=self:reach()
 	local flat=Vector3.new(p.X-o.X,0,p.Z-o.Z)
 	if flat.Magnitude>r then flat=flat.Unit*r end
 	return Vector3.new(o.X+flat.X,math.clamp(p.Y,o.Y+3,o.Y+Config.ArenaHeight),o.Z+flat.Z)
@@ -287,6 +298,11 @@ function Combat:chip(attacker,victim,amount)
 	end
 	return true
 end
+-- (pure) Whether a body on a wall stays on it under a blow: standing on it
+-- (not running), and a light blow.
+function Combat.staysOnWall(victim,heavy)
+	return victim.wall~=nil and victim.wall.mode=="stand" and not heavy
+end
 function Combat:damage(attacker,victim,amount,heavy,readEligible)
 	if self.match.phase~="Duel" or self.match.finishing or victim.health<=0 or attacker.health<=0 then return false end
 	-- Inside Rotation nothing reaches Neji; the dome answers on its own step.
@@ -306,7 +322,11 @@ function Combat:damage(attacker,victim,amount,heavy,readEligible)
 	end
 	-- A counter stance (Families Counter) answers the blow before any defence.
 	if Families.beforeHit(self,attacker,victim,readEligible) then return false end
-	if victim.wall then Motor.detach(victim,self.now,false) end
+	-- (27/11, passe 4, François: « les combats au mur, on doit pouvoir vraiment
+	-- se fighter et continuer le combat sur un mur ») a body standing on a wall
+	-- takes a light blow there and stays on it; what throws (the heavy, and
+	-- Brawler.react's Knockback, Launched, Knockdown...) takes it off.
+	if victim.wall and not Combat.staysOnWall(victim,heavy) then Motor.detach(victim,self.now,false) end
 	-- A blade is judged from where it came from (a redirected shuriken reaches
 	-- the flank even when the thrower stands in front).
 	local delta=(self.hitOrigin or attacker.root.Position)-victim.root.Position
@@ -2266,7 +2286,7 @@ function Combat:updateActor(a,dt)
 	if self.match.radius then self:unstick(a,now) end
 	-- Server-owned humanoids + server-clamped arena coordinates.
 	local p=a.root.Position
-	if Vector3.new(p.X-self.match.origin.X,0,p.Z-self.match.origin.Z).Magnitude>(self.match.radius or Config.ArenaRadius) or p.Y<self.match.origin.Y-3 then
+	if Vector3.new(p.X-self.match.origin.X,0,p.Z-self.match.origin.Z).Magnitude>self:reach() or p.Y<self.match.origin.Y-3 then
 		-- (Fluidity audit 05/11) A body pressed against the arena's edge is held
 		-- on it every frame: that is not a teleport. Declared as one (a new warp
 		-- serial each frame: 53 in 41 s of Studio duel, mostly through Wall
@@ -2290,8 +2310,9 @@ function Combat:stepRotation(a)
 	-- Skill builds: a wider dome (rotationReach) and blades sent back at their
 	-- thrower (rotationReflect), both set by Techniques.Rotation from the spec.
 	local reach=a.rotationReach or Techniques.ROTATION_REACH or 7
-	-- The dome sweeps away the enemy bodies inside it (shadow clones).
-	Bodies.area(self,a,a.root.Position,reach)
+	-- The dome sweeps away the enemy bodies inside it (shadow clones): thrown
+	-- out of it, then gone (27/11, the CM's Naruto vs Neji)
+	Bodies.area(self,a,a.root.Position,reach,Techniques.ROTATION_THROW or 44)
 	for i=#self.projectiles,1,-1 do
 		local p=self.projectiles[i]
 		if p.a~=a and (p.position-a.root.Position).Magnitude<=reach+1.5 then

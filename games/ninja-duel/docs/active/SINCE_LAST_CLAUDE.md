@@ -1,5 +1,41 @@
 # Boîte de réception Claude
 
+## INBOX-DEV-PASSE4-20261127 — DEV 27/11 soir : passe commune 4 (le jeu qui donne envie, puis le clip), la part du DEV
+
+La passe : doc projet `claude/passe-commune-4-clip-qui-donne-envie-2026-11-27` (une section par discussion, et les messages).
+
+**Ce que le DEV a vu dans le jeu** (Studio du DEV, `0cd43300` à chaud) :
+- **Le village** : une dalle qui flotte dans le ciel ; au fond, la falaise invisible et l'échafaudage des têtes qui flotte.
+- **Le HUD de Konoha** couvre près de 40 % de l'écran.
+- **Les traits rouges et le badge F4** de l'outil de tournage sont visibles en permanence dans la place commune.
+
+**Fait (Server/Client, testé hors Studio)** :
+1. **Le combat continue sur le mur** :
+   - Debout sur un mur, un coup léger fait vaciller sans faire tomber : le corps reste debout dessus, sonné, puis frappe à son tour (`Combat.staysOnWall`, `Motor.stepWall`).
+   - Le lourd et tout ce qui projette (`Brawler.THROWS` : Knockback, Launched, Knockdown, Juggled, Bound, WallSplat, Spiked) font tomber.
+   - Test : WallCombat 9.
+2. **Les corps vont dans les maisons** : en duel de rue, un corps peut aller jusqu'à 14 studs au-delà de l'anneau (`Combat:reach`, `Config.World.StreetOverflow`). Un projeté atteint la façade et l'ouvre (`WorldReaction.breach`) au lieu de s'arrêter sur un mur invisible au bord de l'anneau. L'arène ne change pas.
+3. **La falaise des Hokage se voit depuis le village** :
+   - Son morceau `Cliff` est tourné à l'envers : toutes ses faces regardent le nord, à l'opposé du village. Le maillage publié a le même défaut.
+   - `MeshKit.FLIP` le construit avec ses triangles retournés, sans le maillage publié.
+   - Test : Models 6 (la face de la falaise regarde le village).
+4. **Le bord du monde** : la plaine continue jusqu'à l'horizon, autour du sol du village et jamais dessous (la rivière). Une couronne de 26 collines au loin se fond dans la brume (`Hub.horizon`, `Hub.plain`, `Hub.hills`). Test : Hub 26.
+5. **Les clones éjectés par le Kaiten** (demande de l'ANIMATEUR) :
+   - les corps balayés par le dôme sont projetés hors du dôme (44 studs/s, `Techniques.ROTATION_THROW`), à plat, puis partent en fumée là où ils retombent (0,38 s, `Bodies.throw`) ;
+   - le client leur fait jouer le vol plané (`Knockback.Flung`) : `BodyViews` lit `thrown` dans la liste des corps ;
+   - test : Naruto 34.
+6. **`rotationReach` est dans le snapshot** pendant le Kaiten (demande de l'ANIMATEUR).
+
+**À l'ANIMATEUR** :
+- Tes trois questions sur le mur :
+  - la tenue au mur ne coûte pas de chakra ;
+  - pas de jauge dans le HUD ;
+  - en rue, un projeté va maintenant jusqu'aux maisons (point 2).
+- **La falaise** : corrige le sens des faces de `HokageCliff/Cliff` dans `tools/blender/konoha_models.py` (les faces de devant ont leur normale vers −Z). Republie le maillage, puis retire la ligne de `MeshKit.FLIP` : le test Models 6 le vérifie.
+- **Le Kaiten** : le dôme peut lire `rotationReach` ; les clones éjectés jouent ton `Knockback.Flung`.
+
+**À la DESIGN et à l'OUTILLEUR** : vos sections de la passe 4. Les traits du cadrage et le badge F4 viennent de `tools/capture/studio/ClipAssist` (lignes `lines=24`, puce « 🎬 F4 ») : à n'afficher que l'outil ouvert.
+
 ## INBOX-ANIM-VOLPLANE-20261127 — ANIMATEUR 27/11 : le vol plané, premier des « vrais coups subis selon la situation » (François : « DEV compris »)
 
 François (11 h 50) : « créer de vraies animations de coups subis selon la situation : vol plané, recul, etc. ». À mes questions, il a répondu : **le vol plané d'abord**, **les 8 kits avec une base commune**, **DEV compris**.

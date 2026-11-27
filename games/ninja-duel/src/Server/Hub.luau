@@ -963,9 +963,62 @@ function Hub.forestOutside(f)
 	g:SetAttribute("Trees",#trees)
 	return g
 end
+-- (27/11, passe 4, François: « le village est généré d'une manière bizarre »;
+-- seen from a roof or from above, it was a slab floating in the sky, the
+-- ground ending at the walls) The land goes on to the horizon: a plain a hair
+-- under the village's own ground, and a ring of low wooded hills far out that
+-- the haze (Shared/Look.ATMOSPHERE) melts into the sky. Unscaled units (Hub.
+-- scaleVillage multiplies them, and a part stays under 2048 studs).
+Hub.HORIZON={Tile=1500,Tiles=3,HillRing={1150,1450},Hills=26}
+-- (pure) The hills: {x, z, diameter, sink} in the village's frame.
+function Hub.hills()
+	local H=Hub.HORIZON
+	local out={}
+	for i=0,H.Hills-1 do
+		local a=math.rad(i*360/H.Hills+(i%3)*4)
+		local r=H.HillRing[1]+((i*7)%5)/4*(H.HillRing[2]-H.HillRing[1])
+		local d=900+((i*5)%4)*160
+		table.insert(out,{math.cos(a)*r,math.sin(a)*r,d,d*(.36+((i*3)%4)*.025)})
+	end
+	return out
+end
+-- (pure) The plain's tiles {x0, z0, x1, z1}: the square of the horizon round
+-- the village's own ground (never under it: the river's bed and water there),
+-- each tile at most HORIZON.Tile across.
+function Hub.plain()
+	local H=Hub.HORIZON
+	local R=H.Tile*H.Tiles/2
+	local vx0,vx1,vz0,vz1=-Layout.HalfX-20,Layout.HalfX+20,Layout.MinZ-20,Layout.MaxZ+24
+	local out={}
+	local function fill(ax,az,bx,bz)
+		if bx-ax<=.1 or bz-az<=.1 then return end
+		local nx,nz=math.ceil((bx-ax)/H.Tile),math.ceil((bz-az)/H.Tile)
+		local wx,wz=(bx-ax)/nx,(bz-az)/nz
+		for i=0,nx-1 do for j=0,nz-1 do table.insert(out,{ax+i*wx,az+j*wz,ax+(i+1)*wx,az+(j+1)*wz}) end end
+	end
+	fill(-R,-R,R,vz0)            -- north of the village
+	fill(-R,vz1,R,R)             -- south (the forest's own ground lies on it)
+	fill(-R,vz0,vx0,vz1)         -- west
+	fill(vx1,vz0,R,vz1)          -- east
+	return out
+end
+function Hub.horizon(f)
+	local H=Hub.HORIZON
+	local g=Instance.new("Folder");g.Name="Horizon";g.Parent=f
+	for _,r in Hub.plain() do
+		local tile=deco(g,"Plain",Vector3.new(r[3]-r[1],8,r[4]-r[2]),rel((r[1]+r[3])/2,-4.4,(r[2]+r[4])/2),C.grassDark,Enum.Material.Grass)
+		tile.CastShadow=false
+	end
+	for k,h in Hub.hills() do
+		local hill=deco(g,"Hill",Vector3.one*h[3],rel(h[1],-h[4],h[2]),if k%3==0 then C.grass else C.grassDark,Enum.Material.Grass)
+		hill.Shape=Enum.PartType.Ball;hill.CastShadow=false
+	end
+	return g
+end
 function Hub.buildLayout(f)
 	layoutGround(f)
 	Hub.forestOutside(f)
+	Hub.horizon(f)
 	local buildings=Instance.new("Folder");buildings.Name="Buildings";buildings.Parent=f
 	for _,b in Layout.Buildings do Hub.layoutBuilding(buildings,b) end
 	for _,w in Layout.Walls do

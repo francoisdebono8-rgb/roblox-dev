@@ -283,7 +283,9 @@ end
 function Motor.stepWall(a,c,dt,now)
 	local wall=a.wall
 	if not wall then return false end
-	if now>=wall.untilTime or not wall.part.Parent or a.state=="Stunned" or a.state=="Defeated" then
+	-- (27/11, passe 4) a body standing on the wall stays there stunned by a
+	-- light blow (Combat.staysOnWall); a run up or along it ends
+	if now>=wall.untilTime or not wall.part.Parent or (a.state=="Stunned" and wall.mode~="stand") or a.state=="Defeated" then
 		Motor.detach(a,now,false);return false
 	end
 	local p=RaycastParams.new();p.FilterType=Enum.RaycastFilterType.Exclude

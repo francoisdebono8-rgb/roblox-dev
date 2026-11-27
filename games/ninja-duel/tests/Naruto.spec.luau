@@ -576,7 +576,17 @@ test("other fighters: Neji's Rotation sweeps clones away, each clone blow costs 
  local rotation
  for i,t in b.def.Techniques do if t.Id=="Rotation" then rotation="Technique"..i end end
  assert(c:request(b,rotation))
- until_(c,.4,function() return not near.alive end,"Rotation left a clone standing inside the dome")
+ -- (27/11, the CM's Naruto vs Neji) thrown out of the dome first, then gone
+ local from=near.position
+ until_(c,.4,function() return near.thrown~=nil end,"Rotation did not throw the clone out of the dome")
+ H.step(c,.15)
+ local out=V.new(near.position.X-b.root.Position.X,0,near.position.Z-b.root.Position.Z).Magnitude
+ local was=V.new(from.X-b.root.Position.X,0,from.Z-b.root.Position.Z).Magnitude
+ assert(near.alive and out>was+2 and near.airborne,"the thrown clone did not fly out of the dome: "..out.." from "..was)
+ local view
+ for _,v in Bodies.view(c) do if v.id==near.id then view=v end end
+ assert(view and view.thrown and view.thrown>0,"the clients are not told the clone flies")
+ until_(c,.6,function() return not near.alive end,"Rotation left a clone standing inside the dome")
  assert(far.alive,"Rotation reached a clone far outside the dome")
  -- Gaara: a clone's jab spends one charge, it does not break the shield.
  local c2,x,y=H.duel("Legion","Sand");place(c2,x,y,10)

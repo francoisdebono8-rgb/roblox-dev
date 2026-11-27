@@ -80,7 +80,9 @@ return {
 	-- facts. Energies: a body (studs/s x BodyEnergy), a projectile (damage x
 	-- ProjectileEnergy), a strike that met the world (damage x StrikeEnergy),
 	-- a zone (radius x ZoneEnergy); below MinEnergy nothing is marked.
-	World = {MaxScars = 48, MaxRubble = 24, RubblePerBreak = 4, MaxEmbeds = 16, MinEnergy = 8,
+	-- StreetOverflow (27/11, passe 4): studs past a street duel's ring a body
+	-- may go (Combat:reach), so a thrown one reaches the houses round it.
+	World = {StreetOverflow = 14, MaxScars = 48, MaxRubble = 24, RubblePerBreak = 4, MaxEmbeds = 16, MinEnergy = 8,
 		CrackedShare = 0.5, StumpHeight = 2.2, MoundShare = 0.38,
 		BodySpeed = 14, LandingSpeed = 26, BodyEnergy = 1.4, ProjectileEnergy = 5, StrikeEnergy = 4, ZoneEnergy = 5,
 		BodyRepeat = 0.35, SmashCarry = 0.6, HeavyKinds = {heavy = true, spike = true, launch = true},

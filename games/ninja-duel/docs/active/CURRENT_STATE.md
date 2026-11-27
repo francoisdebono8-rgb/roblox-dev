@@ -5,6 +5,13 @@
   - Konoha et la forêt : 30 au sol au lieu de 36, mesuré 28,8 en course. En l'air, le saut porte toujours à 36 (`HubMove.AIR_RUN`) : les toits que relie le plan du village restent atteints.
   - Le duel : le sprint passe à 42 au lieu de 45 (Lee : 50,4 au lieu de 54). Descendre plus bas casse le réglage des bots : à 40, ils ne feintent plus en entrant (Regression) et Lee n'utilise plus ses routes (Lee) ; à 38, Neji n'atteint plus Naruto pour ses 64 Paumes (AIVariety). Pour aller plus lent, il faut d'abord régler l'IA. Le Chidori formé à distance suit maintenant les règles de variété des autres jutsu (`AI:hogs`), car il sortait 4 fois sur 7 à 38.
   - Avant que son kit ait sa propre course (maîtrise 800), son avatar court la course ninja nette de l'ANIMATEUR (`Lion.Run.F`, `Lion.Sprint`), dans Konoha (`HubBody.NINJA_RUN`) comme en duel (`NinjaRun` sur son corps, `Matches.runOf` → `VelmoraMotionEngine`). Vu en duel : penché, bras en arrière.
+- **Passe commune 4, part du DEV** (27/11 soir, INBOX-DEV-PASSE4-20261127) :
+  - le combat continue sur le mur (un coup léger y laisse le corps, le lourd et les projections le font tomber) ;
+  - en rue, un projeté va jusqu'aux maisons (14 studs au-delà de l'anneau) ;
+  - la falaise des Hokage est construite à l'endroit (son maillage était retourné : invisible depuis le village) ;
+  - la plaine et une couronne de collines cachent le bord du monde ;
+  - les clones du Kaiten sont éjectés avant la fumée ; `rotationReach` est dans le snapshot.
+  Tests : WallCombat 9, Models 6, Hub 26, Naruto 34. À voir dans le jeu.
 - **Le robot humain, troisième partie** (INBOX-OUTILLEUR-HUMAIN3-20261127, réponse INBOX-DEV-HUMAIN3-20261127) :
   - un tournoi refusé dit pourquoi (kit pas appris, build hors budget) ;
   - un build vide entre avec le build par défaut du kit, plus à 0 / 100 ;

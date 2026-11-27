@@ -340,17 +340,44 @@ function Bodies.projectile(c,p,step)
 	return not volume
 end
 -- Every enemy body of `a` within `radius` of `center` (a dome, a shockwave).
-function Bodies.area(c,a,center,radius)
+-- (27/11, the ANIMATEUR for the CM's Naruto vs Neji: « les clones
+-- disparaissent en fumée dès le contact : on ne les voit pas être éjectés »)
+-- `throw` (studs/s): the swept bodies are thrown out of the area first, flat
+-- and on their back (the client plays the vol plané, Knockback.Flung), and go
+-- up in smoke where they come down (Bodies.THROW.Air later).
+Bodies.THROW={Air=.38,Lift=16,Gravity=96}
+function Bodies.area(c,a,center,radius,throw)
 	local all=c.bodies
 	if not all or #all==0 then return 0 end
 	local count=0
 	for _,body in table.clone(all) do
 		local d=body.position-center
-		if body.alive and not body.buried and body.owner~=a and flat(d).Magnitude<=radius+Bodies.RADIUS and math.abs(d.Y)<6 then
-			Bodies.dispel(c,body,"area",a);count+=1
+		if body.alive and not body.buried and not body.thrown and body.owner~=a and flat(d).Magnitude<=radius+Bodies.RADIUS and math.abs(d.Y)<6 then
+			if throw then Bodies.throw(c,body,flat(d),throw,a) else Bodies.dispel(c,body,"area",a) end
+			count+=1
 		end
 	end
 	return count
+end
+-- A body thrown (out of a dome): it flies, then is gone.
+function Bodies.throw(c,body,away,speed,by)
+	local out=if away.Magnitude>.1 then away.Unit else flat(body.look or Vector3.new(0,0,-1))
+	if out.Magnitude<.1 then out=Vector3.new(0,0,-1) end
+	body.thrown={velocity=out.Unit*speed+Vector3.new(0,Bodies.THROW.Lift,0),untilT=c.now+Bodies.THROW.Air,by=by,at=c.now}
+	body.mode="thrown";body.carry=nil;body.action=nil;body.state="Neutral";body.airborne=true
+	-- it flies back first, its face to the one who threw it
+	body.look=-out.Unit
+end
+Bodies.controllers=Bodies.controllers or {}
+Bodies.controllers.thrown=function(c,body,dt)
+	local t=body.thrown
+	if not t then return end
+	t.velocity-=Vector3.new(0,Bodies.THROW.Gravity*dt,0)
+	local floor=c.match.origin.Y+3
+	local p=c:clamp(body.position+t.velocity*dt)
+	if p.Y<floor then p=Vector3.new(p.X,floor,p.Z) end
+	body.position=p
+	if c.now>=t.untilT then Bodies.dispel(c,body,"area",t.by) end
 end
 -- The enemy body a string opener is pushed at: the lock stays on the real
 -- fighter, the stick picks the clone. nil when the stick points at none in
@@ -439,7 +466,8 @@ function Bodies.view(c)
 			table.insert(out,{id=body.id,owner=body.owner.id,fighterId=body.owner.fighterId,kind=body.kind,position=body.position,look=body.look,
 				state=body.state,action=body.action,variant=body.variant,actionSerial=body.actionSerial,actionElapsed=c.now-(body.actionAt or c.now),
 				airborne=body.airborne,velocity=body.velocity,remaining=math.max(0,body.expires-c.now),mode=body.mode,cast=body.cast,
-				ephemeral=body.ephemeral,warp=body.warp,crowd=body.crowd,buried=body.buried,slot=body.slot})
+				ephemeral=body.ephemeral,warp=body.warp,crowd=body.crowd,buried=body.buried,slot=body.slot,
+				thrown=if body.thrown then c.now-body.thrown.at else nil})
 		end
 	end
 	return out

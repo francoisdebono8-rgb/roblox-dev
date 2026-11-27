@@ -64,6 +64,34 @@ test("a run up a wall that runs out with the stick still into it stands on it, a
 	assert(a.wall and math.abs(a.root.Position.Y-y)<.3,"standing still, it slides on the wall")
 end)
 
+-- (27/11, passe 4, François: « on doit pouvoir vraiment se fighter et
+-- continuer le combat sur un mur ») a light blow taken on the wall keeps the
+-- body there; a heavy one throws it off
+test("on the wall a light blow taken keeps the body there, a heavy one throws it off",function()
+	local Combat=H.load("Server/Combat")
+	local c,a,b=onWall()
+	a.move=V.zero
+	H.step(c,.1)
+	-- the opponent comes up beside him on the wall
+	b.root.CFrame=CFrame.new(a.root.Position+V.new(0,0,2.5))
+	assert(Combat.staysOnWall(a,false) and not Combat.staysOnWall(a,true),"the rule")
+	local hp=a.health
+	assert(c:damage(b,a,4,false,false),"the light blow did not land")
+	assert(a.health<hp,"no damage")
+	H.step(c,.3)
+	assert(a.wall and a.wall.mode=="stand" and a.root.CFrame.UpVector.X<-.9,"a light blow threw him off the wall")
+	-- the stun over, he fights on up there
+	H.step(c,.6)
+	assert(c:request(a,"Attack"),"no strike back on the wall")
+	H.step(c,.05)
+	assert(a.wall and a.wall.mode=="stand","his strike back threw him off the wall")
+	-- the heavy throws him off
+	H.step(c,.8)
+	c:damage(b,a,10,true,false)
+	H.step(c,.05)
+	assert(not a.wall,"the heavy left him on the wall")
+end)
+
 test("on the wall the string is fought there, then the jump leaps off it upright",function()
 	local c,a=onWall()
 	a.move=V.zero
@@ -140,6 +168,21 @@ test("the walker: along a wall he runs on it, the jump kicks off it; a stand on 
 	assert(near(Move.wallStick(V.new(1,0,0),wall.normal),V.new(0,1,0)),"the walker's stick into the wall is not up")
 	local off=Move.standKick(m,7.5)
 	assert(off and off.X<0 and m.stand==nil,"no kick off the wall he stood on")
+end)
+
+-- (27/11, passe 4) in a street a thrown body goes a little past the ring, to
+-- the houses round it; in the arena the edge is where it was
+test("a body thrown in a street goes past the ring to the houses; the arena's edge stays",function()
+	local c,a=H.duel("Leaf","Mirage")
+	local arena=c:reach()
+	c.match.radius=30
+	assert(c:reach()==30,"a master's ground lost its edge")
+	c.match.site={key="Plaza",street=true}
+	assert(c:reach()==30+Config.World.StreetOverflow,"the street's ring holds the body")
+	local q=c:clamp(V.new(39,3,0))
+	assert(math.abs(q.X-39)<1e-3,"a body past the ring was pulled back onto it")
+	c.match.radius=nil;c.match.site=nil
+	assert(c:reach()==arena,"the arena's edge moved")
 end)
 
 print(("WallCombat: %d passed"):format(passed))

@@ -1008,4 +1008,35 @@ test("the walker grows: novice, trained, then his kit's own way; standing, his k
 	assert(Matches.runOf("Leaf",800)==nil,"a duel: his kit's own run at its third tier")
 end)
 
+-- (27/11, passe 4: the village a slab floating in the sky) the land goes on to
+-- the horizon: a plain round the village's ground (never under it) and a ring
+-- of hills far out, each part under the engine's 2048 studs once scaled
+test("the land goes on to the horizon: a plain round the village and hills far out",function()
+	local Hub=H.load("Server/Hub")
+	local Layout=H.load("Shared/KonohaLayout")
+	local HubMap=H.load("Shared/HubMap")
+	local S=HubMap.Scale or 1
+	local tiles=Hub.plain()
+	local vx0,vx1,vz0,vz1=-Layout.HalfX-20,Layout.HalfX+20,Layout.MinZ-20,Layout.MaxZ+24
+	local area=0
+	for _,r in tiles do
+		local w,d=r[3]-r[1],r[4]-r[2]
+		assert(w>0 and d>0 and w*S<2048 and d*S<2048,"a tile too big")
+		local overlaps=r[1]<vx1-.01 and r[3]>vx0+.01 and r[2]<vz1-.01 and r[4]>vz0+.01
+		assert(not overlaps,"a tile lies under the village's ground")
+		area+=w*d
+	end
+	local R=Hub.HORIZON.Tile*Hub.HORIZON.Tiles/2
+	assert(math.abs(area-((2*R)^2-(vx1-vx0)*(vz1-vz0)))<1,"the plain has holes or overlaps")
+	local far=0
+	for _,o in Layout.Outside do far=math.max(far,math.sqrt(o[2]^2+o[3]^2)+math.max(o[4],o[5])/2) end
+	for _,h in Hub.hills() do
+		local r=math.sqrt(h[1]^2+h[2]^2)
+		-- where the half-sunk ball meets the ground
+		local foot=math.sqrt((h[3]/2)^2-h[4]^2)
+		assert(r-foot>far+50 and r-foot>Layout.HalfX+200,"a hill sits on the village or its backdrops")
+		assert(h[3]*S<2048 and h[4]>0 and h[4]<h[3]/2,"a hill's size")
+	end
+end)
+
 print(string.format("NinjaDuel hub Konoha (DEC-038): %d PASS",passed))

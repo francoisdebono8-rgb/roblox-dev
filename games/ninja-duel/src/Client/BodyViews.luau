@@ -128,7 +128,15 @@ function BodyViews:step(view,entry,dt)
 		state=if acting then entry.state elseif entry.cast then "TechniqueChannel" else "Neutral",
 		attackName=if acting then entry.action else nil,attackVariant=if acting then entry.variant else nil,attackSerial=serial,
 		castId=if acting then nil else entry.cast,castElapsed=now-(clock.castAt or now)}
-	view.phase=Motion.present(view.model,visual,{attackElapsed=if acting then now-clock.at else 0,reactionElapsed=0},dt)
+	-- (27/11) a body thrown out of a dome (Server/Bodies.throw): the vol plané
+	-- (Knockback.Flung), then its smoke
+	local reactionElapsed=0
+	if entry.thrown then
+		visual.state="Stunned";visual.reaction="Knockback";visual.flung=true;visual.attackName=nil;visual.castId=nil
+		reactionElapsed=entry.thrown
+		visual.reactionElapsed=reactionElapsed
+	end
+	view.phase=Motion.present(view.model,visual,{attackElapsed=if acting then now-clock.at else 0,reactionElapsed=reactionElapsed},dt)
 	self:fade(view,dt)
 end
 -- (06/11) A crowd round the opponent stands between the lens and the player's

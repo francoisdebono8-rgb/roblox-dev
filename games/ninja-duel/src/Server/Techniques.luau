@@ -829,6 +829,8 @@ function Techniques.rupture(c,a,attacker,twist)
 end
 -- Neji -----------------------------------------------------------------
 Techniques.ROTATION_REACH=7
+-- (27/11) how fast the dome throws the swept bodies out (Bodies.area)
+Techniques.ROTATION_THROW=44
 Techniques.Rotation={
 	check=function() return true end,
 	execute=function(c,a,pending,now)
