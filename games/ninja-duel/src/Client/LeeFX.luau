@@ -116,14 +116,16 @@ end
 -- trousers and its rims caught the light as spikes. François's reference
 -- (27/11, 11 h 29, « rappel poids de Lee ») and the anime: a belt of pale beige
 -- blocks wrapped round the shin, each block lettered 根性 (« guts ») in black.
--- So that is the weight drawn here: WEIGHT_BLOCKS blocks round the ankle, over
+-- François again (11 h 54, « les poids sont trop gros, ils sont fins de
+-- base »): thin plates hugging the leg, not a sandbag. So that is the weight
+-- drawn here: WEIGHT_BLOCKS blocks round the ankle, over
 -- the widest clothing there, each with its 根性 facing out; and it is those
 -- same two belts that come off and crater the floor.
-LeeFX.WEIGHT_LOW=.1 -- below the shin's centre, as a share of its length
-LeeFX.WEIGHT_PROUD=.26 -- studs the belt stands out of the widest clothing round the shin
-LeeFX.WEIGHT_TALL=.66 -- the blocks' height, studs
-LeeFX.WEIGHT_BLOCKS=6
-LeeFX.WEIGHT_DEPTH=.2 -- the blocks' thickness
+LeeFX.WEIGHT_LOW=.05 -- below the shin's centre, as a share of its length
+LeeFX.WEIGHT_PROUD=.1 -- studs the belt stands out of the widest clothing round the shin
+LeeFX.WEIGHT_TALL=.5 -- the blocks' height, studs
+LeeFX.WEIGHT_BLOCKS=8
+LeeFX.WEIGHT_DEPTH=.07 -- the blocks' thickness
 LeeFX.WEIGHT_BLOCK=Color3.fromRGB(228,220,192)
 LeeFX.WEIGHT_EDGE=Color3.fromRGB(150,140,112)
 LeeFX.WEIGHT_INK=Color3.fromRGB(20,18,16)
@@ -147,7 +149,7 @@ local function buildWeight(cf,across)
 	for k=0,n-1 do
 		local face=cf*CFrame.Angles(0,k*math.pi*2/n,0)*CFrame.new(0,0,-r)
 		-- the darker backing shows as an outline round each block
-		local back=weightPart(w,Vector3.new(wide+.04,tall+.04,depth*.8),face*CFrame.new(0,0,.03),LeeFX.WEIGHT_EDGE,Enum.Material.SmoothPlastic)
+		local back=weightPart(w,Vector3.new(wide+.03,tall+.03,depth*.6),face*CFrame.new(0,0,depth*.3),LeeFX.WEIGHT_EDGE,Enum.Material.SmoothPlastic)
 		back.Name="Edge"
 		local block=weightPart(w,Vector3.new(wide-.02,tall-.04,depth),face,LeeFX.WEIGHT_BLOCK,Enum.Material.SmoothPlastic)
 		block.Name="Block"

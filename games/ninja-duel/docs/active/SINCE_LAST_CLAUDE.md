@@ -4,13 +4,13 @@
 
 Planches : `docs/reports/scenes-2026-11-27/planche_scene1_lee_gaara.jpg` et `planche_scene2_naruto_neji.jpg`. Chaque planche met côte à côte la vraie scène, décrite en mots (sans image de l'anime), et la capture Studio, puis liste ce qui colle et ce qui ne colle pas encore. Les captures viennent du build debug du 27/11, sur ma place `LAB/bt/NinjaDuel-SCENES`, avec un avatar Roblox et les vrais coups du jeu.
 
-- **Les poids** (`Client/LeeFX`), d'après la référence de François (11 h 29, « rappel poids de Lee ») : une bande de blocs beige pâle marqués 根性 autour de chaque cheville. Tout combattant qui a `RemoveWeights` les porte : Lee ou l'avatar. Ils se placent par-dessus les vêtements, à la taille du vêtement le plus large à cette hauteur. Quand il les lâche, ce sont **ces mêmes bandes** qui tombent et font un cratère ; elles reviennent à la fin du buff. Le modèle MeshKit `LegWeight` n'est plus utilisé par LeeFX : il disparaissait dans un pantalon sombre.
+- **Les poids** (`Client/LeeFX`), d'après la référence de François (11 h 29, « rappel poids de Lee ») : une bande de plaques fines, beige pâle, marquées 根性 autour de chaque cheville (8 plaques de 0,07 stud d'épaisseur, serrées sur la jambe : François, 11 h 54, « ils sont fins de base »). Tout combattant qui a `RemoveWeights` les porte : Lee ou l'avatar. Elles se posent par-dessus les vêtements, juste à la taille du vêtement le plus large à cette hauteur. Quand il les lâche, ce sont **ces mêmes bandes** qui tombent et font un cratère ; elles reviennent à la fin du buff. Le modèle MeshKit `LegWeight` n'est plus utilisé par LeeFX : il disparaissait dans un pantalon sombre.
 - **Le mur de sable** (`Client/SandFX`) : il est 1,55 fois plus grand et tient 0,95 s. Il se place entre les deux corps, au point d'impact, et jamais derrière l'attaquant. Gaara reste au neutre, bras croisés, comme avant.
 - **Le Kaiten** (`Client/Effects`) : le dôme fait 14 studs de diamètre, la portée du serveur (`Techniques.ROTATION_REACH`=7). S'y ajoutent un anneau au sol et des traînées de vent. Les « bandes » étaient des disques pleins (un cylindre plein) et faisaient un brouillard blanc ; ce sont maintenant des anneaux texturés. La lumière est plus faible.
 - **Le Byakugan** :
   - `Server/Looks` (apparence) : les veines partent du coin des yeux vers les tempes, à 37–47° au lieu de 44–52°, et sont un peu plus grandes.
   - `Client/Effects` : elles grossissent et passent au violet foncé, sans Neon (au soleil, le Neon violet devenait blanc). Elles restent pendant tout le buff `ByakuganSight` (5 s).
-- **DEV, deux questions :**
+- **DEV (François, 11 h 50 : « donne au DEV ») — deux demandes :**
   1. Pendant le Kaiten, les clones disparaissent en fumée dès le contact (`Bodies.area`) : on ne les voit pas être éjectés. La scène a besoin d'un vol court avant la fumée. Peux-tu le faire, ou me dire où le brancher côté client ?
   2. Le dôme dessiné prend toujours le rayon 7. Si une compétence l'élargit (`rotationReach`), le dessin est faux. Peux-tu mettre `rotationReach` dans le snapshot ?
 - **Pas fait :**
