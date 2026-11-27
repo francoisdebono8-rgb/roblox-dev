@@ -145,4 +145,26 @@ test("sceneFilm Lee vs Gaara: in the street, the sand stops his blows, the weigh
 	assert(again.ok,"another take: "..tostring(again.error))
 end)
 
+-- (27/11, Studio: a capture froze the server 2 s, three beats went off together)
+test("sceneFilm: a stall of the server delays the scene, it does not pile its beats up",function()
+	local m=Matches.new(remote)
+	local player=fakePlayer(10)
+	m:selection(player)
+	local scene=Scene.new({matches=m,press=DevHooks.press,avatarState=function() return "ready" end,clock=function() return clock end})
+	local r=scene:start(player,{avatar={kit="Leaf"},foe={kit="Sand"},flash=false,koAtEnd=false,tail=.5,
+		beats={{t=.5,act="light"},{t=1.5,act="light"},{t=2.5,act="guard"}}},clock)
+	assert(r.ok,"not started: "..tostring(r.error))
+	local function frame(dt) clock+=dt;m:update(dt,clock);runTimers();scene:step(clock) end
+	for _=1,70 do frame(.02) end            -- 0.8 s into the scene (after its 0.6 s lead): the first beat pressed
+	frame(2)                                -- the server froze 2 s
+	for _=1,200 do frame(.02);if scene:result().state~="playing" then break end end
+	local res=scene:result()
+	assert(#res.beats==3,"beats pressed: "..#res.beats)
+	local a,b,c=res.beats[1],res.beats[2],res.beats[3]
+	assert(math.abs(b.since-1.5)<.05 and math.abs(c.since-2.5)<.05,"the beats lost their times: "..b.since..", "..c.since)
+	assert(b.at-a.at>2.5 and c.at-b.at>.95,string.format("the beats piled up after the stall: %.2f %.2f %.2f (%.2f %.2f %.2f)",a.at-a.at,b.at-a.at,c.at-a.at,a.since,b.since,c.since))
+	assert(#res.stalls==1 and math.abs(res.stalls[1].lost-1.9)<.01,"the stall is not told")
+	assert(res.state=="done" and m.sessions[player].phase=="Selection","the scene without K.O. does not end")
+end)
+
 print(string.format("NinjaDuel sceneFilm (the CM's Naruto scenes): %d PASS",passed))

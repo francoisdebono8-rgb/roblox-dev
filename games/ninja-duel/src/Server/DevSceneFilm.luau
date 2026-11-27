@@ -40,7 +40,8 @@
 --     take     the take's number, for the cameras (NDTake)
 --   sceneFilmResult: where it is, when each beat was pressed (and whether
 --   the duel took it), each blow that landed and each the sand stopped, and
---   the K.O. Times are the duel's clock (server time) and seconds from t = 0.
+--   the K.O. Times are the duel's clock (server time) and seconds from t = 0;
+--   `stalls`: the server froze then (a capture, a hitch), the scene waited.
 --
 -- The duel is a real one (Matches:start, one round, the street's ring), but
 -- scripted: the client's stick is ignored and the foe's AI is off. It never
@@ -67,6 +68,11 @@ Scene.MOVES={walk=true,run=true}
 Scene.TOWARD={foe=true,away=true,left=true,right=true,none=true}
 -- A key or a stick held at most this long (s).
 Scene.MAX_HOLD=5
+-- (27/11, Studio: a capture froze the server 2 s and three beats went off
+-- together) The scene's clock moves at most this much a frame: a stall of the
+-- server delays what follows instead of piling it up. Each stall is told in
+-- the result (`stalls`): a take with one is to be shot again.
+Scene.MAX_DT=.1
 
 -- The scenes written here (the CM's storyboards). Episode 1, « Lee's
 -- weights » (doc projet § Épisode 1): his blows stopped by the sand, he
@@ -83,9 +89,9 @@ Scene.PRESETS={
 			-- 2–5 s: round him, from every side, the sand blocks everything
 			-- (one blow at a time: each costs the sand a charge, none breaks it)
 			{t=1.3,who="avatar",act="walk",toward="left",hold=.4},
-			{t=1.9,who="avatar",act="light"},
+			{t=1.9,who="avatar",act="light",toward="foe"},
 			{t=2.3,who="avatar",act="walk",toward="right",hold=.4},
-			{t=2.9,who="avatar",act="light"},
+			{t=2.9,who="avatar",act="light",toward="foe"},
 			{t=3.2,who="foe",act="refill"},
 			{t=3.4,who="avatar",act="walk",hold=.2},
 			{t=3.9,who="avatar",act="light"},
@@ -298,6 +304,7 @@ function Scene:start(player,spec,now)
 	end
 	self.plan=plan;self.player=player;self.session=s;self.combat=c
 	self.log={};self.next=1;self.stops={};self.ko=nil;self.koArmed=false;self.forcing=nil;self.error=nil;self.endedAt=nil;self.lastDamage=nil
+	self.stalls={};self.lastNow=c.now
 	self.startedAt=now
 	local attribute=self.deps.attribute or function() end
 	attribute("NDTake",plan.take)
@@ -305,6 +312,8 @@ function Scene:start(player,spec,now)
 	-- t = 0: after the intro if it plays, a breath after the flash
 	local introLeft=if plan.intro and s.introUntil then math.max(0,s.introUntil-c.now) else 0
 	self.t0=c.now+introLeft+plan.lead
+	-- the scene's clock: seconds from t = 0, stalls taken out
+	self.el=c.now-self.t0
 	self.flashAt=nil
 	if plan.flash and self.deps.flash then
 		local due=introLeft
@@ -360,7 +369,7 @@ function Scene:press(p,el)
 		res,why=ok,reason
 	end
 	if not p.part then (self.deps.attribute or function() end)("NDBeat",p.name.."#"..p.beat) end
-	table.insert(self.log,{beat=p.beat,t=p.t,at=c.now,since=c.now-self.t0,who=p.who,act=p.name,action=p.action,ok=res~=false,why=why})
+	table.insert(self.log,{beat=p.beat,t=p.t,at=c.now,since=el,who=p.who,act=p.name,action=p.action,ok=res~=false,why=why})
 end
 
 -- Each frame (DevHooks' Heartbeat).
@@ -380,7 +389,12 @@ function Scene:step(now)
 		self.flashAt=c.now
 		pcall(self.deps.flash)
 	end
-	local el=c.now-self.t0
+	local raw=math.max(0,c.now-self.lastNow)
+	local dt=math.min(raw,Scene.MAX_DT)
+	if raw>dt then table.insert(self.stalls,{at=c.now,since=self.el+dt,lost=raw-dt}) end
+	self.lastNow=c.now
+	self.el+=dt
+	local el=self.el
 	if el>plan.last+plan.koWithin+plan.tail+10 then self:fail("the scene ran past its end");self.deps.matches:selection(self.player);return end
 	-- neither falls before the end: a body under half its health is whole again
 	for _,a in {s.human,s.bot} do
@@ -430,18 +444,25 @@ function Scene:result()
 	local c=self.combat
 	local damage=(c and c.damageLog) or self.lastDamage or {}
 	if c then self.lastDamage=c.damageLog end
+	-- a moment of the duel's clock in the scene's (the stalls before it taken out)
 	local t0=self.t0 or 0
+	local stalls=self.stalls or {}
+	local function since(at)
+		local lost=0
+		for _,st in stalls do if st.at<=at then lost+=st.lost end end
+		return at-t0-lost
+	end
 	local who=function(by)
 		if not plan then return by end
 		if plan.avatar==plan.foe then return "either" end
 		return if by==plan.avatar then "avatar" elseif by==plan.foe then "foe" else tostring(by)
 	end
-	for _,d in damage do table.insert(hits,{at=d.t,since=d.t-t0,by=who(d.by),amount=d.amount,tag=d.tag,hits=d.hits}) end
+	for _,d in damage do table.insert(hits,{at=d.t,since=since(d.t),by=who(d.by),amount=d.amount,tag=d.tag,hits=d.hits}) end
 	local events={}
-	for _,e in self.events do table.insert(events,{at=e.at,since=e.at-t0,who=e.who,event=e.event}) end
+	for _,e in self.events do table.insert(events,{at=e.at,since=since(e.at),who=e.who,event=e.event}) end
 	return {state=self.state,error=self.error,preset=plan and plan.preset,street=plan and plan.site.key,avatar=plan and plan.avatar,foe=plan and plan.foe,
 		take=plan and plan.take,startedAt=self.startedAt,t0=self.t0,flashAt=self.flashAt,endedAt=self.endedAt,
-		beats=self.log,hits=hits,events=events,ko=self.ko}
+		beats=self.log,hits=hits,events=events,ko=self.ko,stalls=stalls}
 end
 
 return Scene
