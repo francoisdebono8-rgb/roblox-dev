@@ -1,5 +1,12 @@
 # Boîte de réception Claude
 
+## INBOX-DESIGN-ARBRE-20261127 — DESIGN 27/11 : l'arbre du kit dessiné comme un vrai arbre
+
+François : « Arbre du kit pas visuel… pas une vision d'un vrai arbre, inspire-toi d'arbres existants. » `src/Client/TreePanel.luau` : `Panel:drawTree` remplace la grille (drawRows/tile retirés). Racines = techniques de départ (carte du kit) dans la terre, un tronc en écorce, une branche par colonne qui monte palier après palier (I en bas, palier fermé sous un voile « OPENS AT MASTERY n »), sceaux ronds avec pictogramme (UIAssets), feuilles autour de ce qui est appris, la transformation en sceau rouge à la cime dans le feuillage. L'onglet NINJA utilise le même arbre sous les natures. Le panneau s'ouvre sur les racines. Contrats inchangés (`TreeView.layout`, `detail`, LearnNode/SetNode). Test pur : Shop.spec « the real tree » (toutes les clés placées, aucun chevauchement, paliers qui montent, cime en haut, 8 kits).
+
+- **DEV** : actualiser la place commune avec ce TreePanel (vérifié en Play Studio par injection, captures racines/milieu/cime ; pas encore dans la place).
+- `motion-lab/build.py` échoue aussi sans ce commit (Harness:305, concaténation nil) : à voir côté OUTILLEUR/DEV.
+
 ## INBOX-OUTILLEUR-HUMAIN2-20261127 — OUTILLEUR 27/11 midi : courir, frapper, se battre, acheter
 
 Mesures : `tools/humanbot/mesures/2026-11-27b_ac418a18/` (journal, rapport, 5 captures). Aucune ligne rouge, aucun double paiement (5 achats en rafale au marché, chacun une fois), une seule tenue sur le corps après les achats.

@@ -29,9 +29,7 @@ Panel.__index=Panel
 local W,H=1500,800
 local GRID_X,GRID_Y,GRID_W,GRID_H=24,140,1036,592
 local DETAIL_X=1084
-local GUTTER=92
 Panel.CLOSE={X=W-156,Y=22,W=132,H=58}
-local TILE_H,TILE_GAP=40,6
 local CARD_H=124 -- the kit's card, over the KIT tab's grid
 local NATURE_H=132 -- the natures, over the NINJA tab's grid
 Panel.TAB={W=170,H=48,Y=92,X=816}
@@ -302,65 +300,276 @@ function Panel:draw()
 	self.tierLabel.Text="MASTERY "..layout.mastery
 	self.tierNext.Text=if layout.nextTier then "TIER "..layout.nextTier.name.." AT "..layout.nextTier.need else "EVERY TIER OPEN"
 	self.tierFill.Size=UDim2.new(layout.progress,0,1,0)
-	local n=#layout.branches
-	local colW=math.floor((GRID_W-GUTTER-12-(n-1)*12)/n)
-	local function colX(b) return GUTTER+(b-1)*(colW+12) end
-	local function add(item) table.insert(self.drawn,item);return item end
 	-- (step 2) the kit's card
 	local top=self:drawCard(Panel.kitCard(self.kitId))
-	-- Branch headers.
-	for b,branch in layout.branches do
-		add(K.text(self.grid,branch.name,UDim2.fromOffset(colX(b),top),UDim2.fromOffset(colW,24),20,self.M.ink,K.TITLE_FONT,Enum.TextXAlignment.Center))
-	end
-	local y=top+34
-	self:drawRows(layout,n,colX,y)
+	-- (DESIGN 27/11: « pas une vision d'un vrai arbre ») a real tree
+	self:drawTree(layout,top,Panel.kitCard(self.kitId))
 end
 
--- The tiers as rows, the branches as columns, and the lines between nodes.
-function Panel:drawRows(layout,n,colX,y)
-	local K=self.kit
-	local function add(item) table.insert(self.drawn,item);return item end
-	local at={}
-	for _,row in layout.tiers do
-		local tallest=0
-		for b=1,n do tallest=math.max(tallest,#row.cells[b]) end
-		local height=math.max(1,tallest)*(TILE_H+TILE_GAP)+10
-		add(K.frame(self.grid,UDim2.fromOffset(0,y-6),UDim2.fromOffset(GRID_W-12,2),self.M.ink,0))
-		local label=add(K.text(self.grid,row.name,UDim2.fromOffset(0,y),UDim2.fromOffset(GUTTER-8,40),40,if row.open then self.M.red else self.M.off,K.TITLE_FONT))
-		label.TextYAlignment=Enum.TextYAlignment.Top
-		local unit=if self.tab=="ninja" then "POINTS " else "MASTERY "
-		add(K.text(self.grid,if row.need==0 then "FROM THE START" elseif row.open then unit..row.need.." • OPEN" else unit..row.need,
-			UDim2.fromOffset(0,y+42),UDim2.fromOffset(GUTTER-8,30),12,if row.open then self.M.brown else self.M.off,K.STRONG_FONT or K.BODY_FONT))
-		for b=1,n do
-			for k,node in row.cells[b] do
-				local ty=y+(k-1)*(TILE_H+TILE_GAP)
-				at[node.id]={x=colX(b),y=ty,col=b}
-				self:tile(node,colX(b),ty,colW)
-			end
-		end
-		y+=height
+-- ------------------------------------------------------------------ the tree
+-- (DESIGN 27/11, François: « l'arbre du kit pas visuel… pas une vision d'un
+-- vrai arbre, inspire-toi d'arbres existants ») A tree you climb, after the
+-- trees players know: Diablo IV's trunk that climbs through gates with its
+-- clusters on the boughs, Ghost of Tsushima's ink-brush branches and round
+-- kamon seals. Here: the kit's starting techniques are the roots in the
+-- earth; one bark trunk climbs the page; a bough leaves it for each branch
+-- and rises through that branch's seals, tier after tier (a closed tier lies
+-- under a veil that says what opens it); the leaves gather round what he
+-- owns; and at the crown, in the canopy, the red seal of the transformation.
+Panel.TREE={GUT=96,ROOTS=176,CROWN=190,STEP=112,PAD=46,SEAL=60,BIG=76,CROWN_SEAL=104,TRUNK=40}
+local BARK=Color3.fromRGB(96,66,42)
+local BARK_DARK=Color3.fromRGB(52,34,22)
+local LEAF=Color3.fromRGB(92,132,70)
+local LEAF_LIGHT=Color3.fromRGB(142,178,98)
+local EARTH=Color3.fromRGB(214,198,168)
+local KIND_ICON={jutsu="scroll",property="weights",stat="fist",route="flash",airwall="wind",counter="palm",substitution="clone",awakening="fire",tool="kunai"}
+local WORD_ICON={{"rasengan","spiral"},{"clone","clone"},{"kunai","kunai"},{"shuriken","shuriken"},{"chidori","bolt"},{"lightning","bolt"},
+	{"sand","sand"},{"water","water"},{"fire","fire"},{"wind","wind"},{"eye","eye"},{"sharingan","eye"},{"byakugan","eye"},{"palm","palm"},
+	{"wire","wire"},{"hound","hound"},{"dog","hound"},{"fist","fist"},{"lotus","fist"},{"mark","mark"},{"chakra","whirl"},{"tails","fire"}}
+-- The pictogram of a node: its item's, else a word of its name, else its kind.
+function Panel.sealIcon(node,def)
+	if not UIAssets then return nil end
+	local own=Panel.icon(def or {id=node.id})
+	if own and own~="" then return own end
+	local low=string.lower(node.name or "")
+	for _,pair in WORD_ICON do
+		if string.find(low,pair[1],1,true) then return UIAssets.id("icon_"..pair[2]) end
 	end
-	-- The line from a node to the one it opens, in the same branch.
-	for _,branch in layout.branches do
-		for _,node in branch.nodes do
-			for _,need in node.requires or {} do
-				local from,to=at[need],at[node.id]
-				if from and to and from.col==to.col and to.y>from.y then
-					local line=add(K.frame(self.grid,UDim2.fromOffset(from.x+12,from.y+TILE_H),UDim2.fromOffset(3,to.y-from.y-TILE_H),
-						if node.status=="active" or node.status=="off" then self.M.ink else self.M.off,0))
-					line.ZIndex=76
+	return UIAssets.id("icon_"..(KIND_ICON[node.kind or ""] or "scroll"))
+end
+-- Where everything sits (pure): a column per branch, a band per tier (as
+-- tall as its fullest cell), the transformation at the crown.
+function Panel.treeLayout(layout,width,top,rootsH)
+	local T=Panel.TREE
+	local ROOTS=rootsH or T.ROOTS
+	local n=math.max(1,#layout.branches)
+	local step=(width-T.GUT-16)/n
+	local cols={}
+	for b=1,n do cols[b]=T.GUT+step*(b-.5) end
+	local trunkX=T.GUT+(width-T.GUT-16)/2
+	local crowns,bands={},{}
+	local total=0
+	for t,row in layout.tiers do
+		local most=0
+		for b=1,n do
+			local c=0
+			for _,node in row.cells[b] or {} do if not node.transform then c+=1 end end
+			most=math.max(most,c)
+		end
+		bands[t]={h=math.max(1,most)*T.STEP+T.PAD,row=row}
+		total+=bands[t].h
+	end
+	local height=T.CROWN+total+ROOTS
+	local ground=top+height-ROOTS
+	local at={}
+	local y=ground
+	for t,band in bands do
+		band.bottom=y;band.top=y-band.h
+		for b=1,n do
+			local k=0
+			for _,node in band.row.cells[b] or {} do
+				if node.transform then table.insert(crowns,node)
+				else
+					k+=1
+					at[node.id]={x=cols[b],y=y-T.PAD*.5-(k-.5)*T.STEP,b=b,t=t,node=node}
 				end
 			end
 		end
+		y=band.top
 	end
-	self.grid.CanvasSize=UDim2.fromOffset(GRID_W-12,y+10)
+	local crownY=top+T.CROWN*.5
+	for i,node in crowns do
+		at[node.id]={x=trunkX+(i-(#crowns+1)/2)*150,y=crownY,b=0,t=#bands,node=node,crown=true}
+	end
+	return {height=height,ground=ground,trunkX=trunkX,cols=cols,step=step,bands=bands,at=at,top=top,crownY=crownY,crowns=crowns}
+end
+local function line(self,x1,y1,x2,y2,thick,color,z)
+	local len=math.sqrt((x2-x1)^2+(y2-y1)^2)
+	local f=self.kit.frame(self.grid,UDim2.fromOffset((x1+x2)/2,(y1+y2)/2),UDim2.fromOffset(len+thick*.8,thick),color,0)
+	f.AnchorPoint=Vector2.new(.5,.5);f.Rotation=math.deg(math.atan2(y2-y1,x2-x1));f.ZIndex=z or 76;f.BorderSizePixel=0
+	self.kit.corner(f,math.floor(thick/2))
+	table.insert(self.drawn,f)
+	return f
+end
+-- A bark limb: a dark edge under a lighter wood, tapering from w1 to w2,
+-- bent through (mx,my).
+local function limb(self,x1,y1,mx,my,x2,y2,w1,w2,z)
+	local pts={{x1,y1},{mx,my},{x2,y2}}
+	local seg=6
+	local prev=nil
+	for i=0,seg do
+		local t=i/seg
+		local a=(1-t)^2;local b=2*(1-t)*t;local c=t^2
+		local px=a*pts[1][1]+b*pts[2][1]+c*pts[3][1]
+		local py=a*pts[1][2]+b*pts[2][2]+c*pts[3][2]
+		if prev then
+			local w=w1+(w2-w1)*t
+			line(self,prev[1],prev[2],px,py,w+6,BARK_DARK,z or 75)
+			line(self,prev[1],prev[2],px,py,w,BARK,(z or 75)+1)
+		end
+		prev={px,py}
+	end
+end
+local function blob(self,x,y,r,color,alpha,z)
+	local f=self.kit.frame(self.grid,UDim2.fromOffset(x,y),UDim2.fromOffset(r*2,r*2),color,alpha)
+	f.AnchorPoint=Vector2.new(.5,.5);f.ZIndex=z or 76;self.kit.corner(f,r)
+	table.insert(self.drawn,f)
+	return f
+end
+function Panel:drawTree(layout,top,card)
+	local K,M=self.kit,self.M
+	local T=Panel.TREE
+	local width=GRID_W-12
+	local starts=(card and card.starts) or {}
+	local rootsH=if #starts>0 then T.ROOTS else 60
+	local L=Panel.treeLayout(layout,width,top,rootsH)
+	local STRONG=K.STRONG_FONT or K.BODY_FONT
+	local function add(item) table.insert(self.drawn,item);return item end
+	-- the canopy: soft leaves round the crown
+	local cw=width-T.GUT-40
+	for k=1,11 do
+		local fx=L.trunkX+math.cos(k*2.4)*cw*.4*(.35+(k%4)/5)
+		local fy=L.crownY+14+math.sin(k*1.9)*28
+		blob(self,fx,fy,56+(k%3)*16,if k%2==0 then LEAF else LEAF_LIGHT,.5,72)
+	end
+	-- the earth and the roots: what he starts with
+	add(K.frame(self.grid,UDim2.fromOffset(0,L.ground+44),UDim2.new(1,-12,0,rootsH-44),EARTH,0)).ZIndex=73
+	for i,name in starts do
+		local rx=T.GUT+(width-T.GUT-16)*(i-.5)/math.max(1,#starts)
+		limb(self,L.trunkX,L.ground+30,(L.trunkX+rx)/2,L.ground+96,rx,L.ground+108,14,6,74)
+		local seal=blob(self,rx,L.ground+110,24,M.ink,0,78)
+		K.create("UIStroke",seal,{Color=M.cream,Thickness=3,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
+		local icon=Panel.sealIcon({name=name,kind="jutsu"},nil)
+		if icon and icon~="" then
+			K.create("ImageLabel",seal,{Image=icon,Size=UDim2.fromScale(.6,.6),Position=UDim2.fromScale(.2,.2),BackgroundTransparency=1,ScaleType=Enum.ScaleType.Fit,ImageColor3=M.cream,ZIndex=79})
+		end
+		local t=K.text(self.grid,Text.upper(name),UDim2.fromOffset(rx-90,L.ground+136),UDim2.fromOffset(180,18),14,M.ink,STRONG,Enum.TextXAlignment.Center)
+		t.ZIndex=78;add(t)
+	end
+	if #starts>0 then
+		local rootsTag=K.text(self.grid,"ROOTS  •  YOUR START",UDim2.fromOffset(L.trunkX-130,L.ground+50),UDim2.fromOffset(260,20),16,M.red,K.TITLE_FONT,Enum.TextXAlignment.Center)
+		rootsTag.ZIndex=80;rootsTag.TextStrokeColor3=EARTH;rootsTag.TextStrokeTransparency=0;add(rootsTag)
+	end
+	-- the trunk, from the earth to the crown
+	limb(self,L.trunkX,L.ground+44,L.trunkX-14,(L.ground+L.crownY)/2,L.trunkX,L.crownY+30,T.TRUNK,T.TRUNK*.45,74)
+	-- the tiers: a band each, its numeral in the margin, a closed one veiled
+	for t,band in L.bands do
+		local row=band.row
+		local rule=K.frame(self.grid,UDim2.fromOffset(T.GUT-10,band.bottom),UDim2.new(1,-T.GUT-6,0,2),M.ink,.82);rule.ZIndex=73;add(rule)
+		local label=K.text(self.grid,row.name,UDim2.fromOffset(8,band.top+12),UDim2.fromOffset(80,44),44,if row.open then M.red else M.off,K.TITLE_FONT)
+		label.ZIndex=79;add(label)
+		local unit=if self.tab=="ninja" then "POINTS " else "MASTERY "
+		local sub=K.text(self.grid,if row.need==0 then "FROM THE START" elseif row.open then "OPEN" else unit..row.need,UDim2.fromOffset(8,band.top+56),UDim2.fromOffset(88,30),12,if row.open then M.brown else M.off,STRONG)
+		sub.TextWrapped=true;sub.ZIndex=79;add(sub)
+		if not row.open then
+			local veil=K.frame(self.grid,UDim2.fromOffset(0,band.top),UDim2.new(1,-12,0,band.h),M.ink,.84);veil.ZIndex=84;add(veil)
+			local lock=K.text(veil,"OPENS AT "..unit..row.need,UDim2.new(1,-340,0,10),UDim2.fromOffset(326,26),20,M.ink,K.TITLE_FONT,Enum.TextXAlignment.Right)
+			lock.ZIndex=85
+		end
+	end
+	-- the boughs: out of the trunk, then up through the branch's seals
+	for b,branch in layout.branches do
+		local bx=L.cols[b]
+		local low,high=-math.huge,math.huge
+		for _,node in branch.nodes do
+			local p=L.at[node.id]
+			if p and not p.crown then low=math.max(low,p.y);high=math.min(high,p.y) end
+		end
+		if low>-math.huge then
+			local d=math.abs(bx-L.trunkX)/(width*.5)
+			local leave=L.ground+30-d*20
+			local foot=L.ground+12
+			limb(self,L.trunkX,leave,bx,leave-10,bx,foot,18-d*4,12,74)
+			line(self,bx,foot,bx,high,10,BARK_DARK,75)
+			line(self,bx,foot,bx,high,6,BARK,76)
+			local tag=K.text(self.grid,branch.name,UDim2.fromOffset(bx-L.step*.48,foot-10),UDim2.fromOffset(L.step*.96,22),16,M.cream,K.TITLE_FONT,Enum.TextXAlignment.Center)
+			tag.BackgroundTransparency=0;tag.BackgroundColor3=BARK_DARK;tag.ZIndex=79;tag.TextScaled=true;K.corner(tag,6);add(tag)
+			K.create("UITextSizeConstraint",tag,{MaxTextSize=16,MinTextSize=9})
+		end
+	end
+	-- the twigs: a node that needs a node of another branch reaches for it
+	for _,p in L.at do
+		for _,need in p.node.requires or {} do
+			local q=L.at[need]
+			if q and (q.b~=p.b or p.crown) then
+				line(self,q.x,q.y,p.x,p.y,if p.crown then 3 else 5,if p.node.status=="active" or p.node.status=="off" then BARK_DARK else M.off,75)
+			end
+		end
+	end
+	-- the crown reaches down to the trunk
+	for _,node in L.crowns do
+		local p=L.at[node.id]
+		limb(self,L.trunkX,L.crownY+40,(L.trunkX+p.x)/2,L.crownY+30,p.x,p.y,12,8,75)
+	end
+	-- the seals
+	for id,p in L.at do
+		local def=if self.tab=="ninja" then nil else TreeView.node(self.kitId,id)
+		self:seal(p.node,p.x,p.y,def,p.crown)
+	end
+	if #L.crowns>0 then
+		local crownTag=K.text(self.grid,if card and card.transform then "THE CROWN  •  "..Text.upper(card.transform) else "THE CROWN",UDim2.fromOffset(L.trunkX-240,top+8),UDim2.fromOffset(480,28),26,M.red,K.TITLE_FONT,Enum.TextXAlignment.Center)
+		crownTag.ZIndex=79;add(crownTag)
+	end
+	self.grid.CanvasSize=UDim2.fromOffset(GRID_W-12,top+L.height+10)
+	-- the tree grows up: it opens on its roots and its first tier
+	local key=tostring(self.kitId)..tostring(self.tab)
+	if self.scrolledFor~=key then
+		self.scrolledFor=key
+		pcall(function() self.grid.CanvasPosition=Vector2.new(0,math.max(0,top+L.height+10-GRID_H)) end)
+	end
 	if not self.selected then
-		for _,row in layout.tiers do for b=1,n do for _,node in row.cells[b] do
-			if not self.selected and node.status=="learn" then self.selected=node.id end
-		end end end
+		for _,p in L.at do if not self.selected and p.node.status=="learn" then self.selected=p.node.id end end
 		self.selected=self.selected or (layout.branches[1] and layout.branches[1].nodes[1] and layout.branches[1].nodes[1].id)
 	end
 	self:detail()
+	return L
+end
+-- A node as a round seal: ink when his (a red ring when on, leaves round it),
+-- paper with a red ring when he can learn it, faded when out of reach; its
+-- pictogram inside, its name under it, its cost on a red tab.
+function Panel:seal(node,x,y,def,crown)
+	local K,M=self.kit,self.M
+	local T=Panel.TREE
+	local big=node.major or node.transform
+	local r=(if crown then T.CROWN_SEAL elseif big then T.BIG else T.SEAL)/2
+	local st=node.status
+	local mine=st=="active" or st=="off"
+	local faded=st=="locked" or st=="tier" or st=="short"
+	if mine then
+		for k=1,4 do
+			local a=-2.4+k*.95
+			blob(self,x+math.cos(a)*r*1.05,y+math.sin(a)*r*.95,r*.42,if k%2==0 then LEAF else LEAF_LIGHT,0,78)
+		end
+	end
+	local fill=if crown then M.red elseif mine then M.ink else M.paper
+	local b=K.create("TextButton",self.grid,{Text="",Position=UDim2.fromOffset(x,y),Size=UDim2.fromOffset(r*2,r*2),AnchorPoint=Vector2.new(.5,.5),
+		BackgroundColor3=fill,BackgroundTransparency=if faded and not crown then .25 else 0,BorderSizePixel=0,AutoButtonColor=true,ZIndex=80})
+	table.insert(self.drawn,b);K.corner(b,r)
+	K.create("UIStroke",b,{Color=if st=="active" or st=="learn" then M.red elseif mine or crown then M.ink else M.off,
+		Thickness=if st=="active" then 5 elseif st=="learn" then 4 else 3,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
+	if self.selected==node.id then
+		local sel=K.frame(b,UDim2.fromScale(.5,.5),UDim2.new(1,16,1,16),M.ink,1);sel.AnchorPoint=Vector2.new(.5,.5);sel.ZIndex=79;K.corner(sel,r+8)
+		K.create("UIStroke",sel,{Color=M.ink,Thickness=3,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
+	end
+	local icon=Panel.sealIcon(node,def)
+	local light=mine or crown
+	if icon and icon~="" then
+		K.create("ImageLabel",b,{Image=icon,Size=UDim2.fromScale(.6,.6),Position=UDim2.fromScale(.2,.2),BackgroundTransparency=1,ScaleType=Enum.ScaleType.Fit,
+			ImageColor3=if light then M.cream else M.ink,ImageTransparency=if faded then .55 else 0,ZIndex=81})
+	else
+		local glyph=K.text(b,string.sub(Text.upper(node.name),1,1),UDim2.fromScale(0,0),UDim2.fromScale(1,1),r,if light then M.cream else M.ink,K.TITLE_FONT,Enum.TextXAlignment.Center)
+		glyph.ZIndex=81
+	end
+	local name=K.text(self.grid,Text.upper(node.name),UDim2.fromOffset(x-74,y+r+3),UDim2.fromOffset(148,30),13,if faded then M.off else M.ink,K.STRONG_FONT or K.BODY_FONT,Enum.TextXAlignment.Center)
+	name.ZIndex=81;name.TextWrapped=true;name.TextStrokeColor3=M.back;name.TextStrokeTransparency=0;name.TextYAlignment=Enum.TextYAlignment.Top;table.insert(self.drawn,name)
+	if not mine then
+		local cost=K.text(self.grid,tostring(node.cost),UDim2.fromOffset(x+r*.5,y-r-2),UDim2.fromOffset(26,22),15,M.cream,K.TITLE_FONT,Enum.TextXAlignment.Center)
+		cost.BackgroundTransparency=0;cost.BackgroundColor3=if st=="learn" then M.red else M.off;cost.ZIndex=82;K.corner(cost,6)
+		table.insert(self.drawn,cost)
+	end
+	b.Activated:Connect(function() self.selected=node.id;self:draw() end)
+	self.tiles[node.id]=b
+	return b
 end
 
 -- (step 2) The kit's card over the grid; returns where the grid starts.
@@ -434,50 +643,10 @@ function Panel:drawNinja()
 		card.Activated:Connect(function() self.selected=node.id;self:detail() end)
 		self.tiles[node.id]=card
 	end
-	local n=#layout.branches
-	local colW=math.floor((GRID_W-GUTTER-12-(n-1)*12)/n)
-	local function colX(b) return GUTTER+(b-1)*(colW+12) end
-	for b,branch in layout.branches do
-		add(K.text(self.grid,branch.name,UDim2.fromOffset(colX(b),NATURE_H),UDim2.fromOffset(colW,24),20,M.ink,K.TITLE_FONT,Enum.TextXAlignment.Center))
-	end
 	if not self.selected and not layout.nature then
 		for _,node in layout.natures do if not self.selected and (node.status=="learn" or node.status=="off") then self.selected=node.id end end
 	end
-	self:drawRows(layout,n,colX,NATURE_H+34)
-end
-
-function Panel:tile(node,x,y,w)
-	local K,P=self.kit,self.P
-	local style=STYLE[node.status] or STYLE.locked
-	local M=self.M
-	local tile=K.create("TextButton",self.grid,{Text="",Position=UDim2.fromOffset(x,y),Size=UDim2.fromOffset(w,TILE_H),BackgroundColor3=M[style.bg] or M.paper,
-		BackgroundTransparency=style.alpha,BorderSizePixel=0,AutoButtonColor=true,ZIndex=77})
-	table.insert(self.drawn,tile)
-	K.corner(tile,3)
-	if style.stroke or node.item then
-		-- a kit object (the gourd, the weights) wears a red ring
-		K.create("UIStroke",tile,{Color=if node.item then M.red else (M[style.stroke] or M.ink),Thickness=if node.item then 3 else 2,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
-	end
-	local color=M[style.text] or M.ink
-	-- (step 2) its pictogram: the technique it unlocks, its object, its element
-	local def=if self.tab=="ninja" then {id=node.id} else (TreeView.node(self.kitId,node.id) or {})
-	local icon=Panel.icon(def)
-	local left=10
-	if icon then
-		K.create("ImageLabel",tile,{Image=icon,Position=UDim2.fromOffset(4,4),Size=UDim2.fromOffset(TILE_H-8,TILE_H-8),BackgroundTransparency=1,ScaleType=Enum.ScaleType.Fit,ZIndex=78})
-		left=TILE_H
-	end
-	local name=K.text(tile,Text.upper(node.name),UDim2.fromOffset(left,3),UDim2.new(1,-44-left,0,20),if node.major then 18 else 14,color,if node.major then K.TITLE_FONT else (K.STRONG_FONT or K.BODY_FONT))
-	name.TextTruncate=Enum.TextTruncate.AtEnd;name.TextWrapped=false;name.ZIndex=78
-	local sub=if node.item then "KIT OBJECT" elseif node.status=="tier" then "TIER "..(if node.tier==2 then "II" else "III").." CLOSED"
-		elseif node.status=="locked" then "WAITS FOR A NODE" elseif node.status=="learn" then "TO LEARN" else node.kindLabel
-	if self.tab=="ninja" and node.status=="locked" and node.why then sub=Text.upper(node.why) end
-	local tag=K.text(tile,sub,UDim2.fromOffset(left,22),UDim2.new(1,-44-left,0,14),11,color,K.BODY_FONT)
-	tag.TextTransparency=.15;tag.ZIndex=78
-	local right=K.text(tile,style.tag or tostring(node.cost),UDim2.new(1,-46,0,0),UDim2.fromOffset(40,TILE_H),18,color,K.STRONG_FONT or K.TITLE_FONT,Enum.TextXAlignment.Center)
-	right.ZIndex=78
-	tile.Activated:Connect(function() self.selected=node.id;self:detail() end)
-	self.tiles[node.id]=tile
+	self:drawTree(layout,NATURE_H+10,nil)
 end
 
 function Panel:detail()
