@@ -126,6 +126,7 @@ function Hub.new(ui,camera,send,controls)
 	self.ranksButton=ranks
 	-- (DESIGN 23/11, step 5) SETTINGS, left of QUESTS
 	local gear=K.button(self.shopBox,"SETTINGS",UDim2.fromOffset(0,68),UDim2.fromOffset(120,48),function()
+		self:closePanels()
 		self:hideCard()
 		if self.ui.settings then
 			self.ui.settings.onHide=function() self:apply() end
@@ -137,6 +138,7 @@ function Hub.new(ui,camera,send,controls)
 	self.settingsButton=gear
 	-- (DESIGN 26/11, DEC-053) THE 8: the prodigies beaten in the street
 	self.eightButton=K.button(self.shopBox,"THE 8",UDim2.fromOffset(0,124),UDim2.fromOffset(424,48),function()
+		self:closePanels()
 		self:hideCard()
 		if self.eight then self.eight.onHide=function() self:apply() end;self.eight:show(self.kits and self.kits.challenges8) end
 		self:apply()
@@ -250,7 +252,7 @@ function Hub.new(ui,camera,send,controls)
 		if prompt:GetAttribute("NinjaBoard") then self:openBoard() end
 		if prompt:GetAttribute("NinjaTrain") then self:train() end
 		-- (14/11) the market: the looks sold for Ryō
-		if prompt:GetAttribute("NinjaMarket") and self.ui.shopPanel then self:hideCard();self.ui.shopPanel:show(self.kits,"WEAPONS","market") end
+		if prompt:GetAttribute("NinjaMarket") and self.ui.shopPanel then self:closePanels();self:hideCard();self.ui.shopPanel:show(self.kits,"WEAPONS","market") end
 	end)
 	-- The run and the second jump (Client/HubMove).
 	UIS.JumpRequest:Connect(function() self:jumpRequest() end)
@@ -265,7 +267,7 @@ function Hub.new(ui,camera,send,controls)
 			self:openBoard()
 		elseif key==Enum.KeyCode.ButtonL3 and not self.panelOpen then
 			self.move:toggleRun();self:paintRun()
-		elseif key==Enum.KeyCode.ButtonY and not self.panelOpen and not self.card.Visible then
+		elseif key==Enum.KeyCode.ButtonY and not self.panelOpen and not self.card.Visible and not Hub.inIntro() then
 			self:openShop()
 		elseif key==Enum.KeyCode.ButtonB and self.card.Visible and not self.panelOpen then
 			-- (a panel open over the card closes first: panelOpen is last frame's)
@@ -333,7 +335,8 @@ function Hub:paintRun()
 	self.runButton.BackgroundTransparency=if self.move.runLatch then 0 else .25
 end
 function Hub:openShop()
-	if not self.ui.shopPanel then return end
+	if not self.ui.shopPanel or Hub.inIntro() then return end
+	self:closePanels()
 	self:hideCard()
 	self.ui.shopPanel:show(self.kits)
 end
@@ -479,18 +482,43 @@ function Hub:racket(r)
 	if r then self:hideCard();self.racketPanel:show(r) else self.racketPanel:hide() end
 end
 function Hub:openQuests()
-	if not self.quests then return end
+	if not self.quests or Hub.inIntro() then return end
+	self:closePanels()
 	self:hideCard()
 	self.quests:show(self.kits and self.kits.daily)
 	self:apply()
 end
 function Hub:openRanks()
+	if Hub.inIntro() then return end
+	self:closePanels()
 	self:hideCard()
 	if self.ui.leaderboard then self.ui.leaderboard.onHide=function() self:apply() end end
 	if self.ui.showLeaderboard then self.ui:showLeaderboard() end
 	self:apply()
 end
+-- (27/11, the OUTILLEUR's human robot: B in the forest opened the board,
+-- and ENTER THE STAGE there chose a starter before the gate) The way in
+-- (NinjaIntro, Client/ForestIntro): no board, no shop, no menu of the
+-- village until he walks out of it.
+function Hub.inIntro()
+	local intro=false
+	pcall(function() intro=Players.LocalPlayer:GetAttribute("NinjaIntro")~=nil end)
+	return intro
+end
+-- (27/11, the human robot: DUELS, SHOP, RANKS, QUESTS and THE 8 stayed
+-- clickable beside an open menu, three of them open at once) One menu at a
+-- time: opening one closes the others (the board, the pages, the big map).
+function Hub:closePanels()
+	local ui=self.ui
+	for _,p in {ui.treePanel,ui.shopPanel,ui.outfitPanel,self.quests,ui.leaderboard,ui.settings,self.eight} do
+		if p then pcall(function() if p:shown() then p:hide() end end) end
+	end
+	if self.map then pcall(function() if self.map:shown() then self.map:closeBigMap() end end) end
+	if self.board then self.board=false end
+end
 function Hub:openBoard()
+	if Hub.inIntro() then return end
+	self:closePanels()
 	self.board=true;self:hideCard();self:apply()
 	if self.ui.lastLobby then self.ui:render(self.ui.lastLobby) end
 end
@@ -586,10 +614,17 @@ function Hub:refreshHud(position)
 	self:journal()
 	self:showHud()
 	local input=self:input()
-	self.keys.Text=if input=="pad" then "L3 RUN  •  A TWICE: LEAP  •  X TALK  •  Y SHOP  •  R1 DUELS" else "SHIFT RUN  •  SPACE TWICE: LEAP  •  E TALK  •  B DUELS"
+	self.keys.Text=Hub.keysText(input,Hub.inIntro())
 	self.cardFoot.Text=if input=="pad" then "B: CLOSE" elseif input=="touch" then "✕ OR WALK AWAY TO CLOSE" else "E: TALK  •  WALK AWAY TO CLOSE"
 end
 
+-- (pure) The keys' banner: in the way in (the forest), no shop, no duels.
+function Hub.keysText(input,intro)
+	if input=="pad" then
+		return if intro then "L3 RUN  •  A TWICE: LEAP  •  X TALK" else "L3 RUN  •  A TWICE: LEAP  •  X TALK  •  Y SHOP  •  R1 DUELS"
+	end
+	return if intro then "SHIFT RUN  •  SPACE TWICE: LEAP  •  E TALK" else "SHIFT RUN  •  SPACE TWICE: LEAP  •  E TALK  •  B DUELS"
+end
 local TAG={open={"",nil},loading={"…",nil},starter={"START HERE","gold"},starterLocked={"LATER","muted"},
 	owned={"YOUR KIT","paper"},master={"READY FOR YOU","gold"},locked={"LOCKED","muted"}}
 function Hub:marker(model,id,title,place)

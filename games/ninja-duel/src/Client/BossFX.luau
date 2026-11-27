@@ -93,9 +93,17 @@ function Boss.dress(model,MeshKit)
 			p.Parent=folder
 		end
 	end
+	-- (27/11, DEV: the same as the outfits' cloth boxes and the bandit's
+	-- prodigy pieces) the body's fades (BodyViews, the lenses, Roblox's own
+	-- camera) give LocalTransparencyModifier back 0: the stand-in's pieces are
+	-- hidden by their own Transparency here, held there
 	local function hide(d)
 		if not d:IsA("BasePart") or d:GetAttribute("BossPiece") or d.Name=="FaceEye" or d.Name=="HumanoidRootPart" then return end
 		d.LocalTransparencyModifier=1
+		if d.Transparency<1 then d.Transparency=1 end
+		pcall(function()
+			d:GetPropertyChangedSignal("Transparency"):Connect(function() if d.Transparency<1 then d.Transparency=1 end end)
+		end)
 		if d.Name=="FaceMouth" then local gui=d:FindFirstChildOfClass("SurfaceGui");if gui then gui.Enabled=false end end
 	end
 	for _,d in model:GetDescendants() do hide(d) end
@@ -123,7 +131,9 @@ function Boss.start()
 		while true do
 			task.wait(.5)
 			local duels=workspace:FindFirstChild("NinjaDuels")
-			if duels then for _,d in duels:GetDescendants() do seen(d) end end
+			-- (27/11) the duels' bodies only (Duel_n.<fighter>), not every
+			-- effect's part under them (the OUTILLEUR's 0.45 s frames)
+			if duels then for _,duel in duels:GetChildren() do for _,d in duel:GetChildren() do seen(d) end end end
 		end
 	end)
 end

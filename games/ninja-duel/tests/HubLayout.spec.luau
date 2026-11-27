@@ -152,6 +152,18 @@ test("Konoha's HUD: placed by the layout, the goal follows the player, touch and
 		assert(j.tab=="CHAPTER 2  •  THE EIGHT SEALS" and j.seals==3,"the seals' chapter")
 		assert(Hub.journalOf(1,0,Story).seals==nil,"no seals before chapter 2")
 		local hub=Hub.new(ui,{},function(action,payload) table.insert(sent,{action,payload}) end,{Enable=function() end,Disable=function() end})
+		-- (27/11, the OUTILLEUR's human robot) in the way in, the keys' banner
+		-- has no shop nor duels; one menu at a time; the controls' sheet frees
+		-- the cursor and does not open under the creation card
+		assert(not string.find(Hub.keysText("keys",true),"DUELS",1,true) and not string.find(Hub.keysText("pad",true),"SHOP",1,true),"the way in shows the village's menus")
+		assert(string.find(Hub.keysText("keys",false),"B DUELS",1,true) and string.find(Hub.keysText("pad",false),"R1 DUELS",1,true),"the village lost its keys")
+		hub:closePanels()
+		assert(ui:overDuel()==false and ui:controlsAllowed()==true,"nothing open: the cursor held, the controls allowed")
+		local Matches=H.load("Server/Matches")
+		local walker={GetAttribute=function(_,k) if k=="NinjaIntro" then return "forest" end return nil end}
+		local inside={GetAttribute=function() return nil end}
+		assert(Matches.inIntro(walker) and not Matches.inIntro(inside),"the way in")
+		for _,a in {"ChooseStarter","Start","Tutorial","First","SelectKit"} do assert(Matches.INTRO_REFUSED[a],"the way in lets "..a.." through") end
 		local new={state="ready",owned={},mastery={},masters={},needStarter=true,trees={},ryo=0,style={owned={},equipped={}}}
 		hub:render({phase="Selection",kits=new})
 		-- a laptop: the place box under Roblox's bar, the goal under the top row

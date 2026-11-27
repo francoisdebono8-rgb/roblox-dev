@@ -1279,8 +1279,24 @@ function UI:sealHud(h,pad,page)
 	end
 	self.sealWeave.Text=""
 end
+-- (27/11) A sheet open over the duel that needs the cursor: the controls,
+-- the settings.
+function UI:overDuel()
+	if self.controls and self.controls.Visible then return true end
+	local ok,shown=pcall(function() return self.settings and self.settings:shown() end)
+	return ok and shown==true
+end
+-- (27/11, the OUTILLEUR's human robot: Tab opened CONTROLS under the gate's
+-- creation card) The controls' sheet opens over the duel or the village walk,
+-- not over a page that holds the screen (the creation, the way in's cards).
+function UI:controlsAllowed()
+	local ok,creating=pcall(function() return self.creator and self.creator:shown() end)
+	if ok and creating then return false end
+	return true
+end
 function UI:toggleControls()
 	local open=not self.controls.Visible
+	if open and not self:controlsAllowed() then return end
 	if open then
 		local pad=false
 		pcall(function() pad=Controls.isGamepad(UIS:GetLastInputType()) end)

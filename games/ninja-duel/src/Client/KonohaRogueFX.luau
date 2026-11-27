@@ -158,9 +158,14 @@ function Rogue.start()
 			while true do
 				task.wait(.4)
 				local duels=workspace:FindFirstChild("NinjaDuels")
+				-- (27/11, the OUTILLEUR's human robot: frames of 0.45 s at
+				-- irregular times) the duels' bodies only (Duel_n.<fighter>),
+				-- not every effect's part under them, every 0.4 s
 				if duels then
-					for _,d in duels:GetDescendants() do
-						if d:IsA("Model") and d:GetAttribute("NinjaRogueLook") and not dressedDuel[d] then pcall(dressDuel,d) end
+					for _,duel in duels:GetChildren() do
+						for _,d in duel:GetChildren() do
+							if d:IsA("Model") and d:GetAttribute("NinjaRogueLook") and not dressedDuel[d] then pcall(dressDuel,d) end
+						end
 					end
 				end
 			end

@@ -180,7 +180,10 @@ RunService:BindToRenderStep("NinjaDuelCamera",Enum.RenderPriority.Camera.Value,f
 	-- final positions for this frame, so the smoothed bodies and the camera agree.
 	presentation:smoothStep(current,dt)
 	presentation:update(current,dt)
-	camera.menuOpen=(dev~=nil and dev.panelOpen==true)
+	-- (27/11, the OUTILLEUR's human robot: CONTROLS open in a duel, the
+	-- cursor held at the centre could not reach CLOSE) a sheet over the duel
+	-- (the controls, the settings) frees the cursor like the dev panel
+	camera.menuOpen=(dev~=nil and dev.panelOpen==true) or ui:overDuel()
 	mouse.TargetFilter=player.Character
 	camera:update(current,dt)
 	-- (HUD v3) the two heads filmed live in their cases (Client/FaceCam)

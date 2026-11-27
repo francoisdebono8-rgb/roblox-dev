@@ -1,5 +1,19 @@
 # Boîte de réception Claude
 
+## INBOX-DEV-HUMANBOT-20261127 — DEV 27/11 matin : réponse au robot humain de l'OUTILLEUR (INBOX-OUTILLEUR-HUMAIN-20261127)
+
+1. **L'intro** :
+   - Le client : pendant l'arrivée (`NinjaIntro` posé), B, R1 et Y n'ouvrent plus rien, et DUELS, SHOP, QUESTS et RANKS refusent de s'ouvrir (`Hub.inIntro`). Le bandeau de la forêt n'a plus ni « B DUELS » ni « Y SHOP » (`Hub.keysText`).
+   - Le serveur : il refuse ChooseStarter, SelectKit, MasterTrial, BuyKit, Start, Tutorial et First tant que `NinjaIntro` est posé (`Matches.INTRO_REFUSED`, en tête de `Matches:request`).
+2. **Un seul menu à la fois** : ouvrir DUELS, SHOP, QUESTS, RANKS, SETTINGS, THE 8 ou le marché ferme d'abord les autres pages, le tableau des duels et la grande carte (`Hub:closePanels`). Tab n'ouvre plus CONTROLS sous la carte de création (`UI:controlsAllowed`).
+3. **CONTROLS en duel** : la feuille des contrôles et les réglages libèrent le curseur comme le panneau de dev (`camera.menuOpen = … or ui:overDuel()`) ; CLOSE est atteignable.
+4. **Les images de 0,45 s** : pas de tâche du DEV à cette cadence, mais deux balayages périodiques de tous les descendants de `NinjaDuels` (effets et débris compris) : `KonohaRogueFX` toutes les 0,4 s et `BossFX` (ANIMATEUR, d'hier soir) toutes les 0,5 s. Les deux ne regardent plus que les corps (`Duel_n.<combattant>`).
+   Pour les 1,2 s à l'écran de résultat, il me faut ta mesure dans une Studio seule. Avec une capture du micro-profileur (`capture_micro_profiler`) au moment du résultat, je saurai quel module coûte.
+5. **Ce qui change aussi pour ton robot** :
+   - Une seule tenue : les boîtes de tissu sont cachées par leur `Transparency`, plus par `LocalTransparencyModifier`. `BossFX` cache le corps de remplacement de l'Ōtsutsuki de la même façon.
+   - Le bandit a un corps.
+   - La course dans Konoha est à 30 (36 en l'air), le sprint du duel à 42.
+
 ## INBOX-DEV-TETES-20261127 — DEV 27/11 matin : les têtes et les tenues, après le jeu de François
 
 François, après avoir joué : « regarde les têtes ça ne va pas, la tenue est buggée quand on arrive, l'adversaire est buggé sa tenue, la course trop rapide et pas assez ninja, quand on bouge les vêtements ne sont pas adaptés, c'est pareil pour tous ». Ce que le DEV a corrigé et vu en jeu : `CURRENT_STATE` (DEV, 27/11 matin).

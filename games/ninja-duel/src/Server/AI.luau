@@ -497,7 +497,7 @@ function AI:tired(key,now,rule)
 	for _,u in self.uses or {} do if u.key==key and now-u.at<=rule[2] then n+=1 end end
 	return n>=rule[1]
 end
--- (27/11, the sprint slower: 40) A held-state jutsu formed in the open (the
+-- (27/11, the sprint slower) A held-state jutsu formed in the open (the
 -- Chidori) keeps the others' variety: not a third time in Technique[2] s, and
 -- never more than half of the jutsu he has thrown (three allowed). Sasuke's
 -- Chidori came out 4 times of 7 once the fights ran a little longer.

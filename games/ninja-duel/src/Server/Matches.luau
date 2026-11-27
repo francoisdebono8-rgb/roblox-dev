@@ -492,6 +492,14 @@ end
 -- `options` (optional): {player=spec, bot=spec, bracket=id} skill builds (see
 -- Matches.resolveKit). An invalid or over-budget build refuses the start. No
 -- options: both fighters are exactly today's kits.
+-- The way in (Server/Forest: the player attribute NinjaIntro) and what it
+-- refuses from the board and the village's menus.
+Matches.INTRO_REFUSED={ChooseStarter=true,SelectKit=true,MasterTrial=true,BuyKit=true,Start=true,Tutorial=true,First=true}
+function Matches.inIntro(player)
+	local ok,v=pcall(function() return player:GetAttribute("NinjaIntro") end)
+	return ok and v~=nil
+end
+
 -- (27/11, François: « la course de notre avatar est trop rapide et pas assez
 -- ninja », his choice: « course ninja nette ») (pure) The run his body plays
 -- in a duel: the clean ninja run (Lion's, the ANIMATEUR's tight one) until
@@ -979,6 +987,11 @@ function Matches:request(player,payload)
 		elseif s.combat then self:snapshot(player,s) end
 		return
 	end
+	-- (27/11, the OUTILLEUR's human robot: B in the forest opened the board
+	-- and ENTER THE STAGE chose a starter before the gate) In the way in
+	-- (NinjaIntro: the forest, the bandit, the path, the creation) nothing of
+	-- the village is asked: no kit chosen, no duel started from the board.
+	if Matches.inIntro(player) and Matches.INTRO_REFUSED[action] then return end
 	-- (23/11, passe 1) a rogue's racket answered: pay, run or fight (Server/Thugs)
 	if action=="Racket" then
 		if type(payload.id)=="string" and type(payload.choice)=="string" then pcall(require(script.Parent.Thugs).answer,player,payload.id,payload.choice) end
