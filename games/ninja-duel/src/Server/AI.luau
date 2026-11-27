@@ -497,6 +497,19 @@ function AI:tired(key,now,rule)
 	for _,u in self.uses or {} do if u.key==key and now-u.at<=rule[2] then n+=1 end end
 	return n>=rule[1]
 end
+-- (27/11, the sprint slower: 40) A held-state jutsu formed in the open (the
+-- Chidori) keeps the others' variety: not a third time in Technique[2] s, and
+-- never more than half of the jutsu he has thrown (three allowed). Sasuke's
+-- Chidori came out 4 times of 7 once the fights ran a little longer.
+function AI:hogs(id)
+	local n=(self.techCounts and self.techCounts[id]) or 0
+	return n>=3 and n+1>((self.techTotal or 0)+1)*.5
+end
+function AI:countTech(id)
+	self.techCounts=self.techCounts or {}
+	self.techCounts[id]=(self.techCounts[id] or 0)+1
+	self.techTotal=(self.techTotal or 0)+1
+end
 -- A technique of the kit not placed yet, once the round has run a while.
 function AI:owed(id,now)
 	return not (self.placed and self.placed[id]) and now-(self.roundStart or now)>=AI.Variety.OweAfter
@@ -954,7 +967,7 @@ function AI:update(now)
 			for slot,spec in a.def.Techniques do
 				if spec.Id=="MassShadowClone" then
 					a.move=Vector3.zero
-					if c:request(a,"Technique"..slot,target.root.Position) then self:used("MassShadowClone",now);return end
+					if c:request(a,"Technique"..slot,target.root.Position) then self:used("MassShadowClone",now);self:countTech("MassShadowClone");return end
 				end
 			end
 		end
@@ -979,7 +992,7 @@ function AI:update(now)
 				and self:owed(spec.Id,now) and distance<(spec.Range or 20)+1 and (a.cooldowns[spec.Id] or 0)<=now and a.chakra>=(spec.Cost or 0) then
 				self.oweTryAt=now+1.2+self.rng:NextNumber()*1.2
 				if self.rng:NextNumber()<.5 and c:request(a,"Technique"..slot,target.root.Position) then
-					self:used(spec.Id,now);self.lastTech=spec.Id
+					self:used(spec.Id,now);self.lastTech=spec.Id;self:countTech(spec.Id)
 					self.techReadyAt=now+(tune.TechniqueGap or 0)+self.rng:NextNumber()*(tune.TechniqueJitter or 0)
 					return
 				end
@@ -1015,8 +1028,8 @@ function AI:update(now)
 		-- body does with it next.
 		for slot,spec in a.def.Techniques do
 			if spec.State and not a.bodyState and distance>7 and distance<(spec.Range or 20) and self.rng:NextNumber()<(tune.StateForm or .35)
-				and c:request(a,"Technique"..slot,target.root.Position) then
-				self:used(spec.Id,now);self.lastTech=spec.Id
+				and not self:hogs(spec.Id) and not self:tired(spec.Id,now,AI.Variety.Technique) and c:request(a,"Technique"..slot,target.root.Position) then
+				self:used(spec.Id,now);self.lastTech=spec.Id;self:countTech(spec.Id)
 				self.techReadyAt=now+(tune.TechniqueGap or 0)+self.rng:NextNumber()*(tune.TechniqueJitter or 0);return
 			end
 		end
@@ -1077,7 +1090,7 @@ function AI:update(now)
 				use=distance<(spec.Range or 20)+1 and self.rng:NextNumber()<AI.Variety.OweChance
 			end
 			if use and c:request(a,"Technique"..slot,aim) then
-				self:used(spec.Id,now);self.lastTech=spec.Id
+				self:used(spec.Id,now);self.lastTech=spec.Id;self:countTech(spec.Id)
 				-- A held technique (spec.Hold): the bot holds it for a while of its
 				-- choosing, longer when the opponent is far (more time to see it).
 				if spec.Hold then

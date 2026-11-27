@@ -312,7 +312,7 @@ test("in a full sprint the light opens the string carried by the run, the heavy 
  local slid=V.new(a.root.Position.X-slideFrom.X,0,a.root.Position.Z-slideFrom.Z).Magnitude
  assert(slid>=2,string.format("the body stood still through the recovery (%.1f studs)",slid))
  H.step(c,.01)
- -- (27/11, the sprint slower: 38, no longer 45) part of its speed: a third of
+ -- (27/11, the sprint slower: 40, no longer 45) part of its speed: a third of
  -- the fighter's sprint (18 of Lee's 54 before)
  local sprint=a.profile and a.profile.SprintSpeed or H.load("Shared/Config").Movement.SprintSpeed
  local carried=sprint*(a.def.SprintScale or 1)/3

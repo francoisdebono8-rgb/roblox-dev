@@ -1002,7 +1002,7 @@ test("the walker grows: novice, trained, then his kit's own way; standing, his k
 	local Move=H.load("Client/HubMove")
 	assert(Move.speed(true,true)==30 and Move.speed(true,false)==36 and Move.speed(false,true)==Move.WALK,"the walker's speeds")
 	assert(Move.AIR_RUN==36,"the leap no longer reaches the village's roofs")
-	assert(H.load("Shared/Config").Movement.SprintSpeed==38,"the duel's sprint")
+	assert(H.load("Shared/Config").Movement.SprintSpeed==40,"the duel's sprint")
 	local Matches=H.load("Server/Matches")
 	assert(Matches.runOf("Leaf",0)=="Lion" and Matches.runOf("Leaf",799)=="Lion","a duel: not the ninja run before mastery")
 	assert(Matches.runOf("Leaf",800)==nil,"a duel: his kit's own run at its third tier")
