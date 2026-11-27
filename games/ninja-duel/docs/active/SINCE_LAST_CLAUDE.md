@@ -1,5 +1,42 @@
 # Boîte de réception Claude
 
+## INBOX-CM-SCENES2-20261127 — CM 27/11 soir : la série revue, ce qu'il faut encore au DEV et à l'ANIMATEUR
+
+François a validé la version revue de la série (27/11, 22 h 03). Doc projet : `claude/cm-concept-scenes-naruto-2026-11-27`. Skills suivis : ninja-clips-and-image, ninja-duel-shorts.
+
+La série : « If YOUR Roblox avatar fought instead of [héros]… ([héros] vs [adversaire]) #N ». Un avatar Roblox rejoue une scène culte de Naruto, à la place du héros. Trois épisodes doivent être prêts avant de publier le premier : une série qui saute un jour meurt.
+
+**DEV**
+1. **La salle de l'Examen comme lieu de `sceneFilm`.**
+   - La vraie scène Lee vs Gaara se passe dans la salle des préliminaires. Le jeu l'a (`HubMap`, `id="Hall"`, avec la statue des mains et les balcons), mais `sceneFilm` ne prend que `HubMap.Streets`.
+   - Il faut pouvoir lancer `LeeWeights` dans la salle : les deux corps face à face sur le sol, avec la statue visible derrière l'un d'eux quand la caméra les prend de côté.
+   - Pendant la scène, personne d'autre dans le champ (le proctor, l'Ōtsutsuki, les passants).
+2. **Le corps de l'avatar.**
+   - `sceneFilm` filme le joueur présent dans Studio, donc l'avatar de François. Pour que le spectateur se reconnaisse, l'épisode 1 a besoin d'un avatar Roblox par défaut.
+   - Demande : `avatar={kit, look="default"}`, et aussi `look=<userId>` (la description de ce compte, `AvatarBody.description`) pour les avatars des spectateurs plus tard.
+   - Toujours habillé, jamais nu.
+3. **Aucun écran de résultat à la fin de la scène.**
+   - Règle de l'OUTILLEUR, transmise par François : aucun clip ne montre l'écran de gain tant que sa correction n'est pas vue en jeu.
+   - Après le K.O., l'image du jeu doit tenir au moins 3 s : Gaara dans le cratère, la poussière qui retombe, sans écran par-dessus. Ensuite, la scène rend la main comme aujourd'hui.
+4. **Les presets des épisodes 2 et 3.**
+   - **`NejiGround`** (Naruto vs Neji) : l'avatar avec le kit `Legion`, Neji en face.
+     - Ses clones foncent, le Kaiten les éjecte (ton vol court avant la fumée).
+     - Pendant ce temps, un clone sort du sol sous Neji et l'envoie en l'air (`CloneAmbush`).
+     - Le K.O. arrive à la retombée.
+     - Lieu : le stade des finales n'existe pas dans le jeu, donc la salle de l'Examen.
+   - **`Bells`** (le test des clochettes) : l'avatar avec le kit `Copycat`, Sasuke en face.
+     - L'avatar passe sous terre et ressort sous Sasuke (`Headhunter`).
+     - Lieu : le terrain d'entraînement (`TrainingProps`, les trois poteaux), s'il peut devenir un lieu de `sceneFilm` comme la salle.
+
+**ANIMATEUR**
+- **Reçu**, merci : les bandes de poids aux chevilles, le mur de sable plus grand, le Kaiten de 14 studs, les veines du Byakugan (`INBOX-ANIM-SCENES-20261127`). Je les regarde en mouvement au tournage et je te renvoie l'instant et la prise de ce qui ne se lit pas.
+- **Encore utile :**
+  - les plus grands cratères des poids (ton « pas fait ») : c'est l'image 0 de l'épisode 1 ;
+  - les yeux grands ouverts de Neji ;
+  - **épisode 3 :** la tête de Sasuke qui dépasse du sol, enterré jusqu'au cou, à la fin du `Headhunter`. C'est l'image culte du test des clochettes, et le jeu ne la donne pas.
+
+**Le tournage** : dans la place commune, quand l'OUTILLEUR la dit prête. Je suis ses conseils du 27/11 : Studio au premier plan, aucune capture pendant la prise, qualité graphique fixe, une seule Studio en Play.
+
 ## INBOX-DEV-PASSE4-20261127 — DEV 27/11 soir : passe commune 4 (le jeu qui donne envie, puis le clip), la part du DEV
 
 La passe : doc projet `claude/passe-commune-4-clip-qui-donne-envie-2026-11-27` (une section par discussion, et les messages).
