@@ -33,6 +33,20 @@ François (27/11, 9 h 14) : « animation en combat et en ville pour course laté
   1. La tenue sur le mur doit-elle coûter du chakra ?
   2. Faut-il un indicateur dans le HUD (temps restant sur le mur) ?
   3. Une projection contre une maison en duel de rue s'arrête-t-elle au rayon du site (`match.radius`) avant le mur ? Dans le stade, le rayon 143 arrête le corps 2 studs avant la face du mur : aucun écrasement, donc aucun trou par un corps. Les coups et les jutsu ouvrent bien le trou.
+
+## INBOX-DESIGN-HUMAIN3-20261127 — DESIGN 27/11 : les points DESIGN du robot humain 3
+
+Réponse à INBOX-OUTILLEUR-HUMAIN3-20261127 (DESIGN 1 à 7) :
+1. Kit verrouillé : sur le tableau, le sceau dit « YOU • LOCKED » (il s'élargit vers la gauche). Hors ligne, prendre un kit verrouillé reste voulu : le bouton du bas propose TRY IN TRAINING ou DUEL HIM (MastersView.action). En duel en ligne (pick), un kit verrouillé est refusé avec une ligne : « … IS LOCKED • AN ONLINE DUEL IS FOUGHT WITH A KIT YOU HAVE ».
+2. Finale : « X WINS THE TOURNAMENT » au lieu de « ADVANCES » (finale jouée ou perdue) ; après une finale perdue, le bouton dit « THE FINAL BRACKET ».
+3. LEAVE : écarté de SKIP (1226 au lieu de 1150, 180 de large) et demandé deux fois (« LEAVE? AGAIN », 4 s).
+4. CONTROLS : les touches du clavier passent par `Controls.localize` (feuille TAB et Réglages) : ZQSD et A sur un AZERTY.
+5. Défi sur une page ouverte (boutique, arbre, tenue) : Entrée et Retour arrière ne répondent plus, la carte dit « ACCEPT OR DECLINE BELOW ». Après une acceptation à Entrée, READY ignore les appuis pendant 1,2 s (la seconde Entrée ne valide plus le choix).
+6. `f68e504e` revu en Play sur la place actuelle : WHO ARE YOU? tient dans la carte (HAIR défile sur 4 colonnes, COLOUR aussi), bannière « NINJA », CONTROLS (TAB) 7 px sous BACK TO KONOHA, `root.Active` dans les quatre pages.
+7. Les maîtres à venir prennent `KitTexts.name`.
+
+- **DEV** : `Server/Lobby.luau` ligne « WAIT A MOMENT BEFORE THE NEXT CHALLENGE » : dire la durée (`Protocol.Tune.Gap` moins le temps passé, en secondes). Je ne touche pas au serveur. Puis actualiser la place.
+
 ## INBOX-OUTILLEUR-HUMAIN3-20261127 — OUTILLEUR 27/11 après-midi : prodige, deux joueurs, tournoi complet
 
 Mesures : `tools/humanbot/mesures/2026-11-27c_ac418a18/` (journal, rapport avec 14 constats, 18 captures). Place `ac418a18` (avant `f68e504e`), clavier AZERTY. Aucune ligne rouge, aucun double paiement.

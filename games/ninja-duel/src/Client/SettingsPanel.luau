@@ -14,7 +14,8 @@ S.W,S.H=860,760
 S.STEPS={volume=.1,sensitivity=.2,music=.1,ambience=.1}
 S.LIMITS={volume={0,1},sensitivity={.4,2},music={0,1},ambience={0,1}}
 S.MAX_REPORT=300
--- What the CONTROLS block lists: the action, its key, its pad button.
+-- What the CONTROLS block lists: the action, its key, its pad button
+-- (keys written QWERTY, shown with the player's own labels: Controls.localize).
 S.ROWS={
 	{"MOVE","WASD","LEFT STICK"},{"LIGHT / HEAVY","LMB / RMB","X / Y"},{"GUARD","F","L1"},{"DODGE","Q","B"},
 	{"JUMP","SPACE","A"},{"KUNAI","R","R2"},{"CHAKRA","Z","L2"},{"SUBSTITUTE","X","D-PAD RIGHT"},
@@ -85,7 +86,7 @@ function S.new(kit,gui,send)
 	for i,row in S.ROWS do
 		local y=382+(i-1)*28
 		z(kit.text(card,row[1],UDim2.fromOffset(28,y),UDim2.fromOffset(290,22),16,M.ink,STRONG))
-		z(kit.text(card,row[2],UDim2.fromOffset(330,y),UDim2.fromOffset(220,22),16,M.mid or M.ink,STRONG))
+		z(kit.text(card,Controls.localize(row[2]),UDim2.fromOffset(330,y),UDim2.fromOffset(220,22),16,M.mid or M.ink,STRONG))
 		z(kit.text(card,row[3],UDim2.fromOffset(560,y),UDim2.fromOffset(260,22),16,M.mid or M.ink,STRONG))
 	end
 	-- REPORT A PROBLEM (the test place)
