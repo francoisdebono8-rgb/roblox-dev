@@ -44,4 +44,12 @@ for name,clip in require(script.Parent.AuthoredJutsu33) do all[name]=clip end
 for name,clip in require(script.Parent.AuthoredJutsu34) do all[name]=clip end
 for name,clip in require(script.Parent.AuthoredJutsu35) do all[name]=clip end
 -- END passe 2
+-- BEGIN passe 3 (tools/blender/p3_build.py)
+for name,clip in require(script.Parent.AuthoredJutsu41) do all[name]=clip end
+for name,clip in require(script.Parent.AuthoredJutsu42) do all[name]=clip end
+for name,clip in require(script.Parent.AuthoredJutsu43) do all[name]=clip end
+for name,clip in require(script.Parent.AuthoredJutsu44) do all[name]=clip end
+for name,clip in require(script.Parent.AuthoredJutsu45) do all[name]=clip end
+for name,clip in require(script.Parent.AuthoredJutsu46) do all[name]=clip end
+-- END passe 3
 return all

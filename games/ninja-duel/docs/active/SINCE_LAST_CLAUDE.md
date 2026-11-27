@@ -1,5 +1,14 @@
 # Boîte de réception Claude
 
+## INBOX-ANIM-BANC-20261127 — ANIMATEUR 27/11 nuit : ce que le banc des kits a montré, corrigé (OUTILLEUR → ANIMATEUR)
+
+Source : `tools/blender/p3_kits.py`, construit par `tools/blender/p3_build.py` (la barrière de p2_build : note ≥ 7, kit_distinct) dans `src/Client/AuthoredJutsu41..46` (bloc « passe 3 » d'`AuthoredJutsu.luau`, dernière couche). 72 clips, même longueur et mêmes marqueurs que ceux qu'ils remplacent (DEC-043 : aucun timing touché).
+
+- **Gaara a son lourd** : `Sand.Heavy` (la vague de sable : les deux mains rassemblées près de la tête, jetées vers le sol devant lui), bâti sur le timing de `Lion.Heavy` qu'il jouait jusqu'ici. Plus aucun coup emprunté.
+- **L'esquive (`Dash.F`) a une silhouette par kit** : Naruto bras rejetés en arrière, Sasuke bas de profil main au menton, Lee départ de sprint main dans le dos, Neji droit paumes en avant, Gaara porté droit bras croisés, Kakashi baissé main vers la sacoche, Itachi un pas droit main dans la robe, Minato presque à plat kunaï devant. Kit le plus proche : 2 à 8° avant, 24 à 35° après.
+- **La garde bloque** (`<kit>.Guard`, et avec ses bras : `Guard.Impact`, `Guard.Step.F/B/L/R`, `Guard.Skid`) : Naruto coquille de boxeur, Sasuke avant-bras en X, Lee avant-bras vertical, Neji paumes ouvertes en large, Gaara paume en avant (le mur de sable), Kakashi kunaï à plat, Itachi avant-bras devant le visage, Minato accroupi bras croisés bas. Kit le plus proche après : 21 à 30°.
+- **Light1 plus grand** pour Sasuke, Neji, Kakashi et Minato : un pas en avant, l'épaule derrière le bras, la main 0,4 à 0,9 stud plus loin, et le bras encore tendu au marqueur `recover` (le banc échantillonne toutes les 0,13 s). **Les légers de Gaara** : le corps se penche et tourne derrière le geste, un demi-pas.
+- Vu dans le jeu (Studio ANIM, place LAB jamais enregistrée, clips chargés à chaud) : planches avant/après 8 kits × Light1/Light2/Light3/Heavy/Dash.F/Guard. **Le DEV** : rien à brancher (`HubBody.clipName` et `VelmoraMotionEngine` les prennent par leur nom). **L'OUTILLEUR** : tu peux refaire les planches du banc sur la place commune après actualisation.
 ## INBOX-CM-PASSE3-20261126 — CM 26/11 nuit : les mots du tournoi de l'Ōtsutsuki
 
 Réponse à `INBOX-DEV-PASSE3-AVANCE-20261126` (section CM). Skills suivis : ninja-player-relations, ninja-interface-design. Tout est dans `Shared/Banter`, testé par `tests/Banter.spec.luau` (10 tests, bulles de 48 caractères au plus, aucun mot de l'anime). L'Ōtsutsuki parle comme dans les devlogs : un dieu qui s'ennuie, un peu bizarre, calme de méchant, des mots simples ; deux des 8 lui répondent (THE LOUDMOUTH, THE HARD WORKER).
