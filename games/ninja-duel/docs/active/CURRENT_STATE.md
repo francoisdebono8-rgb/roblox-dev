@@ -10,8 +10,9 @@
   - un build vide entre avec le build par défaut du kit, plus à 0 / 100 ;
   - la finale perdue montre la prime du finaliste ;
   - le défieur d'un défi accepté sur le même serveur est prévenu, son bandeau disparaît ;
-  - le défi de rue se joue contre l'IA facile tant que son kit a moins de 20 points.
-  Tests : Tournament 13, Lobby 10, ChallengeFilm 7.
+  - le défi de rue se joue contre l'IA facile tant que son kit a moins de 20 points ;
+  - l'écran de gain nomme les maîtres à venir par leur titre, plus par leur vrai nom.
+  Tests : Tournament 13, Lobby 10, ChallengeFilm 7, HubLayout 8.
 - **`sceneFilm`, la scène écrite du CM** (INBOX-CM-SCENES-20261127, réponse INBOX-DEV-SCENES-20261127) : dans la place commune (Studio), une scène dans une rue de Konoha. L'avatar porte le kit entier d'un prodige (plus les nœuds demandés), face au prodige de la scène. Chaque temps passe par les vraies touches du duel ; les défenses automatiques restent actives. Le K.O. vient sur le dernier temps (sinon forcé, et dit). Le résultat donne l'heure de chaque temps, de chaque coup touché et de chaque coup arrêté par le sable. Scène prête : `LeeWeights` (Lee vs Gaara). Vu dans Studio (NATIVE_STUDIO) : 5 blocages du sable avant 5 s, les poids à 6,3 s, le sable vidé à 9,7 s, le K.O. du Lotus à 13,2 s. Test : SceneFilm 3.
 - **Le robot humain, deuxième partie** (INBOX-OUTILLEUR-HUMAIN2-20261127, réponse INBOX-DEV-HUMAIN2-20261127) : un combat contre un voyou donne la moitié de la maîtrise d'un duel s'il est gagné, rien s'il est perdu (`Masters.thugGain`). Après l'arrivée, l'ouverture de la grande porte est fermée derrière le joueur, sur son écran (`Hub:closeGate`) : il ne ressort plus dans la forêt vide. Ouverts : le corps lancé à 220 studs/s (trace demandée à l'OUTILLEUR), les images de 1,6 s et 0,9 s (micro-profileur demandé). Tests : Masters 11, HubLayout 7.
 - **Le robot humain de l'OUTILLEUR** (INBOX-OUTILLEUR-HUMAIN-20261127, réponse INBOX-DEV-HUMANBOT-20261127) : pendant l'arrivée, rien du village ne s'ouvre, ni côté client ni côté serveur. Un seul menu est ouvert à la fois. Tab n'ouvre plus CONTROLS sous la création. En duel, la feuille des contrôles libère le curseur. Les balayages périodiques des duels (`KonohaRogueFX`, `BossFX`) ne regardent plus que les corps. Test : HubLayout 7.

@@ -258,6 +258,17 @@ end)
 
 -- (19/11, vague 2 DEV 1) The screen (HubClient, DESIGN) and the walk
 -- (HubMove, DEV) in their own files: the screen never drives the body.
+-- (27/11, the OUTILLEUR's human robot) the masters to come, on the result
+-- screen, by their titles: no prodigy's real name on screen
+test("the result screen names the masters to come by their titles",function()
+	local fs=require("@lune/fs")
+	local ui=fs.readFile("src/Client/UI.luau")
+	assert(string.find(ui,"table.insert(leads,KitTexts.name(master))",1,true),"the masters to come are not named by KitTexts")
+	local KitTexts=H.load("Shared/KitTexts")
+	local Fighters=H.load("Shared/Fighters")
+	for id,line in KitTexts.Lines do assert(KitTexts.name(id)==line.title and line.title~=Fighters[id].Name,id.."'s title is his name") end
+end)
+
 test("the village's screen and the walk are two files: HubClient draws, HubMove moves",function()
 	local fs=require("@lune/fs")
 	local screen=fs.readFile("src/Client/HubClient.luau")

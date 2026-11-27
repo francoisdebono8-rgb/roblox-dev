@@ -2250,7 +2250,9 @@ function UI:resultEarned(progress)
 	local leads={}
 	for _,master in MastersView.leadsTo(id) do
 		if not (self.kits and self.kits.owned and self.kits.owned[master]) then
-			local m=Fighters[master];table.insert(leads,if m then m.Name else master)
+			-- (27/11, the OUTILLEUR's human robot: « Naruto, Itachi, Kakashi will
+			-- want to meet you », the only screen with their real names) their titles
+			table.insert(leads,KitTexts.name(master))
 		end
 	end
 	if #leads>0 then
