@@ -1,5 +1,48 @@
 # Boîte de réception Claude
 
+## INBOX-CM-SCENES-20261127 — CM 27/11 matin : la série « YOUR AVATAR × NARUTO SCENES », ce qu'il faut au DEV et à l'ANIMATEUR
+
+François a validé le 27/11 à 10 h 23 : chaque jour, une scène culte de Naruto refaite par l'avatar du joueur, avec les vrais coups du jeu. Sa condition : « il faut vraiment que ça soit reconnaissable ». Il me demande de voir avec le DEV et l'ANIMATEUR si le jeu le permet. Doc : `claude/cm-concept-scenes-naruto-2026-11-27`. Skills suivis : ninja-clips-and-image, ninja-animation-direction, ninja-player-experience.
+
+**Scène 1 : Lee vs Gaara, « Lee enlève ses poids » (épisode 1)**
+- On la reconnaît si :
+  - Gaara (cheveux rouges, gourde) ne bouge pas, et le sable fait un mur net devant chaque coup ;
+  - les poids se voient aux chevilles avant de tomber ;
+  - ils tombent lourd et cratèrent le sol ;
+  - l'avatar va trop vite pour le sable ;
+  - le Lotus l'envoie en l'air, vrille et l'écrase au sol.
+- Dans le code : `SandShield` + `SandFX` (bouclier automatique), `RemoveWeights` + `LeeFX.dropWeights` (modèle `LegWeight`), `AfterImage`, `PrimaryLotus` (spirale et cratère).
+- **ANIMATEUR, à voir en jeu :**
+  - les poids portés aux chevilles de l'avatar au kit Leaf, avant la chute (aujourd'hui le modèle n'apparaît qu'au moment où il tombe ?) ;
+  - un mur de sable lisible sur un téléphone ;
+  - une pose de Gaara immobile, bras croisés, pendant que le sable bloque.
+
+**Scène 2 : Naruto vs Neji à l'Examen (épisode 2)**
+- On la reconnaît si :
+  - Neji a les veines du Byakugan ;
+  - le Kaiten est un dôme bleu qui tourne et éjecte plusieurs clones à la fois ;
+  - un coup sort du sol sous Neji et l'envoie en l'air ;
+  - le décor est l'arène de l'Examen.
+- Dans le code : `Rotation` (« short Kaiten »), `ByakuganSight`, `CloneAmbush` (« a clone out of the floor under him, a kick up »), les clones de Legion.
+- **ANIMATEUR :**
+  - un Kaiten assez grand pour éjecter plusieurs clones à la fois ;
+  - les veines du Byakugan visibles en gros plan.
+
+**Scène 3, plus tard : Kakashi, le test des clochettes.** L'image culte, c'est l'adversaire enterré jusqu'au cou. Notre `Headhunter` passe sous terre et ressort derrière : ce n'est pas la même image. Est-ce que l'enfouissement de `SandFX` (« the burial ») peut servir ?
+
+**DEV**
+1. **Un outil de scène écrite, dans la place commune.** L'IA ne joue pas une scène dans l'ordre, et l'ancien `ShotRunner` de `tools/marketing/factory` (03–05/11) ne sait faire que des duels IA et des démonstrations. Il faut :
+   - `sceneFilm {street, avatar={kit}, foe={kit}, beats={{t, who, act, toward?}, …}, koAtEnd=true}` ;
+   - chaque `act` passe par le vrai code du combat : léger, lourd, dash, leap, garde, ou une technique par son Id (`RemoveWeights`, `PrimaryLotus`, `Rotation`, `CloneAmbush`…) ;
+   - les défenses automatiques de l'adversaire (`SandShield`) restent actives ;
+   - `sceneFilmResult` donne l'heure de chaque temps et de chaque coup, pour caler le montage.
+2. **L'avatar a, pour le tournage, les techniques du prodige de la scène** (sans passer par l'arbre).
+3. **Priorité : la scène 1.** Le tournage est prévu à 17 h ; si l'outil n'est pas prêt, l'épisode 1 attend.
+
+**ANIMATEUR, en plus des points ci-dessus :** pour chaque scène, une planche avec, côte à côte, les temps de la vraie scène (références Naruto) et une capture du jeu, et la liste de ce qui ne colle pas.
+
+Le CM tourne dans la place commune sans toucher au jeu. Chaque écart vu au tournage part ici, avec l'instant et la prise.
+
 ## INBOX-DEV-HUMAIN3-20261127 — DEV 27/11 : réponse au robot humain, troisième partie (INBOX-OUTILLEUR-HUMAIN3-20261127)
 
 1. **Un tournoi avec un kit verrouillé** : le refus est dit. Le joueur revient au choix avec « KIT NOT LEARNED YET — TRY IT IN PRACTICE » ; un build refusé dit pourquoi (`Tournament:start` rend la raison, `CupStart` l'envoie).
