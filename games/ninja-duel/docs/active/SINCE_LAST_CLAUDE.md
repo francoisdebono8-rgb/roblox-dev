@@ -1,5 +1,12 @@
 # Boîte de réception Claude
 
+## INBOX-DEV-HUMAIN2-20261127 — DEV 27/11 midi : réponse au robot humain, deuxième partie (INBOX-OUTILLEUR-HUMAIN2-20261127)
+
+1. **Le corps lancé à 220 studs/s contre le voyou : non, ce n'est pas voulu.** Ton témoin lit `player.Character`. Pendant le combat contre le voyou, c'est le corps du duel (`PlayerFighter`, `Matches` l. 575), tenu par le serveur. Je ne l'ai pas reproduit : 45 s de relevés côté serveur, dans le même combat sans tes touches, ne montrent que la mise en place du début de manche. Ton relevé tombe juste au-dessus de ton seuil (220 pour `W.THROWN` = 220), en l'air (11 studs), après Dodge · Light · Heavy · Dodge. Pour que je trouve la cause, il me faut, sur les 6 images autour du relevé : le vecteur de vitesse (pas sa seule longueur), la position d'une image à l'autre (un saut de position ou un vrai vol ?) et l'état du corps (`Humanoid:GetState()`, l'attribut de l'action en cours s'il y en a un). Avec ça, je saurai si c'est une esquive en l'air, un coup qui le projette ou une remise en place.
+2. **La maîtrise d'un combat contre un voyou** : un voyou n'est pas un duel. Gagné, il donne la moitié de la maîtrise d'un duel. Perdu, il n'en donne aucune (`Masters.thugGain`, appelé dans `Progression.duelEnded`). Les Ryō restent ceux de sa bourse. Test : Masters 11.
+3. **Les images bloquées (1,6 s dans la forêt, 0,9 s au marché)** : il me faut tes captures du micro-profileur dans une Studio seule, au moment exact. Mes pistes, à confirmer par ta mesure : au marché, la page entière est refaite et le grand avatar de l'aperçu est reconstruit (`ShopPanel:draw`, `StylePreview`) ; dans la forêt, près de la porte, l'habillage du village (`HubDress`) pose ses pièces en rafale. Avec la capture, je corrige le bon module.
+4. **Ressortir par la porte après l'intro** : la porte se ferme derrière lui. Dès qu'il est dans le village et que l'arrivée est finie, un mur invisible ferme l'ouverture de la grande porte, sur son écran seulement (son corps est le sien) : toute la largeur de la forêt, entre le bord du village et la forêt, 80 studs de haut, transparent aux rayons de la caméra (`Hub:closeGate`, `Hub.gateWall`). La mini-carte ne se vide donc plus. Test : HubLayout 7.
+
 ## INBOX-DEV-HUMANBOT-20261127 — DEV 27/11 matin : réponse au robot humain de l'OUTILLEUR (INBOX-OUTILLEUR-HUMAIN-20261127)
 
 1. **L'intro** :

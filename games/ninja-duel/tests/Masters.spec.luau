@@ -309,4 +309,25 @@ test("a duel with a kit not his yet pays its Ryō; a rogue's fight only its purs
 	Config.Progression.Enabled=false
 end)
 
+-- (27/11, the OUTILLEUR's human robot: « une défaite contre un voyou donne
+-- 30 de maîtrise, comme un duel ») a rogue's fight is not a duel
+test("a rogue's fight gives half a duel's mastery when won, none when lost",function()
+	local duel=Masters.duelGain({won=true,techniques=1,level="hard"})
+	assert(Masters.thugGain(duel,true,false)==duel,"a duel lost its mastery")
+	assert(Masters.thugGain(Masters.Gain.Finished,false,true)==0,"a lost rogue's fight gave mastery")
+	local half=Masters.thugGain(duel,true,true)
+	assert(half>0 and half<duel and half==math.floor(duel*.5+.5),"a won rogue's fight gave "..half.." of "..duel)
+	Config.Progression.Enabled=true
+	Progression.repo=nil
+	Progression.init(Repo.memoryStore())
+	local player={UserId=505,Name="P505",DisplayName="P505",Parent=H.Players}
+	assert(Progression.load(player))
+	assert(Progression.chooseStarter(player,"Lion"),"he could not take Naruto")
+	local lost=Progression.duelEnded(player,{playerId="Lion",aiLevel="easy",thug={kit="Leaf"}},false)
+	assert(not (lost and lost.amount and lost.amount>0),"a lost rogue's fight gave "..tostring(lost and lost.amount).." mastery")
+	local lostDuel=Progression.duelEnded(player,{playerId="Lion",aiLevel="easy"},false)
+	assert(lostDuel and lostDuel.amount and lostDuel.amount>0,"a lost duel gave no mastery")
+	Config.Progression.Enabled=false
+end)
+
 print(string.format("NinjaDuel masters' path (DEC-037): %d PASS",passed))

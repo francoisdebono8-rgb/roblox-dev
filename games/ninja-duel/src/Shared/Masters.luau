@@ -85,6 +85,14 @@ function Masters.duelGain(r)
 	return math.clamp(math.floor(n+.5),0,G.Max)
 end
 
+-- (27/11) A rogue's fight (Server/Thugs): won, half a duel's mastery; lost,
+-- none. `amount`: the duel's.
+function Masters.thugGain(amount,won,thug)
+	if not thug then return amount end
+	if not won then return 0 end
+	return math.floor((amount or 0)*.5+.5)
+end
+
 -- (DEC-040) Mastery for a duel against another player, decided:
 -- r = {won, techniques}.
 function Masters.versusGain(r)

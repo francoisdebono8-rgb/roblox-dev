@@ -532,10 +532,39 @@ function Hub:jumpRequest()
 	if not self.active or self.board then return end
 	self.move:jump()
 end
+-- (27/11, the OUTILLEUR's human robot: « après l'intro, on peut ressortir par
+-- la porte dans la forêt, où la mini-carte est vide ») The forest is the way
+-- in only: once he is in the village with the way in done, the great gate's
+-- opening is closed behind him, on this screen (his body is his to move),
+-- across the forest's width between the village's edge and the forest.
+-- (pure) The wall: its centre (relative to HubMap.Origin) and its size.
+function Hub.gateWall(map)
+	local F=map.Forest
+	local z=(map.MaxZ+F.z0)/2
+	return Vector3.new((F.x0+F.x1)/2,30,z),Vector3.new(F.x1-F.x0,80,math.max(2,F.z0-map.MaxZ))
+end
+function Hub:closeGate(root)
+	-- (the way in set after his body came into the village, on joining: the
+	-- gate opens again for it)
+	if Hub.inIntro() then
+		if self.gateClosed then self.gateClosed:Destroy();self.gateClosed=nil end
+		return
+	end
+	if self.gateClosed or not root then return end
+	local rel=root.Position-HubMap.Origin
+	if not HubMap.inside(rel) then return end
+	local at,size=Hub.gateWall(HubMap)
+	local wall=Instance.new("Part")
+	wall.Name="NinjaGateClosed";wall.Anchored=true;wall.CanCollide=true;wall.CanQuery=false;wall.CanTouch=false
+	wall.Transparency=1;wall.CastShadow=false;wall.Size=size;wall.CFrame=CFrame.new(HubMap.Origin+at)
+	wall.Parent=workspace
+	self.gateClosed=wall
+end
 function Hub:step(dt)
 	if not self.active then return end
 	if self:anyPanel()~=self.panelOpen then self:apply() end
 	local character=Players.LocalPlayer.Character
+	pcall(self.closeGate,self,character and character:FindFirstChild("HumanoidRootPart"))
 	-- (DESIGN 21/11) the minimap follows him
 	if self.map and self.map.mini.Visible then
 		local root=character and character:FindFirstChild("HumanoidRootPart")

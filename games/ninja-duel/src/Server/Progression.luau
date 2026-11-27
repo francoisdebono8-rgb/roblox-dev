@@ -319,6 +319,10 @@ function P.duelEnded(player,s,won)
 	local used=0
 	for _ in (s.human and s.human.usedJutsu) or {} do used+=1 end
 	local amount=if owned then Masters.duelGain({won=won,techniques=used,level=s.aiLevel or "easy"}) else 0
+	-- (27/11, the OUTILLEUR's human robot: « une défaite contre un voyou donne
+	-- 30 de maîtrise, comme un duel ») a rogue's fight is not a duel: won, half
+	-- a duel's; lost, nothing
+	amount=Masters.thugGain(amount,won,s.thug~=nil)
 	if P.boosted(player) then amount=math.min(Masters.Gain.Max,amount*2) end
 	local out=nil
 	if amount>0 then

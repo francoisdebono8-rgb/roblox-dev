@@ -159,6 +159,14 @@ test("Konoha's HUD: placed by the layout, the goal follows the player, touch and
 		assert(string.find(Hub.keysText("keys",false),"B DUELS",1,true) and string.find(Hub.keysText("pad",false),"R1 DUELS",1,true),"the village lost its keys")
 		hub:closePanels()
 		assert(ui:overDuel()==false and ui:controlsAllowed()==true,"nothing open: the cursor held, the controls allowed")
+		-- (27/11, the human robot: back out through the gate after the way in)
+		-- the great gate's opening is closed behind him: across the forest's
+		-- width, between the village's edge and the forest, taller than a leap
+		local HubMap=H.load("Shared/HubMap")
+		local at,size=Hub.gateWall(HubMap)
+		assert(math.abs(size.X-(HubMap.Forest.x1-HubMap.Forest.x0))<.01 and size.Y>=60,"the wall does not close the gate: "..tostring(size))
+		assert(at.Z>HubMap.MaxZ and at.Z<HubMap.Forest.z0,"the wall is not between the village and the forest: z="..at.Z)
+		assert(HubMap.inside(H.envBase.Vector3.new(0,0,at.Z-size.Z/2-1)) and HubMap.inForest(H.envBase.Vector3.new(0,0,at.Z+size.Z/2+1)),"the wall leaves a gap at the gate")
 		local Matches=H.load("Server/Matches")
 		local walker={GetAttribute=function(_,k) if k=="NinjaIntro" then return "forest" end return nil end}
 		local inside={GetAttribute=function() return nil end}
