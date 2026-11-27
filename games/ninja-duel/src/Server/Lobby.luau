@@ -364,8 +364,13 @@ function Lobby:accepted(p,msg)
 	if not Lobby.challengeable(self:stateOf(p)) then
 		return self:deliver({k="no",id=msg.id,to=msg.from,toJob=msg.fromJob,reason="busy",name=p.name})
 	end
-	-- Same server: the online 1v1 at once, no teleport.
-	if other then return self:pairHere(p,other,rec.fighter or p.fighter,fighter,rec.quick) end
+	-- Same server: the online 1v1 at once, no teleport. (27/11, the
+	-- OUTILLEUR's human robot: « CHALLENGE SENT • WAITING… » and its CANCEL
+	-- stayed through the duel) the challenger is told, his banner let go.
+	if other then
+		self:status(p,string.upper(rec.toName or "YOUR OPPONENT").." ACCEPTED")
+		return self:pairHere(p,other,rec.fighter or p.fighter,fighter,rec.quick)
+	end
 	self:status(p,string.upper(rec.toName or "YOUR OPPONENT").." ACCEPTED  •  LEAVING FOR THE DUEL…")
 	self.svc.spawn(function()
 		local ok,code,serverId=pcall(function() return self.svc.teleport:ReserveServer(self.svc.placeId) end)

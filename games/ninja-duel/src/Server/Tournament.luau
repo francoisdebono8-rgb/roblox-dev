@@ -53,7 +53,9 @@ function Tournament.admit(fighter,nodes)
 	return SkillBuilds().admit(Tournament.Bracket,fighter,nodes,Tournament.everything(fighter),{gated=true,allowClosed=true})
 end
 function Tournament.defaultBuild(fighter,own)
-	if type(own)=="table" and Tournament.admit(fighter,own) then return table.clone(own) end
+	-- (27/11, the OUTILLEUR's human robot: « NEW TOURNAMENT a donné YOUR BUILD
+	-- 0 / 100 ») his own build when it has nodes; an empty one is no build
+	if type(own)=="table" and #own>0 and Tournament.admit(fighter,own) then return table.clone(own) end
 	local tree=SkillBuilds().tree(fighter)
 	local nodes={}
 	local function try(id)
@@ -155,17 +157,20 @@ function Tournament:send(player,s,phase)
 end
 
 -- ------------------------------------------------------------ flow
+-- Returns whether it started, or false and why (in the player's words).
+Tournament.NOT_LEARNED="KIT NOT LEARNED YET — TRY IT IN PRACTICE"
 function Tournament:start(player,fighter,nodes)
 	local m=self.matches
-	if type(fighter)~="string" or not table.find(BetaRoster,fighter) or not Fighters[fighter] then return false end
+	if type(fighter)~="string" or not table.find(BetaRoster,fighter) or not Fighters[fighter] then return false,"CHOOSE A NINJA" end
 	-- (DEC-037) the player's fighter in the cup: a learned kit.
 	local Progression=require(script.Parent.Progression)
-	if not Progression.owns(player,fighter) then return false end
-	-- (23/11, DEC-048) his build for the cup, within its budget
+	if not Progression.owns(player,fighter) then return false,Tournament.NOT_LEARNED end
+	-- (23/11, DEC-048) his build for the cup, within its budget; (27/11) an
+	-- empty build is no build: the kit's default
 	local spec=Progression.kitSpec(player,fighter)
-	if nodes==nil then nodes=Tournament.defaultBuild(fighter,spec and spec.nodes) end
-	local kit=Tournament.admit(fighter,nodes)
-	if not kit then return false end
+	if nodes==nil or (type(nodes)=="table" and #nodes==0) then nodes=Tournament.defaultBuild(fighter,spec and spec.nodes) end
+	local kit,why=Tournament.admit(fighter,nodes)
+	if not kit then return false,why or "THIS BUILD CANNOT ENTER" end
 	local s=m:session(player)
 	if s.online then return false end
 	m:destroy(s)
@@ -322,7 +327,12 @@ function Tournament:request(player,s,action,payload)
 	end
 	if action=="CupStart" then
 		-- (Audit 04/11) and NEW TOURNAMENT once one is over (champion or out).
-		if (s.phase=="Selection" and not s.cup) or (s.cup and s.cup.over) then self:start(player,payload.player,payload.nodes) end
+		if (s.phase=="Selection" and not s.cup) or (s.cup and s.cup.over) then
+			-- (27/11, the OUTILLEUR's human robot: a locked kit, « la page
+			-- d'entrée s'est fermée, rien ne se passe ») a refusal says why
+			local ok,why=self:start(player,payload.player,payload.nodes)
+			if not ok and why then self.matches:selection(player,self.matches.refusal(why)) end
+		end
 		return true
 	end
 	if not s.cup then return false end

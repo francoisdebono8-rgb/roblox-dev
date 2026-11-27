@@ -210,4 +210,26 @@ test("the encounter's lens: in front of him, to his side, never behind; his face
 	end
 end)
 
+-- (27/11, the OUTILLEUR's human robot: the street's prodigy beat a kit with
+-- no node learned three times) the street's challenge at the easy AI while his
+-- kit has fewer points than the cup's first builds; a film keeps its level
+test("a street challenge is at the easy AI while his kit is new, then at its own level",function()
+	assert(Matches.challengeLevel(0)=="easy" and Matches.challengeLevel(Matches.CHALLENGE_EASY_BELOW-1)=="easy","a new kit")
+	assert(Matches.challengeLevel(Matches.CHALLENGE_EASY_BELOW)==H.load("Shared/Solo").Challenge.level,"a grown kit")
+	assert(Matches.challengeLevel(nil)==H.load("Shared/Solo").Challenge.level,"a kit he only tries (whole)")
+	local kitSpec=Progression.kitSpec
+	Progression.kitSpec=function() return {nodes={}} end
+	local m=Matches.new(remote)
+	local player=fakePlayer(21)
+	m:selection(player)
+	local site=HubMap.Streets[1]
+	assert(m:challengeStart(player,"Lion",{kit="Sand",site=site,line="x"},clock),"no duel")
+	local easy=Matches.aiLevel(m.sessions[player])
+	m:selection(player)
+	assert(m:challengeStart(player,"Lion",{kit="Sand",site=site,line="x"},clock,"hard"),"no duel")
+	local film=Matches.aiLevel(m.sessions[player])
+	Progression.kitSpec=kitSpec
+	assert(easy=="easy" and film=="hard","levels: "..tostring(easy)..", "..tostring(film))
+end)
+
 print(string.format("NinjaDuel challengeFilm (the CM's series): %d PASS",passed))

@@ -214,6 +214,10 @@ test("same server: an accepted challenge goes straight to the online pick, no te
 	assert(o.duel.seats[1].fighter=="Copycat" and o.duel.seats[2].fighter=="GentleFist","fighters")
 	assert(#world.teleports==0,"a teleport for a duel on the same server")
 	assert(a.m.sessions[carol].phase=="Pick","Carol's AI duel did not end")
+	-- (27/11, the OUTILLEUR's human robot) Alice is told: her CHALLENGE SENT
+	-- banner and its CANCEL let go (Client/LobbyPanel reads ACCEPTED)
+	local told=lastOf(alice,"status")
+	assert(told and string.find(told.text,"ACCEPTED",1,true),"the challenger is not told: "..tostring(told and told.text))
 end)
 
 -- (26/11, passe 3, DEC-055) a blow in the street is a challenge; hit back

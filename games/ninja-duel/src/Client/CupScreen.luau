@@ -168,6 +168,16 @@ function Cup:fill(p,seat,cup,alive)
 	p.edge.Color=if mine then P.gold else P.paper
 	p.edge.Transparency=if mine then .1 else .75
 end
+-- (27/11, the OUTILLEUR's human robot: the finalist's +150 Ryō and +60
+-- mastery paid but never shown) The line under the bracket once it is over
+-- for him: a lost final says what it gave.
+function Cup.outLine(cup)
+	local reward=cup.reward
+	local prize=reward~=nil and ((reward.amount or 0)>0 or (reward.ryo or 0)>0)
+	if cup.out and prize then return string.format("RUNNER-UP  •  +%d MASTERY  •  +%d RYŌ",reward.amount or 0,reward.ryo or 0) end
+	if cup.out then return "Out this time. Come back sharper." end
+	return ""
+end
 function Cup:draw(cup)
 	self.cup=cup
 	self.lastFighter=cup.seats[cup.me]
@@ -211,7 +221,7 @@ function Cup:draw(cup)
 		local champion=cup.champion and nameOf(cup.seats[cup.champion]) or "?"
 		self.subtitle.Text=if cup.out then "ELIMINATED IN THE "..tostring(cup.eliminatedIn or "").."  •  THE REST OF THE BRACKET WAS PLAYED OUT" else "THE TOURNAMENT IS OVER"
 		self.nextTitle.Text="CHAMPION  •  "..champion
-		self.lineA.Text=if cup.out then "Out this time. Come back sharper." else ""
+		self.lineA.Text=Cup.outLine(cup)
 		self.lineB.Text=""
 		self.primary.Text="NEW TOURNAMENT"
 		self.secondary.Text="BACK TO THE ROSTER";self.secondary.Visible=true

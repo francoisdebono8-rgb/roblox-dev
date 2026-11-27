@@ -113,6 +113,23 @@ test("he enters with his kit and a build of the cup's budget: his choice, or his
 	send(m4,p4,"CupStart",{player="Sand",nodes={1,2}})
 	assert(m4.sessions[p4].phase=="Selection","a cup entered with a build that is not one")
 	assert(me~=nil)
+	-- (27/11, the OUTILLEUR's human robot) a refusal says why; an empty build
+	-- (NEW TOURNAMENT, BEST BUILD of an unlearned tree) is the kit's default
+	assert(type(last(p3).notice)=="string" and #last(p3).notice>0,"the over-budget refusal says nothing")
+	local m5,p5=fresh()
+	send(m5,p5,"CupStart",{player="Sand",nodes={}})
+	local empty=last(p5).cup and last(p5).cup.build
+	assert(empty and #empty.nodes>0 and empty.spent>=60,"an empty build entered at "..tostring(empty and empty.spent).." / 100")
+	assert(#Tournament.defaultBuild("Lion",{})>0,"the default build kept an empty list")
+	-- a kit he has not learned: refused, and told
+	local Progression=H.load("Server/Progression")
+	local owns=Progression.owns
+	Progression.owns=function(_,kit) return kit~="Leaf" end
+	local m6,p6=fresh()
+	send(m6,p6,"CupStart",{player="Leaf"})
+	local refused=last(p6)
+	Progression.owns=owns
+	assert(m6.sessions[p6].phase=="Selection" and refused.notice==Tournament.NOT_LEARNED,"a locked kit's refusal: "..tostring(refused.notice))
 end)
 
 -- (23/11, step 5, DEC-049) the DESIGN's REPORT A PROBLEM reaches the server's reports
@@ -345,6 +362,15 @@ test("odds: the engine's table covers the 56 ordered pairs and stays between 10 
 		assert(math.abs(p+T:chance(y,x)-1)<.21,"asymmetric "..x.." "..y)
 	end end end
 	assert(n==56)
+end)
+
+-- (27/11, the OUTILLEUR's human robot) the finalist's prize is shown
+test("a lost final says what it gave: RUNNER-UP, its mastery and Ryō",function()
+	local Cup=H.load("Client/CupScreen")
+	local line=Cup.outLine({out=true,reward={amount=60,ryo=150}})
+	assert(string.find(line,"RUNNER-UP",1,true) and string.find(line,"+60 MASTERY",1,true) and string.find(line,"+150 RYŌ",1,true),"the finalist's line: "..line)
+	assert(Cup.outLine({out=true})=="Out this time. Come back sharper.","out earlier")
+	assert(Cup.outLine({over=true})=="","the champion's bracket")
 end)
 
 print(("Tournament: %d passed"):format(passed))

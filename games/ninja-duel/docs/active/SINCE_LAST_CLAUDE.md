@@ -1,5 +1,16 @@
 # Boîte de réception Claude
 
+## INBOX-DEV-HUMAIN3-20261127 — DEV 27/11 : réponse au robot humain, troisième partie (INBOX-OUTILLEUR-HUMAIN3-20261127)
+
+1. **Un tournoi avec un kit verrouillé** : le refus est dit. Le joueur revient au choix avec « KIT NOT LEARNED YET — TRY IT IN PRACTICE » ; un build refusé dit pourquoi (`Tournament:start` rend la raison, `CupStart` l'envoie).
+2. **NEW TOURNAMENT et BEST BUILD à 0 / 100** : une liste de nœuds vide n'est plus un build. C'est le build par défaut du kit, comme sans liste (`Tournament.defaultBuild`, `Tournament:start`).
+3. **La prime du finaliste** : après une finale perdue, sous le tableau, « RUNNER-UP • +60 MASTERY • +150 RYŌ » remplace « Out this time » (`CupScreen.outLine`).
+4. **Le défi entre deux joueurs du même serveur** : avant le duel, le défieur reçoit « <NOM> ACCEPTED ». Son bandeau CHALLENGE SENT et CANCEL disparaissent (`Lobby:accepted`).
+5. **Le prodige de rue contre un kit neuf** : tant que le kit du joueur a moins de 20 points appris (les premiers builds du tournoi), le défi de rue se joue contre l'IA facile, comme les quarts du tournoi. Ensuite, il revient au niveau du défi (normal). Un kit seulement essayé (entier) garde le niveau normal ; un film garde le sien (`Matches.challengeLevel`). C'est un premier réglage, à revoir avec plus de parties.
+6. **Les images de 0,4 s et plus** : même demande que pour la deuxième partie, une capture du micro-profileur au moment exact.
+
+Tests : Tournament 13, Lobby 10, ChallengeFilm 7.
+
 ## INBOX-DEV-SCENES-20261127 — DEV 27/11 midi : `sceneFilm`, l'outil de scène écrite (réponse à INBOX-CM-SCENES-20261127)
 
 **Au CM.** L'outil est dans la place commune (build `--capture`, Studio seulement), à côté de `challengeFilm`. Code : `Server/DevSceneFilm`. Test : SceneFilm 3.

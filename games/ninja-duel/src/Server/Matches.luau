@@ -612,10 +612,29 @@ Matches.Dare={line=1.6,vs=1.5}
 -- inspiration, where the inspiration stood. `kit`: the learned kit he fights
 -- with. `level`: the inspiration's AI (Solo.Challenge.level unless a film
 -- asks). Returns whether it started.
+-- (27/11, the OUTILLEUR's human robot: the street's prodigy, his whole kit at
+-- the normal AI, beat three times a kit with no node learned; the same robot
+-- won the cup's quarter-final, easy AI, with 35 points) A challenge in the
+-- street is at the easy AI while the kit he fights with has fewer points
+-- learned than the cup's first builds (BuildPresets' Beginner); then at its
+-- own level. `spent`: his build's points (nil: a kit he only tries, whole).
+Matches.CHALLENGE_EASY_BELOW=20
+function Matches.challengeLevel(spent)
+	if spent~=nil and spent<Matches.CHALLENGE_EASY_BELOW then return "easy" end
+	return require(Shared.Solo).Challenge.level
+end
 function Matches:challengeStart(player,kit,c,now,level)
 	local s=self:session(player)
 	s.masterTrial=nil;s.firstStage=nil;s.firstFight=nil;s.coach=nil;s.challenge=c.kit
-	s.aiLevel=if Matches.LEVELS[level or ""] then level else require(Shared.Solo).Challenge.level
+	if not Matches.LEVELS[level or ""] then
+		local spent=nil
+		pcall(function()
+			local spec=Progression.kitSpec(player,kit)
+			if spec then spent=SkillBuilds.cost(kit,spec.nodes or {}) end
+		end)
+		level=Matches.challengeLevel(spent)
+	end
+	s.aiLevel=level
 	s.nextSite={key=c.site.key,origin=HubMap.Origin+c.site.at,radius=c.site.radius,place=c.site.place,street=true,axis=c.site.axis,start=c.site.start}
 	local ok=self:start(player,kit,c.kit,false)
 	s.nextSite=nil
