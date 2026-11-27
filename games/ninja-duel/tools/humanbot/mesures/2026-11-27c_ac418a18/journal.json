@@ -1,0 +1,1034 @@
+{
+ "transcrit": "Le journal du 27/11 après-midi (tournoi complet, prodige), transcrit à la main\ndepuis l'export compact du témoin (report.py --read) et NDHumanServer.read() :\nles pas avant chaque bug sont raccourcis aux 5 derniers, les événements aux\nprincipaux. Les nombres (clics, touches, images longues, comptes) sont ceux du\ntémoin, recopiés tels quels.",
+ "place": "ac418a18 (_prochaine NinjaDuel.rbxlx, Play solo, clavier AZERTY du Mac)",
+ "setup": "serveur : Forest.atGate + create, chooseStarter Lion, earnRyo 1000, matches:selection (le client avait déjà posé THE LOUDMOUTH en YOU)",
+ "client": {
+  "seconds": 1456.31,
+  "clicks": 102,
+  "keys": 113,
+  "answers": 64,
+  "hitches": [
+   {
+    "t": 122.88,
+    "dt": 0.4552
+   },
+   {
+    "t": 146.64,
+    "dt": 0.4847
+   },
+   {
+    "t": 184.2,
+    "dt": 0.5153
+   },
+   {
+    "t": 267.41,
+    "dt": 2.1145
+   },
+   {
+    "t": 332.54,
+    "dt": 1.0105
+   },
+   {
+    "t": 402.1,
+    "dt": 1.504
+   },
+   {
+    "t": 422.06,
+    "dt": 1.089
+   },
+   {
+    "t": 469.09,
+    "dt": 1.4086
+   },
+   {
+    "t": 547.45,
+    "dt": 1.1926
+   },
+   {
+    "t": 586.08,
+    "dt": 0.8217
+   },
+   {
+    "t": 679.88,
+    "dt": 0.3737
+   },
+   {
+    "t": 684.21,
+    "dt": 0.3816
+   },
+   {
+    "t": 700.78,
+    "dt": 1.3023
+   },
+   {
+    "t": 746.21,
+    "dt": 0.7697
+   },
+   {
+    "t": 771.27,
+    "dt": 0.2702
+   },
+   {
+    "t": 794.48,
+    "dt": 0.2564
+   },
+   {
+    "t": 831.55,
+    "dt": 0.269
+   },
+   {
+    "t": 834.81,
+    "dt": 0.2702
+   },
+   {
+    "t": 835.19,
+    "dt": 0.3069
+   },
+   {
+    "t": 838.58,
+    "dt": 0.2568
+   },
+   {
+    "t": 838.89,
+    "dt": 0.2865
+   },
+   {
+    "t": 850.49,
+    "dt": 0.2533
+   },
+   {
+    "t": 870.04,
+    "dt": 1.2034
+   },
+   {
+    "t": 886.13,
+    "dt": 2.0114
+   },
+   {
+    "t": 927.18,
+    "dt": 1.6746
+   },
+   {
+    "t": 927.62,
+    "dt": 0.2961
+   },
+   {
+    "t": 956.38,
+    "dt": 0.2716
+   },
+   {
+    "t": 956.72,
+    "dt": 0.2656
+   },
+   {
+    "t": 964.47,
+    "dt": 0.8777
+   },
+   {
+    "t": 971.9,
+    "dt": 0.3776
+   },
+   {
+    "t": 985.88,
+    "dt": 0.328
+   },
+   {
+    "t": 1069.37,
+    "dt": 1.4566
+   },
+   {
+    "t": 1106.46,
+    "dt": 1.2498
+   },
+   {
+    "t": 1136.61,
+    "dt": 0.6565
+   },
+   {
+    "t": 1203.45,
+    "dt": 0.3972
+   },
+   {
+    "t": 1246.3,
+    "dt": 0.3258
+   },
+   {
+    "t": 1280.55,
+    "dt": 0.3677
+   },
+   {
+    "t": 1354.5,
+    "dt": 0.2569
+   }
+  ],
+  "events": [
+   {
+    "t": 0,
+    "kind": "note",
+    "v": "tournoi complet : DUELS puis TOURNAMENT • VS AI"
+   },
+   {
+    "t": 143.37,
+    "kind": "menus",
+    "v": "« VS » + CupEntry (kit THE LOUDMOUTH, verrouillé, marqué YOU)"
+   },
+   {
+    "t": 177.97,
+    "kind": "note",
+    "v": "BEST BUILD → la page se ferme, aucun tournoi (Tournament.start : owns=false)"
+   },
+   {
+    "t": 258.63,
+    "kind": "note",
+    "v": "THE UNTOUCHABLE (LOCKED) → ENTER → la page se ferme, aucun tournoi"
+   },
+   {
+    "t": 395.78,
+    "kind": "note",
+    "v": "THE AVENGER 35/100 → ENTER ×2 → le tableau (le 2e clic ne lance rien dessous)"
+   },
+   {
+    "t": 431.93,
+    "kind": "note",
+    "v": "SKIP ×5 → un seul match sauté ; FIGHT : quart contre THE UNTOUCHABLE"
+   },
+   {
+    "t": 537.51,
+    "kind": "menus",
+    "v": "« VICTORY  2–0 » +265 Ryō"
+   },
+   {
+    "t": 573.49,
+    "kind": "note",
+    "v": "WATCH, touches et clics pendant le match regardé ; SKIP ×2 sans effet, le 3e 34 s plus tard marche"
+   },
+   {
+    "t": 725.35,
+    "kind": "menus",
+    "v": "« VICTORY  2–0 » demi contre THE FATED GENIUS"
+   },
+   {
+    "t": 862.67,
+    "kind": "menus",
+    "v": "« DEFEAT  1–2 » finale contre THE HARD WORKER (« THE HARD WORKER ADVANCES »)"
+   },
+   {
+    "t": 880.8,
+    "kind": "menus",
+    "v": "« PRODIGY TOURNAMENT » CHAMPION THE HARD WORKER, sans la prime du finaliste (+150 Ryō +60 maîtrise côté serveur)"
+   },
+   {
+    "t": 897.88,
+    "kind": "note",
+    "v": "NEW TOURNAMENT → YOUR BUILD 0 / 100, sans page d'entrée"
+   },
+   {
+    "t": 919.72,
+    "kind": "note",
+    "v": "LEAVE → Konoha, sans confirmation"
+   },
+   {
+    "t": 953.61,
+    "kind": "note",
+    "v": "prodige : courir vers THE UNTOUCHABLE, E deux fois → un seul défi"
+   },
+   {
+    "t": 1066.77,
+    "kind": "menus",
+    "v": "« DEFEAT  0–2 » (mains humaines, touches au hasard)"
+   },
+   {
+    "t": 1150.46,
+    "kind": "note",
+    "v": "REMATCH puis BACK TO KONOHA 160 ms après → la revanche gagne la course"
+   },
+   {
+    "t": 1247.49,
+    "kind": "menus",
+    "v": "« DEFEAT  0–2 » (robot de duel joueur, graine 4)"
+   },
+   {
+    "t": 1384.65,
+    "kind": "menus",
+    "v": "« DEFEAT  1–2 » (robot de duel joueur, graine 5)"
+   },
+   {
+    "t": 1418.39,
+    "kind": "scene",
+    "v": "Workspace"
+   }
+  ],
+  "bugs": [
+   {
+    "kind": "menus ensemble",
+    "key": "CupEntry + « VS »",
+    "count": 248,
+    "t": 143.37,
+    "menus": [
+     "« VS »",
+     "CupEntry"
+    ],
+    "mouse": "Default",
+    "detail": {
+     "note": "la fenêtre d'entrée du tournoi est un dialogue du VS : attendu"
+    },
+    "steps": [
+     {
+      "k": "MouseButton1",
+      "on": "ALL MODES"
+     },
+     {
+      "k": "act",
+      "on": "ALL MODES"
+     },
+     {
+      "k": "MouseButton1",
+      "on": "TOURNAMENT • VS AI"
+     },
+     {
+      "k": "act",
+      "on": "TOURNAMENT • VS AI"
+     },
+     {
+      "k": "MouseButton1",
+      "on": "TOURNAMENT • VS AI"
+     }
+    ]
+   },
+   {
+    "kind": "souris bloquée",
+    "key": "« CONTROLS »",
+    "count": 1262,
+    "t": 458.38,
+    "menus": [
+     "« CONTROLS »"
+    ],
+    "mouse": "LockCenter",
+    "detail": {
+     "note": "Tab en duel, place ac418a18 (avant f68e504e)"
+    },
+    "steps": [
+     {
+      "k": "MouseButton1",
+      "on": "FIGHT"
+     },
+     {
+      "k": "act",
+      "on": "FIGHT"
+     },
+     {
+      "k": "note"
+     },
+     {
+      "k": "Tab"
+     }
+    ]
+   },
+   {
+    "kind": "corps bloqué",
+    "key": "32,16",
+    "count": 1,
+    "t": 469.09,
+    "menus": [],
+    "mouse": "LockCenter",
+    "place": "Duel_1",
+    "detail": {
+     "at": [
+      33.6,
+      3,
+      22.7
+     ],
+     "speed": 19,
+     "state": "Running",
+     "note": "en duel : le corps est piloté par le serveur"
+    },
+    "steps": [
+     {
+      "k": "note"
+     },
+     {
+      "k": "Tab"
+     },
+     {
+      "k": "Tab"
+     },
+     {
+      "k": "Tab"
+     },
+     {
+      "k": "Tab"
+     }
+    ]
+   },
+   {
+    "kind": "menus ensemble",
+    "key": "« CONTROLS » + « VICTORY  2–0 »",
+    "count": 1,
+    "t": 561.29,
+    "menus": [
+     "« VICTORY  2–0 »",
+     "« CONTROLS »"
+    ],
+    "mouse": "Default",
+    "detail": {
+     "note": "Tab sur l'écran de résultat : CONTROLS par-dessus, attendu"
+    },
+    "steps": [
+     {
+      "k": "Space"
+     },
+     {
+      "k": "E"
+     },
+     {
+      "k": "Tab"
+     }
+    ]
+   },
+   {
+    "kind": "corps nu",
+    "key": "sans tenue",
+    "count": 84,
+    "t": 564.04,
+    "menus": [
+     "« PRODIGY TOURNAMENT »"
+    ],
+    "mouse": "Default",
+    "place": "-",
+    "detail": {
+     "note": "sur le tableau du tournoi : le corps n'est pas l'avatar du village"
+    },
+    "steps": [
+     {
+      "k": "Return"
+     },
+     {
+      "k": "MouseButton1",
+      "on": "CONTINUE • THE BRACKET"
+     },
+     {
+      "k": "act",
+      "on": "CONTINUE • THE BRACKET"
+     }
+    ]
+   },
+   {
+    "kind": "corps bloqué",
+    "key": "-16,72",
+    "count": 1,
+    "t": 601.07,
+    "menus": [],
+    "mouse": "Default",
+    "place": "Duel_1",
+    "detail": {
+     "at": [
+      -15.7,
+      3,
+      72.7
+     ],
+     "speed": 20,
+     "state": "Running",
+     "note": "en spectateur : le corps est celui d'un prodige piloté"
+    },
+    "steps": [
+     {
+      "k": "MouseButton1",
+      "on": "WATCH"
+     },
+     {
+      "k": "act",
+      "on": "WATCH"
+     },
+     {
+      "k": "W"
+     },
+     {
+      "k": "Space"
+     },
+     {
+      "k": "Q"
+     }
+    ]
+   },
+   {
+    "kind": "corps bloqué",
+    "key": "48,40",
+    "count": 1,
+    "t": 617.27,
+    "menus": [],
+    "mouse": "Default",
+    "place": "Duel_1",
+    "detail": {
+     "at": [
+      50.2,
+      3,
+      47.5
+     ],
+     "speed": 20,
+     "state": "Running",
+     "note": "en spectateur"
+    },
+    "steps": [
+     {
+      "k": "MouseButton2"
+     },
+     {
+      "k": "MouseButton1"
+     },
+     {
+      "k": "MouseButton1"
+     }
+    ]
+   },
+   {
+    "kind": "corps bloqué",
+    "key": "-8,-16",
+    "count": 1,
+    "t": 759.87,
+    "menus": [],
+    "mouse": "LockCenter",
+    "place": "Duel_1",
+    "detail": {
+     "at": [
+      -3.6,
+      3,
+      -15.3
+     ],
+     "speed": 9.9,
+     "state": "Running",
+     "note": "en duel"
+    },
+    "steps": [
+     {
+      "k": "MouseButton1",
+      "on": "FIGHT"
+     },
+     {
+      "k": "act",
+      "on": "FIGHT"
+     },
+     {
+      "k": "Tab"
+     },
+     {
+      "k": "Space"
+     },
+     {
+      "k": "Tab"
+     },
+     {
+      "k": "Return"
+     }
+    ]
+   },
+   {
+    "kind": "souris bloquée",
+    "key": "« LOSS »",
+    "count": 4,
+    "t": 1065.95,
+    "menus": [
+     "« LOSS »"
+    ],
+    "mouse": "LockCenter",
+    "detail": {
+     "note": "le tampon LOSS avant l'écran DEFEAT : la souris reste au centre ~0,6 s"
+    },
+    "steps": [
+     {
+      "k": "MouseButton1"
+     },
+     {
+      "k": "MouseButton1"
+     },
+     {
+      "k": "MouseButton1"
+     }
+    ]
+   },
+   {
+    "kind": "menus ensemble",
+    "key": "« CONTROLS » + « DEFEAT  0–2 »",
+    "count": 48,
+    "t": 1103.29,
+    "menus": [
+     "« DEFEAT  0–2 »",
+     "« CONTROLS »"
+    ],
+    "mouse": "Default",
+    "detail": {
+     "note": "Tab sur l'écran de résultat : attendu"
+    },
+    "steps": [
+     {
+      "k": "Tab"
+     }
+    ]
+   },
+   {
+    "kind": "à-coup",
+    "key": "2.1",
+    "count": 1,
+    "t": 267.41,
+    "menus": [],
+    "mouse": "",
+    "detail": {
+     "ms": 2114
+    },
+    "steps": []
+   },
+   {
+    "kind": "à-coup",
+    "key": "2.0",
+    "count": 1,
+    "t": 886.13,
+    "menus": [],
+    "mouse": "",
+    "detail": {
+     "ms": 2011
+    },
+    "steps": []
+   },
+   {
+    "kind": "à-coup",
+    "key": "1.6",
+    "count": 1,
+    "t": 927.18,
+    "menus": [],
+    "mouse": "",
+    "detail": {
+     "ms": 1674
+    },
+    "steps": []
+   },
+   {
+    "kind": "à-coup",
+    "key": "1.5",
+    "count": 1,
+    "t": 402.1,
+    "menus": [],
+    "mouse": "",
+    "detail": {
+     "ms": 1504
+    },
+    "steps": []
+   },
+   {
+    "kind": "à-coup",
+    "key": "1.4",
+    "count": 2,
+    "t": 469.09,
+    "menus": [],
+    "mouse": "",
+    "detail": {
+     "ms": 1408
+    },
+    "steps": []
+   },
+   {
+    "kind": "à-coup",
+    "key": "1.3",
+    "count": 1,
+    "t": 700.78,
+    "menus": [],
+    "mouse": "",
+    "detail": {
+     "ms": 1302
+    },
+    "steps": []
+   },
+   {
+    "kind": "à-coup",
+    "key": "1.2",
+    "count": 2,
+    "t": 870.04,
+    "menus": [],
+    "mouse": "",
+    "detail": {
+     "ms": 1203
+    },
+    "steps": []
+   },
+   {
+    "kind": "à-coup",
+    "key": "1.1",
+    "count": 1,
+    "t": 547.45,
+    "menus": [],
+    "mouse": "",
+    "detail": {
+     "ms": 1192
+    },
+    "steps": []
+   },
+   {
+    "kind": "à-coup",
+    "key": "1.0",
+    "count": 2,
+    "t": 332.54,
+    "menus": [],
+    "mouse": "",
+    "detail": {
+     "ms": 1010
+    },
+    "steps": []
+   },
+   {
+    "kind": "à-coup",
+    "key": "0.8",
+    "count": 2,
+    "t": 586.08,
+    "menus": [],
+    "mouse": "",
+    "detail": {
+     "ms": 821
+    },
+    "steps": []
+   },
+   {
+    "kind": "à-coup",
+    "key": "0.7",
+    "count": 1,
+    "t": 746.21,
+    "menus": [],
+    "mouse": "",
+    "detail": {
+     "ms": 769
+    },
+    "steps": []
+   },
+   {
+    "kind": "à-coup",
+    "key": "0.6",
+    "count": 1,
+    "t": 1136.61,
+    "menus": [],
+    "mouse": "",
+    "detail": {
+     "ms": 656
+    },
+    "steps": []
+   },
+   {
+    "kind": "à-coup",
+    "key": "0.5",
+    "count": 1,
+    "t": 184.2,
+    "menus": [],
+    "mouse": "",
+    "detail": {
+     "ms": 515
+    },
+    "steps": []
+   }
+  ]
+ },
+ "server": {
+  "rows": [
+   {
+    "cmd": "gainMastery",
+    "args": "Lion 66",
+    "ok": true
+   },
+   {
+    "cmd": "earnRyo",
+    "args": "150",
+    "ok": true
+   },
+   {
+    "cmd": "dailyRecord",
+    "args": "+115",
+    "ok": true
+   },
+   {
+    "cmd": "earnItem",
+    "args": "TitleGraduate",
+    "ok": true
+   },
+   {
+    "cmd": "gainMastery",
+    "args": "Lion 48",
+    "ok": true
+   },
+   {
+    "cmd": "earnRyo",
+    "args": "50",
+    "ok": true
+   },
+   {
+    "cmd": "dailyRecord",
+    "args": "+60",
+    "ok": true
+   },
+   {
+    "cmd": "soloRecord",
+    "args": "feat comeback",
+    "ok": true
+   },
+   {
+    "cmd": "earnItem",
+    "args": "TitleComeback",
+    "ok": true
+   },
+   {
+    "cmd": "gainMastery",
+    "args": "Lion 30",
+    "ok": true
+   },
+   {
+    "cmd": "earnRyo",
+    "args": "20",
+    "ok": true
+   },
+   {
+    "cmd": "gainMastery",
+    "args": "Lion 60 (finaliste)",
+    "ok": true
+   },
+   {
+    "cmd": "earnRyo",
+    "args": "150 (finaliste)",
+    "ok": true
+   },
+   {
+    "cmd": "gainMastery",
+    "args": "Lion 50",
+    "ok": true
+   },
+   {
+    "cmd": "earnRyo",
+    "args": "20",
+    "ok": true
+   },
+   {
+    "cmd": "soloRecord",
+    "args": "challenge Sand perdu",
+    "ok": true
+   },
+   {
+    "cmd": "gainMastery",
+    "args": "Lion 10",
+    "ok": true
+   },
+   {
+    "cmd": "gainMastery",
+    "args": "Lion 30",
+    "ok": true
+   },
+   {
+    "cmd": "earnRyo",
+    "args": "20",
+    "ok": true
+   },
+   {
+    "cmd": "gainMastery",
+    "args": "Lion 30",
+    "ok": true
+   },
+   {
+    "cmd": "earnRyo",
+    "args": "20",
+    "ok": true
+   }
+  ],
+  "ryo": {
+   "start": 1000,
+   "end": 1605
+  },
+  "bugs": [
+   {
+    "kind": "refus muet",
+    "key": "Tournament.start:Legion",
+    "count": 1,
+    "detail": {
+     "why": "Progression.owns false (THE LOUDMOUTH)",
+     "note": "vu par l'état du serveur : cup=false, lastLifecycle posé"
+    }
+   },
+   {
+    "kind": "refus muet",
+    "key": "Tournament.start:Sand",
+    "count": 1,
+    "detail": {
+     "why": "Progression.owns false (THE UNTOUCHABLE)",
+     "note": "idem"
+    }
+   }
+  ]
+ },
+ "duels": [
+  {
+   "what": "tournoi quart",
+   "vs": "THE UNTOUCHABLE",
+   "pilot": "NDDuelBot joueur 1",
+   "wins": "2-0",
+   "rounds_s": [
+    45.3,
+    38.2
+   ]
+  },
+  {
+   "what": "tournoi demi",
+   "vs": "THE FATED GENIUS",
+   "pilot": "NDDuelBot joueur 2 + touches",
+   "wins": "2-0",
+   "rounds_s": [
+    27.3,
+    15.9
+   ]
+  },
+  {
+   "what": "tournoi finale",
+   "vs": "THE HARD WORKER",
+   "pilot": "NDDuelBot joueur 3",
+   "wins": "1-2",
+   "rounds_s": [
+    27.6,
+    29.8,
+    34.9
+   ]
+  },
+  {
+   "what": "prodige de rue",
+   "vs": "THE UNTOUCHABLE (Sand, IA normal)",
+   "pilot": "mains humaines (mash)",
+   "wins": "0-2"
+  },
+  {
+   "what": "prodige de rue",
+   "vs": "THE UNTOUCHABLE",
+   "pilot": "NDDuelBot joueur 4",
+   "wins": "0-2",
+   "rounds_s": [
+    25,
+    57.4
+   ]
+  },
+  {
+   "what": "prodige de rue",
+   "vs": "THE UNTOUCHABLE",
+   "pilot": "NDDuelBot joueur 5",
+   "wins": "1-2",
+   "rounds_s": [
+    30.6,
+    33.9,
+    44.6
+   ]
+  }
+ ],
+ "deux_joueurs": {
+  "place": "multiplayer_playtest 2 clients (client-1 = Player2, client-2 = Player1), même place ac418a18",
+  "setup": "serveur : Forest.atGate + create, chooseStarter Lion, earnRyo 500, matches:selection pour les deux",
+  "steps": [
+   "Player1 ouvre la boutique ; Player2 : DUELS → ALL MODES → PLAYERS ONLINE (1 ONLINE • 1 READY) → CHALLENGE ×3 vite → un seul défi (le bouton passe à SENT…)",
+   "Player1, dans la boutique, voit PLAYER2 CHALLENGES YOU (ACCEPT / DECLINE, ENTER ACCEPTS • BACKSPACE DECLINES) par-dessus la boutique ; il l'ignore : le défi tombe au bout de 20 s",
+   "nouveau défi : Player1 appuie sur Backspace dans la boutique → PLAYER1 DECLINED",
+   "Player2 redéfie aussitôt → WAIT A MOMENT BEFORE THE NEXT CHALLENGE (sans dire combien de temps)",
+   "10 s plus tard, défi ; Player1 appuie deux fois sur Entrée : la 1re accepte, la 2e le met READY (il n'a pas choisi son ninja)",
+   "Player2 choisit THE LOUDMOUTH (verrouillé) puis READY : il se bat en THE AVENGER, sans un mot",
+   "pendant tout le duel, et encore sur l'écran de victoire, Player2 garde le bandeau CHALLENGE SENT TO PLAYER1 • WAITING… avec CANCEL ; CANCEL répond au clic et ne fait rien (Lobby:accepted, même serveur → pairHere, aucun statut envoyé au défieur)",
+   "duel en ligne aux mains humaines des deux côtés (touches au hasard + clics) : Player2 gagne 2-0",
+   "Player2 clique REMATCH pendant que Player1 clique BACK TO KONOHA : Player1 rentre au village, le bouton de Player2 devient OPPONENT LEFT",
+   "serveur : rankedResult pour les deux, +200 maîtrise et +150 Ryō au gagnant, +120 et +20 au perdant, aucun paiement en double"
+  ],
+  "clients": {
+   "client-1 (Player2, le défieur)": {
+    "seconds": 621,
+    "clicks": 99,
+    "keys": 64,
+    "answers": 15,
+    "hitches": [
+     {
+      "t": 7.5,
+      "dt": 0.51
+     },
+     {
+      "t": 266.1,
+      "dt": 0.26
+     }
+    ],
+    "bugs": [
+     {
+      "kind": "à-coup",
+      "key": "0.5",
+      "count": 1,
+      "place": "Workspace"
+     },
+     {
+      "kind": "menus ensemble",
+      "key": "« PLAYERS ONLINE » + « VS »",
+      "count": 28,
+      "place": "Workspace"
+     },
+     {
+      "kind": "souris bloquée",
+      "key": "« CONTROLS »",
+      "count": 3882,
+      "place": "Online_3",
+      "menus": [
+       "« CONTROLS »"
+      ],
+      "mouse": "LockCenter"
+     }
+    ]
+   },
+   "client-2 (Player1, le défié)": {
+    "seconds": 540,
+    "clicks": 47,
+    "keys": 77,
+    "answers": 6,
+    "hitches": [
+     {
+      "t": 404.2,
+      "dt": 0.28
+     }
+    ],
+    "bugs": []
+   }
+  },
+  "server": {
+   "rows": [
+    [
+     "Player2",
+     "rankedResult won"
+    ],
+    [
+     "Player1",
+     "rankedResult lost"
+    ],
+    [
+     "Player2",
+     "gainMastery 200"
+    ],
+    [
+     "Player2",
+     "earnRyo 150"
+    ],
+    [
+     "Player2",
+     "dailyRecord"
+    ],
+    [
+     "Player2",
+     "meritAdd pvp"
+    ],
+    [
+     "Player2",
+     "earnItem TitleGraduate"
+    ],
+    [
+     "Player1",
+     "gainMastery 120"
+    ],
+    [
+     "Player1",
+     "earnRyo 20"
+    ],
+    [
+     "Player1",
+     "dailyRecord"
+    ]
+   ],
+   "bugs": []
+  }
+ }
+}
