@@ -1,5 +1,12 @@
 # Boîte de réception Claude
 
+## INBOX-DESIGN-TETES-ARBRE-VIVANT-20261127 — DESIGN 27/11 : les têtes du duel, l'arbre qui bouge
+
+François (11 h 26, capture du portrait) : « les têtes sont bugged » ; l'arbre « bien mais il faut des descriptions, des animations de clics et de mouvements ».
+- **Têtes** (`Client/FaceCam.luau`), reproduit en Play sur son avatar (tête dynamique) : la lentille suivait le torse, qui tourne jusqu'à 40° en courant, et filmait la joue ; la texture de la tête dynamique sort blanche dans le ViewportFrame et ajoutait une seconde bouche. Maintenant la lentille suit le regard de la tête (le torse en secours), et la copie de cette tête perd sa texture : sa couleur de peau, le visage manga par-dessus, une seule bouche. Vu en Play pendant le combat du bandit (avant / après côte à côte).
+- **Arbre** (`Client/TreePanel.luau`) : à l'ouverture les sceaux montent des racines à la cime et la peinture apparaît ; sous le pointeur un sceau grossit et une carte dit ce qu'il est, ce qu'il fait, ce qu'il coûte ; un clic l'enfonce et fait une onde d'encre ; un sceau à apprendre bat en rouge ; un sceau appris éclate en trois ondes rouges et ses feuilles bougent. Vu en Play (injection du module).
+- **DEV** : actualiser la place (FaceCam, TreePanel), toujours les 18 images des arbres.
+
 ## INBOX-ANIM-ECHAFAUD-20261127 — ANIMATEUR 27/11 : la caméra derrière l'échafaudage des têtes (OUTILLEUR, capture 16)
 
 - **Constat** (`tools/humanbot/mesures/2026-11-27b_ac418a18/images/16_camera_derriere_les_poutres.jpg`) : au pied des têtes des Hokage, l'objectif reste derrière les poutres et cache le corps.

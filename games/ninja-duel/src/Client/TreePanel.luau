@@ -132,7 +132,7 @@ function Panel.icon(node)
 end
 
 function Panel.new(kit,gui,send)
-	local self=setmetatable({kit=kit,send=send,tiles={},drawn={}},Panel)
+	local self=setmetatable({kit=kit,send=send,tiles={},drawn={},scales={}},Panel)
 	local P,create,frame,text,button,corner=kit.palette,kit.create,kit.frame,kit.text,kit.button,kit.corner
 	self.P=P
 	-- (DA v3, DESIGN validated 14/11; François 15/11: « c'était toujours les
@@ -243,6 +243,7 @@ function Panel:shown() return self.root.Visible end
 -- when it closes (the same as Client/ShopPanel).
 function Panel:hide()
 	self.root.Visible=false
+	self.enteredFor=nil -- (27/11) reopened, the tree rises again
 	pcall(function()
 		local GuiService=game:GetService("GuiService")
 		local selected=GuiService.SelectedObject
@@ -289,7 +290,7 @@ function Panel:draw()
 		b.TextColor3=if id==self.tab then self.M.cream else self.M.ink
 	end
 	for _,item in self.drawn do item:Destroy() end
-	self.drawn={};self.tiles={}
+	self.drawn={};self.tiles={};self.scales={};self.tipCard=nil;self.tipFor=nil
 	if self.tab=="ninja" then return self:drawNinja() end
 	local layout=TreeView.layout(self.kitId,self:state())
 	if not layout then self.title.Text="NO TREE";return end
@@ -560,6 +561,7 @@ function Panel:drawTree(layout,top,card)
 		local def=if self.tab=="ninja" then nil else TreeView.node(self.kitId,id)
 		self:seal(p.node,p.x,p.y,def,p.crown)
 	end
+	self:animateTree(L)
 	if #L.crowns>0 then
 		local crownTag=K.text(self.grid,if card and card.transform then "THE CROWN  •  "..Text.upper(card.transform) else "THE CROWN",UDim2.fromOffset(L.trunkX-240,top+8),UDim2.fromOffset(480,28),26,M.red,K.TITLE_FONT,Enum.TextXAlignment.Center)
 		crownTag.ZIndex=79;add(crownTag)
@@ -592,7 +594,8 @@ function Panel:seal(node,x,y,def,crown)
 	if mine then
 		for k=1,4 do
 			local a=-2.4+k*.95
-			blob(self,x+math.cos(a)*r*1.05,y+math.sin(a)*r*.95,r*.42,if k%2==0 then LEAF else LEAF_LIGHT,0,78)
+			local leaf=blob(self,x+math.cos(a)*r*1.05,y+math.sin(a)*r*.95,r*.42,if k%2==0 then LEAF else LEAF_LIGHT,0,78)
+			Panel.tween(leaf,1.6+k*.2,{Position=UDim2.fromOffset(x+math.cos(a)*r*1.12,y+math.sin(a)*r*.95-3)},Enum.EasingStyle.Sine,-1,true)
 		end
 	end
 	local fill=if crown then M.red elseif mine then M.ink else M.paper
@@ -621,9 +624,114 @@ function Panel:seal(node,x,y,def,crown)
 		cost.BackgroundTransparency=0;cost.BackgroundColor3=if st=="learn" then M.red else M.off;cost.ZIndex=82;K.corner(cost,6)
 		table.insert(self.drawn,cost)
 	end
-	b.Activated:Connect(function() self.selected=node.id;self:draw() end)
+	-- (DESIGN 27/11, François: « des descriptions, des animations de clics et
+	-- de mouvements ») the seal lives: it grows under the pointer and says what
+	-- it is, it is pressed in, a seal he can learn pings in red, his leaves sway
+	local scale=K.create("UIScale",b,{Scale=1})
+	pcall(function()
+		b.MouseEnter:Connect(function() Panel.tween(scale,.12,{Scale=1.1});self:tip(node,x,y,r,def) end)
+		b.MouseLeave:Connect(function() Panel.tween(scale,.12,{Scale=1});if self.tipFor==node.id then self:tip(nil) end end)
+	end)
+	b.Activated:Connect(function() self.pressed=node.id;self.selected=node.id;self:draw() end)
+	if st=="learn" then
+		local ping=K.frame(self.grid,UDim2.fromOffset(x,y),UDim2.fromOffset(r*2,r*2),M.red,1)
+		ping.AnchorPoint=Vector2.new(.5,.5);ping.ZIndex=79;K.corner(ping,r+12);table.insert(self.drawn,ping)
+		local ring=K.create("UIStroke",ping,{Color=M.red,Thickness=3,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
+		Panel.tween(ping,1.4,{Size=UDim2.fromOffset(r*2+26,r*2+26)},Enum.EasingStyle.Quad,-1)
+		Panel.tween(ring,1.4,{Transparency=1},Enum.EasingStyle.Quad,-1)
+	end
 	self.tiles[node.id]=b
+	self.scales[node.id]=scale
 	return b
+end
+-- The tree's movements after a draw: opened, the seals rise from the roots up
+-- and the painting comes out of the paper; a seal pressed is pushed in and
+-- rings; a seal just learned bursts in ink and grows its leaves.
+function Panel:animateTree(L)
+	local key=tostring(self.kitId)..tostring(self.tab)
+	local status={}
+	for id,p in L.at do status[id]=p.node.status end
+	local before=if self.statusFor==key then self.lastStatus else nil
+	self.statusFor=key;self.lastStatus=status
+	if self.enteredFor~=key then
+		self.enteredFor=key
+		for id,p in L.at do
+			local s=self.scales[id]
+			if s then
+				s.Scale=0
+				Panel.tween(s,.32,{Scale=1},Enum.EasingStyle.Back,0,false,math.clamp((L.ground-p.y)/math.max(1,L.height),0,1)*.55)
+			end
+		end
+		for _,item in self.drawn do
+			if item:IsA("ImageLabel") and item.ZIndex==72 then item.ImageTransparency=1;Panel.tween(item,.45,{ImageTransparency=0}) end
+		end
+	end
+	local pressed=self.pressed;self.pressed=nil
+	if pressed and self.scales[pressed] then
+		local s=self.scales[pressed]
+		s.Scale=.86;Panel.tween(s,.28,{Scale=1},Enum.EasingStyle.Back)
+		local p=L.at[pressed]
+		if p then self:ripple(p.x,p.y,self.M.ink,1) end
+	end
+	for id,st in status do
+		local was=before and before[id]
+		if was and was~=st and (st=="active" or st=="off") and was~="active" and was~="off" then
+			local p=L.at[id]
+			if p then
+				self:ripple(p.x,p.y,self.M.red,3)
+				local s=self.scales[id]
+				if s then s.Scale=1.35;Panel.tween(s,.5,{Scale=1},Enum.EasingStyle.Elastic) end
+			end
+		end
+	end
+end
+-- Rings of ink going out from a seal.
+function Panel:ripple(x,y,color,count)
+	for k=1,count do
+		local f=self.kit.frame(self.grid,UDim2.fromOffset(x,y),UDim2.fromOffset(40,40),color,1)
+		f.AnchorPoint=Vector2.new(.5,.5);f.ZIndex=83;self.kit.corner(f,80);table.insert(self.drawn,f)
+		local ring=self.kit.create("UIStroke",f,{Color=color,Thickness=4,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
+		Panel.tween(f,.6,{Size=UDim2.fromOffset(150,150)},Enum.EasingStyle.Quad,0,false,(k-1)*.12)
+		Panel.tween(ring,.6,{Transparency=1,Thickness=1},Enum.EasingStyle.Quad,0,false,(k-1)*.12)
+	end
+end
+-- A tween that cannot break a draw (TweenService missing in the tests).
+function Panel.tween(object,time,goal,style,repeats,reverses,delay)
+	pcall(function()
+		local TS=game:GetService("TweenService")
+		TS:Create(object,TweenInfo.new(time,style or Enum.EasingStyle.Quad,Enum.EasingDirection.Out,repeats or 0,reverses or false,delay or 0),goal):Play()
+	end)
+end
+-- The card under the pointer: what the seal is, what it does, what it costs.
+function Panel:tip(node,x,y,r,def)
+	if self.tipCard then self.tipCard:Destroy();self.tipCard=nil end
+	self.tipFor=nil
+	if not node then return end
+	local K,M=self.kit,self.M
+	local ninja=self.tab=="ninja"
+	local d=nil
+	pcall(function() d=if ninja then Panel.ninjaDetail(self:ninjaView() or NinjaTree.view(nil,0),node.id) else TreeView.detail(self.kitId,self:state(),node.id) end)
+	local W=260
+	local left=x+r+14+W>GRID_W-24
+	local card=K.frame(self.grid,UDim2.fromOffset(if left then x-r-14-W else x+r+14,y-30),UDim2.fromOffset(W,10),M.paper,0)
+	card.ZIndex=96;card.AutomaticSize=Enum.AutomaticSize.Y;K.corner(card,6)
+	K.create("UIStroke",card,{Color=M.ink,Thickness=2,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
+	K.create("UIPadding",card,{PaddingLeft=UDim.new(0,12),PaddingRight=UDim.new(0,12),PaddingTop=UDim.new(0,8),PaddingBottom=UDim.new(0,10)})
+	K.create("UIListLayout",card,{Padding=UDim.new(0,4),SortOrder=Enum.SortOrder.LayoutOrder})
+	local function line(text,size,color,font,order)
+		local t=K.text(card,text,UDim2.fromOffset(0,0),UDim2.new(1,0,0,0),size,color,font)
+		t.AutomaticSize=Enum.AutomaticSize.Y;t.TextWrapped=true;t.ZIndex=97;t.LayoutOrder=order
+		return t
+	end
+	line(Text.upper(node.name),20,M.ink,K.TITLE_FONT,1)
+	local status=({active="ON",off="LEARNED  •  OFF",learn="LEARN  •  "..tostring(node.cost).." POINTS",short=tostring(node.cost).." POINTS  •  NOT ENOUGH",tier="TIER CLOSED",locked="NEEDS ANOTHER NODE"})[node.status or ""] or ""
+	line(((node.kindLabel and node.kindLabel~="" and Text.upper(node.kindLabel).."  •  ") or "")..status,12,if node.status=="learn" then M.red else M.brown or M.ink,K.STRONG_FONT or K.BODY_FONT,2)
+	if d and d.shows and d.shows~="" then line(d.shows,14,M.ink,K.BODY_FONT,3) end
+	if d and d.note and d.note~="" then line(d.note,12,M.red,K.STRONG_FONT or K.BODY_FONT,4) end
+	table.insert(self.drawn,card)
+	self.tipCard=card;self.tipFor=node.id
+	local s=K.create("UIScale",card,{Scale=.85})
+	Panel.tween(s,.12,{Scale=1},Enum.EasingStyle.Back)
 end
 
 -- (step 2) The kit's card over the grid; returns where the grid starts.

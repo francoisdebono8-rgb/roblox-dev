@@ -97,11 +97,15 @@ function FaceCam.collect(model)
 	return list
 end
 
--- The lens for a head: in front of the chest (the torso's front, the head's
--- when there is no torso), looking at the face.
+-- The lens for a head: in front of the face, looking at it. (DESIGN 27/11,
+-- François's capture: the face seen from the side) it follows where the head
+-- looks, not the chest: running, the torso leans and turns up to 40° away
+-- and the lens filmed the cheek. The torso is the fallback when the head
+-- looks straight up or down.
 function FaceCam.lens(head,torso)
-	local front=(torso or head).CFrame.LookVector
+	local front=head.CFrame.LookVector
 	front=Vector3.new(front.X,0,front.Z)
+	if front.Magnitude<.25 and torso then front=torso.CFrame.LookVector;front=Vector3.new(front.X,0,front.Z) end
 	if front.Magnitude<1e-3 then front=Vector3.new(0,0,-1) end
 	front=front.Unit
 	local target=head.CFrame.Position
@@ -284,8 +288,13 @@ function FaceCam:watch(model)
 	self:clear()
 	self.model=model
 	if not model then return end
+	local bare=FaceCam.needsCartoon(model:FindFirstChild("Head"))
 	for _,part in FaceCam.collect(model) do
 		local ok,copy=pcall(still,part)
+		-- (DESIGN 27/11, seen in the game: a white head) the dynamic head's
+		-- texture draws white in a ViewportFrame: its skin colour instead, the
+		-- manga face goes over it
+		if ok and copy and bare and part.Name=="Head" and copy:IsA("MeshPart") then pcall(function() copy.TextureID="" end) end
 		if ok and copy then copy.Parent=self.view;table.insert(self.copies,{part=part,copy=copy}) end
 	end
 	for _,p in model:GetChildren() do
