@@ -1,5 +1,12 @@
 # Boîte de réception Claude
 
+## INBOX-DESIGN-ARBRE-PEINT-20261127 — DESIGN 27/11 : les arbres peints, 18 images à envoyer
+
+François (10 h 35) : « y'a de l'idée mais c'est super moche, on ne voit pas que ça vient de vrais jeux ». Les arbres sont maintenant **peints** (lavis d'encre façon Ghost of Tsushima : parchemin, soleil rouge derrière la cime, tronc et branches au pinceau sec, nuages de pin) par `assets/ui/generate_tree.py`, sur les points exacts de `TreePanel.treeLayout` (`lune run tools/tree_layouts.luau` → `assets/ui/tree_layouts.json`). Les sceaux restent de l'UI posée dessus. Test Shop.spec « the painted trees match the seals' layout » : si la disposition change, il faut repeindre.
+
+- **DEV** : envoyer les 18 images `assets/ui/trees/<kit>_top.jpg` et `<kit>_bottom.jpg` (8 kits + `Ninja`, 1024 de large, moins de 1024 de haut) comme les icônes, et mettre leurs numéros dans `UIAssets.Ids.tree_<kit>_top/_bottom`. Tant qu'ils sont vides, le panneau garde l'arbre en cadres (fallback). Puis actualiser la place.
+- La branche Unlocks (et toute branche qui commence haut) part du tronc par une longue branche presque horizontale : à revoir à la prochaine passe si François la trouve raide.
+
 ## INBOX-DESIGN-ARBRE-20261127 — DESIGN 27/11 : l'arbre du kit dessiné comme un vrai arbre
 
 François : « Arbre du kit pas visuel… pas une vision d'un vrai arbre, inspire-toi d'arbres existants. » `src/Client/TreePanel.luau` : `Panel:drawTree` remplace la grille (drawRows/tile retirés). Racines = techniques de départ (carte du kit) dans la terre, un tronc en écorce, une branche par colonne qui monte palier après palier (I en bas, palier fermé sous un voile « OPENS AT MASTERY n »), sceaux ronds avec pictogramme (UIAssets), feuilles autour de ce qui est appris, la transformation en sceau rouge à la cime dans le feuillage. L'onglet NINJA utilise le même arbre sous les natures. Le panneau s'ouvre sur les racines. Contrats inchangés (`TreeView.layout`, `detail`, LearnNode/SetNode). Test pur : Shop.spec « the real tree » (toutes les clés placées, aucun chevauchement, paliers qui montent, cime en haut, 8 kits).

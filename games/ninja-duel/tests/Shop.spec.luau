@@ -1151,4 +1151,31 @@ test("the real tree: every seal placed, none overlapping, tiers climbing, the cr
 	assert(kits>=8,"the eight kits' trees")
 end)
 
+-- (DESIGN 27/11, « super moche ») the trees are painted on their layout
+-- (assets/ui/generate_tree.py from tools/tree_layouts.luau): the painting
+-- and the seals must not drift apart. A layout change means repainting.
+test("the painted trees match the seals' layout (repaint after a layout change)",function()
+	local Tree=H.load("Client/TreePanel")
+	local TV=H.load("Shared/TreeView")
+	local fs=require("@lune/fs")
+	local serde=require("@lune/serde")
+	local painted=serde.decode("json",fs.readFile("assets/ui/tree_layouts.json"))
+	local checked=0
+	for kit,d in painted do
+		if kit~="Ninja" then
+			local layout=TV.layout(kit,{unlocked={},active={},points=0,free=0,mastery=0})
+			local card=Tree.kitCard(kit)
+			local L=Tree.treeLayout(layout,1024,0,if #((card and card.starts) or {})>0 then Tree.TREE.ROOTS else 60)
+			assert(math.abs(L.height-d.height)<.5,kit..": the tree's height changed, repaint it")
+			for _,n in d.nodes do
+				local p=L.at[n.id]
+				assert(p and math.abs(p.x-n.x)<.5 and math.abs(p.y-n.y)<.5,kit.." "..n.id..": the seal moved off its painted twig, repaint")
+			end
+			checked+=1
+		end
+	end
+	assert(checked>=8,"the eight painted trees")
+	assert(fs.isFile("assets/ui/trees/Legion_top.jpg") and fs.isFile("assets/ui/trees/Legion_bottom.jpg"),"the painting's two halves")
+end)
+
 print(string.format("NinjaDuel shop and Ryō (13/11): %d PASS",passed))
