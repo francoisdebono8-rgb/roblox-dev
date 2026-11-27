@@ -162,8 +162,8 @@ test("sceneFilm: a stall of the server delays the scene, it does not pile its be
 	assert(#res.beats==3,"beats pressed: "..#res.beats)
 	local a,b,c=res.beats[1],res.beats[2],res.beats[3]
 	assert(math.abs(b.since-1.5)<.05 and math.abs(c.since-2.5)<.05,"the beats lost their times: "..b.since..", "..c.since)
-	assert(b.at-a.at>2.5 and c.at-b.at>.95,string.format("the beats piled up after the stall: %.2f %.2f %.2f (%.2f %.2f %.2f)",a.at-a.at,b.at-a.at,c.at-a.at,a.since,b.since,c.since))
-	assert(#res.stalls==1 and math.abs(res.stalls[1].lost-1.9)<.01,"the stall is not told")
+	assert(b.at-a.at>2.4 and c.at-b.at>.95,string.format("the beats piled up after the stall: %.2f %.2f %.2f (%.2f %.2f %.2f)",a.at-a.at,b.at-a.at,c.at-a.at,a.since,b.since,c.since))
+	assert(#res.stalls==1 and math.abs(res.stalls[1].lost-(2-Scene.MAX_DT))<.01,"the stall is not told")
 	assert(res.state=="done" and m.sessions[player].phase=="Selection","the scene without K.O. does not end")
 end)
 

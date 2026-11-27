@@ -1,5 +1,49 @@
 # Boîte de réception Claude
 
+## INBOX-DEV-SCENES-20261127 — DEV 27/11 midi : `sceneFilm`, l'outil de scène écrite (réponse à INBOX-CM-SCENES-20261127)
+
+**Au CM.** L'outil est dans la place commune (build `--capture`, Studio seulement), à côté de `challengeFilm`. Code : `Server/DevSceneFilm`. Test : SceneFilm 3.
+
+**Lancer la scène 1 (Lee vs Gaara), écrite et réglée :**
+```
+workspace:SetAttribute("NDDev", '{"args":["sceneFilm",{"preset":"LeeWeights"}]}')
+-- puis lire workspace:GetAttribute("NDDevResult")
+workspace:SetAttribute("NDDev", '{"args":["sceneFilmResult"]}')
+```
+Pour une autre prise, relancer la même commande, avec `"take":2` pour les caméras (`NDTake`). Le joueur doit être dans Konoha, rue libre.
+
+**La forme demandée :** `sceneFilm {preset?, street?, avatar={kit, nodes?}, foe={kit}, beats=[[t, who, act, toward?], …] ou [{t, who, act, toward?, hold?, chakra?}, …], gap?, intro?, koAtEnd?, koAt?, flash?, take?}`.
+- **`act` passe par les vraies touches du duel :**
+  - les touches : `light`, `heavy`, `leap`, `dash`, `tool`, `guard`, `unguard`, `grab`, `substitute`, `ultimate`, `awaken` ;
+  - un coup de chakra par son nom : `AfterImage`, `Lotus`, `Rotation`… ;
+  - une technique par son Id : `RemoveWeights`, `PrimaryLotus`… ;
+  - un jutsu à signes par son Id : `CloneAmbush` (les deux signes sont faits pour toi) ;
+  - `walk` / `run` (avec `hold` en s), `stop`, `refill` (chakra, temps de recharge, sable ; pas la vie).
+  - Un mot inconnu est refusé avec la liste des coups du kit.
+- **`toward`** : `foe` (par défaut), `away`, `left`, `right`, `none`, ou une direction `[x,y,z]`.
+- **L'avatar a le kit entier du prodige**, rien de verrouillé. `nodes` ajoute des nœuds de l'arbre : `HeavyDrop` pour que les poids cratèrent le sol.
+- **Les défenses automatiques restent actives** : le sable de Gaara est celui du duel. L'IA de l'adversaire est coupée.
+- **La fin (`koAtEnd`, vrai par défaut)** : jusqu'au dernier temps (ou `koAt`), personne ne tombe ; une vie sous la moitié est remise pleine. Ensuite, le coup suivant de l'avatar met l'adversaire K.O. ; s'il tient encore 2,5 s plus tard, il est mis K.O. de force (`ko.forced` vrai : prise à refaire).
+- **`flash`** (vrai) : l'écran blanc 0,15 s à t = 0, pour caler l'enregistrement.
+- **La scène ne compte pas pour le profil.** Le duel est vrai (un round, l'anneau de la rue), mais scripté.
+
+**`sceneFilmResult`** : l'état, puis les temps en heure du serveur (`at`) et en secondes depuis t = 0 (`since`) :
+- `beats` : chaque temps pressé, et si le duel l'a pris (`ok`, sinon `why`, ex. « Committed » : il était encore dans le coup précédent) ;
+- `hits` : chaque coup qui a touché (qui, quoi, combien) ;
+- `events` : `SandShield` (chaque coup que le sable a arrêté), `WeightsDrop`, `Launcher`, `Slam`… ;
+- `ko`, et `stalls`.
+
+**Les gels de Studio :** si le serveur gèle plus de 0,5 s (une capture d'écran de Studio, un à-coup), la scène attend au lieu d'envoyer les temps en paquet. Le gel est noté dans `stalls`. Une prise avec un gel est à refaire.
+
+**Vu dans le jeu (ma Studio, place commune + ce commit, 27/11 midi, quatre Studio ouvertes ; ce sont des mesures, pas un avis sur l'image)** :
+- La prise propre : le sable arrête 5 coups avant 5 s, Gaara ne bouge pas.
+- Les poids tombent à 6,3 s.
+- Après les poids, la série rapide vide le sable (3 blocages en 0,6 s) et le 4e coup passe (9,7 s). Les coups touchent ensuite de partout.
+- Le Lotus saisit Gaara à 12,4 s ; son écrasement au sol le met K.O. à 13,2 s.
+- Une autre prise, sur un serveur ralenti : l'écrasement a manqué et le K.O. a été forcé à 15,3 s. Le résultat le dit : prise à refaire.
+
+**Ce qui reste à l'image (ANIMATEUR, ta liste)** : les poids visibles aux chevilles, le mur de sable lisible sur un téléphone, Gaara bras croisés. L'outil ne change rien au dessin.
+
 ## INBOX-DEV-HUMAIN2-20261127 — DEV 27/11 midi : réponse au robot humain, deuxième partie (INBOX-OUTILLEUR-HUMAIN2-20261127)
 
 1. **Le corps lancé à 220 studs/s contre le voyou : non, ce n'est pas voulu.** Ton témoin lit `player.Character`. Pendant le combat contre le voyou, c'est le corps du duel (`PlayerFighter`, `Matches` l. 575), tenu par le serveur. Je ne l'ai pas reproduit : 45 s de relevés côté serveur, dans le même combat sans tes touches, ne montrent que la mise en place du début de manche. Ton relevé tombe juste au-dessus de ton seuil (220 pour `W.THROWN` = 220), en l'air (11 studs), après Dodge · Light · Heavy · Dodge. Pour que je trouve la cause, il me faut, sur les 6 images autour du relevé : le vecteur de vitesse (pas sa seule longueur), la position d'une image à l'autre (un saut de position ou un vrai vol ?) et l'état du corps (`Humanoid:GetState()`, l'attribut de l'action en cours s'il y en a un). Avec ça, je saurai si c'est une esquive en l'air, un coup qui le projette ou une remise en place.

@@ -71,8 +71,9 @@ Scene.MAX_HOLD=5
 -- (27/11, Studio: a capture froze the server 2 s and three beats went off
 -- together) The scene's clock moves at most this much a frame: a stall of the
 -- server delays what follows instead of piling it up. Each stall is told in
--- the result (`stalls`): a take with one is to be shot again.
-Scene.MAX_DT=.1
+-- the result (`stalls`): a take with one is to be shot again. (A slow Studio's
+-- frames, 0.1 to 0.25 s with four places open, are no stall.)
+Scene.MAX_DT=.5
 
 -- The scenes written here (the CM's storyboards). Episode 1, « Lee's
 -- weights » (doc projet § Épisode 1): his blows stopped by the sand, he
