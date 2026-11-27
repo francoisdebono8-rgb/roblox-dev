@@ -82,6 +82,7 @@ run NinjaArts  "$LUNE" run tests/NinjaArts.spec.luau
 run FirstCombat "$LUNE" run tests/FirstCombat.spec.luau
 run Solo     "$LUNE" run tests/Solo.spec.luau
 run ChallFilm "$LUNE" run tests/ChallengeFilm.spec.luau
+run SceneFilm "$LUNE" run tests/SceneFilm.spec.luau
 run Forest   "$LUNE" run tests/Forest.spec.luau
 run KitTexts   "$LUNE" run tests/KitTexts.spec.luau
 run PlayTexts  "$LUNE" run tests/PlayTexts.spec.luau

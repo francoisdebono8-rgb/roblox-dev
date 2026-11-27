@@ -180,6 +180,18 @@ function DevHooks.install(matches)
 		learned=function(player,kit) return Progression.handles[player]==nil or Progression.owns(player,kit) end,
 		seed=function() return math.floor(os.clock()*1000)%100000 end})
 	RunService.Heartbeat:Connect(function() film:step(workspace:GetServerTimeNow()) end)
+	-- (27/11) the CM's written scenes (sceneFilm below)
+	local scene=require(script.Parent.DevSceneFilm).new({matches=matches,press=DevHooks.press,
+		avatarState=function(player) return (require(script.Parent.AvatarBody).state(player)) end,
+		attribute=function(name,value) workspace:SetAttribute(name,value) end,clock=os.clock,
+		-- the sync flash: the screen white for 0.15 s (as the capture tools' ShotRunner)
+		flash=function()
+			local Lighting=game:GetService("Lighting")
+			local e0,b0=Lighting.ExposureCompensation,Lighting.Brightness
+			Lighting.ExposureCompensation=6;Lighting.Brightness=10
+			task.delay(.15,function() Lighting.ExposureCompensation=e0;Lighting.Brightness=b0 end)
+		end})
+	RunService.Heartbeat:Connect(function() scene:step(workspace:GetServerTimeNow()) end)
 	local function onInvoke(op,arg1,arg2,arg3,arg4)
 		local player,s=session()
 		if op=="tool" then return run(player,arg1,arg2) end
@@ -263,6 +275,14 @@ function DevHooks.install(matches)
 			return film:start(player,arg1,workspace:GetServerTimeNow())
 		elseif op=="challengeFilmResult" then
 			return film:result()
+		elseif op=="sceneFilm" then
+			-- (27/11, the CM's series YOUR AVATAR × NARUTO SCENES) arg1 = {preset?,
+			-- street?, avatar={kit, nodes?}, foe={kit}, beats={{t, who, act,
+			-- toward?, hold?}, ...}, gap?, intro?, koAtEnd?, flash?, take?}: a
+			-- written scene in the street, every blow the duel's own (DevSceneFilm)
+			return scene:start(player,arg1,workspace:GetServerTimeNow())
+		elseif op=="sceneFilmResult" then
+			return scene:result()
 		end
 		if not s or not s.combat then return "no duel" end
 		local c=s.combat
