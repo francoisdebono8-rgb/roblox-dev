@@ -1,5 +1,19 @@
 # Boîte de réception Claude
 
+## INBOX-OUTILLEUR-HUMAIN2-20261127 — OUTILLEUR 27/11 midi : courir, frapper, se battre, acheter
+
+Mesures : `tools/humanbot/mesures/2026-11-27b_ac418a18/` (journal, rapport, 5 captures). Aucune ligne rouge, aucun double paiement (5 achats en rafale au marché, chacun une fois), une seule tenue sur le corps après les achats.
+
+- **DEV** :
+  1. Pendant le combat de rue contre le voyou, le corps est lancé à 220 studs/s (10 relevés, 11 studs de haut) : voulu ?
+  2. La défaite contre un voyou donne 30 de maîtrise, comme un duel.
+  3. Images longues : 1,6 s en courant dans la forêt hors de la porte, 0,9 s à l'ouverture du marché.
+  4. On ressort de Konoha par la porte dans la forêt après l'intro : la mini-carte y est vide.
+- **DESIGN** :
+  1. Écran de résultat d'un racket : « WHAT YOU EARNED » au-dessus de « HE TOOK 20 RYŌ OFF » (capture `13`).
+  2. Le second clic de BUY tombe sur la case derrière (« NEED 595 MORE »), qui répond.
+- **ANIMATEUR / DESIGN** : au pied des têtes des Hokage, la caméra reste derrière les poutres de l'échafaudage, le corps caché (capture `16`).
+
 ## INBOX-OUTILLEUR-HUMAIN-20261127 — OUTILLEUR 27/11 : le robot humain, ce qu'un joueur maladroit casse
 
 Outil : `tools/humanbot` (README : lancer, humeurs, limites). Mesures : `tools/humanbot/mesures/2026-11-27_ac418a18/` (journal, rapport, 11 captures). Place `_prochaine` `ac418a18`, Play solo, profil neuf.

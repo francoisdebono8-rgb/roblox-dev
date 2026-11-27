@@ -61,6 +61,18 @@ def test_the_walk_releases_every_key_it_holds():
     assert held == set()
 
 
+def test_the_run_across_the_village_lets_go_of_every_key():
+    acts = chaos.plan("roam", seed=21, n=40)
+    held = set()
+    for a in acts:
+        if a["action"] == "keyDown":
+            held.add(a["key_code"])
+        elif a["action"] == "keyUp":
+            held.discard(a["key_code"])
+    assert held == set()
+    assert sum(a.get("wait_time_ms", 0) for a in acts) > 20000   # a real run, not a twitch
+
+
 def test_waits_are_a_humans():
     waits = [a["wait_time_ms"] for a in chaos.plan("mash", seed=2, n=60) if a["action"] == "wait"]
     assert min(waits) >= 40 and len(set(waits)) > 10
@@ -103,6 +115,13 @@ def test_the_report_of_the_27th():
     text = report.report(mesure)
     assert "menus ensemble" in text and "SOON" not in text and "FeetNone" not in text
     assert report.hitches(mesure["client"]["hitches"])["felt"] == 16
+
+
+def test_the_street_blows_are_named():
+    mesure = {"client": {"fists": 10, "fistsLive": 9, "bugs": [], "hitches": []},
+              "server": {"rows": [], "street": {"lands": {"nil": 7, "thug": 1}}}}
+    text = report.report(mesure)
+    assert "rien (dans le vide) 7" in text and "un voyou 1" in text and "Coups de rue" in text
 
 
 def main():

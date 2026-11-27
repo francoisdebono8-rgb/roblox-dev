@@ -22,6 +22,8 @@ Moods (the scan is _G.NDHumanWatch.scan(), the buttons a player can click now):
   everything every visible button once, in a random order, a human's pace            (mouse, scan)
   wander     walks without logic: a key held a little, the opposite at once, jumps
              in the middle of a turn, shift on and off, the double jump spammed        (keyboard)
+  roam       runs across the village: W and Shift held long, veers, leaps, a turn back
+                                                                                      (keyboard)
   mash       a fight with no plan: clicks in bursts, dodge spam, guard held then
              released mid-combo, numbers of techniques, the menu keys in the middle  (keyboard)
   menukeys   the menu keys pressed in a row and over each other (M, B, Tab, G,
@@ -32,7 +34,7 @@ import random
 import sys
 
 MOUSE_MOODS = ("frenzy", "dither", "everything")
-KEY_MOODS = ("wander", "mash", "menukeys")
+KEY_MOODS = ("wander", "roam", "mash", "menukeys")
 # The game's keys (Shared/Controls Keyboard, Client/HubMove, the panels).
 MOVE = ["W", "A", "S", "D"]
 FIGHT = ["Q", "F", "E", "R", "Z", "X", "G", "V", "C", "T", "Y", "B", "One", "Two", "Three", "Four", "Five"]
@@ -157,6 +159,32 @@ def wander(rng, n):
     return acts
 
 
+def roam(rng, n):
+    """(27/11, François : « courir un peu partout ») Runs across the village: W held a
+    long time with Shift, veering with A or D, leaps (Space twice) over what is in the
+    way, a stop, a turn back with S, and again."""
+    acts = [{"action": "keyDown", "key_code": "W"}, {"action": "keyDown", "key_code": "LeftShift"}]
+    for _ in range(n):
+        r = rng.random()
+        if r < .4:
+            side = rng.choice(["A", "D"])
+            acts += [{"action": "keyDown", "key_code": side}, {"action": "wait", "wait_time_ms": rng.randint(250, 1400)},
+                     {"action": "keyUp", "key_code": side}]
+        elif r < .65:
+            acts += key("Space", rng.randint(90, 180)) + key("Space", rng.randint(300, 900))
+        elif r < .75:
+            acts += [{"action": "keyUp", "key_code": "W"}, {"action": "keyDown", "key_code": "S"},
+                     {"action": "wait", "wait_time_ms": rng.randint(400, 1500)}, {"action": "keyUp", "key_code": "S"},
+                     {"action": "keyDown", "key_code": "W"}]
+        elif r < .82:
+            acts += [{"action": "keyUp", "key_code": "LeftShift"}, {"action": "wait", "wait_time_ms": rng.randint(300, 1200)},
+                     {"action": "keyDown", "key_code": "LeftShift"}]
+        else:
+            acts.append({"action": "wait", "wait_time_ms": rng.randint(600, 2500)})
+    acts += [{"action": "keyUp", "key_code": "LeftShift"}, {"action": "keyUp", "key_code": "W"}]
+    return acts
+
+
 def mash(rng, n):
     acts = []
     for _ in range(n):
@@ -209,6 +237,8 @@ def plan(mood, seed=0, scan=None, n=12, at=(667, 330)):
         return wander(rng, n)
     if mood == "mash":
         return mash(rng, n)
+    if mood == "roam":
+        return roam(rng, n)
     if mood == "mashclicks":
         return mash_clicks(rng, n, *at)
     if mood == "menukeys":

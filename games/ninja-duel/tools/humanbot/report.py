@@ -55,6 +55,9 @@ MEANING = {
 ORDER = ["erreur rouge", "erreur rouge (serveur)", "payé deux fois", "Ryō faux", "tenue en double", "corps nu",
          "tenue fausse", "clic mort", "souris bloquée", "menus ensemble", "hors écran", "texte coupé",
          "corps bloqué", "chute", "projeté", "à-coup"]
+# What a street blow met (Server/HubFight.land), for a human.
+STREET = {"nil": "rien (dans le vide)", "world": "le décor", "broke": "une caisse cassée", "thug": "un voyou",
+          "dummy": "le mannequin", "challenger": "un prodige", "boss": "l'Ōtsutsuki"}
 # A frame this long (s) is felt; the witness notes every frame over 0.25 s.
 FELT = 0.4
 
@@ -110,6 +113,11 @@ def report(mesure):
     lines.append(f"{round(c.get('seconds', 0) / 60)} min de jeu : {c.get('clicks', 0)} clics et {c.get('keys', 0)} touches, "
                  f"{c.get('answers', 0)} boutons qui ont répondu ; {len(cmds)} commandes du profil côté serveur, "
                  f"{len(refused)} refusées.")
+    if c.get("fists"):
+        lines.append(f"Coups de rue pressés par le code du jeu : {c['fists']} ({c.get('fistsLive', 0)} pendant que le corps pouvait frapper).")
+    street = (s.get("street") or {}).get("lands")
+    if street:
+        lines.append("Ce que les coups de rue ont touché : " + ", ".join(f"{STREET.get(k, k)} {v}" for k, v in sorted(street.items(), key=lambda kv: -kv[1])) + ".")
     lines.append("")
     groups = grouped(c.get("bugs", []) + s.get("bugs", []))
     if not groups:

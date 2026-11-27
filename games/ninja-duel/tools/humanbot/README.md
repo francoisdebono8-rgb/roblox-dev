@@ -19,6 +19,7 @@ Le robot a deux parties, et ne prend jamais l'écran, la souris ni le clavier du
 | `dither` | ouvre puis ferme, clique la même chose deux fois, puis une autre | souris + scan |
 | `everything` | chaque bouton visible une fois, dans le désordre | souris + scan |
 | `wander` | marche sans logique : une touche puis l'opposée, des sauts en plein virage, Shift par à-coups, le double saut à répétition | clavier |
+| `roam` | (27/11, deuxième partie) court partout : W et Shift tenus longtemps, dérive avec A ou D, sauts (double espace) par-dessus ce qui gêne, demi-tour avec S | clavier |
 | `mash` | se bat sans plan : rafales de touches, esquive répétée, garde lâchée au milieu, chiffres des techniques, touches des menus en plein combat | clavier |
 | `mashclicks` | la souris d'un combat : rafales de clics gauches, un clic droit de temps en temps | souris |
 | `menukeys` | les touches des menus enchaînées et superposées (M, B, Tab, G, Backspace, Return, E) | clavier |
@@ -46,6 +47,8 @@ Sur le serveur :
 - un paiement pris deux fois ;
 - des Ryō faux ;
 - les lignes rouges.
+
+Les coups de rue (`_G.NDHumanWatch.fists(secondes, graine)`) passent par le code du client du jeu (`HubFightClient:press`, ce que son clic appelle), au rythme d'un joueur : rafales de légers, un lourd de temps en temps, une esquive, des pauses. Les mains de Studio ne les déclenchent pas (voir plus bas).
 
 ## Lancer
 
@@ -113,3 +116,33 @@ Pas testé :
 - deux joueurs ;
 - la manette et le tactile ;
 - l'achat avec des Ryō : le profil neuf avait 0 Ryō, donc on ne savait pas si un double paiement était possible.
+
+## Le 27/11, deuxième partie : courir partout, frapper, se battre, acheter des tenues
+
+François : « courir un peu partout, envoyer des coups, se battre, acheter des tenues ». Fichiers : `mesures/2026-11-27b_ac418a18/` (`journal.json`, `rapport.md`, `images/`).
+
+Préparation par le serveur, notée dans le journal :
+- la porte passée comme la carte de création la passe (`Forest.atGate`, puis `Forest.create`) ;
+- le kit de l'Avenger (`chooseStarter`) et 3 000 Ryō (`earnRyo`) ;
+- puis `Matches:selection` pour que le HUD les montre ;
+- deux fois, le joueur a été posé près de sa cible : à 14 studs du voyou de la Plaza et à 8 studs du marché.
+
+9 minutes : 185 touches, 87 clics, 214 coups de rue. Aucune ligne rouge, aucun paiement en double, aucune tenue en double.
+
+1. **Courir partout** : trois courses `roam` (graines 21, 22 et 23), avec Shift, des sauts et des demi-tours.
+   - Le joueur est monté jusqu'aux têtes des Hokage, puis il est ressorti par la porte dans la forêt : la mini-carte y est vide (image `15`).
+   - Au pied des têtes, la caméra est restée derrière les poutres d'un échafaudage, le corps caché (image `16`).
+   - Aucun corps bloqué ni chute ; une image de 1,6 s en courant dans la forêt.
+2. **Frapper** : 214 coups (195 pendant que le corps pouvait frapper).
+   - Sur 116 coups arrivés au serveur : 102 dans le vide, 11 dans le décor, 2 caisses cassées, 1 voyou.
+   - Coups seuls, sans cible, ils n'ont rien cassé d'autre que deux caisses.
+3. **Se battre** : un lourd sur le voyou de la Plaza lance le combat (ROGUE NINJA, image `12`). En tapant au hasard (clavier et souris) : perdu 0-2.
+   - Le résultat dit « WHAT YOU EARNED : HE TOOK 20 RYŌ OFF » (image `13`) : un titre « ce que tu as gagné » au-dessus d'une perte.
+   - La défaite rapporte quand même 30 de maîtrise.
+   - Pendant le combat, le corps a été lancé à 220 studs/s, 10 fois, à 11 studs de haut : un coup du voyou, à juger par le DEV.
+4. **Acheter des tenues** : au marché (E devant le marchand), 5 hauts à 600 Ryō, en rafale.
+   - BUY double-cliqué, deux prix cliqués à la suite, BUY puis un autre prix aussitôt.
+   - Le serveur a fait 5 achats, chacun une fois, de 3 005 à 5 Ryō ; le dernier haut acheté est porté.
+   - Une seule tenue et un seul jeu de pièces sur le corps, ceux équipés (image `14`).
+   - Le second clic de BUY tombe sur la case derrière (« NEED 595 MORE »), qui répond sans rien acheter.
+   - Avec la nouvelle tenue, une dernière course avec des coups ne fait rien tomber.

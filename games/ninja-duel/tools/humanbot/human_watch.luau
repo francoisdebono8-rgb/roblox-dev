@@ -30,6 +30,8 @@
 --                                  user_mouse_input, menu, covered (another
 --                                  object on top of its centre)
 --   _G.NDHumanWatch.note(text)     a line in the journal (the scene played)
+--   _G.NDHumanWatch.fists(s,seed)  the street's blows for s seconds, a human's rhythm
+--                                  (through the game's client: see README)
 --   _G.NDHumanWatch.outfit(equipped)  the cloth check now (equipped: the
 --                                  server's slots, from NDHumanServer.equipped())
 --   _G.NDHumanWatch.read()         the journal (JSON) for tools/humanbot/report.py
@@ -292,6 +294,19 @@ function W.start(fresh)
 		end
 	end))
 	-- the attributes the game moves when the scene changes
+	-- the body's place: a duel's folder (Duel_1, Online_3…) or the village
+	local lastPlace=nil
+	task.spawn(function()
+		while running do
+			local c=player.Character
+			local place=c and c.Parent and c.Parent.Name or "-"
+			if place~=lastPlace then
+				lastPlace=place
+				table.insert(rows,{t=now(),kind="scene",what="place",value=place})
+			end
+			task.wait(.25)
+		end
+	end)
 	for _,a in {"NinjaIntro","NinjaKit"} do
 		table.insert(conns,player:GetAttributeChangedSignal(a):Connect(function()
 			table.insert(rows,{t=now(),kind="scene",what=a,value=tostring(player:GetAttribute(a))})
@@ -387,6 +402,38 @@ function W.scan()
 		end
 	end
 	return HttpService:JSONEncode({menus=menuNames(),mouse=UIS.MouseBehavior.Name,stage=player:GetAttribute("NinjaIntro"),buttons=out})
+end
+
+-- (27/11, François : « envoyer des coups, se battre ») The street's blows,
+-- pressed through the game's own client (Client/HubFightClient:press, what
+-- its click handler calls): Studio's hands arrive « already processed » and
+-- the street's handler leaves those (see the README). A human's rhythm:
+-- bursts of light blows, a heavy now and then, a dodge, pauses. Runs beside
+-- the hands (the walk, the menus) for `seconds`; each press is a row
+-- "fist:<move>".
+W.FISTS={"Light","Light","Light","Heavy","Dodge","Light","Heavy"}
+function W.fists(seconds,seed)
+	local ps=player:WaitForChild("PlayerScripts")
+	local module=ps:FindFirstChild("HubFightClient",true)
+	if not module then return "pas de HubFightClient" end
+	local rng=Random.new(seed or 1)
+	local stopAt=os.clock()+(seconds or 30)
+	W.fisting=true
+	task.spawn(function()
+		while W.fisting and os.clock()<stopAt do
+			local f=require(module).current
+			local burst=rng:NextInteger(1,4)
+			for _=1,burst do
+				local move=W.FISTS[rng:NextInteger(1,#W.FISTS)]
+				local ok=f~=nil and pcall(function() f:press(move) end)
+				table.insert(rows,{t=now(),kind="in",key="fist:"..move,down=true,live=f~=nil and f:live() or false,ok=ok})
+				task.wait(rng:NextNumber(.12,.35))
+			end
+			task.wait(rng:NextNumber(.3,1.6))
+		end
+		W.fisting=false
+	end)
+	return "coups pendant "..tostring(seconds or 30).." s"
 end
 
 function W.note(text)
