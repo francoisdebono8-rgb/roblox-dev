@@ -34,7 +34,7 @@ local function snapshot(c,a,b)
   illusion=math.max(0,a.illusionUntil-now),decoy=a.decoyPosition,velocity=a.root.AssemblyLinearVelocity,
   throwKind=a.throwKind,throwElapsed=now-(a.throwStarted or -10),throwRelease=a.throwRelease or .1,
   guess=Brawler.guessView(c,a)}
- local bot={id="b",state=b.state,health=b.health,lookVector=b.root.CFrame.LookVector,airborne=b.airborne,reaction=b.reaction,groundPose=b.groundPose,
+ local bot={id="b",state=b.state,health=b.health,lookVector=b.root.CFrame.LookVector,airborne=b.airborne,reaction=b.reaction,groundPose=b.groundPose,wall=b.wall~=nil or nil,
   tenketsu=if (b.tenketsuUntil or 0)>now then b.tenketsu or 0 else 0}
  return {human=h,bot=bot}
 end

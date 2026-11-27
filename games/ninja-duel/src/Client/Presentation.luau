@@ -623,6 +623,10 @@ end
 function Presentation:predictStrike(action,data,now,ahead)
 	local h=data and data.human
 	if not h or h.reaction or h.wall or h.groundPose or (h.health or 1)<=0 or (h.guess and h.guess.held) then return end
+	-- (27/11, passe 4: the fight goes on up a wall) an opponent standing on a
+	-- wall: which opener the stick makes of the press, the server reads from
+	-- where he stands up there; the client does not guess it
+	if data.bot and data.bot.wall then return end
 	local g=h.guess or {}
 	-- (É7) branches ahead of the strike the client leaves to the server: a
 	-- held body state, a teleport's arrival strike, a grab's throw, a blade

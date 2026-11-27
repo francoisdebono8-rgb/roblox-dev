@@ -724,7 +724,8 @@ test("a 1v1 between two walkers is fought in Konoha's street, one fight per plac
 		assert(d.phase=="Duel" and (d.origin-centre).Magnitude<1e-3 and d.radius==site.radius,"not fought in the street")
 		assert(arenas==before,"a stadium was built for a street duel")
 		local far=d.combat:clamp(centre+V.new(200,3,0))
-		assert(math.abs((far-centre).Magnitude-site.radius)<.5,"the street's circle is the stadium's")
+		-- (27/11, passe 4) a thrown body goes a little past the ring, to the houses
+		assert(math.abs((far-centre).Magnitude-(site.radius+H.load("Shared/Config").World.StreetOverflow))<.5,"the street's circle is the stadium's")
 		assert(last(a).site and last(a).site.place==HubMap.Masters.Leaf.place and last(a).site.street,"the packet does not name the street")
 		local UI=H.load("Client/UI")
 		assert(UI.stageName(last(a))=="STREET DUEL  •  "..HubMap.Masters.Leaf.place,"the banner: "..UI.stageName(last(a)))
