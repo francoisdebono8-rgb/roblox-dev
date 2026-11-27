@@ -119,17 +119,38 @@ function Rogue.start()
 		-- hidden, the body in the rogue's colours, the rogue's modelled pieces on.
 		local BODY={Head=true,UpperTorso=true,LowerTorso=true,LeftUpperArm=true,RightUpperArm=true,LeftLowerArm=true,RightLowerArm=true,
 			LeftHand=true,RightHand=true,LeftUpperLeg=true,RightUpperLeg=true,LeftLowerLeg=true,RightLowerLeg=true,LeftFoot=true,RightFoot=true,HumanoidRootPart=true}
+		-- (27/11, François: « l'adversaire est buggé, sa tenue », seen in his
+		-- Play: the forest's bandit was a headband, a hood and clothes with no
+		-- head, no hands, and the prodigy's pieces coming back) The prodigy's
+		-- sculpted body (Server/LookMeshes) hides the R15 parts by their
+		-- Transparency; hiding the sculpted pieces by LocalTransparencyModifier
+		-- left no body at all, and the body's fades (BodyViews, the lenses)
+		-- gave them back. Here the R15 parts are shown and the sculpted pieces
+		-- hidden, both by their own Transparency on this screen, held there.
 		local dressedDuel=setmetatable({},{__mode="k"})
+		local function hold(part,value)
+			if part.Transparency~=value then part.Transparency=value end
+			pcall(function()
+				part:GetPropertyChangedSignal("Transparency"):Connect(function()
+					if part.Transparency~=value then part.Transparency=value end
+				end)
+			end)
+		end
+		Rogue.hold=hold
 		local function dressDuel(model)
 			if dressedDuel[model] then return end
 			dressedDuel[model]=true
 			local dark=Color3.fromRGB(34,34,40)
 			for _,d in model:GetDescendants() do
 				if d:IsA("BasePart") then
-					if not BODY[d.Name] then d.LocalTransparencyModifier=1
-					elseif d.Name=="Head" or d.Name=="LeftHand" or d.Name=="RightHand" then d.Color=Rogue.SKIN
-					elseif d.Name~="HumanoidRootPart" then d.Color=dark end
-				end
+					if not BODY[d.Name] then hold(d,1)
+					elseif d.Name=="HumanoidRootPart" then continue
+					else
+						hold(d,0)
+						d.Color=if d.Name=="Head" or d.Name=="LeftHand" or d.Name=="RightHand" then Rogue.SKIN else dark
+					end
+				elseif d:IsA("SurfaceGui") then d.Enabled=false
+				elseif d:IsA("Decal") then d.Transparency=1 end
 			end
 			task.spawn(function() pcall(Folk.dress,model,Dress,{Rogue.LOOK},colors) end)
 		end

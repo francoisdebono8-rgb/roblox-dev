@@ -138,6 +138,26 @@ function Dress.template(model)
 	return Dress.templates[model] or nil
 end
 
+-- A server cloth piece hidden on this screen: its own Transparency (no other
+-- system writes it here), its drawings off; held hidden if the server writes
+-- it again (a duel's body hidden and shown back).
+Dress.held=setmetatable({},{__mode="k"})
+function Dress.hideCloth(piece)
+	piece.LocalTransparencyModifier=1
+	if piece.Transparency<1 then piece.Transparency=1 end
+	for _,d in piece:GetDescendants() do
+		if (d:IsA("Decal") or d:IsA("Texture")) and d.Transparency<1 then d.Transparency=1
+		elseif d:IsA("SurfaceGui") or d:IsA("BillboardGui") then d.Enabled=false end
+	end
+	if Dress.held[piece] then return end
+	Dress.held[piece]=true
+	pcall(function()
+		piece:GetPropertyChangedSignal("Transparency"):Connect(function()
+			if piece.Transparency<1 then piece.Transparency=1 end
+		end)
+	end)
+end
+
 -- Dresses the body that holds `holder` (a server "NinjaOutfit"); returns the
 -- number of pieces put on.
 function Dress.wear(holder)
@@ -179,9 +199,18 @@ function Dress.wear(holder)
 	folder.Parent=body
 	-- the server's cloth pieces of the items now modelled: hidden here (19/11:
 	-- only those; a look without a model, a cape, a scroll, stays in cloth)
+	-- (27/11, François: « la tenue est buggée quand on arrive », seen in his
+	-- Play: on the duel's body the server's cloth boxes of the tunic, the
+	-- trousers, the sandals and the headband stood visible over their models,
+	-- two outfits one inside the other) The body's other systems set every
+	-- piece's LocalTransparencyModifier (BodyViews' fade, the lenses' fades,
+	-- the perception's hiding) and gave them back 0. A hidden cloth piece is
+	-- hidden by its own Transparency on this screen, held there when the
+	-- server writes it again.
 	local function hide(piece)
 		local of=piece:GetAttribute("NinjaItem")
-		if piece:IsA("BasePart") and (of==nil or modelled[of]) then piece.LocalTransparencyModifier=1 end
+		if not (piece:IsA("BasePart") and (of==nil or modelled[of])) then return end
+		Dress.hideCloth(piece)
 	end
 	for _,piece in holder:GetChildren() do hide(piece) end
 	holder.ChildAdded:Connect(hide)

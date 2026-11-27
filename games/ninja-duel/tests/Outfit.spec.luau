@@ -289,4 +289,21 @@ test("an arm piece comes in to a round arm, not to a blocky one",function()
 	assert(Dress.fill(round,"RightLowerLeg")==1 and Dress.fill(round,"UpperTorso")==1,"legs and torso fill theirs")
 end)
 
+-- (27/11, François: « la tenue est buggée quand on arrive ») a cloth piece of a
+-- modelled item stays hidden whatever the body's fades do to its
+-- LocalTransparencyModifier: its own Transparency is 1 here, its drawings off
+test("a modelled item's cloth box stays hidden when the body's fades give its LocalTransparencyModifier back",function()
+	local Dress=H.load("Client/OutfitDress")
+	local cloth=Instance.new("Part");cloth.Name="Band";cloth.Transparency=0
+	local decal=Instance.new("Decal");decal.Parent=cloth
+	Dress.hideCloth(cloth)
+	cloth.LocalTransparencyModifier=0   -- a fade that ends
+	assert(cloth.Transparency==1,"the cloth box shows again under its model")
+	assert(decal.Transparency==1,"its drawing shows")
+	Dress.hideCloth(cloth)
+	assert(cloth.Transparency==1,"twice")
+	local src=require("@lune/fs").readFile("src/Client/OutfitDress.luau")
+	assert(string.find(src,"Dress.hideCloth(piece)",1,true),"the outfit's hide does not use it")
+end)
+
 print(string.format("NinjaDuel outfit (DEC-040): %d PASS",passed))
