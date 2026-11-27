@@ -187,6 +187,11 @@ end
 SandFX.WALL_R=2.2 -- the wall's curve round him (the model's radius)
 SandFX.WALL_UP=.09 -- seconds to rear up
 SandFX.STUCK=.5 -- seconds a caught kunai stays planted
+-- (27/11, INBOX-CM-SCENES « un mur de sable lisible sur un téléphone ») the
+-- wall stands taller and wider than his body and stays up long enough to be
+-- seen at phone size, before it pours back
+SandFX.WALL_SCALE=1.55
+SandFX.WALL_HOLD=.95 -- seconds the wall stands after the blow
 local function gourdOf(model)
 	if not model then return nil end
 	for _,d in model:GetDescendants() do
@@ -244,11 +249,17 @@ local function modelledShield(fx,impact,folder)
 	local root=body and body:FindFirstChild("HumanoidRootPart")
 	local centre=if root then root.Position else impact.position-face*1.6
 	local y=ground(fx,centre,centre.Y-3)
-	local foot=Vector3.new(centre.X,y,centre.Z)+face*SandFX.WALL_R
+	pcall(function() wall:ScaleTo(SandFX.WALL_SCALE) end)
+	-- between the two bodies: the blow lands on the sand, a hand from his face,
+	-- never behind the striker (seen in Studio 27/11: at the scaled radius the
+	-- wall stood beside the avatar, his fist already past it)
+	local reach=(impact.position-centre)*Vector3.new(1,0,1)
+	local gap=math.clamp(reach:Dot(face)-.35,SandFX.WALL_R,SandFX.WALL_R*SandFX.WALL_SCALE)
+	local foot=Vector3.new(centre.X,y,centre.Z)+face*gap
 	-- the hollow faces him (model -z), the crest rolls toward the blow
 	local cf=CFrame.lookAt(foot,foot-face)
 	wall.Parent=fx.folder
-	wall:PivotTo(cf*CFrame.new(0,-4.8,0))
+	wall:PivotTo(cf*CFrame.new(0,-4.8*SandFX.WALL_SCALE,0))
 	K.tween(wall.PrimaryPart,SandFX.WALL_UP,{CFrame=cf},Enum.EasingStyle.Back,Enum.EasingDirection.Out)
 	-- out of the gourd: the stream that builds it
 	local gourd=gourdOf(body)
@@ -266,7 +277,7 @@ local function modelledShield(fx,impact,folder)
 	thud(fx,impact.position,if breaking then .7 else .45,if breaking then .55 else .9)
 	local front=foot+face*.2
 	if not breaking then caught(fx,impact,front,face) end
-	local hold=if breaking then .12 else SandFX.STUCK+.1
+	local hold=if breaking then .12 else math.max(SandFX.STUCK+.1,SandFX.WALL_HOLD)
 	task.delay(hold,function()
 		if not wall.Parent then return end
 		if breaking then
@@ -277,7 +288,7 @@ local function modelledShield(fx,impact,folder)
 			dust(fx,foot+Vector3.new(0,2,0),20,2.8)
 		else
 			-- pours back to the floor
-			K.tween(wall.PrimaryPart,.4,{CFrame=cf*CFrame.new(0,-4.6,0)},Enum.EasingStyle.Quad,Enum.EasingDirection.In)
+			K.tween(wall.PrimaryPart,.4,{CFrame=cf*CFrame.new(0,-4.6*SandFX.WALL_SCALE,0)},Enum.EasingStyle.Quad,Enum.EasingDirection.In)
 			grains(fx,foot+Vector3.new(0,1.5,0),14,6,false)
 		end
 	end)

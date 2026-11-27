@@ -9,7 +9,6 @@ local Debris=game:GetService("Debris")
 
 local LeeFX={}
 local VfxKit=require(script.Parent.VfxKit)
-local MeshKit=require(script.Parent.MeshKit)
 local K -- Effects' helpers, handed over by install()
 LeeFX.clock=os.clock -- (headless tests drive time)
 local LEE="Leaf"
@@ -108,25 +107,121 @@ end
 -- (13/11, user: « les poids ») Remove the Weights: the two training weights
 -- come off his shins and drop like anvils (modelled: MeshKit "LegWeight"),
 -- each one cratering the floor where it lands; they stay there a moment.
+-- (27/11, the CM's scene « Lee's weights », INBOX-CM-SCENES: « les poids
+-- visibles aux chevilles de l'avatar avant la chute ») Whoever carries Remove
+-- the Weights (Lee, or an avatar who learned it) wears the two weights round
+-- his lower shins, just over the ankles, from the start of the duel until he
+-- drops them (the buff); they are back on him once it ends. Seen in Studio on
+-- an avatar: the modelled LegWeight (dark grey, MeshKit) vanished into navy
+-- trousers and its rims caught the light as spikes. François's reference
+-- (27/11, 11 h 29, « rappel poids de Lee ») and the anime: a belt of pale beige
+-- blocks wrapped round the shin, each block lettered 根性 (« guts ») in black.
+-- So that is the weight drawn here: WEIGHT_BLOCKS blocks round the ankle, over
+-- the widest clothing there, each with its 根性 facing out; and it is those
+-- same two belts that come off and crater the floor.
+LeeFX.WEIGHT_LOW=.1 -- below the shin's centre, as a share of its length
+LeeFX.WEIGHT_PROUD=.26 -- studs the belt stands out of the widest clothing round the shin
+LeeFX.WEIGHT_TALL=.66 -- the blocks' height, studs
+LeeFX.WEIGHT_BLOCKS=6
+LeeFX.WEIGHT_DEPTH=.2 -- the blocks' thickness
+LeeFX.WEIGHT_BLOCK=Color3.fromRGB(228,220,192)
+LeeFX.WEIGHT_EDGE=Color3.fromRGB(150,140,112)
+LeeFX.WEIGHT_INK=Color3.fromRGB(20,18,16)
+LeeFX.WEIGHT_WORD="根性"
+local function weightPart(parent,size,cf,color,material)
+	local part=Instance.new("Part")
+	part.Size=size;part.CFrame=cf;part.Color=color;part.Material=material
+	part.TopSurface=Enum.SurfaceType.Smooth;part.BottomSurface=Enum.SurfaceType.Smooth
+	part.Anchored=true;part.CanCollide=false;part.CanQuery=false;part.CanTouch=false;part.Massless=true;part.CastShadow=false
+	part.Parent=parent
+	return part
+end
+-- One belt, its axis up, centred on cf, `across` studs wide.
+local function buildWeight(cf,across)
+	local w=Instance.new("Model");w.Name="LeeWeightWorn"
+	local tall,n,depth=LeeFX.WEIGHT_TALL,LeeFX.WEIGHT_BLOCKS,LeeFX.WEIGHT_DEPTH
+	local r=across/2-depth/2
+	local wide=2*r*math.tan(math.pi/n)*.94
+	local core=weightPart(w,Vector3.new(.1,.1,.1),cf,LeeFX.WEIGHT_EDGE,Enum.Material.SmoothPlastic)
+	core.Name="Root";core.Transparency=1
+	for k=0,n-1 do
+		local face=cf*CFrame.Angles(0,k*math.pi*2/n,0)*CFrame.new(0,0,-r)
+		-- the darker backing shows as an outline round each block
+		local back=weightPart(w,Vector3.new(wide+.04,tall+.04,depth*.8),face*CFrame.new(0,0,.03),LeeFX.WEIGHT_EDGE,Enum.Material.SmoothPlastic)
+		back.Name="Edge"
+		local block=weightPart(w,Vector3.new(wide-.02,tall-.04,depth),face,LeeFX.WEIGHT_BLOCK,Enum.Material.SmoothPlastic)
+		block.Name="Block"
+		local gui=Instance.new("SurfaceGui")
+		gui.Face=Enum.NormalId.Front;gui.SizingMode=Enum.SurfaceGuiSizingMode.PixelsPerStud;gui.PixelsPerStud=120
+		gui.LightInfluence=1;gui.Parent=block
+		local word=Instance.new("TextLabel")
+		word.BackgroundTransparency=1;word.Size=UDim2.fromScale(1,1);word.Text=LeeFX.WEIGHT_WORD
+		word.TextScaled=true;word.TextColor3=LeeFX.WEIGHT_INK;word.Font=Enum.Font.GothamBlack
+		word.Parent=gui
+		local pad=Instance.new("UIPadding");pad.PaddingLeft=UDim.new(.06,0);pad.PaddingRight=UDim.new(.06,0);pad.PaddingTop=UDim.new(.14,0);pad.PaddingBottom=UDim.new(.14,0);pad.Parent=word
+	end
+	w.PrimaryPart=core
+	return w
+end
+local function girthAt(model,shin,at)
+	-- an avatar's trouser or leg warmer is wider than the shin: the widest piece
+	-- worn at that height
+	local girth=math.max(shin.Size.X,shin.Size.Z)
+	for _,d in model:GetDescendants() do
+		if d:IsA("BasePart") and d~=shin and d.Transparency<1 and d.Name~="HumanoidRootPart" and not d:FindFirstAncestor("LeeWeightWorn") then
+			local rel=at:PointToObjectSpace(d.Position)
+			if Vector3.new(rel.X,0,rel.Z).Magnitude<.45 and math.abs(rel.Y)<d.Size.Y/2+.1 then
+				girth=math.max(girth,math.min(d.Size.X,1.6),math.min(d.Size.Z,1.6))
+			end
+		end
+	end
+	return girth
+end
 local function dropWeights(fx,impact,folder)
 	local model=folder and folder:FindFirstChild(impact.owner or "")
 	local at=impact.position
 	local y=ground(fx,at,at.Y-2.8)
+	-- the weights he was wearing come off him (no copy appears)
+	local worn={}
+	if model then
+		local st=stateOf(fx,model)
+		if st.worn then for _,w in st.worn do if w.Parent then table.insert(worn,w) end end end
+		st.worn=nil;st.dropped=os.clock()
+	end
 	for i,name in {"LeftLowerLeg","RightLowerLeg"} do
 		local shin=model and model:FindFirstChild(name)
-		local from=if shin then shin.CFrame else CFrame.new(at+Vector3.new(i==1 and -.5 or .5,-1.8,0))
-		local w=MeshKit.model("LegWeight")
-		local land=Vector3.new(from.Position.X+(i==1 and -.35 or .35),y+.36,from.Position.Z+.2)
-		if w then
-			w.Name="LeeWeight";w.PrimaryPart.CFrame=from;w.Parent=fx.folder
-			local rest=CFrame.new(land)*CFrame.Angles(math.rad(90),math.rad(i*37),0)
-			K.tween(w.PrimaryPart,.3,{CFrame=rest},Enum.EasingStyle.Quad,Enum.EasingDirection.In)
-			task.delay(2.6,function()
-				if not w.Parent then return end
-				for _,d in w:GetDescendants() do if d:IsA("BasePart") and d.Name~="Root" then K.tween(d,.5,{Transparency=1}) end end
-			end)
-			Debris:AddItem(w,3.2)
+		local w=worn[i]
+		local from=if w then w:GetPivot() elseif shin then shin.CFrame else CFrame.new(at+Vector3.new(i==1 and -.5 or .5,-1.8,0))
+		if not w then
+			local cf=from*CFrame.new(0,if shin then -shin.Size.Y*LeeFX.WEIGHT_LOW else 0,0)
+			w=buildWeight(cf,(if shin then girthAt(model,shin,cf) else .9)+LeeFX.WEIGHT_PROUD)
+			from=cf
 		end
+		w.Name="LeeWeight"
+		local parts={}
+		for _,d in w:GetDescendants() do
+			if d:IsA("WeldConstraint") then d:Destroy() end
+			if d:IsA("BasePart") then d.Anchored=true;table.insert(parts,{part=d,offset=from:ToObjectSpace(d.CFrame)}) end
+		end
+		w.Parent=fx.folder
+		local land=Vector3.new(from.Position.X+(i==1 and -.35 or .35),y+.36,from.Position.Z+.2)
+		local rest=CFrame.new(land)*CFrame.Angles(math.rad(90),math.rad(i*37),0)
+		-- it drops like lead: straight down, accelerating, onto its side
+		local start=os.clock()
+		local conn
+		conn=game:GetService("RunService").Heartbeat:Connect(function()
+			local t=math.min(1,(os.clock()-start)/.3)
+			local e=t*t
+			local cf=from:Lerp(rest,e)
+			for _,p in parts do if p.part.Parent then p.part.CFrame=cf*p.offset end end
+			if t>=1 or not w.Parent then conn:Disconnect() end
+		end)
+		task.delay(2.6,function()
+			if not w.Parent then return end
+			for _,p in parts do if p.part.Name~="Root" then K.tween(p.part,.5,{Transparency=1}) end end
+			for _,d in w:GetDescendants() do if d:IsA("TextLabel") then K.tween(d,.5,{TextTransparency=1}) end end
+		end)
+		Debris:AddItem(w,3.2)
 		task.delay(.3,function()
 			if not VfxKit.mark(fx.folder,"GroundCrater",Vector3.new(land.X,y,land.Z),Vector3.yAxis,1.9,2.4,.6) then crater(fx,land,2.2) end
 			kickDust(fx,Vector3.new(land.X,y+.5,land.Z),12,1.6)
@@ -135,9 +230,53 @@ local function dropWeights(fx,impact,folder)
 		end)
 	end
 end
+local function carriesWeights(actor)
+	for _,t in actor.techniques or {} do if t.id=="RemoveWeights" then return true end end
+	return false
+end
+local function wearWeights(fx,model,actor,st)
+	local on=carriesWeights(actor) and not (actor.family and actor.family.buff=="RemoveWeights") and (actor.health or 1)>0
+	-- the dropped pair lies on the floor a moment before he can wear them again
+	if on and st.dropped and os.clock()-st.dropped<1.2 then on=false end
+	if not on then
+		if st.worn then for _,w in st.worn do if w.Parent then w:Destroy() end end;st.worn=nil end
+		return
+	end
+	if st.worn then
+		local ok=true
+		for _,w in st.worn do if not w.Parent then ok=false end end
+		if ok then return end
+		for _,w in st.worn do if w.Parent then w:Destroy() end end
+	end
+	local worn={}
+	-- one size for the pair: the wider of the two ankles
+	local across=0
+	for _,name in {"LeftLowerLeg","RightLowerLeg"} do
+		local shin=model:FindFirstChild(name)
+		if shin then across=math.max(across,girthAt(model,shin,shin.CFrame*CFrame.new(0,-shin.Size.Y*LeeFX.WEIGHT_LOW,0))) end
+	end
+	for _,name in {"LeftLowerLeg","RightLowerLeg"} do
+		local shin=model:FindFirstChild(name)
+		if shin then
+			local at=shin.CFrame*CFrame.new(0,-shin.Size.Y*LeeFX.WEIGHT_LOW,0)
+			local w=buildWeight(at,across+LeeFX.WEIGHT_PROUD)
+			for _,d in w:GetDescendants() do
+				if d:IsA("BasePart") then
+					d.Anchored=false
+					local weld=Instance.new("WeldConstraint");weld.Part0=shin;weld.Part1=d;weld.Parent=d
+				end
+			end
+			w.Parent=model
+			table.insert(worn,w)
+		end
+	end
+	st.worn=worn
+end
+LeeFX.carriesWeights=carriesWeights
 local function impact(fx,data,folder)
-	if data.fighter~=LEE then return false end
+	-- the weights fall off whoever wore them (an avatar with Lee's technique too)
 	if data.style=="cast" and data.technique=="RemoveWeights" then dropWeights(fx,data,folder);return true end
+	if data.fighter~=LEE then return false end
 	local style=data.style
 	if style=="awaken" then awaken(fx,data,folder);return true end
 	if style=="gate" then gateOpens(fx,data);return true end
@@ -245,7 +384,10 @@ local function crescent(fx,model,actor,st)
 	Debris:AddItem(holder,.3)
 end
 local function fighter(fx,model,actor,dt)
-	if not model or not actor or actor.fighterId~=LEE then return end
+	if not model or not actor then return end
+	-- the weights: on whoever carries them, Lee or not
+	pcall(wearWeights,fx,model,actor,stateOf(fx,model))
+	if actor.fighterId~=LEE then return end
 	local st=stateOf(fx,model)
 	gate(fx,model,actor,st)
 	lotus(fx,model,actor,st)

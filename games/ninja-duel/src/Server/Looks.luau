@@ -478,10 +478,14 @@ D.Neji=function(model,def)
 	-- The tail falls down the back, from the head down to the waist.
 	blob(model,"UpperTorso","HairTail",Vector3.new(.5,1.7,.34),CFrame.new(0,-.1,.62),hair)
 	lock(model,"HairTip",Vector3.new(0,-.9,.62),Vector3.new(0,-1,.05),.6,.48,.32,hairShade,"UpperTorso")
-	-- Byakugan veins at the temples (shown while focused).
+	-- Byakugan veins at the temples (shown while focused). (27/11, INBOX-CM-
+	-- SCENES « les veines du Byakugan visibles en gros plan ») From the outer
+	-- corner of each eye toward the temple, where the anime draws them: at
+	-- 44-52° round the head they sat on the cheek's far edge, out of a frontal
+	-- close-up.
 	for _,s in {-1,1} do
 		for k=0,2 do
-			local vein=piece(model,"Head","ByakuganVein",Vector3.new(.03,.2,.02),Face.onHead(s*(44+k*4),.0+(k-1)*.08,.012)*A(0,0,R(s*(30-k*30))),rgb(150,138,196),{shadow=false})
+			local vein=piece(model,"Head","ByakuganVein",Vector3.new(.045,.26,.02),Face.onHead(s*(37+k*5),-.04+(k-1)*.1,.012)*A(0,0,R(s*(35-k*35))),rgb(150,138,196),{shadow=false})
 			if vein then vein.Transparency=1 end
 		end
 	end

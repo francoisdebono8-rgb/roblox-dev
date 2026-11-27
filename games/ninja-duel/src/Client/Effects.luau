@@ -80,6 +80,7 @@ FX.SOUND=SOUND
 FX.TEX=TEX
 -- Contacts that bring the crowd to its feet, by strength.
 local CHEER={chidori=1,groundbounce=.8,slam=1,launcher=.7,finisher=.8,fire=1,teleport=.9,parry=.8,substitute=.4,burst=.8,clash=.9,wall=.6,wallbounce=1,worldbreak=1,housebreak=1,walltech=.5,repel=.9,trigram=.7}
+local ROTATION_R=7 -- Techniques.ROTATION_REACH: the dome is drawn at what it sweeps
 local HYUGA=Color3.fromRGB(190,208,255)
 -- Visual time runs a hair behind the server clock, like the bodies, so a blade
 -- leaves the throwing hand on the frame the arm releases it.
@@ -2373,35 +2374,80 @@ function FX:fighter(model,actor,dt)
 	-- Neji: the Byakugan veins stand out while it is focused; the Rotation dome.
 	if actor.fighterId=="GentleFist" then
 		local focused=(actor.intro or 0)>0 or actor.castId~=nil or (actor.counter or 0)>0 or actor.rotation==true or (actor.awaken or 0)>0
-		for _,vein in aura.veins or {} do vein.Transparency=if focused then 0 else 1 end
+			-- (27/11) and for the whole Byakugan: Perception buff (5 s), the close-up the scene needs
+			or (actor.family~=nil and actor.family.buff=="ByakuganSight")
+		-- (27/11, INBOX-CM-SCENES « les veines du Byakugan visibles en gros
+		-- plan ») focused, the veins swell from the eyes' outer corners and turn a
+		-- deep violet that reads at phone size; at rest they are hidden as before
+		for _,vein in aura.veins or {} do
+			local base=vein:GetAttribute("VeinSize")
+			if not base then base=vein.Size;vein:SetAttribute("VeinSize",base);vein:SetAttribute("VeinColor",vein.Color) end
+			vein.Transparency=if focused then 0 else 1
+			vein.Size=if focused then Vector3.new(base.X*1.7,base.Y*1.3,base.Z) else base
+			-- (not Neon: in daylight a violet Neon blooms to white, seen 27/11)
+			vein.Color=if focused then Color3.fromRGB(104,78,156) else vein:GetAttribute("VeinColor") or vein.Color
+		end
 		local dome=aura.dome
+		-- (27/11, INBOX-CM-SCENES « un Kaiten assez grand pour éjecter plusieurs
+		-- clones d'un coup ») The dome is drawn at the server's reach (radius
+		-- ROTATION_R, Techniques.ROTATION_REACH=7: what it sweeps is what is
+		-- inside the shell), with bold spinning bands, a ring scored on the floor
+		-- and streaks of wind thrown off its rim, so the bodies flung out of it are
+		-- seen leaving the sphere.
+		local R=ROTATION_R
 		if actor.rotation and not dome then
 			local holder=new("Model",{Name="Rotation"},self.folder)
-			local shell=block(holder,Vector3.one*12,root.CFrame,Color3.fromRGB(200,220,255),Enum.Material.Glass);shell.Shape=Enum.PartType.Ball;shell.Transparency=.86
-			local inner=block(holder,Vector3.one*9,root.CFrame,Color3.fromRGB(236,244,255),Enum.Material.ForceField);inner.Shape=Enum.PartType.Ball;inner.Transparency=.55
+			local shell=block(holder,Vector3.one*R*2,root.CFrame,Color3.fromRGB(200,220,255),Enum.Material.Glass);shell.Shape=Enum.PartType.Ball;shell.Transparency=.9
+			local inner=block(holder,Vector3.one*R*1.5,root.CFrame,Color3.fromRGB(236,244,255),Enum.Material.ForceField);inner.Shape=Enum.PartType.Ball;inner.Transparency=.6
 			local bands={}
-			for k=1,3 do
-				local band=block(holder,Vector3.new(.12,12.4,12.4),root.CFrame,HYUGA,Enum.Material.Neon);band.Shape=Enum.PartType.Cylinder;band.Transparency=.7
-				table.insert(bands,band)
+			-- the spinning bands are rings (a cylinder part is a solid disc: seen
+			-- 27/11 as white fog filling the sphere); the soft ring texture, both
+			-- faces, on a flat quad through his centre
+			if Kit.has("ring") then
+				for k=1,5 do
+					local band=new("Part",{Name="RotationBand",Size=Vector3.new(R*2.1,R*2.1,.05),CFrame=root.CFrame,Transparency=1,
+						Anchored=true,CanCollide=false,CanQuery=false,CanTouch=false,CastShadow=false},holder)
+					for _,face in {Enum.NormalId.Front,Enum.NormalId.Back} do
+						new("Decal",{TextureContent=Kit.content("ring"),Face=face,Color3=if k%2==0 then Color3.new(1,1,1) else Color3.fromRGB(120,165,255),Transparency=.1},band)
+					end
+					table.insert(bands,band)
+				end
 			end
-			local light=new("PointLight",{Color=HYUGA,Brightness=4,Range=18,Shadows=false},shell)
-			dome={holder=holder,shell=shell,inner=inner,bands=bands,light=light,born=os.clock()}
+			local ring=block(holder,Vector3.new(.08,R*2.2,R*2.2),root.CFrame,Color3.fromRGB(230,240,255),Enum.Material.Neon);ring.Shape=Enum.PartType.Cylinder;ring.Transparency=.5
+			local light=new("PointLight",{Color=HYUGA,Brightness=2,Range=R*2.4,Shadows=false},shell)
+			dome={holder=holder,shell=shell,inner=inner,bands=bands,ring=ring,light=light,born=os.clock(),streak=0}
 			aura.dome=dome
-			sound(shell,SOUND.whoosh,.5,.45)
+			sound(shell,SOUND.whoosh,.6,.45)
+			Kit.dust(self.folder,root.Position-Vector3.new(0,2.6,0),R*.5,1.4,Color3.fromRGB(205,200,185),10)
 		end
 		if dome then
 			if actor.rotation then
 				local grow=math.clamp((os.clock()-dome.born)/.12,.3,1)
 				local center=root.CFrame*CFrame.new(0,-.6,0)
-				dome.shell.CFrame=center;dome.shell.Size=Vector3.one*12*grow
-				dome.inner.CFrame=center*CFrame.Angles(0,os.clock()*20,0);dome.inner.Size=Vector3.one*9*grow
+				dome.shell.CFrame=center;dome.shell.Size=Vector3.one*R*2*grow
+				dome.inner.CFrame=center*CFrame.Angles(0,os.clock()*20,0);dome.inner.Size=Vector3.one*R*1.5*grow
 				for k,band in dome.bands do
-					band.CFrame=center*CFrame.Angles(0,os.clock()*(18+k*4),0)*CFrame.Angles(0,0,math.rad(60*k))
-					band.Size=Vector3.new(.12,12.4*grow,12.4*grow)
+					band.CFrame=center*CFrame.Angles(0,os.clock()*(18+k*4),0)*CFrame.Angles(math.rad(36*k-90),0,0)
+					band.Size=Vector3.new(R*2.1*grow,R*2.1*grow,.05)
+				end
+				local feet=Vector3.new(root.Position.X,root.Position.Y-2.9,root.Position.Z)
+				dome.ring.CFrame=CFrame.new(feet)*CFrame.Angles(0,os.clock()*12,math.rad(90))
+				dome.ring.Size=Vector3.new(.08,R*2.2*grow,R*2.2*grow)
+				-- wind thrown off the rim
+				dome.streak-=1
+				if dome.streak<=0 then
+					dome.streak=3
+					local a=math.random()*math.pi*2
+					local out=Vector3.new(math.cos(a),0,math.sin(a))
+					local from=center.Position+out*R*.95+Vector3.new(0,math.random()*2-.6,0)
+					local s=block(self.folder,Vector3.new(.14,.14,2.6),CFrame.lookAt(from,from+out:Cross(Vector3.yAxis)),Color3.new(1,1,1),Enum.Material.Neon)
+					s.Transparency=.3
+					tween(s,.22,{Transparency=1,Size=Vector3.new(.04,.04,4),CFrame=CFrame.lookAt(from+out*2.4,from+out*2.4+out:Cross(Vector3.yAxis))})
+					Debris:AddItem(s,.25)
 				end
 			else
 				aura.dome=nil
-				for _,d in dome.holder:GetDescendants() do if d:IsA("BasePart") then tween(d,.18,{Transparency=1,Size=d.Size*1.15}) end end
+				for _,d in dome.holder:GetDescendants() do if d:IsA("BasePart") then tween(d,.18,{Transparency=1,Size=d.Size*1.15}) elseif d:IsA("Decal") then tween(d,.18,{Transparency=1}) end end
 				Debris:AddItem(dome.holder,.25)
 			end
 		end
