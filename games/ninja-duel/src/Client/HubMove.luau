@@ -15,7 +15,12 @@ Move.__index=Move
 -- at rest (the duel's pad sprint does the same, DECISIONS socle 2).
 Move.REST=.35
 -- (15/11) the village is 1.3 times bigger (HubMap.Scale): the run a little faster
-Move.WALK,Move.RUN,Move.JUMP,Move.LEAP=16,36,56,54
+-- (27/11, François: « la course est trop rapide », his choice: slower
+-- everywhere) The run on the ground 30, no longer 36; in the air the leap
+-- still carries at 36 (AIR_RUN), so every roof the village's plan joins
+-- (tools/village: run 36) is still reached.
+Move.WALK,Move.RUN,Move.JUMP,Move.LEAP=16,30,56,54
+Move.AIR_RUN=36
 -- The second jump: not before this long after leaving the ground.
 Move.LEAP_AFTER=.18
 -- (23/11, step 4, DEC-048) the second jump is a bound: for this long after it
@@ -167,6 +172,13 @@ function Move:jump()
 end
 
 -- One frame of the walk. Returns the character's root (nil without a body)
+-- (pure) His speed: walking, running on the ground, running in the air (the
+-- leap carries further than the run on the ground).
+function Move.speed(run,grounded)
+	if not run then return Move.WALK end
+	return if grounded then Move.RUN else Move.AIR_RUN
+end
+
 -- and whether the run latch just ended (the screen repaints its RUN button).
 function Move:step(dt)
 	local character,hum,root=body()
@@ -181,12 +193,12 @@ function Move:step(dt)
 		if self.restFor>Move.REST then self.runLatch=false;self.runMoved=false;self.restFor=0;ended=true end
 	end
 	local run=self.runLatch or UIS:IsKeyDown(Enum.KeyCode.LeftShift) or UIS:IsKeyDown(Enum.KeyCode.RightShift)
-	hum.WalkSpeed=if run then Move.RUN else Move.WALK
-	-- the bound of the second jump carries him further
-	if self.leapAt and os.clock()-self.leapAt<Move.BOUND_TIME and hum.MoveDirection.Magnitude>.1 then hum.WalkSpeed=Move.RUN*Move.BOUND end
-	hum.UseJumpPower=true;hum.JumpPower=Move.JUMP
 	local state=hum:GetState()
 	local grounded=state==Enum.HumanoidStateType.Running or state==Enum.HumanoidStateType.Landed or state==Enum.HumanoidStateType.RunningNoPhysics
+	hum.WalkSpeed=Move.speed(run,grounded)
+	-- the bound of the second jump carries him further
+	if self.leapAt and os.clock()-self.leapAt<Move.BOUND_TIME and hum.MoveDirection.Magnitude>.1 then hum.WalkSpeed=Move.AIR_RUN*Move.BOUND end
+	hum.UseJumpPower=true;hum.JumpPower=Move.JUMP
 	if grounded and not self.climb then Move.landed(self) end
 	-- the run up a wall
 	local direction=if self.climb then -self.climb.normal else hum.MoveDirection

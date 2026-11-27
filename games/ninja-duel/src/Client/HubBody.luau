@@ -23,7 +23,7 @@ local Body={}
 Body.__index=Body
 Body.STRIDE=.7                 -- the planted foot's share of a clip's stride
 Body.WALK_BELOW=20             -- world studs/s: under it the walk, then the run
-Body.SPRINT_ABOVE=30           -- over it the sprint (HubMove.RUN is 36)
+Body.SPRINT_ABOVE=25           -- over it the sprint (HubMove.RUN is 30 on the ground)
 Body.STILL=1.5                 -- under it he stands
 Body.ROLL_FALL=62              -- landing faster than this down: the roll or the hard landing
 Body.ROLL_MOVING=14            -- the roll when he still moves this fast, else the hard landing
@@ -70,7 +70,16 @@ function Body.family(kit)
 	end
 	return out
 end
+-- (27/11, François after playing: « la course de notre avatar est trop rapide
+-- et pas assez ninja », his choice: « course ninja nette ») Before he masters
+-- a kit, his run is a clean ninja run, leaning forward, the arms back, the
+-- head up (the ANIMATEUR's tight ninja run, Lion's), not the novice's upright
+-- flailing nor the trained athlete's pumping arms; the walk, the jumps and
+-- the landings keep his stage.
+Body.NINJA_RUN={["Run.F"]="Lion.Run.F",Sprint="Lion.Sprint"}
 function Body.clipName(Authored,kit,move,stage,rest)
+	local ninja=stage and Body.NINJA_RUN[move]
+	if ninja and Authored.has(ninja) then return ninja end
 	if stage and Authored.has(stage.."."..move) then return stage.."."..move end
 	if rest and move=="Idle" and Authored.has(tostring(kit)..".Rest") then return tostring(kit)..".Rest" end
 	local own=tostring(kit).."."..move

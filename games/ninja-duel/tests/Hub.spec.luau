@@ -981,7 +981,11 @@ test("the walker grows: novice, trained, then his kit's own way; standing, his k
 	assert(Body.stage("Leaf",Body.TRAINED)=="Trained" and Body.stage("Leaf",Body.OWN-1)=="Trained","trained")
 	assert(Body.stage("Leaf",Body.OWN)==nil,"his kit's own at the third tier")
 	assert(Body.clipName(Authored,"Leaf","Walk.F","Novice")=="Novice.Walk.F","the novice's walk")
-	assert(Body.clipName(Authored,"Leaf","Sprint","Trained")=="Trained.Sprint","the trained sprint")
+	-- (27/11, François: « pas assez ninja », his choice « course ninja nette »)
+	-- before his kit's own way, the run and the sprint are the clean ninja run
+	assert(Body.clipName(Authored,"Leaf","Sprint","Trained")=="Lion.Sprint","the trained sprint is not the ninja run")
+	assert(Body.clipName(Authored,"Leaf","Run.F","Novice")=="Lion.Run.F","the novice's run is not the ninja run")
+	assert(Body.clipName(Authored,"Leaf","Sprint",nil)=="Leaf.Sprint","his kit's own sprint at the third tier")
 	assert(Body.clipName(Authored,"Leaf","Walk.F",nil)=="Leaf.Walk.F","his kit's walk")
 	assert(Body.clipName(Authored,"Leaf","AirJump","Novice")=="Leaf.AirJump","a move the stage has not: his kit's")
 	assert(Body.clipName(Authored,"Copycat","Idle",nil,true)=="Copycat.Rest","Kakashi stands with his book")
@@ -991,7 +995,17 @@ test("the walker grows: novice, trained, then his kit's own way; standing, his k
 	b.kit="Leaf";b.walkStage="Novice";b.rest=true
 	local f={now=1,dt=1/60,kit="Leaf",stage="Novice",rest=true,vy=0,grounded=true,speed=24}
 	local c=Body.choose(b,f)
-	assert(c.move=="Run.F" and c.t<=Authored.length("Novice.Run.F")+1e-6,"the novice's run")
+	assert(c.move=="Run.F" and c.t<=Authored.length("Lion.Run.F")+1e-6,"the novice's run")
+	-- (27/11, « trop rapide », slower everywhere) the run on the ground is
+	-- slower; in the air the leap carries as far as before (the village's
+	-- plan: tools/village, run 36); the duel's sprint too
+	local Move=H.load("Client/HubMove")
+	assert(Move.speed(true,true)==30 and Move.speed(true,false)==36 and Move.speed(false,true)==Move.WALK,"the walker's speeds")
+	assert(Move.AIR_RUN==36,"the leap no longer reaches the village's roofs")
+	assert(H.load("Shared/Config").Movement.SprintSpeed==38,"the duel's sprint")
+	local Matches=H.load("Server/Matches")
+	assert(Matches.runOf("Leaf",0)=="Lion" and Matches.runOf("Leaf",799)=="Lion","a duel: not the ninja run before mastery")
+	assert(Matches.runOf("Leaf",800)==nil,"a duel: his kit's own run at its third tier")
 end)
 
 print(string.format("NinjaDuel hub Konoha (DEC-038): %d PASS",passed))

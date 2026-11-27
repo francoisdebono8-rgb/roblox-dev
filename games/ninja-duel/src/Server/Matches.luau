@@ -492,6 +492,18 @@ end
 -- `options` (optional): {player=spec, bot=spec, bracket=id} skill builds (see
 -- Matches.resolveKit). An invalid or over-budget build refuses the start. No
 -- options: both fighters are exactly today's kits.
+-- (27/11, François: « la course de notre avatar est trop rapide et pas assez
+-- ninja », his choice: « course ninja nette ») (pure) The run his body plays
+-- in a duel: the clean ninja run (Lion's, the ANIMATEUR's tight one) until
+-- his mastery of the kit he fights with reaches its own way (HubBody.OWN,
+-- 800), then nil (the kit's own run).
+Matches.OWN_RUN=800
+Matches.NINJA_RUN="Lion"
+function Matches.runOf(kit,mastery)
+	if type(kit)=="string" and (tonumber(mastery) or 0)>=Matches.OWN_RUN then return nil end
+	return Matches.NINJA_RUN
+end
+
 function Matches:start(player,playerId,botId,training,options)
 	local s=self:session(player)
 	if not Fighters[playerId] or not Fighters[botId] then return false end
@@ -557,6 +569,13 @@ function Matches:start(player,playerId,botId,training,options)
 	if not s.spectate then s.human.looks=Progression.looks(player) end
 	-- (Beta loop) a learned kit he fights with is his roster's pick next time.
 	if not s.spectate then Progression.remember(player,playerId) end
+	-- (27/11) his run, as in Konoha: the clean ninja run until he masters the
+	-- kit he fights with (Client/VelmoraMotionEngine reads NinjaRun)
+	if not s.spectate then
+		local okView,view=pcall(Progression.view,player)
+		local mastery=okView and view and view.mastery and view.mastery[playerId] or 0
+		pcall(function() s.human.model:SetAttribute("NinjaRun",Matches.runOf(playerId,mastery)) end)
+	end
 	s.ai=AI.new(s.combat,s.bot,player.UserId%100000+ s.epoch,Matches.aiLevel(s)):withStrategy()
 	s.finishing=false
 	-- Tournament rounds: first to two (one in training).

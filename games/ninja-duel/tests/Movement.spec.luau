@@ -312,7 +312,11 @@ test("in a full sprint the light opens the string carried by the run, the heavy 
  local slid=V.new(a.root.Position.X-slideFrom.X,0,a.root.Position.Z-slideFrom.Z).Magnitude
  assert(slid>=2,string.format("the body stood still through the recovery (%.1f studs)",slid))
  H.step(c,.01)
- assert((a.locomotion or V.zero).Magnitude>=18,string.format("the run restarted from a stand after the strike (%.1f)",(a.locomotion or V.zero).Magnitude))
+ -- (27/11, the sprint slower: 38, no longer 45) part of its speed: a third of
+ -- the fighter's sprint (18 of Lee's 54 before)
+ local sprint=a.profile and a.profile.SprintSpeed or H.load("Shared/Config").Movement.SprintSpeed
+ local carried=sprint*(a.def.SprintScale or 1)/3
+ assert((a.locomotion or V.zero).Magnitude>=carried,string.format("the run restarted from a stand after the strike (%.1f, want %.1f)",(a.locomotion or V.zero).Magnitude,carried))
  -- Walking: the plain opener.
  local c2,a2,b2=H.duel("Leaf","Mirage")
  c2:relocate(a2,V.new(-60,3,0));c2:relocate(b2,V.new(40,3,0))

@@ -2288,14 +2288,22 @@ local function authoredLocomotion(char,actor,fighterId,dt)
 				table.insert(list,{name,w});stride+=contactStrideOf(name)*w;length+=Authored.length(name)*w;total+=w
 			end
 		end
+		-- (27/11, François: « pas assez ninja », his choice: « course ninja
+		-- nette ») His avatar runs forward with the clean ninja run (the
+		-- server's NinjaRun on his body, Server/Matches.runOf) until he has
+		-- mastered the kit he fights with; the walk and the side steps stay
+		-- the kit's.
+		local R=char:GetAttribute("NinjaRun")
+		R=if type(R)=="string" and Authored.has(R..".Run.F") then R else F
 		for _,d in LOCO_DIRS do
 			local w=dirW[d]
 			if w>0 then
+				local runner=if d=="F" then R else F
 				add(F..".Walk."..d,w*(1-toRun))
-				add(F..".Run."..d,w*toRun*(if d=="F" and Authored.has(F..".Sprint") then 1-toSprint else 1))
+				add(runner..".Run."..d,w*toRun*(if d=="F" and Authored.has(runner..".Sprint") then 1-toSprint else 1))
 			end
 		end
-		add(F..".Sprint",dirW.F*toRun*toSprint)
+		add(R..".Sprint",dirW.F*toRun*toSprint)
 		stride=if total>0 then stride/total else 7
 		length=if total>0 then length/total else .7
 		-- Cycles per second the feet need, capped at CADENCE_MAX times the

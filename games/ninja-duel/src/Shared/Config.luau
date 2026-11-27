@@ -175,7 +175,9 @@ return {
 		SplatSpeed = 17, SplatTime = 0.62, SplatDamage = 3, PinTime = 0.42, PinMax = 2,
 		TechFrom = 0.05, TechUntil = 0.34, TechCost = 12, DiveRange = 50},
 	RequestRate = 40, RequestBurst = 48, SnapshotInterval = 0.033,
-	Movement = { SprintSpeed = 45, GroundAcceleration = 170, GroundDeceleration = 290, TurnAcceleration = 360, AirAcceleration = 76,
+	-- (27/11, François: « la course est trop rapide », slower everywhere) the
+	-- duel's sprint 38, no longer 45 (Lee's, the fastest: 42.6, no longer 50)
+	Movement = { SprintSpeed = 38, GroundAcceleration = 170, GroundDeceleration = 290, TurnAcceleration = 360, AirAcceleration = 76,
 		BurstAcceleration = 520, BurstWindow = 0.16,
 		-- Ninja jump at Gravity 140, gravity integrated once: ~12 studs apex and
 		-- ~0.83 s of flight at scale 1 (JumpScale stretches it per fighter).
