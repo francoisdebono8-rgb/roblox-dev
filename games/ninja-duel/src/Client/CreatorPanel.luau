@@ -119,7 +119,10 @@ function C.new(kit,gui,send)
 		self.preview:turn(true)
 	end)
 	-- the choices
-	self.body=z(kit.frame(card,UDim2.fromOffset(724,96),UDim2.fromOffset(C.W-752,500),M.paper,1))
+	-- (OUTILLEUR 27/11: the 5th row under NEXT, HAIR and COLOUR off the screen)
+	-- the choices scroll, in four columns that fit, above the buttons
+	self.body=kit.create("ScrollingFrame",card,{Position=UDim2.fromOffset(724,96),Size=UDim2.fromOffset(C.W-752,C.H-96-102),BackgroundTransparency=1,BorderSizePixel=0,
+		ScrollBarThickness=8,ScrollBarImageColor3=M.ink,CanvasSize=UDim2.fromOffset(0,0),ScrollingDirection=Enum.ScrollingDirection.Y,ZIndex=80})
 	-- RANDOM, and its quip under the avatar
 	self.randomButton=z(kit.button(card,W.random,UDim2.fromOffset(28,C.H-86),UDim2.fromOffset(250,66),function() self:randomize() end,M.paper),1)
 	self.randomButton.Font=kit.TITLE_FONT;self.randomButton.TextSize=34;self.randomButton.TextColor3=M.ink
@@ -175,12 +178,13 @@ function C:draw()
 			head.ZIndex=81;table.insert(self.drawn,head);y+=28
 		end
 		local opts=C.options(slot)
-		local cw,ch=150,if #step.slots>1 then 92 else 120
-		local per=3
+		local per=4
+		local cw=math.floor((C.W-752-14-(per-1)*10)/per)
+		local ch=if #step.slots>1 then 84 else 100
 		for i,o in opts do
 			local col,row=(i-1)%per,(i-1)//per
 			local on=self.picks[slot]==o.id
-			local cell=kit.button(self.body,"",UDim2.fromOffset(col*(cw+12),y+row*(ch+10)),UDim2.fromOffset(cw,ch),function() self:pick(slot,o.id) end,if on then M.ink else M.paper)
+			local cell=kit.button(self.body,"",UDim2.fromOffset(col*(cw+10),y+row*(ch+10)),UDim2.fromOffset(cw,ch),function() self:pick(slot,o.id) end,if on then M.ink else M.paper)
 			cell.ZIndex=81;table.insert(self.drawn,cell)
 			kit.create("UIStroke",cell,{Color=if on then M.red else M.ink,Thickness=if on then 4 else 2,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
 			if o.color then
@@ -194,6 +198,7 @@ function C:draw()
 		end
 		y+=math.ceil(#opts/per)*(ch+10)+8
 	end
+	self.body.CanvasSize=UDim2.fromOffset(0,y)
 	-- the avatar wears it
 	pcall(function()
 		local player=game:GetService("Players").LocalPlayer

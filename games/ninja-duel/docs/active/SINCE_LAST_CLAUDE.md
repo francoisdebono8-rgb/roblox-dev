@@ -24,6 +24,35 @@ François, après avoir joué : « regarde les têtes ça ne va pas, la tenue es
 - Avant que le joueur maîtrise un kit (maîtrise 800), sa course et son sprint sont maintenant ta course ninja serrée (`Lion.Run.F`, `Lion.Sprint`), dans Konoha comme en duel. C'est le choix de François : « course ninja nette ». Les courses `Novice.*` et `Trained.*` ne sont plus jouées ; leur marche, leurs sauts et leurs réceptions le restent. Si tu veux une course ninja propre à l'avatar, nomme-la `Avatar.Run.F` / `Avatar.Sprint` : le DEV la branchera à la place.
 - Les vêtements en mouvement : la superposition des deux tenues est corrigée. S'il reste des trous aux articulations (épaule, coude, genou) sur les pièces rigides par membre, c'est le prochain point à regarder.
 
+## INBOX-OUTILLEUR-HUMAIN2-20261127 — OUTILLEUR 27/11 midi : courir, frapper, se battre, acheter
+
+Mesures : `tools/humanbot/mesures/2026-11-27b_ac418a18/` (journal, rapport, 5 captures). Aucune ligne rouge, aucun double paiement (5 achats en rafale au marché, chacun une fois), une seule tenue sur le corps après les achats.
+
+- **DEV** :
+  1. Pendant le combat de rue contre le voyou, le corps est lancé à 220 studs/s (10 relevés, 11 studs de haut) : voulu ?
+  2. La défaite contre un voyou donne 30 de maîtrise, comme un duel.
+  3. Images longues : 1,6 s en courant dans la forêt hors de la porte, 0,9 s à l'ouverture du marché.
+  4. On ressort de Konoha par la porte dans la forêt après l'intro : la mini-carte y est vide.
+- **DESIGN** :
+  1. Écran de résultat d'un racket : « WHAT YOU EARNED » au-dessus de « HE TOOK 20 RYŌ OFF » (capture `13`).
+  2. Le second clic de BUY tombe sur la case derrière (« NEED 595 MORE »), qui répond.
+- **ANIMATEUR / DESIGN** : au pied des têtes des Hokage, la caméra reste derrière les poutres de l'échafaudage, le corps caché (capture `16`).
+
+## INBOX-OUTILLEUR-HUMAIN-20261127 — OUTILLEUR 27/11 : le robot humain, ce qu'un joueur maladroit casse
+
+Outil : `tools/humanbot` (README : lancer, humeurs, limites). Mesures : `tools/humanbot/mesures/2026-11-27_ac418a18/` (journal, rapport, 11 captures). Place `_prochaine` `ac418a18`, Play solo, profil neuf.
+
+- **DEV** :
+  1. B (et l'écran du tournoi) pendant l'intro : à fermer tant que `NinjaIntro` est posé, ou à ouvrir sans les boutons qui choisissent un kit (ENTER THE STAGE a fait `chooseStarter Lion` depuis la forêt, `needsIntro` devient faux). Le bandeau « B DUELS » de la forêt aussi.
+  2. Un seul menu à la fois dans Konoha : les boutons du HUD restent cliquables à côté d'un menu ouvert (LEADERBOARDS + SHOP + VS ensemble), Tab ouvre CONTROLS sous la carte de création.
+  3. CONTROLS en duel : `Camera:mouse` garde `LockCenter` (seul `dev.panelOpen` compte comme menu) ; le curseur ne peut pas atteindre CLOSE.
+  4. Les images de 0,45 s toutes les 25 à 120 s, et 1,2 s à l'écran de résultat : quelque chose de périodique côté serveur ou client ? (à refaire dans une Studio seule).
+- **DESIGN** :
+  1. La carte de création (WHO ARE YOU?) déborde : HAIR (TOPKNOT, LONG BRAID, UNDERCUT CREST, CURTAINS, YOUR OWN HAIR) et COLOUR (six couleurs) hors de l'écran, la 5e rangée sous NEXT / THAT'S ME (capture `04`).
+  2. L'aperçu de MY NINJA laisse passer les clics vers l'écran du tournoi derrière (capture `09`).
+  3. CONTROLS (TAB) caché sous BACK TO KONOHA sur l'écran du tournoi.
+- **CM** : rien à faire ; les captures montrent les écrans tels qu'un nouveau joueur les voit.
+
 ## INBOX-DEV-PASSE3-RETOURS-20261127 — DEV 27/11 nuit : réponses à l'OUTILLEUR et à la DESIGN, la place de ce soir
 
 Détail et preuves : `CURRENT_STATE` (DEV, 27/11 nuit). Code validé avant la poussée (suite, 4 builds, isolation, docs, architecture), ANIMATEUR passe 3 compris.

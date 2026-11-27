@@ -327,9 +327,11 @@ function UI.new(parent,send)
 		UDim2.fromOffset(152,84),UDim2.fromOffset(1100,20),15,palette.muted,Enum.Font.BuilderSansMedium)
 	local banner=frame(shell,UDim2.fromOffset(1534,0),UDim2.fromOffset(44,280),palette.paper,0)
 	create("UIStroke",banner,{Color=palette.red,Thickness=2})
-	text(banner,"天\n才\n忍\n者\n大\n会",UDim2.fromOffset(0,12),UDim2.fromOffset(44,240),26,palette.red,BODY_FONT,Enum.TextXAlignment.Center).LineHeight=.95
+	-- (no kanji) the banner says it in our letters
+	text(banner,"N\nI\nN\nJ\nA",UDim2.fromOffset(0,12),UDim2.fromOffset(44,240),30,palette.red,TITLE_FONT,Enum.TextXAlignment.Center).LineHeight=.95
 	frame(shell,UDim2.fromOffset(1553,280),UDim2.fromOffset(6,40),palette.red,0)
-	self.controlsButton=button(shell,"CONTROLS  (TAB)",UDim2.fromOffset(1290,30),UDim2.fromOffset(220,40),function() self:toggleControls() end)
+	-- (OUTILLEUR 27/11: hidden under BACK TO KONOHA) under it, on its own line
+	self.controlsButton=button(shell,"CONTROLS  (TAB)",UDim2.fromOffset(1300,82),UDim2.fromOffset(220,40),function() self:toggleControls() end)
 	self.controlsButton.TextSize=20
 	-- The two stages.
 	local function stage(side)

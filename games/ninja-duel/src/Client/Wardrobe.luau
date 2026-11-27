@@ -71,6 +71,8 @@ function W.new(kit,gui,send,ui)
 	local M=kit.MANGA
 	self.M=M
 	self.root=kit.frame(gui,UDim2.fromScale(0,0),UDim2.fromScale(1,1),M.ink,.35)
+	-- (OUTILLEUR 27/11, robot humain) the page swallows clicks: none reach the screen behind
+	self.root.Active=true
 	self.root.ZIndex=74;self.root.Visible=false;self.root.Active=true
 	local card=kit.frame(self.root,UDim2.fromScale(.5,.5),UDim2.fromOffset(W.W,W.H),M.paper,0)
 	card.AnchorPoint=Vector2.new(.5,.5);card.ZIndex=75

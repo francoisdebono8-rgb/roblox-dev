@@ -118,6 +118,8 @@ function Panel.new(kit,gui,send,onTree)
 	self.M=M
 	local STRONG=kit.STRONG_FONT or kit.BODY_FONT
 	self.root=frame(gui,UDim2.fromScale(0,0),UDim2.fromScale(1,1),M.ink,.35)
+	-- (OUTILLEUR 27/11, robot humain) the page swallows clicks: none reach the screen behind
+	self.root.Active=true
 	self.root.ZIndex=73;self.root.Visible=false;self.root.Active=true
 	-- (DA v3, DESIGN, validated 14/11: Mix-Shop) a page of the manga, not a
 	-- dark frame: paper, an ink edge, one red for what you can do.

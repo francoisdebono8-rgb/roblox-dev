@@ -1,0 +1,455 @@
+{
+ "client": {
+  "seconds": 541.57,
+  "clicks": 87,
+  "at": [
+   -146,
+   3,
+   -2361
+  ],
+  "bugs": [
+   {
+    "menus": [],
+    "steps": [
+     {
+      "t": 146.02,
+      "k": "fist:Light"
+     },
+     {
+      "t": 146.3,
+      "k": "fist:Heavy"
+     },
+     {
+      "t": 146.59,
+      "k": "fist:Dodge"
+     },
+     {
+      "t": 146.64,
+      "k": "D"
+     },
+     {
+      "t": 147.31,
+      "k": "Space"
+     },
+     {
+      "t": 147.5,
+      "k": "Space"
+     }
+    ],
+    "t": 156.8,
+    "at": [
+     -51.9,
+     3.8,
+     -1902
+    ],
+    "key": "1.5",
+    "count": 1,
+    "mouse": "Default",
+    "kind": "à-coup",
+    "detail": {
+     "ms": 1591,
+     "note": "en courant dans la forêt, hors de la porte"
+    }
+   },
+   {
+    "menus": [],
+    "steps": [
+     {
+      "t": 187.62,
+      "k": "fist:Light"
+     },
+     {
+      "t": 187.85,
+      "k": "fist:Dodge"
+     },
+     {
+      "t": 188.13,
+      "k": "fist:Light"
+     },
+     {
+      "t": 188.37,
+      "k": "fist:Light"
+     },
+     {
+      "t": 188.9,
+      "k": "fist:Light"
+     },
+     {
+      "t": 189.13,
+      "k": "fist:Dodge"
+     }
+    ],
+    "t": 190.28,
+    "at": [
+     34.6,
+     3.8,
+     -2345
+    ],
+    "key": "0.7",
+    "count": 2,
+    "mouse": "Default",
+    "kind": "à-coup",
+    "detail": {
+     "ms": 726,
+     "note": "à la Plaza, en frappant"
+    }
+   },
+   {
+    "menus": [],
+    "steps": [
+     {
+      "t": 213.64,
+      "k": "fist:Dodge"
+     },
+     {
+      "t": 213.85,
+      "k": "fist:Light"
+     },
+     {
+      "t": 214.02,
+      "k": "fist:Heavy"
+     },
+     {
+      "t": 214.22,
+      "k": "fist:Dodge"
+     },
+     {
+      "t": 215.7,
+      "k": "fist:Light"
+     },
+     {
+      "t": 216.02,
+      "k": "fist:Dodge"
+     }
+    ],
+    "t": 250.48,
+    "at": [
+     15.4,
+     11.4,
+     -2373.2
+    ],
+    "key": "200",
+    "count": 10,
+    "mouse": "LockCenter",
+    "kind": "projeté",
+    "detail": {
+     "speed": 220,
+     "at": [
+      15.4,
+      11.4,
+      -2373.2
+     ],
+     "note": "pendant le combat contre le voyou, à 11 studs de haut"
+    }
+   },
+   {
+    "menus": [
+     "« DEFEAT  0–2 »"
+    ],
+    "steps": [
+     {
+      "t": 314.06,
+      "k": "MouseButton1"
+     },
+     {
+      "t": 314.2,
+      "k": "MouseButton1"
+     },
+     {
+      "t": 314.4,
+      "k": "MouseButton1"
+     },
+     {
+      "t": 314.53,
+      "k": "MouseButton1"
+     },
+     {
+      "t": 314.73,
+      "k": "MouseButton1"
+     },
+     {
+      "t": 314.87,
+      "k": "MouseButton1"
+     }
+    ],
+    "t": 321.87,
+    "at": [
+     -14.1,
+     3,
+     -2353.4
+    ],
+    "key": "0.5",
+    "count": 1,
+    "mouse": "Default",
+    "kind": "à-coup",
+    "detail": {
+     "ms": 554
+    }
+   },
+   {
+    "menus": [
+     "« MARKET »"
+    ],
+    "steps": [
+     {
+      "t": 460.94,
+      "k": "act",
+      "on": "BUY"
+     },
+     {
+      "t": 461.14,
+      "k": "MouseButton1",
+      "on": "NEED 595 MORE"
+     },
+     {
+      "t": 461.28,
+      "k": "act",
+      "on": "NEED 595 MORE"
+     },
+     {
+      "t": 461.28,
+      "k": "MouseButton1"
+     },
+     {
+      "t": 461.87,
+      "k": "MouseButton1"
+     },
+     {
+      "t": 462.01,
+      "k": "MouseButton1"
+     }
+    ],
+    "t": 470.5,
+    "at": [
+     205.4,
+     3.8,
+     -2311.4
+    ],
+    "key": "0.9",
+    "count": 1,
+    "mouse": "Default",
+    "kind": "à-coup",
+    "detail": {
+     "ms": 908,
+     "note": "au marché"
+    }
+   }
+  ],
+  "fistsLive": 195,
+  "events": [
+   {
+    "t": 0,
+    "kind": "scene",
+    "v": "Workspace"
+   },
+   {
+    "t": 0,
+    "kind": "note",
+    "v": "Konoha, 3000 Ryō, kit Lion : courir partout + coups de rue"
+   },
+   {
+    "t": 108.44,
+    "kind": "note",
+    "v": "Plaza : course + coups (roam 22, fists 38 s)"
+   },
+   {
+    "t": 176.24,
+    "kind": "note",
+    "v": "placé à 14 studs du voyou de la Plaza (préparation) : il court vers lui en frappant"
+   },
+   {
+    "t": 205.68,
+    "kind": "scene",
+    "v": "Duel_1"
+   },
+   {
+    "t": 283.53,
+    "kind": "menus",
+    "v": "« LOSS »"
+   },
+   {
+    "t": 284.55,
+    "kind": "menus",
+    "v": "« DEFEAT  0–2 »"
+   },
+   {
+    "t": 351.75,
+    "kind": "scene",
+    "v": "Workspace"
+   },
+   {
+    "t": 354.23,
+    "kind": "menus",
+    "v": "« SHOP »"
+   },
+   {
+    "t": 406.21,
+    "kind": "menus",
+    "v": "« MARKET »"
+   },
+   {
+    "t": 492.41,
+    "kind": "menus",
+    "v": ""
+   },
+   {
+    "t": 507.26,
+    "kind": "note",
+    "v": "après les achats : course + coups dans la nouvelle tenue (roam 23)"
+   }
+  ],
+  "keys": 185,
+  "hitches": [
+   {
+    "dt": 0.4789,
+    "t": 54.96
+   },
+   {
+    "dt": 0.4649,
+    "t": 70.55
+   },
+   {
+    "dt": 1.5913,
+    "t": 156.8
+   },
+   {
+    "dt": 0.7265,
+    "t": 190.28
+   },
+   {
+    "dt": 0.726,
+    "t": 213.64
+   },
+   {
+    "dt": 0.5548,
+    "t": 321.87
+   },
+   {
+    "dt": 0.9086,
+    "t": 470.5
+   }
+  ],
+  "answers": 20,
+  "fists": 214,
+  "note": "NDHumanWatch (avec fists et le lieu du corps), Play solo de PLACES/_prochaine (ac418a18), Studio à soi. Préparation par le serveur : la porte passée (Forest.atGate puis Forest.create, comme la carte), le kit Lion (chooseStarter), 3000 Ryō (earnRyo), puis Matches:selection pour que le HUD les montre ; placé à 14 studs du voyou de la Plaza et à 8 studs du marché."
+ },
+ "server": {
+  "rows": [
+   {
+    "cmd": "gainMastery",
+    "ryo": [
+     3000,
+     3000
+    ],
+    "args": "{\"fighter\":\"Lion\",\"amount\":30}",
+    "t": 327.31,
+    "ok": true
+   },
+   {
+    "cmd": "dailyRecord",
+    "ryo": [
+     3000,
+     3025
+    ],
+    "args": "{\"day\":20784,\"events\":{\"jutsu\":2,\"duel\":1}}",
+    "t": 327.31,
+    "ok": true
+   },
+   {
+    "cmd": "payRyo",
+    "ryo": [
+     3025,
+     3005
+    ],
+    "args": "{\"why\":\"racket\",\"amount\":20}",
+    "t": 327.31,
+    "ok": true
+   },
+   {
+    "cmd": "buyItem",
+    "ryo": [
+     3005,
+     2405
+    ],
+    "args": "{\"item\":\"TopTrackJacketOrange\"}",
+    "t": 499.3,
+    "ok": true
+   },
+   {
+    "cmd": "buyItem",
+    "ryo": [
+     2405,
+     1805
+    ],
+    "args": "{\"item\":\"TopMeshShirt\"}",
+    "t": 501.92,
+    "ok": true
+   },
+   {
+    "cmd": "buyItem",
+    "ryo": [
+     1805,
+     1205
+    ],
+    "args": "{\"item\":\"TopChuninVest\"}",
+    "t": 503.42,
+    "ok": true
+   },
+   {
+    "cmd": "buyItem",
+    "ryo": [
+     1205,
+     605
+    ],
+    "args": "{\"item\":\"TopGiWhite\"}",
+    "t": 505.52,
+    "ok": true
+   },
+   {
+    "cmd": "buyItem",
+    "ryo": [
+     605,
+     5
+    ],
+    "args": "{\"item\":\"TopGiBlue\"}",
+    "t": 506.75,
+    "ok": true
+   }
+  ],
+  "bugs": [],
+  "street": {
+   "lands": {
+    "thug": 1,
+    "nil": 102,
+    "broke": 2,
+    "world": 11
+   },
+   "states": [
+    "Selection|VNM08080|Workspace",
+    "world broken=false",
+    "world broken=true",
+    "world broken=false",
+    "Duel|PlayerFighter|Duel_1",
+    "Result|PlayerFighter|Duel_1",
+    "Selection|nil|nil",
+    "Selection|VNM08080|Workspace",
+    "world broken=true",
+    "world broken=false",
+    "world broken=true"
+   ]
+  },
+  "outfit_after": {
+   "equipped": {
+    "top": "TopGiBlue",
+    "headband": "HeadbandBlue",
+    "feet": "FeetSandals",
+    "bottom": "BottomPantsDark"
+   },
+   "worn": {
+    "sets": 1,
+    "holders": 1,
+    "ids": "TopGiBlue,BottomPantsDark,FeetSandals,HeadbandBlue"
+   }
+  }
+ }
+}

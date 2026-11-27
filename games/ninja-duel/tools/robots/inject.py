@@ -55,12 +55,15 @@ ROBOTS = {
     "street": ("NDStreetBot", "streetfight/street_bot.luau", []),
     "sound": ("NDSoundCheck", "sounds/sound_check.luau", []),
     "bench": ("NDKitBench", "kitbench/kit_bench.luau", []),
+    # (27/11) the human robot's witness: what goes wrong while the hands click, walk and fight
+    "human": ("NDHumanWatch", "humanbot/human_watch.luau", []),
 }
 # (26/11, passe 2) the robots of the server: injected with eval_server_runtime
 SERVER = {
     "serverlog": ("NDServerLog", "duelaudit/server_log.luau", []),
     "outfitbodies": ("NDOutfitBodies", "outfitcheck/outfit_bodies.luau", []),
     "streetlog": ("NDStreetLog", "streetfight/street_log.luau", []),
+    "humanserver": ("NDHumanServer", "humanbot/human_server.luau", []),
 }
 SHORT = {mod: short for short, (mod, _, _) in list(ROBOTS.items()) + list(SERVER.items())}
 
