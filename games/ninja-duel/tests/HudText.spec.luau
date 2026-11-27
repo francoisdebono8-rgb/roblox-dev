@@ -123,4 +123,17 @@ test("the result gives the other side's last word: the bandit, a rogue, the insp
 	assert(UI.lastWord({thug={say={line=""}}})==nil,"an empty word")
 end)
 
+-- (OUTILLEUR 27/11) a lost final does not say « ADVANCES »; the keys are
+-- shown with the player's own keyboard (AZERTY: ZQSD, dodge A)
+test("the final's winner wins it, and the controls speak the player's keyboard",function()
+	local UI=H.load("Client/UI")
+	assert(UI.resultLine({cup={next={round=1}}},"X")=="X  ADVANCES","a quarter-final")
+	assert(UI.resultLine({cup={next={round=3}}},"X")=="X  WINS THE TOURNAMENT","the final")
+	assert(UI.resultLine({cup={out=true,eliminatedIn="FINAL"}},"X")=="X  WINS THE TOURNAMENT","a lost final")
+	assert(UI.resultLine({},"X")=="X  WINS","a duel")
+	local Controls=H.load("Shared/Controls")
+	local azerty={W="Z",A="Q",S="S",D="D",Q="A",Z="W"}
+	assert(Controls.localize("WASD",azerty)=="ZQSD" and Controls.localize("Q",azerty)=="A","AZERTY keys")
+end)
+
 print(string.format("NinjaDuel fight screen words (QA 12/11): %d PASS",passed))

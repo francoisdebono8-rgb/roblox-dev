@@ -120,7 +120,10 @@ function Panel.new(ui,remote,kit)
 		if code==Enum.KeyCode.ButtonSelect then self:answer(true);return end
 		if code==Enum.KeyCode.ButtonB and self.phase~="Duel" then self:answer(false);return end
 		if processed then return end
-		if code==Enum.KeyCode.Return then self:answer(true)
+		-- (OUTILLEUR 27/11) over the shop or another page, the keys belong to
+		-- the page: the challenge is answered with its own buttons
+		if self:pageOpen() then return end
+		if code==Enum.KeyCode.Return then self.ui.keyAnsweredAt=os.clock();self:answer(true)
 		elseif code==Enum.KeyCode.Backspace then self:answer(false) end
 	end)
 	remote.OnClientEvent:Connect(function(data) self:receive(data) end)
@@ -191,6 +194,17 @@ function Panel:answer(accept)
 	self:drawInvite()
 	self:send({op="answer",id=invite.id,accept=accept,fighter=self.ui.player})
 end
+-- A full page (shop, tree, outfit, settings…) is open over the roster.
+function Panel:pageOpen()
+	local ui=self.ui
+	for _,p in {ui.shopPanel,ui.treePanel,ui.outfitPanel,ui.wardrobe,ui.settingsPanel,ui.creatorPanel} do
+		if type(p)=="table" and p.shown then
+			local ok,on=pcall(p.shown,p)
+			if ok and on then return true end
+		end
+	end
+	return false
+end
 function Panel:drawInvite()
 	local invite=self.invite
 	self.inviteCard.Visible=invite~=nil
@@ -199,7 +213,7 @@ function Panel:drawInvite()
 	self.inviteText.Text=Text.upper(invite.from).." CHALLENGES YOU"
 	local pad=false
 	pcall(function() pad=UIS:GetLastInputType().Name:match("^Gamepad")~=nil end)
-	local keys=if not pad then "ENTER ACCEPTS  •  BACKSPACE DECLINES" elseif self.phase=="Duel" then "SELECT ACCEPTS" else "A ACCEPTS  •  B DECLINES"
+	local keys=if not pad and self:pageOpen() then "ACCEPT OR DECLINE BELOW" elseif not pad then "ENTER ACCEPTS  •  BACKSPACE DECLINES" elseif self.phase=="Duel" then "SELECT ACCEPTS" else "A ACCEPTS  •  B DECLINES"
 	self.inviteSub.Text=(if def then "WITH "..KitTexts.name(invite.fighter).."  •  " else "")..keys
 	if pad and self.phase~="Duel" then
 		pcall(function() game:GetService("GuiService").SelectedObject=self.acceptButton end)

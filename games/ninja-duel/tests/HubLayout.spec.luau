@@ -263,7 +263,7 @@ end)
 test("the result screen names the masters to come by their titles",function()
 	local fs=require("@lune/fs")
 	local ui=fs.readFile("src/Client/UI.luau")
-	assert(string.find(ui,"table.insert(leads,KitTexts.name(master))",1,true),"the masters to come are not named by KitTexts")
+	assert(string.find(ui,"then KitTexts.name(master) else master)",1,true) and not string.find(ui,"m.Name else master",1,true),"the masters to come are not named by KitTexts")
 	local KitTexts=H.load("Shared/KitTexts")
 	local Fighters=H.load("Shared/Fighters")
 	for id,line in KitTexts.Lines do assert(KitTexts.name(id)==line.title and line.title~=Fighters[id].Name,id.."'s title is his name") end

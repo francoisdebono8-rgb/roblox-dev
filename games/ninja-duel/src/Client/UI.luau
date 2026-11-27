@@ -270,9 +270,13 @@ function UI.lastWord(progress)
 	end
 	return nil
 end
--- Who the result names: « ADVANCES » only in the tournament's bracket.
+-- Who the result names: « ADVANCES » only in the tournament's bracket, and
+-- the final's winner wins it (OUTILLEUR 27/11: « ADVANCES » after a final).
 function UI.resultLine(data,name)
-	if data and data.cup then return name.."  ADVANCES" end
+	if data and data.cup then
+		local final=(data.cup.next and data.cup.next.round==3) or data.cup.eliminatedIn=="FINAL"
+		return name..(if final then "  WINS THE TOURNAMENT" else "  ADVANCES")
+	end
 	return name.."  WINS"
 end
 function UI.new(parent,send)
@@ -436,7 +440,12 @@ function UI.new(parent,send)
 	-- The action row: training, online, private duel by code, and the stage.
 	local below=800
 	self.startButton=button(shell,"ENTER THE STAGE",UDim2.fromOffset(1140,below),UDim2.fromOffset(400,58),function()
-		if self.picking then send("Confirm");return end
+		if self.picking then
+			-- (OUTILLEUR 27/11) the Enter that accepted a challenge does not
+			-- also say READY: the pick is looked at for a second first
+			if self.keyAnsweredAt and os.clock()-self.keyAnsweredAt<1.2 then return end
+			send("Confirm");return
+		end
 		-- (Beta loop) the masters' path decides first: the first kit taken, a
 		-- master's duel, a kit not learned yet tried in training.
 		local act=MastersView.action(self.kits,self.player)
@@ -1123,6 +1132,8 @@ function UI:refreshSelection()
 			t.bar.Visible=(kit.progress or 0)>0
 			t.bar.Size=UDim2.new(kit.progress or 0,if kit.progress then -6 else 0,0,3)
 		end
+		-- (OUTILLEUR 27/11) YOU on a locked kit still says it is locked
+		if t.mine and kit.locked and kit.tag~="" then t.seal.Text=(if t.theirs then "YOU • CPU" else "YOU").."  •  "..kit.tag end
 		if not picked and kit.tag~="" then
 			local bright=kit.status=="master" or kit.status=="starter"
 			t.seal.Text=kit.tag
@@ -1192,7 +1203,8 @@ function UI:buildControls(pad)
 	body:ClearAllChildren()
 	local K,P=Controls.KeyLabel,Controls.PadLabel
 	local function key(entry)
-		if entry[3] then return if pad then entry[3] else entry[2] end
+		-- (OUTILLEUR 27/11, AZERTY: « WASD » next to the dodge « A ») keys in his own labels
+		if entry[3] then return if pad then entry[3] else Controls.localize(entry[2]) end
 		local label=if pad then P[entry[2]] else K[entry[2]]
 		return label or entry[2]
 	end
@@ -1332,9 +1344,12 @@ end
 -- A roster tile under the pointer rises; a picked one stands higher.
 function UI:liftTablet(t)
 	local rise=if t.mine or t.theirs then 10 elseif t.hover then 6 else 0
+	-- (OUTILLEUR 27/11) a longer seal (YOU • LOCKED) widens to the left
+	local sw=if #t.seal.Text>9 then 112 else 48
+	t.seal.Size=UDim2.fromOffset(sw,14)
 	local ok=pcall(function()
 		Tween:Create(t.tablet,TweenInfo.new(.16,Enum.EasingStyle.Quad,Enum.EasingDirection.Out),{Position=UDim2.fromOffset(t.x,t.y-rise)}):Play()
-		Tween:Create(t.seal,TweenInfo.new(.16,Enum.EasingStyle.Quad,Enum.EasingDirection.Out),{Position=UDim2.fromOffset(t.x+t.w-52,t.y-7-rise)}):Play()
+		Tween:Create(t.seal,TweenInfo.new(.16,Enum.EasingStyle.Quad,Enum.EasingDirection.Out),{Position=UDim2.fromOffset(t.x+t.w-sw-4,t.y-7-rise)}):Play()
 	end)
 	if not ok then t.tablet.Position=UDim2.fromOffset(t.x,t.y-rise) end
 	t.glow.Size=UDim2.new(0,if t.mine or t.theirs then 10 elseif t.hover then 8 else 6,1,0)
@@ -1373,6 +1388,12 @@ end
 -- Online pick: your fighter changes until you confirm; the server echoes it.
 function UI:choose(id)
 	if self.onlineInfo and self.onlineInfo.ready then return end
+	-- (OUTILLEUR 27/11) an online duel is fought with a kit he has: a locked
+	-- one says so and is not taken
+	if self.kits and self.kits.state=="ready" and MastersView.tablet(self.kits,id).locked then
+		if self.notice then self.notice.Text=KitTexts.name(id).." IS LOCKED  •  AN ONLINE DUEL IS FOUGHT WITH A KIT YOU HAVE" end
+		return
+	end
 	self.player=id;self:refreshSelection();self.send("Pick",{player=id})
 end
 -- (Beta loop) the server's word on the player's kits (Progression.view, nil when
@@ -2152,7 +2173,8 @@ function UI:render(data)
 	self.inCup=data.cup~=nil
 	self.rosterButton.Text=if self.inCup then "LEAVE THE TOURNAMENT" elseif Config.Hub and Config.Hub.Enabled then "BACK TO KONOHA" else "RETURN TO THE ROSTER"
 	if self.inCup then
-		self.rematchButton.Text=if data.cup.out and not data.spectate then "SEE WHO WINS IT  •  THE BRACKET" else "CONTINUE  •  THE BRACKET"
+		self.rematchButton.Text=if data.cup.out and not data.spectate and data.cup.eliminatedIn=="FINAL" then "THE FINAL BRACKET"
+			elseif data.cup.out and not data.spectate then "SEE WHO WINS IT  •  THE BRACKET" else "CONTINUE  •  THE BRACKET"
 		if data.spectate then
 			local def=Fighters[winner.fighterId or ""]
 			self.resultTitle.Text=(if def then KitTexts.name(winner.fighterId) else "")..(if (data.roundsToWin or 1)>1 and data.wins then string.format("  %d–%d",math.max(data.wins.human or 0,data.wins.bot or 0),math.min(data.wins.human or 0,data.wins.bot or 0)) else "")
@@ -2252,7 +2274,7 @@ function UI:resultEarned(progress)
 		if not (self.kits and self.kits.owned and self.kits.owned[master]) then
 			-- (27/11, the OUTILLEUR's human robot: « Naruto, Itachi, Kakashi will
 			-- want to meet you », the only screen with their real names) their titles
-			table.insert(leads,KitTexts.name(master))
+			table.insert(leads,if Fighters[master] then KitTexts.name(master) else master)
 		end
 	end
 	if #leads>0 then

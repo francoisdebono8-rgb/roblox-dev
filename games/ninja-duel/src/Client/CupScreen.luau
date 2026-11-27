@@ -92,7 +92,9 @@ function Cup.new(ui,send,kit)
 	self.primary.ZIndex=43;self.primary.TextSize=32
 	self.secondary=K.button(panel,"SKIP",UDim2.fromOffset(880,84),UDim2.fromOffset(256,48),function() self:press("secondary") end)
 	self.secondary.ZIndex=43
-	self.leave=K.button(panel,"LEAVE",UDim2.fromOffset(1150,84),UDim2.fromOffset(256,48),function() self:press("leave") end)
+	-- (OUTILLEUR 27/11: LEAVE stuck to SKIP, no confirmation) apart from SKIP,
+	-- and asked twice
+	self.leave=K.button(panel,"LEAVE",UDim2.fromOffset(1226,84),UDim2.fromOffset(180,48),function() self:press("leave") end)
 	self.leave.ZIndex=43
 	-- The champion's card.
 	local champion=K.inkCard(K.frame(root,UDim2.fromScale(.5,.5),UDim2.fromOffset(700,420),K.CARD,0))
@@ -142,7 +144,14 @@ end
 function Cup:press(which)
 	local cup=self.cup
 	if not cup then return end
-	if which=="leave" then self.send("CupLeave");return end
+	if which=="leave" then
+		if self.leaveArmed and os.clock()-self.leaveArmed<4 then self.leaveArmed=nil;self.send("CupLeave");return end
+		self.leaveArmed=os.clock()
+		self.leave.Text="LEAVE?  AGAIN"
+		local armed=self.leaveArmed
+		task.delay(4,function() if self.leaveArmed==armed then self.leaveArmed=nil;self.leave.Text="LEAVE" end end)
+		return
+	end
 	if cup.over or cup.out then
 		if which=="primary" then self.send("CupStart",{player=cup.seats[cup.me]}) else self.send("CupLeave") end
 		return
@@ -236,7 +245,7 @@ function Cup:draw(cup)
 		self.lineB.Text=b..":  “"..tostring(n.lineB or "").."”"
 		self.primary.Text=if n.mine then "FIGHT" else "WATCH"
 		self.secondary.Text="SKIP";self.secondary.Visible=not n.mine
-		self.leave.Text="LEAVE";self.leave.Visible=true
+		if not self.leaveArmed then self.leave.Text="LEAVE" end;self.leave.Visible=true
 		self.primary.BackgroundColor3=P.red
 	end
 	local nextMatch=n and n.match
