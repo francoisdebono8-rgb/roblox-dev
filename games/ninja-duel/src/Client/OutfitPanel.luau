@@ -44,6 +44,8 @@ function Panel.new(kit,gui,send,ui)
 	local P=kit.palette
 	self.P=P
 	self.root=kit.frame(gui,UDim2.fromOffset(0,0),UDim2.fromScale(1,1),P.ink,1)
+	-- (OUTILLEUR 27/11, robot humain) the page swallows clicks: none reach the screen behind
+	self.root.Active=true
 	self.root.ZIndex=72;self.root.Visible=false
 	-- (DA v3, DESIGN, validée le 14/11 22 h 35) une case de planche manga :
 	-- papier, encre noire, un seul rouge ; la ligne choisie en bande d'encre
