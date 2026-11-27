@@ -120,8 +120,10 @@ function Camera.fadeWide(from,to,faded)
 		local copy=w.copy
 		if copy.Parent and not faded[copy] then
 			local size=copy.Size
-			if (copy.Position-mid).Magnitude<=reach+size.Magnitude/2 and Camera.segmentBox(from,to,copy.CFrame,size*Camera.WIDE_SHARE) then
-				fadeHit(w.box,faded);n+=1
+			if (copy.Position-mid).Magnitude<=reach+size.Magnitude/2 and Camera.segmentBox(from,to,copy.CFrame,if w.thin then size else size*Camera.WIDE_SHARE) then
+				-- (27/11) a scaffold, a rope (HubDress.THIN): itself alone
+				if w.thin or not w.box then faded[copy]=true else fadeHit(w.box,faded) end
+				n+=1
 			end
 		end
 	end
@@ -175,7 +177,7 @@ local IMPULSE={
  jutsuclash={.26,3.2},conduct={.08,1},steam={.03,.8},puddle={0,0},sandmelt={0,0},
  ultimateStart={.08,2},ultimate={.12,1.2},ultimateTick={.05,.6},ultimateEnd={.3,3.2},ultimateMiss={0,0},tsukuyomi={.06,1.6},gate={.04,.8},reveal={0,0},
  launcher={.1,1.3},finisher={.13,1.6},parry={.14,1.7},jutsu={.15,1.8},fire={.32,3.2},
- slam={.26,2.6},wall={.14,1.1},wallbounce={.2,2.0},clash={.12,1.6},walltech={.02,.4},pin={.02,.25},ember={.02,.35},palm={.015,.2},palmburst={.06,.9},flow={.03,.6},awaken={.12,2.4},groundbounce={.18,1.8},worldbreak={.2,2.2},chidori={.1,2.2},afterimage={0,0},deflect={.01,.2},repel={.1,1.3},rotation={.04,.9},trigram={0,0},
+ slam={.26,2.6},wall={.14,1.1},wallbounce={.2,2.0},clash={.12,1.6},walltech={.02,.4},pin={.02,.25},ember={.02,.35},palm={.015,.2},palmburst={.06,.9},flow={.03,.6},awaken={.12,2.4},groundbounce={.18,1.8},worldbreak={.2,2.2},housebreak={.24,2.6},chidori={.1,2.2},afterimage={0,0},deflect={.01,.2},repel={.1,1.3},rotation={.04,.9},trigram={0,0},
 }
 -- (Stage 6) an ultimate takes the lens for its sequence (Server/Ultimates:
 -- the "ultimate" contact carries kind, time, and the frame of the catch).

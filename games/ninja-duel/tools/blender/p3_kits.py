@@ -334,3 +334,33 @@ for _k in KITS:
     CLIPS[_k + ".Guard"] = guard(_k)
     CLIPS[_k + ".Guard.Impact"] = guard_impact(_k)
     CLIPS[_k + ".Dash.F"] = DASH[_k]
+
+
+# ================================================================== the run along a wall
+# (27/11, François: « course latérale sur les murs ») The walker (Client/HubBody) and the duel's
+# fighter running ALONG a wall: the body leans into the wall (the feet on it, the head off it), a
+# long fast stride in the air, the arm on the wall's side low and back, the far arm pumping, the
+# head turned along the run. R: the wall on his right; L the mirror.
+def wall_run_side(f):
+    def fn(old):
+        L, a = old["length"], {"air": True}
+        lean = 36 * f
+
+        def stride(lead):
+            g = 1 if lead == "L" else -1
+            return {"root": {"pitch": 14, "lean": lean}, "Waist": {"pitch": 6, "turn": 8 * g, "lean": 6 * f}, "Neck": {"pitch": -8, "turn": -6 * g, "lean": -18 * f},
+                    "LL": {"swing": 78 if g > 0 else -42, "spread": 4, "bend": 100 if g > 0 else 32, "ankle": 8 if g > 0 else -30},
+                    "RL": {"swing": -42 if g > 0 else 78, "spread": 4, "bend": 32 if g > 0 else 100, "ankle": -30 if g > 0 else 8},
+                    "LA": {"swing": -55 if g > 0 else 80, "spread": 22 if f > 0 else 10, "bend": 80},
+                    "RA": {"swing": 80 if g > 0 else -55, "spread": 10 if f > 0 else 22, "bend": 80}}
+        pass_ = {"root": {"pitch": 16, "lean": lean}, "Waist": {"pitch": 6, "lean": 6 * f}, "Neck": {"pitch": -8, "lean": -18 * f},
+                 "LL": {"swing": 24, "spread": 4, "bend": 112}, "RL": {"swing": 24, "spread": 4, "bend": 112},
+                 "LA": {"swing": 12, "spread": 16, "bend": 88}, "RA": {"swing": 12, "spread": 16, "bend": 88}}
+        return {"keys": [key(0, stride("L"), "smooth", **a), key(L * .25, pass_, "smooth", **a), key(L * .5, stride("R"), "smooth", **a),
+                         key(L * .75, pass_, "smooth", **a), key(L, stride("L"), "smooth", **a)], "loop": True}
+    fn.base = "Lion.Parkour.WallRun"
+    return fn
+
+
+CLIPS["Lion.Parkour.WallRunSideR"] = wall_run_side(1)
+CLIPS["Lion.Parkour.WallRunSideL"] = wall_run_side(-1)

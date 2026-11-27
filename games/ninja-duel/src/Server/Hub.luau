@@ -640,6 +640,11 @@ function Hub.forFights(f)
 			local s=d.Size
 			if s.Y>=Hub.WALL_HEIGHT and math.max(s.X,s.Z)>=Hub.WALL_WIDTH*2 and math.min(s.X,s.Z)>=Hub.WALL_WIDTH*.5 then
 				d:SetAttribute("NinjaWall",true);walls+=1
+				-- (27/11, François: « les maisons se cassent lors des combats en
+				-- ville ») a house's wall breaks through under a heavy blow
+				-- (Server/WorldReaction.breach); the village's own walls do not
+				local house=d.Parent and d.Parent:IsA("Model") and d.Parent:GetAttribute("LayoutModel")~=nil
+				if house then d:SetAttribute("WorldMaterial","house") end
 			end
 		end
 		if d:IsA("Model") and Hub.BREAKABLE[d:GetAttribute("Dress") or ""] then
@@ -1444,7 +1449,7 @@ end
 -- which every client reads: NinjaPose (the state) and NinjaPoseSeq (+1 at
 -- each, so the same move twice is seen twice). Only those words, at most
 -- POSE_RATE a second.
-Hub.POSES={climb=true,leap=true,kick=true,vault=true,none=true}
+Hub.POSES={climb=true,leap=true,kick=true,vault=true,none=true,siderunL=true,siderunR=true,wallstand=true}
 Hub.POSE_RATE=12
 -- (23/11, step 5) an emote in the street: "emote:<look id>", a look of the
 -- emote slot he owns (or a base one); its clip goes on NinjaEmote.

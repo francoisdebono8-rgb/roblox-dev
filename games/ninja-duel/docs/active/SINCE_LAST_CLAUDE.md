@@ -87,6 +87,39 @@ François, après avoir joué : « regarde les têtes ça ne va pas, la tenue es
 - Avant que le joueur maîtrise un kit (maîtrise 800), sa course et son sprint sont maintenant ta course ninja serrée (`Lion.Run.F`, `Lion.Sprint`), dans Konoha comme en duel. C'est le choix de François : « course ninja nette ». Les courses `Novice.*` et `Trained.*` ne sont plus jouées ; leur marche, leurs sauts et leurs réceptions le restent. Si tu veux une course ninja propre à l'avatar, nomme-la `Avatar.Run.F` / `Avatar.Sprint` : le DEV la branchera à la place.
 - Les vêtements en mouvement : la superposition des deux tenues est corrigée. S'il reste des trous aux articulations (épaule, coude, genou) sur les pièces rigides par membre, c'est le prochain point à regarder.
 
+## INBOX-ANIM-ECHAFAUD-20261127 — ANIMATEUR 27/11 : la caméra derrière l'échafaudage des têtes (OUTILLEUR, capture 16)
+
+- **Constat** (`tools/humanbot/mesures/2026-11-27b_ac418a18/images/16_camera_derriere_les_poutres.jpg`) : au pied des têtes des Hokage, l'objectif reste derrière les poutres et cache le corps.
+- **Correction** : l'échafaudage, ses cordes et ses outils (`Scaffold`, `Rope`, `Tools`, mes modèles `HeadSlot*`) sont des cadres légers posés devant une tête pleine. `Client/HubDress.THIN` les inscrit chacun seul dans la liste des objectifs (`HubDress.wide`, sans boîte). `Client/Camera.fadeWide` efface une pièce `thin` à elle seule quand la ligne tête → objectif traverse son volume, sans effacer la tête derrière.
+- **Vérifié dans Studio** : sur l'échafaudage de la 2ᵉ tête, avec la vraie copie, la ligne d'un corps derrière les poutres jusqu'à l'objectif devant efface l'échafaudage ; la même ligne devant l'échafaudage n'efface rien.
+- **Pas fait** : refaire la capture 16 en marchant jusqu'au pied des têtes. Ma place de test me ramène à la porte quand je déplace le corps à la main. **OUTILLEUR** : peux-tu rejouer ton robot humain sur la place commune après actualisation ?
+
+## INBOX-ANIM-MURS-20261127 — ANIMATEUR 27/11 matin : combattre sur les murs, courir le long, les maisons qui cassent (François : « tout, DEV compris »)
+
+François (27/11, 9 h 14) : « animation en combat et en ville pour course latérale sur les murs, une vraie adaptation au mur, qu'on puisse combattre sur les murs à la perpendiculaire ; je veux des dégâts de combat, les maisons se cassent lors des combats en ville ». À ma question, il a choisi : **tout, DEV compris**, des **morceaux qui tombent** (la maison réparée après le combat), **en ville et en duel**. J'ai donc touché à des fichiers du DEV ; voici exactement quoi.
+
+- **Debout sur le mur (duel et duel de rue)** — `Server/Motor` : nouveau mode `a.wall.mode="stand"`. Une course sur un mur (en montée ou le long) qui s'épuise avec le stick toujours vers le mur colle au mur. Le root lui-même est tourné : son « haut » est la normale du mur, d'où le volume du coup, la garde et les clips à la perpendiculaire. Le stick marche sur le mur (vers le mur : monter, à l'opposé : descendre, de côté : le long). Saut : on quitte le mur d'un bond. C : on se laisse tomber. En haut : on passe sur le toit. Au pied : on reprend le sol. La tenue dure `Config.Wall.StandTime` (8 s, × Wall Runner). `PlatformStand` est mis pendant la tenue et rendu à chaque sortie, y compris au reset du round (`Combat`). Le reste de `Motor` est inchangé.
+- **On se bat là-haut** — `Server/Brawler.request` : debout sur le mur, les enchaînements, le lourd, la garde et l'esquive se jouent sur le mur (`stepStand` garde le corps dessus). Exception : un adversaire au sol loin en dessous déclenche toujours le plongeon (`WallDive`). Un coup reçu fait toujours tomber du mur (`Combat`, ligne de la victime : inchangé).
+- **L'IA** — `Server/AI` : si l'adversaire est debout sur un mur, elle monte le chercher (8 fois sur 10). Elle va au pied du mur sous lui, monte, se met debout à sa hauteur (`Motor.levelWith`), puis enchaîne, garde ou frappe fort, et plonge ou saute si on reste en bas.
+- **Le client** — `Client/VelmoraMotionEngine` : debout sur le mur, le corps joue ses clips ordinaires (le root est tourné) ; seuls les pieds ne sont pas plantés sur un sol (`onWallStand`).
+- **Les maisons cassent (duel de rue)** :
+  - `Server/Hub.forFights` marque les murs des maisons `WorldMaterial="house"` (pas les murs du village).
+  - `Server/WorldReaction` : nouvelle classe `house` et `WorldReaction.breach`. Un coup qui pèse (énergie ≥ `Config.World.Breach.Energy` = 34 : un lourd contre le mur, un corps projeté dedans, un jutsu) ouvre un trou : ouverture sombre irrégulière, lattes cassées, éclats de plâtre et planches au bord, gravats au pied. Un second coup à côté l'agrandit. 10 trous au plus par duel. Le trou est dans le dossier du duel, donc la maison est réparée à la fin.
+  - `Client/HouseBreakFX` (nouveau) : le contact `housebreak` fait voler plâtre, planches et tuiles (si le trou est haut), avec poussière, craquement, onde et tremblement de caméra (`Effects`, `Camera`). Les morceaux ont leur propre petite simulation : ils ne poussent jamais un corps, 60 au plus.
+- **En ville (marche)** — `Client/HubMove` : **la course le long d'un mur** (en l'air ou en courant, à côté d'un mur, en allant le long : le corps court dessus, penché, en arc court ; saut : appel d'un mur à l'autre). **Debout sur le mur** comme en duel (monter un mur jusqu'au bout, le stick toujours vers lui), et les coups du kit s'y jouent. `Client/HubBody` : penché dans la course le long. Nouveaux clips de l'ANIMATEUR `Lion.Parkour.WallRunSideR` / `WallRunSideL`. `Server/Hub.POSES` : `siderunL`, `siderunR`, `wallstand`.
+- **Tests** : nouveau `tests/WallCombat.spec.luau` (6 tests, dans `run.sh`). `tests/NinjaArts.spec` : le test de durée de course sur le mur lâche maintenant le stick une fois sur le mur (le stick tenu vers le mur colle désormais au mur).
+- **Clips** : `p3_build` écrit maintenant dans `AuthoredJutsu36..41`, à la suite de 35. Avant, il écrivait en 41..46, et le trou 36..40 faisait que `clips_dump` (et donc la barrière des clips) ne les voyait pas.
+- **Vu dans le jeu** (Studio WALL, build debug, jamais enregistré) :
+  - Sasuke monte le mur du stade et s'y tient à la perpendiculaire (haut du root = normale du mur), marche, enchaîne Light1 ×2 et garde sur le mur.
+  - Lee (IA) monte le chercher, se met debout à sa hauteur et le frappe sur le mur, ce qui le fait tomber.
+  - Un lourd contre un mur marqué « maison » ouvre le trou et fait voler les morceaux.
+- **Pas vu en vrai** :
+  - La marche en ville au clavier (contrôle réel de la course le long et de la tenue sur le mur) : seules la logique (tests) et les poses (planche) ont été vérifiées.
+  - Un vrai duel de rue contre une maison : `challengeFilm` refuse sans kit appris.
+- **Questions au DEV** :
+  1. La tenue sur le mur doit-elle coûter du chakra ?
+  2. Faut-il un indicateur dans le HUD (temps restant sur le mur) ?
+  3. Une projection contre une maison en duel de rue s'arrête-t-elle au rayon du site (`match.radius`) avant le mur ? Dans le stade, le rayon 143 arrête le corps 2 studs avant la face du mur : aucun écrasement, donc aucun trou par un corps. Les coups et les jutsu ouvrent bien le trou.
 ## INBOX-OUTILLEUR-HUMAIN3-20261127 — OUTILLEUR 27/11 après-midi : prodige, deux joueurs, tournoi complet
 
 Mesures : `tools/humanbot/mesures/2026-11-27c_ac418a18/` (journal, rapport avec 14 constats, 18 captures). Place `ac418a18` (avant `f68e504e`), clavier AZERTY. Aucune ligne rouge, aucun double paiement.

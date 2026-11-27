@@ -47,10 +47,91 @@ function Motor.airJump(a,c,now,grounded)
  a.locomotion=horizontal;a.takeoffUntil=now+.12
  return true
 end
+-- ---------------------------------------------------------------- the wall stand
+-- (27/11, François: « qu'on puisse combattre sur les murs à la
+-- perpendiculaire ») The body stands on the wall: its up is the wall's
+-- normal, its feet on the surface, its look along it (to the opponent). The
+-- root itself is turned (not only the drawn pose), so everything the duel
+-- reads off it (the blow's volume in front, the guard's front, the facing)
+-- is on the wall too, and the clips play at a right angle to it.
+
+-- (pure) The wall's own axes: "up the wall" (the world's up laid on it) and
+-- "along" it (right-handed with the normal).
+function Motor.wallAxes(normal)
+	local up=UP-normal*UP:Dot(normal)
+	if up.Magnitude<.05 then up=Vector3.zAxis-normal*normal.Z end
+	up=up.Unit
+	return up,up:Cross(normal).Unit
+end
+-- (pure) The stick on a wall: into it climbs, away from it comes down,
+-- sideways runs along it. Returns a direction on the wall (length <= 1).
+function Motor.wallStick(move,normal)
+	local m=flat(move)
+	if m.Magnitude<.2 then return Vector3.zero end
+	local up,along=Motor.wallAxes(normal)
+	local v=up*m:Dot(-normal)+along*m:Dot(along)
+	return if v.Magnitude>1 then v.Unit else v
+end
+-- (pure) Where the standing body looks: toward `to` laid on the wall when it
+-- is given, else up the wall.
+function Motor.wallLook(normal,from,to)
+	local up=Motor.wallAxes(normal)
+	if to then
+		local d=to-from
+		d-=normal*d:Dot(normal)
+		if d.Magnitude>.3 then return d.Unit end
+	end
+	return up
+end
+-- (pure) The frame of a body standing on a wall at `at`: up the wall's
+-- normal, looking `look` (on the wall). Built from its axes (lookAt's up
+-- argument is not everywhere).
+function Motor.wallFrame(at,look,normal)
+	local up=normal.Unit
+	local l=look-up*look:Dot(up)
+	l=if l.Magnitude>.05 then l.Unit else Motor.wallAxes(normal)
+	return CFrame.fromMatrix(at,l:Cross(up),up,-l)
+end
+-- How far the root stands off the wall: the hips' height (its feet on it).
+function Motor.standHeight(a)
+	local hip=a.hum and a.hum.HipHeight or 2
+	return math.max(1.5,hip+a.root.Size.Y/2)
+end
+function Motor.stand(a,c,now,hit)
+	local wall=a.wall
+	if not wall then return false end
+	wall.mode="stand";wall.startAt=now
+	wall.untilTime=now+Config.Wall.StandTime*(wall.long or 1)
+	wall.part=hit.Instance;wall.normal=hit.Normal;wall.tangent=nil;wall.side=nil
+	wall.height=Motor.standHeight(a)
+	-- standing: the ground strings and the guard, not the air ones
+	a.airborne=false
+	pcall(function() a.hum.PlatformStand=true end)
+	c:cue(a,"ON THE WALL • SPACE LEAP / C DROP",0.8)
+	return true
+end
+-- (pure) The upright frame the body leaves the wall with: where it stands,
+-- looking out from the wall (or along its last look when it was not into it).
+function Motor.uprightFrom(position,look,normal)
+	local l=flat(look)
+	if l.Magnitude<.1 or l.Unit:Dot(-flat(normal).Unit)>.7 then l=flat(normal) end
+	if l.Magnitude<.1 then l=Vector3.new(0,0,-1) end
+	return CFrame.lookAt(position,position+l.Unit)
+end
 function Motor.detach(a,now,rebound)
 	local wall=a.wall
 	if not wall then return false end
 	a.wall=nil; a.wallNext=now+Config.Wall.ReattachDelay
+	if wall.mode=="stand" then
+		-- off the wall the body stands up again (its feet first: it drops on them)
+		pcall(function() a.hum.PlatformStand=false;a.hum:ChangeState(Enum.HumanoidStateType.Freefall) end)
+		a.root.CFrame=Motor.uprightFrom(a.root.Position,a.root.CFrame.LookVector,wall.normal)
+		if not rebound then
+			a.root.AssemblyLinearVelocity=wall.normal*10+UP*4
+			a.airborne=true
+			return true
+		end
+	end
 	if rebound then a.wallJumpUntil=now+0.22 end
 	-- Movement overhaul (Studio): the wall step pins the velocity to zero, so
 	-- the hop's tangential carry was always nothing. Hand it the wall motion
@@ -107,6 +188,98 @@ function Motor.tryWall(a,c,now)
 	c:cue(a,"WALL RUN • SPACE REBOUND / C DETACH",0.8)
 	return true
 end
+-- Whether a wall run that runs out sticks to the wall: the player's stick
+-- still into it; the AI when its opponent is up there (on a wall, or above).
+function Motor.wantsStand(a,normal)
+	if a.state~="Neutral" and a.state~="Guarding" then return false end
+	if flat(a.move):Dot(-normal)>=Config.Wall.StandEnter then return true end
+	local b=a.target
+	return not a.playerInput and b~=nil and b.root~=nil and b.health>0 and (b.wall~=nil or b.root.Position.Y>a.root.Position.Y+4)
+end
+-- An AI running up to an opponent standing on the wall stands once level with him.
+function Motor.levelWith(a)
+	local b=a.target
+	return not a.playerInput and b~=nil and b.wall~=nil and b.root~=nil and a.root.Position.Y>=b.root.Position.Y-1.5
+end
+-- (pure) The walk on the wall for an AI body: toward its opponent laid on
+-- the wall (it has no stick), slowing as it arrives.
+function Motor.wallChase(normal,from,to,near)
+	local d=to-from
+	d-=normal*d:Dot(normal)
+	if d.Magnitude<(near or 3) then return Vector3.zero end
+	return d.Unit
+end
+-- One frame on the wall, standing. `p` the frame's ray params.
+function Motor.stepStand(a,c,dt,now,p)
+	local wall=a.wall
+	local W=Config.Wall
+	local height=wall.height or Motor.standHeight(a)
+	-- What the duel did to the root this frame (a strike's step, a guard
+	-- pushed back, a dodge): kept along the wall, never off it.
+	local drift=a.root.Position-(wall.at or a.root.Position)
+	drift-=wall.normal*drift:Dot(wall.normal)
+	-- (gravity pulls the body a little between two frames: not a step down)
+	local wallUp=Motor.wallAxes(wall.normal)
+	drift-=wallUp*math.min(0,drift:Dot(wallUp))
+	if drift.Magnitude>40*dt then drift=drift.Unit*40*dt end
+	local origin=(wall.at or a.root.Position)+drift
+	local hit=workspace:Raycast(origin,-wall.normal*(height+1.6),p)
+	if not hit or hit.Normal:Dot(wall.normal)<.72 or math.abs(hit.Normal.Y)>.3
+		or (hit.Instance~=wall.part and not hit.Instance:GetAttribute("NinjaWall")) then
+		Motor.detach(a,now,false);return false
+	end
+	if hit.Instance~=wall.part then wall.part=hit.Instance end
+	wall.normal=hit.Normal
+	local n=hit.Normal
+	local up=Motor.wallAxes(n)
+	-- the walk: the player's stick laid on the wall; the AI toward its opponent
+	local walk
+	if a.playerInput then walk=Motor.wallStick(a.move,n)
+	elseif a.target and a.target.root and a.target.health>0 then
+		walk=if a.state=="Neutral" then Motor.wallChase(n,a.root.Position,a.target.root.Position) else Vector3.zero
+	else walk=Vector3.zero end
+	local speed=if a.state=="Neutral" then W.StandSpeed elseif a.state=="Guarding" then Config.GuardSpeed else 0
+	local motion=walk*speed
+	wall.motion=motion
+	local foot=hit.Position+motion*dt
+	-- down at the foot of the wall: the body steps off onto the ground
+	local floor=workspace:Raycast(foot+n*.6,Vector3.new(0,-2.2,0),p)
+	if walk:Dot(up)<-.3 and floor and floor.Normal.Y>.6 then
+		Motor.detach(a,now,false)
+		a.root.CFrame=CFrame.new(floor.Position+n*1.2+UP*height)*a.root.CFrame.Rotation
+		a.root.AssemblyLinearVelocity=Vector3.zero
+		return false
+	end
+	-- the top of the wall: over it, onto the roof
+	local top=wall.part.Position.Y+wall.part.Size.Y*.5
+	if foot.Y>top-.4 then Motor.detach(a,now,true);return false end
+	if now>=wall.untilTime then Motor.detach(a,now,false);return false end
+	local at=c:clamp(foot+n*height)
+	-- nothing else in the way of the body along the wall
+	local obstacle=workspace:Raycast(a.root.Position,at-a.root.Position,p)
+	if obstacle and obstacle.Instance~=wall.part and not obstacle.Instance:GetAttribute("NinjaWall") then at=a.root.Position end
+	-- its look: the opponent near enough (laid on the wall), else where it walks, else up
+	local to=nil
+	if a.target and a.target.root and a.target.health>0 and (a.target.root.Position-at).Magnitude<=W.StandFace then to=a.target.root.Position
+	elseif motion.Magnitude>1 then to=at+motion end
+	local look=Motor.wallLook(n,at,to)
+	-- turned at a bounded rate: the body pivots on its feet, not snapped round
+	local old=a.root.CFrame.LookVector-n*a.root.CFrame.LookVector:Dot(n)
+	if wall.looked and old.Magnitude>.1 then
+		old=old.Unit
+		local angle=math.atan2(old:Cross(look):Dot(n),old:Dot(look))
+		local step=math.clamp(angle,-math.rad(720)*dt,math.rad(720)*dt)
+		look=CFrame.fromAxisAngle(n,step):VectorToWorldSpace(old)
+	end
+	wall.looked=true
+	a.root.CFrame=Motor.wallFrame(at,look,n)
+	a.root.AssemblyLinearVelocity=Vector3.zero
+	a.hum.AutoRotate=false;a.hum:Move(Vector3.zero,false)
+	wall.at=at
+	a.airborne=false
+	a.locomotion=motion
+	return true
+end
 function Motor.stepWall(a,c,dt,now)
 	local wall=a.wall
 	if not wall then return false end
@@ -115,6 +288,7 @@ function Motor.stepWall(a,c,dt,now)
 	end
 	local p=RaycastParams.new();p.FilterType=Enum.RaycastFilterType.Exclude
 	p.FilterDescendantsInstances={a.model,c.match.effects};p.RespectCanCollide=true;DuelQuery.apply(p)
+	if wall.mode=="stand" then return Motor.stepStand(a,c,dt,now,p) end
 	local hit=workspace:Raycast(a.root.Position, -wall.normal*Config.Wall.Detect,p)
 	if not hit or hit.Normal:Dot(wall.normal)<0.72 or (hit.Instance~=wall.part and not hit.Instance:GetAttribute("NinjaWall")) then
 		Motor.detach(a,now,false);return false
@@ -134,6 +308,8 @@ function Motor.stepWall(a,c,dt,now)
 		tangent=if tangent.Magnitude>.05 then tangent.Unit else wall.tangent
 		wall.tangent=tangent
 		local speed=wall.speed*math.exp(-.9*t/(wall.long or 1))
+		-- (27/11) the run spent with the stick still into the wall: it stands on it
+		if (speed<14 or Motor.levelWith(a)) and Motor.wantsStand(a,wall.normal) then return Motor.stand(a,c,now,hit) end
 		if speed<14 or (t>.35 and Motor.grounded(a,c)) then Motor.detach(a,now,false);return false end
 		-- Studio: from a ground entry the old +8 arc never left the floor (a lean
 		-- along the ground; the humanoid snaps back near the floor). A real arc up,
@@ -143,6 +319,9 @@ function Motor.stepWall(a,c,dt,now)
 		-- Up the wall as high as the entry carried it, sideways a little;
 		-- out of speed, the body falls off.
 		local rise=(wall.rise or Config.Wall.RiseSpeed)-20*t/(wall.long or 1)
+		-- (27/11) the climb's speed spent, the stick still into the wall: it
+		-- stands on it instead of falling off
+		if (rise<4 or Motor.levelWith(a)) and Motor.wantsStand(a,wall.normal) then return Motor.stand(a,c,now,hit) end
 		if rise<-6 then Motor.detach(a,now,false);return false end
 		motion=side*Config.Wall.SideSpeed*.5+UP*rise
 	end
@@ -305,6 +484,9 @@ function Motor.step(a,c,dt,now)
  donor(a,c)
 	if not a.wall then Motor.tryWall(a,c,now) end
 	if Motor.stepWall(a,c,dt,now) then return false end
+	-- (27/11) a body that left a wall it stood on any other way (a reset, a
+	-- teleport): its own physics back
+	if not a.wall and a.hum.PlatformStand then pcall(function() a.hum.PlatformStand=false end) end
 	local vertical=a.root.AssemblyLinearVelocity.Y
 	if vertical<0 then a.fallSpeed=math.max(a.fallSpeed or 0,-vertical) end
 	local grounded=Motor.grounded(a,c)

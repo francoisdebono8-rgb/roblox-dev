@@ -796,7 +796,13 @@ function Brawler.request(c,a,action)
   c:cue(a,"RIPOSTE",.6);Brawler.event(c,a,"Riposte")
   return Brawler.start(c,a,Brawler.riposteMove(c,a))
  end
- if a.wall then
+ -- (27/11) Standing on the wall the strings, the heavy, the guard and the
+ -- dodge are fought there (Server/Motor.stepStand keeps the body on it); a
+ -- strike at an opponent far below still dives at him.
+ local standing=a.wall and a.wall.mode=="stand" and not (a.target and a.target.root and a.target.health>0
+  and not a.target.wall and a.root.Position.Y-a.target.root.Position.Y>9
+  and (a.target.root.Position-a.root.Position).Magnitude<=Config.Wall.DiveRange)
+ if a.wall and not standing then
   -- From a wall run a strike becomes a dive at the opponent: height and an
   -- angle the guard has to read.
   local wall=a.wall
