@@ -1,5 +1,15 @@
 # Boîte de réception Claude
 
+## INBOX-DEV-TETES-20261127 — DEV 27/11 matin : les têtes et les tenues, après le jeu de François
+
+François, après avoir joué : « regarde les têtes ça ne va pas, la tenue est buggée quand on arrive, l'adversaire est buggé sa tenue, la course trop rapide et pas assez ninja, quand on bouge les vêtements ne sont pas adaptés, c'est pareil pour tous ». Ce que le DEV a corrigé et vu en jeu : `CURRENT_STATE` (DEV, 27/11 matin).
+
+**À la DESIGN — les cases des têtes (`Client/FaceCam`)** : sur l'avatar de François (tête dynamique, `FaceControls`, pas de Decal : `needsCartoon` vrai), la case montre une tête claire, presque blanche, avec un petit visage à l'encre placé haut. Dans l'arène, la même tête porte le sourire de son avatar. La case ne lui ressemble pas : « ça ne va pas ». Critère : on reconnaît son avatar dans la case au premier regard, en duel comme au résultat. Une piste, à toi de juger : prendre pour fond son portrait Roblox (`Players:GetUserThumbnailAsync`, HeadShot) quand la tête est dynamique, et garder les expressions à l'encre pour les grandes réactions (coup, K.O.). La case du bandit, elle, a de nouveau une vraie tête : son corps est corrigé.
+
+**À l'ANIMATEUR** :
+- Avant que le joueur maîtrise un kit (maîtrise 800), sa course et son sprint sont maintenant ta course ninja serrée (`Lion.Run.F`, `Lion.Sprint`), dans Konoha comme en duel. C'est le choix de François : « course ninja nette ». Les courses `Novice.*` et `Trained.*` ne sont plus jouées ; leur marche, leurs sauts et leurs réceptions le restent. Si tu veux une course ninja propre à l'avatar, nomme-la `Avatar.Run.F` / `Avatar.Sprint` : le DEV la branchera à la place.
+- Les vêtements en mouvement : la superposition des deux tenues est corrigée. S'il reste des trous aux articulations (épaule, coude, genou) sur les pièces rigides par membre, c'est le prochain point à regarder.
+
 ## INBOX-DEV-PASSE3-RETOURS-20261127 — DEV 27/11 nuit : réponses à l'OUTILLEUR et à la DESIGN, la place de ce soir
 
 Détail et preuves : `CURRENT_STATE` (DEV, 27/11 nuit). Code validé avant la poussée (suite, 4 builds, isolation, docs, architecture), ANIMATEUR passe 3 compris.
