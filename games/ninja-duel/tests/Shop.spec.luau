@@ -275,7 +275,17 @@ test("the screens build and draw: the shop's five tabs, the tree by tiers, the K
 		ui.shopPanel.tab="PASSES";ui.shopPanel:draw()
 		assert(ui.shopPanel.heading.Text=="VIP & PASSES","the passes page")
 		ui.treePanel:show("Leaf",kits)
-		assert(ui.treePanel:shown() and ui.treePanel.tiles.Weights and ui.treePanel.tiles.HeavyDrop,"the tree's tiles")
+		-- (fourth pass) one branch at a time: every node shows in its branch
+		local seen={}
+		local opened=ui.treePanel.branch
+		for b=1,#H.load("Shared/TreeView").layout("Leaf",kits.trees.Leaf).branches do
+			ui.treePanel.branch=b;ui.treePanel:draw()
+			for id in ui.treePanel.tiles do seen[id]=true end
+		end
+		assert(ui.treePanel:shown() and seen.Weights and seen.HeavyDrop,"the tree's tiles")
+		ui.treePanel.branch=opened;ui.treePanel:draw()
+		local weightsBranch=nil
+		for b=1,6 do ui.treePanel.branch=b;ui.treePanel:draw();if ui.treePanel.tiles.Weights then weightsBranch=b break end end
 		-- (15/11, DA v3) a page of paper: learned and on in ink, to learn in red
 		local M=ui.treePanel.M
 		assert(ui.treePanel.card.BackgroundColor3==M.back,"the tree is not a paper page")
@@ -1115,39 +1125,41 @@ test("the style preview: his own outfit on, the look pointed at in its slot, sta
 	assert((arm.CFrame.Position-Vector3new(1.5,3.1,0)).Magnitude<1e-4 and math.abs(arm.CFrame.RightVector.Y)<1e-4,"the arm does not hang at rest: "..tostring(arm.CFrame.Position))
 end)
 
--- (DESIGN 27/11, third pass, after Ghost of Tsushima, Sekiro, Jujutsu
--- Infinite) the tree as groups: every node of every kit has a place in its
--- branch's group, none on another, the tiers read left to right, no group
--- out of the page or on another, a line only inside a group.
-test("the skill tree's groups: every seal placed, none overlapping, tiers left to right",function()
+-- (DESIGN 27/11, fourth pass, after AC Shadows, Ghost of Tsushima, Sekiro)
+-- one branch at a time as a tree: every node of every branch of every kit
+-- has a place, none on another, the tiers climb from the foot (I) to the
+-- top (III), each seal's name has room beside it, nothing leaves the page.
+test("a branch as a tree: every seal placed, none overlapping, tiers climbing, names inside",function()
 	local Tree=H.load("Client/TreePanel")
 	local TV=H.load("Shared/TreeView")
 	local Trees=H.load("Shared/SkillTrees")
 	local NT=H.load("Shared/NinjaTree")
 	local T=Tree.TREE
+	local width=Tree.TREE_W-12
 	local kits=0
 	local function check(name,layout)
-		local L=Tree.treeLayout(layout,1024,100)
-		for _,branch in layout.branches do for _,node in branch.nodes do
-			local p=L.at[node.id]
-			assert(p,name.." "..node.id.." has no place")
-			local g=L.groups[p.b]
-			assert(p.x>=g.x+T.BIG/2-1 and p.x<=g.x+g.w-T.BIG/2+1 and p.y>=g.y+T.HEAD and p.y<=g.y+g.h-T.BOTTOM+1,name.." "..node.id.." is out of its group")
-		end end
-		local list={}
-		for _,p in L.at do table.insert(list,p) end
-		for i=1,#list do for j=i+1,#list do
-			local a,b=list[i],list[j]
-			assert(math.sqrt((a.x-b.x)^2+(a.y-b.y)^2)>=T.BIG+6,name..": "..a.node.id.." and "..b.node.id.." overlap")
-			if a.b==b.b and a.t<b.t then assert(a.x<b.x,name..": tier "..a.t.." not left of tier "..b.t) end
-		end end
-		for _,g in L.groups do
-			assert(g.x>=0 and g.x+g.w<=1024+.5,name..": a group leaves the page")
-			for _,o in L.groups do
-				if o~=g then assert(g.x+g.w<=o.x+.5 or o.x+o.w<=g.x+.5 or g.y+g.h<=o.y+.5 or o.y+o.h<=g.y+.5,name..": two groups overlap") end
+		for b,branch in layout.branches do
+			local L=Tree.branchLayout(layout,b,width,592)
+			for _,node in branch.nodes do
+				local p=L.at[node.id]
+				assert(p,name.." "..node.id.." has no place in its branch")
+				local r=T.BIG/2
+				assert(p.x-r>=0 and p.x+r<=width and p.y-r>=0 and p.y+r<=L.height,name.." "..node.id.." leaves the page")
+				if not p.crown then
+					local LW=T.OFF-r-24
+					assert(LW>=130,"no room for the names")
+					assert((p.side<0 and p.x-r-12-LW>=0) or (p.side>0 and p.x+r+12+LW<=width),name.." "..node.id..": its name leaves the page")
+				end
 			end
+			local list={}
+			for _,p in L.at do table.insert(list,p) end
+			for i=1,#list do for j=i+1,#list do
+				local a,c=list[i],list[j]
+				assert(math.sqrt((a.x-c.x)^2+(a.y-c.y)^2)>=T.BIG+8,name.." "..branch.name..": "..a.node.id.." and "..c.node.id.." overlap")
+				if a.t<c.t and not a.crown and not c.crown then assert(a.y>c.y,name..": tier "..a.t.." is not under tier "..c.t) end
+			end end
+			if L.crown then for _,p in L.at do if p~=L.crown then assert(L.crown.y<p.y,name..": the crown is not on top") end end end
 		end
-		for _,link in L.links do assert(L.at[link.from].b==L.at[link.to].b,name..": a line between two groups") end
 	end
 	for kit in Trees do
 		local layout=TV.layout(kit,{unlocked={},active={},points=0,free=0,mastery=0})
@@ -1155,6 +1167,10 @@ test("the skill tree's groups: every seal placed, none overlapping, tiers left t
 	end
 	check("Ninja",Tree.ninjaLayout(NT.view(NT.new(),0)))
 	assert(kits>=8,"the eight kits' trees")
+	-- what a seal says beside its name
+	assert(Tree.sealState({status="learn",cost=4})=="LEARN  •  4 PTS" and Tree.sealState({status="active"})=="ON","the seal's words")
+	local mine,all,can=Tree.branchCount({nodes={{status="active"},{status="off"},{status="learn"},{status="tier"}}})
+	assert(mine==2 and all==4 and can==1,"a branch's count")
 end)
 
 print(string.format("NinjaDuel shop and Ryō (13/11): %d PASS",passed))

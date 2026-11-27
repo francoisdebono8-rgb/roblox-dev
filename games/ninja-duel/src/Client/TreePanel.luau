@@ -1,14 +1,13 @@
 -- The skill tree of a learned kit (DEC-038, user 13/11: « vraiment les arbres
--- de compétences, vraiment comment ça va marcher »). Drawn as the design
--- board shows it: the tiers as rows (I from the start, II at 300 mastery,
--- III at 800), the branches as columns, a line from a node to the one it
--- opens in the same branch; each node a tile (on, learned, to learn, too
--- dear, its tier closed, waiting for another node). On the right, the picked
--- node: what it does, what answers it, what it opens, and the button that
--- learns it or turns it on or off. At the top, the points and the mastery
--- towards the next tier. The server decides (Matches: LearnNode, SetNode);
--- the panel draws Shared/TreeView over the server's Progression view.
--- Opened from the roster (SKILL TREE), a master's card and the result.
+-- de compétences, vraiment comment ça va marcher »). (DESIGN 27/11, fourth
+-- pass) One branch at a time, as in Assassin's Creed Shadows: the branches
+-- listed on the left (how far each one is), the picked one drawn as a tree
+-- in the middle (tier I at the foot, III at the top, each seal named with
+-- its state or price), the picked seal told on the right with its button.
+-- The NINJA tab: the chakra natures first, then its three branches. The
+-- server decides (Matches: LearnNode, SetNode); the panel draws
+-- Shared/TreeView over the server's Progression view. Opened from the
+-- roster (SKILL TREE), a master's card and the result.
 local Shared=game:GetService("ReplicatedStorage").NinjaDuel
 -- (26/11) capitals by Text.upper: string.upper follows the player's locale and broke « • » and « — »
 local Text=require(Shared.Text)
@@ -29,9 +28,12 @@ Panel.__index=Panel
 local W,H=1500,800
 local GRID_X,GRID_Y,GRID_W,GRID_H=24,140,1036,592
 local DETAIL_X=1084
+-- (fourth pass) the branches' list on the left, the picked branch's tree beside it
+local BAR_W=232
+local BAR_X=GRID_X
+local TREE_X=GRID_X+BAR_W+16
+local TREE_W=GRID_X+GRID_W-TREE_X
 Panel.CLOSE={X=W-156,Y=22,W=132,H=58}
-local CARD_H=124 -- the kit's card, over the KIT tab's grid
-local NATURE_H=132 -- the natures, over the NINJA tab's grid
 Panel.TAB={W=170,H=48,Y=92,X=816}
 
 -- ------------------------------------------------------------------ pure
@@ -182,7 +184,7 @@ function Panel.new(kit,gui,send)
 	self.tab="kit";self.tabs={}
 	for i,t in {{id="kit",name="KIT TREE"},{id="ninja",name="NINJA TREE"}} do
 		local b=button(card,t.name,UDim2.fromOffset(Panel.TAB.X+(i-1)*(Panel.TAB.W+10),Panel.TAB.Y),UDim2.fromOffset(Panel.TAB.W,Panel.TAB.H),function()
-			if self.tab~=t.id then self.tab=t.id;self.selected=nil;self:draw() end
+			if self.tab~=t.id then self.tab=t.id;self.selected=nil;self.branch=nil;self:draw() end
 		end,M.paper)
 		b.Font=STRONG;b.TextSize=20;ring(b,3)
 		self.tabs[t.id]=b
@@ -215,9 +217,20 @@ function Panel.new(kit,gui,send)
 	self.action=button(detail,"",UDim2.new(0,20,1,-80),UDim2.new(1,-40,0,60),function() self:press() end,M.red)
 	self.action.TextSize=26;self.action.Font=STRONG;self.action.Visible=false
 	self.actionRing=ring(self.action,3);self.actionRing.Enabled=false
-	-- The legend under the grid.
-	self.legend=text(card,"INK: YOURS  •  RED RING: ON  •  RED DOT: YOU CAN LEARN IT  •  GREY: NOT YET  •  POINT AT A SEAL TO READ IT",
-		UDim2.fromOffset(GRID_X,H-56),UDim2.fromOffset(GRID_W,20),14,M.mid,STRONG)
+	-- The legend under the tree: the seals themselves, small, and what they mean.
+	local legend=frame(card,UDim2.fromOffset(GRID_X,H-58),UDim2.fromOffset(GRID_W,22),M.back,1)
+	self.legend=legend
+	local samples={{fill=M.ink,stroke=M.ink,word="YOURS"},{fill=M.ink,stroke=M.red,word="ON"},{fill=M.paper,stroke=M.ink,dot=true,word="YOU CAN LEARN IT"},
+		{fill=M.paper,stroke=M.off,word="NOT YET"}}
+	local lx=0
+	for _,s in samples do
+		local c=frame(legend,UDim2.fromOffset(lx,2),UDim2.fromOffset(18,18),s.fill,0);corner(c,9)
+		create("UIStroke",c,{Color=s.stroke,Thickness=2,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
+		if s.dot then local d=frame(c,UDim2.new(1,-5,0,-3),UDim2.fromOffset(8,8),M.red,0);corner(d,4) end
+		text(legend,s.word,UDim2.fromOffset(lx+26,2),UDim2.fromOffset(#s.word*9,18),14,M.mid,STRONG)
+		lx+=26+#s.word*9+24
+	end
+	text(legend,"POINT AT A SEAL TO READ IT",UDim2.fromOffset(lx,2),UDim2.fromOffset(300,18),14,M.red,STRONG)
 	self.footer=text(card,"Switch nodes between duels. In ranked, everyone has the full kit.",
 		UDim2.fromOffset(GRID_X,H-34),UDim2.fromOffset(W-48,20),13,M.brown,kit.BODY_FONT)
 	return self
@@ -252,7 +265,7 @@ function Panel:hide()
 end
 
 function Panel:show(kitId,kits)
-	if self.kitId~=kitId then self.selected=nil end
+	if self.kitId~=kitId then self.selected=nil;self.branch=nil end
 	self.kitId=kitId;self.kits=kits
 	if self.selected and not TreeView.node(kitId,self.selected) then self.selected=nil end
 	self:draw()
@@ -291,6 +304,8 @@ function Panel:draw()
 	end
 	for _,item in self.drawn do item:Destroy() end
 	self.drawn={};self.tiles={};self.scales={}
+	-- (fourth pass) the tree beside the branches' list
+	self.grid.Position=UDim2.fromOffset(TREE_X,GRID_Y);self.grid.Size=UDim2.fromOffset(TREE_W,GRID_H)
 	if self.tab=="ninja" then return self:drawNinja() end
 	local layout=TreeView.layout(self.kitId,self:state())
 	if not layout then self.title.Text="NO TREE";return end
@@ -301,27 +316,30 @@ function Panel:draw()
 	self.tierLabel.Text="MASTERY "..layout.mastery
 	self.tierNext.Text=if layout.nextTier then "TIER "..layout.nextTier.name.." AT "..layout.nextTier.need else "EVERY TIER OPEN"
 	self.tierFill.Size=UDim2.new(layout.progress,0,1,0)
-	-- (step 2) the kit's card
-	local top=self:drawCard(Panel.kitCard(self.kitId))
-	self:drawTree(layout,top,Panel.kitCard(self.kitId))
+	self:drawKit(layout)
 end
 
 -- ------------------------------------------------------------------ the tree
--- (DESIGN 27/11, third pass. François: « l'arbre est devenu brouillon, va
--- chercher des menus de compétences sur internet ».) Looked at: Ghost of
--- Tsushima's Techniques (small groups of small round seals on a quiet ink
--- page, a title and one line over each group, the picked one told in a
--- fixed panel, never over the tree), Sekiro's skill trees (each tree read
--- left to right, the root at the left, right-angled lines to what a skill
--- opens) and Roblox's Jujutsu Infinite (one look per branch, the locked
--- ones with a padlock). What they share and ours lacked: a quiet page, one
--- group per branch, small seals all alike, thin straight lines, no words
--- on the tree but the branch's name, and nothing that moves unless he acts.
--- So: one group per branch on the paper (three a row), its tiers I, II, III
--- read left to right, its seals in columns, a line where a seal needs
--- another; the name, the effect and the price go to the panel on the right,
--- shown on hover and on a pick.
-Panel.TREE={COLS=3,GAP=26,HEAD=72,STEP=60,SEAL=40,BIG=50,PADX=44,BOTTOM=22}
+-- (DESIGN 27/11, fourth pass. François: « on n'y comprend rien, repars de
+-- l'arbre et adapte l'interface à ce que tu as vu, sois méticuleux ».)
+-- What the menus of real games do, and what this page takes from each:
+-- * Assassin's Creed Shadows (Masteries): ONE tree at a time, picked in a
+--   list on the left that says how far each one is; the tiers are rows
+--   numbered in the margin with what opens them; the nodes hang on one line,
+--   each with its name; the last one, big, at the end of the line.
+-- * Ghost of Tsushima (Techniques): a quiet page, the picked skill told in
+--   a fixed panel (name, what it does, price, the button), never over the
+--   tree; small round seals, all alike.
+-- * Sekiro: a skill that needs another sits after it on the same line.
+-- So: on the left the branches (name, learned out of all, a red dot when
+-- one can be learned); in the middle the picked branch as a tree, its
+-- trunk going up from tier I at the foot to tier III and the crown, each
+-- seal on a twig, left and right of the trunk, its name and its price or
+-- state written beside it; a closed tier under a veil that says what opens
+-- it; on the right, the panel. The ink, the paper and the red of the shop.
+Panel.TREE={BAR_W=BAR_W,ROW=78,PAD=56,OFF=190,SEAL=54,BIG=62,CROWN=150,FOOT=26,TRUNK=12}
+Panel.TREE_W=TREE_W
+local BARK=Color3.fromRGB(58,40,28)
 local KIND_ICON={jutsu="scroll",property="weights",stat="fist",route="flash",airwall="wind",counter="palm",substitution="clone",awakening="fire",tool="kunai"}
 local WORD_ICON={{"rasengan","spiral"},{"clone","clone"},{"kunai","kunai"},{"shuriken","shuriken"},{"chidori","bolt"},{"lightning","bolt"},
 	{"sand","sand"},{"water","water"},{"fire","fire"},{"wind","wind"},{"eye","eye"},{"sharingan","eye"},{"byakugan","eye"},{"palm","palm"},
@@ -337,51 +355,63 @@ function Panel.sealIcon(node,def)
 	end
 	return UIAssets.id("icon_"..(KIND_ICON[node.kind or ""] or "scroll"))
 end
--- Where everything sits (pure): a group per branch, three a row, all the
--- groups of a row as tall as its fullest; in a group, a column per tier, its
--- seals stacked and centred; the lines between a seal and the one it needs.
-function Panel.treeLayout(layout,width,top)
+-- What a seal says beside its name (pure): its state, or its price.
+function Panel.sealState(node,tierNeed)
+	local st=node.status
+	if st=="active" then return "ON"
+	elseif st=="off" then return "LEARNED  •  OFF"
+	elseif st=="learn" then return "LEARN  •  "..tostring(node.cost).." PTS"
+	elseif st=="short" then return tostring(node.cost).." PTS  •  NOT ENOUGH"
+	elseif st=="tier" then return "TIER CLOSED"
+	end
+	return "NEEDS ANOTHER FIRST"
+end
+-- How far a branch is (pure): learned, all, how many he can learn now.
+function Panel.branchCount(branch)
+	local mine,can=0,0
+	for _,node in branch.nodes do
+		if node.status=="active" or node.status=="off" then mine+=1 end
+		if node.status=="learn" then can+=1 end
+	end
+	return mine,#branch.nodes,can
+end
+-- One branch as a tree (pure). Tier I at the foot, III at the top, the
+-- transformation (or the branch's big node of tier III) as the crown; in a
+-- tier, the seals two by two, left and right of the trunk, upwards.
+function Panel.branchLayout(layout,b,width,minHeight)
 	local T=Panel.TREE
-	local n=#layout.branches
-	local cols=math.max(1,math.min(T.COLS,n))
-	local w=(width-(cols-1)*T.GAP)/cols
-	local tiers=#layout.tiers
-	local groups,at,links={},{},{}
-	local y=top
-	local b=1
-	while b<=n do
-		local most=1
-		for k=b,math.min(n,b+cols-1) do
-			for t=1,tiers do most=math.max(most,#(layout.tiers[t].cells[k] or {})) end
+	local trunkX=width/2
+	local crown=nil
+	local bands={}
+	local total=T.FOOT
+	for t,row in layout.tiers do
+		local cells={}
+		for _,node in row.cells[b] or {} do
+			if node.transform and not crown then crown=node else table.insert(cells,node) end
 		end
-		local h=T.HEAD+most*T.STEP+T.BOTTOM
-		for k=b,math.min(n,b+cols-1) do
-			local x=((k-b)%cols)*(w+T.GAP)
-			local g={b=k,x=x,y=y,w=w,h=h,name=layout.branches[k].name,count=#layout.branches[k].nodes,mine=0,columns={}}
-			local step=if tiers>1 then (w-2*T.PADX)/(tiers-1) else 0
-			for t=1,tiers do
-				local cx=x+T.PADX+(t-1)*step
-				local cells=layout.tiers[t].cells[k] or {}
-				g.columns[t]={x=cx,open=layout.tiers[t].open,name=layout.tiers[t].name,need=layout.tiers[t].need}
-				local body=y+T.HEAD+(most*T.STEP)/2
-				for i,node in cells do
-					local ny=body+(i-(#cells+1)/2)*T.STEP
-					at[node.id]={x=cx,y=ny,b=k,t=t,node=node,big=node.major or node.transform}
-					if node.status=="active" or node.status=="off" then g.mine+=1 end
-				end
-			end
-			groups[k]=g
-		end
-		y+=h+T.GAP
-		b+=cols
+		local rows=math.max(1,math.ceil(#cells/2))
+		bands[t]={cells=cells,h=T.PAD+rows*T.ROW,open=row.open,name=row.name,need=row.need,index=t}
+		total+=bands[t].h
 	end
-	for id,p in at do
-		for _,need in p.node.requires or {} do
-			local q=at[need]
-			if q and q.b==p.b then table.insert(links,{from=need,to=id}) end
+	total+=if crown then T.CROWN else 20
+	local height=math.max(total,minHeight or 0)
+	local at={}
+	local y=height-T.FOOT
+	for t,band in bands do
+		band.bottom=y;band.top=y-band.h
+		for i,node in band.cells do
+			local row=math.ceil(i/2)
+			local side=if i%2==1 then -1 else 1
+			at[node.id]={x=trunkX+side*T.OFF,y=band.bottom-T.PAD*.5-(row-.5)*T.ROW+8,side=side,t=t,node=node}
 		end
+		y=band.top
 	end
-	return {groups=groups,at=at,links=links,height=y-top-T.GAP,top=top}
+	local crownAt=nil
+	if crown then
+		crownAt={x=trunkX,y=y-T.CROWN+44,side=0,t=#bands,node=crown,crown=true}
+		at[crown.id]=crownAt
+	end
+	return {at=at,bands=bands,trunkX=trunkX,height=height,top=if crown then crownAt.y else y,foot=height-T.FOOT,crown=crownAt}
 end
 -- A tween that cannot break a draw (TweenService missing in the tests).
 function Panel.tween(object,time,goal,style,repeats,reverses,delay)
@@ -390,104 +420,175 @@ function Panel.tween(object,time,goal,style,repeats,reverses,delay)
 		TS:Create(object,TweenInfo.new(time,style or Enum.EasingStyle.Quad,Enum.EasingDirection.Out,repeats or 0,reverses or false,delay or 0),goal):Play()
 	end)
 end
-local function bar(self,x,y,w,h,color,alpha,z)
-	local f=self.kit.frame(self.grid,UDim2.fromOffset(x,y),UDim2.fromOffset(w,h),color,alpha or 0)
+local function rect(self,parent,x,y,w,h,color,alpha,z)
+	local f=self.kit.frame(parent,UDim2.fromOffset(x,y),UDim2.fromOffset(w,h),color,alpha or 0)
 	f.BorderSizePixel=0;f.ZIndex=z or 77
 	table.insert(self.drawn,f)
 	return f
 end
-function Panel:drawTree(layout,top,card)
+-- The branches on the left: one button each, how far it is, a red dot when
+-- something can be learned in it. `extra`: a first entry (the natures).
+function Panel:drawBranches(branches,extra)
 	local K,M=self.kit,self.M
 	local T=Panel.TREE
 	local STRONG=K.STRONG_FONT or K.BODY_FONT
-	local width=GRID_W-12
-	local L=Panel.treeLayout(layout,width,top)
-	local function add(item) table.insert(self.drawn,item);return item end
-	self.groupFrames={}
-	for _,g in L.groups do
-		-- the group: its name in the brush, a red stroke, one line
-		local name=add(K.text(self.grid,g.name,UDim2.fromOffset(g.x,g.y),UDim2.fromOffset(g.w,30),26,M.ink,K.TITLE_FONT))
-		name.ZIndex=78
-		local stroke=bar(self,g.x+1,g.y+30,64,4,M.red,0,78);K.corner(stroke,2)
-		local line=add(K.text(self.grid,string.format("%d SKILLS  •  %d YOURS",g.count,g.mine),UDim2.fromOffset(g.x,g.y+36),UDim2.fromOffset(g.w,16),12,M.brown,STRONG))
+	local head=K.text(self.card,"BRANCHES",UDim2.fromOffset(BAR_X,GRID_Y-2),UDim2.fromOffset(T.BAR_W,18),14,M.red,STRONG)
+	head.ZIndex=77;table.insert(self.drawn,head)
+	local list={}
+	if extra then table.insert(list,extra) end
+	for b,branch in branches do
+		local mine,all,can=Panel.branchCount(branch)
+		table.insert(list,{key=b,name=branch.name,line=string.format("%d / %d LEARNED",mine,all),can=can,fill=if all>0 then mine/all else 0})
+	end
+	self.branchButtons={}
+	for i,item in list do
+		local y=GRID_Y+22+(i-1)*62
+		local on=item.key==self.branch
+		local b=K.create("TextButton",self.card,{Text="",Position=UDim2.fromOffset(BAR_X,y),Size=UDim2.fromOffset(T.BAR_W,54),
+			BackgroundColor3=if on then M.ink else M.paper,BorderSizePixel=0,AutoButtonColor=false,ZIndex=77})
+		b.Name="Branch_"..tostring(item.key)
+		table.insert(self.drawn,b);K.corner(b,4)
+		K.create("UIStroke",b,{Color=M.ink,Thickness=2,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
+		local name=K.text(b,item.name,UDim2.fromOffset(12,4),UDim2.new(1,-40,0,28),24,if on then M.cream else M.ink,K.TITLE_FONT)
+		name.ZIndex=78;name.TextScaled=true;K.create("UITextSizeConstraint",name,{MaxTextSize=24,MinTextSize=12})
+		local line=K.text(b,item.line,UDim2.fromOffset(12,31),UDim2.new(1,-24,0,14),12,if on then M.cream else M.brown,STRONG)
 		line.ZIndex=78
-		table.insert(self.groupFrames,{name,stroke,line})
-		-- the tiers: a numeral over each column, a closed one says its price
-		for t,col in g.columns do
-			local label=if col.open then col.name else col.name.."  "..tostring(col.need)
-			local numeral=add(K.text(self.grid,label,UDim2.fromOffset(col.x-40,g.y+T.HEAD-16),UDim2.fromOffset(80,14),11,if col.open then M.off else M.red,STRONG,Enum.TextXAlignment.Center))
-			numeral.ZIndex=78
-			if t>1 then
-				-- a hairline between the columns, as on the page of a scroll
-				local px=(g.columns[t-1].x+col.x)/2
-				bar(self,px,g.y+T.HEAD+4,1,g.h-T.HEAD-T.BOTTOM,M.ink,.9,76)
-			end
+		if item.fill then
+			local track=K.frame(b,UDim2.new(0,12,1,-7),UDim2.new(1,-24,0,3),if on then M.mid else M.back,0);track.ZIndex=78
+			local fill=K.frame(track,UDim2.fromOffset(0,0),UDim2.fromScale(item.fill,1),M.red,0);fill.ZIndex=79
 		end
+		if (item.can or 0)>0 then
+			local dot=K.frame(b,UDim2.new(1,-22,0,10),UDim2.fromOffset(12,12),M.red,0);dot.ZIndex=79;K.corner(dot,6)
+		end
+		b.Activated:Connect(function()
+			if self.branch~=item.key then self.branch=item.key;self.selected=nil;self:draw() end
+		end)
+		pcall(function()
+			b.MouseEnter:Connect(function() if self.branch~=item.key then b.BackgroundColor3=M.back end end)
+			b.MouseLeave:Connect(function() if self.branch~=item.key then b.BackgroundColor3=M.paper end end)
+		end)
+		self.branchButtons[item.key]=b
 	end
-	-- the lines: out of the seal it needs, a right angle, into the seal
-	for _,link in L.links do
-		local a,b=L.at[link.from],L.at[link.to]
-		local lit=a.node.status=="active" or a.node.status=="off"
-		local color=if lit then M.ink else M.off
-		local mid=(a.x+b.x)/2
-		local thick=if lit then 3 else 2
-		bar(self,math.min(a.x,mid),a.y-thick/2,math.abs(mid-a.x),thick,color,0,77)
-		bar(self,mid-thick/2,math.min(a.y,b.y)-thick/2,thick,math.abs(b.y-a.y)+thick,color,0,77)
-		bar(self,math.min(mid,b.x),b.y-thick/2,math.abs(b.x-mid),thick,color,0,77)
-	end
-	for id,p in L.at do
-		local def=if self.tab=="ninja" then nil else TreeView.node(self.kitId,id)
-		self:seal(p.node,p.x,p.y,def,p.big)
-	end
-	self.grid.CanvasSize=UDim2.fromOffset(GRID_W-12,top+L.height+16)
-	local key=tostring(self.kitId)..tostring(self.tab)
-	if self.scrolledFor~=key then
-		self.scrolledFor=key
-		pcall(function() self.grid.CanvasPosition=Vector2.new(0,0) end)
-	end
-	if not self.selected then
-		for _,p in L.at do if not self.selected and p.node.status=="learn" then self.selected=p.node.id end end
-		self.selected=self.selected or (layout.branches[1] and layout.branches[1].nodes[1] and layout.branches[1].nodes[1].id)
-	end
-	self:animateTree(L)
-	self:detail()
-	return L
+	return GRID_Y+22+#list*62
 end
--- A node as a small round seal, all alike: ink when his (a red ring when
--- on), paper ringed in ink with a red dot when he can learn it, faded when
--- out of reach; its pictogram inside; nothing written around it.
-function Panel:seal(node,x,y,def,big)
+-- The kit in three lines under the branches: what it starts with, its crown.
+function Panel:drawKitNote(card,y)
+	if not card then return end
+	local K,M=self.kit,self.M
+	local STRONG=K.STRONG_FONT or K.BODY_FONT
+	local T=Panel.TREE
+	local h=GRID_Y+GRID_H-y-4
+	if h<60 then return end
+	local box=rect(self,self.card,BAR_X,y+6,T.BAR_W,h,M.paper,0,77);K.corner(box,4)
+	K.create("UIStroke",box,{Color=M.off,Thickness=1,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
+	local t=K.text(box,"YOU START WITH",UDim2.fromOffset(10,8),UDim2.new(1,-20,0,14),12,M.red,STRONG);t.ZIndex=78
+	local s=K.text(box,table.concat(card.starts,"\n"),UDim2.fromOffset(10,24),UDim2.new(1,-20,0,h-30),13,M.ink,STRONG)
+	s.TextWrapped=true;s.TextYAlignment=Enum.TextYAlignment.Top;s.ZIndex=78
+end
+-- The picked branch as a tree.
+function Panel:drawBranch(layout,b)
 	local K,M=self.kit,self.M
 	local T=Panel.TREE
-	local r=(if big then T.BIG else T.SEAL)/2
+	local STRONG=K.STRONG_FONT or K.BODY_FONT
+	local L=Panel.branchLayout(layout,b,TREE_W-12,GRID_H)
+	local g=self.grid
+	-- the trunk, from the foot to the crown, a little wider at the foot
+	local trunkTop=L.top
+	local trunk=rect(self,g,L.trunkX-T.TRUNK/2,trunkTop,T.TRUNK,L.foot-trunkTop+10,BARK,0,76);K.corner(trunk,6)
+	local foot=rect(self,g,L.trunkX-T.TRUNK,L.foot-30,T.TRUNK*2,40,BARK,0,76);K.corner(foot,8)
+	local ground=rect(self,g,L.trunkX-130,L.foot+8,260,3,BARK,.3,76);K.corner(ground,2)
+	-- the tiers: a rule and its numeral in the margin, what opens it
+	for t,band in L.bands do
+		local unit=if self.tab=="ninja" then "POINTS" else "MASTERY"
+		local rule=rect(self,g,0,band.top,TREE_W-12,1,M.ink,.82,75)
+		-- its name on the rule, at the left: TIER II • OPEN
+		local word=if band.need==0 then "FROM THE START" elseif band.open then "OPEN" else unit.." "..tostring(band.need)
+		local tag=K.text(g,"TIER "..band.name.."  •  "..word,UDim2.fromOffset(0,band.top+4),UDim2.fromOffset(260,18),14,if band.open then M.red else M.off,K.TITLE_FONT)
+		tag.ZIndex=78;table.insert(self.drawn,tag)
+		if not band.open then
+			local veil=rect(self,g,0,band.top+1,TREE_W-12,band.h-1,M.back,.25,85)
+			local lock=K.text(veil,string.format("OPENS AT %s %d",unit,band.need),UDim2.new(1,-356,0,3),UDim2.fromOffset(350,20),18,M.ink,K.TITLE_FONT,Enum.TextXAlignment.Right)
+			lock.ZIndex=86
+		end
+	end
+	-- the twigs and the seals
+	for id,p in L.at do
+		local def=if self.tab=="ninja" then nil else TreeView.node(self.kitId,id)
+		if not p.crown then
+			local x0=math.min(L.trunkX,p.x);local w=math.abs(p.x-L.trunkX)
+			rect(self,g,x0,p.y-2,w,4,BARK,0,77)
+		end
+		self:seal(p,def)
+	end
+	g.CanvasSize=UDim2.fromOffset(TREE_W-12,L.height)
+	local key=tostring(self.kitId)..tostring(self.tab)..tostring(b)
+	if self.scrolledFor~=key then
+		self.scrolledFor=key
+		-- the tree is read from its foot: tier I first
+		pcall(function() g.CanvasPosition=Vector2.new(0,math.max(0,L.height-GRID_H)) end)
+	end
+	if not self.selected then
+		for _,band in L.bands do for _,node in band.cells do if not self.selected and node.status=="learn" then self.selected=node.id end end end
+		if not self.selected then for _,band in L.bands do for _,node in band.cells do self.selected=self.selected or node.id end end end
+		self.selected=self.selected or (L.crown and L.crown.node.id)
+	end
+	return L
+end
+-- A seal on its twig, its name and its state beside it.
+function Panel:seal(p,def)
+	local K,M=self.kit,self.M
+	local T=Panel.TREE
+	local STRONG=K.STRONG_FONT or K.BODY_FONT
+	local node=p.node
+	local r=(if p.crown or node.major then T.BIG else T.SEAL)/2
 	local st=node.status
 	local mine=st=="active" or st=="off"
 	local faded=st=="locked" or st=="tier" or st=="short"
+	local x,y=p.x,p.y
+	local fill=if p.crown and not mine then M.red elseif mine then M.ink else M.paper
+	-- (the crown out of reach stays red, but faded like any seal out of reach)
 	local b=K.create("TextButton",self.grid,{Text="",Position=UDim2.fromOffset(x,y),Size=UDim2.fromOffset(r*2,r*2),AnchorPoint=Vector2.new(.5,.5),
-		BackgroundColor3=if mine then M.ink else M.paper,BackgroundTransparency=0,BorderSizePixel=0,AutoButtonColor=false,ZIndex=80})
+		BackgroundColor3=fill,BackgroundTransparency=if p.crown and faded then .55 else 0,BorderSizePixel=0,AutoButtonColor=false,ZIndex=80})
 	b.Name="Seal_"..tostring(node.id)
 	table.insert(self.drawn,b);K.corner(b,r)
-	K.create("UIStroke",b,{Color=if st=="active" then M.red elseif mine then M.ink elseif st=="learn" then M.ink else M.off,
-		Thickness=if st=="active" then 3 else 2,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
+	K.create("UIStroke",b,{Color=if st=="active" then M.red elseif mine or st=="learn" or p.crown then M.ink else M.off,
+		Thickness=if st=="active" then 4 else 3,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
 	local icon=Panel.sealIcon(node,def)
+	local light=mine or (p.crown and not mine)
 	if icon and icon~="" then
-		K.create("ImageLabel",b,{Image=icon,Size=UDim2.fromScale(.58,.58),Position=UDim2.fromScale(.21,.21),BackgroundTransparency=1,ScaleType=Enum.ScaleType.Fit,
-			ImageColor3=if mine then M.cream else M.ink,ImageTransparency=if faded then .6 else 0,ZIndex=81})
-	else
-		K.text(b,string.sub(Text.upper(node.name),1,1),UDim2.fromScale(0,0),UDim2.fromScale(1,1),r,if mine then M.cream else M.ink,K.TITLE_FONT,Enum.TextXAlignment.Center).ZIndex=81
+		K.create("ImageLabel",b,{Image=icon,Size=UDim2.fromScale(.56,.56),Position=UDim2.fromScale(.22,.22),BackgroundTransparency=1,ScaleType=Enum.ScaleType.Fit,
+			ImageColor3=if light then M.cream else M.ink,ImageTransparency=if faded then .55 else 0,ZIndex=81})
 	end
 	if st=="learn" then
-		local dot=K.frame(b,UDim2.new(1,-6,0,-2),UDim2.fromOffset(12,12),M.red,0);dot.ZIndex=82;K.corner(dot,6)
+		local dot=K.frame(b,UDim2.new(1,-8,0,-2),UDim2.fromOffset(14,14),M.red,0);dot.ZIndex=82;K.corner(dot,7)
 		K.create("UIStroke",dot,{Color=M.paper,Thickness=2,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
 	end
 	if self.selected==node.id then
-		local sel=K.frame(b,UDim2.fromScale(.5,.5),UDim2.new(1,12,1,12),M.ink,1);sel.AnchorPoint=Vector2.new(.5,.5);sel.ZIndex=79;K.corner(sel,r+6)
-		K.create("UIStroke",sel,{Color=M.red,Thickness=2,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
+		local sel=K.frame(b,UDim2.fromScale(.5,.5),UDim2.new(1,14,1,14),M.ink,1);sel.AnchorPoint=Vector2.new(.5,.5);sel.ZIndex=79;K.corner(sel,r+7)
+		K.create("UIStroke",sel,{Color=M.red,Thickness=3,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
 	end
+	-- its name and its state, outside the trunk (under the crown)
+	local LW=T.OFF-r-24
+	local nameX,align
+	if p.crown then nameX,align=x-150,Enum.TextXAlignment.Center
+	elseif p.side<0 then nameX,align=x-r-12-LW,Enum.TextXAlignment.Right
+	else nameX,align=x+r+12,Enum.TextXAlignment.Left end
+	local nameY=if p.crown then y+r+4 else y-20
+	local nameW=if p.crown then 300 else LW
+	if p.crown then
+		-- the crown's words sit on a strip of the page, over the trunk
+		local strip=K.frame(self.grid,UDim2.fromOffset(nameX-6,nameY-2),UDim2.fromOffset(nameW+12,40),M.back,0);strip.ZIndex=80;K.corner(strip,4)
+		table.insert(self.drawn,strip)
+	end
+	local name=K.text(self.grid,(if p.crown then "THE CROWN  •  " else "")..Text.upper(node.name),UDim2.fromOffset(nameX,nameY),UDim2.fromOffset(nameW,20),16,if faded then M.off else M.ink,K.TITLE_FONT,align)
+	name.ZIndex=81;name.TextScaled=true;K.create("UITextSizeConstraint",name,{MaxTextSize=17,MinTextSize=10});table.insert(self.drawn,name)
+	local state=K.text(self.grid,Panel.sealState(node),UDim2.fromOffset(nameX,nameY+20),UDim2.fromOffset(nameW,16),12,
+		if st=="learn" or st=="active" then M.red elseif faded then M.off else M.brown,STRONG,align)
+	state.ZIndex=81;table.insert(self.drawn,state)
+	-- under the pointer it grows a little and the panel tells it
 	local scale=K.create("UIScale",b,{Scale=1})
-	-- under the pointer: it grows a little and the panel tells it
 	pcall(function()
-		b.MouseEnter:Connect(function() Panel.tween(scale,.1,{Scale=1.12});self:detail(node.id) end)
+		b.MouseEnter:Connect(function() Panel.tween(scale,.1,{Scale=1.1});self:detail(node.id) end)
 		b.MouseLeave:Connect(function() Panel.tween(scale,.1,{Scale=1});self:detail() end)
 	end)
 	b.Activated:Connect(function() self.pressed=node.id;self.selected=node.id;self:draw() end)
@@ -495,11 +596,9 @@ function Panel:seal(node,x,y,def,big)
 	self.scales[node.id]=scale
 	return b
 end
--- The movements, only when he acts: opened, the groups come up from the
--- paper one after the other; a seal pressed gives under the finger; a seal
--- just learned takes the ink with one ring.
-function Panel:animateTree(L)
-	local key=tostring(self.kitId)..tostring(self.tab)
+-- Movements only when he acts: a branch opened, its seals come up from the
+-- foot; a seal pressed gives under the finger; a seal just learned rings.
+function Panel:animateTree(L,key)
 	local status={}
 	for id,p in L.at do status[id]=p.node.status end
 	local before=if self.statusFor==key then self.lastStatus else nil
@@ -508,7 +607,7 @@ function Panel:animateTree(L)
 		self.enteredFor=key
 		for id,p in L.at do
 			local s=self.scales[id]
-			if s then s.Scale=.6;Panel.tween(s,.22,{Scale=1},Enum.EasingStyle.Back,0,false,(p.b-1)*.05+(p.t-1)*.04) end
+			if s then s.Scale=.5;Panel.tween(s,.22,{Scale=1},Enum.EasingStyle.Back,0,false,math.clamp((L.foot-p.y)/math.max(1,L.height),0,1)*.3) end
 		end
 	end
 	local pressed=self.pressed;self.pressed=nil
@@ -520,51 +619,32 @@ function Panel:animateTree(L)
 		if was and was~=st and (st=="active" or st=="off") and was~="active" and was~="off" then
 			local p=L.at[id]
 			if p then
-				local f=self.kit.frame(self.grid,UDim2.fromOffset(p.x,p.y),UDim2.fromOffset(44,44),self.M.red,1)
-				f.AnchorPoint=Vector2.new(.5,.5);f.ZIndex=83;self.kit.corner(f,60);table.insert(self.drawn,f)
-				local ring=self.kit.create("UIStroke",f,{Color=self.M.red,Thickness=3,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
-				Panel.tween(f,.5,{Size=UDim2.fromOffset(96,96)});Panel.tween(ring,.5,{Transparency=1})
+				local f=self.kit.frame(self.grid,UDim2.fromOffset(p.x,p.y),UDim2.fromOffset(60,60),self.M.red,1)
+				f.AnchorPoint=Vector2.new(.5,.5);f.ZIndex=83;self.kit.corner(f,80);table.insert(self.drawn,f)
+				local ring=self.kit.create("UIStroke",f,{Color=self.M.red,Thickness=4,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
+				Panel.tween(f,.5,{Size=UDim2.fromOffset(130,130)});Panel.tween(ring,.5,{Transparency=1})
 			end
 		end
 	end
 end
-
--- (step 2) The kit's card over the grid; returns where the grid starts.
-function Panel:drawCard(c)
-	if not c then return 0 end
-	local K,M=self.kit,self.M
-	local STRONG=K.STRONG_FONT or K.BODY_FONT
-	local card=K.frame(self.grid,UDim2.fromOffset(0,0),UDim2.fromOffset(GRID_W-12,CARD_H-10),M.paper,0)
-	table.insert(self.drawn,card);K.corner(card,4);self.ring(card,3)
-	card.Name="KitCard"
-	-- four columns: what he starts with, what the tree adds, its top (the
-	-- transformation), his signature (the CM's « why this kit »)
-	local cols={
-		{"STARTS WITH",table.concat(c.starts,"  •  "),nil},
-		{"THE TREE ADDS",table.concat(c.adds,"  •  "),nil},
-		{"AT THE TOP",c.transform or "",c.topLine},
-		{"SIGNATURE",nil,c.signature},
-	}
-	local w=math.floor((GRID_W-12-24)/4)
-	for i,col in cols do
-		local x=12+(i-1)*w
-		K.text(card,col[1],UDim2.fromOffset(x,8),UDim2.fromOffset(w-12,16),13,M.red,STRONG)
-		local y=26
-		if col[2] then
-			local body=K.text(card,if col[2]=="" then "—" else col[2],UDim2.fromOffset(x,y),UDim2.fromOffset(w-14,if col[3] then 22 else 80),16,M.ink,STRONG)
-			body.TextYAlignment=Enum.TextYAlignment.Top;body.TextWrapped=true
-			y+=24
-		end
-		if col[3] then
-			local line=K.text(card,col[3],UDim2.fromOffset(x,y),UDim2.fromOffset(w-14,CARD_H-10-y-6),13,M.mid,K.BODY_FONT)
-			line.TextYAlignment=Enum.TextYAlignment.Top;line.TextWrapped=true
+-- The kit's tab: the branches, the picked one as a tree, the kit's note.
+function Panel:drawKit(layout)
+	if self.branch==nil or type(self.branch)~="number" or not layout.branches[self.branch] then
+		-- open on the first branch where something can be learned
+		self.branch=1
+		for b,branch in layout.branches do
+			local _,_,can=Panel.branchCount(branch)
+			if can>0 then self.branch=b;break end
 		end
 	end
-	return CARD_H
+	local bottom=self:drawBranches(layout.branches,nil)
+	self:drawKitNote(Panel.kitCard(self.kitId),bottom)
+	local L=self:drawBranch(layout,self.branch)
+	self:animateTree(L,tostring(self.kitId).."kit"..tostring(self.branch))
+	self:detail()
 end
-
--- (step 2) The NINJA tab: the header, the five natures, the other branches.
 function Panel:ninjaView() return self.kits and self.kits.ninja end
+-- The ninja's tab: the natures first, then his three branches.
 function Panel:drawNinja()
 	local K,M=self.kit,self.M
 	local STRONG=K.STRONG_FONT or K.BODY_FONT
@@ -577,33 +657,56 @@ function Panel:drawNinja()
 	self.tierLabel.Text="NINJA POINTS "..(layout.points or 0)
 	self.tierNext.Text=if layout.nextTier then "TIER "..layout.nextTier.name.." AT "..layout.nextTier.need else "EVERY TIER OPEN"
 	self.tierFill.Size=UDim2.new(layout.progress,0,1,0)
+	if self.branch~="nature" and not (type(self.branch)=="number" and layout.branches[self.branch]) then self.branch="nature" end
+	local chosen=layout.nature
+	local natureLine=if chosen then "YOURS: "..Text.upper(chosen) else "CHOOSE ONE"
+	self:drawBranches(layout.branches,{key="nature",name="CHAKRA NATURE",line=natureLine,can=(function()
+		for _,n in layout.natures do if n.status=="learn" then return 1 end end
+		return 0
+	end)()})
+	if self.branch~="nature" then
+		local L=self:drawBranch(layout,self.branch)
+		self:animateTree(L,"ninja"..tostring(self.branch))
+		self:detail()
+		return
+	end
+	-- the natures: one card each, in the element's colour; the chosen one inked
 	local function add(item) table.insert(self.drawn,item);return item end
-	-- The natures: one card each, in the element's colour; the chosen one inked.
-	add(K.text(self.grid,"CHAKRA NATURE  •  ONE AT A TIME",UDim2.fromOffset(0,0),UDim2.fromOffset(GRID_W-12,24),20,M.ink,K.TITLE_FONT))
-	local cw=math.floor((GRID_W-12-4*12)/5)
+	local g=self.grid
+	add(K.text(g,"CHAKRA NATURE  •  ONE AT A TIME",UDim2.fromOffset(0,0),UDim2.fromOffset(TREE_W-12,26),24,M.ink,K.TITLE_FONT))
+	add(K.text(g,"Your nature runs through your infused kunai and blade. Change it between duels.",UDim2.fromOffset(0,30),UDim2.fromOffset(TREE_W-12,18),14,M.brown,K.BODY_FONT))
+	local cw=math.floor((TREE_W-12-12)/2)
 	for i,node in layout.natures do
 		local rgb=Panel.NATURE_COLOR[node.nature] or {200,200,200}
 		local color=Color3.fromRGB(rgb[1],rgb[2],rgb[3])
 		local ink=if Panel.NATURE_DARK[node.nature] then M.cream else M.ink
-		local chosen=node.status=="active"
-		local card=K.create("TextButton",self.grid,{Text="",Position=UDim2.fromOffset((i-1)*(cw+12),30),Size=UDim2.fromOffset(cw,NATURE_H-40),
+		local isChosen=node.status=="active"
+		local col=(i-1)%2;local row=math.floor((i-1)/2)
+		local card=K.create("TextButton",g,{Text="",Position=UDim2.fromOffset(col*(cw+12),62+row*112),Size=UDim2.fromOffset(cw,100),
 			BackgroundColor3=color,BackgroundTransparency=if node.status=="locked" or node.status=="tier" or node.status=="short" then .45 else 0,BorderSizePixel=0,AutoButtonColor=true,ZIndex=77})
 		add(card);K.corner(card,4)
-		K.create("UIStroke",card,{Color=M.ink,Thickness=if chosen then 5 else 2,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
+		K.create("UIStroke",card,{Color=if self.selected==node.id then M.red else M.ink,Thickness=if isChosen or self.selected==node.id then 5 else 2,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
 		card.Name="Nature"..node.nature
-		K.text(card,Text.upper(node.nature),UDim2.fromOffset(10,6),UDim2.new(1,-20,0,34),30,ink,K.TITLE_FONT).ZIndex=78
-		local line=K.text(card,node.shows or "",UDim2.fromOffset(10,40),UDim2.new(1,-20,0,32),12,ink,K.BODY_FONT)
+		K.text(card,Text.upper(node.nature),UDim2.fromOffset(14,8),UDim2.new(1,-28,0,34),32,ink,K.TITLE_FONT).ZIndex=78
+		local line=K.text(card,node.shows or "",UDim2.fromOffset(14,42),UDim2.new(1,-28,0,32),13,ink,K.BODY_FONT)
 		line.TextWrapped=true;line.TextYAlignment=Enum.TextYAlignment.Top;line.ZIndex=78
-		local tag=if chosen then "YOUR NATURE" elseif node.status=="off" then "LEARNED • CHOOSE" elseif node.status=="learn" then "LEARN • "..node.cost elseif node.status=="short" then node.cost.." POINTS" else "LOCKED"
-		local band=K.frame(card,UDim2.new(0,0,1,-22),UDim2.new(1,0,0,22),if chosen then M.ink else M.paper,0);band.ZIndex=78
-		K.text(band,tag,UDim2.fromOffset(0,0),UDim2.fromScale(1,1),13,if chosen then M.cream else M.ink,STRONG,Enum.TextXAlignment.Center).ZIndex=79
-		card.Activated:Connect(function() self.selected=node.id;self:detail() end)
+		local tag=if isChosen then "YOUR NATURE" elseif node.status=="off" then "LEARNED  •  CHOOSE IT" elseif node.status=="learn" then "LEARN  •  "..node.cost.." PTS" elseif node.status=="short" then node.cost.." PTS" else "LOCKED"
+		local band=K.frame(card,UDim2.new(0,0,1,-24),UDim2.new(1,0,0,24),if isChosen then M.ink else M.paper,0);band.ZIndex=78
+		K.text(band,tag,UDim2.fromOffset(0,0),UDim2.fromScale(1,1),13,if isChosen then M.cream else M.ink,STRONG,Enum.TextXAlignment.Center).ZIndex=79
+		card.Activated:Connect(function() self.selected=node.id;self:draw() end)
+		pcall(function()
+			card.MouseEnter:Connect(function() self:detail(node.id) end)
+			card.MouseLeave:Connect(function() self:detail() end)
+		end)
 		self.tiles[node.id]=card
 	end
-	if not self.selected and not layout.nature then
+	g.CanvasSize=UDim2.fromOffset(TREE_W-12,62+math.ceil(#layout.natures/2)*112)
+	pcall(function() g.CanvasPosition=Vector2.new(0,0) end)
+	if not self.selected then
 		for _,node in layout.natures do if not self.selected and (node.status=="learn" or node.status=="off") then self.selected=node.id end end
+		self.selected=self.selected or (layout.natures[1] and layout.natures[1].id)
 	end
-	self:drawTree(layout,NATURE_H+10,nil)
+	self:detail()
 end
 
 -- `shown`: a seal under the pointer (told, not picked); else the picked one.
