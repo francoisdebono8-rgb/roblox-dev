@@ -165,6 +165,20 @@ return {
 		-- (24/11, DEC-053 § 3.2) the blow that decides the duel: held longer and
 		-- slower, the camera on the impact (snapshot finalBlow, Client/Camera)
 		Decisive = {SlowFor = 0.6, SlowScale = 0.25}},
+	-- (27/11, François: « de vraies animations de coups subis selon la situation :
+	-- vol plané… ») A Knockback this fast (the Rotation's 48 and up; the
+	-- Sixty-Four Palms' last push, 46, stays a skid) along the floor (studs/s) is a vol
+	-- plané: the body flies laid out (Knockback.Flung), lands on its back,
+	-- bounces and slides (Knockdown.Flung), then lies Down seconds before the
+	-- usual get-up. The light strings never send one (their last blow skids).
+	-- Skid: the share of the flight kept as the slide along the floor.
+	-- Lift: the least upward speed of one, so it is seen flying (seen 27/11 in
+	-- Studio: the Rotation's 18 kept it a quarter of a second off the floor).
+	-- Air: the longest the flight is held before the landing takes over.
+	-- Clear: a wall closer than this behind the body takes it (a splat) instead.
+	Flight = {Speed = 48, Lift = 26, Air = 1.2, Down = 0.95, Skid = 0.8, Clear = 14,
+		-- the strings' own enders besides Light*: thrown away to be chased (MoveGraphs)
+		Strings = {PalmThrust = true}},
 	-- Where each fighter starts (studs from the centre): far enough apart that
 	-- the round opens on an approach, not on a punch.
 	StartDistance = 24,

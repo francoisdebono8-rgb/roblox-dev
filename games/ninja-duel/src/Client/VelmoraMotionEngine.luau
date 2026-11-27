@@ -2847,6 +2847,11 @@ local function authoredReaction(actor)
 		LANDINGS[actor.id or ""]=land
 		if actor.airborne then
 			land.groundAt=nil
+			-- (27/11) a vol plané (snapshot flung, Config.Flight): laid out flat,
+			-- the limbs trailing; it lands on its back (groundTargets)
+			if actor.flung and Authored.has(F..".Knockback.Flung") then
+				local p=play("Knockback.Flung",elapsed+2/60,side<0);if p then return p,RATE.authored,"Knockback.Flung" end
+			end
 			local name,mirror=directional("Knockback")
 			local p=play(name,elapsed+2/60,mirror);if p then return p,RATE.authored,name..(if mirror then ".L" else "") end
 		else
@@ -3105,7 +3110,14 @@ local function groundTargets(actor)
 		local clip="Down"
 		local fallLen=if Authored.has(F..".Knockdown") then Authored.length(F..".Knockdown") else 0
 		local elapsed=actor.reactionElapsed or 0
-		if pose=="Knockdown" and actor.reaction=="Knockdown" and fallLen>0 and (actor.airborne or elapsed<.34) then
+		local flungLen=if actor.flung and Authored.has(F..".Knockdown.Flung") then Authored.length(F..".Knockdown.Flung") else 0
+		if pose=="Knockdown" and actor.reaction=="Knockdown" and flungLen>0 and elapsed<flungLen then
+			-- (27/11) the vol plané's end: the back takes the floor, a bounce, the
+			-- slide; it ends on Down's first frame
+			clip="Knockdown.Flung"
+			out=Authored.sample(F..".Knockdown.Flung",elapsed)
+			if side<0 then out=Authored.mirror(out) end
+		elseif pose=="Knockdown" and actor.reaction=="Knockdown" and fallLen>0 and (actor.airborne or elapsed<.34) then
 			-- (ANIM-005) Thrown down: the authored fall plays (it ends lying,
 			-- where Down starts); the body went to the lying pose at once.
 			clip="Knockdown"

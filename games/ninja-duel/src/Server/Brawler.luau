@@ -442,6 +442,7 @@ end
 -- `cause` (optional): what threw the body (a move or technique name); a wall
 -- the flight ends on reports it, so the client can say which blow did it.
 function Brawler.react(c,a,kind,velocity,duration,source,cause)
+ local was=a.reaction
  Brawler.releaseGrab(a)
  -- (Audit 29/10) A hit ends the run: its hand-back threw the body on at the
  -- run's speed on the first free frame after the stun.
@@ -455,6 +456,28 @@ function Brawler.react(c,a,kind,velocity,duration,source,cause)
  -- reaction marks the body airborne)
  if (kind=="Knockback" or kind=="Launched" or kind=="Knockdown") and typeof(velocity)=="Vector3" then pcall(WorldReaction.blow,c,a,velocity,kind) end
  a.reaction=kind;a.reactionUntil=c.now+duration;a.reactionVelocity=velocity;a.reactionStartedAt=c.now
+ -- (27/11) a vol plané: a Knockback fast along the floor, from anything but
+ -- a light string's blow (Config.Flight); it ends on the back (below, landing)
+ a.flung=nil
+ -- (a body pinned to a wall is bounced off it by the heavy: not a flight)
+ if kind=="Knockback" and was~="WallSplat" and typeof(velocity)=="Vector3" and Vector3.new(velocity.X,0,velocity.Z).Magnitude>=Config.Flight.Speed then
+  local by=if type(source)=="table" then source.attackName else nil
+  -- a wall close behind: the body splats on it (the wall's own game), no flight
+  local flat=Vector3.new(velocity.X,0,velocity.Z)
+  local params=RaycastParams.new();params.FilterType=Enum.RaycastFilterType.Exclude
+  local skip={a.model,c.match.effects}
+  if type(source)=="table" and source.model then table.insert(skip,source.model) end
+  params.FilterDescendantsInstances=skip;DuelQuery.apply(params)
+  local wall=workspace:Raycast(a.root.Position,flat.Unit*Config.Flight.Clear,params)
+  local blocked=wall~=nil and math.abs(wall.Normal.Y)<.5
+  local stringBlow=type(by)=="string" and (string.find(by,"^Light")~=nil or Config.Flight.Strings[by]==true)
+  if not blocked and not stringBlow then
+   a.flung=true
+   if velocity.Y<Config.Flight.Lift then velocity=Vector3.new(velocity.X,Config.Flight.Lift,velocity.Z);a.reactionVelocity=velocity end
+   -- held until it comes down (the landing below ends it)
+   a.reactionUntil=math.max(a.reactionUntil,c.now+Config.Flight.Air)
+  end
+ end
 	 a.reactionSource=source;a.reactionCause=cause
  a.pending=nil;a.buffered=nil;a.attackName=nil;a.guardHeld=false;a.state="Neutral";a.untilTime=c.now
  -- Hit out of it: his own strings and re-entry are over.
@@ -1863,13 +1886,23 @@ function Brawler.step(c,a,dt)
      if hit.Normal.Y>.5 and velocity.Y<0 then
       if a.reaction=="Spiked" then a.reaction="Knockdown";a.groundPose="Knockdown";a.reactionUntil=c.now+.6;a.invulnerableUntil=c.now+.85 end
       if a.reaction=="Knockdown" then a.reactionUntil=math.min(a.reactionUntil,c.now+.55);Brawler.event(c,a,"LandedSlam") end
+      if a.reaction=="Knockback" and a.flung then
+       -- (27/11) the vol plané comes down on its back: it bounces, slides
+       -- and lies there (Config.Flight.Down) before the usual get-up
+       a.reaction="Knockdown";a.groundPose="Knockdown";a.reactionStartedAt=c.now
+       local down=NinjaArts.downTime(a,Config.Flight.Down)
+       a.reactionUntil=c.now+down;a.invulnerableUntil=c.now+down+.24
+       local from=a.hitFrom or Vector3.zAxis
+       a.groundSide=if a.root.CFrame.RightVector:Dot(from)>=0 then 1 else -1
+       Brawler.event(c,a,"FlungLanded")
+      end
       WorldReaction.landing(c,a,hit,-velocity.Y)
       -- The body is on the floor now: stop reporting it as airborne so the
       -- presentation plays the grounded pose instead of an air reaction.
       a.airborne=false;a.airRecoverUsed=false;a.airStringHits=0
       a.landedAt=c.now
       -- A body thrown along the floor keeps some of its run as a skid.
-      velocity=Vector3.new(velocity.X,0,velocity.Z)*.6
+      velocity=Vector3.new(velocity.X,0,velocity.Z)*(if a.flung then Config.Flight.Skid else .6)
      elseif math.abs(hit.Normal.Y)<.3 and WorldReaction.body(c,a,hit,-velocity:Dot(hit.Normal),velocity) and hit.Instance:GetAttribute("WorldState")=="Broken" then
       -- (EMB-004) The surface gave way under the body: the tree falls, the
       -- boulder bursts, and the body carries on through with what is left of

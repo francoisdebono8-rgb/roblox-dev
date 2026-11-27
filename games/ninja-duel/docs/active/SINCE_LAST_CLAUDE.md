@@ -1,5 +1,28 @@
 # Boîte de réception Claude
 
+## INBOX-ANIM-VOLPLANE-20261127 — ANIMATEUR 27/11 : le vol plané, premier des « vrais coups subis selon la situation » (François : « DEV compris »)
+
+François (11 h 50) : « créer de vraies animations de coups subis selon la situation : vol plané, recul, etc. ». À mes questions, il a répondu : **le vol plané d'abord**, **les 8 kits avec une base commune**, **DEV compris**.
+
+- **Règle** (`Shared/Config.Flight`, `Server/Brawler.react`) :
+  - Un `Knockback` qui part à **48 studs/s ou plus** le long du sol est un vol plané (`a.flung`). C'est le cas du Kaiten, de la Paume du vide, du Rasengan et des grands souffles. La dernière poussée des 64 paumes (46) reste une glissade.
+  - Pas de vol plané dans trois cas, qui gardent leur jeu :
+    - les fins de chaîne (`Light*`, et `PalmThrust` de Neji : `Flight.Strings`), lancées pour être poursuivies ;
+    - un corps collé au mur, que le coup lourd fait rebondir ;
+    - un mur à moins de 14 studs derrière (`Flight.Clear`) : le corps s'y colle.
+  - Le corps monte au moins à `Lift` = 26 (avant, le Kaiten le laissait 0,25 s en l'air ; maintenant environ 0,75 s).
+  - La réaction tient jusqu'à l'atterrissage (`Air` = 1,2 s au plus).
+- **Atterrissage** : sur le dos. La réaction devient `Knockdown` (`groundPose`) pour `Down` = 0,95 s, avec `NinjaArts.downTime` et l'invulnérabilité comme une mise au sol. La glissade garde 80 % de l'élan (au lieu de 60 %). Événement `FlungLanded`. Le relevé (`Wakeup`) et la roulade technique (`tech`) restent ceux d'une mise au sol.
+- **Snapshot** : `flung` (vrai pendant le vol et l'atterrissage).
+- **Clips** (`tools/blender/p3_kits.py`, `SIG` par kit ; écrits dans `AuthoredJutsu36..42`) :
+  - `<kit>.Knockback.Flung` : le vol, à plat, les hanches devant, le menton rentré, bras et jambes qui traînent vers l'attaquant, en boucle.
+  - `<kit>.Knockdown.Flung` (0,9 s) : le dos touche le sol, un rebond, la glissade bras ouverts. Le clip finit sur la première image de `<kit>.Down`.
+  - Chaque kit tombe à sa façon : Naruto s'étale et bat des bras, Lee et Minato rentrent les genoux, Gaara garde les bras croisés même sur le dos, Neji reste composé.
+- **Moteur** (`Client/VelmoraMotionEngine`) : `authoredReaction` joue `Knockback.Flung` en l'air ; `groundTargets` joue `Knockdown.Flung` à l'atterrissage, puis `Down` et `Getup` comme avant.
+- **Test** : `tests/Flight.spec.luau` (4 tests), ajouté à `run.sh`.
+- **Vu dans Studio** (place `LAB/bt/NinjaDuel-FLUNG`, Kaiten de Neji sur Lee) : le corps vole à plat, retombe sur le dos, rebondit, glisse, reste au sol puis se relève. Avec `Lift` = 26, le vol dure environ 0,75 s ; je n'ai pas pu le filmer (la vidéo de Studio n'a gardé que 8 images).
+- **Suite prévue** : le recul titubant, la vrille, l'effondrement à genoux.
+
 ## INBOX-ANIM-SCENES-20261127 — ANIMATEUR 27/11 : Lee vs Gaara et Naruto vs Neji reconnaissables (réponse à INBOX-CM-SCENES-20261127)
 
 Planches : `docs/reports/scenes-2026-11-27/planche_scene1_lee_gaara.jpg` et `planche_scene2_naruto_neji.jpg`. Chaque planche met côte à côte la vraie scène, décrite en mots (sans image de l'anime), et la capture Studio, puis liste ce qui colle et ce qui ne colle pas encore. Les captures viennent du build debug du 27/11, sur ma place `LAB/bt/NinjaDuel-SCENES`, avec un avatar Roblox et les vrais coups du jeu.

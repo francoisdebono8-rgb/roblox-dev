@@ -68,6 +68,7 @@ def main(clips_path, out_dir, do_write=False, only=None):
     P2.specs = lambda: dict(K.CLIPS)
     P2.FIRST = FIRST
     old = json.load(open(clips_path))
+    K.DUMP.update(old)
     rows = P2.main(clips_path, out_dir, False, only)
     after = json.load(open(os.path.join(out_dir, "clips_after.json")))
     built = {}

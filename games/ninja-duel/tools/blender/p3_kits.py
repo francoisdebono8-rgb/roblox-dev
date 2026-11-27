@@ -364,3 +364,96 @@ def wall_run_side(f):
 
 CLIPS["Lion.Parkour.WallRunSideR"] = wall_run_side(1)
 CLIPS["Lion.Parkour.WallRunSideL"] = wall_run_side(-1)
+
+
+# ================================================================== the « vol plané »
+# (27/11, François: « créer des vraies animations de coups subis selon la situation : vol plané,
+# recul, etc. », first the vol plané) A heavy blow sends the body flying back off its feet
+# (the server's « flung » Knockback, Config.Flight): Knockback.Flung is the flight, laid out flat, the hips
+# leading away from the blow, chin tucked, arms and legs trailing toward the attacker and
+# drifting (loops from "loop"). Knockdown.Flung is the end of it: the back hits the floor, the
+# body bounces once, slides on its back with the arms out and comes to rest exactly on the
+# kit's Down (its first frame), where the get-up takes over. Each kit falls its own way
+# (SIG): Naruto sprawls and flails, Lee and Minato tuck their knees in, Gaara stays stiff with
+# his arms close, Neji keeps his composure.
+SIG = {
+    "Legion": {"flail": 1.25, "tuck": .25, "bounce": 1.15, "roll": 10},
+    "Lion": {"flail": .8, "tuck": .5, "bounce": .9, "roll": -6},
+    "Leaf": {"flail": 1.0, "tuck": .85, "bounce": 1.05, "roll": 8},
+    "GentleFist": {"flail": .6, "tuck": .45, "bounce": .8, "roll": -4},
+    "Sand": {"flail": .35, "tuck": .1, "bounce": .7, "roll": 0},
+    "Copycat": {"flail": .7, "tuck": .6, "bounce": .9, "roll": -8},
+    "Mirage": {"flail": .6, "tuck": .5, "bounce": .85, "roll": 6},
+    "Flashstep": {"flail": .7, "tuck": .75, "bounce": .9, "roll": -6},
+}
+
+
+def _layout(s, phase):
+    """Flying back, laid out. phase 0/1: the two ends of the limbs' drift."""
+    fl, tk = s["flail"], s["tuck"]
+    g = 1 if phase == 0 else -1
+    return {"root": {"pitch": -62, "lean": s["roll"] * g * .5, "y": .3},
+            "Waist": {"pitch": -12, "turn": 6 * g * fl}, "Neck": {"pitch": 26, "turn": -4 * g},
+            "RA": {"swing": 62 + 24 * min(fl, 1) + 12 * g * fl, "spread": 30 + 20 * fl, "bend": 30 + 10 * fl},
+            "LA": {"swing": 62 + 24 * min(fl, 1) - 12 * g * fl, "spread": 30 + 20 * fl, "bend": 34 + 10 * fl},
+            "RL": {"swing": 40 + 40 * tk + 8 * g * fl, "spread": 8 + 6 * fl, "bend": 25 + 70 * tk, "ankle": -20},
+            "LL": {"swing": 30 + 40 * tk - 8 * g * fl, "spread": 8 + 6 * fl, "bend": 15 + 70 * tk, "ankle": -25}}
+
+
+def flung(kit):
+    s = SIG[kit]
+
+    def fn(old):
+        a = {"air": True}
+        whip = {"root": {"pitch": -32, "y": .1}, "Waist": {"pitch": -22}, "Neck": {"pitch": -24},
+                "RA": {"swing": 95, "spread": 30, "bend": 20}, "LA": {"swing": 90, "spread": 34, "bend": 24},
+                "RL": {"swing": 30, "spread": 6, "bend": 20, "ankle": -10}, "LL": {"swing": 12, "spread": 6, "bend": 10, "ankle": -10}}
+        A0, A1 = _layout(s, 0), _layout(s, 1)
+        return {"keys": [key(0, whip, "out", **a), key(.08, A0, "smooth", **a), key(.2, A0, "smooth", **a),
+                         key(.4, A1, "smooth", **a), key(.6, A0, "smooth", **a)]}
+    fn.base = kit + ".Knockback"
+    return fn
+
+
+DUMP = {}   # the game's clips (p3_build sets it): Knockdown.Flung ends on the kit's Down
+
+
+def flung_land(kit):
+    """Built over the kit's Knockdown, its own length (0.9 s); ends on Down's first frame."""
+    s = SIG[kit]
+    fl, tk, bo = s["flail"], s["tuck"], s["bounce"]
+
+    def fn(old):
+        import syph_author as SA
+        a = {"air": True}
+        down = DUMP.get(kit + ".Down")
+        # the back takes the floor: the shoulders and hips on it, the limbs still up from the flight
+        hit = {"root": {"pitch": -80, "y": -2.0, "z": .7, "lean": s["roll"]}, "Waist": {"pitch": -10}, "Neck": {"pitch": 28},
+               "RA": {"swing": 75 + 15 * fl, "spread": 34, "bend": 24}, "LA": {"swing": 70 + 15 * fl, "spread": 38, "bend": 28},
+               "RL": {"swing": 70 + 20 * tk, "spread": 10, "bend": 40 + 50 * tk, "ankle": -20}, "LL": {"swing": 60 + 20 * tk, "spread": 12, "bend": 30 + 50 * tk, "ankle": -20}}
+        # it bounces once: the hips come off the floor, the knees fly up, the arms open
+        bounce = {"root": {"pitch": -68, "y": -2.0 + .6 * bo, "z": .7, "lean": -s["roll"]}, "Waist": {"pitch": -6}, "Neck": {"pitch": 22},
+                  "RA": {"swing": 40 + 30 * fl, "spread": 62, "bend": 30}, "LA": {"swing": 36 + 30 * fl, "spread": 66, "bend": 34},
+                  "RL": {"swing": 95, "spread": 12, "bend": 75 + 25 * tk, "ankle": -30}, "LL": {"swing": 85, "spread": 14, "bend": 65 + 25 * tk, "ankle": -30}}
+        # then slides on its back, the arms out wide along the floor, the knees up
+        slide = {"root": {"pitch": -84, "y": -2.05, "z": .7, "lean": s["roll"] * 1.6}, "Waist": {"pitch": -4, "turn": s["roll"]}, "Neck": {"pitch": 16, "turn": -s["roll"] * 2},
+                 "RA": {"swing": 14, "spread": 30 + 45 * fl, "bend": 22}, "LA": {"swing": 12, "spread": 28 + 45 * fl, "bend": 26},
+                 "RL": {"swing": 20 + 50 * tk, "spread": 6 + 12 * fl, "bend": 20 + 80 * tk, "ankle": 10}, "LL": {"swing": 10 + 45 * tk, "spread": 8 + 12 * fl, "bend": 10 + 70 * tk, "ankle": 10}}
+        if kit == "Sand":
+            # Gaara even on his back: the arms stay folded on the chest
+            for arm, sw in (("RA", 70), ("LA", 64)):
+                slide[arm] = {"swing": sw, "spread": -10, "twist": 30, "bend": 115}
+                bounce[arm] = {"swing": sw, "spread": -6, "twist": 30, "bend": 110}
+                hit[arm] = {"swing": sw + 10, "spread": -6, "twist": 30, "bend": 105}
+        keys = [key(0, hit, "out", **a), key(.13, bounce, "out", **a), key(.3, merge(slide, {"root": {"y": -2.0}}), "in2", **a),
+                key(.62, slide, "smooth", **a)]
+        if down:
+            keys.append({"t": .9, "ease": "smooth", "raw": SA.frame_of(down, 0)})
+        return {"keys": keys, "length": .9}
+    fn.base = kit + ".Knockdown"
+    return fn
+
+
+for _k in KITS:
+    CLIPS[_k + ".Knockback.Flung"] = flung(_k)
+    CLIPS[_k + ".Knockdown.Flung"] = flung_land(_k)

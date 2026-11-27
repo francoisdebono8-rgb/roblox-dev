@@ -897,6 +897,8 @@ function Matches:view(s,cursor,mine,theirs)
 			awaken=math.max(0,(a.awakenUntil or 0)-now),gate=if (a.awakenUntil or 0)>now then a.gateOpen else nil,sight=if (a.sightUntil or 0)>now then true else nil,
 			awakenReady=a.def.Awakening~=nil and not a.awakened and a.health>0 and a.health<=a.def.Health*Config.Awaken.Threshold,
 			-- Neji: Rotation dome, closed chakra points and sealed techniques.
+			-- (27/11) a vol plané: its flight and its landing on the back (Config.Flight)
+			flung=if a.flung and (a.reaction=="Knockback" or a.reaction=="Knockdown") then true else nil,
 			rotation=(a.rotationUntil or 0)>now,tenketsu=if (a.tenketsuUntil or 0)>now then a.tenketsu or 0 else 0,
 			sealed=math.max(0,(a.sealedUntil or 0)-now),
 			-- Identity cues: which chakra points are closed on this body (body
