@@ -1,5 +1,26 @@
 # Boîte de réception Claude
 
+## INBOX-OUTILLEUR-MURS-20261127 — OUTILLEUR 27/11 soir (passe commune 4) : le robot humain sur les murs, la fluidité pour filmer
+
+Mesures : `tools/humanbot/mesures/2026-11-27d_0cd43300/` (rapport, 11 captures). Place : copie de la place commune `0cd43300`. Aucune ligne rouge.
+
+- **DEV** :
+  1. Duel de rue dans les ruelles : la caméra se colle aux façades, entre dans la maison qui s'efface, et perd les deux corps (captures 40, 41). Le corps du joueur a aussi été poussé dans une fente de 2 studs entre deux maisons.
+  2. L'IA se tient sur le mur au ras du sol (y ≈ 3,5) jusqu'à 8 s de suite, 7 fois, et frappe dans le vide. Perchée sous le joueur posé sur un auvent, elle a frappé 8 s sans qu'aucun coup ne touche dans un sens ou l'autre.
+  3. Le seul coup reçu debout sur le mur a fait quitter le mur aussitôt (0cd43300) : à revoir avec ton point 1 de la passe.
+  4. 24 maisons ouvertes en deux duels, dont 16 par des coups de l'IA qui touchaient le mur (`WorldReaction.impact` ouvre à chaque coup assez fort). Voulu ?
+  5. Une image de 145 ms en duel, toute dans le son (updateFmod 134 ms, update3dListenerAttributes 72 ms). Les sons de HouseBreakFX et StrikeSoundFX sont créés à la volée sans préchargement : piste.
+  6. Pour info : chaque capture de Studio (MCP) gèle le Play ~0,47 s. Une capture pendant un tournage ou une mesure fausse le résultat.
+- **ANIMATEUR** :
+  1. En ville, se tenir sur le mur ne marche que dans un cas précis (sauter à côté d'un long mur, tourner le stick dedans juste à la fin de la course le long) : 2 fois sur 6. Garder le stick dedans fait passer le haut en 0,3 s. Sur une maison de 15-18 studs, la montée pose toujours sur le toit.
+  2. Debout sur le mur, le corps horizontal en garde rend bien de côté (capture 38) ; la course le long part même au sol, à côté d'une maison.
+- **DESIGN** : rien n'apprend le mur à l'écran (la barre du bas ne parle que de SHIFT, SPACE ×2, E, B). Les traits rouges et le badge F4 restent visibles hors tournage.
+- **CM** (pour le tournage de ce soir) :
+  1. Studio **au premier plan** pendant la prise : au second plan, elle ne dessine que 15 images par seconde.
+  2. **Aucune capture Claude** (capture_screenshot) pendant la prise : chacune fige l'image ~0,5 s.
+  3. Qualité graphique fixe (le F4 dit 12 ; la place lit « Automatique »), « Préparer l'image » du F4, une seule Studio en Play.
+  4. Les plus belles images vues : la course sur les toits au-dessus des ruelles (42), le joueur debout sur le mur de côté (38), la maison ouverte avec la fissure au sol (44). À éviter : le duel au fond d'une ruelle étroite (la caméra se colle aux murs).
+
 ## INBOX-ANIM-VOLPLANE-20261127 — ANIMATEUR 27/11 : le vol plané, premier des « vrais coups subis selon la situation » (François : « DEV compris »)
 
 François (11 h 50) : « créer de vraies animations de coups subis selon la situation : vol plané, recul, etc. ». À mes questions, il a répondu : **le vol plané d'abord**, **les 8 kits avec une base commune**, **DEV compris**.

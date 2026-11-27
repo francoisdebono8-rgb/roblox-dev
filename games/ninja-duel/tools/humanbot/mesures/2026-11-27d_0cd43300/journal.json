@@ -1,0 +1,604 @@
+{
+ "transcrit": "Le journal du 27/11 soir (passe commune 4 : le robot humain sur les murs, la\nfluidité), transcrit à la main depuis le témoin client (comptes, images\nlongues, bugs) et les suivis serveur des murs (poses de la ville, modes du\nduel, maisons ouvertes). Les deux notes « capture » sont celles de l'essai\nfait exprès (60 s sans capture, puis deux captures) ; les autres captures de la\npasse n'étaient pas notées.",
+ "place": "LAB/robots/NinjaDuel-P4-robots.rbxlx, copie de PLACES/NinjaDuel.rbxlx : BUILD 021aa681 | RUNTIME 2789def3 | capture @ 0cd43300 ; Studio au second plan",
+ "setup": "serveur : Forest.atGate + create, chooseStarter Lion, earnRyo 1000 ; le joueur posé devant chaque mur ; défi de THE HARD WORKER (Leaf) posé dans les ruelles (SoloPlay:summon, BackAlley)",
+ "client": {
+  "seconds": 786,
+  "clicks": 52,
+  "keys": 41,
+  "answers": 1,
+  "fists": 9,
+  "fistsLive": 9,
+  "hitches": [
+   {
+    "t": 28.0,
+    "dt": 0.47
+   },
+   {
+    "t": 49.0,
+    "dt": 0.45
+   },
+   {
+    "t": 75.9,
+    "dt": 0.48
+   },
+   {
+    "t": 111.0,
+    "dt": 0.46
+   },
+   {
+    "t": 151.2,
+    "dt": 0.49
+   },
+   {
+    "t": 233.6,
+    "dt": 0.46
+   },
+   {
+    "t": 277.3,
+    "dt": 0.45
+   },
+   {
+    "t": 336.6,
+    "dt": 0.45
+   },
+   {
+    "t": 399.5,
+    "dt": 1.06
+   },
+   {
+    "t": 420.1,
+    "dt": 0.49
+   },
+   {
+    "t": 449.0,
+    "dt": 0.47
+   },
+   {
+    "t": 474.2,
+    "dt": 0.45
+   },
+   {
+    "t": 494.1,
+    "dt": 0.47
+   },
+   {
+    "t": 533.3,
+    "dt": 0.55
+   },
+   {
+    "t": 554.0,
+    "dt": 0.39
+   },
+   {
+    "t": 620.2,
+    "dt": 0.28
+   },
+   {
+    "t": 661.9,
+    "dt": 0.48
+   },
+   {
+    "t": 672.7,
+    "dt": 0.47
+   }
+  ],
+  "events": [
+   {
+    "t": 0,
+    "kind": "note",
+    "v": "passe 4 : le robot humain sur les murs (place 0cd43300, copie dans LAB/robots)"
+   },
+   {
+    "t": 593.4,
+    "kind": "note",
+    "v": "mesure : 60 s sans capture d'écran"
+   },
+   {
+    "t": 661.5,
+    "kind": "note",
+    "v": "capture"
+   },
+   {
+    "t": 672.3,
+    "kind": "note",
+    "v": "capture"
+   }
+  ],
+  "bugs": [
+   {
+    "kind": "corps bloqué",
+    "key": "80,-2160",
+    "count": 2,
+    "place": "Workspace",
+    "detail": {
+     "note": "W tenu au sol contre une maison : on ne grimpe qu'en l'air"
+    }
+   },
+   {
+    "kind": "corps bloqué",
+    "key": "152,-2160",
+    "count": 3,
+    "place": "Workspace"
+   },
+   {
+    "kind": "corps bloqué",
+    "key": "-48,-2520",
+    "count": 1,
+    "place": "Workspace"
+   },
+   {
+    "kind": "corps bloqué",
+    "key": "-104,-2496",
+    "count": 4,
+    "place": "Workspace"
+   },
+   {
+    "kind": "à-coup",
+    "key": "1",
+    "count": 1,
+    "place": "Duel_1",
+    "detail": {
+     "ms": 1060,
+     "note": "au début du duel des ruelles"
+    }
+   },
+   {
+    "kind": "à-coup",
+    "key": "0.5",
+    "count": 1,
+    "place": "Duel_1",
+    "detail": {
+     "ms": 550
+    }
+   }
+  ]
+ },
+ "server": {
+  "rows": [],
+  "bugs": []
+ },
+ "murs": {
+  "pose": [
+   {
+    "run": "ruelle 9 studs (68,-2207)",
+    "pose": "siderunR"
+   },
+   {
+    "run": "ruelle 9 studs (68,-2207)",
+    "pose": "kick"
+   },
+   {
+    "run": "ruelle 9 studs (68,-2207)",
+    "pose": "leap"
+   },
+   {
+    "run": "ruelle 9 studs (68,-2207)",
+    "pose": "none"
+   },
+   {
+    "run": "ruelle 9 studs (68,-2207)",
+    "pose": "climb"
+   },
+   {
+    "run": "ruelle 9 studs (68,-2207)",
+    "pose": "vault"
+   },
+   {
+    "run": "ruelle 9 studs (68,-2207)",
+    "pose": "none"
+   },
+   {
+    "run": "ruelle 9 studs (68,-2207)",
+    "pose": "climb"
+   },
+   {
+    "run": "ruelle 9 studs (68,-2207)",
+    "pose": "none"
+   },
+   {
+    "run": "ruelle 9 studs (68,-2207)",
+    "pose": "siderunR"
+   },
+   {
+    "run": "ruelle 9 studs (68,-2207)",
+    "pose": "none"
+   },
+   {
+    "run": "pilier du SwingTree",
+    "pose": "climb"
+   },
+   {
+    "run": "pilier du SwingTree",
+    "pose": "vault"
+   },
+   {
+    "run": "pilier du SwingTree",
+    "pose": "none"
+   },
+   {
+    "run": "machiya 15 studs",
+    "pose": "climb"
+   },
+   {
+    "run": "machiya 15 studs",
+    "pose": "vault"
+   },
+   {
+    "run": "machiya 15 studs",
+    "pose": "none"
+   },
+   {
+    "run": "ExamHallWest, saut puis A",
+    "pose": "siderunL"
+   },
+   {
+    "run": "ExamHallWest, saut puis A",
+    "pose": "kick"
+   },
+   {
+    "run": "ExamHallWest, saut puis A",
+    "pose": "leap"
+   },
+   {
+    "run": "ExamHallWest, saut puis A",
+    "pose": "none"
+   },
+   {
+    "run": "ExamHallWest, saut puis A",
+    "pose": "siderunL"
+   },
+   {
+    "run": "ExamHallWest, saut puis A",
+    "pose": "wallstand"
+   },
+   {
+    "run": "ExamHallWest, saut puis A",
+    "pose": "vault"
+   },
+   {
+    "run": "ExamHallWest, saut puis A",
+    "pose": "none"
+   },
+   {
+    "run": "ExamHallWest, saut puis A",
+    "pose": "siderunL"
+   },
+   {
+    "run": "ExamHallWest, saut puis A",
+    "pose": "none"
+   },
+   {
+    "run": "ExamHallWest, sans saut",
+    "pose": "siderunL"
+   },
+   {
+    "run": "ExamHallWest, sans saut",
+    "pose": "none"
+   },
+   {
+    "run": "ExamHallWest, saut, A en fin de course",
+    "pose": "siderunL"
+   },
+   {
+    "run": "ExamHallWest, saut, A en fin de course",
+    "pose": "wallstand"
+   },
+   {
+    "run": "ExamHallWest, saut, A en fin de course",
+    "pose": "none"
+   }
+  ],
+  "duel": [
+   {
+    "t": 9.7,
+    "who": "PlayerFighter",
+    "mode": "stand",
+    "state": "Neutral",
+    "hp": 100,
+    "y": 5.0
+   },
+   {
+    "t": 14.9,
+    "who": "AIFighter",
+    "mode": "stand",
+    "state": "Neutral",
+    "hp": 100,
+    "y": 8.1
+   },
+   {
+    "t": 15.4,
+    "who": "AIFighter",
+    "mode": "-",
+    "state": "Neutral",
+    "hp": 100,
+    "y": 8.1
+   },
+   {
+    "t": 17.6,
+    "who": "PlayerFighter",
+    "mode": "-",
+    "state": "Neutral",
+    "hp": 100,
+    "y": 5.0
+   },
+   {
+    "t": 45.1,
+    "who": "AIFighter",
+    "mode": "stand",
+    "state": "Neutral",
+    "hp": 100,
+    "y": 3.7
+   },
+   {
+    "t": 53.0,
+    "who": "AIFighter",
+    "mode": "-",
+    "state": "Neutral",
+    "hp": 100,
+    "y": 3.7
+   },
+   {
+    "t": 54.5,
+    "who": "AIFighter",
+    "mode": "stand",
+    "state": "Neutral",
+    "hp": 100,
+    "y": 3.6
+   },
+   {
+    "t": 57.3,
+    "who": "AIFighter",
+    "mode": "-",
+    "state": "Neutral",
+    "hp": 100,
+    "y": 3.6
+   },
+   {
+    "t": 58.1,
+    "who": "AIFighter",
+    "mode": "stand",
+    "state": "Neutral",
+    "hp": 100,
+    "y": 3.5
+   },
+   {
+    "t": 62.6,
+    "who": "AIFighter",
+    "mode": "-",
+    "state": "Neutral",
+    "hp": 100,
+    "y": 3.5
+   },
+   {
+    "t": 67.2,
+    "who": "AIFighter",
+    "mode": "stand",
+    "state": "Neutral",
+    "hp": 100,
+    "y": 3.6
+   },
+   {
+    "t": 75.3,
+    "who": "AIFighter",
+    "mode": "-",
+    "state": "Neutral",
+    "hp": 100,
+    "y": 3.6
+   },
+   {
+    "t": 77.5,
+    "who": "AIFighter",
+    "mode": "stand",
+    "state": "Neutral",
+    "hp": 100,
+    "y": 3.6
+   },
+   {
+    "t": 85.4,
+    "who": "AIFighter",
+    "mode": "-",
+    "state": "Neutral",
+    "hp": 100,
+    "y": 3.6
+   },
+   {
+    "t": 102.2,
+    "who": "AIFighter",
+    "mode": "stand",
+    "state": "Neutral",
+    "hp": 100,
+    "y": 3.9
+   },
+   {
+    "t": 110.3,
+    "who": "AIFighter",
+    "mode": "-",
+    "state": "Neutral",
+    "hp": 100,
+    "y": 3.9
+   },
+   {
+    "t": 127.8,
+    "who": "AIFighter",
+    "mode": "stand",
+    "state": "Neutral",
+    "hp": 100,
+    "y": 3.5
+   },
+   {
+    "t": 128.2,
+    "who": "AIFighter",
+    "mode": "-",
+    "state": "Neutral",
+    "hp": 100,
+    "y": 3.5
+   },
+   {
+    "t": 133.0,
+    "who": "AIFighter",
+    "mode": "stand",
+    "state": "Neutral",
+    "hp": 100,
+    "y": 4.4
+   },
+   {
+    "t": 133.6,
+    "who": "AIFighter",
+    "mode": "-",
+    "state": "Neutral",
+    "hp": 100,
+    "y": 4.4
+   },
+   {
+    "t": 138.0,
+    "who": "AIFighter",
+    "mode": "stand",
+    "state": "Neutral",
+    "hp": 100,
+    "y": 5.0
+   },
+   {
+    "t": 140.4,
+    "who": "AIFighter",
+    "mode": "-",
+    "state": "Neutral",
+    "hp": 90,
+    "y": 5.0
+   }
+  ],
+  "breach": [
+   {
+    "t": 0,
+    "part": "machiya.Solid1",
+    "energy": 31.6
+   },
+   {
+    "t": 1,
+    "part": "machiya.Solid1",
+    "energy": 26.3
+   },
+   {
+    "t": 2,
+    "part": "machiya.Solid1",
+    "energy": 20
+   },
+   {
+    "t": 3,
+    "part": "machiya.Solid1",
+    "energy": 47.9
+   },
+   {
+    "t": 4,
+    "part": "machiya.Solid1",
+    "energy": 31.2
+   },
+   {
+    "t": 5,
+    "part": "machiya.Solid1",
+    "energy": 20
+   },
+   {
+    "t": 6,
+    "part": "machiya.Solid1",
+    "energy": 28
+   },
+   {
+    "t": 7,
+    "part": "machiya.Solid1",
+    "energy": 57.6
+   },
+   {
+    "t": 8,
+    "part": "machiya.Solid1",
+    "energy": 51.2
+   },
+   {
+    "t": 9,
+    "part": "machiya.Solid1",
+    "energy": 89.6
+   },
+   {
+    "t": 10,
+    "part": "machiya.Solid1",
+    "energy": 52
+   },
+   {
+    "t": 11,
+    "part": "machiya.Solid1",
+    "energy": 89.6
+   },
+   {
+    "t": 12,
+    "part": "machiya.Solid1",
+    "energy": 36
+   },
+   {
+    "t": 13,
+    "part": "machiya.Solid1",
+    "energy": 28
+   },
+   {
+    "t": 14,
+    "part": "machiya.Solid1",
+    "energy": 24
+   },
+   {
+    "t": 15,
+    "part": "machiya.Solid1",
+    "energy": 24
+   },
+   {
+    "t": 16,
+    "part": "machiya.Solid1",
+    "energy": 72
+   },
+   {
+    "t": 17,
+    "part": "machiya.Solid1",
+    "energy": 72
+   },
+   {
+    "t": 18,
+    "part": "machiya.Solid1",
+    "energy": 89.6
+   },
+   {
+    "t": 19,
+    "part": "machiya.Solid1",
+    "energy": 72
+   },
+   {
+    "t": 20,
+    "part": "machiya.Solid1",
+    "energy": 51.2
+   },
+   {
+    "t": 21,
+    "part": "machiya.Solid1",
+    "energy": 56.6
+   },
+   {
+    "t": 22,
+    "part": "machiya.Solid1",
+    "energy": 58.9
+   },
+   {
+    "t": 23,
+    "part": "machiya.Solid1",
+    "energy": 89.6
+   }
+  ],
+  "notes": [
+   "En ville, debout sur le mur : 2 fois sur 6 courses, seulement en sautant à côté d'un long mur puis en tournant le stick dedans à la fin de la course le long. Garder le stick dedans fait monter et passer le haut en 0,3 s.",
+   "Courir droit dans une maison de 15-18 studs : on monte et on passe sur le toit (la montée fait 36 studs) ; au sol, W contre un mur ne grimpe pas.",
+   "En duel : l'IA se tient sur le mur 8 s au ras du sol (y 3,5) et frappe dans le vide ; elle a frappé 8 s depuis le mur le joueur perché au-dessus, sans qu'aucun coup ne touche dans un sens ou l'autre.",
+   "Le seul coup reçu sur le mur (le joueur tombe sur l'IA) l'a fait quitter le mur aussitôt.",
+   "24 maisons ouvertes en deux duels : 8 par le corps du joueur projeté, 16 par des coups de l'IA qui touchaient le mur (WorldReaction.impact ouvre une maison à chaque coup assez fort, corps ou coup)."
+  ]
+ },
+ "fluidite": {
+  "profileur": "micro-profileur 8,5 s de duel des ruelles (client du Play solo) : 59 i/s simulées, médiane 16,6 ms, p99 18,6 ms ; une image de 145 ms (son : updateFmod 134 ms, update3dListenerAttributes 72 ms) ; Studio au second plan : 14,8 images dessinées par seconde",
+  "captures": "60 s sans capture : rien au-dessus de 0,3 s ; deux captures : deux images de 0,48 et 0,47 s ; 15 captures pendant la passe, 15 images de 0,39 à 0,55 s"
+ }
+}

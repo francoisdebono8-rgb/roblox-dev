@@ -454,6 +454,14 @@ function W.note(text)
 	table.insert(rows,{t=now(),kind="note",text=tostring(text)})
 	return "ok"
 end
+-- (27/11 soir, passe 4) Measured: each Studio capture (capture_screenshot of
+-- the MCP) freezes the Play for about 0.47 s (2 captures: 0.48 and 0.47 s; 60 s
+-- without one: nothing over 0.3 s). Call W.shot() just before a capture: the
+-- report leaves the long frame that follows out of the game's own.
+function W.shot()
+	table.insert(rows,{t=now(),kind="note",text="capture"})
+	return "ok"
+end
 
 function W.read()
 	local inputs,acts=0,0

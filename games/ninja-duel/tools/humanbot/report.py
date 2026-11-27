@@ -117,10 +117,57 @@ def steps_text(steps, n=6):
     return " · ".join(parts)
 
 
-def hitches(rows):
+# (27/11 soir) A Studio capture freezes the Play about 0.47 s: the long frame in
+# this time after a "capture" note (NDHumanWatch.shot) is the capture's, not the game's.
+CAPTURE_FREEZE = 2.0
+
+
+def hitches(rows, events=None):
+    shots = [e["t"] for e in (events or []) if e.get("kind") == "note" and e.get("v") == "capture"]
+    rows = [h for h in rows if not any(0 <= h.get("t", 0) - s <= CAPTURE_FREEZE for s in shots)]
     felt = [h for h in rows if h.get("dt", 0) >= FELT]
     return {"felt": len(felt), "max": max((h["dt"] for h in rows), default=0.0),
             "every": round(sum(b["t"] - a["t"] for a, b in zip(felt, felt[1:])) / max(1, len(felt) - 1), 1) if len(felt) > 1 else None}
+
+
+# What a pose of the village is called for a player (Client/HubMove: HubPose).
+POSES = {"climb": "monte le mur", "wallstand": "debout sur le mur", "siderunR": "court le long (droite)",
+         "siderunL": "court le long (gauche)", "leap": "saut", "kick": "appel sur le mur", "vault": "passe le haut"}
+
+
+def stands(duel):
+    """Each time a fighter stood on a wall in a duel: how long, and whether a blow
+    he took ended it (his health lower on the row that leaves the wall)."""
+    out, on = [], {}
+    for r in duel:
+        who = r.get("who")
+        if r.get("mode") == "stand" and who not in on:
+            on[who] = r
+        elif r.get("mode") != "stand" and who in on:
+            start = on.pop(who)
+            out.append({"who": who, "from": start["t"], "seconds": round(r["t"] - start["t"], 1),
+                        "hit": r.get("hp", 0) < start.get("hp", 0), "y": start.get("y")})
+    return out
+
+
+def walls_text(walls):
+    lines = []
+    poses = {}
+    for p in walls.get("pose", []):
+        poses[p["pose"]] = poses.get(p["pose"], 0) + 1
+    if poses:
+        lines.append("En ville : " + ", ".join(f"{POSES.get(k, k)} {v}" for k, v in sorted(poses.items(), key=lambda kv: -kv[1]) if k != "none") + ".")
+    st = stands(walls.get("duel", []))
+    if st:
+        hit = [s for s in st if s["hit"]]
+        lines.append(f"En duel : {len(st)} fois debout sur un mur (de {min(s['seconds'] for s in st)} à {max(s['seconds'] for s in st)} s) ; "
+                     f"{len(hit)} fin(s) sur un coup reçu.")
+    br = walls.get("breach", [])
+    if br:
+        lines.append(f"Maisons ouvertes : {len(br)} (énergie {min(b['energy'] for b in br)} à {max(b['energy'] for b in br)}).")
+    for n in walls.get("notes", []):
+        lines.append(f"- {n}")
+    return lines
 
 
 def report(mesure):
@@ -152,7 +199,7 @@ def report(mesure):
                 where += f" ({note})"
             lines.append(f"| {b.get('key')} | {b.get('count', 1)} | {where} | {steps_text(b.get('steps') or [])} |")
         lines.append("")
-    h = hitches(c.get("hitches", []))
+    h = hitches(c.get("hitches", []), c.get("events"))
     lines.append(f"Images longues : {h['felt']} de {FELT} s ou plus (la plus longue {h['max']} s)"
                  + (f", une toutes les {h['every']} s en moyenne." if h["every"] else "."))
     lines.append("")
@@ -164,6 +211,12 @@ def report(mesure):
         lines.append("|---|---|---|---|")
         for d in duels:
             lines.append(f"| {d.get('what')} | {d.get('vs')} | {d.get('pilot')} | {d.get('wins')} |")
+        lines.append("")
+    walls = mesure.get("murs")
+    if walls:
+        lines.append("## Les murs")
+        lines.append("")
+        lines.extend(walls_text(walls))
         lines.append("")
     two = mesure.get("deux_joueurs")
     if two:
