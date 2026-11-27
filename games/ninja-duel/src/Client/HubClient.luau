@@ -290,6 +290,12 @@ function Hub.new(ui,camera,send,controls)
 			self:hideCard()
 		end
 	end)
+	-- (DESIGN 27/11, François: « un travail d'ombre doit être fait ») every box
+	-- sits on the image: a soft ink shadow under each (UI.kit.shadow)
+	if K.shadow then
+		for _,g in {self.bar,self.hud,self.goal,wallet,self.duelsButton,shop,self.questsButton,ranks,gear,self.eightButton,bubble} do pcall(K.shadow,g) end
+		if self.map and self.map.mini then pcall(K.shadow,self.map.mini) end
+	end
 	-- The layout follows the window and the way he plays (touch, pad, keys).
 	pcall(function() workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(function() self:layout() end) end)
 	-- (only when the way changes: mouse and keys alternate all the time)

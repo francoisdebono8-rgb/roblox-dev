@@ -336,4 +336,17 @@ test("the bar's line and the clean screen (passe commune 4)",function()
 	assert(UI.COACH_BOTTOM and UI.COACH_BOTTOM<=200,"the coach's caption sits at the bottom")
 end)
 
+test("the paper is an aged one and the boxes have a shadow (François 27/11)",function()
+	local UI=H.load("Client/UI")
+	local M=UI.kit.MANGA
+	for _,k in {"paper","back","cream"} do
+		local c=M[k]
+		local lum=.2126*c.R+.7152*c.G+.0722*c.B
+		assert(lum<.9,k.." is still a screen white: "..string.format("%.2f",lum))
+	end
+	assert(type(UI.kit.shadow)=="function","no shadow in the kit")
+	local src=require("@lune/fs").readFile("src/Client/HubClient.luau")..require("@lune/fs").readFile("src/Client/TreePanel.luau")
+	assert(select(2,string.gsub(src,"shadow%(",""))>=4,"the boxes have no shadow")
+end)
+
 print(string.format("NinjaDuel Konoha HUD layout: %d PASS",passed))

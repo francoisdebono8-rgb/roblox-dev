@@ -170,8 +170,9 @@ function Preview.frame(parent,full)
 	local body=Preview.body()
 	if not body or not Authored then return nil end
 	local vp=Instance.new("ViewportFrame")
-	vp.BackgroundTransparency=1;vp.BorderSizePixel=0;vp.Ambient=Color3.fromRGB(190,180,170);vp.LightColor=Color3.fromRGB(255,246,232)
-	vp.LightDirection=Vector3.new(-.4,-1,-.6)
+	vp.BackgroundTransparency=1;vp.BorderSizePixel=0;vp.Ambient=Color3.fromRGB(215,206,196);vp.LightColor=Color3.fromRGB(255,250,242)
+	-- (27/11, « peu lisible ») lit from the front and above, as the lens sees it
+	vp.LightDirection=Vector3.new(.3,-.8,.6)
 	local model=body:Clone()
 	for _,p in model:GetDescendants() do if p:IsA("BasePart") then p.Anchored=true end end
 	model.Parent=vp
@@ -180,7 +181,7 @@ function Preview.frame(parent,full)
 	-- three quarters from the front, the body's middle in the middle
 	local root=model:FindFirstChild("HumanoidRootPart")
 	local centre=(root and root.Position or Vector3.zero)+Vector3.new(0,if full then -.3 else .1,0)
-	local dist=if full then 15.5 else 12
+	local dist=if full then 14 else 10
 	cam.CFrame=CFrame.lookAt(centre+Vector3.new(-.5,.15,-1).Unit*dist,centre)
 	vp.Parent=parent
 	return {vp=vp,model=model,root=root,home=root and root.CFrame or CFrame.identity,order=links(model),centre=centre,full=full}

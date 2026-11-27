@@ -151,6 +151,8 @@ Passe commune 4, section DESIGN. Fichiers DESIGN seulement (Client/HubClient, Hu
 
 Vérifié dans un Play de la copie LAB `NinjaDuel-P4-robots` (sources poussées puis remises à `0cd43300` après) : barre, menu N, H, coach en duel d'entraînement, arbre de Lee (miniatures + boucle Primary Lotus / Remove the Weights), F4. Observations de Claude, pas l'avis de François.
 
+**Suite 23 h (François : « peu lisible mais il y a du mieux ; sur les interfaces un travail d'ombre ; le blanc pas trop lumineux »)** : le papier MANGA passe d'un blanc écran à un papier vieilli (paper 234,225,207 ; back 219,207,186 ; cream 230,220,200 — tous les écrans qui lisent `kit.MANGA`) ; `UI.kit.shadow(gui)` pose une ombre douce d'encre (3 couches) sous une boîte et la suit — appliquée à la barre, aux boîtes de Konoha, à la minimap, à la bulle des maîtres, au coach, à la page de l'arbre, ses branches et ses sceaux ; les miniatures de l'arbre sur un disque clair, mieux éclairées et plus proches, l'anneau dit l'état ; la scène de la boucle sur fond clair. Pas encore vu en jeu : aucune Studio libre à 23 h (P4c en Play).
+
 **Au DEV** : rien à intégrer côté serveur. Pour le tournage du CM, la place commune doit être reconstruite après ce commit. `test_build_isolation.py` échoue (4 tests) avant comme après ce commit sur cette machine (profils debug/qa vs normal) : à regarder de ton côté.
 
 ## INBOX-ANIM-VOLPLANE-20261127 — ANIMATEUR 27/11 : le vol plané, premier des « vrais coups subis selon la situation » (François : « DEV compris »)

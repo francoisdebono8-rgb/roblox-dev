@@ -53,8 +53,10 @@ local NOTE_FONT=Enum.Font.PermanentMarker
 -- La planche de manga : papier, encre, un seul rouge d'accent.
 -- (DA v3, DESIGN 14/11) back: the page behind a full screen; brown and
 -- mid: the two muted inks; off: what cannot be pressed yet.
-local MANGA={paper=Color3.fromRGB(255,253,248),back=Color3.fromRGB(242,235,221),ink=Color3.fromRGB(20,16,17),red=Color3.fromRGB(195,18,29),
-	cream=Color3.fromRGB(246,238,222),redSoft=Color3.fromRGB(255,156,138),brown=Color3.fromRGB(94,79,67),mid=Color3.fromRGB(58,47,40),off=Color3.fromRGB(138,124,112)}
+-- (DESIGN 27/11, François: « le blanc comme ça, pas trop lumineux ») the
+-- paper is an aged one, not a screen white: paper, page and cream a step down.
+local MANGA={paper=Color3.fromRGB(234,225,207),back=Color3.fromRGB(219,207,186),ink=Color3.fromRGB(20,16,17),red=Color3.fromRGB(195,18,29),
+	cream=Color3.fromRGB(230,220,200),redSoft=Color3.fromRGB(255,156,138),brown=Color3.fromRGB(94,79,67),mid=Color3.fromRGB(58,47,40),off=Color3.fromRGB(138,124,112)}
 -- (HUD v3, DESIGN validated 14/11) the pink trail of the blows just taken,
 -- the chakra's blue written on paper, a burnt scroll and its ember.
 UI.TRAIL=Color3.fromRGB(255,156,138)
@@ -84,6 +86,50 @@ local function text(parent,value,position,size,fontSize,color,font,align)
 		TextColor3=color or palette.text,BackgroundTransparency=1,TextXAlignment=align or Enum.TextXAlignment.Left,TextWrapped=true})
 end
 local function corner(parent,radius) return create("UICorner",parent,{CornerRadius=UDim.new(0,radius or 6)}) end
+-- (DESIGN 27/11, François: « sur les interfaces un travail d'ombre doit être
+-- fait ») A soft ink shadow under a box: three layers behind it, each a
+-- little larger, lower and lighter, so the box sits on the image instead of
+-- being pasted on it. Siblings of the box (a child would draw over it), they
+-- follow its place, size, turn, scale and visibility. Returns the layers.
+UI.SHADOW={dy=3,step=3,alpha={.78,.86,.92}}
+local function shadow(gui,depth)
+	if not gui or not gui.Parent then return {} end
+	depth=depth or 1
+	local S=UI.SHADOW
+	local layers={}
+	local round=gui:FindFirstChildOfClass("UICorner")
+	local scaleOf=gui:FindFirstChildOfClass("UIScale")
+	for i,a in S.alpha do
+		local grow=(i-1)*S.step*depth
+		local l=Instance.new("Frame")
+		l.Name="Shadow";l.BorderSizePixel=0;l.BackgroundColor3=Color3.fromRGB(10,8,9);l.BackgroundTransparency=a
+		l.Active=false
+		local c=Instance.new("UICorner");c.CornerRadius=UDim.new(0,(round and round.CornerRadius.Offset or 4)+grow);c.Parent=l
+		local sc=if scaleOf then Instance.new("UIScale") else nil
+		if sc then sc.Parent=l end
+		table.insert(layers,{f=l,grow=grow,scale=sc})
+		l.Parent=gui.Parent
+	end
+	local function sync()
+		for i,L in layers do
+			local l=L.f
+			local s=scaleOf and scaleOf.Scale or 1
+			l.AnchorPoint=gui.AnchorPoint;l.Rotation=gui.Rotation;l.Visible=gui.Visible
+			l.ZIndex=math.max((gui.ZIndex or 1)-1,0)
+			local dy=(S.dy+i*S.dy*.6)*depth
+			l.Size=gui.Size+UDim2.fromOffset(L.grow*2/s,L.grow*2/s)
+			l.Position=gui.Position+UDim2.fromOffset(-L.grow+dy*.35,-L.grow+dy)
+			if L.scale then L.scale.Scale=s end
+		end
+	end
+	sync()
+	pcall(function()
+		for _,prop in {"Position","Size","Visible","Rotation","AnchorPoint","ZIndex"} do gui:GetPropertyChangedSignal(prop):Connect(sync) end
+		if scaleOf then scaleOf:GetPropertyChangedSignal("Scale"):Connect(sync) end
+		gui.Destroying:Connect(function() for _,L in layers do L.f:Destroy() end end)
+	end)
+	return layers
+end
 local function stroke(parent,color,thickness) return create("UIStroke",parent,{Color=color or palette.ink,Thickness=thickness or 2}) end
 -- (DESIGN 15/11) An image of the manga page (Shared/UIAssets) laid over a
 -- frame, sliced when it is a frame; nil while it is not imported, the frame
@@ -276,7 +322,7 @@ function UI.rankLine(r)
 	if nextRank then line..=string.format("  •  %d to %s",math.max(0,nextRank.from-rating),nextRank.name) end
 	return line
 end
-UI.kit={palette=palette,create=create,frame=frame,text=text,corner=corner,inkCard=inkCard,inkTitle=inkTitle,button=button,
+UI.kit={palette=palette,create=create,frame=frame,text=text,corner=corner,shadow=shadow,inkCard=inkCard,inkTitle=inkTitle,button=button,
 	TITLE_FONT=TITLE_FONT,BODY_FONT=BODY_FONT,STRONG_FONT=STRONG_FONT,VOICE_FONT=VOICE_FONT,NOTE_FONT=NOTE_FONT,MANGA=MANGA,CARD=CARD,fitScale=fitScale,cornerClose=cornerClose,SMALL=SMALL,rankBadge=rankBadge,Ranked=Ranked}
 local function accentOf(def) return Color3.fromRGB(table.unpack(def.Color)) end
 -- (15/11, audit: a duel at a master's home still said « PRODIGY TOURNAMENT »)
@@ -1128,6 +1174,7 @@ function UI.new(parent,send)
 	self.coachDone.BackgroundTransparency=0;self.coachDone.BackgroundColor3=MANGA.red;self.coachDone.Rotation=8;self.coachDone.ZIndex=44;self.coachDone.Visible=false
 	create("UIStroke",self.coachDone,{Color=MANGA.ink,Thickness=3,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
 	self.coach=coach
+	shadow(coach)
 	self.coachStep=text(coach,"",UDim2.fromOffset(14,-30),UDim2.fromOffset(420,24),18,MANGA.paper,TITLE_FONT)
 	create("UIStroke",self.coachStep,{Color=MANGA.ink,Thickness=2,ApplyStrokeMode=Enum.ApplyStrokeMode.Contextual})
 	self.coachSkip=text(coach,"",UDim2.new(0,14,1,10),UDim2.new(1,-28,0,20),15,MANGA.paper,STRONG_FONT or BODY_FONT,Enum.TextXAlignment.Center)

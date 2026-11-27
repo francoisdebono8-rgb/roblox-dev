@@ -207,9 +207,10 @@ function Panel.new(kit,gui,send)
 	create("UITextSizeConstraint",self.head,{MaxTextSize=40,MinTextSize=18})
 	-- (DESIGN 27/11, passe commune 4) the move, played by his avatar in a
 	-- loop on a band of ink (Client/MovePreview); the technique's name on it
-	self.stage=frame(detail,UDim2.fromOffset(20,110),UDim2.fromOffset(DW-40,190),M.ink,0);corner(self.stage,4)
+	-- (27/11, « peu lisible ») a light stage ringed in ink: the dark outfits read on it
+	self.stage=frame(detail,UDim2.fromOffset(20,110),UDim2.fromOffset(DW-40,190),M.back,0);corner(self.stage,4);ring(self.stage,3)
 	self.stage.ClipsDescendants=true
-	self.stageNone=text(self.stage,"",UDim2.fromOffset(0,70),UDim2.new(1,0,0,40),16,M.off,STRONG,Enum.TextXAlignment.Center)
+	self.stageNone=text(self.stage,"",UDim2.fromOffset(0,70),UDim2.new(1,0,0,40),16,M.brown,STRONG,Enum.TextXAlignment.Center)
 	-- (step 2) the technique a node unlocks: its name over the stage's foot
 	self.unlock=frame(self.stage,UDim2.new(0,0,1,-46),UDim2.new(1,0,0,46),M.ink,.15)
 	self.unlock.Visible=false;self.unlock.ZIndex=84
@@ -242,12 +243,13 @@ function Panel.new(kit,gui,send)
 	-- The legend under the tree: the seals themselves, small, and what they mean.
 	local legend=frame(card,UDim2.fromOffset(GRID_X,H-58),UDim2.fromOffset(GRID_W,22),M.back,1)
 	self.legend=legend
-	local samples={{fill=M.ink,stroke=M.ink,word="YOURS"},{fill=M.ink,stroke=M.red,word="ON"},{fill=M.paper,stroke=M.ink,dot=true,word="YOU CAN LEARN IT"},
+	-- (27/11) as the seals now look: the avatar on a light disc, the ring says it
+	local samples={{fill=M.cream,stroke=M.ink,thick=4,word="YOURS"},{fill=M.cream,stroke=M.red,thick=4,word="ON"},{fill=M.cream,stroke=M.ink,dot=true,word="YOU CAN LEARN IT"},
 		{fill=M.paper,stroke=M.off,word="NOT YET"}}
 	local lx=0
 	for _,s in samples do
 		local c=frame(legend,UDim2.fromOffset(lx,2),UDim2.fromOffset(18,18),s.fill,0);corner(c,9)
-		create("UIStroke",c,{Color=s.stroke,Thickness=2,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
+		create("UIStroke",c,{Color=s.stroke,Thickness=s.thick or 2,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
 		if s.dot then local d=frame(c,UDim2.new(1,-5,0,-3),UDim2.fromOffset(8,8),M.red,0);corner(d,4) end
 		text(legend,s.word,UDim2.fromOffset(lx+26,2),UDim2.fromOffset(#s.word*9,18),14,M.mid,STRONG)
 		lx+=26+#s.word*9+24
@@ -255,6 +257,12 @@ function Panel.new(kit,gui,send)
 	text(legend,"POINT AT A SEAL TO READ IT",UDim2.fromOffset(lx,2),UDim2.fromOffset(300,18),14,M.red,STRONG)
 	self.footer=text(card,"Switch nodes between duels. In ranked, everyone has the full kit.",
 		UDim2.fromOffset(GRID_X,H-34),UDim2.fromOffset(W-48,20),13,M.brown,kit.BODY_FONT)
+	-- (DESIGN 27/11, François: « un travail d'ombre ») the page and its boxes
+	-- sit on the image: a soft ink shadow under each (UI.kit.shadow)
+	if kit.shadow then
+		kit.shadow(card,2.2)
+		for _,g in {detail,chip,self.close,self.tabs.kit,self.tabs.ninja} do kit.shadow(g,.8) end
+	end
 	return self
 end
 
@@ -473,6 +481,7 @@ function Panel:drawBranches(branches,extra)
 		b.Name="Branch_"..tostring(item.key)
 		table.insert(self.drawn,b);K.corner(b,4)
 		K.create("UIStroke",b,{Color=M.ink,Thickness=2,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
+		if K.shadow then K.shadow(b,.7) end
 		local name=K.text(b,item.name,UDim2.fromOffset(12,4),UDim2.new(1,-40,0,28),24,if on then M.cream else M.ink,K.TITLE_FONT)
 		name.ZIndex=78;name.TextScaled=true;K.create("UITextSizeConstraint",name,{MaxTextSize=24,MinTextSize=12})
 		local line=K.text(b,item.line,UDim2.fromOffset(12,31),UDim2.new(1,-24,0,14),12,if on then M.cream else M.brown,STRONG)
@@ -575,6 +584,7 @@ function Panel:seal(p,def)
 		BackgroundColor3=fill,BackgroundTransparency=if p.crown and faded then .55 else 0,BorderSizePixel=0,AutoButtonColor=false,ZIndex=80})
 	b.Name="Seal_"..tostring(node.id)
 	table.insert(self.drawn,b);K.corner(b,r)
+	if K.shadow and not faded then K.shadow(b,.7) end
 	K.create("UIStroke",b,{Color=if st=="active" then M.red elseif mine or st=="learn" or p.crown then M.ink else M.off,
 		Thickness=if st=="active" then 4 else 3,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
 	local icon=Panel.sealIcon(node,def)
@@ -584,6 +594,10 @@ function Panel:seal(p,def)
 	local thumb=self:thumb(b,node.id,r)
 	if thumb then
 		thumb.ImageTransparency=if faded then .5 else 0
+		thumb.BackgroundTransparency=if faded then .5 else 0
+		-- his own seal: a thick ink ring (red when on)
+		local ring=b:FindFirstChildOfClass("UIStroke")
+		if ring and mine then ring.Thickness=5 end
 		if icon and icon~="" then
 			local badge=K.frame(b,UDim2.new(1,-14,1,-14),UDim2.fromOffset(20,20),if light then M.ink else M.paper,0);badge.ZIndex=83;K.corner(badge,10)
 			K.create("UIStroke",badge,{Color=M.ink,Thickness=1.5,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
@@ -758,6 +772,9 @@ function Panel:thumb(b,id,r)
 	if not f then return nil end
 	local vp=f.vp
 	vp.Size=UDim2.fromScale(1,1);vp.Position=UDim2.fromScale(0,0);vp.ZIndex=81
+	-- (27/11, François: « peu lisible ») the avatar on a light disc, never on
+	-- the ink: the seal's state is its ring and its badge
+	vp.BackgroundTransparency=0;vp.BackgroundColor3=self.M.cream
 	if not vp:FindFirstChildOfClass("UICorner") then local c=Instance.new("UICorner");c.CornerRadius=UDim.new(.5,0);c.Parent=vp end
 	vp.Parent=b
 	return vp
