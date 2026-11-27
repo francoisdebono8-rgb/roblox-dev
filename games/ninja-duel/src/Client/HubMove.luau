@@ -38,8 +38,32 @@ Move.MANTLE=Vector2.new(18,42) -- the hop over the top: forward, up (feet over t
 Move.KICK=Vector2.new(34,50)   -- the kick off the wall: away, up
 Move.REGRAB=.3             -- after a kick, the same wall again not before
 
+-- (27/11, François: « course latérale sur les murs, une vraie adaptation au
+-- mur, qu'on puisse combattre sur les murs à la perpendiculaire ») Two more
+-- ways on a wall:
+--   * the run ALONG it: in the air (or running) beside a wall, moving along
+--     it, he runs on it sideways, leaning into it, a short arc up then down;
+--     jump: the kick off it; it runs out: he falls, his second jump given back.
+--   * standing ON it: a run up (or along) that runs out with the stick still
+--     into the wall sticks there, the body at a right angle to it, its feet
+--     on it. The stick walks on it (into the wall: up, away: down, sideways:
+--     along); his kit's blows and guard are played there (HubFightClient:
+--     the root itself is turned); jump: the kick; at the top: onto the roof;
+--     at the foot: back on the ground. The duel does the same (Server/Motor).
+Move.SIDE_SPEED=40         -- studs a second along the wall
+Move.SIDE_TIME=.9          -- how long the run along a wall lasts
+Move.SIDE_RISE=16          -- the arc: up at first, falling SIDE_FALL a second after
+Move.SIDE_FALL=34
+Move.SIDE_INTO=.62         -- moving less straight into the wall than this: along it
+Move.SIDE_REACH=2.9        -- the wall beside him, from the body's centre
+Move.SIDE_MIN=14           -- the speed it takes (horizontal)
+Move.SIDE_GAP=1.6          -- the body's centre off the wall while running on it
+Move.STAND_SPEED=16        -- studs a second walking on the wall
+Move.STAND_TIME=6          -- how long he holds on a wall
+Move.STAND_INTO=.3         -- how straight into the wall the stick must be to stick
+
 function Move.new()
-	return setmetatable({runLatch=false,runMoved=false,restFor=0,leapUsed=false,jumpedAt=nil,climb=nil,climbUsed=false,kickedAt=-1,kickedFrom=nil,leapAt=nil,mantleAt=nil},Move)
+	return setmetatable({runLatch=false,runMoved=false,restFor=0,leapUsed=false,jumpedAt=nil,climb=nil,climbUsed=false,kickedAt=-1,kickedFrom=nil,leapAt=nil,mantleAt=nil,side=nil,stand=nil},Move)
 end
 -- (23/11, step 5, DEC-049) an emote in the street: the look of the emote slot
 -- (Shared/Shop id), played by his body for all to see (Server/Hub.pose). G on
@@ -103,7 +127,79 @@ function Move.kick(m,now)
 end
 -- On the ground: the wall run is his again.
 function Move.landed(m)
-	m.climb=nil;m.climbUsed=false;m.leapUsed=false
+	m.climb=nil;m.climbUsed=false;m.leapUsed=false;m.side=nil;m.sideUsed=false
+end
+
+-- ------------------------------------------------------------ along the wall
+-- (pure) The run along a wall starting: `see` = {wall = {normal, part} (the
+-- wall beside him), dir = his flat move (unit), speed (horizontal), air, run}.
+-- Returns the velocity of its first frame, or nil.
+function Move.sideStart(m,now,see)
+	if m.side or m.climb or m.stand or m.sideUsed then return nil end
+	local w=see.wall
+	if not w or not see.dir or (see.speed or 0)<Move.SIDE_MIN or not (see.air or see.run) then return nil end
+	local into=see.dir:Dot(-w.normal)
+	if into>=Move.SIDE_INTO or into<-.2 then return nil end
+	if m.kickedFrom==w.part and now-m.kickedAt<Move.REGRAB then return nil end
+	local along=see.dir-w.normal*see.dir:Dot(w.normal)
+	if along.Magnitude<.3 then return nil end
+	along=along.Unit
+	-- the wall on his right: +1
+	local side=if along:Cross(Vector3.yAxis):Dot(-w.normal)>0 then 1 else -1
+	m.side={at=now,normal=w.normal,part=w.part,along=along,side=side,speed=math.max(Move.SIDE_SPEED,see.speed),scale=see.scale or 1}
+	m.sideUsed=true
+	return along*m.side.speed+Vector3.yAxis*Move.SIDE_RISE
+end
+-- (pure) One frame of the run along: `see.wall` the wall still beside him
+-- (nil: it ended, a corner, a door). Returns the velocity and what happened
+-- ("run", "spent", "lost").
+function Move.sideStep(m,now,see)
+	local r=m.side
+	if not r then return nil,nil end
+	local t=now-r.at
+	if not see.wall or see.wall.normal:Dot(r.normal)<.9 then m.side=nil;m.leapUsed=false;return nil,"lost" end
+	if t>=Move.SIDE_TIME*(r.scale or 1) then m.side=nil;m.leapUsed=false;return nil,"spent" end
+	r.part=see.wall.part
+	local speed=r.speed*math.exp(-.6*t)
+	return r.along*speed+Vector3.yAxis*(Move.SIDE_RISE-Move.SIDE_FALL*t),"run"
+end
+-- The jump on a wall run along it: the kick, away and up, the run kept (pure).
+function Move.sideKick(m,now)
+	local r=m.side
+	if not r then return nil end
+	m.side=nil;m.sideUsed=false;m.leapUsed=false
+	m.kickedAt=now;m.kickedFrom=r.part
+	return r.normal*Move.KICK.X*.8+r.along*Move.SIDE_SPEED*.6+Vector3.yAxis*Move.KICK.Y
+end
+
+-- -------------------------------------------------------------- on the wall
+-- (pure) The wall's axes: up it (the world's up laid on it), along it.
+function Move.wallAxes(normal)
+	local up=Vector3.yAxis-normal*normal.Y
+	if up.Magnitude<.05 then up=Vector3.zAxis end
+	up=up.Unit
+	return up,up:Cross(normal).Unit
+end
+-- (pure) The stick on a wall: into it climbs, away comes down, sideways along.
+function Move.wallStick(move,normal)
+	local m=Vector3.new(move.X,0,move.Z)
+	if m.Magnitude<.2 then return Vector3.zero end
+	local up,along=Move.wallAxes(normal)
+	local v=up*m:Dot(-normal)+along*m:Dot(along)
+	return if v.Magnitude>1 then v.Unit else v
+end
+function Move.standStart(m,now,wall,scale)
+	m.climb=nil;m.side=nil
+	m.stand={at=now,normal=wall.normal,part=wall.part,look=Move.wallAxes(wall.normal),scale=scale or 1}
+	return m.stand
+end
+-- The jump on the wall standing: the kick off it (pure).
+function Move.standKick(m,now)
+	local st=m.stand
+	if not st then return nil end
+	m.stand=nil;m.climbUsed=false;m.sideUsed=false;m.leapUsed=false
+	m.kickedAt=now;m.kickedFrom=st.part
+	return st.normal*Move.KICK.X+Vector3.yAxis*Move.KICK.Y
 end
 
 -- (pure) A surface the walker runs up: a NinjaWall, upright, and not the
@@ -126,6 +222,32 @@ local function look(character,root,direction)
 	return {normal=Vector3.new(hit.Normal.X,0,hit.Normal.Z).Unit,part=hit.Instance}
 end
 
+-- The wall beside him (left or right, at the chest), for the run along it.
+local function beside(character,root,direction)
+	if not params then params=RaycastParams.new();params.FilterType=Enum.RaycastFilterType.Exclude end
+	params.FilterDescendantsInstances={character}
+	local flat=Vector3.new(direction.X,0,direction.Z)
+	if flat.Magnitude<.1 then return nil end
+	flat=flat.Unit
+	local right=flat:Cross(Vector3.yAxis)
+	local best=nil
+	for _,dir in {right,-right,(right+flat).Unit,(-right+flat).Unit} do
+		local hit=workspace:Raycast(root.Position,dir*Move.SIDE_REACH,params)
+		if hit and Move.climbable(hit.Instance,hit.Normal) and (not best or hit.Distance<best.distance) then
+			best={normal=Vector3.new(hit.Normal.X,0,hit.Normal.Z).Unit,part=hit.Instance,distance=hit.Distance,position=hit.Position}
+		end
+	end
+	return best
+end
+-- The wall under his feet while he stands on it (a ray from the root back to it).
+local function under(character,root,normal,reach)
+	if not params then params=RaycastParams.new();params.FilterType=Enum.RaycastFilterType.Exclude end
+	params.FilterDescendantsInstances={character}
+	local hit=workspace:Raycast(root.Position,-normal*reach,params)
+	if not (hit and Move.climbable(hit.Instance,hit.Normal)) then return nil end
+	return {normal=Vector3.new(hit.Normal.X,0,hit.Normal.Z).Unit,part=hit.Instance,position=hit.Position}
+end
+
 local function body()
 	local character=Players.LocalPlayer.Character
 	local hum=character and character:FindFirstChildOfClass("Humanoid")
@@ -144,8 +266,10 @@ end
 function Move:jump()
 	local _,hum,root=body()
 	if not hum or not root then return false end
-	-- on a wall: the kick off it
-	local kick=Move.kick(self,os.clock())
+	-- on a wall: the kick off it (standing on it, running along it, up it)
+	local wasStanding=self.stand~=nil
+	local kick=Move.standKick(self,os.clock()) or Move.sideKick(self,os.clock()) or Move.kick(self,os.clock())
+	if wasStanding then self:leaveWall(hum,root) end
 	if kick then
 		root.AssemblyLinearVelocity=kick
 		root.CFrame=CFrame.lookAt(root.Position,root.Position+Vector3.new(kick.X,0,kick.Z))
@@ -164,6 +288,57 @@ function Move:jump()
 		self.jumpedAt=os.clock()
 	end
 	return false
+end
+
+-- Off the wall he stood on: upright again, his own physics back.
+function Move:leaveWall(hum,root)
+	self.stand=nil
+	pcall(function() hum.PlatformStand=false end)
+	local look=Vector3.new(root.CFrame.LookVector.X,0,root.CFrame.LookVector.Z)
+	if look.Magnitude<.2 then look=Vector3.new(root.CFrame.UpVector.X,0,root.CFrame.UpVector.Z) end
+	if look.Magnitude<.1 then look=Vector3.new(0,0,-1) end
+	root.CFrame=CFrame.lookAt(root.Position,root.Position+look.Unit)
+end
+-- One frame standing on the wall. Returns what happened ("stand", "top",
+-- "foot", "lost", "spent") and the speed he walks it.
+function Move:standFrame(character,hum,root,dt,busy)
+	local st=self.stand
+	local height=math.max(1.5,hum.HipHeight+root.Size.Y/2)
+	local wall=under(character,root,st.normal,height+1.8)
+	if not wall then self:leaveWall(hum,root);return "lost",0 end
+	st.normal,st.part=wall.normal,wall.part
+	local up=Move.wallAxes(wall.normal)
+	local walk=if busy then Vector3.zero else Move.wallStick(hum.MoveDirection,wall.normal)
+	local motion=walk*Move.STAND_SPEED
+	local foot=wall.position+motion*dt
+	if os.clock()-st.at>=Move.STAND_TIME*(st.scale or 1) then self:leaveWall(hum,root);return "spent",0 end
+	-- down at the foot of the wall: back on the ground
+	if walk:Dot(up)<-.3 then
+		local floor=workspace:Raycast(foot+wall.normal*.6,Vector3.new(0,-2.4,0),params)
+		if floor and floor.Normal.Y>.6 then
+			self:leaveWall(hum,root)
+			root.CFrame=CFrame.new(floor.Position+wall.normal*1.2+Vector3.yAxis*height)*root.CFrame.Rotation
+			root.AssemblyLinearVelocity=Vector3.zero
+			return "foot",0
+		end
+	end
+	-- the top: over it onto the roof
+	local top=wall.part.Position.Y+wall.part.Size.Y*.5
+	if foot.Y>top-.4 then
+		self:leaveWall(hum,root)
+		root.AssemblyLinearVelocity=-wall.normal*Move.MANTLE.X+Vector3.yAxis*Move.MANTLE.Y
+		return "top",0
+	end
+	-- where he looks: where he walks; still, his last look
+	if motion.Magnitude>1 then st.look=motion.Unit end
+	local look=st.look-wall.normal*st.look:Dot(wall.normal)
+	look=if look.Magnitude>.1 then look.Unit else up
+	local at=foot+wall.normal*height
+	pcall(function() hum.PlatformStand=true end)
+	root.CFrame=CFrame.fromMatrix(at,look:Cross(wall.normal),wall.normal,-look)
+	root.AssemblyLinearVelocity=Vector3.zero
+	root.AssemblyAngularVelocity=Vector3.zero
+	return "stand",motion.Magnitude
 end
 
 -- One frame of the walk. Returns the character's root (nil without a body)
@@ -187,23 +362,65 @@ function Move:step(dt)
 	hum.UseJumpPower=true;hum.JumpPower=Move.JUMP
 	local state=hum:GetState()
 	local grounded=state==Enum.HumanoidStateType.Running or state==Enum.HumanoidStateType.Landed or state==Enum.HumanoidStateType.RunningNoPhysics
-	if grounded and not self.climb then Move.landed(self) end
-	-- the run up a wall
-	local direction=if self.climb then -self.climb.normal else hum.MoveDirection
-	local wall=look(character,root,direction)
-	local into=0
-	if wall and hum.MoveDirection.Magnitude>.1 then into=hum.MoveDirection.Unit:Dot(-wall.normal) end
-	if self.climb then into=1 end
+	if grounded and not self.climb and not self.stand then Move.landed(self) end
 	local share=tonumber(Players.LocalPlayer:GetAttribute("NinjaWallRun")) or 1
-	local velocity,what=Move.climbStep(self,os.clock(),{wall=wall,into=into,air=not grounded,run=run,scale=share})
-	if velocity then
-		root.AssemblyLinearVelocity=velocity
-		if what=="start" then
-			root.CFrame=CFrame.lookAt(root.Position,root.Position-wall.normal)
-			hum:ChangeState(Enum.HumanoidStateType.Freefall)
+	local now=os.clock()
+	local what=nil
+	local wallSpeed=nil
+	local busy=self.fight and self.fight.busy and self.fight:busy()
+	if self.stand then
+		-- standing on the wall (27/11)
+		local happened,speed=self:standFrame(character,hum,root,dt,busy)
+		what=if happened=="top" then "top" else nil
+		if happened=="top" then self.mantleAt=now end
+		wallSpeed=speed
+	elseif self.side then
+		-- running along the wall (27/11)
+		local wall=beside(character,root,self.side.along)
+		local velocity,happened=Move.sideStep(self,now,{wall=wall})
+		if velocity then
+			root.AssemblyLinearVelocity=velocity
+			-- kept off the wall at the same gap, facing the run
+			local at=root.Position
+			if wall then at=at+wall.normal*(Move.SIDE_GAP-wall.distance) end
+			root.CFrame=CFrame.lookAt(at,at+self.side.along)
+		elseif happened=="spent" and wall and hum.MoveDirection.Magnitude>.1 and hum.MoveDirection.Unit:Dot(-wall.normal)>=Move.STAND_INTO then
+			Move.standStart(self,now,wall,share)
 		end
+	else
+		-- the run up a wall
+		local direction=if self.climb then -self.climb.normal else hum.MoveDirection
+		local wall=look(character,root,direction)
+		local into=0
+		if wall and hum.MoveDirection.Magnitude>.1 then into=hum.MoveDirection.Unit:Dot(-wall.normal) end
+		local stickInto=into
+		if self.climb then into=1 end
+		local climbWall=self.climb
+		local velocity
+		velocity,what=Move.climbStep(self,now,{wall=wall,into=into,air=not grounded,run=run,scale=share})
+		if velocity then
+			root.AssemblyLinearVelocity=velocity
+			if what=="start" then
+				root.CFrame=CFrame.lookAt(root.Position,root.Position-wall.normal)
+				hum:ChangeState(Enum.HumanoidStateType.Freefall)
+			end
+		elseif what=="spent" and wall and climbWall and stickInto>=Move.STAND_INTO then
+			-- the climb spent, the stick still into the wall: he stands on it
+			Move.standStart(self,now,wall,share)
+		elseif not what and not self.climb then
+			-- beside a wall, moving along it: he runs on it
+			local flat=Vector3.new(root.AssemblyLinearVelocity.X,0,root.AssemblyLinearVelocity.Z)
+			local dir=if hum.MoveDirection.Magnitude>.1 then Vector3.new(hum.MoveDirection.X,0,hum.MoveDirection.Z).Unit else nil
+			local side=dir and beside(character,root,dir)
+			local first=side and Move.sideStart(self,now,{wall=side,dir=dir,speed=flat.Magnitude,air=not grounded,run=run,scale=share})
+			if first then
+				root.AssemblyLinearVelocity=first
+				root.CFrame=CFrame.lookAt(root.Position,root.Position+self.side.along)
+				hum:ChangeState(Enum.HumanoidStateType.Freefall)
+			end
+		end
+		if what=="top" then self.mantleAt=now end
 	end
-	if what=="top" then self.mantleAt=os.clock() end
 	-- (23/11, step 5) the emote key, and the emote the server granted (his own
 	-- character's NinjaPose / NinjaEmote, as everyone sees it)
 	if not self.emoteBound then
@@ -221,7 +438,8 @@ function Move:step(dt)
 	end
 	self.climbing=self.climb~=nil
 	-- (23/11, step 5) what the others need to pose him: his move, sent on change
-	local pose=if self.climb then "climb" else "none"
+	local pose=if self.climb then "climb" elseif self.stand then "wallstand"
+		elseif self.side then (if self.side.side>0 then "siderunR" else "siderunL") else "none"
 	if self.leapAt and self.leapAt>(self.sentLeap or 0) then pose="leap";self.sentLeap=self.leapAt
 	elseif self.kickedAt and self.kickedAt>0 and self.kickedAt>(self.sentKick or 0) then pose="kick";self.sentKick=self.kickedAt
 	elseif what=="top" then pose="vault" end
@@ -247,8 +465,9 @@ function Move:step(dt)
 	if poser then
 		pcall(require(script.Parent.HubBody).poseOthers,poser.Authored,dt,root.Position)
 		local v=root.AssemblyLinearVelocity
-		pcall(poser.step,poser,character,hum,{now=os.clock(),dt=dt,speed=Vector3.new(v.X,0,v.Z).Magnitude,vy=v.Y,
-			grounded=grounded and not self.climb,climbing=self.climb~=nil,climbSpeed=Move.CLIMB,
+		pcall(poser.step,poser,character,hum,{now=os.clock(),dt=dt,speed=wallSpeed or Vector3.new(v.X,0,v.Z).Magnitude,vy=if self.stand then 0 else v.Y,
+			grounded=(grounded and not self.climb and not self.side) or self.stand~=nil,climbing=self.climb~=nil,climbSpeed=Move.CLIMB,
+			sideRun=self.side and self.side.side,sideSpeed=self.side and self.side.speed,onWall=self.stand~=nil,
 			leapAt=self.leapAt,kickAt=if self.kickedAt and self.kickedAt>0 then self.kickedAt else nil,mantleAt=self.mantleAt,
 			emote=self.emoteClip,emoteAt=self.emoteAt,act=act,actAt=actAt})
 	end

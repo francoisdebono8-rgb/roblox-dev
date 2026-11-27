@@ -543,6 +543,22 @@ function AI:update(now)
 		table.insert(self.recent,a.attackName);if #self.recent>5 then table.remove(self.recent,1) end
 	end
 	self.lastMove=a.attackName
+	-- (27/11, François: « qu'on puisse combattre sur les murs ») The opponent
+	-- stands on a wall: the bot goes up after him (most of the time: now and
+	-- then it waits for him below). At the foot of the wall under him, into
+	-- it: the run up it, and it stands level with him (Server/Motor.levelWith).
+	if target.wall and target.wall.mode=="stand" and not a.wall and a.state=="Neutral" and not a.reaction then
+		self.wallChase=self.wallChase or {at=now,go=self.rng:NextNumber()<.8}
+		if self.wallChase.go then
+			local n=Vector3.new(target.wall.normal.X,0,target.wall.normal.Z)
+			n=if n.Magnitude>.05 then n.Unit else Vector3.zAxis
+			local foot=target.root.Position+n*1.5
+			local d=Vector3.new(foot.X-a.root.Position.X,0,foot.Z-a.root.Position.Z)
+			a.sprinting=true
+			a.move=if d.Magnitude>3 then d.Unit else -n
+			return
+		end
+	else self.wallChase=nil end
 	if self:defend(now) then return end
 	-- Genjutsu: sometimes the bot sees through the decoy, sometimes it does not.
 	if a.illusionUntil>now then
@@ -663,6 +679,34 @@ function AI:update(now)
 	-- Wall run: rise along the wall, then dive at the opponent.
 	local fromCenter=(a.root.Position-c.match.origin)*Vector3.new(1,0,1)
 	local outward=if fromCenter.Magnitude>.1 then fromCenter.Unit else Vector3.xAxis
+	if a.wall and a.wall.mode=="stand" then
+		-- (27/11) Standing on the wall (Server/Motor.stepStand walks it to the
+		-- opponent): the fight goes on there. Near him: the string, a heavy
+		-- now and then, the guard against his swing; him far below on the
+		-- ground for a while: a dive at him or a leap off.
+		self.wallSince=self.wallSince or now
+		a.move=Vector3.zero
+		local gap=(target.root.Position-a.root.Position).Magnitude
+		local swinging=target.state=="Startup" or target.state=="Active"
+		if a.state=="Neutral" and gap<=5.5 then
+			if swinging and self.rng:NextNumber()<.35 then
+				c:request(a,"Guard");self.guardUntil=now+.35
+			elseif self.rng:NextNumber()<.5 then
+				c:request(a,if self.rng:NextNumber()<.2 then "Heavy" else "Attack")
+			end
+		elseif a.state=="Neutral" and not target.wall and now-self.wallSince>1.4 and self.rng:NextNumber()<.04 then
+			c:request(a,if self.rng:NextNumber()<.6 then "Attack" else "Jump")
+		end
+		if now>=self.guardUntil and a.state=="Guarding" then c:request(a,"GuardOff") end
+		return
+	end
+	if a.wall and target.wall and target.wall.mode=="stand" then
+		-- (27/11) running up to an opponent who stands on the wall: up to him,
+		-- to stand there too (Server/Motor.wantsStand), no dive past him
+		self.wallSince=self.wallSince or now
+		a.move=-a.wall.normal
+		return
+	end
 	if a.wall then
 		self.wallSince=self.wallSince or now
 		local along=Vector3.new(-a.wall.normal.Z,0,a.wall.normal.X)

@@ -79,7 +79,7 @@ FX.SOUND=SOUND
 -- 0.3 s late: their image was fetched at first use).
 FX.TEX=TEX
 -- Contacts that bring the crowd to its feet, by strength.
-local CHEER={chidori=1,groundbounce=.8,slam=1,launcher=.7,finisher=.8,fire=1,teleport=.9,parry=.8,substitute=.4,burst=.8,clash=.9,wall=.6,wallbounce=1,worldbreak=1,walltech=.5,repel=.9,trigram=.7}
+local CHEER={chidori=1,groundbounce=.8,slam=1,launcher=.7,finisher=.8,fire=1,teleport=.9,parry=.8,substitute=.4,burst=.8,clash=.9,wall=.6,wallbounce=1,worldbreak=1,housebreak=1,walltech=.5,repel=.9,trigram=.7}
 local HYUGA=Color3.fromRGB(190,208,255)
 -- Visual time runs a hair behind the server clock, like the bodies, so a blade
 -- leaves the throwing hand on the frame the arm releases it.
@@ -1186,6 +1186,11 @@ function FX:impact(impact,folder)
 			local size=math.min(if big then 9 else 6,dims[2]*.85)
 			if size>=2 then Kit.ground(self.folder,hit.Position,hit.Normal,"crack",size,2.2,1.2,Color3.new(1,1,1),.1) end
 		end
+	elseif style=="housebreak" then
+		-- (27/11) a house wall broken through in a street duel: what flies out
+		-- of the hole the server drew (Client/HouseBreakFX)
+		pcall(function() require(script.Parent.HouseBreakFX).burst(self.folder,impact) end)
+		shockRing(self.folder,position,Color3.fromRGB(236,226,200),2,10+(impact.size or 4)*1.5,.32,impact.normal or Vector3.zAxis)
 	elseif style=="worldbreak" then
 		-- (EMB-004) A tree going down or a boulder bursting: the server already
 		-- changed the arena; this is the dust and the pieces flying off it.

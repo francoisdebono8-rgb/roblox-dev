@@ -2877,6 +2877,8 @@ function Combat:clear(preserveAnimations)
 		a.shieldCharges=a.def.SandShield and a.def.SandShield.Charges or 0
 		a.bodyState=nil
 		a.attackName=nil; a.attackStarted=0; a.pending=nil; a.anchor=nil; a.illusionUntil=0; a.decoyPosition=nil; a.move=Vector3.zero; a.wall=nil
+		-- (27/11) off a wall it stood on (Server/Motor.stepStand): its own physics back
+		pcall(function() a.hum.PlatformStand=false end)
 		a.hum:Move(Vector3.zero); a.root.AssemblyLinearVelocity=Vector3.zero; a.locomotion=Vector3.zero; a.airborne=false
 		-- Every other temporary state (buffs, stances, slows, poison, windows).
 		Families.clearState(a)

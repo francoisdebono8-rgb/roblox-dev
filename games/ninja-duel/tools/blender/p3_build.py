@@ -7,7 +7,7 @@ gate and kit_distinct report, and write them into the game:
 
 Besides p3_kits.CLIPS, each kit's guard steps and skid (Guard.Step.F/B/L/R, Guard.Skid) keep
 their legs and take the arms of its new guard (e2_build.step_with_guard_arms's rule), so the
-cover holds while it moves. --write puts them into src/Client/AuthoredJutsu41.. (the last
+cover holds while it moves. --write puts them into src/Client/AuthoredJutsu36.. (the last
 layer AuthoredJutsu.luau lays, after passe 2's: one block of lines takes it all back).
 """
 import json
@@ -21,7 +21,7 @@ import syph_author as SA  # noqa: E402
 import p2_build as P2  # noqa: E402
 import p3_kits as K  # noqa: E402
 
-FIRST = 41
+FIRST = 36
 OUT = P2.OUT
 INDEX = P2.INDEX
 ARMS = ("Right", "Left", "RightElbow", "LeftElbow", "RightWrist", "LeftWrist")

@@ -98,7 +98,13 @@ return {
 		-- it stood (Blow) and its skid ploughed (Skid, its own budget).
 		GroundEnergy = 40, GroundElement = 18, MajorEnergy = 90, MaxFloorScars = 18,
 		Fade = {Minor = 40, Major = 90, Out = 1.6},
-		Blow = {Speed = 30, Energy = 1.6}, Skid = {Speed = 9, Every = 0.13, Max = 14, Fade = 16}},
+		Blow = {Speed = 30, Energy = 1.6}, Skid = {Speed = 9, Every = 0.13, Max = 14, Fade = 16},
+		-- (27/11, François: « les maisons se cassent lors des combats en
+		-- ville ») A house's wall breaks through (WorldReaction.breach) under a
+		-- blow of Energy or more (a body thrown into it, a heavy, a jutsu): a
+		-- hole Min..Max studs across (Grow per energy past it), at most Count
+		-- holes in a duel (the oldest goes).
+		Breach = {Energy = 34, Min = 3.2, Max = 7, Grow = 1/22, Count = 10}},
 	-- Ninja Embodiment (Server/Perception): the space a body reads around a
 	-- fight. Behind: how far past the target (or behind itself) a surface
 	-- counts; Scan: how far around the target the nearest surface is looked
@@ -173,7 +179,17 @@ return {
 		ReboundUp = 61, ReboundAway = 29, ReattachDelay = 0.4,
 		-- Wall combat: splat state, pins, tech window and the dive from a wall run.
 		SplatSpeed = 17, SplatTime = 0.62, SplatDamage = 3, PinTime = 0.42, PinMax = 2,
-		TechFrom = 0.05, TechUntil = 0.34, TechCost = 12, DiveRange = 50},
+		TechFrom = 0.05, TechUntil = 0.34, TechCost = 12, DiveRange = 50,
+		-- (27/11, François: « une vraie adaptation au mur, qu'on puisse
+		-- combattre sur les murs à la perpendiculaire ») Standing on the wall
+		-- with chakra (Server/Motor, mode "stand"): a run up or along a wall
+		-- that ends with the stick still into it sticks there, the body at a
+		-- right angle to it. The stick walks on it (into the wall: up, away:
+		-- down, sideways: along) at StandSpeed; it holds StandTime seconds
+		-- (the ninja tree's Wall Runner lengthens it); the guard, the strings
+		-- and the heavy are fought there. StandEnter: how straight into the
+		-- wall the stick must be to stick.
+		StandSpeed = 17, StandTime = 8, StandEnter = 0.3, StandFace = 40},
 	RequestRate = 40, RequestBurst = 48, SnapshotInterval = 0.033,
 	Movement = { SprintSpeed = 45, GroundAcceleration = 170, GroundDeceleration = 290, TurnAcceleration = 360, AirAcceleration = 76,
 		BurstAcceleration = 520, BurstWindow = 0.16,

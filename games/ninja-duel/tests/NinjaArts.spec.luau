@@ -214,6 +214,9 @@ test("mobility: the wall run lasts longer, a second jump in the air, a quick ris
 		a.locomotion=dir*50;a.move=dir
 		H.step(c,.01)
 		assert(a.wall,"no wall run")
+		-- (27/11) the stick let go once on the wall: held into it, a run that
+		-- runs out stands on the wall instead (Server/Motor.stepStand)
+		a.move=V.zero
 		local start=c.now
 		for _=1,400 do H.step(c,.01);if not a.wall then break end end
 		return c.now-start

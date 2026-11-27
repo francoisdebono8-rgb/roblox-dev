@@ -306,6 +306,8 @@ local function apply(char,targets,rate,dt,upperRate,legRate,floor)
 	end
 	s.markKey=nil
 	local feet=targets.__feet
+	-- (27/11) on a wall the feet are on the wall: no floor to plant them on
+	if s.onWallStand then feet=nil;floor=nil end
 	-- the floor's lift (lying), or what is left of it once up
 	local lift=0
 	if floor and dt then
@@ -3570,6 +3572,11 @@ function Motion.present(char,actor,clock,dt)
 		return "ko"
 	end
 	local memo=stateOf(char)
+	-- (27/11) standing on the wall (Server/Motor.stepStand): the root itself is
+	-- turned at a right angle to the wall, so the body plays its own clips
+	-- (the guard, the strings, the walk) there; only the feet are not planted
+	-- on a floor below it (apply).
+	memo.onWallStand=subject.wallMode=="stand" or nil
 	-- (Stage 6, redone 02/11) An ultimate's whole-sequence clip, caster or
 	-- held body, played on its own clock from the moment the server started
 	-- it (no feet planting: the server carries the root through the air).
@@ -3780,7 +3787,7 @@ function Motion.present(char,actor,clock,dt)
 		apply(char,targets,rate,dt)
 		return "chase"
 	end
-	if subject.wall then
+	if subject.wall and subject.wallMode~="stand" then
 		-- (19/11, Selene) not `local targets,rate=if ... then f() else g()`: an
 		-- if-expression keeps one value, so the pose's own rate (RATE.wall for
 		-- the cling) was dropped and apply fell back to the locomotion rate.

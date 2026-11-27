@@ -51,6 +51,13 @@ WorldReaction.Classes={
 	brittle={integrity=30,dark=Color3.fromRGB(180,200,210),burn=Color3.fromRGB(60,60,60),
 		blunt={wear=1.4,scar="crack"},slash={wear=1,scar="crack"},pierce={wear=1,scar="crack"},
 		blast={wear=1.6,scar="crack"},energy={wear=1.6,scar="crack"}},
+	-- (27/11, François: « les maisons se cassent lors des combats en ville »)
+	-- A house of Konoha in a street duel (Server/Hub.forFights tags its walls
+	-- WorldMaterial "house"): its solids are invisible (the dressed model is
+	-- what is seen), so it takes no drawn scar; a blow that weighs something
+	-- breaks a hole through it instead (WorldReaction.breach).
+	house={integrity=math.huge,dark=Color3.fromRGB(40,30,24),burn=Color3.fromRGB(26,22,20),breach=true,
+		blunt={wear=0},slash={wear=0},pierce={wear=0},blast={wear=0},energy={wear=0}},
 	metal={integrity=math.huge,dark=Color3.fromRGB(70,70,74),burn=Color3.fromRGB(30,30,32),
 		blunt={wear=0,scar="dent"},slash={wear=0,scar="scratch"},pierce={wear=0,scar=nil},
 		blast={wear=0,scar="dent"},energy={wear=0,scar="gouge"}},
@@ -81,7 +88,7 @@ WorldReaction.Projectiles={
 local function state(c)
 	local w=c.world
 	if not w then
-		w={parts=setmetatable({},{__mode="k"}),scars={},rubble={},embeds={},
+		w={parts=setmetatable({},{__mode="k"}),scars={},rubble={},embeds={},breaches={},
 			stats={impacts=0,scars=0,merged=0,breaks=0,smash=0,embeds=0}}
 		c.world=w
 	end
@@ -564,6 +571,99 @@ local function rubble(c,at,size,color,material,direction,planks)
 	end
 	evict(w.rubble,TUNE.MaxRubble)
 end
+-- ------------------------------------------------------------------ breaches
+-- (27/11, François: « je veux des dégâts de combat, les maisons se cassent
+-- lors des combats en ville ») A blow that weighs something on a house's
+-- wall (a body thrown into it, a heavy that met it, a jutsu) bursts a hole in
+-- it: a dark opening with its broken plaster and laths, boards hanging out of
+-- its rim, rubble at the foot of the wall. A second blow close to it makes
+-- it bigger. The hole is the duel's (its folder: gone when the duel ends,
+-- the house whole again); the pieces flying out are the client's
+-- ("housebreak", Client/HouseBreakFX).
+local BREACH_DARK=Color3.fromRGB(34,26,22)
+local BREACH_WOOD=Color3.fromRGB(104,74,50)
+-- (pure) The size of the hole a blow of `energy` makes (studs across), and
+-- grown by another blow.
+function WorldReaction.breachSize(energy,old)
+	local B=TUNE.Breach
+	local fresh=math.clamp(B.Min+(energy-B.Energy)*B.Grow,B.Min,B.Max)
+	if old then return math.min(B.Max,old+fresh*.45) end
+	return fresh
+end
+-- The hole drawn: on the wall's face at `position`, `size` across.
+local function drawBreach(b)
+	-- (b.part is the drawing: evict destroys it; b.surface the wall)
+	if b.part then b.part:Destroy() end
+	local m=Instance.new("Model");m.Name="Breach"
+	local n=b.normal
+	local cf=CFrame.lookAt(b.position+n*.06,b.position+n*2)
+	local size=b.size
+	local tint=b.tint
+	local h=hash(b.position)
+	-- the opening: three dark slabs at odd angles make a ragged hole
+	for k=0,2 do
+		local hk=hash(b.position+Vector3.new(k*1.7,k*.9,k*2.3))
+		local w,ht=size*(.62+hk*.3),size*(.5+hk*.28)
+		chunk(m,cf*CFrame.new((hk-.5)*size*.18,(k-1)*size*.12,-.02*k)*CFrame.Angles(0,0,(h+k*.37)*1.4),
+			Vector3.new(w,ht,.12),Enum.Material.SmoothPlastic,BREACH_DARK)
+	end
+	-- the wall's inside seen through it: two broken laths across the hole
+	for k=0,1 do
+		local hk=hash(b.position+Vector3.new(k*3.1,1,k))
+		local lath=chunk(m,cf*CFrame.new((hk-.5)*size*.2,(k-.5)*size*.32,.05)*CFrame.Angles(0,0,(hk-.5)*.7),
+			Vector3.new(size*(.55+hk*.3),.16,.14),Enum.Material.Wood,BREACH_WOOD:Lerp(BREACH_DARK,.35))
+		lath.Name="Lath"
+	end
+	-- the rim: plaster shards and board ends standing out of the wall
+	local count=7+math.floor(size)
+	for k=1,count do
+		local hk=hash(b.position+Vector3.new(k*.71,k*1.3,k*.53))
+		local a=(k/count)*math.pi*2+hk*.5
+		local r=size*(.42+hk*.12)
+		local board=k%3==0
+		local s=if board then Vector3.new(.22,.12+hk*.08,size*(.25+hk*.2)) else Vector3.new(size*(.16+hk*.14),size*(.12+hk*.1),.14+hk*.12)
+		local at=cf*CFrame.new(math.cos(a)*r,math.sin(a)*r*.85,0)
+		local piece=chunk(m,at*CFrame.Angles(if board then 0 else (hk-.5)*.9,if board then (hk-.5)*1.2 else (hk-.5)*.8,a+(hk-.5))
+			*CFrame.new(0,0,if board then size*.12 else 0),
+			s,if board then Enum.Material.WoodPlanks else Enum.Material.Plaster,
+			if board then BREACH_WOOD else tint:Lerp(BREACH_DARK,.12+hk*.2))
+		piece.Name=if board then "Board" else "Shard"
+	end
+	m.Parent=b.folder
+	b.part=m
+end
+function WorldReaction.breach(c,part,position,normal,energy,direction)
+	local B=TUNE.Breach
+	if energy<B.Energy or math.abs(normal.Y)>.5 then return nil end
+	local folder=folderOf(c)
+	if not folder then return nil end
+	local w=state(c)
+	-- the face of the wall: put the hole on it, not inside the part
+	local n=Vector3.new(normal.X,0,normal.Z).Unit
+	for _,old in w.breaches do
+		if old.surface==part and (old.position-position).Magnitude<old.size*.6 then
+			old.size=WorldReaction.breachSize(energy,old.size)
+			old.marks+=1
+			drawBreach(old)
+			c:pushImpact(position,"housebreak",true,{normal=n,size=old.size,tint=old.tint,direction=direction or -n,again=true})
+			return old
+		end
+	end
+	local tint=part:GetAttribute("WorldTint")
+	if typeof(tint)~="Color3" then tint=part.Color end
+	local b={surface=part,position=position,normal=n,size=WorldReaction.breachSize(energy),tint=tint,folder=folder,marks=1,at=c.now}
+	drawBreach(b)
+	table.insert(w.breaches,b)
+	evict(w.breaches,B.Count)
+	w.stats.breaches=(w.stats.breaches or 0)+1
+	-- what fell at the foot of the wall: boards and plaster lying there
+	local ok,ground=pcall(function() return workspace:Raycast(position+n*1.2,Vector3.new(0,-40,0),c:rayParams(true)) end)
+	if not ok then ground=nil end
+	if ground then rubble(c,ground.Position+n*.4,math.clamp(b.size*.4,.8,2),tint,Enum.Material.Plaster,n,true) end
+	c:pushImpact(position,"housebreak",true,{normal=n,size=b.size,tint=tint,direction=direction or -n})
+	return b
+end
+
 -- A tall part (a trunk) falls away from the blow; a squat one (a boulder)
 -- shatters into a low mound. Either way what is left is low: it no longer
 -- hides a body, stops a blade at head height or takes a wall splat.
@@ -643,6 +743,10 @@ function WorldReaction.impact(c,hit)
 	local element=hit.element and WorldReaction.Elements[hit.element]
 	w.stats.impacts+=1
 	if energy<TUNE.MinEnergy then return nil end
+	if profile.breach then
+		local hole=WorldReaction.breach(c,part,hit.position,hit.normal or Vector3.zAxis,energy,hit.direction)
+		return {class=rec.class,scar=if hole then "breach" else nil,wear=0,state=rec.state,broken=false,breach=hole}
+	end
 	local normal=hit.normal or Vector3.yAxis
 	local position=hit.position
 	local direction=hit.direction or -normal

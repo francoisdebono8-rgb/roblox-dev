@@ -29,6 +29,8 @@ Body.ROLL_FALL=62              -- landing faster than this down: the roll or the
 Body.ROLL_MOVING=14            -- the roll when he still moves this fast, else the hard landing
 Body.WALL_TILT=math.rad(70)    -- the body off the wall, the feet on it
 Body.WALL_BACK=1.4             -- studs the tilted body is moved off the wall
+Body.SIDE_LEAN=math.rad(38)    -- (27/11) running along a wall: the lean into it
+Body.SIDE_SHIFT=.6             -- and the hips moved toward it (studs)
 Body.BLEND=.12                 -- seconds to ease from one clip into the next
 Body.VAULT=.35                 -- the hop over a roof's edge
 Body.KICK=.45                  -- the leap after a kick off a wall
@@ -138,6 +140,15 @@ function Body.choose(b,f)
 		local move=if len("Parkour.WallRun")>0 then "Parkour.WallRun" else "Sprint"
 		return {move=move,t=(b.phase%1)*len(move),tilt=1}
 	end
+	-- (27/11) along the wall: the sprint's strides, the body leaning into the
+	-- wall (the ANIMATEUR's Parkour.WallRunSideR / L, tools/blender/p3_kits.py)
+	if f.sideRun then
+		local own=if f.sideRun>0 then "Parkour.WallRunSideR" else "Parkour.WallRunSideL"
+		local move=if len(own)>0 then own else "Sprint"
+		local stride=b.strideOf and b:strideOf(move) or 7
+		b.phase+=(f.dt or 0)*(f.sideSpeed or 40)/math.max(stride*Body.STRIDE,1)
+		return {move=move,t=(b.phase%1)*len(move),tilt=0,roll=if move=="Sprint" then f.sideRun else 0}
+	end
 	if f.mantleAt and f.now-f.mantleAt<Body.VAULT then return {move="Parkour.Vault",t=f.now-f.mantleAt,tilt=0} end
 	-- (23/11, step 5) an emote in the street: played while he stands, once
 	if f.emote and f.emoteAt and f.grounded and f.speed<Body.STILL then
@@ -187,6 +198,13 @@ function Body:pose(choice,now)
 	self.tilt=if target>0 then math.max(self.tilt*(1-k),target*k) else self.tilt*(1-k)
 	if self.tilt>1e-3 and pose.Root then
 		pose.Root=CFrame.new(0,0,Body.WALL_BACK*self.tilt)*CFrame.Angles(Body.WALL_TILT*self.tilt,0,0)*pose.Root
+	end
+	-- (27/11) running along a wall: leaning into it (+1: the wall on his right),
+	-- eased in and out like the tilt
+	local rollTo=choice.roll or 0
+	self.roll=(self.roll or 0)+(rollTo-(self.roll or 0))*math.clamp(k*1.5,0,1)
+	if math.abs(self.roll)>1e-3 and pose.Root then
+		pose.Root=CFrame.new(Body.SIDE_SHIFT*self.roll,0,0)*CFrame.Angles(0,0,-Body.SIDE_LEAN*self.roll)*pose.Root
 	end
 	if self.from and k<1 then
 		local out={}
@@ -285,8 +303,9 @@ function Body.crowdFacts(w,now,dt,velocity,grounded,pose,seq,kit,emote,mastery,a
 		w.actSeq=actSeq
 	end
 	local clip=w.act and (require(game:GetService("ReplicatedStorage").NinjaDuel.HubFight).Moves[w.act] or {}).clip
-	return {now=now,dt=dt,speed=Vector3.new(velocity.X,0,velocity.Z).Magnitude,vy=velocity.Y,grounded=grounded and pose~="climb",
-		climbing=pose=="climb",climbSpeed=38,leapAt=w.leapAt,kickAt=w.kickAt,mantleAt=w.mantleAt,kit=kit,mastery=mastery or 0,
+	local side=if pose=="siderunR" then 1 elseif pose=="siderunL" then -1 else nil
+	return {now=now,dt=dt,speed=Vector3.new(velocity.X,0,velocity.Z).Magnitude,vy=velocity.Y,grounded=(grounded and pose~="climb" and side==nil) or pose=="wallstand",
+		climbing=pose=="climb",climbSpeed=38,sideRun=side,sideSpeed=40,onWall=pose=="wallstand",leapAt=w.leapAt,kickAt=w.kickAt,mantleAt=w.mantleAt,kit=kit,mastery=mastery or 0,
 		emote=if pose=="emote" then emote else nil,emoteAt=w.emoteAt,act=clip,actAt=if clip then w.actAt else nil}
 end
 function Body.poseOthers(Authored,dt,here)
