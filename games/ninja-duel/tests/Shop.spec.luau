@@ -1115,67 +1115,46 @@ test("the style preview: his own outfit on, the look pointed at in its slot, sta
 	assert((arm.CFrame.Position-Vector3new(1.5,3.1,0)).Magnitude<1e-4 and math.abs(arm.CFrame.RightVector.Y)<1e-4,"the arm does not hang at rest: "..tostring(arm.CFrame.Position))
 end)
 
--- (DESIGN 27/11, « pas une vision d'un vrai arbre ») the kit's tree is drawn
--- as a tree: every node of every kit has a place, none sits on another, the
--- tiers climb (tier I lowest), the roots under it and the crown on top.
-test("the real tree: every seal placed, none overlapping, tiers climbing, the crown on top",function()
+-- (DESIGN 27/11, third pass, after Ghost of Tsushima, Sekiro, Jujutsu
+-- Infinite) the tree as groups: every node of every kit has a place in its
+-- branch's group, none on another, the tiers read left to right, no group
+-- out of the page or on another, a line only inside a group.
+test("the skill tree's groups: every seal placed, none overlapping, tiers left to right",function()
 	local Tree=H.load("Client/TreePanel")
 	local TV=H.load("Shared/TreeView")
 	local Trees=H.load("Shared/SkillTrees")
+	local NT=H.load("Shared/NinjaTree")
 	local T=Tree.TREE
 	local kits=0
+	local function check(name,layout)
+		local L=Tree.treeLayout(layout,1024,100)
+		for _,branch in layout.branches do for _,node in branch.nodes do
+			local p=L.at[node.id]
+			assert(p,name.." "..node.id.." has no place")
+			local g=L.groups[p.b]
+			assert(p.x>=g.x+T.BIG/2-1 and p.x<=g.x+g.w-T.BIG/2+1 and p.y>=g.y+T.HEAD and p.y<=g.y+g.h-T.BOTTOM+1,name.." "..node.id.." is out of its group")
+		end end
+		local list={}
+		for _,p in L.at do table.insert(list,p) end
+		for i=1,#list do for j=i+1,#list do
+			local a,b=list[i],list[j]
+			assert(math.sqrt((a.x-b.x)^2+(a.y-b.y)^2)>=T.BIG+6,name..": "..a.node.id.." and "..b.node.id.." overlap")
+			if a.b==b.b and a.t<b.t then assert(a.x<b.x,name..": tier "..a.t.." not left of tier "..b.t) end
+		end end
+		for _,g in L.groups do
+			assert(g.x>=0 and g.x+g.w<=1024+.5,name..": a group leaves the page")
+			for _,o in L.groups do
+				if o~=g then assert(g.x+g.w<=o.x+.5 or o.x+o.w<=g.x+.5 or g.y+g.h<=o.y+.5 or o.y+o.h<=g.y+.5,name..": two groups overlap") end
+			end
+		end
+		for _,link in L.links do assert(L.at[link.from].b==L.at[link.to].b,name..": a line between two groups") end
+	end
 	for kit in Trees do
 		local layout=TV.layout(kit,{unlocked={},active={},points=0,free=0,mastery=0})
-		if layout then
-			kits+=1
-			local L=Tree.treeLayout(layout,1024,100)
-			local seen=0
-			for _,branch in layout.branches do for _,node in branch.nodes do
-				local p=L.at[node.id]
-				assert(p,kit.." "..node.id.." has no place on the tree")
-				seen+=1
-				assert(p.x>T.GUT-10 and p.x<1024,kit.." "..node.id.." is off the page")
-				assert(p.y>100 and p.y<L.ground,kit.." "..node.id.." is not above the roots")
-				if node.transform then assert(p.crown and p.y<L.bands[#L.bands].top,kit.."'s transformation is not at the crown") end
-			end end
-			local list={}
-			for _,p in L.at do table.insert(list,p) end
-			for i=1,#list do for j=i+1,#list do
-				local a,b=list[i],list[j]
-				local d=math.sqrt((a.x-b.x)^2+(a.y-b.y)^2)
-				assert(d>=T.BIG,string.format("%s: %s and %s overlap (%.0f)",kit,a.node.id,b.node.id,d))
-			end end
-			for t=2,#L.bands do assert(L.bands[t].bottom<=L.bands[t-1].top,kit..": tier "..t.." is not above tier "..(t-1)) end
-		end
+		if layout then kits+=1;check(kit,layout) end
 	end
+	check("Ninja",Tree.ninjaLayout(NT.view(NT.new(),0)))
 	assert(kits>=8,"the eight kits' trees")
-end)
-
--- (DESIGN 27/11, « super moche ») the trees are painted on their layout
--- (assets/ui/generate_tree.py from tools/tree_layouts.luau): the painting
--- and the seals must not drift apart. A layout change means repainting.
-test("the painted trees match the seals' layout (repaint after a layout change)",function()
-	local Tree=H.load("Client/TreePanel")
-	local TV=H.load("Shared/TreeView")
-	local fs=require("@lune/fs")
-	local serde=require("@lune/serde")
-	local painted=serde.decode("json",fs.readFile("assets/ui/tree_layouts.json"))
-	local checked=0
-	for kit,d in painted do
-		if kit~="Ninja" then
-			local layout=TV.layout(kit,{unlocked={},active={},points=0,free=0,mastery=0})
-			local card=Tree.kitCard(kit)
-			local L=Tree.treeLayout(layout,1024,0,if #((card and card.starts) or {})>0 then Tree.TREE.ROOTS else 60)
-			assert(math.abs(L.height-d.height)<.5,kit..": the tree's height changed, repaint it")
-			for _,n in d.nodes do
-				local p=L.at[n.id]
-				assert(p and math.abs(p.x-n.x)<.5 and math.abs(p.y-n.y)<.5,kit.." "..n.id..": the seal moved off its painted twig, repaint")
-			end
-			checked+=1
-		end
-	end
-	assert(checked>=8,"the eight painted trees")
-	assert(fs.isFile("assets/ui/trees/Legion_top.jpg") and fs.isFile("assets/ui/trees/Legion_bottom.jpg"),"the painting's two halves")
 end)
 
 print(string.format("NinjaDuel shop and Ryō (13/11): %d PASS",passed))

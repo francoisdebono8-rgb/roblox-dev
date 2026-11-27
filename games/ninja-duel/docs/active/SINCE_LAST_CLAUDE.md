@@ -87,6 +87,11 @@ François, après avoir joué : « regarde les têtes ça ne va pas, la tenue es
 - Avant que le joueur maîtrise un kit (maîtrise 800), sa course et son sprint sont maintenant ta course ninja serrée (`Lion.Run.F`, `Lion.Sprint`), dans Konoha comme en duel. C'est le choix de François : « course ninja nette ». Les courses `Novice.*` et `Trained.*` ne sont plus jouées ; leur marche, leurs sauts et leurs réceptions le restent. Si tu veux une course ninja propre à l'avatar, nomme-la `Avatar.Run.F` / `Avatar.Sprint` : le DEV la branchera à la place.
 - Les vêtements en mouvement : la superposition des deux tenues est corrigée. S'il reste des trous aux articulations (épaule, coude, genou) sur les pièces rigides par membre, c'est le prochain point à regarder.
 
+## INBOX-DESIGN-ARBRE-GROUPES-20261127 — DESIGN 27/11 : l'arbre refait d'après de vrais jeux (annule les 18 images)
+
+François (11 h 49) : « l'arbre est devenu brouillon, va chercher des menus de compétences sur internet ». Regardés : Ghost of Tsushima (Techniques : petits groupes de petits sceaux sur une page calme, un titre et une ligne par groupe, le détail dans un panneau fixe), Sekiro (chaque arbre lu de gauche à droite, lignes à angle droit), Jujutsu Infinite sur Roblox (un aspect par branche, cadenas). `TreePanel` : un groupe par branche (trois par rangée), les paliers I, II, III en colonnes de gauche à droite, des sceaux tous pareils (encre = à lui, anneau rouge = actif, point rouge = à apprendre, gris = pas encore), une ligne à angle droit seulement quand un sceau en demande un autre ; plus aucun mot sur l'arbre que le nom des branches, le nom, l'effet et le prix vont au panneau de droite au survol et au choix ; mouvements seulement quand il agit (ouverture, clic, sceau appris). Vu en Play par injection.
+- **DEV** : **ne plus envoyer les 18 images d'arbres** (`assets/ui/trees`, `generate_tree.py`, `tree_layouts.json` et `UIAssets.tree_*` sont retirés). Actualiser la place (TreePanel, FaceCam).
+
 ## INBOX-DESIGN-TETES-ARBRE-VIVANT-20261127 — DESIGN 27/11 : les têtes du duel, l'arbre qui bouge
 
 François (11 h 26, capture du portrait) : « les têtes sont bugged » ; l'arbre « bien mais il faut des descriptions, des animations de clics et de mouvements ».
