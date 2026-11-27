@@ -1076,10 +1076,17 @@ def torii():
 def hokage_cliff():
     """The cliff alone, after the monument of the Naruto era (four faces,
     before the village climbed onto it): a sheer face of warm sandstone, its
-    top a flat plateau with a few trees, no mountains behind. The faces stand
-    proud of the rock (HeadSlot1..4 or the avatars, placed by the server; the
-    face carries no niche, so they can sit anywhere, staggered). Its solid box
-    stays 330 x 92 x 32, front at z -232."""
+    top a plateau with trees. The faces stand proud of the rock (HeadSlot1..4
+    or the avatars, placed by the server; the face carries no niche, so they
+    can sit anywhere, staggered). Its solid box stays 330 x 92 x 32, front at
+    z -232.
+    (27/11, passe commune 4, the DEV seen from the village: « la falaise ne se
+    voit pas », a slab: a front face, two flat end panels and a strip of grass,
+    with the sky under and behind it) Now a massif: the face goes down under
+    the ground (y -14) so no sky shows at its foot; at each end it turns back
+    into a hillside that slopes down to the ground; the plateau runs far back
+    (to z -560) and comes down behind, all one closed relief, seen from
+    anywhere. Trees all over its top."""
     rock = Piece("Cliff", "Rock", flat=True)
     top = Piece("Plateau", "Grass", flat=True)
     trees = Piece("Trees", "Grass", flat=True)
@@ -1091,9 +1098,11 @@ def hokage_cliff():
         c = lerp(SAND_D, SAND, .55 + .25 * strata + .22 * noise.noise(p * .06))
         c = lerp(c, SAND_D, .28 * max(0, noise.noise(Vector((p.x * .22, 0, 1)))) * smooth((90 - p.y) / 30))
         return grime(c, p, 0, 10, .25)
+    FOOT = -14.0
     def crest(x):
         return 92 + 1.5 * noise.noise(Vector((x * .03, 3.1, 0))) - 10 * smooth((abs(x) - 140) / 25)
-    X, Y = 90, 28
+    # the face: x -165..165, from under the ground to the lip
+    X, Y = 90, 30
     rows = []
     for j in range(Y + 1):
         v = j / Y
@@ -1101,35 +1110,75 @@ def hokage_cliff():
         for i in range(X + 1):
             x = -165 + 330 * i / X
             yt = crest(x)
-            y = yt * v
+            y = FOOT + (yt - FOOT) * v
             dz = 1.5 * noise.noise(Vector((x * .05, y * .05, 0))) + .7 * noise.noise(Vector((x * .2, y * .2, 3)))
             dz -= 1.6 * smooth((y - yt + 4) / 4)                     # the lip rounds over onto the plateau
             dz -= 12 * smooth((abs(x) - 130) / 35)                   # the ends turn back into the hillside
             row.append(Vector((x, y, -232 + dz)))
         rows.append(row)
     loft(rock, rows, rc, closed=False, cap0=False, cap1=False)
-    for i in (0, X):
-        loft(rock, [[rows[j][i] for j in range(Y + 1)], [Vector((rows[j][i].x, rows[j][i].y, -300)) for j in range(Y + 1)]], rc, closed=False, cap0=False, cap1=False)
-    # the plateau: flat, grass worn to earth near the lip, going back out of sight
-    prow = [Vector((p.x, p.y + .05, p.z - .6)) for p in rows[-1]]
-    prows = [prow] + [[Vector((p.x, crest(p.x) + .4 * noise.noise(Vector((p.x * .05, z * .05, 0))), z)) for p in prow] for z in (-240, -260, -300)]
-    loft(top, prows, lambda p, kk: lerp(rgb(110, 98, 70), lerp(C["leaf"], C["leafDark"], .4 + .3 * noise.noise(p * .05)), smooth((-236 - p.z) / 6)),
-         closed=False, cap0=False, cap1=False)
-    # a few trees up there, in small groups, set back from the edge
+    lip = rows[-1]
+    # the massif behind and beside it: one height field from x -330..330,
+    # z -150 (in front of the ends) .. -560 (behind), rock on the slopes,
+    # grass on the flat. In front of the face (|x| < 165) it stays under the
+    # ground; past the face's ends it climbs from the ground to the crest.
+    def height(x, z):
+        ax = abs(x)
+        # how far back from the face line (z -232), and how far out to the side
+        back = smooth((-232 - z) / 4)                                    # 0 in front of the face, 1 just behind it
+        ridge = crest(max(-165, min(165, x))) - 6 * smooth((-z - 330) / 120) * 0
+        side = 1 - smooth((ax - 175) / 150)                              # the hill falls away past the ends
+        rear = 1 - smooth((-z - 400) / 150)                              # and behind
+        # past the ends, the hillside comes forward to meet the ground
+        flank = smooth((ax - 140) / 25) * smooth((z + 160) / -60)       # full from just inside the face's ends
+        cover = max(back, flank)
+        hgt = FOOT + (ridge - FOOT) * cover * side * rear
+        hgt += 3 * noise.noise(Vector((x * .025, z * .025, 7))) * cover * side * rear
+        return hgt
+    NX, NZ = 66, 42
+    xs = [-330 + 660 * i / NX for i in range(NX + 1)]
+    zs = [-150 - 410 * k / NZ for k in range(NZ + 1)]
+    grid = []
+    for z in zs:
+        row = []
+        for x in xs:
+            y = height(x, z)
+            if abs(x) < 165 and z > -236:
+                y = FOOT - 2                                              # under the face, out of sight
+            row.append(Vector((x, y, z)))
+        grid.append(row)
+    def hc(p, k=0):
+        # grass where it is flat, rock on the steep (by the height's slope)
+        e = 4
+        gx = height(p.x + e, p.z) - height(p.x - e, p.z)
+        gz = height(p.x, p.z + e) - height(p.x, p.z - e)
+        steep = smooth((math.sqrt(gx * gx + gz * gz) / (2 * e) - .55) / .5)
+        g = lerp(C["leaf"], C["leafDark"], .4 + .3 * noise.noise(p * .05))
+        return lerp(g, rc(p), steep)
+    loft(top, grid, hc, closed=False, cap0=False, cap1=False)
+    # trees all over the top, in groups, set back from the lip; fewer on the slopes
     rng = random.Random(14)
     shades = (C["leafDark"], C["leaf"], C["leafLight"])
-    groups = ((-140, -252), (-108, -262), (-60, -250), (5, -268), (48, -256), (110, -250), (142, -266))
-    for k, (gx, gz) in enumerate(groups):
+    placed = 0
+    for k in range(46):
+        gx = rng.uniform(-300, 300)
+        gz = rng.uniform(-250, -520)
+        if abs(gx) < 170 and gz > -248:
+            continue
+        base = height(gx, gz)
+        if base < 8:
+            continue
         for j in range(rng.randint(1, 3)):
             x, z = gx + rng.uniform(-6, 6), gz + rng.uniform(-5, 5)
-            base = crest(x)
-            h = rng.uniform(9, 14)
-            r = rng.uniform(4.5, 7)
-            cyl(trunks, T(x, base - .5, z), .75, h * .7, C["bark"], sides=6)
+            b = height(x, z)
+            h = rng.uniform(9, 15)
+            r = rng.uniform(4.5, 7.5)
+            cyl(trunks, T(x, b - .8, z), .75, h * .7, C["bark"], sides=6)
             tone = shades[rng.randrange(3)]
-            for c_ in range(3):
-                ellipsoid(trees, (x + rng.uniform(-2, 2), base + h * .7 + rng.uniform(0, 2.5), z + rng.uniform(-2, 2)), (r, r * .8, r),
+            for c_ in range(2):
+                ellipsoid(trees, (x + rng.uniform(-2, 2), b + h * .7 + rng.uniform(0, 2.5), z + rng.uniform(-2, 2)), (r, r * .8, r),
                           lambda p, kk, tone=tone: jitter(tone, p, .12, .5), seg=7, rings=5, bump=lambda d, c_=c_: .22 * noise.noise(d * 2 + Vector((c_, k, 1))))
+            placed += 1
     return [rock, top, trees, trunks]
 
 

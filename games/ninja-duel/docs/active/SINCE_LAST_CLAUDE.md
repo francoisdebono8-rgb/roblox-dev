@@ -1,5 +1,36 @@
 # Boîte de réception Claude
 
+## INBOX-ANIM-PASSE4-20261127 — ANIMATEUR, passe commune 4 (27/11 soir) : le mur, les dégâts, la falaise
+
+Ce que j'ai fait, ce que j'ai vu dans Studio (place `LAB/bt/NinjaDuel-P4c`, la branche commune) et ce qui manque.
+
+- **La falaise** (`tools/blender/konoha_models.py` `hokage_cliff`, épissée seule dans `HubMeshData17/18` : les autres modèles ne sont pas touchés, car une régénération complète changeait aussi des maisons) :
+  - C'est maintenant un massif :
+    - la face descend sous le sol (y −14) ;
+    - un plateau de collines part loin derrière (z −560) et redescend sur les côtés et à l'arrière ;
+    - 46 groupes d'arbres sont posés dessus.
+  - Vu d'en haut, ce n'est plus une plaque : le relief est là. Vu du village, la falaise se voit (elle se voyait aussi avant dans ma place, avec le maillage chargé).
+  - **Pas réglé** :
+    - de l'extérieur, côté ouest, le bout de la face se voit encore comme un panneau ;
+    - les têtes (`HubMap.Base.Heads`, DEV) sont à environ 36 studs devant la face : leurs échafaudages et leurs plaques flottent quand on ne voit pas la roche derrière. **DEV** : reculer les têtes contre la face (z ≈ face + 6) ;
+    - le sol vert du village s'arrête avant le pied de la falaise (la couronne de forêt et de collines du DEV).
+- **La course au mur** (`Client/WallRunFX`, branché dans `HubBody` pour la ville et dans `Effects:fighter` pour le duel) :
+  - à chaque pas, un disque de chakra bleu à plat sur le mur, sous le pied qui le touche, et une bouffée de poussière ;
+  - debout sur le mur, les deux semelles brillent doucement.
+  - Vu dans Studio sur le mur d'enceinte (le corps placé par script contre le mur ; ce n'est pas une course au clavier).
+- **La vrille et la roulade** :
+  - `Lion.Parkour.WallSpin` (le donneur de tous) : le saut depuis un mur tourne d'un tour complet, groupé.
+  - `HubBody` : une réception dans les 1,6 s qui suivent un saut de mur est une roulade (`Parkour.LandRoll`).
+  - **Pas vu en jeu** (il faut le clavier).
+- **Le coup reçu sur le mur** :
+  - `<kit>.Wall.Hit`, pour les 8 kits, est joué par `authoredReaction` quand `HitStun` arrive en `wallMode` `stand` : il vacille, s'affaisse sur le mur, se rattrape accroupi, une main vers le mur, puis se relève dessus. Les pieds restent au mur.
+  - **Dépend du DEV**, point 1 de la passe : un coup léger ne doit plus faire tomber du mur.
+  - L'appel sur le mur pour frapper, c'est le plongeon (`WallDive`) déjà là depuis `stand`. Je n'y ai pas touché.
+- **Les dégâts** (`Client/Effects`) :
+  - les fissures laissées par un corps contre un mur tiennent maintenant 75 s (`FX.SCAR_HOLD`), au plus 26 à la fois (`FX.SCAR_MAX`, la plus vieille s'en va). Avant, elles disparaissaient en 2,2 s.
+  - Un vol plané qui retombe fissure le sol sous le corps, avec de la poussière et des éclats.
+  - **Pas vu en jeu ce soir.**
+- **Les armes et les PNJ** : **pas faits**. Le dossier `~/Documents/NinjaDuel/REFERENCES/` n'existe pas sur le Mac (seuls `PLACES`, `LAB`, `ARCHIVES`, `_outils`, `BLENDER`, `_maintenance` et `MEDIA` sont là). Je les fais dès que les planches y sont.
 ## INBOX-OUTILLEUR-MURS-20261127 — OUTILLEUR 27/11 soir (passe commune 4) : le robot humain sur les murs, la fluidité pour filmer
 
 Mesures : `tools/humanbot/mesures/2026-11-27d_0cd43300/` (rapport, 11 captures). Place : copie de la place commune `0cd43300`. Aucune ligne rouge.
